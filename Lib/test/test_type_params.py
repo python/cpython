@@ -4,7 +4,7 @@ import types
 import unittest
 from test.support import requires_working_socket, check_syntax_error
 
-from typing import Any, Generic, Sequence, TypeVar, TypeVarTuple, ParamSpec
+from typing import Any, Generic, Sequence, TypeVar, TypeVarTuple, ParamSpec, get_args
 
 
 def run_code(code: str) -> dict[str, Any]:
@@ -144,8 +144,7 @@ class TypeParamsInvalidTest(unittest.TestCase):
         check_syntax_error(self, "def f[T](y: (x := Sequence[T])): pass")
 
 
-class NonlocalTest(unittest.TestCase):
-
+class TypeParamsNonlocalTest(unittest.TestCase):
     def test_nonlocal_disallowed_01(self):
         code = """
             def outer():
@@ -377,6 +376,21 @@ class TypeParamsAccessTest(unittest.TestCase):
         c = Child()
         self.assertEqual(c.meth(1), "basechild")
 
+    def test_type_alias_containing_lambda(self):
+        type Alias[T] = lambda: T
+        T, = Alias.__type_params__
+        self.assertIs(Alias.__value__(), T)
+
+    def test_class_base_containing_lambda(self):
+        # Test that scopes nested inside hidden functions work correctly
+        outer_var = "outer"
+        class Base[T]: ...
+        class Child[T](Base[lambda: (int, outer_var, T)]): ...
+        base, _ = types.get_original_bases(Child)
+        func, = get_args(base)
+        T, = Child.__type_params__
+        self.assertEqual(func(), (int, "outer", T))
+
 
 def global_generic_func[T]():
     pass
@@ -475,7 +489,7 @@ class TypeParamsClassScopeTest(unittest.TestCase):
         self.assertIs(X.Alias.__value__, float)
 
 
-class ManglingTest(unittest.TestCase):
+class TypeParamsManglingTest(unittest.TestCase):
     def test_mangling(self):
         class Foo[__T]:
             param = __T
@@ -498,7 +512,7 @@ class ManglingTest(unittest.TestCase):
         self.assertEqual(Foo.Alias.__value__, (T, V))
 
 
-class ComplexCallsTest(unittest.TestCase):
+class TypeParamsComplexCallsTest(unittest.TestCase):
     def test_defaults(self):
         # Generic functions with both defaults and kwdefaults trigger a specific code path
         # in the compiler.
@@ -535,7 +549,7 @@ class ComplexCallsTest(unittest.TestCase):
         self.assertEqual(C2.kwargs, {"c": 3})
 
 
-class TypeParamsTraditionalTypeVars(unittest.TestCase):
+class TypeParamsTraditionalTypeVarsTest(unittest.TestCase):
     def test_traditional_01(self):
         code = """
             from typing import Generic
@@ -649,7 +663,7 @@ class TypeParamsTypeVarTupleTest(unittest.TestCase):
         self.assertIsInstance(a, TypeVarTuple)
 
 
-class TypeParamsTypeVarParamSpec(unittest.TestCase):
+class TypeParamsTypeVarParamSpecTest(unittest.TestCase):
     def test_paramspec_01(self):
         code = """def func1[**A: str](): pass"""
         check_syntax_error(self, code, "cannot use bound with ParamSpec")
