@@ -335,7 +335,7 @@ be found in any statistics text.
 .. function:: gammavariate(alpha, beta)
 
    Gamma distribution.  (*Not* the gamma function!)  The shape and
-   scale parameters, ``alpha`` and ``beta``, must have positive values.
+   scale parameters, *alpha* and *beta*, must have positive values.
    (Calling conventions vary and some sources define 'beta'
    as the inverse of the scale).
 
