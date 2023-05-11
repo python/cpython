@@ -23,23 +23,35 @@ platforms but it's not been thoroughly tested).
 The :mod:`pty` module defines the following functions:
 
 
-.. function:: fork()
+.. function:: fork(mode=None, winsz=None)
 
    Fork. Connect the child's controlling terminal to a pseudo-terminal. Return
    value is ``(pid, fd)``. Note that the child  gets *pid* 0, and the *fd* is
    *invalid*. The parent's return value is the *pid* of the child, and *fd* is a
    file descriptor connected to the child's controlling terminal (and also to the
-   child's standard input and output).
+   child's standard input and output). The *mode* argument, which is expected
+   to be a termios attribute list like the one returned by
+   :func:`termios.tcgetattr`, will be applied to the slave end. The *winsz*
+   argument, which is expected to be a winsize pair like the one returned by
+   :func:`termios.tcgetwinsize`, will be applied to the slave end.
 
 
-.. function:: openpty()
+.. function:: openpty(mode=None, winsz=None, name=False)
 
    Open a new pseudo-terminal pair, using :func:`os.openpty` if possible, or
-   emulation code for generic Unix systems. Return a pair of file descriptors
-   ``(master, slave)``, for the master and the slave end, respectively.
+   emulation code for generic Unix systems. The *mode* argument, which is
+   expected to be a termios attribute list like the one returned by
+   :func:`termios.tcgetattr`, will be applied to the slave end. The *winsz*
+   argument, which is expected to be a winsize pair like the one returned by
+   :func:`termios.tcgetwinsize`, will be applied to the slave end. If *name*
+   is false, return a pair of file descriptors ``(master, slave)``, for the
+   master and the slave end, respectively. Otherwise, return
+   ``(master, slave, name)``, where the additional value is the filename of
+   the slave.
 
 
-.. function:: spawn(argv[, master_read[, stdin_read]])
+.. function:: spawn(argv[, master_read[, stdin_read]], slave_echo=True, \
+                    handle_winch=False)
 
    Spawn a process, and connect its controlling terminal with the current
    process's standard io. This is often used to baffle programs which insist on
@@ -68,6 +80,15 @@ The :mod:`pty` module defines the following functions:
    communicate with the parent process OR the child process. Unless the child
    process will quit without any input, *spawn* will then loop forever. If
    *master_read* signals EOF the same behavior results (on linux at least).
+
+   The ECHO termios attribute of the slave end is turned on or off based on
+   the value of the argument *slave_echo* being true or false respectively.
+
+   If *spawn* is called from the main thread, then a handler for
+   :const:`signal.SIGWINCH` will be installed if *handle_winch* is true, if
+   the pair of constants
+   (:const:`termios.TIOCGWINSZ`, :const:`termios.TIOCSWINSZ`) is defined, and
+   if STDIN of the current process is a terminal.
 
    Return the exit status value from :func:`os.waitpid` on the child process.
 
