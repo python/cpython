@@ -128,7 +128,7 @@ or :class:`frozenset` or instances of their subtypes.
 
    .. note::
       Unlike the Python :meth:`__contains__` method, this function does not
-      automatically convert unhashable sets into temporary frozensets.  
+      automatically convert unhashable sets into temporary frozensets.
 
 
 .. c:function:: int PySet_Add(PyObject *set, PyObject *key)
