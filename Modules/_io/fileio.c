@@ -551,8 +551,8 @@ err_closed(void)
 static PyObject *
 err_mode(_PyIO_State *state, const char *action)
 {
-    PyErr_Format(state->unsupported_operation, "File not open for %s", action);
-    return NULL;
+    return PyErr_Format(state->unsupported_operation,
+                        "File not open for %s", action);
 }
 
 /*[clinic input]

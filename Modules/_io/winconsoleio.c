@@ -180,7 +180,6 @@ internal_close(winconsoleio *self)
 
 /*[clinic input]
 _io._WindowsConsoleIO.close
-
     cls: defining_class
     /
 
@@ -192,7 +191,7 @@ close() may be called more than once without error.
 
 static PyObject *
 _io__WindowsConsoleIO_close_impl(winconsoleio *self, PyTypeObject *cls)
-/*[clinic end generated code: output=e50c1808c063e1e2 input=f200f26059fb2ecf]*/
+/*[clinic end generated code: output=e50c1808c063e1e2 input=161001bd2a649a4b]*/
 {
     PyObject *res;
     PyObject *exc;
@@ -460,9 +459,8 @@ err_closed(void)
 static PyObject *
 err_mode(_PyIO_State *state, const char *action)
 {
-    PyErr_Format(state->unsupported_operation,
-                 "Console buffer does not support %s", action);
-    return NULL;
+    return PyErr_Format(state->unsupported_operation,
+                        "Console buffer does not support %s", action);
 }
 
 /*[clinic input]
@@ -639,14 +637,13 @@ error:
 
 
 static Py_ssize_t
-readinto(winconsoleio *self, char *buf, Py_ssize_t len)
+readinto(_PyIO_State *state, winconsoleio *self, char *buf, Py_ssize_t len)
 {
     if (self->fd == -1) {
         err_closed();
         return -1;
     }
     if (!self->readable) {
-        _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
         err_mode(state, "reading");
         return -1;
     }
@@ -737,6 +734,7 @@ readinto(winconsoleio *self, char *buf, Py_ssize_t len)
 
 /*[clinic input]
 _io._WindowsConsoleIO.readinto
+    cls: defining_class
     buffer: Py_buffer(accept={rwbuffer})
     /
 
@@ -744,10 +742,12 @@ Same as RawIOBase.readinto().
 [clinic start generated code]*/
 
 static PyObject *
-_io__WindowsConsoleIO_readinto_impl(winconsoleio *self, Py_buffer *buffer)
-/*[clinic end generated code: output=66d1bdfa3f20af39 input=4ed68da48a6baffe]*/
+_io__WindowsConsoleIO_readinto_impl(winconsoleio *self, PyTypeObject *cls,
+                                    Py_buffer *buffer)
+/*[clinic end generated code: output=96717c74f6204b79 input=4b0627c3b1645f78]*/
 {
-    Py_ssize_t len = readinto(self, buffer->buf, buffer->len);
+    _PyIO_State *state = get_io_state_by_cls(cls);
+    Py_ssize_t len = readinto(state, self, buffer->buf, buffer->len);
     if (len < 0)
         return NULL;
 
@@ -938,7 +938,9 @@ _io__WindowsConsoleIO_read_impl(winconsoleio *self, PyTypeObject *cls,
     if (bytes == NULL)
         return NULL;
 
-    bytes_size = readinto(self, PyBytes_AS_STRING(bytes), PyBytes_GET_SIZE(bytes));
+    _PyIO_State *state = get_io_state_by_cls(cls);
+    bytes_size = readinto(state, self, PyBytes_AS_STRING(bytes),
+                          PyBytes_GET_SIZE(bytes));
     if (bytes_size < 0) {
         Py_CLEAR(bytes);
         return NULL;
