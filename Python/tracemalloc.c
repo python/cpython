@@ -11,11 +11,6 @@
 
 #include <stdlib.h>               // malloc()
 
-/*[clinic input]
-module _tracemalloc
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=708a98302fc46e5f]*/
-
 #define tracemalloc_config _PyRuntime.tracemalloc.config
 
 _Py_DECLARE_STR(anon_unknown, "<unknown>");

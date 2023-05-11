@@ -3,6 +3,11 @@
 #include "clinic/_tracemalloc.c.h"
 
 
+/*[clinic input]
+module _tracemalloc
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=708a98302fc46e5f]*/
+
 
 /*[clinic input]
 _tracemalloc.is_tracing
