@@ -2292,7 +2292,7 @@ static PyObject *
 AttributeError_getstate(PyAttributeErrorObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *dict = ((PyAttributeErrorObject *)self)->dict;
-    if (self->name || self->obj || self->args) {
+    if (self->name || self->args) {
         dict = dict ? PyDict_Copy(dict) : PyDict_New();
         if (dict == NULL)
             return NULL;
@@ -2302,10 +2302,6 @@ AttributeError_getstate(PyAttributeErrorObject *self, PyObject *Py_UNUSED(ignore
         }
         /* We specifically are not pickling the obj attribute since there are many
         cases where it is unlikely to be picklable. See GH-103352.
-        if (self->obj && PyDict_SetItemString(dict, "obj", self->obj) < 0) {
-            Py_DECREF(dict);
-            return NULL;
-        }
         */
         if (self->args && PyDict_SetItemString(dict, "args", self->args) < 0) {
             Py_DECREF(dict);

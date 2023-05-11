@@ -519,8 +519,7 @@ class ExceptionTests(unittest.TestCase):
             try:
                 e = exc(*args, **kwargs)
             except:
-                print("\nexc=%r, args=%r, kwargs=%r" %
-                    (exc, args, kwargs), file=sys.stderr)
+                print(f"\nexc={exc!r}, args={args!r}", file=sys.stderr)
                 # raise
             else:
                 # Verify module name
