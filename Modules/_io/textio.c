@@ -20,8 +20,16 @@
 module _io
 class _io.IncrementalNewlineDecoder "nldecoder_object *" "clinic_state()->PyIncrementalNewlineDecoder_Type"
 class _io.TextIOWrapper "textio *" "clinic_state()->TextIOWrapper_Type"
+class _io._TextIOBase "PyObject *" "&PyTextIOBase_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=81f67cf54eaa6001]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=8b7f24fa13bfdd7f]*/
+
+typedef struct nldecoder_object nldecoder_object;
+typedef struct textio textio;
+
+#define clinic_state() (find_io_state_by_def(Py_TYPE(self)))
+#include "clinic/textio.c.h"
+#undef clinic_state
 
 /* TextIOBase */
 
@@ -34,62 +42,88 @@ PyDoc_STRVAR(textiobase_doc,
     );
 
 static PyObject *
-_unsupported(const char *message)
+_unsupported(_PyIO_State *state, const char *message)
 {
-    _PyIO_State *state = IO_STATE();
-    if (state != NULL)
-        PyErr_SetString(state->unsupported_operation, message);
+    PyErr_SetString(state->unsupported_operation, message);
     return NULL;
 }
 
-PyDoc_STRVAR(textiobase_detach_doc,
-    "Separate the underlying buffer from the TextIOBase and return it.\n"
-    "\n"
-    "After the underlying buffer has been detached, the TextIO is in an\n"
-    "unusable state.\n"
-    );
+/*[clinic input]
+_io._TextIOBase.detach
+    cls: defining_class
+    /
+
+Separate the underlying buffer from the TextIOBase and return it.
+
+After the underlying buffer has been detached, the TextIO is in an unusable state.
+[clinic start generated code]*/
 
 static PyObject *
-textiobase_detach(PyObject *self, PyObject *Py_UNUSED(ignored))
+_io__TextIOBase_detach_impl(PyObject *self, PyTypeObject *cls)
+/*[clinic end generated code: output=50915f40c609eaa4 input=987ca3640d0a3776]*/
 {
-    return _unsupported("detach");
+    _PyIO_State *state = IO_STATE();
+    return _unsupported(state, "detach");
 }
 
-PyDoc_STRVAR(textiobase_read_doc,
-    "Read at most size characters from stream.\n"
-    "\n"
-    "Read from underlying buffer until we have size characters or we hit EOF.\n"
-    "If size is negative or omitted, read until EOF.\n"
-    );
+/*[clinic input]
+_io._TextIOBase.read
+    cls: defining_class
+    /
+    *args: object
+
+Read at most size characters from stream.
+
+Read from underlying buffer until we have size characters or we hit EOF.
+If size is negative or omitted, read until EOF.
+[clinic start generated code]*/
 
 static PyObject *
-textiobase_read(PyObject *self, PyObject *args)
+_io__TextIOBase_read_impl(PyObject *self, PyTypeObject *cls, PyObject *args)
+/*[clinic end generated code: output=3adf28998831f461 input=cee1e84664a20de0]*/
 {
-    return _unsupported("read");
+    _PyIO_State *state = IO_STATE();
+    return _unsupported(state, "read");
 }
 
-PyDoc_STRVAR(textiobase_readline_doc,
-    "Read until newline or EOF.\n"
-    "\n"
-    "Returns an empty string if EOF is hit immediately.\n"
-    );
+/*[clinic input]
+_io._TextIOBase.readline
+    cls: defining_class
+    /
+    *args: object
+
+Read until newline or EOF.
+
+Return an empty string if EOF is hit immediately.
+[clinic start generated code]*/
 
 static PyObject *
-textiobase_readline(PyObject *self, PyObject *args)
+_io__TextIOBase_readline_impl(PyObject *self, PyTypeObject *cls,
+                              PyObject *args)
+/*[clinic end generated code: output=3073a948d02319f3 input=58f801259f7ff3ef]*/
 {
-    return _unsupported("readline");
+    _PyIO_State *state = IO_STATE();
+    return _unsupported(state, "readline");
 }
 
-PyDoc_STRVAR(textiobase_write_doc,
-    "Write string to stream.\n"
-    "Returns the number of characters written (which is always equal to\n"
-    "the length of the string).\n"
-    );
+/*[clinic input]
+_io._TextIOBase.write
+    cls: defining_class
+    /
+    *args: object
+
+Write string to stream.
+
+Return the number of characters written
+(which is always equal to the length of the string).
+[clinic start generated code]*/
 
 static PyObject *
-textiobase_write(PyObject *self, PyObject *args)
+_io__TextIOBase_write_impl(PyObject *self, PyTypeObject *cls, PyObject *args)
+/*[clinic end generated code: output=5d985eb529472bc4 input=21b6961b5cba9496]*/
 {
-    return _unsupported("write");
+    _PyIO_State *state = IO_STATE();
+    return _unsupported(state, "write");
 }
 
 PyDoc_STRVAR(textiobase_encoding_doc,
@@ -132,10 +166,10 @@ textiobase_errors_get(PyObject *self, void *context)
 
 
 static PyMethodDef textiobase_methods[] = {
-    {"detach", textiobase_detach, METH_NOARGS, textiobase_detach_doc},
-    {"read", textiobase_read, METH_VARARGS, textiobase_read_doc},
-    {"readline", textiobase_readline, METH_VARARGS, textiobase_readline_doc},
-    {"write", textiobase_write, METH_VARARGS, textiobase_write_doc},
+    _IO__TEXTIOBASE_DETACH_METHODDEF
+    _IO__TEXTIOBASE_READ_METHODDEF
+    _IO__TEXTIOBASE_READLINE_METHODDEF
+    _IO__TEXTIOBASE_WRITE_METHODDEF
     {NULL, NULL}
 };
 
@@ -200,14 +234,14 @@ PyTypeObject PyTextIOBase_Type = {
 
 /* IncrementalNewlineDecoder */
 
-typedef struct {
+struct nldecoder_object {
     PyObject_HEAD
     PyObject *decoder;
     PyObject *errors;
     unsigned int pendingcr: 1;
     unsigned int translate: 1;
     unsigned int seennl: 3;
-} nldecoder_object;
+};
 
 /*[clinic input]
 _io.IncrementalNewlineDecoder.__init__
@@ -645,7 +679,7 @@ incrementalnewlinedecoder_newlines_get(nldecoder_object *self, void *context)
 typedef PyObject *
         (*encodefunc_t)(PyObject *, PyObject *);
 
-typedef struct
+struct textio
 {
     PyObject_HEAD
     int ok; /* initialized? */
@@ -704,7 +738,7 @@ typedef struct
     PyObject *dict;
 
     _PyIO_State *state;
-} textio;
+};
 
 static void
 textiowrapper_set_decoded_chars(textio *self, PyObject *chars);
@@ -1349,7 +1383,8 @@ _io_TextIOWrapper_reconfigure_impl(textio *self, PyObject *encoding,
     /* Check if something is in the read buffer */
     if (self->decoded_chars != NULL) {
         if (encoding != Py_None || errors != Py_None || newline_obj != NULL) {
-            _unsupported("It is not possible to set the encoding or newline "
+            _unsupported(self->state,
+                         "It is not possible to set the encoding or newline "
                          "of stream after the first read");
             return NULL;
         }
@@ -1616,8 +1651,9 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
     CHECK_ATTACHED(self);
     CHECK_CLOSED(self);
 
-    if (self->encoder == NULL)
-        return _unsupported("not writable");
+    if (self->encoder == NULL) {
+        return _unsupported(self->state, "not writable");
+    }
 
     Py_INCREF(text);
 
@@ -1798,7 +1834,7 @@ textiowrapper_read_chunk(textio *self, Py_ssize_t size_hint)
      */
 
     if (self->decoder == NULL) {
-        _unsupported("not readable");
+        _unsupported(self->state, "not readable");
         return -1;
     }
 
@@ -1923,8 +1959,9 @@ _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n)
     CHECK_ATTACHED(self);
     CHECK_CLOSED(self);
 
-    if (self->decoder == NULL)
-        return _unsupported("not readable");
+    if (self->decoder == NULL) {
+        return _unsupported(self->state, "not readable");
+    }
 
     if (_textiowrapper_writeflush(self) < 0)
         return NULL;
@@ -2455,7 +2492,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
     Py_INCREF(cookieObj);
 
     if (!self->seekable) {
-        _unsupported("underlying stream is not seekable");
+        _unsupported(self->state, "underlying stream is not seekable");
         goto fail;
     }
 
@@ -2469,7 +2506,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
             goto fail;
 
         if (cmp == 0) {
-            _unsupported("can't do nonzero cur-relative seeks");
+            _unsupported(self->state, "can't do nonzero cur-relative seeks");
             goto fail;
         }
 
@@ -2489,7 +2526,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
             goto fail;
 
         if (cmp == 0) {
-            _unsupported("can't do nonzero end-relative seeks");
+            _unsupported(self->state, "can't do nonzero end-relative seeks");
             goto fail;
         }
 
@@ -2652,7 +2689,7 @@ _io_TextIOWrapper_tell_impl(textio *self)
     CHECK_CLOSED(self);
 
     if (!self->seekable) {
-        _unsupported("underlying stream is not seekable");
+        _unsupported(self->state, "underlying stream is not seekable");
         goto fail;
     }
     if (!self->telling) {
@@ -3178,10 +3215,6 @@ textiowrapper_chunk_size_set(textio *self, PyObject *arg, void *context)
     self->chunk_size = n;
     return 0;
 }
-
-#define clinic_state() (find_io_state_by_def(Py_TYPE(self)))
-#include "clinic/textio.c.h"
-#undef clinic_state
 
 static PyMethodDef incrementalnewlinedecoder_methods[] = {
     _IO_INCREMENTALNEWLINEDECODER_DECODE_METHODDEF
