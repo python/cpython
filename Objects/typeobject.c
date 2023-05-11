@@ -9117,6 +9117,12 @@ releasebuffer_maybe_call_super(PyObject *self, Py_buffer *buffer)
 static void
 releasebuffer_call_python(PyObject *self, Py_buffer *buffer)
 {
+    // bf_releasebuffer may be called while an exception is already active.
+    // We have no way to report additional errors up the stack, because
+    // this slot returns void, so we simply stash away the active exception
+    // and restore it after the call to Python returns.
+    PyObject *exc = PyErr_GetRaisedException();
+
     PyObject *mv;
     bool is_buffer_wrapper = Py_TYPE(buffer->obj) == &_PyBufferWrapper_Type;
     if (is_buffer_wrapper) {
@@ -9124,7 +9130,7 @@ releasebuffer_call_python(PyObject *self, Py_buffer *buffer)
         // __release_buffer__() that __buffer__() returned.
         PyBufferWrapper *bw = (PyBufferWrapper *)buffer->obj;
         if (bw->mv == NULL) {
-            return;
+            goto end;
         }
         mv = Py_NewRef(bw->mv);
     }
@@ -9134,7 +9140,7 @@ releasebuffer_call_python(PyObject *self, Py_buffer *buffer)
         mv = PyMemoryView_FromBuffer(buffer);
         if (mv == NULL) {
             PyErr_WriteUnraisable(self);
-            return;
+            goto end;
         }
         // Set the memoryview to restricted mode, which forbids
         // users from saving any reference to the underlying buffer
@@ -9155,6 +9161,10 @@ releasebuffer_call_python(PyObject *self, Py_buffer *buffer)
         PyObject_CallMethodNoArgs(mv, &_Py_ID(release));
     }
     Py_DECREF(mv);
+end:
+    assert(!PyErr_Occurred());
+
+    PyErr_SetRaisedException(exc);
 }
 
 /*
@@ -10245,18 +10255,6 @@ _PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj, PyObject *name, int *me
     return res;
 }
 
-PyObject *
-_PySuper_LookupDescr(PyTypeObject *su_type, PyObject *su_obj, PyObject *name)
-{
-    PyTypeObject *su_obj_type = supercheck(su_type, su_obj);
-    if (su_obj_type == NULL) {
-        return NULL;
-    }
-    PyObject *res = _super_lookup_descr(su_type, su_obj_type, name);
-    Py_DECREF(su_obj_type);
-    return res;
-}
-
 static PyObject *
 super_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
@@ -10279,8 +10277,10 @@ super_descr_get(PyObject *self, PyObject *obj, PyObject *type)
             return NULL;
         newobj = (superobject *)PySuper_Type.tp_new(&PySuper_Type,
                                                  NULL, NULL);
-        if (newobj == NULL)
+        if (newobj == NULL) {
+            Py_DECREF(obj_type);
             return NULL;
+        }
         newobj->type = (PyTypeObject*)Py_NewRef(su->type);
         newobj->obj = Py_NewRef(obj);
         newobj->obj_type = obj_type;

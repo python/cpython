@@ -8,6 +8,7 @@ import pickle
 import re
 import sys
 import warnings
+from test.support.import_helper import import_fresh_module
 from unittest import TestCase, main, skipUnless, skip
 from unittest.mock import patch
 from copy import copy, deepcopy
@@ -3908,7 +3909,14 @@ class GenericTests(BaseTestCase):
         self.assertEqual(MyChain[int]().__orig_class__, MyChain[int])
 
     def test_all_repr_eq_any(self):
-        objs = (getattr(typing, el) for el in typing.__all__)
+        typing = import_fresh_module("typing")
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.filterwarnings('always', '', DeprecationWarning)
+            objs = [getattr(typing, el) for el in typing.__all__]
+        self.assertEqual(
+            [str(w.message) for w in wlog],
+            ["'typing.ByteString' is deprecated and slated for removal in Python 3.14"]
+        )
         for obj in objs:
             self.assertNotEqual(repr(obj), '')
             self.assertEqual(obj, obj)
@@ -5996,8 +6004,16 @@ class CollectionsAbcTests(BaseTestCase):
         self.assertNotIsInstance((), typing.MutableSequence)
 
     def test_bytestring(self):
-        self.assertIsInstance(b'', typing.ByteString)
-        self.assertIsInstance(bytearray(b''), typing.ByteString)
+        with self.assertWarns(DeprecationWarning):
+            from typing import ByteString
+        with self.assertWarns(DeprecationWarning):
+            self.assertIsInstance(b'', ByteString)
+        with self.assertWarns(DeprecationWarning):
+            self.assertIsInstance(bytearray(b''), ByteString)
+        with self.assertWarns(DeprecationWarning):
+            class Foo(ByteString): ...
+        with self.assertWarns(DeprecationWarning):
+            class Bar(ByteString, typing.Awaitable): ...
 
     def test_list(self):
         self.assertIsSubclass(list, typing.List)
@@ -8293,6 +8309,10 @@ SpecialAttrsT = typing.TypeVar('SpecialAttrsT', int, float, complex)
 class SpecialAttrsTests(BaseTestCase):
 
     def test_special_attrs(self):
+        with warnings.catch_warnings(
+            action='ignore', category=DeprecationWarning
+        ):
+            typing_ByteString = typing.ByteString
         cls_to_check = {
             # ABC classes
             typing.AbstractSet: 'AbstractSet',
@@ -8301,7 +8321,7 @@ class SpecialAttrsTests(BaseTestCase):
             typing.AsyncIterable: 'AsyncIterable',
             typing.AsyncIterator: 'AsyncIterator',
             typing.Awaitable: 'Awaitable',
-            typing.ByteString: 'ByteString',
+            typing_ByteString: 'ByteString',
             typing.Callable: 'Callable',
             typing.ChainMap: 'ChainMap',
             typing.Collection: 'Collection',
@@ -8626,6 +8646,8 @@ class AllTests(BaseTestCase):
                 getattr(v, '__module__', None) == typing.__name__
             )
         }
+        # Deprecated; added dynamically via module __getattr__
+        computed_all.add("ByteString")
         self.assertSetEqual(computed_all, actual_all)
 
 

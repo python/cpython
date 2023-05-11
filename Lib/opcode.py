@@ -373,6 +373,7 @@ _specializations = {
         "FOR_ITER_GEN",
     ],
     "LOAD_SUPER_ATTR": [
+        "LOAD_SUPER_ATTR_ATTR",
         "LOAD_SUPER_ATTR_METHOD",
     ],
     "LOAD_ATTR": [
@@ -450,9 +451,6 @@ _cache_format = {
     },
     "LOAD_SUPER_ATTR": {
         "counter": 1,
-        "class_version": 2,
-        "self_type_version": 2,
-        "method": 4,
     },
     "LOAD_ATTR": {
         "counter": 1,
