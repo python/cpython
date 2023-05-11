@@ -42,11 +42,9 @@ PyDoc_STRVAR(textiobase_doc,
     );
 
 static PyObject *
-_unsupported(const char *message)
+_unsupported(_PyIO_State *state, const char *message)
 {
-    _PyIO_State *state = IO_STATE();
-    if (state != NULL)
-        PyErr_SetString(state->unsupported_operation, message);
+    PyErr_SetString(state->unsupported_operation, message);
     return NULL;
 }
 
@@ -64,7 +62,8 @@ static PyObject *
 _io__TextIOBase_detach_impl(PyObject *self, PyTypeObject *cls)
 /*[clinic end generated code: output=50915f40c609eaa4 input=987ca3640d0a3776]*/
 {
-    return _unsupported("detach");
+    _PyIO_State *state = IO_STATE();
+    return _unsupported(state, "detach");
 }
 
 /*[clinic input]
@@ -83,7 +82,8 @@ static PyObject *
 _io__TextIOBase_read_impl(PyObject *self, PyTypeObject *cls, PyObject *args)
 /*[clinic end generated code: output=3adf28998831f461 input=cee1e84664a20de0]*/
 {
-    return _unsupported("read");
+    _PyIO_State *state = IO_STATE();
+    return _unsupported(state, "read");
 }
 
 /*[clinic input]
@@ -102,7 +102,8 @@ _io__TextIOBase_readline_impl(PyObject *self, PyTypeObject *cls,
                               PyObject *args)
 /*[clinic end generated code: output=3073a948d02319f3 input=58f801259f7ff3ef]*/
 {
-    return _unsupported("readline");
+    _PyIO_State *state = IO_STATE();
+    return _unsupported(state, "readline");
 }
 
 /*[clinic input]
@@ -121,7 +122,8 @@ static PyObject *
 _io__TextIOBase_write_impl(PyObject *self, PyTypeObject *cls, PyObject *args)
 /*[clinic end generated code: output=5d985eb529472bc4 input=21b6961b5cba9496]*/
 {
-    return _unsupported("write");
+    _PyIO_State *state = IO_STATE();
+    return _unsupported(state, "write");
 }
 
 PyDoc_STRVAR(textiobase_encoding_doc,
@@ -1381,7 +1383,8 @@ _io_TextIOWrapper_reconfigure_impl(textio *self, PyObject *encoding,
     /* Check if something is in the read buffer */
     if (self->decoded_chars != NULL) {
         if (encoding != Py_None || errors != Py_None || newline_obj != NULL) {
-            _unsupported("It is not possible to set the encoding or newline "
+            _unsupported(self->state,
+                         "It is not possible to set the encoding or newline "
                          "of stream after the first read");
             return NULL;
         }
@@ -1648,8 +1651,9 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
     CHECK_ATTACHED(self);
     CHECK_CLOSED(self);
 
-    if (self->encoder == NULL)
-        return _unsupported("not writable");
+    if (self->encoder == NULL) {
+        return _unsupported(self->state, "not writable");
+    }
 
     Py_INCREF(text);
 
@@ -1830,7 +1834,7 @@ textiowrapper_read_chunk(textio *self, Py_ssize_t size_hint)
      */
 
     if (self->decoder == NULL) {
-        _unsupported("not readable");
+        _unsupported(self->state, "not readable");
         return -1;
     }
 
@@ -1955,8 +1959,9 @@ _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n)
     CHECK_ATTACHED(self);
     CHECK_CLOSED(self);
 
-    if (self->decoder == NULL)
-        return _unsupported("not readable");
+    if (self->decoder == NULL) {
+        return _unsupported(self->state, "not readable");
+    }
 
     if (_textiowrapper_writeflush(self) < 0)
         return NULL;
@@ -2487,7 +2492,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
     Py_INCREF(cookieObj);
 
     if (!self->seekable) {
-        _unsupported("underlying stream is not seekable");
+        _unsupported(self->state, "underlying stream is not seekable");
         goto fail;
     }
 
@@ -2501,7 +2506,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
             goto fail;
 
         if (cmp == 0) {
-            _unsupported("can't do nonzero cur-relative seeks");
+            _unsupported(self->state, "can't do nonzero cur-relative seeks");
             goto fail;
         }
 
@@ -2521,7 +2526,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
             goto fail;
 
         if (cmp == 0) {
-            _unsupported("can't do nonzero end-relative seeks");
+            _unsupported(self->state, "can't do nonzero end-relative seeks");
             goto fail;
         }
 
@@ -2684,7 +2689,7 @@ _io_TextIOWrapper_tell_impl(textio *self)
     CHECK_CLOSED(self);
 
     if (!self->seekable) {
-        _unsupported("underlying stream is not seekable");
+        _unsupported(self->state, "underlying stream is not seekable");
         goto fail;
     }
     if (!self->telling) {
