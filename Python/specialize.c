@@ -323,11 +323,8 @@ _PyCode_Quicken(PyCodeObject *code)
 
 /* Super */
 
-#define SPEC_FAIL_SUPER_NOT_LOAD_METHOD 9
-#define SPEC_FAIL_SUPER_BAD_CLASS 10
-#define SPEC_FAIL_SUPER_SHADOWED 11
-#define SPEC_FAIL_SUPER_NOT_METHOD 12
-#define SPEC_FAIL_SUPER_ERROR_OR_NOT_FOUND 13
+#define SPEC_FAIL_SUPER_BAD_CLASS 9
+#define SPEC_FAIL_SUPER_SHADOWED 10
 
 /* Attributes */
 
@@ -436,27 +433,28 @@ _PyCode_Quicken(PyCodeObject *code)
 #define SPEC_FAIL_COMPARE_OP_FLOAT_LONG 21
 #define SPEC_FAIL_COMPARE_OP_LONG_FLOAT 22
 
-/* FOR_ITER */
-#define SPEC_FAIL_FOR_ITER_GENERATOR 10
-#define SPEC_FAIL_FOR_ITER_COROUTINE 11
-#define SPEC_FAIL_FOR_ITER_ASYNC_GENERATOR 12
-#define SPEC_FAIL_FOR_ITER_LIST 13
-#define SPEC_FAIL_FOR_ITER_TUPLE 14
-#define SPEC_FAIL_FOR_ITER_SET 15
-#define SPEC_FAIL_FOR_ITER_STRING 16
-#define SPEC_FAIL_FOR_ITER_BYTES 17
-#define SPEC_FAIL_FOR_ITER_RANGE 18
-#define SPEC_FAIL_FOR_ITER_ITERTOOLS 19
-#define SPEC_FAIL_FOR_ITER_DICT_KEYS 20
-#define SPEC_FAIL_FOR_ITER_DICT_ITEMS 21
-#define SPEC_FAIL_FOR_ITER_DICT_VALUES 22
-#define SPEC_FAIL_FOR_ITER_ENUMERATE 23
-#define SPEC_FAIL_FOR_ITER_MAP 24
-#define SPEC_FAIL_FOR_ITER_ZIP 25
-#define SPEC_FAIL_FOR_ITER_SEQ_ITER 26
-#define SPEC_FAIL_FOR_ITER_REVERSED_LIST 27
-#define SPEC_FAIL_FOR_ITER_CALLABLE 28
-#define SPEC_FAIL_FOR_ITER_ASCII_STRING 29
+/* FOR_ITER and SEND */
+#define SPEC_FAIL_ITER_GENERATOR 10
+#define SPEC_FAIL_ITER_COROUTINE 11
+#define SPEC_FAIL_ITER_ASYNC_GENERATOR 12
+#define SPEC_FAIL_ITER_LIST 13
+#define SPEC_FAIL_ITER_TUPLE 14
+#define SPEC_FAIL_ITER_SET 15
+#define SPEC_FAIL_ITER_STRING 16
+#define SPEC_FAIL_ITER_BYTES 17
+#define SPEC_FAIL_ITER_RANGE 18
+#define SPEC_FAIL_ITER_ITERTOOLS 19
+#define SPEC_FAIL_ITER_DICT_KEYS 20
+#define SPEC_FAIL_ITER_DICT_ITEMS 21
+#define SPEC_FAIL_ITER_DICT_VALUES 22
+#define SPEC_FAIL_ITER_ENUMERATE 23
+#define SPEC_FAIL_ITER_MAP 24
+#define SPEC_FAIL_ITER_ZIP 25
+#define SPEC_FAIL_ITER_SEQ_ITER 26
+#define SPEC_FAIL_ITER_REVERSED_LIST 27
+#define SPEC_FAIL_ITER_CALLABLE 28
+#define SPEC_FAIL_ITER_ASCII_STRING 29
+#define SPEC_FAIL_ITER_ASYNC_GENERATOR_SEND 30
 
 // UNPACK_SEQUENCE
 
@@ -515,15 +513,10 @@ specialize_module_load_attr(
 /* Attribute specialization */
 
 void
-_Py_Specialize_LoadSuperAttr(PyObject *global_super, PyObject *cls, PyObject *self,
-                             _Py_CODEUNIT *instr, PyObject *name, int load_method) {
+_Py_Specialize_LoadSuperAttr(PyObject *global_super, PyObject *cls, _Py_CODEUNIT *instr, int load_method) {
     assert(ENABLE_SPECIALIZATION);
     assert(_PyOpcode_Caches[LOAD_SUPER_ATTR] == INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR);
     _PySuperAttrCache *cache = (_PySuperAttrCache *)(instr + 1);
-    if (!load_method) {
-        SPECIALIZATION_FAIL(LOAD_SUPER_ATTR, SPEC_FAIL_SUPER_NOT_LOAD_METHOD);
-        goto fail;
-    }
     if (global_super != (PyObject *)&PySuper_Type) {
         SPECIALIZATION_FAIL(LOAD_SUPER_ATTR, SPEC_FAIL_SUPER_SHADOWED);
         goto fail;
@@ -532,23 +525,8 @@ _Py_Specialize_LoadSuperAttr(PyObject *global_super, PyObject *cls, PyObject *se
         SPECIALIZATION_FAIL(LOAD_SUPER_ATTR, SPEC_FAIL_SUPER_BAD_CLASS);
         goto fail;
     }
-    PyTypeObject *tp = (PyTypeObject *)cls;
-    PyObject *res = _PySuper_LookupDescr(tp, self, name);
-    if (res == NULL) {
-        SPECIALIZATION_FAIL(LOAD_SUPER_ATTR, SPEC_FAIL_SUPER_ERROR_OR_NOT_FOUND);
-        PyErr_Clear();
-        goto fail;
-    }
-    if (_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
-        write_u32(cache->class_version, tp->tp_version_tag);
-        write_u32(cache->self_type_version, Py_TYPE(self)->tp_version_tag);
-        write_obj(cache->method, res);  // borrowed
-        instr->op.code = LOAD_SUPER_ATTR_METHOD;
-        Py_DECREF(res);
-        goto success;
-    }
-    Py_DECREF(res);
-    SPECIALIZATION_FAIL(LOAD_SUPER_ATTR, SPEC_FAIL_SUPER_NOT_METHOD);
+    instr->op.code = load_method ? LOAD_SUPER_ATTR_METHOD : LOAD_SUPER_ATTR_ATTR;
+    goto success;
 
 fail:
     STAT_INC(LOAD_SUPER_ATTR, failure);
@@ -1455,7 +1433,7 @@ _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *ins
         goto fail;
     }
     if (PyObject_CheckBuffer(container)) {
-        if (PyLong_CheckExact(sub) && (((size_t)Py_SIZE(sub)) > 1)) {
+        if (PyLong_CheckExact(sub) && (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub))) {
             SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_OUT_OF_RANGE);
         }
         else if (strcmp(container_type->tp_name, "array.array") == 0) {
@@ -2122,66 +2100,69 @@ int
  _PySpecialization_ClassifyIterator(PyObject *iter)
 {
     if (PyGen_CheckExact(iter)) {
-        return SPEC_FAIL_FOR_ITER_GENERATOR;
+        return SPEC_FAIL_ITER_GENERATOR;
     }
     if (PyCoro_CheckExact(iter)) {
-        return SPEC_FAIL_FOR_ITER_COROUTINE;
+        return SPEC_FAIL_ITER_COROUTINE;
     }
     if (PyAsyncGen_CheckExact(iter)) {
-        return SPEC_FAIL_FOR_ITER_ASYNC_GENERATOR;
+        return SPEC_FAIL_ITER_ASYNC_GENERATOR;
+    }
+    if (PyAsyncGenASend_CheckExact(iter)) {
+        return SPEC_FAIL_ITER_ASYNC_GENERATOR_SEND;
     }
     PyTypeObject *t = Py_TYPE(iter);
     if (t == &PyListIter_Type) {
-        return SPEC_FAIL_FOR_ITER_LIST;
+        return SPEC_FAIL_ITER_LIST;
     }
     if (t == &PyTupleIter_Type) {
-        return SPEC_FAIL_FOR_ITER_TUPLE;
+        return SPEC_FAIL_ITER_TUPLE;
     }
     if (t == &PyDictIterKey_Type) {
-        return SPEC_FAIL_FOR_ITER_DICT_KEYS;
+        return SPEC_FAIL_ITER_DICT_KEYS;
     }
     if (t == &PyDictIterValue_Type) {
-        return SPEC_FAIL_FOR_ITER_DICT_VALUES;
+        return SPEC_FAIL_ITER_DICT_VALUES;
     }
     if (t == &PyDictIterItem_Type) {
-        return SPEC_FAIL_FOR_ITER_DICT_ITEMS;
+        return SPEC_FAIL_ITER_DICT_ITEMS;
     }
     if (t == &PySetIter_Type) {
-        return SPEC_FAIL_FOR_ITER_SET;
+        return SPEC_FAIL_ITER_SET;
     }
     if (t == &PyUnicodeIter_Type) {
-        return SPEC_FAIL_FOR_ITER_STRING;
+        return SPEC_FAIL_ITER_STRING;
     }
     if (t == &PyBytesIter_Type) {
-        return SPEC_FAIL_FOR_ITER_BYTES;
+        return SPEC_FAIL_ITER_BYTES;
     }
     if (t == &PyRangeIter_Type) {
-        return SPEC_FAIL_FOR_ITER_RANGE;
+        return SPEC_FAIL_ITER_RANGE;
     }
     if (t == &PyEnum_Type) {
-        return SPEC_FAIL_FOR_ITER_ENUMERATE;
+        return SPEC_FAIL_ITER_ENUMERATE;
     }
     if (t == &PyMap_Type) {
-        return SPEC_FAIL_FOR_ITER_MAP;
+        return SPEC_FAIL_ITER_MAP;
     }
     if (t == &PyZip_Type) {
-        return SPEC_FAIL_FOR_ITER_ZIP;
+        return SPEC_FAIL_ITER_ZIP;
     }
     if (t == &PySeqIter_Type) {
-        return SPEC_FAIL_FOR_ITER_SEQ_ITER;
+        return SPEC_FAIL_ITER_SEQ_ITER;
     }
     if (t == &PyListRevIter_Type) {
-        return SPEC_FAIL_FOR_ITER_REVERSED_LIST;
+        return SPEC_FAIL_ITER_REVERSED_LIST;
     }
     if (t == &_PyUnicodeASCIIIter_Type) {
-        return SPEC_FAIL_FOR_ITER_ASCII_STRING;
+        return SPEC_FAIL_ITER_ASCII_STRING;
     }
     const char *name = t->tp_name;
     if (strncmp(name, "itertools", 9) == 0) {
-        return SPEC_FAIL_FOR_ITER_ITERTOOLS;
+        return SPEC_FAIL_ITER_ITERTOOLS;
     }
     if (strncmp(name, "callable_iterator", 17) == 0) {
-        return SPEC_FAIL_FOR_ITER_CALLABLE;
+        return SPEC_FAIL_ITER_CALLABLE;
     }
     return SPEC_FAIL_OTHER;
 }

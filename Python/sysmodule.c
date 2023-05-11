@@ -365,7 +365,7 @@ PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
     _PyRuntimeState *runtime = &_PyRuntime;
     PyThreadState *tstate;
     if (runtime->initialized) {
-        tstate = _PyRuntimeState_GetThreadState(runtime);
+        tstate = _PyThreadState_GET();
     }
     else {
         tstate = NULL;

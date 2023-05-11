@@ -7,6 +7,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyType_GetSubclasses()
 #include "pycore_runtime.h"       // _Py_ID()
+#include "pycore_typeobject.h"    // _PyType_GetMRO()
 #include "clinic/_abc.c.h"
 
 /*[clinic input]
@@ -943,6 +944,7 @@ _abcmodule_free(void *module)
 
 static PyModuleDef_Slot _abcmodule_slots[] = {
     {Py_mod_exec, _abcmodule_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

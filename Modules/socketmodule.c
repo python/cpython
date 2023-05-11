@@ -1903,6 +1903,11 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         /* RDS sockets use sockaddr_in: fall-through */
 #endif /* AF_RDS */
 
+#ifdef AF_DIVERT
+    case AF_DIVERT:
+        /* FreeBSD divert(4) sockets use sockaddr_in: fall-through */
+#endif /* AF_DIVERT */
+
     case AF_INET:
     {
         struct maybe_idna host = {NULL, NULL};
@@ -6878,8 +6883,10 @@ socket_getnameinfo(PyObject *self, PyObject *args)
         }
 #endif
     }
+    Py_BEGIN_ALLOW_THREADS
     error = getnameinfo(res->ai_addr, (socklen_t) res->ai_addrlen,
                     hbuf, sizeof(hbuf), pbuf, sizeof(pbuf), flags);
+    Py_END_ALLOW_THREADS
     if (error) {
         socket_state *state = get_module_state(self);
         set_gaierror(state, error);
@@ -7681,6 +7688,14 @@ socket_exec(PyObject *m)
 #endif
 #ifdef AF_SYSTEM
     ADD_INT_MACRO(m, AF_SYSTEM);
+#endif
+
+/* FreeBSD divert(4) */
+#ifdef PF_DIVERT
+    PyModule_AddIntMacro(m, PF_DIVERT);
+#endif
+#ifdef AF_DIVERT
+    PyModule_AddIntMacro(m, AF_DIVERT);
 #endif
 
 #ifdef AF_PACKET
@@ -8857,6 +8872,7 @@ error:
 
 static struct PyModuleDef_Slot socket_slots[] = {
     {Py_mod_exec, socket_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL},
 };
 
