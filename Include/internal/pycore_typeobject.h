@@ -142,8 +142,6 @@ PyAPI_DATA(PyTypeObject) _PyBufferWrapper_Type;
 
 PyObject *
 _PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj, PyObject *name, int *meth_found);
-PyObject *
-_PySuper_LookupDescr(PyTypeObject *su_type, PyObject *su_obj, PyObject *name);
 
 #ifdef __cplusplus
 }
