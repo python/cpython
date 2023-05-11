@@ -607,12 +607,19 @@ inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
             SET_SCOPE(scopes, k, scope);
         }
         else {
-            // free vars in comprehension that are locals in outer scope can
-            // now simply be locals, unless they are free in comp children
-            if ((PyLong_AsLong(existing) & DEF_BOUND) &&
-                    !is_free_in_any_child(comp, k)) {
-                if (PySet_Discard(comp_free, k) < 0) {
-                    return 0;
+            if (PyLong_AsLong(existing) & DEF_BOUND) {
+                // cell vars in comprehension that are locals in outer scope
+                // must be promoted to cell so u_cellvars isn't wrong
+                if (scope == CELL && ste->ste_type == FunctionBlock) {
+                    SET_SCOPE(scopes, k, scope);
+                }
+
+                // free vars in comprehension that are locals in outer scope can
+                // now simply be locals, unless they are free in comp children
+                if (!is_free_in_any_child(comp, k)) {
+                    if (PySet_Discard(comp_free, k) < 0) {
+                        return 0;
+                    }
                 }
             }
         }
