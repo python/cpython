@@ -1798,7 +1798,7 @@ def test_pdb_issue_gh_101517():
     (Pdb) continue
     """
 
-def test_pdb_issue_gh_104301():
+def test_pdb_ambiguous_statements():
     """See GH-104301
 
     Make sure that ambiguous statements prefixed by '!' are properly disambiguated
