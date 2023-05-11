@@ -1108,6 +1108,9 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
     int prev_line = _Py_Instrumentation_GetLine(code, prev_index);
     if (prev_line == line) {
         int prev_opcode = _PyCode_CODE(code)[prev_index].op.code;
+        /* RESUME and INSTRUMENTED_RESUME are needed for the operation of
+         * instrumentation, so must never be hidden by an INSTRUMENTED_LINE.
+         */
         if (prev_opcode != RESUME && prev_opcode != INSTRUMENTED_RESUME) {
             goto done;
         }
