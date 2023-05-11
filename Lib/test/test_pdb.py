@@ -1798,6 +1798,29 @@ def test_pdb_issue_gh_101517():
     (Pdb) continue
     """
 
+def test_pdb_issue_gh_104301():
+    """See GH-104301
+
+    Make sure that ambiguous statements prefixed by '!' are properly disambiguated
+
+    >>> with PdbTestInput([
+    ...     '! n = 42',  # disambiguated statement: reassign the name n
+    ...     'n',         # advance the debugger into the print()
+    ...     'continue'
+    ... ]):
+    ...     n = -1
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     print(n)
+    > <doctest test.test_pdb.test_pdb_issue_gh_104301[0]>(8)<module>()
+    -> print(n)
+    (Pdb) ! n = 42
+    (Pdb) n
+    42
+    > <doctest test.test_pdb.test_pdb_issue_gh_104301[0]>(1)<module>()
+    -> with PdbTestInput([
+    (Pdb) continue
+    """
+
 
 @support.requires_subprocess()
 class PdbTestCase(unittest.TestCase):
