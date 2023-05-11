@@ -9115,8 +9115,9 @@ releasebuffer_maybe_call_super(PyObject *self, Py_buffer *buffer)
 }
 
 static void
-releasebuffer_call_python(PyObject *self, Py_buffer *buffer)
+releasebuffer_call_python_inner(PyObject *self, Py_buffer *buffer)
 {
+    assert(!PyErr_Occurred());
     PyObject *mv;
     bool is_buffer_wrapper = Py_TYPE(buffer->obj) == &_PyBufferWrapper_Type;
     if (is_buffer_wrapper) {
@@ -9155,6 +9156,22 @@ releasebuffer_call_python(PyObject *self, Py_buffer *buffer)
         PyObject_CallMethodNoArgs(mv, &_Py_ID(release));
     }
     Py_DECREF(mv);
+}
+
+static void
+releasebuffer_call_python(PyObject *self, Py_buffer *buffer)
+{
+    // bf_releasebuffer may be called while an exception is already active.
+    // We have no way to report additional errors up the stack, because
+    // this slot returns void, so we simply stash away the active exception
+    // and restore it after the call to Python returns.
+    PyObject *type, *value, *traceback;
+    PyErr_Fetch(&type, &value, &traceback);
+
+    releasebuffer_call_python_inner(self, buffer);
+    assert(!PyErr_Occurred());
+
+    PyErr_Restore(type, value, traceback);
 }
 
 /*
