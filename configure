@@ -6143,6 +6143,20 @@ cat > conftest.c <<EOF
         hppa-linux-gnu
 # elif defined(__ia64__)
         ia64-linux-gnu
+# elif defined(__loongarch__)
+#  if defined(__loongarch_lp64)
+#   if defined(__loongarch_soft_float)
+        loongarch64-linux-gnusf
+#   elif defined(__loongarch_single_float)
+        loongarch64-linux-gnuf32
+#   elif defined(__loongarch_double_float)
+        loongarch64-linux-gnu
+#   else
+#    error unknown platform triplet
+#   endif
+#  else
+#   error unknown platform triplet
+#  endif
 # elif defined(__m68k__) && !defined(__mcoldfire__)
         m68k-linux-gnu
 # elif defined(__mips_hard_float) && defined(__mips_isa_rev) && (__mips_isa_rev >=6) && defined(_MIPSEL)
@@ -10726,6 +10740,41 @@ $as_echo "$ac_cv_sizeof_uintptr_t" >&6; }
 
 cat >>confdefs.h <<_ACEOF
 #define SIZEOF_UINTPTR_T $ac_cv_sizeof_uintptr_t
+_ACEOF
+
+
+# The cast to long int works around a bug in the HP C Compiler,
+# see AC_CHECK_SIZEOF for more information.
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking alignment of max_align_t" >&5
+$as_echo_n "checking alignment of max_align_t... " >&6; }
+if ${ac_cv_alignof_max_align_t+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if ac_fn_c_compute_int "$LINENO" "(long int) offsetof (ac__type_alignof_, y)" "ac_cv_alignof_max_align_t"        "$ac_includes_default
+#ifndef offsetof
+# define offsetof(type, member) ((char *) &((type *) 0)->member - (char *) 0)
+#endif
+typedef struct { char x; max_align_t y; } ac__type_alignof_;"; then :
+
+else
+  if test "$ac_cv_type_max_align_t" = yes; then
+     { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error 77 "cannot compute alignment of max_align_t
+See \`config.log' for more details" "$LINENO" 5; }
+   else
+     ac_cv_alignof_max_align_t=0
+   fi
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_alignof_max_align_t" >&5
+$as_echo "$ac_cv_alignof_max_align_t" >&6; }
+
+
+
+cat >>confdefs.h <<_ACEOF
+#define ALIGNOF_MAX_ALIGN_T $ac_cv_alignof_max_align_t
 _ACEOF
 
 

@@ -38,7 +38,7 @@ PyFrame_GetLineNumber(PyFrameObject *f)
         return f->f_lineno;
     }
     else {
-        return _PyInterpreterFrame_GetLine(f->f_frame);
+        return PyUnstable_InterpreterFrame_GetLine(f->f_frame);
     }
 }
 
@@ -1224,6 +1224,10 @@ _PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame)
         }
 
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+        _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
+        if (kind & CO_FAST_HIDDEN) {
+            continue;
+        }
         if (value == NULL) {
             if (PyObject_DelItem(locals, name) != 0) {
                 if (PyErr_ExceptionMatches(PyExc_KeyError)) {

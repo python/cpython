@@ -294,9 +294,7 @@ def get_docstring(node, clean=True):
     if not(node.body and isinstance(node.body[0], Expr)):
         return None
     node = node.body[0].value
-    if isinstance(node, Str):
-        text = node.s
-    elif isinstance(node, Constant) and isinstance(node.value, str):
+    if isinstance(node, Constant) and isinstance(node.value, str):
         text = node.value
     else:
         return None
@@ -499,20 +497,52 @@ class NodeTransformer(NodeVisitor):
         return node
 
 
+_DEPRECATED_VALUE_ALIAS_MESSAGE = (
+    "{name} is deprecated and will be removed in Python {remove}; use value instead"
+)
+_DEPRECATED_CLASS_MESSAGE = (
+    "{name} is deprecated and will be removed in Python {remove}; "
+    "use ast.Constant instead"
+)
+
+
 # If the ast module is loaded more than once, only add deprecated methods once
 if not hasattr(Constant, 'n'):
     # The following code is for backward compatibility.
     # It will be removed in future.
 
-    def _getter(self):
+    def _n_getter(self):
         """Deprecated. Use value instead."""
+        import warnings
+        warnings._deprecated(
+            "Attribute n", message=_DEPRECATED_VALUE_ALIAS_MESSAGE, remove=(3, 14)
+        )
         return self.value
 
-    def _setter(self, value):
+    def _n_setter(self, value):
+        import warnings
+        warnings._deprecated(
+            "Attribute n", message=_DEPRECATED_VALUE_ALIAS_MESSAGE, remove=(3, 14)
+        )
         self.value = value
 
-    Constant.n = property(_getter, _setter)
-    Constant.s = property(_getter, _setter)
+    def _s_getter(self):
+        """Deprecated. Use value instead."""
+        import warnings
+        warnings._deprecated(
+            "Attribute s", message=_DEPRECATED_VALUE_ALIAS_MESSAGE, remove=(3, 14)
+        )
+        return self.value
+
+    def _s_setter(self, value):
+        import warnings
+        warnings._deprecated(
+            "Attribute s", message=_DEPRECATED_VALUE_ALIAS_MESSAGE, remove=(3, 14)
+        )
+        self.value = value
+
+    Constant.n = property(_n_getter, _n_setter)
+    Constant.s = property(_s_getter, _s_setter)
 
 class _ABC(type):
 
@@ -520,6 +550,13 @@ class _ABC(type):
         cls.__doc__ = """Deprecated AST node class. Use ast.Constant instead"""
 
     def __instancecheck__(cls, inst):
+        if cls in _const_types:
+            import warnings
+            warnings._deprecated(
+                f"ast.{cls.__qualname__}",
+                message=_DEPRECATED_CLASS_MESSAGE,
+                remove=(3, 14)
+            )
         if not isinstance(inst, Constant):
             return False
         if cls in _const_types:
@@ -543,6 +580,10 @@ def _new(cls, *args, **kwargs):
         if pos < len(args):
             raise TypeError(f"{cls.__name__} got multiple values for argument {key!r}")
     if cls in _const_types:
+        import warnings
+        warnings._deprecated(
+            f"ast.{cls.__qualname__}", message=_DEPRECATED_CLASS_MESSAGE, remove=(3, 14)
+        )
         return Constant(*args, **kwargs)
     return Constant.__new__(cls, *args, **kwargs)
 
@@ -565,9 +606,18 @@ class Ellipsis(Constant, metaclass=_ABC):
     _fields = ()
 
     def __new__(cls, *args, **kwargs):
-        if cls is Ellipsis:
+        if cls is _ast_Ellipsis:
+            import warnings
+            warnings._deprecated(
+                "ast.Ellipsis", message=_DEPRECATED_CLASS_MESSAGE, remove=(3, 14)
+            )
             return Constant(..., *args, **kwargs)
         return Constant.__new__(cls, *args, **kwargs)
+
+# Keep another reference to Ellipsis in the global namespace
+# so it can be referenced in Ellipsis.__new__
+# (The original "Ellipsis" name is removed from the global namespace later on)
+_ast_Ellipsis = Ellipsis
 
 _const_types = {
     Num: (int, float, complex),
@@ -1697,6 +1747,22 @@ class _Unparser(NodeVisitor):
 def unparse(ast_obj):
     unparser = _Unparser()
     return unparser.visit(ast_obj)
+
+
+_deprecated_globals = {
+    name: globals().pop(name)
+    for name in ('Num', 'Str', 'Bytes', 'NameConstant', 'Ellipsis')
+}
+
+def __getattr__(name):
+    if name in _deprecated_globals:
+        globals()[name] = value = _deprecated_globals[name]
+        import warnings
+        warnings._deprecated(
+            f"ast.{name}", message=_DEPRECATED_CLASS_MESSAGE, remove=(3, 14)
+        )
+        return value
+    raise AttributeError(f"module 'ast' has no attribute '{name}'")
 
 
 def main():

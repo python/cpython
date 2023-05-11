@@ -11,7 +11,6 @@ extern "C" {
 #include "pycore_opcode_utils.h"
 #include "pycore_compile.h"
 
-static const _PyCompilerSrcLocation NO_LOCATION = {-1, -1, -1, -1};
 
 typedef struct {
     int i_opcode;
@@ -95,9 +94,8 @@ _PyCfgInstruction* _PyCfg_BasicblockLastInstr(const _PyCfgBasicblock *b);
 int _PyCfg_OptimizeCodeUnit(_PyCfgBuilder *g, PyObject *consts, PyObject *const_cache,
                             int code_flags, int nlocals, int nparams, int firstlineno);
 int _PyCfg_Stackdepth(_PyCfgBasicblock *entryblock, int code_flags);
-void _PyCfg_ConvertExceptionHandlersToNops(_PyCfgBasicblock *entryblock);
+void _PyCfg_ConvertPseudoOps(_PyCfgBasicblock *entryblock);
 int _PyCfg_ResolveJumps(_PyCfgBuilder *g);
-int _PyCfg_InstrSize(_PyCfgInstruction *instruction);
 
 
 static inline int
@@ -113,7 +111,7 @@ basicblock_nofallthrough(const _PyCfgBasicblock *b) {
 
 PyCodeObject *
 _PyAssemble_MakeCodeObject(_PyCompile_CodeUnitMetadata *u, PyObject *const_cache,
-                           PyObject *consts, int maxdepth, _PyCfgBasicblock *entryblock,
+                           PyObject *consts, int maxdepth, _PyCompile_InstructionSequence *instrs,
                            int nlocalsplus, int code_flags, PyObject *filename);
 
 #ifdef __cplusplus

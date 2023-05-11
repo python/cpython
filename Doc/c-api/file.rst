@@ -5,7 +5,7 @@
 File Objects
 ------------
 
-.. index:: object: file
+.. index:: pair: object; file
 
 These APIs are a minimal emulation of the Python 2 C API for built-in file
 objects, which used to rely on the buffered I/O (:c:expr:`FILE*`) support
