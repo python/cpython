@@ -1750,19 +1750,20 @@ SUFFICIENT_TO_DEOPT_AND_SPECIALIZE = 100
 class Test_Pep523API(unittest.TestCase):
 
     def do_test(self, func, names):
-        calls = []
+        actual_calls = []
         start = SUFFICIENT_TO_DEOPT_AND_SPECIALIZE
         count = start + SUFFICIENT_TO_DEOPT_AND_SPECIALIZE
         try:
             for i in range(count):
                 if i == start:
-                    _testinternalcapi.set_eval_frame_record(calls)
+                    _testinternalcapi.set_eval_frame_record(actual_calls)
                 func()
         finally:
             _testinternalcapi.set_eval_frame_default()
-        self.assertEqual(len(calls), SUFFICIENT_TO_DEOPT_AND_SPECIALIZE * len(names))
-        for name, call in zip(itertools.cycle(names), calls):
-            self.assertEqual(name, call)
+        expected_calls = names * SUFFICIENT_TO_DEOPT_AND_SPECIALIZE
+        self.assertEqual(len(expected_calls), len(actual_calls))
+        for expected, actual in zip(expected_calls, actual_calls, strict=True):
+            self.assertEqual(expected, actual)
 
     def test_inlined_binary_subscr(self):
         class C:
