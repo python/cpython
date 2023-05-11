@@ -365,6 +365,9 @@ pathlib
 * Add :meth:`pathlib.Path.is_junction` as a proxy to :func:`os.path.isjunction`.
   (Contributed by Charles Machalow in :gh:`99547`.)
 
+* Add support for recursive wildcards in :meth:`pathlib.PurePath.match`.
+  (Contributed by Barney Gale in :gh:`101398`.)
+
 
 dis
 ---
