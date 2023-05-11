@@ -629,6 +629,13 @@ _PyEval_ReleaseLock(PyThreadState *tstate)
     drop_gil(ceval, tstate);
 }
 
+int
+_PyEval_HoldsLock(PyThreadState *tstate)
+{
+    _Py_EnsureTstateNotNULL(tstate);
+    return current_thread_holds_gil(tstate->interp->ceval.gil, tstate);
+}
+
 void
 PyEval_AcquireThread(PyThreadState *tstate)
 {
