@@ -775,6 +775,9 @@ All Argument Clinic converters accept the following arguments:
     because :pep:`8` mandates that the Python library may not use
     annotations.
 
+  ``unused``
+    Wrap the argument with :c:macro:`Py_UNUSED` in the impl function signature.
+
 In addition, some converters accept additional arguments.  Here is a list
 of these arguments, along with their meanings:
 
@@ -785,9 +788,6 @@ of these arguments, along with their meanings:
     specific lists of types as shown in the legacy converter table.)
 
     To accept ``None``, add ``NoneType`` to this set.
-
-  ``unused``
-    Wrap the argument with :c:macro:`Py_UNUSED` in the impl function signature.
 
   ``bitwise``
     Only supported for unsigned integers.  The native integer value of this
