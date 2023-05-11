@@ -391,6 +391,12 @@ class TypeParamsAccessTest(unittest.TestCase):
         T, = Child.__type_params__
         self.assertEqual(func(), (int, "outer", T))
 
+    def test_comprehension_01(self):
+        type Alias[T: ([T for T in (T, [1])[1]], T)] = [T for T in T.__name__]
+        self.assertEqual(Alias.__value__, ["T"])
+        T, = Alias.__type_params__
+        self.assertEqual(T.__constraints__, ([1], T))
+
 
 def global_generic_func[T]():
     pass

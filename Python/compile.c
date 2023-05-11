@@ -5420,7 +5420,7 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
         // assignment expression to a nonlocal in the comprehension, these don't
         // need handling here since they shouldn't be isolated
         if (symbol & DEF_LOCAL && !(symbol & DEF_NONLOCAL)) {
-            if (c->u->u_ste->ste_type != FunctionBlock) {
+            if (!_PyST_IsFunctionLike(c->u->u_ste)) {
                 // non-function scope: override this name to use fast locals
                 PyObject *orig = PyDict_GetItem(c->u->u_metadata.u_fasthidden, k);
                 if (orig != Py_True) {

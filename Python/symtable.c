@@ -648,7 +648,7 @@ inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
             if (PyLong_AsLong(existing) & DEF_BOUND) {
                 // cell vars in comprehension that are locals in outer scope
                 // must be promoted to cell so u_cellvars isn't wrong
-                if (scope == CELL && ste->ste_type == FunctionBlock) {
+                if (scope == CELL && _PyST_IsFunctionLike(ste)) {
                     SET_SCOPE(scopes, k, scope);
                 }
 
