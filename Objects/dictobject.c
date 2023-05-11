@@ -300,9 +300,19 @@ _PyDict_DebugMallocStats(FILE *out)
 
 static void free_keys_object(PyInterpreterState *interp, PyDictKeysObject *keys);
 
+/* PyDictKeysObject has refcounts like PyObject does, so we have the
+   following two functions to mirror what Py_INCREF() and Py_DECREF() do.
+   (Keep in mind that PyDictKeysObject isn't actually a PyObject.)
+   Likewise a PyDictKeysObject can be immortal (e.g. Py_EMPTY_KEYS),
+   so we apply a naive version of what Py_INCREF() and Py_DECREF() do
+   for immortal objects. */
+
 static inline void
 dictkeys_incref(PyDictKeysObject *dk)
 {
+    if (dk->dk_refcnt == _Py_IMMORTAL_REFCNT) {
+        return;
+    }
 #ifdef Py_REF_DEBUG
     _Py_IncRefTotal(_PyInterpreterState_GET());
 #endif
@@ -312,6 +322,9 @@ dictkeys_incref(PyDictKeysObject *dk)
 static inline void
 dictkeys_decref(PyInterpreterState *interp, PyDictKeysObject *dk)
 {
+    if (dk->dk_refcnt == _Py_IMMORTAL_REFCNT) {
+        return;
+    }
     assert(dk->dk_refcnt > 0);
 #ifdef Py_REF_DEBUG
     _Py_DecRefTotal(_PyInterpreterState_GET());
@@ -447,7 +460,7 @@ estimate_log2_keysize(Py_ssize_t n)
  * (which cannot fail and thus can do no allocation).
  */
 static PyDictKeysObject empty_keys_struct = {
-        1, /* dk_refcnt */
+        _Py_IMMORTAL_REFCNT, /* dk_refcnt */
         0, /* dk_log2_size */
         0, /* dk_log2_index_bytes */
         DICT_KEYS_UNICODE, /* dk_kind */
@@ -779,6 +792,7 @@ clone_combined_dict_keys(PyDictObject *orig)
     assert(PyDict_Check(orig));
     assert(Py_TYPE(orig)->tp_iter == (getiterfunc)dict_iter);
     assert(orig->ma_values == NULL);
+    assert(orig->ma_keys != Py_EMPTY_KEYS);
     assert(orig->ma_keys->dk_refcnt == 1);
 
     size_t keys_size = _PyDict_KeysSize(orig->ma_keys);
@@ -833,7 +847,7 @@ PyObject *
 PyDict_New(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    dictkeys_incref(Py_EMPTY_KEYS);
+    /* We don't incref Py_EMPTY_KEYS here because it is immortal. */
     return new_dict(interp, Py_EMPTY_KEYS, NULL, 0, 0);
 }
 
@@ -1331,7 +1345,7 @@ insert_to_emptydict(PyInterpreterState *interp, PyDictObject *mp,
         Py_DECREF(value);
         return -1;
     }
-    dictkeys_decref(interp, Py_EMPTY_KEYS);
+    /* We don't decref Py_EMPTY_KEYS here because it is immortal. */
     mp->ma_keys = newkeys;
     mp->ma_values = NULL;
 
@@ -1529,14 +1543,10 @@ dictresize(PyInterpreterState *interp, PyDictObject *mp,
 
         // We can not use free_keys_object here because key's reference
         // are moved already.
+        if (oldkeys != Py_EMPTY_KEYS) {
 #ifdef Py_REF_DEBUG
-        _Py_DecRefTotal(_PyInterpreterState_GET());
+            _Py_DecRefTotal(_PyInterpreterState_GET());
 #endif
-        if (oldkeys == Py_EMPTY_KEYS) {
-            oldkeys->dk_refcnt--;
-            assert(oldkeys->dk_refcnt > 0);
-        }
-        else {
             assert(oldkeys->dk_kind != DICT_KEYS_SPLIT);
             assert(oldkeys->dk_refcnt == 1);
 #if PyDict_MAXFREELIST > 0
@@ -2080,8 +2090,8 @@ PyDict_Clear(PyObject *op)
         dictkeys_decref(interp, oldkeys);
     }
     else {
-       assert(oldkeys->dk_refcnt == 1);
-       dictkeys_decref(interp, oldkeys);
+        assert(oldkeys->dk_refcnt == 1);
+        dictkeys_decref(interp, oldkeys);
     }
     ASSERT_CONSISTENT(mp);
 }

@@ -896,6 +896,10 @@ Other constructors, all class methods:
       in UTC. As such, the recommended way to create an object representing the
       current time in UTC is by calling ``datetime.now(timezone.utc)``.
 
+   .. deprecated:: 3.12
+
+      Use :meth:`datetime.now` with :attr:`UTC` instead.
+
 
 .. classmethod:: datetime.fromtimestamp(timestamp, tz=None)
 
@@ -963,6 +967,10 @@ Other constructors, all class methods:
       is out of the range of values supported by the platform C
       :c:func:`gmtime` function. Raise :exc:`OSError` instead of
       :exc:`ValueError` on :c:func:`gmtime` failure.
+
+   .. deprecated:: 3.12
+
+      Use :meth:`datetime.fromtimestamp` with :attr:`UTC` instead.
 
 
 .. classmethod:: datetime.fromordinal(ordinal)

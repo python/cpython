@@ -1666,6 +1666,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             # All optional features should be enabled.
             'feature_flags':
                 OBMALLOC | FORK | EXEC | THREADS | DAEMON_THREADS,
+            'own_gil': True,
         }
         out, err = self.run_embedded_interpreter(
             'test_init_main_interpreter_settings',
