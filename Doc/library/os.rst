@@ -201,6 +201,11 @@ process and user.
    ``'surrogateescape'`` error handler. Use :data:`environb` if you would like
    to use a different encoding.
 
+   On Windows, the keys are converted to uppercase. This also applies when
+   getting, setting, or deleting an item. For example,
+   ``environ['monty'] = 'python'`` maps the key ``'MONTY'`` to the value
+   ``'python'``.
+
    .. note::
 
       Calling :func:`putenv` directly does not change :data:`os.environ`, so it's better
@@ -1091,13 +1096,17 @@ as internal buffering of data.
 
    See also :func:`set_blocking` and :meth:`socket.socket.setblocking`.
 
-   .. availability:: Unix.
+   .. availability:: Unix, Windows.
 
       The function is limited on Emscripten and WASI, see
       :ref:`wasm-availability` for more information.
 
+      On Windows, this function is limited to pipes.
+
    .. versionadded:: 3.5
 
+   .. versionchanged:: 3.12
+      Added support for pipes on Windows.
 
 .. function:: isatty(fd, /)
 
@@ -1275,7 +1284,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
 .. function:: openpty()
 
-   .. index:: module: pty
+   .. index:: pair: module; pty
 
    Open a new pseudo-terminal pair. Return a pair of file descriptors
    ``(master, slave)`` for the pty and the tty, respectively. The new file
@@ -1565,13 +1574,17 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    See also :func:`get_blocking` and :meth:`socket.socket.setblocking`.
 
-   .. availability:: Unix.
+   .. availability:: Unix, Windows.
 
       The function is limited on Emscripten and WASI, see
       :ref:`wasm-availability` for more information.
 
+      On Windows, this function is limited to pipes.
+
    .. versionadded:: 3.5
 
+   .. versionchanged:: 3.12
+      Added support for pipes on Windows.
 
 .. data:: SF_NODISKIO
           SF_MNOWAIT
@@ -2173,6 +2186,69 @@ features:
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+
+.. function:: listdrives()
+
+   Return a list containing the names of drives on a Windows system.
+
+   A drive name typically looks like ``'C:\\'``. Not every drive name
+   will be associated with a volume, and some may be inaccessible for
+   a variety of reasons, including permissions, network connectivity
+   or missing media. This function does not test for access.
+
+   May raise :exc:`OSError` if an error occurs collecting the drive
+   names.
+
+   .. audit-event:: os.listdrives "" os.listdrives
+
+   .. availability:: Windows
+
+   .. versionadded:: 3.12
+
+
+.. function:: listmounts(volume)
+
+   Return a list containing the mount points for a volume on a Windows
+   system.
+
+   *volume* must be represented as a GUID path, like those returned by
+   :func:`os.listvolumes`. Volumes may be mounted in multiple locations
+   or not at all. In the latter case, the list will be empty. Mount
+   points that are not associated with a volume will not be returned by
+   this function.
+
+   The mount points return by this function will be absolute paths, and
+   may be longer than the drive name.
+
+   Raises :exc:`OSError` if the volume is not recognized or if an error
+   occurs collecting the paths.
+
+   .. audit-event:: os.listmounts volume os.listmounts
+
+   .. availability:: Windows
+
+   .. versionadded:: 3.12
+
+
+.. function:: listvolumes()
+
+   Return a list containing the volumes in the system.
+
+   Volumes are typically represented as a GUID path that looks like
+   ``\\?\Volume{xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}\``. Files can
+   usually be accessed through a GUID path, permissions allowing.
+   However, users are generally not familiar with them, and so the
+   recommended use of this function is to retrieve mount points
+   using :func:`os.listmounts`.
+
+   May raise :exc:`OSError` if an error occurs collecting the volumes.
+
+   .. audit-event:: os.listvolumes "" os.listvolumes
+
+   .. availability:: Windows
+
+   .. versionadded:: 3.12
 
 
 .. function:: lstat(path, *, dir_fd=None)
@@ -2782,6 +2858,12 @@ features:
       Added support for the :class:`~os.PathLike` interface.  Added support
       for :class:`bytes` paths on Windows.
 
+   .. versionchanged:: 3.12
+      The ``st_ctime`` attribute of a stat result is deprecated on Windows.
+      The file creation time is properly available as ``st_birthtime``, and
+      in the future ``st_ctime`` may be changed to return zero or the
+      metadata change time, if available.
+
 
 .. function:: stat(path, *, dir_fd=None, follow_symlinks=True)
 
@@ -2808,7 +2890,7 @@ features:
    possible and call :func:`lstat` on the result. This does not apply to
    dangling symlinks or junction points, which will raise the usual exceptions.
 
-   .. index:: module: stat
+   .. index:: pair: module; stat
 
    Example::
 
@@ -2897,10 +2979,12 @@ features:
 
    .. attribute:: st_ctime
 
-      Platform dependent:
+      Time of most recent metadata change expressed in seconds.
 
-      * the time of most recent metadata change on Unix,
-      * the time of creation on Windows, expressed in seconds.
+      .. versionchanged:: 3.12
+         ``st_ctime`` is deprecated on Windows. Use ``st_birthtime`` for
+         the file creation time. In the future, ``st_ctime`` will contain
+         the time of the most recent metadata change, as for other platforms.
 
    .. attribute:: st_atime_ns
 
@@ -2913,29 +2997,48 @@ features:
 
    .. attribute:: st_ctime_ns
 
-      Platform dependent:
+      Time of most recent metadata change expressed in nanoseconds as an
+      integer.
 
-      * the time of most recent metadata change on Unix,
-      * the time of creation on Windows, expressed in nanoseconds as an
-        integer.
+      .. versionchanged:: 3.12
+         ``st_ctime_ns`` is deprecated on Windows. Use ``st_birthtime_ns``
+         for the file creation time. In the future, ``st_ctime`` will contain
+         the time of the most recent metadata change, as for other platforms.
+
+   .. attribute:: st_birthtime
+
+      Time of file creation expressed in seconds. This attribute is not
+      always available, and may raise :exc:`AttributeError`.
+
+      .. versionchanged:: 3.12
+         ``st_birthtime`` is now available on Windows.
+
+   .. attribute:: st_birthtime_ns
+
+      Time of file creation expressed in nanoseconds as an integer.
+      This attribute is not always available, and may raise
+      :exc:`AttributeError`.
+
+      .. versionadded:: 3.12
 
    .. note::
 
       The exact meaning and resolution of the :attr:`st_atime`,
-      :attr:`st_mtime`, and :attr:`st_ctime` attributes depend on the operating
-      system and the file system. For example, on Windows systems using the FAT
-      or FAT32 file systems, :attr:`st_mtime` has 2-second resolution, and
-      :attr:`st_atime` has only 1-day resolution.  See your operating system
-      documentation for details.
+      :attr:`st_mtime`, :attr:`st_ctime` and :attr:`st_birthtime` attributes
+      depend on the operating system and the file system. For example, on
+      Windows systems using the FAT32 file systems, :attr:`st_mtime` has
+      2-second resolution, and :attr:`st_atime` has only 1-day resolution.
+      See your operating system documentation for details.
 
       Similarly, although :attr:`st_atime_ns`, :attr:`st_mtime_ns`,
-      and :attr:`st_ctime_ns` are always expressed in nanoseconds, many
-      systems do not provide nanosecond precision.  On systems that do
-      provide nanosecond precision, the floating-point object used to
-      store :attr:`st_atime`, :attr:`st_mtime`, and :attr:`st_ctime`
-      cannot preserve all of it, and as such will be slightly inexact.
-      If you need the exact timestamps you should always use
-      :attr:`st_atime_ns`, :attr:`st_mtime_ns`, and :attr:`st_ctime_ns`.
+      :attr:`st_ctime_ns` and :attr:`st_birthtime_ns` are always expressed in
+      nanoseconds, many systems do not provide nanosecond precision.  On
+      systems that do provide nanosecond precision, the floating-point object
+      used to store :attr:`st_atime`, :attr:`st_mtime`, :attr:`st_ctime` and
+      :attr:`st_birthtime` cannot preserve all of it, and as such will be
+      slightly inexact. If you need the exact timestamps you should always use
+      :attr:`st_atime_ns`, :attr:`st_mtime_ns`, :attr:`st_ctime_ns` and
+      :attr:`st_birthtime_ns`.
 
    On some Unix systems (such as Linux), the following attributes may also be
    available:
@@ -2964,10 +3067,6 @@ features:
    .. attribute:: st_gen
 
       File generation number.
-
-   .. attribute:: st_birthtime
-
-      Time of file creation.
 
    On Solaris and derivatives, the following attributes may also be
    available:
@@ -3040,6 +3139,25 @@ features:
       On Windows, the :attr:`st_mode` member now identifies special
       files as :const:`S_IFCHR`, :const:`S_IFIFO` or :const:`S_IFBLK`
       as appropriate.
+
+   .. versionchanged:: 3.12
+      On Windows, :attr:`st_ctime` is deprecated. Eventually, it will
+      contain the last metadata change time, for consistency with other
+      platforms, but for now still contains creation time.
+      Use :attr:`st_birthtime` for the creation time.
+
+   .. versionchanged:: 3.12
+      On Windows, :attr:`st_ino` may now be up to 128 bits, depending
+      on the file system. Previously it would not be above 64 bits, and
+      larger file identifiers would be arbitrarily packed.
+
+   .. versionchanged:: 3.12
+      On Windows, :attr:`st_rdev` no longer returns a value. Previously
+      it would contain the same as :attr:`st_dev`, which was incorrect.
+
+   .. versionadded:: 3.12
+      Added the :attr:`st_birthtime` member on Windows.
+
 
 .. function:: statvfs(path)
 
@@ -3801,7 +3919,8 @@ to be ignored.
    the :envvar:`PATH` variable. The other variants, :func:`execl`, :func:`execle`,
    :func:`execv`, and :func:`execve`, will not use the :envvar:`PATH` variable to
    locate the executable; *path* must contain an appropriate absolute or relative
-   path.
+   path. Relative paths must include at least one slash, even on Windows, as
+   plain names will not be resolved.
 
    For :func:`execle`, :func:`execlpe`, :func:`execve`, and :func:`execvpe` (note
    that these all end in "e"), the *env* parameter must be a mapping which is
@@ -3833,7 +3952,7 @@ to be ignored.
 
    .. note::
 
-      The standard way to exit is ``sys.exit(n)``.  :func:`_exit` should
+      The standard way to exit is :func:`sys.exit(n) <sys.exit>`.  :func:`!_exit` should
       normally only be used in the child process after a :func:`fork`.
 
 The following exit codes are defined and can be used with :func:`_exit`,
@@ -4474,7 +4593,7 @@ written in Python, such as a mail server's external command delivery program.
    :attr:`!children_system`, and :attr:`!elapsed` in that order.
 
    See the Unix manual page
-   :manpage:`times(2)` and `times(3) <https://www.freebsd.org/cgi/man.cgi?time(3)>`_ manual page on Unix or `the GetProcessTimes MSDN
+   :manpage:`times(2)` and `times(3) <https://man.freebsd.org/cgi/man.cgi?time(3)>`_ manual page on Unix or `the GetProcessTimes MSDN
    <https://docs.microsoft.com/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocesstimes>`_
    on Windows. On Windows, only :attr:`!user` and :attr:`!system` are known; the other attributes are zero.
 

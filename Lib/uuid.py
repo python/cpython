@@ -401,7 +401,7 @@ def _get_command_stdout(command, *args):
 # over locally administered ones since the former are globally unique, but
 # we'll return the first of the latter found if that's all the machine has.
 #
-# See https://en.wikipedia.org/wiki/MAC_address#Universal_vs._local
+# See https://en.wikipedia.org/wiki/MAC_address#Universal_vs._local_(U/L_bit)
 
 def _is_universal(mac):
     return not (mac & (1 << 41))
@@ -615,7 +615,7 @@ def _random_getnode():
     # significant bit of the first octet".  This works out to be the 41st bit
     # counting from 1 being the least significant bit, or 1<<40.
     #
-    # See https://en.wikipedia.org/wiki/MAC_address#Unicast_vs._multicast
+    # See https://en.wikipedia.org/w/index.php?title=MAC_address&oldid=1128764812#Universal_vs._local_(U/L_bit)
     import random
     return random.getrandbits(48) | (1 << 40)
 
@@ -711,9 +711,11 @@ def uuid1(node=None, clock_seq=None):
 
 def uuid3(namespace, name):
     """Generate a UUID from the MD5 hash of a namespace UUID and a name."""
+    if isinstance(name, str):
+        name = bytes(name, "utf-8")
     from hashlib import md5
     digest = md5(
-        namespace.bytes + bytes(name, "utf-8"),
+        namespace.bytes + name,
         usedforsecurity=False
     ).digest()
     return UUID(bytes=digest[:16], version=3)
@@ -724,23 +726,27 @@ def uuid4():
 
 def uuid5(namespace, name):
     """Generate a UUID from the SHA-1 hash of a namespace UUID and a name."""
+    if isinstance(name, str):
+        name = bytes(name, "utf-8")
     from hashlib import sha1
-    hash = sha1(namespace.bytes + bytes(name, "utf-8")).digest()
+    hash = sha1(namespace.bytes + name).digest()
     return UUID(bytes=hash[:16], version=5)
 
 
 def main():
     """Run the uuid command line interface."""
-    uuid_funcs = {"uuid1": uuid1,
-                  "uuid3": uuid3,
-                  "uuid4": uuid4,
-                  "uuid5": uuid5}
+    uuid_funcs = {
+        "uuid1": uuid1,
+        "uuid3": uuid3,
+        "uuid4": uuid4,
+        "uuid5": uuid5
+    }
     uuid_namespace_funcs = ("uuid3", "uuid5")
     namespaces = {
-        "NAMESPACE_DNS": NAMESPACE_DNS,
-        "NAMESPACE_URL": NAMESPACE_URL,
-        "NAMESPACE_OID": NAMESPACE_OID,
-        "NAMESPACE_X500": NAMESPACE_X500
+        "@dns": NAMESPACE_DNS,
+        "@url": NAMESPACE_URL,
+        "@oid": NAMESPACE_OID,
+        "@x500": NAMESPACE_X500
     }
 
     import argparse
@@ -748,11 +754,13 @@ def main():
         description="Generates a uuid using the selected uuid function.")
     parser.add_argument("-u", "--uuid", choices=uuid_funcs.keys(), default="uuid4",
                         help="The function to use to generate the uuid. "
-                             "By default uuid4 function is used.")
-    parser.add_argument("-ns", "--namespace",
-                        help="The namespace used as part of generating the uuid. "
+                        "By default uuid4 function is used.")
+    parser.add_argument("-n", "--namespace",
+                        help="The namespace is a UUID, or '@ns' where 'ns' is a "
+                        "well-known predefined UUID addressed by namespace name. "
+                        "Such as @dns, @url, @oid, and @x500. "
                         "Only required for uuid3/uuid5 functions.")
-    parser.add_argument("-n", "--name",
+    parser.add_argument("-N", "--name",
                         help="The name used as part of generating the uuid. "
                         "Only required for uuid3/uuid5 functions.")
 

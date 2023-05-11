@@ -912,6 +912,34 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(sys_getunicodeinternedsize__doc__,
+"getunicodeinternedsize($module, /)\n"
+"--\n"
+"\n"
+"Return the number of elements of the unicode interned dictionary");
+
+#define SYS_GETUNICODEINTERNEDSIZE_METHODDEF    \
+    {"getunicodeinternedsize", (PyCFunction)sys_getunicodeinternedsize, METH_NOARGS, sys_getunicodeinternedsize__doc__},
+
+static Py_ssize_t
+sys_getunicodeinternedsize_impl(PyObject *module);
+
+static PyObject *
+sys_getunicodeinternedsize(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t _return_value;
+
+    _return_value = sys_getunicodeinternedsize_impl(module);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromSsize_t(_return_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(sys__getframe__doc__,
 "_getframe($module, depth=0, /)\n"
 "--\n"
@@ -1387,4 +1415,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=5c761f14326ced54 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6d598acc26237fbe input=a9049054013a1b77]*/

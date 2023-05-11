@@ -1,2 +1,0 @@
-Fixed segfault in property.getter/setter/deleter that occurred when a property
-subclass overrode the ``__new__`` method to return a non-property instance.

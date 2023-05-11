@@ -1343,6 +1343,7 @@ decompress_buf(ZlibDecompressor *self, Py_ssize_t max_length)
         }
     } else if (err != Z_OK && err != Z_BUF_ERROR) {
         zlib_error(state, self->zst, err, "while decompressing data");
+        goto error;
     }
 
     self->avail_in_real += self->zst.avail_in;
@@ -1932,6 +1933,7 @@ zlib_exec(PyObject *mod)
 
 static PyModuleDef_Slot zlib_slots[] = {
     {Py_mod_exec, zlib_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

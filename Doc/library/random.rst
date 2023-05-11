@@ -404,8 +404,8 @@ Alternative Generator
    Class that implements the default pseudo-random number generator used by the
    :mod:`random` module.
 
-   .. deprecated:: 3.9
-      In the future, the *seed* must be one of the following types:
+   .. deprecated-removed:: 3.9 3.11
+      Formerly the *seed* could be any hashable object.  Now it is limited to:
       :class:`NoneType`, :class:`int`, :class:`float`, :class:`str`,
       :class:`bytes`, or :class:`bytearray`.
 
@@ -423,7 +423,7 @@ Notes on Reproducibility
 ------------------------
 
 Sometimes it is useful to be able to reproduce the sequences given by a
-pseudo-random number generator.  By re-using a seed value, the same sequence should be
+pseudo-random number generator.  By reusing a seed value, the same sequence should be
 reproducible from run to run as long as multiple threads are not running.
 
 Most of the random module's algorithms and seeding functions are subject to
@@ -610,7 +610,8 @@ from the combinatoric iterators in the :mod:`itertools` module:
        return tuple(pool[i] for i in indices)
 
    def random_combination_with_replacement(iterable, r):
-       "Random selection from itertools.combinations_with_replacement(iterable, r)"
+       "Choose r elements with replacement.  Order the result to match the iterable."
+       # Result will be in set(itertools.combinations_with_replacement(iterable, r)).
        pool = tuple(iterable)
        n = len(pool)
        indices = sorted(random.choices(range(n), k=r))

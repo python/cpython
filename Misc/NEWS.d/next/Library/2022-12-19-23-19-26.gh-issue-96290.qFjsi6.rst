@@ -1,5 +1,0 @@
-Fix handling of partial and invalid UNC drives in ``ntpath.splitdrive()``, and in
-``ntpath.normpath()`` on non-Windows systems. Paths such as '\\server' and '\\' are now considered
-by ``splitdrive()`` to contain only a drive, and consequently are not modified by ``normpath()`` on
-non-Windows systems. The behaviour of ``normpath()`` on Windows systems is unaffected, as native
-OS APIs are used. Patch by Eryk Sun, with contributions by Barney Gale.

@@ -43,7 +43,18 @@ version = '1'
 
 NO_VARARG = "PY_SSIZE_T_MAX"
 CLINIC_PREFIX = "__clinic_"
-CLINIC_PREFIXED_ARGS = {"args"}
+CLINIC_PREFIXED_ARGS = {
+    "_keywords",
+    "_parser",
+    "args",
+    "argsbuf",
+    "fastargs",
+    "kwargs",
+    "kwnames",
+    "nargs",
+    "noptargs",
+    "return_value",
+}
 
 class Unspecified:
     def __repr__(self):
@@ -345,6 +356,7 @@ class CRenderData:
         # you should check the _return_value for errors, and
         # "goto exit" if there are any.
         self.return_conversion = []
+        self.converter_retval = "_return_value"
 
         # The C statements required to do some operations
         # after the end of parsing but before cleaning up.
@@ -803,13 +815,11 @@ class CLanguage(Language):
         # parser_body_fields remembers the fields passed in to the
         # previous call to parser_body. this is used for an awful hack.
         parser_body_fields = ()
-        parser_body_declarations = ''
         def parser_body(prototype, *fields, declarations=''):
-            nonlocal parser_body_fields, parser_body_declarations
+            nonlocal parser_body_fields
             add, output = text_accumulator()
             add(prototype)
             parser_body_fields = fields
-            parser_body_declarations = declarations
 
             fields = list(fields)
             fields.insert(0, normalize_snippet("""
@@ -1174,6 +1184,7 @@ class CLanguage(Language):
                 raise ValueError("Slot methods cannot access their defining class.")
 
             if not parses_keywords:
+                declarations = '{base_type_ptr}'
                 fields.insert(0, normalize_snippet("""
                     if ({self_type_check}!_PyArg_NoKeywords("{name}", kwargs)) {{
                         goto exit;
@@ -1187,7 +1198,7 @@ class CLanguage(Language):
                         """, indent=4))
 
             parser_definition = parser_body(parser_prototype, *fields,
-                                            declarations=parser_body_declarations)
+                                            declarations=declarations)
 
 
         if flags in ('METH_NOARGS', 'METH_O', 'METH_VARARGS'):
@@ -1942,12 +1953,12 @@ legacy_converters = {}
 return_converters = {}
 
 
-def write_file(filename, new_contents):
+def write_file(filename, new_contents, force=False):
     try:
         with open(filename, 'r', encoding="utf-8") as fp:
             old_contents = fp.read()
 
-        if old_contents == new_contents:
+        if old_contents == new_contents and not force:
             # no change: avoid modifying the file modification time
             return
     except FileNotFoundError:
@@ -2111,7 +2122,7 @@ impl_definition block
                          traceback.format_exc().rstrip())
             printer.print_block(block)
 
-        second_pass_replacements = {}
+        clinic_out = []
 
         # these are destinations not buffers
         for name, destination in self.destinations.items():
@@ -2152,25 +2163,11 @@ impl_definition block
                     block.input = 'preserve\n'
                     printer_2 = BlockPrinter(self.language)
                     printer_2.print_block(block, core_includes=True)
-                    write_file(destination.filename, printer_2.f.getvalue())
+                    pair = destination.filename, printer_2.f.getvalue()
+                    clinic_out.append(pair)
                     continue
-        text = printer.f.getvalue()
 
-        if second_pass_replacements:
-            printer_2 = BlockPrinter(self.language)
-            parser_2 = BlockParser(text, self.language)
-            changed = False
-            for block in parser_2:
-                if block.dsl_name:
-                    for id, replacement in second_pass_replacements.items():
-                        if id in block.output:
-                            changed = True
-                            block.output = block.output.replace(id, replacement)
-                printer_2.print_block(block)
-            if changed:
-                text = printer_2.f.getvalue()
-
-        return text
+        return printer.f.getvalue(), clinic_out
 
 
     def _module_and_class(self, fields):
@@ -2226,9 +2223,13 @@ def parse_file(filename, *, verify=True, output=None):
         return
 
     clinic = Clinic(language, verify=verify, filename=filename)
-    cooked = clinic.parse(raw)
+    src_out, clinic_out = clinic.parse(raw)
 
-    write_file(output, cooked)
+    # If clinic output changed, force updating the source file as well.
+    force = bool(clinic_out)
+    write_file(output, src_out, force=force)
+    for fn, data in clinic_out:
+        write_file(fn, data)
 
 
 def compute_checksum(input, length=None):
@@ -3839,20 +3840,21 @@ class self_converter(CConverter):
         cls = self.function.cls
 
         if ((kind in (METHOD_NEW, METHOD_INIT)) and cls and cls.typedef):
-            type_object = self.function.cls.type_object
-            prefix = (type_object[1:] + '.' if type_object[0] == '&' else
-                      type_object + '->')
             if kind == METHOD_NEW:
-                type_check = ('({0} == {1} ||\n        '
-                              ' {0}->tp_init == {2}tp_init)'
-                             ).format(self.name, type_object, prefix)
+                type_check = (
+                    '({0} == base_tp || {0}->tp_init == base_tp->tp_init)'
+                 ).format(self.name)
             else:
-                type_check = ('(Py_IS_TYPE({0}, {1}) ||\n        '
-                              ' Py_TYPE({0})->tp_new == {2}tp_new)'
-                             ).format(self.name, type_object, prefix)
+                type_check = ('(Py_IS_TYPE({0}, base_tp) ||\n        '
+                              ' Py_TYPE({0})->tp_new == base_tp->tp_new)'
+                             ).format(self.name)
 
             line = '{} &&\n        '.format(type_check)
             template_dict['self_type_check'] = line
+
+            type_object = self.function.cls.type_object
+            type_ptr = f'PyTypeObject *base_tp = {type_object};'
+            template_dict['base_type_ptr'] = type_ptr
 
 
 
@@ -3892,15 +3894,15 @@ class CReturnConverter(metaclass=CReturnConverterAutoRegister):
     def return_converter_init(self):
         pass
 
-    def declare(self, data, name="_return_value"):
+    def declare(self, data):
         line = []
         add = line.append
         add(self.type)
         if not self.type.endswith('*'):
             add(' ')
-        add(name + ';')
+        add(data.converter_retval + ';')
         data.declarations.append(''.join(line))
-        data.return_value = name
+        data.return_value = data.converter_retval
 
     def err_occurred_if(self, expr, data):
         data.return_conversion.append('if (({}) && PyErr_Occurred()) {{\n    goto exit;\n}}\n'.format(expr))
@@ -3922,8 +3924,10 @@ class bool_return_converter(CReturnConverter):
 
     def render(self, function, data):
         self.declare(data)
-        self.err_occurred_if("_return_value == -1", data)
-        data.return_conversion.append('return_value = PyBool_FromLong((long)_return_value);\n')
+        self.err_occurred_if(f"{data.converter_retval} == -1", data)
+        data.return_conversion.append(
+            f'return_value = PyBool_FromLong((long){data.converter_retval});\n'
+        )
 
 class long_return_converter(CReturnConverter):
     type = 'long'
@@ -3933,9 +3937,10 @@ class long_return_converter(CReturnConverter):
 
     def render(self, function, data):
         self.declare(data)
-        self.err_occurred_if("_return_value == {}-1".format(self.unsigned_cast), data)
+        self.err_occurred_if(f"{data.converter_retval} == {self.unsigned_cast}-1", data)
         data.return_conversion.append(
-            ''.join(('return_value = ', self.conversion_fn, '(', self.cast, '_return_value);\n')))
+            f'return_value = {self.conversion_fn}({self.cast}{data.converter_retval});\n'
+        )
 
 class int_return_converter(long_return_converter):
     type = 'int'
@@ -3977,9 +3982,10 @@ class double_return_converter(CReturnConverter):
 
     def render(self, function, data):
         self.declare(data)
-        self.err_occurred_if("_return_value == -1.0", data)
+        self.err_occurred_if(f"{data.converter_retval} == -1.0", data)
         data.return_conversion.append(
-            'return_value = PyFloat_FromDouble(' + self.cast + '_return_value);\n')
+            f'return_value = PyFloat_FromDouble({self.cast}{data.converter_retval});\n'
+        )
 
 class float_return_converter(double_return_converter):
     type = 'float'
@@ -4695,10 +4701,8 @@ class DSLParser:
                     c_default = "NULL"
                 elif (isinstance(expr, ast.BinOp) or
                     (isinstance(expr, ast.UnaryOp) and
-                     not (isinstance(expr.operand, ast.Num) or
-                          (hasattr(ast, 'Constant') and
-                           isinstance(expr.operand, ast.Constant) and
-                           type(expr.operand.value) in (int, float, complex)))
+                     not (isinstance(expr.operand, ast.Constant) and
+                          type(expr.operand.value) in {int, float, complex})
                     )):
                     c_default = kwargs.get("c_default")
                     if not (isinstance(c_default, str) and c_default):
@@ -4800,13 +4804,9 @@ class DSLParser:
         self.function.parameters[key] = p
 
     def parse_converter(self, annotation):
-        if (hasattr(ast, 'Constant') and
-            isinstance(annotation, ast.Constant) and
+        if (isinstance(annotation, ast.Constant) and
             type(annotation.value) is str):
             return annotation.value, True, {}
-
-        if isinstance(annotation, ast.Str):
-            return annotation.s, True, {}
 
         if isinstance(annotation, ast.Name):
             return annotation.id, False, {}

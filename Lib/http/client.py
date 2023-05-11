@@ -448,6 +448,7 @@ class HTTPResponse(io.BufferedIOBase):
         return self.fp is None
 
     def read(self, amt=None):
+        """Read and return the response body, or up to the next amt bytes."""
         if self.fp is None:
             return b""
 
@@ -857,6 +858,7 @@ class HTTPConnection:
         self._tunnel_host = None
         self._tunnel_port = None
         self._tunnel_headers = {}
+        self._proxy_response_headers = None
 
         (self.host, self.port) = self._get_hostport(host, port)
 
@@ -869,9 +871,9 @@ class HTTPConnection:
     def set_tunnel(self, host, port=None, headers=None):
         """Set up host and port for HTTP CONNECT tunnelling.
 
-        In a connection that uses HTTP CONNECT tunneling, the host passed to the
-        constructor is used as a proxy server that relays all communication to
-        the endpoint passed to `set_tunnel`. This done by sending an HTTP
+        In a connection that uses HTTP CONNECT tunnelling, the host passed to
+        the constructor is used as a proxy server that relays all communication
+        to the endpoint passed to `set_tunnel`. This done by sending an HTTP
         CONNECT request to the proxy server when the connection is established.
 
         This method must be called before the HTTP connection has been
@@ -879,6 +881,13 @@ class HTTPConnection:
 
         The headers argument should be a mapping of extra HTTP headers to send
         with the CONNECT request.
+
+        As HTTP/1.1 is used for HTTP CONNECT tunnelling request, as per the RFC
+        (https://tools.ietf.org/html/rfc7231#section-4.3.6), a HTTP Host:
+        header must be provided, matching the authority-form of the request
+        target provided as the destination for the CONNECT request. If a
+        HTTP Host: header is not provided via the headers argument, one
+        is generated and transmitted automatically.
         """
 
         if self.sock:
@@ -886,9 +895,14 @@ class HTTPConnection:
 
         self._tunnel_host, self._tunnel_port = self._get_hostport(host, port)
         if headers:
-            self._tunnel_headers = headers
+            self._tunnel_headers = headers.copy()
         else:
             self._tunnel_headers.clear()
+
+        if not any(header.lower() == "host" for header in self._tunnel_headers):
+            encoded_host = self._tunnel_host.encode("idna").decode("ascii")
+            self._tunnel_headers["Host"] = "%s:%d" % (
+                encoded_host, self._tunnel_port)
 
     def _get_hostport(self, host, port):
         if port is None:
@@ -914,8 +928,9 @@ class HTTPConnection:
         self.debuglevel = level
 
     def _tunnel(self):
-        connect = b"CONNECT %s:%d HTTP/1.0\r\n" % (
-            self._tunnel_host.encode("ascii"), self._tunnel_port)
+        connect = b"CONNECT %s:%d %s\r\n" % (
+            self._tunnel_host.encode("idna"), self._tunnel_port,
+            self._http_vsn_str.encode("ascii"))
         headers = [connect]
         for header, value in self._tunnel_headers.items():
             headers.append(f"{header}: {value}\r\n".encode("latin-1"))
@@ -927,23 +942,21 @@ class HTTPConnection:
         del headers
 
         response = self.response_class(self.sock, method=self._method)
-        (version, code, message) = response._read_status()
+        try:
+            (version, code, message) = response._read_status()
 
-        if code != http.HTTPStatus.OK:
-            self.close()
-            raise OSError(f"Tunnel connection failed: {code} {message.strip()}")
-        while True:
-            line = response.fp.readline(_MAXLINE + 1)
-            if len(line) > _MAXLINE:
-                raise LineTooLong("header line")
-            if not line:
-                # for sites which EOF without sending a trailer
-                break
-            if line in (b'\r\n', b'\n', b''):
-                break
+            self._proxy_response_headers = parse_headers(response.fp)
 
             if self.debuglevel > 0:
-                print('header:', line.decode())
+                for hdr, val in self._proxy_response_headers.items():
+                    print("header:", hdr + ":", val)
+
+            if code != http.HTTPStatus.OK:
+                self.close()
+                raise OSError(f"Tunnel connection failed: {code} {message.strip()}")
+
+        finally:
+            response.close()
 
     def connect(self):
         """Connect to the host and port specified in __init__."""
