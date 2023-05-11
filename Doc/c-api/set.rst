@@ -121,11 +121,14 @@ or :class:`frozenset` or instances of their subtypes.
 
 .. c:function:: int PySet_Contains(PyObject *anyset, PyObject *key)
 
-   Return ``1`` if found, ``0`` if not found, and ``-1`` if an error is encountered.  Unlike
-   the Python :meth:`__contains__` method, this function does not automatically
-   convert unhashable sets into temporary frozensets.  Raise a :exc:`TypeError` if
-   the *key* is unhashable. Raise :exc:`PyExc_SystemError` if *anyset* is not a
+   Return ``1`` if found, ``0`` if not found, and ``-1`` if an error is encountered.
+   Raise a :exc:`TypeError` if the *key* is unhashable.
+   Raise :exc:`PyExc_SystemError` if *anyset* is not a
    :class:`set`, :class:`frozenset`, or an instance of a subtype.
+
+   .. note::
+      Unlike the Python :meth:`__contains__` method, this function does not
+      automatically convert unhashable sets into temporary frozensets.  
 
 
 .. c:function:: int PySet_Add(PyObject *set, PyObject *key)
@@ -146,11 +149,13 @@ subtypes but not for instances of :class:`frozenset` or its subtypes.
 .. c:function:: int PySet_Discard(PyObject *set, PyObject *key)
 
    Return ``1`` if found and removed, ``0`` if not found (no action taken), and ``-1`` if an
-   error is encountered.  Does not raise :exc:`KeyError` for missing keys.  Raise a
-   :exc:`TypeError` if the *key* is unhashable.  Unlike the Python :meth:`~set.discard`
-   method, this function does not automatically convert unhashable sets into
-   temporary frozensets. Raise :exc:`PyExc_SystemError` if *set* is not an
-   instance of :class:`set` or its subtype.
+   error is encountered.  Does not raise :exc:`KeyError` for missing keys.
+   Raise a :exc:`TypeError` if the *key* is unhashable.
+   Raise :exc:`PyExc_SystemError` if *set* is not an instance of :class:`set` or its subtype.
+
+   .. note::
+      Unlike the Python :meth:`~set.discard` method, this function does not
+      automatically convert unhashable sets into temporary frozensets.
 
 
 .. c:function:: PyObject* PySet_Pop(PyObject *set)
