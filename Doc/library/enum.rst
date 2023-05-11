@@ -119,7 +119,8 @@ Module Contents
    :func:`~enum.property`
 
       Allows :class:`Enum` members to have attributes without conflicting with
-      member names.
+      member names.  The ``value`` and ``name`` attributes are implemented this
+      way.
 
    :func:`unique`
 
@@ -169,7 +170,7 @@ Data Types
    final *enum*, as well as creating the enum members, properly handling
    duplicates, providing iteration over the enum class, etc.
 
-   .. method:: EnumType.__call__(cls, value, names=None, *, module=None, qualname=None, type=None, start=1, boundary=None)
+   .. method:: EnumType.__call__(cls, value, names=None, \*, module=None, qualname=None, type=None, start=1, boundary=None)
 
       This method is called in two different ways:
 
@@ -317,7 +318,7 @@ Data Types
          >>> PowersOfThree.SECOND.value
          9
 
-   .. method:: Enum.__init_subclass__(cls, **kwds)
+   .. method:: Enum.__init_subclass__(cls, \**kwds)
 
       A *classmethod* that is used to further configure subsequent subclasses.
       By default, does nothing.
@@ -696,7 +697,8 @@ Data Types
 
    .. attribute:: STRICT
 
-      Out-of-range values cause a :exc:`ValueError` to be raised::
+      Out-of-range values cause a :exc:`ValueError` to be raised. This is the
+      default for :class:`Flag`::
 
          >>> from enum import Flag, STRICT, auto
          >>> class StrictFlag(Flag, boundary=STRICT):
@@ -714,7 +716,7 @@ Data Types
    .. attribute:: CONFORM
 
       Out-of-range values have invalid values removed, leaving a valid *Flag*
-      value. This is the default for :class:`Flag`::
+      value::
 
          >>> from enum import Flag, CONFORM, auto
          >>> class ConformFlag(Flag, boundary=CONFORM):

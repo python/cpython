@@ -2808,5 +2808,65 @@ class TestEdgeCases(unittest.TestCase):
         sys.settrace(sys.gettrace())
 
 
+class TestLinesAfterTraceStarted(TraceTestCase):
+
+    def test_events(self):
+        tracer = Tracer()
+        sys._getframe().f_trace = tracer.trace
+        sys.settrace(tracer.trace)
+        line = 4
+        line = 5
+        sys.settrace(None)
+        self.compare_events(
+            TestLinesAfterTraceStarted.test_events.__code__.co_firstlineno,
+            tracer.events, [
+                (4, 'line'),
+                (5, 'line'),
+                (6, 'line')])
+
+
+class TestSetLocalTrace(TraceTestCase):
+
+    def test_with_branches(self):
+
+        def tracefunc(frame, event, arg):
+            if frame.f_code.co_name == "func":
+                frame.f_trace = tracefunc
+                line = frame.f_lineno - frame.f_code.co_firstlineno
+                events.append((line, event))
+            return tracefunc
+
+        def func(arg = 1):
+            N = 1
+            if arg >= 2:
+                not_reached = 3
+            else:
+                reached = 5
+            if arg >= 3:
+                not_reached = 7
+            else:
+                reached = 9
+            the_end = 10
+
+        EXPECTED_EVENTS = [
+            (0, 'call'),
+            (1, 'line'),
+            (2, 'line'),
+            (5, 'line'),
+            (6, 'line'),
+            (9, 'line'),
+            (10, 'line'),
+            (10, 'return'),
+        ]
+
+        events = []
+        sys.settrace(tracefunc)
+        sys._getframe().f_trace = tracefunc
+        func()
+        self.assertEqual(events, EXPECTED_EVENTS)
+        sys.settrace(None)
+
+
+
 if __name__ == "__main__":
     unittest.main()
