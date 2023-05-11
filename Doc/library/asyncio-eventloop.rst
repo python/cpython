@@ -510,12 +510,12 @@ Opening network connections
       When a server's IPv4 path and protocol are working, but the server's
       IPv6 path and protocol are not working, a dual-stack client
       application experiences significant connection delay compared to an
-      IPv4-only client.  This is undesirable because it causes the dual-
-      stack client to have a worse user experience.  This document
+      IPv4-only client.  This is undesirable because it causes the
+      dual-stack client to have a worse user experience.  This document
       specifies requirements for algorithms that reduce this user-visible
       delay and provides an algorithm.
 
-      For more information: https://tools.ietf.org/html/rfc6555
+      For more information: https://datatracker.ietf.org/doc/html/rfc6555
 
    .. versionchanged:: 3.11
 
@@ -1538,7 +1538,7 @@ Server objects are created by :meth:`loop.create_server`,
 :meth:`loop.create_unix_server`, :func:`start_server`,
 and :func:`start_unix_server` functions.
 
-Do not instantiate the class directly.
+Do not instantiate the :class:`Server` class directly.
 
 .. class:: Server
 
@@ -1629,7 +1629,8 @@ Do not instantiate the class directly.
 
    .. attribute:: sockets
 
-      List of :class:`socket.socket` objects the server is listening on.
+      List of socket-like objects, ``asyncio.trsock.TransportSocket``, which
+      the server is listening on.
 
       .. versionchanged:: 3.7
          Prior to Python 3.7 ``Server.sockets`` used to return an

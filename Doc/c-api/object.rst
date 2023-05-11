@@ -179,9 +179,18 @@ Object Protocol
    If *o1* and *o2* are the same object, :c:func:`PyObject_RichCompareBool`
    will always return ``1`` for :const:`Py_EQ` and ``0`` for :const:`Py_NE`.
 
+.. c:function:: PyObject* PyObject_Format(PyObject *obj, PyObject *format_spec)
+
+   Format *obj* using *format_spec*. This is equivalent to the Python
+   expression ``format(obj, format_spec)``.
+
+   *format_spec* may be ``NULL``. In this case the call is equivalent
+   to ``format(obj)``.
+   Returns the formatted string on success, ``NULL`` on failure.
+
 .. c:function:: PyObject* PyObject_Repr(PyObject *o)
 
-   .. index:: builtin: repr
+   .. index:: pair: built-in function; repr
 
    Compute a string representation of object *o*.  Returns the string
    representation on success, ``NULL`` on failure.  This is the equivalent of the
@@ -193,7 +202,7 @@ Object Protocol
 
 .. c:function:: PyObject* PyObject_ASCII(PyObject *o)
 
-   .. index:: builtin: ascii
+   .. index:: pair: built-in function; ascii
 
    As :c:func:`PyObject_Repr`, compute a string representation of object *o*, but
    escape the non-ASCII characters in the string returned by
@@ -218,7 +227,7 @@ Object Protocol
 
 .. c:function:: PyObject* PyObject_Bytes(PyObject *o)
 
-   .. index:: builtin: bytes
+   .. index:: pair: built-in function; bytes
 
    Compute a bytes representation of object *o*.  ``NULL`` is returned on
    failure and a bytes object on success.  This is equivalent to the Python
@@ -269,7 +278,7 @@ Object Protocol
 
 .. c:function:: Py_hash_t PyObject_Hash(PyObject *o)
 
-   .. index:: builtin: hash
+   .. index:: pair: built-in function; hash
 
    Compute and return the hash value of an object *o*.  On failure, return ``-1``.
    This is the equivalent of the Python expression ``hash(o)``.
@@ -303,7 +312,7 @@ Object Protocol
 
 .. c:function:: PyObject* PyObject_Type(PyObject *o)
 
-   .. index:: builtin: type
+   .. index:: pair: built-in function; type
 
    When *o* is non-``NULL``, returns a type object corresponding to the object type
    of object *o*. On failure, raises :exc:`SystemError` and returns ``NULL``.  This
@@ -323,7 +332,7 @@ Object Protocol
 .. c:function:: Py_ssize_t PyObject_Size(PyObject *o)
                Py_ssize_t PyObject_Length(PyObject *o)
 
-   .. index:: builtin: len
+   .. index:: pair: built-in function; len
 
    Return the length of object *o*.  If the object *o* provides either the sequence
    and mapping protocols, the sequence length is returned.  On error, ``-1`` is

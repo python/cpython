@@ -49,8 +49,13 @@ The :mod:`functools` module defines the following functions:
         >>> factorial(12)      # makes two new recursive calls, the other 10 are cached
         479001600
 
-   The cache is threadsafe so the wrapped function can be used in multiple
-   threads.
+   The cache is threadsafe so that the wrapped function can be used in
+   multiple threads.  This means that the underlying data structure will
+   remain coherent during concurrent updates.
+
+   It is possible for the wrapped function to be called more than once if
+   another thread makes an additional call before the initial call has been
+   completed and cached.
 
    .. versionadded:: 3.9
 
@@ -97,18 +102,10 @@ The :mod:`functools` module defines the following functions:
    ``__slots__`` without including ``__dict__`` as one of the defined slots
    (as such classes don't provide a ``__dict__`` attribute at all).
 
-   If a mutable mapping is not available or if space-efficient key sharing
-   is desired, an effect similar to :func:`cached_property` can be achieved
-   by a stacking :func:`property` on top of :func:`cache`::
-
-       class DataSet:
-           def __init__(self, sequence_of_numbers):
-               self._data = sequence_of_numbers
-
-           @property
-           @cache
-           def stdev(self):
-               return statistics.stdev(self._data)
+   If a mutable mapping is not available or if space-efficient key sharing is
+   desired, an effect similar to :func:`cached_property` can also be achieved by
+   stacking :func:`property` on top of :func:`lru_cache`. See
+   :ref:`faq-cache-method-calls` for more details on how this differs from :func:`cached_property`.
 
    .. versionadded:: 3.8
 
@@ -143,8 +140,13 @@ The :mod:`functools` module defines the following functions:
    *maxsize* most recent calls.  It can save time when an expensive or I/O bound
    function is periodically called with the same arguments.
 
-   The cache is threadsafe so the wrapped function can be used in multiple
-   threads.
+   The cache is threadsafe so that the wrapped function can be used in
+   multiple threads.  This means that the underlying data structure will
+   remain coherent during concurrent updates.
+
+   It is possible for the wrapped function to be called more than once if
+   another thread makes an additional call before the initial call has been
+   completed and cached.
 
    Since a dictionary is used to cache results, the positional and keyword
    arguments to the function must be :term:`hashable`.

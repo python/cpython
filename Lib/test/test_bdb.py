@@ -1206,7 +1206,8 @@ class IssuesTestCase(BaseTestCase):
 class TestRegressions(unittest.TestCase):
     def test_format_stack_entry_no_lineno(self):
         # See gh-101517
-        Bdb().format_stack_entry((sys._getframe(), None))
+        self.assertIn('Warning: lineno is None',
+                      Bdb().format_stack_entry((sys._getframe(), None)))
 
 
 if __name__ == "__main__":

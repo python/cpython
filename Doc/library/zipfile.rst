@@ -55,8 +55,9 @@ The module defines the following items:
 .. class:: Path
    :noindex:
 
-   A pathlib-compatible wrapper for zip files. See section
-   :ref:`path-objects` for details.
+   Class that implements a subset of the interface provided by
+   :class:`pathlib.Path`, including the full
+   :class:`importlib.resources.abc.Traversable` interface.
 
    .. versionadded:: 3.8
 
@@ -127,7 +128,7 @@ The module defines the following items:
       Documentation on the ZIP file format by Phil Katz, the creator of the format and
       algorithms used.
 
-   `Info-ZIP Home Page <http://www.info-zip.org/>`_
+   `Info-ZIP Home Page <https://infozip.sourceforge.net/>`_
       Information about the Info-ZIP project's ZIP archive programs and development
       libraries.
 
@@ -287,7 +288,7 @@ ZipFile Objects
    (``ZipExtFile``) is read-only and provides the following methods:
    :meth:`~io.BufferedIOBase.read`, :meth:`~io.IOBase.readline`,
    :meth:`~io.IOBase.readlines`, :meth:`~io.IOBase.seek`,
-   :meth:`~io.IOBase.tell`, :meth:`__iter__`, :meth:`~iterator.__next__`.
+   :meth:`~io.IOBase.tell`, :meth:`~container.__iter__`, :meth:`~iterator.__next__`.
    These objects can operate independently of the ZipFile.
 
    With ``mode='w'``, a writable file handle is returned, which supports the

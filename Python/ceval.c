@@ -1536,6 +1536,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
         _PyFrame_SetStackPointer(frame, stack_pointer); \
         int err = trace_function_entry(tstate, frame); \
         stack_pointer = _PyFrame_GetStackPointer(frame); \
+        frame->stacktop = -1; \
         if (err) { \
             goto error; \
         } \
@@ -2232,6 +2233,7 @@ handle_eval_breaker:
         }
 
         TARGET(BINARY_SUBSCR_GETITEM) {
+            DEOPT_IF(tstate->interp->eval_frame, BINARY_SUBSCR);
             PyObject *sub = TOP();
             PyObject *container = SECOND();
             _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)next_instr;

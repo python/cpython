@@ -619,7 +619,8 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                     self.add_return("_res")
                 self.print("}")
             self.print("int _mark = p->mark;")
-            self.print("int _start_mark = p->mark;")
+            if memoize:
+                self.print("int _start_mark = p->mark;")
             self.print("void **_children = PyMem_Malloc(sizeof(void *));")
             self.out_of_memory_return(f"!_children")
             self.print("Py_ssize_t _children_capacity = 1;")
@@ -642,7 +643,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             self.out_of_memory_return(f"!_seq", cleanup_code="PyMem_Free(_children);")
             self.print("for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);")
             self.print("PyMem_Free(_children);")
-            if node.name:
+            if memoize and node.name:
                 self.print(f"_PyPegen_insert_memo(p, _start_mark, {node.name}_type, _seq);")
             self.add_return("_seq")
 

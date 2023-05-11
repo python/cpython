@@ -4887,7 +4887,7 @@ Fix use of registry values to launch Python from Microsoft Store app.
 .. section: Windows
 
 Fix memory leak on Windows in creating an SSLContext object or running
-urllib.request.urlopen('https://...').
+``urllib.request.urlopen('https://...')``.
 
 ..
 

@@ -1021,7 +1021,7 @@ directories.
 
    Files in *src* that begin with :file:`.nfs` are skipped (more information on
    these files is available in answer D2 of the `NFS FAQ page
-   <http://nfs.sourceforge.net/#section_d>`_).
+   <https://nfs.sourceforge.net/#section_d>`_).
 
    .. versionchanged:: 3.3.1
       NFS files are ignored.

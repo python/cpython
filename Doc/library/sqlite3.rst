@@ -72,7 +72,7 @@ including `cursors`_ and `transactions`_.
 
 First, we need to create a new database and open
 a database connection to allow :mod:`!sqlite3` to work with it.
-Call :func:`sqlite3.connect` to to create a connection to
+Call :func:`sqlite3.connect` to create a connection to
 the database :file:`tutorial.db` in the current working directory,
 implicitly creating it if it does not exist:
 
@@ -271,9 +271,9 @@ Module functions
 
    :param float timeout:
        How many seconds the connection should wait before raising
-       an exception, if the database is locked by another connection.
-       If another connection opens a transaction to modify the database,
-       it will be locked until that transaction is committed.
+       an :exc:`OperationalError` when a table is locked.
+       If another connection opens a transaction to modify a table,
+       that table will be locked until the transaction is committed.
        Default five seconds.
 
    :param int detect_types:
@@ -307,7 +307,7 @@ Module functions
        to avoid data corruption.
        See :attr:`threadsafety` for more information.
 
-   :param Connection factory:
+   :param ~sqlite3.Connection factory:
        A custom subclass of :class:`Connection` to create the connection with,
        if not the default :class:`Connection` class.
 
@@ -325,7 +325,7 @@ Module functions
        The query string allows passing parameters to SQLite,
        enabling various :ref:`sqlite3-uri-tricks`.
 
-   :rtype: Connection
+   :rtype: ~sqlite3.Connection
 
    .. audit-event:: sqlite3.connect database sqlite3.connect
    .. audit-event:: sqlite3.connect/handle connection_handle sqlite3.connect
@@ -867,7 +867,7 @@ Connection objects
 
       Call this method from a different thread to abort any queries that might
       be executing on the connection.
-      Aborted queries will raise an exception.
+      Aborted queries will raise an :exc:`OperationalError`.
 
 
    .. method:: set_authorizer(authorizer_callback)
@@ -1035,7 +1035,7 @@ Connection objects
       Works even if the database is being accessed by other clients
       or concurrently by the same connection.
 
-      :param Connection target:
+      :param ~sqlite3.Connection target:
           The database connection to save the backup to.
 
       :param int pages:
@@ -1363,12 +1363,12 @@ Cursor objects
 
       For every item in *parameters*,
       repeatedly execute the :ref:`parameterized <sqlite3-placeholders>`
-      SQL statement *sql*.
+      :abbr:`DML (Data Manipulation Language)` SQL statement *sql*.
 
       Uses the same implicit transaction handling as :meth:`~Cursor.execute`.
 
       :param str sql:
-         A single SQL :abbr:`DML (Data Manipulation Language)` statement.
+         A single SQL DML statement.
 
       :param parameters:
          An :term:`!iterable` of parameters to bind with
@@ -1390,6 +1390,13 @@ Cursor objects
          ]
          # cur is an sqlite3.Cursor object
          cur.executemany("INSERT INTO data VALUES(?)", rows)
+
+      .. note::
+
+         Any resulting rows are discarded,
+         including DML statements with `RETURNING clauses`_.
+
+      .. _RETURNING clauses: https://www.sqlite.org/lang_returning.html
 
    .. method:: executescript(sql_script, /)
 
@@ -1509,7 +1516,10 @@ Cursor objects
       ``INSERT``, ``UPDATE``, ``DELETE``, and ``REPLACE`` statements;
       is ``-1`` for other statements,
       including :abbr:`CTE (Common Table Expression)` queries.
-      It is only updated by the :meth:`execute` and :meth:`executemany` methods.
+      It is only updated by the :meth:`execute` and :meth:`executemany` methods,
+      after the statement has run to completion.
+      This means that any resulting rows must be fetched in order for
+      :attr:`!rowcount` to be updated.
 
    .. attribute:: row_factory
 

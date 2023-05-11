@@ -957,12 +957,12 @@ cmath.log
 
 log(z[, base]) -> the logarithm of z to the given base.
 
-If the base not specified, returns the natural logarithm (base e) of z.
+If the base is not specified, returns the natural logarithm (base e) of z.
 [clinic start generated code]*/
 
 static PyObject *
 cmath_log_impl(PyObject *module, Py_complex x, PyObject *y_obj)
-/*[clinic end generated code: output=4effdb7d258e0d94 input=230ed3a71ecd000a]*/
+/*[clinic end generated code: output=4effdb7d258e0d94 input=e1f81d4fcfd26497]*/
 {
     Py_complex y;
 

@@ -1092,8 +1092,13 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
 
     if not getattr(cls, '__doc__'):
         # Create a class doc-string.
-        cls.__doc__ = (cls.__name__ +
-                       str(inspect.signature(cls)).replace(' -> None', ''))
+        try:
+            # In some cases fetching a signature is not possible.
+            # But, we surely should not fail in this case.
+            text_sig = str(inspect.signature(cls)).replace(' -> None', '')
+        except (TypeError, ValueError):
+            text_sig = ''
+        cls.__doc__ = (cls.__name__ + text_sig)
 
     if match_args:
         # I could probably compute this once
@@ -1175,6 +1180,9 @@ def _add_slots(cls, is_frozen, weakref_slot):
     # Remove __dict__ itself.
     cls_dict.pop('__dict__', None)
 
+    # Clear existing `__weakref__` descriptor, it belongs to a previous type:
+    cls_dict.pop('__weakref__', None)  # gh-102069
+
     # And finally create the class.
     qualname = getattr(cls, '__qualname__', None)
     cls = type(cls)(cls.__name__, cls.__bases__, cls_dict)
@@ -1183,8 +1191,10 @@ def _add_slots(cls, is_frozen, weakref_slot):
 
     if is_frozen:
         # Need this for pickling frozen classes with slots.
-        cls.__getstate__ = _dataclass_getstate
-        cls.__setstate__ = _dataclass_setstate
+        if '__getstate__' not in cls_dict:
+            cls.__getstate__ = _dataclass_getstate
+        if '__setstate__' not in cls_dict:
+            cls.__setstate__ = _dataclass_setstate
 
     return cls
 
@@ -1231,7 +1241,7 @@ def fields(class_or_instance):
     try:
         fields = getattr(class_or_instance, _FIELDS)
     except AttributeError:
-        raise TypeError('must be called with a dataclass type or instance')
+        raise TypeError('must be called with a dataclass type or instance') from None
 
     # Exclude pseudo-fields.  Note that fields is sorted by insertion
     # order, so the order of the tuple is as the fields were defined.

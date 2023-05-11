@@ -1,0 +1,1 @@
+Fix an issue where incorrect locations numbers could be assigned to code following ``case`` blocks.

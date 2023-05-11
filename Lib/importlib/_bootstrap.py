@@ -747,8 +747,6 @@ class BuiltinImporter:
 
     @classmethod
     def find_spec(cls, fullname, path=None, target=None):
-        if path is not None:
-            return None
         if _imp.is_builtin(fullname):
             return spec_from_loader(fullname, cls, origin=cls._ORIGIN)
         else:

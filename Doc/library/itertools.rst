@@ -359,7 +359,7 @@ loops that truncate the stream.
 .. function:: filterfalse(predicate, iterable)
 
    Make an iterator that filters elements from iterable returning only those for
-   which the predicate is ``False``. If *predicate* is ``None``, return the items
+   which the predicate is false. If *predicate* is ``None``, return the items
    that are false. Roughly equivalent to::
 
       def filterfalse(predicate, iterable):
@@ -792,7 +792,7 @@ which incur interpreter overhead.
        return next(g, True) and not next(g, False)
 
    def quantify(iterable, pred=bool):
-       "Count how many times the predicate is true"
+       "Count how many times the predicate is True"
        return sum(map(pred, iterable))
 
    def ncycles(iterable, n):
@@ -805,7 +805,7 @@ which incur interpreter overhead.
        if n < 1:
            raise ValueError('n must be at least one')
        it = iter(iterable)
-       while (batch := tuple(islice(it, n))):
+       while batch := tuple(islice(it, n)):
            yield batch
 
    def grouper(iterable, n, *, incomplete='fill', fillvalue=None):
@@ -861,11 +861,23 @@ which incur interpreter overhead.
           (x - 5) (x + 4) (x - 3)  expands to:   x³ -4x² -17x + 60
        """
        # polynomial_from_roots([5, -4, 3]) --> [1, -4, -17, 60]
-       roots = list(map(operator.neg, roots))
-       return [
-           sum(map(math.prod, combinations(roots, k)))
-           for k in range(len(roots) + 1)
-       ]
+       expansion = [1]
+       for r in roots:
+           expansion = convolve(expansion, (1, -r))
+       return list(expansion)
+
+   def polynomial_eval(coefficients, x):
+       """Evaluate a polynomial at a specific value.
+
+       Computes with better numeric stability than Horner's method.
+       """
+       # Evaluate x³ -4x² -17x + 60 at x = 2.5
+       # polynomial_eval([1, -4, -17, 60], x=2.5) --> 8.125
+       n = len(coefficients)
+       if n == 0:
+           return x * 0  # coerce zero to the type of x
+       powers = map(pow, repeat(x), reversed(range(n)))
+       return sumprod(coefficients, powers)
 
    def iter_index(iterable, value, start=0):
        "Return indices where a value occurs in a sequence or iterable."
@@ -875,9 +887,12 @@ which incur interpreter overhead.
        except AttributeError:
            # Slow path for general iterables
            it = islice(iterable, start, None)
-           for i, element in enumerate(it, start):
-               if element is value or element == value:
-                   yield i
+           i = start - 1
+           try:
+               while True:
+                   yield (i := i + operator.indexOf(it, value) + 1)
+           except ValueError:
+               pass
        else:
            # Fast path for sequences
            i = start - 1
@@ -910,7 +925,7 @@ which incur interpreter overhead.
                n = quotient
                if n == 1:
                    return
-       if n >= 2:
+       if n > 1:
            yield n
 
    def flatten(list_of_lists):

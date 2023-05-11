@@ -885,8 +885,17 @@ ga_iter_clear(PyObject *self) {
 static PyObject *
 ga_iter_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
+    PyObject *iter = _PyEval_GetBuiltin(&_Py_ID(iter));
     gaiterobject *gi = (gaiterobject *)self;
-    return Py_BuildValue("N(O)", _PyEval_GetBuiltin(&_Py_ID(iter)), gi->obj);
+
+    /* _PyEval_GetBuiltin can invoke arbitrary code,
+     * call must be before access of iterator pointers.
+     * see issue #101765 */
+
+    if (gi->obj)
+        return Py_BuildValue("N(O)", iter, gi->obj);
+    else
+        return Py_BuildValue("N(())", iter);
 }
 
 static PyMethodDef ga_iter_methods[] = {

@@ -574,6 +574,156 @@ def test_pdb_whatis_command():
     (Pdb) continue
     """
 
+def test_pdb_display_command():
+    """Test display command
+
+    >>> def test_function():
+    ...     a = 0
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     a = 1
+    ...     a = 2
+    ...     a = 3
+    ...     a = 4
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    ...     'display a',
+    ...     'n',
+    ...     'display',
+    ...     'undisplay a',
+    ...     'n',
+    ...     'display a',
+    ...     'undisplay',
+    ...     'display a < 1',
+    ...     'n',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_display_command[0]>(4)test_function()
+    -> a = 1
+    (Pdb) display a
+    display a: 0
+    (Pdb) n
+    > <doctest test.test_pdb.test_pdb_display_command[0]>(5)test_function()
+    -> a = 2
+    display a: 1  [old: 0]
+    (Pdb) display
+    Currently displaying:
+    a: 1
+    (Pdb) undisplay a
+    (Pdb) n
+    > <doctest test.test_pdb.test_pdb_display_command[0]>(6)test_function()
+    -> a = 3
+    (Pdb) display a
+    display a: 2
+    (Pdb) undisplay
+    (Pdb) display a < 1
+    display a < 1: False
+    (Pdb) n
+    > <doctest test.test_pdb.test_pdb_display_command[0]>(7)test_function()
+    -> a = 4
+    (Pdb) continue
+    """
+
+def test_pdb_alias_command():
+    """Test alias command
+
+    >>> class A:
+    ...     def __init__(self):
+    ...         self.attr1 = 10
+    ...         self.attr2 = 'str'
+    ...     def method(self):
+    ...         pass
+
+    >>> def test_function():
+    ...     o = A()
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     o.method()
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    ...     'alias pi for k in %1.__dict__.keys(): print(f"%1.{k} = {%1.__dict__[k]}")',
+    ...     'alias ps pi self',
+    ...     'pi o',
+    ...     's',
+    ...     'ps',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_alias_command[1]>(4)test_function()
+    -> o.method()
+    (Pdb) alias pi for k in %1.__dict__.keys(): print(f"%1.{k} = {%1.__dict__[k]}")
+    (Pdb) alias ps pi self
+    (Pdb) pi o
+    o.attr1 = 10
+    o.attr2 = str
+    (Pdb) s
+    --Call--
+    > <doctest test.test_pdb.test_pdb_alias_command[0]>(5)method()
+    -> def method(self):
+    (Pdb) ps
+    self.attr1 = 10
+    self.attr2 = str
+    (Pdb) continue
+    """
+
+def test_pdb_where_command():
+    """Test where command
+
+    >>> def g():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+
+    >>> def f():
+    ...     g();
+
+    >>> def test_function():
+    ...     f()
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    ...     'w',
+    ...     'where',
+    ...     'u',
+    ...     'w',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    --Return--
+    > <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()->None
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) w
+    ...
+      <doctest test.test_pdb.test_pdb_where_command[3]>(8)<module>()
+    -> test_function()
+      <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
+    -> f()
+      <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
+    -> g();
+    > <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()->None
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) where
+    ...
+      <doctest test.test_pdb.test_pdb_where_command[3]>(8)<module>()
+    -> test_function()
+      <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
+    -> f()
+      <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
+    -> g();
+    > <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()->None
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) u
+    > <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
+    -> g();
+    (Pdb) w
+    ...
+      <doctest test.test_pdb.test_pdb_where_command[3]>(8)<module>()
+    -> test_function()
+      <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
+    -> f()
+    > <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
+    -> g();
+      <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()->None
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) continue
+    """
+
 def test_post_mortem():
     """Test post mortem traceback debugging.
 
@@ -1474,6 +1624,80 @@ def test_pdb_issue_gh_94215():
     (Pdb) continue
     """
 
+def test_pdb_issue_gh_101673():
+    """See GH-101673
+
+    Make sure ll won't revert local variable assignment
+
+    >>> def test_function():
+    ...    a = 1
+    ...    import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     '!a = 2',
+    ...     'll',
+    ...     'p a',
+    ...     'continue'
+    ... ]):
+    ...     test_function()
+    --Return--
+    > <doctest test.test_pdb.test_pdb_issue_gh_101673[0]>(3)test_function()->None
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) !a = 2
+    (Pdb) ll
+      1         def test_function():
+      2            a = 1
+      3  ->        import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) p a
+    2
+    (Pdb) continue
+    """
+
+def test_pdb_issue_gh_101517():
+    """See GH-101517
+
+    Make sure pdb doesn't crash when the exception is caught in a try/except* block
+
+    >>> def test_function():
+    ...     try:
+    ...         raise KeyError
+    ...     except* Exception as e:
+    ...         import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'continue'
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_issue_gh_101517[0]>(4)test_function()
+    -> except* Exception as e:
+    (Pdb) continue
+    """
+
+def test_pdb_issue_gh_103225():
+    """See GH-103225
+
+    Make sure longlist uses 1-based line numbers in frames that correspond to a module
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'longlist',
+    ...     'continue'
+    ... ]):
+    ...     a = 1
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     b = 2
+    > <doctest test.test_pdb.test_pdb_issue_gh_103225[0]>(7)<module>()
+    -> b = 2
+    (Pdb) longlist
+      1     with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+      2         'longlist',
+      3         'continue'
+      4     ]):
+      5         a = 1
+      6         import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+      7  ->     b = 2
+    (Pdb) continue
+    """
+
 
 @support.requires_subprocess()
 class PdbTestCase(unittest.TestCase):
@@ -2149,6 +2373,12 @@ def bœr():
         stdout, stderr = self._run_pdb(["gh93696_host.py"], commands)
         # verify that pdb found the source of the "frozen" function
         self.assertIn('x = "Sentinel string for gh-93696"', stdout, "Sentinel statement not found")
+
+    def test_non_utf8_encoding(self):
+        script_dir = os.path.join(os.path.dirname(__file__), 'encoded_modules')
+        for filename in os.listdir(script_dir):
+            if filename.endswith(".py"):
+                self._run_pdb([os.path.join(script_dir, filename)], 'q')
 
 class ChecklineTests(unittest.TestCase):
     def setUp(self):
