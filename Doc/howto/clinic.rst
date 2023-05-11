@@ -786,6 +786,9 @@ of these arguments, along with their meanings:
 
     To accept ``None``, add ``NoneType`` to this set.
 
+  ``unused``
+    Wrap the argument with :c:macro:`Py_UNUSED` in the impl function signature.
+
   ``bitwise``
     Only supported for unsigned integers.  The native integer value of this
     Python argument will be written to the parameter without any range checking,
