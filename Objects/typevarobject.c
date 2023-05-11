@@ -1537,7 +1537,7 @@ _Py_subscript_generic(PyThreadState* unused, PyObject *params)
         return NULL;
     }
     PyObject *args[2] = {(PyObject *)interp->cached_objects.generic_type, params};
-    PyObject *result = call_typing_func_object("_generic_class_getitem", args, 2);
+    PyObject *result = call_typing_func_object("_GenericAlias", args, 2);
     Py_DECREF(params);
     return result;
 }
