@@ -5,7 +5,6 @@ from collections import OrderedDict
 import _thread
 import importlib.machinery
 import importlib.util
-import itertools
 import os
 import pickle
 import random
