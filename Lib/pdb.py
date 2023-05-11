@@ -1767,7 +1767,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # Yes it's a bit hacky. Get the caller name, get the method based on
         # that name, and get the docstring from that method.
         # This should NOT fail if the caller is a method of this class.
-        doc = inspect.getdoc(getattr(self, sys._getframe().f_back.f_code.co_name))
+        doc = inspect.getdoc(getattr(self, sys._getframe(1).f_code.co_name))
         if doc is not None:
             self.message(self._help_message_from_doc(doc, usage_only=True))
 
