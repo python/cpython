@@ -775,6 +775,10 @@ handle_eval_breaker:
 
 #include "generated_cases.c.h"
 
+    /* INSTRUMENTED_LINE has to be here, rather than in bytecodes.c,
+     * because it needs to capture frame->prev_instr before it is updated,
+     * as happens in the standard instruction prologue.
+     */
 #if USE_COMPUTED_GOTOS
         TARGET_INSTRUMENTED_LINE:
 #else

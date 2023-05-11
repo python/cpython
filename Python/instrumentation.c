@@ -1025,6 +1025,7 @@ _Py_call_instrumentation_jump(
         return NULL;
     }
     if (frame->prev_instr != target) {
+        /* The callback has caused a jump (by setting the line number) */
         return frame->prev_instr;
     }
     /* Reset prev_instr for INSTRUMENTED_LINE */
@@ -1294,6 +1295,12 @@ initialize_lines(PyCodeObject *code)
                 line_data[i].original_opcode = 0;
                 break;
             default:
+                /* Set original_opcode to the opcode iff the instruction
+                 * starts a line, and thus should be instrumented.
+                 * This saves having to perform this check every time the
+                 * we turn instrumentation on or off, and serves as a sanity
+                 * check when debugging.
+                 */
                 if (line != current_line && line >= 0) {
                     line_data[i].original_opcode = opcode;
                 }
@@ -1322,6 +1329,8 @@ initialize_lines(PyCodeObject *code)
         switch (opcode) {
             case POP_JUMP_IF_FALSE:
             case POP_JUMP_IF_TRUE:
+            case POP_JUMP_IF_NONE:
+            case POP_JUMP_IF_NOT_NONE:
             case JUMP_FORWARD:
             {
                 target = i + oparg;
@@ -1363,6 +1372,10 @@ initialize_lines(PyCodeObject *code)
         int depth_and_lasti;
         scan = parse_varint(scan, &depth_and_lasti);
         int original_opcode = _Py_GetBaseOpcode(code, handler);
+        /* Skip if not the start of a line.
+         * END_ASYNC_FOR is a bit special as it marks the end of
+         * an `async for` loop, which should not generate its own
+         * line event. */
         if (line_data[handler].line_delta != NO_LINE &&
             original_opcode != END_ASYNC_FOR) {
             line_data[handler].original_opcode = original_opcode;
