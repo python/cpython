@@ -115,16 +115,6 @@ class TypeParamsInvalidTest(unittest.TestCase):
         self.assertEqual(X.__name__, "X")
         self.assertIs(cls.__annotations__["X"], int)
 
-    def test_name_non_collision_11(self):
-        code = """
-            def outer():
-                X = 1
-                def inner[X]():
-                    nonlocal X
-                return X
-            """
-        check_syntax_error(self, code)
-
     def test_name_non_collision_13(self):
         ns = run_code("""
             X = 1
@@ -152,6 +142,49 @@ class TypeParamsInvalidTest(unittest.TestCase):
         check_syntax_error(self, "class X[T: (y := 3)]: pass")
         check_syntax_error(self, "class X[T](y := Sequence[T]): pass")
         check_syntax_error(self, "def f[T](y: (x := Sequence[T])): pass")
+
+
+class NonlocalTest(unittest.TestCase):
+
+    def test_nonlocal_disallowed_01(self):
+        code = """
+            def outer():
+                X = 1
+                def inner[X]():
+                    nonlocal X
+                return X
+            """
+        check_syntax_error(self, code)
+
+    def test_nonlocal_disallowed_02(self):
+        code = """
+            def outer2[T]():
+                def inner1():
+                    nonlocal T
+        """
+        check_syntax_error(self, textwrap.dedent(code))
+
+    def test_nonlocal_disallowed_03(self):
+        code = """
+            class Cls[T]:
+                nonlocal T
+        """
+        check_syntax_error(self, textwrap.dedent(code))
+
+    def test_nonlocal_allowed(self):
+        code = """
+            def func[T]():
+                T = "func"
+                def inner():
+                    nonlocal T
+                    T = "inner"
+                inner()
+                assert T == "inner"
+        """
+        ns = run_code(code)
+        func = ns["func"]
+        T, = func.__type_params__
+        self.assertEqual(T.__name__, "T")
 
 
 class TypeParamsAccessTest(unittest.TestCase):
@@ -304,14 +337,6 @@ class TypeParamsAccessTest(unittest.TestCase):
         """)
         cls = ns["C"]
         self.assertEqual(cls.Alias.__value__, "class")
-
-    def test_nonlocal(self):
-        code = """
-            def outer2[T]():
-                def inner1():
-                    nonlocal T
-        """
-        check_syntax_error(self, textwrap.dedent(code))
 
     def test_shadowing_nonlocal(self):
         ns = run_code("""
