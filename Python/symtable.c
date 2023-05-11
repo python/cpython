@@ -886,9 +886,8 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
         /* Pass down previously bound symbols */
         if (bound) {
             temp = PyNumber_InPlaceOr(newbound, bound);
-            if (!temp) {
+            if (!temp)
                 goto error;
-            }
             Py_DECREF(temp);
         }
     }
@@ -905,17 +904,15 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
         /* Add function locals to bound set */
         if (_PyST_IsFunctionLike(ste)) {
             temp = PyNumber_InPlaceOr(newbound, local);
-            if (!temp) {
+            if (!temp)
                 goto error;
-            }
             Py_DECREF(temp);
         }
         /* Pass down previously bound symbols */
         if (bound) {
             temp = PyNumber_InPlaceOr(newbound, bound);
-            if (!temp) {
+            if (!temp)
                 goto error;
-            }
             Py_DECREF(temp);
         }
         /* Pass down known globals */
