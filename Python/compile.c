@@ -5028,14 +5028,19 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
             long scope = (symbol >> SCOPE_OFFSET) & SCOPE_MASK;
             PyObject *outv = PyDict_GetItemWithError(c->u->u_ste->ste_symbols, k);
             if (outv == NULL) {
+                assert(PyErr_Occurred());
                 return ERROR;
             }
             assert(PyLong_Check(outv));
             long outsc = (PyLong_AS_LONG(outv) >> SCOPE_OFFSET) & SCOPE_MASK;
-            if (scope != outsc) {
+            if (scope != outsc && !(scope == CELL && outsc == FREE)) {
                 // If a name has different scope inside than outside the
                 // comprehension, we need to temporarily handle it with the
-                // right scope while compiling the comprehension.
+                // right scope while compiling the comprehension. (If it's free
+                // in outer scope and cell in inner scope, we can't treat it as
+                // both cell and free in the same function, but treating it as
+                // free throughout is fine; it's *_DEREF either way.)
+
                 if (state->temp_symbols == NULL) {
                     state->temp_symbols = PyDict_New();
                     if (state->temp_symbols == NULL) {
@@ -5071,7 +5076,11 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
                 // comprehension and restore the original one after
                 ADDOP_NAME(c, loc, LOAD_FAST_AND_CLEAR, k, varnames);
                 if (scope == CELL) {
-                    ADDOP_NAME(c, loc, MAKE_CELL, k, cellvars);
+                    if (outsc == FREE) {
+                        ADDOP_NAME(c, loc, MAKE_CELL, k, freevars);
+                    } else {
+                        ADDOP_NAME(c, loc, MAKE_CELL, k, cellvars);
+                    }
                 }
                 if (PyList_Append(state->pushed_locals, k) < 0) {
                     return ERROR;
