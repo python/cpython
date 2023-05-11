@@ -13452,8 +13452,6 @@ formatfloat(PyObject *v, struct unicode_format_arg_t *arg,
 
     if (arg->flags & F_ALT)
         dtoa_flags |= Py_DTSF_ALT;
-    if (arg->flags & F_NO_NEG_0)
-        dtoa_flags |= Py_DTSF_NO_NEG_0;
     p = PyOS_double_to_string(x, arg->ch, prec, dtoa_flags, NULL);
     if (p == NULL)
         return -1;
@@ -14573,17 +14571,13 @@ _PyUnicode_InitGlobalObjects(PyInterpreterState *interp)
 PyStatus
 _PyUnicode_InitTypes(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return _PyStatus_OK();
-    }
-
-    if (_PyStaticType_InitBuiltin(&EncodingMapType) < 0) {
+    if (_PyStaticType_InitBuiltin(interp, &EncodingMapType) < 0) {
         goto error;
     }
-    if (_PyStaticType_InitBuiltin(&PyFieldNameIter_Type) < 0) {
+    if (_PyStaticType_InitBuiltin(interp, &PyFieldNameIter_Type) < 0) {
         goto error;
     }
-    if (_PyStaticType_InitBuiltin(&PyFormatterIter_Type) < 0) {
+    if (_PyStaticType_InitBuiltin(interp, &PyFormatterIter_Type) < 0) {
         goto error;
     }
     return _PyStatus_OK();
@@ -15162,13 +15156,9 @@ unicode_is_finalizing(void)
 void
 _PyUnicode_FiniTypes(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return;
-    }
-
-    _PyStaticType_Dealloc(&EncodingMapType);
-    _PyStaticType_Dealloc(&PyFieldNameIter_Type);
-    _PyStaticType_Dealloc(&PyFormatterIter_Type);
+    _PyStaticType_Dealloc(interp, &EncodingMapType);
+    _PyStaticType_Dealloc(interp, &PyFieldNameIter_Type);
+    _PyStaticType_Dealloc(interp, &PyFormatterIter_Type);
 }
 
 
@@ -15200,12 +15190,18 @@ static PyMethodDef _string_methods[] = {
     {NULL, NULL}
 };
 
+static PyModuleDef_Slot module_slots[] = {
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {0, NULL}
+};
+
 static struct PyModuleDef _string_module = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_string",
     .m_doc = PyDoc_STR("string helper module"),
     .m_size = 0,
     .m_methods = _string_methods,
+    .m_slots = module_slots,
 };
 
 PyMODINIT_FUNC

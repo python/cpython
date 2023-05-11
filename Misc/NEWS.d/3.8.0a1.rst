@@ -3818,7 +3818,7 @@ user.
 .. section: Library
 
 The :2to3fixer:`reload` fixer now uses :func:`importlib.reload` instead of
-deprecated :func:`imp.reload`.
+deprecated :func:`!imp.reload`.
 
 ..
 

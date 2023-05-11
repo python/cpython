@@ -925,6 +925,35 @@ class UnionTests(unittest.TestCase):
         assert typing.Optional[int] | str == typing.Union[int, str, None]
         assert typing.Union[int, bool] | str == typing.Union[int, bool, str]
 
+    def test_or_type_operator_with_Literal(self):
+        Literal = typing.Literal
+        self.assertEqual((Literal[1] | Literal[2]).__args__,
+                         (Literal[1], Literal[2]))
+
+        self.assertEqual((Literal[0] | Literal[False]).__args__,
+                         (Literal[0], Literal[False]))
+        self.assertEqual((Literal[1] | Literal[True]).__args__,
+                         (Literal[1], Literal[True]))
+
+        self.assertEqual(Literal[1] | Literal[1], Literal[1])
+        self.assertEqual(Literal['a'] | Literal['a'], Literal['a'])
+
+        import enum
+        class Ints(enum.IntEnum):
+            A = 0
+            B = 1
+
+        self.assertEqual(Literal[Ints.A] | Literal[Ints.A], Literal[Ints.A])
+        self.assertEqual(Literal[Ints.B] | Literal[Ints.B], Literal[Ints.B])
+
+        self.assertEqual((Literal[Ints.B] | Literal[Ints.A]).__args__,
+                         (Literal[Ints.B], Literal[Ints.A]))
+
+        self.assertEqual((Literal[0] | Literal[Ints.A]).__args__,
+                         (Literal[0], Literal[Ints.A]))
+        self.assertEqual((Literal[1] | Literal[Ints.B]).__args__,
+                         (Literal[1], Literal[Ints.B]))
+
     def test_or_type_repr(self):
         assert repr(int | str) == "int | str"
         assert repr((int | str) | list) == "int | str | list"
