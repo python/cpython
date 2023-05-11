@@ -832,7 +832,7 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION */
             assert(frame != &entry_frame);
             if ((tstate->interp->eval_frame == NULL) &&
-                (Py_TYPE(receiver) == &PyGen_Type || Py_TYPE(receiver) == &PyCoro_Type) && 
+                (Py_TYPE(receiver) == &PyGen_Type || Py_TYPE(receiver) == &PyCoro_Type) &&
                 ((PyGenObject *)receiver)->gi_frame_state < FRAME_EXECUTING)
             {
                 PyGenObject *gen = (PyGenObject *)receiver;
