@@ -10,10 +10,17 @@ extern "C" {
 
 struct _mod;   // Type defined in pycore_ast.h
 
-typedef enum _block_type { FunctionBlock, ClassBlock, ModuleBlock,
-                           AnnotationBlock, TypeVarBoundBlock, TypeAliasBlock,
-                           TypeParamBlock }
-    _Py_block_ty;
+typedef enum _block_type {
+    FunctionBlock, ClassBlock, ModuleBlock,
+    // Used for annotations if 'from __future__ import annotations' is active.
+    // Annotation blocks cannot bind names and are not evaluated.
+    AnnotationBlock,
+    // Used for generics and type aliases. These work mostly like functions
+    // (see PEP 695 for details). The three different blocks function identically;
+    // they are different enum entries only so that error messages can be more
+    // precise.
+    TypeVarBoundBlock, TypeAliasBlock, TypeParamBlock
+} _Py_block_ty;
 
 typedef enum _comprehension_type {
     NoComprehension = 0,
