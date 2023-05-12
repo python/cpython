@@ -14,7 +14,10 @@
 
 .. testsetup:: *
 
-   from collections.abc import *
+   import warnings
+   # Ignore warning when ByteString is imported
+   with warnings.catch_warnings(action='ignore', category=DeprecationWarning):
+       from collections.abc import *
    import itertools
    __name__ = '<doctest>'
 
