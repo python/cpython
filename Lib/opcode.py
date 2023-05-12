@@ -198,6 +198,8 @@ hasfree.append(139)
 jrel_op('JUMP_BACKWARD', 140)    # Number of words to skip (backwards)
 name_op('LOAD_SUPER_ATTR', 141)
 def_op('CALL_FUNCTION_EX', 142)  # Flags
+def_op('LOAD_FAST_AND_CLEAR', 143)  # Local variable number
+haslocal.append(143)
 
 def_op('EXTENDED_ARG', 144)
 EXTENDED_ARG = 144
@@ -267,6 +269,8 @@ pseudo_op('LOAD_METHOD', 262, ['LOAD_ATTR'])
 pseudo_op('LOAD_SUPER_METHOD', 263, ['LOAD_SUPER_ATTR'])
 pseudo_op('LOAD_ZERO_SUPER_METHOD', 264, ['LOAD_SUPER_ATTR'])
 pseudo_op('LOAD_ZERO_SUPER_ATTR', 265, ['LOAD_SUPER_ATTR'])
+
+pseudo_op('STORE_FAST_MAYBE_NULL', 266, ['STORE_FAST'])
 
 MAX_PSEUDO_OPCODE = MIN_PSEUDO_OPCODE + len(_pseudo_ops) - 1
 
@@ -369,6 +373,7 @@ _specializations = {
         "FOR_ITER_GEN",
     ],
     "LOAD_SUPER_ATTR": [
+        "LOAD_SUPER_ATTR_ATTR",
         "LOAD_SUPER_ATTR_METHOD",
     ],
     "LOAD_ATTR": [
@@ -446,9 +451,6 @@ _cache_format = {
     },
     "LOAD_SUPER_ATTR": {
         "counter": 1,
-        "class_version": 2,
-        "self_type_version": 2,
-        "method": 4,
     },
     "LOAD_ATTR": {
         "counter": 1,

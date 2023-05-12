@@ -582,6 +582,7 @@ iomodule_traverse(PyObject *mod, visitproc visit, void *arg) {
         return 0;
     Py_VISIT(state->unsupported_operation);
 
+    Py_VISIT(state->PyIOBase_Type);
     Py_VISIT(state->PyIncrementalNewlineDecoder_Type);
     Py_VISIT(state->PyRawIOBase_Type);
     Py_VISIT(state->PyBufferedIOBase_Type);
@@ -609,6 +610,7 @@ iomodule_clear(PyObject *mod) {
         return 0;
     Py_CLEAR(state->unsupported_operation);
 
+    Py_CLEAR(state->PyIOBase_Type);
     Py_CLEAR(state->PyIncrementalNewlineDecoder_Type);
     Py_CLEAR(state->PyRawIOBase_Type);
     Py_CLEAR(state->PyBufferedIOBase_Type);
@@ -730,9 +732,11 @@ PyInit__io(void)
         "UnsupportedOperation", PyExc_OSError, PyExc_ValueError);
     if (state->unsupported_operation == NULL)
         goto fail;
-    if (PyModule_AddObject(m, "UnsupportedOperation",
-                           Py_NewRef(state->unsupported_operation)) < 0)
+    if (PyModule_AddObjectRef(m, "UnsupportedOperation",
+                              state->unsupported_operation) < 0)
+    {
         goto fail;
+    }
 
     /* BlockingIOError, for compatibility */
     if (PyModule_AddObjectRef(m, "BlockingIOError",
@@ -749,6 +753,7 @@ PyInit__io(void)
     }
 
     // Base classes
+    state->PyIOBase_Type = (PyTypeObject *)Py_NewRef(&PyIOBase_Type);
     ADD_TYPE(m, state->PyIncrementalNewlineDecoder_Type, &nldecoder_spec, NULL);
     ADD_TYPE(m, state->PyBytesIOBuffer_Type, &bytesiobuf_spec, NULL);
 
@@ -770,7 +775,7 @@ PyInit__io(void)
 
     // PyRawIOBase_Type(PyIOBase_Type) subclasses
     ADD_TYPE(m, state->PyFileIO_Type, &fileio_spec, state->PyRawIOBase_Type);
-#ifdef MS_WINDOWS
+#ifdef HAVE_WINDOWS_CONSOLE_IO
     ADD_TYPE(m, state->PyWindowsConsoleIO_Type, &winconsoleio_spec,
              state->PyRawIOBase_Type);
 #endif
@@ -785,7 +790,6 @@ PyInit__io(void)
     return m;
 
   fail:
-    Py_XDECREF(state->unsupported_operation);
     Py_DECREF(m);
     return NULL;
 }

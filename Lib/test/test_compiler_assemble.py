@@ -16,7 +16,7 @@ class IsolatedAssembleTests(AssemblerTestCase):
             metadata.setdefault(key, key)
         for key in ['consts']:
             metadata.setdefault(key, [])
-        for key in ['names', 'varnames', 'cellvars', 'freevars']:
+        for key in ['names', 'varnames', 'cellvars', 'freevars', 'fasthidden']:
             metadata.setdefault(key, {})
         for key in ['argcount', 'posonlyargcount', 'kwonlyargcount']:
             metadata.setdefault(key, 0)
@@ -33,6 +33,9 @@ class IsolatedAssembleTests(AssemblerTestCase):
 
         expected_metadata = {}
         for key, value in metadata.items():
+            if key == "fasthidden":
+                # not exposed on code object
+                continue
             if isinstance(value, list):
                 expected_metadata[key] = tuple(value)
             elif isinstance(value, dict):
@@ -52,7 +55,7 @@ class IsolatedAssembleTests(AssemblerTestCase):
             'filename' : 'avg.py',
             'name'     : 'avg',
             'qualname' : 'stats.avg',
-            'consts'   : [2],
+            'consts'   : {2 : 0},
             'argcount' : 2,
             'varnames' : {'x' : 0, 'y' : 1},
         }

@@ -8,6 +8,59 @@ preserve
 #endif
 
 
+PyDoc_STRVAR(_io__IOBase_seek__doc__,
+"seek($self, /, *args)\n"
+"--\n"
+"\n"
+"Change the stream position to the given byte offset.\n"
+"\n"
+"The offset is interpreted relative to the position indicated by whence.\n"
+"Values for whence are:\n"
+"\n"
+"* 0 -- start of stream (the default); offset should be zero or positive\n"
+"* 1 -- current stream position; offset may be negative\n"
+"* 2 -- end of stream; offset is usually negative\n"
+"\n"
+"Return the new absolute position.");
+
+#define _IO__IOBASE_SEEK_METHODDEF    \
+    {"seek", _PyCFunction_CAST(_io__IOBase_seek), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__IOBase_seek__doc__},
+
+static PyObject *
+_io__IOBase_seek_impl(PyObject *self, PyTypeObject *cls, PyObject *args);
+
+static PyObject *
+_io__IOBase_seek(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = { NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "seek",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *__clinic_args = NULL;
+
+    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    __clinic_args = args[0];
+    return_value = _io__IOBase_seek_impl(self, cls, __clinic_args);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
+}
+
 PyDoc_STRVAR(_io__IOBase_tell__doc__,
 "tell($self, /)\n"
 "--\n"
@@ -24,6 +77,53 @@ static PyObject *
 _io__IOBase_tell(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__IOBase_tell_impl(self);
+}
+
+PyDoc_STRVAR(_io__IOBase_truncate__doc__,
+"truncate($self, /, *args)\n"
+"--\n"
+"\n"
+"Truncate file to size bytes.\n"
+"\n"
+"File pointer is left unchanged. Size defaults to the current IO position\n"
+"as reported by tell(). Return the new size.");
+
+#define _IO__IOBASE_TRUNCATE_METHODDEF    \
+    {"truncate", _PyCFunction_CAST(_io__IOBase_truncate), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__IOBase_truncate__doc__},
+
+static PyObject *
+_io__IOBase_truncate_impl(PyObject *self, PyTypeObject *cls, PyObject *args);
+
+static PyObject *
+_io__IOBase_truncate(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = { NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "truncate",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *__clinic_args = NULL;
+
+    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    __clinic_args = args[0];
+    return_value = _io__IOBase_truncate_impl(self, cls, __clinic_args);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
 }
 
 PyDoc_STRVAR(_io__IOBase_flush__doc__,
@@ -131,20 +231,24 @@ PyDoc_STRVAR(_io__IOBase_fileno__doc__,
 "fileno($self, /)\n"
 "--\n"
 "\n"
-"Returns underlying file descriptor if one exists.\n"
+"Return underlying file descriptor if one exists.\n"
 "\n"
-"OSError is raised if the IO object does not use a file descriptor.");
+"Raise OSError if the IO object does not use a file descriptor.");
 
 #define _IO__IOBASE_FILENO_METHODDEF    \
-    {"fileno", (PyCFunction)_io__IOBase_fileno, METH_NOARGS, _io__IOBase_fileno__doc__},
+    {"fileno", _PyCFunction_CAST(_io__IOBase_fileno), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__IOBase_fileno__doc__},
 
 static PyObject *
-_io__IOBase_fileno_impl(PyObject *self);
+_io__IOBase_fileno_impl(PyObject *self, PyTypeObject *cls);
 
 static PyObject *
-_io__IOBase_fileno(PyObject *self, PyObject *Py_UNUSED(ignored))
+_io__IOBase_fileno(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _io__IOBase_fileno_impl(self);
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "fileno() takes no arguments");
+        return NULL;
+    }
+    return _io__IOBase_fileno_impl(self, cls);
 }
 
 PyDoc_STRVAR(_io__IOBase_isatty__doc__,
@@ -316,4 +420,4 @@ _io__RawIOBase_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__RawIOBase_readall_impl(self);
 }
-/*[clinic end generated code: output=b7246a2087eb966b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=63bc25a5bfcecaf0 input=a9049054013a1b77]*/

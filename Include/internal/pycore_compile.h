@@ -70,6 +70,9 @@ typedef struct {
     PyObject *u_varnames;  /* local variables */
     PyObject *u_cellvars;  /* cell variables */
     PyObject *u_freevars;  /* free variables */
+    PyObject *u_fasthidden; /* dict; keys are names that are fast-locals only
+                               temporarily within an inlined comprehension. When
+                               value is True, treat as fast-local. */
 
     Py_ssize_t u_argcount;        /* number of arguments for block */
     Py_ssize_t u_posonlyargcount;        /* number of positional only arguments for block */

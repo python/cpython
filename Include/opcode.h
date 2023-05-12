@@ -97,6 +97,7 @@ extern "C" {
 #define JUMP_BACKWARD                          140
 #define LOAD_SUPER_ATTR                        141
 #define CALL_FUNCTION_EX                       142
+#define LOAD_FAST_AND_CLEAR                    143
 #define EXTENDED_ARG                           144
 #define LIST_APPEND                            145
 #define SET_ADD                                146
@@ -146,7 +147,8 @@ extern "C" {
 #define LOAD_SUPER_METHOD                      263
 #define LOAD_ZERO_SUPER_METHOD                 264
 #define LOAD_ZERO_SUPER_ATTR                   265
-#define MAX_PSEUDO_OPCODE                      265
+#define STORE_FAST_MAYBE_NULL                  266
+#define MAX_PSEUDO_OPCODE                      266
 #define BINARY_OP_ADD_FLOAT                      6
 #define BINARY_OP_ADD_INT                        7
 #define BINARY_OP_ADD_UNICODE                    8
@@ -183,33 +185,34 @@ extern "C" {
 #define FOR_ITER_TUPLE                          63
 #define FOR_ITER_RANGE                          64
 #define FOR_ITER_GEN                            65
-#define LOAD_SUPER_ATTR_METHOD                  66
-#define LOAD_ATTR_CLASS                         67
-#define LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN       70
-#define LOAD_ATTR_INSTANCE_VALUE                72
-#define LOAD_ATTR_MODULE                        73
-#define LOAD_ATTR_PROPERTY                      76
-#define LOAD_ATTR_SLOT                          77
-#define LOAD_ATTR_WITH_HINT                     78
-#define LOAD_ATTR_METHOD_LAZY_DICT              79
-#define LOAD_ATTR_METHOD_NO_DICT                80
-#define LOAD_ATTR_METHOD_WITH_VALUES            81
-#define LOAD_CONST__LOAD_FAST                   82
-#define LOAD_FAST__LOAD_CONST                   84
-#define LOAD_FAST__LOAD_FAST                    86
-#define LOAD_GLOBAL_BUILTIN                     87
-#define LOAD_GLOBAL_MODULE                      88
-#define STORE_ATTR_INSTANCE_VALUE              111
-#define STORE_ATTR_SLOT                        112
-#define STORE_ATTR_WITH_HINT                   113
-#define STORE_FAST__LOAD_FAST                  143
-#define STORE_FAST__STORE_FAST                 153
-#define STORE_SUBSCR_DICT                      154
-#define STORE_SUBSCR_LIST_INT                  158
-#define UNPACK_SEQUENCE_LIST                   159
-#define UNPACK_SEQUENCE_TUPLE                  160
-#define UNPACK_SEQUENCE_TWO_TUPLE              161
-#define SEND_GEN                               166
+#define LOAD_SUPER_ATTR_ATTR                    66
+#define LOAD_SUPER_ATTR_METHOD                  67
+#define LOAD_ATTR_CLASS                         70
+#define LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN       72
+#define LOAD_ATTR_INSTANCE_VALUE                73
+#define LOAD_ATTR_MODULE                        76
+#define LOAD_ATTR_PROPERTY                      77
+#define LOAD_ATTR_SLOT                          78
+#define LOAD_ATTR_WITH_HINT                     79
+#define LOAD_ATTR_METHOD_LAZY_DICT              80
+#define LOAD_ATTR_METHOD_NO_DICT                81
+#define LOAD_ATTR_METHOD_WITH_VALUES            82
+#define LOAD_CONST__LOAD_FAST                   84
+#define LOAD_FAST__LOAD_CONST                   86
+#define LOAD_FAST__LOAD_FAST                    87
+#define LOAD_GLOBAL_BUILTIN                     88
+#define LOAD_GLOBAL_MODULE                     111
+#define STORE_ATTR_INSTANCE_VALUE              112
+#define STORE_ATTR_SLOT                        113
+#define STORE_ATTR_WITH_HINT                   153
+#define STORE_FAST__LOAD_FAST                  154
+#define STORE_FAST__STORE_FAST                 158
+#define STORE_SUBSCR_DICT                      159
+#define STORE_SUBSCR_LIST_INT                  160
+#define UNPACK_SEQUENCE_LIST                   161
+#define UNPACK_SEQUENCE_TUPLE                  166
+#define UNPACK_SEQUENCE_TWO_TUPLE              167
+#define SEND_GEN                               168
 
 #define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\
     || ((op) == JUMP) \
@@ -218,6 +221,7 @@ extern "C" {
     || ((op) == LOAD_SUPER_METHOD) \
     || ((op) == LOAD_ZERO_SUPER_METHOD) \
     || ((op) == LOAD_ZERO_SUPER_ATTR) \
+    || ((op) == STORE_FAST_MAYBE_NULL) \
     )
 
 #define HAS_CONST(op) (false\
