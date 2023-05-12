@@ -9121,8 +9121,7 @@ releasebuffer_call_python(PyObject *self, Py_buffer *buffer)
     // We have no way to report additional errors up the stack, because
     // this slot returns void, so we simply stash away the active exception
     // and restore it after the call to Python returns.
-    PyObject *type, *value, *traceback;
-    PyErr_Fetch(&type, &value, &traceback);
+    PyObject *exc = PyErr_GetRaisedException();
 
     PyObject *mv;
     bool is_buffer_wrapper = Py_TYPE(buffer->obj) == &_PyBufferWrapper_Type;
@@ -9165,7 +9164,7 @@ releasebuffer_call_python(PyObject *self, Py_buffer *buffer)
 end:
     assert(!PyErr_Occurred());
 
-    PyErr_Restore(type, value, traceback);
+    PyErr_SetRaisedException(exc);
 }
 
 /*
