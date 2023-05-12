@@ -301,7 +301,9 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
                 if len(version_number) != 2:
                     raise ValueError
                 if any(not component.isdigit() for component in version_number):
-                    raise ValueError
+                    raise ValueError("non digit in http version")
+                if any(len(component) > 10 for component in version_number):
+                    raise ValueError("unreasonable length http version")
                 version_number = int(version_number[0]), int(version_number[1])
             except (ValueError, IndexError):
                 self.send_error(
