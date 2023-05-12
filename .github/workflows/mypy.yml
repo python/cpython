@@ -32,8 +32,8 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: "3.x"
           cache: pip
-          cache-dependency-path: .github/workflows/mypy-clinic.yml
+          cache-dependency-path: Tools/clinic/requirements-dev.txt
       - run: pip install -r Tools/clinic/requirements-dev.txt
       - run: mypy --config-file Tools/clinic/mypy.ini
