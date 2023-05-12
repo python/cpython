@@ -101,7 +101,7 @@ static PyObject *
 _io__IOBase_seek_impl(PyObject *self, PyTypeObject *cls, PyObject *args)
 /*[clinic end generated code: output=1dd694ac9de260fa input=ebb5476eb22fc5d4]*/
 {
-    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    _PyIO_State *state = get_io_state_by_cls(cls);
     return iobase_unsupported(state, "seek");
 }
 
@@ -134,7 +134,7 @@ static PyObject *
 _io__IOBase_truncate_impl(PyObject *self, PyTypeObject *cls, PyObject *args)
 /*[clinic end generated code: output=b7eed4649cbe22c1 input=ad90582a1d8b5cc9]*/
 {
-    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    _PyIO_State *state = get_io_state_by_cls(cls);
     return iobase_unsupported(state, "truncate");
 }
 

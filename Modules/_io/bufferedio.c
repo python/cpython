@@ -162,7 +162,7 @@ _io__BufferedIOBase_read_impl(PyObject *self, PyTypeObject *cls,
                               PyObject *args)
 /*[clinic end generated code: output=4521b30940fd7b67 input=390205758adc8510]*/
 {
-    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    _PyIO_State *state = get_io_state_by_cls(cls);
     return bufferediobase_unsupported(state, "read");
 }
 
@@ -184,7 +184,7 @@ _io__BufferedIOBase_read1_impl(PyObject *self, PyTypeObject *cls,
                                PyObject *args)
 /*[clinic end generated code: output=636fd241c21e050a input=ef546a1238c5b41c]*/
 {
-    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    _PyIO_State *state = get_io_state_by_cls(cls);
     return bufferediobase_unsupported(state, "read1");
 }
 
@@ -209,7 +209,7 @@ _io__BufferedIOBase_write_impl(PyObject *self, PyTypeObject *cls,
                                PyObject *args)
 /*[clinic end generated code: output=d51feea4bcac9892 input=f79b72c4dccb3dc2]*/
 {
-    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    _PyIO_State *state = get_io_state_by_cls(cls);
     return bufferediobase_unsupported(state, "write");
 }
 

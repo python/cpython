@@ -62,7 +62,7 @@ static PyObject *
 _io__TextIOBase_detach_impl(PyObject *self, PyTypeObject *cls)
 /*[clinic end generated code: output=50915f40c609eaa4 input=987ca3640d0a3776]*/
 {
-    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    _PyIO_State *state = get_io_state_by_cls(cls);
     return _unsupported(state, "detach");
 }
 
@@ -82,7 +82,7 @@ static PyObject *
 _io__TextIOBase_read_impl(PyObject *self, PyTypeObject *cls, PyObject *args)
 /*[clinic end generated code: output=3adf28998831f461 input=cee1e84664a20de0]*/
 {
-    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    _PyIO_State *state = get_io_state_by_cls(cls);
     return _unsupported(state, "read");
 }
 
@@ -102,7 +102,7 @@ _io__TextIOBase_readline_impl(PyObject *self, PyTypeObject *cls,
                               PyObject *args)
 /*[clinic end generated code: output=3073a948d02319f3 input=58f801259f7ff3ef]*/
 {
-    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    _PyIO_State *state = get_io_state_by_cls(cls);
     return _unsupported(state, "readline");
 }
 
@@ -122,7 +122,7 @@ static PyObject *
 _io__TextIOBase_write_impl(PyObject *self, PyTypeObject *cls, PyObject *args)
 /*[clinic end generated code: output=5d985eb529472bc4 input=21b6961b5cba9496]*/
 {
-    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    _PyIO_State *state = get_io_state_by_cls(cls);
     return _unsupported(state, "write");
 }
 
