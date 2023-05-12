@@ -48,11 +48,13 @@ def dash_R(ns, test_name, test_func):
     else:
         zdc = zipimport._zip_directory_cache.copy()
     abcs = {}
-    for abc in [getattr(collections.abc, a) for a in collections.abc.__all__]:
-        if not isabstract(abc):
-            continue
-        for obj in abc.__subclasses__() + [abc]:
-            abcs[obj] = _get_dump(obj)[0]
+    # catch and ignore collections.abc.ByteString deprecation
+    with warnings.catch_warnings(action='ignore', category=DeprecationWarning):
+        for abc in [getattr(collections.abc, a) for a in collections.abc.__all__]:
+            if not isabstract(abc):
+                continue
+            for obj in abc.__subclasses__() + [abc]:
+                abcs[obj] = _get_dump(obj)[0]
 
     # bpo-31217: Integer pool to get a single integer object for the same
     # value. The pool is used to prevent false alarm when checking for memory
@@ -73,9 +75,10 @@ def dash_R(ns, test_name, test_func):
     fd_deltas = [0] * repcount
     getallocatedblocks = sys.getallocatedblocks
     gettotalrefcount = sys.gettotalrefcount
+    getunicodeinternedsize = sys.getunicodeinternedsize
     fd_count = os_helper.fd_count
     # initialize variables to make pyflakes quiet
-    rc_before = alloc_before = fd_before = 0
+    rc_before = alloc_before = fd_before = interned_before = 0
 
     if not ns.quiet:
         print("beginning", repcount, "repetitions", file=sys.stderr)
@@ -91,9 +94,13 @@ def dash_R(ns, test_name, test_func):
         dash_R_cleanup(fs, ps, pic, zdc, abcs)
         support.gc_collect()
 
-        # Read memory statistics immediately after the garbage collection
-        alloc_after = getallocatedblocks()
-        rc_after = gettotalrefcount()
+        # Read memory statistics immediately after the garbage collection.
+        # Also, readjust the reference counts and alloc blocks by ignoring
+        # any strings that might have been interned during test_func. These
+        # strings will be deallocated at runtime shutdown
+        interned_after = getunicodeinternedsize()
+        alloc_after = getallocatedblocks() - interned_after
+        rc_after = gettotalrefcount() - interned_after * 2
         fd_after = fd_count()
 
         if not ns.quiet:
@@ -106,6 +113,7 @@ def dash_R(ns, test_name, test_func):
         alloc_before = alloc_after
         rc_before = rc_after
         fd_before = fd_after
+        interned_before = interned_after
 
     if not ns.quiet:
         print(file=sys.stderr)
@@ -167,7 +175,9 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
         zipimport._zip_directory_cache.update(zdc)
 
     # Clear ABC registries, restoring previously saved ABC registries.
-    abs_classes = [getattr(collections.abc, a) for a in collections.abc.__all__]
+    # ignore deprecation warning for collections.abc.ByteString
+    with warnings.catch_warnings(action='ignore', category=DeprecationWarning):
+        abs_classes = [getattr(collections.abc, a) for a in collections.abc.__all__]
     abs_classes = filter(isabstract, abs_classes)
     for abc in abs_classes:
         for obj in abc.__subclasses__() + [abc]:

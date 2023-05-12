@@ -274,6 +274,8 @@ class TextTestRunner(object):
                 infos.append("failures=%d" % failed)
             if errored:
                 infos.append("errors=%d" % errored)
+        elif run == 0:
+            self.stream.write("NO TESTS RAN")
         else:
             self.stream.write("OK")
         if skipped:
