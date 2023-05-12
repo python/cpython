@@ -83,6 +83,7 @@ type_check(PyObject *arg, const char *msg)
     }
     PyObject *args[2] = {arg, message_str};
     PyObject *result = call_typing_func_object("_type_check", args, 2);
+    Py_DECREF(message_str);
     return result;
 }
 

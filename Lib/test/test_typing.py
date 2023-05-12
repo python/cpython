@@ -6004,6 +6004,8 @@ class CollectionsAbcTests(BaseTestCase):
         self.assertNotIsInstance((), typing.MutableSequence)
 
     def test_bytestring(self):
+        # ensure it's not already imported
+        typing._remove_cached_ByteString_from_globals()
         with self.assertWarns(DeprecationWarning):
             from typing import ByteString
         with self.assertWarns(DeprecationWarning):
