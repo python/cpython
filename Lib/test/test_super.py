@@ -359,7 +359,7 @@ class TestSuper(unittest.TestCase):
             def method(self):
                 return super().msg
 
-        with patch("test.test_super.super", MySuper) as m:
+        with patch(f"{__name__}.super", MySuper) as m:
             self.assertEqual(C().method(), "super super")
 
     def test_shadowed_dynamic_two_arg(self):
@@ -373,7 +373,7 @@ class TestSuper(unittest.TestCase):
             def method(self):
                 return super(1, 2).msg
 
-        with patch("test.test_super.super", MySuper) as m:
+        with patch(f"{__name__}.super", MySuper) as m:
             self.assertEqual(C().method(), "super super")
             self.assertEqual(call_args, [(1, 2)])
 

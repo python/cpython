@@ -3598,7 +3598,7 @@ _PyExc_InitTypes(PyInterpreterState *interp)
 {
     for (size_t i=0; i < Py_ARRAY_LENGTH(static_exceptions); i++) {
         PyTypeObject *exc = static_exceptions[i].exc;
-        if (_PyStaticType_InitBuiltin(exc) < 0) {
+        if (_PyStaticType_InitBuiltin(interp, exc) < 0) {
             return -1;
         }
     }
@@ -3609,13 +3609,9 @@ _PyExc_InitTypes(PyInterpreterState *interp)
 static void
 _PyExc_FiniTypes(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return;
-    }
-
     for (Py_ssize_t i=Py_ARRAY_LENGTH(static_exceptions) - 1; i >= 0; i--) {
         PyTypeObject *exc = static_exceptions[i].exc;
-        _PyStaticType_Dealloc(exc);
+        _PyStaticType_Dealloc(interp, exc);
     }
 }
 
