@@ -2294,8 +2294,9 @@ AttributeError_getstate(PyAttributeErrorObject *self, PyObject *Py_UNUSED(ignore
     PyObject *dict = ((PyAttributeErrorObject *)self)->dict;
     if (self->name || self->args) {
         dict = dict ? PyDict_Copy(dict) : PyDict_New();
-        if (dict == NULL)
+        if (dict == NULL) {
             return NULL;
+        }
         if (self->name && PyDict_SetItemString(dict, "name", self->name) < 0) {
             Py_DECREF(dict);
             return NULL;
@@ -2312,17 +2313,16 @@ AttributeError_getstate(PyAttributeErrorObject *self, PyObject *Py_UNUSED(ignore
     else if (dict) {
         return Py_NewRef(dict);
     }
-    else {
-        Py_RETURN_NONE;
-    }
+    Py_RETURN_NONE;
 }
 
 static PyObject *
 AttributeError_reduce(PyAttributeErrorObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *state = AttributeError_getstate(self, NULL);
-    if (state == NULL)
+    if (state == NULL) {
         return NULL;
+    }
 
     return PyTuple_Pack(3, Py_TYPE(self), self->args, state);
 }
