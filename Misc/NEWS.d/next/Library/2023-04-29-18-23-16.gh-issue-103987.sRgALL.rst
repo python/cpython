@@ -1,1 +1,1 @@
-add more `CHECK_VALID`s in `mmapmodule.c` to avoid the file being invalidated by Python code.
+add more ``CHECK_VALID`` s in ``mmapmodule.c`` to avoid the file being invalidated by Python code.
