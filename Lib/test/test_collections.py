@@ -11,6 +11,7 @@ from itertools import product, chain, combinations
 import string
 import sys
 from test import support
+from test.support.import_helper import import_fresh_module
 import types
 import unittest
 
@@ -25,7 +26,7 @@ from collections.abc import Sized, Container, Callable, Collection
 from collections.abc import Set, MutableSet
 from collections.abc import Mapping, MutableMapping, KeysView, ItemsView, ValuesView
 from collections.abc import Sequence, MutableSequence
-from collections.abc import ByteString, Buffer
+from collections.abc import Buffer
 
 
 class TestUserObjects(unittest.TestCase):
@@ -1939,6 +1940,8 @@ class TestCollectionABCs(ABCTestCase):
                             nativeseq, seqseq, (letter, start, stop))
 
     def test_ByteString(self):
+        with self.assertWarns(DeprecationWarning):
+            from collections.abc import ByteString
         for sample in [bytes, bytearray]:
             with self.assertWarns(DeprecationWarning):
                 self.assertIsInstance(sample(), ByteString)
@@ -1959,6 +1962,11 @@ class TestCollectionABCs(ABCTestCase):
         with self.assertWarns(DeprecationWarning):
             # No metaclass conflict
             class Z(ByteString, Awaitable): pass
+
+    def test_ByteString_attribute_access(self):
+        collections_abc = import_fresh_module("collections.abc")
+        with self.assertWarns(DeprecationWarning):
+            collections_abc.ByteString
 
     def test_Buffer(self):
         for sample in [bytes, bytearray, memoryview]:
