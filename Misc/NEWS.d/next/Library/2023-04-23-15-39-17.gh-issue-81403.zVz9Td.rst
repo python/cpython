@@ -1,0 +1,3 @@
+:class:`urllib.request.CacheFTPHandler` no longer raises :class:`URLError`
+if a cached FTP instance is reused. ftplib's endtransfer method calls
+voidresp to drain the connection to handle FTP instance reuse properly.
