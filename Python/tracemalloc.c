@@ -1549,7 +1549,7 @@ _PyTraceMalloc_GetTracedMemory(void)
 }
 
 void
-_PyTraceResetPeak(void)
+_PyTraceMalloc_ResetPeak(void)
 {
     if (!tracemalloc_config.tracing) {
         return;

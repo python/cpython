@@ -65,7 +65,7 @@ PyAPI_FUNC(size_t) _PyTraceMalloc_GetMemory(void);
 PyAPI_FUNC(PyObject *) _PyTraceMalloc_GetTracedMemory(void);
 
 /* Set the peak size of traced memory blocks to the current size */
-PyAPI_FUNC(void) _PyTraceResetPeak(void);
+PyAPI_FUNC(void) _PyTraceMalloc_ResetPeak(void);
 
 #endif
 
