@@ -28,7 +28,8 @@ class Monitor:
     Anyway this implementation seems to work well enough for the CPython sources.
     """
 
-    is_a_simple_defined: Callable = re.compile(r'^defined\s*\(\s*[A-Za-z0-9_]+\s*\)$').match
+    is_a_simple_defined: Callable[[str], re.Match[str] | None]
+    is_a_simple_defined = re.compile(r'^defined\s*\(\s*[A-Za-z0-9_]+\s*\)$').match
 
     def __init__(self, filename=None, *, verbose: bool = False):
         self.stack: TokenStack = []

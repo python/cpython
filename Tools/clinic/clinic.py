@@ -28,7 +28,7 @@ import types
 
 from collections.abc import Callable
 from types import *
-from typing import NamedTuple, TypeVar, Type
+from typing import Any, NamedTuple, Type
 
 # TODO:
 #
@@ -1924,8 +1924,7 @@ class Destination:
 # maps strings to Language objects.
 # "languages" maps the name of the language ("C", "Python").
 # "extensions" maps the file extension ("c", "py").
-L = TypeVar('L', bound=Language)
-LangDict = dict[str, L]
+LangDict = dict[str, Callable[[str], Language]]
 
 languages = { 'C': CLanguage, 'Python': PythonLanguage }
 extensions: LangDict = { name: CLanguage for name in "c cc cpp cxx h hh hpp hxx".split() }
@@ -2589,7 +2588,7 @@ class CConverter(metaclass=CConverterAutoRegister):
 
     # If not None, default must be isinstance() of this type.
     # (You can also specify a tuple of types.)
-    default_type: Type | tuple[Type, ...] | None = None
+    default_type: Type[Any] | tuple[Type[Any], ...] | None = None
 
     # "default" converted into a C value, as a string.
     # Or None if there is no default.
