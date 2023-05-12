@@ -1,0 +1,2 @@
+Fixes false MultipartInvariantViolationDefects which were triggered when
+only headers of a multipart message were parsed.

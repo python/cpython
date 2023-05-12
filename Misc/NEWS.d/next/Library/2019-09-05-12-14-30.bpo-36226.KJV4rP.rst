@@ -1,0 +1,2 @@
+Fixes false StartBoundaryNotFoundDefects which were triggered by
+parse_headers not forwarding the headersonly to the email parser.

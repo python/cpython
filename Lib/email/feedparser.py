@@ -187,6 +187,7 @@ class FeedParser:
         assert not self._msgstack
         # Look for final set of defects
         if root.get_content_maintype() == 'multipart' \
+               and not self._headersonly \
                and not root.is_multipart():
             defect = errors.MultipartInvariantViolationDefect()
             self.policy.handle_defect(root, defect)

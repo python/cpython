@@ -390,6 +390,11 @@ class HttpMethodTests(TestCase):
                 conn.sock = FakeSocket(None)
                 conn.request(method=method, url="/")
 
+    def test_parse_valid_multipart_header(self):
+        header = b'Content-Type: multipart/related; boundary="==="\r\n\r\n'
+        fp = io.BytesIO(header)
+        message = client.parse_headers(fp)
+        self.assertListEqual(message.defects, [])
 
 class TransferEncodingTest(TestCase):
     expected_body = b"It's just a flesh wound"
