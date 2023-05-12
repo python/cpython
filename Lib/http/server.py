@@ -300,9 +300,8 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
                 #   - Leading zeros MUST be ignored by recipients.
                 if len(version_number) != 2:
                     raise ValueError
-                for component in version_number:
-                    if not component.isdigit():
-                        raise ValueError
+                if any(not component.isdigit() for component in version_number):
+                    raise ValueError
                 version_number = int(version_number[0]), int(version_number[1])
             except (ValueError, IndexError):
                 self.send_error(
