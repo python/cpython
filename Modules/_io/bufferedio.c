@@ -2423,15 +2423,6 @@ _io_BufferedRandom___init___impl(buffered *self, PyObject *raw,
 #include "clinic/bufferedio.c.h"
 #undef clinic_state
 
-static void
-bufferediobase_dealloc(PyObject *self)
-{
-    PyTypeObject *tp = Py_TYPE(self);
-    _PyObject_GC_UNTRACK(self);
-    tp->tp_free(self);
-    Py_DECREF(tp);
-}
-
 static int
 bufferediobase_traverse(PyObject *self, visitproc visit, void *arg)
 {

@@ -171,15 +171,6 @@ textiobase_traverse(PyObject *self, visitproc visit, void *arg)
     return 0;
 }
 
-static void
-textiobase_dealloc(PyObject *self)
-{
-    PyTypeObject *tp = Py_TYPE(self);
-    _PyObject_GC_UNTRACK(self);
-    tp->tp_free((PyObject *)self);
-    Py_DECREF(tp);
-}
-
 static PyMethodDef textiobase_methods[] = {
     _IO__TEXTIOBASE_DETACH_METHODDEF
     _IO__TEXTIOBASE_READ_METHODDEF
