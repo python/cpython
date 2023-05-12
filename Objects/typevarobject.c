@@ -1333,7 +1333,8 @@ static PyGetSetDef typealias_getset[] = {
 };
 
 static typealiasobject *
-typealias_alloc(const char *name, PyObject *type_params, PyObject *compute_value)
+typealias_alloc(const char *name, PyObject *type_params, PyObject *compute_value,
+                PyObject *value)
 {
     char *owned_name = strdup(name);
     if (owned_name == NULL) {
@@ -1348,8 +1349,8 @@ typealias_alloc(const char *name, PyObject *type_params, PyObject *compute_value
     }
     ta->name = owned_name;
     ta->type_params = Py_IsNone(type_params) ? NULL : Py_XNewRef(type_params);
-    ta->compute_value = Py_NewRef(compute_value);
-    ta->value = NULL;
+    ta->compute_value = Py_XNewRef(compute_value);
+    ta->value = Py_XNewRef(value);
     _PyObject_GC_TRACK(ta);
     return ta;
 }
@@ -1400,6 +1401,31 @@ static PyMethodDef typealias_methods[] = {
     {0}
 };
 
+
+/*[clinic input]
+@classmethod
+typealias.__new__ as typealias_new
+
+    name: str
+    value: object
+    *
+    type_params: object = NULL
+
+Create a TypeAliasType.
+[clinic start generated code]*/
+
+static PyObject *
+typealias_new_impl(PyTypeObject *type, const char *name, PyObject *value,
+                   PyObject *type_params)
+/*[clinic end generated code: output=a49732e3a327545c input=fe542c90292dbd35]*/
+{
+    if (type_params != NULL && !PyTuple_Check(type_params)) {
+        PyErr_SetString(PyExc_TypeError, "type_params must be a tuple");
+        return NULL;
+    }
+    return (PyObject *)typealias_alloc(name, type_params, NULL, value);
+}
+
 PyDoc_STRVAR(typealias_doc,
 "Type alias.\n\
 \n\
@@ -1416,6 +1442,7 @@ static PyType_Slot typealias_slots[] = {
     {Py_mp_subscript, typealias_subscript},
     {Py_tp_dealloc, typealias_dealloc},
     {Py_tp_alloc, PyType_GenericAlloc},
+    {Py_tp_new, typealias_new},
     {Py_tp_free, PyObject_GC_Del},
     {Py_tp_traverse, (traverseproc)typealias_traverse},
     {Py_tp_clear, (inquiry)typealias_clear},
@@ -1444,7 +1471,7 @@ _Py_make_typealias(PyThreadState* unused, PyObject *args)
     }
     PyObject *type_params = PyTuple_GET_ITEM(args, 1);
     PyObject *compute_value = PyTuple_GET_ITEM(args, 2);
-    return (PyObject *)typealias_alloc(name_str, type_params, compute_value);
+    return (PyObject *)typealias_alloc(name_str, type_params, compute_value, NULL);
 }
 
 PyDoc_STRVAR(generic_doc,

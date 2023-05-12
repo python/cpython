@@ -1222,6 +1222,7 @@ extern "C" {
     INIT_ID(twice), \
     INIT_ID(txt), \
     INIT_ID(type), \
+    INIT_ID(type_params), \
     INIT_ID(tz), \
     INIT_ID(tzname), \
     INIT_ID(uid), \

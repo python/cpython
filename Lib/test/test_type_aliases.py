@@ -2,7 +2,7 @@ import types
 import unittest
 from test.support import check_syntax_error
 
-from typing import Callable, TypeAliasType, get_args
+from typing import Callable, TypeAliasType, TypeVar, get_args
 
 from .test_type_params import run_code
 
@@ -149,3 +149,34 @@ class TypeParamsAliasValueTest(unittest.TestCase):
         type X = list[Y]
         type Y = list[X]
         self.assertEqual(repr(X), "X")
+
+
+class TypeAliasConstructorTest(unittest.TestCase):
+    def test_basic(self):
+        TA = TypeAliasType("TA", int)
+        self.assertEqual(TA.__name__, "TA")
+        self.assertIs(TA.__value__, int)
+        self.assertEqual(TA.__type_params__, ())
+
+    def test_generic(self):
+        T = TypeVar("T")
+        TA = TypeAliasType("TA", list[T], type_params=(T,))
+        self.assertEqual(TA.__name__, "TA")
+        self.assertEqual(TA.__value__, list[T])
+        self.assertEqual(TA.__type_params__, (T,))
+
+    def test_keywords(self):
+        TA = TypeAliasType(name="TA", value=int)
+        self.assertEqual(TA.__name__, "TA")
+        self.assertIs(TA.__value__, int)
+        self.assertEqual(TA.__type_params__, ())
+
+    def test_errors(self):
+        with self.assertRaises(TypeError):
+            TypeAliasType()
+        with self.assertRaises(TypeError):
+            TypeAliasType("TA")
+        with self.assertRaises(TypeError):
+            TypeAliasType("TA", list, ())
+        with self.assertRaises(TypeError):
+            TypeAliasType("TA", list, type_params=42)
