@@ -196,7 +196,6 @@ static PyGetSetDef textiobase_getset[] = {
 };
 
 static PyType_Slot textiobase_slots[] = {
-    {Py_tp_dealloc, textiobase_dealloc},
     {Py_tp_doc, (void *)textiobase_doc},
     {Py_tp_methods, textiobase_methods},
     {Py_tp_getset, textiobase_getset},

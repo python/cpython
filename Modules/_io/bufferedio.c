@@ -2450,7 +2450,6 @@ static PyMethodDef bufferediobase_methods[] = {
 };
 
 static PyType_Slot bufferediobase_slots[] = {
-    {Py_tp_dealloc, bufferediobase_dealloc},
     {Py_tp_doc, (void *)bufferediobase_doc},
     {Py_tp_methods, bufferediobase_methods},
     {Py_tp_traverse, bufferediobase_traverse},
