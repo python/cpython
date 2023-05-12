@@ -116,7 +116,7 @@ caller(void)
     PyObject *r = PyFunction_GetModule(f->f_funcobj);
     if (!r) {
         PyErr_Clear();
-        r = Py_None;
+        Py_RETURN_NONE;
     }
     return Py_NewRef(r);
 }
