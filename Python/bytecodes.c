@@ -1598,8 +1598,8 @@ dummy_func(
             STAT_INC(LOAD_SUPER_ATTR, hit);
             PyObject *name = GETITEM(frame->f_code->co_names, oparg >> 2);
             res = _PySuper_Lookup((PyTypeObject *)class, self, name, NULL);
-            ERROR_IF(res == NULL, error);
             DECREF_INPUTS();
+            ERROR_IF(res == NULL, error);
         }
 
         inst(LOAD_SUPER_ATTR_METHOD, (unused/1, global_super, class, self -- res2, res)) {
