@@ -1,6 +1,5 @@
 import re
 import sys
-from typing import NewType
 from collections.abc import Callable
 
 
