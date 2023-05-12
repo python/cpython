@@ -20,7 +20,7 @@ build:
     # If there are no changes (git diff exits with 0) we force the command to return with 183.
     # This is a special exit code on Read the Docs that will cancel the build immediately.
     - |
-      if [ "$READTHEDOCS_VERSION_TYPE" = "external" ] && git diff --quiet origin/main -- Doc/ .readthedocs.yml; then
+      if [[ "$READTHEDOCS_VERSION_TYPE" = "external" ]] && git diff --quiet origin/main -- Doc/ .readthedocs.yml; then
         echo "No changes to Doc/ - exiting the build.";
         exit 183;
       fi
