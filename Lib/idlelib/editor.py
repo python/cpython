@@ -38,12 +38,13 @@ darwin = sys.platform == 'darwin'
 def _sphinx_version():
     "Format sys.version_info to produce the Sphinx version string used to install the chm docs"
     major, minor, micro, level, serial = sys.version_info
-    release = '%s%s' % (major, minor)
-    release += '%s' % (micro,)
+    # TODO remove unneeded function since .chm no longer installed
+    release = f'{major}{minor}'
+    release += f'{micro}'
     if level == 'candidate':
-        release += 'rc%s' % (serial,)
+        release += f'rc{serial}'
     elif level != 'final':
-        release += '%s%s' % (level[0], serial)
+        release += f'{level[0]}{serial}'
     return release
 
 
@@ -950,7 +951,7 @@ class EditorWindow:
         rf_list = []
         file_path = self.recent_files_path
         if file_path and os.path.exists(file_path):
-            with open(file_path, 'r',
+            with open(file_path,
                       encoding='utf_8', errors='replace') as rf_list_file:
                 rf_list = rf_list_file.readlines()
         if new_file:
@@ -1458,7 +1459,7 @@ class EditorWindow:
                     else:
                         self.reindent_to(y.compute_backslash_indent())
                 else:
-                    assert 0, "bogus continuation type %r" % (c,)
+                    assert 0, f"bogus continuation type {c!r}"
                 return "break"
 
             # This line starts a brand new statement; indent relative to

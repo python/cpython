@@ -71,33 +71,38 @@ PyDoc_STRVAR(iobase_doc,
 
 /* Internal methods */
 static PyObject *
-iobase_unsupported(const char *message)
+iobase_unsupported(_PyIO_State *state, const char *message)
 {
-    _PyIO_State *state = IO_STATE();
-    if (state != NULL)
-        PyErr_SetString(state->unsupported_operation, message);
+    PyErr_SetString(state->unsupported_operation, message);
     return NULL;
 }
 
 /* Positioning */
 
-PyDoc_STRVAR(iobase_seek_doc,
-    "Change stream position.\n"
-    "\n"
-    "Change the stream position to the given byte offset. The offset is\n"
-    "interpreted relative to the position indicated by whence.  Values\n"
-    "for whence are:\n"
-    "\n"
-    "* 0 -- start of stream (the default); offset should be zero or positive\n"
-    "* 1 -- current stream position; offset may be negative\n"
-    "* 2 -- end of stream; offset is usually negative\n"
-    "\n"
-    "Return the new absolute position.");
+/*[clinic input]
+_io._IOBase.seek
+    cls: defining_class
+    /
+    *args: object
+
+Change the stream position to the given byte offset.
+
+The offset is interpreted relative to the position indicated by whence.
+Values for whence are:
+
+* 0 -- start of stream (the default); offset should be zero or positive
+* 1 -- current stream position; offset may be negative
+* 2 -- end of stream; offset is usually negative
+
+Return the new absolute position.
+[clinic start generated code]*/
 
 static PyObject *
-iobase_seek(PyObject *self, PyObject *args)
+_io__IOBase_seek_impl(PyObject *self, PyTypeObject *cls, PyObject *args)
+/*[clinic end generated code: output=1dd694ac9de260fa input=ebb5476eb22fc5d4]*/
 {
-    return iobase_unsupported("seek");
+    _PyIO_State *state = IO_STATE();
+    return iobase_unsupported(state, "seek");
 }
 
 /*[clinic input]
@@ -113,16 +118,24 @@ _io__IOBase_tell_impl(PyObject *self)
     return _PyObject_CallMethod(self, &_Py_ID(seek), "ii", 0, 1);
 }
 
-PyDoc_STRVAR(iobase_truncate_doc,
-    "Truncate file to size bytes.\n"
-    "\n"
-    "File pointer is left unchanged.  Size defaults to the current IO\n"
-    "position as reported by tell().  Returns the new size.");
+/*[clinic input]
+_io._IOBase.truncate
+    cls: defining_class
+    /
+    *args: object
+
+Truncate file to size bytes.
+
+File pointer is left unchanged. Size defaults to the current IO position
+as reported by tell(). Return the new size.
+[clinic start generated code]*/
 
 static PyObject *
-iobase_truncate(PyObject *self, PyObject *args)
+_io__IOBase_truncate_impl(PyObject *self, PyTypeObject *cls, PyObject *args)
+/*[clinic end generated code: output=b7eed4649cbe22c1 input=ad90582a1d8b5cc9]*/
 {
-    return iobase_unsupported("truncate");
+    _PyIO_State *state = IO_STATE();
+    return iobase_unsupported(state, "truncate");
 }
 
 static int
@@ -202,6 +215,27 @@ _PyIOBase_check_closed(PyObject *self, PyObject *args)
         return Py_None;
     }
     Py_RETURN_NONE;
+}
+
+static PyObject *
+iobase_check_seekable(PyObject *self, PyObject *args)
+{
+    _PyIO_State *state = IO_STATE();
+    return _PyIOBase_check_seekable(state, self, args);
+}
+
+static PyObject *
+iobase_check_readable(PyObject *self, PyObject *args)
+{
+    _PyIO_State *state = IO_STATE();
+    return _PyIOBase_check_readable(state, self, args);
+}
+
+static PyObject *
+iobase_check_writable(PyObject *self, PyObject *args)
+{
+    _PyIO_State *state = IO_STATE();
+    return _PyIOBase_check_writable(state, self, args);
 }
 
 /* XXX: IOBase thinks it has to maintain its own internal state in
@@ -372,14 +406,14 @@ _io__IOBase_seekable_impl(PyObject *self)
 }
 
 PyObject *
-_PyIOBase_check_seekable(PyObject *self, PyObject *args)
+_PyIOBase_check_seekable(_PyIO_State *state, PyObject *self, PyObject *args)
 {
     PyObject *res  = PyObject_CallMethodNoArgs(self, &_Py_ID(seekable));
     if (res == NULL)
         return NULL;
     if (res != Py_True) {
         Py_CLEAR(res);
-        iobase_unsupported("File or stream is not seekable.");
+        iobase_unsupported(state, "File or stream is not seekable.");
         return NULL;
     }
     if (args == Py_True) {
@@ -405,14 +439,14 @@ _io__IOBase_readable_impl(PyObject *self)
 
 /* May be called with any object */
 PyObject *
-_PyIOBase_check_readable(PyObject *self, PyObject *args)
+_PyIOBase_check_readable(_PyIO_State *state, PyObject *self, PyObject *args)
 {
     PyObject *res = PyObject_CallMethodNoArgs(self, &_Py_ID(readable));
     if (res == NULL)
         return NULL;
     if (res != Py_True) {
         Py_CLEAR(res);
-        iobase_unsupported("File or stream is not readable.");
+        iobase_unsupported(state, "File or stream is not readable.");
         return NULL;
     }
     if (args == Py_True) {
@@ -438,14 +472,14 @@ _io__IOBase_writable_impl(PyObject *self)
 
 /* May be called with any object */
 PyObject *
-_PyIOBase_check_writable(PyObject *self, PyObject *args)
+_PyIOBase_check_writable(_PyIO_State *state, PyObject *self, PyObject *args)
 {
     PyObject *res = PyObject_CallMethodNoArgs(self, &_Py_ID(writable));
     if (res == NULL)
         return NULL;
     if (res != Py_True) {
         Py_CLEAR(res);
-        iobase_unsupported("File or stream is not writable.");
+        iobase_unsupported(state, "File or stream is not writable.");
         return NULL;
     }
     if (args == Py_True) {
@@ -477,17 +511,20 @@ iobase_exit(PyObject *self, PyObject *args)
 
 /*[clinic input]
 _io._IOBase.fileno
+    cls: defining_class
+    /
 
-Returns underlying file descriptor if one exists.
+Return underlying file descriptor if one exists.
 
-OSError is raised if the IO object does not use a file descriptor.
+Raise OSError if the IO object does not use a file descriptor.
 [clinic start generated code]*/
 
 static PyObject *
-_io__IOBase_fileno_impl(PyObject *self)
-/*[clinic end generated code: output=7cc0973f0f5f3b73 input=4e37028947dc1cc8]*/
+_io__IOBase_fileno_impl(PyObject *self, PyTypeObject *cls)
+/*[clinic end generated code: output=7caaa32a6f4ada3d input=1927c8bea5c85099]*/
 {
-    return iobase_unsupported("fileno");
+    _PyIO_State *state = IO_STATE();
+    return iobase_unsupported(state, "fileno");
 }
 
 /*[clinic input]
@@ -787,9 +824,9 @@ _io__IOBase_writelines(PyObject *self, PyObject *lines)
 #include "clinic/iobase.c.h"
 
 static PyMethodDef iobase_methods[] = {
-    {"seek", iobase_seek, METH_VARARGS, iobase_seek_doc},
+    _IO__IOBASE_SEEK_METHODDEF
     _IO__IOBASE_TELL_METHODDEF
-    {"truncate", iobase_truncate, METH_VARARGS, iobase_truncate_doc},
+    _IO__IOBASE_TRUNCATE_METHODDEF
     _IO__IOBASE_FLUSH_METHODDEF
     _IO__IOBASE_CLOSE_METHODDEF
 
@@ -798,9 +835,9 @@ static PyMethodDef iobase_methods[] = {
     _IO__IOBASE_WRITABLE_METHODDEF
 
     {"_checkClosed",   _PyIOBase_check_closed, METH_NOARGS},
-    {"_checkSeekable", _PyIOBase_check_seekable, METH_NOARGS},
-    {"_checkReadable", _PyIOBase_check_readable, METH_NOARGS},
-    {"_checkWritable", _PyIOBase_check_writable, METH_NOARGS},
+    {"_checkSeekable", iobase_check_seekable, METH_NOARGS},
+    {"_checkReadable", iobase_check_readable, METH_NOARGS},
+    {"_checkWritable", iobase_check_writable, METH_NOARGS},
 
     _IO__IOBASE_FILENO_METHODDEF
     _IO__IOBASE_ISATTY_METHODDEF

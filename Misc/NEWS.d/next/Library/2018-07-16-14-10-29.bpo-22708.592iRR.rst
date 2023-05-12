@@ -1,0 +1,3 @@
+http.client CONNECT method tunnel improvements: Use HTTP 1.1 protocol; send
+a matching Host: header with CONNECT, if one is not provided; convert IDN
+domain names to Punycode. Patch by Michael Handler.
