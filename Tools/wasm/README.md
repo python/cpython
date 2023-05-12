@@ -328,7 +328,17 @@ make -j$(nproc)
 popd
 ```
 
-## WASI limitations and issues (WASI SDK 15.0)
+0. Make sure `Modules/Setup.local` exists
+0. Make sure the necessary build tools are installed:
+  0. WASI SDK (which includes `clang`)
+  0. `make`
+  0. `pkg-config` (on Linux)
+0. Create the build/host Python
+  0. `mkdir -p builddir/build`
+  0. `pushd builddir/build`
+  0. Get the host platform: `sysconfig.get_config_var("BUILD_GNU_TYPE")`
+  0. `../../configure -C --build=$BUILD --host=$BUILD`
+  0. `make all`
 
 A lot of Emscripten limitations also apply to WASI. Noticeable restrictions
 are:
