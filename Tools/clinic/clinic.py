@@ -25,11 +25,10 @@ import string
 import sys
 import textwrap
 import traceback
-import types
 
 from collections.abc import Callable
-from types import *
-from typing import Any, NamedTuple
+from types import FunctionType, NoneType
+from typing import Any, NamedTuple, NoReturn, Literal, overload
 
 # TODO:
 #
@@ -60,21 +59,21 @@ CLINIC_PREFIXED_ARGS = {
 }
 
 class Unspecified:
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<Unspecified>'
 
 unspecified = Unspecified()
 
 
 class Null:
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<Null>'
 
 NULL = Null()
 
 
 class Unknown:
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<Unknown>'
 
 unknown = Unknown()
@@ -82,15 +81,16 @@ unknown = Unknown()
 sig_end_marker = '--'
 
 Appender = Callable[[str], None]
-Outputter = Callable[[None], str]
+Outputter = Callable[[], str]
+TemplateDict = dict[str, str]
 
 class _TextAccumulator(NamedTuple):
     text: list[str]
     append: Appender
     output: Outputter
 
-def _text_accumulator():
-    text = []
+def _text_accumulator() -> _TextAccumulator:
+    text: list[str] = []
     def output():
         s = ''.join(text)
         text.clear()
@@ -99,10 +99,10 @@ def _text_accumulator():
 
 
 class TextAccumulator(NamedTuple):
-    text: list[str]
     append: Appender
+    output: Outputter
 
-def text_accumulator():
+def text_accumulator() -> TextAccumulator:
     """
     Creates a simple text accumulator / joiner.
 
@@ -116,8 +116,28 @@ def text_accumulator():
     text, append, output = _text_accumulator()
     return TextAccumulator(append, output)
 
+@overload
+def warn_or_fail(
+    *args: object,
+    fail: Literal[True],
+    filename: str | None = None,
+    line_number: int | None = None,
+) -> NoReturn: ...
 
-def warn_or_fail(fail=False, *args, filename=None, line_number=None):
+@overload
+def warn_or_fail(
+    *args: object,
+    fail: Literal[False] = False,
+    filename: str | None = None,
+    line_number: int | None = None,
+) -> None: ...
+
+def warn_or_fail(
+    *args: object,
+    fail: bool = False,
+    filename: str | None = None,
+    line_number: int | None = None,
+) -> None:
     joined = " ".join([str(a) for a in args])
     add, output = text_accumulator()
     if fail:
@@ -140,14 +160,22 @@ def warn_or_fail(fail=False, *args, filename=None, line_number=None):
         sys.exit(-1)
 
 
-def warn(*args, filename=None, line_number=None):
-    return warn_or_fail(False, *args, filename=filename, line_number=line_number)
+def warn(
+    *args: object,
+    filename: str | None = None,
+    line_number: int | None = None,
+) -> None:
+    return warn_or_fail(*args, filename=filename, line_number=line_number, fail=False)
 
-def fail(*args, filename=None, line_number=None):
-    return warn_or_fail(True, *args, filename=filename, line_number=line_number)
+def fail(
+    *args: object,
+    filename: str | None = None,
+    line_number: int | None = None,
+) -> NoReturn:
+    warn_or_fail(*args, filename=filename, line_number=line_number, fail=True)
 
 
-def quoted_for_c_string(s):
+def quoted_for_c_string(s: str) -> str:
     for old, new in (
         ('\\', '\\\\'), # must be first!
         ('"', '\\"'),
@@ -156,13 +184,13 @@ def quoted_for_c_string(s):
         s = s.replace(old, new)
     return s
 
-def c_repr(s):
+def c_repr(s: str) -> str:
     return '"' + s + '"'
 
 
 is_legal_c_identifier = re.compile('^[A-Za-z_][A-Za-z0-9_]*$').match
 
-def is_legal_py_identifier(s):
+def is_legal_py_identifier(s: str) -> bool:
     return all(is_legal_c_identifier(field) for field in s.split('.'))
 
 # identifiers that are okay in Python but aren't a good idea in C.
@@ -175,7 +203,7 @@ register return short signed sizeof static struct switch
 typedef typeof union unsigned void volatile while
 """.strip().split())
 
-def ensure_legal_c_identifier(s):
+def ensure_legal_c_identifier(s: str) -> str:
     # for now, just complain if what we're given isn't legal
     if not is_legal_c_identifier(s):
         fail("Illegal C identifier: {}".format(s))
@@ -184,7 +212,7 @@ def ensure_legal_c_identifier(s):
         return s + "_value"
     return s
 
-def rstrip_lines(s):
+def rstrip_lines(s: str) -> str:
     text, add, output = _text_accumulator()
     for line in s.split('\n'):
         add(line.rstrip())
@@ -192,14 +220,14 @@ def rstrip_lines(s):
     text.pop()
     return output()
 
-def format_escape(s):
+def format_escape(s: str) -> str:
     # double up curly-braces, this string will be used
     # as part of a format_map() template later
     s = s.replace('{', '{{')
     s = s.replace('}', '}}')
     return s
 
-def linear_format(s, **kwargs):
+def linear_format(s: str, **kwargs: str) -> str:
     """
     Perform str.format-like substitution, except:
       * The strings substituted must be on lines by
@@ -243,7 +271,7 @@ def linear_format(s, **kwargs):
 
     return output()[:-1]
 
-def indent_all_lines(s, prefix):
+def indent_all_lines(s: str, prefix: str) -> str:
     """
     Returns 's', with 'prefix' prepended to all lines.
 
@@ -264,7 +292,7 @@ def indent_all_lines(s, prefix):
         final.append(last)
     return ''.join(final)
 
-def suffix_all_lines(s, suffix):
+def suffix_all_lines(s: str, suffix: str) -> str:
     """
     Returns 's', with 'suffix' appended to all lines.
 
@@ -284,7 +312,7 @@ def suffix_all_lines(s, suffix):
     return ''.join(final)
 
 
-def version_splitter(s):
+def version_splitter(s: str) -> tuple[int, ...]:
     """Splits a version string into a tuple of integers.
 
     The following ASCII characters are allowed, and employ
@@ -295,7 +323,7 @@ def version_splitter(s):
     (This permits Python-style version strings such as "1.4b3".)
     """
     version = []
-    accumulator = []
+    accumulator: list[str] = []
     def flush():
         if not accumulator:
             raise ValueError('Unsupported version string: ' + repr(s))
@@ -315,7 +343,7 @@ def version_splitter(s):
     flush()
     return tuple(version)
 
-def version_comparitor(version1, version2):
+def version_comparitor(version1: str, version2: str) -> Literal[-1, 0, 1]:
     iterator = itertools.zip_longest(version_splitter(version1), version_splitter(version2), fillvalue=0)
     for i, (a, b) in enumerate(iterator):
         if a < b:
@@ -1944,20 +1972,6 @@ extensions['py'] = PythonLanguage
 
 # maps strings to callables.
 # these callables must be of the form:
-#   def foo(name, default, *, ...)
-# The callable may have any number of keyword-only parameters.
-# The callable must return a CConverter object.
-# The callable should not call builtins.print.
-converters = {}
-
-# maps strings to callables.
-# these callables follow the same rules as those for "converters" above.
-# note however that they will never be called with keyword-only parameters.
-legacy_converters = {}
-
-
-# maps strings to callables.
-# these callables must be of the form:
 #   def foo(*, ...)
 # The callable may have any number of keyword-only parameters.
 # The callable must return a CConverter object.
@@ -1965,17 +1979,17 @@ legacy_converters = {}
 return_converters = {}
 
 
-def write_file(filename, new_contents, force=False):
+def file_changed(filename: str, new_contents: str) -> bool:
+    """Return true if file contents changed (meaning we must update it)"""
     try:
         with open(filename, 'r', encoding="utf-8") as fp:
             old_contents = fp.read()
-
-        if old_contents == new_contents and not force:
-            # no change: avoid modifying the file modification time
-            return
+        return old_contents != new_contents
     except FileNotFoundError:
-        pass
+        return True
 
+
+def write_file(filename: str, new_contents: str):
     # Atomic write using a temporary file and os.replace()
     filename_new = f"{filename}.new"
     with open(filename_new, "w", encoding="utf-8") as fp:
@@ -2237,11 +2251,12 @@ def parse_file(filename, *, verify=True, output=None):
     clinic = Clinic(language, verify=verify, filename=filename)
     src_out, clinic_out = clinic.parse(raw)
 
-    # If clinic output changed, force updating the source file as well.
-    force = bool(clinic_out)
-    write_file(output, src_out, force=force)
-    for fn, data in clinic_out:
-        write_file(fn, data)
+    changes = [(fn, data) for fn, data in clinic_out if file_changed(fn, data)]
+    if changes:
+        # Always (re)write the source file.
+        write_file(output, src_out)
+        for fn, data in clinic_out:
+            write_file(fn, data)
 
 
 def compute_checksum(input, length=None):
@@ -2668,15 +2683,15 @@ class CConverter(metaclass=CConverterAutoRegister):
     # keep in sync with self_converter.__init__!
     def __init__(self,
              # Positional args:
-             name,
-             py_name,
+             name: str,
+             py_name: str,
              function,
              default=unspecified,
              *,  # Keyword only args:
-             c_default=None,
-             py_default=None,
-             annotation=unspecified,
-             unused=False,
+             c_default: str | None = None,
+             py_default: str | None = None,
+             annotation: str | Unspecified = unspecified,
+             unused: bool = False,
              **kwargs
     ):
         self.name = ensure_legal_c_identifier(name)
@@ -2712,10 +2727,10 @@ class CConverter(metaclass=CConverterAutoRegister):
     def converter_init(self):
         pass
 
-    def is_optional(self):
+    def is_optional(self) -> bool:
         return (self.default is not unspecified)
 
-    def _render_self(self, parameter, data):
+    def _render_self(self, parameter: str, data: CRenderData) -> None:
         self.parameter = parameter
         name = self.parser_name
 
@@ -2775,7 +2790,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         if cleanup:
             data.cleanup.append('/* Cleanup for ' + name + ' */\n' + cleanup.rstrip() + "\n")
 
-    def render(self, parameter, data):
+    def render(self, parameter: str, data: CRenderData) -> None:
         """
         parameter is a clinic.Parameter instance.
         data is a CRenderData instance.
@@ -2851,7 +2866,7 @@ class CConverter(metaclass=CConverterAutoRegister):
             declaration.append(';')
         return "".join(declaration)
 
-    def initialize(self):
+    def initialize(self) -> str:
         """
         The C statements required to set up this variable before parsing.
         Returns a string containing this code indented at column 0.
@@ -2859,7 +2874,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         """
         return ""
 
-    def modify(self):
+    def modify(self) -> str:
         """
         The C statements required to modify this variable after parsing.
         Returns a string containing this code indented at column 0.
@@ -2867,7 +2882,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         """
         return ""
 
-    def post_parsing(self):
+    def post_parsing(self) -> str:
         """
         The C statements required to do some operations after the end of parsing but before cleaning up.
         Return a string containing this code indented at column 0.
@@ -2875,7 +2890,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         """
         return ""
 
-    def cleanup(self):
+    def cleanup(self) -> str:
         """
         The C statements required to clean up after this variable.
         Returns a string containing this code indented at column 0.
@@ -2928,7 +2943,7 @@ class CConverter(metaclass=CConverterAutoRegister):
                 """.format(argname=argname, paramname=self.parser_name, cast=cast)
         return None
 
-    def set_template_dict(self, template_dict):
+    def set_template_dict(self, template_dict: TemplateDict) -> None:
         pass
 
     @property
@@ -2951,6 +2966,23 @@ type_checks = {
 }
 
 
+ConverterType = Callable[..., CConverter]
+ConverterDict = dict[str, ConverterType]
+
+# maps strings to callables.
+# these callables must be of the form:
+#   def foo(name, default, *, ...)
+# The callable may have any number of keyword-only parameters.
+# The callable must return a CConverter object.
+# The callable should not call builtins.print.
+converters: ConverterDict = {}
+
+# maps strings to callables.
+# these callables follow the same rules as those for "converters" above.
+# note however that they will never be called with keyword-only parameters.
+legacy_converters: ConverterDict = {}
+
+
 class bool_converter(CConverter):
     type = 'int'
     default_type = bool
@@ -2966,7 +2998,7 @@ class bool_converter(CConverter):
             self.default = bool(self.default)
             self.c_default = str(int(self.default))
 
-    def parse_arg(self, argname, displayname):
+    def parse_arg(self, argname: str, displayname: str) -> str:
         if self.format_unit == 'i':
             return """
                 {paramname} = _PyLong_AsInt({argname});
@@ -2992,10 +3024,10 @@ class defining_class_converter(CConverter):
     format_unit = ''
     show_in_signature = False
 
-    def converter_init(self, *, type=None):
+    def converter_init(self, *, type=None) -> None:
         self.specified_type = type
 
-    def render(self, parameter, data):
+    def render(self, parameter, data) -> None:
         self._render_self(parameter, data)
 
     def set_template_dict(self, template_dict):
@@ -3008,7 +3040,7 @@ class char_converter(CConverter):
     format_unit = 'c'
     c_ignored_default = "'\0'"
 
-    def converter_init(self):
+    def converter_init(self) -> None:
         if isinstance(self.default, self.default_type):
             if len(self.default) != 1:
                 fail("char_converter: illegal default value " + repr(self.default))
@@ -3017,7 +3049,7 @@ class char_converter(CConverter):
             if self.c_default == '"\'"':
                 self.c_default = r"'\''"
 
-    def parse_arg(self, argname, displayname):
+    def parse_arg(self, argname: str, displayname: str) -> str:
         if self.format_unit == 'c':
             return """
                 if (PyBytes_Check({argname}) && PyBytes_GET_SIZE({argname}) == 1) {{{{
@@ -3042,11 +3074,11 @@ class unsigned_char_converter(CConverter):
     format_unit = 'b'
     c_ignored_default = "'\0'"
 
-    def converter_init(self, *, bitwise=False):
+    def converter_init(self, *, bitwise: bool = False) -> None:
         if bitwise:
             self.format_unit = 'B'
 
-    def parse_arg(self, argname, displayname):
+    def parse_arg(self, argname: str, displayname: str) -> str:
         if self.format_unit == 'b':
             return """
                 {{{{
@@ -3091,7 +3123,7 @@ class short_converter(CConverter):
     format_unit = 'h'
     c_ignored_default = "0"
 
-    def parse_arg(self, argname, displayname):
+    def parse_arg(self, argname: str, displayname: str) -> str:
         if self.format_unit == 'h':
             return """
                 {{{{
@@ -3121,13 +3153,13 @@ class unsigned_short_converter(CConverter):
     default_type = int
     c_ignored_default = "0"
 
-    def converter_init(self, *, bitwise=False):
+    def converter_init(self, *, bitwise: bool = False) -> None:
         if bitwise:
             self.format_unit = 'H'
         else:
             self.converter = '_PyLong_UnsignedShort_Converter'
 
-    def parse_arg(self, argname, displayname):
+    def parse_arg(self, argname: str, displayname: str) -> str:
         if self.format_unit == 'H':
             return """
                 {paramname} = (unsigned short)PyLong_AsUnsignedLongMask({argname});
@@ -3144,7 +3176,7 @@ class int_converter(CConverter):
     format_unit = 'i'
     c_ignored_default = "0"
 
-    def converter_init(self, *, accept={int}, type=None):
+    def converter_init(self, *, accept={int}, type=None) -> None:
         if accept == {str}:
             self.format_unit = 'C'
         elif accept != {int}:
@@ -3152,7 +3184,7 @@ class int_converter(CConverter):
         if type is not None:
             self.type = type
 
-    def parse_arg(self, argname, displayname):
+    def parse_arg(self, argname: str, displayname: str) -> str:
         if self.format_unit == 'i':
             return """
                 {paramname} = _PyLong_AsInt({argname});
@@ -3183,13 +3215,13 @@ class unsigned_int_converter(CConverter):
     default_type = int
     c_ignored_default = "0"
 
-    def converter_init(self, *, bitwise=False):
+    def converter_init(self, *, bitwise: bool = False) -> None:
         if bitwise:
             self.format_unit = 'I'
         else:
             self.converter = '_PyLong_UnsignedInt_Converter'
 
-    def parse_arg(self, argname, displayname):
+    def parse_arg(self, argname: str, displayname: str) -> str:
         if self.format_unit == 'I':
             return """
                 {paramname} = (unsigned int)PyLong_AsUnsignedLongMask({argname});
@@ -3205,7 +3237,7 @@ class long_converter(CConverter):
     format_unit = 'l'
     c_ignored_default = "0"
 
-    def parse_arg(self, argname, displayname):
+    def parse_arg(self, argname: str, displayname: str) -> str:
         if self.format_unit == 'l':
             return """
                 {paramname} = PyLong_AsLong({argname});
@@ -3220,13 +3252,13 @@ class unsigned_long_converter(CConverter):
     default_type = int
     c_ignored_default = "0"
 
-    def converter_init(self, *, bitwise=False):
+    def converter_init(self, *, bitwise: bool = False) -> None:
         if bitwise:
             self.format_unit = 'k'
         else:
             self.converter = '_PyLong_UnsignedLong_Converter'
 
-    def parse_arg(self, argname, displayname):
+    def parse_arg(self, argname: str, displayname: str) -> str:
         if self.format_unit == 'k':
             return """
                 if (!PyLong_Check({argname})) {{{{
@@ -3244,7 +3276,7 @@ class long_long_converter(CConverter):
     format_unit = 'L'
     c_ignored_default = "0"
 
-    def parse_arg(self, argname, displayname):
+    def parse_arg(self, argname: str, displayname: str) -> str:
         if self.format_unit == 'L':
             return """
                 {paramname} = PyLong_AsLongLong({argname});
@@ -3259,13 +3291,13 @@ class unsigned_long_long_converter(CConverter):
     default_type = int
     c_ignored_default = "0"
 
-    def converter_init(self, *, bitwise=False):
+    def converter_init(self, *, bitwise: bool = False) -> None:
         if bitwise:
             self.format_unit = 'K'
         else:
             self.converter = '_PyLong_UnsignedLongLong_Converter'
 
-    def parse_arg(self, argname, displayname):
+    def parse_arg(self, argname: str, displayname: str) -> str:
         if self.format_unit == 'K':
             return """
                 if (!PyLong_Check({argname})) {{{{
@@ -3281,7 +3313,7 @@ class Py_ssize_t_converter(CConverter):
     type = 'Py_ssize_t'
     c_ignored_default = "0"
 
-    def converter_init(self, *, accept={int}):
+    def converter_init(self, *, accept={int}) -> None:
         if accept == {int}:
             self.format_unit = 'n'
             self.default_type = int
@@ -3290,7 +3322,7 @@ class Py_ssize_t_converter(CConverter):
         else:
             fail("Py_ssize_t_converter: illegal 'accept' argument " + repr(accept))
 
-    def parse_arg(self, argname, displayname):
+    def parse_arg(self, argname: str, displayname: str) -> str:
         if self.format_unit == 'n':
             return """
                 {{{{
@@ -3312,7 +3344,7 @@ class Py_ssize_t_converter(CConverter):
 class slice_index_converter(CConverter):
     type = 'Py_ssize_t'
 
-    def converter_init(self, *, accept={int, NoneType}):
+    def converter_init(self, *, accept={int, NoneType}) -> None:
         if accept == {int}:
             self.converter = '_PyEval_SliceIndexNotNone'
         elif accept == {int, NoneType}:
@@ -3325,7 +3357,7 @@ class size_t_converter(CConverter):
     converter = '_PyLong_Size_t_Converter'
     c_ignored_default = "0"
 
-    def parse_arg(self, argname, displayname):
+    def parse_arg(self, argname: str, displayname: str) -> str:
         if self.format_unit == 'n':
             return """
                 {paramname} = PyNumber_AsSsize_t({argname}, PyExc_OverflowError);
@@ -3340,7 +3372,7 @@ class fildes_converter(CConverter):
     type = 'int'
     converter = '_PyLong_FileDescriptor_Converter'
 
-    def _parse_arg(self, argname, displayname):
+    def _parse_arg(self, argname: str, displayname: str) -> str:
         return """
             {paramname} = PyObject_AsFileDescriptor({argname});
             if ({paramname} == -1) {{{{
@@ -3355,7 +3387,7 @@ class float_converter(CConverter):
     format_unit = 'f'
     c_ignored_default = "0.0"
 
-    def parse_arg(self, argname, displayname):
+    def parse_arg(self, argname: str, displayname: str) -> str:
         if self.format_unit == 'f':
             return """
                 if (PyFloat_CheckExact({argname})) {{{{
@@ -3377,7 +3409,7 @@ class double_converter(CConverter):
     format_unit = 'd'
     c_ignored_default = "0.0"
 
-    def parse_arg(self, argname, displayname):
+    def parse_arg(self, argname: str, displayname: str) -> str:
         if self.format_unit == 'd':
             return """
                 if (PyFloat_CheckExact({argname})) {{{{
@@ -3400,7 +3432,7 @@ class Py_complex_converter(CConverter):
     format_unit = 'D'
     c_ignored_default = "{0.0, 0.0}"
 
-    def parse_arg(self, argname, displayname):
+    def parse_arg(self, argname: str, displayname: str) -> str:
         if self.format_unit == 'D':
             return """
                 {paramname} = PyComplex_AsCComplex({argname});
@@ -3476,7 +3508,7 @@ class str_converter(CConverter):
             name = self.name
             return f"PyMem_FREE({name});\n"
 
-    def parse_arg(self, argname, displayname):
+    def parse_arg(self, argname: str, displayname: str) -> str:
         if self.format_unit == 's':
             return """
                 if (!PyUnicode_Check({argname})) {{{{
@@ -3571,7 +3603,7 @@ class PyBytesObject_converter(CConverter):
     format_unit = 'S'
     # accept = {bytes}
 
-    def parse_arg(self, argname, displayname):
+    def parse_arg(self, argname: str, displayname: str) -> str:
         if self.format_unit == 'S':
             return """
                 if (!PyBytes_Check({argname})) {{{{
@@ -3588,7 +3620,7 @@ class PyByteArrayObject_converter(CConverter):
     format_unit = 'Y'
     # accept = {bytearray}
 
-    def parse_arg(self, argname, displayname):
+    def parse_arg(self, argname: str, displayname: str) -> str:
         if self.format_unit == 'Y':
             return """
                 if (!PyByteArray_Check({argname})) {{{{
@@ -3605,7 +3637,7 @@ class unicode_converter(CConverter):
     default_type = (str, Null, NoneType)
     format_unit = 'U'
 
-    def parse_arg(self, argname, displayname):
+    def parse_arg(self, argname: str, displayname: str) -> str:
         if self.format_unit == 'U':
             return """
                 if (!PyUnicode_Check({argname})) {{{{
@@ -3628,7 +3660,7 @@ class Py_UNICODE_converter(CConverter):
     type = 'const Py_UNICODE *'
     default_type = (str, Null, NoneType)
 
-    def converter_init(self, *, accept={str}, zeroes=False):
+    def converter_init(self, *, accept={str}, zeroes: bool = False) -> None:
         format_unit = 'Z' if accept=={str, NoneType} else 'u'
         if zeroes:
             format_unit += '#'
@@ -3650,7 +3682,7 @@ class Py_UNICODE_converter(CConverter):
 PyMem_Free((void *){name});
 """.format(name=self.name)
 
-    def parse_arg(self, argname, argnum):
+    def parse_arg(self, argname: str, argnum: str) -> str:
         if not self.length:
             if self.accept == {str}:
                 return """
@@ -3690,7 +3722,7 @@ class Py_buffer_converter(CConverter):
     impl_by_reference = True
     c_ignored_default = "{NULL, NULL}"
 
-    def converter_init(self, *, accept={buffer}):
+    def converter_init(self, *, accept={buffer}) -> None:
         if self.default not in (unspecified, None):
             fail("The only legal default value for Py_buffer is None.")
 
@@ -3713,7 +3745,7 @@ class Py_buffer_converter(CConverter):
         name = self.name
         return "".join(["if (", name, ".obj) {\n   PyBuffer_Release(&", name, ");\n}\n"])
 
-    def parse_arg(self, argname, displayname):
+    def parse_arg(self, argname: str, displayname: str) -> str:
         if self.format_unit == 'y*':
             return """
                 if (PyObject_GetBuffer({argname}, &{paramname}, PyBUF_SIMPLE) != 0) {{{{
@@ -3762,7 +3794,7 @@ class Py_buffer_converter(CConverter):
         return super().parse_arg(argname, displayname)
 
 
-def correct_name_for_self(f):
+def correct_name_for_self(f) -> tuple[str, str]:
     if f.kind in (CALLABLE, METHOD_INIT):
         if f.cls:
             return "PyObject *", "self"
@@ -3788,7 +3820,7 @@ class self_converter(CConverter):
     type = None
     format_unit = ''
 
-    def converter_init(self, *, type=None):
+    def converter_init(self, *, type=None) -> None:
         self.specified_type = type
 
     def pre_render(self):
@@ -4036,7 +4068,7 @@ def eval_ast_expr(node, globals, *, filename='-'):
 
     node = ast.Expression(node)
     co = compile(node, filename, 'eval')
-    fn = types.FunctionType(co, globals)
+    fn = FunctionType(co, globals)
     return fn()
 
 

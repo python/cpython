@@ -1,6 +1,7 @@
 import re
 import sys
 from collections.abc import Callable
+from typing import NoReturn
 
 
 TokenAndCondition = tuple[str, str]
@@ -30,7 +31,7 @@ class Monitor:
     is_a_simple_defined: Callable[[str], re.Match[str] | None]
     is_a_simple_defined = re.compile(r'^defined\s*\(\s*[A-Za-z0-9_]+\s*\)$').match
 
-    def __init__(self, filename=None, *, verbose: bool = False):
+    def __init__(self, filename: str | None = None, *, verbose: bool = False) -> None:
         self.stack: TokenStack = []
         self.in_comment = False
         self.continuation: str | None = None
@@ -55,7 +56,7 @@ class Monitor:
         """
         return " && ".join(condition for token, condition in self.stack)
 
-    def fail(self, *a):
+    def fail(self, *a: object) -> NoReturn:
         if self.filename:
             filename = " " + self.filename
         else:
@@ -64,7 +65,7 @@ class Monitor:
         print("   ", ' '.join(str(x) for x in a))
         sys.exit(-1)
 
-    def close(self):
+    def close(self) -> None:
         if self.stack:
             self.fail("Ended file while still in a preprocessor conditional block!")
 
