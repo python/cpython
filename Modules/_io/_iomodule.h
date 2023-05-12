@@ -158,7 +158,6 @@ struct _io_state {
     PyTypeObject *PyBytesIOBuffer_Type;
     PyTypeObject *PyBytesIO_Type;
     PyTypeObject *PyFileIO_Type;
-    PyTypeObject *PyIOBase_Type;
     PyTypeObject *PyStringIO_Type;
     PyTypeObject *PyTextIOBase_Type;
     PyTypeObject *PyTextIOWrapper_Type;
