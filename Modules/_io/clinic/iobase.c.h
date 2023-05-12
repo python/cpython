@@ -231,9 +231,9 @@ PyDoc_STRVAR(_io__IOBase_fileno__doc__,
 "fileno($self, /)\n"
 "--\n"
 "\n"
-"Returns underlying file descriptor if one exists.\n"
+"Return underlying file descriptor if one exists.\n"
 "\n"
-"OSError is raised if the IO object does not use a file descriptor.");
+"Raise OSError if the IO object does not use a file descriptor.");
 
 #define _IO__IOBASE_FILENO_METHODDEF    \
     {"fileno", _PyCFunction_CAST(_io__IOBase_fileno), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__IOBase_fileno__doc__},
@@ -420,4 +420,4 @@ _io__RawIOBase_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__RawIOBase_readall_impl(self);
 }
-/*[clinic end generated code: output=91c4f8fa9bfe909c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=63bc25a5bfcecaf0 input=a9049054013a1b77]*/

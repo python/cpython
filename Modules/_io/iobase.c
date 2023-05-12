@@ -522,18 +522,17 @@ iobase_exit(PyObject *self, PyObject *args)
 
 /*[clinic input]
 _io._IOBase.fileno
-
     cls: defining_class
     /
 
-Returns underlying file descriptor if one exists.
+Return underlying file descriptor if one exists.
 
-OSError is raised if the IO object does not use a file descriptor.
+Raise OSError if the IO object does not use a file descriptor.
 [clinic start generated code]*/
 
 static PyObject *
 _io__IOBase_fileno_impl(PyObject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=7caaa32a6f4ada3d input=9e960cc21e8889a3]*/
+/*[clinic end generated code: output=7caaa32a6f4ada3d input=1927c8bea5c85099]*/
 {
     _PyIO_State *state = get_io_state_by_cls(cls);
     return iobase_unsupported(state, "fileno");
