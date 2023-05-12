@@ -3214,6 +3214,14 @@ class PidTests(unittest.TestCase):
 
 @support.requires_subprocess()
 class SpawnTests(unittest.TestCase):
+    @staticmethod
+    def quote_args(args):
+        # On Windows, os.spawn* simply joins arguments with spaces:
+        # arguments need to be quoted
+        if os.name != 'nt':
+            return args
+        return [f'"{arg}"' if " " in arg.strip() else arg for arg in args]
+
     def create_args(self, *, with_env=False, use_bytes=False):
         self.exitcode = 17
 
@@ -3234,115 +3242,118 @@ class SpawnTests(unittest.TestCase):
         with open(filename, "w", encoding="utf-8") as fp:
             fp.write(code)
 
-        args = [sys.executable, filename]
+        program = sys.executable
+        args = self.quote_args([program, filename])
         if use_bytes:
+            program = os.fsencode(program)
             args = [os.fsencode(a) for a in args]
             self.env = {os.fsencode(k): os.fsencode(v)
                         for k, v in self.env.items()}
 
-        return args
+        return program, args
 
     @requires_os_func('spawnl')
     def test_spawnl(self):
-        args = self.create_args()
-        exitcode = os.spawnl(os.P_WAIT, args[0], *args)
+        program, args = self.create_args()
+        exitcode = os.spawnl(os.P_WAIT, program, *args)
         self.assertEqual(exitcode, self.exitcode)
 
     @requires_os_func('spawnle')
     def test_spawnle(self):
-        args = self.create_args(with_env=True)
-        exitcode = os.spawnle(os.P_WAIT, args[0], *args, self.env)
+        program, args = self.create_args(with_env=True)
+        exitcode = os.spawnle(os.P_WAIT, program, *args, self.env)
         self.assertEqual(exitcode, self.exitcode)
 
     @requires_os_func('spawnlp')
     def test_spawnlp(self):
-        args = self.create_args()
-        exitcode = os.spawnlp(os.P_WAIT, args[0], *args)
+        program, args = self.create_args()
+        exitcode = os.spawnlp(os.P_WAIT, program, *args)
         self.assertEqual(exitcode, self.exitcode)
 
     @requires_os_func('spawnlpe')
     def test_spawnlpe(self):
-        args = self.create_args(with_env=True)
-        exitcode = os.spawnlpe(os.P_WAIT, args[0], *args, self.env)
+        program, args = self.create_args(with_env=True)
+        exitcode = os.spawnlpe(os.P_WAIT, program, *args, self.env)
         self.assertEqual(exitcode, self.exitcode)
 
     @requires_os_func('spawnv')
     def test_spawnv(self):
-        args = self.create_args()
-        exitcode = os.spawnv(os.P_WAIT, args[0], args)
+        program, args = self.create_args()
+        exitcode = os.spawnv(os.P_WAIT, program, args)
         self.assertEqual(exitcode, self.exitcode)
 
         # Test for PyUnicode_FSConverter()
-        exitcode = os.spawnv(os.P_WAIT, FakePath(args[0]), args)
+        exitcode = os.spawnv(os.P_WAIT, FakePath(program), args)
         self.assertEqual(exitcode, self.exitcode)
 
     @requires_os_func('spawnve')
     def test_spawnve(self):
-        args = self.create_args(with_env=True)
-        exitcode = os.spawnve(os.P_WAIT, args[0], args, self.env)
+        program, args = self.create_args(with_env=True)
+        exitcode = os.spawnve(os.P_WAIT, program, args, self.env)
         self.assertEqual(exitcode, self.exitcode)
 
     @requires_os_func('spawnvp')
     def test_spawnvp(self):
-        args = self.create_args()
-        exitcode = os.spawnvp(os.P_WAIT, args[0], args)
+        program, args = self.create_args()
+        exitcode = os.spawnvp(os.P_WAIT, program, args)
         self.assertEqual(exitcode, self.exitcode)
 
     @requires_os_func('spawnvpe')
     def test_spawnvpe(self):
-        args = self.create_args(with_env=True)
-        exitcode = os.spawnvpe(os.P_WAIT, args[0], args, self.env)
+        program, args = self.create_args(with_env=True)
+        exitcode = os.spawnvpe(os.P_WAIT, program, args, self.env)
         self.assertEqual(exitcode, self.exitcode)
 
     @requires_os_func('spawnv')
     def test_nowait(self):
-        args = self.create_args()
-        pid = os.spawnv(os.P_NOWAIT, args[0], args)
+        program, args = self.create_args()
+        pid = os.spawnv(os.P_NOWAIT, program, args)
         support.wait_process(pid, exitcode=self.exitcode)
 
     @requires_os_func('spawnve')
     def test_spawnve_bytes(self):
         # Test bytes handling in parse_arglist and parse_envlist (#28114)
-        args = self.create_args(with_env=True, use_bytes=True)
-        exitcode = os.spawnve(os.P_WAIT, args[0], args, self.env)
+        program, args = self.create_args(with_env=True, use_bytes=True)
+        exitcode = os.spawnve(os.P_WAIT, program, args, self.env)
         self.assertEqual(exitcode, self.exitcode)
 
     @requires_os_func('spawnl')
     def test_spawnl_noargs(self):
-        args = self.create_args()
-        self.assertRaises(ValueError, os.spawnl, os.P_NOWAIT, args[0])
-        self.assertRaises(ValueError, os.spawnl, os.P_NOWAIT, args[0], '')
+        program, __ = self.create_args()
+        self.assertRaises(ValueError, os.spawnl, os.P_NOWAIT, program)
+        self.assertRaises(ValueError, os.spawnl, os.P_NOWAIT, program, '')
 
     @requires_os_func('spawnle')
     def test_spawnle_noargs(self):
-        args = self.create_args()
-        self.assertRaises(ValueError, os.spawnle, os.P_NOWAIT, args[0], {})
-        self.assertRaises(ValueError, os.spawnle, os.P_NOWAIT, args[0], '', {})
+        program, __ = self.create_args()
+        self.assertRaises(ValueError, os.spawnle, os.P_NOWAIT, program, {})
+        self.assertRaises(ValueError, os.spawnle, os.P_NOWAIT, program, '', {})
 
     @requires_os_func('spawnv')
     def test_spawnv_noargs(self):
-        args = self.create_args()
-        self.assertRaises(ValueError, os.spawnv, os.P_NOWAIT, args[0], ())
-        self.assertRaises(ValueError, os.spawnv, os.P_NOWAIT, args[0], [])
-        self.assertRaises(ValueError, os.spawnv, os.P_NOWAIT, args[0], ('',))
-        self.assertRaises(ValueError, os.spawnv, os.P_NOWAIT, args[0], [''])
+        program, __ = self.create_args()
+        self.assertRaises(ValueError, os.spawnv, os.P_NOWAIT, program, ())
+        self.assertRaises(ValueError, os.spawnv, os.P_NOWAIT, program, [])
+        self.assertRaises(ValueError, os.spawnv, os.P_NOWAIT, program, ('',))
+        self.assertRaises(ValueError, os.spawnv, os.P_NOWAIT, program, [''])
 
     @requires_os_func('spawnve')
     def test_spawnve_noargs(self):
-        args = self.create_args()
-        self.assertRaises(ValueError, os.spawnve, os.P_NOWAIT, args[0], (), {})
-        self.assertRaises(ValueError, os.spawnve, os.P_NOWAIT, args[0], [], {})
-        self.assertRaises(ValueError, os.spawnve, os.P_NOWAIT, args[0], ('',), {})
-        self.assertRaises(ValueError, os.spawnve, os.P_NOWAIT, args[0], [''], {})
+        program, __ = self.create_args()
+        self.assertRaises(ValueError, os.spawnve, os.P_NOWAIT, program, (), {})
+        self.assertRaises(ValueError, os.spawnve, os.P_NOWAIT, program, [], {})
+        self.assertRaises(ValueError, os.spawnve, os.P_NOWAIT, program, ('',), {})
+        self.assertRaises(ValueError, os.spawnve, os.P_NOWAIT, program, [''], {})
 
     def _test_invalid_env(self, spawn):
-        args = [sys.executable, '-c', 'pass']
+        program = sys.executable
+        args = self.quote_args([program, '-c', 'pass'])
 
         # null character in the environment variable name
         newenv = os.environ.copy()
         newenv["FRUIT\0VEGETABLE"] = "cabbage"
         try:
-            exitcode = spawn(os.P_WAIT, args[0], args, newenv)
+            exitcode = spawn(os.P_WAIT, program, args, newenv)
         except ValueError:
             pass
         else:
@@ -3352,7 +3363,7 @@ class SpawnTests(unittest.TestCase):
         newenv = os.environ.copy()
         newenv["FRUIT"] = "orange\0VEGETABLE=cabbage"
         try:
-            exitcode = spawn(os.P_WAIT, args[0], args, newenv)
+            exitcode = spawn(os.P_WAIT, program, args, newenv)
         except ValueError:
             pass
         else:
@@ -3362,7 +3373,7 @@ class SpawnTests(unittest.TestCase):
         newenv = os.environ.copy()
         newenv["FRUIT=ORANGE"] = "lemon"
         try:
-            exitcode = spawn(os.P_WAIT, args[0], args, newenv)
+            exitcode = spawn(os.P_WAIT, program, args, newenv)
         except ValueError:
             pass
         else:
@@ -3375,10 +3386,11 @@ class SpawnTests(unittest.TestCase):
             fp.write('import sys, os\n'
                      'if os.getenv("FRUIT") != "orange=lemon":\n'
                      '    raise AssertionError')
-        args = [sys.executable, filename]
+
+        args = self.quote_args([program, filename])
         newenv = os.environ.copy()
         newenv["FRUIT"] = "orange=lemon"
-        exitcode = spawn(os.P_WAIT, args[0], args, newenv)
+        exitcode = spawn(os.P_WAIT, program, args, newenv)
         self.assertEqual(exitcode, 0)
 
     @requires_os_func('spawnve')

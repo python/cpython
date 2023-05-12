@@ -95,6 +95,31 @@ class ChromeCommandTest(CommandTestMixin, unittest.TestCase):
                    arguments=[URL])
 
 
+class EdgeCommandTest(CommandTestMixin, unittest.TestCase):
+
+    browser_class = webbrowser.Edge
+
+    def test_open(self):
+        self._test('open',
+                   options=[],
+                   arguments=[URL])
+
+    def test_open_with_autoraise_false(self):
+        self._test('open', kw=dict(autoraise=False),
+                   options=[],
+                   arguments=[URL])
+
+    def test_open_new(self):
+        self._test('open_new',
+                   options=['--new-window'],
+                   arguments=[URL])
+
+    def test_open_new_tab(self):
+        self._test('open_new_tab',
+                   options=[],
+                   arguments=[URL])
+
+
 class MozillaCommandTest(CommandTestMixin, unittest.TestCase):
 
     browser_class = webbrowser.Mozilla

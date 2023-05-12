@@ -98,6 +98,9 @@ annotations. These include:
     *Introducing* :data:`LiteralString`
 * :pep:`681`: Data Class Transforms
     *Introducing* the :func:`@dataclass_transform<dataclass_transform>` decorator
+* :pep:`692`: Using ``TypedDict`` for more precise ``**kwargs`` typing
+    *Introducing* a new way of typing ``**kwargs`` with :data:`Unpack` and
+    :data:`TypedDict`
 * :pep:`698`: Adding an override decorator to typing
     *Introducing* the :func:`@override<override>` decorator
 
@@ -423,7 +426,7 @@ to this is that a list of types can be used to substitute a :class:`ParamSpec`::
    >>> class Z(Generic[T, P]): ...
    ...
    >>> Z[int, [dict, float]]
-   __main__.Z[int, (<class 'dict'>, <class 'float'>)]
+   __main__.Z[int, [dict, float]]
 
 
 Furthermore, a generic with only one parameter specification variable will accept
@@ -434,9 +437,9 @@ to the former, so the following are equivalent::
    >>> class X(Generic[P]): ...
    ...
    >>> X[int, str]
-   __main__.X[(<class 'int'>, <class 'str'>)]
+   __main__.X[[int, str]]
    >>> X[[int, str]]
-   __main__.X[(<class 'int'>, <class 'str'>)]
+   __main__.X[[int, str]]
 
 Do note that generics with :class:`ParamSpec` may not have correct
 ``__parameters__`` after substitution in some cases because they
@@ -1417,8 +1420,10 @@ These are not used in annotations. They are building blocks for creating generic
       tup: tuple[Unpack[Ts]]
 
    In fact, ``Unpack`` can be used interchangeably with ``*`` in the context
-   of types. You might see ``Unpack`` being used explicitly in older versions
-   of Python, where ``*`` couldn't be used in certain places::
+   of :class:`typing.TypeVarTuple <TypeVarTuple>` and
+   :class:`builtins.tuple <tuple>` types. You might see ``Unpack`` being used
+   explicitly in older versions of Python, where ``*`` couldn't be used in
+   certain places::
 
       # In older versions of Python, TypeVarTuple and Unpack
       # are located in the `typing_extensions` backports package.
@@ -1427,6 +1432,21 @@ These are not used in annotations. They are building blocks for creating generic
       Ts = TypeVarTuple('Ts')
       tup: tuple[*Ts]         # Syntax error on Python <= 3.10!
       tup: tuple[Unpack[Ts]]  # Semantically equivalent, and backwards-compatible
+
+   ``Unpack`` can also be used along with :class:`typing.TypedDict` for typing
+   ``**kwargs`` in a function signature::
+
+      from typing import TypedDict, Unpack
+
+      class Movie(TypedDict):
+         name: str
+         year: int
+
+      # This function expects two keyword arguments - `name` of type `str`
+      # and `year` of type `int`.
+      def foo(**kwargs: Unpack[Movie]): ...
+
+   See :pep:`692` for more details on using ``Unpack`` for ``**kwargs`` typing.
 
    .. versionadded:: 3.11
 
@@ -1598,15 +1618,6 @@ These are not used in annotations. They are building blocks for creating generic
       import threading
       assert isinstance(threading.Thread(name='Bob'), Named)
 
-   .. versionchanged:: 3.12
-      The internal implementation of :func:`isinstance` checks against
-      runtime-checkable protocols now uses :func:`inspect.getattr_static`
-      to look up attributes (previously, :func:`hasattr` was used).
-      As a result, some objects which used to be considered instances
-      of a runtime-checkable protocol may no longer be considered instances
-      of that protocol on Python 3.12+, and vice versa.
-      Most users are unlikely to be affected by this change.
-
    .. note::
 
         :func:`!runtime_checkable` will check only the presence of the required
@@ -1627,6 +1638,24 @@ These are not used in annotations. They are building blocks for creating generic
         code.
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.12
+      The internal implementation of :func:`isinstance` checks against
+      runtime-checkable protocols now uses :func:`inspect.getattr_static`
+      to look up attributes (previously, :func:`hasattr` was used).
+      As a result, some objects which used to be considered instances
+      of a runtime-checkable protocol may no longer be considered instances
+      of that protocol on Python 3.12+, and vice versa.
+      Most users are unlikely to be affected by this change.
+
+   .. versionchanged:: 3.12
+      The members of a runtime-checkable protocol are now considered "frozen"
+      at runtime as soon as the class has been created. Monkey-patching
+      attributes onto a runtime-checkable protocol will still work, but will
+      have no impact on :func:`isinstance` checks comparing objects to the
+      protocol. See :ref:`"What's new in Python 3.12" <whatsnew-typing-py312>`
+      for more details.
+
 
 Other special directives
 """"""""""""""""""""""""
@@ -2101,17 +2130,11 @@ Corresponding to collections in :mod:`collections.abc`
 
 .. class:: ByteString(Sequence[int])
 
-   A generic version of :class:`collections.abc.ByteString`.
-
    This type represents the types :class:`bytes`, :class:`bytearray`,
    and :class:`memoryview` of byte sequences.
 
-   As a shorthand for this type, :class:`bytes` can be used to
-   annotate arguments of any of the types mentioned above.
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.ByteString` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
+   .. deprecated-removed:: 3.9 3.14
+      Prefer :class:`collections.abc.Buffer`, or a union like ``bytes | bytearray | memoryview``.
 
 .. class:: Collection(Sized, Iterable[T_co], Container[T_co])
 
@@ -2455,14 +2478,15 @@ Functions and decorators
 
    Ask a static type checker to confirm that *val* has an inferred type of *typ*.
 
-   When the type checker encounters a call to ``assert_type()``, it
+   At runtime this does nothing: it returns the first argument unchanged with no
+   checks or side effects, no matter the actual type of the argument.
+
+   When a static type checker encounters a call to ``assert_type()``, it
    emits an error if the value is not of the specified type::
 
        def greet(name: str) -> None:
            assert_type(name, str)  # OK, inferred type of `name` is `str`
            assert_type(name, int)  # type checker error
-
-   At runtime this returns the first argument unchanged with no side effects.
 
    This function is useful for ensuring the type checker's understanding of a
    script is in line with the developer's intentions::
@@ -2852,24 +2876,37 @@ Introspection helpers
       if a default value equal to ``None`` was set.
       Now the annotation is returned unchanged.
 
-.. function:: get_args(tp)
 .. function:: get_origin(tp)
 
-   Provide basic introspection for generic types and special typing forms.
-
-   For a typing object of the form ``X[Y, Z, ...]`` these functions return
-   ``X`` and ``(Y, Z, ...)``. If ``X`` is a generic alias for a builtin or
+   Get the unsubscripted version of a type: for a typing object of the form
+   ``X[Y, Z, ...]`` return ``X``. If ``X`` is a generic alias for a builtin or
    :mod:`collections` class, it gets normalized to the original class.
+   If ``X`` is an instance of :class:`ParamSpecArgs` or :class:`ParamSpecKwargs`,
+   return the underlying :class:`ParamSpec`.
+   Return ``None`` for unsupported objects.
+   Examples::
+
+      assert get_origin(str) is None
+      assert get_origin(Dict[str, int]) is dict
+      assert get_origin(Union[int, str]) is Union
+      P = ParamSpec('P')
+      assert get_origin(P.args) is P
+      assert get_origin(P.kwargs) is P
+
+   .. versionadded:: 3.8
+
+.. function:: get_args(tp)
+
+   Get type arguments with all substitutions performed: for a typing object
+   of the form ``X[Y, Z, ...]`` return ``(Y, Z, ...)``.
    If ``X`` is a union or :class:`Literal` contained in another
    generic type, the order of ``(Y, Z, ...)`` may be different from the order
    of the original arguments ``[Y, Z, ...]`` due to type caching.
-   For unsupported objects return ``None`` and ``()`` correspondingly.
+   Return ``()`` for unsupported objects.
    Examples::
 
-      assert get_origin(Dict[str, int]) is dict
+      assert get_args(int) == ()
       assert get_args(Dict[int, str]) == (int, str)
-
-      assert get_origin(Union[int, str]) is Union
       assert get_args(Union[int, str]) == (int, str)
 
    .. versionadded:: 3.8
@@ -2947,6 +2984,8 @@ convenience. This is subject to change, and not all deprecations are listed.
 +----------------------------------+---------------+-------------------+----------------+
 |  ``typing`` versions of standard | 3.9           | Undecided         | :pep:`585`     |
 |  collections                     |               |                   |                |
++----------------------------------+---------------+-------------------+----------------+
+|  ``typing.ByteString``           | 3.9           | 3.14              | :gh:`91896`    |
 +----------------------------------+---------------+-------------------+----------------+
 |  ``typing.Text``                 | 3.11          | Undecided         | :gh:`92332`    |
 +----------------------------------+---------------+-------------------+----------------+
