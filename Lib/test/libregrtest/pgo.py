@@ -5,6 +5,7 @@
 # runs slowly.
 PGO_TESTS = [
     'test_array',
+    'test_asyncio',
     'test_base64',
     'test_binascii',
     'test_binop',
