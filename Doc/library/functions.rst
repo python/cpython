@@ -168,6 +168,11 @@ are always available.  They are listed here in alphabetical order.
    If :func:`sys.breakpointhook` is not accessible, this function will
    raise :exc:`RuntimeError`.
 
+   By default (if :func:`sys.breakpointhook` has not been replaced), the
+   behavior of :func:`breakpoint` can be changed with the
+   :envvar:`PYTHONBREAKPOINT` environment variable.  See
+   :func:`sys.breakpointhook` for details.
+
    .. audit-event:: builtins.breakpoint breakpointhook breakpoint
 
    .. versionadded:: 3.7
