@@ -339,7 +339,7 @@ class MmapTests(unittest.TestCase):
 
 
         with self.assertRaises(ValueError):
-            m[X():5] = b'abcde' # should not crash
+            m[X():5] = b'abcd' # should not crash
 
     def test_unexpected_mmap_close_scenario_5(self):
         # See gh-103987
@@ -358,7 +358,7 @@ class MmapTests(unittest.TestCase):
 
 
         with self.assertRaises(ValueError):
-            m[X():5:1] = b'abcde' # should not crash
+            m[X():5:1] = b'abcd' # should not crash
 
     def test_tougher_find(self):
         # Do a tougher .find() test.  SF bug 515943 pointed out that, in 2.2,
