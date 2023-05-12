@@ -775,8 +775,7 @@ def Concatenate(self, parameters):
                         "ParamSpec variable or ellipsis.")
     msg = "Concatenate[arg, ...]: each arg must be a type."
     parameters = (*(_type_check(p, msg) for p in parameters[:-1]), parameters[-1])
-    return _ConcatenateGenericAlias(self, parameters,
-                                    _paramspec_tvars=True)
+    return _ConcatenateGenericAlias(self, parameters)
 
 
 @_SpecialForm
@@ -1307,8 +1306,7 @@ class _BaseGenericAlias(_Final, _root=True):
         raise AttributeError(attr)
 
     def __setattr__(self, attr, val):
-        if _is_dunder(attr) or attr in {'_name', '_inst', '_nparams',
-                                        '_paramspec_tvars'}:
+        if _is_dunder(attr) or attr in {'_name', '_inst', '_nparams'}:
             super().__setattr__(attr, val)
         else:
             setattr(self.__origin__, attr, val)
@@ -1362,15 +1360,13 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
     #     ClassVar[float]
     #     TypeVar[bool]
 
-    def __init__(self, origin, args, *, inst=True, name=None,
-                 _paramspec_tvars=False):
+    def __init__(self, origin, args, *, inst=True, name=None):
         super().__init__(origin, inst=inst, name=name)
         if not isinstance(args, tuple):
             args = (args,)
         self.__args__ = tuple(... if a is _TypingEllipsis else
                               a for a in args)
         self.__parameters__ = _collect_parameters(args)
-        self._paramspec_tvars = _paramspec_tvars
         if not name:
             self.__module__ = origin.__module__
 
@@ -1513,8 +1509,7 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         return new_args
 
     def copy_with(self, args):
-        return self.__class__(self.__origin__, args, name=self._name, inst=self._inst,
-                              _paramspec_tvars=self._paramspec_tvars)
+        return self.__class__(self.__origin__, args, name=self._name, inst=self._inst)
 
     def __repr__(self):
         if self._name:
@@ -1604,6 +1599,22 @@ class _SpecialGenericAlias(_NotIterable, _BaseGenericAlias, _root=True):
     def __ror__(self, left):
         return Union[left, self]
 
+
+class _DeprecatedGenericAlias(_SpecialGenericAlias, _root=True):
+    def __init__(
+        self, origin, nparams, *, removal_version, inst=True, name=None
+    ):
+        super().__init__(origin, nparams, inst=inst, name=name)
+        self._removal_version = removal_version
+
+    def __instancecheck__(self, inst):
+        import warnings
+        warnings._deprecated(
+            f"{self.__module__}.{self._name}", remove=self._removal_version
+        )
+        return super().__instancecheck__(inst)
+
+
 class _CallableGenericAlias(_NotIterable, _GenericAlias, _root=True):
     def __repr__(self):
         assert self._name == 'Callable'
@@ -1624,8 +1635,7 @@ class _CallableGenericAlias(_NotIterable, _GenericAlias, _root=True):
 class _CallableType(_SpecialGenericAlias, _root=True):
     def copy_with(self, params):
         return _CallableGenericAlias(self.__origin__, params,
-                                     name=self._name, inst=self._inst,
-                                     _paramspec_tvars=True)
+                                     name=self._name, inst=self._inst)
 
     def __getitem__(self, params):
         if not isinstance(params, tuple) or len(params) != 2:
@@ -1869,8 +1879,7 @@ class Generic:
                     new_args.append(new_arg)
             params = tuple(new_args)
 
-        return _GenericAlias(cls, params,
-                             _paramspec_tvars=True)
+        return _GenericAlias(cls, params)
 
     def __init_subclass__(cls, *args, **kwargs):
         super().__init_subclass__(*args, **kwargs)
@@ -2763,7 +2772,6 @@ Mapping = _alias(collections.abc.Mapping, 2)
 MutableMapping = _alias(collections.abc.MutableMapping, 2)
 Sequence = _alias(collections.abc.Sequence, 1)
 MutableSequence = _alias(collections.abc.MutableSequence, 1)
-ByteString = _alias(collections.abc.ByteString, 0)  # Not generic
 # Tuple accepts variable number of parameters.
 Tuple = _TupleType(tuple, -1, inst=False, name='Tuple')
 Tuple.__doc__ = \
@@ -3563,3 +3571,18 @@ def override(method: F, /) -> F:
         # read-only property, TypeError if it's a builtin class.
         pass
     return method
+
+
+def __getattr__(attr):
+    if attr == "ByteString":
+        import warnings
+        warnings._deprecated("typing.ByteString", remove=(3, 14))
+        with warnings.catch_warnings(
+            action="ignore", category=DeprecationWarning
+        ):
+            # Not generic
+            ByteString = globals()["ByteString"] = _DeprecatedGenericAlias(
+                collections.abc.ByteString, 0, removal_version=(3, 14)
+            )
+        return ByteString
+    raise AttributeError(f"module 'typing' has no attribute {attr!r}")
