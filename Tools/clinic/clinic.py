@@ -7,6 +7,7 @@
 
 import abc
 import ast
+import builtins as bltns
 import collections
 import contextlib
 import copy
@@ -28,7 +29,7 @@ import types
 
 from collections.abc import Callable
 from types import *
-from typing import Any, NamedTuple, Type
+from typing import Any, NamedTuple
 
 # TODO:
 #
@@ -2588,7 +2589,7 @@ class CConverter(metaclass=CConverterAutoRegister):
 
     # If not None, default must be isinstance() of this type.
     # (You can also specify a tuple of types.)
-    default_type: Type[Any] | tuple[Type[Any], ...] | None = None
+    default_type: bltns.type[Any] | tuple[bltns.type[Any], ...] | None = None
 
     # "default" converted into a C value, as a string.
     # Or None if there is no default.
