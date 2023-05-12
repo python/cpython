@@ -831,6 +831,9 @@ Pending Removal in Python 3.14
   For use in typing, prefer a union, like ``bytes | bytearray``, or :class:`collections.abc.Buffer`.
   (Contributed by Shantanu Jain in :gh:`91896`.)
 
+* :class:`typing.ByteString`, deprecated since Python 3.9, now causes an
+  :exc:`DeprecationWarning` to be emitted when it is used or accessed.
+
 * Creating immutable types (:data:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
   bases using the C API.
 
