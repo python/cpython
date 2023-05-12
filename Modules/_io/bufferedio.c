@@ -136,15 +136,15 @@ _io__BufferedIOBase_detach_impl(PyObject *self, PyTypeObject *cls)
 _io._BufferedIOBase.read
 
     cls: defining_class
+    size: int(unused=True) = -1
     /
-    *args: object
 
 Read and return up to n bytes.
 
-If the argument is omitted, None, or negative, read and
+If the size argument is omitted, None, or negative, read and
 return all data until EOF.
 
-If the argument is positive, and the underlying raw stream is
+If the size argument is positive, and the underlying raw stream is
 not 'interactive', multiple raw reads may be issued to satisfy
 the byte count (unless EOF is reached first).
 However, for interactive raw streams (as well as sockets and pipes),
@@ -159,8 +159,8 @@ mode and no data is available at the moment.
 
 static PyObject *
 _io__BufferedIOBase_read_impl(PyObject *self, PyTypeObject *cls,
-                              PyObject *args)
-/*[clinic end generated code: output=4521b30940fd7b67 input=390205758adc8510]*/
+                              int Py_UNUSED(size))
+/*[clinic end generated code: output=aceb2765587b0a29 input=824f6f910465e61a]*/
 {
     _PyIO_State *state = IO_STATE();
     return bufferediobase_unsupported(state, "read");
@@ -170,10 +170,10 @@ _io__BufferedIOBase_read_impl(PyObject *self, PyTypeObject *cls,
 _io._BufferedIOBase.read1
 
     cls: defining_class
+    size: int(unused=True) = -1
     /
-    *args: object
 
-Read and return up to n bytes, with at most one read() call to the underlying raw stream.
+Read and return up to size bytes, with at most one read() call to the underlying raw stream.
 
 Return an empty bytes object on EOF.
 A short result does not imply that EOF is imminent.
@@ -181,8 +181,8 @@ A short result does not imply that EOF is imminent.
 
 static PyObject *
 _io__BufferedIOBase_read1_impl(PyObject *self, PyTypeObject *cls,
-                               PyObject *args)
-/*[clinic end generated code: output=636fd241c21e050a input=ef546a1238c5b41c]*/
+                               int Py_UNUSED(size))
+/*[clinic end generated code: output=2e7fc62972487eaa input=af76380e020fd9e6]*/
 {
     _PyIO_State *state = IO_STATE();
     return bufferediobase_unsupported(state, "read1");
@@ -192,10 +192,10 @@ _io__BufferedIOBase_read1_impl(PyObject *self, PyTypeObject *cls,
 _io._BufferedIOBase.write
 
     cls: defining_class
+    b: object(unused=True)
     /
-    *args: object
 
-Write the given buffer to the IO stream.
+Write buffer b to the IO stream.
 
 Return the number of bytes written, which is always
 the length of b in bytes.
@@ -206,8 +206,8 @@ underlying raw stream cannot accept more data at the moment.
 
 static PyObject *
 _io__BufferedIOBase_write_impl(PyObject *self, PyTypeObject *cls,
-                               PyObject *args)
-/*[clinic end generated code: output=d51feea4bcac9892 input=f79b72c4dccb3dc2]*/
+                               PyObject *Py_UNUSED(b))
+/*[clinic end generated code: output=712c635246bf2306 input=9793f5c8f71029ad]*/
 {
     _PyIO_State *state = IO_STATE();
     return bufferediobase_unsupported(state, "write");
