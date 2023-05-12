@@ -5787,9 +5787,14 @@ gethost_common(socket_state *state, struct hostent *h, struct sockaddr *addr,
 
     /* SF #1511317: h_aliases can be NULL */
     if (h->h_aliases) {
-        for (pch = h->h_aliases; *pch != NULL; pch++) {
+        for (pch = h->h_aliases; ; pch++) {
             int status;
-            tmp = PyUnicode_FromString(*pch);
+            char *s;
+            memcpy(&s, pch, sizeof(s)); // pch can be misaligned
+            if (s == NULL) {
+                break;
+            }
+            tmp = PyUnicode_FromString(s);
             if (tmp == NULL)
                 goto err;
 
@@ -5801,8 +5806,13 @@ gethost_common(socket_state *state, struct hostent *h, struct sockaddr *addr,
         }
     }
 
-    for (pch = h->h_addr_list; *pch != NULL; pch++) {
+    for (pch = h->h_addr_list; ; pch++) {
         int status;
+        char *s;
+        memcpy(&s, pch, sizeof(s)); // pch can be misaligned
+        if (s == NULL) {
+            break;
+        }
 
         switch (af) {
 
@@ -5814,7 +5824,7 @@ gethost_common(socket_state *state, struct hostent *h, struct sockaddr *addr,
 #ifdef HAVE_SOCKADDR_SA_LEN
             sin.sin_len = sizeof(sin);
 #endif
-            memcpy(&sin.sin_addr, *pch, sizeof(sin.sin_addr));
+            memcpy(&sin.sin_addr, s, sizeof(sin.sin_addr));
             tmp = make_ipv4_addr(&sin);
 
             if (pch == h->h_addr_list && alen >= sizeof(sin))
@@ -5831,7 +5841,7 @@ gethost_common(socket_state *state, struct hostent *h, struct sockaddr *addr,
 #ifdef HAVE_SOCKADDR_SA_LEN
             sin6.sin6_len = sizeof(sin6);
 #endif
-            memcpy(&sin6.sin6_addr, *pch, sizeof(sin6.sin6_addr));
+            memcpy(&sin6.sin6_addr, s, sizeof(sin6.sin6_addr));
             tmp = make_ipv6_addr(&sin6);
 
             if (pch == h->h_addr_list && alen >= sizeof(sin6))

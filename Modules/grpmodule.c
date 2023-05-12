@@ -65,8 +65,13 @@ mkgrent(PyObject *module, struct group *p)
         Py_DECREF(v);
         return NULL;
     }
-    for (member = p->gr_mem; *member != NULL; member++) {
-        PyObject *x = PyUnicode_DecodeFSDefault(*member);
+    for (member = p->gr_mem; ; member++) {
+        char *s;
+        memcpy(&s, member, sizeof(s)); // member can be misaligned
+        if (s == NULL) {
+            break;
+        }
+        PyObject *x = PyUnicode_DecodeFSDefault(s);
         if (x == NULL || PyList_Append(w, x) != 0) {
             Py_XDECREF(x);
             Py_DECREF(w);
