@@ -149,6 +149,7 @@ struct _io_state {
     PyObject *unsupported_operation;
 
     /* Types */
+    PyTypeObject *PyIOBase_Type;
     PyTypeObject *PyIncrementalNewlineDecoder_Type;
     PyTypeObject *PyRawIOBase_Type;
     PyTypeObject *PyBufferedIOBase_Type;
