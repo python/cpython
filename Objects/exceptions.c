@@ -2287,6 +2287,46 @@ AttributeError_traverse(PyAttributeErrorObject *self, visitproc visit, void *arg
     return BaseException_traverse((PyBaseExceptionObject *)self, visit, arg);
 }
 
+/* Pickling support */
+static PyObject *
+AttributeError_getstate(PyAttributeErrorObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *dict = ((PyAttributeErrorObject *)self)->dict;
+    if (self->name || self->args) {
+        dict = dict ? PyDict_Copy(dict) : PyDict_New();
+        if (dict == NULL) {
+            return NULL;
+        }
+        if (self->name && PyDict_SetItemString(dict, "name", self->name) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+        /* We specifically are not pickling the obj attribute since there are many
+        cases where it is unlikely to be picklable. See GH-103352.
+        */
+        if (self->args && PyDict_SetItemString(dict, "args", self->args) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+        return dict;
+    }
+    else if (dict) {
+        return Py_NewRef(dict);
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+AttributeError_reduce(PyAttributeErrorObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *state = AttributeError_getstate(self, NULL);
+    if (state == NULL) {
+        return NULL;
+    }
+
+    return PyTuple_Pack(3, Py_TYPE(self), self->args, state);
+}
+
 static PyMemberDef AttributeError_members[] = {
     {"name", T_OBJECT, offsetof(PyAttributeErrorObject, name), 0, PyDoc_STR("attribute name")},
     {"obj", T_OBJECT, offsetof(PyAttributeErrorObject, obj), 0, PyDoc_STR("object")},
@@ -2294,7 +2334,9 @@ static PyMemberDef AttributeError_members[] = {
 };
 
 static PyMethodDef AttributeError_methods[] = {
-    {NULL}  /* Sentinel */
+    {"__getstate__", (PyCFunction)AttributeError_getstate, METH_NOARGS},
+    {"__reduce__", (PyCFunction)AttributeError_reduce, METH_NOARGS },
+    {NULL}
 };
 
 ComplexExtendsException(PyExc_Exception, AttributeError,
