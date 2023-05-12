@@ -6,7 +6,7 @@ on:
       - main
   pull_request:
     paths:
-      - "Tools/clinic/**/*"
+      - "Tools/clinic/**"
       - ".github/workflows/mypy-clinic.yml"
   workflow_dispatch:
 
