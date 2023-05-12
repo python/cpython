@@ -2060,6 +2060,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/sndhdrdata \
 		test/subprocessdata \
 		test/support \
+		test/support/_hypothesis_stubs \
 		test/test_asyncio \
 		test/test_capi \
 		test/test_ctypes \
