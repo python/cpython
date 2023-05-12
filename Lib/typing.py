@@ -3586,3 +3586,12 @@ def __getattr__(attr):
             )
         return ByteString
     raise AttributeError(f"module 'typing' has no attribute {attr!r}")
+
+
+def _remove_cached_ByteString_from_globals():
+    try:
+        del globals()["ByteString"]
+    except KeyError:
+        pass
+
+_cleanups.append(_remove_cached_ByteString_from_globals)
