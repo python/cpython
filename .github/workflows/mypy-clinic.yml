@@ -1,0 +1,31 @@
+name: Run mypy on Tools/clinic
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    paths:
+      - "Tools/clinic/**/*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  mypy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: .github/workflows/mypy-clinic.yml
+      - run: pip install mypy==1.3.0
+      - run: mypy --config-file Tools/clinic/mypy.ini
