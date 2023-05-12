@@ -2233,6 +2233,7 @@ handle_eval_breaker:
         }
 
         TARGET(BINARY_SUBSCR_GETITEM) {
+            DEOPT_IF(tstate->interp->eval_frame, BINARY_SUBSCR);
             PyObject *sub = TOP();
             PyObject *container = SECOND();
             _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)next_instr;
