@@ -1709,11 +1709,11 @@ static Py_ssize_t
 parse_abbr(const char *const p, PyObject **abbr)
 {
     const char *ptr = p;
-    char buff = *ptr;
     const char *str_start;
     const char *str_end;
 
     if (*ptr == '<') {
+        char buff;
         ptr++;
         str_start = ptr;
         while ((buff = *ptr) != '>') {
