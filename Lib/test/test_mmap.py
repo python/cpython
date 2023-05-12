@@ -318,7 +318,7 @@ class MmapTests(unittest.TestCase):
 
             m = mmap.mmap(f.fileno(), n, access=mmap.ACCESS_WRITE)
 
-        m.close()
+
         with self.assertRaises(ValueError):
             m[X()] = 1 # should not crash
 
@@ -337,7 +337,7 @@ class MmapTests(unittest.TestCase):
 
             m = mmap.mmap(f.fileno(), n, access=mmap.ACCESS_WRITE)
 
-        m.close()
+
         with self.assertRaises(ValueError):
             m[X():5] = b'abcde' # should not crash
 
@@ -356,7 +356,7 @@ class MmapTests(unittest.TestCase):
 
             m = mmap.mmap(f.fileno(), n, access=mmap.ACCESS_WRITE)
 
-        m.close()
+
         with self.assertRaises(ValueError):
             m[X():5:1] = b'abcde' # should not crash
 
