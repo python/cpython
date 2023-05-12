@@ -367,8 +367,6 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 2;
         case SWAP:
             return (oparg-2) + 2;
-        case INSTRUMENTED_LINE:
-            return 0;
         case INSTRUMENTED_INSTRUCTION:
             return 0;
         case INSTRUMENTED_JUMP_FORWARD:
@@ -759,8 +757,6 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 1;
         case SWAP:
             return (oparg-2) + 2;
-        case INSTRUMENTED_LINE:
-            return 0;
         case INSTRUMENTED_INSTRUCTION:
             return 0;
         case INSTRUMENTED_JUMP_FORWARD:
@@ -976,7 +972,6 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [COPY] = { true, INSTR_FMT_IB },
     [BINARY_OP] = { true, INSTR_FMT_IBC },
     [SWAP] = { true, INSTR_FMT_IB },
-    [INSTRUMENTED_LINE] = { true, INSTR_FMT_IX },
     [INSTRUMENTED_INSTRUCTION] = { true, INSTR_FMT_IX },
     [INSTRUMENTED_JUMP_FORWARD] = { true, INSTR_FMT_IB },
     [INSTRUMENTED_JUMP_BACKWARD] = { true, INSTR_FMT_IB },

@@ -301,7 +301,7 @@ Objects/object.c	-	_Py_NotImplementedStruct	-
 Objects/setobject.c	-	_dummy_struct	-
 Objects/setobject.c	-	_PySet_Dummy	-
 Objects/sliceobject.c	-	_Py_EllipsisObject	-
-Python/instrumentation.c	-	DISABLE	-
+Python/instrumentation.c	-	_PyInstrumentation_DISABLE	-
 Python/instrumentation.c	-	_PyInstrumentation_MISSING	-
 
 
