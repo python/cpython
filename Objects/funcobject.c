@@ -666,7 +666,7 @@ func_get_type_params(PyFunctionObject *op, void *Py_UNUSED(ignored))
 }
 
 PyObject *
-_Py_set_function_type_params(PyThreadState *unused, PyObject *func,
+_Py_set_function_type_params(PyThreadState *Py_UNUSED(ignored), PyObject *func,
                              PyObject *type_params)
 {
     assert(PyFunction_Check(func));

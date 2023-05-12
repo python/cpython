@@ -2,15 +2,9 @@ import asyncio
 import textwrap
 import types
 import unittest
-from test.support import requires_working_socket, check_syntax_error
+from test.support import requires_working_socket, check_syntax_error, run_code
 
-from typing import Any, Generic, Sequence, TypeVar, TypeVarTuple, ParamSpec, get_args
-
-
-def run_code(code: str) -> dict[str, Any]:
-    ns = {}
-    exec(textwrap.dedent(code), ns)
-    return ns
+from typing import Generic, Sequence, TypeVar, TypeVarTuple, ParamSpec, get_args
 
 
 class TypeParamsInvalidTest(unittest.TestCase):

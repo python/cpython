@@ -202,7 +202,7 @@ list_to_tuple(PyThreadState* unused, PyObject *v)
 }
 
 static PyObject *
-make_typevar(PyThreadState* unused, PyObject *v)
+make_typevar(PyThreadState* Py_UNUSED(ignored), PyObject *v)
 {
     assert(PyUnicode_Check(v));
     return _Py_make_typevar(PyUnicode_AsUTF8(v), NULL, NULL);
@@ -236,7 +236,7 @@ prep_reraise_star(PyThreadState* unused, PyObject *orig, PyObject *excs)
 }
 
 static PyObject *
-make_typevar_with_bound(PyThreadState* unused, PyObject *name,
+make_typevar_with_bound(PyThreadState* Py_UNUSED(ignored), PyObject *name,
                         PyObject *evaluate_bound)
 {
     assert(PyUnicode_Check(name));
@@ -244,7 +244,7 @@ make_typevar_with_bound(PyThreadState* unused, PyObject *name,
 }
 
 static PyObject *
-make_typevar_with_constraints(PyThreadState* unused, PyObject *name,
+make_typevar_with_constraints(PyThreadState* Py_UNUSED(ignored), PyObject *name,
                               PyObject *evaluate_constraints)
 {
     assert(PyUnicode_Check(name));

@@ -1,10 +1,8 @@
 import types
 import unittest
-from test.support import check_syntax_error
+from test.support import check_syntax_error, run_code
 
 from typing import Callable, TypeAliasType, TypeVar, get_args
-
-from .test_type_params import run_code
 
 
 class TypeParamsInvalidTest(unittest.TestCase):

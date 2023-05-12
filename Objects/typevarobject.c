@@ -248,7 +248,7 @@ static PyMemberDef typevar_members[] = {
 };
 
 static PyObject *
-typevar_bound(typevarobject *self, void *unused)
+typevar_bound(typevarobject *self, void *Py_UNUSED(ignored))
 {
     if (self->bound != NULL) {
         return Py_NewRef(self->bound);
@@ -262,7 +262,7 @@ typevar_bound(typevarobject *self, void *unused)
 }
 
 static PyObject *
-typevar_constraints(typevarobject *self, void *unused)
+typevar_constraints(typevarobject *self, void *Py_UNUSED(ignored))
 {
     if (self->constraints != NULL) {
         return Py_NewRef(self->constraints);
@@ -1246,14 +1246,14 @@ _Py_make_typevar(const char *name, PyObject *evaluate_bound, PyObject *evaluate_
 }
 
 PyObject *
-_Py_make_paramspec(PyThreadState *unused, PyObject *v)
+_Py_make_paramspec(PyThreadState *Py_UNUSED(ignored), PyObject *v)
 {
     assert(PyUnicode_Check(v));
     return (PyObject *)paramspec_alloc(PyUnicode_AsUTF8(v), NULL, false, false, true, NULL);
 }
 
 PyObject *
-_Py_make_typevartuple(PyThreadState *unused, PyObject *v)
+_Py_make_typevartuple(PyThreadState *Py_UNUSED(ignored), PyObject *v)
 {
     assert(PyUnicode_Check(v));
     return (PyObject *)typevartuple_alloc(PyUnicode_AsUTF8(v), NULL);
