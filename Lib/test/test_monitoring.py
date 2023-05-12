@@ -1,6 +1,7 @@
 """Test suite for the sys.monitoring."""
 
 import collections
+import dis
 import functools
 import operator
 import sys
@@ -507,7 +508,7 @@ class LineMonitoringTest(MonitoringTestBase, unittest.TestCase):
             sys.monitoring.set_events(TEST_TOOL, 0)
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
             start = LineMonitoringTest.test_lines_single.__code__.co_firstlineno
-            self.assertEqual(events, [start+7, 15, start+8])
+            self.assertEqual(events, [start+7, 16, start+8])
         finally:
             sys.monitoring.set_events(TEST_TOOL, 0)
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
@@ -525,7 +526,7 @@ class LineMonitoringTest(MonitoringTestBase, unittest.TestCase):
             sys.monitoring.set_events(TEST_TOOL, 0)
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
             start = LineMonitoringTest.test_lines_loop.__code__.co_firstlineno
-            self.assertEqual(events, [start+7, 22, 23, 22, 23, 22, start+8])
+            self.assertEqual(events, [start+7, 23, 24, 23, 24, 23, start+8])
         finally:
             sys.monitoring.set_events(TEST_TOOL, 0)
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
@@ -547,7 +548,7 @@ class LineMonitoringTest(MonitoringTestBase, unittest.TestCase):
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
             sys.monitoring.register_callback(TEST_TOOL2, E.LINE, None)
             start = LineMonitoringTest.test_lines_two.__code__.co_firstlineno
-            expected = [start+10, 15, start+11]
+            expected = [start+10, 16, start+11]
             self.assertEqual(events, expected)
             self.assertEqual(events2, expected)
         finally:
@@ -1190,9 +1191,21 @@ class TestLoadSuperAttr(CheckEvents):
         # un-optimized `LOAD_GLOBAL super; CALL; LOAD_ATTR` form.
         assignment = "x = 1" if optimized else "super = super"
         codestr = f"{assignment}\n{textwrap.dedent(codestr)}"
+        co = compile(codestr, "<string>", "exec")
+        # validate that we really do have a LOAD_SUPER_ATTR, only when optimized
+        self.assertEqual(self._has_load_super_attr(co), optimized)
         d = {}
-        exec(codestr, d, d)
+        exec(co, d, d)
         return d
+
+    def _has_load_super_attr(self, co):
+        has = any(instr.opname == "LOAD_SUPER_ATTR" for instr in dis.get_instructions(co))
+        if not has:
+            has = any(
+                isinstance(c, types.CodeType) and self._has_load_super_attr(c)
+                for c in co.co_consts
+            )
+        return has
 
     def _super_method_call(self, optimized=False):
         codestr = """
