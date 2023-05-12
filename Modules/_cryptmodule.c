@@ -4,6 +4,9 @@
 #include "Python.h"
 
 #include <sys/types.h>
+#ifdef HAVE_CRYPT_H
+#include <crypt.h>
+#endif
 
 /* Module crypt */
 
@@ -55,6 +58,7 @@ static PyMethodDef crypt_methods[] = {
 };
 
 static PyModuleDef_Slot _crypt_slots[] = {
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

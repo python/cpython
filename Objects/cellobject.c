@@ -11,8 +11,7 @@ PyCell_New(PyObject *obj)
     op = (PyCellObject *)PyObject_GC_New(PyCellObject, &PyCell_Type);
     if (op == NULL)
         return NULL;
-    op->ob_ref = obj;
-    Py_XINCREF(obj);
+    op->ob_ref = Py_XNewRef(obj);
 
     _PyObject_GC_TRACK(op);
     return (PyObject *)op;
@@ -56,22 +55,20 @@ PyCell_Get(PyObject *op)
         PyErr_BadInternalCall();
         return NULL;
     }
-    Py_XINCREF(((PyCellObject*)op)->ob_ref);
-    return PyCell_GET(op);
+    PyObject *value = PyCell_GET(op);
+    return Py_XNewRef(value);
 }
 
 int
-PyCell_Set(PyObject *op, PyObject *obj)
+PyCell_Set(PyObject *op, PyObject *value)
 {
-    PyObject* oldobj;
     if (!PyCell_Check(op)) {
         PyErr_BadInternalCall();
         return -1;
     }
-    oldobj = PyCell_GET(op);
-    Py_XINCREF(obj);
-    PyCell_SET(op, obj);
-    Py_XDECREF(oldobj);
+    PyObject *old_value = PyCell_GET(op);
+    PyCell_SET(op, Py_XNewRef(value));
+    Py_XDECREF(old_value);
     return 0;
 }
 
@@ -136,15 +133,13 @@ cell_get_contents(PyCellObject *op, void *closure)
         PyErr_SetString(PyExc_ValueError, "Cell is empty");
         return NULL;
     }
-    Py_INCREF(op->ob_ref);
-    return op->ob_ref;
+    return Py_NewRef(op->ob_ref);
 }
 
 static int
 cell_set_contents(PyCellObject *op, PyObject *obj, void *Py_UNUSED(ignored))
 {
-    Py_XINCREF(obj);
-    Py_XSETREF(op->ob_ref, obj);
+    Py_XSETREF(op->ob_ref, Py_XNewRef(obj));
     return 0;
 }
 

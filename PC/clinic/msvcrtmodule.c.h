@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(msvcrt_heapmin__doc__,
 "heapmin($module, /)\n"
 "--\n"
@@ -37,7 +43,7 @@ PyDoc_STRVAR(msvcrt_locking__doc__,
 "individually.");
 
 #define MSVCRT_LOCKING_METHODDEF    \
-    {"locking", (PyCFunction)(void(*)(void))msvcrt_locking, METH_FASTCALL, msvcrt_locking__doc__},
+    {"locking", _PyCFunction_CAST(msvcrt_locking), METH_FASTCALL, msvcrt_locking__doc__},
 
 static PyObject *
 msvcrt_locking_impl(PyObject *module, int fd, int mode, long nbytes);
@@ -83,7 +89,7 @@ PyDoc_STRVAR(msvcrt_setmode__doc__,
 "Return value is the previous mode.");
 
 #define MSVCRT_SETMODE_METHODDEF    \
-    {"setmode", (PyCFunction)(void(*)(void))msvcrt_setmode, METH_FASTCALL, msvcrt_setmode__doc__},
+    {"setmode", _PyCFunction_CAST(msvcrt_setmode), METH_FASTCALL, msvcrt_setmode__doc__},
 
 static long
 msvcrt_setmode_impl(PyObject *module, int fd, int flags);
@@ -128,7 +134,7 @@ PyDoc_STRVAR(msvcrt_open_osfhandle__doc__,
 "to os.fdopen() to create a file object.");
 
 #define MSVCRT_OPEN_OSFHANDLE_METHODDEF    \
-    {"open_osfhandle", (PyCFunction)(void(*)(void))msvcrt_open_osfhandle, METH_FASTCALL, msvcrt_open_osfhandle__doc__},
+    {"open_osfhandle", _PyCFunction_CAST(msvcrt_open_osfhandle), METH_FASTCALL, msvcrt_open_osfhandle__doc__},
 
 static long
 msvcrt_open_osfhandle_impl(PyObject *module, void *handle, int flags);
@@ -141,8 +147,15 @@ msvcrt_open_osfhandle(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int flags;
     long _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, ""_Py_PARSE_UINTPTR"i:open_osfhandle",
-        &handle, &flags)) {
+    if (!_PyArg_CheckPositional("open_osfhandle", nargs, 2, 2)) {
+        goto exit;
+    }
+    handle = PyLong_AsVoidPtr(args[0]);
+    if (!handle && PyErr_Occurred()) {
+        goto exit;
+    }
+    flags = _PyLong_AsInt(args[1]);
+    if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = msvcrt_open_osfhandle_impl(module, handle, flags);
@@ -248,6 +261,8 @@ msvcrt_getch(PyObject *module, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
+#if defined(MS_WINDOWS_DESKTOP)
+
 PyDoc_STRVAR(msvcrt_getwch__doc__,
 "getwch($module, /)\n"
 "--\n"
@@ -271,6 +286,8 @@ msvcrt_getwch(PyObject *module, PyObject *Py_UNUSED(ignored))
 
     return return_value;
 }
+
+#endif /* defined(MS_WINDOWS_DESKTOP) */
 
 PyDoc_STRVAR(msvcrt_getche__doc__,
 "getche($module, /)\n"
@@ -296,6 +313,8 @@ msvcrt_getche(PyObject *module, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
+#if defined(MS_WINDOWS_DESKTOP)
+
 PyDoc_STRVAR(msvcrt_getwche__doc__,
 "getwche($module, /)\n"
 "--\n"
@@ -319,6 +338,8 @@ msvcrt_getwche(PyObject *module, PyObject *Py_UNUSED(ignored))
 
     return return_value;
 }
+
+#endif /* defined(MS_WINDOWS_DESKTOP) */
 
 PyDoc_STRVAR(msvcrt_putch__doc__,
 "putch($module, char, /)\n"
@@ -353,6 +374,8 @@ msvcrt_putch(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
+
+#if defined(MS_WINDOWS_DESKTOP)
 
 PyDoc_STRVAR(msvcrt_putwch__doc__,
 "putwch($module, unicode_char, /)\n"
@@ -389,6 +412,8 @@ msvcrt_putwch(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
+
+#endif /* defined(MS_WINDOWS_DESKTOP) */
 
 PyDoc_STRVAR(msvcrt_ungetch__doc__,
 "ungetch($module, char, /)\n"
@@ -428,6 +453,8 @@ exit:
     return return_value;
 }
 
+#if defined(MS_WINDOWS_DESKTOP)
+
 PyDoc_STRVAR(msvcrt_ungetwch__doc__,
 "ungetwch($module, unicode_char, /)\n"
 "--\n"
@@ -464,6 +491,8 @@ exit:
     return return_value;
 }
 
+#endif /* defined(MS_WINDOWS_DESKTOP) */
+
 #if defined(_DEBUG)
 
 PyDoc_STRVAR(msvcrt_CrtSetReportFile__doc__,
@@ -475,7 +504,7 @@ PyDoc_STRVAR(msvcrt_CrtSetReportFile__doc__,
 "Only available on Debug builds.");
 
 #define MSVCRT_CRTSETREPORTFILE_METHODDEF    \
-    {"CrtSetReportFile", (PyCFunction)(void(*)(void))msvcrt_CrtSetReportFile, METH_FASTCALL, msvcrt_CrtSetReportFile__doc__},
+    {"CrtSetReportFile", _PyCFunction_CAST(msvcrt_CrtSetReportFile), METH_FASTCALL, msvcrt_CrtSetReportFile__doc__},
 
 static void *
 msvcrt_CrtSetReportFile_impl(PyObject *module, int type, void *file);
@@ -488,8 +517,15 @@ msvcrt_CrtSetReportFile(PyObject *module, PyObject *const *args, Py_ssize_t narg
     void *file;
     void *_return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "i"_Py_PARSE_UINTPTR":CrtSetReportFile",
-        &type, &file)) {
+    if (!_PyArg_CheckPositional("CrtSetReportFile", nargs, 2, 2)) {
+        goto exit;
+    }
+    type = _PyLong_AsInt(args[0]);
+    if (type == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    file = PyLong_AsVoidPtr(args[1]);
+    if (!file && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = msvcrt_CrtSetReportFile_impl(module, type, file);
@@ -515,7 +551,7 @@ PyDoc_STRVAR(msvcrt_CrtSetReportMode__doc__,
 "Only available on Debug builds.");
 
 #define MSVCRT_CRTSETREPORTMODE_METHODDEF    \
-    {"CrtSetReportMode", (PyCFunction)(void(*)(void))msvcrt_CrtSetReportMode, METH_FASTCALL, msvcrt_CrtSetReportMode__doc__},
+    {"CrtSetReportMode", _PyCFunction_CAST(msvcrt_CrtSetReportMode), METH_FASTCALL, msvcrt_CrtSetReportMode__doc__},
 
 static long
 msvcrt_CrtSetReportMode_impl(PyObject *module, int type, int mode);
@@ -590,6 +626,8 @@ exit:
 
 #endif /* defined(_DEBUG) */
 
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM))
+
 PyDoc_STRVAR(msvcrt_GetErrorMode__doc__,
 "GetErrorMode($module, /)\n"
 "--\n"
@@ -607,6 +645,8 @@ msvcrt_GetErrorMode(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return msvcrt_GetErrorMode_impl(module);
 }
+
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)) */
 
 PyDoc_STRVAR(msvcrt_SetErrorMode__doc__,
 "SetErrorMode($module, mode, /)\n"
@@ -636,6 +676,22 @@ exit:
     return return_value;
 }
 
+#ifndef MSVCRT_GETWCH_METHODDEF
+    #define MSVCRT_GETWCH_METHODDEF
+#endif /* !defined(MSVCRT_GETWCH_METHODDEF) */
+
+#ifndef MSVCRT_GETWCHE_METHODDEF
+    #define MSVCRT_GETWCHE_METHODDEF
+#endif /* !defined(MSVCRT_GETWCHE_METHODDEF) */
+
+#ifndef MSVCRT_PUTWCH_METHODDEF
+    #define MSVCRT_PUTWCH_METHODDEF
+#endif /* !defined(MSVCRT_PUTWCH_METHODDEF) */
+
+#ifndef MSVCRT_UNGETWCH_METHODDEF
+    #define MSVCRT_UNGETWCH_METHODDEF
+#endif /* !defined(MSVCRT_UNGETWCH_METHODDEF) */
+
 #ifndef MSVCRT_CRTSETREPORTFILE_METHODDEF
     #define MSVCRT_CRTSETREPORTFILE_METHODDEF
 #endif /* !defined(MSVCRT_CRTSETREPORTFILE_METHODDEF) */
@@ -647,4 +703,8 @@ exit:
 #ifndef MSVCRT_SET_ERROR_MODE_METHODDEF
     #define MSVCRT_SET_ERROR_MODE_METHODDEF
 #endif /* !defined(MSVCRT_SET_ERROR_MODE_METHODDEF) */
-/*[clinic end generated code: output=20dfbc768edce7c0 input=a9049054013a1b77]*/
+
+#ifndef MSVCRT_GETERRORMODE_METHODDEF
+    #define MSVCRT_GETERRORMODE_METHODDEF
+#endif /* !defined(MSVCRT_GETERRORMODE_METHODDEF) */
+/*[clinic end generated code: output=2db6197608a6aab3 input=a9049054013a1b77]*/

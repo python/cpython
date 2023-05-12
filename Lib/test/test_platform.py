@@ -79,6 +79,7 @@ class PlatformTest(unittest.TestCase):
         res = platform.architecture()
 
     @os_helper.skip_unless_symlink
+    @support.requires_subprocess()
     def test_architecture_via_symlink(self): # issue3762
         with support.PythonSymlink() as py:
             cmd = "-c", "import platform; print(platform.architecture())"
@@ -122,10 +123,6 @@ class PlatformTest(unittest.TestCase):
         for input, output in (
             ('2.4.3 (#1, Jun 21 2006, 13:54:21) \n[GCC 3.3.4 (pre 3.3.5 20040809)]',
              ('CPython', '2.4.3', '', '', '1', 'Jun 21 2006 13:54:21', 'GCC 3.3.4 (pre 3.3.5 20040809)')),
-            ('IronPython 1.0.60816 on .NET 2.0.50727.42',
-             ('IronPython', '1.0.60816', '', '', '', '', '.NET 2.0.50727.42')),
-            ('IronPython 1.0 (1.0.61005.1977) on .NET 2.0.50727.42',
-             ('IronPython', '1.0.0', '', '', '', '', '.NET 2.0.50727.42')),
             ('2.4.3 (truncation, date, t) \n[GCC]',
              ('CPython', '2.4.3', '', '', 'truncation', 'date t', 'GCC')),
             ('2.4.3 (truncation, date, ) \n[GCC]',
@@ -160,20 +157,11 @@ class PlatformTest(unittest.TestCase):
                  ('r261:67515', 'Dec  6 2008 15:26:00'),
                  'GCC 4.0.1 (Apple Computer, Inc. build 5370)'),
 
-            ("IronPython 2.0 (2.0.0.0) on .NET 2.0.50727.3053", None, "cli")
+            ("3.10.8 (tags/v3.10.8:aaaf517424, Feb 14 2023, 16:28:12) [GCC 9.4.0]",
+             None, "linux")
             :
-                ("IronPython", "2.0.0", "", "", ("", ""),
-                 ".NET 2.0.50727.3053"),
-
-            ("2.6.1 (IronPython 2.6.1 (2.6.10920.0) on .NET 2.0.50727.1433)", None, "cli")
-            :
-                ("IronPython", "2.6.1", "", "", ("", ""),
-                 ".NET 2.0.50727.1433"),
-
-            ("2.7.4 (IronPython 2.7.4 (2.7.0.40) on Mono 4.0.30319.1 (32-bit))", None, "cli")
-            :
-                ("IronPython", "2.7.4", "", "", ("", ""),
-                 "Mono 4.0.30319.1 (32-bit)"),
+                ('CPython', '3.10.8', '', '',
+                ('tags/v3.10.8:aaaf517424', 'Feb 14 2023 16:28:12'), 'GCC 9.4.0'),
 
             ("2.5 (trunk:6107, Mar 26 2009, 13:02:18) \n[Java HotSpot(TM) Client VM (\"Apple Computer, Inc.\")]",
             ('Jython', 'trunk', '6107'), "java1.5.0_16")
@@ -204,6 +192,9 @@ class PlatformTest(unittest.TestCase):
             self.assertEqual(platform.python_build(), info[4])
             self.assertEqual(platform.python_compiler(), info[5])
 
+        with self.assertRaises(ValueError):
+            platform._sys_version('2. 4.3 (truncation) \n[GCC]')
+
     def test_system_alias(self):
         res = platform.system_alias(
             platform.system(),
@@ -227,6 +218,14 @@ class PlatformTest(unittest.TestCase):
         self.assertEqual(res[5], res.processor)
         self.assertEqual(res[-1], res.processor)
         self.assertEqual(len(res), 6)
+
+    @unittest.skipUnless(sys.platform.startswith('win'), "windows only test")
+    def test_uname_win32_without_wmi(self):
+        def raises_oserror(*a):
+            raise OSError()
+
+        with support.swap_attr(platform, '_wmi_query', raises_oserror):
+            self.test_uname()
 
     def test_uname_cast_to_tuple(self):
         res = platform.uname()
@@ -268,7 +267,16 @@ class PlatformTest(unittest.TestCase):
         self.assertEqual(res[:], expected)
         self.assertEqual(res[:5], expected[:5])
 
+    def test_uname_fields(self):
+        self.assertIn('processor', platform.uname()._fields)
+
+    def test_uname_asdict(self):
+        res = platform.uname()._asdict()
+        self.assertEqual(len(res), 6)
+        self.assertIn('processor', res)
+
     @unittest.skipIf(sys.platform in ['win32', 'OpenVMS'], "uname -p not used")
+    @support.requires_subprocess()
     def test_uname_processor(self):
         """
         On some systems, the processor must match the output
@@ -287,24 +295,31 @@ class PlatformTest(unittest.TestCase):
         # on 64 bit Windows: if PROCESSOR_ARCHITEW6432 exists we should be
         # using it, per
         # http://blogs.msdn.com/david.wang/archive/2006/03/26/HOWTO-Detect-Process-Bitness.aspx
-        try:
+
+        # We also need to suppress WMI checks, as those are reliable and
+        # overrule the environment variables
+        def raises_oserror(*a):
+            raise OSError()
+
+        with support.swap_attr(platform, '_wmi_query', raises_oserror):
             with os_helper.EnvironmentVarGuard() as environ:
-                if 'PROCESSOR_ARCHITEW6432' in environ:
-                    del environ['PROCESSOR_ARCHITEW6432']
-                environ['PROCESSOR_ARCHITECTURE'] = 'foo'
-                platform._uname_cache = None
-                system, node, release, version, machine, processor = platform.uname()
-                self.assertEqual(machine, 'foo')
-                environ['PROCESSOR_ARCHITEW6432'] = 'bar'
-                platform._uname_cache = None
-                system, node, release, version, machine, processor = platform.uname()
-                self.assertEqual(machine, 'bar')
-        finally:
-            platform._uname_cache = None
+                try:
+                    if 'PROCESSOR_ARCHITEW6432' in environ:
+                        del environ['PROCESSOR_ARCHITEW6432']
+                    environ['PROCESSOR_ARCHITECTURE'] = 'foo'
+                    platform._uname_cache = None
+                    system, node, release, version, machine, processor = platform.uname()
+                    self.assertEqual(machine, 'foo')
+                    environ['PROCESSOR_ARCHITEW6432'] = 'bar'
+                    platform._uname_cache = None
+                    system, node, release, version, machine, processor = platform.uname()
+                    self.assertEqual(machine, 'bar')
+                finally:
+                    platform._uname_cache = None
 
     def test_java_ver(self):
         res = platform.java_ver()
-        if sys.platform == 'java':
+        if sys.platform == 'java':  # Is never actually checked in CI
             self.assertTrue(all(res))
 
     def test_win32_ver(self):
@@ -362,6 +377,7 @@ class PlatformTest(unittest.TestCase):
             # parent
             support.wait_process(pid, exitcode=0)
 
+    @unittest.skipIf(support.is_emscripten, "Does not apply to Emscripten")
     def test_libc_ver(self):
         # check that libc_ver(executable) doesn't raise an exception
         if os.path.isdir(sys.executable) and \

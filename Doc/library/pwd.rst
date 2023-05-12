@@ -10,6 +10,8 @@
 This module provides access to the Unix user account and password database.  It
 is available on all Unix versions.
 
+.. include:: ../includes/wasm-notavail.rst
+
 Password database entries are reported as a tuple-like object, whose attributes
 correspond to the members of the ``passwd`` structure (Attribute field below,
 see ``<pwd.h>``):
@@ -37,7 +39,7 @@ raised if the entry asked for cannot be found.
 
 .. note::
 
-   .. index:: module: crypt
+   .. index:: pair: module; crypt
 
    In traditional Unix the field ``pw_passwd`` usually contains a password
    encrypted with a DES derived algorithm (see module :mod:`crypt`).  However most

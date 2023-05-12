@@ -84,7 +84,6 @@ mkpwent(PyObject *module, struct passwd *p)
     if (v == NULL)
         return NULL;
 
-#define SETI(i,val) PyStructSequence_SET_ITEM(v, i, PyLong_FromLong((long) val))
 #define SETS(i,val) sets(v, i, val)
 
     SETS(setIndex++, p->pw_name);
@@ -104,7 +103,6 @@ mkpwent(PyObject *module, struct passwd *p)
     SETS(setIndex++, p->pw_shell);
 
 #undef SETS
-#undef SETI
 
     if (PyErr_Occurred()) {
         Py_XDECREF(v);
@@ -338,6 +336,7 @@ pwdmodule_exec(PyObject *module)
 
 static PyModuleDef_Slot pwdmodule_slots[] = {
     {Py_mod_exec, pwdmodule_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

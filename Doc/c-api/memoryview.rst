@@ -3,7 +3,7 @@
 .. _memoryview-objects:
 
 .. index::
-   object: memoryview
+   pair: object; memoryview
 
 MemoryView objects
 ------------------
@@ -27,7 +27,7 @@ any other object.
 
    .. versionadded:: 3.3
 
-.. c:function:: PyObject *PyMemoryView_FromBuffer(Py_buffer *view)
+.. c:function:: PyObject *PyMemoryView_FromBuffer(const Py_buffer *view)
 
    Create a memoryview object wrapping the given buffer structure *view*.
    For simple byte buffers, :c:func:`PyMemoryView_FromMemory` is the preferred
@@ -55,10 +55,9 @@ any other object.
    *mview* **must** be a memoryview instance; this macro doesn't check its type,
    you must do it yourself or you will risk crashes.
 
-.. c:function:: Py_buffer *PyMemoryView_GET_BASE(PyObject *mview)
+.. c:function:: PyObject *PyMemoryView_GET_BASE(PyObject *mview)
 
    Return either a pointer to the exporting object that the memoryview is based
    on or ``NULL`` if the memoryview has been created by one of the functions
    :c:func:`PyMemoryView_FromMemory` or :c:func:`PyMemoryView_FromBuffer`.
    *mview* **must** be a memoryview instance.
-

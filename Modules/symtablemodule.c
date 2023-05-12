@@ -1,8 +1,5 @@
 #include "Python.h"
-
-#include "code.h"
-#include "Python-ast.h"
-#include "symtable.h"
+#include "pycore_symtable.h"      // struct symtable
 
 #include "clinic/symtablemodule.c.h"
 /*[clinic input]
@@ -59,10 +56,8 @@ _symtable_symtable_impl(PyObject *module, PyObject *source,
     if (st == NULL) {
         return NULL;
     }
-    t = (PyObject *)st->st_top;
-    Py_INCREF(t);
-    PyMem_Free((void *)st->st_future);
-    PySymtable_Free(st);
+    t = Py_NewRef(st->st_top);
+    _PySymtable_Free(st);
     return t;
 }
 
@@ -70,12 +65,6 @@ static PyMethodDef symtable_methods[] = {
     _SYMTABLE_SYMTABLE_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
-
-static int
-symtable_init_stentry_type(PyObject *m)
-{
-    return PyType_Ready(&PySTEntry_Type);
-}
 
 static int
 symtable_init_constants(PyObject *m)
@@ -110,8 +99,8 @@ symtable_init_constants(PyObject *m)
 }
 
 static PyModuleDef_Slot symtable_slots[] = {
-    {Py_mod_exec, symtable_init_stentry_type},
     {Py_mod_exec, symtable_init_constants},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 
