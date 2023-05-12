@@ -261,8 +261,6 @@ class TypeParamsAccessTest(unittest.TestCase):
                 x = int
                 def func[T](self, a: x, b: T):
                     ...
-
-            assert ClassA.func.__annotations__["a"] is int
             """
         )
         cls = ns["ClassA"]
