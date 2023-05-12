@@ -1034,15 +1034,6 @@ rawiobase_write(PyObject *self, PyObject *args)
     return NULL;
 }
 
-static void
-rawiobase_dealloc(PyObject *self)
-{
-    PyTypeObject *tp = Py_TYPE(self);
-    _PyObject_GC_UNTRACK(self);
-    tp->tp_free(self);
-    Py_DECREF(tp);
-}
-
 static int
 rawiobase_traverse(PyObject *self, visitproc visit, void *arg)
 {
@@ -1059,7 +1050,6 @@ static PyMethodDef rawiobase_methods[] = {
 };
 
 static PyType_Slot rawiobase_slots[] = {
-    {Py_tp_dealloc, rawiobase_dealloc},
     {Py_tp_doc, (void *)rawiobase_doc},
     {Py_tp_methods, rawiobase_methods},
     {Py_tp_traverse, rawiobase_traverse},
