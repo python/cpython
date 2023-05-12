@@ -1048,6 +1048,7 @@ analyze_child_block(PySTEntryObject *entry, PyObject *bound, PyObject *free,
     *child_free = temp_free;
     Py_DECREF(temp_bound);
     Py_DECREF(temp_global);
+    Py_DECREF(temp_typeparams);
     return 1;
  error:
     Py_XDECREF(temp_bound);
