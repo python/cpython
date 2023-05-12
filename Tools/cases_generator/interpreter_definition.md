@@ -137,9 +137,9 @@ The following definitions may occur:
 `foo_1` is legal. `$` is not legal, nor is `struct` or `class`.
 
 The optional `type` in an `object` is the C type. It defaults to `PyObject *`.
-The objects before the "--" are the objects on top of the the stack at the start
-of the instruction. Those after the "--" are the objects on top of the the stack
-at the end of the instruction.
+The objects before the "--" are the objects on top of the stack at the start of
+the instruction. Those after the "--" are the objects on top of the stack at the
+end of the instruction.
 
 An `inst` without `stack_effect` is a transitional form to allow the original C code
 definitions to be copied. It lacks information to generate anything other than the

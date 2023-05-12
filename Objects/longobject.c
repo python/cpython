@@ -7,9 +7,8 @@
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_long.h"          // _Py_SmallInts
 #include "pycore_object.h"        // _PyObject_Init()
-#include "pycore_pystate.h"       // _Py_IsMainInterpreter()
 #include "pycore_runtime.h"       // _PY_NSMALLPOSINTS
-#include "pycore_structseq.h"     // _PyStructSequence_FiniType()
+#include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
 
 #include <ctype.h>
 #include <float.h>
@@ -52,8 +51,7 @@ static PyObject *
 get_small_int(sdigit ival)
 {
     assert(IS_SMALL_INT(ival));
-    PyObject *v = (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + ival];
-    return Py_NewRef(v);
+    return (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + ival];
 }
 
 static PyLongObject *
@@ -3271,6 +3269,27 @@ long_richcompare(PyObject *self, PyObject *other, int op)
     Py_RETURN_RICHCOMPARE(result, 0, op);
 }
 
+static void
+long_dealloc(PyObject *self)
+{
+    /* This should never get called, but we also don't want to SEGV if
+     * we accidentally decref small Ints out of existence. Instead,
+     * since small Ints are immortal, re-set the reference count.
+     */
+    PyLongObject *pylong = (PyLongObject*)self;
+    if (pylong && _PyLong_IsCompact(pylong)) {
+        stwodigits ival = medium_value(pylong);
+        if (IS_SMALL_INT(ival)) {
+            PyLongObject *small_pylong = (PyLongObject *)get_small_int((sdigit)ival);
+            if (pylong == small_pylong) {
+                _Py_SetImmortal(self);
+                return;
+            }
+        }
+    }
+    Py_TYPE(self)->tp_free(self);
+}
+
 static Py_hash_t
 long_hash(PyLongObject *v)
 {
@@ -6233,7 +6252,7 @@ PyTypeObject PyLong_Type = {
     "int",                                      /* tp_name */
     offsetof(PyLongObject, long_value.ob_digit),  /* tp_basicsize */
     sizeof(digit),                              /* tp_itemsize */
-    0,                                          /* tp_dealloc */
+    long_dealloc,                               /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
@@ -6331,19 +6350,11 @@ PyLong_GetInfo(void)
 PyStatus
 _PyLong_InitTypes(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return _PyStatus_OK();
-    }
-
-    if (PyType_Ready(&PyLong_Type) < 0) {
-        return _PyStatus_ERR("Can't initialize int type");
-    }
-
     /* initialize int_info */
-    if (Int_InfoType.tp_name == NULL) {
-        if (_PyStructSequence_InitBuiltin(&Int_InfoType, &int_info_desc) < 0) {
-            return _PyStatus_ERR("can't init int info type");
-        }
+    if (_PyStructSequence_InitBuiltin(interp, &Int_InfoType,
+                                      &int_info_desc) < 0)
+    {
+        return _PyStatus_ERR("can't init int info type");
     }
 
     return _PyStatus_OK();
@@ -6353,9 +6364,5 @@ _PyLong_InitTypes(PyInterpreterState *interp)
 void
 _PyLong_FiniTypes(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return;
-    }
-
-    _PyStructSequence_FiniType(&Int_InfoType);
+    _PyStructSequence_FiniBuiltin(interp, &Int_InfoType);
 }
