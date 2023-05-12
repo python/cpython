@@ -264,7 +264,7 @@ class FeedParser:
                         yield NeedMoreData
                         continue
                     break
-                msg = self._pop_message()
+                self._pop_message()
                 # We need to pop the EOF matcher in order to tell if we're at
                 # the end of the current file, not the end of the last block
                 # of message headers.

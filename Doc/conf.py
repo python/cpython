@@ -76,6 +76,13 @@ venvdir = os.getenv('VENVDIR')
 if venvdir is not None:
     exclude_patterns.append(venvdir + '/*')
 
+nitpick_ignore = [
+    # Do not error nit-picky mode builds when _SubParsersAction.add_parser cannot
+    # be resolved, as the method is currently undocumented. For context, see
+    # https://github.com/python/cpython/pull/103289.
+    ('py:meth', '_SubParsersAction.add_parser'),
+]
+
 # Disable Docutils smartquotes for several translations
 smartquotes_excludes = {
     'languages': ['ja', 'fr', 'zh_TW', 'zh_CN'], 'builders': ['man', 'text'],
@@ -83,6 +90,11 @@ smartquotes_excludes = {
 
 # Avoid a warning with Sphinx >= 2.0
 master_doc = 'contents'
+
+# Allow translation of index directives
+gettext_additional_targets = [
+    'index',
+]
 
 # Options for HTML output
 # -----------------------
@@ -107,12 +119,13 @@ if any('htmlhelp' in arg for arg in sys.argv):
 # Short title used e.g. for <title> HTML tags.
 html_short_title = '%s Documentation' % release
 
-# Deployment preview information, from Netlify
-# (See netlify.toml and https://docs.netlify.com/configure-builds/environment-variables/#git-metadata)
+# Deployment preview information
+# (See .readthedocs.yml and https://docs.readthedocs.io/en/stable/reference/environment-variables.html)
+repository_url = os.getenv("READTHEDOCS_GIT_CLONE_URL")
 html_context = {
-    "is_deployment_preview": os.getenv("IS_DEPLOYMENT_PREVIEW"),
-    "repository_url": os.getenv("REPOSITORY_URL"),
-    "pr_id": os.getenv("REVIEW_ID")
+    "is_deployment_preview": os.getenv("READTHEDOCS_VERSION_TYPE") == "external",
+    "repository_url": repository_url.removesuffix(".git") if repository_url else None,
+    "pr_id": os.getenv("READTHEDOCS_VERSION")
 }
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
@@ -256,12 +269,48 @@ coverage_ignore_c_items = {
 
 linkcheck_allowed_redirects = {
     # bpo-NNNN -> BPO -> GH Issues
-    r'https://bugs.python.org/issue\?@action=redirect&bpo=\d+': 'https://github.com/python/cpython/issues/\d+',
+    r'https://bugs.python.org/issue\?@action=redirect&bpo=\d+': r'https://github.com/python/cpython/issues/\d+',
     # GH-NNNN used to refer to pull requests
-    r'https://github.com/python/cpython/issues/\d+': 'https://github.com/python/cpython/pull/\d+',
+    r'https://github.com/python/cpython/issues/\d+': r'https://github.com/python/cpython/pull/\d+',
     # :source:`something` linking files in the repository
-    r'https://github.com/python/cpython/tree/.*': 'https://github.com/python/cpython/blob/.*'
+    r'https://github.com/python/cpython/tree/.*': 'https://github.com/python/cpython/blob/.*',
+    # Intentional HTTP use at Misc/NEWS.d/3.5.0a1.rst
+    r'http://www.python.org/$': 'https://www.python.org/$',
+    # Used in license page, keep as is
+    r'https://www.zope.org/': r'https://www.zope.dev/',
+    # Microsoft's redirects to learn.microsoft.com
+    r'https://msdn.microsoft.com/.*': 'https://learn.microsoft.com/.*',
+    r'https://docs.microsoft.com/.*': 'https://learn.microsoft.com/.*',
+    r'https://go.microsoft.com/fwlink/\?LinkID=\d+': 'https://learn.microsoft.com/.*',
+    # Language redirects
+    r'https://toml.io': 'https://toml.io/en/',
+    r'https://www.redhat.com': 'https://www.redhat.com/en',
+    # Other redirects
+    r'https://www.boost.org/libs/.+': r'https://www.boost.org/doc/libs/\d_\d+_\d/.+',
+    r'https://support.microsoft.com/en-us/help/\d+': 'https://support.microsoft.com/en-us/topic/.+',
+    r'https://perf.wiki.kernel.org$': 'https://perf.wiki.kernel.org/index.php/Main_Page',
+    r'https://www.sqlite.org': 'https://www.sqlite.org/index.html',
+    r'https://mitpress.mit.edu/sicp$': 'https://mitpress.mit.edu/9780262510875/structure-and-interpretation-of-computer-programs/',
+    r'https://www.python.org/psf/': 'https://www.python.org/psf-landing/',
 }
+
+linkcheck_anchors_ignore = [
+    # ignore anchors that start with a '/', e.g. Wikipedia media files:
+    # https://en.wikipedia.org/wiki/Walrus#/media/File:Pacific_Walrus_-_Bull_(8247646168).jpg
+    r'\/.*',
+]
+
+linkcheck_ignore = [
+    # The crawler gets "Anchor not found"
+    r'https://developer.apple.com/documentation/.+?#.*',
+    r'https://devguide.python.org.+?/#.*',
+    r'https://github.com.+?#.*',
+    # Robot crawlers not allowed: "403 Client Error: Forbidden"
+    r'https://support.enthought.com/hc/.*',
+    # SSLError CertificateError, even though it is valid
+    r'https://unix.org/version2/whatsnew/lp64_wp.html',
+]
+
 
 # Options for extensions
 # ----------------------

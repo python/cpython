@@ -577,6 +577,16 @@ class TestClassCleanup(unittest.TestCase):
                 'inner setup', 'inner test', 'inner cleanup',
                 'end outer test', 'outer cleanup'])
 
+    def test_run_empty_suite_error_message(self):
+        class EmptyTest(unittest.TestCase):
+            pass
+
+        suite = unittest.defaultTestLoader.loadTestsFromTestCase(EmptyTest)
+        runner = getRunner()
+        runner.run(suite)
+
+        self.assertIn("\nNO TESTS RAN\n", runner.stream.getvalue())
+
 
 class TestModuleCleanUp(unittest.TestCase):
     def test_add_and_do_ModuleCleanup(self):

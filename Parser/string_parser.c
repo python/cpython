@@ -248,7 +248,8 @@ _PyPegen_parse_string(Parser *p, Token *t)
         const char *ch;
         for (ch = s; *ch; ch++) {
             if (Py_CHARMASK(*ch) >= 0x80) {
-                RAISE_SYNTAX_ERROR(
+                RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
+                                   t,
                                    "bytes can only contain ASCII "
                                    "literal characters");
                 return NULL;

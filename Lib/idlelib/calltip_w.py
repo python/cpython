@@ -25,7 +25,7 @@ class CalltipWindow(TooltipBase):
         text_widget: a Text widget with code for which call-tips are desired
         """
         # Note: The Text widget will be accessible as self.anchor_widget
-        super(CalltipWindow, self).__init__(text_widget)
+        super().__init__(text_widget)
 
         self.label = self.text = None
         self.parenline = self.parencol = self.lastline = None
@@ -54,7 +54,7 @@ class CalltipWindow(TooltipBase):
             return
         self.lastline = curline
         self.anchor_widget.see("insert")
-        super(CalltipWindow, self).position_window()
+        super().position_window()
 
     def showtip(self, text, parenleft, parenright):
         """Show the call-tip, bind events which will close it and reposition it.
@@ -73,7 +73,7 @@ class CalltipWindow(TooltipBase):
         self.parenline, self.parencol = map(
             int, self.anchor_widget.index(parenleft).split("."))
 
-        super(CalltipWindow, self).showtip()
+        super().showtip()
 
         self._bind_events()
 
@@ -143,7 +143,7 @@ class CalltipWindow(TooltipBase):
             # ValueError may be raised by MultiCall
             pass
 
-        super(CalltipWindow, self).hidetip()
+        super().hidetip()
 
     def _bind_events(self):
         """Bind event handlers."""
