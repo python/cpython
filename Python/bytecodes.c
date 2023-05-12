@@ -1174,6 +1174,7 @@ dummy_func(
                               "no locals when loading %R", name);
                 goto error;
             }
+            Py_INCREF(mod_or_class_dict);
         }
 
         op(_LOAD_CLASSDICT_OR_GLOBAL_INTRO, (mod_or_class_dict -- mod_or_class_dict, name)) {
@@ -1187,17 +1188,21 @@ dummy_func(
                     Py_INCREF(v);
                 }
                 else if (_PyErr_Occurred(tstate)) {
+                    Py_DECREF(mod_or_class_dict);
                     goto error;
                 }
             }
             else {
                 v = PyObject_GetItem(mod_or_class_dict, name);
                 if (v == NULL) {
-                    if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError))
+                    if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
+                        Py_DECREF(mod_or_class_dict);
                         goto error;
+                    }
                     _PyErr_Clear(tstate);
                 }
             }
+            Py_DECREF(mod_or_class_dict);
             if (v == NULL) {
                 v = PyDict_GetItemWithError(GLOBALS(), name);
                 if (v != NULL) {
@@ -1359,7 +1364,7 @@ dummy_func(
         }
 
         op(_LOAD_CLASSDEREF_INTRO, (-- class_dict)) {
-            class_dict = LOCALS();
+            class_dict = Py_NewRef(LOCALS());
         }
 
         op(_LOAD_CLASSDICT_OR_DEREF_INTRO, (class_dict -- class_dict)) {
@@ -1376,6 +1381,7 @@ dummy_func(
                     Py_INCREF(value);
                 }
                 else if (_PyErr_Occurred(tstate)) {
+                    Py_DECREF(class_dict);
                     goto error;
                 }
             }
@@ -1383,11 +1389,13 @@ dummy_func(
                 value = PyObject_GetItem(class_dict, name);
                 if (value == NULL) {
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
+                        Py_DECREF(class_dict);
                         goto error;
                     }
                     _PyErr_Clear(tstate);
                 }
             }
+            Py_DECREF(class_dict);
             if (!value) {
                 PyObject *cell = GETLOCAL(oparg);
                 value = PyCell_GET(cell);
