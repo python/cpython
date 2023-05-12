@@ -790,8 +790,7 @@ def Concatenate(self, parameters):
                         "ParamSpec variable or ellipsis.")
     msg = "Concatenate[arg, ...]: each arg must be a type."
     parameters = (*(_type_check(p, msg) for p in parameters[:-1]), parameters[-1])
-    return _ConcatenateGenericAlias(self, parameters,
-                                    _paramspec_tvars=True)
+    return _ConcatenateGenericAlias(self, parameters)
 
 
 @_SpecialForm
@@ -1058,8 +1057,7 @@ def _generic_class_getitem(cls, params):
                 new_args.append(new_arg)
         params = tuple(new_args)
 
-    return _GenericAlias(cls, params,
-                            _paramspec_tvars=True)
+    return _GenericAlias(cls, params)
 
 
 def _generic_init_subclass(cls, *args, **kwargs):
@@ -1152,8 +1150,7 @@ class _BaseGenericAlias(_Final, _root=True):
         raise AttributeError(attr)
 
     def __setattr__(self, attr, val):
-        if _is_dunder(attr) or attr in {'_name', '_inst', '_nparams',
-                                        '_paramspec_tvars'}:
+        if _is_dunder(attr) or attr in {'_name', '_inst', '_nparams'}:
             super().__setattr__(attr, val)
         else:
             setattr(self.__origin__, attr, val)
@@ -1207,15 +1204,13 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
     #     ClassVar[float]
     #     TypeVar[bool]
 
-    def __init__(self, origin, args, *, inst=True, name=None,
-                 _paramspec_tvars=False):
+    def __init__(self, origin, args, *, inst=True, name=None):
         super().__init__(origin, inst=inst, name=name)
         if not isinstance(args, tuple):
             args = (args,)
         self.__args__ = tuple(... if a is _TypingEllipsis else
                               a for a in args)
         self.__parameters__ = _collect_parameters(args)
-        self._paramspec_tvars = _paramspec_tvars
         if not name:
             self.__module__ = origin.__module__
 
@@ -1358,8 +1353,7 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         return new_args
 
     def copy_with(self, args):
-        return self.__class__(self.__origin__, args, name=self._name, inst=self._inst,
-                              _paramspec_tvars=self._paramspec_tvars)
+        return self.__class__(self.__origin__, args, name=self._name, inst=self._inst)
 
     def __repr__(self):
         if self._name:
@@ -1469,8 +1463,7 @@ class _CallableGenericAlias(_NotIterable, _GenericAlias, _root=True):
 class _CallableType(_SpecialGenericAlias, _root=True):
     def copy_with(self, params):
         return _CallableGenericAlias(self.__origin__, params,
-                                     name=self._name, inst=self._inst,
-                                     _paramspec_tvars=True)
+                                     name=self._name, inst=self._inst)
 
     def __getitem__(self, params):
         if not isinstance(params, tuple) or len(params) != 2:

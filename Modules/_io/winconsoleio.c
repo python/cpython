@@ -180,6 +180,8 @@ internal_close(winconsoleio *self)
 
 /*[clinic input]
 _io._WindowsConsoleIO.close
+    cls: defining_class
+    /
 
 Close the console object.
 
@@ -188,13 +190,15 @@ close() may be called more than once without error.
 [clinic start generated code]*/
 
 static PyObject *
-_io__WindowsConsoleIO_close_impl(winconsoleio *self)
-/*[clinic end generated code: output=27ef95b66c29057b input=68c4e5754f8136c2]*/
+_io__WindowsConsoleIO_close_impl(winconsoleio *self, PyTypeObject *cls)
+/*[clinic end generated code: output=e50c1808c063e1e2 input=161001bd2a649a4b]*/
 {
     PyObject *res;
     PyObject *exc;
     int rc;
-    res = PyObject_CallMethodOneArg((PyObject*)&PyRawIOBase_Type,
+
+    _PyIO_State *state = get_io_state_by_cls(cls);
+    res = PyObject_CallMethodOneArg((PyObject*)state->PyRawIOBase_Type,
                                     &_Py_ID(close), (PyObject*)self);
     if (!self->closefd) {
         self->fd = -1;
@@ -263,7 +267,7 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
     int fd_is_own = 0;
     HANDLE handle = NULL;
 
-#ifdef NDEBUG
+#ifndef NDEBUG
     _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     assert(PyObject_TypeCheck(self, state->PyWindowsConsoleIO_Type));
 #endif
@@ -453,13 +457,10 @@ err_closed(void)
 }
 
 static PyObject *
-err_mode(const char *action)
+err_mode(_PyIO_State *state, const char *action)
 {
-    _PyIO_State *state = IO_STATE();
-    if (state != NULL)
-        PyErr_Format(state->unsupported_operation,
-                     "Console buffer does not support %s", action);
-    return NULL;
+    return PyErr_Format(state->unsupported_operation,
+                        "Console buffer does not support %s", action);
 }
 
 /*[clinic input]
@@ -636,14 +637,14 @@ error:
 
 
 static Py_ssize_t
-readinto(winconsoleio *self, char *buf, Py_ssize_t len)
+readinto(_PyIO_State *state, winconsoleio *self, char *buf, Py_ssize_t len)
 {
     if (self->fd == -1) {
         err_closed();
         return -1;
     }
     if (!self->readable) {
-        err_mode("reading");
+        err_mode(state, "reading");
         return -1;
     }
     if (len == 0)
@@ -733,6 +734,7 @@ readinto(winconsoleio *self, char *buf, Py_ssize_t len)
 
 /*[clinic input]
 _io._WindowsConsoleIO.readinto
+    cls: defining_class
     buffer: Py_buffer(accept={rwbuffer})
     /
 
@@ -740,10 +742,12 @@ Same as RawIOBase.readinto().
 [clinic start generated code]*/
 
 static PyObject *
-_io__WindowsConsoleIO_readinto_impl(winconsoleio *self, Py_buffer *buffer)
-/*[clinic end generated code: output=66d1bdfa3f20af39 input=4ed68da48a6baffe]*/
+_io__WindowsConsoleIO_readinto_impl(winconsoleio *self, PyTypeObject *cls,
+                                    Py_buffer *buffer)
+/*[clinic end generated code: output=96717c74f6204b79 input=4b0627c3b1645f78]*/
 {
-    Py_ssize_t len = readinto(self, buffer->buf, buffer->len);
+    _PyIO_State *state = get_io_state_by_cls(cls);
+    Py_ssize_t len = readinto(state, self, buffer->buf, buffer->len);
     if (len < 0)
         return NULL;
 
@@ -897,6 +901,7 @@ _io__WindowsConsoleIO_readall_impl(winconsoleio *self)
 
 /*[clinic input]
 _io._WindowsConsoleIO.read
+    cls: defining_class
     size: Py_ssize_t(accept={int, NoneType}) = -1
     /
 
@@ -908,16 +913,19 @@ Return an empty bytes object at EOF.
 [clinic start generated code]*/
 
 static PyObject *
-_io__WindowsConsoleIO_read_impl(winconsoleio *self, Py_ssize_t size)
-/*[clinic end generated code: output=57df68af9f4b22d0 input=8bc73bc15d0fa072]*/
+_io__WindowsConsoleIO_read_impl(winconsoleio *self, PyTypeObject *cls,
+                                Py_ssize_t size)
+/*[clinic end generated code: output=7e569a586537c0ae input=a14570a5da273365]*/
 {
     PyObject *bytes;
     Py_ssize_t bytes_size;
 
     if (self->fd == -1)
         return err_closed();
-    if (!self->readable)
-        return err_mode("reading");
+    if (!self->readable) {
+        _PyIO_State *state = get_io_state_by_cls(cls);
+        return err_mode(state, "reading");
+    }
 
     if (size < 0)
         return _io__WindowsConsoleIO_readall_impl(self);
@@ -930,7 +938,9 @@ _io__WindowsConsoleIO_read_impl(winconsoleio *self, Py_ssize_t size)
     if (bytes == NULL)
         return NULL;
 
-    bytes_size = readinto(self, PyBytes_AS_STRING(bytes), PyBytes_GET_SIZE(bytes));
+    _PyIO_State *state = get_io_state_by_cls(cls);
+    bytes_size = readinto(state, self, PyBytes_AS_STRING(bytes),
+                          PyBytes_GET_SIZE(bytes));
     if (bytes_size < 0) {
         Py_CLEAR(bytes);
         return NULL;
@@ -948,6 +958,7 @@ _io__WindowsConsoleIO_read_impl(winconsoleio *self, Py_ssize_t size)
 
 /*[clinic input]
 _io._WindowsConsoleIO.write
+    cls: defining_class
     b: Py_buffer
     /
 
@@ -958,8 +969,9 @@ The number of bytes actually written is returned.
 [clinic start generated code]*/
 
 static PyObject *
-_io__WindowsConsoleIO_write_impl(winconsoleio *self, Py_buffer *b)
-/*[clinic end generated code: output=775bdb16fbf9137b input=be35fb624f97c941]*/
+_io__WindowsConsoleIO_write_impl(winconsoleio *self, PyTypeObject *cls,
+                                 Py_buffer *b)
+/*[clinic end generated code: output=e8019f480243cb29 input=10ac37c19339dfbe]*/
 {
     BOOL res = TRUE;
     wchar_t *wbuf;
@@ -968,8 +980,10 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, Py_buffer *b)
 
     if (self->fd == -1)
         return err_closed();
-    if (!self->writable)
-        return err_mode("writing");
+    if (!self->writable) {
+        _PyIO_State *state = get_io_state_by_cls(cls);
+        return err_mode(state, "writing");
+    }
 
     handle = _Py_get_osfhandle(self->fd);
     if (handle == INVALID_HANDLE_VALUE)

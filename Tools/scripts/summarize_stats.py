@@ -226,11 +226,13 @@ def pretty(defname):
 def kind_to_text(kind, defines, opname):
     if kind <= 8:
         return pretty(defines[kind][0])
-    if opname.endswith("ATTR"):
+    if opname == "LOAD_SUPER_ATTR":
+        opname = "SUPER"
+    elif opname.endswith("ATTR"):
         opname = "ATTR"
-    if opname in ("FOR_ITER", "SEND"):
+    elif opname in ("FOR_ITER", "SEND"):
         opname = "ITER"
-    if opname.endswith("SUBSCR"):
+    elif opname.endswith("SUBSCR"):
         opname = "SUBSCR"
     for name in defines[kind]:
         if name.startswith(opname):
