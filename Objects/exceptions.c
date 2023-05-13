@@ -2324,7 +2324,7 @@ AttributeError_reduce(PyAttributeErrorObject *self, PyObject *Py_UNUSED(ignored)
         return NULL;
     }
 
-    PyObject* return_value = PyTuple_Pack(3, Py_TYPE(self), self->args, state);
+    PyObject *return_value = PyTuple_Pack(3, Py_TYPE(self), self->args, state);
     Py_DECREF(state);
     return return_value;
 }
