@@ -225,7 +225,22 @@ class GeneratorTest(unittest.TestCase):
         gi = f()
         self.assertIsNone(gi.gi_frame.f_back)
 
+    def test_issue103488(self):
 
+        def gen_raises():
+            yield
+            raise ValueError()
+
+        def loop():
+            try:
+                for _ in gen_raises():
+                    if True is False:
+                        return
+            except ValueError:
+                pass
+
+        #This should not raise
+        loop()
 
 class ExceptionTest(unittest.TestCase):
     # Tests for the issue #23353: check that the currently handled exception
@@ -2126,11 +2141,10 @@ Traceback (most recent call last):
   ...
 SyntaxError: 'yield' outside function
 
-# Pegen does not produce this error message yet
-# >>> def f(): x = yield = y
-# Traceback (most recent call last):
-#   ...
-# SyntaxError: assignment to yield expression not possible
+>>> def f(): x = yield = y
+Traceback (most recent call last):
+  ...
+SyntaxError: assignment to yield expression not possible
 
 >>> def f(): (yield bar) = y
 Traceback (most recent call last):

@@ -142,7 +142,7 @@ class Printer:
 
     def object_head(self, typename: str) -> None:
         with self.block(".ob_base =", ","):
-            self.write(f".ob_refcnt = 999999999,")
+            self.write(f".ob_refcnt = _Py_IMMORTAL_REFCNT,")
             self.write(f".ob_type = &{typename},")
 
     def object_var_head(self, typename: str, size: int) -> None:
@@ -175,6 +175,12 @@ class Printer:
             return f"&_Py_STR({strings[s]})"
         if s in identifiers:
             return f"&_Py_ID({s})"
+        if len(s) == 1:
+            c = ord(s)
+            if c < 128:
+                return f"(PyObject *)&_Py_SINGLETON(strings).ascii[{c}]"
+            elif c < 256:
+                return f"(PyObject *)&_Py_SINGLETON(strings).latin1[{c - 128}]"
         if re.match(r'\A[A-Za-z0-9_]+\Z', s):
             name = f"const_str_{s}"
         kind, ascii = analyze_character_width(s)
