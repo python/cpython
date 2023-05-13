@@ -338,6 +338,14 @@ class ListComprehensionTest(unittest.TestCase):
         outputs = {"y": [1, 3, 5]}
         self._check_in_scopes(code, outputs)
 
+    def test_nested_4(self):
+        code = """
+            items = [([lambda: x for x in range(2)], lambda: x) for x in range(3)]
+            out = [([fn() for fn in fns], fn()) for fns, fn in items]
+        """
+        outputs = {"out": [([1, 1], 2), ([1, 1], 2), ([1, 1], 2)]}
+        self._check_in_scopes(code, outputs)
+
     def test_nameerror(self):
         code = """
             [x for x in [1]]
