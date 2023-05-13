@@ -1,9 +1,13 @@
 What's New in IDLE 3.11.z
-after 3.11.0 until 3.11.10?
-Scheduled for 2024-04-??
-===========================
+(since 3.11.0)
+Released after 2022-10-24
+=========================
 
 
+gh-88496 Fix IDLE test hang on macOS.
+
+gh-103314 Support sys.last_exc after exceptions in Shell.
+Patch by Irit Katriel.
 
 
 What's New in IDLE 3.11.0
