@@ -4,7 +4,6 @@ import sys
 
 from dataclasses import dataclass
 from types import FrameType, CodeType
-from typing import Callable
 
 
 MEVENT = sys.monitoring.events
@@ -45,45 +44,44 @@ class Breakpoint:
         return cls._next_id - 1
 
 
-class MonitorGenie:
-    """
-    MonitorGenie is a layer to handle PEP-669 events aka sys.monitoring.
-
-    It saves the trouble for the debugger to handle the monitoring events.
-    MonitorGenie takes file and function breakpoints, and an action to start
-    the monitoring. The accepted actions are:
-        "step"
-        "next"
-        "return"
-        "continue"
-    """
+class _DebuggerMonitor:
     def __init__(
         self,
-        tool_id: int,
-        debugger_entry: Callable[[FrameType, Breakpoint | None, int, dict | None], None]
+        debugger,
     ):
         self._action = None
         self._frame = None
-        self._tool_id = tool_id
+        self._debugger = debugger
         self._returning = False
-        self._tasks = []
         self._bound_breakpoints: dict[CodeType, list[Breakpoint]] = {}
         self._free_breakpoints: list[Breakpoint] = []
-        self._debugger_entry = debugger_entry 
-        self._code_with_events = set()
-        sys.monitoring.use_tool_id(tool_id, "MonitorGenie")
-        self._register_callbacks()
+        self._code_with_events: dict[CodeType, int] = {}
 
-    # ========================================================================
-    # ============================= Public API ===============================
-    # ========================================================================
+    @property
+    def has_breakpoint(self):
+        return self._free_breakpoints or self._bound_breakpoints
 
-    def start_monitor(self, action: str, frame: FrameType):
-        """starts monitoring with the given action and frame"""
-        self._clear_monitor()
-        self._try_bind_breakpoints(frame.f_code)
-        self._set_events_for_breakpoints()
-        self._action, self._frame = action, frame
+    def get_global_events(self):
+        if self._free_breakpoints:
+            return MEVENT.CALL
+        else:
+            return MEVENT.NO_EVENTS
+
+    def get_local_events(self):
+        for code, bp_list in self._bound_breakpoints.items():
+            for breakpoint in bp_list:
+                if breakpoint.line_number is not None:
+                    self._add_local_events(code, MEVENT.LINE)
+                else:
+                    self._add_local_events(code, MEVENT.PY_START)
+        return self._code_with_events
+
+    def clear_events(self):
+        self._code_with_events = {}
+
+    def set_action(self, action: str, frame: FrameType):
+        self._action = action
+        self._frame = frame
         if action == "step":
             if not self._returning:
                 self._add_local_events(frame.f_code, MEVENT.LINE | MEVENT.CALL | MEVENT.PY_RETURN \
@@ -101,16 +99,24 @@ class MonitorGenie:
                 self._add_local_events(frame.f_back.f_code, MEVENT.LINE | MEVENT.PY_RETURN | MEVENT.PY_YIELD)
         elif action == "continue":
             pass
-
         self._returning = False
-        sys.monitoring.restart_events()
 
-    def start_monitor_code(self, code: CodeType):
-        """starts monitoring when the given code is executed"""
-        self._clear_monitor()
-        self._action, self._frame = "step", None
+    def set_code(self, code: CodeType):
+        self._action = "step"
+        self.frame = None
         self._add_local_events(code, MEVENT.LINE | MEVENT.CALL | MEVENT.PY_RETURN | MEVENT.PY_YIELD)
-        sys.monitoring.restart_events()
+
+    def try_bind_breakpoints(self, code):
+        """try to bind free breakpoint, return whether any breakpoint is bound"""
+        bp_dirty = False
+        for bp in self._free_breakpoints[:]:
+            if bp.belong_to(code):
+                self.remove_breakpoint(bp)
+                bp.code = code
+                self.add_breakpoint(bp)
+                bp_dirty = True
+                break
+        return bp_dirty
 
     def add_breakpoint(self, breakpoint: Breakpoint):
         """adds a breakpoint to the list of breakpoints"""
@@ -127,49 +133,50 @@ class MonitorGenie:
             self._free_breakpoints.remove(breakpoint)
         else:
             self._bound_breakpoints[breakpoint.code].remove(breakpoint)
+            if not self._bound_breakpoints[breakpoint.code]:
+                del self._bound_breakpoints[breakpoint.code]
 
-    # ========================================================================
-    # ============================ Private API ===============================
-    # ========================================================================
+    def line_callback(self, frame, code, line_number):
+        if bp := self._breakhere(code, line_number):
+            self._debugger.monitor_callback(frame, bp, MEVENT.LINE,
+                                            {"code": code, "line_number": line_number})
+        elif self._stophere(code):
+            self._debugger.monitor_callback(frame, None, MEVENT.LINE,
+                                            {"code": code, "line_number": line_number})
+        else:
+            return False
+        return True
 
-    def _clear_monitor(self):
-        sys.monitoring.set_events(self._tool_id, 0)
-        for code in self._code_with_events:
-            sys.monitoring.set_local_events(self._tool_id, code, 0)
+    def call_callback(self, code):
+        # The only possible trigget for this is "step" action
+        # If the callable is instrumentable, do it, otherwise ignore it
+        if self._action == "step":
+            self._add_local_events(code, MEVENT.LINE)
+            return True
+        return False
 
-    def _add_global_events(self, events):
-        curr_events = sys.monitoring.get_events(self._tool_id)
-        sys.monitoring.set_events(self._tool_id, curr_events | events)
+    def start_callback(self, frame, code, instruction_offset):
+        if bp := self._breakhere(code, None):
+            self._debugger.monitor_callback(frame, bp, MEVENT.PY_START,
+                                            {"code": code, "instruction_offset": instruction_offset})
+        elif self._stophere(code):
+            self._debugger.monitor_callback(frame, None, MEVENT.PY_START,
+                                            {"code": code, "instruction_offset": instruction_offset})
+        else:
+            return False
+        return True
+
+    def return_callback(self, frame, code, instruction_offset, retval):
+        if self._stophere(code):
+            self._returning = True
+            self._debugger.monitor_callback(frame, None, MEVENT.PY_RETURN,
+                                            {"code": code, "instruction_offset": instruction_offset, "retval": retval})
+        else:
+            return False
+        return True
 
     def _add_local_events(self, code, events):
-        curr_events = sys.monitoring.get_local_events(self._tool_id, code)
-        self._code_with_events.add(code)
-        sys.monitoring.set_local_events(self._tool_id, code, curr_events | events)
-
-    def _set_events_for_breakpoints(self):
-        if self._free_breakpoints:
-            self._add_global_events(MEVENT.PY_START)
-        for code, bp_list in self._bound_breakpoints.items():
-            for breakpoint in bp_list:
-                if breakpoint.line_number is not None:
-                    self._add_local_events(code, MEVENT.LINE)
-                else:
-                    self._add_local_events(code, MEVENT.PY_START)
-
-    def _try_bind_breakpoints(self, code):
-        # copy the breakpoints so we can remove bp from it
-        bp_dirty = False
-        for bp in self._free_breakpoints[:]:
-            if bp.belong_to(code):
-                self.remove_breakpoint(bp)
-                bp.code = code
-                self.add_breakpoint(bp)
-                bp_dirty = True
-                break
-        if bp_dirty:
-            self._set_events_for_breakpoints()
-            if not self._free_breakpoints:
-                sys.monitoring.set_events(self._tool_id, 0)
+        self._code_with_events[code] = self._code_with_events.get(code, 0) | events
 
     def _stophere(self, code):
         if self._action == "step":
@@ -191,6 +198,111 @@ class MonitorGenie:
                     return bp
         return None
 
+
+class MonitorGenie:
+    """
+    MonitorGenie is a layer to handle PEP-669 events aka sys.monitoring.
+
+    It saves the trouble for the debugger to handle the monitoring events.
+    MonitorGenie takes file and function breakpoints, and an action to start
+    the monitoring. The accepted actions are:
+        "step"
+        "next"
+        "return"
+        "continue"
+    """
+    def __init__(
+        self,
+        tool_id: int,
+    ):
+        self._action = None
+        self._frame = None
+        self._tool_id = tool_id
+        self._tasks = []
+        sys.monitoring.use_tool_id(tool_id, "MonitorGenie")
+        self._register_callbacks()
+        self._debugger_monitors: dict[Bdbx, _DebuggerMonitor] = {}
+        self._code_with_events = set()
+
+    # ========================================================================
+    # ============================= Public API ===============================
+    # ========================================================================
+
+    def register_debugger(self, debugger):
+        if debugger not in self._debugger_monitors:
+            self._debugger_monitors[debugger] = _DebuggerMonitor(debugger)
+
+    def unregister_debugger(self, debugger):
+        if debugger in self._debugger_monitors:
+            self._debugger_monitors.pop(debugger)
+
+    def start_monitor(self, debugger, action: str, frame: FrameType):
+        """starts monitoring with the given action and frame"""
+        dbg_monitor = self._get_monitor(debugger)
+
+        if action == "continue" and not dbg_monitor.has_breakpoint:
+            self.unregister_debugger(debugger)
+        else:
+            dbg_monitor.clear_events()
+            dbg_monitor.try_bind_breakpoints(frame.f_code)
+            dbg_monitor.set_action(action, frame)
+        
+        self._set_events()
+        sys.monitoring.restart_events()
+
+    def start_monitor_code(self, debugger, code: CodeType):
+        """starts monitoring when the given code is executed"""
+        dbg_monitor = self._get_monitor(debugger)
+        dbg_monitor.clear_events()
+        dbg_monitor.set_code(code)
+        self._set_events()
+        sys.monitoring.restart_events()
+
+    def add_breakpoint(self, debugger, breakpoint: Breakpoint):
+        self._get_monitor(debugger).add_breakpoint(breakpoint)
+
+    def remove_breakpoint(self, debugger, breakpoint: Breakpoint):
+        self._get_monitor(debugger).remove_breakpoint(breakpoint)
+
+    # ========================================================================
+    # ============================ Private API ===============================
+    # ========================================================================
+
+    def _get_monitor(self, debugger):
+        if debugger not in self._debugger_monitors:
+            self.register_debugger(debugger)
+        return self._debugger_monitors[debugger]
+
+    def _get_monitors(self):
+        return list(self._debugger_monitors.values())
+
+    def _set_events(self):
+        """
+        Go through all the registered debuggers and figure out all the events
+        that need to be set
+        """
+        self._clear_monitor()
+        global_events = MEVENT.NO_EVENTS
+        for dbg_monitor in self._get_monitors():
+            global_events |= dbg_monitor.get_global_events()
+            for code, events in dbg_monitor.get_local_events().items():
+                self._add_local_events(code, events)
+
+    def _clear_monitor(self):
+        sys.monitoring.set_events(self._tool_id, 0)
+        for code in self._code_with_events:
+            sys.monitoring.set_local_events(self._tool_id, code, 0)
+        self._code_with_events = set()
+
+    def _add_global_events(self, events):
+        curr_events = sys.monitoring.get_events(self._tool_id)
+        sys.monitoring.set_events(self._tool_id, curr_events | events)
+
+    def _add_local_events(self, code, events):
+        curr_events = sys.monitoring.get_local_events(self._tool_id, code)
+        self._code_with_events.add(code)
+        sys.monitoring.set_local_events(self._tool_id, code, curr_events | events)
+
     # Callbacks for the real sys.monitoring
 
     def _register_callbacks(self):
@@ -201,13 +313,11 @@ class MonitorGenie:
         sys.monitoring.register_callback(self._tool_id, MEVENT.PY_RETURN, self._return_callback)
 
     def _line_callback(self, code, line_number):
-        if bp := self._breakhere(code, line_number):
-            self._start_debugger(sys._getframe().f_back, bp, MEVENT.LINE,
-                                 {"code": code, "line_number": line_number})
-        elif self._stophere(code):
-            self._start_debugger(sys._getframe().f_back, None, MEVENT.LINE,
-                                 {"code": code, "line_number": line_number})
-        else:
+        frame = sys._getframe(1)
+        triggered_callback = False
+        for dbg_monitor in self._get_monitors():
+            triggered_callback |= dbg_monitor.line_callback(frame, code, line_number)
+        if not triggered_callback:
             return sys.monitoring.DISABLE
 
     def _call_callback(self, code, instruction_offset, callable, arg0):
@@ -222,30 +332,30 @@ class MonitorGenie:
             except AttributeError:
                 pass
         if code is not None:
-            self._add_local_events(code, MEVENT.LINE)
+            for dbg_monitor in self._get_monitors():
+                if dbg_monitor.call_callback(code):
+                    self._set_events()
 
     def _start_callback(self, code, instruction_offset):
-        self._try_bind_breakpoints(code)
-        if bp := self._breakhere(code, None):
-            self._start_debugger(sys._getframe().f_back, bp, MEVENT.PY_START,
-                                 {"code": code, "instruction_offset": instruction_offset})
-        elif self._stophere(code):
-            self._start_debugger(sys._getframe().f_back, None, MEVENT.PY_START,
-                                 {"code": code, "instruction_offset": instruction_offset})
-        else:
+        frame = sys._getframe(1)
+        triggered_callback = False
+        for dbg_monitor in self._get_monitors():
+            if dbg_monitor.try_bind_breakpoints(code):
+                self._set_events()
+            triggered_callback |= dbg_monitor.start_callback(frame, code, instruction_offset)
+        if not triggered_callback:
             return sys.monitoring.DISABLE
 
     def _return_callback(self, code, instruction_offset, retval):
-        if self._stophere(code):
-            self._returning = True
-            self._start_debugger(sys._getframe().f_back, None, MEVENT.PY_RETURN,
-                                 {"code": code, "instruction_offset": instruction_offset, "retval": retval})
-        else:
+        frame = sys._getframe(1)
+        triggered_callback = False
+        for dbg_monitor in self._get_monitors():
+            triggered_callback |= dbg_monitor.return_callback(frame, code, instruction_offset, retval)
+        if not triggered_callback:
             return sys.monitoring.DISABLE
 
-    def _start_debugger(self, frame, breakpoint, event, args):
-        self._debugger_entry(frame, breakpoint, event, args)
 
+_monitor_genie = MonitorGenie(sys.monitoring.DEBUGGER_ID)
 
 @dataclass
 class StopEvent:
@@ -255,17 +365,6 @@ class StopEvent:
     is_return: bool = False
 
 class Bdbx:
-    """Bdbx is a singleton class that implements the debugger logic"""
-    _instance = None
-
-    def __new__(cls):
-        if Bdbx._instance is None:
-            instance = super().__new__(cls)
-            instance._tool_id = sys.monitoring.DEBUGGER_ID
-            instance._monitor_genie = MonitorGenie(instance._tool_id, instance.monitor_callback)
-            Bdbx._instance = instance
-        return Bdbx._instance
-
     def __init__(self):
         self._next_action = None
         self._next_action_frame = None
@@ -274,6 +373,7 @@ class Bdbx:
         self._curr_frame = None
         self._main_pyfile = ''
         self.clear_breakpoints()
+        self._monitor_genie = _monitor_genie
 
     # ========================================================================
     # ============================= Public API ===============================
@@ -284,12 +384,12 @@ class Bdbx:
         if frame is None:
             frame = sys._getframe().f_back
         self.set_action("next", frame)
-        self._monitor_genie.start_monitor(self._next_action, self._next_action_frame)
+        self._monitor_genie.start_monitor(self, self._next_action, self._next_action_frame)
 
     def break_code(self, code):
         """break into the debugger when the given code is executed"""
         self.set_action("step", None)
-        self._monitor_genie.start_monitor_code(code)
+        self._monitor_genie.start_monitor_code(self, code)
 
     def set_action(self, action, frame=None):
         """Set the next action, if frame is None, use the current frame"""
@@ -308,7 +408,7 @@ class Bdbx:
         # Setting line_number to None for function breakpoints
         bp = Breakpoint(abspath, None, func.__code__)
         self._breakpoints.append(bp)
-        self._monitor_genie.add_breakpoint(bp)
+        self._monitor_genie.add_breakpoint(self, bp)
 
     def set_file_breakpoint(self, filename, line_number):
         """Set a breakpoint at the given line number in the given file
@@ -318,12 +418,12 @@ class Bdbx:
         """
         bp = Breakpoint(filename, line_number, None)
         self._breakpoints.append(bp)
-        self._monitor_genie.add_breakpoint(bp)
+        self._monitor_genie.add_breakpoint(self, bp)
 
     def clear_breakpoints(self):
         if hasattr(self, "_breakpoints"):
             for bp in self._breakpoints:
-                self._monitor_genie.remove_breakpoint(bp)
+                self._monitor_genie.remove_breakpoint(self, bp)
         self._breakpoints = []
 
     def select_frame(self, index, offset=False):
@@ -383,7 +483,7 @@ class Bdbx:
         self.dispatch_event(self._stop_event)
 
         # After the dispatch returns, reset the monitor
-        self._monitor_genie.start_monitor(self._next_action, self._next_action_frame)
+        self._monitor_genie.start_monitor(self, self._next_action, self._next_action_frame)
 
     # ========================================================================
     # ======================= Helper functions ===============================

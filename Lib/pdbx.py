@@ -4,7 +4,6 @@ import cmd
 import io
 import linecache
 import os
-import reprlib
 import runpy
 import sys
 
