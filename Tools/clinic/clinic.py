@@ -12,6 +12,7 @@ import collections
 import contextlib
 import copy
 import cpp
+import enum
 import functools
 import hashlib
 import inspect
@@ -28,7 +29,7 @@ import traceback
 
 from collections.abc import Callable
 from types import FunctionType, NoneType
-from typing import Any, NamedTuple, NoReturn, Literal, overload
+from typing import Any, Final, NamedTuple, NoReturn, Literal, overload
 
 # TODO:
 #
@@ -58,25 +59,26 @@ CLINIC_PREFIXED_ARGS = {
     "return_value",
 }
 
-class Unspecified:
+
+class Sentinels(enum.Enum):
+    unspecified = "unspecified"
+    unknown = "unknown"
+
     def __repr__(self) -> str:
-        return '<Unspecified>'
-
-unspecified = Unspecified()
+        return f"<{self.value.capitalize()}>"
 
 
+unspecified: Final = Sentinels.unspecified
+unknown: Final = Sentinels.unknown
+
+
+# This one needs to be a distinct class, unlike the other two
 class Null:
     def __repr__(self) -> str:
         return '<Null>'
 
+
 NULL = Null()
-
-
-class Unknown:
-    def __repr__(self) -> str:
-        return '<Unknown>'
-
-unknown = Unknown()
 
 sig_end_marker = '--'
 
@@ -2227,7 +2229,12 @@ impl_definition block
         return module, cls
 
 
-def parse_file(filename, *, verify=True, output=None):
+def parse_file(
+        filename: str,
+        *,
+        verify: bool = True,
+        output: str | None = None
+) -> None:
     if not output:
         output = filename
 
@@ -2259,7 +2266,10 @@ def parse_file(filename, *, verify=True, output=None):
             write_file(fn, data)
 
 
-def compute_checksum(input, length=None):
+def compute_checksum(
+        input: str | None,
+        length: int | None = None
+) -> str:
     input = input or ''
     s = hashlib.sha1(input.encode('utf-8')).hexdigest()
     if length:
@@ -2270,30 +2280,46 @@ def compute_checksum(input, length=None):
 
 
 class PythonParser:
-    def __init__(self, clinic):
+    def __init__(self, clinic: Clinic) -> None:
         pass
 
-    def parse(self, block):
+    def parse(self, block: Block) -> None:
         s = io.StringIO()
         with OverrideStdioWith(s):
             exec(block.input)
         block.output = s.getvalue()
 
 
+ModuleDict = dict[str, "Module"]
+
 class Module:
-    def __init__(self, name, module=None):
+    def __init__(
+            self,
+            name: str,
+            module = None
+    ) -> None:
         self.name = name
         self.module = self.parent = module
 
-        self.modules = collections.OrderedDict()
-        self.classes = collections.OrderedDict()
-        self.functions = []
+        self.modules: ModuleDict = collections.OrderedDict()
+        self.classes: ClassDict = collections.OrderedDict()
+        self.functions: list[Function] = []
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<clinic.Module " + repr(self.name) + " at " + str(id(self)) + ">"
 
+
+ClassDict = dict[str, "Class"]
+
 class Class:
-    def __init__(self, name, module=None, cls=None, typedef=None, type_object=None):
+    def __init__(
+            self,
+            name: str,
+            module: Module | None = None,
+            cls = None,
+            typedef: str | None = None,
+            type_object: str | None = None
+    ) -> None:
         self.name = name
         self.module = module
         self.cls = cls
@@ -2301,13 +2327,14 @@ class Class:
         self.type_object = type_object
         self.parent = cls or module
 
-        self.classes = collections.OrderedDict()
-        self.functions = []
+        self.classes: ClassDict = collections.OrderedDict()
+        self.functions: list[Function] = []
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<clinic.Class " + repr(self.name) + " at " + str(id(self)) + ">"
 
-unsupported_special_methods = set("""
+
+unsupported_special_methods: set[str] = set("""
 
 __abs__
 __add__
@@ -2600,7 +2627,7 @@ class CConverter(metaclass=CConverterAutoRegister):
     # Or the magic value "unknown" if this value is a cannot be evaluated
     # at Argument-Clinic-preprocessing time (but is presumed to be valid
     # at runtime).
-    default = unspecified
+    default: object = unspecified
 
     # If not None, default must be isinstance() of this type.
     # (You can also specify a tuple of types.)
@@ -2655,7 +2682,7 @@ class CConverter(metaclass=CConverterAutoRegister):
 
     # What encoding do we want for this variable?  Only used
     # by format units starting with 'e'.
-    encoding = None
+    encoding: str | None = None
 
     # Should this object be required to be a subclass of a specific type?
     # If not None, should be a string representing a pointer to a
@@ -2686,11 +2713,11 @@ class CConverter(metaclass=CConverterAutoRegister):
              name: str,
              py_name: str,
              function,
-             default=unspecified,
+             default: object = unspecified,
              *,  # Keyword only args:
              c_default: str | None = None,
              py_default: str | None = None,
-             annotation: str | Unspecified = unspecified,
+             annotation: str | Literal[Sentinels.unspecified] = unspecified,
              unused: bool = False,
              **kwargs
     ):
@@ -2699,7 +2726,10 @@ class CConverter(metaclass=CConverterAutoRegister):
         self.unused = unused
 
         if default is not unspecified:
-            if self.default_type and not isinstance(default, (self.default_type, Unknown)):
+            if (self.default_type
+                and default is not unknown
+                and not isinstance(default, self.default_type)
+            ):
                 if isinstance(self.default_type, type):
                     types_str = self.default_type.__name__
                 else:
@@ -2713,7 +2743,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         if py_default:
             self.py_default = py_default
 
-        if annotation != unspecified:
+        if annotation is not unspecified:
             fail("The 'annotation' parameter is not currently permitted.")
 
         # this is deliberate, to prevent you from caching information
@@ -2982,6 +3012,8 @@ converters: ConverterDict = {}
 # note however that they will never be called with keyword-only parameters.
 legacy_converters: ConverterDict = {}
 
+TypeSet = set[bltns.type[Any]]
+
 
 class bool_converter(CConverter):
     type = 'int'
@@ -2989,7 +3021,7 @@ class bool_converter(CConverter):
     format_unit = 'p'
     c_ignored_default = '0'
 
-    def converter_init(self, *, accept={object}):
+    def converter_init(self, *, accept: TypeSet = {object}) -> None:
         if accept == {int}:
             self.format_unit = 'i'
         elif accept != {object}:
@@ -3176,7 +3208,7 @@ class int_converter(CConverter):
     format_unit = 'i'
     c_ignored_default = "0"
 
-    def converter_init(self, *, accept={int}, type=None) -> None:
+    def converter_init(self, *, accept: TypeSet = {int}, type=None) -> None:
         if accept == {str}:
             self.format_unit = 'C'
         elif accept != {int}:
@@ -3313,7 +3345,7 @@ class Py_ssize_t_converter(CConverter):
     type = 'Py_ssize_t'
     c_ignored_default = "0"
 
-    def converter_init(self, *, accept={int}) -> None:
+    def converter_init(self, *, accept: TypeSet = {int}) -> None:
         if accept == {int}:
             self.format_unit = 'n'
             self.default_type = int
@@ -3344,7 +3376,7 @@ class Py_ssize_t_converter(CConverter):
 class slice_index_converter(CConverter):
     type = 'Py_ssize_t'
 
-    def converter_init(self, *, accept={int, NoneType}) -> None:
+    def converter_init(self, *, accept: TypeSet = {int, NoneType}) -> None:
         if accept == {int}:
             self.converter = '_PyEval_SliceIndexNotNone'
         elif accept == {int, NoneType}:
@@ -3447,7 +3479,12 @@ class object_converter(CConverter):
     type = 'PyObject *'
     format_unit = 'O'
 
-    def converter_init(self, *, converter=None, type=None, subclass_of=None):
+    def converter_init(
+            self, *,
+            converter=None,
+            type=None,
+            subclass_of=None
+    ) -> None:
         if converter:
             if subclass_of:
                 fail("object: Cannot pass in both 'converter' and 'subclass_of'")
@@ -3483,7 +3520,13 @@ class str_converter(CConverter):
     default_type = (str, Null, NoneType)
     format_unit = 's'
 
-    def converter_init(self, *, accept={str}, encoding=None, zeroes=False):
+    def converter_init(
+            self,
+            *,
+            accept: TypeSet = {str},
+            encoding: str | None = None,
+            zeroes: bool = False
+    ) -> None:
 
         key = str_converter_key(accept, encoding, zeroes)
         format_unit = str_converter_argument_map.get(key)
@@ -3561,7 +3604,14 @@ class str_converter(CConverter):
 # mapping from arguments to format unit *and* registers the
 # legacy C converter for that format unit.
 #
-def r(format_unit, *, accept, encoding=False, zeroes=False):
+ConverterKeywordDict = dict[str, TypeSet | bool]
+
+def r(format_unit: str,
+      *,
+      accept: TypeSet,
+      encoding: bool = False,
+      zeroes: bool = False
+) -> None:
     if not encoding and format_unit != 's':
         # add the legacy c converters here too.
         #
@@ -3571,7 +3621,7 @@ def r(format_unit, *, accept, encoding=False, zeroes=False):
         #
         # also don't add the converter for 's' because
         # the metaclass for CConverter adds it for us.
-        kwargs = {}
+        kwargs: ConverterKeywordDict = {}
         if accept != {str}:
             kwargs['accept'] = accept
         if zeroes:
@@ -3660,7 +3710,11 @@ class Py_UNICODE_converter(CConverter):
     type = 'const Py_UNICODE *'
     default_type = (str, Null, NoneType)
 
-    def converter_init(self, *, accept={str}, zeroes: bool = False) -> None:
+    def converter_init(
+            self, *,
+            accept: TypeSet = {str},
+            zeroes: bool = False
+    ) -> None:
         format_unit = 'Z' if accept=={str, NoneType} else 'u'
         if zeroes:
             format_unit += '#'
@@ -3722,7 +3776,7 @@ class Py_buffer_converter(CConverter):
     impl_by_reference = True
     c_ignored_default = "{NULL, NULL}"
 
-    def converter_init(self, *, accept={buffer}) -> None:
+    def converter_init(self, *, accept: TypeSet = {buffer}) -> None:
         if self.default not in (unspecified, None):
             fail("The only legal default value for Py_buffer is None.")
 
@@ -3943,7 +3997,7 @@ class CReturnConverter(metaclass=CReturnConverterAutoRegister):
 
     # The Python default value for this parameter, as a Python value.
     # Or the magic value "unspecified" if there is no default.
-    default = None
+    default: object = None
 
     def __init__(self, *, py_default=None, **kwargs):
         self.py_default = py_default
@@ -4206,10 +4260,8 @@ class DSLParser:
 
     def directive_class(self, name, typedef, type_object):
         fields = name.split('.')
-        in_classes = False
         parent = self
         name = fields.pop()
-        so_far = []
         module, cls = self.clinic._module_and_class(fields)
 
         parent = cls or module
@@ -4745,7 +4797,7 @@ class DSLParser:
                     # but at least make an attempt at ensuring it's a valid expression.
                     try:
                         value = eval(default)
-                        if value == unspecified:
+                        if value is unspecified:
                             fail("'unspecified' is not a legal default value!")
                     except NameError:
                         pass # probably a named constant

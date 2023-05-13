@@ -868,9 +868,12 @@ class ClinicExternalTest(TestCase):
         self.assertEqual(new_mtime_ns, old_mtime_ns)
 
 
-ac_tester = import_helper.import_module('_testclinic')
+try:
+    import _testclinic as ac_tester
+except ImportError:
+    ac_tester = None
 
-
+@unittest.skipIf(ac_tester is None, "_testclinic is missing")
 class ClinicFunctionalTest(unittest.TestCase):
     locals().update((name, getattr(ac_tester, name))
                     for name in dir(ac_tester) if name.startswith('test_'))

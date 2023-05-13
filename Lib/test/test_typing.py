@@ -2695,6 +2695,82 @@ class ProtocolTests(BaseTestCase):
         with self.assertRaises(TypeError):
             issubclass(D, PNonCall)
 
+    def test_no_weird_caching_with_issubclass_after_isinstance(self):
+        @runtime_checkable
+        class Spam(Protocol):
+            x: int
+
+        class Eggs:
+            def __init__(self) -> None:
+                self.x = 42
+
+        self.assertIsInstance(Eggs(), Spam)
+
+        # gh-104555: If we didn't override ABCMeta.__subclasscheck__ in _ProtocolMeta,
+        # TypeError wouldn't be raised here,
+        # as the cached result of the isinstance() check immediately above
+        # would mean the issubclass() call would short-circuit
+        # before we got to the "raise TypeError" line
+        with self.assertRaises(TypeError):
+            issubclass(Eggs, Spam)
+
+    def test_no_weird_caching_with_issubclass_after_isinstance_2(self):
+        @runtime_checkable
+        class Spam(Protocol):
+            x: int
+
+        class Eggs: ...
+
+        self.assertNotIsInstance(Eggs(), Spam)
+
+        # gh-104555: If we didn't override ABCMeta.__subclasscheck__ in _ProtocolMeta,
+        # TypeError wouldn't be raised here,
+        # as the cached result of the isinstance() check immediately above
+        # would mean the issubclass() call would short-circuit
+        # before we got to the "raise TypeError" line
+        with self.assertRaises(TypeError):
+            issubclass(Eggs, Spam)
+
+    def test_no_weird_caching_with_issubclass_after_isinstance_3(self):
+        @runtime_checkable
+        class Spam(Protocol):
+            x: int
+
+        class Eggs:
+            def __getattr__(self, attr):
+                if attr == "x":
+                    return 42
+                raise AttributeError(attr)
+
+        self.assertNotIsInstance(Eggs(), Spam)
+
+        # gh-104555: If we didn't override ABCMeta.__subclasscheck__ in _ProtocolMeta,
+        # TypeError wouldn't be raised here,
+        # as the cached result of the isinstance() check immediately above
+        # would mean the issubclass() call would short-circuit
+        # before we got to the "raise TypeError" line
+        with self.assertRaises(TypeError):
+            issubclass(Eggs, Spam)
+
+    def test_no_weird_caching_with_issubclass_after_isinstance_pep695(self):
+        @runtime_checkable
+        class Spam[T](Protocol):
+            x: T
+
+        class Eggs[T]:
+            def __init__(self, x: T) -> None:
+                self.x = x
+
+        self.assertIsInstance(Eggs(42), Spam)
+
+        # gh-104555: If we didn't override ABCMeta.__subclasscheck__ in _ProtocolMeta,
+        # TypeError wouldn't be raised here,
+        # as the cached result of the isinstance() check immediately above
+        # would mean the issubclass() call would short-circuit
+        # before we got to the "raise TypeError" line
+        with self.assertRaises(TypeError):
+            issubclass(Eggs, Spam)
+
     def test_protocols_isinstance(self):
         T = TypeVar('T')
 
@@ -3090,6 +3166,21 @@ class ProtocolTests(BaseTestCase):
         self.assertNotIsSubclass(D, NonPR)
         self.assertIsInstance(NonPR(), PR)
         self.assertIsSubclass(NonPR, PR)
+
+        self.assertNotIn("__protocol_attrs__", vars(NonP))
+        self.assertNotIn("__protocol_attrs__", vars(NonPR))
+        self.assertNotIn("__callable_proto_members_only__", vars(NonP))
+        self.assertNotIn("__callable_proto_members_only__", vars(NonPR))
+
+        acceptable_extra_attrs = {
+            '_is_protocol', '_is_runtime_protocol', '__parameters__',
+            '__subclasshook__', '__abstractmethods__', '_abc_impl',
+            '__init__', '__annotations__',
+        }
+        self.assertLessEqual(vars(NonP).keys(), vars(C).keys() | acceptable_extra_attrs)
+        self.assertLessEqual(
+            vars(NonPR).keys(), vars(D).keys() | acceptable_extra_attrs
+        )
 
     def test_custom_subclasshook(self):
         class P(Protocol):

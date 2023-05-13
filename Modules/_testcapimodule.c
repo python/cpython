@@ -3062,6 +3062,33 @@ settrace_to_record(PyObject *self, PyObject *list)
     Py_RETURN_NONE;
 }
 
+static int
+error_func(PyObject *obj, PyFrameObject *f, int what, PyObject *arg)
+{
+    assert(PyList_Check(obj));
+    /* Only raise if list is empty, otherwise append None
+     * This ensures that we only raise once */
+    if (PyList_GET_SIZE(obj)) {
+        return 0;
+    }
+    if (PyList_Append(obj, Py_None)) {
+       return -1;
+    }
+    PyErr_SetString(PyExc_Exception, "an exception");
+    return -1;
+}
+
+static PyObject *
+settrace_to_error(PyObject *self, PyObject *list)
+{
+    if (!PyList_Check(list)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a list");
+        return NULL;
+    }
+    PyEval_SetTrace(error_func, list);
+    Py_RETURN_NONE;
+}
+
 static PyObject *
 clear_managed_dict(PyObject *self, PyObject *obj)
 {
@@ -3352,6 +3379,7 @@ static PyMethodDef TestMethods[] = {
     {"gen_get_code", gen_get_code, METH_O, NULL},
     {"get_feature_macros", get_feature_macros, METH_NOARGS, NULL},
     {"test_code_api", test_code_api, METH_NOARGS, NULL},
+    {"settrace_to_error", settrace_to_error, METH_O, NULL},
     {"settrace_to_record", settrace_to_record, METH_O, NULL},
     {"test_macros", test_macros, METH_NOARGS, NULL},
     {"clear_managed_dict", clear_managed_dict, METH_O, NULL},

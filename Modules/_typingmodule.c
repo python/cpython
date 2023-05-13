@@ -6,6 +6,7 @@
 
 #include "Python.h"
 #include "internal/pycore_interp.h"
+#include "internal/pycore_typevarobject.h"
 #include "clinic/_typingmodule.c.h"
 
 /*[clinic input]
@@ -56,9 +57,11 @@ _typing_exec(PyObject *m)
     EXPORT_TYPE("ParamSpec", paramspec_type);
     EXPORT_TYPE("ParamSpecArgs", paramspecargs_type);
     EXPORT_TYPE("ParamSpecKwargs", paramspeckwargs_type);
-    EXPORT_TYPE("TypeAliasType", typealias_type);
     EXPORT_TYPE("Generic", generic_type);
 #undef EXPORT_TYPE
+    if (PyModule_AddObjectRef(m, "TypeAliasType", (PyObject *)&_PyTypeAlias_Type) < 0) {
+        return -1;
+    }
     return 0;
 }
 
