@@ -4,8 +4,10 @@ import cmd
 import io
 import linecache
 import os
+import pprint
 import runpy
 import sys
+import traceback
 
 from bdbx import Bdbx, BdbxQuit
 from types import CodeType
@@ -115,10 +117,7 @@ class Pdbx(Bdbx, cmd.Cmd):
         __main__.__dict__.clear()
         __main__.__dict__.update(globals)
         self.break_code(target.code)
-        try:
-            exec(target.code, globals, locals)
-        except BdbxQuit:
-            pass
+        exec(target.code, globals, locals)
         __main__.__dict__.clear()
         __main__.__dict__.update(main_dict)
 
@@ -130,6 +129,7 @@ class Pdbx(Bdbx, cmd.Cmd):
             filename = self._main_pyfile
         return filename
 
+    # ======================= Formatting Helpers ============================
     def _format_stack_entry(self, frame, lineno, stack_prefix="> ", code_prefix="-> "):
         """Return a string with information about a stack entry.
 
@@ -152,6 +152,9 @@ class Pdbx(Bdbx, cmd.Cmd):
         else:
             code = ""
         return f"{stack_prefix}{func_name}() @ {filename}:{lineno}{code}"
+
+    def _format_exception(exc):
+        return traceback.format_exception_only(exc)[-1].strip()
 
     def _print_stack_entry(self,
                            frame,
@@ -286,6 +289,14 @@ class Pdbx(Bdbx, cmd.Cmd):
 
         return filename, line_number, function, condition
 
+    def _getval(self, arg):
+        try:
+            frame = self.get_current_frame()
+            return eval(arg, frame.f_globals, frame.f_locals)
+        except:
+            self.error(self._format_exception(sys.exception()))
+            raise
+
     # ======================================================================
     # The following methods are called by the cmd.Cmd base class
     # All the commands are in alphabetic order
@@ -339,6 +350,7 @@ class Pdbx(Bdbx, cmd.Cmd):
     do_d = do_down
 
     def do_EOF(self, arg):
+        self.message('')
         raise BdbxQuit("quit")
 
     def do_next(self, arg):
@@ -346,6 +358,32 @@ class Pdbx(Bdbx, cmd.Cmd):
         return True
 
     do_n = do_next
+
+    def do_p(self, arg):
+        """p expression
+
+        Print the value of the expression.
+        """
+        try:
+            val = self._getval(arg)
+            self.message(repr(val))
+        except:
+            # error message is printed
+            pass
+        return False
+
+    def do_pp(self, arg):
+        """pp expression
+
+        Pretty-print the value of the expression.
+        """
+        try:
+            val = self._getval(arg)
+            self.message(pprint.pformat(val))
+        except:
+            # error message is printed
+            pass
+        return False
 
     def do_quit(self, arg):
         raise BdbxQuit("quit")
@@ -406,6 +444,14 @@ def break_here():
     pdb = Pdbx()
     pdb.break_here(sys._getframe().f_back)
 
+_usage = """\
+usage: pdbx.py [-m module | pyfile] [arg] ...
+
+Debug the Python program given by pyfile. Alternatively,
+an executable module or package to debug can be specified using
+the -m switch.
+"""
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -422,10 +468,19 @@ def main():
         sys.argv[:] = commands
     else:
         # Show help message
-        parser.print_help()
+        print(_usage)
+        sys.exit(2)
 
     pdbx = Pdbx()
-    pdbx._run_target(target)
+    while True:
+        try:
+            pdbx._run_target(target)
+        except SystemExit as e:
+            # In most cases SystemExit does not warrant a post-mortem session.
+            print("The program exited via sys.exit(). Exit status:", end=' ')
+            print(e)
+        except BdbxQuit:
+            break
 
 
 if __name__ == '__main__':
