@@ -228,29 +228,30 @@ Implementing functions and methods
    Structure used to describe a method of an extension type.  This structure has
    four fields:
 
-   +------------------+---------------+-------------------------------+
-   | Field            | C Type        | Meaning                       |
-   +==================+===============+===============================+
-   | :attr:`ml_name`  | const char \* | name of the method            |
-   +------------------+---------------+-------------------------------+
-   | :attr:`ml_meth`  | PyCFunction   | pointer to the C              |
-   |                  |               | implementation                |
-   +------------------+---------------+-------------------------------+
-   | :attr:`ml_flags` | int           | flag bits indicating how the  |
-   |                  |               | call should be constructed    |
-   +------------------+---------------+-------------------------------+
-   | :attr:`ml_doc`   | const char \* | points to the contents of the |
-   |                  |               | docstring                     |
-   +------------------+---------------+-------------------------------+
+   .. c:member:: const char* ml_name
 
-The :attr:`ml_meth` is a C function pointer.  The functions may be of different
+      name of the method
+
+   .. c:member:: PyCFunction ml_meth
+
+      pointer to the C implementation
+
+   .. c:member:: int ml_flags
+
+      flags bits indicating how the call should be constructed
+
+   .. c:member:: const char* ml_doc
+
+      points to the contents of the docstring
+
+The :c:member:`ml_meth` is a C function pointer.  The functions may be of different
 types, but they always return :c:expr:`PyObject*`.  If the function is not of
 the :c:type:`PyCFunction`, the compiler will require a cast in the method table.
 Even though :c:type:`PyCFunction` defines the first parameter as
 :c:expr:`PyObject*`, it is common that the method implementation uses the
 specific C type of the *self* object.
 
-The :attr:`ml_flags` field is a bitfield which can include the following flags.
+The :c:member:`ml_flags` field is a bitfield which can include the following flags.
 The individual flags indicate either a calling convention or a binding
 convention.
 
@@ -346,7 +347,7 @@ method.
 
 .. data:: METH_CLASS
 
-   .. index:: builtin: classmethod
+   .. index:: pair: built-in function; classmethod
 
    The method will be passed the type object as the first parameter rather
    than an instance of the type.  This is used to create *class methods*,
@@ -356,7 +357,7 @@ method.
 
 .. data:: METH_STATIC
 
-   .. index:: builtin: staticmethod
+   .. index:: pair: built-in function; staticmethod
 
    The method will be passed ``NULL`` as the first parameter rather than an
    instance of the type.  This is used to create *static methods*, similar to
@@ -484,6 +485,22 @@ The following flags can be used with :c:member:`PyMemberDef.flags`:
 
    Emit an ``object.__getattr__`` :ref:`audit event <audit-events>`
    before reading.
+
+.. c:macro:: Py_RELATIVE_OFFSET
+
+   Indicates that the :c:member:`~PyMemberDef.offset` of this ``PyMemberDef``
+   entry indicates an offset from the subclass-specific data, rather than
+   from ``PyObject``.
+
+   Can only be used as part of :c:member:`Py_tp_members <PyTypeObject.tp_members>`
+   :c:type:`slot <PyTypeSlot>` when creating a class using negative
+   :c:member:`~PyTypeDef.basicsize`.
+   It is mandatory in that case.
+
+   This flag is only used in :c:type:`PyTypeSlot`.
+   When setting :c:member:`~PyTypeObject.tp_members` during
+   class creation, Python clears it and sets
+   :c:member:`PyMemberDef.offset` to the offset from the ``PyObject`` struct.
 
 .. index::
    single: READ_RESTRICTED
@@ -614,7 +631,7 @@ Defining Getters and Setters
 
    .. c:member:: getter PyGetSetDef.get
 
-      C funtion to get the attribute.
+      C function to get the attribute.
 
    .. c:member:: setter PyGetSetDef.set
 

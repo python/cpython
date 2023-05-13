@@ -119,7 +119,7 @@ letter = re.compile(r'[a-zA-Z_]')
 kwds = (
     'AUTO', 'BREAK', 'CASE', 'CHAR', 'CONST',
     'CONTINUE', 'DEFAULT', 'DO', 'DOUBLE', 'ELSE', 'ENUM', 'EXTERN',
-    'FLOAT', 'FOR', 'GOTO', 'IF', 'INLINE', 'INT', 'LONG',
+    'FLOAT', 'FOR', 'GOTO', 'IF', 'INLINE', 'INT', 'LONG', 'OVERRIDE',
     'REGISTER', 'OFFSETOF',
     'RESTRICT', 'RETURN', 'SHORT', 'SIGNED', 'SIZEOF', 'STATIC', 'STRUCT',
     'SWITCH', 'TYPEDEF', 'UNION', 'UNSIGNED', 'VOID',
@@ -240,7 +240,12 @@ def to_text(tkns: list[Token], dedent: int = 0) -> str:
             res.append('\n')
             col = 1+dedent
         res.append(' '*(c-col))
-        res.append(tkn.text)
+        text = tkn.text
+        if dedent != 0 and tkn.kind == 'COMMENT' and '\n' in text:
+            if dedent < 0:
+                text = text.replace('\n', '\n' + ' '*-dedent)
+            # TODO: dedent > 0
+        res.append(text)
         line, col = tkn.end
     return ''.join(res)
 

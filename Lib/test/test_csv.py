@@ -10,7 +10,7 @@ import csv
 import gc
 import pickle
 from test import support
-from test.support import warnings_helper
+from test.support import warnings_helper, import_helper, check_disallow_instantiation
 from itertools import permutations
 from textwrap import dedent
 from collections import OrderedDict
@@ -187,6 +187,10 @@ class Test_Csv(unittest.TestCase):
                          quoting = csv.QUOTE_ALL)
         self._write_test(['a\nb',1], '"a\nb","1"',
                          quoting = csv.QUOTE_ALL)
+        self._write_test(['a','',None,1], '"a","",,1',
+                         quoting = csv.QUOTE_STRINGS)
+        self._write_test(['a','',None,1], '"a","",,"1"',
+                         quoting = csv.QUOTE_NOTNULL)
 
     def test_write_escape(self):
         self._write_test(['a',1,'p,q'], 'a,1,"p,q"',
@@ -762,12 +766,20 @@ class TestDictFields(unittest.TestCase):
         dictrow = {'f0': 0, 'f1': 1, 'f2': 2, 'f3': 3}
         self.assertRaises(ValueError, csv.DictWriter.writerow, writer, dictrow)
 
+        # see bpo-44512 (differently cased 'raise' should not result in 'ignore')
+        writer = csv.DictWriter(fileobj, ['f1', 'f2'], extrasaction="RAISE")
+        self.assertRaises(ValueError, csv.DictWriter.writerow, writer, dictrow)
+
     def test_write_field_not_in_field_names_ignore(self):
         fileobj = StringIO()
         writer = csv.DictWriter(fileobj, ['f1', 'f2'], extrasaction="ignore")
         dictrow = {'f0': 0, 'f1': 1, 'f2': 2, 'f3': 3}
         csv.DictWriter.writerow(writer, dictrow)
         self.assertEqual(fileobj.getvalue(), "1,2\r\n")
+
+        # bpo-44512
+        writer = csv.DictWriter(fileobj, ['f1', 'f2'], extrasaction="IGNORE")
+        csv.DictWriter.writerow(writer, dictrow)
 
     def test_dict_reader_fieldnames_accepts_iter(self):
         fieldnames = ["a", "b", "c"]
@@ -1417,6 +1429,13 @@ class MiscTestCase(unittest.TestCase):
     def test_subclassable(self):
         # issue 44089
         class Foo(csv.Error): ...
+
+    @support.cpython_only
+    def test_disallow_instantiation(self):
+        _csv = import_helper.import_module("_csv")
+        for tp in _csv.Reader, _csv.Writer:
+            with self.subTest(tp=tp):
+                check_disallow_instantiation(self, tp)
 
 if __name__ == '__main__':
     unittest.main()

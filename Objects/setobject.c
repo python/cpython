@@ -1957,12 +1957,11 @@ done:
 static PyObject *
 set_sizeof(PySetObject *so, PyObject *Py_UNUSED(ignored))
 {
-    Py_ssize_t res;
-
-    res = _PyObject_SIZE(Py_TYPE(so));
-    if (so->table != so->smalltable)
-        res = res + (so->mask + 1) * sizeof(setentry);
-    return PyLong_FromSsize_t(res);
+    size_t res = _PyObject_SIZE(Py_TYPE(so));
+    if (so->table != so->smalltable) {
+        res += ((size_t)so->mask + 1) * sizeof(setentry);
+    }
+    return PyLong_FromSize_t(res);
 }
 
 PyDoc_STRVAR(sizeof_doc, "S.__sizeof__() -> size of S in memory, in bytes");
@@ -2544,6 +2543,7 @@ static PyTypeObject _PySetDummy_Type = {
 };
 
 static PyObject _dummy_struct = {
-  _PyObject_EXTRA_INIT
-  2, &_PySetDummy_Type
+    _PyObject_EXTRA_INIT
+    { _Py_IMMORTAL_REFCNT },
+    &_PySetDummy_Type
 };

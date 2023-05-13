@@ -263,9 +263,7 @@ void _PyAST_Fini(PyInterpreterState *interp)
     Py_CLEAR(state->vararg);
     Py_CLEAR(state->withitem_type);
 
-    if (_PyInterpreterState_Get() == _PyInterpreterState_Main()) {
-        Py_CLEAR(_Py_CACHED_OBJECT(str_replace_inf));
-    }
+    Py_CLEAR(_Py_INTERP_CACHED_OBJECT(interp, str_replace_inf));
 
 #if !defined(NDEBUG)
     state->initialized = -1;
@@ -12195,6 +12193,7 @@ astmodule_exec(PyObject *m)
 
 static PyModuleDef_Slot astmodule_slots[] = {
     {Py_mod_exec, astmodule_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

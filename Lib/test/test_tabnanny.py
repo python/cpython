@@ -110,9 +110,10 @@ class TestErrPrint(TestCase):
 
         for args, expected in tests:
             with self.subTest(arguments=args, expected=expected):
-                with captured_stderr() as stderr:
-                    tabnanny.errprint(*args)
-                self.assertEqual(stderr.getvalue() , expected)
+                with self.assertRaises(SystemExit):
+                    with captured_stderr() as stderr:
+                        tabnanny.errprint(*args)
+                    self.assertEqual(stderr.getvalue() , expected)
 
 
 class TestNannyNag(TestCase):
@@ -203,14 +204,16 @@ class TestCheck(TestCase):
             err = ('unindent does not match any outer indentation level'
                 ' (<tokenize>, line 3)\n')
             err = f"{file_path!r}: Indentation Error: {err}"
-            self.verify_tabnanny_check(file_path, err=err)
+            with self.assertRaises(SystemExit):
+                self.verify_tabnanny_check(file_path, err=err)
 
     def test_when_tokenize_tokenerror(self):
         """A python source code file eligible for raising 'tokenize.TokenError'."""
         with TemporaryPyFile(SOURCE_CODES["incomplete_expression"]) as file_path:
             err = "('EOF in multi-line statement', (7, 0))\n"
             err = f"{file_path!r}: Token Error: {err}"
-            self.verify_tabnanny_check(file_path, err=err)
+            with self.assertRaises(SystemExit):
+                self.verify_tabnanny_check(file_path, err=err)
 
     def test_when_nannynag_error_verbose(self):
         """A python source code file eligible for raising `tabnanny.NannyNag`.
@@ -236,7 +239,8 @@ class TestCheck(TestCase):
         path = 'no_file.py'
         err = (f"{path!r}: I/O Error: [Errno {errno.ENOENT}] "
               f"{os.strerror(errno.ENOENT)}: {path!r}\n")
-        self.verify_tabnanny_check(path, err=err)
+        with self.assertRaises(SystemExit):
+            self.verify_tabnanny_check(path, err=err)
 
     def test_errored_directory(self):
         """Directory containing wrongly indented python source code files."""
@@ -251,7 +255,8 @@ class TestCheck(TestCase):
                 err = ('unindent does not match any outer indentation level'
                             ' (<tokenize>, line 3)\n')
                 err = f"{e_file!r}: Indentation Error: {err}"
-                self.verify_tabnanny_check(tmp_dir, err=err)
+                with self.assertRaises(SystemExit):
+                    self.verify_tabnanny_check(tmp_dir, err=err)
 
 
 class TestProcessTokens(TestCase):
@@ -287,9 +292,12 @@ class TestProcessTokens(TestCase):
 class TestCommandLine(TestCase):
     """Tests command line interface of `tabnanny`."""
 
-    def validate_cmd(self, *args, stdout="", stderr="", partial=False):
+    def validate_cmd(self, *args, stdout="", stderr="", partial=False, expect_failure=False):
         """Common function to assert the behaviour of command line interface."""
-        _, out, err = script_helper.assert_python_ok('-m', 'tabnanny', *args)
+        if expect_failure:
+            _, out, err = script_helper.assert_python_failure('-m', 'tabnanny', *args)
+        else:
+            _, out, err = script_helper.assert_python_ok('-m', 'tabnanny', *args)
         # Note: The `splitlines()` will solve the problem of CRLF(\r) added
         # by OS Windows.
         out = os.fsdecode(out)
@@ -310,7 +318,7 @@ class TestCommandLine(TestCase):
             stderr  = f"{file_path!r}: Indentation Error: "
             stderr += ('unindent does not match any outer indentation level'
                     ' (<tokenize>, line 3)')
-            self.validate_cmd(file_path, stderr=stderr)
+            self.validate_cmd(file_path, stderr=stderr, expect_failure=True)
 
     def test_with_error_free_file(self):
         """Should not display anything if python file is correctly indented."""
@@ -321,7 +329,7 @@ class TestCommandLine(TestCase):
         """Should display usage on no arguments."""
         path = findfile('tabnanny.py')
         stderr = f"Usage: {path} [-v] file_or_directory ..."
-        self.validate_cmd(stderr=stderr)
+        self.validate_cmd(stderr=stderr, expect_failure=True)
 
     def test_quiet_flag(self):
         """Should display less when quite mode is on."""

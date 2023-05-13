@@ -1,0 +1,3 @@
+Now creating :class:`inspect.Signature` objects with positional-only
+parameter with a default followed by a positional-or-keyword parameter
+without one is impossible.

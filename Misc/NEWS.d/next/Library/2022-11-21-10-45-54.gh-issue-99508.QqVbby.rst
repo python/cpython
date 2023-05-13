@@ -1,2 +1,0 @@
-Fix ``TypeError`` in ``Lib/importlib/_bootstrap_external.py`` while calling
-``_imp.source_hash()``.

@@ -1,6 +1,5 @@
 #include "Python.h"
 #include "pycore_ast.h"           // identifier, stmt_ty
-#include "pycore_compile.h"       // _Py_Mangle(), _PyFuture_FromAST()
 #include "pycore_parser.h"        // _PyParser_ASTFromString()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntryObject
@@ -104,6 +103,7 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_comprehension = NoComprehension;
     ste->ste_returns_value = 0;
     ste->ste_needs_class_closure = 0;
+    ste->ste_comp_inlined = 0;
     ste->ste_comp_iter_target = 0;
     ste->ste_comp_iter_expr = 0;
 
@@ -559,6 +559,77 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
     return 1;
 }
 
+static int
+is_free_in_any_child(PySTEntryObject *entry, PyObject *key)
+{
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(entry->ste_children); i++) {
+        PySTEntryObject *child_ste = (PySTEntryObject *)PyList_GET_ITEM(
+            entry->ste_children, i);
+        long scope = _PyST_GetScope(child_ste, key);
+        if (scope == FREE) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static int
+inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
+                     PyObject *scopes, PyObject *comp_free,
+                     PyObject *promote_to_cell)
+{
+    PyObject *k, *v;
+    Py_ssize_t pos = 0;
+    while (PyDict_Next(comp->ste_symbols, &pos, &k, &v)) {
+        // skip comprehension parameter
+        long comp_flags = PyLong_AS_LONG(v);
+        if (comp_flags & DEF_PARAM) {
+            assert(_PyUnicode_EqualToASCIIString(k, ".0"));
+            continue;
+        }
+        int scope = (comp_flags >> SCOPE_OFFSET) & SCOPE_MASK;
+        int only_flags = comp_flags & ((1 << SCOPE_OFFSET) - 1);
+        PyObject *existing = PyDict_GetItemWithError(ste->ste_symbols, k);
+        if (existing == NULL && PyErr_Occurred()) {
+            return 0;
+        }
+        if (!existing) {
+            // name does not exist in scope, copy from comprehension
+            assert(scope != FREE || PySet_Contains(comp_free, k) == 1);
+            PyObject *v_flags = PyLong_FromLong(only_flags);
+            if (v_flags == NULL) {
+                return 0;
+            }
+            int ok = PyDict_SetItem(ste->ste_symbols, k, v_flags);
+            Py_DECREF(v_flags);
+            if (ok < 0) {
+                return 0;
+            }
+            SET_SCOPE(scopes, k, scope);
+        }
+        else {
+            if (PyLong_AsLong(existing) & DEF_BOUND) {
+                // cell vars in comprehension that are locals in outer scope
+                // must be promoted to cell so u_cellvars isn't wrong
+                if (scope == CELL && ste->ste_type == FunctionBlock) {
+                    if (PySet_Add(promote_to_cell, k) < 0) {
+                        return 0;
+                    }
+                }
+
+                // free vars in comprehension that are locals in outer scope can
+                // now simply be locals, unless they are free in comp children
+                if (!is_free_in_any_child(comp, k)) {
+                    if (PySet_Discard(comp_free, k) < 0) {
+                        return 0;
+                    }
+                }
+            }
+        }
+    }
+    return 1;
+}
+
 #undef SET_SCOPE
 
 /* If a name is defined in free and also in locals, then this block
@@ -570,7 +641,7 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
 */
 
 static int
-analyze_cells(PyObject *scopes, PyObject *free)
+analyze_cells(PyObject *scopes, PyObject *free, PyObject *promote_to_cell)
 {
     PyObject *name, *v, *v_cell;
     int success = 0;
@@ -585,7 +656,7 @@ analyze_cells(PyObject *scopes, PyObject *free)
         scope = PyLong_AS_LONG(v);
         if (scope != LOCAL)
             continue;
-        if (!PySet_Contains(free, name))
+        if (!PySet_Contains(free, name) && !PySet_Contains(promote_to_cell, name))
             continue;
         /* Replace LOCAL with CELL for this name, and remove
            from free. It is safe to replace the value of name
@@ -728,17 +799,17 @@ error:
 
 static int
 analyze_child_block(PySTEntryObject *entry, PyObject *bound, PyObject *free,
-                    PyObject *global, PyObject* child_free);
+                    PyObject *global, PyObject **child_free);
 
 static int
 analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
               PyObject *global)
 {
     PyObject *name, *v, *local = NULL, *scopes = NULL, *newbound = NULL;
-    PyObject *newglobal = NULL, *newfree = NULL, *allfree = NULL;
+    PyObject *newglobal = NULL, *newfree = NULL, *promote_to_cell = NULL;
     PyObject *temp;
-    int i, success = 0;
-    Py_ssize_t pos = 0;
+    int success = 0;
+    Py_ssize_t i, pos = 0;
 
     local = PySet_New(NULL);  /* collect new names bound in block */
     if (!local)
@@ -747,8 +818,8 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     if (!scopes)
         goto error;
 
-    /* Allocate new global and bound variable dictionaries.  These
-       dictionaries hold the names visible in nested blocks.  For
+    /* Allocate new global, bound and free variable sets.  These
+       sets hold the names visible in nested blocks.  For
        ClassBlocks, the bound and global names are initialized
        before analyzing names, because class bindings aren't
        visible in methods.  For other blocks, they are initialized
@@ -766,6 +837,9 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
         goto error;
     newbound = PySet_New(NULL);
     if (!newbound)
+        goto error;
+    promote_to_cell = PySet_New(NULL);
+    if (!promote_to_cell)
         goto error;
 
     /* Class namespace has no effect on names visible in
@@ -827,31 +901,58 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
 
        newbound, newglobal now contain the names visible in
        nested blocks.  The free variables in the children will
-       be collected in allfree.
+       be added to newfree.
     */
-    allfree = PySet_New(NULL);
-    if (!allfree)
-        goto error;
     for (i = 0; i < PyList_GET_SIZE(ste->ste_children); ++i) {
+        PyObject *child_free = NULL;
         PyObject *c = PyList_GET_ITEM(ste->ste_children, i);
         PySTEntryObject* entry;
         assert(c && PySTEntry_Check(c));
         entry = (PySTEntryObject*)c;
+
+        // we inline all non-generator-expression comprehensions
+        int inline_comp =
+            entry->ste_comprehension &&
+            !entry->ste_generator;
+
         if (!analyze_child_block(entry, newbound, newfree, newglobal,
-                                 allfree))
+                                 &child_free))
+        {
             goto error;
+        }
+        if (inline_comp) {
+            if (!inline_comprehension(ste, entry, scopes, child_free, promote_to_cell)) {
+                Py_DECREF(child_free);
+                goto error;
+            }
+            entry->ste_comp_inlined = 1;
+        }
+        temp = PyNumber_InPlaceOr(newfree, child_free);
+        Py_DECREF(child_free);
+        if (!temp)
+            goto error;
+        Py_DECREF(temp);
         /* Check if any children have free variables */
         if (entry->ste_free || entry->ste_child_free)
             ste->ste_child_free = 1;
     }
 
-    temp = PyNumber_InPlaceOr(newfree, allfree);
-    if (!temp)
-        goto error;
-    Py_DECREF(temp);
+    /* Splice children of inlined comprehensions into our children list */
+    for (i = PyList_GET_SIZE(ste->ste_children) - 1; i >= 0; --i) {
+        PyObject* c = PyList_GET_ITEM(ste->ste_children, i);
+        PySTEntryObject* entry;
+        assert(c && PySTEntry_Check(c));
+        entry = (PySTEntryObject*)c;
+        if (entry->ste_comp_inlined &&
+            PyList_SetSlice(ste->ste_children, i, i + 1,
+                            entry->ste_children) < 0)
+        {
+            goto error;
+        }
+    }
 
     /* Check if any local variables must be converted to cell variables */
-    if (ste->ste_type == FunctionBlock && !analyze_cells(scopes, newfree))
+    if (ste->ste_type == FunctionBlock && !analyze_cells(scopes, newfree, promote_to_cell))
         goto error;
     else if (ste->ste_type == ClassBlock && !drop_class_free(ste, newfree))
         goto error;
@@ -871,7 +972,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     Py_XDECREF(newbound);
     Py_XDECREF(newglobal);
     Py_XDECREF(newfree);
-    Py_XDECREF(allfree);
+    Py_XDECREF(promote_to_cell);
     if (!success)
         assert(PyErr_Occurred());
     return success;
@@ -879,16 +980,15 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
 
 static int
 analyze_child_block(PySTEntryObject *entry, PyObject *bound, PyObject *free,
-                    PyObject *global, PyObject* child_free)
+                    PyObject *global, PyObject** child_free)
 {
     PyObject *temp_bound = NULL, *temp_global = NULL, *temp_free = NULL;
-    PyObject *temp;
 
-    /* Copy the bound and global dictionaries.
+    /* Copy the bound/global/free sets.
 
-       These dictionaries are used by all blocks enclosed by the
+       These sets are used by all blocks enclosed by the
        current block.  The analyze_block() call modifies these
-       dictionaries.
+       sets.
 
     */
     temp_bound = PySet_New(bound);
@@ -903,12 +1003,8 @@ analyze_child_block(PySTEntryObject *entry, PyObject *bound, PyObject *free,
 
     if (!analyze_block(entry, temp_bound, temp_free, temp_global))
         goto error;
-    temp = PyNumber_InPlaceOr(child_free, temp_free);
-    if (!temp)
-        goto error;
-    Py_DECREF(temp);
+    *child_free = temp_free;
     Py_DECREF(temp_bound);
-    Py_DECREF(temp_free);
     Py_DECREF(temp_global);
     return 1;
  error:
@@ -1488,7 +1584,8 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
          */
         if (ste->ste_comprehension) {
             long target_in_scope = _PyST_GetSymbol(ste, target_name);
-            if (target_in_scope & DEF_COMP_ITER) {
+            if ((target_in_scope & DEF_COMP_ITER) &&
+                (target_in_scope & DEF_LOCAL)) {
                 PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_CONFLICT, target_name);
                 PyErr_RangedSyntaxLocationObject(st->st_filename,
                                                   e->lineno,
@@ -1539,7 +1636,7 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
     /* We should always find either a FunctionBlock, ModuleBlock or ClassBlock
        and should never fall to this case
     */
-    assert(0);
+    Py_UNREACHABLE();
     return 0;
 }
 
@@ -2150,4 +2247,69 @@ _Py_SymtableStringObjectFlags(const char *str, PyObject *filename,
     st = _PySymtable_Build(mod, filename, &future);
     _PyArena_Free(arena);
     return st;
+}
+
+PyObject *
+_Py_Mangle(PyObject *privateobj, PyObject *ident)
+{
+    /* Name mangling: __private becomes _classname__private.
+       This is independent from how the name is used. */
+    if (privateobj == NULL || !PyUnicode_Check(privateobj) ||
+        PyUnicode_READ_CHAR(ident, 0) != '_' ||
+        PyUnicode_READ_CHAR(ident, 1) != '_') {
+        return Py_NewRef(ident);
+    }
+    size_t nlen = PyUnicode_GET_LENGTH(ident);
+    size_t plen = PyUnicode_GET_LENGTH(privateobj);
+    /* Don't mangle __id__ or names with dots.
+
+       The only time a name with a dot can occur is when
+       we are compiling an import statement that has a
+       package name.
+
+       TODO(jhylton): Decide whether we want to support
+       mangling of the module name, e.g. __M.X.
+    */
+    if ((PyUnicode_READ_CHAR(ident, nlen-1) == '_' &&
+         PyUnicode_READ_CHAR(ident, nlen-2) == '_') ||
+        PyUnicode_FindChar(ident, '.', 0, nlen, 1) != -1) {
+        return Py_NewRef(ident); /* Don't mangle __whatever__ */
+    }
+    /* Strip leading underscores from class name */
+    size_t ipriv = 0;
+    while (PyUnicode_READ_CHAR(privateobj, ipriv) == '_') {
+        ipriv++;
+    }
+    if (ipriv == plen) {
+        return Py_NewRef(ident); /* Don't mangle if class is just underscores */
+    }
+    plen -= ipriv;
+
+    if (plen + nlen >= PY_SSIZE_T_MAX - 1) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "private identifier too large to be mangled");
+        return NULL;
+    }
+
+    Py_UCS4 maxchar = PyUnicode_MAX_CHAR_VALUE(ident);
+    if (PyUnicode_MAX_CHAR_VALUE(privateobj) > maxchar) {
+        maxchar = PyUnicode_MAX_CHAR_VALUE(privateobj);
+    }
+
+    PyObject *result = PyUnicode_New(1 + nlen + plen, maxchar);
+    if (!result) {
+        return NULL;
+    }
+    /* ident = "_" + priv[ipriv:] + ident # i.e. 1+plen+nlen bytes */
+    PyUnicode_WRITE(PyUnicode_KIND(result), PyUnicode_DATA(result), 0, '_');
+    if (PyUnicode_CopyCharacters(result, 1, privateobj, ipriv, plen) < 0) {
+        Py_DECREF(result);
+        return NULL;
+    }
+    if (PyUnicode_CopyCharacters(result, plen+1, ident, 0, nlen) < 0) {
+        Py_DECREF(result);
+        return NULL;
+    }
+    assert(_PyUnicode_CheckConsistency(result, 1));
+    return result;
 }
