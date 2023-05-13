@@ -28,6 +28,7 @@ simple statements is:
               : | `future_stmt`
               : | `global_stmt`
               : | `nonlocal_stmt`
+              : | `type_stmt`
 
 
 .. _exprstmts:
@@ -1012,3 +1013,26 @@ pre-existing bindings in the local scope.
 
    :pep:`3104` - Access to Names in Outer Scopes
       The specification for the :keyword:`nonlocal` statement.
+
+.. _type:
+
+The :keyword:`!type` statement
+==============================
+
+.. index:: pair: statement; type
+
+.. productionlist:: python-grammar
+   type_stmt: 'type' `identifier` [`type_params`] "=" `expression`
+
+The :keyword:`!type` statement introduces a type alias.
+
+TODO(jelle): Link to typing.TypeAliasType. Link to section on type params. Link to section on lazy eval of RHS.
+
+:keyword:`!type` is a :ref:`soft keyword <soft-keywords>`.
+
+.. versionadded:: 3.12
+
+.. seealso::
+
+   :pep:`695` - Type Parameter Syntax
+      Introduced the `type` statement and syntax for generic classes and functions.

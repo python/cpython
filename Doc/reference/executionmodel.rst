@@ -71,6 +71,8 @@ The following constructs bind names:
   + in a capture pattern in structural pattern matching
 
 * :keyword:`import` statements.
+* :keyword:`type` statements.
+* :ref:`type parameter lists <type-params>`.
 
 The :keyword:`!import` statement of the form ``from ... import *`` binds all
 names defined in the imported module, except those beginning with an underscore.
@@ -149,7 +151,8 @@ a global statement, the free variable is treated as a global.
 The :keyword:`nonlocal` statement causes corresponding names to refer
 to previously bound variables in the nearest enclosing function scope.
 :exc:`SyntaxError` is raised at compile time if the given name does not
-exist in any enclosing function scope.
+exist in any enclosing function scope. :ref:`Type parameters <type-params>`
+cannot be rebound with the :keyword:`!nonlocal` statement.
 
 .. index:: pair: module; __main__
 
@@ -163,13 +166,23 @@ These references follow the normal rules for name resolution with an exception
 that unbound local variables are looked up in the global namespace.
 The namespace of the class definition becomes the attribute dictionary of
 the class. The scope of names defined in a class block is limited to the
-class block; it does not extend to the code blocks of methods -- this includes
+class block; it does not extend to the code blocks of methods. This includes
 comprehensions and generator expressions since they are implemented using a
-function scope.  This means that the following will fail::
+function scope, but it does not include :ref:`type scopes <type-scopes>`,
+which have access to their enclosing class scopes.
+This means that the following will fail::
 
    class A:
        a = 42
        b = list(a + i for i in range(10))
+
+However, the following will succeed::
+
+   class A:
+       type Alias = Nested
+       class Nested: ...
+
+   print(A.Alias.__value__)  # <type 'A.Nested'>
 
 .. _restrict_exec:
 
