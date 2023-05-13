@@ -1,0 +1,1 @@
+improving accuracy of mimetypes guess_extension
