@@ -1,0 +1,5 @@
+Name: The Tk Toolkit
+Version: 8.5.12
+Requires: tcl >= 8.5.12
+Libs: -ltk8.5 -ltkstub8.5
+# Libs.private: -lXft -lfontconfig -lfreetype -lfontconfig -lX11

@@ -27,6 +27,7 @@ from idlelib import query
 from idlelib import replace
 from idlelib import search
 from idlelib.tree import wheel_event
+from idlelib.util import py_extensions
 from idlelib import window
 
 # The default tab setting for a Text widget, in average-width characters.
@@ -37,12 +38,13 @@ darwin = sys.platform == 'darwin'
 def _sphinx_version():
     "Format sys.version_info to produce the Sphinx version string used to install the chm docs"
     major, minor, micro, level, serial = sys.version_info
-    release = '%s%s' % (major, minor)
-    release += '%s' % (micro,)
+    # TODO remove unneeded function since .chm no longer installed
+    release = f'{major}{minor}'
+    release += f'{micro}'
     if level == 'candidate':
-        release += 'rc%s' % (serial,)
+        release += f'rc{serial}'
     elif level != 'final':
-        release += '%s%s' % (level[0], serial)
+        release += f'{level[0]}{serial}'
     return release
 
 
@@ -60,7 +62,6 @@ class EditorWindow:
     from idlelib.sidebar import LineNumbers
     from idlelib.format import FormatParagraph, FormatRegion, Indents, Rstrip
     from idlelib.parenmatch import ParenMatch
-    from idlelib.squeezer import Squeezer
     from idlelib.zoomheight import ZoomHeight
 
     filesystemencoding = sys.getfilesystemencoding()  # for file names
@@ -68,6 +69,7 @@ class EditorWindow:
 
     allow_code_context = True
     allow_line_numbers = True
+    user_input_insert_tags = None
 
     def __init__(self, flist=None, filename=None, key=None, root=None):
         # Delay import: runscript imports pyshell imports EditorWindow.
@@ -85,10 +87,20 @@ class EditorWindow:
                     dochome = os.path.join(basepath, pyver,
                                            'Doc', 'index.html')
             elif sys.platform[:3] == 'win':
-                chmfile = os.path.join(sys.base_prefix, 'Doc',
-                                       'Python%s.chm' % _sphinx_version())
-                if os.path.isfile(chmfile):
-                    dochome = chmfile
+                import winreg  # Windows only, block only executed once.
+                docfile = ''
+                KEY = (rf"Software\Python\PythonCore\{sys.winver}"
+                        r"\Help\Main Python Documentation")
+                try:
+                    docfile = winreg.QueryValue(winreg.HKEY_CURRENT_USER, KEY)
+                except FileNotFoundError:
+                    try:
+                        docfile = winreg.QueryValue(winreg.HKEY_LOCAL_MACHINE,
+                                                    KEY)
+                    except FileNotFoundError:
+                        pass
+                if os.path.isfile(docfile):
+                    dochome = docfile
             elif sys.platform == 'darwin':
                 # documentation may be stored inside a python framework
                 dochome = os.path.join(sys.base_prefix,
@@ -311,7 +323,7 @@ class EditorWindow:
 
         # Former extension bindings depends on frame.text being packed
         # (called from self.ResetColorizer()).
-        autocomplete = self.AutoComplete(self)
+        autocomplete = self.AutoComplete(self, self.user_input_insert_tags)
         text.bind("<<autocomplete>>", autocomplete.autocomplete_event)
         text.bind("<<try-open-completions>>",
                   autocomplete.try_open_completions_event)
@@ -794,7 +806,7 @@ class EditorWindow:
         if not filename or os.path.isdir(filename):
             return True
         base, ext = os.path.splitext(os.path.basename(filename))
-        if os.path.normcase(ext) in (".py", ".pyw"):
+        if os.path.normcase(ext) in py_extensions:
             return True
         line = self.text.get('1.0', '1.0 lineend')
         return line.startswith('#!') and 'python' in line
@@ -821,9 +833,7 @@ class EditorWindow:
             self.color = self.ColorDelegator()
         # can add more colorizers here...
         if self.color:
-            self.per.removefilter(self.undo)
-            self.per.insertfilter(self.color)
-            self.per.insertfilter(self.undo)
+            self.per.insertfilterafter(filter=self.color, after=self.undo)
 
     def _rmcolorizer(self):
         if not self.color:
@@ -985,7 +995,7 @@ class EditorWindow:
         rf_list = []
         file_path = self.recent_files_path
         if file_path and os.path.exists(file_path):
-            with open(file_path, 'r',
+            with open(file_path,
                       encoding='utf_8', errors='replace') as rf_list_file:
                 rf_list = rf_list_file.readlines()
         if new_file:
@@ -1350,9 +1360,7 @@ class EditorWindow:
         want = ((have - 1) // self.indentwidth) * self.indentwidth
         # Debug prompt is multilined....
         ncharsdeleted = 0
-        while 1:
-            if chars == self.prompt_last_line:  # '' unless PyShell
-                break
+        while True:
             chars = chars[:-1]
             ncharsdeleted = ncharsdeleted + 1
             have = len(chars.expandtabs(tabwidth))
@@ -1361,7 +1369,8 @@ class EditorWindow:
         text.undo_block_start()
         text.delete("insert-%dc" % ncharsdeleted, "insert")
         if have < want:
-            text.insert("insert", ' ' * (want - have))
+            text.insert("insert", ' ' * (want - have),
+                        self.user_input_insert_tags)
         text.undo_block_stop()
         return "break"
 
@@ -1394,7 +1403,7 @@ class EditorWindow:
                     effective = len(prefix.expandtabs(self.tabwidth))
                     n = self.indentwidth
                     pad = ' ' * (n - effective % n)
-                text.insert("insert", pad)
+                text.insert("insert", pad, self.user_input_insert_tags)
             text.see("insert")
             return "break"
         finally:
@@ -1425,13 +1434,14 @@ class EditorWindow:
             if i == n:
                 # The cursor is in or at leading indentation in a continuation
                 # line; just inject an empty line at the start.
-                text.insert("insert linestart", '\n')
+                text.insert("insert linestart", '\n',
+                            self.user_input_insert_tags)
                 return "break"
             indent = line[:i]
 
             # Strip whitespace before insert point unless it's in the prompt.
             i = 0
-            while line and line[-1] in " \t" and line != self.prompt_last_line:
+            while line and line[-1] in " \t":
                 line = line[:-1]
                 i += 1
             if i:
@@ -1442,7 +1452,7 @@ class EditorWindow:
                 text.delete("insert")
 
             # Insert new line.
-            text.insert("insert", '\n')
+            text.insert("insert", '\n', self.user_input_insert_tags)
 
             # Adjust indentation for continuations and block open/close.
             # First need to find the last statement.
@@ -1478,7 +1488,7 @@ class EditorWindow:
                 elif c == pyparse.C_STRING_NEXT_LINES:
                     # Inside a string which started before this line;
                     # just mimic the current indent.
-                    text.insert("insert", indent)
+                    text.insert("insert", indent, self.user_input_insert_tags)
                 elif c == pyparse.C_BRACKET:
                     # Line up with the first (if any) element of the
                     # last open bracket structure; else indent one
@@ -1492,18 +1502,19 @@ class EditorWindow:
                     # beyond leftmost =; else to beyond first chunk of
                     # non-whitespace on initial line.
                     if y.get_num_lines_in_stmt() > 1:
-                        text.insert("insert", indent)
+                        text.insert("insert", indent,
+                                    self.user_input_insert_tags)
                     else:
                         self.reindent_to(y.compute_backslash_indent())
                 else:
-                    assert 0, "bogus continuation type %r" % (c,)
+                    assert 0, f"bogus continuation type {c!r}"
                 return "break"
 
             # This line starts a brand new statement; indent relative to
             # indentation of initial line of closest preceding
             # interesting statement.
             indent = y.get_base_indent_string()
-            text.insert("insert", indent)
+            text.insert("insert", indent, self.user_input_insert_tags)
             if y.is_block_opener():
                 self.smart_indent_event(event)
             elif indent and y.is_block_closer():
@@ -1550,7 +1561,8 @@ class EditorWindow:
         if text.compare("insert linestart", "!=", "insert"):
             text.delete("insert linestart", "insert")
         if column:
-            text.insert("insert", self._make_blanks(column))
+            text.insert("insert", self._make_blanks(column),
+                        self.user_input_insert_tags)
         text.undo_block_stop()
 
     # Guess indentwidth from text content.

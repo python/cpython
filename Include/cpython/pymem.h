@@ -10,8 +10,6 @@ PyAPI_FUNC(void) PyMem_RawFree(void *ptr);
 /* Try to get the allocators name set by _PyMem_SetupAllocators(). */
 PyAPI_FUNC(const char*) _PyMem_GetCurrentAllocatorName(void);
 
-PyAPI_FUNC(void *) PyMem_Calloc(size_t nelem, size_t elsize);
-
 /* strdup() using PyMem_RawMalloc() */
 PyAPI_FUNC(char *) _PyMem_RawStrdup(const char *str);
 

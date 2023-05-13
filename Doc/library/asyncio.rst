@@ -17,7 +17,6 @@
            await asyncio.sleep(1)
            print('... World!')
 
-       # Python 3.7+
        asyncio.run(main())
 
 asyncio is a library to write **concurrent** code using
@@ -57,6 +56,19 @@ Additionally, there are **low-level** APIs for
 * :ref:`bridge <asyncio-futures>` callback-based libraries and code
   with async/await syntax.
 
+You can experiment with an ``asyncio`` concurrent context in the REPL:
+
+.. code-block:: pycon
+
+   $ python -m asyncio
+   asyncio REPL ...
+   Use "await" directly instead of "asyncio.run()".
+   Type "help", "copyright", "credits" or "license" for more information.
+   >>> import asyncio
+   >>> await asyncio.sleep(10, result='hello')
+   'hello'
+
+.. include:: ../includes/wasm-notavail.rst
 
 .. We use the "rubric" directive here to avoid creating
    the "Reference" subsection in the TOC.
@@ -67,6 +79,7 @@ Additionally, there are **low-level** APIs for
    :caption: High-level APIs
    :maxdepth: 1
 
+   asyncio-runner.rst
    asyncio-task.rst
    asyncio-stream.rst
    asyncio-sync.rst
@@ -83,6 +96,7 @@ Additionally, there are **low-level** APIs for
    asyncio-protocol.rst
    asyncio-policy.rst
    asyncio-platforms.rst
+   asyncio-extending.rst
 
 .. toctree::
    :caption: Guides and Tutorials

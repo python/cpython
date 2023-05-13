@@ -1,3 +1,0 @@
-Fix segfault in :meth:`sqlite3.Connection.backup` if no argument was
-provided. The regression was introduced by GH-23838. Patch by
-Erlend E. Aasland.

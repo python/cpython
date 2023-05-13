@@ -8,9 +8,12 @@
  * any warranty. http://creativecommons.org/publicdomain/zero/1.0/
  */
 
-#include "Python.h"
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 
-#include "impl/blake2.h"
+#include "Python.h"
+#include "blake2module.h"
 
 extern PyType_Spec blake2b_type_spec;
 extern PyType_Spec blake2s_type_spec;
@@ -124,6 +127,7 @@ blake2_exec(PyObject *m)
 
 static PyModuleDef_Slot _blake2_slots[] = {
     {Py_mod_exec, blake2_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

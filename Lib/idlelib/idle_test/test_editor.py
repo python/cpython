@@ -5,6 +5,7 @@ from collections import namedtuple
 from functools import partial
 import sys
 from test.support import requires
+
 import unittest
 from unittest import mock
 import tkinter as tk
@@ -190,7 +191,6 @@ class IndentAndNewlineTest(unittest.TestCase):
                           '2.end'),
                  )
 
-        w.prompt_last_line = ''
         for test in tests:
             with self.subTest(label=test.label):
                 insert(text, test.text)
@@ -203,14 +203,8 @@ class IndentAndNewlineTest(unittest.TestCase):
         text.tag_add('sel', '1.17', '1.end')
         nl(None)
         # Deletes selected text before adding new line.
-        eq(get('1.0', 'end'), '  def f1(self, a,\n         \n    return a + b\n')
-
-        # Preserves the whitespace in shell prompt.
-        w.prompt_last_line = '>>> '
-        insert(text, '>>> \t\ta =')
-        text.mark_set('insert', '1.5')
-        nl(None)
-        eq(get('1.0', 'end'), '>>> \na =\n')
+        eq(get('1.0', 'end'),
+           '  def f1(self, a,\n         \n    return a + b\n')
 
 
 class RMenuTest(unittest.TestCase):
@@ -267,9 +261,9 @@ class ModuleHelpersTest(unittest.TestCase):
         eq(ga(keydefs, '<<cancel>>'), 'Ctrl+Break')  # Cancel to Ctrl-Break.
         eq(ga(keydefs, '<<open-module>>'), 'Ctrl+Shift+O')  # Shift doesn't change.
 
-        # Cocoa test.
+        # Cocoa test: it skips open-module shortcut.
         mock_cocoa.return_value = True
-        eq(ga(keydefs, '<<open-module>>'), '')  # Cocoa skips open-module shortcut.
+        eq(ga(keydefs, '<<open-module>>'), '')
 
 
 class MenubarTest(unittest.TestCase):
@@ -384,7 +378,8 @@ class MenubarTest(unittest.TestCase):
         mock_callback = w._extra_help_callback
 
         # Create help menu.
-        help = w.menudict['help'] = tk.Menu(w.menubar, name='help', tearoff=False)
+        help = w.menudict['help'] = tk.Menu(w.menubar, name='help',
+                                            tearoff=False)
         cmd = mock_callback.return_value = lambda e: 'break'
         help.add_command(label='help1', command=cmd)
         w.base_helpmenu_length = help.index('end')
@@ -421,7 +416,7 @@ class MenubarTest(unittest.TestCase):
         self.assertIsInstance(gvo('<<toggle-debugger>>'), tk.BooleanVar)
 
     @mock.patch.object(editor.webbrowser, 'open')
-    @unittest.skipIf(sys.platform.startswith('win'), 'this is test for nix system')
+    @unittest.skipIf(sys.platform.startswith('win'), 'Unix only')
     def test__extra_help_callback_not_windows(self, mock_openfile):
         w = self.mock_editwin
         ehc = partial(w._EditorWindow__extra_help_callback, w)
@@ -434,7 +429,7 @@ class MenubarTest(unittest.TestCase):
         mock_openfile.called_with('/foo/bar/baz')
 
     @mock.patch.object(editor.os, 'startfile')
-    @unittest.skipIf(not sys.platform.startswith('win'), 'this is test for windows system')
+    @unittest.skipIf(not sys.platform.startswith('win'), 'Windows only')
     def test_extra_help_callback_windows(self, mock_start):
         # os.startfile doesn't exist on other platforms.
         w = self.mock_editwin
@@ -442,12 +437,14 @@ class MenubarTest(unittest.TestCase):
         def ehc(source):
             return Editor._extra_help_callback(w, source)
         ehc('http://python.org')
-        mock_start.called_with('http://python.org')
+        # 'called_with' requires spec tjr
+        #mock_start.called_with('http://python.org')
         # Filename that doesn't open.
-        mock_start.side_effect = OSError('boom')
+        # But get '(X)' tk box 'Document Start Fa...' that needs OK click.
+        #mock_start.side_effect = OSError('boom')
         ehc('/foo/bar/baz/')()
         self.assertTrue(w.showerror.callargs.kwargs)
-
+ 
 
 class BindingsTest(unittest.TestCase):
 
