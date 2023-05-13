@@ -2599,6 +2599,9 @@ class CConverter(metaclass=CConverterAutoRegister):
     # Every non-abstract subclass should supply a valid value.
     c_ignored_default = 'NULL'
 
+    # If true, wrap with Py_UNUSED.
+    unused = False
+
     # The C converter *function* to be used, if any.
     # (If this is not None, format_unit must be 'O&'.)
     converter = None
@@ -2651,9 +2654,22 @@ class CConverter(metaclass=CConverterAutoRegister):
     signature_name = None
 
     # keep in sync with self_converter.__init__!
-    def __init__(self, name, py_name, function, default=unspecified, *, c_default=None, py_default=None, annotation=unspecified, **kwargs):
+    def __init__(self,
+             # Positional args:
+             name,
+             py_name,
+             function,
+             default=unspecified,
+             *,  # Keyword only args:
+             c_default=None,
+             py_default=None,
+             annotation=unspecified,
+             unused=False,
+             **kwargs
+    ):
         self.name = ensure_legal_c_identifier(name)
         self.py_name = py_name
+        self.unused = unused
 
         if default is not unspecified:
             if self.default_type and not isinstance(default, (self.default_type, Unknown)):
@@ -2800,6 +2816,8 @@ class CConverter(metaclass=CConverterAutoRegister):
             name = self.parser_name
         else:
             name = self.name
+            if self.unused:
+                name = f"Py_UNUSED({name})"
         prototype.append(name)
         return "".join(prototype)
 

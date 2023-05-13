@@ -582,6 +582,7 @@ iomodule_traverse(PyObject *mod, visitproc visit, void *arg) {
         return 0;
     Py_VISIT(state->unsupported_operation);
 
+    Py_VISIT(state->PyIOBase_Type);
     Py_VISIT(state->PyIncrementalNewlineDecoder_Type);
     Py_VISIT(state->PyRawIOBase_Type);
     Py_VISIT(state->PyBufferedIOBase_Type);
@@ -609,6 +610,7 @@ iomodule_clear(PyObject *mod) {
         return 0;
     Py_CLEAR(state->unsupported_operation);
 
+    Py_CLEAR(state->PyIOBase_Type);
     Py_CLEAR(state->PyIncrementalNewlineDecoder_Type);
     Py_CLEAR(state->PyRawIOBase_Type);
     Py_CLEAR(state->PyBufferedIOBase_Type);
@@ -751,6 +753,7 @@ PyInit__io(void)
     }
 
     // Base classes
+    state->PyIOBase_Type = (PyTypeObject *)Py_NewRef(&PyIOBase_Type);
     ADD_TYPE(m, state->PyIncrementalNewlineDecoder_Type, &nldecoder_spec, NULL);
     ADD_TYPE(m, state->PyBytesIOBuffer_Type, &bytesiobuf_spec, NULL);
 

@@ -9158,7 +9158,13 @@ releasebuffer_call_python(PyObject *self, Py_buffer *buffer)
         Py_DECREF(ret);
     }
     if (!is_buffer_wrapper) {
-        PyObject_CallMethodNoArgs(mv, &_Py_ID(release));
+        PyObject *res = PyObject_CallMethodNoArgs(mv, &_Py_ID(release));
+        if (res == NULL) {
+            PyErr_WriteUnraisable(self);
+        }
+        else {
+            Py_DECREF(res);
+        }
     }
     Py_DECREF(mv);
 end:
@@ -10277,8 +10283,10 @@ super_descr_get(PyObject *self, PyObject *obj, PyObject *type)
             return NULL;
         newobj = (superobject *)PySuper_Type.tp_new(&PySuper_Type,
                                                  NULL, NULL);
-        if (newobj == NULL)
+        if (newobj == NULL) {
+            Py_DECREF(obj_type);
             return NULL;
+        }
         newobj->type = (PyTypeObject*)Py_NewRef(su->type);
         newobj->obj = Py_NewRef(obj);
         newobj->obj_type = obj_type;
