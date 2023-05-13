@@ -2772,6 +2772,9 @@ Mapping = _alias(collections.abc.Mapping, 2)
 MutableMapping = _alias(collections.abc.MutableMapping, 2)
 Sequence = _alias(collections.abc.Sequence, 1)
 MutableSequence = _alias(collections.abc.MutableSequence, 1)
+ByteString = _DeprecatedGenericAlias(
+    collections.abc.ByteString, 0, removal_version=(3, 14)  # Not generic.
+)
 # Tuple accepts variable number of parameters.
 Tuple = _TupleType(tuple, -1, inst=False, name='Tuple')
 Tuple.__doc__ = \
@@ -3571,27 +3574,3 @@ def override(method: F, /) -> F:
         # read-only property, TypeError if it's a builtin class.
         pass
     return method
-
-
-def __getattr__(attr):
-    if attr == "ByteString":
-        import warnings
-        warnings._deprecated("typing.ByteString", remove=(3, 14))
-        with warnings.catch_warnings(
-            action="ignore", category=DeprecationWarning
-        ):
-            # Not generic
-            ByteString = globals()["ByteString"] = _DeprecatedGenericAlias(
-                collections.abc.ByteString, 0, removal_version=(3, 14)
-            )
-        return ByteString
-    raise AttributeError(f"module 'typing' has no attribute {attr!r}")
-
-
-def _remove_cached_ByteString_from_globals():
-    try:
-        del globals()["ByteString"]
-    except KeyError:
-        pass
-
-_cleanups.append(_remove_cached_ByteString_from_globals)
