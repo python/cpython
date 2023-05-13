@@ -130,8 +130,8 @@ PyAPI_FUNC(char*) _PyLong_FormatBytesWriter(
  * we define them to the numbers in both places and then assert that
  * they're the same.
  */
-static_assert(SIGN_MASK == _PyLong_SIGN_MASK);
-static_assert(NON_SIZE_BITS == _PyLong_NON_SIZE_BITS);
+static_assert(SIGN_MASK == _PyLong_SIGN_MASK, "SIGN_MASK does not match _PyLong_SIGN_MASK");
+static_assert(NON_SIZE_BITS == _PyLong_NON_SIZE_BITS, "NON_SIZE_BITS does not match _PyLong_NON_SIZE_BITS");
 
 /* All *compact" values are guaranteed to fit into
  * a Py_ssize_t with at least one bit to spare.
