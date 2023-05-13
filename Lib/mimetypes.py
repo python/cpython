@@ -193,9 +193,15 @@ class MimeTypes:
         Optional `strict' argument when false adds a bunch of commonly found,
         but non-standard types.
         """
+        parts = type.split("/")
+        possible_extension = "." + parts[1].lower() if len(parts) == 2 else None
         extensions = self.guess_all_extensions(type, strict)
-        if not extensions:
+
+        if possible_extension and possible_extension in extensions:
+            return possible_extension
+        elif not extensions:
             return None
+
         return extensions[0]
 
     def read(self, filename, strict=True):
