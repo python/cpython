@@ -131,7 +131,7 @@ class Pdbx(Bdbx, cmd.Cmd):
             filename = self._main_pyfile
         return filename
 
-    def _format_stack_entry(self, frame, lineno, lprefix=': '):
+    def _format_stack_entry(self, frame, lineno, stack_prefix="> ", code_prefix="-> "):
         """Return a string with information about a stack entry.
 
         The stack entry frame_lineno is a (frame, lineno) tuple.  The
@@ -143,28 +143,35 @@ class Pdbx(Bdbx, cmd.Cmd):
         filename = self._canonic(frame.f_code.co_filename)
         s = '%s(%r)' % (filename, lineno)
         if frame.f_code.co_name:
-            s += frame.f_code.co_name
+            func_name = frame.f_code.co_name
         else:
-            s += "<lambda>"
-        s += '()'
-        if '__return__' in frame.f_locals:
-            rv = frame.f_locals['__return__']
-            s += '->'
-            s += reprlib.repr(rv)
-        line = linecache.getline(filename, lineno, frame.f_globals)
-        if line:
-            s += lprefix + line.strip()
-        return s
+            func_name = "<lambda>"
 
-    def _print_stack_entry(self, frame, line_number=None):
-        if frame is self.get_current_frame():
-            prefix = '> '
+        code = linecache.getline(filename, lineno, frame.f_globals)
+        if code:
+            code = f"\n{code_prefix}{code.strip()}"
         else:
-            prefix = '  '
+            code = ""
+        return f"{stack_prefix}{func_name}() @ {filename}:{lineno}{code}"
+
+    def _print_stack_entry(self,
+                           frame,
+                           line_number=None,
+                           stack_prefix=None,
+                           code_prefix=None):
         if line_number is None:
             line_number = frame.f_lineno
-        self.message(prefix +
-                     self._format_stack_entry(frame, line_number, '\n-> '))
+        if stack_prefix is None:
+            if frame is self.get_current_frame():
+                stack_prefix = '> '
+            else:
+                stack_prefix = '  '
+        if code_prefix is None:
+            code_prefix = '-> '
+        self.message(self._format_stack_entry(frame,
+                                              line_number,
+                                              stack_prefix=stack_prefix,
+                                              code_prefix=code_prefix))
 
     def _canonic(self, filename):
         """Return canonical form of filename.
@@ -379,8 +386,16 @@ class Pdbx(Bdbx, cmd.Cmd):
 
     def do_where(self, arg):
         try:
-            for frame in self.get_stack():
-                self._print_stack_entry(frame)
+            stack = self.get_stack()
+            prefix_size = len(str(len(stack)))
+            for idx, frame in enumerate(stack):
+                if frame is self.get_current_frame():
+                    tag = '>'
+                else:
+                    tag = '#'
+                self._print_stack_entry(frame,
+                                        stack_prefix=f"{tag}{idx: <{prefix_size}} ",
+                                        code_prefix=f"{'': >{prefix_size}}  -> ")
         except KeyboardInterrupt:
             pass
         return False

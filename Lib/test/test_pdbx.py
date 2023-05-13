@@ -38,45 +38,49 @@ def test_pdbx_basic_commands():
     ...     'step',
     ...     'step',
     ...     'step',
+    ...     'step',
     ...     'return',
     ...     'next',
     ...     'n',
     ...     'continue',
     ... ]):
     ...     test_function()
-    > <doctest test.test_pdbx.test_pdbx_basic_commands[1]>(3)test_function()
+    > test_function() @ <doctest test.test_pdbx.test_pdbx_basic_commands[1]>:3
     -> for i in range(5):
     (Pdbx) step
-    > <doctest test.test_pdbx.test_pdbx_basic_commands[1]>(4)test_function()
+    > test_function() @ <doctest test.test_pdbx.test_pdbx_basic_commands[1]>:4
     -> n = f(i)
     (Pdbx) step
-    > <doctest test.test_pdbx.test_pdbx_basic_commands[0]>(2)f()
+    > f() @ <doctest test.test_pdbx.test_pdbx_basic_commands[0]>:2
     -> x = x + 1
     (Pdbx) step
-    > <doctest test.test_pdbx.test_pdbx_basic_commands[0]>(3)f()
+    > f() @ <doctest test.test_pdbx.test_pdbx_basic_commands[0]>:3
     -> return x
     (Pdbx) step
     ----return----
-    > <doctest test.test_pdbx.test_pdbx_basic_commands[0]>(3)f()
+    > f() @ <doctest test.test_pdbx.test_pdbx_basic_commands[0]>:3
     -> return x
     (Pdbx) step
-    > <doctest test.test_pdbx.test_pdbx_basic_commands[1]>(5)test_function()
+    > test_function() @ <doctest test.test_pdbx.test_pdbx_basic_commands[1]>:5
     -> pass
     (Pdbx) step
-    > <doctest test.test_pdbx.test_pdbx_basic_commands[1]>(4)test_function()
+    > test_function() @ <doctest test.test_pdbx.test_pdbx_basic_commands[1]>:3
+    -> for i in range(5):
+    (Pdbx) step
+    > test_function() @ <doctest test.test_pdbx.test_pdbx_basic_commands[1]>:4
     -> n = f(i)
     (Pdbx) step
-    > <doctest test.test_pdbx.test_pdbx_basic_commands[0]>(2)f()
+    > f() @ <doctest test.test_pdbx.test_pdbx_basic_commands[0]>:2
     -> x = x + 1
     (Pdbx) return
-    > <doctest test.test_pdbx.test_pdbx_basic_commands[1]>(5)test_function()
+    > test_function() @ <doctest test.test_pdbx.test_pdbx_basic_commands[1]>:5
     -> pass
     (Pdbx) next
-    > <doctest test.test_pdbx.test_pdbx_basic_commands[1]>(4)test_function()
-    -> n = f(i)
+    > test_function() @ <doctest test.test_pdbx.test_pdbx_basic_commands[1]>:3
+    -> for i in range(5):
     (Pdbx) n
-    > <doctest test.test_pdbx.test_pdbx_basic_commands[1]>(5)test_function()
-    -> pass
+    > test_function() @ <doctest test.test_pdbx.test_pdbx_basic_commands[1]>:4
+    -> n = f(i)
     (Pdbx) continue
     """
 
@@ -106,24 +110,24 @@ def test_pdbx_basic_breakpoint():
     ...     'continue',
     ... ]):
     ...     test_function()
-    > <doctest test.test_pdbx.test_pdbx_basic_breakpoint[1]>(3)test_function()
+        > test_function() @ <doctest test.test_pdbx.test_pdbx_basic_breakpoint[1]>:3
     -> for i in range(5):
     (Pdbx) break invalid
     Invalid breakpoint argument: invalid
     (Pdbx) break f
     (Pdbx) continue
     ----call----
-    > <doctest test.test_pdbx.test_pdbx_basic_breakpoint[0]>(1)f()
+    > f() @ <doctest test.test_pdbx.test_pdbx_basic_breakpoint[0]>:1
     -> def f(x):
     (Pdbx) clear
     (Pdbx) return
-    > <doctest test.test_pdbx.test_pdbx_basic_breakpoint[1]>(5)test_function()
+    > test_function() @ <doctest test.test_pdbx.test_pdbx_basic_breakpoint[1]>:5
     -> pass
     (Pdbx) break 6
     (Pdbx) break 100
     Can't find line 100 in file <doctest test.test_pdbx.test_pdbx_basic_breakpoint[1]>
     (Pdbx) continue
-    > <doctest test.test_pdbx.test_pdbx_basic_breakpoint[1]>(6)test_function()
+    > test_function() @ <doctest test.test_pdbx.test_pdbx_basic_breakpoint[1]>:6
     -> a = 3
     (Pdbx) continue
     """
@@ -151,52 +155,52 @@ def test_pdbx_where_command():
     ...     'continue',
     ... ]):
     ...     test_function()
-    > <doctest test.test_pdbx.test_pdbx_where_command[0]>(3)g()
+    > g() @ <doctest test.test_pdbx.test_pdbx_where_command[0]>:3
     -> pass
     (Pdbx) w
     ...
-      <doctest test.test_pdbx.test_pdbx_where_command[3]>(10)<module>()
-    -> test_function()
-      <doctest test.test_pdbx.test_pdbx_where_command[2]>(2)test_function()
-    -> f()
-      <doctest test.test_pdbx.test_pdbx_where_command[1]>(2)f()
-    -> g();
-    > <doctest test.test_pdbx.test_pdbx_where_command[0]>(3)g()
-    -> pass
+    #18 <module>() @ <doctest test.test_pdbx.test_pdbx_where_command[3]>:10
+        -> test_function()
+    #19 test_function() @ <doctest test.test_pdbx.test_pdbx_where_command[2]>:2
+        -> f()
+    #20 f() @ <doctest test.test_pdbx.test_pdbx_where_command[1]>:2
+        -> g();
+    >21 g() @ <doctest test.test_pdbx.test_pdbx_where_command[0]>:3
+        -> pass
     (Pdbx) where
     ...
-      <doctest test.test_pdbx.test_pdbx_where_command[3]>(10)<module>()
-    -> test_function()
-      <doctest test.test_pdbx.test_pdbx_where_command[2]>(2)test_function()
-    -> f()
-      <doctest test.test_pdbx.test_pdbx_where_command[1]>(2)f()
-    -> g();
-    > <doctest test.test_pdbx.test_pdbx_where_command[0]>(3)g()
-    -> pass
+    #18 <module>() @ <doctest test.test_pdbx.test_pdbx_where_command[3]>:10
+        -> test_function()
+    #19 test_function() @ <doctest test.test_pdbx.test_pdbx_where_command[2]>:2
+        -> f()
+    #20 f() @ <doctest test.test_pdbx.test_pdbx_where_command[1]>:2
+        -> g();
+    >21 g() @ <doctest test.test_pdbx.test_pdbx_where_command[0]>:3
+        -> pass
     (Pdbx) u
-    > <doctest test.test_pdbx.test_pdbx_where_command[1]>(2)f()
+    > f() @ <doctest test.test_pdbx.test_pdbx_where_command[1]>:2
     -> g();
     (Pdbx) w
     ...
-      <doctest test.test_pdbx.test_pdbx_where_command[2]>(2)test_function()
-    -> f()
-    > <doctest test.test_pdbx.test_pdbx_where_command[1]>(2)f()
-    -> g();
-      <doctest test.test_pdbx.test_pdbx_where_command[0]>(3)g()
-    -> pass
+    #19 test_function() @ <doctest test.test_pdbx.test_pdbx_where_command[2]>:2
+        -> f()
+    >20 f() @ <doctest test.test_pdbx.test_pdbx_where_command[1]>:2
+        -> g();
+    #21 g() @ <doctest test.test_pdbx.test_pdbx_where_command[0]>:3
+        -> pass
     (Pdbx) d
-    > <doctest test.test_pdbx.test_pdbx_where_command[0]>(3)g()
+    > g() @ <doctest test.test_pdbx.test_pdbx_where_command[0]>:3
     -> pass
     (Pdbx) w
     ...
-      <doctest test.test_pdbx.test_pdbx_where_command[3]>(10)<module>()
-    -> test_function()
-      <doctest test.test_pdbx.test_pdbx_where_command[2]>(2)test_function()
-    -> f()
-      <doctest test.test_pdbx.test_pdbx_where_command[1]>(2)f()
-    -> g();
-    > <doctest test.test_pdbx.test_pdbx_where_command[0]>(3)g()
-    -> pass
+    #18 <module>() @ <doctest test.test_pdbx.test_pdbx_where_command[3]>:10
+        -> test_function()
+    #19 test_function() @ <doctest test.test_pdbx.test_pdbx_where_command[2]>:2
+        -> f()
+    #20 f() @ <doctest test.test_pdbx.test_pdbx_where_command[1]>:2
+        -> g();
+    >21 g() @ <doctest test.test_pdbx.test_pdbx_where_command[0]>:3
+        -> pass
     (Pdbx) continue
     """
 
