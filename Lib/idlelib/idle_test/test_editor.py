@@ -444,7 +444,7 @@ class MenubarTest(unittest.TestCase):
         #mock_start.side_effect = OSError('boom')
         ehc('/foo/bar/baz/')()
         self.assertTrue(w.showerror.callargs.kwargs)
- 
+
 
 class BindingsTest(unittest.TestCase):
 
