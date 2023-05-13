@@ -417,13 +417,11 @@ class Sniffer:
             if len(row) != columns:
                 continue # skip rows that have irregular number of columns
 
-            # checking if all col are strings
-            for cols in columnTypes:
-                if row[cols].isnumeric():
-                    col_are_strings = False
-                    break
-
             for col in list(columnTypes.keys()):
+                # checking if all col are strings
+                if row[col].isnumeric():
+                    col_are_strings = False
+
                 thisType = complex
                 try:
                     thisType(row[col])
