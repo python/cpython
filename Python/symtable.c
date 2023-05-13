@@ -613,7 +613,8 @@ is_free_in_any_child(PySTEntryObject *entry, PyObject *key)
 
 static int
 inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
-                     PyObject *scopes, PyObject *comp_free)
+                     PyObject *scopes, PyObject *comp_free,
+                     PyObject *promote_to_cell)
 {
     PyObject *k, *v;
     Py_ssize_t pos = 0;
@@ -649,7 +650,9 @@ inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
                 // cell vars in comprehension that are locals in outer scope
                 // must be promoted to cell so u_cellvars isn't wrong
                 if (scope == CELL && _PyST_IsFunctionLike(ste)) {
-                    SET_SCOPE(scopes, k, scope);
+                    if (PySet_Add(promote_to_cell, k) < 0) {
+                        return 0;
+                    }
                 }
 
                 // free vars in comprehension that are locals in outer scope can
@@ -676,7 +679,7 @@ inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
 */
 
 static int
-analyze_cells(PyObject *scopes, PyObject *free)
+analyze_cells(PyObject *scopes, PyObject *free, PyObject *promote_to_cell)
 {
     PyObject *name, *v, *v_cell;
     int success = 0;
@@ -691,7 +694,7 @@ analyze_cells(PyObject *scopes, PyObject *free)
         scope = PyLong_AS_LONG(v);
         if (scope != LOCAL)
             continue;
-        if (!PySet_Contains(free, name))
+        if (!PySet_Contains(free, name) && !PySet_Contains(promote_to_cell, name))
             continue;
         /* Replace LOCAL with CELL for this name, and remove
            from free. It is safe to replace the value of name
@@ -846,7 +849,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
               PyObject *global, PyObject *typeparams)
 {
     PyObject *name, *v, *local = NULL, *scopes = NULL, *newbound = NULL;
-    PyObject *newglobal = NULL, *newfree = NULL;
+    PyObject *newglobal = NULL, *newfree = NULL, *promote_to_cell = NULL;
     PyObject *temp;
     int success = 0;
     Py_ssize_t i, pos = 0;
@@ -877,6 +880,9 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
         goto error;
     newbound = PySet_New(NULL);
     if (!newbound)
+        goto error;
+    promote_to_cell = PySet_New(NULL);
+    if (!promote_to_cell)
         goto error;
 
     /* Class namespace has no effect on names visible in
@@ -960,7 +966,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
             goto error;
         }
         if (inline_comp) {
-            if (!inline_comprehension(ste, entry, scopes, child_free)) {
+            if (!inline_comprehension(ste, entry, scopes, child_free, promote_to_cell)) {
                 Py_DECREF(child_free);
                 goto error;
             }
@@ -991,7 +997,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     }
 
     /* Check if any local variables must be converted to cell variables */
-    if (_PyST_IsFunctionLike(ste) && !analyze_cells(scopes, newfree))
+    if (_PyST_IsFunctionLike(ste) && !analyze_cells(scopes, newfree, promote_to_cell))
         goto error;
     else if (ste->ste_type == ClassBlock && !drop_class_free(ste, newfree))
         goto error;
@@ -1011,6 +1017,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     Py_XDECREF(newbound);
     Py_XDECREF(newglobal);
     Py_XDECREF(newfree);
+    Py_XDECREF(promote_to_cell);
     if (!success)
         assert(PyErr_Occurred());
     return success;
