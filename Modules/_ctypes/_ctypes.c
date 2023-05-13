@@ -5502,7 +5502,7 @@ comerror_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    tp->tp_clear(self);
+    (void)comerror_clear(self);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
