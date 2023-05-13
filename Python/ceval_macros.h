@@ -174,7 +174,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 */
 
 #define PREDICT_ID(op)          PRED_##op
-#define PREDICT(op)             if (0) goto PREDICT_ID(op)
 #define PREDICTED(op)           PREDICT_ID(op):
 
 
