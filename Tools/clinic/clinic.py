@@ -5,6 +5,8 @@
 # Licensed to the PSF under a contributor agreement.
 #
 
+from __future__ import annotations
+
 import abc
 import ast
 import builtins as bltns
@@ -27,9 +29,15 @@ import textwrap
 import traceback
 import types
 
-from collections.abc import Callable
 from types import *
-from typing import Any, NamedTuple
+from typing import Any, Callable, Dict, NamedTuple, TYPE_CHECKING
+
+# types.NoneType only exists on Python 3.10+
+# type(None) isn't understood by type-checkers on <3.10 :(
+if TYPE_CHECKING:
+    from _typeshed import NoneType
+else:
+    NoneType = type(None)
 
 # TODO:
 #
@@ -1935,7 +1943,7 @@ class Destination:
 # maps strings to Language objects.
 # "languages" maps the name of the language ("C", "Python").
 # "extensions" maps the file extension ("c", "py").
-LangDict = dict[str, Callable[[str], Language]]
+LangDict = Dict[str, Callable[[str], Language]]
 
 languages = { 'C': CLanguage, 'Python': PythonLanguage }
 extensions: LangDict = { name: CLanguage for name in "c cc cpp cxx h hh hpp hxx".split() }

@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import re
 import sys
-from collections.abc import Callable
+from typing import Callable, List, Tuple
 
 
-TokenAndCondition = tuple[str, str]
-TokenStack = list[TokenAndCondition]
+TokenAndCondition = Tuple[str, str]
+TokenStack = List[TokenAndCondition]
 
 def negate(condition: str) -> str:
     """
