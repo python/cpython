@@ -79,21 +79,27 @@ iobase_unsupported(_PyIO_State *state, const char *message)
 
 /* Positioning */
 
-PyDoc_STRVAR(iobase_seek_doc,
-    "Change stream position.\n"
-    "\n"
-    "Change the stream position to the given byte offset. The offset is\n"
-    "interpreted relative to the position indicated by whence.  Values\n"
-    "for whence are:\n"
-    "\n"
-    "* 0 -- start of stream (the default); offset should be zero or positive\n"
-    "* 1 -- current stream position; offset may be negative\n"
-    "* 2 -- end of stream; offset is usually negative\n"
-    "\n"
-    "Return the new absolute position.");
+/*[clinic input]
+_io._IOBase.seek
+    cls: defining_class
+    /
+    *args: object
+
+Change the stream position to the given byte offset.
+
+The offset is interpreted relative to the position indicated by whence.
+Values for whence are:
+
+* 0 -- start of stream (the default); offset should be zero or positive
+* 1 -- current stream position; offset may be negative
+* 2 -- end of stream; offset is usually negative
+
+Return the new absolute position.
+[clinic start generated code]*/
 
 static PyObject *
-iobase_seek(PyObject *self, PyObject *args)
+_io__IOBase_seek_impl(PyObject *self, PyTypeObject *cls, PyObject *args)
+/*[clinic end generated code: output=1dd694ac9de260fa input=ebb5476eb22fc5d4]*/
 {
     _PyIO_State *state = IO_STATE();
     return iobase_unsupported(state, "seek");
@@ -112,14 +118,21 @@ _io__IOBase_tell_impl(PyObject *self)
     return _PyObject_CallMethod(self, &_Py_ID(seek), "ii", 0, 1);
 }
 
-PyDoc_STRVAR(iobase_truncate_doc,
-    "Truncate file to size bytes.\n"
-    "\n"
-    "File pointer is left unchanged.  Size defaults to the current IO\n"
-    "position as reported by tell().  Returns the new size.");
+/*[clinic input]
+_io._IOBase.truncate
+    cls: defining_class
+    /
+    *args: object
+
+Truncate file to size bytes.
+
+File pointer is left unchanged. Size defaults to the current IO position
+as reported by tell(). Return the new size.
+[clinic start generated code]*/
 
 static PyObject *
-iobase_truncate(PyObject *self, PyObject *args)
+_io__IOBase_truncate_impl(PyObject *self, PyTypeObject *cls, PyObject *args)
+/*[clinic end generated code: output=b7eed4649cbe22c1 input=ad90582a1d8b5cc9]*/
 {
     _PyIO_State *state = IO_STATE();
     return iobase_unsupported(state, "truncate");
@@ -498,15 +511,17 @@ iobase_exit(PyObject *self, PyObject *args)
 
 /*[clinic input]
 _io._IOBase.fileno
+    cls: defining_class
+    /
 
-Returns underlying file descriptor if one exists.
+Return underlying file descriptor if one exists.
 
-OSError is raised if the IO object does not use a file descriptor.
+Raise OSError if the IO object does not use a file descriptor.
 [clinic start generated code]*/
 
 static PyObject *
-_io__IOBase_fileno_impl(PyObject *self)
-/*[clinic end generated code: output=7cc0973f0f5f3b73 input=4e37028947dc1cc8]*/
+_io__IOBase_fileno_impl(PyObject *self, PyTypeObject *cls)
+/*[clinic end generated code: output=7caaa32a6f4ada3d input=1927c8bea5c85099]*/
 {
     _PyIO_State *state = IO_STATE();
     return iobase_unsupported(state, "fileno");
@@ -809,9 +824,9 @@ _io__IOBase_writelines(PyObject *self, PyObject *lines)
 #include "clinic/iobase.c.h"
 
 static PyMethodDef iobase_methods[] = {
-    {"seek", iobase_seek, METH_VARARGS, iobase_seek_doc},
+    _IO__IOBASE_SEEK_METHODDEF
     _IO__IOBASE_TELL_METHODDEF
-    {"truncate", iobase_truncate, METH_VARARGS, iobase_truncate_doc},
+    _IO__IOBASE_TRUNCATE_METHODDEF
     _IO__IOBASE_FLUSH_METHODDEF
     _IO__IOBASE_CLOSE_METHODDEF
 
