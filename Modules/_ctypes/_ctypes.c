@@ -5487,6 +5487,14 @@ static void
 comerror_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
+    PyBaseExceptionObject *obj = (PyBaseExceptionObject *) self;
+
+    Py_CLEAR(obj->dict);
+    Py_CLEAR(obj->args);
+    Py_CLEAR(obj->notes);
+    Py_CLEAR(obj->traceback);
+    Py_CLEAR(obj->cause);
+    Py_CLEAR(obj->context);
     PyObject_GC_UnTrack(self);
     tp->tp_free(self);
     Py_DECREF(tp);
