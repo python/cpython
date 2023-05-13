@@ -72,7 +72,7 @@ test runner
    a GUI tool for test discovery and execution.  This is intended largely for ease of use
    for those new to unit testing.  For production environments it is
    recommended that tests be driven by a continuous integration system such as
-   `Buildbot <https://buildbot.net/>`_, `Jenkins <https://jenkins.io/>`_,
+   `Buildbot <https://buildbot.net/>`_, `Jenkins <https://www.jenkins.io/>`_,
    `GitHub Actions <https://github.com/features/actions>`_, or
    `AppVeyor <https://www.appveyor.com/>`_.
 
@@ -1983,12 +1983,12 @@ Loading and running tests
    .. attribute:: testNamePatterns
 
       List of Unix shell-style wildcard test name patterns that test methods
-      have to match to be included in test suites (see ``-v`` option).
+      have to match to be included in test suites (see ``-k`` option).
 
       If this attribute is not ``None`` (the default), all test methods to be
       included in test suites must match one of the patterns in this list.
       Note that matches are always performed using :meth:`fnmatch.fnmatchcase`,
-      so unlike patterns passed to the ``-v`` option, simple substring patterns
+      so unlike patterns passed to the ``-k`` option, simple substring patterns
       will have to be converted using ``*`` wildcards.
 
       This affects all the :meth:`loadTestsFrom\*` methods.

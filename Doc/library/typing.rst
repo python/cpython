@@ -41,9 +41,16 @@ For a summary of deprecated features and a deprecation timeline, please see
 
 .. seealso::
 
+   For a quick overview of type hints, refer to
+   `this cheat sheet <https://mypy.readthedocs.io/en/stable/cheat_sheet_py3.html>`_.
+
+   The "Type System Reference" section of https://mypy.readthedocs.io/ -- since
+   the Python typing system is standardised via PEPs, this reference should
+   broadly apply to most Python type checkers, although some parts may still be
+   specific to mypy.
+
    The documentation at https://typing.readthedocs.io/ serves as useful reference
    for type system features, useful typing related tools and typing best practices.
-
 
 .. _relevant-peps:
 
@@ -439,7 +446,7 @@ are intended primarily for static type checking.
 
 A user-defined generic class can have ABCs as base classes without a metaclass
 conflict. Generic metaclasses are not supported. The outcome of parameterizing
-generics is cached, and most types in the typing module are hashable and
+generics is cached, and most types in the typing module are :term:`hashable` and
 comparable for equality.
 
 
@@ -1343,7 +1350,7 @@ These are not used in annotations. They are building blocks for creating generic
 
         x: Ts          # Not valid
         x: tuple[Ts]   # Not valid
-        x: tuple[*Ts]  # The correct way to to do it
+        x: tuple[*Ts]  # The correct way to do it
 
     Type variable tuples can be used in the same contexts as normal type
     variables. For example, in class definitions, arguments, and return types::
@@ -1582,15 +1589,31 @@ These are not used in annotations. They are building blocks for creating generic
 
       assert isinstance(open('/some/file'), Closable)
 
+      @runtime_checkable
+      class Named(Protocol):
+          name: str
+
+      import threading
+      assert isinstance(threading.Thread(name='Bob'), Named)
+
    .. note::
 
-        :func:`runtime_checkable` will check only the presence of the required
-        methods, not their type signatures. For example, :class:`ssl.SSLObject`
+        :func:`!runtime_checkable` will check only the presence of the required
+        methods or attributes, not their type signatures or types.
+        For example, :class:`ssl.SSLObject`
         is a class, therefore it passes an :func:`issubclass`
         check against :data:`Callable`.  However, the
-        :meth:`ssl.SSLObject.__init__` method exists only to raise a
+        ``ssl.SSLObject.__init__`` method exists only to raise a
         :exc:`TypeError` with a more informative message, therefore making
         it impossible to call (instantiate) :class:`ssl.SSLObject`.
+
+   .. note::
+
+        An :func:`isinstance` check against a runtime-checkable protocol can be
+        surprisingly slow compared to an ``isinstance()`` check against
+        a non-protocol class. Consider using alternative idioms such as
+        :func:`hasattr` calls for structural checks in performance-sensitive
+        code.
 
    .. versionadded:: 3.8
 
@@ -2067,17 +2090,11 @@ Corresponding to collections in :mod:`collections.abc`
 
 .. class:: ByteString(Sequence[int])
 
-   A generic version of :class:`collections.abc.ByteString`.
-
    This type represents the types :class:`bytes`, :class:`bytearray`,
    and :class:`memoryview` of byte sequences.
 
-   As a shorthand for this type, :class:`bytes` can be used to
-   annotate arguments of any of the types mentioned above.
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.ByteString` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
+   .. deprecated-removed:: 3.9 3.14
+      Prefer ``typing_extensions.Buffer``, or a union like ``bytes | bytearray | memoryview``.
 
 .. class:: Collection(Sized, Iterable[T_co], Container[T_co])
 
@@ -2415,14 +2432,15 @@ Functions and decorators
 
    Ask a static type checker to confirm that *val* has an inferred type of *typ*.
 
-   When the type checker encounters a call to ``assert_type()``, it
+   At runtime this does nothing: it returns the first argument unchanged with no
+   checks or side effects, no matter the actual type of the argument.
+
+   When a static type checker encounters a call to ``assert_type()``, it
    emits an error if the value is not of the specified type::
 
        def greet(name: str) -> None:
            assert_type(name, str)  # OK, inferred type of `name` is `str`
            assert_type(name, int)  # type checker error
-
-   At runtime this returns the first argument unchanged with no side effects.
 
    This function is useful for ensuring the type checker's understanding of a
    script is in line with the developer's intentions::
@@ -2772,24 +2790,37 @@ Introspection helpers
       if a default value equal to ``None`` was set.
       Now the annotation is returned unchanged.
 
-.. function:: get_args(tp)
 .. function:: get_origin(tp)
 
-   Provide basic introspection for generic types and special typing forms.
-
-   For a typing object of the form ``X[Y, Z, ...]`` these functions return
-   ``X`` and ``(Y, Z, ...)``. If ``X`` is a generic alias for a builtin or
+   Get the unsubscripted version of a type: for a typing object of the form
+   ``X[Y, Z, ...]`` return ``X``. If ``X`` is a generic alias for a builtin or
    :mod:`collections` class, it gets normalized to the original class.
+   If ``X`` is an instance of :class:`ParamSpecArgs` or :class:`ParamSpecKwargs`,
+   return the underlying :class:`ParamSpec`.
+   Return ``None`` for unsupported objects.
+   Examples::
+
+      assert get_origin(str) is None
+      assert get_origin(Dict[str, int]) is dict
+      assert get_origin(Union[int, str]) is Union
+      P = ParamSpec('P')
+      assert get_origin(P.args) is P
+      assert get_origin(P.kwargs) is P
+
+   .. versionadded:: 3.8
+
+.. function:: get_args(tp)
+
+   Get type arguments with all substitutions performed: for a typing object
+   of the form ``X[Y, Z, ...]`` return ``(Y, Z, ...)``.
    If ``X`` is a union or :class:`Literal` contained in another
    generic type, the order of ``(Y, Z, ...)`` may be different from the order
    of the original arguments ``[Y, Z, ...]`` due to type caching.
-   For unsupported objects return ``None`` and ``()`` correspondingly.
+   Return ``()`` for unsupported objects.
    Examples::
 
-      assert get_origin(Dict[str, int]) is dict
+      assert get_args(int) == ()
       assert get_args(Dict[int, str]) == (int, str)
-
-      assert get_origin(Union[int, str]) is Union
       assert get_args(Union[int, str]) == (int, str)
 
    .. versionadded:: 3.8
@@ -2867,6 +2898,8 @@ convenience. This is subject to change, and not all deprecations are listed.
 +----------------------------------+---------------+-------------------+----------------+
 |  ``typing`` versions of standard | 3.9           | Undecided         | :pep:`585`     |
 |  collections                     |               |                   |                |
++----------------------------------+---------------+-------------------+----------------+
+|  ``typing.ByteString``           | 3.9           | 3.14              | :gh:`91896`    |
 +----------------------------------+---------------+-------------------+----------------+
 |  ``typing.Text``                 | 3.11          | Undecided         | :gh:`92332`    |
 +----------------------------------+---------------+-------------------+----------------+

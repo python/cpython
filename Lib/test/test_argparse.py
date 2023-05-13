@@ -1,5 +1,7 @@
 # Author: Steven J. Bethard <steven.bethard@gmail.com>.
 
+import contextlib
+import functools
 import inspect
 import io
 import operator
@@ -33,6 +35,35 @@ class StdIOBuffer(io.TextIOWrapper):
     def getvalue(self):
         self.flush()
         return self.buffer.raw.getvalue().decode('utf-8')
+
+
+class StdStreamTest(unittest.TestCase):
+
+    def test_skip_invalid_stderr(self):
+        parser = argparse.ArgumentParser()
+        with (
+            contextlib.redirect_stderr(None),
+            mock.patch('argparse._sys.exit')
+        ):
+            parser.exit(status=0, message='foo')
+
+    def test_skip_invalid_stdout(self):
+        parser = argparse.ArgumentParser()
+        for func in (
+            parser.print_usage,
+            parser.print_help,
+            functools.partial(parser.parse_args, ['-h'])
+        ):
+            with (
+                self.subTest(func=func),
+                contextlib.redirect_stdout(None),
+                # argparse uses stderr as a fallback
+                StdIOBuffer() as mocked_stderr,
+                contextlib.redirect_stderr(mocked_stderr),
+                mock.patch('argparse._sys.exit'),
+            ):
+                func()
+                self.assertRegex(mocked_stderr.getvalue(), r'usage:')
 
 
 class TestCase(unittest.TestCase):
@@ -3749,6 +3780,28 @@ class TestHelpUsage(HelpTestCase):
           -z Z Z Z              z
           d                     d
           e                     e
+        '''
+    version = ''
+
+
+class TestHelpUsageWithParentheses(HelpTestCase):
+    parser_signature = Sig(prog='PROG')
+    argument_signatures = [
+        Sig('positional', metavar='(example) positional'),
+        Sig('-p', '--optional', metavar='{1 (option A), 2 (option B)}'),
+    ]
+
+    usage = '''\
+        usage: PROG [-h] [-p {1 (option A), 2 (option B)}] (example) positional
+        '''
+    help = usage + '''\
+
+        positional arguments:
+          (example) positional
+
+        options:
+          -h, --help            show this help message and exit
+          -p {1 (option A), 2 (option B)}, --optional {1 (option A), 2 (option B)}
         '''
     version = ''
 

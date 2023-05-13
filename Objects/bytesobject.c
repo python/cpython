@@ -430,9 +430,6 @@ formatfloat(PyObject *v, int flags, int prec, int type,
     if (flags & F_ALT) {
         dtoa_flags |= Py_DTSF_ALT;
     }
-    if (flags & F_NO_NEG_0) {
-        dtoa_flags |= Py_DTSF_NO_NEG_0;
-    }
     p = PyOS_double_to_string(x, type, prec, dtoa_flags, NULL);
 
     if (p == NULL)
@@ -441,8 +438,10 @@ formatfloat(PyObject *v, int flags, int prec, int type,
     len = strlen(p);
     if (writer != NULL) {
         str = _PyBytesWriter_Prepare(writer, str, len);
-        if (str == NULL)
+        if (str == NULL) {
+            PyMem_Free(p);
             return NULL;
+        }
         memcpy(str, p, len);
         PyMem_Free(p);
         str += len;
@@ -712,7 +711,6 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                 case ' ': flags |= F_BLANK; continue;
                 case '#': flags |= F_ALT; continue;
                 case '0': flags |= F_ZERO; continue;
-                case 'z': flags |= F_NO_NEG_0; continue;
                 }
                 break;
             }
@@ -3189,11 +3187,16 @@ PyDoc_STRVAR(length_hint_doc,
 static PyObject *
 striter_reduce(striterobject *it, PyObject *Py_UNUSED(ignored))
 {
+    PyObject *iter = _PyEval_GetBuiltin(&_Py_ID(iter));
+
+    /* _PyEval_GetBuiltin can invoke arbitrary code,
+     * call must be before access of iterator pointers.
+     * see issue #101765 */
+
     if (it->it_seq != NULL) {
-        return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(&_Py_ID(iter)),
-                             it->it_seq, it->it_index);
+        return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
     } else {
-        return Py_BuildValue("N(())", _PyEval_GetBuiltin(&_Py_ID(iter)));
+        return Py_BuildValue("N(())", iter);
     }
 }
 

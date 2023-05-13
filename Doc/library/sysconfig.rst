@@ -121,7 +121,7 @@ identifier.  Python currently uses eight paths:
 
    Return the default scheme name for the current platform.
 
-   .. versionchanged:: 3.10
+   .. versionadded:: 3.10
       This function was previously named ``_get_default_scheme()`` and
       considered an implementation detail.
 

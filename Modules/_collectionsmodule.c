@@ -997,7 +997,7 @@ deque_count(dequeobject *deque, PyObject *v)
 }
 
 PyDoc_STRVAR(count_doc,
-"D.count(value) -> integer -- return number of occurrences of value");
+"D.count(value) -- return number of occurrences of value");
 
 static int
 deque_contains(dequeobject *deque, PyObject *v)
@@ -1106,7 +1106,7 @@ deque_index(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
 }
 
 PyDoc_STRVAR(index_doc,
-"D.index(value, [start, [stop]]) -> integer -- return first index of value.\n"
+"D.index(value, [start, [stop]]) -- return first index of value.\n"
 "Raises ValueError if the value is not present.");
 
 /* insert(), remove(), and delitem() are implemented in terms of

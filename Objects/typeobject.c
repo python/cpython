@@ -4080,6 +4080,8 @@ _PyStaticType_Dealloc(PyTypeObject *type)
     }
 
     type->tp_flags &= ~Py_TPFLAGS_READY;
+    type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
+    type->tp_version_tag = 0;
 }
 
 
@@ -8967,8 +8969,10 @@ super_descr_get(PyObject *self, PyObject *obj, PyObject *type)
             return NULL;
         newobj = (superobject *)PySuper_Type.tp_new(&PySuper_Type,
                                                  NULL, NULL);
-        if (newobj == NULL)
+        if (newobj == NULL) {
+            Py_DECREF(obj_type);
             return NULL;
+        }
         Py_INCREF(su->type);
         Py_INCREF(obj);
         newobj->type = su->type;

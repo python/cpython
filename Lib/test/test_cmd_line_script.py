@@ -657,6 +657,31 @@ class CmdLineTest(unittest.TestCase):
                 ],
             )
 
+    def test_syntaxerror_null_bytes(self):
+        script = "x = '\0' nothing to see here\n';import os;os.system('echo pwnd')\n"
+        with os_helper.temp_dir() as script_dir:
+            script_name = _make_test_script(script_dir, 'script', script)
+            exitcode, stdout, stderr = assert_python_failure(script_name)
+            self.assertEqual(
+                stderr.splitlines()[-2:],
+                [   b"    x = '",
+                    b'SyntaxError: source code cannot contain null bytes'
+                ],
+            )
+
+    def test_syntaxerror_null_bytes_in_multiline_string(self):
+        scripts = ["\n'''\nmultilinestring\0\n'''", "\nf'''\nmultilinestring\0\n'''"] # Both normal and f-strings
+        with os_helper.temp_dir() as script_dir:
+            for script in scripts:
+                script_name = _make_test_script(script_dir, 'script', script)
+                _, _, stderr = assert_python_failure(script_name)
+                self.assertEqual(
+                    stderr.splitlines()[-2:],
+                    [   b"    multilinestring",
+                        b'SyntaxError: source code cannot contain null bytes'
+                    ]
+                )
+
     def test_consistent_sys_path_for_direct_execution(self):
         # This test case ensures that the following all give the same
         # sys.path configuration:
@@ -741,6 +766,9 @@ class CmdLineTest(unittest.TestCase):
         self.assertNotEqual(proc.returncode, 0)
 
     @unittest.skipUnless(os.path.exists('/dev/fd/0'), 'requires /dev/fd platform')
+    @unittest.skipIf(sys.platform.startswith("freebsd") and
+                     os.stat("/dev").st_dev == os.stat("/dev/fd").st_dev,
+                     "Requires fdescfs mounted on /dev/fd on FreeBSD")
     def test_script_as_dev_fd(self):
         # GH-87235: On macOS passing a non-trivial script to /dev/fd/N can cause
         # problems because all open /dev/fd/N file descriptors share the same

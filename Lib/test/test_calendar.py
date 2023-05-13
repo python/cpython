@@ -568,11 +568,15 @@ class CalendarTestCase(unittest.TestCase):
         try:
             # formatweekday uses different day names based on the available width.
             cal = calendar.LocaleTextCalendar(locale='en_US')
-            # For short widths, a centered, abbreviated name is used.
-            self.assertEqual(cal.formatweekday(0, 5), " Mon ")
-            # For really short widths, even the abbreviated name is truncated.
+            # For really short widths, the abbreviated name is truncated.
+            self.assertEqual(cal.formatweekday(0, 1), "M")
             self.assertEqual(cal.formatweekday(0, 2), "Mo")
+            # For short widths, a centered, abbreviated name is used.
+            self.assertEqual(cal.formatweekday(0, 3), "Mon")
+            self.assertEqual(cal.formatweekday(0, 5), " Mon ")
+            self.assertEqual(cal.formatweekday(0, 8), "  Mon   ")
             # For long widths, the full day name is used.
+            self.assertEqual(cal.formatweekday(0, 9), "  Monday ")
             self.assertEqual(cal.formatweekday(0, 10), "  Monday  ")
         except locale.Error:
             raise unittest.SkipTest('cannot set the en_US locale')

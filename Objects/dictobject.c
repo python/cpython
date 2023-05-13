@@ -600,7 +600,7 @@ new_keys_object(uint8_t log2_size, bool unicode)
 
     assert(log2_size >= PyDict_LOG_MINSIZE);
 
-    usable = USABLE_FRACTION(1<<log2_size);
+    usable = USABLE_FRACTION((size_t)1<<log2_size);
     if (log2_size < 8) {
         log2_bytes = log2_size;
     }
@@ -5573,14 +5573,16 @@ _PyObject_FreeInstanceAttributes(PyObject *self)
     PyTypeObject *tp = Py_TYPE(self);
     assert(Py_TYPE(self)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
     PyDictValues **values_ptr = _PyObject_ValuesPointer(self);
-    if (*values_ptr == NULL) {
+    PyDictValues *values = *values_ptr;
+    if (values == NULL) {
         return;
     }
+    *values_ptr = NULL;
     PyDictKeysObject *keys = CACHED_KEYS(tp);
     for (Py_ssize_t i = 0; i < keys->dk_nentries; i++) {
-        Py_XDECREF((*values_ptr)->values[i]);
+        Py_XDECREF(values->values[i]);
     }
-    free_values(*values_ptr);
+    free_values(values);
 }
 
 PyObject *

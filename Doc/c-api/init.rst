@@ -233,9 +233,9 @@ Initializing and finalizing the interpreter
       single: PyEval_InitThreads()
       single: modules (in module sys)
       single: path (in module sys)
-      module: builtins
-      module: __main__
-      module: sys
+      pair: module; builtins
+      pair: module; __main__
+      pair: module; sys
       triple: module; search; path
       single: PySys_SetArgv()
       single: PySys_SetArgvEx()
@@ -404,7 +404,7 @@ Process-wide parameters
    program name is ``'/usr/local/bin/python'``, the prefix is ``'/usr/local'``. The
    returned string points into static storage; the caller should not modify its
    value.  This corresponds to the :makevar:`prefix` variable in the top-level
-   :file:`Makefile` and the ``--prefix`` argument to the :program:`configure`
+   :file:`Makefile` and the :option:`--prefix` argument to the :program:`configure`
    script at build time.  The value is available to Python code as ``sys.prefix``.
    It is only useful on Unix.  See also the next function.
 
@@ -709,7 +709,7 @@ Process-wide parameters
    .. deprecated:: 3.11
 
 
-.. c:function:: w_char* Py_GetPythonHome()
+.. c:function:: wchar_t* Py_GetPythonHome()
 
    Return the default "home", that is, the value set by a previous call to
    :c:func:`Py_SetPythonHome`, or the value of the :envvar:`PYTHONHOME`
@@ -940,9 +940,9 @@ code, or when embedding the Python interpreter:
    .. versionchanged:: 3.2
       This function cannot be called before :c:func:`Py_Initialize()` anymore.
 
-   .. deprecated-removed:: 3.9 3.11
+   .. deprecated:: 3.9
 
-   .. index:: module: _thread
+   .. index:: pair: module; _thread
 
 
 .. c:function:: int PyEval_ThreadsInitialized()
@@ -954,7 +954,7 @@ code, or when embedding the Python interpreter:
    .. versionchanged:: 3.7
       The :term:`GIL` is now initialized by :c:func:`Py_Initialize()`.
 
-   .. deprecated-removed:: 3.9 3.11
+   .. deprecated:: 3.9
 
 
 .. c:function:: PyThreadState* PyEval_SaveThread()
@@ -1385,9 +1385,9 @@ function. You can create and destroy them using the following functions:
 .. c:function:: PyThreadState* Py_NewInterpreter()
 
    .. index::
-      module: builtins
-      module: __main__
-      module: sys
+      pair: module; builtins
+      pair: module; __main__
+      pair: module; sys
       single: stdout (in module sys)
       single: stderr (in module sys)
       single: stdin (in module sys)

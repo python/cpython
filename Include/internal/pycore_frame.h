@@ -94,7 +94,10 @@ static inline void _PyFrame_StackPush(_PyInterpreterFrame *f, PyObject *value) {
 
 void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest);
 
-/* Consumes reference to func */
+/* Consumes reference to func and locals.
+   Does not initialize frame->previous, which happens
+   when frame is linked into the frame stack.
+ */
 static inline void
 _PyFrame_InitializeSpecials(
     _PyInterpreterFrame *frame, PyFunctionObject *func,

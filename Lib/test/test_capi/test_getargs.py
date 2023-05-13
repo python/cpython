@@ -1098,6 +1098,10 @@ class String_TestCase(unittest.TestCase):
             warnings.simplefilter('error', DeprecationWarning)
             self.assertRaises(DeprecationWarning, getargs_Z_hash, 'abc\xe9')
 
+    def test_gh_99240_clear_args(self):
+        from _testcapi import gh_99240_clear_args
+        self.assertRaises(TypeError, gh_99240_clear_args, 'a', '\0b')
+
 
 class Object_TestCase(unittest.TestCase):
     def test_S(self):

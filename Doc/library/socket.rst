@@ -19,7 +19,7 @@ all modern Unix systems, Windows, MacOS, and probably additional platforms.
 
 .. include:: ../includes/wasm-notavail.rst
 
-.. index:: object: socket
+.. index:: pair: object; socket
 
 The Python interface is a straightforward transliteration of the Unix system
 call and library interface for sockets to Python's object-oriented style: the
@@ -717,8 +717,8 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    ``(host, port)``) and return the socket object.
 
    *family* should be either :data:`AF_INET` or :data:`AF_INET6`.
-   *backlog* is the queue size passed to :meth:`socket.listen`; when ``0``
-   a default reasonable value is chosen.
+   *backlog* is the queue size passed to :meth:`socket.listen`; if not specified
+   , a default reasonable value is chosen.
    *reuse_port* dictates whether to set the :data:`SO_REUSEPORT` socket option.
 
    If *dualstack_ipv6* is true and the platform supports it the socket will
@@ -1688,7 +1688,7 @@ to sockets.
    much data, if any, was successfully sent.
 
    .. versionchanged:: 3.5
-      The socket timeout is no more reset each time data is sent successfully.
+      The socket timeout is no longer reset each time data is sent successfully.
       The socket timeout is now the maximum total duration to send all data.
 
    .. versionchanged:: 3.5
@@ -1829,7 +1829,7 @@ to sockets.
 .. method:: socket.setsockopt(level, optname, None, optlen: int)
    :noindex:
 
-   .. index:: module: struct
+   .. index:: pair: module; struct
 
    Set the value of the given socket option (see the Unix manual page
    :manpage:`setsockopt(2)`).  The needed symbolic constants are defined in the
@@ -1911,8 +1911,8 @@ can be changed by calling :func:`setdefaulttimeout`.
 
 * In *non-blocking mode*, operations fail (with an error that is unfortunately
   system-dependent) if they cannot be completed immediately: functions from the
-  :mod:`select` can be used to know when and whether a socket is available for
-  reading or writing.
+  :mod:`select` module can be used to know when and whether a socket is available
+  for reading or writing.
 
 * In *timeout mode*, operations fail if they cannot be completed within the
   timeout specified for the socket (they raise a :exc:`timeout` exception)
@@ -2101,7 +2101,7 @@ manager protocol instead, open a socket with::
     socket.socket(socket.AF_CAN, socket.SOCK_DGRAM, socket.CAN_BCM)
 
 After binding (:const:`CAN_RAW`) or connecting (:const:`CAN_BCM`) the socket, you
-can use the :meth:`socket.send`, and the :meth:`socket.recv` operations (and
+can use the :meth:`socket.send` and :meth:`socket.recv` operations (and
 their counterparts) on the socket object as usual.
 
 This last example might require special privileges::

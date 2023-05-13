@@ -55,13 +55,13 @@ point to the directories of the virtual environment,
 whereas :data:`sys.base_prefix` and :data:`sys.base_exec_prefix`
 point to those of the base Python used to create the environment.
 It is sufficient to check
-``sys.prefix == sys.base_prefix`` to determine if the current interpreter is
+``sys.prefix != sys.base_prefix`` to determine if the current interpreter is
 running from a virtual environment.
 
 A virtual environment may be "activated" using a script in its binary directory
 (``bin`` on POSIX; ``Scripts`` on Windows).
 This will prepend that directory to your :envvar:`!PATH`, so that running
-:program:`!python` will invoke the environment's Python interpreter
+:program:`python` will invoke the environment's Python interpreter
 and you can run installed scripts without having to use their full path.
 The invocation of the activation script is platform-specific
 (:samp:`{<venv>}` must be replaced by the path to the directory
@@ -84,7 +84,7 @@ containing the virtual environment):
 +-------------+------------+--------------------------------------------------+
 
 .. versionadded:: 3.4
-   :program:`!fish` and :program:`!csh` activation scripts.
+   :program:`fish` and :program:`csh` activation scripts.
 
 .. versionadded:: 3.8
    PowerShell activation scripts installed under POSIX for PowerShell Core

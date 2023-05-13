@@ -14385,8 +14385,6 @@ formatfloat(PyObject *v, struct unicode_format_arg_t *arg,
 
     if (arg->flags & F_ALT)
         dtoa_flags |= Py_DTSF_ALT;
-    if (arg->flags & F_NO_NEG_0)
-        dtoa_flags |= Py_DTSF_NO_NEG_0;
     p = PyOS_double_to_string(x, arg->ch, prec, dtoa_flags, NULL);
     if (p == NULL)
         return -1;
@@ -15757,14 +15755,21 @@ PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(
 static PyObject *
 unicodeiter_reduce(unicodeiterobject *it, PyObject *Py_UNUSED(ignored))
 {
+    PyObject *iter = _PyEval_GetBuiltin(&_Py_ID(iter));
+
+    /* _PyEval_GetBuiltin can invoke arbitrary code,
+     * call must be before access of iterator pointers.
+     * see issue #101765 */
+
     if (it->it_seq != NULL) {
-        return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(&_Py_ID(iter)),
-                             it->it_seq, it->it_index);
+        return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
     } else {
         PyObject *u = (PyObject *)_PyUnicode_New(0);
-        if (u == NULL)
+        if (u == NULL) {
+            Py_XDECREF(iter);
             return NULL;
-        return Py_BuildValue("N(N)", _PyEval_GetBuiltin(&_Py_ID(iter)), u);
+        }
+        return Py_BuildValue("N(N)", iter, u);
     }
 }
 

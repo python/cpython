@@ -1790,6 +1790,15 @@ class _BasePathTest(object):
             subdir.chmod(000)
             self.assertEqual(len(set(base.glob("*"))), 4)
 
+    @os_helper.skip_unless_symlink
+    def test_glob_long_symlink(self):
+        # See gh-87695
+        base = self.cls(BASE) / 'long_symlink'
+        base.mkdir()
+        bad_link = base / 'bad_link'
+        bad_link.symlink_to("bad" * 200)
+        self.assertEqual(sorted(base.glob('**/*')), [bad_link])
+
     def _check_resolve(self, p, expected, strict=True):
         q = p.resolve(strict)
         self.assertEqual(q, expected)

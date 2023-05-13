@@ -5,7 +5,7 @@
 Type Objects
 ------------
 
-.. index:: object: type
+.. index:: pair: object; type
 
 
 .. c:type:: PyTypeObject

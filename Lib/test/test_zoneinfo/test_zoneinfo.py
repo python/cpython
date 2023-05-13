@@ -1530,13 +1530,20 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
     @contextlib.contextmanager
     def python_tzpath_context(value):
         path_var = "PYTHONTZPATH"
+        unset_env_sentinel = object()
+        old_env = unset_env_sentinel
         try:
             with OS_ENV_LOCK:
                 old_env = os.environ.get(path_var, None)
                 os.environ[path_var] = value
                 yield
         finally:
-            if old_env is None:
+            if old_env is unset_env_sentinel:
+                # In this case, `old_env` was never retrieved from the
+                # environment for whatever reason, so there's no need to
+                # reset the environment TZPATH.
+                pass
+            elif old_env is None:
                 del os.environ[path_var]
             else:
                 os.environ[path_var] = old_env  # pragma: nocover

@@ -339,13 +339,6 @@ get_event_loop(int stacklevel)
         return loop;
     }
 
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "There is no current event loop",
-                     stacklevel))
-    {
-        return NULL;
-    }
-
     policy = PyObject_CallNoArgs(asyncio_get_event_loop_policy);
     if (policy == NULL) {
         return NULL;
@@ -1673,7 +1666,12 @@ FutureIter_throw(futureiterobject *self, PyObject *const *args, Py_ssize_t nargs
         val = args[1];
     }
 
-    if (tb != NULL && !PyTraceBack_Check(tb)) {
+    if (val == Py_None) {
+        val = NULL;
+    }
+    if (tb == Py_None ) {
+        tb = NULL;
+    } else if (tb != NULL && !PyTraceBack_Check(tb)) {
         PyErr_SetString(PyExc_TypeError, "throw() third argument must be a traceback");
         return NULL;
     }
@@ -3129,6 +3127,11 @@ _asyncio_get_event_loop_impl(PyObject *module)
     return get_event_loop(1);
 }
 
+// This internal method is going away in Python 3.12, left here only for
+// backwards compatibility with 3.10.0 - 3.10.8 and 3.11.0.
+// Similarly, this method's Python equivalent in asyncio.events is going
+// away as well.
+// See GH-99949 for more details.
 /*[clinic input]
 _asyncio._get_event_loop
     stacklevel: int = 3

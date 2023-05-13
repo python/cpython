@@ -169,6 +169,14 @@
 #    define HAVE_PWRITEV_RUNTIME (pwritev != NULL)
 #  endif
 
+#  ifdef HAVE_MKFIFOAT
+#    define HAVE_MKFIFOAT_RUNTIME (mkfifoat != NULL)
+#  endif
+
+#  ifdef HAVE_MKNODAT
+#    define HAVE_MKNODAT_RUNTIME (mknodat != NULL)
+#  endif
+
 #endif
 
 #ifdef HAVE_FUTIMESAT
@@ -590,6 +598,10 @@ PyOS_AfterFork_Child(void)
 
     PyThreadState *tstate = _PyThreadState_GET();
     _Py_EnsureTstateNotNULL(tstate);
+
+#ifdef PY_HAVE_THREAD_NATIVE_ID
+    tstate->native_thread_id = PyThread_get_thread_native_id();
+#endif
 
     status = _PyEval_ReInitThreads(tstate);
     if (_PyStatus_EXCEPTION(status)) {
@@ -9382,11 +9394,6 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
     /* dup3() is available on Linux 2.6.27+ and glibc 2.9 */
     static int dup3_works = -1;
 #endif
-
-    if (fd < 0 || fd2 < 0) {
-        posix_error();
-        return -1;
-    }
 
     /* dup2() can fail with EINTR if the target FD is already open, because it
      * then has to be closed. See os_close_impl() for why we don't handle EINTR

@@ -154,8 +154,8 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
                           "in combination with stripdir or prependdir"))
 
     success = True
-    if quiet < 2 and isinstance(fullname, os.PathLike):
-        fullname = os.fspath(fullname)
+    fullname = os.fspath(fullname)
+    stripdir = os.fspath(stripdir) if stripdir is not None else None
     name = os.path.basename(fullname)
 
     dfile = None

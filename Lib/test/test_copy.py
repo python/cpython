@@ -51,6 +51,9 @@ class TestCopy(unittest.TestCase):
         self.assertRaises(TypeError, copy.copy, x)
         copyreg.pickle(C, pickle_C, C)
         y = copy.copy(x)
+        self.assertIsNot(x, y)
+        self.assertEqual(type(y), C)
+        self.assertEqual(y.foo, x.foo)
 
     def test_copy_reduce_ex(self):
         class C(object):
@@ -313,6 +316,9 @@ class TestCopy(unittest.TestCase):
         self.assertRaises(TypeError, copy.deepcopy, x)
         copyreg.pickle(C, pickle_C, C)
         y = copy.deepcopy(x)
+        self.assertIsNot(x, y)
+        self.assertEqual(type(y), C)
+        self.assertEqual(y.foo, x.foo)
 
     def test_deepcopy_reduce_ex(self):
         class C(object):
@@ -356,8 +362,8 @@ class TestCopy(unittest.TestCase):
             pass
         def f():
             pass
-        tests = [None, 42, 2**100, 3.14, True, False, 1j,
-                 "hello", "hello\u1234", f.__code__,
+        tests = [None, ..., NotImplemented, 42, 2**100, 3.14, True, False, 1j,
+                 b"bytes", "hello", "hello\u1234", f.__code__,
                  NewStyle, range(10), Classic, max, property()]
         for x in tests:
             self.assertIs(copy.deepcopy(x), x)

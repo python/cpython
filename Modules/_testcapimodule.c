@@ -22,6 +22,7 @@
 
 #include "Python.h"
 #include "datetime.h"             // PyDateTimeAPI
+#include "frameobject.h"          // PyFrame_New
 #include "marshal.h"              // PyMarshal_WriteLongToFile
 #include "structmember.h"         // PyMemberDef
 #include <float.h>                // FLT_MAX
@@ -2523,6 +2524,20 @@ pyobject_bytes_from_null(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
+exc_set_object(PyObject *self, PyObject *args)
+{
+    PyObject *exc;
+    PyObject *obj;
+
+    if (!PyArg_ParseTuple(args, "OO:exc_set_object", &exc, &obj)) {
+        return NULL;
+    }
+
+    PyErr_SetObject(exc, obj);
+    return NULL;
+}
+
+static PyObject *
 raise_exception(PyObject *self, PyObject *args)
 {
     PyObject *exc;
@@ -2744,6 +2759,7 @@ get_date_fromdate(PyObject *self, PyObject *args)
     }
     return rv;
 }
+
 
 static PyObject *
 get_datetime_fromdateandtime(PyObject *self, PyObject *args)
@@ -4525,12 +4541,19 @@ temporary_c_thread(void *data)
     PyThread_release_lock(test_c_thread->exit_event);
 }
 
+static test_c_thread_t test_c_thread;
+
 static PyObject *
-call_in_temporary_c_thread(PyObject *self, PyObject *callback)
+call_in_temporary_c_thread(PyObject *self, PyObject *args)
 {
     PyObject *res = NULL;
-    test_c_thread_t test_c_thread;
+    PyObject *callback = NULL;
     long thread;
+    int wait = 1;
+    if (!PyArg_ParseTuple(args, "O|i", &callback, &wait))
+    {
+        return NULL;
+    }
 
     test_c_thread.start_event = PyThread_allocate_lock();
     test_c_thread.exit_event = PyThread_allocate_lock();
@@ -4540,8 +4563,7 @@ call_in_temporary_c_thread(PyObject *self, PyObject *callback)
         goto exit;
     }
 
-    Py_INCREF(callback);
-    test_c_thread.callback = callback;
+    test_c_thread.callback = Py_NewRef(callback);
 
     PyThread_acquire_lock(test_c_thread.start_event, 1);
     PyThread_acquire_lock(test_c_thread.exit_event, 1);
@@ -4557,21 +4579,43 @@ call_in_temporary_c_thread(PyObject *self, PyObject *callback)
     PyThread_acquire_lock(test_c_thread.start_event, 1);
     PyThread_release_lock(test_c_thread.start_event);
 
+    if (!wait) {
+        Py_RETURN_NONE;
+    }
+
     Py_BEGIN_ALLOW_THREADS
         PyThread_acquire_lock(test_c_thread.exit_event, 1);
         PyThread_release_lock(test_c_thread.exit_event);
     Py_END_ALLOW_THREADS
 
-    Py_INCREF(Py_None);
-    res = Py_None;
+    res = Py_NewRef(Py_None);
 
 exit:
     Py_CLEAR(test_c_thread.callback);
-    if (test_c_thread.start_event)
+    if (test_c_thread.start_event) {
         PyThread_free_lock(test_c_thread.start_event);
-    if (test_c_thread.exit_event)
+        test_c_thread.start_event = NULL;
+    }
+    if (test_c_thread.exit_event) {
         PyThread_free_lock(test_c_thread.exit_event);
+        test_c_thread.exit_event = NULL;
+    }
     return res;
+}
+
+static PyObject *
+join_temporary_c_thread(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    Py_BEGIN_ALLOW_THREADS
+        PyThread_acquire_lock(test_c_thread.exit_event, 1);
+        PyThread_release_lock(test_c_thread.exit_event);
+    Py_END_ALLOW_THREADS
+    Py_CLEAR(test_c_thread.callback);
+    PyThread_free_lock(test_c_thread.start_event);
+    test_c_thread.start_event = NULL;
+    PyThread_free_lock(test_c_thread.exit_event);
+    test_c_thread.exit_event = NULL;
+    Py_RETURN_NONE;
 }
 
 /* marshal */
@@ -6001,6 +6045,22 @@ frame_getlasti(PyObject *self, PyObject *frame)
 }
 
 static PyObject *
+frame_new(PyObject *self, PyObject *args)
+{
+    PyObject *code, *globals, *locals;
+    if (!PyArg_ParseTuple(args, "OOO", &code, &globals, &locals)) {
+        return NULL;
+    }
+    if (!PyCode_Check(code)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a code object");
+        return NULL;
+    }
+    PyThreadState *tstate = PyThreadState_Get();
+
+    return (PyObject *)PyFrame_New(tstate, (PyCodeObject *)code, globals, locals);
+}
+
+static PyObject *
 eval_get_func_name(PyObject *self, PyObject *func)
 {
     return PyUnicode_FromString(PyEval_GetFuncName(func));
@@ -6010,6 +6070,144 @@ static PyObject *
 eval_get_func_desc(PyObject *self, PyObject *func)
 {
     return PyUnicode_FromString(PyEval_GetFuncDesc(func));
+}
+
+static PyObject *
+eval_eval_code_ex(PyObject *mod, PyObject *pos_args)
+{
+    PyObject *result = NULL;
+    PyObject *code;
+    PyObject *globals;
+    PyObject *locals = NULL;
+    PyObject *args = NULL;
+    PyObject *kwargs = NULL;
+    PyObject *defaults = NULL;
+    PyObject *kw_defaults = NULL;
+    PyObject *closure = NULL;
+
+    PyObject **c_kwargs = NULL;
+
+    if (!PyArg_UnpackTuple(pos_args,
+                           "eval_code_ex",
+                           2,
+                           8,
+                           &code,
+                           &globals,
+                           &locals,
+                           &args,
+                           &kwargs,
+                           &defaults,
+                           &kw_defaults,
+                           &closure))
+    {
+        goto exit;
+    }
+
+    if (!PyCode_Check(code)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "code must be a Python code object");
+        goto exit;
+    }
+
+    if (!PyDict_Check(globals)) {
+        PyErr_SetString(PyExc_TypeError, "globals must be a dict");
+        goto exit;
+    }
+
+    if (locals && !PyMapping_Check(locals)) {
+        PyErr_SetString(PyExc_TypeError, "locals must be a mapping");
+        goto exit;
+    }
+    if (locals == Py_None) {
+        locals = NULL;
+    }
+
+    PyObject **c_args = NULL;
+    Py_ssize_t c_args_len = 0;
+
+    if (args)
+    {
+        if (!PyTuple_Check(args)) {
+            PyErr_SetString(PyExc_TypeError, "args must be a tuple");
+            goto exit;
+        } else {
+            c_args = &PyTuple_GET_ITEM(args, 0);
+            c_args_len = PyTuple_Size(args);
+        }
+    }
+
+    Py_ssize_t c_kwargs_len = 0;
+
+    if (kwargs)
+    {
+        if (!PyDict_Check(kwargs)) {
+            PyErr_SetString(PyExc_TypeError, "keywords must be a dict");
+            goto exit;
+        } else {
+            c_kwargs_len = PyDict_Size(kwargs);
+            if (c_kwargs_len > 0) {
+                c_kwargs = PyMem_NEW(PyObject*, 2 * c_kwargs_len);
+                if (!c_kwargs) {
+                    PyErr_NoMemory();
+                    goto exit;
+                }
+
+                Py_ssize_t i = 0;
+                Py_ssize_t pos = 0;
+
+                while (PyDict_Next(kwargs,
+                                   &pos,
+                                   &c_kwargs[i],
+                                   &c_kwargs[i + 1]))
+                {
+                    i += 2;
+                }
+                c_kwargs_len = i / 2;
+                /* XXX This is broken if the caller deletes dict items! */
+            }
+        }
+    }
+
+
+    PyObject **c_defaults = NULL;
+    Py_ssize_t c_defaults_len = 0;
+
+    if (defaults && PyTuple_Check(defaults)) {
+        c_defaults = &PyTuple_GET_ITEM(defaults, 0);
+        c_defaults_len = PyTuple_Size(defaults);
+    }
+
+    if (kw_defaults && !PyDict_Check(kw_defaults)) {
+        PyErr_SetString(PyExc_TypeError, "kw_defaults must be a dict");
+        goto exit;
+    }
+
+    if (closure && !PyTuple_Check(closure)) {
+        PyErr_SetString(PyExc_TypeError, "closure must be a tuple of cells");
+        goto exit;
+    }
+
+
+    result = PyEval_EvalCodeEx(
+        code,
+        globals,
+        locals,
+        c_args,
+        (int)c_args_len,
+        c_kwargs,
+        (int)c_kwargs_len,
+        c_defaults,
+        (int)c_defaults_len,
+        kw_defaults,
+        closure
+    );
+
+exit:
+    if (c_kwargs) {
+        PyMem_DEL(c_kwargs);
+    }
+
+    return result;
 }
 
 static PyObject *
@@ -6192,8 +6390,10 @@ function_get_module(PyObject *self, PyObject *func)
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
 static PyObject *getargs_s_hash_int(PyObject *, PyObject *, PyObject*);
 static PyObject *getargs_s_hash_int2(PyObject *, PyObject *, PyObject*);
+static PyObject *gh_99240_clear_args(PyObject *, PyObject *);
 
 static PyMethodDef TestMethods[] = {
+    {"exc_set_object",          exc_set_object,                  METH_VARARGS},
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",       raise_memoryerror,               METH_NOARGS},
     {"set_errno",               set_errno,                       METH_VARARGS},
@@ -6308,6 +6508,7 @@ static PyMethodDef TestMethods[] = {
       METH_VARARGS|METH_KEYWORDS},
     {"getargs_s_hash_int2",      _PyCFunction_CAST(getargs_s_hash_int2),
       METH_VARARGS|METH_KEYWORDS},
+    {"gh_99240_clear_args",     gh_99240_clear_args,             METH_VARARGS},
     {"getargs_z",               getargs_z,                       METH_VARARGS},
     {"getargs_z_star",          getargs_z_star,                  METH_VARARGS},
     {"getargs_z_hash",          getargs_z_hash,                  METH_VARARGS},
@@ -6354,6 +6555,7 @@ static PyMethodDef TestMethods[] = {
     {"set_exc_info",            test_set_exc_info,               METH_VARARGS},
     {"argparsing",              argparsing,                      METH_VARARGS},
     {"code_newempty",           code_newempty,                   METH_VARARGS},
+    {"eval_code_ex",            eval_eval_code_ex,               METH_VARARGS},
     {"make_exception_with_doc", _PyCFunction_CAST(make_exception_with_doc),
      METH_VARARGS | METH_KEYWORDS},
     {"make_memoryview_from_NULL_pointer", make_memoryview_from_NULL_pointer,
@@ -6399,8 +6601,9 @@ static PyMethodDef TestMethods[] = {
     {"docstring_with_signature_with_defaults",
         (PyCFunction)test_with_docstring, METH_NOARGS,
         docstring_with_signature_with_defaults},
-    {"call_in_temporary_c_thread", call_in_temporary_c_thread, METH_O,
+    {"call_in_temporary_c_thread", call_in_temporary_c_thread, METH_VARARGS,
      PyDoc_STR("set_error_class(error_class) -> None")},
+    {"join_temporary_c_thread", join_temporary_c_thread, METH_NOARGS},
     {"pymarshal_write_long_to_file",
         pymarshal_write_long_to_file, METH_VARARGS},
     {"pymarshal_write_object_to_file",
@@ -6490,6 +6693,7 @@ static PyMethodDef TestMethods[] = {
     {"frame_getgenerator", frame_getgenerator, METH_O, NULL},
     {"frame_getbuiltins", frame_getbuiltins, METH_O, NULL},
     {"frame_getlasti", frame_getlasti, METH_O, NULL},
+    {"frame_new", frame_new, METH_VARARGS, NULL},
     {"eval_get_func_name", eval_get_func_name, METH_O, NULL},
     {"eval_get_func_desc", eval_get_func_desc, METH_O, NULL},
     {"get_feature_macros", get_feature_macros, METH_NOARGS, NULL},
@@ -8087,5 +8291,23 @@ getargs_s_hash_int2(PyObject *self, PyObject *args, PyObject *kwargs)
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "w*|(s#)i", keywords, &buf, &s, &len, &i))
         return NULL;
     PyBuffer_Release(&buf);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+gh_99240_clear_args(PyObject *self, PyObject *args)
+{
+    char *a = NULL;
+    char *b = NULL;
+
+    if (!PyArg_ParseTuple(args, "eses", "idna", &a, "idna", &b)) {
+        if (a || b) {
+            PyErr_Clear();
+            PyErr_SetString(PyExc_AssertionError, "Arguments are not cleared.");
+        }
+        return NULL;
+    }
+    PyMem_Free(a);
+    PyMem_Free(b);
     Py_RETURN_NONE;
 }

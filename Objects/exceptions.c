@@ -1423,7 +1423,12 @@ _PyExc_PrepReraiseStar(PyObject *orig, PyObject *excs)
         if (res < 0) {
             goto done;
         }
-        result = _PyExc_CreateExceptionGroup("", raised_list);
+        if (PyList_GET_SIZE(raised_list) > 1) {
+            result = _PyExc_CreateExceptionGroup("", raised_list);
+        }
+        else {
+            result = Py_NewRef(PyList_GetItem(raised_list, 0));
+        }
         if (result == NULL) {
             goto done;
         }

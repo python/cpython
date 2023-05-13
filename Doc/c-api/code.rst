@@ -77,6 +77,8 @@ bound into a function.
 
    Returns ``1`` if the function succeeds and 0 otherwise.
 
+   .. versionadded:: 3.11
+
 .. c:function:: PyObject* PyCode_GetCode(PyCodeObject *co)
 
    Equivalent to the Python code ``getattr(co, 'co_code')``.

@@ -1238,6 +1238,10 @@ _Py_Specialize_BinarySubscr(
             SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_OUT_OF_VERSIONS);
             goto fail;
         }
+        if (_PyInterpreterState_GET()->eval_frame) {
+            SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_OTHER);
+            goto fail;
+        }
         cache->func_version = version;
         ((PyHeapTypeObject *)container_type)->_spec_cache.getitem = descriptor;
         _Py_SET_OPCODE(*instr, BINARY_SUBSCR_GETITEM);

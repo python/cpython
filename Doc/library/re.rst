@@ -271,7 +271,8 @@ The special characters are:
 
    * To match a literal ``']'`` inside a set, precede it with a backslash, or
      place it at the beginning of the set.  For example, both ``[()[\]{}]`` and
-     ``[]()[{}]`` will both match a parenthesis.
+     ``[]()[{}]`` will match a right bracket, as well as left bracket, braces,
+     and parentheses.
 
    .. .. index:: single: --; in regular expressions
    .. .. index:: single: &&; in regular expressions
@@ -418,7 +419,8 @@ The special characters are:
    +---------------------------------------+----------------------------------+
 
    .. deprecated:: 3.11
-      Group names containing non-ASCII characters in bytes patterns.
+      Group *name* containing characters outside the ASCII range
+      (``b'\x00'``-``b'\x7f'``) in :class:`bytes` patterns.
 
 .. index:: single: (?P=; in regular expressions
 
@@ -494,6 +496,8 @@ The special characters are:
 
    .. deprecated:: 3.11
       Group *id* containing anything except ASCII digits.
+      Group *name* containing characters outside the ASCII range
+      (``b'\x00'``-``b'\x7f'``) in :class:`bytes` replacement strings.
 
 
 The special sequences consist of ``'\'`` and a character from the list below.
@@ -589,10 +593,9 @@ character ``'$'``.
 
 ``\w``
    For Unicode (str) patterns:
-      Matches Unicode word characters; this includes most characters
-      that can be part of a word in any language, as well as numbers and
-      the underscore. If the :const:`ASCII` flag is used, only
-      ``[a-zA-Z0-9_]`` is matched.
+      Matches Unicode word characters; this includes alphanumeric characters (as defined by :meth:`str.isalnum`)
+      as well as the underscore (``_``).
+      If the :const:`ASCII` flag is used, only ``[a-zA-Z0-9_]`` is matched.
 
    For 8-bit (bytes) patterns:
       Matches characters considered alphanumeric in the ASCII character set;
@@ -1016,7 +1019,8 @@ Functions
 
    .. deprecated:: 3.11
       Group *id* containing anything except ASCII digits.
-      Group names containing non-ASCII characters in bytes replacement strings.
+      Group *name* containing characters outside the ASCII range
+      (``b'\x00'``-``b'\x7f'``) in :class:`bytes` replacement strings.
 
 
 .. function:: subn(pattern, repl, string, count=0, flags=0)
@@ -1562,16 +1566,22 @@ search() vs. match()
 
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
-Python offers two different primitive operations based on regular expressions:
-:func:`re.match` checks for a match only at the beginning of the string, while
-:func:`re.search` checks for a match anywhere in the string (this is what Perl
-does by default).
+Python offers different primitive operations based on regular expressions:
+
++ :func:`re.match` checks for a match only at the beginning of the string
++ :func:`re.search` checks for a match anywhere in the string
+  (this is what Perl does by default)
++ :func:`re.fullmatch` checks for entire string to be a match
+
 
 For example::
 
    >>> re.match("c", "abcdef")    # No match
    >>> re.search("c", "abcdef")   # Match
    <re.Match object; span=(2, 3), match='c'>
+   >>> re.fullmatch("p.*n", "python") # Match
+   <re.Match object; span=(0, 6), match='python'>
+   >>> re.fullmatch("r.*n", "python") # No match
 
 Regular expressions beginning with ``'^'`` can be used with :func:`search` to
 restrict the match at the beginning of the string::
@@ -1585,8 +1595,8 @@ Note however that in :const:`MULTILINE` mode :func:`match` only matches at the
 beginning of the string, whereas using :func:`search` with a regular expression
 beginning with ``'^'`` will match at the beginning of each line. ::
 
-   >>> re.match('X', 'A\nB\nX', re.MULTILINE)  # No match
-   >>> re.search('^X', 'A\nB\nX', re.MULTILINE)  # Match
+   >>> re.match("X", "A\nB\nX", re.MULTILINE)  # No match
+   >>> re.search("^X", "A\nB\nX", re.MULTILINE)  # Match
    <re.Match object; span=(4, 5), match='X'>
 
 

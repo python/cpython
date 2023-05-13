@@ -954,7 +954,7 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, Py_buffer *b)
 {
     BOOL res = TRUE;
     wchar_t *wbuf;
-    DWORD len, wlen, n = 0;
+    DWORD len, wlen, orig_len, n = 0;
     HANDLE handle;
 
     if (self->fd == -1)
@@ -984,6 +984,21 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, Py_buffer *b)
        have to reduce and recalculate. */
     while (wlen > 32766 / sizeof(wchar_t)) {
         len /= 2;
+        orig_len = len;
+        /* Reduce the length until we hit the final byte of a UTF-8 sequence
+         * (top bit is unset). Fix for github issue 82052.
+         */
+        while (len > 0 && (((char *)b->buf)[len-1] & 0x80) != 0)
+            --len;
+        /* If we hit a length of 0, something has gone wrong. This shouldn't
+         * be possible, as valid UTF-8 can have at most 3 non-final bytes
+         * before a final one, and our buffer is way longer than that.
+         * But to be on the safe side, if we hit this issue we just restore
+         * the original length and let the console API sort it out.
+         */
+        if (len == 0) {
+            len = orig_len;
+        }
         wlen = MultiByteToWideChar(CP_UTF8, 0, b->buf, len, NULL, 0);
     }
     Py_END_ALLOW_THREADS

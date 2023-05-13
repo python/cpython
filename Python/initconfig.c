@@ -168,6 +168,8 @@ static const char usage_envvars[] =
 "PYTHONDEBUG             : enable parser debug mode (-d)\n"
 "PYTHONDONTWRITEBYTECODE : don't write .pyc files (-B)\n"
 "PYTHONINSPECT           : inspect interactively after running script (-i)\n"
+"PYTHONINTMAXSTRDIGITS   : limit max digit characters in an int value\n"
+"                          (-X int_max_str_digits=number)\n"
 "PYTHONNOUSERSITE        : disable user site directory (-s)\n"
 "PYTHONOPTIMIZE          : enable level 1 optimizations (-O)\n"
 "PYTHONUNBUFFERED        : disable stdout/stderr buffering (-u)\n"

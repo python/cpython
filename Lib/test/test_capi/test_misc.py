@@ -133,14 +133,43 @@ class CAPITest(unittest.TestCase):
         else:
             self.assertTrue(False)
 
+    def test_set_object(self):
+        # new exception as obj is not an exception
+        with self.assertRaises(ValueError) as e:
+            _testcapi.exc_set_object(ValueError, 42)
+        self.assertEqual(e.exception.args, (42,))
+
+        # wraps the exception because unrelated types
+        with self.assertRaises(ValueError) as e:
+            _testcapi.exc_set_object(ValueError, TypeError(1,2,3))
+        wrapped = e.exception.args[0]
+        self.assertIsInstance(wrapped, TypeError)
+        self.assertEqual(wrapped.args, (1, 2, 3))
+
+        # is superclass, so does not wrap
+        with self.assertRaises(PermissionError) as e:
+            _testcapi.exc_set_object(OSError, PermissionError(24))
+        self.assertEqual(e.exception.args, (24,))
+
+        class Meta(type):
+            def __subclasscheck__(cls, sub):
+                1/0
+
+        class Broken(Exception, metaclass=Meta):
+            pass
+
+        with self.assertRaises(ZeroDivisionError) as e:
+            _testcapi.exc_set_object(Broken, Broken())
+
     @unittest.skipUnless(_posixsubprocess, '_posixsubprocess required for this test.')
     def test_seq_bytes_to_charp_array(self):
         # Issue #15732: crash in _PySequence_BytesToCharpArray()
         class Z(object):
             def __len__(self):
                 return 1
-        self.assertRaises(TypeError, _posixsubprocess.fork_exec,
-                          1,Z(),3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)
+        with self.assertRaisesRegex(TypeError, 'indexing'):
+            _posixsubprocess.fork_exec(
+                          1,Z(),True,(1, 2),5,6,7,8,9,10,11,12,13,14,True,True,17,False,19,20,21,22,False)
         # Issue #15736: overflow in _PySequence_BytesToCharpArray()
         class Z(object):
             def __len__(self):
@@ -148,7 +177,7 @@ class CAPITest(unittest.TestCase):
             def __getitem__(self, i):
                 return b'x'
         self.assertRaises(MemoryError, _posixsubprocess.fork_exec,
-                          1,Z(),3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)
+                          1,Z(),True,(1, 2),5,6,7,8,9,10,11,12,13,14,True,True,17,False,19,20,21,22,False)
 
     @unittest.skipUnless(_posixsubprocess, '_posixsubprocess required for this test.')
     def test_subprocess_fork_exec(self):
@@ -158,7 +187,7 @@ class CAPITest(unittest.TestCase):
 
         # Issue #15738: crash in subprocess_fork_exec()
         self.assertRaises(TypeError, _posixsubprocess.fork_exec,
-                          Z(),[b'1'],3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)
+                          Z(),[b'1'],True,(1, 2),5,6,7,8,9,10,11,12,13,14,True,True,17,False,19,20,21,22,False)
 
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
@@ -1334,33 +1363,54 @@ class Test_FrameAPI(unittest.TestCase):
         frame = next(gen)
         self.assertIs(gen, _testcapi.frame_getgenerator(frame))
 
+    def test_frame_fback_api(self):
+        """Test that accessing `f_back` does not cause a segmentation fault on
+        a frame created with `PyFrame_New` (GH-99110)."""
+        def dummy():
+            pass
+
+        frame = _testcapi.frame_new(dummy.__code__, globals(), locals())
+        # The following line should not cause a segmentation fault.
+        self.assertIsNone(frame.f_back)
+
 
 SUFFICIENT_TO_DEOPT_AND_SPECIALIZE = 100
 
 class Test_Pep523API(unittest.TestCase):
 
-    def do_test(self, func):
-        calls = []
+    def do_test(self, func, names):
+        actual_calls = []
         start = SUFFICIENT_TO_DEOPT_AND_SPECIALIZE
         count = start + SUFFICIENT_TO_DEOPT_AND_SPECIALIZE
-        for i in range(count):
-            if i == start:
-                _testinternalcapi.set_eval_frame_record(calls)
-            func()
-        _testinternalcapi.set_eval_frame_default()
-        self.assertEqual(len(calls), SUFFICIENT_TO_DEOPT_AND_SPECIALIZE)
-        for name in calls:
-            self.assertEqual(name, func.__name__)
+        try:
+            for i in range(count):
+                if i == start:
+                    _testinternalcapi.set_eval_frame_record(actual_calls)
+                func()
+        finally:
+            _testinternalcapi.set_eval_frame_default()
+        expected_calls = names * SUFFICIENT_TO_DEOPT_AND_SPECIALIZE
+        self.assertEqual(len(expected_calls), len(actual_calls))
+        for expected, actual in zip(expected_calls, actual_calls, strict=True):
+            self.assertEqual(expected, actual)
 
-    def test_pep523_with_specialization_simple(self):
-        def func1():
-            pass
-        self.do_test(func1)
+    def test_inlined_binary_subscr(self):
+        class C:
+            def __getitem__(self, other):
+                return None
+        def func():
+            C()[42]
+        names = ["func", "__getitem__"]
+        self.do_test(func, names)
 
-    def test_pep523_with_specialization_with_default(self):
-        def func2(x=None):
+    def test_inlined_call(self):
+        def inner(x=42):
             pass
-        self.do_test(func2)
+        def func():
+            inner()
+            inner(42)
+        names = ["func", "inner", "inner"]
+        self.do_test(func, names)
 
 
 if __name__ == "__main__":

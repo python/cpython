@@ -440,7 +440,7 @@ always available.
    object <traceback-objects>` which typically encapsulates the call
    stack at the point where the exception last occurred.
 
-   .. index:: object: traceback
+   .. index:: pair: object; traceback
 
    If no exception is being handled anywhere on the stack, this function
    return a tuple containing three ``None`` values.
@@ -568,49 +568,55 @@ always available.
 
    .. tabularcolumns:: |l|l|L|
 
-   +---------------------+----------------+--------------------------------------------------+
-   | attribute           | float.h macro  | explanation                                      |
-   +=====================+================+==================================================+
-   | :const:`epsilon`    | DBL_EPSILON    | difference between 1.0 and the least value       |
-   |                     |                | greater than 1.0 that is representable as a float|
-   |                     |                |                                                  |
-   |                     |                | See also :func:`math.ulp`.                       |
-   +---------------------+----------------+--------------------------------------------------+
-   | :const:`dig`        | DBL_DIG        | maximum number of decimal digits that can be     |
-   |                     |                | faithfully represented in a float;  see below    |
-   +---------------------+----------------+--------------------------------------------------+
-   | :const:`mant_dig`   | DBL_MANT_DIG   | float precision: the number of base-``radix``    |
-   |                     |                | digits in the significand of a float             |
-   +---------------------+----------------+--------------------------------------------------+
-   | :const:`max`        | DBL_MAX        | maximum representable positive finite float      |
-   +---------------------+----------------+--------------------------------------------------+
-   | :const:`max_exp`    | DBL_MAX_EXP    | maximum integer *e* such that ``radix**(e-1)`` is|
-   |                     |                | a representable finite float                     |
-   +---------------------+----------------+--------------------------------------------------+
-   | :const:`max_10_exp` | DBL_MAX_10_EXP | maximum integer *e* such that ``10**e`` is in the|
-   |                     |                | range of representable finite floats             |
-   +---------------------+----------------+--------------------------------------------------+
-   | :const:`min`        | DBL_MIN        | minimum representable positive *normalized* float|
-   |                     |                |                                                  |
-   |                     |                | Use :func:`math.ulp(0.0) <math.ulp>` to get the  |
-   |                     |                | smallest positive *denormalized* representable   |
-   |                     |                | float.                                           |
-   +---------------------+----------------+--------------------------------------------------+
-   | :const:`min_exp`    | DBL_MIN_EXP    | minimum integer *e* such that ``radix**(e-1)`` is|
-   |                     |                | a normalized float                               |
-   +---------------------+----------------+--------------------------------------------------+
-   | :const:`min_10_exp` | DBL_MIN_10_EXP | minimum integer *e* such that ``10**e`` is a     |
-   |                     |                | normalized float                                 |
-   +---------------------+----------------+--------------------------------------------------+
-   | :const:`radix`      | FLT_RADIX      | radix of exponent representation                 |
-   +---------------------+----------------+--------------------------------------------------+
-   | :const:`rounds`     | FLT_ROUNDS     | integer constant representing the rounding mode  |
-   |                     |                | used for arithmetic operations.  This reflects   |
-   |                     |                | the value of the system FLT_ROUNDS macro at      |
-   |                     |                | interpreter startup time.  See section 5.2.4.2.2 |
-   |                     |                | of the C99 standard for an explanation of the    |
-   |                     |                | possible values and their meanings.              |
-   +---------------------+----------------+--------------------------------------------------+
+   +---------------------+---------------------+--------------------------------------------------+
+   | attribute           | float.h macro       | explanation                                      |
+   +=====================+=====================+==================================================+
+   | ``epsilon``         | ``DBL_EPSILON``     | difference between 1.0 and the least value       |
+   |                     |                     | greater than 1.0 that is representable as a float|
+   |                     |                     |                                                  |
+   |                     |                     | See also :func:`math.ulp`.                       |
+   +---------------------+---------------------+--------------------------------------------------+
+   | ``dig``             | ``DBL_DIG``         | maximum number of decimal digits that can be     |
+   |                     |                     | faithfully represented in a float;  see below    |
+   +---------------------+---------------------+--------------------------------------------------+
+   | ``mant_dig``        | ``DBL_MANT_DIG``    | float precision: the number of base-``radix``    |
+   |                     |                     | digits in the significand of a float             |
+   +---------------------+---------------------+--------------------------------------------------+
+   | ``max``             | ``DBL_MAX``         | maximum representable positive finite float      |
+   +---------------------+---------------------+--------------------------------------------------+
+   | ``max_exp``         | ``DBL_MAX_EXP``     | maximum integer *e* such that ``radix**(e-1)`` is|
+   |                     |                     | a representable finite float                     |
+   +---------------------+---------------------+--------------------------------------------------+
+   | ``max_10_exp``      | ``DBL_MAX_10_EXP``  | maximum integer *e* such that ``10**e`` is in the|
+   |                     |                     | range of representable finite floats             |
+   +---------------------+---------------------+--------------------------------------------------+
+   | ``min``             | ``DBL_MIN``         | minimum representable positive *normalized* float|
+   |                     |                     |                                                  |
+   |                     |                     | Use :func:`math.ulp(0.0) <math.ulp>` to get the  |
+   |                     |                     | smallest positive *denormalized* representable   |
+   |                     |                     | float.                                           |
+   +---------------------+---------------------+--------------------------------------------------+
+   | ``min_exp``         | ``DBL_MIN_EXP``     | minimum integer *e* such that ``radix**(e-1)`` is|
+   |                     |                     | a normalized float                               |
+   +---------------------+---------------------+--------------------------------------------------+
+   | ``min_10_exp``      | ``DBL_MIN_10_EXP``  | minimum integer *e* such that ``10**e`` is a     |
+   |                     |                     | normalized float                                 |
+   +---------------------+---------------------+--------------------------------------------------+
+   | ``radix``           | ``FLT_RADIX``       | radix of exponent representation                 |
+   +---------------------+---------------------+--------------------------------------------------+
+   | ``rounds``          | ``FLT_ROUNDS``      | integer representing the rounding mode for       |
+   |                     |                     | floating-point arithmetic. This reflects the     |
+   |                     |                     | value of the system ``FLT_ROUNDS`` macro at      |
+   |                     |                     | interpreter startup time:                        |
+   |                     |                     | ``-1`` indeterminable,                           |
+   |                     |                     | ``0`` toward zero,                               |
+   |                     |                     | ``1`` to nearest,                                |
+   |                     |                     | ``2`` toward positive infinity,                  |
+   |                     |                     | ``3`` toward negative infinity                   |
+   |                     |                     |                                                  |
+   |                     |                     | All other values for ``FLT_ROUNDS`` characterize |
+   |                     |                     | implementation-defined rounding behavior.        |
+   +---------------------+---------------------+--------------------------------------------------+
 
    The attribute :attr:`sys.float_info.dig` needs further explanation.  If
    ``s`` is any string representing a decimal number with at most
@@ -691,7 +697,7 @@ always available.
    the encoding used with the :term:`filesystem error handler <filesystem
    encoding and error handler>` to convert between Unicode filenames and bytes
    filenames. The filesystem error handler is returned from
-   :func:`getfilesystemencoding`.
+   :func:`getfilesystemencodeerrors`.
 
    For best compatibility, str should be used for filenames in all cases,
    although representing filenames as bytes is also supported. Functions
@@ -775,7 +781,7 @@ always available.
    additional garbage collector overhead if the object is managed by the garbage
    collector.
 
-   See `recursive sizeof recipe <https://code.activestate.com/recipes/577504>`_
+   See `recursive sizeof recipe <https://code.activestate.com/recipes/577504/>`_
    for an example of using :func:`getsizeof` recursively to find the size of
    containers and all their contents.
 
@@ -1301,7 +1307,7 @@ always available.
 
    A string giving the site-specific directory prefix where the platform
    independent Python files are installed; on Unix, the default is
-   ``'/usr/local'``.  This can be set at build time with the ``--prefix``
+   :file:`/usr/local`. This can be set at build time with the :option:`--prefix`
    argument to the :program:`configure` script.  See
    :ref:`installation_paths` for derived paths.
 
@@ -1805,7 +1811,7 @@ always available.
 
    The version number used to form registry keys on Windows platforms. This is
    stored as string resource 1000 in the Python DLL.  The value is normally the
-   first three characters of :const:`version`.  It is provided in the :mod:`sys`
+   major and minor versions of the running Python interpreter.  It is provided in the :mod:`sys`
    module for informational purposes; modifying this value has no effect on the
    registry keys used by Python.
 

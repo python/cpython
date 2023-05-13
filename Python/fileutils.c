@@ -2142,7 +2142,10 @@ _Py_join_relfile(const wchar_t *dirname, const wchar_t *relfile)
     }
     assert(wcslen(dirname) < MAXPATHLEN);
     assert(wcslen(relfile) < MAXPATHLEN - wcslen(dirname));
-    join_relfile(filename, bufsize, dirname, relfile);
+    if (join_relfile(filename, bufsize, dirname, relfile) < 0) {
+        PyMem_RawFree(filename);
+        return NULL;
+    }
     return filename;
 }
 
@@ -2180,6 +2183,7 @@ _Py_find_basename(const wchar_t *filename)
 wchar_t *
 _Py_normpath(wchar_t *path, Py_ssize_t size)
 {
+    assert(path != NULL);
     if (!path[0] || size == 0) {
         return path;
     }

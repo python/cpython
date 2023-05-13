@@ -1010,6 +1010,7 @@ init_frame(_PyInterpreterFrame *frame, PyFunctionObject *func, PyObject *locals)
     Py_INCREF(func);
     PyCodeObject *code = (PyCodeObject *)func->func_code;
     _PyFrame_InitializeSpecials(frame, func, locals, code->co_nlocalsplus);
+    frame->previous = NULL;
     for (Py_ssize_t i = 0; i < code->co_nlocalsplus; i++) {
         frame->localsplus[i] = NULL;
     }

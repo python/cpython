@@ -563,10 +563,9 @@ the original TOS1.
 .. opcode:: END_ASYNC_FOR
 
    Terminates an :keyword:`async for` loop.  Handles an exception raised
-   when awaiting a next item.  If TOS is :exc:`StopAsyncIteration` pop 3
-   values from the stack and restore the exception state using the second
-   of them.  Otherwise re-raise the exception using the value
-   from the stack.  An exception handler block is removed from the block stack.
+   when awaiting a next item. The stack contains the async iterable in
+   TOS1 and the raised exception in TOS. Both are popped.
+   If the exception is not :exc:`StopAsyncIteration`, it is re-raised.
 
    .. versionadded:: 3.8
 
@@ -1089,7 +1088,7 @@ iterations of the loop.
 
 .. opcode:: MAKE_CELL (i)
 
-   Creates a new cell in slot ``i``.  If that slot is empty then
+   Creates a new cell in slot ``i``.  If that slot is nonempty then
    that value is stored into the new cell.
 
    .. versionadded:: 3.11
@@ -1269,7 +1268,7 @@ iterations of the loop.
 
 .. opcode:: BUILD_SLICE (argc)
 
-   .. index:: builtin: slice
+   .. index:: pair: built-in function; slice
 
    Pushes a slice object on the stack.  *argc* must be 2 or 3.  If it is 2,
    ``slice(TOS1, TOS)`` is pushed; if it is 3, ``slice(TOS2, TOS1, TOS)`` is

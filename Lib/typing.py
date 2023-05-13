@@ -250,10 +250,17 @@ def _collect_parameters(args):
     """
     parameters = []
     for t in args:
-        # We don't want __parameters__ descriptor of a bare Python class.
         if isinstance(t, type):
-            continue
-        if hasattr(t, '__typing_subst__'):
+            # We don't want __parameters__ descriptor of a bare Python class.
+            pass
+        elif isinstance(t, tuple):
+            # `t` might be a tuple, when `ParamSpec` is substituted with
+            # `[T, int]`, or `[int, *Ts]`, etc.
+            for x in t:
+                for collected in _collect_parameters([x]):
+                    if collected not in parameters:
+                        parameters.append(collected)
+        elif hasattr(t, '__typing_subst__'):
             if t not in parameters:
                 parameters.append(t)
         else:
@@ -283,25 +290,6 @@ def _unpack_args(args):
         else:
             newargs.append(arg)
     return newargs
-
-def _prepare_paramspec_params(cls, params):
-    """Prepares the parameters for a Generic containing ParamSpec
-    variables (internal helper).
-    """
-    # Special case where Z[[int, str, bool]] == Z[int, str, bool] in PEP 612.
-    if (len(cls.__parameters__) == 1
-            and params and not _is_param_expr(params[0])):
-        assert isinstance(cls.__parameters__[0], ParamSpec)
-        return (params,)
-    else:
-        _check_generic(cls, params, len(cls.__parameters__))
-        _params = []
-        # Convert lists to tuples to help other libraries cache the results.
-        for p, tvar in zip(params, cls.__parameters__):
-            if isinstance(tvar, ParamSpec) and isinstance(p, list):
-                p = tuple(p)
-            _params.append(p)
-        return tuple(_params)
 
 def _deduplicate(params):
     # Weed out strict duplicates, preserving the first of each occurrence.
@@ -382,10 +370,13 @@ def _eval_type(t, globalns, localns, recursive_guard=frozenset()):
                 ForwardRef(arg) if isinstance(arg, str) else arg
                 for arg in t.__args__
             )
+            is_unpacked = t.__unpacked__
             if _should_unflatten_callable_args(t, args):
                 t = t.__origin__[(args[:-1], args[-1])]
             else:
                 t = t.__origin__[args]
+            if is_unpacked:
+                t = Unpack[t]
         ev_args = tuple(_eval_type(a, globalns, localns, recursive_guard) for a in t.__args__)
         if ev_args == t.__args__:
             return t
@@ -839,7 +830,7 @@ class ForwardRef(_Final, _root=True):
         # Unfortunately, this isn't a valid expression on its own, so we
         # do the unpacking manually.
         if arg[0] == '*':
-            arg_to_compile = f'({arg},)[0]'  # E.g. (*Ts,)[0]
+            arg_to_compile = f'({arg},)[0]'  # E.g. (*Ts,)[0] or (*tuple[int, int],)[0]
         else:
             arg_to_compile = arg
         try:
@@ -1193,7 +1184,7 @@ class ParamSpec(_Final, _Immutable, _BoundVarianceMixin, _PickleUsingNameMixin,
 
     Parameter specification variables can be introspected. e.g.:
 
-       P.__name__ == 'T'
+       P.__name__ == 'P'
        P.__bound__ == None
        P.__covariant__ == False
        P.__contravariant__ == False
@@ -1226,7 +1217,18 @@ class ParamSpec(_Final, _Immutable, _BoundVarianceMixin, _PickleUsingNameMixin,
         return arg
 
     def __typing_prepare_subst__(self, alias, args):
-        return _prepare_paramspec_params(alias, args)
+        params = alias.__parameters__
+        i = params.index(self)
+        if i >= len(args):
+            raise TypeError(f"Too few arguments for {alias}")
+        # Special case where Z[[int, str, bool]] == Z[int, str, bool] in PEP 612.
+        if len(params) == 1 and not _is_param_expr(args[0]):
+            assert i == 0
+            args = (args,)
+        # Convert lists to tuples to help other libraries cache the results.
+        elif isinstance(args[i], list):
+            args = (*args[:i], tuple(args[i]), *args[i+1:])
+        return args
 
 def _is_dunder(attr):
     return attr.startswith('__') and attr.endswith('__')
@@ -1421,10 +1423,12 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
             raise TypeError(f"Too {'many' if alen > plen else 'few'} arguments for {self};"
                             f" actual {alen}, expected {plen}")
         new_arg_by_param = dict(zip(params, args))
+        return tuple(self._make_substitution(self.__args__, new_arg_by_param))
 
+    def _make_substitution(self, args, new_arg_by_param):
+        """Create a list of new type arguments."""
         new_args = []
-        for old_arg in self.__args__:
-
+        for old_arg in args:
             if isinstance(old_arg, type):
                 new_args.append(old_arg)
                 continue
@@ -1468,10 +1472,20 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
                 # should join all these types together in a flat list
                 # `(float, int, str)` - so again, we should `extend`.
                 new_args.extend(new_arg)
+            elif isinstance(old_arg, tuple):
+                # Corner case:
+                #    P = ParamSpec('P')
+                #    T = TypeVar('T')
+                #    class Base(Generic[P]): ...
+                # Can be substituted like this:
+                #    X = Base[[int, T]]
+                # In this case, `old_arg` will be a tuple:
+                new_args.append(
+                    tuple(self._make_substitution(old_arg, new_arg_by_param)),
+                )
             else:
                 new_args.append(new_arg)
-
-        return tuple(new_args)
+        return new_args
 
     def copy_with(self, args):
         return self.__class__(self.__origin__, args, name=self._name, inst=self._inst,
@@ -1789,23 +1803,13 @@ class Generic:
         if not isinstance(params, tuple):
             params = (params,)
 
-        if not params:
-            # We're only ok with `params` being empty if the class's only type
-            # parameter is a `TypeVarTuple` (which can contain zero types).
-            class_params = getattr(cls, "__parameters__", None)
-            only_class_parameter_is_typevartuple = (
-                    class_params is not None
-                    and len(class_params) == 1
-                    and isinstance(class_params[0], TypeVarTuple)
-            )
-            if not only_class_parameter_is_typevartuple:
-                raise TypeError(
-                    f"Parameter list to {cls.__qualname__}[...] cannot be empty"
-                )
-
         params = tuple(_type_convert(p) for p in params)
         if cls in (Generic, Protocol):
             # Generic and Protocol can only be subscripted with unique type variables.
+            if not params:
+                raise TypeError(
+                    f"Parameter list to {cls.__qualname__}[...] cannot be empty"
+                )
             if not all(_is_typevar_like(p) for p in params):
                 raise TypeError(
                     f"Parameters to {cls.__name__}[...] must all be type variables "
@@ -1815,13 +1819,20 @@ class Generic:
                     f"Parameters to {cls.__name__}[...] must all be unique")
         else:
             # Subscripting a regular Generic subclass.
-            if any(isinstance(t, ParamSpec) for t in cls.__parameters__):
-                params = _prepare_paramspec_params(cls, params)
-            elif not any(isinstance(p, TypeVarTuple) for p in cls.__parameters__):
-                # We only run this if there are no TypeVarTuples, because we
-                # don't check variadic generic arity at runtime (to reduce
-                # complexity of typing.py).
-                _check_generic(cls, params, len(cls.__parameters__))
+            for param in cls.__parameters__:
+                prepare = getattr(param, '__typing_prepare_subst__', None)
+                if prepare is not None:
+                    params = prepare(cls, params)
+            _check_generic(cls, params, len(cls.__parameters__))
+
+            new_args = []
+            for param, new_arg in zip(cls.__parameters__, params):
+                if isinstance(param, TypeVarTuple):
+                    new_args.extend(new_arg)
+                else:
+                    new_args.append(new_arg)
+            params = tuple(new_args)
+
         return _GenericAlias(cls, params,
                              _paramspec_tvars=True)
 
@@ -1849,7 +1860,7 @@ class Generic:
                         base.__origin__ is Generic):
                     if gvars is not None:
                         raise TypeError(
-                            "Cannot inherit from Generic[...] multiple types.")
+                            "Cannot inherit from Generic[...] multiple times.")
                     gvars = base.__parameters__
             if gvars is not None:
                 tvarset = set(tvars)
@@ -2088,6 +2099,8 @@ class _AnnotatedAlias(_NotIterable, _GenericAlias, _root=True):
     with extra annotations. The alias behaves like a normal typing alias,
     instantiating is the same as instantiating the underlying type, binding
     it to types is also the same.
+
+    The metadata itself is stored in a '__metadata__' attribute as a tuple.
     """
     def __init__(self, origin, metadata):
         if isinstance(origin, _AnnotatedAlias):
@@ -2140,6 +2153,10 @@ class Annotated:
     Details:
 
     - It's an error to call `Annotated` with less than two arguments.
+    - Access the metadata via the ``__metadata__`` attribute::
+
+        Annotated[int, '$'].__metadata__ == ('$',)
+
     - Nested Annotated are flattened::
 
         Annotated[Annotated[T, Ann1, Ann2], Ann3] == Annotated[T, Ann1, Ann2, Ann3]
@@ -2233,15 +2250,16 @@ def cast(typ, val):
 def assert_type(val, typ, /):
     """Ask a static type checker to confirm that the value is of the given type.
 
-    When the type checker encounters a call to assert_type(), it
+    At runtime this does nothing: it returns the first argument unchanged with no
+    checks or side effects, no matter the actual type of the argument.
+
+    When a static type checker encounters a call to assert_type(), it
     emits an error if the value is not of the specified type::
 
         def greet(name: str) -> None:
             assert_type(name, str)  # ok
             assert_type(name, int)  # type checker error
 
-    At runtime this returns the first argument unchanged and otherwise
-    does nothing.
     """
     return val
 

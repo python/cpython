@@ -23549,7 +23549,6 @@ _loop0_1_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -23575,6 +23574,7 @@ _loop0_1_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -23599,7 +23599,6 @@ _loop0_1_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_1_type, _seq);
     p->level--;
     return _seq;
 }
@@ -23618,7 +23617,6 @@ _loop0_2_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -23644,6 +23642,7 @@ _loop0_2_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -23668,7 +23667,6 @@ _loop0_2_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_2_type, _seq);
     p->level--;
     return _seq;
 }
@@ -23687,7 +23685,6 @@ _loop1_3_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -23713,6 +23710,7 @@ _loop1_3_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -23742,7 +23740,6 @@ _loop1_3_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_3_type, _seq);
     p->level--;
     return _seq;
 }
@@ -23761,7 +23758,6 @@ _loop0_5_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -23796,6 +23792,7 @@ _loop0_5_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -23820,7 +23817,6 @@ _loop0_5_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_5_type, _seq);
     p->level--;
     return _seq;
 }
@@ -24353,7 +24349,6 @@ _loop1_14_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -24379,6 +24374,7 @@ _loop1_14_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -24408,7 +24404,6 @@ _loop1_14_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_14_type, _seq);
     p->level--;
     return _seq;
 }
@@ -24590,7 +24585,6 @@ _loop0_19_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -24625,6 +24619,7 @@ _loop0_19_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -24649,7 +24644,6 @@ _loop0_19_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_19_type, _seq);
     p->level--;
     return _seq;
 }
@@ -24710,7 +24704,6 @@ _loop0_21_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -24745,6 +24738,7 @@ _loop0_21_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -24769,7 +24763,6 @@ _loop0_21_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_21_type, _seq);
     p->level--;
     return _seq;
 }
@@ -24935,7 +24928,6 @@ _loop0_24_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -24961,6 +24953,7 @@ _loop0_24_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -24985,7 +24978,6 @@ _loop0_24_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_24_type, _seq);
     p->level--;
     return _seq;
 }
@@ -25004,7 +24996,6 @@ _loop1_25_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -25030,6 +25021,7 @@ _loop1_25_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -25059,7 +25051,6 @@ _loop1_25_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_25_type, _seq);
     p->level--;
     return _seq;
 }
@@ -25078,7 +25069,6 @@ _loop0_27_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -25113,6 +25103,7 @@ _loop0_27_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -25137,7 +25128,6 @@ _loop0_27_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_27_type, _seq);
     p->level--;
     return _seq;
 }
@@ -25245,7 +25235,6 @@ _loop0_30_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -25280,6 +25269,7 @@ _loop0_30_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -25304,7 +25294,6 @@ _loop0_30_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_30_type, _seq);
     p->level--;
     return _seq;
 }
@@ -25412,7 +25401,6 @@ _loop1_32_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -25438,6 +25426,7 @@ _loop1_32_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -25467,7 +25456,6 @@ _loop1_32_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_32_type, _seq);
     p->level--;
     return _seq;
 }
@@ -25630,7 +25618,6 @@ _loop0_36_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -25656,6 +25643,7 @@ _loop0_36_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -25680,7 +25668,6 @@ _loop0_36_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_36_type, _seq);
     p->level--;
     return _seq;
 }
@@ -25699,7 +25686,6 @@ _loop0_37_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -25725,6 +25711,7 @@ _loop0_37_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -25749,7 +25736,6 @@ _loop0_37_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_37_type, _seq);
     p->level--;
     return _seq;
 }
@@ -25768,7 +25754,6 @@ _loop0_38_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -25794,6 +25779,7 @@ _loop0_38_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -25818,7 +25804,6 @@ _loop0_38_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_38_type, _seq);
     p->level--;
     return _seq;
 }
@@ -25837,7 +25822,6 @@ _loop1_39_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -25863,6 +25847,7 @@ _loop1_39_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -25892,7 +25877,6 @@ _loop1_39_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_39_type, _seq);
     p->level--;
     return _seq;
 }
@@ -25911,7 +25895,6 @@ _loop0_40_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -25937,6 +25920,7 @@ _loop0_40_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -25961,7 +25945,6 @@ _loop0_40_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_40_type, _seq);
     p->level--;
     return _seq;
 }
@@ -25980,7 +25963,6 @@ _loop1_41_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -26006,6 +25988,7 @@ _loop1_41_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -26035,7 +26018,6 @@ _loop1_41_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_41_type, _seq);
     p->level--;
     return _seq;
 }
@@ -26054,7 +26036,6 @@ _loop1_42_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -26080,6 +26061,7 @@ _loop1_42_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -26109,7 +26091,6 @@ _loop1_42_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_42_type, _seq);
     p->level--;
     return _seq;
 }
@@ -26128,7 +26109,6 @@ _loop1_43_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -26154,6 +26134,7 @@ _loop1_43_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -26183,7 +26164,6 @@ _loop1_43_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_43_type, _seq);
     p->level--;
     return _seq;
 }
@@ -26202,7 +26182,6 @@ _loop0_44_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -26228,6 +26207,7 @@ _loop0_44_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -26252,7 +26232,6 @@ _loop0_44_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_44_type, _seq);
     p->level--;
     return _seq;
 }
@@ -26271,7 +26250,6 @@ _loop1_45_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -26297,6 +26275,7 @@ _loop1_45_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -26326,7 +26305,6 @@ _loop1_45_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_45_type, _seq);
     p->level--;
     return _seq;
 }
@@ -26345,7 +26323,6 @@ _loop0_46_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -26371,6 +26348,7 @@ _loop0_46_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -26395,7 +26373,6 @@ _loop0_46_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_46_type, _seq);
     p->level--;
     return _seq;
 }
@@ -26414,7 +26391,6 @@ _loop1_47_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -26440,6 +26416,7 @@ _loop1_47_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -26469,7 +26446,6 @@ _loop1_47_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_47_type, _seq);
     p->level--;
     return _seq;
 }
@@ -26488,7 +26464,6 @@ _loop0_48_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -26514,6 +26489,7 @@ _loop0_48_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -26538,7 +26514,6 @@ _loop0_48_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_48_type, _seq);
     p->level--;
     return _seq;
 }
@@ -26557,7 +26532,6 @@ _loop0_49_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -26583,6 +26557,7 @@ _loop0_49_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -26607,7 +26582,6 @@ _loop0_49_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_49_type, _seq);
     p->level--;
     return _seq;
 }
@@ -26626,7 +26600,6 @@ _loop1_50_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -26652,6 +26625,7 @@ _loop1_50_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -26681,7 +26655,6 @@ _loop1_50_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_50_type, _seq);
     p->level--;
     return _seq;
 }
@@ -26700,7 +26673,6 @@ _loop0_52_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -26735,6 +26707,7 @@ _loop0_52_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -26759,7 +26732,6 @@ _loop0_52_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_52_type, _seq);
     p->level--;
     return _seq;
 }
@@ -26820,7 +26792,6 @@ _loop0_54_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -26855,6 +26826,7 @@ _loop0_54_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -26879,7 +26851,6 @@ _loop0_54_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_54_type, _seq);
     p->level--;
     return _seq;
 }
@@ -26940,7 +26911,6 @@ _loop0_56_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -26975,6 +26945,7 @@ _loop0_56_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -26999,7 +26970,6 @@ _loop0_56_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_56_type, _seq);
     p->level--;
     return _seq;
 }
@@ -27060,7 +27030,6 @@ _loop0_58_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -27095,6 +27064,7 @@ _loop0_58_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -27119,7 +27089,6 @@ _loop0_58_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_58_type, _seq);
     p->level--;
     return _seq;
 }
@@ -27257,7 +27226,6 @@ _loop1_60_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -27283,6 +27251,7 @@ _loop1_60_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -27312,7 +27281,6 @@ _loop1_60_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_60_type, _seq);
     p->level--;
     return _seq;
 }
@@ -27331,7 +27299,6 @@ _loop1_61_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -27357,6 +27324,7 @@ _loop1_61_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -27386,7 +27354,6 @@ _loop1_61_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_61_type, _seq);
     p->level--;
     return _seq;
 }
@@ -27499,7 +27466,6 @@ _loop1_64_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -27525,6 +27491,7 @@ _loop1_64_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -27554,7 +27521,6 @@ _loop1_64_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_64_type, _seq);
     p->level--;
     return _seq;
 }
@@ -27573,7 +27539,6 @@ _loop0_66_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -27608,6 +27573,7 @@ _loop0_66_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -27632,7 +27598,6 @@ _loop0_66_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_66_type, _seq);
     p->level--;
     return _seq;
 }
@@ -27963,7 +27928,6 @@ _loop0_72_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -27998,6 +27962,7 @@ _loop0_72_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -28022,7 +27987,6 @@ _loop0_72_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_72_type, _seq);
     p->level--;
     return _seq;
 }
@@ -28083,7 +28047,6 @@ _loop0_74_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -28118,6 +28081,7 @@ _loop0_74_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -28142,7 +28106,6 @@ _loop0_74_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_74_type, _seq);
     p->level--;
     return _seq;
 }
@@ -28261,7 +28224,6 @@ _loop0_77_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -28296,6 +28258,7 @@ _loop0_77_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -28320,7 +28283,6 @@ _loop0_77_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_77_type, _seq);
     p->level--;
     return _seq;
 }
@@ -28381,7 +28343,6 @@ _loop0_79_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -28416,6 +28377,7 @@ _loop0_79_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -28440,7 +28402,6 @@ _loop0_79_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_79_type, _seq);
     p->level--;
     return _seq;
 }
@@ -28501,7 +28462,6 @@ _loop1_80_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -28527,6 +28487,7 @@ _loop1_80_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -28556,7 +28517,6 @@ _loop1_80_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_80_type, _seq);
     p->level--;
     return _seq;
 }
@@ -28575,7 +28535,6 @@ _loop1_81_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -28601,6 +28560,7 @@ _loop1_81_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -28630,7 +28590,6 @@ _loop1_81_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_81_type, _seq);
     p->level--;
     return _seq;
 }
@@ -28649,7 +28608,6 @@ _loop0_83_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -28684,6 +28642,7 @@ _loop0_83_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -28708,7 +28667,6 @@ _loop0_83_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_83_type, _seq);
     p->level--;
     return _seq;
 }
@@ -28769,7 +28727,6 @@ _loop1_84_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -28795,6 +28752,7 @@ _loop1_84_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -28824,7 +28782,6 @@ _loop1_84_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_84_type, _seq);
     p->level--;
     return _seq;
 }
@@ -28843,7 +28800,6 @@ _loop1_85_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -28869,6 +28825,7 @@ _loop1_85_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -28898,7 +28855,6 @@ _loop1_85_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_85_type, _seq);
     p->level--;
     return _seq;
 }
@@ -28917,7 +28873,6 @@ _loop1_86_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -28943,6 +28898,7 @@ _loop1_86_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -28972,7 +28928,6 @@ _loop1_86_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_86_type, _seq);
     p->level--;
     return _seq;
 }
@@ -29035,7 +28990,6 @@ _loop0_89_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -29070,6 +29024,7 @@ _loop0_89_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -29094,7 +29049,6 @@ _loop0_89_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_89_type, _seq);
     p->level--;
     return _seq;
 }
@@ -29491,7 +29445,6 @@ _loop0_95_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -29517,6 +29470,7 @@ _loop0_95_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -29541,7 +29495,6 @@ _loop0_95_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_95_type, _seq);
     p->level--;
     return _seq;
 }
@@ -29560,7 +29513,6 @@ _loop0_96_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -29586,6 +29538,7 @@ _loop0_96_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -29610,7 +29563,6 @@ _loop0_96_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_96_type, _seq);
     p->level--;
     return _seq;
 }
@@ -29629,7 +29581,6 @@ _loop0_97_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -29655,6 +29606,7 @@ _loop0_97_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -29679,7 +29631,6 @@ _loop0_97_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_97_type, _seq);
     p->level--;
     return _seq;
 }
@@ -29698,7 +29649,6 @@ _loop1_98_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -29724,6 +29674,7 @@ _loop1_98_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -29753,7 +29704,6 @@ _loop1_98_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_98_type, _seq);
     p->level--;
     return _seq;
 }
@@ -29772,7 +29722,6 @@ _loop0_99_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -29798,6 +29747,7 @@ _loop0_99_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -29822,7 +29772,6 @@ _loop0_99_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_99_type, _seq);
     p->level--;
     return _seq;
 }
@@ -29841,7 +29790,6 @@ _loop1_100_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -29867,6 +29815,7 @@ _loop1_100_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -29896,7 +29845,6 @@ _loop1_100_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_100_type, _seq);
     p->level--;
     return _seq;
 }
@@ -29915,7 +29863,6 @@ _loop1_101_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -29941,6 +29888,7 @@ _loop1_101_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -29970,7 +29918,6 @@ _loop1_101_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_101_type, _seq);
     p->level--;
     return _seq;
 }
@@ -29989,7 +29936,6 @@ _loop1_102_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -30015,6 +29961,7 @@ _loop1_102_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -30044,7 +29991,6 @@ _loop1_102_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_102_type, _seq);
     p->level--;
     return _seq;
 }
@@ -30063,7 +30009,6 @@ _loop0_103_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -30089,6 +30034,7 @@ _loop0_103_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -30113,7 +30059,6 @@ _loop0_103_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_103_type, _seq);
     p->level--;
     return _seq;
 }
@@ -30132,7 +30077,6 @@ _loop1_104_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -30158,6 +30102,7 @@ _loop1_104_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -30187,7 +30132,6 @@ _loop1_104_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_104_type, _seq);
     p->level--;
     return _seq;
 }
@@ -30206,7 +30150,6 @@ _loop0_105_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -30232,6 +30175,7 @@ _loop0_105_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -30256,7 +30200,6 @@ _loop0_105_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_105_type, _seq);
     p->level--;
     return _seq;
 }
@@ -30275,7 +30218,6 @@ _loop1_106_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -30301,6 +30243,7 @@ _loop1_106_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -30330,7 +30273,6 @@ _loop1_106_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_106_type, _seq);
     p->level--;
     return _seq;
 }
@@ -30349,7 +30291,6 @@ _loop0_107_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -30375,6 +30316,7 @@ _loop0_107_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -30399,7 +30341,6 @@ _loop0_107_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_107_type, _seq);
     p->level--;
     return _seq;
 }
@@ -30418,7 +30359,6 @@ _loop1_108_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -30444,6 +30384,7 @@ _loop1_108_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -30473,7 +30414,6 @@ _loop1_108_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_108_type, _seq);
     p->level--;
     return _seq;
 }
@@ -30492,7 +30432,6 @@ _loop1_109_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -30518,6 +30457,7 @@ _loop1_109_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -30547,7 +30487,6 @@ _loop1_109_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_109_type, _seq);
     p->level--;
     return _seq;
 }
@@ -30616,7 +30555,6 @@ _loop0_112_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -30651,6 +30589,7 @@ _loop0_112_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -30675,7 +30614,6 @@ _loop0_112_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_112_type, _seq);
     p->level--;
     return _seq;
 }
@@ -30736,7 +30674,6 @@ _loop1_113_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -30762,6 +30699,7 @@ _loop1_113_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -30791,7 +30729,6 @@ _loop1_113_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_113_type, _seq);
     p->level--;
     return _seq;
 }
@@ -30810,7 +30747,6 @@ _loop0_114_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -30836,6 +30772,7 @@ _loop0_114_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -30860,7 +30797,6 @@ _loop0_114_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_114_type, _seq);
     p->level--;
     return _seq;
 }
@@ -30879,7 +30815,6 @@ _loop0_115_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -30905,6 +30840,7 @@ _loop0_115_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -30929,7 +30865,6 @@ _loop0_115_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_115_type, _seq);
     p->level--;
     return _seq;
 }
@@ -31008,7 +30943,6 @@ _loop0_118_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -31043,6 +30977,7 @@ _loop0_118_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -31067,7 +31002,6 @@ _loop0_118_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_118_type, _seq);
     p->level--;
     return _seq;
 }
@@ -31176,7 +31110,6 @@ _loop0_121_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -31211,6 +31144,7 @@ _loop0_121_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -31235,7 +31169,6 @@ _loop0_121_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_121_type, _seq);
     p->level--;
     return _seq;
 }
@@ -31296,7 +31229,6 @@ _loop0_123_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -31331,6 +31263,7 @@ _loop0_123_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -31355,7 +31288,6 @@ _loop0_123_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_123_type, _seq);
     p->level--;
     return _seq;
 }
@@ -31416,7 +31348,6 @@ _loop0_125_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -31451,6 +31382,7 @@ _loop0_125_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -31475,7 +31407,6 @@ _loop0_125_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_125_type, _seq);
     p->level--;
     return _seq;
 }
@@ -31536,7 +31467,6 @@ _loop0_127_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -31571,6 +31501,7 @@ _loop0_127_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -31595,7 +31526,6 @@ _loop0_127_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_127_type, _seq);
     p->level--;
     return _seq;
 }
@@ -31656,7 +31586,6 @@ _loop0_128_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -31682,6 +31611,7 @@ _loop0_128_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -31706,7 +31636,6 @@ _loop0_128_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_128_type, _seq);
     p->level--;
     return _seq;
 }
@@ -31725,7 +31654,6 @@ _loop0_130_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -31760,6 +31688,7 @@ _loop0_130_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -31784,7 +31713,6 @@ _loop0_130_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_130_type, _seq);
     p->level--;
     return _seq;
 }
@@ -31845,7 +31773,6 @@ _loop1_131_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -31871,6 +31798,7 @@ _loop1_131_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -31900,7 +31828,6 @@ _loop1_131_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_131_type, _seq);
     p->level--;
     return _seq;
 }
@@ -31960,7 +31887,6 @@ _loop0_134_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -31995,6 +31921,7 @@ _loop0_134_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -32019,7 +31946,6 @@ _loop0_134_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_134_type, _seq);
     p->level--;
     return _seq;
 }
@@ -32080,7 +32006,6 @@ _loop0_136_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -32115,6 +32040,7 @@ _loop0_136_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -32139,7 +32065,6 @@ _loop0_136_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_136_type, _seq);
     p->level--;
     return _seq;
 }
@@ -32200,7 +32125,6 @@ _loop0_138_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -32235,6 +32159,7 @@ _loop0_138_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -32259,7 +32184,6 @@ _loop0_138_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_138_type, _seq);
     p->level--;
     return _seq;
 }
@@ -32320,7 +32244,6 @@ _loop0_140_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -32355,6 +32278,7 @@ _loop0_140_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -32379,7 +32303,6 @@ _loop0_140_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_140_type, _seq);
     p->level--;
     return _seq;
 }
@@ -32440,7 +32363,6 @@ _loop0_142_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -32475,6 +32397,7 @@ _loop0_142_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -32499,7 +32422,6 @@ _loop0_142_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_142_type, _seq);
     p->level--;
     return _seq;
 }
@@ -33151,7 +33073,6 @@ _loop0_152_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -33177,6 +33098,7 @@ _loop0_152_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -33201,7 +33123,6 @@ _loop0_152_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_152_type, _seq);
     p->level--;
     return _seq;
 }
@@ -33220,7 +33141,6 @@ _loop0_153_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -33246,6 +33166,7 @@ _loop0_153_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -33270,7 +33191,6 @@ _loop0_153_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_153_type, _seq);
     p->level--;
     return _seq;
 }
@@ -33289,7 +33209,6 @@ _loop0_154_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -33315,6 +33234,7 @@ _loop0_154_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -33339,7 +33259,6 @@ _loop0_154_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_154_type, _seq);
     p->level--;
     return _seq;
 }
@@ -33609,7 +33528,6 @@ _loop0_159_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -33635,6 +33553,7 @@ _loop0_159_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -33659,7 +33578,6 @@ _loop0_159_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_159_type, _seq);
     p->level--;
     return _seq;
 }
@@ -33678,7 +33596,6 @@ _loop0_160_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -33704,6 +33621,7 @@ _loop0_160_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -33728,7 +33646,6 @@ _loop0_160_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_160_type, _seq);
     p->level--;
     return _seq;
 }
@@ -33747,7 +33664,6 @@ _loop1_161_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -33773,6 +33689,7 @@ _loop1_161_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -33802,7 +33719,6 @@ _loop1_161_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_161_type, _seq);
     p->level--;
     return _seq;
 }
@@ -33879,7 +33795,6 @@ _loop0_163_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -33905,6 +33820,7 @@ _loop0_163_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -33929,7 +33845,6 @@ _loop0_163_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_163_type, _seq);
     p->level--;
     return _seq;
 }
@@ -34006,7 +33921,6 @@ _loop0_165_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -34032,6 +33946,7 @@ _loop0_165_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -34056,7 +33971,6 @@ _loop0_165_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_165_type, _seq);
     p->level--;
     return _seq;
 }
@@ -34133,7 +34047,6 @@ _loop0_167_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -34159,6 +34072,7 @@ _loop0_167_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -34183,7 +34097,6 @@ _loop0_167_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_167_type, _seq);
     p->level--;
     return _seq;
 }
@@ -34202,7 +34115,6 @@ _loop1_168_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -34228,6 +34140,7 @@ _loop1_168_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -34257,7 +34170,6 @@ _loop1_168_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_168_type, _seq);
     p->level--;
     return _seq;
 }
@@ -34453,7 +34365,6 @@ _loop0_172_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -34479,6 +34390,7 @@ _loop0_172_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -34503,7 +34415,6 @@ _loop0_172_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_172_type, _seq);
     p->level--;
     return _seq;
 }
@@ -34657,7 +34568,6 @@ _loop1_175_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -34683,6 +34593,7 @@ _loop1_175_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -34712,7 +34623,6 @@ _loop1_175_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_175_type, _seq);
     p->level--;
     return _seq;
 }
@@ -34731,7 +34641,6 @@ _loop0_176_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -34757,6 +34666,7 @@ _loop0_176_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -34781,7 +34691,6 @@ _loop0_176_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_176_type, _seq);
     p->level--;
     return _seq;
 }
@@ -34800,7 +34709,6 @@ _loop0_177_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -34826,6 +34734,7 @@ _loop0_177_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -34850,7 +34759,6 @@ _loop0_177_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_177_type, _seq);
     p->level--;
     return _seq;
 }
@@ -34869,7 +34777,6 @@ _loop0_179_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -34904,6 +34811,7 @@ _loop0_179_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -34928,7 +34836,6 @@ _loop0_179_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_179_type, _seq);
     p->level--;
     return _seq;
 }
@@ -35047,7 +34954,6 @@ _loop0_181_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -35073,6 +34979,7 @@ _loop0_181_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -35097,7 +35004,6 @@ _loop0_181_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_181_type, _seq);
     p->level--;
     return _seq;
 }
@@ -35174,7 +35080,6 @@ _loop0_183_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -35200,6 +35105,7 @@ _loop0_183_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -35224,7 +35130,6 @@ _loop0_183_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_183_type, _seq);
     p->level--;
     return _seq;
 }
@@ -35301,7 +35206,6 @@ _loop0_185_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -35327,6 +35231,7 @@ _loop0_185_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -35351,7 +35256,6 @@ _loop0_185_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_185_type, _seq);
     p->level--;
     return _seq;
 }
@@ -35370,7 +35274,6 @@ _loop1_186_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -35396,6 +35299,7 @@ _loop1_186_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -35425,7 +35329,6 @@ _loop1_186_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_186_type, _seq);
     p->level--;
     return _seq;
 }
@@ -35444,7 +35347,6 @@ _loop1_187_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -35470,6 +35372,7 @@ _loop1_187_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -35499,7 +35402,6 @@ _loop1_187_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_187_type, _seq);
     p->level--;
     return _seq;
 }
@@ -35637,7 +35539,6 @@ _loop0_190_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -35663,6 +35564,7 @@ _loop0_190_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -35687,7 +35589,6 @@ _loop0_190_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_190_type, _seq);
     p->level--;
     return _seq;
 }
@@ -35918,7 +35819,6 @@ _loop0_195_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -35953,6 +35853,7 @@ _loop0_195_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -35977,7 +35878,6 @@ _loop0_195_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_195_type, _seq);
     p->level--;
     return _seq;
 }
@@ -36038,7 +35938,6 @@ _loop0_197_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -36073,6 +35972,7 @@ _loop0_197_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -36097,7 +35997,6 @@ _loop0_197_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_197_type, _seq);
     p->level--;
     return _seq;
 }
@@ -36158,7 +36057,6 @@ _loop0_199_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -36193,6 +36091,7 @@ _loop0_199_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -36217,7 +36116,6 @@ _loop0_199_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_199_type, _seq);
     p->level--;
     return _seq;
 }
@@ -36278,7 +36176,6 @@ _loop0_201_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -36313,6 +36210,7 @@ _loop0_201_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -36337,7 +36235,6 @@ _loop0_201_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_201_type, _seq);
     p->level--;
     return _seq;
 }
@@ -36456,7 +36353,6 @@ _loop0_203_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -36482,6 +36378,7 @@ _loop0_203_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -36506,7 +36403,6 @@ _loop0_203_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_203_type, _seq);
     p->level--;
     return _seq;
 }
@@ -36525,7 +36421,6 @@ _loop1_204_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -36551,6 +36446,7 @@ _loop1_204_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -36580,7 +36476,6 @@ _loop1_204_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_204_type, _seq);
     p->level--;
     return _seq;
 }
@@ -36641,7 +36536,6 @@ _loop0_206_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -36667,6 +36561,7 @@ _loop0_206_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -36691,7 +36586,6 @@ _loop0_206_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_206_type, _seq);
     p->level--;
     return _seq;
 }
@@ -36710,7 +36604,6 @@ _loop1_207_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -36736,6 +36629,7 @@ _loop1_207_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -36765,7 +36659,6 @@ _loop1_207_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop1_207_type, _seq);
     p->level--;
     return _seq;
 }
@@ -37229,7 +37122,6 @@ _loop0_219_rule(Parser *p)
     }
     void *_res = NULL;
     int _mark = p->mark;
-    int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
         p->error_indicator = 1;
@@ -37264,6 +37156,7 @@ _loop0_219_rule(Parser *p)
                 _children_capacity *= 2;
                 void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
                 if (!_new_children) {
+                    PyMem_Free(_children);
                     p->error_indicator = 1;
                     PyErr_NoMemory();
                     p->level--;
@@ -37288,7 +37181,6 @@ _loop0_219_rule(Parser *p)
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
-    _PyPegen_insert_memo(p, _start_mark, _loop0_219_type, _seq);
     p->level--;
     return _seq;
 }

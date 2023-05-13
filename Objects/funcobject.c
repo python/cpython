@@ -27,8 +27,10 @@ _PyFunction_FromConstructor(PyFrameConstructor *constr)
     op->func_qualname = constr->fc_qualname;
     Py_INCREF(constr->fc_code);
     op->func_code = constr->fc_code;
-    op->func_defaults = NULL;
-    op->func_kwdefaults = NULL;
+    Py_XINCREF(constr->fc_defaults);
+    op->func_defaults = constr->fc_defaults;
+    Py_XINCREF(constr->fc_kwdefaults);
+    op->func_kwdefaults = constr->fc_kwdefaults;
     Py_XINCREF(constr->fc_closure);
     op->func_closure = constr->fc_closure;
     Py_INCREF(Py_None);
@@ -843,7 +845,7 @@ functools_wraps(PyObject *wrapper, PyObject *wrapped)
 
      class C:
          @classmethod
-         def f(cls, arg1, arg2, ...):
+         def f(cls, arg1, arg2, argN):
              ...
 
    It can be called either on the class (e.g. C.f()) or on an instance
@@ -968,7 +970,7 @@ To declare a class method, use this idiom:\n\
 \n\
   class C:\n\
       @classmethod\n\
-      def f(cls, arg1, arg2, ...):\n\
+      def f(cls, arg1, arg2, argN):\n\
           ...\n\
 \n\
 It can be called either on the class (e.g. C.f()) or on an instance\n\
@@ -1041,7 +1043,7 @@ PyClassMethod_New(PyObject *callable)
 
      class C:
          @staticmethod
-         def f(arg1, arg2, ...):
+         def f(arg1, arg2, argN):
              ...
 
    It can be called either on the class (e.g. C.f()) or on an instance
@@ -1165,7 +1167,7 @@ To declare a static method, use this idiom:\n\
 \n\
      class C:\n\
          @staticmethod\n\
-         def f(arg1, arg2, ...):\n\
+         def f(arg1, arg2, argN):\n\
              ...\n\
 \n\
 It can be called either on the class (e.g. C.f()) or on an instance\n\

@@ -1,2 +1,0 @@
-Suppress ImportError for invalid query for help() command. Patch by Dong-hee
-Na.
