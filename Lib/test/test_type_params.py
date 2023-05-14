@@ -530,6 +530,20 @@ class TypeParamsClassScopeTest(unittest.TestCase):
         self.assertEqual(cls.bound, "nonlocal")
         self.assertEqual(cls.meth.__annotations__["arg"], "nonlocal")
 
+    def test_explicit_global(self):
+        ns = run_code("""
+            x = "global"
+            def outer():
+                x = "nonlocal"
+                class Cls:
+                    global x
+                    type Alias = x
+                Cls.x = "class"
+                return Cls
+        """)
+        cls = ns["outer"]()
+        self.assertEqual(cls.Alias.__value__, "global")
+
 
 class TypeParamsManglingTest(unittest.TestCase):
     def test_mangling(self):

@@ -77,8 +77,8 @@ typedef struct _symtable_entry {
                                          over the class dict should be created */
     unsigned ste_comp_inlined : 1; /* true if this comprehension is inlined */
     unsigned ste_comp_iter_target : 1; /* true if visiting comprehension target */
-    unsigned ste_type_params_in_class : 1; /* true if this is a type parameters block
-                                              inside a class */
+    unsigned ste_can_see_class_scope : 1; /* true if this block can see names bound in an
+                                             enclosing class scope */
     int ste_comp_iter_expr; /* non-zero if visiting a comprehension range expression */
     int ste_lineno;          /* first line of block */
     int ste_col_offset;      /* offset of first line of block */

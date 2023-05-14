@@ -117,7 +117,7 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_needs_class_closure = 0;
     ste->ste_comp_inlined = 0;
     ste->ste_comp_iter_target = 0;
-    ste->ste_type_params_in_class = 0;
+    ste->ste_can_see_class_scope = 0;
     ste->ste_comp_iter_expr = 0;
     ste->ste_needs_classdict = 0;
 
@@ -498,8 +498,8 @@ error_at_directive(PySTEntryObject *ste, PyObject *name)
       global: set of all symbol names explicitly declared as global
 */
 
-static int
-is_bound_in_symbols(PyObject *symbols, PyObject *name)
+static long
+flags_in_symbols(PyObject *symbols, PyObject *name)
 {
     if (symbols == NULL) {
         return 0;
@@ -510,8 +510,7 @@ is_bound_in_symbols(PyObject *symbols, PyObject *name)
         return 0;
     }
     assert(PyLong_CheckExact(v));
-    long flags = PyLong_AS_LONG(v);
-    return flags & DEF_BOUND;
+    return PyLong_AS_LONG(v);
 }
 
 #define SET_SCOPE(DICT, NAME, I) { \
@@ -596,13 +595,18 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
        is nested.
     */
     if (bound && PySet_Contains(bound, name)) {
-        // If we were passed class_symbols (i.e., we're in an ste_type_params_in_class scope)
+        // If we were passed class_symbols (i.e., we're in an ste_can_see_class_scope scope)
         // and the bound name is in that set, then the name is potentially bound both by
         // the immediately enclosing class namespace, and also by an outer function namespace.
         // In that case, we want the runtime name resolution to look at only the class
         // namespace and the globals (not the namespace providing the bound).
-        if (is_bound_in_symbols(class_symbols, name)) {
+        long class_flags = flags_in_symbols(class_symbols, name);
+        if (class_flags & DEF_BOUND) {
             SET_SCOPE(scopes, name, GLOBAL_IMPLICIT);
+            return 1;
+        }
+        else if (class_flags & DEF_GLOBAL) {
+            SET_SCOPE(scopes, name, GLOBAL_EXPLICIT);
             return 1;
         }
         SET_SCOPE(scopes, name, FREE);
@@ -982,7 +986,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
         entry = (PySTEntryObject*)c;
 
         PyObject *new_class_symbols = NULL;
-        if (entry->ste_type_params_in_class) {
+        if (entry->ste_can_see_class_scope) {
             if (ste->ste_type == ClassBlock) {
                 new_class_symbols = ste->ste_symbols;
             }
@@ -1319,7 +1323,7 @@ symtable_enter_typeparam_block(struct symtable *st, identifier name,
         return 0;
     }
     if (current_type == ClassBlock) {
-        st->st_cur->ste_type_params_in_class = 1;
+        st->st_cur->ste_can_see_class_scope = 1;
         if (!symtable_add_def(st, &_Py_ID(__classdict__), USE, lineno, col_offset, end_lineno, end_col_offset)) {
             return 0;
         }
@@ -1558,7 +1562,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         if (!symtable_enter_block(st, name, TypeAliasBlock,
                                   (void *)s, LOCATION(s)))
             VISIT_QUIT(st, 0);
-        st->st_cur->ste_type_params_in_class = is_in_class;
+        st->st_cur->ste_can_see_class_scope = is_in_class;
         if (is_in_class && !symtable_add_def(st, &_Py_ID(__classdict__), USE, LOCATION(s->v.TypeAlias.value))) {
             VISIT_QUIT(st, 0);
         }
@@ -2098,12 +2102,12 @@ symtable_visit_typeparam(struct symtable *st, typeparam_ty tp)
         if (!symtable_add_def(st, tp->v.TypeVar.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp)))
             VISIT_QUIT(st, 0);
         if (tp->v.TypeVar.bound) {
-            int is_in_class = st->st_cur->ste_type_params_in_class;
+            int is_in_class = st->st_cur->ste_can_see_class_scope;
             if (!symtable_enter_block(st, tp->v.TypeVar.name,
                                       TypeVarBoundBlock, (void *)tp,
                                       LOCATION(tp)))
                 VISIT_QUIT(st, 0);
-            st->st_cur->ste_type_params_in_class = is_in_class;
+            st->st_cur->ste_can_see_class_scope = is_in_class;
             if (is_in_class && !symtable_add_def(st, &_Py_ID(__classdict__), USE, LOCATION(tp->v.TypeVar.bound))) {
                 VISIT_QUIT(st, 0);
             }

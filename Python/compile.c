@@ -4143,7 +4143,7 @@ compiler_nameop(struct compiler *c, location loc,
                     return ERROR;
                 }
             }
-            else if (c->u->u_ste->ste_type_params_in_class) {
+            else if (c->u->u_ste->ste_can_see_class_scope) {
                 op = LOAD_FROM_DICT_OR_DEREF;
                 // First load the classdict
                 if (compiler_addop_o(c->u, loc, LOAD_DEREF,
@@ -4170,7 +4170,7 @@ compiler_nameop(struct compiler *c, location loc,
     case OP_GLOBAL:
         switch (ctx) {
         case Load:
-            if (c->u->u_ste->ste_type_params_in_class) {
+            if (c->u->u_ste->ste_can_see_class_scope && scope == GLOBAL_IMPLICIT) {
                 op = LOAD_FROM_DICT_OR_GLOBALS;
                 // First load the classdict
                 if (compiler_addop_o(c->u, loc, LOAD_DEREF,
