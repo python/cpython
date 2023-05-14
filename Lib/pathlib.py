@@ -54,6 +54,7 @@ def _ignore_error(exception):
             getattr(exception, 'winerror', None) in _IGNORED_WINERRORS)
 
 
+@functools.lru_cache()
 def _is_case_sensitive(flavour):
     return flavour.normcase('Aa') == 'Aa'
 
@@ -735,7 +736,7 @@ class PurePath(object):
         """
         Return True if this path matches the given pattern.
         """
-        if not isinstance(path_pattern, PurePath) or self._flavour is not path_pattern._flavour:
+        if not isinstance(path_pattern, PurePath):
             path_pattern = self.with_segments(path_pattern)
         case_sensitive = _is_case_sensitive(self._flavour)
         pattern = _compile_pattern(path_pattern._lines, case_sensitive)
