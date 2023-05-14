@@ -1,8 +1,8 @@
-"""The Justin(time) template JIT for CPython 3.12, based on copy-and-patch."""
+"""The Justin(time) template JIT for CPython 3.13, based on copy-and-patch."""
 
-import collections
 import dataclasses
 import itertools
+import json
 import pathlib
 import re
 import subprocess
@@ -24,186 +24,264 @@ def batched(iterable, n):
             return
         yield batch
 
-# XXX: This parsing needs to be way cleaned up. syms, headers, then disassembly and relocs per section
-class ObjectParser:
+class _Value(typing.TypedDict):
+    Value: str
+    RawValue: int
 
-    _file_format: typing.ClassVar[str]
-    _type: typing.ClassVar[str]
-    _section_prefix: typing.ClassVar[str]
-    _fix_up_holes: typing.ClassVar[bool]
-    _symbol_prefix: typing.ClassVar[str]
+class Flag(typing.TypedDict):
+    Name: str
+    Value: int
+
+class Flags(typing.TypedDict):
+    RawFlags: int
+    Flags: list[Flag]
+
+class SectionData(typing.TypedDict):
+    Offset: int
+    Bytes: list[int]
+
+if sys.platform == "win32":
+
+    class Name(typing.TypedDict):
+        Value: str
+        Offset: int
+        Bytes: list[int]
+
+    class Relocation(typing.TypedDict):
+        Offset: int
+        Type: _Value
+        Symbol: str
+        SymbolIndex: int
+
+    class AuxSectionDef(typing.TypedDict):
+        Length: int
+        RelocationCount: int
+        LineNumberCount: int
+        Checksum: int
+        Number: int
+        Selection: int
+
+    class Symbol(typing.TypedDict):
+        Name: str
+        Value: int
+        Section: _Value
+        BaseType: _Value
+        ComplexType: _Value
+        StorageClass: int
+        AuxSymbolCount: int
+        AuxSectionDef: AuxSectionDef
+
+    class Section(typing.TypedDict):
+        Number: int
+        Name: Name
+        VirtualSize: int
+        VirtualAddress: int
+        RawDataSize: int
+        PointerToRawData: int
+        PointerToRelocations: int
+        PointerToLineNumbers: int
+        RelocationCount: int
+        LineNumberCount: int
+        Characteristics: Flags
+        Relocations: list[dict[typing.Literal["Relocation"], Relocation]]
+        Symbols: list[dict[typing.Literal["Symbol"], Symbol]]
+        SectionData: SectionData  # XXX
+
+elif sys.platform == "darwin":
+    ...
+elif sys.platform == "linux":
+
+    class Relocation(typing.TypedDict):
+        Offset: int
+        Type: _Value
+        Symbol: _Value
+        Addend: int
+
+    class Symbol(typing.TypedDict):
+        Name: _Value
+        Value: int
+        Size: int
+        Binding: _Value
+        Type: _Value
+        Other: int
+        Section: _Value
+
+    class Section(typing.TypedDict):
+        Index: int
+        Name: _Value
+        Type: _Value
+        Flags: Flags
+        Address: int
+        Offset: int
+        Size: int
+        Link: int
+        Info: int
+        AddressAlignment: int
+        EntrySize: int
+        Relocations: list[dict[typing.Literal["Relocation"], Relocation]]
+        Symbols: list[dict[typing.Literal["Symbol"], Symbol]]
+        SectionData: SectionData
+else:
+    assert False, sys.platform
+
+Sections = list[dict[typing.Literal["Section"], Section]]
+
+S = typing.TypeVar("S", bound=str)
+T = typing.TypeVar("T")
+
+
+def unwrap(source: list[dict[S, T]], wrapper: S) -> list[T]:
+    return [child[wrapper] for child in source]
     
+# TODO: Divide into read-only data and writable/executable text.
+
+class NewObjectParser:
+
+    _ARGS = [
+        "--demangle",
+        "--elf-output-style=JSON",
+        "--expand-relocs",
+        "--pretty-print",
+        "--sections",
+        "--section-data",
+        "--section-relocations",
+        "--section-symbols",
+    ]
+
     def __init__(self, path: str) -> None:
-        self._sections = []
-        self._path = path
-
-    def _dump(self, *args) -> typing.Iterator[str]:
-        args = ["llvm-objdump", *args, self._path]
-        # process = subprocess.run(args, check=True)
+        args = ["llvm-readobj", *self._ARGS, path]
         process = subprocess.run(args, check=True, capture_output=True)
-        lines = filter(None, process.stdout.decode().splitlines())
-        line = next(lines, None)
-        if line != f"{self._path}:\tfile format {self._file_format}":
-            raise NotImplementedError(line)
-        return lines
+        output = process.stdout
+        start = output.index(b"[", 1)  # XXX
+        end = output.rindex(b"]", 0, -1) + 1  # XXX
+        self._data: Sections = json.loads(output[start:end])
 
-    def _parse_headers(self) -> typing.Generator[tuple[str, int, int, str], None, None]:
-        lines = self._dump("--headers")
-        line = next(lines, None)
-        assert line == "Sections:"
-        line = next(lines, None)
-        pattern = r"Idx\s+Name\s+Size\s+VMA\s+Type"
-        match = re.fullmatch(pattern, line)
-        assert match is not None
-        pattern = r"\s+(\d+)\s+([\w\.\-]+)?\s+([0-9a-f]{8})\s+([0-9a-f]{16})\s+(BSS|DATA|TEXT)?"
-        for i, line in enumerate(lines):
-            match = re.fullmatch(pattern, line)
-            assert match is not None, line
-            idx, name, size, vma, type = match.groups()
-            assert int(idx) == i
-            # assert int(vma, 16) == 0
-            if type is not None:
-                yield (name, int(size, 16), int(vma, 16), type)
-
-    def _parse_syms(self) -> None:
-        lines = self._dump("--syms", "--section", ".text")
-        assert next(lines) == "SYMBOL TABLE:"
-        syms = {}
-        pattern = r"([0-9a-f]+)\s+([\sa-zA-Z]*)\s+(\*ABS\*|\*UND\*|[\w\.,]+)(?:\s+([0-9a-f]+))?\s+(\w+)"
-        for line in lines:
-            match = re.fullmatch(pattern, line)
-            assert match is not None, repr(line)
-            value, flags, section, size, name = match.groups()
-            if size is None:
-                size = "0"
-            if section == "*ABS*":
-                assert flags == "l    df"
-                assert int(size, 16) == 0
-            elif section == "*UND*":
-                assert flags == ""
-                assert int(size, 16) == 0
+    if sys.platform == "win32":
+        def parse(self):
+            body = bytearray()
+            body_symbols = {}
+            body_offsets = {}
+            relocations = {}
+            dupes = set()
+            for section in unwrap(self._data, "Section"):
+                flags = {flag["Name"] for flag in section["Characteristics"]["Flags"]}
+                if "SectionData" not in section:
+                    continue
+                if flags & {"IMAGE_SCN_LINK_COMDAT", "IMAGE_SCN_MEM_EXECUTE", "IMAGE_SCN_MEM_READ", "IMAGE_SCN_MEM_WRITE"} == {"IMAGE_SCN_LINK_COMDAT", "IMAGE_SCN_MEM_READ"}:
+                    # XXX: Merge these
+                    before = body_offsets[section["Number"]] = len(body)
+                    section_data = section["SectionData"]
+                    body.extend(section_data["Bytes"])
+                elif flags & {"IMAGE_SCN_MEM_READ"} == {"IMAGE_SCN_MEM_READ"}:
+                    before = body_offsets[section["Number"]] = len(body)
+                    section_data = section["SectionData"]
+                    body.extend(section_data["Bytes"])
+                else:
+                    continue
+                for symbol in unwrap(section["Symbols"], "Symbol"):
+                    offset = before + symbol["Value"]
+                    name = symbol["Name"]
+                    if name in body_symbols:
+                        dupes.add(name)
+                    body_symbols[name] = offset
+                for relocation in unwrap(section["Relocations"], "Relocation"):
+                    offset = before + relocation["Offset"]
+                    assert offset not in relocations
+                    # XXX: Addend
+                    relocations[offset] = (relocation["Symbol"], relocation["Type"]["Value"], 0)
+            if "_justin_entry" in body_symbols:
+                entry = body_symbols["_justin_entry"]
             else:
-                syms[name] = value
-                if name == "_justin_entry":
-                    assert flags == "g     F"
-                    assert int(size, 16) == 0
-                    assert int(value, 16) == 0
-        
-        return syms
-
-    def _parse_reloc(self) -> None:
-        lines = self._dump("--reloc")
-        relocs = collections.defaultdict(list)
-        line = next(lines, None)
-        while line is not None:
-            pattern = r"RELOCATION RECORDS FOR \[([\w+\.]+)\]:"
-            match = re.fullmatch(pattern, line)
-            assert match is not None, line
-            [section] = match.groups()
-            assert section not in relocs
-            line = next(lines, None)
-            pattern = r"OFFSET\s+TYPE\s+VALUE"
-            match = re.fullmatch(pattern, line)
-            assert match is not None
-            for line in lines:
-                pattern = r"([0-9a-f]{16})\s+(\w+)\s+([\w\.]+)(?:\+0x([0-9a-f]+))?"
-                match = re.fullmatch(pattern, line)
-                if match is None:
-                    break
-                offset, type, value, addend = match.groups()
-                assert type == self._type, type
-                addend = int(addend, 16) if addend else 0
-                assert value.startswith(self._symbol_prefix)
-                value = value.removeprefix(self._symbol_prefix)
-                relocs[section].append(Hole(value, int(offset, 16), addend))
+                entry = body_symbols["_justin_trampoline"]
+            holes = []
+            for offset, (symbol, type, addend) in relocations.items():
+                assert type == "IMAGE_REL_AMD64_ADDR64"
+                assert symbol not in dupes
+                if symbol in body_symbols:
+                    addend += body_symbols[symbol] - entry
+                    symbol = "_justin_base"
+                holes.append(Hole(symbol, offset, addend))
+            return Stencil(bytes(body)[entry:], tuple(holes))  # XXX
+    elif sys.platform == "darwin":
+        ...
+    elif sys.platform == "linux":
+        def parse(self):
+            body = bytearray()
+            body_symbols = {}
+            body_offsets = {}
+            relocations = {}
+            for section in unwrap(self._data, "Section"):
+                type = section["Type"]["Value"]
+                flags = {flag["Name"] for flag in section["Flags"]["Flags"]}
+                if type == "SHT_RELA":
+                    assert "SHF_INFO_LINK" in flags, flags
+                    before = body_offsets[section["Info"]]
+                    assert not section["Symbols"]
+                    for relocation in unwrap(section["Relocations"], "Relocation"):
+                        offset = before + relocation["Offset"]
+                        assert offset not in relocations
+                        relocations[offset] = (relocation["Symbol"]["Value"], relocation["Type"]["Value"], relocation["Addend"])
+                elif type == "SHT_PROGBITS":
+                    if "SHF_ALLOC" not in flags:
+                        continue
+                    elif flags & {"SHF_EXECINSTR", "SHF_MERGE", "SHF_WRITE"} == {"SHF_MERGE"}:
+                        # XXX: Merge these
+                        before = body_offsets[section["Index"]] = len(body)
+                        section_data = section["SectionData"]
+                        body.extend(section_data["Bytes"])
+                    else:
+                        before = body_offsets[section["Index"]] = len(body)
+                        section_data = section["SectionData"]
+                        body.extend(section_data["Bytes"])
+                    assert not section["Relocations"]
+                    for symbol in unwrap(section["Symbols"], "Symbol"):
+                        offset = before + symbol["Value"]
+                        name = symbol["Name"]["Value"]
+                        assert name not in body_symbols
+                        body_symbols[name] = offset
+                else:
+                    assert type in {"SHT_LLVM_ADDRSIG", "SHT_NULL", "SHT_STRTAB", "SHT_SYMTAB"}, type
+                    continue
+            if "_justin_entry" in body_symbols:
+                entry = body_symbols["_justin_entry"]
             else:
-                break
-        return relocs
+                entry = body_symbols["_justin_trampoline"]
+            holes = []
+            for offset, (symbol, type, addend) in relocations.items():
+                assert type == "R_X86_64_64"
+                if symbol in body_symbols:
+                    addend += body_symbols[symbol] - entry
+                    symbol = "_justin_base"
+                holes.append(Hole(symbol, offset, addend))
+            return Stencil(bytes(body)[entry:], tuple(holes))  # XXX   
 
-    def _parse_full_contents(self, section, vma) -> bytes:
-        lines = self._dump("--full-contents", "--section", section)
-        line = next(lines, None)
-        if line is None:
-            return b""
-        # assert line == f"Contents of section {prefix}{section}:", line
-        body = bytearray()
-        pattern = r" ([\s0-9a-f]{4}) ([\s0-9a-f]{8}) ([\s0-9a-f]{8}) ([\s0-9a-f]{8}) ([\s0-9a-f]{8}) .*"
-        for line in lines:
-            match = re.fullmatch(pattern, line)
-            assert match is not None, line
-            i, *chunks = match.groups()
-            assert int(i, 16) - vma == len(body), (i, len(body))
-            data = "".join(chunks).rstrip()
-            body.extend(int(data, 16).to_bytes(len(data) // 2, "big"))
-        return bytes(body)
+# class ObjectParserCOFFX8664(ObjectParser):
+#     _file_format = "coff-x86-64"
+#     _type = "IMAGE_REL_AMD64_ADDR64"
+#     _section_prefix = ""
+#     _fix_up_holes = True
+#     _symbol_prefix = ""
 
-    def parse(self):
-        # self._parse_syms()
-        relocs = self._parse_reloc()
-        offsets = {}
-        body = b""
-        holes = []
-        for name, size, vma, type in self._parse_headers():
-            if vma:
-                body += bytes(vma - len(body))
-            size_before = len(body)
-            holes += [Hole(hole.symbol, hole.offset+size_before, hole.addend) for hole in relocs[name]]
-            offsets[name] = size_before
-            body += self._parse_full_contents(name, vma)
-            assert len(body) - size_before == size
-        fixed = []
-        for hole in holes:
-            if self._fix_up_holes and hole.symbol in offsets:
-                # TODO: fix offset too? Or just assert that relocs are only in main section?
-                hole = Hole(hole.symbol, hole.offset, hole.addend + offsets[hole.symbol])
-            if hole.symbol.startswith(".rodata") or hole.symbol.startswith(".text") or hole.symbol.startswith("_cstring"):
-                hole = Hole("_justin_base", hole.offset, hole.addend)
-            fixed.append(hole)
-        return Stencil(body, fixed)
-    
-class ObjectParserCOFFX8664(ObjectParser):
-    _file_format = "coff-x86-64"
-    _type = "IMAGE_REL_AMD64_ADDR64"
-    _section_prefix = ""
-    _fix_up_holes = True
-    _symbol_prefix = ""
+# class ObjectParserELF64X8664(ObjectParser):
+#     _file_format = "elf64-x86-64"
+#     _type = "R_X86_64_64"
+#     _section_prefix = ""
+#     _fix_up_holes = True
+#     _symbol_prefix = ""
 
-class ObjectParserELF64X8664(ObjectParser):
-    _file_format = "elf64-x86-64"
-    _type = "R_X86_64_64"
-    _section_prefix = ""
-    _fix_up_holes = True
-    _symbol_prefix = ""
+# class ObjectParserMachO64BitARM64(ObjectParser):
+#     _file_format = "mach-o 64-bit arm64"
+#     _type = "ARM64_RELOC_UNSIGNED"
+#     _section_prefix = ""
+#     _fix_up_holes = True
+#     _symbol_prefix = "_"
 
-class ObjectParserMachO64BitARM64(ObjectParser):
-    _file_format = "mach-o 64-bit arm64"
-    _type = "ARM64_RELOC_UNSIGNED"
-    _section_prefix = ""
-    _fix_up_holes = True
-    _symbol_prefix = "_"
-
-class ObjectParserMachO64BitX8664(ObjectParser):
-    _file_format = "mach-o 64-bit x86-64"
-    _type = "X86_64_RELOC_UNSIGNED"
-    _section_prefix = ""
-    _fix_up_holes = True
-    _symbol_prefix = "_"
-
-def _get_object_parser(path: str) -> ObjectParser:
-    for parser in [
-        ObjectParserCOFFX8664,
-        ObjectParserELF64X8664,
-        ObjectParserMachO64BitARM64,
-        ObjectParserMachO64BitX8664
-    ]:
-        p = parser(path)
-        try:
-            p._dump("--syms")
-        except NotImplementedError:
-            pass
-        else:
-            return p
-    raise NotImplementedError(sys.platform)
+# class ObjectParserMachO64BitX8664(ObjectParser):
+#     _file_format = "mach-o 64-bit x86-64"
+#     _type = "X86_64_RELOC_UNSIGNED"
+#     _section_prefix = ""
+#     _fix_up_holes = True
+#     _symbol_prefix = "_"
 
 @dataclasses.dataclass(frozen=True)
 class Hole:
@@ -215,7 +293,7 @@ class Hole:
 class Stencil:
     body: bytes
     holes: tuple[Hole, ...]
-
+    # entry: int
 
 class Engine:
     _CPPFLAGS = [
@@ -246,14 +324,8 @@ class Engine:
     _OFFSETOF_CO_CODE_ADAPTIVE = 192
     _SKIP = frozenset(
         {
-            "BEFORE_ASYNC_WITH", # XXX: Windows...
-            "BEFORE_WITH", # XXX: Windows...
-            "BUILD_CONST_KEY_MAP", # XXX: Windows...
             "CALL_BOUND_METHOD_EXACT_ARGS",
             "CALL_FUNCTION_EX",
-            "CALL_NO_KW_BUILTIN_O", # XXX: Windows...
-            "CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS", # XXX: Windows...
-            "CALL_NO_KW_METHOD_DESCRIPTOR_O", # XXX: Windows...
             "CHECK_EG_MATCH",
             "CHECK_EXC_MATCH",
             "CLEANUP_THROW",
@@ -262,14 +334,10 @@ class Engine:
             "DELETE_GLOBAL",
             "DELETE_NAME",
             "DICT_MERGE",
-            "DICT_UPDATE", # XXX: Windows...
             "END_ASYNC_FOR",
             "EXTENDED_ARG",  # XXX: Only because we don't handle extended args correctly...
             "FOR_ITER",
-            "GET_AITER", # XXX: Windows...
-            "GET_ANEXT", # XXX: Windows...
             "GET_AWAITABLE",
-            "GET_YIELD_FROM_ITER", # XXX: Windows...
             "IMPORT_FROM",
             "IMPORT_NAME",
             "INSTRUMENTED_CALL", # XXX
@@ -294,8 +362,6 @@ class Engine:
             "JUMP_BACKWARD_INTO_TRACE",
             "JUMP_BACKWARD_NO_INTERRUPT",
             "KW_NAMES",  # XXX: Only because we don't handle kwnames correctly...
-            "LIST_EXTEND", # XXX: Windows...
-            "LOAD_BUILD_CLASS", # XXX: Windows...
             "LOAD_CLASSDEREF",
             "LOAD_CLOSURE",
             "LOAD_DEREF",
@@ -308,9 +374,7 @@ class Engine:
             "RAISE_VARARGS",
             "RERAISE",
             "SEND",
-            "SETUP_ANNOTATIONS", # XXX: Windows...
             "STORE_ATTR_WITH_HINT",
-            "STORE_NAME", # XXX: Windows...
             "UNPACK_EX",
             "UNPACK_SEQUENCE",
         }
@@ -343,12 +407,12 @@ class Engine:
                 ["clang", *self._CPPFLAGS, *defines, *self._CFLAGS, "-emit-llvm", "-S", "-o", ll.name, path],
                 check=True,
             )
-            # self._use_ghccc(ll.name)  # XXX: Windows...
+            self._use_ghccc(ll.name)
             subprocess.run(
                 ["clang", *self._CFLAGS, "-c", "-o", o.name, ll.name],
                 check=True,
             )
-            return _get_object_parser(o.name).parse()
+            return NewObjectParser(o.name).parse()
 
     def build(self) -> None:
         generated_cases = PYTHON_GENERATED_CASES_C_H.read_text()
