@@ -462,7 +462,7 @@ class PurePath(object):
             return self._matcher_cached
         except AttributeError:
             if not self.parts:
-                raise ValueError("empty pattern")
+                raise ValueError("empty pattern") from None
             parts = [r'\A' if self.drive or self.root else '^']
             for part in self._lines.splitlines(keepends=True):
                 if part == '**\n':
@@ -470,7 +470,7 @@ class PurePath(object):
                 elif part == '**':
                     part = r'[\s\S]*'
                 elif '**' in part:
-                    raise ValueError("Invalid pattern: '**' can only be an entire path component")
+                    raise ValueError("Invalid pattern: '**' can only be an entire path component") from None
                 else:
                     part = fnmatch.translate(part)[_FNMATCH_SLICE]
                 parts.append(part)
