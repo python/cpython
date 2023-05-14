@@ -205,7 +205,7 @@ static PyObject *
 make_typevar(PyThreadState* Py_UNUSED(ignored), PyObject *v)
 {
     assert(PyUnicode_Check(v));
-    return _Py_make_typevar(PyUnicode_AsUTF8(v), NULL, NULL);
+    return _Py_make_typevar(v, NULL, NULL);
 }
 
 const instrinsic_func1
@@ -240,7 +240,7 @@ make_typevar_with_bound(PyThreadState* Py_UNUSED(ignored), PyObject *name,
                         PyObject *evaluate_bound)
 {
     assert(PyUnicode_Check(name));
-    return _Py_make_typevar(PyUnicode_AsUTF8(name), evaluate_bound, NULL);
+    return _Py_make_typevar(name, evaluate_bound, NULL);
 }
 
 static PyObject *
@@ -248,8 +248,7 @@ make_typevar_with_constraints(PyThreadState* Py_UNUSED(ignored), PyObject *name,
                               PyObject *evaluate_constraints)
 {
     assert(PyUnicode_Check(name));
-    return _Py_make_typevar(PyUnicode_AsUTF8(name), NULL,
-                            evaluate_constraints);
+    return _Py_make_typevar(name, NULL, evaluate_constraints);
 }
 
 const instrinsic_func2

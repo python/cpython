@@ -16,7 +16,7 @@ PyDoc_STRVAR(typevar_new__doc__,
 "Create a TypeVar.");
 
 static PyObject *
-typevar_new_impl(PyTypeObject *type, const char *name, PyObject *constraints,
+typevar_new_impl(PyTypeObject *type, PyObject *name, PyObject *constraints,
                  PyObject *bound, int covariant, int contravariant,
                  int infer_variance);
 
@@ -53,7 +53,7 @@ typevar_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = Py_MIN(nargs, 1) + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
-    const char *name;
+    PyObject *name;
     PyObject *constraints = NULL;
     PyObject *bound = Py_None;
     int covariant = 0;
@@ -68,15 +68,7 @@ typevar_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         _PyArg_BadArgument("typevar", "argument 'name'", "str", fastargs[0]);
         goto exit;
     }
-    Py_ssize_t name_length;
-    name = PyUnicode_AsUTF8AndSize(fastargs[0], &name_length);
-    if (name == NULL) {
-        goto exit;
-    }
-    if (strlen(name) != (size_t)name_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        goto exit;
-    }
+    name = fastargs[0];
     constraints = fastargs[1];
     if (!noptargs) {
         goto skip_optional_kwonly;
@@ -304,7 +296,7 @@ PyDoc_STRVAR(paramspec_new__doc__,
 "Create a ParamSpec object.");
 
 static PyObject *
-paramspec_new_impl(PyTypeObject *type, const char *name, PyObject *bound,
+paramspec_new_impl(PyTypeObject *type, PyObject *name, PyObject *bound,
                    int covariant, int contravariant, int infer_variance);
 
 static PyObject *
@@ -340,7 +332,7 @@ paramspec_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
-    const char *name;
+    PyObject *name;
     PyObject *bound = Py_None;
     int covariant = 0;
     int contravariant = 0;
@@ -354,15 +346,7 @@ paramspec_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         _PyArg_BadArgument("paramspec", "argument 'name'", "str", fastargs[0]);
         goto exit;
     }
-    Py_ssize_t name_length;
-    name = PyUnicode_AsUTF8AndSize(fastargs[0], &name_length);
-    if (name == NULL) {
-        goto exit;
-    }
-    if (strlen(name) != (size_t)name_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        goto exit;
-    }
+    name = fastargs[0];
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
@@ -536,7 +520,7 @@ PyDoc_STRVAR(typevartuple__doc__,
 "Create a new TypeVarTuple with the given name.");
 
 static PyObject *
-typevartuple_impl(PyTypeObject *type, const char *name);
+typevartuple_impl(PyTypeObject *type, PyObject *name);
 
 static PyObject *
 typevartuple(PyTypeObject *type, PyObject *args, PyObject *kwargs)
@@ -570,7 +554,7 @@ typevartuple(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *argsbuf[1];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    const char *name;
+    PyObject *name;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
     if (!fastargs) {
@@ -580,15 +564,7 @@ typevartuple(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         _PyArg_BadArgument("typevartuple", "argument 'name'", "str", fastargs[0]);
         goto exit;
     }
-    Py_ssize_t name_length;
-    name = PyUnicode_AsUTF8AndSize(fastargs[0], &name_length);
-    if (name == NULL) {
-        goto exit;
-    }
-    if (strlen(name) != (size_t)name_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        goto exit;
-    }
+    name = fastargs[0];
     return_value = typevartuple_impl(type, name);
 
 exit:
@@ -747,7 +723,7 @@ PyDoc_STRVAR(typealias_new__doc__,
 "Create a TypeAliasType.");
 
 static PyObject *
-typealias_new_impl(PyTypeObject *type, const char *name, PyObject *value,
+typealias_new_impl(PyTypeObject *type, PyObject *name, PyObject *value,
                    PyObject *type_params);
 
 static PyObject *
@@ -783,7 +759,7 @@ typealias_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 2;
-    const char *name;
+    PyObject *name;
     PyObject *value;
     PyObject *type_params = NULL;
 
@@ -795,15 +771,7 @@ typealias_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         _PyArg_BadArgument("typealias", "argument 'name'", "str", fastargs[0]);
         goto exit;
     }
-    Py_ssize_t name_length;
-    name = PyUnicode_AsUTF8AndSize(fastargs[0], &name_length);
-    if (name == NULL) {
-        goto exit;
-    }
-    if (strlen(name) != (size_t)name_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        goto exit;
-    }
+    name = fastargs[0];
     value = fastargs[1];
     if (!noptargs) {
         goto skip_optional_kwonly;
@@ -815,4 +783,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=61f317e6bb78de3b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=807bcd30ebd10ac3 input=a9049054013a1b77]*/

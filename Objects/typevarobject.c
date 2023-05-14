@@ -18,7 +18,7 @@ class Generic "PyObject *" "&PyGeneric_Type"
 
 typedef struct {
     PyObject_HEAD
-    const char *name;
+    PyObject *name;
     PyObject *bound;
     PyObject *evaluate_bound;
     PyObject *constraints;
@@ -30,12 +30,12 @@ typedef struct {
 
 typedef struct {
     PyObject_HEAD
-    const char *name;
+    PyObject *name;
 } typevartupleobject;
 
 typedef struct {
     PyObject_HEAD
-    const char *name;
+    PyObject *name;
     PyObject *bound;
     bool covariant;
     bool contravariant;
@@ -44,7 +44,7 @@ typedef struct {
 
 typedef struct {
     PyObject_HEAD
-    const char *name;
+    PyObject *name;
     PyObject *type_params;
     PyObject *compute_value;
     PyObject *value;
@@ -161,6 +161,9 @@ unpack_typevartuples(PyObject *params)
     if (contains_typevartuple((PyTupleObject *)params)) {
         Py_ssize_t n = PyTuple_GET_SIZE(params);
         PyObject *new_params = PyTuple_New(n);
+        if (new_params == NULL) {
+            return NULL;
+        }
         PyTypeObject *tp = PyInterpreterState_Get()->cached_objects.typevartuple_type;
         for (Py_ssize_t i = 0; i < n; i++) {
             PyObject *param = PyTuple_GET_ITEM(params, i);
@@ -191,7 +194,7 @@ typevar_dealloc(PyObject *self)
 
     _PyObject_GC_UNTRACK(self);
 
-    free((void *)tv->name);
+    Py_DECREF(tv->name);
     Py_XDECREF(tv->bound);
     Py_XDECREF(tv->evaluate_bound);
     Py_XDECREF(tv->constraints);
@@ -232,15 +235,15 @@ typevar_repr(PyObject *self)
     typevarobject *tv = (typevarobject *)self;
 
     if (tv->infer_variance) {
-        return PyUnicode_FromFormat("%s", tv->name);
+        return Py_NewRef(tv->name);
     }
 
     char variance = tv->covariant ? '+' : tv->contravariant ? '-' : '~';
-    return PyUnicode_FromFormat("%c%s", variance, tv->name);
+    return PyUnicode_FromFormat("%c%U", variance, tv->name);
 }
 
 static PyMemberDef typevar_members[] = {
-    {"__name__", T_STRING, offsetof(typevarobject, name), READONLY},
+    {"__name__", T_OBJECT, offsetof(typevarobject, name), READONLY},
     {"__covariant__", T_BOOL, offsetof(typevarobject, covariant), READONLY},
     {"__contravariant__", T_BOOL, offsetof(typevarobject, contravariant), READONLY},
     {"__infer_variance__", T_BOOL, offsetof(typevarobject, infer_variance), READONLY},
@@ -282,27 +285,19 @@ static PyGetSetDef typevar_getset[] = {
 };
 
 static typevarobject *
-typevar_alloc(const char *name, PyObject *bound, PyObject *evaluate_bound,
+typevar_alloc(PyObject *name, PyObject *bound, PyObject *evaluate_bound,
               PyObject *constraints, PyObject *evaluate_constraints,
               bool covariant, bool contravariant, bool infer_variance,
               PyObject *module)
 {
-
-    char *owned_name = strdup(name);
-    if (owned_name == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-
     PyTypeObject *tp = PyInterpreterState_Get()->cached_objects.typevar_type;
     assert(tp != NULL);
     typevarobject *tv = PyObject_GC_New(typevarobject, tp);
     if (tv == NULL) {
-        free((void *)owned_name);
         return NULL;
     }
 
-    tv->name = owned_name;
+    tv->name = Py_NewRef(name);
 
     tv->bound = Py_XNewRef(bound);
     tv->evaluate_bound = Py_XNewRef(evaluate_bound);
@@ -328,7 +323,7 @@ typevar_alloc(const char *name, PyObject *bound, PyObject *evaluate_bound,
 @classmethod
 typevar.__new__ as typevar_new
 
-    name: str
+    name: object(subclass_of="&PyUnicode_Type")
     *constraints: object
     *
     bound: object = None
@@ -340,10 +335,10 @@ Create a TypeVar.
 [clinic start generated code]*/
 
 static PyObject *
-typevar_new_impl(PyTypeObject *type, const char *name, PyObject *constraints,
+typevar_new_impl(PyTypeObject *type, PyObject *name, PyObject *constraints,
                  PyObject *bound, int covariant, int contravariant,
                  int infer_variance)
-/*[clinic end generated code: output=463d42203b82ea59 input=55a3db20c1cf1450]*/
+/*[clinic end generated code: output=1d200450ee99226d input=2c07ab87c94f462b]*/
 {
     if (covariant && contravariant) {
         PyErr_SetString(PyExc_ValueError,
@@ -426,7 +421,7 @@ static PyObject *
 typevar_reduce_impl(typevarobject *self)
 /*[clinic end generated code: output=02e5c55d7cf8a08f input=de76bc95f04fb9ff]*/
 {
-    return PyUnicode_FromString(self->name);
+    return Py_NewRef(self->name);
 }
 
 static PyObject *
@@ -586,7 +581,7 @@ paramspecargs_repr(PyObject *self)
 
     PyTypeObject *tp = PyInterpreterState_Get()->cached_objects.paramspec_type;
     if (Py_IS_TYPE(psa->__origin__, tp)) {
-        return PyUnicode_FromFormat("%s.args",
+        return PyUnicode_FromFormat("%U.args",
             ((paramspecobject *)psa->__origin__)->name);
     }
     return PyUnicode_FromFormat("%R.args", psa->__origin__);
@@ -664,7 +659,7 @@ paramspeckwargs_repr(PyObject *self)
 
     PyTypeObject *tp = PyInterpreterState_Get()->cached_objects.paramspec_type;
     if (Py_IS_TYPE(psk->__origin__, tp)) {
-        return PyUnicode_FromFormat("%s.kwargs",
+        return PyUnicode_FromFormat("%U.kwargs",
             ((paramspecobject *)psk->__origin__)->name);
     }
     return PyUnicode_FromFormat("%R.kwargs", psk->__origin__);
@@ -742,7 +737,7 @@ paramspec_dealloc(PyObject *self)
 
     _PyObject_GC_UNTRACK(self);
 
-    free((void *)ps->name);
+    Py_DECREF(ps->name);
     Py_XDECREF(ps->bound);
     _PyObject_ClearManagedDict(self);
 
@@ -774,15 +769,15 @@ paramspec_repr(PyObject *self)
     paramspecobject *ps = (paramspecobject *)self;
 
     if (ps->infer_variance) {
-        return PyUnicode_FromFormat("%s", ps->name);
+        return Py_NewRef(ps->name);
     }
 
     char variance = ps->covariant ? '+' : ps->contravariant ? '-' : '~';
-    return PyUnicode_FromFormat("%c%s", variance, ps->name);
+    return PyUnicode_FromFormat("%c%U", variance, ps->name);
 }
 
 static PyMemberDef paramspec_members[] = {
-    {"__name__", T_STRING, offsetof(paramspecobject, name), READONLY},
+    {"__name__", T_OBJECT, offsetof(paramspecobject, name), READONLY},
     {"__bound__", T_OBJECT, offsetof(paramspecobject, bound), READONLY},
     {"__covariant__", T_BOOL, offsetof(paramspecobject, covariant), READONLY},
     {"__contravariant__", T_BOOL, offsetof(paramspecobject, contravariant), READONLY},
@@ -811,21 +806,15 @@ static PyGetSetDef paramspec_getset[] = {
 };
 
 static paramspecobject *
-paramspec_alloc(const char *name, PyObject *bound, bool covariant,
+paramspec_alloc(PyObject *name, PyObject *bound, bool covariant,
                 bool contravariant, bool infer_variance, PyObject *module)
 {
-    char *owned_name = strdup(name);
-    if (owned_name == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
     PyTypeObject *tp = PyInterpreterState_Get()->cached_objects.paramspec_type;
     paramspecobject *ps = PyObject_GC_New(paramspecobject, tp);
     if (ps == NULL) {
-        free((void *)owned_name);
         return NULL;
     }
-    ps->name = owned_name;
+    ps->name = Py_NewRef(name);
     ps->bound = Py_XNewRef(bound);
     ps->covariant = covariant;
     ps->contravariant = contravariant;
@@ -844,7 +833,7 @@ paramspec_alloc(const char *name, PyObject *bound, bool covariant,
 @classmethod
 paramspec.__new__ as paramspec_new
 
-    name: str
+    name: object(subclass_of="&PyUnicode_Type")
     *
     bound: object = None
     covariant: bool = False
@@ -855,9 +844,9 @@ Create a ParamSpec object.
 [clinic start generated code]*/
 
 static PyObject *
-paramspec_new_impl(PyTypeObject *type, const char *name, PyObject *bound,
+paramspec_new_impl(PyTypeObject *type, PyObject *name, PyObject *bound,
                    int covariant, int contravariant, int infer_variance)
-/*[clinic end generated code: output=846484852fb0dda8 input=f83ea6382c481f21]*/
+/*[clinic end generated code: output=fd2daab79cba62da input=57c49c581979b952]*/
 {
     if (covariant && contravariant) {
         PyErr_SetString(PyExc_ValueError, "Bivariant types are not supported.");
@@ -930,7 +919,7 @@ static PyObject *
 paramspec_reduce_impl(paramspecobject *self)
 /*[clinic end generated code: output=b83398674416db27 input=5bf349f0d5dd426c]*/
 {
-    return PyUnicode_FromString(self->name);
+    return Py_NewRef(self->name);
 }
 
 static PyObject *
@@ -1028,7 +1017,7 @@ typevartuple_dealloc(PyObject *self)
     _PyObject_GC_UNTRACK(self);
     typevartupleobject *tvt = (typevartupleobject *)self;
 
-    free((void *)tvt->name);
+    Py_DECREF(tvt->name);
     _PyObject_ClearManagedDict(self);
 
     Py_TYPE(self)->tp_free(self);
@@ -1058,29 +1047,23 @@ typevartuple_repr(PyObject *self)
 {
     typevartupleobject *tvt = (typevartupleobject *)self;
 
-    return PyUnicode_FromFormat("%s", tvt->name);
+    return Py_NewRef(tvt->name);
 }
 
 static PyMemberDef typevartuple_members[] = {
-    {"__name__", T_STRING, offsetof(typevartupleobject, name), READONLY},
+    {"__name__", T_OBJECT, offsetof(typevartupleobject, name), READONLY},
     {0}
 };
 
 static typevartupleobject *
-typevartuple_alloc(const char *name, PyObject *module)
+typevartuple_alloc(PyObject *name, PyObject *module)
 {
-    char *owned_name = strdup(name);
-    if (owned_name == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
     PyTypeObject *tp = PyInterpreterState_Get()->cached_objects.typevartuple_type;
     typevartupleobject *tvt = PyObject_GC_New(typevartupleobject, tp);
     if (tvt == NULL) {
-        free(owned_name);
         return NULL;
     }
-    tvt->name = owned_name;
+    tvt->name = Py_NewRef(name);
     _PyObject_GC_TRACK(tvt);
     if (module != NULL) {
         if (PyObject_SetAttrString((PyObject *)tvt, "__module__", module) < 0) {
@@ -1095,14 +1078,14 @@ typevartuple_alloc(const char *name, PyObject *module)
 @classmethod
 typevartuple.__new__
 
-    name: str
+    name: object(subclass_of="&PyUnicode_Type")
 
 Create a new TypeVarTuple with the given name.
 [clinic start generated code]*/
 
 static PyObject *
-typevartuple_impl(PyTypeObject *type, const char *name)
-/*[clinic end generated code: output=a5a5bc3437a27749 input=d89424a0e967cee6]*/
+typevartuple_impl(PyTypeObject *type, PyObject *name)
+/*[clinic end generated code: output=09d417a28f976202 input=00d28abcf1fc96bb]*/
 {
     PyObject *module = caller();
     if (module == NULL) {
@@ -1156,7 +1139,7 @@ static PyObject *
 typevartuple_reduce_impl(typevartupleobject *self)
 /*[clinic end generated code: output=3215bc0477913d20 input=3018a4d66147e807]*/
 {
-    return PyUnicode_FromString(self->name);
+    return Py_NewRef(self->name);
 }
 
 static PyObject *
@@ -1239,7 +1222,7 @@ PyType_Spec typevartuple_spec = {
 };
 
 PyObject *
-_Py_make_typevar(const char *name, PyObject *evaluate_bound, PyObject *evaluate_constraints)
+_Py_make_typevar(PyObject *name, PyObject *evaluate_bound, PyObject *evaluate_constraints)
 {
     return (PyObject *)typevar_alloc(name, NULL, evaluate_bound, NULL, evaluate_constraints,
                                      false, false, true, NULL);
@@ -1249,14 +1232,14 @@ PyObject *
 _Py_make_paramspec(PyThreadState *Py_UNUSED(ignored), PyObject *v)
 {
     assert(PyUnicode_Check(v));
-    return (PyObject *)paramspec_alloc(PyUnicode_AsUTF8(v), NULL, false, false, true, NULL);
+    return (PyObject *)paramspec_alloc(v, NULL, false, false, true, NULL);
 }
 
 PyObject *
 _Py_make_typevartuple(PyThreadState *Py_UNUSED(ignored), PyObject *v)
 {
     assert(PyUnicode_Check(v));
-    return (PyObject *)typevartuple_alloc(PyUnicode_AsUTF8(v), NULL);
+    return (PyObject *)typevartuple_alloc(v, NULL);
 }
 
 static void
@@ -1265,7 +1248,7 @@ typealias_dealloc(PyObject *self)
     PyTypeObject *tp = Py_TYPE(self);
     _PyObject_GC_UNTRACK(self);
     typealiasobject *ta = (typealiasobject *)self;
-    free((void *)ta->name);
+    Py_DECREF(ta->name);
     Py_XDECREF(ta->type_params);
     Py_XDECREF(ta->compute_value);
     Py_XDECREF(ta->value);
@@ -1291,11 +1274,11 @@ static PyObject *
 typealias_repr(PyObject *self)
 {
     typealiasobject *ta = (typealiasobject *)self;
-    return PyUnicode_FromString(ta->name);
+    return Py_NewRef(ta->name);
 }
 
 static PyMemberDef typealias_members[] = {
-    {"__name__", T_STRING, offsetof(typealiasobject, name), READONLY},
+    {"__name__", T_OBJECT, offsetof(typealiasobject, name), READONLY},
     {0}
 };
 
@@ -1334,21 +1317,15 @@ static PyGetSetDef typealias_getset[] = {
 };
 
 static typealiasobject *
-typealias_alloc(const char *name, PyObject *type_params, PyObject *compute_value,
+typealias_alloc(PyObject *name, PyObject *type_params, PyObject *compute_value,
                 PyObject *value)
 {
-    char *owned_name = strdup(name);
-    if (owned_name == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
     PyTypeObject *tp = PyInterpreterState_Get()->cached_objects.typealias_type;
     typealiasobject *ta = PyObject_GC_New(typealiasobject, tp);
     if (ta == NULL) {
-        free(owned_name);
         return NULL;
     }
-    ta->name = owned_name;
+    ta->name = Py_NewRef(name);
     ta->type_params = Py_IsNone(type_params) ? NULL : Py_XNewRef(type_params);
     ta->compute_value = Py_XNewRef(compute_value);
     ta->value = Py_XNewRef(value);
@@ -1383,7 +1360,7 @@ static PyObject *
 typealias_reduce_impl(typealiasobject *self)
 /*[clinic end generated code: output=913724f92ad3b39b input=4f06fbd9472ec0f1]*/
 {
-    return PyUnicode_FromString(self->name);
+    return Py_NewRef(self->name);
 }
 
 static PyObject *
@@ -1407,7 +1384,7 @@ static PyMethodDef typealias_methods[] = {
 @classmethod
 typealias.__new__ as typealias_new
 
-    name: str
+    name: object(subclass_of="&PyUnicode_Type")
     value: object
     *
     type_params: object = NULL
@@ -1416,9 +1393,9 @@ Create a TypeAliasType.
 [clinic start generated code]*/
 
 static PyObject *
-typealias_new_impl(PyTypeObject *type, const char *name, PyObject *value,
+typealias_new_impl(PyTypeObject *type, PyObject *name, PyObject *value,
                    PyObject *type_params)
-/*[clinic end generated code: output=a49732e3a327545c input=fe542c90292dbd35]*/
+/*[clinic end generated code: output=8920ce6bdff86f00 input=df163c34e17e1a35]*/
 {
     if (type_params != NULL && !PyTuple_Check(type_params)) {
         PyErr_SetString(PyExc_TypeError, "type_params must be a tuple");
@@ -1466,13 +1443,9 @@ _Py_make_typealias(PyThreadState* unused, PyObject *args)
     assert(PyTuple_GET_SIZE(args) == 3);
     PyObject *name = PyTuple_GET_ITEM(args, 0);
     assert(PyUnicode_Check(name));
-    const char *name_str = PyUnicode_AsUTF8(name);
-    if (name_str == NULL) {
-        return NULL;
-    }
     PyObject *type_params = PyTuple_GET_ITEM(args, 1);
     PyObject *compute_value = PyTuple_GET_ITEM(args, 2);
-    return (PyObject *)typealias_alloc(name_str, type_params, compute_value, NULL);
+    return (PyObject *)typealias_alloc(name, type_params, compute_value, NULL);
 }
 
 PyDoc_STRVAR(generic_doc,
