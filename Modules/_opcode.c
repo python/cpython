@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "opcode.h"
+#include "internal/pycore_code.h"
 
 /*[clinic input]
 module _opcode
@@ -68,10 +69,34 @@ _opcode_stack_effect_impl(PyObject *module, int opcode, PyObject *oparg,
     return effect;
 }
 
+/*[clinic input]
+
+_opcode.get_specialization_stats
+
+Return the specialization stats
+[clinic start generated code]*/
+
+static PyObject *
+_opcode_get_specialization_stats_impl(PyObject *module)
+/*[clinic end generated code: output=fcbc32fdfbec5c17 input=e1f60db68d8ce5f6]*/
+{
+#ifdef Py_STATS
+    return _Py_GetSpecializationStats();
+#else
+    Py_RETURN_NONE;
+#endif
+}
+
 static PyMethodDef
 opcode_functions[] =  {
     _OPCODE_STACK_EFFECT_METHODDEF
+    _OPCODE_GET_SPECIALIZATION_STATS_METHODDEF
     {NULL, NULL, 0, NULL}
+};
+
+static PyModuleDef_Slot module_slots[] = {
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {0, NULL}
 };
 
 static struct PyModuleDef opcodemodule = {
@@ -79,7 +104,8 @@ static struct PyModuleDef opcodemodule = {
     .m_name = "_opcode",
     .m_doc = "Opcode support module.",
     .m_size = 0,
-    .m_methods = opcode_functions
+    .m_methods = opcode_functions,
+    .m_slots = module_slots,
 };
 
 PyMODINIT_FUNC

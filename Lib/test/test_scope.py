@@ -2,6 +2,7 @@ import unittest
 import weakref
 
 from test.support import check_syntax_error, cpython_only
+from test.support import gc_collect
 
 
 class ScopeTests(unittest.TestCase):
@@ -175,6 +176,57 @@ class ScopeTests(unittest.TestCase):
 
         self.assertEqual(foo(a=42), 50)
         self.assertEqual(foo(), 25)
+
+    def testCellIsArgAndEscapes(self):
+        # We need to be sure that a cell passed in as an arg still
+        # gets wrapped in a new cell if the arg escapes into an
+        # inner function (closure).
+
+        def external():
+            value = 42
+            def inner():
+                return value
+            cell, = inner.__closure__
+            return cell
+        cell_ext = external()
+
+        def spam(arg):
+            def eggs():
+                return arg
+            return eggs
+
+        eggs = spam(cell_ext)
+        cell_closure, = eggs.__closure__
+        cell_eggs = eggs()
+
+        self.assertIs(cell_eggs, cell_ext)
+        self.assertIsNot(cell_eggs, cell_closure)
+
+    def testCellIsLocalAndEscapes(self):
+        # We need to be sure that a cell bound to a local still
+        # gets wrapped in a new cell if the local escapes into an
+        # inner function (closure).
+
+        def external():
+            value = 42
+            def inner():
+                return value
+            cell, = inner.__closure__
+            return cell
+        cell_ext = external()
+
+        def spam(arg):
+            cell = arg
+            def eggs():
+                return cell
+            return eggs
+
+        eggs = spam(cell_ext)
+        cell_closure, = eggs.__closure__
+        cell_eggs = eggs()
+
+        self.assertIs(cell_eggs, cell_ext)
+        self.assertIsNot(cell_eggs, cell_closure)
 
     def testRecursion(self):
 
@@ -422,6 +474,7 @@ class ScopeTests(unittest.TestCase):
         for i in range(100):
             f1()
 
+        gc_collect()  # For PyPy or other GCs.
         self.assertEqual(Foo.count, 0)
 
     def testClassAndGlobal(self):
@@ -754,6 +807,7 @@ class ScopeTests(unittest.TestCase):
         tester.dig()
         ref = weakref.ref(tester)
         del tester
+        gc_collect()  # For PyPy or other GCs.
         self.assertIsNone(ref())
 
 

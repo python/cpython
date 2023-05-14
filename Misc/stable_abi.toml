@@ -1,0 +1,2408 @@
+# This file lists the contents of the Limited API and Stable ABI.
+# Please append new items at the end.
+
+# The syntax of this file is not fixed.
+# It is designed to be read only by Tools/build/stable_abi.py, which can change
+# without notice.
+
+# For the history of the stable ABI prior to this file,
+# see the history of PC/python3dll.c and before that, PC/python3.def,
+# and PC/pythonXYstub.def
+
+
+# The current format is TOML.
+
+# There are these kinds of top-level "items":
+# - struct: A C struct. See `struct_abi_kind` for how much of the struct is
+#   exposed.
+# - function: A function that must be kept available (and exported, i.e. not
+#   converted to a macro).
+# - const: A simple value, defined with `#define`.
+# - macro: A preprocessor macro more complex than a simple `const` value.
+# - data: An exported object, which must continue to be available but its exact
+#   value may change.
+# - typedef: A C typedef which is used in other definitions in the limited API.
+#   Its size/layout/signature must not change.
+# - feature_macro: Other items may be conditional on whether this macro
+#   is defined or not.
+
+# Each top-level item can have details defined for it:
+# - added: The version in which the item was added to the stable ABI.
+# - ifdef: The item is only available if the given feature_macro is defined.
+# - abi_only: If present, the item is not part of the Limited API, but it *is*
+#   part of the stable ABI. The item will not show up in user-facing docs.
+#   Typically used for:
+#   - private functions called by public macros, e.g. _Py_BuildValue_SizeT
+#   - items that were part of the limited API in the past, and must remain part
+#     of the stable ABI.
+#   - a combination of the above (functions that were called by macros that
+#     were public in the past)
+# - struct_abi_kind: for `struct`, defines how much of the struct is exposed:
+#   - 'full-abi': All of the struct is part of the ABI, including the size
+#     (users may define arrays of these structs).
+#     Typically used for initalization, rather than at runtime.
+#   - 'opaque': No members are part of the ABI, nor is the size. The Limited
+#     API only handles these via pointers. The C definition should be
+#     incomplete (opaque).
+#   - 'members': Only specific members are part of the stable ABI.
+#     The struct's size may change, so it can't be used in arrays.
+#     Do not add new structs of this kind without an extremely good reason.
+# - members: For `struct` with struct_abi_kind = 'members', a list of the
+#   exposed members.
+# - doc: for `feature_macro`, the blurb added in documentation
+# - windows: for `feature_macro`, this macro is defined on Windows.
+#   (This info is used to generate the DLL manifest and needs to be available
+#   on all platforms.)
+
+# Removing items from this file is generally not allowed, and additions should
+# be considered with that in mind. See the devguide for exact rules:
+#    https://devguide.python.org/c-api/#limited-api
+
+# User-facing docs are at:
+#    https://docs.python.org/3/c-api/stable.html#stable
+
+
+# Feature macros for optional functionality:
+
+[feature_macro.MS_WINDOWS]
+    doc = 'on Windows'
+    windows = true
+[feature_macro.HAVE_FORK]
+    doc = 'on platforms with fork()'
+[feature_macro.USE_STACKCHECK]
+    doc = 'on platforms with USE_STACKCHECK'
+    windows = 'maybe'
+[feature_macro.PY_HAVE_THREAD_NATIVE_ID]
+    doc = 'on platforms with native thread IDs'
+    windows = true
+[feature_macro.Py_REF_DEBUG]
+    doc = 'when Python is compiled in debug mode (with Py_REF_DEBUG)'
+    windows = 'maybe'
+
+
+# Mentioned in PEP 384:
+
+[struct.PyObject]
+    added = '3.2'
+    members = ['ob_refcnt', 'ob_type']
+    struct_abi_kind = 'members'
+[struct.PyVarObject]
+    added = '3.2'
+    members = ['ob_base', 'ob_size']
+    struct_abi_kind = 'members'
+[struct.PyMethodDef]
+    added = '3.2'
+    struct_abi_kind = 'full-abi'
+[struct.PyMemberDef]
+    added = '3.2'  # Before 3.12, PyMemberDef required #include "structmember.h"
+    struct_abi_kind = 'full-abi'
+[struct.PyGetSetDef]
+    added = '3.2'
+    struct_abi_kind = 'full-abi'
+[struct.PyModuleDef_Base]
+    added = '3.2'
+    struct_abi_kind = 'full-abi'
+[struct.PyModuleDef]
+    added = '3.2'
+    struct_abi_kind = 'full-abi'
+[struct.PyStructSequence_Field]
+    added = '3.2'
+    struct_abi_kind = 'full-abi'
+[struct.PyStructSequence_Desc]
+    added = '3.2'
+    struct_abi_kind = 'full-abi'
+[struct.PyType_Slot]
+    added = '3.2'
+    struct_abi_kind = 'full-abi'
+[struct.PyType_Spec]
+    added = '3.2'
+    struct_abi_kind = 'full-abi'
+[struct.PyThreadState]
+    added = '3.2'
+    struct_abi_kind = 'opaque'
+[struct.PyInterpreterState]
+    added = '3.2'
+    struct_abi_kind = 'opaque'
+[struct.PyFrameObject]
+    added = '3.2'
+    struct_abi_kind = 'opaque'
+[struct.symtable]
+    added = '3.2'
+    struct_abi_kind = 'opaque'
+[struct.PyWeakReference]
+    added = '3.2'
+    struct_abi_kind = 'opaque'
+[struct.PyLongObject]
+    added = '3.2'
+    struct_abi_kind = 'opaque'
+[struct.PyTypeObject]
+    added = '3.2'
+    struct_abi_kind = 'opaque'
+
+[function.PyType_FromSpec]
+    added = '3.2'
+
+[const.Py_tp_dealloc]
+    added = '3.2'
+[const.Py_tp_getattr]
+    added = '3.2'
+[const.Py_tp_setattr]
+    added = '3.2'
+[const.Py_tp_repr]
+    added = '3.2'
+[const.Py_tp_hash]
+    added = '3.2'
+[const.Py_tp_call]
+    added = '3.2'
+[const.Py_tp_str]
+    added = '3.2'
+[const.Py_tp_getattro]
+    added = '3.2'
+[const.Py_tp_setattro]
+    added = '3.2'
+[const.Py_tp_doc]
+    added = '3.2'
+[const.Py_tp_traverse]
+    added = '3.2'
+[const.Py_tp_clear]
+    added = '3.2'
+[const.Py_tp_richcompare]
+    added = '3.2'
+[const.Py_tp_iter]
+    added = '3.2'
+[const.Py_tp_iternext]
+    added = '3.2'
+[const.Py_tp_methods]
+    added = '3.2'
+[const.Py_tp_base]
+    added = '3.2'
+[const.Py_tp_descr_get]
+    added = '3.2'
+[const.Py_tp_descr_set]
+    added = '3.2'
+[const.Py_tp_init]
+    added = '3.2'
+[const.Py_tp_alloc]
+    added = '3.2'
+[const.Py_tp_new]
+    added = '3.2'
+[const.Py_tp_members]
+    added = '3.2'
+[const.Py_tp_getset]
+    added = '3.2'
+[const.Py_tp_free]
+    added = '3.2'
+[const.Py_tp_is_gc]
+    added = '3.2'
+[const.Py_tp_bases]
+    added = '3.2'
+[const.Py_tp_del]
+    added = '3.2'
+[const.Py_nb_add]
+    added = '3.2'
+[const.Py_nb_subtract]
+    added = '3.2'
+[const.Py_nb_multiply]
+    added = '3.2'
+[const.Py_nb_remainder]
+    added = '3.2'
+[const.Py_nb_divmod]
+    added = '3.2'
+[const.Py_nb_power]
+    added = '3.2'
+[const.Py_nb_negative]
+    added = '3.2'
+[const.Py_nb_positive]
+    added = '3.2'
+[const.Py_nb_absolute]
+    added = '3.2'
+[const.Py_nb_bool]
+    added = '3.2'
+[const.Py_nb_invert]
+    added = '3.2'
+[const.Py_nb_lshift]
+    added = '3.2'
+[const.Py_nb_rshift]
+    added = '3.2'
+[const.Py_nb_and]
+    added = '3.2'
+[const.Py_nb_xor]
+    added = '3.2'
+[const.Py_nb_or]
+    added = '3.2'
+[const.Py_nb_int]
+    added = '3.2'
+[const.Py_nb_float]
+    added = '3.2'
+[const.Py_nb_inplace_add]
+    added = '3.2'
+[const.Py_nb_inplace_subtract]
+    added = '3.2'
+[const.Py_nb_inplace_multiply]
+    added = '3.2'
+[const.Py_nb_inplace_remainder]
+    added = '3.2'
+[const.Py_nb_inplace_power]
+    added = '3.2'
+[const.Py_nb_inplace_lshift]
+    added = '3.2'
+[const.Py_nb_inplace_rshift]
+    added = '3.2'
+[const.Py_nb_inplace_and]
+    added = '3.2'
+[const.Py_nb_inplace_xor]
+    added = '3.2'
+[const.Py_nb_inplace_or]
+    added = '3.2'
+[const.Py_nb_floor_divide]
+    added = '3.2'
+[const.Py_nb_true_divide]
+    added = '3.2'
+[const.Py_nb_inplace_floor_divide]
+    added = '3.2'
+[const.Py_nb_inplace_true_divide]
+    added = '3.2'
+[const.Py_nb_index]
+    added = '3.2'
+[const.Py_sq_length]
+    added = '3.2'
+[const.Py_sq_concat]
+    added = '3.2'
+[const.Py_sq_repeat]
+    added = '3.2'
+[const.Py_sq_item]
+    added = '3.2'
+[const.Py_sq_ass_item]
+    added = '3.2'
+[const.Py_sq_contains]
+    added = '3.2'
+[const.Py_sq_inplace_concat]
+    added = '3.2'
+[const.Py_sq_inplace_repeat]
+    added = '3.2'
+[const.Py_mp_length]
+    added = '3.2'
+[const.Py_mp_subscript]
+    added = '3.2'
+[const.Py_mp_ass_subscript]
+    added = '3.2'
+
+[typedef.Py_uintptr_t]
+    added = '3.2'
+[typedef.Py_intptr_t]
+    added = '3.2'
+[typedef.Py_ssize_t]
+    added = '3.2'
+[typedef.unaryfunc]
+    added = '3.2'
+[typedef.binaryfunc]
+    added = '3.2'
+[typedef.ternaryfunc]
+    added = '3.2'
+[typedef.inquiry]
+    added = '3.2'
+[typedef.lenfunc]
+    added = '3.2'
+[typedef.ssizeargfunc]
+    added = '3.2'
+[typedef.ssizessizeargfunc]
+    added = '3.2'
+[typedef.ssizeobjargproc]
+    added = '3.2'
+[typedef.ssizessizeobjargproc]
+    added = '3.2'
+[typedef.objobjargproc]
+    added = '3.2'
+[typedef.objobjproc]
+    added = '3.2'
+[typedef.visitproc]
+    added = '3.2'
+[typedef.traverseproc]
+    added = '3.2'
+[typedef.destructor]
+    added = '3.2'
+[typedef.getattrfunc]
+    added = '3.2'
+[typedef.getattrofunc]
+    added = '3.2'
+[typedef.setattrfunc]
+    added = '3.2'
+[typedef.setattrofunc]
+    added = '3.2'
+[typedef.reprfunc]
+    added = '3.2'
+[typedef.hashfunc]
+    added = '3.2'
+[typedef.richcmpfunc]
+    added = '3.2'
+[typedef.getiterfunc]
+    added = '3.2'
+[typedef.iternextfunc]
+    added = '3.2'
+[typedef.descrgetfunc]
+    added = '3.2'
+[typedef.descrsetfunc]
+    added = '3.2'
+[typedef.initproc]
+    added = '3.2'
+[typedef.newfunc]
+    added = '3.2'
+[typedef.allocfunc]
+    added = '3.2'
+[typedef.PyCFunction]
+    added = '3.2'
+[typedef.PyCFunctionWithKeywords]
+    added = '3.2'
+[typedef.PyCapsule_Destructor]
+    added = '3.2'
+[typedef.getter]
+    added = '3.2'
+[typedef.setter]
+    added = '3.2'
+[typedef.PyOS_sighandler_t]
+    added = '3.2'
+[typedef.PyGILState_STATE]
+    added = '3.2'
+[typedef.Py_UCS4]
+    added = '3.2'
+
+[macro.Py_BEGIN_ALLOW_THREADS]
+    added = '3.2'
+[macro.Py_BLOCK_THREADS]
+    added = '3.2'
+[macro.Py_UNBLOCK_THREADS]
+    added = '3.2'
+[macro.Py_END_ALLOW_THREADS]
+    added = '3.2'
+
+# The following were added in PC/python3.def in the initial stable ABI commit,
+# 4d0d471a8031de90a2b1ce99c4ac4780e60b3bc9,
+# and later amendments in 3.2:
+# 0d012f284be829c6217f60523db0e1671b7db9d9
+# c83bc3c1fbed14d27a5de3032e24d2cf006a7c4b
+
+[function.PyArg_Parse]
+    added = '3.2'
+[function.PyArg_ParseTuple]
+    added = '3.2'
+[function.PyArg_ParseTupleAndKeywords]
+    added = '3.2'
+[function.PyArg_UnpackTuple]
+    added = '3.2'
+[function.PyArg_VaParse]
+    added = '3.2'
+[function.PyArg_VaParseTupleAndKeywords]
+    added = '3.2'
+[function.PyArg_ValidateKeywordArguments]
+    added = '3.2'
+[data.PyBaseObject_Type]
+    added = '3.2'
+[function.PyBool_FromLong]
+    added = '3.2'
+[data.PyBool_Type]
+    added = '3.2'
+[data.PyByteArrayIter_Type]
+    added = '3.2'
+[function.PyByteArray_AsString]
+    added = '3.2'
+[function.PyByteArray_Concat]
+    added = '3.2'
+[function.PyByteArray_FromObject]
+    added = '3.2'
+[function.PyByteArray_FromStringAndSize]
+    added = '3.2'
+[function.PyByteArray_Resize]
+    added = '3.2'
+[function.PyByteArray_Size]
+    added = '3.2'
+[data.PyByteArray_Type]
+    added = '3.2'
+[data.PyBytesIter_Type]
+    added = '3.2'
+[function.PyBytes_AsString]
+    added = '3.2'
+[function.PyBytes_AsStringAndSize]
+    added = '3.2'
+[function.PyBytes_Concat]
+    added = '3.2'
+[function.PyBytes_ConcatAndDel]
+    added = '3.2'
+[function.PyBytes_DecodeEscape]
+    added = '3.2'
+[function.PyBytes_FromFormat]
+    added = '3.2'
+[function.PyBytes_FromFormatV]
+    added = '3.2'
+[function.PyBytes_FromObject]
+    added = '3.2'
+[function.PyBytes_FromString]
+    added = '3.2'
+[function.PyBytes_FromStringAndSize]
+    added = '3.2'
+[function.PyBytes_Repr]
+    added = '3.2'
+[function.PyBytes_Size]
+    added = '3.2'
+[data.PyBytes_Type]
+    added = '3.2'
+[function.PyCFunction_Call]
+    added = '3.2'
+[function.PyCFunction_GetFlags]
+    added = '3.2'
+[function.PyCFunction_GetFunction]
+    added = '3.2'
+[function.PyCFunction_GetSelf]
+    added = '3.2'
+[function.PyCFunction_NewEx]
+    added = '3.2'
+[data.PyCFunction_Type]
+    added = '3.2'
+[function.PyCallIter_New]
+    added = '3.2'
+[data.PyCallIter_Type]
+    added = '3.2'
+[function.PyCallable_Check]
+    added = '3.2'
+[function.PyCapsule_GetContext]
+    added = '3.2'
+[function.PyCapsule_GetDestructor]
+    added = '3.2'
+[function.PyCapsule_GetName]
+    added = '3.2'
+[function.PyCapsule_GetPointer]
+    added = '3.2'
+[function.PyCapsule_Import]
+    added = '3.2'
+[function.PyCapsule_IsValid]
+    added = '3.2'
+[function.PyCapsule_New]
+    added = '3.2'
+[function.PyCapsule_SetContext]
+    added = '3.2'
+[function.PyCapsule_SetDestructor]
+    added = '3.2'
+[function.PyCapsule_SetName]
+    added = '3.2'
+[function.PyCapsule_SetPointer]
+    added = '3.2'
+[data.PyCapsule_Type]
+    added = '3.2'
+[data.PyClassMethodDescr_Type]
+    added = '3.2'
+[function.PyCodec_BackslashReplaceErrors]
+    added = '3.2'
+[function.PyCodec_Decode]
+    added = '3.2'
+[function.PyCodec_Decoder]
+    added = '3.2'
+[function.PyCodec_Encode]
+    added = '3.2'
+[function.PyCodec_Encoder]
+    added = '3.2'
+[function.PyCodec_IgnoreErrors]
+    added = '3.2'
+[function.PyCodec_IncrementalDecoder]
+    added = '3.2'
+[function.PyCodec_IncrementalEncoder]
+    added = '3.2'
+[function.PyCodec_KnownEncoding]
+    added = '3.2'
+[function.PyCodec_LookupError]
+    added = '3.2'
+[function.PyCodec_Register]
+    added = '3.2'
+[function.PyCodec_RegisterError]
+    added = '3.2'
+[function.PyCodec_ReplaceErrors]
+    added = '3.2'
+[function.PyCodec_StreamReader]
+    added = '3.2'
+[function.PyCodec_StreamWriter]
+    added = '3.2'
+[function.PyCodec_StrictErrors]
+    added = '3.2'
+[function.PyCodec_XMLCharRefReplaceErrors]
+    added = '3.2'
+[function.PyComplex_FromDoubles]
+    added = '3.2'
+[function.PyComplex_ImagAsDouble]
+    added = '3.2'
+[function.PyComplex_RealAsDouble]
+    added = '3.2'
+[data.PyComplex_Type]
+    added = '3.2'
+[function.PyDescr_NewClassMethod]
+    added = '3.2'
+[function.PyDescr_NewGetSet]
+    added = '3.2'
+[function.PyDescr_NewMember]
+    added = '3.2'
+[function.PyDescr_NewMethod]
+    added = '3.2'
+[data.PyDictItems_Type]
+    added = '3.2'
+[data.PyDictIterItem_Type]
+    added = '3.2'
+[data.PyDictIterKey_Type]
+    added = '3.2'
+[data.PyDictIterValue_Type]
+    added = '3.2'
+[data.PyDictKeys_Type]
+    added = '3.2'
+[function.PyDictProxy_New]
+    added = '3.2'
+[data.PyDictProxy_Type]
+    added = '3.2'
+[data.PyDictValues_Type]
+    added = '3.2'
+[function.PyDict_Clear]
+    added = '3.2'
+[function.PyDict_Contains]
+    added = '3.2'
+[function.PyDict_Copy]
+    added = '3.2'
+[function.PyDict_DelItem]
+    added = '3.2'
+[function.PyDict_DelItemString]
+    added = '3.2'
+[function.PyDict_GetItem]
+    added = '3.2'
+[function.PyDict_GetItemString]
+    added = '3.2'
+[function.PyDict_GetItemWithError]
+    added = '3.2'
+[function.PyDict_Items]
+    added = '3.2'
+[function.PyDict_Keys]
+    added = '3.2'
+[function.PyDict_Merge]
+    added = '3.2'
+[function.PyDict_MergeFromSeq2]
+    added = '3.2'
+[function.PyDict_New]
+    added = '3.2'
+[function.PyDict_Next]
+    added = '3.2'
+[function.PyDict_SetItem]
+    added = '3.2'
+[function.PyDict_SetItemString]
+    added = '3.2'
+[function.PyDict_Size]
+    added = '3.2'
+[data.PyDict_Type]
+    added = '3.2'
+[function.PyDict_Update]
+    added = '3.2'
+[function.PyDict_Values]
+    added = '3.2'
+[data.PyEllipsis_Type]
+    added = '3.2'
+[data.PyEnum_Type]
+    added = '3.2'
+[function.PyErr_BadArgument]
+    added = '3.2'
+[function.PyErr_BadInternalCall]
+    added = '3.2'
+[function.PyErr_CheckSignals]
+    added = '3.2'
+[function.PyErr_Clear]
+    added = '3.2'
+[function.PyErr_Display]
+    added = '3.2'
+[function.PyErr_DisplayException]
+    added = '3.12'
+[function.PyErr_ExceptionMatches]
+    added = '3.2'
+[function.PyErr_Fetch]
+    added = '3.2'
+[function.PyErr_Format]
+    added = '3.2'
+[function.PyErr_GivenExceptionMatches]
+    added = '3.2'
+[function.PyErr_NewException]
+    added = '3.2'
+[function.PyErr_NewExceptionWithDoc]
+    added = '3.2'
+[function.PyErr_NoMemory]
+    added = '3.2'
+[function.PyErr_NormalizeException]
+    added = '3.2'
+[function.PyErr_Occurred]
+    added = '3.2'
+[function.PyErr_Print]
+    added = '3.2'
+[function.PyErr_PrintEx]
+    added = '3.2'
+[function.PyErr_ProgramText]
+    added = '3.2'
+[function.PyErr_Restore]
+    added = '3.2'
+[function.PyErr_SetFromErrno]
+    added = '3.2'
+[function.PyErr_SetFromErrnoWithFilename]
+    added = '3.2'
+[function.PyErr_SetFromErrnoWithFilenameObject]
+    added = '3.2'
+[function.PyErr_SetInterrupt]
+    added = '3.2'
+[function.PyErr_SetNone]
+    added = '3.2'
+[function.PyErr_SetObject]
+    added = '3.2'
+[function.PyErr_SetString]
+    added = '3.2'
+[function.PyErr_SyntaxLocation]
+    added = '3.2'
+[function.PyErr_WarnEx]
+    added = '3.2'
+[function.PyErr_WarnExplicit]
+    added = '3.2'
+[function.PyErr_WarnFormat]
+    added = '3.2'
+[function.PyErr_WriteUnraisable]
+    added = '3.2'
+[function.PyEval_AcquireLock]
+    added = '3.2'
+[function.PyEval_AcquireThread]
+    added = '3.2'
+[function.PyEval_CallFunction]
+    added = '3.2'
+[function.PyEval_CallMethod]
+    added = '3.2'
+[function.PyEval_CallObjectWithKeywords]
+    added = '3.2'
+[function.PyEval_EvalCode]
+    added = '3.2'
+[function.PyEval_EvalCodeEx]
+    added = '3.2'
+[function.PyEval_EvalFrame]
+    added = '3.2'
+[function.PyEval_EvalFrameEx]
+    added = '3.2'
+[function.PyEval_GetBuiltins]
+    added = '3.2'
+[function.PyEval_GetFrame]
+    added = '3.2'
+[function.PyEval_GetFuncDesc]
+    added = '3.2'
+[function.PyEval_GetFuncName]
+    added = '3.2'
+[function.PyEval_GetGlobals]
+    added = '3.2'
+[function.PyEval_GetLocals]
+    added = '3.2'
+[function.PyEval_InitThreads]
+    added = '3.2'
+[function.PyEval_ReleaseLock]
+    added = '3.2'
+[function.PyEval_ReleaseThread]
+    added = '3.2'
+[function.PyEval_RestoreThread]
+    added = '3.2'
+[function.PyEval_SaveThread]
+    added = '3.2'
+[function.PyEval_ThreadsInitialized]
+    added = '3.2'
+[data.PyExc_ArithmeticError]
+    added = '3.2'
+[data.PyExc_AssertionError]
+    added = '3.2'
+[data.PyExc_AttributeError]
+    added = '3.2'
+[data.PyExc_BaseException]
+    added = '3.2'
+[data.PyExc_BaseExceptionGroup]
+    added = '3.11'
+[data.PyExc_BufferError]
+    added = '3.2'
+[data.PyExc_BytesWarning]
+    added = '3.2'
+[data.PyExc_DeprecationWarning]
+    added = '3.2'
+[data.PyExc_EOFError]
+    added = '3.2'
+[data.PyExc_EnvironmentError]
+    added = '3.2'
+[data.PyExc_Exception]
+    added = '3.2'
+[data.PyExc_FloatingPointError]
+    added = '3.2'
+[data.PyExc_FutureWarning]
+    added = '3.2'
+[data.PyExc_GeneratorExit]
+    added = '3.2'
+[data.PyExc_IOError]
+    added = '3.2'
+[data.PyExc_ImportError]
+    added = '3.2'
+[data.PyExc_ImportWarning]
+    added = '3.2'
+[data.PyExc_IndentationError]
+    added = '3.2'
+[data.PyExc_IndexError]
+    added = '3.2'
+[data.PyExc_KeyError]
+    added = '3.2'
+[data.PyExc_KeyboardInterrupt]
+    added = '3.2'
+[data.PyExc_LookupError]
+    added = '3.2'
+[data.PyExc_MemoryError]
+    added = '3.2'
+[data.PyExc_NameError]
+    added = '3.2'
+[data.PyExc_NotImplementedError]
+    added = '3.2'
+[data.PyExc_OSError]
+    added = '3.2'
+[data.PyExc_OverflowError]
+    added = '3.2'
+[data.PyExc_PendingDeprecationWarning]
+    added = '3.2'
+[data.PyExc_ReferenceError]
+    added = '3.2'
+[data.PyExc_RuntimeError]
+    added = '3.2'
+[data.PyExc_RuntimeWarning]
+    added = '3.2'
+[data.PyExc_StopIteration]
+    added = '3.2'
+[data.PyExc_SyntaxError]
+    added = '3.2'
+[data.PyExc_SyntaxWarning]
+    added = '3.2'
+[data.PyExc_SystemError]
+    added = '3.2'
+[data.PyExc_SystemExit]
+    added = '3.2'
+[data.PyExc_TabError]
+    added = '3.2'
+[data.PyExc_TypeError]
+    added = '3.2'
+[data.PyExc_UnboundLocalError]
+    added = '3.2'
+[data.PyExc_UnicodeDecodeError]
+    added = '3.2'
+[data.PyExc_UnicodeEncodeError]
+    added = '3.2'
+[data.PyExc_UnicodeError]
+    added = '3.2'
+[data.PyExc_UnicodeTranslateError]
+    added = '3.2'
+[data.PyExc_UnicodeWarning]
+    added = '3.2'
+[data.PyExc_UserWarning]
+    added = '3.2'
+[data.PyExc_ValueError]
+    added = '3.2'
+[data.PyExc_Warning]
+    added = '3.2'
+[data.PyExc_ZeroDivisionError]
+    added = '3.2'
+[function.PyException_GetCause]
+    added = '3.2'
+[function.PyException_GetContext]
+    added = '3.2'
+[function.PyException_GetTraceback]
+    added = '3.2'
+[function.PyException_SetCause]
+    added = '3.2'
+[function.PyException_SetContext]
+    added = '3.2'
+[function.PyException_SetTraceback]
+    added = '3.2'
+[function.PyFile_FromFd]
+    added = '3.2'
+[function.PyFile_GetLine]
+    added = '3.2'
+[function.PyFile_WriteObject]
+    added = '3.2'
+[function.PyFile_WriteString]
+    added = '3.2'
+[data.PyFilter_Type]
+    added = '3.2'
+[function.PyFloat_AsDouble]
+    added = '3.2'
+[function.PyFloat_FromDouble]
+    added = '3.2'
+[function.PyFloat_FromString]
+    added = '3.2'
+[function.PyFloat_GetInfo]
+    added = '3.2'
+[function.PyFloat_GetMax]
+    added = '3.2'
+[function.PyFloat_GetMin]
+    added = '3.2'
+[data.PyFloat_Type]
+    added = '3.2'
+[function.PyFrozenSet_New]
+    added = '3.2'
+[data.PyFrozenSet_Type]
+    added = '3.2'
+[function.PyGC_Collect]
+    added = '3.2'
+[function.PyGILState_Ensure]
+    added = '3.2'
+[function.PyGILState_GetThisThreadState]
+    added = '3.2'
+[function.PyGILState_Release]
+    added = '3.2'
+[data.PyGetSetDescr_Type]
+    added = '3.2'
+[function.PyImport_AddModule]
+    added = '3.2'
+[function.PyImport_AppendInittab]
+    added = '3.2'
+[function.PyImport_ExecCodeModule]
+    added = '3.2'
+[function.PyImport_ExecCodeModuleEx]
+    added = '3.2'
+[function.PyImport_ExecCodeModuleWithPathnames]
+    added = '3.2'
+[function.PyImport_GetImporter]
+    added = '3.2'
+[function.PyImport_GetMagicNumber]
+    added = '3.2'
+[function.PyImport_GetMagicTag]
+    added = '3.2'
+[function.PyImport_GetModuleDict]
+    added = '3.2'
+[function.PyImport_Import]
+    added = '3.2'
+[function.PyImport_ImportFrozenModule]
+    added = '3.2'
+[function.PyImport_ImportModule]
+    added = '3.2'
+[function.PyImport_ImportModuleLevel]
+    added = '3.2'
+[function.PyImport_ImportModuleNoBlock]
+    added = '3.2'
+[function.PyImport_ReloadModule]
+    added = '3.2'
+[function.PyInterpreterState_Clear]
+    added = '3.2'
+[function.PyInterpreterState_Delete]
+    added = '3.2'
+[function.PyInterpreterState_New]
+    added = '3.2'
+[function.PyIter_Next]
+    added = '3.2'
+[data.PyListIter_Type]
+    added = '3.2'
+[data.PyListRevIter_Type]
+    added = '3.2'
+[function.PyList_Append]
+    added = '3.2'
+[function.PyList_AsTuple]
+    added = '3.2'
+[function.PyList_GetItem]
+    added = '3.2'
+[function.PyList_GetSlice]
+    added = '3.2'
+[function.PyList_Insert]
+    added = '3.2'
+[function.PyList_New]
+    added = '3.2'
+[function.PyList_Reverse]
+    added = '3.2'
+[function.PyList_SetItem]
+    added = '3.2'
+[function.PyList_SetSlice]
+    added = '3.2'
+[function.PyList_Size]
+    added = '3.2'
+[function.PyList_Sort]
+    added = '3.2'
+[data.PyList_Type]
+    added = '3.2'
+[data.PyLongRangeIter_Type]
+    added = '3.2'
+[function.PyLong_AsDouble]
+    added = '3.2'
+[function.PyLong_AsLong]
+    added = '3.2'
+[function.PyLong_AsLongAndOverflow]
+    added = '3.2'
+[function.PyLong_AsLongLong]
+    added = '3.2'
+[function.PyLong_AsLongLongAndOverflow]
+    added = '3.2'
+[function.PyLong_AsSize_t]
+    added = '3.2'
+[function.PyLong_AsSsize_t]
+    added = '3.2'
+[function.PyLong_AsUnsignedLong]
+    added = '3.2'
+[function.PyLong_AsUnsignedLongLong]
+    added = '3.2'
+[function.PyLong_AsUnsignedLongLongMask]
+    added = '3.2'
+[function.PyLong_AsUnsignedLongMask]
+    added = '3.2'
+[function.PyLong_AsVoidPtr]
+    added = '3.2'
+[function.PyLong_FromDouble]
+    added = '3.2'
+[function.PyLong_FromLong]
+    added = '3.2'
+[function.PyLong_FromLongLong]
+    added = '3.2'
+[function.PyLong_FromSize_t]
+    added = '3.2'
+[function.PyLong_FromSsize_t]
+    added = '3.2'
+[function.PyLong_FromString]
+    added = '3.2'
+[function.PyLong_FromUnsignedLong]
+    added = '3.2'
+[function.PyLong_FromUnsignedLongLong]
+    added = '3.2'
+[function.PyLong_FromVoidPtr]
+    added = '3.2'
+[function.PyLong_GetInfo]
+    added = '3.2'
+[data.PyLong_Type]
+    added = '3.2'
+[data.PyMap_Type]
+    added = '3.2'
+[function.PyMapping_Check]
+    added = '3.2'
+[function.PyMapping_GetItemString]
+    added = '3.2'
+[function.PyMapping_HasKey]
+    added = '3.2'
+[function.PyMapping_HasKeyString]
+    added = '3.2'
+[function.PyMapping_Items]
+    added = '3.2'
+[function.PyMapping_Keys]
+    added = '3.2'
+[function.PyMapping_Length]
+    added = '3.2'
+[function.PyMapping_SetItemString]
+    added = '3.2'
+[function.PyMapping_Size]
+    added = '3.2'
+[function.PyMapping_Values]
+    added = '3.2'
+[function.PyMem_Free]
+    added = '3.2'
+[function.PyMem_Malloc]
+    added = '3.2'
+[function.PyMem_Realloc]
+    added = '3.2'
+[data.PyMemberDescr_Type]
+    added = '3.2'
+[function.PyMemoryView_FromObject]
+    added = '3.2'
+[function.PyMemoryView_GetContiguous]
+    added = '3.2'
+[data.PyMemoryView_Type]
+    added = '3.2'
+[data.PyMethodDescr_Type]
+    added = '3.2'
+[function.PyModule_AddIntConstant]
+    added = '3.2'
+[function.PyModule_AddObject]
+    added = '3.2'
+[function.PyModule_AddStringConstant]
+    added = '3.2'
+[function.PyModule_Create2]
+    added = '3.2'
+[function.PyModule_GetDef]
+    added = '3.2'
+[function.PyModule_GetDict]
+    added = '3.2'
+[function.PyModule_GetFilename]
+    added = '3.2'
+[function.PyModule_GetFilenameObject]
+    added = '3.2'
+[function.PyModule_GetName]
+    added = '3.2'
+[function.PyModule_GetState]
+    added = '3.2'
+[function.PyModule_New]
+    added = '3.2'
+[data.PyModule_Type]
+    added = '3.2'
+[function.PyNumber_Absolute]
+    added = '3.2'
+[function.PyNumber_Add]
+    added = '3.2'
+[function.PyNumber_And]
+    added = '3.2'
+[function.PyNumber_AsSsize_t]
+    added = '3.2'
+[function.PyNumber_Check]
+    added = '3.2'
+[function.PyNumber_Divmod]
+    added = '3.2'
+[function.PyNumber_Float]
+    added = '3.2'
+[function.PyNumber_FloorDivide]
+    added = '3.2'
+[function.PyNumber_InPlaceAdd]
+    added = '3.2'
+[function.PyNumber_InPlaceAnd]
+    added = '3.2'
+[function.PyNumber_InPlaceFloorDivide]
+    added = '3.2'
+[function.PyNumber_InPlaceLshift]
+    added = '3.2'
+[function.PyNumber_InPlaceMultiply]
+    added = '3.2'
+[function.PyNumber_InPlaceOr]
+    added = '3.2'
+[function.PyNumber_InPlacePower]
+    added = '3.2'
+[function.PyNumber_InPlaceRemainder]
+    added = '3.2'
+[function.PyNumber_InPlaceRshift]
+    added = '3.2'
+[function.PyNumber_InPlaceSubtract]
+    added = '3.2'
+[function.PyNumber_InPlaceTrueDivide]
+    added = '3.2'
+[function.PyNumber_InPlaceXor]
+    added = '3.2'
+[function.PyNumber_Index]
+    added = '3.2'
+[function.PyNumber_Invert]
+    added = '3.2'
+[function.PyNumber_Long]
+    added = '3.2'
+[function.PyNumber_Lshift]
+    added = '3.2'
+[function.PyNumber_Multiply]
+    added = '3.2'
+[function.PyNumber_Negative]
+    added = '3.2'
+[function.PyNumber_Or]
+    added = '3.2'
+[function.PyNumber_Positive]
+    added = '3.2'
+[function.PyNumber_Power]
+    added = '3.2'
+[function.PyNumber_Remainder]
+    added = '3.2'
+[function.PyNumber_Rshift]
+    added = '3.2'
+[function.PyNumber_Subtract]
+    added = '3.2'
+[function.PyNumber_ToBase]
+    added = '3.2'
+[function.PyNumber_TrueDivide]
+    added = '3.2'
+[function.PyNumber_Xor]
+    added = '3.2'
+[function.PyOS_AfterFork]
+    added = '3.2'
+    ifdef = 'HAVE_FORK'
+[data.PyOS_InputHook]
+    added = '3.2'
+[function.PyOS_InterruptOccurred]
+    added = '3.2'
+[function.PyOS_double_to_string]
+    added = '3.2'
+[function.PyOS_getsig]
+    added = '3.2'
+[function.PyOS_mystricmp]
+    added = '3.2'
+[function.PyOS_mystrnicmp]
+    added = '3.2'
+[function.PyOS_setsig]
+    added = '3.2'
+[function.PyOS_snprintf]
+    added = '3.2'
+[function.PyOS_string_to_double]
+    added = '3.2'
+[function.PyOS_strtol]
+    added = '3.2'
+[function.PyOS_strtoul]
+    added = '3.2'
+[function.PyOS_vsnprintf]
+    added = '3.2'
+[function.PyObject_ASCII]
+    added = '3.2'
+[function.PyObject_AsFileDescriptor]
+    added = '3.2'
+[function.PyObject_Bytes]
+    added = '3.2'
+[function.PyObject_Call]
+    added = '3.2'
+[function.PyObject_CallFunction]
+    added = '3.2'
+[function.PyObject_CallFunctionObjArgs]
+    added = '3.2'
+[function.PyObject_CallMethod]
+    added = '3.2'
+[function.PyObject_CallMethodObjArgs]
+    added = '3.2'
+[function.PyObject_CallObject]
+    added = '3.2'
+[function.PyObject_ClearWeakRefs]
+    added = '3.2'
+[function.PyObject_DelItem]
+    added = '3.2'
+[function.PyObject_DelItemString]
+    added = '3.2'
+[function.PyObject_Dir]
+    added = '3.2'
+[function.PyObject_Format]
+    added = '3.2'
+[function.PyObject_Free]
+    added = '3.2'
+[function.PyObject_GC_Del]
+    added = '3.2'
+[function.PyObject_GC_Track]
+    added = '3.2'
+[function.PyObject_GC_UnTrack]
+    added = '3.2'
+[function.PyObject_GenericGetAttr]
+    added = '3.2'
+[function.PyObject_GenericSetAttr]
+    added = '3.2'
+[function.PyObject_GetAttr]
+    added = '3.2'
+[function.PyObject_GetAttrString]
+    added = '3.2'
+[function.PyObject_GetItem]
+    added = '3.2'
+[function.PyObject_GetIter]
+    added = '3.2'
+[function.PyObject_HasAttr]
+    added = '3.2'
+[function.PyObject_HasAttrString]
+    added = '3.2'
+[function.PyObject_Hash]
+    added = '3.2'
+[function.PyObject_HashNotImplemented]
+    added = '3.2'
+[function.PyObject_Init]
+    added = '3.2'
+[function.PyObject_InitVar]
+    added = '3.2'
+[function.PyObject_IsInstance]
+    added = '3.2'
+[function.PyObject_IsSubclass]
+    added = '3.2'
+[function.PyObject_IsTrue]
+    added = '3.2'
+[function.PyObject_Length]
+    added = '3.2'
+[function.PyObject_Malloc]
+    added = '3.2'
+[function.PyObject_Not]
+    added = '3.2'
+[function.PyObject_Realloc]
+    added = '3.2'
+[function.PyObject_Repr]
+    added = '3.2'
+[function.PyObject_RichCompare]
+    added = '3.2'
+[function.PyObject_RichCompareBool]
+    added = '3.2'
+[function.PyObject_SelfIter]
+    added = '3.2'
+[function.PyObject_SetAttr]
+    added = '3.2'
+[function.PyObject_SetAttrString]
+    added = '3.2'
+[function.PyObject_SetItem]
+    added = '3.2'
+[function.PyObject_Size]
+    added = '3.2'
+[function.PyObject_Str]
+    added = '3.2'
+[function.PyObject_Type]
+    added = '3.2'
+[data.PyProperty_Type]
+    added = '3.2'
+[data.PyRangeIter_Type]
+    added = '3.2'
+[data.PyRange_Type]
+    added = '3.2'
+[data.PyReversed_Type]
+    added = '3.2'
+[function.PySeqIter_New]
+    added = '3.2'
+[data.PySeqIter_Type]
+    added = '3.2'
+[function.PySequence_Check]
+    added = '3.2'
+[function.PySequence_Concat]
+    added = '3.2'
+[function.PySequence_Contains]
+    added = '3.2'
+[function.PySequence_Count]
+    added = '3.2'
+[function.PySequence_DelItem]
+    added = '3.2'
+[function.PySequence_DelSlice]
+    added = '3.2'
+[function.PySequence_Fast]
+    added = '3.2'
+[function.PySequence_GetItem]
+    added = '3.2'
+[function.PySequence_GetSlice]
+    added = '3.2'
+[function.PySequence_In]
+    added = '3.2'
+[function.PySequence_InPlaceConcat]
+    added = '3.2'
+[function.PySequence_InPlaceRepeat]
+    added = '3.2'
+[function.PySequence_Index]
+    added = '3.2'
+[function.PySequence_Length]
+    added = '3.2'
+[function.PySequence_List]
+    added = '3.2'
+[function.PySequence_Repeat]
+    added = '3.2'
+[function.PySequence_SetItem]
+    added = '3.2'
+[function.PySequence_SetSlice]
+    added = '3.2'
+[function.PySequence_Size]
+    added = '3.2'
+[function.PySequence_Tuple]
+    added = '3.2'
+[data.PySetIter_Type]
+    added = '3.2'
+[function.PySet_Add]
+    added = '3.2'
+[function.PySet_Clear]
+    added = '3.2'
+[function.PySet_Contains]
+    added = '3.2'
+[function.PySet_Discard]
+    added = '3.2'
+[function.PySet_New]
+    added = '3.2'
+[function.PySet_Pop]
+    added = '3.2'
+[function.PySet_Size]
+    added = '3.2'
+[data.PySet_Type]
+    added = '3.2'
+[function.PySlice_GetIndices]
+    added = '3.2'
+[function.PySlice_GetIndicesEx]
+    added = '3.2'
+[function.PySlice_New]
+    added = '3.2'
+[data.PySlice_Type]
+    added = '3.2'
+[function.PyState_FindModule]
+    added = '3.2'
+[function.PyStructSequence_GetItem]
+    added = '3.2'
+[function.PyStructSequence_New]
+    added = '3.2'
+[function.PyStructSequence_NewType]
+    added = '3.2'
+[function.PyStructSequence_SetItem]
+    added = '3.2'
+[data.PySuper_Type]
+    added = '3.2'
+[function.PySys_AddWarnOption]
+    added = '3.2'
+[function.PySys_AddWarnOptionUnicode]
+    added = '3.2'
+[function.PySys_FormatStderr]
+    added = '3.2'
+[function.PySys_FormatStdout]
+    added = '3.2'
+[function.PySys_GetObject]
+    added = '3.2'
+[function.PySys_HasWarnOptions]
+    added = '3.2'
+[function.PySys_ResetWarnOptions]
+    added = '3.2'
+[function.PySys_SetArgv]
+    added = '3.2'
+[function.PySys_SetArgvEx]
+    added = '3.2'
+[function.PySys_SetObject]
+    added = '3.2'
+[function.PySys_SetPath]
+    added = '3.2'
+[function.PySys_WriteStderr]
+    added = '3.2'
+[function.PySys_WriteStdout]
+    added = '3.2'
+[function.PyThreadState_Clear]
+    added = '3.2'
+[function.PyThreadState_Delete]
+    added = '3.2'
+[function.PyThreadState_DeleteCurrent]
+    added = '3.2'
+    abi_only = true
+[function.PyThreadState_Get]
+    added = '3.2'
+[function.PyThreadState_GetDict]
+    added = '3.2'
+[function.PyThreadState_New]
+    added = '3.2'
+[function.PyThreadState_SetAsyncExc]
+    added = '3.2'
+[function.PyThreadState_Swap]
+    added = '3.2'
+[function.PyTraceBack_Here]
+    added = '3.2'
+[function.PyTraceBack_Print]
+    added = '3.2'
+[data.PyTraceBack_Type]
+    added = '3.2'
+[data.PyTupleIter_Type]
+    added = '3.2'
+[function.PyTuple_GetItem]
+    added = '3.2'
+[function.PyTuple_GetSlice]
+    added = '3.2'
+[function.PyTuple_New]
+    added = '3.2'
+[function.PyTuple_Pack]
+    added = '3.2'
+[function.PyTuple_SetItem]
+    added = '3.2'
+[function.PyTuple_Size]
+    added = '3.2'
+[data.PyTuple_Type]
+    added = '3.2'
+[function.PyType_ClearCache]
+    added = '3.2'
+[function.PyType_GenericAlloc]
+    added = '3.2'
+[function.PyType_GenericNew]
+    added = '3.2'
+[function.PyType_GetFlags]
+    added = '3.2'
+[function.PyType_IsSubtype]
+    added = '3.2'
+[function.PyType_Modified]
+    added = '3.2'
+[function.PyType_Ready]
+    added = '3.2'
+[data.PyType_Type]
+    added = '3.2'
+[function.PyUnicodeDecodeError_Create]
+    added = '3.2'
+[function.PyUnicodeDecodeError_GetEncoding]
+    added = '3.2'
+[function.PyUnicodeDecodeError_GetEnd]
+    added = '3.2'
+[function.PyUnicodeDecodeError_GetObject]
+    added = '3.2'
+[function.PyUnicodeDecodeError_GetReason]
+    added = '3.2'
+[function.PyUnicodeDecodeError_GetStart]
+    added = '3.2'
+[function.PyUnicodeDecodeError_SetEnd]
+    added = '3.2'
+[function.PyUnicodeDecodeError_SetReason]
+    added = '3.2'
+[function.PyUnicodeDecodeError_SetStart]
+    added = '3.2'
+[function.PyUnicodeEncodeError_GetEncoding]
+    added = '3.2'
+[function.PyUnicodeEncodeError_GetEnd]
+    added = '3.2'
+[function.PyUnicodeEncodeError_GetObject]
+    added = '3.2'
+[function.PyUnicodeEncodeError_GetReason]
+    added = '3.2'
+[function.PyUnicodeEncodeError_GetStart]
+    added = '3.2'
+[function.PyUnicodeEncodeError_SetEnd]
+    added = '3.2'
+[function.PyUnicodeEncodeError_SetReason]
+    added = '3.2'
+[function.PyUnicodeEncodeError_SetStart]
+    added = '3.2'
+[data.PyUnicodeIter_Type]
+    added = '3.2'
+[function.PyUnicodeTranslateError_GetEnd]
+    added = '3.2'
+[function.PyUnicodeTranslateError_GetObject]
+    added = '3.2'
+[function.PyUnicodeTranslateError_GetReason]
+    added = '3.2'
+[function.PyUnicodeTranslateError_GetStart]
+    added = '3.2'
+[function.PyUnicodeTranslateError_SetEnd]
+    added = '3.2'
+[function.PyUnicodeTranslateError_SetReason]
+    added = '3.2'
+[function.PyUnicodeTranslateError_SetStart]
+    added = '3.2'
+[function.PyUnicode_Append]
+    added = '3.2'
+[function.PyUnicode_AppendAndDel]
+    added = '3.2'
+[function.PyUnicode_AsASCIIString]
+    added = '3.2'
+[function.PyUnicode_AsCharmapString]
+    added = '3.2'
+[function.PyUnicode_AsDecodedObject]
+    added = '3.2'
+[function.PyUnicode_AsDecodedUnicode]
+    added = '3.2'
+[function.PyUnicode_AsEncodedObject]
+    added = '3.2'
+[function.PyUnicode_AsEncodedString]
+    added = '3.2'
+[function.PyUnicode_AsEncodedUnicode]
+    added = '3.2'
+[function.PyUnicode_AsLatin1String]
+    added = '3.2'
+[function.PyUnicode_AsRawUnicodeEscapeString]
+    added = '3.2'
+[function.PyUnicode_AsUTF16String]
+    added = '3.2'
+[function.PyUnicode_AsUTF32String]
+    added = '3.2'
+[function.PyUnicode_AsUTF8String]
+    added = '3.2'
+[function.PyUnicode_AsUnicodeEscapeString]
+    added = '3.2'
+[function.PyUnicode_AsWideChar]
+    added = '3.2'
+[function.PyUnicode_Compare]
+    added = '3.2'
+[function.PyUnicode_Concat]
+    added = '3.2'
+[function.PyUnicode_Contains]
+    added = '3.2'
+[function.PyUnicode_Count]
+    added = '3.2'
+[function.PyUnicode_Decode]
+    added = '3.2'
+[function.PyUnicode_DecodeASCII]
+    added = '3.2'
+[function.PyUnicode_DecodeCharmap]
+    added = '3.2'
+[function.PyUnicode_DecodeFSDefault]
+    added = '3.2'
+[function.PyUnicode_DecodeFSDefaultAndSize]
+    added = '3.2'
+[function.PyUnicode_DecodeLatin1]
+    added = '3.2'
+[function.PyUnicode_DecodeRawUnicodeEscape]
+    added = '3.2'
+[function.PyUnicode_DecodeUTF16]
+    added = '3.2'
+[function.PyUnicode_DecodeUTF16Stateful]
+    added = '3.2'
+[function.PyUnicode_DecodeUTF32]
+    added = '3.2'
+[function.PyUnicode_DecodeUTF32Stateful]
+    added = '3.2'
+[function.PyUnicode_DecodeUTF8]
+    added = '3.2'
+[function.PyUnicode_DecodeUTF8Stateful]
+    added = '3.2'
+[function.PyUnicode_DecodeUnicodeEscape]
+    added = '3.2'
+[function.PyUnicode_FSConverter]
+    added = '3.2'
+[function.PyUnicode_FSDecoder]
+    added = '3.2'
+[function.PyUnicode_Find]
+    added = '3.2'
+[function.PyUnicode_Format]
+    added = '3.2'
+[function.PyUnicode_FromEncodedObject]
+    added = '3.2'
+[function.PyUnicode_FromFormat]
+    added = '3.2'
+[function.PyUnicode_FromFormatV]
+    added = '3.2'
+[function.PyUnicode_FromObject]
+    added = '3.2'
+[function.PyUnicode_FromOrdinal]
+    added = '3.2'
+[function.PyUnicode_FromString]
+    added = '3.2'
+[function.PyUnicode_FromStringAndSize]
+    added = '3.2'
+[function.PyUnicode_FromWideChar]
+    added = '3.2'
+[function.PyUnicode_GetDefaultEncoding]
+    added = '3.2'
+[function.PyUnicode_GetSize]
+    added = '3.2'
+    abi_only = true
+[function.PyUnicode_IsIdentifier]
+    added = '3.2'
+[function.PyUnicode_Join]
+    added = '3.2'
+[function.PyUnicode_Partition]
+    added = '3.2'
+[function.PyUnicode_RPartition]
+    added = '3.2'
+[function.PyUnicode_RSplit]
+    added = '3.2'
+[function.PyUnicode_Replace]
+    added = '3.2'
+[function.PyUnicode_Resize]
+    added = '3.2'
+[function.PyUnicode_RichCompare]
+    added = '3.2'
+[function.PyUnicode_Split]
+    added = '3.2'
+[function.PyUnicode_Splitlines]
+    added = '3.2'
+[function.PyUnicode_Tailmatch]
+    added = '3.2'
+[function.PyUnicode_Translate]
+    added = '3.2'
+[function.PyUnicode_BuildEncodingMap]
+    added = '3.2'
+[function.PyUnicode_CompareWithASCIIString]
+    added = '3.2'
+[function.PyUnicode_DecodeUTF7]
+    added = '3.2'
+[function.PyUnicode_DecodeUTF7Stateful]
+    added = '3.2'
+[function.PyUnicode_EncodeFSDefault]
+    added = '3.2'
+[function.PyUnicode_InternFromString]
+    added = '3.2'
+[function.PyUnicode_InternImmortal]
+    added = '3.2'
+    abi_only = true
+[function.PyUnicode_InternInPlace]
+    added = '3.2'
+[data.PyUnicode_Type]
+    added = '3.2'
+[function.PyWeakref_GetObject]
+    added = '3.2'
+[function.PyWeakref_NewProxy]
+    added = '3.2'
+[function.PyWeakref_NewRef]
+    added = '3.2'
+[data.PyWrapperDescr_Type]
+    added = '3.2'
+[function.PyWrapper_New]
+    added = '3.2'
+[data.PyZip_Type]
+    added = '3.2'
+[function.Py_AddPendingCall]
+    added = '3.2'
+[function.Py_AtExit]
+    added = '3.2'
+[function.Py_BuildValue]
+    added = '3.2'
+[function.Py_CompileString]
+    added = '3.2'
+[function.Py_DecRef]
+    added = '3.2'
+[function.Py_EndInterpreter]
+    added = '3.2'
+[function.Py_Exit]
+    added = '3.2'
+[function.Py_FatalError]
+    added = '3.2'
+[data.Py_FileSystemDefaultEncoding]
+    added = '3.2'
+[function.Py_Finalize]
+    added = '3.2'
+[function.Py_GetBuildInfo]
+    added = '3.2'
+[function.Py_GetCompiler]
+    added = '3.2'
+[function.Py_GetCopyright]
+    added = '3.2'
+[function.Py_GetExecPrefix]
+    added = '3.2'
+[function.Py_GetPath]
+    added = '3.2'
+[function.Py_GetPlatform]
+    added = '3.2'
+[function.Py_GetPrefix]
+    added = '3.2'
+[function.Py_GetProgramFullPath]
+    added = '3.2'
+[function.Py_GetProgramName]
+    added = '3.2'
+[function.Py_GetPythonHome]
+    added = '3.2'
+[function.Py_GetRecursionLimit]
+    added = '3.2'
+[function.Py_GetVersion]
+    added = '3.2'
+[data.Py_HasFileSystemDefaultEncoding]
+    added = '3.2'
+[function.Py_IncRef]
+    added = '3.2'
+[function.Py_Initialize]
+    added = '3.2'
+[function.Py_InitializeEx]
+    added = '3.2'
+[function.Py_IsInitialized]
+    added = '3.2'
+[function.Py_Main]
+    added = '3.2'
+[function.Py_MakePendingCalls]
+    added = '3.2'
+[function.Py_NewInterpreter]
+    added = '3.2'
+[function.Py_ReprEnter]
+    added = '3.2'
+[function.Py_ReprLeave]
+    added = '3.2'
+[function.Py_SetProgramName]
+    added = '3.2'
+[function.Py_SetPythonHome]
+    added = '3.2'
+[function.Py_SetRecursionLimit]
+    added = '3.2'
+[function.Py_VaBuildValue]
+    added = '3.2'
+
+[function._PyErr_BadInternalCall]
+    added = '3.2'
+    abi_only = true
+[function._PyObject_CallFunction_SizeT]
+    added = '3.2'
+    abi_only = true
+[function._PyObject_CallMethod_SizeT]
+    added = '3.2'
+    abi_only = true
+[function._PyObject_GC_New]
+    added = '3.2'
+    abi_only = true
+[function._PyObject_GC_NewVar]
+    added = '3.2'
+    abi_only = true
+[function._PyObject_GC_Resize]
+    added = '3.2'
+    abi_only = true
+[function._PyObject_New]
+    added = '3.2'
+    abi_only = true
+[function._PyObject_NewVar]
+    added = '3.2'
+    abi_only = true
+[function._PyState_AddModule]
+    added = '3.2'
+    abi_only = true
+[function._PyThreadState_Init]
+    added = '3.2'
+    abi_only = true
+[function._PyThreadState_Prealloc]
+    added = '3.2'
+    abi_only = true
+[data._PyWeakref_CallableProxyType]
+    added = '3.2'
+    abi_only = true
+[data._PyWeakref_ProxyType]
+    added = '3.2'
+    abi_only = true
+[data._PyWeakref_RefType]
+    added = '3.2'
+    abi_only = true
+[function._Py_BuildValue_SizeT]
+    added = '3.2'
+    abi_only = true
+[function._Py_CheckRecursiveCall]
+    added = '3.2'
+    abi_only = true
+[function._Py_Dealloc]
+    added = '3.2'
+    abi_only = true
+[data._Py_EllipsisObject]
+    added = '3.2'
+    abi_only = true
+[data._Py_FalseStruct]
+    added = '3.2'
+    abi_only = true
+[data._Py_NoneStruct]
+    added = '3.2'
+    abi_only = true
+[data._Py_NotImplementedStruct]
+    added = '3.2'
+    abi_only = true
+[data._Py_SwappedOp]
+    added = '3.2'
+    abi_only = true
+[data._Py_TrueStruct]
+    added = '3.2'
+    abi_only = true
+[function._Py_VaBuildValue_SizeT]
+    added = '3.2'
+    abi_only = true
+
+# Old buffer protocol support (deprecated)
+
+[function.PyObject_AsCharBuffer]
+    added = '3.2'
+[function.PyObject_AsReadBuffer]
+    added = '3.2'
+[function.PyObject_AsWriteBuffer]
+    added = '3.2'
+[function.PyObject_CheckReadBuffer]
+    added = '3.2'
+
+# Flags are implicitly part of the ABI:
+
+[const.Py_TPFLAGS_DEFAULT]
+    added = '3.2'
+[const.Py_TPFLAGS_BASETYPE]
+    added = '3.2'
+[const.Py_TPFLAGS_HAVE_GC]
+    added = '3.2'
+
+[const.METH_VARARGS]
+    added = '3.2'
+[const.METH_NOARGS]
+    added = '3.2'
+[const.METH_O]
+    added = '3.2'
+[const.METH_CLASS]
+    added = '3.2'
+[const.METH_STATIC]
+    added = '3.2'
+[const.METH_COEXIST]
+    added = '3.2'
+# METH_STACKLESS is undocumented
+# METH_FASTCALL is not part of limited API.
+
+# The following are defined in private headers, but historically
+# they were exported as part of the stable ABI.
+[function.PyMarshal_ReadObjectFromString]
+    added = '3.2'
+    abi_only = true
+[function.PyMarshal_WriteObjectToString]
+    added = '3.2'
+    abi_only = true
+[function.PyMember_GetOne]
+    added = '3.2'  # Before 3.12, available in "structmember.h"
+[function.PyMember_SetOne]
+    added = '3.2'  # Before 3.12, available in "structmember.h"
+
+# TLS api is deprecated; superseded by TSS API
+
+[function.PyThread_ReInitTLS]
+    added = '3.2'
+[function.PyThread_create_key]
+    added = '3.2'
+[function.PyThread_delete_key]
+    added = '3.2'
+[function.PyThread_set_key_value]
+    added = '3.2'
+[function.PyThread_get_key_value]
+    added = '3.2'
+[function.PyThread_delete_key_value]
+    added = '3.2'
+[function.PyThread_acquire_lock]
+    added = '3.2'
+[function.PyThread_acquire_lock_timed]
+    added = '3.2'
+[function.PyThread_allocate_lock]
+    added = '3.2'
+[function.PyThread_exit_thread]
+    added = '3.2'
+[function.PyThread_free_lock]
+    added = '3.2'
+[function.PyThread_get_stacksize]
+    added = '3.2'
+[function.PyThread_get_thread_ident]
+    added = '3.2'
+[function.PyThread_get_thread_native_id]
+    added = '3.2'
+    ifdef = 'PY_HAVE_THREAD_NATIVE_ID'
+[function.PyThread_init_thread]
+    added = '3.2'
+[function.PyThread_release_lock]
+    added = '3.2'
+[function.PyThread_set_stacksize]
+    added = '3.2'
+[function.PyThread_start_new_thread]
+    added = '3.2'
+
+# The following were added in PC/python3.def in Python 3.3:
+# 7800f75827b1be557be16f3b18f5170fbf9fae08
+# 9c56409d3353b8cd4cfc19e0467bbe23fd34fc92
+# 75aeaa9b18667219bbacbc58ba6efecccef9dfbd
+
+[function.PyState_AddModule]
+    added = '3.3'
+[function.PyState_RemoveModule]
+    added = '3.3'
+[function.PyType_FromSpecWithBases]
+    added = '3.3'
+[function._PyArg_Parse_SizeT]
+    added = '3.3'
+    abi_only = true
+[function._PyArg_ParseTuple_SizeT]
+    added = '3.3'
+    abi_only = true
+[function._PyArg_ParseTupleAndKeywords_SizeT]
+    added = '3.3'
+    abi_only = true
+[function._PyArg_VaParse_SizeT]
+    added = '3.3'
+    abi_only = true
+[function._PyArg_VaParseTupleAndKeywords_SizeT]
+    added = '3.3'
+    abi_only = true
+[function.PyThread_GetInfo]
+    added = '3.3'
+
+# The following were added in PC/python3.def in Python 3.4:
+# 3ba3a3ee56c142e93d6bbe20ff6bf939212a30f0
+
+[function.PyCFunction_New]
+    added = '3.4'
+[function.PyType_GetSlot]
+    added = '3.4'
+
+# The following were added in PC/python3.def in Python 3.5:
+# 11d7b1423fc44d764eba7065ea5eba58ed748b21
+# f3b73ad51da3097d7915796fdc62608b1ab90c0a
+
+[function.PyErr_FormatV]
+    added = '3.5'
+[function.PyModuleDef_Init]
+    added = '3.5'
+[data.PyModuleDef_Type]
+    added = '3.5'
+
+# New slots in 3.5:
+# d51374ed78a3e3145911a16cdf3b9b84b3ba7d15 - Matrix multiplication (PEP 465)
+# 7544508f0245173bff5866aa1598c8f6cce1fc5f - Async iterators (PEP 492)
+# 0969a9f8abcf98bb43ea77b1dd050426adcfb4f7 - tp_finalize
+
+[const.Py_nb_matrix_multiply]
+    added = '3.5'
+[const.Py_nb_inplace_matrix_multiply]
+    added = '3.5'
+[const.Py_am_await]
+    added = '3.5'
+[const.Py_am_aiter]
+    added = '3.5'
+[const.Py_am_anext]
+    added = '3.5'
+[const.Py_tp_finalize]
+    added = '3.5'
+
+# The following were added in PC/python3.def in Python 3.6:
+
+[function.Py_FinalizeEx]
+    added = '3.6'
+
+[function.PyOS_FSPath]
+    added = '3.6'
+[function.PyErr_ResourceWarning]
+    added = '3.6'
+[function.PyErr_SetImportErrorSubclass]
+    added = '3.6'
+[data.PyExc_ModuleNotFoundError]
+    added = '3.6'
+
+# The following were added in PC/python3.def in Python 3.6.1 and 3.5.3/3.5.4:
+
+[function.PyCodec_NameReplaceErrors]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.PyErr_GetExcInfo]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.PyErr_SetExcInfo]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.PyErr_SetFromErrnoWithFilenameObjects]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.PyErr_SetImportError]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.PyErr_SyntaxLocationEx]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[data.PyExc_BlockingIOError]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[data.PyExc_BrokenPipeError]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[data.PyExc_ChildProcessError]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[data.PyExc_ConnectionAbortedError]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[data.PyExc_ConnectionError]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[data.PyExc_ConnectionRefusedError]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[data.PyExc_ConnectionResetError]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[data.PyExc_FileExistsError]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[data.PyExc_FileNotFoundError]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[data.PyExc_InterruptedError]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[data.PyExc_IsADirectoryError]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[data.PyExc_NotADirectoryError]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[data.PyExc_PermissionError]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[data.PyExc_ProcessLookupError]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[data.PyExc_RecursionError]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[data.PyExc_ResourceWarning]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[data.PyExc_StopAsyncIteration]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[data.PyExc_TimeoutError]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.PyImport_AddModuleObject]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.PyImport_ExecCodeModuleObject]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.PyImport_ImportFrozenModuleObject]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.PyImport_ImportModuleLevelObject]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.PyMem_Calloc]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.PyMemoryView_FromMemory]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.PyModule_AddFunctions]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.PyModule_ExecDef]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.PyModule_FromDefAndSpec2]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.PyModule_GetNameObject]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.PyModule_NewObject]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.PyModule_SetDocString]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.PyNumber_InPlaceMatrixMultiply]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.PyNumber_MatrixMultiply]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.PyObject_Calloc]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.PyObject_GenericSetDict]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.PySys_AddXOption]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.PySys_GetXOptions]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.PyUnicode_AsUCS4]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.PyUnicode_AsUCS4Copy]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.PyUnicode_AsWideCharString]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.PyUnicode_DecodeLocale]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.PyUnicode_DecodeLocaleAndSize]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.PyUnicode_EncodeLocale]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.PyUnicode_FindChar]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.PyUnicode_GetLength]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.PyUnicode_ReadChar]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.PyUnicode_Substring]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.PyUnicode_WriteChar]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.Py_DecodeLocale]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.Py_EncodeLocale]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.Py_SetPath]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+[function.PyErr_SetExcFromWindowsErr]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+    ifdef = 'MS_WINDOWS'
+[function.PyErr_SetExcFromWindowsErrWithFilename]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+    ifdef = 'MS_WINDOWS'
+[function.PyErr_SetExcFromWindowsErrWithFilenameObject]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+    ifdef = 'MS_WINDOWS'
+[function.PyErr_SetExcFromWindowsErrWithFilenameObjects]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+    ifdef = 'MS_WINDOWS'
+[function.PyErr_SetFromWindowsErr]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+    ifdef = 'MS_WINDOWS'
+[function.PyErr_SetFromWindowsErrWithFilename]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+    ifdef = 'MS_WINDOWS'
+[data.PyExc_WindowsError]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+    ifdef = 'MS_WINDOWS'
+[function.PyOS_CheckStack]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+    ifdef = 'USE_STACKCHECK'
+[function.PyUnicode_AsMBCSString]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+    ifdef = 'MS_WINDOWS'
+[function.PyUnicode_DecodeCodePageStateful]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+    ifdef = 'MS_WINDOWS'
+[function.PyUnicode_DecodeMBCS]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+    ifdef = 'MS_WINDOWS'
+[function.PyUnicode_DecodeMBCSStateful]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+    ifdef = 'MS_WINDOWS'
+[function.PyUnicode_EncodeCodePage]
+    added = '3.7'  # (and 3.6.1 and 3.5.3)
+    ifdef = 'MS_WINDOWS'
+
+# 3.5.4:
+[function.PySlice_AdjustIndices]
+    added = '3.7'  # (and 3.6.1 and 3.5.4)
+[function.PySlice_Unpack]
+    added = '3.7'  # (and 3.6.1 and 3.5.4)
+
+# The following were added in PC/python3.def in Python 3.7:
+
+[function.PyInterpreterState_GetID]
+    added = '3.7'
+[function.PyThread_tss_alloc]
+    added = '3.7'
+[function.PyThread_tss_create]
+    added = '3.7'
+[function.PyThread_tss_delete]
+    added = '3.7'
+[function.PyThread_tss_free]
+    added = '3.7'
+[function.PyThread_tss_get]
+    added = '3.7'
+[function.PyThread_tss_is_created]
+    added = '3.7'
+[function.PyThread_tss_set]
+    added = '3.7'
+[function.PyOS_BeforeFork]
+    added = '3.7'
+    ifdef = 'HAVE_FORK'
+[function.PyOS_AfterFork_Parent]
+    added = '3.7'
+    ifdef = 'HAVE_FORK'
+[function.PyOS_AfterFork_Child]
+    added = '3.7'
+    ifdef = 'HAVE_FORK'
+
+# New method flags in 3.7 (PEP 590):
+
+[const.METH_FASTCALL]
+    added = '3.7'
+[const.METH_METHOD]
+    added = '3.7'
+
+# The following were added in PC/python3.def in Python 3.8:
+
+[function.PyImport_GetModule]
+    added = '3.8'
+[data.Py_UTF8Mode]
+    added = '3.8'
+[function.PyExceptionClass_Name]
+    added = '3.8'
+[function.PyIndex_Check]
+    added = '3.8'
+[function.PyIter_Check]
+    added = '3.8'
+[data.PyDictRevIterItem_Type]
+    added = '3.8'
+[data.PyDictRevIterKey_Type]
+    added = '3.8'
+[data.PyDictRevIterValue_Type]
+    added = '3.8'
+[function.PyInterpreterState_GetDict]
+    added = '3.8'
+[function.Py_BytesMain]
+    added = '3.8'
+
+# New type flag (PEP 590):
+
+[const.Py_TPFLAGS_METHOD_DESCRIPTOR]
+    added = '3.8'
+
+# The following were added in PC/python3.def in Python 3.9:
+
+[function.Py_EnterRecursiveCall]
+    added = '3.9'
+[function.Py_LeaveRecursiveCall]
+    added = '3.9'
+[function.Py_GenericAlias]
+    added = '3.9'
+[data.Py_GenericAliasType]
+    added = '3.9'
+[function.PyCMethod_New]
+    added = '3.9'
+[function.PyInterpreterState_Get]
+    added = '3.9'
+[function.PyObject_GC_IsFinalized]
+    added = '3.9'
+[function.PyObject_GC_IsTracked]
+    added = '3.9'
+
+# The following were added in PC/python3.def in Python 3.10:
+
+[function.Py_GetArgcArgv]
+    added = '3.10'
+    abi_only = true
+[function.PyIter_Send]
+    added = '3.10'
+[function.PyUnicode_AsUTF8AndSize]
+    added = '3.10'
+[function.PyObject_GenericGetDict]
+    added = '3.10'
+[function.Py_NewRef]
+    added = '3.10'
+[function.Py_XNewRef]
+    added = '3.10'
+[function.PyModule_AddType]
+    added = '3.10'
+[function.PyType_FromModuleAndSpec]
+    added = '3.10'
+[function.PyType_GetModule]
+    added = '3.10'
+[function.PyType_GetModuleState]
+    added = '3.10'
+[function.PyFrame_GetLineNumber]
+    added = '3.10'
+[function.PyFrame_GetCode]
+    added = '3.10'
+[function.PyObject_CallNoArgs]
+    added = '3.10'
+[function.PyThreadState_GetFrame]
+    added = '3.10'
+[function.PyThreadState_GetID]
+    added = '3.10'
+[function.PyThreadState_GetInterpreter]
+    added = '3.10'
+[function.PyModule_AddObjectRef]
+    added = '3.10'
+[data.Py_FileSystemDefaultEncodeErrors]
+    added = '3.10'
+[function.PyCodec_Unregister]
+    added = '3.10'
+[function.PyErr_SetInterruptEx]
+    added = '3.10'
+[function.Py_Is]
+    added = '3.10'
+[function.Py_IsTrue]
+    added = '3.10'
+[function.Py_IsFalse]
+    added = '3.10'
+[function.Py_IsNone]
+    added = '3.10'
+[function._Py_IncRef]
+    added = '3.10'
+    abi_only = true
+[function._Py_DecRef]
+    added = '3.10'
+    abi_only = true
+[function.PyAIter_Check]
+    added = '3.10'
+[function.PyObject_GetAIter]
+    added = '3.10'
+[data.PyExc_EncodingWarning]
+    added = '3.10'
+
+# Support for Stable ABI in debug builds
+
+[data._Py_RefTotal]
+    added = '3.10'
+    ifdef = 'Py_REF_DEBUG'
+    abi_only = true
+[function._Py_NegativeRefcount]
+    added = '3.10'
+    ifdef = 'Py_REF_DEBUG'
+    abi_only = true
+
+# New slots in 3.10:
+
+[const.Py_am_send]
+    added = '3.10'
+
+
+# New GC control functions in Py3.10 (https://bugs.python.org/issue28254)
+
+[function.PyGC_Disable]
+    added = '3.10'
+[function.PyGC_Enable]
+    added = '3.10'
+[function.PyGC_IsEnabled]
+    added = '3.10'
+
+# Add new C API in Python 3.11
+
+[function.PyType_GetName]
+    added = '3.11'
+[function.PyType_GetQualName]
+    added = '3.11'
+[data.PyStructSequence_UnnamedField]
+    added = '3.11'
+
+# Add stable Py_buffer API in Python 3.11 (https://bugs.python.org/issue45459)
+[struct.Py_buffer]
+    added = '3.11'
+    struct_abi_kind = 'full-abi'
+[function.PyObject_CheckBuffer]
+    added = '3.11'
+[function.PyObject_GetBuffer]
+    added = '3.11'
+[function.PyBuffer_GetPointer]
+    added = '3.11'
+[function.PyBuffer_SizeFromFormat]
+    added = '3.11'
+[function.PyBuffer_ToContiguous]
+    added = '3.11'
+[function.PyBuffer_FromContiguous]
+    added = '3.11'
+[function.PyObject_CopyData]
+    added = '3.11'
+[function.PyBuffer_IsContiguous]
+    added = '3.11'
+[function.PyBuffer_FillContiguousStrides]
+    added = '3.11'
+[function.PyBuffer_FillInfo]
+    added = '3.11'
+[function.PyBuffer_Release]
+    added = '3.11'
+[function.PyMemoryView_FromBuffer]
+    added = '3.11'
+
+# Constants for Py_buffer API added to this list in Python 3.11.1 (https://github.com/python/cpython/issues/98680)
+# (they were available with 3.11.0)
+[const.PyBUF_MAX_NDIM]
+    added = '3.11'
+[const.PyBUF_SIMPLE]
+    added = '3.11'
+[const.PyBUF_WRITABLE]
+    added = '3.11'
+[const.PyBUF_FORMAT]
+    added = '3.11'
+[const.PyBUF_ND]
+    added = '3.11'
+[const.PyBUF_STRIDES]
+    added = '3.11'
+[const.PyBUF_C_CONTIGUOUS]
+    added = '3.11'
+[const.PyBUF_F_CONTIGUOUS]
+    added = '3.11'
+[const.PyBUF_ANY_CONTIGUOUS]
+    added = '3.11'
+[const.PyBUF_INDIRECT]
+    added = '3.11'
+[const.PyBUF_CONTIG]
+    added = '3.11'
+[const.PyBUF_CONTIG_RO]
+    added = '3.11'
+[const.PyBUF_STRIDED]
+    added = '3.11'
+[const.PyBUF_STRIDED_RO]
+    added = '3.11'
+[const.PyBUF_RECORDS]
+    added = '3.11'
+[const.PyBUF_RECORDS_RO]
+    added = '3.11'
+[const.PyBUF_FULL]
+    added = '3.11'
+[const.PyBUF_FULL_RO]
+    added = '3.11'
+[const.PyBUF_READ]
+    added = '3.11'
+[const.PyBUF_WRITE]
+    added = '3.11'
+
+
+# (Detailed comments aren't really needed for further entries: from here on
+#  we can use version control logs.)
+
+[data.Py_Version]
+    added = '3.11'
+[function.PyErr_GetHandledException]
+    added = '3.11'
+[function.PyErr_SetHandledException]
+    added = '3.11'
+
+[function.PyType_FromMetaclass]
+    added = '3.12'
+[const.Py_TPFLAGS_HAVE_VECTORCALL]
+    added = '3.12'
+[function.PyVectorcall_NARGS]
+    added = '3.12'
+[function.PyVectorcall_Call]
+    added = '3.12'
+[function.PyErr_GetRaisedException]
+    added = '3.12'
+[function.PyErr_SetRaisedException]
+    added = '3.12'
+[function.PyException_GetArgs]
+    added = '3.12'
+[function.PyException_SetArgs]
+    added = '3.12'
+
+[typedef.vectorcallfunc]
+    added = '3.12'
+[function.PyObject_Vectorcall]
+    added = '3.12'
+[function.PyObject_VectorcallMethod]
+    added = '3.12'
+[macro.PY_VECTORCALL_ARGUMENTS_OFFSET]
+    added = '3.12'
+[typedef.getbufferproc]
+    added = '3.12'
+[typedef.releasebufferproc]
+    added = '3.12'
+
+[const.Py_T_BYTE]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_SHORT]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_INT]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_LONG]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_LONGLONG]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_UBYTE]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_UINT]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_USHORT]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_ULONG]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_ULONGLONG]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_PYSSIZET]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_FLOAT]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_DOUBLE]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_BOOL]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_STRING]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_STRING_INPLACE]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_CHAR]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_OBJECT_EX]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_READONLY]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_AUDIT_READ]
+    added = '3.12'  # Before 3.12, available in "structmember.h"
+
+[function.PyObject_GetTypeData]
+    added = '3.12'
+[function.PyType_GetTypeDataSize]
+    added = '3.12'
+[const.Py_RELATIVE_OFFSET]
+    added = '3.12'
+[const.Py_TPFLAGS_ITEMS_AT_END]
+    added = '3.12'

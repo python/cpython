@@ -428,7 +428,7 @@
     <ClInclude Include="$(lzmaDir)src\liblzma\simple\simple_private.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="$(lzmaDir)windows\config.h">
+    <ClInclude Include="$(lzmaDir)windows\vs2019\config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

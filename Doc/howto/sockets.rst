@@ -45,7 +45,7 @@ likely to be other forms of IPC that are faster, but for
 cross-platform communication, sockets are about the only game in town.
 
 They were invented in Berkeley as part of the BSD flavor of Unix. They spread
-like wildfire with the Internet. With good reason --- the combination of sockets
+like wildfire with the internet. With good reason --- the combination of sockets
 with INET makes talking to arbitrary machines around the world unbelievably easy
 (at least compared to other schemes).
 
@@ -252,20 +252,25 @@ Binary Data
 -----------
 
 It is perfectly possible to send binary data over a socket. The major problem is
-that not all machines use the same formats for binary data. For example, a
-Motorola chip will represent a 16 bit integer with the value 1 as the two hex
-bytes 00 01. Intel and DEC, however, are byte-reversed - that same 1 is 01 00.
+that not all machines use the same formats for binary data. For example,
+`network byte order <https://en.wikipedia.org/wiki/Endianness#Networking>`_
+is big-endian, with the most significant byte first,
+so a 16 bit integer with the value ``1`` would be the two hex bytes ``00 01``.
+However, most common processors (x86/AMD64, ARM, RISC-V), are little-endian,
+with the least significant byte first - that same ``1`` would be ``01 00``.
+
 Socket libraries have calls for converting 16 and 32 bit integers - ``ntohl,
 htonl, ntohs, htons`` where "n" means *network* and "h" means *host*, "s" means
 *short* and "l" means *long*. Where network order is host order, these do
 nothing, but where the machine is byte-reversed, these swap the bytes around
 appropriately.
 
-In these days of 32 bit machines, the ascii representation of binary data is
+In these days of 64-bit machines, the ASCII representation of binary data is
 frequently smaller than the binary representation. That's because a surprising
-amount of the time, all those longs have the value 0, or maybe 1. The string "0"
-would be two bytes, while binary is four. Of course, this doesn't fit well with
-fixed-length messages. Decisions, decisions.
+amount of the time, most integers have the value 0, or maybe 1.
+The string ``"0"`` would be two bytes, while a full 64-bit integer would be 8.
+Of course, this doesn't fit well with fixed-length messages.
+Decisions, decisions.
 
 
 Disconnecting
