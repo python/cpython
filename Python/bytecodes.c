@@ -195,6 +195,12 @@ dummy_func(
             Py_INCREF(value);
         }
 
+        inst(LOAD_FAST_AND_CLEAR, (-- value)) {
+            value = GETLOCAL(oparg);
+            // do not use SETLOCAL here, it decrefs the old value
+            GETLOCAL(oparg) = NULL;
+        }
+
         inst(LOAD_CONST, (-- value)) {
             value = GETITEM(frame->f_code->co_consts, oparg);
             Py_INCREF(value);
@@ -489,6 +495,7 @@ dummy_func(
         }
 
         inst(BINARY_SUBSCR_GETITEM, (unused/1, container, sub -- unused)) {
+            DEOPT_IF(tstate->interp->eval_frame, BINARY_SUBSCR);
             PyTypeObject *tp = Py_TYPE(container);
             DEOPT_IF(!PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE), BINARY_SUBSCR);
             PyHeapTypeObject *ht = (PyHeapTypeObject *)tp;
@@ -808,7 +815,7 @@ dummy_func(
             PREDICT(LOAD_CONST);
         }
 
-        family(for_iter, INLINE_CACHE_ENTRIES_FOR_ITER) = {
+        family(send, INLINE_CACHE_ENTRIES_SEND) = {
             SEND,
             SEND_GEN,
         };
@@ -825,8 +832,9 @@ dummy_func(
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
             assert(frame != &entry_frame);
-            if ((Py_TYPE(receiver) == &PyGen_Type ||
-                Py_TYPE(receiver) == &PyCoro_Type) && ((PyGenObject *)receiver)->gi_frame_state < FRAME_EXECUTING)
+            if ((tstate->interp->eval_frame == NULL) &&
+                (Py_TYPE(receiver) == &PyGen_Type || Py_TYPE(receiver) == &PyCoro_Type) &&
+                ((PyGenObject *)receiver)->gi_frame_state < FRAME_EXECUTING)
             {
                 PyGenObject *gen = (PyGenObject *)receiver;
                 _PyInterpreterFrame *gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
@@ -861,7 +869,8 @@ dummy_func(
             Py_DECREF(v);
         }
 
-        inst(SEND_GEN, (unused/1, receiver, v -- receiver)) {
+        inst(SEND_GEN, (unused/1, receiver, v -- receiver, unused)) {
+            DEOPT_IF(tstate->interp->eval_frame, SEND);
             PyGenObject *gen = (PyGenObject *)receiver;
             DEOPT_IF(Py_TYPE(gen) != &PyGen_Type &&
                      Py_TYPE(gen) != &PyCoro_Type, SEND);
@@ -1557,17 +1566,18 @@ dummy_func(
 
         family(load_super_attr, INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR) = {
             LOAD_SUPER_ATTR,
+            LOAD_SUPER_ATTR_ATTR,
             LOAD_SUPER_ATTR_METHOD,
         };
 
-        inst(LOAD_SUPER_ATTR, (unused/9, global_super, class, self -- res2 if (oparg & 1), res)) {
+        inst(LOAD_SUPER_ATTR, (unused/1, global_super, class, self -- res2 if (oparg & 1), res)) {
             PyObject *name = GETITEM(frame->f_code->co_names, oparg >> 2);
             int load_method = oparg & 1;
             #if ENABLE_SPECIALIZATION
             _PySuperAttrCache *cache = (_PySuperAttrCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 next_instr--;
-                _Py_Specialize_LoadSuperAttr(global_super, class, self, next_instr, name, load_method);
+                _Py_Specialize_LoadSuperAttr(global_super, class, next_instr, load_method);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(LOAD_SUPER_ATTR, deferred);
@@ -1585,17 +1595,38 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        inst(LOAD_SUPER_ATTR_METHOD, (unused/1, class_version/2, self_type_version/2, method/4, global_super, class, self -- res2, res)) {
+        inst(LOAD_SUPER_ATTR_ATTR, (unused/1, global_super, class, self -- res2 if (oparg & 1), res)) {
+            assert(!(oparg & 1));
             DEOPT_IF(global_super != (PyObject *)&PySuper_Type, LOAD_SUPER_ATTR);
             DEOPT_IF(!PyType_Check(class), LOAD_SUPER_ATTR);
-            DEOPT_IF(((PyTypeObject *)class)->tp_version_tag != class_version, LOAD_SUPER_ATTR);
-            PyTypeObject *self_type = Py_TYPE(self);
-            DEOPT_IF(self_type->tp_version_tag != self_type_version, LOAD_SUPER_ATTR);
-            res2 = method;
-            res = self; // transfer ownership
-            Py_INCREF(res2);
+            STAT_INC(LOAD_SUPER_ATTR, hit);
+            PyObject *name = GETITEM(frame->f_code->co_names, oparg >> 2);
+            res = _PySuper_Lookup((PyTypeObject *)class, self, name, NULL);
+            DECREF_INPUTS();
+            ERROR_IF(res == NULL, error);
+        }
+
+        inst(LOAD_SUPER_ATTR_METHOD, (unused/1, global_super, class, self -- res2, res)) {
+            assert(oparg & 1);
+            DEOPT_IF(global_super != (PyObject *)&PySuper_Type, LOAD_SUPER_ATTR);
+            DEOPT_IF(!PyType_Check(class), LOAD_SUPER_ATTR);
+            STAT_INC(LOAD_SUPER_ATTR, hit);
+            PyObject *name = GETITEM(frame->f_code->co_names, oparg >> 2);
+            int method_found = 0;
+            res2 = _PySuper_Lookup((PyTypeObject *)class, self, name, &method_found);
             Py_DECREF(global_super);
             Py_DECREF(class);
+            if (res2 == NULL) {
+                Py_DECREF(self);
+                ERROR_IF(true, error);
+            }
+            if (method_found) {
+                res = self; // transfer ownership
+            } else {
+                Py_DECREF(self);
+                res = res2;
+                res2 = NULL;
+            }
         }
 
         family(load_attr, INLINE_CACHE_ENTRIES_LOAD_ATTR) = {
@@ -2366,6 +2397,7 @@ dummy_func(
         }
 
         inst(FOR_ITER_GEN, (unused/1, iter -- iter, unused)) {
+            DEOPT_IF(tstate->interp->eval_frame, FOR_ITER);
             PyGenObject *gen = (PyGenObject *)iter;
             DEOPT_IF(Py_TYPE(gen) != &PyGen_Type, FOR_ITER);
             DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING, FOR_ITER);
@@ -3166,6 +3198,25 @@ dummy_func(
                 }
             }
             else {
+                if (Py_TYPE(func) == &PyFunction_Type &&
+                    tstate->interp->eval_frame == NULL &&
+                    ((PyFunctionObject *)func)->vectorcall == _PyFunction_Vectorcall) {
+                    assert(PyTuple_CheckExact(callargs));
+                    Py_ssize_t nargs = PyTuple_GET_SIZE(callargs);
+                    int code_flags = ((PyCodeObject *)PyFunction_GET_CODE(func))->co_flags;
+                    PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(func));
+
+                    _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit_Ex(tstate,
+                                                                                (PyFunctionObject *)func, locals,
+                                                                                nargs, callargs, kwargs);
+                    // Need to manually shrink the stack since we exit with DISPATCH_INLINED.
+                    STACK_SHRINK(oparg + 3);
+                    if (new_frame == NULL) {
+                        goto error;
+                    }
+                    frame->return_offset = 0;
+                    DISPATCH_INLINED(new_frame);
+                }
                 result = PyObject_Call(func, callargs, kwargs);
             }
             DECREF_INPUTS();
@@ -3302,28 +3353,6 @@ dummy_func(
         inst(SWAP, (bottom, unused[oparg-2], top --
                     top, unused[oparg-2], bottom)) {
             assert(oparg >= 2);
-        }
-
-        inst(INSTRUMENTED_LINE, ( -- )) {
-            _Py_CODEUNIT *here = next_instr-1;
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            int original_opcode = _Py_call_instrumentation_line(
-                    tstate, frame, here);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (original_opcode < 0) {
-                next_instr = here+1;
-                goto error;
-            }
-            next_instr = frame->prev_instr;
-            if (next_instr != here) {
-                DISPATCH();
-            }
-            if (_PyOpcode_Caches[original_opcode]) {
-                _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(next_instr+1);
-                INCREMENT_ADAPTIVE_COUNTER(cache->counter);
-            }
-            opcode = original_opcode;
-            DISPATCH_GOTO();
         }
 
         inst(INSTRUMENTED_INSTRUCTION, ( -- )) {

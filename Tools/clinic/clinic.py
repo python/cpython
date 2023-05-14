@@ -43,7 +43,18 @@ version = '1'
 
 NO_VARARG = "PY_SSIZE_T_MAX"
 CLINIC_PREFIX = "__clinic_"
-CLINIC_PREFIXED_ARGS = {"args"}
+CLINIC_PREFIXED_ARGS = {
+    "_keywords",
+    "_parser",
+    "args",
+    "argsbuf",
+    "fastargs",
+    "kwargs",
+    "kwnames",
+    "nargs",
+    "noptargs",
+    "return_value",
+}
 
 class Unspecified:
     def __repr__(self):
@@ -345,6 +356,7 @@ class CRenderData:
         # you should check the _return_value for errors, and
         # "goto exit" if there are any.
         self.return_conversion = []
+        self.converter_retval = "_return_value"
 
         # The C statements required to do some operations
         # after the end of parsing but before cleaning up.
@@ -803,13 +815,11 @@ class CLanguage(Language):
         # parser_body_fields remembers the fields passed in to the
         # previous call to parser_body. this is used for an awful hack.
         parser_body_fields = ()
-        parser_body_declarations = ''
         def parser_body(prototype, *fields, declarations=''):
-            nonlocal parser_body_fields, parser_body_declarations
+            nonlocal parser_body_fields
             add, output = text_accumulator()
             add(prototype)
             parser_body_fields = fields
-            parser_body_declarations = declarations
 
             fields = list(fields)
             fields.insert(0, normalize_snippet("""
@@ -1943,12 +1953,12 @@ legacy_converters = {}
 return_converters = {}
 
 
-def write_file(filename, new_contents):
+def write_file(filename, new_contents, force=False):
     try:
         with open(filename, 'r', encoding="utf-8") as fp:
             old_contents = fp.read()
 
-        if old_contents == new_contents:
+        if old_contents == new_contents and not force:
             # no change: avoid modifying the file modification time
             return
     except FileNotFoundError:
@@ -2112,7 +2122,7 @@ impl_definition block
                          traceback.format_exc().rstrip())
             printer.print_block(block)
 
-        second_pass_replacements = {}
+        clinic_out = []
 
         # these are destinations not buffers
         for name, destination in self.destinations.items():
@@ -2153,25 +2163,11 @@ impl_definition block
                     block.input = 'preserve\n'
                     printer_2 = BlockPrinter(self.language)
                     printer_2.print_block(block, core_includes=True)
-                    write_file(destination.filename, printer_2.f.getvalue())
+                    pair = destination.filename, printer_2.f.getvalue()
+                    clinic_out.append(pair)
                     continue
-        text = printer.f.getvalue()
 
-        if second_pass_replacements:
-            printer_2 = BlockPrinter(self.language)
-            parser_2 = BlockParser(text, self.language)
-            changed = False
-            for block in parser_2:
-                if block.dsl_name:
-                    for id, replacement in second_pass_replacements.items():
-                        if id in block.output:
-                            changed = True
-                            block.output = block.output.replace(id, replacement)
-                printer_2.print_block(block)
-            if changed:
-                text = printer_2.f.getvalue()
-
-        return text
+        return printer.f.getvalue(), clinic_out
 
 
     def _module_and_class(self, fields):
@@ -2227,9 +2223,13 @@ def parse_file(filename, *, verify=True, output=None):
         return
 
     clinic = Clinic(language, verify=verify, filename=filename)
-    cooked = clinic.parse(raw)
+    src_out, clinic_out = clinic.parse(raw)
 
-    write_file(output, cooked)
+    # If clinic output changed, force updating the source file as well.
+    force = bool(clinic_out)
+    write_file(output, src_out, force=force)
+    for fn, data in clinic_out:
+        write_file(fn, data)
 
 
 def compute_checksum(input, length=None):
@@ -2599,6 +2599,9 @@ class CConverter(metaclass=CConverterAutoRegister):
     # Every non-abstract subclass should supply a valid value.
     c_ignored_default = 'NULL'
 
+    # If true, wrap with Py_UNUSED.
+    unused = False
+
     # The C converter *function* to be used, if any.
     # (If this is not None, format_unit must be 'O&'.)
     converter = None
@@ -2651,9 +2654,22 @@ class CConverter(metaclass=CConverterAutoRegister):
     signature_name = None
 
     # keep in sync with self_converter.__init__!
-    def __init__(self, name, py_name, function, default=unspecified, *, c_default=None, py_default=None, annotation=unspecified, **kwargs):
+    def __init__(self,
+             # Positional args:
+             name,
+             py_name,
+             function,
+             default=unspecified,
+             *,  # Keyword only args:
+             c_default=None,
+             py_default=None,
+             annotation=unspecified,
+             unused=False,
+             **kwargs
+    ):
         self.name = ensure_legal_c_identifier(name)
         self.py_name = py_name
+        self.unused = unused
 
         if default is not unspecified:
             if self.default_type and not isinstance(default, (self.default_type, Unknown)):
@@ -2800,6 +2816,8 @@ class CConverter(metaclass=CConverterAutoRegister):
             name = self.parser_name
         else:
             name = self.name
+            if self.unused:
+                name = f"Py_UNUSED({name})"
         prototype.append(name)
         return "".join(prototype)
 
@@ -3894,15 +3912,15 @@ class CReturnConverter(metaclass=CReturnConverterAutoRegister):
     def return_converter_init(self):
         pass
 
-    def declare(self, data, name="_return_value"):
+    def declare(self, data):
         line = []
         add = line.append
         add(self.type)
         if not self.type.endswith('*'):
             add(' ')
-        add(name + ';')
+        add(data.converter_retval + ';')
         data.declarations.append(''.join(line))
-        data.return_value = name
+        data.return_value = data.converter_retval
 
     def err_occurred_if(self, expr, data):
         data.return_conversion.append('if (({}) && PyErr_Occurred()) {{\n    goto exit;\n}}\n'.format(expr))
@@ -3924,8 +3942,10 @@ class bool_return_converter(CReturnConverter):
 
     def render(self, function, data):
         self.declare(data)
-        self.err_occurred_if("_return_value == -1", data)
-        data.return_conversion.append('return_value = PyBool_FromLong((long)_return_value);\n')
+        self.err_occurred_if(f"{data.converter_retval} == -1", data)
+        data.return_conversion.append(
+            f'return_value = PyBool_FromLong((long){data.converter_retval});\n'
+        )
 
 class long_return_converter(CReturnConverter):
     type = 'long'
@@ -3935,9 +3955,10 @@ class long_return_converter(CReturnConverter):
 
     def render(self, function, data):
         self.declare(data)
-        self.err_occurred_if("_return_value == {}-1".format(self.unsigned_cast), data)
+        self.err_occurred_if(f"{data.converter_retval} == {self.unsigned_cast}-1", data)
         data.return_conversion.append(
-            ''.join(('return_value = ', self.conversion_fn, '(', self.cast, '_return_value);\n')))
+            f'return_value = {self.conversion_fn}({self.cast}{data.converter_retval});\n'
+        )
 
 class int_return_converter(long_return_converter):
     type = 'int'
@@ -3979,9 +4000,10 @@ class double_return_converter(CReturnConverter):
 
     def render(self, function, data):
         self.declare(data)
-        self.err_occurred_if("_return_value == -1.0", data)
+        self.err_occurred_if(f"{data.converter_retval} == -1.0", data)
         data.return_conversion.append(
-            'return_value = PyFloat_FromDouble(' + self.cast + '_return_value);\n')
+            f'return_value = PyFloat_FromDouble({self.cast}{data.converter_retval});\n'
+        )
 
 class float_return_converter(double_return_converter):
     type = 'float'
@@ -4697,10 +4719,8 @@ class DSLParser:
                     c_default = "NULL"
                 elif (isinstance(expr, ast.BinOp) or
                     (isinstance(expr, ast.UnaryOp) and
-                     not (isinstance(expr.operand, ast.Num) or
-                          (hasattr(ast, 'Constant') and
-                           isinstance(expr.operand, ast.Constant) and
-                           type(expr.operand.value) in (int, float, complex)))
+                     not (isinstance(expr.operand, ast.Constant) and
+                          type(expr.operand.value) in {int, float, complex})
                     )):
                     c_default = kwargs.get("c_default")
                     if not (isinstance(c_default, str) and c_default):
@@ -4802,13 +4822,9 @@ class DSLParser:
         self.function.parameters[key] = p
 
     def parse_converter(self, annotation):
-        if (hasattr(ast, 'Constant') and
-            isinstance(annotation, ast.Constant) and
+        if (isinstance(annotation, ast.Constant) and
             type(annotation.value) is str):
             return annotation.value, True, {}
-
-        if isinstance(annotation, ast.Str):
-            return annotation.s, True, {}
 
         if isinstance(annotation, ast.Name):
             return annotation.id, False, {}

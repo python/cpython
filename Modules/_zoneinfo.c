@@ -1709,11 +1709,11 @@ static Py_ssize_t
 parse_abbr(const char *const p, PyObject **abbr)
 {
     const char *ptr = p;
-    char buff = *ptr;
     const char *str_start;
     const char *str_end;
 
     if (*ptr == '<') {
+        char buff;
         ptr++;
         str_start = ptr;
         while ((buff = *ptr) != '>') {
@@ -2822,7 +2822,10 @@ error:
 }
 
 static PyModuleDef_Slot zoneinfomodule_slots[] = {
-    {Py_mod_exec, zoneinfomodule_exec}, {0, NULL}};
+    {Py_mod_exec, zoneinfomodule_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {0, NULL},
+};
 
 static struct PyModuleDef zoneinfomodule = {
     .m_base = PyModuleDef_HEAD_INIT,
