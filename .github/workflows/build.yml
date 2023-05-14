@@ -396,6 +396,11 @@ jobs:
           -x test_subprocess \
           -x test_signal \
           -x test_sysconfig
+    - uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: hypothesis-example-db
+        path: .hypothesis/examples/
 
 
   build_asan:
