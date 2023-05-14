@@ -247,6 +247,9 @@ builtin_chr(PyObject *module, PyObject *arg)
 
     i = _PyLong_AsInt(arg);
     if (i == -1 && PyErr_Occurred()) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            PyErr_SetString(PyExc_ValueError, "chr() arg not in range(0x110000)");
+        }
         goto exit;
     }
     return_value = builtin_chr_impl(module, i);
