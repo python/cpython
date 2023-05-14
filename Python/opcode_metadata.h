@@ -139,8 +139,6 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 0;
         case LOAD_BUILD_CLASS:
             return 0;
-        case LOAD_LOCALS:
-            return 0;
         case STORE_NAME:
             return 1;
         case DELETE_NAME:
@@ -163,10 +161,12 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case DELETE_GLOBAL:
             return 0;
+        case LOAD_LOCALS:
+            return 0;
         case LOAD_NAME:
-            return 0+2;
-        case LOAD_CLASSDICT_OR_GLOBAL:
-            return 1+2;
+            return 0+1;
+        case LOAD_FROM_DICT_OR_GLOBALS:
+            return 1;
         case LOAD_GLOBAL:
             return 0;
         case LOAD_GLOBAL_MODULE:
@@ -179,10 +179,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 0;
         case DELETE_DEREF:
             return 0;
-        case LOAD_CLASSDEREF:
-            return 0+1;
-        case LOAD_CLASSDICT_OR_DEREF:
-            return 1+1;
+        case LOAD_FROM_DICT_OR_DEREF:
+            return 1;
         case LOAD_DEREF:
             return 0;
         case STORE_DEREF:
@@ -535,8 +533,6 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 1;
         case LOAD_BUILD_CLASS:
             return 1;
-        case LOAD_LOCALS:
-            return 1;
         case STORE_NAME:
             return 0;
         case DELETE_NAME:
@@ -559,10 +555,12 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case DELETE_GLOBAL:
             return 0;
+        case LOAD_LOCALS:
+            return 1;
         case LOAD_NAME:
-            return 2+1;
-        case LOAD_CLASSDICT_OR_GLOBAL:
-            return 2+1;
+            return 1+1;
+        case LOAD_FROM_DICT_OR_GLOBALS:
+            return 1;
         case LOAD_GLOBAL:
             return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_GLOBAL_MODULE:
@@ -575,10 +573,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case DELETE_DEREF:
             return 0;
-        case LOAD_CLASSDEREF:
-            return 1+1;
-        case LOAD_CLASSDICT_OR_DEREF:
-            return 1+1;
+        case LOAD_FROM_DICT_OR_DEREF:
+            return 1;
         case LOAD_DEREF:
             return 1;
         case STORE_DEREF:
@@ -870,7 +866,6 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [CLEANUP_THROW] = { true, INSTR_FMT_IX },
     [LOAD_ASSERTION_ERROR] = { true, INSTR_FMT_IX },
     [LOAD_BUILD_CLASS] = { true, INSTR_FMT_IX },
-    [LOAD_LOCALS] = { true, INSTR_FMT_IX },
     [STORE_NAME] = { true, INSTR_FMT_IB },
     [DELETE_NAME] = { true, INSTR_FMT_IB },
     [UNPACK_SEQUENCE] = { true, INSTR_FMT_IBC },
@@ -882,16 +877,16 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [DELETE_ATTR] = { true, INSTR_FMT_IB },
     [STORE_GLOBAL] = { true, INSTR_FMT_IB },
     [DELETE_GLOBAL] = { true, INSTR_FMT_IB },
+    [LOAD_LOCALS] = { true, INSTR_FMT_IB },
     [LOAD_NAME] = { true, INSTR_FMT_IB },
-    [LOAD_CLASSDICT_OR_GLOBAL] = { true, INSTR_FMT_IB },
+    [LOAD_FROM_DICT_OR_GLOBALS] = { true, INSTR_FMT_IB },
     [LOAD_GLOBAL] = { true, INSTR_FMT_IBC000 },
     [LOAD_GLOBAL_MODULE] = { true, INSTR_FMT_IBC000 },
     [LOAD_GLOBAL_BUILTIN] = { true, INSTR_FMT_IBC000 },
     [DELETE_FAST] = { true, INSTR_FMT_IB },
     [MAKE_CELL] = { true, INSTR_FMT_IB },
     [DELETE_DEREF] = { true, INSTR_FMT_IB },
-    [LOAD_CLASSDEREF] = { true, INSTR_FMT_IB },
-    [LOAD_CLASSDICT_OR_DEREF] = { true, INSTR_FMT_IB },
+    [LOAD_FROM_DICT_OR_DEREF] = { true, INSTR_FMT_IB },
     [LOAD_DEREF] = { true, INSTR_FMT_IB },
     [STORE_DEREF] = { true, INSTR_FMT_IB },
     [COPY_FREE_VARS] = { true, INSTR_FMT_IB },

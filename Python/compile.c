@@ -4137,10 +4137,14 @@ compiler_nameop(struct compiler *c, location loc,
         switch (ctx) {
         case Load:
             if (c->u->u_ste->ste_type == ClassBlock) {
-                op = LOAD_CLASSDEREF;
+                op = LOAD_FROM_DICT_OR_DEREF;
+                // First load the locals
+                if (codegen_addop_noarg(INSTR_SEQUENCE(c), LOAD_LOCALS, loc) < 0) {
+                    return ERROR;
+                }
             }
             else if (c->u->u_ste->ste_type_params_in_class) {
-                op = LOAD_CLASSDICT_OR_DEREF;
+                op = LOAD_FROM_DICT_OR_DEREF;
                 // First load the classdict
                 if (compiler_addop_o(c->u, loc, LOAD_DEREF,
                                      c->u->u_metadata.u_freevars, &_Py_ID(__classdict__)) < 0) {
@@ -4167,7 +4171,7 @@ compiler_nameop(struct compiler *c, location loc,
         switch (ctx) {
         case Load:
             if (c->u->u_ste->ste_type_params_in_class) {
-                op = LOAD_CLASSDICT_OR_GLOBAL;
+                op = LOAD_FROM_DICT_OR_GLOBALS;
                 // First load the classdict
                 if (compiler_addop_o(c->u, loc, LOAD_DEREF,
                                      c->u->u_metadata.u_freevars, &_Py_ID(__classdict__)) < 0) {
@@ -7526,8 +7530,7 @@ fix_cell_offsets(_PyCompile_CodeUnitMetadata *umd, basicblock *entryblock, int *
                 case LOAD_DEREF:
                 case STORE_DEREF:
                 case DELETE_DEREF:
-                case LOAD_CLASSDEREF:
-                case LOAD_CLASSDICT_OR_DEREF:
+                case LOAD_FROM_DICT_OR_DEREF:
                     assert(oldoffset >= 0);
                     assert(oldoffset < noffsets);
                     assert(fixedmap[oldoffset] >= 0);

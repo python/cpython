@@ -207,7 +207,6 @@ EXTENDED_ARG = 144
 def_op('LIST_APPEND', 145)
 def_op('SET_ADD', 146)
 def_op('MAP_ADD', 147)
-def_op('LOAD_CLASSDEREF', 148)
 hasfree.append(148)
 def_op('COPY_FREE_VARS', 149)
 def_op('YIELD_VALUE', 150)
@@ -229,8 +228,8 @@ hasconst.append(172)
 def_op('CALL_INTRINSIC_1', 173)
 def_op('CALL_INTRINSIC_2', 174)
 
-name_op('LOAD_CLASSDICT_OR_GLOBAL', 175)
-def_op('LOAD_CLASSDICT_OR_DEREF', 176)
+name_op('LOAD_FROM_DICT_OR_GLOBALS', 175)
+def_op('LOAD_FROM_DICT_OR_DEREF', 176)
 hasfree.append(176)
 
 # Instrumented instructions

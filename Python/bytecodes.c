@@ -1003,15 +1003,6 @@ dummy_func(
             }
         }
 
-        inst(LOAD_LOCALS, ( -- locals)) {
-            locals = LOCALS();
-            if (locals == NULL) {
-                _PyErr_SetString(tstate, PyExc_SystemError,
-                                    "no locals found");
-                ERROR_IF(true, error);
-            }
-            Py_INCREF(locals);
-        }
 
         inst(STORE_NAME, (v -- )) {
             PyObject *name = GETITEM(frame->f_code->co_names, oparg);
@@ -1169,22 +1160,20 @@ dummy_func(
             }
         }
 
-        op(_LOAD_NAME_INTRO, (-- mod_or_class_dict, name)) {
-            name = GETITEM(frame->f_code->co_names, oparg);
-            mod_or_class_dict = LOCALS();
-            if (mod_or_class_dict == NULL) {
-                _PyErr_Format(tstate, PyExc_SystemError,
-                              "no locals when loading %R", name);
-                goto error;
+        op(_LOAD_LOCALS, ( -- locals)) {
+            locals = LOCALS();
+            if (locals == NULL) {
+                _PyErr_SetString(tstate, PyExc_SystemError,
+                                 "no locals found");
+                ERROR_IF(true, error);
             }
-            Py_INCREF(mod_or_class_dict);
+            Py_INCREF(locals);
         }
 
-        op(_LOAD_CLASSDICT_OR_GLOBAL_INTRO, (mod_or_class_dict -- mod_or_class_dict, name)) {
-            name = GETITEM(frame->f_code->co_names, oparg);
-        }
+        macro(LOAD_LOCALS) = _LOAD_LOCALS;
 
-        op(_LOAD_NAME_COMMON, (mod_or_class_dict, name -- v)) {
+        op(_LOAD_FROM_DICT_OR_GLOBALS, (mod_or_class_dict -- v)) {
+            PyObject *name = GETITEM(frame->f_code->co_names, oparg);
             if (PyDict_CheckExact(mod_or_class_dict)) {
                 v = PyDict_GetItemWithError(mod_or_class_dict, name);
                 if (v != NULL) {
@@ -1242,9 +1231,9 @@ dummy_func(
             }
         }
 
-        macro(LOAD_NAME) = _LOAD_NAME_INTRO + _LOAD_NAME_COMMON;
+        macro(LOAD_NAME) = _LOAD_LOCALS + _LOAD_FROM_DICT_OR_GLOBALS;
 
-        macro(LOAD_CLASSDICT_OR_GLOBAL) = _LOAD_CLASSDICT_OR_GLOBAL_INTRO + _LOAD_NAME_COMMON;
+        macro(LOAD_FROM_DICT_OR_GLOBALS) = _LOAD_FROM_DICT_OR_GLOBALS;
 
         family(load_global, INLINE_CACHE_ENTRIES_LOAD_GLOBAL) = {
             LOAD_GLOBAL,
@@ -1366,14 +1355,7 @@ dummy_func(
             Py_DECREF(oldobj);
         }
 
-        op(_LOAD_CLASSDEREF_INTRO, (-- class_dict)) {
-            class_dict = Py_NewRef(LOCALS());
-        }
-
-        op(_LOAD_CLASSDICT_OR_DEREF_INTRO, (class_dict -- class_dict)) {
-        }
-
-        op(_LOAD_CLASSDEREF_COMMON, (class_dict -- value)) {
+        inst(LOAD_FROM_DICT_OR_DEREF, (class_dict -- value)) {
             PyObject *name;
             assert(class_dict);
             assert(oparg >= 0 && oparg < frame->f_code->co_nlocalsplus);
@@ -1409,9 +1391,6 @@ dummy_func(
                 Py_INCREF(value);
             }
         }
-
-        macro(LOAD_CLASSDEREF) = _LOAD_CLASSDEREF_INTRO + _LOAD_CLASSDEREF_COMMON;
-        macro(LOAD_CLASSDICT_OR_DEREF) = _LOAD_CLASSDICT_OR_DEREF_INTRO + _LOAD_CLASSDEREF_COMMON;
 
         inst(LOAD_DEREF, ( -- value)) {
             PyObject *cell = GETLOCAL(oparg);
