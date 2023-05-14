@@ -311,7 +311,7 @@ class PurePath(object):
         # to implement comparison methods like `__lt__()`.
         '_parts_normcase_cached',
 
-        # The `_lines_cached`slot stores the string path with path separators
+        # The `_lines_cached` slot stores the string path with path separators
         # and newlines swapped. This is used to implement `match()`.
         '_lines_cached',
 
