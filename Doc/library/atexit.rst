@@ -45,6 +45,9 @@ internal error is detected, or when :func:`os._exit` is called.
    This function returns *func*, which makes it possible to use it as a
    decorator.
 
+   The effect of calling :func:`register` from another registered cleanup
+   function is undefined.
+
 
 .. function:: unregister(func)
 
@@ -55,6 +58,8 @@ internal error is detected, or when :func:`os._exit` is called.
    comparisons (``==``) are used internally during unregistration, so function
    references do not need to have matching identities.
 
+   The effect of calling :func:`unregister` from a registered cleanup function
+   is undefined.
 
 .. seealso::
 
