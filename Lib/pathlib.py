@@ -77,6 +77,28 @@ _SWAP_SEP_AND_NEWLINE = {
 
 
 @functools.lru_cache()
+def _make_matcher(pattern):
+    if not pattern.parts:
+        raise ValueError("empty pattern") from None
+    parts = [r'\A' if pattern.drive or pattern.root else '^']
+    for part in pattern._lines.splitlines(keepends=True):
+        if part == '**\n':
+            part = r'[\s\S]*^'
+        elif part == '**':
+            part = r'[\s\S]*'
+        elif '**' in part:
+            raise ValueError("Invalid pattern: '**' can only be an entire path component") from None
+        else:
+            part = fnmatch.translate(part)[_FNMATCH_SLICE]
+        parts.append(part)
+    parts.append(r'\Z')
+    flags = re.MULTILINE
+    if not _is_case_sensitive(pattern._flavour):
+        flags |= re.IGNORECASE
+    return re.compile(''.join(parts), flags=flags)
+
+
+@functools.lru_cache()
 def _make_selector(pattern_parts, flavour, case_sensitive):
     pat = pattern_parts[0]
     child_parts = pattern_parts[1:]
@@ -286,12 +308,9 @@ class PurePath(object):
         # to implement comparison methods like `__lt__()`.
         '_parts_normcase_cached',
 
-        # The `_lines_cached` and `_matcher_cached` slots store the
-        # string path with path separators and newlines swapped, and an
-        # `re.Pattern` object derived thereof. These are used to implement
-        # `match()`.
+        # The `_lines_cached`slot stores the string path with path separators
+        # and newlines swapped. This is used to implement `match()`.
         '_lines_cached',
-        '_matcher_cached',
 
         # The `_hash` slot stores the hash of the case-normalized string
         # path. It's set when `__hash__()` is called for the first time.
@@ -461,31 +480,6 @@ class PurePath(object):
             trans = _SWAP_SEP_AND_NEWLINE[self._flavour.sep]
             self._lines_cached = str(self).translate(trans)
             return self._lines_cached
-
-    @property
-    def _matcher(self):
-        try:
-            return self._matcher_cached
-        except AttributeError:
-            if not self.parts:
-                raise ValueError("empty pattern") from None
-            parts = [r'\A' if self.drive or self.root else '^']
-            for part in self._lines.splitlines(keepends=True):
-                if part == '**\n':
-                    part = r'[\s\S]*^'
-                elif part == '**':
-                    part = r'[\s\S]*'
-                elif '**' in part:
-                    raise ValueError("Invalid pattern: '**' can only be an entire path component") from None
-                else:
-                    part = fnmatch.translate(part)[_FNMATCH_SLICE]
-                parts.append(part)
-            parts.append(r'\Z')
-            flags = re.MULTILINE
-            if not _is_case_sensitive(self._flavour):
-                flags |= re.IGNORECASE
-            self._matcher_cached = re.compile(''.join(parts), flags=flags)
-            return self._matcher_cached
 
     def __eq__(self, other):
         if not isinstance(other, PurePath):
@@ -745,7 +739,7 @@ class PurePath(object):
         """
         if not isinstance(path_pattern, PurePath) or self._flavour is not path_pattern._flavour:
             path_pattern = self.with_segments(path_pattern)
-        match = path_pattern._matcher.search(self._lines)
+        match = _make_matcher(path_pattern).search(self._lines)
         return match is not None
 
 
