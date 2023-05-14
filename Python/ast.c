@@ -621,7 +621,6 @@ validate_pattern(struct validator *state, pattern_ty p, int star_ok)
                     break;
                 }
             }
-
             if (ret == 0) {
                 break;
             }
