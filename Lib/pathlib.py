@@ -62,6 +62,12 @@ def _is_case_sensitive(flavour):
 #
 
 
+# fnmatch.translate() returns a regular expression that includes a prefix and
+# a suffix, which enable matching newlines and ensure the end of the string is
+# matched, respectively. These features are undesirable for our implementation
+# of PurePatch.match(), which represents path separators as newlines and joins
+# pattern segments together. As a workaround, we define a slice object that
+# remove the prefix and suffix from any translate() result.
 _FNMATCH_PREFIX, _FNMATCH_SUFFIX = fnmatch.translate('_').split('_')
 _FNMATCH_SLICE = slice(len(_FNMATCH_PREFIX), -len(_FNMATCH_SUFFIX))
 _SWAP_SEP_AND_NEWLINE = {
