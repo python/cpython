@@ -68,29 +68,29 @@ def isabs(s):
 # Ignore the previous parts if a part is absolute.
 # Insert a '/' unless the first part is empty or already ends in '/'.
 
-def join(path, *paths):
+def join(a, *p):
     """Join two or more pathname components, inserting '/' as needed.
     If any component is an absolute path, all previous path components
     will be discarded.  An empty last part will result in a path that
     ends with a separator."""
-    path = os.fspath(path)
-    sep = _get_sep(path)
-    _path = path
+    a = os.fspath(a)
+    sep = _get_sep(a)
+    path = a
     try:
-        if not paths:
+        if not p:
             # bpo-23780: Ensure compatible data type even if paths is empty.
-            path[:0] + sep
-        for p in map(os.fspath, paths):
-            if p.startswith(sep):
-                path = p
-            elif not path or path.endswith(sep):
-                path += p
+            a[:0] + sep
+        for b in map(os.fspath, p):
+            if b.startswith(sep):
+                a = b
+            elif not a or a.endswith(sep):
+                a += b
             else:
-                path += sep + p
+                a += sep + b
     except (TypeError, AttributeError, BytesWarning):
-        genericpath._check_arg_types('join', _path, *paths)
+        genericpath._check_arg_types('join', path, *p)
         raise
-    return path
+    return a
 
 
 # Split a path in head (everything up to the last '/') and tail (the
