@@ -78,19 +78,18 @@ def join(a, *p):
     path = a
     try:
         if not p:
-            # bpo-23780: Ensure compatible data type even if paths is empty.
-            a[:0] + sep
+            path[:0] + sep  #23780: Ensure compatible data type even if p is null.
         for b in map(os.fspath, p):
             if b.startswith(sep):
-                a = b
-            elif not a or a.endswith(sep):
-                a += b
+                path = b
+            elif not path or path.endswith(sep):
+                path += b
             else:
-                a += sep + b
+                path += sep + b
     except (TypeError, AttributeError, BytesWarning):
-        genericpath._check_arg_types('join', path, *p)
+        genericpath._check_arg_types('join', a, *p)
         raise
-    return a
+    return path
 
 
 # Split a path in head (everything up to the last '/') and tail (the
