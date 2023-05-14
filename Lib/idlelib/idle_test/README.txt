@@ -146,12 +146,12 @@ python -m unittest -v idlelib.idle_test
 python -m test -v -ugui test_idle
 python -m test.test_idle
 
-The idle tests are 'discovered' by idlelib.idle_test.__init__.load_tests,
-which is also imported into test.test_idle. Normally, neither file
+IDLE tests are 'discovered' by idlelib.idle_test.__init__.load_tests
+when this is imported into test.test_idle. Normally, neither file
 should be changed when working on individual test modules. The third
 command runs unittest indirectly through regrtest. The same happens when
 the entire test suite is run with 'python -m test'. So that command must
-work for buildbots to stay green. Idle tests must not disturb the
+work for buildbots to stay green. IDLE tests must not disturb the
 environment in a way that makes other tests fail (GH-62281).
 
 To test subsets of modules, see idlelib.idle_test.__init__.  This
