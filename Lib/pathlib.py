@@ -78,9 +78,12 @@ _SWAP_SEP_AND_NEWLINE = {
 
 @functools.lru_cache()
 def _make_matcher(pattern):
-    if not pattern.parts:
+    if pattern.drive or pattern.root:
+        parts = [r'\A']
+    elif pattern._tail:
+        parts = ['^']
+    else:
         raise ValueError("empty pattern")
-    parts = [r'\A' if pattern.drive or pattern.root else '^']
     for part in pattern._lines.splitlines(keepends=True):
         if part == '**\n':
             part = r'[\s\S]*^'
