@@ -5478,23 +5478,14 @@ comerror_init(PyObject *self, PyObject *args, PyObject *kwds)
 
 static int
 comerror_clear(PyObject *self) {
-    PyBaseExceptionObject *obj = (PyBaseExceptionObject *) self;
-    Py_CLEAR(obj->dict);
-    Py_CLEAR(obj->args);
-    Py_CLEAR(obj->notes);
-    Py_CLEAR(obj->traceback);
-    Py_CLEAR(obj->cause);
-    Py_CLEAR(obj->context);
-    return 0;
+    return ((PyTypeObject *)PyExc_BaseException)->tp_clear(self);
 }
 
 static int
 comerror_traverse(PyObject *self, visitproc visit, void *arg)
 {
-    PyTypeObject *tp = Py_TYPE(self);
-    Py_VISIT(tp);
-    tp->tp_clear(self);
-    return 0;
+    Py_VISIT(Py_TYPE(self));
+    return ((PyTypeObject *)PyExc_BaseException)->tp_traverse(self, visit, arg);
 }
 
 static void
