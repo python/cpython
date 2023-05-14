@@ -67,7 +67,7 @@ def _is_case_sensitive(flavour):
 # matched, respectively. These features are undesirable for our implementation
 # of PurePatch.match(), which represents path separators as newlines and joins
 # pattern segments together. As a workaround, we define a slice object that
-# remove the prefix and suffix from any translate() result.
+# can remove the prefix and suffix from any translate() result.
 _FNMATCH_PREFIX, _FNMATCH_SUFFIX = fnmatch.translate('_').split('_')
 _FNMATCH_SLICE = slice(len(_FNMATCH_PREFIX), -len(_FNMATCH_SUFFIX))
 _SWAP_SEP_AND_NEWLINE = {
