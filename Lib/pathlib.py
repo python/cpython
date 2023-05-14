@@ -79,7 +79,7 @@ _SWAP_SEP_AND_NEWLINE = {
 @functools.lru_cache()
 def _make_matcher(pattern):
     if not pattern.parts:
-        raise ValueError("empty pattern") from None
+        raise ValueError("empty pattern")
     parts = [r'\A' if pattern.drive or pattern.root else '^']
     for part in pattern._lines.splitlines(keepends=True):
         if part == '**\n':
@@ -87,7 +87,7 @@ def _make_matcher(pattern):
         elif part == '**':
             part = r'[\s\S]*'
         elif '**' in part:
-            raise ValueError("Invalid pattern: '**' can only be an entire path component") from None
+            raise ValueError("Invalid pattern: '**' can only be an entire path component")
         else:
             part = fnmatch.translate(part)[_FNMATCH_SLICE]
         parts.append(part)
