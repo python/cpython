@@ -105,6 +105,7 @@
 
 #define DISPATCH_INLINED(NEW_FRAME)                     \
     do {                                                \
+        assert(tstate->interp->eval_frame == NULL);     \
         _PyFrame_SetStackPointer(frame, stack_pointer); \
         frame->prev_instr = next_instr - 1;             \
         (NEW_FRAME)->previous = frame;                  \
