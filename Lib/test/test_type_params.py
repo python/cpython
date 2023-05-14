@@ -544,6 +544,48 @@ class TypeParamsClassScopeTest(unittest.TestCase):
         cls = ns["outer"]()
         self.assertEqual(cls.Alias.__value__, "global")
 
+    def test_explicit_global_with_no_static_bound(self):
+        ns = run_code("""
+            def outer():
+                class Cls:
+                    global x
+                    type Alias = x
+                Cls.x = "class"
+                return Cls
+        """)
+        ns["x"] = "global"
+        cls = ns["outer"]()
+        self.assertEqual(cls.Alias.__value__, "global")
+
+    def test_explicit_global_with_assignment(self):
+        ns = run_code("""
+            x = "global"
+            def outer():
+                x = "nonlocal"
+                class Cls:
+                    global x
+                    type Alias = x
+                    x = "global from class"
+                Cls.x = "class"
+                return Cls
+        """)
+        cls = ns["outer"]()
+        self.assertEqual(cls.Alias.__value__, "global from class")
+
+    def test_explicit_nonlocal(self):
+        ns = run_code("""
+            x = "global"
+            def outer():
+                x = "nonlocal"
+                class Cls:
+                    nonlocal x
+                    type Alias = x
+                    x = "class"
+                return Cls
+        """)
+        cls = ns["outer"]()
+        self.assertEqual(cls.Alias.__value__, "class")
+
 
 class TypeParamsManglingTest(unittest.TestCase):
     def test_mangling(self):

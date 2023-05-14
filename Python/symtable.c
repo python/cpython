@@ -589,26 +589,28 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
         }
         return 1;
     }
+    // If we were passed class_symbols (i.e., we're in an ste_can_see_class_scope scope)
+    // and the bound name is in that set, then the name is potentially bound both by
+    // the immediately enclosing class namespace, and also by an outer function namespace.
+    // In that case, we want the runtime name resolution to look at only the class
+    // namespace and the globals (not the namespace providing the bound).
+    // Similarly, if the name is explicitly global in the class namespace (through the
+    // global statement), we want to also treat it as a global in this scope.
+    long class_flags = flags_in_symbols(class_symbols, name);
+    if (class_flags & DEF_GLOBAL) {
+        SET_SCOPE(scopes, name, GLOBAL_EXPLICIT);
+        return 1;
+    }
+    else if (class_flags & DEF_BOUND && !(class_flags & DEF_NONLOCAL)) {
+        SET_SCOPE(scopes, name, GLOBAL_IMPLICIT);
+        return 1;
+    }
     /* If an enclosing block has a binding for this name, it
        is a free variable rather than a global variable.
        Note that having a non-NULL bound implies that the block
        is nested.
     */
     if (bound && PySet_Contains(bound, name)) {
-        // If we were passed class_symbols (i.e., we're in an ste_can_see_class_scope scope)
-        // and the bound name is in that set, then the name is potentially bound both by
-        // the immediately enclosing class namespace, and also by an outer function namespace.
-        // In that case, we want the runtime name resolution to look at only the class
-        // namespace and the globals (not the namespace providing the bound).
-        long class_flags = flags_in_symbols(class_symbols, name);
-        if (class_flags & DEF_BOUND) {
-            SET_SCOPE(scopes, name, GLOBAL_IMPLICIT);
-            return 1;
-        }
-        else if (class_flags & DEF_GLOBAL) {
-            SET_SCOPE(scopes, name, GLOBAL_EXPLICIT);
-            return 1;
-        }
         SET_SCOPE(scopes, name, FREE);
         ste->ste_free = 1;
         return PySet_Add(free, name) >= 0;
