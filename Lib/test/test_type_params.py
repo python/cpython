@@ -504,14 +504,14 @@ class TypeParamsClassScopeTest(unittest.TestCase):
                     val = Alias.__value__
                     def meth[T: x](self, arg: x): ...
                     bound = meth.__type_params__[0].__bound__
+                    annotation = meth.__annotations__["arg"]
                     x = "class"
                 return Cls
         """)
         cls = ns["outer"]()
         self.assertEqual(cls.val, "global")
         self.assertEqual(cls.bound, "global")
-        # will be "class" under PEP 649
-        self.assertEqual(cls.meth.__annotations__["arg"], "global")
+        self.assertEqual(cls.annotation, "global")
 
     def test_no_binding_uses_nonlocal(self):
         ns = run_code("""
