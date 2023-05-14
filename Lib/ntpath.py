@@ -106,9 +106,10 @@ def isabs(s):
 # Join two (or more) paths.
 def join(path, *paths):
     """Join two or more pathname components, inserting '\\' as needed.
-    If any component is an absolute path, all previous path components
-    will be discarded.  An empty last part will result in a path that
-    ends with a separator."""
+    If any component is an absolute path with a root, all previous path
+    components will be discarded.  If any component is an absolute path without
+    a root, all previous path components except for the root will be discarded.
+    An empty last part will result in a path that ends with a separator."""
     path = os.fspath(path)
     if isinstance(path, bytes):
         sep = b'\\'
@@ -120,7 +121,8 @@ def join(path, *paths):
         colon = ':'
     try:
         if not paths:
-            path[:0] + sep  #23780: Ensure compatible data type even if p is null.
+            # bpo-23780: Ensure compatible data type even if paths is empty.
+            path[:0] + sep
         result_drive, result_root, result_path = splitroot(path)
         for p in map(os.fspath, paths):
             p_drive, p_root, p_path = splitroot(p)
