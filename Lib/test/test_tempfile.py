@@ -1147,6 +1147,12 @@ class TestNamedTemporaryFile(BaseTestCase):
         mock_open().close.assert_called()
         self.assertEqual(os.listdir(dir), [])
 
+    def test_path_method(self):
+        d = self.do_create()
+        path = d.path
+        self.assertTrue(issubclass(type(path), pathlib.Path), "unexpected return type")
+        self.assertEqual(str(path), d.name, ".path .name mismatch")
+
     # How to test the mode and bufsize parameters?
 
 class TestSpooledTemporaryFile(BaseTestCase):
@@ -1852,6 +1858,13 @@ class TestTemporaryDirectory(BaseTestCase):
             pass
         self.assertTrue(os.path.exists(working_dir))
         shutil.rmtree(working_dir)
+
+    def test_path_method(self):
+        d = self.do_create()
+        path = d.path
+        self.assertTrue(issubclass(type(path), pathlib.Path), "unexpected return type")
+        self.assertEqual(str(path), d.name, ".path .name mismatch")
+
 
 if __name__ == "__main__":
     unittest.main()

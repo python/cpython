@@ -90,9 +90,9 @@ The module defines the following user-callable items:
    attribute is the underlying true file object. This :term:`file-like object`
    can be used in a :keyword:`with` statement, just like a normal file.  The
    name of the temporary file can be retrieved from the :attr:`name` attribute
-   of the returned file-like object. On Unix, unlike with the
-   :func:`TemporaryFile`, the directory entry does not get unlinked immediately
-   after the file creation.
+   and :class:`pathlib.Path` path using :attr:`path` of the returned file-like
+   object. On Unix, unlike with the :func:`TemporaryFile`, the directory entry
+   does not get unlinked immediately after the file creation.
 
    If *delete* is true (the default) and *delete_on_close* is true (the
    default), the file is deleted as soon as it is closed. If *delete* is true
@@ -141,6 +141,9 @@ The module defines the following user-callable items:
 
    .. versionchanged:: 3.12
       Added *delete_on_close* parameter.
+
+   .. versionchanged:: 3.13
+      Added *path* property.
 
 
 .. class:: SpooledTemporaryFile(max_size=0, mode='w+b', buffering=-1, encoding=None, newline=None, suffix=None, prefix=None, dir=None, *, errors=None)
@@ -210,6 +213,9 @@ The module defines the following user-callable items:
 
    .. versionchanged:: 3.12
       Added the *delete* parameter.
+
+   .. versionchanged:: 3.13
+      Added *path* property.
 
 
 .. function:: mkstemp(suffix=None, prefix=None, dir=None, text=False)
@@ -420,6 +426,15 @@ Here are some examples of typical usage of the :mod:`tempfile` module::
     ...     print('created temporary directory', tmpdirname)
     >>>
     # directory and contents have been removed
+
+    # create a named temporary file, similar to TemporaryFile
+    # but location and name is accessible
+    >>> with tempfile.NamedTemporaryFile as fp:
+    ...    print('file name: ', fp.name)
+    ...    print('file path: ', fp.path)
+    file name: '/tmp/tmpfiehg5my'
+    file path: PosixPath('/tmp/tmpfiehg5my')
+
 
 .. _tempfile-mktemp-deprecated:
 
