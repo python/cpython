@@ -627,7 +627,7 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
 def _repr_fn(fields, globals):
     fn = _create_fn('__repr__',
                     ('self',),
-                    ['return self.__class__.__qualname__ + f"(' +
+                    ['return f"{self.__class__.__qualname__}(' +
                      ', '.join([f"{f.name}={{self.{f.name}!r}}"
                                 for f in fields]) +
                      ')"'],
