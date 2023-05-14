@@ -580,7 +580,9 @@ validate_pattern(struct validator *state, pattern_ty p, int star_ok)
                     break;
                 }
             }
-
+            if (ret == 0) {
+                break;
+            }
             ret = validate_patterns(state, p->v.MatchMapping.patterns, /*star_ok=*/0);
             break;
         case MatchClass_kind:
@@ -620,6 +622,9 @@ validate_pattern(struct validator *state, pattern_ty p, int star_ok)
                 }
             }
 
+            if (ret == 0) {
+                break;
+            }
             if (!validate_patterns(state, p->v.MatchClass.patterns, /*star_ok=*/0)) {
                 ret = 0;
                 break;
