@@ -524,7 +524,7 @@ class LineMonitoringTest(MonitoringTestBase, unittest.TestCase):
             sys.monitoring.set_events(TEST_TOOL, 0)
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
             start = LineMonitoringTest.test_lines_loop.__code__.co_firstlineno
-            self.assertEqual(events, [start+7, 21, 22, 22, 21, start+8])
+            self.assertEqual(events, [start+7, 21, 22, 21, 22, 21, start+8])
         finally:
             sys.monitoring.set_events(TEST_TOOL, 0)
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
@@ -1050,6 +1050,8 @@ class TestLocalEvents(MonitoringTestBase, unittest.TestCase):
 def line_from_offset(code, offset):
     for start, end, line in code.co_lines():
         if start <= offset < end:
+            if line is None:
+                return f"[offset={offset}]"
             return line - code.co_firstlineno
     return -1
 
@@ -1072,9 +1074,20 @@ class BranchRecorder(JumpRecorder):
     event_type = E.BRANCH
     name = "branch"
 
+class ReturnRecorder:
+
+    event_type = E.PY_RETURN
+
+    def __init__(self, events):
+        self.events = events
+
+    def __call__(self, code, offset, val):
+        self.events.append(("return", val))
+
 
 JUMP_AND_BRANCH_RECORDERS = JumpRecorder, BranchRecorder
 JUMP_BRANCH_AND_LINE_RECORDERS = JumpRecorder, BranchRecorder, LineRecorder
+FLOW_AND_LINE_RECORDERS = JumpRecorder, BranchRecorder, LineRecorder, ExceptionRecorder, ReturnRecorder
 
 class TestBranchAndJumpEvents(CheckEvents):
     maxDiff = None
@@ -1098,7 +1111,6 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('jump', 'func', 4, 2),
             ('branch', 'func', 2, 2)])
 
-
         self.check_events(func, recorders = JUMP_BRANCH_AND_LINE_RECORDERS, expected = [
             ('line', 'check_events', 10),
             ('line', 'func', 1),
@@ -1108,15 +1120,62 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('branch', 'func', 3, 6),
             ('line', 'func', 6),
             ('jump', 'func', 6, 2),
+            ('line', 'func', 2),
             ('branch', 'func', 2, 2),
             ('line', 'func', 3),
             ('branch', 'func', 3, 4),
             ('line', 'func', 4),
             ('jump', 'func', 4, 2),
-            ('branch', 'func', 2, 2),
             ('line', 'func', 2),
+            ('branch', 'func', 2, 2),
             ('line', 'check_events', 11)])
 
+    def test_except_star(self):
+
+        class Foo:
+            def meth(self):
+                pass
+
+        def func():
+            try:
+                try:
+                    raise KeyError
+                except* Exception as e:
+                    f = Foo(); f.meth()
+            except KeyError:
+                pass
+
+
+        self.check_events(func, recorders = JUMP_BRANCH_AND_LINE_RECORDERS, expected = [
+            ('line', 'check_events', 10),
+            ('line', 'func', 1),
+            ('line', 'func', 2),
+            ('line', 'func', 3),
+            ('line', 'func', 4),
+            ('branch', 'func', 4, 4),
+            ('line', 'func', 5),
+            ('line', 'meth', 1),
+            ('jump', 'func', 5, 5),
+            ('jump', 'func', 5, '[offset=114]'),
+            ('branch', 'func', '[offset=120]', '[offset=122]'),
+            ('line', 'check_events', 11)])
+
+        self.check_events(func, recorders = FLOW_AND_LINE_RECORDERS, expected = [
+            ('line', 'check_events', 10),
+            ('line', 'func', 1),
+            ('line', 'func', 2),
+            ('line', 'func', 3),
+            ('raise', KeyError),
+            ('line', 'func', 4),
+            ('branch', 'func', 4, 4),
+            ('line', 'func', 5),
+            ('line', 'meth', 1),
+            ('return', None),
+            ('jump', 'func', 5, 5),
+            ('jump', 'func', 5, '[offset=114]'),
+            ('branch', 'func', '[offset=120]', '[offset=122]'),
+            ('return', None),
+            ('line', 'check_events', 11)])
 
 class TestSetGetEvents(MonitoringTestBase, unittest.TestCase):
 

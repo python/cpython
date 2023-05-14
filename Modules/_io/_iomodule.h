@@ -149,6 +149,7 @@ struct _io_state {
     PyObject *unsupported_operation;
 
     /* Types */
+    PyTypeObject *PyIOBase_Type;
     PyTypeObject *PyIncrementalNewlineDecoder_Type;
     PyTypeObject *PyRawIOBase_Type;
     PyTypeObject *PyBufferedIOBase_Type;
@@ -162,7 +163,7 @@ struct _io_state {
     PyTypeObject *PyStringIO_Type;
     PyTypeObject *PyTextIOBase_Type;
     PyTypeObject *PyTextIOWrapper_Type;
-#ifdef MS_WINDOWS
+#ifdef HAVE_WINDOWS_CONSOLE_IO
     PyTypeObject *PyWindowsConsoleIO_Type;
 #endif
 };
