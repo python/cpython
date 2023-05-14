@@ -77,14 +77,9 @@ _SWAP_SEP_AND_NEWLINE = {
 
 
 @functools.lru_cache()
-def _make_matcher(pattern):
-    if pattern.drive or pattern.root:
-        parts = [r'\A']
-    elif pattern._tail:
-        parts = ['^']
-    else:
-        raise ValueError("empty pattern")
-    for part in pattern._lines.splitlines(keepends=True):
+def _compile_pattern(pattern_lines, case_sensitive):
+    parts = ['^']
+    for part in pattern_lines.splitlines(keepends=True):
         if part == '**\n':
             part = r'[\s\S]*^'
         elif part == '**':
@@ -96,7 +91,7 @@ def _make_matcher(pattern):
         parts.append(part)
     parts.append(r'\Z')
     flags = re.MULTILINE
-    if not _is_case_sensitive(pattern._flavour):
+    if not case_sensitive:
         flags |= re.IGNORECASE
     return re.compile(''.join(parts), flags=flags)
 
@@ -742,8 +737,14 @@ class PurePath(object):
         """
         if not isinstance(path_pattern, PurePath) or self._flavour is not path_pattern._flavour:
             path_pattern = self.with_segments(path_pattern)
-        match = _make_matcher(path_pattern).search(self._lines)
-        return match is not None
+        case_sensitive = _is_case_sensitive(self._flavour)
+        pattern = _compile_pattern(path_pattern._lines, case_sensitive)
+        if path_pattern.drive or path_pattern.root:
+            return pattern.match(self._lines) is not None
+        elif path_pattern._tail:
+            return pattern.search(self._lines) is not None
+        else:
+            raise ValueError("empty pattern")
 
 
 # Can't subclass os.PathLike from PurePath and keep the constructor
