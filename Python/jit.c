@@ -62,7 +62,7 @@ copy_and_patch(unsigned char *memory, const Stencil *stencil, uintptr_t patches[
         const Hole *hole = &stencil->holes[i];
         uintptr_t *addr = (uintptr_t *)(memory + hole->offset);
         // assert(*addr == 0);
-        *addr += hole->addend + patches[hole->kind];
+        *addr += hole->addend + patches[hole->kind];  // XXX: macOS needs += for now.
     }
     return memory + stencil->nbytes;
 }

@@ -201,6 +201,7 @@ class NewObjectParser:
                     addend += body_symbols[symbol] - entry
                     symbol = "_justin_base"
                 holes.append(Hole(symbol, offset, addend))
+            holes.sort(key=lambda hole: hole.offset)
             return Stencil(bytes(body)[entry:], tuple(holes))  # XXX
     elif sys.platform == "darwin":
         ...
@@ -253,6 +254,7 @@ class NewObjectParser:
                     addend += body_symbols[symbol] - entry
                     symbol = "_justin_base"
                 holes.append(Hole(symbol, offset, addend))
+            holes.sort(key=lambda hole: hole.offset)
             return Stencil(bytes(body)[entry:], tuple(holes))  # XXX   
 
 # class ObjectParserCOFFX8664(ObjectParser):
@@ -368,6 +370,7 @@ class Engine:
             "LOAD_FAST_CHECK",
             "LOAD_GLOBAL",
             "LOAD_NAME",
+            "LOAD_SUPER_ATTR",  # XXX: macOS... investigate!
             "MAKE_CELL",
             "MATCH_CLASS",
             "MATCH_KEYS",
@@ -377,6 +380,7 @@ class Engine:
             "STORE_ATTR_WITH_HINT",
             "UNPACK_EX",
             "UNPACK_SEQUENCE",
+            "WITH_EXCEPT_START",  # XXX: macOS... investigate!
         }
     )
 
