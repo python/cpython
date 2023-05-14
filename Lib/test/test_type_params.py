@@ -494,6 +494,42 @@ class TypeParamsClassScopeTest(unittest.TestCase):
         self.assertIs(X.foo.__type_params__[0].__bound__, float)
         self.assertIs(X.Alias.__value__, float)
 
+    def test_binding_uses_global(self):
+        ns = run_code("""
+            x = "global"
+            def outer():
+                x = "nonlocal"
+                class Cls:
+                    type Alias = x
+                    val = Alias.__value__
+                    def meth[T: x](self, arg: x): ...
+                    bound = meth.__type_params__[0].__bound__
+                    x = "class"
+                return Cls
+        """)
+        cls = ns["outer"]()
+        self.assertEqual(cls.val, "global")
+        self.assertEqual(cls.bound, "global")
+        # will be "class" under PEP 649
+        self.assertEqual(cls.meth.__annotations__["arg"], "global")
+
+    def test_no_binding_uses_nonlocal(self):
+        ns = run_code("""
+            x = "global"
+            def outer():
+                x = "nonlocal"
+                class Cls:
+                    type Alias = x
+                    val = Alias.__value__
+                    def meth[T: x](self, arg: x): ...
+                    bound = meth.__type_params__[0].__bound__
+                return Cls
+        """)
+        cls = ns["outer"]()
+        self.assertEqual(cls.val, "nonlocal")
+        self.assertEqual(cls.bound, "nonlocal")
+        self.assertEqual(cls.meth.__annotations__["arg"], "nonlocal")
+
 
 class TypeParamsManglingTest(unittest.TestCase):
     def test_mangling(self):

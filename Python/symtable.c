@@ -498,6 +498,22 @@ error_at_directive(PySTEntryObject *ste, PyObject *name)
       global: set of all symbol names explicitly declared as global
 */
 
+static int
+is_bound_in_symbols(PyObject *symbols, PyObject *name)
+{
+    if (symbols == NULL) {
+        return 0;
+    }
+    PyObject *v = PyDict_GetItemWithError(symbols, name);
+    if (v == NULL) {
+        assert(!PyErr_Occurred());
+        return 0;
+    }
+    assert(PyLong_CheckExact(v));
+    long flags = PyLong_AS_LONG(v);
+    return flags & DEF_BOUND;
+}
+
 #define SET_SCOPE(DICT, NAME, I) { \
     PyObject *o = PyLong_FromLong(I); \
     if (!o) \
@@ -519,7 +535,7 @@ error_at_directive(PySTEntryObject *ste, PyObject *name)
 static int
 analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
              PyObject *bound, PyObject *local, PyObject *free,
-             PyObject *global, PyObject *typeparams)
+             PyObject *global, PyObject *typeparams, PyObject *class_symbols)
 {
     if (flags & DEF_GLOBAL) {
         if (flags & DEF_NONLOCAL) {
@@ -580,6 +596,15 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
        is nested.
     */
     if (bound && PySet_Contains(bound, name)) {
+        // If we were passed class_symbols (i.e., we're in an ste_type_params_in_class scope)
+        // and the bound name is in that set, then the name is potentially bound both by
+        // the immediately enclosing class namespace, and also by an outer function namespace.
+        // In that case, we want the runtime name resolution to look at only the class
+        // namespace and the globals (not the namespace providing the bound).
+        if (is_bound_in_symbols(class_symbols, name)) {
+            SET_SCOPE(scopes, name, GLOBAL_IMPLICIT);
+            return 1;
+        }
         SET_SCOPE(scopes, name, FREE);
         ste->ste_free = 1;
         return PySet_Add(free, name) >= 0;
@@ -842,11 +867,12 @@ error:
 
 static int
 analyze_child_block(PySTEntryObject *entry, PyObject *bound, PyObject *free,
-                    PyObject *global, PyObject *typeparams, PyObject **child_free);
+                    PyObject *global, PyObject *typeparams, PyObject *class_symbols,
+                    PyObject **child_free);
 
 static int
 analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
-              PyObject *global, PyObject *typeparams)
+              PyObject *global, PyObject *typeparams, PyObject *class_symbols)
 {
     PyObject *name, *v, *local = NULL, *scopes = NULL, *newbound = NULL;
     PyObject *newglobal = NULL, *newfree = NULL, *promote_to_cell = NULL;
@@ -908,7 +934,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     while (PyDict_Next(ste->ste_symbols, &pos, &name, &v)) {
         long flags = PyLong_AS_LONG(v);
         if (!analyze_name(ste, scopes, name, flags,
-                          bound, local, free, global, typeparams))
+                          bound, local, free, global, typeparams, class_symbols))
             goto error;
     }
 
@@ -955,13 +981,23 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
         assert(c && PySTEntry_Check(c));
         entry = (PySTEntryObject*)c;
 
+        PyObject *new_class_symbols = NULL;
+        if (entry->ste_type_params_in_class) {
+            if (ste->ste_type == ClassBlock) {
+                new_class_symbols = ste->ste_symbols;
+            }
+            else if (class_symbols) {
+                new_class_symbols = class_symbols;
+            }
+        }
+
         // we inline all non-generator-expression comprehensions
         int inline_comp =
             entry->ste_comprehension &&
             !entry->ste_generator;
 
         if (!analyze_child_block(entry, newbound, newfree, newglobal,
-                                 typeparams, &child_free))
+                                 typeparams, new_class_symbols, &child_free))
         {
             goto error;
         }
@@ -1025,7 +1061,8 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
 
 static int
 analyze_child_block(PySTEntryObject *entry, PyObject *bound, PyObject *free,
-                    PyObject *global, PyObject *typeparams, PyObject** child_free)
+                    PyObject *global, PyObject *typeparams, PyObject *class_symbols,
+                    PyObject** child_free)
 {
     PyObject *temp_bound = NULL, *temp_global = NULL, *temp_free = NULL;
     PyObject *temp_typeparams = NULL;
@@ -1050,7 +1087,7 @@ analyze_child_block(PySTEntryObject *entry, PyObject *bound, PyObject *free,
     if (!temp_typeparams)
         goto error;
 
-    if (!analyze_block(entry, temp_bound, temp_free, temp_global, temp_typeparams))
+    if (!analyze_block(entry, temp_bound, temp_free, temp_global, temp_typeparams, class_symbols))
         goto error;
     *child_free = temp_free;
     Py_DECREF(temp_bound);
@@ -1085,7 +1122,7 @@ symtable_analyze(struct symtable *st)
         Py_DECREF(global);
         return 0;
     }
-    r = analyze_block(st->st_top, NULL, free, global, typeparams);
+    r = analyze_block(st->st_top, NULL, free, global, typeparams, NULL);
     Py_DECREF(free);
     Py_DECREF(global);
     Py_DECREF(typeparams);
