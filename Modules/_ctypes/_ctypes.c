@@ -5477,7 +5477,8 @@ comerror_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static int
-comerror_clear(PyObject *self) {
+comerror_clear(PyObject *self)
+{
     return ((PyTypeObject *)PyExc_BaseException)->tp_clear(self);
 }
 
