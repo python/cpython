@@ -197,6 +197,7 @@
     <ClInclude Include="..\Include\internal\pycore_asdl.h" />
     <ClInclude Include="..\Include\internal\pycore_ast.h" />
     <ClInclude Include="..\Include\internal\pycore_ast_state.h" />
+    <ClInclude Include="..\Include\internal\pycore_atexit.h" />
     <ClInclude Include="..\Include\internal\pycore_atomic.h" />
     <ClInclude Include="..\Include\internal\pycore_atomic_funcs.h" />
     <ClInclude Include="..\Include\internal\pycore_bitutils.h" />
@@ -205,6 +206,7 @@
     <ClInclude Include="..\Include\internal\pycore_call.h" />
     <ClInclude Include="..\Include\internal\pycore_ceval.h" />
     <ClInclude Include="..\Include\internal\pycore_ceval_state.h" />
+    <ClInclude Include="..\Include\internal\pycore_cfg.h" />
     <ClInclude Include="..\Include\internal\pycore_code.h" />
     <ClInclude Include="..\Include\internal\pycore_compile.h" />
     <ClInclude Include="..\Include\internal\pycore_condvar.h" />
@@ -373,13 +375,16 @@
     <ClCompile Include="..\Modules\_contextvarsmodule.c" />
     <ClCompile Include="..\Modules\_csv.c" />
     <ClCompile Include="..\Modules\_functoolsmodule.c" />
+    <ClCompile Include="..\Modules\_hacl\Hacl_Hash_MD5.c" />
+    <ClCompile Include="..\Modules\_hacl\Hacl_Hash_SHA1.c" />
+    <ClCompile Include="..\Modules\_hacl\Hacl_Streaming_SHA2.c" />
+    <ClCompile Include="..\Modules\_hacl\Hacl_Hash_SHA3.c" />
     <ClCompile Include="..\Modules\_heapqmodule.c" />
     <ClCompile Include="..\Modules\_json.c" />
     <ClCompile Include="..\Modules\_localemodule.c" />
     <ClCompile Include="..\Modules\_lsprof.c" />
     <ClCompile Include="..\Modules\_pickle.c" />
     <ClCompile Include="..\Modules\_randommodule.c" />
-    <ClCompile Include="..\Modules\_sha3\sha3module.c" />
     <ClCompile Include="..\Modules\_sre\sre.c" />
     <ClInclude Include="..\Modules\_sre\sre.h" />
     <ClInclude Include="..\Modules\_sre\sre_constants.h" />
@@ -402,17 +407,15 @@
     <ClCompile Include="..\Modules\itertoolsmodule.c" />
     <ClCompile Include="..\Modules\main.c" />
     <ClCompile Include="..\Modules\mathmodule.c" />
-    <ClCompile Include="..\Modules\_hacl\Hacl_Hash_MD5.c" />
     <ClCompile Include="..\Modules\md5module.c" />
     <ClCompile Include="..\Modules\mmapmodule.c" />
     <ClCompile Include="..\Modules\_opcode.c" />
     <ClCompile Include="..\Modules\_operator.c" />
     <ClCompile Include="..\Modules\posixmodule.c" />
     <ClCompile Include="..\Modules\rotatingtree.c" />
-    <ClCompile Include="..\Modules\_hacl\Hacl_Hash_SHA1.c" />
     <ClCompile Include="..\Modules\sha1module.c" />
-    <ClCompile Include="..\Modules\_hacl\Hacl_Streaming_SHA2.c" />
     <ClCompile Include="..\Modules\sha2module.c" />
+    <ClCompile Include="..\Modules\sha3module.c" />
     <ClCompile Include="..\Modules\signalmodule.c" />
     <ClCompile Include="..\Modules\_statisticsmodule.c" />
     <ClCompile Include="..\Modules\symtablemodule.c" />
@@ -498,6 +501,7 @@
     <ClCompile Include="..\Python\pyhash.c" />
     <ClCompile Include="..\Python\_warnings.c" />
     <ClCompile Include="..\Python\asdl.c" />
+    <ClCompile Include="..\Python\assemble.c" />
     <ClCompile Include="..\Python\ast.c" />
     <ClCompile Include="..\Python\ast_opt.c" />
     <ClCompile Include="..\Python\ast_unparse.c" />
@@ -511,6 +515,7 @@
     <ClCompile Include="..\Python\dynload_win.c" />
     <ClCompile Include="..\Python\errors.c" />
     <ClCompile Include="..\Python\fileutils.c" />
+    <ClCompile Include="..\Python\flowgraph.c" />
     <ClCompile Include="..\Python\formatter_unicode.c" />
     <ClCompile Include="..\Python\frame.c" />
     <ClCompile Include="..\Python\frozen.c" />
@@ -528,6 +533,8 @@
     <ClCompile Include="..\Python\importdl.c" />
     <ClCompile Include="..\Python\initconfig.c" />
     <ClCompile Include="..\Python\intrinsics.c" />
+    <ClCompile Include="..\Python\instrumentation.c" />
+    <ClCompile Include="..\Python\legacy_tracing.c" />
     <ClCompile Include="..\Python\marshal.c" />
     <ClCompile Include="..\Python\modsupport.c" />
     <ClCompile Include="..\Python\mysnprintf.c" />
