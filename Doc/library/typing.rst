@@ -1552,7 +1552,7 @@ These are not used in annotations. They are building blocks for creating generic
 
 .. data:: AnyStr
 
-   ``AnyStr`` is a :ref:`constrained type variable <_typing-constrained-typevar>` defined as
+   ``AnyStr`` is a :ref:`constrained type variable <typing-constrained-typevar>` defined as
    ``AnyStr = TypeVar('AnyStr', str, bytes)``.
 
    It is meant to be used for functions that may accept any kind of string
