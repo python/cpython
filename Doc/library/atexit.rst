@@ -21,7 +21,7 @@ program is killed by a signal not handled by Python, when a Python fatal
 internal error is detected, or when :func:`os._exit` is called.
 
 **Note:** The effect of registering or unregistering functions from within
-a cleanup function is underfined.
+a cleanup function is undefined.
 
 .. versionchanged:: 3.7
     When used with C-API subinterpreters, registered functions
