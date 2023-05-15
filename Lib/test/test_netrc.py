@@ -196,7 +196,6 @@ class NetrcTestCase(unittest.TestCase):
 
     def _test_comment(self, nrc, passwd='pass'):
         nrc = self.make_nrc(nrc)
-        print(nrc.hosts)
         self.assertEqual(nrc.hosts['foo.domain.com'], ('bar', '', passwd))
         self.assertEqual(nrc.hosts['bar.domain.com'], ('foo', '', 'pass'))
 
