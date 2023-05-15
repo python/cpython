@@ -603,12 +603,21 @@ LIBHACL_SHA2_HEADERS= \
 
 # Default target
 all:		@DEF_MAKE_ALL_RULE@
+
+# First target in Makefile is implicit default. So .PHONY needs to come after
+# all.
+.PHONY: all
+
+.PHONY: build_all
 build_all:	check-clean-src $(BUILDPYTHON) platform sharedmods \
 		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil
+
+.PHONY: build_wasm
 build_wasm: check-clean-src $(BUILDPYTHON) platform sharedmods \
 		python-config checksharedmods
 
 # Check that the source is clean when building out of source.
+.PHONY: check-clean-src
 check-clean-src:
 	@if test -n "$(VPATH)" -a \( \
 	    -f "$(srcdir)/Programs/python.o" \
@@ -652,23 +661,28 @@ profile-run-stamp:
 	# to record its completion and avoid re-running it.
 	touch $@
 
+.PHONY: build_all_generate_profile
 build_all_generate_profile:
 	$(MAKE) @DEF_MAKE_RULE@ CFLAGS_NODIST="$(CFLAGS_NODIST) $(PGO_PROF_GEN_FLAG)" LDFLAGS_NODIST="$(LDFLAGS_NODIST) $(PGO_PROF_GEN_FLAG)" LIBS="$(LIBS)"
 
+.PHONY: run_profile_task
 run_profile_task:
 	@ # FIXME: can't run for a cross build
 	$(LLVM_PROF_FILE) $(RUNSHARED) ./$(BUILDPYTHON) $(PROFILE_TASK) || true
 
+.PHONY: build_all_merge_profile
 build_all_merge_profile:
 	$(LLVM_PROF_MERGER)
 
 # Compile Python binary with profile guided optimization.
 # To force re-running of the profile task, remove the profile-run-stamp file.
+.PHONY: profile-opt
 profile-opt: profile-run-stamp
 	@echo "Rebuilding with profile guided optimizations:"
 	-rm -f profile-clean-stamp
 	$(MAKE) @DEF_MAKE_RULE@ CFLAGS_NODIST="$(CFLAGS_NODIST) $(PGO_PROF_USE_FLAG)" LDFLAGS_NODIST="$(LDFLAGS_NODIST)"
 
+.PHONY: bolt-opt
 bolt-opt: @PREBOLT_RULE@
 	rm -f *.fdata
 	@if $(READELF) -p .note.bolt_info $(BUILDPYTHON) | grep BOLT > /dev/null; then\
@@ -685,12 +699,13 @@ bolt-opt: @PREBOLT_RULE@
 
 
 # Compile and run with gcov
-.PHONY=coverage coverage-lcov coverage-report
+.PHONY: coverage
 coverage:
 	@echo "Building with support for coverage checking:"
 	$(MAKE) clean
 	$(MAKE) @DEF_MAKE_RULE@ CFLAGS="$(CFLAGS) -O0 -pg --coverage" LDFLAGS="$(LDFLAGS) --coverage"
 
+.PHONY: coverage-lcov
 coverage-lcov:
 	@echo "Creating Coverage HTML report with LCOV:"
 	@rm -f $(COVERAGE_INFO)
@@ -722,6 +737,7 @@ coverage-lcov:
 	@echo
 
 # Force regeneration of parser and frozen modules
+.PHONY: coverage-report
 coverage-report: regen-token regen-frozen
 	@ # build with coverage info
 	$(MAKE) coverage
@@ -731,7 +747,7 @@ coverage-report: regen-token regen-frozen
 	$(MAKE) coverage-lcov
 
 # Run "Argument Clinic" over all source files
-.PHONY=clinic
+.PHONY: clinic
 clinic: check-clean-src $(srcdir)/Modules/_blake2/blake2s_impl.c
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py --make --srcdir $(srcdir)
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_global_objects.py
@@ -796,6 +812,7 @@ Modules/python.exp: $(LIBRARY)
 #
 # Distributors are likely to want to install this somewhere else e.g. relative
 # to the stripped DWARF data for the shared library.
+.PHONY: gdbhooks
 gdbhooks: $(BUILDPYTHON)-gdb.py
 
 SRC_GDB_HOOKS=$(srcdir)/Tools/gdb/libpython.py
@@ -936,6 +953,7 @@ $(LIBHACL_SHA2_A): $(LIBHACL_SHA2_OBJS)
 # create relative links from build/lib.platform/egg.so to Modules/egg.so
 # pybuilddir.txt is created too late. We cannot use it in Makefile
 # targets. ln --relative is not portable.
+.PHONY: sharedmods
 sharedmods: $(SHAREDMODS) pybuilddir.txt
 	@target=`cat pybuilddir.txt`; \
 	$(MKDIR_P) $$target; \
@@ -946,9 +964,11 @@ sharedmods: $(SHAREDMODS) pybuilddir.txt
 	done
 
 # dependency on BUILDPYTHON ensures that the target is run last
+.PHONY: checksharedmods
 checksharedmods: sharedmods $(PYTHON_FOR_BUILD_DEPS) $(BUILDPYTHON)
 	@$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/check_extension_modules.py
 
+.PHONY: rundsymutil
 rundsymutil: sharedmods $(PYTHON_FOR_BUILD_DEPS) $(BUILDPYTHON)
 	@if [ ! -z $(DSYMUTIL) ] ; then \
 		echo $(DSYMUTIL_PATH) $(BUILDPYTHON); \
@@ -1252,20 +1272,24 @@ regen-global-objects: $(srcdir)/Tools/build/generate_global_objects.py
 ############################################################################
 # ABI
 
+.PHONY: regen-abidump
 regen-abidump: all
 	@$(MKDIR_P) $(srcdir)/Doc/data/
 	abidw "libpython$(LDVERSION).so" --no-architecture --out-file $(srcdir)/Doc/data/python$(LDVERSION).abi.new
 	@$(UPDATE_FILE) --create $(srcdir)/Doc/data/python$(LDVERSION).abi $(srcdir)/Doc/data/python$(LDVERSION).abi.new
 
+.PHONY: check-abidump
 check-abidump: all
 	abidiff $(srcdir)/Doc/data/python$(LDVERSION).abi "libpython$(LDVERSION).so" --drop-private-types --no-architecture --no-added-syms
 
+.PHONY: regen-limited-abi
 regen-limited-abi: all
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/build/stable_abi.py --generate-all $(srcdir)/Misc/stable_abi.toml
 
 ############################################################################
 # Regenerate all generated files
 
+.PHONY: regen-all
 regen-all: regen-cases regen-opcode regen-opcode-targets regen-typeslots \
 	regen-token regen-ast regen-keyword regen-sre regen-frozen clinic \
 	regen-pegen-metaparser regen-pegen regen-test-frozenmain \
@@ -1351,7 +1375,7 @@ regen-pegen:
 		-o $(srcdir)/Parser/parser.new.c
 	$(UPDATE_FILE) $(srcdir)/Parser/parser.c $(srcdir)/Parser/parser.new.c
 
-.PHONY=regen-ast
+.PHONY: regen-ast
 regen-ast:
 	# Regenerate 3 files using using Parser/asdl_c.py:
 	# - Include/internal/pycore_ast.h
@@ -1424,6 +1448,7 @@ regen-stdlib-module-names: all Programs/_testembed
 		> $(srcdir)/Python/stdlib_module_names.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/stdlib_module_names.h $(srcdir)/Python/stdlib_module_names.h.new
 
+.PHONY: regen-sre
 regen-sre:
 	# Regenerate Modules/_sre/sre_constants.h and Modules/_sre/sre_targets.h
 	# from Lib/re/_constants.py using Tools/build/generate_sre_constants.py
@@ -1762,15 +1787,15 @@ TESTPYTHON=	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(TESTPYTHONOPTS)
 TESTRUNNER=	$(TESTPYTHON) $(srcdir)/Tools/scripts/run_tests.py
 TESTTIMEOUT=	1200
 
-.PHONY: test testall testuniversal buildbottest pythoninfo
-
 # Remove "test_python_*" directories of previous failed test jobs.
 # Pass TESTOPTS options because it can contain --tempdir option.
+.PHONY: cleantest
 cleantest: all
 	$(TESTRUNNER) $(TESTOPTS) --cleanup
 
 # Run a basic set of regression tests.
 # This excludes some tests that are particularly resource-intensive.
+.PHONY: test
 test: all
 		$(TESTRUNNER) $(TESTOPTS)
 
@@ -1781,6 +1806,7 @@ test: all
 # the bytecode read from a .pyc file had the bug, sometimes the directly
 # generated bytecode.  This is sometimes a very shy bug needing a lot of
 # sample data.
+.PHONY: testall
 testall: all
 		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
 		$(TESTPYTHON) -E $(srcdir)/Lib/compileall.py
@@ -1790,6 +1816,7 @@ testall: all
 
 # Run the test suite for both architectures in a Universal build on OSX.
 # Must be run on an Intel box.
+.PHONY: testuniversal
 testuniversal: all
 		@if [ `arch` != 'i386' ]; then \
 			echo "This can only be used on OSX/i386" ;\
@@ -1801,6 +1828,7 @@ testuniversal: all
 
 # Like testall, but with only one pass and without multiple processes.
 # Run an optional script to include information about the build environment.
+.PHONY: buildbottest
 buildbottest: all
 		-@if which pybuildbot.identify >/dev/null 2>&1; then \
 			pybuildbot.identify "CC='$(CC)'" "CXX='$(CXX)'"; \
@@ -1808,9 +1836,11 @@ buildbottest: all
 		$(TESTRUNNER) -j 1 -u all -W --slowest --fail-env-changed --timeout=$(TESTTIMEOUT) $(TESTOPTS)
 
 # Like testall, but run Python tests with HOSTRUNNER directly.
+.PHONY: hostrunnertest
 hostrunnertest: all
 	$(RUNSHARED) $(HOSTRUNNER) ./$(BUILDPYTHON) -m test -u all $(TESTOPTS)
 
+.PHONY: pythoninfo
 pythoninfo: all
 		$(RUNSHARED) $(HOSTRUNNER) ./$(BUILDPYTHON) -m test.pythoninfo
 
@@ -1820,14 +1850,17 @@ QUICKTESTOPTS=	$(TESTOPTS) -x test_subprocess test_io test_lib2to3 \
 		test_multiprocessing_forkserver \
 		test_mailbox test_nntplib test_socket test_poll \
 		test_select test_zipfile test_concurrent_futures
+
+.PHONY: quicktest
 quicktest: all
 		$(TESTRUNNER) $(QUICKTESTOPTS)
 
 # SSL tests
-.PHONY: multisslcompile multissltest
+.PHONY: multisslcompile
 multisslcompile: all
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/ssl/multissltests.py --steps=modules
 
+.PHONY: multissltest
 multissltest: all
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/ssl/multissltests.py
 
@@ -1835,6 +1868,7 @@ multissltest: all
 # prevent race conditions with PGO builds. PGO builds use recursive make,
 # which can lead to two parallel `./python setup.py build` processes that
 # step on each others toes.
+.PHONY: install
 install: @FRAMEWORKINSTALLFIRST@ commoninstall bininstall maninstall @FRAMEWORKINSTALLLAST@
 	if test "x$(ENSUREPIP)" != "xno"  ; then \
 		case $(ENSUREPIP) in \
@@ -1845,6 +1879,7 @@ install: @FRAMEWORKINSTALLFIRST@ commoninstall bininstall maninstall @FRAMEWORKI
 			$$ensurepip --root=$(DESTDIR)/ ; \
 	fi
 
+.PHONY: altinstall
 altinstall: commoninstall
 	if test "x$(ENSUREPIP)" != "xno"  ; then \
 		case $(ENSUREPIP) in \
@@ -1855,6 +1890,7 @@ altinstall: commoninstall
 			$$ensurepip --root=$(DESTDIR)/ ; \
 	fi
 
+.PHONY: commoninstall
 commoninstall:  check-clean-src @FRAMEWORKALTINSTALLFIRST@ \
 		altbininstall libinstall inclinstall libainstall \
 		sharedinstall altmaninstall \
@@ -1863,6 +1899,7 @@ commoninstall:  check-clean-src @FRAMEWORKALTINSTALLFIRST@ \
 # Install shared libraries enabled by Setup
 DESTDIRS=	$(exec_prefix) $(LIBDIR) $(BINLIBDEST) $(DESTSHARED)
 
+.PHONY: sharedinstall
 sharedinstall: all
 		@for i in $(DESTDIRS); \
 		do \
@@ -1885,6 +1922,7 @@ sharedinstall: all
 
 # Install the interpreter with $(VERSION) affixed
 # This goes into $(exec_prefix)
+.PHONY: altbininstall
 altbininstall: $(BUILDPYTHON) @FRAMEWORKPYTHONW@
 	@for i in $(BINDIR) $(LIBDIR); \
 	do \
@@ -1950,7 +1988,7 @@ altbininstall: $(BUILDPYTHON) @FRAMEWORKPYTHONW@
 		fi \
 	fi
 
-
+.PHONY: bininstall
 bininstall: altbininstall
 	if test ! -d $(DESTDIR)$(LIBPC); then \
 		echo "Creating directory $(LIBPC)"; \
@@ -1991,6 +2029,7 @@ bininstall: altbininstall
 	fi
 
 # Install the versioned manual page
+.PHONY: altmaninstall
 altmaninstall:
 	@for i in $(MANDIR) $(MANDIR)/man1; \
 	do \
@@ -2004,6 +2043,7 @@ altmaninstall:
 		$(DESTDIR)$(MANDIR)/man1/python$(VERSION).1
 
 # Install the unversioned manual page
+.PHONY: maninstall
 maninstall:	altmaninstall
 	-rm -f $(DESTDIR)$(MANDIR)/man1/python3.1
 	(cd $(DESTDIR)$(MANDIR)/man1; $(LN) -s python$(VERSION).1 python3.1)
@@ -2162,6 +2202,8 @@ TESTSUBDIRS=	idlelib/idle_test \
 COMPILEALL_OPTS=-j0
 
 TEST_MODULES=@TEST_MODULES@
+
+.PHONY: libinstall
 libinstall:	all $(srcdir)/Modules/xxmodule.c
 	@for i in $(SCRIPTDIR) $(LIBDEST); \
 	do \
@@ -2282,10 +2324,13 @@ $(SCRIPT_PYDOC): $(srcdir)/Tools/scripts/pydoc3
 	sed -e "s,/usr/bin/env python3,$(EXENAME)," < $(srcdir)/Tools/scripts/pydoc3 > $@
 	@chmod +x $@
 
+.PHONY: scripts
 scripts: $(SCRIPT_2TO3) $(SCRIPT_IDLE) $(SCRIPT_PYDOC) python-config
 
 # Install the include files
 INCLDIRSTOMAKE=$(INCLUDEDIR) $(CONFINCLUDEDIR) $(INCLUDEPY) $(CONFINCLUDEPY)
+
+.PHONY: inclinstall
 inclinstall:
 	@for i in $(INCLDIRSTOMAKE); \
 	do \
@@ -2329,6 +2374,7 @@ LIBPL=		@LIBPL@
 # pkgconfig directory
 LIBPC=		$(LIBDIR)/pkgconfig
 
+.PHONY: libainstall
 libainstall: all scripts
 	@for i in $(LIBDIR) $(LIBPL) $(LIBPC) $(BINDIR); \
 	do \
@@ -2392,6 +2438,7 @@ libainstall: all scripts
 #
 # This target is here for backward compatibility, previous versions of Python
 # hadn't integrated framework installation in the normal install process.
+.PHONY: frameworkinstall
 frameworkinstall: install
 
 # On install, we re-make the framework
@@ -2400,8 +2447,10 @@ frameworkinstall: install
 # automatically set prefix to the location deep down in the framework, so we
 # only have to cater for the structural bits of the framework.
 
+.PHONY: frameworkinstallframework
 frameworkinstallframework: frameworkinstallstructure install frameworkinstallmaclib
 
+.PHONY: frameworkinstallstructure
 frameworkinstallstructure:	$(LDLIBRARY)
 	@if test "$(PYTHONFRAMEWORKDIR)" = no-framework; then \
 		echo Not configured with --enable-framework; \
@@ -2426,6 +2475,7 @@ frameworkinstallstructure:	$(LDLIBRARY)
 # This installs Mac/Lib into the framework
 # Install a number of symlinks to keep software that expects a normal unix
 # install (which includes python-config) happy.
+.PHONY: frameworkinstallmaclib
 frameworkinstallmaclib:
 	$(LN) -fs "../../../$(PYTHONFRAMEWORK)" "$(DESTDIR)$(LIBPL)/libpython$(LDVERSION).a"
 	$(LN) -fs "../../../$(PYTHONFRAMEWORK)" "$(DESTDIR)$(LIBPL)/libpython$(LDVERSION).dylib"
@@ -2435,25 +2485,30 @@ frameworkinstallmaclib:
 	$(LN) -fs "../$(PYTHONFRAMEWORK)" "$(DESTDIR)$(prefix)/lib/libpython$(VERSION).dylib"
 
 # This installs the IDE, the Launcher and other apps into /Applications
+.PHONY: frameworkinstallapps
 frameworkinstallapps:
 	cd Mac && $(MAKE) installapps DESTDIR="$(DESTDIR)"
 
 # Build the bootstrap executable that will spawn the interpreter inside
 # an app bundle within the framework.  This allows the interpreter to
 # run OS X GUI APIs.
+.PHONY: frameworkpythonw
 frameworkpythonw:
 	cd Mac && $(MAKE) pythonw
 
 # This installs the python* and other bin symlinks in $prefix/bin or in
 # a bin directory relative to the framework root
+.PHONY: frameworkinstallunixtools
 frameworkinstallunixtools:
 	cd Mac && $(MAKE) installunixtools DESTDIR="$(DESTDIR)"
 
+.PHONY: frameworkaltinstallunixtools
 frameworkaltinstallunixtools:
 	cd Mac && $(MAKE) altinstallunixtools DESTDIR="$(DESTDIR)"
 
 # This installs the Tools into the applications directory.
 # It is not part of a normal frameworkinstall
+.PHONY: frameworkinstallextras
 frameworkinstallextras:
 	cd Mac && $(MAKE) installextras DESTDIR="$(DESTDIR)"
 
@@ -2483,11 +2538,13 @@ Python/dtoa.o: Python/dtoa.c
 	$(CC) -c $(PY_CORE_CFLAGS) $(CFLAGS_ALIASING) -o $@ $<
 
 # Run reindent on the library
+.PHONY: reindent
 reindent:
 	./$(BUILDPYTHON) $(srcdir)/Tools/patchcheck/reindent.py -r $(srcdir)/Lib
 
 # Rerun configure with the same options as it was run last time,
 # provided the config.status script exists
+.PHONY: recheck
 recheck:
 	./config.status --recheck
 	./config.status
@@ -2524,10 +2581,12 @@ TAGS::
 
 # Sanitation targets -- clean leaves libraries, executables and tags
 # files, which clobber removes as well
+.PHONY: pycremoval
 pycremoval:
 	-find $(srcdir) -depth -name '__pycache__' -exec rm -rf {} ';'
 	-find $(srcdir) -name '*.py[co]' -exec rm -f {} ';'
 
+.PHONY: rmtestturds
 rmtestturds:
 	-rm -f *BAD *GOOD *SKIPPED
 	-rm -rf OUT
@@ -2535,11 +2594,13 @@ rmtestturds:
 	-rm -f *.txt
 	-rm -f gb-18030-2000.xml
 
+.PHONY: docclean
 docclean:
 	$(MAKE) -C $(srcdir)/Doc clean
 
 # like the 'clean' target but retain the profile guided optimization (PGO)
 # data.  The PGO data is only valid if source code remains unchanged.
+.PHONY: clean-retain-profile
 clean-retain-profile: pycremoval
 	find . -name '*.[oa]' -exec rm -f {} ';'
 	find . -name '*.s[ol]' -exec rm -f {} ';'
@@ -2563,6 +2624,7 @@ clean-retain-profile: pycremoval
 	-rm -f Include/pydtrace_probes.h
 	-rm -f profile-gen-stamp
 
+.PHONY: profile-removal
 profile-removal:
 	find . -name '*.gc??' -exec rm -f {} ';'
 	find . -name '*.profclang?' -exec rm -f {} ';'
@@ -2571,12 +2633,14 @@ profile-removal:
 	rm -rf $(COVERAGE_REPORT)
 	rm -f profile-run-stamp
 
+.PHONY: clean
 clean: clean-retain-profile
 	@if test @DEF_MAKE_ALL_RULE@ = profile-opt; then \
 		rm -f profile-gen-stamp profile-clean-stamp; \
 		$(MAKE) profile-removal; \
 	fi
 
+.PHONY: clobber
 clobber: clean
 	-rm -f $(BUILDPYTHON) $(LIBRARY) $(LDLIBRARY) $(DLLLIBRARY) \
 		tags TAGS \
@@ -2588,6 +2652,7 @@ clobber: clean
 # Make things extra clean, before making a distribution:
 # remove all generated files, even Makefile[.pre]
 # Keep configure and Python-ast.[ch], it's possible they can't be generated
+.PHONY: distclean
 distclean: clobber docclean
 	for file in $(srcdir)/Lib/test/data/* ; do \
 	    if test "$$file" != "$(srcdir)/Lib/test/data/README"; then rm "$$file"; fi; \
@@ -2608,16 +2673,19 @@ distclean: clobber docclean
 				     -exec rm -f {} ';'
 
 # Check that all symbols exported by libpython start with "Py" or "_Py"
+.PHONY: smelly
 smelly: all
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/build/smelly.py
 
 # Check if any unsupported C global variables have been added.
+.PHONY: check-c-globals
 check-c-globals:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/c-analyzer/check-c-globals.py \
 		--format summary \
 		--traceback
 
 # Find files with funny names
+.PHONY: funny
 funny:
 	find $(SUBDIRS) $(SUBDIRSTOO) \
 		-type d \
@@ -2649,9 +2717,11 @@ funny:
 		-o -print
 
 # Perform some verification checks on any modified files.
+.PHONY: patchcheck
 patchcheck: all
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/patchcheck/patchcheck.py
 
+.PHONY: check-limited-abi
 check-limited-abi: all
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/build/stable_abi.py --all $(srcdir)/Misc/stable_abi.toml
 
@@ -2664,19 +2734,6 @@ update-config:
 # Dependencies
 
 Python/thread.o: @THREADHEADERS@ $(srcdir)/Python/condvar.h
-
-# Declare targets that aren't real files
-.PHONY: all build_all build_wasm check-clean-src
-.PHONY: sharedmods checksharedmods test quicktest rundsymutil
-.PHONY: install altinstall sharedinstall bininstall altbininstall
-.PHONY: maninstall libinstall inclinstall libainstall
-.PHONY: frameworkinstall frameworkinstallframework frameworkinstallstructure
-.PHONY: frameworkinstallmaclib frameworkinstallapps frameworkinstallunixtools
-.PHONY: frameworkaltinstallunixtools recheck clean clobber distclean
-.PHONY: smelly funny patchcheck touch altmaninstall commoninstall
-.PHONY: clean-retain-profile profile-removal run_profile_task
-.PHONY: build_all_generate_profile build_all_merge_profile
-.PHONY: gdbhooks scripts
 
 ##########################################################################
 # Module dependencies and platform-specific files
