@@ -65,7 +65,7 @@ def fileConfig(fname, defaults=None, disable_existing_loggers=True, encoding=Non
         if not os.path.exists(fname):
             raise FileNotFoundError(f"{fname} doesn't exist")
         elif not os.path.getsize(fname):
-            raise ValueError(f"{fname} configuration file is empty")
+            raise ValueError(f'{fname} is an empty file')
 
     if isinstance(fname, configparser.RawConfigParser):
         cp = fname
