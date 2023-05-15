@@ -1190,7 +1190,7 @@ ghijkl\0mno
 ghi\0jkl
 """
     sample15 = """\
-    sample,fastq_1,fastq_2
+sample,fastq_1,fastq_2
 A1-35-8,/mnt/scratch/sarek/data/A1-35-8/A1-35-8_R1.fastq.gz,/mnt/scratch/sarek/data/A1-35-8/A1-35-8_R2.fastq.gz
 A2-102-5,/mnt/scratch/sarek/data/A2-102-5/A2-102-5_R1.fastq.gz,/mnt/scratch/sarek/data/A2-102-5/A2-102-5_R2.fastq.gz
 A5-35-17,/mnt/scratch/sarek/data/A5-35-17/A5-35-17_R1.fastq.gz,/mnt/scratch/sarek/data/A5-35-17/A5-35-17_R2.fastq.gz
