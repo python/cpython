@@ -176,7 +176,7 @@ _testcapi_raise_memoryerror_impl(PyObject *module)
 /*[clinic input]
 _testcapi.fatal_error
     message: str(accept={robuffer})
-    release_gil: int = 0
+    release_gil: bool = False
     /
 fatal_error(message, release_gil=False): call Py_FatalError(message)
 [clinic start generated code]*/
@@ -184,7 +184,7 @@ fatal_error(message, release_gil=False): call Py_FatalError(message)
 static PyObject *
 _testcapi_fatal_error_impl(PyObject *module, const char *message,
                            int release_gil)
-/*[clinic end generated code: output=9c3237116e6a03e8 input=50a85c024226f44f]*/
+/*[clinic end generated code: output=9c3237116e6a03e8 input=56f76191e4b152d7]*/
 {
     if (release_gil) {
         Py_BEGIN_ALLOW_THREADS

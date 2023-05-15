@@ -324,7 +324,7 @@ _testcapi_raise_memoryerror(PyObject *module, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(_testcapi_fatal_error__doc__,
-"fatal_error($module, message, release_gil=0, /)\n"
+"fatal_error($module, message, release_gil=False, /)\n"
 "--\n"
 "\n"
 "fatal_error(message, release_gil=False): call Py_FatalError(message)");
@@ -343,7 +343,7 @@ _testcapi_fatal_error(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     const char *message;
     int release_gil = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "y|i:fatal_error",
+    if (!_PyArg_ParseStack(args, nargs, "y|p:fatal_error",
         &message, &release_gil)) {
         goto exit;
     }
@@ -458,4 +458,4 @@ _testcapi_traceback_print(PyObject *module, PyObject *const *args, Py_ssize_t na
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f20b5ac4d0de3705 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=61dfe5aadcb50f13 input=a9049054013a1b77]*/
