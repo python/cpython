@@ -49,6 +49,18 @@ module_threads_init(struct module_threads *threads)
     return 0;
 }
 
+#ifdef HAVE_FORK
+static int
+module_threads_reinit(struct module_threads *threads)
+{
+    if (_PyThread_at_fork_reinit(threads->mutex) < 0) {
+        PyErr_SetString(ThreadError, "failed to reinitialize lock at fork");
+        return -1;
+    }
+    return 0;
+}
+#endif
+
 static void
 module_threads_fini(struct module_threads *threads)
 {
@@ -1702,6 +1714,18 @@ PyDoc_STRVAR(excepthook_doc,
 \n\
 Handle uncaught Thread.run() exception.");
 
+#ifdef HAVE_FORK
+static PyObject *
+thread__after_fork(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    thread_module_state *state = get_thread_state(module);
+    if (module_threads_reinit(&state->threads) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+#endif
+
 static PyMethodDef thread_methods[] = {
     {"start_new_thread",        (PyCFunction)thread_PyThread_start_new_thread,
      METH_VARARGS, start_new_doc},
@@ -1731,8 +1755,12 @@ static PyMethodDef thread_methods[] = {
      METH_VARARGS, stack_size_doc},
     {"_set_sentinel",           thread__set_sentinel,
      METH_NOARGS, _set_sentinel_doc},
-    {"_excepthook",              thread_excepthook,
+    {"_excepthook",             thread_excepthook,
      METH_O, excepthook_doc},
+#ifdef HAVE_FORK
+    {"_after_fork",             thread__after_fork,
+     METH_NOARGS, NULL},
+#endif
     {NULL,                      NULL}           /* sentinel */
 };
 
