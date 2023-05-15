@@ -54,6 +54,16 @@ module_threads_init(struct module_threads *threads)
     return 0;
 }
 
+static int
+module_threads_reinit(struct module_threads *threads)
+{
+    if (_PyThread_at_fork_reinit(threads->mutex) < 0) {
+        PyErr_SetString(ThreadError, "failed to reinitialize lock at fork");
+        return -1;
+    }
+    return 0;
+}
+
 static void
 module_threads_fini(struct module_threads *threads)
 {
@@ -1477,11 +1487,12 @@ release_sentinel(void *wr_raw)
 }
 
 static PyObject *
-thread__set_sentinel(PyObject *module, PyObject *arg)
+thread__set_sentinel(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     PyObject *wr;
     PyThreadState *tstate = _PyThreadState_GET();
-    lockobject *lock = (lockobject *)arg;
+    thread_module_state *state = get_thread_state(module);
+    lockobject *lock;
 
     if (tstate->on_delete_data != NULL) {
         /* We must support the re-creation of the lock from a
@@ -1492,21 +1503,25 @@ thread__set_sentinel(PyObject *module, PyObject *arg)
         tstate->on_delete_data = NULL;
         Py_DECREF(wr);
     }
+    lock = newlockobject(state);
+    if (lock == NULL)
+        return NULL;
     /* The lock is owned by whoever called _set_sentinel(), but the weakref
        hangs to the thread state. */
     wr = PyWeakref_NewRef((PyObject *) lock, NULL);
     if (wr == NULL) {
+        Py_DECREF(lock);
         return NULL;
     }
     tstate->on_delete_data = (void *) wr;
     tstate->on_delete = &release_sentinel;
-    Py_RETURN_NONE;
+    return (PyObject *) lock;
 }
 
 PyDoc_STRVAR(_set_sentinel_doc,
-"_set_sentinel(lock)\n\
+"_set_sentinel() -> lock\n\
 \n\
-Set the sentinel lock that will be released when the current thread\n\
+Set a sentinel lock that will be released when the current thread\n\
 state is finalized (after it is untied from the interpreter).\n\
 \n\
 This is a private API for the threading module.");
@@ -1707,6 +1722,16 @@ PyDoc_STRVAR(excepthook_doc,
 \n\
 Handle uncaught Thread.run() exception.");
 
+static PyObject *
+thread__after_fork(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    thread_module_state *state = get_thread_state(module);
+    if (module_threads_reinit(&state->threads) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef thread_methods[] = {
     {"start_new_thread",        (PyCFunction)thread_PyThread_start_new_thread,
      METH_VARARGS, start_new_doc},
@@ -1735,9 +1760,11 @@ static PyMethodDef thread_methods[] = {
     {"stack_size",              (PyCFunction)thread_stack_size,
      METH_VARARGS, stack_size_doc},
     {"_set_sentinel",           thread__set_sentinel,
-     METH_O, _set_sentinel_doc},
-    {"_excepthook",              thread_excepthook,
+     METH_NOARGS, _set_sentinel_doc},
+    {"_excepthook",             thread_excepthook,
      METH_O, excepthook_doc},
+    {"_after_fork",             thread__after_fork,
+     METH_NOARGS, NULL},
     {NULL,                      NULL}           /* sentinel */
 };
 

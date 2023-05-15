@@ -49,6 +49,7 @@ try:
 except AttributeError:
     _CRLock = None
 TIMEOUT_MAX = _thread.TIMEOUT_MAX
+_internal_after_fork = _thread._after_fork
 del _thread
 
 
@@ -1024,8 +1025,7 @@ class Thread:
         Set a lock object which will be released by the interpreter when
         the underlying thread state (see pystate.h) gets deleted.
         """
-        self._tstate_lock = _allocate_lock()
-        _set_sentinel(self._tstate_lock)
+        self._tstate_lock = _set_sentinel()
         self._tstate_lock.acquire()
 
         if not self.daemon:
@@ -1678,4 +1678,5 @@ def _after_fork():
 
 
 if hasattr(_os, "register_at_fork"):
+    _os.register_at_fork(after_in_child=_internal_after_fork)
     _os.register_at_fork(after_in_child=_after_fork)
