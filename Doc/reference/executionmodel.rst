@@ -168,7 +168,7 @@ The namespace of the class definition becomes the attribute dictionary of
 the class. The scope of names defined in a class block is limited to the
 class block; it does not extend to the code blocks of methods. This includes
 comprehensions and generator expressions since they are implemented using a
-function scope, but it does not include :ref:`type scopes <type-scopes>`,
+function scope, but it does not include :ref:`annotation scopes <annotation-scopes>`,
 which have access to their enclosing class scopes.
 This means that the following will fail::
 
@@ -183,6 +183,47 @@ However, the following will succeed::
        class Nested: ...
 
    print(A.Alias.__value__)  # <type 'A.Nested'>
+
+.. _annotation-scopes:
+
+Annotation scopes
+-----------------
+
+:ref:`Type parameter lists <type-params>`` and :keyword:`type` statements
+introduce *annotation scopes*, which behave mostly like function scopes,
+but with some exceptions discussed below. :term:`Annotations <annotation>`
+currently do not use annotation scopes, but they are expected to use
+annotation scopes in Python 3.13 when :pep:`649` is implemented.
+
+Annotation scopes are used in the following contexts:
+
+* Type parameter lists for generic type aliases
+* Type parameter lists for generic functions. The function's annotations are
+  executed within the type scope, but its defaults and decorators are not.
+* Type parameter lists for generic classes. The class's base classes and
+  keyword arguments are executed within the type scope, but its decorators are not.
+* The bounds and constraints for type variables.
+* The value of type aliases.
+
+Annotation scopes differ from function scopes in the following ways:
+
+* If an annotation scope is immediately within a class scope, or within another
+  annotation scope that is immediately within a class scope, names defined in the
+  class scope can be accessed from within the annotation scope, as if the code in the
+  annotation scope was executing directly within the class scope. (By contrast, regular
+  functions defined within classes cannot access names defined in the class scope.)
+* Expressions in annotation scopes cannot contain :keyword:`yield`, ``yield from <expr>``,
+  :keyword:`await`, or :token:`:= <~python-grammar:expression>` expressions. (These
+  expressions are allowed in other scopes contained within the type scope.)
+* Names defined in annotation scopes cannot be rebound with :keyword:`nonlocal`
+  statements in inner scopes. This includes only type parameters, as no other
+  syntactic elements that can appear within type scopes can introduce new names.
+* While annotation scopes internally have a name, that name is not reflected in the
+  :attr:`__qualname__` of objects defined within the scope. Instead, the :attr:`!__qualname__`
+  of such objects is as if the object was defined in the enclosing scope.
+
+.. versionadded:: 3.12
+   Annotation scopes were introduced in Python 3.12 as part of :pep:`695`.
 
 .. _restrict_exec:
 

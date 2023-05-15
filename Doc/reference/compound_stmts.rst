@@ -1634,6 +1634,16 @@ generic over a type variable. This information is primarily used by static
 type checkers, and at runtime, generic objects behave much like their
 non-generic counterparts.
 
+Type parameters are declared in square brackets (``[]``) immediately
+after the name of the function, class, or type alias. The type parameters
+are accessible within the scope of the generic object, but not elsewhere.
+Thus, after a declaration ``def func[T](): ...``, the name ``T`` is not in
+the module scope. Below, the semantics of generic objects are described
+with more precision. The scope of type parameters is modeled with a special
+function (technically, an :ref:`annotation scope <annotation-scopes>`,
+represented with the pseudo-keyword ``def'``) that
+wraps the creation of the generic object.
+
 Generic functions, classes, and type aliases have a :attr:`__type_params__`
 attribute listing their type parameters.
 
@@ -1681,42 +1691,6 @@ The following example indicates the full set of allowed type parameter declarati
       *d: SimpleTypeVarTuple,
    ): ...
 
-.. _type-scopes:
-
-Type scopes
------------
-
-Type parameter lists and :keyword:`type` statements introduce *type scopes*,
-which behave mostly like function scopes, but with some exceptions. Below,
-the semantics of type parameter lists are explained using the pseudo-keyword
-`def'` to indicate a type scope.
-
-Type scopes are used in the following contexts:
-
-* Type parameter lists for generic type aliases
-* Type parameter lists for generic functions. The function's annotations are
-  executed within the type scope, but its defaults and decorators are not.
-* Type parameter lists for generic classes. The class's base classes and
-  keyword arguments are executed within the type scope, but its decorators are not.
-* The bounds and constraints for type variables.
-* The value of type aliases.
-
-Type scopes differ from function scopes in the following ways:
-
-* If a type scope is immediately within a class scope, or within another
-  type scope that is immediately within a class scope, names defined in the
-  class scope can be accessed from within the type scope. (By contrast, regular
-  functions defined within classes cannot access names defined in the class scope.)
-* Expressions in type scopes cannot contain :keyword:`yield`, ``yield from``,
-  :keyword:`await`, or :token:`:= <~python-grammar:expression>` expressions. (These
-  expressions are allowed in other scopes contained within the type scope.)
-* Names defined in type scopes cannot be rebound with :keyword:`nonlocal`
-  statements in inner scopes. This includes only type parameters, as no other
-  syntactic elements that can appear within type scopes can introduce new names.
-* While type scopes internally have a name, that name is not reflected in the
-  :attr:`__qualname__` of objects defined within the scope. Instead, the :attr:`!__qualname__`
-  of such objects is as if the object was defined in the enclosing scope.
-
 .. _generic-functions:
 
 Generic functions
@@ -1735,13 +1709,13 @@ This syntax is equivalent to::
        return func
    func = TYPE_PARAMS_OF_func()
 
-Here `def'` indicates a :ref:`type scope <type-scopes>`. (Two other
+Here ``def'`` indicates an :ref:`annotation scope <annotation-scopes>`. (Two other
 liberties are taken in the translation: the ``__type_params__``
 attribute of generic functions is not writable from Python code;
 and the syntax does not go through attribute access on the :mod:`typing`
 module, but creates an instance of :data:`typing.TypeVar` directly.)
 
-The annotations of generic functions are defined within the type scope
+The annotations of generic functions are defined within the annotation scope
 used for declaring the type parameters, but the function's defaults and
 decorators are not.
 
@@ -1752,7 +1726,7 @@ as well as for additional flavors of type parameters::
    def func[T: int, *Ts, **P](*args: *Ts, arg: Callable[P, T] = some_default):
        ...
 
-This is equivalent to::
+Except for the lazy evaluation of the ``TypeVar`` bound, this is equivalent to::
 
    DEFAULT_OF_arg = some_default
 
@@ -1760,7 +1734,8 @@ This is equivalent to::
 
        def' BOUND_OF_T():
            return int
-       T = typing.TypeVar("T", evaluate_bound=BOUND_OF_T)
+       # In reality, BOUND_OF_T() is evaluated only on demand.
+       T = typing.TypeVar("T", bound=BOUND_OF_T())
 
        Ts = typing.TypeVarTuple("Ts")
        P = typing.ParamSpec("P")
@@ -1771,10 +1746,6 @@ This is equivalent to::
        func.__type_params__ = (T, Ts, P)
        return func
    func = decorator(TYPE_PARAMS_OF_func())
-
-The Python constructor of :data:`typing.TypeVar` does not take an
-``evaluate_bound`` argument. It is used in the translation to indicate
-that the bound is lazily evaluated.
 
 .. _generic-classes:
 
@@ -1795,7 +1766,7 @@ This syntax is equivalent to::
        return Bag
    Bag = TYPE_PARAMS_OF_Bag()
 
-Here again `def'` indicates a :ref:`type scope <type-scopes>`.
+Here again ``def'`` indicates an :ref:`annotation scope <annotation-scopes>`.
 
 Generic classes implicitly inherit from :data:`typing.Generic`.
 The base classes and keyword arguments of generic classes are
@@ -1821,7 +1792,21 @@ This is equivalent to::
 Generic type aliases
 --------------------
 
-TODO(jelle)
+The :keyword:`type` statement can also be used to create a generic type alias:
+
+   type ListOrSet[T] = list[T] | set[T]
+
+Except for the lazy evaluation of the value, this is equivalent to:
+
+   def' TYPE_PARAMS_OF_ListOrSet():
+       T = typing.TypeVar("T")
+
+       def' VALUE_OF_ListOrSet():
+           return list[T] | set[T]
+       # In reality, the value is lazily evaluated
+       return typing.TypeAliasType("ListOrSet", VALUE_OF_ListOrSet(), type_params=(T,))
+   ListOrSet = TYPE_PARAMS_OF_ListOrSet()
+
 
 
 .. rubric:: Footnotes
