@@ -1789,7 +1789,7 @@ class ConfigFileTest(BaseTest):
         self.assertRaises(ValueError, logging.config.fileConfig, fn)
         os.unlink(fn)
 
-    def test_exception_if_confg_file_does_not_exists(self):
+    def test_exception_if_config_file_does_not_exist(self):
         self.assertRaises(FileNotFoundError, logging.config.fileConfig, 'filenotfound')
 
     def test_defaults_do_no_interpolation(self):
