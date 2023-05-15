@@ -9158,7 +9158,13 @@ releasebuffer_call_python(PyObject *self, Py_buffer *buffer)
         Py_DECREF(ret);
     }
     if (!is_buffer_wrapper) {
-        PyObject_CallMethodNoArgs(mv, &_Py_ID(release));
+        PyObject *res = PyObject_CallMethodNoArgs(mv, &_Py_ID(release));
+        if (res == NULL) {
+            PyErr_WriteUnraisable(self);
+        }
+        else {
+            Py_DECREF(res);
+        }
     }
     Py_DECREF(mv);
 end:

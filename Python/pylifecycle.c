@@ -29,9 +29,6 @@
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
 #include "opcode.h"
 
-extern PyStatus _PyIO_InitTypes(PyInterpreterState *interp);
-extern void _PyIO_FiniTypes(PyInterpreterState *interp);
-
 #include <locale.h>               // setlocale()
 #include <stdlib.h>               // getenv()
 
@@ -704,11 +701,6 @@ pycore_init_types(PyInterpreterState *interp)
 
     if (_PyExc_InitTypes(interp) < 0) {
         return _PyStatus_ERR("failed to initialize an exception type");
-    }
-
-    status = _PyIO_InitTypes(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
     }
 
     status = _PyExc_InitGlobalObjects(interp);
@@ -1667,8 +1659,6 @@ flush_std_files(void)
 static void
 finalize_interp_types(PyInterpreterState *interp)
 {
-    _PyIO_FiniTypes(interp);
-
     _PyUnicode_FiniTypes(interp);
     _PySys_FiniTypes(interp);
     _PyExc_Fini(interp);

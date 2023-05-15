@@ -17,10 +17,10 @@
 
 /*[clinic input]
 module _io
-class _io._IOBase "PyObject *" "&PyIOBase_Type"
-class _io._RawIOBase "PyObject *" "&PyRawIOBase_Type"
+class _io._IOBase "PyObject *" "clinic_state()->PyIOBase_Type"
+class _io._RawIOBase "PyObject *" "clinic_state()->PyRawIOBase_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=d29a4d076c2b211c]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=9006b7802ab8ea85]*/
 
 /*
  * IOBase class, an abstract class
@@ -103,7 +103,7 @@ _io__IOBase_seek_impl(PyObject *self, PyTypeObject *cls,
                       int Py_UNUSED(offset), int Py_UNUSED(whence))
 /*[clinic end generated code: output=8bd74ea6538ded53 input=8d4e6adcd08292f2]*/
 {
-    _PyIO_State *state = IO_STATE();
+    _PyIO_State *state = get_io_state_by_cls(cls);
     return iobase_unsupported(state, "seek");
 }
 
@@ -137,7 +137,7 @@ _io__IOBase_truncate_impl(PyObject *self, PyTypeObject *cls,
                           PyObject *Py_UNUSED(size))
 /*[clinic end generated code: output=2013179bff1fe8ef input=660ac20936612c27]*/
 {
-    _PyIO_State *state = IO_STATE();
+    _PyIO_State *state = get_io_state_by_cls(cls);
     return iobase_unsupported(state, "truncate");
 }
 
@@ -223,22 +223,30 @@ _PyIOBase_check_closed(PyObject *self, PyObject *args)
 static PyObject *
 iobase_check_seekable(PyObject *self, PyObject *args)
 {
-    _PyIO_State *state = IO_STATE();
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     return _PyIOBase_check_seekable(state, self, args);
 }
 
 static PyObject *
 iobase_check_readable(PyObject *self, PyObject *args)
 {
-    _PyIO_State *state = IO_STATE();
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     return _PyIOBase_check_readable(state, self, args);
 }
 
 static PyObject *
 iobase_check_writable(PyObject *self, PyObject *args)
 {
-    _PyIO_State *state = IO_STATE();
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     return _PyIOBase_check_writable(state, self, args);
+}
+
+PyObject *
+_PyIOBase_cannot_pickle(PyObject *self, PyObject *args)
+{
+    PyErr_Format(PyExc_TypeError,
+        "cannot pickle '%.100s' instances", _PyType_Name(Py_TYPE(self)));
+    return NULL;
 }
 
 /* XXX: IOBase thinks it has to maintain its own internal state in
@@ -354,6 +362,7 @@ _PyIOBase_finalize(PyObject *self)
 static int
 iobase_traverse(iobase *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->dict);
     return 0;
 }
@@ -383,11 +392,13 @@ iobase_dealloc(iobase *self)
         }
         return;
     }
+    PyTypeObject *tp = Py_TYPE(self);
     _PyObject_GC_UNTRACK(self);
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
     Py_CLEAR(self->dict);
-    Py_TYPE(self)->tp_free((PyObject *) self);
+    tp->tp_free((PyObject *)self);
+    Py_DECREF(tp);
 }
 
 /* Inquiry methods */
@@ -526,7 +537,7 @@ static PyObject *
 _io__IOBase_fileno_impl(PyObject *self, PyTypeObject *cls)
 /*[clinic end generated code: output=7caaa32a6f4ada3d input=1927c8bea5c85099]*/
 {
-    _PyIO_State *state = IO_STATE();
+    _PyIO_State *state = get_io_state_by_cls(cls);
     return iobase_unsupported(state, "fileno");
 }
 
@@ -824,7 +835,9 @@ _io__IOBase_writelines(PyObject *self, PyObject *lines)
     Py_RETURN_NONE;
 }
 
+#define clinic_state() (find_io_state_by_def(Py_TYPE(self)))
 #include "clinic/iobase.c.h"
+#undef clinic_state
 
 static PyMethodDef iobase_methods[] = {
     _IO__IOBASE_SEEK_METHODDEF
@@ -861,59 +874,34 @@ static PyGetSetDef iobase_getset[] = {
     {NULL}
 };
 
-
-PyTypeObject PyIOBase_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_io._IOBase",              /*tp_name*/
-    sizeof(iobase),             /*tp_basicsize*/
-    0,                          /*tp_itemsize*/
-    (destructor)iobase_dealloc, /*tp_dealloc*/
-    0,                          /*tp_vectorcall_offset*/
-    0,                          /*tp_getattr*/
-    0,                          /*tp_setattr*/
-    0,                          /*tp_as_async*/
-    0,                          /*tp_repr*/
-    0,                          /*tp_as_number*/
-    0,                          /*tp_as_sequence*/
-    0,                          /*tp_as_mapping*/
-    0,                          /*tp_hash */
-    0,                          /*tp_call*/
-    0,                          /*tp_str*/
-    0,                          /*tp_getattro*/
-    0,                          /*tp_setattro*/
-    0,                          /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE
-        | Py_TPFLAGS_HAVE_GC,   /*tp_flags*/
-    iobase_doc,                 /* tp_doc */
-    (traverseproc)iobase_traverse, /* tp_traverse */
-    (inquiry)iobase_clear,      /* tp_clear */
-    0,                          /* tp_richcompare */
-    offsetof(iobase, weakreflist), /* tp_weaklistoffset */
-    iobase_iter,                /* tp_iter */
-    iobase_iternext,            /* tp_iternext */
-    iobase_methods,             /* tp_methods */
-    0,                          /* tp_members */
-    iobase_getset,              /* tp_getset */
-    0,                          /* tp_base */
-    0,                          /* tp_dict */
-    0,                          /* tp_descr_get */
-    0,                          /* tp_descr_set */
-    offsetof(iobase, dict),     /* tp_dictoffset */
-    0,                          /* tp_init */
-    0,                          /* tp_alloc */
-    PyType_GenericNew,          /* tp_new */
-    0,                          /* tp_free */
-    0,                          /* tp_is_gc */
-    0,                          /* tp_bases */
-    0,                          /* tp_mro */
-    0,                          /* tp_cache */
-    0,                          /* tp_subclasses */
-    0,                          /* tp_weaklist */
-    0,                          /* tp_del */
-    0,                          /* tp_version_tag */
-    iobase_finalize,            /* tp_finalize */
+static struct PyMemberDef iobase_members[] = {
+    {"__weaklistoffset__", T_PYSSIZET, offsetof(iobase, weakreflist), READONLY},
+    {"__dictoffset__", T_PYSSIZET, offsetof(iobase, dict), READONLY},
+    {NULL},
 };
 
+
+static PyType_Slot iobase_slots[] = {
+    {Py_tp_dealloc, iobase_dealloc},
+    {Py_tp_doc, (void *)iobase_doc},
+    {Py_tp_traverse, iobase_traverse},
+    {Py_tp_clear, iobase_clear},
+    {Py_tp_iter, iobase_iter},
+    {Py_tp_iternext, iobase_iternext},
+    {Py_tp_methods, iobase_methods},
+    {Py_tp_members, iobase_members},
+    {Py_tp_getset, iobase_getset},
+    {Py_tp_finalize, iobase_finalize},
+    {0, NULL},
+};
+
+PyType_Spec iobase_spec = {
+    .name = "_io._IOBase",
+    .basicsize = sizeof(iobase),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = iobase_slots,
+};
 
 /*
  * RawIOBase class, Inherits from IOBase.
@@ -1048,6 +1036,13 @@ rawiobase_write(PyObject *self, PyObject *args)
     return NULL;
 }
 
+static int
+rawiobase_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
 static PyMethodDef rawiobase_methods[] = {
     _IO__RAWIOBASE_READ_METHODDEF
     _IO__RAWIOBASE_READALL_METHODDEF
@@ -1056,53 +1051,16 @@ static PyMethodDef rawiobase_methods[] = {
     {NULL, NULL}
 };
 
-PyTypeObject PyRawIOBase_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_io._RawIOBase",                /*tp_name*/
-    0,                          /*tp_basicsize*/
-    0,                          /*tp_itemsize*/
-    0,                          /*tp_dealloc*/
-    0,                          /*tp_vectorcall_offset*/
-    0,                          /*tp_getattr*/
-    0,                          /*tp_setattr*/
-    0,                          /*tp_as_async*/
-    0,                          /*tp_repr*/
-    0,                          /*tp_as_number*/
-    0,                          /*tp_as_sequence*/
-    0,                          /*tp_as_mapping*/
-    0,                          /*tp_hash */
-    0,                          /*tp_call*/
-    0,                          /*tp_str*/
-    0,                          /*tp_getattro*/
-    0,                          /*tp_setattro*/
-    0,                          /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,  /*tp_flags*/
-    rawiobase_doc,              /* tp_doc */
-    0,                          /* tp_traverse */
-    0,                          /* tp_clear */
-    0,                          /* tp_richcompare */
-    0,                          /* tp_weaklistoffset */
-    0,                          /* tp_iter */
-    0,                          /* tp_iternext */
-    rawiobase_methods,          /* tp_methods */
-    0,                          /* tp_members */
-    0,                          /* tp_getset */
-    &PyIOBase_Type,             /* tp_base */
-    0,                          /* tp_dict */
-    0,                          /* tp_descr_get */
-    0,                          /* tp_descr_set */
-    0,                          /* tp_dictoffset */
-    0,                          /* tp_init */
-    0,                          /* tp_alloc */
-    0,                          /* tp_new */
-    0,                          /* tp_free */
-    0,                          /* tp_is_gc */
-    0,                          /* tp_bases */
-    0,                          /* tp_mro */
-    0,                          /* tp_cache */
-    0,                          /* tp_subclasses */
-    0,                          /* tp_weaklist */
-    0,                          /* tp_del */
-    0,                          /* tp_version_tag */
-    0,                          /* tp_finalize */
+static PyType_Slot rawiobase_slots[] = {
+    {Py_tp_doc, (void *)rawiobase_doc},
+    {Py_tp_methods, rawiobase_methods},
+    {Py_tp_traverse, rawiobase_traverse},
+    {0, NULL},
+};
+
+PyType_Spec rawiobase_spec = {
+    .name = "_io._RawIOBase",
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = rawiobase_slots,
 };
