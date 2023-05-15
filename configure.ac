@@ -202,7 +202,7 @@ AC_SUBST([FREEZE_MODULE_DEPS])
 AC_SUBST([PYTHON_FOR_BUILD_DEPS])
 
 AC_CHECK_PROGS([PYTHON_FOR_REGEN],
-  [python$PACKAGE_VERSION python3.11 python3.10 python3.9 python3.8 python3.7 python3.6 python3 python],
+  [python$PACKAGE_VERSION python3.12 python3.11 python3.10 python3 python],
   [python3])
 AC_SUBST(PYTHON_FOR_REGEN)
 
@@ -1929,68 +1929,6 @@ if test "$Py_LTO" = 'true' ; then
   LDFLAGS_NODIST="$LDFLAGS_NODIST $LTOFLAGS"
 fi
 
-# Enable bolt flags
-Py_BOLT='false'
-AC_MSG_CHECKING(for --enable-bolt)
-AC_ARG_ENABLE(bolt, AS_HELP_STRING(
-                [--enable-bolt],
-                [enable usage of the llvm-bolt post-link optimizer (default is no)]),
-[
-if test "$enableval" != no
-then
-  Py_BOLT='true'
-  AC_MSG_RESULT(yes);
-else
-  Py_BOLT='false'
-  AC_MSG_RESULT(no);
-fi],
-[AC_MSG_RESULT(no)])
-
-AC_SUBST(PREBOLT_RULE)
-if test "$Py_BOLT" = 'true' ; then
-  PREBOLT_RULE="${DEF_MAKE_ALL_RULE}"
-  DEF_MAKE_ALL_RULE="bolt-opt"
-  DEF_MAKE_RULE="build_all"
-
-  AC_SUBST(READELF)
-  AC_CHECK_TOOLS(READELF, [readelf], "notfound")
-  if test "$READELF" == "notfound"
-  then
-    AC_MSG_ERROR([readelf is required for a --enable-bolt build but could not be found.])
-  fi
-      
-  # -fno-reorder-blocks-and-partition is required for bolt to work.
-  # Possibly GCC only.
-  AX_CHECK_COMPILE_FLAG([-fno-reorder-blocks-and-partition],[
-      CFLAGS_NODIST="$CFLAGS_NODIST -fno-reorder-blocks-and-partition"
-  ])
-
-  # These flags are required for bolt to work:
-  LDFLAGS_NODIST="$LDFLAGS_NODIST -Wl,--emit-relocs"
-
-  # These flags are required to get good performance from bolt:
-  CFLAGS_NODIST="$CFLAGS_NODIST -fno-pie"
-  # We want to add these no-pie flags to linking executables but not shared libraries:
-  LINKCC="$LINKCC -fno-pie -no-pie"
-  AC_SUBST(LLVM_BOLT)
-  AC_PATH_TOOL(LLVM_BOLT, llvm-bolt, '', ${llvm_path})
-  if test -n "${LLVM_BOLT}" -a -x "${LLVM_BOLT}"
-  then
-    AC_MSG_RESULT("Found llvm-bolt")
-  else
-    AC_MSG_ERROR([llvm-bolt is required for a --enable-bolt build but could not be found.])
-  fi
-
-  AC_SUBST(MERGE_FDATA)
-  AC_PATH_TOOL(MERGE_FDATA, merge-fdata, '', ${llvm_path})
-  if test -n "${MERGE_FDATA}" -a -x "${MERGE_FDATA}"
-  then
-    AC_MSG_RESULT("Found merge-fdata")
-  else
-    AC_MSG_ERROR([merge-fdata is required for a --enable-bolt build but could not be found.])
-  fi
-fi
-
 # Enable PGO flags.
 AC_SUBST(PGO_PROF_GEN_FLAG)
 AC_SUBST(PGO_PROF_USE_FLAG)
@@ -2066,6 +2004,68 @@ case $CC in
     LLVM_PROF_FILE=""
     ;;
 esac
+
+# BOLT optimization. Always configured after PGO since it always runs after PGO.
+Py_BOLT='false'
+AC_MSG_CHECKING(for --enable-bolt)
+AC_ARG_ENABLE(bolt, AS_HELP_STRING(
+                [--enable-bolt],
+                [enable usage of the llvm-bolt post-link optimizer (default is no)]),
+[
+if test "$enableval" != no
+then
+  Py_BOLT='true'
+  AC_MSG_RESULT(yes);
+else
+  Py_BOLT='false'
+  AC_MSG_RESULT(no);
+fi],
+[AC_MSG_RESULT(no)])
+
+AC_SUBST(PREBOLT_RULE)
+if test "$Py_BOLT" = 'true' ; then
+  PREBOLT_RULE="${DEF_MAKE_ALL_RULE}"
+  DEF_MAKE_ALL_RULE="bolt-opt"
+  DEF_MAKE_RULE="build_all"
+
+  AC_SUBST(READELF)
+  AC_CHECK_TOOLS(READELF, [readelf], "notfound")
+  if test "$READELF" == "notfound"
+  then
+    AC_MSG_ERROR([readelf is required for a --enable-bolt build but could not be found.])
+  fi
+
+  # -fno-reorder-blocks-and-partition is required for bolt to work.
+  # Possibly GCC only.
+  AX_CHECK_COMPILE_FLAG([-fno-reorder-blocks-and-partition],[
+      CFLAGS_NODIST="$CFLAGS_NODIST -fno-reorder-blocks-and-partition"
+  ])
+
+  # These flags are required for bolt to work:
+  LDFLAGS_NODIST="$LDFLAGS_NODIST -Wl,--emit-relocs"
+
+  # These flags are required to get good performance from bolt:
+  CFLAGS_NODIST="$CFLAGS_NODIST -fno-pie"
+  # We want to add these no-pie flags to linking executables but not shared libraries:
+  LINKCC="$LINKCC -fno-pie -no-pie"
+  AC_SUBST(LLVM_BOLT)
+  AC_PATH_TOOL(LLVM_BOLT, llvm-bolt, '', ${llvm_path})
+  if test -n "${LLVM_BOLT}" -a -x "${LLVM_BOLT}"
+  then
+    AC_MSG_RESULT("Found llvm-bolt")
+  else
+    AC_MSG_ERROR([llvm-bolt is required for a --enable-bolt build but could not be found.])
+  fi
+
+  AC_SUBST(MERGE_FDATA)
+  AC_PATH_TOOL(MERGE_FDATA, merge-fdata, '', ${llvm_path})
+  if test -n "${MERGE_FDATA}" -a -x "${MERGE_FDATA}"
+  then
+    AC_MSG_RESULT("Found merge-fdata")
+  else
+    AC_MSG_ERROR([merge-fdata is required for a --enable-bolt build but could not be found.])
+  fi
+fi
 
 # XXX Shouldn't the code above that fiddles with BASECFLAGS and OPT be
 # merged with this chunk of code?
