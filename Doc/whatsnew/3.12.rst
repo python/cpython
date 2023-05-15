@@ -420,6 +420,13 @@ itertools
   tuples where the last batch may be shorter than the rest.
   (Contributed by Raymond Hettinger in :gh:`98363`.)
 
+logging
+-------
+
+* :func:`logging.config.fileConfig` now raise :exc:`FileNotFoundError`
+  if file doesn't exist and :exc:`ValueError` if file is invalid or
+  empty. (Contributed by Prince Roshan in :gh:`103606`.)
+
 math
 ----
 
