@@ -613,6 +613,9 @@ validate_pattern(struct validator *state, pattern_ty p, int star_ok)
                     break;
                 }
             }
+            if (ret == 0) {
+                break;
+            }
 
             for (Py_ssize_t i = 0; i < asdl_seq_LEN(p->v.MatchClass.kwd_attrs); i++) {
                 PyObject *identifier = asdl_seq_GET(p->v.MatchClass.kwd_attrs, i);
@@ -624,6 +627,7 @@ validate_pattern(struct validator *state, pattern_ty p, int star_ok)
             if (ret == 0) {
                 break;
             }
+
             if (!validate_patterns(state, p->v.MatchClass.patterns, /*star_ok=*/0)) {
                 ret = 0;
                 break;
