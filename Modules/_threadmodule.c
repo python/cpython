@@ -1477,12 +1477,11 @@ release_sentinel(void *wr_raw)
 }
 
 static PyObject *
-thread__set_sentinel(PyObject *module, PyObject *Py_UNUSED(ignored))
+thread__set_sentinel(PyObject *module, PyObject *arg)
 {
     PyObject *wr;
     PyThreadState *tstate = _PyThreadState_GET();
-    thread_module_state *state = get_thread_state(module);
-    lockobject *lock;
+    lockobject *lock = (lockobject *)arg;
 
     if (tstate->on_delete_data != NULL) {
         /* We must support the re-creation of the lock from a
@@ -1493,25 +1492,21 @@ thread__set_sentinel(PyObject *module, PyObject *Py_UNUSED(ignored))
         tstate->on_delete_data = NULL;
         Py_DECREF(wr);
     }
-    lock = newlockobject(state);
-    if (lock == NULL)
-        return NULL;
     /* The lock is owned by whoever called _set_sentinel(), but the weakref
        hangs to the thread state. */
     wr = PyWeakref_NewRef((PyObject *) lock, NULL);
     if (wr == NULL) {
-        Py_DECREF(lock);
         return NULL;
     }
     tstate->on_delete_data = (void *) wr;
     tstate->on_delete = &release_sentinel;
-    return (PyObject *) lock;
+    Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(_set_sentinel_doc,
-"_set_sentinel() -> lock\n\
+"_set_sentinel(lock)\n\
 \n\
-Set a sentinel lock that will be released when the current thread\n\
+Set the sentinel lock that will be released when the current thread\n\
 state is finalized (after it is untied from the interpreter).\n\
 \n\
 This is a private API for the threading module.");
@@ -1740,7 +1735,7 @@ static PyMethodDef thread_methods[] = {
     {"stack_size",              (PyCFunction)thread_stack_size,
      METH_VARARGS, stack_size_doc},
     {"_set_sentinel",           thread__set_sentinel,
-     METH_NOARGS, _set_sentinel_doc},
+     METH_O, _set_sentinel_doc},
     {"_excepthook",              thread_excepthook,
      METH_O, excepthook_doc},
     {NULL,                      NULL}           /* sentinel */

@@ -1024,7 +1024,8 @@ class Thread:
         Set a lock object which will be released by the interpreter when
         the underlying thread state (see pystate.h) gets deleted.
         """
-        self._tstate_lock = _set_sentinel()
+        self._tstate_lock = _allocate_lock()
+        _set_sentinel(self._tstate_lock)
         self._tstate_lock.acquire()
 
         if not self.daemon:
