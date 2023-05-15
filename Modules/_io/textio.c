@@ -171,6 +171,7 @@ static int
 textiobase_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
+    Py_VISIT(((iobase *)self)->dict);
     return 0;
 }
 

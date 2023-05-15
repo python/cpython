@@ -26,12 +26,6 @@ class _io._RawIOBase "PyObject *" "clinic_state()->PyRawIOBase_Type"
  * IOBase class, an abstract class
  */
 
-typedef struct {
-    PyObject_HEAD
-
-    PyObject *dict;
-    PyObject *weakreflist;
-} iobase;
 
 PyDoc_STRVAR(iobase_doc,
     "The abstract base class for all I/O classes.\n"
@@ -1040,6 +1034,7 @@ static int
 rawiobase_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
+    Py_VISIT(((iobase *)self)->dict);
     return 0;
 }
 
