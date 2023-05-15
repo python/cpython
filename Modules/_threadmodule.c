@@ -20,12 +20,16 @@
 
 // Forward declarations
 static struct PyModuleDef thread_module;
+struct module_state;
+static struct lockobject *newlockobject(struct module_state *);
 
 
 /* threads owned by the modulo */
 
 struct module_thread {
     PyThreadState *tstate;
+    /* This lock is released right after the Python code finishes. */
+    PyObject *running_lock;
     struct module_thread *prev;
     struct module_thread *next;
 };
@@ -112,7 +116,25 @@ module_threads_remove(struct module_threads *threads, struct module_thread *mt)
 }
 
 static struct module_thread *
-add_module_thread(struct module_threads *threads, PyThreadState *tstate)
+module_threads_lookup(struct module_threads *threads, PyThreadState *tstate)
+{
+    PyThread_acquire_lock(threads->mutex, WAIT_LOCK);
+
+    struct module_thread *mt = threads->head;
+    while (mt != NULL) {
+        if (mt->tstate == tstate) {
+            break;
+        }
+        mt = mt->next;
+    }
+
+    PyThread_release_lock(threads->mutex);
+    return mt;
+}
+
+static struct module_thread *
+add_module_thread(struct module_state *state, struct module_threads *threads,
+                  PyThreadState *tstate)
 {
     // Create the new list entry.
     struct module_thread *mt = PyMem_RawMalloc(sizeof(struct module_thread));
@@ -125,6 +147,13 @@ add_module_thread(struct module_threads *threads, PyThreadState *tstate)
     mt->tstate = tstate;
     mt->prev = NULL;
     mt->next = NULL;
+
+    // Create the "running" lock.
+    mt->running_lock = (PyObject *) newlockobject(state);
+    if (mt->running_lock == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
 
     module_threads_add(threads, mt);
 
@@ -145,6 +174,9 @@ static void
 module_thread_finished(struct module_threads *threads, struct module_thread *mt)
 {
     threads->num_running--;
+
+    // The threading module may keep this alive past here.
+    Py_CLEAR(mt->running_lock);
 
     // XXX We should be notifying other threads here.
 }
@@ -169,7 +201,7 @@ remove_module_thread(struct module_threads *threads, struct module_thread *mt)
 
 /* module state */
 
-typedef struct {
+typedef struct module_state {
     struct module_threads threads;
 
     PyTypeObject *excepthook_type;
@@ -189,7 +221,7 @@ get_thread_state(PyObject *module)
 
 /* Lock objects */
 
-typedef struct {
+typedef struct lockobject {
     PyObject_HEAD
     PyThread_type_lock lock_lock;
     PyObject *in_weakreflist;
@@ -1321,7 +1353,8 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
     }
     thread_module_state *state = get_thread_state(self);
     boot->module_state = state;
-    boot->module_thread = add_module_thread(&state->threads, boot->tstate);
+    boot->module_thread = add_module_thread(state, &state->threads,
+                                            boot->tstate);
     if (boot->module_thread == NULL) {
         PyThreadState_Clear(boot->tstate);
         PyMem_Free(boot);
@@ -1391,8 +1424,6 @@ A subthread can use this function to interrupt the main thread.\n\
 \n\
 Note: the default signal handler for SIGINT raises ``KeyboardInterrupt``."
 );
-
-static lockobject *newlockobject(thread_module_state *);
 
 static PyObject *
 thread_PyThread_allocate_lock(PyObject *module, PyObject *Py_UNUSED(ignored))
@@ -1492,7 +1523,20 @@ thread__set_sentinel(PyObject *module, PyObject *Py_UNUSED(ignored))
     PyObject *wr;
     PyThreadState *tstate = _PyThreadState_GET();
     thread_module_state *state = get_thread_state(module);
-    lockobject *lock;
+
+    PyObject *lock;
+    struct module_thread *mt = module_threads_lookup(&state->threads, tstate);
+    if (mt == NULL) {
+        /* It must be the "main" thread. */
+        lock = (PyObject *) newlockobject(state);
+        if (lock == NULL) {
+            return NULL;
+        }
+    }
+    else {
+        assert(mt->running_lock != NULL);
+        lock = Py_NewRef(mt->running_lock);
+    }
 
     if (tstate->on_delete_data != NULL) {
         /* We must support the re-creation of the lock from a
@@ -1503,19 +1547,17 @@ thread__set_sentinel(PyObject *module, PyObject *Py_UNUSED(ignored))
         tstate->on_delete_data = NULL;
         Py_DECREF(wr);
     }
-    lock = newlockobject(state);
-    if (lock == NULL)
-        return NULL;
     /* The lock is owned by whoever called _set_sentinel(), but the weakref
        hangs to the thread state. */
-    wr = PyWeakref_NewRef((PyObject *) lock, NULL);
+    wr = PyWeakref_NewRef(lock, NULL);
     if (wr == NULL) {
         Py_DECREF(lock);
         return NULL;
     }
     tstate->on_delete_data = (void *) wr;
     tstate->on_delete = &release_sentinel;
-    return (PyObject *) lock;
+
+    return lock;
 }
 
 PyDoc_STRVAR(_set_sentinel_doc,
