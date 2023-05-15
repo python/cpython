@@ -64,6 +64,8 @@ def _is_case_sensitive(flavour):
 
 @functools.lru_cache()
 def _compile_pattern_part(pattern_part, case_sensitive):
+    if pattern_part == '*':
+        return None
     flags = re.NOFLAG if case_sensitive else re.IGNORECASE
     return re.compile(fnmatch.translate(pattern_part), flags=flags).fullmatch
 
@@ -86,7 +88,7 @@ def _select_children(paths, dir_only, match):
                     except OSError:
                         continue
                 name = entry.name
-                if match(name):
+                if match is None or match(name):
                     yield path._make_child_relpath(name)
 
 
