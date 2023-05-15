@@ -66,6 +66,16 @@ def freeze_support():
     '''
     Run code for process object if this in not the main process
     '''
+    if (
+        len(sys.argv) >= 2 and sys.argv[-2] == '-c' and sys.argv[-1].startswith((
+            'from multiprocessing.semaphore_tracker import main',  # Py<3.8
+            'from multiprocessing.resource_tracker import main',  # Py>=3.8
+            'from multiprocessing.forkserver import main'
+        )) and set(sys.argv[1:-2]) == set(util._args_from_interpreter_flags())
+    ):
+        exec(sys.argv[-1])
+        sys.exit()
+
     if is_forking(sys.argv):
         kwds = {}
         for arg in sys.argv[2:]:
