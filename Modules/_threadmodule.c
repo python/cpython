@@ -1048,12 +1048,10 @@ _localdummy_destroyed(PyObject *localweakref, PyObject *dummyweakref)
 /* Module functions */
 
 struct bootstate {
-    PyInterpreterState *interp;
     PyObject *func;
     PyObject *args;
     PyObject *kwargs;
     PyThreadState *tstate;
-    _PyRuntimeState *runtime;
 };
 
 
@@ -1122,7 +1120,6 @@ and False otherwise.\n");
 static PyObject *
 thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
     PyObject *func, *args, *kwargs = NULL;
 
     if (!PyArg_UnpackTuple(fargs, "start_new_thread", 2, 3,
@@ -1160,8 +1157,7 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
     if (boot == NULL) {
         return PyErr_NoMemory();
     }
-    boot->interp = _PyInterpreterState_GET();
-    boot->tstate = _PyThreadState_New(boot->interp);
+    boot->tstate = _PyThreadState_New(interp);
     if (boot->tstate == NULL) {
         PyMem_Free(boot);
         if (!PyErr_Occurred()) {
@@ -1169,7 +1165,6 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
         }
         return NULL;
     }
-    boot->runtime = runtime;
     boot->func = Py_NewRef(func);
     boot->args = Py_NewRef(args);
     boot->kwargs = Py_XNewRef(kwargs);
