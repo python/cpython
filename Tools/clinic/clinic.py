@@ -1965,16 +1965,20 @@ legacy_converters = {}
 return_converters = {}
 
 
-def write_file(filename, new_contents, force=False):
+def file_changed(filename: str, new_contents: str) -> bool:
+    """Return true if file contents changed (meaning we must update it)"""
     try:
         with open(filename, 'r', encoding="utf-8") as fp:
             old_contents = fp.read()
-
-        if old_contents == new_contents and not force:
-            # no change: avoid modifying the file modification time
-            return
+        return old_contents != new_contents
     except FileNotFoundError:
-        pass
+        return True
+
+
+def write_file(filename: str, new_contents: str, force=False):
+    if not force and not file_changed(filename, new_contents):
+        # no change: avoid modifying the file modification time
+        return
 
     # Atomic write using a temporary file and os.replace()
     filename_new = f"{filename}.new"
@@ -2238,7 +2242,7 @@ def parse_file(filename, *, verify=True, output=None):
     src_out, clinic_out = clinic.parse(raw)
 
     # If clinic output changed, force updating the source file as well.
-    force = bool(clinic_out)
+    force = any(file_changed(fn, data) for fn, data in clinic_out)
     write_file(output, src_out, force=force)
     for fn, data in clinic_out:
         write_file(fn, data)
