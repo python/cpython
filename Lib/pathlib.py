@@ -164,30 +164,15 @@ class _RecursiveWildcardSelector(_Selector):
     def __init__(self, pat, child_parts, flavour, case_sensitive):
         _Selector.__init__(self, child_parts, flavour, case_sensitive)
 
-    def _iterate_directories(self, parent_path, scandir):
+    def _iterate_directories(self, parent_path):
         yield parent_path
-        try:
-            # We must close the scandir() object before proceeding to
-            # avoid exhausting file descriptors when globbing deep trees.
-            with scandir(parent_path) as scandir_it:
-                entries = list(scandir_it)
-        except OSError:
-            pass
-        else:
-            for entry in entries:
-                entry_is_dir = False
-                try:
-                    entry_is_dir = entry.is_dir(follow_symlinks=False)
-                except OSError:
-                    pass
-                if entry_is_dir:
-                    path = parent_path._make_child_relpath(entry.name)
-                    for p in self._iterate_directories(path, scandir):
-                        yield p
+        for dirpath, dirnames, _ in parent_path.walk():
+            for dirname in dirnames:
+                yield dirpath._make_child_relpath(dirname)
 
     def _select_from(self, parent_path, scandir):
         successor_select = self.successor._select_from
-        for starting_point in self._iterate_directories(parent_path, scandir):
+        for starting_point in self._iterate_directories(parent_path):
             for p in successor_select(starting_point, scandir):
                 yield p
 
