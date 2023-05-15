@@ -1,0 +1,2 @@
+Isolate the :mod:`io` extension module by applying :pep:`687`. Patch by
+Kumar Aditya, Victor Stinner, and Erlend E. Aasland.
