@@ -164,6 +164,27 @@ class BaseHTTPServerTestCase(BaseTestCase):
         res = self.con.getresponse()
         self.assertEqual(res.status, HTTPStatus.BAD_REQUEST)
 
+    def test_version_signs_and_underscores(self):
+        self.con._http_vsn_str = 'HTTP/-9_9_9.+9_9_9'
+        self.con.putrequest('GET', '/')
+        self.con.endheaders()
+        res = self.con.getresponse()
+        self.assertEqual(res.status, HTTPStatus.BAD_REQUEST)
+
+    def test_major_version_number_too_long(self):
+        self.con._http_vsn_str = 'HTTP/909876543210.0'
+        self.con.putrequest('GET', '/')
+        self.con.endheaders()
+        res = self.con.getresponse()
+        self.assertEqual(res.status, HTTPStatus.BAD_REQUEST)
+
+    def test_minor_version_number_too_long(self):
+        self.con._http_vsn_str = 'HTTP/1.909876543210'
+        self.con.putrequest('GET', '/')
+        self.con.endheaders()
+        res = self.con.getresponse()
+        self.assertEqual(res.status, HTTPStatus.BAD_REQUEST)
+
     def test_version_none_get(self):
         self.con._http_vsn_str = ''
         self.con.putrequest('GET', '/')
