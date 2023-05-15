@@ -1748,28 +1748,80 @@ SUFFICIENT_TO_DEOPT_AND_SPECIALIZE = 100
 
 class Test_Pep523API(unittest.TestCase):
 
-    def do_test(self, func):
-        calls = []
+    def do_test(self, func, names):
+        actual_calls = []
         start = SUFFICIENT_TO_DEOPT_AND_SPECIALIZE
         count = start + SUFFICIENT_TO_DEOPT_AND_SPECIALIZE
-        for i in range(count):
-            if i == start:
-                _testinternalcapi.set_eval_frame_record(calls)
-            func()
-        _testinternalcapi.set_eval_frame_default()
-        self.assertEqual(len(calls), SUFFICIENT_TO_DEOPT_AND_SPECIALIZE)
-        for name in calls:
-            self.assertEqual(name, func.__name__)
+        try:
+            for i in range(count):
+                if i == start:
+                    _testinternalcapi.set_eval_frame_record(actual_calls)
+                func()
+        finally:
+            _testinternalcapi.set_eval_frame_default()
+        expected_calls = names * SUFFICIENT_TO_DEOPT_AND_SPECIALIZE
+        self.assertEqual(len(expected_calls), len(actual_calls))
+        for expected, actual in zip(expected_calls, actual_calls, strict=True):
+            self.assertEqual(expected, actual)
 
-    def test_pep523_with_specialization_simple(self):
-        def func1():
-            pass
-        self.do_test(func1)
+    def test_inlined_binary_subscr(self):
+        class C:
+            def __getitem__(self, other):
+                return None
+        def func():
+            C()[42]
+        names = ["func", "__getitem__"]
+        self.do_test(func, names)
 
-    def test_pep523_with_specialization_with_default(self):
-        def func2(x=None):
+    def test_inlined_call(self):
+        def inner(x=42):
             pass
-        self.do_test(func2)
+        def func():
+            inner()
+            inner(42)
+        names = ["func", "inner", "inner"]
+        self.do_test(func, names)
+
+    def test_inlined_call_function_ex(self):
+        def inner(x):
+            pass
+        def func():
+            inner(*[42])
+        names = ["func", "inner"]
+        self.do_test(func, names)
+
+    def test_inlined_for_iter(self):
+        def gen():
+            yield 42
+        def func():
+            for _ in gen():
+                pass
+        names = ["func", "gen", "gen", "gen"]
+        self.do_test(func, names)
+
+    def test_inlined_load_attr(self):
+        class C:
+            @property
+            def a(self):
+                return 42
+        class D:
+            def __getattribute__(self, name):
+                return 42
+        def func():
+            C().a
+            D().a
+        names = ["func", "a", "__getattribute__"]
+        self.do_test(func, names)
+
+    def test_inlined_send(self):
+        def inner():
+            yield 42
+        def outer():
+            yield from inner()
+        def func():
+            list(outer())
+        names = ["func", "outer", "outer", "inner", "inner", "outer", "inner"]
+        self.do_test(func, names)
 
 
 if __name__ == "__main__":

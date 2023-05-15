@@ -5996,8 +5996,14 @@ class CollectionsAbcTests(BaseTestCase):
         self.assertNotIsInstance((), typing.MutableSequence)
 
     def test_bytestring(self):
-        self.assertIsInstance(b'', typing.ByteString)
-        self.assertIsInstance(bytearray(b''), typing.ByteString)
+        with self.assertWarns(DeprecationWarning):
+            self.assertIsInstance(b'', typing.ByteString)
+        with self.assertWarns(DeprecationWarning):
+            self.assertIsInstance(bytearray(b''), typing.ByteString)
+        with self.assertWarns(DeprecationWarning):
+            class Foo(typing.ByteString): ...
+        with self.assertWarns(DeprecationWarning):
+            class Bar(typing.ByteString, typing.Awaitable): ...
 
     def test_list(self):
         self.assertIsSubclass(list, typing.List)
