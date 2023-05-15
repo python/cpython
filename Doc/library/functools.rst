@@ -108,16 +108,8 @@ The :mod:`functools` module defines the following functions:
 
    If a mutable mapping is not available, an effect similar to
    :func:`cached_property` can also be achieved by stacking :func:`property` on
-   top of :func:`cache`::
-
-       class DataSet:
-           def __init__(self, sequence_of_numbers):
-               self._data = sequence_of_numbers
-
-           @property
-           @cache
-           def stdev(self):
-               return statistics.stdev(self._data)
+   top of :func:`lru_cache`. See :ref:`faq-cache-method-calls` for more details
+   on how this differs from :func:`cached_property`.
 
    .. versionadded:: 3.8
 
