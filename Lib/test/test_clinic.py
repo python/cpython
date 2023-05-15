@@ -774,6 +774,44 @@ Not at column 0!
         module, function = block.signatures
         self.assertIsInstance((function.parameters['path']).converter, clinic.str_converter)
 
+    def test_unused_param(self):
+        block = self.parse("""
+            module foo
+            foo.func
+                fn: object
+                k: float
+                i: float(unused=True)
+                /
+                *
+                flag: bool(unused=True) = False
+        """)
+        sig = block.signatures[1]  # Function index == 1
+        params = sig.parameters
+        conv = lambda fn: params[fn].converter
+        dataset = (
+            {"name": "fn", "unused": False},
+            {"name": "k", "unused": False},
+            {"name": "i", "unused": True},
+            {"name": "flag", "unused": True},
+        )
+        for param in dataset:
+            name, unused = param.values()
+            with self.subTest(name=name, unused=unused):
+                p = conv(name)
+                # Verify that the unused flag is parsed correctly.
+                self.assertEqual(unused, p.unused)
+
+                # Now, check that we'll produce correct code.
+                decl = p.simple_declaration(in_parser=False)
+                if unused:
+                    self.assertIn("Py_UNUSED", decl)
+                else:
+                    self.assertNotIn("Py_UNUSED", decl)
+
+                # Make sure the Py_UNUSED macro is not used in the parser body.
+                parser_decl = p.simple_declaration(in_parser=True)
+                self.assertNotIn("Py_UNUSED", parser_decl)
+
     def parse(self, text):
         c = FakeClinic()
         parser = DSLParser(c)

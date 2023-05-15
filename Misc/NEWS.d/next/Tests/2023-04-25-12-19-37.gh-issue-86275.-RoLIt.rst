@@ -1,0 +1,2 @@
+Added property-based tests to the :mod:`zoneinfo` tests, along with stubs
+for the ``hypothesis`` interface. (Patch by Paul Ganssle)
