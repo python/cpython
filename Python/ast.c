@@ -67,12 +67,11 @@ static int
 validate_comprehension(struct validator *state, asdl_comprehension_seq *gens)
 {
     assert(!PyErr_Occurred());
-    Py_ssize_t i;
     if (!asdl_seq_LEN(gens)) {
         PyErr_SetString(PyExc_ValueError, "comprehension with no generators");
         return 0;
     }
-    for (i = 0; i < asdl_seq_LEN(gens); i++) {
+    for (Py_ssize_t i = 0; i < asdl_seq_LEN(gens); i++) {
         comprehension_ty comp = asdl_seq_GET(gens, i);
         if (!validate_expr(state, comp->target, Store) ||
             !validate_expr(state, comp->iter, Load) ||
@@ -86,8 +85,7 @@ static int
 validate_keywords(struct validator *state, asdl_keyword_seq *keywords)
 {
     assert(!PyErr_Occurred());
-    Py_ssize_t i;
-    for (i = 0; i < asdl_seq_LEN(keywords); i++)
+    for (Py_ssize_t i = 0; i < asdl_seq_LEN(keywords); i++)
         if (!validate_expr(state, (asdl_seq_GET(keywords, i))->value, Load))
             return 0;
     return 1;
@@ -97,8 +95,7 @@ static int
 validate_args(struct validator *state, asdl_arg_seq *args)
 {
     assert(!PyErr_Occurred());
-    Py_ssize_t i;
-    for (i = 0; i < asdl_seq_LEN(args); i++) {
+    for (Py_ssize_t i = 0; i < asdl_seq_LEN(args); i++) {
         arg_ty arg = asdl_seq_GET(args, i);
         VALIDATE_POSITIONS(arg);
         if (arg->annotation && !validate_expr(state, arg->annotation, Load))
