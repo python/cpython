@@ -1787,7 +1787,7 @@ class ConfigFileTest(BaseTest):
         fd, fn = tempfile.mkstemp(prefix='test_empty_', suffix='.ini')
         os.close(fd)
         self.assertRaises(ValueError, logging.config.fileConfig, fn)
-        os.unlink(fn)
+        os.remove(fn)
 
     def test_exception_if_config_file_does_not_exist(self):
         self.assertRaises(FileNotFoundError, logging.config.fileConfig, 'filenotfound')
