@@ -736,10 +736,8 @@ static PyType_Spec rlock_type_spec = {
 };
 
 static lockobject *
-newlockobject(PyObject *module)
+newlockobject(thread_module_state *state)
 {
-    thread_module_state *state = get_thread_state(module);
-
     PyTypeObject *type = state->lock_type;
     lockobject *self = (lockobject *)type->tp_alloc(type, 0);
     if (self == NULL) {
@@ -1384,12 +1382,13 @@ A subthread can use this function to interrupt the main thread.\n\
 Note: the default signal handler for SIGINT raises ``KeyboardInterrupt``."
 );
 
-static lockobject *newlockobject(PyObject *module);
+static lockobject *newlockobject(thread_module_state *);
 
 static PyObject *
 thread_PyThread_allocate_lock(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    return (PyObject *) newlockobject(module);
+    thread_module_state *state = get_thread_state(module);
+    return (PyObject *) newlockobject(state);
 }
 
 PyDoc_STRVAR(allocate_doc,
@@ -1440,8 +1439,8 @@ particular thread within a system.");
 static PyObject *
 thread__count(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    return PyLong_FromLong(interp->threads.count);
+    thread_module_state *state = get_thread_state(self);
+    return PyLong_FromLong(state->threads.num_running);
 }
 
 PyDoc_STRVAR(_count_doc,
@@ -1482,6 +1481,7 @@ thread__set_sentinel(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     PyObject *wr;
     PyThreadState *tstate = _PyThreadState_GET();
+    thread_module_state *state = get_thread_state(module);
     lockobject *lock;
 
     if (tstate->on_delete_data != NULL) {
@@ -1493,7 +1493,7 @@ thread__set_sentinel(PyObject *module, PyObject *Py_UNUSED(ignored))
         tstate->on_delete_data = NULL;
         Py_DECREF(wr);
     }
-    lock = newlockobject(module);
+    lock = newlockobject(state);
     if (lock == NULL)
         return NULL;
     /* The lock is owned by whoever called _set_sentinel(), but the weakref
