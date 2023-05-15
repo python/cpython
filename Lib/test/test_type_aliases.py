@@ -178,3 +178,27 @@ class TypeAliasConstructorTest(unittest.TestCase):
             TypeAliasType("TA", list, ())
         with self.assertRaises(TypeError):
             TypeAliasType("TA", list, type_params=42)
+
+
+class TypeAliasTypeTest(unittest.TestCase):
+    def test_immutable(self):
+        with self.assertRaises(TypeError):
+            TypeAliasType.whatever = "not allowed"
+
+    def test_no_subclassing(self):
+        with self.assertRaisesRegex(TypeError, "not an acceptable base type"):
+            class MyAlias(TypeAliasType):
+                pass
+
+    def test_union(self):
+        type Alias1 = int
+        type Alias2 = str
+        union = Alias1 | Alias2
+        self.assertIsInstance(union, types.UnionType)
+        self.assertEqual(get_args(union), (Alias1, Alias2))
+        union2 = Alias1 | list[float]
+        self.assertIsInstance(union2, types.UnionType)
+        self.assertEqual(get_args(union2), (Alias1, list[float]))
+        union3 = list[range] | Alias1
+        self.assertIsInstance(union3, types.UnionType)
+        self.assertEqual(get_args(union3), (list[range], Alias1))
