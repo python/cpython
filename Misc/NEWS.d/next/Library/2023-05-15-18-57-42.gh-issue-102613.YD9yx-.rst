@@ -1,0 +1,2 @@
+Improve performance of :meth:`pathlib.Path.glob` by simplifying its
+implementation.

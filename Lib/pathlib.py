@@ -54,6 +54,7 @@ def _ignore_error(exception):
             getattr(exception, 'winerror', None) in _IGNORED_WINERRORS)
 
 
+@functools.lru_cache()
 def _is_case_sensitive(flavour):
     return flavour.normcase('Aa') == 'Aa'
 
@@ -62,137 +63,51 @@ def _is_case_sensitive(flavour):
 #
 
 @functools.lru_cache()
-def _make_selector(pattern_parts, flavour, case_sensitive):
-    pat = pattern_parts[0]
-    if not pat:
-        return _TerminatingSelector()
-    if pat == '**':
-        child_parts_idx = 1
-        while child_parts_idx < len(pattern_parts) and pattern_parts[child_parts_idx] == '**':
-            child_parts_idx += 1
-        child_parts = pattern_parts[child_parts_idx:]
-        if '**' in child_parts:
-            cls = _DoubleRecursiveWildcardSelector
-        else:
-            cls = _RecursiveWildcardSelector
-    else:
-        child_parts = pattern_parts[1:]
-        if pat == '..':
-            cls = _ParentSelector
-        elif '**' in pat:
-            raise ValueError("Invalid pattern: '**' can only be an entire path component")
-        else:
-            cls = _WildcardSelector
-    return cls(pat, child_parts, flavour, case_sensitive)
+def _compile_pattern_part(pattern_part, case_sensitive):
+    flags = re.NOFLAG if case_sensitive else re.IGNORECASE
+    return re.compile(fnmatch.translate(pattern_part), flags=flags).fullmatch
 
 
-class _Selector:
-    """A selector matches a specific glob pattern part against the children
-    of a given path."""
-
-    def __init__(self, child_parts, flavour, case_sensitive):
-        self.child_parts = child_parts
-        if child_parts:
-            self.successor = _make_selector(child_parts, flavour, case_sensitive)
-            self.dironly = True
-        else:
-            self.successor = _TerminatingSelector()
-            self.dironly = False
-
-    def select_from(self, parent_path):
-        """Iterate over all child paths of `parent_path` matched by this
-        selector.  This can contain parent_path itself."""
-        path_cls = type(parent_path)
-        scandir = path_cls._scandir
-        if not parent_path.is_dir():
-            return iter([])
-        return self._select_from(parent_path, scandir)
-
-
-class _TerminatingSelector:
-
-    def _select_from(self, parent_path, scandir):
-        yield parent_path
-
-
-class _ParentSelector(_Selector):
-
-    def __init__(self, name, child_parts, flavour, case_sensitive):
-        _Selector.__init__(self, child_parts, flavour, case_sensitive)
-
-    def _select_from(self,  parent_path, scandir):
-        path = parent_path._make_child_relpath('..')
-        for p in self.successor._select_from(path, scandir):
-            yield p
-
-
-class _WildcardSelector(_Selector):
-
-    def __init__(self, pat, child_parts, flavour, case_sensitive):
-        _Selector.__init__(self, child_parts, flavour, case_sensitive)
-        if case_sensitive is None:
-            # TODO: evaluate case-sensitivity of each directory in _select_from()
-            case_sensitive = _is_case_sensitive(flavour)
-        flags = re.NOFLAG if case_sensitive else re.IGNORECASE
-        self.match = re.compile(fnmatch.translate(pat), flags=flags).fullmatch
-
-    def _select_from(self, parent_path, scandir):
+def _select_children(paths, dir_only, match):
+    for path in paths:
         try:
             # We must close the scandir() object before proceeding to
             # avoid exhausting file descriptors when globbing deep trees.
-            with scandir(parent_path) as scandir_it:
+            with path._scandir() as scandir_it:
                 entries = list(scandir_it)
         except OSError:
             pass
         else:
             for entry in entries:
-                if self.dironly:
+                if dir_only:
                     try:
                         if not entry.is_dir():
                             continue
                     except OSError:
                         continue
                 name = entry.name
-                if self.match(name):
-                    path = parent_path._make_child_relpath(name)
-                    for p in self.successor._select_from(path, scandir):
-                        yield p
+                if match(name):
+                    yield path._make_child_relpath(name)
 
 
-class _RecursiveWildcardSelector(_Selector):
-
-    def __init__(self, pat, child_parts, flavour, case_sensitive):
-        _Selector.__init__(self, child_parts, flavour, case_sensitive)
-
-    def _iterate_directories(self, parent_path):
-        yield parent_path
-        for dirpath, dirnames, _ in parent_path.walk():
+def _select_recursive(paths):
+    for path in paths:
+        yield path
+        for dirpath, dirnames, _ in path.walk():
             for dirname in dirnames:
                 yield dirpath._make_child_relpath(dirname)
 
-    def _select_from(self, parent_path, scandir):
-        successor_select = self.successor._select_from
-        for starting_point in self._iterate_directories(parent_path):
-            for p in successor_select(starting_point, scandir):
-                yield p
 
-
-class _DoubleRecursiveWildcardSelector(_RecursiveWildcardSelector):
-    """
-    Like _RecursiveWildcardSelector, but also de-duplicates results from
-    successive selectors. This is necessary if the pattern contains
-    multiple non-adjacent '**' segments.
-    """
-
-    def _select_from(self, parent_path, scandir):
-        yielded = set()
-        try:
-            for p in super()._select_from(parent_path, scandir):
-                if p not in yielded:
-                    yield p
-                    yielded.add(p)
-        finally:
-            yielded.clear()
+def _select_unique(paths):
+    yielded = set()
+    try:
+        for path in paths:
+            raw_path = path._raw_path
+            if raw_path not in yielded:
+                yield path
+                yielded.add(raw_path)
+    finally:
+        yielded.clear()
 
 
 #
@@ -996,9 +911,7 @@ class Path(PurePath):
             raise NotImplementedError("Non-relative patterns are unsupported")
         if pattern[-1] in (self._flavour.sep, self._flavour.altsep):
             pattern_parts.append('')
-        selector = _make_selector(tuple(pattern_parts), self._flavour, case_sensitive)
-        for p in selector.select_from(self):
-            yield p
+        return self._glob(pattern_parts, case_sensitive)
 
     def rglob(self, pattern, *, case_sensitive=None):
         """Recursively yield all existing files (of any kind, including
@@ -1011,9 +924,36 @@ class Path(PurePath):
             raise NotImplementedError("Non-relative patterns are unsupported")
         if pattern and pattern[-1] in (self._flavour.sep, self._flavour.altsep):
             pattern_parts.append('')
-        selector = _make_selector(("**",) + tuple(pattern_parts), self._flavour, case_sensitive)
-        for p in selector.select_from(self):
-            yield p
+        return self._glob(['**'] + pattern_parts, case_sensitive)
+
+    def _glob(self, pattern_parts, case_sensitive):
+        if case_sensitive is None:
+            # TODO: evaluate case-sensitivity of each directory in _select_children().
+            case_sensitive = _is_case_sensitive(self._flavour)
+        paths = iter([self] if self.is_dir() else [])
+        deduplicate = False
+        part_idx = 0
+        while part_idx < len(pattern_parts):
+            part = pattern_parts[part_idx]
+            part_idx += 1
+            if part == '':
+                pass
+            elif part == '..':
+                paths = (path._make_child_relpath('..') for path in paths)
+            elif part == '**':
+                while part_idx < len(pattern_parts) and pattern_parts[part_idx] == '**':
+                    part_idx += 1
+                paths = _select_recursive(paths)
+                if deduplicate:
+                    paths = _select_unique(paths)
+                deduplicate = True
+            elif '**' in part:
+                raise ValueError("Invalid pattern: '**' can only be an entire path component")
+            else:
+                dir_only = part_idx < len(pattern_parts)
+                match = _compile_pattern_part(part, case_sensitive)
+                paths = _select_children(paths, dir_only, match)
+        return paths
 
     def walk(self, top_down=True, on_error=None, follow_symlinks=False):
         """Walk the directory tree from this directory, similar to os.walk()."""
