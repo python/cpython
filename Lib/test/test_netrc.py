@@ -1,4 +1,8 @@
-import netrc, os, unittest, sys, textwrap
+import netrc
+import os
+import sys
+import textwrap
+import unittest
 from test.support import os_helper, run_unittest
 
 try:
@@ -7,6 +11,7 @@ except ImportError:
     pwd = None
 
 temp_filename = os_helper.TESTFN
+
 
 class NetrcTestCase(unittest.TestCase):
 
@@ -191,6 +196,7 @@ class NetrcTestCase(unittest.TestCase):
 
     def _test_comment(self, nrc, passwd='pass'):
         nrc = self.make_nrc(nrc)
+        print(nrc.hosts)
         self.assertEqual(nrc.hosts['foo.domain.com'], ('bar', '', passwd))
         self.assertEqual(nrc.hosts['bar.domain.com'], ('foo', '', 'pass'))
 
@@ -212,6 +218,14 @@ class NetrcTestCase(unittest.TestCase):
         self._test_comment("""\
             #
             machine foo.domain.com login bar password pass
+            machine bar.domain.com login foo password pass
+            """)
+
+    def test_comment_after_new_line(self):
+        self._test_comment("""\
+            machine foo.domain.com login bar password pass
+
+            # TEST
             machine bar.domain.com login foo password pass
             """)
 
@@ -249,6 +263,13 @@ class NetrcTestCase(unittest.TestCase):
             machine foo.domain.com login bar password pass
             machine bar.domain.com login foo password pass
             #
+            """)
+
+    def test_comment_at_first_line(self):
+        self._test_comment("""
+            # TEST
+            machine foo.domain.com login bar password pass
+            machine bar.domain.com login foo password pass
             """)
 
     def test_comment_at_end_of_machine_line(self):
@@ -308,8 +329,10 @@ class NetrcTestCase(unittest.TestCase):
             self.assertEqual(nrc.hosts['foo.domain.com'],
                              ('anonymous', '', 'pass'))
 
+
 def test_main():
     run_unittest(NetrcTestCase)
+
 
 if __name__ == "__main__":
     test_main()

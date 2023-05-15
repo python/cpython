@@ -23,6 +23,7 @@ class NetrcParseError(Exception):
 class _netrclex:
     def __init__(self, fp):
         self.lineno = 1
+        self.dontskip = False
         self.instream = fp
         self.whitespace = "\n\t\r "
         self.pushback = []
@@ -34,30 +35,29 @@ class _netrclex:
         return ch
 
     def get_token(self):
+        self.dontskip = False
         if self.pushback:
             return self.pushback.pop(0)
         token = ""
-        fiter = iter(self._read_char, "")
-        for ch in fiter:
-            if ch in self.whitespace:
-                continue
-            if ch == '"':
-                for ch in fiter:
-                    if ch == '"':
-                        return token
-                    elif ch == "\\":
-                        ch = self._read_char()
-                    token += ch
-            else:
-                if ch == "\\":
-                    ch = self._read_char()
+        enquoted = False
+        while ch := self._read_char():
+            if ch == '\\':
+                ch = self._read_char()
                 token += ch
-                for ch in fiter:
-                    if ch in self.whitespace:
-                        return token
-                    elif ch == "\\":
-                        ch = self._read_char()
-                    token += ch
+                continue
+            if ch in self.whitespace and not enquoted:
+                if token == "":
+                    continue
+                if ch == '\n':
+                    self.dontskip = True
+                return token
+            if ch == '"':
+                if enquoted:
+                    return token
+                enquoted = True
+                continue
+            else:
+                token += ch
         return token
 
     def push_token(self, token):
@@ -87,10 +87,10 @@ class netrc:
                 break
             elif tt[0] == '#':
                 # For top level tokens, we skip line if the # is followed
-                # by a space. Otherwise, we only skip the token.
-                if len(tt) == 1:
+                # by a space / newline. Otherwise, we only skip the token.
+                if tt == '#' and not lexer.dontskip:
                     lexer.instream.readline()
-                    lexer.lineno++
+                    lexer.lineno += 1
                 continue
             elif tt == 'machine':
                 entryname = lexer.get_token()
@@ -101,7 +101,7 @@ class netrc:
                 self.macros[entryname] = []
                 while 1:
                     line = lexer.instream.readline()
-                    lexer.lineno++
+                    lexer.lineno += 1
                     if not line:
                         raise NetrcParseError(
                             "Macro definition missing null line terminator.",
@@ -126,9 +126,10 @@ class netrc:
             self.hosts[entryname] = {}
             while 1:
                 tt = lexer.get_token()
-                if tt[0] == '#':
-                    lexer.instream.readline()
-                    lexer.lineno++
+                if tt.startswith('#'):
+                    if not lexer.dontskip:
+                        lexer.instream.readline()
+                        lexer.lineno += 1
                     continue
                 if tt in {'', 'machine', 'default', 'macdef'}:
                     self.hosts[entryname] = (login, account, password)
