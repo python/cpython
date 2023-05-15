@@ -64,6 +64,8 @@ def _is_case_sensitive(flavour):
 
 @functools.lru_cache()
 def _compile_pattern_part(pattern_part, case_sensitive):
+    """Compile given glob pattern to a re.Pattern object (observing case
+    sensitivity), or None if the pattern should match everything."""
     if pattern_part == '*':
         return None
     flags = re.NOFLAG if case_sensitive else re.IGNORECASE
@@ -71,6 +73,7 @@ def _compile_pattern_part(pattern_part, case_sensitive):
 
 
 def _select_children(paths, dir_only, match):
+    """Yield direct children of given paths, filtering by name and type."""
     for path in paths:
         try:
             # We must close the scandir() object before proceeding to
@@ -93,6 +96,7 @@ def _select_children(paths, dir_only, match):
 
 
 def _select_recursive(paths):
+    """Yield given paths and all their subdirectories, recursively."""
     for path in paths:
         yield path
         for dirpath, dirnames, _ in path.walk():
@@ -101,6 +105,7 @@ def _select_recursive(paths):
 
 
 def _select_unique(paths):
+    """Yields the given paths, filtering out duplicates."""
     yielded = set()
     try:
         for path in paths:
@@ -939,13 +944,16 @@ class Path(PurePath):
             part = pattern_parts[part_idx]
             part_idx += 1
             if part == '':
+                # Trailing slash.
                 pass
             elif part == '..':
                 paths = (path._make_child_relpath('..') for path in paths)
             elif part == '**':
+                # Collapse adjacent '**' segments.
                 while part_idx < len(pattern_parts) and pattern_parts[part_idx] == '**':
                     part_idx += 1
                 paths = _select_recursive(paths)
+                # De-duplicate if we've already seen a '**' segment.
                 if deduplicate:
                     paths = _select_unique(paths)
                 deduplicate = True
