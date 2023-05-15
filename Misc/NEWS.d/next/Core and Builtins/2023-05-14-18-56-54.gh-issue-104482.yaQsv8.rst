@@ -1,1 +1,1 @@
-Fix three error handling bugs in ast.c's parsing of pattern matching statements.
+Fix three error handling bugs in ast.c's validation of pattern matching statements.
