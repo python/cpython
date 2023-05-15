@@ -1,1 +1,1 @@
-Fix incorrect comment parsing in the `netrc` module
+Fix incorrect comment parsing in the ``netrc`` module
