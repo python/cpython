@@ -32,7 +32,8 @@ struct module_thread {
 
 struct module_threads {
     // XXX This can replace interp->threads.count.
-    Py_ssize_t count;
+    long num_total;
+    long num_running;
     PyThread_type_lock mutex;
     struct module_thread *head;
     struct module_thread *tail;
@@ -41,7 +42,8 @@ struct module_threads {
 static int
 module_threads_init(struct module_threads *threads)
 {
-    threads->count = 0;
+    threads->num_total = 0;
+    threads->num_running = 0;
     threads->head = NULL;
     threads->tail = NULL;
     threads->mutex = PyThread_allocate_lock();
@@ -72,7 +74,7 @@ module_threads_add(struct module_threads *threads, struct module_thread *mt)
         threads->tail->next = mt;
     }
     threads->tail = mt;
-    threads->count++;
+    threads->num_total++;
 
     PyThread_release_lock(threads->mutex);
 }
@@ -94,7 +96,7 @@ module_threads_remove(struct module_threads *threads, struct module_thread *mt)
     else {
         mt->next->prev = mt->prev;
     }
-    threads->count--;
+    threads->num_total--;
 
     PyThread_release_lock(threads->mutex);
 }
@@ -120,19 +122,19 @@ add_module_thread(struct module_threads *threads, PyThreadState *tstate)
 }
 
 static int
-module_thread_starting(struct module_thread *mt)
+module_thread_starting(struct module_threads *threads, struct module_thread *mt)
 {
     assert(mt->tstate == PyThreadState_Get());
 
-    mt->tstate->interp->threads.count++;
+    threads->num_running++;
 
     return 0;
 }
 
 static void
-module_thread_finished(struct module_thread *mt)
+module_thread_finished(struct module_threads *threads, struct module_thread *mt)
 {
-    mt->tstate->interp->threads.count--;
+    threads->num_running--;
 
     // XXX We should be notifying other threads here.
 }
@@ -1215,7 +1217,7 @@ thread_run(void *boot_raw)
     _PyThreadState_Bind(tstate);
     PyEval_AcquireThread(tstate);
 
-    module_thread_starting(mt);
+    module_thread_starting(&state->threads, mt);
 
     PyObject *res = PyObject_Call(boot->func, boot->args, boot->kwargs);
     if (res == NULL) {
@@ -1230,7 +1232,7 @@ thread_run(void *boot_raw)
         Py_DECREF(res);
     }
 
-    module_thread_finished(mt);
+    module_thread_finished(&state->threads, mt);
 
     thread_bootstate_free(boot);
     PyThreadState_Clear(tstate);
