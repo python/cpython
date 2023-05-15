@@ -1490,10 +1490,6 @@ PyThreadState_Clear(PyThreadState *tstate)
 
     Py_CLEAR(tstate->context);
 
-    if (tstate->on_delete != NULL) {
-        tstate->on_delete(tstate->on_delete_data);
-    }
-
     tstate->_status.cleared = 1;
 
     // XXX Call _PyThreadStateSwap(runtime, NULL) here if "current".

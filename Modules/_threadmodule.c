@@ -140,6 +140,13 @@ module_thread_finished(struct module_thread *mt)
 static void
 remove_module_thread(struct module_threads *threads, struct module_thread *mt)
 {
+    // Notify other threads that this one is done.
+    // XXX This should happen in module_thread_finished().
+    // XXX These fields could be removed from PyThreadState.
+    if (mt->tstate->on_delete != NULL) {
+        mt->tstate->on_delete(mt->tstate->on_delete_data);
+    }
+
     // Remove it from the list.
     module_threads_remove(threads, mt);
 
