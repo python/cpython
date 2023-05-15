@@ -1972,6 +1972,17 @@ class _BasePathTest(object):
         bad_link.symlink_to("bad" * 200)
         self.assertEqual(sorted(base.glob('**/*')), [bad_link])
 
+    def test_glob_above_recursion_limit(self):
+        recursion_limit = 40
+        # directory_depth > recursion_limit
+        directory_depth = recursion_limit + 10
+        base = pathlib.Path(os_helper.TESTFN, 'deep')
+        path = pathlib.Path(base, *(['d'] * directory_depth))
+        path.mkdir(parents=True)
+
+        with set_recursion_limit(recursion_limit):
+            list(base.glob('**'))
+
     def _check_resolve(self, p, expected, strict=True):
         q = p.resolve(strict)
         self.assertEqual(q, expected)
