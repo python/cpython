@@ -82,24 +82,26 @@ iobase_unsupported(_PyIO_State *state, const char *message)
 /*[clinic input]
 _io._IOBase.seek
     cls: defining_class
+    offset: int(unused=True)
+    whence: int(unused=True, c_default='0') = os.SEEK_SET
     /
-    *args: object
 
 Change the stream position to the given byte offset.
 
 The offset is interpreted relative to the position indicated by whence.
 Values for whence are:
 
-* 0 -- start of stream (the default); offset should be zero or positive
-* 1 -- current stream position; offset may be negative
-* 2 -- end of stream; offset is usually negative
+* os.SEEK_SET or 0 -- start of stream (the default); offset should be zero or positive
+* os.SEEK_CUR or 1 -- current stream position; offset may be negative
+* os.SEEK_END or 2 -- end of stream; offset is usually negative
 
 Return the new absolute position.
 [clinic start generated code]*/
 
 static PyObject *
-_io__IOBase_seek_impl(PyObject *self, PyTypeObject *cls, PyObject *args)
-/*[clinic end generated code: output=1dd694ac9de260fa input=ebb5476eb22fc5d4]*/
+_io__IOBase_seek_impl(PyObject *self, PyTypeObject *cls,
+                      int Py_UNUSED(offset), int Py_UNUSED(whence))
+/*[clinic end generated code: output=8bd74ea6538ded53 input=8d4e6adcd08292f2]*/
 {
     _PyIO_State *state = get_io_state_by_cls(cls);
     return iobase_unsupported(state, "seek");
@@ -121,8 +123,8 @@ _io__IOBase_tell_impl(PyObject *self)
 /*[clinic input]
 _io._IOBase.truncate
     cls: defining_class
+    size: object(unused=True) = None
     /
-    *args: object
 
 Truncate file to size bytes.
 
@@ -131,8 +133,9 @@ as reported by tell(). Return the new size.
 [clinic start generated code]*/
 
 static PyObject *
-_io__IOBase_truncate_impl(PyObject *self, PyTypeObject *cls, PyObject *args)
-/*[clinic end generated code: output=b7eed4649cbe22c1 input=ad90582a1d8b5cc9]*/
+_io__IOBase_truncate_impl(PyObject *self, PyTypeObject *cls,
+                          PyObject *Py_UNUSED(size))
+/*[clinic end generated code: output=2013179bff1fe8ef input=660ac20936612c27]*/
 {
     _PyIO_State *state = get_io_state_by_cls(cls);
     return iobase_unsupported(state, "truncate");
