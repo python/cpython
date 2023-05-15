@@ -131,12 +131,11 @@ _testcapi.watch_dict
     watcher_id: int
     dict: object
     /
-Watch dict.
 [clinic start generated code]*/
 
 static PyObject *
 _testcapi_watch_dict_impl(PyObject *module, int watcher_id, PyObject *dict)
-/*[clinic end generated code: output=1426e0273cebe2d8 input=ffbe7762b6c79c52]*/
+/*[clinic end generated code: output=1426e0273cebe2d8 input=5d11ddf8ccb22a05]*/
 {
     if (PyDict_Watch(watcher_id, dict)) {
         return NULL;
@@ -145,16 +144,12 @@ _testcapi_watch_dict_impl(PyObject *module, int watcher_id, PyObject *dict)
 }
 
 /*[clinic input]
-_testcapi.unwatch_dict
-    watcher_id: int
-    dict: object
-    /
-Unwatch dict.
+_testcapi.unwatch_dict = _testcapi.watch_dict
 [clinic start generated code]*/
 
 static PyObject *
 _testcapi_unwatch_dict_impl(PyObject *module, int watcher_id, PyObject *dict)
-/*[clinic end generated code: output=512b1a71ae33c351 input=5621f8bbc4ef8e6a]*/
+/*[clinic end generated code: output=512b1a71ae33c351 input=cae7dc1b6f7713b8]*/
 {
     if (PyDict_Unwatch(watcher_id, dict)) {
         return NULL;
@@ -270,12 +265,11 @@ _testcapi.watch_type
     watcher_id: int
     type: object
     /
-Watch type.
 [clinic start generated code]*/
 
 static PyObject *
 _testcapi_watch_type_impl(PyObject *module, int watcher_id, PyObject *type)
-/*[clinic end generated code: output=fdf4777126724fc4 input=70ac8124d5b8296d]*/
+/*[clinic end generated code: output=fdf4777126724fc4 input=b0a72ed7db885ee8]*/
 {
     if (PyType_Watch(watcher_id, type)) {
         return NULL;
@@ -284,16 +278,12 @@ _testcapi_watch_type_impl(PyObject *module, int watcher_id, PyObject *type)
 }
 
 /*[clinic input]
-_testcapi.unwatch_type
-    watcher_id: int
-    type: object
-    /
-Unwatch type.
+_testcapi.unwatch_type = _testcapi.watch_type
 [clinic start generated code]*/
 
 static PyObject *
 _testcapi_unwatch_type_impl(PyObject *module, int watcher_id, PyObject *type)
-/*[clinic end generated code: output=0389672d4ad5f68b input=33cdc13902253394]*/
+/*[clinic end generated code: output=0389672d4ad5f68b input=6701911fb45edc9e]*/
 {
     if (PyType_Unwatch(watcher_id, type)) {
         return NULL;

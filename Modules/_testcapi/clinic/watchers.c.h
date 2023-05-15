@@ -11,8 +11,7 @@ preserve
 PyDoc_STRVAR(_testcapi_watch_dict__doc__,
 "watch_dict($module, watcher_id, dict, /)\n"
 "--\n"
-"\n"
-"Watch dict.");
+"\n");
 
 #define _TESTCAPI_WATCH_DICT_METHODDEF    \
     {"watch_dict", _PyCFunction_CAST(_testcapi_watch_dict), METH_FASTCALL, _testcapi_watch_dict__doc__},
@@ -44,8 +43,7 @@ exit:
 PyDoc_STRVAR(_testcapi_unwatch_dict__doc__,
 "unwatch_dict($module, watcher_id, dict, /)\n"
 "--\n"
-"\n"
-"Unwatch dict.");
+"\n");
 
 #define _TESTCAPI_UNWATCH_DICT_METHODDEF    \
     {"unwatch_dict", _PyCFunction_CAST(_testcapi_unwatch_dict), METH_FASTCALL, _testcapi_unwatch_dict__doc__},
@@ -77,8 +75,7 @@ exit:
 PyDoc_STRVAR(_testcapi_watch_type__doc__,
 "watch_type($module, watcher_id, type, /)\n"
 "--\n"
-"\n"
-"Watch type.");
+"\n");
 
 #define _TESTCAPI_WATCH_TYPE_METHODDEF    \
     {"watch_type", _PyCFunction_CAST(_testcapi_watch_type), METH_FASTCALL, _testcapi_watch_type__doc__},
@@ -110,8 +107,7 @@ exit:
 PyDoc_STRVAR(_testcapi_unwatch_type__doc__,
 "unwatch_type($module, watcher_id, type, /)\n"
 "--\n"
-"\n"
-"Unwatch type.");
+"\n");
 
 #define _TESTCAPI_UNWATCH_TYPE_METHODDEF    \
     {"unwatch_type", _PyCFunction_CAST(_testcapi_unwatch_type), METH_FASTCALL, _testcapi_unwatch_type__doc__},
@@ -201,4 +197,4 @@ _testcapi_set_func_kwdefaults_via_capi(PyObject *module, PyObject *const *args, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6fe009b91cf50293 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8b0f3e8f8e0a49cf input=a9049054013a1b77]*/
