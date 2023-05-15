@@ -22,7 +22,137 @@
 static struct PyModuleDef thread_module;
 
 
+/* threads owned by the modulo */
+
+struct module_thread {
+    PyThreadState *tstate;
+    struct module_thread *prev;
+    struct module_thread *next;
+};
+
+struct module_threads {
+    // XXX This can replace interp->threads.count.
+    Py_ssize_t count;
+    PyThread_type_lock mutex;
+    struct module_thread *head;
+    struct module_thread *tail;
+};
+
+static int
+module_threads_init(struct module_threads *threads)
+{
+    threads->count = 0;
+    threads->head = NULL;
+    threads->tail = NULL;
+    threads->mutex = PyThread_allocate_lock();
+    if (threads->mutex == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    return 0;
+}
+
+static void
+module_threads_fini(struct module_threads *threads)
+{
+    PyThread_free_lock(threads->mutex);
+}
+
+static void
+module_threads_add(struct module_threads *threads, struct module_thread *mt)
+{
+    PyThread_acquire_lock(threads->mutex, WAIT_LOCK);
+
+    // Add it to the end of the list.
+    if (threads->head == NULL) {
+        threads->head = mt;
+    }
+    else {
+        mt->prev = threads->tail;
+        threads->tail->next = mt;
+    }
+    threads->tail = mt;
+    threads->count++;
+
+    PyThread_release_lock(threads->mutex);
+}
+
+static void
+module_threads_remove(struct module_threads *threads, struct module_thread *mt)
+{
+    PyThread_acquire_lock(threads->mutex, WAIT_LOCK);
+
+    if (mt->prev == NULL) {
+        threads->head = mt->next;
+    }
+    else {
+        mt->prev->next = mt->next;
+    }
+    if (mt->next == NULL) {
+        threads->tail = mt->prev;
+    }
+    else {
+        mt->next->prev = mt->prev;
+    }
+    threads->count--;
+
+    PyThread_release_lock(threads->mutex);
+}
+
+static struct module_thread *
+add_module_thread(struct module_threads *threads, PyThreadState *tstate)
+{
+    // Create the new list entry.
+    struct module_thread *mt = PyMem_RawMalloc(sizeof(struct module_thread));
+    if (mt == NULL) {
+        if (!PyErr_Occurred()) {
+            PyErr_NoMemory();
+        }
+        return NULL;
+    }
+    mt->tstate = tstate;
+    mt->prev = NULL;
+    mt->next = NULL;
+
+    module_threads_add(threads, mt);
+
+    return mt;
+}
+
+static int
+module_thread_starting(struct module_thread *mt)
+{
+    assert(mt->tstate == PyThreadState_Get());
+
+    mt->tstate->interp->threads.count++;
+
+    return 0;
+}
+
+static void
+module_thread_finished(struct module_thread *mt)
+{
+    mt->tstate->interp->threads.count--;
+
+    // XXX We should be notifying other threads here.
+}
+
+static void
+remove_module_thread(struct module_threads *threads, struct module_thread *mt)
+{
+    // Remove it from the list.
+    module_threads_remove(threads, mt);
+
+    // Deallocate everything.
+    PyMem_RawFree(mt);
+}
+
+
+/* module state */
+
 typedef struct {
+    struct module_threads threads;
+
     PyTypeObject *excepthook_type;
     PyTypeObject *lock_type;
     PyTypeObject *local_type;
@@ -1052,6 +1182,8 @@ struct bootstate {
     PyObject *args;
     PyObject *kwargs;
     PyThreadState *tstate;
+    thread_module_state *module_state;
+    struct module_thread *module_thread;
 };
 
 
@@ -1069,12 +1201,14 @@ static void
 thread_run(void *boot_raw)
 {
     struct bootstate *boot = (struct bootstate *) boot_raw;
-    PyThreadState *tstate;
+    PyThreadState *tstate = boot->tstate;
+    thread_module_state *state = boot->module_state;
+    struct module_thread *mt = boot->module_thread;
 
-    tstate = boot->tstate;
     _PyThreadState_Bind(tstate);
     PyEval_AcquireThread(tstate);
-    tstate->interp->threads.count++;
+
+    module_thread_starting(mt);
 
     PyObject *res = PyObject_Call(boot->func, boot->args, boot->kwargs);
     if (res == NULL) {
@@ -1089,9 +1223,12 @@ thread_run(void *boot_raw)
         Py_DECREF(res);
     }
 
+    module_thread_finished(mt);
+
     thread_bootstate_free(boot);
-    tstate->interp->threads.count--;
     PyThreadState_Clear(tstate);
+    // XXX This should be called last:
+    remove_module_thread(&state->threads, mt);
     _PyThreadState_DeleteCurrent(tstate);
 
     // bpo-44434: Don't call explicitly PyThread_exit_thread(). On Linux with
@@ -1163,6 +1300,14 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
         if (!PyErr_Occurred()) {
             return PyErr_NoMemory();
         }
+        return NULL;
+    }
+    thread_module_state *state = get_thread_state(self);
+    boot->module_state = state;
+    boot->module_thread = add_module_thread(&state->threads, boot->tstate);
+    if (boot->module_thread == NULL) {
+        PyThreadState_Clear(boot->tstate);
+        PyMem_Free(boot);
         return NULL;
     }
     boot->func = Py_NewRef(func);
@@ -1604,6 +1749,11 @@ thread_module_exec(PyObject *module)
     // Initialize the C thread library
     PyThread_init_thread();
 
+    // Initialize the list of threads owned by this module.
+    if (module_threads_init(&state->threads) < 0) {
+        return -1;
+    }
+
     // Lock
     state->lock_type = (PyTypeObject *)PyType_FromSpec(&lock_type_spec);
     if (state->lock_type == NULL) {
@@ -1694,6 +1844,8 @@ thread_module_clear(PyObject *module)
 static void
 thread_module_free(void *module)
 {
+    thread_module_state *state = get_thread_state(module);
+    module_threads_fini(&state->threads);
     thread_module_clear((PyObject *)module);
 }
 
