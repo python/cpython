@@ -139,8 +139,7 @@ exit:
 PyDoc_STRVAR(_testcapi_set_func_defaults_via_capi__doc__,
 "set_func_defaults_via_capi($module, func, defaults, /)\n"
 "--\n"
-"\n"
-"Set default values to a given function.");
+"\n");
 
 #define _TESTCAPI_SET_FUNC_DEFAULTS_VIA_CAPI_METHODDEF    \
     {"set_func_defaults_via_capi", _PyCFunction_CAST(_testcapi_set_func_defaults_via_capi), METH_FASTCALL, _testcapi_set_func_defaults_via_capi__doc__},
@@ -168,33 +167,32 @@ exit:
 }
 
 PyDoc_STRVAR(_testcapi_set_func_kwdefaults_via_capi__doc__,
-"set_func_kwdefaults_via_capi($module, func, kwdefaults, /)\n"
+"set_func_kwdefaults_via_capi($module, func, defaults, /)\n"
 "--\n"
-"\n"
-"Set keyword deafult values to a given function.");
+"\n");
 
 #define _TESTCAPI_SET_FUNC_KWDEFAULTS_VIA_CAPI_METHODDEF    \
     {"set_func_kwdefaults_via_capi", _PyCFunction_CAST(_testcapi_set_func_kwdefaults_via_capi), METH_FASTCALL, _testcapi_set_func_kwdefaults_via_capi__doc__},
 
 static PyObject *
 _testcapi_set_func_kwdefaults_via_capi_impl(PyObject *module, PyObject *func,
-                                            PyObject *kwdefaults);
+                                            PyObject *defaults);
 
 static PyObject *
 _testcapi_set_func_kwdefaults_via_capi(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *func;
-    PyObject *kwdefaults;
+    PyObject *defaults;
 
     if (!_PyArg_CheckPositional("set_func_kwdefaults_via_capi", nargs, 2, 2)) {
         goto exit;
     }
     func = args[0];
-    kwdefaults = args[1];
-    return_value = _testcapi_set_func_kwdefaults_via_capi_impl(module, func, kwdefaults);
+    defaults = args[1];
+    return_value = _testcapi_set_func_kwdefaults_via_capi_impl(module, func, defaults);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8b0f3e8f8e0a49cf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=12c375089125d165 input=a9049054013a1b77]*/

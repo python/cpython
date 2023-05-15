@@ -135,7 +135,7 @@ _testcapi.watch_dict
 
 static PyObject *
 _testcapi_watch_dict_impl(PyObject *module, int watcher_id, PyObject *dict)
-/*[clinic end generated code: output=1426e0273cebe2d8 input=5d11ddf8ccb22a05]*/
+/*[clinic end generated code: output=1426e0273cebe2d8 input=269b006d60c358bd]*/
 {
     if (PyDict_Watch(watcher_id, dict)) {
         return NULL;
@@ -269,7 +269,7 @@ _testcapi.watch_type
 
 static PyObject *
 _testcapi_watch_type_impl(PyObject *module, int watcher_id, PyObject *type)
-/*[clinic end generated code: output=fdf4777126724fc4 input=b0a72ed7db885ee8]*/
+/*[clinic end generated code: output=fdf4777126724fc4 input=5a808bf12be7e3ed]*/
 {
     if (PyType_Watch(watcher_id, type)) {
         return NULL;
@@ -623,13 +623,12 @@ _testcapi.set_func_defaults_via_capi
     func: object
     defaults: object
     /
-Set default values to a given function.
 [clinic start generated code]*/
 
 static PyObject *
 _testcapi_set_func_defaults_via_capi_impl(PyObject *module, PyObject *func,
                                           PyObject *defaults)
-/*[clinic end generated code: output=caf0cb39db31ac24 input=9a7d91215cd0f05b]*/
+/*[clinic end generated code: output=caf0cb39db31ac24 input=e04a8508ca9d42fc]*/
 {
     if (PyFunction_SetDefaults(func, defaults) < 0) {
         return NULL;
@@ -638,19 +637,15 @@ _testcapi_set_func_defaults_via_capi_impl(PyObject *module, PyObject *func,
 }
 
 /*[clinic input]
-_testcapi.set_func_kwdefaults_via_capi
-    func: object
-    kwdefaults: object
-    /
-Set keyword deafult values to a given function.
+_testcapi.set_func_kwdefaults_via_capi = _testcapi.set_func_defaults_via_capi
 [clinic start generated code]*/
 
 static PyObject *
 _testcapi_set_func_kwdefaults_via_capi_impl(PyObject *module, PyObject *func,
-                                            PyObject *kwdefaults)
-/*[clinic end generated code: output=5ea36d7f9db6a01d input=ee84c08d30ae135e]*/
+                                            PyObject *defaults)
+/*[clinic end generated code: output=9ed3b08177025070 input=f3cd1ca3c18de8ce]*/
 {
-    if (PyFunction_SetKwDefaults(func, kwdefaults) < 0) {
+    if (PyFunction_SetKwDefaults(func, defaults) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
