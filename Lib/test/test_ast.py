@@ -2035,6 +2035,12 @@ class ASTValidatorTests(unittest.TestCase):
             kwd_attrs=[],
             kwd_patterns=[ast.MatchStar()]
         ),
+        ast.MatchClass(
+            constant_true,  # invalid name
+            patterns=[],
+            kwd_attrs=['True'],
+            kwd_patterns=[pattern_1]
+        ),
         ast.MatchSequence(
             [
                 ast.MatchStar("True")

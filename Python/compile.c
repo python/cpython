@@ -567,6 +567,7 @@ PyCodeObject *
 _PyAST_Compile(mod_ty mod, PyObject *filename, PyCompilerFlags *pflags,
                int optimize, PyArena *arena)
 {
+    assert(!PyErr_Occurred());
     struct compiler *c = new_compiler(mod, filename, pflags, optimize, arena);
     if (c == NULL) {
         return NULL;
