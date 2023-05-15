@@ -78,7 +78,7 @@ def fileConfig(fname, defaults=None, disable_existing_loggers=True, encoding=Non
                 encoding = io.text_encoding(encoding)
                 cp.read(fname, encoding=encoding)
         except configparser.ParsingError as e:
-            raise ValueError(f"{fname} is invalid, errored with: {e}")
+            raise ValueError(f'{fname} is invalid: {e}')
 
     formatters = _create_formatters(cp)
 
