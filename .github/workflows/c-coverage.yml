@@ -1,0 +1,56 @@
+name: C coverage
+
+on:
+  schedule:
+    # Run this daily at 2400 UTC
+    - cron: '0 0 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  c-coverage:
+    name: 'C-level coverage (using llvm-cov)'
+    runs-on: ubuntu-20.04
+    env:
+      OPENSSL_VER: 1.1.1n
+      PYTHONSTRICTEXTENSIONBUILD: 1
+    steps:
+    - name: Install Dependencies
+      run: |
+        sudo ./.github/workflows/posix-deps-apt.sh
+    - name: Configure OpenSSL env vars
+      run: |
+        echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> $GITHUB_ENV
+        echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> $GITHUB_ENV
+    - name: Restore OpenSSL build
+      id: cache-openssl
+      uses: actions/cache@v3
+      with:
+        path: ./multissl/openssl/${{ env.OPENSSL_VER }}
+        key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
+    - name: Install OpenSSL
+      if: steps.cache-openssl.outputs.cache-hit != 'true'
+      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory $MULTISSL_DIR --openssl $OPENSSL_VER --system Linux
+    - name: Add ccache to PATH
+      run: |
+        echo "PATH=/usr/lib/ccache:$PATH" >> $GITHUB_ENV
+    - name: Configure ccache action
+      uses: hendrikmuhs/ccache-action@v1
+    - name: Configure clang (with coverage)
+      run: |
+        echo "CC=clang" >> $GITHUB_ENV
+        echo "CXX=clang++" >> $GITHUB_ENV
+    - name: Configure CPython
+      run: ./configure --with-pydebug --with-openssl=$OPENSSL_DIR
+    - name: Generate coverage report
+      # Using "-j1" is important, or the Github Action runs out of memory
+      run: EXTRATESTOPTS=-j1 xvfb-run make coverage-report
+    - name: Publish coverage-report
+      uses: JamesIves/github-pages-deploy-action@v4
+      with:
+        folder: coverage-report
+        repository-name: '' # TODO Destination
+        token: ${{ secrets.COVERAGE_DEPLOY_TOKEN }} # TODO: Use an organization-level token
+        single-commit: true
