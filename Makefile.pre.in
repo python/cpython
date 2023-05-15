@@ -603,6 +603,7 @@ LIBHACL_SHA2_HEADERS= \
 
 # Default target
 all:		@DEF_MAKE_ALL_RULE@
+
 # First target in Makefile is implicit default. So .PHONY needs to come after
 # all.
 .PHONY: all
@@ -610,6 +611,7 @@ all:		@DEF_MAKE_ALL_RULE@
 .PHONY: build_all
 build_all:	check-clean-src $(BUILDPYTHON) platform sharedmods \
 		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil
+
 .PHONY: build_wasm
 build_wasm: check-clean-src $(BUILDPYTHON) platform sharedmods \
 		python-config checksharedmods
