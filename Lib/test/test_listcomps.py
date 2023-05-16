@@ -379,22 +379,42 @@ class ListComprehensionTest(unittest.TestCase):
         with self.assertRaises(UnboundLocalError):
             f()
 
-    def test_unbound_local_in_class_scope(self):
-        class X:
-            y = 1
-            with self.assertRaises(NameError):
-                [x + y for x in range(2)]
-
-    def test_comprehension_in_class_scope(self):
+    def test_name_error_in_class_scope(self):
         code = """
             y = 1
-            class X:
+            [x + y for x in range(2)]
+        """
+        self._check_in_scopes(code, raises=NameError, scopes=["class"])
+
+    def test_global_in_class_scope(self):
+        code = """
+            y = 2
+            vals = [(x, y) for x in range(2)]
+        """
+        outputs = {"vals": [(0, 1), (1, 1)]}
+        self._check_in_scopes(code, outputs, ns={"y": 1}, scopes=["class"])
+
+    def test_in_class_scope_inside_function_1(self):
+        code = """
+            class C:
                 y = 2
                 vals = [(x, y) for x in range(2)]
-            vals = X.vals
+            vals = C.vals
         """
-        self._check_in_scopes(code, {"vals": [(0, 1), (1, 1)]},
-                              scopes=["module", "function"])
+        outputs = {"vals": [(0, 1), (1, 1)]}
+        self._check_in_scopes(code, outputs, ns={"y": 1}, scopes=["function"])
+
+    def test_in_class_scope_inside_function_2(self):
+        code = """
+            y = 1
+            class C:
+                y = 2
+                vals = [(x, y) for x in range(2)]
+            vals = C.vals
+        """
+        outputs = {"vals": [(0, 1), (1, 1)]}
+        self._check_in_scopes(code, outputs, scopes=["function"])
+
 
 
 __test__ = {'doctests' : doctests}
