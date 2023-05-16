@@ -1805,6 +1805,7 @@ class _ProtocolMeta(ABCMeta):
             return True
 
         if is_protocol_cls:
+            # Fast path for protocols with only callable members
             if cls.__callable_proto_members_only__ and issubclass(type(instance), cls):
                 return True
 
