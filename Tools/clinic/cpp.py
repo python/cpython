@@ -65,7 +65,7 @@ class Monitor:
         print("   ", ' '.join(str(x) for x in a))
         sys.exit(-1)
 
-    def close(self):
+    def close(self) -> None:
         if self.stack:
             self.fail("Ended file while still in a preprocessor conditional block!")
 

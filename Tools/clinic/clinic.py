@@ -118,7 +118,7 @@ def text_accumulator() -> TextAccumulator:
 
 @overload
 def warn_or_fail(
-    *args,
+    *args: object,
     fail: Literal[True],
     filename: str | None = None,
     line_number: int | None = None,
@@ -126,14 +126,14 @@ def warn_or_fail(
 
 @overload
 def warn_or_fail(
-    *args,
+    *args: object,
     fail: Literal[False] = False,
     filename: str | None = None,
     line_number: int | None = None,
 ) -> None: ...
 
 def warn_or_fail(
-    *args,
+    *args: object,
     fail: bool = False,
     filename: str | None = None,
     line_number: int | None = None,
@@ -160,10 +160,18 @@ def warn_or_fail(
         sys.exit(-1)
 
 
-def warn(*args, filename: str | None = None, line_number: int | None = None) -> None:
+def warn(
+    *args: object,
+    filename: str | None = None,
+    line_number: int | None = None,
+) -> None:
     return warn_or_fail(*args, filename=filename, line_number=line_number, fail=False)
 
-def fail(*args, filename: str | None = None, line_number: int | None = None) -> NoReturn:
+def fail(
+    *args: object,
+    filename: str | None = None,
+    line_number: int | None = None,
+) -> NoReturn:
     warn_or_fail(*args, filename=filename, line_number=line_number, fail=True)
 
 
