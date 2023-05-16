@@ -25,10 +25,9 @@ import string
 import sys
 import textwrap
 import traceback
-import types
 
 from collections.abc import Callable
-from types import *
+from types import FunctionType, NoneType
 from typing import Any, NamedTuple
 
 # TODO:
@@ -1965,17 +1964,17 @@ legacy_converters = {}
 return_converters = {}
 
 
-def write_file(filename, new_contents, force=False):
+def file_changed(filename: str, new_contents: str) -> bool:
+    """Return true if file contents changed (meaning we must update it)"""
     try:
         with open(filename, 'r', encoding="utf-8") as fp:
             old_contents = fp.read()
-
-        if old_contents == new_contents and not force:
-            # no change: avoid modifying the file modification time
-            return
+        return old_contents != new_contents
     except FileNotFoundError:
-        pass
+        return True
 
+
+def write_file(filename: str, new_contents: str):
     # Atomic write using a temporary file and os.replace()
     filename_new = f"{filename}.new"
     with open(filename_new, "w", encoding="utf-8") as fp:
@@ -2237,11 +2236,12 @@ def parse_file(filename, *, verify=True, output=None):
     clinic = Clinic(language, verify=verify, filename=filename)
     src_out, clinic_out = clinic.parse(raw)
 
-    # If clinic output changed, force updating the source file as well.
-    force = bool(clinic_out)
-    write_file(output, src_out, force=force)
-    for fn, data in clinic_out:
-        write_file(fn, data)
+    changes = [(fn, data) for fn, data in clinic_out if file_changed(fn, data)]
+    if changes:
+        # Always (re)write the source file.
+        write_file(output, src_out)
+        for fn, data in clinic_out:
+            write_file(fn, data)
 
 
 def compute_checksum(input, length=None):
@@ -2668,15 +2668,15 @@ class CConverter(metaclass=CConverterAutoRegister):
     # keep in sync with self_converter.__init__!
     def __init__(self,
              # Positional args:
-             name,
-             py_name,
+             name: str,
+             py_name: str,
              function,
              default=unspecified,
              *,  # Keyword only args:
-             c_default=None,
-             py_default=None,
-             annotation=unspecified,
-             unused=False,
+             c_default: str | None = None,
+             py_default: str | None = None,
+             annotation: str | Unspecified = unspecified,
+             unused: bool = False,
              **kwargs
     ):
         self.name = ensure_legal_c_identifier(name)
@@ -2712,10 +2712,10 @@ class CConverter(metaclass=CConverterAutoRegister):
     def converter_init(self):
         pass
 
-    def is_optional(self):
+    def is_optional(self) -> bool:
         return (self.default is not unspecified)
 
-    def _render_self(self, parameter, data):
+    def _render_self(self, parameter: str, data: CRenderData) -> None:
         self.parameter = parameter
         name = self.parser_name
 
@@ -2775,7 +2775,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         if cleanup:
             data.cleanup.append('/* Cleanup for ' + name + ' */\n' + cleanup.rstrip() + "\n")
 
-    def render(self, parameter, data):
+    def render(self, parameter: str, data: CRenderData) -> None:
         """
         parameter is a clinic.Parameter instance.
         data is a CRenderData instance.
@@ -2851,7 +2851,7 @@ class CConverter(metaclass=CConverterAutoRegister):
             declaration.append(';')
         return "".join(declaration)
 
-    def initialize(self):
+    def initialize(self) -> str:
         """
         The C statements required to set up this variable before parsing.
         Returns a string containing this code indented at column 0.
@@ -2859,7 +2859,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         """
         return ""
 
-    def modify(self):
+    def modify(self) -> str:
         """
         The C statements required to modify this variable after parsing.
         Returns a string containing this code indented at column 0.
@@ -2867,7 +2867,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         """
         return ""
 
-    def post_parsing(self):
+    def post_parsing(self) -> str:
         """
         The C statements required to do some operations after the end of parsing but before cleaning up.
         Return a string containing this code indented at column 0.
@@ -2875,7 +2875,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         """
         return ""
 
-    def cleanup(self):
+    def cleanup(self) -> str:
         """
         The C statements required to clean up after this variable.
         Returns a string containing this code indented at column 0.
@@ -2928,7 +2928,7 @@ class CConverter(metaclass=CConverterAutoRegister):
                 """.format(argname=argname, paramname=self.parser_name, cast=cast)
         return None
 
-    def set_template_dict(self, template_dict):
+    def set_template_dict(self, template_dict: dict[str, str]):
         pass
 
     @property
@@ -4036,7 +4036,7 @@ def eval_ast_expr(node, globals, *, filename='-'):
 
     node = ast.Expression(node)
     co = compile(node, filename, 'eval')
-    fn = types.FunctionType(co, globals)
+    fn = FunctionType(co, globals)
     return fn()
 
 
