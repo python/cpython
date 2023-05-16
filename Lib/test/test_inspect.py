@@ -2052,20 +2052,9 @@ class TestGetattrStatic(unittest.TestCase):
         descriptor.__set__ = lambda s, i, v: None
         self.assertEqual(inspect.getattr_static(foo, 'd'), Foo.__dict__['d'])
 
-        class DescriptorGetDelete:
-            def __get__(self, instance, klass):
-                return 'bar'
-            def __delete__(self, instance, klass):
-                pass
-        class Bar:
-            get_delete = DescriptorGetDelete()
-            def __init__(self):
-                self.__dict__['get_delete'] = 42
-
-        bar = Bar()
-        self.assertNotEqual(inspect.getattr_static(bar, 'get_delete'), 42)
-        self.assertIsInstance(inspect.getattr_static(bar, 'get_delete'), DescriptorGetDelete)
-
+        del descriptor.__set__
+        descriptor.__delete__ = lambda s, i, o: None
+        self.assertEqual(inspect.getattr_static(foo, 'd'), Foo.__dict__['d'])
 
     def test_metaclass_with_descriptor(self):
         class descriptor(object):
