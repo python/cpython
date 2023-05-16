@@ -82,6 +82,15 @@ module_threads_reinit(struct module_threads *threads)
 static void
 module_threads_fini(struct module_threads *threads)
 {
+    // Wait for all the threads to finalize.
+    PyThread_acquire_lock(threads->mutex, WAIT_LOCK);
+    while (threads->head != NULL) {
+        PyThread_release_lock(threads->mutex);
+        // XXX Sleep?
+        PyThread_acquire_lock(threads->mutex, WAIT_LOCK);
+    }
+    PyThread_release_lock(threads->mutex);
+
     PyThread_free_lock(threads->mutex);
 }
 
