@@ -2002,7 +2002,8 @@ buffer_info(PyObject *self, PyObject *arg)
 #ifndef MS_WIN32
 
 #ifdef HAVE_DL_ITERATE_PHDR
-static int interp_cb(struct dl_phdr_info *info, size_t size, void *data)
+static int
+interp_cb(struct dl_phdr_info *info, size_t size, void *data)
 {
     const char **ps = data;
     const char *base = (const char *)info->dlpi_addr;
