@@ -111,6 +111,8 @@ tok_new(void)
     tok->interactive_underflow = IUNDERFLOW_NORMAL;
     tok->str = NULL;
     tok->report_warnings = 1;
+    tok->tok_extra_tokens = 0;
+    tok->comment_newline = 0;
     tok->tok_mode_stack[0] = (tokenizer_mode){.kind =TOK_REGULAR_MODE, .f_string_quote='\0', .f_string_quote_size = 0, .f_string_debug=0};
     tok->tok_mode_stack_index = 0;
     tok->tok_report_warnings = 1;
@@ -1649,6 +1651,8 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     tok->starting_col_offset = -1;
     blankline = 0;
 
+
+    const char* starting_indent = NULL;
     /* Get indentation level */
     if (tok->atbol) {
         int col = 0;
@@ -1745,11 +1749,14 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         }
     }
 
+    starting_indent = tok->start;
     tok->start = tok->cur;
     tok->starting_col_offset = tok->col_offset;
 
     /* Return pending indents/dedents */
-    if (tok->pendin != 0) {
+   if (tok->pendin != 0) {
+        p_start = tok->buf;
+        p_end = tok->cur;
         if (tok->pendin < 0) {
             tok->pendin++;
             return MAKE_TOKEN(DEDENT);
@@ -1806,8 +1813,16 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         const char *prefix, *p, *type_start;
         int current_starting_col_offset;
 
+        // if (tok->tok_extra_tokens) {
+        //     p = tok->start;
+        // }
+
         while (c != EOF && c != '\n') {
             c = tok_nextc(tok);
+        }
+
+        if (tok->tok_extra_tokens) {
+            p = tok->start;
         }
 
         if (tok->type_comments) {
@@ -1863,6 +1878,13 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     return MAKE_TYPE_COMMENT_TOKEN(TYPE_COMMENT, current_starting_col_offset, tok->col_offset);
                 }
             }
+        }
+        if (tok->tok_extra_tokens) {
+            tok_backup(tok, c);  /* don't eat the newline or EOF */
+            p_start = p;
+            p_end = tok->cur;
+            tok->comment_newline = 1;
+            return MAKE_TOKEN(COMMENT);
         }
     }
 
@@ -1976,7 +1998,18 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     if (c == '\n') {
         tok->atbol = 1;
         if (blankline || tok->level > 0) {
+            if (tok->tok_extra_tokens) {
+                p_start = tok->start;
+                p_end = tok->cur;
+                return MAKE_TOKEN(NL);
+            }
             goto nextline;
+        }
+        if (tok->comment_newline && tok->tok_extra_tokens) {
+            tok->comment_newline = 0;
+                p_start = tok->start;
+                p_end = tok->cur;
+                return MAKE_TOKEN(NL);
         }
         p_start = tok->start;
         p_end = tok->cur - 1; /* Leave '\n' out of the string */

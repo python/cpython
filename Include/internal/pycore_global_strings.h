@@ -406,6 +406,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(exception)
         STRUCT_FOR_ID(exp)
         STRUCT_FOR_ID(extend)
+        STRUCT_FOR_ID(extra_tokens)
         STRUCT_FOR_ID(facility)
         STRUCT_FOR_ID(factory)
         STRUCT_FOR_ID(false)

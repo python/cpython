@@ -2215,6 +2215,7 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
         module = None
 
     if not isinstance(module, ast.Module):
+        breakpoint()
         raise ValueError("{!r} builtin has invalid signature".format(obj))
 
     f = module.body[0]

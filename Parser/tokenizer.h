@@ -127,6 +127,8 @@ struct tok_state {
     tokenizer_mode tok_mode_stack[MAXFSTRINGLEVEL];
     int tok_mode_stack_index;
     int tok_report_warnings;
+    int tok_extra_tokens;
+    int comment_newline;
 #ifdef Py_DEBUG
     int debug;
 #endif

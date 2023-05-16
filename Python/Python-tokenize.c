@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "../Parser/tokenizer.h"
+#include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
 
 static struct PyModuleDef _tokenizemodule;
 
@@ -34,11 +35,14 @@ typedef struct
 _tokenizer.tokenizeriter.__new__ as tokenizeriter_new
 
     source: str
+    *
+    extra_tokens: bool
 [clinic start generated code]*/
 
 static PyObject *
-tokenizeriter_new_impl(PyTypeObject *type, const char *source)
-/*[clinic end generated code: output=7fd9f46cf9263cbb input=4384b368407375c6]*/
+tokenizeriter_new_impl(PyTypeObject *type, const char *source,
+                       int extra_tokens)
+/*[clinic end generated code: output=f6f9d8b4beec8106 input=90dc5b6a5df180c2]*/
 {
     tokenizeriterobject *self = (tokenizeriterobject *)type->tp_alloc(type, 0);
     if (self == NULL) {
@@ -54,6 +58,9 @@ tokenizeriter_new_impl(PyTypeObject *type, const char *source)
         return NULL;
     }
     self->tok->filename = filename;
+    if (extra_tokens) {
+        self->tok->tok_extra_tokens = 1;
+    }
     return (PyObject *)self;
 }
 
@@ -92,10 +99,10 @@ tokenizeriter_next(tokenizeriterobject *it)
     int col_offset = -1;
     int end_col_offset = -1;
     if (token.start != NULL && token.start >= line_start) {
-        col_offset = (int)(token.start - line_start);
+        col_offset = _PyPegen_byte_offset_to_character_offset(line, token.start - line_start);
     }
     if (token.end != NULL && token.end >= it->tok->line_start) {
-        end_col_offset = (int)(token.end - it->tok->line_start);
+        end_col_offset = _PyPegen_byte_offset_to_character_offset(line, token.end - it->tok->line_start);
     }
 
     return Py_BuildValue("(NiiiiiN)", str, type, lineno, end_lineno, col_offset, end_col_offset, line);
