@@ -16,7 +16,7 @@ jobs:
 
     steps:
     - name: "Check PRs"
-      uses: actions/stale@1160a2240286f5da8ec72b1c0816ce2481aabf84  # v8.0.0
+      uses: actions/stale@v8
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         stale-pr-message: 'This PR is stale because it has been open for 30 days with no activity.'
