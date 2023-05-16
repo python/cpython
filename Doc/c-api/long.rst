@@ -5,8 +5,8 @@
 Integer Objects
 ---------------
 
-.. index:: object: long integer
-           object: integer
+.. index:: pair: object; long integer
+           pair: object; integer
 
 All integers are implemented as "long" integer objects of arbitrary size.
 
@@ -93,6 +93,10 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    whitespace and single underscores after a base specifier and between digits are
    ignored.  If there are no digits or *str* is not NULL-terminated following the
    digits and trailing whitespace, :exc:`ValueError` will be raised.
+
+   .. seealso:: Python methods :meth:`int.to_bytes` and :meth:`int.from_bytes`
+      to convert a :c:type:`PyLongObject` to/from an array of bytes in base
+      ``256``. You can call those from C using :c:func:`PyObject_CallMethod`.
 
 
 .. c:function:: PyObject* PyLong_FromUnicodeObject(PyObject *u, int base)

@@ -11,7 +11,7 @@ from unittest import TestCase, mock
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
 from test.support import os_helper
-from test.support.script_helper import run_test_script, make_script
+from test.support.script_helper import run_test_script, make_script, run_python_until_end
 import os
 import token
 
@@ -1470,6 +1470,19 @@ class TestTokenize(TestCase):
             self.assertEqual(tok_name[tokens[i + 1].exact_type], tok_name[expected_tokens[i]])
         self.assertEqual(tok_name[tokens[-1].exact_type], tok_name[token.ENDMARKER])
 
+    def test_invalid_character_in_fstring_middle(self):
+        # See gh-103824
+        script = b'''F"""
+        \xe5"""'''
+
+        with os_helper.temp_dir() as temp_dir:
+            filename = os.path.join(temp_dir, "script.py")
+            with open(filename, 'wb') as file:
+                file.write(script)
+            rs, _ = run_python_until_end(filename)
+            self.assertIn(b"SyntaxError", rs.err)
+
+
 class UntokenizeTest(TestCase):
 
     def test_bad_input_order(self):
@@ -1625,6 +1638,10 @@ class TestRoundtrip(TestCase):
         # 7 more testfiles fail.  Remove them also until the failure is diagnosed.
 
         testfiles.remove(os.path.join(tempdir, "test_unicode_identifiers.py"))
+
+        # TODO: Remove this once we can unparse PEP 701 syntax
+        testfiles.remove(os.path.join(tempdir, "test_fstring.py"))
+
         for f in ('buffer', 'builtin', 'fileio', 'inspect', 'os', 'platform', 'sys'):
             testfiles.remove(os.path.join(tempdir, "test_%s.py") % f)
 
@@ -1937,25 +1954,39 @@ c"""', """\
     """)
 
         self.check_tokenize('f"abc"', """\
-    STRING     'f"abc"'      (1, 0) (1, 6)
+    FSTRING_START 'f"'          (1, 0) (1, 2)
+    FSTRING_MIDDLE 'abc'         (1, 2) (1, 5)
+    FSTRING_END '"'           (1, 5) (1, 6)
     """)
 
         self.check_tokenize('fR"a{b}c"', """\
-    STRING     'fR"a{b}c"'   (1, 0) (1, 9)
+    FSTRING_START 'fR"'         (1, 0) (1, 3)
+    FSTRING_MIDDLE 'a'           (1, 3) (1, 4)
+    LBRACE     '{'           (1, 4) (1, 5)
+    NAME       'b'           (1, 5) (1, 6)
+    RBRACE     '}'           (1, 6) (1, 7)
+    FSTRING_MIDDLE 'c'           (1, 7) (1, 8)
+    FSTRING_END '"'           (1, 8) (1, 9)
     """)
 
         self.check_tokenize('f"""abc"""', """\
-    STRING     'f\"\"\"abc\"\"\"'  (1, 0) (1, 10)
+    FSTRING_START 'f\"""'        (1, 0) (1, 4)
+    FSTRING_MIDDLE 'abc'         (1, 4) (1, 7)
+    FSTRING_END '\"""'         (1, 7) (1, 10)
     """)
 
         self.check_tokenize(r'f"abc\
 def"', """\
-    STRING     'f"abc\\\\\\ndef"' (1, 0) (2, 4)
+    FSTRING_START \'f"\'          (1, 0) (1, 2)
+    FSTRING_MIDDLE 'abc\\\\\\ndef'  (1, 2) (2, 3)
+    FSTRING_END '"'           (2, 3) (2, 4)
     """)
 
         self.check_tokenize(r'Rf"abc\
 def"', """\
-    STRING     'Rf"abc\\\\\\ndef"' (1, 0) (2, 4)
+    FSTRING_START 'Rf"'         (1, 0) (1, 3)
+    FSTRING_MIDDLE 'abc\\\\\\ndef'  (1, 3) (2, 3)
+    FSTRING_END '"'           (2, 3) (2, 4)
     """)
 
     def test_function(self):
