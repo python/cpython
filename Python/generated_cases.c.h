@@ -2093,7 +2093,7 @@
             #line 1452 "Python/bytecodes.c"
                 if (true) goto pop_1_error;
             }
-            Py_DECREF(none_val);
+            assert(Py_IsNone(none_val));
             #line 2098 "Python/generated_cases.c.h"
             Py_DECREF(iterable);
             STACK_SHRINK(1);

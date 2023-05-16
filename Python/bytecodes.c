@@ -1451,7 +1451,7 @@ dummy_func(
                 DECREF_INPUTS();
                 ERROR_IF(true, error);
             }
-            Py_DECREF(none_val);
+            assert(Py_IsNone(none_val));
             DECREF_INPUTS();
         }
 
