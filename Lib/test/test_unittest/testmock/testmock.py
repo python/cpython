@@ -2311,5 +2311,19 @@ class MockTest(unittest.TestCase):
         self.assertIsNone(obj._instance, msg='after mock')
         self.assertEqual('object', obj.instance)
 
+    def test_decorated_async_methods_with_spec_mock(self):
+        class Foo():
+            @classmethod
+            async def class_method(cls):
+                pass
+            @staticmethod
+            async def static_method():
+                pass
+            async def method(self):
+                pass
+        mock = Mock(spec=Foo)
+        for m in (mock.method, mock.class_method, mock.static_method):
+            self.assertIsInstance(m, AsyncMock)
+
 if __name__ == '__main__':
     unittest.main()
