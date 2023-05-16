@@ -415,6 +415,8 @@ class Engine:
         "-fno-asynchronous-unwind-tables",
         # Don't want relocations to use the global offset table:
         "-fno-pic",
+        # Disable stack-smashing canaries, which use the global offset table:
+        "-fno-stack-protector",
         # The GHC calling convention uses %rbp as an argument-passing register:
         "-fomit-frame-pointer",
         # Need this to leave room for patching our 64-bit pointers:
@@ -467,7 +469,6 @@ class Engine:
             "LOAD_FAST_CHECK",
             "LOAD_GLOBAL",
             "LOAD_NAME",
-            "LOAD_SUPER_ATTR",  # XXX: macOS... investigate!
             "MAKE_CELL",
             "MATCH_CLASS",
             "MATCH_KEYS",
@@ -477,7 +478,6 @@ class Engine:
             "STORE_ATTR_WITH_HINT",
             "UNPACK_EX",
             "UNPACK_SEQUENCE",
-            "WITH_EXCEPT_START",  # XXX: macOS... investigate!
         }
     )
 
