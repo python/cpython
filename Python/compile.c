@@ -5453,9 +5453,6 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
                 }
             }
             long scope = (symbol >> SCOPE_OFFSET) & SCOPE_MASK;
-            if (scope == FREE && c->u->u_ste->ste_type == ClassBlock) {
-                dict_add_o(c->u->u_metadata.u_freevars, k);
-            }
             PyObject *outv = PyDict_GetItemWithError(c->u->u_ste->ste_symbols, k);
             if (outv == NULL) {
                 outv = _PyLong_GetZero();
