@@ -1528,15 +1528,15 @@ thread__set_sentinel(PyObject *module, PyObject *Py_UNUSED(ignored))
     struct module_thread *mt = module_threads_lookup(&state->threads, tstate);
     if (mt == NULL) {
         /* It must be the "main" thread. */
-        lock = (PyObject *) newlockobject(state);
-        if (lock == NULL) {
+        mt = add_module_thread(state, &state->threads, tstate);
+        if (mt == NULL) {
             return NULL;
         }
     }
     else {
         assert(mt->running_lock != NULL);
-        lock = Py_NewRef(mt->running_lock);
     }
+    lock = Py_NewRef(mt->running_lock);
 
     if (tstate->on_delete_data != NULL) {
         /* We must support the re-creation of the lock from a
@@ -1551,9 +1551,6 @@ thread__set_sentinel(PyObject *module, PyObject *Py_UNUSED(ignored))
        hangs to the thread state. */
     wr = PyWeakref_NewRef(lock, NULL);
     if (wr == NULL) {
-        if (mt == NULL) {
-            Py_DECREF(lock);
-        }
         return NULL;
     }
     tstate->on_delete_data = (void *) wr;
