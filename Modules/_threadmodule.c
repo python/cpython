@@ -213,6 +213,37 @@ remove_module_thread(struct module_threads *threads, struct module_thread *mt)
     PyMem_RawFree(mt);
 }
 
+static void
+wait_for_threads_fini(struct module_threads *threads)
+{
+    Py_BEGIN_ALLOW_THREADS
+
+    int done = 0;
+    while (!done) {
+        PyThread_acquire_lock(threads->mutex, WAIT_LOCK);
+
+        done = 1;
+        struct module_thread *mt = threads->head;
+        while (mt != NULL) {
+            if (!mt->daemonic) {
+                // Wait for the next thread to be finalized.
+                if (PyThread_acquire_lock(mt->lifetime_mutex, NOWAIT_LOCK)) {
+                    PyThread_release_lock(mt->lifetime_mutex);
+                }
+                else {
+                    done = 0;
+                    break;
+                }
+            }
+            mt = mt->next;
+        }
+
+        PyThread_release_lock(threads->mutex);
+    }
+
+    Py_END_ALLOW_THREADS
+}
+
 
 /* module state */
 
@@ -1781,6 +1812,14 @@ Handle uncaught Thread.run() exception.");
 
 #ifdef HAVE_FORK
 static PyObject *
+thread__wait_for_threads_fini(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    thread_module_state *state = get_thread_state(module);
+    wait_for_threads_fini(&state->threads);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
 thread__after_fork(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     thread_module_state *state = get_thread_state(module);
@@ -1822,6 +1861,8 @@ static PyMethodDef thread_methods[] = {
      METH_NOARGS, _set_sentinel_doc},
     {"_excepthook",             thread_excepthook,
      METH_O, excepthook_doc},
+    {"_wait_for_threads_fini",  thread__wait_for_threads_fini,
+     METH_NOARGS, NULL},
 #ifdef HAVE_FORK
     {"_after_fork",             thread__after_fork,
      METH_NOARGS, NULL},

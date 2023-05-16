@@ -49,6 +49,7 @@ try:
 except AttributeError:
     _CRLock = None
 TIMEOUT_MAX = _thread.TIMEOUT_MAX
+_wait_for_threads_fini = _thread._wait_for_threads_fini
 _internal_after_fork = _thread._after_fork
 del _thread
 
@@ -1590,6 +1591,7 @@ def _shutdown():
         pass
 
     # Join all non-deamon threads
+    # XXX We should be able to drop this in favor of _wait_for_threads_fini().
     while True:
         with _shutdown_locks_lock:
             locks = list(_shutdown_locks)
@@ -1605,6 +1607,9 @@ def _shutdown():
 
         # new threads can be spawned while we were waiting for the other
         # threads to complete
+
+    # Wait for all non-daemon threads to be finalized.
+    _wait_for_threads_fini()
 
 
 def main_thread():
