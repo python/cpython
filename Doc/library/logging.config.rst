@@ -88,8 +88,8 @@ in :mod:`logging` itself) and defining handlers which are declared either in
    configuration).
 
    It will raise :exc:`FileNotFoundError` if file
-   doesn't exist and :exc:`ValueError` if file is invalid or
-   empty
+   doesn't exist and :exc:`ValueError` if the file is invalid or
+   empty.
 
    :param fname: A filename, or a file-like object, or an instance derived
                  from :class:`~configparser.RawConfigParser`. If a
@@ -131,7 +131,7 @@ in :mod:`logging` itself) and defining handlers which are declared either in
        The *encoding* parameter is added.
 
     .. versionadded:: 3.12
-       The exception will be thrown if the file provided
+       An exception will be thrown if the provided file
        doesn't exist or is invalid or empty.
 
 .. function:: listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None)
