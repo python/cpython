@@ -680,7 +680,7 @@ class PurePath(object):
         name = self._tail[-1].partition('.')[0].partition(':')[0].rstrip(' ')
         return name.upper() in _WIN_RESERVED_NAMES
 
-    def match(self, path_pattern):
+    def match(self, path_pattern, case_sensitive=True):
         """
         Return True if this path matches the given pattern.
         """
@@ -695,6 +695,9 @@ class PurePath(object):
         elif len(pat_parts) > len(parts):
             return False
         for part, pat in zip(reversed(parts), reversed(pat_parts)):
+            if not case_sensitive:
+                # Convert the 'part' and 'pattern' to lowercase to ensure case insensitivity.
+                part, pat = part.lower(), pat.lower()
             if not fnmatch.fnmatchcase(part, pat):
                 return False
         return True
