@@ -27,6 +27,8 @@ static struct PyModuleDef thread_module;
 struct module_thread {
     PyThreadState *tstate;
     int daemonic;
+    PyThread_type_lock lifetime_mutex;
+    int lifetime_mutex_held;
     struct module_thread *prev;
     struct module_thread *next;
 };
@@ -51,6 +53,8 @@ module_threads_init(struct module_threads *threads)
 }
 
 #ifdef HAVE_FORK
+static int module_thread_reinit(struct module_thread *);
+
 static int
 module_threads_reinit(struct module_threads *threads)
 {
@@ -58,6 +62,19 @@ module_threads_reinit(struct module_threads *threads)
         PyErr_SetString(ThreadError, "failed to reinitialize lock at fork");
         return -1;
     }
+
+    PyThread_acquire_lock(threads->mutex, WAIT_LOCK);
+
+    struct module_thread *mt = threads->head;
+    while (mt != NULL) {
+        if (module_thread_reinit(mt) < 0) {
+            return -1;
+        }
+        mt = mt->next;
+    }
+
+    PyThread_release_lock(threads->mutex);
+
     return 0;
 }
 #endif
@@ -124,11 +141,35 @@ add_module_thread(struct module_threads *threads,
     mt->prev = NULL;
     mt->next = NULL;
 
+    // Create the lifetime lock.
+    mt->lifetime_mutex = PyThread_allocate_lock();
+    if (mt->lifetime_mutex == NULL) {
+        PyMem_Free(mt);
+        return NULL;
+    }
+    mt->lifetime_mutex_held = 0;
+
     // Add the entry to the end of the list.
     module_threads_add(threads, mt);
 
     return mt;
 }
+
+#ifdef HAVE_FORK
+static int
+module_thread_reinit(struct module_thread *mt)
+{
+    if (_PyThread_at_fork_reinit(mt->lifetime_mutex) < 0) {
+        PyErr_SetString(ThreadError, "failed to reinitialize lock at fork");
+        return -1;
+    }
+    if (mt->lifetime_mutex_held) {
+        PyThread_acquire_lock(mt->lifetime_mutex, WAIT_LOCK);
+    }
+
+    return 0;
+}
+#endif
 
 static void
 module_thread_starting(struct module_thread *mt)
@@ -136,6 +177,12 @@ module_thread_starting(struct module_thread *mt)
     assert(mt->tstate == PyThreadState_Get());
 
     mt->tstate->interp->threads.count++;
+
+    // We acquire the lifetime lock here instead of in add_module_thread()
+    // because we must do it in the actual thread, which wasn't started yet
+    // when add_module_thread() was called.
+    PyThread_acquire_lock(mt->lifetime_mutex, WAIT_LOCK);
+    mt->lifetime_mutex_held = 1;
 }
 
 static void
@@ -150,10 +197,19 @@ module_thread_finished(struct module_thread *mt)
 static void
 remove_module_thread(struct module_threads *threads, struct module_thread *mt)
 {
+    // Mark the thread as truly dead now.
+    if (mt->lifetime_mutex_held) {
+        PyThread_release_lock(mt->lifetime_mutex);
+    }
+
     // Remove it from the list.
     module_threads_remove(threads, mt);
 
     // Deallocate everything.
+    if (mt->lifetime_mutex != NULL) {
+        PyThread_free_lock(mt->lifetime_mutex);
+        mt->lifetime_mutex = NULL;
+    }
     PyMem_RawFree(mt);
 }
 
