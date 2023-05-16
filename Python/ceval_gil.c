@@ -709,11 +709,19 @@ PyEval_SaveThread(void)
 void
 PyEval_RestoreThread(PyThreadState *tstate)
 {
+#ifdef MS_WINDOWS
+    int err = GetLastError();
+#endif
+
     _Py_EnsureTstateNotNULL(tstate);
 
     take_gil(tstate);
 
     _PyThreadState_SwapNoGIL(tstate);
+
+#ifdef MS_WINDOWS
+    SetLastError(err);
+#endif
 }
 
 
