@@ -1050,6 +1050,7 @@ static PyType_Slot rawiobase_slots[] = {
     {0, NULL},
 };
 
+/* Do not set Py_TPFLAGS_HAVE_GC so that tp_traverse and tp_clear are inherited */
 PyType_Spec rawiobase_spec = {
     .name = "_io._RawIOBase",
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |

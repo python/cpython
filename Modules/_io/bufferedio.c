@@ -2440,6 +2440,7 @@ static PyType_Slot bufferediobase_slots[] = {
     {0, NULL},
 };
 
+/* Do not set Py_TPFLAGS_HAVE_GC so that tp_traverse and tp_clear are inherited */
 PyType_Spec bufferediobase_spec = {
     .name = "_io._BufferedIOBase",
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |

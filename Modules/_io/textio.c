@@ -190,6 +190,7 @@ static PyType_Slot textiobase_slots[] = {
     {0, NULL},
 };
 
+/* Do not set Py_TPFLAGS_HAVE_GC so that tp_traverse and tp_clear are inherited */
 PyType_Spec textiobase_spec = {
     .name = "_io._TextIOBase",
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
