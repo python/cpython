@@ -2938,7 +2938,8 @@ type_checks = {
 }
 
 
-ConverterDict = dict[str, CConverter]
+ConverterType = Callable[..., CConverter]
+ConverterDict = dict[str, ConverterType]
 
 # maps strings to callables.
 # these callables must be of the form:
