@@ -136,12 +136,13 @@ See also :ref:`Reflection <reflection>`.
 Internal Frames
 ---------------
 
-Unless using PEP 523, you will not need this.
+Unless using :pep:`523`, you will not need this.
 
 .. c:struct:: _PyInterpreterFrame
 
    The interpreter's internal frame representation.
 
+   .. versionadded:: 3.11
 
 .. c:function:: PyObject* PyUnstable_InterpreterFrame_GetCode(struct _PyInterpreterFrame *frame);
 
