@@ -7,6 +7,7 @@
 
 import abc
 import ast
+import builtins as bltns
 import collections
 import contextlib
 import copy
@@ -24,9 +25,10 @@ import string
 import sys
 import textwrap
 import traceback
-import types
 
-from types import *
+from collections.abc import Callable
+from types import FunctionType, NoneType
+from typing import Any, NamedTuple, NoReturn, Literal, overload
 
 # TODO:
 #
@@ -43,45 +45,63 @@ version = '1'
 
 NO_VARARG = "PY_SSIZE_T_MAX"
 CLINIC_PREFIX = "__clinic_"
-CLINIC_PREFIXED_ARGS = {"args"}
+CLINIC_PREFIXED_ARGS = {
+    "_keywords",
+    "_parser",
+    "args",
+    "argsbuf",
+    "fastargs",
+    "kwargs",
+    "kwnames",
+    "nargs",
+    "noptargs",
+    "return_value",
+}
 
 class Unspecified:
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<Unspecified>'
 
 unspecified = Unspecified()
 
 
 class Null:
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<Null>'
 
 NULL = Null()
 
 
 class Unknown:
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<Unknown>'
 
 unknown = Unknown()
 
 sig_end_marker = '--'
 
+Appender = Callable[[str], None]
+Outputter = Callable[[], str]
 
-_text_accumulator_nt = collections.namedtuple("_text_accumulator", "text append output")
+class _TextAccumulator(NamedTuple):
+    text: list[str]
+    append: Appender
+    output: Outputter
 
-def _text_accumulator():
-    text = []
+def _text_accumulator() -> _TextAccumulator:
+    text: list[str] = []
     def output():
         s = ''.join(text)
         text.clear()
         return s
-    return _text_accumulator_nt(text, text.append, output)
+    return _TextAccumulator(text, text.append, output)
 
 
-text_accumulator_nt = collections.namedtuple("text_accumulator", "text append")
+class TextAccumulator(NamedTuple):
+    append: Appender
+    output: Outputter
 
-def text_accumulator():
+def text_accumulator() -> TextAccumulator:
     """
     Creates a simple text accumulator / joiner.
 
@@ -93,10 +113,30 @@ def text_accumulator():
        empties the accumulator.
     """
     text, append, output = _text_accumulator()
-    return text_accumulator_nt(append, output)
+    return TextAccumulator(append, output)
 
+@overload
+def warn_or_fail(
+    *args: object,
+    fail: Literal[True],
+    filename: str | None = None,
+    line_number: int | None = None,
+) -> NoReturn: ...
 
-def warn_or_fail(fail=False, *args, filename=None, line_number=None):
+@overload
+def warn_or_fail(
+    *args: object,
+    fail: Literal[False] = False,
+    filename: str | None = None,
+    line_number: int | None = None,
+) -> None: ...
+
+def warn_or_fail(
+    *args: object,
+    fail: bool = False,
+    filename: str | None = None,
+    line_number: int | None = None,
+) -> None:
     joined = " ".join([str(a) for a in args])
     add, output = text_accumulator()
     if fail:
@@ -119,14 +159,22 @@ def warn_or_fail(fail=False, *args, filename=None, line_number=None):
         sys.exit(-1)
 
 
-def warn(*args, filename=None, line_number=None):
-    return warn_or_fail(False, *args, filename=filename, line_number=line_number)
+def warn(
+    *args: object,
+    filename: str | None = None,
+    line_number: int | None = None,
+) -> None:
+    return warn_or_fail(*args, filename=filename, line_number=line_number, fail=False)
 
-def fail(*args, filename=None, line_number=None):
-    return warn_or_fail(True, *args, filename=filename, line_number=line_number)
+def fail(
+    *args: object,
+    filename: str | None = None,
+    line_number: int | None = None,
+) -> NoReturn:
+    warn_or_fail(*args, filename=filename, line_number=line_number, fail=True)
 
 
-def quoted_for_c_string(s):
+def quoted_for_c_string(s: str) -> str:
     for old, new in (
         ('\\', '\\\\'), # must be first!
         ('"', '\\"'),
@@ -135,13 +183,13 @@ def quoted_for_c_string(s):
         s = s.replace(old, new)
     return s
 
-def c_repr(s):
+def c_repr(s: str) -> str:
     return '"' + s + '"'
 
 
 is_legal_c_identifier = re.compile('^[A-Za-z_][A-Za-z0-9_]*$').match
 
-def is_legal_py_identifier(s):
+def is_legal_py_identifier(s: str) -> bool:
     return all(is_legal_c_identifier(field) for field in s.split('.'))
 
 # identifiers that are okay in Python but aren't a good idea in C.
@@ -154,7 +202,7 @@ register return short signed sizeof static struct switch
 typedef typeof union unsigned void volatile while
 """.strip().split())
 
-def ensure_legal_c_identifier(s):
+def ensure_legal_c_identifier(s: str) -> str:
     # for now, just complain if what we're given isn't legal
     if not is_legal_c_identifier(s):
         fail("Illegal C identifier: {}".format(s))
@@ -163,7 +211,7 @@ def ensure_legal_c_identifier(s):
         return s + "_value"
     return s
 
-def rstrip_lines(s):
+def rstrip_lines(s: str) -> str:
     text, add, output = _text_accumulator()
     for line in s.split('\n'):
         add(line.rstrip())
@@ -171,14 +219,14 @@ def rstrip_lines(s):
     text.pop()
     return output()
 
-def format_escape(s):
+def format_escape(s: str) -> str:
     # double up curly-braces, this string will be used
     # as part of a format_map() template later
     s = s.replace('{', '{{')
     s = s.replace('}', '}}')
     return s
 
-def linear_format(s, **kwargs):
+def linear_format(s: str, **kwargs: str) -> str:
     """
     Perform str.format-like substitution, except:
       * The strings substituted must be on lines by
@@ -222,7 +270,7 @@ def linear_format(s, **kwargs):
 
     return output()[:-1]
 
-def indent_all_lines(s, prefix):
+def indent_all_lines(s: str, prefix: str) -> str:
     """
     Returns 's', with 'prefix' prepended to all lines.
 
@@ -243,7 +291,7 @@ def indent_all_lines(s, prefix):
         final.append(last)
     return ''.join(final)
 
-def suffix_all_lines(s, suffix):
+def suffix_all_lines(s: str, suffix: str) -> str:
     """
     Returns 's', with 'suffix' appended to all lines.
 
@@ -263,7 +311,7 @@ def suffix_all_lines(s, suffix):
     return ''.join(final)
 
 
-def version_splitter(s):
+def version_splitter(s: str) -> tuple[int, ...]:
     """Splits a version string into a tuple of integers.
 
     The following ASCII characters are allowed, and employ
@@ -274,7 +322,7 @@ def version_splitter(s):
     (This permits Python-style version strings such as "1.4b3".)
     """
     version = []
-    accumulator = []
+    accumulator: list[str] = []
     def flush():
         if not accumulator:
             raise ValueError('Unsupported version string: ' + repr(s))
@@ -294,7 +342,7 @@ def version_splitter(s):
     flush()
     return tuple(version)
 
-def version_comparitor(version1, version2):
+def version_comparitor(version1: str, version2: str) -> Literal[-1, 0, 1]:
     iterator = itertools.zip_longest(version_splitter(version1), version_splitter(version2), fillvalue=0)
     for i, (a, b) in enumerate(iterator):
         if a < b:
@@ -345,6 +393,7 @@ class CRenderData:
         # you should check the _return_value for errors, and
         # "goto exit" if there are any.
         self.return_conversion = []
+        self.converter_retval = "_return_value"
 
         # The C statements required to do some operations
         # after the end of parsing but before cleaning up.
@@ -803,13 +852,11 @@ class CLanguage(Language):
         # parser_body_fields remembers the fields passed in to the
         # previous call to parser_body. this is used for an awful hack.
         parser_body_fields = ()
-        parser_body_declarations = ''
         def parser_body(prototype, *fields, declarations=''):
-            nonlocal parser_body_fields, parser_body_declarations
+            nonlocal parser_body_fields
             add, output = text_accumulator()
             add(prototype)
             parser_body_fields = fields
-            parser_body_declarations = declarations
 
             fields = list(fields)
             fields.insert(0, normalize_snippet("""
@@ -1915,8 +1962,10 @@ class Destination:
 # maps strings to Language objects.
 # "languages" maps the name of the language ("C", "Python").
 # "extensions" maps the file extension ("c", "py").
+LangDict = dict[str, Callable[[str], Language]]
+
 languages = { 'C': CLanguage, 'Python': PythonLanguage }
-extensions = { name: CLanguage for name in "c cc cpp cxx h hh hpp hxx".split() }
+extensions: LangDict = { name: CLanguage for name in "c cc cpp cxx h hh hpp hxx".split() }
 extensions['py'] = PythonLanguage
 
 
@@ -1943,17 +1992,17 @@ legacy_converters = {}
 return_converters = {}
 
 
-def write_file(filename, new_contents):
+def file_changed(filename: str, new_contents: str) -> bool:
+    """Return true if file contents changed (meaning we must update it)"""
     try:
         with open(filename, 'r', encoding="utf-8") as fp:
             old_contents = fp.read()
-
-        if old_contents == new_contents:
-            # no change: avoid modifying the file modification time
-            return
+        return old_contents != new_contents
     except FileNotFoundError:
-        pass
+        return True
 
+
+def write_file(filename: str, new_contents: str):
     # Atomic write using a temporary file and os.replace()
     filename_new = f"{filename}.new"
     with open(filename_new, "w", encoding="utf-8") as fp:
@@ -2112,7 +2161,7 @@ impl_definition block
                          traceback.format_exc().rstrip())
             printer.print_block(block)
 
-        second_pass_replacements = {}
+        clinic_out = []
 
         # these are destinations not buffers
         for name, destination in self.destinations.items():
@@ -2153,25 +2202,11 @@ impl_definition block
                     block.input = 'preserve\n'
                     printer_2 = BlockPrinter(self.language)
                     printer_2.print_block(block, core_includes=True)
-                    write_file(destination.filename, printer_2.f.getvalue())
+                    pair = destination.filename, printer_2.f.getvalue()
+                    clinic_out.append(pair)
                     continue
-        text = printer.f.getvalue()
 
-        if second_pass_replacements:
-            printer_2 = BlockPrinter(self.language)
-            parser_2 = BlockParser(text, self.language)
-            changed = False
-            for block in parser_2:
-                if block.dsl_name:
-                    for id, replacement in second_pass_replacements.items():
-                        if id in block.output:
-                            changed = True
-                            block.output = block.output.replace(id, replacement)
-                printer_2.print_block(block)
-            if changed:
-                text = printer_2.f.getvalue()
-
-        return text
+        return printer.f.getvalue(), clinic_out
 
 
     def _module_and_class(self, fields):
@@ -2227,9 +2262,14 @@ def parse_file(filename, *, verify=True, output=None):
         return
 
     clinic = Clinic(language, verify=verify, filename=filename)
-    cooked = clinic.parse(raw)
+    src_out, clinic_out = clinic.parse(raw)
 
-    write_file(output, cooked)
+    changes = [(fn, data) for fn, data in clinic_out if file_changed(fn, data)]
+    if changes:
+        # Always (re)write the source file.
+        write_file(output, src_out)
+        for fn, data in clinic_out:
+            write_file(fn, data)
 
 
 def compute_checksum(input, length=None):
@@ -2558,15 +2598,15 @@ class CConverter(metaclass=CConverterAutoRegister):
     """
 
     # The C name to use for this variable.
-    name = None
+    name: str | None = None
 
     # The Python name to use for this variable.
-    py_name = None
+    py_name: str | None = None
 
     # The C type to use for this variable.
     # 'type' should be a Python string specifying the type, e.g. "int".
     # If this is a pointer type, the type string should end with ' *'.
-    type = None
+    type: str | None = None
 
     # The Python default value for this parameter, as a Python value.
     # Or the magic value "unspecified" if there is no default.
@@ -2577,15 +2617,15 @@ class CConverter(metaclass=CConverterAutoRegister):
 
     # If not None, default must be isinstance() of this type.
     # (You can also specify a tuple of types.)
-    default_type = None
+    default_type: bltns.type[Any] | tuple[bltns.type[Any], ...] | None = None
 
     # "default" converted into a C value, as a string.
     # Or None if there is no default.
-    c_default = None
+    c_default: str | None = None
 
     # "default" converted into a Python value, as a string.
     # Or None if there is no default.
-    py_default = None
+    py_default: str | None = None
 
     # The default value used to initialize the C variable when
     # there is no default, but not specifying a default may
@@ -2597,11 +2637,14 @@ class CConverter(metaclass=CConverterAutoRegister):
     #
     # This value is specified as a string.
     # Every non-abstract subclass should supply a valid value.
-    c_ignored_default = 'NULL'
+    c_ignored_default: str = 'NULL'
+
+    # If true, wrap with Py_UNUSED.
+    unused = False
 
     # The C converter *function* to be used, if any.
     # (If this is not None, format_unit must be 'O&'.)
-    converter = None
+    converter: str | None = None
 
     # Should Argument Clinic add a '&' before the name of
     # the variable when passing it into the _impl function?
@@ -2651,9 +2694,22 @@ class CConverter(metaclass=CConverterAutoRegister):
     signature_name = None
 
     # keep in sync with self_converter.__init__!
-    def __init__(self, name, py_name, function, default=unspecified, *, c_default=None, py_default=None, annotation=unspecified, **kwargs):
+    def __init__(self,
+             # Positional args:
+             name: str,
+             py_name: str,
+             function,
+             default=unspecified,
+             *,  # Keyword only args:
+             c_default: str | None = None,
+             py_default: str | None = None,
+             annotation: str | Unspecified = unspecified,
+             unused: bool = False,
+             **kwargs
+    ):
         self.name = ensure_legal_c_identifier(name)
         self.py_name = py_name
+        self.unused = unused
 
         if default is not unspecified:
             if self.default_type and not isinstance(default, (self.default_type, Unknown)):
@@ -2684,10 +2740,10 @@ class CConverter(metaclass=CConverterAutoRegister):
     def converter_init(self):
         pass
 
-    def is_optional(self):
+    def is_optional(self) -> bool:
         return (self.default is not unspecified)
 
-    def _render_self(self, parameter, data):
+    def _render_self(self, parameter: str, data: CRenderData) -> None:
         self.parameter = parameter
         name = self.parser_name
 
@@ -2747,7 +2803,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         if cleanup:
             data.cleanup.append('/* Cleanup for ' + name + ' */\n' + cleanup.rstrip() + "\n")
 
-    def render(self, parameter, data):
+    def render(self, parameter: str, data: CRenderData) -> None:
         """
         parameter is a clinic.Parameter instance.
         data is a CRenderData instance.
@@ -2800,6 +2856,8 @@ class CConverter(metaclass=CConverterAutoRegister):
             name = self.parser_name
         else:
             name = self.name
+            if self.unused:
+                name = f"Py_UNUSED({name})"
         prototype.append(name)
         return "".join(prototype)
 
@@ -2821,7 +2879,7 @@ class CConverter(metaclass=CConverterAutoRegister):
             declaration.append(';')
         return "".join(declaration)
 
-    def initialize(self):
+    def initialize(self) -> str:
         """
         The C statements required to set up this variable before parsing.
         Returns a string containing this code indented at column 0.
@@ -2829,7 +2887,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         """
         return ""
 
-    def modify(self):
+    def modify(self) -> str:
         """
         The C statements required to modify this variable after parsing.
         Returns a string containing this code indented at column 0.
@@ -2837,7 +2895,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         """
         return ""
 
-    def post_parsing(self):
+    def post_parsing(self) -> str:
         """
         The C statements required to do some operations after the end of parsing but before cleaning up.
         Return a string containing this code indented at column 0.
@@ -2845,7 +2903,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         """
         return ""
 
-    def cleanup(self):
+    def cleanup(self) -> str:
         """
         The C statements required to clean up after this variable.
         Returns a string containing this code indented at column 0.
@@ -2898,7 +2956,7 @@ class CConverter(metaclass=CConverterAutoRegister):
                 """.format(argname=argname, paramname=self.parser_name, cast=cast)
         return None
 
-    def set_template_dict(self, template_dict):
+    def set_template_dict(self, template_dict: dict[str, str]):
         pass
 
     @property
@@ -3414,7 +3472,7 @@ class robuffer: pass
 def str_converter_key(types, encoding, zeroes):
     return (frozenset(types), bool(encoding), bool(zeroes))
 
-str_converter_argument_map = {}
+str_converter_argument_map: dict[str, str] = {}
 
 class str_converter(CConverter):
     type = 'const char *'
@@ -3894,15 +3952,15 @@ class CReturnConverter(metaclass=CReturnConverterAutoRegister):
     def return_converter_init(self):
         pass
 
-    def declare(self, data, name="_return_value"):
+    def declare(self, data):
         line = []
         add = line.append
         add(self.type)
         if not self.type.endswith('*'):
             add(' ')
-        add(name + ';')
+        add(data.converter_retval + ';')
         data.declarations.append(''.join(line))
-        data.return_value = name
+        data.return_value = data.converter_retval
 
     def err_occurred_if(self, expr, data):
         data.return_conversion.append('if (({}) && PyErr_Occurred()) {{\n    goto exit;\n}}\n'.format(expr))
@@ -3924,8 +3982,10 @@ class bool_return_converter(CReturnConverter):
 
     def render(self, function, data):
         self.declare(data)
-        self.err_occurred_if("_return_value == -1", data)
-        data.return_conversion.append('return_value = PyBool_FromLong((long)_return_value);\n')
+        self.err_occurred_if(f"{data.converter_retval} == -1", data)
+        data.return_conversion.append(
+            f'return_value = PyBool_FromLong((long){data.converter_retval});\n'
+        )
 
 class long_return_converter(CReturnConverter):
     type = 'long'
@@ -3935,9 +3995,10 @@ class long_return_converter(CReturnConverter):
 
     def render(self, function, data):
         self.declare(data)
-        self.err_occurred_if("_return_value == {}-1".format(self.unsigned_cast), data)
+        self.err_occurred_if(f"{data.converter_retval} == {self.unsigned_cast}-1", data)
         data.return_conversion.append(
-            ''.join(('return_value = ', self.conversion_fn, '(', self.cast, '_return_value);\n')))
+            f'return_value = {self.conversion_fn}({self.cast}{data.converter_retval});\n'
+        )
 
 class int_return_converter(long_return_converter):
     type = 'int'
@@ -3979,9 +4040,10 @@ class double_return_converter(CReturnConverter):
 
     def render(self, function, data):
         self.declare(data)
-        self.err_occurred_if("_return_value == -1.0", data)
+        self.err_occurred_if(f"{data.converter_retval} == -1.0", data)
         data.return_conversion.append(
-            'return_value = PyFloat_FromDouble(' + self.cast + '_return_value);\n')
+            f'return_value = PyFloat_FromDouble({self.cast}{data.converter_retval});\n'
+        )
 
 class float_return_converter(double_return_converter):
     type = 'float'
@@ -4002,7 +4064,7 @@ def eval_ast_expr(node, globals, *, filename='-'):
 
     node = ast.Expression(node)
     co = compile(node, filename, 'eval')
-    fn = types.FunctionType(co, globals)
+    fn = FunctionType(co, globals)
     return fn()
 
 
@@ -4697,10 +4759,8 @@ class DSLParser:
                     c_default = "NULL"
                 elif (isinstance(expr, ast.BinOp) or
                     (isinstance(expr, ast.UnaryOp) and
-                     not (isinstance(expr.operand, ast.Num) or
-                          (hasattr(ast, 'Constant') and
-                           isinstance(expr.operand, ast.Constant) and
-                           type(expr.operand.value) in (int, float, complex)))
+                     not (isinstance(expr.operand, ast.Constant) and
+                          type(expr.operand.value) in {int, float, complex})
                     )):
                     c_default = kwargs.get("c_default")
                     if not (isinstance(c_default, str) and c_default):
@@ -4802,13 +4862,9 @@ class DSLParser:
         self.function.parameters[key] = p
 
     def parse_converter(self, annotation):
-        if (hasattr(ast, 'Constant') and
-            isinstance(annotation, ast.Constant) and
+        if (isinstance(annotation, ast.Constant) and
             type(annotation.value) is str):
             return annotation.value, True, {}
-
-        if isinstance(annotation, ast.Str):
-            return annotation.s, True, {}
 
         if isinstance(annotation, ast.Name):
             return annotation.id, False, {}

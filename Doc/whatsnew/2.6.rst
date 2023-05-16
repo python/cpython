@@ -1433,7 +1433,7 @@ one, :func:`math.trunc`, that's been backported to Python 2.6.
 
    `Scheme's numerical tower <https://www.gnu.org/software/guile/manual/html_node/Numerical-Tower.html#Numerical-Tower>`__, from the Guile manual.
 
-   `Scheme's number datatypes <https://schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_sec_6.2>`__ from the R5RS Scheme specification.
+   `Scheme's number datatypes <https://conservatory.scheme.org/schemers/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_sec_6.2>`__ from the R5RS Scheme specification.
 
 
 The :mod:`fractions` Module
@@ -2363,7 +2363,7 @@ changes, or look through the Subversion logs for all the details.
   negotiation itself.  (Patch contributed by Bill Fenner;
   :issue:`829951`.)
 
-* The :mod:`socket` module now supports TIPC (http://tipc.sourceforge.net/),
+* The :mod:`socket` module now supports TIPC (https://tipc.sourceforge.net/),
   a high-performance non-IP-based protocol designed for use in clustered
   environments.  TIPC addresses are 4- or 5-tuples.
   (Contributed by Alberto Bertogli; :issue:`1646`.)

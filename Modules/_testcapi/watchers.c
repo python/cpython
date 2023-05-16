@@ -1,8 +1,15 @@
 #include "parts.h"
 
+#include "clinic/watchers.c.h"
+
 #define Py_BUILD_CORE
 #include "pycore_function.h"  // FUNC_MAX_WATCHERS
 #include "pycore_code.h"  // CODE_MAX_WATCHERS
+
+/*[clinic input]
+module _testcapi
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6361033e795369fc]*/
 
 // Test dict watching
 static PyObject *g_dict_watch_events;
@@ -119,28 +126,31 @@ clear_dict_watcher(PyObject *self, PyObject *watcher_id)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_testcapi.watch_dict
+    watcher_id: int
+    dict: object
+    /
+[clinic start generated code]*/
+
 static PyObject *
-watch_dict(PyObject *self, PyObject *args)
+_testcapi_watch_dict_impl(PyObject *module, int watcher_id, PyObject *dict)
+/*[clinic end generated code: output=1426e0273cebe2d8 input=269b006d60c358bd]*/
 {
-    PyObject *dict;
-    int watcher_id;
-    if (!PyArg_ParseTuple(args, "iO", &watcher_id, &dict)) {
-        return NULL;
-    }
     if (PyDict_Watch(watcher_id, dict)) {
         return NULL;
     }
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_testcapi.unwatch_dict = _testcapi.watch_dict
+[clinic start generated code]*/
+
 static PyObject *
-unwatch_dict(PyObject *self, PyObject *args)
+_testcapi_unwatch_dict_impl(PyObject *module, int watcher_id, PyObject *dict)
+/*[clinic end generated code: output=512b1a71ae33c351 input=cae7dc1b6f7713b8]*/
 {
-    PyObject *dict;
-    int watcher_id;
-    if (!PyArg_ParseTuple(args, "iO", &watcher_id, &dict)) {
-        return NULL;
-    }
     if (PyDict_Unwatch(watcher_id, dict)) {
         return NULL;
     }
@@ -250,28 +260,31 @@ get_type_modified_events(PyObject *self, PyObject *Py_UNUSED(args))
     return Py_NewRef(g_type_modified_events);
 }
 
+/*[clinic input]
+_testcapi.watch_type
+    watcher_id: int
+    type: object
+    /
+[clinic start generated code]*/
+
 static PyObject *
-watch_type(PyObject *self, PyObject *args)
+_testcapi_watch_type_impl(PyObject *module, int watcher_id, PyObject *type)
+/*[clinic end generated code: output=fdf4777126724fc4 input=5a808bf12be7e3ed]*/
 {
-    PyObject *type;
-    int watcher_id;
-    if (!PyArg_ParseTuple(args, "iO", &watcher_id, &type)) {
-        return NULL;
-    }
     if (PyType_Watch(watcher_id, type)) {
         return NULL;
     }
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_testcapi.unwatch_type = _testcapi.watch_type
+[clinic start generated code]*/
+
 static PyObject *
-unwatch_type(PyObject *self, PyObject *args)
+_testcapi_unwatch_type_impl(PyObject *module, int watcher_id, PyObject *type)
+/*[clinic end generated code: output=0389672d4ad5f68b input=6701911fb45edc9e]*/
 {
-    PyObject *type;
-    int watcher_id;
-    if (!PyArg_ParseTuple(args, "iO", &watcher_id, &type)) {
-        return NULL;
-    }
     if (PyType_Unwatch(watcher_id, type)) {
         return NULL;
     }
@@ -605,29 +618,34 @@ allocate_too_many_func_watchers(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_testcapi.set_func_defaults_via_capi
+    func: object
+    defaults: object
+    /
+[clinic start generated code]*/
+
 static PyObject *
-set_func_defaults(PyObject *self, PyObject *args)
+_testcapi_set_func_defaults_via_capi_impl(PyObject *module, PyObject *func,
+                                          PyObject *defaults)
+/*[clinic end generated code: output=caf0cb39db31ac24 input=e04a8508ca9d42fc]*/
 {
-    PyObject *func = NULL;
-    PyObject *defaults = NULL;
-    if (!PyArg_ParseTuple(args, "OO", &func, &defaults)) {
-        return NULL;
-    }
     if (PyFunction_SetDefaults(func, defaults) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_testcapi.set_func_kwdefaults_via_capi = _testcapi.set_func_defaults_via_capi
+[clinic start generated code]*/
+
 static PyObject *
-set_func_kwdefaults(PyObject *self, PyObject *args)
+_testcapi_set_func_kwdefaults_via_capi_impl(PyObject *module, PyObject *func,
+                                            PyObject *defaults)
+/*[clinic end generated code: output=9ed3b08177025070 input=f3cd1ca3c18de8ce]*/
 {
-    PyObject *func = NULL;
-    PyObject *kwdefaults = NULL;
-    if (!PyArg_ParseTuple(args, "OO", &func, &kwdefaults)) {
-        return NULL;
-    }
-    if (PyFunction_SetKwDefaults(func, kwdefaults) < 0) {
+    if (PyFunction_SetKwDefaults(func, defaults) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -637,16 +655,16 @@ static PyMethodDef test_methods[] = {
     // Dict watchers.
     {"add_dict_watcher",         add_dict_watcher,        METH_O,       NULL},
     {"clear_dict_watcher",       clear_dict_watcher,      METH_O,       NULL},
-    {"watch_dict",               watch_dict,              METH_VARARGS, NULL},
-    {"unwatch_dict",             unwatch_dict,            METH_VARARGS, NULL},
+    _TESTCAPI_WATCH_DICT_METHODDEF
+    _TESTCAPI_UNWATCH_DICT_METHODDEF
     {"get_dict_watcher_events",
      (PyCFunction) get_dict_watcher_events,               METH_NOARGS,  NULL},
 
     // Type watchers.
     {"add_type_watcher",         add_type_watcher,        METH_O,       NULL},
     {"clear_type_watcher",       clear_type_watcher,      METH_O,       NULL},
-    {"watch_type",               watch_type,              METH_VARARGS, NULL},
-    {"unwatch_type",             unwatch_type,            METH_VARARGS, NULL},
+    _TESTCAPI_WATCH_TYPE_METHODDEF
+    _TESTCAPI_UNWATCH_TYPE_METHODDEF
     {"get_type_modified_events",
      (PyCFunction) get_type_modified_events,              METH_NOARGS, NULL},
 
@@ -663,8 +681,8 @@ static PyMethodDef test_methods[] = {
     // Function watchers.
     {"add_func_watcher",         add_func_watcher,        METH_O,       NULL},
     {"clear_func_watcher",       clear_func_watcher,      METH_O,       NULL},
-    {"set_func_defaults_via_capi", set_func_defaults,     METH_VARARGS, NULL},
-    {"set_func_kwdefaults_via_capi", set_func_kwdefaults, METH_VARARGS, NULL},
+    _TESTCAPI_SET_FUNC_DEFAULTS_VIA_CAPI_METHODDEF
+    _TESTCAPI_SET_FUNC_KWDEFAULTS_VIA_CAPI_METHODDEF
     {"allocate_too_many_func_watchers", allocate_too_many_func_watchers,
      METH_NOARGS, NULL},
     {NULL},
