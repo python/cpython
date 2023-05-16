@@ -2630,22 +2630,22 @@ class SupportsIndex(Protocol):
 
 
 @runtime_checkable
-class SupportsAbs[T_co](Protocol):
+class SupportsAbs[T](Protocol):
     """An ABC with one abstract method __abs__ that is covariant in its return type."""
     __slots__ = ()
 
     @abstractmethod
-    def __abs__(self) -> T_co:
+    def __abs__(self) -> T:
         pass
 
 
 @runtime_checkable
-class SupportsRound[T_co](Protocol):
+class SupportsRound[T](Protocol):
     """An ABC with one abstract method __round__ that is covariant in its return type."""
     __slots__ = ()
 
     @abstractmethod
-    def __round__(self, ndigits: int = 0) -> T_co:
+    def __round__(self, ndigits: int = 0) -> T:
         pass
 
 
@@ -3287,7 +3287,10 @@ def dataclass_transform[T](
     return decorator
 
 
-def override[F: Callable[..., Any]](method: F, /) -> F:
+type _Func = Callable[..., Any]
+
+
+def override[F: _Func](method: F, /) -> F:
     """Indicate that a method is intended to override a method in a base class.
 
     Usage:
