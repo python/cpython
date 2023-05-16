@@ -1144,9 +1144,7 @@ class Thread:
             return
 
         try:
-            if lock.acquire(block, timeout):
-                lock.release()
-                self._stop()
+            locked = lock.acquire(block, timeout)
         except:
             if lock.locked():
                 # bpo-45274: lock.acquire() acquired the lock, but the function
@@ -1156,6 +1154,9 @@ class Thread:
                 lock.release()
                 self._stop()
             raise
+        if locked:
+            lock.release()
+            self._stop()
 
     @property
     def name(self):
