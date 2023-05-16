@@ -26,6 +26,7 @@
 #include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()
+#include "pycore_typevarobject.h" // _Py_clear_generic_types()
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
 #include "opcode.h"
 
@@ -1698,6 +1699,7 @@ finalize_interp_clear(PyThreadState *tstate)
     int is_main_interp = _Py_IsMainInterpreter(tstate->interp);
 
     _PyExc_ClearExceptionGroupType(tstate->interp);
+    _Py_clear_generic_types(tstate->interp);
 
     /* Clear interpreter state and all thread states */
     _PyInterpreterState_Clear(tstate);
@@ -1788,6 +1790,7 @@ Py_FinalizeEx(void)
 
     /* Remaining daemon threads will automatically exit
        when they attempt to take the GIL (ex: PyEval_RestoreThread()). */
+    _PyInterpreterState_SetFinalizing(tstate->interp, tstate);
     _PyRuntimeState_SetFinalizing(runtime, tstate);
     runtime->initialized = 0;
     runtime->core_initialized = 0;
@@ -2142,6 +2145,10 @@ Py_EndInterpreter(PyThreadState *tstate)
         Py_FatalError("not the last thread");
     }
 
+    /* Remaining daemon threads will automatically exit
+       when they attempt to take the GIL (ex: PyEval_RestoreThread()). */
+    _PyInterpreterState_SetFinalizing(interp, tstate);
+
     // XXX Call something like _PyImport_Disable() here?
 
     _PyImport_FiniExternal(tstate->interp);
@@ -2150,6 +2157,18 @@ Py_EndInterpreter(PyThreadState *tstate)
 
     finalize_interp_clear(tstate);
     finalize_interp_delete(tstate->interp);
+}
+
+int
+_Py_IsInterpreterFinalizing(PyInterpreterState *interp)
+{
+    /* We check the runtime first since, in a daemon thread,
+       interp might be dangling pointer. */
+    PyThreadState *finalizing = _PyRuntimeState_GetFinalizing(&_PyRuntime);
+    if (finalizing == NULL) {
+        finalizing = _PyInterpreterState_GetFinalizing(interp);
+    }
+    return finalizing != NULL;
 }
 
 /* Add the __main__ module */

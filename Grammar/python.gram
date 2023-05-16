@@ -112,6 +112,7 @@ simple_stmts[asdl_stmt_seq*]:
 # will throw a SyntaxError.
 simple_stmt[stmt_ty] (memo):
     | assignment
+    | &"type" type_alias
     | e=star_expressions { _PyAST_Expr(e, EXTRA) }
     | &'return' return_stmt
     | &('import' | 'from') import_stmt
@@ -252,8 +253,8 @@ class_def[stmt_ty]:
 
 class_def_raw[stmt_ty]:
     | invalid_class_def_raw
-    | 'class' a=NAME b=['(' z=[arguments] ')' { z }] ':' c=block {
-        _PyAST_ClassDef(a->v.Name.id,
+    | 'class' a=NAME t=[type_params] b=['(' z=[arguments] ')' { z }] ':' c=block {
+        _PyAST_ClassDef(a->v.Name.id, t,
                      (b) ? ((expr_ty) b)->v.Call.args : NULL,
                      (b) ? ((expr_ty) b)->v.Call.keywords : NULL,
                      c, NULL, EXTRA) }
@@ -267,16 +268,16 @@ function_def[stmt_ty]:
 
 function_def_raw[stmt_ty]:
     | invalid_def_raw
-    | 'def' n=NAME &&'(' params=[params] ')' a=['->' z=expression { z }] &&':' tc=[func_type_comment] b=block {
-        _PyAST_FunctionDef(n->v.Name.id,
+    | 'def' n=NAME t=[type_params] &&'(' params=[params] ')' a=['->' z=expression { z }] &&':' tc=[func_type_comment] b=block {
+        _PyAST_FunctionDef(n->v.Name.id, t,
                         (params) ? params : CHECK(arguments_ty, _PyPegen_empty_arguments(p)),
                         b, NULL, a, NEW_TYPE_COMMENT(p, tc), EXTRA) }
-    | ASYNC 'def' n=NAME &&'(' params=[params] ')' a=['->' z=expression { z }] &&':' tc=[func_type_comment] b=block {
+    | ASYNC 'def' n=NAME t=[type_params] &&'(' params=[params] ')' a=['->' z=expression { z }] &&':' tc=[func_type_comment] b=block {
         CHECK_VERSION(
             stmt_ty,
             5,
             "Async functions are",
-            _PyAST_AsyncFunctionDef(n->v.Name.id,
+            _PyAST_AsyncFunctionDef(n->v.Name.id, t,
                             (params) ? params : CHECK(arguments_ty, _PyPegen_empty_arguments(p)),
                             b, NULL, a, NEW_TYPE_COMMENT(p, tc), EXTRA)
         ) }
@@ -627,6 +628,39 @@ keyword_patterns[asdl_seq*]:
 
 keyword_pattern[KeyPatternPair*]:
     | arg=NAME '=' value=pattern { _PyPegen_key_pattern_pair(p, arg, value) }
+
+# Type statement
+# ---------------
+
+type_alias[stmt_ty]:
+    | "type" n=NAME t=[type_params] '=' b=expression {
+        CHECK_VERSION(stmt_ty, 12, "Type statement is",
+        _PyAST_TypeAlias(CHECK(expr_ty, _PyPegen_set_expr_context(p, n, Store)), t, b, EXTRA)) }
+
+# Type parameter declaration
+# --------------------------
+
+type_params[asdl_typeparam_seq*]: '[' t=type_param_seq  ']' {
+        CHECK_VERSION(asdl_typeparam_seq *, 12, "Type parameter lists are", t) }
+
+type_param_seq[asdl_typeparam_seq*]: a[asdl_typeparam_seq*]=','.type_param+ [','] { a }
+
+type_param[typeparam_ty] (memo):
+    | a=NAME b=[type_param_bound] { _PyAST_TypeVar(a->v.Name.id, b, EXTRA) }
+    | '*' a=NAME colon=":" e=expression {
+            RAISE_SYNTAX_ERROR_STARTING_FROM(colon, e->kind == Tuple_kind
+                ? "cannot use constraints with TypeVarTuple"
+                : "cannot use bound with TypeVarTuple")
+        }
+    | '*' a=NAME { _PyAST_TypeVarTuple(a->v.Name.id, EXTRA) }
+    | '**' a=NAME colon=":" e=expression {
+            RAISE_SYNTAX_ERROR_STARTING_FROM(colon, e->kind == Tuple_kind
+                ? "cannot use constraints with ParamSpec"
+                : "cannot use bound with ParamSpec")
+        }
+    | '**' a=NAME { _PyAST_ParamSpec(a->v.Name.id, EXTRA) }
+
+type_param_bound[expr_ty]: ":" e=expression { e }
 
 # EXPRESSIONS
 # -----------

@@ -131,6 +131,7 @@ def_op('RETURN_GENERATOR', 75)
 def_op('RETURN_VALUE', 83)
 
 def_op('SETUP_ANNOTATIONS', 85)
+def_op('LOAD_LOCALS', 87)
 
 def_op('POP_EXCEPT', 89)
 
@@ -206,7 +207,6 @@ EXTENDED_ARG = 144
 def_op('LIST_APPEND', 145)
 def_op('SET_ADD', 146)
 def_op('MAP_ADD', 147)
-def_op('LOAD_CLASSDEREF', 148)
 hasfree.append(148)
 def_op('COPY_FREE_VARS', 149)
 def_op('YIELD_VALUE', 150)
@@ -227,6 +227,10 @@ def_op('KW_NAMES', 172)
 hasconst.append(172)
 def_op('CALL_INTRINSIC_1', 173)
 def_op('CALL_INTRINSIC_2', 174)
+
+name_op('LOAD_FROM_DICT_OR_GLOBALS', 175)
+def_op('LOAD_FROM_DICT_OR_DEREF', 176)
+hasfree.append(176)
 
 # Instrumented instructions
 MIN_INSTRUMENTED_OPCODE = 238
@@ -318,12 +322,20 @@ _intrinsic_1_descs = [
     "INTRINSIC_ASYNC_GEN_WRAP",
     "INTRINSIC_UNARY_POSITIVE",
     "INTRINSIC_LIST_TO_TUPLE",
+    "INTRINSIC_TYPEVAR",
+    "INTRINSIC_PARAMSPEC",
+    "INTRINSIC_TYPEVARTUPLE",
+    "INTRINSIC_SUBSCRIPT_GENERIC",
+    "INTRINSIC_TYPEALIAS",
 ]
 
 _intrinsic_2_descs = [
-    'INTRINSIC_2_INVALID',
-    'INTRINSIC_PREP_RERAISE_STAR',
-    ]
+    "INTRINSIC_2_INVALID",
+    "INTRINSIC_PREP_RERAISE_STAR",
+    "INTRINSIC_TYPEVAR_WITH_BOUND",
+    "INTRINSIC_TYPEVAR_WITH_CONSTRAINTS",
+    "INTRINSIC_SET_FUNCTION_TYPE_PARAMS",
+]
 
 _specializations = {
     "BINARY_OP": [
