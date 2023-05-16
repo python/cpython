@@ -446,7 +446,10 @@ getpath_realpath(PyObject *Py_UNUSED(self) , PyObject *args)
             if (s) {
                 *s = L'\0';
             }
-            path2 = _Py_normpath(_Py_join_relfile(path, resolved), -1);
+            path2 = _Py_join_relfile(path, resolved);
+            if (path2) {
+                path2 = _Py_normpath(path2, -1);
+            }
             PyMem_RawFree((void *)path);
             path = path2;
         }

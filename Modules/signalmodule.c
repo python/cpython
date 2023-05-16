@@ -13,7 +13,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_signal.h"
+#include "pycore_signal.h"        // Py_NSIG
 
 #ifndef MS_WINDOWS
 #  include "posixmodule.h"
@@ -27,8 +27,6 @@
 #    include <process.h>
 #  endif
 #endif
-
-#include "pycore_signal.h"        // Py_NSIG
 
 #ifdef HAVE_SIGNAL_H
 #  include <signal.h>
@@ -1697,6 +1695,7 @@ _signal_module_free(void *module)
 
 static PyModuleDef_Slot signal_slots[] = {
     {Py_mod_exec, signal_module_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 
