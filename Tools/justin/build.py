@@ -40,12 +40,12 @@ class SectionData(typing.TypedDict):
     Offset: int
     Bytes: list[int]
 
-if sys.platform == "win32":
+class _Name(typing.TypedDict):
+    Value: str
+    Offset: int
+    Bytes: list[int]
 
-    class Name(typing.TypedDict):
-        Value: str
-        Offset: int
-        Bytes: list[int]
+if sys.platform == "win32":
 
     class Relocation(typing.TypedDict):
         Offset: int
@@ -73,7 +73,7 @@ if sys.platform == "win32":
 
     class Section(typing.TypedDict):
         Number: int
-        Name: Name
+        Name: _Name
         VirtualSize: int
         VirtualAddress: int
         RawDataSize: int
@@ -88,7 +88,42 @@ if sys.platform == "win32":
         SectionData: SectionData  # XXX
 
 elif sys.platform == "darwin":
-    ...
+    
+    class Relocation(typing.TypedDict):
+        Offset: int
+        PCRel: int
+        Length: int
+        Type: _Value
+        Symbol: _Value  # XXX
+        Section: _Value  # XXX
+
+    class Symbol(typing.TypedDict):
+        Name: _Value
+        Type: _Value
+        Section: _Value
+        RefType: _Value
+        Flags: Flags
+        Value: int
+
+    class Section(typing.TypedDict):
+        Index: int
+        Name: _Name
+        Segment: _Name
+        Address: int
+        Size: int
+        Offset: int
+        Alignment: int
+        RelocationOffset: int
+        RelocationCount: int
+        Type: _Value
+        Attributes: Flags
+        Reserved1: int
+        Reserved2: int
+        Reserved3: int
+        Relocations: list[dict[typing.Literal["Relocation"], Relocation]]  # XXX
+        Symbols: list[dict[typing.Literal["Symbol"], Symbol]]  # XXX
+        SectionData: SectionData  # XXX
+
 elif sys.platform == "linux":
 
     class Relocation(typing.TypedDict):
@@ -152,11 +187,13 @@ class NewObjectParser:
         args = ["llvm-readobj", *self._ARGS, path]
         process = subprocess.run(args, check=True, capture_output=True)
         output = process.stdout
+        output = output.replace(b"}Extern\n", b"}\n")  # XXX: macOS
         start = output.index(b"[", 1)  # XXX
         end = output.rindex(b"]", 0, -1) + 1  # XXX
         self._data: Sections = json.loads(output[start:end])
 
     if sys.platform == "win32":
+
         def parse(self):
             body = bytearray()
             body_symbols = {}
@@ -203,9 +240,62 @@ class NewObjectParser:
                 holes.append(Hole(symbol, offset, addend))
             holes.sort(key=lambda hole: hole.offset)
             return Stencil(bytes(body)[entry:], tuple(holes))  # XXX
+
     elif sys.platform == "darwin":
-        ...
+
+        def parse(self):
+            body = bytearray()
+            body_symbols = {}
+            body_offsets = {}
+            relocations = {}
+            dupes = set()
+            for section in unwrap(self._data, "Section"):
+                assert section["Address"] >= len(body)
+                body.extend([0] * (section["Address"] - len(body)))
+                before = body_offsets[section["Index"]] = section["Address"]
+                section_data = section["SectionData"]
+                body.extend(section_data["Bytes"])
+                name = section["Name"]["Value"]
+                assert name.startswith("_")
+                name = name.removeprefix("_")
+                if name in body_symbols:
+                    dupes.add(name)
+                body_symbols[name] = 0  # before
+                for symbol in unwrap(section["Symbols"], "Symbol"):
+                    offset = symbol["Value"]
+                    name = symbol["Name"]["Value"]
+                    assert name.startswith("_")
+                    name = name.removeprefix("_")
+                    if name in body_symbols:
+                        dupes.add(name)
+                    body_symbols[name] = offset
+                for relocation in unwrap(section["Relocations"], "Relocation"):
+                    offset = before + relocation["Offset"]
+                    assert offset not in relocations
+                    # XXX: Addend
+                    name = relocation["Symbol"]["Value"] if "Symbol" in relocation else relocation["Section"]["Value"]
+                    assert name.startswith("_")
+                    name = name.removeprefix("_")
+                    if name == "__bzero":  # XXX
+                        name = "bzero"  # XXX
+                    relocations[offset] = (name, relocation["Type"]["Value"], 0)
+            if "_justin_entry" in body_symbols:
+                entry = body_symbols["_justin_entry"]
+            else:
+                entry = body_symbols["_justin_trampoline"]
+            holes = []
+            for offset, (symbol, type, addend) in relocations.items():
+                assert type == "X86_64_RELOC_UNSIGNED", type
+                assert symbol not in dupes
+                if symbol in body_symbols:
+                    addend += body_symbols[symbol] - entry
+                    symbol = "_justin_base"
+                holes.append(Hole(symbol, offset, addend))
+            holes.sort(key=lambda hole: hole.offset)
+            return Stencil(bytes(body)[entry:], tuple(holes))  # XXX 
+
     elif sys.platform == "linux":
+
         def parse(self):
             body = bytearray()
             body_symbols = {}
