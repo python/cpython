@@ -27,6 +27,7 @@ static struct PyModuleDef thread_module;
 struct module_thread {
     PyThreadState *tstate;
     int daemonic;
+    int running;
     PyThread_type_lock lifetime_mutex;
     int lifetime_mutex_held;
     struct module_thread *prev;
@@ -83,13 +84,24 @@ static void
 module_threads_fini(struct module_threads *threads)
 {
     // Wait for all the threads to finalize.
-    PyThread_acquire_lock(threads->mutex, WAIT_LOCK);
-    while (threads->head != NULL) {
-        PyThread_release_lock(threads->mutex);
-        // XXX Sleep?
+    int done = 0;
+    while (!done) {
+        done = 1;
         PyThread_acquire_lock(threads->mutex, WAIT_LOCK);
+        struct module_thread *mt = threads->head;
+        while (mt != NULL) {
+            if (mt->running) {
+                assert(mt->daemonic);
+                // It was killed with PyThread_exit_thread().
+            }
+            else {
+                done = 0;
+                break;
+            }
+            mt = mt->next;
+        }
+        PyThread_release_lock(threads->mutex);
     }
-    PyThread_release_lock(threads->mutex);
 
     PyThread_free_lock(threads->mutex);
 }
@@ -147,6 +159,7 @@ add_module_thread(struct module_threads *threads,
     }
     mt->tstate = tstate;
     mt->daemonic = daemonic;
+    mt->running = 0;
     mt->prev = NULL;
     mt->next = NULL;
 
@@ -192,12 +205,16 @@ module_thread_starting(struct module_thread *mt)
     // when add_module_thread() was called.
     PyThread_acquire_lock(mt->lifetime_mutex, WAIT_LOCK);
     mt->lifetime_mutex_held = 1;
+
+    mt->running = 1;
 }
 
 static void
 module_thread_finished(struct module_thread *mt)
 {
     mt->tstate->interp->threads.count--;
+
+    mt->running = 0;
 
     // Notify other threads that this one is done.
     // XXX Do it explicitly here rather than via tstate.on_delete().
