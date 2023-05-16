@@ -211,6 +211,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case MAP_ADD:
             return 2;
+        case INSTRUMENTED_LOAD_SUPER_ATTR:
+            return 3;
         case LOAD_SUPER_ATTR:
             return 3;
         case LOAD_SUPER_ATTR_ATTR:
@@ -605,6 +607,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case MAP_ADD:
             return 0;
+        case INSTRUMENTED_LOAD_SUPER_ATTR:
+            return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_SUPER_ATTR:
             return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_SUPER_ATTR_ATTR:
@@ -902,6 +906,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [DICT_UPDATE] = { true, INSTR_FMT_IB },
     [DICT_MERGE] = { true, INSTR_FMT_IB },
     [MAP_ADD] = { true, INSTR_FMT_IB },
+    [INSTRUMENTED_LOAD_SUPER_ATTR] = { true, INSTR_FMT_IBC00000000 },
     [LOAD_SUPER_ATTR] = { true, INSTR_FMT_IBC },
     [LOAD_SUPER_ATTR_ATTR] = { true, INSTR_FMT_IBC },
     [LOAD_SUPER_ATTR_METHOD] = { true, INSTR_FMT_IBC },
