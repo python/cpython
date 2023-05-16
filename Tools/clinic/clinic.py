@@ -2669,15 +2669,15 @@ class CConverter(metaclass=CConverterAutoRegister):
     # keep in sync with self_converter.__init__!
     def __init__(self,
              # Positional args:
-             name,
-             py_name,
+             name: str,
+             py_name: str,
              function,
              default=unspecified,
              *,  # Keyword only args:
-             c_default=None,
-             py_default=None,
-             annotation=unspecified,
-             unused=False,
+             c_default: str | None = None,
+             py_default: str | None = None,
+             annotation: str | Unspecified = unspecified,
+             unused: bool = False,
              **kwargs
     ):
         self.name = ensure_legal_c_identifier(name)
@@ -2713,10 +2713,10 @@ class CConverter(metaclass=CConverterAutoRegister):
     def converter_init(self):
         pass
 
-    def is_optional(self):
+    def is_optional(self) -> bool:
         return (self.default is not unspecified)
 
-    def _render_self(self, parameter, data):
+    def _render_self(self, parameter: str, data: CRenderData) -> None:
         self.parameter = parameter
         name = self.parser_name
 
@@ -2776,7 +2776,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         if cleanup:
             data.cleanup.append('/* Cleanup for ' + name + ' */\n' + cleanup.rstrip() + "\n")
 
-    def render(self, parameter, data):
+    def render(self, parameter: str, data: CRenderData):
         """
         parameter is a clinic.Parameter instance.
         data is a CRenderData instance.
@@ -2852,7 +2852,7 @@ class CConverter(metaclass=CConverterAutoRegister):
             declaration.append(';')
         return "".join(declaration)
 
-    def initialize(self):
+    def initialize(self) -> str:
         """
         The C statements required to set up this variable before parsing.
         Returns a string containing this code indented at column 0.
@@ -2860,7 +2860,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         """
         return ""
 
-    def modify(self):
+    def modify(self) -> str:
         """
         The C statements required to modify this variable after parsing.
         Returns a string containing this code indented at column 0.
@@ -2868,7 +2868,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         """
         return ""
 
-    def post_parsing(self):
+    def post_parsing(self) -> str:
         """
         The C statements required to do some operations after the end of parsing but before cleaning up.
         Return a string containing this code indented at column 0.
@@ -2876,7 +2876,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         """
         return ""
 
-    def cleanup(self):
+    def cleanup(self) -> str:
         """
         The C statements required to clean up after this variable.
         Returns a string containing this code indented at column 0.
@@ -2929,7 +2929,7 @@ class CConverter(metaclass=CConverterAutoRegister):
                 """.format(argname=argname, paramname=self.parser_name, cast=cast)
         return None
 
-    def set_template_dict(self, template_dict):
+    def set_template_dict(self, template_dict: dict[str, str]):
         pass
 
     @property
