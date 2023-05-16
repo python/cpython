@@ -87,7 +87,7 @@ in :mod:`logging` itself) and defining handlers which are declared either in
    provides a mechanism to present the choices and load the chosen
    configuration).
 
-   It will raise :exc:`FileNotFoundError` if file
+   It will raise :exc:`FileNotFoundError` if the file
    doesn't exist and :exc:`ValueError` if the file is invalid or
    empty.
 
