@@ -2943,7 +2943,7 @@ class CConverter(metaclass=CConverterAutoRegister):
                 """.format(argname=argname, paramname=self.parser_name, cast=cast)
         return None
 
-    def set_template_dict(self, template_dict: TemplateDict):
+    def set_template_dict(self, template_dict: TemplateDict) -> None:
         pass
 
     @property
@@ -3074,7 +3074,7 @@ class unsigned_char_converter(CConverter):
     format_unit = 'b'
     c_ignored_default = "'\0'"
 
-    def converter_init(self, *, bitwise=False) -> None:
+    def converter_init(self, *, bitwise: bool = False) -> None:
         if bitwise:
             self.format_unit = 'B'
 
