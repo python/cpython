@@ -2956,10 +2956,10 @@ legacy_converters: ConverterDict = {}
 
 
 class bool_converter(CConverter):
-    type: str = 'int'
-    default_type: bltns.type[bool] = bool
-    format_unit: str = 'p'
-    c_ignored_default: str = '0'
+    type = 'int'
+    default_type = bool
+    format_unit = 'p'
+    c_ignored_default = '0'
 
     def converter_init(self, *, accept={object}):
         if accept == {int}:
@@ -2992,9 +2992,9 @@ class defining_class_converter(CConverter):
     A special-case converter:
     this is the default converter used for the defining class.
     """
-    type: str = 'PyTypeObject *'
-    format_unit: str = ''
-    show_in_signature: bool = False
+    type = 'PyTypeObject *'
+    format_unit = ''
+    show_in_signature = False
 
     def converter_init(self, *, type=None) -> None:
         self.specified_type = type
@@ -3007,10 +3007,10 @@ class defining_class_converter(CConverter):
 
 
 class char_converter(CConverter):
-    type: str = 'char'
-    default_type: tuple[bltns.type[bytes], bltns.type[bytearray]] = (bytes, bytearray)
-    format_unit: str = 'c'
-    c_ignored_default: str = "'\0'"
+    type = 'char'
+    default_type = (bytes, bytearray)
+    format_unit = 'c'
+    c_ignored_default = "'\0'"
 
     def converter_init(self) -> None:
         if isinstance(self.default, self.default_type):
@@ -3041,10 +3041,10 @@ class char_converter(CConverter):
 
 @add_legacy_c_converter('B', bitwise=True)
 class unsigned_char_converter(CConverter):
-    type: str = 'unsigned char'
-    default_type: bltns.type[int] = int
-    format_unit: str = 'b'
-    c_ignored_default: str = "'\0'"
+    type = 'unsigned char'
+    default_type = int
+    format_unit = 'b'
+    c_ignored_default = "'\0'"
 
     def converter_init(self, *, bitwise=False) -> None:
         if bitwise:
@@ -3090,10 +3090,10 @@ class unsigned_char_converter(CConverter):
 class byte_converter(unsigned_char_converter): pass
 
 class short_converter(CConverter):
-    type: str = 'short'
-    default_type: bltns.type[int] = int
-    format_unit: str = 'h'
-    c_ignored_default: str = "0"
+    type = 'short'
+    default_type = int
+    format_unit = 'h'
+    c_ignored_default = "0"
 
     def parse_arg(self, argname: str, displayname: str) -> str:
         if self.format_unit == 'h':
@@ -3121,9 +3121,9 @@ class short_converter(CConverter):
         return super().parse_arg(argname, displayname)
 
 class unsigned_short_converter(CConverter):
-    type: str = 'unsigned short'
-    default_type: bltns.type[int] = int
-    c_ignored_default: str = "0"
+    type = 'unsigned short'
+    default_type = int
+    c_ignored_default = "0"
 
     def converter_init(self, *, bitwise: bool = False) -> None:
         if bitwise:
@@ -3143,10 +3143,10 @@ class unsigned_short_converter(CConverter):
 
 @add_legacy_c_converter('C', accept={str})
 class int_converter(CConverter):
-    type: str = 'int'
-    default_type: bltns.type[int] = int
-    format_unit: str = 'i'
-    c_ignored_default: str = "0"
+    type = 'int'
+    default_type = int
+    format_unit = 'i'
+    c_ignored_default = "0"
 
     def converter_init(self, *, accept={int}, type=None) -> None:
         if accept == {str}:
@@ -3183,9 +3183,9 @@ class int_converter(CConverter):
         return super().parse_arg(argname, displayname)
 
 class unsigned_int_converter(CConverter):
-    type: str = 'unsigned int'
-    default_type: bltns.type[int] = int
-    c_ignored_default: str = "0"
+    type = 'unsigned int'
+    default_type = int
+    c_ignored_default = "0"
 
     def converter_init(self, *, bitwise: bool = False) -> None:
         if bitwise:
@@ -3204,10 +3204,10 @@ class unsigned_int_converter(CConverter):
         return super().parse_arg(argname, displayname)
 
 class long_converter(CConverter):
-    type: str = 'long'
-    default_type: bltns.type[int] = int
-    format_unit: str = 'l'
-    c_ignored_default: str = "0"
+    type = 'long'
+    default_type = int
+    format_unit = 'l'
+    c_ignored_default = "0"
 
     def parse_arg(self, argname: str, displayname: str) -> str:
         if self.format_unit == 'l':
@@ -3220,9 +3220,9 @@ class long_converter(CConverter):
         return super().parse_arg(argname, displayname)
 
 class unsigned_long_converter(CConverter):
-    type: str = 'unsigned long'
-    default_type: bltns.type[int] = int
-    c_ignored_default: str = "0"
+    type = 'unsigned long'
+    default_type = int
+    c_ignored_default = "0"
 
     def converter_init(self, *, bitwise: bool = False) -> None:
         if bitwise:
@@ -3243,10 +3243,10 @@ class unsigned_long_converter(CConverter):
         return super().parse_arg(argname, displayname)
 
 class long_long_converter(CConverter):
-    type: str = 'long long'
-    default_type: bltns.type[int] = int
-    format_unit: str = 'L'
-    c_ignored_default: str = "0"
+    type = 'long long'
+    default_type = int
+    format_unit = 'L'
+    c_ignored_default = "0"
 
     def parse_arg(self, argname: str, displayname: str) -> str:
         if self.format_unit == 'L':
@@ -3259,9 +3259,9 @@ class long_long_converter(CConverter):
         return super().parse_arg(argname, displayname)
 
 class unsigned_long_long_converter(CConverter):
-    type: str = 'unsigned long long'
-    default_type: bltns.type[int] = int
-    c_ignored_default: str = "0"
+    type = 'unsigned long long'
+    default_type = int
+    c_ignored_default = "0"
 
     def converter_init(self, *, bitwise: bool = False) -> None:
         if bitwise:
@@ -3282,8 +3282,8 @@ class unsigned_long_long_converter(CConverter):
         return super().parse_arg(argname, displayname)
 
 class Py_ssize_t_converter(CConverter):
-    type: str = 'Py_ssize_t'
-    c_ignored_default: str = "0"
+    type = 'Py_ssize_t'
+    c_ignored_default = "0"
 
     def converter_init(self, *, accept={int}) -> None:
         if accept == {int}:
@@ -3314,7 +3314,7 @@ class Py_ssize_t_converter(CConverter):
 
 
 class slice_index_converter(CConverter):
-    type: str = 'Py_ssize_t'
+    type = 'Py_ssize_t'
 
     def converter_init(self, *, accept={int, NoneType}) -> None:
         if accept == {int}:
@@ -3325,9 +3325,9 @@ class slice_index_converter(CConverter):
             fail("slice_index_converter: illegal 'accept' argument " + repr(accept))
 
 class size_t_converter(CConverter):
-    type: str = 'size_t'
-    converter: str = '_PyLong_Size_t_Converter'
-    c_ignored_default: str = "0"
+    type = 'size_t'
+    converter = '_PyLong_Size_t_Converter'
+    c_ignored_default = "0"
 
     def parse_arg(self, argname: str, displayname: str) -> str:
         if self.format_unit == 'n':
@@ -3341,8 +3341,8 @@ class size_t_converter(CConverter):
 
 
 class fildes_converter(CConverter):
-    type: str = 'int'
-    converter: str = '_PyLong_FileDescriptor_Converter'
+    type = 'int'
+    converter = '_PyLong_FileDescriptor_Converter'
 
     def _parse_arg(self, argname: str, displayname: str) -> str:
         return """
@@ -3354,10 +3354,10 @@ class fildes_converter(CConverter):
 
 
 class float_converter(CConverter):
-    type: str = 'float'
-    default_type: bltns.type[float] = float
-    format_unit: str = 'f'
-    c_ignored_default: str = "0.0"
+    type = 'float'
+    default_type = float
+    format_unit = 'f'
+    c_ignored_default = "0.0"
 
     def parse_arg(self, argname: str, displayname: str) -> str:
         if self.format_unit == 'f':
@@ -3376,10 +3376,10 @@ class float_converter(CConverter):
         return super().parse_arg(argname, displayname)
 
 class double_converter(CConverter):
-    type: str = 'double'
-    default_type: bltns.type[float] = float
-    format_unit: str = 'd'
-    c_ignored_default: str = "0.0"
+    type = 'double'
+    default_type = float
+    format_unit = 'd'
+    c_ignored_default = "0.0"
 
     def parse_arg(self, argname: str, displayname: str) -> str:
         if self.format_unit == 'd':
@@ -3399,10 +3399,10 @@ class double_converter(CConverter):
 
 
 class Py_complex_converter(CConverter):
-    type: str = 'Py_complex'
-    default_type: bltns.type[complex] = complex
-    format_unit: str = 'D'
-    c_ignored_default: str = "{0.0, 0.0}"
+    type = 'Py_complex'
+    default_type = complex
+    format_unit = 'D'
+    c_ignored_default = "{0.0, 0.0}"
 
     def parse_arg(self, argname: str, displayname: str) -> str:
         if self.format_unit == 'D':
@@ -3416,8 +3416,8 @@ class Py_complex_converter(CConverter):
 
 
 class object_converter(CConverter):
-    type: str = 'PyObject *'
-    format_unit: str = 'O'
+    type = 'PyObject *'
+    format_unit = 'O'
 
     def converter_init(self, *, converter=None, type=None, subclass_of=None):
         if converter:
@@ -3451,9 +3451,9 @@ def str_converter_key(types, encoding, zeroes):
 str_converter_argument_map: dict[str, str] = {}
 
 class str_converter(CConverter):
-    type: str = 'const char *'
+    type = 'const char *'
     default_type = (str, Null, NoneType)
-    format_unit: str = 's'
+    format_unit = 's'
 
     def converter_init(self, *, accept={str}, encoding=None, zeroes=False):
 
@@ -3571,8 +3571,8 @@ del r
 
 
 class PyBytesObject_converter(CConverter):
-    type: str = 'PyBytesObject *'
-    format_unit: str = 'S'
+    type = 'PyBytesObject *'
+    format_unit = 'S'
     # accept = {bytes}
 
     def parse_arg(self, argname: str, displayname: str) -> str:
@@ -3588,8 +3588,8 @@ class PyBytesObject_converter(CConverter):
         return super().parse_arg(argname, displayname)
 
 class PyByteArrayObject_converter(CConverter):
-    type: str = 'PyByteArrayObject *'
-    format_unit: str = 'Y'
+    type = 'PyByteArrayObject *'
+    format_unit = 'Y'
     # accept = {bytearray}
 
     def parse_arg(self, argname: str, displayname: str) -> str:
@@ -3605,9 +3605,9 @@ class PyByteArrayObject_converter(CConverter):
         return super().parse_arg(argname, displayname)
 
 class unicode_converter(CConverter):
-    type: str = 'PyObject *'
+    type = 'PyObject *'
     default_type = (str, Null, NoneType)
-    format_unit: str = 'U'
+    format_unit = 'U'
 
     def parse_arg(self, argname: str, displayname: str) -> str:
         if self.format_unit == 'U':
@@ -3629,7 +3629,7 @@ class unicode_converter(CConverter):
 @add_legacy_c_converter('Z', accept={str, NoneType})
 @add_legacy_c_converter('Z#', accept={str, NoneType}, zeroes=True)
 class Py_UNICODE_converter(CConverter):
-    type: str = 'const Py_UNICODE *'
+    type = 'const Py_UNICODE *'
     default_type = (str, Null, NoneType)
 
     def converter_init(self, *, accept={str}, zeroes: bool = False) -> None:
@@ -3689,10 +3689,10 @@ PyMem_Free((void *){name});
 @add_legacy_c_converter('z*', accept={str, buffer, NoneType})
 @add_legacy_c_converter('w*', accept={rwbuffer})
 class Py_buffer_converter(CConverter):
-    type: str = 'Py_buffer'
-    format_unit: str = 'y*'
-    impl_by_reference: bool = True
-    c_ignored_default: str = "{NULL, NULL}"
+    type = 'Py_buffer'
+    format_unit = 'y*'
+    impl_by_reference = True
+    c_ignored_default = "{NULL, NULL}"
 
     def converter_init(self, *, accept={buffer}) -> None:
         if self.default not in (unspecified, None):
@@ -3789,8 +3789,8 @@ class self_converter(CConverter):
     A special-case converter:
     this is the default converter used for "self".
     """
-    type: str | None = None
-    format_unit: str = ''
+    type = None
+    format_unit = ''
 
     def converter_init(self, *, type=None) -> None:
         self.specified_type = type
