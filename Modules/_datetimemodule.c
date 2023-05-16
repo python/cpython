@@ -5147,7 +5147,7 @@ datetime_utcnow(PyObject *cls, PyObject *dummy)
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
         "datetime.utcnow() is deprecated and scheduled for removal in a "
         "future version. Use timezone-aware objects to represent datetimes "
-        "in UTC: datetime.now(datetime.UTC).", 1))
+        "in UTC: datetime.now(timestamp, datetime.UTC).", 1))
     {
         return NULL;
     }
