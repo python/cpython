@@ -27,6 +27,15 @@ The debugger is extensible -- it is actually defined as the class :class:`Pdb`.
 This is currently undocumented but easily understood by reading the source.  The
 extension interface uses the modules :mod:`bdb` and :mod:`cmd`.
 
+.. seealso::
+
+   Module :mod:`faulthandler`
+      Used to dump Python tracebacks explicitly, on a fault, after a timeout,
+      or on a user signal.
+
+   Module :mod:`traceback`
+      Standard interface to extract, format and print stack traces of Python programs.
+
 The debugger's prompt is ``(Pdb)``. Typical usage to run a program under control
 of the debugger is::
 
@@ -49,7 +58,7 @@ of the debugger is::
 :file:`pdb.py` can also be invoked as a script to debug other scripts.  For
 example::
 
-   python3 -m pdb myscript.py
+   python -m pdb myscript.py
 
 When invoked as a script, pdb will automatically enter post-mortem debugging if
 the program being debugged exits abnormally.  After post-mortem debugging (or
@@ -63,18 +72,17 @@ useful than quitting the debugger upon program's exit.
 
 .. versionadded:: 3.7
    :file:`pdb.py` now accepts a ``-m`` option that execute modules similar to the way
-   ``python3 -m`` does. As with a script, the debugger will pause execution just
+   ``python -m`` does. As with a script, the debugger will pause execution just
    before the first line of the module.
 
 
-The typical usage to break into the debugger from a running program is to
-insert ::
+The typical usage to break into the debugger is to insert::
 
    import pdb; pdb.set_trace()
 
-at the location you want to break into the debugger.  You can then step through
-the code following this statement, and continue running without the debugger
-using the :pdbcmd:`continue` command.
+at the location you want to break into the debugger, and then run the program.
+You can then step through the code following this statement, and continue
+running without the debugger using the :pdbcmd:`continue` command.
 
 .. versionadded:: 3.7
    The built-in :func:`breakpoint()`, when called with defaults, can be used
@@ -234,17 +242,22 @@ Multiple commands may be entered on a single line, separated by ``;;``.  (A
 single ``;`` is not used as it is the separator for multiple commands in a line
 that is passed to the Python parser.)  No intelligence is applied to separating
 the commands; the input is split at the first ``;;`` pair, even if it is in the
-middle of a quoted string.
+middle of a quoted string. A workaround for strings with double semicolons
+is to use implicit string concatenation ``';'';'`` or ``";"";"``.
 
 .. index::
    pair: .pdbrc; file
    triple: debugger; configuration; file
 
 If a file :file:`.pdbrc` exists in the user's home directory or in the current
-directory, it is read in and executed as if it had been typed at the debugger
-prompt.  This is particularly useful for aliases.  If both files exist, the one
-in the home directory is read first and aliases defined there can be overridden
-by the local file.
+directory, it is read with ``'utf-8'`` encoding and executed as if it had been
+typed at the debugger prompt.  This is particularly useful for aliases.  If both
+files exist, the one in the home directory is read first and aliases defined there
+can be overridden by the local file.
+
+.. versionchanged:: 3.11
+   :file:`.pdbrc` is now read with ``'utf-8'`` encoding. Previously, it was read
+   with the system locale encoding.
 
 .. versionchanged:: 3.2
    :file:`.pdbrc` can now contain commands that continue debugging, such as
@@ -500,7 +513,7 @@ by the local file.
    :file:`.pdbrc` file)::
 
       # Print instance variables (usage "pi classInst")
-      alias pi for k in %1.__dict__.keys(): print("%1.",k,"=",%1.__dict__[k])
+      alias pi for k in %1.__dict__.keys(): print(f"%1.{k} = {%1.__dict__[k]}")
       # Print instance variables in self
       alias ps pi self
 

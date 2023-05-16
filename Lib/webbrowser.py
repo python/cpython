@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-"""Interfaces for launching and remotely controlling Web browsers."""
+"""Interfaces for launching and remotely controlling web browsers."""
 # Maintained by Georg Brandl.
 
 import os
@@ -8,6 +8,7 @@ import shutil
 import sys
 import subprocess
 import threading
+import warnings
 
 __all__ = ["Error", "open", "open_new", "open_new_tab", "get", "register"]
 
@@ -461,13 +462,14 @@ def register_X_browsers():
     if shutil.which("xdg-open"):
         register("xdg-open", None, BackgroundBrowser("xdg-open"))
 
-    # The default GNOME3 browser
+    # Opens an appropriate browser for the URL scheme according to
+    # freedesktop.org settings (GNOME, KDE, XFCE, etc.)
+    if shutil.which("gio"):
+        register("gio", None, BackgroundBrowser(["gio", "open", "--", "%s"]))
+
+    # Equivalent of gio open before 2015
     if "GNOME_DESKTOP_SESSION_ID" in os.environ and shutil.which("gvfs-open"):
         register("gvfs-open", None, BackgroundBrowser("gvfs-open"))
-
-    # The default GNOME browser
-    if "GNOME_DESKTOP_SESSION_ID" in os.environ and shutil.which("gnome-open"):
-        register("gnome-open", None, BackgroundBrowser("gnome-open"))
 
     # The default KDE browser
     if "KDE_FULL_SESSION" in os.environ and shutil.which("kfmclient"):
@@ -532,15 +534,23 @@ def register_standard_browsers():
         # OS X can use below Unix support (but we prefer using the OS X
         # specific stuff)
 
+    if sys.platform == "serenityos":
+        # SerenityOS webbrowser, simply called "Browser".
+        register("Browser", None, BackgroundBrowser("Browser"))
+
     if sys.platform[:3] == "win":
         # First try to use the default Windows browser
         register("windows-default", WindowsDefault)
 
-        # Detect some common Windows browsers, fallback to IE
-        iexplore = os.path.join(os.environ.get("PROGRAMFILES", "C:\\Program Files"),
-                                "Internet Explorer\\IEXPLORE.EXE")
+        # Detect some common Windows browsers, fallback to Microsoft Edge
+        # location in 64-bit Windows
+        edge64 = os.path.join(os.environ.get("PROGRAMFILES(x86)", "C:\\Program Files (x86)"),
+                              "Microsoft\\Edge\\Application\\msedge.exe")
+        # location in 32-bit Windows
+        edge32 = os.path.join(os.environ.get("PROGRAMFILES", "C:\\Program Files"),
+                              "Microsoft\\Edge\\Application\\msedge.exe")
         for browser in ("firefox", "firebird", "seamonkey", "mozilla",
-                        "netscape", "opera", iexplore):
+                        "opera", edge64, edge32):
             if shutil.which(browser):
                 register(browser, None, BackgroundBrowser(browser))
     else:
@@ -625,6 +635,8 @@ if sys.platform == 'darwin':
         Internet System Preferences panel, will be used.
         """
         def __init__(self, name):
+            warnings.warn(f'{self.__class__.__name__} is deprecated in 3.11'
+                          ' use MacOSXOSAScript instead.', DeprecationWarning, stacklevel=2)
             self.name = name
 
         def open(self, url, new=0, autoraise=True):
@@ -662,19 +674,33 @@ if sys.platform == 'darwin':
             return not rc
 
     class MacOSXOSAScript(BaseBrowser):
-        def __init__(self, name):
-            self._name = name
+        def __init__(self, name='default'):
+            super().__init__(name)
+
+        @property
+        def _name(self):
+            warnings.warn(f'{self.__class__.__name__}._name is deprecated in 3.11'
+                          f' use {self.__class__.__name__}.name instead.',
+                          DeprecationWarning, stacklevel=2)
+            return self.name
+
+        @_name.setter
+        def _name(self, val):
+            warnings.warn(f'{self.__class__.__name__}._name is deprecated in 3.11'
+                          f' use {self.__class__.__name__}.name instead.',
+                          DeprecationWarning, stacklevel=2)
+            self.name = val
 
         def open(self, url, new=0, autoraise=True):
-            if self._name == 'default':
+            if self.name == 'default':
                 script = 'open location "%s"' % url.replace('"', '%22') # opens in default browser
             else:
-                script = '''
+                script = f'''
                    tell application "%s"
                        activate
                        open location "%s"
                    end
-                   '''%(self._name, url.replace('"', '%22'))
+                   '''%(self.name, url.replace('"', '%22'))
 
             osapipe = os.popen("osascript", "w")
             if osapipe is None:
@@ -687,11 +713,12 @@ if sys.platform == 'darwin':
 
 def main():
     import getopt
-    usage = """Usage: %s [-n | -t] url
+    usage = """Usage: %s [-n | -t | -h] url
     -n: open new window
-    -t: open new tab""" % sys.argv[0]
+    -t: open new tab
+    -h, --help: show help""" % sys.argv[0]
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'ntd')
+        opts, args = getopt.getopt(sys.argv[1:], 'ntdh',['help'])
     except getopt.error as msg:
         print(msg, file=sys.stderr)
         print(usage, file=sys.stderr)
@@ -700,6 +727,9 @@ def main():
     for o, a in opts:
         if o == '-n': new_win = 1
         elif o == '-t': new_win = 2
+        elif o == '-h' or o == '--help': 
+            print(usage, file=sys.stderr)
+            sys.exit()
     if len(args) != 1:
         print(usage, file=sys.stderr)
         sys.exit(1)

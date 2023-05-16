@@ -1,0 +1,1 @@
+Fix incorrect results from :meth:`ssl.SSLSocket.shared_ciphers`

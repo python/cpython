@@ -4,7 +4,7 @@ from idlelib import searchengine as se
 import unittest
 # from test.support import requires
 from tkinter import  BooleanVar, StringVar, TclError  # ,Tk, Text
-import tkinter.messagebox as tkMessageBox
+from tkinter import messagebox
 from idlelib.idle_test.mock_tk import Var, Mbox
 from idlelib.idle_test.mock_tk import Text as mockText
 import re
@@ -19,13 +19,13 @@ def setUpModule():
     # Replace s-e module tkinter imports other than non-gui TclError.
     se.BooleanVar = Var
     se.StringVar = Var
-    se.tkMessageBox = Mbox
+    se.messagebox = Mbox
 
 def tearDownModule():
     # Restore 'just in case', though other tests should also replace.
     se.BooleanVar = BooleanVar
     se.StringVar = StringVar
-    se.tkMessageBox = tkMessageBox
+    se.messagebox = messagebox
 
 
 class Mock:

@@ -3,7 +3,6 @@
 
 import os, sys, errno
 import unittest
-from test import support
 from test.support import import_helper
 import threading
 from platform import machine, win32_edition
@@ -46,7 +45,7 @@ test_data = [
     ("Raw Data",      b"binary\x00data",                       REG_BINARY),
     ("Big String",    "x"*(2**14-1),                           REG_SZ),
     ("Big Binary",    b"x"*(2**14),                            REG_BINARY),
-    # Two and three kanjis, meaning: "Japan" and "Japanese")
+    # Two and three kanjis, meaning: "Japan" and "Japanese".
     ("Japanese 日本", "日本語", REG_SZ),
 ]
 
@@ -114,7 +113,6 @@ class BaseWinregTests(unittest.TestCase):
                       "does not close the actual key!")
         except OSError:
             pass
-
     def _read_test_data(self, root_key, subkeystr="sub_key", OpenKey=OpenKey):
         # Check we can get default value for this key.
         val = QueryValue(root_key, test_key_name)
@@ -341,6 +339,23 @@ class LocalWinregTests(BaseWinregTests):
         finally:
             DeleteKey(HKEY_CURRENT_USER, test_key_name)
 
+    def test_setvalueex_negative_one_check(self):
+        # Test for Issue #43984, check -1 was not set by SetValueEx.
+        # Py2Reg, which gets called by SetValueEx, wasn't checking return
+        # value by PyLong_AsUnsignedLong, thus setting -1 as value in the registry.
+        # The implementation now checks PyLong_AsUnsignedLong return value to assure
+        # the value set was not -1.
+        try:
+            with CreateKey(HKEY_CURRENT_USER, test_key_name) as ck:
+                with self.assertRaises(OverflowError):
+                    SetValueEx(ck, "test_name_dword", None, REG_DWORD, -1)
+                    SetValueEx(ck, "test_name_qword", None, REG_QWORD, -1)
+                self.assertRaises(FileNotFoundError, QueryValueEx, ck, "test_name_dword")
+                self.assertRaises(FileNotFoundError, QueryValueEx, ck, "test_name_qword")
+
+        finally:
+            DeleteKey(HKEY_CURRENT_USER, test_key_name)
+
     def test_queryvalueex_return_value(self):
         # Test for Issue #16759, return unsigned int from QueryValueEx.
         # Reg2Py, which gets called by QueryValueEx, was returning a value
@@ -490,12 +505,9 @@ class Win64WinregTests(BaseWinregTests):
         with self.assertRaises(FileNotFoundError) as ctx:
             QueryValue(HKEY_CLASSES_ROOT, 'some_value_that_does_not_exist')
 
-def test_main():
-    support.run_unittest(LocalWinregTests, RemoteWinregTests,
-                         Win64WinregTests)
 
 if __name__ == "__main__":
     if not REMOTE_NAME:
         print("Remote registry calls can be tested using",
               "'test_winreg.py --remote \\\\machine_name'")
-    test_main()
+    unittest.main()

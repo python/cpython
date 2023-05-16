@@ -24,7 +24,7 @@ The Basics
 ==========
 
 The :term:`CPython` runtime sees all Python objects as variables of type
-:c:type:`PyObject\*`, which serves as a "base type" for all Python objects.
+:c:expr:`PyObject*`, which serves as a "base type" for all Python objects.
 The :c:type:`PyObject` structure itself only contains the object's
 :term:`reference count` and a pointer to the object's "type object".
 This is where the action is; the type object determines which (C) functions
@@ -67,9 +67,10 @@ The first bit is::
 This is what a Custom object will contain.  ``PyObject_HEAD`` is mandatory
 at the start of each object struct and defines a field called ``ob_base``
 of type :c:type:`PyObject`, containing a pointer to a type object and a
-reference count (these can be accessed using the macros :c:macro:`Py_REFCNT`
-and :c:macro:`Py_TYPE` respectively).  The reason for the macro is to
-abstract away the layout and to enable additional fields in debug builds.
+reference count (these can be accessed using the macros :c:macro:`Py_TYPE`
+and :c:macro:`Py_REFCNT` respectively).  The reason for the macro is to
+abstract away the layout and to enable additional fields in :ref:`debug builds
+<debug-build>`.
 
 .. note::
    There is no semicolon above after the :c:macro:`PyObject_HEAD` macro.
@@ -89,7 +90,7 @@ The second bit is the definition of the type object. ::
    static PyTypeObject CustomType = {
        PyVarObject_HEAD_INIT(NULL, 0)
        .tp_name = "custom.Custom",
-       .tp_doc = "Custom objects",
+       .tp_doc = PyDoc_STR("Custom objects"),
        .tp_basicsize = sizeof(CustomObject),
        .tp_itemsize = 0,
        .tp_flags = Py_TPFLAGS_DEFAULT,
@@ -160,7 +161,7 @@ you will need to OR the corresponding flags.
 
 We provide a doc string for the type in :c:member:`~PyTypeObject.tp_doc`. ::
 
-   .tp_doc = "Custom objects",
+   .tp_doc = PyDoc_STR("Custom objects"),
 
 To enable object creation, we have to provide a :c:member:`~PyTypeObject.tp_new`
 handler.  This is the equivalent of the Python method :meth:`__new__`, but
@@ -237,13 +238,6 @@ adds these capabilities:
 
 
 This version of the module has a number of changes.
-
-We've added an extra include::
-
-   #include <structmember.h>
-
-This include provides declarations that we use to handle attributes, as
-described a bit later.
 
 The  :class:`Custom` type now has three data attributes in its C struct,
 *first*, *last*, and *number*.  The *first* and *last* variables are Python
@@ -435,11 +429,11 @@ We want to expose our instance variables as attributes. There are a
 number of ways to do that. The simplest way is to define member definitions::
 
    static PyMemberDef Custom_members[] = {
-       {"first", T_OBJECT_EX, offsetof(CustomObject, first), 0,
+       {"first", Py_T_OBJECT_EX, offsetof(CustomObject, first), 0,
         "first name"},
-       {"last", T_OBJECT_EX, offsetof(CustomObject, last), 0,
+       {"last", Py_T_OBJECT_EX, offsetof(CustomObject, last), 0,
         "last name"},
-       {"number", T_INT, offsetof(CustomObject, number), 0,
+       {"number", Py_T_INT, offsetof(CustomObject, number), 0,
         "custom number"},
        {NULL}  /* Sentinel */
    };
@@ -608,7 +602,7 @@ above.  In this case, we aren't using a closure, so we just pass ``NULL``.
 We also remove the member definitions for these attributes::
 
    static PyMemberDef Custom_members[] = {
-       {"number", T_INT, offsetof(CustomObject, number), 0,
+       {"number", Py_T_INT, offsetof(CustomObject, number), 0,
         "custom number"},
        {NULL}  /* Sentinel */
    };

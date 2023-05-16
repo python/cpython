@@ -1,0 +1,1 @@
+Add note to exception raised in ``PyErr_SetObject`` when normalization fails.

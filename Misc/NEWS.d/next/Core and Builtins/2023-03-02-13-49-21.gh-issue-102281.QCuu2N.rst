@@ -1,0 +1,1 @@
+Fix potential nullptr dereference and use of uninitialized memory in fileutils. Patch by Max Bachmann.

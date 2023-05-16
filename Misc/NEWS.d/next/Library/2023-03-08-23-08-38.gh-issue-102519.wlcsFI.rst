@@ -1,0 +1,2 @@
+Add :func:`os.listdrives`, :func:`os.listvolumes` and :func:`os.listmounts`
+functions on Windows for enumerating drives, volumes and mount points

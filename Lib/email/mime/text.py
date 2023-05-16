@@ -10,7 +10,6 @@ from email.charset import Charset
 from email.mime.nonmultipart import MIMENonMultipart
 
 
-
 class MIMEText(MIMENonMultipart):
     """Class for generating text/* type MIME documents."""
 

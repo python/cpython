@@ -1,0 +1,1 @@
+:func:`asyncio.wait` now accepts generators yielding tasks. Patch by Kumar Aditya.

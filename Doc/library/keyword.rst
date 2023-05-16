@@ -9,7 +9,7 @@
 --------------
 
 This module allows a Python program to determine if a string is a
-:ref:`keyword <keywords>`.
+:ref:`keyword <keywords>` or :ref:`soft keyword <soft-keywords>`.
 
 
 .. function:: iskeyword(s)
@@ -26,14 +26,14 @@ This module allows a Python program to determine if a string is a
 
 .. function:: issoftkeyword(s)
 
-   Return ``True`` if *s* is a Python soft :ref:`keyword <keywords>`.
+   Return ``True`` if *s* is a Python :ref:`soft keyword <soft-keywords>`.
 
    .. versionadded:: 3.9
 
 
 .. data:: softkwlist
 
-   Sequence containing all the soft :ref:`keywords <keywords>` defined for the
+   Sequence containing all the :ref:`soft keywords <soft-keywords>` defined for the
    interpreter.  If any soft keywords are defined to only be active when particular
    :mod:`__future__` statements are in effect, these will be included as well.
 

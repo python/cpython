@@ -1,0 +1,2 @@
+Fix SSE2 and SSE3 detection in ``_blake2`` internal module. Patch by Max
+Bachmann.

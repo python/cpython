@@ -1,2 +1,0 @@
-Convert the _multibytecodec extension module (CJK codecs) to multi-phase
-initialization (:pep:`489`).  Patch by Erlend E. Aasland.

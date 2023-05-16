@@ -69,7 +69,7 @@ typedef struct {
     int (*initialized_color)(void);
 } PyCurses_CAPI;
 
-#define PyCursesWindow_Check(v) Py_IS_TYPE(v, &PyCursesWindow_Type)
+#define PyCursesWindow_Check(v) Py_IS_TYPE((v), &PyCursesWindow_Type)
 
 #define PyCurses_CAPSULE_NAME "_curses._C_API"
 

@@ -1,2 +1,0 @@
-Correct call to :mod:`tkinter.colorchooser` to return RGB triplet of ints
-instead of floats.  Patch by Cheryl Sabella.

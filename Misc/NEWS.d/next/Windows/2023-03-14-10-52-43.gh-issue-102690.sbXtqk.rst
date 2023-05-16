@@ -1,0 +1,1 @@
+Update :mod:`webbrowser` to fall back to Microsoft Edge instead of Internet Explorer.

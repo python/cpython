@@ -17,9 +17,11 @@ This module defines the class :class:`FTP` and a few related items. The
 this to write Python programs that perform a variety of automated FTP jobs, such
 as mirroring other FTP servers.  It is also used by the module
 :mod:`urllib.request` to handle URLs that use FTP.  For more information on FTP
-(File Transfer Protocol), see Internet :rfc:`959`.
+(File Transfer Protocol), see internet :rfc:`959`.
 
 The default encoding is UTF-8, following :rfc:`2640`.
+
+.. include:: ../includes/wasm-notavail.rst
 
 Here's a sample session using the :mod:`ftplib` module::
 
@@ -28,6 +30,7 @@ Here's a sample session using the :mod:`ftplib` module::
    >>> ftp.login()                     # user anonymous, passwd anonymous@
    '230 Login successful.'
    >>> ftp.cwd('debian')               # change into "debian" directory
+   '250 Directory successfully changed.'
    >>> ftp.retrlines('LIST')           # list directory contents
    -rw-rw-r--    1 1176     1176         1063 Jun 15 10:18 README
    ...
@@ -39,6 +42,7 @@ Here's a sample session using the :mod:`ftplib` module::
    >>>     ftp.retrbinary('RETR README', fp.write)
    '226 Transfer complete.'
    >>> ftp.quit()
+   '221 Goodbye.'
 
 
 The module defines the following items:
@@ -81,7 +85,8 @@ The module defines the following items:
       The *encoding* parameter was added, and the default was changed from
       Latin-1 to UTF-8 to follow :rfc:`2640`.
 
-.. class:: FTP_TLS(host='', user='', passwd='', acct='', keyfile=None, certfile=None, context=None, timeout=None, source_address=None, *, encoding='utf-8')
+.. class:: FTP_TLS(host='', user='', passwd='', acct='', *, context=None,
+                   timeout=None, source_address=None, encoding='utf-8')
 
    A :class:`FTP` subclass which adds TLS support to FTP as described in
    :rfc:`4217`.
@@ -91,10 +96,6 @@ The module defines the following items:
    is a :class:`ssl.SSLContext` object which allows bundling SSL configuration
    options, certificates and private keys into a single (potentially
    long-lived) structure.  Please read :ref:`ssl-security` for best practices.
-
-   *keyfile* and *certfile* are a legacy alternative to *context* -- they
-   can point to PEM-formatted private key and certificate chain files
-   (respectively) for the SSL connection.
 
    .. versionadded:: 3.2
 
@@ -107,7 +108,6 @@ The module defines the following items:
       :data:`ssl.HAS_SNI`).
 
    .. deprecated:: 3.6
-
        *keyfile* and *certfile* are deprecated in favor of *context*.
        Please use :meth:`ssl.SSLContext.load_cert_chain` instead, or let
        :func:`ssl.create_default_context` select the system's trusted CA
@@ -118,6 +118,9 @@ The module defines the following items:
       :class:`ValueError` to prevent the creation of a non-blocking socket.
       The *encoding* parameter was added, and the default was changed from
       Latin-1 to UTF-8 to follow :rfc:`2640`.
+
+   .. versionchanged:: 3.12
+       The deprecated *keyfile* and *certfile* parameters have been removed.
 
    Here's a sample session using the :class:`FTP_TLS` class::
 

@@ -1,1 +1,0 @@
-remove __init_subclass__ support for Enum members

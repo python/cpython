@@ -1,0 +1,1 @@
+Improve build support for the Xbox. Patch by Max Bachmann.

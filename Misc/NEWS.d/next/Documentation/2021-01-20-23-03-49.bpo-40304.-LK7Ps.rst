@@ -1,2 +1,0 @@
-Fix doc for type(name, bases, dict).  Patch by Boris Verkhovskiy and
-Éric Araujo.

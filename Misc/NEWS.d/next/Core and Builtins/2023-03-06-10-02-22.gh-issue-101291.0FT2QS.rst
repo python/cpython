@@ -1,0 +1,7 @@
+Rearrage bits in first field (after header) of PyLongObject.
+* Bits 0 and 1: 1 - sign. I.e. 0 for positive numbers, 1 for zero and 2 for negative numbers.
+* Bit 2 reserved (probably for the immortal bit)
+* Bits 3+ the unsigned size.
+
+This makes a few operations slightly more efficient, and will enable a more
+compact and faster 2s-complement representation of most ints in future.

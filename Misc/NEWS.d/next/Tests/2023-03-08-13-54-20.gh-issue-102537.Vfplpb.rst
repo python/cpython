@@ -1,0 +1,2 @@
+Adjust the error handling strategy in
+``test_zoneinfo.TzPathTest.python_tzpath_context``. Patch by Paul Ganssle.
