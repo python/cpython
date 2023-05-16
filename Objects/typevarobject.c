@@ -48,6 +48,7 @@ typedef struct {
     PyObject *type_params;
     PyObject *compute_value;
     PyObject *value;
+    PyObject *module;
 } typealiasobject;
 
 #include "clinic/typevarobject.c.h"
@@ -1252,6 +1253,7 @@ typealias_dealloc(PyObject *self)
     Py_XDECREF(ta->type_params);
     Py_XDECREF(ta->compute_value);
     Py_XDECREF(ta->value);
+    Py_XDECREF(ta->module);
     Py_TYPE(self)->tp_free(self);
     Py_DECREF(tp);
 }
@@ -1309,16 +1311,30 @@ typealias_type_params(PyObject *self, void *unused)
     return Py_NewRef(ta->type_params);
 }
 
+static PyObject *
+typealias_module(PyObject *self, void *unused)
+{
+    typealiasobject *ta = (typealiasobject *)self;
+    if (ta->module != NULL) {
+        return Py_NewRef(ta->module);
+    }
+    if (ta->compute_value != NULL) {
+        return PyFunction_GetModule(ta->compute_value);
+    }
+    Py_RETURN_NONE;
+}
+
 static PyGetSetDef typealias_getset[] = {
     {"__parameters__", typealias_parameters, (setter)NULL, NULL, NULL},
     {"__type_params__", typealias_type_params, (setter)NULL, NULL, NULL},
     {"__value__", typealias_value, (setter)NULL, NULL, NULL},
+    {"__module__", typealias_module, (setter)NULL, NULL, NULL},
     {0}
 };
 
 static typealiasobject *
 typealias_alloc(PyObject *name, PyObject *type_params, PyObject *compute_value,
-                PyObject *value)
+                PyObject *value, PyObject *module)
 {
     PyTypeObject *tp = PyInterpreterState_Get()->cached_objects.typealias_type;
     typealiasobject *ta = PyObject_GC_New(typealiasobject, tp);
@@ -1329,6 +1345,7 @@ typealias_alloc(PyObject *name, PyObject *type_params, PyObject *compute_value,
     ta->type_params = Py_IsNone(type_params) ? NULL : Py_XNewRef(type_params);
     ta->compute_value = Py_XNewRef(compute_value);
     ta->value = Py_XNewRef(value);
+    ta->module = Py_XNewRef(module);
     _PyObject_GC_TRACK(ta);
     return ta;
 }
@@ -1339,6 +1356,7 @@ typealias_traverse(typealiasobject *self, visitproc visit, void *arg)
     Py_VISIT(self->type_params);
     Py_VISIT(self->compute_value);
     Py_VISIT(self->value);
+    Py_VISIT(self->module);
     return 0;
 }
 
@@ -1348,6 +1366,7 @@ typealias_clear(typealiasobject *self)
     Py_CLEAR(self->type_params);
     Py_CLEAR(self->compute_value);
     Py_CLEAR(self->value);
+    Py_CLEAR(self->module);
     return 0;
 }
 
@@ -1401,7 +1420,14 @@ typealias_new_impl(PyTypeObject *type, PyObject *name, PyObject *value,
         PyErr_SetString(PyExc_TypeError, "type_params must be a tuple");
         return NULL;
     }
-    return (PyObject *)typealias_alloc(name, type_params, NULL, value);
+    PyObject *module = caller();
+    if (module == NULL) {
+        return NULL;
+    }
+    PyObject *ta = (PyObject *)typealias_alloc(name, type_params, NULL, value,
+                                               module);
+    Py_DECREF(module);
+    return ta;
 }
 
 PyDoc_STRVAR(typealias_doc,
@@ -1445,7 +1471,8 @@ _Py_make_typealias(PyThreadState* unused, PyObject *args)
     assert(PyUnicode_Check(name));
     PyObject *type_params = PyTuple_GET_ITEM(args, 1);
     PyObject *compute_value = PyTuple_GET_ITEM(args, 2);
-    return (PyObject *)typealias_alloc(name, type_params, compute_value, NULL);
+    assert(PyFunction_Check(compute_value));
+    return (PyObject *)typealias_alloc(name, type_params, compute_value, NULL, NULL);
 }
 
 PyDoc_STRVAR(generic_doc,
