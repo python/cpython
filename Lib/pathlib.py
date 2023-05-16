@@ -695,10 +695,10 @@ class PurePath(object):
         elif len(pat_parts) > len(parts):
             return False
         for part, pat in zip(reversed(parts), reversed(pat_parts)):
-            if not case_sensitive:
-                # Convert the 'part' and 'pattern' to lowercase to ensure case insensitivity.
-                part, pat = part.lower(), pat.lower()
-            if not fnmatch.fnmatchcase(part, pat):
+            # If none of the flags are applied, the value of 'flags' would be 0.
+            flags = 0 if case_sensitive else re.I
+            match = re.compile(fnmatch.translate(pat), flags).match
+            if not match(part):
                 return False
         return True
 
