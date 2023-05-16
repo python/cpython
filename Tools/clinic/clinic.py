@@ -12,6 +12,7 @@ import collections
 import contextlib
 import copy
 import cpp
+import enum
 import functools
 import hashlib
 import inspect
@@ -28,7 +29,7 @@ import traceback
 
 from collections.abc import Callable
 from types import FunctionType, NoneType
-from typing import Any, NamedTuple, NoReturn, Literal, overload
+from typing import Any, Final, NamedTuple, NoReturn, Literal, overload
 
 # TODO:
 #
@@ -58,25 +59,19 @@ CLINIC_PREFIXED_ARGS = {
     "return_value",
 }
 
-class Unspecified:
+
+class Sentinels(enum.Enum):
+    unspecified = "unspecified"
+    NULL = "null"
+    unknown = "unknown"
+
     def __repr__(self) -> str:
-        return '<Unspecified>'
-
-unspecified = Unspecified()
+        return f"<{self.value.capitalize()}>"
 
 
-class Null:
-    def __repr__(self) -> str:
-        return '<Null>'
-
-NULL = Null()
-
-
-class Unknown:
-    def __repr__(self) -> str:
-        return '<Unknown>'
-
-unknown = Unknown()
+unspecified: Final = Sentinels.unspecified
+NULL: Final = Sentinels.NULL
+unknown: Final = Sentinels.unknown
 
 sig_end_marker = '--'
 
@@ -2690,7 +2685,7 @@ class CConverter(metaclass=CConverterAutoRegister):
              *,  # Keyword only args:
              c_default: str | None = None,
              py_default: str | None = None,
-             annotation: str | Unspecified = unspecified,
+             annotation: str | Literal[Sentinels.unspecified] = unspecified,
              unused: bool = False,
              **kwargs
     ):
