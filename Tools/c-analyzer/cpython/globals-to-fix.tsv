@@ -458,7 +458,6 @@ Modules/_tkinter.c	-	trbInCmd	-
 
 ## pre-allocated buffer
 Modules/nismodule.c	nisproc_maplist_2	res	-
-Modules/pyexpat.c	PyUnknownEncodingHandler	template_buffer	-
 
 ## other
 Include/datetime.h	-	PyDateTimeAPI	-
