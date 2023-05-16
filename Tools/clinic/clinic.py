@@ -25,10 +25,9 @@ import string
 import sys
 import textwrap
 import traceback
-import types
 
 from collections.abc import Callable
-from types import *
+from types import FunctionType, NoneType
 from typing import Any, NamedTuple
 
 # TODO:
@@ -4037,7 +4036,7 @@ def eval_ast_expr(node, globals, *, filename='-'):
 
     node = ast.Expression(node)
     co = compile(node, filename, 'eval')
-    fn = types.FunctionType(co, globals)
+    fn = FunctionType(co, globals)
     return fn()
 
 
