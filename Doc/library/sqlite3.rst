@@ -1530,12 +1530,12 @@ Cursor objects
 
       For every item in *parameters*,
       repeatedly execute the :ref:`parameterized <sqlite3-placeholders>`
-      SQL statement *sql*.
+      :abbr:`DML (Data Manipulation Language)` SQL statement *sql*.
 
       Uses the same implicit transaction handling as :meth:`~Cursor.execute`.
 
       :param str sql:
-         A single SQL :abbr:`DML (Data Manipulation Language)` statement.
+         A single SQL DML statement.
 
       :param parameters:
          An :term:`!iterable` of parameters to bind with
@@ -1557,6 +1557,13 @@ Cursor objects
          ]
          # cur is an sqlite3.Cursor object
          cur.executemany("INSERT INTO data VALUES(?)", rows)
+
+      .. note::
+
+         Any resulting rows are discarded,
+         including DML statements with `RETURNING clauses`_.
+
+      .. _RETURNING clauses: https://www.sqlite.org/lang_returning.html
 
       .. deprecated-removed:: 3.12 3.14
 
@@ -1687,7 +1694,10 @@ Cursor objects
       ``INSERT``, ``UPDATE``, ``DELETE``, and ``REPLACE`` statements;
       is ``-1`` for other statements,
       including :abbr:`CTE (Common Table Expression)` queries.
-      It is only updated by the :meth:`execute` and :meth:`executemany` methods.
+      It is only updated by the :meth:`execute` and :meth:`executemany` methods,
+      after the statement has run to completion.
+      This means that any resulting rows must be fetched in order for
+      :attr:`!rowcount` to be updated.
 
    .. attribute:: row_factory
 

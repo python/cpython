@@ -840,7 +840,7 @@ Builtins
   need it; however, 99 percent of the time an explicit :keyword:`for`
   loop is more readable.
 
-* Removed :func:`reload`.  Use :func:`imp.reload`.
+* Removed :func:`reload`.  Use :func:`!imp.reload`.
 
 * Removed. :meth:`dict.has_key` -- use the :keyword:`in` operator
   instead.

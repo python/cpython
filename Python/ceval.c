@@ -27,6 +27,7 @@
 #include "pycore_dict.h"
 #include "dictobject.h"
 #include "pycore_frame.h"
+#include "frameobject.h"          // _PyInterpreterFrame_GetLine
 #include "opcode.h"
 #include "pydtrace.h"
 #include "setobject.h"
@@ -212,6 +213,9 @@ static _PyInterpreterFrame *
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
                         PyObject *locals, PyObject* const* args,
                         size_t argcount, PyObject *kwnames);
+static  _PyInterpreterFrame *
+_PyEvalFramePushAndInit_Ex(PyThreadState *tstate, PyFunctionObject *func,
+    PyObject *locals, Py_ssize_t nargs, PyObject *callargs, PyObject *kwargs);
 static void
 _PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
 
@@ -771,6 +775,41 @@ handle_eval_breaker:
 
 #include "generated_cases.c.h"
 
+    /* INSTRUMENTED_LINE has to be here, rather than in bytecodes.c,
+     * because it needs to capture frame->prev_instr before it is updated,
+     * as happens in the standard instruction prologue.
+     */
+#if USE_COMPUTED_GOTOS
+        TARGET_INSTRUMENTED_LINE:
+#else
+        case INSTRUMENTED_LINE:
+#endif
+    {
+        _Py_CODEUNIT *prev = frame->prev_instr;
+        _Py_CODEUNIT *here = frame->prev_instr = next_instr;
+        _PyFrame_SetStackPointer(frame, stack_pointer);
+        int original_opcode = _Py_call_instrumentation_line(
+                tstate, frame, here, prev);
+        stack_pointer = _PyFrame_GetStackPointer(frame);
+        if (original_opcode < 0) {
+            next_instr = here+1;
+            goto error;
+        }
+        next_instr = frame->prev_instr;
+        if (next_instr != here) {
+            DISPATCH();
+        }
+        if (_PyOpcode_Caches[original_opcode]) {
+            _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(next_instr+1);
+            /* Prevent the underlying instruction from specializing
+             * and overwriting the instrumentation. */
+            INCREMENT_ADAPTIVE_COUNTER(cache->counter);
+        }
+        opcode = original_opcode;
+        DISPATCH_GOTO();
+    }
+
+
 #if USE_COMPUTED_GOTOS
         _unknown_opcode:
 #else
@@ -782,7 +821,7 @@ handle_eval_breaker:
             _PyErr_Format(tstate, PyExc_SystemError,
                           "%U:%d: unknown opcode %d",
                           frame->f_code->co_filename,
-                          _PyInterpreterFrame_GetLine(frame),
+                          PyUnstable_InterpreterFrame_GetLine(frame),
                           opcode);
             goto error;
 
@@ -1498,6 +1537,49 @@ fail:
         }
     }
     PyErr_NoMemory();
+    return NULL;
+}
+
+/* Same as _PyEvalFramePushAndInit but takes an args tuple and kwargs dict.
+   Steals references to func, callargs and kwargs.
+*/
+static _PyInterpreterFrame *
+_PyEvalFramePushAndInit_Ex(PyThreadState *tstate, PyFunctionObject *func,
+    PyObject *locals, Py_ssize_t nargs, PyObject *callargs, PyObject *kwargs)
+{
+    bool has_dict = (kwargs != NULL && PyDict_GET_SIZE(kwargs) > 0);
+    PyObject *kwnames = NULL;
+    PyObject *const *newargs;
+    if (has_dict) {
+        newargs = _PyStack_UnpackDict(tstate, _PyTuple_ITEMS(callargs), nargs, kwargs, &kwnames);
+        if (newargs == NULL) {
+            Py_DECREF(func);
+            goto error;
+        }
+    }
+    else {
+        newargs = &PyTuple_GET_ITEM(callargs, 0);
+        /* We need to incref all our args since the new frame steals the references. */
+        for (Py_ssize_t i = 0; i < nargs; ++i) {
+            Py_INCREF(PyTuple_GET_ITEM(callargs, i));
+        }
+    }
+    _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
+        tstate, (PyFunctionObject *)func, locals,
+        newargs, nargs, kwnames
+    );
+    if (has_dict) {
+        _PyStack_UnpackDict_FreeNoDecRef(newargs, kwnames);
+    }
+    /* No need to decref func here because the reference has been stolen by
+       _PyEvalFramePushAndInit.
+    */
+    Py_DECREF(callargs);
+    Py_XDECREF(kwargs);
+    return new_frame;
+error:
+    Py_DECREF(callargs);
+    Py_XDECREF(kwargs);
     return NULL;
 }
 
