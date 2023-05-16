@@ -1,1 +1,1 @@
-Fix file descriptor leaks in subprocess.Popen
+Fix potential file descriptor leaks in :class:`subprocess.Popen`.
