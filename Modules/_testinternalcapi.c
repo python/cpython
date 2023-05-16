@@ -593,17 +593,19 @@ _testinternalcapi.compiler_codegen -> object
   ast: object
   filename: object
   optimize: int
+  compile_mode: int = 0
 
 Apply compiler code generation to an AST.
 [clinic start generated code]*/
 
 static PyObject *
 _testinternalcapi_compiler_codegen_impl(PyObject *module, PyObject *ast,
-                                        PyObject *filename, int optimize)
-/*[clinic end generated code: output=fbbbbfb34700c804 input=e9fbe6562f7f75e4]*/
+                                        PyObject *filename, int optimize,
+                                        int compile_mode)
+/*[clinic end generated code: output=40a68f6e13951cc8 input=a0e00784f1517cd7]*/
 {
     PyCompilerFlags *flags = NULL;
-    return _PyCompile_CodeGen(ast, filename, flags, optimize);
+    return _PyCompile_CodeGen(ast, filename, flags, optimize, compile_mode);
 }
 
 
@@ -667,12 +669,14 @@ _testinternalcapi_assemble_code_object_impl(PyObject *module,
     umd.u_varnames = PyDict_GetItemString(metadata, "varnames");
     umd.u_cellvars = PyDict_GetItemString(metadata, "cellvars");
     umd.u_freevars = PyDict_GetItemString(metadata, "freevars");
+    umd.u_fasthidden = PyDict_GetItemString(metadata, "fasthidden");
 
-    assert(PyList_Check(umd.u_consts));
+    assert(PyDict_Check(umd.u_consts));
     assert(PyDict_Check(umd.u_names));
     assert(PyDict_Check(umd.u_varnames));
     assert(PyDict_Check(umd.u_cellvars));
     assert(PyDict_Check(umd.u_freevars));
+    assert(PyDict_Check(umd.u_fasthidden));
 
     umd.u_argcount = get_nonnegative_int_from_dict(metadata, "argcount");
     umd.u_posonlyargcount = get_nonnegative_int_from_dict(metadata, "posonlyargcount");
@@ -725,6 +729,13 @@ get_interp_settings(PyObject *self, PyObject *args)
     int res = PyDict_SetItemString(settings, "feature_flags", flags);
     Py_DECREF(flags);
     if (res != 0) {
+        Py_DECREF(settings);
+        return NULL;
+    }
+
+    /* "own GIL" */
+    PyObject *own_gil = interp->ceval.own_gil ? Py_True : Py_False;
+    if (PyDict_SetItemString(settings, "own_gil", own_gil) != 0) {
         Py_DECREF(settings);
         return NULL;
     }
@@ -789,6 +800,7 @@ module_exec(PyObject *module)
 
 static struct PyModuleDef_Slot module_slots[] = {
     {Py_mod_exec, module_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL},
 };
 

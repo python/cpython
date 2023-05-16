@@ -2141,11 +2141,10 @@ Traceback (most recent call last):
   ...
 SyntaxError: 'yield' outside function
 
-# Pegen does not produce this error message yet
-# >>> def f(): x = yield = y
-# Traceback (most recent call last):
-#   ...
-# SyntaxError: assignment to yield expression not possible
+>>> def f(): x = yield = y
+Traceback (most recent call last):
+  ...
+SyntaxError: assignment to yield expression not possible
 
 >>> def f(): (yield bar) = y
 Traceback (most recent call last):

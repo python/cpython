@@ -19,7 +19,7 @@
 
 This module provides runtime support for type hints. The most fundamental
 support consists of the types :data:`Any`, :data:`Union`, :data:`Callable`,
-:class:`TypeVar`, and :class:`Generic`. For a full specification, please see
+:class:`TypeVar`, and :class:`Generic`. For a specification, please see
 :pep:`484`. For a simplified introduction to type hints, see :pep:`483`.
 
 
@@ -592,7 +592,7 @@ The module defines the following classes, functions and decorators.
    when the checked program targets Python 3.9 or newer.
 
    The deprecated types will be removed from the :mod:`typing` module
-   in the first Python version released 5 years after the release of Python 3.9.0.
+   no sooner than the first Python version released 5 years after the release of Python 3.9.0.
    See details in :pep:`585`—*Type Hinting Generics In Standard Collections*.
 
 
@@ -1291,6 +1291,8 @@ These are not used in annotations. They are building blocks for creating generic
        U = TypeVar('U', bound=str|bytes)  # Can be any subtype of the union str|bytes
        V = TypeVar('V', bound=SupportsAbs)  # Can be anything with an __abs__ method
 
+.. _typing-constrained-typevar:
+
     Using a *constrained* type variable, however, means that the ``TypeVar``
     can only ever be solved as being exactly one of the constraints given::
 
@@ -1550,7 +1552,7 @@ These are not used in annotations. They are building blocks for creating generic
 
 .. data:: AnyStr
 
-   ``AnyStr`` is a :class:`constrained type variable <TypeVar>` defined as
+   ``AnyStr`` is a :ref:`constrained type variable <typing-constrained-typevar>` defined as
    ``AnyStr = TypeVar('AnyStr', str, bytes)``.
 
    It is meant to be used for functions that may accept any kind of string
@@ -2112,7 +2114,7 @@ Other concrete types
       Python 2 is no longer supported, and most type checkers also no longer
       support type checking Python 2 code. Removal of the alias is not
       currently planned, but users are encouraged to use
-      :class:`str` instead of ``Text`` wherever possible.
+      :class:`str` instead of ``Text``.
 
 Abstract Base Classes
 ---------------------
@@ -2130,17 +2132,11 @@ Corresponding to collections in :mod:`collections.abc`
 
 .. class:: ByteString(Sequence[int])
 
-   A generic version of :class:`collections.abc.ByteString`.
-
    This type represents the types :class:`bytes`, :class:`bytearray`,
    and :class:`memoryview` of byte sequences.
 
-   As a shorthand for this type, :class:`bytes` can be used to
-   annotate arguments of any of the types mentioned above.
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.ByteString` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
+   .. deprecated-removed:: 3.9 3.14
+      Prefer :class:`collections.abc.Buffer`, or a union like ``bytes | bytearray | memoryview``.
 
 .. class:: Collection(Sized, Iterable[T_co], Container[T_co])
 
@@ -2882,24 +2878,37 @@ Introspection helpers
       if a default value equal to ``None`` was set.
       Now the annotation is returned unchanged.
 
-.. function:: get_args(tp)
 .. function:: get_origin(tp)
 
-   Provide basic introspection for generic types and special typing forms.
-
-   For a typing object of the form ``X[Y, Z, ...]`` these functions return
-   ``X`` and ``(Y, Z, ...)``. If ``X`` is a generic alias for a builtin or
+   Get the unsubscripted version of a type: for a typing object of the form
+   ``X[Y, Z, ...]`` return ``X``. If ``X`` is a generic alias for a builtin or
    :mod:`collections` class, it gets normalized to the original class.
+   If ``X`` is an instance of :class:`ParamSpecArgs` or :class:`ParamSpecKwargs`,
+   return the underlying :class:`ParamSpec`.
+   Return ``None`` for unsupported objects.
+   Examples::
+
+      assert get_origin(str) is None
+      assert get_origin(Dict[str, int]) is dict
+      assert get_origin(Union[int, str]) is Union
+      P = ParamSpec('P')
+      assert get_origin(P.args) is P
+      assert get_origin(P.kwargs) is P
+
+   .. versionadded:: 3.8
+
+.. function:: get_args(tp)
+
+   Get type arguments with all substitutions performed: for a typing object
+   of the form ``X[Y, Z, ...]`` return ``(Y, Z, ...)``.
    If ``X`` is a union or :class:`Literal` contained in another
    generic type, the order of ``(Y, Z, ...)`` may be different from the order
    of the original arguments ``[Y, Z, ...]`` due to type caching.
-   For unsupported objects return ``None`` and ``()`` correspondingly.
+   Return ``()`` for unsupported objects.
    Examples::
 
-      assert get_origin(Dict[str, int]) is dict
+      assert get_args(int) == ()
       assert get_args(Dict[int, str]) == (int, str)
-
-      assert get_origin(Union[int, str]) is Union
       assert get_args(Union[int, str]) == (int, str)
 
    .. versionadded:: 3.8
@@ -2977,6 +2986,8 @@ convenience. This is subject to change, and not all deprecations are listed.
 +----------------------------------+---------------+-------------------+----------------+
 |  ``typing`` versions of standard | 3.9           | Undecided         | :pep:`585`     |
 |  collections                     |               |                   |                |
++----------------------------------+---------------+-------------------+----------------+
+|  ``typing.ByteString``           | 3.9           | 3.14              | :gh:`91896`    |
 +----------------------------------+---------------+-------------------+----------------+
 |  ``typing.Text``                 | 3.11          | Undecided         | :gh:`92332`    |
 +----------------------------------+---------------+-------------------+----------------+
