@@ -111,7 +111,7 @@ in :mod:`logging` itself) and defining handlers which are declared either in
                                     they or their ancestors are explicitly named
                                     in the logging configuration.
 
-    :param encoding: The encoding used to open file when *fname* is filename.
+   :param encoding: The encoding used to open file when *fname* is filename.
 
    .. versionchanged:: 3.4
       An instance of a subclass of :class:`~configparser.RawConfigParser` is
