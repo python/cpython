@@ -200,7 +200,7 @@ class ListComprehensionTest(unittest.TestCase):
             y = [g for x in [1]]
         """
         outputs = {"y": [2]}
-        self._check_in_scopes(code, outputs)
+        self._check_in_scopes(code, outputs, scopes=["module", "function"])
 
     def test_inner_cell_shadows_outer_redefined(self):
         code = """
@@ -328,7 +328,7 @@ class ListComprehensionTest(unittest.TestCase):
             y = [x for [x ** x for x in range(x)][x - 1] in l]
         """
         outputs = {"y": [3, 3, 3]}
-        self._check_in_scopes(code, outputs)
+        self._check_in_scopes(code, outputs, scopes=["module", "function"])
 
     def test_nested_3(self):
         code = """
@@ -378,6 +378,23 @@ class ListComprehensionTest(unittest.TestCase):
 
         with self.assertRaises(UnboundLocalError):
             f()
+
+    def test_unbound_local_in_class_scope(self):
+        class X:
+            y = 1
+            with self.assertRaises(NameError):
+                [x + y for x in range(2)]
+
+    def test_comprehension_in_class_scope(self):
+        code = """
+            y = 1
+            class X:
+                y = 2
+                vals = [(x, y) for x in range(2)]
+            vals = X.vals
+        """
+        self._check_in_scopes(code, {"vals": [(0, 1), (1, 1)]},
+                              scopes=["module", "fucntion"])
 
 
 __test__ = {'doctests' : doctests}

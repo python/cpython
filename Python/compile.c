@@ -388,6 +388,8 @@ struct compiler_unit {
     instr_sequence u_instr_sequence; /* codegen output */
 
     int u_nfblocks;
+    int u_in_inlined_comp;
+
     struct fblockinfo u_fblock[CO_MAXBLOCKS];
 
     _PyCompile_CodeUnitMetadata u_metadata;
@@ -1290,6 +1292,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
     }
 
     u->u_nfblocks = 0;
+    u->u_in_inlined_comp = 0;
     u->u_metadata.u_firstlineno = lineno;
     u->u_metadata.u_consts = PyDict_New();
     if (!u->u_metadata.u_consts) {
@@ -4137,7 +4140,7 @@ compiler_nameop(struct compiler *c, location loc,
     case OP_DEREF:
         switch (ctx) {
         case Load:
-            if (c->u->u_ste->ste_type == ClassBlock) {
+            if (c->u->u_ste->ste_type == ClassBlock && !c->u->u_in_inlined_comp) {
                 op = LOAD_FROM_DICT_OR_DEREF;
                 // First load the locals
                 if (codegen_addop_noarg(INSTR_SEQUENCE(c), LOAD_LOCALS, loc) < 0) {
@@ -4188,7 +4191,12 @@ compiler_nameop(struct compiler *c, location loc,
         break;
     case OP_NAME:
         switch (ctx) {
-        case Load: op = LOAD_NAME; break;
+        case Load:
+            op = (c->u->u_ste->ste_type == ClassBlock
+                    && c->u->u_in_inlined_comp)
+                ? LOAD_GLOBAL
+                : LOAD_NAME;
+            break;
         case Store: op = STORE_NAME; break;
         case Del: op = DELETE_NAME; break;
         }
@@ -5413,6 +5421,7 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
                                  PySTEntryObject *entry,
                                  inlined_comprehension_state *state)
 {
+    c->u->u_in_inlined_comp++;
     // iterate over names bound in the comprehension and ensure we isolate
     // them from the outer scope as needed
     PyObject *k, *v;
@@ -5424,7 +5433,7 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
         // at all; DEF_LOCAL | DEF_NONLOCAL can occur in the case of an
         // assignment expression to a nonlocal in the comprehension, these don't
         // need handling here since they shouldn't be isolated
-        if (symbol & DEF_LOCAL && !(symbol & DEF_NONLOCAL)) {
+        if ((symbol & DEF_LOCAL && !(symbol & DEF_NONLOCAL)) || c->u->u_ste->ste_type == ClassBlock) {
             if (!_PyST_IsFunctionLike(c->u->u_ste)) {
                 // non-function scope: override this name to use fast locals
                 PyObject *orig = PyDict_GetItem(c->u->u_metadata.u_fasthidden, k);
@@ -5444,10 +5453,12 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
                 }
             }
             long scope = (symbol >> SCOPE_OFFSET) & SCOPE_MASK;
+            if (scope == FREE && c->u->u_ste->ste_type == ClassBlock) {
+                dict_add_o(c->u->u_metadata.u_freevars, k);
+            }
             PyObject *outv = PyDict_GetItemWithError(c->u->u_ste->ste_symbols, k);
             if (outv == NULL) {
-                assert(PyErr_Occurred());
-                return ERROR;
+                outv = _PyLong_GetZero();
             }
             assert(PyLong_Check(outv));
             long outsc = (PyLong_AS_LONG(outv) >> SCOPE_OFFSET) & SCOPE_MASK;
@@ -5521,6 +5532,7 @@ static int
 pop_inlined_comprehension_state(struct compiler *c, location loc,
                                 inlined_comprehension_state state)
 {
+    c->u->u_in_inlined_comp--;
     PyObject *k, *v;
     Py_ssize_t pos = 0;
     if (state.temp_symbols) {
