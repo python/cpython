@@ -2665,7 +2665,7 @@ class ProtocolTests(BaseTestCase):
 
         # gh-104555: ABCMeta might cache the result of this isinstance check
         # if we called super().__instancecheck__ in the wrong place
-        # in _ProtocolMeta.__instancheck__...
+        # in _ProtocolMeta.__instancecheck__...
         self.assertIsInstance(Eggs(), Spam)
 
         # ...and if it did, then TypeError wouldn't be raised here!
@@ -2683,7 +2683,7 @@ class ProtocolTests(BaseTestCase):
 
         # gh-104555: ABCMeta might cache the result of this isinstance check
         # if we called super().__instancecheck__ in the wrong place
-        # in _ProtocolMeta.__instancheck__...
+        # in _ProtocolMeta.__instancecheck__...
         self.assertIsInstance(Eggs(42), Spam)
 
         # ...and if it did, then TypeError wouldn't be raised here!
