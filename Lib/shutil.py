@@ -1244,7 +1244,8 @@ def unpack_archive(filename, extract_dir=None, format=None, *, filter=None):
             raise ReadError("Unknown archive format '{0}'".format(filename))
 
         func = _UNPACK_FORMATS[format][1]
-        kwargs = dict(_UNPACK_FORMATS[format][2]) | filter_kwargs
+        kwargs = dict(_UNPACK_FORMATS[format][2])
+        kwargs.update(filter_kwargs)
         func(filename, extract_dir, **kwargs)
 
 

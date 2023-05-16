@@ -16,7 +16,6 @@ import tarfile
 
 from test import support
 from test.support import script_helper
-from test.support import warnings_helper
 
 # Check for our compression modules.
 try:
@@ -2739,8 +2738,7 @@ class NoneInfoExtractTests(ReadTest):
         tar.errorlevel = 0
         with ExitStack() as cm:
             if cls.extraction_filter is None:
-                cm.enter_context(warnings.catch_warnings(
-                    action="ignore", category=DeprecationWarning))
+                cm.enter_context(warnings.catch_warnings())
             tar.extractall(cls.control_dir, filter=cls.extraction_filter)
         tar.close()
         cls.control_paths = set(
@@ -2870,8 +2868,8 @@ class NoneInfoTests_Misc(unittest.TestCase):
         for attr_names in ({'mtime'}, {'mode'}, {'uid'}, {'gid'},
                            {'uname'}, {'gname'},
                            {'uid', 'uname'}, {'gid', 'gname'}):
-            with (self.subTest(attr_names=attr_names),
-                  tarfile.open(tarname, encoding="iso8859-1") as tar):
+            with self.subTest(attr_names=attr_names), \
+                  tarfile.open(tarname, encoding="iso8859-1") as tar:
                 tio_prev = io.TextIOWrapper(io.BytesIO(), 'ascii', newline='\n')
                 with support.swap_attr(sys, 'stdout', tio_prev):
                     tar.list()
@@ -3062,7 +3060,7 @@ class TestExtractionFilters(unittest.TestCase):
         if type is None and isinstance(name, str) and name.endswith('/'):
             type = tarfile.DIRTYPE
         if symlink_to is not None:
-            got = (self.destdir / name).readlink()
+            got = pathlib.Path(os.readlink(self.destdir / name))
             expected = pathlib.Path(symlink_to)
             # The symlink might be the same (textually) as what we expect,
             # but some systems change the link to an equivalent path, so
@@ -3379,7 +3377,7 @@ class TestExtractionFilters(unittest.TestCase):
         """Ensure the default filter warns"""
         with ArchiveMaker() as arc:
             arc.add('foo')
-        with warnings_helper.check_warnings(
+        with support.check_warnings(
                 ('Python 3.14', DeprecationWarning)):
             with self.check_context(arc.open(), None):
                 self.expect_file('foo')
