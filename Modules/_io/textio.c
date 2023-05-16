@@ -167,13 +167,6 @@ textiobase_errors_get(PyObject *self, void *context)
     Py_RETURN_NONE;
 }
 
-static int
-textiobase_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    Py_VISIT(((iobase *)self)->dict);
-    return 0;
-}
 
 static PyMethodDef textiobase_methods[] = {
     _IO__TEXTIOBASE_DETACH_METHODDEF
@@ -194,13 +187,12 @@ static PyType_Slot textiobase_slots[] = {
     {Py_tp_doc, (void *)textiobase_doc},
     {Py_tp_methods, textiobase_methods},
     {Py_tp_getset, textiobase_getset},
-    {Py_tp_traverse, textiobase_traverse},
     {0, NULL},
 };
 
 PyType_Spec textiobase_spec = {
     .name = "_io._TextIOBase",
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
               Py_TPFLAGS_IMMUTABLETYPE),
     .slots = textiobase_slots,
 };

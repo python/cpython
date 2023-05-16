@@ -195,11 +195,3 @@ extern PyObject *_PyIOBase_cannot_pickle(PyObject *self, PyObject *args);
 #ifdef HAVE_WINDOWS_CONSOLE_IO
 extern char _PyIO_get_console_type(PyObject *);
 #endif
-
-
-typedef struct {
-    PyObject_HEAD
-
-    PyObject *dict;
-    PyObject *weakreflist;
-} iobase;

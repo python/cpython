@@ -26,6 +26,12 @@ class _io._RawIOBase "PyObject *" "clinic_state()->PyRawIOBase_Type"
  * IOBase class, an abstract class
  */
 
+typedef struct {
+    PyObject_HEAD
+
+    PyObject *dict;
+    PyObject *weakreflist;
+} iobase;
 
 PyDoc_STRVAR(iobase_doc,
     "The abstract base class for all I/O classes.\n"
@@ -1030,14 +1036,6 @@ rawiobase_write(PyObject *self, PyObject *args)
     return NULL;
 }
 
-static int
-rawiobase_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    Py_VISIT(((iobase *)self)->dict);
-    return 0;
-}
-
 static PyMethodDef rawiobase_methods[] = {
     _IO__RAWIOBASE_READ_METHODDEF
     _IO__RAWIOBASE_READALL_METHODDEF
@@ -1049,13 +1047,12 @@ static PyMethodDef rawiobase_methods[] = {
 static PyType_Slot rawiobase_slots[] = {
     {Py_tp_doc, (void *)rawiobase_doc},
     {Py_tp_methods, rawiobase_methods},
-    {Py_tp_traverse, rawiobase_traverse},
     {0, NULL},
 };
 
 PyType_Spec rawiobase_spec = {
     .name = "_io._RawIOBase",
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
               Py_TPFLAGS_IMMUTABLETYPE),
     .slots = rawiobase_slots,
 };
