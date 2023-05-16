@@ -1182,7 +1182,12 @@ class TestBranchAndJumpEvents(CheckEvents):
 class TestLoadSuperAttr(CheckEvents):
     RECORDERS = CallRecorder, LineRecorder, CRaiseRecorder, CReturnRecorder
 
-    def _exec(self, codestr, optimized=False):
+    def _exec(self, co):
+        d = {}
+        exec(co, d, d)
+        return d
+
+    def _exec_super(self, codestr, optimized=False):
         # The compiler checks for statically visible shadowing of the name
         # `super`, and declines to emit `LOAD_SUPER_ATTR` if shadowing is found.
         # So inserting `super = super` prevents the compiler from emitting
@@ -1194,9 +1199,7 @@ class TestLoadSuperAttr(CheckEvents):
         co = compile(codestr, "<string>", "exec")
         # validate that we really do have a LOAD_SUPER_ATTR, only when optimized
         self.assertEqual(self._has_load_super_attr(co), optimized)
-        d = {}
-        exec(co, d, d)
-        return d
+        return self._exec(co)
 
     def _has_load_super_attr(self, co):
         has = any(instr.opname == "LOAD_SUPER_ATTR" for instr in dis.get_instructions(co))
@@ -1224,7 +1227,7 @@ class TestLoadSuperAttr(CheckEvents):
             def f():
                 return b.method(1)
         """
-        d = self._exec(codestr, optimized)
+        d = self._exec_super(codestr, optimized)
         expected = [
             ('line', 'check_events', 10),
             ('call', 'f', sys.monitoring.MISSING),
@@ -1275,7 +1278,7 @@ class TestLoadSuperAttr(CheckEvents):
                 else:
                     assert False, "should have raised TypeError"
         """
-        d = self._exec(codestr, optimized)
+        d = self._exec_super(codestr, optimized)
         expected = [
             ('line', 'check_events', 10),
             ('call', 'f', sys.monitoring.MISSING),
@@ -1316,7 +1319,7 @@ class TestLoadSuperAttr(CheckEvents):
             def f():
                 return b.method()
         """
-        d = self._exec(codestr, optimized)
+        d = self._exec_super(codestr, optimized)
         expected = [
             ('line', 'check_events', 10),
             ('call', 'f', sys.monitoring.MISSING),
@@ -1338,6 +1341,57 @@ class TestLoadSuperAttr(CheckEvents):
 
         self.check_events(nonopt_func, recorders=self.RECORDERS, expected=nonopt_expected)
         self.check_events(opt_func, recorders=self.RECORDERS, expected=opt_expected)
+
+    def test_vs_other_type_call(self):
+        code_template = textwrap.dedent("""
+            class C:
+                def method(self):
+                    return {cls}().__repr__{call}
+            c = C()
+            def f():
+                return c.method()
+        """)
+
+        def get_expected(name, call_method, ns):
+            repr_arg = 0 if name == "int" else sys.monitoring.MISSING
+            return [
+                ('line', 'check_events', 10),
+                ('call', 'f', sys.monitoring.MISSING),
+                ('line', 'f', 1),
+                ('call', 'method', ns["c"]),
+                ('line', 'method', 1),
+                ('call', name, sys.monitoring.MISSING),
+                ('C return', name, sys.monitoring.MISSING),
+                *(
+                    [
+                        ('call', '__repr__', repr_arg),
+                        ('C return', '__repr__', repr_arg),
+                    ] if call_method else []
+                ),
+                ('line', 'check_events', 11),
+                ('call', 'set_events', 2),
+            ]
+
+        for call_method in [True, False]:
+            with self.subTest(call_method=call_method):
+                call_str = "()" if call_method else ""
+                code_super = code_template.format(cls="super", call=call_str)
+                code_int = code_template.format(cls="int", call=call_str)
+                co_super = compile(code_super, '<string>', 'exec')
+                self.assertTrue(self._has_load_super_attr(co_super))
+                ns_super = self._exec(co_super)
+                ns_int = self._exec(code_int)
+
+                self.check_events(
+                    ns_super["f"],
+                    recorders=self.RECORDERS,
+                    expected=get_expected("super", call_method, ns_super)
+                )
+                self.check_events(
+                    ns_int["f"],
+                    recorders=self.RECORDERS,
+                    expected=get_expected("int", call_method, ns_int)
+                )
 
 
 class TestSetGetEvents(MonitoringTestBase, unittest.TestCase):
