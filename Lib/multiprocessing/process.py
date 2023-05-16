@@ -61,7 +61,7 @@ def parent_process():
 def _cleanup():
     # check for processes which have finished
     for p in list(_children):
-        if p._popen.poll() is not None:
+        if p._popen is not None and p._popen.poll() is not None:
             _children.discard(p)
 
 #
