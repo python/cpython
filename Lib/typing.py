@@ -1804,6 +1804,9 @@ class _ProtocolMeta(ABCMeta):
         if type.__instancecheck__(cls, instance):
             return True
 
+        if cls.__callable_proto_members_only__ and issubclass(type(instance), cls):
+            return True
+
         if is_protocol_cls:
             getattr_static = _lazy_load_getattr_static()
             for attr in cls.__protocol_attrs__:
