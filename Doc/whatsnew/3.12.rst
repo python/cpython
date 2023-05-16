@@ -771,6 +771,16 @@ Deprecated
   ``int``, convert to int explicitly with ``~int(x)``. (Contributed by Tim Hoffmann
   in :gh:`103487`.)
 
+* :class:`datetime.datetime`'s
+  :meth:`~datetime.datetime.utcnow` and
+  :meth:`~datetime.datetime.utcfromtimestamp` are deprecated and will be
+  removed in a future version. Instead, use timezone-aware objects to represent
+  datetimes in UTC: respectively, call
+  :meth:`~datetime.datetime.now` and
+  :meth:`~datetime.datetime.fromtimestamp`  with the *tz* parameter set to
+  :attr:`datetime.UTC`.
+  (Contributed by Paul Ganssle in :gh:`103857`.)
+
 Pending Removal in Python 3.13
 ------------------------------
 
