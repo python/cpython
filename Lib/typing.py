@@ -2471,8 +2471,9 @@ def final(f):
     return f
 
 
-# Some unconstrained type variables.  These are used by the container types.
-# (These are not for export.)
+# Some unconstrained type variables.  These were initially used by the container types.
+# They were never meant for export and are now unused, but we keep them around to
+# avoid breaking compatibility with users who import them.
 T = TypeVar('T')  # Any type.
 KT = TypeVar('KT')  # Key type.
 VT = TypeVar('VT')  # Value type.
@@ -2577,8 +2578,6 @@ Type.__doc__ = \
     At this point the type checker knows that joe has type BasicUser.
     """
 
-# Internal type variable for callables. Not for export.
-F = TypeVar("F", bound=Callable[..., Any])
 
 @runtime_checkable
 class SupportsInt(Protocol):
@@ -2631,7 +2630,7 @@ class SupportsIndex(Protocol):
 
 
 @runtime_checkable
-class SupportsAbs(Protocol[T_co]):
+class SupportsAbs[T_co](Protocol):
     """An ABC with one abstract method __abs__ that is covariant in its return type."""
     __slots__ = ()
 
@@ -2641,7 +2640,7 @@ class SupportsAbs(Protocol[T_co]):
 
 
 @runtime_checkable
-class SupportsRound(Protocol[T_co]):
+class SupportsRound[T_co](Protocol):
     """An ABC with one abstract method __round__ that is covariant in its return type."""
     __slots__ = ()
 
@@ -3183,7 +3182,7 @@ re.__name__ = __name__ + '.re'
 sys.modules[re.__name__] = re
 
 
-def reveal_type(obj: T, /) -> T:
+def reveal_type[T](obj: T, /) -> T:
     """Reveal the inferred type of a variable.
 
     When a static type checker encounters a call to ``reveal_type()``,
@@ -3203,7 +3202,7 @@ def reveal_type(obj: T, /) -> T:
     return obj
 
 
-def dataclass_transform(
+def dataclass_transform[T](
     *,
     eq_default: bool = True,
     order_default: bool = False,
@@ -3288,8 +3287,7 @@ def dataclass_transform(
     return decorator
 
 
-
-def override(method: F, /) -> F:
+def override[F: Callable[..., Any]](method: F, /) -> F:
     """Indicate that a method is intended to override a method in a base class.
 
     Usage:
