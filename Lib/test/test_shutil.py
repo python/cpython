@@ -23,7 +23,6 @@ import zipfile
 
 from test import support
 from test.support import TESTFN, FakePath
-from test.support import warnings_helper
 
 TESTFN2 = TESTFN + "2"
 
@@ -1276,7 +1275,7 @@ class TestShutil(unittest.TestCase):
     def check_unpack_tarball(self, format):
         self.check_unpack_archive(format, filter='fully_trusted')
         self.check_unpack_archive(format, filter='data')
-        with warnings_helper.check_warnings(
+        with support.check_warnings(
                 ('The default', RuntimeWarning)):
             self.check_unpack_archive(format)
 
