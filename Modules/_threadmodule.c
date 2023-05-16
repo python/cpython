@@ -30,6 +30,29 @@ struct module_thread {
     PyThreadState *tstate;
     /* This lock is released right after the Python code finishes. */
     PyObject *running_lock;
+    /* Called when a thread state is deleted normally, but not when it
+     * is destroyed after fork().
+     * Pain:  to prevent rare but fatal shutdown errors (issue 18808),
+     * Thread.join() must wait for the join'ed thread's tstate to be unlinked
+     * from the tstate chain.  That happens at the end of a thread's life,
+     * in pystate.c.
+     * The obvious way doesn't quite work:  create a lock which the tstate
+     * unlinking code releases, and have Thread.join() wait to acquire that
+     * lock.  The problem is that we _are_ at the end of the thread's life:
+     * if the thread holds the last reference to the lock, decref'ing the
+     * lock will delete the lock, and that may trigger arbitrary Python code
+     * if there's a weakref, with a callback, to the lock.  But by this time
+     * _PyRuntime.gilstate.tstate_current is already NULL, so only the simplest
+     * of C code can be allowed to run (in particular it must not be possible to
+     * release the GIL).
+     * So instead of holding the lock directly, the tstate holds a weakref to
+     * the lock:  that's the value of lock_weakref.  Decref'ing a
+     * weakref is harmless.
+     * After the tstate is unlinked, release_sentinel is called with the
+     * weakref-to-lock (lock_weakref) argument, and release_sentinel releases
+     * the indirectly held lock.
+     */
+    PyObject *running_lock_weakref;
     struct module_thread *prev;
     struct module_thread *next;
 };
@@ -154,6 +177,7 @@ add_module_thread(struct module_state *state, struct module_threads *threads,
         PyErr_NoMemory();
         return NULL;
     }
+    mt->running_lock_weakref = NULL;
 
     module_threads_add(threads, mt);
 
@@ -181,14 +205,15 @@ module_thread_finished(struct module_threads *threads, struct module_thread *mt)
     // XXX We should be notifying other threads here.
 }
 
+static void release_sentinel(PyObject *wr);
+
 static void
 remove_module_thread(struct module_threads *threads, struct module_thread *mt)
 {
     // Notify other threads that this one is done.
     // XXX This should happen in module_thread_finished().
-    // XXX These fields could be removed from PyThreadState.
-    if (mt->tstate->on_delete != NULL) {
-        mt->tstate->on_delete(mt->tstate->on_delete_data);
+    if (mt->running_lock_weakref != NULL) {
+        release_sentinel(mt->running_lock_weakref);
     }
 
     // Remove it from the list.
@@ -1497,9 +1522,8 @@ This function is meant for internal and specialized purposes only.\n\
 In most applications `threading.enumerate()` should be used instead.");
 
 static void
-release_sentinel(void *wr_raw)
+release_sentinel(PyObject *wr)
 {
-    PyObject *wr = _PyObject_CAST(wr_raw);
     /* Tricky: this function is called when the current thread state
        is being deleted.  Therefore, only simple C code can safely
        execute here. */
@@ -1538,14 +1562,10 @@ thread__set_sentinel(PyObject *module, PyObject *Py_UNUSED(ignored))
     }
     lock = Py_NewRef(mt->running_lock);
 
-    if (tstate->on_delete_data != NULL) {
+    if (mt->running_lock_weakref != NULL) {
         /* We must support the re-creation of the lock from a
            fork()ed child. */
-        assert(tstate->on_delete == &release_sentinel);
-        wr = (PyObject *) tstate->on_delete_data;
-        tstate->on_delete = NULL;
-        tstate->on_delete_data = NULL;
-        Py_DECREF(wr);
+        Py_CLEAR(mt->running_lock_weakref);
     }
     /* The lock is owned by whoever called _set_sentinel(), but the weakref
        hangs to the thread state. */
@@ -1553,8 +1573,7 @@ thread__set_sentinel(PyObject *module, PyObject *Py_UNUSED(ignored))
     if (wr == NULL) {
         return NULL;
     }
-    tstate->on_delete_data = (void *) wr;
-    tstate->on_delete = &release_sentinel;
+    mt->running_lock_weakref = wr;
 
     return lock;
 }
