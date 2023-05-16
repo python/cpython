@@ -160,7 +160,7 @@ Unless using :pep:`523`, you will not need this.
 
 .. c:function:: int PyUnstable_InterpreterFrame_GetLine(struct _PyInterpreterFrame *frame);
 
-   Return the  currently executing line number, or -1 if there is no line number.
+   Return the currently executing line number, or -1 if there is no line number.
 
    .. versionadded:: 3.12
 
