@@ -479,6 +479,7 @@ OBJECT_OBJS=	\
 		Objects/structseq.o \
 		Objects/tupleobject.o \
 		Objects/typeobject.o \
+		Objects/typevarobject.o \
 		Objects/unicodeobject.o \
 		Objects/unicodectype.o \
 		Objects/unionobject.o \
@@ -642,7 +643,7 @@ profile-gen-stamp: profile-clean-stamp
 		exit 1;\
 	fi
 	@echo "Building with support for profile generation:"
-	$(MAKE) build_all_generate_profile
+	$(MAKE) @DEF_MAKE_RULE@ CFLAGS_NODIST="$(CFLAGS_NODIST) $(PGO_PROF_GEN_FLAG)" LDFLAGS_NODIST="$(LDFLAGS_NODIST) $(PGO_PROF_GEN_FLAG)" LIBS="$(LIBS)"
 	touch $@
 
 # Run task with profile generation build to create profile information.
@@ -652,27 +653,15 @@ profile-run-stamp:
 	# enabled.
 	$(MAKE) profile-gen-stamp
 	# Next, run the profile task to generate the profile information.
-	$(MAKE) run_profile_task
-	$(MAKE) build_all_merge_profile
+	@ # FIXME: can't run for a cross build
+	$(LLVM_PROF_FILE) $(RUNSHARED) ./$(BUILDPYTHON) $(PROFILE_TASK) || true
+	$(LLVM_PROF_MERGER)
 	# Remove profile generation binary since we are done with it.
 	$(MAKE) clean-retain-profile
 	# This is an expensive target to build and it does not have proper
 	# makefile dependency information.  So, we create a "stamp" file
 	# to record its completion and avoid re-running it.
 	touch $@
-
-.PHONY: build_all_generate_profile
-build_all_generate_profile:
-	$(MAKE) @DEF_MAKE_RULE@ CFLAGS_NODIST="$(CFLAGS_NODIST) $(PGO_PROF_GEN_FLAG)" LDFLAGS_NODIST="$(LDFLAGS_NODIST) $(PGO_PROF_GEN_FLAG)" LIBS="$(LIBS)"
-
-.PHONY: run_profile_task
-run_profile_task:
-	@ # FIXME: can't run for a cross build
-	$(LLVM_PROF_FILE) $(RUNSHARED) ./$(BUILDPYTHON) $(PROFILE_TASK) || true
-
-.PHONY: build_all_merge_profile
-build_all_merge_profile:
-	$(LLVM_PROF_MERGER)
 
 # Compile Python binary with profile guided optimization.
 # To force re-running of the profile task, remove the profile-run-stamp file.
@@ -1767,6 +1756,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_tracemalloc.h \
 		$(srcdir)/Include/internal/pycore_tuple.h \
 		$(srcdir)/Include/internal/pycore_typeobject.h \
+		$(srcdir)/Include/internal/pycore_typevarobject.h \
 		$(srcdir)/Include/internal/pycore_ucnhash.h \
 		$(srcdir)/Include/internal/pycore_unionobject.h \
 		$(srcdir)/Include/internal/pycore_unicodeobject.h \
