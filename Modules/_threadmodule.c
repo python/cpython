@@ -1551,7 +1551,9 @@ thread__set_sentinel(PyObject *module, PyObject *Py_UNUSED(ignored))
        hangs to the thread state. */
     wr = PyWeakref_NewRef(lock, NULL);
     if (wr == NULL) {
-        Py_DECREF(lock);
+        if (mt == NULL) {
+            Py_DECREF(lock);
+        }
         return NULL;
     }
     tstate->on_delete_data = (void *) wr;
