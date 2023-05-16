@@ -316,18 +316,20 @@ xattrnamespace(int *namespace, const char *fullattr)
     if (sep < fullattr)
         return ENOATTR;
 
-    nslen = sep - fullattr + 1;
+    nslen = sep - fullattr;
 
-    if (strncmp(fullattr, "user", (4 < nslen ? 4 : nslen)) == 0) {
+    // We could use extattr_string_to_namespace, but we have a prefix, not a
+    // null-terminated string, at this point. extattr_string_to_namespace is
+    // currently documented to only support 'user' and 'system' namespaces.
+    if (nslen == 4 && memcmp(fullattr, "user", 4) == 0) {
         *namespace = EXTATTR_NAMESPACE_USER;
-    } else if (strncmp(fullattr, "system", (6 < nslen ? 6 : nslen)) == 0) {
+    } else if (nslen == 6 && memcmp(fullattr, "system", 6) == 0) {
         *namespace = EXTATTR_NAMESPACE_SYSTEM;
+    } else {
+        return ENOATTR;
     }
 
-    if (*namespace == -1)
-        ret = ENOATTR;
-
-    return ret;
+    return 0;
 }
 
 /* xattr lists come back from FreeBSD without the leading namespace.
@@ -361,7 +363,7 @@ normalize_xattr_list(int namespace, char *attrs, size_t size, ssize_t extattr_re
     if (size - SSIZE_MAX < SSIZE_MAX)
         return -ERANGE;
 
-    if (! (scratch = calloc(1, size)))
+    if (! (scratch = PyMem_RawCalloc(1, size)))
         return -ENOMEM;
 
     scratch_ptr = scratch;
@@ -393,7 +395,7 @@ normalize_xattr_list(int namespace, char *attrs, size_t size, ssize_t extattr_re
     ret = size - left;
 
 bad:
-    free(scratch);
+    PyMem_RawFree(scratch);
 
     return ret;
 }
@@ -14248,6 +14250,95 @@ os_removexattr_impl(PyObject *module, path_t *path, path_t *attribute,
     Py_RETURN_NONE;
 }
 
+#ifdef __FreeBSD__
+
+static PyObject *
+freebsd_listxattr_impl(PyObject* list, path_t *path, int follow_symlinks) {
+    PyObject *result = list;
+    int namespaces[] = {EXTATTR_NAMESPACE_SYSTEM, EXTATTR_NAMESPACE_USER};
+    char *nsprefix[] = {"system.", "user."};
+    int privileged_namespaces = 1;
+
+    char *name = path->narrow ? path->narrow : ".";
+
+    Py_BEGIN_ALLOW_THREADS;
+    for (int i = 0; i < sizeof(namespaces) / sizeof(int); i++) {
+        ssize_t length;
+        int namespace = namespaces[i];
+        if (path->fd > -1)
+            length = extattr_list_fd(path->fd, namespace, NULL, 0);
+        else if (follow_symlinks)
+            length = extattr_list_file(name, namespace, NULL, 0);
+        else
+            length = extattr_list_link(name, namespace, NULL, 0);
+
+        if (length < 0) {
+            if (i < privileged_namespaces && errno == EPERM) {
+                continue;
+            } else {
+                path_error(path);
+                result = NULL;
+                break;
+            }
+        }
+        
+        char* buffer = PyMem_RawMalloc(length);
+        if (path->fd > -1)
+            length = extattr_list_fd(path->fd, namespace, buffer, length);
+        else if (follow_symlinks)
+            length = extattr_list_file(name, namespace, buffer, length);
+        else
+            length = extattr_list_link(name, namespace, buffer, length);
+
+        if (length < 0) {
+            path_error(path);
+            result = NULL;
+            break;
+        }
+
+        // buffer to build "{namespace}.{attr}" strings, must include prefix:
+        char attr_name[EXTATTR_MAXNAMELEN + 8];
+        int attr_name_size = sizeof(attr_name);
+
+        char *next = buffer;
+        char *end = buffer + length;
+        char *attr_suffix = stpcpy(attr_name, nsprefix[i]);
+        ssize_t attr_buf_size = attr_name + attr_name_size - attr_suffix;
+        Py_BLOCK_THREADS;
+        while (next < end) {
+            char attr_len = *next;
+            if (attr_len >= attr_buf_size) {
+                result = NULL;
+                // TODO handle memory error
+                break;
+            }
+            char *attr_name_end = mempcpy(attr_suffix, next + 1, attr_len);
+            *attr_name_end = '\0';
+            int error;
+            PyObject *attribute = PyUnicode_DecodeFSDefaultAndSize(attr_name,
+                                                                   attr_name_end - attr_name);
+            if (!attribute) {
+                result = NULL;
+                break;
+            }
+            error = PyList_Append(list, attribute);
+            Py_DECREF(attribute);
+            if (error) {
+                result = NULL;
+                break;
+            }
+            next += attr_len + 1;
+        }
+        Py_UNBLOCK_THREADS;
+        if (result == NULL) {
+            break;
+        }
+    }
+    Py_END_ALLOW_THREADS;
+
+    return result;
+}
+#endif
 
 /*[clinic input]
 os.listxattr
@@ -14269,13 +14360,6 @@ static PyObject *
 os_listxattr_impl(PyObject *module, path_t *path, int follow_symlinks)
 /*[clinic end generated code: output=bebdb4e2ad0ce435 input=9826edf9fdb90869]*/
 {
-    Py_ssize_t i;
-    PyObject *result = NULL;
-    const char *name;
-    char *buffer = NULL, *start, *end, *trace;
-    size_t buffer_size = 0;
-    ssize_t length = 0;
-
     if (fd_and_follow_symlinks_invalid("listxattr", path->fd, follow_symlinks))
         goto exit;
 
@@ -14283,6 +14367,14 @@ os_listxattr_impl(PyObject *module, path_t *path, int follow_symlinks)
                     path->object ? path->object : Py_None) < 0) {
         return NULL;
     }
+
+#if defined(HAVE_SYS_XATTR_H)
+    Py_ssize_t i;
+    PyObject *result = NULL;
+    const char *name;
+    char *buffer = NULL, *start, *end, *trace;
+    size_t buffer_size = 0;
+    ssize_t length = 0;
 
     name = path->narrow ? path->narrow : ".";
 
@@ -14349,6 +14441,23 @@ exit:
     if (buffer)
         PyMem_Free(buffer);
     return result;
+
+#else if defined(HAVE_SYS_EXTATTR_H) || defined(__FreeBSD__)
+
+    PyObject *list = PyList_New(0);
+    if (!list) {
+        goto exit;
+    }
+    PyObject *result = freebsd_listxattr_impl(list, path, follow_symlinks);
+    if (!result) {
+        Py_DECREF(list);
+        return NULL;
+    }
+exit:
+    return result;
+
+#endif
+
 }
 #endif /* USE_XATTRS */
 
