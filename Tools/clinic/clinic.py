@@ -2957,7 +2957,7 @@ legacy_converters: ConverterDict = {}
 
 class bool_converter(CConverter):
     type: str = 'int'
-    default_type = bool
+    default_type: bltns.type[bool] = bool
     format_unit: str = 'p'
     c_ignored_default: str = '0'
 
@@ -3008,7 +3008,7 @@ class defining_class_converter(CConverter):
 
 class char_converter(CConverter):
     type: str = 'char'
-    default_type = (bytes, bytearray)
+    default_type: tuple[bltns.type[bytes], bltns.type[bytearray]] = (bytes, bytearray)
     format_unit: str = 'c'
     c_ignored_default: str = "'\0'"
 
@@ -3042,7 +3042,7 @@ class char_converter(CConverter):
 @add_legacy_c_converter('B', bitwise=True)
 class unsigned_char_converter(CConverter):
     type: str = 'unsigned char'
-    default_type = int
+    default_type: bltns.type[int] = int
     format_unit: str = 'b'
     c_ignored_default: str = "'\0'"
 
@@ -3091,7 +3091,7 @@ class byte_converter(unsigned_char_converter): pass
 
 class short_converter(CConverter):
     type: str = 'short'
-    default_type = int
+    default_type: bltns.type[int] = int
     format_unit: str = 'h'
     c_ignored_default: str = "0"
 
@@ -3122,7 +3122,7 @@ class short_converter(CConverter):
 
 class unsigned_short_converter(CConverter):
     type: str = 'unsigned short'
-    default_type = int
+    default_type: bltns.type[int] = int
     c_ignored_default: str = "0"
 
     def converter_init(self, *, bitwise: bool = False) -> None:
@@ -3144,7 +3144,7 @@ class unsigned_short_converter(CConverter):
 @add_legacy_c_converter('C', accept={str})
 class int_converter(CConverter):
     type: str = 'int'
-    default_type = int
+    default_type: bltns.type[int] = int
     format_unit: str = 'i'
     c_ignored_default: str = "0"
 
@@ -3184,7 +3184,7 @@ class int_converter(CConverter):
 
 class unsigned_int_converter(CConverter):
     type: str = 'unsigned int'
-    default_type = int
+    default_type: bltns.type[int] = int
     c_ignored_default: str = "0"
 
     def converter_init(self, *, bitwise: bool = False) -> None:
@@ -3205,7 +3205,7 @@ class unsigned_int_converter(CConverter):
 
 class long_converter(CConverter):
     type: str = 'long'
-    default_type = int
+    default_type: bltns.type[int] = int
     format_unit: str = 'l'
     c_ignored_default: str = "0"
 
@@ -3221,7 +3221,7 @@ class long_converter(CConverter):
 
 class unsigned_long_converter(CConverter):
     type: str = 'unsigned long'
-    default_type = int
+    default_type: bltns.type[int] = int
     c_ignored_default: str = "0"
 
     def converter_init(self, *, bitwise: bool = False) -> None:
@@ -3244,7 +3244,7 @@ class unsigned_long_converter(CConverter):
 
 class long_long_converter(CConverter):
     type: str = 'long long'
-    default_type = int
+    default_type: bltns.type[int] = int
     format_unit: str = 'L'
     c_ignored_default: str = "0"
 
@@ -3260,7 +3260,7 @@ class long_long_converter(CConverter):
 
 class unsigned_long_long_converter(CConverter):
     type: str = 'unsigned long long'
-    default_type = int
+    default_type: bltns.type[int] = int
     c_ignored_default: str = "0"
 
     def converter_init(self, *, bitwise: bool = False) -> None:
@@ -3355,7 +3355,7 @@ class fildes_converter(CConverter):
 
 class float_converter(CConverter):
     type: str = 'float'
-    default_type = float
+    default_type: bltns.type[float] = float
     format_unit: str = 'f'
     c_ignored_default: str = "0.0"
 
@@ -3377,7 +3377,7 @@ class float_converter(CConverter):
 
 class double_converter(CConverter):
     type: str = 'double'
-    default_type = float
+    default_type: bltns.type[float] = float
     format_unit: str = 'd'
     c_ignored_default: str = "0.0"
 
@@ -3400,7 +3400,7 @@ class double_converter(CConverter):
 
 class Py_complex_converter(CConverter):
     type: str = 'Py_complex'
-    default_type = complex
+    default_type: bltns.type[complex] = complex
     format_unit: str = 'D'
     c_ignored_default: str = "{0.0, 0.0}"
 
@@ -3691,7 +3691,7 @@ PyMem_Free((void *){name});
 class Py_buffer_converter(CConverter):
     type: str = 'Py_buffer'
     format_unit: str = 'y*'
-    impl_by_reference = True
+    impl_by_reference: bool = True
     c_ignored_default: str = "{NULL, NULL}"
 
     def converter_init(self, *, accept={buffer}) -> None:
@@ -3789,7 +3789,7 @@ class self_converter(CConverter):
     A special-case converter:
     this is the default converter used for "self".
     """
-    type = None
+    type: str | None = None
     format_unit: str = ''
 
     def converter_init(self, *, type=None) -> None:
