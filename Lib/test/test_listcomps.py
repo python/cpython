@@ -201,6 +201,7 @@ class ListComprehensionTest(unittest.TestCase):
         """
         outputs = {"y": [2]}
         self._check_in_scopes(code, outputs, scopes=["module", "function"])
+        self._check_in_scopes(code, scopes=["class"], raises=NameError)
 
     def test_inner_cell_shadows_outer_redefined(self):
         code = """
@@ -329,6 +330,7 @@ class ListComprehensionTest(unittest.TestCase):
         """
         outputs = {"y": [3, 3, 3]}
         self._check_in_scopes(code, outputs, scopes=["module", "function"])
+        self._check_in_scopes(code, scopes=["class"], raises=NameError)
 
     def test_nested_3(self):
         code = """
@@ -413,6 +415,38 @@ class ListComprehensionTest(unittest.TestCase):
             vals = C.vals
         """
         outputs = {"vals": [(0, 1), (1, 1)]}
+        self._check_in_scopes(code, outputs, scopes=["function"])
+
+    def test_in_class_scope_with_global(self):
+        code = """
+            y = 1
+            class C:
+                global y
+                y = 2
+                # Ensure the listcomp uses the global, not the value in the
+                # class namespace
+                locals()['y'] = 3
+                vals = [(x, y) for x in range(2)]
+            vals = C.vals
+        """
+        outputs = {"vals": [(0, 2), (1, 2)]}
+        self._check_in_scopes(code, outputs, scopes=["module", "class"])
+        outputs = {"vals": [(0, 1), (1, 1)]}
+        self._check_in_scopes(code, outputs, scopes=["function"])
+
+    def test_in_class_scope_with_nonlocal(self):
+        code = """
+            y = 1
+            class C:
+                nonlocal y
+                y = 2
+                # Ensure the listcomp uses the global, not the value in the
+                # class namespace
+                locals()['y'] = 3
+                vals = [(x, y) for x in range(2)]
+            vals = C.vals
+        """
+        outputs = {"vals": [(0, 2), (1, 2)]}
         self._check_in_scopes(code, outputs, scopes=["function"])
 
 
