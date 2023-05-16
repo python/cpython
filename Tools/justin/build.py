@@ -225,7 +225,9 @@ class NewObjectParser:
                     offset = before + relocation["Offset"]
                     assert offset not in relocations
                     # XXX: Addend
-                    relocations[offset] = (relocation["Symbol"], relocation["Type"]["Value"], 0)
+                    addend = int.from_bytes(body[offset:offset + 8], sys.byteorder)
+                    body[offset:offset + 8] = [0] * 8
+                    relocations[offset] = (relocation["Symbol"], relocation["Type"]["Value"], addend)
             if "_justin_entry" in body_symbols:
                 entry = body_symbols["_justin_entry"]
             else:
@@ -278,7 +280,9 @@ class NewObjectParser:
                     name = name.removeprefix("_")
                     if name == "__bzero":  # XXX
                         name = "bzero"  # XXX
-                    relocations[offset] = (name, relocation["Type"]["Value"], 0)
+                    addend = int.from_bytes(body[offset:offset + 8], sys.byteorder)
+                    body[offset:offset + 8] = [0] * 8
+                    relocations[offset] = (name, relocation["Type"]["Value"], addend)
             if "_justin_entry" in body_symbols:
                 entry = body_symbols["_justin_entry"]
             else:
@@ -311,7 +315,10 @@ class NewObjectParser:
                     for relocation in unwrap(section["Relocations"], "Relocation"):
                         offset = before + relocation["Offset"]
                         assert offset not in relocations
-                        relocations[offset] = (relocation["Symbol"]["Value"], relocation["Type"]["Value"], relocation["Addend"])
+                        addend = int.from_bytes(body[offset:offset + 8], sys.byteorder)
+                        body[offset:offset + 8] = [0] * 8
+                        addend += relocation["Addend"]
+                        relocations[offset] = (relocation["Symbol"]["Value"], relocation["Type"]["Value"], addend)
                 elif type == "SHT_PROGBITS":
                     if "SHF_ALLOC" not in flags:
                         continue
