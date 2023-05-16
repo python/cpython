@@ -2572,6 +2572,9 @@ update_strong_cache(zoneinfo_state *state, const PyTypeObject *const type,
     }
 
     StrongCacheNode *new_node = strong_cache_node_new(key, zone);
+    if (new_node == NULL) {
+        return;
+    }
     StrongCacheNode **root = &(state->ZONEINFO_STRONG_CACHE);
     move_strong_cache_node_to_front(state, root, new_node);
 

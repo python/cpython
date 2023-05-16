@@ -9023,6 +9023,10 @@ os_setgroups(PyObject *module, PyObject *groups)
     }
 
     gid_t *grouplist = PyMem_New(gid_t, len);
+    if (grouplist == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
     for (Py_ssize_t i = 0; i < len; i++) {
         PyObject *elem;
         elem = PySequence_GetItem(groups, i);

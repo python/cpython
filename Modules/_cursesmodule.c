@@ -3252,7 +3252,6 @@ _curses_initscr_impl(PyObject *module)
 /*[clinic end generated code: output=619fb68443810b7b input=514f4bce1821f6b5]*/
 {
     WINDOW *win;
-    PyCursesWindowObject *winobj;
 
     if (initialised) {
         wrefresh(stdscr);
@@ -3348,9 +3347,7 @@ _curses_initscr_impl(PyObject *module)
     SetDictInt("LINES", LINES);
     SetDictInt("COLS", COLS);
 
-    winobj = (PyCursesWindowObject *)PyCursesWindow_New(win, NULL);
-    screen_encoding = winobj->encoding;
-    return (PyObject *)winobj;
+    return (PyObject *)PyCursesWindow_New(win, screen_encoding);
 }
 
 /*[clinic input]
