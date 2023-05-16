@@ -1798,7 +1798,10 @@ class _ProtocolMeta(ABCMeta):
             raise TypeError("Instance and class checks can only be used with"
                             " @runtime_checkable protocols")
 
-        if super().__instancecheck__(instance):
+        # gh-104555: Don't call super().__instancecheck__ here,
+        # ABCMeta.__instancecheck__ would erroneously use it to populate the cache,
+        # which would cause incorrect results for *issubclass()* calls
+        if type.__instancecheck__(cls, instance):
             return True
 
         if is_protocol_cls:
@@ -1813,7 +1816,7 @@ class _ProtocolMeta(ABCMeta):
             else:
                 return True
 
-        return False
+        return super().__instancecheck__(instance)
 
 
 class Protocol(Generic, metaclass=_ProtocolMeta):
