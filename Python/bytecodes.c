@@ -56,7 +56,7 @@ static PyObject *value, *value1, *value2, *left, *right, *res, *sum, *prod, *sub
 static PyObject *container, *start, *stop, *v, *lhs, *rhs, *res2;
 static PyObject *list, *tuple, *dict, *owner, *set, *str, *tup, *map, *keys;
 static PyObject *exit_func, *lasti, *val, *retval, *obj, *iter;
-static PyObject *aiter, *awaitable, *iterable, *w, *exc_value, *bc;
+static PyObject *aiter, *awaitable, *iterable, *w, *exc_value, *bc, *locals;
 static PyObject *orig, *excs, *update, *b, *fromlist, *level, *from;
 static PyObject **pieces, **values;
 static size_t jump;
@@ -125,6 +125,7 @@ dummy_func(
     PyObject *subject;
     PyObject *top;
     PyObject *type;
+    PyObject *typevars;
     int values_or_none;
 
     switch (opcode) {
@@ -1002,6 +1003,7 @@ dummy_func(
             }
         }
 
+
         inst(STORE_NAME, (v -- )) {
             PyObject *name = GETITEM(frame->f_code->co_names, oparg);
             PyObject *ns = LOCALS();
@@ -1158,31 +1160,41 @@ dummy_func(
             }
         }
 
-        inst(LOAD_NAME, ( -- v)) {
-            PyObject *name = GETITEM(frame->f_code->co_names, oparg);
-            PyObject *locals = LOCALS();
+        op(_LOAD_LOCALS, ( -- locals)) {
+            locals = LOCALS();
             if (locals == NULL) {
-                _PyErr_Format(tstate, PyExc_SystemError,
-                              "no locals when loading %R", name);
-                goto error;
+                _PyErr_SetString(tstate, PyExc_SystemError,
+                                 "no locals found");
+                ERROR_IF(true, error);
             }
-            if (PyDict_CheckExact(locals)) {
-                v = PyDict_GetItemWithError(locals, name);
+            Py_INCREF(locals);
+        }
+
+        macro(LOAD_LOCALS) = _LOAD_LOCALS;
+
+        op(_LOAD_FROM_DICT_OR_GLOBALS, (mod_or_class_dict -- v)) {
+            PyObject *name = GETITEM(frame->f_code->co_names, oparg);
+            if (PyDict_CheckExact(mod_or_class_dict)) {
+                v = PyDict_GetItemWithError(mod_or_class_dict, name);
                 if (v != NULL) {
                     Py_INCREF(v);
                 }
                 else if (_PyErr_Occurred(tstate)) {
+                    Py_DECREF(mod_or_class_dict);
                     goto error;
                 }
             }
             else {
-                v = PyObject_GetItem(locals, name);
+                v = PyObject_GetItem(mod_or_class_dict, name);
                 if (v == NULL) {
-                    if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError))
+                    if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
+                        Py_DECREF(mod_or_class_dict);
                         goto error;
+                    }
                     _PyErr_Clear(tstate);
                 }
             }
+            Py_DECREF(mod_or_class_dict);
             if (v == NULL) {
                 v = PyDict_GetItemWithError(GLOBALS(), name);
                 if (v != NULL) {
@@ -1218,6 +1230,10 @@ dummy_func(
                 }
             }
         }
+
+        macro(LOAD_NAME) = _LOAD_LOCALS + _LOAD_FROM_DICT_OR_GLOBALS;
+
+        macro(LOAD_FROM_DICT_OR_GLOBALS) = _LOAD_FROM_DICT_OR_GLOBALS;
 
         family(load_global, INLINE_CACHE_ENTRIES_LOAD_GLOBAL) = {
             LOAD_GLOBAL,
@@ -1339,29 +1355,32 @@ dummy_func(
             Py_DECREF(oldobj);
         }
 
-        inst(LOAD_CLASSDEREF, ( -- value)) {
-            PyObject *name, *locals = LOCALS();
-            assert(locals);
+        inst(LOAD_FROM_DICT_OR_DEREF, (class_dict -- value)) {
+            PyObject *name;
+            assert(class_dict);
             assert(oparg >= 0 && oparg < frame->f_code->co_nlocalsplus);
             name = PyTuple_GET_ITEM(frame->f_code->co_localsplusnames, oparg);
-            if (PyDict_CheckExact(locals)) {
-                value = PyDict_GetItemWithError(locals, name);
+            if (PyDict_CheckExact(class_dict)) {
+                value = PyDict_GetItemWithError(class_dict, name);
                 if (value != NULL) {
                     Py_INCREF(value);
                 }
                 else if (_PyErr_Occurred(tstate)) {
+                    Py_DECREF(class_dict);
                     goto error;
                 }
             }
             else {
-                value = PyObject_GetItem(locals, name);
+                value = PyObject_GetItem(class_dict, name);
                 if (value == NULL) {
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
+                        Py_DECREF(class_dict);
                         goto error;
                     }
                     _PyErr_Clear(tstate);
                 }
             }
+            Py_DECREF(class_dict);
             if (!value) {
                 PyObject *cell = GETLOCAL(oparg);
                 value = PyCell_GET(cell);
