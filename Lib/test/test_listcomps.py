@@ -394,7 +394,7 @@ class ListComprehensionTest(unittest.TestCase):
             vals = X.vals
         """
         self._check_in_scopes(code, {"vals": [(0, 1), (1, 1)]},
-                              scopes=["module", "fucntion"])
+                              scopes=["module", "function"])
 
 
 __test__ = {'doctests' : doctests}
