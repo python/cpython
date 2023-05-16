@@ -980,6 +980,12 @@ New Features
   to replace the legacy-api :c:func:`PyErr_Display`. (Contributed by
   Irit Katriel in :gh:`102755`).
 
+* Convert the ``PyCurses_API`` C API (``_curses._C_API`` capsule) from a pointer
+  array to a structure(``PyCurses_C_API``) in pycore_curses.h. ``PyCursesWindow_Type``,
+  ``PyCursesSetupTermCalled``, ``PyCursesInitialised``, ``PyCursesInitialisedColor``
+  be moved into internal APIs and the public API will be deprecated in 3.14.
+  (Contributed by Hai Shi in :gh:`87175`).
+
 Porting to Python 3.12
 ----------------------
 

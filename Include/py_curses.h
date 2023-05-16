@@ -54,6 +54,8 @@
 extern "C" {
 #endif
 
+#define PyCurses_API_pointers 4
+
 /* Type declarations */
 
 typedef struct {
@@ -61,13 +63,6 @@ typedef struct {
     WINDOW *win;
     char *encoding;
 } PyCursesWindowObject;
-
-typedef struct {
-    PyTypeObject *window_type;
-    int (*setup_term_called)(void);
-    int (*initialized)(void);
-    int (*initialized_color)(void);
-} PyCurses_CAPI;
 
 #define PyCursesWindow_Check(v) Py_IS_TYPE((v), &PyCursesWindow_Type)
 
@@ -80,15 +75,16 @@ typedef struct {
 #else
 /* This section is used in modules that use the _cursesmodule API */
 
-static PyCurses_CAPI *PyCurses_API;
+Py_DEPRECATED(3.14) static void **PyCurses_API;
 
-#define PyCursesWindow_Type (*PyCurses_API->window_type)
-#define PyCursesSetupTermCalled  {if (!PyCurses_API->setup_term_called()) return NULL;}
-#define PyCursesInitialised      {if (!PyCurses_API->initialized()) return NULL;}
-#define PyCursesInitialisedColor {if (!PyCurses_API->initialized_color()) return NULL;}
+/* Those macros will be deprecated in 3.14 and moved into internal APIs.  */
+#define PyCursesWindow_Type (*_PyType_CAST(PyCurses_API[0]))
+#define PyCursesSetupTermCalled  {if (! ((int (*)(void))PyCurses_API[1]) () ) return NULL;}
+#define PyCursesInitialised      {if (! ((int (*)(void))PyCurses_API[2]) () ) return NULL;}
+#define PyCursesInitialisedColor {if (! ((int (*)(void))PyCurses_API[3]) () ) return NULL;}
 
 #define import_curses() \
-    PyCurses_API = PyCapsule_Import(PyCurses_CAPSULE_NAME, 1);
+    PyCurses_API = (void **)PyCapsule_Import(PyCurses_CAPSULE_NAME, 1);
 
 #endif
 

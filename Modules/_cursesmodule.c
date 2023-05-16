@@ -116,6 +116,7 @@ static const char PyCursesVersion[] = "2.2";
 
 #define CURSES_MODULE
 #include "py_curses.h"
+#include "pycore_curses.h"
 
 #if defined(HAVE_TERM_H) || defined(__sgi)
 /* For termname, longname, putp, tigetflag, tigetnum, tigetstr, tparm
