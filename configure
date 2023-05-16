@@ -883,11 +883,15 @@ CFLAGS_NODIST
 BASECFLAGS
 CFLAGS_ALIASING
 OPT
+BOLT_APPLY_FLAGS
+BOLT_INSTRUMENT_FLAGS
+BOLT_BINARIES
 MERGE_FDATA
 LLVM_BOLT
 ac_ct_READELF
 READELF
-PREBOLT_RULE
+MAKE_BOLT_MAKE_DEPENDENCY
+MAKE_BOLT_NATIVE_DEPENDENCY
 LLVM_PROF_FOUND
 LLVM_PROFDATA
 LLVM_PROF_ERR
@@ -898,8 +902,9 @@ PGO_PROF_GEN_FLAG
 LLVM_AR_FOUND
 LLVM_AR
 PROFILE_TASK
-DEF_MAKE_RULE
-DEF_MAKE_ALL_RULE
+MAKE_TARGET_BUILD_OPTIMIZED
+MAKE_TARGET_BUILD_PLAIN
+MAKE_TARGET_ALL
 ABIFLAGS
 LN
 MKDIR_P
@@ -1056,6 +1061,7 @@ with_assertions
 enable_optimizations
 with_lto
 enable_bolt
+with_bolt_libpython
 with_strict_overflow
 with_dsymutil
 with_address_sanitizer
@@ -1097,6 +1103,7 @@ PKG_CONFIG
 PKG_CONFIG_PATH
 PKG_CONFIG_LIBDIR
 MACHDEP
+_PYTHON_HOST_PLATFORM
 CC
 CFLAGS
 LDFLAGS
@@ -1105,6 +1112,8 @@ CPPFLAGS
 CPP
 HOSTRUNNER
 PROFILE_TASK
+BOLT_INSTRUMENT_FLAGS
+BOLT_APPLY_FLAGS
 LIBUUID_CFLAGS
 LIBUUID_LIBS
 LIBFFI_CFLAGS
@@ -1828,6 +1837,8 @@ Optional Packages:
   --with-lto=[full|thin|no|yes]
                           enable Link-Time-Optimization in any build (default
                           is no)
+  --with-bolt-libpython   enable BOLT optimization of libpython (WARNING:
+                          known to crash BOLT)
   --with-strict-overflow  if 'yes', add -fstrict-overflow to CFLAGS, else add
                           -fno-strict-overflow (default is no)
   --with-dsymutil         link debug information into final executable with
@@ -1905,6 +1916,14 @@ Some influential environment variables:
   PKG_CONFIG_LIBDIR
               path overriding pkg-config's built-in search path
   MACHDEP     name for machine-dependent library files
+  _PYTHON_HOST_PLATFORM
+              Forces a platform tag value for use in sysconfig data. This will
+              be calculated automatically in non-cross builds by running
+              sysconfig code in the bootstrapped interpreter. In cross builds,
+              an attempt will be made to derive an appropriate value in
+              configure. But some targets may derive incorrect values. This
+              variable can be set to force a value. Example values:
+              linux-x86_64, macosx-10.9-universal2, win-amd64
   CC          C compiler command
   CFLAGS      C compiler flags
   LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
@@ -1916,6 +1935,10 @@ Some influential environment variables:
   HOSTRUNNER  Program to run CPython for the host platform
   PROFILE_TASK
               Python args for PGO generation task
+  BOLT_INSTRUMENT_FLAGS
+              Arguments to llvm-bolt when instrumenting binaries
+  BOLT_APPLY_FLAGS
+              Arguments to llvm-bolt when creating a BOLT optimized binary
   LIBUUID_CFLAGS
               C compiler flags for LIBUUID, overriding pkg-config
   LIBUUID_LIBS
@@ -3914,33 +3937,41 @@ fi
 $as_echo "\"$MACHDEP\"" >&6; }
 
 
-if test "$cross_compiling" = yes; then
-	case "$host" in
-	*-*-linux*)
-		case "$host_cpu" in
-		arm*)
-			_host_cpu=arm
-			;;
-		*)
-			_host_cpu=$host_cpu
-		esac
-		;;
-	*-*-cygwin*)
-		_host_cpu=
-		;;
-	*-*-vxworks*)
-		_host_cpu=$host_cpu
-		;;
-	wasm32-*-* | wasm64-*-*)
-		_host_cpu=$host_cpu
-		;;
-	*)
-		# for now, limit cross builds to known configurations
-		MACHDEP="unknown"
-		as_fn_error $? "cross build not supported for $host" "$LINENO" 5
-	esac
-	_PYTHON_HOST_PLATFORM="$MACHDEP${_host_cpu:+-$_host_cpu}"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking _PYTHON_HOST_PLATFORM" >&5
+$as_echo_n "checking _PYTHON_HOST_PLATFORM... " >&6; }
+
+if test -z "${_PYTHON_HOST_PLATFORM}"; then
+    if test "$cross_compiling" = yes; then
+        case "$host" in
+        *-*-linux*)
+            case "$host_cpu" in
+            arm*)
+                _host_cpu=arm
+                ;;
+            *)
+                _host_cpu=$host_cpu
+            esac
+            ;;
+        *-*-cygwin*)
+            _host_cpu=
+            ;;
+        *-*-vxworks*)
+            _host_cpu=$host_cpu
+            ;;
+        wasm32-*-* | wasm64-*-*)
+            _host_cpu=$host_cpu
+            ;;
+        *)
+            # for now, limit cross builds to known configurations
+            MACHDEP="unknown"
+            as_fn_error $? "cross build not supported for $host" "$LINENO" 5
+        esac
+        _PYTHON_HOST_PLATFORM="$MACHDEP${_host_cpu:+-$_host_cpu}"
+    fi
 fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $_PYTHON_HOST_PLATFORM" >&5
+$as_echo "$_PYTHON_HOST_PLATFORM" >&6; }
 
 # Some systems cannot stand _XOPEN_SOURCE being defined at all; they
 # disable features if it is defined, without any means to access these
@@ -7448,7 +7479,17 @@ $as_echo "no" >&6; }
 fi
 
 # Enable optimization flags
+# Which target `all` (the default make target) depends on.
 
+# Which target to evaluate for non-optimized builds.
+
+
+
+# Do a non-optimized generic build by default. Build configurations below
+# can override as appropriate.
+MAKE_TARGET_ALL="build-plain"
+MAKE_TARGET_BUILD_PLAIN="build_all"
+MAKE_TARGET_BUILD_OPTIMIZED="build-optimized-not-enabled"
 
 Py_OPT='false'
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-optimizations" >&5
@@ -7473,13 +7514,15 @@ fi
 
 
 if test "$Py_OPT" = 'true' ; then
+  # PGO is implied by optimizations mode.
+  PGO_ENABLED=1
+  MAKE_TARGET_ALL="build-optimized"
+  MAKE_TARGET_BUILD_OPTIMIZED="profile-pgo-apply-stamp"
+
   # Intentionally not forcing Py_LTO='true' here.  Too many toolchains do not
   # compile working code using it and both test_distutils and test_gdb are
   # broken when you do manage to get a toolchain that works with it.  People
   # who want LTO need to use --with-lto themselves.
-  DEF_MAKE_ALL_RULE="profile-opt"
-  REQUIRE_PGO="yes"
-  DEF_MAKE_RULE="build_all"
   case $CC in
     *gcc*)
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fno-semantic-interposition" >&5
@@ -7523,13 +7566,7 @@ fi
       ;;
   esac
 elif test "$ac_sys_system" = "Emscripten" -o "$ac_sys_system" = "WASI"; then
-      DEF_MAKE_ALL_RULE="build_wasm"
-  REQUIRE_PGO="no"
-  DEF_MAKE_RULE="all"
-else
-  DEF_MAKE_ALL_RULE="build_all"
-  REQUIRE_PGO="no"
-  DEF_MAKE_RULE="all"
+      MAKE_TARGET_BUILD_PLAIN="build_wasm"
 fi
 
 
@@ -8039,7 +8076,8 @@ case $CC in
     if test $LLVM_PROF_FOUND = not-found
     then
       LLVM_PROF_ERR=yes
-      if test "${REQUIRE_PGO}" = "yes"
+
+      if test -n "${ENABLE_PGO}"
       then
         as_fn_error $? "llvm-profdata is required for a --enable-optimizations build but could not be found." "$LINENO" 5
       fi
@@ -8055,10 +8093,10 @@ case $CC in
         if test "${LLVM_PROF_FOUND}" = "not-found"
         then
           LLVM_PROF_ERR=yes
-          if test "${REQUIRE_PGO}" = "yes"
-	  then
-	    as_fn_error $? "llvm-profdata is required for a --enable-optimizations build but could not be found." "$LINENO" 5
-	  fi
+          if test -n "${ENABLE_PGO}"
+          then
+            as_fn_error $? "llvm-profdata is required for a --enable-optimizations build but could not be found." "$LINENO" 5
+          fi
         fi
         ;;
       *)
@@ -8101,10 +8139,19 @@ fi
 
 
 
+
+
 if test "$Py_BOLT" = 'true' ; then
-  PREBOLT_RULE="${DEF_MAKE_ALL_RULE}"
-  DEF_MAKE_ALL_RULE="bolt-opt"
-  DEF_MAKE_RULE="build_all"
+  MAKE_TARGET_BUILD_OPTIMIZED="profile-bolt-apply-stamp"
+
+  # Hook up make dependencies differently depending on whether PGO is
+  # enabled. See inline comment in Makefile.pre.in for how this works.
+  if test -n "${PGO_ENABLED}"
+  then
+    MAKE_BOLT_NATIVE_DEPENDENCY="profile-pgo-apply-stamp"
+  else
+    MAKE_BOLT_MAKE_DEPENDENCY="${MAKE_TARGET_BUILD_PLAIN}"
+  fi
 
 
   if test -n "$ac_tool_prefix"; then
@@ -8473,6 +8520,49 @@ $as_echo "\"Found merge-fdata\"" >&6; }
     as_fn_error $? "merge-fdata is required for a --enable-bolt build but could not be found." "$LINENO" 5
   fi
 fi
+
+# Enable BOLT optimizations of libpython. Optional for now due to known
+# crashes on LLVM 15. Seems to be fixed in LLVM 16.
+
+BOLT_BINARIES='$(BUILDPYTHON)'
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-bolt-libpython" >&5
+$as_echo_n "checking for --with-bolt-libpython... " >&6; }
+
+# Check whether --with-bolt_libpython was given.
+if test "${with_bolt_libpython+set}" = set; then :
+  withval=$with_bolt_libpython; with_bolt_libpython="yes"
+else
+  with_bolt_libpython="no"
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_bolt_libpython" >&5
+$as_echo "$with_bolt_libpython" >&6; }
+
+if test "${enable_shared}" = "yes" -a "${with_bolt_libpython}" = "yes"
+then
+  BOLT_BINARIES="${BOLT_BINARIES} \$(INSTSONAME)"
+fi
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking BOLT_INSTRUMENT_FLAGS" >&5
+$as_echo_n "checking BOLT_INSTRUMENT_FLAGS... " >&6; }
+if test -z "${BOLT_INSTRUMENT_FLAGS}"
+then
+    BOLT_INSTRUMENT_FLAGS=
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOLT_INSTRUMENT_FLAGS" >&5
+$as_echo "$BOLT_INSTRUMENT_FLAGS" >&6; }
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking BOLT_APPLY_FLAGS" >&5
+$as_echo_n "checking BOLT_APPLY_FLAGS... " >&6; }
+if test -z "${BOLT_APPLY_FLAGS}"
+then
+    BOLT_APPLY_FLAGS="-update-debug-sections -reorder-blocks=ext-tsp -reorder-functions=hfsort+ -split-functions=3 -icf=1 -inline-all -split-eh -reorder-functions-use-hot-size -peepholes=all -jump-tables=aggressive -inline-ap -indirect-call-promotion=all -dyno-stats -use-gnu-stack -frame-opt=hot"
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOLT_APPLY_FLAGS" >&5
+$as_echo "$BOLT_APPLY_FLAGS" >&6; }
 
 # XXX Shouldn't the code above that fiddles with BASECFLAGS and OPT be
 # merged with this chunk of code?

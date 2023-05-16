@@ -122,8 +122,7 @@ Tools/unicode/data/
 # hendrikmuhs/ccache-action@v1
 /.ccache
 /platform
-/profile-clean-stamp
-/profile-run-stamp
+/profile-*-stamp
 /Python/deepfreeze/*.c
 /pybuilddir.txt
 /pyconfig.h

@@ -584,34 +584,46 @@ then
 fi
 AC_MSG_RESULT("$MACHDEP")
 
-AC_SUBST(_PYTHON_HOST_PLATFORM)
-if test "$cross_compiling" = yes; then
-	case "$host" in
-	*-*-linux*)
-		case "$host_cpu" in
-		arm*)
-			_host_cpu=arm
-			;;
-		*)
-			_host_cpu=$host_cpu
-		esac
-		;;
-	*-*-cygwin*)
-		_host_cpu=
-		;;
-	*-*-vxworks*)
-		_host_cpu=$host_cpu
-		;;
-	wasm32-*-* | wasm64-*-*)
-		_host_cpu=$host_cpu
-		;;
-	*)
-		# for now, limit cross builds to known configurations
-		MACHDEP="unknown"
-		AC_MSG_ERROR([cross build not supported for $host])
-	esac
-	_PYTHON_HOST_PLATFORM="$MACHDEP${_host_cpu:+-$_host_cpu}"
+AC_ARG_VAR(_PYTHON_HOST_PLATFORM, [
+  Forces a platform tag value for use in sysconfig data. This will be calculated
+  automatically in non-cross builds by running sysconfig code in the
+  bootstrapped interpreter. In cross builds, an attempt will be made to
+  derive an appropriate value in configure. But some targets may derive
+  incorrect values. This variable can be set to force a value. Example
+  values: linux-x86_64, macosx-10.9-universal2, win-amd64])
+AC_MSG_CHECKING(_PYTHON_HOST_PLATFORM)
+
+if test -z "${_PYTHON_HOST_PLATFORM}"; then
+    if test "$cross_compiling" = yes; then
+        case "$host" in
+        *-*-linux*)
+            case "$host_cpu" in
+            arm*)
+                _host_cpu=arm
+                ;;
+            *)
+                _host_cpu=$host_cpu
+            esac
+            ;;
+        *-*-cygwin*)
+            _host_cpu=
+            ;;
+        *-*-vxworks*)
+            _host_cpu=$host_cpu
+            ;;
+        wasm32-*-* | wasm64-*-*)
+            _host_cpu=$host_cpu
+            ;;
+        *)
+            # for now, limit cross builds to known configurations
+            MACHDEP="unknown"
+            AC_MSG_ERROR([cross build not supported for $host])
+        esac
+        _PYTHON_HOST_PLATFORM="$MACHDEP${_host_cpu:+-$_host_cpu}"
+    fi
 fi
+
+AC_MSG_RESULT([$_PYTHON_HOST_PLATFORM])
 
 # Some systems cannot stand _XOPEN_SOURCE being defined at all; they
 # disable features if it is defined, without any means to access these
@@ -1722,8 +1734,18 @@ else
 fi
 
 # Enable optimization flags
-AC_SUBST(DEF_MAKE_ALL_RULE)
-AC_SUBST(DEF_MAKE_RULE)
+# Which target `all` (the default make target) depends on.
+AC_SUBST(MAKE_TARGET_ALL)
+# Which target to evaluate for non-optimized builds.
+AC_SUBST(MAKE_TARGET_BUILD_PLAIN)
+AC_SUBST(MAKE_TARGET_BUILD_OPTIMIZED)
+
+# Do a non-optimized generic build by default. Build configurations below
+# can override as appropriate.
+MAKE_TARGET_ALL="build-plain"
+MAKE_TARGET_BUILD_PLAIN="build_all"
+MAKE_TARGET_BUILD_OPTIMIZED="build-optimized-not-enabled"
+
 Py_OPT='false'
 AC_MSG_CHECKING(for --enable-optimizations)
 AC_ARG_ENABLE(optimizations, AS_HELP_STRING(
@@ -1741,13 +1763,15 @@ fi],
 [AC_MSG_RESULT(no)])
 
 if test "$Py_OPT" = 'true' ; then
+  # PGO is implied by optimizations mode.
+  PGO_ENABLED=1
+  MAKE_TARGET_ALL="build-optimized"
+  MAKE_TARGET_BUILD_OPTIMIZED="profile-pgo-apply-stamp"
+
   # Intentionally not forcing Py_LTO='true' here.  Too many toolchains do not
   # compile working code using it and both test_distutils and test_gdb are
   # broken when you do manage to get a toolchain that works with it.  People
   # who want LTO need to use --with-lto themselves.
-  DEF_MAKE_ALL_RULE="profile-opt"
-  REQUIRE_PGO="yes"
-  DEF_MAKE_RULE="build_all"
   case $CC in
     *gcc*)
       AX_CHECK_COMPILE_FLAG([-fno-semantic-interposition],[
@@ -1759,13 +1783,7 @@ if test "$Py_OPT" = 'true' ; then
 elif test "$ac_sys_system" = "Emscripten" -o "$ac_sys_system" = "WASI"; then
   dnl Emscripten does not support shared extensions yet. Build
   dnl "python.[js,wasm]", "pybuilddir.txt", and "platform" files.
-  DEF_MAKE_ALL_RULE="build_wasm"
-  REQUIRE_PGO="no"
-  DEF_MAKE_RULE="all"
-else
-  DEF_MAKE_ALL_RULE="build_all"
-  REQUIRE_PGO="no"
-  DEF_MAKE_RULE="all"
+  MAKE_TARGET_BUILD_PLAIN="build_wasm"
 fi
 
 AC_ARG_VAR(PROFILE_TASK, Python args for PGO generation task)
@@ -1967,7 +1985,8 @@ case $CC in
     if test $LLVM_PROF_FOUND = not-found
     then
       LLVM_PROF_ERR=yes
-      if test "${REQUIRE_PGO}" = "yes"
+
+      if test -n "${ENABLE_PGO}"
       then
         AC_MSG_ERROR([llvm-profdata is required for a --enable-optimizations build but could not be found.])
       fi
@@ -1983,10 +2002,10 @@ case $CC in
         if test "${LLVM_PROF_FOUND}" = "not-found"
         then
           LLVM_PROF_ERR=yes
-          if test "${REQUIRE_PGO}" = "yes"
-	  then
-	    AC_MSG_ERROR([llvm-profdata is required for a --enable-optimizations build but could not be found.])
-	  fi
+          if test -n "${ENABLE_PGO}"
+          then
+            AC_MSG_ERROR([llvm-profdata is required for a --enable-optimizations build but could not be found.])
+          fi
         fi
         ;;
       *)
@@ -2022,11 +2041,20 @@ else
 fi],
 [AC_MSG_RESULT(no)])
 
-AC_SUBST(PREBOLT_RULE)
+AC_SUBST(MAKE_BOLT_NATIVE_DEPENDENCY)
+AC_SUBST(MAKE_BOLT_MAKE_DEPENDENCY)
+
 if test "$Py_BOLT" = 'true' ; then
-  PREBOLT_RULE="${DEF_MAKE_ALL_RULE}"
-  DEF_MAKE_ALL_RULE="bolt-opt"
-  DEF_MAKE_RULE="build_all"
+  MAKE_TARGET_BUILD_OPTIMIZED="profile-bolt-apply-stamp"
+
+  # Hook up make dependencies differently depending on whether PGO is
+  # enabled. See inline comment in Makefile.pre.in for how this works.
+  if test -n "${PGO_ENABLED}"
+  then
+    MAKE_BOLT_NATIVE_DEPENDENCY="profile-pgo-apply-stamp"
+  else
+    MAKE_BOLT_MAKE_DEPENDENCY="${MAKE_TARGET_BUILD_PLAIN}"
+  fi
 
   AC_SUBST(READELF)
   AC_CHECK_TOOLS(READELF, [readelf], "notfound")
@@ -2066,6 +2094,39 @@ if test "$Py_BOLT" = 'true' ; then
     AC_MSG_ERROR([merge-fdata is required for a --enable-bolt build but could not be found.])
   fi
 fi
+
+# Enable BOLT optimizations of libpython. Optional for now due to known
+# crashes on LLVM 15. Seems to be fixed in LLVM 16.
+AC_SUBST(BOLT_BINARIES)
+BOLT_BINARIES='$(BUILDPYTHON)'
+
+AC_MSG_CHECKING(for --with-bolt-libpython)
+AC_ARG_WITH(bolt_libpython,
+            AS_HELP_STRING([--with-bolt-libpython], [enable BOLT optimization of libpython (WARNING: known to crash BOLT)]),
+            [with_bolt_libpython="yes"],
+            [with_bolt_libpython="no"])
+AC_MSG_RESULT($with_bolt_libpython)
+
+if test "${enable_shared}" = "yes" -a "${with_bolt_libpython}" = "yes"
+then
+  BOLT_BINARIES="${BOLT_BINARIES} \$(INSTSONAME)"
+fi
+
+AC_ARG_VAR(BOLT_INSTRUMENT_FLAGS, Arguments to llvm-bolt when instrumenting binaries)
+AC_MSG_CHECKING(BOLT_INSTRUMENT_FLAGS)
+if test -z "${BOLT_INSTRUMENT_FLAGS}"
+then
+    BOLT_INSTRUMENT_FLAGS=
+fi
+AC_MSG_RESULT($BOLT_INSTRUMENT_FLAGS)
+
+AC_ARG_VAR(BOLT_APPLY_FLAGS, Arguments to llvm-bolt when creating a BOLT optimized binary)
+AC_MSG_CHECKING(BOLT_APPLY_FLAGS)
+if test -z "${BOLT_APPLY_FLAGS}"
+then
+    BOLT_APPLY_FLAGS="-update-debug-sections -reorder-blocks=ext-tsp -reorder-functions=hfsort+ -split-functions=3 -icf=1 -inline-all -split-eh -reorder-functions-use-hot-size -peepholes=all -jump-tables=aggressive -inline-ap -indirect-call-promotion=all -dyno-stats -use-gnu-stack -frame-opt=hot"
+fi
+AC_MSG_RESULT($BOLT_APPLY_FLAGS)
 
 # XXX Shouldn't the code above that fiddles with BASECFLAGS and OPT be
 # merged with this chunk of code?
