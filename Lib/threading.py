@@ -969,7 +969,7 @@ class Thread:
         with _active_limbo_lock:
             _limbo[self] = self
         try:
-            _start_new_thread(self._bootstrap, ())
+            _start_new_thread(self._bootstrap, (), daemonic=self._daemonic)
         except Exception:
             with _active_limbo_lock:
                 del _limbo[self]
