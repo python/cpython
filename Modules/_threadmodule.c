@@ -1887,10 +1887,10 @@ static PyMethodDef thread_methods[] = {
      METH_NOARGS, _set_sentinel_doc},
     {"_excepthook",             thread_excepthook,
      METH_O, excepthook_doc},
-    {"_wait_for_threads_fini",  thread__wait_for_threads_fini,
+    {"_wait_for_threads_fini",  (PyCFunction)thread__wait_for_threads_fini,
      METH_NOARGS, NULL},
 #ifdef HAVE_FORK
-    {"_after_fork",             thread__after_fork,
+    {"_after_fork",             (PyCFunction)thread__after_fork,
      METH_NOARGS, NULL},
 #endif
     {NULL,                      NULL}           /* sentinel */
