@@ -885,9 +885,8 @@ CFLAGS_ALIASING
 OPT
 MERGE_FDATA
 LLVM_BOLT
-ac_ct_READELF
-READELF
-PREBOLT_RULE
+MAKE_BOLT_MAKE_DEPENDENCY
+MAKE_BOLT_NATIVE_DEPENDENCY
 LLVM_PROF_FOUND
 LLVM_PROFDATA
 LLVM_PROF_ERR
@@ -898,8 +897,9 @@ PGO_PROF_GEN_FLAG
 LLVM_AR_FOUND
 LLVM_AR
 PROFILE_TASK
-DEF_MAKE_RULE
-DEF_MAKE_ALL_RULE
+MAKE_TARGET_BUILD_OPTIMIZED
+MAKE_TARGET_BUILD_PLAIN
+MAKE_TARGET_ALL
 ABIFLAGS
 LN
 MKDIR_P
@@ -7448,7 +7448,17 @@ $as_echo "no" >&6; }
 fi
 
 # Enable optimization flags
+# Which target `all` (the default make target) depends on.
 
+# Which target to evaluate for non-optimized builds.
+
+
+
+# Do a non-optimized generic build by default. Build configurations below
+# can override as appropriate.
+MAKE_TARGET_ALL="build-plain"
+MAKE_TARGET_BUILD_PLAIN="build_all"
+MAKE_TARGET_BUILD_OPTIMIZED="build-optimized-not-enabled"
 
 Py_OPT='false'
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-optimizations" >&5
@@ -7473,13 +7483,15 @@ fi
 
 
 if test "$Py_OPT" = 'true' ; then
+  # PGO is implied by optimizations mode.
+  PGO_ENABLED=1
+  MAKE_TARGET_ALL="build-optimized"
+  MAKE_TARGET_BUILD_OPTIMIZED="profile-pgo-apply-stamp"
+
   # Intentionally not forcing Py_LTO='true' here.  Too many toolchains do not
   # compile working code using it and both test_distutils and test_gdb are
   # broken when you do manage to get a toolchain that works with it.  People
   # who want LTO need to use --with-lto themselves.
-  DEF_MAKE_ALL_RULE="profile-opt"
-  REQUIRE_PGO="yes"
-  DEF_MAKE_RULE="build_all"
   case $CC in
     *gcc*)
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fno-semantic-interposition" >&5
@@ -7523,13 +7535,7 @@ fi
       ;;
   esac
 elif test "$ac_sys_system" = "Emscripten" -o "$ac_sys_system" = "WASI"; then
-      DEF_MAKE_ALL_RULE="build_wasm"
-  REQUIRE_PGO="no"
-  DEF_MAKE_RULE="all"
-else
-  DEF_MAKE_ALL_RULE="build_all"
-  REQUIRE_PGO="no"
-  DEF_MAKE_RULE="all"
+      MAKE_TARGET_BUILD_PLAIN="build_wasm"
 fi
 
 
@@ -8039,7 +8045,8 @@ case $CC in
     if test $LLVM_PROF_FOUND = not-found
     then
       LLVM_PROF_ERR=yes
-      if test "${REQUIRE_PGO}" = "yes"
+
+      if test -n "${ENABLE_PGO}"
       then
         as_fn_error $? "llvm-profdata is required for a --enable-optimizations build but could not be found." "$LINENO" 5
       fi
@@ -8055,10 +8062,10 @@ case $CC in
         if test "${LLVM_PROF_FOUND}" = "not-found"
         then
           LLVM_PROF_ERR=yes
-          if test "${REQUIRE_PGO}" = "yes"
-	  then
-	    as_fn_error $? "llvm-profdata is required for a --enable-optimizations build but could not be found." "$LINENO" 5
-	  fi
+          if test -n "${ENABLE_PGO}"
+          then
+            as_fn_error $? "llvm-profdata is required for a --enable-optimizations build but could not be found." "$LINENO" 5
+          fi
         fi
         ;;
       *)
@@ -8101,115 +8108,18 @@ fi
 
 
 
+
+
 if test "$Py_BOLT" = 'true' ; then
-  PREBOLT_RULE="${DEF_MAKE_ALL_RULE}"
-  DEF_MAKE_ALL_RULE="bolt-opt"
-  DEF_MAKE_RULE="build_all"
+  MAKE_TARGET_BUILD_OPTIMIZED="profile-bolt-apply-stamp"
 
-
-  if test -n "$ac_tool_prefix"; then
-  for ac_prog in readelf
-  do
-    # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
-set dummy $ac_tool_prefix$ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_READELF+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$READELF"; then
-  ac_cv_prog_READELF="$READELF" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_READELF="$ac_tool_prefix$ac_prog"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-READELF=$ac_cv_prog_READELF
-if test -n "$READELF"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $READELF" >&5
-$as_echo "$READELF" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-    test -n "$READELF" && break
-  done
-fi
-if test -z "$READELF"; then
-  ac_ct_READELF=$READELF
-  for ac_prog in readelf
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_ac_ct_READELF+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$ac_ct_READELF"; then
-  ac_cv_prog_ac_ct_READELF="$ac_ct_READELF" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_ac_ct_READELF="$ac_prog"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-ac_ct_READELF=$ac_cv_prog_ac_ct_READELF
-if test -n "$ac_ct_READELF"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_ct_READELF" >&5
-$as_echo "$ac_ct_READELF" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$ac_ct_READELF" && break
-done
-
-  if test "x$ac_ct_READELF" = x; then
-    READELF=""notfound""
-  else
-    case $cross_compiling:$ac_tool_warned in
-yes:)
-{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
-$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
-ac_tool_warned=yes ;;
-esac
-    READELF=$ac_ct_READELF
-  fi
-fi
-
-  if test "$READELF" == "notfound"
+  # Hook up make dependencies differently depending on whether PGO is
+  # enabled. See inline comment in Makefile.pre.in for how this works.
+  if test -n "${PGO_ENABLED}"
   then
-    as_fn_error $? "readelf is required for a --enable-bolt build but could not be found." "$LINENO" 5
+    MAKE_BOLT_NATIVE_DEPENDENCY="profile-pgo-apply-stamp"
+  else
+    MAKE_BOLT_MAKE_DEPENDENCY="${MAKE_TARGET_BUILD_PLAIN}"
   fi
 
   # -fno-reorder-blocks-and-partition is required for bolt to work.
