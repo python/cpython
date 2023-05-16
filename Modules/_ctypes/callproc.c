@@ -2010,7 +2010,7 @@ interp_cb(struct dl_phdr_info *info, size_t size, void *data)
     const ElfW(Phdr) *ph = info->dlpi_phdr;
     int phn = info->dlpi_phnum;
 
-    for(int i=0; i < phn; i++) {
+    for (int i=0; i < phn; i++) {
         if (ph[i].p_type == PT_INTERP) {
             *ps = base + ph[i].p_vaddr;
             return 1;
