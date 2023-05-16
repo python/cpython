@@ -22,6 +22,7 @@ configure*                    @erlend-aasland @corona10
 **/*hamt*                     @1st1
 Objects/set*                  @rhettinger
 Objects/dict*                 @methane @markshannon
+Objects/typevarobject.c       @JelleZijlstra
 Objects/type*                 @markshannon
 Objects/codeobject.c          @markshannon
 Objects/frameobject.c         @markshannon
@@ -33,6 +34,7 @@ Python/flowgraph.c            @markshannon @iritkatriel
 Python/ast_opt.c              @isidentical
 Lib/test/test_patma.py        @brandtbucher
 Lib/test/test_peepholer.py    @brandtbucher
+Lib/test/test_type_*.py       @JelleZijlstra
 
 # Exceptions
 Lib/traceback.py              @iritkatriel

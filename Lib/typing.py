@@ -1663,7 +1663,7 @@ class _TypingEllipsis:
 _TYPING_INTERNALS = frozenset({
     '__parameters__', '__orig_bases__',  '__orig_class__',
     '_is_protocol', '_is_runtime_protocol', '__protocol_attrs__',
-    '__callable_proto_members_only__',
+    '__callable_proto_members_only__', '__type_params__',
 })
 
 _SPECIAL_NAMES = frozenset({
