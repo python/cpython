@@ -22,7 +22,7 @@
 static struct PyModuleDef thread_module;
 
 
-/* threads owned by the modulo */
+/* threads owned by the module */
 
 struct module_thread {
     PyThreadState *tstate;
