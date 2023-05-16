@@ -3136,18 +3136,18 @@ class ProtocolTests(BaseTestCase):
 
     def test_pep695_generic_protocol_callable_members(self):
         @runtime_checkable
-        class Foo[T_co](Protocol):
-            def meth(self, x: T_co) -> None: ...
+        class Foo[T](Protocol):
+            def meth(self, x: T) -> None: ...
 
-        class Bar[T_co]:
-            def meth(self, x: T_co) -> None: ...
+        class Bar[T]:
+            def meth(self, x: T) -> None: ...
 
         self.assertIsInstance(Bar(), Foo)
         self.assertIsSubclass(Bar, Foo)
 
         @runtime_checkable
-        class SupportsTrunc[T_co](Protocol):
-            def __trunc__(self) -> T_co: ...
+        class SupportsTrunc[T](Protocol):
+            def __trunc__(self) -> T: ...
 
         self.assertIsInstance(0.0, SupportsTrunc)
         self.assertIsSubclass(float, SupportsTrunc)
