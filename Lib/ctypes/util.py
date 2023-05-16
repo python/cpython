@@ -370,9 +370,12 @@ elif os.name == "posix":
 
         def find_library(name):
             # See issue #9998
-            return _findSoname_ldconfig(name) or \
-                   _get_soname(_findLib_gcc(name)) or _get_soname(_findLib_ld(name)) or \
-                   _findLib_musl(name)
+            return (
+                _findSoname_ldconfig(name)
+                or _get_soname(_findLib_gcc(name))
+                or _get_soname(_findLib_ld(name))
+                or _findLib_musl(name)
+            )
 
 ################################################################
 # test code
