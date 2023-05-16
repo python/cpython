@@ -62,15 +62,15 @@ static PyObject *
 _io__TextIOBase_detach_impl(PyObject *self, PyTypeObject *cls)
 /*[clinic end generated code: output=50915f40c609eaa4 input=987ca3640d0a3776]*/
 {
-    _PyIO_State *state = IO_STATE();
+    _PyIO_State *state = get_io_state_by_cls(cls);
     return _unsupported(state, "detach");
 }
 
 /*[clinic input]
 _io._TextIOBase.read
     cls: defining_class
+    size: int(unused=True) = -1
     /
-    *args: object
 
 Read at most size characters from stream.
 
@@ -79,50 +79,53 @@ If size is negative or omitted, read until EOF.
 [clinic start generated code]*/
 
 static PyObject *
-_io__TextIOBase_read_impl(PyObject *self, PyTypeObject *cls, PyObject *args)
-/*[clinic end generated code: output=3adf28998831f461 input=cee1e84664a20de0]*/
+_io__TextIOBase_read_impl(PyObject *self, PyTypeObject *cls,
+                          int Py_UNUSED(size))
+/*[clinic end generated code: output=51a5178a309ce647 input=f5e37720f9fc563f]*/
 {
-    _PyIO_State *state = IO_STATE();
+    _PyIO_State *state = get_io_state_by_cls(cls);
     return _unsupported(state, "read");
 }
 
 /*[clinic input]
 _io._TextIOBase.readline
     cls: defining_class
+    size: int(unused=True) = -1
     /
-    *args: object
 
 Read until newline or EOF.
 
 Return an empty string if EOF is hit immediately.
+If size is specified, at most size characters will be read.
 [clinic start generated code]*/
 
 static PyObject *
 _io__TextIOBase_readline_impl(PyObject *self, PyTypeObject *cls,
-                              PyObject *args)
-/*[clinic end generated code: output=3073a948d02319f3 input=58f801259f7ff3ef]*/
+                              int Py_UNUSED(size))
+/*[clinic end generated code: output=3f47d7966d6d074e input=42eafec94107fa27]*/
 {
-    _PyIO_State *state = IO_STATE();
+    _PyIO_State *state = get_io_state_by_cls(cls);
     return _unsupported(state, "readline");
 }
 
 /*[clinic input]
 _io._TextIOBase.write
     cls: defining_class
+    s: str(unused=True)
     /
-    *args: object
 
-Write string to stream.
+Write string s to stream.
 
 Return the number of characters written
 (which is always equal to the length of the string).
 [clinic start generated code]*/
 
 static PyObject *
-_io__TextIOBase_write_impl(PyObject *self, PyTypeObject *cls, PyObject *args)
-/*[clinic end generated code: output=5d985eb529472bc4 input=21b6961b5cba9496]*/
+_io__TextIOBase_write_impl(PyObject *self, PyTypeObject *cls,
+                           const char *Py_UNUSED(s))
+/*[clinic end generated code: output=18b28231460275de input=e9cabaa5f6732b07]*/
 {
-    _PyIO_State *state = IO_STATE();
+    _PyIO_State *state = get_io_state_by_cls(cls);
     return _unsupported(state, "write");
 }
 
@@ -180,57 +183,20 @@ static PyGetSetDef textiobase_getset[] = {
     {NULL}
 };
 
-PyTypeObject PyTextIOBase_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_io._TextIOBase",          /*tp_name*/
-    0,                          /*tp_basicsize*/
-    0,                          /*tp_itemsize*/
-    0,                          /*tp_dealloc*/
-    0,                          /*tp_vectorcall_offset*/
-    0,                          /*tp_getattr*/
-    0,                          /*tp_setattr*/
-    0,                          /*tp_as_async*/
-    0,                          /*tp_repr*/
-    0,                          /*tp_as_number*/
-    0,                          /*tp_as_sequence*/
-    0,                          /*tp_as_mapping*/
-    0,                          /*tp_hash */
-    0,                          /*tp_call*/
-    0,                          /*tp_str*/
-    0,                          /*tp_getattro*/
-    0,                          /*tp_setattro*/
-    0,                          /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,  /*tp_flags*/
-    textiobase_doc,             /* tp_doc */
-    0,                          /* tp_traverse */
-    0,                          /* tp_clear */
-    0,                          /* tp_richcompare */
-    0,                          /* tp_weaklistoffset */
-    0,                          /* tp_iter */
-    0,                          /* tp_iternext */
-    textiobase_methods,         /* tp_methods */
-    0,                          /* tp_members */
-    textiobase_getset,          /* tp_getset */
-    &PyIOBase_Type,             /* tp_base */
-    0,                          /* tp_dict */
-    0,                          /* tp_descr_get */
-    0,                          /* tp_descr_set */
-    0,                          /* tp_dictoffset */
-    0,                          /* tp_init */
-    0,                          /* tp_alloc */
-    0,                          /* tp_new */
-    0,                          /* tp_free */
-    0,                          /* tp_is_gc */
-    0,                          /* tp_bases */
-    0,                          /* tp_mro */
-    0,                          /* tp_cache */
-    0,                          /* tp_subclasses */
-    0,                          /* tp_weaklist */
-    0,                          /* tp_del */
-    0,                          /* tp_version_tag */
-    0,                          /* tp_finalize */
+static PyType_Slot textiobase_slots[] = {
+    {Py_tp_doc, (void *)textiobase_doc},
+    {Py_tp_methods, textiobase_methods},
+    {Py_tp_getset, textiobase_getset},
+    {0, NULL},
 };
 
+/* Do not set Py_TPFLAGS_HAVE_GC so that tp_traverse and tp_clear are inherited */
+PyType_Spec textiobase_spec = {
+    .name = "_io._TextIOBase",
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = textiobase_slots,
+};
 
 /* IncrementalNewlineDecoder */
 
@@ -1456,7 +1422,7 @@ textiowrapper_dealloc(textio *self)
     _PyObject_GC_UNTRACK(self);
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *)self);
-    textiowrapper_clear(self);
+    (void)textiowrapper_clear(self);
     tp->tp_free((PyObject *)self);
     Py_DECREF(tp);
 }
@@ -3267,6 +3233,9 @@ static PyMethodDef textiowrapper_methods[] = {
     _IO_TEXTIOWRAPPER_SEEK_METHODDEF
     _IO_TEXTIOWRAPPER_TELL_METHODDEF
     _IO_TEXTIOWRAPPER_TRUNCATE_METHODDEF
+
+    {"__reduce__", _PyIOBase_cannot_pickle, METH_VARARGS},
+    {"__reduce_ex__", _PyIOBase_cannot_pickle, METH_VARARGS},
     {NULL, NULL}
 };
 

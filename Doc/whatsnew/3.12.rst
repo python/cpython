@@ -1204,6 +1204,8 @@ Build Changes
 
   (Contributed by Zhang Na in :gh:`90656`.)
 
+* ``PYTHON_FOR_REGEN`` now require Python 3.10 or newer.
+
 
 C API Changes
 =============

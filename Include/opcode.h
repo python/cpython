@@ -45,6 +45,7 @@ extern "C" {
 #define RETURN_GENERATOR                        75
 #define RETURN_VALUE                            83
 #define SETUP_ANNOTATIONS                       85
+#define LOAD_LOCALS                             87
 #define POP_EXCEPT                              89
 #define HAVE_ARGUMENT                           90
 #define STORE_NAME                              90
@@ -102,7 +103,6 @@ extern "C" {
 #define LIST_APPEND                            145
 #define SET_ADD                                146
 #define MAP_ADD                                147
-#define LOAD_CLASSDEREF                        148
 #define COPY_FREE_VARS                         149
 #define YIELD_VALUE                            150
 #define RESUME                                 151
@@ -118,7 +118,10 @@ extern "C" {
 #define KW_NAMES                               172
 #define CALL_INTRINSIC_1                       173
 #define CALL_INTRINSIC_2                       174
-#define MIN_INSTRUMENTED_OPCODE                238
+#define LOAD_FROM_DICT_OR_GLOBALS              175
+#define LOAD_FROM_DICT_OR_DEREF                176
+#define MIN_INSTRUMENTED_OPCODE                237
+#define INSTRUMENTED_LOAD_SUPER_ATTR           237
 #define INSTRUMENTED_POP_JUMP_IF_NONE          238
 #define INSTRUMENTED_POP_JUMP_IF_NOT_NONE      239
 #define INSTRUMENTED_RESUME                    240
@@ -199,11 +202,11 @@ extern "C" {
 #define LOAD_ATTR_WITH_HINT                     82
 #define LOAD_ATTR_METHOD_LAZY_DICT              84
 #define LOAD_ATTR_METHOD_NO_DICT                86
-#define LOAD_ATTR_METHOD_WITH_VALUES            87
-#define LOAD_CONST__LOAD_FAST                   88
-#define LOAD_FAST__LOAD_CONST                  111
-#define LOAD_FAST__LOAD_FAST                   112
-#define LOAD_GLOBAL_BUILTIN                    113
+#define LOAD_ATTR_METHOD_WITH_VALUES            88
+#define LOAD_CONST__LOAD_FAST                  111
+#define LOAD_FAST__LOAD_CONST                  112
+#define LOAD_FAST__LOAD_FAST                   113
+#define LOAD_GLOBAL_BUILTIN                    148
 #define LOAD_GLOBAL_MODULE                     153
 #define STORE_ATTR_INSTANCE_VALUE              154
 #define STORE_ATTR_SLOT                        158
@@ -215,7 +218,7 @@ extern "C" {
 #define UNPACK_SEQUENCE_LIST                   168
 #define UNPACK_SEQUENCE_TUPLE                  169
 #define UNPACK_SEQUENCE_TWO_TUPLE              170
-#define SEND_GEN                               175
+#define SEND_GEN                               177
 
 #define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\
     || ((op) == JUMP) \

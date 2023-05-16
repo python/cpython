@@ -444,6 +444,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.12b1 3528 (Add LOAD_SUPER_ATTR_METHOD specialization)
 #     Python 3.12b1 3529 (Inline list/dict/set comprehensions)
 #     Python 3.12b1 3530 (Shrink the LOAD_SUPER_ATTR caches)
+#     Python 3.12b1 3531 (Add PEP 695 changes)
 
 #     Python 3.13 will start with 3550
 

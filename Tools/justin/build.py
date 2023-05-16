@@ -450,6 +450,7 @@ class Engine:
             "INSTRUMENTED_JUMP_BACKWARD", # XXX
             "INSTRUMENTED_JUMP_FORWARD", # XXX
             "INSTRUMENTED_LINE", # XXX
+            "INSTRUMENTED_LOAD_SUPER_ATTR", # XXX
             "INSTRUMENTED_POP_JUMP_IF_FALSE", # XXX
             "INSTRUMENTED_POP_JUMP_IF_NONE", # XXX
             "INSTRUMENTED_POP_JUMP_IF_NOT_NONE", # XXX
@@ -467,6 +468,8 @@ class Engine:
             "LOAD_CLOSURE",
             "LOAD_DEREF",
             "LOAD_FAST_CHECK",
+            "LOAD_FROM_DICT_OR_DEREF",
+            "LOAD_FROM_DICT_OR_GLOBALS",
             "LOAD_GLOBAL",
             "LOAD_NAME",
             "MAKE_CELL",
