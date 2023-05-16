@@ -912,6 +912,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
 
         // we inline all non-generator-expression comprehensions
         int inline_comp =
+            ste->ste_type == FunctionBlock &&
             entry->ste_comprehension &&
             !entry->ste_generator;
 

@@ -1352,11 +1352,14 @@ class TestSourcePositions(unittest.TestCase):
                                and x != 50)]
             """)
         compiled_code, _ = self.check_positions_against_ast(snippet)
+        compiled_code = compiled_code.co_consts[0]
         self.assertIsInstance(compiled_code, types.CodeType)
         self.assertOpcodeSourcePositionIs(compiled_code, 'LIST_APPEND',
             line=1, end_line=2, column=1, end_column=8, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'JUMP_BACKWARD',
             line=1, end_line=2, column=1, end_column=8, occurrence=1)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE',
+            line=1, end_line=6, column=0, end_column=32, occurrence=1)
 
     def test_multiline_async_list_comprehension(self):
         snippet = textwrap.dedent("""\
@@ -1390,11 +1393,14 @@ class TestSourcePositions(unittest.TestCase):
                                and x != 50)}
             """)
         compiled_code, _ = self.check_positions_against_ast(snippet)
+        compiled_code = compiled_code.co_consts[0]
         self.assertIsInstance(compiled_code, types.CodeType)
         self.assertOpcodeSourcePositionIs(compiled_code, 'SET_ADD',
             line=1, end_line=2, column=1, end_column=8, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'JUMP_BACKWARD',
             line=1, end_line=2, column=1, end_column=8, occurrence=1)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE',
+            line=1, end_line=6, column=0, end_column=32, occurrence=1)
 
     def test_multiline_async_set_comprehension(self):
         snippet = textwrap.dedent("""\
@@ -1428,11 +1434,14 @@ class TestSourcePositions(unittest.TestCase):
                                and x != 50)}
             """)
         compiled_code, _ = self.check_positions_against_ast(snippet)
+        compiled_code = compiled_code.co_consts[0]
         self.assertIsInstance(compiled_code, types.CodeType)
         self.assertOpcodeSourcePositionIs(compiled_code, 'MAP_ADD',
             line=1, end_line=2, column=1, end_column=7, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'JUMP_BACKWARD',
             line=1, end_line=2, column=1, end_column=7, occurrence=1)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE',
+            line=1, end_line=6, column=0, end_column=32, occurrence=1)
 
     def test_multiline_async_dict_comprehension(self):
         snippet = textwrap.dedent("""\
@@ -1702,6 +1711,9 @@ class TestSourcePositions(unittest.TestCase):
         for source in [
             "lambda: a",
             "(a for b in c)",
+            "[a for b in c]",
+            "{a for b in c}",
+            "{a: b for c in d}",
         ]:
             with self.subTest(source):
                 code = compile(f"{source}, {source}", "<test>", "eval")

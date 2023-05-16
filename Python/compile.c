@@ -691,7 +691,6 @@ compiler_unit_free(struct compiler_unit *u)
     Py_CLEAR(u->u_metadata.u_varnames);
     Py_CLEAR(u->u_metadata.u_freevars);
     Py_CLEAR(u->u_metadata.u_cellvars);
-    Py_CLEAR(u->u_metadata.u_fasthidden);
     Py_CLEAR(u->u_private);
     PyObject_Free(u);
 }
@@ -1256,12 +1255,6 @@ compiler_enter_scope(struct compiler *c, identifier name,
     u->u_metadata.u_freevars = dictbytype(u->u_ste->ste_symbols, FREE, DEF_FREE_CLASS,
                                PyDict_GET_SIZE(u->u_metadata.u_cellvars));
     if (!u->u_metadata.u_freevars) {
-        compiler_unit_free(u);
-        return ERROR;
-    }
-
-    u->u_metadata.u_fasthidden = PyDict_New();
-    if (!u->u_metadata.u_fasthidden) {
         compiler_unit_free(u);
         return ERROR;
     }
@@ -3725,8 +3718,7 @@ compiler_nameop(struct compiler *c, location loc,
         optype = OP_DEREF;
         break;
     case LOCAL:
-        if (c->u->u_ste->ste_type == FunctionBlock ||
-                (PyDict_GetItem(c->u->u_metadata.u_fasthidden, mangled) == Py_True))
+        if (c->u->u_ste->ste_type == FunctionBlock)
             optype = OP_FAST;
         break;
     case GLOBAL_IMPLICIT:
@@ -4988,7 +4980,6 @@ compiler_async_comprehension_generator(struct compiler *c, location loc,
 typedef struct {
     PyObject *pushed_locals;
     PyObject *temp_symbols;
-    PyObject *fast_hidden;
 } inlined_comprehension_state;
 
 static int
@@ -5008,24 +4999,6 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
         // assignment expression to a nonlocal in the comprehension, these don't
         // need handling here since they shouldn't be isolated
         if (symbol & DEF_LOCAL && !(symbol & DEF_NONLOCAL)) {
-            if (c->u->u_ste->ste_type != FunctionBlock) {
-                // non-function scope: override this name to use fast locals
-                PyObject *orig = PyDict_GetItem(c->u->u_metadata.u_fasthidden, k);
-                if (orig != Py_True) {
-                    if (PyDict_SetItem(c->u->u_metadata.u_fasthidden, k, Py_True) < 0) {
-                        return ERROR;
-                    }
-                    if (state->fast_hidden == NULL) {
-                        state->fast_hidden = PySet_New(NULL);
-                        if (state->fast_hidden == NULL) {
-                            return ERROR;
-                        }
-                    }
-                    if (PySet_Add(state->fast_hidden, k) < 0) {
-                        return ERROR;
-                    }
-                }
-            }
             long scope = (symbol >> SCOPE_OFFSET) & SCOPE_MASK;
             PyObject *outv = PyDict_GetItemWithError(c->u->u_ste->ste_symbols, k);
             if (outv == NULL) {
@@ -5130,22 +5103,6 @@ pop_inlined_comprehension_state(struct compiler *c, location loc,
             ADDOP_NAME(c, loc, STORE_FAST_MAYBE_NULL, k, varnames);
         }
         Py_CLEAR(state.pushed_locals);
-    }
-    if (state.fast_hidden) {
-        while (PySet_Size(state.fast_hidden) > 0) {
-            PyObject *k = PySet_Pop(state.fast_hidden);
-            if (k == NULL) {
-                return ERROR;
-            }
-            // we set to False instead of clearing, so we can track which names
-            // were temporarily fast-locals and should use CO_FAST_HIDDEN
-            if (PyDict_SetItem(c->u->u_metadata.u_fasthidden, k, Py_False)) {
-                Py_DECREF(k);
-                return ERROR;
-            }
-            Py_DECREF(k);
-        }
-        Py_CLEAR(state.fast_hidden);
     }
     return SUCCESS;
 }
@@ -5293,7 +5250,6 @@ error:
     Py_XDECREF(entry);
     Py_XDECREF(inline_state.pushed_locals);
     Py_XDECREF(inline_state.temp_symbols);
-    Py_XDECREF(inline_state.fast_hidden);
     return ERROR;
 }
 
