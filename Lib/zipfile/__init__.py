@@ -439,8 +439,13 @@ class ZipInfo (object):
         result.append('>')
         return ''.join(result)
 
-    def FileHeader(self, zip64=False):
-        """Return the per-file header as a bytes object."""
+    def FileHeader(self, zip64=None):
+        """Return the per-file header as a bytes object.
+
+        When the optional zip64 arg is None rather than a bool, we will
+        decide based upon the file_size and compress_size, if known,
+        False otherwise.
+        """
         dt = self.date_time
         dosdate = (dt[0] - 1980) << 9 | dt[1] << 5 | dt[2]
         dostime = dt[3] << 11 | dt[4] << 5 | (dt[5] // 2)
@@ -455,6 +460,10 @@ class ZipInfo (object):
         extra = self.extra
 
         min_version = 0
+        if zip64 is None:
+            # We always explicitly pass zip64 within this module.... This
+            # remains for anyone using ZipInfo.FileHeader as a public API.
+            zip64 = file_size > ZIP64_LIMIT or compress_size > ZIP64_LIMIT
         if zip64:
             fmt = '<HHQQ'
             extra = extra + struct.pack(fmt,
