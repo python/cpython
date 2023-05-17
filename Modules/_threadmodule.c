@@ -27,6 +27,15 @@ static struct PyModuleDef thread_module;
 struct module_thread {
     PyThreadState *tstate;
     int daemonic;
+    struct {
+        unsigned int initialized:1;
+        unsigned int started:1;
+        unsigned int func_started:1;
+        unsigned int func_ended:1;
+        unsigned int tstate_cleared:1;
+        /* padding to align to 4 bytes */
+        unsigned int :27;
+    } status;
 };
 
 static struct module_thread *
@@ -53,6 +62,9 @@ new_module_thread(PyInterpreterState *interp, int daemonic)
     *mt = (struct module_thread){
         .tstate = tstate,
         .daemonic = daemonic,
+        .status = {
+            .initialized = 1,
+        },
     };
     return mt;
 }
@@ -61,11 +73,64 @@ static void
 delete_module_thread(struct module_thread *mt)
 {
     if (mt->tstate != NULL) {
+        assert(!mt->status.tstate_cleared);
         PyThreadState_Clear(mt->tstate);
         PyThreadState_Delete(mt->tstate);
         mt->tstate = NULL;
     }
     PyMem_RawFree(mt);
+}
+
+static void
+bind_module_thread(struct module_thread *mt)
+{
+    assert(_PyThreadState_GET() == NULL);
+    assert(mt->status.initialized);
+    assert(!mt->status.started);
+
+    mt->status.started = 1;
+
+    _PyThreadState_Bind(mt->tstate);
+}
+
+static void
+set_module_thread_starting(struct module_thread *mt)
+{
+    assert(mt->tstate == _PyThreadState_GET());
+    assert(mt->status.started);
+    assert(!mt->status.func_started);
+
+    mt->status.func_started = 1;
+
+    mt->tstate->interp->threads.count++;
+}
+
+static void
+set_module_thread_finished(struct module_thread *mt)
+{
+    assert(mt->tstate == _PyThreadState_GET());
+    assert(mt->status.func_started);
+    assert(!mt->status.func_ended);
+
+    mt->status.func_ended = 1;
+
+    mt->tstate->interp->threads.count--;
+}
+
+static void
+release_module_thread_tstate(struct module_thread *mt)
+{
+    assert(mt->tstate == _PyThreadState_GET());
+    assert(mt->status.func_ended);
+    assert(!mt->status.tstate_cleared);
+
+    PyThreadState *tstate = mt->tstate;
+    PyThreadState_Clear(tstate);
+    // This releases the GIL.
+    _PyThreadState_DeleteCurrent(tstate);
+
+    mt->tstate = NULL;
+    mt->status.tstate_cleared = 1;
 }
 
 
@@ -1119,12 +1184,12 @@ thread_run(void *boot_raw)
 {
     struct bootstate *boot = (struct bootstate *) boot_raw;
     struct module_thread *mt = boot->module_thread;
-    PyThreadState *tstate = mt->tstate;
 
-    _PyThreadState_Bind(tstate);
-    PyEval_AcquireThread(tstate);
-    tstate->interp->threads.count++;
+    bind_module_thread(mt);
 
+    // Run the Python function with the GIL held.
+    PyEval_AcquireThread(mt->tstate);
+    set_module_thread_starting(mt);
     PyObject *res = PyObject_Call(boot->func, boot->args, boot->kwargs);
     if (res == NULL) {
         if (PyErr_ExceptionMatches(PyExc_SystemExit))
@@ -1137,12 +1202,10 @@ thread_run(void *boot_raw)
     else {
         Py_DECREF(res);
     }
-
+    set_module_thread_finished(mt);
     thread_bootstate_free(boot);
-    tstate->interp->threads.count--;
-    PyThreadState_Clear(tstate);
-    _PyThreadState_DeleteCurrent(tstate);
-    mt->tstate = NULL;
+
+    release_module_thread_tstate(mt);
     delete_module_thread(mt);
 
     // bpo-44434: Don't call explicitly PyThread_exit_thread(). On Linux with
