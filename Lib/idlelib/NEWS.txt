@@ -4,6 +4,9 @@ Released after 2022-10-24
 =========================
 
 
+gh-104486: Make About print both tcl and tk versions if different,
+as is expected someday.
+
 gh-88496 Fix IDLE test hang on macOS.
 
 gh-103314 Support sys.last_exc after exceptions in Shell.
