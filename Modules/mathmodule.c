@@ -3904,6 +3904,10 @@ math_nextafter_impl(PyObject *module, double x, double y, int steps)
 
     uint64_t usteps = steps;
 
+    // We assume that double and uint64_t have the same endianness.
+    // This is not guaranteed by the C-standard, but it is true for
+    // all platforms we care about. (The most likely form of violation
+    // would be a "mixed-endian" double.)
     union pun {double f; uint64_t i;};
     union pun ux = {x}, uy = {y};
     if(ux.i == uy.i) {
