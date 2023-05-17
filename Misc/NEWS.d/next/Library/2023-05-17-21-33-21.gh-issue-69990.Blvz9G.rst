@@ -1,0 +1,1 @@
+Make the meth:`Profile.print_stats` support sorting by multiple values. Patched by Chiu-Hsiang Hsu and Furkan Onder.
