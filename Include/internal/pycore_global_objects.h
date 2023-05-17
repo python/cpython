@@ -68,6 +68,14 @@ struct _Py_interp_cached_objects {
     PyObject *type_slots_pname;
     pytype_slotdef *type_slots_ptrs[MAX_EQUIV];
 
+    /* TypeVar and related types */
+    PyTypeObject *generic_type;
+    PyTypeObject *typevar_type;
+    PyTypeObject *typevartuple_type;
+    PyTypeObject *paramspec_type;
+    PyTypeObject *paramspecargs_type;
+    PyTypeObject *paramspeckwargs_type;
+    PyTypeObject *typealias_type;
 };
 
 #define _Py_INTERP_STATIC_OBJECT(interp, NAME) \

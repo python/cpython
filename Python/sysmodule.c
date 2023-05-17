@@ -332,6 +332,7 @@ _PySys_ClearAuditHooks(PyThreadState *ts)
     }
 
     _PyRuntimeState *runtime = ts->interp->runtime;
+    /* The hooks are global so we have to check for runtime finalization. */
     PyThreadState *finalizing = _PyRuntimeState_GetFinalizing(runtime);
     assert(finalizing == ts);
     if (finalizing != ts) {
@@ -365,7 +366,7 @@ PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
     _PyRuntimeState *runtime = &_PyRuntime;
     PyThreadState *tstate;
     if (runtime->initialized) {
-        tstate = _PyRuntimeState_GetThreadState(runtime);
+        tstate = _PyThreadState_GET();
     }
     else {
         tstate = NULL;
@@ -2038,6 +2039,9 @@ sys__clear_type_cache_impl(PyObject *module)
     PyType_ClearCache();
     Py_RETURN_NONE;
 }
+
+/* Note that, for now, we do not have a per-interpreter equivalent
+  for sys.is_finalizing(). */
 
 /*[clinic input]
 sys.is_finalizing

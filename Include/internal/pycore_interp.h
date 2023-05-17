@@ -83,6 +83,13 @@ struct _is {
     int _initialized;
     int finalizing;
 
+    /* Set by Py_EndInterpreter().
+
+       Use _PyInterpreterState_GetFinalizing()
+       and _PyInterpreterState_SetFinalizing()
+       to access it, don't access it directly. */
+    _Py_atomic_address _finalizing;
+
     struct _obmalloc_state obmalloc;
 
     struct _ceval_state ceval;
@@ -178,6 +185,9 @@ struct _is {
        basis.  Also see _PyRuntimeState regarding the various mutex fields.
        */
 
+    /* The per-interpreter GIL, which might not be used. */
+    struct _gil_runtime_state _gil;
+
     /* the initial PyInterpreterState.threads.head */
     PyThreadState _initial_thread;
 };
@@ -186,6 +196,17 @@ struct _is {
 /* other API */
 
 extern void _PyInterpreterState_Clear(PyThreadState *tstate);
+
+
+static inline PyThreadState*
+_PyInterpreterState_GetFinalizing(PyInterpreterState *interp) {
+    return (PyThreadState*)_Py_atomic_load_relaxed(&interp->_finalizing);
+}
+
+static inline void
+_PyInterpreterState_SetFinalizing(PyInterpreterState *interp, PyThreadState *tstate) {
+    _Py_atomic_store_relaxed(&interp->_finalizing, (uintptr_t)tstate);
+}
 
 
 /* cross-interpreter data registry */

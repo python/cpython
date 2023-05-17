@@ -26,7 +26,7 @@ const char * const PyStructSequence_UnnamedField = "unnamed field";
 static Py_ssize_t
 get_type_attr_as_size(PyTypeObject *tp, PyObject *name)
 {
-    PyObject *v = PyDict_GetItemWithError(tp->tp_dict, name);
+    PyObject *v = PyDict_GetItemWithError(_PyType_GetDict(tp), name);
     if (v == NULL && !PyErr_Occurred()) {
         PyErr_Format(PyExc_TypeError,
                      "Missed attribute '%U' of type %s",
@@ -493,7 +493,7 @@ initialize_static_type(PyTypeObject *type, PyStructSequence_Desc *desc,
     Py_INCREF(type);
 
     if (initialize_structseq_dict(
-            desc, type->tp_dict, n_members, n_unnamed_members) < 0) {
+            desc, _PyType_GetDict(type), n_members, n_unnamed_members) < 0) {
         Py_DECREF(type);
         return -1;
     }
@@ -511,7 +511,6 @@ _PyStructSequence_InitBuiltinWithFlags(PyInterpreterState *interp,
     Py_ssize_t n_members = count_members(desc, &n_unnamed_members);
     PyMemberDef *members = NULL;
 
-    int initialized = 1;
     if ((type->tp_flags & Py_TPFLAGS_READY) == 0) {
         assert(type->tp_name == NULL);
         assert(type->tp_members == NULL);
@@ -524,7 +523,6 @@ _PyStructSequence_InitBuiltinWithFlags(PyInterpreterState *interp,
         initialize_static_fields(type, desc, members, tp_flags);
 
         _Py_SetImmortal(type);
-        initialized = 0;
     }
 #ifndef NDEBUG
     else {
@@ -543,13 +541,10 @@ _PyStructSequence_InitBuiltinWithFlags(PyInterpreterState *interp,
                      desc->name);
         goto error;
     }
-    // This should be dropped if tp_dict is made per-interpreter.
-    if (initialized) {
-        return 0;
-    }
 
     if (initialize_structseq_dict(
-            desc, type->tp_dict, n_members, n_unnamed_members) < 0) {
+            desc, _PyType_GetDict(type), n_members, n_unnamed_members) < 0)
+    {
         goto error;
     }
 
@@ -675,7 +670,7 @@ _PyStructSequence_NewType(PyStructSequence_Desc *desc, unsigned long tp_flags)
     }
 
     if (initialize_structseq_dict(
-            desc, type->tp_dict, n_members, n_unnamed_members) < 0) {
+            desc, _PyType_GetDict(type), n_members, n_unnamed_members) < 0) {
         Py_DECREF(type);
         return NULL;
     }
