@@ -680,23 +680,24 @@ class PurePath(object):
         name = self._tail[-1].partition('.')[0].partition(':')[0].rstrip(' ')
         return name.upper() in _WIN_RESERVED_NAMES
 
-    def match(self, path_pattern, case_sensitive=True):
+    def match(self, path_pattern, case_sensitive=None):
         """
         Return True if this path matches the given pattern.
         """
+        if case_sensitive is None:
+            case_sensitive = _is_case_sensitive(self._flavour)
+        flags = re.NOFLAG if case_sensitive else re.IGNORECASE
         pat = self.with_segments(path_pattern)
         if not pat.parts:
             raise ValueError("empty pattern")
-        pat_parts = pat._parts_normcase
-        parts = self._parts_normcase
+        pat_parts = str(pat).split(pat._flavour.sep)
+        parts = str(self).split(self._flavour.sep)
         if pat.drive or pat.root:
             if len(pat_parts) != len(parts):
                 return False
         elif len(pat_parts) > len(parts):
             return False
         for part, pat in zip(reversed(parts), reversed(pat_parts)):
-            # If none of the flags are applied, the value of 'flags' would be 0.
-            flags = 0 if case_sensitive else re.I
             match = re.compile(fnmatch.translate(pat), flags).match
             if not match(part):
                 return False
