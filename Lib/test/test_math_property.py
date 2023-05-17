@@ -1,29 +1,43 @@
+import functools
+import unittest
+from math import isnan, nextafter
+from test.support import requires_IEEE_754
 from test.support.hypothesis_helper import hypothesis
 
 floats = hypothesis.strategies.floats
 integers = hypothesis.strategies.integers
 
-from math import nextafter, inf
-from functools import reduce
+
+def equal_float(x, y):
+    if isnan(x) and isnan(y):
+        return True
+    assert x == y
 
 
 def via_reduce(x, y, steps):
-    return reduce(nextafter, [y] * steps, x)
+    return functools.reduce(nextafter, [y] * steps, x)
+
 
 class NextafterTests(unittest.TestCase):
     @requires_IEEE_754
     @hypothesis.given(
-      x=floats(),
-      y=floats(),
-      a=integers(),
-      b=integers())
-    def test_addition_commutes(self, x, y, a, b):
-      assert nextafter(nextafter(x, y, steps=a), steps=b) == nextafter(x, y, steps=a+b)
-    
+        x=floats(),
+        y=floats(),
+        steps=integers(min_value=0, max_value=2**16))
+    def test_count(self, x, y, steps):
+        equal_float(via_reduce(x, y, steps),
+                    nextafter(x, y, steps=steps))
+
     @requires_IEEE_754
     @hypothesis.given(
-      x=floats(),
-      y=floats(),
-      steps=integers())
-    def test_count(self, x, y, steps):
-      assert via_reduce(x, y, steps) == nextafter(x, y, steps=steps)
+        x=floats(),
+        y=floats(),
+        a=integers(min_value=0),
+        b=integers(min_value=0))
+    def test_addition_commutes(self, x, y, a, b):
+        first = nextafter(x, y, steps=a)
+        second = nextafter(first, y, steps=b)
+        combined = nextafter(x, y, steps=a+b)
+        hypothesis.note(f"{first} -> {second} == {combined}")
+
+        equal_float(second, combined)
