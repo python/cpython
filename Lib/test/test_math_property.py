@@ -8,10 +8,8 @@ floats = hypothesis.strategies.floats
 integers = hypothesis.strategies.integers
 
 
-def equal_float(x, y):
-    if isnan(x) and isnan(y):
-        return True
-    assert x == y
+def assert_equal_float(x, y):
+    assert isnan(x) and isnan(y) or x == y
 
 
 def via_reduce(x, y, steps):
@@ -25,8 +23,8 @@ class NextafterTests(unittest.TestCase):
         y=floats(),
         steps=integers(min_value=0, max_value=2**16))
     def test_count(self, x, y, steps):
-        equal_float(via_reduce(x, y, steps),
-                    nextafter(x, y, steps=steps))
+        assert_equal_float(via_reduce(x, y, steps),
+                           nextafter(x, y, steps=steps))
 
     @requires_IEEE_754
     @hypothesis.given(
@@ -40,4 +38,4 @@ class NextafterTests(unittest.TestCase):
         combined = nextafter(x, y, steps=a+b)
         hypothesis.note(f"{first} -> {second} == {combined}")
 
-        equal_float(second, combined)
+        assert_equal_float(second, combined)
