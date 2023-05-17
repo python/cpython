@@ -578,7 +578,13 @@ Pure paths provide the following methods and properties:
 
    By default, or when the *case_sensitive* keyword-only argument is set to
    ``None``, this method matches paths using platform-specific casing rules:
-   typically, case-sensitive on POSIX, and case-insensitive on Windows.
+   typically, case-sensitive on POSIX, and case-insensitive on Windows::
+
+      >>> PurePosixPath('b.py').match('*.PY')
+      False
+      >>> PureWindowsPath('b.py').match('*.PY')
+      True
+
    Set *case_sensitive* to ``True`` or ``False`` to override this behaviour.
 
    .. versionadded:: 3.12

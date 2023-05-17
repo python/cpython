@@ -86,10 +86,9 @@ def _make_selector(pattern_parts, flavour, case_sensitive):
     return cls(pat, child_parts, flavour, case_sensitive)
 
 
-@functools.lru_cache(maxsize=256, typed=True)
+@functools.lru_cache(maxsize=256)
 def _compile_pattern(pat, flags):
-    re_pat = fnmatch.translate(pat)
-    return re.compile(re_pat, flags).match
+    return re.compile(fnmatch.translate(pat), flags).match
 
 
 class _Selector:
@@ -690,9 +689,6 @@ class PurePath(object):
         """
         Return True if this path matches the given pattern.
         """
-        if case_sensitive is None:
-            case_sensitive = _is_case_sensitive(self._flavour)
-        flags = re.NOFLAG if case_sensitive else re.IGNORECASE
         pat = self.with_segments(path_pattern)
         if not pat.parts:
             raise ValueError("empty pattern")
@@ -703,6 +699,11 @@ class PurePath(object):
                 return False
         elif len(pat_parts) > len(parts):
             return False
+        # Generate regex flag based on |case_sensitive| parameter.
+        if case_sensitive is None:
+            case_sensitive = _is_case_sensitive(self._flavour)
+        flags = re.NOFLAG if case_sensitive else re.IGNORECASE
+
         for part, pat in zip(reversed(parts), reversed(pat_parts)):
             match = _compile_pattern(pat, flags)
             if not match(part):
