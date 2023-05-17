@@ -1421,7 +1421,12 @@ _PyExc_PrepReraiseStar(PyObject *orig, PyObject *excs)
         if (res < 0) {
             goto done;
         }
-        result = _PyExc_CreateExceptionGroup("", raised_list);
+        if (PyList_GET_SIZE(raised_list) > 1) {
+            result = _PyExc_CreateExceptionGroup("", raised_list);
+        }
+        else {
+            result = Py_NewRef(PyList_GetItem(raised_list, 0));
+        }
         if (result == NULL) {
             goto done;
         }
@@ -2282,6 +2287,48 @@ AttributeError_traverse(PyAttributeErrorObject *self, visitproc visit, void *arg
     return BaseException_traverse((PyBaseExceptionObject *)self, visit, arg);
 }
 
+/* Pickling support */
+static PyObject *
+AttributeError_getstate(PyAttributeErrorObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *dict = ((PyAttributeErrorObject *)self)->dict;
+    if (self->name || self->args) {
+        dict = dict ? PyDict_Copy(dict) : PyDict_New();
+        if (dict == NULL) {
+            return NULL;
+        }
+        if (self->name && PyDict_SetItemString(dict, "name", self->name) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+        /* We specifically are not pickling the obj attribute since there are many
+        cases where it is unlikely to be picklable. See GH-103352.
+        */
+        if (self->args && PyDict_SetItemString(dict, "args", self->args) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+        return dict;
+    }
+    else if (dict) {
+        return Py_NewRef(dict);
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+AttributeError_reduce(PyAttributeErrorObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *state = AttributeError_getstate(self, NULL);
+    if (state == NULL) {
+        return NULL;
+    }
+
+    PyObject *return_value = PyTuple_Pack(3, Py_TYPE(self), self->args, state);
+    Py_DECREF(state);
+    return return_value;
+}
+
 static PyMemberDef AttributeError_members[] = {
     {"name", T_OBJECT, offsetof(PyAttributeErrorObject, name), 0, PyDoc_STR("attribute name")},
     {"obj", T_OBJECT, offsetof(PyAttributeErrorObject, obj), 0, PyDoc_STR("object")},
@@ -2289,7 +2336,9 @@ static PyMemberDef AttributeError_members[] = {
 };
 
 static PyMethodDef AttributeError_methods[] = {
-    {NULL}  /* Sentinel */
+    {"__getstate__", (PyCFunction)AttributeError_getstate, METH_NOARGS},
+    {"__reduce__", (PyCFunction)AttributeError_reduce, METH_NOARGS },
+    {NULL}
 };
 
 ComplexExtendsException(PyExc_Exception, AttributeError,
@@ -3591,13 +3640,9 @@ static struct static_exception static_exceptions[] = {
 int
 _PyExc_InitTypes(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return 0;
-    }
-
     for (size_t i=0; i < Py_ARRAY_LENGTH(static_exceptions); i++) {
         PyTypeObject *exc = static_exceptions[i].exc;
-        if (_PyStaticType_InitBuiltin(exc) < 0) {
+        if (_PyStaticType_InitBuiltin(interp, exc) < 0) {
             return -1;
         }
     }
@@ -3608,13 +3653,9 @@ _PyExc_InitTypes(PyInterpreterState *interp)
 static void
 _PyExc_FiniTypes(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return;
-    }
-
     for (Py_ssize_t i=Py_ARRAY_LENGTH(static_exceptions) - 1; i >= 0; i--) {
         PyTypeObject *exc = static_exceptions[i].exc;
-        _PyStaticType_Dealloc(exc);
+        _PyStaticType_Dealloc(interp, exc);
     }
 }
 
@@ -3764,113 +3805,3 @@ _PyException_AddNote(PyObject *exc, PyObject *note)
     return res;
 }
 
-/* Helper to do the equivalent of "raise X from Y" in C, but always using
- * the current exception rather than passing one in.
- *
- * We currently limit this to *only* exceptions that use the BaseException
- * tp_init and tp_new methods, since we can be reasonably sure we can wrap
- * those correctly without losing data and without losing backwards
- * compatibility.
- *
- * We also aim to rule out *all* exceptions that might be storing additional
- * state, whether by having a size difference relative to BaseException,
- * additional arguments passed in during construction or by having a
- * non-empty instance dict.
- *
- * We need to be very careful with what we wrap, since changing types to
- * a broader exception type would be backwards incompatible for
- * existing codecs, and with different init or new method implementations
- * may either not support instantiation with PyErr_Format or lose
- * information when instantiated that way.
- *
- * XXX (ncoghlan): This could be made more comprehensive by exploiting the
- * fact that exceptions are expected to support pickling. If more builtin
- * exceptions (e.g. AttributeError) start to be converted to rich
- * exceptions with additional attributes, that's probably a better approach
- * to pursue over adding special cases for particular stateful subclasses.
- *
- * Returns a borrowed reference to the new exception (if any), NULL if the
- * existing exception was left in place.
- */
-PyObject *
-_PyErr_TrySetFromCause(const char *format, ...)
-{
-    PyObject* msg_prefix;
-    PyObject *instance_args;
-    Py_ssize_t num_args, caught_type_size, base_exc_size;
-    va_list vargs;
-    int same_basic_size;
-
-    PyObject *exc = PyErr_GetRaisedException();
-    PyTypeObject *caught_type = Py_TYPE(exc);
-    /* Ensure type info indicates no extra state is stored at the C level
-     * and that the type can be reinstantiated using PyErr_Format
-     */
-    caught_type_size = caught_type->tp_basicsize;
-    base_exc_size = _PyExc_BaseException.tp_basicsize;
-    same_basic_size = (
-        caught_type_size == base_exc_size ||
-        (_PyType_SUPPORTS_WEAKREFS(caught_type) &&
-            (caught_type_size == base_exc_size + (Py_ssize_t)sizeof(PyObject *))
-        )
-    );
-    if (caught_type->tp_init != (initproc)BaseException_init ||
-        caught_type->tp_new != BaseException_new ||
-        !same_basic_size ||
-        caught_type->tp_itemsize != _PyExc_BaseException.tp_itemsize) {
-        /* We can't be sure we can wrap this safely, since it may contain
-         * more state than just the exception type. Accordingly, we just
-         * leave it alone.
-         */
-        PyErr_SetRaisedException(exc);
-        return NULL;
-    }
-
-    /* Check the args are empty or contain a single string */
-    instance_args = ((PyBaseExceptionObject *)exc)->args;
-    num_args = PyTuple_GET_SIZE(instance_args);
-    if (num_args > 1 ||
-        (num_args == 1 &&
-         !PyUnicode_CheckExact(PyTuple_GET_ITEM(instance_args, 0)))) {
-        /* More than 1 arg, or the one arg we do have isn't a string
-         */
-        PyErr_SetRaisedException(exc);
-        return NULL;
-    }
-
-    /* Ensure the instance dict is also empty */
-    if (!_PyObject_IsInstanceDictEmpty(exc)) {
-        /* While we could potentially copy a non-empty instance dictionary
-         * to the replacement exception, for now we take the more
-         * conservative path of leaving exceptions with attributes set
-         * alone.
-         */
-        PyErr_SetRaisedException(exc);
-        return NULL;
-    }
-
-    /* For exceptions that we can wrap safely, we chain the original
-     * exception to a new one of the exact same type with an
-     * error message that mentions the additional details and the
-     * original exception.
-     *
-     * It would be nice to wrap OSError and various other exception
-     * types as well, but that's quite a bit trickier due to the extra
-     * state potentially stored on OSError instances.
-     */
-    va_start(vargs, format);
-    msg_prefix = PyUnicode_FromFormatV(format, vargs);
-    va_end(vargs);
-    if (msg_prefix == NULL) {
-        Py_DECREF(exc);
-        return NULL;
-    }
-
-    PyErr_Format((PyObject*)Py_TYPE(exc), "%U (%s: %S)",
-                 msg_prefix, Py_TYPE(exc)->tp_name, exc);
-    Py_DECREF(msg_prefix);
-    PyObject *new_exc = PyErr_GetRaisedException();
-    PyException_SetCause(new_exc, exc);
-    PyErr_SetRaisedException(new_exc);
-    return new_exc;
-}

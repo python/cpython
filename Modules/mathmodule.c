@@ -59,7 +59,6 @@ raised for division by zero and mod by zero.
 #include "Python.h"
 #include "pycore_bitutils.h"      // _Py_bit_length()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_dtoa.h"          // _Py_dg_infinity()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyObject_LookupSpecial()
@@ -389,34 +388,6 @@ lanczos_sum(double x)
     return num/den;
 }
 
-/* Constant for +infinity, generated in the same way as float('inf'). */
-
-static double
-m_inf(void)
-{
-#if _PY_SHORT_FLOAT_REPR == 1
-    return _Py_dg_infinity(0);
-#else
-    return Py_HUGE_VAL;
-#endif
-}
-
-/* Constant nan value, generated in the same way as float('nan'). */
-/* We don't currently assume that Py_NAN is defined everywhere. */
-
-#if _PY_SHORT_FLOAT_REPR == 1
-
-static double
-m_nan(void)
-{
-#if _PY_SHORT_FLOAT_REPR == 1
-    return _Py_dg_stdnan(0);
-#else
-    return Py_NAN;
-#endif
-}
-
-#endif
 
 static double
 m_tgamma(double x)
@@ -435,7 +406,7 @@ m_tgamma(double x)
     if (x == 0.0) {
         errno = EDOM;
         /* tgamma(+-0.0) = +-inf, divide-by-zero */
-        return copysign(Py_HUGE_VAL, x);
+        return copysign(Py_INFINITY, x);
     }
 
     /* integer arguments */
@@ -836,7 +807,7 @@ long_lcm(PyObject *a, PyObject *b)
 {
     PyObject *g, *m, *f, *ab;
 
-    if (Py_SIZE(a) == 0 || Py_SIZE(b) == 0) {
+    if (_PyLong_IsZero((PyLongObject *)a) || _PyLong_IsZero((PyLongObject *)b)) {
         return PyLong_FromLong(0);
     }
     g = _PyLong_GCD(a, b);
@@ -1726,13 +1697,13 @@ math_isqrt(PyObject *module, PyObject *n)
         return NULL;
     }
 
-    if (_PyLong_Sign(n) < 0) {
+    if (_PyLong_IsNegative((PyLongObject *)n)) {
         PyErr_SetString(
             PyExc_ValueError,
             "isqrt() argument must be nonnegative");
         goto error;
     }
-    if (_PyLong_Sign(n) == 0) {
+    if (_PyLong_IsZero((PyLongObject *)n)) {
         Py_DECREF(n);
         return PyLong_FromLong(0);
     }
@@ -2096,7 +2067,7 @@ math_trunc(PyObject *module, PyObject *x)
         return PyFloat_Type.tp_as_number->nb_int(x);
     }
 
-    if (Py_TYPE(x)->tp_dict == NULL) {
+    if (_PyType_IsReady(Py_TYPE(x))) {
         if (PyType_Ready(Py_TYPE(x)) < 0)
             return NULL;
     }
@@ -2254,7 +2225,7 @@ loghelper(PyObject* arg, double (*func)(double))
         Py_ssize_t e;
 
         /* Negative or zero inputs give a ValueError. */
-        if (Py_SIZE(arg) <= 0) {
+        if (!_PyLong_IsPositive((PyLongObject *)arg)) {
             PyErr_SetString(PyExc_ValueError,
                             "math domain error");
             return NULL;
@@ -2284,33 +2255,22 @@ loghelper(PyObject* arg, double (*func)(double))
 }
 
 
-/*[clinic input]
-math.log
-
-    x:    object
-    [
-    base: object(c_default="NULL") = math.e
-    ]
-    /
-
-Return the logarithm of x to the given base.
-
-If the base not specified, returns the natural logarithm (base e) of x.
-[clinic start generated code]*/
-
+/* AC: cannot convert yet, see gh-102839 and gh-89381, waiting
+   for support of multiple signatures */
 static PyObject *
-math_log_impl(PyObject *module, PyObject *x, int group_right_1,
-              PyObject *base)
-/*[clinic end generated code: output=7b5a39e526b73fc9 input=0f62d5726cbfebbd]*/
+math_log(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
 {
     PyObject *num, *den;
     PyObject *ans;
 
-    num = loghelper(x, m_log);
-    if (num == NULL || base == NULL)
+    if (!_PyArg_CheckPositional("log", nargs, 1, 2))
+        return NULL;
+
+    num = loghelper(args[0], m_log);
+    if (num == NULL || nargs == 1)
         return num;
 
-    den = loghelper(base, m_log);
+    den = loghelper(args[1], m_log);
     if (den == NULL) {
         Py_DECREF(num);
         return NULL;
@@ -2322,6 +2282,10 @@ math_log_impl(PyObject *module, PyObject *x, int group_right_1,
     return ans;
 }
 
+PyDoc_STRVAR(math_log_doc,
+"log(x, [base=math.e])\n\
+Return the logarithm of x to the given base.\n\n\
+If the base is not specified, returns the natural logarithm (base e) of x.");
 
 /*[clinic input]
 math.log2
@@ -3723,12 +3687,12 @@ math_perm_impl(PyObject *module, PyObject *n, PyObject *k)
     }
     assert(PyLong_CheckExact(n) && PyLong_CheckExact(k));
 
-    if (Py_SIZE(n) < 0) {
+    if (_PyLong_IsNegative((PyLongObject *)n)) {
         PyErr_SetString(PyExc_ValueError,
                         "n must be a non-negative integer");
         goto error;
     }
-    if (Py_SIZE(k) < 0) {
+    if (_PyLong_IsNegative((PyLongObject *)k)) {
         PyErr_SetString(PyExc_ValueError,
                         "k must be a non-negative integer");
         goto error;
@@ -3815,12 +3779,12 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
     }
     assert(PyLong_CheckExact(n) && PyLong_CheckExact(k));
 
-    if (Py_SIZE(n) < 0) {
+    if (_PyLong_IsNegative((PyLongObject *)n)) {
         PyErr_SetString(PyExc_ValueError,
                         "n must be a non-negative integer");
         goto error;
     }
-    if (Py_SIZE(k) < 0) {
+    if (_PyLong_IsNegative((PyLongObject *)k)) {
         PyErr_SetString(PyExc_ValueError,
                         "k must be a non-negative integer");
         goto error;
@@ -3852,7 +3816,8 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
         if (temp == NULL) {
             goto error;
         }
-        if (Py_SIZE(temp) < 0) {
+        assert(PyLong_Check(temp));
+        if (_PyLong_IsNegative((PyLongObject *)temp)) {
             Py_DECREF(temp);
             result = PyLong_FromLong(0);
             goto done;
@@ -3944,7 +3909,7 @@ math_ulp_impl(PyObject *module, double x)
     if (Py_IS_INFINITY(x)) {
         return x;
     }
-    double inf = m_inf();
+    double inf = Py_INFINITY;
     double x2 = nextafter(x, inf);
     if (Py_IS_INFINITY(x2)) {
         /* special case: x is the largest positive representable float */
@@ -3981,14 +3946,12 @@ math_exec(PyObject *module)
     if (PyModule_AddObject(module, "tau", PyFloat_FromDouble(Py_MATH_TAU)) < 0) {
         return -1;
     }
-    if (PyModule_AddObject(module, "inf", PyFloat_FromDouble(m_inf())) < 0) {
+    if (PyModule_AddObject(module, "inf", PyFloat_FromDouble(Py_INFINITY)) < 0) {
         return -1;
     }
-#if _PY_SHORT_FLOAT_REPR == 1
-    if (PyModule_AddObject(module, "nan", PyFloat_FromDouble(m_nan())) < 0) {
+    if (PyModule_AddObject(module, "nan", PyFloat_FromDouble(fabs(Py_NAN))) < 0) {
         return -1;
     }
-#endif
     return 0;
 }
 
@@ -4045,7 +4008,7 @@ static PyMethodDef math_methods[] = {
     {"lcm",             _PyCFunction_CAST(math_lcm),       METH_FASTCALL,  math_lcm_doc},
     MATH_LDEXP_METHODDEF
     {"lgamma",          math_lgamma,    METH_O,         math_lgamma_doc},
-    MATH_LOG_METHODDEF
+    {"log",             _PyCFunction_CAST(math_log),       METH_FASTCALL,  math_log_doc},
     {"log1p",           math_log1p,     METH_O,         math_log1p_doc},
     MATH_LOG10_METHODDEF
     MATH_LOG2_METHODDEF
@@ -4070,6 +4033,7 @@ static PyMethodDef math_methods[] = {
 
 static PyModuleDef_Slot math_slots[] = {
     {Py_mod_exec, math_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

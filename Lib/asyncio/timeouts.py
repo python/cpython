@@ -84,6 +84,7 @@ class Timeout:
     async def __aenter__(self) -> "Timeout":
         self._state = _State.ENTERED
         self._task = tasks.current_task()
+        self._cancelling = self._task.cancelling()
         if self._task is None:
             raise RuntimeError("Timeout should be used inside a task")
         self.reschedule(self._when)
@@ -104,10 +105,10 @@ class Timeout:
         if self._state is _State.EXPIRING:
             self._state = _State.EXPIRED
 
-            if self._task.uncancel() == 0 and exc_type is exceptions.CancelledError:
-                # Since there are no outstanding cancel requests, we're
+            if self._task.uncancel() <= self._cancelling and exc_type is exceptions.CancelledError:
+                # Since there are no new cancel requests, we're
                 # handling this.
-                raise TimeoutError
+                raise TimeoutError from exc_val
         elif self._state is _State.ENTERED:
             self._state = _State.EXITED
 

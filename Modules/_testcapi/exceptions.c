@@ -40,12 +40,22 @@ static PyObject *
 exception_print(PyObject *self, PyObject *args)
 {
     PyObject *exc;
+    int legacy = 0;
 
-    if (!PyArg_ParseTuple(args, "O:exception_print", &exc)) {
+    if (!PyArg_ParseTuple(args, "O|i:exception_print", &exc, &legacy)) {
         return NULL;
     }
-
-    PyErr_DisplayException(exc);
+    if (legacy) {
+        PyObject *tb = NULL;
+        if (PyExceptionInstance_Check(exc)) {
+            tb = PyException_GetTraceback(exc);
+        }
+        PyErr_Display((PyObject *) Py_TYPE(exc), exc, tb);
+        Py_XDECREF(tb);
+    }
+    else {
+        PyErr_DisplayException(exc);
+    }
     Py_RETURN_NONE;
 }
 

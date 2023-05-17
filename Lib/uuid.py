@@ -53,7 +53,7 @@ from enum import Enum, _simple_enum
 __author__ = 'Ka-Ping Yee <ping@zesty.ca>'
 
 # The recognized platforms - known behaviors
-if sys.platform in ('win32', 'darwin'):
+if sys.platform in ('win32', 'darwin', 'emscripten', 'wasi'):
     _AIX = _LINUX = False
 else:
     import platform
@@ -401,7 +401,7 @@ def _get_command_stdout(command, *args):
 # over locally administered ones since the former are globally unique, but
 # we'll return the first of the latter found if that's all the machine has.
 #
-# See https://en.wikipedia.org/wiki/MAC_address#Universal_vs._local
+# See https://en.wikipedia.org/wiki/MAC_address#Universal_vs._local_(U/L_bit)
 
 def _is_universal(mac):
     return not (mac & (1 << 41))
@@ -615,7 +615,7 @@ def _random_getnode():
     # significant bit of the first octet".  This works out to be the 41st bit
     # counting from 1 being the least significant bit, or 1<<40.
     #
-    # See https://en.wikipedia.org/wiki/MAC_address#Unicast_vs._multicast
+    # See https://en.wikipedia.org/w/index.php?title=MAC_address&oldid=1128764812#Universal_vs._local_(U/L_bit)
     import random
     return random.getrandbits(48) | (1 << 40)
 
@@ -711,9 +711,11 @@ def uuid1(node=None, clock_seq=None):
 
 def uuid3(namespace, name):
     """Generate a UUID from the MD5 hash of a namespace UUID and a name."""
+    if isinstance(name, str):
+        name = bytes(name, "utf-8")
     from hashlib import md5
     digest = md5(
-        namespace.bytes + bytes(name, "utf-8"),
+        namespace.bytes + name,
         usedforsecurity=False
     ).digest()
     return UUID(bytes=digest[:16], version=3)
@@ -724,8 +726,10 @@ def uuid4():
 
 def uuid5(namespace, name):
     """Generate a UUID from the SHA-1 hash of a namespace UUID and a name."""
+    if isinstance(name, str):
+        name = bytes(name, "utf-8")
     from hashlib import sha1
-    hash = sha1(namespace.bytes + bytes(name, "utf-8")).digest()
+    hash = sha1(namespace.bytes + name).digest()
     return UUID(bytes=hash[:16], version=5)
 
 

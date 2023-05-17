@@ -1,0 +1,18 @@
+# Read the Docs configuration file
+# See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
+# Project page: https://readthedocs.org/projects/cpython-previews/
+
+version: 2
+
+sphinx:
+   configuration: Doc/conf.py
+
+build:
+  os: ubuntu-22.04
+  tools:
+    python: "3"
+
+  commands:
+    - make -C Doc venv html
+    - mkdir _readthedocs
+    - mv Doc/build/html _readthedocs/html

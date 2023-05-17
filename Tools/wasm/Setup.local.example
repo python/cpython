@@ -5,6 +5,7 @@ audioop
 _bz2
 _crypt
 _decimal
+nis
 _pickle
 pyexpat _elementtree
 _sha3 _blake2
