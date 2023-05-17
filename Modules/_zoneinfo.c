@@ -2387,6 +2387,7 @@ strong_cache_node_new(PyObject *key, PyObject *zone)
 {
     StrongCacheNode *node = PyMem_Malloc(sizeof(StrongCacheNode));
     if (node == NULL) {
+        PyErr_NoMemory();
         return NULL;
     }
 
