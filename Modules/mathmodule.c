@@ -3947,7 +3947,7 @@ math_nextafter_impl(PyObject *module, double x, double y, PyObject *steps)
 
     // opposite signs
     if (((ux.i ^ uy.i) & sign_bit)) {
-        // NOTE: ax + ay can never overflow, because there most significant bit
+        // NOTE: ax + ay can never overflow, because their most significant bit
         // ain't set.
         if (ax + ay <= usteps) {
             return PyFloat_FromDouble(uy.f);
