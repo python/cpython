@@ -228,7 +228,7 @@ Number-theoretic and representation functions
 
    Return the floating-point value *steps* steps after *x* towards *y*.
 
-   If *x* is equal to *y*, return *y*.
+   If *x* is equal to *y*, return *y*, unless *steps* is zero.
 
    Examples:
 
