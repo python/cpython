@@ -109,15 +109,13 @@ _testcapi_exc_set_object_impl(PyObject *module, PyObject *exc, PyObject *obj)
 }
 
 /*[clinic input]
-_testcapi.exc_set_object_fetch
-    exception as exc: object
-    obj: object
+_testcapi.exc_set_object_fetch = _testcapi.exc_set_object
 [clinic start generated code]*/
 
 static PyObject *
 _testcapi_exc_set_object_fetch_impl(PyObject *module, PyObject *exc,
                                     PyObject *obj)
-/*[clinic end generated code: output=7a5ff5f6d3cf687f input=0f2675f24fe95093]*/
+/*[clinic end generated code: output=7a5ff5f6d3cf687f input=77ec686f1f95fa38]*/
 {
     PyObject *type;
     PyObject *value;
