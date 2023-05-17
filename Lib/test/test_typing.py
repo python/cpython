@@ -2663,12 +2663,13 @@ class ProtocolTests(BaseTestCase):
             def __init__(self) -> None:
                 self.x = 42
 
-        # gh-104555: ABCMeta might cache the result of this isinstance check
-        # if we called super().__instancecheck__ in the wrong place
-        # in _ProtocolMeta.__instancecheck__...
         self.assertIsInstance(Eggs(), Spam)
 
-        # ...and if it did, then TypeError wouldn't be raised here!
+        # gh-104555: If we didn't override ABCMeta.__subclasscheck__ in _ProtocolMeta,
+        # TypeError wouldn't be raised here,
+        # as the cached result of the isinstance() check immediately above
+        # would mean the issubclass() call would short-circuit
+        # before we got to the "raise TypeError" line
         with self.assertRaises(TypeError):
             issubclass(Eggs, Spam)
 
@@ -2679,12 +2680,13 @@ class ProtocolTests(BaseTestCase):
 
         class Eggs: ...
 
-        # gh-104555: ABCMeta might cache the result of this isinstance check
-        # if we called super().__instancecheck__ in the wrong place
-        # in _ProtocolMeta.__instancecheck__...
         self.assertNotIsInstance(Eggs(), Spam)
 
-        # ...and if it did, then TypeError wouldn't be raised here!
+        # gh-104555: If we didn't override ABCMeta.__subclasscheck__ in _ProtocolMeta,
+        # TypeError wouldn't be raised here,
+        # as the cached result of the isinstance() check immediately above
+        # would mean the issubclass() call would short-circuit
+        # before we got to the "raise TypeError" line
         with self.assertRaises(TypeError):
             issubclass(Eggs, Spam)
 
@@ -2699,12 +2701,13 @@ class ProtocolTests(BaseTestCase):
                     return 42
                 raise AttributeError(attr)
 
-        # gh-104555: ABCMeta might cache the result of this isinstance check
-        # if we called super().__instancecheck__ in the wrong place
-        # in _ProtocolMeta.__instancecheck__...
         self.assertNotIsInstance(Eggs(), Spam)
 
-        # ...and if it did, then TypeError wouldn't be raised here!
+        # gh-104555: If we didn't override ABCMeta.__subclasscheck__ in _ProtocolMeta,
+        # TypeError wouldn't be raised here,
+        # as the cached result of the isinstance() check immediately above
+        # would mean the issubclass() call would short-circuit
+        # before we got to the "raise TypeError" line
         with self.assertRaises(TypeError):
             issubclass(Eggs, Spam)
 
@@ -2717,12 +2720,13 @@ class ProtocolTests(BaseTestCase):
             def __init__(self, x: T) -> None:
                 self.x = x
 
-        # gh-104555: ABCMeta might cache the result of this isinstance check
-        # if we called super().__instancecheck__ in the wrong place
-        # in _ProtocolMeta.__instancecheck__...
         self.assertIsInstance(Eggs(42), Spam)
 
-        # ...and if it did, then TypeError wouldn't be raised here!
+        # gh-104555: If we didn't override ABCMeta.__subclasscheck__ in _ProtocolMeta,
+        # TypeError wouldn't be raised here,
+        # as the cached result of the isinstance() check immediately above
+        # would mean the issubclass() call would short-circuit
+        # before we got to the "raise TypeError" line
         with self.assertRaises(TypeError):
             issubclass(Eggs, Spam)
 
