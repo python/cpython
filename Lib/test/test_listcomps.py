@@ -449,6 +449,13 @@ class ListComprehensionTest(unittest.TestCase):
         outputs = {"vals": [(0, 2), (1, 2)]}
         self._check_in_scopes(code, outputs, scopes=["function"])
 
+    def test_nested_has_free_var(self):
+        code = """
+            items = [a for a in [1] if [a for _ in [0]]]
+        """
+        outputs = {"items": [1]}
+        self._check_in_scopes(code, outputs, scopes=["class"])
+
 
 
 __test__ = {'doctests' : doctests}

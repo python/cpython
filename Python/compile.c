@@ -5421,6 +5421,7 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
                                  PySTEntryObject *entry,
                                  inlined_comprehension_state *state)
 {
+    int in_class_block = (c->u->u_ste->ste_type == ClassBlock) && !c->u->u_in_inlined_comp;
     c->u->u_in_inlined_comp++;
     // iterate over names bound in the comprehension and ensure we isolate
     // them from the outer scope as needed
@@ -5433,7 +5434,7 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
         // at all; DEF_LOCAL | DEF_NONLOCAL can occur in the case of an
         // assignment expression to a nonlocal in the comprehension, these don't
         // need handling here since they shouldn't be isolated
-        if ((symbol & DEF_LOCAL && !(symbol & DEF_NONLOCAL)) || c->u->u_ste->ste_type == ClassBlock) {
+        if ((symbol & DEF_LOCAL && !(symbol & DEF_NONLOCAL)) || in_class_block) {
             if (!_PyST_IsFunctionLike(c->u->u_ste)) {
                 // non-function scope: override this name to use fast locals
                 PyObject *orig = PyDict_GetItem(c->u->u_metadata.u_fasthidden, k);
