@@ -2600,7 +2600,7 @@ class CConverter(metaclass=CConverterAutoRegister):
     # Or the magic value "unknown" if this value is a cannot be evaluated
     # at Argument-Clinic-preprocessing time (but is presumed to be valid
     # at runtime).
-    default = unspecified
+    default: bool | Unspecified = unspecified
 
     # If not None, default must be isinstance() of this type.
     # (You can also specify a tuple of types.)
@@ -2655,7 +2655,7 @@ class CConverter(metaclass=CConverterAutoRegister):
 
     # What encoding do we want for this variable?  Only used
     # by format units starting with 'e'.
-    encoding = None
+    encoding: str | None = None
 
     # Should this object be required to be a subclass of a specific type?
     # If not None, should be a string representing a pointer to a
@@ -2982,6 +2982,8 @@ converters: ConverterDict = {}
 # note however that they will never be called with keyword-only parameters.
 legacy_converters: ConverterDict = {}
 
+TypeSet = set[bltns.type[Any]]
+
 
 class bool_converter(CConverter):
     type = 'int'
@@ -2989,7 +2991,7 @@ class bool_converter(CConverter):
     format_unit = 'p'
     c_ignored_default = '0'
 
-    def converter_init(self, *, accept={object}):
+    def converter_init(self, *, accept: TypeSet = {object}) -> None:
         if accept == {int}:
             self.format_unit = 'i'
         elif accept != {object}:
@@ -3176,7 +3178,7 @@ class int_converter(CConverter):
     format_unit = 'i'
     c_ignored_default = "0"
 
-    def converter_init(self, *, accept={int}, type=None) -> None:
+    def converter_init(self, *, accept: TypeSet = {int}, type=None) -> None:
         if accept == {str}:
             self.format_unit = 'C'
         elif accept != {int}:
@@ -3313,7 +3315,7 @@ class Py_ssize_t_converter(CConverter):
     type = 'Py_ssize_t'
     c_ignored_default = "0"
 
-    def converter_init(self, *, accept={int}) -> None:
+    def converter_init(self, *, accept: TypeSet = {int}) -> None:
         if accept == {int}:
             self.format_unit = 'n'
             self.default_type = int
@@ -3344,7 +3346,7 @@ class Py_ssize_t_converter(CConverter):
 class slice_index_converter(CConverter):
     type = 'Py_ssize_t'
 
-    def converter_init(self, *, accept={int, NoneType}) -> None:
+    def converter_init(self, *, accept: TypeSet = {int, NoneType}) -> None:
         if accept == {int}:
             self.converter = '_PyEval_SliceIndexNotNone'
         elif accept == {int, NoneType}:
@@ -3447,7 +3449,12 @@ class object_converter(CConverter):
     type = 'PyObject *'
     format_unit = 'O'
 
-    def converter_init(self, *, converter=None, type=None, subclass_of=None):
+    def converter_init(
+            self, *,
+            converter=None,
+            type=None,
+            subclass_of=None
+    ) -> None:
         if converter:
             if subclass_of:
                 fail("object: Cannot pass in both 'converter' and 'subclass_of'")
@@ -3483,7 +3490,13 @@ class str_converter(CConverter):
     default_type = (str, Null, NoneType)
     format_unit = 's'
 
-    def converter_init(self, *, accept={str}, encoding=None, zeroes=False):
+    def converter_init(
+            self,
+            *,
+            accept: TypeSet = {str},
+            encoding: str | None = None,
+            zeroes: bool = False
+    ) -> None:
 
         key = str_converter_key(accept, encoding, zeroes)
         format_unit = str_converter_argument_map.get(key)
@@ -3561,7 +3574,14 @@ class str_converter(CConverter):
 # mapping from arguments to format unit *and* registers the
 # legacy C converter for that format unit.
 #
-def r(format_unit, *, accept, encoding=False, zeroes=False):
+ConverterKeywordDict = dict[str, TypeSet | bool]
+
+def r(format_unit: str,
+      *,
+      accept: TypeSet,
+      encoding: bool = False,
+      zeroes: bool = False
+) -> None:
     if not encoding and format_unit != 's':
         # add the legacy c converters here too.
         #
@@ -3571,7 +3591,7 @@ def r(format_unit, *, accept, encoding=False, zeroes=False):
         #
         # also don't add the converter for 's' because
         # the metaclass for CConverter adds it for us.
-        kwargs = {}
+        kwargs: ConverterKeywordDict = {}
         if accept != {str}:
             kwargs['accept'] = accept
         if zeroes:
@@ -3660,7 +3680,11 @@ class Py_UNICODE_converter(CConverter):
     type = 'const Py_UNICODE *'
     default_type = (str, Null, NoneType)
 
-    def converter_init(self, *, accept={str}, zeroes: bool = False) -> None:
+    def converter_init(
+            self, *,
+            accept: TypeSet = {str},
+            zeroes: bool = False
+    ) -> None:
         format_unit = 'Z' if accept=={str, NoneType} else 'u'
         if zeroes:
             format_unit += '#'
@@ -3722,7 +3746,7 @@ class Py_buffer_converter(CConverter):
     impl_by_reference = True
     c_ignored_default = "{NULL, NULL}"
 
-    def converter_init(self, *, accept={buffer}) -> None:
+    def converter_init(self, *, accept: TypeSet = {buffer}) -> None:
         if self.default not in (unspecified, None):
             fail("The only legal default value for Py_buffer is None.")
 
