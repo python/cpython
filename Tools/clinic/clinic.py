@@ -2991,7 +2991,7 @@ class bool_converter(CConverter):
     format_unit = 'p'
     c_ignored_default = '0'
 
-    def converter_init(self, *, accept: TypeSet = {object}):
+    def converter_init(self, *, accept: TypeSet = {object}) -> None:
         if accept == {int}:
             self.format_unit = 'i'
         elif accept != {object}:
@@ -3449,7 +3449,12 @@ class object_converter(CConverter):
     type = 'PyObject *'
     format_unit = 'O'
 
-    def converter_init(self, *, converter=None, type=None, subclass_of=None):
+    def converter_init(
+            self, *,
+            converter=None,
+            type=None,
+            subclass_of=None
+    ) -> None:
         if converter:
             if subclass_of:
                 fail("object: Cannot pass in both 'converter' and 'subclass_of'")
@@ -3491,7 +3496,7 @@ class str_converter(CConverter):
             accept: TypeSet = {str},
             encoding: str | None = None,
             zeroes: bool = False
-    ):
+    ) -> None:
 
         key = str_converter_key(accept, encoding, zeroes)
         format_unit = str_converter_argument_map.get(key)
