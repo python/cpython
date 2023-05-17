@@ -348,7 +348,7 @@ or on combining URL components into a URL string.
    .. versionchanged:: 3.10
       ASCII newline and tab characters are stripped from the URL.
 
-   .. versionchanged:: 3.11.4
+   .. versionchanged:: 3.10.12
       Leading WHATWG C0 control and space characters are stripped from the URL.
 
 .. _WHATWG spec: https://url.spec.whatwg.org/#concept-basic-url-parser
@@ -447,14 +447,6 @@ with security implications code defensively. Do some verification within your
 code before trusting a returned component part.  Does that ``scheme`` make
 sense?  Is that a sensible ``path``?  Is there anything strange about that
 ``hostname``?  etc.
-
-What constitutes a URL is not universally well defined.  Different applications
-have different needs and desired constraints.  For instance the living `WHATWG
-spec`_ describes what user facing web clients such as a web browser require.
-While :rfc:`3986` is more general.  These functions incorporate some aspects of
-both, but cannot be claimed compliant with either.  The APIs and existing user
-code with expectations on specific behaviors predate both standards leading us
-to be very cautious about making API behavior changes.
 
 .. _parsing-ascii-encoded-bytes:
 
