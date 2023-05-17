@@ -1775,8 +1775,8 @@ del _pickle_psargs, _pickle_pskwargs
 
 
 class _ProtocolMeta(ABCMeta):
-    # This metaclass is really unfortunate and exists only because of
-    # the lack of __instancehook__.
+    # This metaclass is somewhat unfortunate,
+    # but is necessary for several reasons...
     def __init__(cls, *args, **kwargs):
         super().__init__(*args, **kwargs)
         cls.__protocol_attrs__ = _get_protocol_attrs(cls)
@@ -1785,6 +1785,17 @@ class _ProtocolMeta(ABCMeta):
         cls.__callable_proto_members_only__ = all(
             callable(getattr(cls, attr, None)) for attr in cls.__protocol_attrs__
         )
+
+    def __subclasscheck__(cls, other):
+        if (
+            getattr(cls, '_is_protocol', False)
+            and not cls.__callable_proto_members_only__
+            and not _allow_reckless_class_checks(depth=2)
+        ):
+            raise TypeError(
+                "Protocols with non-method members don't support issubclass()"
+            )
+        return super().__subclasscheck__(other)
 
     def __instancecheck__(cls, instance):
         # We need this method for situations where attributes are
@@ -1869,11 +1880,6 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
                 raise TypeError("Instance and class checks can only be used with"
                                 " @runtime_checkable protocols")
 
-            if not cls.__callable_proto_members_only__ :
-                if _allow_reckless_class_checks():
-                    return NotImplemented
-                raise TypeError("Protocols with non-method members"
-                                " don't support issubclass()")
             if not isinstance(other, type):
                 # Same error message as for issubclass(1, int).
                 raise TypeError('issubclass() arg 1 must be a class')
