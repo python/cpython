@@ -835,7 +835,7 @@ PyDoc_STRVAR(math_nextafter__doc__,
     {"nextafter", _PyCFunction_CAST(math_nextafter), METH_FASTCALL|METH_KEYWORDS, math_nextafter__doc__},
 
 static PyObject *
-math_nextafter_impl(PyObject *module, double x, double y, int steps);
+math_nextafter_impl(PyObject *module, double x, double y, PyObject* steps);
 
 static PyObject *
 math_nextafter(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -870,7 +870,7 @@ math_nextafter(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     double x;
     double y;
-    int steps = 1;
+    PyObject* steps = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
     if (!args) {
@@ -899,10 +899,7 @@ math_nextafter(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    steps = _PyLong_AsInt(args[2]);
-    if (steps == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
+    steps = args[2];
 skip_optional_kwonly:
     return_value = math_nextafter_impl(module, x, y, steps);
 

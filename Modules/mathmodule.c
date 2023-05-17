@@ -3878,7 +3878,6 @@ static PyObject *
 math_nextafter_impl(PyObject *module, double x, double y, PyObject* steps)
 /*[clinic end generated code: output=14190eb869199e5a input=a794e7a79768ee25]*/
 {
-    // TODO(Matthias): can we use steps == NULL for default?
 #if defined(_AIX)
     if (x == y) {
         /* On AIX 7.1, libm nextafter(-0.0, +0.0) returns -0.0.
@@ -3901,11 +3900,11 @@ math_nextafter_impl(PyObject *module, double x, double y, PyObject* steps)
         return NULL;
     }
     assert(PyLong_CheckExact(steps));
-    assert(overflow >= 0 && !PyErr_Occurred());
     if (_PyLong_IsNegative((PyLongObject *)steps)) {
         PyErr_SetString(PyExc_ValueError,
                         "steps must be a non-negative integer");
-        goto error;
+        Py_DECREF(steps);
+        return NULL;
     }
 
     uint64_t usteps = PyLong_AsUnsignedLongLong(steps);
