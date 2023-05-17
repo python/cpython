@@ -2673,7 +2673,7 @@ class ProtocolTests(BaseTestCase):
         with self.assertRaises(TypeError):
             issubclass(Eggs, Spam)
 
-    def test_no_weird_caching_with_issubclass_after_isinstance2(self):
+    def test_no_weird_caching_with_issubclass_after_isinstance_2(self):
         @runtime_checkable
         class Spam(Protocol):
             x: int
@@ -2690,7 +2690,7 @@ class ProtocolTests(BaseTestCase):
         with self.assertRaises(TypeError):
             issubclass(Eggs, Spam)
 
-    def test_no_weird_caching_with_issubclass_after_isinstance3(self):
+    def test_no_weird_caching_with_issubclass_after_isinstance_3(self):
         @runtime_checkable
         class Spam(Protocol):
             x: int
