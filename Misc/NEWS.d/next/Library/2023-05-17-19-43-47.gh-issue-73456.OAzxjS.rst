@@ -1,0 +1,1 @@
+Fix fail to create a  :class:`_ctypes._SimpleCData` subclass using a closure like calling super() without arguments
