@@ -161,8 +161,8 @@ or on combining URL components into a URL string.
 
    .. warning::
 
-      The :func:`urlparse` API does not perform validation.  See :ref:`URL
-      parsing security <url-parsing-security>` for details.
+      :func:`urlparse` does not perform validation.  See :ref:`URL parsing
+      security <url-parsing-security>` for details.
 
    .. versionchanged:: 3.2
       Added IPv6 URL parsing capabilities.
@@ -334,8 +334,8 @@ or on combining URL components into a URL string.
 
    .. warning::
 
-      The :func:`urlsplit` API does not perform validation.  See :ref:`URL
-      parsing security <url-parsing-security>` for details.
+      :func:`urlsplit` does not perform validation.  See :ref:`URL parsing
+      security <url-parsing-security>` for details.
 
    .. versionchanged:: 3.6
       Out-of-range port numbers now raise :exc:`ValueError`, instead of
@@ -432,29 +432,29 @@ or on combining URL components into a URL string.
 URL parsing security
 --------------------
 
-   The :func:`urlsplit` and :func:`urlparse` APIs do not perform **validation**
-   of inputs.  They may not raise errors on inputs that other applications
-   consider invalid.  They may accept and pass through some inputs that might
-   not be considered URLs elsewhere as unusually split component parts.  Their
-   purpose is for practical functionality rather than purity.
+The :func:`urlsplit` and :func:`urlparse` APIs do not perform **validation** of
+inputs.  They may not raise errors on inputs that other applications consider
+invalid.  They may also succeed on some inputs that might not be considered
+URLs elsewhere.  Their purpose is for practical functionality rather than
+purity.
 
-   Instead of raising an exception on unusual input, they may instead return
-   some components as empty ``""`` strings. Or components may contain more than
-   perhaps they should.
+Instead of raising an exception on unusual input, they may instead return some
+component parts as empty strings. Or components may contain more than perhaps
+they should.
 
-   We recommend that users of these APIs where the values may be used anywhere
-   with security implications code defensively. Do some verification within
-   your code before trusting a returned component part.  Does that ``scheme``
-   make sense?  Is that a sensible ``path``?  Is there anything strange about
-   that ``hostname``?  etc.
+We recommend that users of these APIs where the values may be used anywhere
+with security implications code defensively. Do some verification within your
+code before trusting a returned component part.  Does that ``scheme`` make
+sense?  Is that a sensible ``path``?  Is there anything strange about that
+``hostname``?  etc.
 
-   What constitutes a URL is not universally well defined.  Different
-   applications have different needs and desired constraints.  For instance the
-   living `WHATWG spec`_ describes what user facing web clients such as a web
-   browser require.  While :rfc:`3986` is more general.  These functions
-   incorporate some aspects of both, but cannot be claimed compliant with
-   either.  Our APIs and code with expectations on their behaviors predate both
-   standards.  We attempt to maintain backwards compatibility.
+What constitutes a URL is not universally well defined.  Different applications
+have different needs and desired constraints.  For instance the living `WHATWG
+spec`_ describes what user facing web clients such as a web browser require.
+While :rfc:`3986` is more general.  These functions incorporate some aspects of
+both, but cannot be claimed compliant with either.  The APIs and existing user
+code with expectations on specific behaviors predate both standards leading us
+to be very cautious about making API behavior changes.
 
 .. _parsing-ascii-encoded-bytes:
 
