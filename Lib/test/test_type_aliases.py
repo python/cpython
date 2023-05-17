@@ -1,6 +1,7 @@
 import types
 import unittest
 from test.support import check_syntax_error, run_code
+from test import mod_generics_cache
 
 from typing import Callable, TypeAliasType, TypeVar, get_args
 
@@ -207,5 +208,10 @@ class TypeAliasTypeTest(unittest.TestCase):
         self.assertEqual(get_args(union3), (list[range], Alias1))
 
     def test_module(self):
+        self.assertEqual(TypeAliasType.__module__, "typing")
         type Alias = int
         self.assertEqual(Alias.__module__, __name__)
+        self.assertEqual(mod_generics_cache.Alias.__module__,
+                         mod_generics_cache.__name__)
+        self.assertEqual(mod_generics_cache.OldStyle.__module__,
+                         mod_generics_cache.__name__)
