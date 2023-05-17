@@ -2672,6 +2672,42 @@ class ProtocolTests(BaseTestCase):
         with self.assertRaises(TypeError):
             issubclass(Eggs, Spam)
 
+    def test_no_weird_caching_with_issubclass_after_isinstance2(self):
+        @runtime_checkable
+        class Spam(Protocol):
+            x: int
+
+        class Eggs: ...
+
+        # gh-104555: ABCMeta might cache the result of this isinstance check
+        # if we called super().__instancecheck__ in the wrong place
+        # in _ProtocolMeta.__instancecheck__...
+        self.assertNotIsInstance(Eggs(), Spam)
+
+        # ...and if it did, then TypeError wouldn't be raised here!
+        with self.assertRaises(TypeError):
+            issubclass(Eggs, Spam)
+
+    def test_no_weird_caching_with_issubclass_after_isinstance3(self):
+        @runtime_checkable
+        class Spam(Protocol):
+            x: int
+
+        class Eggs:
+            def __getattr__(self, attr):
+                if attr == "x":
+                    return 42
+                raise AttributeError(attr)
+
+        # gh-104555: ABCMeta might cache the result of this isinstance check
+        # if we called super().__instancecheck__ in the wrong place
+        # in _ProtocolMeta.__instancecheck__...
+        self.assertNotIsInstance(Eggs(), Spam)
+
+        # ...and if it did, then TypeError wouldn't be raised here!
+        with self.assertRaises(TypeError):
+            issubclass(Eggs, Spam)
+
     def test_no_weird_caching_with_issubclass_after_isinstance_pep695(self):
         @runtime_checkable
         class Spam[T](Protocol):
