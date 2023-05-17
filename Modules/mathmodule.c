@@ -59,7 +59,6 @@ raised for division by zero and mod by zero.
 #include "Python.h"
 #include "pycore_bitutils.h"      // _Py_bit_length()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_dtoa.h"          // _Py_dg_infinity()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyObject_LookupSpecial()
@@ -389,34 +388,6 @@ lanczos_sum(double x)
     return num/den;
 }
 
-/* Constant for +infinity, generated in the same way as float('inf'). */
-
-static double
-m_inf(void)
-{
-#if _PY_SHORT_FLOAT_REPR == 1
-    return _Py_dg_infinity(0);
-#else
-    return Py_HUGE_VAL;
-#endif
-}
-
-/* Constant nan value, generated in the same way as float('nan'). */
-/* We don't currently assume that Py_NAN is defined everywhere. */
-
-#if _PY_SHORT_FLOAT_REPR == 1
-
-static double
-m_nan(void)
-{
-#if _PY_SHORT_FLOAT_REPR == 1
-    return _Py_dg_stdnan(0);
-#else
-    return Py_NAN;
-#endif
-}
-
-#endif
 
 static double
 m_tgamma(double x)
@@ -435,7 +406,7 @@ m_tgamma(double x)
     if (x == 0.0) {
         errno = EDOM;
         /* tgamma(+-0.0) = +-inf, divide-by-zero */
-        return copysign(Py_HUGE_VAL, x);
+        return copysign(Py_INFINITY, x);
     }
 
     /* integer arguments */
@@ -2096,7 +2067,7 @@ math_trunc(PyObject *module, PyObject *x)
         return PyFloat_Type.tp_as_number->nb_int(x);
     }
 
-    if (Py_TYPE(x)->tp_dict == NULL) {
+    if (_PyType_IsReady(Py_TYPE(x))) {
         if (PyType_Ready(Py_TYPE(x)) < 0)
             return NULL;
     }
@@ -2314,7 +2285,7 @@ math_log(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
 PyDoc_STRVAR(math_log_doc,
 "log(x, [base=math.e])\n\
 Return the logarithm of x to the given base.\n\n\
-If the base not specified, returns the natural logarithm (base e) of x.");
+If the base is not specified, returns the natural logarithm (base e) of x.");
 
 /*[clinic input]
 math.log2
@@ -3938,7 +3909,7 @@ math_ulp_impl(PyObject *module, double x)
     if (Py_IS_INFINITY(x)) {
         return x;
     }
-    double inf = m_inf();
+    double inf = Py_INFINITY;
     double x2 = nextafter(x, inf);
     if (Py_IS_INFINITY(x2)) {
         /* special case: x is the largest positive representable float */
@@ -3975,14 +3946,12 @@ math_exec(PyObject *module)
     if (PyModule_AddObject(module, "tau", PyFloat_FromDouble(Py_MATH_TAU)) < 0) {
         return -1;
     }
-    if (PyModule_AddObject(module, "inf", PyFloat_FromDouble(m_inf())) < 0) {
+    if (PyModule_AddObject(module, "inf", PyFloat_FromDouble(Py_INFINITY)) < 0) {
         return -1;
     }
-#if _PY_SHORT_FLOAT_REPR == 1
-    if (PyModule_AddObject(module, "nan", PyFloat_FromDouble(m_nan())) < 0) {
+    if (PyModule_AddObject(module, "nan", PyFloat_FromDouble(fabs(Py_NAN))) < 0) {
         return -1;
     }
-#endif
     return 0;
 }
 
@@ -4064,6 +4033,7 @@ static PyMethodDef math_methods[] = {
 
 static PyModuleDef_Slot math_slots[] = {
     {Py_mod_exec, math_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 
