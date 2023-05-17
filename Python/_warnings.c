@@ -1366,6 +1366,20 @@ exit:
 }
 
 void
+_PyErr_WarnUnawaitedAgenMethod(PyAsyncGenObject *agen, PyObject *method)
+{
+    PyObject *exc = PyErr_GetRaisedException();
+    if (_PyErr_WarnFormat((PyObject *)agen, PyExc_RuntimeWarning, 1,
+                          "coroutine method %R of %R was never awaited",
+                          method, agen->ag_qualname) < 0)
+    {
+        PyErr_WriteUnraisable((PyObject *)agen);
+    }
+    PyErr_SetRaisedException(exc);
+}
+
+
+void
 _PyErr_WarnUnawaitedCoroutine(PyObject *coro)
 {
     /* First, we attempt to funnel the warning through
@@ -1405,8 +1419,8 @@ _PyErr_WarnUnawaitedCoroutine(PyObject *coro)
     }
     if (!warned) {
         if (_PyErr_WarnFormat(coro, PyExc_RuntimeWarning, 1,
-                              "coroutine '%S' was never awaited",
-                              ((PyCoroObject *)coro)->cr_qualname) < 0)
+                              "coroutine '%R' was never awaited",
+                              coro) < 0)
         {
             PyErr_WriteUnraisable(coro);
         }

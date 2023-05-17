@@ -775,6 +775,7 @@ extern "C" {
     INIT_ID(a), \
     INIT_ID(abs_tol), \
     INIT_ID(access), \
+    INIT_ID(aclose), \
     INIT_ID(add), \
     INIT_ID(add_done_callback), \
     INIT_ID(after_in_child), \
@@ -788,7 +789,9 @@ extern "C" {
     INIT_ID(arguments), \
     INIT_ID(argv), \
     INIT_ID(as_integer_ratio), \
+    INIT_ID(asend), \
     INIT_ID(ast), \
+    INIT_ID(athrow), \
     INIT_ID(attribute), \
     INIT_ID(authorizer_callback), \
     INIT_ID(autocommit), \
