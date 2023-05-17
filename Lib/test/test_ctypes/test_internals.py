@@ -96,5 +96,12 @@ class ObjectsTestCase(unittest.TestCase):
 ##XXX        print x.data[0]
 ##XXX        print x.data._objects
 
+    def test_closure(self):
+        # ctypes fails to create a _ctypes._SimpleCData subclass using a closure, like calling super() without parameters.
+        # see gh-73456
+        class SuperTest(c_uint32):
+            def __repr__(self):
+                return super().__repr__()
+
 if __name__ == '__main__':
     unittest.main()

@@ -1940,6 +1940,13 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
     static PyObject *suffix;
     Py_ssize_t i;
 
+    PyObject *dict = PyTuple_GET_ITEM(args, 2);
+
+    /* Prevent PyType_Type.tp_new from overwriting the primary class that
+     * was already set in __classcell__. See issue GH-73456. */
+    if(PyDict_DelItem(dict, &_Py_ID(__classcell__)))
+        PyErr_Clear();
+
     swapped_args = PyTuple_New(PyTuple_GET_SIZE(args));
     if (!swapped_args)
         return NULL;
