@@ -159,6 +159,7 @@
     <ClCompile Include="..\Objects\structseq.c" />
     <ClCompile Include="..\Objects\tupleobject.c" />
     <ClCompile Include="..\Objects\typeobject.c" />
+    <ClCompile Include="..\Objects\typevarobject.c" />
     <ClCompile Include="..\Objects\unicodectype.c" />
     <ClCompile Include="..\Objects\unicodeobject.c" />
     <ClCompile Include="..\Objects\unionobject.c" />
@@ -241,6 +242,7 @@
     </ClCompile>
     <ClCompile Include="..\Python\thread.c" />
     <ClCompile Include="..\Python\traceback.c" />
+    <ClCompile Include="..\Python\tracemalloc.c" />
   </ItemGroup>
   <ItemGroup>
     <!-- BEGIN frozen modules -->
