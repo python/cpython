@@ -394,6 +394,17 @@ HTTPConnection Objects
       one will be automatically generated and transmitted if not provided in
       the headers argument.
 
+
+.. method:: HTTPConnection.get_proxy_response_headers()
+
+   Returns a dictionary with the headers of the response received from
+   the proxy server to the CONNECT request.
+
+   If the CONNECT request was not sent, the method returns an empty dictionary.
+
+   .. versionadded:: 3.12
+
+
 .. method:: HTTPConnection.connect()
 
    Connect to the server specified when the object was created.  By default,

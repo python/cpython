@@ -8,7 +8,6 @@ import pickle
 import re
 import sys
 import warnings
-from test.support.import_helper import import_fresh_module
 from unittest import TestCase, main, skipUnless, skip
 from unittest.mock import patch
 from copy import copy, deepcopy
@@ -49,11 +48,8 @@ from test import mod_generics_cache
 from test import _typed_dict_helper
 
 
-py_typing = import_helper.import_fresh_module('typing', blocked=['_typing'])
-c_typing = import_helper.import_fresh_module('typing', fresh=['_typing'])
-
-
 CANNOT_SUBCLASS_TYPE = 'Cannot subclass special typing classes'
+NOT_A_BASE_TYPE = "type 'typing.%s' is not an acceptable base type"
 CANNOT_SUBCLASS_INSTANCE = 'Cannot subclass an instance of %s'
 
 
@@ -371,6 +367,41 @@ class TypeVarTests(BaseTestCase):
         self.assertEqual(T, T)
         # T is an instance of TypeVar
         self.assertIsInstance(T, TypeVar)
+        self.assertEqual(T.__name__, 'T')
+        self.assertEqual(T.__constraints__, ())
+        self.assertIs(T.__bound__, None)
+        self.assertIs(T.__covariant__, False)
+        self.assertIs(T.__contravariant__, False)
+        self.assertIs(T.__infer_variance__, False)
+
+    def test_attributes(self):
+        T_bound = TypeVar('T_bound', bound=int)
+        self.assertEqual(T_bound.__name__, 'T_bound')
+        self.assertEqual(T_bound.__constraints__, ())
+        self.assertIs(T_bound.__bound__, int)
+
+        T_constraints = TypeVar('T_constraints', int, str)
+        self.assertEqual(T_constraints.__name__, 'T_constraints')
+        self.assertEqual(T_constraints.__constraints__, (int, str))
+        self.assertIs(T_constraints.__bound__, None)
+
+        T_co = TypeVar('T_co', covariant=True)
+        self.assertEqual(T_co.__name__, 'T_co')
+        self.assertIs(T_co.__covariant__, True)
+        self.assertIs(T_co.__contravariant__, False)
+        self.assertIs(T_co.__infer_variance__, False)
+
+        T_contra = TypeVar('T_contra', contravariant=True)
+        self.assertEqual(T_contra.__name__, 'T_contra')
+        self.assertIs(T_contra.__covariant__, False)
+        self.assertIs(T_contra.__contravariant__, True)
+        self.assertIs(T_contra.__infer_variance__, False)
+
+        T_infer = TypeVar('T_infer', infer_variance=True)
+        self.assertEqual(T_infer.__name__, 'T_infer')
+        self.assertIs(T_infer.__covariant__, False)
+        self.assertIs(T_infer.__contravariant__, False)
+        self.assertIs(T_infer.__infer_variance__, True)
 
     def test_typevar_instance_type_error(self):
         T = TypeVar('T')
@@ -431,7 +462,7 @@ class TypeVarTests(BaseTestCase):
         self.assertNotEqual(TypeVar('T', int, str), TypeVar('T', int, str))
 
     def test_cannot_subclass(self):
-        with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
+        with self.assertRaisesRegex(TypeError, NOT_A_BASE_TYPE % 'TypeVar'):
             class V(TypeVar): pass
         T = TypeVar("T")
         with self.assertRaisesRegex(TypeError,
@@ -447,6 +478,9 @@ class TypeVarTests(BaseTestCase):
             TypeVar('X', bound=Union)
         with self.assertRaises(TypeError):
             TypeVar('X', str, float, bound=Employee)
+        with self.assertRaisesRegex(TypeError,
+                                    r"Bound must be a type\. Got \(1, 2\)\."):
+            TypeVar('X', bound=(1, 2))
 
     def test_missing__name__(self):
         # See bpo-39942
@@ -458,6 +492,12 @@ class TypeVarTests(BaseTestCase):
     def test_no_bivariant(self):
         with self.assertRaises(ValueError):
             TypeVar('T', covariant=True, contravariant=True)
+
+    def test_cannot_combine_explicit_and_infer(self):
+        with self.assertRaises(ValueError):
+            TypeVar('T', covariant=True, infer_variance=True)
+        with self.assertRaises(ValueError):
+            TypeVar('T', contravariant=True, infer_variance=True)
 
     def test_var_substitution(self):
         T = TypeVar('T')
@@ -1162,7 +1202,7 @@ class TypeVarTupleTests(BaseTestCase):
         self.assertEndsWith(repr(K[float, str]), 'A[float, str, typing.Unpack[typing.Tuple[str, ...]]]')
 
     def test_cannot_subclass(self):
-        with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
+        with self.assertRaisesRegex(TypeError, NOT_A_BASE_TYPE % 'TypeVarTuple'):
             class C(TypeVarTuple): pass
         Ts = TypeVarTuple('Ts')
         with self.assertRaisesRegex(TypeError,
@@ -3135,6 +3175,24 @@ class ProtocolTests(BaseTestCase):
 
         self.assertIsInstance(Test(), PSub)
 
+    def test_pep695_generic_protocol_callable_members(self):
+        @runtime_checkable
+        class Foo[T](Protocol):
+            def meth(self, x: T) -> None: ...
+
+        class Bar[T]:
+            def meth(self, x: T) -> None: ...
+
+        self.assertIsInstance(Bar(), Foo)
+        self.assertIsSubclass(Bar, Foo)
+
+        @runtime_checkable
+        class SupportsTrunc[T](Protocol):
+            def __trunc__(self) -> T: ...
+
+        self.assertIsInstance(0.0, SupportsTrunc)
+        self.assertIsSubclass(float, SupportsTrunc)
+
     def test_init_called(self):
         T = TypeVar('T')
 
@@ -3909,14 +3967,7 @@ class GenericTests(BaseTestCase):
         self.assertEqual(MyChain[int]().__orig_class__, MyChain[int])
 
     def test_all_repr_eq_any(self):
-        typing = import_fresh_module("typing")
-        with warnings.catch_warnings(record=True) as wlog:
-            warnings.filterwarnings('always', '', DeprecationWarning)
-            objs = [getattr(typing, el) for el in typing.__all__]
-        self.assertEqual(
-            [str(w.message) for w in wlog],
-            ["'typing.ByteString' is deprecated and slated for removal in Python 3.14"]
-        )
+        objs = (getattr(typing, el) for el in typing.__all__)
         for obj in objs:
             self.assertNotEqual(repr(obj), '')
             self.assertEqual(obj, obj)
@@ -6005,15 +6056,13 @@ class CollectionsAbcTests(BaseTestCase):
 
     def test_bytestring(self):
         with self.assertWarns(DeprecationWarning):
-            from typing import ByteString
+            self.assertIsInstance(b'', typing.ByteString)
         with self.assertWarns(DeprecationWarning):
-            self.assertIsInstance(b'', ByteString)
+            self.assertIsInstance(bytearray(b''), typing.ByteString)
         with self.assertWarns(DeprecationWarning):
-            self.assertIsInstance(bytearray(b''), ByteString)
+            class Foo(typing.ByteString): ...
         with self.assertWarns(DeprecationWarning):
-            class Foo(ByteString): ...
-        with self.assertWarns(DeprecationWarning):
-            class Bar(ByteString, typing.Awaitable): ...
+            class Bar(typing.ByteString, typing.Awaitable): ...
 
     def test_list(self):
         self.assertIsSubclass(list, typing.List)
@@ -6454,34 +6503,27 @@ class TypeTests(BaseTestCase):
 class TestModules(TestCase):
     func_names = ['_idfunc']
 
-    def test_py_functions(self):
-        for fname in self.func_names:
-            self.assertEqual(getattr(py_typing, fname).__module__, 'typing')
-
-    @skipUnless(c_typing, 'requires _typing')
     def test_c_functions(self):
         for fname in self.func_names:
-            self.assertEqual(getattr(c_typing, fname).__module__, '_typing')
+            self.assertEqual(getattr(typing, fname).__module__, '_typing')
 
 
-class NewTypeTests:
+class NewTypeTests(BaseTestCase):
     def cleanup(self):
-        for f in self.module._cleanups:
+        for f in typing._cleanups:
             f()
 
     @classmethod
     def setUpClass(cls):
-        sys.modules['typing'] = cls.module
         global UserId
-        UserId = cls.module.NewType('UserId', int)
-        cls.UserName = cls.module.NewType(cls.__qualname__ + '.UserName', str)
+        UserId = typing.NewType('UserId', int)
+        cls.UserName = typing.NewType(cls.__qualname__ + '.UserName', str)
 
     @classmethod
     def tearDownClass(cls):
         global UserId
         del UserId
         del cls.UserName
-        sys.modules['typing'] = typing
 
     def tearDown(self):
         self.cleanup()
@@ -6501,11 +6543,11 @@ class NewTypeTests:
     def test_or(self):
         for cls in (int, self.UserName):
             with self.subTest(cls=cls):
-                self.assertEqual(UserId | cls, self.module.Union[UserId, cls])
-                self.assertEqual(cls | UserId, self.module.Union[cls, UserId])
+                self.assertEqual(UserId | cls, typing.Union[UserId, cls])
+                self.assertEqual(cls | UserId, typing.Union[cls, UserId])
 
-                self.assertEqual(self.module.get_args(UserId | cls), (UserId, cls))
-                self.assertEqual(self.module.get_args(cls | UserId), (cls, UserId))
+                self.assertEqual(typing.get_args(UserId | cls), (UserId, cls))
+                self.assertEqual(typing.get_args(cls | UserId), (cls, UserId))
 
     def test_special_attrs(self):
         self.assertEqual(UserId.__name__, 'UserId')
@@ -6526,7 +6568,7 @@ class NewTypeTests:
                          f'{__name__}.{self.__class__.__qualname__}.UserName')
 
     def test_pickle(self):
-        UserAge = self.module.NewType('UserAge', float)
+        UserAge = typing.NewType('UserAge', float)
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             with self.subTest(proto=proto):
                 pickled = pickle.dumps(UserId, proto)
@@ -6556,15 +6598,6 @@ class NewTypeTests:
         ):
             class ProUserId(UserId):
                 ...
-
-
-class NewTypePythonTests(NewTypeTests, BaseTestCase):
-    module = py_typing
-
-
-@skipUnless(c_typing, 'requires _typing')
-class NewTypeCTests(NewTypeTests, BaseTestCase):
-    module = c_typing
 
 
 class NamedTupleTests(BaseTestCase):
@@ -7820,6 +7853,7 @@ class ParamSpecTests(BaseTestCase):
         P = ParamSpec('P')
         self.assertEqual(P, P)
         self.assertIsInstance(P, ParamSpec)
+        self.assertEqual(P.__name__, 'P')
 
     def test_valid_uses(self):
         P = ParamSpec('P')
@@ -8180,11 +8214,11 @@ class ParamSpecTests(BaseTestCase):
         self.assertEqual(C2[Concatenate[T, P2]].__parameters__, (T, P2))
 
     def test_cannot_subclass(self):
-        with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
+        with self.assertRaisesRegex(TypeError, NOT_A_BASE_TYPE % 'ParamSpec'):
             class C(ParamSpec): pass
-        with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
+        with self.assertRaisesRegex(TypeError, NOT_A_BASE_TYPE % 'ParamSpecArgs'):
             class C(ParamSpecArgs): pass
-        with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
+        with self.assertRaisesRegex(TypeError, NOT_A_BASE_TYPE % 'ParamSpecKwargs'):
             class C(ParamSpecKwargs): pass
         P = ParamSpec('P')
         with self.assertRaisesRegex(TypeError,
@@ -8309,10 +8343,6 @@ SpecialAttrsT = typing.TypeVar('SpecialAttrsT', int, float, complex)
 class SpecialAttrsTests(BaseTestCase):
 
     def test_special_attrs(self):
-        with warnings.catch_warnings(
-            action='ignore', category=DeprecationWarning
-        ):
-            typing_ByteString = typing.ByteString
         cls_to_check = {
             # ABC classes
             typing.AbstractSet: 'AbstractSet',
@@ -8321,7 +8351,7 @@ class SpecialAttrsTests(BaseTestCase):
             typing.AsyncIterable: 'AsyncIterable',
             typing.AsyncIterator: 'AsyncIterator',
             typing.Awaitable: 'Awaitable',
-            typing_ByteString: 'ByteString',
+            typing.ByteString: 'ByteString',
             typing.Callable: 'Callable',
             typing.ChainMap: 'ChainMap',
             typing.Collection: 'Collection',
@@ -8646,8 +8676,6 @@ class AllTests(BaseTestCase):
                 getattr(v, '__module__', None) == typing.__name__
             )
         }
-        # Deprecated; added dynamically via module __getattr__
-        computed_all.add("ByteString")
         self.assertSetEqual(computed_all, actual_all)
 
 
