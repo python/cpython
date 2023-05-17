@@ -546,7 +546,7 @@ Pure paths provide the following methods and properties:
       PureWindowsPath('c:/Program Files')
 
 
-.. method:: PurePath.match(pattern)
+.. method:: PurePath.match(pattern, *, case_sensitive=None)
 
    Match this path against the provided glob-style pattern.  Return ``True``
    if matching is successful, ``False`` otherwise.
@@ -575,6 +575,14 @@ Pure paths provide the following methods and properties:
       False
       >>> PureWindowsPath('b.py').match('*.PY')
       True
+
+   By default, or when the *case_sensitive* keyword-only argument is set to
+   ``None``, this method matches paths using platform-specific casing rules:
+   typically, case-sensitive on POSIX, and case-insensitive on Windows.
+   Set *case_sensitive* to ``True`` or ``False`` to override this behaviour.
+
+   .. versionadded:: 3.12
+      The *case_sensitive* argument.
 
 
 .. method:: PurePath.relative_to(other, walk_up=False)

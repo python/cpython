@@ -312,6 +312,11 @@ class _BasePurePathTest(object):
         # Multi-part glob-style pattern.
         self.assertFalse(P('/a/b/c.py').match('/**/*.py'))
         self.assertTrue(P('/a/b/c.py').match('/a/**/*.py'))
+        # Case-sensitive flag
+        self.assertFalse(P('A.py').match('a.PY', case_sensitive=True))
+        self.assertTrue(P('A.py').match('a.PY', case_sensitive=False))
+        self.assertFalse(P('c:/a/B.Py').match('C:/A/*.pY', case_sensitive=True))
+        self.assertTrue(P('/a/b/c.py').match('/A/*/*.Py', case_sensitive=False))
 
     def test_ordering_common(self):
         # Ordering is tuple-alike.
@@ -744,9 +749,6 @@ class PurePosixPathTest(_BasePurePathTest, unittest.TestCase):
     def test_match(self):
         P = self.cls
         self.assertFalse(P('A.py').match('a.PY'))
-        self.assertTrue(P('A.py').match('a.PY', case_sensitive=False))
-        self.assertTrue(P('/a/b/c.py').match('/A/*/*.Py', case_sensitive=False))
-        self.assertTrue(P('/a/b/c.py').match('**/*.py', case_sensitive=False))
 
     def test_is_absolute(self):
         P = self.cls
@@ -941,11 +943,6 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertTrue(P('B.py').match('b.PY'))
         self.assertTrue(P('c:/a/B.Py').match('C:/A/*.pY'))
         self.assertTrue(P('//Some/Share/B.Py').match('//somE/sharE/*.pY'))
-        # Case-sensitivity
-        self.assertFalse(P('A.py').match('a.PY', case_sensitive=True))
-        self.assertFalse(P('c:/a/B.Py').match('C:/A/*.pY', case_sensitive=True))
-        self.assertFalse(P('c:/a/B/c.PY').match('C:/A/**/*.pY', case_sensitive=True))
-        self.assertTrue(P('c:/a/B/c.pY').match('c:/a/**/*.pY', case_sensitive=True))
         # Path anchor doesn't match pattern anchor
         self.assertFalse(P('c:/b.py').match('/*.py'))  # 'c:/' vs '/'
         self.assertFalse(P('c:/b.py').match('c:*.py'))  # 'c:/' vs 'c:'

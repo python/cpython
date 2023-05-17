@@ -86,6 +86,12 @@ def _make_selector(pattern_parts, flavour, case_sensitive):
     return cls(pat, child_parts, flavour, case_sensitive)
 
 
+@functools.lru_cache(maxsize=256, typed=True)
+def _compile_pattern(pat, flags):
+    re_pat = fnmatch.translate(pat)
+    return re.compile(re_pat, flags).match
+
+
 class _Selector:
     """A selector matches a specific glob pattern part against the children
     of a given path."""
@@ -680,7 +686,7 @@ class PurePath(object):
         name = self._tail[-1].partition('.')[0].partition(':')[0].rstrip(' ')
         return name.upper() in _WIN_RESERVED_NAMES
 
-    def match(self, path_pattern, case_sensitive=None):
+    def match(self, path_pattern, *, case_sensitive=None):
         """
         Return True if this path matches the given pattern.
         """
@@ -690,15 +696,15 @@ class PurePath(object):
         pat = self.with_segments(path_pattern)
         if not pat.parts:
             raise ValueError("empty pattern")
-        pat_parts = str(pat).split(pat._flavour.sep)
-        parts = str(self).split(self._flavour.sep)
+        pat_parts = pat.parts
+        parts = self.parts
         if pat.drive or pat.root:
             if len(pat_parts) != len(parts):
                 return False
         elif len(pat_parts) > len(parts):
             return False
         for part, pat in zip(reversed(parts), reversed(pat_parts)):
-            match = re.compile(fnmatch.translate(pat), flags).match
+            match = _compile_pattern(pat, flags)
             if not match(part):
                 return False
         return True
