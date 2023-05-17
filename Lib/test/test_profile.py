@@ -92,6 +92,14 @@ class ProfileTest(unittest.TestCase):
         self.profilermodule.run("int('1')", filename=TESTFN)
         self.assertTrue(os.path.exists(TESTFN))
 
+    def test_run_with_sort_by_values(self):
+        s = StringIO()
+        stdout = sys.stdout
+        sys.stdout = s
+        self.profilermodule.run("int('1')", sort=('tottime', 'stdname'))
+        sys.stdout = stdout
+        self.assertIn("Ordered by: internal time, standard name", s.getvalue())
+
     def test_runctx(self):
         with silent():
             self.profilermodule.runctx("testfunc()", globals(), locals())
