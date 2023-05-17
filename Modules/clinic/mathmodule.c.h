@@ -826,16 +826,21 @@ exit:
 }
 
 PyDoc_STRVAR(math_nextafter__doc__,
-"nextafter($module, x, y, /, *, steps=1)\n"
+"nextafter($module, x, y, /, *, steps=None)\n"
 "--\n"
 "\n"
-"Return the floating-point value the given number of steps after x towards y.");
+"Return the floating-point value the given number of steps after x towards y.\n"
+"\n"
+"If steps is not specified or is None, it defaults to 1.\n"
+"\n"
+"Raises a TypeError, if x or y is not a double, or if steps is not an integer.\n"
+"Raises ValueError if steps is negative.");
 
 #define MATH_NEXTAFTER_METHODDEF    \
     {"nextafter", _PyCFunction_CAST(math_nextafter), METH_FASTCALL|METH_KEYWORDS, math_nextafter__doc__},
 
 static PyObject *
-math_nextafter_impl(PyObject *module, double x, double y, PyObject* steps);
+math_nextafter_impl(PyObject *module, double x, double y, PyObject *steps);
 
 static PyObject *
 math_nextafter(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -870,7 +875,7 @@ math_nextafter(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     double x;
     double y;
-    PyObject* steps = NULL;
+    PyObject *steps = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
     if (!args) {
@@ -945,4 +950,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b3ff18abb82b4f3c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=91a0357265a2a553 input=a9049054013a1b77]*/
