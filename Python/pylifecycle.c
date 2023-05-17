@@ -1129,10 +1129,11 @@ init_interp_main(PyThreadState *tstate)
             return _PyStatus_ERR("can't initialize signals");
         }
 
-        if (_PyTraceMalloc_Init(config->tracemalloc) < 0) {
-            return _PyStatus_ERR("can't initialize tracemalloc");
+        if (config->tracemalloc) {
+           if (_PyTraceMalloc_Start(config->tracemalloc) < 0) {
+                return _PyStatus_ERR("can't start tracemalloc");
+            }
         }
-
 
 #ifdef PY_HAVE_PERF_TRAMPOLINE
         if (config->perf_profiling) {
