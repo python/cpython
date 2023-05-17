@@ -82,7 +82,7 @@ class TokenizeTest(TestCase):
     NAME       'False'       (4, 11) (4, 16)
     COMMENT    '# NEWLINE'   (4, 17) (4, 26)
     NEWLINE    '\\n'          (4, 26) (4, 27)
-    DEDENT     ''            (5, 0) (5, 0)
+    DEDENT     ''            (4, 27) (4, 27)
     """)
         indent_error_file = b"""\
 def k(x):
@@ -230,6 +230,10 @@ def k(x):
                 continue
             self.assertEqual(number_token(lit), lit)
         for lit in INVALID_UNDERSCORE_LITERALS:
+            try:
+                number_token(lit)
+            except SyntaxError:
+                continue
             self.assertNotEqual(number_token(lit), lit)
 
     def test_string(self):
@@ -728,8 +732,8 @@ def"', """\
     NEWLINE    '\\n'          (2, 5) (2, 6)
     INDENT     '        \\t'  (3, 0) (3, 9)
     NAME       'pass'        (3, 9) (3, 13)
-    DEDENT     ''            (4, 0) (4, 0)
-    DEDENT     ''            (4, 0) (4, 0)
+    DEDENT     ''            (3, 14) (3, 14)
+    DEDENT     ''            (3, 14) (3, 14)
     """)
 
     def test_non_ascii_identifiers(self):
@@ -941,7 +945,7 @@ async def foo():
     NUMBER     '1'           (2, 17) (2, 18)
     OP         ':'           (2, 18) (2, 19)
     NAME       'pass'        (2, 20) (2, 24)
-    DEDENT     ''            (3, 0) (3, 0)
+    DEDENT     ''            (2, 25) (2, 25)
     """)
 
         self.check_tokenize('''async def foo(async): await''', """\
@@ -989,7 +993,7 @@ def f():
     NAME       'await'       (6, 2) (6, 7)
     OP         '='           (6, 8) (6, 9)
     NUMBER     '2'           (6, 10) (6, 11)
-    DEDENT     ''            (7, 0) (7, 0)
+    DEDENT     ''            (6, 12) (6, 12)
     """)
 
         self.check_tokenize('''\
@@ -1027,7 +1031,7 @@ async def f():
     NAME       'await'       (6, 2) (6, 7)
     OP         '='           (6, 8) (6, 9)
     NUMBER     '2'           (6, 10) (6, 11)
-    DEDENT     ''            (7, 0) (7, 0)
+    DEDENT     ''            (6, 12) (6, 12)
     """)
 
 class GenerateTokensTest(TokenizeTest):
@@ -1052,7 +1056,7 @@ def decistmt(s):
             ])
         else:
             result.append((toknum, tokval))
-    return untokenize(result).decode('utf-8')
+    return untokenize(result).decode('utf-8').strip()
 
 class TestMisc(TestCase):
 
@@ -1408,9 +1412,9 @@ class TestDetectEncoding(TestCase):
 
 class TestTokenize(TestCase):
 
-    def test_tokenize(self):
+    def test_tokenizee(self):
         import tokenize as tokenize_module
-        encoding = object()
+        encoding = "utf-8"
         encoding_used = None
         def mock_detect_encoding(readline):
             return encoding, [b'first', b'second']
@@ -2643,8 +2647,7 @@ async def f():
         compile(valid, "<string>", "exec")
 
         invalid = generate_source(MAXINDENT)
-        tokens = list(_generate_tokens_from_c_tokenizer(invalid))
-        self.assertEqual(tokens[-1].type, NEWLINE)
+        self.assertRaises(SyntaxError, lambda: list(_generate_tokens_from_c_tokenizer(invalid)))
         self.assertRaises(
             IndentationError, compile, invalid, "<string>", "exec"
         )

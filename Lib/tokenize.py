@@ -406,7 +406,6 @@ def open(filename):
 
 def tokenize2(readline):
     encoding, consumed = detect_encoding(readline)
-
     rl_gen = _itertools.chain(consumed, iter(readline, b""))
     if encoding is not None:
         if encoding == "utf-8-sig":
@@ -417,6 +416,7 @@ def tokenize2(readline):
     
 def _tokenize2(rl_gen, encoding):
     source = b"".join(rl_gen)
+    token = None
     for token in _generate_tokens_from_c_tokenizer(source.decode(encoding), extra_tokens=True):
         # TODO: Marta -> limpiar esto
         if 6 < token.type <= 54:
@@ -429,6 +429,9 @@ def _tokenize2(rl_gen, encoding):
             token = token._replace(string='\n', start=(l_start, c_start), end=(l_end, c_end+1))
 
         yield token
+    if token is not None:
+        last_line, _ = token.start
+        yield TokenInfo(ENDMARKER, '', (last_line + 1, 0), (last_line + 1, 0), '')
 
 
 def tokenize(readline):
@@ -638,6 +641,7 @@ def _tokenize(readline, encoding):
         yield TokenInfo(DEDENT, '', (lnum, 0), (lnum, 0), '')
     yield TokenInfo(ENDMARKER, '', (lnum, 0), (lnum, 0), '')
 
+tokenize = tokenize2
 
 def generate_tokens(readline):
     """Tokenize a source reading Python code as unicode strings.
@@ -647,7 +651,10 @@ def generate_tokens(readline):
     """
     def _gen():
         while True:
-            line = readline()
+            try:
+                line = readline()
+            except StopIteration:
+                return
             if not line:
                 return
             yield line.encode()

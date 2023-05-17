@@ -1638,6 +1638,7 @@ token_setup(struct tok_state *tok, struct token *token, int type, const char *st
     return type;
 }
 
+
 static int
 tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct token *token)
 {
@@ -1652,7 +1653,6 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     blankline = 0;
 
 
-    const char* starting_indent = NULL;
     /* Get indentation level */
     if (tok->atbol) {
         int col = 0;
@@ -1749,19 +1749,24 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         }
     }
 
-    starting_indent = tok->start;
     tok->start = tok->cur;
     tok->starting_col_offset = tok->col_offset;
 
     /* Return pending indents/dedents */
    if (tok->pendin != 0) {
-        p_start = tok->buf;
-        p_end = tok->cur;
         if (tok->pendin < 0) {
+            if (tok->tok_extra_tokens) {
+                p_start = tok->cur;
+                p_end = tok->cur;
+            }
             tok->pendin++;
             return MAKE_TOKEN(DEDENT);
         }
         else {
+            if (tok->tok_extra_tokens) {
+                p_start = tok->buf;
+                p_end = tok->cur;
+            }
             tok->pendin--;
             return MAKE_TOKEN(INDENT);
         }
@@ -1883,7 +1888,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             tok_backup(tok, c);  /* don't eat the newline or EOF */
             p_start = p;
             p_end = tok->cur;
-            tok->comment_newline = 1;
+            tok->comment_newline = blankline;
             return MAKE_TOKEN(COMMENT);
         }
     }

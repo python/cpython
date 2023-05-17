@@ -1,5 +1,7 @@
 #include "Python.h"
+#include "errcode.h"
 #include "../Parser/tokenizer.h"
+#include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
 #include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
 
 static struct PyModuleDef _tokenizemodule;
@@ -64,12 +66,68 @@ tokenizeriter_new_impl(PyTypeObject *type, const char *source,
     return (PyObject *)self;
 }
 
+static int
+_tokenizer_error(struct tok_state *tok)
+{
+    if (PyErr_Occurred()) {
+        return -1;
+    }
+
+    const char *msg = NULL;
+    PyObject* errtype = PyExc_SyntaxError;
+    switch (tok->done) {
+        case E_TOKEN:
+            msg = "invalid token";
+            break;
+        case E_EOF:
+            if (tok->level) {
+                    PyErr_Format(PyExc_SyntaxError,
+                                 "parenthesis '%c' was never closed",
+                                tok->parenstack[tok->level-1]);
+            } else {
+                PyErr_SetString(PyExc_SyntaxError, "unexpected EOF while parsing");
+            }
+            return -1;
+        case E_DEDENT:
+            PyErr_SetString(PyExc_IndentationError,
+                            "unindent does not match any outer indentation level");
+            return -1;
+        case E_INTR:
+            if (!PyErr_Occurred()) {
+                PyErr_SetNone(PyExc_KeyboardInterrupt);
+            }
+            return -1;
+        case E_NOMEM:
+            PyErr_NoMemory();
+            return -1;
+        case E_TABSPACE:
+            errtype = PyExc_TabError;
+            msg = "inconsistent use of tabs and spaces in indentation";
+            break;
+        case E_TOODEEP:
+            errtype = PyExc_IndentationError;
+            msg = "too many levels of indentation";
+            break;
+        case E_LINECONT: {
+            msg = "unexpected character after line continuation character";
+            break;
+        }
+        default:
+            msg = "unknown parsing error";
+    }
+    PyErr_SetString(errtype, msg);
+    return -1;
+}
+
 static PyObject *
 tokenizeriter_next(tokenizeriterobject *it)
 {
     struct token token;
     int type = _PyTokenizer_Get(it->tok, &token);
-    if (type == ERRORTOKEN && PyErr_Occurred()) {
+    if (type == ERRORTOKEN) {
+        if(!PyErr_Occurred()) {
+            _tokenizer_error(it->tok);
+        }
         return NULL;
     }
     if (type == ERRORTOKEN || type == ENDMARKER) {
