@@ -3897,8 +3897,10 @@ math_nextafter_impl(PyObject *module, double x, double y, int steps)
     }
     if (steps == 0)
         return PyFloat_FromDouble(x);
-    if (Py_IS_NAN(x) || Py_IS_NAN(y))
-        return PyFloat_FromDouble(x+y);
+    if (Py_IS_NAN(x))
+        return PyFloat_FromDouble(x);
+    if (Py_IS_NAN(y))
+        return PyFloat_FromDouble(y);
 
     uint64_t usteps = steps;
 
