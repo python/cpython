@@ -271,7 +271,7 @@ typevar_constraints(typevarobject *self, void *Py_UNUSED(ignored))
         return Py_NewRef(self->constraints);
     }
     if (self->evaluate_constraints == NULL) {
-        Py_RETURN_NONE;
+        return PyTuple_New(0);
     }
     PyObject *constraints = PyObject_CallNoArgs(self->evaluate_constraints);
     self->constraints = Py_XNewRef(constraints);
