@@ -26,10 +26,11 @@ static struct PyModuleDef thread_module;
 
 struct module_thread {
     PyThreadState *tstate;
+    int daemonic;
 };
 
 static struct module_thread *
-new_module_thread(PyInterpreterState *interp)
+new_module_thread(PyInterpreterState *interp, int daemonic)
 {
     PyThreadState *tstate = _PyThreadState_New(interp);
     if (tstate == NULL) {
@@ -51,6 +52,7 @@ new_module_thread(PyInterpreterState *interp)
 
     *mt = (struct module_thread){
         .tstate = tstate,
+        .daemonic = daemonic,
     };
     return mt;
 }
@@ -1167,13 +1169,18 @@ Return True if daemon threads are allowed in the current interpreter,\n\
 and False otherwise.\n");
 
 static PyObject *
-thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
+thread_PyThread_start_new_thread(PyObject *self,
+                                 PyObject *fargs, PyObject *fkwargs)
 {
+    char *kwlist[] = {"", "", "", "daemonic", NULL};
     PyObject *func, *args, *kwargs = NULL;
-
-    if (!PyArg_UnpackTuple(fargs, "start_new_thread", 2, 3,
-                           &func, &args, &kwargs))
+    int daemonic = 0;
+    if (!PyArg_ParseTupleAndKeywords(fargs, fkwargs,
+                                     "OO|Op:start_new_thread", kwlist,
+                                     &func, &args, &kwargs, &daemonic))
+    {
         return NULL;
+    }
     if (!PyCallable_Check(func)) {
         PyErr_SetString(PyExc_TypeError,
                         "first arg must be callable");
@@ -1202,7 +1209,7 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
         return NULL;
     }
 
-    struct module_thread *mt = new_module_thread(interp);
+    struct module_thread *mt = new_module_thread(interp, daemonic);
     if (mt == NULL) {
         return NULL;
     }
@@ -1227,7 +1234,7 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
 }
 
 PyDoc_STRVAR(start_new_doc,
-"start_new_thread(function, args[, kwargs])\n\
+"start_new_thread(function, args[, kwargs], daemonic=0)\n\
 (start_new() is an obsolete synonym)\n\
 \n\
 Start a new thread and return its identifier.  The thread will call the\n\
@@ -1607,9 +1614,9 @@ Handle uncaught Thread.run() exception.");
 
 static PyMethodDef thread_methods[] = {
     {"start_new_thread",        (PyCFunction)thread_PyThread_start_new_thread,
-     METH_VARARGS, start_new_doc},
+     METH_VARARGS | METH_KEYWORDS, start_new_doc},
     {"start_new",               (PyCFunction)thread_PyThread_start_new_thread,
-     METH_VARARGS, start_new_doc},
+     METH_VARARGS | METH_KEYWORDS, start_new_doc},
     {"daemon_threads_allowed",  (PyCFunction)thread_daemon_threads_allowed,
      METH_NOARGS, daemon_threads_allowed_doc},
     {"allocate_lock",           thread_PyThread_allocate_lock,
