@@ -1,0 +1,1 @@
+Enhance meth:`bytearray.__repr__` with meth:`bytes._repr__`'s logic. Patched by Xiang Zhang and Furkan Onder.
