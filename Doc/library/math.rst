@@ -224,7 +224,7 @@ Number-theoretic and representation functions
    of *x* and are floats.
 
 
-.. function:: nextafter(x, y, /, *, steps=1)
+.. function:: nextafter(x, y, steps=1)
 
    Return the floating-point value *steps* steps after *x* towards *y*.
 
