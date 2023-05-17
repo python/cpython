@@ -9,16 +9,15 @@ preserve
 
 
 PyDoc_STRVAR(_testcapi_err_set_raised__doc__,
-"err_set_raised($module, exc, /)\n"
+"err_set_raised($module, exception, /)\n"
 "--\n"
-"\n"
-"Test PyErr_SetRaisedException C API.");
+"\n");
 
 #define _TESTCAPI_ERR_SET_RAISED_METHODDEF    \
     {"err_set_raised", (PyCFunction)_testcapi_err_set_raised, METH_O, _testcapi_err_set_raised__doc__},
 
 PyDoc_STRVAR(_testcapi_exception_print__doc__,
-"exception_print($module, exc, legacy=False, /)\n"
+"exception_print($module, exception, legacy=False, /)\n"
 "--\n"
 "\n"
 "To test the format of exceptions as printed out.");
@@ -158,10 +157,9 @@ exit:
 }
 
 PyDoc_STRVAR(_testcapi_exc_set_object__doc__,
-"exc_set_object($module, /, exc, obj)\n"
+"exc_set_object($module, /, exception, obj)\n"
 "--\n"
-"\n"
-"Test PyErr_SetObject C API.");
+"\n");
 
 #define _TESTCAPI_EXC_SET_OBJECT_METHODDEF    \
     {"exc_set_object", _PyCFunction_CAST(_testcapi_exc_set_object), METH_FASTCALL|METH_KEYWORDS, _testcapi_exc_set_object__doc__},
@@ -182,7 +180,7 @@ _testcapi_exc_set_object(PyObject *module, PyObject *const *args, Py_ssize_t nar
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(exc), &_Py_ID(obj), },
+        .ob_item = { &_Py_ID(exception), &_Py_ID(obj), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -191,7 +189,7 @@ _testcapi_exc_set_object(PyObject *module, PyObject *const *args, Py_ssize_t nar
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"exc", "obj", NULL};
+    static const char * const _keywords[] = {"exception", "obj", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "exc_set_object",
@@ -215,10 +213,9 @@ exit:
 }
 
 PyDoc_STRVAR(_testcapi_exc_set_object_fetch__doc__,
-"exc_set_object_fetch($module, /, exc, obj)\n"
+"exc_set_object_fetch($module, /, exception, obj)\n"
 "--\n"
-"\n"
-"Test PyErr_SetObject and PyErr_Fetch C APIs.");
+"\n");
 
 #define _TESTCAPI_EXC_SET_OBJECT_FETCH_METHODDEF    \
     {"exc_set_object_fetch", _PyCFunction_CAST(_testcapi_exc_set_object_fetch), METH_FASTCALL|METH_KEYWORDS, _testcapi_exc_set_object_fetch__doc__},
@@ -240,7 +237,7 @@ _testcapi_exc_set_object_fetch(PyObject *module, PyObject *const *args, Py_ssize
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(exc), &_Py_ID(obj), },
+        .ob_item = { &_Py_ID(exception), &_Py_ID(obj), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -249,7 +246,7 @@ _testcapi_exc_set_object_fetch(PyObject *module, PyObject *const *args, Py_ssize
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"exc", "obj", NULL};
+    static const char * const _keywords[] = {"exception", "obj", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "exc_set_object_fetch",
@@ -273,10 +270,9 @@ exit:
 }
 
 PyDoc_STRVAR(_testcapi_raise_exception__doc__,
-"raise_exception($module, exc, num_args, /)\n"
+"raise_exception($module, exception, num_args, /)\n"
 "--\n"
-"\n"
-"Test PyErr_SetObject for raising exception");
+"\n");
 
 #define _TESTCAPI_RAISE_EXCEPTION_METHODDEF    \
     {"raise_exception", _PyCFunction_CAST(_testcapi_raise_exception), METH_FASTCALL, _testcapi_raise_exception__doc__},
@@ -356,8 +352,7 @@ exit:
 PyDoc_STRVAR(_testcapi_set_exc_info__doc__,
 "set_exc_info($module, new_type, new_value, new_tb, /)\n"
 "--\n"
-"\n"
-"Test PyErr_SetExcInfo C API.");
+"\n");
 
 #define _TESTCAPI_SET_EXC_INFO_METHODDEF    \
     {"set_exc_info", _PyCFunction_CAST(_testcapi_set_exc_info), METH_FASTCALL, _testcapi_set_exc_info__doc__},
@@ -389,17 +384,15 @@ exit:
 PyDoc_STRVAR(_testcapi_set_exception__doc__,
 "set_exception($module, new_exc, /)\n"
 "--\n"
-"\n"
-"Test PyErr_SetHandledException C API.");
+"\n");
 
 #define _TESTCAPI_SET_EXCEPTION_METHODDEF    \
     {"set_exception", (PyCFunction)_testcapi_set_exception, METH_O, _testcapi_set_exception__doc__},
 
 PyDoc_STRVAR(_testcapi_write_unraisable_exc__doc__,
-"write_unraisable_exc($module, exc, err_msg, obj, /)\n"
+"write_unraisable_exc($module, exception, err_msg, obj, /)\n"
 "--\n"
-"\n"
-"Test _PyErr_WriteUnraisableMsg C API.");
+"\n");
 
 #define _TESTCAPI_WRITE_UNRAISABLE_EXC_METHODDEF    \
     {"write_unraisable_exc", _PyCFunction_CAST(_testcapi_write_unraisable_exc), METH_FASTCALL, _testcapi_write_unraisable_exc__doc__},
@@ -458,4 +451,4 @@ _testcapi_traceback_print(PyObject *module, PyObject *const *args, Py_ssize_t na
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=61dfe5aadcb50f13 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9076f55ae0673fee input=a9049054013a1b77]*/
