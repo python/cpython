@@ -186,49 +186,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(math_log__doc__,
-"log(x, [base=math.e])\n"
-"Return the logarithm of x to the given base.\n"
-"\n"
-"If the base not specified, returns the natural logarithm (base e) of x.");
-
-#define MATH_LOG_METHODDEF    \
-    {"log", (PyCFunction)math_log, METH_VARARGS, math_log__doc__},
-
-static PyObject *
-math_log_impl(PyObject *module, PyObject *x, int group_right_1,
-              PyObject *base);
-
-static PyObject *
-math_log(PyObject *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    PyObject *x;
-    int group_right_1 = 0;
-    PyObject *base = NULL;
-
-    switch (PyTuple_GET_SIZE(args)) {
-        case 1:
-            if (!PyArg_ParseTuple(args, "O:log", &x)) {
-                goto exit;
-            }
-            break;
-        case 2:
-            if (!PyArg_ParseTuple(args, "OO:log", &x, &base)) {
-                goto exit;
-            }
-            group_right_1 = 1;
-            break;
-        default:
-            PyErr_SetString(PyExc_TypeError, "math.log requires 1 to 2 arguments");
-            goto exit;
-    }
-    return_value = math_log_impl(module, x, group_right_1, base);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(math_log2__doc__,
 "log2($module, x, /)\n"
 "--\n"
@@ -954,4 +911,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=899211ec70e4506c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a6437a3ba18c486a input=a9049054013a1b77]*/

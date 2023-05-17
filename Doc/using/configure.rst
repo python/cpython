@@ -216,6 +216,22 @@ WebAssembly Options
 Install Options
 ---------------
 
+.. cmdoption:: --prefix=PREFIX
+
+   Install architecture-independent files in PREFIX. On Unix, it
+   defaults to :file:`/usr/local`.
+
+   This value can be retrived at runtime using :data:`sys.prefix`.
+
+   As an example, one can use ``--prefix="$HOME/.local/"`` to install
+   a Python in its home directory.
+
+.. cmdoption:: --exec-prefix=EPREFIX
+
+   Install architecture-dependent files in EPREFIX, defaults to :option:`--prefix`.
+
+   This value can be retrived at runtime using :data:`sys.exec_prefix`.
+
 .. cmdoption:: --disable-test-modules
 
    Don't build nor install test modules, like the :mod:`test` package or the

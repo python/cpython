@@ -12,6 +12,7 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "structmember.h"         // PyMemberDef
 #include "opcode.h"               // SEND
+#include "frameobject.h"          // _PyInterpreterFrame_GetLine
 #include "pystats.h"
 
 static PyObject *gen_close(PyGenObject *, PyObject *);
@@ -69,8 +70,6 @@ void
 _PyGen_Finalize(PyObject *self)
 {
     PyGenObject *gen = (PyGenObject *)self;
-    PyObject *res = NULL;
-    PyObject *error_type, *error_value, *error_traceback;
 
     if (gen->gi_frame_state >= FRAME_COMPLETED) {
         /* Generator isn't paused, so no need to close */
@@ -82,23 +81,22 @@ _PyGen_Finalize(PyObject *self)
         PyObject *finalizer = agen->ag_origin_or_finalizer;
         if (finalizer && !agen->ag_closed) {
             /* Save the current exception, if any. */
-            PyErr_Fetch(&error_type, &error_value, &error_traceback);
+            PyObject *exc = PyErr_GetRaisedException();
 
-            res = PyObject_CallOneArg(finalizer, self);
-
+            PyObject *res = PyObject_CallOneArg(finalizer, self);
             if (res == NULL) {
                 PyErr_WriteUnraisable(self);
             } else {
                 Py_DECREF(res);
             }
             /* Restore the saved exception. */
-            PyErr_Restore(error_type, error_value, error_traceback);
+            PyErr_SetRaisedException(exc);
             return;
         }
     }
 
     /* Save the current exception, if any. */
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+    PyObject *exc = PyErr_GetRaisedException();
 
     /* If `gen` is a coroutine, and if it was never awaited on,
        issue a RuntimeWarning. */
@@ -109,20 +107,19 @@ _PyGen_Finalize(PyObject *self)
         _PyErr_WarnUnawaitedCoroutine((PyObject *)gen);
     }
     else {
-        res = gen_close(gen, NULL);
-    }
-
-    if (res == NULL) {
-        if (PyErr_Occurred()) {
-            PyErr_WriteUnraisable(self);
+        PyObject *res = gen_close(gen, NULL);
+        if (res == NULL) {
+            if (PyErr_Occurred()) {
+                PyErr_WriteUnraisable(self);
+            }
         }
-    }
-    else {
-        Py_DECREF(res);
+        else {
+            Py_DECREF(res);
+        }
     }
 
     /* Restore the saved exception. */
-    PyErr_Restore(error_type, error_value, error_traceback);
+    PyErr_SetRaisedException(exc);
 }
 
 static void
@@ -648,39 +645,11 @@ _PyGen_SetStopIterationValue(PyObject *value)
 int
 _PyGen_FetchStopIterationValue(PyObject **pvalue)
 {
-    PyObject *et, *ev, *tb;
     PyObject *value = NULL;
-
     if (PyErr_ExceptionMatches(PyExc_StopIteration)) {
-        PyErr_Fetch(&et, &ev, &tb);
-        if (ev) {
-            /* exception will usually be normalised already */
-            if (PyObject_TypeCheck(ev, (PyTypeObject *) et)) {
-                value = Py_NewRef(((PyStopIterationObject *)ev)->value);
-                Py_DECREF(ev);
-            } else if (et == PyExc_StopIteration && !PyTuple_Check(ev)) {
-                /* Avoid normalisation and take ev as value.
-                 *
-                 * Normalization is required if the value is a tuple, in
-                 * that case the value of StopIteration would be set to
-                 * the first element of the tuple.
-                 *
-                 * (See _PyErr_CreateException code for details.)
-                 */
-                value = ev;
-            } else {
-                /* normalisation required */
-                PyErr_NormalizeException(&et, &ev, &tb);
-                if (!PyObject_TypeCheck(ev, (PyTypeObject *)PyExc_StopIteration)) {
-                    PyErr_Restore(et, ev, tb);
-                    return -1;
-                }
-                value = Py_NewRef(((PyStopIterationObject *)ev)->value);
-                Py_DECREF(ev);
-            }
-        }
-        Py_XDECREF(et);
-        Py_XDECREF(tb);
+        PyObject *exc = PyErr_GetRaisedException();
+        value = Py_NewRef(((PyStopIterationObject *)exc)->value);
+        Py_DECREF(exc);
     } else if (PyErr_Occurred()) {
         return -1;
     }
@@ -1354,7 +1323,7 @@ compute_cr_origin(int origin_depth, _PyInterpreterFrame *current_frame)
     frame = current_frame;
     for (int i = 0; i < frame_count; ++i) {
         PyCodeObject *code = frame->f_code;
-        int line = _PyInterpreterFrame_GetLine(frame);
+        int line = PyUnstable_InterpreterFrame_GetLine(frame);
         PyObject *frameinfo = Py_BuildValue("OiO", code->co_filename, line,
                                             code->co_name);
         if (!frameinfo) {
@@ -1436,9 +1405,6 @@ typedef struct _PyAsyncGenWrappedValue {
 
 #define _PyAsyncGenWrappedValue_CheckExact(o) \
                     Py_IS_TYPE(o, &_PyAsyncGenWrappedValue_Type)
-
-#define PyAsyncGenASend_CheckExact(o) \
-                    Py_IS_TYPE(o, &_PyAsyncGenASend_Type)
 
 
 static int
@@ -1552,6 +1518,15 @@ ag_getcode(PyGenObject *gen, void *Py_UNUSED(ignored))
     return _gen_getcode(gen, "ag_code");
 }
 
+static PyObject *
+ag_getsuspended(PyAsyncGenObject *ag, void *Py_UNUSED(ignored))
+{
+    if (ag->ag_frame_state == FRAME_SUSPENDED) {
+        Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;
+}
+
 static PyGetSetDef async_gen_getsetlist[] = {
     {"__name__", (getter)gen_get_name, (setter)gen_set_name,
      PyDoc_STR("name of the async generator")},
@@ -1561,6 +1536,7 @@ static PyGetSetDef async_gen_getsetlist[] = {
      PyDoc_STR("object being awaited on, or None")},
      {"ag_frame",  (getter)ag_getframe, NULL, NULL},
      {"ag_code",  (getter)ag_getcode, NULL, NULL},
+     {"ag_suspended",  (getter)ag_getsuspended, NULL, NULL},
     {NULL} /* Sentinel */
 };
 
