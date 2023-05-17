@@ -22,7 +22,7 @@
 static struct PyModuleDef thread_module;
 
 
-/* threads owned by the module */
+/* state for threads owned by the module */
 
 struct module_thread {
     PyThreadState *tstate;
@@ -81,62 +81,163 @@ delete_module_thread(struct module_thread *mt)
     PyMem_RawFree(mt);
 }
 
+
+struct module_threads {
+    PyThread_type_lock mutex;
+    struct {
+        long all;
+        long running;
+        long non_daemon_running;
+        long pyfuncs_running;
+    } counts;
+};
+
+static int
+module_threads_init(struct module_threads *threads)
+{
+    PyThread_type_lock lock = PyThread_allocate_lock();
+    if (lock == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+
+    *threads = (struct module_threads){
+        .mutex = lock,
+    };
+    assert(_PyThreadState_GET()->interp->threads.count == 0);
+    return 0;
+}
+
+#ifdef HAVE_FORK
+static int
+module_threads_reinit(struct module_threads *threads)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    assert(tstate->thread_id == PyThread_get_thread_ident());
+
+    if (_PyThread_at_fork_reinit(threads->mutex) < 0) {
+        PyErr_SetString(ThreadError, "failed to reinitialize lock at fork");
+        return -1;
+    }
+
+    *threads = (struct module_threads){
+        .mutex = threads->mutex,
+        // The counts are all reset to 0.
+    };
+    // XXX assert(_PyThreadState_GET()->interp->threads.count == 0);
+    return 0;
+}
+#endif
+
 static void
-bind_module_thread(struct module_thread *mt)
+module_threads_fini(struct module_threads *threads)
+{
+    // XXX assert(_PyThreadState_GET()->interp->threads.count == threads->counts.pyfuncs_running);
+
+    // XXX Wait for all module threads to finish running thread_run().
+    assert(threads->counts.running == 0);
+
+    PyThread_free_lock(threads->mutex);
+}
+
+
+/* high-level helpers for threads owned by the module */
+
+static void
+bind_module_thread(struct module_threads *threads,
+                   struct module_thread *mt)
 {
     assert(_PyThreadState_GET() == NULL);
+
+    PyThread_acquire_lock(threads->mutex, WAIT_LOCK);
+
     assert(mt->status.initialized);
     assert(!mt->status.started);
-
     mt->status.started = 1;
+    threads->counts.all++;
+    threads->counts.running++;
+
+    PyThread_release_lock(threads->mutex);
 
     _PyThreadState_Bind(mt->tstate);
 }
 
 static void
-set_module_thread_starting(struct module_thread *mt)
+set_module_thread_starting(struct module_threads *threads,
+                           struct module_thread *mt)
 {
+    PyThread_acquire_lock(threads->mutex, WAIT_LOCK);
+
     assert(mt->tstate == _PyThreadState_GET());
     assert(mt->status.started);
     assert(!mt->status.func_started);
-
     mt->status.func_started = 1;
-
+    threads->counts.pyfuncs_running++;
+    // XXX Drop interp.threads.count.
     mt->tstate->interp->threads.count++;
+
+    PyThread_release_lock(threads->mutex);
 }
 
 static void
-set_module_thread_finished(struct module_thread *mt)
+set_module_thread_finished(struct module_threads *threads,
+                           struct module_thread *mt)
 {
+    PyThread_acquire_lock(threads->mutex, WAIT_LOCK);
+
     assert(mt->tstate == _PyThreadState_GET());
     assert(mt->status.func_started);
     assert(!mt->status.func_ended);
-
     mt->status.func_ended = 1;
-
+    threads->counts.pyfuncs_running--;
+    // XXX Drop interp.threads.count.
     mt->tstate->interp->threads.count--;
+
+    PyThread_release_lock(threads->mutex);
 }
 
 static void
-release_module_thread_tstate(struct module_thread *mt)
+release_module_thread_tstate(struct module_threads *threads,
+                             struct module_thread *mt)
 {
+    PyThread_acquire_lock(threads->mutex, WAIT_LOCK);
+
     assert(mt->tstate == _PyThreadState_GET());
     assert(mt->status.func_ended);
     assert(!mt->status.tstate_cleared);
-
     PyThreadState *tstate = mt->tstate;
+    mt->tstate = NULL;
+    mt->status.tstate_cleared = 1;
+
+    PyThread_release_lock(threads->mutex);
+
     PyThreadState_Clear(tstate);
     // This releases the GIL.
     _PyThreadState_DeleteCurrent(tstate);
+}
 
-    mt->tstate = NULL;
-    mt->status.tstate_cleared = 1;
+static void
+finalize_module_thread(struct module_threads *threads,
+                       struct module_thread *mt)
+{
+    PyThread_acquire_lock(threads->mutex, WAIT_LOCK);
+
+    assert(mt->tstate == _PyThreadState_GET());
+    assert(mt->status.func_ended);
+    assert(mt->status.tstate_cleared);
+    threads->counts.running--;
+
+    PyThread_release_lock(threads->mutex);
+
+    delete_module_thread(mt);
 }
 
 
 /* module state */
 
 typedef struct {
+    struct module_threads threads;
+
     PyTypeObject *excepthook_type;
     PyTypeObject *lock_type;
     PyTypeObject *local_type;
@@ -1162,6 +1263,7 @@ _localdummy_destroyed(PyObject *localweakref, PyObject *dummyweakref)
 /* Module functions */
 
 struct bootstate {
+    thread_module_state *module_state;
     struct module_thread *module_thread;
     PyObject *func;
     PyObject *args;
@@ -1183,13 +1285,14 @@ static void
 thread_run(void *boot_raw)
 {
     struct bootstate *boot = (struct bootstate *) boot_raw;
+    struct module_threads *threads = &boot->module_state->threads;
     struct module_thread *mt = boot->module_thread;
 
-    bind_module_thread(mt);
+    bind_module_thread(threads, mt);
 
     // Run the Python function with the GIL held.
     PyEval_AcquireThread(mt->tstate);
-    set_module_thread_starting(mt);
+    set_module_thread_starting(threads, mt);
     PyObject *res = PyObject_Call(boot->func, boot->args, boot->kwargs);
     if (res == NULL) {
         if (PyErr_ExceptionMatches(PyExc_SystemExit))
@@ -1202,11 +1305,11 @@ thread_run(void *boot_raw)
     else {
         Py_DECREF(res);
     }
-    set_module_thread_finished(mt);
+    set_module_thread_finished(threads, mt);
     thread_bootstate_free(boot);
 
-    release_module_thread_tstate(mt);
-    delete_module_thread(mt);
+    release_module_thread_tstate(threads, mt);
+    finalize_module_thread(threads, mt);
 
     // bpo-44434: Don't call explicitly PyThread_exit_thread(). On Linux with
     // the glibc, pthread_exit() can abort the whole process if dlopen() fails
@@ -1271,6 +1374,7 @@ thread_PyThread_start_new_thread(PyObject *self,
                         "thread is not supported for isolated subinterpreters");
         return NULL;
     }
+    thread_module_state *state = get_thread_state(self);
 
     struct module_thread *mt = new_module_thread(interp, daemonic);
     if (mt == NULL) {
@@ -1281,6 +1385,7 @@ thread_PyThread_start_new_thread(PyObject *self,
     if (boot == NULL) {
         return PyErr_NoMemory();
     }
+    boot->module_state = state;
     boot->module_thread = mt;
     boot->func = Py_NewRef(func);
     boot->args = Py_NewRef(args);
@@ -1675,6 +1780,18 @@ PyDoc_STRVAR(excepthook_doc,
 \n\
 Handle uncaught Thread.run() exception.");
 
+#ifdef HAVE_FORK
+static PyObject *
+thread__after_fork(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    thread_module_state *state = get_thread_state(module);
+    if (module_threads_reinit(&state->threads) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+#endif
+
 static PyMethodDef thread_methods[] = {
     {"start_new_thread",        (PyCFunction)thread_PyThread_start_new_thread,
      METH_VARARGS | METH_KEYWORDS, start_new_doc},
@@ -1706,6 +1823,10 @@ static PyMethodDef thread_methods[] = {
      METH_NOARGS, _set_sentinel_doc},
     {"_excepthook",              thread_excepthook,
      METH_O, excepthook_doc},
+#ifdef HAVE_FORK
+    {"_after_fork",             (PyCFunction)thread__after_fork,
+     METH_NOARGS, NULL},
+#endif
     {NULL,                      NULL}           /* sentinel */
 };
 
@@ -1720,6 +1841,11 @@ thread_module_exec(PyObject *module)
 
     // Initialize the C thread library
     PyThread_init_thread();
+
+    // Initialize the list of threads owned by this module.
+    if (module_threads_init(&state->threads) < 0) {
+        return -1;
+    }
 
     // Lock
     state->lock_type = (PyTypeObject *)PyType_FromSpec(&lock_type_spec);
@@ -1811,6 +1937,8 @@ thread_module_clear(PyObject *module)
 static void
 thread_module_free(void *module)
 {
+    thread_module_state *state = get_thread_state(module);
+    module_threads_fini(&state->threads);
     thread_module_clear((PyObject *)module);
 }
 
