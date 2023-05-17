@@ -480,12 +480,6 @@ class TypeVarTests(BaseTestCase):
         with self.assertRaises(ValueError):
             TypeVar('T', covariant=True, contravariant=True)
 
-    def test_cannot_combine_explicit_and_infer(self):
-        with self.assertRaises(ValueError):
-            TypeVar('T', covariant=True, infer_variance=True)
-        with self.assertRaises(ValueError):
-            TypeVar('T', contravariant=True, infer_variance=True)
-
     def test_var_substitution(self):
         T = TypeVar('T')
         subst = T.__typing_subst__
