@@ -3891,7 +3891,7 @@ math_nextafter_impl(PyObject *module, double x, double y, PyObject *steps)
         return PyFloat_FromDouble(y);
     }
 #endif
-    if (steps == NULL) {
+    if (steps == Py_None) {
         // fast path: we default to one step.
         return PyFloat_FromDouble(nextafter(x, y));
     }
