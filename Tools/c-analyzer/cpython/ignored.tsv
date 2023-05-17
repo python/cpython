@@ -583,6 +583,7 @@ Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	AST_LITERAL_EVAL_INITIALIZED
 # XXX Fix the analyzer.
 
 ## forward/extern references
+Include/internal/pycore_curses.h	-	PyCurses_C_API	-
 Include/py_curses.h	-	PyCurses_API	-
 Include/pydecimal.h	-	_decimal_api	-
 Modules/_blake2/blake2module.c	-	blake2b_type_spec	-
