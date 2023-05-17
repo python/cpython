@@ -883,6 +883,11 @@ CFLAGS_NODIST
 BASECFLAGS
 CFLAGS_ALIASING
 OPT
+MERGE_FDATA
+LLVM_BOLT
+ac_ct_READELF
+READELF
+PREBOLT_RULE
 LLVM_PROF_FOUND
 LLVM_PROFDATA
 LLVM_PROF_ERR
@@ -890,11 +895,6 @@ LLVM_PROF_FILE
 LLVM_PROF_MERGER
 PGO_PROF_USE_FLAG
 PGO_PROF_GEN_FLAG
-MERGE_FDATA
-LLVM_BOLT
-ac_ct_READELF
-READELF
-PREBOLT_RULE
 LLVM_AR_FOUND
 LLVM_AR
 PROFILE_TASK
@@ -3359,7 +3359,7 @@ fi
 
 
 
-for ac_prog in python$PACKAGE_VERSION python3.11 python3.10 python3.9 python3.8 python3.7 python3.6 python3 python
+for ac_prog in python$PACKAGE_VERSION python3.12 python3.11 python3.10 python3 python
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -7903,7 +7903,181 @@ fi
   LDFLAGS_NODIST="$LDFLAGS_NODIST $LTOFLAGS"
 fi
 
-# Enable bolt flags
+# Enable PGO flags.
+
+
+
+
+
+
+if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}llvm-profdata", so it can be a program name with args.
+set dummy ${ac_tool_prefix}llvm-profdata; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_LLVM_PROFDATA+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $LLVM_PROFDATA in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_LLVM_PROFDATA="$LLVM_PROFDATA" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in ${llvm_path}
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_LLVM_PROFDATA="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+LLVM_PROFDATA=$ac_cv_path_LLVM_PROFDATA
+if test -n "$LLVM_PROFDATA"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LLVM_PROFDATA" >&5
+$as_echo "$LLVM_PROFDATA" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+fi
+if test -z "$ac_cv_path_LLVM_PROFDATA"; then
+  ac_pt_LLVM_PROFDATA=$LLVM_PROFDATA
+  # Extract the first word of "llvm-profdata", so it can be a program name with args.
+set dummy llvm-profdata; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ac_pt_LLVM_PROFDATA+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ac_pt_LLVM_PROFDATA in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ac_pt_LLVM_PROFDATA="$ac_pt_LLVM_PROFDATA" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in ${llvm_path}
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ac_pt_LLVM_PROFDATA="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ac_pt_LLVM_PROFDATA=$ac_cv_path_ac_pt_LLVM_PROFDATA
+if test -n "$ac_pt_LLVM_PROFDATA"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_pt_LLVM_PROFDATA" >&5
+$as_echo "$ac_pt_LLVM_PROFDATA" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+  if test "x$ac_pt_LLVM_PROFDATA" = x; then
+    LLVM_PROFDATA="''"
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    LLVM_PROFDATA=$ac_pt_LLVM_PROFDATA
+  fi
+else
+  LLVM_PROFDATA="$ac_cv_path_LLVM_PROFDATA"
+fi
+
+
+if test -n "${LLVM_PROFDATA}" -a -x "${LLVM_PROFDATA}"
+then
+  LLVM_PROF_FOUND="found"
+else
+  LLVM_PROF_FOUND="not-found"
+fi
+if test "$ac_sys_system" = "Darwin" -a "${LLVM_PROF_FOUND}" = "not-found"
+then
+  found_llvm_profdata=`/usr/bin/xcrun -find llvm-profdata 2>/dev/null`
+  if test -n "${found_llvm_profdata}"
+  then
+    # llvm-profdata isn't directly in $PATH in some cases.
+    # https://apple.stackexchange.com/questions/197053/
+    LLVM_PROFDATA='/usr/bin/xcrun llvm-profdata'
+    LLVM_PROF_FOUND=found
+    { $as_echo "$as_me:${as_lineno-$LINENO}: llvm-profdata found via xcrun: ${LLVM_PROFDATA}" >&5
+$as_echo "$as_me: llvm-profdata found via xcrun: ${LLVM_PROFDATA}" >&6;}
+  fi
+fi
+LLVM_PROF_ERR=no
+case $CC in
+  *clang*)
+    # Any changes made here should be reflected in the GCC+Darwin case below
+    PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
+    PGO_PROF_USE_FLAG="-fprofile-instr-use=code.profclangd"
+    LLVM_PROF_MERGER="${LLVM_PROFDATA} merge -output=code.profclangd *.profclangr"
+    LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"code-%p.profclangr\""
+    if test $LLVM_PROF_FOUND = not-found
+    then
+      LLVM_PROF_ERR=yes
+      if test "${REQUIRE_PGO}" = "yes"
+      then
+        as_fn_error $? "llvm-profdata is required for a --enable-optimizations build but could not be found." "$LINENO" 5
+      fi
+    fi
+    ;;
+  *gcc*)
+    case $ac_sys_system in
+      Darwin*)
+        PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
+        PGO_PROF_USE_FLAG="-fprofile-instr-use=code.profclangd"
+        LLVM_PROF_MERGER="${LLVM_PROFDATA} merge -output=code.profclangd *.profclangr"
+        LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"code-%p.profclangr\""
+        if test "${LLVM_PROF_FOUND}" = "not-found"
+        then
+          LLVM_PROF_ERR=yes
+          if test "${REQUIRE_PGO}" = "yes"
+	  then
+	    as_fn_error $? "llvm-profdata is required for a --enable-optimizations build but could not be found." "$LINENO" 5
+	  fi
+        fi
+        ;;
+      *)
+        PGO_PROF_GEN_FLAG="-fprofile-generate"
+        PGO_PROF_USE_FLAG="-fprofile-use -fprofile-correction"
+        LLVM_PROF_MERGER="true"
+        LLVM_PROF_FILE=""
+        ;;
+    esac
+    ;;
+  *icc*)
+    PGO_PROF_GEN_FLAG="-prof-gen"
+    PGO_PROF_USE_FLAG="-prof-use"
+    LLVM_PROF_MERGER="true"
+    LLVM_PROF_FILE=""
+    ;;
+esac
+
+# BOLT optimization. Always configured after PGO since it always runs after PGO.
 Py_BOLT='false'
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-bolt" >&5
 $as_echo_n "checking for --enable-bolt... " >&6; }
@@ -8299,180 +8473,6 @@ $as_echo "\"Found merge-fdata\"" >&6; }
     as_fn_error $? "merge-fdata is required for a --enable-bolt build but could not be found." "$LINENO" 5
   fi
 fi
-
-# Enable PGO flags.
-
-
-
-
-
-
-if test -n "$ac_tool_prefix"; then
-  # Extract the first word of "${ac_tool_prefix}llvm-profdata", so it can be a program name with args.
-set dummy ${ac_tool_prefix}llvm-profdata; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_LLVM_PROFDATA+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $LLVM_PROFDATA in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_LLVM_PROFDATA="$LLVM_PROFDATA" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in ${llvm_path}
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_LLVM_PROFDATA="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-LLVM_PROFDATA=$ac_cv_path_LLVM_PROFDATA
-if test -n "$LLVM_PROFDATA"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LLVM_PROFDATA" >&5
-$as_echo "$LLVM_PROFDATA" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-fi
-if test -z "$ac_cv_path_LLVM_PROFDATA"; then
-  ac_pt_LLVM_PROFDATA=$LLVM_PROFDATA
-  # Extract the first word of "llvm-profdata", so it can be a program name with args.
-set dummy llvm-profdata; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_ac_pt_LLVM_PROFDATA+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $ac_pt_LLVM_PROFDATA in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_ac_pt_LLVM_PROFDATA="$ac_pt_LLVM_PROFDATA" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in ${llvm_path}
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_ac_pt_LLVM_PROFDATA="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-ac_pt_LLVM_PROFDATA=$ac_cv_path_ac_pt_LLVM_PROFDATA
-if test -n "$ac_pt_LLVM_PROFDATA"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_pt_LLVM_PROFDATA" >&5
-$as_echo "$ac_pt_LLVM_PROFDATA" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-  if test "x$ac_pt_LLVM_PROFDATA" = x; then
-    LLVM_PROFDATA="''"
-  else
-    case $cross_compiling:$ac_tool_warned in
-yes:)
-{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
-$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
-ac_tool_warned=yes ;;
-esac
-    LLVM_PROFDATA=$ac_pt_LLVM_PROFDATA
-  fi
-else
-  LLVM_PROFDATA="$ac_cv_path_LLVM_PROFDATA"
-fi
-
-
-if test -n "${LLVM_PROFDATA}" -a -x "${LLVM_PROFDATA}"
-then
-  LLVM_PROF_FOUND="found"
-else
-  LLVM_PROF_FOUND="not-found"
-fi
-if test "$ac_sys_system" = "Darwin" -a "${LLVM_PROF_FOUND}" = "not-found"
-then
-  found_llvm_profdata=`/usr/bin/xcrun -find llvm-profdata 2>/dev/null`
-  if test -n "${found_llvm_profdata}"
-  then
-    # llvm-profdata isn't directly in $PATH in some cases.
-    # https://apple.stackexchange.com/questions/197053/
-    LLVM_PROFDATA='/usr/bin/xcrun llvm-profdata'
-    LLVM_PROF_FOUND=found
-    { $as_echo "$as_me:${as_lineno-$LINENO}: llvm-profdata found via xcrun: ${LLVM_PROFDATA}" >&5
-$as_echo "$as_me: llvm-profdata found via xcrun: ${LLVM_PROFDATA}" >&6;}
-  fi
-fi
-LLVM_PROF_ERR=no
-case $CC in
-  *clang*)
-    # Any changes made here should be reflected in the GCC+Darwin case below
-    PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
-    PGO_PROF_USE_FLAG="-fprofile-instr-use=code.profclangd"
-    LLVM_PROF_MERGER="${LLVM_PROFDATA} merge -output=code.profclangd *.profclangr"
-    LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"code-%p.profclangr\""
-    if test $LLVM_PROF_FOUND = not-found
-    then
-      LLVM_PROF_ERR=yes
-      if test "${REQUIRE_PGO}" = "yes"
-      then
-        as_fn_error $? "llvm-profdata is required for a --enable-optimizations build but could not be found." "$LINENO" 5
-      fi
-    fi
-    ;;
-  *gcc*)
-    case $ac_sys_system in
-      Darwin*)
-        PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
-        PGO_PROF_USE_FLAG="-fprofile-instr-use=code.profclangd"
-        LLVM_PROF_MERGER="${LLVM_PROFDATA} merge -output=code.profclangd *.profclangr"
-        LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"code-%p.profclangr\""
-        if test "${LLVM_PROF_FOUND}" = "not-found"
-        then
-          LLVM_PROF_ERR=yes
-          if test "${REQUIRE_PGO}" = "yes"
-	  then
-	    as_fn_error $? "llvm-profdata is required for a --enable-optimizations build but could not be found." "$LINENO" 5
-	  fi
-        fi
-        ;;
-      *)
-        PGO_PROF_GEN_FLAG="-fprofile-generate"
-        PGO_PROF_USE_FLAG="-fprofile-use -fprofile-correction"
-        LLVM_PROF_MERGER="true"
-        LLVM_PROF_FILE=""
-        ;;
-    esac
-    ;;
-  *icc*)
-    PGO_PROF_GEN_FLAG="-prof-gen"
-    PGO_PROF_USE_FLAG="-prof-use"
-    LLVM_PROF_MERGER="true"
-    LLVM_PROF_FILE=""
-    ;;
-esac
 
 # XXX Shouldn't the code above that fiddles with BASECFLAGS and OPT be
 # merged with this chunk of code?
