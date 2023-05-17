@@ -364,6 +364,32 @@ class TypeVarTests(BaseTestCase):
         self.assertEqual(T, T)
         # T is an instance of TypeVar
         self.assertIsInstance(T, TypeVar)
+        self.assertEqual(T.__name__, 'T')
+        self.assertEqual(T.__constraints__, ())
+        self.assertIs(T.__bound__, None)
+        self.assertIs(T.__covariant__, False)
+        self.assertIs(T.__contravariant__, False)
+
+    def test_attributes(self):
+        T_bound = TypeVar('T_bound', bound=int)
+        self.assertEqual(T_bound.__name__, 'T_bound')
+        self.assertEqual(T_bound.__constraints__, ())
+        self.assertIs(T_bound.__bound__, int)
+
+        T_constraints = TypeVar('T_constraints', int, str)
+        self.assertEqual(T_constraints.__name__, 'T_constraints')
+        self.assertEqual(T_constraints.__constraints__, (int, str))
+        self.assertIs(T_constraints.__bound__, None)
+
+        T_co = TypeVar('T_co', covariant=True)
+        self.assertEqual(T_co.__name__, 'T_co')
+        self.assertIs(T_co.__covariant__, True)
+        self.assertIs(T_co.__contravariant__, False)
+
+        T_contra = TypeVar('T_contra', contravariant=True)
+        self.assertEqual(T_contra.__name__, 'T_contra')
+        self.assertIs(T_contra.__covariant__, False)
+        self.assertIs(T_contra.__contravariant__, True)
 
     def test_typevar_instance_type_error(self):
         T = TypeVar('T')
@@ -453,6 +479,12 @@ class TypeVarTests(BaseTestCase):
     def test_no_bivariant(self):
         with self.assertRaises(ValueError):
             TypeVar('T', covariant=True, contravariant=True)
+
+    def test_cannot_combine_explicit_and_infer(self):
+        with self.assertRaises(ValueError):
+            TypeVar('T', covariant=True, infer_variance=True)
+        with self.assertRaises(ValueError):
+            TypeVar('T', contravariant=True, infer_variance=True)
 
     def test_var_substitution(self):
         T = TypeVar('T')
@@ -7426,6 +7458,7 @@ class ParamSpecTests(BaseTestCase):
         P = ParamSpec('P')
         self.assertEqual(P, P)
         self.assertIsInstance(P, ParamSpec)
+        self.assertEqual(P.__name__, 'P')
 
     def test_valid_uses(self):
         P = ParamSpec('P')
