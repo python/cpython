@@ -22,6 +22,53 @@
 static struct PyModuleDef thread_module;
 
 
+/* threads owned by the module */
+
+struct module_thread {
+    PyThreadState *tstate;
+};
+
+static struct module_thread *
+new_module_thread(PyInterpreterState *interp)
+{
+    PyThreadState *tstate = _PyThreadState_New(interp);
+    if (tstate == NULL) {
+        if (!PyErr_Occurred()) {
+            PyErr_NoMemory();
+        }
+        return NULL;
+    }
+
+    struct module_thread *mt = PyMem_RawMalloc(sizeof(struct module_thread));
+    if (mt == NULL) {
+        PyThreadState_Clear(tstate);
+        PyThreadState_Delete(tstate);
+        if (!PyErr_Occurred()) {
+            PyErr_NoMemory();
+        }
+        return NULL;
+    }
+
+    *mt = (struct module_thread){
+        .tstate = tstate,
+    };
+    return mt;
+}
+
+static void
+delete_module_thread(struct module_thread *mt)
+{
+    if (mt->tstate != NULL) {
+        PyThreadState_Clear(mt->tstate);
+        PyThreadState_Delete(mt->tstate);
+        mt->tstate = NULL;
+    }
+    PyMem_RawFree(mt);
+}
+
+
+/* module state */
+
 typedef struct {
     PyTypeObject *excepthook_type;
     PyTypeObject *lock_type;
@@ -1048,12 +1095,10 @@ _localdummy_destroyed(PyObject *localweakref, PyObject *dummyweakref)
 /* Module functions */
 
 struct bootstate {
-    PyInterpreterState *interp;
+    struct module_thread *module_thread;
     PyObject *func;
     PyObject *args;
     PyObject *kwargs;
-    PyThreadState *tstate;
-    _PyRuntimeState *runtime;
 };
 
 
@@ -1071,9 +1116,9 @@ static void
 thread_run(void *boot_raw)
 {
     struct bootstate *boot = (struct bootstate *) boot_raw;
-    PyThreadState *tstate;
+    struct module_thread *mt = boot->module_thread;
+    PyThreadState *tstate = mt->tstate;
 
-    tstate = boot->tstate;
     _PyThreadState_Bind(tstate);
     PyEval_AcquireThread(tstate);
     tstate->interp->threads.count++;
@@ -1095,6 +1140,8 @@ thread_run(void *boot_raw)
     tstate->interp->threads.count--;
     PyThreadState_Clear(tstate);
     _PyThreadState_DeleteCurrent(tstate);
+    mt->tstate = NULL;
+    delete_module_thread(mt);
 
     // bpo-44434: Don't call explicitly PyThread_exit_thread(). On Linux with
     // the glibc, pthread_exit() can abort the whole process if dlopen() fails
@@ -1122,7 +1169,6 @@ and False otherwise.\n");
 static PyObject *
 thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
     PyObject *func, *args, *kwargs = NULL;
 
     if (!PyArg_UnpackTuple(fargs, "start_new_thread", 2, 3,
@@ -1156,20 +1202,16 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
         return NULL;
     }
 
+    struct module_thread *mt = new_module_thread(interp);
+    if (mt == NULL) {
+        return NULL;
+    }
+
     struct bootstate *boot = PyMem_NEW(struct bootstate, 1);
     if (boot == NULL) {
         return PyErr_NoMemory();
     }
-    boot->interp = _PyInterpreterState_GET();
-    boot->tstate = _PyThreadState_New(boot->interp);
-    if (boot->tstate == NULL) {
-        PyMem_Free(boot);
-        if (!PyErr_Occurred()) {
-            return PyErr_NoMemory();
-        }
-        return NULL;
-    }
-    boot->runtime = runtime;
+    boot->module_thread = mt;
     boot->func = Py_NewRef(func);
     boot->args = Py_NewRef(args);
     boot->kwargs = Py_XNewRef(kwargs);
@@ -1177,7 +1219,7 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
     unsigned long ident = PyThread_start_new_thread(thread_run, (void*) boot);
     if (ident == PYTHREAD_INVALID_THREAD_ID) {
         PyErr_SetString(ThreadError, "can't start new thread");
-        PyThreadState_Clear(boot->tstate);
+        delete_module_thread(mt);
         thread_bootstate_free(boot);
         return NULL;
     }
