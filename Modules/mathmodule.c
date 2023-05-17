@@ -3863,8 +3863,9 @@ math.nextafter
 
     x: double
     y: double
-    steps: object = None
     /
+    *
+    steps: object = None
 
 Return the floating-point value the given number of steps after x towards y.
 
@@ -3876,7 +3877,7 @@ Raises ValueError if steps is negative.
 
 static PyObject *
 math_nextafter_impl(PyObject *module, double x, double y, PyObject *steps)
-/*[clinic end generated code: output=cc6511f02afc099e input=fa9d9e3472b55cc1]*/
+/*[clinic end generated code: output=cc6511f02afc099e input=7f2a5842112af2b4]*/
 {
 #if defined(_AIX)
     if (x == y) {
