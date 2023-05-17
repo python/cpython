@@ -3865,15 +3865,20 @@ math.nextafter
     y: double
     /
     *
-    steps: int = 1
+    steps: object = none
 
 Return the floating-point value the given number of steps after x towards y.
+If steps is not specified or is None, it defaults to 1.
+
+Raises a TypeError, if x or y is not a double, or if steps is not an integer.
+Raises ValueError if steps is negative.
 [clinic start generated code]*/
 
 static PyObject *
-math_nextafter_impl(PyObject *module, double x, double y, int steps)
+math_nextafter_impl(PyObject *module, double x, double y, PyObject* steps)
 /*[clinic end generated code: output=14190eb869199e5a input=a794e7a79768ee25]*/
 {
+    // TODO(Matthias): can we use steps == NULL for default?
 #if defined(_AIX)
     if (x == y) {
         /* On AIX 7.1, libm nextafter(-0.0, +0.0) returns -0.0.
@@ -3887,22 +3892,44 @@ math_nextafter_impl(PyObject *module, double x, double y, int steps)
         return PyFloat_FromDouble(y);
     }
 #endif
-    // fast path:
-    if (steps == 1) {
+    if (steps == NULL) {
+        // fast path: we default to one step.
         return PyFloat_FromDouble(nextafter(x, y));
     }
-    if (steps < 0) {
-        PyErr_SetString(PyExc_ValueError, "steps must be >= 0");
+    steps = PyNumber_Index(steps);
+    if (steps == NULL) {
         return NULL;
     }
-    if (steps == 0)
-        return PyFloat_FromDouble(x);
-    if (Py_IS_NAN(x))
-        return PyFloat_FromDouble(x);
-    if (Py_IS_NAN(y))
-        return PyFloat_FromDouble(y);
+    assert(PyLong_CheckExact(steps));
+    assert(overflow >= 0 && !PyErr_Occurred());
+    if (_PyLong_IsNegative((PyLongObject *)steps)) {
+        PyErr_SetString(PyExc_ValueError,
+                        "steps must be a non-negative integer");
+        goto error;
+    }
 
-    uint64_t usteps = steps;
+    uint64_t usteps = PyLong_AsUnsignedLongLong(steps);
+    // Conveniently, uint64_t and double have the same number of bits
+    // on all the platforms we care about.
+    // So if an overflow occurs, we can just use UINT64_MAX.
+    if (usteps == (unsigned long long)-1 && PyErr_Occurred()) {
+        if(!PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            Py_DECREF(steps);
+            return NULL;
+        }
+        PyErr_Clear();
+        usteps = UINT64_MAX;
+    }
+    Py_DECREF(steps);
+    if (usteps == 0) {
+        return PyFloat_FromDouble(x);
+    }
+    if (Py_IS_NAN(x)) {
+        return PyFloat_FromDouble(x);
+    }
+    if (Py_IS_NAN(y)) {
+        return PyFloat_FromDouble(y);
+    }
 
     // We assume that double and uint64_t have the same endianness.
     // This is not guaranteed by the C-standard, but it is true for
@@ -3921,6 +3948,8 @@ math_nextafter_impl(PyObject *module, double x, double y, int steps)
 
     // opposite signs
     if (((ux.i ^ uy.i) & sign_bit)) {
+        // NOTE: ax + ay can never overflow, because there most significant bit
+        // ain't set.
         if (ax + ay <= usteps) {
             return PyFloat_FromDouble(uy.f);
         // This comparison has to use <, because <= would get +0.0 vs -0.0
@@ -3934,18 +3963,14 @@ math_nextafter_impl(PyObject *module, double x, double y, int steps)
         }
     // same sign
     } else if (ax > ay) {
-        // the addition is not UB,
-        // because we have an extra bit at the top of ax and usteps.
-        if (ax >= ay + usteps) {
+        if (ax - ay >= usteps) {
             ux.i -= usteps;
             return PyFloat_FromDouble(ux.f);
         } else {
             return PyFloat_FromDouble(uy.f);
         }
     } else {
-        // the addition is not UB,
-        // because we have an extra bit at the top of ax and usteps.
-        if (ax + usteps <= ay) {
+        if (ay - ax >= usteps) {
             ux.i += usteps;
             return PyFloat_FromDouble(ux.f);
         } else {
