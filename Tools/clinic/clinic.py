@@ -3581,7 +3581,7 @@ def r(format_unit: str,
       accept: TypeSet,
       encoding: bool = False,
       zeroes: bool = False
-):
+) -> None:
     if not encoding and format_unit != 's':
         # add the legacy c converters here too.
         #
