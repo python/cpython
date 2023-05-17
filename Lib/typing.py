@@ -3202,7 +3202,12 @@ def reveal_type[T](obj: T, /) -> T:
     return obj
 
 
-def dataclass_transform[T](
+class _IdentityCallable(Protocol):
+    def __call__[T](self, arg: T, /) -> T:
+        ...
+
+
+def dataclass_transform(
     *,
     eq_default: bool = True,
     order_default: bool = False,
@@ -3210,7 +3215,7 @@ def dataclass_transform[T](
     frozen_default: bool = False,
     field_specifiers: tuple[type[Any] | Callable[..., Any], ...] = (),
     **kwargs: Any,
-) -> Callable[[T], T]:
+) -> _IdentityCallable:
     """Decorator that marks a function, class, or metaclass as providing
     dataclass-like behavior.
 
