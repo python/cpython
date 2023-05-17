@@ -567,6 +567,7 @@
     </ClCompile>
     <ClCompile Include="..\Python\thread.c" />
     <ClCompile Include="..\Python\traceback.c" />
+    <ClCompile Include="..\Python\tracemalloc.c" />
   </ItemGroup>
   <ItemGroup>
     <!-- BEGIN deepfreeze -->
