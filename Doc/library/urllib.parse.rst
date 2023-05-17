@@ -348,7 +348,7 @@ or on combining URL components into a URL string.
    .. versionchanged:: 3.10
       ASCII newline and tab characters are stripped from the URL.
 
-   .. versionchanged:: 3.12
+   .. versionchanged:: 3.11.4
       Leading WHATWG C0 control and space characters are stripped from the URL.
 
 .. _WHATWG spec: https://url.spec.whatwg.org/#concept-basic-url-parser
