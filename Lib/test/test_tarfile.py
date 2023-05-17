@@ -5,13 +5,17 @@ from hashlib import sha256
 from contextlib import contextmanager
 from random import Random
 import pathlib
+import shutil
+import re
+import warnings
+import stat
 
 import unittest
 import unittest.mock
 import tarfile
 
 from test import support
-from test.support import script_helper, requires_hashdigest
+from test.support import script_helper
 
 # Check for our compression modules.
 try:
@@ -2204,7 +2208,12 @@ class MiscTest(unittest.TestCase):
                      'EmptyHeaderError', 'TruncatedHeaderError',
                      'EOFHeaderError', 'InvalidHeaderError',
                      'SubsequentHeaderError', 'ExFileObject',
-                     'main'}
+                     'main',
+                     'fully_trusted_filter', 'data_filter',
+                     'tar_filter', 'FilterError', 'AbsoluteLinkError',
+                     'OutsideDestinationError', 'SpecialFileError',
+                     'AbsolutePathError', 'LinkOutsideDestinationError',
+                     }
         support.check__all__(self, tarfile, blacklist=blacklist)
 
 
@@ -2226,6 +2235,15 @@ class CommandLineTest(unittest.TestCase):
         with tarfile.open(tar_name, 'w') as tf:
             for tardata in files:
                 tf.add(tardata, arcname=os.path.basename(tardata))
+
+    def make_evil_tarfile(self, tar_name):
+        files = [support.findfile('tokenize_tests.txt')]
+        self.addCleanup(support.unlink, tar_name)
+        with tarfile.open(tar_name, 'w') as tf:
+            benign = tarfile.TarInfo('benign')
+            tf.addfile(benign, fileobj=io.BytesIO(b''))
+            evil = tarfile.TarInfo('../evil')
+            tf.addfile(evil, fileobj=io.BytesIO(b''))
 
     def test_bad_use(self):
         rc, out, err = self.tarfilecmd_failure()
@@ -2379,6 +2397,25 @@ class CommandLineTest(unittest.TestCase):
                 self.assertIn(b' file is extracted.', out)
             finally:
                 support.rmtree(tarextdir)
+
+    def test_extract_command_filter(self):
+        self.make_evil_tarfile(tmpname)
+        # Make an inner directory, so the member named '../evil'
+        # is still extracted into `tarextdir`
+        destdir = os.path.join(tarextdir, 'dest')
+        os.mkdir(tarextdir)
+        try:
+            with support.temp_cwd(destdir):
+                self.tarfilecmd_failure('-e', tmpname,
+                                        '-v',
+                                        '--filter', 'data')
+                out = self.tarfilecmd('-e', tmpname,
+                                      '-v',
+                                      '--filter', 'fully_trusted',
+                                      PYTHONIOENCODING='utf-8')
+                self.assertIn(b' file is extracted.', out)
+        finally:
+            support.rmtree(tarextdir)
 
     def test_extract_command_different_directory(self):
         self.make_simple_tarfile(tmpname)
@@ -2651,6 +2688,893 @@ class NumericOwnerTest(unittest.TestCase):
         with self._setup_test(mock_geteuid) as (tarfl, filename_1, _, _):
             self.assertRaises(TypeError,
                               tarfl.extract, filename_1, TEMPDIR, False, True)
+
+
+class ReplaceTests(ReadTest, unittest.TestCase):
+    def test_replace_name(self):
+        member = self.tar.getmember('ustar/regtype')
+        replaced = member.replace(name='misc/other')
+        self.assertEqual(replaced.name, 'misc/other')
+        self.assertEqual(member.name, 'ustar/regtype')
+        self.assertEqual(self.tar.getmember('ustar/regtype').name,
+                         'ustar/regtype')
+
+    def test_replace_deep(self):
+        member = self.tar.getmember('pax/regtype1')
+        replaced = member.replace()
+        replaced.pax_headers['gname'] = 'not-bar'
+        self.assertEqual(member.pax_headers['gname'], 'bar')
+        self.assertEqual(
+            self.tar.getmember('pax/regtype1').pax_headers['gname'], 'bar')
+
+    def test_replace_shallow(self):
+        member = self.tar.getmember('pax/regtype1')
+        replaced = member.replace(deep=False)
+        replaced.pax_headers['gname'] = 'not-bar'
+        self.assertEqual(member.pax_headers['gname'], 'not-bar')
+        self.assertEqual(
+            self.tar.getmember('pax/regtype1').pax_headers['gname'], 'not-bar')
+
+    def test_replace_all(self):
+        member = self.tar.getmember('ustar/regtype')
+        for attr_name in ('name', 'mtime', 'mode', 'linkname',
+                          'uid', 'gid', 'uname', 'gname'):
+            with self.subTest(attr_name=attr_name):
+                replaced = member.replace(**{attr_name: None})
+                self.assertEqual(getattr(replaced, attr_name), None)
+                self.assertNotEqual(getattr(member, attr_name), None)
+
+    def test_replace_internal(self):
+        member = self.tar.getmember('ustar/regtype')
+        with self.assertRaises(TypeError):
+            member.replace(offset=123456789)
+
+
+class NoneInfoExtractTests(ReadTest):
+    # These mainly check that all kinds of members are extracted successfully
+    # if some metadata is None.
+    # Some of the methods do additional spot checks.
+
+    # We also test that the default filters can deal with None.
+
+    extraction_filter = None
+
+    @classmethod
+    def setUpClass(cls):
+        tar = tarfile.open(tarname, mode='r', encoding="iso8859-1")
+        cls.control_dir = pathlib.Path(TEMPDIR) / "extractall_ctrl"
+        tar.errorlevel = 0
+        tar.extractall(cls.control_dir, filter=cls.extraction_filter)
+        tar.close()
+        cls.control_paths = set(
+            p.relative_to(cls.control_dir)
+            for p in pathlib.Path(cls.control_dir).glob('**/*'))
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.control_dir)
+
+    def check_files_present(self, directory):
+        got_paths = set(
+            p.relative_to(directory)
+            for p in pathlib.Path(directory).glob('**/*'))
+        self.assertEqual(self.control_paths, got_paths)
+
+    @contextmanager
+    def extract_with_none(self, *attr_names):
+        DIR = pathlib.Path(TEMPDIR) / "extractall_none"
+        self.tar.errorlevel = 0
+        for member in self.tar.getmembers():
+            for attr_name in attr_names:
+                setattr(member, attr_name, None)
+        with support.temp_dir(DIR):
+            self.tar.extractall(DIR, filter='fully_trusted')
+            self.check_files_present(DIR)
+            yield DIR
+
+    def test_extractall_none_mtime(self):
+        # mtimes of extracted files should be later than 'now' -- the mtime
+        # of a previously created directory.
+        now = pathlib.Path(TEMPDIR).stat().st_mtime
+        with self.extract_with_none('mtime') as DIR:
+            for path in pathlib.Path(DIR).glob('**/*'):
+                with self.subTest(path=path):
+                    try:
+                        mtime = path.stat().st_mtime
+                    except OSError:
+                        # Some systems can't stat symlinks, ignore those
+                        if not path.is_symlink():
+                            raise
+                    else:
+                        self.assertGreaterEqual(path.stat().st_mtime, now)
+
+    def test_extractall_none_mode(self):
+        # modes of directories and regular files should match the mode
+        # of a "normally" created directory or regular file
+        dir_mode = pathlib.Path(TEMPDIR).stat().st_mode
+        regular_file = pathlib.Path(TEMPDIR) / 'regular_file'
+        regular_file.write_text('')
+        regular_file_mode = regular_file.stat().st_mode
+        with self.extract_with_none('mode') as DIR:
+            for path in pathlib.Path(DIR).glob('**/*'):
+                with self.subTest(path=path):
+                    if path.is_dir():
+                        self.assertEqual(path.stat().st_mode, dir_mode)
+                    elif path.is_file():
+                        self.assertEqual(path.stat().st_mode,
+                                         regular_file_mode)
+
+    def test_extractall_none_uid(self):
+        with self.extract_with_none('uid'):
+            pass
+
+    def test_extractall_none_gid(self):
+        with self.extract_with_none('gid'):
+            pass
+
+    def test_extractall_none_uname(self):
+        with self.extract_with_none('uname'):
+            pass
+
+    def test_extractall_none_gname(self):
+        with self.extract_with_none('gname'):
+            pass
+
+    def test_extractall_none_ownership(self):
+        with self.extract_with_none('uid', 'gid', 'uname', 'gname'):
+            pass
+
+class NoneInfoExtractTests_Data(NoneInfoExtractTests, unittest.TestCase):
+    extraction_filter = 'data'
+
+class NoneInfoExtractTests_FullyTrusted(NoneInfoExtractTests,
+                                        unittest.TestCase):
+    extraction_filter = 'fully_trusted'
+
+class NoneInfoExtractTests_Tar(NoneInfoExtractTests, unittest.TestCase):
+    extraction_filter = 'tar'
+
+class NoneInfoExtractTests_Default(NoneInfoExtractTests,
+                                   unittest.TestCase):
+    extraction_filter = None
+
+class NoneInfoTests_Misc(unittest.TestCase):
+    def test_add(self):
+        # When addfile() encounters None metadata, it raises a ValueError
+        bio = io.BytesIO()
+        for tarformat in (tarfile.USTAR_FORMAT, tarfile.GNU_FORMAT,
+                          tarfile.PAX_FORMAT):
+            with self.subTest(tarformat=tarformat):
+                tar = tarfile.open(fileobj=bio, mode='w', format=tarformat)
+                tarinfo = tar.gettarinfo(tarname)
+                try:
+                    tar.addfile(tarinfo)
+                except Exception:
+                    if tarformat == tarfile.USTAR_FORMAT:
+                        # In the old, limited format, adding might fail for
+                        # reasons like the UID being too large
+                        pass
+                    else:
+                        raise
+                else:
+                    for attr_name in ('mtime', 'mode', 'uid', 'gid',
+                                    'uname', 'gname'):
+                        with self.subTest(attr_name=attr_name):
+                            replaced = tarinfo.replace(**{attr_name: None})
+                            with self.assertRaisesRegex(ValueError,
+                                                        f"{attr_name}"):
+                                tar.addfile(replaced)
+
+    def test_list(self):
+        # Change some metadata to None, then compare list() output
+        # word-for-word. We want list() to not raise, and to only change
+        # printout for the affected piece of metadata.
+        # (n.b.: some contents of the test archive are hardcoded.)
+        for attr_names in ({'mtime'}, {'mode'}, {'uid'}, {'gid'},
+                           {'uname'}, {'gname'},
+                           {'uid', 'uname'}, {'gid', 'gname'}):
+            with self.subTest(attr_names=attr_names), \
+                  tarfile.open(tarname, encoding="iso8859-1") as tar:
+                tio_prev = io.TextIOWrapper(io.BytesIO(), 'ascii', newline='\n')
+                with support.swap_attr(sys, 'stdout', tio_prev):
+                    tar.list()
+                for member in tar.getmembers():
+                    for attr_name in attr_names:
+                        setattr(member, attr_name, None)
+                tio_new = io.TextIOWrapper(io.BytesIO(), 'ascii', newline='\n')
+                with support.swap_attr(sys, 'stdout', tio_new):
+                    tar.list()
+                for expected, got in zip(tio_prev.detach().getvalue().split(),
+                                         tio_new.detach().getvalue().split()):
+                    if attr_names == {'mtime'} and re.match(rb'2003-01-\d\d', expected):
+                        self.assertEqual(got, b'????-??-??')
+                    elif attr_names == {'mtime'} and re.match(rb'\d\d:\d\d:\d\d', expected):
+                        self.assertEqual(got, b'??:??:??')
+                    elif attr_names == {'mode'} and re.match(
+                            rb'.([r-][w-][x-]){3}', expected):
+                        self.assertEqual(got, b'??????????')
+                    elif attr_names == {'uname'} and expected.startswith(
+                            (b'tarfile/', b'lars/', b'foo/')):
+                        exp_user, exp_group = expected.split(b'/')
+                        got_user, got_group = got.split(b'/')
+                        self.assertEqual(got_group, exp_group)
+                        self.assertRegex(got_user, b'[0-9]+')
+                    elif attr_names == {'gname'} and expected.endswith(
+                            (b'/tarfile', b'/users', b'/bar')):
+                        exp_user, exp_group = expected.split(b'/')
+                        got_user, got_group = got.split(b'/')
+                        self.assertEqual(got_user, exp_user)
+                        self.assertRegex(got_group, b'[0-9]+')
+                    elif attr_names == {'uid'} and expected.startswith(
+                            (b'1000/')):
+                        exp_user, exp_group = expected.split(b'/')
+                        got_user, got_group = got.split(b'/')
+                        self.assertEqual(got_group, exp_group)
+                        self.assertEqual(got_user, b'None')
+                    elif attr_names == {'gid'} and expected.endswith((b'/100')):
+                        exp_user, exp_group = expected.split(b'/')
+                        got_user, got_group = got.split(b'/')
+                        self.assertEqual(got_user, exp_user)
+                        self.assertEqual(got_group, b'None')
+                    elif attr_names == {'uid', 'uname'} and expected.startswith(
+                            (b'tarfile/', b'lars/', b'foo/', b'1000/')):
+                        exp_user, exp_group = expected.split(b'/')
+                        got_user, got_group = got.split(b'/')
+                        self.assertEqual(got_group, exp_group)
+                        self.assertEqual(got_user, b'None')
+                    elif attr_names == {'gname', 'gid'} and expected.endswith(
+                            (b'/tarfile', b'/users', b'/bar', b'/100')):
+                        exp_user, exp_group = expected.split(b'/')
+                        got_user, got_group = got.split(b'/')
+                        self.assertEqual(got_user, exp_user)
+                        self.assertEqual(got_group, b'None')
+                    else:
+                        # In other cases the output should be the same
+                        self.assertEqual(expected, got)
+
+def _filemode_to_int(mode):
+    """Inverse of `stat.filemode` (for permission bits)
+
+    Using mode strings rather than numbers makes the later tests more readable.
+    """
+    str_mode = mode[1:]
+    result = (
+          {'r': stat.S_IRUSR, '-': 0}[str_mode[0]]
+        | {'w': stat.S_IWUSR, '-': 0}[str_mode[1]]
+        | {'x': stat.S_IXUSR, '-': 0,
+           's': stat.S_IXUSR | stat.S_ISUID,
+           'S': stat.S_ISUID}[str_mode[2]]
+        | {'r': stat.S_IRGRP, '-': 0}[str_mode[3]]
+        | {'w': stat.S_IWGRP, '-': 0}[str_mode[4]]
+        | {'x': stat.S_IXGRP, '-': 0,
+           's': stat.S_IXGRP | stat.S_ISGID,
+           'S': stat.S_ISGID}[str_mode[5]]
+        | {'r': stat.S_IROTH, '-': 0}[str_mode[6]]
+        | {'w': stat.S_IWOTH, '-': 0}[str_mode[7]]
+        | {'x': stat.S_IXOTH, '-': 0,
+           't': stat.S_IXOTH | stat.S_ISVTX,
+           'T': stat.S_ISVTX}[str_mode[8]]
+        )
+    # check we did this right
+    assert stat.filemode(result)[1:] == mode[1:]
+
+    return result
+
+class ArchiveMaker:
+    """Helper to create a tar file with specific contents
+
+    Usage:
+
+        with ArchiveMaker() as t:
+            t.add('filename', ...)
+
+        with t.open() as tar:
+            ... # `tar` is now a TarFile with 'filename' in it!
+    """
+    def __init__(self):
+        self.bio = io.BytesIO()
+
+    def __enter__(self):
+        self.tar_w = tarfile.TarFile(mode='w', fileobj=self.bio)
+        return self
+
+    def __exit__(self, *exc):
+        self.tar_w.close()
+        self.contents = self.bio.getvalue()
+        self.bio = None
+
+    def add(self, name, *, type=None, symlink_to=None, hardlink_to=None,
+            mode=None, **kwargs):
+        """Add a member to the test archive. Call within `with`."""
+        name = str(name)
+        tarinfo = tarfile.TarInfo(name).replace(**kwargs)
+        if mode:
+            tarinfo.mode = _filemode_to_int(mode)
+        if symlink_to is not None:
+            type = tarfile.SYMTYPE
+            tarinfo.linkname = str(symlink_to)
+        if hardlink_to is not None:
+            type = tarfile.LNKTYPE
+            tarinfo.linkname = str(hardlink_to)
+        if name.endswith('/') and type is None:
+            type = tarfile.DIRTYPE
+        if type is not None:
+            tarinfo.type = type
+        if tarinfo.isreg():
+            fileobj = io.BytesIO(bytes(tarinfo.size))
+        else:
+            fileobj = None
+        self.tar_w.addfile(tarinfo, fileobj)
+
+    def open(self, **kwargs):
+        """Open the resulting archive as TarFile. Call after `with`."""
+        bio = io.BytesIO(self.contents)
+        return tarfile.open(fileobj=bio, **kwargs)
+
+
+class TestExtractionFilters(unittest.TestCase):
+
+    # A temporary directory for the extraction results.
+    # All files that "escape" the destination path should still end
+    # up in this directory.
+    outerdir = pathlib.Path(TEMPDIR) / 'outerdir'
+
+    # The destination for the extraction, within `outerdir`
+    destdir = outerdir / 'dest'
+
+    @contextmanager
+    def check_context(self, tar, filter):
+        """Extracts `tar` to `self.destdir` and allows checking the result
+
+        If an error occurs, it must be checked using `expect_exception`
+
+        Otherwise, all resulting files must be checked using `expect_file`,
+        except the destination directory itself and parent directories of
+        other files.
+        When checking directories, do so before their contents.
+        """
+        with support.temp_dir(self.outerdir):
+            try:
+                tar.extractall(self.destdir, filter=filter)
+            except Exception as exc:
+                self.raised_exception = exc
+                self.expected_paths = set()
+            else:
+                self.raised_exception = None
+                self.expected_paths = set(self.outerdir.glob('**/*'))
+                self.expected_paths.discard(self.destdir)
+            try:
+                yield
+            finally:
+                tar.close()
+            if self.raised_exception:
+                raise self.raised_exception
+            self.assertEqual(self.expected_paths, set())
+
+    def expect_file(self, name, type=None, symlink_to=None, mode=None):
+        """Check a single file. See check_context."""
+        if self.raised_exception:
+            raise self.raised_exception
+        # use normpath() rather than resolve() so we don't follow symlinks
+        path = pathlib.Path(os.path.normpath(self.destdir / name))
+        self.assertIn(path, self.expected_paths)
+        self.expected_paths.remove(path)
+
+        # When checking mode, ignore Windows (which can only set user read and
+        # user write bits). Newer versions of Python use `os_helper.can_chmod()`
+        # instead of hardcoding Windows.
+        if mode is not None and sys.platform != 'win32':
+            got = stat.filemode(stat.S_IMODE(path.stat().st_mode))
+            self.assertEqual(got, mode)
+
+        if type is None and isinstance(name, str) and name.endswith('/'):
+            type = tarfile.DIRTYPE
+        if symlink_to is not None:
+            got = pathlib.Path(os.readlink(self.destdir / name))
+            expected = pathlib.Path(symlink_to)
+            # The symlink might be the same (textually) as what we expect,
+            # but some systems change the link to an equivalent path, so
+            # we fall back to samefile().
+            if expected != got:
+                self.assertTrue(got.samefile(expected))
+        elif type == tarfile.REGTYPE or type is None:
+            self.assertTrue(path.is_file())
+        elif type == tarfile.DIRTYPE:
+            self.assertTrue(path.is_dir())
+        elif type == tarfile.FIFOTYPE:
+            self.assertTrue(path.is_fifo())
+        else:
+            raise NotImplementedError(type)
+        for parent in path.parents:
+            self.expected_paths.discard(parent)
+
+    def expect_exception(self, exc_type, message_re='.'):
+        with self.assertRaisesRegex(exc_type, message_re):
+            if self.raised_exception is not None:
+                raise self.raised_exception
+        self.raised_exception = None
+
+    def test_benign_file(self):
+        with ArchiveMaker() as arc:
+            arc.add('benign.txt')
+        for filter in 'fully_trusted', 'tar', 'data':
+            with self.check_context(arc.open(), filter):
+                self.expect_file('benign.txt')
+
+    def test_absolute(self):
+        # Test handling a member with an absolute path
+        # Inspired by 'absolute1' in https://github.com/jwilk/traversal-archives
+        with ArchiveMaker() as arc:
+            arc.add(self.outerdir / 'escaped.evil')
+
+        with self.check_context(arc.open(), 'fully_trusted'):
+            self.expect_file('../escaped.evil')
+
+        for filter in 'tar', 'data':
+            with self.check_context(arc.open(), filter):
+                if str(self.outerdir).startswith('/'):
+                    # We strip leading slashes, as e.g. GNU tar does
+                    # (without --absolute-filenames).
+                    outerdir_stripped = str(self.outerdir).lstrip('/')
+                    self.expect_file(f'{outerdir_stripped}/escaped.evil')
+                else:
+                    # On this system, absolute paths don't have leading
+                    # slashes.
+                    # So, there's nothing to strip. We refuse to unpack
+                    # to an absolute path, nonetheless.
+                    self.expect_exception(
+                        tarfile.AbsolutePathError,
+                        """['"].*escaped.evil['"] has an absolute path""")
+
+    def test_parent_symlink(self):
+        # Test interplaying symlinks
+        # Inspired by 'dirsymlink2a' in jwilk/traversal-archives
+        with ArchiveMaker() as arc:
+            arc.add('current', symlink_to='.')
+            arc.add('parent', symlink_to='current/..')
+            arc.add('parent/evil')
+
+        if support.can_symlink():
+            with self.check_context(arc.open(), 'fully_trusted'):
+                if self.raised_exception is not None:
+                    # Windows will refuse to create a file that's a symlink to itself
+                    # (and tarfile doesn't swallow that exception)
+                    self.expect_exception(FileExistsError)
+                    # The other cases will fail with this error too.
+                    # Skip the rest of this test.
+                    return
+                else:
+                    self.expect_file('current', symlink_to='.')
+                    self.expect_file('parent', symlink_to='current/..')
+                    self.expect_file('../evil')
+
+            with self.check_context(arc.open(), 'tar'):
+                self.expect_exception(
+                    tarfile.OutsideDestinationError,
+                    """'parent/evil' would be extracted to ['"].*evil['"], """
+                    + "which is outside the destination")
+
+            with self.check_context(arc.open(), 'data'):
+                self.expect_exception(
+                    tarfile.LinkOutsideDestinationError,
+                    """'parent' would link to ['"].*outerdir['"], """
+                    + "which is outside the destination")
+
+        else:
+            # No symlink support. The symlinks are ignored.
+            with self.check_context(arc.open(), 'fully_trusted'):
+                self.expect_file('parent/evil')
+            with self.check_context(arc.open(), 'tar'):
+                self.expect_file('parent/evil')
+            with self.check_context(arc.open(), 'data'):
+                self.expect_file('parent/evil')
+
+    def test_parent_symlink2(self):
+        # Test interplaying symlinks
+        # Inspired by 'dirsymlink2b' in jwilk/traversal-archives
+        with ArchiveMaker() as arc:
+            arc.add('current', symlink_to='.')
+            arc.add('current/parent', symlink_to='..')
+            arc.add('parent/evil')
+
+        with self.check_context(arc.open(), 'fully_trusted'):
+            if support.can_symlink():
+                self.expect_file('current', symlink_to='.')
+                self.expect_file('parent', symlink_to='..')
+                self.expect_file('../evil')
+            else:
+                self.expect_file('current/')
+                self.expect_file('parent/evil')
+
+        with self.check_context(arc.open(), 'tar'):
+            if support.can_symlink():
+                self.expect_exception(
+                        tarfile.OutsideDestinationError,
+                        "'parent/evil' would be extracted to "
+                        + """['"].*evil['"], which is outside """
+                        + "the destination")
+            else:
+                self.expect_file('current/')
+                self.expect_file('parent/evil')
+
+        with self.check_context(arc.open(), 'data'):
+            self.expect_exception(
+                    tarfile.LinkOutsideDestinationError,
+                    """'current/parent' would link to ['"].*['"], """
+                    + "which is outside the destination")
+
+    def test_absolute_symlink(self):
+        # Test symlink to an absolute path
+        # Inspired by 'dirsymlink' in jwilk/traversal-archives
+        with ArchiveMaker() as arc:
+            arc.add('parent', symlink_to=self.outerdir)
+            arc.add('parent/evil')
+
+        with self.check_context(arc.open(), 'fully_trusted'):
+            if support.can_symlink():
+                self.expect_file('parent', symlink_to=self.outerdir)
+                self.expect_file('../evil')
+            else:
+                self.expect_file('parent/evil')
+
+        with self.check_context(arc.open(), 'tar'):
+            if support.can_symlink():
+                self.expect_exception(
+                        tarfile.OutsideDestinationError,
+                        "'parent/evil' would be extracted to "
+                        + """['"].*evil['"], which is outside """
+                        + "the destination")
+            else:
+                self.expect_file('parent/evil')
+
+        with self.check_context(arc.open(), 'data'):
+            self.expect_exception(
+                tarfile.AbsoluteLinkError,
+                "'parent' is a symlink to an absolute path")
+
+    def test_sly_relative0(self):
+        # Inspired by 'relative0' in jwilk/traversal-archives
+        with ArchiveMaker() as arc:
+            arc.add('../moo', symlink_to='..//tmp/moo')
+
+        try:
+            with self.check_context(arc.open(), filter='fully_trusted'):
+                if support.can_symlink():
+                    if isinstance(self.raised_exception, FileExistsError):
+                        # XXX TarFile happens to fail creating a parent
+                        # directory.
+                        # This might be a bug, but fixing it would hurt
+                        # security.
+                        # Note that e.g. GNU `tar` rejects '..' components,
+                        # so you could argue this is an invalid archive and we
+                        # just raise an bad type of exception.
+                        self.expect_exception(FileExistsError)
+                    else:
+                        self.expect_file('../moo', symlink_to='..//tmp/moo')
+                else:
+                    # The symlink can't be extracted and is ignored
+                    pass
+        except FileExistsError:
+            pass
+
+        for filter in 'tar', 'data':
+            with self.check_context(arc.open(), filter):
+                self.expect_exception(
+                        tarfile.OutsideDestinationError,
+                        "'../moo' would be extracted to "
+                        + "'.*moo', which is outside "
+                        + "the destination")
+
+    def test_sly_relative2(self):
+        # Inspired by 'relative2' in jwilk/traversal-archives
+        with ArchiveMaker() as arc:
+            arc.add('tmp/')
+            arc.add('tmp/../../moo', symlink_to='tmp/../..//tmp/moo')
+
+        with self.check_context(arc.open(), 'fully_trusted'):
+            self.expect_file('tmp', type=tarfile.DIRTYPE)
+            if support.can_symlink():
+                self.expect_file('../moo', symlink_to='tmp/../../tmp/moo')
+
+        for filter in 'tar', 'data':
+            with self.check_context(arc.open(), filter):
+                self.expect_exception(
+                    tarfile.OutsideDestinationError,
+                    "'tmp/../../moo' would be extracted to "
+                    + """['"].*moo['"], which is outside the """
+                    + "destination")
+
+    def test_modes(self):
+        # Test how file modes are extracted
+        # (Note that the modes are ignored on platforms without working chmod)
+        with ArchiveMaker() as arc:
+            arc.add('all_bits', mode='?rwsrwsrwt')
+            arc.add('perm_bits', mode='?rwxrwxrwx')
+            arc.add('exec_group_other', mode='?rw-rwxrwx')
+            arc.add('read_group_only', mode='?---r-----')
+            arc.add('no_bits', mode='?---------')
+            arc.add('dir/', mode='?---rwsrwt')
+
+        # On some systems, setting the sticky bit is a no-op.
+        # Check if that's the case.
+        tmp_filename = os.path.join(TEMPDIR, "tmp.file")
+        with open(tmp_filename, 'w'):
+            pass
+        os.chmod(tmp_filename, os.stat(tmp_filename).st_mode | stat.S_ISVTX)
+        have_sticky_files = (os.stat(tmp_filename).st_mode & stat.S_ISVTX)
+        os.unlink(tmp_filename)
+
+        os.mkdir(tmp_filename)
+        os.chmod(tmp_filename, os.stat(tmp_filename).st_mode | stat.S_ISVTX)
+        have_sticky_dirs = (os.stat(tmp_filename).st_mode & stat.S_ISVTX)
+        os.rmdir(tmp_filename)
+
+        with self.check_context(arc.open(), 'fully_trusted'):
+            if have_sticky_files:
+                self.expect_file('all_bits', mode='?rwsrwsrwt')
+            else:
+                self.expect_file('all_bits', mode='?rwsrwsrwx')
+            self.expect_file('perm_bits', mode='?rwxrwxrwx')
+            self.expect_file('exec_group_other', mode='?rw-rwxrwx')
+            self.expect_file('read_group_only', mode='?---r-----')
+            self.expect_file('no_bits', mode='?---------')
+            if have_sticky_dirs:
+                self.expect_file('dir/', mode='?---rwsrwt')
+            else:
+                self.expect_file('dir/', mode='?---rwsrwx')
+
+        with self.check_context(arc.open(), 'tar'):
+            self.expect_file('all_bits', mode='?rwxr-xr-x')
+            self.expect_file('perm_bits', mode='?rwxr-xr-x')
+            self.expect_file('exec_group_other', mode='?rw-r-xr-x')
+            self.expect_file('read_group_only', mode='?---r-----')
+            self.expect_file('no_bits', mode='?---------')
+            self.expect_file('dir/', mode='?---r-xr-x')
+
+        with self.check_context(arc.open(), 'data'):
+            normal_dir_mode = stat.filemode(stat.S_IMODE(
+                self.outerdir.stat().st_mode))
+            self.expect_file('all_bits', mode='?rwxr-xr-x')
+            self.expect_file('perm_bits', mode='?rwxr-xr-x')
+            self.expect_file('exec_group_other', mode='?rw-r--r--')
+            self.expect_file('read_group_only', mode='?rw-r-----')
+            self.expect_file('no_bits', mode='?rw-------')
+            self.expect_file('dir/', mode=normal_dir_mode)
+
+    def test_pipe(self):
+        # Test handling of a special file
+        with ArchiveMaker() as arc:
+            arc.add('foo', type=tarfile.FIFOTYPE)
+
+        for filter in 'fully_trusted', 'tar':
+            with self.check_context(arc.open(), filter):
+                if hasattr(os, 'mkfifo'):
+                    self.expect_file('foo', type=tarfile.FIFOTYPE)
+                else:
+                    # The pipe can't be extracted and is skipped.
+                    pass
+
+        with self.check_context(arc.open(), 'data'):
+            self.expect_exception(
+                tarfile.SpecialFileError,
+                "'foo' is a special file")
+
+    def test_special_files(self):
+        # Creating device files is tricky. Instead of attempting that let's
+        # only check the filter result.
+        for special_type in tarfile.FIFOTYPE, tarfile.CHRTYPE, tarfile.BLKTYPE:
+            tarinfo = tarfile.TarInfo('foo')
+            tarinfo.type = special_type
+            trusted = tarfile.fully_trusted_filter(tarinfo, '')
+            self.assertIs(trusted, tarinfo)
+            tar = tarfile.tar_filter(tarinfo, '')
+            self.assertEqual(tar.type, special_type)
+            with self.assertRaises(tarfile.SpecialFileError) as cm:
+                tarfile.data_filter(tarinfo, '')
+            self.assertIsInstance(cm.exception.tarinfo, tarfile.TarInfo)
+            self.assertEqual(cm.exception.tarinfo.name, 'foo')
+
+    def test_fully_trusted_filter(self):
+        # The 'fully_trusted' filter returns the original TarInfo objects.
+        with tarfile.TarFile.open(tarname) as tar:
+            for tarinfo in tar.getmembers():
+                filtered = tarfile.fully_trusted_filter(tarinfo, '')
+                self.assertIs(filtered, tarinfo)
+
+    def test_tar_filter(self):
+        # The 'tar' filter returns TarInfo objects with the same name/type.
+        # (It can also fail for particularly "evil" input, but we don't have
+        # that in the test archive.)
+        with tarfile.TarFile.open(tarname) as tar:
+            for tarinfo in tar.getmembers():
+                filtered = tarfile.tar_filter(tarinfo, '')
+                self.assertIs(filtered.name, tarinfo.name)
+                self.assertIs(filtered.type, tarinfo.type)
+
+    def test_data_filter(self):
+        # The 'data' filter either raises, or returns TarInfo with the same
+        # name/type.
+        with tarfile.TarFile.open(tarname) as tar:
+            for tarinfo in tar.getmembers():
+                try:
+                    filtered = tarfile.data_filter(tarinfo, '')
+                except tarfile.FilterError:
+                    continue
+                self.assertIs(filtered.name, tarinfo.name)
+                self.assertIs(filtered.type, tarinfo.type)
+
+    def test_default_filter_warns_not(self):
+        """Ensure the default filter does not warn (like in 3.12)"""
+        with ArchiveMaker() as arc:
+            arc.add('foo')
+        with support.check_no_warnings(self):
+            with self.check_context(arc.open(), None):
+                self.expect_file('foo')
+
+    def test_change_default_filter_on_instance(self):
+        tar = tarfile.TarFile(tarname, 'r')
+        def strict_filter(tarinfo, path):
+            if tarinfo.name == 'ustar/regtype':
+                return tarinfo
+            else:
+                return None
+        tar.extraction_filter = strict_filter
+        with self.check_context(tar, None):
+            self.expect_file('ustar/regtype')
+
+    def test_change_default_filter_on_class(self):
+        def strict_filter(tarinfo, path):
+            if tarinfo.name == 'ustar/regtype':
+                return tarinfo
+            else:
+                return None
+        tar = tarfile.TarFile(tarname, 'r')
+        with support.swap_attr(tarfile.TarFile, 'extraction_filter',
+                               staticmethod(strict_filter)):
+            with self.check_context(tar, None):
+                self.expect_file('ustar/regtype')
+
+    def test_change_default_filter_on_subclass(self):
+        class TarSubclass(tarfile.TarFile):
+            def extraction_filter(self, tarinfo, path):
+                if tarinfo.name == 'ustar/regtype':
+                    return tarinfo
+                else:
+                    return None
+
+        tar = TarSubclass(tarname, 'r')
+        with self.check_context(tar, None):
+            self.expect_file('ustar/regtype')
+
+    def test_change_default_filter_to_string(self):
+        tar = tarfile.TarFile(tarname, 'r')
+        tar.extraction_filter = 'data'
+        with self.check_context(tar, None):
+            self.expect_exception(TypeError)
+
+    def test_custom_filter(self):
+        def custom_filter(tarinfo, path):
+            self.assertIs(path, self.destdir)
+            if tarinfo.name == 'move_this':
+                return tarinfo.replace(name='moved')
+            if tarinfo.name == 'ignore_this':
+                return None
+            return tarinfo
+
+        with ArchiveMaker() as arc:
+            arc.add('move_this')
+            arc.add('ignore_this')
+            arc.add('keep')
+        with self.check_context(arc.open(), custom_filter):
+            self.expect_file('moved')
+            self.expect_file('keep')
+
+    def test_bad_filter_name(self):
+        with ArchiveMaker() as arc:
+            arc.add('foo')
+        with self.check_context(arc.open(), 'bad filter name'):
+            self.expect_exception(ValueError)
+
+    def test_stateful_filter(self):
+        # Stateful filters should be possible.
+        # (This doesn't really test tarfile. Rather, it demonstrates
+        # that third parties can implement a stateful filter.)
+        class StatefulFilter:
+            def __enter__(self):
+                self.num_files_processed = 0
+                return self
+
+            def __call__(self, tarinfo, path):
+                try:
+                    tarinfo = tarfile.data_filter(tarinfo, path)
+                except tarfile.FilterError:
+                    return None
+                self.num_files_processed += 1
+                return tarinfo
+
+            def __exit__(self, *exc_info):
+                self.done = True
+
+        with ArchiveMaker() as arc:
+            arc.add('good')
+            arc.add('bad', symlink_to='/')
+            arc.add('good')
+        with StatefulFilter() as custom_filter:
+            with self.check_context(arc.open(), custom_filter):
+                self.expect_file('good')
+        self.assertEqual(custom_filter.num_files_processed, 2)
+        self.assertEqual(custom_filter.done, True)
+
+    def test_errorlevel(self):
+        def extracterror_filter(tarinfo, path):
+            raise tarfile.ExtractError('failed with ExtractError')
+        def filtererror_filter(tarinfo, path):
+            raise tarfile.FilterError('failed with FilterError')
+        def oserror_filter(tarinfo, path):
+            raise OSError('failed with OSError')
+        def tarerror_filter(tarinfo, path):
+            raise tarfile.TarError('failed with base TarError')
+        def valueerror_filter(tarinfo, path):
+            raise ValueError('failed with ValueError')
+
+        with ArchiveMaker() as arc:
+            arc.add('file')
+
+        # If errorlevel is 0, errors affected by errorlevel are ignored
+
+        with self.check_context(arc.open(errorlevel=0), extracterror_filter):
+            self.expect_file('file')
+
+        with self.check_context(arc.open(errorlevel=0), filtererror_filter):
+            self.expect_file('file')
+
+        with self.check_context(arc.open(errorlevel=0), oserror_filter):
+            self.expect_file('file')
+
+        with self.check_context(arc.open(errorlevel=0), tarerror_filter):
+            self.expect_exception(tarfile.TarError)
+
+        with self.check_context(arc.open(errorlevel=0), valueerror_filter):
+            self.expect_exception(ValueError)
+
+        # If 1, all fatal errors are raised
+
+        with self.check_context(arc.open(errorlevel=1), extracterror_filter):
+            self.expect_file('file')
+
+        with self.check_context(arc.open(errorlevel=1), filtererror_filter):
+            self.expect_exception(tarfile.FilterError)
+
+        with self.check_context(arc.open(errorlevel=1), oserror_filter):
+            self.expect_exception(OSError)
+
+        with self.check_context(arc.open(errorlevel=1), tarerror_filter):
+            self.expect_exception(tarfile.TarError)
+
+        with self.check_context(arc.open(errorlevel=1), valueerror_filter):
+            self.expect_exception(ValueError)
+
+        # If 2, all non-fatal errors are raised as well.
+
+        with self.check_context(arc.open(errorlevel=2), extracterror_filter):
+            self.expect_exception(tarfile.ExtractError)
+
+        with self.check_context(arc.open(errorlevel=2), filtererror_filter):
+            self.expect_exception(tarfile.FilterError)
+
+        with self.check_context(arc.open(errorlevel=2), oserror_filter):
+            self.expect_exception(OSError)
+
+        with self.check_context(arc.open(errorlevel=2), tarerror_filter):
+            self.expect_exception(tarfile.TarError)
+
+        with self.check_context(arc.open(errorlevel=2), valueerror_filter):
+            self.expect_exception(ValueError)
+
+        # We only handle ExtractionError, FilterError & OSError specially.
+
+        with self.check_context(arc.open(errorlevel='boo!'), filtererror_filter):
+            self.expect_exception(TypeError)  # errorlevel is not int
 
 
 def setUpModule():
