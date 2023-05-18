@@ -2227,7 +2227,12 @@ impl_definition block
         return module, cls
 
 
-def parse_file(filename, *, verify=True, output=None):
+def parse_file(
+        filename: str,
+        *,
+        verify: bool = True,
+        output: str | None = None
+) -> None:
     if not output:
         output = filename
 
@@ -2259,7 +2264,7 @@ def parse_file(filename, *, verify=True, output=None):
             write_file(fn, data)
 
 
-def compute_checksum(input, length=None):
+def compute_checksum(input: str, length: int | None = None) -> str:
     input = input or ''
     s = hashlib.sha1(input.encode('utf-8')).hexdigest()
     if length:
@@ -2270,10 +2275,10 @@ def compute_checksum(input, length=None):
 
 
 class PythonParser:
-    def __init__(self, clinic):
+    def __init__(self, clinic: Clinic) -> None:
         pass
 
-    def parse(self, block):
+    def parse(self, block: Block) -> None:
         s = io.StringIO()
         with OverrideStdioWith(s):
             exec(block.input)
@@ -2281,19 +2286,33 @@ class PythonParser:
 
 
 class Module:
-    def __init__(self, name, module=None):
+    def __init__(
+            self,
+            name: str,
+            module: Module | None = None
+    ) -> None:
         self.name = name
         self.module = self.parent = module
 
-        self.modules = collections.OrderedDict()
-        self.classes = collections.OrderedDict()
-        self.functions = []
+        self.modules: ModuleDict = collections.OrderedDict()
+        self.classes: ClassDict = collections.OrderedDict()
+        self.functions: list[Function] = []
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<clinic.Module " + repr(self.name) + " at " + str(id(self)) + ">"
 
+ModuleDict = dict[str, Module]
+
+
 class Class:
-    def __init__(self, name, module=None, cls=None, typedef=None, type_object=None):
+    def __init__(
+            self,
+            name: str,
+            module: Module | None = None,
+            cls: Class | None = None,
+            typedef: str | None = None,
+            type_object: str | None = None
+    ) -> None:
         self.name = name
         self.module = module
         self.cls = cls
@@ -2301,13 +2320,16 @@ class Class:
         self.type_object = type_object
         self.parent = cls or module
 
-        self.classes = collections.OrderedDict()
-        self.functions = []
+        self.classes: ClassDict = collections.OrderedDict()
+        self.functions: list[Function] = []
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<clinic.Class " + repr(self.name) + " at " + str(id(self)) + ">"
 
-unsupported_special_methods = set("""
+ClassDict = dict[str, Class]
+
+
+unsupported_special_methods: set[str] = set("""
 
 __abs__
 __add__
