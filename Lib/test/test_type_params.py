@@ -425,11 +425,11 @@ class TypeParamsLazyEvaluationTest(unittest.TestCase):
         type_params = Foo.__type_params__
         self.assertEqual(len(type_params), 2)
         self.assertEqual(type_params[0].__name__, "T")
-        self.assertEqual(type_params[0].__bound__, Foo)
-        self.assertEqual(type_params[0].__constraints__, None)
+        self.assertIs(type_params[0].__bound__, Foo)
+        self.assertEqual(type_params[0].__constraints__, ())
 
         self.assertEqual(type_params[1].__name__, "U")
-        self.assertEqual(type_params[1].__bound__, None)
+        self.assertIs(type_params[1].__bound__, None)
         self.assertEqual(type_params[1].__constraints__, (Foo, Foo))
 
     def test_evaluation_error(self):
@@ -439,16 +439,16 @@ class TypeParamsLazyEvaluationTest(unittest.TestCase):
         type_params = Foo.__type_params__
         with self.assertRaises(NameError):
             type_params[0].__bound__
-        self.assertEqual(type_params[0].__constraints__, None)
-        self.assertEqual(type_params[1].__bound__, None)
+        self.assertEqual(type_params[0].__constraints__, ())
+        self.assertIs(type_params[1].__bound__, None)
         with self.assertRaises(NameError):
             type_params[1].__constraints__
 
         Undefined = "defined"
         self.assertEqual(type_params[0].__bound__, "defined")
-        self.assertEqual(type_params[0].__constraints__, None)
+        self.assertEqual(type_params[0].__constraints__, ())
 
-        self.assertEqual(type_params[1].__bound__, None)
+        self.assertIs(type_params[1].__bound__, None)
         self.assertEqual(type_params[1].__constraints__, ("defined",))
 
 

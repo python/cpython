@@ -1775,8 +1775,8 @@ del _pickle_psargs, _pickle_pskwargs
 
 
 class _ProtocolMeta(ABCMeta):
-    # This metaclass is really unfortunate and exists only because of
-    # the lack of __instancehook__.
+    # This metaclass is somewhat unfortunate,
+    # but is necessary for several reasons...
     def __init__(cls, *args, **kwargs):
         super().__init__(*args, **kwargs)
         cls.__protocol_attrs__ = _get_protocol_attrs(cls)
@@ -1785,6 +1785,17 @@ class _ProtocolMeta(ABCMeta):
         cls.__callable_proto_members_only__ = all(
             callable(getattr(cls, attr, None)) for attr in cls.__protocol_attrs__
         )
+
+    def __subclasscheck__(cls, other):
+        if (
+            getattr(cls, '_is_protocol', False)
+            and not cls.__callable_proto_members_only__
+            and not _allow_reckless_class_checks(depth=2)
+        ):
+            raise TypeError(
+                "Protocols with non-method members don't support issubclass()"
+            )
+        return super().__subclasscheck__(other)
 
     def __instancecheck__(cls, instance):
         # We need this method for situations where attributes are
@@ -1869,11 +1880,6 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
                 raise TypeError("Instance and class checks can only be used with"
                                 " @runtime_checkable protocols")
 
-            if not cls.__callable_proto_members_only__ :
-                if _allow_reckless_class_checks():
-                    return NotImplemented
-                raise TypeError("Protocols with non-method members"
-                                " don't support issubclass()")
             if not isinstance(other, type):
                 # Same error message as for issubclass(1, int).
                 raise TypeError('issubclass() arg 1 must be a class')
@@ -2471,8 +2477,9 @@ def final(f):
     return f
 
 
-# Some unconstrained type variables.  These are used by the container types.
-# (These are not for export.)
+# Some unconstrained type variables.  These were initially used by the container types.
+# They were never meant for export and are now unused, but we keep them around to
+# avoid breaking compatibility with users who import them.
 T = TypeVar('T')  # Any type.
 KT = TypeVar('KT')  # Key type.
 VT = TypeVar('VT')  # Value type.
@@ -2577,8 +2584,6 @@ Type.__doc__ = \
     At this point the type checker knows that joe has type BasicUser.
     """
 
-# Internal type variable for callables. Not for export.
-F = TypeVar("F", bound=Callable[..., Any])
 
 @runtime_checkable
 class SupportsInt(Protocol):
@@ -2631,22 +2636,22 @@ class SupportsIndex(Protocol):
 
 
 @runtime_checkable
-class SupportsAbs(Protocol[T_co]):
+class SupportsAbs[T](Protocol):
     """An ABC with one abstract method __abs__ that is covariant in its return type."""
     __slots__ = ()
 
     @abstractmethod
-    def __abs__(self) -> T_co:
+    def __abs__(self) -> T:
         pass
 
 
 @runtime_checkable
-class SupportsRound(Protocol[T_co]):
+class SupportsRound[T](Protocol):
     """An ABC with one abstract method __round__ that is covariant in its return type."""
     __slots__ = ()
 
     @abstractmethod
-    def __round__(self, ndigits: int = 0) -> T_co:
+    def __round__(self, ndigits: int = 0) -> T:
         pass
 
 
@@ -3183,7 +3188,7 @@ re.__name__ = __name__ + '.re'
 sys.modules[re.__name__] = re
 
 
-def reveal_type(obj: T, /) -> T:
+def reveal_type[T](obj: T, /) -> T:
     """Reveal the inferred type of a variable.
 
     When a static type checker encounters a call to ``reveal_type()``,
@@ -3203,6 +3208,11 @@ def reveal_type(obj: T, /) -> T:
     return obj
 
 
+class _IdentityCallable(Protocol):
+    def __call__[T](self, arg: T, /) -> T:
+        ...
+
+
 def dataclass_transform(
     *,
     eq_default: bool = True,
@@ -3211,7 +3221,7 @@ def dataclass_transform(
     frozen_default: bool = False,
     field_specifiers: tuple[type[Any] | Callable[..., Any], ...] = (),
     **kwargs: Any,
-) -> Callable[[T], T]:
+) -> _IdentityCallable:
     """Decorator that marks a function, class, or metaclass as providing
     dataclass-like behavior.
 
@@ -3288,8 +3298,10 @@ def dataclass_transform(
     return decorator
 
 
+type _Func = Callable[..., Any]
 
-def override(method: F, /) -> F:
+
+def override[F: _Func](method: F, /) -> F:
     """Indicate that a method is intended to override a method in a base class.
 
     Usage:
