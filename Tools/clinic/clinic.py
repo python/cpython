@@ -12,6 +12,7 @@ import collections
 import contextlib
 import copy
 import cpp
+import enum
 import functools
 import hashlib
 import inspect
@@ -28,7 +29,7 @@ import traceback
 
 from collections.abc import Callable
 from types import FunctionType, NoneType
-from typing import Any, NamedTuple, NoReturn, Literal, overload
+from typing import Any, Final, NamedTuple, NoReturn, Literal, overload
 
 # TODO:
 #
@@ -58,25 +59,26 @@ CLINIC_PREFIXED_ARGS = {
     "return_value",
 }
 
-class Unspecified:
+
+class Sentinels(enum.Enum):
+    unspecified = "unspecified"
+    unknown = "unknown"
+
     def __repr__(self) -> str:
-        return '<Unspecified>'
-
-unspecified = Unspecified()
+        return f"<{self.value.capitalize()}>"
 
 
+unspecified: Final = Sentinels.unspecified
+unknown: Final = Sentinels.unknown
+
+
+# This one needs to be a distinct class, unlike the other two
 class Null:
     def __repr__(self) -> str:
         return '<Null>'
 
+
 NULL = Null()
-
-
-class Unknown:
-    def __repr__(self) -> str:
-        return '<Unknown>'
-
-unknown = Unknown()
 
 sig_end_marker = '--'
 
@@ -2622,7 +2624,7 @@ class CConverter(metaclass=CConverterAutoRegister):
     # Or the magic value "unknown" if this value is a cannot be evaluated
     # at Argument-Clinic-preprocessing time (but is presumed to be valid
     # at runtime).
-    default: bool | Unspecified = unspecified
+    default: object = unspecified
 
     # If not None, default must be isinstance() of this type.
     # (You can also specify a tuple of types.)
@@ -2708,11 +2710,11 @@ class CConverter(metaclass=CConverterAutoRegister):
              name: str,
              py_name: str,
              function,
-             default=unspecified,
+             default: object = unspecified,
              *,  # Keyword only args:
              c_default: str | None = None,
              py_default: str | None = None,
-             annotation: str | Unspecified = unspecified,
+             annotation: str | Literal[Sentinels.unspecified] = unspecified,
              unused: bool = False,
              **kwargs
     ):
@@ -2721,7 +2723,10 @@ class CConverter(metaclass=CConverterAutoRegister):
         self.unused = unused
 
         if default is not unspecified:
-            if self.default_type and not isinstance(default, (self.default_type, Unknown)):
+            if (self.default_type
+                and default is not unknown
+                and not isinstance(default, self.default_type)
+            ):
                 if isinstance(self.default_type, type):
                     types_str = self.default_type.__name__
                 else:
@@ -2735,7 +2740,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         if py_default:
             self.py_default = py_default
 
-        if annotation != unspecified:
+        if annotation is not unspecified:
             fail("The 'annotation' parameter is not currently permitted.")
 
         # this is deliberate, to prevent you from caching information
@@ -3989,7 +3994,7 @@ class CReturnConverter(metaclass=CReturnConverterAutoRegister):
 
     # The Python default value for this parameter, as a Python value.
     # Or the magic value "unspecified" if there is no default.
-    default = None
+    default: object = None
 
     def __init__(self, *, py_default=None, **kwargs):
         self.py_default = py_default
@@ -4252,10 +4257,8 @@ class DSLParser:
 
     def directive_class(self, name, typedef, type_object):
         fields = name.split('.')
-        in_classes = False
         parent = self
         name = fields.pop()
-        so_far = []
         module, cls = self.clinic._module_and_class(fields)
 
         parent = cls or module
@@ -4791,7 +4794,7 @@ class DSLParser:
                     # but at least make an attempt at ensuring it's a valid expression.
                     try:
                         value = eval(default)
-                        if value == unspecified:
+                        if value is unspecified:
                             fail("'unspecified' is not a legal default value!")
                     except NameError:
                         pass # probably a named constant
