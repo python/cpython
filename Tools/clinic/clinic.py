@@ -29,7 +29,7 @@ import traceback
 
 from collections.abc import Callable
 from types import FunctionType, NoneType
-from typing import Any, NamedTuple, NoReturn, Literal, overload
+from typing import Any, Final, NamedTuple, NoReturn, Literal, overload
 
 # TODO:
 #
@@ -74,6 +74,7 @@ NULL: Final = Sentinels.NULL
 unknown: Final = Sentinels.unknown
 
 NullType = type(Sentinels.NULL)
+
 
 sig_end_marker = '--'
 
@@ -2597,7 +2598,7 @@ class CConverter(metaclass=CConverterAutoRegister):
     # Or the magic value "unknown" if this value is a cannot be evaluated
     # at Argument-Clinic-preprocessing time (but is presumed to be valid
     # at runtime).
-    default: bool | Unspecified = unspecified
+    default: bool | Literal[Sentinels.unspecified] = unspecified
 
     # If not None, default must be isinstance() of this type.
     # (You can also specify a tuple of types.)
@@ -2697,10 +2698,8 @@ class CConverter(metaclass=CConverterAutoRegister):
 
         if default is not unspecified:
             if (self.default_type
-                and not (
-                    isinstance(default, self.default_type)
-                    or default is unknown
-                )
+                and default is not unknown
+                and not isinstance(default, self.default_type)
             ):
                 if isinstance(self.default_type, type):
                     types_str = self.default_type.__name__
