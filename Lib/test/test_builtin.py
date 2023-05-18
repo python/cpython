@@ -2493,10 +2493,9 @@ class TestType(unittest.TestCase):
         self.assertIsInstance(T, typing.TypeVar)
         A.__type_params__ = "whatever"
         self.assertEqual(A.__type_params__, "whatever")
-        del A.__type_params__
-        self.assertEqual(A.__type_params__, ())
-        with self.assertRaises(AttributeError):
+        with self.assertRaises(TypeError):
             del A.__type_params__
+        self.assertEqual(A.__type_params__, "whatever")
 
     def test_type_doc(self):
         for doc in 'x', '\xc4', '\U0001f40d', 'x\x00y', b'x', 42, None:

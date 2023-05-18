@@ -1505,26 +1505,12 @@ type_get_type_params(PyTypeObject *type, void *context)
 static int
 type_set_type_params(PyTypeObject *type, PyObject *value, void *context)
 {
-    if (_PyType_HasFeature(type, Py_TPFLAGS_IMMUTABLETYPE)) {
-        PyErr_Format(PyExc_TypeError,
-                     "cannot set '__type_params__' attribute of immutable type '%s'",
-                     type->tp_name);
+    if (!check_set_special_type_attr(type, value, "__type_params__")) {
         return -1;
     }
 
-    int result;
     PyObject *dict = lookup_tp_dict(type);
-    if (value != NULL) {
-        /* set */
-        result = PyDict_SetItem(dict, &_Py_ID(__type_params__), value);
-    } else {
-        /* delete */
-        if (!PyDict_Contains(dict, &_Py_ID(__type_params__))) {
-            PyErr_Format(PyExc_AttributeError, "__type_params__");
-            return -1;
-        }
-        result = PyDict_DelItem(dict, &_Py_ID(__type_params__));
-    }
+    int result = PyDict_SetItem(dict, &_Py_ID(__type_params__), value);
 
     if (result == 0) {
         PyType_Modified(type);
