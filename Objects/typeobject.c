@@ -1460,18 +1460,6 @@ type_get_annotations(PyTypeObject *type, void *context)
     return annotations;
 }
 
-static PyObject *
-type_get_type_params(PyTypeObject *type, void *context)
-{
-    PyObject *params = PyDict_GetItem(lookup_tp_dict(type), &_Py_ID(__type_params__));
-
-    if (params) {
-        return Py_NewRef(params);
-    }
-
-    return PyTuple_New(0);
-}
-
 static int
 type_set_annotations(PyTypeObject *type, PyObject *value, void *context)
 {
@@ -1494,6 +1482,48 @@ type_set_annotations(PyTypeObject *type, PyObject *value, void *context)
             return -1;
         }
         result = PyDict_DelItem(dict, &_Py_ID(__annotations__));
+    }
+
+    if (result == 0) {
+        PyType_Modified(type);
+    }
+    return result;
+}
+
+static PyObject *
+type_get_type_params(PyTypeObject *type, void *context)
+{
+    PyObject *params = PyDict_GetItem(lookup_tp_dict(type), &_Py_ID(__type_params__));
+
+    if (params) {
+        return Py_NewRef(params);
+    }
+
+    return PyTuple_New(0);
+}
+
+static int
+type_set_type_params(PyTypeObject *type, PyObject *value, void *context)
+{
+    if (_PyType_HasFeature(type, Py_TPFLAGS_IMMUTABLETYPE)) {
+        PyErr_Format(PyExc_TypeError,
+                     "cannot set '__type_params__' attribute of immutable type '%s'",
+                     type->tp_name);
+        return -1;
+    }
+
+    int result;
+    PyObject *dict = lookup_tp_dict(type);
+    if (value != NULL) {
+        /* set */
+        result = PyDict_SetItem(dict, &_Py_ID(__type_params__), value);
+    } else {
+        /* delete */
+        if (!PyDict_Contains(dict, &_Py_ID(__type_params__))) {
+            PyErr_Format(PyExc_AttributeError, "__type_params__");
+            return -1;
+        }
+        result = PyDict_DelItem(dict, &_Py_ID(__type_params__));
     }
 
     if (result == 0) {
@@ -1548,7 +1578,7 @@ static PyGetSetDef type_getsets[] = {
     {"__doc__", (getter)type_get_doc, (setter)type_set_doc, NULL},
     {"__text_signature__", (getter)type_get_text_signature, NULL, NULL},
     {"__annotations__", (getter)type_get_annotations, (setter)type_set_annotations, NULL},
-    {"__type_params__", (getter)type_get_type_params, NULL, NULL},
+    {"__type_params__", (getter)type_get_type_params, (setter)type_set_type_params, NULL},
     {0}
 };
 
