@@ -1287,27 +1287,38 @@ thread_run(void *boot_raw)
     struct bootstate *boot = (struct bootstate *) boot_raw;
     struct module_threads *threads = &boot->module_state->threads;
     struct module_thread *mt = boot->module_thread;
+    PyObject *pyfunc = boot->func;
+    PyObject *pyargs = boot->args;
+    PyObject *pykwargs = boot->kwargs;
 
     bind_module_thread(threads, mt);
 
-    // Run the Python function with the GIL held.
     PyEval_AcquireThread(mt->tstate);
+    // We free the boot state before running pyfunc
+    // since daemon threads can exit before PyObject_Call() returns.
+    // We can't do much about leaking pyfunc/pyargs/pykwargs though.
+    PyMem_Free(boot);
+
+    // Run the Python function with the GIL held.
     set_module_thread_starting(threads, mt);
-    PyObject *res = PyObject_Call(boot->func, boot->args, boot->kwargs);
+    PyObject *res = PyObject_Call(pyfunc, pyargs, pykwargs);
     if (res == NULL) {
         if (PyErr_ExceptionMatches(PyExc_SystemExit))
             /* SystemExit is ignored silently */
             PyErr_Clear();
         else {
-            _PyErr_WriteUnraisableMsg("in thread started by", boot->func);
+            _PyErr_WriteUnraisableMsg("in thread started by", pyfunc);
         }
     }
     else {
         Py_DECREF(res);
     }
     set_module_thread_finished(threads, mt);
-    thread_bootstate_free(boot);
 
+    // Clean up everything we created in thread_PyThread_start_new_thread().
+    Py_DECREF(pyfunc);
+    Py_DECREF(pyargs);
+    Py_XDECREF(pykwargs);
     release_module_thread_tstate(threads, mt);
     finalize_module_thread(threads, mt);
 
