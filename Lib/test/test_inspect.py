@@ -2052,6 +2052,9 @@ class TestGetattrStatic(unittest.TestCase):
         descriptor.__set__ = lambda s, i, v: None
         self.assertEqual(inspect.getattr_static(foo, 'd'), Foo.__dict__['d'])
 
+        del descriptor.__set__
+        descriptor.__delete__ = lambda s, i, o: None
+        self.assertEqual(inspect.getattr_static(foo, 'd'), Foo.__dict__['d'])
 
     def test_metaclass_with_descriptor(self):
         class descriptor(object):

@@ -293,7 +293,8 @@ _enter_buffered_busy(buffered *self)
                      "reentrant call inside %R", self);
         return 0;
     }
-    relax_locking = _Py_IsFinalizing();
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    relax_locking = _Py_IsInterpreterFinalizing(interp);
     Py_BEGIN_ALLOW_THREADS
     if (!relax_locking)
         st = PyThread_acquire_lock(self->lock, 1);
@@ -2423,13 +2424,6 @@ _io_BufferedRandom___init___impl(buffered *self, PyObject *raw,
 #include "clinic/bufferedio.c.h"
 #undef clinic_state
 
-static int
-bufferediobase_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
-}
-
 static PyMethodDef bufferediobase_methods[] = {
     _IO__BUFFEREDIOBASE_DETACH_METHODDEF
     _IO__BUFFEREDIOBASE_READ_METHODDEF
@@ -2443,13 +2437,13 @@ static PyMethodDef bufferediobase_methods[] = {
 static PyType_Slot bufferediobase_slots[] = {
     {Py_tp_doc, (void *)bufferediobase_doc},
     {Py_tp_methods, bufferediobase_methods},
-    {Py_tp_traverse, bufferediobase_traverse},
     {0, NULL},
 };
 
+/* Do not set Py_TPFLAGS_HAVE_GC so that tp_traverse and tp_clear are inherited */
 PyType_Spec bufferediobase_spec = {
     .name = "_io._BufferedIOBase",
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
               Py_TPFLAGS_IMMUTABLETYPE),
     .slots = bufferediobase_slots,
 };

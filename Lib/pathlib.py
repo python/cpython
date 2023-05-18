@@ -62,14 +62,14 @@ def _is_case_sensitive(flavour):
 # Globbing helpers
 #
 
-@functools.lru_cache()
-def _compile_pattern_part(pattern_part, case_sensitive):
+@functools.lru_cache(maxsize=256)
+def _compile_pattern(pat, case_sensitive):
     """Compile given glob pattern to a re.Pattern object (observing case
     sensitivity), or None if the pattern should match everything."""
-    if pattern_part == '*':
+    if pat == '*':
         return None
     flags = re.NOFLAG if case_sensitive else re.IGNORECASE
-    return re.compile(fnmatch.translate(pattern_part), flags=flags).fullmatch
+    return re.compile(fnmatch.translate(pat), flags).match
 
 
 def _select_children(paths, dir_only, match):
@@ -602,22 +602,25 @@ class PurePath(object):
         name = self._tail[-1].partition('.')[0].partition(':')[0].rstrip(' ')
         return name.upper() in _WIN_RESERVED_NAMES
 
-    def match(self, path_pattern):
+    def match(self, path_pattern, *, case_sensitive=None):
         """
         Return True if this path matches the given pattern.
         """
+        if case_sensitive is None:
+            case_sensitive = _is_case_sensitive(self._flavour)
         pat = self.with_segments(path_pattern)
         if not pat.parts:
             raise ValueError("empty pattern")
-        pat_parts = pat._parts_normcase
-        parts = self._parts_normcase
+        pat_parts = pat.parts
+        parts = self.parts
         if pat.drive or pat.root:
             if len(pat_parts) != len(parts):
                 return False
         elif len(pat_parts) > len(parts):
             return False
         for part, pat in zip(reversed(parts), reversed(pat_parts)):
-            if not fnmatch.fnmatchcase(part, pat):
+            match = _compile_pattern(pat, case_sensitive)
+            if match is not None and not match(part):
                 return False
         return True
 
@@ -961,7 +964,7 @@ class Path(PurePath):
                 raise ValueError("Invalid pattern: '**' can only be an entire path component")
             else:
                 dir_only = part_idx < len(pattern_parts)
-                match = _compile_pattern_part(part, case_sensitive)
+                match = _compile_pattern(part, case_sensitive)
                 paths = _select_children(paths, dir_only, match)
         return paths
 
