@@ -1,9 +1,9 @@
 from test import support
 from test.support import os_helper
-from tokenize import (tokenize, tokenize2, _tokenize, untokenize, NUMBER, NAME, OP,
+from tokenize import (tokenize, _tokenize, untokenize, NUMBER, NAME, OP,
                      STRING, ENDMARKER, ENCODING, tok_name, detect_encoding,
                      open as tokenize_open, Untokenizer, generate_tokens,
-                     NEWLINE, _generate_tokens_from_c_tokenizer, DEDENT)
+                     NEWLINE, _generate_tokens_from_c_tokenizer, DEDENT, TokenInfo)
 from io import BytesIO, StringIO
 import unittest
 from textwrap import dedent
@@ -46,7 +46,7 @@ class TokenizeTest(TestCase):
         # Format the tokens in s in a table format.
         # The ENDMARKER and final NEWLINE are omitted.
         f = BytesIO(s.encode('utf-8'))
-        result = stringify_tokens_from_source(tokenize2(f.readline), s)
+        result = stringify_tokens_from_source(tokenize(f.readline), s)
         self.assertEqual(result,
                          ["    ENCODING   'utf-8'       (0, 0) (0, 0)"] +
                          expected.rstrip().splitlines())
@@ -1128,32 +1128,15 @@ class Test_Tokenize(TestCase):
             nonlocal first
             if not first:
                 first = True
-                return line
+                yield line
             else:
-                return b''
+                yield b''
 
         # skip the initial encoding token and the end tokens
-        tokens = list(_tokenize(readline, encoding='utf-8'))[1:-2]
-        expected_tokens = [(3, '"ЉЊЈЁЂ"', (1, 0), (1, 7), '"ЉЊЈЁЂ"')]
+        tokens = list(_tokenize(readline(), encoding='utf-8'))[:-2]
+        expected_tokens = [TokenInfo(3, '"ЉЊЈЁЂ"', (1, 0), (1, 7), '"ЉЊЈЁЂ"\n')]
         self.assertEqual(tokens, expected_tokens,
                          "bytes not decoded with encoding")
-
-    def test__tokenize_does_not_decode_with_encoding_none(self):
-        literal = '"ЉЊЈЁЂ"'
-        first = False
-        def readline():
-            nonlocal first
-            if not first:
-                first = True
-                return literal
-            else:
-                return b''
-
-        # skip the end tokens
-        tokens = list(_tokenize(readline, encoding=None))[:-2]
-        expected_tokens = [(3, '"ЉЊЈЁЂ"', (1, 0), (1, 7), '"ЉЊЈЁЂ"')]
-        self.assertEqual(tokens, expected_tokens,
-                         "string not tokenized when encoding is None")
 
 
 class TestDetectEncoding(TestCase):
@@ -1412,7 +1395,7 @@ class TestDetectEncoding(TestCase):
 
 class TestTokenize(TestCase):
 
-    def test_tokenizee(self):
+    def test_tokenize(self):
         import tokenize as tokenize_module
         encoding = "utf-8"
         encoding_used = None
@@ -1424,7 +1407,10 @@ class TestTokenize(TestCase):
             encoding_used = encoding
             out = []
             while True:
-                next_line = readline()
+                try:
+                    next_line = next(readline)
+                except StopIteration:
+                    return out
                 if next_line:
                     out.append(next_line)
                     continue
@@ -1444,7 +1430,7 @@ class TestTokenize(TestCase):
         tokenize_module._tokenize = mock__tokenize
         try:
             results = tokenize(mock_readline)
-            self.assertEqual(list(results),
+            self.assertEqual(list(results)[1:],
                              [b'first', b'second', b'1', b'2', b'3', b'4'])
         finally:
             tokenize_module.detect_encoding = orig_detect_encoding
@@ -1740,7 +1726,7 @@ class TestRoundtrip(TestCase):
             if support.verbose >= 2:
                 print('tokenize', testfile)
             with open(testfile, 'rb') as f:
-                with self.subTest(file=testfile):
+                # with self.subTest(file=testfile):
                     self.check_roundtrip(f)
 
 

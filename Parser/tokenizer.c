@@ -2600,6 +2600,9 @@ tok_get_fstring_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct 
 
 f_string_middle:
 
+    // TODO: This is a bit of a hack, but it works for now. We need to find a better way to handle
+    // this.
+    tok->multi_line_start = tok->line_start;
     while (end_quote_size != current_tok->f_string_quote_size) {
         int c = tok_nextc(tok);
         if (tok->done == E_ERROR) {

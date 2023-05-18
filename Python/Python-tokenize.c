@@ -113,7 +113,7 @@ _tokenizer_error(struct tok_state *tok)
             break;
         }
         default:
-            msg = "unknown parsing error";
+            msg = "unknown tokenization error";
     }
     PyErr_SetString(errtype, msg);
     return -1;
@@ -127,6 +127,7 @@ tokenizeriter_next(tokenizeriterobject *it)
     if (type == ERRORTOKEN) {
         if(!PyErr_Occurred()) {
             _tokenizer_error(it->tok);
+            assert(PyErr_Occurred());
         }
         return NULL;
     }
