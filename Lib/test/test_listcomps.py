@@ -385,12 +385,12 @@ class ListComprehensionTest(unittest.TestCase):
         code = """
             a = 1
             def f():
-                [(lambda: b) for b in [a]]
-                return b
+                func, = [(lambda: b) for b in [a]]
+                return b, func()
             x = f()
         """
         self._check_in_scopes(
-            code, {"x": 2}, ns={"b": 2}, scopes=["function", "module"])
+            code, {"x": (2, 1)}, ns={"b": 2}, scopes=["function", "module"])
         # inside a class, the `a = 1` assignment is not visible
         self._check_in_scopes(code, raises=NameError, scopes=["class"])
 
@@ -398,12 +398,12 @@ class ListComprehensionTest(unittest.TestCase):
         code = """
             a = 1
             def f():
-                [[lambda: b for b in c] + [b] for c in [[a]]]
-                return b
+                (func, inner_b), = [[lambda: b for b in c] + [b] for c in [[a]]]
+                return b, inner_b, func()
             x = f()
         """
         self._check_in_scopes(
-            code, {"x": 2}, ns={"b": 2}, scopes=["function", "module"])
+            code, {"x": (2, 2, 1)}, ns={"b": 2}, scopes=["function", "module"])
         # inside a class, the `a = 1` assignment is not visible
         self._check_in_scopes(code, raises=NameError, scopes=["class"])
 
