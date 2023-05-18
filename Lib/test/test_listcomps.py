@@ -470,6 +470,20 @@ class ListComprehensionTest(unittest.TestCase):
         """
         self._check_in_scopes(code, {"items": [1]})
 
+    def test_nested_free_var_in_expr(self):
+        code = """
+            items = [(_C, [x for x in [1] if _C]) for _C in [0, 1]]
+        """
+        self._check_in_scopes(code, {"items": [(0, []), (1, [1])]})
+
+    def test_nested_listcomp_in_lambda(self):
+        code = """
+            f = [(z, lambda y: [(x, y, z) for x in [3]]) for z in [1]]
+            (z, func), = f
+            out = func(2)
+        """
+        self._check_in_scopes(code, {"z": 1, "out": [(3, 2, 1)]})
+
 
 __test__ = {'doctests' : doctests}
 
