@@ -430,6 +430,7 @@ Constructor functions also accept the following tree hashing parameters:
 
 .. figure:: hashlib-blake2-tree.png
    :alt: Explanation of tree mode parameters.
+   :class: invert-in-dark-mode
 
 See section 2.10 in `BLAKE2 specification
 <https://www.blake2.net/blake2_20130129.pdf>`_ for comprehensive review of tree

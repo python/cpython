@@ -124,7 +124,7 @@ class CompilationStepTestCase(unittest.TestCase):
 class CodegenTestCase(CompilationStepTestCase):
 
     def generate_code(self, ast):
-        insts = compiler_codegen(ast, "my_file.py", 0)
+        insts, _ = compiler_codegen(ast, "my_file.py", 0)
         return insts
 
 

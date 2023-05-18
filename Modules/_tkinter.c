@@ -3283,20 +3283,6 @@ PyInit__tkinter(void)
     }
     PyTclObject_Type = o;
 
-#ifdef TK_AQUA
-    /* Tk_MacOSXSetupTkNotifier must be called before Tcl's subsystems
-     * start waking up.  Note that Tcl_FindExecutable will do this, this
-     * code must be above it! The original warning from
-     * tkMacOSXAppInit.c is copied below.
-     *
-     * NB - You have to swap in the Tk Notifier BEFORE you start up the
-     * Tcl interpreter for now.  It probably should work to do this
-     * in the other order, but for now it doesn't seem to.
-     *
-     */
-    Tk_MacOSXSetupTkNotifier();
-#endif
-
 
     /* This helps the dynamic loader; in Unicode aware Tcl versions
        it also helps Tcl find its encodings. */

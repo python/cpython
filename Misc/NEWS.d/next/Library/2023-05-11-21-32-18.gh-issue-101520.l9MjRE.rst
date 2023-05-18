@@ -1,0 +1,2 @@
+Move the core functionality of the ``tracemalloc`` module in the ``Python/``
+folder, leaving just the module wrapper in ``Modules/``.

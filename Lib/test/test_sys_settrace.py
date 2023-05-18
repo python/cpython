@@ -2867,6 +2867,5 @@ class TestSetLocalTrace(TraceTestCase):
         sys.settrace(None)
 
 
-
 if __name__ == "__main__":
     unittest.main()
