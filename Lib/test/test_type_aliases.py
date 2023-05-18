@@ -1,3 +1,4 @@
+import pickle
 import types
 import unittest
 from test.support import check_syntax_error, run_code
@@ -214,3 +215,9 @@ class TypeAliasTypeTest(unittest.TestCase):
                          mod_generics_cache.__name__)
         self.assertEqual(mod_generics_cache.OldStyle.__module__,
                          mod_generics_cache.__name__)
+
+    def test_pickling(self):
+        pickled = pickle.dumps(mod_generics_cache.Alias)
+        self.assertIs(pickle.loads(pickled), mod_generics_cache.Alias)
+        pickled = pickle.dumps(mod_generics_cache.OldStyle)
+        self.assertIs(pickle.loads(pickled), mod_generics_cache.OldStyle)

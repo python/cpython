@@ -1319,7 +1319,8 @@ typealias_module(PyObject *self, void *unused)
         return Py_NewRef(ta->module);
     }
     if (ta->compute_value != NULL) {
-        return PyFunction_GetModule(ta->compute_value);
+        // PyFunction_GetModule() returns a borrowed reference
+        return Py_NewRef(PyFunction_GetModule(ta->compute_value));
     }
     Py_RETURN_NONE;
 }
