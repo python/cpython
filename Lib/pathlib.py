@@ -690,6 +690,8 @@ class PurePath(object):
         """
         Return True if this path matches the given pattern.
         """
+        if case_sensitive is None:
+            case_sensitive = _is_case_sensitive(self._flavour)
         pat = self.with_segments(path_pattern)
         if not pat.parts:
             raise ValueError("empty pattern")
@@ -700,13 +702,8 @@ class PurePath(object):
                 return False
         elif len(pat_parts) > len(parts):
             return False
-        # Generate regex flag based on |case_sensitive| parameter.
-        if case_sensitive is None:
-            case_sensitive = _is_case_sensitive(self._flavour)
-        flags = re.NOFLAG if case_sensitive else re.IGNORECASE
-
         for part, pat in zip(reversed(parts), reversed(pat_parts)):
-            match = _compile_pattern(pat, flags)
+            match = _compile_pattern(pat, case_sensitive)
             if not match(part):
                 return False
         return True
