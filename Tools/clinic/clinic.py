@@ -62,7 +62,6 @@ CLINIC_PREFIXED_ARGS = {
 
 class Sentinels(enum.Enum):
     unspecified = "unspecified"
-    NULL = "null"
     unknown = "unknown"
 
     def __repr__(self) -> str:
@@ -70,11 +69,16 @@ class Sentinels(enum.Enum):
 
 
 unspecified: Final = Sentinels.unspecified
-NULL: Final = Sentinels.NULL
 unknown: Final = Sentinels.unknown
 
-NullType = type(Sentinels.NULL)
 
+# This one needs to be a distinct class, unlike the other two
+class Null:
+    def __repr__(self) -> str:
+        return '<Null>'
+
+
+NULL = Null()
 
 sig_end_marker = '--'
 
@@ -2598,7 +2602,7 @@ class CConverter(metaclass=CConverterAutoRegister):
     # Or the magic value "unknown" if this value is a cannot be evaluated
     # at Argument-Clinic-preprocessing time (but is presumed to be valid
     # at runtime).
-    default: bool | Literal[Sentinels.unspecified] = unspecified
+    default: object = unspecified
 
     # If not None, default must be isinstance() of this type.
     # (You can also specify a tuple of types.)
@@ -2684,7 +2688,7 @@ class CConverter(metaclass=CConverterAutoRegister):
              name: str,
              py_name: str,
              function,
-             default=unspecified,
+             default: object = unspecified,
              *,  # Keyword only args:
              c_default: str | None = None,
              py_default: str | None = None,
@@ -2714,7 +2718,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         if py_default:
             self.py_default = py_default
 
-        if annotation != unspecified:
+        if annotation is not unspecified:
             fail("The 'annotation' parameter is not currently permitted.")
 
         # this is deliberate, to prevent you from caching information
@@ -3488,7 +3492,7 @@ str_converter_argument_map: dict[str, str] = {}
 
 class str_converter(CConverter):
     type = 'const char *'
-    default_type = (str, NullType, NoneType)
+    default_type = (str, Null, NoneType)
     format_unit = 's'
 
     def converter_init(
@@ -3507,7 +3511,7 @@ class str_converter(CConverter):
         self.format_unit = format_unit
         self.length = bool(zeroes)
         if encoding:
-            if self.default not in (NULL, None, unspecified):
+            if self.default not in (Null, None, unspecified):
                 fail("str_converter: Argument Clinic doesn't support default values for encoded strings")
             self.encoding = encoding
             self.type = 'char *'
@@ -3655,7 +3659,7 @@ class PyByteArrayObject_converter(CConverter):
 
 class unicode_converter(CConverter):
     type = 'PyObject *'
-    default_type = (str, NullType, NoneType)
+    default_type = (str, Null, NoneType)
     format_unit = 'U'
 
     def parse_arg(self, argname: str, displayname: str) -> str:
@@ -3679,7 +3683,7 @@ class unicode_converter(CConverter):
 @add_legacy_c_converter('Z#', accept={str, NoneType}, zeroes=True)
 class Py_UNICODE_converter(CConverter):
     type = 'const Py_UNICODE *'
-    default_type = (str, NullType, NoneType)
+    default_type = (str, Null, NoneType)
 
     def converter_init(
             self, *,
@@ -3968,7 +3972,7 @@ class CReturnConverter(metaclass=CReturnConverterAutoRegister):
 
     # The Python default value for this parameter, as a Python value.
     # Or the magic value "unspecified" if there is no default.
-    default = None
+    default: object = None
 
     def __init__(self, *, py_default=None, **kwargs):
         self.py_default = py_default
@@ -4770,7 +4774,7 @@ class DSLParser:
                     # but at least make an attempt at ensuring it's a valid expression.
                     try:
                         value = eval(default)
-                        if value == unspecified:
+                        if value is unspecified:
                             fail("'unspecified' is not a legal default value!")
                     except NameError:
                         pass # probably a named constant
