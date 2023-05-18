@@ -27,7 +27,7 @@ struct trampoline_api_st {
     void* (*init_state)(void);
     void (*write_state)(void* state, const void *code_addr,
                         unsigned int code_size, PyCodeObject* code);
-    void (*free_state)(void);
+    int (*free_state)(void* state);
     void *state;
 };
 #endif
