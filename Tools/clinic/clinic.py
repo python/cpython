@@ -2266,7 +2266,10 @@ def parse_file(
             write_file(fn, data)
 
 
-def compute_checksum(input: str, length: int | None = None) -> str:
+def compute_checksum(
+        input: str | None,
+        length: int | None = None
+) -> str:
     input = input or ''
     s = hashlib.sha1(input.encode('utf-8')).hexdigest()
     if length:
@@ -2287,11 +2290,13 @@ class PythonParser:
         block.output = s.getvalue()
 
 
+ModuleDict = dict[str, "Module"]
+
 class Module:
     def __init__(
             self,
             name: str,
-            module: Module | None = None
+            module = None
     ) -> None:
         self.name = name
         self.module = self.parent = module
@@ -2303,15 +2308,15 @@ class Module:
     def __repr__(self) -> str:
         return "<clinic.Module " + repr(self.name) + " at " + str(id(self)) + ">"
 
-ModuleDict = dict[str, Module]
 
+ClassDict = dict[str, "Class"]
 
 class Class:
     def __init__(
             self,
             name: str,
             module: Module | None = None,
-            cls: Class | None = None,
+            cls = None,
             typedef: str | None = None,
             type_object: str | None = None
     ) -> None:
@@ -2327,8 +2332,6 @@ class Class:
 
     def __repr__(self) -> str:
         return "<clinic.Class " + repr(self.name) + " at " + str(id(self)) + ">"
-
-ClassDict = dict[str, Class]
 
 
 unsupported_special_methods: set[str] = set("""
