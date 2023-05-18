@@ -391,6 +391,21 @@ class ListComprehensionTest(unittest.TestCase):
         """
         self._check_in_scopes(
             code, {"x": 2}, ns={"b": 2}, scopes=["function", "module"])
+        # inside a class, the `a = 1` assignment is not visible
+        self._check_in_scopes(code, raises=NameError, scopes=["class"])
+
+    def test_cell_in_nested_comprehension(self):
+        code = """
+            a = 1
+            def f():
+                [[lambda: b for b in c] + [b] for c in [[a]]]
+                return b
+            x = f()
+        """
+        self._check_in_scopes(
+            code, {"x": 2}, ns={"b": 2}, scopes=["function", "module"])
+        # inside a class, the `a = 1` assignment is not visible
+        self._check_in_scopes(code, raises=NameError, scopes=["class"])
 
     def test_name_error_in_class_scope(self):
         code = """

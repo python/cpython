@@ -645,7 +645,7 @@ inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
         }
         int scope = (comp_flags >> SCOPE_OFFSET) & SCOPE_MASK;
         int only_flags = comp_flags & ((1 << SCOPE_OFFSET) - 1);
-        if (scope == CELL) {
+        if (scope == CELL || only_flags & DEF_COMP_CELL) {
             if (PySet_Add(inlined_cells, k) < 0) {
                 return 0;
             }
