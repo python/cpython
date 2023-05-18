@@ -1,0 +1,7 @@
+Fix issue where an :func:`issubclass` check comparing a class ``X`` against a
+:func:`runtime-checkable protocol <typing.runtime_checkable>` ``Y`` with
+non-callable members would not cause :exc:`TypeError` to be raised if an
+:func:`isinstance` call had previously been made comparing an instance of ``X``
+to ``Y``. This issue was present in edge cases on Python 3.11, but became more
+prominent in 3.12 due to some unrelated changes that were made to
+runtime-checkable protocols. Patch by Alex Waygood.

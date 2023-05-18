@@ -45,16 +45,16 @@
 "assignment expression cannot be used in a comprehension iterable expression"
 
 #define ANNOTATION_NOT_ALLOWED \
-"'%s' can not be used within an annotation"
+"%s cannot be used within an annotation"
 
 #define TYPEVAR_BOUND_NOT_ALLOWED \
-"'%s' can not be used within a TypeVar bound"
+"%s cannot be used within a TypeVar bound"
 
 #define TYPEALIAS_NOT_ALLOWED \
-"'%s' can not be used within a type alias"
+"%s cannot be used within a type alias"
 
 #define TYPEPARAM_NOT_ALLOWED \
-"'%s' can not be used within the definition of a generic"
+"%s cannot be used within the definition of a generic"
 
 #define DUPLICATE_TYPE_PARAM \
 "duplicate type parameter '%U'"
@@ -674,8 +674,9 @@ inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
                 }
 
                 // free vars in comprehension that are locals in outer scope can
-                // now simply be locals, unless they are free in comp children
-                if (!is_free_in_any_child(comp, k)) {
+                // now simply be locals, unless they are free in comp children,
+                // or if the outer scope is a class block
+                if (!is_free_in_any_child(comp, k) && ste->ste_type != ClassBlock) {
                     if (PySet_Discard(comp_free, k) < 0) {
                         return 0;
                     }
