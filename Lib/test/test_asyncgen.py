@@ -1613,7 +1613,6 @@ class AsyncGenAsyncioTest(unittest.TestCase):
                 break
 
         asyncio.run(main())
-        asyncio.run(asyncio.sleep(1))
 
         self.assertEqual([], messages)
 
@@ -1695,33 +1694,36 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         self.loop.run_until_complete(run())
 
 
-class TestUnawaitedWarnings:
+class TestUnawaitedWarnings(unittest.TestCase):
     def test_asend(self):
         async def gen():
             yield 1
 
-        msg = f"coroutine method 'asend' of 'gen' was never awaited"
+        msg = f"coroutine method 'asend' of '{gen.__qualname__}' was never awaited"
         with self.assertWarnsRegex(RuntimeWarning, msg):
             g = gen()
             g.asend(None)
+            gc_collect()
 
     def test_athrow(self):
         async def gen():
             yield 1
 
-        msg = f"coroutine method 'athrow' of 'gen' was never awaited"
+        msg = f"coroutine method 'athrow' of '{gen.__qualname__}' was never awaited"
         with self.assertWarnsRegex(RuntimeWarning, msg):
             g = gen()
             g.athrow(RuntimeError)
+            gc_collect()
 
     def test_aclose(self):
         async def gen():
             yield 1
 
-        msg = f"coroutine method 'aclose' of 'gen' was never awaited"
+        msg = f"coroutine method 'aclose' of '{gen.__qualname__}' was never awaited"
         with self.assertWarnsRegex(RuntimeWarning, msg):
             g = gen()
             g.aclose()
+            gc_collect()
 
 
 
