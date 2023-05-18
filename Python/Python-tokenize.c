@@ -118,38 +118,45 @@ _tokenizer_error(struct tok_state *tok)
             msg = "unknown tokenization error";
     }
 
-    // TODO: Clean up this code and factor out common error paths
-
     PyObject* errstr = NULL;
     PyObject* error_line = NULL;
+    PyObject* tmp = NULL;
+    PyObject* value = NULL;
+    int result = 0;
 
     Py_ssize_t size = tok->inp - tok->buf;
     error_line = PyUnicode_DecodeUTF8(tok->buf, size, "replace");
     if (!error_line) {
-        goto error;
+        result = -1;
+        goto exit;
     }
-    PyObject *tmp = Py_BuildValue("(OnnOii)", tok->filename, tok->lineno, 0, error_line, 0, 0);
+
+    tmp = Py_BuildValue("(OnnOii)", tok->filename, tok->lineno, 0, error_line, 0, 0);
     if (!tmp) {
-        goto error;
+        result = -1;
+        goto exit;
     }
-    Py_CLEAR(error_line);
+
     errstr = PyUnicode_FromString(msg);
     if (!errstr) {
-        goto error;
+        result = -1;
+        goto exit;
     }
-    PyObject* value = PyTuple_Pack(2, errstr, tmp);
-    Py_DECREF(errstr);
-    Py_DECREF(tmp);
+
+    value = PyTuple_Pack(2, errstr, tmp);
     if (!value) {
-        goto error;
+        result = -1;
+        goto exit;
     }
+
     PyErr_SetObject(errtype, value);
-    Py_DECREF(value);
-    return 0;
-error:
+
+exit:
     Py_XDECREF(errstr);
     Py_XDECREF(error_line);
-    return -1;
+    Py_XDECREF(tmp);
+    Py_XDECREF(value);
+    return result;
 }
 
 static PyObject *
