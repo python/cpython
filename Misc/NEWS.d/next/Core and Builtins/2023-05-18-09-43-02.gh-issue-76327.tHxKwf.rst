@@ -1,0 +1,2 @@
+Fix multiprocessing support for frozen executable on non-Windows platforms.
+Remove outdated warning in document.
