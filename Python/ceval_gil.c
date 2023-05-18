@@ -332,6 +332,9 @@ tstate_must_exit(PyThreadState *tstate)
        After Py_Finalize() has been called, tstate can be a dangling pointer:
        point to PyThreadState freed memory. */
     PyThreadState *finalizing = _PyRuntimeState_GetFinalizing(&_PyRuntime);
+    if (finalizing == NULL) {
+        finalizing = _PyInterpreterState_GetFinalizing(tstate->interp);
+    }
     return (finalizing != NULL && finalizing != tstate);
 }
 

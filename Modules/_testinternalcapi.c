@@ -12,6 +12,7 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#include "frameobject.h"
 #include "pycore_atomic_funcs.h" // _Py_atomic_int_get()
 #include "pycore_bitutils.h"     // _Py_bswap32()
 #include "pycore_compile.h"      // _PyCompile_CodeGen, _PyCompile_OptimizeCfg, _PyCompile_Assemble
@@ -669,12 +670,14 @@ _testinternalcapi_assemble_code_object_impl(PyObject *module,
     umd.u_varnames = PyDict_GetItemString(metadata, "varnames");
     umd.u_cellvars = PyDict_GetItemString(metadata, "cellvars");
     umd.u_freevars = PyDict_GetItemString(metadata, "freevars");
+    umd.u_fasthidden = PyDict_GetItemString(metadata, "fasthidden");
 
     assert(PyDict_Check(umd.u_consts));
     assert(PyDict_Check(umd.u_names));
     assert(PyDict_Check(umd.u_varnames));
     assert(PyDict_Check(umd.u_cellvars));
     assert(PyDict_Check(umd.u_freevars));
+    assert(PyDict_Check(umd.u_fasthidden));
 
     umd.u_argcount = get_nonnegative_int_from_dict(metadata, "argcount");
     umd.u_posonlyargcount = get_nonnegative_int_from_dict(metadata, "posonlyargcount");
@@ -779,6 +782,39 @@ perf_map_state_teardown(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     PyUnstable_PerfMapState_Fini();
     Py_RETURN_NONE;
 }
+    
+static PyObject *
+iframe_getcode(PyObject *self, PyObject *frame)
+{
+    if (!PyFrame_Check(frame)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
+        return NULL;
+    }
+    struct _PyInterpreterFrame *f = ((PyFrameObject *)frame)->f_frame;
+    return PyUnstable_InterpreterFrame_GetCode(f);
+}
+
+static PyObject *
+iframe_getline(PyObject *self, PyObject *frame)
+{
+    if (!PyFrame_Check(frame)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
+        return NULL;
+    }
+    struct _PyInterpreterFrame *f = ((PyFrameObject *)frame)->f_frame;
+    return PyLong_FromLong(PyUnstable_InterpreterFrame_GetLine(f));
+}
+
+static PyObject *
+iframe_getlasti(PyObject *self, PyObject *frame)
+{
+    if (!PyFrame_Check(frame)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
+        return NULL;
+    }
+    struct _PyInterpreterFrame *f = ((PyFrameObject *)frame)->f_frame;
+    return PyLong_FromLong(PyUnstable_InterpreterFrame_GetLasti(f));
+}
 
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
@@ -805,6 +841,9 @@ static PyMethodDef module_functions[] = {
     {"clear_extension", clear_extension, METH_VARARGS, NULL},
     {"write_perf_map_entry", write_perf_map_entry, METH_VARARGS},
     {"perf_map_state_teardown", perf_map_state_teardown, METH_NOARGS},
+    {"iframe_getcode", iframe_getcode, METH_O, NULL},
+    {"iframe_getline", iframe_getline, METH_O, NULL},
+    {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
     {NULL, NULL} /* sentinel */
 };
 

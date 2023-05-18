@@ -20,15 +20,19 @@ PyDoc_STRVAR(_io__WindowsConsoleIO_close__doc__,
 "close() may be called more than once without error.");
 
 #define _IO__WINDOWSCONSOLEIO_CLOSE_METHODDEF    \
-    {"close", (PyCFunction)_io__WindowsConsoleIO_close, METH_NOARGS, _io__WindowsConsoleIO_close__doc__},
+    {"close", _PyCFunction_CAST(_io__WindowsConsoleIO_close), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__WindowsConsoleIO_close__doc__},
 
 static PyObject *
-_io__WindowsConsoleIO_close_impl(winconsoleio *self);
+_io__WindowsConsoleIO_close_impl(winconsoleio *self, PyTypeObject *cls);
 
 static PyObject *
-_io__WindowsConsoleIO_close(winconsoleio *self, PyObject *Py_UNUSED(ignored))
+_io__WindowsConsoleIO_close(winconsoleio *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _io__WindowsConsoleIO_close_impl(self);
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "close() takes no arguments");
+        return NULL;
+    }
+    return _io__WindowsConsoleIO_close_impl(self, cls);
 }
 
 #endif /* defined(HAVE_WINDOWS_CONSOLE_IO) */
@@ -208,27 +212,46 @@ PyDoc_STRVAR(_io__WindowsConsoleIO_readinto__doc__,
 "Same as RawIOBase.readinto().");
 
 #define _IO__WINDOWSCONSOLEIO_READINTO_METHODDEF    \
-    {"readinto", (PyCFunction)_io__WindowsConsoleIO_readinto, METH_O, _io__WindowsConsoleIO_readinto__doc__},
+    {"readinto", _PyCFunction_CAST(_io__WindowsConsoleIO_readinto), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__WindowsConsoleIO_readinto__doc__},
 
 static PyObject *
-_io__WindowsConsoleIO_readinto_impl(winconsoleio *self, Py_buffer *buffer);
+_io__WindowsConsoleIO_readinto_impl(winconsoleio *self, PyTypeObject *cls,
+                                    Py_buffer *buffer);
 
 static PyObject *
-_io__WindowsConsoleIO_readinto(winconsoleio *self, PyObject *arg)
+_io__WindowsConsoleIO_readinto(winconsoleio *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "readinto",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     Py_buffer buffer = {NULL, NULL};
 
-    if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[0], &buffer, PyBUF_WRITABLE) < 0) {
         PyErr_Clear();
-        _PyArg_BadArgument("readinto", "argument", "read-write bytes-like object", arg);
+        _PyArg_BadArgument("readinto", "argument 1", "read-write bytes-like object", args[0]);
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("readinto", "argument", "contiguous buffer", arg);
+        _PyArg_BadArgument("readinto", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
-    return_value = _io__WindowsConsoleIO_readinto_impl(self, &buffer);
+    return_value = _io__WindowsConsoleIO_readinto_impl(self, cls, &buffer);
 
 exit:
     /* Cleanup for buffer */
@@ -278,28 +301,44 @@ PyDoc_STRVAR(_io__WindowsConsoleIO_read__doc__,
 "Return an empty bytes object at EOF.");
 
 #define _IO__WINDOWSCONSOLEIO_READ_METHODDEF    \
-    {"read", _PyCFunction_CAST(_io__WindowsConsoleIO_read), METH_FASTCALL, _io__WindowsConsoleIO_read__doc__},
+    {"read", _PyCFunction_CAST(_io__WindowsConsoleIO_read), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__WindowsConsoleIO_read__doc__},
 
 static PyObject *
-_io__WindowsConsoleIO_read_impl(winconsoleio *self, Py_ssize_t size);
+_io__WindowsConsoleIO_read_impl(winconsoleio *self, PyTypeObject *cls,
+                                Py_ssize_t size);
 
 static PyObject *
-_io__WindowsConsoleIO_read(winconsoleio *self, PyObject *const *args, Py_ssize_t nargs)
+_io__WindowsConsoleIO_read(winconsoleio *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "read",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     Py_ssize_t size = -1;
 
-    if (!_PyArg_CheckPositional("read", nargs, 0, 1)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     if (nargs < 1) {
-        goto skip_optional;
+        goto skip_optional_posonly;
     }
     if (!_Py_convert_optional_to_ssize_t(args[0], &size)) {
         goto exit;
     }
-skip_optional:
-    return_value = _io__WindowsConsoleIO_read_impl(self, size);
+skip_optional_posonly:
+    return_value = _io__WindowsConsoleIO_read_impl(self, cls, size);
 
 exit:
     return return_value;
@@ -319,25 +358,44 @@ PyDoc_STRVAR(_io__WindowsConsoleIO_write__doc__,
 "The number of bytes actually written is returned.");
 
 #define _IO__WINDOWSCONSOLEIO_WRITE_METHODDEF    \
-    {"write", (PyCFunction)_io__WindowsConsoleIO_write, METH_O, _io__WindowsConsoleIO_write__doc__},
+    {"write", _PyCFunction_CAST(_io__WindowsConsoleIO_write), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__WindowsConsoleIO_write__doc__},
 
 static PyObject *
-_io__WindowsConsoleIO_write_impl(winconsoleio *self, Py_buffer *b);
+_io__WindowsConsoleIO_write_impl(winconsoleio *self, PyTypeObject *cls,
+                                 Py_buffer *b);
 
 static PyObject *
-_io__WindowsConsoleIO_write(winconsoleio *self, PyObject *arg)
+_io__WindowsConsoleIO_write(winconsoleio *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "write",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     Py_buffer b = {NULL, NULL};
 
-    if (PyObject_GetBuffer(arg, &b, PyBUF_SIMPLE) != 0) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[0], &b, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&b, 'C')) {
-        _PyArg_BadArgument("write", "argument", "contiguous buffer", arg);
+        _PyArg_BadArgument("write", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
-    return_value = _io__WindowsConsoleIO_write_impl(self, &b);
+    return_value = _io__WindowsConsoleIO_write_impl(self, cls, &b);
 
 exit:
     /* Cleanup for b */
@@ -407,4 +465,4 @@ _io__WindowsConsoleIO_isatty(winconsoleio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
     #define _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
 #endif /* !defined(_IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF) */
-/*[clinic end generated code: output=163e934aa9b0ef16 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=235393758365c229 input=a9049054013a1b77]*/
