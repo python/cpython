@@ -25,6 +25,8 @@ class IsolatedCodeGenTests(CodegenTestCase):
             ('LOAD_CONST', 2, 1),
             exit_lbl,
             ('POP_TOP', None),
+            ('LOAD_CONST', 3),
+            ('RETURN_VALUE', None),
         ]
         self.codegen_test(snippet, expected)
 
@@ -37,14 +39,16 @@ class IsolatedCodeGenTests(CodegenTestCase):
             ('GET_ITER', None, 1),
             loop_lbl := self.Label(),
             ('FOR_ITER', exit_lbl := self.Label(), 1),
-            ('STORE_NAME', None, 1),
+            ('STORE_NAME', 1, 1),
             ('PUSH_NULL', None, 2),
-            ('LOAD_NAME', None, 2),
-            ('LOAD_NAME', None, 2),
-            ('CALL', None, 2),
+            ('LOAD_NAME', 2, 2),
+            ('LOAD_NAME', 1, 2),
+            ('CALL', 1, 2),
             ('POP_TOP', None),
             ('JUMP', loop_lbl),
             exit_lbl,
             ('END_FOR', None),
+            ('LOAD_CONST', 0),
+            ('RETURN_VALUE', None),
         ]
         self.codegen_test(snippet, expected)

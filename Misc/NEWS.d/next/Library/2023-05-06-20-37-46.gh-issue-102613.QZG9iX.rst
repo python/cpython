@@ -1,0 +1,3 @@
+Improve performance of :meth:`pathlib.Path.glob` when expanding recursive
+wildcards ("``**``") by merging adjacent wildcards and de-duplicating
+results only when necessary.

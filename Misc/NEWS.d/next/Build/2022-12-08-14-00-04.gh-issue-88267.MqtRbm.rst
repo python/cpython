@@ -1,1 +1,0 @@
-Avoid exporting Python symbols in linked Windows applications when the core is built as static.

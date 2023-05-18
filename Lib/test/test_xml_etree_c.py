@@ -181,6 +181,26 @@ class MiscTests(unittest.TestCase):
         r = e.get(X())
         self.assertIsNone(r)
 
+    @support.cpython_only
+    def test_immutable_types(self):
+        root = cET.fromstring('<a></a>')
+        dataset = (
+            cET.Element,
+            cET.TreeBuilder,
+            cET.XMLParser,
+            type(root.iter()),
+        )
+        for tp in dataset:
+            with self.subTest(tp=tp):
+                with self.assertRaisesRegex(TypeError, "immutable"):
+                    tp.foo = 1
+
+    @support.cpython_only
+    def test_disallow_instantiation(self):
+        root = cET.fromstring('<a></a>')
+        iter_type = type(root.iter())
+        support.check_disallow_instantiation(self, iter_type)
+
 
 @unittest.skipUnless(cET, 'requires _elementtree')
 class TestAliasWorking(unittest.TestCase):
