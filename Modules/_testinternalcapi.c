@@ -782,7 +782,7 @@ perf_map_state_teardown(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     PyUnstable_PerfMapState_Fini();
     Py_RETURN_NONE;
 }
-    
+
 static PyObject *
 iframe_getcode(PyObject *self, PyObject *frame)
 {
