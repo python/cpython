@@ -190,6 +190,9 @@ set_module_thread_finished(struct module_threads *threads,
     threads->counts.pyfuncs_running--;
 
     PyThread_release_lock(threads->mutex);
+
+    // Notify other threads that this one is done.
+    // XXX Do it explicitly here rather than via tstate.on_delete().
 }
 
 static void
