@@ -1727,7 +1727,7 @@ class TestRoundtrip(TestCase):
                 print('tokenize', testfile)
             with open(testfile, 'rb') as f:
                 # with self.subTest(file=testfile):
-                    self.check_roundtrip(f)
+                self.check_roundtrip(f)
 
 
     def roundtrip(self, code):

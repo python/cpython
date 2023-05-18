@@ -444,7 +444,7 @@ def tokenize(readline):
             encoding = "utf-8"
         yield TokenInfo(ENCODING, encoding, (0, 0), (0, 0), '')
     yield from _tokenize(rl_gen, encoding)
-    
+
 def _tokenize(rl_gen, encoding):
     source = b"".join(rl_gen).decode(encoding)
     token = None
