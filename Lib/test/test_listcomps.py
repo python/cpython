@@ -379,6 +379,17 @@ class ListComprehensionTest(unittest.TestCase):
         with self.assertRaises(UnboundLocalError):
             f()
 
+    def test_global_outside_cellvar_inside_plus_freevar(self):
+        code = """
+            a = 1
+            def f():
+                [(lambda: b) for b in [a]]
+                return b
+            x = f()
+        """
+        self._check_in_scopes(
+            code, {"x": 2}, ns={"b": 2}, scopes=["function", "module"])
+
 
 __test__ = {'doctests' : doctests}
 
