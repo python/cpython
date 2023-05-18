@@ -559,6 +559,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(newline)
         STRUCT_FOR_ID(newlines)
         STRUCT_FOR_ID(next)
+        STRUCT_FOR_ID(nlocals)
         STRUCT_FOR_ID(node_depth)
         STRUCT_FOR_ID(node_offset)
         STRUCT_FOR_ID(ns)
