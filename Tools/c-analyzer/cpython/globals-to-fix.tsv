@@ -86,6 +86,7 @@ Objects/sliceobject.c	-	PyEllipsis_Type	-
 Objects/sliceobject.c	-	PySlice_Type	-
 Objects/tupleobject.c	-	PyTupleIter_Type	-
 Objects/tupleobject.c	-	PyTuple_Type	-
+Objects/typeobject.c	-	_PyBufferWrapper_Type	-
 Objects/typeobject.c	-	PyBaseObject_Type	-
 Objects/typeobject.c	-	PySuper_Type	-
 Objects/typeobject.c	-	PyType_Type	-
@@ -300,7 +301,7 @@ Objects/object.c	-	_Py_NotImplementedStruct	-
 Objects/setobject.c	-	_dummy_struct	-
 Objects/setobject.c	-	_PySet_Dummy	-
 Objects/sliceobject.c	-	_Py_EllipsisObject	-
-Python/instrumentation.c	-	DISABLE	-
+Python/instrumentation.c	-	_PyInstrumentation_DISABLE	-
 Python/instrumentation.c	-	_PyInstrumentation_MISSING	-
 
 
@@ -316,13 +317,6 @@ Python/instrumentation.c	-	_PyInstrumentation_MISSING	-
 ##-----------------------
 ## static types
 
-Modules/_io/bufferedio.c	-	PyBufferedIOBase_Type	-
-Modules/_io/bytesio.c	-	_PyBytesIOBuffer_Type	-
-Modules/_io/iobase.c	-	PyIOBase_Type	-
-Modules/_io/iobase.c	-	PyRawIOBase_Type	-
-Modules/_io/textio.c	-	PyIncrementalNewlineDecoder_Type	-
-Modules/_io/textio.c	-	PyTextIOBase_Type	-
-Modules/_io/winconsoleio.c	-	PyWindowsConsoleIO_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptorBase_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptorDerived_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptorNopGet_Type	-
@@ -341,7 +335,6 @@ Modules/_testcapi/vectorcall.c	-	MethodDescriptor2_Type	-
 ##-----------------------
 ## static types
 
-Modules/_ctypes/_ctypes.c	-	DictRemover_Type	-
 Modules/_ctypes/_ctypes.c	-	PyCArrayType_Type	-
 Modules/_ctypes/_ctypes.c	-	PyCArray_Type	-
 Modules/_ctypes/_ctypes.c	-	PyCData_Type	-
@@ -352,18 +345,14 @@ Modules/_ctypes/_ctypes.c	-	PyCPointer_Type	-
 Modules/_ctypes/_ctypes.c	-	PyCSimpleType_Type	-
 Modules/_ctypes/_ctypes.c	-	PyCStructType_Type	-
 Modules/_ctypes/_ctypes.c	-	Simple_Type	-
-Modules/_ctypes/_ctypes.c	-	StructParam_Type	-
 Modules/_ctypes/_ctypes.c	-	Struct_Type	-
 Modules/_ctypes/_ctypes.c	-	UnionType_Type	-
 Modules/_ctypes/_ctypes.c	-	Union_Type	-
-Modules/_ctypes/callbacks.c	-	PyCThunk_Type	-
 Modules/_ctypes/callproc.c	-	PyCArg_Type	-
-Modules/_ctypes/cfield.c	-	PyCField_Type	-
 Modules/_ctypes/ctypes.h	-	PyCArg_Type	-
 Modules/_ctypes/ctypes.h	-	PyCArrayType_Type	-
 Modules/_ctypes/ctypes.h	-	PyCArray_Type	-
 Modules/_ctypes/ctypes.h	-	PyCData_Type	-
-Modules/_ctypes/ctypes.h	-	PyCField_Type	-
 Modules/_ctypes/ctypes.h	-	PyCFuncPtrType_Type	-
 Modules/_ctypes/ctypes.h	-	PyCFuncPtr_Type	-
 Modules/_ctypes/ctypes.h	-	PyCPointerType_Type	-
@@ -371,7 +360,6 @@ Modules/_ctypes/ctypes.h	-	PyCPointer_Type	-
 Modules/_ctypes/ctypes.h	-	PyCSimpleType_Type	-
 Modules/_ctypes/ctypes.h	-	PyCStgDict_Type	-
 Modules/_ctypes/ctypes.h	-	PyCStructType_Type	-
-Modules/_ctypes/ctypes.h	-	PyCThunk_Type	-
 Modules/_ctypes/ctypes.h	-	PyExc_ArgError	-
 Modules/_ctypes/ctypes.h	-	_ctypes_conversion_encoding	-
 Modules/_ctypes/ctypes.h	-	_ctypes_conversion_errors	-
@@ -454,6 +442,8 @@ Modules/_decimal/_decimal.c	-	SignalTuple	-
 Modules/_asynciomodule.c	-	fi_freelist	-
 Modules/_asynciomodule.c	-	fi_freelist_len	-
 Modules/_ctypes/_ctypes.c	-	_ctypes_ptrtype_cache	-
+Modules/_ctypes/_ctypes.c	-	global_state	-
+Modules/_ctypes/ctypes.h	-	global_state	-
 Modules/_tkinter.c	-	tcl_lock	-
 Modules/_tkinter.c	-	excInCmd	-
 Modules/_tkinter.c	-	valInCmd	-
@@ -468,7 +458,6 @@ Modules/_tkinter.c	-	trbInCmd	-
 
 ## pre-allocated buffer
 Modules/nismodule.c	nisproc_maplist_2	res	-
-Modules/pyexpat.c	PyUnknownEncodingHandler	template_buffer	-
 
 ## other
 Include/datetime.h	-	PyDateTimeAPI	-
@@ -485,27 +474,6 @@ Modules/_decimal/_decimal.c	-	_py_float_abs	-
 Modules/_decimal/_decimal.c	-	_py_long_bit_length	-
 Modules/_decimal/_decimal.c	-	_py_float_as_integer_ratio	-
 Modules/_elementtree.c	-	expat_capi	-
-Modules/cjkcodecs/_codecs_hk.c	-	big5_encmap	-
-Modules/cjkcodecs/_codecs_hk.c	-	big5_decmap	-
-Modules/cjkcodecs/_codecs_hk.c	big5hkscs_codec_init	initialized	-
-Modules/cjkcodecs/_codecs_iso2022.c	-	cp949_encmap	-
-Modules/cjkcodecs/_codecs_iso2022.c	-	ksx1001_decmap	-
-Modules/cjkcodecs/_codecs_iso2022.c	-	jisxcommon_encmap	-
-Modules/cjkcodecs/_codecs_iso2022.c	-	jisx0208_decmap	-
-Modules/cjkcodecs/_codecs_iso2022.c	-	jisx0212_decmap	-
-Modules/cjkcodecs/_codecs_iso2022.c	-	jisx0213_bmp_encmap	-
-Modules/cjkcodecs/_codecs_iso2022.c	-	jisx0213_1_bmp_decmap	-
-Modules/cjkcodecs/_codecs_iso2022.c	-	jisx0213_2_bmp_decmap	-
-Modules/cjkcodecs/_codecs_iso2022.c	-	jisx0213_emp_encmap	-
-Modules/cjkcodecs/_codecs_iso2022.c	-	jisx0213_1_emp_decmap	-
-Modules/cjkcodecs/_codecs_iso2022.c	-	jisx0213_2_emp_decmap	-
-Modules/cjkcodecs/_codecs_iso2022.c	-	gbcommon_encmap	-
-Modules/cjkcodecs/_codecs_iso2022.c	-	gb2312_decmap	-
-Modules/cjkcodecs/_codecs_iso2022.c	ksx1001_init	initialized	-
-Modules/cjkcodecs/_codecs_iso2022.c	jisx0208_init	initialized	-
-Modules/cjkcodecs/_codecs_iso2022.c	jisx0212_init	initialized	-
-Modules/cjkcodecs/_codecs_iso2022.c	jisx0213_init	initialized	-
-Modules/cjkcodecs/_codecs_iso2022.c	gb2312_init	initialized	-
 Modules/readline.c	-	libedit_append_replace_history_offset	-
 Modules/readline.c	-	using_libedit_emulation	-
 Modules/readline.c	-	libedit_history_start	-

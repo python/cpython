@@ -1,11 +1,11 @@
 .. _using:
 
-=================================
- Using :mod:`!importlib.metadata`
-=================================
+========================================================
+:mod:`!importlib.metadata` -- Accessing package metadata
+========================================================
 
 .. module:: importlib.metadata
-   :synopsis: The implementation of the importlib metadata.
+   :synopsis: Accessing package metadata
 
 .. versionadded:: 3.8
 .. versionchanged:: 3.10
@@ -13,7 +13,7 @@
 
 **Source code:** :source:`Lib/importlib/metadata/__init__.py`
 
-``importlib_metadata`` is a library that provides access to
+``importlib.metadata`` is a library that provides access to
 the metadata of an installed `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_,
 such as its entry points
 or its top-level names (`Import Package <https://packaging.python.org/en/latest/glossary/#term-Import-Package>`_\s, modules, if any).
@@ -24,7 +24,7 @@ API`_ and `metadata API`_ of ``pkg_resources``.  Along with
 this package can eliminate the need to use the older and less efficient
 ``pkg_resources`` package.
 
-``importlib_metadata`` operates on third-party *distribution packages*
+``importlib.metadata`` operates on third-party *distribution packages*
 installed into Python's ``site-packages`` directory via tools such as
 `pip <https://pypi.org/project/pip/>`_.
 Specifically, it works with distributions with discoverable
@@ -178,7 +178,7 @@ The "selectable" entry points were introduced in ``importlib_metadata``
 no parameters and always returned a dictionary of entry points, keyed
 by group. With ``importlib_metadata`` 5.0 and Python 3.12,
 ``entry_points`` always returns an ``EntryPoints`` object. See
-`backports.entry_points_selectable <https://pypi.org/project/backports.entry_points_selectable>`_
+`backports.entry_points_selectable <https://pypi.org/project/backports.entry-points-selectable>`_
 for compatibility options.
 
 
@@ -308,6 +308,10 @@ Python module or `Import Package <https://packaging.python.org/en/latest/glossar
     >>> packages_distributions()
     {'importlib_metadata': ['importlib-metadata'], 'yaml': ['PyYAML'], 'jaraco': ['jaraco.classes', 'jaraco.functools'], ...}
 
+Some editable installs, `do not supply top-level names
+<https://github.com/pypa/packaging-problems/issues/609>`_, and thus this
+function is not reliable with such installs.
+
 .. versionadded:: 3.10
 
 .. _distributions:
@@ -364,7 +368,7 @@ system :ref:`finders <finders-and-loaders>`.  To find a distribution package's m
 ``importlib.metadata`` queries the list of :term:`meta path finders <meta path finder>` on
 :data:`sys.meta_path`.
 
-By default ``importlib_metadata`` installs a finder for distribution packages
+By default ``importlib.metadata`` installs a finder for distribution packages
 found on the file system.
 This finder doesn't actually find any *distributions*,
 but it can find their metadata.
