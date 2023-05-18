@@ -87,7 +87,8 @@ def _make_selector(pattern_parts, flavour, case_sensitive):
 
 
 @functools.lru_cache(maxsize=256)
-def _compile_pattern(pat, flags):
+def _compile_pattern(pat, case_sensitive):
+    flags = re.NOFLAG if case_sensitive else re.IGNORECASE
     return re.compile(fnmatch.translate(pat), flags).match
 
 
