@@ -484,6 +484,12 @@ class ListComprehensionTest(unittest.TestCase):
         """
         self._check_in_scopes(code, {"z": 1, "out": [(3, 2, 1)]})
 
+    def test_assign_to_comp_iter_var_in_outer_function(self):
+        code = """
+            a = [1 for a in [0]]
+        """
+        self._check_in_scopes(code, {"a": [1]}, scopes=["function"])
+
 
 __test__ = {'doctests' : doctests}
 
