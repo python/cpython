@@ -4,6 +4,8 @@ Released after 2022-10-24
 =========================
 
 
+gh-104499: Fix completions for Tk Aqua 8.7 (currently blank).
+
 gh-104486: Make About print both tcl and tk versions if different,
 as is expected someday.
 
