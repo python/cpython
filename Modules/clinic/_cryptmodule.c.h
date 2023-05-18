@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(crypt_crypt__doc__,
 "crypt($module, word, salt, /)\n"
 "--\n"
@@ -14,7 +20,7 @@ PyDoc_STRVAR(crypt_crypt__doc__,
 "results for a given *word*.");
 
 #define CRYPT_CRYPT_METHODDEF    \
-    {"crypt", (PyCFunction)(void(*)(void))crypt_crypt, METH_FASTCALL, crypt_crypt__doc__},
+    {"crypt", _PyCFunction_CAST(crypt_crypt), METH_FASTCALL, crypt_crypt__doc__},
 
 static PyObject *
 crypt_crypt_impl(PyObject *module, const char *word, const char *salt);
@@ -30,7 +36,7 @@ crypt_crypt(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("crypt", 1, "str", args[0]);
+        _PyArg_BadArgument("crypt", "argument 1", "str", args[0]);
         goto exit;
     }
     Py_ssize_t word_length;
@@ -43,7 +49,7 @@ crypt_crypt(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("crypt", 2, "str", args[1]);
+        _PyArg_BadArgument("crypt", "argument 2", "str", args[1]);
         goto exit;
     }
     Py_ssize_t salt_length;
@@ -60,4 +66,4 @@ crypt_crypt(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3f75d4d4be4dddbb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=235ccef9211184f4 input=a9049054013a1b77]*/

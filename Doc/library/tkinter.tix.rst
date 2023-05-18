@@ -33,17 +33,17 @@ special needs of your application and users.
 
 .. seealso::
 
-   `Tix Homepage <http://tix.sourceforge.net/>`_
+   `Tix Homepage <https://tix.sourceforge.net/>`_
       The home page for :mod:`Tix`.  This includes links to additional documentation
       and downloads.
 
-   `Tix Man Pages <http://tix.sourceforge.net/dist/current/man/>`_
+   `Tix Man Pages <https://tix.sourceforge.net/dist/current/man/>`_
       On-line version of the man pages and reference material.
 
-   `Tix Programming Guide <http://tix.sourceforge.net/dist/current/docs/tix-book/tix.book.html>`_
+   `Tix Programming Guide <https://tix.sourceforge.net/dist/current/docs/tix-book/tix.book.html>`_
       On-line version of the programmer's reference material.
 
-   `Tix Development Applications <http://tix.sourceforge.net/Tixapps/src/Tide.html>`_
+   `Tix Development Applications <https://tix.sourceforge.net/Tixapps/src/Tide.html>`_
       Tix applications for development of Tix and Tkinter programs. Tide applications
       work under Tk or Tkinter, and include :program:`TixInspect`, an inspector to
       remotely modify and debug Tix/Tk/Tkinter applications.
@@ -80,7 +80,7 @@ the following::
 Tix Widgets
 -----------
 
-`Tix <http://tix.sourceforge.net/dist/current/man/html/TixCmd/TixIntro.htm>`_
+`Tix <https://tix.sourceforge.net/dist/current/man/html/TixCmd/TixIntro.htm>`_
 introduces over 40 widget classes to the :mod:`tkinter` repertoire.
 
 
@@ -91,125 +91,125 @@ Basic Widgets
 .. class:: Balloon()
 
    A `Balloon
-   <http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixBalloon.htm>`_ that
+   <https://tix.sourceforge.net/dist/current/man/html/TixCmd/tixBalloon.htm>`_ that
    pops up over a widget to provide help.  When the user moves the cursor inside a
    widget to which a Balloon widget has been bound, a small pop-up window with a
    descriptive message will be shown on the screen.
 
 .. Python Demo of:
-.. \ulink{Balloon}{http://tix.sourceforge.net/dist/current/demos/samples/Balloon.tcl}
+.. \ulink{Balloon}{https://tix.sourceforge.net/dist/current/demos/samples/Balloon.tcl}
 
 
 .. class:: ButtonBox()
 
    The `ButtonBox
-   <http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixButtonBox.htm>`_
+   <https://tix.sourceforge.net/dist/current/man/html/TixCmd/tixButtonBox.htm>`_
    widget creates a box of buttons, such as is commonly used for ``Ok Cancel``.
 
 .. Python Demo of:
-.. \ulink{ButtonBox}{http://tix.sourceforge.net/dist/current/demos/samples/BtnBox.tcl}
+.. \ulink{ButtonBox}{https://tix.sourceforge.net/dist/current/demos/samples/BtnBox.tcl}
 
 
 .. class:: ComboBox()
 
    The `ComboBox
-   <http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixComboBox.htm>`_
+   <https://tix.sourceforge.net/dist/current/man/html/TixCmd/tixComboBox.htm>`_
    widget is similar to the combo box control in MS Windows. The user can select a
    choice by either typing in the entry subwidget or selecting from the listbox
    subwidget.
 
 .. Python Demo of:
-.. \ulink{ComboBox}{http://tix.sourceforge.net/dist/current/demos/samples/ComboBox.tcl}
+.. \ulink{ComboBox}{https://tix.sourceforge.net/dist/current/demos/samples/ComboBox.tcl}
 
 
 .. class:: Control()
 
    The `Control
-   <http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixControl.htm>`_
+   <https://tix.sourceforge.net/dist/current/man/html/TixCmd/tixControl.htm>`_
    widget is also known as the :class:`SpinBox` widget. The user can adjust the
    value by pressing the two arrow buttons or by entering the value directly into
    the entry. The new value will be checked against the user-defined upper and
    lower limits.
 
 .. Python Demo of:
-.. \ulink{Control}{http://tix.sourceforge.net/dist/current/demos/samples/Control.tcl}
+.. \ulink{Control}{https://tix.sourceforge.net/dist/current/demos/samples/Control.tcl}
 
 
 .. class:: LabelEntry()
 
    The `LabelEntry
-   <http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixLabelEntry.htm>`_
+   <https://tix.sourceforge.net/dist/current/man/html/TixCmd/tixLabelEntry.htm>`_
    widget packages an entry widget and a label into one mega widget. It can
    be used to simplify the creation of "entry-form" type of interface.
 
 .. Python Demo of:
-.. \ulink{LabelEntry}{http://tix.sourceforge.net/dist/current/demos/samples/LabEntry.tcl}
+.. \ulink{LabelEntry}{https://tix.sourceforge.net/dist/current/demos/samples/LabEntry.tcl}
 
 
 .. class:: LabelFrame()
 
    The `LabelFrame
-   <http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixLabelFrame.htm>`_
+   <https://tix.sourceforge.net/dist/current/man/html/TixCmd/tixLabelFrame.htm>`_
    widget packages a frame widget and a label into one mega widget.  To create
    widgets inside a LabelFrame widget, one creates the new widgets relative to the
    :attr:`frame` subwidget and manage them inside the :attr:`frame` subwidget.
 
 .. Python Demo of:
-.. \ulink{LabelFrame}{http://tix.sourceforge.net/dist/current/demos/samples/LabFrame.tcl}
+.. \ulink{LabelFrame}{https://tix.sourceforge.net/dist/current/demos/samples/LabFrame.tcl}
 
 
 .. class:: Meter()
 
    The `Meter
-   <http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixMeter.htm>`_ widget
+   <https://tix.sourceforge.net/dist/current/man/html/TixCmd/tixMeter.htm>`_ widget
    can be used to show the progress of a background job which may take a long time
    to execute.
 
 .. Python Demo of:
-.. \ulink{Meter}{http://tix.sourceforge.net/dist/current/demos/samples/Meter.tcl}
+.. \ulink{Meter}{https://tix.sourceforge.net/dist/current/demos/samples/Meter.tcl}
 
 
 .. class:: OptionMenu()
 
    The `OptionMenu
-   <http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixOptionMenu.htm>`_
+   <https://tix.sourceforge.net/dist/current/man/html/TixCmd/tixOptionMenu.htm>`_
    creates a menu button of options.
 
 .. Python Demo of:
-.. \ulink{OptionMenu}{http://tix.sourceforge.net/dist/current/demos/samples/OptMenu.tcl}
+.. \ulink{OptionMenu}{https://tix.sourceforge.net/dist/current/demos/samples/OptMenu.tcl}
 
 
 .. class:: PopupMenu()
 
    The `PopupMenu
-   <http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixPopupMenu.htm>`_
+   <https://tix.sourceforge.net/dist/current/man/html/TixCmd/tixPopupMenu.htm>`_
    widget can be used as a replacement of the ``tk_popup`` command. The advantage
    of the :mod:`Tix` :class:`PopupMenu` widget is it requires less application code
    to manipulate.
 
 .. Python Demo of:
-.. \ulink{PopupMenu}{http://tix.sourceforge.net/dist/current/demos/samples/PopMenu.tcl}
+.. \ulink{PopupMenu}{https://tix.sourceforge.net/dist/current/demos/samples/PopMenu.tcl}
 
 
 .. class:: Select()
 
    The `Select
-   <http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixSelect.htm>`_ widget
+   <https://tix.sourceforge.net/dist/current/man/html/TixCmd/tixSelect.htm>`_ widget
    is a container of button subwidgets. It can be used to provide radio-box or
    check-box style of selection options for the user.
 
 .. Python Demo of:
-.. \ulink{Select}{http://tix.sourceforge.net/dist/current/demos/samples/Select.tcl}
+.. \ulink{Select}{https://tix.sourceforge.net/dist/current/demos/samples/Select.tcl}
 
 
 .. class:: StdButtonBox()
 
    The `StdButtonBox
-   <http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixStdButtonBox.htm>`_
+   <https://tix.sourceforge.net/dist/current/man/html/TixCmd/tixStdButtonBox.htm>`_
    widget is a group of standard buttons for Motif-like dialog boxes.
 
 .. Python Demo of:
-.. \ulink{StdButtonBox}{http://tix.sourceforge.net/dist/current/demos/samples/StdBBox.tcl}
+.. \ulink{StdButtonBox}{https://tix.sourceforge.net/dist/current/demos/samples/StdBBox.tcl}
 
 
 File Selectors
@@ -219,37 +219,37 @@ File Selectors
 .. class:: DirList()
 
    The `DirList
-   <http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixDirList.htm>`_
+   <https://tix.sourceforge.net/dist/current/man/html/TixCmd/tixDirList.htm>`_
    widget displays a list view of a directory, its previous directories and its
    sub-directories. The user can choose one of the directories displayed in the
    list or change to another directory.
 
 .. Python Demo of:
-.. \ulink{DirList}{http://tix.sourceforge.net/dist/current/demos/samples/DirList.tcl}
+.. \ulink{DirList}{https://tix.sourceforge.net/dist/current/demos/samples/DirList.tcl}
 
 
 .. class:: DirTree()
 
    The `DirTree
-   <http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixDirTree.htm>`_
+   <https://tix.sourceforge.net/dist/current/man/html/TixCmd/tixDirTree.htm>`_
    widget displays a tree view of a directory, its previous directories and its
    sub-directories. The user can choose one of the directories displayed in the
    list or change to another directory.
 
 .. Python Demo of:
-.. \ulink{DirTree}{http://tix.sourceforge.net/dist/current/demos/samples/DirTree.tcl}
+.. \ulink{DirTree}{https://tix.sourceforge.net/dist/current/demos/samples/DirTree.tcl}
 
 
 .. class:: DirSelectDialog()
 
    The `DirSelectDialog
-   <http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixDirSelectDialog.htm>`_
+   <https://tix.sourceforge.net/dist/current/man/html/TixCmd/tixDirSelectDialog.htm>`_
    widget presents the directories in the file system in a dialog window.  The user
    can use this dialog window to navigate through the file system to select the
    desired directory.
 
 .. Python Demo of:
-.. \ulink{DirSelectDialog}{http://tix.sourceforge.net/dist/current/demos/samples/DirDlg.tcl}
+.. \ulink{DirSelectDialog}{https://tix.sourceforge.net/dist/current/demos/samples/DirDlg.tcl}
 
 
 .. class:: DirSelectBox()
@@ -263,39 +263,39 @@ File Selectors
 .. class:: ExFileSelectBox()
 
    The `ExFileSelectBox
-   <http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixExFileSelectBox.htm>`_
+   <https://tix.sourceforge.net/dist/current/man/html/TixCmd/tixExFileSelectBox.htm>`_
    widget is usually embedded in a tixExFileSelectDialog widget. It provides a
    convenient method for the user to select files. The style of the
    :class:`ExFileSelectBox` widget is very similar to the standard file dialog on
    MS Windows 3.1.
 
 .. Python Demo of:
-.. \ulink{ExFileSelectDialog}{http://tix.sourceforge.net/dist/current/demos/samples/EFileDlg.tcl}
+.. \ulink{ExFileSelectDialog}{https://tix.sourceforge.net/dist/current/demos/samples/EFileDlg.tcl}
 
 
 .. class:: FileSelectBox()
 
    The `FileSelectBox
-   <http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixFileSelectBox.htm>`_
+   <https://tix.sourceforge.net/dist/current/man/html/TixCmd/tixFileSelectBox.htm>`_
    is similar to the standard Motif(TM) file-selection box. It is generally used
    for the user to choose a file. FileSelectBox stores the files mostly recently
    selected into a :class:`ComboBox` widget so that they can be quickly selected
    again.
 
 .. Python Demo of:
-.. \ulink{FileSelectDialog}{http://tix.sourceforge.net/dist/current/demos/samples/FileDlg.tcl}
+.. \ulink{FileSelectDialog}{https://tix.sourceforge.net/dist/current/demos/samples/FileDlg.tcl}
 
 
 .. class:: FileEntry()
 
    The `FileEntry
-   <http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixFileEntry.htm>`_
+   <https://tix.sourceforge.net/dist/current/man/html/TixCmd/tixFileEntry.htm>`_
    widget can be used to input a filename. The user can type in the filename
    manually. Alternatively, the user can press the button widget that sits next to
    the entry, which will bring up a file selection dialog.
 
 .. Python Demo of:
-.. \ulink{FileEntry}{http://tix.sourceforge.net/dist/current/demos/samples/FileEnt.tcl}
+.. \ulink{FileEntry}{https://tix.sourceforge.net/dist/current/demos/samples/FileEnt.tcl}
 
 
 Hierarchical ListBox
@@ -305,42 +305,42 @@ Hierarchical ListBox
 .. class:: HList()
 
    The `HList
-   <http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixHList.htm>`_ widget
+   <https://tix.sourceforge.net/dist/current/man/html/TixCmd/tixHList.htm>`_ widget
    can be used to display any data that have a hierarchical structure, for example,
    file system directory trees. The list entries are indented and connected by
    branch lines according to their places in the hierarchy.
 
 .. Python Demo of:
-.. \ulink{HList}{http://tix.sourceforge.net/dist/current/demos/samples/HList1.tcl}
+.. \ulink{HList}{https://tix.sourceforge.net/dist/current/demos/samples/HList1.tcl}
 
 
 .. class:: CheckList()
 
    The `CheckList
-   <http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixCheckList.htm>`_
+   <https://tix.sourceforge.net/dist/current/man/html/TixCmd/tixCheckList.htm>`_
    widget displays a list of items to be selected by the user. CheckList acts
    similarly to the Tk checkbutton or radiobutton widgets, except it is capable of
    handling many more items than checkbuttons or radiobuttons.
 
 .. Python Demo of:
-.. \ulink{ CheckList}{http://tix.sourceforge.net/dist/current/demos/samples/ChkList.tcl}
+.. \ulink{ CheckList}{https://tix.sourceforge.net/dist/current/demos/samples/ChkList.tcl}
 .. Python Demo of:
-.. \ulink{ScrolledHList (1)}{http://tix.sourceforge.net/dist/current/demos/samples/SHList.tcl}
+.. \ulink{ScrolledHList (1)}{https://tix.sourceforge.net/dist/current/demos/samples/SHList.tcl}
 .. Python Demo of:
-.. \ulink{ScrolledHList (2)}{http://tix.sourceforge.net/dist/current/demos/samples/SHList2.tcl}
+.. \ulink{ScrolledHList (2)}{https://tix.sourceforge.net/dist/current/demos/samples/SHList2.tcl}
 
 
 .. class:: Tree()
 
    The `Tree
-   <http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixTree.htm>`_ widget
+   <https://tix.sourceforge.net/dist/current/man/html/TixCmd/tixTree.htm>`_ widget
    can be used to display hierarchical data in a tree form. The user can adjust the
    view of the tree by opening or closing parts of the tree.
 
 .. Python Demo of:
-.. \ulink{Tree}{http://tix.sourceforge.net/dist/current/demos/samples/Tree.tcl}
+.. \ulink{Tree}{https://tix.sourceforge.net/dist/current/demos/samples/Tree.tcl}
 .. Python Demo of:
-.. \ulink{Tree (Dynamic)}{http://tix.sourceforge.net/dist/current/demos/samples/DynTree.tcl}
+.. \ulink{Tree (Dynamic)}{https://tix.sourceforge.net/dist/current/demos/samples/DynTree.tcl}
 
 
 Tabular ListBox
@@ -350,7 +350,7 @@ Tabular ListBox
 .. class:: TList()
 
    The `TList
-   <http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixTList.htm>`_ widget
+   <https://tix.sourceforge.net/dist/current/man/html/TixCmd/tixTList.htm>`_ widget
    can be used to display data in a tabular format. The list entries of a
    :class:`TList` widget are similar to the entries in the Tk listbox widget.  The
    main differences are (1) the :class:`TList` widget can display the list entries
@@ -358,17 +358,17 @@ Tabular ListBox
    multiple colors and fonts for the list entries.
 
 .. Python Demo of:
-.. \ulink{ScrolledTList (1)}{http://tix.sourceforge.net/dist/current/demos/samples/STList1.tcl}
+.. \ulink{ScrolledTList (1)}{https://tix.sourceforge.net/dist/current/demos/samples/STList1.tcl}
 .. Python Demo of:
-.. \ulink{ScrolledTList (2)}{http://tix.sourceforge.net/dist/current/demos/samples/STList2.tcl}
+.. \ulink{ScrolledTList (2)}{https://tix.sourceforge.net/dist/current/demos/samples/STList2.tcl}
 .. Grid has yet to be added to Python
 .. \subsubsection{Grid Widget}
 .. Python Demo of:
-.. \ulink{Simple Grid}{http://tix.sourceforge.net/dist/current/demos/samples/SGrid0.tcl}
+.. \ulink{Simple Grid}{https://tix.sourceforge.net/dist/current/demos/samples/SGrid0.tcl}
 .. Python Demo of:
-.. \ulink{ScrolledGrid}{http://tix.sourceforge.net/dist/current/demos/samples/SGrid1.tcl}
+.. \ulink{ScrolledGrid}{https://tix.sourceforge.net/dist/current/demos/samples/SGrid1.tcl}
 .. Python Demo of:
-.. \ulink{Editable Grid}{http://tix.sourceforge.net/dist/current/demos/samples/EditGrid.tcl}
+.. \ulink{Editable Grid}{https://tix.sourceforge.net/dist/current/demos/samples/EditGrid.tcl}
 
 
 Manager Widgets
@@ -378,19 +378,19 @@ Manager Widgets
 .. class:: PanedWindow()
 
    The `PanedWindow
-   <http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixPanedWindow.htm>`_
+   <https://tix.sourceforge.net/dist/current/man/html/TixCmd/tixPanedWindow.htm>`_
    widget allows the user to interactively manipulate the sizes of several panes.
    The panes can be arranged either vertically or horizontally.  The user changes
    the sizes of the panes by dragging the resize handle between two panes.
 
 .. Python Demo of:
-.. \ulink{PanedWindow}{http://tix.sourceforge.net/dist/current/demos/samples/PanedWin.tcl}
+.. \ulink{PanedWindow}{https://tix.sourceforge.net/dist/current/demos/samples/PanedWin.tcl}
 
 
 .. class:: ListNoteBook()
 
    The `ListNoteBook
-   <http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixListNoteBook.htm>`_
+   <https://tix.sourceforge.net/dist/current/man/html/TixCmd/tixListNoteBook.htm>`_
    widget is very similar to the :class:`TixNoteBook` widget: it can be used to
    display many windows in a limited space using a notebook metaphor. The notebook
    is divided into a stack of pages (windows). At one time only one of these pages
@@ -398,30 +398,30 @@ Manager Widgets
    the desired page in the :attr:`hlist` subwidget.
 
 .. Python Demo of:
-.. \ulink{ListNoteBook}{http://tix.sourceforge.net/dist/current/demos/samples/ListNBK.tcl}
+.. \ulink{ListNoteBook}{https://tix.sourceforge.net/dist/current/demos/samples/ListNBK.tcl}
 
 
 .. class:: NoteBook()
 
    The `NoteBook
-   <http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixNoteBook.htm>`_
+   <https://tix.sourceforge.net/dist/current/man/html/TixCmd/tixNoteBook.htm>`_
    widget can be used to display many windows in a limited space using a notebook
    metaphor. The notebook is divided into a stack of pages. At one time only one of
    these pages can be shown. The user can navigate through these pages by choosing
    the visual "tabs" at the top of the NoteBook widget.
 
 .. Python Demo of:
-.. \ulink{NoteBook}{http://tix.sourceforge.net/dist/current/demos/samples/NoteBook.tcl}
+.. \ulink{NoteBook}{https://tix.sourceforge.net/dist/current/demos/samples/NoteBook.tcl}
 
 .. \subsubsection{Scrolled Widgets}
 .. Python Demo of:
-.. \ulink{ScrolledListBox}{http://tix.sourceforge.net/dist/current/demos/samples/SListBox.tcl}
+.. \ulink{ScrolledListBox}{https://tix.sourceforge.net/dist/current/demos/samples/SListBox.tcl}
 .. Python Demo of:
-.. \ulink{ScrolledText}{http://tix.sourceforge.net/dist/current/demos/samples/SText.tcl}
+.. \ulink{ScrolledText}{https://tix.sourceforge.net/dist/current/demos/samples/SText.tcl}
 .. Python Demo of:
-.. \ulink{ScrolledWindow}{http://tix.sourceforge.net/dist/current/demos/samples/SWindow.tcl}
+.. \ulink{ScrolledWindow}{https://tix.sourceforge.net/dist/current/demos/samples/SWindow.tcl}
 .. Python Demo of:
-.. \ulink{Canvas Object View}{http://tix.sourceforge.net/dist/current/demos/samples/CObjView.tcl}
+.. \ulink{Canvas Object View}{https://tix.sourceforge.net/dist/current/demos/samples/CObjView.tcl}
 
 
 Image Types
@@ -429,17 +429,17 @@ Image Types
 
 The :mod:`tkinter.tix` module adds:
 
-* `pixmap <http://tix.sourceforge.net/dist/current/man/html/TixCmd/pixmap.htm>`_
+* `pixmap <https://tix.sourceforge.net/dist/current/man/html/TixCmd/pixmap.htm>`_
   capabilities to all :mod:`tkinter.tix` and :mod:`tkinter` widgets to create
   color images from XPM files.
 
   .. Python Demo of:
-  .. \ulink{XPM Image In Button}{http://tix.sourceforge.net/dist/current/demos/samples/Xpm.tcl}
+  .. \ulink{XPM Image In Button}{https://tix.sourceforge.net/dist/current/demos/samples/Xpm.tcl}
   .. Python Demo of:
-  .. \ulink{XPM Image In Menu}{http://tix.sourceforge.net/dist/current/demos/samples/Xpm1.tcl}
+  .. \ulink{XPM Image In Menu}{https://tix.sourceforge.net/dist/current/demos/samples/Xpm1.tcl}
 
 * `Compound
-  <http://tix.sourceforge.net/dist/current/man/html/TixCmd/compound.htm>`_ image
+  <https://tix.sourceforge.net/dist/current/man/html/TixCmd/compound.htm>`_ image
   types can be used to create images that consists of multiple horizontal lines;
   each line is composed of a series of items (texts, bitmaps, images or spaces)
   arranged from left to right. For example, a compound image can be used to
@@ -447,13 +447,13 @@ The :mod:`tkinter.tix` module adds:
   widget.
 
   .. Python Demo of:
-  .. \ulink{Compound Image In Buttons}{http://tix.sourceforge.net/dist/current/demos/samples/CmpImg.tcl}
+  .. \ulink{Compound Image In Buttons}{https://tix.sourceforge.net/dist/current/demos/samples/CmpImg.tcl}
   .. Python Demo of:
-  .. \ulink{Compound Image In NoteBook}{http://tix.sourceforge.net/dist/current/demos/samples/CmpImg2.tcl}
+  .. \ulink{Compound Image In NoteBook}{https://tix.sourceforge.net/dist/current/demos/samples/CmpImg2.tcl}
   .. Python Demo of:
-  .. \ulink{Compound Image Notebook Color Tabs}{http://tix.sourceforge.net/dist/current/demos/samples/CmpImg4.tcl}
+  .. \ulink{Compound Image Notebook Color Tabs}{https://tix.sourceforge.net/dist/current/demos/samples/CmpImg4.tcl}
   .. Python Demo of:
-  .. \ulink{Compound Image Icons}{http://tix.sourceforge.net/dist/current/demos/samples/CmpImg3.tcl}
+  .. \ulink{Compound Image Icons}{https://tix.sourceforge.net/dist/current/demos/samples/CmpImg3.tcl}
 
 
 Miscellaneous Widgets
@@ -463,7 +463,7 @@ Miscellaneous Widgets
 .. class:: InputOnly()
 
    The `InputOnly
-   <http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixInputOnly.htm>`_
+   <https://tix.sourceforge.net/dist/current/man/html/TixCmd/tixInputOnly.htm>`_
    widgets are to accept inputs from the user, which can be done with the ``bind``
    command (Unix only).
 
@@ -477,7 +477,7 @@ In addition, :mod:`tkinter.tix` augments :mod:`tkinter` by providing:
 .. class:: Form()
 
    The `Form
-   <http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixForm.htm>`_ geometry
+   <https://tix.sourceforge.net/dist/current/man/html/TixCmd/tixForm.htm>`_ geometry
    manager based on attachment rules for all Tk widgets.
 
 
@@ -488,7 +488,7 @@ Tix Commands
 .. class:: tixCommand()
 
    The `tix commands
-   <http://tix.sourceforge.net/dist/current/man/html/TixCmd/tix.htm>`_ provide
+   <https://tix.sourceforge.net/dist/current/man/html/TixCmd/tix.htm>`_ provide
    access to miscellaneous elements of :mod:`Tix`'s internal state and the
    :mod:`Tix` application context.  Most of the information manipulated by these
    methods pertains to the application as a whole, or to a screen or display,

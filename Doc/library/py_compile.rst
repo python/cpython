@@ -27,7 +27,7 @@ byte-code cache files in the directory containing the source code.
    Exception raised when an error occurs while attempting to compile the file.
 
 
-.. function:: compile(file, cfile=None, dfile=None, doraise=False, optimize=-1, invalidation_mode=PycInvalidationMode.TIMESTAMP)
+.. function:: compile(file, cfile=None, dfile=None, doraise=False, optimize=-1, invalidation_mode=PycInvalidationMode.TIMESTAMP, quiet=0)
 
    Compile a source file to byte-code and write out the byte-code cache file.
    The source code is loaded from the file named *file*.  The byte-code is
@@ -35,12 +35,20 @@ byte-code cache files in the directory containing the source code.
    in ``.pyc``.
    For example, if *file* is ``/foo/bar/baz.py`` *cfile* will default to
    ``/foo/bar/__pycache__/baz.cpython-32.pyc`` for Python 3.2.  If *dfile* is
-   specified, it is used as the name of the source file in error messages when
-   instead of *file*.  If *doraise* is true, a :exc:`PyCompileError` is raised
+   specified, it is used instead of *file* as the name of the source file from
+   which source lines are obtained for display in exception tracebacks.
+   If *doraise* is true, a :exc:`PyCompileError` is raised
    when an error is encountered while compiling *file*. If *doraise* is false
    (the default), an error string is written to ``sys.stderr``, but no exception
    is raised.  This function returns the path to byte-compiled file, i.e.
    whatever *cfile* value was used.
+
+   The *doraise* and *quiet* arguments determine how errors are handled while
+   compiling file. If *quiet* is 0 or 1, and *doraise* is false, the default
+   behaviour is enabled: an error string is written to ``sys.stderr``, and the
+   function returns ``None`` instead of a path. If *doraise* is true,
+   a :exc:`PyCompileError` is raised instead. However if *quiet* is 2,
+   no message is written, and *doraise* has no effect.
 
    If the path that *cfile* becomes (either explicitly specified or computed)
    is a symlink or non-regular file, :exc:`FileExistsError` will be raised.
@@ -82,6 +90,9 @@ byte-code cache files in the directory containing the source code.
       overrides the value of the *invalidation_mode* argument, and determines
       its default value instead.
 
+   .. versionchanged:: 3.8
+      The *quiet* parameter was added.
+
 
 .. class:: PycInvalidationMode
 
@@ -115,21 +126,33 @@ byte-code cache files in the directory containing the source code.
       system external to Python like a build system.
 
 
-.. function:: main(args=None)
+Command-Line Interface
+----------------------
 
-   Compile several source files.  The files named in *args* (or on the command
-   line, if *args* is ``None``) are compiled and the resulting byte-code is
-   cached in the normal manner.  This function does not search a directory
-   structure to locate source files; it only compiles files named explicitly.
-   If ``'-'`` is the only parameter in args, the list of files is taken from
-   standard input.
+This module can be invoked as a script to compile several source
+files.  The files named in *filenames* are compiled and the resulting
+bytecode is cached in the normal manner.  This program does not search
+a directory structure to locate source files; it only compiles files
+named explicitly. The exit status is nonzero if one of the files could
+not be compiled.
 
-   .. versionchanged:: 3.2
-      Added support for ``'-'``.
+.. program:: python -m py_compile
 
-When this module is run as a script, the :func:`main` is used to compile all the
-files named on the command line.  The exit status is nonzero if one of the files
-could not be compiled.
+.. cmdoption:: <file> ... <fileN>
+               -
+
+   Positional arguments are files to compile.  If ``-`` is the only
+   parameter, the list of files is taken from standard input.
+
+.. cmdoption:: -q, --quiet
+
+   Suppress errors output.
+
+.. versionchanged:: 3.2
+   Added support for ``-``.
+
+.. versionchanged:: 3.10
+   Added support for :option:`-q`.
 
 
 .. seealso::

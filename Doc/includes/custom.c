@@ -7,9 +7,9 @@ typedef struct {
 } CustomObject;
 
 static PyTypeObject CustomType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "custom.Custom",
-    .tp_doc = "Custom objects",
+    .tp_doc = PyDoc_STR("Custom objects"),
     .tp_basicsize = sizeof(CustomObject),
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT,
@@ -17,7 +17,7 @@ static PyTypeObject CustomType = {
 };
 
 static PyModuleDef custommodule = {
-    PyModuleDef_HEAD_INIT,
+    .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "custom",
     .m_doc = "Example module that creates an extension type.",
     .m_size = -1,
@@ -35,6 +35,11 @@ PyInit_custom(void)
         return NULL;
 
     Py_INCREF(&CustomType);
-    PyModule_AddObject(m, "Custom", (PyObject *) &CustomType);
+    if (PyModule_AddObject(m, "Custom", (PyObject *) &CustomType) < 0) {
+        Py_DECREF(&CustomType);
+        Py_DECREF(m);
+        return NULL;
+    }
+
     return m;
 }

@@ -3,11 +3,13 @@ Test the implementation of the PEP 540: the UTF-8 Mode.
 """
 
 import locale
+import subprocess
 import sys
 import textwrap
 import unittest
 from test import support
 from test.support.script_helper import assert_python_ok, assert_python_failure
+from test.support import os_helper
 
 
 MS_WINDOWS = (sys.platform == 'win32')
@@ -159,7 +161,7 @@ class UTF8ModeTests(unittest.TestCase):
         filename = __file__
 
         out = self.get_output('-c', code, filename, PYTHONUTF8='1')
-        self.assertEqual(out, 'UTF-8/strict')
+        self.assertEqual(out.lower(), 'utf-8/strict')
 
     def _check_io_encoding(self, module, encoding=None, errors=None):
         filename = __file__
@@ -181,10 +183,10 @@ class UTF8ModeTests(unittest.TestCase):
                               PYTHONUTF8='1')
 
         if not encoding:
-            encoding = 'UTF-8'
+            encoding = 'utf-8'
         if not errors:
             errors = 'strict'
-        self.assertEqual(out, f'{encoding}/{errors}')
+        self.assertEqual(out.lower(), f'{encoding}/{errors}')
 
     def check_io_encoding(self, module):
         self._check_io_encoding(module, encoding="latin1")
@@ -201,12 +203,12 @@ class UTF8ModeTests(unittest.TestCase):
     def test_locale_getpreferredencoding(self):
         code = 'import locale; print(locale.getpreferredencoding(False), locale.getpreferredencoding(True))'
         out = self.get_output('-X', 'utf8', '-c', code)
-        self.assertEqual(out, 'UTF-8 UTF-8')
+        self.assertEqual(out, 'utf-8 utf-8')
 
         for loc in POSIX_LOCALES:
             with self.subTest(LC_ALL=loc):
                 out = self.get_output('-X', 'utf8', '-c', code, LC_ALL=loc)
-                self.assertEqual(out, 'UTF-8 UTF-8')
+                self.assertEqual(out, 'utf-8 utf-8')
 
     @unittest.skipIf(MS_WINDOWS, 'test specific to Unix')
     def test_cmd_line(self):
@@ -249,6 +251,32 @@ class UTF8ModeTests(unittest.TestCase):
         code = 'import sys; print(sys.flags.ignore_environment)'
         out = self.get_output('-X', 'utf8', '-E', '-c', code)
         self.assertEqual(out, '1')
+
+    @unittest.skipIf(MS_WINDOWS,
+                     "os.device_encoding() doesn't implement "
+                     "the UTF-8 Mode on Windows")
+    @support.requires_subprocess()
+    def test_device_encoding(self):
+        # Use stdout as TTY
+        if not sys.stdout.isatty():
+            self.skipTest("sys.stdout is not a TTY")
+
+        filename = 'out.txt'
+        self.addCleanup(os_helper.unlink, filename)
+
+        code = (f'import os, sys; fd = sys.stdout.fileno(); '
+                f'out = open({filename!r}, "w", encoding="utf-8"); '
+                f'print(os.isatty(fd), os.device_encoding(fd), file=out); '
+                f'out.close()')
+        cmd = [sys.executable, '-X', 'utf8', '-c', code]
+        # The stdout TTY is inherited to the child process
+        proc = subprocess.run(cmd, text=True)
+        self.assertEqual(proc.returncode, 0, proc)
+
+        # In UTF-8 Mode, device_encoding(fd) returns "UTF-8" if fd is a TTY
+        with open(filename, encoding="utf8") as fp:
+            out = fp.read().rstrip()
+        self.assertEqual(out, 'True utf-8')
 
 
 if __name__ == "__main__":

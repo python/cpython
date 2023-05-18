@@ -220,7 +220,7 @@ these commands by default, as long as, when invoked, they provide clear and
 simple directions on how to install them on that platform (usually using
 the system package manager).
 
-__ https://www.python.org/dev/peps/pep-0453/#recommendations-for-downstream-distributors
+__ https://peps.python.org/pep-0453/#recommendations-for-downstream-distributors
 
 .. note::
 
@@ -247,7 +247,7 @@ projects.
 
 However, as this migration is currently still incomplete, the legacy
 versions of those guides remaining available as :ref:`install-index`
-and :ref:`distutils-index`.
+and :ref:`setuptools-index`.
 
 .. seealso::
 
@@ -409,7 +409,7 @@ Some smaller changes made to the core Python language are:
   evaluating has no elements.  (Contributed by Julian Berman in
   :issue:`18111`.)
 
-* Module objects are now :mod:`weakref`'able.
+* Module objects are now :ref:`weakly referenceable <mod-weakref>`.
 
 * Module ``__file__`` attributes (and related values) should now always
   contain absolute paths by default, with the sole exception of
@@ -490,7 +490,7 @@ environment was declined.
 :mod:`ensurepip` includes a bundled copy of ``pip``, up-to-date as of the first
 release candidate of the release of CPython with which it ships (this applies
 to both maintenance releases and feature releases).  ``ensurepip`` does not
-access the internet.  If the installation has Internet access, after
+access the internet.  If the installation has internet access, after
 ``ensurepip`` is run the bundled ``pip`` can be used to upgrade ``pip`` to a
 more recent release than the bundled one.  (Note that such an upgraded version
 of ``pip`` is considered to be a separately installed package and will not be
@@ -991,18 +991,18 @@ for the :meth:`~importlib.abc.InspectLoader.get_code` method.  However,
 it will normally be desirable to override the default implementation
 for performance reasons.  (Contributed by Brett Cannon in :issue:`18072`.)
 
-The :func:`~importlib.reload` function has been moved from :mod:`imp` to
-:mod:`importlib` as part of the :mod:`imp` module deprecation.  (Contributed by
+The :func:`~importlib.reload` function has been moved from :mod:`!imp` to
+:mod:`importlib` as part of the :mod:`!imp` module deprecation.  (Contributed by
 Berker Peksag in :issue:`18193`.)
 
 :mod:`importlib.util` now has a :data:`~importlib.util.MAGIC_NUMBER` attribute
 providing access to the bytecode version number.  This replaces the
-:func:`~imp.get_magic` function in the deprecated :mod:`imp` module.
+:func:`!get_magic` function in the deprecated :mod:`!imp` module.
 (Contributed by Brett Cannon in :issue:`18192`.)
 
 New :mod:`importlib.util` functions :func:`~importlib.util.cache_from_source`
 and :func:`~importlib.util.source_from_cache` replace the same-named functions
-in the deprecated :mod:`imp` module.  (Contributed by Brett Cannon in
+in the deprecated :mod:`!imp` module.  (Contributed by Brett Cannon in
 :issue:`18194`.)
 
 The :mod:`importlib` bootstrap :class:`.NamespaceLoader` now conforms to
@@ -1113,8 +1113,8 @@ with additional speedups by Antoine Pitrou in :issue:`19219`.)
 mmap
 ----
 
-mmap objects can now be :mod:`weakref`\ ed.  (Contributed by Valerie Lambert in
-:issue:`4885`.)
+mmap objects are now :ref:`weakly referenceable <mod-weakref>`.
+(Contributed by Valerie Lambert in :issue:`4885`.)
 
 
 multiprocessing
@@ -1659,7 +1659,7 @@ The :class:`~unittest.TestCase` class has a new method,
 :keyword:`with` block becomes a "sub-test".  This context manager allows a test
 method to dynamically generate subtests  by, say, calling the ``subTest``
 context manager inside a loop.  A single test method can thereby produce an
-indefinite number of separately-identified and separately-counted tests, all of
+indefinite number of separately identified and separately counted tests, all of
 which will run even if one or more of them fail.  For example::
 
     class NumbersTest(unittest.TestCase):
@@ -1849,7 +1849,7 @@ Python's default implementation to a SipHash implementation on platforms that
 have a 64 bit data type.  Any performance differences in comparison with the
 older FNV algorithm are trivial.
 
-The PEP adds additional fields to the :attr:`sys.hash_info` struct sequence to
+The PEP adds additional fields to the :attr:`sys.hash_info` named tuple to
 describe the hash algorithm in use by the currently executing binary.  Otherwise,
 the PEP does not alter any existing CPython APIs.
 
@@ -1963,7 +1963,7 @@ Other Improvements
   <https://devguide.python.org/coverage/#measuring-coverage-of-c-code-with-gcov-and-lcov>`_
   will build python, run the test suite, and generate an HTML coverage report
   for the C codebase using ``gcov`` and `lcov
-  <http://ltp.sourceforge.net/coverage/lcov.php>`_.
+  <https://ltp.sourceforge.net/coverage/lcov.php>`_.
 
 * The ``-R`` option to the :ref:`python regression test suite <regrtest>` now
   also checks for memory allocation leaks, using
@@ -2056,7 +2056,7 @@ Significant Optimizations
   ``malloc`` in ``obmalloc``.  Artificial benchmarks show about a 3% memory
   savings.
 
-* :func:`os.urandom` now uses a lazily-opened persistent file descriptor
+* :func:`os.urandom` now uses a lazily opened persistent file descriptor
   so as to avoid using many file descriptors when run in parallel from
   multiple threads.  (Contributed by Antoine Pitrou in :issue:`18756`.)
 
@@ -2077,31 +2077,31 @@ Deprecations in the Python API
 ------------------------------
 
 * As mentioned in :ref:`whatsnew-pep-451`, a number of :mod:`importlib`
-  methods and functions are deprecated: :meth:`importlib.find_loader` is
+  methods and functions are deprecated: :meth:`!importlib.find_loader` is
   replaced by :func:`importlib.util.find_spec`;
-  :meth:`importlib.machinery.PathFinder.find_module` is replaced by
+  :meth:`!importlib.machinery.PathFinder.find_module` is replaced by
   :meth:`importlib.machinery.PathFinder.find_spec`;
-  :meth:`importlib.abc.MetaPathFinder.find_module` is replaced by
+  :meth:`!importlib.abc.MetaPathFinder.find_module` is replaced by
   :meth:`importlib.abc.MetaPathFinder.find_spec`;
-  :meth:`importlib.abc.PathEntryFinder.find_loader` and
-  :meth:`~importlib.abc.PathEntryFinder.find_module` are replaced by
+  :meth:`!importlib.abc.PathEntryFinder.find_loader` and
+  :meth:`!find_module` are replaced by
   :meth:`importlib.abc.PathEntryFinder.find_spec`; all of the ``xxxLoader`` ABC
-  ``load_module`` methods (:meth:`importlib.abc.Loader.load_module`,
-  :meth:`importlib.abc.InspectLoader.load_module`,
-  :meth:`importlib.abc.FileLoader.load_module`,
-  :meth:`importlib.abc.SourceLoader.load_module`) should no longer be
+  ``load_module`` methods (:meth:`!importlib.abc.Loader.load_module`,
+  :meth:`!importlib.abc.InspectLoader.load_module`,
+  :meth:`!importlib.abc.FileLoader.load_module`,
+  :meth:`!importlib.abc.SourceLoader.load_module`) should no longer be
   implemented, instead loaders should implement an
   ``exec_module`` method
   (:meth:`importlib.abc.Loader.exec_module`,
   :meth:`importlib.abc.InspectLoader.exec_module`
   :meth:`importlib.abc.SourceLoader.exec_module`) and let the import system
   take care of the rest; and
-  :meth:`importlib.abc.Loader.module_repr`,
-  :meth:`importlib.util.module_for_loader`, :meth:`importlib.util.set_loader`,
-  and :meth:`importlib.util.set_package` are no longer needed because their
+  :meth:`!importlib.abc.Loader.module_repr`,
+  :meth:`!importlib.util.module_for_loader`, :meth:`!importlib.util.set_loader`,
+  and :meth:`!importlib.util.set_package` are no longer needed because their
   functions are now handled automatically by the import system.
 
-* The :mod:`imp` module is pending deprecation. To keep compatibility with
+* The :mod:`!imp` module is pending deprecation. To keep compatibility with
   Python 2/3 code bases, the module's removal is currently not scheduled.
 
 * The :mod:`formatter` module is pending deprecation and is slated for removal
@@ -2277,7 +2277,7 @@ Changes in the Python API
   in a backwards-compatible fashion, use e.g.
   ``getattr(module, '__loader__', None) is not None``.  (:issue:`17115`.)
 
-* :meth:`importlib.util.module_for_loader` now sets ``__loader__`` and
+* :meth:`!importlib.util.module_for_loader` now sets ``__loader__`` and
   ``__package__`` unconditionally to properly support reloading. If this is not
   desired then you will need to set these attributes manually. You can use
   :func:`importlib.util.module_to_load` for module management.
@@ -2300,7 +2300,7 @@ Changes in the Python API
   then you can see if the module's ``__spec__.location`` is set to ``'frozen'``,
   check if the loader is a subclass of
   :class:`importlib.machinery.FrozenImporter`,
-  or if Python 2 compatibility is necessary you can use :func:`imp.is_frozen`.
+  or if Python 2 compatibility is necessary you can use :func:`!imp.is_frozen`.
 
 * :func:`py_compile.compile` now raises :exc:`FileExistsError` if the file path
   it would write to is a symlink or a non-regular file. This is to act as a
@@ -2503,13 +2503,13 @@ Changes in the C API
 
 * The result of the :c:data:`PyOS_ReadlineFunctionPointer` callback must
   now be a string allocated by :c:func:`PyMem_RawMalloc` or
-  :c:func:`PyMem_RawRealloc`, or *NULL* if an error occurred, instead of a
+  :c:func:`PyMem_RawRealloc`, or ``NULL`` if an error occurred, instead of a
   string allocated by :c:func:`PyMem_Malloc` or :c:func:`PyMem_Realloc`
   (:issue:`16742`)
 
 * :c:func:`PyThread_set_key_value` now always set the value. In Python
   3.3, the function did nothing if the key already exists (if the current
-  value is a non-NULL pointer).
+  value is a non-``NULL`` pointer).
 
 * The ``f_tstate`` (thread state) field of the :c:type:`PyFrameObject`
   structure has been removed to fix a bug: see :issue:`14432` for the

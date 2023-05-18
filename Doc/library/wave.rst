@@ -12,7 +12,12 @@
 --------------
 
 The :mod:`wave` module provides a convenient interface to the WAV sound format.
-It does not support compression/decompression, but it does support mono/stereo.
+Only PCM encoded wave files are supported.
+
+.. versionchanged:: 3.12
+
+   Support for ``WAVE_FORMAT_EXTENSIBLE`` headers was added, provided that the
+   extended format is ``KSDATAFORMAT_SUBTYPE_PCM``.
 
 The :mod:`wave` module defines the following function and exception:
 
@@ -46,13 +51,6 @@ The :mod:`wave` module defines the following function and exception:
 
    .. versionchanged:: 3.4
       Added support for unseekable files.
-
-.. function:: openfp(file, mode)
-
-   A synonym for :func:`.open`, maintained for backwards compatibility.
-
-   .. deprecated-removed:: 3.7 3.9
-
 
 .. exception:: Error
 
