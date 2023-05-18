@@ -59,7 +59,7 @@ _typing_exec(PyObject *m)
     EXPORT_TYPE("ParamSpecKwargs", paramspeckwargs_type);
     EXPORT_TYPE("Generic", generic_type);
 #undef EXPORT_TYPE
-    if (PyModule_AddObjectRef(m, "TypeAliasType", &_PyTypeAlias_Type) < 0) {
+    if (PyModule_AddObjectRef(m, "TypeAliasType", (PyObject *)&_PyTypeAlias_Type) < 0) {
         return -1;
     }
     return 0;
