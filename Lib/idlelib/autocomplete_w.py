@@ -186,7 +186,7 @@ class AutoCompleteWindow:
         acw.withdraw()
         acw.wm_overrideredirect(1)
         try:
-            # Prevent grabbing focus on maxOS.
+            # Prevent grabbing focus on macOS.
             acw.tk.call("::tk::unsupported::MacWindowStyle", "style", acw._w,
                         "help", "noActivates")
         except TclError:
