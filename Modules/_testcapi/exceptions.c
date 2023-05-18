@@ -98,11 +98,12 @@ _testcapi_make_exception_with_doc_impl(PyObject *module, const char *name,
 _testcapi.exc_set_object
     exception as exc: object
     obj: object
+    /
 [clinic start generated code]*/
 
 static PyObject *
 _testcapi_exc_set_object_impl(PyObject *module, PyObject *exc, PyObject *obj)
-/*[clinic end generated code: output=34c8c7c83e5c8463 input=d2ccbcb97e67d3c2]*/
+/*[clinic end generated code: output=34c8c7c83e5c8463 input=fc530aafb1b0a360]*/
 {
     PyErr_SetObject(exc, obj);
     return NULL;

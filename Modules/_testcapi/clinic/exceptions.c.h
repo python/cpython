@@ -157,51 +157,24 @@ exit:
 }
 
 PyDoc_STRVAR(_testcapi_exc_set_object__doc__,
-"exc_set_object($module, /, exception, obj)\n"
+"exc_set_object($module, exception, obj, /)\n"
 "--\n"
 "\n");
 
 #define _TESTCAPI_EXC_SET_OBJECT_METHODDEF    \
-    {"exc_set_object", _PyCFunction_CAST(_testcapi_exc_set_object), METH_FASTCALL|METH_KEYWORDS, _testcapi_exc_set_object__doc__},
+    {"exc_set_object", _PyCFunction_CAST(_testcapi_exc_set_object), METH_FASTCALL, _testcapi_exc_set_object__doc__},
 
 static PyObject *
 _testcapi_exc_set_object_impl(PyObject *module, PyObject *exc, PyObject *obj);
 
 static PyObject *
-_testcapi_exc_set_object(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_testcapi_exc_set_object(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 2
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(exception), &_Py_ID(obj), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"exception", "obj", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "exc_set_object",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *exc;
     PyObject *obj;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_CheckPositional("exc_set_object", nargs, 2, 2)) {
         goto exit;
     }
     exc = args[0];
@@ -213,52 +186,25 @@ exit:
 }
 
 PyDoc_STRVAR(_testcapi_exc_set_object_fetch__doc__,
-"exc_set_object_fetch($module, /, exception, obj)\n"
+"exc_set_object_fetch($module, exception, obj, /)\n"
 "--\n"
 "\n");
 
 #define _TESTCAPI_EXC_SET_OBJECT_FETCH_METHODDEF    \
-    {"exc_set_object_fetch", _PyCFunction_CAST(_testcapi_exc_set_object_fetch), METH_FASTCALL|METH_KEYWORDS, _testcapi_exc_set_object_fetch__doc__},
+    {"exc_set_object_fetch", _PyCFunction_CAST(_testcapi_exc_set_object_fetch), METH_FASTCALL, _testcapi_exc_set_object_fetch__doc__},
 
 static PyObject *
 _testcapi_exc_set_object_fetch_impl(PyObject *module, PyObject *exc,
                                     PyObject *obj);
 
 static PyObject *
-_testcapi_exc_set_object_fetch(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_testcapi_exc_set_object_fetch(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 2
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(exception), &_Py_ID(obj), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"exception", "obj", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "exc_set_object_fetch",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *exc;
     PyObject *obj;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_CheckPositional("exc_set_object_fetch", nargs, 2, 2)) {
         goto exit;
     }
     exc = args[0];
@@ -451,4 +397,4 @@ _testcapi_traceback_print(PyObject *module, PyObject *const *args, Py_ssize_t na
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9076f55ae0673fee input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ee4a6d2d08c23e0a input=a9049054013a1b77]*/
