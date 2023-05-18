@@ -115,13 +115,15 @@ module_threads_reinit(struct module_threads *threads)
 #endif
     assert(tstate->thread_id == PyThread_get_thread_ident());
 
-    if (_PyThread_at_fork_reinit(threads->mutex) < 0) {
+    PyThread_type_lock lock = threads->mutex;
+    assert(lock != NULL);
+    if (_PyThread_at_fork_reinit(&lock) < 0) {
         PyErr_SetString(ThreadError, "failed to reinitialize lock at fork");
         return -1;
     }
 
     *threads = (struct module_threads){
-        .mutex = threads->mutex,
+        .mutex = lock,
         // The counts are all reset to 0.
     };
     return 0;
