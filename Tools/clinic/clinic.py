@@ -29,7 +29,15 @@ import traceback
 
 from collections.abc import Callable
 from types import FunctionType, NoneType
-from typing import Any, Final, NamedTuple, NoReturn, Literal, overload
+from typing import (
+    Any,
+    Final,
+    Literal,
+    NamedTuple,
+    NoReturn,
+    Type,
+    overload,
+)
 
 # TODO:
 #
@@ -72,6 +80,8 @@ class Sentinels(enum.Enum):
 unspecified: Final = Sentinels.unspecified
 NULL: Final = Sentinels.NULL
 unknown: Final = Sentinels.unknown
+
+NullType = type(Sentinels.NULL)
 
 sig_end_marker = '--'
 
@@ -2694,7 +2704,12 @@ class CConverter(metaclass=CConverterAutoRegister):
         self.unused = unused
 
         if default is not unspecified:
-            if self.default_type and not isinstance(default, (self.default_type, Unknown)):
+            if (self.default_type
+                and not (
+                    isinstance(default, self.default_type)
+                    or default is unknown
+                )
+            ):
                 if isinstance(self.default_type, type):
                     types_str = self.default_type.__name__
                 else:
@@ -3482,7 +3497,7 @@ str_converter_argument_map: dict[str, str] = {}
 
 class str_converter(CConverter):
     type = 'const char *'
-    default_type = (str, Null, NoneType)
+    default_type = (str, NullType, NoneType)
     format_unit = 's'
 
     def converter_init(
@@ -3501,7 +3516,7 @@ class str_converter(CConverter):
         self.format_unit = format_unit
         self.length = bool(zeroes)
         if encoding:
-            if self.default not in (Null, None, unspecified):
+            if self.default not in (NULL, None, unspecified):
                 fail("str_converter: Argument Clinic doesn't support default values for encoded strings")
             self.encoding = encoding
             self.type = 'char *'
@@ -3649,7 +3664,7 @@ class PyByteArrayObject_converter(CConverter):
 
 class unicode_converter(CConverter):
     type = 'PyObject *'
-    default_type = (str, Null, NoneType)
+    default_type = (str, NullType, NoneType)
     format_unit = 'U'
 
     def parse_arg(self, argname: str, displayname: str) -> str:
@@ -3673,7 +3688,7 @@ class unicode_converter(CConverter):
 @add_legacy_c_converter('Z#', accept={str, NoneType}, zeroes=True)
 class Py_UNICODE_converter(CConverter):
     type = 'const Py_UNICODE *'
-    default_type = (str, Null, NoneType)
+    default_type = (str, NullType, NoneType)
 
     def converter_init(
             self, *,
