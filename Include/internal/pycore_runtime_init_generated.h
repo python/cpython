@@ -1065,6 +1065,7 @@ extern "C" {
     INIT_ID(newline), \
     INIT_ID(newlines), \
     INIT_ID(next), \
+    INIT_ID(nlocals), \
     INIT_ID(node_depth), \
     INIT_ID(node_offset), \
     INIT_ID(ns), \
