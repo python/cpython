@@ -7996,7 +7996,7 @@ finally:
 }
 
 PyObject *
-_PyCompile_OptimizeCfg(PyObject *instructions, PyObject *consts)
+_PyCompile_OptimizeCfg(PyObject *instructions, PyObject *consts, int nlocals)
 {
     PyObject *res = NULL;
     PyObject *const_cache = PyDict_New();
@@ -8008,7 +8008,7 @@ _PyCompile_OptimizeCfg(PyObject *instructions, PyObject *consts)
     if (instructions_to_cfg(instructions, &g) < 0) {
         goto error;
     }
-    int code_flags = 0, nlocals = 0, nparams = 0, firstlineno = 1;
+    int code_flags = 0, nparams = 0, firstlineno = 1;
     if (_PyCfg_OptimizeCodeUnit(&g, consts, const_cache, code_flags, nlocals,
                                 nparams, firstlineno) < 0) {
         goto error;
