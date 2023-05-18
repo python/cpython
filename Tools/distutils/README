@@ -1,0 +1,3 @@
+This directory contains the Distutils package, which was
+part of the CPython stdlib until 3.11. It is vendored here
+for use with the c-analyzer and the peg-generator.

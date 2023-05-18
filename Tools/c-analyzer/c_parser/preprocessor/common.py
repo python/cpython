@@ -1,5 +1,4 @@
 import contextlib
-import distutils.ccompiler
 import logging
 import shlex
 import subprocess
@@ -16,6 +15,13 @@ from .errors import (
 
 logger = logging.getLogger(__name__)
 
+try:
+    import distutils.ccompiler
+except ImportError:
+    import pathlib
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent.parent.parent))
+    import distutils.ccompiler
+    sys.path.pop(0)
 
 # XXX Add aggregate "source" class(es)?
 #  * expose all lines as single text string

@@ -47,11 +47,14 @@ cygwin in no-cygwin mode).
 
 import os
 import sys
+import copy
 from subprocess import Popen, PIPE, check_output
 import re
 
 from distutils.unixccompiler import UnixCCompiler
-from distutils.errors import CCompilerError
+from distutils.file_util import write_file
+from distutils.errors import (DistutilsExecError, CCompilerError,
+        CompileError, UnknownFileError)
 from distutils.version import LooseVersion
 from distutils.spawn import find_executable
 
@@ -151,6 +154,120 @@ class CygwinCCompiler(UnixCCompiler):
             # with MSVC 7.0 or later.
             self.dll_libraries = get_msvcr()
 
+    def _compile(self, obj, src, ext, cc_args, extra_postargs, pp_opts):
+        """Compiles the source by spawning GCC and windres if needed."""
+        if ext == '.rc' or ext == '.res':
+            # gcc needs '.res' and '.rc' compiled to object files !!!
+            try:
+                self.spawn(["windres", "-i", src, "-o", obj])
+            except DistutilsExecError as msg:
+                raise CompileError(msg)
+        else: # for other files use the C-compiler
+            try:
+                self.spawn(self.compiler_so + cc_args + [src, '-o', obj] +
+                           extra_postargs)
+            except DistutilsExecError as msg:
+                raise CompileError(msg)
+
+    def link(self, target_desc, objects, output_filename, output_dir=None,
+             libraries=None, library_dirs=None, runtime_library_dirs=None,
+             export_symbols=None, debug=0, extra_preargs=None,
+             extra_postargs=None, build_temp=None, target_lang=None):
+        """Link the objects."""
+        # use separate copies, so we can modify the lists
+        extra_preargs = copy.copy(extra_preargs or [])
+        libraries = copy.copy(libraries or [])
+        objects = copy.copy(objects or [])
+
+        # Additional libraries
+        libraries.extend(self.dll_libraries)
+
+        # handle export symbols by creating a def-file
+        # with executables this only works with gcc/ld as linker
+        if ((export_symbols is not None) and
+            (target_desc != self.EXECUTABLE or self.linker_dll == "gcc")):
+            # (The linker doesn't do anything if output is up-to-date.
+            # So it would probably better to check if we really need this,
+            # but for this we had to insert some unchanged parts of
+            # UnixCCompiler, and this is not what we want.)
+
+            # we want to put some files in the same directory as the
+            # object files are, build_temp doesn't help much
+            # where are the object files
+            temp_dir = os.path.dirname(objects[0])
+            # name of dll to give the helper files the same base name
+            (dll_name, dll_extension) = os.path.splitext(
+                os.path.basename(output_filename))
+
+            # generate the filenames for these files
+            def_file = os.path.join(temp_dir, dll_name + ".def")
+            lib_file = os.path.join(temp_dir, 'lib' + dll_name + ".a")
+
+            # Generate .def file
+            contents = [
+                "LIBRARY %s" % os.path.basename(output_filename),
+                "EXPORTS"]
+            for sym in export_symbols:
+                contents.append(sym)
+            self.execute(write_file, (def_file, contents),
+                         "writing %s" % def_file)
+
+            # next add options for def-file and to creating import libraries
+
+            # dllwrap uses different options than gcc/ld
+            if self.linker_dll == "dllwrap":
+                extra_preargs.extend(["--output-lib", lib_file])
+                # for dllwrap we have to use a special option
+                extra_preargs.extend(["--def", def_file])
+            # we use gcc/ld here and can be sure ld is >= 2.9.10
+            else:
+                # doesn't work: bfd_close build\...\libfoo.a: Invalid operation
+                #extra_preargs.extend(["-Wl,--out-implib,%s" % lib_file])
+                # for gcc/ld the def-file is specified as any object files
+                objects.append(def_file)
+
+        #end: if ((export_symbols is not None) and
+        #        (target_desc != self.EXECUTABLE or self.linker_dll == "gcc")):
+
+        # who wants symbols and a many times larger output file
+        # should explicitly switch the debug mode on
+        # otherwise we let dllwrap/ld strip the output file
+        # (On my machine: 10KiB < stripped_file < ??100KiB
+        #   unstripped_file = stripped_file + XXX KiB
+        #  ( XXX=254 for a typical python extension))
+        if not debug:
+            extra_preargs.append("-s")
+
+        UnixCCompiler.link(self, target_desc, objects, output_filename,
+                           output_dir, libraries, library_dirs,
+                           runtime_library_dirs,
+                           None, # export_symbols, we do this in our def-file
+                           debug, extra_preargs, extra_postargs, build_temp,
+                           target_lang)
+
+    # -- Miscellaneous methods -----------------------------------------
+
+    def object_filenames(self, source_filenames, strip_dir=0, output_dir=''):
+        """Adds supports for rc and res files."""
+        if output_dir is None:
+            output_dir = ''
+        obj_names = []
+        for src_name in source_filenames:
+            # use normcase to make sure '.rc' is really '.rc' and not '.RC'
+            base, ext = os.path.splitext(os.path.normcase(src_name))
+            if ext not in (self.src_extensions + ['.rc','.res']):
+                raise UnknownFileError("unknown file type '%s' (from '%s')" % \
+                      (ext, src_name))
+            if strip_dir:
+                base = os.path.basename (base)
+            if ext in ('.res', '.rc'):
+                # these need to be compiled to object files
+                obj_names.append (os.path.join(output_dir,
+                                              base + ext + self.obj_extension))
+            else:
+                obj_names.append (os.path.join(output_dir,
+                                               base + self.obj_extension))
+        return obj_names
 
 # the same as cygwin plus some additional parameters
 class Mingw32CCompiler(CygwinCCompiler):
@@ -227,7 +344,7 @@ def check_config_h():
     # XXX since this function also checks sys.version, it's not strictly a
     # "pyconfig.h" check -- should probably be renamed...
 
-    import sysconfig
+    from distutils import sysconfig
 
     # if sys.version contains GCC then python was compiled with GCC, and the
     # pyconfig.h file should be OK

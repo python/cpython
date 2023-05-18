@@ -69,6 +69,40 @@ unittest.main()
 """
 
 
+def _missing_compiler_executable(cmd_names=[]):
+    """Check if the compiler components used to build the interpreter exist.
+
+    Check for the existence of the compiler executables whose names are listed
+    in 'cmd_names' or all the compiler executables when 'cmd_names' is empty
+    and return the first missing executable or None when none is found
+    missing.
+
+    """
+    test_tools.skip_if_missing("distutils")
+    with test_tools.imports_under_tool(""):
+        from distutils import ccompiler, sysconfig, spawn, errors
+
+    compiler = ccompiler.new_compiler()
+    sysconfig.customize_compiler(compiler)
+    if compiler.compiler_type == "msvc":
+        # MSVC has no executables, so check whether initialization succeeds
+        try:
+            compiler.initialize()
+        except errors.DistutilsPlatformError:
+            return "msvc"
+    for name in compiler.executables:
+        if cmd_names and name not in cmd_names:
+            continue
+        cmd = getattr(compiler, name)
+        if cmd_names:
+            assert cmd is not None, \
+                    "the '%s' executable is not configured" % name
+        elif not cmd:
+            continue
+        if spawn.find_executable(cmd[0]) is None:
+            return cmd[0]
+
+
 @support.requires_subprocess()
 class TestCParser(unittest.TestCase):
 
@@ -90,7 +124,7 @@ class TestCParser(unittest.TestCase):
 
     def setUp(self):
         self._backup_config_vars = dict(sysconfig._CONFIG_VARS)
-        cmd = support.missing_compiler_executable()
+        cmd = _missing_compiler_executable()
         if cmd is not None:
             self.skipTest("The %r command is not found" % cmd)
         self.old_cwd = os.getcwd()

@@ -61,7 +61,7 @@ __all__ = [
     # miscellaneous
     "run_with_locale", "swap_item", "findfile", "infinite_recursion",
     "swap_attr", "Matcher", "set_memlimit", "SuppressCrashReport", "sortdict",
-    "run_with_tz", "PGO", "missing_compiler_executable",
+    "run_with_tz", "PGO",
     "ALWAYS_EQ", "NEVER_EQ", "LARGEST", "SMALLEST",
     "LOOPBACK_TIMEOUT", "INTERNET_TIMEOUT", "SHORT_TIMEOUT", "LONG_TIMEOUT",
     "Py_DEBUG", "EXCEEDS_RECURSION_LIMIT",
@@ -1854,38 +1854,6 @@ def check_free_after_iterating(test, iter, cls, args=()):
     # The sequence should be deallocated just after the end of iterating
     gc_collect()
     test.assertTrue(done)
-
-
-def missing_compiler_executable(cmd_names=[]):
-    """Check if the compiler components used to build the interpreter exist.
-
-    Check for the existence of the compiler executables whose names are listed
-    in 'cmd_names' or all the compiler executables when 'cmd_names' is empty
-    and return the first missing executable or None when none is found
-    missing.
-
-    """
-    # TODO (PEP 632): alternate check without using distutils
-    from distutils import ccompiler, sysconfig, spawn, errors
-    compiler = ccompiler.new_compiler()
-    sysconfig.customize_compiler(compiler)
-    if compiler.compiler_type == "msvc":
-        # MSVC has no executables, so check whether initialization succeeds
-        try:
-            compiler.initialize()
-        except errors.DistutilsPlatformError:
-            return "msvc"
-    for name in compiler.executables:
-        if cmd_names and name not in cmd_names:
-            continue
-        cmd = getattr(compiler, name)
-        if cmd_names:
-            assert cmd is not None, \
-                    "the '%s' executable is not configured" % name
-        elif not cmd:
-            continue
-        if spawn.find_executable(cmd[0]) is None:
-            return cmd[0]
 
 
 _is_android_emulator = None
