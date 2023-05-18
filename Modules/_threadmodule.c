@@ -110,7 +110,9 @@ module_threads_init(struct module_threads *threads)
 static int
 module_threads_reinit(struct module_threads *threads)
 {
+#ifndef NDEBUG
     PyThreadState *tstate = _PyThreadState_GET();
+#endif
     assert(tstate->thread_id == PyThread_get_thread_ident());
 
     if (_PyThread_at_fork_reinit(threads->mutex) < 0) {
@@ -1802,9 +1804,9 @@ thread__after_fork(PyObject *module, PyObject *Py_UNUSED(ignored))
 #endif
 
 static PyMethodDef thread_methods[] = {
-    {"start_new_thread",        (PyCFunction)thread_PyThread_start_new_thread,
+    {"start_new_thread",        _PyCFunction_CAST(thread_PyThread_start_new_thread),
      METH_VARARGS | METH_KEYWORDS, start_new_doc},
-    {"start_new",               (PyCFunction)thread_PyThread_start_new_thread,
+    {"start_new",               _PyCFunction_CAST(thread_PyThread_start_new_thread),
      METH_VARARGS | METH_KEYWORDS, start_new_doc},
     {"daemon_threads_allowed",  (PyCFunction)thread_daemon_threads_allowed,
      METH_NOARGS, daemon_threads_allowed_doc},
