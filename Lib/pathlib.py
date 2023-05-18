@@ -139,8 +139,7 @@ class _WildcardSelector(_Selector):
         if case_sensitive is None:
             # TODO: evaluate case-sensitivity of each directory in _select_from()
             case_sensitive = _is_case_sensitive(flavour)
-        flags = re.NOFLAG if case_sensitive else re.IGNORECASE
-        self.match = re.compile(fnmatch.translate(pat), flags=flags).fullmatch
+        self.match = _compile_pattern(pat, case_sensitive)
 
     def _select_from(self, parent_path, scandir):
         try:
