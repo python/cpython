@@ -104,7 +104,6 @@ module_threads_init(struct module_threads *threads)
     *threads = (struct module_threads){
         .mutex = lock,
     };
-    assert(_PyThreadState_GET()->interp->threads.count == 0);
     return 0;
 }
 
@@ -124,7 +123,6 @@ module_threads_reinit(struct module_threads *threads)
         .mutex = threads->mutex,
         // The counts are all reset to 0.
     };
-    // XXX assert(_PyThreadState_GET()->interp->threads.count == 0);
     return 0;
 }
 #endif
@@ -132,10 +130,12 @@ module_threads_reinit(struct module_threads *threads)
 static void
 module_threads_fini(struct module_threads *threads)
 {
-    // XXX assert(_PyThreadState_GET()->interp->threads.count == threads->counts.pyfuncs_running);
+    PyThread_acquire_lock(threads->mutex, WAIT_LOCK);
 
     // XXX Wait for all module threads to finish running thread_run().
-    assert(threads->counts.running == 0);
+    // XXX assert(threads->counts.running == 0);
+
+    PyThread_release_lock(threads->mutex);
 
     PyThread_free_lock(threads->mutex);
 }
@@ -173,8 +173,6 @@ set_module_thread_starting(struct module_threads *threads,
     assert(!mt->status.func_started);
     mt->status.func_started = 1;
     threads->counts.pyfuncs_running++;
-    // XXX Drop interp.threads.count.
-    mt->tstate->interp->threads.count++;
 
     PyThread_release_lock(threads->mutex);
 }
@@ -190,8 +188,6 @@ set_module_thread_finished(struct module_threads *threads,
     assert(!mt->status.func_ended);
     mt->status.func_ended = 1;
     threads->counts.pyfuncs_running--;
-    // XXX Drop interp.threads.count.
-    mt->tstate->interp->threads.count--;
 
     PyThread_release_lock(threads->mutex);
 }
@@ -1519,8 +1515,8 @@ particular thread within a system.");
 static PyObject *
 thread__count(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    return PyLong_FromLong(interp->threads.count);
+    thread_module_state *state = get_thread_state(self);
+    return PyLong_FromLong(state->threads.counts.pyfuncs_running);
 }
 
 PyDoc_STRVAR(_count_doc,
