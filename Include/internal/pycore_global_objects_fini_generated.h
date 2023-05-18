@@ -1071,6 +1071,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(newline));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(newlines));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(next));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(nlocals));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(node_depth));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(node_offset));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(ns));
