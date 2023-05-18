@@ -87,7 +87,6 @@ struct module_threads {
     struct {
         long all;
         long running;
-        long non_daemon_running;
         long pyfuncs_running;
     } counts;
 };
