@@ -1,1 +1,1 @@
-Added case_sensitive argument to pathlib.PurePath.match()
+Added *case_sensitive* argument to :meth:`pathlib.PurePath.match`
