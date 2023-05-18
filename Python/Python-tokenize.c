@@ -89,8 +89,10 @@ _tokenizer_error(struct tok_state *tok)
             }
             return -1;
         case E_DEDENT:
-            PyErr_SetString(PyExc_IndentationError,
-                            "unindent does not match any outer indentation level");
+            PyErr_Format(PyExc_IndentationError,
+                        "unindent does not match any outer indentation level "
+                        "(<tokenize>, line %d)",
+                        tok->lineno);
             return -1;
         case E_INTR:
             if (!PyErr_Occurred()) {
@@ -115,7 +117,38 @@ _tokenizer_error(struct tok_state *tok)
         default:
             msg = "unknown tokenization error";
     }
-    PyErr_SetString(errtype, msg);
+
+    // TODO: Clean up this code and factor out common error paths
+
+    PyObject* errstr = NULL;
+    PyObject* error_line = NULL;
+
+    Py_ssize_t size = tok->inp - tok->buf;
+    error_line = PyUnicode_DecodeUTF8(tok->buf, size, "replace");
+    if (!error_line) {
+        goto error;
+    }
+    PyObject *tmp = Py_BuildValue("(OnnOii)", tok->filename, tok->lineno, 0, error_line, 0, 0);
+    if (!tmp) {
+        goto error;
+    }
+    Py_CLEAR(error_line);
+    errstr = PyUnicode_FromString(msg);
+    if (!errstr) {
+        goto error;
+    }
+    PyObject* value = PyTuple_Pack(2, errstr, tmp);
+    Py_DECREF(errstr);
+    Py_DECREF(tmp);
+    if (!value) {
+        goto error;
+    }
+    PyErr_SetObject(errtype, value);
+    Py_DECREF(value);
+    return 0;
+error:
+    Py_XDECREF(errstr);
+    Py_XDECREF(error_line);
     return -1;
 }
 

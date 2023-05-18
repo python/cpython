@@ -517,7 +517,10 @@ def main():
                 tokens = list(tokenize(f.readline))
         else:
             filename = "<stdin>"
-            tokens = _tokenize(sys.stdin.readline, None)
+            tokens = _tokenize(
+                (x.encode('utf-8') for x in iter(sys.stdin.readline, "")
+            ), "utf-8")
+
 
         # Output the tokenization
         for token in tokens:

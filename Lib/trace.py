@@ -360,7 +360,6 @@ def _find_strings(filename, encoding=None):
     # Add this special case so that the test in the loop passes.
     prev_ttype = token.INDENT
     with open(filename, encoding=encoding) as f:
-        print(filename)
         tok = tokenize.generate_tokens(f.readline)
         for ttype, tstr, start, end, line in tok:
             if ttype == token.STRING:
