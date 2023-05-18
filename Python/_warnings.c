@@ -1419,8 +1419,8 @@ _PyErr_WarnUnawaitedCoroutine(PyObject *coro)
     }
     if (!warned) {
         if (_PyErr_WarnFormat(coro, PyExc_RuntimeWarning, 1,
-                              "coroutine '%R' was never awaited",
-                              coro) < 0)
+                              "coroutine '%S' was never awaited",
+                              ((PyCoroObject *)coro)->cr_qualname) < 0)
         {
             PyErr_WriteUnraisable(coro);
         }
