@@ -87,6 +87,10 @@ in :mod:`logging` itself) and defining handlers which are declared either in
    provides a mechanism to present the choices and load the chosen
    configuration).
 
+   It will raise :exc:`FileNotFoundError` if the file
+   doesn't exist and :exc:`ValueError` if the file is invalid or
+   empty.
+
    :param fname: A filename, or a file-like object, or an instance derived
                  from :class:`~configparser.RawConfigParser`. If a
                  ``RawConfigParser``-derived instance is passed, it is used as
@@ -125,6 +129,10 @@ in :mod:`logging` itself) and defining handlers which are declared either in
 
     .. versionadded:: 3.10
        The *encoding* parameter is added.
+
+    .. versionadded:: 3.12
+       An exception will be thrown if the provided file
+       doesn't exist or is invalid or empty.
 
 .. function:: listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None)
 
