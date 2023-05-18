@@ -4230,10 +4230,8 @@ class DSLParser:
 
     def directive_class(self, name, typedef, type_object):
         fields = name.split('.')
-        in_classes = False
         parent = self
         name = fields.pop()
-        so_far = []
         module, cls = self.clinic._module_and_class(fields)
 
         parent = cls or module
