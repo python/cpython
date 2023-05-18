@@ -215,19 +215,18 @@ release_module_thread_tstate(struct module_threads *threads,
 }
 
 static void
-finalize_module_thread(struct module_threads *threads,
+untrack_module_thread(struct module_threads *threads,
                        struct module_thread *mt)
 {
+    assert(_PyThreadState_GET() == NULL);
+
     PyThread_acquire_lock(threads->mutex, WAIT_LOCK);
 
-    assert(mt->tstate == _PyThreadState_GET());
     assert(mt->status.func_ended);
     assert(mt->status.tstate_cleared);
     threads->counts.running--;
 
     PyThread_release_lock(threads->mutex);
-
-    delete_module_thread(mt);
 }
 
 
@@ -1318,7 +1317,8 @@ thread_run(void *boot_raw)
     Py_DECREF(pyargs);
     Py_XDECREF(pykwargs);
     release_module_thread_tstate(threads, mt);
-    finalize_module_thread(threads, mt);
+    untrack_module_thread(threads, mt);
+    delete_module_thread(mt);
 
     // bpo-44434: Don't call explicitly PyThread_exit_thread(). On Linux with
     // the glibc, pthread_exit() can abort the whole process if dlopen() fails
