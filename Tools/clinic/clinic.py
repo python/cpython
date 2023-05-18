@@ -29,15 +29,7 @@ import traceback
 
 from collections.abc import Callable
 from types import FunctionType, NoneType
-from typing import (
-    Any,
-    Final,
-    Literal,
-    NamedTuple,
-    NoReturn,
-    Type,
-    overload,
-)
+from typing import Any, NamedTuple, NoReturn, Literal, overload
 
 # TODO:
 #
