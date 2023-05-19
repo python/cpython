@@ -3,7 +3,7 @@
 //   Python/bytecodes.c
 // Do not edit!
 
-#ifndef NEED_OPCODE_TABLES
+#ifndef NEED_OPCODE_METADATA
 extern int _PyOpcode_num_popped(int opcode, int oparg, bool jump);
 #else
 int
@@ -13,11 +13,15 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 0;
         case RESUME:
             return 0;
+        case INSTRUMENTED_RESUME:
+            return 0;
         case LOAD_CLOSURE:
             return 0;
         case LOAD_FAST_CHECK:
             return 0;
         case LOAD_FAST:
+            return 0;
+        case LOAD_FAST_AND_CLEAR:
             return 0;
         case LOAD_CONST:
             return 0;
@@ -39,6 +43,12 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 0;
         case END_FOR:
             return 1+1;
+        case INSTRUMENTED_END_FOR:
+            return 2;
+        case END_SEND:
+            return 2;
+        case INSTRUMENTED_END_SEND:
+            return 2;
         case UNARY_NEGATIVE:
             return 1;
         case UNARY_NOT:
@@ -97,7 +107,11 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case RETURN_VALUE:
             return 1;
+        case INSTRUMENTED_RETURN_VALUE:
+            return 1;
         case RETURN_CONST:
+            return 0;
+        case INSTRUMENTED_RETURN_CONST:
             return 0;
         case GET_AITER:
             return 1;
@@ -109,6 +123,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 2;
         case SEND_GEN:
             return 2;
+        case INSTRUMENTED_YIELD_VALUE:
+            return 1;
         case YIELD_VALUE:
             return 1;
         case POP_EXCEPT:
@@ -145,8 +161,12 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case DELETE_GLOBAL:
             return 0;
-        case LOAD_NAME:
+        case LOAD_LOCALS:
             return 0;
+        case LOAD_NAME:
+            return 0+1;
+        case LOAD_FROM_DICT_OR_GLOBALS:
+            return 1;
         case LOAD_GLOBAL:
             return 0;
         case LOAD_GLOBAL_MODULE:
@@ -159,8 +179,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 0;
         case DELETE_DEREF:
             return 0;
-        case LOAD_CLASSDEREF:
-            return 0;
+        case LOAD_FROM_DICT_OR_DEREF:
+            return 1;
         case LOAD_DEREF:
             return 0;
         case STORE_DEREF:
@@ -191,6 +211,14 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case MAP_ADD:
             return 2;
+        case INSTRUMENTED_LOAD_SUPER_ATTR:
+            return 3;
+        case LOAD_SUPER_ATTR:
+            return 3;
+        case LOAD_SUPER_ATTR_ATTR:
+            return 3;
+        case LOAD_SUPER_ATTR_METHOD:
+            return 3;
         case LOAD_ATTR:
             return 1;
         case LOAD_ATTR_INSTANCE_VALUE:
@@ -215,13 +243,11 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 2;
         case COMPARE_OP:
             return 2;
-        case COMPARE_AND_BRANCH:
+        case COMPARE_OP_FLOAT:
             return 2;
-        case COMPARE_AND_BRANCH_FLOAT:
+        case COMPARE_OP_INT:
             return 2;
-        case COMPARE_AND_BRANCH_INT:
-            return 2;
-        case COMPARE_AND_BRANCH_STR:
+        case COMPARE_OP_STR:
             return 2;
         case IS_OP:
             return 2;
@@ -265,6 +291,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case FOR_ITER:
             return 1;
+        case INSTRUMENTED_FOR_ITER:
+            return 0;
         case FOR_ITER_LIST:
             return 1;
         case FOR_ITER_TUPLE:
@@ -288,6 +316,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case LOAD_ATTR_METHOD_LAZY_DICT:
             return 1;
         case KW_NAMES:
+            return 0;
+        case INSTRUMENTED_CALL:
             return 0;
         case CALL:
             return oparg + 2;
@@ -325,6 +355,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return oparg + 2;
         case CALL_NO_KW_METHOD_DESCRIPTOR_FAST:
             return oparg + 2;
+        case INSTRUMENTED_CALL_FUNCTION_EX:
+            return 0;
         case CALL_FUNCTION_EX:
             return ((oparg & 1) ? 1 : 0) + 3;
         case MAKE_FUNCTION:
@@ -341,9 +373,25 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 2;
         case SWAP:
             return (oparg-2) + 2;
+        case INSTRUMENTED_INSTRUCTION:
+            return 0;
+        case INSTRUMENTED_JUMP_FORWARD:
+            return 0;
+        case INSTRUMENTED_JUMP_BACKWARD:
+            return 0;
+        case INSTRUMENTED_POP_JUMP_IF_TRUE:
+            return 0;
+        case INSTRUMENTED_POP_JUMP_IF_FALSE:
+            return 0;
+        case INSTRUMENTED_POP_JUMP_IF_NONE:
+            return 0;
+        case INSTRUMENTED_POP_JUMP_IF_NOT_NONE:
+            return 0;
         case EXTENDED_ARG:
             return 0;
         case CACHE:
+            return 0;
+        case RESERVED:
             return 0;
         default:
             return -1;
@@ -351,7 +399,7 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
 }
 #endif
 
-#ifndef NEED_OPCODE_TABLES
+#ifndef NEED_OPCODE_METADATA
 extern int _PyOpcode_num_pushed(int opcode, int oparg, bool jump);
 #else
 int
@@ -361,11 +409,15 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case RESUME:
             return 0;
+        case INSTRUMENTED_RESUME:
+            return 0;
         case LOAD_CLOSURE:
             return 1;
         case LOAD_FAST_CHECK:
             return 1;
         case LOAD_FAST:
+            return 1;
+        case LOAD_FAST_AND_CLEAR:
             return 1;
         case LOAD_CONST:
             return 1;
@@ -387,6 +439,12 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 1;
         case END_FOR:
             return 0+0;
+        case INSTRUMENTED_END_FOR:
+            return 0;
+        case END_SEND:
+            return 1;
+        case INSTRUMENTED_END_SEND:
+            return 1;
         case UNARY_NEGATIVE:
             return 1;
         case UNARY_NOT:
@@ -445,7 +503,11 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case RETURN_VALUE:
             return 0;
+        case INSTRUMENTED_RETURN_VALUE:
+            return 0;
         case RETURN_CONST:
+            return 0;
+        case INSTRUMENTED_RETURN_CONST:
             return 0;
         case GET_AITER:
             return 1;
@@ -456,6 +518,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case SEND:
             return 2;
         case SEND_GEN:
+            return 2;
+        case INSTRUMENTED_YIELD_VALUE:
             return 1;
         case YIELD_VALUE:
             return 1;
@@ -493,7 +557,11 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case DELETE_GLOBAL:
             return 0;
+        case LOAD_LOCALS:
+            return 1;
         case LOAD_NAME:
+            return 1+1;
+        case LOAD_FROM_DICT_OR_GLOBALS:
             return 1;
         case LOAD_GLOBAL:
             return ((oparg & 1) ? 1 : 0) + 1;
@@ -507,7 +575,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case DELETE_DEREF:
             return 0;
-        case LOAD_CLASSDEREF:
+        case LOAD_FROM_DICT_OR_DEREF:
             return 1;
         case LOAD_DEREF:
             return 1;
@@ -539,6 +607,14 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case MAP_ADD:
             return 0;
+        case INSTRUMENTED_LOAD_SUPER_ATTR:
+            return ((oparg & 1) ? 1 : 0) + 1;
+        case LOAD_SUPER_ATTR:
+            return ((oparg & 1) ? 1 : 0) + 1;
+        case LOAD_SUPER_ATTR_ATTR:
+            return ((oparg & 1) ? 1 : 0) + 1;
+        case LOAD_SUPER_ATTR_METHOD:
+            return 2;
         case LOAD_ATTR:
             return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_ATTR_INSTANCE_VALUE:
@@ -563,14 +639,12 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case COMPARE_OP:
             return 1;
-        case COMPARE_AND_BRANCH:
-            return 0;
-        case COMPARE_AND_BRANCH_FLOAT:
-            return 0;
-        case COMPARE_AND_BRANCH_INT:
-            return 0;
-        case COMPARE_AND_BRANCH_STR:
-            return 0;
+        case COMPARE_OP_FLOAT:
+            return 1;
+        case COMPARE_OP_INT:
+            return 1;
+        case COMPARE_OP_STR:
+            return 1;
         case IS_OP:
             return 1;
         case CONTAINS_OP:
@@ -613,6 +687,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 1;
         case FOR_ITER:
             return 2;
+        case INSTRUMENTED_FOR_ITER:
+            return 0;
         case FOR_ITER_LIST:
             return 2;
         case FOR_ITER_TUPLE:
@@ -636,6 +712,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case LOAD_ATTR_METHOD_LAZY_DICT:
             return ((oparg & 1) ? 1 : 0) + 1;
         case KW_NAMES:
+            return 0;
+        case INSTRUMENTED_CALL:
             return 0;
         case CALL:
             return 1;
@@ -673,6 +751,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 1;
         case CALL_NO_KW_METHOD_DESCRIPTOR_FAST:
             return 1;
+        case INSTRUMENTED_CALL_FUNCTION_EX:
+            return 0;
         case CALL_FUNCTION_EX:
             return 1;
         case MAKE_FUNCTION:
@@ -689,9 +769,25 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 1;
         case SWAP:
             return (oparg-2) + 2;
+        case INSTRUMENTED_INSTRUCTION:
+            return 0;
+        case INSTRUMENTED_JUMP_FORWARD:
+            return 0;
+        case INSTRUMENTED_JUMP_BACKWARD:
+            return 0;
+        case INSTRUMENTED_POP_JUMP_IF_TRUE:
+            return 0;
+        case INSTRUMENTED_POP_JUMP_IF_FALSE:
+            return 0;
+        case INSTRUMENTED_POP_JUMP_IF_NONE:
+            return 0;
+        case INSTRUMENTED_POP_JUMP_IF_NOT_NONE:
+            return 0;
         case EXTENDED_ARG:
             return 0;
         case CACHE:
+            return 0;
+        case RESERVED:
             return 0;
         default:
             return -1;
@@ -699,21 +795,23 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
 }
 #endif
 
-enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC0, INSTR_FMT_IBC000, INSTR_FMT_IBC00000000, INSTR_FMT_IBIB, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC000 };
+enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC00, INSTR_FMT_IBC000, INSTR_FMT_IBC00000000, INSTR_FMT_IBIB, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC000 };
 struct opcode_metadata {
     bool valid_entry;
     enum InstructionFormat instr_format;
 };
 
-#ifndef NEED_OPCODE_TABLES
+#ifndef NEED_OPCODE_METADATA
 extern const struct opcode_metadata _PyOpcode_opcode_metadata[256];
 #else
 const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [NOP] = { true, INSTR_FMT_IX },
     [RESUME] = { true, INSTR_FMT_IB },
+    [INSTRUMENTED_RESUME] = { true, INSTR_FMT_IB },
     [LOAD_CLOSURE] = { true, INSTR_FMT_IB },
     [LOAD_FAST_CHECK] = { true, INSTR_FMT_IB },
     [LOAD_FAST] = { true, INSTR_FMT_IB },
+    [LOAD_FAST_AND_CLEAR] = { true, INSTR_FMT_IB },
     [LOAD_CONST] = { true, INSTR_FMT_IB },
     [STORE_FAST] = { true, INSTR_FMT_IB },
     [LOAD_FAST__LOAD_FAST] = { true, INSTR_FMT_IBIB },
@@ -724,6 +822,9 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [POP_TOP] = { true, INSTR_FMT_IX },
     [PUSH_NULL] = { true, INSTR_FMT_IX },
     [END_FOR] = { true, INSTR_FMT_IB },
+    [INSTRUMENTED_END_FOR] = { true, INSTR_FMT_IX },
+    [END_SEND] = { true, INSTR_FMT_IX },
+    [INSTRUMENTED_END_SEND] = { true, INSTR_FMT_IX },
     [UNARY_NEGATIVE] = { true, INSTR_FMT_IX },
     [UNARY_NOT] = { true, INSTR_FMT_IX },
     [UNARY_INVERT] = { true, INSTR_FMT_IX },
@@ -735,13 +836,13 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [BINARY_OP_INPLACE_ADD_UNICODE] = { true, INSTR_FMT_IX },
     [BINARY_OP_ADD_FLOAT] = { true, INSTR_FMT_IXC },
     [BINARY_OP_ADD_INT] = { true, INSTR_FMT_IXC },
-    [BINARY_SUBSCR] = { true, INSTR_FMT_IXC000 },
+    [BINARY_SUBSCR] = { true, INSTR_FMT_IXC },
     [BINARY_SLICE] = { true, INSTR_FMT_IX },
     [STORE_SLICE] = { true, INSTR_FMT_IX },
-    [BINARY_SUBSCR_LIST_INT] = { true, INSTR_FMT_IXC000 },
-    [BINARY_SUBSCR_TUPLE_INT] = { true, INSTR_FMT_IXC000 },
-    [BINARY_SUBSCR_DICT] = { true, INSTR_FMT_IXC000 },
-    [BINARY_SUBSCR_GETITEM] = { true, INSTR_FMT_IXC000 },
+    [BINARY_SUBSCR_LIST_INT] = { true, INSTR_FMT_IXC },
+    [BINARY_SUBSCR_TUPLE_INT] = { true, INSTR_FMT_IXC },
+    [BINARY_SUBSCR_DICT] = { true, INSTR_FMT_IXC },
+    [BINARY_SUBSCR_GETITEM] = { true, INSTR_FMT_IXC },
     [LIST_APPEND] = { true, INSTR_FMT_IB },
     [SET_ADD] = { true, INSTR_FMT_IB },
     [STORE_SUBSCR] = { true, INSTR_FMT_IXC },
@@ -753,12 +854,15 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [RAISE_VARARGS] = { true, INSTR_FMT_IB },
     [INTERPRETER_EXIT] = { true, INSTR_FMT_IX },
     [RETURN_VALUE] = { true, INSTR_FMT_IX },
+    [INSTRUMENTED_RETURN_VALUE] = { true, INSTR_FMT_IX },
     [RETURN_CONST] = { true, INSTR_FMT_IB },
+    [INSTRUMENTED_RETURN_CONST] = { true, INSTR_FMT_IB },
     [GET_AITER] = { true, INSTR_FMT_IX },
     [GET_ANEXT] = { true, INSTR_FMT_IX },
     [GET_AWAITABLE] = { true, INSTR_FMT_IB },
     [SEND] = { true, INSTR_FMT_IBC },
     [SEND_GEN] = { true, INSTR_FMT_IBC },
+    [INSTRUMENTED_YIELD_VALUE] = { true, INSTR_FMT_IX },
     [YIELD_VALUE] = { true, INSTR_FMT_IX },
     [POP_EXCEPT] = { true, INSTR_FMT_IX },
     [RERAISE] = { true, INSTR_FMT_IB },
@@ -777,14 +881,16 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [DELETE_ATTR] = { true, INSTR_FMT_IB },
     [STORE_GLOBAL] = { true, INSTR_FMT_IB },
     [DELETE_GLOBAL] = { true, INSTR_FMT_IB },
+    [LOAD_LOCALS] = { true, INSTR_FMT_IB },
     [LOAD_NAME] = { true, INSTR_FMT_IB },
+    [LOAD_FROM_DICT_OR_GLOBALS] = { true, INSTR_FMT_IB },
     [LOAD_GLOBAL] = { true, INSTR_FMT_IBC000 },
     [LOAD_GLOBAL_MODULE] = { true, INSTR_FMT_IBC000 },
     [LOAD_GLOBAL_BUILTIN] = { true, INSTR_FMT_IBC000 },
     [DELETE_FAST] = { true, INSTR_FMT_IB },
     [MAKE_CELL] = { true, INSTR_FMT_IB },
     [DELETE_DEREF] = { true, INSTR_FMT_IB },
-    [LOAD_CLASSDEREF] = { true, INSTR_FMT_IB },
+    [LOAD_FROM_DICT_OR_DEREF] = { true, INSTR_FMT_IB },
     [LOAD_DEREF] = { true, INSTR_FMT_IB },
     [STORE_DEREF] = { true, INSTR_FMT_IB },
     [COPY_FREE_VARS] = { true, INSTR_FMT_IB },
@@ -800,6 +906,10 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [DICT_UPDATE] = { true, INSTR_FMT_IB },
     [DICT_MERGE] = { true, INSTR_FMT_IB },
     [MAP_ADD] = { true, INSTR_FMT_IB },
+    [INSTRUMENTED_LOAD_SUPER_ATTR] = { true, INSTR_FMT_IBC00000000 },
+    [LOAD_SUPER_ATTR] = { true, INSTR_FMT_IBC },
+    [LOAD_SUPER_ATTR_ATTR] = { true, INSTR_FMT_IBC },
+    [LOAD_SUPER_ATTR_METHOD] = { true, INSTR_FMT_IBC },
     [LOAD_ATTR] = { true, INSTR_FMT_IBC00000000 },
     [LOAD_ATTR_INSTANCE_VALUE] = { true, INSTR_FMT_IBC00000000 },
     [LOAD_ATTR_MODULE] = { true, INSTR_FMT_IBC00000000 },
@@ -812,10 +922,9 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [STORE_ATTR_WITH_HINT] = { true, INSTR_FMT_IBC000 },
     [STORE_ATTR_SLOT] = { true, INSTR_FMT_IXC000 },
     [COMPARE_OP] = { true, INSTR_FMT_IBC },
-    [COMPARE_AND_BRANCH] = { true, INSTR_FMT_IBC0 },
-    [COMPARE_AND_BRANCH_FLOAT] = { true, INSTR_FMT_IBC0 },
-    [COMPARE_AND_BRANCH_INT] = { true, INSTR_FMT_IBC0 },
-    [COMPARE_AND_BRANCH_STR] = { true, INSTR_FMT_IBC0 },
+    [COMPARE_OP_FLOAT] = { true, INSTR_FMT_IBC },
+    [COMPARE_OP_INT] = { true, INSTR_FMT_IBC },
+    [COMPARE_OP_STR] = { true, INSTR_FMT_IBC },
     [IS_OP] = { true, INSTR_FMT_IB },
     [CONTAINS_OP] = { true, INSTR_FMT_IB },
     [CHECK_EG_MATCH] = { true, INSTR_FMT_IX },
@@ -837,6 +946,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [GET_ITER] = { true, INSTR_FMT_IX },
     [GET_YIELD_FROM_ITER] = { true, INSTR_FMT_IX },
     [FOR_ITER] = { true, INSTR_FMT_IBC },
+    [INSTRUMENTED_FOR_ITER] = { true, INSTR_FMT_IB },
     [FOR_ITER_LIST] = { true, INSTR_FMT_IBC },
     [FOR_ITER_TUPLE] = { true, INSTR_FMT_IBC },
     [FOR_ITER_RANGE] = { true, INSTR_FMT_IBC },
@@ -849,24 +959,26 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [LOAD_ATTR_METHOD_NO_DICT] = { true, INSTR_FMT_IBC00000000 },
     [LOAD_ATTR_METHOD_LAZY_DICT] = { true, INSTR_FMT_IBC00000000 },
     [KW_NAMES] = { true, INSTR_FMT_IB },
-    [CALL] = { true, INSTR_FMT_IBC000 },
-    [CALL_BOUND_METHOD_EXACT_ARGS] = { true, INSTR_FMT_IBC000 },
-    [CALL_PY_EXACT_ARGS] = { true, INSTR_FMT_IBC000 },
-    [CALL_PY_WITH_DEFAULTS] = { true, INSTR_FMT_IBC000 },
-    [CALL_NO_KW_TYPE_1] = { true, INSTR_FMT_IBC000 },
-    [CALL_NO_KW_STR_1] = { true, INSTR_FMT_IBC000 },
-    [CALL_NO_KW_TUPLE_1] = { true, INSTR_FMT_IBC000 },
-    [CALL_BUILTIN_CLASS] = { true, INSTR_FMT_IBC000 },
-    [CALL_NO_KW_BUILTIN_O] = { true, INSTR_FMT_IBC000 },
-    [CALL_NO_KW_BUILTIN_FAST] = { true, INSTR_FMT_IBC000 },
-    [CALL_BUILTIN_FAST_WITH_KEYWORDS] = { true, INSTR_FMT_IBC000 },
-    [CALL_NO_KW_LEN] = { true, INSTR_FMT_IBC000 },
-    [CALL_NO_KW_ISINSTANCE] = { true, INSTR_FMT_IBC000 },
-    [CALL_NO_KW_LIST_APPEND] = { true, INSTR_FMT_IBC000 },
-    [CALL_NO_KW_METHOD_DESCRIPTOR_O] = { true, INSTR_FMT_IBC000 },
-    [CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS] = { true, INSTR_FMT_IBC000 },
-    [CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS] = { true, INSTR_FMT_IBC000 },
-    [CALL_NO_KW_METHOD_DESCRIPTOR_FAST] = { true, INSTR_FMT_IBC000 },
+    [INSTRUMENTED_CALL] = { true, INSTR_FMT_IB },
+    [CALL] = { true, INSTR_FMT_IBC00 },
+    [CALL_BOUND_METHOD_EXACT_ARGS] = { true, INSTR_FMT_IBC00 },
+    [CALL_PY_EXACT_ARGS] = { true, INSTR_FMT_IBC00 },
+    [CALL_PY_WITH_DEFAULTS] = { true, INSTR_FMT_IBC00 },
+    [CALL_NO_KW_TYPE_1] = { true, INSTR_FMT_IBC00 },
+    [CALL_NO_KW_STR_1] = { true, INSTR_FMT_IBC00 },
+    [CALL_NO_KW_TUPLE_1] = { true, INSTR_FMT_IBC00 },
+    [CALL_BUILTIN_CLASS] = { true, INSTR_FMT_IBC00 },
+    [CALL_NO_KW_BUILTIN_O] = { true, INSTR_FMT_IBC00 },
+    [CALL_NO_KW_BUILTIN_FAST] = { true, INSTR_FMT_IBC00 },
+    [CALL_BUILTIN_FAST_WITH_KEYWORDS] = { true, INSTR_FMT_IBC00 },
+    [CALL_NO_KW_LEN] = { true, INSTR_FMT_IBC00 },
+    [CALL_NO_KW_ISINSTANCE] = { true, INSTR_FMT_IBC00 },
+    [CALL_NO_KW_LIST_APPEND] = { true, INSTR_FMT_IBC00 },
+    [CALL_NO_KW_METHOD_DESCRIPTOR_O] = { true, INSTR_FMT_IBC00 },
+    [CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS] = { true, INSTR_FMT_IBC00 },
+    [CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS] = { true, INSTR_FMT_IBC00 },
+    [CALL_NO_KW_METHOD_DESCRIPTOR_FAST] = { true, INSTR_FMT_IBC00 },
+    [INSTRUMENTED_CALL_FUNCTION_EX] = { true, INSTR_FMT_IX },
     [CALL_FUNCTION_EX] = { true, INSTR_FMT_IB },
     [MAKE_FUNCTION] = { true, INSTR_FMT_IB },
     [RETURN_GENERATOR] = { true, INSTR_FMT_IX },
@@ -875,7 +987,15 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [COPY] = { true, INSTR_FMT_IB },
     [BINARY_OP] = { true, INSTR_FMT_IBC },
     [SWAP] = { true, INSTR_FMT_IB },
+    [INSTRUMENTED_INSTRUCTION] = { true, INSTR_FMT_IX },
+    [INSTRUMENTED_JUMP_FORWARD] = { true, INSTR_FMT_IB },
+    [INSTRUMENTED_JUMP_BACKWARD] = { true, INSTR_FMT_IB },
+    [INSTRUMENTED_POP_JUMP_IF_TRUE] = { true, INSTR_FMT_IB },
+    [INSTRUMENTED_POP_JUMP_IF_FALSE] = { true, INSTR_FMT_IB },
+    [INSTRUMENTED_POP_JUMP_IF_NONE] = { true, INSTR_FMT_IB },
+    [INSTRUMENTED_POP_JUMP_IF_NOT_NONE] = { true, INSTR_FMT_IB },
     [EXTENDED_ARG] = { true, INSTR_FMT_IB },
     [CACHE] = { true, INSTR_FMT_IX },
+    [RESERVED] = { true, INSTR_FMT_IX },
 };
 #endif

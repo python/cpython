@@ -20,6 +20,8 @@ class OpcodeTests(unittest.TestCase):
         # All defined opcodes
         has_arg = dis.hasarg
         for name, code in filter(lambda item: item[0] not in dis.deoptmap, dis.opmap.items()):
+            if code >= opcode.MIN_INSTRUMENTED_OPCODE:
+                continue
             with self.subTest(opname=name):
                 if code not in has_arg:
                     stack_effect(code)
@@ -47,6 +49,8 @@ class OpcodeTests(unittest.TestCase):
         has_exc = dis.hasexc
         has_jump = dis.hasjabs + dis.hasjrel
         for name, code in filter(lambda item: item[0] not in dis.deoptmap, dis.opmap.items()):
+            if code >= opcode.MIN_INSTRUMENTED_OPCODE:
+                continue
             with self.subTest(opname=name):
                 if code not in has_arg:
                     common = stack_effect(code)
