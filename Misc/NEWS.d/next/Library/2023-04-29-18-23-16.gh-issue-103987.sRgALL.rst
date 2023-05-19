@@ -1,1 +1,2 @@
-add more ``CHECK_VALID`` s in ``mmapmodule.c`` to avoid the file being invalidated by Python code.
+In :mod:`mmap`, fix several bugs that could lead to access to memory-mapped files after
+they have been invalidated.
