@@ -3944,7 +3944,7 @@ math_nextafter_impl(PyObject *module, double x, double y, PyObject *steps)
     const uint64_t sign_bit = 1ULL<<63;
 
     uint64_t ax = ux.i & ~sign_bit;
-	uint64_t ay = uy.i & ~sign_bit;
+    uint64_t ay = uy.i & ~sign_bit;
 
     // opposite signs
     if (((ux.i ^ uy.i) & sign_bit)) {
