@@ -35,6 +35,15 @@
 #define NAMED_EXPR_COMP_IN_CLASS \
 "assignment expression within a comprehension cannot be used in a class body"
 
+#define NAMED_EXPR_COMP_IN_TYPEVAR_BOUND \
+"assignment expression within a comprehension cannot be used in a TypeVar bound"
+
+#define NAMED_EXPR_COMP_IN_TYPEALIAS \
+"assignment expression within a comprehension cannot be used in a type alias"
+
+#define NAMED_EXPR_COMP_IN_TYPEPARAM \
+"assignment expression within a comprehension cannot be used within the definition of a generic"
+
 #define NAMED_EXPR_COMP_CONFLICT \
 "assignment expression cannot rebind comprehension iteration variable '%U'"
 
@@ -45,16 +54,16 @@
 "assignment expression cannot be used in a comprehension iterable expression"
 
 #define ANNOTATION_NOT_ALLOWED \
-"'%s' can not be used within an annotation"
+"%s cannot be used within an annotation"
 
 #define TYPEVAR_BOUND_NOT_ALLOWED \
-"'%s' can not be used within a TypeVar bound"
+"%s cannot be used within a TypeVar bound"
 
 #define TYPEALIAS_NOT_ALLOWED \
-"'%s' can not be used within a type alias"
+"%s cannot be used within a type alias"
 
 #define TYPEPARAM_NOT_ALLOWED \
-"'%s' can not be used within the definition of a generic"
+"%s cannot be used within the definition of a generic"
 
 #define DUPLICATE_TYPE_PARAM \
 "duplicate type parameter '%U'"
@@ -632,7 +641,7 @@ is_free_in_any_child(PySTEntryObject *entry, PyObject *key)
 static int
 inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
                      PyObject *scopes, PyObject *comp_free,
-                     PyObject *promote_to_cell)
+                     PyObject *inlined_cells)
 {
     PyObject *k, *v;
     Py_ssize_t pos = 0;
@@ -645,6 +654,11 @@ inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
         }
         int scope = (comp_flags >> SCOPE_OFFSET) & SCOPE_MASK;
         int only_flags = comp_flags & ((1 << SCOPE_OFFSET) - 1);
+        if (scope == CELL || only_flags & DEF_COMP_CELL) {
+            if (PySet_Add(inlined_cells, k) < 0) {
+                return 0;
+            }
+        }
         PyObject *existing = PyDict_GetItemWithError(ste->ste_symbols, k);
         if (existing == NULL && PyErr_Occurred()) {
             return 0;
@@ -665,17 +679,10 @@ inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
         }
         else {
             if (PyLong_AsLong(existing) & DEF_BOUND) {
-                // cell vars in comprehension that are locals in outer scope
-                // must be promoted to cell so u_cellvars isn't wrong
-                if (scope == CELL && _PyST_IsFunctionLike(ste)) {
-                    if (PySet_Add(promote_to_cell, k) < 0) {
-                        return 0;
-                    }
-                }
-
                 // free vars in comprehension that are locals in outer scope can
-                // now simply be locals, unless they are free in comp children
-                if (!is_free_in_any_child(comp, k)) {
+                // now simply be locals, unless they are free in comp children,
+                // or if the outer scope is a class block
+                if (!is_free_in_any_child(comp, k) && ste->ste_type != ClassBlock) {
                     if (PySet_Discard(comp_free, k) < 0) {
                         return 0;
                     }
@@ -697,7 +704,7 @@ inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
 */
 
 static int
-analyze_cells(PyObject *scopes, PyObject *free, PyObject *promote_to_cell)
+analyze_cells(PyObject *scopes, PyObject *free, PyObject *inlined_cells)
 {
     PyObject *name, *v, *v_cell;
     int success = 0;
@@ -712,7 +719,7 @@ analyze_cells(PyObject *scopes, PyObject *free, PyObject *promote_to_cell)
         scope = PyLong_AS_LONG(v);
         if (scope != LOCAL)
             continue;
-        if (!PySet_Contains(free, name) && !PySet_Contains(promote_to_cell, name))
+        if (!PySet_Contains(free, name) && !PySet_Contains(inlined_cells, name))
             continue;
         /* Replace LOCAL with CELL for this name, and remove
            from free. It is safe to replace the value of name
@@ -752,7 +759,8 @@ drop_class_free(PySTEntryObject *ste, PyObject *free)
 */
 static int
 update_symbols(PyObject *symbols, PyObject *scopes,
-               PyObject *bound, PyObject *free, int classflag)
+               PyObject *bound, PyObject *free,
+               PyObject *inlined_cells, int classflag)
 {
     PyObject *name = NULL, *itr = NULL;
     PyObject *v = NULL, *v_scope = NULL, *v_new = NULL, *v_free = NULL;
@@ -763,6 +771,9 @@ update_symbols(PyObject *symbols, PyObject *scopes,
         long scope, flags;
         assert(PyLong_Check(v));
         flags = PyLong_AS_LONG(v);
+        if (PySet_Contains(inlined_cells, name)) {
+            flags |= DEF_COMP_CELL;
+        }
         v_scope = PyDict_GetItemWithError(scopes, name);
         assert(v_scope && PyLong_Check(v_scope));
         scope = PyLong_AS_LONG(v_scope);
@@ -869,7 +880,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
               PySTEntryObject *class_entry)
 {
     PyObject *name, *v, *local = NULL, *scopes = NULL, *newbound = NULL;
-    PyObject *newglobal = NULL, *newfree = NULL, *promote_to_cell = NULL;
+    PyObject *newglobal = NULL, *newfree = NULL, *inlined_cells = NULL;
     PyObject *temp;
     int success = 0;
     Py_ssize_t i, pos = 0;
@@ -901,8 +912,8 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     newbound = PySet_New(NULL);
     if (!newbound)
         goto error;
-    promote_to_cell = PySet_New(NULL);
-    if (!promote_to_cell)
+    inlined_cells = PySet_New(NULL);
+    if (!inlined_cells)
         goto error;
 
     /* Class namespace has no effect on names visible in
@@ -996,7 +1007,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
             goto error;
         }
         if (inline_comp) {
-            if (!inline_comprehension(ste, entry, scopes, child_free, promote_to_cell)) {
+            if (!inline_comprehension(ste, entry, scopes, child_free, inlined_cells)) {
                 Py_DECREF(child_free);
                 goto error;
             }
@@ -1027,12 +1038,12 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     }
 
     /* Check if any local variables must be converted to cell variables */
-    if (_PyST_IsFunctionLike(ste) && !analyze_cells(scopes, newfree, promote_to_cell))
+    if (_PyST_IsFunctionLike(ste) && !analyze_cells(scopes, newfree, inlined_cells))
         goto error;
     else if (ste->ste_type == ClassBlock && !drop_class_free(ste, newfree))
         goto error;
     /* Records the results of the analysis in the symbol table entry */
-    if (!update_symbols(ste->ste_symbols, scopes, bound, newfree,
+    if (!update_symbols(ste->ste_symbols, scopes, bound, newfree, inlined_cells,
                         ste->ste_type == ClassBlock))
         goto error;
 
@@ -1047,7 +1058,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     Py_XDECREF(newbound);
     Py_XDECREF(newglobal);
     Py_XDECREF(newfree);
-    Py_XDECREF(promote_to_cell);
+    Py_XDECREF(inlined_cells);
     if (!success)
         assert(PyErr_Occurred());
     return success;
@@ -1855,7 +1866,7 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
         }
 
         /* If we find a FunctionBlock entry, add as GLOBAL/LOCAL or NONLOCAL/LOCAL */
-        if (_PyST_IsFunctionLike(ste)) {
+        if (ste->ste_type == FunctionBlock) {
             long target_in_scope = _PyST_GetSymbol(ste, target_name);
             if (target_in_scope & DEF_GLOBAL) {
                 if (!symtable_add_def(st, target_name, DEF_GLOBAL, LOCATION(e)))
@@ -1878,9 +1889,27 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
 
             return symtable_add_def_helper(st, target_name, DEF_GLOBAL, ste, LOCATION(e));
         }
-        /* Disallow usage in ClassBlock */
-        if (ste->ste_type == ClassBlock) {
-            PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_IN_CLASS);
+        /* Disallow usage in ClassBlock and type scopes */
+        if (ste->ste_type == ClassBlock ||
+            ste->ste_type == TypeParamBlock ||
+            ste->ste_type == TypeAliasBlock ||
+            ste->ste_type == TypeVarBoundBlock) {
+            switch (ste->ste_type) {
+                case ClassBlock:
+                    PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_IN_CLASS);
+                    break;
+                case TypeParamBlock:
+                    PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_IN_TYPEPARAM);
+                    break;
+                case TypeAliasBlock:
+                    PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_IN_TYPEALIAS);
+                    break;
+                case TypeVarBoundBlock:
+                    PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_IN_TYPEVAR_BOUND);
+                    break;
+                default:
+                    Py_UNREACHABLE();
+            }
             PyErr_RangedSyntaxLocationObject(st->st_filename,
                                               e->lineno,
                                               e->col_offset + 1,

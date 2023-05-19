@@ -395,6 +395,9 @@ pathlib
 * Add :meth:`pathlib.Path.is_junction` as a proxy to :func:`os.path.isjunction`.
   (Contributed by Charles Machalow in :gh:`99547`.)
 
+* Add *case_sensitive* optional parameter to :meth:`pathlib.Path.glob`,
+  :meth:`pathlib.Path.rglob` and :meth:`pathlib.PurePath.match` for matching
+  the path's case sensitivity, allowing for more precise control over the matching process.
 
 dis
 ---
@@ -866,6 +869,11 @@ Pending Removal in Python 3.14
 
 * The *onerror* argument of :func:`shutil.rmtree` is deprecated in 3.12,
   and will be removed in 3.14.
+
+* The *type*, *choices*, and *metavar* parameters
+  of :class:`!argparse.BooleanOptionalAction` are deprecated
+  and will be removed in 3.14.
+  (Contributed by Nikita Sobolev in :gh:`92248`.)
 
 * :func:`pkgutil.find_loader` and :func:`pkgutil.get_loader`
   now raise :exc:`DeprecationWarning`;

@@ -1756,6 +1756,42 @@ class ConfigFileTest(BaseTest):
         self.apply_config(test_config)
         self.assertEqual(logging.getLogger().handlers[0].name, 'hand1')
 
+    def test_exception_if_confg_file_is_invalid(self):
+        test_config = """
+            [loggers]
+            keys=root
+
+            [handlers]
+            keys=hand1
+
+            [formatters]
+            keys=form1
+
+            [logger_root]
+            handlers=hand1
+
+            [handler_hand1]
+            class=StreamHandler
+            formatter=form1
+
+            [formatter_form1]
+            format=%(levelname)s ++ %(message)s
+
+            prince
+            """
+
+        file = io.StringIO(textwrap.dedent(test_config))
+        self.assertRaises(ValueError, logging.config.fileConfig, file)
+
+    def test_exception_if_confg_file_is_empty(self):
+        fd, fn = tempfile.mkstemp(prefix='test_empty_', suffix='.ini')
+        os.close(fd)
+        self.assertRaises(ValueError, logging.config.fileConfig, fn)
+        os.remove(fn)
+
+    def test_exception_if_config_file_does_not_exist(self):
+        self.assertRaises(FileNotFoundError, logging.config.fileConfig, 'filenotfound')
+
     def test_defaults_do_no_interpolation(self):
         """bpo-33802 defaults should not get interpolated"""
         ini = textwrap.dedent("""

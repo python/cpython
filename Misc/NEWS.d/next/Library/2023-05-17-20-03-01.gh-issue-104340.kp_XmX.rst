@@ -1,0 +1,1 @@
+When an ``asyncio`` pipe protocol loses its connection due to an error, and the caller doesn't await ``wait_closed()`` on the corresponding ``StreamWriter``, don't log a warning about an exception that was never retrieved. After all, according to the ``StreamWriter.close()`` docs, the ``wait_closed()`` call is optional ("not mandatory").

@@ -136,6 +136,9 @@ class TypeParamsInvalidTest(unittest.TestCase):
         check_syntax_error(self, "class X[T: (y := 3)]: pass")
         check_syntax_error(self, "class X[T](y := Sequence[T]): pass")
         check_syntax_error(self, "def f[T](y: (x := Sequence[T])): pass")
+        check_syntax_error(self, "class X[T]([(x := 3) for _ in range(2)] and B): pass")
+        check_syntax_error(self, "def f[T: [(x := 3) for _ in range(2)]](): pass")
+        check_syntax_error(self, "type T = [(x := 3) for _ in range(2)]")
 
 
 class TypeParamsNonlocalTest(unittest.TestCase):
@@ -425,11 +428,11 @@ class TypeParamsLazyEvaluationTest(unittest.TestCase):
         type_params = Foo.__type_params__
         self.assertEqual(len(type_params), 2)
         self.assertEqual(type_params[0].__name__, "T")
-        self.assertEqual(type_params[0].__bound__, Foo)
-        self.assertEqual(type_params[0].__constraints__, None)
+        self.assertIs(type_params[0].__bound__, Foo)
+        self.assertEqual(type_params[0].__constraints__, ())
 
         self.assertEqual(type_params[1].__name__, "U")
-        self.assertEqual(type_params[1].__bound__, None)
+        self.assertIs(type_params[1].__bound__, None)
         self.assertEqual(type_params[1].__constraints__, (Foo, Foo))
 
     def test_evaluation_error(self):
@@ -439,16 +442,16 @@ class TypeParamsLazyEvaluationTest(unittest.TestCase):
         type_params = Foo.__type_params__
         with self.assertRaises(NameError):
             type_params[0].__bound__
-        self.assertEqual(type_params[0].__constraints__, None)
-        self.assertEqual(type_params[1].__bound__, None)
+        self.assertEqual(type_params[0].__constraints__, ())
+        self.assertIs(type_params[1].__bound__, None)
         with self.assertRaises(NameError):
             type_params[1].__constraints__
 
         Undefined = "defined"
         self.assertEqual(type_params[0].__bound__, "defined")
-        self.assertEqual(type_params[0].__constraints__, None)
+        self.assertEqual(type_params[0].__constraints__, ())
 
-        self.assertEqual(type_params[1].__bound__, None)
+        self.assertIs(type_params[1].__bound__, None)
         self.assertEqual(type_params[1].__constraints__, ("defined",))
 
 
@@ -813,10 +816,11 @@ class TypeParamsTypeParamsDunder(unittest.TestCase):
             class ClassA[A]():
                 pass
             ClassA.__type_params__ = ()
+            params = ClassA.__type_params__
         """
 
-        with self.assertRaisesRegex(AttributeError, "attribute '__type_params__' of 'type' objects is not writable"):
-            run_code(code)
+        ns = run_code(code)
+        self.assertEqual(ns["params"], ())
 
     def test_typeparams_dunder_function_01(self):
         def outer[A, B]():
@@ -843,5 +847,5 @@ class TypeParamsTypeParamsDunder(unittest.TestCase):
             func.__type_params__ = ()
         """
 
-        with self.assertRaisesRegex(AttributeError, "attribute '__type_params__' of 'function' objects is not writable"):
-            run_code(code)
+        ns = run_code(code)
+        self.assertEqual(ns["func"].__type_params__, ())
