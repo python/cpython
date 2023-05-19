@@ -189,8 +189,8 @@ operation is being performed, so the intermediate analysis object isn't useful:
    all methods (including class and static methods). For a code object or
    sequence of raw bytecode, it prints one line per bytecode instruction.
    It also recursively disassembles nested code objects (the code of
-   comprehensions, generator expressions and nested functions, and the code
-   used for building nested classes).
+   generator expressions and nested functions, and the code
+   used for building nested classes and :ref:`annotation scopes <annotation-scopes>`).
    Strings are first compiled to code objects with the :func:`compile`
    built-in function before being disassembled.  If no object is provided, this
    function disassembles the last traceback.
