@@ -395,6 +395,9 @@ pathlib
 * Add :meth:`pathlib.Path.is_junction` as a proxy to :func:`os.path.isjunction`.
   (Contributed by Charles Machalow in :gh:`99547`.)
 
+* Add *case_sensitive* optional parameter to :meth:`pathlib.Path.glob`,
+  :meth:`pathlib.Path.rglob` and :meth:`pathlib.PurePath.match` for matching
+  the path's case sensitivity, allowing for more precise control over the matching process.
 
 dis
 ---
@@ -831,8 +834,8 @@ Pending Removal in Python 3.14
   For use in typing, prefer a union, like ``bytes | bytearray``, or :class:`collections.abc.Buffer`.
   (Contributed by Shantanu Jain in :gh:`91896`.)
 
-* :class:`typing.ByteString`, deprecated since Python 3.9, now causes an
-  :exc:`DeprecationWarning` to be emitted when it is used or accessed.
+* :class:`typing.ByteString`, deprecated since Python 3.9, now causes a
+  :exc:`DeprecationWarning` to be emitted when it is used.
 
 * Creating immutable types (:data:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
   bases using the C API.
@@ -1203,6 +1206,8 @@ Build Changes
   * loongarch64-linux-gnu
 
   (Contributed by Zhang Na in :gh:`90656`.)
+
+* ``PYTHON_FOR_REGEN`` now require Python 3.10 or newer.
 
 
 C API Changes

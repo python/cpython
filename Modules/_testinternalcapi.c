@@ -12,6 +12,7 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#include "frameobject.h"
 #include "pycore_atomic_funcs.h" // _Py_atomic_int_get()
 #include "pycore_bitutils.h"     // _Py_bswap32()
 #include "pycore_compile.h"      // _PyCompile_CodeGen, _PyCompile_OptimizeCfg, _PyCompile_Assemble
@@ -615,16 +616,17 @@ _testinternalcapi.optimize_cfg -> object
 
   instructions: object
   consts: object
+  nlocals: int
 
 Apply compiler optimizations to an instruction list.
 [clinic start generated code]*/
 
 static PyObject *
 _testinternalcapi_optimize_cfg_impl(PyObject *module, PyObject *instructions,
-                                    PyObject *consts)
-/*[clinic end generated code: output=5412aeafca683c8b input=7e8a3de86ebdd0f9]*/
+                                    PyObject *consts, int nlocals)
+/*[clinic end generated code: output=57c53c3a3dfd1df0 input=6a96d1926d58d7e5]*/
 {
-    return _PyCompile_OptimizeCfg(instructions, consts);
+    return _PyCompile_OptimizeCfg(instructions, consts, nlocals);
 }
 
 static int
@@ -757,6 +759,38 @@ clear_extension(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+iframe_getcode(PyObject *self, PyObject *frame)
+{
+    if (!PyFrame_Check(frame)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
+        return NULL;
+    }
+    struct _PyInterpreterFrame *f = ((PyFrameObject *)frame)->f_frame;
+    return PyUnstable_InterpreterFrame_GetCode(f);
+}
+
+static PyObject *
+iframe_getline(PyObject *self, PyObject *frame)
+{
+    if (!PyFrame_Check(frame)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
+        return NULL;
+    }
+    struct _PyInterpreterFrame *f = ((PyFrameObject *)frame)->f_frame;
+    return PyLong_FromLong(PyUnstable_InterpreterFrame_GetLine(f));
+}
+
+static PyObject *
+iframe_getlasti(PyObject *self, PyObject *frame)
+{
+    if (!PyFrame_Check(frame)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
+        return NULL;
+    }
+    struct _PyInterpreterFrame *f = ((PyFrameObject *)frame)->f_frame;
+    return PyLong_FromLong(PyUnstable_InterpreterFrame_GetLasti(f));
+}
 
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
@@ -781,6 +815,9 @@ static PyMethodDef module_functions[] = {
     _TESTINTERNALCAPI_ASSEMBLE_CODE_OBJECT_METHODDEF
     {"get_interp_settings", get_interp_settings, METH_VARARGS, NULL},
     {"clear_extension", clear_extension, METH_VARARGS, NULL},
+    {"iframe_getcode", iframe_getcode, METH_O, NULL},
+    {"iframe_getline", iframe_getline, METH_O, NULL},
+    {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
     {NULL, NULL} /* sentinel */
 };
 
