@@ -1307,57 +1307,136 @@ yet finished.\n\
 This function is meant for internal and specialized purposes only.\n\
 In most applications `threading.enumerate()` should be used instead.");
 
+
+/* Here we're essentinally cleaning up after a thread that finished
+   and has aleady been deallocated (both the threading.Thread and
+   the tstate).  Thus it will run in a different thread with the
+   same interpreter (via a "pending call"). */
 static int
-release_sentinel(void *wr_raw)
+clean_up_sentinel(void *data)
 {
-    PyObject *wr = _PyObject_CAST(wr_raw);
+    PyObject *lockobj = (PyObject *)data;
+    assert(lockobj != NULL);
+    PyThread_type_lock lock = ((lockobject *)lockobj)->lock_lock;
+
+    /* Wait here until we know for sure that he thread running
+       _PyThreadState_DeleteCurrent() has released the lock. */
+    if (acquire_timed(lock, 0) == PY_LOCK_ACQUIRED) {
+        /* _PyThreadState_DeleteCurrent() finished, so we can proceed. */
+        PyThread_release_lock(lock);
+        ((lockobject *)lockobj)->locked = 0;
+    }
+    else if (((lockobject *)lockobj)->locked == 2) {
+        /* _PyThreadState_DeleteCurrent() is still holding
+           the lock, so we will wait here until it is released.
+           We don't need to hold the GIL while we wait though. */
+        ((lockobject *)lockobj)->locked = 1;
+
+        PyLockStatus r = acquire_timed(lock, -1);
+        // XXX Why do we have to loop?
+        while (r == PY_LOCK_FAILURE) {
+            r = acquire_timed(lock, -1);
+        }
+        PyThread_release_lock(lock);
+        ((lockobject *)lockobj)->locked = 0;
+    }
+    /* Otherwise the current thread acquired the lock right before
+       its eval loop was interrupted to run this pending call.
+       We can simply let it proceed. */
+
+    /* In all cases, at this point we are done with the lock. */
+    Py_DECREF(lockobj);
+    return 0;
+}
+
+static PyThread_type_lock
+thread_prepare_delete(PyThreadState *tstate)
+{
+    assert(tstate->_threading_thread.pre_delete != NULL);
+    PyThread_type_lock lock = NULL;
+
     /* Tricky: this function is called when the current thread state
        is being deleted.  Therefore, only simple C code can safely
-       execute here. */
-    PyObject *obj = PyWeakref_GET_OBJECT(wr);
-    lockobject *lock;
-    if (obj != Py_None) {
-        lock = (lockobject *) obj;
-        if (lock->locked) {
-            PyThread_release_lock(lock->lock_lock);
-            lock->locked = 0;
-        }
+       execute here.  The GIL is still held. */
+
+    PyObject *wr = tstate->_threading_thread.lock_weakref;
+    assert(wr != NULL);
+    PyObject *lockobj = PyWeakref_GET_OBJECT(wr);
+    if (lockobj == Py_None) {
+        /* The thread has already been destroyed, so we can clean up now. */
+        goto done;
     }
+    if (_PyThreadState_GET() != tstate) {
+        assert(PyThread_get_thread_ident() != tstate->thread_id);
+        /* It must be a daemon thread that was killed during
+         * interp/runtime finalization, so there's nothing to do. */
+        goto done;
+    }
+    assert(((lockobject *)lockobj)->locked == 1);
+    assert(acquire_timed(((lockobject *)lockobj)->lock_lock, 0) == PY_LOCK_FAILURE);
+    /* We cheat a little here to allow clean_up_sentinel() to know
+       that this thread is still holding the lock.  The value will be
+       reset to the normal 0 or 1 as soon as any other thread
+       uses the lock. */
+    ((lockobject *)lockobj)->locked = 2;
+
+    /* We need to prevent the underlying PyThread_type_lock from getting
+       destroyed before we release it in _PyThreadState_DeleteCurrent(),
+       However, we don't need the weakref any more. */
+    Py_INCREF(lockobj);
+
+    /* The pending call will be run the next time the GIL is taken
+       by one of this interpreter's threads. */
+    void *data = (void *) lockobj;
+    if (Py_AddPendingCall(clean_up_sentinel, data) < 0) {
+        Py_DECREF(lockobj);
+        /* We otherwise ignore the error.  A non-zero value means
+           there were too many pending calls already queued up.
+           This case is unlikely, and, at worst,
+           we'll just leak the lock.
+           */
+        goto done;
+    }
+
+    lock = ((lockobject *)lockobj)->lock_lock;
+
+done:
     /* Deallocating a weakref with a NULL callback only calls
        PyObject_GC_Del(), which can't call any Python code. */
     Py_DECREF(wr);
-    return 0;
+    tstate->_threading_thread.pre_delete = NULL;
+    tstate->_threading_thread.lock_weakref = NULL;
+    return lock;
 }
 
 static PyObject *
 thread__set_sentinel(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *wr;
     PyThreadState *tstate = _PyThreadState_GET();
-    lockobject *lock;
 
-    if (tstate->on_delete_data != NULL) {
+    if (tstate->_threading_thread.lock_weakref != NULL) {
         /* We must support the re-creation of the lock from a
            fork()ed child. */
-        assert(tstate->on_delete == &release_sentinel);
-        wr = (PyObject *) tstate->on_delete_data;
-        tstate->on_delete = NULL;
-        tstate->on_delete_data = NULL;
-        Py_DECREF(wr);
+        assert(tstate->_threading_thread.pre_delete == &thread_prepare_delete);
+        tstate->_threading_thread.pre_delete = NULL;
+        tstate->_threading_thread.lock_weakref = NULL;
+        Py_DECREF(tstate->_threading_thread.lock_weakref);
     }
-    lock = newlockobject(module);
-    if (lock == NULL)
+
+    PyObject *lockobj = (PyObject *) newlockobject(module);
+    if (lockobj == NULL) {
         return NULL;
+    }
     /* The lock is owned by whoever called _set_sentinel(), but the weakref
        hangs to the thread state. */
-    wr = PyWeakref_NewRef((PyObject *) lock, NULL);
+    PyObject *wr = PyWeakref_NewRef(lockobj, NULL);
     if (wr == NULL) {
-        Py_DECREF(lock);
+        Py_DECREF(lockobj);
         return NULL;
     }
-    tstate->on_delete_data = (void *) wr;
-    tstate->on_delete = &release_sentinel;
-    return (PyObject *) lock;
+    tstate->_threading_thread.pre_delete = &thread_prepare_delete;
+    tstate->_threading_thread.lock_weakref = wr;
+    return lockobj;
 }
 
 PyDoc_STRVAR(_set_sentinel_doc,

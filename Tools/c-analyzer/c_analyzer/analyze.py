@@ -174,7 +174,14 @@ def find_typedecl(decl, typespec, typespecs):
             # If the decl is in a source file then we expect the
             # type to be in the same file or in a header file.
             continue
-        candidates.append(typedecl)
+        for c in candidates:
+            if c.name == typedecl.name and c.data == typedecl.data:
+                # The type was duplicated in another file.
+                assert c.parent == typedecl.parent
+                break
+        else:
+            candidates.append(typedecl)
+
     if not candidates:
         return None
     elif len(candidates) == 1:

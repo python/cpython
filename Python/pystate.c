@@ -1490,6 +1490,22 @@ PyThreadState_Clear(PyThreadState *tstate)
 
     Py_CLEAR(tstate->context);
 
+    if (tstate != current_fast_get(&_PyRuntime)) {
+        /* The "current" case is handled in _PyThreadState_DeleteCurrent(). */
+        if (tstate->_threading_thread.pre_delete != NULL) {
+#ifdef NDEBUG
+            (void) tstate->_threading_thread.pre_delete(tstate);
+#else
+            PyThread_type_lock lock;
+            lock = tstate->_threading_thread.pre_delete(tstate);
+            assert(lock == NULL);
+#endif
+        }
+    }
+    if (tstate->on_delete != NULL) {
+        tstate->on_delete(tstate->on_delete_data);
+    }
+
     tstate->_status.cleared = 1;
 
     // XXX Call _PyThreadStateSwap(runtime, NULL) here if "current".
@@ -1501,6 +1517,7 @@ static void
 tstate_delete_common(PyThreadState *tstate)
 {
     assert(tstate->_status.cleared && !tstate->_status.finalized);
+    // XXX assert(tstate->_threading_thread.pre_delete == NULL);
 
     PyInterpreterState *interp = tstate->interp;
     if (interp == NULL) {
@@ -1561,18 +1578,33 @@ void
 _PyThreadState_DeleteCurrent(PyThreadState *tstate)
 {
     _Py_EnsureTstateNotNULL(tstate);
-    /* We ignore the return value.  A non-zero value means there were
-       too many pending calls already queued up.  This case is unlikely,
-       and, at worst, we'll leak on_delete_data.
-       Also, note that the pending call will be run the next time the
-       GIL is taken by one of this interpreter's threads.  So it won't
-       happen until after the _PyEval_ReleaseLock() call below. */
-    (void)_PyEval_AddPendingCall(tstate->interp,
-                                 tstate->on_delete, tstate->on_delete_data);
+
+    PyThread_type_lock lock = NULL;
+    if (tstate->_threading_thread.pre_delete != NULL) {
+        /* This may queue up a pending call that will run in a
+           different thread in the same interpreter.  It will only
+           run _after_ we've released the GIL below.
+
+           lock will be NULL if the threading.Thread has already been
+           destroyed, if there are too many pending calls already queued
+           up, or if _PyThreadState_DeleteCurrent() wasn't called by
+           thread_run() (in _threadmodule.c).
+           */
+        lock = tstate->_threading_thread.pre_delete(tstate);
+    }
 
     tstate_delete_common(tstate);
     current_fast_clear(tstate->interp->runtime);
     _PyEval_ReleaseLock(tstate);
+
+    if (lock != NULL) {
+        /* Notify threading._shutdown() that this thread has been finalized.
+           This must happen *after* the GIL is released,
+           to avoid a race with threading._shutdown()
+           (via wait_for_thread_shutdown() in pylifecycle.c).. */
+        PyThread_release_lock(lock);
+    }
+
     free_threadstate(tstate);
 }
 

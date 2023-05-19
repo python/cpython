@@ -112,6 +112,10 @@ struct _py_trashcan {
     PyObject *delete_later;
 };
 
+// We can't include pythread.h yet (due to include cycles)
+// so we duplicate PyThread_type_lock here.
+typedef void *PyThread_type_lock;
+
 struct _ts {
     /* See Python/ceval.c for comments explaining most fields */
 
@@ -188,30 +192,49 @@ struct _ts {
 
     struct _py_trashcan trash;
 
-    /* Called when a thread state is deleted normally, but not when it
-     * is destroyed after fork().
-     * Pain:  to prevent rare but fatal shutdown errors (issue 18808),
-     * Thread.join() must wait for the join'ed thread's tstate to be unlinked
-     * from the tstate chain.  That happens at the end of a thread's life,
-     * in pystate.c.
-     * The obvious way doesn't quite work:  create a lock which the tstate
-     * unlinking code releases, and have Thread.join() wait to acquire that
-     * lock.  The problem is that we _are_ at the end of the thread's life:
-     * if the thread holds the last reference to the lock, decref'ing the
-     * lock will delete the lock, and that may trigger arbitrary Python code
-     * if there's a weakref, with a callback, to the lock.  But by this time
-     * _PyRuntime.gilstate.tstate_current is already NULL, so only the simplest
-     * of C code can be allowed to run (in particular it must not be possible to
-     * release the GIL).
-     * So instead of holding the lock directly, the tstate holds a weakref to
-     * the lock:  that's the value of on_delete_data below.  Decref'ing a
-     * weakref is harmless.
-     * on_delete points to _threadmodule.c's static release_sentinel() function.
-     * After the tstate is unlinked, release_sentinel is called with the
-     * weakref-to-lock (on_delete_data) argument, and release_sentinel releases
-     * the indirectly held lock.
-     */
-    int (*on_delete)(void *);
+    struct {
+        /* Called when a thread state is deleted normally, but not when
+         * it is destroyed after fork().
+         *
+         * Pain:  to prevent rare but fatal shutdown errors (issue 18808),
+         * Thread.join() must wait for the join'ed thread's tstate to be
+         * unlinked from the tstate chain.  That happens at the end of a
+         * thread's life, in pystate.c.
+         *
+         * The obvious way doesn't quite work:  create a lock which the
+         * tstate unlinking code releases, and have Thread.join() wait
+         * to acquire that lock.  The problem is that we _are_ at the end
+         * of the thread's life:  if the thread holds the last reference
+         * to the lock, decref'ing the lock will delete the lock, and
+         * that may trigger arbitrary Python code if there's a weakref,
+         * with a callback, to the lock.  But by this time the current
+         * tstate is already NULL, so only the simplest of C code can be
+         * allowed to run (in particular it must not be possible to
+         * release the GIL).
+         *
+         * So instead of holding the lock directly, the tstate holds
+         * a weakref to the lock:  that's the value of .lock_weakref
+         * below.  Decref'ing a weakref is harmless.
+         *
+         * .pre_delete points to the thread_prepare_delete static function
+         * in _threadmodule.c.  It gets called right _before_ the tstate
+         * is deleted, with the GIL held, and returns the lock to release.
+         * It also adds a pending call to delete the lock once the lock
+         * has been released.  This works because the pending call won't
+         * run until another thread of the interpreter takes the GIL.
+         *
+         * It is important that the lock be released _after_ the GIL
+         * is released to avoid a race with threading._shutdown().
+         */
+        // XXX Does all of the above explanation still hold?
+        PyThread_type_lock (*pre_delete)(PyThreadState *);
+        PyObject *lock_weakref;
+    } _threading_thread;
+    /* These weren't ever meant to be used except internally,
+     * but we're keeping them around just in case.  Internally,
+     * we use the _threading_thread field. */
+    /* XXX Drop them! */
+    void (*on_delete)(void *);
     void *on_delete_data;
 
     int coroutine_origin_tracking_depth;
