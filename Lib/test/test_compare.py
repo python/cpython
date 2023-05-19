@@ -427,34 +427,26 @@ class ComparisonFullTest(unittest.TestCase):
                         a1, b2, -1, cls_a.meth, cls_b.meth)
 
     def test_str_subclass(self):
-        """  Test comparison for type ``str`` and its subclass ``StrSubclass``.
-        """
+        """  Compare instances of str and a subclass."""
         class StrSubclass(str):
             pass
 
-        c1 = StrSubclass("a")
-        c2 = StrSubclass("b")
-        c3 = StrSubclass("b")  # Different instance than c2.
-        self.assertIsNot(c2, c3, "Testcase error: c2 is c3")
-
         s1 = str("a")
         s2 = str("b")
-        s3 = str("b")  # Same instance as s2.
-        self.assertIs(s2, s3, "Testcase error: s2 is not s3")
+        c1 = StrSubclass("a")
+        c2 = StrSubclass("b")
+        c3 = StrSubclass("b")
 
+        self.assert_total_order(s1, s1,   0)
+        self.assert_total_order(s1, s2, -1)
         self.assert_total_order(c1, c1,   0)
         self.assert_total_order(c1, c2, -1)
         self.assert_total_order(c2, c3,   0)
 
-        self.assert_total_order(s1, s1,   0)
-        self.assert_total_order(s1, s2, -1)
-        self.assert_total_order(s2, s3,   0)
-
-        self.assert_total_order(c1, s2, -1)
-        self.assert_total_order(c2, s3,   0)
-
         self.assert_total_order(s1, c2, -1)
         self.assert_total_order(s2, c3,   0)
+        self.assert_total_order(c1, s2, -1)
+        self.assert_total_order(c2, s2,   0)
 
     def test_numbers(self):
         """ Test comparison for number types.
