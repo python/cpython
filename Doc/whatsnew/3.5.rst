@@ -425,7 +425,7 @@ are declared in the annotations::
 While these annotations are available at runtime through the usual
 :attr:`__annotations__` attribute, *no automatic type checking happens at
 runtime*.  Instead, it is assumed that a separate off-line type checker
-(e.g. `mypy <http://mypy-lang.org>`_) will be used for on-demand
+(e.g. `mypy <https://mypy-lang.org>`_) will be used for on-demand
 source code analysis.
 
 The type system supports unions, generic types, and a special type
@@ -2212,7 +2212,7 @@ for details.)
 The :c:member:`PyTypeObject.tp_finalize` slot is now part of the stable ABI.
 
 Windows builds now require Microsoft Visual C++ 14.0, which
-is available as part of `Visual Studio 2015 <https://www.visualstudio.com/>`_.
+is available as part of `Visual Studio 2015 <https://visualstudio.microsoft.com/en/vs/older-downloads/#visual-studio-2015-and-other-products>`_.
 
 Extension modules now include a platform information tag in their filename on
 some platforms (the tag is optional, and CPython will import extensions without

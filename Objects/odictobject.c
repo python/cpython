@@ -1556,10 +1556,9 @@ _PyODict_SetItem_KnownHash(PyObject *od, PyObject *key, PyObject *value,
         res = _odict_add_new_node((PyODictObject *)od, key, hash);
         if (res < 0) {
             /* Revert setting the value on the dict */
-            PyObject *exc, *val, *tb;
-            PyErr_Fetch(&exc, &val, &tb);
+            PyObject *exc = PyErr_GetRaisedException();
             (void) _PyDict_DelItem_KnownHash(od, key, hash);
-            _PyErr_ChainExceptions(exc, val, tb);
+            _PyErr_ChainExceptions1(exc);
         }
     }
     return res;
