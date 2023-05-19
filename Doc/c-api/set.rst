@@ -107,7 +107,7 @@ or :class:`frozenset` or instances of their subtypes.
 
 .. c:function:: Py_ssize_t PySet_Size(PyObject *anyset)
 
-   .. index:: builtin: len
+   .. index:: pair: built-in function; len
 
    Return the length of a :class:`set` or :class:`frozenset` object. Equivalent to
    ``len(anyset)``.  Raises a :exc:`PyExc_SystemError` if *anyset* is not a

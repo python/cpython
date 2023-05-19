@@ -3,10 +3,12 @@
 
 #include "Python.h"
 #include "pycore_frame.h"
+#include "pycore_function.h"
 #include "pycore_runtime.h"
 #include "pycore_global_objects.h"
 #include "pycore_intrinsics.h"
 #include "pycore_pyerrors.h"
+#include "pycore_typevarobject.h"
 
 
 /******** Unary functions ********/
@@ -199,6 +201,13 @@ list_to_tuple(PyThreadState* unused, PyObject *v)
     return _PyTuple_FromArray(((PyListObject *)v)->ob_item, Py_SIZE(v));
 }
 
+static PyObject *
+make_typevar(PyThreadState* Py_UNUSED(ignored), PyObject *v)
+{
+    assert(PyUnicode_Check(v));
+    return _Py_make_typevar(v, NULL, NULL);
+}
+
 const instrinsic_func1
 _PyIntrinsics_UnaryFunctions[] = {
     [0] = no_intrinsic,
@@ -208,6 +217,11 @@ _PyIntrinsics_UnaryFunctions[] = {
     [INTRINSIC_ASYNC_GEN_WRAP] = _PyAsyncGenValueWrapperNew,
     [INTRINSIC_UNARY_POSITIVE] = unary_pos,
     [INTRINSIC_LIST_TO_TUPLE] = list_to_tuple,
+    [INTRINSIC_TYPEVAR] = make_typevar,
+    [INTRINSIC_PARAMSPEC] = _Py_make_paramspec,
+    [INTRINSIC_TYPEVARTUPLE] = _Py_make_typevartuple,
+    [INTRINSIC_SUBSCRIPT_GENERIC] = _Py_subscript_generic,
+    [INTRINSIC_TYPEALIAS] = _Py_make_typealias,
 };
 
 
@@ -221,8 +235,26 @@ prep_reraise_star(PyThreadState* unused, PyObject *orig, PyObject *excs)
     return _PyExc_PrepReraiseStar(orig, excs);
 }
 
+static PyObject *
+make_typevar_with_bound(PyThreadState* Py_UNUSED(ignored), PyObject *name,
+                        PyObject *evaluate_bound)
+{
+    assert(PyUnicode_Check(name));
+    return _Py_make_typevar(name, evaluate_bound, NULL);
+}
+
+static PyObject *
+make_typevar_with_constraints(PyThreadState* Py_UNUSED(ignored), PyObject *name,
+                              PyObject *evaluate_constraints)
+{
+    assert(PyUnicode_Check(name));
+    return _Py_make_typevar(name, NULL, evaluate_constraints);
+}
+
 const instrinsic_func2
 _PyIntrinsics_BinaryFunctions[] = {
     [INTRINSIC_PREP_RERAISE_STAR] = prep_reraise_star,
+    [INTRINSIC_TYPEVAR_WITH_BOUND] = make_typevar_with_bound,
+    [INTRINSIC_TYPEVAR_WITH_CONSTRAINTS] = make_typevar_with_constraints,
+    [INTRINSIC_SET_FUNCTION_TYPE_PARAMS] = _Py_set_function_type_params,
 };
-
