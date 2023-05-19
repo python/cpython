@@ -60,11 +60,17 @@ struct pair_encodemap {
     DBCHAR code;
 };
 
-typedef struct {
+#ifndef CJK_MOD_SPECIFIC_STATE
+#define CJK_MOD_SPECIFIC_STATE
+#endif
+
+typedef struct _cjk_mod_state {
     int num_mappings;
     int num_codecs;
     struct dbcs_map *mapping_list;
     MultibyteCodec *codec_list;
+
+    CJK_MOD_SPECIFIC_STATE
 } cjkcodecs_module_state;
 
 static inline cjkcodecs_module_state *
@@ -76,33 +82,33 @@ get_module_state(PyObject *mod)
 }
 
 #define CODEC_INIT(encoding)                                            \
-    static int encoding##_codec_init(const void *config)
+    static int encoding##_codec_init(const MultibyteCodec *codec)
 
 #define ENCODER_INIT(encoding)                                          \
     static int encoding##_encode_init(                                  \
-        MultibyteCodec_State *state, const void *config)
+        MultibyteCodec_State *state, const MultibyteCodec *codec)
 #define ENCODER(encoding)                                               \
     static Py_ssize_t encoding##_encode(                                \
-        MultibyteCodec_State *state, const void *config,                \
+        MultibyteCodec_State *state, const MultibyteCodec *codec,       \
         int kind, const void *data,                                     \
         Py_ssize_t *inpos, Py_ssize_t inlen,                            \
         unsigned char **outbuf, Py_ssize_t outleft, int flags)
 #define ENCODER_RESET(encoding)                                         \
     static Py_ssize_t encoding##_encode_reset(                          \
-        MultibyteCodec_State *state, const void *config,                \
+        MultibyteCodec_State *state, const MultibyteCodec *codec,       \
         unsigned char **outbuf, Py_ssize_t outleft)
 
 #define DECODER_INIT(encoding)                                          \
     static int encoding##_decode_init(                                  \
-        MultibyteCodec_State *state, const void *config)
+        MultibyteCodec_State *state, const MultibyteCodec *codec)
 #define DECODER(encoding)                                               \
     static Py_ssize_t encoding##_decode(                                \
-        MultibyteCodec_State *state, const void *config,                \
+        MultibyteCodec_State *state, const MultibyteCodec *codec,       \
         const unsigned char **inbuf, Py_ssize_t inleft,                 \
         _PyUnicodeWriter *writer)
 #define DECODER_RESET(encoding)                                         \
     static Py_ssize_t encoding##_decode_reset(                          \
-        MultibyteCodec_State *state, const void *config)
+        MultibyteCodec_State *state, const MultibyteCodec *codec)
 
 #define NEXT_IN(i)                              \
     do {                                        \
@@ -205,6 +211,9 @@ get_module_state(PyObject *mod)
         (m)->bottom]) != NOCHAR)
 #define TRYMAP_ENC(charset, assi, uni)                     \
     _TRYMAP_ENC(&charset##_encmap[(uni) >> 8], assi, (uni) & 0xff)
+#define TRYMAP_ENC_ST(charset, assi, uni) \
+    _TRYMAP_ENC(&(codec->modstate->charset##_encmap)[(uni) >> 8], \
+                assi, (uni) & 0xff)
 
 #define _TRYMAP_DEC(m, assi, val)                             \
     ((m)->map != NULL &&                                        \
@@ -213,6 +222,8 @@ get_module_state(PyObject *mod)
      ((assi) = (m)->map[(val) - (m)->bottom]) != UNIINV)
 #define TRYMAP_DEC(charset, assi, c1, c2)                     \
     _TRYMAP_DEC(&charset##_decmap[c1], assi, c2)
+#define TRYMAP_DEC_ST(charset, assi, c1, c2) \
+    _TRYMAP_DEC(&(codec->modstate->charset##_decmap)[c1], assi, c2)
 
 #define BEGIN_MAPPINGS_LIST(NUM)                                    \
 static int                                                          \
@@ -271,9 +282,12 @@ add_codecs(cjkcodecs_module_state *st)                          \
 #define CODEC_STATELESS_WINIT(enc) \
     NEXT_CODEC = (MultibyteCodec){#enc, NULL, enc##_codec_init, _STATELESS_METHODS(enc)};
 
-#define END_CODECS_LIST             \
-    assert(st->num_codecs == idx);  \
-    return 0;                       \
+#define END_CODECS_LIST                         \
+    assert(st->num_codecs == idx);              \
+    for (int i = 0; i < st->num_codecs; i++) {  \
+        st->codec_list[i].modstate = st;        \
+    }                                           \
+    return 0;                                   \
 }
 
 
@@ -284,18 +298,45 @@ getmultibytecodec(void)
     return _PyImport_GetModuleAttrString("_multibytecodec", "__create_codec");
 }
 
+static void
+destroy_codec_capsule(PyObject *capsule)
+{
+    void *ptr = PyCapsule_GetPointer(capsule, CODEC_CAPSULE);
+    codec_capsule *data = (codec_capsule *)ptr;
+    Py_DECREF(data->cjk_module);
+    PyMem_Free(ptr);
+}
+
+static codec_capsule *
+capsulate_codec(PyObject *mod, const MultibyteCodec *codec)
+{
+    codec_capsule *data = PyMem_Malloc(sizeof(codec_capsule));
+    if (data == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    data->codec = codec;
+    data->cjk_module = Py_NewRef(mod);
+    return data;
+}
+
 static PyObject *
-_getcodec(const MultibyteCodec *codec)
+_getcodec(PyObject *self, const MultibyteCodec *codec)
 {
     PyObject *cofunc = getmultibytecodec();
     if (cofunc == NULL) {
         return NULL;
     }
 
-    PyObject *codecobj = PyCapsule_New((void *)codec,
-                                       PyMultibyteCodec_CAPSULE_NAME,
-                                       NULL);
+    codec_capsule *data = capsulate_codec(self, codec);
+    if (data == NULL) {
+        Py_DECREF(cofunc);
+        return NULL;
+    }
+    PyObject *codecobj = PyCapsule_New(data, CODEC_CAPSULE,
+                                       destroy_codec_capsule);
     if (codecobj == NULL) {
+        PyMem_Free(data);
         Py_DECREF(cofunc);
         return NULL;
     }
@@ -323,7 +364,7 @@ getcodec(PyObject *self, PyObject *encoding)
     for (int i = 0; i < st->num_codecs; i++) {
         const MultibyteCodec *codec = &st->codec_list[i];
         if (strcmp(codec->encoding, enc) == 0) {
-            return _getcodec(codec);
+            return _getcodec(self, codec);
         }
     }
 
@@ -352,8 +393,7 @@ register_maps(PyObject *module)
         char mhname[256] = "__map_";
         strcpy(mhname + sizeof("__map_") - 1, h->charset);
 
-        PyObject *capsule = PyCapsule_New((void *)h,
-                                          PyMultibyteCodec_CAPSULE_NAME, NULL);
+        PyObject *capsule = PyCapsule_New((void *)h, MAP_CAPSULE, NULL);
         if (capsule == NULL) {
             return -1;
         }
@@ -417,14 +457,14 @@ importmap(const char *modname, const char *symbol,
     o = PyObject_GetAttrString(mod, symbol);
     if (o == NULL)
         goto errorexit;
-    else if (!PyCapsule_IsValid(o, PyMultibyteCodec_CAPSULE_NAME)) {
+    else if (!PyCapsule_IsValid(o, MAP_CAPSULE)) {
         PyErr_SetString(PyExc_ValueError,
                         "map data must be a Capsule.");
         goto errorexit;
     }
     else {
         struct dbcs_map *map;
-        map = PyCapsule_GetPointer(o, PyMultibyteCodec_CAPSULE_NAME);
+        map = PyCapsule_GetPointer(o, MAP_CAPSULE);
         if (encmap != NULL)
             *encmap = map->encmap;
         if (decmap != NULL)
@@ -462,6 +502,7 @@ static struct PyMethodDef _cjk_methods[] = {
 
 static PyModuleDef_Slot _cjk_slots[] = {
     {Py_mod_exec, _cjk_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

@@ -105,6 +105,7 @@
 
 #define DISPATCH_INLINED(NEW_FRAME)                     \
     do {                                                \
+        assert(tstate->interp->eval_frame == NULL);     \
         _PyFrame_SetStackPointer(frame, stack_pointer); \
         frame->prev_instr = next_instr - 1;             \
         (NEW_FRAME)->previous = frame;                  \
@@ -115,7 +116,7 @@
 
 #define CHECK_EVAL_BREAKER() \
     _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY(); \
-    if (_Py_atomic_load_relaxed_int32(eval_breaker)) { \
+    if (_Py_atomic_load_relaxed_int32(&tstate->interp->ceval.eval_breaker)) { \
         goto handle_eval_breaker; \
     }
 
@@ -334,11 +335,10 @@ do { \
 #define INSTRUMENTED_JUMP(src, dest, event) \
 do { \
     _PyFrame_SetStackPointer(frame, stack_pointer); \
-    int err = _Py_call_instrumentation_jump(tstate, event, frame, src, dest); \
+    next_instr = _Py_call_instrumentation_jump(tstate, event, frame, src, dest); \
     stack_pointer = _PyFrame_GetStackPointer(frame); \
-    if (err) { \
+    if (next_instr == NULL) { \
         next_instr = (dest)+1; \
         goto error; \
     } \
-    next_instr = frame->prev_instr; \
 } while (0);

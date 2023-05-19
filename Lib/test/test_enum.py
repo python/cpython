@@ -819,10 +819,27 @@ class TestPlainFlag(_EnumTests, _PlainOutputTests, _FlagTests, unittest.TestCase
 
 class TestIntEnum(_EnumTests, _MinimalOutputTests, unittest.TestCase):
     enum_type = IntEnum
+    #
+    def test_shadowed_attr(self):
+        class Number(IntEnum):
+            divisor = 1
+            numerator = 2
+        #
+        self.assertEqual(Number.divisor.numerator, 1)
+        self.assertIs(Number.numerator.divisor, Number.divisor)
 
 
 class TestStrEnum(_EnumTests, _MinimalOutputTests, unittest.TestCase):
     enum_type = StrEnum
+    #
+    def test_shadowed_attr(self):
+        class Book(StrEnum):
+            author = 'author'
+            title = 'title'
+        #
+        self.assertEqual(Book.author.title(), 'Author')
+        self.assertEqual(Book.title.title(), 'Title')
+        self.assertIs(Book.title.author, Book.author)
 
 
 class TestIntFlag(_EnumTests, _MinimalOutputTests, _FlagTests, unittest.TestCase):

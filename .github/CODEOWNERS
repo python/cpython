@@ -7,11 +7,14 @@
 # GitHub
 .github/**                    @ezio-melotti @hugovk
 
+# pre-commit
+.pre-commit-config.yaml       @hugovk @AlexWaygood
+
 # Build system
 configure*                    @erlend-aasland @corona10
 
 # asyncio
-**/*asyncio*                  @1st1 @asvetlov @gvanrossum @kumaraditya303
+**/*asyncio*                  @1st1 @asvetlov @gvanrossum @kumaraditya303 @willingc
 
 # Core
 **/*context*                  @1st1
@@ -19,15 +22,19 @@ configure*                    @erlend-aasland @corona10
 **/*hamt*                     @1st1
 Objects/set*                  @rhettinger
 Objects/dict*                 @methane @markshannon
+Objects/typevarobject.c       @JelleZijlstra
 Objects/type*                 @markshannon
 Objects/codeobject.c          @markshannon
 Objects/frameobject.c         @markshannon
 Objects/call.c                @markshannon
 Python/ceval.c                @markshannon
 Python/compile.c              @markshannon @iritkatriel
+Python/assemble.c             @markshannon @iritkatriel
+Python/flowgraph.c            @markshannon @iritkatriel
 Python/ast_opt.c              @isidentical
 Lib/test/test_patma.py        @brandtbucher
 Lib/test/test_peepholer.py    @brandtbucher
+Lib/test/test_type_*.py       @JelleZijlstra
 
 # Exceptions
 Lib/traceback.py              @iritkatriel

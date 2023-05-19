@@ -962,7 +962,7 @@ locale_alias = {
     'c.ascii':                              'C',
     'c.en':                                 'C',
     'c.iso88591':                           'en_US.ISO8859-1',
-    'c.utf8':                               'en_US.UTF-8',
+    'c.utf8':                               'C.UTF-8',
     'c_c':                                  'C',
     'c_c.c':                                'C',
     'ca':                                   'ca_ES.ISO8859-1',

@@ -954,7 +954,16 @@ The canonical way to create an :class:`Option` instance is with the
 
 As you can see, most actions involve storing or updating a value somewhere.
 :mod:`optparse` always creates a special object for this, conventionally called
-``options`` (it happens to be an instance of :class:`optparse.Values`).  Option
+``options``, which is an instance of :class:`optparse.Values`.
+
+.. class:: Values
+
+   An object holding parsed argument names and values as attributes.
+   Normally created by calling when calling :meth:`OptionParser.parse_args`,
+   and can be overridden by a custom subclass passed to the *values* argument of
+   :meth:`OptionParser.parse_args` (as described in :ref:`optparse-parsing-arguments`).
+
+Option
 arguments (and various other values) are stored as attributes of this object,
 according to the :attr:`~Option.dest` (destination) option attribute.
 
@@ -990,6 +999,14 @@ one that makes sense for *all* options.
 
 Option attributes
 ^^^^^^^^^^^^^^^^^
+
+.. class:: Option
+
+   A single command line argument,
+   with various attributes passed by keyword to the constructor.
+   Normally created with :meth:`OptionParser.add_option` rather than directly,
+   and can be overridden by a custom class via the *option_class* argument
+   to :class:`OptionParser`.
 
 The following option attributes may be passed as keyword arguments to
 :meth:`OptionParser.add_option`.  If you pass an option attribute that is not
@@ -2035,3 +2052,27 @@ Features of note:
   about setting a default value for the option destinations in question; they
   can just leave the default as ``None`` and :meth:`ensure_value` will take care of
   getting it right when it's needed.
+
+Exceptions
+----------
+
+.. exception:: OptionError
+
+   Raised if an :class:`Option` instance is created with invalid or
+   inconsistent arguments.
+
+.. exception:: OptionConflictError
+
+   Raised if conflicting options are added to an :class:`OptionParser`.
+
+.. exception:: OptionValueError
+
+   Raised if an invalid option value is encountered on the command line.
+
+.. exception:: BadOptionError
+
+   Raised if an invalid option is passed on the command line.
+
+.. exception:: AmbiguousOptionError
+
+   Raised if an ambiguous option is passed on the command line.
