@@ -6804,6 +6804,9 @@ class NamedTupleTests(BaseTestCase):
         self.assertEqual(X.__bases__, (tuple, Generic))
         self.assertEqual(X.__orig_bases__, (NamedTuple, Generic[T]))
         self.assertEqual(X.__mro__, (X, tuple, Generic, object))
+        self.assertEqual(X.__parameters__, (T,))
+        self.assertEqual(X[str].__args__, (str,))
+        self.assertEqual(X[str].__parameters__, ())
 
     def test_non_generic_subscript(self):
         # For backward compatibility, subscription works
