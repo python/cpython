@@ -1205,10 +1205,8 @@ Function definitions
 A function definition defines a user-defined function object (see section
 :ref:`types`):
 
-TODO(jelle): generics
-
 .. productionlist:: python-grammar
-   funcdef: [`decorators`] "def" `funcname` "(" [`parameter_list`] ")"
+   funcdef: [`decorators`] "def" `funcname` [`type_params`] "(" [`parameter_list`] ")"
           : ["->" `expression`] ":" `suite`
    decorators: `decorator`+
    decorator: "@" `assignment_expression` NEWLINE
@@ -1257,6 +1255,15 @@ except that the original function is not temporarily bound to the name ``func``.
    Functions may be decorated with any valid
    :token:`~python-grammar:assignment_expression`. Previously, the grammar was
    much more restrictive; see :pep:`614` for details.
+
+A list of :ref:`type parameters <type-params>` may be given in square brackets
+between the function's name and the opening parenthesis for its parameter list.
+This indicates to static type checkers that the function is generic. At runtime,
+the type parameters can be retrieved from the function's ``__type_params__``
+attribute. See :ref:`generic-functions` for more.
+
+.. versionadded:: 3.12
+   Type parameters are new in version 3.12.
 
 .. index::
    triple: default; parameter; value
@@ -1379,10 +1386,8 @@ Class definitions
 
 A class definition defines a class object (see section :ref:`types`):
 
-TODO(jelle): generics
-
 .. productionlist:: python-grammar
-   classdef: [`decorators`] "class" `classname` [`inheritance`] ":" `suite`
+   classdef: [`decorators`] "class" `classname` [`type_params`] [`inheritance`] ":" `suite`
    inheritance: "(" [`argument_list`] ")"
    classname: `identifier`
 
@@ -1437,6 +1442,15 @@ decorators.  The result is then bound to the class name.
    Classes may be decorated with any valid
    :token:`~python-grammar:assignment_expression`. Previously, the grammar was
    much more restrictive; see :pep:`614` for details.
+
+A list of :ref:`type parameters <type-params>` may be given in square brackets
+immediately after the class's name.
+This indicates to static type checkers that the class is generic. At runtime,
+the type parameters can be retrieved from the class's ``__type_params__``
+attribute. See :ref:`generic-classes` for more.
+
+.. versionadded:: 3.12
+   Type parameters are new in version 3.12.
 
 **Programmer's note:** Variables defined in the class definition are class
 attributes; they are shared by instances.  Instance attributes can be set in a
@@ -1709,13 +1723,12 @@ This syntax is equivalent to::
        return func
    func = TYPE_PARAMS_OF_func()
 
-Here ``def'`` indicates an :ref:`annotation scope <annotation-scopes>`. (Two other
-liberties are taken in the translation: the ``__type_params__``
-attribute of generic functions is not writable from Python code;
-and the syntax does not go through attribute access on the :mod:`typing`
-module, but creates an instance of :data:`typing.TypeVar` directly.)
+Here ``def'`` indicates an :ref:`annotation scope <annotation-scopes>`. (One
+other liberty is taken in the translation: the syntax does not go through
+attribute access on the :mod:`typing` module, but creates an instance of
+:data:`typing.TypeVar` directly.)
 
-The annotations of generic functions are defined within the annotation scope
+The annotations of generic functions are evaluated within the annotation scope
 used for declaring the type parameters, but the function's defaults and
 decorators are not.
 
@@ -1770,8 +1783,8 @@ Here again ``def'`` indicates an :ref:`annotation scope <annotation-scopes>`.
 
 Generic classes implicitly inherit from :data:`typing.Generic`.
 The base classes and keyword arguments of generic classes are
-executed within the type scope for the type parameters,
-and decorators are executed outside that scope. This is illustrated
+evaluated within the type scope for the type parameters,
+and decorators are evaluated outside that scope. This is illustrated
 by this example::
 
    @decorator
