@@ -8060,9 +8060,21 @@ os_posix_openpt_impl(PyObject *module, int oflag)
 {
     int fd;
 
+#if defined(O_CLOEXEC)
+    oflag |= O_CLOEXEC;
+#endif
+
     fd = posix_openpt(oflag);
-    if (fd == -1)
+    if (fd == -1) {
         posix_error();
+        return -1;
+    }
+
+    // Just in case, likely a no-op given O_CLOEXEC above.
+    if (_Py_set_inheritable(fd, 0, NULL) < 0) {
+        close(fd);
+        return -1;
+    }
 
     return fd;
 }
