@@ -219,7 +219,7 @@ Annotation scopes differ from function scopes in the following ways:
   statements in inner scopes. This includes only type parameters, as no other
   syntactic elements that can appear within type scopes can introduce new names.
 * While annotation scopes internally have a name, that name is not reflected in the
-  :attr:`__qualname__` of objects defined within the scope. Instead, the :attr:`!__qualname__`
+  ``__qualname__`` of objects defined within the scope. Instead, the ``__qualname__``
   of such objects is as if the object was defined in the enclosing scope.
 
 .. versionadded:: 3.12
