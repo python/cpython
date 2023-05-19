@@ -206,7 +206,7 @@ class ComparisonFullTest(unittest.TestCase):
                         CompLt, CompGt, CompLtGt,  # less/greater-than group
                         CompLe, CompGe, CompLeGe)  # less/greater-or-equal group
 
-    def create_sorted_insts(self, class_, values):
+    def create_sorted_instances(self, class_, values):
         """
         Create a number of objects of type `class_` and return them in a list.
 
@@ -222,16 +222,16 @@ class ComparisonFullTest(unittest.TestCase):
         """
 
         # Create a list of instances with the default constructor.
-        insts = [class_() for __ in range(len(values))]
+        instances = [class_() for __ in range(len(values))]
 
         # Sort the instance list by identity.
-        insts.sort(key=id)
+        instances.sort(key=id)
 
         # Assign the provided values to the instances.
-        for i, inst in enumerate(insts):
+        for i, inst in enumerate(instances):
             inst.x = values[i]
 
-        return insts
+        return instances
 
     def assert_equality_only(self, a, b, equal):
         """ Assert equality result and that ordering is not implemented.
@@ -421,24 +421,24 @@ class ComparisonFullTest(unittest.TestCase):
         # Comparisons of objects of the same class.
         for cls in self.all_comp_classes:
             with self.subTest(cls):
-                insts = self.create_sorted_insts(cls, (1, 2, 1))
+                instances = self.create_sorted_instances(cls, (1, 2, 1))
 
                 # same object
-                self.assert_total_order(insts[0], insts[0], 0,
+                self.assert_total_order(instances[0], instances[0], 0,
                                         cls.meth, cls.meth)
 
                 # different objects, same value
-                self.assert_total_order(insts[0], insts[2], 0,
+                self.assert_total_order(instances[0], instances[2], 0,
                                         cls.meth, cls.meth)
 
                 # different objects, value ascending for ascending identities
-                self.assert_total_order(insts[0], insts[1], -1,
+                self.assert_total_order(instances[0], instances[1], -1,
                                         cls.meth, cls.meth)
 
                 # different objects, value descending for ascending identities.
                 # This is the interesting case to assert that order comparison
                 # is performed based on the value and not based on the identity.
-                self.assert_total_order(insts[1], insts[2], +1,
+                self.assert_total_order(instances[1], instances[2], +1,
                                         cls.meth, cls.meth)
 
         # Comparisons of objects of the combination of all classes.
