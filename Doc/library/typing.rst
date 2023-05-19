@@ -101,6 +101,8 @@ annotations. These include:
 * :pep:`692`: Using ``TypedDict`` for more precise ``**kwargs`` typing
     *Introducing* a new way of typing ``**kwargs`` with :data:`Unpack` and
     :data:`TypedDict`
+* :pep:`695`: Type Parameter Syntax
+    *Introducing* syntax for creating generic functions, classes, and type aliases.
 * :pep:`698`: Adding an override decorator to typing
     *Introducing* the :func:`@override<override>` decorator
 
