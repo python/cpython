@@ -295,19 +295,20 @@ class ComparisonFullTest(unittest.TestCase):
         self.assert_gt_comparison_subtest(**args)
         self.assert_ge_comparison_subtest(**args)
 
+    # The body of each subtest has form
+        # if value-based comparison methods:
+            # expect what the testcase defined;
+        # else:  no value-based comparison
+            # expect default behavior of object.
+
     def assert_eq_comparison_subtest(self, *, a, b, comp, a_meth, b_meth):
         """ Test "==" comparison.
         The comparison is performed in both directions of the operands.
         """
-
         if a_meth is None or "eq" in a_meth or "eq" in b_meth:
-            # There are value-based comparison methods;
-            # we expect what the testcase defined.
             self.assertEqual(a == b, comp == 0)
             self.assertEqual(b == a, comp == 0)
         else:
-            # There are no value-based comparison methods;
-            # we expect the default behavior of object.
             self.assertEqual(a == b, a is b)
             self.assertEqual(b == a, a is b)
 
@@ -315,15 +316,10 @@ class ComparisonFullTest(unittest.TestCase):
         """ Test "!=" comparison.
         The comparison is performed in both directions of the operands.
         """
-
         if a_meth is None or not {"ne", "eq"}.isdisjoint(a_meth + b_meth):
-            # There are value-based comparison methods;
-            # we expect what the testcase defined.
             self.assertEqual(a != b, comp != 0)
             self.assertEqual(b != a, comp != 0)
         else:
-            # There are no value-based comparison methods;
-            # we expect the default behavior of object.
             self.assertEqual(a != b, a is not b)
             self.assertEqual(b != a, a is not b)
 
@@ -331,15 +327,10 @@ class ComparisonFullTest(unittest.TestCase):
         """ Test "<" comparison.
         The comparison is performed in both directions of the operands.
         """
-
         if a_meth is None or "lt" in a_meth or "gt" in b_meth:
-            # There are value-based comparison methods;
-            # we expect what the testcase defined.
             self.assertEqual(a < b, comp < 0)
             self.assertEqual(b > a, comp < 0)
         else:
-            # There are no value-based comparison methods;
-            # we expect the default behavior of object.
             with self.assertRaisesRegex(TypeError, "not supported"):
                 a < b
             with self.assertRaisesRegex(TypeError, "not supported"):
@@ -349,15 +340,10 @@ class ComparisonFullTest(unittest.TestCase):
         """ Test "<=" comparison.
         The comparison is performed in both directions of the operands.
         """
-
         if a_meth is None or "le" in a_meth or "ge" in b_meth:
-            # There are value-based comparison methods;
-            # we expect what the testcase defined.
             self.assertEqual(a <= b, comp <= 0)
             self.assertEqual(b >= a, comp <= 0)
         else:
-            # There are no value-based comparison methods;
-            # we expect the default behavior of object.
             with self.assertRaisesRegex(TypeError, "not supported"):
                 a <= b
             with self.assertRaisesRegex(TypeError, "not supported"):
@@ -367,15 +353,10 @@ class ComparisonFullTest(unittest.TestCase):
         """ Test ">" comparison.
         The comparison is performed in both directions of the operands.
         """
-
         if a_meth is None or "gt" in a_meth or "lt" in b_meth:
-            # There are value-based comparison methods;
-            # we expect what the testcase defined.
             self.assertEqual(a > b, comp > 0)
             self.assertEqual(b < a, comp > 0)
         else:
-            # There are no value-based comparison methods;
-            # we expect the default behavior of object.
             with self.assertRaisesRegex(TypeError, "not supported"):
                 a > b
             with self.assertRaisesRegex(TypeError, "not supported"):
@@ -385,15 +366,10 @@ class ComparisonFullTest(unittest.TestCase):
         """ Test ">=" comparison.
         The comparison is performed in both directions of the operands.
         """
-
         if a_meth is None or "ge" in a_meth or "le" in b_meth:
-            # There are value-based comparison methods;
-            # we expect what the testcase defined.
             self.assertEqual(a >= b, comp >= 0)
             self.assertEqual(b <= a, comp >= 0)
         else:
-            # There are no value-based comparison methods;
-            # we expect the default behavior of object.
             with self.assertRaisesRegex(TypeError, "not supported"):
                 a >= b
             with self.assertRaisesRegex(TypeError, "not supported"):
