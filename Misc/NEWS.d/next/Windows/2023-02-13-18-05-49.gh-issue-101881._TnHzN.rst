@@ -1,1 +1,0 @@
-Add support for the os.get_blocking() and os.set_blocking() functions on Windows.

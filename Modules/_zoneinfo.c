@@ -204,7 +204,7 @@ zoneinfo_get_state(PyObject *mod)
 static inline zoneinfo_state *
 zoneinfo_get_state_by_cls(PyTypeObject *cls)
 {
-    zoneinfo_state *state = (zoneinfo_state *)PyType_GetModuleState(cls);
+    zoneinfo_state *state = (zoneinfo_state *)_PyType_GetModuleState(cls);
     assert(state != NULL);
     return state;
 }
@@ -270,10 +270,9 @@ error:
     Py_CLEAR(self);
 cleanup:
     if (file_obj != NULL) {
-        PyObject *exc, *val, *tb;
-        PyErr_Fetch(&exc, &val, &tb);
+        PyObject *exc = PyErr_GetRaisedException();
         PyObject *tmp = PyObject_CallMethod(file_obj, "close", NULL);
-        _PyErr_ChainExceptions(exc, val, tb);
+        _PyErr_ChainExceptions1(exc);
         if (tmp == NULL) {
             Py_CLEAR(self);
         }
@@ -1710,11 +1709,11 @@ static Py_ssize_t
 parse_abbr(const char *const p, PyObject **abbr)
 {
     const char *ptr = p;
-    char buff = *ptr;
     const char *str_start;
     const char *str_end;
 
     if (*ptr == '<') {
+        char buff;
         ptr++;
         str_start = ptr;
         while ((buff = *ptr) != '>') {
@@ -2823,7 +2822,10 @@ error:
 }
 
 static PyModuleDef_Slot zoneinfomodule_slots[] = {
-    {Py_mod_exec, zoneinfomodule_exec}, {0, NULL}};
+    {Py_mod_exec, zoneinfomodule_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {0, NULL},
+};
 
 static struct PyModuleDef zoneinfomodule = {
     .m_base = PyModuleDef_HEAD_INIT,
