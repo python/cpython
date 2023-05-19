@@ -1568,6 +1568,62 @@ class TraceTestCase(unittest.TestCase):
 
         self.run_and_compare(func, EXPECTED_EVENTS)
 
+    def test_settrace_error(self):
+
+        raised = False
+        def error_once(frame, event, arg):
+            nonlocal raised
+            if not raised:
+                raised = True
+                raise Exception
+            return error
+
+        try:
+            sys._getframe().f_trace = error_once
+            sys.settrace(error_once)
+            len([])
+        except Exception as ex:
+            count = 0
+            tb = ex.__traceback__
+            print(tb)
+            while tb:
+                if tb.tb_frame.f_code.co_name == "test_settrace_error":
+                    count += 1
+                tb = tb.tb_next
+            if count == 0:
+                self.fail("Traceback is missing frame")
+            elif count > 1:
+                self.fail("Traceback has frame more than once")
+        else:
+            self.fail("No exception raised")
+        finally:
+            sys.settrace(None)
+
+    @support.cpython_only
+    def test_testcapi_settrace_error(self):
+
+        # Skip this test if the _testcapi module isn't available.
+        _testcapi = import_helper.import_module('_testcapi')
+
+        try:
+            _testcapi.settrace_to_error([])
+            len([])
+        except Exception as ex:
+            count = 0
+            tb = ex.__traceback__
+            while tb:
+                if tb.tb_frame.f_code.co_name == "test_testcapi_settrace_error":
+                    count += 1
+                tb = tb.tb_next
+            if count == 0:
+                self.fail("Traceback is missing frame")
+            elif count > 1:
+                self.fail("Traceback has frame more than once")
+        else:
+            self.fail("No exception raised")
+        finally:
+            sys.settrace(None)
+
     def test_very_large_function(self):
         # There is a separate code path when the number of lines > (1 << 15).
         d = {}
