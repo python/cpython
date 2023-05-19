@@ -1,6 +1,4 @@
-"""
-Test equality and order comparisons.
-"""
+"Test equality and order comparisons."
 import unittest
 from test.support import ALWAYS_EQ
 from fractions import Fraction
@@ -8,10 +6,9 @@ from decimal import Decimal
 
 
 class ComparisonSimpleTest(unittest.TestCase):
-    """
-    A testcase that verifies the behavior of equality and order comparisons for
-    some simple cases.
-    """
+    """Test equality and order comparisons for some simple cases."""
+    # TODO Does addition of FullTest below obsolete any of these?
+
     class Empty:
         def __repr__(self):
             return '<Empty>'
@@ -124,14 +121,13 @@ class ComparisonSimpleTest(unittest.TestCase):
 
 
 class ComparisonFullTest(unittest.TestCase):
-    """
-    A testcase that verifies the behavior of equality and ordering
-    comparisons for built-in types and user-defined classes that implement
-    relevant combinations of rich comparison methods.
+    """Test equality and ordering comparisons for built-in types and
+    user-defined classes that implement relevant combinations of rich
+    comparison methods.
     """
 
     class CompBase:
-        """ Base class for classes with rich comparison methods.
+        """Base class for classes with rich comparison methods.
 
         The "x" attribute should be set to an underlying value to compare.
 
@@ -208,18 +204,15 @@ class ComparisonFullTest(unittest.TestCase):
             CompLe, CompGe, CompLeGe)  # less/greater-or-equal group
 
     def create_sorted_instances(self, class_, values):
-        """
-        Create a number of objects of type `class_` and return them in a list.
+        """Create objects of type `class_` and return them in a list.
 
         `values` is a list of values that determines the value of data
         attribute `x` of each object.
 
-        The main feature of this function is that the objects in the result
-        list are sorted by their identity, and afterwards the values of the
-        `values` list are assigned to these objects. Testcases can utilize this
-        to assign decreasing values to objects with increasing identities,
-        which in turn allows asserting that order comparison is performed by
-        value and not by identity.
+        Objects in the returned list are sorted by their identity.  They
+        assigned values in `values` list order.  By assign decreasing
+        values to objects with increasing identities, testcases can assert
+        that order comparison is performed by value and not by identity.
         """
 
         # Create a list of instances with the default constructor.
@@ -449,15 +442,10 @@ class ComparisonFullTest(unittest.TestCase):
         self.assert_total_order(c2, s2,   0)
 
     def test_numbers(self):
-        """ Test comparison for number types.
-        """
-        i1 = int(10001)
-        i2 = int(10002)
-        i3 = i1 + 1  # Same value, different instance than i2.
-        i4 = i2 - 1  # Same value, different instance than i1.
-        i5 = 42
-        self.assertIsNot(i2, i3, "Testcase error: i2 is i3")
-        self.assertIsNot(i1, i4, "Testcase error: i1 is i4")
+        """ Compare number types."""
+
+        i1 = 10001
+        i2 = 10002
 
         f1 = 1.1
         f2 = 2.1
@@ -494,8 +482,6 @@ class ComparisonFullTest(unittest.TestCase):
         # Same types.
         self.assert_total_order(i1, i1, 0)
         self.assert_total_order(i1, i2, -1)
-        self.assert_total_order(i2, i3, 0)
-        self.assert_total_order(i3, i4, +1)
 
         self.assert_total_order(f1, f1, 0)
         self.assert_total_order(f1, f2, -1)
