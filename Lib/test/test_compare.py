@@ -223,13 +223,10 @@ class ComparisonFullTest(unittest.TestCase):
         return instances
 
     def assert_equality_only(self, a, b, equal):
-        """ Assert equality result and that ordering is not implemented.
+        """Assert equality result and that ordering is not implemented.
 
         a, b: Instances to be tested (of same or different type).
-
-        equal: Boolean indicating the expected equality comparison result:
-                 True means: a == b
-                 False means: a != b
+        equal: Boolean indicating the expected equality comparison results.
         """
         self.assertEqual(a == b, equal)
         self.assertEqual(b == a, equal)
@@ -253,36 +250,25 @@ class ComparisonFullTest(unittest.TestCase):
             b >= a
 
     def assert_total_order(self, a, b, comp, a_meth=None, b_meth=None):
-        """
-        Perform assertions on total ordering comparison of two instances.
-
-        This function implements the knowledge about how equality and ordering
-        comparisons are supposed to work.
+        """Test total ordering comparison of two instances.
 
         a, b: Instances to be tested (of same or different type).
 
-        comp: Integer indicating the expected order comparison result,
-              for operations that are supported by the classes:
-                       <0 means: a < b
-                       0 means: a == b
-                       >0 means: a > b
+        comp: -1, 0, or 1 indicates that the expected order comparison
+           result for operations that are supported by the classes is
+           a <, ==, or > b.
 
-        a_meth, b_meth:  Tuple of rich comparison method names (without
-                    leading and trailing underscores) that are expected to be
-                    available for the corresponding instance. This information
-                    is only needed for instances of user-defined classes,
-                    when some operations are not implemented.
-                    Possible values for the tuple items are:
-                    "eq", "ne", "lt", "le", "gt", "ge".
+        a_meth, b_meth: Either None, indicating that all rich comparison
+           methods are available, aa for builtins, or the tuple (subset)
+           of "eq", "ne", "lt", "le", "gt", and "ge" that are available
+           for the corresponding instance (of a user-defined class).
         """
-
-        args = dict(a=a, b=b, comp=comp, a_meth=a_meth, b_meth=b_meth)
-        self.assert_eq_comparison_subtest(**args)
-        self.assert_ne_comparison_subtest(**args)
-        self.assert_lt_comparison_subtest(**args)
-        self.assert_le_comparison_subtest(**args)
-        self.assert_gt_comparison_subtest(**args)
-        self.assert_ge_comparison_subtest(**args)
+        self.assert_eq_subtest(a, b, comp, a_meth, b_meth)
+        self.assert_ne_subtest(a, b, comp, a_meth, b_meth)
+        self.assert_lt_subtest(a, b, comp, a_meth, b_meth)
+        self.assert_le_subtest(a, b, comp, a_meth, b_meth)
+        self.assert_gt_subtest(a, b, comp, a_meth, b_meth)
+        self.assert_ge_subtest(a, b, comp, a_meth, b_meth)
 
     # The body of each subtest has form
         # if value-based comparison methods:
@@ -290,7 +276,7 @@ class ComparisonFullTest(unittest.TestCase):
         # else:  no value-based comparison
             # expect default behavior of object.
 
-    def assert_eq_comparison_subtest(self, *, a, b, comp, a_meth, b_meth):
+    def assert_eq_subtest(self, a, b, comp, a_meth, b_meth):
         """ Test "==" comparison.
         The comparison is performed in both directions of the operands.
         """
@@ -301,7 +287,7 @@ class ComparisonFullTest(unittest.TestCase):
             self.assertEqual(a == b, a is b)
             self.assertEqual(b == a, a is b)
 
-    def assert_ne_comparison_subtest(self, *, a, b, comp, a_meth, b_meth):
+    def assert_ne_subtest(self, a, b, comp, a_meth, b_meth):
         """ Test "!=" comparison.
         The comparison is performed in both directions of the operands.
         """
@@ -312,7 +298,7 @@ class ComparisonFullTest(unittest.TestCase):
             self.assertEqual(a != b, a is not b)
             self.assertEqual(b != a, a is not b)
 
-    def assert_lt_comparison_subtest(self, *, a, b, comp, a_meth, b_meth):
+    def assert_lt_subtest(self, a, b, comp, a_meth, b_meth):
         """ Test "<" comparison.
         The comparison is performed in both directions of the operands.
         """
@@ -325,7 +311,7 @@ class ComparisonFullTest(unittest.TestCase):
             with self.assertRaisesRegex(TypeError, "not supported"):
                 b > a
 
-    def assert_le_comparison_subtest(self, *, a, b, comp, a_meth, b_meth):
+    def assert_le_subtest(self, a, b, comp, a_meth, b_meth):
         """ Test "<=" comparison.
         The comparison is performed in both directions of the operands.
         """
@@ -338,7 +324,7 @@ class ComparisonFullTest(unittest.TestCase):
             with self.assertRaisesRegex(TypeError, "not supported"):
                 b >= a
 
-    def assert_gt_comparison_subtest(self, *, a, b, comp, a_meth, b_meth):
+    def assert_gt_subtest(self, a, b, comp, a_meth, b_meth):
         """ Test ">" comparison.
         The comparison is performed in both directions of the operands.
         """
@@ -351,7 +337,7 @@ class ComparisonFullTest(unittest.TestCase):
             with self.assertRaisesRegex(TypeError, "not supported"):
                 b < a
 
-    def assert_ge_comparison_subtest(self, *, a, b, comp, a_meth, b_meth):
+    def assert_ge_subtest(self, a, b, comp, a_meth, b_meth):
         """ Test ">=" comparison.
         The comparison is performed in both directions of the operands.
         """
