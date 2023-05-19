@@ -197,7 +197,7 @@ annotation scopes in Python 3.13 when :pep:`649` is implemented.
 
 Annotation scopes are used in the following contexts:
 
-* Type parameter lists for generic type aliases
+* Type parameter lists for generic type aliases.
 * Type parameter lists for generic functions. The function's annotations are
   executed within the type scope, but its defaults and decorators are not.
 * Type parameter lists for generic classes. The class's base classes and
@@ -212,7 +212,7 @@ Annotation scopes differ from function scopes in the following ways:
   class scope can be accessed from within the annotation scope, as if the code in the
   annotation scope was executing directly within the class scope. (By contrast, regular
   functions defined within classes cannot access names defined in the class scope.)
-* Expressions in annotation scopes cannot contain :keyword:`yield`, ``yield from <expr>``,
+* Expressions in annotation scopes cannot contain :keyword:`yield`, ``yield from``,
   :keyword:`await`, or :token:`:= <~python-grammar:expression>` expressions. (These
   expressions are allowed in other scopes contained within the type scope.)
 * Names defined in annotation scopes cannot be rebound with :keyword:`nonlocal`
