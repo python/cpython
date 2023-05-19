@@ -333,14 +333,14 @@ class ComparisonFullTest(unittest.TestCase):
                 b <= a
 
     def test_objects(self):
-        """ Compare instances of type 'object'."""
+        """Compare instances of type 'object'."""
         a = object()
         b = object()
         self.assert_equality_only(a, a, True)
         self.assert_equality_only(a, b, False)
 
     def test_comp_classes_same(self):
-        """ Compare same-class instances with comparison methods."""
+        """Compare same-class instances with comparison methods."""
 
         for cls in self.all_comp_classes:
             with self.subTest(cls):
@@ -365,7 +365,7 @@ class ComparisonFullTest(unittest.TestCase):
                                         cls.meth, cls.meth)
 
     def test_comp_classes_different(self):
-        """ Compare different-class instances with comparison methods."""
+        """Compare different-class instances with comparison methods."""
 
         for cls_a in self.all_comp_classes:
             for cls_b in self.all_comp_classes:
@@ -383,7 +383,7 @@ class ComparisonFullTest(unittest.TestCase):
                         a1, b2, -1, cls_a.meth, cls_b.meth)
 
     def test_str_subclass(self):
-        """  Compare instances of str and a subclass."""
+        """Compare instances of str and a subclass."""
         class StrSubclass(str):
             pass
 
@@ -405,7 +405,7 @@ class ComparisonFullTest(unittest.TestCase):
         self.assert_total_order(c2, s2,   0)
 
     def test_numbers(self):
-        """ Compare number types."""
+        """Compare number types."""
 
         # Same types.
         i1 = 1001
@@ -441,8 +441,7 @@ class ComparisonFullTest(unittest.TestCase):
             self.assert_equality_only(n1, c1, True)
 
     def test_sequences(self):
-        """ Test comparison for sequences (list, tuple, range).
-        """
+        """Compare list, tuple, and range."""
         l1 = [1, 2]
         l2 = [2, 3]
         self.assert_total_order(l1, l1, 0)
@@ -463,8 +462,7 @@ class ComparisonFullTest(unittest.TestCase):
         self.assert_equality_only(r1, t1, False)
 
     def test_bytes(self):
-        """ Test comparison for bytes and bytearray).
-        """
+        """Compare bytes and bytearray."""
         bs1 = b'a1'
         bs2 = b'b2'
         self.assert_total_order(bs1, bs1, 0)
@@ -481,8 +479,7 @@ class ComparisonFullTest(unittest.TestCase):
         self.assert_total_order(ba1, bs2, -1)
 
     def test_sets(self):
-        """ Test comparison for sets (set, frozenset).
-        """
+        """Compare set and frozenset."""
         s1 = {1, 2}
         s2 = {1, 2, 3}
         s3 = {1, 2, 3}  # Same value, different instance than s2.
@@ -520,7 +517,7 @@ class ComparisonFullTest(unittest.TestCase):
         self.assert_total_order(f3, s4, +1)
 
     def test_mappings(self):
-        """ Test comparison for mappings (dict).
+        """ Compare dict.
         """
         d1 = {1: "a", 2: "b"}
         d2 = {2: "b", 3: "c"}
