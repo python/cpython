@@ -2560,6 +2560,9 @@ class LandMine:
     def __repr__(self) -> str:
         return '<LandMine ' + repr(self.__message__) + ">"
 
+    # Type checkers wouldn't check attribute access on instances of this class properly
+    # if they saw it had a __getattribute__ method,
+    # so pretend to type checkers that the __getattribute__ method doesn't exist
     if not TYPE_CHECKING:
         def __getattribute__(self, name):
             if name in ('__repr__', '__message__'):
