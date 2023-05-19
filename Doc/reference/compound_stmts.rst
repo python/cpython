@@ -1649,21 +1649,21 @@ attribute listing their type parameters.
 
 Type parameters come in three kinds:
 
-* :data:`typing.TypeVar`, introduced by a plain name (e.g., `T`). Semantically, this
+* :data:`typing.TypeVar`, introduced by a plain name (e.g., ``T``). Semantically, this
   stands for a single type.
 * :data:`typing.TypeVarTuple`, introduced by a name prefixed with a single
-  asterisk (e.g., `*Ts`). Semantically, this stands for a tuple of any
+  asterisk (e.g., ``*Ts``). Semantically, this stands for a tuple of any
   number of types.
 * :data:`typing.ParamSpec`, introduced by a name prefixed with two asterisks
-  (e.g., `**P`). Semantically, this stands for the parameters of a callable.
+  (e.g., ``**P``). Semantically, this stands for the parameters of a callable.
 
 :data:`typing.TypeVar` declarations can define *bounds* and *constraints* with
-a colon (`:`) followed by an expression. A single expression after the colon
-indicates a bound (e.g. `T: int`). The expression should be a type (though this
+a colon (``:``) followed by an expression. A single expression after the colon
+indicates a bound (e.g. ``T: int``). The expression should be a type (though this
 is not enforced at runtime, only by static type checkers) and semantically, this means
 that the :data:`!typing.TypeVar` can only represent types that are a subtype of
 this bound. A parenthesized tuple of expressions after the colon indicates a
-set of constraints (e.g. `T: (str, bytes)`). Each member of the tuple should be a
+set of constraints (e.g. ``T: (str, bytes)``). Each member of the tuple should be a
 type (again, this is not enforced at runtime). Constrained type variables can only
 take on one of the types in the list of constraints.
 

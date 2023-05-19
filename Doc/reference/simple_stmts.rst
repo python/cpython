@@ -1035,4 +1035,5 @@ TODO(jelle): Link to typing.TypeAliasType. Link to section on type params. Link 
 .. seealso::
 
    :pep:`695` - Type Parameter Syntax
-      Introduced the `type` statement and syntax for generic classes and functions.
+      Introduced the :keyword:`!type` statement and syntax for
+      generic classes and functions.
