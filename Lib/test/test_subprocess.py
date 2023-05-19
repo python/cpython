@@ -792,7 +792,7 @@ class ProcessTestCase(BaseTestCase):
                      'The Python shared library cannot be loaded '
                      'with an empty environment.')
     @unittest.skipIf(check_sanitizer(address=True),
-                     'AddressSanitizer cannot be runned with empty env')
+                     'AddressSanitizer adds to the environment.')
     def test_empty_env(self):
         """Verify that env={} is as empty as possible."""
 
