@@ -870,6 +870,11 @@ Pending Removal in Python 3.14
 * The *onerror* argument of :func:`shutil.rmtree` is deprecated in 3.12,
   and will be removed in 3.14.
 
+* The *type*, *choices*, and *metavar* parameters
+  of :class:`!argparse.BooleanOptionalAction` are deprecated
+  and will be removed in 3.14.
+  (Contributed by Nikita Sobolev in :gh:`92248`.)
+
 * :func:`pkgutil.find_loader` and :func:`pkgutil.get_loader`
   now raise :exc:`DeprecationWarning`;
   use :func:`importlib.util.find_spec` instead.
