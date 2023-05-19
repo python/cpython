@@ -1490,10 +1490,6 @@ PyThreadState_Clear(PyThreadState *tstate)
 
     Py_CLEAR(tstate->context);
 
-    if (tstate->on_delete != NULL) {
-        tstate->on_delete(tstate->on_delete_data);
-    }
-
     tstate->_status.cleared = 1;
 
     // XXX Call _PyThreadStateSwap(runtime, NULL) here if "current".
@@ -1565,6 +1561,15 @@ void
 _PyThreadState_DeleteCurrent(PyThreadState *tstate)
 {
     _Py_EnsureTstateNotNULL(tstate);
+    /* We ignore the return value.  A non-zero value means there were
+       too many pending calls already queued up.  This case is unlikely,
+       and, at worst, we'll leak on_delete_data.
+       Also, note that the pending call will be run the next time the
+       GIL is taken by one of this interpreter's threads.  So it won't
+       happen until after the _PyEval_ReleaseLock() call below. */
+    (void)_PyEval_AddPendingCall(tstate->interp,
+                                 tstate->on_delete, tstate->on_delete_data);
+
     tstate_delete_common(tstate);
     current_fast_clear(tstate->interp->runtime);
     _PyEval_ReleaseLock(tstate);

@@ -211,7 +211,7 @@ struct _ts {
      * weakref-to-lock (on_delete_data) argument, and release_sentinel releases
      * the indirectly held lock.
      */
-    void (*on_delete)(void *);
+    int (*on_delete)(void *);
     void *on_delete_data;
 
     int coroutine_origin_tracking_depth;

@@ -1307,7 +1307,7 @@ yet finished.\n\
 This function is meant for internal and specialized purposes only.\n\
 In most applications `threading.enumerate()` should be used instead.");
 
-static void
+static int
 release_sentinel(void *wr_raw)
 {
     PyObject *wr = _PyObject_CAST(wr_raw);
@@ -1326,6 +1326,7 @@ release_sentinel(void *wr_raw)
     /* Deallocating a weakref with a NULL callback only calls
        PyObject_GC_Del(), which can't call any Python code. */
     Py_DECREF(wr);
+    return 0;
 }
 
 static PyObject *
