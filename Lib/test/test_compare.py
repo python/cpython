@@ -215,16 +215,11 @@ class ComparisonFullTest(unittest.TestCase):
         that order comparison is performed by value and not by identity.
         """
 
-        # Create a list of instances with the default constructor.
         instances = [class_() for __ in range(len(values))]
-
-        # Sort the instance list by identity.
         instances.sort(key=id)
-
         # Assign the provided values to the instances.
-        for i, inst in enumerate(instances):
-            inst.x = values[i]
-
+        for inst, value in zip(instances, values):
+            inst.x = value
         return instances
 
     def assert_equality_only(self, a, b, equal):
