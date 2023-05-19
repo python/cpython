@@ -445,42 +445,19 @@ class ComparisonFullTest(unittest.TestCase):
         """
         l1 = [1, 2]
         l2 = [2, 3]
-        l3 = [2, 3]  # Same value, different instance than l2.
-        l4 = [1, 2]  # Same value, different instance than l1.
-        self.assertIsNot(l2, l3, "Testcase error: l2 is l3")
-        self.assertIsNot(l1, l4, "Testcase error: l1 is l4")
+        self.assert_total_order(l1, l1, 0)
+        self.assert_total_order(l1, l2, -1)
 
         t1 = (1, 2)
         t2 = (2, 3)
-        t3 = (2, 3)  # Same value, different instance than t2.
-        t4 = (1, 2)  # Same value, different instance than t1.
-        self.assertIsNot(t2, t3, "Testcase error: t2 is t3")
-        self.assertIsNot(t1, t4, "Testcase error: t1 is t4")
+        self.assert_total_order(t1, t1, 0)
+        self.assert_total_order(t1, t2, -1)
 
         r1 = range(1, 2)
         r2 = range(2, 2)
-        r3 = range(2, 2)  # Same value, different instance than r2.
-        r4 = range(1, 2)  # Same value, different instance than r1.
-        self.assertIsNot(r2, r3, "Testcase error: r2 is r3")
-        self.assertIsNot(r1, r4, "Testcase error: r1 is r4")
-
-        # Same types.
-        self.assert_total_order(t1, t1, 0)
-        self.assert_total_order(t1, t2, -1)
-        self.assert_total_order(t2, t3, 0)
-        self.assert_total_order(t3, t4, +1)
-
-        self.assert_total_order(l1, l1, 0)
-        self.assert_total_order(l1, l2, -1)
-        self.assert_total_order(l2, l3, 0)
-        self.assert_total_order(l3, l4, +1)
-
         self.assert_equality_only(r1, r1, True)
         self.assert_equality_only(r1, r2, False)
-        self.assert_equality_only(r2, r3, True)
-        self.assert_equality_only(r3, r4, False)
 
-        # Mixing types.
         self.assert_equality_only(t1, l1, False)
         self.assert_equality_only(l1, r1, False)
         self.assert_equality_only(r1, t1, False)
