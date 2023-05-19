@@ -66,7 +66,7 @@ PyAPI_FUNC(PyObject *) _Py_device_encoding(int);
 
 #ifdef MS_WINDOWS
 struct _Py_stat_struct {
-    unsigned long st_dev;
+    uint64_t st_dev;
     uint64_t st_ino;
     unsigned short st_mode;
     int st_nlink;
@@ -80,8 +80,11 @@ struct _Py_stat_struct {
     int st_mtime_nsec;
     time_t st_ctime;
     int st_ctime_nsec;
+    time_t st_birthtime;
+    int st_birthtime_nsec;
     unsigned long st_file_attributes;
     unsigned long st_reparse_tag;
+    uint64_t st_ino_high;
 };
 #else
 #  define _Py_stat_struct stat

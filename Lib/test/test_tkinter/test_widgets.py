@@ -76,6 +76,8 @@ class ToplevelTest(AbstractToplevelTest, unittest.TestCase):
 
     def test_configure_screen(self):
         widget = self.create()
+        if widget._windowingsystem != 'x11':
+            self.skipTest('Not using Tk for X11')
         self.assertEqual(widget['screen'], '')
         try:
             display = os.environ['DISPLAY']
@@ -1376,6 +1378,11 @@ class MenuTest(AbstractWidgetTest, unittest.TestCase):
 
     def create(self, **kwargs):
         return tkinter.Menu(self.root, **kwargs)
+
+    def test_indexcommand_none(self):
+        widget = self.create()
+        i = widget.index('none')
+        self.assertIsNone(i)
 
     def test_configure_postcommand(self):
         widget = self.create()
