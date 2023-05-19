@@ -261,8 +261,8 @@ void _PyAST_Fini(PyInterpreterState *interp)
     Py_CLEAR(state->type_comment);
     Py_CLEAR(state->type_ignore_type);
     Py_CLEAR(state->type_ignores);
-    Py_CLEAR(state->typeparam_type);
-    Py_CLEAR(state->typeparams);
+    Py_CLEAR(state->type_param_type);
+    Py_CLEAR(state->type_params);
     Py_CLEAR(state->unaryop_type);
     Py_CLEAR(state->upper);
     Py_CLEAR(state->value);
@@ -362,7 +362,7 @@ static int init_identifiers(struct ast_state *state)
     if ((state->type = PyUnicode_InternFromString("type")) == NULL) return 0;
     if ((state->type_comment = PyUnicode_InternFromString("type_comment")) == NULL) return 0;
     if ((state->type_ignores = PyUnicode_InternFromString("type_ignores")) == NULL) return 0;
-    if ((state->typeparams = PyUnicode_InternFromString("typeparams")) == NULL) return 0;
+    if ((state->type_params = PyUnicode_InternFromString("type_params")) == NULL) return 0;
     if ((state->upper = PyUnicode_InternFromString("upper")) == NULL) return 0;
     if ((state->value = PyUnicode_InternFromString("value")) == NULL) return 0;
     if ((state->values = PyUnicode_InternFromString("values")) == NULL) return 0;
@@ -383,7 +383,7 @@ GENERATE_ASDL_SEQ_CONSTRUCTOR(withitem, withitem_ty)
 GENERATE_ASDL_SEQ_CONSTRUCTOR(match_case, match_case_ty)
 GENERATE_ASDL_SEQ_CONSTRUCTOR(pattern, pattern_ty)
 GENERATE_ASDL_SEQ_CONSTRUCTOR(type_ignore, type_ignore_ty)
-GENERATE_ASDL_SEQ_CONSTRUCTOR(typeparam, typeparam_ty)
+GENERATE_ASDL_SEQ_CONSTRUCTOR(type_param, type_param_ty)
 
 static PyObject* ast2obj_mod(struct ast_state *state, void*);
 static const char * const Module_fields[]={
@@ -409,7 +409,7 @@ static const char * const stmt_attributes[] = {
 static PyObject* ast2obj_stmt(struct ast_state *state, void*);
 static const char * const FunctionDef_fields[]={
     "name",
-    "typeparams",
+    "type_params",
     "args",
     "body",
     "decorator_list",
@@ -418,7 +418,7 @@ static const char * const FunctionDef_fields[]={
 };
 static const char * const AsyncFunctionDef_fields[]={
     "name",
-    "typeparams",
+    "type_params",
     "args",
     "body",
     "decorator_list",
@@ -427,7 +427,7 @@ static const char * const AsyncFunctionDef_fields[]={
 };
 static const char * const ClassDef_fields[]={
     "name",
-    "typeparams",
+    "type_params",
     "bases",
     "keywords",
     "body",
@@ -446,7 +446,7 @@ static const char * const Assign_fields[]={
 };
 static const char * const TypeAlias_fields[]={
     "name",
-    "typeparams",
+    "type_params",
     "value",
 };
 static const char * const AugAssign_fields[]={
@@ -775,13 +775,13 @@ static const char * const TypeIgnore_fields[]={
     "lineno",
     "tag",
 };
-static const char * const typeparam_attributes[] = {
+static const char * const type_param_attributes[] = {
     "lineno",
     "col_offset",
     "end_lineno",
     "end_col_offset",
 };
-static PyObject* ast2obj_typeparam(struct ast_state *state, void*);
+static PyObject* ast2obj_type_param(struct ast_state *state, void*);
 static const char * const TypeVar_fields[]={
     "name",
     "bound",
@@ -1169,13 +1169,13 @@ init_types(struct ast_state *state)
         "FunctionType(expr* argtypes, expr returns)");
     if (!state->FunctionType_type) return 0;
     state->stmt_type = make_type(state, "stmt", state->AST_type, NULL, 0,
-        "stmt = FunctionDef(identifier name, typeparam* typeparams, arguments args, stmt* body, expr* decorator_list, expr? returns, string? type_comment)\n"
-        "     | AsyncFunctionDef(identifier name, typeparam* typeparams, arguments args, stmt* body, expr* decorator_list, expr? returns, string? type_comment)\n"
-        "     | ClassDef(identifier name, typeparam* typeparams, expr* bases, keyword* keywords, stmt* body, expr* decorator_list)\n"
+        "stmt = FunctionDef(identifier name, type_param* type_params, arguments args, stmt* body, expr* decorator_list, expr? returns, string? type_comment)\n"
+        "     | AsyncFunctionDef(identifier name, type_param* type_params, arguments args, stmt* body, expr* decorator_list, expr? returns, string? type_comment)\n"
+        "     | ClassDef(identifier name, type_param* type_params, expr* bases, keyword* keywords, stmt* body, expr* decorator_list)\n"
         "     | Return(expr? value)\n"
         "     | Delete(expr* targets)\n"
         "     | Assign(expr* targets, expr value, string? type_comment)\n"
-        "     | TypeAlias(expr name, typeparam* typeparams, expr value)\n"
+        "     | TypeAlias(expr name, type_param* type_params, expr value)\n"
         "     | AugAssign(expr target, operator op, expr value)\n"
         "     | AnnAssign(expr target, expr annotation, expr? value, int simple)\n"
         "     | For(expr target, expr iter, stmt* body, stmt* orelse, string? type_comment)\n"
@@ -1206,7 +1206,7 @@ init_types(struct ast_state *state)
         return 0;
     state->FunctionDef_type = make_type(state, "FunctionDef", state->stmt_type,
                                         FunctionDef_fields, 7,
-        "FunctionDef(identifier name, typeparam* typeparams, arguments args, stmt* body, expr* decorator_list, expr? returns, string? type_comment)");
+        "FunctionDef(identifier name, type_param* type_params, arguments args, stmt* body, expr* decorator_list, expr? returns, string? type_comment)");
     if (!state->FunctionDef_type) return 0;
     if (PyObject_SetAttr(state->FunctionDef_type, state->returns, Py_None) ==
         -1)
@@ -1217,7 +1217,7 @@ init_types(struct ast_state *state)
     state->AsyncFunctionDef_type = make_type(state, "AsyncFunctionDef",
                                              state->stmt_type,
                                              AsyncFunctionDef_fields, 7,
-        "AsyncFunctionDef(identifier name, typeparam* typeparams, arguments args, stmt* body, expr* decorator_list, expr? returns, string? type_comment)");
+        "AsyncFunctionDef(identifier name, type_param* type_params, arguments args, stmt* body, expr* decorator_list, expr? returns, string? type_comment)");
     if (!state->AsyncFunctionDef_type) return 0;
     if (PyObject_SetAttr(state->AsyncFunctionDef_type, state->returns, Py_None)
         == -1)
@@ -1227,7 +1227,7 @@ init_types(struct ast_state *state)
         return 0;
     state->ClassDef_type = make_type(state, "ClassDef", state->stmt_type,
                                      ClassDef_fields, 6,
-        "ClassDef(identifier name, typeparam* typeparams, expr* bases, keyword* keywords, stmt* body, expr* decorator_list)");
+        "ClassDef(identifier name, type_param* type_params, expr* bases, keyword* keywords, stmt* body, expr* decorator_list)");
     if (!state->ClassDef_type) return 0;
     state->Return_type = make_type(state, "Return", state->stmt_type,
                                    Return_fields, 1,
@@ -1248,7 +1248,7 @@ init_types(struct ast_state *state)
         return 0;
     state->TypeAlias_type = make_type(state, "TypeAlias", state->stmt_type,
                                       TypeAlias_fields, 3,
-        "TypeAlias(expr name, typeparam* typeparams, expr value)");
+        "TypeAlias(expr name, type_param* type_params, expr value)");
     if (!state->TypeAlias_type) return 0;
     state->AugAssign_type = make_type(state, "AugAssign", state->stmt_type,
                                       AugAssign_fields, 3,
@@ -1894,33 +1894,33 @@ init_types(struct ast_state *state)
                                        TypeIgnore_fields, 2,
         "TypeIgnore(int lineno, string tag)");
     if (!state->TypeIgnore_type) return 0;
-    state->typeparam_type = make_type(state, "typeparam", state->AST_type,
-                                      NULL, 0,
-        "typeparam = TypeVar(identifier name, expr? bound)\n"
-        "          | ParamSpec(identifier name)\n"
-        "          | TypeVarTuple(identifier name)");
-    if (!state->typeparam_type) return 0;
-    if (!add_attributes(state, state->typeparam_type, typeparam_attributes, 4))
-        return 0;
-    if (PyObject_SetAttr(state->typeparam_type, state->end_lineno, Py_None) ==
+    state->type_param_type = make_type(state, "type_param", state->AST_type,
+                                       NULL, 0,
+        "type_param = TypeVar(identifier name, expr? bound)\n"
+        "           | ParamSpec(identifier name)\n"
+        "           | TypeVarTuple(identifier name)");
+    if (!state->type_param_type) return 0;
+    if (!add_attributes(state, state->type_param_type, type_param_attributes,
+        4)) return 0;
+    if (PyObject_SetAttr(state->type_param_type, state->end_lineno, Py_None) ==
         -1)
         return 0;
-    if (PyObject_SetAttr(state->typeparam_type, state->end_col_offset, Py_None)
-        == -1)
+    if (PyObject_SetAttr(state->type_param_type, state->end_col_offset,
+        Py_None) == -1)
         return 0;
-    state->TypeVar_type = make_type(state, "TypeVar", state->typeparam_type,
+    state->TypeVar_type = make_type(state, "TypeVar", state->type_param_type,
                                     TypeVar_fields, 2,
         "TypeVar(identifier name, expr? bound)");
     if (!state->TypeVar_type) return 0;
     if (PyObject_SetAttr(state->TypeVar_type, state->bound, Py_None) == -1)
         return 0;
     state->ParamSpec_type = make_type(state, "ParamSpec",
-                                      state->typeparam_type, ParamSpec_fields,
+                                      state->type_param_type, ParamSpec_fields,
                                       1,
         "ParamSpec(identifier name)");
     if (!state->ParamSpec_type) return 0;
     state->TypeVarTuple_type = make_type(state, "TypeVarTuple",
-                                         state->typeparam_type,
+                                         state->type_param_type,
                                          TypeVarTuple_fields, 1,
         "TypeVarTuple(identifier name)");
     if (!state->TypeVarTuple_type) return 0;
@@ -1967,8 +1967,8 @@ static int obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty*
                            out, PyArena* arena);
 static int obj2ast_type_ignore(struct ast_state *state, PyObject* obj,
                                type_ignore_ty* out, PyArena* arena);
-static int obj2ast_typeparam(struct ast_state *state, PyObject* obj,
-                             typeparam_ty* out, PyArena* arena);
+static int obj2ast_type_param(struct ast_state *state, PyObject* obj,
+                              type_param_ty* out, PyArena* arena);
 
 mod_ty
 _PyAST_Module(asdl_stmt_seq * body, asdl_type_ignore_seq * type_ignores,
@@ -2032,7 +2032,7 @@ _PyAST_FunctionType(asdl_expr_seq * argtypes, expr_ty returns, PyArena *arena)
 }
 
 stmt_ty
-_PyAST_FunctionDef(identifier name, asdl_typeparam_seq * typeparams,
+_PyAST_FunctionDef(identifier name, asdl_type_param_seq * type_params,
                    arguments_ty args, asdl_stmt_seq * body, asdl_expr_seq *
                    decorator_list, expr_ty returns, string type_comment, int
                    lineno, int col_offset, int end_lineno, int end_col_offset,
@@ -2054,7 +2054,7 @@ _PyAST_FunctionDef(identifier name, asdl_typeparam_seq * typeparams,
         return NULL;
     p->kind = FunctionDef_kind;
     p->v.FunctionDef.name = name;
-    p->v.FunctionDef.typeparams = typeparams;
+    p->v.FunctionDef.type_params = type_params;
     p->v.FunctionDef.args = args;
     p->v.FunctionDef.body = body;
     p->v.FunctionDef.decorator_list = decorator_list;
@@ -2068,7 +2068,7 @@ _PyAST_FunctionDef(identifier name, asdl_typeparam_seq * typeparams,
 }
 
 stmt_ty
-_PyAST_AsyncFunctionDef(identifier name, asdl_typeparam_seq * typeparams,
+_PyAST_AsyncFunctionDef(identifier name, asdl_type_param_seq * type_params,
                         arguments_ty args, asdl_stmt_seq * body, asdl_expr_seq
                         * decorator_list, expr_ty returns, string type_comment,
                         int lineno, int col_offset, int end_lineno, int
@@ -2090,7 +2090,7 @@ _PyAST_AsyncFunctionDef(identifier name, asdl_typeparam_seq * typeparams,
         return NULL;
     p->kind = AsyncFunctionDef_kind;
     p->v.AsyncFunctionDef.name = name;
-    p->v.AsyncFunctionDef.typeparams = typeparams;
+    p->v.AsyncFunctionDef.type_params = type_params;
     p->v.AsyncFunctionDef.args = args;
     p->v.AsyncFunctionDef.body = body;
     p->v.AsyncFunctionDef.decorator_list = decorator_list;
@@ -2104,10 +2104,11 @@ _PyAST_AsyncFunctionDef(identifier name, asdl_typeparam_seq * typeparams,
 }
 
 stmt_ty
-_PyAST_ClassDef(identifier name, asdl_typeparam_seq * typeparams, asdl_expr_seq
-                * bases, asdl_keyword_seq * keywords, asdl_stmt_seq * body,
-                asdl_expr_seq * decorator_list, int lineno, int col_offset, int
-                end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_ClassDef(identifier name, asdl_type_param_seq * type_params,
+                asdl_expr_seq * bases, asdl_keyword_seq * keywords,
+                asdl_stmt_seq * body, asdl_expr_seq * decorator_list, int
+                lineno, int col_offset, int end_lineno, int end_col_offset,
+                PyArena *arena)
 {
     stmt_ty p;
     if (!name) {
@@ -2120,7 +2121,7 @@ _PyAST_ClassDef(identifier name, asdl_typeparam_seq * typeparams, asdl_expr_seq
         return NULL;
     p->kind = ClassDef_kind;
     p->v.ClassDef.name = name;
-    p->v.ClassDef.typeparams = typeparams;
+    p->v.ClassDef.type_params = type_params;
     p->v.ClassDef.bases = bases;
     p->v.ClassDef.keywords = keywords;
     p->v.ClassDef.body = body;
@@ -2192,8 +2193,8 @@ _PyAST_Assign(asdl_expr_seq * targets, expr_ty value, string type_comment, int
 }
 
 stmt_ty
-_PyAST_TypeAlias(expr_ty name, asdl_typeparam_seq * typeparams, expr_ty value,
-                 int lineno, int col_offset, int end_lineno, int
+_PyAST_TypeAlias(expr_ty name, asdl_type_param_seq * type_params, expr_ty
+                 value, int lineno, int col_offset, int end_lineno, int
                  end_col_offset, PyArena *arena)
 {
     stmt_ty p;
@@ -2212,7 +2213,7 @@ _PyAST_TypeAlias(expr_ty name, asdl_typeparam_seq * typeparams, expr_ty value,
         return NULL;
     p->kind = TypeAlias_kind;
     p->v.TypeAlias.name = name;
-    p->v.TypeAlias.typeparams = typeparams;
+    p->v.TypeAlias.type_params = type_params;
     p->v.TypeAlias.value = value;
     p->lineno = lineno;
     p->col_offset = col_offset;
@@ -3713,17 +3714,17 @@ _PyAST_TypeIgnore(int lineno, string tag, PyArena *arena)
     return p;
 }
 
-typeparam_ty
+type_param_ty
 _PyAST_TypeVar(identifier name, expr_ty bound, int lineno, int col_offset, int
                end_lineno, int end_col_offset, PyArena *arena)
 {
-    typeparam_ty p;
+    type_param_ty p;
     if (!name) {
         PyErr_SetString(PyExc_ValueError,
                         "field 'name' is required for TypeVar");
         return NULL;
     }
-    p = (typeparam_ty)_PyArena_Malloc(arena, sizeof(*p));
+    p = (type_param_ty)_PyArena_Malloc(arena, sizeof(*p));
     if (!p)
         return NULL;
     p->kind = TypeVar_kind;
@@ -3736,17 +3737,17 @@ _PyAST_TypeVar(identifier name, expr_ty bound, int lineno, int col_offset, int
     return p;
 }
 
-typeparam_ty
+type_param_ty
 _PyAST_ParamSpec(identifier name, int lineno, int col_offset, int end_lineno,
                  int end_col_offset, PyArena *arena)
 {
-    typeparam_ty p;
+    type_param_ty p;
     if (!name) {
         PyErr_SetString(PyExc_ValueError,
                         "field 'name' is required for ParamSpec");
         return NULL;
     }
-    p = (typeparam_ty)_PyArena_Malloc(arena, sizeof(*p));
+    p = (type_param_ty)_PyArena_Malloc(arena, sizeof(*p));
     if (!p)
         return NULL;
     p->kind = ParamSpec_kind;
@@ -3758,17 +3759,17 @@ _PyAST_ParamSpec(identifier name, int lineno, int col_offset, int end_lineno,
     return p;
 }
 
-typeparam_ty
+type_param_ty
 _PyAST_TypeVarTuple(identifier name, int lineno, int col_offset, int
                     end_lineno, int end_col_offset, PyArena *arena)
 {
-    typeparam_ty p;
+    type_param_ty p;
     if (!name) {
         PyErr_SetString(PyExc_ValueError,
                         "field 'name' is required for TypeVarTuple");
         return NULL;
     }
-    p = (typeparam_ty)_PyArena_Malloc(arena, sizeof(*p));
+    p = (type_param_ty)_PyArena_Malloc(arena, sizeof(*p));
     if (!p)
         return NULL;
     p->kind = TypeVarTuple_kind;
@@ -3882,10 +3883,10 @@ ast2obj_stmt(struct ast_state *state, void* _o)
         if (PyObject_SetAttr(result, state->name, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.FunctionDef.typeparams,
-                             ast2obj_typeparam);
+        value = ast2obj_list(state, (asdl_seq*)o->v.FunctionDef.type_params,
+                             ast2obj_type_param);
         if (!value) goto failed;
-        if (PyObject_SetAttr(result, state->typeparams, value) == -1)
+        if (PyObject_SetAttr(result, state->type_params, value) == -1)
             goto failed;
         Py_DECREF(value);
         value = ast2obj_arguments(state, o->v.FunctionDef.args);
@@ -3926,10 +3927,10 @@ ast2obj_stmt(struct ast_state *state, void* _o)
             goto failed;
         Py_DECREF(value);
         value = ast2obj_list(state,
-                             (asdl_seq*)o->v.AsyncFunctionDef.typeparams,
-                             ast2obj_typeparam);
+                             (asdl_seq*)o->v.AsyncFunctionDef.type_params,
+                             ast2obj_type_param);
         if (!value) goto failed;
-        if (PyObject_SetAttr(result, state->typeparams, value) == -1)
+        if (PyObject_SetAttr(result, state->type_params, value) == -1)
             goto failed;
         Py_DECREF(value);
         value = ast2obj_arguments(state, o->v.AsyncFunctionDef.args);
@@ -3970,10 +3971,10 @@ ast2obj_stmt(struct ast_state *state, void* _o)
         if (PyObject_SetAttr(result, state->name, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.ClassDef.typeparams,
-                             ast2obj_typeparam);
+        value = ast2obj_list(state, (asdl_seq*)o->v.ClassDef.type_params,
+                             ast2obj_type_param);
         if (!value) goto failed;
-        if (PyObject_SetAttr(result, state->typeparams, value) == -1)
+        if (PyObject_SetAttr(result, state->type_params, value) == -1)
             goto failed;
         Py_DECREF(value);
         value = ast2obj_list(state, (asdl_seq*)o->v.ClassDef.bases,
@@ -4052,10 +4053,10 @@ ast2obj_stmt(struct ast_state *state, void* _o)
         if (PyObject_SetAttr(result, state->name, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.TypeAlias.typeparams,
-                             ast2obj_typeparam);
+        value = ast2obj_list(state, (asdl_seq*)o->v.TypeAlias.type_params,
+                             ast2obj_type_param);
         if (!value) goto failed;
-        if (PyObject_SetAttr(result, state->typeparams, value) == -1)
+        if (PyObject_SetAttr(result, state->type_params, value) == -1)
             goto failed;
         Py_DECREF(value);
         value = ast2obj_expr(state, o->v.TypeAlias.value);
@@ -5656,9 +5657,9 @@ failed:
 }
 
 PyObject*
-ast2obj_typeparam(struct ast_state *state, void* _o)
+ast2obj_type_param(struct ast_state *state, void* _o)
 {
-    typeparam_ty o = (typeparam_ty)_o;
+    type_param_ty o = (type_param_ty)_o;
     PyObject *result = NULL, *value = NULL;
     PyTypeObject *tp;
     if (!o) {
@@ -6074,7 +6075,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     }
     if (isinstance) {
         identifier name;
-        asdl_typeparam_seq* typeparams;
+        asdl_type_param_seq* type_params;
         arguments_ty args;
         asdl_stmt_seq* body;
         asdl_expr_seq* decorator_list;
@@ -6098,11 +6099,11 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->typeparams, &tmp) < 0) {
+        if (_PyObject_LookupAttr(obj, state->type_params, &tmp) < 0) {
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"typeparams\" missing from FunctionDef");
+            PyErr_SetString(PyExc_TypeError, "required field \"type_params\" missing from FunctionDef");
             return 1;
         }
         else {
@@ -6110,27 +6111,27 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "FunctionDef field \"typeparams\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "FunctionDef field \"type_params\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
-            typeparams = _Py_asdl_typeparam_seq_new(len, arena);
-            if (typeparams == NULL) goto failed;
+            type_params = _Py_asdl_type_param_seq_new(len, arena);
+            if (type_params == NULL) goto failed;
             for (i = 0; i < len; i++) {
-                typeparam_ty val;
+                type_param_ty val;
                 PyObject *tmp2 = Py_NewRef(PyList_GET_ITEM(tmp, i));
                 if (_Py_EnterRecursiveCall(" while traversing 'FunctionDef' node")) {
                     goto failed;
                 }
-                res = obj2ast_typeparam(state, tmp2, &val, arena);
+                res = obj2ast_type_param(state, tmp2, &val, arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
-                    PyErr_SetString(PyExc_RuntimeError, "FunctionDef field \"typeparams\" changed size during iteration");
+                    PyErr_SetString(PyExc_RuntimeError, "FunctionDef field \"type_params\" changed size during iteration");
                     goto failed;
                 }
-                asdl_seq_SET(typeparams, i, val);
+                asdl_seq_SET(type_params, i, val);
             }
             Py_CLEAR(tmp);
         }
@@ -6257,9 +6258,10 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _PyAST_FunctionDef(name, typeparams, args, body, decorator_list,
-                                  returns, type_comment, lineno, col_offset,
-                                  end_lineno, end_col_offset, arena);
+        *out = _PyAST_FunctionDef(name, type_params, args, body,
+                                  decorator_list, returns, type_comment,
+                                  lineno, col_offset, end_lineno,
+                                  end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -6270,7 +6272,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     }
     if (isinstance) {
         identifier name;
-        asdl_typeparam_seq* typeparams;
+        asdl_type_param_seq* type_params;
         arguments_ty args;
         asdl_stmt_seq* body;
         asdl_expr_seq* decorator_list;
@@ -6294,11 +6296,11 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->typeparams, &tmp) < 0) {
+        if (_PyObject_LookupAttr(obj, state->type_params, &tmp) < 0) {
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"typeparams\" missing from AsyncFunctionDef");
+            PyErr_SetString(PyExc_TypeError, "required field \"type_params\" missing from AsyncFunctionDef");
             return 1;
         }
         else {
@@ -6306,27 +6308,27 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "AsyncFunctionDef field \"typeparams\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "AsyncFunctionDef field \"type_params\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
-            typeparams = _Py_asdl_typeparam_seq_new(len, arena);
-            if (typeparams == NULL) goto failed;
+            type_params = _Py_asdl_type_param_seq_new(len, arena);
+            if (type_params == NULL) goto failed;
             for (i = 0; i < len; i++) {
-                typeparam_ty val;
+                type_param_ty val;
                 PyObject *tmp2 = Py_NewRef(PyList_GET_ITEM(tmp, i));
                 if (_Py_EnterRecursiveCall(" while traversing 'AsyncFunctionDef' node")) {
                     goto failed;
                 }
-                res = obj2ast_typeparam(state, tmp2, &val, arena);
+                res = obj2ast_type_param(state, tmp2, &val, arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
-                    PyErr_SetString(PyExc_RuntimeError, "AsyncFunctionDef field \"typeparams\" changed size during iteration");
+                    PyErr_SetString(PyExc_RuntimeError, "AsyncFunctionDef field \"type_params\" changed size during iteration");
                     goto failed;
                 }
-                asdl_seq_SET(typeparams, i, val);
+                asdl_seq_SET(type_params, i, val);
             }
             Py_CLEAR(tmp);
         }
@@ -6453,7 +6455,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _PyAST_AsyncFunctionDef(name, typeparams, args, body,
+        *out = _PyAST_AsyncFunctionDef(name, type_params, args, body,
                                        decorator_list, returns, type_comment,
                                        lineno, col_offset, end_lineno,
                                        end_col_offset, arena);
@@ -6467,7 +6469,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     }
     if (isinstance) {
         identifier name;
-        asdl_typeparam_seq* typeparams;
+        asdl_type_param_seq* type_params;
         asdl_expr_seq* bases;
         asdl_keyword_seq* keywords;
         asdl_stmt_seq* body;
@@ -6490,11 +6492,11 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->typeparams, &tmp) < 0) {
+        if (_PyObject_LookupAttr(obj, state->type_params, &tmp) < 0) {
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"typeparams\" missing from ClassDef");
+            PyErr_SetString(PyExc_TypeError, "required field \"type_params\" missing from ClassDef");
             return 1;
         }
         else {
@@ -6502,27 +6504,27 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "ClassDef field \"typeparams\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "ClassDef field \"type_params\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
-            typeparams = _Py_asdl_typeparam_seq_new(len, arena);
-            if (typeparams == NULL) goto failed;
+            type_params = _Py_asdl_type_param_seq_new(len, arena);
+            if (type_params == NULL) goto failed;
             for (i = 0; i < len; i++) {
-                typeparam_ty val;
+                type_param_ty val;
                 PyObject *tmp2 = Py_NewRef(PyList_GET_ITEM(tmp, i));
                 if (_Py_EnterRecursiveCall(" while traversing 'ClassDef' node")) {
                     goto failed;
                 }
-                res = obj2ast_typeparam(state, tmp2, &val, arena);
+                res = obj2ast_type_param(state, tmp2, &val, arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
-                    PyErr_SetString(PyExc_RuntimeError, "ClassDef field \"typeparams\" changed size during iteration");
+                    PyErr_SetString(PyExc_RuntimeError, "ClassDef field \"type_params\" changed size during iteration");
                     goto failed;
                 }
-                asdl_seq_SET(typeparams, i, val);
+                asdl_seq_SET(type_params, i, val);
             }
             Py_CLEAR(tmp);
         }
@@ -6670,7 +6672,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        *out = _PyAST_ClassDef(name, typeparams, bases, keywords, body,
+        *out = _PyAST_ClassDef(name, type_params, bases, keywords, body,
                                decorator_list, lineno, col_offset, end_lineno,
                                end_col_offset, arena);
         if (*out == NULL) goto failed;
@@ -6847,7 +6849,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     }
     if (isinstance) {
         expr_ty name;
-        asdl_typeparam_seq* typeparams;
+        asdl_type_param_seq* type_params;
         expr_ty value;
 
         if (_PyObject_LookupAttr(obj, state->name, &tmp) < 0) {
@@ -6867,11 +6869,11 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->typeparams, &tmp) < 0) {
+        if (_PyObject_LookupAttr(obj, state->type_params, &tmp) < 0) {
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"typeparams\" missing from TypeAlias");
+            PyErr_SetString(PyExc_TypeError, "required field \"type_params\" missing from TypeAlias");
             return 1;
         }
         else {
@@ -6879,27 +6881,27 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "TypeAlias field \"typeparams\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "TypeAlias field \"type_params\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
-            typeparams = _Py_asdl_typeparam_seq_new(len, arena);
-            if (typeparams == NULL) goto failed;
+            type_params = _Py_asdl_type_param_seq_new(len, arena);
+            if (type_params == NULL) goto failed;
             for (i = 0; i < len; i++) {
-                typeparam_ty val;
+                type_param_ty val;
                 PyObject *tmp2 = Py_NewRef(PyList_GET_ITEM(tmp, i));
                 if (_Py_EnterRecursiveCall(" while traversing 'TypeAlias' node")) {
                     goto failed;
                 }
-                res = obj2ast_typeparam(state, tmp2, &val, arena);
+                res = obj2ast_type_param(state, tmp2, &val, arena);
                 _Py_LeaveRecursiveCall();
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
-                    PyErr_SetString(PyExc_RuntimeError, "TypeAlias field \"typeparams\" changed size during iteration");
+                    PyErr_SetString(PyExc_RuntimeError, "TypeAlias field \"type_params\" changed size during iteration");
                     goto failed;
                 }
-                asdl_seq_SET(typeparams, i, val);
+                asdl_seq_SET(type_params, i, val);
             }
             Py_CLEAR(tmp);
         }
@@ -6920,7 +6922,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _PyAST_TypeAlias(name, typeparams, value, lineno, col_offset,
+        *out = _PyAST_TypeAlias(name, type_params, value, lineno, col_offset,
                                 end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
@@ -12293,8 +12295,8 @@ obj2ast_type_ignore(struct ast_state *state, PyObject* obj, type_ignore_ty*
 }
 
 int
-obj2ast_typeparam(struct ast_state *state, PyObject* obj, typeparam_ty* out,
-                  PyArena* arena)
+obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
+                   PyArena* arena)
 {
     int isinstance;
 
@@ -12313,12 +12315,12 @@ obj2ast_typeparam(struct ast_state *state, PyObject* obj, typeparam_ty* out,
         return 1;
     }
     if (tmp == NULL) {
-        PyErr_SetString(PyExc_TypeError, "required field \"lineno\" missing from typeparam");
+        PyErr_SetString(PyExc_TypeError, "required field \"lineno\" missing from type_param");
         return 1;
     }
     else {
         int res;
-        if (_Py_EnterRecursiveCall(" while traversing 'typeparam' node")) {
+        if (_Py_EnterRecursiveCall(" while traversing 'type_param' node")) {
             goto failed;
         }
         res = obj2ast_int(state, tmp, &lineno, arena);
@@ -12330,12 +12332,12 @@ obj2ast_typeparam(struct ast_state *state, PyObject* obj, typeparam_ty* out,
         return 1;
     }
     if (tmp == NULL) {
-        PyErr_SetString(PyExc_TypeError, "required field \"col_offset\" missing from typeparam");
+        PyErr_SetString(PyExc_TypeError, "required field \"col_offset\" missing from type_param");
         return 1;
     }
     else {
         int res;
-        if (_Py_EnterRecursiveCall(" while traversing 'typeparam' node")) {
+        if (_Py_EnterRecursiveCall(" while traversing 'type_param' node")) {
             goto failed;
         }
         res = obj2ast_int(state, tmp, &col_offset, arena);
@@ -12352,7 +12354,7 @@ obj2ast_typeparam(struct ast_state *state, PyObject* obj, typeparam_ty* out,
     }
     else {
         int res;
-        if (_Py_EnterRecursiveCall(" while traversing 'typeparam' node")) {
+        if (_Py_EnterRecursiveCall(" while traversing 'type_param' node")) {
             goto failed;
         }
         res = obj2ast_int(state, tmp, &end_lineno, arena);
@@ -12369,7 +12371,7 @@ obj2ast_typeparam(struct ast_state *state, PyObject* obj, typeparam_ty* out,
     }
     else {
         int res;
-        if (_Py_EnterRecursiveCall(" while traversing 'typeparam' node")) {
+        if (_Py_EnterRecursiveCall(" while traversing 'type_param' node")) {
             goto failed;
         }
         res = obj2ast_int(state, tmp, &end_col_offset, arena);
@@ -12486,7 +12488,7 @@ obj2ast_typeparam(struct ast_state *state, PyObject* obj, typeparam_ty* out,
         return 0;
     }
 
-    PyErr_Format(PyExc_TypeError, "expected some sort of typeparam, but got %R", obj);
+    PyErr_Format(PyExc_TypeError, "expected some sort of type_param, but got %R", obj);
     failed:
     Py_XDECREF(tmp);
     return 1;
@@ -12880,7 +12882,7 @@ astmodule_exec(PyObject *m)
     if (PyModule_AddObjectRef(m, "TypeIgnore", state->TypeIgnore_type) < 0) {
         return -1;
     }
-    if (PyModule_AddObjectRef(m, "typeparam", state->typeparam_type) < 0) {
+    if (PyModule_AddObjectRef(m, "type_param", state->type_param_type) < 0) {
         return -1;
     }
     if (PyModule_AddObjectRef(m, "TypeVar", state->TypeVar_type) < 0) {
