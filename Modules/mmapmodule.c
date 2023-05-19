@@ -961,7 +961,7 @@ mmap_subscript(mmap_object *self, PyObject *item)
             return NULL;
         }
         slicelen = PySlice_AdjustIndices(self->size, &start, &stop, step);
-        
+
         CHECK_VALID(NULL);
         if (slicelen <= 0)
             return PyBytes_FromStringAndSize("", 0);
