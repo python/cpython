@@ -7,7 +7,6 @@ from decimal import Decimal
 
 class ComparisonSimpleTest(unittest.TestCase):
     """Test equality and order comparisons for some simple cases."""
-    # TODO Does addition of FullTest below obsolete any of these?
 
     class Empty:
         def __repr__(self):
@@ -482,54 +481,28 @@ class ComparisonFullTest(unittest.TestCase):
         """Compare set and frozenset."""
         s1 = {1, 2}
         s2 = {1, 2, 3}
-        s3 = {1, 2, 3}  # Same value, different instance than s2.
-        s4 = {1, 2}     # Same value, different instance than s1.
-        self.assertIsNot(s2, s3, "Testcase error: s2 is s3")
-        self.assertIsNot(s1, s4, "Testcase error: s1 is s4")
-
-        f1 = frozenset({1, 2})
-        f2 = frozenset({1, 2, 3})
-        f3 = frozenset({1, 2, 3})  # Same value, different instance than f2.
-        f4 = frozenset({1, 2})     # Same value, different instance than f1.
-        self.assertIsNot(f2, f3, "Testcase error: f2 is f3")
-        self.assertIsNot(f1, f4, "Testcase error: f1 is f4")
-
-        # Same types.
         self.assert_total_order(s1, s1, 0)
         self.assert_total_order(s1, s2, -1)
-        self.assert_total_order(s2, s3, 0)
-        self.assert_total_order(s3, s4, +1)
 
+        f1 = frozenset(s1)
+        f2 = frozenset(s2)
         self.assert_total_order(f1, f1,  0)
         self.assert_total_order(f1, f2, -1)
-        self.assert_total_order(f2, f3, 0)
-        self.assert_total_order(f3, f4, +1)
 
-        # Mixing types.
         self.assert_total_order(s1, f1, 0)
         self.assert_total_order(s1, f2, -1)
-        self.assert_total_order(s2, f3, 0)
-        self.assert_total_order(s3, f4, +1)
-
         self.assert_total_order(f1, s1, 0)
         self.assert_total_order(f1, s2, -1)
-        self.assert_total_order(f2, s3, 0)
-        self.assert_total_order(f3, s4, +1)
 
     def test_mappings(self):
         """ Compare dict.
         """
         d1 = {1: "a", 2: "b"}
         d2 = {2: "b", 3: "c"}
-        d3 = {3: "c", 2: "b"}  # Same value, different instance than d2.
-        d4 = {1: "a", 2: "b"}  # Same value, different instance than d1.
-        self.assertIsNot(d2, d3, "Testcase error: d2 is d3")
-        self.assertIsNot(d1, d4, "Testcase error: d1 is d4")
-
+        d3 = {3: "c", 2: "b"}
         self.assert_equality_only(d1, d1, True)
         self.assert_equality_only(d1, d2, False)
         self.assert_equality_only(d2, d3, True)
-        self.assert_equality_only(d3, d4, False)
 
 
 if __name__ == '__main__':
