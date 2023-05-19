@@ -200,11 +200,12 @@ class ComparisonFullTest(unittest.TestCase):
             return self.x >= other.x
 
     # It should be sufficient to combine the comparison methods only within
-    # each group:
-    all_comp_classes = (CompNone,
-                        CompEq, CompNe, CompEqNe,  # equal group
-                        CompLt, CompGt, CompLtGt,  # less/greater-than group
-                        CompLe, CompGe, CompLeGe)  # less/greater-or-equal group
+    # each group.
+    all_comp_classes = (
+            CompNone,
+            CompEq, CompNe, CompEqNe,  # equal group
+            CompLt, CompGt, CompLtGt,  # less/greater-than group
+            CompLe, CompGe, CompLeGe)  # less/greater-or-equal group
 
     def create_sorted_instances(self, class_, values):
         """
@@ -376,38 +377,28 @@ class ComparisonFullTest(unittest.TestCase):
                 b <= a
 
     def test_objects(self):
-        """ Test comparison for two instances of type 'object'.
-        """
+        """ Compare instances of type 'object'."""
         a = object()
         b = object()
-
         self.assert_equality_only(a, a, True)
         self.assert_equality_only(a, b, False)
 
-    def test_comp_classes(self):
-        """
-        Test comparison for instances that have different combinations of
-        comparison methods implemented.
+    def test_comp_classes_same(self):
+        """ Compare same-class instances with comparison methods."""
 
-        This test function tests all combinations of a set of classes, so that
-        instances are sometimes of different classes and sometimes of the same
-        class.
-        """
-
-        # Comparisons of objects of the same class.
         for cls in self.all_comp_classes:
             with self.subTest(cls):
                 instances = self.create_sorted_instances(cls, (1, 2, 1))
 
-                # same object
+                # Same object.
                 self.assert_total_order(instances[0], instances[0], 0,
                                         cls.meth, cls.meth)
 
-                # different objects, same value
+                # Different objects, same value.
                 self.assert_total_order(instances[0], instances[2], 0,
                                         cls.meth, cls.meth)
 
-                # different objects, value ascending for ascending identities
+                # Different objects, value ascending for ascending identities.
                 self.assert_total_order(instances[0], instances[1], -1,
                                         cls.meth, cls.meth)
 
@@ -417,7 +408,9 @@ class ComparisonFullTest(unittest.TestCase):
                 self.assert_total_order(instances[1], instances[2], +1,
                                         cls.meth, cls.meth)
 
-        # Comparisons of objects of the combination of all classes.
+    def test_comp_classes_different(self):
+        """ Compare different-class instances with comparison methods."""
+
         for cls_a in self.all_comp_classes:
             for cls_b in self.all_comp_classes:
                 with self.subTest(a=cls_a, b=cls_b):
@@ -428,10 +421,8 @@ class ComparisonFullTest(unittest.TestCase):
                     b2 = cls_b()
                     b2.x = 2
 
-                    # Different objects, same value.
                     self.assert_total_order(
                         a1, b1, 0, cls_a.meth, cls_b.meth)
-
                     self.assert_total_order(
                         a1, b2, -1, cls_a.meth, cls_b.meth)
 
