@@ -816,10 +816,11 @@ class TypeParamsTypeParamsDunder(unittest.TestCase):
             class ClassA[A]():
                 pass
             ClassA.__type_params__ = ()
+            params = ClassA.__type_params__
         """
 
-        with self.assertRaisesRegex(AttributeError, "attribute '__type_params__' of 'type' objects is not writable"):
-            run_code(code)
+        ns = run_code(code)
+        self.assertEqual(ns["params"], ())
 
     def test_typeparams_dunder_function_01(self):
         def outer[A, B]():
