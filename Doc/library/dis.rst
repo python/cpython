@@ -926,6 +926,27 @@ iterations of the loop.
 .. opcode:: LOAD_NAME (namei)
 
    Pushes the value associated with ``co_names[namei]`` onto the stack.
+   The name is looked up within the locals, then the globals, then the builtins.
+
+
+.. opcode:: LOAD_LOCALS
+
+   Pushes a reference to the locals dictionary onto the stack.  This is used
+   to prepare namespace dictionaries for :opcode:`LOAD_FROM_DICT_OR_DEREF`
+   and :opcode:`LOAD_FROM_DICT_OR_GLOBALS`.
+
+   .. versionadded:: 3.12
+
+
+.. opcode:: LOAD_FROM_DICT_OR_GLOBALS (i)
+
+   Pops a mapping off the stack and looks up the value for ``co_names[namei]``.
+   If the name is not found there, look it up in the globals and then the builtins,
+   similar to :opcode:`LOAD_GLOBAL`.
+   This is used for loading global variables in
+   :ref:`annotation scopes <annotation-scopes>` within class bodies.
+
+   .. versionadded:: 3.12
 
 
 .. opcode:: BUILD_TUPLE (count)
@@ -1243,16 +1264,17 @@ iterations of the loop.
       ``i`` is no longer offset by the length of ``co_varnames``.
 
 
-.. opcode:: LOAD_CLASSDEREF (i)
+.. opcode:: LOAD_FROM_DICT_OR_DEREF (i)
 
-   Much like :opcode:`LOAD_DEREF` but first checks the locals dictionary before
-   consulting the cell.  This is used for loading free variables in class
-   bodies.
+   Pops a mapping off the stack and looks up the name associated with
+   slot ``i`` of the "fast locals" storage in this mapping.
+   If the name is not found there, load it from the cell contained in
+   slot ``i``, similar to :opcode:`LOAD_DEREF`. This is used for loading
+   free variables in class bodies and in
+   :ref:`annotation scopes <annotation-scopes>` within class bodies.
 
-   .. versionadded:: 3.4
-
-   .. versionchanged:: 3.11
-      ``i`` is no longer offset by the length of ``co_varnames``.
+   .. versionadded:: 3.12
+      Replaces the previous instruction ``LOAD_CLASSDEREF``.
 
 
 .. opcode:: STORE_DEREF (i)
@@ -1504,13 +1526,23 @@ iterations of the loop.
 
    The operand determines which intrinsic function is called:
 
-   * ``0`` Not valid
-   * ``1`` Prints the argument to standard out. Used in the REPL.
-   * ``2`` Performs ``import *`` for the named module.
-   * ``3`` Extracts the return value from a ``StopIteration`` exception.
-   * ``4`` Wraps an aync generator value
-   * ``5`` Performs the unary ``+`` operation
-   * ``6`` Converts a list to a tuple
+   * ``INTRINSIC_1_INVALID`` Not valid
+   * ``INTRINSIC_PRINT`` Prints the argument to standard out.
+     Used in the REPL.
+   * ``INTRINSIC_IMPORT_STAR`` Performs ``import *`` for the named module.
+   * ``INTRINSIC_STOPITERATION_ERROR`` Extracts the return value from
+     a ``StopIteration`` exception.
+   * ``INTRINSIC_ASYNC_GEN_WRAP`` Wraps an aync generator value
+   * ``INTRINSIC_UNARY_POSITIVE`` Performs the unary ``+`` operation
+   * ``INTRINSIC_LIST_TO_TUPLE`` Converts a list to a tuple
+   * ``INTRINSIC_TYPEVAR`` Creates a :class:`typing.TypeVar`
+   * ``INTRINSIC_PARAMSPEC`` Creates a :class:`typing.ParamSpec`
+   * ``INTRINSIC_TYPEVARTUPLE`` Creates a :class:`typing.TypeVarTuple`
+   * ``INTRINSIC_SUBSCRIPT_GENERIC`` Returns :class:`typing.Generic`
+     subscripted with the value on top of the stack.
+   * ``INTRINSIC_TYPEALIAS`` Creates a :class:`typing.TypeAliasType`;
+     used in the :keyword:`type` statement. The argument is a tuple of
+     the type alias's name, type parameters, and value.
 
    .. versionadded:: 3.12
 
@@ -1522,8 +1554,15 @@ iterations of the loop.
 
    The operand determines which intrinsic function is called:
 
-   * ``0`` Not valid
-   * ``1`` Calculates the :exc:`ExceptionGroup` to raise from a ``try-except*``.
+   * ``INTRINSIC_2_INVALID`` Not valid
+   * ``INTRINSIC_PREP_RERAISE_STAR`` Calculates the :exc:`ExceptionGroup`
+     to raise from a ``try-except*``.
+   * ``INTRINSIC_TYPEVAR_WITH_BOUND`` Creates a :class:`typing.TypeVar`
+     with a bound.
+   * ``INTRINSIC_TYPEVAR_WITH_CONSTRAINTS`` Creates a :class:`typing.TypeVar`
+     with constraints.
+   * ``INTRINSIC_SET_FUNCTION_TYPE_PARAMS`` Sets the ``__type_params__``
+     attribute of a function.
 
    .. versionadded:: 3.12
 
