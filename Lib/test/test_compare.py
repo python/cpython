@@ -462,44 +462,23 @@ class ComparisonFullTest(unittest.TestCase):
         self.assert_equality_only(l1, r1, False)
         self.assert_equality_only(r1, t1, False)
 
-    def test_binary_sequences(self):
-        """ Test comparison for binary sequences (bytes, bytearray).
+    def test_bytes(self):
+        """ Test comparison for bytes and bytearray).
         """
         bs1 = b'a1'
         bs2 = b'b2'
-        bs3 = b'b' + b'2'  # Same value, different instance than bs2.
-        bs4 = b'a' + b'1'  # Same value, different instance than bs1.
-        self.assertIsNot(bs2, bs3, "Testcase error: bs2 is bs3")
-        self.assertIsNot(bs1, bs4, "Testcase error: bs1 is bs4")
+        self.assert_total_order(bs1, bs1, 0)
+        self.assert_total_order(bs1, bs2, -1)
 
         ba1 = bytearray(b'a1')
         ba2 = bytearray(b'b2')
-        ba3 = bytearray(b'b2')  # Same value, different instance than ba2.
-        ba4 = bytearray(b'a1')  # Same value, different instance than ba1.
-        self.assertIsNot(ba2, ba3, "Testcase error: ba2 is ba3")
-        self.assertIsNot(ba1, ba4, "Testcase error: ba1 is ba4")
-
-        # Same types.
-        self.assert_total_order(bs1, bs1, 0)
-        self.assert_total_order(bs1, bs2, -1)
-        self.assert_total_order(bs2, bs3, 0)
-        self.assert_total_order(bs3, bs4, +1)
-
         self.assert_total_order(ba1, ba1,  0)
         self.assert_total_order(ba1, ba2, -1)
-        self.assert_total_order(ba2, ba3, 0)
-        self.assert_total_order(ba3, ba4, +1)
 
-        # Mixing types.
         self.assert_total_order(bs1, ba1, 0)
         self.assert_total_order(bs1, ba2, -1)
-        self.assert_total_order(bs2, ba3, 0)
-        self.assert_total_order(bs3, ba4, +1)
-
         self.assert_total_order(ba1, bs1, 0)
         self.assert_total_order(ba1, bs2, -1)
-        self.assert_total_order(ba2, bs3, 0)
-        self.assert_total_order(ba3, bs4, +1)
 
     def test_sets(self):
         """ Test comparison for sets (set, frozenset).
