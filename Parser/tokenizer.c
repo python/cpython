@@ -1126,7 +1126,7 @@ tok_underflow_interactive(struct tok_state *tok) {
 
 static int
 tok_underflow_file(struct tok_state *tok) {
-    if (tok->start == NULL) {
+    if (tok->start == NULL && !INSIDE_FSTRING(tok)) {
         tok->cur = tok->inp = tok->buf;
     }
     if (tok->decoding_state == STATE_INIT) {
