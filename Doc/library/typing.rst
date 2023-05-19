@@ -3010,5 +3010,5 @@ convenience. This is subject to change, and not all deprecations are listed.
 |  ``typing.Hashable`` and         | 3.12          | Undecided         | :gh:`94309`    |
 |  ``typing.Sized``                |               |                   |                |
 +----------------------------------+---------------+-------------------+----------------+
-|  ``typing.TypeAlias``            | 3.12          | Undecided         | :pep`695`      |
+|  ``typing.TypeAlias``            | 3.12          | Undecided         | :pep:`695`     |
 +----------------------------------+---------------+-------------------+----------------+
