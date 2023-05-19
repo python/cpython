@@ -1129,6 +1129,8 @@ as internal buffering of data.
 
    .. availability:: Unix, not Emscripten, not WASI.
 
+   .. versionadded:: 3.12
+
 
 .. function:: isatty(fd, /)
 
@@ -1407,6 +1409,8 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    .. availability:: Unix, not Emscripten, not WASI.
 
+   .. versionadded:: 3.12
+
 
 .. function:: preadv(fd, buffers, offset, flags=0, /)
 
@@ -1474,6 +1478,8 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    guaranteed to be thread-safe.
 
    .. availability:: Unix, not Emscripten, not WASI.
+
+   .. versionadded:: 3.12
 
 
 .. function:: pwrite(fd, str, offset, /)
@@ -1735,6 +1741,8 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Calls the C standard library function :c:func:`unlockpt`.
 
    .. availability:: Unix, not Emscripten, not WASI.
+
+   .. versionadded:: 3.12
 
 
 .. function:: write(fd, str, /)
