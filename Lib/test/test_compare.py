@@ -407,93 +407,38 @@ class ComparisonFullTest(unittest.TestCase):
     def test_numbers(self):
         """ Compare number types."""
 
-        i1 = 10001
-        i2 = 10002
-
-        f1 = 1.1
-        f2 = 2.1
-        f3 = f1 + 1  # Same value, different instance than f2.
-        f4 = f2 - 1  # Same value, different instance than f1.
-        f5 = 42.0
-        self.assertIsNot(f2, f3, "Testcase error: f2 is f3")
-        self.assertIsNot(f1, f4, "Testcase error: f1 is f4")
-
-        c1 = 1+1j
-        c2 = 2+2j
-        c3 = 2+2j  # Same value, different instance than c2.
-        c4 = 1+1j  # Same value, different instance than c1.
-        c5 = 42+0j
-        self.assertIsNot(c2, c3, "Testcase error: c2 is c3")
-        self.assertIsNot(c1, c4, "Testcase error: c1 is c4")
-
-        q1 = Fraction(1, 2)
-        q2 = Fraction(2, 3)
-        q3 = Fraction(2, 3)  # Same value, different instance than q2.
-        q4 = Fraction(1, 2)  # Same value, different instance than q1.
-        q5 = Fraction(84, 2)
-        self.assertIsNot(q2, q3, "Testcase error: q2 is q3")
-        self.assertIsNot(q1, q4, "Testcase error: q1 is q4")
-
-        d1 = Decimal('1.2')
-        d2 = Decimal('2.3')
-        d3 = Decimal('2.3')  # Same value, different instance than d2.
-        d4 = Decimal('1.2')  # Same value, different instance than d1.
-        d5 = Decimal('42.0')
-        self.assertIsNot(d2, d3, "Testcase error: d2 is d3")
-        self.assertIsNot(d1, d4, "Testcase error: d1 is d4")
-
         # Same types.
+        i1 = 1001
+        i2 = 1002
         self.assert_total_order(i1, i1, 0)
         self.assert_total_order(i1, i2, -1)
 
+        f1 = 1001.0
+        f2 = 1001.1
         self.assert_total_order(f1, f1, 0)
         self.assert_total_order(f1, f2, -1)
-        self.assert_total_order(f2, f3, 0)
-        self.assert_total_order(f3, f4, +1)
 
-        self.assert_equality_only(c1, c1, True)
-        self.assert_equality_only(c1, c2, False)
-        self.assert_equality_only(c2, c3, True)
-        self.assert_equality_only(c3, c4, False)
-
+        q1 = Fraction(2002, 2)
+        q2 = Fraction(2003, 2)
         self.assert_total_order(q1, q1, 0)
         self.assert_total_order(q1, q2, -1)
-        self.assert_total_order(q2, q3, 0)
-        self.assert_total_order(q3, q4, +1)
 
+        d1 = Decimal('1001.0')
+        d2 = Decimal('1001.1')
         self.assert_total_order(d1, d1, 0)
         self.assert_total_order(d1, d2, -1)
-        self.assert_total_order(d2, d3, 0)
-        self.assert_total_order(d3, d4, +1)
+
+        c1 = 1001+0j
+        c2 = 1001+1j
+        self.assert_equality_only(c1, c1, True)
+        self.assert_equality_only(c1, c2, False)
+
 
         # Mixing types.
-        self.assert_total_order(i5, f5, 0)
-        self.assert_equality_only(i5, c5, True)
-        self.assert_total_order(i5, q5, 0)
-        self.assert_total_order(i5, d5, 0)
-
-        self.assert_equality_only(f5, c5, True)
-        self.assert_total_order(f5, q5, 0)
-        self.assert_total_order(f5, d5, 0)
-
-        self.assert_equality_only(c5, q5, True)
-        self.assert_equality_only(c5, d5, True)
-
-        self.assert_total_order(q5, d5, 0)
-
-        self.assert_total_order(i1, f1, +1)
-        self.assert_equality_only(i1, c1, False)
-        self.assert_total_order(i1, q1, +1)
-        self.assert_total_order(i1, d1, +1)
-
-        self.assert_equality_only(f1, c1, False)
-        self.assert_total_order(f1, q1, +1)
-        self.assert_total_order(f1, d1, -1)
-
-        self.assert_equality_only(c1, q1, False)
-        self.assert_equality_only(c1, d1, False)
-
-        self.assert_total_order(q1, d1, -1)
+        for n1, n2 in ((i1,f1), (i1,q1), (i1,d1), (f1,q1), (f1,d1), (q1,d1)):
+            self.assert_total_order(n1, n2, 0)
+        for n1 in (i1, f1, q1, d1):
+            self.assert_equality_only(n1, c1, True)
 
     def test_sequences(self):
         """ Test comparison for sequences (list, tuple, range).
