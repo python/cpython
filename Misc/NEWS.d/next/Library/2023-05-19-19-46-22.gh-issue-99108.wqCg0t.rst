@@ -1,0 +1,2 @@
+We now release the GIL around built-in HACL\* :mod:`hashlib` hash updates of
+reasonable size, matching what the OpenSSL backed hash updates already do.

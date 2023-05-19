@@ -53,7 +53,7 @@
         PyThread_release_lock((obj)->lock); \
     }
 
-/* TODO(gps): We should probably make this a module or EVPobject attribute
+/* TODO(gpshead): We should make this a module or class attribute
  * to allow the user to optimize based on the platform they're using. */
 #define HASHLIB_GIL_MINSIZE 2048
 
