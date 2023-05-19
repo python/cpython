@@ -159,13 +159,11 @@ _testcapi_raise_exception_impl(PyObject *module, PyObject *exc, int num_args)
 
 /*[clinic input]
 _testcapi.raise_memoryerror
-
-reliably raise a MemoryError
 [clinic start generated code]*/
 
 static PyObject *
 _testcapi_raise_memoryerror_impl(PyObject *module)
-/*[clinic end generated code: output=dd057803fb0131e6 input=00e9d6f183604386]*/
+/*[clinic end generated code: output=dd057803fb0131e6 input=6ca521bd07fb73cb]*/
 {
     return PyErr_NoMemory();
 }
@@ -175,14 +173,12 @@ _testcapi.fatal_error
     message: str(accept={robuffer})
     release_gil: bool = False
     /
-
-fatal_error(message, release_gil=False): call Py_FatalError(message)
 [clinic start generated code]*/
 
 static PyObject *
 _testcapi_fatal_error_impl(PyObject *module, const char *message,
                            int release_gil)
-/*[clinic end generated code: output=9c3237116e6a03e8 input=3d1709d2936fe086]*/
+/*[clinic end generated code: output=9c3237116e6a03e8 input=1be357a2ccb04c8c]*/
 {
     if (release_gil) {
         Py_BEGIN_ALLOW_THREADS

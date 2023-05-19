@@ -250,8 +250,7 @@ exit:
 PyDoc_STRVAR(_testcapi_raise_memoryerror__doc__,
 "raise_memoryerror($module, /)\n"
 "--\n"
-"\n"
-"reliably raise a MemoryError");
+"\n");
 
 #define _TESTCAPI_RAISE_MEMORYERROR_METHODDEF    \
     {"raise_memoryerror", (PyCFunction)_testcapi_raise_memoryerror, METH_NOARGS, _testcapi_raise_memoryerror__doc__},
@@ -268,8 +267,7 @@ _testcapi_raise_memoryerror(PyObject *module, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(_testcapi_fatal_error__doc__,
 "fatal_error($module, message, release_gil=False, /)\n"
 "--\n"
-"\n"
-"fatal_error(message, release_gil=False): call Py_FatalError(message)");
+"\n");
 
 #define _TESTCAPI_FATAL_ERROR_METHODDEF    \
     {"fatal_error", _PyCFunction_CAST(_testcapi_fatal_error), METH_FASTCALL, _testcapi_fatal_error__doc__},
@@ -397,4 +395,4 @@ _testcapi_traceback_print(PyObject *module, PyObject *const *args, Py_ssize_t na
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ee4a6d2d08c23e0a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ec1b2e62adea9846 input=a9049054013a1b77]*/
