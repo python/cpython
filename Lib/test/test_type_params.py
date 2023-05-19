@@ -136,6 +136,9 @@ class TypeParamsInvalidTest(unittest.TestCase):
         check_syntax_error(self, "class X[T: (y := 3)]: pass")
         check_syntax_error(self, "class X[T](y := Sequence[T]): pass")
         check_syntax_error(self, "def f[T](y: (x := Sequence[T])): pass")
+        check_syntax_error(self, "class X[T]([(x := 3) for _ in range(2)] and B): pass")
+        check_syntax_error(self, "def f[T: [(x := 3) for _ in range(2)]](): pass")
+        check_syntax_error(self, "type T = [(x := 3) for _ in range(2)]")
 
 
 class TypeParamsNonlocalTest(unittest.TestCase):
