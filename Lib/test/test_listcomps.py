@@ -381,6 +381,32 @@ class ListComprehensionTest(unittest.TestCase):
         with self.assertRaises(UnboundLocalError):
             f()
 
+    def test_global_outside_cellvar_inside_plus_freevar(self):
+        code = """
+            a = 1
+            def f():
+                func, = [(lambda: b) for b in [a]]
+                return b, func()
+            x = f()
+        """
+        self._check_in_scopes(
+            code, {"x": (2, 1)}, ns={"b": 2}, scopes=["function", "module"])
+        # inside a class, the `a = 1` assignment is not visible
+        self._check_in_scopes(code, raises=NameError, scopes=["class"])
+
+    def test_cell_in_nested_comprehension(self):
+        code = """
+            a = 1
+            def f():
+                (func, inner_b), = [[lambda: b for b in c] + [b] for c in [[a]]]
+                return b, inner_b, func()
+            x = f()
+        """
+        self._check_in_scopes(
+            code, {"x": (2, 2, 1)}, ns={"b": 2}, scopes=["function", "module"])
+        # inside a class, the `a = 1` assignment is not visible
+        self._check_in_scopes(code, raises=NameError, scopes=["class"])
+
     def test_name_error_in_class_scope(self):
         code = """
             y = 1
@@ -483,6 +509,25 @@ class ListComprehensionTest(unittest.TestCase):
             out = func(2)
         """
         self._check_in_scopes(code, {"z": 1, "out": [(3, 2, 1)]})
+
+    def test_assign_to_comp_iter_var_in_outer_function(self):
+        code = """
+            a = [1 for a in [0]]
+        """
+        self._check_in_scopes(code, {"a": [1]}, scopes=["function"])
+
+    def test_no_leakage_to_locals(self):
+        code = """
+            def b():
+                [a for b in [1] for _ in []]
+                return b, locals()
+            r, s = b()
+            x = r is b
+            y = list(s.keys())
+        """
+        self._check_in_scopes(code, {"x": True, "y": []}, scopes=["module"])
+        self._check_in_scopes(code, {"x": True, "y": ["b"]}, scopes=["function"])
+        self._check_in_scopes(code, raises=NameError, scopes=["class"])
 
 
 __test__ = {'doctests' : doctests}

@@ -843,5 +843,5 @@ class TypeParamsTypeParamsDunder(unittest.TestCase):
             func.__type_params__ = ()
         """
 
-        with self.assertRaisesRegex(AttributeError, "attribute '__type_params__' of 'function' objects is not writable"):
-            run_code(code)
+        ns = run_code(code)
+        self.assertEqual(ns["func"].__type_params__, ())

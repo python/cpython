@@ -1779,12 +1779,13 @@ class _ProtocolMeta(ABCMeta):
     # but is necessary for several reasons...
     def __init__(cls, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        cls.__protocol_attrs__ = _get_protocol_attrs(cls)
-        # PEP 544 prohibits using issubclass()
-        # with protocols that have non-method members.
-        cls.__callable_proto_members_only__ = all(
-            callable(getattr(cls, attr, None)) for attr in cls.__protocol_attrs__
-        )
+        if getattr(cls, "_is_protocol", False):
+            cls.__protocol_attrs__ = _get_protocol_attrs(cls)
+            # PEP 544 prohibits using issubclass()
+            # with protocols that have non-method members.
+            cls.__callable_proto_members_only__ = all(
+                callable(getattr(cls, attr, None)) for attr in cls.__protocol_attrs__
+            )
 
     def __subclasscheck__(cls, other):
         if (
