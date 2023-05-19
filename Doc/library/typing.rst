@@ -111,10 +111,10 @@ annotations. These include:
 Type aliases
 ============
 
-A type alias is defined by assigning the type to the alias. In this example,
+A type alias is defined using the :keyword:`type` statement. In this example,
 ``Vector`` and ``list[float]`` will be treated as interchangeable synonyms::
 
-   Vector = list[float]
+   type Vector = list[float]
 
    def scale(scalar: float, vector: Vector) -> Vector:
        return [scalar * num for num in vector]
@@ -126,9 +126,9 @@ Type aliases are useful for simplifying complex type signatures. For example::
 
    from collections.abc import Sequence
 
-   ConnectionOptions = dict[str, str]
-   Address = tuple[str, int]
-   Server = tuple[Address, ConnectionOptions]
+   type ConnectionOptions = dict[str, str]
+   type Address = tuple[str, int]
+   type Server = tuple[Address, ConnectionOptions]
 
    def broadcast_message(message: str, servers: Sequence[Server]) -> None:
        ...
@@ -142,6 +142,17 @@ Type aliases are useful for simplifying complex type signatures. For example::
 
 Note that ``None`` as a type hint is a special case and is replaced by
 ``type(None)``.
+
+The :keyword:`type` statement is new in Python 3.12. For backwards
+compatibility, type aliases can also created through simple assignment::
+
+   Vector = list[float]
+
+Or marked with :data:`TypeAlias`::
+
+   from typing import TypeAlias
+
+   Vector: TypeAlias = list[float]
 
 .. _distinct:
 
