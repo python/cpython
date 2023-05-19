@@ -754,6 +754,9 @@ These can be used as types in annotations and do not support ``[]``.
 
    .. versionadded:: 3.10
 
+   .. deprecated:: 3.12
+      :data:`TypeAlias` is deprecated in favor of the :keyword:`type` statement.
+
 Special forms
 """""""""""""
 
@@ -2995,4 +2998,6 @@ convenience. This is subject to change, and not all deprecations are listed.
 +----------------------------------+---------------+-------------------+----------------+
 |  ``typing.Hashable`` and         | 3.12          | Undecided         | :gh:`94309`    |
 |  ``typing.Sized``                |               |                   |                |
++----------------------------------+---------------+-------------------+----------------+
+|  ``typing.TypeAlias``            | 3.12          | Undecided         | :pep`695`      |
 +----------------------------------+---------------+-------------------+----------------+
