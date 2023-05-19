@@ -272,14 +272,11 @@ class ComparisonFullTest(unittest.TestCase):
 
     # The body of each subtest has form
         # if value-based comparison methods:
-            # expect what the testcase defined;
+            # expect what the testcase defined for a op b and b rop a;
         # else:  no value-based comparison
-            # expect default behavior of object.
+            # expect default behavior of object for a op b and b rop a.
 
     def assert_eq_subtest(self, a, b, comp, a_meth, b_meth):
-        """ Test "==" comparison.
-        The comparison is performed in both directions of the operands.
-        """
         if a_meth is None or "eq" in a_meth or "eq" in b_meth:
             self.assertEqual(a == b, comp == 0)
             self.assertEqual(b == a, comp == 0)
@@ -288,9 +285,6 @@ class ComparisonFullTest(unittest.TestCase):
             self.assertEqual(b == a, a is b)
 
     def assert_ne_subtest(self, a, b, comp, a_meth, b_meth):
-        """ Test "!=" comparison.
-        The comparison is performed in both directions of the operands.
-        """
         if a_meth is None or not {"ne", "eq"}.isdisjoint(a_meth + b_meth):
             self.assertEqual(a != b, comp != 0)
             self.assertEqual(b != a, comp != 0)
@@ -299,9 +293,6 @@ class ComparisonFullTest(unittest.TestCase):
             self.assertEqual(b != a, a is not b)
 
     def assert_lt_subtest(self, a, b, comp, a_meth, b_meth):
-        """ Test "<" comparison.
-        The comparison is performed in both directions of the operands.
-        """
         if a_meth is None or "lt" in a_meth or "gt" in b_meth:
             self.assertEqual(a < b, comp < 0)
             self.assertEqual(b > a, comp < 0)
@@ -312,9 +303,6 @@ class ComparisonFullTest(unittest.TestCase):
                 b > a
 
     def assert_le_subtest(self, a, b, comp, a_meth, b_meth):
-        """ Test "<=" comparison.
-        The comparison is performed in both directions of the operands.
-        """
         if a_meth is None or "le" in a_meth or "ge" in b_meth:
             self.assertEqual(a <= b, comp <= 0)
             self.assertEqual(b >= a, comp <= 0)
@@ -325,9 +313,6 @@ class ComparisonFullTest(unittest.TestCase):
                 b >= a
 
     def assert_gt_subtest(self, a, b, comp, a_meth, b_meth):
-        """ Test ">" comparison.
-        The comparison is performed in both directions of the operands.
-        """
         if a_meth is None or "gt" in a_meth or "lt" in b_meth:
             self.assertEqual(a > b, comp > 0)
             self.assertEqual(b < a, comp > 0)
@@ -338,9 +323,6 @@ class ComparisonFullTest(unittest.TestCase):
                 b < a
 
     def assert_ge_subtest(self, a, b, comp, a_meth, b_meth):
-        """ Test ">=" comparison.
-        The comparison is performed in both directions of the operands.
-        """
         if a_meth is None or "ge" in a_meth or "le" in b_meth:
             self.assertEqual(a >= b, comp >= 0)
             self.assertEqual(b <= a, comp >= 0)
