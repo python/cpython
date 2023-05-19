@@ -1,0 +1,2 @@
+Avoid compilation error due to tommath.h not being found when building
+Tkinter against Tcl 8.7 built with bundled libtommath.
