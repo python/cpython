@@ -46,7 +46,7 @@ my_fgets(PyThreadState* tstate, char *buf, int len, FILE *fp)
 
     while (1) {
         if (PyOS_InputHook != NULL &&
-            // See the comment for PyOS_ReadlineFunctionPointer below:
+            // GH-104668: See PyOS_ReadlineFunctionPointer's comment below...
             _Py_IsMainInterpreter(tstate->interp))
         {
             (void)(PyOS_InputHook)();
@@ -135,7 +135,7 @@ _PyOS_WindowsConsoleReadline(PyThreadState *tstate, HANDLE hStdIn)
     wbuflen = sizeof(wbuf_local) / sizeof(wbuf_local[0]) - 1;
     while (1) {
         if (PyOS_InputHook != NULL &&
-            // See the comment for PyOS_ReadlineFunctionPointer below:
+            // GH-104668: See PyOS_ReadlineFunctionPointer's comment below...
             _Py_IsMainInterpreter(tstate->interp))
         {
             (void)(PyOS_InputHook)();
@@ -396,7 +396,7 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
      * this: python -i < test1.py
      */
     if (!isatty(fileno(sys_stdin)) || !isatty(fileno(sys_stdout)) ||
-        // Don't call globally-registered callbacks like PyOS_InputHook or
+        // GH-104668: Don't call global callbacks like PyOS_InputHook or
         // PyOS_ReadlineFunctionPointer from subinterpreters, since it seems
         // like there's no good way for users (like readline and tkinter) to
         // avoid using global state to manage them. Plus, we generally don't
