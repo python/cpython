@@ -2108,13 +2108,17 @@ dummy_func(
                 _Py_Specialize_JumpBackwardBegin(&cframe, next_instr - 1);
                 GO_TO_INSTRUCTION(JUMP_BACKWARD_QUICK);
             }
-            STAT_INC(JUMP_BACKWARD, deferred);
             DECREMENT_ADAPTIVE_COUNTER(next_instr->cache);
             #endif  /* ENABLE_SPECIALIZATION */
             GO_TO_INSTRUCTION(JUMP_BACKWARD_QUICK);
         }
 
         inst(JUMP_BACKWARD_QUICK, (unused/1, unused/4 --)) {
+        #ifdef _PyJIT_ACTIVE
+            STAT_INC(JUMP_BACKWARD, hit);
+        #else
+            STAT_INC(JUMP_BACKWARD, deferred);
+        #endif
             JUMPBY(_PyOpcode_Caches[JUMP_BACKWARD]);
             assert(oparg < INSTR_OFFSET());
             JUMPBY(-oparg);
@@ -2129,28 +2133,30 @@ dummy_func(
         }
 
         inst(JUMP_BACKWARD_INTO_TRACE, (unused/1, trace/4 --)) {
-            _Py_CODEUNIT *instr = next_instr - 1;
+            _Py_CODEUNIT *saved_next_instr = next_instr;
             JUMPBY(_PyOpcode_Caches[JUMP_BACKWARD]);
             assert(oparg < INSTR_OFFSET());
             JUMPBY(-oparg);
             CHECK_EVAL_BREAKER();
             int status = ((_PyJITFunction)(uintptr_t)trace)(tstate, frame, stack_pointer, next_instr);
-            frame = cframe.current_frame;
-            next_instr = frame->prev_instr;
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            next_instr = saved_next_instr;
             if (status < 0) {
                 UPDATE_MISS_STATS(JUMP_BACKWARD);
-                if (ADAPTIVE_COUNTER_IS_ZERO(instr[1].cache)) {
-                    instr->op.code = JUMP_BACKWARD;
-                    _PyJIT_Free((_PyJITFunction)(uintptr_t)trace);
+                if (ADAPTIVE_COUNTER_IS_ZERO(next_instr->cache)) {
+                    next_instr[-1].op.code = JUMP_BACKWARD;
+                    // _PyJIT_Free((_PyJITFunction)(uintptr_t)trace);
                 }
                 else {
-                    DECREMENT_ADAPTIVE_COUNTER(instr[1].cache);
+                    STAT_INC(JUMP_BACKWARD, deferred);
+                    DECREMENT_ADAPTIVE_COUNTER(next_instr->cache);
                 }
             }
             else {
                 STAT_INC(JUMP_BACKWARD, hit);
             }
+            frame = cframe.current_frame;
+            next_instr = frame->prev_instr;
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             switch (status) {
                 case -1:
                     NEXTOPARG();

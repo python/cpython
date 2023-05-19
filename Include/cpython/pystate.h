@@ -63,6 +63,11 @@ typedef int (*Py_tracefunc)(PyObject *, PyFrameObject *, int, PyObject *);
 #define PyTrace_OPCODE 7
 
 // XXX
+// 1 << 4:
+// 1 << 5: 137.8% deferred, 81.7% failure, 81.9% too long, 15.9% other
+// 1 << 6: 102.0% deferred, 13.3% failure, 74.0% too long, 22.0% other
+// 1 << 7:  98.7% deferred, 21.1% failure, 63.8% too long, 28.9% other
+// 1 << 8:
 #define _PyJIT_MAX_RECORDING_LENGTH (1 << 6)
 
 // Internal structure: you should not use it directly, but use public functions
