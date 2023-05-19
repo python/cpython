@@ -189,7 +189,7 @@ However, the following will succeed::
 Annotation scopes
 -----------------
 
-:ref:`Type parameter lists <type-params>`` and :keyword:`type` statements
+:ref:`Type parameter lists <type-params>` and :keyword:`type` statements
 introduce *annotation scopes*, which behave mostly like function scopes,
 but with some exceptions discussed below. :term:`Annotations <annotation>`
 currently do not use annotation scopes, but they are expected to use

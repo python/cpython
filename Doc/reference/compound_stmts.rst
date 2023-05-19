@@ -1671,7 +1671,7 @@ For :data:`!typing.TypeVar`\ s declared using the type parameter list syntax,
 the bound and constraints are not evaluated when the generic object is created,
 but only when the value is explicitly accessed through the attributes ``__bound__``
 and ``__constraints__``. To accomplish this, the bounds or constraints are
-evaluated in a separate :ref:`type scope <type-scopes>`.
+evaluated in a separate :ref:`annotation scope <annotation-scopes>`.
 
 :data:`typing.TypeVarTuple`\ s and :data:`typing.ParamSpec`\ s cannot have bounds
 or constraints.
@@ -1792,11 +1792,11 @@ This is equivalent to::
 Generic type aliases
 --------------------
 
-The :keyword:`type` statement can also be used to create a generic type alias:
+The :keyword:`type` statement can also be used to create a generic type alias::
 
    type ListOrSet[T] = list[T] | set[T]
 
-Except for the lazy evaluation of the value, this is equivalent to:
+Except for the lazy evaluation of the value, this is equivalent to::
 
    def' TYPE_PARAMS_OF_ListOrSet():
        T = typing.TypeVar("T")
@@ -1806,8 +1806,6 @@ Except for the lazy evaluation of the value, this is equivalent to:
        # In reality, the value is lazily evaluated
        return typing.TypeAliasType("ListOrSet", VALUE_OF_ListOrSet(), type_params=(T,))
    ListOrSet = TYPE_PARAMS_OF_ListOrSet()
-
-
 
 .. rubric:: Footnotes
 

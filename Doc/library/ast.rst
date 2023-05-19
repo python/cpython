@@ -917,6 +917,25 @@ Statements
             type_ignores=[])
 
 
+.. class:: TypeAlias(name, typeparams, value)
+
+   A type alias created through the :keyword:`type` statement. ``name``
+   is the name of the alias, ``typeparams`` is a list of
+   :ref:`type parameters <ast-type-params>`, and ``value`` is the value of the
+   type alias.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('type Alias = int'), indent=4))
+        Module(
+            body=[
+                TypeAlias(
+                    name=Name(id='Alias', ctx=Store()),
+                    typeparams=[],
+                    value=Name(id='int', ctx=Load()))],
+            type_ignores=[])
+
+
 Other statements which are only applicable inside functions or loops are
 described in other sections.
 
@@ -1644,15 +1663,93 @@ Pattern matching
                                     value=Constant(value=Ellipsis))])])],
             type_ignores=[])
 
+.. _ast-type-params:
+
+Type parameters
+^^^^^^^^^^^^^^^
+
+:ref:`Type parameters <type-params>` can exist on classes, functions, and type
+aliases.
+
+.. class:: TypeVar(name, bound)
+
+   A :class:`~typing.TypeVar`. ``name`` is the name of the type variable, and
+   ``bound`` is the bound or constraints, if any. If the value is a :class:`Tuple`,
+   it represents constraints; otherwise it represents the bound.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("type Alias[T: int] = list[T]"), indent=4))
+        Module(
+            body=[
+                TypeAlias(
+                    name=Name(id='Alias', ctx=Store()),
+                    typeparams=[
+                        TypeVar(
+                            name='T',
+                            bound=Name(id='int', ctx=Load()))],
+                    value=Subscript(
+                        value=Name(id='list', ctx=Load()),
+                        slice=Name(id='T', ctx=Load()),
+                        ctx=Load()))],
+            type_ignores=[])
+
+.. class:: ParamSpec(name)
+
+   A :class:`~typing.ParamSpec`. ``name`` is the name of the parameter specification.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("type Alias[**P] = Callable[P, int]"), indent=4))
+        Module(
+            body=[
+                TypeAlias(
+                    name=Name(id='Alias', ctx=Store()),
+                    typeparams=[
+                        ParamSpec(name='P')],
+                    value=Subscript(
+                        value=Name(id='Callable', ctx=Load()),
+                        slice=Tuple(
+                            elts=[
+                                Name(id='P', ctx=Load()),
+                                Name(id='int', ctx=Load())],
+                            ctx=Load()),
+                        ctx=Load()))],
+            type_ignores=[])
+
+.. class:: TypeVarTuple(name)
+
+   A :class:`~typing.TypeVarTuple`. ``name`` is the name of the type variable tuple.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("type Alias[*Ts] = tuple[*Ts]"), indent=4))
+        Module(
+            body=[
+                TypeAlias(
+                    name=Name(id='Alias', ctx=Store()),
+                    typeparams=[
+                        TypeVarTuple(name='Ts')],
+                    value=Subscript(
+                        value=Name(id='tuple', ctx=Load()),
+                        slice=Tuple(
+                            elts=[
+                                Starred(
+                                    value=Name(id='Ts', ctx=Load()),
+                                    ctx=Load())],
+                            ctx=Load()),
+                        ctx=Load()))],
+            type_ignores=[])
 
 Function and class definitions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. class:: FunctionDef(name, args, body, decorator_list, returns, type_comment)
+.. class:: FunctionDef(name, typeparams, args, body, decorator_list, returns, type_comment)
 
    A function definition.
 
    * ``name`` is a raw string of the function name.
+   * ``typeparams`` is a list of :ref:`type parameters <ast-type-params>`.
    * ``args`` is an :class:`arguments` node.
    * ``body`` is the list of nodes inside the function.
    * ``decorator_list`` is the list of decorators to be applied, stored outermost
@@ -1820,11 +1917,12 @@ Function and class definitions
             type_ignores=[])
 
 
-.. class:: ClassDef(name, bases, keywords, starargs, kwargs, body, decorator_list)
+.. class:: ClassDef(name, typeparams, bases, keywords, starargs, kwargs, body, decorator_list)
 
    A class definition.
 
    * ``name`` is a raw string for the class name
+   * ``typeparams`` is a list of :ref:`type parameters <ast-type-params>`.
    * ``bases`` is a list of nodes for explicitly specified base classes.
    * ``keywords`` is a list of :class:`keyword` nodes, principally for 'metaclass'.
      Other keywords will be passed to the metaclass, as per `PEP-3115
