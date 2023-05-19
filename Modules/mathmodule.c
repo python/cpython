@@ -3908,19 +3908,29 @@ math_nextafter_impl(PyObject *module, double x, double y, PyObject *steps)
         return NULL;
     }
 
-    uint64_t usteps = PyLong_AsUnsignedLongLong(steps);
+    unsigned long long usteps_ull = PyLong_AsUnsignedLongLong(steps);
     // Conveniently, uint64_t and double have the same number of bits
     // on all the platforms we care about.
     // So if an overflow occurs, we can just use UINT64_MAX.
-    if (usteps == (unsigned long long)-1 && PyErr_Occurred()) {
-        if(!PyErr_ExceptionMatches(PyExc_OverflowError)) {
-            Py_DECREF(steps);
-            return NULL;
-        }
-        PyErr_Clear();
-        usteps = UINT64_MAX;
-    }
     Py_DECREF(steps);
+    if (usteps_ull >= UINT64_MAX) {
+        // This branch includes the case where an error occurred, since
+        // (unsigned long long)(-1) = ULLONG_MAX >= UINT64_MAX. Note that
+        // usteps_ull can be strictly larger than UINT64_MAX on a machine
+        // where unsigned long long has width > 64 bits.
+        if (PyErr_Occurred()) {
+            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+                PyErr_Clear();
+            }
+            else {
+                return NULL;
+            }
+        }
+        usteps_ull = UINT64_MAX;
+    }
+    assert(usteps_ull <= UINT64_MAX);
+    uint64_t usteps = (uint64_t)usteps_ull;
+
     if (usteps == 0) {
         return PyFloat_FromDouble(x);
     }
@@ -3937,7 +3947,7 @@ math_nextafter_impl(PyObject *module, double x, double y, PyObject *steps)
     // would be a "mixed-endian" double.)
     union pun {double f; uint64_t i;};
     union pun ux = {x}, uy = {y};
-    if(ux.i == uy.i) {
+    if (ux.i == uy.i) {
         return PyFloat_FromDouble(x);
     }
 
