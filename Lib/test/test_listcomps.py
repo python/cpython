@@ -516,6 +516,19 @@ class ListComprehensionTest(unittest.TestCase):
         """
         self._check_in_scopes(code, {"a": [1]}, scopes=["function"])
 
+    def test_no_leakage_to_locals(self):
+        code = """
+            def b():
+                [a for b in [1] for _ in []]
+                return b, locals()
+            r, s = b()
+            x = r is b
+            y = list(s.keys())
+        """
+        self._check_in_scopes(code, {"x": True, "y": []}, scopes=["module"])
+        self._check_in_scopes(code, {"x": True, "y": ["b"]}, scopes=["function"])
+        self._check_in_scopes(code, raises=NameError, scopes=["class"])
+
 
 __test__ = {'doctests' : doctests}
 

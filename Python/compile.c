@@ -5490,30 +5490,28 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
                 }
                 Py_DECREF(outv);
             }
-            if (outsc == LOCAL || outsc == CELL || outsc == FREE) {
-                // local names bound in comprehension must be isolated from
-                // outer scope; push existing value (which may be NULL if
-                // not defined) on stack
+            // local names bound in comprehension must be isolated from
+            // outer scope; push existing value (which may be NULL if
+            // not defined) on stack
+            if (state->pushed_locals == NULL) {
+                state->pushed_locals = PyList_New(0);
                 if (state->pushed_locals == NULL) {
-                    state->pushed_locals = PyList_New(0);
-                    if (state->pushed_locals == NULL) {
-                        return ERROR;
-                    }
-                }
-                // in the case of a cell, this will actually push the cell
-                // itself to the stack, then we'll create a new one for the
-                // comprehension and restore the original one after
-                ADDOP_NAME(c, loc, LOAD_FAST_AND_CLEAR, k, varnames);
-                if (scope == CELL) {
-                    if (outsc == FREE) {
-                        ADDOP_NAME(c, loc, MAKE_CELL, k, freevars);
-                    } else {
-                        ADDOP_NAME(c, loc, MAKE_CELL, k, cellvars);
-                    }
-                }
-                if (PyList_Append(state->pushed_locals, k) < 0) {
                     return ERROR;
                 }
+            }
+            // in the case of a cell, this will actually push the cell
+            // itself to the stack, then we'll create a new one for the
+            // comprehension and restore the original one after
+            ADDOP_NAME(c, loc, LOAD_FAST_AND_CLEAR, k, varnames);
+            if (scope == CELL) {
+                if (outsc == FREE) {
+                    ADDOP_NAME(c, loc, MAKE_CELL, k, freevars);
+                } else {
+                    ADDOP_NAME(c, loc, MAKE_CELL, k, cellvars);
+                }
+            }
+            if (PyList_Append(state->pushed_locals, k) < 0) {
+                return ERROR;
             }
         }
     }
