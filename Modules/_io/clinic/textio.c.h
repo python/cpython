@@ -33,7 +33,7 @@ _io__TextIOBase_detach(PyObject *self, PyTypeObject *cls, PyObject *const *args,
 }
 
 PyDoc_STRVAR(_io__TextIOBase_read__doc__,
-"read($self, /, *args)\n"
+"read($self, size=-1, /)\n"
 "--\n"
 "\n"
 "Read at most size characters from stream.\n"
@@ -45,7 +45,8 @@ PyDoc_STRVAR(_io__TextIOBase_read__doc__,
     {"read", _PyCFunction_CAST(_io__TextIOBase_read), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__TextIOBase_read__doc__},
 
 static PyObject *
-_io__TextIOBase_read_impl(PyObject *self, PyTypeObject *cls, PyObject *args);
+_io__TextIOBase_read_impl(PyObject *self, PyTypeObject *cls,
+                          int Py_UNUSED(size));
 
 static PyObject *
 _io__TextIOBase_read(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -57,7 +58,7 @@ _io__TextIOBase_read(PyObject *self, PyTypeObject *cls, PyObject *const *args, P
     #  define KWTUPLE NULL
     #endif
 
-    static const char * const _keywords[] = { NULL};
+    static const char * const _keywords[] = {"", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "read",
@@ -65,34 +66,41 @@ _io__TextIOBase_read(PyObject *self, PyTypeObject *cls, PyObject *const *args, P
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    PyObject *__clinic_args = NULL;
+    int size = -1;
 
-    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    __clinic_args = args[0];
-    return_value = _io__TextIOBase_read_impl(self, cls, __clinic_args);
+    if (nargs < 1) {
+        goto skip_optional_posonly;
+    }
+    size = _PyLong_AsInt(args[0]);
+    if (size == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_posonly:
+    return_value = _io__TextIOBase_read_impl(self, cls, size);
 
 exit:
-    Py_XDECREF(__clinic_args);
     return return_value;
 }
 
 PyDoc_STRVAR(_io__TextIOBase_readline__doc__,
-"readline($self, /, *args)\n"
+"readline($self, size=-1, /)\n"
 "--\n"
 "\n"
 "Read until newline or EOF.\n"
 "\n"
-"Return an empty string if EOF is hit immediately.");
+"Return an empty string if EOF is hit immediately.\n"
+"If size is specified, at most size characters will be read.");
 
 #define _IO__TEXTIOBASE_READLINE_METHODDEF    \
     {"readline", _PyCFunction_CAST(_io__TextIOBase_readline), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__TextIOBase_readline__doc__},
 
 static PyObject *
 _io__TextIOBase_readline_impl(PyObject *self, PyTypeObject *cls,
-                              PyObject *args);
+                              int Py_UNUSED(size));
 
 static PyObject *
 _io__TextIOBase_readline(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -104,7 +112,7 @@ _io__TextIOBase_readline(PyObject *self, PyTypeObject *cls, PyObject *const *arg
     #  define KWTUPLE NULL
     #endif
 
-    static const char * const _keywords[] = { NULL};
+    static const char * const _keywords[] = {"", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "readline",
@@ -112,25 +120,31 @@ _io__TextIOBase_readline(PyObject *self, PyTypeObject *cls, PyObject *const *arg
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    PyObject *__clinic_args = NULL;
+    int size = -1;
 
-    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    __clinic_args = args[0];
-    return_value = _io__TextIOBase_readline_impl(self, cls, __clinic_args);
+    if (nargs < 1) {
+        goto skip_optional_posonly;
+    }
+    size = _PyLong_AsInt(args[0]);
+    if (size == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_posonly:
+    return_value = _io__TextIOBase_readline_impl(self, cls, size);
 
 exit:
-    Py_XDECREF(__clinic_args);
     return return_value;
 }
 
 PyDoc_STRVAR(_io__TextIOBase_write__doc__,
-"write($self, /, *args)\n"
+"write($self, s, /)\n"
 "--\n"
 "\n"
-"Write string to stream.\n"
+"Write string s to stream.\n"
 "\n"
 "Return the number of characters written\n"
 "(which is always equal to the length of the string).");
@@ -139,7 +153,8 @@ PyDoc_STRVAR(_io__TextIOBase_write__doc__,
     {"write", _PyCFunction_CAST(_io__TextIOBase_write), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__TextIOBase_write__doc__},
 
 static PyObject *
-_io__TextIOBase_write_impl(PyObject *self, PyTypeObject *cls, PyObject *args);
+_io__TextIOBase_write_impl(PyObject *self, PyTypeObject *cls,
+                           const char *Py_UNUSED(s));
 
 static PyObject *
 _io__TextIOBase_write(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -151,7 +166,7 @@ _io__TextIOBase_write(PyObject *self, PyTypeObject *cls, PyObject *const *args, 
     #  define KWTUPLE NULL
     #endif
 
-    static const char * const _keywords[] = { NULL};
+    static const char * const _keywords[] = {"", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "write",
@@ -159,17 +174,28 @@ _io__TextIOBase_write(PyObject *self, PyTypeObject *cls, PyObject *const *args, 
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    PyObject *__clinic_args = NULL;
+    const char *s;
 
-    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    __clinic_args = args[0];
-    return_value = _io__TextIOBase_write_impl(self, cls, __clinic_args);
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("write", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    Py_ssize_t s_length;
+    s = PyUnicode_AsUTF8AndSize(args[0], &s_length);
+    if (s == NULL) {
+        goto exit;
+    }
+    if (strlen(s) != (size_t)s_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    return_value = _io__TextIOBase_write_impl(self, cls, s);
 
 exit:
-    Py_XDECREF(__clinic_args);
     return return_value;
 }
 
@@ -934,4 +960,4 @@ _io_TextIOWrapper_close(textio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_TextIOWrapper_close_impl(self);
 }
-/*[clinic end generated code: output=d800e5a8a50d6720 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=42f592331302973f input=a9049054013a1b77]*/

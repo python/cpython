@@ -1,0 +1,5 @@
+Do not add a frame to the traceback in the ``sys.setprofile`` and
+``sys.settrace`` trampoline functions. This ensures that frames are not
+duplicated if an exception is raised in the callback function, and ensures
+that frames are not omitted if a C callback is used and that does not add the
+frame.
