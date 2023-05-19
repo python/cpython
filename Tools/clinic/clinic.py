@@ -29,7 +29,7 @@ import traceback
 
 from collections.abc import Callable
 from types import FunctionType, NoneType
-from typing import Any, Final, NamedTuple, NoReturn, Literal, overload
+from typing import TYPE_CHECKING, Any, Final, NamedTuple, NoReturn, Literal, overload
 
 # TODO:
 #
@@ -2554,17 +2554,21 @@ class Parameter:
 
 class LandMine:
     # try to access any
-    def __init__(self, message):
+    def __init__(self, message: str) -> None:
         self.__message__ = message
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<LandMine ' + repr(self.__message__) + ">"
 
-    def __getattribute__(self, name):
-        if name in ('__repr__', '__message__'):
-            return super().__getattribute__(name)
-        # raise RuntimeError(repr(name))
-        fail("Stepped on a land mine, trying to access attribute " + repr(name) + ":\n" + self.__message__)
+    if not TYPE_CHECKING:
+        def __getattribute__(self, name):
+            if name in ('__repr__', '__message__'):
+                return super().__getattribute__(name)
+            # raise RuntimeError(repr(name))
+            fail(
+                f"Stepped on a land mine, trying to access attribute "
+                f"{name!r}:\n{self.__message__}"
+            )
 
 
 def add_c_converter(f, name=None):
