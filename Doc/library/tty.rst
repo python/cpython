@@ -25,7 +25,7 @@ The :mod:`tty` module defines the following functions:
    Convert the tty attribute list *mode*, which is a list like the one returned
    by :func:`termios.tcgetattr`, to that of a tty in raw mode.
 
-.. versionadded:: 3.12
+   .. versionadded:: 3.12
 
 
 .. function:: cfmakecbreak(mode)
@@ -33,7 +33,7 @@ The :mod:`tty` module defines the following functions:
    Convert the tty attribute list *mode*, which is a list like the one returned
    by :func:`termios.tcgetattr`, to that of a tty in cbreak mode.
 
-.. versionadded:: 3.12
+   .. versionadded:: 3.12
 
 
 .. function:: setraw(fd, when=termios.TCSAFLUSH)
