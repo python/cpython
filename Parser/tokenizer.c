@@ -1815,12 +1815,9 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             return MAKE_TOKEN(syntaxerror(tok, "f-string expression part cannot include '#'"));
         }
 
-        const char *prefix, *p, *type_start;
+        const char* p = NULL;
+        const char *prefix, *type_start;
         int current_starting_col_offset;
-
-        // if (tok->tok_extra_tokens) {
-        //     p = tok->start;
-        // }
 
         while (c != EOF && c != '\n') {
             c = tok_nextc(tok);

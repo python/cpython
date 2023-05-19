@@ -193,10 +193,10 @@ tokenizeriter_next(tokenizeriterobject *it)
         return NULL;
     }
     const char *line_start = ISSTRINGLIT(type) ? it->tok->multi_line_start : it->tok->line_start;
-    int lineno = ISSTRINGLIT(type) ? it->tok->first_lineno : it->tok->lineno;
-    int end_lineno = it->tok->lineno;
-    int col_offset = -1;
-    int end_col_offset = -1;
+    Py_ssize_t lineno = ISSTRINGLIT(type) ? it->tok->first_lineno : it->tok->lineno;
+    Py_ssize_t end_lineno = it->tok->lineno;
+    Py_ssize_t col_offset = -1;
+    Py_ssize_t end_col_offset = -1;
     if (token.start != NULL && token.start >= line_start) {
         col_offset = _PyPegen_byte_offset_to_character_offset(line, token.start - line_start);
     }
@@ -204,7 +204,7 @@ tokenizeriter_next(tokenizeriterobject *it)
         end_col_offset = _PyPegen_byte_offset_to_character_offset(line, token.end - it->tok->line_start);
     }
 
-    return Py_BuildValue("(NiiiiiN)", str, type, lineno, end_lineno, col_offset, end_col_offset, line);
+    return Py_BuildValue("(NinnnnN)", str, type, lineno, end_lineno, col_offset, end_col_offset, line);
 }
 
 static void
