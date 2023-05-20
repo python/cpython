@@ -27,8 +27,8 @@ Note that holding the Global Interpreter Lock (GIL) is not required for these AP
    and it will initialize the state on first call.
 
    Returns ``0`` on success, ``-1`` on failure to create/open the perf map file,
-   or ``-2`` on failure to create a lock. Check :c:data:`errno` for more
-   information about the cause of a failure.
+   or ``-2`` on failure to create a lock. Check ``errno`` for more information
+   about the cause of a failure.
 
 .. c:function:: int PyUnstable_WritePerfMapEntry(const void *code_addr, unsigned int code_size, const char *entry_name)
 
