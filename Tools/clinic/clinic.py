@@ -548,8 +548,6 @@ def permute_optional_groups(left, required, right):
     If required is empty, left must also be empty.
     """
     required = tuple(required)
-    result = []
-
     if not required:
         if left:
             raise ValueError("required is empty but left is not")
@@ -1338,7 +1336,6 @@ class CLanguage(Language):
         if isinstance(parameters[0].converter, self_converter):
             del parameters[0]
 
-        groups = []
         group = None
         left = []
         right = []
@@ -1428,8 +1425,6 @@ class CLanguage(Language):
         first_optional = len(selfless)
         positional = selfless and selfless[-1].is_positional_only()
         new_or_init = f.kind in (METHOD_NEW, METHOD_INIT)
-        default_return_converter = (not f.return_converter or
-            f.return_converter.type == 'PyObject *')
         has_option_groups = False
 
         # offset i by -1 because first_optional needs to ignore self
@@ -1526,7 +1521,6 @@ class CLanguage(Language):
         template_dict['return_value'] = data.return_value
 
         # used by unpack tuple code generator
-        ignore_self = -1 if isinstance(converters[0], self_converter) else 0
         unpack_min = first_optional
         unpack_max = len(selfless)
         template_dict['unpack_min'] = str(unpack_min)
@@ -1803,10 +1797,8 @@ class BlockParser:
             if self.verify:
                 if 'input' in d:
                     checksum = d['output']
-                    input_checksum = d['input']
                 else:
                     checksum = d['checksum']
-                    input_checksum = None
 
                 computed = compute_checksum(output, len(checksum))
                 if checksum != computed:
@@ -4243,8 +4235,7 @@ class DSLParser:
             fail("Insufficient Clinic version!\n  Version: " + version + "\n  Required: " + required)
 
     def directive_module(self, name):
-        fields = name.split('.')
-        new = fields.pop()
+        fields = name.split('.')[:-1]
         module, cls = self.clinic._module_and_class(fields)
         if cls:
             fail("Can't nest a module inside a class!")
