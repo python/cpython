@@ -3,15 +3,13 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"   // _PyIndex_Check()
+#include "pycore_object.h"     // _PyType_IsReady()
 
 #define FLAG_SIZE_T 1
 typedef double va_double;
 
 static PyObject *va_build_value(const char *, va_list, int);
 static PyObject **va_build_stack(PyObject **small_stack, Py_ssize_t small_stack_len, const char *, va_list, int, Py_ssize_t*);
-
-/* Package context -- the full module name for package imports */
-const char *_Py_PackageContext = NULL;
 
 
 int
@@ -96,16 +94,12 @@ static PyObject *do_mkvalue(const char**, va_list *, int);
 static void
 do_ignore(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n, int flags)
 {
-    PyObject *v;
-    Py_ssize_t i;
     assert(PyErr_Occurred());
-    v = PyTuple_New(n);
-    for (i = 0; i < n; i++) {
-        PyObject *exception, *value, *tb, *w;
-
-        PyErr_Fetch(&exception, &value, &tb);
-        w = do_mkvalue(p_format, p_va, flags);
-        PyErr_Restore(exception, value, tb);
+    PyObject *v = PyTuple_New(n);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *exc = PyErr_GetRaisedException();
+        PyObject *w = do_mkvalue(p_format, p_va, flags);
+        PyErr_SetRaisedException(exc);
         if (w != NULL) {
             if (v != NULL) {
                 PyTuple_SET_ITEM(v, i, w);
@@ -700,7 +694,7 @@ PyModule_AddStringConstant(PyObject *m, const char *name, const char *value)
 int
 PyModule_AddType(PyObject *module, PyTypeObject *type)
 {
-    if (PyType_Ready(type) < 0) {
+    if (!_PyType_IsReady(type) && PyType_Ready(type) < 0) {
         return -1;
     }
 

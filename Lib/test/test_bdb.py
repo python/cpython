@@ -433,8 +433,9 @@ class TracerRun():
         not_empty = ''
         if self.tracer.set_list:
             not_empty += 'All paired tuples have not been processed, '
-            not_empty += ('the last one was number %d' %
+            not_empty += ('the last one was number %d\n' %
                           self.tracer.expect_set_no)
+            not_empty += repr(self.tracer.set_list)
 
         # Make a BdbNotExpectedError a unittest failure.
         if type_ is not None and issubclass(BdbNotExpectedError, type_):
@@ -1201,6 +1202,13 @@ class IssuesTestCase(BaseTestCase):
             ]
             with TracerRun(self) as tracer:
                 tracer.runcall(tfunc_import)
+
+
+class TestRegressions(unittest.TestCase):
+    def test_format_stack_entry_no_lineno(self):
+        # See gh-101517
+        self.assertIn('Warning: lineno is None',
+                      Bdb().format_stack_entry((sys._getframe(), None)))
 
 
 if __name__ == "__main__":

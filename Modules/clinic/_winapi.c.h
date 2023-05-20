@@ -133,7 +133,7 @@ _winapi_ConnectNamedPipe(PyObject *module, PyObject *const *args, Py_ssize_t nar
     static const char * const _keywords[] = {"handle", "overlapped", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .format = "" F_HANDLE "|i:ConnectNamedPipe",
+        .format = "" F_HANDLE "|p:ConnectNamedPipe",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
@@ -742,6 +742,32 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_winapi_UnmapViewOfFile__doc__,
+"UnmapViewOfFile($module, address, /)\n"
+"--\n"
+"\n");
+
+#define _WINAPI_UNMAPVIEWOFFILE_METHODDEF    \
+    {"UnmapViewOfFile", (PyCFunction)_winapi_UnmapViewOfFile, METH_O, _winapi_UnmapViewOfFile__doc__},
+
+static PyObject *
+_winapi_UnmapViewOfFile_impl(PyObject *module, LPCVOID address);
+
+static PyObject *
+_winapi_UnmapViewOfFile(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    LPCVOID address;
+
+    if (!PyArg_Parse(arg, "" F_POINTER ":UnmapViewOfFile", &address)) {
+        goto exit;
+    }
+    return_value = _winapi_UnmapViewOfFile_impl(module, address);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_winapi_OpenFileMapping__doc__,
 "OpenFileMapping($module, desired_access, inherit_handle, name, /)\n"
 "--\n"
@@ -946,7 +972,7 @@ _winapi_ReadFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     static const char * const _keywords[] = {"handle", "size", "overlapped", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .format = "" F_HANDLE "k|i:ReadFile",
+        .format = "" F_HANDLE "k|p:ReadFile",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
@@ -1194,7 +1220,7 @@ _winapi_WriteFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
     static const char * const _keywords[] = {"handle", "buffer", "overlapped", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .format = "" F_HANDLE "O|i:WriteFile",
+        .format = "" F_HANDLE "O|p:WriteFile",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
@@ -1345,4 +1371,44 @@ _winapi__mimetypes_read_windows_registry(PyObject *module, PyObject *const *args
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=83c4a3f0e70e7775 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_winapi_NeedCurrentDirectoryForExePath__doc__,
+"NeedCurrentDirectoryForExePath($module, exe_name, /)\n"
+"--\n"
+"\n");
+
+#define _WINAPI_NEEDCURRENTDIRECTORYFOREXEPATH_METHODDEF    \
+    {"NeedCurrentDirectoryForExePath", (PyCFunction)_winapi_NeedCurrentDirectoryForExePath, METH_O, _winapi_NeedCurrentDirectoryForExePath__doc__},
+
+static int
+_winapi_NeedCurrentDirectoryForExePath_impl(PyObject *module,
+                                            LPCWSTR exe_name);
+
+static PyObject *
+_winapi_NeedCurrentDirectoryForExePath(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    LPCWSTR exe_name = NULL;
+    int _return_value;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("NeedCurrentDirectoryForExePath", "argument", "str", arg);
+        goto exit;
+    }
+    exe_name = PyUnicode_AsWideCharString(arg, NULL);
+    if (exe_name == NULL) {
+        goto exit;
+    }
+    _return_value = _winapi_NeedCurrentDirectoryForExePath_impl(module, exe_name);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    /* Cleanup for exe_name */
+    PyMem_Free((void *)exe_name);
+
+    return return_value;
+}
+/*[clinic end generated code: output=96ea65ece7912d0a input=a9049054013a1b77]*/

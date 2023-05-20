@@ -86,8 +86,8 @@ tokenizeriter_next(tokenizeriterobject *it)
         Py_DECREF(str);
         return NULL;
     }
-    const char *line_start = type == STRING ? it->tok->multi_line_start : it->tok->line_start;
-    int lineno = type == STRING ? it->tok->first_lineno : it->tok->lineno;
+    const char *line_start = ISSTRINGLIT(type) ? it->tok->multi_line_start : it->tok->line_start;
+    int lineno = ISSTRINGLIT(type) ? it->tok->first_lineno : it->tok->lineno;
     int end_lineno = it->tok->lineno;
     int col_offset = -1;
     int end_col_offset = -1;
@@ -151,6 +151,7 @@ static PyMethodDef tokenize_methods[] = {
 
 static PyModuleDef_Slot tokenizemodule_slots[] = {
     {Py_mod_exec, tokenizemodule_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

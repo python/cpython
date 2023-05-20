@@ -991,18 +991,18 @@ for the :meth:`~importlib.abc.InspectLoader.get_code` method.  However,
 it will normally be desirable to override the default implementation
 for performance reasons.  (Contributed by Brett Cannon in :issue:`18072`.)
 
-The :func:`~importlib.reload` function has been moved from :mod:`imp` to
-:mod:`importlib` as part of the :mod:`imp` module deprecation.  (Contributed by
+The :func:`~importlib.reload` function has been moved from :mod:`!imp` to
+:mod:`importlib` as part of the :mod:`!imp` module deprecation.  (Contributed by
 Berker Peksag in :issue:`18193`.)
 
 :mod:`importlib.util` now has a :data:`~importlib.util.MAGIC_NUMBER` attribute
 providing access to the bytecode version number.  This replaces the
-:func:`~imp.get_magic` function in the deprecated :mod:`imp` module.
+:func:`!get_magic` function in the deprecated :mod:`!imp` module.
 (Contributed by Brett Cannon in :issue:`18192`.)
 
 New :mod:`importlib.util` functions :func:`~importlib.util.cache_from_source`
 and :func:`~importlib.util.source_from_cache` replace the same-named functions
-in the deprecated :mod:`imp` module.  (Contributed by Brett Cannon in
+in the deprecated :mod:`!imp` module.  (Contributed by Brett Cannon in
 :issue:`18194`.)
 
 The :mod:`importlib` bootstrap :class:`.NamespaceLoader` now conforms to
@@ -2077,31 +2077,31 @@ Deprecations in the Python API
 ------------------------------
 
 * As mentioned in :ref:`whatsnew-pep-451`, a number of :mod:`importlib`
-  methods and functions are deprecated: :meth:`importlib.find_loader` is
+  methods and functions are deprecated: :meth:`!importlib.find_loader` is
   replaced by :func:`importlib.util.find_spec`;
-  :meth:`importlib.machinery.PathFinder.find_module` is replaced by
+  :meth:`!importlib.machinery.PathFinder.find_module` is replaced by
   :meth:`importlib.machinery.PathFinder.find_spec`;
-  :meth:`importlib.abc.MetaPathFinder.find_module` is replaced by
+  :meth:`!importlib.abc.MetaPathFinder.find_module` is replaced by
   :meth:`importlib.abc.MetaPathFinder.find_spec`;
-  :meth:`importlib.abc.PathEntryFinder.find_loader` and
-  :meth:`~importlib.abc.PathEntryFinder.find_module` are replaced by
+  :meth:`!importlib.abc.PathEntryFinder.find_loader` and
+  :meth:`!find_module` are replaced by
   :meth:`importlib.abc.PathEntryFinder.find_spec`; all of the ``xxxLoader`` ABC
-  ``load_module`` methods (:meth:`importlib.abc.Loader.load_module`,
-  :meth:`importlib.abc.InspectLoader.load_module`,
-  :meth:`importlib.abc.FileLoader.load_module`,
-  :meth:`importlib.abc.SourceLoader.load_module`) should no longer be
+  ``load_module`` methods (:meth:`!importlib.abc.Loader.load_module`,
+  :meth:`!importlib.abc.InspectLoader.load_module`,
+  :meth:`!importlib.abc.FileLoader.load_module`,
+  :meth:`!importlib.abc.SourceLoader.load_module`) should no longer be
   implemented, instead loaders should implement an
   ``exec_module`` method
   (:meth:`importlib.abc.Loader.exec_module`,
   :meth:`importlib.abc.InspectLoader.exec_module`
   :meth:`importlib.abc.SourceLoader.exec_module`) and let the import system
   take care of the rest; and
-  :meth:`importlib.abc.Loader.module_repr`,
-  :meth:`importlib.util.module_for_loader`, :meth:`importlib.util.set_loader`,
-  and :meth:`importlib.util.set_package` are no longer needed because their
+  :meth:`!importlib.abc.Loader.module_repr`,
+  :meth:`!importlib.util.module_for_loader`, :meth:`!importlib.util.set_loader`,
+  and :meth:`!importlib.util.set_package` are no longer needed because their
   functions are now handled automatically by the import system.
 
-* The :mod:`imp` module is pending deprecation. To keep compatibility with
+* The :mod:`!imp` module is pending deprecation. To keep compatibility with
   Python 2/3 code bases, the module's removal is currently not scheduled.
 
 * The :mod:`formatter` module is pending deprecation and is slated for removal
@@ -2277,7 +2277,7 @@ Changes in the Python API
   in a backwards-compatible fashion, use e.g.
   ``getattr(module, '__loader__', None) is not None``.  (:issue:`17115`.)
 
-* :meth:`importlib.util.module_for_loader` now sets ``__loader__`` and
+* :meth:`!importlib.util.module_for_loader` now sets ``__loader__`` and
   ``__package__`` unconditionally to properly support reloading. If this is not
   desired then you will need to set these attributes manually. You can use
   :func:`importlib.util.module_to_load` for module management.
@@ -2300,7 +2300,7 @@ Changes in the Python API
   then you can see if the module's ``__spec__.location`` is set to ``'frozen'``,
   check if the loader is a subclass of
   :class:`importlib.machinery.FrozenImporter`,
-  or if Python 2 compatibility is necessary you can use :func:`imp.is_frozen`.
+  or if Python 2 compatibility is necessary you can use :func:`!imp.is_frozen`.
 
 * :func:`py_compile.compile` now raises :exc:`FileExistsError` if the file path
   it would write to is a symlink or a non-regular file. This is to act as a

@@ -1,6 +1,7 @@
 // types.UnionType -- used to represent e.g. Union[int, str], int | str
 #include "Python.h"
 #include "pycore_object.h"  // _PyObject_GC_TRACK/UNTRACK
+#include "pycore_typevarobject.h"  // _PyTypeAlias_Type
 #include "pycore_unionobject.h"
 #include "structmember.h"
 
@@ -147,10 +148,14 @@ get_types(PyObject **obj, Py_ssize_t *size)
 static int
 is_unionable(PyObject *obj)
 {
-    return (obj == Py_None ||
+    if (obj == Py_None ||
         PyType_Check(obj) ||
         _PyGenericAlias_Check(obj) ||
-        _PyUnion_Check(obj));
+        _PyUnion_Check(obj) ||
+        Py_IS_TYPE(obj, &_PyTypeAlias_Type)) {
+        return 1;
+    }
+    return 0;
 }
 
 PyObject *
@@ -295,8 +300,7 @@ union_getitem(PyObject *self, PyObject *item)
         res = make_union(newargs);
     }
     else {
-        res = PyTuple_GET_ITEM(newargs, 0);
-        Py_INCREF(res);
+        res = Py_NewRef(PyTuple_GET_ITEM(newargs, 0));
         for (Py_ssize_t iarg = 1; iarg < nargs; iarg++) {
             PyObject *arg = PyTuple_GET_ITEM(newargs, iarg);
             Py_SETREF(res, PyNumber_Or(res, arg));

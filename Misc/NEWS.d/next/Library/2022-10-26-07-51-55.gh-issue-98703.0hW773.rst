@@ -1,2 +1,0 @@
-Fix :meth:`asyncio.StreamWriter.drain` to call ``protocol.connection_lost``
-callback only once on Windows.

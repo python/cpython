@@ -181,7 +181,7 @@ method_getattro(PyObject *obj, PyObject *name)
     PyObject *descr = NULL;
 
     {
-        if (tp->tp_dict == NULL) {
+        if (!_PyType_IsReady(tp)) {
             if (PyType_Ready(tp) < 0)
                 return NULL;
         }
@@ -283,8 +283,7 @@ method_repr(PyMethodObject *a)
     }
 
     if (funcname != NULL && !PyUnicode_Check(funcname)) {
-        Py_DECREF(funcname);
-        funcname = NULL;
+        Py_SETREF(funcname, NULL);
     }
 
     /* XXX Shouldn't use repr()/%R here! */
@@ -396,7 +395,7 @@ instancemethod_getattro(PyObject *self, PyObject *name)
     PyTypeObject *tp = Py_TYPE(self);
     PyObject *descr = NULL;
 
-    if (tp->tp_dict == NULL) {
+    if (!_PyType_IsReady(tp)) {
         if (PyType_Ready(tp) < 0)
             return NULL;
     }
@@ -484,8 +483,7 @@ instancemethod_repr(PyObject *self)
         return NULL;
     }
     if (funcname != NULL && !PyUnicode_Check(funcname)) {
-        Py_DECREF(funcname);
-        funcname = NULL;
+        Py_SETREF(funcname, NULL);
     }
 
     result = PyUnicode_FromFormat("<instancemethod %V at %p>",

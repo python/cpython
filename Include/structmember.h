@@ -5,68 +5,49 @@ extern "C" {
 #endif
 
 
-/* Interface to map C struct members to Python object attributes */
+/* Interface to map C struct members to Python object attributes
+ *
+ * This header is deprecated: new code should not use stuff from here.
+ * New definitions are in descrobject.h.
+ *
+ * However, there's nothing wrong with old code continuing to use it,
+ * and there's not much mainenance overhead in maintaining a few aliases.
+ * So, don't be too eager to convert old code.
+ *
+ * It uses names not prefixed with Py_.
+ * It is also *not* included from Python.h and must be included individually.
+ */
 
-#include <stddef.h> /* For offsetof */
-
-/* An array of PyMemberDef structures defines the name, type and offset
-   of selected members of a C structure.  These can be read by
-   PyMember_GetOne() and set by PyMember_SetOne() (except if their READONLY
-   flag is set).  The array must be terminated with an entry whose name
-   pointer is NULL. */
-
-struct PyMemberDef {
-    const char *name;
-    int type;
-    Py_ssize_t offset;
-    int flags;
-    const char *doc;
-};
+#include <stddef.h> /* For offsetof (not always provided by Python.h) */
 
 /* Types */
-#define T_SHORT     0
-#define T_INT       1
-#define T_LONG      2
-#define T_FLOAT     3
-#define T_DOUBLE    4
-#define T_STRING    5
-#define T_OBJECT    6
-/* XXX the ordering here is weird for binary compatibility */
-#define T_CHAR      7   /* 1-character string */
-#define T_BYTE      8   /* 8-bit signed int */
-/* unsigned variants: */
-#define T_UBYTE     9
-#define T_USHORT    10
-#define T_UINT      11
-#define T_ULONG     12
-
-/* Added by Jack: strings contained in the structure */
-#define T_STRING_INPLACE    13
-
-/* Added by Lillo: bools contained in the structure (assumed char) */
-#define T_BOOL      14
-
-#define T_OBJECT_EX 16  /* Like T_OBJECT, but raises AttributeError
-                           when the value is NULL, instead of
-                           converting to None. */
-#define T_LONGLONG      17
-#define T_ULONGLONG     18
-
-#define T_PYSSIZET      19      /* Py_ssize_t */
-#define T_NONE          20      /* Value is always None */
-
+#define T_SHORT     Py_T_SHORT
+#define T_INT       Py_T_INT
+#define T_LONG      Py_T_LONG
+#define T_FLOAT     Py_T_FLOAT
+#define T_DOUBLE    Py_T_DOUBLE
+#define T_STRING    Py_T_STRING
+#define T_OBJECT    _Py_T_OBJECT
+#define T_CHAR      Py_T_CHAR
+#define T_BYTE      Py_T_BYTE
+#define T_UBYTE     Py_T_UBYTE
+#define T_USHORT    Py_T_USHORT
+#define T_UINT      Py_T_UINT
+#define T_ULONG     Py_T_ULONG
+#define T_STRING_INPLACE    Py_T_STRING_INPLACE
+#define T_BOOL      Py_T_BOOL
+#define T_OBJECT_EX Py_T_OBJECT_EX
+#define T_LONGLONG  Py_T_LONGLONG
+#define T_ULONGLONG Py_T_ULONGLONG
+#define T_PYSSIZET  Py_T_PYSSIZET
+#define T_NONE      _Py_T_NONE
 
 /* Flags */
-#define READONLY            1
-#define READ_RESTRICTED     2
-#define PY_WRITE_RESTRICTED 4
+#define READONLY            Py_READONLY
+#define PY_AUDIT_READ        Py_AUDIT_READ
+#define READ_RESTRICTED     Py_AUDIT_READ
+#define PY_WRITE_RESTRICTED _Py_WRITE_RESTRICTED
 #define RESTRICTED          (READ_RESTRICTED | PY_WRITE_RESTRICTED)
-
-#define PY_AUDIT_READ       READ_RESTRICTED
-
-/* Current API, use this */
-PyAPI_FUNC(PyObject *) PyMember_GetOne(const char *, PyMemberDef *);
-PyAPI_FUNC(int) PyMember_SetOne(char *, PyMemberDef *, PyObject *);
 
 
 #ifdef __cplusplus
