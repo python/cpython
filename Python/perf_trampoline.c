@@ -423,13 +423,6 @@ _PyPerfTrampoline_Init(int activate)
         if (new_code_arena() < 0) {
             return -1;
         }
-        if (trampoline_api.state == NULL && trampoline_api.init_state != NULL) {
-            void *state = trampoline_api.init_state();
-            if (state == NULL) {
-                return -1;
-            }
-            trampoline_api.state = state;
-        }
         extra_code_index = _PyEval_RequestCodeExtraIndex(NULL);
         if (extra_code_index == -1) {
             return -1;
