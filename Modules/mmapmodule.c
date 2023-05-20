@@ -292,7 +292,8 @@ mmap_read_method(mmap_object *self,
 
     CHECK_VALID(NULL);
     if (!PyArg_ParseTuple(args, "|O&:read", _Py_convert_optional_to_ssize_t, &num_bytes))
-        return(NULL);
+        return NULL;
+    CHECK_VALID(NULL);
 
     /* silently 'adjust' out-of-range requests */
     remaining = (self->pos < self->size) ? self->size - self->pos : 0;
@@ -333,6 +334,7 @@ mmap_gfind(mmap_object *self,
             end = self->size;
 
         Py_ssize_t res;
+        CHECK_VALID(NULL);
         if (reverse) {
             res = _PyBytes_ReverseFind(
                 self->data + start, end - start,
@@ -396,7 +398,7 @@ mmap_write_method(mmap_object *self,
 
     CHECK_VALID(NULL);
     if (!PyArg_ParseTuple(args, "y*:write", &data))
-        return(NULL);
+        return NULL;
 
     if (!is_writable(self)) {
         PyBuffer_Release(&data);
@@ -409,6 +411,7 @@ mmap_write_method(mmap_object *self,
         return NULL;
     }
 
+    CHECK_VALID(NULL);
     memcpy(&self->data[self->pos], data.buf, data.len);
     self->pos += data.len;
     PyBuffer_Release(&data);
@@ -428,6 +431,7 @@ mmap_write_byte_method(mmap_object *self,
     if (!is_writable(self))
         return NULL;
 
+    CHECK_VALID(NULL);
     if (self->pos < self->size) {
         self->data[self->pos++] = value;
         Py_RETURN_NONE;
@@ -732,6 +736,7 @@ mmap_move_method(mmap_object *self, PyObject *args)
         if (self->size - dest < cnt || self->size - src < cnt)
             goto bounds;
 
+        CHECK_VALID(NULL);
         memmove(&self->data[dest], &self->data[src], cnt);
 
         Py_RETURN_NONE;
@@ -857,6 +862,7 @@ mmap_madvise_method(mmap_object *self, PyObject *args)
         length = self->size - start;
     }
 
+    CHECK_VALID(NULL);
     if (madvise(self->data + start, length, option) != 0) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
@@ -955,6 +961,7 @@ mmap_subscript(mmap_object *self, PyObject *item)
                 "mmap index out of range");
             return NULL;
         }
+        CHECK_VALID(NULL);
         return PyLong_FromLong(Py_CHARMASK(self->data[i]));
     }
     else if (PySlice_Check(item)) {
@@ -965,6 +972,7 @@ mmap_subscript(mmap_object *self, PyObject *item)
         }
         slicelen = PySlice_AdjustIndices(self->size, &start, &stop, step);
 
+        CHECK_VALID(NULL);
         if (slicelen <= 0)
             return PyBytes_FromStringAndSize("", 0);
         else if (step == 1)
@@ -978,6 +986,7 @@ mmap_subscript(mmap_object *self, PyObject *item)
 
             if (result_buf == NULL)
                 return PyErr_NoMemory();
+
             for (cur = start, i = 0; i < slicelen;
                  cur += step, i++) {
                 result_buf[i] = self->data[cur];
@@ -1062,6 +1071,7 @@ mmap_ass_subscript(mmap_object *self, PyObject *item, PyObject *value)
                             "in range(0, 256)");
             return -1;
         }
+        CHECK_VALID(-1);
         self->data[i] = (char) v;
         return 0;
     }
@@ -1087,6 +1097,7 @@ mmap_ass_subscript(mmap_object *self, PyObject *item, PyObject *value)
             return -1;
         }
 
+        CHECK_VALID(-1);
         if (slicelen == 0) {
         }
         else if (step == 1) {
