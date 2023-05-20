@@ -2486,6 +2486,10 @@ compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
     }
 
     /* 2. load the 'build_class' function */
+
+    // these instructions should be attributed to the class line,
+    // not a decorator line
+    loc = LOC(s);
     ADDOP(c, loc, PUSH_NULL);
     ADDOP(c, loc, LOAD_BUILD_CLASS);
 
