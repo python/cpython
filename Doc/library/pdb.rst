@@ -20,8 +20,8 @@ supports post-mortem debugging and can be called under program control.
 
 .. index::
    single: Pdb (class in pdb)
-   module: bdb
-   module: cmd
+   pair: module; bdb
+   pair: module; cmd
 
 The debugger is extensible -- it is actually defined as the class :class:`Pdb`.
 This is currently undocumented but easily understood by reading the source.  The
@@ -36,49 +36,13 @@ extension interface uses the modules :mod:`bdb` and :mod:`cmd`.
    Module :mod:`traceback`
       Standard interface to extract, format and print stack traces of Python programs.
 
-The debugger's prompt is ``(Pdb)``. Typical usage to run a program under control
-of the debugger is::
-
-   >>> import pdb
-   >>> import mymodule
-   >>> pdb.run('mymodule.test()')
-   > <string>(0)?()
-   (Pdb) continue
-   > <string>(1)?()
-   (Pdb) continue
-   NameError: 'spam'
-   > <string>(1)?()
-   (Pdb)
-
-.. versionchanged:: 3.3
-   Tab-completion via the :mod:`readline` module is available for commands and
-   command arguments, e.g. the current global and local names are offered as
-   arguments of the ``p`` command.
-
-:file:`pdb.py` can also be invoked as a script to debug other scripts.  For
-example::
-
-   python3 -m pdb myscript.py
-
-When invoked as a script, pdb will automatically enter post-mortem debugging if
-the program being debugged exits abnormally.  After post-mortem debugging (or
-after normal exit of the program), pdb will restart the program.  Automatic
-restarting preserves pdb's state (such as breakpoints) and in most cases is more
-useful than quitting the debugger upon program's exit.
-
-.. versionadded:: 3.2
-   :file:`pdb.py` now accepts a ``-c`` option that executes commands as if given
-   in a :file:`.pdbrc` file, see :ref:`debugger-commands`.
-
-.. versionadded:: 3.7
-   :file:`pdb.py` now accepts a ``-m`` option that execute modules similar to the way
-   ``python3 -m`` does. As with a script, the debugger will pause execution just
-   before the first line of the module.
-
-
 The typical usage to break into the debugger is to insert::
 
    import pdb; pdb.set_trace()
+
+Or::
+
+   breakpoint()
 
 at the location you want to break into the debugger, and then run the program.
 You can then step through the code following this statement, and continue
@@ -88,21 +52,75 @@ running without the debugger using the :pdbcmd:`continue` command.
    The built-in :func:`breakpoint()`, when called with defaults, can be used
    instead of ``import pdb; pdb.set_trace()``.
 
+::
+
+   def double(x):
+      breakpoint()
+      return x * 2
+   val = 3
+   print(f"{val} * 2 is {double(val)}")
+
+The debugger's prompt is ``(Pdb)``, which is the indicator that you are in debug mode::
+
+   > ...(3)double()
+   -> return x * 2
+   (Pdb) p x
+   3
+   (Pdb) continue
+   3 * 2 is 6
+
+.. versionchanged:: 3.3
+   Tab-completion via the :mod:`readline` module is available for commands and
+   command arguments, e.g. the current global and local names are offered as
+   arguments of the ``p`` command.
+
+
+You can also invoke :mod:`pdb` from the command line to debug other scripts.  For
+example::
+
+   python -m pdb myscript.py
+
+When invoked as a module, pdb will automatically enter post-mortem debugging if
+the program being debugged exits abnormally.  After post-mortem debugging (or
+after normal exit of the program), pdb will restart the program.  Automatic
+restarting preserves pdb's state (such as breakpoints) and in most cases is more
+useful than quitting the debugger upon program's exit.
+
+.. versionadded:: 3.2
+   ``-c`` option is introduced to execute commands as if given
+   in a :file:`.pdbrc` file, see :ref:`debugger-commands`.
+
+.. versionadded:: 3.7
+   ``-m`` option is introduced to execute modules similar to the way
+   ``python -m`` does. As with a script, the debugger will pause execution just
+   before the first line of the module.
+
+Typical usage to execute a statement under control of the debugger is::
+
+   >>> import pdb
+   >>> def f(x):
+   ...     print(1 / x)
+   >>> pdb.run("f(2)")
+   > <string>(1)<module>()
+   (Pdb) continue
+   0.5
+   >>>
+
 The typical usage to inspect a crashed program is::
 
    >>> import pdb
-   >>> import mymodule
-   >>> mymodule.test()
+   >>> def f(x):
+   ...     print(1 / x)
+   ...
+   >>> f(0)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-     File "./mymodule.py", line 4, in test
-       test2()
-     File "./mymodule.py", line 3, in test2
-       print(spam)
-   NameError: spam
+     File "<stdin>", line 2, in f
+   ZeroDivisionError: division by zero
    >>> pdb.pm()
-   > ./mymodule.py(3)test2()
-   -> print(spam)
+   > <stdin>(2)f()
+   (Pdb) p x
+   0
    (Pdb)
 
 
@@ -125,7 +143,7 @@ slightly different way:
 
    Evaluate the *expression* (given as a string or a code object) under debugger
    control.  When :func:`runeval` returns, it returns the value of the
-   expression.  Otherwise this function is similar to :func:`run`.
+   *expression*.  Otherwise this function is similar to :func:`run`.
 
 
 .. function:: runcall(function, *args, **kwds)
@@ -178,7 +196,7 @@ access further features, you have to do this yourself:
    that matches one of these patterns. [1]_
 
    By default, Pdb sets a handler for the SIGINT signal (which is sent when the
-   user presses :kbd:`Ctrl-C` on the console) when you give a ``continue`` command.
+   user presses :kbd:`Ctrl-C` on the console) when you give a :pdbcmd:`continue` command.
    This allows you to break into the debugger again by pressing :kbd:`Ctrl-C`.  If you
    want Pdb not to touch the SIGINT handler, set *nosigint* to true.
 
@@ -275,7 +293,7 @@ can be overridden by the local file.
 
 .. pdbcommand:: w(here)
 
-   Print a stack trace, with the most recent frame at the bottom.  An arrow
+   Print a stack trace, with the most recent frame at the bottom.  An arrow (``>``)
    indicates the current frame, which determines the context of most commands.
 
 .. pdbcommand:: d(own) [count]
@@ -328,9 +346,9 @@ can be overridden by the local file.
 
 .. pdbcommand:: ignore bpnumber [count]
 
-   Set the ignore count for the given breakpoint number.  If count is omitted,
+   Set the ignore count for the given breakpoint number.  If *count* is omitted,
    the ignore count is set to 0.  A breakpoint becomes active when the ignore
-   count is zero.  When non-zero, the count is decremented each time the
+   count is zero.  When non-zero, the *count* is decremented each time the
    breakpoint is reached and the breakpoint is not disabled and any associated
    condition evaluates to true.
 
@@ -369,7 +387,7 @@ can be overridden by the local file.
    breakpoint—which could have its own command list, leading to ambiguities about
    which list to execute.
 
-   If you use the 'silent' command in the command list, the usual message about
+   If you use the ``silent`` command in the command list, the usual message about
    stopping at a breakpoint is not printed.  This may be desirable for breakpoints
    that are to print a specific message and then continue.  If none of the other
    commands print anything, you see no sign that the breakpoint was reached.
@@ -392,8 +410,8 @@ can be overridden by the local file.
    Without argument, continue execution until the line with a number greater
    than the current one is reached.
 
-   With a line number, continue execution until a line with a number greater or
-   equal to that is reached.  In both cases, also stop when the current frame
+   With *lineno*, continue execution until a line with a number greater or
+   equal to *lineno* is reached.  In both cases, also stop when the current frame
    returns.
 
    .. versionchanged:: 3.2
@@ -442,11 +460,11 @@ can be overridden by the local file.
 
 .. pdbcommand:: a(rgs)
 
-   Print the argument list of the current function.
+   Print the arguments of the current function and their current values.
 
 .. pdbcommand:: p expression
 
-   Evaluate the *expression* in the current context and print its value.
+   Evaluate *expression* in the current context and print its value.
 
    .. note::
 
@@ -456,32 +474,76 @@ can be overridden by the local file.
 
 .. pdbcommand:: pp expression
 
-   Like the :pdbcmd:`p` command, except the value of the expression is
+   Like the :pdbcmd:`p` command, except the value of *expression* is
    pretty-printed using the :mod:`pprint` module.
 
 .. pdbcommand:: whatis expression
 
-   Print the type of the *expression*.
+   Print the type of *expression*.
 
 .. pdbcommand:: source expression
 
-   Try to get source code for the given object and display it.
+   Try to get source code of *expression* and display it.
 
    .. versionadded:: 3.2
 
 .. pdbcommand:: display [expression]
 
-   Display the value of the expression if it changed, each time execution stops
+   Display the value of *expression* if it changed, each time execution stops
    in the current frame.
 
-   Without expression, list all display expressions for the current frame.
+   Without *expression*, list all display expressions for the current frame.
+
+   .. note::
+
+      Display evaluates *expression* and compares to the result of the previous
+      evaluation of *expression*, so when the result is mutable, display may not
+      be able to pick up the changes.
+
+   Example::
+
+      lst = []
+      breakpoint()
+      pass
+      lst.append(1)
+      print(lst)
+
+   Display won't realize ``lst`` has been changed because the result of evaluation
+   is modified in place by ``lst.append(1)`` before being compared::
+
+      > example.py(3)<module>()
+      -> pass
+      (Pdb) display lst
+      display lst: []
+      (Pdb) n
+      > example.py(4)<module>()
+      -> lst.append(1)
+      (Pdb) n
+      > example.py(5)<module>()
+      -> print(lst)
+      (Pdb)
+
+   You can do some tricks with copy mechanism to make it work::
+
+      > example.py(3)<module>()
+      -> pass
+      (Pdb) display lst[:]
+      display lst[:]: []
+      (Pdb) n
+      > example.py(4)<module>()
+      -> lst.append(1)
+      (Pdb) n
+      > example.py(5)<module>()
+      -> print(lst)
+      display lst[:]: [1]  [old: []]
+      (Pdb)
 
    .. versionadded:: 3.2
 
 .. pdbcommand:: undisplay [expression]
 
-   Do not display the expression any more in the current frame.  Without
-   expression, clear all display expressions for the current frame.
+   Do not display *expression* anymore in the current frame.  Without
+   *expression*, clear all display expressions for the current frame.
 
    .. versionadded:: 3.2
 
@@ -497,10 +559,10 @@ can be overridden by the local file.
 
 .. pdbcommand:: alias [name [command]]
 
-   Create an alias called *name* that executes *command*.  The command must
+   Create an alias called *name* that executes *command*.  The *command* must
    *not* be enclosed in quotes.  Replaceable parameters can be indicated by
    ``%1``, ``%2``, and so on, while ``%*`` is replaced by all the parameters.
-   If no command is given, the current alias for *name* is shown. If no
+   If *command* is omitted, the current alias for *name* is shown. If no
    arguments are given, all aliases are listed.
 
    Aliases may be nested and can contain anything that can be legally typed at
@@ -513,13 +575,13 @@ can be overridden by the local file.
    :file:`.pdbrc` file)::
 
       # Print instance variables (usage "pi classInst")
-      alias pi for k in %1.__dict__.keys(): print("%1.",k,"=",%1.__dict__[k])
+      alias pi for k in %1.__dict__.keys(): print(f"%1.{k} = {%1.__dict__[k]}")
       # Print instance variables in self
       alias ps pi self
 
 .. pdbcommand:: unalias name
 
-   Delete the specified alias.
+   Delete the specified alias *name*.
 
 .. pdbcommand:: ! statement
 
@@ -535,7 +597,7 @@ can be overridden by the local file.
 .. pdbcommand:: run [args ...]
                 restart [args ...]
 
-   Restart the debugged Python program.  If an argument is supplied, it is split
+   Restart the debugged Python program.  If *args* is supplied, it is split
    with :mod:`shlex` and the result is used as the new :data:`sys.argv`.
    History, breakpoints, actions and debugger options are preserved.
    :pdbcmd:`restart` is an alias for :pdbcmd:`run`.
@@ -546,13 +608,13 @@ can be overridden by the local file.
 
 .. pdbcommand:: debug code
 
-   Enter a recursive debugger that steps through the code
-   argument (which is an arbitrary expression or statement to be
+   Enter a recursive debugger that steps through *code*
+   (which is an arbitrary expression or statement to be
    executed in the current environment).
 
 .. pdbcommand:: retval
 
-   Print the return value for the last return of a function.
+   Print the return value for the last return of the current function.
 
 .. rubric:: Footnotes
 

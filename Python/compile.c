@@ -3613,12 +3613,10 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 
    [orig, res, exc]                           <evaluate E1>
    [orig, res, exc, E1]                       CHECK_EG_MATCH
-   [orig, red, rest/exc, match?]              COPY 1
-   [orig, red, rest/exc, match?, match?]      POP_JUMP_IF_NOT_NONE  H1
-   [orig, red, exc, None]                     POP_TOP
-   [orig, red, exc]                           JUMP L2
+   [orig, res, rest/exc, match?]              COPY 1
+   [orig, res, rest/exc, match?, match?]      POP_JUMP_IF_NONE      C1
 
-   [orig, res, rest, match]         H1:       <assign to V1>  (or POP if no V1)
+   [orig, res, rest, match]                   <assign to V1>  (or POP if no V1)
 
    [orig, res, rest]                          SETUP_FINALLY         R1
    [orig, res, rest]                          <code for S1>
@@ -3626,8 +3624,14 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 
    [orig, res, rest, i, v]          R1:       LIST_APPEND   3 ) exc raised in except* body - add to res
    [orig, res, rest, i]                       POP
+   [orig, res, rest]                          JUMP                  LE2
 
-   [orig, res, rest]                L2:       <evaluate E2>
+   [orig, res, rest]                L2:       NOP  ) for lineno
+   [orig, res, rest]                          JUMP                  LE2
+
+   [orig, res, rest/exc, None]      C1:       POP
+
+   [orig, res, rest]               LE2:       <evaluate E2>
    .............................etc.......................
 
    [orig, res, rest]                Ln+1:     LIST_APPEND 1  ) add unhandled exc to res (could be None)
@@ -3700,8 +3704,12 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         if (except == NULL) {
             return 0;
         }
-        basicblock *handle_match = compiler_new_block(c);
-        if (handle_match == NULL) {
+        basicblock *except_with_error = compiler_new_block(c);
+        if (except_with_error == NULL) {
+            return 0;
+        }
+        basicblock *no_match = compiler_new_block(c);
+        if (no_match == NULL) {
             return 0;
         }
         if (i == 0) {
@@ -3725,12 +3733,8 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
             VISIT(c, expr, handler->v.ExceptHandler.type);
             ADDOP(c, CHECK_EG_MATCH);
             ADDOP_I(c, COPY, 1);
-            ADDOP_JUMP(c, POP_JUMP_IF_NOT_NONE, handle_match);
-            ADDOP(c, POP_TOP);  // match
-            ADDOP_JUMP(c, JUMP, except);
+            ADDOP_JUMP(c, POP_JUMP_IF_NONE, no_match);
         }
-
-        compiler_use_next_block(c, handle_match);
 
         basicblock *cleanup_end = compiler_new_block(c);
         if (cleanup_end == NULL) {
@@ -3793,8 +3797,14 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         ADDOP_I(c, LIST_APPEND, 3); // exc
         ADDOP(c, POP_TOP); // lasti
 
-        ADDOP_JUMP(c, JUMP, except);
+        ADDOP_JUMP(c, JUMP, except_with_error);
         compiler_use_next_block(c, except);
+        ADDOP(c, NOP);  // to hold a propagated location info
+        ADDOP_JUMP(c, JUMP, except_with_error);
+        compiler_use_next_block(c, no_match);
+        ADDOP(c, POP_TOP);  // match (None)
+
+        compiler_use_next_block(c, except_with_error);
 
         if (i == n - 1) {
             /* Add exc to the list (if not None it's the unhandled part of the EG) */
@@ -7047,6 +7057,7 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
             ADDOP(c, POP_TOP);
         }
         VISIT_SEQ(c, stmt, m->body);
+        UNSET_LOC(c);
         ADDOP_JUMP(c, JUMP, end);
         // If the pattern fails to match, we want the line number of the
         // cleanup to be associated with the failed pattern, not the last line
@@ -7071,6 +7082,7 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
             RETURN_IF_FALSE(compiler_jump_if(c, m->guard, end, 0));
         }
         VISIT_SEQ(c, stmt, m->body);
+        UNSET_LOC(c);
     }
     compiler_use_next_block(c, end);
     return 1;
@@ -8678,6 +8690,9 @@ swaptimize(basicblock *block, int *ix)
 #define SWAPPABLE(opcode) \
     ((opcode) == STORE_FAST || (opcode) == POP_TOP)
 
+#define STORES_TO(instr) \
+    (((instr).i_opcode == STORE_FAST) ? (instr).i_oparg : -1)
+
 static int
 next_swappable_instruction(basicblock *block, int i, int lineno)
 {
@@ -8729,6 +8744,23 @@ apply_static_swaps(basicblock *block, int i)
                 return;
             }
         }
+        // The reordering is not safe if the two instructions to be swapped
+        // store to the same location, or if any intervening instruction stores
+        // to the same location as either of them.
+        int store_j = STORES_TO(block->b_instr[j]);
+        int store_k = STORES_TO(block->b_instr[k]);
+        if (store_j >= 0 || store_k >= 0) {
+            if (store_j == store_k) {
+                return;
+            }
+            for (int idx = j + 1; idx < k; idx++) {
+                int store_idx = STORES_TO(block->b_instr[idx]);
+                if (store_idx >= 0 && (store_idx == store_j || store_idx == store_k)) {
+                    return;
+                }
+            }
+        }
+
         // Success!
         swap->i_opcode = NOP;
         struct instr temp = block->b_instr[j];

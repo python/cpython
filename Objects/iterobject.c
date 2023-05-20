@@ -103,11 +103,16 @@ PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(
 static PyObject *
 iter_reduce(seqiterobject *it, PyObject *Py_UNUSED(ignored))
 {
+    PyObject *iter = _PyEval_GetBuiltin(&_Py_ID(iter));
+
+    /* _PyEval_GetBuiltin can invoke arbitrary code,
+     * call must be before access of iterator pointers.
+     * see issue #101765 */
+
     if (it->it_seq != NULL)
-        return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(&_Py_ID(iter)),
-                             it->it_seq, it->it_index);
+        return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
     else
-        return Py_BuildValue("N(())", _PyEval_GetBuiltin(&_Py_ID(iter)));
+        return Py_BuildValue("N(())", iter);
 }
 
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
@@ -217,7 +222,7 @@ calliter_iternext(calliterobject *it)
     }
 
     result = _PyObject_CallNoArgs(it->it_callable);
-    if (result != NULL) {
+    if (result != NULL && it->it_sentinel != NULL){
         int ok;
 
         ok = PyObject_RichCompareBool(it->it_sentinel, result, Py_EQ);
@@ -225,7 +230,6 @@ calliter_iternext(calliterobject *it)
             return result; /* Common case, fast path */
         }
 
-        Py_DECREF(result);
         if (ok > 0) {
             Py_CLEAR(it->it_callable);
             Py_CLEAR(it->it_sentinel);
@@ -236,17 +240,23 @@ calliter_iternext(calliterobject *it)
         Py_CLEAR(it->it_callable);
         Py_CLEAR(it->it_sentinel);
     }
+    Py_XDECREF(result);
     return NULL;
 }
 
 static PyObject *
 calliter_reduce(calliterobject *it, PyObject *Py_UNUSED(ignored))
 {
+    PyObject *iter = _PyEval_GetBuiltin(&_Py_ID(iter));
+
+    /* _PyEval_GetBuiltin can invoke arbitrary code,
+     * call must be before access of iterator pointers.
+     * see issue #101765 */
+
     if (it->it_callable != NULL && it->it_sentinel != NULL)
-        return Py_BuildValue("N(OO)", _PyEval_GetBuiltin(&_Py_ID(iter)),
-                             it->it_callable, it->it_sentinel);
+        return Py_BuildValue("N(OO)", iter, it->it_callable, it->it_sentinel);
     else
-        return Py_BuildValue("N(())", _PyEval_GetBuiltin(&_Py_ID(iter)));
+        return Py_BuildValue("N(())", iter);
 }
 
 static PyMethodDef calliter_methods[] = {

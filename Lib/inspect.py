@@ -1829,8 +1829,10 @@ def getattr_static(obj, attr, default=_sentinel):
     klass_result = _check_class(klass, attr)
 
     if instance_result is not _sentinel and klass_result is not _sentinel:
-        if (_check_class(type(klass_result), '__get__') is not _sentinel and
-            _check_class(type(klass_result), '__set__') is not _sentinel):
+        if _check_class(type(klass_result), "__get__") is not _sentinel and (
+            _check_class(type(klass_result), "__set__") is not _sentinel
+            or _check_class(type(klass_result), "__delete__") is not _sentinel
+        ):
             return klass_result
 
     if instance_result is not _sentinel:
@@ -2978,7 +2980,7 @@ class Signature:
             if __validate_parameters__:
                 params = OrderedDict()
                 top_kind = _POSITIONAL_ONLY
-                kind_defaults = False
+                seen_default = False
 
                 for param in parameters:
                     kind = param.kind
@@ -2993,21 +2995,19 @@ class Signature:
                                          kind.description)
                         raise ValueError(msg)
                     elif kind > top_kind:
-                        kind_defaults = False
                         top_kind = kind
 
                     if kind in (_POSITIONAL_ONLY, _POSITIONAL_OR_KEYWORD):
                         if param.default is _empty:
-                            if kind_defaults:
+                            if seen_default:
                                 # No default for this parameter, but the
-                                # previous parameter of the same kind had
-                                # a default
+                                # previous parameter of had a default
                                 msg = 'non-default argument follows default ' \
                                       'argument'
                                 raise ValueError(msg)
                         else:
                             # There is a default for this parameter.
-                            kind_defaults = True
+                            seen_default = True
 
                     if name in params:
                         msg = 'duplicate parameter name: {!r}'.format(name)

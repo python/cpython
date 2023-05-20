@@ -2524,6 +2524,20 @@ pyobject_bytes_from_null(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
+exc_set_object(PyObject *self, PyObject *args)
+{
+    PyObject *exc;
+    PyObject *obj;
+
+    if (!PyArg_ParseTuple(args, "OO:exc_set_object", &exc, &obj)) {
+        return NULL;
+    }
+
+    PyErr_SetObject(exc, obj);
+    return NULL;
+}
+
+static PyObject *
 raise_exception(PyObject *self, PyObject *args)
 {
     PyObject *exc;
@@ -4625,10 +4639,9 @@ pymarshal_write_long_to_file(PyObject* self, PyObject *args)
     }
 
     PyMarshal_WriteLongToFile(value, fp, version);
+    assert(!PyErr_Occurred());
 
     fclose(fp);
-    if (PyErr_Occurred())
-        return NULL;
     Py_RETURN_NONE;
 }
 
@@ -4651,10 +4664,9 @@ pymarshal_write_object_to_file(PyObject* self, PyObject *args)
     }
 
     PyMarshal_WriteObjectToFile(obj, fp, version);
+    assert(!PyErr_Occurred());
 
     fclose(fp);
-    if (PyErr_Occurred())
-        return NULL;
     Py_RETURN_NONE;
 }
 
@@ -4712,48 +4724,46 @@ pymarshal_read_long_from_file(PyObject* self, PyObject *args)
 static PyObject*
 pymarshal_read_last_object_from_file(PyObject* self, PyObject *args)
 {
-    PyObject *obj;
-    long pos;
     PyObject *filename;
-    FILE *fp;
-
     if (!PyArg_ParseTuple(args, "O:pymarshal_read_last_object_from_file", &filename))
         return NULL;
 
-    fp = _Py_fopen_obj(filename, "rb");
+    FILE *fp = _Py_fopen_obj(filename, "rb");
     if (fp == NULL) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
 
-    obj = PyMarshal_ReadLastObjectFromFile(fp);
-    pos = ftell(fp);
+    PyObject *obj = PyMarshal_ReadLastObjectFromFile(fp);
+    long pos = ftell(fp);
 
     fclose(fp);
+    if (obj == NULL) {
+        return NULL;
+    }
     return Py_BuildValue("Nl", obj, pos);
 }
 
 static PyObject*
 pymarshal_read_object_from_file(PyObject* self, PyObject *args)
 {
-    PyObject *obj;
-    long pos;
     PyObject *filename;
-    FILE *fp;
-
     if (!PyArg_ParseTuple(args, "O:pymarshal_read_object_from_file", &filename))
         return NULL;
 
-    fp = _Py_fopen_obj(filename, "rb");
+    FILE *fp = _Py_fopen_obj(filename, "rb");
     if (fp == NULL) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
 
-    obj = PyMarshal_ReadObjectFromFile(fp);
-    pos = ftell(fp);
+    PyObject *obj = PyMarshal_ReadObjectFromFile(fp);
+    long pos = ftell(fp);
 
     fclose(fp);
+    if (obj == NULL) {
+        return NULL;
+    }
     return Py_BuildValue("Nl", obj, pos);
 }
 
@@ -6335,6 +6345,33 @@ settrace_to_record(PyObject *self, PyObject *list)
     Py_RETURN_NONE;
 }
 
+static int
+error_func(PyObject *obj, PyFrameObject *f, int what, PyObject *arg)
+{
+    assert(PyList_Check(obj));
+    /* Only raise if list is empty, otherwise append None
+     * This ensures that we only raise once */
+    if (PyList_GET_SIZE(obj)) {
+        return 0;
+    }
+    if (PyList_Append(obj, Py_None)) {
+       return -1;
+    }
+    PyErr_SetString(PyExc_Exception, "an exception");
+    return -1;
+}
+
+static PyObject *
+settrace_to_error(PyObject *self, PyObject *list)
+{
+    if (!PyList_Check(list)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a list");
+        return NULL;
+    }
+    PyEval_SetTrace(error_func, list);
+    Py_RETURN_NONE;
+}
+
 static PyObject *negative_dictoffset(PyObject *, PyObject *);
 
 static PyObject *
@@ -6379,6 +6416,7 @@ static PyObject *getargs_s_hash_int2(PyObject *, PyObject *, PyObject*);
 static PyObject *gh_99240_clear_args(PyObject *, PyObject *);
 
 static PyMethodDef TestMethods[] = {
+    {"exc_set_object",          exc_set_object,                  METH_VARARGS},
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",       raise_memoryerror,               METH_NOARGS},
     {"set_errno",               set_errno,                       METH_VARARGS},
@@ -6683,6 +6721,7 @@ static PyMethodDef TestMethods[] = {
     {"eval_get_func_desc", eval_get_func_desc, METH_O, NULL},
     {"get_feature_macros", get_feature_macros, METH_NOARGS, NULL},
     {"test_code_api", test_code_api, METH_NOARGS, NULL},
+    {"settrace_to_error", settrace_to_error, METH_O, NULL},
     {"settrace_to_record", settrace_to_record, METH_O, NULL},
     {"function_get_code", function_get_code, METH_O, NULL},
     {"function_get_globals", function_get_globals, METH_O, NULL},

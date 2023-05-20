@@ -644,7 +644,7 @@ else:
 
         # Non-strict algorithm is to find as much of the target directory
         # as we can and join the rest.
-        tail = ''
+        tail = path[:0]
         while path:
             try:
                 path = _getfinalpathname(path)

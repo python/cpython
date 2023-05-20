@@ -783,6 +783,8 @@ class _SelectorTransport(transports._FlowControlMixin,
         self._buffer = self._buffer_factory()
         self._conn_lost = 0  # Set when call to connection_lost scheduled.
         self._closing = False  # Set when close() called.
+        self._paused = False  # Set when pause_reading() called
+
         if self._server is not None:
             self._server._attach()
         loop._transports[self._sock_fd] = self
@@ -827,6 +829,25 @@ class _SelectorTransport(transports._FlowControlMixin,
 
     def is_closing(self):
         return self._closing
+
+    def is_reading(self):
+        return not self.is_closing() and not self._paused
+
+    def pause_reading(self):
+        if not self.is_reading():
+            return
+        self._paused = True
+        self._loop._remove_reader(self._sock_fd)
+        if self._loop.get_debug():
+            logger.debug("%r pauses reading", self)
+
+    def resume_reading(self):
+        if self._closing or not self._paused:
+            return
+        self._paused = False
+        self._add_reader(self._sock_fd, self._read_ready)
+        if self._loop.get_debug():
+            logger.debug("%r resumes reading", self)
 
     def close(self):
         if self._closing:
@@ -887,9 +908,8 @@ class _SelectorTransport(transports._FlowControlMixin,
         return len(self._buffer)
 
     def _add_reader(self, fd, callback, *args):
-        if self._closing:
+        if not self.is_reading():
             return
-
         self._loop._add_reader(fd, callback, *args)
 
 
@@ -904,7 +924,6 @@ class _SelectorSocketTransport(_SelectorTransport):
         self._read_ready_cb = None
         super().__init__(loop, sock, protocol, extra, server)
         self._eof = False
-        self._paused = False
         self._empty_waiter = None
 
         # Disable the Nagle algorithm -- small writes will be
@@ -928,25 +947,6 @@ class _SelectorSocketTransport(_SelectorTransport):
             self._read_ready_cb = self._read_ready__data_received
 
         super().set_protocol(protocol)
-
-    def is_reading(self):
-        return not self._paused and not self._closing
-
-    def pause_reading(self):
-        if self._closing or self._paused:
-            return
-        self._paused = True
-        self._loop._remove_reader(self._sock_fd)
-        if self._loop.get_debug():
-            logger.debug("%r pauses reading", self)
-
-    def resume_reading(self):
-        if self._closing or not self._paused:
-            return
-        self._paused = False
-        self._add_reader(self._sock_fd, self._read_ready)
-        if self._loop.get_debug():
-            logger.debug("%r resumes reading", self)
 
     def _read_ready(self):
         self._read_ready_cb()

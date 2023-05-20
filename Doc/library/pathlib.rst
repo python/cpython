@@ -21,6 +21,7 @@ inherit from pure paths but also provide I/O operations.
 
 .. image:: pathlib-inheritance.png
    :align: center
+   :class: invert-in-dark-mode
 
 If you've never used this module before or just aren't sure which class is
 right for your task, :class:`Path` is most likely what you need. It instantiates
@@ -186,7 +187,7 @@ these classes, since they don't provide any operation that does system calls.
 General properties
 ^^^^^^^^^^^^^^^^^^
 
-Paths are immutable and hashable.  Paths of a same flavour are comparable
+Paths are immutable and :term:`hashable`.  Paths of a same flavour are comparable
 and orderable.  These properties respect the flavour's case-folding
 semantics::
 

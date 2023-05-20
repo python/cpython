@@ -556,9 +556,11 @@ static void
 filter_dealloc(filterobject *lz)
 {
     PyObject_GC_UnTrack(lz);
+    Py_TRASHCAN_BEGIN(lz, filter_dealloc)
     Py_XDECREF(lz->func);
     Py_XDECREF(lz->it);
     Py_TYPE(lz)->tp_free(lz);
+    Py_TRASHCAN_END
 }
 
 static int
@@ -2997,9 +2999,16 @@ static PyMethodDef builtin_methods[] = {
 };
 
 PyDoc_STRVAR(builtin_doc,
-"Built-in functions, exceptions, and other objects.\n\
+"Built-in functions, types, exceptions, and other objects.\n\
 \n\
-Noteworthy: None is the `nil' object; Ellipsis represents `...' in slices.");
+This module provides direct access to all 'built-in'\n\
+identifiers of Python; for example, builtins.len is\n\
+the full name for the built-in function len().\n\
+\n\
+This module is not normally accessed explicitly by most\n\
+applications, but can be useful in modules that provide\n\
+objects with the same name as a built-in value, but in\n\
+which the built-in of that name is also needed.");
 
 static struct PyModuleDef builtinsmodule = {
     PyModuleDef_HEAD_INIT,

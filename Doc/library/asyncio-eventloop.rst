@@ -192,12 +192,15 @@ Running and stopping the loop
 .. coroutinemethod:: loop.shutdown_default_executor()
 
    Schedule the closure of the default executor and wait for it to join all of
-   the threads in the :class:`ThreadPoolExecutor`. After calling this method, a
-   :exc:`RuntimeError` will be raised if :meth:`loop.run_in_executor` is called
-   while using the default executor.
+   the threads in the :class:`~concurrent.futures.ThreadPoolExecutor`.
+   Once this method has been called,
+   using the default executor with :meth:`loop.run_in_executor`
+   will raise a :exc:`RuntimeError`.
 
-   Note that there is no need to call this function when
-   :func:`asyncio.run` is used.
+   .. note::
+
+      Do not call this method when using :func:`asyncio.run`,
+      as the latter handles default executor shutdown automatically.
 
    .. versionadded:: 3.9
 
@@ -210,22 +213,23 @@ Scheduling callbacks
    Schedule the *callback* :term:`callback` to be called with
    *args* arguments at the next iteration of the event loop.
 
+   Return an instance of :class:`asyncio.Handle`,
+   which can be used later to cancel the callback.
+
    Callbacks are called in the order in which they are registered.
    Each callback will be called exactly once.
 
-   An optional keyword-only *context* argument allows specifying a
+   The optional keyword-only *context* argument specifies a
    custom :class:`contextvars.Context` for the *callback* to run in.
-   The current context is used when no *context* is provided.
+   Callbacks use the current context when no *context* is provided.
 
-   An instance of :class:`asyncio.Handle` is returned, which can be
-   used later to cancel the callback.
-
-   This method is not thread-safe.
+   Unlike :meth:`call_soon_threadsafe`, this method is not thread-safe.
 
 .. method:: loop.call_soon_threadsafe(callback, *args, context=None)
 
-   A thread-safe variant of :meth:`call_soon`.  Must be used to
-   schedule callbacks *from another thread*.
+   A thread-safe variant of :meth:`call_soon`. When scheduling callbacks from
+   another thread, this function *must* be used, since :meth:`call_soon` is not
+   thread-safe.
 
    Raises :exc:`RuntimeError` if called on a loop that's been closed.
    This can happen on a secondary thread when the main application is
@@ -506,12 +510,12 @@ Opening network connections
       When a server's IPv4 path and protocol are working, but the server's
       IPv6 path and protocol are not working, a dual-stack client
       application experiences significant connection delay compared to an
-      IPv4-only client.  This is undesirable because it causes the dual-
-      stack client to have a worse user experience.  This document
+      IPv4-only client.  This is undesirable because it causes the
+      dual-stack client to have a worse user experience.  This document
       specifies requirements for algorithms that reduce this user-visible
       delay and provides an algorithm.
 
-      For more information: https://tools.ietf.org/html/rfc6555
+      For more information: https://datatracker.ietf.org/doc/html/rfc6555
 
    .. versionchanged:: 3.11
 
@@ -1534,7 +1538,7 @@ Server objects are created by :meth:`loop.create_server`,
 :meth:`loop.create_unix_server`, :func:`start_server`,
 and :func:`start_unix_server` functions.
 
-Do not instantiate the class directly.
+Do not instantiate the :class:`Server` class directly.
 
 .. class:: Server
 
@@ -1625,7 +1629,8 @@ Do not instantiate the class directly.
 
    .. attribute:: sockets
 
-      List of :class:`socket.socket` objects the server is listening on.
+      List of socket-like objects, ``asyncio.trsock.TransportSocket``, which
+      the server is listening on.
 
       .. versionchanged:: 3.7
          Prior to Python 3.7 ``Server.sockets`` used to return an

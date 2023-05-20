@@ -569,8 +569,8 @@ the original TOS1.
 
    .. versionadded:: 3.8
 
-    .. versionchanged:: 3.11
-       Exception representation on the stack now consist of one, not three, items.
+   .. versionchanged:: 3.11
+      Exception representation on the stack now consist of one, not three, items.
 
 .. opcode:: BEFORE_ASYNC_WITH
 
@@ -1088,7 +1088,7 @@ iterations of the loop.
 
 .. opcode:: MAKE_CELL (i)
 
-   Creates a new cell in slot ``i``.  If that slot is empty then
+   Creates a new cell in slot ``i``.  If that slot is nonempty then
    that value is stored into the new cell.
 
    .. versionadded:: 3.11
@@ -1268,7 +1268,7 @@ iterations of the loop.
 
 .. opcode:: BUILD_SLICE (argc)
 
-   .. index:: builtin: slice
+   .. index:: pair: built-in function; slice
 
    Pushes a slice object on the stack.  *argc* must be 2 or 3.  If it is 2,
    ``slice(TOS1, TOS)`` is pushed; if it is 3, ``slice(TOS2, TOS1, TOS)`` is

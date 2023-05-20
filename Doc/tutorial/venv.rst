@@ -44,7 +44,7 @@ whichever version you want.
 To create a virtual environment, decide upon a directory where you want to
 place it, and run the :mod:`venv` module as a script with the directory path::
 
-   python3 -m venv tutorial-env
+   python -m venv tutorial-env
 
 This will create the ``tutorial-env`` directory if it doesn't exist,
 and also create directories inside it containing a copy of the Python

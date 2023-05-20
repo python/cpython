@@ -250,10 +250,17 @@ def _collect_parameters(args):
     """
     parameters = []
     for t in args:
-        # We don't want __parameters__ descriptor of a bare Python class.
         if isinstance(t, type):
-            continue
-        if hasattr(t, '__typing_subst__'):
+            # We don't want __parameters__ descriptor of a bare Python class.
+            pass
+        elif isinstance(t, tuple):
+            # `t` might be a tuple, when `ParamSpec` is substituted with
+            # `[T, int]`, or `[int, *Ts]`, etc.
+            for x in t:
+                for collected in _collect_parameters([x]):
+                    if collected not in parameters:
+                        parameters.append(collected)
+        elif hasattr(t, '__typing_subst__'):
             if t not in parameters:
                 parameters.append(t)
         else:
@@ -1416,10 +1423,12 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
             raise TypeError(f"Too {'many' if alen > plen else 'few'} arguments for {self};"
                             f" actual {alen}, expected {plen}")
         new_arg_by_param = dict(zip(params, args))
+        return tuple(self._make_substitution(self.__args__, new_arg_by_param))
 
+    def _make_substitution(self, args, new_arg_by_param):
+        """Create a list of new type arguments."""
         new_args = []
-        for old_arg in self.__args__:
-
+        for old_arg in args:
             if isinstance(old_arg, type):
                 new_args.append(old_arg)
                 continue
@@ -1463,10 +1472,20 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
                 # should join all these types together in a flat list
                 # `(float, int, str)` - so again, we should `extend`.
                 new_args.extend(new_arg)
+            elif isinstance(old_arg, tuple):
+                # Corner case:
+                #    P = ParamSpec('P')
+                #    T = TypeVar('T')
+                #    class Base(Generic[P]): ...
+                # Can be substituted like this:
+                #    X = Base[[int, T]]
+                # In this case, `old_arg` will be a tuple:
+                new_args.append(
+                    tuple(self._make_substitution(old_arg, new_arg_by_param)),
+                )
             else:
                 new_args.append(new_arg)
-
-        return tuple(new_args)
+        return new_args
 
     def copy_with(self, args):
         return self.__class__(self.__origin__, args, name=self._name, inst=self._inst,
@@ -1841,7 +1860,7 @@ class Generic:
                         base.__origin__ is Generic):
                     if gvars is not None:
                         raise TypeError(
-                            "Cannot inherit from Generic[...] multiple types.")
+                            "Cannot inherit from Generic[...] multiple times.")
                     gvars = base.__parameters__
             if gvars is not None:
                 tvarset = set(tvars)
@@ -2080,6 +2099,8 @@ class _AnnotatedAlias(_NotIterable, _GenericAlias, _root=True):
     with extra annotations. The alias behaves like a normal typing alias,
     instantiating is the same as instantiating the underlying type, binding
     it to types is also the same.
+
+    The metadata itself is stored in a '__metadata__' attribute as a tuple.
     """
     def __init__(self, origin, metadata):
         if isinstance(origin, _AnnotatedAlias):
@@ -2132,6 +2153,10 @@ class Annotated:
     Details:
 
     - It's an error to call `Annotated` with less than two arguments.
+    - Access the metadata via the ``__metadata__`` attribute::
+
+        Annotated[int, '$'].__metadata__ == ('$',)
+
     - Nested Annotated are flattened::
 
         Annotated[Annotated[T, Ann1, Ann2], Ann3] == Annotated[T, Ann1, Ann2, Ann3]
@@ -2225,15 +2250,16 @@ def cast(typ, val):
 def assert_type(val, typ, /):
     """Ask a static type checker to confirm that the value is of the given type.
 
-    When the type checker encounters a call to assert_type(), it
+    At runtime this does nothing: it returns the first argument unchanged with no
+    checks or side effects, no matter the actual type of the argument.
+
+    When a static type checker encounters a call to assert_type(), it
     emits an error if the value is not of the specified type::
 
         def greet(name: str) -> None:
             assert_type(name, str)  # ok
             assert_type(name, int)  # type checker error
 
-    At runtime this returns the first argument unchanged and otherwise
-    does nothing.
     """
     return val
 

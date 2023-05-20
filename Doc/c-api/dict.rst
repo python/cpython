@@ -5,7 +5,7 @@
 Dictionary Objects
 ------------------
 
-.. index:: object: dictionary
+.. index:: pair: object; dictionary
 
 
 .. c:type:: PyDictObject
@@ -80,7 +80,7 @@ Dictionary Objects
 
 .. c:function:: int PyDict_DelItem(PyObject *p, PyObject *key)
 
-   Remove the entry in dictionary *p* with key *key*. *key* must be hashable;
+   Remove the entry in dictionary *p* with key *key*. *key* must be :term:`hashable`;
    if it isn't, :exc:`TypeError` is raised.
    If *key* is not in the dictionary, :exc:`KeyError` is raised.
    Return ``0`` on success or ``-1`` on failure.
@@ -154,7 +154,7 @@ Dictionary Objects
 
 .. c:function:: Py_ssize_t PyDict_Size(PyObject *p)
 
-   .. index:: builtin: len
+   .. index:: pair: built-in function; len
 
    Return the number of items in the dictionary.  This is equivalent to
    ``len(p)`` on a dictionary.

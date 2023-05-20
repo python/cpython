@@ -1,5 +1,6 @@
 import ntpath
 import os
+import string
 import sys
 import unittest
 import warnings
@@ -320,6 +321,16 @@ class TestNtpath(NtpathTestCase):
         self.assertPathEqual(ntpath.realpath(ABSTFN + "1"), ABSTFN)
         self.assertPathEqual(ntpath.realpath(os.fsencode(ABSTFN + "1")),
                          os.fsencode(ABSTFN))
+
+        # gh-88013: call ntpath.realpath with binary drive name may raise a
+        # TypeError. The drive should not exist to reproduce the bug.
+        for c in string.ascii_uppercase:
+            d = f"{c}:\\"
+            if not ntpath.exists(d):
+                break
+        else:
+            raise OSError("No free drive letters available")
+        self.assertEqual(ntpath.realpath(d), d)
 
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')

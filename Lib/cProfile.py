@@ -7,6 +7,7 @@
 __all__ = ["run", "runctx", "Profile"]
 
 import _lsprof
+import io
 import profile as _pyprofile
 
 # ____________________________________________________________
@@ -167,7 +168,7 @@ def main():
         else:
             progname = args[0]
             sys.path.insert(0, os.path.dirname(progname))
-            with open(progname, 'rb') as fp:
+            with io.open_code(progname) as fp:
                 code = compile(fp.read(), progname, 'exec')
             globs = {
                 '__file__': progname,

@@ -201,6 +201,11 @@ process and user.
    ``'surrogateescape'`` error handler. Use :data:`environb` if you would like
    to use a different encoding.
 
+   On Windows, the keys are converted to uppercase. This also applies when
+   getting, setting, or deleting an item. For example,
+   ``environ['monty'] = 'python'`` maps the key ``'MONTY'`` to the value
+   ``'python'``.
+
    .. note::
 
       Calling :func:`putenv` directly does not change :data:`os.environ`, so it's better
@@ -1180,7 +1185,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
 .. function:: openpty()
 
-   .. index:: module: pty
+   .. index:: pair: module; pty
 
    Open a new pseudo-terminal pair. Return a pair of file descriptors
    ``(master, slave)`` for the pty and the tty, respectively. The new file
@@ -2702,7 +2707,7 @@ features:
    possible and call :func:`lstat` on the result. This does not apply to
    dangling symlinks or junction points, which will raise the usual exceptions.
 
-   .. index:: module: stat
+   .. index:: pair: module; stat
 
    Example::
 
@@ -3727,7 +3732,7 @@ to be ignored.
 
    .. note::
 
-      The standard way to exit is ``sys.exit(n)``.  :func:`_exit` should
+      The standard way to exit is :func:`sys.exit(n) <sys.exit>`.  :func:`!_exit` should
       normally only be used in the child process after a :func:`fork`.
 
 The following exit codes are defined and can be used with :func:`_exit`,
@@ -4359,7 +4364,7 @@ written in Python, such as a mail server's external command delivery program.
    :attr:`!children_system`, and :attr:`!elapsed` in that order.
 
    See the Unix manual page
-   :manpage:`times(2)` and `times(3) <https://www.freebsd.org/cgi/man.cgi?time(3)>`_ manual page on Unix or `the GetProcessTimes MSDN
+   :manpage:`times(2)` and `times(3) <https://man.freebsd.org/cgi/man.cgi?time(3)>`_ manual page on Unix or `the GetProcessTimes MSDN
    <https://docs.microsoft.com/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocesstimes>`_
    on Windows. On Windows, only :attr:`!user` and :attr:`!system` are known; the other attributes are zero.
 

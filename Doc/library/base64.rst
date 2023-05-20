@@ -58,7 +58,7 @@ The modern interface provides:
    This allows an application to e.g. generate URL or filesystem safe Base64
    strings.  The default is ``None``, for which the standard Base64 alphabet is used.
 
-   May assert or raise a a :exc:`ValueError` if the length of *altchars* is not 2.  Raises a
+   May assert or raise a :exc:`ValueError` if the length of *altchars* is not 2.  Raises a
    :exc:`TypeError` if *altchars* is not a :term:`bytes-like object`.
 
 

@@ -857,6 +857,10 @@ class AST_Tests(unittest.TestCase):
         check_limit("a", "[0]")
         check_limit("a", "*a")
 
+    def test_null_bytes(self):
+        with self.assertRaises(SyntaxError,
+            msg="source code string cannot contain null bytes"):
+            ast.parse("a\0b")
 
 class ASTHelpers_Test(unittest.TestCase):
     maxDiff = None
@@ -1785,6 +1789,12 @@ class ASTValidatorTests(unittest.TestCase):
             patterns=[],
             kwd_attrs=[],
             kwd_patterns=[ast.MatchStar()]
+        ),
+        ast.MatchClass(
+            constant_true,  # invalid name
+            patterns=[],
+            kwd_attrs=['True'],
+            kwd_patterns=[pattern_1]
         ),
         ast.MatchSequence(
             [

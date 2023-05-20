@@ -107,15 +107,6 @@ def find_function(funcname, filename):
                 return funcname, filename, lineno
     return None
 
-def getsourcelines(obj):
-    lines, lineno = inspect.findsource(obj)
-    if inspect.isframe(obj) and obj.f_globals is obj.f_locals:
-        # must be a module frame: do not try to cut a block out of it
-        return lines, 1
-    elif inspect.ismodule(obj):
-        return lines, 1
-    return inspect.getblock(lines[lineno:]), lineno+1
-
 def lasti2lineno(code, lasti):
     linestarts = list(dis.findlinestarts(code))
     linestarts.reverse()
@@ -163,7 +154,7 @@ class _ScriptTarget(str):
 
     @property
     def code(self):
-        with io.open(self) as fp:
+        with io.open_code(self) as fp:
             return f"exec(compile({fp.read()!r}, {self!r}, 'exec'))"
 
 
@@ -1357,7 +1348,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         filename = self.curframe.f_code.co_filename
         breaklist = self.get_file_breaks(filename)
         try:
-            lines, lineno = getsourcelines(self.curframe)
+            lines, lineno = self._getsourcelines(self.curframe)
         except OSError as err:
             self.error(err)
             return
@@ -1373,7 +1364,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except:
             return
         try:
-            lines, lineno = getsourcelines(obj)
+            lines, lineno = self._getsourcelines(obj)
         except (OSError, TypeError) as err:
             self.error(err)
             return
@@ -1651,6 +1642,16 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         self.run(target.code)
 
+
+    def _getsourcelines(self, obj):
+        # GH-103319
+        # inspect.getsourcelines() returns lineno = 0 for
+        # module-level frame which breaks our code print line number
+        # This method should be replaced by inspect.getsourcelines(obj)
+        # once this bug is fixed in inspect
+        lines, lineno = inspect.getsourcelines(obj)
+        lineno = max(1, lineno)
+        return lines, lineno
 
 # Collect all command help into docstring, if not run with -OO
 

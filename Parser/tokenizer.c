@@ -376,6 +376,11 @@ tok_reserve_buf(struct tok_state *tok, Py_ssize_t size)
     return 1;
 }
 
+static inline int
+contains_null_bytes(const char* str, size_t size) {
+    return memchr(str, 0, size) != NULL;
+}
+
 static int
 tok_readline_recode(struct tok_state *tok) {
     PyObject *line;
@@ -831,9 +836,9 @@ tok_readline_raw(struct tok_state *tok)
         if (!tok_reserve_buf(tok, BUFSIZ)) {
             return 0;
         }
-        char *line = Py_UniversalNewlineFgets(tok->inp,
-                                              (int)(tok->end - tok->inp),
-                                              tok->fp, NULL);
+        int n_chars = (int)(tok->end - tok->inp);
+        size_t line_size = 0;
+        char *line = _Py_UniversalNewlineFgetsWithSize(tok->inp, n_chars, tok->fp, NULL, &line_size);
         if (line == NULL) {
             return 1;
         }
@@ -841,7 +846,7 @@ tok_readline_raw(struct tok_state *tok)
             tok_concatenate_interactive_new_line(tok, line) == -1) {
             return 0;
         }
-        tok->inp = strchr(tok->inp, '\0');
+        tok->inp += line_size;
         if (tok->inp == tok->buf) {
             return 0;
         }
@@ -1078,6 +1083,12 @@ tok_nextc(struct tok_state *tok)
             return EOF;
         }
         tok->line_start = tok->cur;
+
+        if (contains_null_bytes(tok->line_start, tok->inp - tok->line_start)) {
+            syntaxerror(tok, "source code cannot contain null bytes");
+            tok->cur = tok->inp;
+            return EOF;
+        }
     }
     Py_UNREACHABLE();
 }
@@ -1987,8 +1998,12 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
         /* Get rest of string */
         while (end_quote_size != quote_size) {
             c = tok_nextc(tok);
-            if (tok->done == E_DECODE)
+            if (tok->done == E_ERROR) {
+                return ERRORTOKEN;
+            }
+            if (tok->done == E_DECODE) {
                 break;
+            }
             if (c == EOF || (quote_size == 1 && c == '\n')) {
                 assert(tok->multi_line_start != NULL);
                 // shift the tok_state's location into

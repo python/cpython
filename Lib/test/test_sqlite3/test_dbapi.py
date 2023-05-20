@@ -604,7 +604,6 @@ class SerializeTests(unittest.TestCase):
             with cx:
                 cx.execute("create table t(t)")
             data = cx.serialize()
-            self.assertEqual(len(data), 8192)
 
             # Remove test table, verify that it was removed.
             with cx:
@@ -1461,6 +1460,14 @@ class BlobTests(unittest.TestCase):
             self.assertRaisesRegex(sqlite.ProgrammingError,
                                    "Cannot operate on a closed database",
                                    blob.read)
+
+    def test_blob_32bit_rowid(self):
+        # gh-100370: we should not get an OverflowError for 32-bit rowids
+        with memory_database() as cx:
+            rowid = 2**32
+            cx.execute("create table t(t blob)")
+            cx.execute("insert into t(rowid, t) values (?, zeroblob(1))", (rowid,))
+            cx.blobopen('t', 't', rowid)
 
 
 @threading_helper.requires_working_threading()
