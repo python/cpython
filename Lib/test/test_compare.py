@@ -269,11 +269,12 @@ class ComparisonFullTest(unittest.TestCase):
         self.assert_gt_subtest(a, b, comp, a_meth, b_meth)
         self.assert_ge_subtest(a, b, comp, a_meth, b_meth)
 
-    # The body of each subtest has form
-        # if value-based comparison methods:
-            # expect what the testcase defined for a op b and b rop a;
-        # else:  no value-based comparison
-            # expect default behavior of object for a op b and b rop a.
+    # The body of each subtest has form:
+    #
+    #     if value-based comparison methods:
+    #         expect what the testcase defined for a op b and b rop a;
+    #     else:  no value-based comparison
+    #         expect default behavior of object for a op b and b rop a.
 
     def assert_eq_subtest(self, a, b, comp, a_meth, b_meth):
         if a_meth is None or "eq" in a_meth or "eq" in b_meth:
