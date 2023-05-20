@@ -16070,14 +16070,21 @@ static PyObject *
 unicodeiter_reduce(unicodeiterobject *it, PyObject *Py_UNUSED(ignored))
 {
     _Py_IDENTIFIER(iter);
+    PyObject *iter = _PyEval_GetBuiltinId(&PyId_iter);
+
+    /* _PyEval_GetBuiltinId can invoke arbitrary code,
+     * call must be before access of iterator pointers.
+     * see issue #101765 */
+
     if (it->it_seq != NULL) {
-        return Py_BuildValue("N(O)n", _PyEval_GetBuiltinId(&PyId_iter),
-                             it->it_seq, it->it_index);
+        return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
     } else {
         PyObject *u = (PyObject *)_PyUnicode_New(0);
-        if (u == NULL)
+        if (u == NULL) {
+            Py_XDECREF(iter);
             return NULL;
-        return Py_BuildValue("N(N)", _PyEval_GetBuiltinId(&PyId_iter), u);
+        }
+        return Py_BuildValue("N(N)", iter, u);
     }
 }
 

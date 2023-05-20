@@ -809,8 +809,11 @@ ABC hierarchy::
 
 .. class:: Traversable
 
-    An object with a subset of pathlib.Path methods suitable for
+    An object with a subset of :class:`pathlib.Path` methods suitable for
     traversing directories and opening files.
+
+    For a representation of the object on the file-system, use
+    :meth:`importlib.resources.as_file`.
 
     .. versionadded:: 3.9
 

@@ -1,0 +1,3 @@
+:func:`urllib.parse.urlsplit` now strips leading C0 control and space
+characters following the specification for URLs defined by WHATWG in
+response to CVE-2023-24329. Patch by Illia Volochii.

@@ -638,7 +638,7 @@ PyDoc_STRVAR(cmath_log__doc__,
 "\n"
 "log(z[, base]) -> the logarithm of z to the given base.\n"
 "\n"
-"If the base not specified, returns the natural logarithm (base e) of z.");
+"If the base is not specified, returns the natural logarithm (base e) of z.");
 
 #define CMATH_LOG_METHODDEF    \
     {"log", (PyCFunction)(void(*)(void))cmath_log, METH_FASTCALL, cmath_log__doc__},
@@ -953,4 +953,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=353347db2e808e0d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=717d3d9f0640e893 input=a9049054013a1b77]*/

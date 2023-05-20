@@ -185,6 +185,8 @@ def _strip_extra(extra, xids):
         i = j
     if not modified:
         return extra
+    if start != len(extra):
+        buffer.append(extra[start:])
     return b''.join(buffer)
 
 def _check_zipfile(fp):
@@ -2196,6 +2198,17 @@ class CompleteDirs(ZipFile):
         dirname = name + '/'
         dir_match = name not in names and dirname in names
         return dirname if dir_match else name
+
+    def getinfo(self, name):
+        """
+        Supplement getinfo for implied dirs.
+        """
+        try:
+            return super().getinfo(name)
+        except KeyError:
+            if not name.endswith('/') or name not in self._name_set():
+                raise
+            return ZipInfo(filename=name)
 
     @classmethod
     def make(cls, source):
