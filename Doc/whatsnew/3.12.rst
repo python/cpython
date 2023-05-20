@@ -255,7 +255,7 @@ Type aliases can also be :ref:`generic <generic-type-aliases>`::
    type Point[T] = tuple[T, T]
 
 The new syntax also allows declaring :class:`~typing.TypeVarTuple`
-and :class:`~typing.ParamSpec` parameters, as well as :class:`~typing.Typevar`
+and :class:`~typing.ParamSpec` parameters, as well as :class:`~typing.TypeVar`
 parameters with bounds or constraints::
 
    type IntFunc[**P] = Callable[P, int]  # ParamSpec
