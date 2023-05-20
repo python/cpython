@@ -2289,8 +2289,9 @@ PyAPI_FUNC(int) PyUnstable_WritePerfMapEntry(
 ) {
 #ifndef MS_WINDOWS
     if (perf_map_state.perf_map == NULL) {
-        if(PyUnstable_PerfMapState_Init() != 0){
-            return -1;
+        int ret = PyUnstable_PerfMapState_Init();
+        if(ret != 0){
+            return ret;
         }
     }
     PyThread_acquire_lock(perf_map_state.map_lock, 1);
