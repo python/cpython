@@ -2264,20 +2264,19 @@ PyAPI_FUNC(int) PyUnstable_PerfMapState_Init(void) {
                 (intmax_t)pid);
     int fd = open(filename, flags, 0600);
     if (fd == -1) {
-        PyErr_SetFromErrnoWithFilename(PyExc_OSError, filename);
         return -1;
     }
     else{
         perf_map_state.perf_map = fdopen(fd, "a");
         if (perf_map_state.perf_map == NULL) {
-            PyErr_SetFromErrnoWithFilename(PyExc_OSError, filename);
+            close(fd);
             return -1;
         }
     }
     perf_map_state.map_lock = PyThread_allocate_lock();
     if (perf_map_state.map_lock == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "failed to create a lock for perf-maps");
-        return -1;
+        fclose(perf_map_state.perf_map);
+        return -2;
     }
 #endif
     return 0;
@@ -2290,7 +2289,7 @@ PyAPI_FUNC(int) PyUnstable_WritePerfMapEntry(
 ) {
 #ifndef MS_WINDOWS
     if (perf_map_state.perf_map == NULL) {
-        if(PyUnstable_PerfMapState_Init() == -1){
+        if(PyUnstable_PerfMapState_Init() != 0){
             return -1;
         }
     }
