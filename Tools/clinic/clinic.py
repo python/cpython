@@ -1913,6 +1913,8 @@ class BufferSeries:
         return "".join(texts)
 
 
+DestinationDict = dict[str, "Destination"]
+
 class Destination:
     def __init__(self, name, type, clinic, *args):
         self.name = name
@@ -2044,23 +2046,30 @@ impl_definition block
 
 """
 
-    def __init__(self, language, printer=None, *, verify=True, filename=None):
+    def __init__(
+            self,
+            language: Language,
+            printer: BlockPrinter | None = None,
+            *,
+            verify: bool = True,
+            filename: str | None = None
+    ) -> None:
         # maps strings to Parser objects.
         # (instantiated from the "parsers" global.)
-        self.parsers = {}
-        self.language = language
+        self.parsers: ParserDict = {}
+        self.language: Language = language
         if printer:
             fail("Custom printers are broken right now")
         self.printer = printer or BlockPrinter(language)
         self.verify = verify
         self.filename = filename
-        self.modules = {}
-        self.classes = {}
-        self.functions = []
+        self.modules: ModuleDict = {}
+        self.classes: ClassDict = {}
+        self.functions: list[Function] = []
 
         self.line_prefix = self.line_suffix = ''
 
-        self.destinations = {}
+        self.destinations: DestinationDict = {}
         self.add_destination("block", "buffer")
         self.add_destination("suppress", "suppress")
         self.add_destination("buffer", "buffer")
@@ -2081,10 +2090,10 @@ impl_definition block
             'impl_definition': d('block'),
         }
 
-        self.destination_buffers_stack = []
-        self.ifndef_symbols = set()
+        self.destination_buffers_stack: list[BufferSeries] = []
+        self.ifndef_symbols: set[str] = set()
 
-        self.presets = {}
+        self.presets: dict[str, Any] = {}
         preset = None
         for line in self.presets_text.strip().split('\n'):
             line = line.strip()
@@ -2112,18 +2121,27 @@ impl_definition block
         global clinic
         clinic = self
 
-    def add_destination(self, name, type, *args):
+    def add_destination(
+            self,
+            name: str,
+            type: str,
+            *args
+    ) -> None:
         if name in self.destinations:
             fail("Destination already exists: " + repr(name))
         self.destinations[name] = Destination(name, type, self, *args)
 
-    def get_destination(self, name):
+    def get_destination(self, name: str) -> Destination:
         d = self.destinations.get(name)
         if not d:
             fail("Destination does not exist: " + repr(name))
         return d
 
-    def get_destination_buffer(self, name, item=0):
+    def get_destination_buffer(
+            self,
+            name: str,
+            item: int = 0
+    ):
         d = self.get_destination(name)
         return d.buffers[item]
 
@@ -4200,6 +4218,8 @@ class IndentStack:
             fail('Cannot dedent, line does not start with the previous margin:')
         return line[indent:]
 
+
+ParserDict = dict[str, "DSLParser"]
 
 class DSLParser:
     def __init__(self, clinic):
