@@ -1866,7 +1866,7 @@ class BlockPrinter:
                 output += '\n'
             write(output)
 
-        arguments="output={output}, input={input}".format(
+        arguments="output={output} input={input}".format(
             output=compute_checksum(output, 16),
             input=compute_checksum(input, 16)
         )
@@ -2725,7 +2725,7 @@ class CConverter(metaclass=CConverterAutoRegister):
                 if isinstance(self.default_type, type):
                     types_str = self.default_type.__name__
                 else:
-                    names = (cls.__name__ for cls in self.default_type)
+                    names = [cls.__name__ for cls in self.default_type]
                     types_str = ', '.join(names)
                 fail("{}: default value {!r} for field {} is not of type {}".format(
                     self.__class__.__name__, default, name, types_str))
