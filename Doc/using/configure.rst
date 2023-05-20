@@ -313,7 +313,13 @@ also be used to improve performance.
    experimental for now. Because this tool operates on machine code its success
    is dependent on a combination of the build environment + the other
    optimization configure args + the CPU architecture, and not all combinations
-   are supported.
+   are supported. BOLT versions before LLVM 16 are known to crash BOLT under
+   some scenarios. Use of LLVM 16 or newer for BOLT optimization is stronger
+   encouraged.
+
+   The ``BOLT_INSTRUMENT_FLAGS`` and ``BOLT_APPLY_FLAGS`` configure variables
+   can be defined to override the default set of arguments for ``llvm-bolt``
+   to instrument and apply BOLT data to binaries, respectively.
 
    .. versionadded:: 3.12
 
