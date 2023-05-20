@@ -548,8 +548,6 @@ def permute_optional_groups(left, required, right):
     If required is empty, left must also be empty.
     """
     required = tuple(required)
-    result = []
-
     if not required:
         if left:
             raise ValueError("required is empty but left is not")
@@ -1338,7 +1336,6 @@ class CLanguage(Language):
         if isinstance(parameters[0].converter, self_converter):
             del parameters[0]
 
-        groups = []
         group = None
         left = []
         right = []
@@ -1428,8 +1425,6 @@ class CLanguage(Language):
         first_optional = len(selfless)
         positional = selfless and selfless[-1].is_positional_only()
         new_or_init = f.kind in (METHOD_NEW, METHOD_INIT)
-        default_return_converter = (not f.return_converter or
-            f.return_converter.type == 'PyObject *')
         has_option_groups = False
 
         # offset i by -1 because first_optional needs to ignore self
@@ -1526,7 +1521,6 @@ class CLanguage(Language):
         template_dict['return_value'] = data.return_value
 
         # used by unpack tuple code generator
-        ignore_self = -1 if isinstance(converters[0], self_converter) else 0
         unpack_min = first_optional
         unpack_max = len(selfless)
         template_dict['unpack_min'] = str(unpack_min)
@@ -1803,10 +1797,8 @@ class BlockParser:
             if self.verify:
                 if 'input' in d:
                     checksum = d['output']
-                    input_checksum = d['input']
                 else:
                     checksum = d['checksum']
-                    input_checksum = None
 
                 computed = compute_checksum(output, len(checksum))
                 if checksum != computed:
@@ -2060,8 +2052,8 @@ impl_definition block
         self.printer = printer or BlockPrinter(language)
         self.verify = verify
         self.filename = filename
-        self.modules = collections.OrderedDict()
-        self.classes = collections.OrderedDict()
+        self.modules = {}
+        self.classes = {}
         self.functions = []
 
         self.line_prefix = self.line_suffix = ''
@@ -2074,18 +2066,18 @@ impl_definition block
             self.add_destination("file", "file", "{dirname}/clinic/{basename}.h")
 
         d = self.get_destination_buffer
-        self.destination_buffers = collections.OrderedDict((
-            ('cpp_if', d('file')),
-            ('docstring_prototype', d('suppress')),
-            ('docstring_definition', d('file')),
-            ('methoddef_define', d('file')),
-            ('impl_prototype', d('file')),
-            ('parser_prototype', d('suppress')),
-            ('parser_definition', d('file')),
-            ('cpp_endif', d('file')),
-            ('methoddef_ifndef', d('file', 1)),
-            ('impl_definition', d('block')),
-        ))
+        self.destination_buffers = {
+            'cpp_if': d('file'),
+            'docstring_prototype': d('suppress'),
+            'docstring_definition': d('file'),
+            'methoddef_define': d('file'),
+            'impl_prototype': d('file'),
+            'parser_prototype': d('suppress'),
+            'parser_definition': d('file'),
+            'cpp_endif': d('file'),
+            'methoddef_ifndef': d('file', 1),
+            'impl_definition': d('block'),
+        }
 
         self.destination_buffers_stack = []
         self.ifndef_symbols = set()
@@ -2098,7 +2090,7 @@ impl_definition block
                 continue
             name, value, *options = line.split()
             if name == 'preset':
-                self.presets[value] = preset = collections.OrderedDict()
+                self.presets[value] = preset = {}
                 continue
 
             if len(options):
@@ -2301,8 +2293,8 @@ class Module:
         self.name = name
         self.module = self.parent = module
 
-        self.modules: ModuleDict = collections.OrderedDict()
-        self.classes: ClassDict = collections.OrderedDict()
+        self.modules: ModuleDict = {}
+        self.classes: ClassDict = {}
         self.functions: list[Function] = []
 
     def __repr__(self) -> str:
@@ -2327,7 +2319,7 @@ class Class:
         self.type_object = type_object
         self.parent = cls or module
 
-        self.classes: ClassDict = collections.OrderedDict()
+        self.classes: ClassDict = {}
         self.functions: list[Function] = []
 
     def __repr__(self) -> str:
@@ -2428,7 +2420,7 @@ class Function:
                  return_converter, return_annotation=inspect.Signature.empty,
                  docstring=None, kind=CALLABLE, coexist=False,
                  docstring_only=False):
-        self.parameters = parameters or collections.OrderedDict()
+        self.parameters = parameters or {}
         self.return_annotation = return_annotation
         self.name = name
         self.full_name = full_name
@@ -2489,12 +2481,10 @@ class Function:
             }
         kwargs.update(overrides)
         f = Function(**kwargs)
-
-        parameters = collections.OrderedDict()
-        for name, value in f.parameters.items():
-            value = value.copy(function=f)
-            parameters[name] = value
-        f.parameters = parameters
+        f.parameters = {
+            name: value.copy(function=f)
+            for name, value in f.parameters.items()
+        }
         return f
 
 
@@ -4245,8 +4235,7 @@ class DSLParser:
             fail("Insufficient Clinic version!\n  Version: " + version + "\n  Required: " + required)
 
     def directive_module(self, name):
-        fields = name.split('.')
-        new = fields.pop()
+        fields = name.split('.')[:-1]
         module, cls = self.clinic._module_and_class(fields)
         if cls:
             fail("Can't nest a module inside a class!")
