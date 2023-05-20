@@ -616,16 +616,17 @@ _testinternalcapi.optimize_cfg -> object
 
   instructions: object
   consts: object
+  nlocals: int
 
 Apply compiler optimizations to an instruction list.
 [clinic start generated code]*/
 
 static PyObject *
 _testinternalcapi_optimize_cfg_impl(PyObject *module, PyObject *instructions,
-                                    PyObject *consts)
-/*[clinic end generated code: output=5412aeafca683c8b input=7e8a3de86ebdd0f9]*/
+                                    PyObject *consts, int nlocals)
+/*[clinic end generated code: output=57c53c3a3dfd1df0 input=6a96d1926d58d7e5]*/
 {
-    return _PyCompile_OptimizeCfg(instructions, consts);
+    return _PyCompile_OptimizeCfg(instructions, consts, nlocals);
 }
 
 static int
