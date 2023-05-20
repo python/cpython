@@ -510,6 +510,16 @@ class ListComprehensionTest(unittest.TestCase):
         """
         self._check_in_scopes(code, {"z": 1, "out": [(3, 2, 1)]})
 
+    def test_lambda_in_iter(self):
+        code = """
+            (func, c), = [(a, b) for b in [1] for a in [lambda : a]]
+            d = func()
+            assert d is func
+            # must use "a" in this scope
+            e = a if False else None
+        """
+        self._check_in_scopes(code, {"c": 1, "e": None})
+
     def test_assign_to_comp_iter_var_in_outer_function(self):
         code = """
             a = [1 for a in [0]]

@@ -35,6 +35,15 @@
 #define NAMED_EXPR_COMP_IN_CLASS \
 "assignment expression within a comprehension cannot be used in a class body"
 
+#define NAMED_EXPR_COMP_IN_TYPEVAR_BOUND \
+"assignment expression within a comprehension cannot be used in a TypeVar bound"
+
+#define NAMED_EXPR_COMP_IN_TYPEALIAS \
+"assignment expression within a comprehension cannot be used in a type alias"
+
+#define NAMED_EXPR_COMP_IN_TYPEPARAM \
+"assignment expression within a comprehension cannot be used within the definition of a generic"
+
 #define NAMED_EXPR_COMP_CONFLICT \
 "assignment expression cannot rebind comprehension iteration variable '%U'"
 
@@ -1857,7 +1866,7 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
         }
 
         /* If we find a FunctionBlock entry, add as GLOBAL/LOCAL or NONLOCAL/LOCAL */
-        if (_PyST_IsFunctionLike(ste)) {
+        if (ste->ste_type == FunctionBlock) {
             long target_in_scope = _PyST_GetSymbol(ste, target_name);
             if (target_in_scope & DEF_GLOBAL) {
                 if (!symtable_add_def(st, target_name, DEF_GLOBAL, LOCATION(e)))
@@ -1880,9 +1889,27 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
 
             return symtable_add_def_helper(st, target_name, DEF_GLOBAL, ste, LOCATION(e));
         }
-        /* Disallow usage in ClassBlock */
-        if (ste->ste_type == ClassBlock) {
-            PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_IN_CLASS);
+        /* Disallow usage in ClassBlock and type scopes */
+        if (ste->ste_type == ClassBlock ||
+            ste->ste_type == TypeParamBlock ||
+            ste->ste_type == TypeAliasBlock ||
+            ste->ste_type == TypeVarBoundBlock) {
+            switch (ste->ste_type) {
+                case ClassBlock:
+                    PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_IN_CLASS);
+                    break;
+                case TypeParamBlock:
+                    PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_IN_TYPEPARAM);
+                    break;
+                case TypeAliasBlock:
+                    PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_IN_TYPEALIAS);
+                    break;
+                case TypeVarBoundBlock:
+                    PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_IN_TYPEVAR_BOUND);
+                    break;
+                default:
+                    Py_UNREACHABLE();
+            }
             PyErr_RangedSyntaxLocationObject(st->st_filename,
                                               e->lineno,
                                               e->col_offset + 1,
