@@ -52,12 +52,14 @@ class SHA512Type "SHA512object *" "&PyType_Type"
 typedef struct {
     PyObject_HEAD
     int digestsize;
+    PyThread_type_lock lock;
     Hacl_Streaming_SHA2_state_sha2_256 *state;
 } SHA256object;
 
 typedef struct {
     PyObject_HEAD
     int digestsize;
+    PyThread_type_lock lock;
     Hacl_Streaming_SHA2_state_sha2_512 *state;
 } SHA512object;
 
@@ -100,6 +102,7 @@ newSHA224object(sha2_state *state)
     if (!sha) {
         return NULL;
     }
+    sha->lock = NULL;
     PyObject_GC_Track(sha);
     return sha;
 }
@@ -112,6 +115,7 @@ newSHA256object(sha2_state *state)
     if (!sha) {
         return NULL;
     }
+    sha->lock = NULL;
     PyObject_GC_Track(sha);
     return sha;
 }
@@ -124,6 +128,7 @@ newSHA384object(sha2_state *state)
     if (!sha) {
         return NULL;
     }
+    sha->lock = NULL;
     PyObject_GC_Track(sha);
     return sha;
 }
@@ -136,6 +141,7 @@ newSHA512object(sha2_state *state)
     if (!sha) {
         return NULL;
     }
+    sha->lock = NULL;
     PyObject_GC_Track(sha);
     return sha;
 }
@@ -153,6 +159,9 @@ static void
 SHA256_dealloc(SHA256object *ptr)
 {
     Hacl_Streaming_SHA2_free_256(ptr->state);
+    if (ptr->lock != NULL) {
+        PyThread_free_lock(ptr->lock);
+    }
     PyTypeObject *tp = Py_TYPE(ptr);
     PyObject_GC_UnTrack(ptr);
     PyObject_GC_Del(ptr);
@@ -163,6 +172,9 @@ static void
 SHA512_dealloc(SHA512object *ptr)
 {
     Hacl_Streaming_SHA2_free_512(ptr->state);
+    if (ptr->lock != NULL) {
+        PyThread_free_lock(ptr->lock);
+    }
     PyTypeObject *tp = Py_TYPE(ptr);
     PyObject_GC_UnTrack(ptr);
     PyObject_GC_Del(ptr);
@@ -229,7 +241,9 @@ SHA256Type_copy_impl(SHA256object *self, PyTypeObject *cls)
         }
     }
 
+    ENTER_HASHLIB(self);
     SHA256copy(self, newobj);
+    LEAVE_HASHLIB(self);
     return (PyObject *)newobj;
 }
 
@@ -259,7 +273,9 @@ SHA512Type_copy_impl(SHA512object *self, PyTypeObject *cls)
         }
     }
 
+    ENTER_HASHLIB(self);
     SHA512copy(self, newobj);
+    LEAVE_HASHLIB(self);
     return (PyObject *)newobj;
 }
 
@@ -275,9 +291,11 @@ SHA256Type_digest_impl(SHA256object *self)
 {
     uint8_t digest[SHA256_DIGESTSIZE];
     assert(self->digestsize <= SHA256_DIGESTSIZE);
+    ENTER_HASHLIB(self);
     // HACL* performs copies under the hood so that self->state remains valid
     // after this call.
     Hacl_Streaming_SHA2_finish_256(self->state, digest);
+    LEAVE_HASHLIB(self);
     return PyBytes_FromStringAndSize((const char *)digest, self->digestsize);
 }
 
@@ -293,9 +311,11 @@ SHA512Type_digest_impl(SHA512object *self)
 {
     uint8_t digest[SHA512_DIGESTSIZE];
     assert(self->digestsize <= SHA512_DIGESTSIZE);
+    ENTER_HASHLIB(self);
     // HACL* performs copies under the hood so that self->state remains valid
     // after this call.
     Hacl_Streaming_SHA2_finish_512(self->state, digest);
+    LEAVE_HASHLIB(self);
     return PyBytes_FromStringAndSize((const char *)digest, self->digestsize);
 }
 
@@ -311,7 +331,9 @@ SHA256Type_hexdigest_impl(SHA256object *self)
 {
     uint8_t digest[SHA256_DIGESTSIZE];
     assert(self->digestsize <= SHA256_DIGESTSIZE);
+    ENTER_HASHLIB(self);
     Hacl_Streaming_SHA2_finish_256(self->state, digest);
+    LEAVE_HASHLIB(self);
     return _Py_strhex((const char *)digest, self->digestsize);
 }
 
@@ -327,7 +349,9 @@ SHA512Type_hexdigest_impl(SHA512object *self)
 {
     uint8_t digest[SHA512_DIGESTSIZE];
     assert(self->digestsize <= SHA512_DIGESTSIZE);
+    ENTER_HASHLIB(self);
     Hacl_Streaming_SHA2_finish_512(self->state, digest);
+    LEAVE_HASHLIB(self);
     return _Py_strhex((const char *)digest, self->digestsize);
 }
 
@@ -348,7 +372,18 @@ SHA256Type_update(SHA256object *self, PyObject *obj)
 
     GET_BUFFER_VIEW_OR_ERROUT(obj, &buf);
 
-    update_256(self->state, buf.buf, buf.len);
+    if (self->lock == NULL && buf.len >= HASHLIB_GIL_MINSIZE) {
+        self->lock = PyThread_allocate_lock();
+    }
+    if (self->lock != NULL) {
+        Py_BEGIN_ALLOW_THREADS
+        PyThread_acquire_lock(self->lock, 1);
+        update_256(self->state, buf.buf, buf.len);
+        PyThread_release_lock(self->lock);
+        Py_END_ALLOW_THREADS
+    } else {
+        update_256(self->state, buf.buf, buf.len);
+    }
 
     PyBuffer_Release(&buf);
     Py_RETURN_NONE;
@@ -371,7 +406,18 @@ SHA512Type_update(SHA512object *self, PyObject *obj)
 
     GET_BUFFER_VIEW_OR_ERROUT(obj, &buf);
 
-    update_512(self->state, buf.buf, buf.len);
+    if (self->lock == NULL && buf.len >= HASHLIB_GIL_MINSIZE) {
+        self->lock = PyThread_allocate_lock();
+    }
+    if (self->lock != NULL) {
+        Py_BEGIN_ALLOW_THREADS
+        PyThread_acquire_lock(self->lock, 1);
+        update_512(self->state, buf.buf, buf.len);
+        PyThread_release_lock(self->lock);
+        Py_END_ALLOW_THREADS
+    } else {
+        update_512(self->state, buf.buf, buf.len);
+    }
 
     PyBuffer_Release(&buf);
     Py_RETURN_NONE;
@@ -560,7 +606,13 @@ _sha2_sha256_impl(PyObject *module, PyObject *string, int usedforsecurity)
         return NULL;
     }
     if (string) {
-        update_256(new->state, buf.buf, buf.len);
+        if (buf.len >= HASHLIB_GIL_MINSIZE) {
+            Py_BEGIN_ALLOW_THREADS
+            update_256(new->state, buf.buf, buf.len);
+            Py_END_ALLOW_THREADS
+        } else {
+            update_256(new->state, buf.buf, buf.len);
+        }
         PyBuffer_Release(&buf);
     }
 
@@ -606,7 +658,13 @@ _sha2_sha224_impl(PyObject *module, PyObject *string, int usedforsecurity)
         return NULL;
     }
     if (string) {
-        update_256(new->state, buf.buf, buf.len);
+        if (buf.len >= HASHLIB_GIL_MINSIZE) {
+            Py_BEGIN_ALLOW_THREADS
+            update_256(new->state, buf.buf, buf.len);
+            Py_END_ALLOW_THREADS
+        } else {
+            update_256(new->state, buf.buf, buf.len);
+        }
         PyBuffer_Release(&buf);
     }
 
@@ -651,7 +709,13 @@ _sha2_sha512_impl(PyObject *module, PyObject *string, int usedforsecurity)
         return NULL;
     }
     if (string) {
-        update_512(new->state, buf.buf, buf.len);
+        if (buf.len >= HASHLIB_GIL_MINSIZE) {
+            Py_BEGIN_ALLOW_THREADS
+            update_512(new->state, buf.buf, buf.len);
+            Py_END_ALLOW_THREADS
+        } else {
+            update_512(new->state, buf.buf, buf.len);
+        }
         PyBuffer_Release(&buf);
     }
 
@@ -696,7 +760,13 @@ _sha2_sha384_impl(PyObject *module, PyObject *string, int usedforsecurity)
         return NULL;
     }
     if (string) {
-        update_512(new->state, buf.buf, buf.len);
+        if (buf.len >= HASHLIB_GIL_MINSIZE) {
+            Py_BEGIN_ALLOW_THREADS
+            update_512(new->state, buf.buf, buf.len);
+            Py_END_ALLOW_THREADS
+        } else {
+            update_512(new->state, buf.buf, buf.len);
+        }
         PyBuffer_Release(&buf);
     }
 
