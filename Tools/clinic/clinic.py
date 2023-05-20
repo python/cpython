@@ -4343,7 +4343,7 @@ class DSLParser:
     def directive_dump(self, name: str) -> None:
         self.block.output.append(self.clinic.get_destination(name).dump())
 
-    def directive_printout(self, *args) -> None:
+    def directive_printout(self, *args: str) -> None:
         self.block.output.append(' '.join(args))
         self.block.output.append('\n')
 
