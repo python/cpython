@@ -1074,7 +1074,7 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
 #endif /* HAVE_SETREUID */
     }
 
-    c_fds_to_keep = PyMem_RawMalloc(fds_to_keep_len * sizeof(int));
+    c_fds_to_keep = PyMem_Malloc(fds_to_keep_len * sizeof(int));
     if (c_fds_to_keep == NULL) {
         PyErr_SetString(PyExc_MemoryError, "failed to malloc c_fds_to_keep");
         goto cleanup;
@@ -1157,7 +1157,7 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
 
 cleanup:
     if (c_fds_to_keep != NULL) {
-        PyMem_RawFree(c_fds_to_keep);
+        PyMem_Free(c_fds_to_keep);
     }
 
     if (saved_errno != 0) {
