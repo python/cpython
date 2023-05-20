@@ -16,6 +16,8 @@ kernel/git/torvalds/linux.git/tree/tools/perf/Documentation/jit-interface.txt>`_
 In Python, these helper APIs can be used by libraries and features that rely
 on generating machine code on the fly.
 
+Note that holding the Global Interpreter Lock (GIL) is not required for these APIs. 
+
 .. c:function:: int PyUnstable_PerfMapState_Init(void)
 
    Open the ``/tmp/perf-$pid.map`` file, unless it's already opened, and create
@@ -23,7 +25,7 @@ on generating machine code on the fly.
    done through :c:func:`PyUnstable_WritePerfMapEntry`). Normally, there's no need
    to call this explicitly, and it is safe to directly use :c:func:`PyUnstable_WritePerfMapEntry`
    in your code. If the state isn't already initialized, it will be created on
-   the first call.
+   the first call. 
 
 .. c:function:: int PyUnstable_WritePerfMapEntry(const void *code_addr, unsigned int code_size, const char *entry_name)
 
