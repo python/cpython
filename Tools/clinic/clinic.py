@@ -1790,7 +1790,7 @@ class BlockParser:
             for field in shlex.split(arguments):
                 name, equals, value = field.partition('=')
                 if not equals:
-                    fail(f"Mangled Argument Clinic marker line: {line!r}")
+                    fail("Mangled Argument Clinic marker line:", repr(line))
                 d[name.strip()] = value.strip()
 
             if self.verify:
@@ -1866,7 +1866,7 @@ class BlockPrinter:
                 output += '\n'
             write(output)
 
-        arguments="output={output} input={input}".format(
+        arguments = "output={output} input={input}".format(
             output=compute_checksum(output, 16),
             input=compute_checksum(input, 16)
         )
