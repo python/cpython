@@ -1747,7 +1747,7 @@ class BlockParser:
             # make sure to recognize stop line even if it
             # doesn't end with EOL (it could be the very end of the file)
             if line.startswith(stop_line):
-                remainder = line[len(stop_line):]
+                remainder = line.removeprefix(stop_line)
                 if remainder and not remainder.isspace():
                     fail(f"Garbage after stop line: {remainder!r}")
                 return True
@@ -1765,7 +1765,7 @@ class BlockParser:
             if body_prefix:
                 line = line.lstrip()
                 assert line.startswith(body_prefix)
-                line = line[len(body_prefix):]
+                line = line.removeprefix(body_prefix)
             input_add(line)
 
         # consume output and checksum line, if present.
@@ -2570,7 +2570,7 @@ def add_c_converter(f, name=None):
         name = f.__name__
         if not name.endswith('_converter'):
             return f
-        name = name[:-len('_converter')]
+        name = name.removesuffix('_converter')
     converters[name] = f
     return f
 
@@ -3977,7 +3977,7 @@ def add_c_return_converter(f, name=None):
         name = f.__name__
         if not name.endswith('_return_converter'):
             return f
-        name = name[:-len('_return_converter')]
+        name = name.removesuffix('_return_converter')
     return_converters[name] = f
     return f
 
@@ -5369,7 +5369,7 @@ For more information see https://docs.python.org/3/howto/clinic.html""")
                 if name in ignored:
                     continue
                 if name.endswith(suffix):
-                    ids.append((name, name[:-len(suffix)]))
+                    ids.append((name, name.removesuffix(suffix)))
                     break
         print()
 
