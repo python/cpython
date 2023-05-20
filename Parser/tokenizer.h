@@ -53,7 +53,7 @@ typedef struct _tokenizer_mode {
     int f_string_raw;
     const char* f_string_start;
     const char* f_string_multi_line_start;
-    Py_ssize_t f_string_line_start;
+    int f_string_line_start;
 
     Py_ssize_t f_string_start_offset;
     Py_ssize_t f_string_multi_line_start_offset;
