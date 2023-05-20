@@ -324,9 +324,9 @@ def version_splitter(s: str) -> tuple[int, ...]:
         c -> -1
     (This permits Python-style version strings such as "1.4b3".)
     """
-    version = []
+    version: list[int] = []
     accumulator: list[str] = []
-    def flush():
+    def flush() -> None:
         if not accumulator:
             raise ValueError('Unsupported version string: ' + repr(s))
         version.append(int(''.join(accumulator)))
@@ -4201,8 +4201,10 @@ class IndentStack:
         return line[indent:]
 
 
+StateKeeper = Callable[[str | None], None]
+
 class DSLParser:
-    def __init__(self, clinic):
+    def __init__(self, clinic: Clinic) -> None:
         self.clinic = clinic
 
         self.directives = {}
@@ -4219,9 +4221,9 @@ class DSLParser:
 
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.function = None
-        self.state = self.state_dsl_start
+        self.state: StateKeeper = self.state_dsl_start
         self.parameter_indent = None
         self.keyword_only = False
         self.positional_only = False
@@ -4234,12 +4236,12 @@ class DSLParser:
         self.parameter_continuation = ''
         self.preserve_output = False
 
-    def directive_version(self, required):
+    def directive_version(self, required: str) -> None:
         global version
         if version_comparitor(version, required) < 0:
             fail("Insufficient Clinic version!\n  Version: " + version + "\n  Required: " + required)
 
-    def directive_module(self, name):
+    def directive_module(self, name: str) -> None:
         fields = name.split('.')[:-1]
         module, cls = self.clinic._module_and_class(fields)
         if cls:
@@ -4252,9 +4254,13 @@ class DSLParser:
         module.modules[name] = m
         self.block.signatures.append(m)
 
-    def directive_class(self, name, typedef, type_object):
+    def directive_class(
+            self,
+            name: str,
+            typedef: str,
+            type_object: str
+    ) -> None:
         fields = name.split('.')
-        parent = self
         name = fields.pop()
         module, cls = self.clinic._module_and_class(fields)
 
@@ -4266,7 +4272,7 @@ class DSLParser:
         parent.classes[name] = c
         self.block.signatures.append(c)
 
-    def directive_set(self, name, value):
+    def directive_set(self, name: str, value: str) -> None:
         if name not in ("line_prefix", "line_suffix"):
             fail("unknown variable", repr(name))
 
@@ -4277,7 +4283,12 @@ class DSLParser:
 
         self.clinic.__dict__[name] = value
 
-    def directive_destination(self, name, command, *args):
+    def directive_destination(
+            self,
+            name: str,
+            command: str,
+            *args
+    ) -> None:
         if command == 'new':
             self.clinic.add_destination(name, *args)
             return
@@ -4287,7 +4298,11 @@ class DSLParser:
         fail("unknown destination command", repr(command))
 
 
-    def directive_output(self, command_or_name, destination=''):
+    def directive_output(
+            self,
+            command_or_name: str,
+            destination: str = ''
+    ) -> None:
         fd = self.clinic.destination_buffers
 
         if command_or_name == "preset":
@@ -4325,34 +4340,34 @@ class DSLParser:
             fail("Invalid command / destination name " + repr(command_or_name) + ", must be one of:\n  preset push pop print everything " + " ".join(fd))
         fd[command_or_name] = d
 
-    def directive_dump(self, name):
+    def directive_dump(self, name: str) -> None:
         self.block.output.append(self.clinic.get_destination(name).dump())
 
-    def directive_printout(self, *args):
+    def directive_printout(self, *args: str) -> None:
         self.block.output.append(' '.join(args))
         self.block.output.append('\n')
 
-    def directive_preserve(self):
+    def directive_preserve(self) -> None:
         if self.preserve_output:
             fail("Can't have preserve twice in one block!")
         self.preserve_output = True
 
-    def at_classmethod(self):
+    def at_classmethod(self) -> None:
         if self.kind is not CALLABLE:
             fail("Can't set @classmethod, function is not a normal callable")
         self.kind = CLASS_METHOD
 
-    def at_staticmethod(self):
+    def at_staticmethod(self) -> None:
         if self.kind is not CALLABLE:
             fail("Can't set @staticmethod, function is not a normal callable")
         self.kind = STATIC_METHOD
 
-    def at_coexist(self):
+    def at_coexist(self) -> None:
         if self.coexist:
             fail("Called @coexist twice!")
         self.coexist = True
 
-    def parse(self, block):
+    def parse(self, block: Block) -> None:
         self.reset()
         self.block = block
         self.saved_output = self.block.output
@@ -4388,10 +4403,14 @@ class DSLParser:
         return False
 
     @staticmethod
-    def calculate_indent(line):
+    def calculate_indent(line: str) -> int:
         return len(line) - len(line.strip())
 
-    def next(self, state, line=None):
+    def next(
+            self,
+            state: StateKeeper,
+            line: str | None = None
+    ) -> None:
         # real_print(self.state.__name__, "->", state.__name__, ", line=", line)
         self.state = state
         if line is not None:
