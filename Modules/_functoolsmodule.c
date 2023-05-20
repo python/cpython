@@ -1243,8 +1243,7 @@ lru_cache_clear_list(lru_list_elem *link)
 {
     while (link != NULL) {
         lru_list_elem *next = link->next;
-        Py_DECREF(link);
-        link = next;
+        Py_SETREF(link, next);
     }
 }
 
@@ -1521,6 +1520,7 @@ _functools_free(void *module)
 
 static struct PyModuleDef_Slot _functools_slots[] = {
     {Py_mod_exec, _functools_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

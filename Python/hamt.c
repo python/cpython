@@ -1354,8 +1354,7 @@ hamt_node_collision_assoc(PyHamtNode_Collision *self,
                 }
 
                 /* Replace the old value with the new value for the our key. */
-                Py_DECREF(new_node->c_array[val_idx]);
-                new_node->c_array[val_idx] = Py_NewRef(val);
+                Py_SETREF(new_node->c_array[val_idx], Py_NewRef(val));
 
                 return (PyHamtNode *)new_node;
 

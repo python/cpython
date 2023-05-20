@@ -1,6 +1,7 @@
 import unittest
 from unittest import mock
 from test import support
+from test.support import check_sanitizer
 from test.support import import_helper
 from test.support import os_helper
 from test.support import warnings_helper
@@ -717,8 +718,9 @@ class ProcessTestCase(BaseTestCase):
             os.close(test_pipe_r)
             os.close(test_pipe_w)
         pipesize = pipesize_default // 2
-        if pipesize < 512:  # the POSIX minimum
-            raise unittest.SkitTest(
+        pagesize_default = support.get_pagesize()
+        if pipesize < pagesize_default:  # the POSIX minimum
+            raise unittest.SkipTest(
                 'default pipesize too small to perform test.')
         p = subprocess.Popen(
             [sys.executable, "-c",
@@ -789,6 +791,8 @@ class ProcessTestCase(BaseTestCase):
     @unittest.skipIf(sysconfig.get_config_var('Py_ENABLE_SHARED') == 1,
                      'The Python shared library cannot be loaded '
                      'with an empty environment.')
+    @unittest.skipIf(check_sanitizer(address=True),
+                     'AddressSanitizer adds to the environment.')
     def test_empty_env(self):
         """Verify that env={} is as empty as possible."""
 
@@ -2832,7 +2836,7 @@ class POSIXProcessTestCase(BaseTestCase):
 
     @unittest.skipIf(sys.platform.startswith("freebsd") and
                      os.stat("/dev").st_dev == os.stat("/dev/fd").st_dev,
-                     "Requires fdescfs mounted on /dev/fd on FreeBSD.")
+                     "Requires fdescfs mounted on /dev/fd on FreeBSD")
     def test_close_fds_when_max_fd_is_lowered(self):
         """Confirm that issue21618 is fixed (may fail under valgrind)."""
         fd_status = support.findfile("fd_status.py", subdir="subprocessdata")
@@ -3209,7 +3213,7 @@ class POSIXProcessTestCase(BaseTestCase):
                         1, 2, 3, 4,
                         True, True, 0,
                         None, None, None, -1,
-                        None, "no vfork")
+                        None, True)
                 self.assertIn('fds_to_keep', str(c.exception))
         finally:
             if not gc_enabled:

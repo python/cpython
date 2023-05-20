@@ -1328,8 +1328,7 @@ call_tzname(PyObject *tzinfo, PyObject *tzinfoarg)
         PyErr_Format(PyExc_TypeError, "tzinfo.tzname() must "
                      "return None or a string, not '%s'",
                      Py_TYPE(result)->tp_name);
-        Py_DECREF(result);
-        result = NULL;
+        Py_SETREF(result, NULL);
     }
 
     return result;
@@ -1849,8 +1848,7 @@ delta_to_microseconds(PyDateTime_Delta *self)
     x2 = PyNumber_Multiply(x1, seconds_per_day);        /* days in seconds */
     if (x2 == NULL)
         goto Done;
-    Py_DECREF(x1);
-    x1 = NULL;
+    Py_SETREF(x1, NULL);
 
     /* x2 has days in seconds */
     x1 = PyLong_FromLong(GET_TD_SECONDS(self));         /* seconds */
@@ -1867,8 +1865,7 @@ delta_to_microseconds(PyDateTime_Delta *self)
     x1 = PyNumber_Multiply(x3, us_per_second);          /* us */
     if (x1 == NULL)
         goto Done;
-    Py_DECREF(x3);
-    x3 = NULL;
+    Py_SETREF(x3, NULL);
 
     /* x1 has days+seconds in us */
     x2 = PyLong_FromLong(GET_TD_MICROSECONDS(self));
@@ -2038,8 +2035,7 @@ multiply_truedivide_timedelta_float(PyDateTime_Delta *delta, PyObject *floatobj,
         goto error;
     }
     temp = PyNumber_Multiply(pyus_in, PyTuple_GET_ITEM(ratio, op));
-    Py_DECREF(pyus_in);
-    pyus_in = NULL;
+    Py_SETREF(pyus_in, NULL);
     if (temp == NULL)
         goto error;
     pyus_out = divide_nearest(temp, PyTuple_GET_ITEM(ratio, !op));
@@ -5148,6 +5144,13 @@ datetime_datetime_now_impl(PyTypeObject *type, PyObject *tz)
 static PyObject *
 datetime_utcnow(PyObject *cls, PyObject *dummy)
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+        "datetime.utcnow() is deprecated and scheduled for removal in a "
+        "future version. Use timezone-aware objects to represent datetimes "
+        "in UTC: datetime.now(datetime.UTC).", 1))
+    {
+        return NULL;
+    }
     return datetime_best_possible(cls, _PyTime_gmtime, Py_None);
 }
 
@@ -5184,6 +5187,13 @@ datetime_fromtimestamp(PyObject *cls, PyObject *args, PyObject *kw)
 static PyObject *
 datetime_utcfromtimestamp(PyObject *cls, PyObject *args)
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+        "datetime.utcfromtimestamp() is deprecated and scheduled for removal "
+        "in a future version. Use timezone-aware objects to represent "
+        "datetimes in UTC: datetime.now(datetime.UTC).", 1))
+    {
+        return NULL;
+    }
     PyObject *timestamp;
     PyObject *result = NULL;
 
@@ -6157,17 +6167,31 @@ local_to_seconds(int year, int month, int day,
 static PyObject *
 local_timezone_from_local(PyDateTime_DateTime *local_dt)
 {
-    long long seconds;
+    long long seconds, seconds2;
     time_t timestamp;
+    int fold = DATE_GET_FOLD(local_dt);
     seconds = local_to_seconds(GET_YEAR(local_dt),
                                GET_MONTH(local_dt),
                                GET_DAY(local_dt),
                                DATE_GET_HOUR(local_dt),
                                DATE_GET_MINUTE(local_dt),
                                DATE_GET_SECOND(local_dt),
-                               DATE_GET_FOLD(local_dt));
+                               fold);
     if (seconds == -1)
         return NULL;
+    seconds2 = local_to_seconds(GET_YEAR(local_dt),
+                                GET_MONTH(local_dt),
+                                GET_DAY(local_dt),
+                                DATE_GET_HOUR(local_dt),
+                                DATE_GET_MINUTE(local_dt),
+                                DATE_GET_SECOND(local_dt),
+                                !fold);
+    if (seconds2 == -1)
+        return NULL;
+    /* Detect gap */
+    if (seconds2 != seconds && (seconds2 > seconds) == fold)
+        seconds = seconds2;
+
     /* XXX: add bounds check */
     timestamp = seconds - epoch;
     return local_timezone_from_timestamp(timestamp);
@@ -6247,13 +6271,10 @@ datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
     }
     else {
         /* Result is already aware - just replace tzinfo. */
-        temp = result->tzinfo;
-        result->tzinfo = Py_NewRef(PyDateTime_TimeZone_UTC);
-        Py_DECREF(temp);
+        Py_SETREF(result->tzinfo, Py_NewRef(PyDateTime_TimeZone_UTC));
     }
 
     /* Attach new tzinfo and let fromutc() do the rest. */
-    temp = result->tzinfo;
     if (tzinfo == Py_None) {
         tzinfo = local_timezone(result);
         if (tzinfo == NULL) {
@@ -6263,8 +6284,7 @@ datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
     }
     else
       Py_INCREF(tzinfo);
-    result->tzinfo = tzinfo;
-    Py_DECREF(temp);
+    Py_SETREF(result->tzinfo, tzinfo);
 
     temp = (PyObject *)result;
     result = (PyDateTime_DateTime *)

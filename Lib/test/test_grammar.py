@@ -3,7 +3,6 @@
 
 from test.support import check_syntax_error
 from test.support import import_helper
-from test.support.warnings_helper import check_syntax_warning
 import inspect
 import unittest
 import sys
@@ -15,7 +14,6 @@ from sys import *
 # with import machinery
 import test.ann_module as ann_module
 import typing
-from collections import ChainMap
 from test import ann_module2
 import test
 
@@ -238,12 +236,9 @@ class TokenTests(unittest.TestCase):
             check(f"[{num}for x in ()]")
             check(f"{num}spam", error=True)
 
+            with self.assertWarnsRegex(SyntaxWarning, r'invalid \w+ literal'):
+                compile(f"{num}is x", "<testcase>", "eval")
             with warnings.catch_warnings():
-                warnings.filterwarnings('ignore', '"is" with a literal',
-                                        SyntaxWarning)
-                with self.assertWarnsRegex(SyntaxWarning,
-                            r'invalid \w+ literal'):
-                    compile(f"{num}is x", "<testcase>", "eval")
                 warnings.simplefilter('error', SyntaxWarning)
                 with self.assertRaisesRegex(SyntaxError,
                             r'invalid \w+ literal'):
@@ -414,6 +409,28 @@ class GrammarTests(unittest.TestCase):
             class Cbad2(C):
                 x: int
                 x.y: list = []
+
+    def test_annotations_inheritance(self):
+        # Check that annotations are not inherited by derived classes
+        class A:
+            attr: int
+        class B(A):
+            pass
+        class C(A):
+            attr: str
+        class D:
+            attr2: int
+        class E(A, D):
+            pass
+        class F(C, A):
+            pass
+        self.assertEqual(A.__annotations__, {"attr": int})
+        self.assertEqual(B.__annotations__, {})
+        self.assertEqual(C.__annotations__, {"attr" : str})
+        self.assertEqual(D.__annotations__, {"attr2" : int})
+        self.assertEqual(E.__annotations__, {})
+        self.assertEqual(F.__annotations__, {})
+
 
     def test_var_annot_metaclass_semantics(self):
         class CMeta(type):
@@ -1447,14 +1464,22 @@ class GrammarTests(unittest.TestCase):
         if 1 < 1 > 1 == 1 >= 1 <= 1 != 1 in 1 not in x is x is not x: pass
 
     def test_comparison_is_literal(self):
-        def check(test, msg='"is" with a literal'):
+        def check(test, msg):
             self.check_syntax_warning(test, msg)
 
-        check('x is 1')
-        check('x is "thing"')
-        check('1 is x')
-        check('x is y is 1')
-        check('x is not 1', '"is not" with a literal')
+        check('x is 1', '"is" with \'int\' literal')
+        check('x is "thing"', '"is" with \'str\' literal')
+        check('1 is x', '"is" with \'int\' literal')
+        check('x is y is 1', '"is" with \'int\' literal')
+        check('x is not 1', '"is not" with \'int\' literal')
+        check('x is not (1, 2)', '"is not" with \'tuple\' literal')
+        check('(1, 2) is not x', '"is not" with \'tuple\' literal')
+
+        check('None is 1', '"is" with \'int\' literal')
+        check('1 is None', '"is" with \'int\' literal')
+
+        check('x == 3 is y', '"is" with \'int\' literal')
+        check('x == "thing" is y', '"is" with \'str\' literal')
 
         with warnings.catch_warnings():
             warnings.simplefilter('error', SyntaxWarning)
@@ -1462,6 +1487,10 @@ class GrammarTests(unittest.TestCase):
             compile('x is False', '<testcase>', 'exec')
             compile('x is True', '<testcase>', 'exec')
             compile('x is ...', '<testcase>', 'exec')
+            compile('None is x', '<testcase>', 'exec')
+            compile('False is x', '<testcase>', 'exec')
+            compile('True is x', '<testcase>', 'exec')
+            compile('... is x', '<testcase>', 'exec')
 
     def test_warn_missed_comma(self):
         def check(test):

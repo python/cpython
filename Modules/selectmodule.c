@@ -57,8 +57,10 @@ extern void bzero(void *, int);
 #endif
 
 #ifdef MS_WINDOWS
-#  define WIN32_LEAN_AND_MEAN
-#  include <winsock.h>
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#  endif
+#  include <winsock2.h>
 #else
 #  define SOCKET int
 #endif
@@ -2649,6 +2651,7 @@ _select_exec(PyObject *m)
 
 static PyModuleDef_Slot _select_slots[] = {
     {Py_mod_exec, _select_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 
