@@ -208,7 +208,7 @@ typedef typeof union unsigned void volatile while
 def ensure_legal_c_identifier(s: str) -> str:
     # for now, just complain if what we're given isn't legal
     if not is_legal_c_identifier(s):
-        fail(f"Illegal C identifier: {s}")
+        fail("Illegal C identifier:", s)
     # but if we picked a C keyword, pick something else
     if s in c_keywords:
         return s + "_value"
@@ -1487,8 +1487,7 @@ class CLanguage(Language):
 
         template_dict['c_basename'] = c_basename
 
-        methoddef_name = f"{c_basename.upper()}_METHODDEF"
-        template_dict['methoddef_name'] = methoddef_name
+        template_dict['methoddef_name'] = c_basename.upper() + "_METHODDEF"
 
         template_dict['docstring'] = self.docstring_for_c_string(f)
 
@@ -1867,7 +1866,10 @@ class BlockPrinter:
                 output += '\n'
             write(output)
 
-        arguments=f"output={compute_checksum(output, 16)} input={compute_checksum(input, 16)}"
+        arguments="output={output}, input={input}".format(
+            output=compute_checksum(output, 16),
+            input=compute_checksum(input, 16)
+        )
         write(self.language.checksum_line.format(dsl_name=dsl_name, arguments=arguments))
         write("\n")
 
@@ -2537,7 +2539,7 @@ class Parameter:
         if i == 0:
             return '"argument"'
         if not self.is_positional_only():
-            return f'''"argument '{self.name}'"'''
+            return f'"argument {self.name!r}"'
         else:
             return f'"argument {i}"'
 
@@ -2723,7 +2725,8 @@ class CConverter(metaclass=CConverterAutoRegister):
                 if isinstance(self.default_type, type):
                     types_str = self.default_type.__name__
                 else:
-                    types_str = ', '.join(cls.__name__ for cls in self.default_type)
+                    names = (cls.__name__ for cls in self.default_type)
+                    types_str = ', '.join(names)
                 fail("{}: default value {!r} for field {} is not of type {}".format(
                     self.__class__.__name__, default, name, types_str))
             self.default = default
@@ -4011,10 +4014,12 @@ class CReturnConverter(metaclass=CReturnConverterAutoRegister):
         data.return_value = data.converter_retval
 
     def err_occurred_if(self, expr, data):
-        data.return_conversion.append(f'if (({expr}) && PyErr_Occurred()) {{\n    goto exit;\n}}\n')
+        line = f'if (({expr}) && PyErr_Occurred()) {{\n    goto exit;\n}}\n'
+        data.return_conversion.append(line)
 
     def err_occurred_if_null_pointer(self, variable, data):
-        data.return_conversion.append(f'if ({variable} == NULL) {{\n    goto exit;\n}}\n')
+        line = f'if ({variable} == NULL) {{\n    goto exit;\n}}\n'
+        data.return_conversion.append(line)
 
     def render(self, function, data):
         """
@@ -4477,9 +4482,9 @@ class DSLParser:
         c_basename = c_basename.strip() or None
 
         if not is_legal_py_identifier(full_name):
-            fail(f"Illegal function name: {full_name}")
+            fail("Illegal function name:", full_name)
         if c_basename and not is_legal_c_identifier(c_basename):
-            fail(f"Illegal C basename: {c_basename}")
+            fail("Illegal C basename:", c_basename)
 
         return_converter = None
         if returns:
@@ -4749,7 +4754,6 @@ class DSLParser:
             default = default.strip()
             bad = False
             ast_input = f"x = {default}"
-            bad = False
             try:
                 module = ast.parse(ast_input)
 
