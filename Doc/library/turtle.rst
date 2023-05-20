@@ -2023,19 +2023,19 @@ Settings and special methods
    (1) *name* is the name of a gif-file and *shape* is ``None``: Install the
        corresponding image shape. ::
 
-         >>> screen.register_shape("turtle.gif")
+       >>> screen.register_shape("turtle.gif")
 
-      .. note::
-         Image shapes *do not* rotate when turning the turtle, so they do not
-         display the heading of the turtle!
+       .. note::
+          Image shapes *do not* rotate when turning the turtle, so they do not
+          display the heading of the turtle!
 
    (2) *name* is an arbitrary string and *shape* is a tuple of pairs of
        coordinates: Install the corresponding polygon shape.
 
-      .. doctest::
-         :skipif: _tkinter is None
+       .. doctest::
+          :skipif: _tkinter is None
 
-         >>> screen.register_shape("triangle", ((5,-3), (0,5), (-5,-3)))
+          >>> screen.register_shape("triangle", ((5,-3), (0,5), (-5,-3)))
 
    (3) *name* is an arbitrary string and *shape* is a (compound) :class:`Shape`
        object: Install the corresponding compound shape.
