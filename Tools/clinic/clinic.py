@@ -208,7 +208,7 @@ typedef typeof union unsigned void volatile while
 def ensure_legal_c_identifier(s: str) -> str:
     # for now, just complain if what we're given isn't legal
     if not is_legal_c_identifier(s):
-        fail("Illegal C identifier: {}".format(s))
+        fail(f"Illegal C identifier: {s}")
     # but if we picked a C keyword, pick something else
     if s in c_keywords:
         return s + "_value"
@@ -577,7 +577,7 @@ def strip_leading_and_trailing_blank_lines(s):
         del lines[0]
     return '\n'.join(lines)
 
-@functools.lru_cache()
+@functools.lru_cache
 def normalize_snippet(s, *, indent=0):
     """
     Reformats s:
@@ -993,7 +993,7 @@ class CLanguage(Language):
                 argname_fmt = 'PyTuple_GET_ITEM(args, %d)'
 
 
-            left_args = "{} - {}".format(nargs, max_pos)
+            left_args = f"{nargs} - {max_pos}"
             max_args = NO_VARARG if (vararg != NO_VARARG) else max_pos
             parser_code = [normalize_snippet("""
                 if (!_PyArg_CheckPositional("{name}", %s, %d, %s)) {{
@@ -1070,14 +1070,14 @@ class CLanguage(Language):
         else:
             has_optional_kw = (max(pos_only, min_pos) + min_kw_only < len(converters) - int(vararg != NO_VARARG))
             if vararg == NO_VARARG:
-                args_declaration = "_PyArg_UnpackKeywords", "%s, %s, %s" % (
+                args_declaration = "_PyArg_UnpackKeywords", "{}, {}, {}".format(
                     min_pos,
                     max_pos,
                     min_kw_only
                 )
                 nargs = "nargs"
             else:
-                args_declaration = "_PyArg_UnpackKeywordsWithVararg", "%s, %s, %s, %s" % (
+                args_declaration = "_PyArg_UnpackKeywordsWithVararg", "{}, {}, {}, {}".format(
                     min_pos,
                     max_pos,
                     min_kw_only,
@@ -1440,7 +1440,7 @@ class CLanguage(Language):
                 first_optional = min(first_optional, i)
 
             if p.is_vararg():
-                data.cleanup.append("Py_XDECREF({});".format(c.parser_name))
+                data.cleanup.append(f"Py_XDECREF({c.parser_name});")
 
             # insert group variable
             group = p.group
@@ -1492,7 +1492,7 @@ class CLanguage(Language):
 
         template_dict['c_basename'] = c_basename
 
-        methoddef_name = "{}_METHODDEF".format(c_basename.upper())
+        methoddef_name = f"{c_basename.upper()}_METHODDEF"
         template_dict['methoddef_name'] = methoddef_name
 
         template_dict['docstring'] = self.docstring_for_c_string(f)
@@ -1797,7 +1797,7 @@ class BlockParser:
             for field in shlex.split(arguments):
                 name, equals, value = field.partition('=')
                 if not equals:
-                    fail("Mangled Argument Clinic marker line: {!r}".format(line))
+                    fail(f"Mangled Argument Clinic marker line: {line!r}")
                 d[name.strip()] = value.strip()
 
             if self.verify:
@@ -1875,7 +1875,7 @@ class BlockPrinter:
                 output += '\n'
             write(output)
 
-        arguments="output={} input={}".format(compute_checksum(output, 16), compute_checksum(input, 16))
+        arguments=f"output={compute_checksum(output, 16)} input={compute_checksum(input, 16)}"
         write(self.language.checksum_line.format(dsl_name=dsl_name, arguments=arguments))
         write("\n")
 
@@ -1984,7 +1984,7 @@ return_converters = {}
 def file_changed(filename: str, new_contents: str) -> bool:
     """Return true if file contents changed (meaning we must update it)"""
     try:
-        with open(filename, 'r', encoding="utf-8") as fp:
+        with open(filename, encoding="utf-8") as fp:
             old_contents = fp.read()
         return old_contents != new_contents
     except FileNotFoundError:
@@ -2140,7 +2140,7 @@ impl_definition block
             dsl_name = block.dsl_name
             if dsl_name:
                 if dsl_name not in self.parsers:
-                    assert dsl_name in parsers, "No parser to handle {!r} block.".format(dsl_name)
+                    assert dsl_name in parsers, f"No parser to handle {dsl_name!r} block."
                     self.parsers[dsl_name] = parsers[dsl_name](self)
                 parser = self.parsers[dsl_name]
                 try:
@@ -2180,7 +2180,7 @@ impl_definition block
                                      "can't make directory {}!".format(
                                         destination.filename, dirname))
                         if self.verify:
-                            with open(destination.filename, "rt") as f:
+                            with open(destination.filename) as f:
                                 parser_2 = BlockParser(f.read(), language=self.language)
                                 blocks = list(parser_2)
                                 if (len(blocks) != 1) or (blocks[0].input != 'preserve\n'):
@@ -2247,7 +2247,7 @@ def parse_file(
     except KeyError:
         fail("Can't identify file type for file " + repr(filename))
 
-    with open(filename, 'r', encoding="utf-8") as f:
+    with open(filename, encoding="utf-8") as f:
         raw = f.read()
 
     # exit quickly if there are no clinic markers in the file
@@ -2547,9 +2547,9 @@ class Parameter:
         if i == 0:
             return '"argument"'
         if not self.is_positional_only():
-            return '''"argument '{}'"'''.format(self.name)
+            return f'''"argument '{self.name}'"'''
         else:
-            return '"argument {}"'.format(i)
+            return f'"argument {i}"'
 
 
 class LandMine:
@@ -2733,7 +2733,7 @@ class CConverter(metaclass=CConverterAutoRegister):
                 if isinstance(self.default_type, type):
                     types_str = self.default_type.__name__
                 else:
-                    types_str = ', '.join((cls.__name__ for cls in self.default_type))
+                    types_str = ', '.join(cls.__name__ for cls in self.default_type)
                 fail("{}: default value {!r} for field {} is not of type {}".format(
                     self.__class__.__name__, default, name, types_str))
             self.default = default
@@ -3965,7 +3965,7 @@ class self_converter(CConverter):
                               ' Py_TYPE({0})->tp_new == base_tp->tp_new)'
                              ).format(self.name)
 
-            line = '{} &&\n        '.format(type_check)
+            line = f'{type_check} &&\n        '
             template_dict['self_type_check'] = line
 
             type_object = self.function.cls.type_object
@@ -4021,10 +4021,10 @@ class CReturnConverter(metaclass=CReturnConverterAutoRegister):
         data.return_value = data.converter_retval
 
     def err_occurred_if(self, expr, data):
-        data.return_conversion.append('if (({}) && PyErr_Occurred()) {{\n    goto exit;\n}}\n'.format(expr))
+        data.return_conversion.append(f'if (({expr}) && PyErr_Occurred()) {{\n    goto exit;\n}}\n')
 
     def err_occurred_if_null_pointer(self, variable, data):
-        data.return_conversion.append('if ({} == NULL) {{\n    goto exit;\n}}\n'.format(variable))
+        data.return_conversion.append(f'if ({variable} == NULL) {{\n    goto exit;\n}}\n')
 
     def render(self, function, data):
         """
@@ -4488,13 +4488,13 @@ class DSLParser:
         c_basename = c_basename.strip() or None
 
         if not is_legal_py_identifier(full_name):
-            fail("Illegal function name: {}".format(full_name))
+            fail(f"Illegal function name: {full_name}")
         if c_basename and not is_legal_c_identifier(c_basename):
-            fail("Illegal C basename: {}".format(c_basename))
+            fail(f"Illegal C basename: {c_basename}")
 
         return_converter = None
         if returns:
-            ast_input = "def x() -> {}: pass".format(returns)
+            ast_input = f"def x() -> {returns}: pass"
             module = None
             try:
                 module = ast.parse(ast_input)
@@ -4707,7 +4707,7 @@ class DSLParser:
 
         module = None
         try:
-            ast_input = "def x({}): pass".format(base)
+            ast_input = f"def x({base}): pass"
             module = ast.parse(ast_input)
         except SyntaxError:
             try:
@@ -4715,7 +4715,7 @@ class DSLParser:
                 #   c: int(accept={str})
                 # so assume there was no actual default value.
                 default = None
-                ast_input = "def x({}): pass".format(line)
+                ast_input = f"def x({line}): pass"
                 module = ast.parse(ast_input)
             except SyntaxError:
                 pass
@@ -4759,7 +4759,7 @@ class DSLParser:
                 self.parameter_state = self.ps_optional
             default = default.strip()
             bad = False
-            ast_input = "x = {}".format(default)
+            ast_input = f"x = {default}"
             bad = False
             try:
                 module = ast.parse(ast_input)
@@ -4867,7 +4867,7 @@ class DSLParser:
         dict = legacy_converters if legacy else converters
         legacy_str = "legacy " if legacy else ""
         if name not in dict:
-            fail('{} is not a valid {}converter'.format(name, legacy_str))
+            fail(f'{name} is not a valid {legacy_str}converter')
         # if you use a c_name for the parameter, we just give that name to the converter
         # but the parameter object gets the python name
         converter = dict[name](c_name or parameter_name, parameter_name, self.function, value, **kwargs)
@@ -5399,7 +5399,7 @@ For more information see https://docs.python.org/3/howto/clinic.html""")
                 for parameter_name, parameter in signature.parameters.items():
                     if parameter.kind == inspect.Parameter.KEYWORD_ONLY:
                         if parameter.default != inspect.Parameter.empty:
-                            s = '{}={!r}'.format(parameter_name, parameter.default)
+                            s = f'{parameter_name}={parameter.default!r}'
                         else:
                             s = parameter_name
                         parameters.append(s)
