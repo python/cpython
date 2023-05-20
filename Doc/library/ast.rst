@@ -1673,7 +1673,7 @@ aliases.
 
 .. class:: TypeVar(name, bound)
 
-   A :class:`~typing.TypeVar`. ``name`` is the name of the type variable, and
+   A :class:`typing.TypeVar`. ``name`` is the name of the type variable, and
    ``bound`` is the bound or constraints, if any. If the value is a :class:`Tuple`,
    it represents constraints; otherwise it represents the bound.
 
@@ -1696,7 +1696,7 @@ aliases.
 
 .. class:: ParamSpec(name)
 
-   A :class:`~typing.ParamSpec`. ``name`` is the name of the parameter specification.
+   A :class:`typing.ParamSpec`. ``name`` is the name of the parameter specification.
 
    .. doctest::
 
@@ -1719,7 +1719,7 @@ aliases.
 
 .. class:: TypeVarTuple(name)
 
-   A :class:`~typing.TypeVarTuple`. ``name`` is the name of the type variable tuple.
+   A :class:`typing.TypeVarTuple`. ``name`` is the name of the type variable tuple.
 
    .. doctest::
 
