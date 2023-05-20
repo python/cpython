@@ -227,7 +227,7 @@ do {                                                                    \
     return err;                                                         \
     }                                                                   \
 } while (0)
-#define CHECK_VALID_OR_RELEASE(err, buffer)                            \
+#define CHECK_VALID_OR_RELEASE(err, buffer)                             \
 do {                                                                    \
     if (self->map_handle == NULL) {                                     \
     PyErr_SetString(PyExc_ValueError, "mmap closed or invalid");        \
@@ -245,7 +245,7 @@ do {                                                                    \
     return err;                                                         \
     }                                                                   \
 } while (0)
-#define CHECK_VALID_OR_RELEASE(err, buffer)                            \
+#define CHECK_VALID_OR_RELEASE(err, buffer)                             \
 do {                                                                    \
     if (self->data == NULL) {                                           \
     PyErr_SetString(PyExc_ValueError, "mmap closed or invalid");        \
