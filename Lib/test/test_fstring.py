@@ -1558,7 +1558,21 @@ x = (
         self.assertAllRaise(SyntaxError, "unterminated f-string literal", ['f"', "f'"])
         self.assertAllRaise(SyntaxError, "unterminated triple-quoted f-string literal",
                             ['f"""', "f'''"])
-
+        # Ensure that the errors are reported at the correct line number.
+        data = '''\
+x = 1 + 1
+y = 2 + 2
+z = f"""
+sdfjnsdfjsdf
+sdfsdfs{1+
+2} dfigdf {3+
+4}sdufsd""
+'''
+        try:
+            compile(data, "?", "exec")
+        except SyntaxError as e:
+            self.assertEqual(e.text, 'z = f"""')
+            self.assertEqual(e.lineno, 3)
     def test_syntax_error_after_debug(self):
         self.assertAllRaise(SyntaxError, "f-string: expecting a valid expression after '{'",
                             [
