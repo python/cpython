@@ -185,7 +185,7 @@ class Monitor:
 
 if __name__ == '__main__':
     for filename in sys.argv[1:]:
-        with open(filename, "rt") as f:
+        with open(filename) as f:
             cpp = Monitor(filename, verbose=True)
             print()
             print(filename)

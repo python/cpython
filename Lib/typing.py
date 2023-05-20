@@ -1779,12 +1779,13 @@ class _ProtocolMeta(ABCMeta):
     # but is necessary for several reasons...
     def __init__(cls, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        cls.__protocol_attrs__ = _get_protocol_attrs(cls)
-        # PEP 544 prohibits using issubclass()
-        # with protocols that have non-method members.
-        cls.__callable_proto_members_only__ = all(
-            callable(getattr(cls, attr, None)) for attr in cls.__protocol_attrs__
-        )
+        if getattr(cls, "_is_protocol", False):
+            cls.__protocol_attrs__ = _get_protocol_attrs(cls)
+            # PEP 544 prohibits using issubclass()
+            # with protocols that have non-method members.
+            cls.__callable_proto_members_only__ = all(
+                callable(getattr(cls, attr, None)) for attr in cls.__protocol_attrs__
+            )
 
     def __subclasscheck__(cls, other):
         if (
@@ -1800,9 +1801,11 @@ class _ProtocolMeta(ABCMeta):
     def __instancecheck__(cls, instance):
         # We need this method for situations where attributes are
         # assigned in __init__.
-        is_protocol_cls = getattr(cls, "_is_protocol", False)
+        if not getattr(cls, "_is_protocol", False):
+            # i.e., it's a concrete subclass of a protocol
+            return super().__instancecheck__(instance)
+
         if (
-            is_protocol_cls and
             not getattr(cls, '_is_runtime_protocol', False) and
             not _allow_reckless_class_checks(depth=2)
         ):
@@ -1812,17 +1815,16 @@ class _ProtocolMeta(ABCMeta):
         if super().__instancecheck__(instance):
             return True
 
-        if is_protocol_cls:
-            getattr_static = _lazy_load_getattr_static()
-            for attr in cls.__protocol_attrs__:
-                try:
-                    val = getattr_static(instance, attr)
-                except AttributeError:
-                    break
-                if val is None and callable(getattr(cls, attr, None)):
-                    break
-            else:
-                return True
+        getattr_static = _lazy_load_getattr_static()
+        for attr in cls.__protocol_attrs__:
+            try:
+                val = getattr_static(instance, attr)
+            except AttributeError:
+                break
+            if val is None and callable(getattr(cls, attr, None)):
+                break
+        else:
+            return True
 
         return False
 

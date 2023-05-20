@@ -1252,7 +1252,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
     }
     u->u_metadata.u_name = Py_NewRef(name);
     u->u_metadata.u_varnames = list2dict(u->u_ste->ste_varnames);
-    u->u_metadata.u_cellvars = dictbytype(u->u_ste->ste_symbols, CELL, 0, 0);
+    u->u_metadata.u_cellvars = dictbytype(u->u_ste->ste_symbols, CELL, DEF_COMP_CELL, 0);
     if (!u->u_metadata.u_varnames || !u->u_metadata.u_cellvars) {
         compiler_unit_free(u);
         return ERROR;
@@ -5490,30 +5490,28 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
                 }
                 Py_DECREF(outv);
             }
-            if (outsc == LOCAL || outsc == CELL || outsc == FREE) {
-                // local names bound in comprehension must be isolated from
-                // outer scope; push existing value (which may be NULL if
-                // not defined) on stack
+            // local names bound in comprehension must be isolated from
+            // outer scope; push existing value (which may be NULL if
+            // not defined) on stack
+            if (state->pushed_locals == NULL) {
+                state->pushed_locals = PyList_New(0);
                 if (state->pushed_locals == NULL) {
-                    state->pushed_locals = PyList_New(0);
-                    if (state->pushed_locals == NULL) {
-                        return ERROR;
-                    }
-                }
-                // in the case of a cell, this will actually push the cell
-                // itself to the stack, then we'll create a new one for the
-                // comprehension and restore the original one after
-                ADDOP_NAME(c, loc, LOAD_FAST_AND_CLEAR, k, varnames);
-                if (scope == CELL) {
-                    if (outsc == FREE) {
-                        ADDOP_NAME(c, loc, MAKE_CELL, k, freevars);
-                    } else {
-                        ADDOP_NAME(c, loc, MAKE_CELL, k, cellvars);
-                    }
-                }
-                if (PyList_Append(state->pushed_locals, k) < 0) {
                     return ERROR;
                 }
+            }
+            // in the case of a cell, this will actually push the cell
+            // itself to the stack, then we'll create a new one for the
+            // comprehension and restore the original one after
+            ADDOP_NAME(c, loc, LOAD_FAST_AND_CLEAR, k, varnames);
+            if (scope == CELL) {
+                if (outsc == FREE) {
+                    ADDOP_NAME(c, loc, MAKE_CELL, k, freevars);
+                } else {
+                    ADDOP_NAME(c, loc, MAKE_CELL, k, cellvars);
+                }
+            }
+            if (PyList_Append(state->pushed_locals, k) < 0) {
+                return ERROR;
             }
         }
     }
