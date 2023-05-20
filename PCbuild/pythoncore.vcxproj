@@ -269,6 +269,7 @@
     <ClInclude Include="..\Include\internal\pycore_tracemalloc.h" />
     <ClInclude Include="..\Include\internal\pycore_tuple.h" />
     <ClInclude Include="..\Include\internal\pycore_typeobject.h" />
+    <ClInclude Include="..\Include\internal\pycore_typevarobject.h" />
     <ClInclude Include="..\Include\internal\pycore_ucnhash.h" />
     <ClInclude Include="..\Include\internal\pycore_unionobject.h" />
     <ClInclude Include="..\Include\internal\pycore_unicodeobject.h" />
@@ -375,13 +376,16 @@
     <ClCompile Include="..\Modules\_contextvarsmodule.c" />
     <ClCompile Include="..\Modules\_csv.c" />
     <ClCompile Include="..\Modules\_functoolsmodule.c" />
+    <ClCompile Include="..\Modules\_hacl\Hacl_Hash_MD5.c" />
+    <ClCompile Include="..\Modules\_hacl\Hacl_Hash_SHA1.c" />
+    <ClCompile Include="..\Modules\_hacl\Hacl_Streaming_SHA2.c" />
+    <ClCompile Include="..\Modules\_hacl\Hacl_Hash_SHA3.c" />
     <ClCompile Include="..\Modules\_heapqmodule.c" />
     <ClCompile Include="..\Modules\_json.c" />
     <ClCompile Include="..\Modules\_localemodule.c" />
     <ClCompile Include="..\Modules\_lsprof.c" />
     <ClCompile Include="..\Modules\_pickle.c" />
     <ClCompile Include="..\Modules\_randommodule.c" />
-    <ClCompile Include="..\Modules\_sha3\sha3module.c" />
     <ClCompile Include="..\Modules\_sre\sre.c" />
     <ClInclude Include="..\Modules\_sre\sre.h" />
     <ClInclude Include="..\Modules\_sre\sre_constants.h" />
@@ -404,17 +408,15 @@
     <ClCompile Include="..\Modules\itertoolsmodule.c" />
     <ClCompile Include="..\Modules\main.c" />
     <ClCompile Include="..\Modules\mathmodule.c" />
-    <ClCompile Include="..\Modules\_hacl\Hacl_Hash_MD5.c" />
     <ClCompile Include="..\Modules\md5module.c" />
     <ClCompile Include="..\Modules\mmapmodule.c" />
     <ClCompile Include="..\Modules\_opcode.c" />
     <ClCompile Include="..\Modules\_operator.c" />
     <ClCompile Include="..\Modules\posixmodule.c" />
     <ClCompile Include="..\Modules\rotatingtree.c" />
-    <ClCompile Include="..\Modules\_hacl\Hacl_Hash_SHA1.c" />
     <ClCompile Include="..\Modules\sha1module.c" />
-    <ClCompile Include="..\Modules\_hacl\Hacl_Streaming_SHA2.c" />
     <ClCompile Include="..\Modules\sha2module.c" />
+    <ClCompile Include="..\Modules\sha3module.c" />
     <ClCompile Include="..\Modules\signalmodule.c" />
     <ClCompile Include="..\Modules\_statisticsmodule.c" />
     <ClCompile Include="..\Modules\symtablemodule.c" />
@@ -480,6 +482,7 @@
     <ClCompile Include="..\Objects\structseq.c" />
     <ClCompile Include="..\Objects\tupleobject.c" />
     <ClCompile Include="..\Objects\typeobject.c" />
+    <ClCompile Include="..\Objects\typevarobject.c" />
     <ClCompile Include="..\Objects\unicodectype.c" />
     <ClCompile Include="..\Objects\unicodeobject.c" />
     <ClCompile Include="..\Objects\unionobject.c" />
@@ -564,6 +567,7 @@
     </ClCompile>
     <ClCompile Include="..\Python\thread.c" />
     <ClCompile Include="..\Python\traceback.c" />
+    <ClCompile Include="..\Python\tracemalloc.c" />
   </ItemGroup>
   <ItemGroup>
     <!-- BEGIN deepfreeze -->

@@ -24,7 +24,7 @@ Be sure to use the ``import os`` style instead of ``from os import *``.  This
 will keep :func:`os.open` from shadowing the built-in :func:`open` function which
 operates much differently.
 
-.. index:: builtin: help
+.. index:: pair: built-in function; help
 
 The built-in :func:`dir` and :func:`help` functions are useful as interactive
 aids for working with large modules like :mod:`os`::

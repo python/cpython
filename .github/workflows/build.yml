@@ -36,6 +36,7 @@ jobs:
     timeout-minutes: 10
     outputs:
       run_tests: ${{ steps.check.outputs.run_tests }}
+      run_hypothesis: ${{ steps.check.outputs.run_hypothesis }}
     steps:
       - uses: actions/checkout@v3
       - name: Check for source changes
@@ -59,6 +60,17 @@ jobs:
             #
             # https://github.com/python/core-workflow/issues/373
             git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qvE '(\.rst$|^Doc|^Misc)' && echo "run_tests=true" >> $GITHUB_OUTPUT || true
+          fi
+
+          # Check if we should run hypothesis tests
+          GIT_BRANCH=${GITHUB_BASE_REF:-${GITHUB_REF#refs/heads/}}
+          echo $GIT_BRANCH
+          if $(echo "$GIT_BRANCH" | grep -q -w '3\.\(8\|9\|10\|11\)'); then
+            echo "Branch too old for hypothesis tests"
+            echo "run_hypothesis=false" >> $GITHUB_OUTPUT
+          else
+            echo "Run hypothesis tests"
+            echo "run_hypothesis=true" >> $GITHUB_OUTPUT
           fi
 
   check_generated_files:
@@ -290,6 +302,92 @@ jobs:
       run: make pythoninfo
     - name: SSL tests
       run: ./python Lib/test/ssltests.py
+
+  test_hypothesis:
+    name: "Hypothesis Tests on Ubuntu"
+    runs-on: ubuntu-20.04
+    timeout-minutes: 60
+    needs: check_source
+    if: needs.check_source.outputs.run_tests == 'true' && needs.check_source.outputs.run_hypothesis == 'true'
+    env:
+      OPENSSL_VER: 1.1.1t
+      PYTHONSTRICTEXTENSIONBUILD: 1
+    steps:
+    - uses: actions/checkout@v3
+    - name: Register gcc problem matcher
+      run: echo "::add-matcher::.github/problem-matchers/gcc.json"
+    - name: Install Dependencies
+      run: sudo ./.github/workflows/posix-deps-apt.sh
+    - name: Configure OpenSSL env vars
+      run: |
+        echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> $GITHUB_ENV
+        echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> $GITHUB_ENV
+    - name: 'Restore OpenSSL build'
+      id: cache-openssl
+      uses: actions/cache@v3
+      with:
+        path: ./multissl/openssl/${{ env.OPENSSL_VER }}
+        key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
+    - name: Install OpenSSL
+      if: steps.cache-openssl.outputs.cache-hit != 'true'
+      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory $MULTISSL_DIR --openssl $OPENSSL_VER --system Linux
+    - name: Add ccache to PATH
+      run: |
+        echo "PATH=/usr/lib/ccache:$PATH" >> $GITHUB_ENV
+    - name: Configure ccache action
+      uses: hendrikmuhs/ccache-action@v1.2
+    - name: Setup directory envs for out-of-tree builds
+      run: |
+        echo "CPYTHON_RO_SRCDIR=$(realpath -m ${GITHUB_WORKSPACE}/../cpython-ro-srcdir)" >> $GITHUB_ENV
+        echo "CPYTHON_BUILDDIR=$(realpath -m ${GITHUB_WORKSPACE}/../cpython-builddir)" >> $GITHUB_ENV
+    - name: Create directories for read-only out-of-tree builds
+      run: mkdir -p $CPYTHON_RO_SRCDIR $CPYTHON_BUILDDIR
+    - name: Bind mount sources read-only
+      run: sudo mount --bind -o ro $GITHUB_WORKSPACE $CPYTHON_RO_SRCDIR
+    - name: Configure CPython out-of-tree
+      working-directory: ${{ env.CPYTHON_BUILDDIR }}
+      run: ../cpython-ro-srcdir/configure --with-pydebug --with-openssl=$OPENSSL_DIR
+    - name: Build CPython out-of-tree
+      working-directory: ${{ env.CPYTHON_BUILDDIR }}
+      run: make -j4
+    - name: Display build info
+      working-directory: ${{ env.CPYTHON_BUILDDIR }}
+      run: make pythoninfo
+    - name: Remount sources writable for tests
+      # some tests write to srcdir, lack of pyc files slows down testing
+      run: sudo mount $CPYTHON_RO_SRCDIR -oremount,rw
+    - name: Setup directory envs for out-of-tree builds
+      run: |
+        echo "CPYTHON_BUILDDIR=$(realpath -m ${GITHUB_WORKSPACE}/../cpython-builddir)" >> $GITHUB_ENV
+    - name: "Create hypothesis venv"
+      working-directory: ${{ env.CPYTHON_BUILDDIR }}
+      run: |
+        VENV_LOC=$(realpath -m .)/hypovenv
+        VENV_PYTHON=$VENV_LOC/bin/python
+        echo "HYPOVENV=${VENV_LOC}" >> $GITHUB_ENV
+        echo "VENV_PYTHON=${VENV_PYTHON}" >> $GITHUB_ENV
+        ./python -m venv $VENV_LOC && $VENV_PYTHON -m pip install -U hypothesis
+    - name: "Run tests"
+      working-directory: ${{ env.CPYTHON_BUILDDIR }}
+      run: |
+        # Most of the excluded tests are slow test suites with no property tests
+        #
+        # (GH-104097) test_sysconfig is skipped because it has tests that are
+        # failing when executed from inside a virtual environment.
+        ${{ env.VENV_PYTHON }} -m test \
+          -W \
+          -o \
+          -j4 \
+          -x test_asyncio \
+          -x test_multiprocessing_fork \
+          -x test_multiprocessing_forkserver \
+          -x test_multiprocessing_spawn \
+          -x test_concurrent_futures \
+          -x test_socket \
+          -x test_subprocess \
+          -x test_signal \
+          -x test_sysconfig
 
 
   build_asan:

@@ -1401,23 +1401,37 @@ class SubinterpreterTest(unittest.TestCase):
         DAEMON_THREADS = 1<<11
         FORK = 1<<15
         EXEC = 1<<16
+        ALL_FLAGS = (OBMALLOC | FORK | EXEC | THREADS | DAEMON_THREADS
+                     | EXTENSIONS);
 
-        features = ['obmalloc', 'fork', 'exec', 'threads', 'daemon_threads',
-                    'extensions']
+        features = [
+            'obmalloc',
+            'fork',
+            'exec',
+            'threads',
+            'daemon_threads',
+            'extensions',
+            'own_gil',
+        ]
         kwlist = [f'allow_{n}' for n in features]
         kwlist[0] = 'use_main_obmalloc'
-        kwlist[-1] = 'check_multi_interp_extensions'
+        kwlist[-2] = 'check_multi_interp_extensions'
+        kwlist[-1] = 'own_gil'
 
         # expected to work
         for config, expected in {
-            (True, True, True, True, True, True):
-                OBMALLOC | FORK | EXEC | THREADS | DAEMON_THREADS | EXTENSIONS,
-            (True, False, False, False, False, False): OBMALLOC,
-            (False, False, False, True, False, True): THREADS | EXTENSIONS,
+            (True, True, True, True, True, True, True):
+                (ALL_FLAGS, True),
+            (True, False, False, False, False, False, False):
+                (OBMALLOC, False),
+            (False, False, False, True, False, True, False):
+                (THREADS | EXTENSIONS, False),
         }.items():
             kwargs = dict(zip(kwlist, config))
+            exp_flags, exp_gil = expected
             expected = {
-                'feature_flags': expected,
+                'feature_flags': exp_flags,
+                'own_gil': exp_gil,
             }
             with self.subTest(config):
                 r, w = os.pipe()
@@ -1437,7 +1451,7 @@ class SubinterpreterTest(unittest.TestCase):
 
         # expected to fail
         for config in [
-            (False, False, False, False, False, False),
+            (False, False, False, False, False, False, False),
         ]:
             kwargs = dict(zip(kwlist, config))
             with self.subTest(config):
@@ -1473,6 +1487,7 @@ class SubinterpreterTest(unittest.TestCase):
             'allow_exec': True,
             'allow_threads': True,
             'allow_daemon_threads': True,
+            'own_gil': False,
         }
 
         def check(enabled, override):
@@ -1483,6 +1498,7 @@ class SubinterpreterTest(unittest.TestCase):
             flags = BASE_FLAGS | EXTENSIONS if enabled else BASE_FLAGS
             settings = {
                 'feature_flags': flags,
+                'own_gil': False,
             }
 
             expected = {
@@ -1728,32 +1744,108 @@ class Test_ModuleStateAccess(unittest.TestCase):
         self.assertIs(Subclass().get_defining_module(), self.module)
 
 
+class TestInternalFrameApi(unittest.TestCase):
+
+    @staticmethod
+    def func():
+        return sys._getframe()
+
+    def test_code(self):
+        frame = self.func()
+        code = _testinternalcapi.iframe_getcode(frame)
+        self.assertIs(code, self.func.__code__)
+
+    def test_lasti(self):
+        frame = self.func()
+        lasti = _testinternalcapi.iframe_getlasti(frame)
+        self.assertGreater(lasti, 0)
+        self.assertLess(lasti, len(self.func.__code__.co_code))
+
+    def test_line(self):
+        frame = self.func()
+        line = _testinternalcapi.iframe_getline(frame)
+        firstline = self.func.__code__.co_firstlineno
+        self.assertEqual(line, firstline + 2)
+
+
 SUFFICIENT_TO_DEOPT_AND_SPECIALIZE = 100
 
 class Test_Pep523API(unittest.TestCase):
 
-    def do_test(self, func):
-        calls = []
+    def do_test(self, func, names):
+        actual_calls = []
         start = SUFFICIENT_TO_DEOPT_AND_SPECIALIZE
         count = start + SUFFICIENT_TO_DEOPT_AND_SPECIALIZE
-        for i in range(count):
-            if i == start:
-                _testinternalcapi.set_eval_frame_record(calls)
-            func()
-        _testinternalcapi.set_eval_frame_default()
-        self.assertEqual(len(calls), SUFFICIENT_TO_DEOPT_AND_SPECIALIZE)
-        for name in calls:
-            self.assertEqual(name, func.__name__)
+        try:
+            for i in range(count):
+                if i == start:
+                    _testinternalcapi.set_eval_frame_record(actual_calls)
+                func()
+        finally:
+            _testinternalcapi.set_eval_frame_default()
+        expected_calls = names * SUFFICIENT_TO_DEOPT_AND_SPECIALIZE
+        self.assertEqual(len(expected_calls), len(actual_calls))
+        for expected, actual in zip(expected_calls, actual_calls, strict=True):
+            self.assertEqual(expected, actual)
 
-    def test_pep523_with_specialization_simple(self):
-        def func1():
-            pass
-        self.do_test(func1)
+    def test_inlined_binary_subscr(self):
+        class C:
+            def __getitem__(self, other):
+                return None
+        def func():
+            C()[42]
+        names = ["func", "__getitem__"]
+        self.do_test(func, names)
 
-    def test_pep523_with_specialization_with_default(self):
-        def func2(x=None):
+    def test_inlined_call(self):
+        def inner(x=42):
             pass
-        self.do_test(func2)
+        def func():
+            inner()
+            inner(42)
+        names = ["func", "inner", "inner"]
+        self.do_test(func, names)
+
+    def test_inlined_call_function_ex(self):
+        def inner(x):
+            pass
+        def func():
+            inner(*[42])
+        names = ["func", "inner"]
+        self.do_test(func, names)
+
+    def test_inlined_for_iter(self):
+        def gen():
+            yield 42
+        def func():
+            for _ in gen():
+                pass
+        names = ["func", "gen", "gen", "gen"]
+        self.do_test(func, names)
+
+    def test_inlined_load_attr(self):
+        class C:
+            @property
+            def a(self):
+                return 42
+        class D:
+            def __getattribute__(self, name):
+                return 42
+        def func():
+            C().a
+            D().a
+        names = ["func", "a", "__getattribute__"]
+        self.do_test(func, names)
+
+    def test_inlined_send(self):
+        def inner():
+            yield 42
+        def outer():
+            yield from inner()
+        def func():
+            list(outer())
+        names = ["func", "outer", "outer", "inner", "inner", "outer", "inner"]
+        self.do_test(func, names)
 
 
 if __name__ == "__main__":

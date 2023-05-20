@@ -21,6 +21,7 @@ inherit from pure paths but also provide I/O operations.
 
 .. image:: pathlib-inheritance.png
    :align: center
+   :class: invert-in-dark-mode
 
 If you've never used this module before or just aren't sure which class is
 right for your task, :class:`Path` is most likely what you need. It instantiates
@@ -545,7 +546,7 @@ Pure paths provide the following methods and properties:
       PureWindowsPath('c:/Program Files')
 
 
-.. method:: PurePath.match(pattern)
+.. method:: PurePath.match(pattern, *, case_sensitive=None)
 
    Match this path against the provided glob-style pattern.  Return ``True``
    if matching is successful, ``False`` otherwise.
@@ -574,6 +575,11 @@ Pure paths provide the following methods and properties:
       False
       >>> PureWindowsPath('b.py').match('*.PY')
       True
+
+   Set *case_sensitive* to ``True`` or ``False`` to override this behaviour.
+
+   .. versionadded:: 3.12
+      The *case_sensitive* argument.
 
 
 .. method:: PurePath.relative_to(other, walk_up=False)

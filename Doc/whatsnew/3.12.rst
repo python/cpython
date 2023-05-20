@@ -153,6 +153,30 @@ New Features
   In Python 3.14, the default will switch to ``'data'``.
   (Contributed by Petr Viktorin in :pep:`706`.)
 
+.. _whatsnew312-pep709:
+
+PEP 709: Comprehension inlining
+-------------------------------
+
+Dictionary, list, and set comprehensions are now inlined, rather than creating a
+new single-use function object for each execution of the comprehension. This
+speeds up execution of a comprehension by up to 2x.
+
+Comprehension iteration variables remain isolated; they don't overwrite a
+variable of the same name in the outer scope, nor are they visible after the
+comprehension. This isolation is now maintained via stack/locals manipulation,
+not via separate function scope.
+
+Inlining does result in a few visible behavior changes:
+
+* There is no longer a separate frame for the comprehension in tracebacks,
+  and tracing/profiling no longer shows the comprehension as a function call.
+* Calling :func:`locals` inside a comprehension now includes variables
+  from outside the comprehension, and no longer includes the synthetic ``.0``
+  variable for the comprehension "argument".
+
+Contributed by Carl Meyer and Vladimir Matveev in :pep:`709`.
+
 PEP 688: Making the buffer protocol accessible in Python
 --------------------------------------------------------
 
@@ -282,6 +306,11 @@ asyncio
   writing to sockets and uses :meth:`~socket.socket.sendmsg` if the platform
   supports it. (Contributed by Kumar Aditya in :gh:`91166`.)
 
+* Added :func:`asyncio.eager_task_factory` and :func:`asyncio.create_eager_task_factory`
+  functions to allow opting an event loop in to eager task execution,
+  making some use-cases 2x to 5x faster.
+  (Contributed by Jacob Bower & Itamar O in :gh:`102853`, :gh:`104140`, and :gh:`104138`)
+
 * On Linux, :mod:`asyncio` uses :class:`~asyncio.PidfdChildWatcher` by default
   if :func:`os.pidfd_open` is available and functional instead of
   :class:`~asyncio.ThreadedChildWatcher`.
@@ -342,8 +371,9 @@ inspect
   (Contributed by Thomas Krennwallner in :issue:`35759`.)
 
 * The performance of :func:`inspect.getattr_static` has been considerably
-  improved. Most calls to the function should be around 2x faster than they
-  were in Python 3.11. (Contributed by Alex Waygood in :gh:`103193`.)
+  improved. Most calls to the function should be at least 2x faster than they
+  were in Python 3.11, and some may be 6x faster or more. (Contributed by Alex
+  Waygood in :gh:`103193`.)
 
 pathlib
 -------
@@ -365,6 +395,9 @@ pathlib
 * Add :meth:`pathlib.Path.is_junction` as a proxy to :func:`os.path.isjunction`.
   (Contributed by Charles Machalow in :gh:`99547`.)
 
+* Add *case_sensitive* optional parameter to :meth:`pathlib.Path.glob`,
+  :meth:`pathlib.Path.rglob` and :meth:`pathlib.PurePath.match` for matching
+  the path's case sensitivity, allowing for more precise control over the matching process.
 
 dis
 ---
@@ -597,7 +630,7 @@ typing
   :func:`runtime-checkable protocols <typing.runtime_checkable>` has changed
   significantly. Most ``isinstance()`` checks against protocols with only a few
   members should be at least 2x faster than in 3.11, and some may be 20x
-  faster or more. However, ``isinstance()`` checks against protocols with seven
+  faster or more. However, ``isinstance()`` checks against protocols with fourteen
   or more members may be slower than in Python 3.11. (Contributed by Alex
   Waygood in :gh:`74690` and :gh:`103193`.)
 
@@ -642,11 +675,6 @@ Optimizations
 
 * Speed up :class:`asyncio.Task` creation by deferring expensive string formatting.
   (Contributed by Itamar O in :gh:`103793`.)
-
-* Added :func:`asyncio.eager_task_factory` and :func:`asyncio.create_eager_task_factory`
-  functions to allow opting an event loop in to eager task execution,
-  speeding up some use-cases by up to 50%.
-  (Contributed by Jacob Bower & Itamar O in :gh:`102853`)
 
 
 CPython bytecode changes
@@ -806,6 +834,9 @@ Pending Removal in Python 3.14
   For use in typing, prefer a union, like ``bytes | bytearray``, or :class:`collections.abc.Buffer`.
   (Contributed by Shantanu Jain in :gh:`91896`.)
 
+* :class:`typing.ByteString`, deprecated since Python 3.9, now causes a
+  :exc:`DeprecationWarning` to be emitted when it is used.
+
 * Creating immutable types (:data:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
   bases using the C API.
 
@@ -839,10 +870,28 @@ Pending Removal in Python 3.14
 * The *onerror* argument of :func:`shutil.rmtree` is deprecated in 3.12,
   and will be removed in 3.14.
 
+* The *type*, *choices*, and *metavar* parameters
+  of :class:`!argparse.BooleanOptionalAction` are deprecated
+  and will be removed in 3.14.
+  (Contributed by Nikita Sobolev in :gh:`92248`.)
+
 * :func:`pkgutil.find_loader` and :func:`pkgutil.get_loader`
   now raise :exc:`DeprecationWarning`;
   use :func:`importlib.util.find_spec` instead.
   (Contributed by Nikita Sobolev in :gh:`97850`.)
+
+* The following :mod:`ast` features have been deprecated in documentation since
+  Python 3.8, now cause a :exc:`DeprecationWarning` to be emitted at runtime
+  when they are accessed or used, and will be removed in Python 3.14:
+
+  * :class:`!ast.Num`
+  * :class:`!ast.Str`
+  * :class:`!ast.Bytes`
+  * :class:`!ast.NameConstant`
+  * :class:`!ast.Ellipsis`
+
+  Use :class:`ast.Constant` instead.
+  (Contributed by Serhiy Storchaka in :gh:`90953`.)
 
 Pending Removal in Future Versions
 ----------------------------------
@@ -1154,6 +1203,16 @@ Build Changes
   ``compileall`` commands into a single command to build .pyc files for all
   optimization levels (0, 1, 2) at once.
   (Contributed by Victor Stinner in :gh:`99289`.)
+
+* Add platform triplets for 64-bit LoongArch:
+
+  * loongarch64-linux-gnusf
+  * loongarch64-linux-gnuf32
+  * loongarch64-linux-gnu
+
+  (Contributed by Zhang Na in :gh:`90656`.)
+
+* ``PYTHON_FOR_REGEN`` now require Python 3.10 or newer.
 
 
 C API Changes

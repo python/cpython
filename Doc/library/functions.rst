@@ -168,6 +168,13 @@ are always available.  They are listed here in alphabetical order.
    If :func:`sys.breakpointhook` is not accessible, this function will
    raise :exc:`RuntimeError`.
 
+   By default, the behavior of :func:`breakpoint` can be changed with
+   the :envvar:`PYTHONBREAKPOINT` environment variable.
+   See :func:`sys.breakpointhook` for usage details.
+
+   Note that this is not guaranteed if :func:`sys.breakpointhook`
+   has been replaced.
+
    .. audit-event:: builtins.breakpoint breakpointhook breakpoint
 
    .. versionadded:: 3.7
@@ -562,7 +569,7 @@ are always available.  They are listed here in alphabetical order.
       Raises an :ref:`auditing event <auditing>` ``exec`` with the code object
       as the argument. Code compilation events may also be raised.
 
-.. index:: builtin: exec
+.. index:: pair: built-in function; exec
 
 .. function:: exec(object, globals=None, locals=None, /, *, closure=None)
 
