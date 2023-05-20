@@ -4237,8 +4237,7 @@ class DSLParser:
             fail("Insufficient Clinic version!\n  Version: " + version + "\n  Required: " + required)
 
     def directive_module(self, name):
-        fields = name.split('.')
-        _ = fields.pop()
+        fields = name.split('.')[:-1]
         module, cls = self.clinic._module_and_class(fields)
         if cls:
             fail("Can't nest a module inside a class!")
