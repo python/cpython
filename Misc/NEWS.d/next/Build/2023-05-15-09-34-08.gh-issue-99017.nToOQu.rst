@@ -1,0 +1,1 @@
+``PYTHON_FOR_REGEN`` now require Python 3.10 or newer.

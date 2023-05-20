@@ -21,6 +21,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 0;
         case LOAD_FAST:
             return 0;
+        case LOAD_FAST_AND_CLEAR:
+            return 0;
         case LOAD_CONST:
             return 0;
         case STORE_FAST:
@@ -159,8 +161,12 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case DELETE_GLOBAL:
             return 0;
-        case LOAD_NAME:
+        case LOAD_LOCALS:
             return 0;
+        case LOAD_NAME:
+            return 0+1;
+        case LOAD_FROM_DICT_OR_GLOBALS:
+            return 1;
         case LOAD_GLOBAL:
             return 0;
         case LOAD_GLOBAL_MODULE:
@@ -173,8 +179,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 0;
         case DELETE_DEREF:
             return 0;
-        case LOAD_CLASSDEREF:
-            return 0;
+        case LOAD_FROM_DICT_OR_DEREF:
+            return 1;
         case LOAD_DEREF:
             return 0;
         case STORE_DEREF:
@@ -205,7 +211,11 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case MAP_ADD:
             return 2;
+        case INSTRUMENTED_LOAD_SUPER_ATTR:
+            return 3;
         case LOAD_SUPER_ATTR:
+            return 3;
+        case LOAD_SUPER_ATTR_ATTR:
             return 3;
         case LOAD_SUPER_ATTR_METHOD:
             return 3;
@@ -363,8 +373,6 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 2;
         case SWAP:
             return (oparg-2) + 2;
-        case INSTRUMENTED_LINE:
-            return 0;
         case INSTRUMENTED_INSTRUCTION:
             return 0;
         case INSTRUMENTED_JUMP_FORWARD:
@@ -408,6 +416,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case LOAD_FAST_CHECK:
             return 1;
         case LOAD_FAST:
+            return 1;
+        case LOAD_FAST_AND_CLEAR:
             return 1;
         case LOAD_CONST:
             return 1;
@@ -508,7 +518,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case SEND:
             return 2;
         case SEND_GEN:
-            return 1;
+            return 2;
         case INSTRUMENTED_YIELD_VALUE:
             return 1;
         case YIELD_VALUE:
@@ -547,7 +557,11 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case DELETE_GLOBAL:
             return 0;
+        case LOAD_LOCALS:
+            return 1;
         case LOAD_NAME:
+            return 1+1;
+        case LOAD_FROM_DICT_OR_GLOBALS:
             return 1;
         case LOAD_GLOBAL:
             return ((oparg & 1) ? 1 : 0) + 1;
@@ -561,7 +575,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case DELETE_DEREF:
             return 0;
-        case LOAD_CLASSDEREF:
+        case LOAD_FROM_DICT_OR_DEREF:
             return 1;
         case LOAD_DEREF:
             return 1;
@@ -593,7 +607,11 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case MAP_ADD:
             return 0;
+        case INSTRUMENTED_LOAD_SUPER_ATTR:
+            return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_SUPER_ATTR:
+            return ((oparg & 1) ? 1 : 0) + 1;
+        case LOAD_SUPER_ATTR_ATTR:
             return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_SUPER_ATTR_METHOD:
             return 2;
@@ -751,8 +769,6 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 1;
         case SWAP:
             return (oparg-2) + 2;
-        case INSTRUMENTED_LINE:
-            return 0;
         case INSTRUMENTED_INSTRUCTION:
             return 0;
         case INSTRUMENTED_JUMP_FORWARD:
@@ -779,7 +795,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
 }
 #endif
 
-enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC00, INSTR_FMT_IBC000, INSTR_FMT_IBC00000000, INSTR_FMT_IBIB, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC000, INSTR_FMT_IXC00000000 };
+enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC00, INSTR_FMT_IBC000, INSTR_FMT_IBC00000000, INSTR_FMT_IBIB, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC000 };
 struct opcode_metadata {
     bool valid_entry;
     enum InstructionFormat instr_format;
@@ -795,6 +811,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [LOAD_CLOSURE] = { true, INSTR_FMT_IB },
     [LOAD_FAST_CHECK] = { true, INSTR_FMT_IB },
     [LOAD_FAST] = { true, INSTR_FMT_IB },
+    [LOAD_FAST_AND_CLEAR] = { true, INSTR_FMT_IB },
     [LOAD_CONST] = { true, INSTR_FMT_IB },
     [STORE_FAST] = { true, INSTR_FMT_IB },
     [LOAD_FAST__LOAD_FAST] = { true, INSTR_FMT_IBIB },
@@ -864,14 +881,16 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [DELETE_ATTR] = { true, INSTR_FMT_IB },
     [STORE_GLOBAL] = { true, INSTR_FMT_IB },
     [DELETE_GLOBAL] = { true, INSTR_FMT_IB },
+    [LOAD_LOCALS] = { true, INSTR_FMT_IB },
     [LOAD_NAME] = { true, INSTR_FMT_IB },
+    [LOAD_FROM_DICT_OR_GLOBALS] = { true, INSTR_FMT_IB },
     [LOAD_GLOBAL] = { true, INSTR_FMT_IBC000 },
     [LOAD_GLOBAL_MODULE] = { true, INSTR_FMT_IBC000 },
     [LOAD_GLOBAL_BUILTIN] = { true, INSTR_FMT_IBC000 },
     [DELETE_FAST] = { true, INSTR_FMT_IB },
     [MAKE_CELL] = { true, INSTR_FMT_IB },
     [DELETE_DEREF] = { true, INSTR_FMT_IB },
-    [LOAD_CLASSDEREF] = { true, INSTR_FMT_IB },
+    [LOAD_FROM_DICT_OR_DEREF] = { true, INSTR_FMT_IB },
     [LOAD_DEREF] = { true, INSTR_FMT_IB },
     [STORE_DEREF] = { true, INSTR_FMT_IB },
     [COPY_FREE_VARS] = { true, INSTR_FMT_IB },
@@ -887,8 +906,10 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [DICT_UPDATE] = { true, INSTR_FMT_IB },
     [DICT_MERGE] = { true, INSTR_FMT_IB },
     [MAP_ADD] = { true, INSTR_FMT_IB },
-    [LOAD_SUPER_ATTR] = { true, INSTR_FMT_IBC00000000 },
-    [LOAD_SUPER_ATTR_METHOD] = { true, INSTR_FMT_IXC00000000 },
+    [INSTRUMENTED_LOAD_SUPER_ATTR] = { true, INSTR_FMT_IBC00000000 },
+    [LOAD_SUPER_ATTR] = { true, INSTR_FMT_IBC },
+    [LOAD_SUPER_ATTR_ATTR] = { true, INSTR_FMT_IBC },
+    [LOAD_SUPER_ATTR_METHOD] = { true, INSTR_FMT_IBC },
     [LOAD_ATTR] = { true, INSTR_FMT_IBC00000000 },
     [LOAD_ATTR_INSTANCE_VALUE] = { true, INSTR_FMT_IBC00000000 },
     [LOAD_ATTR_MODULE] = { true, INSTR_FMT_IBC00000000 },
@@ -966,7 +987,6 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [COPY] = { true, INSTR_FMT_IB },
     [BINARY_OP] = { true, INSTR_FMT_IBC },
     [SWAP] = { true, INSTR_FMT_IB },
-    [INSTRUMENTED_LINE] = { true, INSTR_FMT_IX },
     [INSTRUMENTED_INSTRUCTION] = { true, INSTR_FMT_IX },
     [INSTRUMENTED_JUMP_FORWARD] = { true, INSTR_FMT_IB },
     [INSTRUMENTED_JUMP_BACKWARD] = { true, INSTR_FMT_IB },

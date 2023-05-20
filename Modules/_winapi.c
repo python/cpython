@@ -133,7 +133,7 @@ overlapped_dealloc(OverlappedObject *self)
         {
             /* The operation is no longer pending -- nothing to do. */
         }
-        else if (_Py_IsFinalizing())
+        else if (_Py_IsInterpreterFinalizing(PyInterpreterState_Get()))
         {
             /* The operation is still pending -- give a warning.  This
                will probably only happen on Windows XP. */
@@ -2259,6 +2259,7 @@ static int winapi_exec(PyObject *m)
 
 static PyModuleDef_Slot winapi_slots[] = {
     {Py_mod_exec, winapi_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

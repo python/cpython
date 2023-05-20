@@ -1622,7 +1622,7 @@ class GeneralModuleTests(unittest.TestCase):
 
         from _testcapi import ULONG_MAX, LONG_MAX, LONG_MIN
         try:
-            socket.getaddrinfo(None, ULONG_MAX + 1)
+            socket.getaddrinfo(None, ULONG_MAX + 1, type=socket.SOCK_STREAM)
         except OverflowError:
             # Platforms differ as to what values consitute a getaddrinfo() error
             # return. Some fail for LONG_MAX+1, others ULONG_MAX+1, and Windows
@@ -1632,28 +1632,28 @@ class GeneralModuleTests(unittest.TestCase):
             pass
 
         try:
-            socket.getaddrinfo(None, LONG_MAX + 1)
+            socket.getaddrinfo(None, LONG_MAX + 1, type=socket.SOCK_STREAM)
         except OverflowError:
             self.fail("Either no error or socket.gaierror expected.")
         except socket.gaierror:
             pass
 
         try:
-            socket.getaddrinfo(None, LONG_MAX - 0xffff + 1)
+            socket.getaddrinfo(None, LONG_MAX - 0xffff + 1, type=socket.SOCK_STREAM)
         except OverflowError:
             self.fail("Either no error or socket.gaierror expected.")
         except socket.gaierror:
             pass
 
         try:
-            socket.getaddrinfo(None, LONG_MIN - 1)
+            socket.getaddrinfo(None, LONG_MIN - 1, type=socket.SOCK_STREAM)
         except OverflowError:
             self.fail("Either no error or socket.gaierror expected.")
         except socket.gaierror:
             pass
 
-        socket.getaddrinfo(None, 0)  # No error expected.
-        socket.getaddrinfo(None, 0xffff)  # No error expected.
+        socket.getaddrinfo(None, 0, type=socket.SOCK_STREAM)  # No error expected.
+        socket.getaddrinfo(None, 0xffff, type=socket.SOCK_STREAM)  # No error expected.
 
     def test_getnameinfo(self):
         # only IP addresses are allowed

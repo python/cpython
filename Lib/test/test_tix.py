@@ -5,7 +5,7 @@ from test.support import import_helper
 from test.support import check_sanitizer
 
 if check_sanitizer(address=True, memory=True):
-    raise unittest.SkipTest("Tests involvin libX11 can SEGFAULT on ASAN/MSAN builds")
+    raise unittest.SkipTest("Tests involving libX11 can SEGFAULT on ASAN/MSAN builds")
 
 
 # Skip this test if the _tkinter module wasn't built.

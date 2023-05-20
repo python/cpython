@@ -19,7 +19,6 @@ struct _frame {
     struct _PyInterpreterFrame *f_frame; /* points to the frame data */
     PyObject *f_trace;          /* Trace function */
     int f_lineno;               /* Current line number. Only valid if non-zero */
-    int f_last_traced_line;     /* The last line traced for this frame */
     char f_trace_lines;         /* Emit per-line trace events? */
     char f_trace_opcodes;       /* Emit per-opcode trace events? */
     char f_fast_as_locals;      /* Have the fast locals of this frame been converted to a dict? */
@@ -145,9 +144,9 @@ _PyFrame_GetLocalsArray(_PyInterpreterFrame *frame)
 }
 
 /* Fetches the stack pointer, and sets stacktop to -1.
-    Having stacktop <= 0 ensures that invalid
-    values are not visible to the cycle GC.
-    We choose -1 rather than 0 to assist debugging. */
+   Having stacktop <= 0 ensures that invalid
+   values are not visible to the cycle GC.
+   We choose -1 rather than 0 to assist debugging. */
 static inline PyObject**
 _PyFrame_GetStackPointer(_PyInterpreterFrame *frame)
 {
@@ -264,8 +263,6 @@ _PyFrame_PushUnchecked(PyThreadState *tstate, PyFunctionObject *func, int null_l
     _PyFrame_Initialize(new_frame, func, NULL, code, null_locals_from);
     return new_frame;
 }
-
-int _PyInterpreterFrame_GetLine(_PyInterpreterFrame *frame);
 
 static inline
 PyGenObject *_PyFrame_GetGenerator(_PyInterpreterFrame *frame)
