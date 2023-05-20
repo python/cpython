@@ -1124,7 +1124,7 @@ tok_underflow_interactive(struct tok_state *tok) {
 
 static int
 tok_underflow_file(struct tok_state *tok) {
-    if (tok->start == NULL) {
+    if (tok->start == NULL && !INSIDE_FSTRING(tok)) {
         tok->cur = tok->inp = tok->buf;
     }
     if (tok->decoding_state == STATE_INIT) {
@@ -2250,6 +2250,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         the_current_tok->f_string_quote_size = quote_size;
         the_current_tok->f_string_start = tok->start;
         the_current_tok->f_string_multi_line_start = tok->line_start;
+        the_current_tok->f_string_line_start = tok->lineno;
         the_current_tok->f_string_start_offset = -1;
         the_current_tok->f_string_multi_line_start_offset = -1;
         the_current_tok->last_expr_buffer = NULL;
@@ -2580,7 +2581,9 @@ f_string_middle:
             tok->cur++;
             tok->line_start = current_tok->f_string_multi_line_start;
             int start = tok->lineno;
-            tok->lineno = tok->first_lineno;
+
+            tokenizer_mode *the_current_tok = TOK_GET_MODE(tok);
+            tok->lineno = the_current_tok->f_string_line_start;
 
             if (current_tok->f_string_quote_size == 3) {
                 return MAKE_TOKEN(syntaxerror(tok,
