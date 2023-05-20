@@ -937,7 +937,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    .. seealso::
 
       * :pep:`612` -- Parameter Specification Variables (the PEP which introduced
-      ``ParamSpec`` and ``Concatenate``).
+        ``ParamSpec`` and ``Concatenate``).
       * :class:`ParamSpec` and :class:`Callable`.
 
 
