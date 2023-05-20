@@ -139,6 +139,8 @@ extern struct tok_state *_PyTokenizer_FromUTF8(const char *, int);
 extern struct tok_state *_PyTokenizer_FromFile(FILE *, const char*,
                                               const char *, const char *);
 extern void _PyTokenizer_Free(struct tok_state *);
+extern void _PyToken_Free(struct token *);
+extern void _PyToken_Init(struct token *);
 extern int _PyTokenizer_Get(struct tok_state *, struct token *);
 
 #define tok_dump _Py_tok_dump

@@ -162,18 +162,21 @@ exit:
 static PyObject *
 tokenizeriter_next(tokenizeriterobject *it)
 {
+    PyObject* result = NULL;
     struct token token;
+    _PyToken_Init(&token);
+
     int type = _PyTokenizer_Get(it->tok, &token);
     if (type == ERRORTOKEN) {
         if(!PyErr_Occurred()) {
             _tokenizer_error(it->tok);
             assert(PyErr_Occurred());
         }
-        return NULL;
+        goto exit;
     }
     if (type == ERRORTOKEN || type == ENDMARKER) {
         PyErr_SetString(PyExc_StopIteration, "EOF");
-        return NULL;
+        goto exit;
     }
     PyObject *str = NULL;
     if (token.start == NULL || token.end == NULL) {
@@ -183,14 +186,14 @@ tokenizeriter_next(tokenizeriterobject *it)
         str = PyUnicode_FromStringAndSize(token.start, token.end - token.start);
     }
     if (str == NULL) {
-        return NULL;
+        goto exit;
     }
 
     Py_ssize_t size = it->tok->inp - it->tok->buf;
     PyObject *line = PyUnicode_DecodeUTF8(it->tok->buf, size, "replace");
     if (line == NULL) {
         Py_DECREF(str);
-        return NULL;
+        goto exit;
     }
     const char *line_start = ISSTRINGLIT(type) ? it->tok->multi_line_start : it->tok->line_start;
     Py_ssize_t lineno = ISSTRINGLIT(type) ? it->tok->first_lineno : it->tok->lineno;
@@ -204,7 +207,10 @@ tokenizeriter_next(tokenizeriterobject *it)
         end_col_offset = _PyPegen_byte_offset_to_character_offset(line, token.end - it->tok->line_start);
     }
 
-    return Py_BuildValue("(NinnnnN)", str, type, lineno, end_lineno, col_offset, end_col_offset, line);
+    result = Py_BuildValue("(NinnnnN)", str, type, lineno, end_lineno, col_offset, end_col_offset, line);
+exit:
+    _PyToken_Free(&token);
+    return result;
 }
 
 static void

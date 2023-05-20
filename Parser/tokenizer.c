@@ -982,6 +982,16 @@ _PyTokenizer_Free(struct tok_state *tok)
     PyMem_Free(tok);
 }
 
+void
+_PyToken_Free(struct token *token) {
+    Py_XDECREF(token->metadata);
+}
+
+void
+_PyToken_Init(struct token *token) {
+    token->metadata = NULL;
+}
+
 static int
 tok_readline_raw(struct tok_state *tok)
 {
@@ -1973,6 +1983,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
 
                 struct tok_state ahead_tok;
                 struct token ahead_token;
+                _PyToken_Init(&ahead_token);
                 int ahead_tok_kind;
 
                 memcpy(&ahead_tok, tok, sizeof(ahead_tok));
@@ -1988,8 +1999,10 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                        returning a plain NAME token, return ASYNC. */
                     tok->async_def_indent = tok->indent;
                     tok->async_def = 1;
+                    _PyToken_Free(&ahead_token);
                     return MAKE_TOKEN(ASYNC);
                 }
+                _PyToken_Free(&ahead_token);
             }
         }
 
@@ -2823,7 +2836,9 @@ _PyTokenizer_FindEncodingFilename(int fd, PyObject *filename)
     // if fetching the encoding shows a warning.
     tok->report_warnings = 0;
     while (tok->lineno < 2 && tok->done == E_OK) {
+        _PyToken_Init(&token);
         _PyTokenizer_Get(tok, &token);
+        _PyToken_Free(&token);
     }
     fclose(fp);
     if (tok->encoding) {
