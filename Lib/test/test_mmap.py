@@ -889,7 +889,7 @@ class MmapTests(unittest.TestCase):
     def test_mmap_closed_by_int_scenarios(self):
         """
         gh-103987: Test that mmap objects raise ValueError
-                for accidentally closed mmap files
+                for closed mmap files
         """
 
         class MmapClosedByIntContext:
