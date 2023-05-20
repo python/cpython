@@ -1070,14 +1070,14 @@ class CLanguage(Language):
         else:
             has_optional_kw = (max(pos_only, min_pos) + min_kw_only < len(converters) - int(vararg != NO_VARARG))
             if vararg == NO_VARARG:
-                args_declaration = "_PyArg_UnpackKeywords", "{}, {}, {}".format(
+                args_declaration = "_PyArg_UnpackKeywords", "%s, %s, %s" % (
                     min_pos,
                     max_pos,
                     min_kw_only
                 )
                 nargs = "nargs"
             else:
-                args_declaration = "_PyArg_UnpackKeywordsWithVararg", "{}, {}, {}, {}".format(
+                args_declaration = "_PyArg_UnpackKeywordsWithVararg", "%s, %s, %s, %s" % (
                     min_pos,
                     max_pos,
                     min_kw_only,
