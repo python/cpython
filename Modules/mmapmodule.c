@@ -231,8 +231,8 @@ do {                                                                    \
 do {                                                                    \
     if (self->map_handle == NULL) {                                     \
     PyErr_SetString(PyExc_ValueError, "mmap closed or invalid");        \
-    PyBuffer_Release(&buffer);                                          \
-    return err;                                                         \
+    PyBuffer_Release(&(buffer));                                        \
+    return (err);                                                       \
     }                                                                   \
 } while (0)
 #endif /* MS_WINDOWS */
