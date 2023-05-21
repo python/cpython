@@ -984,13 +984,13 @@ These can be used as types in annotations using ``[]``, each having a unique syn
       # We don't need to pass in the lock ourselves thanks to the decorator.
       sum_threadsafe([1.1, 2.2, 3.3])
 
-.. versionadded:: 3.10
+   .. versionadded:: 3.10
 
-.. seealso::
+   .. seealso::
 
-   * :pep:`612` -- Parameter Specification Variables (the PEP which introduced
-     ``ParamSpec`` and ``Concatenate``).
-   * :class:`ParamSpec` and :class:`Callable`.
+      * :pep:`612` -- Parameter Specification Variables (the PEP which introduced
+        ``ParamSpec`` and ``Concatenate``).
+      * :class:`ParamSpec` and :class:`Callable`.
 
 
 .. class:: Type[CT_co]
@@ -1274,6 +1274,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
    .. versionadded:: 3.10
 
+
 .. data:: Unpack
 
    A typing operator that conceptually marks an object as having been
@@ -1361,8 +1362,7 @@ can also be created without the dedicated syntax, as documented below.
               ...
               # Etc.
 
-.. class:: TypeVar(name, *constraints, bound=None, covariant=False,
-                   contravariant=False, infer_variance=False)
+.. class:: TypeVar(name, *constraints, bound=None, covariant=False, contravariant=False, infer_variance=False)
 
     Type variable.
 
@@ -1481,6 +1481,7 @@ can also be created without the dedicated syntax, as documented below.
 
         T = TypeVar("T")
         Ts = TypeVarTuple("Ts")
+
         def move_first_element_to_last(tup: tuple[T, *Ts]) -> tuple[*Ts, T]:
             return (*tup[1:], tup[0])
 
@@ -1746,6 +1747,95 @@ Other special directives
 
 These are not used in annotations. They are building blocks for declaring types.
 
+.. class:: NamedTuple
+
+   Typed version of :func:`collections.namedtuple`.
+
+   Usage::
+
+       class Employee(NamedTuple):
+           name: str
+           id: int
+
+   This is equivalent to::
+
+       Employee = collections.namedtuple('Employee', ['name', 'id'])
+
+   To give a field a default value, you can assign to it in the class body::
+
+      class Employee(NamedTuple):
+          name: str
+          id: int = 3
+
+      employee = Employee('Guido')
+      assert employee.id == 3
+
+   Fields with a default value must come after any fields without a default.
+
+   The resulting class has an extra attribute ``__annotations__`` giving a
+   dict that maps the field names to the field types.  (The field names are in
+   the ``_fields`` attribute and the default values are in the
+   ``_field_defaults`` attribute, both of which are part of the :func:`~collections.namedtuple`
+   API.)
+
+   ``NamedTuple`` subclasses can also have docstrings and methods::
+
+      class Employee(NamedTuple):
+          """Represents an employee."""
+          name: str
+          id: int = 3
+
+          def __repr__(self) -> str:
+              return f'<Employee {self.name}, id={self.id}>'
+
+   ``NamedTuple`` subclasses can be generic::
+
+      class Group[T](NamedTuple):
+          key: T
+          group: list[T]
+
+   Backward-compatible usage::
+
+       # For creating a generic NamedTuple on Python 3.11 or lower
+       class Group(NamedTuple, Generic[T]):
+           key: T
+           group: list[T]
+
+       # For creating a NamedTuple on Python 3.5 or lower
+       Employee = NamedTuple('Employee', [('name', str), ('id', int)])
+
+   .. versionchanged:: 3.6
+      Added support for :pep:`526` variable annotation syntax.
+
+   .. versionchanged:: 3.6.1
+      Added support for default values, methods, and docstrings.
+
+   .. versionchanged:: 3.8
+      The ``_field_types`` and ``__annotations__`` attributes are
+      now regular dictionaries instead of instances of ``OrderedDict``.
+
+   .. versionchanged:: 3.9
+      Removed the ``_field_types`` attribute in favor of the more
+      standard ``__annotations__`` attribute which has the same information.
+
+   .. versionchanged:: 3.11
+      Added support for generic namedtuples.
+
+.. class:: NewType(name, tp)
+
+   A helper class to indicate a distinct type to a typechecker,
+   see :ref:`distinct`. At runtime it returns an object that returns
+   its argument when called.
+   Usage::
+
+      UserId = NewType('UserId', int)
+      first_user = UserId(1)
+
+   .. versionadded:: 3.5.2
+
+   .. versionchanged:: 3.10
+      ``NewType`` is now a class rather than a function.
+
 .. class:: Protocol(Generic)
 
    Base class for protocol classes. Protocol classes are defined like this::
@@ -1847,95 +1937,6 @@ These are not used in annotations. They are building blocks for declaring types.
       have no impact on :func:`isinstance` checks comparing objects to the
       protocol. See :ref:`"What's new in Python 3.12" <whatsnew-typing-py312>`
       for more details.
-
-.. class:: NamedTuple
-
-   Typed version of :func:`collections.namedtuple`.
-
-   Usage::
-
-       class Employee(NamedTuple):
-           name: str
-           id: int
-
-   This is equivalent to::
-
-       Employee = collections.namedtuple('Employee', ['name', 'id'])
-
-   To give a field a default value, you can assign to it in the class body::
-
-      class Employee(NamedTuple):
-          name: str
-          id: int = 3
-
-      employee = Employee('Guido')
-      assert employee.id == 3
-
-   Fields with a default value must come after any fields without a default.
-
-   The resulting class has an extra attribute ``__annotations__`` giving a
-   dict that maps the field names to the field types.  (The field names are in
-   the ``_fields`` attribute and the default values are in the
-   ``_field_defaults`` attribute, both of which are part of the :func:`~collections.namedtuple`
-   API.)
-
-   ``NamedTuple`` subclasses can also have docstrings and methods::
-
-      class Employee(NamedTuple):
-          """Represents an employee."""
-          name: str
-          id: int = 3
-
-          def __repr__(self) -> str:
-              return f'<Employee {self.name}, id={self.id}>'
-
-   ``NamedTuple`` subclasses can be generic::
-
-      class Group[T](NamedTuple):
-          key: T
-          group: list[T]
-
-   Backward-compatible usage::
-
-       # For creating a generic NamedTuple on Python 3.11 or lower
-       class Group(NamedTuple, Generic[T]):
-           key: T
-           group: list[T]
-
-       # For creating a NamedTuple on Python 3.5 or lower
-       Employee = NamedTuple('Employee', [('name', str), ('id', int)])
-
-   .. versionchanged:: 3.6
-      Added support for :pep:`526` variable annotation syntax.
-
-   .. versionchanged:: 3.6.1
-      Added support for default values, methods, and docstrings.
-
-   .. versionchanged:: 3.8
-      The ``_field_types`` and ``__annotations__`` attributes are
-      now regular dictionaries instead of instances of ``OrderedDict``.
-
-   .. versionchanged:: 3.9
-      Removed the ``_field_types`` attribute in favor of the more
-      standard ``__annotations__`` attribute which has the same information.
-
-   .. versionchanged:: 3.11
-      Added support for generic namedtuples.
-
-.. class:: NewType(name, tp)
-
-   A helper class to indicate a distinct type to a typechecker,
-   see :ref:`distinct`. At runtime it returns an object that returns
-   its argument when called.
-   Usage::
-
-      UserId = NewType('UserId', int)
-      first_user = UserId(1)
-
-   .. versionadded:: 3.5.2
-
-   .. versionchanged:: 3.10
-      ``NewType`` is now a class rather than a function.
 
 .. class:: TypedDict(dict)
 
