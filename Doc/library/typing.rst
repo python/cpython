@@ -1507,108 +1507,112 @@ can also be created without the dedicated syntax, as documented below.
 
 .. class:: TypeVarTuple(name)
 
-    Type variable tuple. A specialized form of :class:`type variable <TypeVar>`
-    that enables *variadic* generics.
+   Type variable tuple. A specialized form of :class:`type variable <TypeVar>`
+   that enables *variadic* generics.
 
-    Type variable tuples can be declared in :ref:`type parameter lists <type-params>`
-    using a single asterisk (``*``) before the name::
+   Type variable tuples can be declared in :ref:`type parameter lists <type-params>`
+   using a single asterisk (``*``) before the name::
 
-        def move_first_element_to_last[T, *Ts](tup: tuple[T, *Ts]) -> tuple[*Ts, T]:
-            return (*tup[1:], tup[0])
+      def move_first_element_to_last[T, *Ts](tup: tuple[T, *Ts]) -> tuple[*Ts, T]:
+         return (*tup[1:], tup[0])
 
-    Or by explicitly invoking the ``TypeVarTuple`` constructor::
+   Or by explicitly invoking the ``TypeVarTuple`` constructor::
 
-        T = TypeVar("T")
-        Ts = TypeVarTuple("Ts")
+      T = TypeVar("T")
+      Ts = TypeVarTuple("Ts")
 
-        def move_first_element_to_last(tup: tuple[T, *Ts]) -> tuple[*Ts, T]:
-            return (*tup[1:], tup[0])
+      def move_first_element_to_last(tup: tuple[T, *Ts]) -> tuple[*Ts, T]:
+         return (*tup[1:], tup[0])
 
-    A normal type variable enables parameterization with a single type. A type
-    variable tuple, in contrast, allows parameterization with an
-    *arbitrary* number of types by acting like an *arbitrary* number of type
-    variables wrapped in a tuple. For example::
+   A normal type variable enables parameterization with a single type. A type
+   variable tuple, in contrast, allows parameterization with an
+   *arbitrary* number of types by acting like an *arbitrary* number of type
+   variables wrapped in a tuple. For example::
 
-        # T is bound to int, Ts is bound to ()
-        # Return value is (1,), which has type tuple[int]
-        move_first_element_to_last(tup=(1,))
+      # T is bound to int, Ts is bound to ()
+      # Return value is (1,), which has type tuple[int]
+      move_first_element_to_last(tup=(1,))
 
-        # T is bound to int, Ts is bound to (str,)
-        # Return value is ('spam', 1), which has type tuple[str, int]
-        move_first_element_to_last(tup=(1, 'spam'))
+      # T is bound to int, Ts is bound to (str,)
+      # Return value is ('spam', 1), which has type tuple[str, int]
+      move_first_element_to_last(tup=(1, 'spam'))
 
-        # T is bound to int, Ts is bound to (str, float)
-        # Return value is ('spam', 3.0, 1), which has type tuple[str, float, int]
-        move_first_element_to_last(tup=(1, 'spam', 3.0))
+      # T is bound to int, Ts is bound to (str, float)
+      # Return value is ('spam', 3.0, 1), which has type tuple[str, float, int]
+      move_first_element_to_last(tup=(1, 'spam', 3.0))
 
-        # This fails to type check (and fails at runtime)
-        # because tuple[()] is not compatible with tuple[T, *Ts]
-        # (at least one element is required)
-        move_first_element_to_last(tup=())
+      # This fails to type check (and fails at runtime)
+      # because tuple[()] is not compatible with tuple[T, *Ts]
+      # (at least one element is required)
+      move_first_element_to_last(tup=())
 
-    Note the use of the unpacking operator ``*`` in ``tuple[T, *Ts]``.
-    Conceptually, you can think of ``Ts`` as a tuple of type variables
-    ``(T1, T2, ...)``. ``tuple[T, *Ts]`` would then become
-    ``tuple[T, *(T1, T2, ...)]``, which is equivalent to
-    ``tuple[T, T1, T2, ...]``. (Note that in older versions of Python, you might
-    see this written using :data:`Unpack <Unpack>` instead, as
-    ``Unpack[Ts]``.)
+   Note the use of the unpacking operator ``*`` in ``tuple[T, *Ts]``.
+   Conceptually, you can think of ``Ts`` as a tuple of type variables
+   ``(T1, T2, ...)``. ``tuple[T, *Ts]`` would then become
+   ``tuple[T, *(T1, T2, ...)]``, which is equivalent to
+   ``tuple[T, T1, T2, ...]``. (Note that in older versions of Python, you might
+   see this written using :data:`Unpack <Unpack>` instead, as
+   ``Unpack[Ts]``.)
 
-    Type variable tuples must *always* be unpacked. This helps distinguish type
-    variable tuples from normal type variables::
+   Type variable tuples must *always* be unpacked. This helps distinguish type
+   variable tuples from normal type variables::
 
-        x: Ts          # Not valid
-        x: tuple[Ts]   # Not valid
-        x: tuple[*Ts]  # The correct way to do it
+      x: Ts          # Not valid
+      x: tuple[Ts]   # Not valid
+      x: tuple[*Ts]  # The correct way to do it
 
-    Type variable tuples can be used in the same contexts as normal type
-    variables. For example, in class definitions, arguments, and return types::
+   Type variable tuples can be used in the same contexts as normal type
+   variables. For example, in class definitions, arguments, and return types::
 
-        class Array[*Shape]:
-            def __getitem__(self, key: tuple[*Shape]) -> float: ...
-            def __abs__(self) -> "Array[*Shape]": ...
-            def get_shape(self) -> tuple[*Shape]: ...
+      class Array[*Shape]:
+         def __getitem__(self, key: tuple[*Shape]) -> float: ...
+         def __abs__(self) -> "Array[*Shape]": ...
+         def get_shape(self) -> tuple[*Shape]: ...
 
-    Type variable tuples can be happily combined with normal type variables::
+   Type variable tuples can be happily combined with normal type variables::
 
-        DType = TypeVar('DType')
+      DType = TypeVar('DType')
 
-        class Array[DType, *Shape]:  # This is fine
-            pass
+      class Array[DType, *Shape]:  # This is fine
+         pass
 
-        class Array2[*Shape, DType]:  # This would also be fine
-            pass
+      class Array2[*Shape, DType]:  # This would also be fine
+         pass
 
-        float_array_1d: Array[float, Height] = Array()     # Totally fine
-        int_array_2d: Array[int, Height, Width] = Array()  # Yup, fine too
+      float_array_1d: Array[float, Height] = Array()     # Totally fine
+      int_array_2d: Array[int, Height, Width] = Array()  # Yup, fine too
 
-    However, note that at most one type variable tuple may appear in a single
-    list of type arguments or type parameters::
+   However, note that at most one type variable tuple may appear in a single
+   list of type arguments or type parameters::
 
-        x: tuple[*Ts, *Ts]                     # Not valid
-        class Array[*Shape, *Shape]:  # Not valid
-            pass
+      x: tuple[*Ts, *Ts]                     # Not valid
+      class Array[*Shape, *Shape]:  # Not valid
+         pass
 
-    Finally, an unpacked type variable tuple can be used as the type annotation
-    of ``*args``::
+   Finally, an unpacked type variable tuple can be used as the type annotation
+   of ``*args``::
 
-        def call_soon[*Ts](
-                callback: Callable[[*Ts], None],
-                *args: *Ts
-        ) -> None:
-            ...
-            callback(*args)
+      def call_soon[*Ts](
+               callback: Callable[[*Ts], None],
+               *args: *Ts
+      ) -> None:
+         ...
+         callback(*args)
 
-    In contrast to non-unpacked annotations of ``*args`` - e.g. ``*args: int``,
-    which would specify that *all* arguments are ``int`` - ``*args: *Ts``
-    enables reference to the types of the *individual* arguments in ``*args``.
-    Here, this allows us to ensure the types of the ``*args`` passed
-    to ``call_soon`` match the types of the (positional) arguments of
-    ``callback``.
+   In contrast to non-unpacked annotations of ``*args`` - e.g. ``*args: int``,
+   which would specify that *all* arguments are ``int`` - ``*args: *Ts``
+   enables reference to the types of the *individual* arguments in ``*args``.
+   Here, this allows us to ensure the types of the ``*args`` passed
+   to ``call_soon`` match the types of the (positional) arguments of
+   ``callback``.
 
-    See :pep:`646` for more details on type variable tuples.
+   See :pep:`646` for more details on type variable tuples.
 
-    .. versionadded:: 3.11
+   .. attribute:: __name__
+
+      The name of the type variable tuple.
+
+   .. versionadded:: 3.11
 
    .. versionchanged:: 3.12
 
@@ -1685,6 +1689,10 @@ can also be created without the dedicated syntax, as documented below.
    generic types.  The ``bound`` argument is also accepted, similar to
    :class:`TypeVar`.  However the actual semantics of these keywords are yet to
    be decided.
+
+   .. attribute:: __name__
+
+      The name of the parameter specification.
 
    .. versionadded:: 3.10
 
