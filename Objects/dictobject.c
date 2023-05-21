@@ -944,21 +944,6 @@ unicodekeys_lookup_unicode(PyDictKeysObject* dk, PyObject *key, Py_hash_t hash)
         }
         perturb >>= PERTURB_SHIFT;
         i = mask & (i*5 + perturb + 1);
-        ix = dictkeys_get_index(dk, i);
-        if (ix >= 0) {
-            PyDictUnicodeEntry *ep = &ep0[ix];
-            assert(ep->me_key != NULL);
-            assert(PyUnicode_CheckExact(ep->me_key));
-            if (ep->me_key == key ||
-                    (unicode_get_hash(ep->me_key) == hash && unicode_eq(ep->me_key, key))) {
-                return ix;
-            }
-        }
-        else if (ix == DKIX_EMPTY) {
-            return DKIX_EMPTY;
-        }
-        perturb >>= PERTURB_SHIFT;
-        i = mask & (i*5 + perturb + 1);
     }
     Py_UNREACHABLE();
 }
