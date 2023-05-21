@@ -319,7 +319,7 @@ also be used to improve performance.
 
    The :envvar:`!BOLT_INSTRUMENT_FLAGS` and :envvar:`!BOLT_APPLY_FLAGS`
    :program:`configure` variables can be defined to override the default set of
-   arguments for :program:`llvm-bolt`` to instrument and apply BOLT data to
+   arguments for :program:`llvm-bolt` to instrument and apply BOLT data to
    binaries, respectively.
 
    .. versionadded:: 3.12
