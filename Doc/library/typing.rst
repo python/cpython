@@ -1364,107 +1364,146 @@ can also be created without the dedicated syntax, as documented below.
 
 .. class:: TypeVar(name, *constraints, bound=None, covariant=False, contravariant=False, infer_variance=False)
 
-    Type variable.
+   Type variable.
 
-    Usage::
+   Usage::
 
       T = TypeVar('T')  # Can be anything
       S = TypeVar('S', bound=str)  # Can be any subtype of str
       A = TypeVar('A', str, bytes)  # Must be exactly str or bytes
 
-    The syntax for :ref:`generic functions <generic-functions>`,
-    :ref:`generic classes <generic-classes>`, and
-    :ref:`generic type aliases <generic-type-aliases>` can be used to
-    create type variables::
+   The syntax for :ref:`generic functions <generic-functions>`,
+   :ref:`generic classes <generic-classes>`, and
+   :ref:`generic type aliases <generic-type-aliases>` can be used to
+   create type variables::
 
-       class Sequence[T]:  # T is a TypeVar
-           ...
+      class Sequence[T]:  # T is a TypeVar
+         ...
 
-    This syntax can also be used to create bound and constrained type
-    variables::
+   This syntax can also be used to create bound and constrained type
+   variables::
 
-       class StrSequence[S: str]:  # S is a TypeVar bound to str
-           ...
-
-
-       class StrOrBytesSequence[A: (str, bytes)]:  # A is a TypeVar constrained to str or bytes
-           ...
-
-    Type variables exist primarily for the benefit of static type
-    checkers.  They serve as the parameters for generic types as well
-    as for generic function definitions.  See :class:`Generic` for more
-    information on generic types.  Generic functions work as follows::
-
-       def repeat[T](x: T, n: int) -> Sequence[T]:
-           """Return a list containing n references to x."""
-           return [x]*n
+      class StrSequence[S: str]:  # S is a TypeVar bound to str
+         ...
 
 
-       def print_capitalized[S: str](x: S) -> S:
-           """Print x capitalized, and return x."""
-           print(x.capitalize())
-           return x
+      class StrOrBytesSequence[A: (str, bytes)]:  # A is a TypeVar constrained to str or bytes
+         ...
+
+   Type variables exist primarily for the benefit of static type
+   checkers.  They serve as the parameters for generic types as well
+   as for generic function definitions.  See :class:`Generic` for more
+   information on generic types.  Generic functions work as follows::
+
+      def repeat[T](x: T, n: int) -> Sequence[T]:
+         """Return a list containing n references to x."""
+         return [x]*n
 
 
-       def concatenate[A: (str, bytes)](x: A, y: A) -> A:
-           """Add two strings or bytes objects together."""
-           return x + y
+      def print_capitalized[S: str](x: S) -> S:
+         """Print x capitalized, and return x."""
+         print(x.capitalize())
+         return x
 
-    Note that type variables can be *bound*, *constrained*, or neither, but
-    cannot be both bound *and* constrained.
 
-    Bound type variables and constrained type variables have different
-    semantics in several important ways. Using a *bound* type variable means
-    that the ``TypeVar`` will be solved using the most specific type possible::
+      def concatenate[A: (str, bytes)](x: A, y: A) -> A:
+         """Add two strings or bytes objects together."""
+         return x + y
 
-       x = print_capitalized('a string')
-       reveal_type(x)  # revealed type is str
+   Note that type variables can be *bound*, *constrained*, or neither, but
+   cannot be both bound *and* constrained.
 
-       class StringSubclass(str):
-           pass
+   Bound type variables and constrained type variables have different
+   semantics in several important ways. Using a *bound* type variable means
+   that the ``TypeVar`` will be solved using the most specific type possible::
 
-       y = print_capitalized(StringSubclass('another string'))
-       reveal_type(y)  # revealed type is StringSubclass
+      x = print_capitalized('a string')
+      reveal_type(x)  # revealed type is str
 
-       z = print_capitalized(45)  # error: int is not a subtype of str
+      class StringSubclass(str):
+         pass
 
-    Type variables can be bound to concrete types, abstract types (ABCs or
-    protocols), and even unions of types::
+      y = print_capitalized(StringSubclass('another string'))
+      reveal_type(y)  # revealed type is StringSubclass
 
-       U = TypeVar('U', bound=str|bytes)  # Can be any subtype of the union str|bytes
-       V = TypeVar('V', bound=SupportsAbs)  # Can be anything with an __abs__ method
+      z = print_capitalized(45)  # error: int is not a subtype of str
 
-       # Can be anything with an __abs__ method
-       def print_abs[V: SupportsAbs](arg: V) -> None:
-           print("Absolute value:", abs(arg))
+   Type variables can be bound to concrete types, abstract types (ABCs or
+   protocols), and even unions of types::
 
-.. _typing-constrained-typevar:
+      U = TypeVar('U', bound=str|bytes)  # Can be any subtype of the union str|bytes
+      V = TypeVar('V', bound=SupportsAbs)  # Can be anything with an __abs__ method
 
-    Using a *constrained* type variable, however, means that the ``TypeVar``
-    can only ever be solved as being exactly one of the constraints given::
+      # Can be anything with an __abs__ method
+      def print_abs[V: SupportsAbs](arg: V) -> None:
+         print("Absolute value:", abs(arg))
 
-       a = concatenate('one', 'two')
-       reveal_type(a)  # revealed type is str
+   .. _typing-constrained-typevar:
 
-       b = concatenate(StringSubclass('one'), StringSubclass('two'))
-       reveal_type(b)  # revealed type is str, despite StringSubclass being passed in
+   Using a *constrained* type variable, however, means that the ``TypeVar``
+   can only ever be solved as being exactly one of the constraints given::
 
-       c = concatenate('one', b'two')  # error: type variable 'A' can be either str or bytes in a function call, but not both
+      a = concatenate('one', 'two')
+      reveal_type(a)  # revealed type is str
 
-    At runtime, ``isinstance(x, T)`` will raise :exc:`TypeError`.  In general,
-    :func:`isinstance` and :func:`issubclass` should not be used with types.
+      b = concatenate(StringSubclass('one'), StringSubclass('two'))
+      reveal_type(b)  # revealed type is str, despite StringSubclass being passed in
 
-    The variance of type variables created through the :ref:`type parameter syntax <type-params>`
-    is inferred by type checkers. When ``infer_variance=True`` is passed,
-    variance is also inferred for manually created type variables.
-    Manually created type variables may be explicitly marked covariant or contravariant by passing
-    ``covariant=True`` or ``contravariant=True``.  See :pep:`484` for more
-    details.  By default, type variables are invariant.
+      c = concatenate('one', b'two')  # error: type variable 'A' can be either str or bytes in a function call, but not both
+
+   At runtime, ``isinstance(x, T)`` will raise :exc:`TypeError`.  In general,
+   :func:`isinstance` and :func:`issubclass` should not be used with types.
+
+   The variance of type variables is inferred by type checkers when they are created
+   through the :ref:`type parameter syntax <type-params>` and when
+   ``infer_variance=True`` is passed.
+   Manually created type variables may be explicitly marked covariant or contravariant by passing
+   ``covariant=True`` or ``contravariant=True``.  See :pep:`484` and :pep:`695` for more
+   details.  By default, type variables are invariant.
+
+   .. attribute:: __name__
+
+      The name of the type variable.
+
+   .. attribute:: __covariant__
+
+      Whether the type variable is covariant.
+
+   .. attribute:: __contravariant__
+
+      Whether the type variable is contravariant.
+
+   .. attribute:: __infer_variance__
+
+      Whether the type variable's variance should be inferred by type checkers.
+
+      .. versionadded:: 3.12
+
+   .. attribute:: __bound__
+
+      The bound of the type variable, if any.
+
+      .. versionchanged:: 3.12
+
+         For type variables created through the new type parameter syntax,
+         the bound is evaluated only when the attribute is accessed, not when
+         the type variable is created.
+
+   .. attribute:: __constraints__
+
+      A tuple containing the constraints of the type variable, if any.
+
+      .. versionchanged:: 3.12
+
+         For type variables created through the new type parameter syntax,
+         the constraints are evaluated only when the attribute is accessed, not when
+         the type variable is created.
 
    .. versionchanged:: 3.12
 
       Type variables can now be declared using the
       :ref:`type parameter <type-params>` syntax introduced by :pep:`695`.
+      The ``infer_variance`` parameter was added.
 
 .. class:: TypeVarTuple(name)
 

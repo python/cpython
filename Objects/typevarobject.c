@@ -446,42 +446,39 @@ PyDoc_STRVAR(typevar_doc,
 Usage::\n\
 \n\
   T = TypeVar('T')  # Can be anything\n\
+  S = TypeVar('S', bound=str)  # Can be any subtype of str\n\
   A = TypeVar('A', str, bytes)  # Must be str or bytes\n\
+\n\
+The syntax for generic functions, classes, and type aliases can\n\
+be used to create type variables::\n\
+\n\
+  class Sequence[T]:  # T is a TypeVar\n\
+    ...\n\
 \n\
 Type variables exist primarily for the benefit of static type\n\
 checkers.  They serve as the parameters for generic types as well\n\
 as for generic function definitions.  See class Generic for more\n\
 information on generic types.  Generic functions work as follows:\n\
 \n\
-  def repeat(x: T, n: int) -> List[T]:\n\
+  def repeat[T](x: T, n: int) -> Sequence[T]:\n\
       '''Return a list containing n references to x.'''\n\
       return [x]*n\n\
 \n\
-  def longest(x: A, y: A) -> A:\n\
-      '''Return the longest of two strings.'''\n\
-      return x if len(x) >= len(y) else y\n\
+  def print_capitalized[S: str](x: S) -> S:\n\
+      '''Print x capitalized, and return x.'''\n\
+      print(x.capitalize())\n\
+      return x\n\
 \n\
-The latter example's signature is essentially the overloading\n\
-of (str, str) -> str and (bytes, bytes) -> bytes.  Also note\n\
-that if the arguments are instances of some subclass of str,\n\
-the return type is still plain str.\n\
+  def concatenate[A: (str, bytes)](x: A, y: A) -> A:\n\
+      '''Add two strings or bytes objects together.'''\n\
+      return x + y\n\
 \n\
-At runtime, isinstance(x, T) and issubclass(C, T) will raise TypeError.\n\
-\n\
-Type variables defined with covariant=True or contravariant=True\n\
-can be used to declare covariant or contravariant generic types.\n\
-See PEP 484 for more details. By default generic types are invariant\n\
-in all type variables.\n\
-\n\
-Type variables can be introspected. e.g.:\n\
-\n\
-  T.__name__ == 'T'\n\
-  T.__constraints__ == ()\n\
-  T.__covariant__ == False\n\
-  T.__contravariant__ = False\n\
-  A.__constraints__ == (str, bytes)\n\
-\n\
-Note that only type variables defined in global scope can be pickled.\n\
+The variance of type variables is inferred by type checkers when they are created\n\
+through the type parameter syntax and when\n\
+``infer_variance=True`` is passed.\n\
+Manually created type variables may be explicitly marked covariant or contravariant by passing\n\
+``covariant=True`` or ``contravariant=True``.  See PEP 484 and PEP 695 for more\n\
+details.  By default, type variables are invariant.\n\
 ");
 
 static PyType_Slot typevar_slots[] = {
