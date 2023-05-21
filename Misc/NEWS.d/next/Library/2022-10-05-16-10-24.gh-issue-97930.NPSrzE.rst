@@ -1,3 +1,0 @@
-Apply changes from importlib_resources 5.8 and 5.9: ``Traversable.joinpath``
-provides a concrete implementation. ``as_file`` now supports directories of
-resources.

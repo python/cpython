@@ -214,7 +214,7 @@ Glossary
       A callable is an object that can be called, possibly with a set
       of arguments (see :term:`argument`), with the following syntax::
 
-         callable(argument1, argument2, ...)
+         callable(argument1, argument2, argumentN)
 
       A :term:`function`, and by extension a :term:`method`, is a callable.
       An instance of a class that implements the :meth:`~object.__call__`
@@ -882,7 +882,7 @@ Glossary
 
    package
       A Python :term:`module` which can contain submodules or recursively,
-      subpackages.  Technically, a package is a Python module with an
+      subpackages.  Technically, a package is a Python module with a
       ``__path__`` attribute.
 
       See also :term:`regular package` and :term:`namespace package`.

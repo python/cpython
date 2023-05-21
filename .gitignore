@@ -41,7 +41,6 @@ gmon.out
 .DS_Store
 
 *.exe
-!Lib/distutils/command/*.exe
 
 # Ignore core dumps... but not Tools/msi/core/ or the like.
 core
@@ -58,7 +57,6 @@ Doc/.venv/
 Doc/env/
 Doc/.env/
 Include/pydtrace_probes.h
-Lib/distutils/command/*.pdb
 Lib/lib2to3/*.pickle
 Lib/site-packages/*
 !Lib/site-packages/README.txt
@@ -116,6 +114,7 @@ PCbuild/win32/
 Tools/unicode/data/
 /autom4te.cache
 /build/
+/builddir/
 /config.cache
 /config.log
 /config.status

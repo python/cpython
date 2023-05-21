@@ -1,2 +1,0 @@
-Run Python code in tracer/profiler function at full speed. Fixes slowdown in
-earlier versions of 3.11.

@@ -1,7 +1,7 @@
 Creation of :ref:`virtual environments <venv-def>` is done by executing the
 command ``venv``::
 
-    python3 -m venv /path/to/new/virtual/environment
+    python -m venv /path/to/new/virtual/environment
 
 Running this command creates the target directory (creating any parent
 directories that don't exist already) and places a ``pyvenv.cfg`` file in it
@@ -16,8 +16,8 @@ re-used.
 
 .. deprecated:: 3.6
    ``pyvenv`` was the recommended tool for creating virtual environments for
-   Python 3.3 and 3.4, and is `deprecated in Python 3.6
-   <https://docs.python.org/dev/whatsnew/3.6.html#id8>`_.
+   Python 3.3 and 3.4, and is
+   :ref:`deprecated in Python 3.6 <whatsnew36-venv>`.
 
 .. versionchanged:: 3.5
    The use of ``venv`` is now recommended for creating virtual environments.
@@ -61,11 +61,15 @@ The command, if run with ``-h``, will show the available options::
                             environment (pip is bootstrapped by default)
       --prompt PROMPT       Provides an alternative prompt prefix for this
                             environment.
-      --upgrade-deps        Upgrade core dependencies: pip setuptools to the
+      --upgrade-deps        Upgrade core dependencies (pip) to the
                             latest version in PyPI
 
     Once an environment has been created, you may wish to activate it, e.g. by
     sourcing an activate script in its bin directory.
+
+.. versionchanged:: 3.12
+
+   ``setuptools`` is no longer a core venv dependency.
 
 .. versionchanged:: 3.9
    Add ``--upgrade-deps`` option to upgrade pip + setuptools to the latest on PyPI
@@ -104,4 +108,3 @@ invoked to bootstrap ``pip`` into the virtual environment.
 Multiple paths can be given to ``venv``, in which case an identical virtual
 environment will be created, according to the given options, at each provided
 path.
-

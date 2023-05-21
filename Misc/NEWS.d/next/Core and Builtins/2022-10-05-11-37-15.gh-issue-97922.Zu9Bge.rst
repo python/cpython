@@ -1,5 +1,0 @@
-The Garbage Collector now runs only on the eval breaker mechanism of the
-Python bytecode evaluation loop instead on object allocations. The GC can
-also run when :c:func:`PyErr_CheckSignals` is called so C extensions that
-need to run for a long time without executing any Python code also have a
-chance to execute the GC periodically.

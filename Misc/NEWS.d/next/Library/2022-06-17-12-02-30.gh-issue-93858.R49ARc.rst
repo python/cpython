@@ -1,1 +1,0 @@
-Prevent error when activating venv in nested fish instances.

@@ -296,10 +296,10 @@ pymain_run_module(const wchar_t *modname, int set_argv0)
         Py_DECREF(module);
         return pymain_exit_err_print();
     }
-    _Py_UnhandledKeyboardInterrupt = 0;
+    _PyRuntime.signals.unhandled_keyboard_interrupt = 0;
     result = PyObject_Call(runmodule, runargs, NULL);
     if (!result && PyErr_Occurred() == PyExc_KeyboardInterrupt) {
-        _Py_UnhandledKeyboardInterrupt = 1;
+        _PyRuntime.signals.unhandled_keyboard_interrupt = 1;
     }
     Py_DECREF(runpy);
     Py_DECREF(runmodule);
@@ -696,7 +696,7 @@ Py_RunMain(void)
 
     pymain_free();
 
-    if (_Py_UnhandledKeyboardInterrupt) {
+    if (_PyRuntime.signals.unhandled_keyboard_interrupt) {
         exitcode = exit_sigint();
     }
 

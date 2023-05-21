@@ -1,3 +1,0 @@
-Slot IDs in PyType_Spec may not be repeated. The documentation was updated
-to mention this. For some cases of repeated slots, PyType_FromSpec and
-related functions will now raise an exception.

@@ -1,2 +1,0 @@
-The ``wasm_build.py`` script now pre-builds Emscripten ports, checks for
-broken EMSDK versions, and warns about pkg-config env vars.

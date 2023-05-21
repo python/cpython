@@ -1,0 +1,2 @@
+Document that the effect of registering or unregistering an :mod:`atexit`
+cleanup function from within a registered cleanup function is undefined.

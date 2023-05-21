@@ -1,3 +1,0 @@
-Python again uses C-style casts for most casting operations when compiled
-with C++. This may trigger compiler warnings, if they are enabled with e.g.
-``-Wold-style-cast`` or ``-Wzero-as-null-pointer-constant`` options for ``g++``.
