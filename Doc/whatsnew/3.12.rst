@@ -774,6 +774,16 @@ Deprecated
   ``int``, convert to int explicitly with ``~int(x)``. (Contributed by Tim Hoffmann
   in :gh:`103487`.)
 
+* :class:`datetime.datetime`'s
+  :meth:`~datetime.datetime.utcnow` and
+  :meth:`~datetime.datetime.utcfromtimestamp` are deprecated and will be
+  removed in a future version. Instead, use timezone-aware objects to represent
+  datetimes in UTC: respectively, call
+  :meth:`~datetime.datetime.now` and
+  :meth:`~datetime.datetime.fromtimestamp`  with the *tz* parameter set to
+  :attr:`datetime.UTC`.
+  (Contributed by Paul Ganssle in :gh:`103857`.)
+
 Pending Removal in Python 3.13
 ------------------------------
 
@@ -1391,6 +1401,12 @@ Porting to Python 3.12
   To get a list of subclasses, call the Python method
   :py:meth:`~class.__subclasses__` (using :c:func:`PyObject_CallMethod`,
   for example).
+
+* Add support of more formatting options (left aligning, octals, uppercase
+  hexadecimals, ``intmax_t``, ``ptrdiff_t``, ``wchar_t`` C
+  strings, variable width and precision) in :c:func:`PyUnicode_FromFormat` and
+  :c:func:`PyUnicode_FromFormatV`.
+  (Contributed by Serhiy Storchaka in :gh:`98836`.)
 
 * An unrecognized format character in :c:func:`PyUnicode_FromFormat` and
   :c:func:`PyUnicode_FromFormatV` now sets a :exc:`SystemError`.
