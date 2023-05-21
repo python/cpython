@@ -1913,8 +1913,6 @@ class BufferSeries:
         return "".join(texts)
 
 
-DestinationDict = dict[str, "Destination"]
-
 class Destination:
     def __init__(self, name, type, clinic, *args):
         self.name = name
@@ -1999,6 +1997,11 @@ def write_file(filename: str, new_contents: str):
         os.unlink(filename_new)
         raise
 
+
+ClassDict = dict[str, "Class"]
+DestinationDict = dict[str, Destination]
+ModuleDict = dict[str, "Module"]
+ParserDict = dict[str, "DSLParser"]
 
 clinic = None
 class Clinic:
@@ -2090,10 +2093,13 @@ impl_definition block
             'impl_definition': d('block'),
         }
 
-        self.destination_buffers_stack: list[Any] = []
+        DestBufferType = dict[str, Callable[..., Any]]
+        DestBufferList = list[DestBufferType]
+
+        self.destination_buffers_stack: DestBufferList = []
         self.ifndef_symbols: set[str] = set()
 
-        self.presets: dict[str, Any] = {}
+        self.presets: dict[str, dict[Any, Any]] = {}
         preset = None
         for line in self.presets_text.strip().split('\n'):
             line = line.strip()
@@ -2302,8 +2308,6 @@ class PythonParser:
         block.output = s.getvalue()
 
 
-ModuleDict = dict[str, "Module"]
-
 class Module:
     def __init__(
             self,
@@ -2320,8 +2324,6 @@ class Module:
     def __repr__(self) -> str:
         return "<clinic.Module " + repr(self.name) + " at " + str(id(self)) + ">"
 
-
-ClassDict = dict[str, "Class"]
 
 class Class:
     def __init__(
@@ -4219,7 +4221,6 @@ class IndentStack:
         return line[indent:]
 
 
-ParserDict = dict[str, "DSLParser"]
 StateKeeper = Callable[[str | None], None]
 
 class DSLParser:
