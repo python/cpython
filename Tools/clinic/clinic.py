@@ -324,9 +324,9 @@ def version_splitter(s: str) -> tuple[int, ...]:
         c -> -1
     (This permits Python-style version strings such as "1.4b3".)
     """
-    version = []
+    version: list[int] = []
     accumulator: list[str] = []
-    def flush():
+    def flush() -> None:
         if not accumulator:
             raise ValueError('Unsupported version string: ' + repr(s))
         version.append(int(''.join(accumulator)))
@@ -1966,15 +1966,6 @@ extensions: LangDict = { name: CLanguage for name in "c cc cpp cxx h hh hpp hxx"
 extensions['py'] = PythonLanguage
 
 
-# maps strings to callables.
-# these callables must be of the form:
-#   def foo(*, ...)
-# The callable may have any number of keyword-only parameters.
-# The callable must return a CConverter object.
-# The callable should not call builtins.print.
-return_converters = {}
-
-
 def file_changed(filename: str, new_contents: str) -> bool:
     """Return true if file contents changed (meaning we must update it)"""
     try:
@@ -3026,6 +3017,16 @@ converters: ConverterDict = {}
 # note however that they will never be called with keyword-only parameters.
 legacy_converters: ConverterDict = {}
 
+# maps strings to callables.
+# these callables must be of the form:
+#   def foo(*, ...)
+# The callable may have any number of keyword-only parameters.
+# The callable must return a CReturnConverter object.
+# The callable should not call builtins.print.
+ReturnConverterType = Callable[..., "CReturnConverter"]
+ReturnConverterDict = dict[str, ReturnConverterType]
+return_converters: ReturnConverterDict = {}
+
 TypeSet = set[bltns.type[Any]]
 
 
@@ -3987,8 +3988,10 @@ class self_converter(CConverter):
             template_dict['base_type_ptr'] = type_ptr
 
 
-
-def add_c_return_converter(f, name=None):
+def add_c_return_converter(
+        f: ReturnConverterType,
+        name: str | None = None
+) -> ReturnConverterType:
     if not name:
         name = f.__name__
         if not name.endswith('_return_converter'):
@@ -3999,8 +4002,14 @@ def add_c_return_converter(f, name=None):
 
 
 class CReturnConverterAutoRegister(type):
-    def __init__(cls, name, bases, classdict):
+    def __init__(
+            cls: ReturnConverterType,
+            name: str,
+            bases: tuple[type, ...],
+            classdict: dict[str, Any]
+    ) -> None:
         add_c_return_converter(cls)
+
 
 class CReturnConverter(metaclass=CReturnConverterAutoRegister):
 
@@ -4013,7 +4022,12 @@ class CReturnConverter(metaclass=CReturnConverterAutoRegister):
     # Or the magic value "unspecified" if there is no default.
     default: object = None
 
-    def __init__(self, *, py_default=None, **kwargs):
+    def __init__(
+            self,
+            *,
+            py_default: str | None = None,
+            **kwargs
+    ) -> None:
         self.py_default = py_default
         try:
             self.return_converter_init(**kwargs)
@@ -4021,11 +4035,10 @@ class CReturnConverter(metaclass=CReturnConverterAutoRegister):
             s = ', '.join(name + '=' + repr(value) for name, value in kwargs.items())
             sys.exit(self.__class__.__name__ + '(' + s + ')\n' + str(e))
 
-    def return_converter_init(self):
-        pass
+    def return_converter_init(self) -> None: ...
 
-    def declare(self, data):
-        line = []
+    def declare(self, data: CRenderData) -> None:
+        line: list[str] = []
         add = line.append
         add(self.type)
         if not self.type.endswith('*'):
@@ -4034,32 +4047,46 @@ class CReturnConverter(metaclass=CReturnConverterAutoRegister):
         data.declarations.append(''.join(line))
         data.return_value = data.converter_retval
 
-    def err_occurred_if(self, expr, data):
+    def err_occurred_if(
+            self,
+            expr: str,
+            data: CRenderData
+    ) -> None:
         line = f'if (({expr}) && PyErr_Occurred()) {{\n    goto exit;\n}}\n'
         data.return_conversion.append(line)
 
-    def err_occurred_if_null_pointer(self, variable, data):
+    def err_occurred_if_null_pointer(
+            self,
+            variable: str,
+            data: CRenderData
+    ) -> None:
         line = f'if ({variable} == NULL) {{\n    goto exit;\n}}\n'
         data.return_conversion.append(line)
 
-    def render(self, function, data):
-        """
-        function is a clinic.Function instance.
-        data is a CRenderData instance.
-        """
-        pass
+    def render(
+            self,
+            function: Function,
+            data: CRenderData
+    ) -> None: ...
+
 
 add_c_return_converter(CReturnConverter, 'object')
+
 
 class bool_return_converter(CReturnConverter):
     type = 'int'
 
-    def render(self, function, data):
+    def render(
+            self,
+            function: Function,
+            data: CRenderData
+    ) -> None:
         self.declare(data)
         self.err_occurred_if(f"{data.converter_retval} == -1", data)
         data.return_conversion.append(
             f'return_value = PyBool_FromLong((long){data.converter_retval});\n'
         )
+
 
 class long_return_converter(CReturnConverter):
     type = 'long'
@@ -4067,16 +4094,22 @@ class long_return_converter(CReturnConverter):
     cast = ''
     unsigned_cast = ''
 
-    def render(self, function, data):
+    def render(
+            self,
+            function: Function,
+            data: CRenderData
+    ) -> None:
         self.declare(data)
         self.err_occurred_if(f"{data.converter_retval} == {self.unsigned_cast}-1", data)
         data.return_conversion.append(
             f'return_value = {self.conversion_fn}({self.cast}{data.converter_retval});\n'
         )
 
+
 class int_return_converter(long_return_converter):
     type = 'int'
     cast = '(long)'
+
 
 class init_return_converter(long_return_converter):
     """
@@ -4085,22 +4118,29 @@ class init_return_converter(long_return_converter):
     type = 'int'
     cast = '(long)'
 
-    def render(self, function, data):
-        pass
+    def render(
+            self,
+            function: Function,
+            data: CRenderData
+    ) -> None: ...
+
 
 class unsigned_long_return_converter(long_return_converter):
     type = 'unsigned long'
     conversion_fn = 'PyLong_FromUnsignedLong'
     unsigned_cast = '(unsigned long)'
 
+
 class unsigned_int_return_converter(unsigned_long_return_converter):
     type = 'unsigned int'
     cast = '(unsigned long)'
     unsigned_cast = '(unsigned int)'
 
+
 class Py_ssize_t_return_converter(long_return_converter):
     type = 'Py_ssize_t'
     conversion_fn = 'PyLong_FromSsize_t'
+
 
 class size_t_return_converter(long_return_converter):
     type = 'size_t'
@@ -4112,12 +4152,17 @@ class double_return_converter(CReturnConverter):
     type = 'double'
     cast = ''
 
-    def render(self, function, data):
+    def render(
+            self,
+            function: Function,
+            data: CRenderData
+    ) -> None:
         self.declare(data)
         self.err_occurred_if(f"{data.converter_retval} == -1.0", data)
         data.return_conversion.append(
             f'return_value = PyFloat_FromDouble({self.cast}{data.converter_retval});\n'
         )
+
 
 class float_return_converter(double_return_converter):
     type = 'float'
@@ -4222,8 +4267,10 @@ class IndentStack:
         return line[indent:]
 
 
+StateKeeper = Callable[[str | None], None]
+
 class DSLParser:
-    def __init__(self, clinic):
+    def __init__(self, clinic: Clinic) -> None:
         self.clinic = clinic
 
         self.directives = {}
@@ -4240,9 +4287,9 @@ class DSLParser:
 
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.function = None
-        self.state = self.state_dsl_start
+        self.state: StateKeeper = self.state_dsl_start
         self.parameter_indent = None
         self.keyword_only = False
         self.positional_only = False
@@ -4255,12 +4302,12 @@ class DSLParser:
         self.parameter_continuation = ''
         self.preserve_output = False
 
-    def directive_version(self, required):
+    def directive_version(self, required: str) -> None:
         global version
         if version_comparitor(version, required) < 0:
             fail("Insufficient Clinic version!\n  Version: " + version + "\n  Required: " + required)
 
-    def directive_module(self, name):
+    def directive_module(self, name: str) -> None:
         fields = name.split('.')[:-1]
         module, cls = self.clinic._module_and_class(fields)
         if cls:
@@ -4273,9 +4320,13 @@ class DSLParser:
         module.modules[name] = m
         self.block.signatures.append(m)
 
-    def directive_class(self, name, typedef, type_object):
+    def directive_class(
+            self,
+            name: str,
+            typedef: str,
+            type_object: str
+    ) -> None:
         fields = name.split('.')
-        parent = self
         name = fields.pop()
         module, cls = self.clinic._module_and_class(fields)
 
@@ -4287,7 +4338,7 @@ class DSLParser:
         parent.classes[name] = c
         self.block.signatures.append(c)
 
-    def directive_set(self, name, value):
+    def directive_set(self, name: str, value: str) -> None:
         if name not in ("line_prefix", "line_suffix"):
             fail("unknown variable", repr(name))
 
@@ -4298,7 +4349,12 @@ class DSLParser:
 
         self.clinic.__dict__[name] = value
 
-    def directive_destination(self, name, command, *args):
+    def directive_destination(
+            self,
+            name: str,
+            command: str,
+            *args
+    ) -> None:
         if command == 'new':
             self.clinic.add_destination(name, *args)
             return
@@ -4308,7 +4364,11 @@ class DSLParser:
         fail("unknown destination command", repr(command))
 
 
-    def directive_output(self, command_or_name, destination=''):
+    def directive_output(
+            self,
+            command_or_name: str,
+            destination: str = ''
+    ) -> None:
         fd = self.clinic.destination_buffers
 
         if command_or_name == "preset":
@@ -4346,34 +4406,34 @@ class DSLParser:
             fail("Invalid command / destination name " + repr(command_or_name) + ", must be one of:\n  preset push pop print everything " + " ".join(fd))
         fd[command_or_name] = d
 
-    def directive_dump(self, name):
+    def directive_dump(self, name: str) -> None:
         self.block.output.append(self.clinic.get_destination(name).dump())
 
-    def directive_printout(self, *args):
+    def directive_printout(self, *args: str) -> None:
         self.block.output.append(' '.join(args))
         self.block.output.append('\n')
 
-    def directive_preserve(self):
+    def directive_preserve(self) -> None:
         if self.preserve_output:
             fail("Can't have preserve twice in one block!")
         self.preserve_output = True
 
-    def at_classmethod(self):
+    def at_classmethod(self) -> None:
         if self.kind is not CALLABLE:
             fail("Can't set @classmethod, function is not a normal callable")
         self.kind = CLASS_METHOD
 
-    def at_staticmethod(self):
+    def at_staticmethod(self) -> None:
         if self.kind is not CALLABLE:
             fail("Can't set @staticmethod, function is not a normal callable")
         self.kind = STATIC_METHOD
 
-    def at_coexist(self):
+    def at_coexist(self) -> None:
         if self.coexist:
             fail("Called @coexist twice!")
         self.coexist = True
 
-    def parse(self, block):
+    def parse(self, block: Block) -> None:
         self.reset()
         self.block = block
         self.saved_output = self.block.output
@@ -4409,10 +4469,14 @@ class DSLParser:
         return False
 
     @staticmethod
-    def calculate_indent(line):
+    def calculate_indent(line: str) -> int:
         return len(line) - len(line.strip())
 
-    def next(self, state, line=None):
+    def next(
+            self,
+            state: StateKeeper,
+            line: str | None = None
+    ) -> None:
         # real_print(self.state.__name__, "->", state.__name__, ", line=", line)
         self.state = state
         if line is not None:

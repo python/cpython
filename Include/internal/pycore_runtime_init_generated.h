@@ -912,6 +912,7 @@ extern "C" {
     INIT_ID(exception), \
     INIT_ID(exp), \
     INIT_ID(extend), \
+    INIT_ID(extra_tokens), \
     INIT_ID(facility), \
     INIT_ID(factory), \
     INIT_ID(false), \
