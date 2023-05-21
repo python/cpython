@@ -2416,6 +2416,9 @@ INVALID, CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW = """
 INVALID, CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW
 """.replace(",", "").strip().split()
 
+ParamDict = dict[str, "Parameter"]
+ReturnConverterType = Callable[..., "CReturnConverter"]
+
 class Function:
     """
     Mutable duck type for inspect.Function.
@@ -2428,12 +2431,22 @@ class Function:
             (not docstring) or ((not docstring[0].isspace()) and (docstring.rstrip() == docstring))
     """
 
-    def __init__(self, parameters=None, *, name,
-                 module, cls=None, c_basename=None,
-                 full_name=None,
-                 return_converter, return_annotation=inspect.Signature.empty,
-                 docstring=None, kind=CALLABLE, coexist=False,
-                 docstring_only=False):
+    def __init__(
+            self,
+            parameters: ParamDict | None = None,
+            *,
+            name: str,
+            module: Module,
+            cls: Class | None = None,
+            c_basename: str | None = None,
+            full_name: str | None = None,
+            return_converter: ReturnConverterType,
+            return_annotation = inspect.Signature.empty,
+            docstring: str | None = None,
+            kind: str = CALLABLE,
+            coexist: bool = False,
+            docstring_only: bool = False
+    ) -> None:
         self.parameters = parameters or {}
         self.return_annotation = return_annotation
         self.name = name
@@ -2467,7 +2480,7 @@ class Function:
         return self.__render_parameters__
 
     @property
-    def methoddef_flags(self):
+    def methoddef_flags(self) -> str | None:
         if self.kind in (METHOD_INIT, METHOD_NEW):
             return None
         flags = []
@@ -2481,10 +2494,10 @@ class Function:
             flags.append('METH_COEXIST')
         return '|'.join(flags)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<clinic.Function ' + self.name + '>'
 
-    def copy(self, **overrides):
+    def copy(self, **overrides) -> "Function":
         kwargs = {
             'name': self.name, 'module': self.module, 'parameters': self.parameters,
             'cls': self.cls, 'c_basename': self.c_basename,
@@ -2507,9 +2520,18 @@ class Parameter:
     Mutable duck type of inspect.Parameter.
     """
 
-    def __init__(self, name, kind, *, default=inspect.Parameter.empty,
-                 function, converter, annotation=inspect.Parameter.empty,
-                 docstring=None, group=0):
+    def __init__(
+            self,
+            name: str,
+            kind: str,
+            *,
+            default = inspect.Parameter.empty,
+            function: Function,
+            converter: "CConverter",
+            annotation = inspect.Parameter.empty,
+            docstring: str | None = None,
+            group: int = 0
+    ) -> None:
         self.name = name
         self.kind = kind
         self.default = default
@@ -2519,22 +2541,22 @@ class Parameter:
         self.docstring = docstring or ''
         self.group = group
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<clinic.Parameter ' + self.name + '>'
 
-    def is_keyword_only(self):
+    def is_keyword_only(self) -> bool:
         return self.kind == inspect.Parameter.KEYWORD_ONLY
 
-    def is_positional_only(self):
+    def is_positional_only(self) -> bool:
         return self.kind == inspect.Parameter.POSITIONAL_ONLY
 
-    def is_vararg(self):
+    def is_vararg(self) -> bool:
         return self.kind == inspect.Parameter.VAR_POSITIONAL
 
-    def is_optional(self):
+    def is_optional(self) -> bool:
         return not self.is_vararg() and (self.default is not unspecified)
 
-    def copy(self, **overrides):
+    def copy(self, **overrides) -> "Parameter":
         kwargs = {
             'name': self.name, 'kind': self.kind, 'default':self.default,
                  'function': self.function, 'converter': self.converter, 'annotation': self.annotation,
@@ -2547,7 +2569,7 @@ class Parameter:
             kwargs['converter'] = converter
         return Parameter(**kwargs)
 
-    def get_displayname(self, i):
+    def get_displayname(self, i: int) -> str:
         if i == 0:
             return '"argument"'
         if not self.is_positional_only():
@@ -2558,13 +2580,13 @@ class Parameter:
 
 class LandMine:
     # try to access any
-    def __init__(self, message):
+    def __init__(self, message: str) -> None:
         self.__message__ = message
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<LandMine ' + repr(self.__message__) + ">"
 
-    def __getattribute__(self, name):
+    def __getattribute__(self, name: str):
         if name in ('__repr__', '__message__'):
             return super().__getattribute__(name)
         # raise RuntimeError(repr(name))
@@ -3023,7 +3045,6 @@ legacy_converters: ConverterDict = {}
 # The callable may have any number of keyword-only parameters.
 # The callable must return a CReturnConverter object.
 # The callable should not call builtins.print.
-ReturnConverterType = Callable[..., "CReturnConverter"]
 ReturnConverterDict = dict[str, ReturnConverterType]
 return_converters: ReturnConverterDict = {}
 
