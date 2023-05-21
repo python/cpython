@@ -88,7 +88,7 @@ in :mod:`logging` itself) and defining handlers which are declared either in
    configuration).
 
    It will raise :exc:`FileNotFoundError` if the file
-   doesn't exist and :exc:`ValueError` if the file is invalid or
+   doesn't exist and :exc:`RuntimeError` if the file is invalid or
    empty.
 
    :param fname: A filename, or a file-like object, or an instance derived
