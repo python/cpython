@@ -2506,7 +2506,7 @@ class Parameter:
             *,
             default = inspect.Parameter.empty,
             function: Function,
-            converter: CConverter,
+            converter: "CConverter",
             annotation = inspect.Parameter.empty,
             docstring: str | None = None,
             group: int = 0
@@ -2535,7 +2535,7 @@ class Parameter:
     def is_optional(self) -> bool:
         return not self.is_vararg() and (self.default is not unspecified)
 
-    def copy(self, **overrides) -> Parameter:
+    def copy(self, **overrides) -> "Parameter":
         kwargs = {
             'name': self.name, 'kind': self.kind, 'default':self.default,
                  'function': self.function, 'converter': self.converter, 'annotation': self.annotation,
