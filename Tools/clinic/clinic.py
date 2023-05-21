@@ -4908,9 +4908,8 @@ class DSLParser:
 
     KwargDict = dict[str | None, Any]
 
-    def parse_converter(
-        self, annotation: ast.expr | None
-    ) -> tuple[str, bool, KwargDict]:
+    @staticmethod
+    def parse_converter(annotation: ast.expr | None) -> tuple[str, bool, KwargDict]:
         match annotation:
             case ast.Constant(value=str() as value):
                 return value, True, {}
