@@ -1361,7 +1361,8 @@ can also be created without the dedicated syntax, as documented below.
               ...
               # Etc.
 
-.. class:: TypeVar
+.. class:: TypeVar(name, *constraints, bound=None, covariant=False,
+                   contravariant=False, infer_variance=False)
 
     Type variable.
 
@@ -1453,7 +1454,10 @@ can also be created without the dedicated syntax, as documented below.
     At runtime, ``isinstance(x, T)`` will raise :exc:`TypeError`.  In general,
     :func:`isinstance` and :func:`issubclass` should not be used with types.
 
-    Type variables may be marked covariant or contravariant by passing
+    The variance of type variables created through the :ref:`type parameter syntax <type-params>`
+    is inferred by type checkers. When ``infer_variance=True`` is passed,
+    variance is also inferred for manually created type variables.
+    Manually created type variables may be explicitly marked covariant or contravariant by passing
     ``covariant=True`` or ``contravariant=True``.  See :pep:`484` for more
     details.  By default, type variables are invariant.
 
