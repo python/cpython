@@ -2396,6 +2396,7 @@ INVALID, CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW
 """.replace(",", "").strip().split()
 
 ParamDict = dict[str, "Parameter"]
+ReturnConverterType = Callable[..., "CReturnConverter"]
 
 class Function:
     """
@@ -2475,7 +2476,7 @@ class Function:
     def __repr__(self) -> str:
         return '<clinic.Function ' + self.name + '>'
 
-    def copy(self, **overrides) -> Function:
+    def copy(self, **overrides: dict[str, Any]) -> Function:
         kwargs = {
             'name': self.name, 'module': self.module, 'parameters': self.parameters,
             'cls': self.cls, 'c_basename': self.c_basename,
@@ -3023,7 +3024,6 @@ legacy_converters: ConverterDict = {}
 # The callable may have any number of keyword-only parameters.
 # The callable must return a CReturnConverter object.
 # The callable should not call builtins.print.
-ReturnConverterType = Callable[..., "CReturnConverter"]
 ReturnConverterDict = dict[str, ReturnConverterType]
 return_converters: ReturnConverterDict = {}
 
