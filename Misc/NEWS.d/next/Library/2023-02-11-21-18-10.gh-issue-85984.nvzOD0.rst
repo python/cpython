@@ -1,0 +1,3 @@
+Add :func:`tty.cfmakeraw` and :func:`tty.cfmakecbreak` to :mod:`tty` and
+modernize, the behavior of :func:`tty.setraw` and :func:`tty.setcbreak` to use
+POSIX.1-2017 Chapter 11 "General Terminal Interface" flag masks by default.

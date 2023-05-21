@@ -2400,6 +2400,7 @@ class Tk(Misc, Wm):
         should when sys.stderr is None."""
         import traceback
         print("Exception in Tkinter callback", file=sys.stderr)
+        sys.last_exc = val
         sys.last_type = exc
         sys.last_value = val
         sys.last_traceback = tb
@@ -3429,8 +3430,7 @@ class Menu(Widget):
     def index(self, index):
         """Return the index of a menu item identified by INDEX."""
         i = self.tk.call(self._w, 'index', index)
-        if i == 'none': return None
-        return self.tk.getint(i)
+        return None if i in ('', 'none') else self.tk.getint(i)  # GH-103685.
 
     def invoke(self, index):
         """Invoke a menu item identified by INDEX and execute
