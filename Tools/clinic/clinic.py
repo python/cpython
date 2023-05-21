@@ -2418,7 +2418,7 @@ class Function:
             cls: Class | None = None,
             c_basename: str | None = None,
             full_name: str | None = None,
-            return_converter: CConverter,
+            return_converter: ReturnConverterType,
             return_annotation = inspect.Signature.empty,
             docstring: str | None = None,
             kind: str = CALLABLE,
