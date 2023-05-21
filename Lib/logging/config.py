@@ -65,7 +65,7 @@ def fileConfig(fname, defaults=None, disable_existing_loggers=True, encoding=Non
         if not os.path.exists(fname):
             raise FileNotFoundError(f"{fname} doesn't exist")
         elif not os.path.getsize(fname):
-            raise ValueError(f'{fname} is an empty file')
+            raise RuntimeError(f'{fname} is an empty file')
 
     if isinstance(fname, configparser.RawConfigParser):
         cp = fname
@@ -78,7 +78,7 @@ def fileConfig(fname, defaults=None, disable_existing_loggers=True, encoding=Non
                 encoding = io.text_encoding(encoding)
                 cp.read(fname, encoding=encoding)
         except configparser.ParsingError as e:
-            raise ValueError(f'{fname} is invalid: {e}')
+            raise RuntimeError(f'{fname} is invalid: {e}')
 
     formatters = _create_formatters(cp)
 

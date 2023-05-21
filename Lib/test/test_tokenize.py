@@ -3,7 +3,7 @@ from test.support import os_helper
 from tokenize import (tokenize, _tokenize, untokenize, NUMBER, NAME, OP,
                      STRING, ENDMARKER, ENCODING, tok_name, detect_encoding,
                      open as tokenize_open, Untokenizer, generate_tokens,
-                     NEWLINE, _generate_tokens_from_c_tokenizer, DEDENT)
+                     NEWLINE, _generate_tokens_from_c_tokenizer, DEDENT, TokenInfo)
 from io import BytesIO, StringIO
 import unittest
 from textwrap import dedent
@@ -82,7 +82,7 @@ class TokenizeTest(TestCase):
     NAME       'False'       (4, 11) (4, 16)
     COMMENT    '# NEWLINE'   (4, 17) (4, 26)
     NEWLINE    '\\n'          (4, 26) (4, 27)
-    DEDENT     ''            (5, 0) (5, 0)
+    DEDENT     ''            (4, 27) (4, 27)
     """)
         indent_error_file = b"""\
 def k(x):
@@ -230,6 +230,10 @@ def k(x):
                 continue
             self.assertEqual(number_token(lit), lit)
         for lit in INVALID_UNDERSCORE_LITERALS:
+            try:
+                number_token(lit)
+            except SyntaxError:
+                continue
             self.assertNotEqual(number_token(lit), lit)
 
     def test_string(self):
@@ -381,21 +385,119 @@ c"""', """\
     STRING     'rb"\""a\\\\\\nb\\\\\\nc"\""' (1, 0) (3, 4)
     """)
         self.check_tokenize('f"abc"', """\
-    STRING     'f"abc"'      (1, 0) (1, 6)
+    FSTRING_START 'f"'          (1, 0) (1, 2)
+    FSTRING_MIDDLE 'abc'         (1, 2) (1, 5)
+    FSTRING_END '"'           (1, 5) (1, 6)
     """)
         self.check_tokenize('fR"a{b}c"', """\
-    STRING     'fR"a{b}c"'   (1, 0) (1, 9)
+    FSTRING_START 'fR"'         (1, 0) (1, 3)
+    FSTRING_MIDDLE 'a'           (1, 3) (1, 4)
+    OP         '{'           (1, 4) (1, 5)
+    NAME       'b'           (1, 5) (1, 6)
+    OP         '}'           (1, 6) (1, 7)
+    FSTRING_MIDDLE 'c'           (1, 7) (1, 8)
+    FSTRING_END '"'           (1, 8) (1, 9)
+    """)
+        self.check_tokenize('fR"a{{{b!r}}}c"', """\
+    FSTRING_START 'fR"'         (1, 0) (1, 3)
+    FSTRING_MIDDLE 'a{'          (1, 3) (1, 5)
+    OP         '{'           (1, 6) (1, 7)
+    NAME       'b'           (1, 7) (1, 8)
+    OP         '!'           (1, 8) (1, 9)
+    NAME       'r'           (1, 9) (1, 10)
+    OP         '}'           (1, 10) (1, 11)
+    FSTRING_MIDDLE '}'           (1, 11) (1, 12)
+    FSTRING_MIDDLE 'c'           (1, 13) (1, 14)
+    FSTRING_END '"'           (1, 14) (1, 15)
+    """)
+        self.check_tokenize('f"{{{1+1}}}"', """\
+    FSTRING_START 'f"'          (1, 0) (1, 2)
+    FSTRING_MIDDLE '{'           (1, 2) (1, 3)
+    OP         '{'           (1, 4) (1, 5)
+    NUMBER     '1'           (1, 5) (1, 6)
+    OP         '+'           (1, 6) (1, 7)
+    NUMBER     '1'           (1, 7) (1, 8)
+    OP         '}'           (1, 8) (1, 9)
+    FSTRING_MIDDLE '}'           (1, 9) (1, 10)
+    FSTRING_END '"'           (1, 11) (1, 12)
+    """)
+        self.check_tokenize('f"""{f\'\'\'{f\'{f"{1+1}"}\'}\'\'\'}"""', """\
+    FSTRING_START 'f\"""'        (1, 0) (1, 4)
+    OP         '{'           (1, 4) (1, 5)
+    FSTRING_START "f'''"        (1, 5) (1, 9)
+    OP         '{'           (1, 9) (1, 10)
+    FSTRING_START "f'"          (1, 10) (1, 12)
+    OP         '{'           (1, 12) (1, 13)
+    FSTRING_START 'f"'          (1, 13) (1, 15)
+    OP         '{'           (1, 15) (1, 16)
+    NUMBER     '1'           (1, 16) (1, 17)
+    OP         '+'           (1, 17) (1, 18)
+    NUMBER     '1'           (1, 18) (1, 19)
+    OP         '}'           (1, 19) (1, 20)
+    FSTRING_END '"'           (1, 20) (1, 21)
+    OP         '}'           (1, 21) (1, 22)
+    FSTRING_END "'"           (1, 22) (1, 23)
+    OP         '}'           (1, 23) (1, 24)
+    FSTRING_END "'''"         (1, 24) (1, 27)
+    OP         '}'           (1, 27) (1, 28)
+    FSTRING_END '\"""'         (1, 28) (1, 31)
+    """)
+        self.check_tokenize('f"""     x\nstr(data, encoding={invalid!r})\n"""', """\
+    FSTRING_START 'f\"""'        (1, 0) (1, 4)
+    FSTRING_MIDDLE '     x\\nstr(data, encoding=' (1, 4) (2, 19)
+    OP         '{'           (2, 19) (2, 20)
+    NAME       'invalid'     (2, 20) (2, 27)
+    OP         '!'           (2, 27) (2, 28)
+    NAME       'r'           (2, 28) (2, 29)
+    OP         '}'           (2, 29) (2, 30)
+    FSTRING_MIDDLE ')\\n'         (2, 30) (3, 0)
+    FSTRING_END '\"""'         (3, 0) (3, 3)
+    """)
+        self.check_tokenize('f"""123456789\nsomething{None}bad"""', """\
+    FSTRING_START 'f\"""'        (1, 0) (1, 4)
+    FSTRING_MIDDLE '123456789\\nsomething' (1, 4) (2, 9)
+    OP         '{'           (2, 9) (2, 10)
+    NAME       'None'        (2, 10) (2, 14)
+    OP         '}'           (2, 14) (2, 15)
+    FSTRING_MIDDLE 'bad'         (2, 15) (2, 18)
+    FSTRING_END '\"""'         (2, 18) (2, 21)
     """)
         self.check_tokenize('f"""abc"""', """\
-    STRING     'f\"\"\"abc\"\"\"'  (1, 0) (1, 10)
+    FSTRING_START 'f\"""'        (1, 0) (1, 4)
+    FSTRING_MIDDLE 'abc'         (1, 4) (1, 7)
+    FSTRING_END '\"""'         (1, 7) (1, 10)
     """)
         self.check_tokenize(r'f"abc\
 def"', """\
-    STRING     'f"abc\\\\\\ndef"' (1, 0) (2, 4)
+    FSTRING_START 'f"'          (1, 0) (1, 2)
+    FSTRING_MIDDLE 'abc\\\\\\ndef'  (1, 2) (2, 3)
+    FSTRING_END '"'           (2, 3) (2, 4)
     """)
         self.check_tokenize(r'Rf"abc\
 def"', """\
-    STRING     'Rf"abc\\\\\\ndef"' (1, 0) (2, 4)
+    FSTRING_START 'Rf"'         (1, 0) (1, 3)
+    FSTRING_MIDDLE 'abc\\\\\\ndef'  (1, 3) (2, 3)
+    FSTRING_END '"'           (2, 3) (2, 4)
+    """)
+        self.check_tokenize("f'some words {a+b:.3f} more words {c+d=} final words'", """\
+    FSTRING_START "f'"          (1, 0) (1, 2)
+    FSTRING_MIDDLE 'some words ' (1, 2) (1, 13)
+    OP         '{'           (1, 13) (1, 14)
+    NAME       'a'           (1, 14) (1, 15)
+    OP         '+'           (1, 15) (1, 16)
+    NAME       'b'           (1, 16) (1, 17)
+    OP         ':'           (1, 17) (1, 18)
+    FSTRING_MIDDLE '.3f'         (1, 18) (1, 21)
+    OP         '}'           (1, 21) (1, 22)
+    FSTRING_MIDDLE ' more words ' (1, 22) (1, 34)
+    OP         '{'           (1, 34) (1, 35)
+    NAME       'c'           (1, 35) (1, 36)
+    OP         '+'           (1, 36) (1, 37)
+    NAME       'd'           (1, 37) (1, 38)
+    OP         '='           (1, 38) (1, 39)
+    OP         '}'           (1, 39) (1, 40)
+    FSTRING_MIDDLE ' final words' (1, 40) (1, 52)
+    FSTRING_END "'"           (1, 52) (1, 53)
     """)
 
     def test_function(self):
@@ -644,8 +746,8 @@ def"', """\
     NEWLINE    '\\n'          (2, 5) (2, 6)
     INDENT     '        \\t'  (3, 0) (3, 9)
     NAME       'pass'        (3, 9) (3, 13)
-    DEDENT     ''            (4, 0) (4, 0)
-    DEDENT     ''            (4, 0) (4, 0)
+    DEDENT     ''            (3, 14) (3, 14)
+    DEDENT     ''            (3, 14) (3, 14)
     """)
 
     def test_non_ascii_identifiers(self):
@@ -857,7 +959,7 @@ async def foo():
     NUMBER     '1'           (2, 17) (2, 18)
     OP         ':'           (2, 18) (2, 19)
     NAME       'pass'        (2, 20) (2, 24)
-    DEDENT     ''            (3, 0) (3, 0)
+    DEDENT     ''            (2, 25) (2, 25)
     """)
 
         self.check_tokenize('''async def foo(async): await''', """\
@@ -905,7 +1007,7 @@ def f():
     NAME       'await'       (6, 2) (6, 7)
     OP         '='           (6, 8) (6, 9)
     NUMBER     '2'           (6, 10) (6, 11)
-    DEDENT     ''            (7, 0) (7, 0)
+    DEDENT     ''            (6, 12) (6, 12)
     """)
 
         self.check_tokenize('''\
@@ -943,7 +1045,7 @@ async def f():
     NAME       'await'       (6, 2) (6, 7)
     OP         '='           (6, 8) (6, 9)
     NUMBER     '2'           (6, 10) (6, 11)
-    DEDENT     ''            (7, 0) (7, 0)
+    DEDENT     ''            (6, 12) (6, 12)
     """)
 
 class GenerateTokensTest(TokenizeTest):
@@ -968,7 +1070,7 @@ def decistmt(s):
             ])
         else:
             result.append((toknum, tokval))
-    return untokenize(result).decode('utf-8')
+    return untokenize(result).decode('utf-8').strip()
 
 class TestMisc(TestCase):
 
@@ -1040,32 +1142,15 @@ class Test_Tokenize(TestCase):
             nonlocal first
             if not first:
                 first = True
-                return line
+                yield line
             else:
-                return b''
+                yield b''
 
         # skip the initial encoding token and the end tokens
-        tokens = list(_tokenize(readline, encoding='utf-8'))[1:-2]
-        expected_tokens = [(3, '"ЉЊЈЁЂ"', (1, 0), (1, 7), '"ЉЊЈЁЂ"')]
+        tokens = list(_tokenize(readline(), encoding='utf-8'))[:-2]
+        expected_tokens = [TokenInfo(3, '"ЉЊЈЁЂ"', (1, 0), (1, 7), '"ЉЊЈЁЂ"\n')]
         self.assertEqual(tokens, expected_tokens,
                          "bytes not decoded with encoding")
-
-    def test__tokenize_does_not_decode_with_encoding_none(self):
-        literal = '"ЉЊЈЁЂ"'
-        first = False
-        def readline():
-            nonlocal first
-            if not first:
-                first = True
-                return literal
-            else:
-                return b''
-
-        # skip the end tokens
-        tokens = list(_tokenize(readline, encoding=None))[:-2]
-        expected_tokens = [(3, '"ЉЊЈЁЂ"', (1, 0), (1, 7), '"ЉЊЈЁЂ"')]
-        self.assertEqual(tokens, expected_tokens,
-                         "string not tokenized when encoding is None")
 
 
 class TestDetectEncoding(TestCase):
@@ -1326,7 +1411,7 @@ class TestTokenize(TestCase):
 
     def test_tokenize(self):
         import tokenize as tokenize_module
-        encoding = object()
+        encoding = "utf-8"
         encoding_used = None
         def mock_detect_encoding(readline):
             return encoding, [b'first', b'second']
@@ -1336,7 +1421,10 @@ class TestTokenize(TestCase):
             encoding_used = encoding
             out = []
             while True:
-                next_line = readline()
+                try:
+                    next_line = next(readline)
+                except StopIteration:
+                    return out
                 if next_line:
                     out.append(next_line)
                     continue
@@ -1356,7 +1444,7 @@ class TestTokenize(TestCase):
         tokenize_module._tokenize = mock__tokenize
         try:
             results = tokenize(mock_readline)
-            self.assertEqual(list(results),
+            self.assertEqual(list(results)[1:],
                              [b'first', b'second', b'1', b'2', b'3', b'4'])
         finally:
             tokenize_module.detect_encoding = orig_detect_encoding
@@ -1652,8 +1740,8 @@ class TestRoundtrip(TestCase):
             if support.verbose >= 2:
                 print('tokenize', testfile)
             with open(testfile, 'rb') as f:
-                with self.subTest(file=testfile):
-                    self.check_roundtrip(f)
+                # with self.subTest(file=testfile):
+                self.check_roundtrip(f)
 
 
     def roundtrip(self, code):
@@ -2496,13 +2584,13 @@ async def f():
     def test_unicode(self):
 
         self.check_tokenize("Örter = u'places'\ngrün = U'green'", """\
-    NAME       'Örter'       (1, 0) (1, 6)
-    EQUAL      '='           (1, 7) (1, 8)
-    STRING     "u'places'"   (1, 9) (1, 18)
-    NEWLINE    ''            (1, 18) (1, 18)
-    NAME       'grün'        (2, 0) (2, 5)
-    EQUAL      '='           (2, 6) (2, 7)
-    STRING     "U'green'"    (2, 8) (2, 16)
+    NAME       'Örter'       (1, 0) (1, 5)
+    EQUAL      '='           (1, 6) (1, 7)
+    STRING     "u'places'"   (1, 8) (1, 17)
+    NEWLINE    ''            (1, 17) (1, 17)
+    NAME       'grün'        (2, 0) (2, 4)
+    EQUAL      '='           (2, 5) (2, 6)
+    STRING     "U'green'"    (2, 7) (2, 15)
     """)
 
     def test_invalid_syntax(self):
@@ -2559,8 +2647,7 @@ async def f():
         compile(valid, "<string>", "exec")
 
         invalid = generate_source(MAXINDENT)
-        tokens = list(_generate_tokens_from_c_tokenizer(invalid))
-        self.assertEqual(tokens[-1].type, NEWLINE)
+        self.assertRaises(SyntaxError, lambda: list(_generate_tokens_from_c_tokenizer(invalid)))
         self.assertRaises(
             IndentationError, compile, invalid, "<string>", "exec"
         )
