@@ -6153,6 +6153,18 @@ sslmodule_init_strings(PyObject *module)
     return 0;
 }
 
+static int
+sslmodule_init_lock(PyObject *module)
+{
+    _sslmodulestate *state = get_ssl_state(module);
+    state->keylog_lock = PyThread_allocate_lock();
+    if (state->keylog_lock == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    return 0;
+}
+
 static PyModuleDef_Slot sslmodule_slots[] = {
     {Py_mod_exec, sslmodule_init_types},
     {Py_mod_exec, sslmodule_init_exceptions},
@@ -6161,9 +6173,8 @@ static PyModuleDef_Slot sslmodule_slots[] = {
     {Py_mod_exec, sslmodule_init_constants},
     {Py_mod_exec, sslmodule_init_versioninfo},
     {Py_mod_exec, sslmodule_init_strings},
-    // XXX gh-103092: fix isolation.
-    {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
-    //{Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_exec, sslmodule_init_lock},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 
@@ -6222,6 +6233,8 @@ static void
 sslmodule_free(void *m)
 {
     sslmodule_clear((PyObject *)m);
+    _sslmodulestate *state = get_ssl_state(m);
+    PyThread_free_lock(state->keylog_lock);
 }
 
 static struct PyModuleDef _sslmodule_def = {
