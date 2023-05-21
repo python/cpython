@@ -121,8 +121,7 @@ test_long_and_overflow(PyObject *self, PyObject *Py_UNUSED(ignored))
     }
     temp = PyNumber_Add(num, one);
     Py_DECREF(one);
-    Py_DECREF(num);
-    num = temp;
+    Py_SETREF(num, temp);
     if (num == NULL)
         return NULL;
     overflow = 0;
@@ -165,8 +164,7 @@ test_long_and_overflow(PyObject *self, PyObject *Py_UNUSED(ignored))
     }
     temp = PyNumber_Subtract(num, one);
     Py_DECREF(one);
-    Py_DECREF(num);
-    num = temp;
+    Py_SETREF(num, temp);
     if (num == NULL)
         return NULL;
     overflow = 0;
@@ -285,8 +283,7 @@ test_long_long_and_overflow(PyObject *self, PyObject *Py_UNUSED(ignored))
     }
     temp = PyNumber_Add(num, one);
     Py_DECREF(one);
-    Py_DECREF(num);
-    num = temp;
+    Py_SETREF(num, temp);
     if (num == NULL)
         return NULL;
     overflow = 0;
@@ -329,8 +326,7 @@ test_long_long_and_overflow(PyObject *self, PyObject *Py_UNUSED(ignored))
     }
     temp = PyNumber_Subtract(num, one);
     Py_DECREF(one);
-    Py_DECREF(num);
-    num = temp;
+    Py_SETREF(num, temp);
     if (num == NULL)
         return NULL;
     overflow = 0;
@@ -538,6 +534,18 @@ test_long_numbits(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_RETURN_NONE;
 }
 
+static PyObject *
+check_long_compact_api(PyObject *self, PyObject *arg)
+{
+    assert(PyLong_Check(arg));
+    int is_compact = PyUnstable_Long_IsCompact((PyLongObject*)arg);
+    Py_ssize_t value = -1;
+    if (is_compact) {
+        value = PyUnstable_Long_CompactValue((PyLongObject*)arg);
+    }
+    return Py_BuildValue("in", is_compact, value);
+}
+
 static PyMethodDef test_methods[] = {
     {"test_long_and_overflow",  test_long_and_overflow,          METH_NOARGS},
     {"test_long_api",           test_long_api,                   METH_NOARGS},
@@ -547,6 +555,7 @@ static PyMethodDef test_methods[] = {
     {"test_long_long_and_overflow",test_long_long_and_overflow,  METH_NOARGS},
     {"test_long_numbits",       test_long_numbits,               METH_NOARGS},
     {"test_longlong_api",       test_longlong_api,               METH_NOARGS},
+    {"call_long_compact_api",   check_long_compact_api,          METH_O},
     {NULL},
 };
 

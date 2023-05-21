@@ -567,6 +567,15 @@ APIs:
    arguments.
 
 
+.. c:function:: PyObject* PyUnicode_FromObject(PyObject *obj)
+
+   Copy an instance of a Unicode subtype to a new true Unicode object if
+   necessary. If *obj* is already a true Unicode object (not a subtype),
+   return the reference with incremented refcount.
+
+   Objects other than Unicode or its subtypes will cause a :exc:`TypeError`.
+
+
 .. c:function:: PyObject* PyUnicode_FromEncodedObject(PyObject *obj, \
                                const char *encoding, const char *errors)
 
@@ -672,15 +681,6 @@ APIs:
    null code point appended.
 
    .. versionadded:: 3.3
-
-
-.. c:function:: PyObject* PyUnicode_FromObject(PyObject *obj)
-
-   Copy an instance of a Unicode subtype to a new true Unicode object if
-   necessary. If *obj* is already a true Unicode object (not a subtype),
-   return the reference with incremented refcount.
-
-   Objects other than Unicode or its subtypes will cause a :exc:`TypeError`.
 
 
 Locale Encoding

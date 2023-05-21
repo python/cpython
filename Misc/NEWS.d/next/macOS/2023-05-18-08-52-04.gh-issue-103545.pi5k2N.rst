@@ -1,0 +1,1 @@
+Add ``os.PRIO_DARWIN_THREAD``, ``os.PRIO_DARWIN_PROCESS``, ``os.PRIO_DARWIN_BG`` and ``os.PRIO_DARWIN_NONUI``. These can be used with ``os.setpriority`` to run the process at a lower priority and make use of the efficiency cores on Apple Silicon systems.

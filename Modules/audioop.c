@@ -1471,8 +1471,7 @@ audioop_ratecv_impl(PyObject *module, Py_buffer *fragment, int width,
                 len = (Py_ssize_t)(ncp - PyBytes_AsString(str));
                 rv = PyBytes_FromStringAndSize
                     (PyBytes_AsString(str), len);
-                Py_DECREF(str);
-                str = rv;
+                Py_SETREF(str, rv);
                 if (str == NULL)
                     goto exit;
                 rv = Py_BuildValue("(O(iO))", str, d, samps);
@@ -1976,6 +1975,7 @@ audioop_exec(PyObject* module)
 
 static PyModuleDef_Slot audioop_slots[] = {
     {Py_mod_exec, audioop_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 
