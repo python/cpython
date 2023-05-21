@@ -3985,7 +3985,7 @@ class CReturnConverterAutoRegister(type):
             cls: ReturnConverterType,
             name: str,
             bases: tuple[type, ...],
-            classdict: dict[Any, Any]
+            classdict: dict[str, Any]
     ) -> None:
         add_c_return_converter(cls)
 
