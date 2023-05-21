@@ -235,6 +235,14 @@ do {                                                                    \
     return err;                                                         \
     }                                                                   \
 } while (0)
+#define CHECK_VALID_OR_RELEASE(err, buffer)                             \
+do {                                                                    \
+    if (self->map_handle == NULL) {                                     \
+    PyErr_SetString(PyExc_ValueError, "mmap closed or invalid");        \
+    PyBuffer_Release(&(buffer));                                        \
+    return (err);                                                       \
+    }                                                                   \
+} while (0)
 #endif /* MS_WINDOWS */
 
 #ifdef UNIX
@@ -243,6 +251,14 @@ do {                                                                    \
     if (self->data == NULL) {                                           \
     PyErr_SetString(PyExc_ValueError, "mmap closed or invalid");        \
     return err;                                                         \
+    }                                                                   \
+} while (0)
+#define CHECK_VALID_OR_RELEASE(err, buffer)                             \
+do {                                                                    \
+    if (self->data == NULL) {                                           \
+    PyErr_SetString(PyExc_ValueError, "mmap closed or invalid");        \
+    PyBuffer_Release(&(buffer));                                        \
+    return (err);                                                       \
     }                                                                   \
 } while (0)
 #endif /* UNIX */
@@ -334,7 +350,7 @@ mmap_gfind(mmap_object *self,
             end = self->size;
 
         Py_ssize_t res;
-        CHECK_VALID(NULL);
+        CHECK_VALID_OR_RELEASE(NULL, view);
         if (reverse) {
             res = _PyBytes_ReverseFind(
                 self->data + start, end - start,
@@ -411,7 +427,7 @@ mmap_write_method(mmap_object *self,
         return NULL;
     }
 
-    CHECK_VALID(NULL);
+    CHECK_VALID_OR_RELEASE(NULL, data);
     memcpy(&self->data[self->pos], data.buf, data.len);
     self->pos += data.len;
     PyBuffer_Release(&data);
@@ -1097,7 +1113,7 @@ mmap_ass_subscript(mmap_object *self, PyObject *item, PyObject *value)
             return -1;
         }
 
-        CHECK_VALID(-1);
+        CHECK_VALID_OR_RELEASE(-1, vbuf);
         if (slicelen == 0) {
         }
         else if (step == 1) {
