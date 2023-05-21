@@ -1466,7 +1466,7 @@ can also be created without the dedicated syntax, as documented below.
       Type variables can now be declared using the
       :ref:`type parameter <type-params>` syntax introduced by :pep:`695`.
 
-.. class:: TypeVarTuple
+.. class:: TypeVarTuple(name)
 
     Type variable tuple. A specialized form of :class:`type variable <TypeVar>`
     that enables *variadic* generics.
