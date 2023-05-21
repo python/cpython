@@ -1244,6 +1244,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
       tup: tuple[*Ts]         # Syntax error on Python <= 3.10!
       tup: tuple[Unpack[Ts]]  # Semantically equivalent, and backwards-compatible
 
+   .. versionadded:: 3.11
 
 Building generic types
 """"""""""""""""""""""
