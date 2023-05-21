@@ -3154,10 +3154,10 @@ class ProtocolTests(BaseTestCase):
 
         class NonPR(PR): pass
 
-        class C:
+        class C(metaclass=abc.ABCMeta):
             x = 1
 
-        class D:
+        class D(metaclass=abc.ABCMeta):
             def meth(self): pass
 
         self.assertNotIsInstance(C(), NonP)
@@ -3174,8 +3174,7 @@ class ProtocolTests(BaseTestCase):
 
         acceptable_extra_attrs = {
             '_is_protocol', '_is_runtime_protocol', '__parameters__',
-            '__subclasshook__', '__abstractmethods__', '_abc_impl',
-            '__init__', '__annotations__',
+            '__init__', '__annotations__', '__subclasshook__',
         }
         self.assertLessEqual(vars(NonP).keys(), vars(C).keys() | acceptable_extra_attrs)
         self.assertLessEqual(
