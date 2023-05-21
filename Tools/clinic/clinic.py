@@ -2051,7 +2051,7 @@ impl_definition block
 
     def __init__(
             self,
-            language: Language,
+            language: CLanguage,
             printer: BlockPrinter | None = None,
             *,
             verify: bool = True,
@@ -2060,7 +2060,7 @@ impl_definition block
         # maps strings to Parser objects.
         # (instantiated from the "parsers" global.)
         self.parsers: ParserDict = {}
-        self.language: Language = language
+        self.language: CLanguage = language
         if printer:
             fail("Custom printers are broken right now")
         self.printer = printer or BlockPrinter(language)
@@ -2273,6 +2273,7 @@ def parse_file(
     if not find_start_re.search(raw):
         return
 
+    assert isinstance(language, CLanguage)
     clinic = Clinic(language, verify=verify, filename=filename)
     src_out, clinic_out = clinic.parse(raw)
 
