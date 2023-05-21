@@ -368,6 +368,14 @@ jobs:
         echo "HYPOVENV=${VENV_LOC}" >> $GITHUB_ENV
         echo "VENV_PYTHON=${VENV_PYTHON}" >> $GITHUB_ENV
         ./python -m venv $VENV_LOC && $VENV_PYTHON -m pip install -U hypothesis
+    - name: 'Restore Hypothesis database'
+      id: cache-hypothesis-database
+      uses: actions/cache@v3
+      with:
+        path: ./hypothesis
+        key: hypothesis-database-${{ github.head_ref || github.run_id }}
+        restore-keys: |
+          - hypothesis-database-
     - name: "Run tests"
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: |
@@ -388,6 +396,11 @@ jobs:
           -x test_subprocess \
           -x test_signal \
           -x test_sysconfig
+    - uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: hypothesis-example-db
+        path: .hypothesis/examples/
 
 
   build_asan:

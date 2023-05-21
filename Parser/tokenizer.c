@@ -111,6 +111,8 @@ tok_new(void)
     tok->interactive_underflow = IUNDERFLOW_NORMAL;
     tok->str = NULL;
     tok->report_warnings = 1;
+    tok->tok_extra_tokens = 0;
+    tok->comment_newline = 0;
     tok->tok_mode_stack[0] = (tokenizer_mode){.kind =TOK_REGULAR_MODE, .f_string_quote='\0', .f_string_quote_size = 0, .f_string_debug=0};
     tok->tok_mode_stack_index = 0;
     tok->tok_report_warnings = 1;
@@ -980,6 +982,16 @@ _PyTokenizer_Free(struct tok_state *tok)
     PyMem_Free(tok);
 }
 
+void
+_PyToken_Free(struct token *token) {
+    Py_XDECREF(token->metadata);
+}
+
+void
+_PyToken_Init(struct token *token) {
+    token->metadata = NULL;
+}
+
 static int
 tok_readline_raw(struct tok_state *tok)
 {
@@ -1124,7 +1136,7 @@ tok_underflow_interactive(struct tok_state *tok) {
 
 static int
 tok_underflow_file(struct tok_state *tok) {
-    if (tok->start == NULL) {
+    if (tok->start == NULL && !INSIDE_FSTRING(tok)) {
         tok->cur = tok->inp = tok->buf;
     }
     if (tok->decoding_state == STATE_INIT) {
@@ -1636,6 +1648,7 @@ token_setup(struct tok_state *tok, struct token *token, int type, const char *st
     return type;
 }
 
+
 static int
 tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct token *token)
 {
@@ -1648,6 +1661,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     tok->start = NULL;
     tok->starting_col_offset = -1;
     blankline = 0;
+
 
     /* Get indentation level */
     if (tok->atbol) {
@@ -1749,12 +1763,20 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     tok->starting_col_offset = tok->col_offset;
 
     /* Return pending indents/dedents */
-    if (tok->pendin != 0) {
+   if (tok->pendin != 0) {
         if (tok->pendin < 0) {
+            if (tok->tok_extra_tokens) {
+                p_start = tok->cur;
+                p_end = tok->cur;
+            }
             tok->pendin++;
             return MAKE_TOKEN(DEDENT);
         }
         else {
+            if (tok->tok_extra_tokens) {
+                p_start = tok->buf;
+                p_end = tok->cur;
+            }
             tok->pendin--;
             return MAKE_TOKEN(INDENT);
         }
@@ -1803,11 +1825,16 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             return MAKE_TOKEN(syntaxerror(tok, "f-string expression part cannot include '#'"));
         }
 
-        const char *prefix, *p, *type_start;
+        const char* p = NULL;
+        const char *prefix, *type_start;
         int current_starting_col_offset;
 
         while (c != EOF && c != '\n') {
             c = tok_nextc(tok);
+        }
+
+        if (tok->tok_extra_tokens) {
+            p = tok->start;
         }
 
         if (tok->type_comments) {
@@ -1863,6 +1890,13 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     return MAKE_TYPE_COMMENT_TOKEN(TYPE_COMMENT, current_starting_col_offset, tok->col_offset);
                 }
             }
+        }
+        if (tok->tok_extra_tokens) {
+            tok_backup(tok, c);  /* don't eat the newline or EOF */
+            p_start = p;
+            p_end = tok->cur;
+            tok->comment_newline = blankline;
+            return MAKE_TOKEN(COMMENT);
         }
     }
 
@@ -1949,6 +1983,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
 
                 struct tok_state ahead_tok;
                 struct token ahead_token;
+                _PyToken_Init(&ahead_token);
                 int ahead_tok_kind;
 
                 memcpy(&ahead_tok, tok, sizeof(ahead_tok));
@@ -1964,8 +1999,10 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                        returning a plain NAME token, return ASYNC. */
                     tok->async_def_indent = tok->indent;
                     tok->async_def = 1;
+                    _PyToken_Free(&ahead_token);
                     return MAKE_TOKEN(ASYNC);
                 }
+                _PyToken_Free(&ahead_token);
             }
         }
 
@@ -1976,7 +2013,18 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     if (c == '\n') {
         tok->atbol = 1;
         if (blankline || tok->level > 0) {
+            if (tok->tok_extra_tokens) {
+                p_start = tok->start;
+                p_end = tok->cur;
+                return MAKE_TOKEN(NL);
+            }
             goto nextline;
+        }
+        if (tok->comment_newline && tok->tok_extra_tokens) {
+            tok->comment_newline = 0;
+                p_start = tok->start;
+                p_end = tok->cur;
+                return MAKE_TOKEN(NL);
         }
         p_start = tok->start;
         p_end = tok->cur - 1; /* Leave '\n' out of the string */
@@ -2250,6 +2298,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         the_current_tok->f_string_quote_size = quote_size;
         the_current_tok->f_string_start = tok->start;
         the_current_tok->f_string_multi_line_start = tok->line_start;
+        the_current_tok->f_string_line_start = tok->lineno;
         the_current_tok->f_string_start_offset = -1;
         the_current_tok->f_string_multi_line_start_offset = -1;
         the_current_tok->last_expr_buffer = NULL;
@@ -2562,6 +2611,9 @@ tok_get_fstring_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct 
 
 f_string_middle:
 
+    // TODO: This is a bit of a hack, but it works for now. We need to find a better way to handle
+    // this.
+    tok->multi_line_start = tok->line_start;
     while (end_quote_size != current_tok->f_string_quote_size) {
         int c = tok_nextc(tok);
         if (tok->done == E_ERROR) {
@@ -2580,7 +2632,9 @@ f_string_middle:
             tok->cur++;
             tok->line_start = current_tok->f_string_multi_line_start;
             int start = tok->lineno;
-            tok->lineno = tok->first_lineno;
+
+            tokenizer_mode *the_current_tok = TOK_GET_MODE(tok);
+            tok->lineno = the_current_tok->f_string_line_start;
 
             if (current_tok->f_string_quote_size == 3) {
                 return MAKE_TOKEN(syntaxerror(tok,
@@ -2785,7 +2839,9 @@ _PyTokenizer_FindEncodingFilename(int fd, PyObject *filename)
     // if fetching the encoding shows a warning.
     tok->report_warnings = 0;
     while (tok->lineno < 2 && tok->done == E_OK) {
+        _PyToken_Init(&token);
         _PyTokenizer_Get(tok, &token);
+        _PyToken_Free(&token);
     }
     fclose(fp);
     if (tok->encoding) {
