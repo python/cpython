@@ -146,4 +146,12 @@ _testcapi_test_long_numbits(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _testcapi_test_long_numbits_impl(module);
 }
-/*[clinic end generated code: output=6075a70259aaae38 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_testcapi_call_long_compact_api__doc__,
+"call_long_compact_api($module, arg, /)\n"
+"--\n"
+"\n");
+
+#define _TESTCAPI_CALL_LONG_COMPACT_API_METHODDEF    \
+    {"call_long_compact_api", (PyCFunction)_testcapi_call_long_compact_api, METH_O, _testcapi_call_long_compact_api__doc__},
+/*[clinic end generated code: output=acfcbe2eea22153e input=a9049054013a1b77]*/

@@ -566,8 +566,16 @@ _testcapi_test_long_numbits_impl(PyObject *module)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_testcapi.call_long_compact_api
+    arg: object
+    /
+[clinic start generated code]*/
+
 static PyObject *
-check_long_compact_api(PyObject *self, PyObject *arg)
+_testcapi_call_long_compact_api(PyObject *module, PyObject *arg)
+/*[clinic end generated code: output=7e3894f611b1b2b7 input=87b87396967af14c]*/
+
 {
     assert(PyLong_Check(arg));
     int is_compact = PyUnstable_Long_IsCompact((PyLongObject*)arg);
@@ -587,7 +595,7 @@ static PyMethodDef test_methods[] = {
     _TESTCAPI_TEST_LONG_LONG_AND_OVERFLOW_METHODDEF
     _TESTCAPI_TEST_LONG_NUMBITS_METHODDEF
     _TESTCAPI_TEST_LONGLONG_API_METHODDEF
-    {"call_long_compact_api",   check_long_compact_api,          METH_O},
+    _TESTCAPI_CALL_LONG_COMPACT_API_METHODDEF
     {NULL},
 };
 
