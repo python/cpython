@@ -449,16 +449,6 @@ def _tokenize(rl_gen, encoding):
     source = b"".join(rl_gen).decode(encoding)
     token = None
     for token in _generate_tokens_from_c_tokenizer(source, extra_tokens=True):
-        # TODO: Marta -> limpiar esto
-        if 6 < token.type <= 54:
-            token = token._replace(type=OP)
-        if token.type in {ASYNC, AWAIT}:
-            token = token._replace(type=NAME)
-        if token.type == NEWLINE:
-            l_start, c_start = token.start
-            l_end, c_end = token.end
-            token = token._replace(string='\n', start=(l_start, c_start), end=(l_end, c_end+1))
-
         yield token
     if token is not None:
         last_line, _ = token.start
