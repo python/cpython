@@ -831,8 +831,9 @@ r_PyLong(RFILE *p)
     n = r_long(p);
     if (n == 0)
         return (PyObject *)_PyLong_New(0);
-    if (n == -1 && PyErr_Occurred())
+    if (n == -1 && PyErr_Occurred()) {
         return NULL;
+    }
     if (n < -SIZE32_MAX || n > SIZE32_MAX) {
         PyErr_SetString(PyExc_ValueError,
                        "bad marshal data (long size out of range)");
@@ -1031,8 +1032,9 @@ r_object(RFILE *p)
 
     case TYPE_INT:
         n = r_long(p);
-        if (n == -1 && PyErr_Occurred())
+        if (n == -1 && PyErr_Occurred()) {
             break;
+        }
         retval = PyLong_FromLong(n);
         R_REF(retval);
         break;
@@ -1101,7 +1103,8 @@ r_object(RFILE *p)
             n = r_long(p);
             if (n < 0 || n > SIZE32_MAX) {
                 if (!PyErr_Occurred()) {
-                    PyErr_SetString(PyExc_ValueError, "bad marshal data (bytes object size out of range)");
+                    PyErr_SetString(PyExc_ValueError,
+                        "bad marshal data (bytes object size out of range)");
                 }
                 break;
             }
@@ -1126,7 +1129,8 @@ r_object(RFILE *p)
         n = r_long(p);
         if (n < 0 || n > SIZE32_MAX) {
             if (!PyErr_Occurred()) {
-                PyErr_SetString(PyExc_ValueError, "bad marshal data (string size out of range)");
+                PyErr_SetString(PyExc_ValueError,
+                    "bad marshal data (string size out of range)");
             }
             break;
         }
@@ -1166,7 +1170,8 @@ r_object(RFILE *p)
         n = r_long(p);
         if (n < 0 || n > SIZE32_MAX) {
             if (!PyErr_Occurred()) {
-                PyErr_SetString(PyExc_ValueError, "bad marshal data (string size out of range)");
+                PyErr_SetString(PyExc_ValueError,
+                    "bad marshal data (string size out of range)");
             }
             break;
         }
@@ -1198,7 +1203,8 @@ r_object(RFILE *p)
         n = r_long(p);
         if (n < 0 || n > SIZE32_MAX) {
             if (!PyErr_Occurred()) {
-                PyErr_SetString(PyExc_ValueError, "bad marshal data (tuple size out of range)");
+                PyErr_SetString(PyExc_ValueError,
+                    "bad marshal data (tuple size out of range)");
             }
             break;
         }
@@ -1226,7 +1232,8 @@ r_object(RFILE *p)
         n = r_long(p);
         if (n < 0 || n > SIZE32_MAX) {
             if (!PyErr_Occurred()) {
-                PyErr_SetString(PyExc_ValueError, "bad marshal data (list size out of range)");
+                PyErr_SetString(PyExc_ValueError,
+                    "bad marshal data (list size out of range)");
             }
             break;
         }
@@ -1282,7 +1289,8 @@ r_object(RFILE *p)
         n = r_long(p);
         if (n < 0 || n > SIZE32_MAX) {
             if (!PyErr_Occurred()) {
-                PyErr_SetString(PyExc_ValueError, "bad marshal data (set size out of range)");
+                PyErr_SetString(PyExc_ValueError,
+                    "bad marshal data (set size out of range)");
             }
             break;
         }
@@ -1468,7 +1476,8 @@ r_object(RFILE *p)
         n = r_long(p);
         if (n < 0 || n >= PyList_GET_SIZE(p->refs)) {
             if (!PyErr_Occurred()) {
-                PyErr_SetString(PyExc_ValueError, "bad marshal data (invalid reference)");
+                PyErr_SetString(PyExc_ValueError,
+                    "bad marshal data (invalid reference)");
             }
             break;
         }
