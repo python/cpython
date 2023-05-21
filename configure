@@ -8375,12 +8375,12 @@ $as_echo "\"Found merge-fdata\"" >&6; }
   fi
 fi
 
-# Enable BOLT of libpython if built.
 
 BOLT_BINARIES='$(BUILDPYTHON)'
-if test "${enable_shared}" = "yes"
-then
+if test "x$enable_shared" = xyes; then :
+
   BOLT_BINARIES="${BOLT_BINARIES} \$(INSTSONAME)"
+
 fi
 
 
@@ -8398,7 +8398,9 @@ $as_echo "$BOLT_INSTRUMENT_FLAGS" >&6; }
 $as_echo_n "checking BOLT_APPLY_FLAGS... " >&6; }
 if test -z "${BOLT_APPLY_FLAGS}"
 then
-  BOLT_APPLY_FLAGS="-update-debug-sections -reorder-blocks=ext-tsp -reorder-functions=hfsort+ -split-functions -icf=1 -inline-all -split-eh -reorder-functions-use-hot-size -peepholes=none -jump-tables=aggressive -inline-ap -indirect-call-promotion=all -dyno-stats -use-gnu-stack -frame-opt=hot"
+  BOLT_APPLY_FLAGS=-update-debug-sections -reorder-blocks=ext-tsp -reorder-functions=hfsort+ -split-functions -icf=1 -inline-all -split-eh -reorder-functions-use-hot-size -peepholes=none -jump-tables=aggressive -inline-ap -indirect-call-promotion=all -dyno-stats -use-gnu-stack -frame-opt=hot
+
+
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOLT_APPLY_FLAGS" >&5
 $as_echo "$BOLT_APPLY_FLAGS" >&6; }

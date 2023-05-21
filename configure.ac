@@ -2060,29 +2060,53 @@ if test "$Py_BOLT" = 'true' ; then
   fi
 fi
 
-# Enable BOLT of libpython if built.
+dnl Enable BOLT of libpython if built.
 AC_SUBST(BOLT_BINARIES)
 BOLT_BINARIES='$(BUILDPYTHON)'
-if test "${enable_shared}" = "yes"
-then
+AS_VAR_IF([enable_shared], [yes], [
   BOLT_BINARIES="${BOLT_BINARIES} \$(INSTSONAME)"
-fi
+])
 
-AC_ARG_VAR(BOLT_INSTRUMENT_FLAGS, Arguments to llvm-bolt when instrumenting binaries)
-AC_MSG_CHECKING(BOLT_INSTRUMENT_FLAGS)
+AC_ARG_VAR(
+  [BOLT_INSTRUMENT_FLAGS],
+  [Arguments to llvm-bolt when instrumenting binaries]
+)
+AC_MSG_CHECKING([BOLT_INSTRUMENT_FLAGS])
 if test -z "${BOLT_INSTRUMENT_FLAGS}"
 then
   BOLT_INSTRUMENT_FLAGS=
 fi
-AC_MSG_RESULT($BOLT_INSTRUMENT_FLAGS)
+AC_MSG_RESULT([$BOLT_INSTRUMENT_FLAGS])
 
-AC_ARG_VAR(BOLT_APPLY_FLAGS, Arguments to llvm-bolt when creating a BOLT optimized binary)
-AC_MSG_CHECKING(BOLT_APPLY_FLAGS)
+AC_ARG_VAR(
+  [BOLT_APPLY_FLAGS],
+  [Arguments to llvm-bolt when creating a BOLT optimized binary]
+)
+AC_MSG_CHECKING([BOLT_APPLY_FLAGS])
 if test -z "${BOLT_APPLY_FLAGS}"
 then
-  BOLT_APPLY_FLAGS="-update-debug-sections -reorder-blocks=ext-tsp -reorder-functions=hfsort+ -split-functions -icf=1 -inline-all -split-eh -reorder-functions-use-hot-size -peepholes=none -jump-tables=aggressive -inline-ap -indirect-call-promotion=all -dyno-stats -use-gnu-stack -frame-opt=hot"
+  AS_VAR_SET(
+    [BOLT_APPLY_FLAGS],
+    [m4_join([ ],
+      [-update-debug-sections],
+      [-reorder-blocks=ext-tsp],
+      [-reorder-functions=hfsort+],
+      [-split-functions],
+      [-icf=1],
+      [-inline-all],
+      [-split-eh],
+      [-reorder-functions-use-hot-size],
+      [-peepholes=none],
+      [-jump-tables=aggressive],
+      [-inline-ap],
+      [-indirect-call-promotion=all],
+      [-dyno-stats],
+      [-use-gnu-stack],
+      [-frame-opt=hot]
+    )]
+  )
 fi
-AC_MSG_RESULT($BOLT_APPLY_FLAGS)
+AC_MSG_RESULT([$BOLT_APPLY_FLAGS])
 
 # XXX Shouldn't the code above that fiddles with BASECFLAGS and OPT be
 # merged with this chunk of code?
