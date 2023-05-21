@@ -1556,14 +1556,11 @@ verify_identifier(struct tok_state *tok)
             tok->cur = (char *)tok->start + PyBytes_GET_SIZE(s);
         }
         Py_DECREF(s);
-        // PyUnicode_FromFormatV() does not support %X
-        char hex[9];
-        (void)PyOS_snprintf(hex, sizeof(hex), "%04X", ch);
         if (Py_UNICODE_ISPRINTABLE(ch)) {
-            syntaxerror(tok, "invalid character '%c' (U+%s)", ch, hex);
+            syntaxerror(tok, "invalid character '%c' (U+%04X)", ch, ch);
         }
         else {
-            syntaxerror(tok, "invalid non-printable character U+%s", hex);
+            syntaxerror(tok, "invalid non-printable character U+%04X", ch);
         }
         return 0;
     }
@@ -2541,9 +2538,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     }
 
     if (!Py_UNICODE_ISPRINTABLE(c)) {
-        char hex[9];
-        (void)PyOS_snprintf(hex, sizeof(hex), "%04X", c);
-        return MAKE_TOKEN(syntaxerror(tok, "invalid non-printable character U+%s", hex));
+        return MAKE_TOKEN(syntaxerror(tok, "invalid non-printable character U+%04X", c));
     }
 
     if( c == '=' && INSIDE_FSTRING_EXPR(current_tok)) {
