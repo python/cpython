@@ -2476,7 +2476,7 @@ class Function:
     def __repr__(self) -> str:
         return '<clinic.Function ' + self.name + '>'
 
-    def copy(self, **overrides: dict[str, Any]) -> Function:
+    def copy(self, **overrides: dict[str, Any]) -> "Function":
         kwargs = {
             'name': self.name, 'module': self.module, 'parameters': self.parameters,
             'cls': self.cls, 'c_basename': self.c_basename,
