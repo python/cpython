@@ -1,5 +1,8 @@
 #include "Python.h"
+#include "errcode.h"
 #include "../Parser/tokenizer.h"
+#include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
+#include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
 
 static struct PyModuleDef _tokenizemodule;
 
@@ -34,11 +37,14 @@ typedef struct
 _tokenizer.tokenizeriter.__new__ as tokenizeriter_new
 
     source: str
+    *
+    extra_tokens: bool
 [clinic start generated code]*/
 
 static PyObject *
-tokenizeriter_new_impl(PyTypeObject *type, const char *source)
-/*[clinic end generated code: output=7fd9f46cf9263cbb input=4384b368407375c6]*/
+tokenizeriter_new_impl(PyTypeObject *type, const char *source,
+                       int extra_tokens)
+/*[clinic end generated code: output=f6f9d8b4beec8106 input=90dc5b6a5df180c2]*/
 {
     tokenizeriterobject *self = (tokenizeriterobject *)type->tp_alloc(type, 0);
     if (self == NULL) {
@@ -54,20 +60,123 @@ tokenizeriter_new_impl(PyTypeObject *type, const char *source)
         return NULL;
     }
     self->tok->filename = filename;
+    if (extra_tokens) {
+        self->tok->tok_extra_tokens = 1;
+    }
     return (PyObject *)self;
+}
+
+static int
+_tokenizer_error(struct tok_state *tok)
+{
+    if (PyErr_Occurred()) {
+        return -1;
+    }
+
+    const char *msg = NULL;
+    PyObject* errtype = PyExc_SyntaxError;
+    switch (tok->done) {
+        case E_TOKEN:
+            msg = "invalid token";
+            break;
+        case E_EOF:
+            if (tok->level) {
+                    PyErr_Format(PyExc_SyntaxError,
+                                 "parenthesis '%c' was never closed",
+                                tok->parenstack[tok->level-1]);
+            } else {
+                PyErr_SetString(PyExc_SyntaxError, "unexpected EOF while parsing");
+            }
+            return -1;
+        case E_DEDENT:
+            PyErr_Format(PyExc_IndentationError,
+                        "unindent does not match any outer indentation level "
+                        "(<tokenize>, line %d)",
+                        tok->lineno);
+            return -1;
+        case E_INTR:
+            if (!PyErr_Occurred()) {
+                PyErr_SetNone(PyExc_KeyboardInterrupt);
+            }
+            return -1;
+        case E_NOMEM:
+            PyErr_NoMemory();
+            return -1;
+        case E_TABSPACE:
+            errtype = PyExc_TabError;
+            msg = "inconsistent use of tabs and spaces in indentation";
+            break;
+        case E_TOODEEP:
+            errtype = PyExc_IndentationError;
+            msg = "too many levels of indentation";
+            break;
+        case E_LINECONT: {
+            msg = "unexpected character after line continuation character";
+            break;
+        }
+        default:
+            msg = "unknown tokenization error";
+    }
+
+    PyObject* errstr = NULL;
+    PyObject* error_line = NULL;
+    PyObject* tmp = NULL;
+    PyObject* value = NULL;
+    int result = 0;
+
+    Py_ssize_t size = tok->inp - tok->buf;
+    error_line = PyUnicode_DecodeUTF8(tok->buf, size, "replace");
+    if (!error_line) {
+        result = -1;
+        goto exit;
+    }
+
+    tmp = Py_BuildValue("(OnnOii)", tok->filename, tok->lineno, 0, error_line, 0, 0);
+    if (!tmp) {
+        result = -1;
+        goto exit;
+    }
+
+    errstr = PyUnicode_FromString(msg);
+    if (!errstr) {
+        result = -1;
+        goto exit;
+    }
+
+    value = PyTuple_Pack(2, errstr, tmp);
+    if (!value) {
+        result = -1;
+        goto exit;
+    }
+
+    PyErr_SetObject(errtype, value);
+
+exit:
+    Py_XDECREF(errstr);
+    Py_XDECREF(error_line);
+    Py_XDECREF(tmp);
+    Py_XDECREF(value);
+    return result;
 }
 
 static PyObject *
 tokenizeriter_next(tokenizeriterobject *it)
 {
+    PyObject* result = NULL;
     struct token token;
+    _PyToken_Init(&token);
+
     int type = _PyTokenizer_Get(it->tok, &token);
-    if (type == ERRORTOKEN && PyErr_Occurred()) {
-        return NULL;
+    if (type == ERRORTOKEN) {
+        if(!PyErr_Occurred()) {
+            _tokenizer_error(it->tok);
+            assert(PyErr_Occurred());
+        }
+        goto exit;
     }
     if (type == ERRORTOKEN || type == ENDMARKER) {
         PyErr_SetString(PyExc_StopIteration, "EOF");
-        return NULL;
+        goto exit;
     }
     PyObject *str = NULL;
     if (token.start == NULL || token.end == NULL) {
@@ -77,28 +186,31 @@ tokenizeriter_next(tokenizeriterobject *it)
         str = PyUnicode_FromStringAndSize(token.start, token.end - token.start);
     }
     if (str == NULL) {
-        return NULL;
+        goto exit;
     }
 
     Py_ssize_t size = it->tok->inp - it->tok->buf;
     PyObject *line = PyUnicode_DecodeUTF8(it->tok->buf, size, "replace");
     if (line == NULL) {
         Py_DECREF(str);
-        return NULL;
+        goto exit;
     }
     const char *line_start = ISSTRINGLIT(type) ? it->tok->multi_line_start : it->tok->line_start;
-    int lineno = ISSTRINGLIT(type) ? it->tok->first_lineno : it->tok->lineno;
-    int end_lineno = it->tok->lineno;
-    int col_offset = -1;
-    int end_col_offset = -1;
+    Py_ssize_t lineno = ISSTRINGLIT(type) ? it->tok->first_lineno : it->tok->lineno;
+    Py_ssize_t end_lineno = it->tok->lineno;
+    Py_ssize_t col_offset = -1;
+    Py_ssize_t end_col_offset = -1;
     if (token.start != NULL && token.start >= line_start) {
-        col_offset = (int)(token.start - line_start);
+        col_offset = _PyPegen_byte_offset_to_character_offset(line, token.start - line_start);
     }
     if (token.end != NULL && token.end >= it->tok->line_start) {
-        end_col_offset = (int)(token.end - it->tok->line_start);
+        end_col_offset = _PyPegen_byte_offset_to_character_offset(line, token.end - it->tok->line_start);
     }
 
-    return Py_BuildValue("(NiiiiiN)", str, type, lineno, end_lineno, col_offset, end_col_offset, line);
+    result = Py_BuildValue("(NinnnnN)", str, type, lineno, end_lineno, col_offset, end_col_offset, line);
+exit:
+    _PyToken_Free(&token);
+    return result;
 }
 
 static void
