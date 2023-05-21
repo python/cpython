@@ -3000,9 +3000,11 @@ legacy_converters: ConverterDict = {}
 # these callables must be of the form:
 #   def foo(*, ...)
 # The callable may have any number of keyword-only parameters.
-# The callable must return a CConverter object.
+# The callable must return a CReturnConverter object.
 # The callable should not call builtins.print.
-return_converters: ConverterDict = {}
+ReturnConverterType = Callable[..., "CReturnConverter"]
+ReturnConverterDict = dict[str, ReturnConverterType]
+return_converters: ReturnConverterDict = {}
 
 TypeSet = set[bltns.type[Any]]
 
@@ -3966,9 +3968,9 @@ class self_converter(CConverter):
 
 
 def add_c_return_converter(
-        f: type,
+        f: ReturnConverterType,
         name: str | None = None
-) -> ConverterType:
+) -> ReturnConverterType:
     if not name:
         name = f.__name__
         if not name.endswith('_return_converter'):
@@ -3980,7 +3982,7 @@ def add_c_return_converter(
 
 class CReturnConverterAutoRegister(type):
     def __init__(
-            cls,
+            cls: ReturnConverterType,
             name: str,
             bases: tuple[type, ...],
             classdict: dict[Any, Any]
