@@ -5016,22 +5016,26 @@ class DSLParser:
         key = f"{parameter_name}_as_{c_name}" if c_name else parameter_name
         self.function.parameters[key] = p
 
-    def parse_converter(self, annotation):
-        if (isinstance(annotation, ast.Constant) and
-            type(annotation.value) is str):
-            return annotation.value, True, {}
+    KwargDict = dict[str | None, Any]
 
-        if isinstance(annotation, ast.Name):
-            return annotation.id, False, {}
-
-        if not isinstance(annotation, ast.Call):
-            fail("Annotations must be either a name, a function call, or a string.")
-
-        name = annotation.func.id
-        symbols = globals()
-
-        kwargs = {node.arg: eval_ast_expr(node.value, symbols) for node in annotation.keywords}
-        return name, False, kwargs
+    @staticmethod
+    def parse_converter(annotation: ast.expr | None) -> tuple[str, bool, KwargDict]:
+        match annotation:
+            case ast.Constant(value=str() as value):
+                return value, True, {}
+            case ast.Name(name):
+                return name, False, {}
+            case ast.Call(func=ast.Name(name)):
+                symbols = globals()
+                kwargs = {
+                    node.arg: eval_ast_expr(node.value, symbols)
+                    for node in annotation.keywords
+                }
+                return name, False, kwargs
+            case _:
+                fail(
+                    "Annotations must be either a name, a function call, or a string."
+                )
 
     def parse_special_symbol(self, symbol):
         if symbol == '*':
