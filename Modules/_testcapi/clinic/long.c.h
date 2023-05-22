@@ -49,7 +49,6 @@ PyDoc_STRVAR(_testcapi_test_long_and_overflow__doc__,
 "Test the PyLong_AsLongAndOverflow API.\n"
 "\n"
 "General conversion to PY_LONG is tested by test_long_api_inner.\n"
-"\n"
 "This test will concentrate on proper handling of overflow.");
 
 #define _TESTCAPI_TEST_LONG_AND_OVERFLOW_METHODDEF    \
@@ -71,7 +70,6 @@ PyDoc_STRVAR(_testcapi_test_long_long_and_overflow__doc__,
 "Test the PyLong_AsLongLongAndOverflow API.\n"
 "\n"
 "General conversion to long long is tested by test_long_api_inner.\n"
-"\n"
 "This test will concentrate on proper handling of overflow.");
 
 #define _TESTCAPI_TEST_LONG_LONG_AND_OVERFLOW_METHODDEF    \
@@ -93,7 +91,6 @@ PyDoc_STRVAR(_testcapi_test_long_as_size_t__doc__,
 "Test the PyLong_As{Size,Ssize}_t API.\n"
 "\n"
 "At present this just tests that non-integer arguments are handled correctly.\n"
-"\n"
 "It should be extended to test overflow handling.");
 
 #define _TESTCAPI_TEST_LONG_AS_SIZE_T_METHODDEF    \
@@ -166,4 +163,4 @@ PyDoc_STRVAR(_testcapi_call_long_compact_api__doc__,
 
 #define _TESTCAPI_CALL_LONG_COMPACT_API_METHODDEF    \
     {"call_long_compact_api", (PyCFunction)_testcapi_call_long_compact_api, METH_O, _testcapi_call_long_compact_api__doc__},
-/*[clinic end generated code: output=5169034598a55388 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d000a1b58fa81eab input=a9049054013a1b77]*/

@@ -104,13 +104,12 @@ _testcapi.test_long_and_overflow
 Test the PyLong_AsLongAndOverflow API.
 
 General conversion to PY_LONG is tested by test_long_api_inner.
-
 This test will concentrate on proper handling of overflow.
 [clinic start generated code]*/
 
 static PyObject *
 _testcapi_test_long_and_overflow_impl(PyObject *module)
-/*[clinic end generated code: output=f8460ca115e31d8e input=8e7eb2d3401c8623]*/
+/*[clinic end generated code: output=f8460ca115e31d8e input=762f6b62da0a3cdc]*/
 {
     PyObject *num, *one, *temp;
     long value;
@@ -272,13 +271,12 @@ _testcapi.test_long_long_and_overflow
 Test the PyLong_AsLongLongAndOverflow API.
 
 General conversion to long long is tested by test_long_api_inner.
-
 This test will concentrate on proper handling of overflow.
 [clinic start generated code]*/
 
 static PyObject *
 _testcapi_test_long_long_and_overflow_impl(PyObject *module)
-/*[clinic end generated code: output=0b92330786f45483 input=2496093514367165]*/
+/*[clinic end generated code: output=0b92330786f45483 input=544bb0aefe5e8a9e]*/
 {
     PyObject *num, *one, *temp;
     long long value;
@@ -440,13 +438,12 @@ _testcapi.test_long_as_size_t
 Test the PyLong_As{Size,Ssize}_t API.
 
 At present this just tests that non-integer arguments are handled correctly.
-
 It should be extended to test overflow handling.
 [clinic start generated code]*/
 
 static PyObject *
 _testcapi_test_long_as_size_t_impl(PyObject *module)
-/*[clinic end generated code: output=f6490ea2b41e6173 input=4d2aafa054f3f9b4]*/
+/*[clinic end generated code: output=f6490ea2b41e6173 input=922990c4a3edfb0d]*/
 {
     size_t out_u;
     Py_ssize_t out_s;
