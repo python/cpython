@@ -1,1 +1,0 @@
-Make :func:`asyncio.subprocess.Process.communicate` close the subprocess's stdin even when called with ``input=None``.
