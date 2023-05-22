@@ -919,8 +919,8 @@ Statements
 
 .. class:: TypeAlias(name, type_params, value)
 
-   A type alias created through the :keyword:`type` statement. ``name``
-   is the name of the alias, ``type_params`` is a list of
+   A :ref:`type alias <type-aliases>` created through the :keyword:`type`
+   statement. ``name`` is the name of the alias, ``type_params`` is a list of
    :ref:`type parameters <ast-type-params>`, and ``value`` is the value of the
    type alias.
 
