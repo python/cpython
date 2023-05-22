@@ -375,7 +375,7 @@ A generic type can have any number of type variables. All varieties of
 
    from typing import TypeVar, Generic, Sequence
 
-   class NewWeirdTrio[T, B: Sequence[bytes], S: (int, str)]:
+   class WeirdTrio[T, B: Sequence[bytes], S: (int, str)]:
        ...
 
    OldT = TypeVar('OldT', contravariant=True)
@@ -476,7 +476,8 @@ inheritance from :class:`Generic`. In this case, ``**`` is not used::
    class Z(Generic[P]):
        ...
 
-Another difference between :class:`TypeVar` and :class:`ParamSpec` is that a generic with only one parameter specification variable will accept
+Another difference between :class:`TypeVar` and :class:`ParamSpec` is that a
+generic with only one parameter specification variable will accept
 parameter lists in the forms ``X[[Type1, Type2, ...]]`` and also
 ``X[Type1, Type2, ...]`` for aesthetic reasons.  Internally, the latter is converted
 to the former, so the following are equivalent::
@@ -1327,9 +1328,11 @@ Building generic types and type aliases
 
 The following objects are not used directly in annotations. Instead, they are building blocks
 for creating generic types and type aliases.
-They can be created through special syntax (:ref:`type parameter lists <type-params>`
-and the :keyword:`type` statement). For compatibility with Python 3.11 and earlier, they
-can also be created without the dedicated syntax, as documented below.
+
+These objects can be created through special syntax
+(:ref:`type parameter lists <type-params>` and the :keyword:`type` statement).
+For compatibility with Python 3.11 and earlier, they can also be created
+without the dedicated syntax, as documented below.
 
 .. class:: Generic
 
@@ -1356,7 +1359,7 @@ can also be created without the dedicated syntax, as documented below.
               return default
 
    Generic classes can also be declared by explicitly inheriting from
-   ``Generic``. In this case, the type parameters must be created
+   ``Generic``. In this case, the type parameters must be declared
    separately::
 
       KT = TypeVar('KT')
@@ -1401,14 +1404,14 @@ can also be created without the dedicated syntax, as documented below.
    information on generic types.  Generic functions work as follows::
 
       def repeat[T](x: T, n: int) -> Sequence[T]:
-         """Return a list containing n references to x."""
-         return [x]*n
+          """Return a list containing n references to x."""
+          return [x]*n
 
 
       def print_capitalized[S: str](x: S) -> S:
-         """Print x capitalized, and return x."""
-         print(x.capitalize())
-         return x
+          """Print x capitalized, and return x."""
+          print(x.capitalize())
+          return x
 
 
       def concatenate[A: (str, bytes)](x: A, y: A) -> A:
