@@ -1,6 +1,7 @@
 import functools
 import inspect
 import os
+import pickle
 import string
 import sys
 import tempfile
@@ -1178,6 +1179,19 @@ class TestCurses(unittest.TestCase):
         win.resize(lines-2, cols-2)
         # this may cause infinite recursion, leading to a RuntimeError
         box._insert_printable_char('a')
+
+    def test_window_non_instantiable(self):
+        # Ensure that '_curses.window' type in not directly instantiable
+        check_disallow_instantiation(self, curses.window)
+
+    def test_window_immutable(self):
+        with self.assertRaisesRegex(TypeError, "immutable"):
+            curses.window.foo = 123
+
+    def test_window_non_picklable(self):
+        win = curses.newwin(10, 10)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            self.assertRaises(TypeError, pickle.dumps, win, proto)
 
 
 class MiscTests(unittest.TestCase):

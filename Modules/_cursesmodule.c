@@ -2534,6 +2534,21 @@ PyCursesWindow_set_encoding(PyCursesWindowObject *self, PyObject *value, void *P
     return 0;
 }
 
+/*[clinic input]
+_curses.window.__reduce__
+[clinic start generated code]*/
+
+static PyObject *
+_curses_window___reduce___impl(PyCursesWindowObject *self)
+/*[clinic end generated code: output=5d438a482619b25a input=cc7e2066b8e918b9]*/
+{
+    PyErr_Format(PyExc_TypeError,
+                 "cannot pickle %s object",
+                 Py_TYPE(self)->tp_name);
+    return NULL;
+}
+
+
 #define clinic_state() (find__curses_state_by_type(Py_TYPE(self)))
 #include "clinic/_cursesmodule.c.h"
 #undef clinic_state
@@ -2621,6 +2636,7 @@ static PyMethodDef PyCursesWindow_Methods[] = {
     {"touchwin",        (PyCFunction)PyCursesWindow_touchwin, METH_NOARGS},
     {"untouchwin",      (PyCFunction)PyCursesWindow_untouchwin, METH_NOARGS},
     _CURSES_WINDOW_VLINE_METHODDEF
+    _CURSES_WINDOW___REDUCE___METHODDEF
     {NULL,                  NULL}   /* sentinel */
 };
 
@@ -2644,7 +2660,8 @@ static PyType_Slot PyCursesWindow_slots[] = {
 static PyType_Spec PyCursesWindow_spec = {
     .name = "_curses.window",
     .basicsize = sizeof(PyCursesWindowObject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE
+           | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .slots = PyCursesWindow_slots
 };
 
@@ -2794,7 +2811,6 @@ _curses_color_content_impl(PyObject *module, int color_number)
     _CURSES_COLOR_VAL_TYPE r,g,b;
 
     _curses_state *state = get__curses_state(module);
-
     PyCursesInitialised(state);
     PyCursesInitialisedColor(state);
 
@@ -3301,6 +3317,14 @@ _curses_init_pair_impl(PyObject *module, int pair_number, int fg, int bg)
     Py_RETURN_NONE;
 }
 
+#define SetDictInt(dict, string,ch)                                     \
+    do {                                                                \
+        PyObject *o = PyLong_FromLong((long) (ch));                     \
+        if (o && PyDict_SetItemString(dict, string, o) == 0) {          \
+            Py_DECREF(o);                                               \
+        }                                                               \
+    } while (0)
+
 /*[clinic input]
 _curses.initscr
 
@@ -3334,14 +3358,6 @@ _curses_initscr_impl(PyObject *module)
 
 /* This was moved from initcurses() because it core dumped on SGI,
    where they're not defined until you've called initscr() */
-#define SetDictInt(dict, string,ch)                                     \
-    do {                                                                \
-        PyObject *o = PyLong_FromLong((long) (ch));                     \
-        if (o && PyDict_SetItemString(dict, string, o) == 0) {          \
-            Py_DECREF(o);                                               \
-        }                                                               \
-    } while (0)
-
     PyObject *d = PyModule_GetDict(module);
     /* Here are some graphic symbols you can use */
     SetDictInt(d, "ACS_ULCORNER",      (ACS_ULCORNER));
@@ -3414,6 +3430,9 @@ _curses_initscr_impl(PyObject *module)
     SetDictInt(d, "COLS", COLS);
 
     winobj = (PyCursesWindowObject *)PyCursesWindow_New(state, win, NULL);
+    if (winobj == NULL) {
+        return NULL;
+    }
     state->screen_encoding = winobj->encoding;
     return (PyObject *)winobj;
 }

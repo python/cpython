@@ -1833,6 +1833,23 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_curses_window___reduce____doc__,
+"__reduce__($self, /)\n"
+"--\n"
+"\n");
+
+#define _CURSES_WINDOW___REDUCE___METHODDEF    \
+    {"__reduce__", (PyCFunction)_curses_window___reduce__, METH_NOARGS, _curses_window___reduce____doc__},
+
+static PyObject *
+_curses_window___reduce___impl(PyCursesWindowObject *self);
+
+static PyObject *
+_curses_window___reduce__(PyCursesWindowObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_window___reduce___impl(self);
+}
+
 #if defined(HAVE_CURSES_FILTER)
 
 PyDoc_STRVAR(_curses_filter__doc__,
@@ -4313,4 +4330,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=eac5ea1b55606da0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7a49be78fe2f4adc input=a9049054013a1b77]*/
