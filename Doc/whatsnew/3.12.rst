@@ -1413,6 +1413,12 @@ Porting to Python 3.12
   :py:meth:`~class.__subclasses__` (using :c:func:`PyObject_CallMethod`,
   for example).
 
+* Add support of more formatting options (left aligning, octals, uppercase
+  hexadecimals, ``intmax_t``, ``ptrdiff_t``, ``wchar_t`` C
+  strings, variable width and precision) in :c:func:`PyUnicode_FromFormat` and
+  :c:func:`PyUnicode_FromFormatV`.
+  (Contributed by Serhiy Storchaka in :gh:`98836`.)
+
 * An unrecognized format character in :c:func:`PyUnicode_FromFormat` and
   :c:func:`PyUnicode_FromFormatV` now sets a :exc:`SystemError`.
   In previous versions it caused all the rest of the format string to be

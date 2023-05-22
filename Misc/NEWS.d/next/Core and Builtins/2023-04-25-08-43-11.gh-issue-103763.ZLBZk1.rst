@@ -8,7 +8,7 @@ attribute. This is implemented as a new AST node ``ast.TypeAlias``.
 
 New syntax (``class X[T]: ...``, ``def func[T](): ...``) is added for defining
 generic functions and classes. This is implemented as a new
-``typeparams`` attribute on the AST nodes for classes and functions.
+``type_params`` attribute on the AST nodes for classes and functions.
 This node holds instances of the new AST classes ``ast.TypeVar``,
 ``ast.ParamSpec``, and ``ast.TypeVarTuple``.
 

@@ -1989,6 +1989,11 @@ def write_file(filename: str, new_contents: str):
         raise
 
 
+ClassDict = dict[str, "Class"]
+DestinationDict = dict[str, Destination]
+ModuleDict = dict[str, "Module"]
+ParserDict = dict[str, "DSLParser"]
+
 clinic = None
 class Clinic:
 
@@ -2035,23 +2040,30 @@ impl_definition block
 
 """
 
-    def __init__(self, language, printer=None, *, verify=True, filename=None):
+    def __init__(
+            self,
+            language: CLanguage,
+            printer: BlockPrinter | None = None,
+            *,
+            verify: bool = True,
+            filename: str | None = None
+    ) -> None:
         # maps strings to Parser objects.
         # (instantiated from the "parsers" global.)
-        self.parsers = {}
-        self.language = language
+        self.parsers: ParserDict = {}
+        self.language: CLanguage = language
         if printer:
             fail("Custom printers are broken right now")
         self.printer = printer or BlockPrinter(language)
         self.verify = verify
         self.filename = filename
-        self.modules = {}
-        self.classes = {}
-        self.functions = []
+        self.modules: ModuleDict = {}
+        self.classes: ClassDict = {}
+        self.functions: list[Function] = []
 
         self.line_prefix = self.line_suffix = ''
 
-        self.destinations = {}
+        self.destinations: DestinationDict = {}
         self.add_destination("block", "buffer")
         self.add_destination("suppress", "suppress")
         self.add_destination("buffer", "buffer")
@@ -2072,10 +2084,13 @@ impl_definition block
             'impl_definition': d('block'),
         }
 
-        self.destination_buffers_stack = []
-        self.ifndef_symbols = set()
+        DestBufferType = dict[str, Callable[..., Any]]
+        DestBufferList = list[DestBufferType]
 
-        self.presets = {}
+        self.destination_buffers_stack: DestBufferList = []
+        self.ifndef_symbols: set[str] = set()
+
+        self.presets: dict[str, dict[Any, Any]] = {}
         preset = None
         for line in self.presets_text.strip().split('\n'):
             line = line.strip()
@@ -2103,18 +2118,27 @@ impl_definition block
         global clinic
         clinic = self
 
-    def add_destination(self, name, type, *args):
+    def add_destination(
+            self,
+            name: str,
+            type: str,
+            *args
+    ) -> None:
         if name in self.destinations:
             fail("Destination already exists: " + repr(name))
         self.destinations[name] = Destination(name, type, self, *args)
 
-    def get_destination(self, name):
+    def get_destination(self, name: str) -> Destination:
         d = self.destinations.get(name)
         if not d:
             fail("Destination does not exist: " + repr(name))
         return d
 
-    def get_destination_buffer(self, name, item=0):
+    def get_destination_buffer(
+            self,
+            name: str,
+            item: int = 0
+    ):
         d = self.get_destination(name)
         return d.buffers[item]
 
@@ -2240,6 +2264,7 @@ def parse_file(
     if not find_start_re.search(raw):
         return
 
+    assert isinstance(language, CLanguage)
     clinic = Clinic(language, verify=verify, filename=filename)
     src_out, clinic_out = clinic.parse(raw)
 
@@ -2275,8 +2300,6 @@ class PythonParser:
         block.output = s.getvalue()
 
 
-ModuleDict = dict[str, "Module"]
-
 class Module:
     def __init__(
             self,
@@ -2293,8 +2316,6 @@ class Module:
     def __repr__(self) -> str:
         return "<clinic.Module " + repr(self.name) + " at " + str(id(self)) + ">"
 
-
-ClassDict = dict[str, "Class"]
 
 class Class:
     def __init__(
@@ -2395,6 +2416,9 @@ INVALID, CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW = """
 INVALID, CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW
 """.replace(",", "").strip().split()
 
+ParamDict = dict[str, "Parameter"]
+ReturnConverterType = Callable[..., "CReturnConverter"]
+
 class Function:
     """
     Mutable duck type for inspect.Function.
@@ -2407,12 +2431,22 @@ class Function:
             (not docstring) or ((not docstring[0].isspace()) and (docstring.rstrip() == docstring))
     """
 
-    def __init__(self, parameters=None, *, name,
-                 module, cls=None, c_basename=None,
-                 full_name=None,
-                 return_converter, return_annotation=inspect.Signature.empty,
-                 docstring=None, kind=CALLABLE, coexist=False,
-                 docstring_only=False):
+    def __init__(
+            self,
+            parameters: ParamDict | None = None,
+            *,
+            name: str,
+            module: Module,
+            cls: Class | None = None,
+            c_basename: str | None = None,
+            full_name: str | None = None,
+            return_converter: ReturnConverterType,
+            return_annotation = inspect.Signature.empty,
+            docstring: str | None = None,
+            kind: str = CALLABLE,
+            coexist: bool = False,
+            docstring_only: bool = False
+    ) -> None:
         self.parameters = parameters or {}
         self.return_annotation = return_annotation
         self.name = name
@@ -2446,7 +2480,7 @@ class Function:
         return self.__render_parameters__
 
     @property
-    def methoddef_flags(self):
+    def methoddef_flags(self) -> str | None:
         if self.kind in (METHOD_INIT, METHOD_NEW):
             return None
         flags = []
@@ -2460,10 +2494,10 @@ class Function:
             flags.append('METH_COEXIST')
         return '|'.join(flags)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<clinic.Function ' + self.name + '>'
 
-    def copy(self, **overrides):
+    def copy(self, **overrides) -> "Function":
         kwargs = {
             'name': self.name, 'module': self.module, 'parameters': self.parameters,
             'cls': self.cls, 'c_basename': self.c_basename,
@@ -2486,9 +2520,18 @@ class Parameter:
     Mutable duck type of inspect.Parameter.
     """
 
-    def __init__(self, name, kind, *, default=inspect.Parameter.empty,
-                 function, converter, annotation=inspect.Parameter.empty,
-                 docstring=None, group=0):
+    def __init__(
+            self,
+            name: str,
+            kind: str,
+            *,
+            default = inspect.Parameter.empty,
+            function: Function,
+            converter: "CConverter",
+            annotation = inspect.Parameter.empty,
+            docstring: str | None = None,
+            group: int = 0
+    ) -> None:
         self.name = name
         self.kind = kind
         self.default = default
@@ -2498,22 +2541,22 @@ class Parameter:
         self.docstring = docstring or ''
         self.group = group
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<clinic.Parameter ' + self.name + '>'
 
-    def is_keyword_only(self):
+    def is_keyword_only(self) -> bool:
         return self.kind == inspect.Parameter.KEYWORD_ONLY
 
-    def is_positional_only(self):
+    def is_positional_only(self) -> bool:
         return self.kind == inspect.Parameter.POSITIONAL_ONLY
 
-    def is_vararg(self):
+    def is_vararg(self) -> bool:
         return self.kind == inspect.Parameter.VAR_POSITIONAL
 
-    def is_optional(self):
+    def is_optional(self) -> bool:
         return not self.is_vararg() and (self.default is not unspecified)
 
-    def copy(self, **overrides):
+    def copy(self, **overrides) -> "Parameter":
         kwargs = {
             'name': self.name, 'kind': self.kind, 'default':self.default,
                  'function': self.function, 'converter': self.converter, 'annotation': self.annotation,
@@ -2526,7 +2569,7 @@ class Parameter:
             kwargs['converter'] = converter
         return Parameter(**kwargs)
 
-    def get_displayname(self, i):
+    def get_displayname(self, i: int) -> str:
         if i == 0:
             return '"argument"'
         if not self.is_positional_only():
@@ -2537,13 +2580,13 @@ class Parameter:
 
 class LandMine:
     # try to access any
-    def __init__(self, message):
+    def __init__(self, message: str) -> None:
         self.__message__ = message
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<LandMine ' + repr(self.__message__) + ">"
 
-    def __getattribute__(self, name):
+    def __getattribute__(self, name: str):
         if name in ('__repr__', '__message__'):
             return super().__getattribute__(name)
         # raise RuntimeError(repr(name))
@@ -3002,7 +3045,6 @@ legacy_converters: ConverterDict = {}
 # The callable may have any number of keyword-only parameters.
 # The callable must return a CReturnConverter object.
 # The callable should not call builtins.print.
-ReturnConverterType = Callable[..., "CReturnConverter"]
 ReturnConverterDict = dict[str, ReturnConverterType]
 return_converters: ReturnConverterDict = {}
 
@@ -4974,22 +5016,26 @@ class DSLParser:
         key = f"{parameter_name}_as_{c_name}" if c_name else parameter_name
         self.function.parameters[key] = p
 
-    def parse_converter(self, annotation):
-        if (isinstance(annotation, ast.Constant) and
-            type(annotation.value) is str):
-            return annotation.value, True, {}
+    KwargDict = dict[str | None, Any]
 
-        if isinstance(annotation, ast.Name):
-            return annotation.id, False, {}
-
-        if not isinstance(annotation, ast.Call):
-            fail("Annotations must be either a name, a function call, or a string.")
-
-        name = annotation.func.id
-        symbols = globals()
-
-        kwargs = {node.arg: eval_ast_expr(node.value, symbols) for node in annotation.keywords}
-        return name, False, kwargs
+    @staticmethod
+    def parse_converter(annotation: ast.expr | None) -> tuple[str, bool, KwargDict]:
+        match annotation:
+            case ast.Constant(value=str() as value):
+                return value, True, {}
+            case ast.Name(name):
+                return name, False, {}
+            case ast.Call(func=ast.Name(name)):
+                symbols = globals()
+                kwargs = {
+                    node.arg: eval_ast_expr(node.value, symbols)
+                    for node in annotation.keywords
+                }
+                return name, False, kwargs
+            case _:
+                fail(
+                    "Annotations must be either a name, a function call, or a string."
+                )
 
     def parse_special_symbol(self, symbol):
         if symbol == '*':
