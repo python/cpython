@@ -1,3 +1,0 @@
-Fix a race condition in the internal :mod:`multiprocessing.process` cleanup
-logic that could manifest as an unintended ``AttributeError`` when calling
-``process.close()``.

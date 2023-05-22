@@ -1,2 +1,0 @@
-Update ``test_pack_configure_in`` and ``test_place_configure_in``
-for changes to error message formatting in Tk 8.7.
