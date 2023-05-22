@@ -222,7 +222,7 @@ tokenizeriter_next(tokenizeriterobject *it)
         }
     }
 
-    result = Py_BuildValue("(NinnnnN)", str, type, lineno, end_lineno, col_offset, end_col_offset, line);
+    result = Py_BuildValue("(iN(nn)(nn)N)", type, str, lineno, col_offset, end_lineno, end_col_offset, line);
 exit:
     _PyToken_Free(&token);
     return result;
