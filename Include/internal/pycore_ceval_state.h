@@ -71,7 +71,7 @@ struct _pending_calls {
        thread state.
        Guarded by the GIL. */
     int async_exc;
-#define NPENDINGCALLS 32
+#define NPENDINGCALLS 100
     struct {
         int (*func)(void *);
         void *arg;
