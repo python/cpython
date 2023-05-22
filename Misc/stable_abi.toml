@@ -2409,7 +2409,9 @@
 
 [function._Py_IncRefTotal_DO_NOT_USE_THIS]
     added = '3.12'
+    ifdef = 'Py_REF_DEBUG'
     abi_only = true
 [function._Py_DecRefTotal_DO_NOT_USE_THIS]
     added = '3.12'
+    ifdef = 'Py_REF_DEBUG'
     abi_only = true
