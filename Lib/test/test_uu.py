@@ -145,6 +145,34 @@ class UUTest(unittest.TestCase):
         uu.encode(inp, out, filename)
         self.assertIn(safefilename, out.getvalue())
 
+    def test_no_directory_traversal(self):
+        relative_bad = b"""\
+begin 644 ../../../../../../../../tmp/test1
+$86)C"@``
+`
+end
+"""
+        with self.assertRaisesRegex(uu.Error, 'directory'):
+            uu.decode(io.BytesIO(relative_bad))
+        if os.altsep:
+            relative_bad_bs = relative_bad.replace(b'/', b'\\')
+            with self.assertRaisesRegex(uu.Error, 'directory'):
+                uu.decode(io.BytesIO(relative_bad_bs))
+
+        absolute_bad = b"""\
+begin 644 /tmp/test2
+$86)C"@``
+`
+end
+"""
+        with self.assertRaisesRegex(uu.Error, 'directory'):
+            uu.decode(io.BytesIO(absolute_bad))
+        if os.altsep:
+            absolute_bad_bs = absolute_bad.replace(b'/', b'\\')
+            with self.assertRaisesRegex(uu.Error, 'directory'):
+                uu.decode(io.BytesIO(absolute_bad_bs))
+
+
 class UUStdIOTest(unittest.TestCase):
 
     def setUp(self):
