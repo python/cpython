@@ -579,30 +579,30 @@ class component_converter(CConverter):
    initialised or not. */
 
 
-static int func_PyCursesSetupTermCalled(void **api)
+static int func_PyCursesSetupTermCalled(void *exc)
 {
     if (initialised_setupterm != TRUE) {
-        PyErr_SetString(api[4],
+        PyErr_SetString((PyObject *)exc,
                         "must call (at least) setupterm() first");
         return 0;
     }
     return 1;
 }
 
-static int func_PyCursesInitialised(void **api)
+static int func_PyCursesInitialised(void *exc)
 {
     if (initialised != TRUE) {
-        PyErr_SetString(api[4],
+        PyErr_SetString((PyObject *)exc,
                         "must call initscr() first");
         return 0;
     }
     return 1;
 }
 
-static int func_PyCursesInitialisedColor(void **api)
+static int func_PyCursesInitialisedColor(void *exc)
 {
     if (initialisedcolors != TRUE) {
-        PyErr_SetString(api[4],
+        PyErr_SetString((PyObject *)exc,
                         "must call start_color() first");
         return 0;
     }
@@ -4857,7 +4857,6 @@ _curses_exec(PyObject *module)
     /* Add a capsule for the C API */
     c_api_object = PyCapsule_New(PyCurses_API, PyCurses_CAPSULE_NAME, curses_capi_destructor);
     if (c_api_object == NULL) {
-        Py_DECREF(PyCurses_API[0]);
         PyMem_Free(PyCurses_API);
         return -1;
     }
