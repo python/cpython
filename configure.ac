@@ -2087,7 +2087,7 @@ if test -z "${BOLT_APPLY_FLAGS}"
 then
   AS_VAR_SET(
     [BOLT_APPLY_FLAGS],
-    [m4_join([ ],
+    ["m4_join([ ],
       [-update-debug-sections],
       [-reorder-blocks=ext-tsp],
       [-reorder-functions=hfsort+],
@@ -2103,7 +2103,7 @@ then
       [-dyno-stats],
       [-use-gnu-stack],
       [-frame-opt=hot]
-    )]
+    )"]
   )
 fi
 AC_MSG_RESULT([$BOLT_APPLY_FLAGS])
