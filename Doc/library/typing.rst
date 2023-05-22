@@ -718,20 +718,20 @@ These can be used as types in annotations and do not support ``[]``.
    This can be used to define a function that should never be
    called, or a function that never returns::
 
-     from typing import Never
+      from typing import Never
 
-     def never_call_me(arg: Never) -> None:
-         pass
+      def never_call_me(arg: Never) -> None:
+          pass
 
-     def int_or_str(arg: int | str) -> None:
-         never_call_me(arg)  # type checker error
-         match arg:
-             case int():
-                 print("It's an int")
-             case str():
-                 print("It's a str")
-             case _:
-                 never_call_me(arg)  # ok, arg is of type Never
+      def int_or_str(arg: int | str) -> None:
+          never_call_me(arg)  # type checker error
+          match arg:
+              case int():
+                  print("It's an int")
+              case str():
+                  print("It's a str")
+              case _:
+                  never_call_me(arg)  # ok, arg is of type Never
 
    .. versionadded:: 3.11
 
@@ -765,9 +765,9 @@ These can be used as types in annotations and do not support ``[]``.
       from typing import Self
 
       class Foo:
-         def return_self(self) -> Self:
-            ...
-            return self
+          def return_self(self) -> Self:
+              ...
+              return self
 
 
    This annotation is semantically equivalent to the following,
@@ -778,16 +778,16 @@ These can be used as types in annotations and do not support ``[]``.
       Self = TypeVar("Self", bound="Foo")
 
       class Foo:
-         def return_self(self: Self) -> Self:
-            ...
-            return self
+          def return_self(self: Self) -> Self:
+              ...
+              return self
 
    In general if something currently follows the pattern of::
 
       class Foo:
-         def return_self(self) -> "Foo":
-            ...
-            return self
+          def return_self(self) -> "Foo":
+              ...
+              return self
 
    You should use :data:`Self` as calls to ``SubclassOfFoo.return_self`` would have
    ``Foo`` as the return type and not ``SubclassOfFoo``.
@@ -1312,8 +1312,8 @@ These can be used as types in annotations using ``[]``, each having a unique syn
       from typing import TypedDict, Unpack
 
       class Movie(TypedDict):
-         name: str
-         year: int
+          name: str
+          year: int
 
       # This function expects two keyword arguments - `name` of type `str`
       # and `year` of type `int`.
@@ -1386,17 +1386,17 @@ without the dedicated syntax, as documented below.
    create type variables::
 
       class Sequence[T]:  # T is a TypeVar
-         ...
+          ...
 
    This syntax can also be used to create bound and constrained type
    variables::
 
       class StrSequence[S: str]:  # S is a TypeVar bound to str
-         ...
+          ...
 
 
       class StrOrBytesSequence[A: (str, bytes)]:  # A is a TypeVar constrained to str or bytes
-         ...
+          ...
 
    Type variables exist primarily for the benefit of static type
    checkers.  They serve as the parameters for generic types as well
@@ -1415,8 +1415,8 @@ without the dedicated syntax, as documented below.
 
 
       def concatenate[A: (str, bytes)](x: A, y: A) -> A:
-         """Add two strings or bytes objects together."""
-         return x + y
+          """Add two strings or bytes objects together."""
+          return x + y
 
    Note that type variables can be *bound*, *constrained*, or neither, but
    cannot be both bound *and* constrained.
@@ -1429,7 +1429,7 @@ without the dedicated syntax, as documented below.
       reveal_type(x)  # revealed type is str
 
       class StringSubclass(str):
-         pass
+          pass
 
       y = print_capitalized(StringSubclass('another string'))
       reveal_type(y)  # revealed type is StringSubclass
@@ -1444,7 +1444,7 @@ without the dedicated syntax, as documented below.
 
       # Can be anything with an __abs__ method
       def print_abs[V: SupportsAbs](arg: V) -> None:
-         print("Absolute value:", abs(arg))
+          print("Absolute value:", abs(arg))
 
    .. _typing-constrained-typevar:
 
@@ -1522,7 +1522,7 @@ without the dedicated syntax, as documented below.
    using a single asterisk (``*``) before the name::
 
       def move_first_element_to_last[T, *Ts](tup: tuple[T, *Ts]) -> tuple[*Ts, T]:
-         return (*tup[1:], tup[0])
+          return (*tup[1:], tup[0])
 
    Or by explicitly invoking the ``TypeVarTuple`` constructor::
 
@@ -1530,7 +1530,7 @@ without the dedicated syntax, as documented below.
       Ts = TypeVarTuple("Ts")
 
       def move_first_element_to_last(tup: tuple[T, *Ts]) -> tuple[*Ts, T]:
-         return (*tup[1:], tup[0])
+          return (*tup[1:], tup[0])
 
    A normal type variable enables parameterization with a single type. A type
    variable tuple, in contrast, allows parameterization with an
@@ -1573,19 +1573,19 @@ without the dedicated syntax, as documented below.
    variables. For example, in class definitions, arguments, and return types::
 
       class Array[*Shape]:
-         def __getitem__(self, key: tuple[*Shape]) -> float: ...
-         def __abs__(self) -> "Array[*Shape]": ...
-         def get_shape(self) -> tuple[*Shape]: ...
+          def __getitem__(self, key: tuple[*Shape]) -> float: ...
+          def __abs__(self) -> "Array[*Shape]": ...
+          def get_shape(self) -> tuple[*Shape]: ...
 
    Type variable tuples can be happily combined with normal type variables::
 
       DType = TypeVar('DType')
 
       class Array[DType, *Shape]:  # This is fine
-         pass
+          pass
 
       class Array2[*Shape, DType]:  # This would also be fine
-         pass
+          pass
 
       float_array_1d: Array[float, Height] = Array()     # Totally fine
       int_array_2d: Array[int, Height, Width] = Array()  # Yup, fine too
@@ -1595,7 +1595,7 @@ without the dedicated syntax, as documented below.
 
       x: tuple[*Ts, *Ts]                     # Not valid
       class Array[*Shape, *Shape]:  # Not valid
-         pass
+          pass
 
    Finally, an unpacked type variable tuple can be used as the type annotation
    of ``*args``::
@@ -1604,8 +1604,8 @@ without the dedicated syntax, as documented below.
                callback: Callable[[*Ts], None],
                *args: *Ts
       ) -> None:
-         ...
-         callback(*args)
+          ...
+          callback(*args)
 
    In contrast to non-unpacked annotations of ``*args`` - e.g. ``*args: int``,
    which would specify that *all* arguments are ``int`` - ``*args: *Ts``
@@ -2428,8 +2428,8 @@ Corresponding to collections in :mod:`collections.abc`
    A generic version of :class:`collections.abc.Mapping`.
    This type can be used as follows::
 
-     def get_position_in_index(word_list: Mapping[str, int], word: str) -> int:
-         return word_list[word]
+      def get_position_in_index(word_list: Mapping[str, int], word: str) -> int:
+          return word_list[word]
 
    .. deprecated:: 3.9
       :class:`collections.abc.Mapping` now supports subscripting (``[]``).
