@@ -1,1 +1,1 @@
-Enhance :meth:`bytearray.__repr__` with :meth:`bytes._repr__`'s logic. Patched by Xiang Zhang and Furkan Onder.
+Make :c:func:`PyBytes_Repr` available to general objects supporting buffer protocol. Patched by Xiang Zhang and Furkan Onder.
