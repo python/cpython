@@ -1,0 +1,4 @@
+BOLT optimization is now applied to the libpython shared library if building
+a shared library. BOLT instrumentation and application settings can now be
+influenced via the ``BOLT_INSTRUMENT_FLAGS`` and ``BOLT_APPLY_FLAGS``
+configure variables.
