@@ -672,21 +672,55 @@ profile-opt: profile-run-stamp
 	-rm -f profile-clean-stamp
 	$(MAKE) @DEF_MAKE_RULE@ CFLAGS_NODIST="$(CFLAGS_NODIST) $(PGO_PROF_USE_FLAG)" LDFLAGS_NODIST="$(LDFLAGS_NODIST)"
 
-.PHONY: bolt-opt
-bolt-opt: @PREBOLT_RULE@
-	rm -f *.fdata
-	@if $(READELF) -p .note.bolt_info $(BUILDPYTHON) | grep BOLT > /dev/null; then\
-		echo "skip: $(BUILDPYTHON) is already BOLTed."; \
-	else \
-		@LLVM_BOLT@ ./$(BUILDPYTHON) -instrument -instrumentation-file-append-pid -instrumentation-file=$(abspath $(BUILDPYTHON).bolt) -o $(BUILDPYTHON).bolt_inst; \
-		./$(BUILDPYTHON).bolt_inst $(PROFILE_TASK) || true; \
-		@MERGE_FDATA@ $(BUILDPYTHON).*.fdata > $(BUILDPYTHON).fdata; \
-		@LLVM_BOLT@ ./$(BUILDPYTHON) -o $(BUILDPYTHON).bolt -data=$(BUILDPYTHON).fdata -update-debug-sections -reorder-blocks=ext-tsp -reorder-functions=hfsort+ -split-functions -icf=1 -inline-all -split-eh -reorder-functions-use-hot-size -peepholes=none -jump-tables=aggressive -inline-ap -indirect-call-promotion=all -dyno-stats -use-gnu-stack -frame-opt=hot; \
-		rm -f *.fdata; \
-		rm -f $(BUILDPYTHON).bolt_inst; \
-		mv $(BUILDPYTHON).bolt $(BUILDPYTHON); \
-	fi
+# List of binaries that BOLT runs on.
+BOLT_BINARIES := @BOLT_BINARIES@
 
+BOLT_INSTRUMENT_FLAGS := @BOLT_INSTRUMENT_FLAGS@
+BOLT_APPLY_FLAGS := @BOLT_APPLY_FLAGS@
+
+.PHONY: clean-bolt
+clean-bolt:
+	# Profile data.
+	rm -f *.fdata
+	# Pristine binaries before BOLT optimization.
+	rm -f *.prebolt
+	# BOLT instrumented binaries.
+	rm -f *.bolt_inst
+
+profile-bolt-stamp: $(BUILDPYTHON)
+	# Ensure a pristine, pre-BOLT copy of the binary and no profile data from last run.
+	for bin in $(BOLT_BINARIES); do \
+	  prebolt="$${bin}.prebolt"; \
+	  if [ -e "$${prebolt}" ]; then \
+	    echo "Restoring pre-BOLT binary $${prebolt}"; \
+	    mv "$${bin}.prebolt" "$${bin}"; \
+	  fi; \
+	  cp "$${bin}" "$${prebolt}"; \
+	  rm -f $${bin}.bolt.*.fdata $${bin}.fdata; \
+	done
+	# Instrument each binary.
+	for bin in $(BOLT_BINARIES); do \
+	  @LLVM_BOLT@ "$${bin}" -instrument -instrumentation-file-append-pid -instrumentation-file=$(abspath $${bin}.bolt) -o $${bin}.bolt_inst $(BOLT_INSTRUMENT_FLAGS); \
+	  mv "$${bin}.bolt_inst" "$${bin}"; \
+	done
+	# Run instrumented binaries to collect data.
+	$(RUNSHARED) ./$(BUILDPYTHON) $(PROFILE_TASK) || true
+	# Merge all the data files together.
+	for bin in $(BOLT_BINARIES); do \
+	  @MERGE_FDATA@ $${bin}.*.fdata > "$${bin}.fdata"; \
+	  rm -f $${bin}.*.fdata; \
+	done
+	# Run bolt against the merged data to produce an optimized binary.
+	for bin in $(BOLT_BINARIES); do \
+	  @LLVM_BOLT@ "$${bin}.prebolt" -o "$${bin}.bolt" -data="$${bin}.fdata" $(BOLT_APPLY_FLAGS); \
+	  mv "$${bin}.bolt" "$${bin}"; \
+	done
+	touch $@
+
+.PHONY: bolt-opt
+bolt-opt:
+	$(MAKE) @PREBOLT_RULE@
+	$(MAKE) profile-bolt-stamp
 
 # Compile and run with gcov
 .PHONY: coverage
@@ -2623,10 +2657,11 @@ profile-removal:
 	rm -f $(COVERAGE_INFO)
 	rm -rf $(COVERAGE_REPORT)
 	rm -f profile-run-stamp
+	rm -f profile-bolt-stamp
 
 .PHONY: clean
-clean: clean-retain-profile
-	@if test @DEF_MAKE_ALL_RULE@ = profile-opt; then \
+clean: clean-retain-profile clean-bolt
+	@if test @DEF_MAKE_ALL_RULE@ = profile-opt -o @DEF_MAKE_ALL_RULE@ = bolt-opt; then \
 		rm -f profile-gen-stamp profile-clean-stamp; \
 		$(MAKE) profile-removal; \
 	fi

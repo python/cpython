@@ -752,7 +752,7 @@ _PyPegen_function_def_decorators(Parser *p, asdl_expr_seq *decorators, stmt_ty f
     assert(function_def != NULL);
     if (function_def->kind == AsyncFunctionDef_kind) {
         return _PyAST_AsyncFunctionDef(
-            function_def->v.FunctionDef.name, function_def->v.FunctionDef.typeparams,
+            function_def->v.FunctionDef.name, function_def->v.FunctionDef.type_params,
             function_def->v.FunctionDef.args,
             function_def->v.FunctionDef.body, decorators, function_def->v.FunctionDef.returns,
             function_def->v.FunctionDef.type_comment, function_def->lineno,
@@ -761,7 +761,7 @@ _PyPegen_function_def_decorators(Parser *p, asdl_expr_seq *decorators, stmt_ty f
     }
 
     return _PyAST_FunctionDef(
-        function_def->v.FunctionDef.name, function_def->v.FunctionDef.typeparams,
+        function_def->v.FunctionDef.name, function_def->v.FunctionDef.type_params,
         function_def->v.FunctionDef.args,
         function_def->v.FunctionDef.body, decorators,
         function_def->v.FunctionDef.returns,
@@ -776,7 +776,7 @@ _PyPegen_class_def_decorators(Parser *p, asdl_expr_seq *decorators, stmt_ty clas
 {
     assert(class_def != NULL);
     return _PyAST_ClassDef(
-        class_def->v.ClassDef.name, class_def->v.ClassDef.typeparams,
+        class_def->v.ClassDef.name, class_def->v.ClassDef.type_params,
         class_def->v.ClassDef.bases, class_def->v.ClassDef.keywords,
         class_def->v.ClassDef.body, decorators,
         class_def->lineno, class_def->col_offset, class_def->end_lineno,

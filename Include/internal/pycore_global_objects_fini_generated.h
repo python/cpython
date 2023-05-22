@@ -918,6 +918,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(exception));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(exp));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(extend));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(extra_tokens));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(facility));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(factory));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(false));
@@ -1193,6 +1194,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(stdin));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(stdout));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(step));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(steps));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(store_name));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(strategy));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(strftime));
