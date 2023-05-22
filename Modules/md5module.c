@@ -49,6 +49,8 @@ typedef long long MD5_INT64; /* 64-bit integer */
 
 typedef struct {
     PyObject_HEAD
+    // Prevents undefined behavior via multiple threads entering the C API.
+    // The lock will be NULL before threaded access has been enabled.
     PyThread_type_lock lock;
     Hacl_Streaming_MD5_state *hash_state;
 } MD5object;
@@ -301,6 +303,8 @@ _md5_md5_impl(PyObject *module, PyObject *string, int usedforsecurity)
     }
     if (string) {
         if (buf.len >= HASHLIB_GIL_MINSIZE) {
+            /* We do not initialize self->lock here as this is the constructor
+             * where it is not yet possible to have concurrent access. */
             Py_BEGIN_ALLOW_THREADS
             update(new->hash_state, buf.buf, buf.len);
             Py_END_ALLOW_THREADS

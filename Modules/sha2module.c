@@ -52,6 +52,8 @@ class SHA512Type "SHA512object *" "&PyType_Type"
 typedef struct {
     PyObject_HEAD
     int digestsize;
+    // Prevents undefined behavior via multiple threads entering the C API.
+    // The lock will be NULL before threaded access has been enabled.
     PyThread_type_lock lock;
     Hacl_Streaming_SHA2_state_sha2_256 *state;
 } SHA256object;
@@ -59,6 +61,8 @@ typedef struct {
 typedef struct {
     PyObject_HEAD
     int digestsize;
+    // Prevents undefined behavior via multiple threads entering the C API.
+    // The lock will be NULL before threaded access has been enabled.
     PyThread_type_lock lock;
     Hacl_Streaming_SHA2_state_sha2_512 *state;
 } SHA512object;
@@ -607,6 +611,8 @@ _sha2_sha256_impl(PyObject *module, PyObject *string, int usedforsecurity)
     }
     if (string) {
         if (buf.len >= HASHLIB_GIL_MINSIZE) {
+            /* We do not initialize self->lock here as this is the constructor
+             * where it is not yet possible to have concurrent access. */
             Py_BEGIN_ALLOW_THREADS
             update_256(new->state, buf.buf, buf.len);
             Py_END_ALLOW_THREADS
@@ -659,6 +665,8 @@ _sha2_sha224_impl(PyObject *module, PyObject *string, int usedforsecurity)
     }
     if (string) {
         if (buf.len >= HASHLIB_GIL_MINSIZE) {
+            /* We do not initialize self->lock here as this is the constructor
+             * where it is not yet possible to have concurrent access. */
             Py_BEGIN_ALLOW_THREADS
             update_256(new->state, buf.buf, buf.len);
             Py_END_ALLOW_THREADS
@@ -710,6 +718,8 @@ _sha2_sha512_impl(PyObject *module, PyObject *string, int usedforsecurity)
     }
     if (string) {
         if (buf.len >= HASHLIB_GIL_MINSIZE) {
+            /* We do not initialize self->lock here as this is the constructor
+             * where it is not yet possible to have concurrent access. */
             Py_BEGIN_ALLOW_THREADS
             update_512(new->state, buf.buf, buf.len);
             Py_END_ALLOW_THREADS
@@ -761,6 +771,8 @@ _sha2_sha384_impl(PyObject *module, PyObject *string, int usedforsecurity)
     }
     if (string) {
         if (buf.len >= HASHLIB_GIL_MINSIZE) {
+            /* We do not initialize self->lock here as this is the constructor
+             * where it is not yet possible to have concurrent access. */
             Py_BEGIN_ALLOW_THREADS
             update_512(new->state, buf.buf, buf.len);
             Py_END_ALLOW_THREADS

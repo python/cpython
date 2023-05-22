@@ -60,6 +60,8 @@ class _sha3.shake_256 "SHA3object *" "&SHAKE256type"
 
 typedef struct {
     PyObject_HEAD
+    // Prevents undefined behavior via multiple threads entering the C API.
+    // The lock will be NULL before threaded access has been enabled.
     PyThread_type_lock lock;
     Hacl_Streaming_Keccak_state *hash_state;
 } SHA3object;
@@ -136,6 +138,8 @@ py_sha3_new_impl(PyTypeObject *type, PyObject *data, int usedforsecurity)
     if (data) {
         GET_BUFFER_VIEW_OR_ERROR(data, &buf, goto error);
         if (buf.len >= HASHLIB_GIL_MINSIZE) {
+            /* We do not initialize self->lock here as this is the constructor
+             * where it is not yet possible to have concurrent access. */
             Py_BEGIN_ALLOW_THREADS
             sha3_update(self->hash_state, buf.buf, buf.len);
             Py_END_ALLOW_THREADS
