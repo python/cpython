@@ -941,7 +941,7 @@ iterations of the loop.
 .. opcode:: LOAD_FROM_DICT_OR_GLOBALS (i)
 
    Pops a mapping off the stack and looks up the value for ``co_names[namei]``.
-   If the name is not found there, look it up in the globals and then the builtins,
+   If the name is not found there, looks it up in the globals and then the builtins,
    similar to :opcode:`LOAD_GLOBAL`.
    This is used for loading global variables in
    :ref:`annotation scopes <annotation-scopes>` within class bodies.
@@ -1268,7 +1268,7 @@ iterations of the loop.
 
    Pops a mapping off the stack and looks up the name associated with
    slot ``i`` of the "fast locals" storage in this mapping.
-   If the name is not found there, load it from the cell contained in
+   If the name is not found there, loads it from the cell contained in
    slot ``i``, similar to :opcode:`LOAD_DEREF`. This is used for loading
    free variables in class bodies and in
    :ref:`annotation scopes <annotation-scopes>` within class bodies.

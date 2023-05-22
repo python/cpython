@@ -344,13 +344,13 @@ A user-defined class can be defined as a generic class.
        def log(self, message: str) -> None:
            self.logger.info('%s: %s', self.name, message)
 
-This syntax indicates that the class ``LoggedVar`` takes a
-single type parameter ``T`` . This also makes ``T`` valid as a type within the
-class body.
+This syntax indicates that the class ``LoggedVar`` is parameterised around a
+single :class:`type variable <TypeVar>` ``T`` . This also makes ``T`` valid as
+a type within the class body.
 
 Generic classes implicitly inherit from :class:`Generic`. For compatibility
 with Python 3.11 and lower, it is also possible to inherit explicitly from
-:class:`Generic`::
+:class:`Generic` to indicate a generic class::
 
    from typing import TypeVar, Generic
 
@@ -359,8 +359,8 @@ with Python 3.11 and lower, it is also possible to inherit explicitly from
    class LoggedVar(Generic[T]):
        ...
 
-The :class:`Generic` base class defines :meth:`~object.__class_getitem__` so
-that ``LoggedVar[T]`` is valid as a type::
+Generic classes have :meth:`~object.__class_getitem__` methods, meaning they
+can be parameterised at runtime (e.g. ``LoggedVar[int]`` below)::
 
    from collections.abc import Iterable
 
@@ -404,7 +404,7 @@ Generic classes can also inherit from other classes::
    class LinkedList[T](Sized):
        ...
 
-When inheriting from generic classes, some type variables could be fixed::
+When inheriting from generic classes, some type parameters could be fixed::
 
     from collections.abc import Mapping
 
@@ -421,7 +421,7 @@ not generic but implicitly inherits from ``Iterable[Any]``::
 
    class MyIterable(Iterable): # Same as Iterable[Any]
 
-User defined generic type aliases are also supported. Examples::
+User-defined generic type aliases are also supported. Examples::
 
    from collections.abc import Iterable
 
@@ -450,7 +450,7 @@ through a simple assignment::
 
 .. versionchanged:: 3.12
    Syntactic support for generics and type aliases is new in version 3.12.
-   Previously, generic classes had to inherit from :class:`Generic`
+   Previously, generic classes had to explicitly inherit from :class:`Generic`
    or contain a type variable in one of their bases.
 
 User-defined generics for parameter expressions are also supported via parameter
@@ -459,7 +459,7 @@ with type variables' described above as parameter specification variables are
 treated by the typing module as a specialized type variable.  The one exception
 to this is that a list of types can be used to substitute a :class:`ParamSpec`::
 
-   >>> class Z[T, **P]: ...  # P is a ParamSpec
+   >>> class Z[T, **P]: ...  # T is a TypeVar; P is a ParamSpec
    ...
    >>> Z[int, [dict, float]]
    __main__.Z[int, [dict, float]]
