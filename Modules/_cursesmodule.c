@@ -3349,9 +3349,6 @@ _curses_initscr_impl(PyObject *module)
     SetDictInt("COLS", COLS);
 
     winobj = (PyCursesWindowObject *)PyCursesWindow_New(win, NULL);
-    if (winobj == NULL) {
-        return NULL;
-    }
     screen_encoding = winobj->encoding;
     return (PyObject *)winobj;
 }
