@@ -1821,7 +1821,7 @@ Function and class definitions
             body=[
                 FunctionDef(
                     name='f',
-                    typeparams=[],
+                    type_params=[],
                     args=arguments(
                         posonlyargs=[],
                         args=[
@@ -1946,7 +1946,7 @@ Function and class definitions
             body=[
                 ClassDef(
                     name='Foo',
-                    typeparams=[],
+                    type_params=[],
                     bases=[
                         Name(id='base1', ctx=Load()),
                         Name(id='base2', ctx=Load())],
@@ -1985,7 +1985,7 @@ Async and await
         body=[
             AsyncFunctionDef(
                 name='f',
-                typeparams=[],
+                type_params=[],
                 args=arguments(
                     posonlyargs=[],
                     args=[],
