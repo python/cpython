@@ -1,1 +1,0 @@
-Implement the required C tokenizer changes for PEP 701. Patch by Pablo Galindo Salgado, Lysandros Nikolaou, Batuhan Taskaya, Marta Gómez Macías and sunmy2019.

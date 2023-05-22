@@ -661,14 +661,49 @@ x = (
         self.assertEqual(f'{"#"}', '#')
         self.assertEqual(f'{d["#"]}', 'hash')
 
-        self.assertAllRaise(SyntaxError, "f-string expression part cannot include '#'",
-                            ["f'{1#}'",   # error because the expression becomes "(1#)"
-                             "f'{3(#)}'",
+        self.assertAllRaise(SyntaxError, "'{' was never closed",
+                            ["f'{1#}'",   # error because everything after '#' is a comment
                              "f'{#}'",
+                             "f'one: {1#}'",
+                             "f'{1# one} {2 this is a comment still#}'",
                              ])
         self.assertAllRaise(SyntaxError, r"f-string: unmatched '\)'",
                             ["f'{)#}'",   # When wrapped in parens, this becomes
                                           #  '()#)'.  Make sure that doesn't compile.
+                             ])
+        self.assertEqual(f'''A complex trick: {
+2  # two
+}''', 'A complex trick: 2')
+        self.assertEqual(f'''
+{
+40 # fourty
++  # plus
+2  # two
+}''', '\n42')
+        self.assertEqual(f'''
+{
+40 # fourty
++  # plus
+2  # two
+}''', '\n42')
+
+        self.assertEqual(f'''
+# this is not a comment
+{ # the following operation it's
+3 # this is a number
+* 2}''', '\n# this is not a comment\n6')
+        self.assertEqual(f'''
+{# f'a {comment}'
+86 # constant
+# nothing more
+}''', '\n86')
+
+        self.assertAllRaise(SyntaxError, r"f-string: valid expression required before '}'",
+                            ["""f'''
+{
+# only a comment
+}'''
+""", # this is equivalent to f'{}'
                              ])
 
     def test_many_expressions(self):

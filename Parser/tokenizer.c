@@ -1818,10 +1818,6 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     /* Skip comment, unless it's a type comment */
     if (c == '#') {
 
-        if (INSIDE_FSTRING(tok)) {
-            return MAKE_TOKEN(syntaxerror(tok, "f-string expression part cannot include '#'"));
-        }
-
         const char* p = NULL;
         const char *prefix, *type_start;
         int current_starting_col_offset;

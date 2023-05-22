@@ -1090,7 +1090,7 @@ class TestSpecial(unittest.TestCase):
             )
 
     @unittest.skipIf(
-            python_version < (3, 13),
+            python_version < (3, 14),
             'inner classes are still members',
             )
     def test_nested_classes_in_enum_are_not_members(self):
@@ -4261,8 +4261,8 @@ class TestInternals(unittest.TestCase):
         self.assertEqual(Color.green.value, 3)
 
     @unittest.skipIf(
-            python_version < (3, 13),
-            'mixed types with auto() will raise in 3.13',
+            python_version < (3, 14),
+            'mixed types with auto() will raise in the future',
             )
     def test_auto_garbage_fail(self):
         with self.assertRaisesRegex(TypeError, 'will require all values to be sortable'):
@@ -4271,8 +4271,8 @@ class TestInternals(unittest.TestCase):
                 blue = auto()
 
     @unittest.skipIf(
-            python_version < (3, 13),
-            'mixed types with auto() will raise in 3.13',
+            python_version < (3, 14),
+            'mixed types with auto() will raise in the future',
             )
     def test_auto_garbage_corrected_fail(self):
         with self.assertRaisesRegex(TypeError, 'will require all values to be sortable'):
@@ -4303,8 +4303,8 @@ class TestInternals(unittest.TestCase):
         self.assertEqual(Color.blue.value, 'blue')
 
     @unittest.skipIf(
-            python_version < (3, 13),
-            'auto() will return highest value + 1 in 3.13',
+            python_version < (3, 14),
+            'auto() will return highest value + 1 in the future',
             )
     def test_auto_with_aliases(self):
         class Color(Enum):
