@@ -1,0 +1,1 @@
+Vendor all of distutils (except for tests) in Tools for use in the c-analyzer and the peg-generator.
