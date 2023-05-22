@@ -32,6 +32,7 @@
 #include "dictobject.h"
 #include "pycore_frame.h"
 #include "opcode.h"
+#include "optimizer.h"
 #include "pydtrace.h"
 #include "setobject.h"
 #include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
@@ -2093,6 +2094,30 @@ dummy_func(
             assert(oparg < INSTR_OFFSET());
             JUMPBY(-oparg);
             CHECK_EVAL_BREAKER();
+        }
+
+        inst(COUNTING_JUMP_BACKWARD, (counter/1 -- )) {
+            JUMPBY(-oparg);
+            CHECK_EVAL_BREAKER();
+            counter--;
+            next_instr->cache = counter;
+            if (counter == 0) {
+                _PyExecutorObject *executor = _PyEval_Optimize(frame->f_code, INSTR_OFFSET()+oparg);
+                if (executor == NULL) {
+                    goto error;
+                }
+                Py_INCREF(executor);
+                frame = executor->execute(executor, frame, stack_pointer);
+                SET_LOCALS_FROM_FRAME();
+            }
+        }
+
+        inst(ENTER_EXECUTOR, (--)) {
+            _PyExecutorObject *executor = frame->f_code->co_executors->executors[oparg];
+            Py_INCREF(executor);
+            frame = executor->execute(executor, frame, stack_pointer);
+            SET_LOCALS_FROM_FRAME();
+            DISPATCH();
         }
 
         inst(POP_JUMP_IF_FALSE, (cond -- )) {
