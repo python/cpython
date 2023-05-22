@@ -1,1 +1,1 @@
-Add arguments checking for :mod:`pdb` commands
+Provide helpful usage messages when parsing incorrect :mod:`pdb` commands.
