@@ -89,11 +89,9 @@ _tokenizer_error(struct tok_state *tok)
             }
             return -1;
         case E_DEDENT:
-            PyErr_Format(PyExc_IndentationError,
-                        "unindent does not match any outer indentation level "
-                        "(<tokenize>, line %d)",
-                        tok->lineno);
-            return -1;
+            msg = "unindent does not match any outer indentation level";
+            errtype = PyExc_IndentationError;
+            break;
         case E_INTR:
             if (!PyErr_Occurred()) {
                 PyErr_SetNone(PyExc_KeyboardInterrupt);
