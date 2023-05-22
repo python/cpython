@@ -873,6 +873,7 @@ r_PyLong(RFILE *p)
         }
         d += (digit)md << j*PyLong_MARSHAL_SHIFT;
     }
+    assert(!PyErr_Occurred());
     /* top digit should be nonzero, else the resulting PyLong won't be
        normalized */
     ob->long_value.ob_digit[size-1] = d;
