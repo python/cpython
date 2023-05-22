@@ -696,9 +696,9 @@ static asdl_pattern_seq* positional_patterns_rule(Parser *p);
 static asdl_seq* keyword_patterns_rule(Parser *p);
 static KeyPatternPair* keyword_pattern_rule(Parser *p);
 static stmt_ty type_alias_rule(Parser *p);
-static asdl_typeparam_seq* type_params_rule(Parser *p);
-static asdl_typeparam_seq* type_param_seq_rule(Parser *p);
-static typeparam_ty type_param_rule(Parser *p);
+static asdl_type_param_seq* type_params_rule(Parser *p);
+static asdl_type_param_seq* type_param_seq_rule(Parser *p);
+static type_param_ty type_param_rule(Parser *p);
 static expr_ty type_param_bound_rule(Parser *p);
 static expr_ty expressions_rule(Parser *p);
 static expr_ty expression_rule(Parser *p);
@@ -10653,7 +10653,7 @@ type_alias_rule(Parser *p)
 }
 
 // type_params: '[' type_param_seq ']'
-static asdl_typeparam_seq*
+static asdl_type_param_seq*
 type_params_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
@@ -10664,7 +10664,7 @@ type_params_rule(Parser *p)
         p->level--;
         return NULL;
     }
-    asdl_typeparam_seq* _res = NULL;
+    asdl_type_param_seq* _res = NULL;
     int _mark = p->mark;
     { // '[' type_param_seq ']'
         if (p->error_indicator) {
@@ -10674,7 +10674,7 @@ type_params_rule(Parser *p)
         D(fprintf(stderr, "%*c> type_params[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'[' type_param_seq ']'"));
         Token * _literal;
         Token * _literal_1;
-        asdl_typeparam_seq* t;
+        asdl_type_param_seq* t;
         if (
             (_literal = _PyPegen_expect_token(p, 9))  // token='['
             &&
@@ -10684,7 +10684,7 @@ type_params_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ type_params[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'[' type_param_seq ']'"));
-            _res = CHECK_VERSION ( asdl_typeparam_seq* , 12 , "Type parameter lists are" , t );
+            _res = CHECK_VERSION ( asdl_type_param_seq* , 12 , "Type parameter lists are" , t );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -10703,7 +10703,7 @@ type_params_rule(Parser *p)
 }
 
 // type_param_seq: ','.type_param+ ','?
-static asdl_typeparam_seq*
+static asdl_type_param_seq*
 type_param_seq_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
@@ -10714,7 +10714,7 @@ type_param_seq_rule(Parser *p)
         p->level--;
         return NULL;
     }
-    asdl_typeparam_seq* _res = NULL;
+    asdl_type_param_seq* _res = NULL;
     int _mark = p->mark;
     { // ','.type_param+ ','?
         if (p->error_indicator) {
@@ -10724,9 +10724,9 @@ type_param_seq_rule(Parser *p)
         D(fprintf(stderr, "%*c> type_param_seq[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "','.type_param+ ','?"));
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
-        asdl_typeparam_seq* a;
+        asdl_type_param_seq* a;
         if (
-            (a = (asdl_typeparam_seq*)_gather_81_rule(p))  // ','.type_param+
+            (a = (asdl_type_param_seq*)_gather_81_rule(p))  // ','.type_param+
             &&
             (_opt_var = _PyPegen_expect_token(p, 12), !p->error_indicator)  // ','?
         )
@@ -10756,7 +10756,7 @@ type_param_seq_rule(Parser *p)
 //     | '*' NAME
 //     | '**' NAME ":" expression
 //     | '**' NAME
-static typeparam_ty
+static type_param_ty
 type_param_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
@@ -10767,7 +10767,7 @@ type_param_rule(Parser *p)
         p->level--;
         return NULL;
     }
-    typeparam_ty _res = NULL;
+    type_param_ty _res = NULL;
     if (_PyPegen_is_memoized(p, type_param_type, &_res)) {
         p->level--;
         return _res;
@@ -30199,7 +30199,7 @@ _loop0_82_rule(Parser *p)
         }
         D(fprintf(stderr, "%*c> _loop0_82[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' type_param"));
         Token * _literal;
-        typeparam_ty elem;
+        type_param_ty elem;
         while (
             (_literal = _PyPegen_expect_token(p, 12))  // token=','
             &&
@@ -30266,7 +30266,7 @@ _gather_81_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_81[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "type_param _loop0_82"));
-        typeparam_ty elem;
+        type_param_ty elem;
         asdl_seq * seq;
         if (
             (elem = type_param_rule(p))  // type_param
