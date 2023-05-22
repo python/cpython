@@ -1424,6 +1424,13 @@ without the dedicated syntax, as documented below.
    Note that type variables can be *bound*, *constrained*, or neither, but
    cannot be both bound *and* constrained.
 
+   The variance of type variables is inferred by type checkers when they are created
+   through the :ref:`type parameter syntax <type-params>` and when
+   ``infer_variance=True`` is passed.
+   Manually created type variables may be explicitly marked covariant or contravariant by passing
+   ``covariant=True`` or ``contravariant=True``.  See :pep:`484` and :pep:`695` for more
+   details.  By default, type variables are invariant.
+
    Bound type variables and constrained type variables have different
    semantics in several important ways. Using a *bound* type variable means
    that the ``TypeVar`` will be solved using the most specific type possible::
@@ -1464,13 +1471,6 @@ without the dedicated syntax, as documented below.
 
    At runtime, ``isinstance(x, T)`` will raise :exc:`TypeError`.  In general,
    :func:`isinstance` and :func:`issubclass` should not be used with types.
-
-   The variance of type variables is inferred by type checkers when they are created
-   through the :ref:`type parameter syntax <type-params>` and when
-   ``infer_variance=True`` is passed.
-   Manually created type variables may be explicitly marked covariant or contravariant by passing
-   ``covariant=True`` or ``contravariant=True``.  See :pep:`484` and :pep:`695` for more
-   details.  By default, type variables are invariant.
 
    .. attribute:: __name__
 
