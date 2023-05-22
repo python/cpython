@@ -37,6 +37,13 @@
  * LEAVE_HASHLIB block or explicitly acquire and release the lock inside
  * a PY_BEGIN / END_ALLOW_THREADS block if they wish to release the GIL for
  * an operation.
+ *
+ * These only drop the GIL if the lock acquisition itself is likely to
+ * block. Thus the non-blocking acquire gating the GIL release for a
+ * blocking lock acquisition. The intent of these macros is to surround
+ * the assumed always "fast" operations that you aren't releasing the
+ * GIL around.  Otherwise use code similar to what you see in hash
+ * function update() methods.
  */
 
 #include "pythread.h"
