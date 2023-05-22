@@ -1613,7 +1613,6 @@ class IndentSearcher:
 
     def __init__(self, text):
         self.text = text
-        self.tabwidth = tabwidth
         self.i = self.finished = 0
         self.blkopenline = self.indentedline = None
 
@@ -1642,7 +1641,7 @@ class IndentSearcher:
     def run(self):
         """Return 2 lines containing block opener and and indent.
 
-        Either or both may instead be None.
+        Either the indent line or both may be None.
         """
         try:
             tokens = tokenize.generate_tokens(self.readline)
