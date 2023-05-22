@@ -815,6 +815,7 @@ _pop_pending_call(struct _pending_calls *pending,
 
     *func = pending->calls[i].func;
     *arg = pending->calls[i].arg;
+    pending->calls[i] = (struct _pending_call){0};
     pending->first = (i + 1) % NPENDINGCALLS;
 }
 

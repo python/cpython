@@ -72,7 +72,7 @@ struct _pending_calls {
        Guarded by the GIL. */
     int async_exc;
 #define NPENDINGCALLS 32
-    struct {
+    struct _pending_call {
         int (*func)(void *);
         void *arg;
     } calls[NPENDINGCALLS];
