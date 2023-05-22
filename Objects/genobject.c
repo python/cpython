@@ -408,9 +408,33 @@ gen_close(PyGenObject *gen, PyObject *args)
         PyErr_SetString(PyExc_RuntimeError, msg);
         return NULL;
     }
-    if (PyErr_ExceptionMatches(PyExc_StopIteration)
-        || PyErr_ExceptionMatches(PyExc_GeneratorExit)) {
-        PyErr_Clear();          /* ignore these errors */
+    if (PyErr_ExceptionMatches(PyExc_StopIteration)) {
+        /* retrieve the StopIteration exception instance being handled, and
+         * extract its value */
+        PyObject *exc, *args, *value;
+        PyThreadState *tstate = _PyThreadState_GET();
+        if (tstate == NULL) {
+            PyErr_Clear();
+            Py_RETURN_NONE;
+        }
+        exc = tstate->current_exception;
+        if (exc == NULL || !PyExceptionInstance_Check(exc)) {
+            PyErr_Clear();
+            Py_RETURN_NONE;
+        }
+        args = ((PyBaseExceptionObject*)exc)->args;
+        if (args == NULL || !PyTuple_Check(args)
+                || PyTuple_GET_SIZE(args) == 0) {
+            PyErr_Clear();
+            Py_RETURN_NONE;
+        }
+        value = PyTuple_GET_ITEM(args, 0);
+        Py_INCREF(value);
+        PyErr_Clear();
+        return value;
+    }
+    if (PyErr_ExceptionMatches(PyExc_GeneratorExit)) {
+        PyErr_Clear();          /* ignore this error */
         Py_RETURN_NONE;
     }
     return NULL;

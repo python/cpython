@@ -595,12 +595,18 @@ is already executing raises a :exc:`ValueError` exception.
 .. method:: generator.close()
 
    Raises a :exc:`GeneratorExit` at the point where the generator function was
-   paused.  If the generator function then exits gracefully, is already closed,
-   or raises :exc:`GeneratorExit` (by not catching the exception), close
-   returns to its caller.  If the generator yields a value, a
+   paused.  If the generator function then exits gracefully, its return value
+   is returned by :meth:`close`.  If the generator function is already closed,
+   or raises :exc:`GeneratorExit` (by not catching the exception),
+   :meth:`close` returns to its caller.  If the generator yields a value, a
    :exc:`RuntimeError` is raised.  If the generator raises any other exception,
    it is propagated to the caller.  :meth:`close` does nothing if the generator
    has already exited due to an exception or normal exit.
+
+   .. versionchanged:: 3.13
+
+      If a generator exits gracefully, its return value is returned by
+      :meth:`close`.
 
 .. index:: single: yield; examples
 
