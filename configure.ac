@@ -2028,13 +2028,6 @@ if test "$Py_BOLT" = 'true' ; then
   DEF_MAKE_ALL_RULE="bolt-opt"
   DEF_MAKE_RULE="build_all"
 
-  AC_SUBST(READELF)
-  AC_CHECK_TOOLS(READELF, [readelf], "notfound")
-  if test "$READELF" == "notfound"
-  then
-    AC_MSG_ERROR([readelf is required for a --enable-bolt build but could not be found.])
-  fi
-
   # -fno-reorder-blocks-and-partition is required for bolt to work.
   # Possibly GCC only.
   AX_CHECK_COMPILE_FLAG([-fno-reorder-blocks-and-partition],[
@@ -2066,6 +2059,54 @@ if test "$Py_BOLT" = 'true' ; then
     AC_MSG_ERROR([merge-fdata is required for a --enable-bolt build but could not be found.])
   fi
 fi
+
+dnl Enable BOLT of libpython if built.
+AC_SUBST(BOLT_BINARIES)
+BOLT_BINARIES='$(BUILDPYTHON)'
+AS_VAR_IF([enable_shared], [yes], [
+  BOLT_BINARIES="${BOLT_BINARIES} \$(INSTSONAME)"
+])
+
+AC_ARG_VAR(
+  [BOLT_INSTRUMENT_FLAGS],
+  [Arguments to llvm-bolt when instrumenting binaries]
+)
+AC_MSG_CHECKING([BOLT_INSTRUMENT_FLAGS])
+if test -z "${BOLT_INSTRUMENT_FLAGS}"
+then
+  BOLT_INSTRUMENT_FLAGS=
+fi
+AC_MSG_RESULT([$BOLT_INSTRUMENT_FLAGS])
+
+AC_ARG_VAR(
+  [BOLT_APPLY_FLAGS],
+  [Arguments to llvm-bolt when creating a BOLT optimized binary]
+)
+AC_MSG_CHECKING([BOLT_APPLY_FLAGS])
+if test -z "${BOLT_APPLY_FLAGS}"
+then
+  AS_VAR_SET(
+    [BOLT_APPLY_FLAGS],
+    [m4_join([ ],
+      [-update-debug-sections],
+      [-reorder-blocks=ext-tsp],
+      [-reorder-functions=hfsort+],
+      [-split-functions],
+      [-icf=1],
+      [-inline-all],
+      [-split-eh],
+      [-reorder-functions-use-hot-size],
+      [-peepholes=none],
+      [-jump-tables=aggressive],
+      [-inline-ap],
+      [-indirect-call-promotion=all],
+      [-dyno-stats],
+      [-use-gnu-stack],
+      [-frame-opt=hot]
+    )]
+  )
+fi
+AC_MSG_RESULT([$BOLT_APPLY_FLAGS])
 
 # XXX Shouldn't the code above that fiddles with BASECFLAGS and OPT be
 # merged with this chunk of code?
