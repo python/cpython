@@ -1,4 +1,4 @@
-"Test editor, coverage 35%."
+"Test editor, coverage 53%."
 
 from idlelib import editor
 import unittest
@@ -200,6 +200,7 @@ class IndentSearcherTest(unittest.TestCase):
         searcher = (self.text)
         test_info = (# text, (block, indent))
                      ("", (None, None)),
+                     ("[1,", (None, None)),  # TokenError
                      ("if 1:\n", ('if 1:\n', None)),
                      ("if 1:\n  2\n  3\n", ('if 1:\n', '  2\n')),
                      )
