@@ -120,14 +120,15 @@ extern PyObject* _Py_Mangle(PyObject *p, PyObject *name);
 #define DEF_ANNOT 2<<7         /* this name is annotated */
 #define DEF_COMP_ITER 2<<8     /* this name is a comprehension iteration variable */
 #define DEF_TYPE_PARAM 2<<9    /* this name is a type parameter */
+#define DEF_COMP_CELL 2<<10    /* this name is a cell in an inlined comprehension */
 
 #define DEF_BOUND (DEF_LOCAL | DEF_PARAM | DEF_IMPORT)
 
 /* GLOBAL_EXPLICIT and GLOBAL_IMPLICIT are used internally by the symbol
    table.  GLOBAL is returned from PyST_GetScope() for either of them.
-   It is stored in ste_symbols at bits 12-15.
+   It is stored in ste_symbols at bits 13-16.
 */
-#define SCOPE_OFFSET 11
+#define SCOPE_OFFSET 12
 #define SCOPE_MASK (DEF_GLOBAL | DEF_LOCAL | DEF_PARAM | DEF_NONLOCAL)
 
 #define LOCAL 1

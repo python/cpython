@@ -23,6 +23,10 @@
 *.gc??
 *.profclang?
 *.profraw
+# Copies of binaries before BOLT optimizations.
+*.prebolt
+# BOLT profile data.
+*.fdata
 *.dyn
 .gdb_history
 .purify
@@ -124,6 +128,7 @@ Tools/unicode/data/
 /platform
 /profile-clean-stamp
 /profile-run-stamp
+/profile-bolt-stamp
 /Python/deepfreeze/*.c
 /pybuilddir.txt
 /pyconfig.h

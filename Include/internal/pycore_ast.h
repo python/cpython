@@ -51,7 +51,7 @@ typedef struct _pattern *pattern_ty;
 
 typedef struct _type_ignore *type_ignore_ty;
 
-typedef struct _typeparam *typeparam_ty;
+typedef struct _type_param *type_param_ty;
 
 
 typedef struct {
@@ -151,10 +151,11 @@ asdl_type_ignore_seq *_Py_asdl_type_ignore_seq_new(Py_ssize_t size, PyArena
 
 typedef struct {
     _ASDL_SEQ_HEAD
-    typeparam_ty typed_elements[1];
-} asdl_typeparam_seq;
+    type_param_ty typed_elements[1];
+} asdl_type_param_seq;
 
-asdl_typeparam_seq *_Py_asdl_typeparam_seq_new(Py_ssize_t size, PyArena *arena);
+asdl_type_param_seq *_Py_asdl_type_param_seq_new(Py_ssize_t size, PyArena
+                                                 *arena);
 
 
 enum _mod_kind {Module_kind=1, Interactive_kind=2, Expression_kind=3,
@@ -197,7 +198,7 @@ struct _stmt {
     union {
         struct {
             identifier name;
-            asdl_typeparam_seq *typeparams;
+            asdl_type_param_seq *type_params;
             arguments_ty args;
             asdl_stmt_seq *body;
             asdl_expr_seq *decorator_list;
@@ -207,7 +208,7 @@ struct _stmt {
 
         struct {
             identifier name;
-            asdl_typeparam_seq *typeparams;
+            asdl_type_param_seq *type_params;
             arguments_ty args;
             asdl_stmt_seq *body;
             asdl_expr_seq *decorator_list;
@@ -217,7 +218,7 @@ struct _stmt {
 
         struct {
             identifier name;
-            asdl_typeparam_seq *typeparams;
+            asdl_type_param_seq *type_params;
             asdl_expr_seq *bases;
             asdl_keyword_seq *keywords;
             asdl_stmt_seq *body;
@@ -240,7 +241,7 @@ struct _stmt {
 
         struct {
             expr_ty name;
-            asdl_typeparam_seq *typeparams;
+            asdl_type_param_seq *type_params;
             expr_ty value;
         } TypeAlias;
 
@@ -649,9 +650,9 @@ struct _type_ignore {
     } v;
 };
 
-enum _typeparam_kind {TypeVar_kind=1, ParamSpec_kind=2, TypeVarTuple_kind=3};
-struct _typeparam {
-    enum _typeparam_kind kind;
+enum _type_param_kind {TypeVar_kind=1, ParamSpec_kind=2, TypeVarTuple_kind=3};
+struct _type_param {
+    enum _type_param_kind kind;
     union {
         struct {
             identifier name;
@@ -681,18 +682,18 @@ mod_ty _PyAST_Interactive(asdl_stmt_seq * body, PyArena *arena);
 mod_ty _PyAST_Expression(expr_ty body, PyArena *arena);
 mod_ty _PyAST_FunctionType(asdl_expr_seq * argtypes, expr_ty returns, PyArena
                            *arena);
-stmt_ty _PyAST_FunctionDef(identifier name, asdl_typeparam_seq * typeparams,
+stmt_ty _PyAST_FunctionDef(identifier name, asdl_type_param_seq * type_params,
                            arguments_ty args, asdl_stmt_seq * body,
                            asdl_expr_seq * decorator_list, expr_ty returns,
                            string type_comment, int lineno, int col_offset, int
                            end_lineno, int end_col_offset, PyArena *arena);
-stmt_ty _PyAST_AsyncFunctionDef(identifier name, asdl_typeparam_seq *
-                                typeparams, arguments_ty args, asdl_stmt_seq *
+stmt_ty _PyAST_AsyncFunctionDef(identifier name, asdl_type_param_seq *
+                                type_params, arguments_ty args, asdl_stmt_seq *
                                 body, asdl_expr_seq * decorator_list, expr_ty
                                 returns, string type_comment, int lineno, int
                                 col_offset, int end_lineno, int end_col_offset,
                                 PyArena *arena);
-stmt_ty _PyAST_ClassDef(identifier name, asdl_typeparam_seq * typeparams,
+stmt_ty _PyAST_ClassDef(identifier name, asdl_type_param_seq * type_params,
                         asdl_expr_seq * bases, asdl_keyword_seq * keywords,
                         asdl_stmt_seq * body, asdl_expr_seq * decorator_list,
                         int lineno, int col_offset, int end_lineno, int
@@ -704,9 +705,9 @@ stmt_ty _PyAST_Delete(asdl_expr_seq * targets, int lineno, int col_offset, int
 stmt_ty _PyAST_Assign(asdl_expr_seq * targets, expr_ty value, string
                       type_comment, int lineno, int col_offset, int end_lineno,
                       int end_col_offset, PyArena *arena);
-stmt_ty _PyAST_TypeAlias(expr_ty name, asdl_typeparam_seq * typeparams, expr_ty
-                         value, int lineno, int col_offset, int end_lineno, int
-                         end_col_offset, PyArena *arena);
+stmt_ty _PyAST_TypeAlias(expr_ty name, asdl_type_param_seq * type_params,
+                         expr_ty value, int lineno, int col_offset, int
+                         end_lineno, int end_col_offset, PyArena *arena);
 stmt_ty _PyAST_AugAssign(expr_ty target, operator_ty op, expr_ty value, int
                          lineno, int col_offset, int end_lineno, int
                          end_col_offset, PyArena *arena);
@@ -891,14 +892,14 @@ pattern_ty _PyAST_MatchOr(asdl_pattern_seq * patterns, int lineno, int
                           col_offset, int end_lineno, int end_col_offset,
                           PyArena *arena);
 type_ignore_ty _PyAST_TypeIgnore(int lineno, string tag, PyArena *arena);
-typeparam_ty _PyAST_TypeVar(identifier name, expr_ty bound, int lineno, int
-                            col_offset, int end_lineno, int end_col_offset,
-                            PyArena *arena);
-typeparam_ty _PyAST_ParamSpec(identifier name, int lineno, int col_offset, int
-                              end_lineno, int end_col_offset, PyArena *arena);
-typeparam_ty _PyAST_TypeVarTuple(identifier name, int lineno, int col_offset,
-                                 int end_lineno, int end_col_offset, PyArena
-                                 *arena);
+type_param_ty _PyAST_TypeVar(identifier name, expr_ty bound, int lineno, int
+                             col_offset, int end_lineno, int end_col_offset,
+                             PyArena *arena);
+type_param_ty _PyAST_ParamSpec(identifier name, int lineno, int col_offset, int
+                               end_lineno, int end_col_offset, PyArena *arena);
+type_param_ty _PyAST_TypeVarTuple(identifier name, int lineno, int col_offset,
+                                  int end_lineno, int end_col_offset, PyArena
+                                  *arena);
 
 
 PyObject* PyAST_mod2obj(mod_ty t);

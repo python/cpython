@@ -616,6 +616,21 @@ These can be used as types in annotations and do not support ``[]``.
       avoiding type checker errors with classes that can duck type anywhere or
       are highly dynamic.
 
+.. data:: AnyStr
+
+   ``AnyStr`` is a :ref:`constrained type variable <typing-constrained-typevar>` defined as
+   ``AnyStr = TypeVar('AnyStr', str, bytes)``.
+
+   It is meant to be used for functions that may accept any kind of string
+   without allowing different kinds of strings to mix. For example::
+
+      def concat(a: AnyStr, b: AnyStr) -> AnyStr:
+          return a + b
+
+      concat(u"foo", u"bar")  # Ok, output has type 'unicode'
+      concat(b"foo", b"bar")  # Ok, output has type 'bytes'
+      concat(u"foo", b"bar")  # Error, cannot mix unicode and bytes
+
 .. data:: LiteralString
 
    Special type that includes only literal strings. A string
@@ -917,13 +932,13 @@ These can be used as types in annotations using ``[]``, each having a unique syn
       # We don't need to pass in the lock ourselves thanks to the decorator.
       sum_threadsafe([1.1, 2.2, 3.3])
 
-.. versionadded:: 3.10
+   .. versionadded:: 3.10
 
-.. seealso::
+   .. seealso::
 
-   * :pep:`612` -- Parameter Specification Variables (the PEP which introduced
-     ``ParamSpec`` and ``Concatenate``).
-   * :class:`ParamSpec` and :class:`Callable`.
+      * :pep:`612` -- Parameter Specification Variables (the PEP which introduced
+        ``ParamSpec`` and ``Concatenate``).
+      * :class:`ParamSpec` and :class:`Callable`.
 
 
 .. class:: Type(Generic[CT_co])
@@ -1208,6 +1223,49 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    .. versionadded:: 3.10
 
 
+.. data:: Unpack
+
+   A typing operator that conceptually marks an object as having been
+   unpacked. For example, using the unpack operator ``*`` on a
+   :class:`type variable tuple <TypeVarTuple>` is equivalent to using ``Unpack``
+   to mark the type variable tuple as having been unpacked::
+
+      Ts = TypeVarTuple('Ts')
+      tup: tuple[*Ts]
+      # Effectively does:
+      tup: tuple[Unpack[Ts]]
+
+   In fact, ``Unpack`` can be used interchangeably with ``*`` in the context
+   of :class:`typing.TypeVarTuple <TypeVarTuple>` and
+   :class:`builtins.tuple <tuple>` types. You might see ``Unpack`` being used
+   explicitly in older versions of Python, where ``*`` couldn't be used in
+   certain places::
+
+      # In older versions of Python, TypeVarTuple and Unpack
+      # are located in the `typing_extensions` backports package.
+      from typing_extensions import TypeVarTuple, Unpack
+
+      Ts = TypeVarTuple('Ts')
+      tup: tuple[*Ts]         # Syntax error on Python <= 3.10!
+      tup: tuple[Unpack[Ts]]  # Semantically equivalent, and backwards-compatible
+
+   ``Unpack`` can also be used along with :class:`typing.TypedDict` for typing
+   ``**kwargs`` in a function signature::
+
+      from typing import TypedDict, Unpack
+
+      class Movie(TypedDict):
+         name: str
+         year: int
+
+      # This function expects two keyword arguments - `name` of type `str`
+      # and `year` of type `int`.
+      def foo(**kwargs: Unpack[Movie]): ...
+
+   See :pep:`692` for more details on using ``Unpack`` for ``**kwargs`` typing.
+
+   .. versionadded:: 3.11
+
 Building generic types
 """"""""""""""""""""""
 
@@ -1409,49 +1467,6 @@ These are not used in annotations. They are building blocks for creating generic
 
     .. versionadded:: 3.11
 
-.. data:: Unpack
-
-   A typing operator that conceptually marks an object as having been
-   unpacked. For example, using the unpack operator ``*`` on a
-   :class:`type variable tuple <TypeVarTuple>` is equivalent to using ``Unpack``
-   to mark the type variable tuple as having been unpacked::
-
-      Ts = TypeVarTuple('Ts')
-      tup: tuple[*Ts]
-      # Effectively does:
-      tup: tuple[Unpack[Ts]]
-
-   In fact, ``Unpack`` can be used interchangeably with ``*`` in the context
-   of :class:`typing.TypeVarTuple <TypeVarTuple>` and
-   :class:`builtins.tuple <tuple>` types. You might see ``Unpack`` being used
-   explicitly in older versions of Python, where ``*`` couldn't be used in
-   certain places::
-
-      # In older versions of Python, TypeVarTuple and Unpack
-      # are located in the `typing_extensions` backports package.
-      from typing_extensions import TypeVarTuple, Unpack
-
-      Ts = TypeVarTuple('Ts')
-      tup: tuple[*Ts]         # Syntax error on Python <= 3.10!
-      tup: tuple[Unpack[Ts]]  # Semantically equivalent, and backwards-compatible
-
-   ``Unpack`` can also be used along with :class:`typing.TypedDict` for typing
-   ``**kwargs`` in a function signature::
-
-      from typing import TypedDict, Unpack
-
-      class Movie(TypedDict):
-         name: str
-         year: int
-
-      # This function expects two keyword arguments - `name` of type `str`
-      # and `year` of type `int`.
-      def foo(**kwargs: Unpack[Movie]): ...
-
-   See :pep:`692` for more details on using ``Unpack`` for ``**kwargs`` typing.
-
-   .. versionadded:: 3.11
-
 .. class:: ParamSpec(name, *, bound=None, covariant=False, contravariant=False)
 
    Parameter specification variable.  A specialized version of
@@ -1550,20 +1565,93 @@ These are not used in annotations. They are building blocks for creating generic
    .. versionadded:: 3.10
 
 
-.. data:: AnyStr
+Other special directives
+""""""""""""""""""""""""
 
-   ``AnyStr`` is a :ref:`constrained type variable <typing-constrained-typevar>` defined as
-   ``AnyStr = TypeVar('AnyStr', str, bytes)``.
+These are not used in annotations. They are building blocks for declaring types.
 
-   It is meant to be used for functions that may accept any kind of string
-   without allowing different kinds of strings to mix. For example::
+.. class:: NamedTuple
 
-      def concat(a: AnyStr, b: AnyStr) -> AnyStr:
-          return a + b
+   Typed version of :func:`collections.namedtuple`.
 
-      concat(u"foo", u"bar")  # Ok, output has type 'unicode'
-      concat(b"foo", b"bar")  # Ok, output has type 'bytes'
-      concat(u"foo", b"bar")  # Error, cannot mix unicode and bytes
+   Usage::
+
+       class Employee(NamedTuple):
+           name: str
+           id: int
+
+   This is equivalent to::
+
+       Employee = collections.namedtuple('Employee', ['name', 'id'])
+
+   To give a field a default value, you can assign to it in the class body::
+
+      class Employee(NamedTuple):
+          name: str
+          id: int = 3
+
+      employee = Employee('Guido')
+      assert employee.id == 3
+
+   Fields with a default value must come after any fields without a default.
+
+   The resulting class has an extra attribute ``__annotations__`` giving a
+   dict that maps the field names to the field types.  (The field names are in
+   the ``_fields`` attribute and the default values are in the
+   ``_field_defaults`` attribute, both of which are part of the :func:`~collections.namedtuple`
+   API.)
+
+   ``NamedTuple`` subclasses can also have docstrings and methods::
+
+      class Employee(NamedTuple):
+          """Represents an employee."""
+          name: str
+          id: int = 3
+
+          def __repr__(self) -> str:
+              return f'<Employee {self.name}, id={self.id}>'
+
+   ``NamedTuple`` subclasses can be generic::
+
+      class Group(NamedTuple, Generic[T]):
+          key: T
+          group: list[T]
+
+   Backward-compatible usage::
+
+       Employee = NamedTuple('Employee', [('name', str), ('id', int)])
+
+   .. versionchanged:: 3.6
+      Added support for :pep:`526` variable annotation syntax.
+
+   .. versionchanged:: 3.6.1
+      Added support for default values, methods, and docstrings.
+
+   .. versionchanged:: 3.8
+      The ``_field_types`` and ``__annotations__`` attributes are
+      now regular dictionaries instead of instances of ``OrderedDict``.
+
+   .. versionchanged:: 3.9
+      Removed the ``_field_types`` attribute in favor of the more
+      standard ``__annotations__`` attribute which has the same information.
+
+   .. versionchanged:: 3.11
+      Added support for generic namedtuples.
+
+.. class:: NewType(name, tp)
+
+   A helper class to indicate a distinct type to a typechecker,
+   see :ref:`distinct`. At runtime it returns an object that returns
+   its argument when called.
+   Usage::
+
+      UserId = NewType('UserId', int)
+      first_user = UserId(1)
+
+   .. versionadded:: 3.5.2
+
+   .. versionchanged:: 3.10
+      ``NewType`` is now a class rather than a function.
 
 .. class:: Protocol(Generic)
 
@@ -1658,94 +1746,6 @@ These are not used in annotations. They are building blocks for creating generic
       protocol. See :ref:`"What's new in Python 3.12" <whatsnew-typing-py312>`
       for more details.
 
-
-Other special directives
-""""""""""""""""""""""""
-
-These are not used in annotations. They are building blocks for declaring types.
-
-.. class:: NamedTuple
-
-   Typed version of :func:`collections.namedtuple`.
-
-   Usage::
-
-       class Employee(NamedTuple):
-           name: str
-           id: int
-
-   This is equivalent to::
-
-       Employee = collections.namedtuple('Employee', ['name', 'id'])
-
-   To give a field a default value, you can assign to it in the class body::
-
-      class Employee(NamedTuple):
-          name: str
-          id: int = 3
-
-      employee = Employee('Guido')
-      assert employee.id == 3
-
-   Fields with a default value must come after any fields without a default.
-
-   The resulting class has an extra attribute ``__annotations__`` giving a
-   dict that maps the field names to the field types.  (The field names are in
-   the ``_fields`` attribute and the default values are in the
-   ``_field_defaults`` attribute, both of which are part of the :func:`~collections.namedtuple`
-   API.)
-
-   ``NamedTuple`` subclasses can also have docstrings and methods::
-
-      class Employee(NamedTuple):
-          """Represents an employee."""
-          name: str
-          id: int = 3
-
-          def __repr__(self) -> str:
-              return f'<Employee {self.name}, id={self.id}>'
-
-   ``NamedTuple`` subclasses can be generic::
-
-      class Group(NamedTuple, Generic[T]):
-          key: T
-          group: list[T]
-
-   Backward-compatible usage::
-
-       Employee = NamedTuple('Employee', [('name', str), ('id', int)])
-
-   .. versionchanged:: 3.6
-      Added support for :pep:`526` variable annotation syntax.
-
-   .. versionchanged:: 3.6.1
-      Added support for default values, methods, and docstrings.
-
-   .. versionchanged:: 3.8
-      The ``_field_types`` and ``__annotations__`` attributes are
-      now regular dictionaries instead of instances of ``OrderedDict``.
-
-   .. versionchanged:: 3.9
-      Removed the ``_field_types`` attribute in favor of the more
-      standard ``__annotations__`` attribute which has the same information.
-
-   .. versionchanged:: 3.11
-      Added support for generic namedtuples.
-
-.. class:: NewType(name, tp)
-
-   A helper class to indicate a distinct type to a typechecker,
-   see :ref:`distinct`. At runtime it returns an object that returns
-   its argument when called.
-   Usage::
-
-      UserId = NewType('UserId', int)
-      first_user = UserId(1)
-
-   .. versionadded:: 3.5.2
-
-   .. versionchanged:: 3.10
-      ``NewType`` is now a class rather than a function.
 
 .. class:: TypedDict(dict)
 

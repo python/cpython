@@ -532,6 +532,17 @@ threading
   profiling functions in all running threads in addition to the calling one.
   (Contributed by Pablo Galindo in :gh:`93503`.)
 
+tkinter
+-------
+
+* ``tkinter.Canvas.coords()`` now flattens its arguments.
+  It now accepts not only coordinates as separate arguments
+  (``x1, y1, x2, y2, ...``) and a sequence of coordinates
+  (``[x1, y1, x2, y2, ...]``), but also coordinates grouped in pairs
+  (``(x1, y1), (x2, y2), ...`` and ``[(x1, y1), (x2, y2), ...]``),
+  like ``create_*()`` methods.
+  (Contributed by Serhiy Storchaka in :gh:`94473`.)
+
 types
 -----
 
@@ -774,6 +785,16 @@ Deprecated
   ``int``, convert to int explicitly with ``~int(x)``. (Contributed by Tim Hoffmann
   in :gh:`103487`.)
 
+* :class:`datetime.datetime`'s
+  :meth:`~datetime.datetime.utcnow` and
+  :meth:`~datetime.datetime.utcfromtimestamp` are deprecated and will be
+  removed in a future version. Instead, use timezone-aware objects to represent
+  datetimes in UTC: respectively, call
+  :meth:`~datetime.datetime.now` and
+  :meth:`~datetime.datetime.fromtimestamp`  with the *tz* parameter set to
+  :attr:`datetime.UTC`.
+  (Contributed by Paul Ganssle in :gh:`103857`.)
+
 Pending Removal in Python 3.13
 ------------------------------
 
@@ -869,6 +890,11 @@ Pending Removal in Python 3.14
 
 * The *onerror* argument of :func:`shutil.rmtree` is deprecated in 3.12,
   and will be removed in 3.14.
+
+* The *type*, *choices*, and *metavar* parameters
+  of :class:`!argparse.BooleanOptionalAction` are deprecated
+  and will be removed in 3.14.
+  (Contributed by Nikita Sobolev in :gh:`92248`.)
 
 * :func:`pkgutil.find_loader` and :func:`pkgutil.get_loader`
   now raise :exc:`DeprecationWarning`;
@@ -1386,6 +1412,12 @@ Porting to Python 3.12
   To get a list of subclasses, call the Python method
   :py:meth:`~class.__subclasses__` (using :c:func:`PyObject_CallMethod`,
   for example).
+
+* Add support of more formatting options (left aligning, octals, uppercase
+  hexadecimals, ``intmax_t``, ``ptrdiff_t``, ``wchar_t`` C
+  strings, variable width and precision) in :c:func:`PyUnicode_FromFormat` and
+  :c:func:`PyUnicode_FromFormatV`.
+  (Contributed by Serhiy Storchaka in :gh:`98836`.)
 
 * An unrecognized format character in :c:func:`PyUnicode_FromFormat` and
   :c:func:`PyUnicode_FromFormatV` now sets a :exc:`SystemError`.
