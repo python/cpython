@@ -1358,6 +1358,9 @@ without the dedicated syntax, as documented below.
           except KeyError:
               return default
 
+   Here the brackets after the function name indicate a
+   :ref:`generic function <generic-functions>`.
+
    Generic classes can also be declared by explicitly inheriting from
    ``Generic``. In this case, the type parameters must be declared
    separately::
