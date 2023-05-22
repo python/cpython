@@ -1,0 +1,2 @@
+Let :meth:`generator.close` forward the return value of a generator function
+on graceful exit.
