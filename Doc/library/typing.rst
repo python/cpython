@@ -1325,7 +1325,8 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 Building generic types and type aliases
 """""""""""""""""""""""""""""""""""""""
 
-These are not used in annotations. They are building blocks for creating generic types.
+The following objects are not used directly in annotations. Instead, they are building blocks
+for creating generic types and type aliases.
 They can be created through special syntax (:ref:`type parameter lists <type-params>`
 and the :keyword:`type` statement). For compatibility with Python 3.11 and earlier, they
 can also be created without the dedicated syntax, as documented below.
