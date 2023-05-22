@@ -2412,3 +2412,4 @@
     abi_only = true
 [function._Py_DecRefTotal_DO_NOT_USE_THIS]
     added = '3.12'
+    abi_only = true
