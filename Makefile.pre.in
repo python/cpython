@@ -403,6 +403,7 @@ PYTHON_OBJS=	\
 		Python/modsupport.o \
 		Python/mysnprintf.o \
 		Python/mystrtoul.o \
+		Python/optimize.o \
 		Python/pathconfig.o \
 		Python/preconfig.o \
 		Python/pyarena.o \

@@ -695,6 +695,8 @@ init_interpreter(PyInterpreterState *interp,
     }
     interp->sys_profile_initialized = false;
     interp->sys_trace_initialized = false;
+    interp->optimizer= &_PyOptimizer_Default;
+    interp->optimizer_threshold = 0;
     if (interp != &runtime->_main_interpreter) {
         /* Fix the self-referential, statically initialized fields. */
         interp->dtoa = (struct _dtoa_state)_dtoa_state_INIT(interp);
@@ -822,6 +824,9 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
         p = p->next;
         HEAD_UNLOCK(runtime);
     }
+
+    Py_CLEAR(interp->optimizer);
+    interp->optimizer = &_PyOptimizer_Default;
 
     /* It is possible that any of the objects below have a finalizer
        that runs Python code or otherwise relies on a thread state

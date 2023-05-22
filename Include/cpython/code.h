@@ -76,6 +76,12 @@ typedef struct {
     int8_t line_delta;
 } _PyCoLineInstrumentationData;
 
+
+typedef struct  _PyExecutorArray {
+    uintptr_t size;
+    struct _PyExecutorObject *executors[1];
+} _PyExecutorArray;
+
 /* Main data structure used for instrumentation.
  * This is allocated when needed for instrumentation
  */
@@ -153,10 +159,12 @@ typedef struct {
     PyObject *co_qualname;        /* unicode (qualname, for reference) */      \
     PyObject *co_linetable;       /* bytes object that holds location info */  \
     PyObject *co_weakreflist;     /* to support weakrefs to code objects */    \
+    _PyExecutorArray *co_executors;      /* excecutors from optimizer */       \
     _PyCoCached *_co_cached;      /* cached co_* attributes */                 \
     uint64_t _co_instrumentation_version; /* current instrumentation version */  \
     _PyCoMonitoringData *_co_monitoring; /* Monitoring data */                 \
     int _co_firsttraceable;       /* index of first traceable instruction */   \
+    char _co_check_hotspots;      /* Are hotspot checks turned on */           \
     /* Scratch space for extra data relating to the code object.               \
        Type is a void* to keep the format private in codeobject.c to force     \
        people to go through the proper APIs. */                                \

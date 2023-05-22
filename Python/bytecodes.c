@@ -2091,33 +2091,30 @@ dummy_func(
         }
 
         inst(JUMP_BACKWARD, (--)) {
-            assert(oparg < INSTR_OFFSET());
-            JUMPBY(-oparg);
+            _Py_CODEUNIT *here = next_instr-1;
+            assert(oparg <= INSTR_OFFSET());
+            JUMPBY(1-oparg);
             CHECK_EVAL_BREAKER();
-        }
-
-        inst(COUNTING_JUMP_BACKWARD, (counter/1 -- )) {
-            JUMPBY(-oparg);
-            CHECK_EVAL_BREAKER();
-            counter--;
-            next_instr->cache = counter;
-            if (counter == 0) {
-                _PyExecutorObject *executor = _PyEval_Optimize(frame->f_code, INSTR_OFFSET()+oparg);
-                if (executor == NULL) {
-                    goto error;
-                }
-                Py_INCREF(executor);
-                frame = executor->execute(executor, frame, stack_pointer);
-                SET_LOCALS_FROM_FRAME();
+            here[1].cache += (1 << OPTIMIZER_BITS_IN_COUNTER);
+            if (here[1].cache > tstate->interp->optimizer_threshold) {
+                OBJECT_STAT_INC(optimization_attempts);
+                _PyOptimizerObject *opt = tstate->interp->optimizer;
+                frame = opt->optimize(opt, frame, here, stack_pointer);
+                here[1].cache &= ((1 << OPTIMIZER_BITS_IN_COUNTER) -1);
+                goto resume_frame;
             }
         }
 
         inst(ENTER_EXECUTOR, (--)) {
-            _PyExecutorObject *executor = frame->f_code->co_executors->executors[oparg];
+            CHECK_EVAL_BREAKER();
+            _PyExecutorObject *executor = (_PyExecutorObject *)frame->f_code->co_executors->executors[oparg];
             Py_INCREF(executor);
             frame = executor->execute(executor, frame, stack_pointer);
-            SET_LOCALS_FROM_FRAME();
-            DISPATCH();
+            if (frame == NULL) {
+                frame = cframe.current_frame;
+                goto error;
+            }
+            goto resume_frame;
         }
 
         inst(POP_JUMP_IF_FALSE, (cond -- )) {
@@ -3370,7 +3367,7 @@ dummy_func(
         }
 
         inst(INSTRUMENTED_JUMP_BACKWARD, ( -- )) {
-            INSTRUMENTED_JUMP(next_instr-1, next_instr-oparg, PY_MONITORING_EVENT_JUMP);
+            INSTRUMENTED_JUMP(next_instr-1, next_instr+1-oparg, PY_MONITORING_EVENT_JUMP);
             CHECK_EVAL_BREAKER();
         }
 
