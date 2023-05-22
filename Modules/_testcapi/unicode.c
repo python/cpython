@@ -1062,7 +1062,7 @@ unicode_decodecodepagestateful(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "iy#|z", &code_page, &data, &size, &errors))
         return NULL;
 
-    result = PyUnicode_DecodeCodePageStateful(data, size, errors, &consumed);
+    result = PyUnicode_DecodeCodePageStateful(code_page, data, size, errors, &consumed);
     if (!result) {
         return NULL;
     }
