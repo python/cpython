@@ -2085,7 +2085,21 @@ AC_ARG_VAR(
 AC_MSG_CHECKING([BOLT_APPLY_FLAGS])
 if test -z "${BOLT_APPLY_FLAGS}"
 then
-  BOLT_APPLY_FLAGS="-update-debug-sections -reorder-blocks=ext-tsp -reorder-functions=hfsort+ -split-functions -icf=1 -inline-all -split-eh -reorder-functions-use-hot-size -peepholes=none -jump-tables=aggressive -inline-ap -indirect-call-promotion=all -dyno-stats -use-gnu-stack -frame-opt=hot"
+  BOLT_APPLY_FLAGS="-update-debug-sections\
+ -reorder-blocks=ext-tsp\
+ -reorder-functions=hfsort+\
+ -split-functions\
+ -icf=1\
+ -inline-all\
+ -split-eh\
+ -reorder-functions-use-hot-size\
+ -peepholes=none\
+ -jump-tables=aggressive\
+ -inline-ap\
+ -indirect-call-promotion=all\
+ -dyno-stats\
+ -use-gnu-stack\
+ -frame-opt=hot"
 fi
 AC_MSG_RESULT([$BOLT_APPLY_FLAGS])
 
