@@ -207,7 +207,22 @@ tokenizeriter_next(tokenizeriterobject *it)
         end_col_offset = _PyPegen_byte_offset_to_character_offset(line, token.end - it->tok->line_start);
     }
 
-    result = Py_BuildValue("(NinnnnN)", str, type, lineno, end_lineno, col_offset, end_col_offset, line);
+    if (it->tok->tok_extra_tokens) {
+        // Necessary adjustments to match the original Python tokenize
+        // implementation
+        if (type > DEDENT && type < OP) {
+            type = OP;
+        }
+        else if (type == ASYNC || type == AWAIT) {
+            type = NAME;
+        }
+        else if (type == NEWLINE) {
+            str = PyUnicode_FromString("\n");
+            end_col_offset++;
+        }
+    }
+
+    result = Py_BuildValue("(iN(nn)(nn)N)", type, str, lineno, col_offset, end_lineno, end_col_offset, line);
 exit:
     _PyToken_Free(&token);
     return result;
