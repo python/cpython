@@ -476,7 +476,7 @@ inheritance from :class:`Generic`. In this case, ``**`` is not used::
    class Z(Generic[P]):
        ...
 
-A generic with only one parameter specification variable will accept
+Another difference between :class:`TypeVar` and :class:`ParamSpec` is that a generic with only one parameter specification variable will accept
 parameter lists in the forms ``X[[Type1, Type2, ...]]`` and also
 ``X[Type1, Type2, ...]`` for aesthetic reasons.  Internally, the latter is converted
 to the former, so the following are equivalent::
