@@ -102,7 +102,7 @@ annotations. These include:
     *Introducing* a new way of typing ``**kwargs`` with :data:`Unpack` and
     :data:`TypedDict`
 * :pep:`695`: Type Parameter Syntax
-    *Introducing* syntax for creating generic functions, classes, and type aliases.
+    *Introducing* builtin syntax for creating generic functions, classes, and type aliases.
 * :pep:`698`: Adding an override decorator to typing
     *Introducing* the :func:`@override<override>` decorator
 
@@ -113,7 +113,8 @@ Type aliases
 
 A type alias is defined using the :keyword:`type` statement, which creates
 an instance of :class:`TypeAliasType`. In this example,
-``Vector`` and ``list[float]`` will be treated as interchangeable synonyms::
+``Vector`` and ``list[float]`` will be treated equivalently by static type
+checkers::
 
    type Vector = list[float]
 
@@ -149,7 +150,8 @@ compatibility, type aliases can also be created through simple assignment::
 
    Vector = list[float]
 
-Or marked with :data:`TypeAlias`::
+Or marked with :data:`TypeAlias` to make it explicit that this is a type alias,
+not a normal variable assignment::
 
    from typing import TypeAlias
 
@@ -220,7 +222,7 @@ See :pep:`484` for more details.
 .. note::
 
    Recall that the use of a type alias declares two types to be *equivalent* to
-   one another. Doing ``Alias = Original`` will make the static type checker
+   one another. Doing ``type Alias = Original`` will make the static type checker
    treat ``Alias`` as being *exactly equivalent* to ``Original`` in all cases.
    This is useful when you want to simplify complex type signatures.
 
@@ -308,9 +310,9 @@ Or by using the :class:`TypeVar` factory directly::
    from collections.abc import Sequence
    from typing import TypeVar
 
-   T = TypeVar('T')      # Declare type variable
+   U = TypeVar('U')      # Declare type variable
 
-   def first(l: Sequence[T]) -> T:   # Generic function
+   def first(l: Sequence[U]) -> U:   # Generic function
        return l[0]
 
 .. versionchanged:: 3.12
@@ -373,14 +375,14 @@ A generic type can have any number of type variables. All varieties of
 
    from typing import TypeVar, Generic, Sequence
 
-   T = TypeVar('T', contravariant=True)
-   B = TypeVar('B', bound=Sequence[bytes], covariant=True)
-   S = TypeVar('S', int, str)
-
-   class OldWeirdTrio(Generic[T, B, S]):
+   class NewWeirdTrio[T, B: Sequence[bytes], S: (int, str)]:
        ...
 
-   class NewWeirdTrio[T, B: Sequence[bytes], S: (int, str)]:
+   OldT = TypeVar('OldT', contravariant=True)
+   OldB = TypeVar('OldB', bound=Sequence[bytes], covariant=True)
+   OldS = TypeVar('OldS', int, str)
+
+   class OldWeirdTrio(Generic[OldT, OldB, OldS]):
        ...
 
 Each type variable argument to :class:`Generic` must be distinct.
@@ -389,7 +391,7 @@ This is thus invalid::
    from typing import TypeVar, Generic
    ...
 
-   class Pair[T, T]:  # SyntaxError
+   class Pair[M, M]:  # SyntaxError
        ...
 
    T = TypeVar('T')
@@ -474,7 +476,7 @@ inheritance from :class:`Generic`. In this case, ``**`` is not used::
    class Z(Generic[P]):
        ...
 
-Furthermore, a generic with only one parameter specification variable will accept
+A generic with only one parameter specification variable will accept
 parameter lists in the forms ``X[[Type1, Type2, ...]]`` and also
 ``X[Type1, Type2, ...]`` for aesthetic reasons.  Internally, the latter is converted
 to the former, so the following are equivalent::
@@ -818,6 +820,8 @@ These can be used as types in annotations and do not support ``[]``.
       Note that while :data:`TypeAlias` and :class:`TypeAliasType` serve
       similar purposes and have similar names, they are distinct and the
       latter is not the type of the former.
+      Removal of :data:`TypeAlias` is not currently planned, but users
+      are encouraged to migrate to :keyword:`type` statements.
 
 Special forms
 """""""""""""
