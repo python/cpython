@@ -5477,10 +5477,16 @@ comerror_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static int
+comerror_clear(PyObject *self)
+{
+    return ((PyTypeObject *)PyExc_BaseException)->tp_clear(self);
+}
+
+static int
 comerror_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
-    return 0;
+    return ((PyTypeObject *)PyExc_BaseException)->tp_traverse(self, visit, arg);
 }
 
 static void
@@ -5488,6 +5494,7 @@ comerror_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
+    (void)comerror_clear(self);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -5497,6 +5504,7 @@ static PyType_Slot comerror_slots[] = {
     {Py_tp_init, comerror_init},
     {Py_tp_traverse, comerror_traverse},
     {Py_tp_dealloc, comerror_dealloc},
+    {Py_tp_clear, comerror_clear},
     {0, NULL},
 };
 
