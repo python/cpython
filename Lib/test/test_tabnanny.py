@@ -317,7 +317,7 @@ class TestCommandLine(TestCase):
         with TemporaryPyFile(SOURCE_CODES["wrong_indented"]) as file_path:
             stderr  = f"{file_path!r}: Token Error: "
             stderr += ('unindent does not match any outer indentation level'
-                    ' (<tokenize>, line 3)')
+                       ' (<string>, line 3)')
             self.validate_cmd(file_path, stderr=stderr, expect_failure=True)
 
     def test_with_error_free_file(self):
