@@ -221,8 +221,9 @@ def _read_headers(fp):
             break
     return headers
 
-def parse_headers(fp, _class=HTTPMessage):
-    """Parses only RFC2822 headers from a file pointer.
+def _parse_header_lines(header_lines, _class=HTTPMessage):
+    """
+    Parses only RFC2822 headers from header lines.
 
     email Parser wants to see strings rather than bytes.
     But a TextIOWrapper around self.rfile would buffer too many bytes
@@ -231,9 +232,14 @@ def parse_headers(fp, _class=HTTPMessage):
     to parse.
 
     """
-    headers = _read_headers(fp)
-    hstring = b''.join(headers).decode('iso-8859-1')
+    hstring = b''.join(header_lines).decode('iso-8859-1')
     return email.parser.Parser(_class=_class).parsestr(hstring)
+
+def parse_headers(fp, _class=HTTPMessage):
+    """Parses only RFC2822 headers from a file pointer."""
+
+    headers = _read_headers(fp)
+    return _parse_header_lines(headers, _class)
 
 
 class HTTPResponse(io.BufferedIOBase):
@@ -858,6 +864,7 @@ class HTTPConnection:
         self._tunnel_host = None
         self._tunnel_port = None
         self._tunnel_headers = {}
+        self._raw_proxy_headers = None
 
         (self.host, self.port) = self._get_hostport(host, port)
 
@@ -941,23 +948,36 @@ class HTTPConnection:
         del headers
 
         response = self.response_class(self.sock, method=self._method)
-        (version, code, message) = response._read_status()
+        try:
+            (version, code, message) = response._read_status()
 
-        if code != http.HTTPStatus.OK:
-            self.close()
-            raise OSError(f"Tunnel connection failed: {code} {message.strip()}")
-        while True:
-            line = response.fp.readline(_MAXLINE + 1)
-            if len(line) > _MAXLINE:
-                raise LineTooLong("header line")
-            if not line:
-                # for sites which EOF without sending a trailer
-                break
-            if line in (b'\r\n', b'\n', b''):
-                break
+            self._raw_proxy_headers = _read_headers(response.fp)
 
             if self.debuglevel > 0:
-                print('header:', line.decode())
+                for header in self._raw_proxy_headers:
+                    print('header:', header.decode())
+
+            if code != http.HTTPStatus.OK:
+                self.close()
+                raise OSError(f"Tunnel connection failed: {code} {message.strip()}")
+
+        finally:
+            response.close()
+
+    def get_proxy_response_headers(self):
+        """
+        Returns a dictionary with the headers of the response
+        received from the proxy server to the CONNECT request
+        sent to set the tunnel.
+
+        If the CONNECT request was not sent, the method returns
+        an empty dictionary.
+        """
+        return (
+            _parse_header_lines(self._raw_proxy_headers)
+            if self._raw_proxy_headers is not None
+            else {}
+        )
 
     def connect(self):
         """Connect to the host and port specified in __init__."""

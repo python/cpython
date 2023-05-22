@@ -2184,6 +2184,7 @@ exec_module(PyObject *m)
 
 static PyModuleDef_Slot winreg_slots[] = {
     {Py_mod_exec, exec_module},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 
