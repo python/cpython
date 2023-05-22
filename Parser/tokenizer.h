@@ -53,6 +53,7 @@ typedef struct _tokenizer_mode {
     int f_string_raw;
     const char* f_string_start;
     const char* f_string_multi_line_start;
+    int f_string_line_start;
 
     Py_ssize_t f_string_start_offset;
     Py_ssize_t f_string_multi_line_start_offset;
@@ -127,6 +128,8 @@ struct tok_state {
     tokenizer_mode tok_mode_stack[MAXFSTRINGLEVEL];
     int tok_mode_stack_index;
     int tok_report_warnings;
+    int tok_extra_tokens;
+    int comment_newline;
 #ifdef Py_DEBUG
     int debug;
 #endif
@@ -137,6 +140,8 @@ extern struct tok_state *_PyTokenizer_FromUTF8(const char *, int);
 extern struct tok_state *_PyTokenizer_FromFile(FILE *, const char*,
                                               const char *, const char *);
 extern void _PyTokenizer_Free(struct tok_state *);
+extern void _PyToken_Free(struct token *);
+extern void _PyToken_Init(struct token *);
 extern int _PyTokenizer_Get(struct tok_state *, struct token *);
 
 #define tok_dump _Py_tok_dump

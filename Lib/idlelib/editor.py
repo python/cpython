@@ -1643,19 +1643,13 @@ class IndentSearcher:
             self.finished = 1
 
     def run(self):
-        save_tabsize = tokenize.tabsize
-        tokenize.tabsize = self.tabwidth
         try:
-            try:
-                tokens = tokenize.generate_tokens(self.readline)
-                for token in tokens:
-                    self.tokeneater(*token)
-            except (tokenize.TokenError, SyntaxError):
-                # since we cut off the tokenizer early, we can trigger
-                # spurious errors
-                pass
-        finally:
-            tokenize.tabsize = save_tabsize
+            tokens = tokenize.generate_tokens(self.readline)
+            for token in tokens:
+                self.tokeneater(*token)
+        except (tokenize.TokenError, SyntaxError):
+            # Stopping the tokenizer early can trigger spurious errors.
+            pass
         return self.blkopenline, self.indentedline
 
 ### end autoindent code ###
