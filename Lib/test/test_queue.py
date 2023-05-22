@@ -267,16 +267,15 @@ class BaseQueueTestMixin(BlockingTestMixin):
     def test_shutdown_allowed_transitions(self):
         # allowed transitions would be from alive via shutdown to immediate
         q = self.type2test()
-        self.assertEqual("alive", q.shutdown_state)
+        self.assertFalse(q.is_shutdown)
 
         q.shutdown()
-        self.assertEqual("shutdown", q.shutdown_state)
+        self.assertTrue(q.is_shutdown)
 
         q.shutdown(immediate=True)
-        self.assertEqual("shutdown-immediate", q.shutdown_state)
+        self.assertTrue(q.is_shutdown)
 
         q.shutdown(immediate=False)
-        self.assertNotEqual("shutdown", q.shutdown_state)
 
     def _shutdown_all_methods_in_one_thread(self, immediate):
         q = self.type2test(2)
@@ -293,10 +292,9 @@ class BaseQueueTestMixin(BlockingTestMixin):
                 q.get()
             with self.assertRaises(self.queue.ShutDown):
                 q.get_nowait()
-            with self.assertRaises(self.queue.ShutDown):
+            with self.assertRaises(ValueError):
                 q.task_done()
-            with self.assertRaises(self.queue.ShutDown):
-                q.join()
+            q.join()
         else:
             self.assertIn(q.get(), "LO")
             q.task_done()
@@ -333,10 +331,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
                 event_end.set()
             time.sleep(delay)
         # end of all puts
-        try:
-            q.join()
-        except self.queue.ShutDown:
-            pass
+        q.join()
 
     def _read_msg_thread(self, q, nb, results, delay, event_start):
         event_start.wait()
@@ -355,26 +350,17 @@ class BaseQueueTestMixin(BlockingTestMixin):
                 nb -= 1
             except self.queue.Empty:
                 pass
-        try:
-            q.join()
-        except self.queue.ShutDown:
-            pass
+        q.join()
 
     def _shutdown_thread(self, q, event_end, immediate):
         event_end.wait()
         q.shutdown(immediate)
-        try:
-            q.join()
-        except self.queue.ShutDown:
-            pass
+        q.join()
 
     def _join_thread(self, q, delay, event_start):
         event_start.wait()
         time.sleep(delay)
-        try:
-            q.join()
-        except self.queue.ShutDown:
-            pass
+        q.join()
 
     def _shutdown_all_methods_in_many_threads(self, immediate):
         q = self.type2test()
@@ -412,6 +398,9 @@ class BaseQueueTestMixin(BlockingTestMixin):
         else:
             assert(len(res_gets) <= len(res_puts))
             assert(res_gets.count(True) <= res_puts.count(True))
+
+        for thread in ps[1:]:
+            thread.join()
 
     def test_shutdown_all_methods_in_many_threads(self):
         return self._shutdown_all_methods_in_many_threads(False)
@@ -544,15 +533,9 @@ class BaseQueueTestMixin(BlockingTestMixin):
         go = threading.Event()
         nb = q.qsize()
 
-        if immediate:
-            thrds = (
-                (self._join_shutdown, (q, results)),
-                (self._join_shutdown, (q, results)),
-            )
-        else:
-            thrds = (
-                (self._join, (q, results)),
-                (self._join, (q, results)),
+        thrds = (
+            (self._join, (q, results)),
+            (self._join, (q, results)),
         )
         threads = []
         for func, params in thrds:
@@ -584,21 +567,15 @@ class BaseQueueTestMixin(BlockingTestMixin):
         nb = q.qsize()
         # queue not fulled
 
-        if immediate:
-            thrds = (
-                (self._put_shutdown, (q, "E", go, results)),
-                (self._join_shutdown, (q, results)),
-            )
-        else:
-            thrds = (
-                (self._put_shutdown, (q, "E", go, results)),
-                (self._join, (q, results)),
-            )
+        thrds = (
+            (self._put_shutdown, (q, "E", go, results)),
+            (self._join, (q, results)),
+        )
         threads = []
         for func, params in thrds:
             threads.append(threading.Thread(target=func, args=params))
             threads[-1].start()
-        if not immediate:
+        if not immediate or immediate:  # TODO: dedent (minimising Git diff)
             self.assertEqual(q.unfinished_tasks, nb)
             for i in range(nb):
                 t = threading.Thread(target=q.task_done)
