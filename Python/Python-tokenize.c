@@ -89,11 +89,9 @@ _tokenizer_error(struct tok_state *tok)
             }
             return -1;
         case E_DEDENT:
-            PyErr_Format(PyExc_IndentationError,
-                        "unindent does not match any outer indentation level "
-                        "(<tokenize>, line %d)",
-                        tok->lineno);
-            return -1;
+            msg = "unindent does not match any outer indentation level";
+            errtype = PyExc_IndentationError;
+            break;
         case E_INTR:
             if (!PyErr_Occurred()) {
                 PyErr_SetNone(PyExc_KeyboardInterrupt);
@@ -131,7 +129,12 @@ _tokenizer_error(struct tok_state *tok)
         goto exit;
     }
 
-    tmp = Py_BuildValue("(OnnOii)", tok->filename, tok->lineno, 0, error_line, 0, 0);
+    Py_ssize_t offset = _PyPegen_byte_offset_to_character_offset(error_line, tok->inp - tok->buf);
+    if (offset == -1) {
+        result = -1;
+        goto exit;
+    }
+    tmp = Py_BuildValue("(OnnOOO)", tok->filename, tok->lineno, offset, error_line, Py_None, Py_None);
     if (!tmp) {
         result = -1;
         goto exit;
