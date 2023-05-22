@@ -535,7 +535,7 @@ threading
 tkinter
 -------
 
-* :meth:`tkinter.Canvas.coords` now flattens its arguments.
+* ``tkinter.Canvas.coords()`` now flattens its arguments.
   It now accepts not only coordinates as separate arguments
   (``x1, y1, x2, y2, ...``) and a sequence of coordinates
   (``[x1, y1, x2, y2, ...]``), but also coordinates grouped in pairs
