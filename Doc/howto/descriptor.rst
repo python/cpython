@@ -997,7 +997,7 @@ here is a pure Python equivalent:
             self.fget = fget
             self.fset = fset
             self.fdel = fdel
-            if doc is None and fget is not None:
+            if doc is None and fget is not None and hasattr(fget, "__doc__"):
                 doc = fget.__doc__
             self.__doc__ = doc
             self._name = ''
@@ -1009,17 +1009,17 @@ here is a pure Python equivalent:
             if obj is None:
                 return self
             if self.fget is None:
-                raise AttributeError(f"property '{self._name}' has no getter")
+                raise AttributeError(f"property {self._name!r} has no getter")
             return self.fget(obj)
 
         def __set__(self, obj, value):
             if self.fset is None:
-                raise AttributeError(f"property '{self._name}' has no setter")
+                raise AttributeError(f"property {self._name!r} has no setter")
             self.fset(obj, value)
 
         def __delete__(self, obj):
             if self.fdel is None:
-                raise AttributeError(f"property '{self._name}' has no deleter")
+                raise AttributeError(f"property {self._name!r} has no deleter")
             self.fdel(obj)
 
         def getter(self, fget):
