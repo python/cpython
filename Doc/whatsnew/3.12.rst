@@ -532,6 +532,17 @@ threading
   profiling functions in all running threads in addition to the calling one.
   (Contributed by Pablo Galindo in :gh:`93503`.)
 
+tkinter
+-------
+
+* ``tkinter.Canvas.coords()`` now flattens its arguments.
+  It now accepts not only coordinates as separate arguments
+  (``x1, y1, x2, y2, ...``) and a sequence of coordinates
+  (``[x1, y1, x2, y2, ...]``), but also coordinates grouped in pairs
+  (``(x1, y1), (x2, y2), ...`` and ``[(x1, y1), (x2, y2), ...]``),
+  like ``create_*()`` methods.
+  (Contributed by Serhiy Storchaka in :gh:`94473`.)
+
 types
 -----
 
