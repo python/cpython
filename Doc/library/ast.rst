@@ -917,10 +917,10 @@ Statements
             type_ignores=[])
 
 
-.. class:: TypeAlias(name, typeparams, value)
+.. class:: TypeAlias(name, type_params, value)
 
    A type alias created through the :keyword:`type` statement. ``name``
-   is the name of the alias, ``typeparams`` is a list of
+   is the name of the alias, ``type_params`` is a list of
    :ref:`type parameters <ast-type-params>`, and ``value`` is the value of the
    type alias.
 
@@ -931,7 +931,7 @@ Statements
             body=[
                 TypeAlias(
                     name=Name(id='Alias', ctx=Store()),
-                    typeparams=[],
+                    type_params=[],
                     value=Name(id='int', ctx=Load()))],
             type_ignores=[])
 
@@ -1684,7 +1684,7 @@ aliases.
             body=[
                 TypeAlias(
                     name=Name(id='Alias', ctx=Store()),
-                    typeparams=[
+                    type_params=[
                         TypeVar(
                             name='T',
                             bound=Name(id='int', ctx=Load()))],
@@ -1705,7 +1705,7 @@ aliases.
             body=[
                 TypeAlias(
                     name=Name(id='Alias', ctx=Store()),
-                    typeparams=[
+                    type_params=[
                         ParamSpec(name='P')],
                     value=Subscript(
                         value=Name(id='Callable', ctx=Load()),
@@ -1728,7 +1728,7 @@ aliases.
             body=[
                 TypeAlias(
                     name=Name(id='Alias', ctx=Store()),
-                    typeparams=[
+                    type_params=[
                         TypeVarTuple(name='Ts')],
                     value=Subscript(
                         value=Name(id='tuple', ctx=Load()),
@@ -1744,12 +1744,12 @@ aliases.
 Function and class definitions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. class:: FunctionDef(name, typeparams, args, body, decorator_list, returns, type_comment)
+.. class:: FunctionDef(name, type_params, args, body, decorator_list, returns, type_comment)
 
    A function definition.
 
    * ``name`` is a raw string of the function name.
-   * ``typeparams`` is a list of :ref:`type parameters <ast-type-params>`.
+   * ``type_params`` is a list of :ref:`type parameters <ast-type-params>`.
    * ``args`` is an :class:`arguments` node.
    * ``body`` is the list of nodes inside the function.
    * ``decorator_list`` is the list of decorators to be applied, stored outermost
@@ -1917,12 +1917,12 @@ Function and class definitions
             type_ignores=[])
 
 
-.. class:: ClassDef(name, typeparams, bases, keywords, starargs, kwargs, body, decorator_list)
+.. class:: ClassDef(name, type_params, bases, keywords, starargs, kwargs, body, decorator_list)
 
    A class definition.
 
    * ``name`` is a raw string for the class name
-   * ``typeparams`` is a list of :ref:`type parameters <ast-type-params>`.
+   * ``type_params`` is a list of :ref:`type parameters <ast-type-params>`.
    * ``bases`` is a list of nodes for explicitly specified base classes.
    * ``keywords`` is a list of :class:`keyword` nodes, principally for 'metaclass'.
      Other keywords will be passed to the metaclass, as per `PEP-3115
