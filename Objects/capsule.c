@@ -220,8 +220,7 @@ PyCapsule_Import(const char *name, int no_block)
             }
         } else {
             PyObject *object2 = PyObject_GetAttrString(object, trace);
-            Py_DECREF(object);
-            object = object2;
+            Py_SETREF(object, object2);
         }
         if (!object) {
             goto EXIT;

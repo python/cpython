@@ -67,8 +67,7 @@ PyFile_GetLine(PyObject *f, int n)
     }
     if (result != NULL && !PyBytes_Check(result) &&
         !PyUnicode_Check(result)) {
-        Py_DECREF(result);
-        result = NULL;
+        Py_SETREF(result, NULL);
         PyErr_SetString(PyExc_TypeError,
                    "object.readline() returned non-string");
     }
@@ -77,8 +76,7 @@ PyFile_GetLine(PyObject *f, int n)
         const char *s = PyBytes_AS_STRING(result);
         Py_ssize_t len = PyBytes_GET_SIZE(result);
         if (len == 0) {
-            Py_DECREF(result);
-            result = NULL;
+            Py_SETREF(result, NULL);
             PyErr_SetString(PyExc_EOFError,
                             "EOF when reading a line");
         }
@@ -88,24 +86,21 @@ PyFile_GetLine(PyObject *f, int n)
             else {
                 PyObject *v;
                 v = PyBytes_FromStringAndSize(s, len-1);
-                Py_DECREF(result);
-                result = v;
+                Py_SETREF(result, v);
             }
         }
     }
     if (n < 0 && result != NULL && PyUnicode_Check(result)) {
         Py_ssize_t len = PyUnicode_GET_LENGTH(result);
         if (len == 0) {
-            Py_DECREF(result);
-            result = NULL;
+            Py_SETREF(result, NULL);
             PyErr_SetString(PyExc_EOFError,
                             "EOF when reading a line");
         }
         else if (PyUnicode_READ_CHAR(result, len-1) == '\n') {
             PyObject *v;
             v = PyUnicode_Substring(result, 0, len-1);
-            Py_DECREF(result);
-            result = v;
+            Py_SETREF(result, v);
         }
     }
     return result;
@@ -230,16 +225,8 @@ _PyLong_FileDescriptor_Converter(PyObject *o, void *ptr)
     return 1;
 }
 
-/*
-** Py_UniversalNewlineFgets is an fgets variation that understands
-** all of \r, \n and \r\n conventions.
-** The stream should be opened in binary mode.
-** The fobj parameter exists solely for legacy reasons and must be NULL.
-** Note that we need no error handling: fgets() treats error and eof
-** identically.
-*/
 char *
-Py_UniversalNewlineFgets(char *buf, int n, FILE *stream, PyObject *fobj)
+_Py_UniversalNewlineFgetsWithSize(char *buf, int n, FILE *stream, PyObject *fobj, size_t* size)
 {
     char *p = buf;
     int c;
@@ -265,9 +252,26 @@ Py_UniversalNewlineFgets(char *buf, int n, FILE *stream, PyObject *fobj)
     }
     FUNLOCKFILE(stream);
     *p = '\0';
-    if (p == buf)
+    if (p == buf) {
         return NULL;
+    }
+    *size = p - buf;
     return buf;
+}
+
+/*
+** Py_UniversalNewlineFgets is an fgets variation that understands
+** all of \r, \n and \r\n conventions.
+** The stream should be opened in binary mode.
+** The fobj parameter exists solely for legacy reasons and must be NULL.
+** Note that we need no error handling: fgets() treats error and eof
+** identically.
+*/
+
+char *
+Py_UniversalNewlineFgets(char *buf, int n, FILE *stream, PyObject *fobj) {
+    size_t size;
+    return _Py_UniversalNewlineFgetsWithSize(buf, n, stream, fobj, &size);
 }
 
 /* **************************** std printer ****************************

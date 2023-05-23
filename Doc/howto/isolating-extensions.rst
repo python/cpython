@@ -372,7 +372,7 @@ To save a some tedious error-handling boilerplate code, you can combine
 these two steps with :c:func:`PyType_GetModuleState`, resulting in::
 
    my_struct *state = (my_struct*)PyType_GetModuleState(type);
-   if (state === NULL) {
+   if (state == NULL) {
        return NULL;
    }
 
@@ -411,7 +411,7 @@ that subclass, which may be defined in different module than yours.
           pass
 
 For a method to get its "defining class", it must use the
-:c:data:`METH_METHOD | METH_FASTCALL | METH_KEYWORDS`
+:data:`METH_METHOD | METH_FASTCALL | METH_KEYWORDS`
 :c:type:`calling convention <PyMethodDef>`
 and the corresponding :c:type:`PyCMethod` signature::
 
@@ -435,7 +435,7 @@ For example::
            PyObject *kwnames)
    {
        my_struct *state = (my_struct*)PyType_GetModuleState(defining_class);
-       if (state === NULL) {
+       if (state == NULL) {
            return NULL;
        }
        ... // rest of logic
@@ -461,7 +461,7 @@ Module State Access from Slot Methods, Getters and Setters
 
    .. After adding to limited API:
 
-      If you use the `limited API <https://docs.python.org/3/c-api/stable.html>__,
+      If you use the :ref:`limited API <stable>,
       you must update ``Py_LIMITED_API`` to ``0x030b0000``, losing ABI
       compatibility with earlier versions.
 
@@ -479,7 +479,7 @@ to get the state::
 
     PyObject *module = PyType_GetModuleByDef(Py_TYPE(self), &module_def);
     my_struct *state = (my_struct*)PyModule_GetState(module);
-    if (state === NULL) {
+    if (state == NULL) {
         return NULL;
     }
 

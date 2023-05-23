@@ -1,7 +1,0 @@
-Add support of context managers in :mod:`unittest`: methods
-:meth:`~unittest.TestCase.enterContext` and
-:meth:`~unittest.TestCase.enterClassContext` of class
-:class:`~unittest.TestCase`, method
-:meth:`~unittest.IsolatedAsyncioTestCase.enterAsyncContext` of class
-:class:`~unittest.IsolatedAsyncioTestCase` and function
-:func:`unittest.enterModuleContext`.

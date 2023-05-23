@@ -27,12 +27,14 @@ def suppress_known_deprecation():
 
 class APITests(
     fixtures.EggInfoPkg,
+    fixtures.EggInfoPkgPipInstalledNoToplevel,
+    fixtures.EggInfoPkgPipInstalledNoModules,
+    fixtures.EggInfoPkgSourcesFallback,
     fixtures.DistInfoPkg,
     fixtures.DistInfoPkgWithDot,
     fixtures.EggInfoFile,
     unittest.TestCase,
 ):
-
     version_pattern = r'\d+\.\d+(\.\d)?'
 
     def test_retrieves_version_of_self(self):
@@ -63,15 +65,28 @@ class APITests(
                     distribution(prefix)
 
     def test_for_top_level(self):
-        self.assertEqual(
-            distribution('egginfo-pkg').read_text('top_level.txt').strip(), 'mod'
-        )
+        tests = [
+            ('egginfo-pkg', 'mod'),
+            ('egg_with_no_modules-pkg', ''),
+        ]
+        for pkg_name, expect_content in tests:
+            with self.subTest(pkg_name):
+                self.assertEqual(
+                    distribution(pkg_name).read_text('top_level.txt').strip(),
+                    expect_content,
+                )
 
     def test_read_text(self):
-        top_level = [
-            path for path in files('egginfo-pkg') if path.name == 'top_level.txt'
-        ][0]
-        self.assertEqual(top_level.read_text(), 'mod\n')
+        tests = [
+            ('egginfo-pkg', 'mod\n'),
+            ('egg_with_no_modules-pkg', '\n'),
+        ]
+        for pkg_name, expect_content in tests:
+            with self.subTest(pkg_name):
+                top_level = [
+                    path for path in files(pkg_name) if path.name == 'top_level.txt'
+                ][0]
+                self.assertEqual(top_level.read_text(), expect_content)
 
     def test_entry_points(self):
         eps = entry_points()
@@ -124,62 +139,6 @@ class APITests(
     def test_entry_points_missing_group(self):
         assert entry_points(group='missing') == ()
 
-    def test_entry_points_dict_construction(self):
-        """
-        Prior versions of entry_points() returned simple lists and
-        allowed casting those lists into maps by name using ``dict()``.
-        Capture this now deprecated use-case.
-        """
-        with suppress_known_deprecation() as caught:
-            eps = dict(entry_points(group='entries'))
-
-        assert 'main' in eps
-        assert eps['main'] == entry_points(group='entries')['main']
-
-        # check warning
-        expected = next(iter(caught))
-        assert expected.category is DeprecationWarning
-        assert "Construction of dict of EntryPoints is deprecated" in str(expected)
-
-    def test_entry_points_by_index(self):
-        """
-        Prior versions of Distribution.entry_points would return a
-        tuple that allowed access by index.
-        Capture this now deprecated use-case
-        See python/importlib_metadata#300 and bpo-44246.
-        """
-        eps = distribution('distinfo-pkg').entry_points
-        with suppress_known_deprecation() as caught:
-            eps[0]
-
-        # check warning
-        expected = next(iter(caught))
-        assert expected.category is DeprecationWarning
-        assert "Accessing entry points by index is deprecated" in str(expected)
-
-    def test_entry_points_groups_getitem(self):
-        """
-        Prior versions of entry_points() returned a dict. Ensure
-        that callers using '.__getitem__()' are supported but warned to
-        migrate.
-        """
-        with suppress_known_deprecation():
-            entry_points()['entries'] == entry_points(group='entries')
-
-            with self.assertRaises(KeyError):
-                entry_points()['missing']
-
-    def test_entry_points_groups_get(self):
-        """
-        Prior versions of entry_points() returned a dict. Ensure
-        that callers using '.get()' are supported but warned to
-        migrate.
-        """
-        with suppress_known_deprecation():
-            entry_points().get('missing', 'default') == 'default'
-            entry_points().get('entries', 'default') == entry_points()['entries']
-            entry_points().get('missing', ()) == ()
-
     def test_entry_points_allows_no_attributes(self):
         ep = entry_points().select(group='entries', name='main')
         with self.assertRaises(AttributeError):
@@ -192,6 +151,28 @@ class APITests(
         assert md['Name'] == 'egginfo-pkg'
         classifiers = md.get_all('Classifier')
         assert 'Topic :: Software Development :: Libraries' in classifiers
+
+    def test_missing_key_legacy(self):
+        """
+        Requesting a missing key will still return None, but warn.
+        """
+        md = metadata('distinfo-pkg')
+        with suppress_known_deprecation():
+            assert md['does-not-exist'] is None
+
+    def test_get_key(self):
+        """
+        Getting a key gets the key.
+        """
+        md = metadata('egginfo-pkg')
+        assert md.get('Name') == 'egginfo-pkg'
+
+    def test_get_missing_key(self):
+        """
+        Requesting a missing key will return None.
+        """
+        md = metadata('distinfo-pkg')
+        assert md.get('does-not-exist') is None
 
     @staticmethod
     def _test_files(files):
@@ -215,6 +196,9 @@ class APITests(
 
     def test_files_egg_info(self):
         self._test_files(files('egginfo-pkg'))
+        self._test_files(files('egg_with_module-pkg'))
+        self._test_files(files('egg_with_no_modules-pkg'))
+        self._test_files(files('sources_fallback-pkg'))
 
     def test_version_egg_info_file(self):
         self.assertEqual(version('egginfo-file'), '0.1')

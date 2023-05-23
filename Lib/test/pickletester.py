@@ -1,3 +1,4 @@
+import builtins
 import collections
 import copyreg
 import dbm
@@ -11,6 +12,7 @@ import shutil
 import struct
 import sys
 import threading
+import types
 import unittest
 import weakref
 from textwrap import dedent
@@ -1980,6 +1982,33 @@ class AbstractPickleTests:
                 u = self.loads(s)
                 self.assertIs(type(singleton), u)
 
+    def test_builtin_types(self):
+        for t in builtins.__dict__.values():
+            if isinstance(t, type) and not issubclass(t, BaseException):
+                for proto in protocols:
+                    s = self.dumps(t, proto)
+                    self.assertIs(self.loads(s), t)
+
+    def test_builtin_exceptions(self):
+        for t in builtins.__dict__.values():
+            if isinstance(t, type) and issubclass(t, BaseException):
+                for proto in protocols:
+                    s = self.dumps(t, proto)
+                    u = self.loads(s)
+                    if proto <= 2 and issubclass(t, OSError) and t is not BlockingIOError:
+                        self.assertIs(u, OSError)
+                    elif proto <= 2 and issubclass(t, ImportError):
+                        self.assertIs(u, ImportError)
+                    else:
+                        self.assertIs(u, t)
+
+    def test_builtin_functions(self):
+        for t in builtins.__dict__.values():
+            if isinstance(t, types.BuiltinFunctionType):
+                for proto in protocols:
+                    s = self.dumps(t, proto)
+                    self.assertIs(self.loads(s), t)
+
     # Tests for protocol 2
 
     def test_proto(self):
@@ -2776,6 +2805,15 @@ class AbstractPickleTests:
                     unpickled = self.loads(self.dumps(method, proto))
                     self.assertEqual(method(obj), unpickled(obj))
 
+        descriptors = (
+            PyMethodsTest.__dict__['cheese'],  # static method descriptor
+            PyMethodsTest.__dict__['wine'],  # class method descriptor
+        )
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            for descr in descriptors:
+                with self.subTest(proto=proto, descr=descr):
+                    self.assertRaises(TypeError, self.dumps, descr, proto)
+
     def test_c_methods(self):
         global Subclass
         class Subclass(tuple):
@@ -2810,6 +2848,15 @@ class AbstractPickleTests:
                 with self.subTest(proto=proto, method=method):
                     unpickled = self.loads(self.dumps(method, proto))
                     self.assertEqual(method(*args), unpickled(*args))
+
+        descriptors = (
+            bytearray.__dict__['maketrans'],  # built-in static method descriptor
+            dict.__dict__['fromkeys'],  # built-in class method descriptor
+        )
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            for descr in descriptors:
+                with self.subTest(proto=proto, descr=descr):
+                    self.assertRaises(TypeError, self.dumps, descr, proto)
 
     def test_compat_pickle(self):
         tests = [

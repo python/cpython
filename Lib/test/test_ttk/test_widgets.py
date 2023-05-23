@@ -8,8 +8,7 @@ from test.test_ttk_textonly import MockTclObj
 from test.test_tkinter.support import (AbstractTkTest, tcl_version, get_tk_patchlevel,
                                   simulate_mouse_click, AbstractDefaultRootTest)
 from test.test_tkinter.widget_tests import (add_standard_options,
-    AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests,
-    setUpModule)
+    AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests)
 
 requires('gui')
 
@@ -50,7 +49,6 @@ class StandardTtkOptionsTests(StandardOptionsTests):
         widget2 = self.create(class_='Foo')
         self.assertEqual(widget2['class'], 'Foo')
         # XXX
-        pass
 
 
 class WidgetTest(AbstractTkTest, unittest.TestCase):
@@ -274,6 +272,21 @@ class CheckbuttonTest(AbstractLabelTest, unittest.TestCase):
         self.assertLessEqual(len(success), 1)
         self.assertEqual(cbtn['offvalue'],
             cbtn.tk.globalgetvar(cbtn['variable']))
+
+    def test_unique_variables(self):
+        frames = []
+        buttons = []
+        for i in range(2):
+            f = ttk.Frame(self.root)
+            f.pack()
+            frames.append(f)
+            for j in 'AB':
+                b = ttk.Checkbutton(f, text=j)
+                b.pack()
+                buttons.append(b)
+        variables = [str(b['variable']) for b in buttons]
+        print(variables)
+        self.assertEqual(len(set(variables)), 4, variables)
 
 
 @add_standard_options(IntegerSizeTests, StandardTtkOptionsTests)

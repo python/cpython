@@ -20,7 +20,7 @@ import tempfile
 from test.support import (captured_stdout, captured_stderr,
                           skip_if_broken_multiprocessing_synchronize, verbose,
                           requires_subprocess, is_emscripten, is_wasi,
-                          requires_venv_with_pip)
+                          requires_venv_with_pip, TEST_HOME_DIR)
 from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree)
 import unittest
 import venv
@@ -216,7 +216,7 @@ class BasicTest(BaseTest):
             if sys.platform == 'win32':
                 expect_exe = os.path.normcase(os.path.realpath(expect_exe))
 
-            def pip_cmd_checker(cmd):
+            def pip_cmd_checker(cmd, **kwargs):
                 cmd[0] = os.path.normcase(cmd[0])
                 self.assertEqual(
                     cmd,
@@ -227,12 +227,11 @@ class BasicTest(BaseTest):
                         'install',
                         '--upgrade',
                         'pip',
-                        'setuptools'
                     ]
                 )
 
             fake_context = builder.ensure_directories(fake_env_dir)
-            with patch('venv.subprocess.check_call', pip_cmd_checker):
+            with patch('venv.subprocess.check_output', pip_cmd_checker):
                 builder.upgrade_dependencies(fake_context)
 
     @requireVenvCreate
@@ -482,6 +481,20 @@ class BasicTest(BaseTest):
             'pool.terminate()'])
         self.assertEqual(out.strip(), "python".encode())
 
+    @requireVenvCreate
+    def test_multiprocessing_recursion(self):
+        """
+        Test that the multiprocessing is able to spawn itself
+        """
+        skip_if_broken_multiprocessing_synchronize()
+
+        rmtree(self.env_dir)
+        self.run_with_capture(venv.create, self.env_dir)
+        envpy = os.path.join(os.path.realpath(self.env_dir),
+                             self.bindir, self.exe)
+        script = os.path.join(TEST_HOME_DIR, '_test_venv_multiprocessing.py')
+        subprocess.check_call([envpy, script])
+
     @unittest.skipIf(os.name == 'nt', 'not relevant on Windows')
     def test_deactivate_with_strict_bash_opts(self):
         bash = shutil.which("bash")
@@ -522,6 +535,102 @@ class BasicTest(BaseTest):
         bad_itempath = self.env_dir + os.pathsep
         self.assertRaises(ValueError, venv.create, bad_itempath)
         self.assertRaises(ValueError, venv.create, pathlib.Path(bad_itempath))
+
+    @unittest.skipIf(os.name == 'nt', 'not relevant on Windows')
+    @requireVenvCreate
+    def test_zippath_from_non_installed_posix(self):
+        """
+        Test that when create venv from non-installed python, the zip path
+        value is as expected.
+        """
+        rmtree(self.env_dir)
+        # First try to create a non-installed python. It's not a real full
+        # functional non-installed python, but enough for this test.
+        platlibdir = sys.platlibdir
+        non_installed_dir = os.path.realpath(tempfile.mkdtemp())
+        self.addCleanup(rmtree, non_installed_dir)
+        bindir = os.path.join(non_installed_dir, self.bindir)
+        os.mkdir(bindir)
+        shutil.copy2(sys.executable, bindir)
+        libdir = os.path.join(non_installed_dir, platlibdir, self.lib[1])
+        os.makedirs(libdir)
+        landmark = os.path.join(libdir, "os.py")
+        stdlib_zip = "python%d%d.zip" % sys.version_info[:2]
+        zip_landmark = os.path.join(non_installed_dir,
+                                    platlibdir,
+                                    stdlib_zip)
+        additional_pythonpath_for_non_installed = []
+        # Copy stdlib files to the non-installed python so venv can
+        # correctly calculate the prefix.
+        for eachpath in sys.path:
+            if eachpath.endswith(".zip"):
+                if os.path.isfile(eachpath):
+                    shutil.copyfile(
+                        eachpath,
+                        os.path.join(non_installed_dir, platlibdir))
+            elif os.path.isfile(os.path.join(eachpath, "os.py")):
+                for name in os.listdir(eachpath):
+                    if name == "site-packages":
+                        continue
+                    fn = os.path.join(eachpath, name)
+                    if os.path.isfile(fn):
+                        shutil.copy(fn, libdir)
+                    elif os.path.isdir(fn):
+                        shutil.copytree(fn, os.path.join(libdir, name))
+            else:
+                additional_pythonpath_for_non_installed.append(
+                    eachpath)
+        cmd = [os.path.join(non_installed_dir, self.bindir, self.exe),
+               "-m",
+               "venv",
+               "--without-pip",
+               self.env_dir]
+        # Our fake non-installed python is not fully functional because
+        # it cannot find the extensions. Set PYTHONPATH so it can run the
+        # venv module correctly.
+        pythonpath = os.pathsep.join(
+            additional_pythonpath_for_non_installed)
+        # For python built with shared enabled. We need to set
+        # LD_LIBRARY_PATH so the non-installed python can find and link
+        # libpython.so
+        ld_library_path = sysconfig.get_config_var("LIBDIR")
+        if not ld_library_path or sysconfig.is_python_build():
+            ld_library_path = os.path.abspath(os.path.dirname(sys.executable))
+        if sys.platform == 'darwin':
+            ld_library_path_env = "DYLD_LIBRARY_PATH"
+        else:
+            ld_library_path_env = "LD_LIBRARY_PATH"
+        # Note that in address sanitizer mode, the current runtime
+        # implementation leaks memory due to not being able to correctly
+        # clean all unicode objects during runtime shutdown. Therefore,
+        # this uses subprocess.run instead of subprocess.check_call to
+        # maintain the core of the test while not failing due to the refleaks.
+        # This should be able to use check_call once all refleaks are fixed.
+        subprocess.run(cmd,
+                       env={"PYTHONPATH": pythonpath,
+                            ld_library_path_env: ld_library_path})
+        envpy = os.path.join(self.env_dir, self.bindir, self.exe)
+        # Now check the venv created from the non-installed python has
+        # correct zip path in pythonpath.
+        cmd = [envpy, '-S', '-c', 'import sys; print(sys.path)']
+        out, err = check_output(cmd)
+        self.assertTrue(zip_landmark.encode() in out)
+
+    def test_activate_shell_script_has_no_dos_newlines(self):
+        """
+        Test that the `activate` shell script contains no CR LF.
+        This is relevant for Cygwin, as the Windows build might have
+        converted line endings accidentally.
+        """
+        venv_dir = pathlib.Path(self.env_dir)
+        rmtree(venv_dir)
+        [[scripts_dir], *_] = self.ENV_SUBDIRS
+        script_path = venv_dir / scripts_dir / "activate"
+        venv.create(venv_dir)
+        with open(script_path, 'rb') as script:
+            for i, line in enumerate(script, 1):
+                error_message = f"CR LF found in line {i}"
+                self.assertFalse(line.endswith(b'\r\n'), error_message)
 
 @requireVenvCreate
 class EnsurePipTest(BaseTest):
@@ -641,7 +750,6 @@ class EnsurePipTest(BaseTest):
         # future pip versions, this test can likely be relaxed further.
         out = out.decode("latin-1") # Force to text, prevent decoding errors
         self.assertIn("Successfully uninstalled pip", out)
-        self.assertIn("Successfully uninstalled setuptools", out)
         # Check pip is now gone from the virtual environment. This only
         # applies in the system_site_packages=False case, because in the
         # other case, pip may still be available in the system site-packages
@@ -659,8 +767,8 @@ class EnsurePipTest(BaseTest):
         try:
             yield
         except subprocess.CalledProcessError as exc:
-            out = exc.output.decode(errors="replace")
-            err = exc.stderr.decode(errors="replace")
+            out = (exc.output or b'').decode(errors="replace")
+            err = (exc.stderr or b'').decode(errors="replace")
             self.fail(
                 f"{exc}\n\n"
                 f"**Subprocess Output**\n{out}\n\n"

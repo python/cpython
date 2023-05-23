@@ -23,6 +23,7 @@
 
 /* #define MALLOC_CLOSURE_DEBUG */ /* enable for some debugging output */
 
+
 /******************************************************************/
 
 typedef union _tagITEM {
@@ -96,7 +97,11 @@ void Py_ffi_closure_free(void *p)
 {
 #ifdef HAVE_FFI_CLOSURE_ALLOC
 #ifdef USING_APPLE_OS_LIBFFI
+# ifdef HAVE_BUILTIN_AVAILABLE
     if (__builtin_available(macos 10.15, ios 13, watchos 6, tvos 13, *)) {
+#  else
+    if (ffi_closure_free != NULL) {
+#  endif
 #endif
         ffi_closure_free(p);
         return;
@@ -114,7 +119,11 @@ void *Py_ffi_closure_alloc(size_t size, void** codeloc)
 {
 #ifdef HAVE_FFI_CLOSURE_ALLOC
 #ifdef USING_APPLE_OS_LIBFFI
+# ifdef HAVE_BUILTIN_AVAILABLE
     if (__builtin_available(macos 10.15, ios 13, watchos 6, tvos 13, *)) {
+# else
+    if (ffi_closure_alloc != NULL) {
+#  endif
 #endif
         return ffi_closure_alloc(size, codeloc);
 #ifdef USING_APPLE_OS_LIBFFI

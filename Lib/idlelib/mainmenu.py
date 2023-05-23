@@ -111,7 +111,7 @@ menudefs = [
  ('help', [
    ('_About IDLE', '<<about-idle>>'),
    None,
-   ('_IDLE Help', '<<help>>'),
+   ('_IDLE Doc', '<<help>>'),
    ('Python _Docs', '<<python-docs>>'),
    ]),
 ]

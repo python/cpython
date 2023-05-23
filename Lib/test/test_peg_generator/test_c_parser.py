@@ -24,7 +24,6 @@ with test_tools.imports_under_tool("peg_generator"):
         generate_parser_c_extension,
         generate_c_parser_source,
     )
-    from pegen.ast_dump import ast_dump
 
 
 TEST_TEMPLATE = """

@@ -60,7 +60,7 @@ class FutureTest(unittest.TestCase):
     def test_badfuture7(self):
         with self.assertRaises(SyntaxError) as cm:
             from test import badsyntax_future7
-        self.check_syntax_error(cm.exception, "badsyntax_future7", 3, 53)
+        self.check_syntax_error(cm.exception, "badsyntax_future7", 3, 54)
 
     def test_badfuture8(self):
         with self.assertRaises(SyntaxError) as cm:

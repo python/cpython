@@ -1,2 +1,0 @@
-Fix an issue where :mod:`dis` utilities could report missing or incorrect
-position information in the presence of ``CACHE`` entries.

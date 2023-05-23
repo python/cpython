@@ -702,7 +702,7 @@ class PydocDocTest(unittest.TestCase):
     def test_synopsis_sourceless(self):
         os = import_helper.import_fresh_module('os')
         expected = os.__doc__.splitlines()[0]
-        filename = os.__cached__
+        filename = os.__spec__.cached
         synopsis = pydoc.synopsis(filename)
 
         self.assertEqual(synopsis, expected)

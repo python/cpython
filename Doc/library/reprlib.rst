@@ -19,7 +19,7 @@ This module provides a class, an instance, and a function:
 
 .. class:: Repr(*, maxlevel=6, maxtuple=6, maxlist=6, maxarray=5, maxdict=4, \
                 maxset=6, maxfrozenset=6, maxdeque=6, maxstring=30, maxlong=40, \
-                maxother=30, fillvalue="...")
+                maxother=30, fillvalue="...", indent=None)
 
    Class which provides formatting services useful in implementing functions
    similar to the built-in :func:`repr`; size limits for  different object types
@@ -140,6 +140,66 @@ which format specific object types.
    This limit is used to control the size of object types for which no specific
    formatting method is available on the :class:`Repr` object. It is applied in a
    similar manner as :attr:`maxstring`.  The default is ``20``.
+
+
+.. attribute:: Repr.indent
+
+   If this attribute is set to ``None`` (the default), the output is formatted
+   with no line breaks or indentation, like the standard :func:`repr`.
+   For example:
+
+   .. code-block:: pycon
+
+      >>> example = [
+              1, 'spam', {'a': 2, 'b': 'spam eggs', 'c': {3: 4.5, 6: []}}, 'ham']
+      >>> import reprlib
+      >>> aRepr = reprlib.Repr()
+      >>> print(aRepr.repr(example))
+      [1, 'spam', {'a': 2, 'b': 'spam eggs', 'c': {3: 4.5, 6: []}}, 'ham']
+
+   If :attr:`~Repr.indent` is set to a string, each recursion level
+   is placed on its own line, indented by that string:
+
+   .. code-block:: pycon
+
+      >>> aRepr.indent = '-->'
+      >>> print(aRepr.repr(example))
+      [
+      -->1,
+      -->'spam',
+      -->{
+      -->-->'a': 2,
+      -->-->'b': 'spam eggs',
+      -->-->'c': {
+      -->-->-->3: 4.5,
+      -->-->-->6: [],
+      -->-->},
+      -->},
+      -->'ham',
+      ]
+
+   Setting :attr:`~Repr.indent` to a positive integer value behaves as if it
+   was set to a string with that number of spaces:
+
+   .. code-block:: pycon
+
+      >>> aRepr.indent = 4
+      >>> print(aRepr.repr(example))
+      [
+          1,
+          'spam',
+          {
+              'a': 2,
+              'b': 'spam eggs',
+              'c': {
+                  3: 4.5,
+                  6: [],
+              },
+          },
+          'ham',
+      ]
+
+   .. versionadded:: 3.12
 
 
 .. method:: Repr.repr(obj)

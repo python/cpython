@@ -13,6 +13,7 @@ import array
 import io
 import copy
 import pickle
+import struct
 
 from test.support import import_helper
 
@@ -526,6 +527,14 @@ class OtherTest(unittest.TestCase):
                 m[:2] = memoryview(p6).cast(format)[:2]
                 m[2:] = memoryview(p6).cast(format)[2:]
                 self.assertEqual(d.value, 0.6)
+
+    def test_half_float(self):
+        half_data = struct.pack('eee', 0.0, -1.5, 1.5)
+        float_data = struct.pack('fff', 0.0, -1.5, 1.5)
+        half_view = memoryview(half_data).cast('e')
+        float_view = memoryview(float_data).cast('f')
+        self.assertEqual(half_view.nbytes * 2, float_view.nbytes)
+        self.assertListEqual(half_view.tolist(), float_view.tolist())
 
     def test_memoryview_hex(self):
         # Issue #9951: memoryview.hex() segfaults with non-contiguous buffers.

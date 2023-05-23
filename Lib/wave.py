@@ -83,6 +83,9 @@ class Error(Exception):
     pass
 
 WAVE_FORMAT_PCM = 0x0001
+WAVE_FORMAT_EXTENSIBLE = 0xFFFE
+# Derived from uuid.UUID("00000001-0000-0010-8000-00aa00389b71").bytes_le
+KSDATAFORMAT_SUBTYPE_PCM = b'\x01\x00\x00\x00\x00\x00\x10\x00\x80\x00\x00\xaa\x008\x9bq'
 
 _array_fmts = None, 'b', 'h', None, 'i'
 
@@ -377,16 +380,31 @@ class Wave_read:
             wFormatTag, self._nchannels, self._framerate, dwAvgBytesPerSec, wBlockAlign = struct.unpack_from('<HHLLH', chunk.read(14))
         except struct.error:
             raise EOFError from None
-        if wFormatTag == WAVE_FORMAT_PCM:
+        if wFormatTag != WAVE_FORMAT_PCM and wFormatTag != WAVE_FORMAT_EXTENSIBLE:
+            raise Error('unknown format: %r' % (wFormatTag,))
+        try:
+            sampwidth = struct.unpack_from('<H', chunk.read(2))[0]
+        except struct.error:
+            raise EOFError from None
+        if wFormatTag == WAVE_FORMAT_EXTENSIBLE:
             try:
-                sampwidth = struct.unpack_from('<H', chunk.read(2))[0]
+                cbSize, wValidBitsPerSample, dwChannelMask = struct.unpack_from('<HHL', chunk.read(8))
+                # Read the entire UUID from the chunk
+                SubFormat = chunk.read(16)
+                if len(SubFormat) < 16:
+                    raise EOFError
             except struct.error:
                 raise EOFError from None
-            self._sampwidth = (sampwidth + 7) // 8
-            if not self._sampwidth:
-                raise Error('bad sample width')
-        else:
-            raise Error('unknown format: %r' % (wFormatTag,))
+            if SubFormat != KSDATAFORMAT_SUBTYPE_PCM:
+                try:
+                    import uuid
+                    subformat_msg = f'unknown extended format: {uuid.UUID(bytes_le=SubFormat)}'
+                except Exception:
+                    subformat_msg = 'unknown extended format'
+                raise Error(subformat_msg)
+        self._sampwidth = (sampwidth + 7) // 8
+        if not self._sampwidth:
+            raise Error('bad sample width')
         if not self._nchannels:
             raise Error('bad # of channels')
         self._framesize = self._nchannels * self._sampwidth
