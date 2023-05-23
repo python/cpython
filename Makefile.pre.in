@@ -597,7 +597,7 @@ LIBHACL_HEADERS= \
 
 LIBHACL_SHA2_HEADERS= \
                 Modules/_hacl/Hacl_Hash_SHA2.h \
-                Modules/_hacl/internal/Hacl_SHA2_Generic.h \
+                Modules/_hacl/internal/Hacl_Hash_SHA2.h \
 		$(LIBHACL_HEADERS)
 
 #########################################################################
