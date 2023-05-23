@@ -85,7 +85,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: config.cache
-          key: ${{ github.job }}-${{ hashFiles('configure', 'configure.ac') }}
+          key: ${{ github.job }}-${{ runner.os }}-${{ hashFiles('configure', 'configure.ac') }}
       - uses: actions/setup-python@v3
       - name: Install Dependencies
         run: sudo ./.github/workflows/posix-deps-apt.sh
