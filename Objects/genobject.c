@@ -411,20 +411,8 @@ gen_close(PyGenObject *gen, PyObject *args)
     if (PyErr_ExceptionMatches(PyExc_StopIteration)) {
         /* retrieve the StopIteration exception instance being handled, and
          * extract its value */
-        PyObject *exc, *args, *value;
-        exc = PyErr_GetRaisedException();  /* clears the error indicator */
-        if (exc == NULL || !PyExceptionInstance_Check(exc)) {
-            Py_XDECREF(exc);
-            Py_RETURN_NONE;
-        }
-        args = ((PyBaseExceptionObject*)exc)->args;
-        if (args == NULL || !PyTuple_Check(args)
-                || PyTuple_GET_SIZE(args) == 0) {
-            Py_DECREF(exc);
-            Py_RETURN_NONE;
-        }
-        value = PyTuple_GET_ITEM(args, 0);
-        Py_INCREF(value);
+        PyObject *exc = PyErr_GetRaisedException();  /* clears the error indicator */
+        PyObject *value = Py_NewRef(((PyStopIterationObject *)exc)->value);
         Py_DECREF(exc);
         return value;
     }
