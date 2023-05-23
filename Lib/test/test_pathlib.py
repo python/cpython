@@ -2080,26 +2080,6 @@ class _BasePathTest(object):
         finally:
             os.chdir(old_cwd)
 
-    def test_with(self):
-        p = self.cls(BASE)
-        it = p.iterdir()
-        it2 = p.iterdir()
-        next(it2)
-        # bpo-46556: path context managers are deprecated in Python 3.11.
-        with self.assertWarns(DeprecationWarning):
-            with p:
-                pass
-        # Using a path as a context manager is a no-op, thus the following
-        # operations should still succeed after the context manage exits.
-        next(it)
-        next(it2)
-        p.exists()
-        p.resolve()
-        p.absolute()
-        with self.assertWarns(DeprecationWarning):
-            with p:
-                pass
-
     @os_helper.skip_unless_working_chmod
     def test_chmod(self):
         p = self.cls(BASE) / 'fileA'
