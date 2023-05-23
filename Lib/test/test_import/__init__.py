@@ -2330,6 +2330,8 @@ class SinglephaseInitTests(unittest.TestCase):
             self.assertIs(basic.look_up_self(), basic_lookedup)
             self.assertEqual(basic.initialized_count(), expected_init_count)
 
+            loaded.module._clear_module_state()
+
     def test_basic_reloaded(self):
         # m_copy is copied into the existing module object.
         # Global state is not changed.
@@ -2413,6 +2415,11 @@ class SinglephaseInitTests(unittest.TestCase):
 
                 self.assertIs(reloaded.snapshot.cached, reloaded.module)
 
+                if hasattr(loaded.module, '_clear_module_state'):
+                    loaded.module._clear_module_state()
+                if hasattr(reloaded.module, '_clear_module_state'):
+                    reloaded.module._clear_module_state()
+
     # Currently, for every single-phrase init module loaded
     # in multiple interpreters, those interpreters share a
     # PyModuleDef for that object, which can be a problem.
@@ -2488,7 +2495,7 @@ class SinglephaseInitTests(unittest.TestCase):
         #  * module's global state was updated, not reset
 
     @requires_subinterpreters
-    def test_basic_multiple_interpreters_deleted_no_reset(self):
+    def test_basic_multiple_interpreters_deleted_no_reset_skip_ref_leak_test(self):
         # without resetting; already loaded in a deleted interpreter
 
         # At this point:

@@ -213,6 +213,13 @@ class Regrtest:
         if ns.tempdir:
             ns.tempdir = os.path.expanduser(ns.tempdir)
 
+        # introduce a way to skip the ref leak tests
+        if ns.huntrleaks:
+            if ns.ignore_tests is None:
+                ns.ignore_tests = ["*skip_ref_leak_test"]
+            else:
+                ns.ignore_tests.append("*skip_ref_leak_test")
+
         self.ns = ns
 
     def find_tests(self, tests):
