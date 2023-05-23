@@ -901,6 +901,12 @@ class CanvasTest(AbstractWidgetTest, unittest.TestCase):
         c.coords(i, [21, 31, 41, 51, 61, 11])
         self.assertEqual(c.coords(i), [21.0, 31.0, 41.0, 51.0, 61.0, 11.0])
 
+        c.coords(i, (22, 32), (42, 52), (62, 12))
+        self.assertEqual(c.coords(i), [22.0, 32.0, 42.0, 52.0, 62.0, 12.0])
+
+        c.coords(i, [(23, 33), (43, 53), (63, 13)])
+        self.assertEqual(c.coords(i), [23.0, 33.0, 43.0, 53.0, 63.0, 13.0])
+
         c.coords(i, 20, 30, 60, 10)
         self.assertEqual(c.coords(i), [20.0, 30.0, 60.0, 10.0])
         self.assertEqual(c.bbox(i), (18, 8, 62, 32))

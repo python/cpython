@@ -16,7 +16,6 @@ At large scale, the structure of the module is following:
   no_type_check_decorator.
 * Generic aliases for collections.abc ABCs and few additional protocols.
 * Special types: NewType, NamedTuple, TypedDict.
-* Wrapper submodules for re and io related types.
 """
 
 from abc import abstractmethod, ABCMeta
@@ -27,7 +26,7 @@ import copyreg
 import contextlib
 import functools
 import operator
-import re as stdlib_re  # Avoid confusion with the re we export.
+import re as stdlib_re  # Avoid confusion with the typing.re namespace on <=3.11
 import sys
 import types
 import warnings
@@ -157,10 +156,6 @@ __all__ = [
     'TypeAliasType',
     'Unpack',
 ]
-
-# The pseudo-submodules 're' and 'io' are part of the public
-# namespace, but excluded from __all__ because they might stomp on
-# legitimate imports of those modules.
 
 
 def _type_convert(arg, module=None, *, allow_special_forms=False):
@@ -1779,12 +1774,13 @@ class _ProtocolMeta(ABCMeta):
     # but is necessary for several reasons...
     def __init__(cls, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        cls.__protocol_attrs__ = _get_protocol_attrs(cls)
-        # PEP 544 prohibits using issubclass()
-        # with protocols that have non-method members.
-        cls.__callable_proto_members_only__ = all(
-            callable(getattr(cls, attr, None)) for attr in cls.__protocol_attrs__
-        )
+        if getattr(cls, "_is_protocol", False):
+            cls.__protocol_attrs__ = _get_protocol_attrs(cls)
+            # PEP 544 prohibits using issubclass()
+            # with protocols that have non-method members.
+            cls.__callable_proto_members_only__ = all(
+                callable(getattr(cls, attr, None)) for attr in cls.__protocol_attrs__
+            )
 
     def __subclasscheck__(cls, other):
         if (
@@ -1800,9 +1796,11 @@ class _ProtocolMeta(ABCMeta):
     def __instancecheck__(cls, instance):
         # We need this method for situations where attributes are
         # assigned in __init__.
-        is_protocol_cls = getattr(cls, "_is_protocol", False)
+        if not getattr(cls, "_is_protocol", False):
+            # i.e., it's a concrete subclass of a protocol
+            return super().__instancecheck__(instance)
+
         if (
-            is_protocol_cls and
             not getattr(cls, '_is_runtime_protocol', False) and
             not _allow_reckless_class_checks(depth=2)
         ):
@@ -1812,17 +1810,16 @@ class _ProtocolMeta(ABCMeta):
         if super().__instancecheck__(instance):
             return True
 
-        if is_protocol_cls:
-            getattr_static = _lazy_load_getattr_static()
-            for attr in cls.__protocol_attrs__:
-                try:
-                    val = getattr_static(instance, attr)
-                except AttributeError:
-                    break
-                if val is None and callable(getattr(cls, attr, None)):
-                    break
-            else:
-                return True
+        getattr_static = _lazy_load_getattr_static()
+        for attr in cls.__protocol_attrs__:
+            try:
+                val = getattr_static(instance, attr)
+            except AttributeError:
+                break
+            if val is None and callable(getattr(cls, attr, None)):
+                break
+        else:
+            return True
 
         return False
 
@@ -3148,44 +3145,8 @@ class TextIO(IO[str]):
         pass
 
 
-class _DeprecatedType(type):
-    def __getattribute__(cls, name):
-        if name not in ("__dict__", "__module__") and name in cls.__dict__:
-            warnings.warn(
-                f"{cls.__name__} is deprecated, import directly "
-                f"from typing instead. {cls.__name__} will be removed "
-                "in Python 3.12.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-        return super().__getattribute__(name)
-
-
-class io(metaclass=_DeprecatedType):
-    """Wrapper namespace for IO generic classes."""
-
-    __all__ = ['IO', 'TextIO', 'BinaryIO']
-    IO = IO
-    TextIO = TextIO
-    BinaryIO = BinaryIO
-
-
-io.__name__ = __name__ + '.io'
-sys.modules[io.__name__] = io
-
 Pattern = _alias(stdlib_re.Pattern, 1)
 Match = _alias(stdlib_re.Match, 1)
-
-class re(metaclass=_DeprecatedType):
-    """Wrapper namespace for re type aliases."""
-
-    __all__ = ['Pattern', 'Match']
-    Pattern = Pattern
-    Match = Match
-
-
-re.__name__ = __name__ + '.re'
-sys.modules[re.__name__] = re
 
 
 def reveal_type[T](obj: T, /) -> T:

@@ -912,6 +912,7 @@ extern "C" {
     INIT_ID(exception), \
     INIT_ID(exp), \
     INIT_ID(extend), \
+    INIT_ID(extra_tokens), \
     INIT_ID(facility), \
     INIT_ID(factory), \
     INIT_ID(false), \
@@ -1065,6 +1066,7 @@ extern "C" {
     INIT_ID(newline), \
     INIT_ID(newlines), \
     INIT_ID(next), \
+    INIT_ID(nlocals), \
     INIT_ID(node_depth), \
     INIT_ID(node_offset), \
     INIT_ID(ns), \
@@ -1186,6 +1188,7 @@ extern "C" {
     INIT_ID(stdin), \
     INIT_ID(stdout), \
     INIT_ID(step), \
+    INIT_ID(steps), \
     INIT_ID(store_name), \
     INIT_ID(strategy), \
     INIT_ID(strftime), \

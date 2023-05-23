@@ -41,8 +41,6 @@ OMIT_FILES = (
     # package management
     "ensurepip/",
     "venv/",
-    # build system
-    "lib2to3/",
     # deprecated
     "uu.py",
     "xdrlib.py",
@@ -78,7 +76,6 @@ OMIT_NETWORKING_FILES = (
     "poplib.py",
     "smtplib.py",
     "socketserver.py",
-    "telnetlib.py",
     # keep urllib.parse for pydoc
     "urllib/error.py",
     "urllib/request.py",

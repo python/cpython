@@ -3154,10 +3154,10 @@ class ProtocolTests(BaseTestCase):
 
         class NonPR(PR): pass
 
-        class C:
+        class C(metaclass=abc.ABCMeta):
             x = 1
 
-        class D:
+        class D(metaclass=abc.ABCMeta):
             def meth(self): pass
 
         self.assertNotIsInstance(C(), NonP)
@@ -3166,6 +3166,20 @@ class ProtocolTests(BaseTestCase):
         self.assertNotIsSubclass(D, NonPR)
         self.assertIsInstance(NonPR(), PR)
         self.assertIsSubclass(NonPR, PR)
+
+        self.assertNotIn("__protocol_attrs__", vars(NonP))
+        self.assertNotIn("__protocol_attrs__", vars(NonPR))
+        self.assertNotIn("__callable_proto_members_only__", vars(NonP))
+        self.assertNotIn("__callable_proto_members_only__", vars(NonPR))
+
+        acceptable_extra_attrs = {
+            '_is_protocol', '_is_runtime_protocol', '__parameters__',
+            '__init__', '__annotations__', '__subclasshook__',
+        }
+        self.assertLessEqual(vars(NonP).keys(), vars(C).keys() | acceptable_extra_attrs)
+        self.assertLessEqual(
+            vars(NonPR).keys(), vars(D).keys() | acceptable_extra_attrs
+        )
 
     def test_custom_subclasshook(self):
         class P(Protocol):
@@ -6795,6 +6809,19 @@ class NamedTupleTests(BaseTestCase):
                 with self.assertRaises(TypeError):
                     G[int, str]
 
+    def test_generic_pep695(self):
+        class X[T](NamedTuple):
+            x: T
+        T, = X.__type_params__
+        self.assertIsInstance(T, TypeVar)
+        self.assertEqual(T.__name__, 'T')
+        self.assertEqual(X.__bases__, (tuple, Generic))
+        self.assertEqual(X.__orig_bases__, (NamedTuple, Generic[T]))
+        self.assertEqual(X.__mro__, (X, tuple, Generic, object))
+        self.assertEqual(X.__parameters__, (T,))
+        self.assertEqual(X[str].__args__, (str,))
+        self.assertEqual(X[str].__parameters__, ())
+
     def test_non_generic_subscript(self):
         # For backward compatibility, subscription works
         # on arbitrary NamedTuple types.
@@ -7205,6 +7232,20 @@ class TypedDictTests(BaseTestCase):
             {'a': typing.Optional[T], 'b': int, 'c': str}
         )
 
+    def test_pep695_generic_typeddict(self):
+        class A[T](TypedDict):
+            a: T
+
+        T, = A.__type_params__
+        self.assertIsInstance(T, TypeVar)
+        self.assertEqual(T.__name__, 'T')
+        self.assertEqual(A.__bases__, (Generic, dict))
+        self.assertEqual(A.__orig_bases__, (TypedDict, Generic[T]))
+        self.assertEqual(A.__mro__, (A, Generic, dict, object))
+        self.assertEqual(A.__parameters__, (T,))
+        self.assertEqual(A[str].__parameters__, ())
+        self.assertEqual(A[str].__args__, (str,))
+
     def test_generic_inheritance(self):
         class A(TypedDict, Generic[T]):
             a: T
@@ -7488,17 +7529,6 @@ class IOTests(BaseTestCase):
         a = stuff.__annotations__['a']
         self.assertEqual(a.__parameters__, ())
 
-    def test_io_submodule(self):
-        with warnings.catch_warnings(record=True) as w:
-            warnings.filterwarnings("default", category=DeprecationWarning)
-            from typing.io import IO, TextIO, BinaryIO, __all__, __name__
-            self.assertIs(IO, typing.IO)
-            self.assertIs(TextIO, typing.TextIO)
-            self.assertIs(BinaryIO, typing.BinaryIO)
-            self.assertEqual(set(__all__), set(['IO', 'TextIO', 'BinaryIO']))
-            self.assertEqual(__name__, 'typing.io')
-            self.assertEqual(len(w), 1)
-
 
 class RETests(BaseTestCase):
     # Much of this is really testing _TypeAlias.
@@ -7542,16 +7572,6 @@ class RETests(BaseTestCase):
         self.assertEqual(repr(Match), 'typing.Match')
         self.assertEqual(repr(Match[str]), 'typing.Match[str]')
         self.assertEqual(repr(Match[bytes]), 'typing.Match[bytes]')
-
-    def test_re_submodule(self):
-        with warnings.catch_warnings(record=True) as w:
-            warnings.filterwarnings("default", category=DeprecationWarning)
-            from typing.re import Match, Pattern, __all__, __name__
-            self.assertIs(Match, typing.Match)
-            self.assertIs(Pattern, typing.Pattern)
-            self.assertEqual(set(__all__), set(['Match', 'Pattern']))
-            self.assertEqual(__name__, 'typing.re')
-            self.assertEqual(len(w), 1)
 
     def test_cannot_subclass(self):
         with self.assertRaisesRegex(
@@ -8724,7 +8744,7 @@ class AllTests(BaseTestCase):
         # Context managers.
         self.assertIn('ContextManager', a)
         self.assertIn('AsyncContextManager', a)
-        # Check that io and re are not exported.
+        # Check that former namespaces io and re are not exported.
         self.assertNotIn('io', a)
         self.assertNotIn('re', a)
         # Spot-check that stdlib modules aren't exported.
@@ -8744,7 +8764,6 @@ class AllTests(BaseTestCase):
             if k in actual_all or (
                 # avoid private names
                 not k.startswith('_') and
-                k not in {'io', 're'} and
                 # there's a few types and metaclasses that aren't exported
                 not k.endswith(('Meta', '_contra', '_co')) and
                 not k.upper() == k and
