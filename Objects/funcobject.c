@@ -665,6 +665,20 @@ func_get_type_params(PyFunctionObject *op, void *Py_UNUSED(ignored))
     return Py_NewRef(op->func_typeparams);
 }
 
+static int
+func_set_type_params(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
+{
+    /* Not legal to del f.__type_params__ or to set it to anything
+     * other than a tuple object. */
+    if (value == NULL || !PyTuple_Check(value)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "__type_params__ must be set to a tuple");
+        return -1;
+    }
+    Py_XSETREF(op->func_typeparams, Py_NewRef(value));
+    return 0;
+}
+
 PyObject *
 _Py_set_function_type_params(PyThreadState *Py_UNUSED(ignored), PyObject *func,
                              PyObject *type_params)
@@ -687,7 +701,8 @@ static PyGetSetDef func_getsetlist[] = {
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
     {"__name__", (getter)func_get_name, (setter)func_set_name},
     {"__qualname__", (getter)func_get_qualname, (setter)func_set_qualname},
-    {"__type_params__", (getter)func_get_type_params, NULL},
+    {"__type_params__", (getter)func_get_type_params,
+     (setter)func_set_type_params},
     {NULL} /* Sentinel */
 };
 

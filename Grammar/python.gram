@@ -640,12 +640,12 @@ type_alias[stmt_ty]:
 # Type parameter declaration
 # --------------------------
 
-type_params[asdl_typeparam_seq*]: '[' t=type_param_seq  ']' {
-        CHECK_VERSION(asdl_typeparam_seq *, 12, "Type parameter lists are", t) }
+type_params[asdl_type_param_seq*]: '[' t=type_param_seq  ']' {
+        CHECK_VERSION(asdl_type_param_seq *, 12, "Type parameter lists are", t) }
 
-type_param_seq[asdl_typeparam_seq*]: a[asdl_typeparam_seq*]=','.type_param+ [','] { a }
+type_param_seq[asdl_type_param_seq*]: a[asdl_type_param_seq*]=','.type_param+ [','] { a }
 
-type_param[typeparam_ty] (memo):
+type_param[type_param_ty] (memo):
     | a=NAME b=[type_param_bound] { _PyAST_TypeVar(a->v.Name.id, b, EXTRA) }
     | '*' a=NAME colon=":" e=expression {
             RAISE_SYNTAX_ERROR_STARTING_FROM(colon, e->kind == Tuple_kind

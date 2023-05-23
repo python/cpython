@@ -1168,6 +1168,24 @@ class TestSpecifics(unittest.TestCase):
         """)
         compile(code, "<test>", "exec")
 
+    def test_apply_static_swaps(self):
+        def f(x, y):
+            a, a = x, y
+            return a
+        self.assertEqual(f("x", "y"), "y")
+
+    def test_apply_static_swaps_2(self):
+        def f(x, y, z):
+            a, b, a = x, y, z
+            return a
+        self.assertEqual(f("x", "y", "z"), "z")
+
+    def test_apply_static_swaps_3(self):
+        def f(x, y, z):
+            a, a, b = x, y, z
+            return a
+        self.assertEqual(f("x", "y", "z"), "y")
+
 
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):

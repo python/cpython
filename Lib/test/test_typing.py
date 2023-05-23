@@ -367,6 +367,41 @@ class TypeVarTests(BaseTestCase):
         self.assertEqual(T, T)
         # T is an instance of TypeVar
         self.assertIsInstance(T, TypeVar)
+        self.assertEqual(T.__name__, 'T')
+        self.assertEqual(T.__constraints__, ())
+        self.assertIs(T.__bound__, None)
+        self.assertIs(T.__covariant__, False)
+        self.assertIs(T.__contravariant__, False)
+        self.assertIs(T.__infer_variance__, False)
+
+    def test_attributes(self):
+        T_bound = TypeVar('T_bound', bound=int)
+        self.assertEqual(T_bound.__name__, 'T_bound')
+        self.assertEqual(T_bound.__constraints__, ())
+        self.assertIs(T_bound.__bound__, int)
+
+        T_constraints = TypeVar('T_constraints', int, str)
+        self.assertEqual(T_constraints.__name__, 'T_constraints')
+        self.assertEqual(T_constraints.__constraints__, (int, str))
+        self.assertIs(T_constraints.__bound__, None)
+
+        T_co = TypeVar('T_co', covariant=True)
+        self.assertEqual(T_co.__name__, 'T_co')
+        self.assertIs(T_co.__covariant__, True)
+        self.assertIs(T_co.__contravariant__, False)
+        self.assertIs(T_co.__infer_variance__, False)
+
+        T_contra = TypeVar('T_contra', contravariant=True)
+        self.assertEqual(T_contra.__name__, 'T_contra')
+        self.assertIs(T_contra.__covariant__, False)
+        self.assertIs(T_contra.__contravariant__, True)
+        self.assertIs(T_contra.__infer_variance__, False)
+
+        T_infer = TypeVar('T_infer', infer_variance=True)
+        self.assertEqual(T_infer.__name__, 'T_infer')
+        self.assertIs(T_infer.__covariant__, False)
+        self.assertIs(T_infer.__contravariant__, False)
+        self.assertIs(T_infer.__infer_variance__, True)
 
     def test_typevar_instance_type_error(self):
         T = TypeVar('T')
@@ -457,6 +492,12 @@ class TypeVarTests(BaseTestCase):
     def test_no_bivariant(self):
         with self.assertRaises(ValueError):
             TypeVar('T', covariant=True, contravariant=True)
+
+    def test_cannot_combine_explicit_and_infer(self):
+        with self.assertRaises(ValueError):
+            TypeVar('T', covariant=True, infer_variance=True)
+        with self.assertRaises(ValueError):
+            TypeVar('T', contravariant=True, infer_variance=True)
 
     def test_var_substitution(self):
         T = TypeVar('T')
@@ -2654,6 +2695,82 @@ class ProtocolTests(BaseTestCase):
         with self.assertRaises(TypeError):
             issubclass(D, PNonCall)
 
+    def test_no_weird_caching_with_issubclass_after_isinstance(self):
+        @runtime_checkable
+        class Spam(Protocol):
+            x: int
+
+        class Eggs:
+            def __init__(self) -> None:
+                self.x = 42
+
+        self.assertIsInstance(Eggs(), Spam)
+
+        # gh-104555: If we didn't override ABCMeta.__subclasscheck__ in _ProtocolMeta,
+        # TypeError wouldn't be raised here,
+        # as the cached result of the isinstance() check immediately above
+        # would mean the issubclass() call would short-circuit
+        # before we got to the "raise TypeError" line
+        with self.assertRaises(TypeError):
+            issubclass(Eggs, Spam)
+
+    def test_no_weird_caching_with_issubclass_after_isinstance_2(self):
+        @runtime_checkable
+        class Spam(Protocol):
+            x: int
+
+        class Eggs: ...
+
+        self.assertNotIsInstance(Eggs(), Spam)
+
+        # gh-104555: If we didn't override ABCMeta.__subclasscheck__ in _ProtocolMeta,
+        # TypeError wouldn't be raised here,
+        # as the cached result of the isinstance() check immediately above
+        # would mean the issubclass() call would short-circuit
+        # before we got to the "raise TypeError" line
+        with self.assertRaises(TypeError):
+            issubclass(Eggs, Spam)
+
+    def test_no_weird_caching_with_issubclass_after_isinstance_3(self):
+        @runtime_checkable
+        class Spam(Protocol):
+            x: int
+
+        class Eggs:
+            def __getattr__(self, attr):
+                if attr == "x":
+                    return 42
+                raise AttributeError(attr)
+
+        self.assertNotIsInstance(Eggs(), Spam)
+
+        # gh-104555: If we didn't override ABCMeta.__subclasscheck__ in _ProtocolMeta,
+        # TypeError wouldn't be raised here,
+        # as the cached result of the isinstance() check immediately above
+        # would mean the issubclass() call would short-circuit
+        # before we got to the "raise TypeError" line
+        with self.assertRaises(TypeError):
+            issubclass(Eggs, Spam)
+
+    def test_no_weird_caching_with_issubclass_after_isinstance_pep695(self):
+        @runtime_checkable
+        class Spam[T](Protocol):
+            x: T
+
+        class Eggs[T]:
+            def __init__(self, x: T) -> None:
+                self.x = x
+
+        self.assertIsInstance(Eggs(42), Spam)
+
+        # gh-104555: If we didn't override ABCMeta.__subclasscheck__ in _ProtocolMeta,
+        # TypeError wouldn't be raised here,
+        # as the cached result of the isinstance() check immediately above
+        # would mean the issubclass() call would short-circuit
+        # before we got to the "raise TypeError" line
+        with self.assertRaises(TypeError):
+            issubclass(Eggs, Spam)
+
     def test_protocols_isinstance(self):
         T = TypeVar('T')
 
@@ -3037,10 +3154,10 @@ class ProtocolTests(BaseTestCase):
 
         class NonPR(PR): pass
 
-        class C:
+        class C(metaclass=abc.ABCMeta):
             x = 1
 
-        class D:
+        class D(metaclass=abc.ABCMeta):
             def meth(self): pass
 
         self.assertNotIsInstance(C(), NonP)
@@ -3049,6 +3166,20 @@ class ProtocolTests(BaseTestCase):
         self.assertNotIsSubclass(D, NonPR)
         self.assertIsInstance(NonPR(), PR)
         self.assertIsSubclass(NonPR, PR)
+
+        self.assertNotIn("__protocol_attrs__", vars(NonP))
+        self.assertNotIn("__protocol_attrs__", vars(NonPR))
+        self.assertNotIn("__callable_proto_members_only__", vars(NonP))
+        self.assertNotIn("__callable_proto_members_only__", vars(NonPR))
+
+        acceptable_extra_attrs = {
+            '_is_protocol', '_is_runtime_protocol', '__parameters__',
+            '__init__', '__annotations__', '__subclasshook__',
+        }
+        self.assertLessEqual(vars(NonP).keys(), vars(C).keys() | acceptable_extra_attrs)
+        self.assertLessEqual(
+            vars(NonPR).keys(), vars(D).keys() | acceptable_extra_attrs
+        )
 
     def test_custom_subclasshook(self):
         class P(Protocol):
@@ -6678,6 +6809,19 @@ class NamedTupleTests(BaseTestCase):
                 with self.assertRaises(TypeError):
                     G[int, str]
 
+    def test_generic_pep695(self):
+        class X[T](NamedTuple):
+            x: T
+        T, = X.__type_params__
+        self.assertIsInstance(T, TypeVar)
+        self.assertEqual(T.__name__, 'T')
+        self.assertEqual(X.__bases__, (tuple, Generic))
+        self.assertEqual(X.__orig_bases__, (NamedTuple, Generic[T]))
+        self.assertEqual(X.__mro__, (X, tuple, Generic, object))
+        self.assertEqual(X.__parameters__, (T,))
+        self.assertEqual(X[str].__args__, (str,))
+        self.assertEqual(X[str].__parameters__, ())
+
     def test_non_generic_subscript(self):
         # For backward compatibility, subscription works
         # on arbitrary NamedTuple types.
@@ -7087,6 +7231,20 @@ class TypedDictTests(BaseTestCase):
             get_type_hints(FooBarGeneric),
             {'a': typing.Optional[T], 'b': int, 'c': str}
         )
+
+    def test_pep695_generic_typeddict(self):
+        class A[T](TypedDict):
+            a: T
+
+        T, = A.__type_params__
+        self.assertIsInstance(T, TypeVar)
+        self.assertEqual(T.__name__, 'T')
+        self.assertEqual(A.__bases__, (Generic, dict))
+        self.assertEqual(A.__orig_bases__, (TypedDict, Generic[T]))
+        self.assertEqual(A.__mro__, (A, Generic, dict, object))
+        self.assertEqual(A.__parameters__, (T,))
+        self.assertEqual(A[str].__parameters__, ())
+        self.assertEqual(A[str].__args__, (str,))
 
     def test_generic_inheritance(self):
         class A(TypedDict, Generic[T]):
@@ -7812,6 +7970,7 @@ class ParamSpecTests(BaseTestCase):
         P = ParamSpec('P')
         self.assertEqual(P, P)
         self.assertIsInstance(P, ParamSpec)
+        self.assertEqual(P.__name__, 'P')
 
     def test_valid_uses(self):
         P = ParamSpec('P')

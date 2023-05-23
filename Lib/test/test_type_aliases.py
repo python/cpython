@@ -1,6 +1,8 @@
+import pickle
 import types
 import unittest
 from test.support import check_syntax_error, run_code
+from test import mod_generics_cache
 
 from typing import Callable, TypeAliasType, TypeVar, get_args
 
@@ -155,6 +157,7 @@ class TypeAliasConstructorTest(unittest.TestCase):
         self.assertEqual(TA.__name__, "TA")
         self.assertIs(TA.__value__, int)
         self.assertEqual(TA.__type_params__, ())
+        self.assertEqual(TA.__module__, __name__)
 
     def test_generic(self):
         T = TypeVar("T")
@@ -162,12 +165,14 @@ class TypeAliasConstructorTest(unittest.TestCase):
         self.assertEqual(TA.__name__, "TA")
         self.assertEqual(TA.__value__, list[T])
         self.assertEqual(TA.__type_params__, (T,))
+        self.assertEqual(TA.__module__, __name__)
 
     def test_keywords(self):
         TA = TypeAliasType(name="TA", value=int)
         self.assertEqual(TA.__name__, "TA")
         self.assertIs(TA.__value__, int)
         self.assertEqual(TA.__type_params__, ())
+        self.assertEqual(TA.__module__, __name__)
 
     def test_errors(self):
         with self.assertRaises(TypeError):
@@ -202,3 +207,18 @@ class TypeAliasTypeTest(unittest.TestCase):
         union3 = list[range] | Alias1
         self.assertIsInstance(union3, types.UnionType)
         self.assertEqual(get_args(union3), (list[range], Alias1))
+
+    def test_module(self):
+        self.assertEqual(TypeAliasType.__module__, "typing")
+        type Alias = int
+        self.assertEqual(Alias.__module__, __name__)
+        self.assertEqual(mod_generics_cache.Alias.__module__,
+                         mod_generics_cache.__name__)
+        self.assertEqual(mod_generics_cache.OldStyle.__module__,
+                         mod_generics_cache.__name__)
+
+    def test_pickling(self):
+        pickled = pickle.dumps(mod_generics_cache.Alias)
+        self.assertIs(pickle.loads(pickled), mod_generics_cache.Alias)
+        pickled = pickle.dumps(mod_generics_cache.OldStyle)
+        self.assertIs(pickle.loads(pickled), mod_generics_cache.OldStyle)

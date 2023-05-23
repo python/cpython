@@ -1460,18 +1460,6 @@ type_get_annotations(PyTypeObject *type, void *context)
     return annotations;
 }
 
-static PyObject *
-type_get_type_params(PyTypeObject *type, void *context)
-{
-    PyObject *params = PyDict_GetItem(lookup_tp_dict(type), &_Py_ID(__type_params__));
-
-    if (params) {
-        return Py_NewRef(params);
-    }
-
-    return PyTuple_New(0);
-}
-
 static int
 type_set_annotations(PyTypeObject *type, PyObject *value, void *context)
 {
@@ -1495,6 +1483,34 @@ type_set_annotations(PyTypeObject *type, PyObject *value, void *context)
         }
         result = PyDict_DelItem(dict, &_Py_ID(__annotations__));
     }
+
+    if (result == 0) {
+        PyType_Modified(type);
+    }
+    return result;
+}
+
+static PyObject *
+type_get_type_params(PyTypeObject *type, void *context)
+{
+    PyObject *params = PyDict_GetItem(lookup_tp_dict(type), &_Py_ID(__type_params__));
+
+    if (params) {
+        return Py_NewRef(params);
+    }
+
+    return PyTuple_New(0);
+}
+
+static int
+type_set_type_params(PyTypeObject *type, PyObject *value, void *context)
+{
+    if (!check_set_special_type_attr(type, value, "__type_params__")) {
+        return -1;
+    }
+
+    PyObject *dict = lookup_tp_dict(type);
+    int result = PyDict_SetItem(dict, &_Py_ID(__type_params__), value);
 
     if (result == 0) {
         PyType_Modified(type);
@@ -1548,7 +1564,7 @@ static PyGetSetDef type_getsets[] = {
     {"__doc__", (getter)type_get_doc, (setter)type_set_doc, NULL},
     {"__text_signature__", (getter)type_get_text_signature, NULL, NULL},
     {"__annotations__", (getter)type_get_annotations, (setter)type_set_annotations, NULL},
-    {"__type_params__", (getter)type_get_type_params, NULL, NULL},
+    {"__type_params__", (getter)type_get_type_params, (setter)type_set_type_params, NULL},
     {0}
 };
 

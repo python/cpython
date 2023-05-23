@@ -70,7 +70,6 @@ dummy_func(
     _PyInterpreterFrame *frame,
     unsigned char opcode,
     unsigned int oparg,
-    _Py_atomic_int * const eval_breaker,
     _PyCFrame cframe,
     _Py_CODEUNIT *next_instr,
     PyObject **stack_pointer,
@@ -143,7 +142,7 @@ dummy_func(
                 ERROR_IF(err, error);
                 next_instr--;
             }
-            else if (_Py_atomic_load_relaxed_int32(eval_breaker) && oparg < 2) {
+            else if (_Py_atomic_load_relaxed_int32(&tstate->interp->ceval.eval_breaker) && oparg < 2) {
                 goto handle_eval_breaker;
             }
         }
@@ -170,7 +169,7 @@ dummy_func(
                     next_instr = frame->prev_instr;
                     DISPATCH();
                 }
-                if (_Py_atomic_load_relaxed_int32(eval_breaker) && oparg < 2) {
+                if (_Py_atomic_load_relaxed_int32(&tstate->interp->ceval.eval_breaker) && oparg < 2) {
                     goto handle_eval_breaker;
                 }
             }
