@@ -208,7 +208,7 @@ int
 _PyPegen_fill_token(Parser *p)
 {
     struct token new_token;
-    new_token.metadata = NULL;
+    _PyToken_Init(&new_token);
     int type = _PyTokenizer_Get(p->tok, &new_token);
 
     // Record and skip '# type: ignore' comments
@@ -251,7 +251,7 @@ _PyPegen_fill_token(Parser *p)
     Token *t = p->tokens[p->fill];
     return initialize_token(p, t, &new_token, type);
 error:
-    Py_XDECREF(new_token.metadata);
+    _PyToken_Free(&new_token);
     return -1;
 }
 
