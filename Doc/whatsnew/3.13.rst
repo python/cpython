@@ -306,6 +306,10 @@ Removed
   added in Python 3.8 and the old macros were deprecated in Python 3.11.
   (Contributed by Irit Katriel in :gh:`105111`.)
 
+* Remove ``locale.resetlocale()`` function deprecated in Python 3.11:
+  use ``locale.setlocale(locale.LC_ALL, "")`` instead.
+  (Contributed by Victor Stinner in :gh:`104783`.)
+
 
 Porting to Python 3.13
 ======================
