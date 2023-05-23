@@ -622,8 +622,8 @@ not have to be) the original ``STACK[-2]``.
 
    .. versionadded:: 3.8
 
-    .. versionchanged:: 3.11
-       Exception representation on the stack now consist of one, not three, items.
+   .. versionchanged:: 3.11
+      Exception representation on the stack now consist of one, not three, items.
 
 
 .. opcode:: CLEANUP_THROW
@@ -1193,6 +1193,14 @@ iterations of the loop.
    Pushes a reference to the local ``co_varnames[var_num]`` onto the stack,
    raising an :exc:`UnboundLocalError` if the local variable has not been
    initialized.
+
+   .. versionadded:: 3.12
+
+.. opcode:: LOAD_FAST_AND_CLEAR (var_num)
+
+   Pushes a reference to the local ``co_varnames[var_num]`` onto the stack (or
+   pushes ``NULL`` onto the stack if the local variable has not been
+   initialized) and sets ``co_varnames[var_num]`` to ``NULL``.
 
    .. versionadded:: 3.12
 

@@ -312,6 +312,11 @@ class _BasePurePathTest(object):
         # Multi-part glob-style pattern.
         self.assertFalse(P('/a/b/c.py').match('/**/*.py'))
         self.assertTrue(P('/a/b/c.py').match('/a/**/*.py'))
+        # Case-sensitive flag
+        self.assertFalse(P('A.py').match('a.PY', case_sensitive=True))
+        self.assertTrue(P('A.py').match('a.PY', case_sensitive=False))
+        self.assertFalse(P('c:/a/B.Py').match('C:/A/*.pY', case_sensitive=True))
+        self.assertTrue(P('/a/b/c.py').match('/A/*/*.Py', case_sensitive=False))
 
     def test_ordering_common(self):
         # Ordering is tuple-alike.
@@ -916,7 +921,7 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(P('//some/share/a/b%#c\xe9').as_uri(),
                          'file://some/share/a/b%25%23c%C3%A9')
 
-    def test_match_common(self):
+    def test_match(self):
         P = self.cls
         # Absolute patterns.
         self.assertTrue(P('c:/b.py').match('*:/*.py'))
@@ -1853,13 +1858,14 @@ class _BasePathTest(object):
 
     def test_rglob_common(self):
         def _check(glob, expected):
-            self.assertEqual(set(glob), { P(BASE, q) for q in expected })
+            self.assertEqual(sorted(glob), sorted(P(BASE, q) for q in expected))
         P = self.cls
         p = P(BASE)
         it = p.rglob("fileA")
         self.assertIsInstance(it, collections.abc.Iterator)
         _check(it, ["fileA"])
         _check(p.rglob("fileB"), ["dirB/fileB"])
+        _check(p.rglob("**/fileB"), ["dirB/fileB"])
         _check(p.rglob("*/fileA"), [])
         if not os_helper.can_symlink():
             _check(p.rglob("*/fileB"), ["dirB/fileB"])
@@ -1883,9 +1889,12 @@ class _BasePathTest(object):
         _check(p.rglob("*"), ["dirC/fileC", "dirC/novel.txt",
                               "dirC/dirD", "dirC/dirD/fileD"])
         _check(p.rglob("file*"), ["dirC/fileC", "dirC/dirD/fileD"])
+        _check(p.rglob("**/file*"), ["dirC/fileC", "dirC/dirD/fileD"])
+        _check(p.rglob("dir*/**"), ["dirC/dirD"])
         _check(p.rglob("*/*"), ["dirC/dirD/fileD"])
         _check(p.rglob("*/"), ["dirC/dirD"])
         _check(p.rglob(""), ["dirC", "dirC/dirD"])
+        _check(p.rglob("**"), ["dirC", "dirC/dirD"])
         # gh-91616, a re module regression
         _check(p.rglob("*.txt"), ["dirC/novel.txt"])
         _check(p.rglob("*.*"), ["dirC/novel.txt"])
@@ -1945,33 +1954,39 @@ class _BasePathTest(object):
         P = self.cls
         base = P(BASE) / 'permissions'
         base.mkdir()
+        self.addCleanup(os_helper.rmtree, base)
 
-        file1 = base / "file1"
-        file1.touch()
-        file2 = base / "file2"
-        file2.touch()
+        for i in range(100):
+            link = base / f"link{i}"
+            if i % 2:
+                link.symlink_to(P(BASE, "dirE", "nonexistent"))
+            else:
+                link.symlink_to(P(BASE, "dirC"))
 
-        subdir = base / "subdir"
+        self.assertEqual(len(set(base.glob("*"))), 100)
+        self.assertEqual(len(set(base.glob("*/"))), 50)
+        self.assertEqual(len(set(base.glob("*/fileC"))), 50)
+        self.assertEqual(len(set(base.glob("*/file*"))), 50)
 
-        file3 = base / "file3"
-        file3.symlink_to(subdir / "other")
+    @os_helper.skip_unless_symlink
+    def test_glob_long_symlink(self):
+        # See gh-87695
+        base = self.cls(BASE) / 'long_symlink'
+        base.mkdir()
+        bad_link = base / 'bad_link'
+        bad_link.symlink_to("bad" * 200)
+        self.assertEqual(sorted(base.glob('**/*')), [bad_link])
 
-        # Patching is needed to avoid relying on the filesystem
-        # to return the order of the files as the error will not
-        # happen if the symlink is the last item.
-        real_scandir = os.scandir
-        def my_scandir(path):
-            with real_scandir(path) as scandir_it:
-                entries = list(scandir_it)
-            entries.sort(key=lambda entry: entry.name)
-            return contextlib.nullcontext(entries)
+    def test_glob_above_recursion_limit(self):
+        recursion_limit = 40
+        # directory_depth > recursion_limit
+        directory_depth = recursion_limit + 10
+        base = pathlib.Path(os_helper.TESTFN, 'deep')
+        path = pathlib.Path(base, *(['d'] * directory_depth))
+        path.mkdir(parents=True)
 
-        with mock.patch("os.scandir", my_scandir):
-            self.assertEqual(len(set(base.glob("*"))), 3)
-            subdir.mkdir()
-            self.assertEqual(len(set(base.glob("*"))), 4)
-            subdir.chmod(000)
-            self.assertEqual(len(set(base.glob("*"))), 4)
+        with set_recursion_limit(recursion_limit):
+            list(base.glob('**'))
 
     def _check_resolve(self, p, expected, strict=True):
         q = p.resolve(strict)
