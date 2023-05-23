@@ -900,26 +900,9 @@ has_pending_calls(PyInterpreterState *interp)
 }
 
 static int
-make_pending_calls(PyInterpreterState *interp)
+_make_pending_calls(struct _pending_calls *pending)
 {
-    /* only execute pending calls on main thread */
-    if (!_Py_ThreadCanHandlePendingCalls()) {
-        return 0;
-    }
-
-    /* don't perform recursive pending calls */
-    if (interp->ceval.pending.busy) {
-        return 0;
-    }
-    interp->ceval.pending.busy = 1;
-
-    /* unsignal before starting to call callbacks, so that any callback
-       added in-between re-signals */
-    UNSIGNAL_PENDING_CALLS(interp);
-    int res = 0;
-
     /* perform a bounded number of calls, in case of recursion */
-    struct _pending_calls *pending = &interp->ceval.pending;
     for (int i=0; i<NPENDINGCALLS; i++) {
         int (*func)(void *) = NULL;
         void *arg = NULL;
@@ -933,19 +916,42 @@ make_pending_calls(PyInterpreterState *interp)
         if (func == NULL) {
             break;
         }
-        res = func(arg);
-        if (res) {
-            goto error;
+        if (func(arg) != 0) {
+            return -1;
         }
     }
+    return 0;
+}
 
-    interp->ceval.pending.busy = 0;
-    return res;
+static int
+make_pending_calls(PyInterpreterState *interp)
+{
+    struct _pending_calls *pending = &interp->ceval.pending;
 
-error:
-    interp->ceval.pending.busy = 0;
-    SIGNAL_PENDING_CALLS(interp);
-    return res;
+    /* only execute pending calls on main thread */
+    if (!_Py_ThreadCanHandlePendingCalls()) {
+        return 0;
+    }
+
+    /* don't perform recursive pending calls */
+    if (pending->busy) {
+        return 0;
+    }
+    pending->busy = 1;
+
+    /* unsignal before starting to call callbacks, so that any callback
+       added in-between re-signals */
+    UNSIGNAL_PENDING_CALLS(interp);
+
+    int res = _make_pending_calls(pending);
+    if (res < 0) {
+        pending->busy = 0;
+        SIGNAL_PENDING_CALLS(interp);
+        return -1;
+    }
+
+    pending->busy = 0;
+    return 0;
 }
 
 void
