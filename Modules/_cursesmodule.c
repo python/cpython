@@ -4837,7 +4837,7 @@ curses_capi_destructor(PyObject *op)
 static int
 _curses_exec(PyObject *module)
 {
-    PyObject *v, *error, *c_api_object;
+    PyObject *d, *v, *error, *c_api_object;
     PyTypeObject *win_tp;
 
     _curses_state *state = get__curses_state(module);
@@ -4850,7 +4850,7 @@ _curses_exec(PyObject *module)
         return -1;
     state->PyCursesWindow_Type = win_tp;
 
-    PyObject *d = PyModule_GetDict(module);
+    d = PyModule_GetDict(module);
 
     /* For exception curses.error */
     error = PyErr_NewException("_curses.error", NULL, NULL);
