@@ -260,7 +260,6 @@ static const char* _Py_stdlib_module_names[] = {
 "syslog",
 "tabnanny",
 "tarfile",
-"telnetlib",
 "tempfile",
 "termios",
 "textwrap",

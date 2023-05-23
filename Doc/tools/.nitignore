@@ -214,7 +214,6 @@ Doc/library/sys_path_init.rst
 Doc/library/sysconfig.rst
 Doc/library/syslog.rst
 Doc/library/tarfile.rst
-Doc/library/telnetlib.rst
 Doc/library/tempfile.rst
 Doc/library/termios.rst
 Doc/library/test.rst

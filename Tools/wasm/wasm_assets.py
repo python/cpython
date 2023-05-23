@@ -76,7 +76,6 @@ OMIT_NETWORKING_FILES = (
     "poplib.py",
     "smtplib.py",
     "socketserver.py",
-    "telnetlib.py",
     # keep urllib.parse for pydoc
     "urllib/error.py",
     "urllib/request.py",
