@@ -66,7 +66,7 @@ class Test_FatalError(unittest.TestCase):
             rc, out, err = assert_python_failure('-sSI', '-c', code)
 
         err = decode_stderr(err)
-        self.assertIn('Fatal Python error: test_fatal_error: MESSAGE\n',
+        self.assertIn('Fatal Python error: _testcapi_fatal_error_impl: MESSAGE\n',
                       err)
 
         match = re.search(r'^Extension modules:(.*) \(total: ([0-9]+)\)$',
@@ -168,6 +168,26 @@ class Test_ErrSetAndRestore(unittest.TestCase):
 
         with self.assertRaises(ZeroDivisionError) as e:
             _testcapi.exc_set_object(Broken, Broken())
+
+    def test_set_object_and_fetch(self):
+        class Broken(Exception):
+            def __init__(self, *arg):
+                raise ValueError("Broken __init__")
+
+        exc = _testcapi.exc_set_object_fetch(Broken, 'abcd')
+        self.assertIsInstance(exc, ValueError)
+        self.assertEqual(exc.__notes__[0],
+                         "Normalization failed: type=Broken args='abcd'")
+
+        class BadArg:
+            def __repr__(self):
+                raise TypeError('Broken arg type')
+
+        exc = _testcapi.exc_set_object_fetch(Broken, BadArg())
+        self.assertIsInstance(exc, ValueError)
+        self.assertEqual(exc.__notes__[0],
+                         'Normalization failed: type=Broken args=<unknown>')
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -849,7 +849,7 @@ in nanoseconds.  The benchmarks were measured on an
 `Intel® Core™ i7-4960HQ processor
 <https://ark.intel.com/content/www/us/en/ark/products/76088/intel-core-i7-4960hq-processor-6m-cache-up-to-3-80-ghz.html>`_
 running the macOS 64-bit builds found at
-`python.org <https://www.python.org/downloads/mac-osx/>`_.
+`python.org <https://www.python.org/downloads/macos/>`_.
 
 
 Deprecated
@@ -935,10 +935,10 @@ Deprecated
 * :func:`smtpd.MailmanProxy` is now deprecated as it is unusable without
   an external module, ``mailman``.  (Contributed by Samuel Colvin in :issue:`35800`.)
 
-* The :mod:`lib2to3` module now emits a :exc:`PendingDeprecationWarning`.
+* The :mod:`!lib2to3` module now emits a :exc:`PendingDeprecationWarning`.
   Python 3.9 switched to a PEG parser (see :pep:`617`), and Python 3.10 may
   include new language syntax that is not parsable by lib2to3's LL(1) parser.
-  The ``lib2to3`` module may be removed from the standard library in a future
+  The :mod:`!lib2to3` module may be removed from the standard library in a future
   Python version. Consider third-party alternatives such as `LibCST`_ or
   `parso`_.
   (Contributed by Carl Meyer in :issue:`40360`.)

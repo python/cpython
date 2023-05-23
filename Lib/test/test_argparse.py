@@ -1,5 +1,7 @@
 # Author: Steven J. Bethard <steven.bethard@gmail.com>.
 
+import contextlib
+import functools
 import inspect
 import io
 import operator
@@ -33,6 +35,35 @@ class StdIOBuffer(io.TextIOWrapper):
     def getvalue(self):
         self.flush()
         return self.buffer.raw.getvalue().decode('utf-8')
+
+
+class StdStreamTest(unittest.TestCase):
+
+    def test_skip_invalid_stderr(self):
+        parser = argparse.ArgumentParser()
+        with (
+            contextlib.redirect_stderr(None),
+            mock.patch('argparse._sys.exit')
+        ):
+            parser.exit(status=0, message='foo')
+
+    def test_skip_invalid_stdout(self):
+        parser = argparse.ArgumentParser()
+        for func in (
+            parser.print_usage,
+            parser.print_help,
+            functools.partial(parser.parse_args, ['-h'])
+        ):
+            with (
+                self.subTest(func=func),
+                contextlib.redirect_stdout(None),
+                # argparse uses stderr as a fallback
+                StdIOBuffer() as mocked_stderr,
+                contextlib.redirect_stderr(mocked_stderr),
+                mock.patch('argparse._sys.exit'),
+            ):
+                func()
+                self.assertRegex(mocked_stderr.getvalue(), r'usage:')
 
 
 class TestCase(unittest.TestCase):
@@ -733,6 +764,49 @@ class TestBooleanOptionalAction(ParserTestCase):
             parser.add_argument('--foo', const=True, action=argparse.BooleanOptionalAction)
 
         self.assertIn("got an unexpected keyword argument 'const'", str(cm.exception))
+
+    def test_deprecated_init_kw(self):
+        # See gh-92248
+        parser = argparse.ArgumentParser()
+
+        with self.assertWarns(DeprecationWarning):
+            parser.add_argument(
+                '-a',
+                action=argparse.BooleanOptionalAction,
+                type=None,
+            )
+        with self.assertWarns(DeprecationWarning):
+            parser.add_argument(
+                '-b',
+                action=argparse.BooleanOptionalAction,
+                type=bool,
+            )
+
+        with self.assertWarns(DeprecationWarning):
+            parser.add_argument(
+                '-c',
+                action=argparse.BooleanOptionalAction,
+                metavar=None,
+            )
+        with self.assertWarns(DeprecationWarning):
+            parser.add_argument(
+                '-d',
+                action=argparse.BooleanOptionalAction,
+                metavar='d',
+            )
+
+        with self.assertWarns(DeprecationWarning):
+            parser.add_argument(
+                '-e',
+                action=argparse.BooleanOptionalAction,
+                choices=None,
+            )
+        with self.assertWarns(DeprecationWarning):
+            parser.add_argument(
+                '-f',
+                action=argparse.BooleanOptionalAction,
+                choices=(),
+            )
 
 class TestBooleanOptionalActionRequired(ParserTestCase):
     """Tests BooleanOptionalAction required"""

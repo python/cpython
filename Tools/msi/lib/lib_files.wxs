@@ -116,10 +116,6 @@
                     <RegistryValue Key="PythonPath" Type="string" Value="[Lib];[DLLs]" />
                 </RegistryKey>
             </Component>
-            <Component Id="Lib2to3_pickle_remove" Directory="Lib_lib2to3" Guid="$(var.RemoveLib2to3PickleComponentGuid)">
-                <RemoveFile Id="Lib2to3_pickle_remove_files" Name="*.pickle" On="uninstall" />
-                <RemoveFolder Id="Lib2to3_pickle_remove_folder" On="uninstall" />
-            </Component>
         </ComponentGroup>
     </Fragment>
     <Fragment>

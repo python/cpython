@@ -6,7 +6,7 @@ dnl Python's configure.ac file requires autoconf 2.69 and autoconf-archive.
 dnl
 
 # Set VERSION so we only need to edit in one place (i.e., here)
-m4_define(PYTHON_VERSION, 3.12)
+m4_define(PYTHON_VERSION, 3.13)
 
 AC_PREREQ([2.69])
 
@@ -97,7 +97,6 @@ if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     # resources get picked up before their $srcdir counterparts.
     #   Objects/ -> typeslots.inc
     #   Include/ -> Python.h
-    #   Python/  -> importlib.h
     # (A side effect of this is that these resources will automatically be
     #  regenerated when building out-of-tree, regardless of whether or not
     #  the $srcdir counterpart is up-to-date.  This is an acceptable trade
@@ -203,7 +202,7 @@ AC_SUBST([FREEZE_MODULE_DEPS])
 AC_SUBST([PYTHON_FOR_BUILD_DEPS])
 
 AC_CHECK_PROGS([PYTHON_FOR_REGEN],
-  [python$PACKAGE_VERSION python3.11 python3.10 python3.9 python3.8 python3.7 python3.6 python3 python],
+  [python$PACKAGE_VERSION python3.13 python3.12 python3.11 python3.10 python3 python],
   [python3])
 AC_SUBST(PYTHON_FOR_REGEN)
 
@@ -960,6 +959,20 @@ cat > conftest.c <<EOF
         hppa-linux-gnu
 # elif defined(__ia64__)
         ia64-linux-gnu
+# elif defined(__loongarch__)
+#  if defined(__loongarch_lp64)
+#   if defined(__loongarch_soft_float)
+        loongarch64-linux-gnusf
+#   elif defined(__loongarch_single_float)
+        loongarch64-linux-gnuf32
+#   elif defined(__loongarch_double_float)
+        loongarch64-linux-gnu
+#   else
+#    error unknown platform triplet
+#   endif
+#  else
+#   error unknown platform triplet
+#  endif
 # elif defined(__m68k__) && !defined(__mcoldfire__)
         m68k-linux-gnu
 # elif defined(__mips_hard_float) && defined(__mips_isa_rev) && (__mips_isa_rev >=6) && defined(_MIPSEL)
@@ -1916,61 +1929,6 @@ if test "$Py_LTO" = 'true' ; then
   LDFLAGS_NODIST="$LDFLAGS_NODIST $LTOFLAGS"
 fi
 
-# Enable bolt flags
-Py_BOLT='false'
-AC_MSG_CHECKING(for --enable-bolt)
-AC_ARG_ENABLE(bolt, AS_HELP_STRING(
-                [--enable-bolt],
-                [enable usage of the llvm-bolt post-link optimizer (default is no)]),
-[
-if test "$enableval" != no
-then
-  Py_BOLT='true'
-  AC_MSG_RESULT(yes);
-else
-  Py_BOLT='false'
-  AC_MSG_RESULT(no);
-fi],
-[AC_MSG_RESULT(no)])
-
-AC_SUBST(PREBOLT_RULE)
-if test "$Py_BOLT" = 'true' ; then
-  PREBOLT_RULE="${DEF_MAKE_ALL_RULE}"
-  DEF_MAKE_ALL_RULE="bolt-opt"
-  DEF_MAKE_RULE="build_all"
-
-  # -fno-reorder-blocks-and-partition is required for bolt to work.
-  # Possibly GCC only.
-  AX_CHECK_COMPILE_FLAG([-fno-reorder-blocks-and-partition],[
-      CFLAGS_NODIST="$CFLAGS_NODIST -fno-reorder-blocks-and-partition"
-  ])
-
-  # These flags are required for bolt to work:
-  LDFLAGS_NODIST="$LDFLAGS_NODIST -Wl,--emit-relocs"
-
-  # These flags are required to get good performance from bolt:
-  CFLAGS_NODIST="$CFLAGS_NODIST -fno-pie"
-  # We want to add these no-pie flags to linking executables but not shared libraries:
-  LINKCC="$LINKCC -fno-pie -no-pie"
-  AC_SUBST(LLVM_BOLT)
-  AC_PATH_TOOL(LLVM_BOLT, llvm-bolt, '', ${llvm_path})
-  if test -n "${LLVM_BOLT}" -a -x "${LLVM_BOLT}"
-  then
-    AC_MSG_RESULT("Found llvm-bolt")
-  else
-    AC_MSG_ERROR([llvm-bolt is required for a --enable-bolt build but could not be found.])
-  fi
-
-  AC_SUBST(MERGE_FDATA)
-  AC_PATH_TOOL(MERGE_FDATA, merge-fdata, '', ${llvm_path})
-  if test -n "${MERGE_FDATA}" -a -x "${MERGE_FDATA}"
-  then
-    AC_MSG_RESULT("Found merge-fdata")
-  else
-    AC_MSG_ERROR([merge-fdata is required for a --enable-bolt build but could not be found.])
-  fi
-fi
-
 # Enable PGO flags.
 AC_SUBST(PGO_PROF_GEN_FLAG)
 AC_SUBST(PGO_PROF_USE_FLAG)
@@ -2046,6 +2004,109 @@ case $CC in
     LLVM_PROF_FILE=""
     ;;
 esac
+
+# BOLT optimization. Always configured after PGO since it always runs after PGO.
+Py_BOLT='false'
+AC_MSG_CHECKING(for --enable-bolt)
+AC_ARG_ENABLE(bolt, AS_HELP_STRING(
+                [--enable-bolt],
+                [enable usage of the llvm-bolt post-link optimizer (default is no)]),
+[
+if test "$enableval" != no
+then
+  Py_BOLT='true'
+  AC_MSG_RESULT(yes);
+else
+  Py_BOLT='false'
+  AC_MSG_RESULT(no);
+fi],
+[AC_MSG_RESULT(no)])
+
+AC_SUBST(PREBOLT_RULE)
+if test "$Py_BOLT" = 'true' ; then
+  PREBOLT_RULE="${DEF_MAKE_ALL_RULE}"
+  DEF_MAKE_ALL_RULE="bolt-opt"
+  DEF_MAKE_RULE="build_all"
+
+  # -fno-reorder-blocks-and-partition is required for bolt to work.
+  # Possibly GCC only.
+  AX_CHECK_COMPILE_FLAG([-fno-reorder-blocks-and-partition],[
+      CFLAGS_NODIST="$CFLAGS_NODIST -fno-reorder-blocks-and-partition"
+  ])
+
+  # These flags are required for bolt to work:
+  LDFLAGS_NODIST="$LDFLAGS_NODIST -Wl,--emit-relocs"
+
+  # These flags are required to get good performance from bolt:
+  CFLAGS_NODIST="$CFLAGS_NODIST -fno-pie"
+  # We want to add these no-pie flags to linking executables but not shared libraries:
+  LINKCC="$LINKCC -fno-pie -no-pie"
+  AC_SUBST(LLVM_BOLT)
+  AC_PATH_TOOL(LLVM_BOLT, llvm-bolt, '', ${llvm_path})
+  if test -n "${LLVM_BOLT}" -a -x "${LLVM_BOLT}"
+  then
+    AC_MSG_RESULT("Found llvm-bolt")
+  else
+    AC_MSG_ERROR([llvm-bolt is required for a --enable-bolt build but could not be found.])
+  fi
+
+  AC_SUBST(MERGE_FDATA)
+  AC_PATH_TOOL(MERGE_FDATA, merge-fdata, '', ${llvm_path})
+  if test -n "${MERGE_FDATA}" -a -x "${MERGE_FDATA}"
+  then
+    AC_MSG_RESULT("Found merge-fdata")
+  else
+    AC_MSG_ERROR([merge-fdata is required for a --enable-bolt build but could not be found.])
+  fi
+fi
+
+dnl Enable BOLT of libpython if built.
+AC_SUBST(BOLT_BINARIES)
+BOLT_BINARIES='$(BUILDPYTHON)'
+AS_VAR_IF([enable_shared], [yes], [
+  BOLT_BINARIES="${BOLT_BINARIES} \$(INSTSONAME)"
+])
+
+AC_ARG_VAR(
+  [BOLT_INSTRUMENT_FLAGS],
+  [Arguments to llvm-bolt when instrumenting binaries]
+)
+AC_MSG_CHECKING([BOLT_INSTRUMENT_FLAGS])
+if test -z "${BOLT_INSTRUMENT_FLAGS}"
+then
+  BOLT_INSTRUMENT_FLAGS=
+fi
+AC_MSG_RESULT([$BOLT_INSTRUMENT_FLAGS])
+
+AC_ARG_VAR(
+  [BOLT_APPLY_FLAGS],
+  [Arguments to llvm-bolt when creating a BOLT optimized binary]
+)
+AC_MSG_CHECKING([BOLT_APPLY_FLAGS])
+if test -z "${BOLT_APPLY_FLAGS}"
+then
+  AS_VAR_SET(
+    [BOLT_APPLY_FLAGS],
+    [m4_join([ ],
+      [-update-debug-sections],
+      [-reorder-blocks=ext-tsp],
+      [-reorder-functions=hfsort+],
+      [-split-functions],
+      [-icf=1],
+      [-inline-all],
+      [-split-eh],
+      [-reorder-functions-use-hot-size],
+      [-peepholes=none],
+      [-jump-tables=aggressive],
+      [-inline-ap],
+      [-indirect-call-promotion=all],
+      [-dyno-stats],
+      [-use-gnu-stack],
+      [-frame-opt=hot]
+    )]
+  )
+fi
+AC_MSG_RESULT([$BOLT_APPLY_FLAGS])
 
 # XXX Shouldn't the code above that fiddles with BASECFLAGS and OPT be
 # merged with this chunk of code?
@@ -2915,6 +2976,7 @@ AC_CHECK_SIZEOF(size_t, 4)
 AC_CHECK_ALIGNOF(size_t)
 AC_CHECK_SIZEOF(pid_t, 4)
 AC_CHECK_SIZEOF(uintptr_t)
+AC_CHECK_ALIGNOF(max_align_t)
 
 AC_TYPE_LONG_DOUBLE
 AC_CHECK_SIZEOF(long double, 16)

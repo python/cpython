@@ -10,8 +10,9 @@ extern "C" {
 
 #include <stdbool.h>
 
-#include "pycore_atomic.h"        // _Py_atomic_address
 #include "pycore_ast_state.h"     // struct ast_state
+#include "pycore_atexit.h"        // struct atexit_state
+#include "pycore_atomic.h"        // _Py_atomic_address
 #include "pycore_ceval_state.h"   // struct _ceval_state
 #include "pycore_code.h"          // struct callable_cache
 #include "pycore_context.h"       // struct _Py_context_state
@@ -22,33 +23,21 @@ extern "C" {
 #include "pycore_function.h"      // FUNC_MAX_WATCHERS
 #include "pycore_genobject.h"     // struct _Py_async_gen_state
 #include "pycore_gc.h"            // struct _gc_runtime_state
-#include "pycore_import.h"        // struct _import_state
-#include "pycore_list.h"          // struct _Py_list_state
 #include "pycore_global_objects.h"  // struct _Py_interp_static_objects
+#include "pycore_import.h"        // struct _import_state
+#include "pycore_instruments.h"   // PY_MONITORING_EVENTS
+#include "pycore_list.h"          // struct _Py_list_state
+#include "pycore_object_state.h"   // struct _py_object_state
+#include "pycore_obmalloc.h"      // struct obmalloc_state
 #include "pycore_tuple.h"         // struct _Py_tuple_state
 #include "pycore_typeobject.h"    // struct type_cache
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
 #include "pycore_warnings.h"      // struct _warnings_runtime_state
 
 
-// atexit state
-typedef struct {
-    PyObject *func;
-    PyObject *args;
-    PyObject *kwargs;
-} atexit_callback;
-
-struct atexit_state {
-    atexit_callback **callbacks;
-    int ncallbacks;
-    int callback_len;
-};
-
-
 struct _Py_long_state {
     int max_str_digits;
 };
-
 
 /* interpreter state */
 
@@ -59,7 +48,11 @@ struct _Py_long_state {
    */
 struct _is {
 
+    struct _ceval_state ceval;
     PyInterpreterState *next;
+
+    uint64_t monitoring_version;
+    uint64_t last_restart_version;
 
     struct pythreads {
         uint64_t next_unique_id;
@@ -91,7 +84,15 @@ struct _is {
     int _initialized;
     int finalizing;
 
-    struct _ceval_state ceval;
+    /* Set by Py_EndInterpreter().
+
+       Use _PyInterpreterState_GetFinalizing()
+       and _PyInterpreterState_SetFinalizing()
+       to access it, don't access it directly. */
+    _Py_atomic_address _finalizing;
+
+    struct _obmalloc_state obmalloc;
+
     struct _gc_runtime_state gc;
 
     struct _import_state imports;
@@ -111,6 +112,7 @@ struct _is {
 
     PyObject *dict;  /* Stores per-interpreter state */
 
+    PyObject *sysdict_copy;
     PyObject *builtins_copy;
     // Initialized to _PyEval_EvalFrameDefault().
     _PyFrameEvalFunction eval_frame;
@@ -137,10 +139,12 @@ struct _is {
     // One bit is set for each non-NULL entry in code_watchers
     uint8_t active_code_watchers;
 
+    struct _py_object_state object_state;
     struct _Py_unicode_state unicode;
     struct _Py_float_state float_state;
     struct _Py_long_state long_state;
     struct _dtoa_state dtoa;
+    struct _py_func_state func_state;
     /* Using a cache is very effective since typically only a single slice is
        created and then deleted again. */
     PySliceObject *slice_cache;
@@ -157,6 +161,15 @@ struct _is {
     struct callable_cache callable_cache;
     PyCodeObject *interpreter_trampoline;
 
+    _Py_Monitors monitors;
+    bool f_opcode_trace_set;
+    bool sys_profile_initialized;
+    bool sys_trace_initialized;
+    Py_ssize_t sys_profiling_threads; /* Count of threads with c_profilefunc set */
+    Py_ssize_t sys_tracing_threads; /* Count of threads with c_tracefunc set */
+    PyObject *monitoring_callables[PY_MONITORING_TOOL_IDS][PY_MONITORING_EVENTS];
+    PyObject *monitoring_tool_names[PY_MONITORING_TOOL_IDS];
+
     struct _Py_interp_cached_objects cached_objects;
     struct _Py_interp_static_objects static_objects;
 
@@ -172,6 +185,9 @@ struct _is {
        basis.  Also see _PyRuntimeState regarding the various mutex fields.
        */
 
+    /* The per-interpreter GIL, which might not be used. */
+    struct _gil_runtime_state _gil;
+
     /* the initial PyInterpreterState.threads.head */
     PyThreadState _initial_thread;
 };
@@ -180,6 +196,17 @@ struct _is {
 /* other API */
 
 extern void _PyInterpreterState_Clear(PyThreadState *tstate);
+
+
+static inline PyThreadState*
+_PyInterpreterState_GetFinalizing(PyInterpreterState *interp) {
+    return (PyThreadState*)_Py_atomic_load_relaxed(&interp->_finalizing);
+}
+
+static inline void
+_PyInterpreterState_SetFinalizing(PyInterpreterState *interp, PyThreadState *tstate) {
+    _Py_atomic_store_relaxed(&interp->_finalizing, (uintptr_t)tstate);
+}
 
 
 /* cross-interpreter data registry */
