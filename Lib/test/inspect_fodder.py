@@ -1,7 +1,7 @@
 # line 1
 'A module docstring.'
 
-import sys, inspect
+import inspect
 # line 5
 
 # line 7
@@ -41,8 +41,8 @@ class StupidGit:
     def argue(self, a, b, c):
         try:
             spam(a, b, c)
-        except:
-            self.ex = sys.exc_info()
+        except BaseException as e:
+            self.ex = e
             self.tr = inspect.trace()
 
     @property
@@ -78,8 +78,8 @@ async def lobbest(grenade):
 currentframe = inspect.currentframe()
 try:
     raise Exception()
-except:
-    tb = sys.exc_info()[2]
+except BaseException as e:
+    tb = e.__traceback__
 
 class Callable:
     def __call__(self, *args):

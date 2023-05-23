@@ -800,7 +800,7 @@ is_normalized_quickcheck(PyObject *self, PyObject *input, bool nfc, bool k,
 {
     /* UCD 3.2.0 is requested, quickchecks must be disabled. */
     if (UCD_Check(self)) {
-        return NO;
+        return MAYBE;
     }
 
     if (PyUnicode_IS_ASCII(input)) {
@@ -1516,6 +1516,7 @@ unicodedata_exec(PyObject *module)
 
 static PyModuleDef_Slot unicodedata_slots[] = {
     {Py_mod_exec, unicodedata_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

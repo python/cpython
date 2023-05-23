@@ -1,6 +1,7 @@
 import unittest
 from unittest import mock
 from test import support
+from test.support import check_sanitizer
 from test.support import import_helper
 from test.support import os_helper
 from test.support import warnings_helper
@@ -717,8 +718,9 @@ class ProcessTestCase(BaseTestCase):
             os.close(test_pipe_r)
             os.close(test_pipe_w)
         pipesize = pipesize_default // 2
-        if pipesize < 512:  # the POSIX minimum
-            raise unittest.SkitTest(
+        pagesize_default = support.get_pagesize()
+        if pipesize < pagesize_default:  # the POSIX minimum
+            raise unittest.SkipTest(
                 'default pipesize too small to perform test.')
         p = subprocess.Popen(
             [sys.executable, "-c",
@@ -789,6 +791,8 @@ class ProcessTestCase(BaseTestCase):
     @unittest.skipIf(sysconfig.get_config_var('Py_ENABLE_SHARED') == 1,
                      'The Python shared library cannot be loaded '
                      'with an empty environment.')
+    @unittest.skipIf(check_sanitizer(address=True),
+                     'AddressSanitizer adds to the environment.')
     def test_empty_env(self):
         """Verify that env={} is as empty as possible."""
 
