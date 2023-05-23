@@ -10,5 +10,4 @@ backwards compatibility. They have been superseded by other modules.
 
 .. toctree::
 
-   imghdr.rst
    optparse.rst
