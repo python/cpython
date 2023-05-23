@@ -233,7 +233,7 @@ class _PathParents(Sequence):
         return "<{}.parents>".format(type(self._path).__name__)
 
 
-class _LexicalPath(object):
+class _BasePurePath(object):
     """Base class for manipulating paths using only lexical operations.
 
     This class does not provide __fspath__(), __bytes__() or as_uri().
@@ -284,7 +284,7 @@ class _LexicalPath(object):
     def __init__(self, *args):
         paths = []
         for arg in args:
-            if isinstance(arg, _LexicalPath):
+            if isinstance(arg, _BasePurePath):
                 path = arg._raw_path
             else:
                 try:
@@ -392,7 +392,7 @@ class _LexicalPath(object):
             return self._parts_normcase_cached
 
     def __eq__(self, other):
-        if not isinstance(other, _LexicalPath):
+        if not isinstance(other, _BasePurePath):
             return NotImplemented
         return self._str_normcase == other._str_normcase and self._flavour is other._flavour
 
@@ -404,22 +404,22 @@ class _LexicalPath(object):
             return self._hash
 
     def __lt__(self, other):
-        if not isinstance(other, _LexicalPath) or self._flavour is not other._flavour:
+        if not isinstance(other, _BasePurePath) or self._flavour is not other._flavour:
             return NotImplemented
         return self._parts_normcase < other._parts_normcase
 
     def __le__(self, other):
-        if not isinstance(other, _LexicalPath) or self._flavour is not other._flavour:
+        if not isinstance(other, _BasePurePath) or self._flavour is not other._flavour:
             return NotImplemented
         return self._parts_normcase <= other._parts_normcase
 
     def __gt__(self, other):
-        if not isinstance(other, _LexicalPath) or self._flavour is not other._flavour:
+        if not isinstance(other, _BasePurePath) or self._flavour is not other._flavour:
             return NotImplemented
         return self._parts_normcase > other._parts_normcase
 
     def __ge__(self, other):
-        if not isinstance(other, _LexicalPath) or self._flavour is not other._flavour:
+        if not isinstance(other, _BasePurePath) or self._flavour is not other._flavour:
             return NotImplemented
         return self._parts_normcase >= other._parts_normcase
 
@@ -666,7 +666,7 @@ class _LexicalPath(object):
         return True
 
 
-class PurePath(_LexicalPath):
+class PurePath(_BasePurePath):
     """Base class for manipulating paths without I/O.
 
     PurePath represents a filesystem path and offers operations which

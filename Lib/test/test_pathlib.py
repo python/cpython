@@ -37,7 +37,7 @@ class _BasePurePathSubclass(object):
         return type(self)(*pathsegments, session_id=self.session_id)
 
 
-class _BaseLexicalPathTest(object):
+class _BaseBasePurePathTest(object):
 
     # Keys are canonical paths, values are list of tuples of arguments
     # supposed to produce equal paths.
@@ -684,11 +684,11 @@ class _BaseLexicalPathTest(object):
             self.assertEqual(str(pp), str(p))
 
 
-class LexicalPathTest(_BaseLexicalPathTest, unittest.TestCase):
-    cls = pathlib._LexicalPath
+class BasePurePathTest(_BaseBasePurePathTest, unittest.TestCase):
+    cls = pathlib._BasePurePath
 
 
-class _BasePurePathTest(_BaseLexicalPathTest):
+class _BasePurePathTest(_BaseBasePurePathTest):
     def test_fspath_common(self):
         P = self.cls
         p = P('a/b')
