@@ -55,7 +55,7 @@ Notes:
       ``Py_UNICODE``. This change doesn't affect its behavior because
       ``Py_UNICODE`` is alias of ``wchar_t`` since Python 3.3.
 
-   .. deprecated-removed:: 3.3 3.14
+   .. deprecated-removed:: 3.3 3.15
 
 
 The actual representation of values is determined by the machine architecture
