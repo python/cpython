@@ -177,6 +177,50 @@ Inlining does result in a few visible behavior changes:
 
 Contributed by Carl Meyer and Vladimir Matveev in :pep:`709`.
 
+PEP 701: Syntactic formalization of f-strings
+---------------------------------------------
+
+:pep:`701` lifts some restrictions in the usage of f-strings. The expressions
+inside f-strings can now be any Python expression: including backslashes,
+unicode characters, multi-line expressions, comments and strings reusing the
+same quote. Let's see some examples:
+
+* Quote reuse: in Python 3.11, reusing the same quotes as the f-string raised a
+  :exc:`SyntaxError`, forcing the user to either use single quotes or escape the quotes
+  inside the expression. In Python 3.12, you can now do things like this:
+
+    >>> things = ['a', 'b', 'c']
+    >>> f"These are the things: {", ".join(things)}"
+    'These are the things: a, b, c'
+
+* Multi-line expressions and comments: In Python 3.11, f-strings expressions
+  must be defined in a single line, making them harder to read. In Python 3.12
+  you can now define expressions in multiple lines and include comments on them:
+
+    >>> f"These are the things: {", ".join([
+    ...     'a',  # A
+    ...     'b',  # B
+    ...     'c'   # C
+    ... ])}"
+    'These are the things: a, b, c'
+
+* Backslashes and unicode characters: f-string expressions couldn't contain
+  any \ character (except for escaping quotes). This also affected unicode
+  characters (such as `\N{snowman}`). Now, you can define expressions like this:
+
+    >>> print(f"These are the things: {"\n".join(things)}")
+    These are the things: a
+    b
+    c
+    >>> print(f"These are the things: {"\N{snowman}".join(things)}")
+    These are the things: a☃b☃c
+
+See :pep:`701` for more details.
+
+(Contributed by Pablo Galindo, Batuhan Taskaya, Lysandros Nikolaou, Cristián
+Maureira-Fredes and Marta Gómez in :gh:`102856`. PEP written by Pablo Galindo,
+Batuhan Taskaya and Lysandros Nikolaou)
+
 PEP 688: Making the buffer protocol accessible in Python
 --------------------------------------------------------
 
@@ -297,6 +341,12 @@ array
 
 * The :class:`array.array` class now supports subscripting, making it a
   :term:`generic type`. (Contributed by Jelle Zijlstra in :gh:`98658`.)
+
+tokenize
+--------
+
+* The :mod:`tokenize` module includes the changes introduced in :pep:`701`. (
+  Contributed by Marta Gómez Macías and Pablo Galindo in :gh:`102856`.)
 
 asyncio
 -------
@@ -686,6 +736,10 @@ Optimizations
 
 * Speed up :class:`asyncio.Task` creation by deferring expensive string formatting.
   (Contributed by Itamar O in :gh:`103793`.)
+
+* The :func:`tokenize.tokenize` and :func:`tokenize.generate_tokens` calls are
+  now 64% faster due to the changes introduced in :pep:`701`. (Contributed by
+  Marta Gómez Macías and Pablo Galindo in :gh:`102856`.)
 
 
 CPython bytecode changes
@@ -1200,6 +1254,13 @@ Changes in the Python API
   :func:`shutil.unpack_archive`, pass the *filter* argument to limit features
   that may be surprising or dangerous.
   See :ref:`tarfile-extraction-filter` for details.
+
+* The behaviour of :func:`tokenize.tokenize` and
+  :func:`tokenize.generate_tokens` is now changed due to the changes introduced
+  in :pep:`701`. In addition to that, final ``DEDENT`` tokens are now within
+  the file bounds. This means that for a file containing 3 lines, the old
+  tokenizer returned a ``DEDENT`` token in line 4 whilst the new tokenizer
+  returns it in line 3.
 
 Build Changes
 =============
