@@ -852,7 +852,6 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
     int saved_errno = 0;
     int allow_vfork;
     int *c_fds_to_keep = NULL;
-    Py_ssize_t fds_to_keep_len = 0;
 
     if (!PyArg_ParseTuple(
             args, "OOpO!OOiiiiiiiiii" _Py_PARSE_PID "OOOiOp:fork_exec",
@@ -881,7 +880,6 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
         PyErr_SetString(PyExc_ValueError, "bad value(s) in fds_to_keep");
         return NULL;
     }
-    fds_to_keep_len = PyTuple_GET_SIZE(py_fds_to_keep);
 
     PyInterpreterState *interp = PyInterpreterState_Get();
     const PyConfig *config = _PyInterpreterState_GetConfig(interp);
@@ -1027,6 +1025,7 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
 #endif /* HAVE_SETREUID */
     }
 
+    Py_ssize_t fds_to_keep_len = PyTuple_GET_SIZE(py_fds_to_keep);
     c_fds_to_keep = PyMem_Malloc(fds_to_keep_len * sizeof(int));
     if (c_fds_to_keep == NULL) {
         PyErr_SetString(PyExc_MemoryError, "failed to malloc c_fds_to_keep");
