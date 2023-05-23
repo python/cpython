@@ -412,25 +412,20 @@ gen_close(PyGenObject *gen, PyObject *args)
         /* retrieve the StopIteration exception instance being handled, and
          * extract its value */
         PyObject *exc, *args, *value;
-        PyThreadState *tstate = _PyThreadState_GET();
-        if (tstate == NULL) {
-            PyErr_Clear();
-            Py_RETURN_NONE;
-        }
-        exc = tstate->current_exception;
+        exc = PyErr_GetRaisedException();  /* clears the error indicator */
         if (exc == NULL || !PyExceptionInstance_Check(exc)) {
-            PyErr_Clear();
+            Py_XDECREF(exc);
             Py_RETURN_NONE;
         }
         args = ((PyBaseExceptionObject*)exc)->args;
         if (args == NULL || !PyTuple_Check(args)
                 || PyTuple_GET_SIZE(args) == 0) {
-            PyErr_Clear();
+            Py_DECREF(exc);
             Py_RETURN_NONE;
         }
         value = PyTuple_GET_ITEM(args, 0);
         Py_INCREF(value);
-        PyErr_Clear();
+        Py_DECREF(exc);
         return value;
     }
     if (PyErr_ExceptionMatches(PyExc_GeneratorExit)) {

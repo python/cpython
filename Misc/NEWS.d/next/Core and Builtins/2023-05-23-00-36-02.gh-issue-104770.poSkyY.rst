@@ -1,2 +1,2 @@
-Let :meth:`generator.close` forward the return value of a generator function
-on graceful exit.
+If a generator returns a value after being closed, the value is returned
+by :meth:`generator.close`.
