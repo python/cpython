@@ -270,6 +270,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.lineno = None
         self.stack = []
         self.curindex = 0
+        if hasattr(self, 'curframe') and self.curframe:
+            self.curframe.f_globals.pop('__pdb_convenience_variables', None)
         self.curframe = None
         self.tb_lineno.clear()
 
@@ -288,6 +290,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # locals whenever the .f_locals accessor is called, so we
         # cache it here to ensure that modifications are not overwritten.
         self.curframe_locals = self.curframe.f_locals
+        self.set_convenience_variable(self.curframe, '_frame', self.curframe)
         return self.execRcLines()
 
     # Can be executed earlier than 'setup' if desired
@@ -359,6 +362,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if self._wait_for_mainpyfile:
             return
         frame.f_locals['__return__'] = return_value
+        self.set_convenience_variable(frame, '_retval', return_value)
         self.message('--Return--')
         self.interaction(frame, None)
 
@@ -369,6 +373,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             return
         exc_type, exc_value, exc_traceback = exc_info
         frame.f_locals['__exception__'] = exc_type, exc_value
+        self.set_convenience_variable(frame, '_exception', exc_value)
 
         # An 'Internal StopIteration' exception is an exception debug event
         # issued by the interpreter when handling a subgenerator run with
@@ -394,6 +399,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 self.message('--KeyboardInterrupt--')
 
     # Called before loop, handles display expressions
+    # Set up convenience variable containers
     def preloop(self):
         displaying = self.displaying.get(self.curframe)
         if displaying:
@@ -434,7 +440,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.message(repr(obj))
 
     def default(self, line):
-        if line[:1] == '!': line = line[1:]
+        if line[:1] == '!': line = line[1:].strip()
         locals = self.curframe_locals
         globals = self.curframe.f_globals
         try:
@@ -477,6 +483,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 next = line[marker+2:].lstrip()
                 self.cmdqueue.append(next)
                 line = line[:marker].rstrip()
+
+        # Replace all the convenience variables
+        line = re.sub(r'\$([a-zA-Z_][a-zA-Z0-9_]*)', r'__pdb_convenience_variables["\1"]', line)
         return line
 
     def onecmd(self, line):
@@ -526,6 +535,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def error(self, msg):
         print('***', msg, file=self.stdout)
+
+    # convenience variables
+
+    def set_convenience_variable(self, frame, name, value):
+        if '__pdb_convenience_variables' not in frame.f_globals:
+            frame.f_globals['__pdb_convenience_variables'] = {}
+        frame.f_globals['__pdb_convenience_variables'][name] = value
 
     # Generic completion functions.  Individual complete_foo methods can be
     # assigned below to one of these functions.
@@ -1018,6 +1034,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.curindex = number
         self.curframe = self.stack[self.curindex][0]
         self.curframe_locals = self.curframe.f_locals
+        self.set_convenience_variable(self.curframe, '_frame', self.curframe)
         self.print_stack_entry(self.stack[self.curindex])
         self.lineno = None
 
@@ -1625,9 +1642,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         Execute the (one-line) statement in the context of the current
         stack frame.  The exclamation point can be omitted unless the
-        first word of the statement resembles a debugger command.  To
-        assign to a global variable you must always prefix the command
-        with a 'global' command, e.g.:
+        first word of the statement resembles a debugger command, e.g.:
+        (Pdb) ! n=42
+        (Pdb)
+
+        To assign to a global variable you must always prefix the command with
+        a 'global' command, e.g.:
         (Pdb) global list_options; list_options = ['-l']
         (Pdb)
         """

@@ -12,6 +12,7 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "structmember.h"         // PyMemberDef
 #include "opcode.h"               // SEND
+#include "frameobject.h"          // _PyInterpreterFrame_GetLine
 #include "pystats.h"
 
 static PyObject *gen_close(PyGenObject *, PyObject *);
@@ -407,10 +408,15 @@ gen_close(PyGenObject *gen, PyObject *args)
         PyErr_SetString(PyExc_RuntimeError, msg);
         return NULL;
     }
-    if (PyErr_ExceptionMatches(PyExc_StopIteration)
-        || PyErr_ExceptionMatches(PyExc_GeneratorExit)) {
-        PyErr_Clear();          /* ignore these errors */
+    assert(PyErr_Occurred());
+    if (PyErr_ExceptionMatches(PyExc_GeneratorExit)) {
+        PyErr_Clear();          /* ignore this error */
         Py_RETURN_NONE;
+    }
+    /* if the generator returned a value while closing, StopIteration was
+     * raised in gen_send_ex() above; retrieve and return the value here */
+    if (_PyGen_FetchStopIterationValue(&retval) == 0) {
+        return retval;
     }
     return NULL;
 }
@@ -1322,7 +1328,7 @@ compute_cr_origin(int origin_depth, _PyInterpreterFrame *current_frame)
     frame = current_frame;
     for (int i = 0; i < frame_count; ++i) {
         PyCodeObject *code = frame->f_code;
-        int line = _PyInterpreterFrame_GetLine(frame);
+        int line = PyUnstable_InterpreterFrame_GetLine(frame);
         PyObject *frameinfo = Py_BuildValue("OiO", code->co_filename, line,
                                             code->co_name);
         if (!frameinfo) {
@@ -1404,9 +1410,6 @@ typedef struct _PyAsyncGenWrappedValue {
 
 #define _PyAsyncGenWrappedValue_CheckExact(o) \
                     Py_IS_TYPE(o, &_PyAsyncGenWrappedValue_Type)
-
-#define PyAsyncGenASend_CheckExact(o) \
-                    Py_IS_TYPE(o, &_PyAsyncGenASend_Type)
 
 
 static int

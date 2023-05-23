@@ -17,7 +17,6 @@ backwards compatibility. They have been superseded by other modules.
    chunk.rst
    crypt.rst
    imghdr.rst
-   imp.rst
    mailcap.rst
    msilib.rst
    nis.rst
@@ -28,6 +27,5 @@ backwards compatibility. They have been superseded by other modules.
    sndhdr.rst
    spwd.rst
    sunau.rst
-   telnetlib.rst
    uu.rst
    xdrlib.rst
