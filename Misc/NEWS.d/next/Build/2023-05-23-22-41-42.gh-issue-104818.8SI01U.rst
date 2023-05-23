@@ -1,0 +1,2 @@
+Sphinx 6.2 or newer is now required to build the Python documentation. Patch
+by Victor Stinner.

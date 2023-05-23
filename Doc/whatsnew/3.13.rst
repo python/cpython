@@ -241,6 +241,9 @@ that may require changes to your code.
 Build Changes
 =============
 
+* Sphinx 6.2 or newer is now required to build the Python documentation.
+  (Contributed by Victor Stinner in :gh:`104818`.)
+
 
 C API Changes
 =============
