@@ -1377,16 +1377,10 @@ without the dedicated syntax, as documented below.
 
    Type variable.
 
-   Usage::
-
-      T = TypeVar('T')  # Can be anything
-      S = TypeVar('S', bound=str)  # Can be any subtype of str
-      A = TypeVar('A', str, bytes)  # Must be exactly str or bytes
-
-   The syntax for :ref:`generic functions <generic-functions>`,
+   The preferred way to construct a type variable is via the dedicated syntax
+   for :ref:`generic functions <generic-functions>`,
    :ref:`generic classes <generic-classes>`, and
-   :ref:`generic type aliases <generic-type-aliases>` can be used to
-   create type variables::
+   :ref:`generic type aliases <generic-type-aliases>`::
 
       class Sequence[T]:  # T is a TypeVar
           ...
@@ -1401,9 +1395,16 @@ without the dedicated syntax, as documented below.
       class StrOrBytesSequence[A: (str, bytes)]:  # A is a TypeVar constrained to str or bytes
           ...
 
+   However, if desired, reusable type variables can also be constructed manually, like so::
+
+      T = TypeVar('T')  # Can be anything
+      S = TypeVar('S', bound=str)  # Can be any subtype of str
+      A = TypeVar('A', str, bytes)  # Must be exactly str or bytes
+
    Type variables exist primarily for the benefit of static type
    checkers.  They serve as the parameters for generic types as well
-   as for generic function definitions.  See :class:`Generic` for more
+   as for generic function and type alias definitions.
+   See :class:`Generic` for more
    information on generic types.  Generic functions work as follows::
 
       def repeat[T](x: T, n: int) -> Sequence[T]:
@@ -1428,8 +1429,9 @@ without the dedicated syntax, as documented below.
    through the :ref:`type parameter syntax <type-params>` and when
    ``infer_variance=True`` is passed.
    Manually created type variables may be explicitly marked covariant or contravariant by passing
-   ``covariant=True`` or ``contravariant=True``.  See :pep:`484` and :pep:`695` for more
-   details.  By default, type variables are invariant.
+   ``covariant=True`` or ``contravariant=True``.
+   By default, manually created type variables are invariant.
+   See :pep:`484` and :pep:`695` for more details.
 
    Bound type variables and constrained type variables have different
    semantics in several important ways. Using a *bound* type variable means
@@ -1449,12 +1451,12 @@ without the dedicated syntax, as documented below.
    Type variables can be bound to concrete types, abstract types (ABCs or
    protocols), and even unions of types::
 
+      # Can be anything with an __abs__ method
+      def print_abs[T: SupportsAbs](arg: T) -> None:
+          print("Absolute value:", abs(arg))
+
       U = TypeVar('U', bound=str|bytes)  # Can be any subtype of the union str|bytes
       V = TypeVar('V', bound=SupportsAbs)  # Can be anything with an __abs__ method
-
-      # Can be anything with an __abs__ method
-      def print_abs[V: SupportsAbs](arg: V) -> None:
-          print("Absolute value:", abs(arg))
 
    .. _typing-constrained-typevar:
 
@@ -1469,8 +1471,7 @@ without the dedicated syntax, as documented below.
 
       c = concatenate('one', b'two')  # error: type variable 'A' can be either str or bytes in a function call, but not both
 
-   At runtime, ``isinstance(x, T)`` will raise :exc:`TypeError`.  In general,
-   :func:`isinstance` and :func:`issubclass` should not be used with types.
+   At runtime, ``isinstance(x, T)`` will raise :exc:`TypeError`.
 
    .. attribute:: __name__
 
@@ -1478,11 +1479,11 @@ without the dedicated syntax, as documented below.
 
    .. attribute:: __covariant__
 
-      Whether the type variable is covariant.
+      Whether the type var has been explicitly marked as covariant.
 
    .. attribute:: __contravariant__
 
-      Whether the type variable is contravariant.
+      Whether the type var has been explicitly marked as contravariant.
 
    .. attribute:: __infer_variance__
 

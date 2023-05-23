@@ -443,42 +443,42 @@ static PyMethodDef typevar_methods[] = {
 PyDoc_STRVAR(typevar_doc,
 "Type variable.\n\
 \n\
-Usage::\n\
+The preferred way to construct a type variable is via the dedicated syntax\n\
+for :ref:`generic functions <generic-functions>`,\n\
+:ref:`generic classes <generic-classes>`, and\n\
+:ref:`generic type aliases <generic-type-aliases>`::\n\
 \n\
-  T = TypeVar('T')  # Can be anything\n\
-  S = TypeVar('S', bound=str)  # Can be any subtype of str\n\
-  A = TypeVar('A', str, bytes)  # Must be str or bytes\n\
+   class Sequence[T]:  # T is a TypeVar\n\
+         ...\n\
 \n\
-The syntax for generic functions, classes, and type aliases can\n\
-be used to create type variables::\n\
+This syntax can also be used to create bound and constrained type\n\
+variables::\n\
 \n\
-  class Sequence[T]:  # T is a TypeVar\n\
-    ...\n\
+   class StrSequence[S: str]:  # S is a TypeVar bound to str\n\
+         ...\n\
+\n\
+\n\
+   class StrOrBytesSequence[A: (str, bytes)]:  # A is a TypeVar constrained to str or bytes\n\
+         ...\n\
+\n\
+However, if desired, reusable type variables can also be constructed\n\
+manually, like so::\n\
+\n\
+   T = TypeVar('T')  # Can be anything\n\
+   S = TypeVar('S', bound=str)  # Can be any subtype of str\n\
+   A = TypeVar('A', str, bytes)  # Must be exactly str or bytes\n\
 \n\
 Type variables exist primarily for the benefit of static type\n\
 checkers.  They serve as the parameters for generic types as well\n\
-as for generic function definitions.  See class Generic for more\n\
-information on generic types.  Generic functions work as follows:\n\
-\n\
-  def repeat[T](x: T, n: int) -> Sequence[T]:\n\
-      '''Return a list containing n references to x.'''\n\
-      return [x]*n\n\
-\n\
-  def print_capitalized[S: str](x: S) -> S:\n\
-      '''Print x capitalized, and return x.'''\n\
-      print(x.capitalize())\n\
-      return x\n\
-\n\
-  def concatenate[A: (str, bytes)](x: A, y: A) -> A:\n\
-      '''Add two strings or bytes objects together.'''\n\
-      return x + y\n\
+as for generic function and type alias definitions.\n\
 \n\
 The variance of type variables is inferred by type checkers when they are created\n\
 through the type parameter syntax and when\n\
 ``infer_variance=True`` is passed.\n\
-Manually created type variables may be explicitly marked covariant or contravariant by passing\n\
-``covariant=True`` or ``contravariant=True``.  See PEP 484 and PEP 695 for more\n\
-details.  By default, type variables are invariant.\n\
+Manually created type variables may be explicitly marked covariant or\n\
+contravariant by passing ``covariant=True`` or ``contravariant=True``.\n\
+By default, manually created type variables are invariant. See PEP 484\n\
+and PEP 695 for more details.\n\
 ");
 
 static PyType_Slot typevar_slots[] = {
