@@ -27,7 +27,7 @@ Interface summary:
    Return a deep copy of *x*.
 
 
-.. exception:: error
+.. exception:: Error
 
    Raised for module specific errors.
 
@@ -60,7 +60,7 @@ The :func:`deepcopy` function avoids these problems by:
   components copied.
 
 This module does not copy types like module, method, stack trace, stack frame,
-file, socket, window, array, or any similar types.  It does "copy" functions and
+file, socket, window, or any similar types.  It does "copy" functions and
 classes (shallow and deeply), by returning the original object unchanged; this
 is compatible with the way these are treated by the :mod:`pickle` module.
 
@@ -68,7 +68,7 @@ Shallow copies of dictionaries can be made using :meth:`dict.copy`, and
 of lists by assigning a slice of the entire list, for example,
 ``copied_list = original_list[:]``.
 
-.. index:: module: pickle
+.. index:: pair: module; pickle
 
 Classes can use the same interfaces to control copying that they use to control
 pickling.  See the description of module :mod:`pickle` for information on these
@@ -86,6 +86,7 @@ The latter is called to implement the deep copy operation; it is passed one
 argument, the ``memo`` dictionary.  If the :meth:`__deepcopy__` implementation needs
 to make a deep copy of a component, it should call the :func:`deepcopy` function
 with the component as first argument and the memo dictionary as second argument.
+The memo dictionary should be treated as an opaque object.
 
 
 .. seealso::

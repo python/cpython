@@ -14,6 +14,7 @@
   </metadata>
   <files>
     <file src="**\*" exclude="python.props" target="tools" />
-    <file src="python.props" target="build\native" />
+    <file src="python.props" target="build\native\python.props" />
+    <file src="python.props" target="build\native\pythonarm32.props" />
   </files>
 </package>

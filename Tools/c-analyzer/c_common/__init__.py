@@ -1,0 +1,2 @@
+
+NOT_SET = object()

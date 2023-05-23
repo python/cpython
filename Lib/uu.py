@@ -33,6 +33,9 @@ decode(in_file [, out_file, mode, quiet])
 import binascii
 import os
 import sys
+import warnings
+
+warnings._deprecated(__name__, remove=(3, 13))
 
 __all__ = ["Error", "encode", "decode"]
 
@@ -130,7 +133,14 @@ def decode(in_file, out_file=None, mode=None, quiet=False):
             # If the filename isn't ASCII, what's up with that?!?
             out_file = hdrfields[2].rstrip(b' \t\r\n\f').decode("ascii")
             if os.path.exists(out_file):
-                raise Error('Cannot overwrite existing file: %s' % out_file)
+                raise Error(f'Cannot overwrite existing file: {out_file}')
+            if (out_file.startswith(os.sep) or
+                f'..{os.sep}' in out_file or (
+                    os.altsep and
+                    (out_file.startswith(os.altsep) or
+                     f'..{os.altsep}' in out_file))
+               ):
+                raise Error(f'Refusing to write to {out_file} due to directory traversal')
         if mode is None:
             mode = int(hdrfields[1], 8)
         #

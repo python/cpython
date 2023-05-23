@@ -27,12 +27,14 @@ echo.      building externals.
 echo.  -m  Enable parallel build (enabled by default)
 echo.  -M  Disable parallel build
 echo.  -v  Increased output messages
+echo.  -vv Verbose output messages
+echo.  -q  Quiet output messages (errors and warnings only)
 echo.  -k  Attempt to kill any running Pythons before building (usually done
 echo.      automatically by the pythoncore project)
 echo.  --pgo          Build with Profile-Guided Optimization.  This flag
 echo.                 overrides -c and -d
 echo.  --test-marker  Enable the test marker within the build.
-echo.  --regen        Regenerate all opcodes, grammar and tokens
+echo.  --regen        Regenerate all opcodes, grammar and tokens.
 echo.
 echo.Available flags to avoid building certain modules.
 echo.These flags have no effect if '-e' is not given:
@@ -44,7 +46,7 @@ echo.Available arguments:
 echo.  -c Release ^| Debug ^| PGInstrument ^| PGUpdate
 echo.     Set the configuration (default: Release)
 echo.  -p x64 ^| Win32 ^| ARM ^| ARM64
-echo.     Set the platform (default: Win32)
+echo.     Set the platform (default: x64)
 echo.  -t Build ^| Rebuild ^| Clean ^| CleanAll
 echo.     Set the target manually
 echo.  --pgo-job  The job to use for PGO training; implies --pgo
@@ -53,7 +55,7 @@ exit /b 127
 
 :Run
 setlocal
-set platf=Win32
+set platf=x64
 set conf=Release
 set target=Build
 set dir=%~dp0
@@ -73,6 +75,8 @@ if "%~1"=="-d" (set conf=Debug) & shift & goto CheckOpts
 if "%~1"=="-m" (set parallel=/m) & shift & goto CheckOpts
 if "%~1"=="-M" (set parallel=) & shift & goto CheckOpts
 if "%~1"=="-v" (set verbose=/v:n) & shift & goto CheckOpts
+if "%~1"=="-vv" (set verbose=/v:d /ds) & shift & goto CheckOpts
+if "%~1"=="-q" (set verbose=/v:q /nologo /clp:summary) & shift & goto CheckOpts
 if "%~1"=="-k" (set kill=true) & shift & goto CheckOpts
 if "%~1"=="--pgo" (set do_pgo=true) & shift & goto CheckOpts
 if "%~1"=="--pgo-job" (set do_pgo=true) & (set pgo_job=%~2) & shift & shift & goto CheckOpts
@@ -112,8 +116,14 @@ rem Setup the environment
 call "%dir%find_msbuild.bat" %MSBUILD%
 if ERRORLEVEL 1 (echo Cannot locate MSBuild.exe on PATH or as MSBUILD variable & exit /b 2)
 
+call "%dir%find_python.bat" %PYTHON%
+if ERRORLEVEL 1 (echo Cannot locate python.exe on PATH or as PYTHON variable & exit /b 3)
+set PythonForBuild=%PYTHON%
+
 if "%kill%"=="true" call :Kill
-if ERRORLEVEL 1 exit /B 3
+if ERRORLEVEL 1 exit /B %ERRORLEVEL%
+
+if "%regen%"=="true" goto :Regen
 
 if "%do_pgo%"=="true" (
     set conf=PGInstrument
@@ -143,6 +153,15 @@ echo on
 @echo off
 exit /B %ERRORLEVEL%
 
+:Regen
+echo on
+%MSBUILD% "%dir%\pythoncore.vcxproj" /t:Regen %verbose%^
+ /p:Configuration=%conf% /p:Platform=%platf%^
+ /p:ForceRegen=true
+
+@echo off
+exit /B %ERRORLEVEL%
+
 :Build
 rem Call on MSBuild to do the work, echo the command.
 rem Passing %1-9 is not the preferred option, but argument parsing in
@@ -155,14 +174,6 @@ echo on
  /p:IncludeSSL=%IncludeSSL% /p:IncludeTkinter=%IncludeTkinter%^
  /p:UseTestMarker=%UseTestMarker% %GITProperty%^
  %1 %2 %3 %4 %5 %6 %7 %8 %9
-
-@if not ERRORLEVEL 1 @if "%Regen%"=="true" (
-    %MSBUILD% "%dir%regen.vcxproj" /t:%target% %parallel% %verbose%^
-     /p:IncludeExternals=%IncludeExternals%^
-     /p:Configuration=%conf% /p:Platform=%platf%^
-     /p:UseTestMarker=%UseTestMarker% %GITProperty%^
-     %1 %2 %3 %4 %5 %6 %7 %8 %9
-)
 
 @echo off
 exit /b %ERRORLEVEL%
