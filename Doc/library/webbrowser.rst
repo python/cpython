@@ -171,9 +171,6 @@ Notes:
    Removed browsers include Grail, Mosaic, Netscape, Galeon,
    Skipstone, Iceape, and Firefox versions 35 and below.
 
-.. deprecated-removed:: 3.11 3.13
-   :class:`MacOSX` is deprecated, use :class:`MacOSXOSAScript` instead.
-
 Here are some simple examples::
 
    url = 'https://docs.python.org/'
