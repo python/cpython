@@ -2150,7 +2150,7 @@ features:
 
    .. audit-event:: os.link src,dst,src_dir_fd,dst_dir_fd os.link
 
-   .. availability:: Unix, Windows.
+   .. availability:: Unix, Windows, not Emscripten.
 
    .. versionchanged:: 3.2
       Added Windows support.
