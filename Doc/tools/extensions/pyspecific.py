@@ -41,7 +41,7 @@ except ImportError:
 
 ISSUE_URI = 'https://bugs.python.org/issue?@action=redirect&bpo=%s'
 GH_ISSUE_URI = 'https://github.com/python/cpython/issues/%s'
-SOURCE_URI = 'https://github.com/python/cpython/tree/main/%s'
+SOURCE_URI = 'https://github.com/python/cpython/tree/3.12/%s'
 
 # monkey-patch reST parser to disable alphabetic and roman enumerated lists
 from docutils.parsers.rst.states import Body
@@ -674,6 +674,30 @@ def process_audit_events(app, doctree, fromdocname):
         node.replace_self(table)
 
 
+def patch_pairindextypes(app, _env) -> None:
+    """Remove all entries from ``pairindextypes`` before writing POT files.
+
+    We want to run this just before writing output files, as the check to
+    circumvent is in ``I18nBuilder.write_doc()``.
+    As such, we link this to ``env-check-consistency``, even though it has
+    nothing to do with the environment consistency check.
+    """
+    if app.builder.name != 'gettext':
+        return
+
+    # allow translating deprecated index entries
+    try:
+        from sphinx.domains.python import pairindextypes
+    except ImportError:
+        pass
+    else:
+        # Sphinx checks if a 'pair' type entry on an index directive is one of
+        # the Sphinx-translated pairindextypes values. As we intend to move
+        # away from this, we need Sphinx to believe that these values don't
+        # exist, by deleting them when using the gettext builder.
+        pairindextypes.clear()
+
+
 def setup(app):
     app.add_role('issue', issue_role)
     app.add_role('gh', gh_issue_role)
@@ -695,6 +719,7 @@ def setup(app):
     app.add_directive_to_domain('py', 'awaitablemethod', PyAwaitableMethod)
     app.add_directive_to_domain('py', 'abstractmethod', PyAbstractMethod)
     app.add_directive('miscnews', MiscNews)
+    app.connect('env-check-consistency', patch_pairindextypes)
     app.connect('doctree-resolved', process_audit_events)
     app.connect('env-merge-info', audit_events_merge)
     app.connect('env-purge-doc', audit_events_purge)

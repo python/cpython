@@ -189,7 +189,7 @@ not just glibc. This fixes support for musl.
 .. nonce: _P5sMa
 .. section: Core and Builtins
 
-Make the slice object hashable.
+Make the slice object hashable. Patch by Will Bradshaw and Furkan Onder.
 
 ..
 
