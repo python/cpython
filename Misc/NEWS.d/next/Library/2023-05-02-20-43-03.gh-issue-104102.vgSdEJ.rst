@@ -1,2 +1,0 @@
-Improve performance of :meth:`pathlib.Path.glob` when evaluating patterns
-that contain ``'../'`` segments.

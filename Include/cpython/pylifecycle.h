@@ -52,6 +52,7 @@ PyAPI_FUNC(const char *) _Py_gitidentifier(void);
 PyAPI_FUNC(const char *) _Py_gitversion(void);
 
 PyAPI_FUNC(int) _Py_IsFinalizing(void);
+PyAPI_FUNC(int) _Py_IsInterpreterFinalizing(PyInterpreterState *interp);
 
 /* Random */
 PyAPI_FUNC(int) _PyOS_URandom(void *buffer, Py_ssize_t size);

@@ -14,6 +14,7 @@
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntry_Type
+#include "pycore_typevarobject.h" // _PyTypeAlias_Type, _Py_initialize_generic
 #include "pycore_typeobject.h"    // _PyBufferWrapper_Type
 #include "pycore_unionobject.h"   // _PyUnion_Type
 #include "pycore_interpreteridobject.h"  // _PyInterpreterID_Type
@@ -2111,6 +2112,7 @@ static PyTypeObject* static_types[] = {
     &_PyWeakref_CallableProxyType,
     &_PyWeakref_ProxyType,
     &_PyWeakref_RefType,
+    &_PyTypeAlias_Type,
 
     // subclasses: _PyTypes_FiniTypes() deallocates them before their base
     // class
@@ -2137,6 +2139,11 @@ _PyTypes_InitTypes(PyInterpreterState *interp)
             assert(PyBaseObject_Type.tp_base == NULL);
             assert(PyType_Type.tp_base == &PyBaseObject_Type);
         }
+    }
+
+    // Must be after static types are initialized
+    if (_Py_initialize_generic(interp) < 0) {
+        return _PyStatus_ERR("Can't initialize generic types");
     }
 
     return _PyStatus_OK();

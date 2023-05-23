@@ -652,7 +652,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     // for the big switch below (in combination with the EXTRA_CASES macro).
     uint8_t opcode;        /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
-    _Py_atomic_int * const eval_breaker = &tstate->interp->ceval.eval_breaker;
 #ifdef LLTRACE
     int lltrace = 0;
 #endif

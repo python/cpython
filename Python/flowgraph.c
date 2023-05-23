@@ -1293,6 +1293,11 @@ swaptimize(basicblock *block, int *ix)
      (opcode) == STORE_FAST_MAYBE_NULL || \
      (opcode) == POP_TOP)
 
+#define STORES_TO(instr) \
+    (((instr).i_opcode == STORE_FAST || \
+      (instr).i_opcode == STORE_FAST_MAYBE_NULL) \
+     ? (instr).i_oparg : -1)
+
 static int
 next_swappable_instruction(basicblock *block, int i, int lineno)
 {
@@ -1344,6 +1349,23 @@ apply_static_swaps(basicblock *block, int i)
                 return;
             }
         }
+        // The reordering is not safe if the two instructions to be swapped
+        // store to the same location, or if any intervening instruction stores
+        // to the same location as either of them.
+        int store_j = STORES_TO(block->b_instr[j]);
+        int store_k = STORES_TO(block->b_instr[k]);
+        if (store_j >= 0 || store_k >= 0) {
+            if (store_j == store_k) {
+                return;
+            }
+            for (int idx = j + 1; idx < k; idx++) {
+                int store_idx = STORES_TO(block->b_instr[idx]);
+                if (store_idx >= 0 && (store_idx == store_j || store_idx == store_k)) {
+                    return;
+                }
+            }
+        }
+
         // Success!
         INSTR_SET_OP0(swap, NOP);
         cfg_instr temp = block->b_instr[j];
