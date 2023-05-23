@@ -8,15 +8,15 @@ module Python
         | Expression(expr body)
         | FunctionType(expr* argtypes, expr returns)
 
-    stmt = FunctionDef(identifier name, typeparam* typeparams, arguments args,
+    stmt = FunctionDef(identifier name, type_param* type_params, arguments args,
                        stmt* body, expr* decorator_list, expr? returns,
                        string? type_comment)
-          | AsyncFunctionDef(identifier name, typeparam* typeparams, arguments args,
+          | AsyncFunctionDef(identifier name, type_param* type_params, arguments args,
                              stmt* body, expr* decorator_list, expr? returns,
                              string? type_comment)
 
           | ClassDef(identifier name,
-             typeparam* typeparams,
+             type_param* type_params,
              expr* bases,
              keyword* keywords,
              stmt* body,
@@ -25,7 +25,7 @@ module Python
 
           | Delete(expr* targets)
           | Assign(expr* targets, expr value, string? type_comment)
-          | TypeAlias(expr name, typeparam* typeparams, expr value)
+          | TypeAlias(expr name, type_param* type_params, expr value)
           | AugAssign(expr target, operator op, expr value)
           -- 'simple' indicates that we annotate simple name without parens
           | AnnAssign(expr target, expr annotation, expr? value, int simple)
@@ -145,8 +145,8 @@ module Python
 
     type_ignore = TypeIgnore(int lineno, string tag)
 
-    typeparam = TypeVar(identifier name, expr? bound)
-            | ParamSpec(identifier name)
-            | TypeVarTuple(identifier name)
-             attributes (int lineno, int col_offset, int? end_lineno, int? end_col_offset)
+    type_param = TypeVar(identifier name, expr? bound)
+               | ParamSpec(identifier name)
+               | TypeVarTuple(identifier name)
+               attributes (int lineno, int col_offset, int? end_lineno, int? end_col_offset)
 }

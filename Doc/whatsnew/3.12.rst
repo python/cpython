@@ -532,6 +532,17 @@ threading
   profiling functions in all running threads in addition to the calling one.
   (Contributed by Pablo Galindo in :gh:`93503`.)
 
+tkinter
+-------
+
+* ``tkinter.Canvas.coords()`` now flattens its arguments.
+  It now accepts not only coordinates as separate arguments
+  (``x1, y1, x2, y2, ...``) and a sequence of coordinates
+  (``[x1, y1, x2, y2, ...]``), but also coordinates grouped in pairs
+  (``(x1, y1), (x2, y2), ...`` and ``[(x1, y1), (x2, y2), ...]``),
+  like ``create_*()`` methods.
+  (Contributed by Serhiy Storchaka in :gh:`94473`.)
+
 types
 -----
 
@@ -808,7 +819,7 @@ Modules (see :pep:`594`):
 * :mod:`sndhdr`
 * :mod:`spwd`
 * :mod:`sunau`
-* :mod:`telnetlib`
+* :mod:`!telnetlib`
 * :mod:`uu`
 * :mod:`xdrlib`
 
@@ -1464,6 +1475,15 @@ Porting to Python 3.12
 
   Note that :c:func:`PyType_FromMetaclass` (added in Python 3.12)
   already disallows creating classes whose metaclass overrides ``tp_new``.
+
+* :c:var:`PyOS_InputHook` and :c:var:`PyOS_ReadlineFunctionPointer` are no
+  longer called in :ref:`subinterpreters <sub-interpreter-support>`. This is
+  because clients generally rely on process-wide global state (since these
+  callbacks have no way of recovering extension module state).
+
+  This also avoids situations where extensions may find themselves running in a
+  subinterpreter that they don't support (or haven't yet been loaded in). See
+  :gh:`104668` for more info.
 
 Deprecated
 ----------

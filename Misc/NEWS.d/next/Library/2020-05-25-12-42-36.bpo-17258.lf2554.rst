@@ -1,2 +1,0 @@
-:mod:`multiprocessing` now supports stronger HMAC algorithms for inter-process
-connection authentication rather than only HMAC-MD5.
