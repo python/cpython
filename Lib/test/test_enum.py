@@ -4254,11 +4254,14 @@ class TestInternals(unittest.TestCase):
                 red = 'red'
                 blue = 2
                 green = auto()
+                yellow = auto()
 
-        self.assertEqual(list(Color), [Color.red, Color.blue, Color.green])
+        self.assertEqual(list(Color),
+                         [Color.red, Color.blue, Color.green, Color.yellow])
         self.assertEqual(Color.red.value, 'red')
         self.assertEqual(Color.blue.value, 2)
         self.assertEqual(Color.green.value, 3)
+        self.assertEqual(Color.yellow.value, 4)
 
     @unittest.skipIf(
             python_version < (3, 13),
