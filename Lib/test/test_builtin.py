@@ -18,6 +18,7 @@ import re
 import sys
 import traceback
 import types
+import typing
 import unittest
 import warnings
 from contextlib import ExitStack
@@ -28,7 +29,7 @@ from textwrap import dedent
 from types import AsyncGeneratorType, FunctionType, CellType
 from operator import neg
 from test import support
-from test.support import (swap_attr, maybe_get_event_loop_policy)
+from test.support import (cpython_only, swap_attr, maybe_get_event_loop_policy)
 from test.support.os_helper import (EnvironmentVarGuard, TESTFN, unlink)
 from test.support.script_helper import assert_python_ok
 from test.support.warnings_helper import check_warnings
@@ -926,6 +927,16 @@ class BuiltinTest(unittest.TestCase):
             f2 = filter(filter_char, "abcdeabcde")
             self.check_iter_pickle(f1, list(f2), proto)
 
+    def test_filter_dealloc(self):
+        # Tests recursive deallocation of nested filter objects using the
+        # thrashcan mechanism. See gh-102356 for more details.
+        max_iters = 1000000
+        i = filter(bool, range(max_iters))
+        for _ in range(max_iters):
+            i = filter(bool, i)
+        del i
+        gc.collect()
+
     def test_getattr(self):
         self.assertTrue(getattr(sys, 'stdout') is sys.stdout)
         self.assertRaises(TypeError, getattr)
@@ -1155,7 +1166,11 @@ class BuiltinTest(unittest.TestCase):
             max()
 
         self.assertRaises(TypeError, max, 42)
-        self.assertRaises(ValueError, max, ())
+        with self.assertRaisesRegex(
+            ValueError,
+            r'max\(\) iterable argument is empty'
+        ):
+            max(())
         class BadSeq:
             def __getitem__(self, index):
                 raise ValueError
@@ -1214,7 +1229,11 @@ class BuiltinTest(unittest.TestCase):
             min()
 
         self.assertRaises(TypeError, min, 42)
-        self.assertRaises(ValueError, min, ())
+        with self.assertRaisesRegex(
+            ValueError,
+            r'min\(\) iterable argument is empty'
+        ):
+            min(())
         class BadSeq:
             def __getitem__(self, index):
                 raise ValueError
@@ -1595,7 +1614,7 @@ class BuiltinTest(unittest.TestCase):
         msg = r"^attribute name must be string, not 'int'$"
         self.assertRaisesRegex(TypeError, msg, setattr, sys, 1, 'spam')
 
-    # test_str(): see test_unicode.py and test_bytes.py for str() tests.
+    # test_str(): see test_str.py and test_bytes.py for str() tests.
 
     def test_sum(self):
         self.assertEqual(sum([]), 0)
@@ -2352,6 +2371,35 @@ class ShutdownTest(unittest.TestCase):
         self.assertEqual(["before", "after"], out.decode().splitlines())
 
 
+@cpython_only
+class ImmortalTests(unittest.TestCase):
+
+    if sys.maxsize < (1 << 32):
+        IMMORTAL_REFCOUNT = (1 << 30) - 1
+    else:
+        IMMORTAL_REFCOUNT = (1 << 32) - 1
+
+    IMMORTALS = (None, True, False, Ellipsis, NotImplemented, *range(-5, 257))
+
+    def assert_immortal(self, immortal):
+        with self.subTest(immortal):
+            self.assertEqual(sys.getrefcount(immortal), self.IMMORTAL_REFCOUNT)
+
+    def test_immortals(self):
+        for immortal in self.IMMORTALS:
+            self.assert_immortal(immortal)
+
+    def test_list_repeat_respect_immortality(self):
+        refs = list(self.IMMORTALS) * 42
+        for immortal in self.IMMORTALS:
+            self.assert_immortal(immortal)
+
+    def test_tuple_repeat_respect_immortality(self):
+        refs = tuple(self.IMMORTALS) * 42
+        for immortal in self.IMMORTALS:
+            self.assert_immortal(immortal)
+
+
 class TestType(unittest.TestCase):
     def test_new_type(self):
         A = type('A', (), {})
@@ -2437,6 +2485,17 @@ class TestType(unittest.TestCase):
         with self.assertRaises(TypeError):
             A.__qualname__ = b'B'
         self.assertEqual(A.__qualname__, 'D.E')
+
+    def test_type_typeparams(self):
+        class A[T]:
+            pass
+        T, = A.__type_params__
+        self.assertIsInstance(T, typing.TypeVar)
+        A.__type_params__ = "whatever"
+        self.assertEqual(A.__type_params__, "whatever")
+        with self.assertRaises(TypeError):
+            del A.__type_params__
+        self.assertEqual(A.__type_params__, "whatever")
 
     def test_type_doc(self):
         for doc in 'x', '\xc4', '\U0001f40d', 'x\x00y', b'x', 42, None:

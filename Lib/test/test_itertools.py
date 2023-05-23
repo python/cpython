@@ -1694,6 +1694,38 @@ class TestBasicOps(unittest.TestCase):
         gc.collect()
         self.assertTrue(gc.is_tracked(next(it)))
 
+    @support.cpython_only
+    def test_immutable_types(self):
+        from itertools import _grouper, _tee, _tee_dataobject
+        dataset = (
+            accumulate,
+            batched,
+            chain,
+            combinations,
+            combinations_with_replacement,
+            compress,
+            count,
+            cycle,
+            dropwhile,
+            filterfalse,
+            groupby,
+            _grouper,
+            islice,
+            pairwise,
+            permutations,
+            product,
+            repeat,
+            starmap,
+            takewhile,
+            _tee,
+            _tee_dataobject,
+            zip_longest,
+        )
+        for tp in dataset:
+            with self.subTest(tp=tp):
+                with self.assertRaisesRegex(TypeError, "immutable"):
+                    tp.foobar = 1
+
 
 class TestExamples(unittest.TestCase):
 
@@ -1814,7 +1846,7 @@ class TestPurePythonRoughEquivalents(unittest.TestCase):
             if n < 1:
                 raise ValueError('n must be at least one')
             it = iter(iterable)
-            while (batch := tuple(islice(it, n))):
+            while batch := tuple(islice(it, n)):
                 yield batch
 
         for iterable, n in product(

@@ -1,3 +1,0 @@
-``ctypes`` arrays of length 0 now report a correct itemsize when a
-``memoryview`` is constructed from them, rather than always giving a value
-of 0.

@@ -619,7 +619,7 @@ class AbstractEventLoopPolicy:
 
         Returns an event loop object implementing the BaseEventLoop interface,
         or raises an exception in case no event loop has been set for the
-        current context.
+        current context and the current policy does not specify to create one.
 
         It should never return None."""
         raise NotImplementedError
@@ -672,6 +672,28 @@ class BaseDefaultEventLoopPolicy(AbstractEventLoopPolicy):
 
         Returns an instance of EventLoop or raises an exception.
         """
+        if (self._local._loop is None and
+                not self._local._set_called and
+                threading.current_thread() is threading.main_thread()):
+            stacklevel = 2
+            try:
+                f = sys._getframe(1)
+            except AttributeError:
+                pass
+            else:
+                # Move up the call stack so that the warning is attached
+                # to the line outside asyncio itself.
+                while f:
+                    module = f.f_globals.get('__name__')
+                    if not (module == 'asyncio' or module.startswith('asyncio.')):
+                        break
+                    f = f.f_back
+                    stacklevel += 1
+            import warnings
+            warnings.warn('There is no current event loop',
+                          DeprecationWarning, stacklevel=stacklevel)
+            self.set_event_loop(self.new_event_loop())
+
         if self._local._loop is None:
             raise RuntimeError('There is no current event loop in thread %r.'
                                % threading.current_thread().name)
