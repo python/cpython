@@ -233,14 +233,10 @@ class _PathParents(Sequence):
         return "<{}.parents>".format(type(self._path).__name__)
 
 
-class PurePath(object):
-    """Base class for manipulating paths without I/O.
+class _LexicalPath(object):
+    """Base class for manipulating paths using only lexical operations.
 
-    PurePath represents a filesystem path and offers operations which
-    don't imply any actual filesystem I/O.  Depending on your system,
-    instantiating a PurePath will return either a PurePosixPath or a
-    PureWindowsPath object.  You can also instantiate either of these classes
-    directly, regardless of your system.
+    This class does not provide __fspath__(), __bytes__() or as_uri().
     """
 
     __slots__ = (
@@ -280,16 +276,6 @@ class PurePath(object):
     )
     _flavour = os.path
 
-    def __new__(cls, *args, **kwargs):
-        """Construct a PurePath from one or several strings and or existing
-        PurePath objects.  The strings and path objects are combined so as
-        to yield a canonicalized path, which is incorporated into the
-        new PurePath object.
-        """
-        if cls is PurePath:
-            cls = PureWindowsPath if os.name == 'nt' else PurePosixPath
-        return object.__new__(cls)
-
     def __reduce__(self):
         # Using the parts tuple helps share interned path parts
         # when pickling related paths.
@@ -298,7 +284,7 @@ class PurePath(object):
     def __init__(self, *args):
         paths = []
         for arg in args:
-            if isinstance(arg, PurePath):
+            if isinstance(arg, _LexicalPath):
                 path = arg._raw_path
             else:
                 try:
@@ -378,42 +364,14 @@ class PurePath(object):
                                                   self._tail) or '.'
             return self._str
 
-    def __fspath__(self):
-        return str(self)
-
     def as_posix(self):
         """Return the string representation of the path with forward (/)
         slashes."""
         f = self._flavour
         return str(self).replace(f.sep, '/')
 
-    def __bytes__(self):
-        """Return the bytes representation of the path.  This is only
-        recommended to use under Unix."""
-        return os.fsencode(self)
-
     def __repr__(self):
         return "{}({!r})".format(self.__class__.__name__, self.as_posix())
-
-    def as_uri(self):
-        """Return the path as a 'file' URI."""
-        if not self.is_absolute():
-            raise ValueError("relative path can't be expressed as a file URI")
-
-        drive = self.drive
-        if len(drive) == 2 and drive[1] == ':':
-            # It's a path on a local drive => 'file:///c:/a/b'
-            prefix = 'file:///' + drive
-            path = self.as_posix()[2:]
-        elif drive:
-            # It's a path on a network drive => 'file://host/share/a/b'
-            prefix = 'file:'
-            path = self.as_posix()
-        else:
-            # It's a posix path => 'file:///etc/hosts'
-            prefix = 'file://'
-            path = str(self)
-        return prefix + urlquote_from_bytes(os.fsencode(path))
 
     @property
     def _str_normcase(self):
@@ -434,7 +392,7 @@ class PurePath(object):
             return self._parts_normcase_cached
 
     def __eq__(self, other):
-        if not isinstance(other, PurePath):
+        if not isinstance(other, _LexicalPath):
             return NotImplemented
         return self._str_normcase == other._str_normcase and self._flavour is other._flavour
 
@@ -446,22 +404,22 @@ class PurePath(object):
             return self._hash
 
     def __lt__(self, other):
-        if not isinstance(other, PurePath) or self._flavour is not other._flavour:
+        if not isinstance(other, _LexicalPath) or self._flavour is not other._flavour:
             return NotImplemented
         return self._parts_normcase < other._parts_normcase
 
     def __le__(self, other):
-        if not isinstance(other, PurePath) or self._flavour is not other._flavour:
+        if not isinstance(other, _LexicalPath) or self._flavour is not other._flavour:
             return NotImplemented
         return self._parts_normcase <= other._parts_normcase
 
     def __gt__(self, other):
-        if not isinstance(other, PurePath) or self._flavour is not other._flavour:
+        if not isinstance(other, _LexicalPath) or self._flavour is not other._flavour:
             return NotImplemented
         return self._parts_normcase > other._parts_normcase
 
     def __ge__(self, other):
-        if not isinstance(other, PurePath) or self._flavour is not other._flavour:
+        if not isinstance(other, _LexicalPath) or self._flavour is not other._flavour:
             return NotImplemented
         return self._parts_normcase >= other._parts_normcase
 
@@ -706,6 +664,57 @@ class PurePath(object):
             if not match(part):
                 return False
         return True
+
+
+class PurePath(_LexicalPath):
+    """Base class for manipulating paths without I/O.
+
+    PurePath represents a filesystem path and offers operations which
+    don't imply any actual filesystem I/O.  Depending on your system,
+    instantiating a PurePath will return either a PurePosixPath or a
+    PureWindowsPath object.  You can also instantiate either of these classes
+    directly, regardless of your system.
+    """
+    __slots__ = ()
+
+    def __new__(cls, *args, **kwargs):
+        """Construct a PurePath from one or several strings and or existing
+        PurePath objects.  The strings and path objects are combined so as
+        to yield a canonicalized path, which is incorporated into the
+        new PurePath object.
+        """
+        if cls is PurePath:
+            cls = PureWindowsPath if os.name == 'nt' else PurePosixPath
+        return object.__new__(cls)
+
+    def __fspath__(self):
+        return str(self)
+
+    def __bytes__(self):
+        """Return the bytes representation of the path.  This is only
+        recommended to use under Unix."""
+        return os.fsencode(self)
+
+    def as_uri(self):
+        """Return the path as a 'file' URI."""
+        if not self.is_absolute():
+            raise ValueError("relative path can't be expressed as a file URI")
+
+        drive = self.drive
+        if len(drive) == 2 and drive[1] == ':':
+            # It's a path on a local drive => 'file:///c:/a/b'
+            prefix = 'file:///' + drive
+            path = self.as_posix()[2:]
+        elif drive:
+            # It's a path on a network drive => 'file://host/share/a/b'
+            prefix = 'file:'
+            path = self.as_posix()
+        else:
+            # It's a posix path => 'file:///etc/hosts'
+            prefix = 'file://'
+            path = str(self)
+        return prefix + urlquote_from_bytes(os.fsencode(path))
+
 
 # Can't subclass os.PathLike from PurePath and keep the constructor
 # optimizations in PurePath.__slots__.
