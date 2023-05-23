@@ -68,8 +68,9 @@ COMPUTE_EVAL_BREAKER(PyInterpreterState *interp,
         _Py_atomic_load_relaxed_int32(&ceval2->gil_drop_request)
         | (_Py_atomic_load_relaxed_int32(&ceval->signals_pending)
            && _Py_ThreadCanHandleSignals(interp))
-        | (_Py_atomic_load_relaxed_int32(&ceval2->pending.calls_to_do)
-           && _Py_ThreadCanHandlePendingCalls())
+        | (_Py_atomic_load_relaxed_int32(&ceval2->pending.calls_to_do))
+        | (_Py_IsMainThread()
+           &&_Py_atomic_load_relaxed_int32(&ceval->pending_mainthread.calls_to_do))
         | ceval2->pending.async_exc
         | _Py_atomic_load_relaxed_int32(&ceval2->gc_scheduled));
 }
@@ -95,11 +96,11 @@ RESET_GIL_DROP_REQUEST(PyInterpreterState *interp)
 
 
 static inline void
-SIGNAL_PENDING_CALLS(PyInterpreterState *interp)
+SIGNAL_PENDING_CALLS(struct _pending_calls *pending, PyInterpreterState *interp)
 {
     struct _ceval_runtime_state *ceval = &interp->runtime->ceval;
     struct _ceval_state *ceval2 = &interp->ceval;
-    _Py_atomic_store_relaxed(&ceval2->pending.calls_to_do, 1);
+    _Py_atomic_store_relaxed(&pending->calls_to_do, 1);
     COMPUTE_EVAL_BREAKER(interp, ceval, ceval2);
 }
 
@@ -109,6 +110,9 @@ UNSIGNAL_PENDING_CALLS(PyInterpreterState *interp)
 {
     struct _ceval_runtime_state *ceval = &interp->runtime->ceval;
     struct _ceval_state *ceval2 = &interp->ceval;
+    if (_Py_IsMainInterpreter(interp)) {
+        _Py_atomic_store_relaxed(&ceval->pending_mainthread.calls_to_do, 0);
+    }
     _Py_atomic_store_relaxed(&ceval2->pending.calls_to_do, 0);
     COMPUTE_EVAL_BREAKER(interp, ceval, ceval2);
 }
@@ -831,6 +835,11 @@ _PyEval_AddPendingCall(PyInterpreterState *interp,
 {
     assert(!mainthreadonly || _Py_IsMainInterpreter(interp));
     struct _pending_calls *pending = &interp->ceval.pending;
+    if (mainthreadonly) {
+        /* The main thread only exists in the main interpreter. */
+        assert(_Py_IsMainInterpreter(interp));
+        pending = &_PyRuntime.ceval.pending_mainthread;
+    }
     /* Ensure that _PyEval_InitState() was called
        and that _PyEval_FiniState() is not called yet. */
     assert(pending->lock != NULL);
@@ -840,7 +849,7 @@ _PyEval_AddPendingCall(PyInterpreterState *interp,
     PyThread_release_lock(pending->lock);
 
     /* signal main loop */
-    SIGNAL_PENDING_CALLS(interp);
+    SIGNAL_PENDING_CALLS(pending, interp);
     return result;
 }
 
@@ -872,10 +881,15 @@ handle_signals(PyThreadState *tstate)
 static inline int
 has_pending_calls(PyInterpreterState *interp)
 {
-    if (_Py_atomic_load_relaxed_int32(&interp->ceval.pending.calls_to_do)) {
+    struct _pending_calls *pending = &interp->ceval.pending;
+    if (_Py_atomic_load_relaxed_int32(&pending->calls_to_do)) {
         return 1;
     }
-    return 0;
+    if (!_Py_IsMainThread()) {
+        return 0;
+    }
+    pending = &_PyRuntime.ceval.pending_mainthread;
+    return _Py_atomic_load_relaxed_int32(&pending->calls_to_do);
 }
 
 static int
@@ -906,11 +920,7 @@ static int
 make_pending_calls(PyInterpreterState *interp)
 {
     struct _pending_calls *pending = &interp->ceval.pending;
-
-    /* only execute pending calls on main thread */
-    if (!_Py_ThreadCanHandlePendingCalls()) {
-        return 0;
-    }
+    struct _pending_calls *pending_main = &_PyRuntime.ceval.pending_mainthread;
 
     /* don't perform recursive pending calls */
     if (pending->busy) {
@@ -922,11 +932,18 @@ make_pending_calls(PyInterpreterState *interp)
        added in-between re-signals */
     UNSIGNAL_PENDING_CALLS(interp);
 
-    int res = _make_pending_calls(pending);
-    if (res < 0) {
+    if (_make_pending_calls(pending) != 0) {
         pending->busy = 0;
-        SIGNAL_PENDING_CALLS(interp);
+        SIGNAL_PENDING_CALLS(pending, interp);
         return -1;
+    }
+
+    if (_Py_IsMainThread()) {
+        if (_make_pending_calls(pending_main) != 0) {
+            pending->busy = 0;
+            SIGNAL_PENDING_CALLS(pending_main, interp);
+            return -1;
+        }
     }
 
     pending->busy = 0;
