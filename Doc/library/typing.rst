@@ -1500,7 +1500,7 @@ without the dedicated syntax, as documented below.
 
          For type variables created through :ref:`type parameter syntax <type-params>`,
          the bound is evaluated only when the attribute is accessed, not when
-         the type variable is created.
+         the type variable is created (see :ref:`lazy-evaluation`).
 
    .. attribute:: __constraints__
 
@@ -1510,7 +1510,7 @@ without the dedicated syntax, as documented below.
 
          For type variables created through :ref:`type parameter syntax <type-params>`,
          the constraints are evaluated only when the attribute is accessed, not when
-         the type variable is created.
+         the type variable is created (see :ref:`lazy-evaluation`).
 
    .. versionchanged:: 3.12
 

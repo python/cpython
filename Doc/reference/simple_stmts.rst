@@ -1041,8 +1041,8 @@ This code is roughly equivalent to::
 mostly like a function, but with several small differences. The value of the
 type alias is evaluated in the annotation scope. It is not evaluated when the
 type alias is created, but only when the value is accessed through the type alias's
-``__value__`` attribute. This allows the type alias to refer to names that are
-not yet defined.
+``__value__`` attribute (see :ref:`lazy-evaluation`).
+This allows the type alias to refer to names that are not yet defined.
 
 Type aliases may be made generic by adding a :ref:`type parameter list <type-params>`
 after the name. See :ref:`generic-type-aliases` for more.

@@ -1739,7 +1739,8 @@ as well as for additional flavors of type parameters::
    def func[T: int, *Ts, **P](*args: *Ts, arg: Callable[P, T] = some_default):
        ...
 
-Except for the lazy evaluation of the :class:`~typing.TypeVar` bound, this is equivalent to::
+Except for the :ref:`lazy evaluation <lazy-evaluation>` of the
+:class:`~typing.TypeVar` bound, this is equivalent to::
 
    DEFAULT_OF_arg = some_default
 
@@ -1760,8 +1761,8 @@ Except for the lazy evaluation of the :class:`~typing.TypeVar` bound, this is eq
        return func
    func = decorator(TYPE_PARAMS_OF_func())
 
-(The uppercased names like ``DEFAULT_OF_arg`` are not actually
-bound at runtime.)
+The capitalized names like ``DEFAULT_OF_arg`` are not actually
+bound at runtime.
 
 .. _generic-classes:
 
@@ -1783,7 +1784,8 @@ This syntax is equivalent to::
    Bag = TYPE_PARAMS_OF_Bag()
 
 Here again ``def'`` (not a real keyword) indicates an
-:ref:`annotation scope <annotation-scopes>`.
+:ref:`annotation scope <annotation-scopes>`, and the name
+``TYPE_PARAMS_OF_Bag`` is not actually bound at runtime.
 
 Generic classes implicitly inherit from :data:`typing.Generic`.
 The base classes and keyword arguments of generic classes are
@@ -1813,7 +1815,8 @@ The :keyword:`type` statement can also be used to create a generic type alias::
 
    type ListOrSet[T] = list[T] | set[T]
 
-Except for the lazy evaluation of the value, this is equivalent to::
+Except for the :ref:`lazy evaluation <lazy-evaluation>` of the value,
+this is equivalent to::
 
    def' TYPE_PARAMS_OF_ListOrSet():
        T = typing.TypeVar("T")
@@ -1823,6 +1826,10 @@ Except for the lazy evaluation of the value, this is equivalent to::
        # In reality, the value is lazily evaluated
        return typing.TypeAliasType("ListOrSet", VALUE_OF_ListOrSet(), type_params=(T,))
    ListOrSet = TYPE_PARAMS_OF_ListOrSet()
+
+Here, ``def'`` (not a real keyword) indicates an
+:ref:`annotation scope <annotation-scopes>`. The capitalized names
+like ``TYPE_PARAMS_OF_ListOrSet`` are not actually bound at runtime.
 
 .. rubric:: Footnotes
 

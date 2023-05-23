@@ -226,7 +226,7 @@ Annotation scopes differ from function scopes in the following ways:
 .. versionadded:: 3.12
    Annotation scopes were introduced in Python 3.12 as part of :pep:`695`.
 
-.. _lazy_evaluation:
+.. _lazy-evaluation:
 
 Lazy evaluation
 ---------------
