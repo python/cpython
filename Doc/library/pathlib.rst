@@ -588,7 +588,7 @@ Pure paths provide the following methods and properties:
    .. versionadded:: 3.12
       The *case_sensitive* argument.
 
-   .. versionchanged:: 3.12
+   .. versionchanged:: 3.13
       Support for the recursive wildcard "``**``" was added. In previous
       versions, it acted like the non-recursive wildcard "``*``".
 

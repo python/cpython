@@ -399,10 +399,6 @@ pathlib
   :meth:`pathlib.Path.rglob` and :meth:`pathlib.PurePath.match` for matching
   the path's case sensitivity, allowing for more precise control over the matching process.
 
-* Add support for recursive wildcards in :meth:`pathlib.PurePath.match`.
-  (Contributed by Barney Gale in :gh:`73435`.)
-
-
 dis
 ---
 

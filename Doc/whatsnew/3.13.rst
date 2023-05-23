@@ -87,6 +87,12 @@ New Modules
 Improved Modules
 ================
 
+pathlib
+-------
+
+* Add support for recursive wildcards in :meth:`pathlib.PurePath.match`.
+  (Contributed by Barney Gale in :gh:`73435`.)
+
 
 Optimizations
 =============
