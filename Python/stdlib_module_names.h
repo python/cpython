@@ -172,7 +172,6 @@ static const char* _Py_stdlib_module_names[] = {
 "itertools",
 "json",
 "keyword",
-"lib2to3",
 "linecache",
 "locale",
 "logging",

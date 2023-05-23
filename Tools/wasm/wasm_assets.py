@@ -41,8 +41,6 @@ OMIT_FILES = (
     # package management
     "ensurepip/",
     "venv/",
-    # build system
-    "lib2to3/",
     # deprecated
     "uu.py",
     "xdrlib.py",

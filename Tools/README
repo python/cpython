@@ -41,8 +41,7 @@ peg_generator   PEG-based parser generator (pegen) used for new parser.
 
 scripts         A number of useful single-file programs, e.g. tabnanny.py
                 by Tim Peters, which checks for inconsistent mixing of
-                tabs and spaces, and 2to3, which converts Python 2 code
-                to Python 3 code.
+                tabs and spaces.
 
 ssl             Scripts to generate ssl_data.h from OpenSSL sources, and run
                 tests against multiple installations of OpenSSL and LibreSSL.

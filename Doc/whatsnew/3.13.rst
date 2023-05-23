@@ -102,6 +102,9 @@ Deprecated
 Removed
 =======
 
+* Remove the ``2to3`` program and the ``lib2to3`` module,
+  deprecated in Python 3.11.
+  (Contributed by Victor Stinner in :gh:`104780`.)
 
 
 Porting to Python 3.13
