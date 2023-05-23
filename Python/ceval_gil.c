@@ -995,6 +995,10 @@ Py_MakePendingCalls(void)
     PyThreadState *tstate = _PyThreadState_GET();
     assert(is_tstate_valid(tstate));
 
+    /* Only execute pending calls on the main thread. */
+    if (!_Py_IsMainThread()) {
+        return 0;
+    }
     return _PyEval_MakePendingCalls(tstate);
 }
 
