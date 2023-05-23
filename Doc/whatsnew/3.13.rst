@@ -102,6 +102,10 @@ Deprecated
 Removed
 =======
 
+* :pep:`594`: Remove the :mod:`!telnetlib` module, deprecated in Python 3.11:
+  use the projects `telnetlib3 <https://pypi.org/project/telnetlib3/>`_ or
+  `Exscript <https://pypi.org/project/Exscript/>`_ instead.
+  (Contributed by Victor Stinner in :gh:`104773`.)
 
 
 Porting to Python 3.13
