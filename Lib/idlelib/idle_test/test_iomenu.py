@@ -12,7 +12,7 @@ from idlelib.idle_test.mock_idle import Func
 # These are used in loadfile and encode.
 # Also used in pyshell.MI.execfile and runscript.tabnanny.
 from tokenize import open, detect_encoding
-# Remove when have proper tests that use both.
+# Remove when we have proper tests that use both.
 
 
 class IOBindingTest(unittest.TestCase):
