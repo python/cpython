@@ -409,11 +409,10 @@ gen_close(PyGenObject *gen, PyObject *args)
         return NULL;
     }
     if (PyErr_ExceptionMatches(PyExc_StopIteration)) {
-        /* retrieve the StopIteration exception instance being handled, and
-         * extract its value */
-        PyObject *exc = PyErr_GetRaisedException();  /* clears the error indicator */
-        PyObject *value = Py_NewRef(((PyStopIterationObject *)exc)->value);
-        Py_DECREF(exc);
+        /* fetch the value of the StopIteration instance being handled;
+         * this clears the error indicator */
+        PyObject *value;
+        _PyGen_FetchStopIterationValue(&value);
         return value;
     }
     if (PyErr_ExceptionMatches(PyExc_GeneratorExit)) {
