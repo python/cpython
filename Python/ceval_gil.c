@@ -962,6 +962,29 @@ _Py_FinishPendingCalls(PyThreadState *tstate)
     }
 }
 
+int
+_PyEval_MakePendingCalls(PyThreadState *tstate)
+{
+    int res;
+
+    if (_Py_IsMainThread()) {
+        /* Python signal handler doesn't really queue a callback:
+           it only signals that a signal was received,
+           see _PyEval_SignalReceived(). */
+        res = handle_signals(tstate);
+        if (res != 0) {
+            return res;
+        }
+    }
+
+    res = make_pending_calls(tstate->interp);
+    if (res != 0) {
+        return res;
+    }
+
+    return 0;
+}
+
 /* Py_MakePendingCalls() is a simple wrapper for the sake
    of backward-compatibility. */
 int
@@ -972,19 +995,7 @@ Py_MakePendingCalls(void)
     PyThreadState *tstate = _PyThreadState_GET();
     assert(is_tstate_valid(tstate));
 
-    /* Python signal handler doesn't really queue a callback: it only signals
-       that a signal was received, see _PyEval_SignalReceived(). */
-    int res = handle_signals(tstate);
-    if (res != 0) {
-        return res;
-    }
-
-    res = make_pending_calls(tstate->interp);
-    if (res != 0) {
-        return res;
-    }
-
-    return 0;
+    return _PyEval_MakePendingCalls(tstate);
 }
 
 void
