@@ -18,6 +18,7 @@ class AifcTest(audiotests.AudioWriteTests,
     module = aifc
     close_fd = True
     test_unseekable_read = None
+    encoding = aifc.AIFC_ENCODING_LINEAR_PCM
 
 
 class AifcPCM8Test(AifcTest, unittest.TestCase):

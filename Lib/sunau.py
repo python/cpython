@@ -259,6 +259,9 @@ class Au_read:
         else:
             return 'not compressed'
 
+    def getencoding(self):
+        return self._encoding
+
     def getparams(self):
         return _sunau_params(self.getnchannels(), self.getsampwidth(),
                   self.getframerate(), self.getnframes(),
@@ -342,6 +345,7 @@ class Au_write:
         self._datawritten = 0
         self._datalength = 0
         self._info = b''
+        self._encoding = AUDIO_FILE_ENCODING_MULAW_8
         self._comptype = 'ULAW' # default is U-law
 
     def setnchannels(self, nchannels):
@@ -362,6 +366,7 @@ class Au_write:
         if sampwidth not in (1, 2, 3, 4):
             raise Error('bad sample width')
         self._sampwidth = sampwidth
+        self._update_encoding()
 
     def getsampwidth(self):
         if not self._framerate:
@@ -404,6 +409,31 @@ class Au_write:
             return 'CCITT G.711 A-law'
         else:
             return 'not compressed'
+
+    def setencoding(self, encoding):
+        if self._nframeswritten:
+            raise Error('cannot change parameters after starting to write')
+        if encoding == AUDIO_FILE_ENCODING_LINEAR_8:
+            self.setcomptype('NONE', None)
+            self.setsampwidth(1)
+        elif encoding == AUDIO_FILE_ENCODING_LINEAR_16:
+            self.setcomptype('NONE', None)
+            self.setsampwidth(2)
+        elif encoding == AUDIO_FILE_ENCODING_LINEAR_24:
+            self.setcomptype('NONE', None)
+            self.setsampwidth(3)
+        elif encoding == AUDIO_FILE_ENCODING_LINEAR_32:
+            self.setcomptype('NONE', None)
+            self.setsampwidth(4)
+        elif encoding == AUDIO_FILE_ENCODING_MULAW_8:
+            self.setcomptype('ULAW', None)
+            self.setsampwidth(2)
+        else:
+            raise Error('unsupported encoding %r', encoding)
+        assert self._encoding == encoding
+
+    def getencoding(self):
+        return self._encoding
 
     def setparams(self, params):
         nchannels, sampwidth, framerate, nframes, comptype, compname = params
@@ -458,6 +488,27 @@ class Au_write:
     #
     # private methods
     #
+    def _update_encoding(self):
+        if self._comptype == 'NONE':
+            if self._sampwidth == 1:
+                self._encoding = AUDIO_FILE_ENCODING_LINEAR_8
+                self._framesize = 1
+            elif self._sampwidth == 2:
+                self._encoding = AUDIO_FILE_ENCODING_LINEAR_16
+                self._framesize = 2
+            elif self._sampwidth == 3:
+                self._encoding = AUDIO_FILE_ENCODING_LINEAR_24
+                self._framesize = 3
+            elif self._sampwidth == 4:
+                self._encoding = AUDIO_FILE_ENCODING_LINEAR_32
+                self._framesize = 4
+            else:
+                raise Error('internal error')
+        elif self._comptype == 'ULAW':
+            self._encoding = AUDIO_FILE_ENCODING_MULAW_8
+            self._framesize = 1
+        else:
+            raise Error('internal error')
 
     def _ensure_header_written(self):
         if not self._nframeswritten:
@@ -470,26 +521,7 @@ class Au_write:
             self._write_header()
 
     def _write_header(self):
-        if self._comptype == 'NONE':
-            if self._sampwidth == 1:
-                encoding = AUDIO_FILE_ENCODING_LINEAR_8
-                self._framesize = 1
-            elif self._sampwidth == 2:
-                encoding = AUDIO_FILE_ENCODING_LINEAR_16
-                self._framesize = 2
-            elif self._sampwidth == 3:
-                encoding = AUDIO_FILE_ENCODING_LINEAR_24
-                self._framesize = 3
-            elif self._sampwidth == 4:
-                encoding = AUDIO_FILE_ENCODING_LINEAR_32
-                self._framesize = 4
-            else:
-                raise Error('internal error')
-        elif self._comptype == 'ULAW':
-            encoding = AUDIO_FILE_ENCODING_MULAW_8
-            self._framesize = 1
-        else:
-            raise Error('internal error')
+        self._update_encoding()
         self._framesize = self._framesize * self._nchannels
         _write_u32(self._file, AUDIO_FILE_MAGIC)
         header_size = 25 + len(self._info)
@@ -505,7 +537,7 @@ class Au_write:
             self._form_length_pos = None
         _write_u32(self._file, length)
         self._datalength = length
-        _write_u32(self._file, encoding)
+        _write_u32(self._file, self._encoding)
         _write_u32(self._file, self._framerate)
         _write_u32(self._file, self._nchannels)
         self._file.write(self._info)
