@@ -152,7 +152,7 @@ same quote as the containing f-string. Let's cover these in detail:
   quites). In Python 3.12, you can now do things like this:
 
     >>> songs = ['Take me back to Eden', 'Alkaline', 'Ascensionism']
-    >>> f"This is the playlist: {", ".join(things)}"
+    >>> f"This is the playlist: {", ".join(songs)}"
     'This is the playlist: Take me back to Eden, Alkaline, Ascensionism
 
   Note that before this change there was no explicit limit in how f-strings can
