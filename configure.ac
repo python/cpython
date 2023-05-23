@@ -2086,24 +2086,33 @@ AC_MSG_CHECKING([BOLT_APPLY_FLAGS])
 if test -z "${BOLT_APPLY_FLAGS}"
 then
   AS_VAR_SET(
+    [BOLT_GENERIC_OPTIONS],
+    [m4_normalize(["
+      -dyno-stats
+      -update-debug-sections
+      -use-gnu-stack
+    "])]
+  )
+  AS_VAR_SET(
+    [BOLT_OPTIMIZATION_OPTIONS],
+    [m4_normalize(["
+      -frame-opt=hot
+      -icf=1
+      -indirect-call-promotion=all
+      -inline-all
+      -inline-ap
+      -jump-tables=aggressive
+      -peepholes=none
+      -reorder-blocks=ext-tsp
+      -reorder-functions-use-hot-size
+      -reorder-functions=hfsort+
+      -split-eh
+      -split-functions
+    "])]
+  )
+  AS_VAR_SET(
     [BOLT_APPLY_FLAGS],
-    [m4_join([ ],
-      [-update-debug-sections],
-      [-reorder-blocks=ext-tsp],
-      [-reorder-functions=hfsort+],
-      [-split-functions],
-      [-icf=1],
-      [-inline-all],
-      [-split-eh],
-      [-reorder-functions-use-hot-size],
-      [-peepholes=none],
-      [-jump-tables=aggressive],
-      [-inline-ap],
-      [-indirect-call-promotion=all],
-      [-dyno-stats],
-      [-use-gnu-stack],
-      [-frame-opt=hot]
-    )]
+    ["${BOLT_GENERIC_OPTIONS} ${BOLT_OPTIMIZATION_OPTIONS}"]
   )
 fi
 AC_MSG_RESULT([$BOLT_APPLY_FLAGS])
