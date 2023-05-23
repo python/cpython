@@ -1628,7 +1628,7 @@ class IndentSearcher:
     def tokeneater(self, type, token, start, end, line,
                    INDENT=tokenize.INDENT,
                    NAME=tokenize.NAME,
-                   OPENERS=('class', 'def', 'for', 'if', 'match','try',
+                   OPENERS=('class', 'def', 'for', 'if', 'match', 'try',
                             'while', 'with')):
         if self.finished:
             pass
