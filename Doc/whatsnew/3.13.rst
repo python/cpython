@@ -87,6 +87,12 @@ New Modules
 Improved Modules
 ================
 
+pathlib
+-------
+
+* Add *follow_symlinks* keyword-only argument to :meth:`pathlib.Path.glob` and
+  :meth:`~pathlib.Path.rglob`.
+  (Contributed by Barney Gale in :gh:`77609`.)
 
 Optimizations
 =============

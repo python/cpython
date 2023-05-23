@@ -929,7 +929,7 @@ call fails (for example because the path doesn't exist).
    .. versionadded:: 3.12
       The *case_sensitive* argument.
 
-   .. versionadded:: 3.12
+   .. versionadded:: 3.13
       The *follow_symlinks* argument.
 
 .. method:: Path.group()
@@ -1349,7 +1349,7 @@ call fails (for example because the path doesn't exist).
    .. versionadded:: 3.12
       The *case_sensitive* argument.
 
-   .. versionadded:: 3.12
+   .. versionadded:: 3.13
       The *follow_symlinks* argument.
 
 .. method:: Path.rmdir()
