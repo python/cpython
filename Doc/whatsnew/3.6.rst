@@ -1520,7 +1520,7 @@ rather than the version that is being emulated for the process
 telnetlib
 ---------
 
-:class:`~telnetlib.Telnet` is now a context manager (contributed by
+:class:`!telnetlib.Telnet` is now a context manager (contributed by
 Stéphane Wirtel in :issue:`25485`).
 
 
