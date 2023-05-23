@@ -55,8 +55,7 @@ def duplicate_string(text):
 class StrSubclass(str):
     pass
 
-class UnicodeTest(string_tests.CommonTest,
-        string_tests.MixinStrUnicodeUserStringTest,
+class StrTest(string_tests.StringLikeTest,
         string_tests.MixinStrUnicodeTest,
         unittest.TestCase):
 
@@ -213,7 +212,7 @@ class UnicodeTest(string_tests.CommonTest,
                         self.assertEqual(case, pickled)
 
     def test_count(self):
-        string_tests.CommonTest.test_count(self)
+        string_tests.StringLikeTest.test_count(self)
         # check mixed argument types
         self.checkequalnofix(3,  'aaa', 'count', 'a')
         self.checkequalnofix(0,  'aaa', 'count', 'b')
@@ -243,7 +242,7 @@ class UnicodeTest(string_tests.CommonTest,
         self.checkequal(3, MyStr('aaa'), 'count', 'a')
 
     def test_find(self):
-        string_tests.CommonTest.test_find(self)
+        string_tests.StringLikeTest.test_find(self)
         # test implementation details of the memchr fast path
         self.checkequal(100, 'a' * 100 + '\u0102', 'find', '\u0102')
         self.checkequal(-1, 'a' * 100 + '\u0102', 'find', '\u0201')
@@ -288,7 +287,7 @@ class UnicodeTest(string_tests.CommonTest,
         self.checkequal(-1, '\u0102' * 100, 'find', '\u0102\U00100304')
 
     def test_rfind(self):
-        string_tests.CommonTest.test_rfind(self)
+        string_tests.StringLikeTest.test_rfind(self)
         # test implementation details of the memrchr fast path
         self.checkequal(0, '\u0102' + 'a' * 100 , 'rfind', '\u0102')
         self.checkequal(-1, '\u0102' + 'a' * 100 , 'rfind', '\u0201')
@@ -329,7 +328,7 @@ class UnicodeTest(string_tests.CommonTest,
         self.checkequal(-1, '\u0102' * 100, 'rfind', '\U00100304\u0102')
 
     def test_index(self):
-        string_tests.CommonTest.test_index(self)
+        string_tests.StringLikeTest.test_index(self)
         self.checkequalnofix(0, 'abcdefghiabc', 'index',  '')
         self.checkequalnofix(3, 'abcdefghiabc', 'index',  'def')
         self.checkequalnofix(0, 'abcdefghiabc', 'index',  'abc')
@@ -353,7 +352,7 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertRaises(ValueError, ('\u0102' * 100).index, '\u0102\U00100304')
 
     def test_rindex(self):
-        string_tests.CommonTest.test_rindex(self)
+        string_tests.StringLikeTest.test_rindex(self)
         self.checkequalnofix(12, 'abcdefghiabc', 'rindex',  '')
         self.checkequalnofix(3,  'abcdefghiabc', 'rindex',  'def')
         self.checkequalnofix(9,  'abcdefghiabc', 'rindex',  'abc')
@@ -449,7 +448,7 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertRaises(TypeError, 'abababc'.translate, 'abc', 'xyz')
 
     def test_split(self):
-        string_tests.CommonTest.test_split(self)
+        string_tests.StringLikeTest.test_split(self)
 
         # test mixed kinds
         for left, right in ('ba', '\u0101\u0100', '\U00010301\U00010300'):
@@ -466,7 +465,7 @@ class UnicodeTest(string_tests.CommonTest,
                                 left + delim * 2 + right, 'split', delim *2)
 
     def test_rsplit(self):
-        string_tests.CommonTest.test_rsplit(self)
+        string_tests.StringLikeTest.test_rsplit(self)
         # test mixed kinds
         for left, right in ('ba', 'юё', '\u0101\u0100', '\U00010301\U00010300'):
             left *= 9
@@ -486,7 +485,7 @@ class UnicodeTest(string_tests.CommonTest,
                              left + right, 'rsplit', None)
 
     def test_partition(self):
-        string_tests.MixinStrUnicodeUserStringTest.test_partition(self)
+        string_tests.StringLikeTest.test_partition(self)
         # test mixed kinds
         self.checkequal(('ABCDEFGH', '', ''), 'ABCDEFGH', 'partition', '\u4200')
         for left, right in ('ba', '\u0101\u0100', '\U00010301\U00010300'):
@@ -503,7 +502,7 @@ class UnicodeTest(string_tests.CommonTest,
                                 left + delim * 2 + right, 'partition', delim * 2)
 
     def test_rpartition(self):
-        string_tests.MixinStrUnicodeUserStringTest.test_rpartition(self)
+        string_tests.StringLikeTest.test_rpartition(self)
         # test mixed kinds
         self.checkequal(('', '', 'ABCDEFGH'), 'ABCDEFGH', 'rpartition', '\u4200')
         for left, right in ('ba', '\u0101\u0100', '\U00010301\U00010300'):
@@ -520,7 +519,7 @@ class UnicodeTest(string_tests.CommonTest,
                                 left + delim * 2 + right, 'rpartition', delim * 2)
 
     def test_join(self):
-        string_tests.MixinStrUnicodeUserStringTest.test_join(self)
+        string_tests.StringLikeTest.test_join(self)
 
         class MyWrapper:
             def __init__(self, sval): self.sval = sval
@@ -547,7 +546,7 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertRaises(OverflowError, ''.join, seq)
 
     def test_replace(self):
-        string_tests.CommonTest.test_replace(self)
+        string_tests.StringLikeTest.test_replace(self)
 
         # method call forwarded from str implementation because of unicode argument
         self.checkequalnofix('one@two!three!', 'one!two!three!', 'replace', '!', '@', 1)
@@ -866,7 +865,7 @@ class UnicodeTest(string_tests.CommonTest,
 
 
     def test_lower(self):
-        string_tests.CommonTest.test_lower(self)
+        string_tests.StringLikeTest.test_lower(self)
         self.assertEqual('\U00010427'.lower(), '\U0001044F')
         self.assertEqual('\U00010427\U00010427'.lower(),
                          '\U0001044F\U0001044F')
@@ -897,7 +896,7 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual('\u00b5'.casefold(), '\u03bc')
 
     def test_upper(self):
-        string_tests.CommonTest.test_upper(self)
+        string_tests.StringLikeTest.test_upper(self)
         self.assertEqual('\U0001044F'.upper(), '\U00010427')
         self.assertEqual('\U0001044F\U0001044F'.upper(),
                          '\U00010427\U00010427')
@@ -914,7 +913,7 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual('\u2177'.upper(), '\u2167')
 
     def test_capitalize(self):
-        string_tests.CommonTest.test_capitalize(self)
+        string_tests.StringLikeTest.test_capitalize(self)
         self.assertEqual('\U0001044F'.capitalize(), '\U00010427')
         self.assertEqual('\U0001044F\U0001044F'.capitalize(),
                          '\U00010427\U0001044F')
@@ -948,7 +947,7 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual('A\u03a3A'.title(), 'A\u03c3a')
 
     def test_swapcase(self):
-        string_tests.CommonTest.test_swapcase(self)
+        string_tests.StringLikeTest.test_swapcase(self)
         self.assertEqual('\U0001044F'.swapcase(), '\U00010427')
         self.assertEqual('\U00010427'.swapcase(), '\U0001044F')
         self.assertEqual('\U0001044F\U0001044F'.swapcase(),
@@ -974,7 +973,7 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual('\u1fd2'.swapcase(), '\u0399\u0308\u0300')
 
     def test_center(self):
-        string_tests.CommonTest.test_center(self)
+        string_tests.StringLikeTest.test_center(self)
         self.assertEqual('x'.center(2, '\U0010FFFF'),
                          'x\U0010FFFF')
         self.assertEqual('x'.center(3, '\U0010FFFF'),
@@ -1475,7 +1474,7 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual('{f:{}}{}{g}'.format(2, 4, f=1, g='g'), ' 14g')
 
     def test_formatting(self):
-        string_tests.MixinStrUnicodeUserStringTest.test_formatting(self)
+        string_tests.StringLikeTest.test_formatting(self)
         # Testing Unicode formatting strings...
         self.assertEqual("%s, %s" % ("abc", "abc"), 'abc, abc')
         self.assertEqual("%s, %s, %i, %f, %5.2f" % ("abc", "abc", 1, 2, 3), 'abc, abc, 1, 2.000000,  3.00')
