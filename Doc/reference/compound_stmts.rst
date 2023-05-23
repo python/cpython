@@ -1262,7 +1262,7 @@ This indicates to static type checkers that the function is generic. At runtime,
 the type parameters can be retrieved from the function's ``__type_params__``
 attribute. See :ref:`generic-functions` for more.
 
-.. versionadded:: 3.12
+.. versionchanged:: 3.12
    Type parameters are new in version 3.12.
 
 .. index::
@@ -1449,7 +1449,7 @@ This indicates to static type checkers that the class is generic. At runtime,
 the type parameters can be retrieved from the class's ``__type_params__``
 attribute. See :ref:`generic-classes` for more.
 
-.. versionadded:: 3.12
+.. versionchanged:: 3.12
    Type parameters are new in version 3.12.
 
 **Programmer's note:** Variables defined in the class definition are class
@@ -1654,8 +1654,7 @@ are accessible within the scope of the generic object, but not elsewhere.
 Thus, after a declaration ``def func[T](): ...``, the name ``T`` is not in
 the module scope. Below, the semantics of generic objects are described
 with more precision. The scope of type parameters is modeled with a special
-function (technically, an :ref:`annotation scope <annotation-scopes>`,
-represented with the pseudo-keyword ``def'``) that
+function (technically, an :ref:`annotation scope <annotation-scopes>`) that
 wraps the creation of the generic object.
 
 Generic functions, classes, and type aliases have a :attr:`__type_params__`
@@ -1723,8 +1722,9 @@ This syntax is equivalent to::
        return func
    func = TYPE_PARAMS_OF_func()
 
-Here ``def'`` indicates an :ref:`annotation scope <annotation-scopes>`. (One
-other liberty is taken in the translation: the syntax does not go through
+Here ``def'`` indicates an :ref:`annotation scope <annotation-scopes>`. (Two
+other liberties are taken in the translation: no function is actually bound
+to the name ``TYPE_PARAMS_OF_func``, and the syntax does not go through
 attribute access on the :mod:`typing` module, but creates an instance of
 :data:`typing.TypeVar` directly.)
 
@@ -1739,7 +1739,7 @@ as well as for additional flavors of type parameters::
    def func[T: int, *Ts, **P](*args: *Ts, arg: Callable[P, T] = some_default):
        ...
 
-Except for the lazy evaluation of the ``TypeVar`` bound, this is equivalent to::
+Except for the lazy evaluation of the :class:`~typing.TypeVar` bound, this is equivalent to::
 
    DEFAULT_OF_arg = some_default
 
@@ -1760,6 +1760,9 @@ Except for the lazy evaluation of the ``TypeVar`` bound, this is equivalent to::
        return func
    func = decorator(TYPE_PARAMS_OF_func())
 
+(The uppercased names like ``DEFAULT_OF_arg`` are not actually
+bound at runtime.)
+
 .. _generic-classes:
 
 Generic classes
@@ -1779,7 +1782,8 @@ This syntax is equivalent to::
        return Bag
    Bag = TYPE_PARAMS_OF_Bag()
 
-Here again ``def'`` indicates an :ref:`annotation scope <annotation-scopes>`.
+Here again ``def'`` (not a real keyword) indicates an
+:ref:`annotation scope <annotation-scopes>`.
 
 Generic classes implicitly inherit from :data:`typing.Generic`.
 The base classes and keyword arguments of generic classes are

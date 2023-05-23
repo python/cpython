@@ -1361,7 +1361,8 @@ without the dedicated syntax, as documented below.
    Here the brackets after the function name indicate a
    :ref:`generic function <generic-functions>`.
 
-   Generic classes can also be declared by explicitly inheriting from
+   For backwards compatibility reasons, generic classes can also be
+   declared by explicitly inheriting from
    ``Generic``. In this case, the type parameters must be declared
    separately::
 
@@ -1497,7 +1498,7 @@ without the dedicated syntax, as documented below.
 
       .. versionchanged:: 3.12
 
-         For type variables created through the new type parameter syntax,
+         For type variables created through :ref:`type parameter syntax <type-params>`,
          the bound is evaluated only when the attribute is accessed, not when
          the type variable is created.
 
@@ -1507,7 +1508,7 @@ without the dedicated syntax, as documented below.
 
       .. versionchanged:: 3.12
 
-         For type variables created through the new type parameter syntax,
+         For type variables created through :ref:`type parameter syntax <type-params>`,
          the constraints are evaluated only when the attribute is accessed, not when
          the type variable is created.
 
