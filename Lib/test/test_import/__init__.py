@@ -1980,10 +1980,6 @@ class SinglephaseInitTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        if '-R' in sys.argv or '--huntrleaks' in sys.argv:
-            # https://github.com/python/cpython/issues/102251
-            raise unittest.SkipTest('unresolved refleaks (see gh-102251)')
-
         spec = importlib.util.find_spec(cls.NAME)
         from importlib.machinery import ExtensionFileLoader
         cls.FILE = spec.origin
