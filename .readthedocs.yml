@@ -24,7 +24,7 @@ build:
       then
         echo "No changes to Doc/ - exiting the build.";
         exit 183;
-    fi
+      fi
 
     - make -C Doc venv html
     - mkdir _readthedocs
