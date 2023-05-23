@@ -3079,7 +3079,7 @@ class TestExtractionFilters(unittest.TestCase):
         if type is None and isinstance(name, str) and name.endswith('/'):
             type = tarfile.DIRTYPE
         if symlink_to is not None:
-            got = pathlib.Path(os.readlink(self.destdir / name))
+            got = pathlib.Path(os.readlink(str(self.destdir / name)))
             expected = pathlib.Path(symlink_to)
             # The symlink might be the same (textually) as what we expect,
             # but some systems change the link to an equivalent path, so
