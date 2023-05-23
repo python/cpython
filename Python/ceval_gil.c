@@ -826,8 +826,10 @@ _pop_pending_call(struct _pending_calls *pending,
 
 int
 _PyEval_AddPendingCall(PyInterpreterState *interp,
-                       int (*func)(void *), void *arg)
+                       int (*func)(void *), void *arg,
+                       int mainthreadonly)
 {
+    assert(!mainthreadonly || _Py_IsMainInterpreter(interp));
     struct _pending_calls *pending = &interp->ceval.pending;
     /* Ensure that _PyEval_InitState() was called
        and that _PyEval_FiniState() is not called yet. */
@@ -870,7 +872,7 @@ Py_AddPendingCall(int (*func)(void *), void *arg)
         /* Last resort: use the main interpreter */
         interp = _PyInterpreterState_Main();
     }
-    return _PyEval_AddPendingCall(interp, func, arg);
+    return _PyEval_AddPendingCall(interp, func, arg, 1);
 }
 
 static int
