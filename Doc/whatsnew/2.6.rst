@@ -2465,7 +2465,7 @@ changes, or look through the Subversion logs for all the details.
   (All changes contributed by Lars Gustäbel).
 
 * An optional ``timeout`` parameter was added to the
-  :class:`telnetlib.Telnet` class constructor, specifying a timeout
+  :class:`!telnetlib.Telnet` class constructor, specifying a timeout
   measured in seconds.  (Added by Facundo Batista.)
 
 * The :class:`tempfile.NamedTemporaryFile` class usually deletes

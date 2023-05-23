@@ -819,7 +819,7 @@ Modules (see :pep:`594`):
 * :mod:`sndhdr`
 * :mod:`spwd`
 * :mod:`sunau`
-* :mod:`telnetlib`
+* :mod:`!telnetlib`
 * :mod:`uu`
 * :mod:`xdrlib`
 
