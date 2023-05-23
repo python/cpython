@@ -954,12 +954,6 @@ _Py_FinishPendingCalls(PyThreadState *tstate)
     assert(PyGILState_Check());
     assert(is_tstate_valid(tstate));
 
-    struct _pending_calls *pending = &tstate->interp->ceval.pending;
-
-    if (!_Py_atomic_load_relaxed_int32(&(pending->calls_to_do))) {
-        return;
-    }
-
     if (make_pending_calls(tstate->interp) < 0) {
         PyObject *exc = _PyErr_GetRaisedException(tstate);
         PyErr_BadInternalCall();
