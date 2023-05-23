@@ -2736,9 +2736,19 @@ class NoneInfoExtractTests(ReadTest):
         tar.errorlevel = 0
         tar.extractall(cls.control_dir, filter=cls.extraction_filter)
         tar.close()
+        try:
+            paths = list(pathlib.Path(cls.control_dir).glob('**/*'))
+        except OSError as err:
+            if getattr(err, 'winerror', None) == 123:
+                # 123 is Windows error ERROR_INVALID_NAME
+                # glob() fails this way when symlink targets are too long
+                # Fixed in 3.8+: https://github.com/python/cpython/issues/79487
+                raise unittest.SkipTest('Path.glob failed')
+            else:
+                raise
         cls.control_paths = set(
             p.relative_to(cls.control_dir)
-            for p in pathlib.Path(cls.control_dir).glob('**/*'))
+            for p in paths)
 
     @classmethod
     def tearDownClass(cls):
@@ -3031,7 +3041,16 @@ class TestExtractionFilters(unittest.TestCase):
                 self.expected_paths = set()
             else:
                 self.raised_exception = None
-                self.expected_paths = set(self.outerdir.glob('**/*'))
+                try:
+                    self.expected_paths = set(self.outerdir.glob('**/*'))
+                except OSError as err
+                    if getattr(err, 'winerror', None) == 123:
+                        # 123 is Windows error ERROR_INVALID_NAME
+                        # glob() fails this way when symlink targets are too long
+                        # Fixed in 3.8+: https://github.com/python/cpython/issues/79487
+                        raise unittest.SkipTest('Path.glob failed')
+                    else:
+                        raise
                 self.expected_paths.discard(self.destdir)
             try:
                 yield
