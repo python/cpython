@@ -122,7 +122,7 @@ typedef enum {
     PyObject *dict;                                                         \
     PyObject *prefix##_weakreflist;                                         \
     PyObject *prefix##_cancelled_exc;                                       \
-    fut_state prefix##_state: 2;                                            \
+    fut_state prefix##_state;                                                  \
     unsigned prefix##_log_tb: 1;                                            \
     unsigned prefix##_blocking: 1;
 
