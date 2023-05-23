@@ -1,3 +1,0 @@
-Added unstable C API for extracting the value of "compact" integers:
-:c:func:`PyUnstable_Long_IsCompact` and
-:c:func:`PyUnstable_Long_CompactValue`.
