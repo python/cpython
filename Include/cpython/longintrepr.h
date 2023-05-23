@@ -104,9 +104,10 @@ _PyLong_FromDigits(int negative, Py_ssize_t digit_count, digit *digits);
 #define _PyLong_SIGN_MASK 3
 #define _PyLong_NON_SIZE_BITS 3
 
+
 static inline int
 _PyLong_IsCompact(const PyLongObject* op) {
-    assert(PyLong_Check(op));
+    assert(PyType_HasFeature((op)->ob_base.ob_type, Py_TPFLAGS_LONG_SUBCLASS));
     return op->long_value.lv_tag < (2 << _PyLong_NON_SIZE_BITS);
 }
 
@@ -115,7 +116,7 @@ _PyLong_IsCompact(const PyLongObject* op) {
 static inline Py_ssize_t
 _PyLong_CompactValue(const PyLongObject *op)
 {
-    assert(PyLong_Check(op));
+    assert(PyType_HasFeature((op)->ob_base.ob_type, Py_TPFLAGS_LONG_SUBCLASS));
     assert(PyUnstable_Long_IsCompact(op));
     Py_ssize_t sign = 1 - (op->long_value.lv_tag & _PyLong_SIGN_MASK);
     return sign * (Py_ssize_t)op->long_value.ob_digit[0];

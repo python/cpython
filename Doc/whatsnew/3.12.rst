@@ -1476,6 +1476,15 @@ Porting to Python 3.12
   Note that :c:func:`PyType_FromMetaclass` (added in Python 3.12)
   already disallows creating classes whose metaclass overrides ``tp_new``.
 
+* :c:var:`PyOS_InputHook` and :c:var:`PyOS_ReadlineFunctionPointer` are no
+  longer called in :ref:`subinterpreters <sub-interpreter-support>`. This is
+  because clients generally rely on process-wide global state (since these
+  callbacks have no way of recovering extension module state).
+
+  This also avoids situations where extensions may find themselves running in a
+  subinterpreter that they don't support (or haven't yet been loaded in). See
+  :gh:`104668` for more info.
+
 Deprecated
 ----------
 
