@@ -1597,7 +1597,7 @@ without the dedicated syntax, as documented below.
    However, note that at most one type variable tuple may appear in a single
    list of type arguments or type parameters::
 
-      x: tuple[*Ts, *Ts]                     # Not valid
+      x: tuple[*Ts, *Ts]            # Not valid
       class Array[*Shape, *Shape]:  # Not valid
           pass
 
