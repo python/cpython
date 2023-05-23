@@ -1800,6 +1800,10 @@ without the dedicated syntax, as documented below.
 
          >>> type Mutually = Recursive
          >>> type Recursive = Mutually
+         >>> Mutually
+         Mutually
+         >>> Recursive
+         Recursive
          >>> Mutually.__value__
          Recursive
          >>> Recursive.__value__
@@ -2134,7 +2138,7 @@ These are not used in annotations. They are building blocks for declaring types.
           group: list[T]
 
    To create a generic ``TypedDict`` that is compatible with Python 3.11
-   or lower, use :class:`Generic` explicitly::
+   or lower, inherit from :class:`Generic` explicitly::
 
       class Group(TypedDict, Generic[T]):
           key: T
