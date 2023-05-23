@@ -847,31 +847,8 @@ _PyEval_AddPendingCall(PyInterpreterState *interp,
 int
 Py_AddPendingCall(int (*func)(void *), void *arg)
 {
-    /* Best-effort to support subinterpreters and calls with the GIL released.
-
-       First attempt _PyThreadState_GET() since it supports subinterpreters.
-
-       If the GIL is released, _PyThreadState_GET() returns NULL . In this
-       case, use PyGILState_GetThisThreadState() which works even if the GIL
-       is released.
-
-       Sadly, PyGILState_GetThisThreadState() doesn't support subinterpreters:
-       see bpo-10915 and bpo-15751.
-
-       Py_AddPendingCall() doesn't require the caller to hold the GIL. */
-    PyThreadState *tstate = _PyThreadState_GET();
-    if (tstate == NULL) {
-        tstate = PyGILState_GetThisThreadState();
-    }
-
-    PyInterpreterState *interp;
-    if (tstate != NULL) {
-        interp = tstate->interp;
-    }
-    else {
-        /* Last resort: use the main interpreter */
-        interp = _PyInterpreterState_Main();
-    }
+    /* Legacy users of this API will continue to target the main thread. */
+    PyInterpreterState *interp = _PyInterpreterState_Main();
     return _PyEval_AddPendingCall(interp, func, arg, 1);
 }
 
