@@ -197,13 +197,14 @@ annotation scopes in Python 3.13 when :pep:`649` is implemented.
 
 Annotation scopes are used in the following contexts:
 
-* Type parameter lists for generic type aliases.
-* Type parameter lists for generic functions. The function's annotations are
+* Type parameter lists for :ref:`generic type aliases <generic-type-aliases>`.
+* Type parameter lists for :ref:`generic functions <generic-functions>`. The function's annotations are
   executed within the annotation scope, but its defaults and decorators are not.
-* Type parameter lists for generic classes. The class's base classes and
+* Type parameter lists for :ref:`generic classes <generic-classes>`. The class's base classes and
   keyword arguments are executed within the annotation scope, but its decorators are not.
-* The bounds and constraints for type variables.
-* The value of type aliases.
+* The bounds and constraints for type variables
+  (:ref:`lazily evaluated <lazy-evaluation>`).
+* The value of type aliases (:ref:`lazily evaluated <lazy-evaluation>`).
 
 Annotation scopes differ from function scopes in the following ways:
 
@@ -224,6 +225,45 @@ Annotation scopes differ from function scopes in the following ways:
 
 .. versionadded:: 3.12
    Annotation scopes were introduced in Python 3.12 as part of :pep:`695`.
+
+.. _lazy_evaluation:
+
+Lazy evaluation
+---------------
+
+The values of type aliases created through the :keyword:`type` statement and
+the bounds and constraints of type variables created through the
+:ref:`type parameter syntax <type-params>` are *lazily evaluated*. This means
+that they are not evaluated when the type alias or type variable is created,
+but only when evaluation is necessary to resolve an attribute access.
+
+Example:
+
+.. doctest::
+
+   >>> type Alias = 1/0
+   >>> Alias.__value__
+   Traceback (most recent call last):
+     ...
+   ZeroDivisionError: division by zero
+
+Here the exception is raised only when the ``__value__`` attribute is accessed.
+
+This behavior is primarily useful for references to types that have not
+yet been defined when the type alias or type variable is created. For example,
+lazy evaluation enables creation of mutually recursive type aliases::
+
+   from typing import Literal
+
+   type SimpleExpr = int | Parenthesized
+   type Parenthesized = tuple[Literal["("], Expr, Literal[")"]]
+   type Expr = SimpleExpr | tuple[SimpleExpr, Literal["+", "-"], Expr]
+
+Lazily evaluated values are evaluated in :ref:`annotation scope <annotation-scopes>`,
+which means that names that appear inside the lazily evaluated value are looked up
+as if they were used in the immediately enclosing scope.
+
+.. versionadded:: 3.12
 
 .. _restrict_exec:
 
