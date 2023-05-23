@@ -1,0 +1,1 @@
+IDLE: Add docstrings and unittests for some functions in editor.py.
