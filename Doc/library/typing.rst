@@ -1779,8 +1779,10 @@ without the dedicated syntax, as documented below.
 
       Example::
 
+         .. doctest::
+
          >>> type ListOrSet[T] = list[T] | set[T]
-         >>> Alias.__type_params__
+         >>> ListOrSet.__type_params__
          (T,)
          >>> type NotGeneric = int
          >>> NotGeneric.__type_params__
@@ -1793,6 +1795,8 @@ without the dedicated syntax, as documented below.
       is accessed.
 
       Example::
+
+         .. doctest::
 
          >>> type Mutually = Recursive
          >>> type Recursive = Mutually
