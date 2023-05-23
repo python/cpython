@@ -27,6 +27,5 @@ backwards compatibility. They have been superseded by other modules.
    sndhdr.rst
    spwd.rst
    sunau.rst
-   telnetlib.rst
    uu.rst
    xdrlib.rst
