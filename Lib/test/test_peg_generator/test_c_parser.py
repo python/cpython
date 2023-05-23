@@ -1,3 +1,4 @@
+import contextlib
 import sysconfig
 import textwrap
 import unittest
@@ -8,7 +9,7 @@ from pathlib import Path
 
 from test import test_tools
 from test import support
-from test.support import os_helper
+from test.support import os_helper, import_helper
 from test.support.script_helper import assert_python_ok
 
 _py_cflags_nodist = sysconfig.get_config_var("PY_CFLAGS_NODIST")
@@ -88,6 +89,15 @@ class TestCParser(unittest.TestCase):
         cls.library_dir = tempfile.mkdtemp(dir=cls.tmp_base)
         cls.addClassCleanup(shutil.rmtree, cls.library_dir)
 
+        with contextlib.ExitStack() as stack:
+            full_venv_path, _ = stack.enter_context(support.setup_venv_with_pip_setuptools_wheel("venv"))
+            stack.enter_context(import_helper.DirsOnSysPath(os.path.join(full_venv_path,
+                                                    "lib",
+                                                    f"python{sysconfig.get_python_version()}",
+                                                    "site-packages")))
+            cls.addClassCleanup(stack.pop_all().close)
+
+    @support.requires_venv_with_pip()
     def setUp(self):
         self._backup_config_vars = dict(sysconfig._CONFIG_VARS)
         cmd = support.missing_compiler_executable()

@@ -35,39 +35,20 @@ class TestCPPExt(unittest.TestCase):
     # the test uses venv+pip: skip if it's not available
     @support.requires_venv_with_pip()
     def check_build(self, std_cpp03, extension_name):
-        # Build in a temporary directory
-        with os_helper.temp_cwd():
-            self._check_build(std_cpp03, extension_name)
+        venv_dir = 'env'
+        with support.setup_venv_with_pip_setuptools_wheel(venv_dir) as (_, python):
+            self._check_build(std_cpp03, extension_name, python)
 
-    def _check_build(self, std_cpp03, extension_name):
+    def _check_build(self, std_cpp03, extension_name, python):
         pkg_dir = 'pkg'
         os.mkdir(pkg_dir)
         shutil.copy(SETUP_TESTCPPEXT, os.path.join(pkg_dir, "setup.py"))
-
-        venv_dir = 'env'
-        verbose = support.verbose
-
-        # Create virtual environment to get setuptools
-        cmd = [sys.executable, '-X', 'dev', '-m', 'venv', venv_dir]
-        if verbose:
-            print()
-            print('Run:', ' '.join(cmd))
-        subprocess.run(cmd, check=True)
-
-        # Get the Python executable of the venv
-        python_exe = 'python'
-        if sys.executable.endswith('.exe'):
-            python_exe += '.exe'
-        if MS_WINDOWS:
-            python = os.path.join(venv_dir, 'Scripts', python_exe)
-        else:
-            python = os.path.join(venv_dir, 'bin', python_exe)
 
         def run_cmd(operation, cmd):
             env = os.environ.copy()
             env['CPYTHON_TEST_CPP_STD'] = 'c++03' if std_cpp03 else 'c++11'
             env['CPYTHON_TEST_EXT_NAME'] = extension_name
-            if verbose:
+            if support.verbose:
                 print('Run:', ' '.join(cmd))
                 subprocess.run(cmd, check=True, env=env)
             else:
@@ -80,12 +61,6 @@ class TestCPPExt(unittest.TestCase):
                     print(proc.stdout, end='')
                     self.fail(
                         f"{operation} failed with exit code {proc.returncode}")
-
-        cmd = [python, '-X', 'dev',
-               '-m', 'pip', 'install',
-               support.findfile('setuptools-67.6.1-py3-none-any.whl'),
-               support.findfile('wheel-0.40.0-py3-none-any.whl')]
-        run_cmd('Install build dependencies', cmd)
 
         # Build and install the C++ extension
         cmd = [python, '-X', 'dev',

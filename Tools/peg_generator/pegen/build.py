@@ -49,16 +49,15 @@ def compile_c_extension(
     static library of the common parser sources (this is useful in case you are
     creating multiple extensions).
     """
-    import distutils.log
-    from distutils.core import Distribution, Extension
-    from distutils.tests.support import fixup_build_ext  # type: ignore
+    import setuptools.logging
 
-    from distutils.ccompiler import new_compiler
-    from distutils.dep_util import newer_group
-    from distutils.sysconfig import customize_compiler
+    from setuptools import Extension, Distribution
+    from setuptools._distutils.dep_util import newer_group
+    from setuptools._distutils.ccompiler import new_compiler
+    from setuptools._distutils.sysconfig import customize_compiler
 
     if verbose:
-        distutils.log.set_threshold(distutils.log.DEBUG)
+        setuptools.logging.set_threshold(setuptools.logging.logging.DEBUG)
 
     source_file_path = pathlib.Path(generated_source_path)
     extension_name = source_file_path.stem
@@ -100,7 +99,6 @@ def compile_c_extension(
     )
     dist = Distribution({"name": extension_name, "ext_modules": [extension]})
     cmd = dist.get_command_obj("build_ext")
-    fixup_build_ext(cmd)
     cmd.build_lib = str(source_file_path.parent)
     cmd.include_dirs = include_dirs
     if build_dir:
