@@ -107,6 +107,9 @@ Removed
   `Exscript <https://pypi.org/project/Exscript/>`_ instead.
   (Contributed by Victor Stinner in :gh:`104773`.)
 
+* Namespaces ``typing.io`` and ``typing.re``, deprecated in Python 3.8,
+  are now removed. The items in those namespaces can be imported directly
+  from :mod:`typing`. (Contributed by Sebastian Rittau in :gh:`92871`.)
 
 Porting to Python 3.13
 ======================
