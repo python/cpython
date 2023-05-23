@@ -48,6 +48,7 @@ struct _Py_long_state {
    */
 struct _is {
 
+    struct _ceval_state ceval;
     PyInterpreterState *next;
 
     uint64_t monitoring_version;
@@ -92,7 +93,6 @@ struct _is {
 
     struct _obmalloc_state obmalloc;
 
-    struct _ceval_state ceval;
     struct _gc_runtime_state gc;
 
     struct _import_state imports;
