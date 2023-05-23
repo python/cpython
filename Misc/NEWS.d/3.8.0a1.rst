@@ -2747,7 +2747,7 @@ smaller file). Also, change the default compression level to 6 (tradeoff).
 .. nonce: xo5LAr
 .. section: Library
 
-The :term:`2to3` :2to3fixer:`execfile` fixer now opens the file with mode
+The 2to3 ``execfile`` fixer now opens the file with mode
 ``'rb'``.  Patch by Zackery Spytz.
 
 ..
@@ -3817,7 +3817,7 @@ user.
 .. nonce: w6g7tn
 .. section: Library
 
-The :2to3fixer:`reload` fixer now uses :func:`importlib.reload` instead of
+The ``reload`` fixer now uses :func:`importlib.reload` instead of
 deprecated :func:`!imp.reload`.
 
 ..
