@@ -408,16 +408,15 @@ gen_close(PyGenObject *gen, PyObject *args)
         PyErr_SetString(PyExc_RuntimeError, msg);
         return NULL;
     }
-    if (PyErr_ExceptionMatches(PyExc_StopIteration)) {
-        /* fetch the value of the StopIteration instance being handled;
-         * this clears the error indicator */
-        PyObject *value;
-        _PyGen_FetchStopIterationValue(&value);
-        return value;
-    }
+    assert(PyErr_Occurred());
     if (PyErr_ExceptionMatches(PyExc_GeneratorExit)) {
         PyErr_Clear();          /* ignore this error */
         Py_RETURN_NONE;
+    }
+    /* if the generator returned a value while closing, StopIteration was
+     * raised in gen_send_ex() above; retrieve and return the value here */
+    if (_PyGen_FetchStopIterationValue(&retval) == 0) {
+        return retval;
     }
     return NULL;
 }
