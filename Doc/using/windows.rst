@@ -470,7 +470,7 @@ user's system, including environment variables, system registry settings, and
 installed packages. The standard library is included as pre-compiled and
 optimized ``.pyc`` files in a ZIP, and ``python3.dll``, ``python37.dll``,
 ``python.exe`` and ``pythonw.exe`` are all provided. Tcl/tk (including all
-dependants, such as Idle), pip and the Python documentation are not included.
+dependents, such as Idle), pip and the Python documentation are not included.
 
 .. note::
 
@@ -541,7 +541,7 @@ Besides the standard CPython distribution, there are modified packages including
 additional functionality.  The following is a list of popular versions and their
 key features:
 
-`ActivePython <https://www.activestate.com/activepython/>`_
+`ActivePython <https://www.activestate.com/products/python/>`_
     Installer with multi-platform compatibility, documentation, PyWin32
 
 `Anaconda <https://www.anaconda.com/download/>`_
@@ -743,21 +743,46 @@ command::
 
   py -2
 
-You should find the latest version of Python 3.x starts.
-
 If you see the following error, you do not have the launcher installed::
 
   'py' is not recognized as an internal or external command,
   operable program or batch file.
-
-Per-user installations of Python do not add the launcher to :envvar:`PATH`
-unless the option was selected on installation.
 
 The command::
 
   py --list
 
 displays the currently installed version(s) of Python.
+
+The ``-x.y`` argument is the short form of the ``-V:Company/Tag`` argument,
+which allows selecting a specific Python runtime, including those that may have
+come from somewhere other than python.org. Any runtime registered by following
+:pep:`514` will be discoverable. The ``--list`` command lists all available
+runtimes using the ``-V:`` format.
+
+When using the ``-V:`` argument, specifying the Company will limit selection to
+runtimes from that provider, while specifying only the Tag will select from all
+providers. Note that omitting the slash implies a tag::
+
+  # Select any '3.*' tagged runtime
+  py -V:3
+
+  # Select any 'PythonCore' released runtime
+  py -V:PythonCore/
+
+  # Select PythonCore's latest Python 3 runtime
+  py -V:PythonCore/3
+
+The short form of the argument (``-3``) only ever selects from core Python
+releases, and not other distributions. However, the longer form (``-V:3``) will
+select from any.
+
+The Company is matched on the full string, case-insenitive. The Tag is matched
+oneither the full string, or a prefix, provided the next character is a dot or a
+hyphen. This allows ``-V:3.1`` to match ``3.1-32``, but not ``3.10``. Tags are
+sorted using numerical ordering (``3.10`` is newer than ``3.1``), but are
+compared using text (``-V:3.01`` does not match ``3.1``).
+
 
 Virtual environments
 ^^^^^^^^^^^^^^^^^^^^
@@ -797,7 +822,7 @@ is printed.  Now try changing the first line to be:
 Re-executing the command should now print the latest Python 3.x information.
 As with the above command-line examples, you can specify a more explicit
 version qualifier.  Assuming you have Python 3.7 installed, try changing
-the first line to ``#! python3.7`` and you should find the |version|
+the first line to ``#! python3.7`` and you should find the 3.7
 version information printed.
 
 Note that unlike interactive use, a bare "python" will use the latest

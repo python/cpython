@@ -6,7 +6,8 @@ contains:
 
 - a stripped down, pyc-only stdlib zip file, e.g. {PREFIX}/lib/python311.zip
 - os.py as marker module {PREFIX}/lib/python3.11/os.py
-- empty lib-dynload directory, to make sure it is copied into the bundle {PREFIX}/lib/python3.11/lib-dynload/.empty
+- empty lib-dynload directory, to make sure it is copied into the bundle:
+    {PREFIX}/lib/python3.11/lib-dynload/.empty
 """
 
 import argparse
@@ -77,7 +78,6 @@ OMIT_NETWORKING_FILES = (
     "poplib.py",
     "smtplib.py",
     "socketserver.py",
-    "telnetlib.py",
     # keep urllib.parse for pydoc
     "urllib/error.py",
     "urllib/request.py",

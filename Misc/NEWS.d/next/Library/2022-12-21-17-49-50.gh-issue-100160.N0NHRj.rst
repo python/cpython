@@ -1,3 +1,0 @@
-Emit a deprecation warning in
-:meth:`asyncio.DefaultEventLoopPolicy.get_event_loop` if there is no current
-event loop set and it decides to create one.

@@ -52,6 +52,7 @@ PyAPI_FUNC(const char *) _Py_gitidentifier(void);
 PyAPI_FUNC(const char *) _Py_gitversion(void);
 
 PyAPI_FUNC(int) _Py_IsFinalizing(void);
+PyAPI_FUNC(int) _Py_IsInterpreterFinalizing(PyInterpreterState *interp);
 
 /* Random */
 PyAPI_FUNC(int) _PyOS_URandom(void *buffer, Py_ssize_t size);
@@ -62,5 +63,10 @@ PyAPI_FUNC(int) _Py_CoerceLegacyLocale(int warn);
 PyAPI_FUNC(int) _Py_LegacyLocaleDetected(int warn);
 PyAPI_FUNC(char *) _Py_SetLocaleFromEnv(int category);
 
-PyAPI_FUNC(PyThreadState *) _Py_NewInterpreterFromConfig(
-    const _PyInterpreterConfig *);
+PyAPI_FUNC(PyStatus) Py_NewInterpreterFromConfig(
+    PyThreadState **tstate_p,
+    const PyInterpreterConfig *config);
+
+typedef void (*atexit_datacallbackfunc)(void *);
+PyAPI_FUNC(int) _Py_AtExit(
+        PyInterpreterState *, atexit_datacallbackfunc, void *);
