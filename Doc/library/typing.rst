@@ -998,7 +998,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
       * :class:`ParamSpec` and :class:`Callable`.
 
 
-.. class:: Type[CT_co]
+.. class:: Type(Generic[CT_co])
 
    A variable annotated with ``C`` may accept a value of type ``C``. In
    contrast, a variable annotated with ``Type[C]`` may accept values that are
@@ -2215,7 +2215,7 @@ Generic concrete collections
 Corresponding to built-in types
 """""""""""""""""""""""""""""""
 
-.. class:: Dict[KT, VT](dict, MutableMapping[KT, VT])
+.. class:: Dict(dict, MutableMapping[KT, VT])
 
    A generic version of :class:`dict`.
    Useful for annotating return types. To annotate arguments it is preferred
@@ -2230,7 +2230,7 @@ Corresponding to built-in types
       :class:`builtins.dict <dict>` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: List[T](list, MutableSequence[T])
+.. class:: List(list, MutableSequence[T])
 
    Generic version of :class:`list`.
    Useful for annotating return types. To annotate arguments it is preferred
@@ -2249,7 +2249,7 @@ Corresponding to built-in types
       :class:`builtins.list <list>` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: Set[T](set, MutableSet[T])
+.. class:: Set(set, MutableSet[T])
 
    A generic version of :class:`builtins.set <set>`.
    Useful for annotating return types. To annotate arguments it is preferred
@@ -2259,7 +2259,7 @@ Corresponding to built-in types
       :class:`builtins.set <set>` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: FrozenSet[T_co](frozenset, AbstractSet[T_co])
+.. class:: FrozenSet(frozenset, AbstractSet[T_co])
 
    A generic version of :class:`builtins.frozenset <frozenset>`.
 
@@ -2273,7 +2273,7 @@ Corresponding to built-in types
 Corresponding to types in :mod:`collections`
 """"""""""""""""""""""""""""""""""""""""""""
 
-.. class:: DefaultDict[KT, VT](collections.defaultdict, MutableMapping[KT, VT])
+.. class:: DefaultDict(collections.defaultdict, MutableMapping[KT, VT])
 
    A generic version of :class:`collections.defaultdict`.
 
@@ -2283,7 +2283,7 @@ Corresponding to types in :mod:`collections`
       :class:`collections.defaultdict` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: OrderedDict[KT, VT](collections.OrderedDict, MutableMapping[KT, VT])
+.. class:: OrderedDict(collections.OrderedDict, MutableMapping[KT, VT])
 
    A generic version of :class:`collections.OrderedDict`.
 
@@ -2293,7 +2293,7 @@ Corresponding to types in :mod:`collections`
       :class:`collections.OrderedDict` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: ChainMap[KT, VT](collections.ChainMap, MutableMapping[KT, VT])
+.. class:: ChainMap(collections.ChainMap, MutableMapping[KT, VT])
 
    A generic version of :class:`collections.ChainMap`.
 
@@ -2304,7 +2304,7 @@ Corresponding to types in :mod:`collections`
       :class:`collections.ChainMap` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: Counter[T](collections.Counter, Dict[T, int])
+.. class:: Counter(collections.Counter, Dict[T, int])
 
    A generic version of :class:`collections.Counter`.
 
@@ -2315,7 +2315,7 @@ Corresponding to types in :mod:`collections`
       :class:`collections.Counter` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: Deque[T](deque, MutableSequence[T])
+.. class:: Deque(deque, MutableSequence[T])
 
    A generic version of :class:`collections.deque`.
 
@@ -2386,7 +2386,7 @@ Abstract Base Classes
 Corresponding to collections in :mod:`collections.abc`
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 
-.. class:: AbstractSet[T_co](Collection[T_co])
+.. class:: AbstractSet(Collection[T_co])
 
    A generic version of :class:`collections.abc.Set`.
 
@@ -2402,7 +2402,7 @@ Corresponding to collections in :mod:`collections.abc`
    .. deprecated-removed:: 3.9 3.14
       Prefer :class:`collections.abc.Buffer`, or a union like ``bytes | bytearray | memoryview``.
 
-.. class:: Collection[T_co](Sized, Iterable[T_co], Container[T_co])
+.. class:: Collection(Sized, Iterable[T_co], Container[T_co])
 
    A generic version of :class:`collections.abc.Collection`
 
@@ -2412,7 +2412,7 @@ Corresponding to collections in :mod:`collections.abc`
       :class:`collections.abc.Collection` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: Container[T_co]
+.. class:: Container(Generic[T_co])
 
    A generic version of :class:`collections.abc.Container`.
 
@@ -2420,7 +2420,7 @@ Corresponding to collections in :mod:`collections.abc`
       :class:`collections.abc.Container` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: ItemsView[KT_co, VT_co](MappingView, AbstractSet[tuple[KT_co, VT_co]])
+.. class:: ItemsView(MappingView, AbstractSet[tuple[KT_co, VT_co]])
 
    A generic version of :class:`collections.abc.ItemsView`.
 
@@ -2428,7 +2428,7 @@ Corresponding to collections in :mod:`collections.abc`
       :class:`collections.abc.ItemsView` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: KeysView[KT_co](MappingView, AbstractSet[KT_co])
+.. class:: KeysView(MappingView, AbstractSet[KT_co])
 
    A generic version of :class:`collections.abc.KeysView`.
 
@@ -2436,7 +2436,7 @@ Corresponding to collections in :mod:`collections.abc`
       :class:`collections.abc.KeysView` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: Mapping[KT, VT_co](Collection[KT])
+.. class:: Mapping(Collection[KT], Generic[KT, VT_co])
 
    A generic version of :class:`collections.abc.Mapping`.
    This type can be used as follows::
@@ -2456,7 +2456,7 @@ Corresponding to collections in :mod:`collections.abc`
       :class:`collections.abc.MappingView` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: MutableMapping[KT, VT](Mapping[KT, VT])
+.. class:: MutableMapping(Mapping[KT, VT])
 
    A generic version of :class:`collections.abc.MutableMapping`.
 
@@ -2465,7 +2465,7 @@ Corresponding to collections in :mod:`collections.abc`
       now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: MutableSequence[T](Sequence[T])
+.. class:: MutableSequence(Sequence[T])
 
    A generic version of :class:`collections.abc.MutableSequence`.
 
@@ -2474,7 +2474,7 @@ Corresponding to collections in :mod:`collections.abc`
       now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: MutableSet[T](AbstractSet[T])
+.. class:: MutableSet(AbstractSet[T])
 
    A generic version of :class:`collections.abc.MutableSet`.
 
@@ -2482,7 +2482,7 @@ Corresponding to collections in :mod:`collections.abc`
       :class:`collections.abc.MutableSet` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: Sequence[T_co](Reversible[T_co], Collection[T_co])
+.. class:: Sequence(Reversible[T_co], Collection[T_co])
 
    A generic version of :class:`collections.abc.Sequence`.
 
@@ -2490,7 +2490,7 @@ Corresponding to collections in :mod:`collections.abc`
       :class:`collections.abc.Sequence` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: ValuesView[VT_co](MappingView, Collection[VT_co])
+.. class:: ValuesView(MappingView, Collection[VT_co])
 
    A generic version of :class:`collections.abc.ValuesView`.
 
@@ -2501,7 +2501,7 @@ Corresponding to collections in :mod:`collections.abc`
 Corresponding to other types in :mod:`collections.abc`
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 
-.. class:: Iterable[T_co]
+.. class:: Iterable(Generic[T_co])
 
    A generic version of :class:`collections.abc.Iterable`.
 
@@ -2509,7 +2509,7 @@ Corresponding to other types in :mod:`collections.abc`
       :class:`collections.abc.Iterable` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: Iterator[T_co](Iterable[T_co])
+.. class:: Iterator(Iterable[T_co])
 
    A generic version of :class:`collections.abc.Iterator`.
 
@@ -2517,7 +2517,7 @@ Corresponding to other types in :mod:`collections.abc`
       :class:`collections.abc.Iterator` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: Generator[YieldType, SendType, ReturnType](Iterator[YieldType])
+.. class:: Generator(Iterator[YieldType], Generic[YieldType, SendType, ReturnType])
 
    A generator can be annotated by the generic type
    ``Generator[YieldType, SendType, ReturnType]``. For example::
@@ -2559,7 +2559,7 @@ Corresponding to other types in :mod:`collections.abc`
    .. deprecated:: 3.12
       Use :class:`collections.abc.Hashable` directly instead.
 
-.. class:: Reversible[T_co](Iterable[T_co])
+.. class:: Reversible(Iterable[T_co])
 
    A generic version of :class:`collections.abc.Reversible`.
 
@@ -2577,7 +2577,7 @@ Corresponding to other types in :mod:`collections.abc`
 Asynchronous programming
 """"""""""""""""""""""""
 
-.. class:: Coroutine[YieldType, SendType, ReturnType](Awaitable[ReturnType])
+.. class:: Coroutine(Awaitable[ReturnType], Generic[YieldType, SendType, ReturnType])
 
    A generic version of :class:`collections.abc.Coroutine`.
    The variance and order of type variables
@@ -2595,7 +2595,7 @@ Asynchronous programming
       :class:`collections.abc.Coroutine` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: AsyncGenerator[YieldType, SendType](AsyncIterator[YieldType])
+.. class:: AsyncGenerator(AsyncIterator[YieldType], Generic[YieldType, SendType])
 
    An async generator can be annotated by the generic type
    ``AsyncGenerator[YieldType, SendType]``. For example::
@@ -2633,7 +2633,7 @@ Asynchronous programming
       now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: AsyncIterable[T_co]
+.. class:: AsyncIterable(Generic[T_co])
 
    A generic version of :class:`collections.abc.AsyncIterable`.
 
@@ -2643,7 +2643,7 @@ Asynchronous programming
       :class:`collections.abc.AsyncIterable` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: AsyncIterator[T_co](AsyncIterable[T_co])
+.. class:: AsyncIterator(AsyncIterable[T_co])
 
    A generic version of :class:`collections.abc.AsyncIterator`.
 
@@ -2667,7 +2667,7 @@ Asynchronous programming
 Context manager types
 """""""""""""""""""""
 
-.. class:: ContextManager[T_co]
+.. class:: ContextManager(Generic[T_co])
 
    A generic version of :class:`contextlib.AbstractContextManager`.
 
@@ -2679,7 +2679,7 @@ Context manager types
       now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: AsyncContextManager[T_co]
+.. class:: AsyncContextManager(Generic[T_co])
 
    A generic version of :class:`contextlib.AbstractAsyncContextManager`.
 
