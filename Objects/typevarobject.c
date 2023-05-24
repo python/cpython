@@ -1319,8 +1319,13 @@ typealias_module(PyObject *self, void *unused)
         return Py_NewRef(ta->module);
     }
     if (ta->compute_value != NULL) {
-        // PyFunction_GetModule() returns a borrowed reference
-        return Py_NewRef(PyFunction_GetModule(ta->compute_value));
+        PyObject* mod = PyFunction_GetModule(ta->compute_value);
+        if (mod != NULL) {
+            // PyFunction_GetModule() returns a borrowed reference,
+            // and it may return NULL (e.g., for functions defined
+            // in an exec()'ed block).
+            return Py_NewRef(mod);
+        }
     }
     Py_RETURN_NONE;
 }
