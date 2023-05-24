@@ -120,6 +120,9 @@ Removed
   Use the :class:`!MacOSXOSAScript` class (introduced in Python 3.2) instead.
   (Contributed by Hugo van Kemenade in :gh:`104804`.)
 
+* Remove support for using :class:`pathlib.Path` objects as context managers.
+  This functionality was deprecated and made a no-op in Python 3.9.
+
 Porting to Python 3.13
 ======================
 
