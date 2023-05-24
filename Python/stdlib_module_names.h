@@ -103,7 +103,6 @@ static const char* _Py_stdlib_module_names[] = {
 "bz2",
 "cProfile",
 "calendar",
-"chunk",
 "cmath",
 "cmd",
 "code",
