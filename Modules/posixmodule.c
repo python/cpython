@@ -4544,6 +4544,11 @@ os__path_isdevdrive_impl(PyObject *module, path_t *path)
 /*[clinic end generated code: output=1f437ea6677433a2 input=ee83e4996a48e23d]*/
 {
 #ifndef PERSISTENT_VOLUME_STATE_DEV_VOLUME
+    /* This flag will be documented at
+       https://learn.microsoft.com/windows-hardware/drivers/ddi/ntifs/ns-ntifs-_file_fs_persistent_volume_information
+       after release, and will be available in the latest WinSDK.
+       We include the flag to avoid a specific version dependency
+       on the latest WinSDK. */
     const int PERSISTENT_VOLUME_STATE_DEV_VOLUME = 0x00002000;
 #endif
     int err = 0;
@@ -4553,6 +4558,10 @@ os__path_isdevdrive_impl(PyObject *module, path_t *path)
     Py_BEGIN_ALLOW_THREADS
     if (!GetVolumePathNameW(path->wide, volume, MAX_PATH)) {
         /* invalid path of some kind */
+        /* Note that this also includes the case where a volume is mounted
+           in a path longer than 260 characters. This is likely to be rare
+           and problematic for other reasons, so a (soft) failure in this
+           check seems okay. */
         err = GetLastError();
     } else if (GetDriveTypeW(volume) != DRIVE_FIXED) {
         /* only care about local dev drives */
