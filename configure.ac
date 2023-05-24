@@ -3916,12 +3916,6 @@ AS_VAR_IF([have_nis], [yes], [
   ])
 ])
 
-dnl On NetBSD, when using OSS audio, you need to link against libossaudio
-AS_CASE([$ac_sys_system],
-  [NetBSD*], [OSSAUDIODEV_LIBS="-lossaudio"],
-  [OSSAUDIODEV_LIBS=""]
-)
-
 dnl detect sqlite3 from Emscripten emport
 PY_CHECK_EMSCRIPTEN_PORT([LIBSQLITE3], [-sUSE_SQLITE3])
 
