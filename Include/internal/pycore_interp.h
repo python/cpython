@@ -162,7 +162,8 @@ struct _is {
     struct callable_cache callable_cache;
     PyCodeObject *interpreter_trampoline;
     _PyOptimizerObject *optimizer;
-    uint16_t optimizer_threshold;
+    uint16_t optimizer_resume_threshold;
+    uint16_t optimizer_backedge_threshold;
 
     _Py_Monitors monitors;
     bool f_opcode_trace_set;

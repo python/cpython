@@ -24,19 +24,14 @@ typedef struct _PyExecutorObject {
 
 typedef struct _PyOptimizerObject _PyOptimizerObject;
 
-/* This would be nicer as an enum, but C doesn't define the size of enums */
-#define PY_OPTIMIZE_FUNCTION_ENTRY 1
-#define PY_OPTIMIZE_RESUME_AFTER_YIELD 2
-#define PY_OPTIMIZE_LOOP 4
-#define PY_OPTIMIZE_ANYWHERE 8
-
 typedef struct _PyInterpreterFrame *(*optimize_func)(_PyOptimizerObject* self, struct _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject **stack_pointer);
 
 typedef struct _PyOptimizerObject {
     PyObject_HEAD
     optimize_func optimize;
-    _PyOptimizerCapabilities capabilities;
-    /* Data needed by the compiler goes here, but is opaque to the VM */
+    uint16_t resume_threshold;
+    uint16_t backedge_threshold;
+    /* Data needed by the optimizer goes here, but is opaque to the VM */
 } _PyOptimizerObject;
 
 int PyUnstable_Insert_Executor(PyCodeObject *code, int offset, _PyExecutorObject *executor);

@@ -107,9 +107,6 @@ noop_optimize(
     _Py_CODEUNIT *instr,
     PyObject **stack_pointer)
 {
-    /* Set to max, so this never triggers again */
-    _PyInterpreterState_GET()->optimizer_threshold = UINT16_MAX;
-    assert(instr->op.code == JUMP_BACKWARD);
     frame->prev_instr = instr - 1;
     _PyFrame_SetStackPointer(frame, stack_pointer);
     return frame;
@@ -127,6 +124,8 @@ static PyTypeObject DefaultOptimizer_Type = {
 _PyOptimizerObject _PyOptimizer_Default = {
     PyObject_HEAD_INIT(&DefaultOptimizer_Type)
     .optimize = noop_optimize,
+    .resume_threshold = UINT16_MAX,
+    .backedge_threshold = UINT16_MAX,
 };
 
 PyObject*
@@ -152,4 +151,6 @@ PyUnstable_SetOptimizer(_PyOptimizerObject* optimizer)
     }
     Py_INCREF(optimizer);
     interp->optimizer = optimizer;
+    interp->optimizer_backedge_threshold = optimizer->backedge_threshold;
+    interp->optimizer_resume_threshold = optimizer->resume_threshold;
 }

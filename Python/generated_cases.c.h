@@ -3052,7 +3052,7 @@
             assert(oparg <= INSTR_OFFSET());
             JUMPBY(1-oparg);
             here[1].cache += (1 << OPTIMIZER_BITS_IN_COUNTER);
-            if (here[1].cache > tstate->interp->optimizer_threshold) {
+            if (here[1].cache > tstate->interp->optimizer_backedge_threshold) {
                 OBJECT_STAT_INC(optimization_attempts);
                 _PyOptimizerObject *opt = tstate->interp->optimizer;
                 frame = opt->optimize(opt, frame, here, stack_pointer);
