@@ -1651,7 +1651,7 @@ non-generic counterparts.
 Type parameters are declared in square brackets (``[]``) immediately
 after the name of the function, class, or type alias. The type parameters
 are accessible within the scope of the generic object, but not elsewhere.
-Thus, after a declaration ``def func[T](): pass``, the name ``T`` is not in
+Thus, after a declaration ``def func[T](): pass``, the name ``T`` is not available in
 the module scope. Below, the semantics of generic objects are described
 with more precision. The scope of type parameters is modeled with a special
 function (technically, an :ref:`annotation scope <annotation-scopes>`) that
