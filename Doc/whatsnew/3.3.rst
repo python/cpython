@@ -1558,7 +1558,7 @@ Schlawack in :issue:`12708`.)
 nntplib
 -------
 
-The :class:`nntplib.NNTP` class now supports the context management protocol to
+The :class:`!nntplib.NNTP` class now supports the context management protocol to
 unconditionally consume :exc:`socket.error` exceptions and to close the NNTP
 connection when done::
 

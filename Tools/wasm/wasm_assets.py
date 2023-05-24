@@ -69,7 +69,6 @@ OMIT_NETWORKING_FILES = (
     "http/",
     "imaplib.py",
     "mailbox.py",
-    "nntplib.py",
     "poplib.py",
     "smtplib.py",
     "socketserver.py",
