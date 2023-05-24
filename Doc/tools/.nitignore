@@ -172,7 +172,6 @@ Doc/library/operator.rst
 Doc/library/optparse.rst
 Doc/library/os.path.rst
 Doc/library/os.rst
-Doc/library/ossaudiodev.rst
 Doc/library/pickle.rst
 Doc/library/pickletools.rst
 Doc/library/platform.rst
@@ -208,7 +207,6 @@ Doc/library/stdtypes.rst
 Doc/library/string.rst
 Doc/library/struct.rst
 Doc/library/subprocess.rst
-Doc/library/sunau.rst
 Doc/library/sys.rst
 Doc/library/sys_path_init.rst
 Doc/library/sysconfig.rst
