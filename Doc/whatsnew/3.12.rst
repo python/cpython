@@ -268,6 +268,8 @@ See :pep:`692` for more details.
 
 (PEP written by Franek Magiera)
 
+Other Language Changes
+======================
 
 * Add :ref:`perf_profiling` through the new
   environment variable :envvar:`PYTHONPERFSUPPORT`,
@@ -278,6 +280,7 @@ See :pep:`692` for more details.
   (Design by Pablo Galindo. Contributed by Pablo Galindo and Christian Heimes
   with contributions from Gregory P. Smith [Google] and Mark Shannon
   in :gh:`96123`.)
+
 * The extraction methods in :mod:`tarfile`, and :func:`shutil.unpack_archive`,
   have a new a *filter* argument that allows limiting tar features than may be
   surprising or dangerous, such as creating files outside the destination
@@ -285,9 +288,6 @@ See :pep:`692` for more details.
   See :ref:`tarfile-extraction-filter` for details.
   In Python 3.14, the default will switch to ``'data'``.
   (Contributed by Petr Viktorin in :pep:`706`.)
-
-Other Language Changes
-======================
 
 * :class:`types.MappingProxyType` instances are now hashable if the underlying
   mapping is hashable.
