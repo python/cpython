@@ -87,6 +87,13 @@ New Modules
 Improved Modules
 ================
 
+typing
+------
+
+* Added :func:`typing.get_protocol_members` to return the set of members
+  defining a :class:`typing.Protocol`. (Contributed by Jelle Zijlstra in
+  :gh:`104873`.)
+
 
 Optimizations
 =============

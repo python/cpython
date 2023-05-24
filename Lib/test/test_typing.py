@@ -22,7 +22,7 @@ from typing import Callable
 from typing import Generic, ClassVar, Final, final, Protocol
 from typing import assert_type, cast, runtime_checkable
 from typing import get_type_hints
-from typing import get_origin, get_args
+from typing import get_origin, get_args, get_protocol_members
 from typing import override
 from typing import is_typeddict
 from typing import reveal_type
@@ -3172,6 +3172,11 @@ class ProtocolTests(BaseTestCase):
         self.assertNotIn("__callable_proto_members_only__", vars(NonP))
         self.assertNotIn("__callable_proto_members_only__", vars(NonPR))
 
+        self.assertIs(get_protocol_members(NonP), None)
+        self.assertIs(get_protocol_members(NonPR), None)
+        self.assertEqual(get_protocol_members(P), {"x"})
+        self.assertEqual(get_protocol_members(PR), {"meth"})
+
         acceptable_extra_attrs = {
             '_is_protocol', '_is_runtime_protocol', '__parameters__',
             '__init__', '__annotations__', '__subclasshook__',
@@ -3586,6 +3591,39 @@ class ProtocolTests(BaseTestCase):
                 super().__init__()
 
         Foo()  # Previously triggered RecursionError
+
+    def test_get_protocol_members(self):
+        self.assertIs(get_protocol_members(object), None)
+        self.assertIs(get_protocol_members(object()), None)
+        self.assertIs(get_protocol_members(Protocol), None)
+        self.assertIs(get_protocol_members(Generic), None)
+
+        class P(Protocol):
+            a: int
+            def b(self) -> str: ...
+            @property
+            def c(self) -> int: ...
+
+        self.assertEqual(get_protocol_members(P), {'a', 'b', 'c'})
+
+        class Concrete:
+            a: int
+            def b(self) -> str: return "capybara"
+            @property
+            def c(self) -> int: return 5
+
+        self.assertIs(get_protocol_members(Concrete), None)
+        self.assertIs(get_protocol_members(Concrete()), None)
+
+        class ConcreteInherit(P):
+            a: int = 42
+            def b(self) -> str: return "capybara"
+            @property
+            def c(self) -> int: return 5
+
+        # not a protocol
+        self.assertEqual(get_protocol_members(ConcreteInherit), None)
+        self.assertIs(get_protocol_members(ConcreteInherit()), None)
 
 
 class GenericTests(BaseTestCase):

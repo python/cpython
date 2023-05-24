@@ -2905,6 +2905,23 @@ Introspection helpers
 
    .. versionadded:: 3.8
 
+.. function:: get_protocol_members(tp)
+
+   Return the set of members defined in a :class:`Protocol`.
+
+   ::
+
+      >>> from typing import Protocol, get_protocol_members
+      >>> class P(Protocol):
+      ...     def a(self) -> str: ...
+      ...     b: int
+      >>> get_protocol_members(P)
+      {'a', 'b'}
+
+   Return None for arguments that are not Protocols.
+
+   .. versionadded:: 3.13
+
 .. function:: is_typeddict(tp)
 
    Check if a type is a :class:`TypedDict`.

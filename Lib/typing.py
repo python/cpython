@@ -132,6 +132,7 @@ __all__ = [
     'get_args',
     'get_origin',
     'get_overloads',
+    'get_protocol_members',
     'get_type_hints',
     'is_typeddict',
     'LiteralString',
@@ -3296,3 +3297,23 @@ def override[F: _Func](method: F, /) -> F:
         # read-only property, TypeError if it's a builtin class.
         pass
     return method
+
+
+def get_protocol_members(tp: type, /) -> set[str]:
+    """Return the set of members defined in a Protocol.
+
+    Example::
+
+        >>> from typing import Protocol, get_protocol_members
+        >>> class P(Protocol):
+        ...     def a(self) -> str: ...
+        ...     b: int
+        >>> get_protocol_members(P)
+        {'a', 'b'}
+
+    Return None for arguments that are not Protocols.
+
+    """
+    if not getattr(tp, '_is_protocol', False) or tp is Protocol:
+        return None
+    return tp.__protocol_attrs__
