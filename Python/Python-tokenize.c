@@ -123,6 +123,8 @@ _tokenizer_error(struct tok_state *tok)
     int result = 0;
 
     Py_ssize_t size = tok->inp - tok->buf;
+    assert(tok->buf[size-1] == '\n');
+    size -= 1; // Remove the newline character from the end of the line
     error_line = PyUnicode_DecodeUTF8(tok->buf, size, "replace");
     if (!error_line) {
         result = -1;
@@ -193,6 +195,8 @@ tokenizeriter_next(tokenizeriterobject *it)
     }
 
     Py_ssize_t size = it->tok->inp - it->tok->buf;
+    assert(it->tok->buf[size-1] == '\n');
+    size -= 1; // Remove the newline character from the end of the line
     PyObject *line = PyUnicode_DecodeUTF8(it->tok->buf, size, "replace");
     if (line == NULL) {
         Py_DECREF(str);
