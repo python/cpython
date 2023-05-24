@@ -1943,8 +1943,9 @@ class Popen:
                         # creates a temporary error to be able to check for FileNotFoundError.
                         # This is done because if it is a FileNotFoundError the cwd option
                         # is the issue, otherwise we should just return the error without setting
-                        # a filename.
-                        temp_error = child_exception_type(errno_num, "foo")
+                        # a filename. The error message needs to be supplied so passing an empty string
+                        # is required.
+                        temp_error = child_exception_type(errno_num, "")
                         if isinstance(temp_error, FileNotFoundError) \
                             or isinstance(temp_error, NotADirectoryError):
                             err_msg = ""
