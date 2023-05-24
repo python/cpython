@@ -173,10 +173,10 @@ def unwrap(source: list[dict[S, T]], wrapper: S) -> list[T]:
 class NewObjectParser:
 
     _ARGS = [
-        "--demangle",
+        # "--demangle",
         "--elf-output-style=JSON",
         "--expand-relocs",
-        "--pretty-print",
+        # "--pretty-print",
         "--sections",
         "--section-data",
         "--section-relocations",
@@ -305,6 +305,7 @@ class NewObjectParser:
             body_symbols = {}
             body_offsets = {}
             relocations = {}
+            dupes = set()
             for section in unwrap(self._data, "Section"):
                 type = section["Type"]["Value"]
                 flags = {flag["Name"] for flag in section["Flags"]["Flags"]}
@@ -347,6 +348,7 @@ class NewObjectParser:
             holes = []
             for offset, (symbol, type, addend) in relocations.items():
                 assert type == "R_X86_64_64"
+                assert symbol not in dupes
                 if symbol in body_symbols:
                     addend += body_symbols[symbol] - entry
                     symbol = "_justin_base"

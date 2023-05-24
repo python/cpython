@@ -2133,7 +2133,7 @@ dummy_func(
             assert(oparg < INSTR_OFFSET());
             JUMPBY(-oparg);
             CHECK_EVAL_BREAKER();
-            int status = ((_PyJITFunction)(uintptr_t)trace)(tstate, frame, stack_pointer, next_instr);
+            _PyJITReturnCode status = ((_PyJITFunction)(uintptr_t)trace)(tstate, frame, stack_pointer, next_instr);
             next_instr = saved_next_instr;
             if (status < 0) {
                 UPDATE_MISS_STATS(JUMP_BACKWARD);
@@ -2153,17 +2153,17 @@ dummy_func(
             next_instr = frame->prev_instr;
             stack_pointer = _PyFrame_GetStackPointer(frame);
             switch (status) {
-                case -1:
+                case _JUSTIN_RETURN_DEOPT:
                     NEXTOPARG();
                     opcode = _PyOpcode_Deopt[opcode];
                     DISPATCH_GOTO();
-                case 0:
+                case _JUSTIN_RETURN_OK:
                     DISPATCH();
-                case 1:
+                case _JUSTIN_RETURN_GOTO_ERROR:
                     goto error;
-                case 2:
+                case _JUSTIN_RETURN_GOTO_EXIT_UNWIND:
                     goto exit_unwind;
-                case 3:
+                case _JUSTIN_RETURN_GOTO_HANDLE_EVAL_BREAKER:
                     goto handle_eval_breaker;
             }
             Py_UNREACHABLE();

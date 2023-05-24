@@ -7,6 +7,7 @@
 #include "pycore_emscripten_signal.h"
 #include "pycore_frame.h"
 #include "pycore_intrinsics.h"
+#include "pycore_jit.h"
 #include "pycore_long.h"
 #include "pycore_object.h"
 #include "pycore_opcode.h"
@@ -15,12 +16,6 @@
 #include "pycore_sliceobject.h"
 
 #include "Python/ceval_macros.h"
-
-#define _JUSTIN_RETURN_DEOPT                    -1
-#define _JUSTIN_RETURN_OK                        0
-#define _JUSTIN_RETURN_GOTO_ERROR                1
-#define _JUSTIN_RETURN_GOTO_EXIT_UNWIND          2
-#define _JUSTIN_RETURN_GOTO_HANDLE_EVAL_BREAKER  3
 
 #undef DEOPT_IF
 #define DEOPT_IF(COND, INSTNAME) \
@@ -42,20 +37,21 @@
 // XXX: Turn off trace recording in here?
 
 // Stuff that will be patched at "JIT time":
-extern int _justin_continue(PyThreadState *tstate, _PyInterpreterFrame *frame,
-                            PyObject **stack_pointer, _Py_CODEUNIT *next_instr);
+extern _PyJITReturnCode _justin_continue(PyThreadState *tstate,
+                                         _PyInterpreterFrame *frame,
+                                         PyObject **stack_pointer,
+                                         _Py_CODEUNIT *next_instr);
 extern _Py_CODEUNIT _justin_next_instr;
 extern void _justin_oparg;
 
 // XXX
 #define cframe (*tstate->cframe)
 
-int
+_PyJITReturnCode
 _justin_entry(PyThreadState *tstate, _PyInterpreterFrame *frame,
               PyObject **stack_pointer, _Py_CODEUNIT *next_instr)
 {
     // Locals that the instruction implementations expect to exist:
-    _Py_atomic_int *const eval_breaker = &tstate->interp->ceval.eval_breaker;
     int oparg = (uintptr_t)&_justin_oparg;
     uint8_t opcode = _JUSTIN_OPCODE;
     // XXX: This temporary solution only works because we don't trace KW_NAMES:
