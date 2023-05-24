@@ -16,6 +16,59 @@ module _asyncio
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=8fd17862aa989c69]*/
 
+typedef enum {
+    STATE_PENDING,
+    STATE_CANCELLED,
+    STATE_FINISHED
+} fut_state;
+
+#define FutureObj_HEAD(prefix)                                              \
+    PyObject_HEAD                                                           \
+    PyObject *prefix##_loop;                                                \
+    PyObject *prefix##_callback0;                                           \
+    PyObject *prefix##_context0;                                            \
+    PyObject *prefix##_callbacks;                                           \
+    PyObject *prefix##_exception;                                           \
+    PyObject *prefix##_exception_tb;                                        \
+    PyObject *prefix##_result;                                              \
+    PyObject *prefix##_source_tb;                                           \
+    PyObject *prefix##_cancel_msg;                                          \
+    fut_state prefix##_state;                                               \
+    int prefix##_log_tb;                                                    \
+    int prefix##_blocking;                                                  \
+    PyObject *dict;                                                         \
+    PyObject *prefix##_weakreflist;                                         \
+    PyObject *prefix##_cancelled_exc;
+
+typedef struct {
+    FutureObj_HEAD(fut)
+} FutureObj;
+
+typedef struct TaskObj {
+    FutureObj_HEAD(task)
+    PyObject *task_fut_waiter;
+    PyObject *task_coro;
+    PyObject *task_name;
+    PyObject *task_context;
+    int task_must_cancel;
+    int task_log_destroy_pending;
+    int task_num_cancels_requested;
+    struct TaskObj *next;
+    struct TaskObj *prev;
+} TaskObj;
+
+typedef struct {
+    PyObject_HEAD
+    TaskObj *sw_task;
+    PyObject *sw_arg;
+} TaskStepMethWrapper;
+
+
+#define Future_CheckExact(state, obj) Py_IS_TYPE(obj, state->FutureType)
+#define Task_CheckExact(state, obj) Py_IS_TYPE(obj, state->TaskType)
+
+#define Future_Check(state, obj) PyObject_TypeCheck(obj, state->FutureType)
+#define Task_Check(state, obj) PyObject_TypeCheck(obj, state->TaskType)
 
 #define FI_FREELIST_MAXLEN 255
 
@@ -73,6 +126,11 @@ typedef struct {
 
     futureiterobject *fi_freelist;
     Py_ssize_t fi_freelist_len;
+
+    struct {
+        TaskObj *head;
+    } asyncio_tasks;
+
 } asyncio_state;
 
 static inline asyncio_state *
@@ -102,56 +160,6 @@ get_asyncio_state_by_def(PyObject *self)
     return get_asyncio_state(mod);
 }
 
-typedef enum {
-    STATE_PENDING,
-    STATE_CANCELLED,
-    STATE_FINISHED
-} fut_state;
-
-#define FutureObj_HEAD(prefix)                                              \
-    PyObject_HEAD                                                           \
-    PyObject *prefix##_loop;                                                \
-    PyObject *prefix##_callback0;                                           \
-    PyObject *prefix##_context0;                                            \
-    PyObject *prefix##_callbacks;                                           \
-    PyObject *prefix##_exception;                                           \
-    PyObject *prefix##_exception_tb;                                        \
-    PyObject *prefix##_result;                                              \
-    PyObject *prefix##_source_tb;                                           \
-    PyObject *prefix##_cancel_msg;                                          \
-    fut_state prefix##_state;                                               \
-    int prefix##_log_tb;                                                    \
-    int prefix##_blocking;                                                  \
-    PyObject *prefix##_weakreflist;                                         \
-    PyObject *prefix##_cancelled_exc;
-
-typedef struct {
-    FutureObj_HEAD(fut)
-} FutureObj;
-
-typedef struct {
-    FutureObj_HEAD(task)
-    PyObject *task_fut_waiter;
-    PyObject *task_coro;
-    PyObject *task_name;
-    PyObject *task_context;
-    int task_must_cancel;
-    int task_log_destroy_pending;
-    int task_num_cancels_requested;
-} TaskObj;
-
-typedef struct {
-    PyObject_HEAD
-    TaskObj *sw_task;
-    PyObject *sw_arg;
-} TaskStepMethWrapper;
-
-
-#define Future_CheckExact(state, obj) Py_IS_TYPE(obj, state->FutureType)
-#define Task_CheckExact(state, obj) Py_IS_TYPE(obj, state->TaskType)
-
-#define Future_Check(state, obj) PyObject_TypeCheck(obj, state->FutureType)
-#define Task_Check(state, obj) PyObject_TypeCheck(obj, state->TaskType)
 
 #include "clinic/_asynciomodule.c.h"
 
@@ -1939,16 +1947,17 @@ static  PyMethodDef TaskWakeupDef = {
 
 /* ----- Task introspection helpers */
 
-static int
-register_task(asyncio_state *state, PyObject *task)
+static void
+register_task(asyncio_state *state, TaskObj *task)
 {
-    PyObject *res = PyObject_CallMethodOneArg(state->scheduled_tasks,
-                                                 &_Py_ID(add), task);
-    if (res == NULL) {
-        return -1;
+    assert(Task_Check(state, task));
+    assert(task->prev == NULL);
+    assert(task->next == NULL);
+    task->prev = state->asyncio_tasks.head;
+    if (state->asyncio_tasks.head != NULL) {
+        state->asyncio_tasks.head->next = task;
     }
-    Py_DECREF(res);
-    return 0;
+    state->asyncio_tasks.head = task;
 }
 
 static int
@@ -1957,16 +1966,22 @@ register_eager_task(asyncio_state *state, PyObject *task)
     return PySet_Add(state->eager_tasks, task);
 }
 
-static int
-unregister_task(asyncio_state *state, PyObject *task)
+static void
+unregister_task(asyncio_state *state, TaskObj *task)
 {
-    PyObject *res = PyObject_CallMethodOneArg(state->scheduled_tasks,
-                                     &_Py_ID(discard), task);
-    if (res == NULL) {
-        return -1;
+    assert(Task_Check(state, task));
+    if (task->prev != NULL) {
+        task->prev->next = task->next;
     }
-    Py_DECREF(res);
-    return 0;
+    if (task->next != NULL) {
+        task->next->prev = task->prev;
+    }
+    if (state->asyncio_tasks.head == task) {
+        assert(task->next == NULL);
+        state->asyncio_tasks.head = task->prev;
+    }
+    task->next = NULL;
+    task->prev = NULL;
 }
 
 static int
@@ -2147,7 +2162,8 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
     if (task_call_step_soon(state, self, NULL)) {
         return -1;
     }
-    return register_task(state, (PyObject*)self);
+    register_task(state, self);
+    return 0;
 }
 
 static int
@@ -2552,6 +2568,9 @@ _asyncio_Task_set_name(TaskObj *self, PyObject *value)
 static void
 TaskObj_finalize(TaskObj *task)
 {
+    asyncio_state *state = get_asyncio_state_by_def((PyObject *)task);
+    unregister_task(state, task);
+
     PyObject *context;
     PyObject *message = NULL;
     PyObject *func;
@@ -3184,9 +3203,7 @@ task_eager_start(asyncio_state *state, TaskObj *task)
     }
 
     if (task->task_state == STATE_PENDING) {
-        if (register_task(state, (PyObject *)task) == -1) {
-            retval = -1;
-        }
+        register_task(state, task);
     } else {
         // This seems to really help performance on pyperformance benchmarks
         Py_CLEAR(task->task_coro);
@@ -3352,9 +3369,16 @@ _asyncio__register_task_impl(PyObject *module, PyObject *task)
 /*[clinic end generated code: output=8672dadd69a7d4e2 input=21075aaea14dfbad]*/
 {
     asyncio_state *state = get_asyncio_state(module);
-    if (register_task(state, task) < 0) {
-        return NULL;
+    if (!Task_Check(state, task)) {
+        PyObject *res = PyObject_CallMethodOneArg(state->scheduled_tasks,
+                                                  &_Py_ID(add), task);
+        if (res == NULL) {
+            return NULL;
+        }
+        Py_DECREF(res);
+        Py_RETURN_NONE;
     }
+    register_task(state, (TaskObj *)task);
     Py_RETURN_NONE;
 }
 
@@ -3395,9 +3419,16 @@ _asyncio__unregister_task_impl(PyObject *module, PyObject *task)
 /*[clinic end generated code: output=6e5585706d568a46 input=28fb98c3975f7bdc]*/
 {
     asyncio_state *state = get_asyncio_state(module);
-    if (unregister_task(state, task) < 0) {
-        return NULL;
+    if (!Task_Check(state, task)) {
+        PyObject *res = PyObject_CallMethodOneArg(state->scheduled_tasks,
+                                                  &_Py_ID(discard), task);
+        if (res == NULL) {
+            return NULL;
+        }
+        Py_DECREF(res);
+        Py_RETURN_NONE;
     }
+    unregister_task(state, (TaskObj *)task);
     Py_RETURN_NONE;
 }
 
@@ -3534,6 +3565,37 @@ _asyncio_current_task_impl(PyObject *module, PyObject *loop)
 
 /*********************** Module **************************/
 
+/*[clinic input]
+_asyncio.all_tasks
+
+    loop: object = None
+
+Return set of tasks associated for loop.
+
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
+/*[clinic end generated code: output=0e107cbb7f72aa7b input=02fab144171b1879]*/
+{
+    PyObject *tasks = PySet_New(NULL);
+    if (tasks == NULL) {
+        return NULL;
+    }
+    asyncio_state *state = get_asyncio_state(module);
+    TaskObj *head = state->asyncio_tasks.head;
+    while (head)
+    {
+        if (loop == Py_None || head->task_loop == loop) {
+            if (PySet_Add(tasks, (PyObject *)head) < 0) {
+                Py_DECREF(tasks);
+                return NULL;
+            }
+        }
+        head = head->prev;
+    }
+    return tasks;
+}
 
 static void
 module_free_freelists(asyncio_state *state)
@@ -3731,6 +3793,7 @@ static PyMethodDef asyncio_methods[] = {
     _ASYNCIO__ENTER_TASK_METHODDEF
     _ASYNCIO__LEAVE_TASK_METHODDEF
     _ASYNCIO__SWAP_CURRENT_TASK_METHODDEF
+    _ASYNCIO_ALL_TASKS_METHODDEF
     {NULL, NULL}
 };
 
@@ -3738,6 +3801,7 @@ static int
 module_exec(PyObject *mod)
 {
     asyncio_state *state = get_asyncio_state(mod);
+    state->asyncio_tasks.head = NULL;
 
 #define CREATE_TYPE(m, tp, spec, base)                                  \
     do {                                                                \
