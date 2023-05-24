@@ -175,7 +175,6 @@ static const char* _Py_stdlib_module_names[] = {
 "logging",
 "lzma",
 "mailbox",
-"mailcap",
 "marshal",
 "math",
 "mimetypes",
