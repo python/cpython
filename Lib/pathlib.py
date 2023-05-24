@@ -674,11 +674,6 @@ class PurePath(_BasePurePath):
     instantiating a PurePath will return either a PurePosixPath or a
     PureWindowsPath object.  You can also instantiate either of these classes
     directly, regardless of your system.
-
-    On Posix, calling ``bytes(path)`` gives the raw filesystem path as
-    a bytes object, as encoded by ``os.fsencode()``. On Windows, the unicode
-    form is the canonical representation of fileysstem paths, and so calling
-    ``bytes()`` on a path is not recommended.
     """
     __slots__ = ()
 
