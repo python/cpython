@@ -236,7 +236,6 @@ static const char* _Py_stdlib_module_names[] = {
 "signal",
 "site",
 "smtplib",
-"sndhdr",
 "socket",
 "socketserver",
 "spwd",

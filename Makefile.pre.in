@@ -2119,7 +2119,6 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/imghdrdata \
 		test/leakers \
 		test/libregrtest \
-		test/sndhdrdata \
 		test/subprocessdata \
 		test/support \
 		test/support/_hypothesis_stubs \

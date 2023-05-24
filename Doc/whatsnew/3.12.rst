@@ -816,7 +816,7 @@ Modules (see :pep:`594`):
 * :mod:`nntplib`
 * :mod:`ossaudiodev`
 * :mod:`pipes`
-* :mod:`sndhdr`
+* :mod:`!sndhdr`
 * :mod:`spwd`
 * :mod:`sunau`
 * :mod:`!telnetlib`

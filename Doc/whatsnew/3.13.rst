@@ -147,6 +147,12 @@ Removed
 
   (Contributed by Victor Stinner in :gh:`104773`.)
 
+* :pep:`594`: Remove the :mod:`!sndhdr` module, deprecated in Python 3.11: use
+  the projects `filetype <https://pypi.org/project/filetype/>`_, `puremagic
+  <https://pypi.org/project/puremagic/>`_, or `python-magic
+  <https://pypi.org/project/python-magic/>`_ instead.
+  (Contributed by Victor Stinner in :gh:`104773`.)
+
 
 Porting to Python 3.13
 ======================
