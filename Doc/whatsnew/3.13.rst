@@ -164,6 +164,10 @@ Removed
 * :pep:`594`: Remove the :mod:`!sunau` module, deprecated in Python 3.11.
   (Contributed by Victor Stinner in :gh:`104773`.)
 
+* :pep:`594`: Remove the :mod:`!mailcap` module, deprecated in Python 3.11.
+  The :mod:`mimetypes` module provides an alternative.
+  (Contributed by Victor Stinner in :gh:`104773`.)
+
 
 Porting to Python 3.13
 ======================
