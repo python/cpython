@@ -2094,7 +2094,6 @@ dummy_func(
             _Py_CODEUNIT *here = next_instr-1;
             assert(oparg <= INSTR_OFFSET());
             JUMPBY(1-oparg);
-            CHECK_EVAL_BREAKER();
             here[1].cache += (1 << OPTIMIZER_BITS_IN_COUNTER);
             if (here[1].cache > tstate->interp->optimizer_threshold) {
                 OBJECT_STAT_INC(optimization_attempts);
@@ -2103,10 +2102,10 @@ dummy_func(
                 here[1].cache &= ((1 << OPTIMIZER_BITS_IN_COUNTER) -1);
                 goto resume_frame;
             }
+            CHECK_EVAL_BREAKER();
         }
 
         inst(ENTER_EXECUTOR, (--)) {
-            CHECK_EVAL_BREAKER();
             _PyExecutorObject *executor = (_PyExecutorObject *)frame->f_code->co_executors->executors[oparg];
             Py_INCREF(executor);
             frame = executor->execute(executor, frame, stack_pointer);
