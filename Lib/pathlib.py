@@ -236,7 +236,7 @@ class _PathParents(Sequence):
 class _BasePurePath(object):
     """Base class for manipulating paths using only lexical operations.
 
-    This class does not provide __fspath__(), __bytes__() or as_uri().
+    This class does not provide the methods __fspath__, __bytes__ or as_uri.
     """
 
     __slots__ = (
@@ -675,7 +675,7 @@ class PurePath(_BasePurePath):
     PureWindowsPath object.  You can also instantiate either of these classes
     directly, regardless of your system.
 
-    On Posix, calling ``bytes()`` on a path gives the raw filesystem path as
+    On Posix, calling ``bytes(path)`` gives the raw filesystem path as
     a bytes object, as encoded by ``os.fsencode()``. On Windows, the unicode
     form is the canonical representation of fileysstem paths, and so calling
     ``bytes()`` on a path is not recommended.
