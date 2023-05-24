@@ -1649,7 +1649,6 @@ These are not used in annotations. They are building blocks for declaring types.
       first_user = UserId(1)
 
    .. attribute:: __module__
-   
       The module in which the new type is defined.
 
    .. attribute:: __name__
