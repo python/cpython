@@ -373,6 +373,20 @@ class TypeVarTests(BaseTestCase):
         self.assertIs(T.__covariant__, False)
         self.assertIs(T.__contravariant__, False)
         self.assertIs(T.__infer_variance__, False)
+        self.assertEqual(T.__module__, __name__)
+
+    def test_basic_with_exec(self):
+        ns = {}
+        exec('from typing import TypeVar; T = TypeVar("T", bound=float)', ns, ns)
+        T = ns['T']
+        self.assertIsInstance(T, TypeVar)
+        self.assertEqual(T.__name__, 'T')
+        self.assertEqual(T.__constraints__, ())
+        self.assertIs(T.__bound__, float)
+        self.assertIs(T.__covariant__, False)
+        self.assertIs(T.__contravariant__, False)
+        self.assertIs(T.__infer_variance__, False)
+        self.assertIs(T.__module__, None)
 
     def test_attributes(self):
         T_bound = TypeVar('T_bound', bound=int)
@@ -938,6 +952,17 @@ class TypeVarTupleTests(BaseTestCase):
         self.assertEqual(Ts.__name__, 'Ts')
         Ts2 = TypeVarTuple('Ts2')
         self.assertEqual(Ts2.__name__, 'Ts2')
+
+    def test_module(self):
+        Ts = TypeVarTuple('Ts')
+        self.assertEqual(Ts.__module__, __name__)
+
+    def test_exec(self):
+        ns = {}
+        exec('from typing import TypeVarTuple; Ts = TypeVarTuple("Ts")', ns)
+        Ts = ns['Ts']
+        self.assertEqual(Ts.__name__, 'Ts')
+        self.assertIs(Ts.__module__, None)
 
     def test_instance_is_equal_to_itself(self):
         Ts = TypeVarTuple('Ts')
@@ -7987,6 +8012,15 @@ class ParamSpecTests(BaseTestCase):
         self.assertEqual(P, P)
         self.assertIsInstance(P, ParamSpec)
         self.assertEqual(P.__name__, 'P')
+        self.assertEqual(P.__module__, __name__)
+
+    def test_basic_with_exec(self):
+        ns = {}
+        exec('from typing import ParamSpec; P = ParamSpec("P")', ns, ns)
+        P = ns['P']
+        self.assertIsInstance(P, ParamSpec)
+        self.assertEqual(P.__name__, 'P')
+        self.assertIs(P.__module__, None)
 
     def test_valid_uses(self):
         P = ParamSpec('P')
