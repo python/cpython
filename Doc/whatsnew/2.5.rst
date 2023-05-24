@@ -1426,9 +1426,9 @@ complete list of changes, or look through the SVN logs for all the details.
   :file:`.msi` files and CAB files.  Some support for reading the :file:`.msi`
   database is also included. (Contributed by Martin von Löwis.)
 
-* The :mod:`nis` module now supports accessing domains other than the system
-  default domain by supplying a *domain* argument to the :func:`nis.match` and
-  :func:`nis.maps` functions. (Contributed by Ben Bell.)
+* The :mod:`!nis` module now supports accessing domains other than the system
+  default domain by supplying a *domain* argument to the :func:`!nis.match` and
+  :func:`!nis.maps` functions. (Contributed by Ben Bell.)
 
 * The :mod:`operator` module's :func:`itemgetter`  and :func:`attrgetter`
   functions now support multiple fields.   A call such as
