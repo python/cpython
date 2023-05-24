@@ -1957,6 +1957,8 @@ class Popen:
                         err_msg = os.strerror(errno_num)
                     if err_filename is not None:
                         raise child_exception_type(errno_num, err_msg, err_filename)
+                    else:
+                        raise child_exception_type(errno_num, err_msg)
                 raise child_exception_type(err_msg)
 
 
