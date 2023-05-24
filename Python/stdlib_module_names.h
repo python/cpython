@@ -180,7 +180,6 @@ static const char* _Py_stdlib_module_names[] = {
 "mimetypes",
 "mmap",
 "modulefinder",
-"msilib",
 "msvcrt",
 "multiprocessing",
 "netrc",

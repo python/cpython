@@ -15,6 +15,5 @@ backwards compatibility. They have been superseded by other modules.
    chunk.rst
    crypt.rst
    imghdr.rst
-   msilib.rst
    optparse.rst
    uu.rst

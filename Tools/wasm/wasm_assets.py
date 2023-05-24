@@ -56,7 +56,6 @@ OMIT_FILES = (
     "concurrent/futures/thread.py",
     # Misc unused or large files
     "pydoc_data/",
-    "msilib/",
 )
 
 # Synchronous network I/O and protocols are not supported; for example,
