@@ -2061,8 +2061,8 @@ ssl
 sunau
 -----
 
-:func:`sunau.openfp` has been deprecated and will be removed in Python 3.9.
-Use :func:`sunau.open` instead.
+:func:`!sunau.openfp` has been deprecated and will be removed in Python 3.9.
+Use :func:`!sunau.open` instead.
 (Contributed by Brian Curtin in :issue:`31985`.)
 
 

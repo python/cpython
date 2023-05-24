@@ -1528,10 +1528,10 @@ work on Windows.  This change was actually inadvertently made in 3.3.4.
 sunau
 -----
 
-The :meth:`~sunau.getparams` method now returns a namedtuple rather than a
+The :meth:`~!sunau.getparams` method now returns a namedtuple rather than a
 plain tuple.  (Contributed by Claudiu Popa in :issue:`18901`.)
 
-:meth:`sunau.open` now supports the context management protocol: when used in a
+:meth:`!sunau.open` now supports the context management protocol: when used in a
 :keyword:`with` block, the ``close`` method of the returned object will be
 called automatically at the end of the block.  (Contributed by Serhiy Storchaka
 in :issue:`18878`.)
@@ -1540,8 +1540,8 @@ in :issue:`18878`.)
 support for writing 24 sample using the module.  (Contributed by
 Serhiy Storchaka in :issue:`19261`.)
 
-The :meth:`~sunau.AU_write.writeframesraw` and
-:meth:`~sunau.AU_write.writeframes` methods now accept any :term:`bytes-like
+The :meth:`~!sunau.AU_write.writeframesraw` and
+:meth:`~!sunau.AU_write.writeframes` methods now accept any :term:`bytes-like
 object`.  (Contributed by Serhiy Storchaka in :issue:`8311`.)
 
 

@@ -901,7 +901,7 @@ Modules (see :pep:`594`):
 * :mod:`!pipes`
 * :mod:`!sndhdr`
 * :mod:`spwd`
-* :mod:`sunau`
+* :mod:`!sunau`
 * :mod:`!telnetlib`
 * :mod:`uu`
 * :mod:`xdrlib`

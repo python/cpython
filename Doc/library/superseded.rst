@@ -21,6 +21,5 @@ backwards compatibility. They have been superseded by other modules.
    nntplib.rst
    optparse.rst
    spwd.rst
-   sunau.rst
    uu.rst
    xdrlib.rst
