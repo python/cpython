@@ -134,6 +134,7 @@ __all__ = [
     'get_overloads',
     'get_protocol_members',
     'get_type_hints',
+    'is_protocol',
     'is_typeddict',
     'LiteralString',
     'Never',
@@ -3299,7 +3300,25 @@ def override[F: _Func](method: F, /) -> F:
     return method
 
 
-def get_protocol_members(tp: type, /) -> frozenset[str] | None:
+def is_protocol(tp: type, /) -> bool:
+    """Return True if the given type is a Protocol.
+
+    Example::
+
+        >>> from typing import Protocol, is_protocol
+        >>> class P(Protocol):
+        ...     def a(self) -> str: ...
+        ...     b: int
+        >>> is_protocol(P)
+        True
+        >>> is_protocol(int)
+        False
+
+    """
+    return getattr(tp, '_is_protocol', False) and tp is not Protocol
+
+
+def get_protocol_members(tp: type, /) -> frozenset[str]:
     """Return the set of members defined in a Protocol.
 
     Example::
@@ -3311,9 +3330,9 @@ def get_protocol_members(tp: type, /) -> frozenset[str] | None:
         >>> get_protocol_members(P)
         frozenset({'a', 'b'})
 
-    Return None for arguments that are not Protocols.
+    Raise a TypeError for arguments that are not Protocols.
 
     """
-    if not getattr(tp, '_is_protocol', False) or tp is Protocol:
-        return None
+    if not is_protocol(tp):
+        raise TypeError(f'{tp!r} is not a Protocol')
     return frozenset(tp.__protocol_attrs__)

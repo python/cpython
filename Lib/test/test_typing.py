@@ -24,7 +24,7 @@ from typing import assert_type, cast, runtime_checkable
 from typing import get_type_hints
 from typing import get_origin, get_args, get_protocol_members
 from typing import override
-from typing import is_typeddict
+from typing import is_typeddict, is_protocol
 from typing import reveal_type
 from typing import dataclass_transform
 from typing import no_type_check, no_type_check_decorator
@@ -3172,8 +3172,6 @@ class ProtocolTests(BaseTestCase):
         self.assertNotIn("__callable_proto_members_only__", vars(NonP))
         self.assertNotIn("__callable_proto_members_only__", vars(NonPR))
 
-        self.assertIs(get_protocol_members(NonP), None)
-        self.assertIs(get_protocol_members(NonPR), None)
         self.assertEqual(get_protocol_members(P), frozenset({"x"}))
         self.assertEqual(get_protocol_members(PR), frozenset({"meth"}))
 
@@ -3593,10 +3591,14 @@ class ProtocolTests(BaseTestCase):
         Foo()  # Previously triggered RecursionError
 
     def test_get_protocol_members(self):
-        self.assertIs(get_protocol_members(object), None)
-        self.assertIs(get_protocol_members(object()), None)
-        self.assertIs(get_protocol_members(Protocol), None)
-        self.assertIs(get_protocol_members(Generic), None)
+        with self.assertRaises(TypeError):
+            get_protocol_members(object)
+        with self.assertRaises(TypeError):
+            get_protocol_members(object())
+        with self.assertRaises(TypeError):
+            get_protocol_members(Protocol)
+        with self.assertRaises(TypeError):
+            get_protocol_members(Generic)
 
         class P(Protocol):
             a: int
@@ -3612,8 +3614,10 @@ class ProtocolTests(BaseTestCase):
             @property
             def c(self) -> int: return 5
 
-        self.assertIs(get_protocol_members(Concrete), None)
-        self.assertIs(get_protocol_members(Concrete()), None)
+        with self.assertRaises(TypeError):
+            get_protocol_members(Concrete)
+        with self.assertRaises(TypeError):
+            get_protocol_members(Concrete())
 
         class ConcreteInherit(P):
             a: int = 42
@@ -3622,8 +3626,21 @@ class ProtocolTests(BaseTestCase):
             def c(self) -> int: return 5
 
         # not a protocol
-        self.assertEqual(get_protocol_members(ConcreteInherit), None)
-        self.assertIs(get_protocol_members(ConcreteInherit()), None)
+        with self.assertRaises(TypeError):
+            get_protocol_members(ConcreteInherit)
+        with self.assertRaises(TypeError):
+            get_protocol_members(ConcreteInherit())
+
+    def test_is_protocol(self):
+        self.assertTrue(is_protocol(Proto))
+        self.assertTrue(is_protocol(Point))
+        self.assertFalse(is_protocol(Concrete))
+        self.assertFalse(is_protocol(Concrete()))
+        self.assertFalse(is_protocol(Generic))
+        self.assertFalse(is_protocol(object))
+
+        # Protocol is not itself a protocol
+        self.assertFalse(is_protocol(Protocol))
 
 
 class GenericTests(BaseTestCase):

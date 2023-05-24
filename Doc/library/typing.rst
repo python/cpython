@@ -2918,7 +2918,22 @@ Introspection helpers
       >>> get_protocol_members(P)
       frozenset({'a', 'b'})
 
-   Return None for arguments that are not Protocols.
+   Raise a :exc:`TypeError` for arguments that are not Protocols.
+
+   .. versionadded:: 3.13
+
+.. function:: is_protocol(tp)
+
+   Check if a type is a :class:`Protocol`.
+
+   For example::
+
+      class P(Protocol):
+          def a(self) -> str: ...
+          b: int
+
+      is_protocol(P)  # => True
+      is_protocol(int)  # => False
 
    .. versionadded:: 3.13
 
