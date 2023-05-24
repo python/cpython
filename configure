@@ -13487,14 +13487,6 @@ LIBS=$save_LIBS
 
 fi
 
-case $ac_sys_system in #(
-  NetBSD*) :
-    OSSAUDIODEV_LIBS="-lossaudio" ;; #(
-  *) :
-    OSSAUDIODEV_LIBS=""
- ;;
-esac
-
 
 
 
