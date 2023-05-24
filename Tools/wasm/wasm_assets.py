@@ -43,7 +43,6 @@ OMIT_FILES = (
     "venv/",
     # deprecated
     "uu.py",
-    "xdrlib.py",
     # other platforms
     "_aix_support.py",
     "_osx_support.py",

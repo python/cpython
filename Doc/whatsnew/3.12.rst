@@ -904,7 +904,7 @@ Modules (see :pep:`594`):
 * :mod:`!sunau`
 * :mod:`!telnetlib`
 * :mod:`uu`
-* :mod:`xdrlib`
+* :mod:`!xdrlib`
 
 APIs:
 

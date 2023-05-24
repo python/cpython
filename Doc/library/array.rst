@@ -260,10 +260,6 @@ Examples::
    Module :mod:`struct`
       Packing and unpacking of heterogeneous binary data.
 
-   Module :mod:`xdrlib`
-      Packing and unpacking of External Data Representation (XDR) data as used in some
-      remote procedure call systems.
-
    `NumPy <https://numpy.org/>`_
       The NumPy package defines another array type.
 
