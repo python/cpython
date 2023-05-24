@@ -1806,9 +1806,6 @@ class ZipFile:
               compress_type=None, compresslevel=None):
         """Put the bytes from filename into the archive under the name
         arcname."""
-        if os.path.abspath(filename) == os.path.abspath(self.filename):
-            raise ValueError(f"Attempt to write {filename} in {self.filename} recursively")
-
         if not self.fp:
             raise ValueError(
                 "Attempt to write to ZIP archive that was already closed")
@@ -1819,6 +1816,11 @@ class ZipFile:
 
         zinfo = ZipInfo.from_file(filename, arcname,
                                   strict_timestamps=self._strict_timestamps)
+
+        if isinstance(self.filename, os.PathLike) or isinstance(self.filename, bytes) \
+            or isinstance(self.filename, str):
+            if os.path.abspath(filename) == os.path.abspath(self.filename):
+                raise ValueError(f"Attempt to write {filename} in {self.filename} recursively")
 
         if zinfo.is_dir():
             zinfo.compress_size = 0
