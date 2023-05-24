@@ -191,7 +191,6 @@ PYTHONPATH=$(COREPYTHONPATH)
 # Modules with UNIX dependencies that require external libraries
 
 #_crypt _cryptmodule.c -lcrypt
-#nis nismodule.c -I/usr/include/tirpc -lnsl -ltirpc
 
 # Modules that require external libraries.
 
