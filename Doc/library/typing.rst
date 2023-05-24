@@ -2006,6 +2006,7 @@ These are not used in annotations. They are building blocks for declaring types.
       protocol. See :ref:`"What's new in Python 3.12" <whatsnew-typing-py312>`
       for more details.
 
+
 .. class:: TypedDict(dict)
 
    Special construct to add type hints to a dictionary.
@@ -2490,7 +2491,7 @@ Corresponding to collections in :mod:`collections.abc`
       :class:`collections.abc.Sequence` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: ValuesView(MappingView, Collection[VT_co])
+.. class:: ValuesView(MappingView, Collection[_VT_co])
 
    A generic version of :class:`collections.abc.ValuesView`.
 
@@ -2517,7 +2518,7 @@ Corresponding to other types in :mod:`collections.abc`
       :class:`collections.abc.Iterator` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: Generator(Iterator[YieldType], Generic[YieldType, SendType, ReturnType])
+.. class:: Generator(Iterator[T_co], Generic[T_co, T_contra, V_co])
 
    A generator can be annotated by the generic type
    ``Generator[YieldType, SendType, ReturnType]``. For example::
@@ -2577,7 +2578,7 @@ Corresponding to other types in :mod:`collections.abc`
 Asynchronous programming
 """"""""""""""""""""""""
 
-.. class:: Coroutine(Awaitable[ReturnType], Generic[YieldType, SendType, ReturnType])
+.. class:: Coroutine(Awaitable[V_co], Generic[T_co, T_contra, V_co])
 
    A generic version of :class:`collections.abc.Coroutine`.
    The variance and order of type variables
@@ -2595,7 +2596,7 @@ Asynchronous programming
       :class:`collections.abc.Coroutine` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: AsyncGenerator(AsyncIterator[YieldType], Generic[YieldType, SendType])
+.. class:: AsyncGenerator(AsyncIterator[T_co], Generic[T_co, T_contra])
 
    An async generator can be annotated by the generic type
    ``AsyncGenerator[YieldType, SendType]``. For example::
@@ -2653,7 +2654,7 @@ Asynchronous programming
       :class:`collections.abc.AsyncIterator` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: Awaitable[T_co]
+.. class:: Awaitable(Generic[T_co])
 
    A generic version of :class:`collections.abc.Awaitable`.
 
