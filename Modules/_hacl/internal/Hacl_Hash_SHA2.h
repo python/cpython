@@ -23,8 +23,8 @@
  */
 
 
-#ifndef __internal_Hacl_SHA2_Generic_H
-#define __internal_Hacl_SHA2_Generic_H
+#ifndef __internal_Hacl_Hash_SHA2_H
+#define __internal_Hacl_Hash_SHA2_H
 
 #if defined(__cplusplus)
 extern "C" {
@@ -34,6 +34,9 @@ extern "C" {
 #include "krml/types.h"
 #include "krml/lowstar_endianness.h"
 #include "krml/internal/target.h"
+
+
+#include "../Hacl_Hash_SHA2.h"
 
 static const
 uint32_t
@@ -124,9 +127,58 @@ Hacl_Impl_SHA2_Generic_k384_512[80U] =
     (uint64_t)0x5fcb6fab3ad6faecU, (uint64_t)0x6c44198c4a475817U
   };
 
+void Hacl_SHA2_Scalar32_sha256_init(uint32_t *hash);
+
+void Hacl_SHA2_Scalar32_sha256_update_nblocks(uint32_t len, uint8_t *b, uint32_t *st);
+
+void
+Hacl_SHA2_Scalar32_sha256_update_last(
+  uint64_t totlen,
+  uint32_t len,
+  uint8_t *b,
+  uint32_t *hash
+);
+
+void Hacl_SHA2_Scalar32_sha256_finish(uint32_t *st, uint8_t *h);
+
+void Hacl_SHA2_Scalar32_sha224_init(uint32_t *hash);
+
+void
+Hacl_SHA2_Scalar32_sha224_update_last(uint64_t totlen, uint32_t len, uint8_t *b, uint32_t *st);
+
+void Hacl_SHA2_Scalar32_sha224_finish(uint32_t *st, uint8_t *h);
+
+void Hacl_SHA2_Scalar32_sha512_init(uint64_t *hash);
+
+void Hacl_SHA2_Scalar32_sha512_update_nblocks(uint32_t len, uint8_t *b, uint64_t *st);
+
+void
+Hacl_SHA2_Scalar32_sha512_update_last(
+  FStar_UInt128_uint128 totlen,
+  uint32_t len,
+  uint8_t *b,
+  uint64_t *hash
+);
+
+void Hacl_SHA2_Scalar32_sha512_finish(uint64_t *st, uint8_t *h);
+
+void Hacl_SHA2_Scalar32_sha384_init(uint64_t *hash);
+
+void Hacl_SHA2_Scalar32_sha384_update_nblocks(uint32_t len, uint8_t *b, uint64_t *st);
+
+void
+Hacl_SHA2_Scalar32_sha384_update_last(
+  FStar_UInt128_uint128 totlen,
+  uint32_t len,
+  uint8_t *b,
+  uint64_t *st
+);
+
+void Hacl_SHA2_Scalar32_sha384_finish(uint64_t *st, uint8_t *h);
+
 #if defined(__cplusplus)
 }
 #endif
 
-#define __internal_Hacl_SHA2_Generic_H_DEFINED
+#define __internal_Hacl_Hash_SHA2_H_DEFINED
 #endif
