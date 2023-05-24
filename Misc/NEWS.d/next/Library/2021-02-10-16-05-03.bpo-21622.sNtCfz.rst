@@ -1,0 +1,1 @@
+Fix :func:`ctypes.util.find_library` with musl libc.

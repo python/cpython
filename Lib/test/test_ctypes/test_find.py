@@ -122,6 +122,15 @@ class FindLibraryLinux(unittest.TestCase):
              unittest.mock.patch("ctypes.util._findLib_gcc", lambda *args: None):
             self.assertNotEqual(find_library('c'), None)
 
+    def test_find_library_musl(self):
+        from _ctypes import get_interp
+        interp = get_interp()
+        if interp == None or interp.find("ld-musl-") == -1:
+            self.skipTest('ld-musl not detected')
+
+        with unittest.mock.patch("ctypes.util._findSoname_ldconfig", lambda *args: None), \
+             unittest.mock.patch("ctypes.util._get_soname", lambda *args: None):
+            self.assertNotEqual(find_library('c'), None)
 
 if __name__ == "__main__":
     unittest.main()
