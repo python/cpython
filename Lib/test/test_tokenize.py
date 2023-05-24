@@ -103,7 +103,7 @@ def k(x):
             e.exception.msg,
             'unindent does not match any outer indentation level')
         self.assertEqual(e.exception.offset, 9)
-        self.assertEqual(e.exception.text, '  x += 5\n')
+        self.assertEqual(e.exception.text, '  x += 5')
 
     def test_int(self):
         # Ordinary integers and binary operators
@@ -1057,6 +1057,23 @@ async def f():
     DEDENT     ''            (6, 12) (6, 12)
     """)
 
+    def test_newline_after_parenthesized_block_with_comment(self):
+        self.check_tokenize('''\
+[
+    # A comment here
+    1
+]
+''', """\
+    OP         '['           (1, 0) (1, 1)
+    NL         '\\n'          (1, 1) (1, 2)
+    COMMENT    '# A comment here' (2, 4) (2, 20)
+    NL         '\\n'          (2, 20) (2, 21)
+    NUMBER     '1'           (3, 4) (3, 5)
+    NL         '\\n'          (3, 5) (3, 6)
+    OP         ']'           (4, 0) (4, 1)
+    NEWLINE    '\\n'          (4, 1) (4, 2)
+    """)
+
 class GenerateTokensTest(TokenizeTest):
     def check_tokenize(self, s, expected):
         # Format the tokens in s in a table format.
@@ -1157,7 +1174,7 @@ class Test_Tokenize(TestCase):
 
         # skip the initial encoding token and the end tokens
         tokens = list(_tokenize(readline(), encoding='utf-8'))[:-2]
-        expected_tokens = [TokenInfo(3, '"ЉЊЈЁЂ"', (1, 0), (1, 7), '"ЉЊЈЁЂ"\n')]
+        expected_tokens = [TokenInfo(3, '"ЉЊЈЁЂ"', (1, 0), (1, 7), '"ЉЊЈЁЂ"')]
         self.assertEqual(tokens, expected_tokens,
                          "bytes not decoded with encoding")
 

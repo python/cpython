@@ -238,7 +238,8 @@ class ThreadedImportTests(unittest.TestCase):
         self.addCleanup(forget, TESTFN)
         self.addCleanup(rmtree, '__pycache__')
         importlib.invalidate_caches()
-        __import__(TESTFN)
+        with threading_helper.wait_threads_exit():
+            __import__(TESTFN)
         del sys.modules[TESTFN]
 
     def test_concurrent_futures_circular_import(self):

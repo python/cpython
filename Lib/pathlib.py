@@ -1080,25 +1080,6 @@ class Path(PurePath):
             cls = WindowsPath if os.name == 'nt' else PosixPath
         return object.__new__(cls)
 
-    def __enter__(self):
-        # In previous versions of pathlib, __exit__() marked this path as
-        # closed; subsequent attempts to perform I/O would raise an IOError.
-        # This functionality was never documented, and had the effect of
-        # making Path objects mutable, contrary to PEP 428.
-        # In Python 3.9 __exit__() was made a no-op.
-        # In Python 3.11 __enter__() began emitting DeprecationWarning.
-        # In Python 3.13 __enter__() and __exit__() should be removed.
-        warnings.warn("pathlib.Path.__enter__() is deprecated and scheduled "
-                      "for removal in Python 3.13; Path objects as a context "
-                      "manager is a no-op",
-                      DeprecationWarning, stacklevel=2)
-        return self
-
-    def __exit__(self, t, v, tb):
-        pass
-
-    # Public API
-
     @classmethod
     def cwd(cls):
         """Return a new path pointing to the current working directory."""
