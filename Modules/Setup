@@ -184,7 +184,6 @@ PYTHONPATH=$(COREPYTHONPATH)
 #_posixshmem -I$(srcdir)/Modules/_multiprocessing _multiprocessing/posixshmem.c -lrt
 #fcntl fcntlmodule.c
 #grp grpmodule.c
-#ossaudiodev ossaudiodev.c
 #resource resource.c
 #spwd spwdmodule.c
 #syslog syslogmodule.c
@@ -262,7 +261,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 # *** Always uncomment this; X11 libraries to link with:
 #	-lX11
 
-# Some system have -lcurses 
+# Some system have -lcurses
 #_curses -lncurses -lncursesw -ltermcap _cursesmodule.c
 #_curses_panel -lpanel -lncurses _curses_panel.c
 
