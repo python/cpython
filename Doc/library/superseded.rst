@@ -12,8 +12,6 @@ backwards compatibility. They have been superseded by other modules.
 
    aifc.rst
    audioop.rst
-   cgi.rst
-   cgitb.rst
    chunk.rst
    crypt.rst
    imghdr.rst
