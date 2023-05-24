@@ -20,7 +20,6 @@ backwards compatibility. They have been superseded by other modules.
    nis.rst
    nntplib.rst
    optparse.rst
-   ossaudiodev.rst
    spwd.rst
    sunau.rst
    uu.rst

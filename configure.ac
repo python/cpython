@@ -7093,7 +7093,7 @@ dnl VxWorks does not provide crypt() function
 AS_CASE([$ac_sys_system],
   [AIX], [PY_STDLIB_MOD_SET_NA([_scproxy], [spwd])],
   [VxWorks*], [PY_STDLIB_MOD_SET_NA([_scproxy], [_crypt], [termios], [grp])],
-  [Darwin], [PY_STDLIB_MOD_SET_NA([ossaudiodev], [spwd])],
+  [Darwin], [PY_STDLIB_MOD_SET_NA([spwd])],
   [CYGWIN*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
   [QNX*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
   [FreeBSD*], [PY_STDLIB_MOD_SET_NA([_scproxy], [spwd])],
@@ -7117,7 +7117,6 @@ AS_CASE([$ac_sys_system],
       [_xxinterpchannels],
       [grp],
       [nis],
-      [ossaudiodev],
       [pwd],
       [resource],
       [spwd],
@@ -7266,9 +7265,6 @@ PY_STDLIB_MOD([_socket],
 
 dnl platform specific extensions
 PY_STDLIB_MOD([grp], [], [test "$ac_cv_func_getgrgid" = yes -o "$ac_cv_func_getgrgid_r" = yes])
-PY_STDLIB_MOD([ossaudiodev],
-  [], [test "$ac_cv_header_linux_soundcard_h" = yes -o "$ac_cv_header_sys_soundcard_h" = yes],
-  [], [$OSSAUDIODEV_LIBS])
 PY_STDLIB_MOD([pwd], [], [test "$ac_cv_func_getpwuid" = yes -o "$ac_cv_func_getpwuid_r" = yes])
 PY_STDLIB_MOD([resource], [], [test "$ac_cv_header_sys_resource_h" = yes])
 PY_STDLIB_MOD([_scproxy],

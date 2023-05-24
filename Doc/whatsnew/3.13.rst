@@ -157,6 +157,10 @@ Removed
   use the :mod:`subprocess` module instead.
   (Contributed by Victor Stinner in :gh:`104773`.)
 
+* :pep:`594`: Remove the :mod:`!ossaudiodev` module, deprecated in Python 3.11:
+  use the `pygame project <https://www.pygame.org/>`_ for audio playback.
+  (Contributed by Victor Stinner in :gh:`104780`.)
+
 
 Porting to Python 3.13
 ======================
