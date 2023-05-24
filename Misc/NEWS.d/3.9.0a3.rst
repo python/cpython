@@ -571,7 +571,7 @@ new task spawning before exception raising.
 .. section: Library
 
 Correctly parenthesize filter-based statements that contain lambda
-expressions in mod:`lib2to3`. Patch by Dong-hee Na.
+expressions in mod:`!lib2to3`. Patch by Dong-hee Na.
 
 ..
 

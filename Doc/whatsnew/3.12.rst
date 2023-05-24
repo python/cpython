@@ -395,6 +395,9 @@ pathlib
 * Add :meth:`pathlib.Path.is_junction` as a proxy to :func:`os.path.isjunction`.
   (Contributed by Charles Machalow in :gh:`99547`.)
 
+* Add *case_sensitive* optional parameter to :meth:`pathlib.Path.glob`,
+  :meth:`pathlib.Path.rglob` and :meth:`pathlib.PurePath.match` for matching
+  the path's case sensitivity, allowing for more precise control over the matching process.
 
 dis
 ---
@@ -528,6 +531,17 @@ threading
   :func:`threading.setprofile_all_threads` that allow to set tracing and
   profiling functions in all running threads in addition to the calling one.
   (Contributed by Pablo Galindo in :gh:`93503`.)
+
+tkinter
+-------
+
+* ``tkinter.Canvas.coords()`` now flattens its arguments.
+  It now accepts not only coordinates as separate arguments
+  (``x1, y1, x2, y2, ...``) and a sequence of coordinates
+  (``[x1, y1, x2, y2, ...]``), but also coordinates grouped in pairs
+  (``(x1, y1), (x2, y2), ...`` and ``[(x1, y1), (x2, y2), ...]``),
+  like ``create_*()`` methods.
+  (Contributed by Serhiy Storchaka in :gh:`94473`.)
 
 types
 -----
@@ -771,6 +785,16 @@ Deprecated
   ``int``, convert to int explicitly with ``~int(x)``. (Contributed by Tim Hoffmann
   in :gh:`103487`.)
 
+* :class:`datetime.datetime`'s
+  :meth:`~datetime.datetime.utcnow` and
+  :meth:`~datetime.datetime.utcfromtimestamp` are deprecated and will be
+  removed in a future version. Instead, use timezone-aware objects to represent
+  datetimes in UTC: respectively, call
+  :meth:`~datetime.datetime.now` and
+  :meth:`~datetime.datetime.fromtimestamp`  with the *tz* parameter set to
+  :attr:`datetime.UTC`.
+  (Contributed by Paul Ganssle in :gh:`103857`.)
+
 Pending Removal in Python 3.13
 ------------------------------
 
@@ -795,7 +819,7 @@ Modules (see :pep:`594`):
 * :mod:`sndhdr`
 * :mod:`spwd`
 * :mod:`sunau`
-* :mod:`telnetlib`
+* :mod:`!telnetlib`
 * :mod:`uu`
 * :mod:`xdrlib`
 
@@ -831,6 +855,9 @@ Pending Removal in Python 3.14
   For use in typing, prefer a union, like ``bytes | bytearray``, or :class:`collections.abc.Buffer`.
   (Contributed by Shantanu Jain in :gh:`91896`.)
 
+* :class:`typing.ByteString`, deprecated since Python 3.9, now causes a
+  :exc:`DeprecationWarning` to be emitted when it is used.
+
 * Creating immutable types (:data:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
   bases using the C API.
 
@@ -863,6 +890,11 @@ Pending Removal in Python 3.14
 
 * The *onerror* argument of :func:`shutil.rmtree` is deprecated in 3.12,
   and will be removed in 3.14.
+
+* The *type*, *choices*, and *metavar* parameters
+  of :class:`!argparse.BooleanOptionalAction` are deprecated
+  and will be removed in 3.14.
+  (Contributed by Nikita Sobolev in :gh:`92248`.)
 
 * :func:`pkgutil.find_loader` and :func:`pkgutil.get_loader`
   now raise :exc:`DeprecationWarning`;
@@ -1201,6 +1233,8 @@ Build Changes
 
   (Contributed by Zhang Na in :gh:`90656`.)
 
+* ``PYTHON_FOR_REGEN`` now require Python 3.10 or newer.
+
 
 C API Changes
 =============
@@ -1379,6 +1413,12 @@ Porting to Python 3.12
   :py:meth:`~class.__subclasses__` (using :c:func:`PyObject_CallMethod`,
   for example).
 
+* Add support of more formatting options (left aligning, octals, uppercase
+  hexadecimals, ``intmax_t``, ``ptrdiff_t``, ``wchar_t`` C
+  strings, variable width and precision) in :c:func:`PyUnicode_FromFormat` and
+  :c:func:`PyUnicode_FromFormatV`.
+  (Contributed by Serhiy Storchaka in :gh:`98836`.)
+
 * An unrecognized format character in :c:func:`PyUnicode_FromFormat` and
   :c:func:`PyUnicode_FromFormatV` now sets a :exc:`SystemError`.
   In previous versions it caused all the rest of the format string to be
@@ -1435,6 +1475,15 @@ Porting to Python 3.12
 
   Note that :c:func:`PyType_FromMetaclass` (added in Python 3.12)
   already disallows creating classes whose metaclass overrides ``tp_new``.
+
+* :c:var:`PyOS_InputHook` and :c:var:`PyOS_ReadlineFunctionPointer` are no
+  longer called in :ref:`subinterpreters <sub-interpreter-support>`. This is
+  because clients generally rely on process-wide global state (since these
+  callbacks have no way of recovering extension module state).
+
+  This also avoids situations where extensions may find themselves running in a
+  subinterpreter that they don't support (or haven't yet been loaded in). See
+  :gh:`104668` for more info.
 
 Deprecated
 ----------
