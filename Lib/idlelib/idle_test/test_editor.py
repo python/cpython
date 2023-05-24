@@ -201,8 +201,8 @@ class IndentSearcherTest(unittest.TestCase):
         test_info = (# text, (block, indent))
                      ("", (None, None)),
                      ("[1,", (None, None)),  # TokenError
-                     ("if 1:\n", ('if 1:\n', None)),
-                     ("if 1:\n  2\n  3\n", ('if 1:\n', '  2\n')),
+                     ("if 1:\n", ('if 1:', None)),
+                     ("if 1:\n  2\n  3\n", ('if 1:', '  2')),
                      )
         for code, expected_pair in test_info:
             with self.subTest(code=code):
