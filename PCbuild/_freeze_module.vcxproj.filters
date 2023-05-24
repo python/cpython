@@ -277,7 +277,7 @@
     <ClCompile Include="..\Objects\odictobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Python\optimize.c">
+    <ClCompile Include="..\Python\optimizer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Parser\parser.c">
