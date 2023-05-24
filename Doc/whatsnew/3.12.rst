@@ -805,8 +805,8 @@ Modules (see :pep:`594`):
 
 * :mod:`aifc`
 * :mod:`audioop`
-* :mod:`cgi`
-* :mod:`cgitb`
+* :mod:`!cgi`
+* :mod:`!cgitb`
 * :mod:`chunk`
 * :mod:`crypt`
 * :mod:`imghdr`
