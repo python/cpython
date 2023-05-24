@@ -3172,8 +3172,17 @@ class ProtocolTests(BaseTestCase):
         self.assertNotIn("__callable_proto_members_only__", vars(NonP))
         self.assertNotIn("__callable_proto_members_only__", vars(NonPR))
 
-        self.assertEqual(get_protocol_members(P), frozenset({"x"}))
-        self.assertEqual(get_protocol_members(PR), frozenset({"meth"}))
+        self.assertEqual(get_protocol_members(P), {"x"})
+        self.assertEqual(get_protocol_members(PR), {"meth"})
+
+        # the returned object should be immutable,
+        # and should be a different object to the original attribute
+        # to prevent users from (accidentally or deliberately)
+        # mutating the attribute on the original class
+        self.assertIsInstance(get_protocol_members(P), frozenset)
+        self.assertIsNot(get_protocol_members(P), P.__protocol_attrs__)
+        self.assertIsInstance(get_protocol_members(PR), frozenset)
+        self.assertIsNot(get_protocol_members(PR), P.__protocol_attrs__)
 
         acceptable_extra_attrs = {
             '_is_protocol', '_is_runtime_protocol', '__parameters__',
@@ -3606,7 +3615,9 @@ class ProtocolTests(BaseTestCase):
             @property
             def c(self) -> int: ...
 
-        self.assertEqual(get_protocol_members(P), frozenset({'a', 'b', 'c'}))
+        self.assertEqual(get_protocol_members(P), {'a', 'b', 'c'})
+        self.assertIsInstance(get_protocol_members(P), frozenset)
+        self.assertIsNot(get_protocol_members(P), P.__protocol_attrs__)
 
         class Concrete:
             a: int

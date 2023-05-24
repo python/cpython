@@ -3315,7 +3315,11 @@ def is_protocol(tp: type, /) -> bool:
         False
 
     """
-    return getattr(tp, '_is_protocol', False) and tp is not Protocol
+    return (
+        isinstance(tp, type)
+        and getattr(tp, '_is_protocol', False)
+        and tp is not Protocol
+    )
 
 
 def get_protocol_members(tp: type, /) -> frozenset[str]:
@@ -3333,6 +3337,7 @@ def get_protocol_members(tp: type, /) -> frozenset[str]:
     Raise a TypeError for arguments that are not Protocols.
 
     """
-    if not is_protocol(tp):
-        raise TypeError(f'{tp!r} is not a Protocol')
-    return frozenset(tp.__protocol_attrs__)
+    try:
+        return frozenset(tp.__protocol_attrs__)
+    except AttributeError:
+        raise TypeError(f'{tp!r} is not a Protocol') from None

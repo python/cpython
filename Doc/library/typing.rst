@@ -2918,13 +2918,13 @@ Introspection helpers
       >>> get_protocol_members(P)
       frozenset({'a', 'b'})
 
-   Raise a :exc:`TypeError` for arguments that are not Protocols.
+   Raise :exc:`TypeError` for arguments that are not Protocols.
 
    .. versionadded:: 3.13
 
 .. function:: is_protocol(tp)
 
-   Check if a type is a :class:`Protocol`.
+   Determine if a type is a :class:`Protocol`.
 
    For example::
 
