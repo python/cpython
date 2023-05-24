@@ -1806,6 +1806,9 @@ class ZipFile:
               compress_type=None, compresslevel=None):
         """Put the bytes from filename into the archive under the name
         arcname."""
+        if os.path.abspath(filename) == os.path.abspath(self.filename):
+            raise ValueError(f"Attempt to write {filename} in {self.filename} recursively")
+
         if not self.fp:
             raise ValueError(
                 "Attempt to write to ZIP archive that was already closed")
