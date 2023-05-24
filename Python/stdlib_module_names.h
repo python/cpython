@@ -235,7 +235,6 @@ static const char* _Py_stdlib_module_names[] = {
 "smtplib",
 "socket",
 "socketserver",
-"spwd",
 "sqlite3",
 "sre_compile",
 "sre_constants",
