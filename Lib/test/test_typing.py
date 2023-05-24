@@ -3174,8 +3174,8 @@ class ProtocolTests(BaseTestCase):
 
         self.assertIs(get_protocol_members(NonP), None)
         self.assertIs(get_protocol_members(NonPR), None)
-        self.assertEqual(get_protocol_members(P), {"x"})
-        self.assertEqual(get_protocol_members(PR), {"meth"})
+        self.assertEqual(get_protocol_members(P), frozenset({"x"}))
+        self.assertEqual(get_protocol_members(PR), frozenset({"meth"}))
 
         acceptable_extra_attrs = {
             '_is_protocol', '_is_runtime_protocol', '__parameters__',
@@ -3604,7 +3604,7 @@ class ProtocolTests(BaseTestCase):
             @property
             def c(self) -> int: ...
 
-        self.assertEqual(get_protocol_members(P), {'a', 'b', 'c'})
+        self.assertEqual(get_protocol_members(P), frozenset({'a', 'b', 'c'}))
 
         class Concrete:
             a: int
