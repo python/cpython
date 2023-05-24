@@ -173,6 +173,11 @@ Removed
   instead.
   (Contributed by Victor Stinner in :gh:`104773`.)
 
+* :pep:`594`: Remove the :mod:`!nntplib` module, deprecated in Python 3.11:
+  the `PyPI nntplib project <https://pypi.org/project/nntplib/>`_ can be used
+  instead.
+  (Contributed by Victor Stinner in :gh:`104773`.)
+
 
 Porting to Python 3.13
 ======================
