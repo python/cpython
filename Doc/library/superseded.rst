@@ -22,7 +22,6 @@ backwards compatibility. They have been superseded by other modules.
    optparse.rst
    ossaudiodev.rst
    pipes.rst
-   sndhdr.rst
    spwd.rst
    sunau.rst
    uu.rst
