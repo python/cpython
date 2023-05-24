@@ -190,11 +190,11 @@ def addpackage(sitedir, name, known_paths):
                 if not dircase in known_paths and os.path.exists(dir):
                     sys.path.append(dir)
                     known_paths.add(dircase)
-            except Exception:
+            except Exception as exc:
                 print("Error processing line {:d} of {}:\n".format(n+1, fullname),
                       file=sys.stderr)
                 import traceback
-                for record in traceback.format_exception(*sys.exc_info()):
+                for record in traceback.format_exception(exc):
                     for line in record.splitlines():
                         print('  '+line, file=sys.stderr)
                 print("\nRemainder of file ignored", file=sys.stderr)
@@ -492,20 +492,23 @@ def venv(known_paths):
         executable = sys._base_executable = os.environ['__PYVENV_LAUNCHER__']
     else:
         executable = sys.executable
-    exe_dir, _ = os.path.split(os.path.abspath(executable))
+    exe_dir = os.path.dirname(os.path.abspath(executable))
     site_prefix = os.path.dirname(exe_dir)
     sys._home = None
     conf_basename = 'pyvenv.cfg'
-    candidate_confs = [
-        conffile for conffile in (
-            os.path.join(exe_dir, conf_basename),
-            os.path.join(site_prefix, conf_basename)
+    candidate_conf = next(
+        (
+            conffile for conffile in (
+                os.path.join(exe_dir, conf_basename),
+                os.path.join(site_prefix, conf_basename)
             )
-        if os.path.isfile(conffile)
-        ]
+            if os.path.isfile(conffile)
+        ),
+        None
+    )
 
-    if candidate_confs:
-        virtual_conf = candidate_confs[0]
+    if candidate_conf:
+        virtual_conf = candidate_conf
         system_site = "true"
         # Issue 25185: Use UTF-8, as that's what the venv module uses when
         # writing the file.

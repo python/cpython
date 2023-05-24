@@ -29,6 +29,7 @@ import functools
 import io
 import logging
 import logging.handlers
+import os
 import queue
 import re
 import struct
@@ -60,15 +61,24 @@ def fileConfig(fname, defaults=None, disable_existing_loggers=True, encoding=Non
     """
     import configparser
 
+    if isinstance(fname, str):
+        if not os.path.exists(fname):
+            raise FileNotFoundError(f"{fname} doesn't exist")
+        elif not os.path.getsize(fname):
+            raise RuntimeError(f'{fname} is an empty file')
+
     if isinstance(fname, configparser.RawConfigParser):
         cp = fname
     else:
-        cp = configparser.ConfigParser(defaults)
-        if hasattr(fname, 'readline'):
-            cp.read_file(fname)
-        else:
-            encoding = io.text_encoding(encoding)
-            cp.read(fname, encoding=encoding)
+        try:
+            cp = configparser.ConfigParser(defaults)
+            if hasattr(fname, 'readline'):
+                cp.read_file(fname)
+            else:
+                encoding = io.text_encoding(encoding)
+                cp.read(fname, encoding=encoding)
+        except configparser.ParsingError as e:
+            raise RuntimeError(f'{fname} is invalid: {e}')
 
     formatters = _create_formatters(cp)
 
@@ -114,11 +124,18 @@ def _create_formatters(cp):
         fs = cp.get(sectname, "format", raw=True, fallback=None)
         dfs = cp.get(sectname, "datefmt", raw=True, fallback=None)
         stl = cp.get(sectname, "style", raw=True, fallback='%')
+        defaults = cp.get(sectname, "defaults", raw=True, fallback=None)
+
         c = logging.Formatter
         class_name = cp[sectname].get("class")
         if class_name:
             c = _resolve(class_name)
-        f = c(fs, dfs, stl)
+
+        if defaults is not None:
+            defaults = eval(defaults, vars(logging))
+            f = c(fs, dfs, stl, defaults=defaults)
+        else:
+            f = c(fs, dfs, stl)
         formatters[form] = f
     return formatters
 
@@ -668,18 +685,27 @@ class DictConfigurator(BaseConfigurator):
             dfmt = config.get('datefmt', None)
             style = config.get('style', '%')
             cname = config.get('class', None)
+            defaults = config.get('defaults', None)
 
             if not cname:
                 c = logging.Formatter
             else:
                 c = _resolve(cname)
 
+            kwargs  = {}
+
+            # Add defaults only if it exists.
+            # Prevents TypeError in custom formatter callables that do not
+            # accept it.
+            if defaults is not None:
+                kwargs['defaults'] = defaults
+
             # A TypeError would be raised if "validate" key is passed in with a formatter callable
             # that does not accept "validate" as a parameter
             if 'validate' in config:  # if user hasn't mentioned it, the default will be fine
-                result = c(fmt, dfmt, style, config['validate'])
+                result = c(fmt, dfmt, style, config['validate'], **kwargs)
             else:
-                result = c(fmt, dfmt, style)
+                result = c(fmt, dfmt, style, **kwargs)
 
         return result
 

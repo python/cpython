@@ -2,6 +2,7 @@
 #include "Python.h"
 #include "pycore_ast.h"           // _PyAST_GetDocString()
 #include "pycore_compile.h"       // _PyASTOptimizeState
+#include "pycore_long.h"           // _PyLong
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_format.h"        // F_LJUST
 
@@ -152,7 +153,9 @@ check_complexity(PyObject *obj, Py_ssize_t limit)
 static PyObject *
 safe_multiply(PyObject *v, PyObject *w)
 {
-    if (PyLong_Check(v) && PyLong_Check(w) && Py_SIZE(v) && Py_SIZE(w)) {
+    if (PyLong_Check(v) && PyLong_Check(w) &&
+        !_PyLong_IsZero((PyLongObject *)v) && !_PyLong_IsZero((PyLongObject *)w)
+    ) {
         size_t vbits = _PyLong_NumBits(v);
         size_t wbits = _PyLong_NumBits(w);
         if (vbits == (size_t)-1 || wbits == (size_t)-1) {
@@ -198,7 +201,9 @@ safe_multiply(PyObject *v, PyObject *w)
 static PyObject *
 safe_power(PyObject *v, PyObject *w)
 {
-    if (PyLong_Check(v) && PyLong_Check(w) && Py_SIZE(v) && Py_SIZE(w) > 0) {
+    if (PyLong_Check(v) && PyLong_Check(w) &&
+        !_PyLong_IsZero((PyLongObject *)v) && _PyLong_IsPositive((PyLongObject *)w)
+    ) {
         size_t vbits = _PyLong_NumBits(v);
         size_t wbits = PyLong_AsSize_t(w);
         if (vbits == (size_t)-1 || wbits == (size_t)-1) {
@@ -215,7 +220,9 @@ safe_power(PyObject *v, PyObject *w)
 static PyObject *
 safe_lshift(PyObject *v, PyObject *w)
 {
-    if (PyLong_Check(v) && PyLong_Check(w) && Py_SIZE(v) && Py_SIZE(w)) {
+    if (PyLong_Check(v) && PyLong_Check(w) &&
+        !_PyLong_IsZero((PyLongObject *)v) && !_PyLong_IsZero((PyLongObject *)w)
+    ) {
         size_t vbits = _PyLong_NumBits(v);
         size_t wbits = PyLong_AsSize_t(w);
         if (vbits == (size_t)-1 || wbits == (size_t)-1) {
@@ -310,7 +317,6 @@ simple_format_arg_parse(PyObject *fmt, Py_ssize_t *ppos,
             case ' ': *flags |= F_BLANK; continue;
             case '#': *flags |= F_ALT; continue;
             case '0': *flags |= F_ZERO; continue;
-            case 'z': *flags |= F_NO_NEG_0; continue;
         }
         break;
     }
@@ -636,6 +642,7 @@ static int astfold_withitem(withitem_ty node_, PyArena *ctx_, _PyASTOptimizeStat
 static int astfold_excepthandler(excepthandler_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_match_case(match_case_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_pattern(pattern_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
+static int astfold_type_param(type_param_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 
 #define CALL(FUNC, TYPE, ARG) \
     if (!FUNC((ARG), ctx_, state)) \
@@ -874,6 +881,7 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     }
     switch (node_->kind) {
     case FunctionDef_kind:
+        CALL_SEQ(astfold_type_param, type_param, node_->v.FunctionDef.type_params);
         CALL(astfold_arguments, arguments_ty, node_->v.FunctionDef.args);
         CALL(astfold_body, asdl_seq, node_->v.FunctionDef.body);
         CALL_SEQ(astfold_expr, expr, node_->v.FunctionDef.decorator_list);
@@ -882,6 +890,7 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         }
         break;
     case AsyncFunctionDef_kind:
+        CALL_SEQ(astfold_type_param, type_param, node_->v.AsyncFunctionDef.type_params);
         CALL(astfold_arguments, arguments_ty, node_->v.AsyncFunctionDef.args);
         CALL(astfold_body, asdl_seq, node_->v.AsyncFunctionDef.body);
         CALL_SEQ(astfold_expr, expr, node_->v.AsyncFunctionDef.decorator_list);
@@ -890,6 +899,7 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         }
         break;
     case ClassDef_kind:
+        CALL_SEQ(astfold_type_param, type_param, node_->v.ClassDef.type_params);
         CALL_SEQ(astfold_expr, expr, node_->v.ClassDef.bases);
         CALL_SEQ(astfold_keyword, keyword, node_->v.ClassDef.keywords);
         CALL(astfold_body, asdl_seq, node_->v.ClassDef.body);
@@ -915,6 +925,11 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
             CALL(astfold_expr, expr_ty, node_->v.AnnAssign.annotation);
         }
         CALL_OPT(astfold_expr, expr_ty, node_->v.AnnAssign.value);
+        break;
+    case TypeAlias_kind:
+        CALL(astfold_expr, expr_ty, node_->v.TypeAlias.name);
+        CALL_SEQ(astfold_type_param, type_param, node_->v.TypeAlias.type_params);
+        CALL(astfold_expr, expr_ty, node_->v.TypeAlias.value);
         break;
     case For_kind:
         CALL(astfold_expr, expr_ty, node_->v.For.target);
@@ -1065,6 +1080,21 @@ astfold_match_case(match_case_ty node_, PyArena *ctx_, _PyASTOptimizeState *stat
     CALL(astfold_pattern, expr_ty, node_->pattern);
     CALL_OPT(astfold_expr, expr_ty, node_->guard);
     CALL_SEQ(astfold_stmt, stmt, node_->body);
+    return 1;
+}
+
+static int
+astfold_type_param(type_param_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
+{
+    switch (node_->kind) {
+        case TypeVar_kind:
+            CALL_OPT(astfold_expr, expr_ty, node_->v.TypeVar.bound);
+            break;
+        case ParamSpec_kind:
+            break;
+        case TypeVarTuple_kind:
+            break;
+    }
     return 1;
 }
 

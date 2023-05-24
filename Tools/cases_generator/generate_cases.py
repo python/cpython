@@ -122,8 +122,9 @@ class Formatter:
         self.prefix = " " * indent
         self.emit_line_directives = emit_line_directives
         self.lineno = 1
+        filename = os.path.relpath(self.stream.name, ROOT)
         # Make filename more user-friendly and less platform-specific
-        filename = self.stream.name.replace("\\", "/")
+        filename = filename.replace("\\", "/")
         if filename.startswith("./"):
             filename = filename[2:]
         if filename.endswith(".new"):
@@ -567,6 +568,7 @@ class Analyzer:
         with open(filename) as file:
             src = file.read()
 
+        filename = os.path.relpath(filename, ROOT)
         # Make filename more user-friendly and less platform-specific
         filename = filename.replace("\\", "/")
         if filename.startswith("./"):
@@ -928,7 +930,7 @@ class Analyzer:
             direction: str, data: list[tuple[AnyInstruction, str]]
         ) -> None:
             self.out.emit("")
-            self.out.emit("#ifndef NEED_OPCODE_TABLES")
+            self.out.emit("#ifndef NEED_OPCODE_METADATA")
             self.out.emit(f"extern int _PyOpcode_num_{direction}(int opcode, int oparg, bool jump);")
             self.out.emit("#else")
             self.out.emit("int")
@@ -997,7 +999,7 @@ class Analyzer:
             self.out.emit("")
 
             # Write metadata array declaration
-            self.out.emit("#ifndef NEED_OPCODE_TABLES")
+            self.out.emit("#ifndef NEED_OPCODE_METADATA")
             self.out.emit("extern const struct opcode_metadata _PyOpcode_opcode_metadata[256];")
             self.out.emit("#else")
             self.out.emit("const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {")
