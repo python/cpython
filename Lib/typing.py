@@ -3299,7 +3299,7 @@ def override[F: _Func](method: F, /) -> F:
     return method
 
 
-def get_protocol_members(tp: type, /) -> set[str]:
+def get_protocol_members(tp: type, /) -> frozenset[str] | None:
     """Return the set of members defined in a Protocol.
 
     Example::
@@ -3309,11 +3309,11 @@ def get_protocol_members(tp: type, /) -> set[str]:
         ...     def a(self) -> str: ...
         ...     b: int
         >>> get_protocol_members(P)
-        {'a', 'b'}
+        frozenset({'a', 'b'})
 
     Return None for arguments that are not Protocols.
 
     """
     if not getattr(tp, '_is_protocol', False) or tp is Protocol:
         return None
-    return tp.__protocol_attrs__
+    return frozenset(tp.__protocol_attrs__)

@@ -2916,7 +2916,7 @@ Introspection helpers
       ...     def a(self) -> str: ...
       ...     b: int
       >>> get_protocol_members(P)
-      {'a', 'b'}
+      frozenset({'a', 'b'})
 
    Return None for arguments that are not Protocols.
 
