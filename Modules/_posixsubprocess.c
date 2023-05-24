@@ -5,6 +5,7 @@
 
 #include "Python.h"
 #include "pycore_fileutils.h"
+#include "pycore_pystate.h"
 #if defined(HAVE_PIPE2) && !defined(_GNU_SOURCE)
 # define _GNU_SOURCE
 #endif
@@ -926,6 +927,11 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
     Py_ssize_t fds_to_keep_len = PyTuple_GET_SIZE(py_fds_to_keep);
 
     PyInterpreterState *interp = PyInterpreterState_Get();
+    if (interp->finalizing) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "child process creation is not allowed at interpreter exit");
+        return NULL;
+    }
     if ((preexec_fn != Py_None) && (interp != PyInterpreterState_Main())) {
         PyErr_SetString(PyExc_RuntimeError,
                         "preexec_fn not supported within subinterpreters");
