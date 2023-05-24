@@ -66,6 +66,10 @@ Summary -- Release highlights
 
 .. PEP-sized items next.
 
+New grammar features:
+
+* :pep:`701`: Syntactic formalization of f-strings
+
 New typing features:
 
 * :pep:`688`: Making the buffer protocol accessible in Python
