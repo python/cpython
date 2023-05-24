@@ -200,7 +200,7 @@ convert_fds_to_keep_to_c(PyObject *py_fds_to_keep, int *c_fds_to_keep)
     for (i = 0; i < len; ++i) {
         PyObject* fdobj = PyTuple_GET_ITEM(py_fds_to_keep, i);
         long fd = PyLong_AsLong(fdobj);
-        if (PyErr_Occurred()) {
+        if (fd == -1 && PyErr_Occurred()) {
             return -1;
         }
         if (fd < 0 || fd > INT_MAX) {
