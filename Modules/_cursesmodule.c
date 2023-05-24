@@ -183,9 +183,7 @@ typedef struct _curses_state {
     char *screen_encoding;
 } _curses_state;
 
-
 static struct PyModuleDef _curses_module;
-
 
 static inline _curses_state *
 get__curses_state(PyObject *mod)
@@ -202,7 +200,6 @@ find__curses_state_by_type(PyTypeObject *type)
     assert(mod != NULL);
     return get__curses_state(mod);
 }
-
 
 static int
 _curses_clear(PyObject *mod)
@@ -2547,7 +2544,6 @@ _curses_window___reduce___impl(PyCursesWindowObject *self)
                  Py_TYPE(self)->tp_name);
     return NULL;
 }
-
 
 #define clinic_state() (find__curses_state_by_type(Py_TYPE(self)))
 #include "clinic/_cursesmodule.c.h"
@@ -5042,12 +5038,11 @@ _curses_exec(PyObject *module)
     return 0;
 }
 
-
 static struct PyModuleDef_Slot _curses_slots[] = {
     {Py_mod_exec, _curses_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
     {0, NULL}
 };
-
 
 static struct PyModuleDef _curses_module = {
     .m_base = PyModuleDef_HEAD_INIT,
@@ -5059,7 +5054,6 @@ static struct PyModuleDef _curses_module = {
     .m_clear = _curses_clear,
     .m_free = _curses_free
 };
-
 
 PyMODINIT_FUNC
 PyInit__curses(void)
