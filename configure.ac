@@ -7064,6 +7064,8 @@ dnl VxWorks does not provide crypt() function
 AS_CASE([$ac_sys_system],
   [AIX], [PY_STDLIB_MOD_SET_NA([_scproxy])],
   [VxWorks*], [PY_STDLIB_MOD_SET_NA([_scproxy], [_crypt], [termios], [grp])],
+  dnl The _scproxy module is available on macOS
+  [Darwin], [],
   [CYGWIN*], [PY_STDLIB_MOD_SET_NA([_scproxy])],
   [QNX*], [PY_STDLIB_MOD_SET_NA([_scproxy])],
   [FreeBSD*], [PY_STDLIB_MOD_SET_NA([_scproxy])],
