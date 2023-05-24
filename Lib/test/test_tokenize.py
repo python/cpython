@@ -92,9 +92,18 @@ def k(x):
         readline = BytesIO(indent_error_file).readline
         with self.assertRaisesRegex(IndentationError,
                                     "unindent does not match any "
-                                    "outer indentation level"):
+                                    "outer indentation level") as e:
             for tok in tokenize(readline):
                 pass
+        self.assertEqual(e.exception.lineno, 3)
+        self.assertEqual(e.exception.filename, '<string>')
+        self.assertEqual(e.exception.end_lineno, None)
+        self.assertEqual(e.exception.end_offset, None)
+        self.assertEqual(
+            e.exception.msg,
+            'unindent does not match any outer indentation level')
+        self.assertEqual(e.exception.offset, 9)
+        self.assertEqual(e.exception.text, '  x += 5\n')
 
     def test_int(self):
         # Ordinary integers and binary operators

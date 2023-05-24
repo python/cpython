@@ -248,8 +248,8 @@ struct ast_state {
     PyObject *type_comment;
     PyObject *type_ignore_type;
     PyObject *type_ignores;
-    PyObject *typeparam_type;
-    PyObject *typeparams;
+    PyObject *type_param_type;
+    PyObject *type_params;
     PyObject *unaryop_type;
     PyObject *upper;
     PyObject *value;

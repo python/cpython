@@ -97,6 +97,8 @@ Include/pytime.h              @pganssle @abalkin
 /Tools/peg_generator/         @pablogsal @lysnikolaou
 /Lib/test/test_peg_generator/ @pablogsal @lysnikolaou
 /Grammar/python.gram          @pablogsal @lysnikolaou
+/Lib/tokenize.py              @pablogsal @lysnikolaou
+/Lib/test/test_tokenize.py    @pablogsal @lysnikolaou
 
 # AST
 Python/ast.c                  @isidentical
