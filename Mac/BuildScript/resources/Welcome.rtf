@@ -26,6 +26,28 @@ At the end of this install, click on
 \f0  to install a set of current SSL root certificates.\
 \
 
+\f1\b [UPDATE: fixed in macOS 13.4] macOS 13 Ventura users
+\f0\b0 :  Due to an issue with the macOS 
+\f1\b Installer
+\f0\b0  app in macOS 13 Ventura updates prior to macOS 13.4, installation of some third-party packages including this Python package may fail with a vague 
+\f1\b "The installer encountered an error"
+\f0\b0  message if the 
+\f1\b Installer
+\f0\b0  app does not have permission to access the folder containing the downloaded installer file, typically in the 
+\f1\b Downloads
+\f0\b0  folder. Go to 
+\f1\b System Settings
+\f0\b0  -> 
+\f1\b Privacy & Security
+\f0\b0  -> 
+\f1\b Files and Folders
+\f0\b0 , then click the mark in front of 
+\f1\b Installer
+\f0\b0  to expand, and enable 
+\f1\b Downloads Folder
+\f0\b0  by moving the toggle to the right. See {\field{\*\fldinst{HYPERLINK "https://github.com/python/cpython/issues/103207"}}{\fldrslt https://github.com/python/cpython/issues/103207}} for up-to-date information on this issue.  This problem has been resolved in macOS 13.4.\
+\
+
 \f1\b NOTE: 
 \f0\b0 This is a beta test preview of Python 3.12.0, the next feature release of Python 3.  It is not intended for production use.\
 }
