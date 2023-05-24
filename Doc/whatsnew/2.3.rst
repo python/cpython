@@ -1392,7 +1392,7 @@ complete list of changes, or look through the CVS logs for all the details.
   details.
 
 * The old and never-documented :mod:`linuxaudiodev` module has been deprecated,
-  and a new version named :mod:`ossaudiodev` has been added.  The module was
+  and a new version named :mod:`!ossaudiodev` has been added.  The module was
   renamed because the OSS sound drivers can be used on platforms other than Linux,
   and the interface has also been tidied and brought up to date in various ways.
   (Contributed by Greg Ward and Nicholas FitzRoy-Dale.)

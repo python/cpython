@@ -172,7 +172,6 @@ Doc/library/operator.rst
 Doc/library/optparse.rst
 Doc/library/os.path.rst
 Doc/library/os.rst
-Doc/library/ossaudiodev.rst
 Doc/library/pickle.rst
 Doc/library/pickletools.rst
 Doc/library/platform.rst
