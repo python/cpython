@@ -489,6 +489,7 @@ class MacroInstruction(SuperOrMacroInstruction):
 
     macro: parser.Macro
     parts: list[Component | parser.CacheEffect]
+    predicted: bool = False
 
 
 @dataclasses.dataclass
@@ -633,8 +634,8 @@ class Analyzer:
 
         Raises SystemExit if there is an error.
         """
-        self.find_predictions()
         self.analyze_supers_and_macros()
+        self.find_predictions()
         self.map_families()
         self.check_families()
 
@@ -648,6 +649,8 @@ class Analyzer:
             for target in targets:
                 if target_instr := self.instrs.get(target):
                     target_instr.predicted = True
+                elif target_macro := self.macro_instrs.get(target):
+                    target_macro.predicted = True
                 else:
                     self.error(
                         f"Unknown instruction {target!r} predicted in {instr.name!r}",
@@ -1152,6 +1155,10 @@ class Analyzer:
         # outer block, rather than trusting the compiler to optimize it.
         self.out.emit("")
         with self.out.block(f"TARGET({up.name})"):
+            match up:
+                case MacroInstruction() as mac:
+                    if mac.predicted:
+                        self.out.emit(f"PREDICTED({mac.name});")
             for i, var in reversed(list(enumerate(up.stack))):
                 src = None
                 if i < up.initial_sp:

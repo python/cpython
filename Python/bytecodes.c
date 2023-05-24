@@ -3302,7 +3302,7 @@ dummy_func(
             top = Py_NewRef(bottom);
         }
 
-        inst(BINARY_OP, (unused/1, lhs, rhs -- res)) {
+        op(_BINARY_OP_SPECIALIZE, (unused/1, lhs, rhs -- lhs, rhs)) {
             #if ENABLE_SPECIALIZATION
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
@@ -3313,6 +3313,9 @@ dummy_func(
             STAT_INC(BINARY_OP, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
+        }
+
+        op(_BINARY_OP_ACTION, (lhs, rhs -- res)) {
             assert(0 <= oparg);
             assert((unsigned)oparg < Py_ARRAY_LENGTH(binary_ops));
             assert(binary_ops[oparg]);
@@ -3320,6 +3323,8 @@ dummy_func(
             DECREF_INPUTS();
             ERROR_IF(res == NULL, error);
         }
+
+        macro(BINARY_OP) = _BINARY_OP_SPECIALIZE + _BINARY_OP_ACTION;
 
         inst(SWAP, (bottom, unused[oparg-2], top --
                     top, unused[oparg-2], bottom)) {

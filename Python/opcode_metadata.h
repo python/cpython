@@ -370,7 +370,7 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case COPY:
             return (oparg-1) + 1;
         case BINARY_OP:
-            return 2;
+            return 2+2;
         case SWAP:
             return (oparg-2) + 2;
         case INSTRUMENTED_INSTRUCTION:
@@ -766,7 +766,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case COPY:
             return (oparg-1) + 2;
         case BINARY_OP:
-            return 1;
+            return 2+1;
         case SWAP:
             return (oparg-2) + 2;
         case INSTRUMENTED_INSTRUCTION:
