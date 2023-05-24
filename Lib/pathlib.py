@@ -666,7 +666,7 @@ class _BasePurePath:
         return True
 
 
-class PurePath(_BasePurePath, os.PathLike):
+class PurePath(_BasePurePath):
     """Base class for manipulating paths without I/O.
 
     PurePath represents a filesystem path and offers operations which
@@ -714,6 +714,11 @@ class PurePath(_BasePurePath, os.PathLike):
             prefix = 'file://'
             path = str(self)
         return prefix + urlquote_from_bytes(os.fsencode(path))
+
+
+# Can't subclass os.PathLike from PurePath and keep the constructor
+# optimizations in PurePath.__slots__.
+os.PathLike.register(PurePath)
 
 
 class PurePosixPath(PurePath):
