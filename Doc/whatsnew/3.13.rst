@@ -256,6 +256,10 @@ Removed
   or `python-magic <https://pypi.org/project/python-magic/>`_ instead.
   (Contributed by Victor Stinner in :gh:`104773`.)
 
+* Remove the :mod:`!tkinter.tix` module, deprecated in Python 3.6.  The
+  third-party Tix library which the module wrapped is unmaintained.
+  (Contributed by Zachary Ware in :gh:`75552`.)
+
 
 Porting to Python 3.13
 ======================
