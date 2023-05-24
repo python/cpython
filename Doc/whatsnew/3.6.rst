@@ -2274,7 +2274,7 @@ Changes in the Python API
   :class:`~collections.OrderedDict`.
   (Contributed by Steve Holden in :issue:`27842`.)
 
-* The :const:`crypt.METHOD_CRYPT` will no longer be added to ``crypt.methods``
+* The :const:`!crypt.METHOD_CRYPT` will no longer be added to ``crypt.methods``
   if unsupported by the platform.
   (Contributed by Victor Stinner in :issue:`25287`.)
 

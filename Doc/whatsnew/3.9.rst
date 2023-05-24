@@ -83,7 +83,7 @@ Interpreter improvements:
   now sped up using :pep:`590` vectorcall;
 * garbage collection does not block on resurrected objects;
 * a number of Python modules (:mod:`_abc`, :mod:`audioop`, :mod:`_bz2`,
-  :mod:`_codecs`, :mod:`_contextvars`, :mod:`_crypt`, :mod:`_functools`,
+  :mod:`_codecs`, :mod:`_contextvars`, :mod:`!_crypt`, :mod:`_functools`,
   :mod:`_json`, :mod:`_locale`, :mod:`math`, :mod:`operator`, :mod:`resource`,
   :mod:`time`, :mod:`_weakref`) now use multiphase initialization as defined
   by PEP 489;
