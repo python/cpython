@@ -7223,29 +7223,29 @@ class TypedDictTests(BaseTestCase):
                         pass
 
     def test_is_typeddict(self):
-        self.assertTrue(is_typeddict(Point2D))
-        self.assertFalse(is_typeddict(Union[str, int]))
+        self.assertIs(is_typeddict(Point2D), True)
+        self.assertIs(is_typeddict(Union[str, int]), False)
         # classes, not instances
-        self.assertFalse(is_typeddict(Point2D()))
+        self.assertIs(is_typeddict(Point2D()), False)
         call_based = TypedDict('call_based', {'a': int})
-        self.assertTrue(is_typeddict(call_based))
-        self.assertFalse(is_typeddict(call_based()))
+        self.assertIs(is_typeddict(call_based), True)
+        self.assertIs(is_typeddict(call_based()), False)
 
         T = TypeVar("T")
         class BarGeneric(TypedDict, Generic[T]):
             a: T
-        self.assertTrue(is_typeddict(BarGeneric))
-        self.assertFalse(is_typeddict(BarGeneric[int]))
-        self.assertFalse(is_typeddict(BarGeneric()))
+        self.assertIs(is_typeddict(BarGeneric), True)
+        self.assertIs(is_typeddict(BarGeneric[int]), False)
+        self.assertIs(is_typeddict(BarGeneric()), False)
 
         class NewGeneric[T](TypedDict):
             a: T
-        self.assertTrue(is_typeddict(NewGeneric))
-        self.assertFalse(is_typeddict(NewGeneric[int]))
-        self.assertFalse(is_typeddict(NewGeneric()))
+        self.assertIs(is_typeddict(NewGeneric), True)
+        self.assertIs(is_typeddict(NewGeneric[int]), False)
+        self.assertIs(is_typeddict(NewGeneric()), False)
 
         # The TypedDict constructor is not itself a TypedDict
-        self.assertFalse(is_typeddict(TypedDict))
+        self.assertIs(is_typeddict(TypedDict), False)
 
     def test_get_type_hints(self):
         self.assertEqual(
