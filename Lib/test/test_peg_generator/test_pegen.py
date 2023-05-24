@@ -96,14 +96,14 @@ class TestPegen(unittest.TestCase):
             [
                 [
                     TokenInfo(
-                        NUMBER, string="1", start=(1, 0), end=(1, 1), line="1, 2\n"
+                        NUMBER, string="1", start=(1, 0), end=(1, 1), line="1, 2"
                     ),
                     TokenInfo(
-                        NUMBER, string="2", start=(1, 3), end=(1, 4), line="1, 2\n"
+                        NUMBER, string="2", start=(1, 3), end=(1, 4), line="1, 2"
                     ),
                 ],
                 TokenInfo(
-                    NEWLINE, string="\n", start=(1, 4), end=(1, 5), line="1, 2\n"
+                    NEWLINE, string="\n", start=(1, 4), end=(1, 5), line="1, 2"
                 ),
             ],
         )
@@ -119,8 +119,8 @@ class TestPegen(unittest.TestCase):
         self.assertEqual(
             node,
             [
-                TokenInfo(NUMBER, string="42", start=(1, 0), end=(1, 2), line="42\n"),
-                TokenInfo(NEWLINE, string="\n", start=(1, 2), end=(1, 3), line="42\n"),
+                TokenInfo(NUMBER, string="42", start=(1, 0), end=(1, 2), line="42"),
+                TokenInfo(NEWLINE, string="\n", start=(1, 2), end=(1, 3), line="42"),
             ],
         )
 
@@ -137,19 +137,19 @@ class TestPegen(unittest.TestCase):
             [
                 [
                     TokenInfo(
-                        NUMBER, string="1", start=(1, 0), end=(1, 1), line="1 + 2\n"
+                        NUMBER, string="1", start=(1, 0), end=(1, 1), line="1 + 2"
                     ),
                     [
                         TokenInfo(
-                            OP, string="+", start=(1, 2), end=(1, 3), line="1 + 2\n"
+                            OP, string="+", start=(1, 2), end=(1, 3), line="1 + 2"
                         ),
                         TokenInfo(
-                            NUMBER, string="2", start=(1, 4), end=(1, 5), line="1 + 2\n"
+                            NUMBER, string="2", start=(1, 4), end=(1, 5), line="1 + 2"
                         ),
                     ],
                 ],
                 TokenInfo(
-                    NEWLINE, string="\n", start=(1, 5), end=(1, 6), line="1 + 2\n"
+                    NEWLINE, string="\n", start=(1, 5), end=(1, 6), line="1 + 2"
                 ),
             ],
         )
@@ -158,10 +158,10 @@ class TestPegen(unittest.TestCase):
             node,
             [
                 [
-                    TokenInfo(NUMBER, string="1", start=(1, 0), end=(1, 1), line="1\n"),
+                    TokenInfo(NUMBER, string="1", start=(1, 0), end=(1, 1), line="1"),
                     None,
                 ],
-                TokenInfo(NEWLINE, string="\n", start=(1, 1), end=(1, 2), line="1\n"),
+                TokenInfo(NEWLINE, string="\n", start=(1, 1), end=(1, 2), line="1"),
             ],
         )
 
@@ -178,11 +178,11 @@ class TestPegen(unittest.TestCase):
             [
                 [
                     TokenInfo(
-                        NUMBER, string="1", start=(1, 0), end=(1, 1), line="1+\n"
+                        NUMBER, string="1", start=(1, 0), end=(1, 1), line="1+"
                     ),
-                    TokenInfo(OP, string="+", start=(1, 1), end=(1, 2), line="1+\n"),
+                    TokenInfo(OP, string="+", start=(1, 1), end=(1, 2), line="1+"),
                 ],
-                TokenInfo(NEWLINE, string="\n", start=(1, 2), end=(1, 3), line="1+\n"),
+                TokenInfo(NEWLINE, string="\n", start=(1, 2), end=(1, 3), line="1+"),
             ],
         )
         node = parse_string("1\n", parser_class)
@@ -190,10 +190,10 @@ class TestPegen(unittest.TestCase):
             node,
             [
                 [
-                    TokenInfo(NUMBER, string="1", start=(1, 0), end=(1, 1), line="1\n"),
+                    TokenInfo(NUMBER, string="1", start=(1, 0), end=(1, 1), line="1"),
                     None,
                 ],
-                TokenInfo(NEWLINE, string="\n", start=(1, 1), end=(1, 2), line="1\n"),
+                TokenInfo(NEWLINE, string="\n", start=(1, 1), end=(1, 2), line="1"),
             ],
         )
 
@@ -210,19 +210,19 @@ class TestPegen(unittest.TestCase):
             [
                 [
                     TokenInfo(
-                        NUMBER, string="1", start=(1, 0), end=(1, 1), line="1 + 2\n"
+                        NUMBER, string="1", start=(1, 0), end=(1, 1), line="1 + 2"
                     ),
                     [
                         TokenInfo(
-                            OP, string="+", start=(1, 2), end=(1, 3), line="1 + 2\n"
+                            OP, string="+", start=(1, 2), end=(1, 3), line="1 + 2"
                         ),
                         TokenInfo(
-                            NUMBER, string="2", start=(1, 4), end=(1, 5), line="1 + 2\n"
+                            NUMBER, string="2", start=(1, 4), end=(1, 5), line="1 + 2"
                         ),
                     ],
                 ],
                 TokenInfo(
-                    NEWLINE, string="\n", start=(1, 5), end=(1, 6), line="1 + 2\n"
+                    NEWLINE, string="\n", start=(1, 5), end=(1, 6), line="1 + 2"
                 ),
             ],
         )
@@ -231,10 +231,10 @@ class TestPegen(unittest.TestCase):
             node,
             [
                 [
-                    TokenInfo(NUMBER, string="1", start=(1, 0), end=(1, 1), line="1\n"),
+                    TokenInfo(NUMBER, string="1", start=(1, 0), end=(1, 1), line="1"),
                     None,
                 ],
-                TokenInfo(NEWLINE, string="\n", start=(1, 1), end=(1, 2), line="1\n"),
+                TokenInfo(NEWLINE, string="\n", start=(1, 1), end=(1, 2), line="1"),
             ],
         )
 
@@ -248,17 +248,17 @@ class TestPegen(unittest.TestCase):
         self.assertEqual(
             node,
             [
-                TokenInfo(NUMBER, string="1", start=(1, 0), end=(1, 1), line="1 2 3\n"),
+                TokenInfo(NUMBER, string="1", start=(1, 0), end=(1, 1), line="1 2 3"),
                 [
                     TokenInfo(
-                        NUMBER, string="2", start=(1, 2), end=(1, 3), line="1 2 3\n"
+                        NUMBER, string="2", start=(1, 2), end=(1, 3), line="1 2 3"
                     ),
                     TokenInfo(
-                        NUMBER, string="3", start=(1, 4), end=(1, 5), line="1 2 3\n"
+                        NUMBER, string="3", start=(1, 4), end=(1, 5), line="1 2 3"
                     ),
                 ],
                 TokenInfo(
-                    NEWLINE, string="\n", start=(1, 5), end=(1, 6), line="1 2 3\n"
+                    NEWLINE, string="\n", start=(1, 5), end=(1, 6), line="1 2 3"
                 ),
             ],
         )
@@ -266,9 +266,9 @@ class TestPegen(unittest.TestCase):
         self.assertEqual(
             node,
             [
-                TokenInfo(NUMBER, string="1", start=(1, 0), end=(1, 1), line="1\n"),
+                TokenInfo(NUMBER, string="1", start=(1, 0), end=(1, 1), line="1"),
                 [],
-                TokenInfo(NEWLINE, string="\n", start=(1, 1), end=(1, 2), line="1\n"),
+                TokenInfo(NEWLINE, string="\n", start=(1, 1), end=(1, 2), line="1"),
             ],
         )
 
@@ -283,36 +283,36 @@ class TestPegen(unittest.TestCase):
             node,
             [
                 TokenInfo(
-                    NUMBER, string="1", start=(1, 0), end=(1, 1), line="1 + 2 + 3\n"
+                    NUMBER, string="1", start=(1, 0), end=(1, 1), line="1 + 2 + 3"
                 ),
                 [
                     [
                         TokenInfo(
-                            OP, string="+", start=(1, 2), end=(1, 3), line="1 + 2 + 3\n"
+                            OP, string="+", start=(1, 2), end=(1, 3), line="1 + 2 + 3"
                         ),
                         TokenInfo(
                             NUMBER,
                             string="2",
                             start=(1, 4),
                             end=(1, 5),
-                            line="1 + 2 + 3\n",
+                            line="1 + 2 + 3",
                         ),
                     ],
                     [
                         TokenInfo(
-                            OP, string="+", start=(1, 6), end=(1, 7), line="1 + 2 + 3\n"
+                            OP, string="+", start=(1, 6), end=(1, 7), line="1 + 2 + 3"
                         ),
                         TokenInfo(
                             NUMBER,
                             string="3",
                             start=(1, 8),
                             end=(1, 9),
-                            line="1 + 2 + 3\n",
+                            line="1 + 2 + 3",
                         ),
                     ],
                 ],
                 TokenInfo(
-                    NEWLINE, string="\n", start=(1, 9), end=(1, 10), line="1 + 2 + 3\n"
+                    NEWLINE, string="\n", start=(1, 9), end=(1, 10), line="1 + 2 + 3"
                 ),
             ],
         )
@@ -327,17 +327,17 @@ class TestPegen(unittest.TestCase):
         self.assertEqual(
             node,
             [
-                TokenInfo(NUMBER, string="1", start=(1, 0), end=(1, 1), line="1 2 3\n"),
+                TokenInfo(NUMBER, string="1", start=(1, 0), end=(1, 1), line="1 2 3"),
                 [
                     TokenInfo(
-                        NUMBER, string="2", start=(1, 2), end=(1, 3), line="1 2 3\n"
+                        NUMBER, string="2", start=(1, 2), end=(1, 3), line="1 2 3"
                     ),
                     TokenInfo(
-                        NUMBER, string="3", start=(1, 4), end=(1, 5), line="1 2 3\n"
+                        NUMBER, string="3", start=(1, 4), end=(1, 5), line="1 2 3"
                     ),
                 ],
                 TokenInfo(
-                    NEWLINE, string="\n", start=(1, 5), end=(1, 6), line="1 2 3\n"
+                    NEWLINE, string="\n", start=(1, 5), end=(1, 6), line="1 2 3"
                 ),
             ],
         )
@@ -355,36 +355,36 @@ class TestPegen(unittest.TestCase):
             node,
             [
                 TokenInfo(
-                    NUMBER, string="1", start=(1, 0), end=(1, 1), line="1 + 2 + 3\n"
+                    NUMBER, string="1", start=(1, 0), end=(1, 1), line="1 + 2 + 3"
                 ),
                 [
                     [
                         TokenInfo(
-                            OP, string="+", start=(1, 2), end=(1, 3), line="1 + 2 + 3\n"
+                            OP, string="+", start=(1, 2), end=(1, 3), line="1 + 2 + 3"
                         ),
                         TokenInfo(
                             NUMBER,
                             string="2",
                             start=(1, 4),
                             end=(1, 5),
-                            line="1 + 2 + 3\n",
+                            line="1 + 2 + 3",
                         ),
                     ],
                     [
                         TokenInfo(
-                            OP, string="+", start=(1, 6), end=(1, 7), line="1 + 2 + 3\n"
+                            OP, string="+", start=(1, 6), end=(1, 7), line="1 + 2 + 3"
                         ),
                         TokenInfo(
                             NUMBER,
                             string="3",
                             start=(1, 8),
                             end=(1, 9),
-                            line="1 + 2 + 3\n",
+                            line="1 + 2 + 3",
                         ),
                     ],
                 ],
                 TokenInfo(
-                    NEWLINE, string="\n", start=(1, 9), end=(1, 10), line="1 + 2 + 3\n"
+                    NEWLINE, string="\n", start=(1, 9), end=(1, 10), line="1 + 2 + 3"
                 ),
             ],
         )
@@ -403,17 +403,17 @@ class TestPegen(unittest.TestCase):
             [
                 [
                     TokenInfo(
-                        NUMBER, string="1", start=(1, 0), end=(1, 1), line="1, 2, 3\n"
+                        NUMBER, string="1", start=(1, 0), end=(1, 1), line="1, 2, 3"
                     ),
                     TokenInfo(
-                        NUMBER, string="2", start=(1, 3), end=(1, 4), line="1, 2, 3\n"
+                        NUMBER, string="2", start=(1, 3), end=(1, 4), line="1, 2, 3"
                     ),
                     TokenInfo(
-                        NUMBER, string="3", start=(1, 6), end=(1, 7), line="1, 2, 3\n"
+                        NUMBER, string="3", start=(1, 6), end=(1, 7), line="1, 2, 3"
                     ),
                 ],
                 TokenInfo(
-                    NEWLINE, string="\n", start=(1, 7), end=(1, 8), line="1, 2, 3\n"
+                    NEWLINE, string="\n", start=(1, 7), end=(1, 8), line="1, 2, 3"
                 ),
             ],
         )
@@ -447,28 +447,28 @@ class TestPegen(unittest.TestCase):
                             string="1",
                             start=(1, 0),
                             end=(1, 1),
-                            line="1 + 2 + 3\n",
+                            line="1 + 2 + 3",
                         ),
                         TokenInfo(
-                            OP, string="+", start=(1, 2), end=(1, 3), line="1 + 2 + 3\n"
+                            OP, string="+", start=(1, 2), end=(1, 3), line="1 + 2 + 3"
                         ),
                         TokenInfo(
                             NUMBER,
                             string="2",
                             start=(1, 4),
                             end=(1, 5),
-                            line="1 + 2 + 3\n",
+                            line="1 + 2 + 3",
                         ),
                     ],
                     TokenInfo(
-                        OP, string="+", start=(1, 6), end=(1, 7), line="1 + 2 + 3\n"
+                        OP, string="+", start=(1, 6), end=(1, 7), line="1 + 2 + 3"
                     ),
                     TokenInfo(
-                        NUMBER, string="3", start=(1, 8), end=(1, 9), line="1 + 2 + 3\n"
+                        NUMBER, string="3", start=(1, 8), end=(1, 9), line="1 + 2 + 3"
                     ),
                 ],
                 TokenInfo(
-                    NEWLINE, string="\n", start=(1, 9), end=(1, 10), line="1 + 2 + 3\n"
+                    NEWLINE, string="\n", start=(1, 9), end=(1, 10), line="1 + 2 + 3"
                 ),
             ],
         )
