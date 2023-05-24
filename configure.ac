@@ -3894,28 +3894,6 @@ if test "$have_glibc_memmove_bug" = yes; then
 fi
 
 
-dnl check for NIS / libnsl dependencies
-dnl libnsl dependencies include tirpc includes and lib
-PKG_CHECK_MODULES([LIBNSL], [libnsl], [have_nis=yes], [
-  LIBNSL_CFLAGS=${LIBNSL_CFLAGS-""}
-  WITH_SAVE_ENV([
-    AC_SEARCH_LIBS([yp_match], [nsl], [have_nis=yes], [have_nis=no])
-  ])
-  AS_CASE([$ac_cv_search_yp_match],
-    [no], [libnsl=""],
-    ["none required"], [libnsl=""],
-    [libnsl="$ac_cv_search_yp_match"]
-  )
-  LIBNSL_LIBS=${LIBNSL_LIBS-$libnsl}
-])
-
-AS_VAR_IF([have_nis], [yes], [
-  WITH_SAVE_ENV([
-    CPPFLAGS="$CPPFLAGS $LIBNSL_CFLAGS"
-    AC_CHECK_HEADERS([rpc/rpc.h])
-  ])
-])
-
 dnl detect sqlite3 from Emscripten emport
 PY_CHECK_EMSCRIPTEN_PORT([LIBSQLITE3], [-sUSE_SQLITE3])
 
@@ -7086,8 +7064,8 @@ dnl VxWorks does not provide crypt() function
 AS_CASE([$ac_sys_system],
   [AIX], [PY_STDLIB_MOD_SET_NA([_scproxy])],
   [VxWorks*], [PY_STDLIB_MOD_SET_NA([_scproxy], [_crypt], [termios], [grp])],
-  [CYGWIN*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
-  [QNX*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
+  [CYGWIN*], [PY_STDLIB_MOD_SET_NA([_scproxy])],
+  [QNX*], [PY_STDLIB_MOD_SET_NA([_scproxy])],
   [FreeBSD*], [PY_STDLIB_MOD_SET_NA([_scproxy])],
   [Emscripten|WASI], [
     dnl subprocess and multiprocessing are not supported (no fork syscall).
@@ -7108,7 +7086,6 @@ AS_CASE([$ac_sys_system],
       [_xxsubinterpreters],
       [_xxinterpchannels],
       [grp],
-      [nis],
       [pwd],
       [resource],
       [syslog],
@@ -7313,9 +7290,6 @@ PY_STDLIB_MOD([_dbm],
 PY_STDLIB_MOD([_gdbm],
   [test "$have_gdbm_dbmliborder" = yes], [test "$have_gdbm" = yes],
   [$GDBM_CFLAGS], [$GDBM_LIBS])
-PY_STDLIB_MOD([nis],
-  [], [test "$have_nis" = yes -a "$ac_cv_header_rpc_rpc_h" = yes],
-  [$LIBNSL_CFLAGS], [$LIBNSL_LIBS])
  PY_STDLIB_MOD([readline],
   [], [test "$with_readline" != "no"],
   [$READLINE_CFLAGS], [$READLINE_LIBS])

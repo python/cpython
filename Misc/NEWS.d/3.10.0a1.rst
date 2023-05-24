@@ -714,7 +714,7 @@ Fix refleak in _Py_fopen_obj() when PySys_Audit() fails
 .. nonce: tzMy7m
 .. section: Core and Builtins
 
-Add a state to the :mod:`nis` module (:pep:`3121`) and apply the multiphase
+Add a state to the :mod:`!nis` module (:pep:`3121`) and apply the multiphase
 initialization. Patch by Dong-hee Na.
 
 ..

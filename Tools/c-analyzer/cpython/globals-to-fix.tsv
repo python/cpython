@@ -454,9 +454,6 @@ Modules/_tkinter.c	-	trbInCmd	-
 ##-----------------------
 ## initialized once
 
-## pre-allocated buffer
-Modules/nismodule.c	nisproc_maplist_2	res	-
-
 ## other
 Include/datetime.h	-	PyDateTimeAPI	-
 Modules/_ctypes/cfield.c	_ctypes_get_fielddesc	initialized	-
