@@ -1940,14 +1940,23 @@ class Popen:
                     errno_num = int(hex_errno, 16)
                     child_exec_never_called = (err_msg == "noexec")
                     if child_exec_never_called:
-                        err_msg = ""
-                        # The error must be from chdir(cwd).
-                        err_filename = cwd
+                        # creates a temporary error to be able to check for FileNotFoundError.
+                        # This is done because if it is a FileNotFoundError the cwd option
+                        # is the issue, otherwise we should just return the error without setting
+                        # a filename.
+                        temp_error = child_exception_type(errno_num, "foo")
+                        if issubclass(temp_error.__class__, FileNotFoundError):
+                            err_msg = ""
+                            # The error must be from chdir(cwd).
+                            err_filename = cwd
+                        else:
+                            err_filename = None
                     else:
                         err_filename = orig_executable
                     if errno_num != 0:
                         err_msg = os.strerror(errno_num)
-                    raise child_exception_type(errno_num, err_msg, err_filename)
+                    if err_filename is not None:
+                        raise child_exception_type(errno_num, err_msg, err_filename)
                 raise child_exception_type(err_msg)
 
 
