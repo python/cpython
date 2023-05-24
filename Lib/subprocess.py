@@ -1945,7 +1945,8 @@ class Popen:
                         # is the issue, otherwise we should just return the error without setting
                         # a filename.
                         temp_error = child_exception_type(errno_num, "foo")
-                        if issubclass(temp_error.__class__, FileNotFoundError):
+                        if isinstance(temp_error, FileNotFoundError) \
+                            or isinstance(temp_error, NotADirectoryError):
                             err_msg = ""
                             # The error must be from chdir(cwd).
                             err_filename = cwd
