@@ -118,6 +118,20 @@ Removed
 * Remove support for using :class:`pathlib.Path` objects as context managers.
   This functionality was deprecated and made a no-op in Python 3.9.
 
+* Removed the following :mod:`unittest` functions, deprecated in Python 3.11:
+
+  * :func:`!unittest.findTestCases`
+  * :func:`!unittest.makeSuite`
+  * :func:`!unittest.getTestCaseNames`
+
+  Use :class:`~unittest.TestLoader` methods instead:
+
+  * :meth:`unittest.TestLoader.loadTestsFromModule`
+  * :meth:`unittest.TestLoader.loadTestsFromTestCase`
+  * :meth:`unittest.TestLoader.getTestCaseNames`
+
+  (Contributed by Hugo van Kemenade in :gh:`104835`.)
+
 * :pep:`594`: Remove the :mod:`!cgi`` and :mod:`!cgitb` modules,
   deprecated in Python 3.11.
 
