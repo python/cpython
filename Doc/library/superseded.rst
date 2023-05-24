@@ -17,7 +17,6 @@ backwards compatibility. They have been superseded by other modules.
    imghdr.rst
    msilib.rst
    nis.rst
-   nntplib.rst
    optparse.rst
    uu.rst
    xdrlib.rst
