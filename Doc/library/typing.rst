@@ -1427,7 +1427,7 @@ without the dedicated syntax, as documented below.
    cannot be both bound *and* constrained.
 
    The variance of type variables is inferred by type checkers when they are created
-   through the :ref:`type parameter syntax <type-params>` and when
+   through the :ref:`type parameter syntax <type-params>` or when
    ``infer_variance=True`` is passed.
    Manually created type variables may be explicitly marked covariant or contravariant by passing
    ``covariant=True`` or ``contravariant=True``.
