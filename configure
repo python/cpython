@@ -8398,7 +8398,8 @@ $as_echo "$BOLT_INSTRUMENT_FLAGS" >&6; }
 $as_echo_n "checking BOLT_APPLY_FLAGS... " >&6; }
 if test -z "${BOLT_APPLY_FLAGS}"
 then
-  BOLT_APPLY_FLAGS="-update-debug-sections\
+  BOLT_APPLY_FLAGS="\
+ -update-debug-sections\
  -reorder-blocks=ext-tsp\
  -reorder-functions=hfsort+\
  -split-functions\
@@ -8412,7 +8413,8 @@ then
  -indirect-call-promotion=all\
  -dyno-stats\
  -use-gnu-stack\
- -frame-opt=hot"
+ -frame-opt=hot\
+"
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOLT_APPLY_FLAGS" >&5
 $as_echo "$BOLT_APPLY_FLAGS" >&6; }
