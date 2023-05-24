@@ -1,0 +1,1 @@
+Added check when writing a ZipFile that the file to be written is not the archive itself
