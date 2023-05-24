@@ -103,7 +103,7 @@ def k(x):
             e.exception.msg,
             'unindent does not match any outer indentation level')
         self.assertEqual(e.exception.offset, 9)
-        self.assertEqual(e.exception.text, '  x += 5\n')
+        self.assertEqual(e.exception.text, '  x += 5')
 
     def test_int(self):
         # Ordinary integers and binary operators
@@ -1157,7 +1157,7 @@ class Test_Tokenize(TestCase):
 
         # skip the initial encoding token and the end tokens
         tokens = list(_tokenize(readline(), encoding='utf-8'))[:-2]
-        expected_tokens = [TokenInfo(3, '"ЉЊЈЁЂ"', (1, 0), (1, 7), '"ЉЊЈЁЂ"\n')]
+        expected_tokens = [TokenInfo(3, '"ЉЊЈЁЂ"', (1, 0), (1, 7), '"ЉЊЈЁЂ"')]
         self.assertEqual(tokens, expected_tokens,
                          "bytes not decoded with encoding")
 
