@@ -1723,7 +1723,7 @@ This syntax is equivalent to::
 
 Here ``annotation-def`` indicates an :ref:`annotation scope <annotation-scopes>`,
 which is not actually bound to any name at runtime. (One
-other liberties are taken in the translation: the syntax does not go through
+other liberty is taken in the translation: the syntax does not go through
 attribute access on the :mod:`typing` module, but creates an instance of
 :data:`typing.TypeVar` directly.)
 
