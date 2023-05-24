@@ -1769,19 +1769,10 @@ These are not used in annotations. They are building blocks for declaring types.
       assert Point2D(x=1, y=2, label='first') == dict(x=1, y=2, label='first')
 
    To allow using this feature with older versions of Python that do not
-   support :pep:`526`, ``TypedDict`` supports two additional equivalent
-   syntactic forms:
-
-   * Using a literal :class:`dict` as the second argument::
+   support :pep:`526`, ``TypedDict`` supports an additional syntactic
+   form using a literal :class:`dict` as the second argument::
 
       Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
-
-   * Using keyword arguments::
-
-      Point2D = TypedDict('Point2D', x=int, y=int, label=str)
-
-   .. versionchanged:: 3.13
-      Removed support for the keyword-argument method of creating ``TypedDict``.
 
    The functional syntax should also be used when any of the keys are not valid
    :ref:`identifiers <identifiers>`, for example because they are keywords or contain hyphens.
@@ -1941,6 +1932,9 @@ These are not used in annotations. They are building blocks for declaring types.
 
    .. versionchanged:: 3.11
       Added support for generic ``TypedDict``\ s.
+
+   .. versionchanged:: 3.13
+      Removed support for the keyword-argument method of creating ``TypedDict``\ s.
 
 Generic concrete collections
 ----------------------------
