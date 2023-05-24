@@ -518,8 +518,8 @@ def main():
             if args.exact:
                 token_type = token.exact_type
             token_range = "%d,%d-%d,%d:" % (token.start + token.end)
-            print("%-20s%-15s%-15r" %
-                  (token_range, tok_name[token_type], token.string))
+            print("%-20s%-15s%-15r%-15r" %
+                  (token_range, tok_name[token_type], token.string, token.line))
     except IndentationError as err:
         line, column = err.args[1][1:3]
         error(err.args[0], filename, (line, column))
