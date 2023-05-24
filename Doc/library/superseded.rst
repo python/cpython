@@ -21,7 +21,6 @@ backwards compatibility. They have been superseded by other modules.
    nntplib.rst
    optparse.rst
    ossaudiodev.rst
-   pipes.rst
    spwd.rst
    sunau.rst
    uu.rst
