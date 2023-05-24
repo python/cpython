@@ -163,6 +163,11 @@ Notes:
 (3)
    Only on macOS platform.
 
+.. versionadded:: 3.2
+   A new :class:`!MacOSXOSAScript` class has been added
+   and is used on Mac instead of the previous :class:`!MacOSX` class.
+   This adds support for opening browsers not currently set as the OS default.
+
 .. versionadded:: 3.3
    Support for Chrome/Chromium has been added.
 

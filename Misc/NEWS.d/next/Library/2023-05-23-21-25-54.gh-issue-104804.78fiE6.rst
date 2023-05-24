@@ -1,2 +1,2 @@
-Remove the :module:`webbrowser` :class:`!webbrowser` class, deprecated in Python 3.11.
+Remove the :mod:`webbrowser` :class:`!webbrowser` class, deprecated in Python 3.11.
 Patch by Hugo van Kemenade.
