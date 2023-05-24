@@ -118,6 +118,11 @@ Removed
 * Remove support for using :class:`pathlib.Path` objects as context managers.
   This functionality was deprecated and made a no-op in Python 3.9.
 
+* Remove the undocumented :class:`!configparser.LegacyInterpolation` class,
+  deprecated in the docstring since Python 3.2,
+  and with a warning since Python 3.11.
+  (Contributed by Hugo van Kemenade in :gh:`104886`.)
+
 * :pep:`594`: Remove the :mod:`!cgi`` and :mod:`!cgitb` modules,
   deprecated in Python 3.11.
 
