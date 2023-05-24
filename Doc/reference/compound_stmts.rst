@@ -1651,7 +1651,7 @@ non-generic counterparts.
 Type parameters are declared in square brackets (``[]``) immediately
 after the name of the function, class, or type alias. The type parameters
 are accessible within the scope of the generic object, but not elsewhere.
-Thus, after a declaration ``def func[T](): ...``, the name ``T`` is not in
+Thus, after a declaration ``def func[T](): pass``, the name ``T`` is not in
 the module scope. Below, the semantics of generic objects are described
 with more precision. The scope of type parameters is modeled with a special
 function (technically, an :ref:`annotation scope <annotation-scopes>`) that
@@ -1663,7 +1663,7 @@ attribute listing their type parameters.
 Type parameters come in three kinds:
 
 * :data:`typing.TypeVar`, introduced by a plain name (e.g., ``T``). Semantically, this
-  stands for a single type.
+  represents a single type to a type checker.
 * :data:`typing.TypeVarTuple`, introduced by a name prefixed with a single
   asterisk (e.g., ``*Ts``). Semantically, this stands for a tuple of any
   number of types.
@@ -1672,8 +1672,7 @@ Type parameters come in three kinds:
 
 :data:`typing.TypeVar` declarations can define *bounds* and *constraints* with
 a colon (``:``) followed by an expression. A single expression after the colon
-indicates a bound (e.g. ``T: int``). The expression should be a type (though this
-is not enforced at runtime, only by static type checkers) and semantically, this means
+indicates a bound (e.g. ``T: int``). Semantically, this means
 that the :data:`!typing.TypeVar` can only represent types that are a subtype of
 this bound. A parenthesized tuple of expressions after the colon indicates a
 set of constraints (e.g. ``T: (str, bytes)``). Each member of the tuple should be a
@@ -1715,16 +1714,16 @@ Generic functions are declared as follows::
 
 This syntax is equivalent to::
 
-   def' TYPE_PARAMS_OF_func():
+   annotation-def TYPE_PARAMS_OF_func():
        T = typing.TypeVar("T")
        def func(arg: T): ...
        func.__type_params__ = (T,)
        return func
    func = TYPE_PARAMS_OF_func()
 
-Here ``def'`` indicates an :ref:`annotation scope <annotation-scopes>`. (Two
-other liberties are taken in the translation: no function is actually bound
-to the name ``TYPE_PARAMS_OF_func``, and the syntax does not go through
+Here ``annotation-def`` indicates an :ref:`annotation scope <annotation-scopes>`,
+which is not actually bound to any name at runtime. (One
+other liberties are taken in the translation: the syntax does not go through
 attribute access on the :mod:`typing` module, but creates an instance of
 :data:`typing.TypeVar` directly.)
 
@@ -1744,9 +1743,9 @@ Except for the :ref:`lazy evaluation <lazy-evaluation>` of the
 
    DEFAULT_OF_arg = some_default
 
-   def' TYPE_PARAMS_OF_func():
+   annotation-def TYPE_PARAMS_OF_func():
 
-       def' BOUND_OF_T():
+       annotation-def BOUND_OF_T():
            return int
        # In reality, BOUND_OF_T() is evaluated only on demand.
        T = typing.TypeVar("T", bound=BOUND_OF_T())
@@ -1775,7 +1774,7 @@ Generic classes are declared as follows::
 
 This syntax is equivalent to::
 
-   def' TYPE_PARAMS_OF_Bag():
+   annotation-def TYPE_PARAMS_OF_Bag():
        T = typing.TypeVar("T")
        class Bag(typing.Generic[T]):
            __type_params__ = (T,)
@@ -1783,7 +1782,7 @@ This syntax is equivalent to::
        return Bag
    Bag = TYPE_PARAMS_OF_Bag()
 
-Here again ``def'`` (not a real keyword) indicates an
+Here again ``annotation-def`` (not a real keyword) indicates an
 :ref:`annotation scope <annotation-scopes>`, and the name
 ``TYPE_PARAMS_OF_Bag`` is not actually bound at runtime.
 
@@ -1798,7 +1797,7 @@ by this example::
 
 This is equivalent to::
 
-   def' TYPE_PARAMS_OF_Bag():
+   annotation-def TYPE_PARAMS_OF_Bag():
        T = typing.TypeVar("T")
        class Bag(Base[T], typing.Generic[T], arg=T):
            __type_params__ = (T,)
@@ -1818,16 +1817,16 @@ The :keyword:`type` statement can also be used to create a generic type alias::
 Except for the :ref:`lazy evaluation <lazy-evaluation>` of the value,
 this is equivalent to::
 
-   def' TYPE_PARAMS_OF_ListOrSet():
+   annotation-def TYPE_PARAMS_OF_ListOrSet():
        T = typing.TypeVar("T")
 
-       def' VALUE_OF_ListOrSet():
+       annotation-def VALUE_OF_ListOrSet():
            return list[T] | set[T]
        # In reality, the value is lazily evaluated
        return typing.TypeAliasType("ListOrSet", VALUE_OF_ListOrSet(), type_params=(T,))
    ListOrSet = TYPE_PARAMS_OF_ListOrSet()
 
-Here, ``def'`` (not a real keyword) indicates an
+Here, ``annotation-def`` (not a real keyword) indicates an
 :ref:`annotation scope <annotation-scopes>`. The capitalized names
 like ``TYPE_PARAMS_OF_ListOrSet`` are not actually bound at runtime.
 

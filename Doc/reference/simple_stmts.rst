@@ -1033,11 +1033,11 @@ For example, the following statement creates a type alias::
 
 This code is roughly equivalent to::
 
-   def' VALUE_OF_Point():
+   annotation-def VALUE_OF_Point():
        return tuple[float, float]
    Point = typing.TypeAliasType("Point", VALUE_OF_Point())
 
-``def'`` indicates an :ref:`annotation scope <annotation-scopes>`, which behaves
+``annotation-def`` indicates an :ref:`annotation scope <annotation-scopes>`, which behaves
 mostly like a function, but with several small differences. The value of the
 type alias is evaluated in the annotation scope. It is not evaluated when the
 type alias is created, but only when the value is accessed through the type alias's

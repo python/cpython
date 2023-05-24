@@ -1361,7 +1361,7 @@ without the dedicated syntax, as documented below.
    Here the brackets after the function name indicate a
    :ref:`generic function <generic-functions>`.
 
-   For backwards compatibility reasons, generic classes can also be
+   For backwards compatibility, generic classes can also be
    declared by explicitly inheriting from
    ``Generic``. In this case, the type parameters must be declared
    separately::
