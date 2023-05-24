@@ -2371,11 +2371,11 @@ Changes in the Python API
   3.3.3.
 
 * The :attr:`~cgi.FieldStorage.file` attribute is now automatically closed when
-  the creating :class:`cgi.FieldStorage` instance is garbage collected. If you
-  were pulling the file object out separately from the :class:`cgi.FieldStorage`
+  the creating :class:`!cgi.FieldStorage` instance is garbage collected. If you
+  were pulling the file object out separately from the :class:`!cgi.FieldStorage`
   instance and not keeping the instance alive, then you should either store the
-  entire :class:`cgi.FieldStorage` instance or read the contents of the file
-  before the :class:`cgi.FieldStorage` instance is garbage collected.
+  entire :class:`!cgi.FieldStorage` instance or read the contents of the file
+  before the :class:`!cgi.FieldStorage` instance is garbage collected.
 
 * Calling ``read`` or ``write`` on a closed SSL socket now raises an
   informative :exc:`ValueError` rather than the previous more mysterious
