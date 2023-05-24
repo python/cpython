@@ -23,8 +23,8 @@
  */
 
 
-#ifndef __Hacl_Streaming_SHA2_H
-#define __Hacl_Streaming_SHA2_H
+#ifndef __Hacl_Hash_SHA2_H
+#define __Hacl_Hash_SHA2_H
 
 #if defined(__cplusplus)
 extern "C" {
@@ -73,7 +73,7 @@ success, or 1 if the combined length of all of the data passed to `update_256`
 
 This function is identical to the update function for SHA2_224.
 */
-uint32_t
+Hacl_Streaming_Types_error_code
 Hacl_Streaming_SHA2_update_256(
   Hacl_Streaming_MD_state_32 *p,
   uint8_t *input,
@@ -98,13 +98,13 @@ void Hacl_Streaming_SHA2_free_256(Hacl_Streaming_MD_state_32 *s);
 /**
 Hash `input`, of len `input_len`, into `dst`, an array of 32 bytes.
 */
-void Hacl_Streaming_SHA2_sha256(uint8_t *input, uint32_t input_len, uint8_t *dst);
+void Hacl_Streaming_SHA2_hash_256(uint8_t *input, uint32_t input_len, uint8_t *dst);
 
 Hacl_Streaming_MD_state_32 *Hacl_Streaming_SHA2_create_in_224(void);
 
 void Hacl_Streaming_SHA2_init_224(Hacl_Streaming_MD_state_32 *s);
 
-uint32_t
+Hacl_Streaming_Types_error_code
 Hacl_Streaming_SHA2_update_224(
   Hacl_Streaming_MD_state_32 *p,
   uint8_t *input,
@@ -123,7 +123,7 @@ void Hacl_Streaming_SHA2_free_224(Hacl_Streaming_MD_state_32 *p);
 /**
 Hash `input`, of len `input_len`, into `dst`, an array of 28 bytes.
 */
-void Hacl_Streaming_SHA2_sha224(uint8_t *input, uint32_t input_len, uint8_t *dst);
+void Hacl_Streaming_SHA2_hash_224(uint8_t *input, uint32_t input_len, uint8_t *dst);
 
 Hacl_Streaming_MD_state_64 *Hacl_Streaming_SHA2_create_in_512(void);
 
@@ -144,7 +144,7 @@ success, or 1 if the combined length of all of the data passed to `update_512`
 
 This function is identical to the update function for SHA2_384.
 */
-uint32_t
+Hacl_Streaming_Types_error_code
 Hacl_Streaming_SHA2_update_512(
   Hacl_Streaming_MD_state_64 *p,
   uint8_t *input,
@@ -169,13 +169,13 @@ void Hacl_Streaming_SHA2_free_512(Hacl_Streaming_MD_state_64 *s);
 /**
 Hash `input`, of len `input_len`, into `dst`, an array of 64 bytes.
 */
-void Hacl_Streaming_SHA2_sha512(uint8_t *input, uint32_t input_len, uint8_t *dst);
+void Hacl_Streaming_SHA2_hash_512(uint8_t *input, uint32_t input_len, uint8_t *dst);
 
 Hacl_Streaming_MD_state_64 *Hacl_Streaming_SHA2_create_in_384(void);
 
 void Hacl_Streaming_SHA2_init_384(Hacl_Streaming_MD_state_64 *s);
 
-uint32_t
+Hacl_Streaming_Types_error_code
 Hacl_Streaming_SHA2_update_384(
   Hacl_Streaming_MD_state_64 *p,
   uint8_t *input,
@@ -194,11 +194,11 @@ void Hacl_Streaming_SHA2_free_384(Hacl_Streaming_MD_state_64 *p);
 /**
 Hash `input`, of len `input_len`, into `dst`, an array of 48 bytes.
 */
-void Hacl_Streaming_SHA2_sha384(uint8_t *input, uint32_t input_len, uint8_t *dst);
+void Hacl_Streaming_SHA2_hash_384(uint8_t *input, uint32_t input_len, uint8_t *dst);
 
 #if defined(__cplusplus)
 }
 #endif
 
-#define __Hacl_Streaming_SHA2_H_DEFINED
+#define __Hacl_Hash_SHA2_H_DEFINED
 #endif
