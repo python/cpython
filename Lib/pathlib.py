@@ -233,7 +233,7 @@ class _PathParents(Sequence):
         return "<{}.parents>".format(type(self._path).__name__)
 
 
-class _BasePurePath(object):
+class _BasePurePath:
     """Base class for manipulating paths using only lexical operations.
 
     This class does not provide the methods __fspath__, __bytes__ or as_uri.
