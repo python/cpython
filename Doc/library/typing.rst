@@ -1648,6 +1648,14 @@ These are not used in annotations. They are building blocks for declaring types.
       UserId = NewType('UserId', int)
       first_user = UserId(1)
 
+   .. attribute:: __name__
+
+      The name of the new type.
+
+   .. attribute:: __supertype__
+
+      The type that the new type is based on.
+
    .. versionadded:: 3.5.2
 
    .. versionchanged:: 3.10
