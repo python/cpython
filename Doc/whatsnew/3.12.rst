@@ -898,7 +898,7 @@ Modules (see :pep:`594`):
 * :mod:`nis`
 * :mod:`nntplib`
 * :mod:`ossaudiodev`
-* :mod:`pipes`
+* :mod:`!pipes`
 * :mod:`!sndhdr`
 * :mod:`spwd`
 * :mod:`sunau`
