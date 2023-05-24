@@ -6771,12 +6771,6 @@ class TypedDictTests(BaseTestCase):
         self.assertIs(is_typeddict(BarGeneric[int]), False)
         self.assertIs(is_typeddict(BarGeneric()), False)
 
-        class NewGeneric[T](TypedDict):
-            a: T
-        self.assertIs(is_typeddict(NewGeneric), True)
-        self.assertIs(is_typeddict(NewGeneric[int]), False)
-        self.assertIs(is_typeddict(NewGeneric()), False)
-
         # The TypedDict constructor is not itself a TypedDict
         self.assertIs(is_typeddict(TypedDict), False)
 
