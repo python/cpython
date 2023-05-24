@@ -1,0 +1,4 @@
+Adjust the location of the (see :pep:`695`) ``type_params`` field on
+:type:`ast.ClassDef`, :type:`ast.AsyncFunctionDef`, and
+:type:`ast.FunctionDef` to better preserve backward compatibility. Patch by
+Jelle Zijlstra
