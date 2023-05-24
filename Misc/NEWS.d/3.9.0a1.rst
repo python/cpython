@@ -3457,7 +3457,7 @@ Patch contributed by Rémi Lapeyre.
 .. nonce: kG0ub5
 .. section: Library
 
-Fixes a bug in :mod:`cgi` module when a multipart/form-data request has no
+Fixes a bug in :mod:`!cgi` module when a multipart/form-data request has no
 `Content-Length` header.
 
 ..
