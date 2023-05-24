@@ -557,7 +557,7 @@ class ThreadTests(BaseTestCase):
         """)
         _, out, err = assert_python_ok("-c", code)
         self.assertEqual(out, b'')
-        self.assertEqual(err.rstrip(), b'child process ok')
+        self.assertIn(b"can't fork at interpreter shutdown", err)
 
     @support.requires_fork()
     def test_dummy_thread_after_fork(self):
@@ -1048,6 +1048,22 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
 
+    def test_start_new_thread_at_exit(self):
+        code = """if 1:
+            import atexit
+            import _thread
+
+            def f():
+                print("shouldn't be printed")
+
+            def exit_handler():
+                _thread.start_new_thread(f, ())
+
+            atexit.register(exit_handler)
+        """
+        _, out, err = assert_python_ok("-c", code)
+        self.assertEqual(out, b'')
+        self.assertIn(b"can't create new thread at interpreter shutdown", err)
 
 class ThreadJoinOnShutdown(BaseTestCase):
 
