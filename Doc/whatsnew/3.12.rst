@@ -146,10 +146,10 @@ inside f-strings can now be any valid Python expression including backslashes,
 unicode escaped sequences, multi-line expressions, comments and strings reusing the
 same quote as the containing f-string. Let's cover these in detail:
 
-* Quote reuse: in Python 3.11, reusing the same quotes as the contaning f-string
+* Quote reuse: in Python 3.11, reusing the same quotes as the containing f-string
   raises a :exc:`SyntaxError`, forcing the user to either use other available
-  quotes (like using double quotes or triple quites if the f-string uses single
-  quites). In Python 3.12, you can now do things like this:
+  quotes (like using double quotes or triple quotes if the f-string uses single
+  quotes). In Python 3.12, you can now do things like this:
 
     >>> songs = ['Take me back to Eden', 'Alkaline', 'Ascensionism']
     >>> f"This is the playlist: {", ".join(songs)}"
@@ -158,7 +158,7 @@ same quote as the containing f-string. Let's cover these in detail:
   Note that before this change there was no explicit limit in how f-strings can
   be nested, but the fact that string quotes cannot be reused inside the
   expression component of f-strings made it impossible to nest f-strings
-  arbitrarily. In fact, this is the most nested-fstring that can be written:
+  arbitrarily. In fact, this is the most nested f-string that could be written:
 
     >>> f"""{f'''{f'{f"{1+1}"}'}'''}"""
     '2'
@@ -1280,10 +1280,10 @@ Changes in the Python API
 
 * The output of the :func:`tokenize.tokenize` and :func:`tokenize.generate_tokens`
   functions is now changed due to the changes introduced in :pep:`701`. This
-  means that ``STRING`` tokens are not emited anymore for f-strings and the
+  means that ``STRING`` tokens are not emitted any more for f-strings and the
   tokens described in :pep:`701` are now produced instead: ``FSTRING_START``,
-  ``FSRING_MIDDLE`` and ``FSTRING_END`` are now emited for f-string "string"
-  parts in addition to the the apropiate tokens for the tokenization in the
+  ``FSRING_MIDDLE`` and ``FSTRING_END`` are now emitted for f-string "string"
+  parts in addition to the appropriate tokens for the tokenization in the
   expression components. For example for the f-string ``f"start {1+1} end"``
   the old version of the tokenizer emitted::
 
@@ -1301,7 +1301,7 @@ Changes in the Python API
       1,13-1,17:          FSTRING_MIDDLE ' end'
       1,17-1,18:          FSTRING_END    '"'
 
-  Aditionally, final ``DEDENT`` tokens are now emited within the bounds of the
+  Aditionally, final ``DEDENT`` tokens are now emitted within the bounds of the
   input. This means that for a file containing 3 lines, the old version of the
   tokenizer returned a ``DEDENT`` token in line 4 whilst the new version returns
   the token in line 3.
