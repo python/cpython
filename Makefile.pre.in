@@ -208,7 +208,7 @@ ENSUREPIP=      @ENSUREPIP@
 # Internal static libraries
 LIBMPDEC_A= Modules/_decimal/libmpdec/libmpdec.a
 LIBEXPAT_A= Modules/expat/libexpat.a
-LIBHACL_SHA2_A= Modules/_hacl/libHacl_Streaming_SHA2.a
+LIBHACL_SHA2_A= Modules/_hacl/libHacl_Hash_SHA2.a
 
 # Module state, compiler flags and linker flags
 # Empty CFLAGS and LDFLAGS are omitted.
@@ -583,7 +583,7 @@ LIBEXPAT_HEADERS= \
 # hashlib's HACL* library
 
 LIBHACL_SHA2_OBJS= \
-                Modules/_hacl/Hacl_Streaming_SHA2.o
+                Modules/_hacl/Hacl_Hash_SHA2.o
 
 LIBHACL_HEADERS= \
                 Modules/_hacl/include/krml/FStar_UInt128_Verified.h \
@@ -596,8 +596,8 @@ LIBHACL_HEADERS= \
                 Modules/_hacl/python_hacl_namespaces.h
 
 LIBHACL_SHA2_HEADERS= \
-                Modules/_hacl/Hacl_Streaming_SHA2.h \
-                Modules/_hacl/internal/Hacl_SHA2_Generic.h \
+                Modules/_hacl/Hacl_Hash_SHA2.h \
+                Modules/_hacl/internal/Hacl_Hash_SHA2.h \
 		$(LIBHACL_HEADERS)
 
 #########################################################################
@@ -964,11 +964,11 @@ $(LIBEXPAT_A): $(LIBEXPAT_OBJS)
 	$(AR) $(ARFLAGS) $@ $(LIBEXPAT_OBJS)
 
 ##########################################################################
-# Build HACL* static libraries for hashlib: libHacl_Streaming_SHA2.a
+# Build HACL* static libraries for hashlib: libHacl_Hash_SHA2.a
 LIBHACL_CFLAGS=-I$(srcdir)/Modules/_hacl/include -D_BSD_SOURCE -D_DEFAULT_SOURCE $(PY_STDMODULE_CFLAGS) $(CCSHARED)
 
-Modules/_hacl/Hacl_Streaming_SHA2.o: $(srcdir)/Modules/_hacl/Hacl_Streaming_SHA2.c $(LIBHACL_SHA2_HEADERS)
-	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Streaming_SHA2.c
+Modules/_hacl/Hacl_Hash_SHA2.o: $(srcdir)/Modules/_hacl/Hacl_Hash_SHA2.c $(LIBHACL_SHA2_HEADERS)
+	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_SHA2.c
 
 $(LIBHACL_SHA2_A): $(LIBHACL_SHA2_OBJS)
 	-rm -f $@
