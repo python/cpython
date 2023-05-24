@@ -2236,16 +2236,6 @@ update curses textbox to additionally handle backspace using the
 
 ..
 
-.. date: 2023-04-04-13-37-28
-.. gh-issue: 103207
-.. nonce: x0vvQp
-.. section: macOS
-
-Add instructions to the macOS installer welcome display on how to workaround
-the macOS 13 Ventura “The installer encountered an error” failure.
-
-..
-
 .. date: 2023-03-24-11-20-47
 .. gh-issue: 102997
 .. nonce: ZgQkbq

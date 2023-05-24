@@ -41,8 +41,6 @@ OMIT_FILES = (
     # package management
     "ensurepip/",
     "venv/",
-    # build system
-    "lib2to3/",
     # deprecated
     "uu.py",
     "xdrlib.py",
@@ -66,19 +64,15 @@ OMIT_FILES = (
 # socket.create_connection() raises an exception:
 # "BlockingIOError: [Errno 26] Operation in progress".
 OMIT_NETWORKING_FILES = (
-    "cgi.py",
-    "cgitb.py",
     "email/",
     "ftplib.py",
     "http/",
     "imaplib.py",
     "mailbox.py",
-    "mailcap.py",
     "nntplib.py",
     "poplib.py",
     "smtplib.py",
     "socketserver.py",
-    "telnetlib.py",
     # keep urllib.parse for pydoc
     "urllib/error.py",
     "urllib/request.py",
@@ -89,7 +83,7 @@ OMIT_NETWORKING_FILES = (
 
 OMIT_MODULE_FILES = {
     "_asyncio": ["asyncio/"],
-    "audioop": ["aifc.py", "sunau.py", "wave.py"],
+    "audioop": ["aifc.py", "wave.py"],
     "_crypt": ["crypt.py"],
     "_curses": ["curses/"],
     "_ctypes": ["ctypes/"],
