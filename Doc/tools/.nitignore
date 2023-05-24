@@ -72,7 +72,6 @@ Doc/howto/sorting.rst
 Doc/howto/unicode.rst
 Doc/howto/urllib2.rst
 Doc/install/index.rst
-Doc/library/2to3.rst
 Doc/library/__future__.rst
 Doc/library/_thread.rst
 Doc/library/abc.rst
@@ -215,7 +214,6 @@ Doc/library/sys_path_init.rst
 Doc/library/sysconfig.rst
 Doc/library/syslog.rst
 Doc/library/tarfile.rst
-Doc/library/telnetlib.rst
 Doc/library/tempfile.rst
 Doc/library/termios.rst
 Doc/library/test.rst

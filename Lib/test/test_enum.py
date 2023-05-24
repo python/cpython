@@ -1090,7 +1090,7 @@ class TestSpecial(unittest.TestCase):
             )
 
     @unittest.skipIf(
-            python_version < (3, 14),
+            python_version < (3, 13),
             'inner classes are still members',
             )
     def test_nested_classes_in_enum_are_not_members(self):
@@ -4261,21 +4261,21 @@ class TestInternals(unittest.TestCase):
         self.assertEqual(Color.green.value, 3)
 
     @unittest.skipIf(
-            python_version < (3, 14),
-            'mixed types with auto() will raise in the future',
+            python_version < (3, 13),
+            'mixed types with auto() will raise in 3.13',
             )
     def test_auto_garbage_fail(self):
-        with self.assertRaisesRegex(TypeError, 'will require all values to be sortable'):
+        with self.assertRaisesRegex(TypeError, "unable to increment 'red'"):
             class Color(Enum):
                 red = 'red'
                 blue = auto()
 
     @unittest.skipIf(
-            python_version < (3, 14),
-            'mixed types with auto() will raise in the future',
+            python_version < (3, 13),
+            'mixed types with auto() will raise in 3.13',
             )
     def test_auto_garbage_corrected_fail(self):
-        with self.assertRaisesRegex(TypeError, 'will require all values to be sortable'):
+        with self.assertRaisesRegex(TypeError, 'unable to sort non-numeric values'):
             class Color(Enum):
                 red = 'red'
                 blue = 2
@@ -4303,8 +4303,8 @@ class TestInternals(unittest.TestCase):
         self.assertEqual(Color.blue.value, 'blue')
 
     @unittest.skipIf(
-            python_version < (3, 14),
-            'auto() will return highest value + 1 in the future',
+            python_version < (3, 13),
+            'auto() will return highest value + 1 in 3.13',
             )
     def test_auto_with_aliases(self):
         class Color(Enum):

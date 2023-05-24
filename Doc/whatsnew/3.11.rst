@@ -1731,7 +1731,7 @@ Modules
   slated for removal in Python 3.13:
 
   +---------------------+---------------------+---------------------+---------------------+---------------------+
-  | :mod:`aifc`         | :mod:`chunk`        | :mod:`msilib`       | :mod:`pipes`        | :mod:`telnetlib`    |
+  | :mod:`aifc`         | :mod:`chunk`        | :mod:`msilib`       | :mod:`pipes`        | :mod:`!telnetlib`   |
   +---------------------+---------------------+---------------------+---------------------+---------------------+
   | :mod:`audioop`      | :mod:`crypt`        | :mod:`nis`          | :mod:`sndhdr`       | :mod:`uu`           |
   +---------------------+---------------------+---------------------+---------------------+---------------------+
@@ -1748,7 +1748,7 @@ Modules
   warnings have now been updated to note they will be removed in Python 3.12.
   (Contributed by Hugo van Kemenade in :issue:`47022`.)
 
-* The :mod:`lib2to3` package and :ref:`2to3 <2to3-reference>` tool
+* The :mod:`!lib2to3` package and ``2to3`` tool
   are now deprecated and may not be able to parse Python 3.10 or newer.
   See :pep:`617`, introducing the new PEG parser, for details.
   (Contributed by Victor Stinner in :issue:`40360`.)

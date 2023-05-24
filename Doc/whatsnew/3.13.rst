@@ -102,7 +102,21 @@ Deprecated
 Removed
 =======
 
+* :pep:`594`: Remove the :mod:`!telnetlib` module, deprecated in Python 3.11:
+  use the projects `telnetlib3 <https://pypi.org/project/telnetlib3/>`_ or
+  `Exscript <https://pypi.org/project/Exscript/>`_ instead.
+  (Contributed by Victor Stinner in :gh:`104773`.)
 
+* Remove the ``2to3`` program and the :mod:`!lib2to3` module,
+  deprecated in Python 3.11.
+  (Contributed by Victor Stinner in :gh:`104780`.)
+
+* Namespaces ``typing.io`` and ``typing.re``, deprecated in Python 3.8,
+  are now removed. The items in those namespaces can be imported directly
+  from :mod:`typing`. (Contributed by Sebastian Rittau in :gh:`92871`.)
+
+* Remove support for using :class:`pathlib.Path` objects as context managers.
+  This functionality was deprecated and made a no-op in Python 3.9.
 
 Porting to Python 3.13
 ======================
