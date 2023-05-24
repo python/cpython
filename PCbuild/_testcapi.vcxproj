@@ -113,6 +113,7 @@
     <ClCompile Include="..\Modules\_testcapi\buffer.c" />
     <ClCompile Include="..\Modules\_testcapi\pyos.c" />
     <ClCompile Include="..\Modules\_testcapi\immortal.c" />
+    <ClCompile Include="..\Modules\_testcapi\gc.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />
