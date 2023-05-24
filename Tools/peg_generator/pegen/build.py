@@ -1,4 +1,5 @@
 import itertools
+import os
 import pathlib
 import sys
 import sysconfig
@@ -25,6 +26,46 @@ def get_extra_flags(compiler_flags: str, compiler_py_flags_nodist: str) -> List[
     if flags is None or py_flags_nodist is None:
         return []
     return f"{flags} {py_flags_nodist}".split()
+
+
+def fixup_build_ext(cmd):
+    """Function needed to make build_ext tests pass.
+
+    When Python was built with --enable-shared on Unix, -L. is not enough to
+    find libpython<blah>.so, because regrtest runs in a tempdir, not in the
+    source directory where the .so lives.
+
+    When Python was built with in debug mode on Windows, build_ext commands
+    need their debug attribute set, and it is not done automatically for
+    some reason.
+
+    This function handles both of these things.  Example use:
+
+        cmd = build_ext(dist)
+        support.fixup_build_ext(cmd)
+        cmd.ensure_finalized()
+
+    Unlike most other Unix platforms, Mac OS X embeds absolute paths
+    to shared libraries into executables, so the fixup is not needed there.
+
+    Taken from distutils (was part of the CPython stdlib until Python 3.11)
+    """
+    if os.name == 'nt':
+        cmd.debug = sys.executable.endswith('_d.exe')
+    elif sysconfig.get_config_var('Py_ENABLE_SHARED'):
+        # To further add to the shared builds fun on Unix, we can't just add
+        # library_dirs to the Extension() instance because that doesn't get
+        # plumbed through to the final compiler command.
+        runshared = sysconfig.get_config_var('RUNSHARED')
+        if runshared is None:
+            cmd.library_dirs = ['.']
+        else:
+            if sys.platform == 'darwin':
+                cmd.library_dirs = []
+            else:
+                name, equals, value = runshared.partition('=')
+                cmd.library_dirs = [d for d in value.split(os.pathsep) if d]
+
 
 
 def compile_c_extension(
@@ -99,6 +140,7 @@ def compile_c_extension(
     )
     dist = Distribution({"name": extension_name, "ext_modules": [extension]})
     cmd = dist.get_command_obj("build_ext")
+    fixup_build_ext(cmd)
     cmd.build_lib = str(source_file_path.parent)
     cmd.include_dirs = include_dirs
     if build_dir:
