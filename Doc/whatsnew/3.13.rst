@@ -161,6 +161,9 @@ Removed
   use the `pygame project <https://www.pygame.org/>`_ for audio playback.
   (Contributed by Victor Stinner in :gh:`104780`.)
 
+* :pep:`594`: Remove the :mod:`!sunau` module, deprecated in Python 3.11.
+  (Contributed by Victor Stinner in :gh:`104773`.)
+
 
 Porting to Python 3.13
 ======================
