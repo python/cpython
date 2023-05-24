@@ -7085,12 +7085,11 @@ dnl Modules that are not available on some platforms
 dnl AIX has shadow passwords, but access is not via getspent()
 dnl VxWorks does not provide crypt() function
 AS_CASE([$ac_sys_system],
-  [AIX], [PY_STDLIB_MOD_SET_NA([_scproxy], [spwd])],
+  [AIX], [PY_STDLIB_MOD_SET_NA([_scproxy])],
   [VxWorks*], [PY_STDLIB_MOD_SET_NA([_scproxy], [_crypt], [termios], [grp])],
-  [Darwin], [PY_STDLIB_MOD_SET_NA([spwd])],
   [CYGWIN*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
   [QNX*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
-  [FreeBSD*], [PY_STDLIB_MOD_SET_NA([_scproxy], [spwd])],
+  [FreeBSD*], [PY_STDLIB_MOD_SET_NA([_scproxy])],
   [Emscripten|WASI], [
     dnl subprocess and multiprocessing are not supported (no fork syscall).
     dnl curses and tkinter user interface are not available.
@@ -7113,7 +7112,6 @@ AS_CASE([$ac_sys_system],
       [nis],
       [pwd],
       [resource],
-      [spwd],
       [syslog],
     )
     AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
@@ -7264,7 +7262,6 @@ PY_STDLIB_MOD([resource], [], [test "$ac_cv_header_sys_resource_h" = yes])
 PY_STDLIB_MOD([_scproxy],
   [test "$ac_sys_system" = "Darwin"], [],
   [], [-framework SystemConfiguration -framework CoreFoundation])
-PY_STDLIB_MOD([spwd], [], [test "$ac_cv_func_getspent" = yes -o "$ac_cv_func_getspnam" = yes])
 PY_STDLIB_MOD([syslog], [], [test "$ac_cv_header_syslog_h" = yes])
 PY_STDLIB_MOD([termios], [], [test "$ac_cv_header_termios_h" = yes])
 

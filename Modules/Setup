@@ -185,7 +185,6 @@ PYTHONPATH=$(COREPYTHONPATH)
 #fcntl fcntlmodule.c
 #grp grpmodule.c
 #resource resource.c
-#spwd spwdmodule.c
 #syslog syslogmodule.c
 #termios termios.c
 
