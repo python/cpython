@@ -19,6 +19,5 @@ backwards compatibility. They have been superseded by other modules.
    nis.rst
    nntplib.rst
    optparse.rst
-   spwd.rst
    uu.rst
    xdrlib.rst

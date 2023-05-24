@@ -182,6 +182,12 @@ Removed
   The :mod:`mimetypes` module provides an alternative.
   (Contributed by Victor Stinner in :gh:`104773`.)
 
+* :pep:`594`: Remove the :mod:`!spwd` module, deprecated in Python 3.11:
+  the `python-pam project <https://pypi.org/project/python-pam/>`_ can be used
+  instead.
+  (Contributed by Victor Stinner in :gh:`104773`.)
+
+
 Porting to Python 3.13
 ======================
 

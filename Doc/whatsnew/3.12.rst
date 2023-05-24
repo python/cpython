@@ -900,7 +900,7 @@ Modules (see :pep:`594`):
 * :mod:`!ossaudiodev`
 * :mod:`!pipes`
 * :mod:`!sndhdr`
-* :mod:`spwd`
+* :mod:`!spwd`
 * :mod:`!sunau`
 * :mod:`!telnetlib`
 * :mod:`uu`
