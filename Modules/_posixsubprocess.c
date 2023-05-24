@@ -798,7 +798,7 @@ do_fork_exec(char *const exec_array[],
     pid_t pid;
 
 #ifdef VFORK_USABLE
-    PyThreadState *vfork_tstate_save = NULL;
+    PyThreadState *vfork_tstate_save;
     if (child_sigmask) {
         /* These are checked by our caller; verify them in debug builds. */
         assert(uid == (uid_t)-1);
@@ -808,7 +808,7 @@ do_fork_exec(char *const exec_array[],
 
         /* Drop the GIL so that other threads can continue execution while this
          * thread in the parent remains blocked per vfork-semantics on the
-         * child's exec syscall outcome. Exec requires filesystem access which
+         * child's exec syscall outcome. Exec does filesystem access which
          * can take an arbitrarily long time. This addresses GH-104372.
          *
          * The vfork'ed child still runs in our address space. Per POSIX it
@@ -817,9 +817,11 @@ do_fork_exec(char *const exec_array[],
          */
         vfork_tstate_save = PyEval_SaveThread();
         pid = vfork();
-        if (pid == (pid_t)-1) {
+        if (pid != 0) {
+            // Not in the child process, reacquire the GIL.
             PyEval_RestoreThread(vfork_tstate_save);
-            vfork_tstate_save = NULL;
+        }
+        if (pid == (pid_t)-1) {
             /* If vfork() fails, fall back to using fork(). When it isn't
              * allowed in a process by the kernel, vfork can return -1
              * with errno EINVAL. https://bugs.python.org/issue47151. */
@@ -833,11 +835,6 @@ do_fork_exec(char *const exec_array[],
 
     if (pid != 0) {
         // Parent process.
-#ifdef VFORK_USABLE
-        if (vfork_tstate_save != NULL) {
-            PyEval_RestoreThread(vfork_tstate_save);
-        }
-#endif
         return pid;
     }
 
