@@ -929,7 +929,7 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
     PyInterpreterState *interp = PyInterpreterState_Get();
     if (interp->finalizing) {
         PyErr_SetString(PyExc_RuntimeError,
-                        "child process creation is not allowed at interpreter exit");
+                        "can't create child process at interpreter shutdown");
         return NULL;
     }
     if ((preexec_fn != Py_None) && (interp != PyInterpreterState_Main())) {

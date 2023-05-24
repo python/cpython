@@ -1157,7 +1157,7 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
     }
     if (interp->finalizing) {
         PyErr_SetString(PyExc_RuntimeError,
-                        "creation of new threads is not allowed at interpreter exit");
+                        "can't create new thread at interpreter shutdown");
         return NULL;
     }
 

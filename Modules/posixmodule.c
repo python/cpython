@@ -7530,7 +7530,7 @@ os_fork1_impl(PyObject *module)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->finalizing) {
         PyErr_SetString(PyExc_RuntimeError,
-                        "fork is not allowed at interpreter exit");
+                        "can't fork at interpreter shutdown");
         return NULL;
     }
     if (!_Py_IsMainInterpreter(interp)) {
@@ -7571,7 +7571,7 @@ os_fork_impl(PyObject *module)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->finalizing) {
         PyErr_SetString(PyExc_RuntimeError,
-                        "fork is not allowed at interpreter exit");
+                        "can't fork at interpreter shutdown");
         return NULL;
     }
     if (!_PyInterpreterState_HasFeature(interp, Py_RTFLAGS_FORK)) {
@@ -8248,7 +8248,7 @@ os_forkpty_impl(PyObject *module)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->finalizing) {
         PyErr_SetString(PyExc_RuntimeError,
-                        "fork is not allowed at interpreter exit");
+                        "can't fork at interpreter shutdown");
         return NULL;
     }
     if (!_Py_IsMainInterpreter(interp)) {
