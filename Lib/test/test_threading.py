@@ -747,7 +747,7 @@ class ThreadTests(BaseTestCase):
         rc, out, err = assert_python_ok("-c", code)
         self.assertEqual(err, b"")
 
-    def test_running_lock(self):
+    def test_tstate_lock(self):
         # Test an implementation detail of Thread objects.
         started = _thread.allocate_lock()
         finish = _thread.allocate_lock()
@@ -757,29 +757,29 @@ class ThreadTests(BaseTestCase):
             started.release()
             finish.acquire()
             time.sleep(0.01)
-        # The running lock is None until the thread is started
+        # The tstate lock is None until the thread is started
         t = threading.Thread(target=f)
-        self.assertIs(t._running_lock, None)
+        self.assertIs(t._tstate_lock, None)
         t.start()
         started.acquire()
         self.assertTrue(t.is_alive())
-        # The running lock can't be acquired when the thread is running
+        # The tstate lock can't be acquired when the thread is running
         # (or suspended).
-        running_lock = t._running_lock
-        self.assertFalse(running_lock.acquire(timeout=0), False)
+        tstate_lock = t._tstate_lock
+        self.assertFalse(tstate_lock.acquire(timeout=0), False)
         finish.release()
         # When the thread ends, the state_lock can be successfully
         # acquired.
-        self.assertTrue(running_lock.acquire(timeout=support.SHORT_TIMEOUT), False)
-        # But is_alive() is still True:  we hold _running_lock now, which
-        # prevents is_alive() from knowing the thread's Python code
+        self.assertTrue(tstate_lock.acquire(timeout=support.SHORT_TIMEOUT), False)
+        # But is_alive() is still True:  we hold _tstate_lock now, which
+        # prevents is_alive() from knowing the thread's end-of-life C code
         # is done.
         self.assertTrue(t.is_alive())
         # Let is_alive() find out the C code is done.
-        running_lock.release()
+        tstate_lock.release()
         self.assertFalse(t.is_alive())
-        # And verify the thread disposed of _running_lock.
-        self.assertIsNone(t._running_lock)
+        # And verify the thread disposed of _tstate_lock.
+        self.assertIsNone(t._tstate_lock)
         t.join()
 
     def test_repr_stopped(self):
