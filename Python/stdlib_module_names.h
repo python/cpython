@@ -185,7 +185,6 @@ static const char* _Py_stdlib_module_names[] = {
 "multiprocessing",
 "netrc",
 "nis",
-"nntplib",
 "nt",
 "ntpath",
 "nturl2path",
