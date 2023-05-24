@@ -153,6 +153,10 @@ Removed
   <https://pypi.org/project/python-magic/>`_ instead.
   (Contributed by Victor Stinner in :gh:`104773`.)
 
+* :pep:`594`: Remove the :mod:`!pipes` module, deprecated in Python 3.11:
+  use the :mod:`subprocess` module instead.
+  (Contributed by Victor Stinner in :gh:`104773`.)
+
 
 Porting to Python 3.13
 ======================

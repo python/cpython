@@ -200,7 +200,6 @@ static const char* _Py_stdlib_module_names[] = {
 "pdb",
 "pickle",
 "pickletools",
-"pipes",
 "pkgutil",
 "platform",
 "plistlib",
