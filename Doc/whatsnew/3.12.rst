@@ -157,7 +157,7 @@ same quote as the containing f-string. Let's cover these in detail:
 
     >>> songs = ['Take me back to Eden', 'Alkaline', 'Ascensionism']
     >>> f"This is the playlist: {", ".join(songs)}"
-    'This is the playlist: Take me back to Eden, Alkaline, Ascensionism
+    'This is the playlist: Take me back to Eden, Alkaline, Ascensionism'
 
   Note that before this change there was no explicit limit in how f-strings can
   be nested, but the fact that string quotes cannot be reused inside the
