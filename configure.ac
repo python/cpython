@@ -7082,7 +7082,6 @@ AC_DEFUN([PY_STDLIB_MOD_SET_NA], [
 
 # stdlib not available
 dnl Modules that are not available on some platforms
-dnl AIX has shadow passwords, but access is not via getspent()
 dnl VxWorks does not provide crypt() function
 AS_CASE([$ac_sys_system],
   [AIX], [PY_STDLIB_MOD_SET_NA([_scproxy])],
