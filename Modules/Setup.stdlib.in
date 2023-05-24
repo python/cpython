@@ -119,8 +119,6 @@
 @MODULE_RESOURCE_TRUE@resource resource.c
 @MODULE_SELECT_TRUE@select selectmodule.c
 @MODULE__SOCKET_TRUE@_socket socketmodule.c
-# AIX has shadow passwords, but does not provide getspent API
-@MODULE_SPWD_TRUE@spwd spwdmodule.c
 @MODULE_SYSLOG_TRUE@syslog syslogmodule.c
 @MODULE_TERMIOS_TRUE@termios termios.c
 
