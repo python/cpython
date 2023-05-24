@@ -458,8 +458,7 @@ nis_maps (PyObject *module, PyObject *args, PyObject *kwdict)
         if (!str || PyList_Append(list, str) < 0)
         {
             Py_XDECREF(str);
-            Py_DECREF(list);
-            list = NULL;
+            Py_SETREF(list, NULL);
             break;
         }
         Py_DECREF(str);
@@ -469,13 +468,13 @@ nis_maps (PyObject *module, PyObject *args, PyObject *kwdict)
 }
 
 static PyMethodDef nis_methods[] = {
-    {"match",                   (PyCFunction)(void(*)(void))nis_match,
+    {"match",                   _PyCFunction_CAST(nis_match),
                                     METH_VARARGS | METH_KEYWORDS,
                                     match__doc__},
-    {"cat",                     (PyCFunction)(void(*)(void))nis_cat,
+    {"cat",                     _PyCFunction_CAST(nis_cat),
                                     METH_VARARGS | METH_KEYWORDS,
                                     cat__doc__},
-    {"maps",                    (PyCFunction)(void(*)(void))nis_maps,
+    {"maps",                    _PyCFunction_CAST(nis_maps),
                                     METH_VARARGS | METH_KEYWORDS,
                                     maps__doc__},
     {"get_default_domain",      nis_get_default_domain,
@@ -503,6 +502,9 @@ nis_exec(PyObject *module)
 
 static PyModuleDef_Slot nis_slots[] = {
     {Py_mod_exec, nis_exec},
+    // XXX gh-103092: fix isolation.
+    {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
+    //{Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 
@@ -524,5 +526,11 @@ static struct PyModuleDef nismodule = {
 PyMODINIT_FUNC
 PyInit_nis(void)
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "'nis' is deprecated and slated for removal in "
+                     "Python 3.13",
+                     7)) {
+        return NULL;
+    }
     return PyModuleDef_Init(&nismodule);
 }

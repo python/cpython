@@ -52,9 +52,9 @@ else:
     _modifier_masks = (MC_CONTROL, MC_ALT, MC_SHIFT, MC_META)
 
 # a dictionary to map a modifier name into its number
-_modifier_names = dict([(name, number)
+_modifier_names = {name: number
                          for number in range(len(_modifiers))
-                         for name in _modifiers[number]])
+                         for name in _modifiers[number]}
 
 # In 3.4, if no shell window is ever open, the underlying Tk widget is
 # destroyed before .__del__ methods here are called.  The following
@@ -134,7 +134,7 @@ def expand_substates(states):
         return nb
     statelist = []
     for state in states:
-        substates = list(set(state & x for x in states))
+        substates = list({state & x for x in states})
         substates.sort(key=nbits, reverse=True)
         statelist.append(substates)
     return statelist
@@ -258,9 +258,9 @@ _types = (
 _binder_classes = (_ComplexBinder,) * 4 + (_SimpleBinder,) * (len(_types)-4)
 
 # A dictionary to map a type name into its number
-_type_names = dict([(name, number)
+_type_names = {name: number
                      for number in range(len(_types))
-                     for name in _types[number]])
+                     for name in _types[number]}
 
 _keysym_re = re.compile(r"^\w+$")
 _button_re = re.compile(r"^[1-5]$")

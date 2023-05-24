@@ -4,6 +4,7 @@
 """Fraction, infinite-precision, rational numbers."""
 
 from decimal import Decimal
+import functools
 import math
 import numbers
 import operator
@@ -20,19 +21,142 @@ _PyHASH_MODULUS = sys.hash_info.modulus
 # _PyHASH_MODULUS.
 _PyHASH_INF = sys.hash_info.inf
 
+@functools.lru_cache(maxsize = 1 << 14)
+def _hash_algorithm(numerator, denominator):
+
+    # To make sure that the hash of a Fraction agrees with the hash
+    # of a numerically equal integer, float or Decimal instance, we
+    # follow the rules for numeric hashes outlined in the
+    # documentation.  (See library docs, 'Built-in Types').
+
+    try:
+        dinv = pow(denominator, -1, _PyHASH_MODULUS)
+    except ValueError:
+        # ValueError means there is no modular inverse.
+        hash_ = _PyHASH_INF
+    else:
+        # The general algorithm now specifies that the absolute value of
+        # the hash is
+        #    (|N| * dinv) % P
+        # where N is self._numerator and P is _PyHASH_MODULUS.  That's
+        # optimized here in two ways:  first, for a non-negative int i,
+        # hash(i) == i % P, but the int hash implementation doesn't need
+        # to divide, and is faster than doing % P explicitly.  So we do
+        #    hash(|N| * dinv)
+        # instead.  Second, N is unbounded, so its product with dinv may
+        # be arbitrarily expensive to compute.  The final answer is the
+        # same if we use the bounded |N| % P instead, which can again
+        # be done with an int hash() call.  If 0 <= i < P, hash(i) == i,
+        # so this nested hash() call wastes a bit of time making a
+        # redundant copy when |N| < P, but can save an arbitrarily large
+        # amount of computation for large |N|.
+        hash_ = hash(hash(abs(numerator)) * dinv)
+    result = hash_ if numerator >= 0 else -hash_
+    return -2 if result == -1 else result
+
 _RATIONAL_FORMAT = re.compile(r"""
     \A\s*                                 # optional whitespace at the start,
     (?P<sign>[-+]?)                       # an optional sign, then
     (?=\d|\.\d)                           # lookahead for digit or .digit
     (?P<num>\d*|\d+(_\d+)*)               # numerator (possibly empty)
     (?:                                   # followed by
-       (?:/(?P<denom>\d+(_\d+)*))?        # an optional denominator
+       (?:\s*/\s*(?P<denom>\d+(_\d+)*))?  # an optional denominator
     |                                     # or
        (?:\.(?P<decimal>d*|\d+(_\d+)*))?  # an optional fractional part
        (?:E(?P<exp>[-+]?\d+(_\d+)*))?     # and optional exponent
     )
     \s*\Z                                 # and optional whitespace to finish
 """, re.VERBOSE | re.IGNORECASE)
+
+
+# Helpers for formatting
+
+def _round_to_exponent(n, d, exponent, no_neg_zero=False):
+    """Round a rational number to the nearest multiple of a given power of 10.
+
+    Rounds the rational number n/d to the nearest integer multiple of
+    10**exponent, rounding to the nearest even integer multiple in the case of
+    a tie. Returns a pair (sign: bool, significand: int) representing the
+    rounded value (-1)**sign * significand * 10**exponent.
+
+    If no_neg_zero is true, then the returned sign will always be False when
+    the significand is zero. Otherwise, the sign reflects the sign of the
+    input.
+
+    d must be positive, but n and d need not be relatively prime.
+    """
+    if exponent >= 0:
+        d *= 10**exponent
+    else:
+        n *= 10**-exponent
+
+    # The divmod quotient is correct for round-ties-towards-positive-infinity;
+    # In the case of a tie, we zero out the least significant bit of q.
+    q, r = divmod(n + (d >> 1), d)
+    if r == 0 and d & 1 == 0:
+        q &= -2
+
+    sign = q < 0 if no_neg_zero else n < 0
+    return sign, abs(q)
+
+
+def _round_to_figures(n, d, figures):
+    """Round a rational number to a given number of significant figures.
+
+    Rounds the rational number n/d to the given number of significant figures
+    using the round-ties-to-even rule, and returns a triple
+    (sign: bool, significand: int, exponent: int) representing the rounded
+    value (-1)**sign * significand * 10**exponent.
+
+    In the special case where n = 0, returns a significand of zero and
+    an exponent of 1 - figures, for compatibility with formatting.
+    Otherwise, the returned significand satisfies
+    10**(figures - 1) <= significand < 10**figures.
+
+    d must be positive, but n and d need not be relatively prime.
+    figures must be positive.
+    """
+    # Special case for n == 0.
+    if n == 0:
+        return False, 0, 1 - figures
+
+    # Find integer m satisfying 10**(m - 1) <= abs(n)/d <= 10**m. (If abs(n)/d
+    # is a power of 10, either of the two possible values for m is fine.)
+    str_n, str_d = str(abs(n)), str(d)
+    m = len(str_n) - len(str_d) + (str_d <= str_n)
+
+    # Round to a multiple of 10**(m - figures). The significand we get
+    # satisfies 10**(figures - 1) <= significand <= 10**figures.
+    exponent = m - figures
+    sign, significand = _round_to_exponent(n, d, exponent)
+
+    # Adjust in the case where significand == 10**figures, to ensure that
+    # 10**(figures - 1) <= significand < 10**figures.
+    if len(str(significand)) == figures + 1:
+        significand //= 10
+        exponent += 1
+
+    return sign, significand, exponent
+
+
+# Pattern for matching float-style format specifications;
+# supports 'e', 'E', 'f', 'F', 'g', 'G' and '%' presentation types.
+_FLOAT_FORMAT_SPECIFICATION_MATCHER = re.compile(r"""
+    (?:
+        (?P<fill>.)?
+        (?P<align>[<>=^])
+    )?
+    (?P<sign>[-+ ]?)
+    (?P<no_neg_zero>z)?
+    (?P<alt>\#)?
+    # A '0' that's *not* followed by another digit is parsed as a minimum width
+    # rather than a zeropad flag.
+    (?P<zeropad>0(?=[0-9]))?
+    (?P<minimumwidth>0|[1-9][0-9]*)?
+    (?P<thousands_sep>[,_])?
+    (?:\.(?P<precision>0|[1-9][0-9]*))?
+    (?P<presentation_type>[eEfFgG%])
+""", re.DOTALL | re.VERBOSE).fullmatch
 
 
 class Fraction(numbers.Rational):
@@ -59,7 +183,7 @@ class Fraction(numbers.Rational):
     __slots__ = ('_numerator', '_denominator')
 
     # We're immutable, so use __new__ not __init__
-    def __new__(cls, numerator=0, denominator=None, *, _normalize=True):
+    def __new__(cls, numerator=0, denominator=None):
         """Constructs a Rational.
 
         Takes a string like '3/2' or '1.5', another Rational instance, a
@@ -155,12 +279,11 @@ class Fraction(numbers.Rational):
 
         if denominator == 0:
             raise ZeroDivisionError('Fraction(%s, 0)' % numerator)
-        if _normalize:
-            g = math.gcd(numerator, denominator)
-            if denominator < 0:
-                g = -g
-            numerator //= g
-            denominator //= g
+        g = math.gcd(numerator, denominator)
+        if denominator < 0:
+            g = -g
+        numerator //= g
+        denominator //= g
         self._numerator = numerator
         self._denominator = denominator
         return self
@@ -177,7 +300,7 @@ class Fraction(numbers.Rational):
         elif not isinstance(f, float):
             raise TypeError("%s.from_float() only takes floats, not %r (%s)" %
                             (cls.__name__, f, type(f).__name__))
-        return cls(*f.as_integer_ratio())
+        return cls._from_coprime_ints(*f.as_integer_ratio())
 
     @classmethod
     def from_decimal(cls, dec):
@@ -189,13 +312,28 @@ class Fraction(numbers.Rational):
             raise TypeError(
                 "%s.from_decimal() only takes Decimals, not %r (%s)" %
                 (cls.__name__, dec, type(dec).__name__))
-        return cls(*dec.as_integer_ratio())
+        return cls._from_coprime_ints(*dec.as_integer_ratio())
+
+    @classmethod
+    def _from_coprime_ints(cls, numerator, denominator, /):
+        """Convert a pair of ints to a rational number, for internal use.
+
+        The ratio of integers should be in lowest terms and the denominator
+        should be positive.
+        """
+        obj = super(Fraction, cls).__new__(cls)
+        obj._numerator = numerator
+        obj._denominator = denominator
+        return obj
+
+    def is_integer(self):
+        """Return True if the Fraction is an integer."""
+        return self._denominator == 1
 
     def as_integer_ratio(self):
-        """Return the integer ratio as a tuple.
+        """Return a pair of integers, whose ratio is equal to the original Fraction.
 
-        Return a tuple of two integers, whose ratio is equal to the
-        Fraction and with a positive denominator.
+        The ratio is in lowest terms and has a positive denominator.
         """
         return (self._numerator, self._denominator)
 
@@ -245,14 +383,16 @@ class Fraction(numbers.Rational):
                 break
             p0, q0, p1, q1 = p1, q1, p0+a*p1, q2
             n, d = d, n-a*d
-
         k = (max_denominator-q0)//q1
-        bound1 = Fraction(p0+k*p1, q0+k*q1)
-        bound2 = Fraction(p1, q1)
-        if abs(bound2 - self) <= abs(bound1-self):
-            return bound2
+
+        # Determine which of the candidates (p0+k*p1)/(q0+k*q1) and p1/q1 is
+        # closer to self. The distance between them is 1/(q1*(q0+k*q1)), while
+        # the distance from p1/q1 to self is d/(q1*self._denominator). So we
+        # need to compare 2*(q0+k*q1) with self._denominator/d.
+        if 2*d*(q0+k*q1) <= self._denominator:
+            return Fraction._from_coprime_ints(p1, q1)
         else:
-            return bound1
+            return Fraction._from_coprime_ints(p0+k*p1, q0+k*q1)
 
     @property
     def numerator(a):
@@ -273,6 +413,122 @@ class Fraction(numbers.Rational):
             return str(self._numerator)
         else:
             return '%s/%s' % (self._numerator, self._denominator)
+
+    def __format__(self, format_spec, /):
+        """Format this fraction according to the given format specification."""
+
+        # Backwards compatiblility with existing formatting.
+        if not format_spec:
+            return str(self)
+
+        # Validate and parse the format specifier.
+        match = _FLOAT_FORMAT_SPECIFICATION_MATCHER(format_spec)
+        if match is None:
+            raise ValueError(
+                f"Invalid format specifier {format_spec!r} "
+                f"for object of type {type(self).__name__!r}"
+            )
+        elif match["align"] is not None and match["zeropad"] is not None:
+            # Avoid the temptation to guess.
+            raise ValueError(
+                f"Invalid format specifier {format_spec!r} "
+                f"for object of type {type(self).__name__!r}; "
+                "can't use explicit alignment when zero-padding"
+            )
+        fill = match["fill"] or " "
+        align = match["align"] or ">"
+        pos_sign = "" if match["sign"] == "-" else match["sign"]
+        no_neg_zero = bool(match["no_neg_zero"])
+        alternate_form = bool(match["alt"])
+        zeropad = bool(match["zeropad"])
+        minimumwidth = int(match["minimumwidth"] or "0")
+        thousands_sep = match["thousands_sep"]
+        precision = int(match["precision"] or "6")
+        presentation_type = match["presentation_type"]
+        trim_zeros = presentation_type in "gG" and not alternate_form
+        trim_point = not alternate_form
+        exponent_indicator = "E" if presentation_type in "EFG" else "e"
+
+        # Round to get the digits we need, figure out where to place the point,
+        # and decide whether to use scientific notation. 'point_pos' is the
+        # relative to the _end_ of the digit string: that is, it's the number
+        # of digits that should follow the point.
+        if presentation_type in "fF%":
+            exponent = -precision
+            if presentation_type == "%":
+                exponent -= 2
+            negative, significand = _round_to_exponent(
+                self._numerator, self._denominator, exponent, no_neg_zero)
+            scientific = False
+            point_pos = precision
+        else:  # presentation_type in "eEgG"
+            figures = (
+                max(precision, 1)
+                if presentation_type in "gG"
+                else precision + 1
+            )
+            negative, significand, exponent = _round_to_figures(
+                self._numerator, self._denominator, figures)
+            scientific = (
+                presentation_type in "eE"
+                or exponent > 0
+                or exponent + figures <= -4
+            )
+            point_pos = figures - 1 if scientific else -exponent
+
+        # Get the suffix - the part following the digits, if any.
+        if presentation_type == "%":
+            suffix = "%"
+        elif scientific:
+            suffix = f"{exponent_indicator}{exponent + point_pos:+03d}"
+        else:
+            suffix = ""
+
+        # String of output digits, padded sufficiently with zeros on the left
+        # so that we'll have at least one digit before the decimal point.
+        digits = f"{significand:0{point_pos + 1}d}"
+
+        # Before padding, the output has the form f"{sign}{leading}{trailing}",
+        # where `leading` includes thousands separators if necessary and
+        # `trailing` includes the decimal separator where appropriate.
+        sign = "-" if negative else pos_sign
+        leading = digits[: len(digits) - point_pos]
+        frac_part = digits[len(digits) - point_pos :]
+        if trim_zeros:
+            frac_part = frac_part.rstrip("0")
+        separator = "" if trim_point and not frac_part else "."
+        trailing = separator + frac_part + suffix
+
+        # Do zero padding if required.
+        if zeropad:
+            min_leading = minimumwidth - len(sign) - len(trailing)
+            # When adding thousands separators, they'll be added to the
+            # zero-padded portion too, so we need to compensate.
+            leading = leading.zfill(
+                3 * min_leading // 4 + 1 if thousands_sep else min_leading
+            )
+
+        # Insert thousands separators if required.
+        if thousands_sep:
+            first_pos = 1 + (len(leading) - 1) % 3
+            leading = leading[:first_pos] + "".join(
+                thousands_sep + leading[pos : pos + 3]
+                for pos in range(first_pos, len(leading), 3)
+            )
+
+        # We now have a sign and a body. Pad with fill character if necessary
+        # and return.
+        body = leading + trailing
+        padding = fill * (minimumwidth - len(sign) - len(body))
+        if align == ">":
+            return padding + sign + body
+        elif align == "<":
+            return sign + body + padding
+        elif align == "^":
+            half = len(padding) // 2
+            return padding[:half] + sign + body + padding[half:]
+        else:  # align == "="
+            return sign + padding + body
 
     def _operator_fallbacks(monomorphic_operator, fallback_operator):
         """Generates forward and reverse operators given a purely-rational
@@ -355,8 +611,10 @@ class Fraction(numbers.Rational):
 
         """
         def forward(a, b):
-            if isinstance(b, (int, Fraction)):
+            if isinstance(b, Fraction):
                 return monomorphic_operator(a, b)
+            elif isinstance(b, int):
+                return monomorphic_operator(a, Fraction(b))
             elif isinstance(b, float):
                 return fallback_operator(float(a), b)
             elif isinstance(b, complex):
@@ -369,7 +627,7 @@ class Fraction(numbers.Rational):
         def reverse(b, a):
             if isinstance(a, numbers.Rational):
                 # Includes ints.
-                return monomorphic_operator(a, b)
+                return monomorphic_operator(Fraction(a), b)
             elif isinstance(a, numbers.Real):
                 return fallback_operator(float(a), float(b))
             elif isinstance(a, numbers.Complex):
@@ -451,40 +709,40 @@ class Fraction(numbers.Rational):
 
     def _add(a, b):
         """a + b"""
-        na, da = a.numerator, a.denominator
-        nb, db = b.numerator, b.denominator
+        na, da = a._numerator, a._denominator
+        nb, db = b._numerator, b._denominator
         g = math.gcd(da, db)
         if g == 1:
-            return Fraction(na * db + da * nb, da * db, _normalize=False)
+            return Fraction._from_coprime_ints(na * db + da * nb, da * db)
         s = da // g
         t = na * (db // g) + nb * s
         g2 = math.gcd(t, g)
         if g2 == 1:
-            return Fraction(t, s * db, _normalize=False)
-        return Fraction(t // g2, s * (db // g2), _normalize=False)
+            return Fraction._from_coprime_ints(t, s * db)
+        return Fraction._from_coprime_ints(t // g2, s * (db // g2))
 
     __add__, __radd__ = _operator_fallbacks(_add, operator.add)
 
     def _sub(a, b):
         """a - b"""
-        na, da = a.numerator, a.denominator
-        nb, db = b.numerator, b.denominator
+        na, da = a._numerator, a._denominator
+        nb, db = b._numerator, b._denominator
         g = math.gcd(da, db)
         if g == 1:
-            return Fraction(na * db - da * nb, da * db, _normalize=False)
+            return Fraction._from_coprime_ints(na * db - da * nb, da * db)
         s = da // g
         t = na * (db // g) - nb * s
         g2 = math.gcd(t, g)
         if g2 == 1:
-            return Fraction(t, s * db, _normalize=False)
-        return Fraction(t // g2, s * (db // g2), _normalize=False)
+            return Fraction._from_coprime_ints(t, s * db)
+        return Fraction._from_coprime_ints(t // g2, s * (db // g2))
 
     __sub__, __rsub__ = _operator_fallbacks(_sub, operator.sub)
 
     def _mul(a, b):
         """a * b"""
-        na, da = a.numerator, a.denominator
-        nb, db = b.numerator, b.denominator
+        na, da = a._numerator, a._denominator
+        nb, db = b._numerator, b._denominator
         g1 = math.gcd(na, db)
         if g1 > 1:
             na //= g1
@@ -493,15 +751,17 @@ class Fraction(numbers.Rational):
         if g2 > 1:
             nb //= g2
             da //= g2
-        return Fraction(na * nb, db * da, _normalize=False)
+        return Fraction._from_coprime_ints(na * nb, db * da)
 
     __mul__, __rmul__ = _operator_fallbacks(_mul, operator.mul)
 
     def _div(a, b):
         """a / b"""
         # Same as _mul(), with inversed b.
-        na, da = a.numerator, a.denominator
-        nb, db = b.numerator, b.denominator
+        nb, db = b._numerator, b._denominator
+        if nb == 0:
+            raise ZeroDivisionError('Fraction(%s, 0)' % db)
+        na, da = a._numerator, a._denominator
         g1 = math.gcd(na, nb)
         if g1 > 1:
             na //= g1
@@ -513,7 +773,7 @@ class Fraction(numbers.Rational):
         n, d = na * db, nb * da
         if d < 0:
             n, d = -n, -d
-        return Fraction(n, d, _normalize=False)
+        return Fraction._from_coprime_ints(n, d)
 
     __truediv__, __rtruediv__ = _operator_fallbacks(_div, operator.truediv)
 
@@ -550,17 +810,17 @@ class Fraction(numbers.Rational):
             if b.denominator == 1:
                 power = b.numerator
                 if power >= 0:
-                    return Fraction(a._numerator ** power,
-                                    a._denominator ** power,
-                                    _normalize=False)
-                elif a._numerator >= 0:
-                    return Fraction(a._denominator ** -power,
-                                    a._numerator ** -power,
-                                    _normalize=False)
+                    return Fraction._from_coprime_ints(a._numerator ** power,
+                                                       a._denominator ** power)
+                elif a._numerator > 0:
+                    return Fraction._from_coprime_ints(a._denominator ** -power,
+                                                       a._numerator ** -power)
+                elif a._numerator == 0:
+                    raise ZeroDivisionError('Fraction(%s, 0)' %
+                                            a._denominator ** -power)
                 else:
-                    return Fraction((-a._denominator) ** -power,
-                                    (-a._numerator) ** -power,
-                                    _normalize=False)
+                    return Fraction._from_coprime_ints((-a._denominator) ** -power,
+                                                       (-a._numerator) ** -power)
             else:
                 # A fractional power will generally produce an
                 # irrational number.
@@ -584,15 +844,15 @@ class Fraction(numbers.Rational):
 
     def __pos__(a):
         """+a: Coerces a subclass instance to Fraction"""
-        return Fraction(a._numerator, a._denominator, _normalize=False)
+        return Fraction._from_coprime_ints(a._numerator, a._denominator)
 
     def __neg__(a):
         """-a"""
-        return Fraction(-a._numerator, a._denominator, _normalize=False)
+        return Fraction._from_coprime_ints(-a._numerator, a._denominator)
 
     def __abs__(a):
         """abs(a)"""
-        return Fraction(abs(a._numerator), a._denominator, _normalize=False)
+        return Fraction._from_coprime_ints(abs(a._numerator), a._denominator)
 
     def __int__(a, _index=operator.index):
         """int(a)"""
@@ -610,12 +870,12 @@ class Fraction(numbers.Rational):
 
     def __floor__(a):
         """math.floor(a)"""
-        return a.numerator // a.denominator
+        return a._numerator // a._denominator
 
     def __ceil__(a):
         """math.ceil(a)"""
         # The negations cleverly convince floordiv to return the ceiling.
-        return -(-a.numerator // a.denominator)
+        return -(-a._numerator // a._denominator)
 
     def __round__(self, ndigits=None):
         """round(self, ndigits)
@@ -623,10 +883,11 @@ class Fraction(numbers.Rational):
         Rounds half toward even.
         """
         if ndigits is None:
-            floor, remainder = divmod(self.numerator, self.denominator)
-            if remainder * 2 < self.denominator:
+            d = self._denominator
+            floor, remainder = divmod(self._numerator, d)
+            if remainder * 2 < d:
                 return floor
-            elif remainder * 2 > self.denominator:
+            elif remainder * 2 > d:
                 return floor + 1
             # Deal with the half case:
             elif floor % 2 == 0:
@@ -644,36 +905,7 @@ class Fraction(numbers.Rational):
 
     def __hash__(self):
         """hash(self)"""
-
-        # To make sure that the hash of a Fraction agrees with the hash
-        # of a numerically equal integer, float or Decimal instance, we
-        # follow the rules for numeric hashes outlined in the
-        # documentation.  (See library docs, 'Built-in Types').
-
-        try:
-            dinv = pow(self._denominator, -1, _PyHASH_MODULUS)
-        except ValueError:
-            # ValueError means there is no modular inverse.
-            hash_ = _PyHASH_INF
-        else:
-            # The general algorithm now specifies that the absolute value of
-            # the hash is
-            #    (|N| * dinv) % P
-            # where N is self._numerator and P is _PyHASH_MODULUS.  That's
-            # optimized here in two ways:  first, for a non-negative int i,
-            # hash(i) == i % P, but the int hash implementation doesn't need
-            # to divide, and is faster than doing % P explicitly.  So we do
-            #    hash(|N| * dinv)
-            # instead.  Second, N is unbounded, so its product with dinv may
-            # be arbitrarily expensive to compute.  The final answer is the
-            # same if we use the bounded |N| % P instead, which can again
-            # be done with an int hash() call.  If 0 <= i < P, hash(i) == i,
-            # so this nested hash() call wastes a bit of time making a
-            # redundant copy when |N| < P, but can save an arbitrarily large
-            # amount of computation for large |N|.
-            hash_ = hash(hash(abs(self._numerator)) * dinv)
-        result = hash_ if self._numerator >= 0 else -hash_
-        return -2 if result == -1 else result
+        return _hash_algorithm(self._numerator, self._denominator)
 
     def __eq__(a, b):
         """a == b"""

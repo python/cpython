@@ -49,7 +49,7 @@ environment variables.
 To get truly stand-alone applications, the Tcl scripts that form the library
 have to be integrated into the application as well. One tool supporting that is
 SAM (stand-alone modules), which is part of the Tix distribution
-(http://tix.sourceforge.net/).
+(https://tix.sourceforge.net/).
 
 Build Tix with SAM enabled, perform the appropriate call to
 :c:func:`Tclsam_init`, etc. inside Python's

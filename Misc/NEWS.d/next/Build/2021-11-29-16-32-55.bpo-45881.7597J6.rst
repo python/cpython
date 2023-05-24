@@ -1,2 +1,0 @@
-The :program:`configure` script now accepts ``--with-build-python`` and
-``--with-freeze-module`` options to make cross compiling easier.

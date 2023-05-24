@@ -281,9 +281,8 @@ static PyObject *
 try_complex_special_method(PyObject *op)
 {
     PyObject *f;
-    _Py_IDENTIFIER(__complex__);
 
-    f = _PyObject_LookupSpecial(op, &PyId___complex__);
+    f = _PyObject_LookupSpecial(op, &_Py_ID(__complex__));
     if (f) {
         PyObject *res = _PyObject_CallNoArgs(f);
         Py_DECREF(f);
@@ -450,8 +449,7 @@ to_complex(PyObject **pobj, Py_complex *pc)
         pc->real = PyFloat_AsDouble(obj);
         return 0;
     }
-    Py_INCREF(Py_NotImplemented);
-    *pobj = Py_NotImplemented;
+    *pobj = Py_NewRef(Py_NotImplemented);
     return -1;
 }
 
@@ -554,8 +552,7 @@ static PyObject *
 complex_pos(PyComplexObject *v)
 {
     if (PyComplex_CheckExact(v)) {
-        Py_INCREF(v);
-        return (PyObject *)v;
+        return Py_NewRef(v);
     }
     else
         return PyComplex_FromCComplex(v->cval);
@@ -632,8 +629,7 @@ complex_richcompare(PyObject *v, PyObject *w, int op)
     else
          res = Py_False;
 
-    Py_INCREF(res);
-    return res;
+    return Py_NewRef(res);
 
 Unimplemented:
     Py_RETURN_NOTIMPLEMENTED;
@@ -706,8 +702,7 @@ complex___complex___impl(PyComplexObject *self)
 /*[clinic end generated code: output=e6b35ba3d275dc9c input=3589ada9d27db854]*/
 {
     if (PyComplex_CheckExact(self)) {
-        Py_INCREF(self);
-        return (PyObject *)self;
+        return Py_NewRef(self);
     }
     else {
         return PyComplex_FromCComplex(self->cval);
@@ -846,7 +841,7 @@ complex_from_string_inner(const char *s, Py_ssize_t len, void *type)
     if (s-start != len)
         goto parse_error;
 
-    return complex_subtype_from_doubles((PyTypeObject *)type, x, y);
+    return complex_subtype_from_doubles(_PyType_CAST(type), x, y);
 
   parse_error:
     PyErr_SetString(PyExc_ValueError,
@@ -918,8 +913,7 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
            to exact complexes here.  If either the input or the
            output is a complex subclass, it will be handled below
            as a non-orthogonal vector.  */
-        Py_INCREF(r);
-        return r;
+        return Py_NewRef(r);
     }
     if (PyUnicode_Check(r)) {
         if (i != NULL) {

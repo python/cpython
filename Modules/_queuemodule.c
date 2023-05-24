@@ -21,7 +21,7 @@ simplequeue_get_state(PyObject *module)
 }
 static struct PyModuleDef queuemodule;
 #define simplequeue_get_state_by_type(type) \
-    (simplequeue_get_state(_PyType_GetModuleByDef(type, &queuemodule)))
+    (simplequeue_get_state(PyType_GetModuleByDef(type, &queuemodule)))
 
 typedef struct {
     PyObject_HEAD
@@ -431,6 +431,7 @@ queuemodule_exec(PyObject *module)
 
 static PyModuleDef_Slot queuemodule_slots[] = {
     {Py_mod_exec, queuemodule_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

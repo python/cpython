@@ -3,6 +3,7 @@
 #endif
 
 PyAPI_FUNC(char *) Py_UniversalNewlineFgets(char *, int, FILE*, PyObject *);
+PyAPI_FUNC(char *) _Py_UniversalNewlineFgetsWithSize(char *, int, FILE*, PyObject *, size_t*);
 
 /* The std printer acts as a preliminary sys.stderr until the new io
    infrastructure is in place. */

@@ -1,7 +1,6 @@
 import ast
 import sys
 import unittest
-from test import support
 
 
 funcdef = """\
@@ -273,7 +272,7 @@ class TypeCommentTests(unittest.TestCase):
             pass
 
     def test_fstring(self):
-        for tree in self.parse_all(fstring, minver=6):
+        for tree in self.parse_all(fstring):
             pass
 
     def test_underscorednumber(self):
@@ -323,7 +322,7 @@ class TypeCommentTests(unittest.TestCase):
         self.assertEqual(tree.type_ignores, [])
 
     def test_longargs(self):
-        for tree in self.parse_all(longargs):
+        for tree in self.parse_all(longargs, minver=8):
             for t in tree.body:
                 # The expected args are encoded in the function name
                 todo = set(t.name[1:])

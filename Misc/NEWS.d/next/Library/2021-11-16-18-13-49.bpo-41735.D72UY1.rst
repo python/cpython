@@ -1,1 +1,0 @@
-Fix thread lock in ``zlib.Decompress.flush()`` method before ``PyObject_GetBuffer``.

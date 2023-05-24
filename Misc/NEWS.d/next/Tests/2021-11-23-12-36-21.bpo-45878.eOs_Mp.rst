@@ -1,2 +1,0 @@
-Test ``Lib/ctypes/test/test_functions.py::test_mro`` now uses
-``self.assertRaises`` instead of ``try/except``.

@@ -6,7 +6,12 @@ import sys
 import types
 import unittest
 
+from test import support
 from test.support import findfile
+
+
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test module requires subprocess")
 
 
 def abspath(filename):
@@ -170,4 +175,4 @@ class SystemTapOptimizedTests(TraceTests, unittest.TestCase):
 
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

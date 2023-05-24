@@ -60,12 +60,7 @@ _opcode_stack_effect_impl(PyObject *module, int opcode, PyObject *oparg,
                 "stack_effect: jump must be False, True or None");
         return -1;
     }
-    if (IS_ARTIFICIAL(opcode)) {
-        effect = PY_INVALID_STACK_EFFECT;
-    }
-    else {
-        effect = PyCompile_OpcodeStackEffectWithJump(opcode, oparg_int, jump_int);
-    }
+    effect = PyCompile_OpcodeStackEffectWithJump(opcode, oparg_int, jump_int);
     if (effect == PY_INVALID_STACK_EFFECT) {
             PyErr_SetString(PyExc_ValueError,
                     "invalid opcode or oparg");
@@ -85,7 +80,7 @@ static PyObject *
 _opcode_get_specialization_stats_impl(PyObject *module)
 /*[clinic end generated code: output=fcbc32fdfbec5c17 input=e1f60db68d8ce5f6]*/
 {
-#if COLLECT_SPECIALIZATION_STATS
+#ifdef Py_STATS
     return _Py_GetSpecializationStats();
 #else
     Py_RETURN_NONE;
@@ -99,12 +94,18 @@ opcode_functions[] =  {
     {NULL, NULL, 0, NULL}
 };
 
+static PyModuleDef_Slot module_slots[] = {
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {0, NULL}
+};
+
 static struct PyModuleDef opcodemodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_opcode",
     .m_doc = "Opcode support module.",
     .m_size = 0,
-    .m_methods = opcode_functions
+    .m_methods = opcode_functions,
+    .m_slots = module_slots,
 };
 
 PyMODINIT_FUNC
