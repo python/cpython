@@ -1817,7 +1817,7 @@ Standard Library
   They will be removed in Python 3.13.
   (Contributed by Serhiy Storchaka and Miro Hrončok in :gh:`92728`.)
 
-* :func:`turtle.settiltangle` has been deprecated since Python 3.1;
+* :func:`!turtle.settiltangle` has been deprecated since Python 3.1;
   it now emits a deprecation warning and will be removed in Python 3.13. Use
   :func:`turtle.tiltangle` instead (it was earlier incorrectly marked
   as deprecated, and its docstring is now corrected).
