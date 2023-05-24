@@ -168,6 +168,9 @@ Removed
   The :mod:`mimetypes` module provides an alternative.
   (Contributed by Victor Stinner in :gh:`104773`.)
 
+* Remove support for the keyword-argument method of creating
+  :class:`typing.TypedDict`, deprecated in Python 3.11.
+  (Contributed by Tomas Roun in :gh:`104786`.)
 
 Porting to Python 3.13
 ======================
