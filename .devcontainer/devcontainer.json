@@ -24,8 +24,8 @@
             "html"
         ],
         // https://github.com/orgs/community/discussions/26026
-        //"umask fix": "sudo setfacl -bnR . && sudo setfacl -bn /tmp"
-        "umask fix": ["sudo", "setfacl", "-bnR", "."]
+        "umask fix: workspace": ["sudo", "setfacl", "-bnR", "."],
+        "umask fix: /tmp": ["sudo", "setfacl", "-bnR", "/tmp"]
     },
     "customizations": {
         "vscode": {
@@ -36,7 +36,7 @@
                 "maelvalais.autoconf",
                 // C auto-complete.
                 "ms-vscode.cpptools",
-                // To view built docs.
+                // To view HTML build of docs.
                 "ms-vscode.live-server",
                 // Python auto-complete.
                 "ms-python.python"
