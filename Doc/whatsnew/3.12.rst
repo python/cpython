@@ -923,7 +923,7 @@ Modules (see :pep:`594`):
 * :mod:`!cgi`
 * :mod:`!cgitb`
 * :mod:`chunk`
-* :mod:`crypt`
+* :mod:`!crypt`
 * :mod:`imghdr`
 * :mod:`!mailcap`
 * :mod:`!msilib`

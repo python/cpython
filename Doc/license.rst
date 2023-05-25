@@ -655,7 +655,7 @@ copyright and licensing notice::
 OpenSSL
 -------
 
-The modules :mod:`hashlib`, :mod:`posix`, :mod:`ssl`, :mod:`crypt` use
+The modules :mod:`hashlib`, :mod:`posix` and :mod:`ssl` use
 the OpenSSL library for added performance if made available by the
 operating system. Additionally, the Windows and macOS installers for
 Python may include a copy of the OpenSSL libraries, so we include a copy
