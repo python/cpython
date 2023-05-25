@@ -476,7 +476,7 @@ The :mod:`trace` module contains the following notice::
 UUencode and UUdecode functions
 -------------------------------
 
-The :mod:`uu` module contains the following notice::
+The ``uu`` codec contains the following notice::
 
    Copyright 1994 by Lance Ellinghouse
    Cathedral City, California Republic, United States of America.

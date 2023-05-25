@@ -217,6 +217,10 @@ Removed
 
   (Contributed by Victor Stinner in :gh:`104773`.)
 
+* :pep:`594`: Remove the :mod:`!uu` module, deprecated in Python 3.11:
+  the :mod:`base64` module is a modern alternative.
+  (Contributed by Victor Stinner in :gh:`104773`.)
+
 
 Porting to Python 3.13
 ======================
