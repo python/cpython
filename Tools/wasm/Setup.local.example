@@ -3,7 +3,6 @@
 _asyncio
 audioop
 _bz2
-_crypt
 _decimal
 _pickle
 pyexpat _elementtree

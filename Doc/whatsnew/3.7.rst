@@ -848,10 +848,10 @@ alternative to script path.  (Contributed by Sanyam Khurana in :issue:`21862`.)
 crypt
 -----
 
-The :mod:`crypt` module now supports the Blowfish hashing method.
+The :mod:`!crypt` module now supports the Blowfish hashing method.
 (Contributed by Serhiy Storchaka in :issue:`31664`.)
 
-The :func:`~crypt.mksalt` function now allows specifying the number of rounds
+The :func:`~!crypt.mksalt` function now allows specifying the number of rounds
 for hashing.  (Contributed by Serhiy Storchaka in :issue:`31702`.)
 
 
