@@ -918,7 +918,7 @@ and will be removed in Python 3.13.
 
 Modules (see :pep:`594`):
 
-* :mod:`aifc`
+* :mod:`!aifc`
 * :mod:`audioop`
 * :mod:`!cgi`
 * :mod:`!cgitb`

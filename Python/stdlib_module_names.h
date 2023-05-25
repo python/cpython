@@ -90,7 +90,6 @@ static const char* _Py_stdlib_module_names[] = {
 "_winapi",
 "_zoneinfo",
 "abc",
-"aifc",
 "antigravity",
 "argparse",
 "array",

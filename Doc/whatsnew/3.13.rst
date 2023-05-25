@@ -201,6 +201,8 @@ Removed
 * :pep:`594`: Remove the :mod:`!msilib` module, deprecated in Python 3.11.
   (Contributed by Zachary Ware in :gh:`104773`.)
 
+* :pep:`594`: Remove the :mod:`!aifc` module, deprecated in Python 3.11.
+  (Contributed by fatelei in :gh:`104773`.)
 
 Porting to Python 3.13
 ======================

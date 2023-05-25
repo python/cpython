@@ -1,6 +1,5 @@
 # Binary data types
 *.aif binary
-*.aifc binary
 *.aiff binary
 *.au binary
 *.bmp binary
