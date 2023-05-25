@@ -1133,7 +1133,7 @@ The MIME type of .bmp has been changed from ``'image/x-ms-bmp'`` to
 msilib
 ------
 
-The new :meth:`Database.Close() <msilib.Database.Close>` method can be used
+The new :meth:`!Database.Close()` method can be used
 to close the :abbr:`MSI` database.
 (Contributed by Berker Peksag in :issue:`20486`.)
 

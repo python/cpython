@@ -138,7 +138,6 @@ _zoneinfo
 _decimal
 _elementtree
 _hashlib
-_msi
 _multiprocessing
 _overlapped
 _socket
