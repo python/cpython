@@ -75,7 +75,6 @@ Doc/install/index.rst
 Doc/library/__future__.rst
 Doc/library/_thread.rst
 Doc/library/abc.rst
-Doc/library/aifc.rst
 Doc/library/ast.rst
 Doc/library/asyncio-dev.rst
 Doc/library/asyncio-eventloop.rst
