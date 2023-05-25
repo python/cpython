@@ -10,6 +10,5 @@ backwards compatibility. They have been superseded by other modules.
 
 .. toctree::
 
-   chunk.rst
    imghdr.rst
    optparse.rst
