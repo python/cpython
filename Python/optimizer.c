@@ -24,30 +24,24 @@ get_next_free_in_executor_array(PyCodeObject *code)
             return -1;
         }
     }
-    for (uintptr_t i = 0; i < size; i++) {
-        if (old->executors[i] == NULL) {
-            return i;
-        }
-    }
-    if (size >= capacity) {
+    assert(size <= capacity);
+    if (size == capacity) {
+        /* Array is full. Grow array */
         int new_capacity = capacity ? capacity * 2 : 4;
-        _PyExecutorArray *new = PyMem_Malloc(offsetof(_PyExecutorArray, executors) +
+        _PyExecutorArray *new = PyMem_Realloc(
+            old,
+            offsetof(_PyExecutorArray, executors) +
             new_capacity * sizeof(_PyExecutorObject *));
         if (new == NULL) {
             PyErr_NoMemory();
             return -1;
         }
-        code->co_executors = new;
         new->capacity = new_capacity;
-        for (uintptr_t i = 0; i < size; i++) {
-            new->executors[i] = old->executors[i];
-        }
-        if (old != NULL) {
-            PyMem_Free(old);
-        }
+        new->size = size;
+        code->co_executors = new;
     }
     assert(size < code->co_executors->capacity);
-    code->co_executors->size = size + 1;
+    code->co_executors->size++;
     return size;
 }
 
@@ -60,6 +54,7 @@ insert_executor(PyCodeObject *code, int offset, _PyExecutorObject *executor)
         executor->vm_data.opcode = old->vm_data.opcode;
         executor->vm_data.oparg = old->vm_data.oparg;
         old->vm_data.opcode = 0;
+        Py_INCREF(executor);
         code->co_executors->executors[original.op.arg] = executor;
         Py_DECREF(old);
     }
@@ -79,7 +74,8 @@ insert_executor(PyCodeObject *code, int offset, _PyExecutorObject *executor)
     return 0;
 }
 
-int PyUnstable_Replace_Executor(PyCodeObject *code, int offset, _PyExecutorObject *new)
+int
+PyUnstable_Replace_Executor(PyCodeObject *code, int offset, _PyExecutorObject *new)
 {
 
     _Py_CODEUNIT original = _PyCode_CODE(code)[offset];
@@ -115,10 +111,9 @@ _PyOptimizerObject _PyOptimizer_Default = {
     .backedge_threshold = UINT16_MAX,
 };
 
-PyObject*
-PyUnstable_GetOptimizer(_PyOptimizerObject* optimizer)
+PyObject *
+PyUnstable_GetOptimizer(void)
 {
-    /* Ignore costs for now */
     PyInterpreterState *interp = PyInterpreterState_Get();
     if (interp->optimizer == &_PyOptimizer_Default) {
         Py_RETURN_NONE;
@@ -129,7 +124,6 @@ PyUnstable_GetOptimizer(_PyOptimizerObject* optimizer)
 void
 PyUnstable_SetOptimizer(_PyOptimizerObject *optimizer)
 {
-    /* Ignore costs for now */
     PyInterpreterState *interp = PyInterpreterState_Get();
     if (optimizer == NULL) {
         optimizer = &_PyOptimizer_Default;
@@ -152,6 +146,7 @@ _PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNI
         return NULL;
     }
     if (insert_executor(frame->f_code, src - _PyCode_CODE(frame->f_code), executor)) {
+        Py_DECREF(executor);
         return NULL;
     }
     return executor->execute(executor, frame, stack_pointer);
@@ -187,7 +182,8 @@ static PyTypeObject CounterExecutor_Type = {
     .tp_dealloc = (destructor)counter_dealloc,
 };
 
-static _PyInterpreterFrame *counter_execute(_PyExecutorObject *self, _PyInterpreterFrame *frame, PyObject **stack_pointer)
+static _PyInterpreterFrame *
+counter_execute(_PyExecutorObject *self, _PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
     ((_PyCounterExecutorObject *)self)->optimizer->count++;
     _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -233,7 +229,8 @@ static PyTypeObject CounterOptimizer_Type = {
     .tp_methods = counter_methods,
 };
 
-PyObject *PyUnstable_Optimizer_NewCounter(void)
+PyObject *
+PyUnstable_Optimizer_NewCounter(void)
 {
     _PyCounterOptimizerObject *opt = (_PyCounterOptimizerObject *)_PyObject_New(&CounterOptimizer_Type);
     if (opt == NULL) {
@@ -245,4 +242,3 @@ PyObject *PyUnstable_Optimizer_NewCounter(void)
     opt->count = 0;
     return (PyObject *)opt;
 }
-
