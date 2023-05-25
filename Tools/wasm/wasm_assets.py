@@ -43,7 +43,6 @@ OMIT_FILES = (
     "venv/",
     # deprecated
     "uu.py",
-    "xdrlib.py",
     # other platforms
     "_aix_support.py",
     "_osx_support.py",
@@ -57,7 +56,6 @@ OMIT_FILES = (
     "concurrent/futures/thread.py",
     # Misc unused or large files
     "pydoc_data/",
-    "msilib/",
 )
 
 # Synchronous network I/O and protocols are not supported; for example,
@@ -69,7 +67,6 @@ OMIT_NETWORKING_FILES = (
     "http/",
     "imaplib.py",
     "mailbox.py",
-    "nntplib.py",
     "poplib.py",
     "smtplib.py",
     "socketserver.py",

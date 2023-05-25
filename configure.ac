@@ -3894,28 +3894,6 @@ if test "$have_glibc_memmove_bug" = yes; then
 fi
 
 
-dnl check for NIS / libnsl dependencies
-dnl libnsl dependencies include tirpc includes and lib
-PKG_CHECK_MODULES([LIBNSL], [libnsl], [have_nis=yes], [
-  LIBNSL_CFLAGS=${LIBNSL_CFLAGS-""}
-  WITH_SAVE_ENV([
-    AC_SEARCH_LIBS([yp_match], [nsl], [have_nis=yes], [have_nis=no])
-  ])
-  AS_CASE([$ac_cv_search_yp_match],
-    [no], [libnsl=""],
-    ["none required"], [libnsl=""],
-    [libnsl="$ac_cv_search_yp_match"]
-  )
-  LIBNSL_LIBS=${LIBNSL_LIBS-$libnsl}
-])
-
-AS_VAR_IF([have_nis], [yes], [
-  WITH_SAVE_ENV([
-    CPPFLAGS="$CPPFLAGS $LIBNSL_CFLAGS"
-    AC_CHECK_HEADERS([rpc/rpc.h])
-  ])
-])
-
 dnl detect sqlite3 from Emscripten emport
 PY_CHECK_EMSCRIPTEN_PORT([LIBSQLITE3], [-sUSE_SQLITE3])
 
@@ -7082,15 +7060,15 @@ AC_DEFUN([PY_STDLIB_MOD_SET_NA], [
 
 # stdlib not available
 dnl Modules that are not available on some platforms
-dnl AIX has shadow passwords, but access is not via getspent()
 dnl VxWorks does not provide crypt() function
 AS_CASE([$ac_sys_system],
-  [AIX], [PY_STDLIB_MOD_SET_NA([_scproxy], [spwd])],
+  [AIX], [PY_STDLIB_MOD_SET_NA([_scproxy])],
   [VxWorks*], [PY_STDLIB_MOD_SET_NA([_scproxy], [_crypt], [termios], [grp])],
-  [Darwin], [PY_STDLIB_MOD_SET_NA([spwd])],
-  [CYGWIN*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
-  [QNX*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
-  [FreeBSD*], [PY_STDLIB_MOD_SET_NA([_scproxy], [spwd])],
+  dnl The _scproxy module is available on macOS
+  [Darwin], [],
+  [CYGWIN*], [PY_STDLIB_MOD_SET_NA([_scproxy])],
+  [QNX*], [PY_STDLIB_MOD_SET_NA([_scproxy])],
+  [FreeBSD*], [PY_STDLIB_MOD_SET_NA([_scproxy])],
   [Emscripten|WASI], [
     dnl subprocess and multiprocessing are not supported (no fork syscall).
     dnl curses and tkinter user interface are not available.
@@ -7110,10 +7088,8 @@ AS_CASE([$ac_sys_system],
       [_xxsubinterpreters],
       [_xxinterpchannels],
       [grp],
-      [nis],
       [pwd],
       [resource],
-      [spwd],
       [syslog],
     )
     AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
@@ -7264,7 +7240,6 @@ PY_STDLIB_MOD([resource], [], [test "$ac_cv_header_sys_resource_h" = yes])
 PY_STDLIB_MOD([_scproxy],
   [test "$ac_sys_system" = "Darwin"], [],
   [], [-framework SystemConfiguration -framework CoreFoundation])
-PY_STDLIB_MOD([spwd], [], [test "$ac_cv_func_getspent" = yes -o "$ac_cv_func_getspnam" = yes])
 PY_STDLIB_MOD([syslog], [], [test "$ac_cv_header_syslog_h" = yes])
 PY_STDLIB_MOD([termios], [], [test "$ac_cv_header_termios_h" = yes])
 
@@ -7317,9 +7292,6 @@ PY_STDLIB_MOD([_dbm],
 PY_STDLIB_MOD([_gdbm],
   [test "$have_gdbm_dbmliborder" = yes], [test "$have_gdbm" = yes],
   [$GDBM_CFLAGS], [$GDBM_LIBS])
-PY_STDLIB_MOD([nis],
-  [], [test "$have_nis" = yes -a "$ac_cv_header_rpc_rpc_h" = yes],
-  [$LIBNSL_CFLAGS], [$LIBNSL_LIBS])
  PY_STDLIB_MOD([readline],
   [], [test "$with_readline" != "no"],
   [$READLINE_CFLAGS], [$READLINE_LIBS])

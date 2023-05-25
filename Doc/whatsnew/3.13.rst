@@ -123,6 +123,18 @@ Removed
   and with a warning since Python 3.11.
   (Contributed by Hugo van Kemenade in :gh:`104876`.)
 
+* Removed the following :mod:`unittest` functions, deprecated in Python 3.11:
+
+  * :func:`!unittest.findTestCases`
+  * :func:`!unittest.makeSuite`
+  * :func:`!unittest.getTestCaseNames`
+
+  Use :class:`~unittest.TestLoader` methods instead:
+
+  * :meth:`unittest.TestLoader.loadTestsFromModule`
+  * :meth:`unittest.TestLoader.loadTestsFromTestCase`
+  * :meth:`unittest.TestLoader.getTestCaseNames`
+
 * :pep:`594`: Remove the :mod:`!cgi`` and :mod:`!cgitb` modules,
   deprecated in Python 3.11.
 
@@ -172,6 +184,25 @@ Removed
 * :pep:`594`: Remove the :mod:`!mailcap` module, deprecated in Python 3.11.
   The :mod:`mimetypes` module provides an alternative.
   (Contributed by Victor Stinner in :gh:`104773`.)
+
+* :pep:`594`: Remove the :mod:`!spwd` module, deprecated in Python 3.11:
+  the `python-pam project <https://pypi.org/project/python-pam/>`_ can be used
+  instead.
+  (Contributed by Victor Stinner in :gh:`104773`.)
+
+* :pep:`594`: Remove the :mod:`!nntplib` module, deprecated in Python 3.11:
+  the `PyPI nntplib project <https://pypi.org/project/nntplib/>`_ can be used
+  instead.
+  (Contributed by Victor Stinner in :gh:`104773`.)
+
+* :pep:`594`: Remove the :mod:`!nis` module, deprecated in Python 3.11.
+  (Contributed by Victor Stinner in :gh:`104773`.)
+
+* :pep:`594`: Remove the :mod:`!xdrlib` module, deprecated in Python 3.11.
+  (Contributed by Victor Stinner in :gh:`104773`.)
+
+* :pep:`594`: Remove the :mod:`!msilib` module, deprecated in Python 3.11.
+  (Contributed by Zachary Ware in :gh:`104773`.)
 
 
 Porting to Python 3.13

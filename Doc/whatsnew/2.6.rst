@@ -3135,7 +3135,7 @@ Port-Specific Changes: Windows
   registry reflection for 32-bit processes running on 64-bit systems.
   (:issue:`1753245`)
 
-* The :mod:`msilib` module's :class:`Record` object
+* The :mod:`!msilib` module's :class:`Record` object
   gained :meth:`GetInteger` and :meth:`GetString` methods that
   return field values as an integer or a string.
   (Contributed by Floris Bruynooghe; :issue:`2125`.)
