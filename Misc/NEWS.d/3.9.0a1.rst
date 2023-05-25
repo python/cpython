@@ -98,7 +98,7 @@ after whitespace, e.g. '127.0.0.1 whatever'.
 .. section: Security
 
 Adds audit events for :mod:`ensurepip`, :mod:`ftplib`, :mod:`glob`,
-:mod:`imaplib`, :mod:`nntplib`, :mod:`pdb`, :mod:`poplib`, :mod:`shutil`,
+:mod:`imaplib`, :mod:`!nntplib`, :mod:`pdb`, :mod:`poplib`, :mod:`shutil`,
 :mod:`smtplib`, :mod:`sqlite3`, :mod:`subprocess`, :mod:`!telnetlib`,
 :mod:`tempfile` and :mod:`webbrowser`, as well as :func:`os.listdir`,
 :func:`os.scandir` and :func:`breakpoint`.
@@ -3457,7 +3457,7 @@ Patch contributed by Rémi Lapeyre.
 .. nonce: kG0ub5
 .. section: Library
 
-Fixes a bug in :mod:`cgi` module when a multipart/form-data request has no
+Fixes a bug in :mod:`!cgi` module when a multipart/form-data request has no
 `Content-Length` header.
 
 ..
@@ -4856,7 +4856,7 @@ Patch by Srinivas Nyayapati.
 .. nonce: Akreij
 .. section: Windows
 
-Trying to import the :mod:`crypt` module on Windows will result in an
+Trying to import the :mod:`!crypt` module on Windows will result in an
 :exc:`ImportError` with a message explaining that the module isn't supported
 on Windows. On other platforms, if the underlying ``_crypt`` module is not
 available, the ImportError will include a message explaining the problem.
