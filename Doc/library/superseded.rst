@@ -18,4 +18,3 @@ backwards compatibility. They have been superseded by other modules.
    msilib.rst
    optparse.rst
    uu.rst
-   xdrlib.rst
