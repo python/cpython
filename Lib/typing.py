@@ -2858,9 +2858,6 @@ def TypedDict(typename, fields=None, /, *, total=True):
     checker is only expected to support a literal False or True as the value of
     the total argument. True is the default, and makes all items defined in the
     class body be required.
-
-    The class syntax is only supported in Python 3.6+, while the other
-    syntax form works for Python 2.7 and 3.2+
     """
     if fields is None:
         fields = {}
