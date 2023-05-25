@@ -5,6 +5,13 @@
 #include "pycore_abstract.h"   // _PyIndex_Check()
 #include "pycore_object.h"     // _PyType_IsReady()
 
+// Remove alias to _SizeT version in modsupport.h
+// These two functions are kept for stable ABI.
+#undef Py_BuildValue
+#undef Py_VaBuildValue
+PyAPI_FUNC(PyObject *) Py_BuildValue(const char *, ...);
+PyAPI_FUNC(PyObject *) Py_VaBuildValue(const char *, va_list);
+
 #define FLAG_SIZE_T 1
 typedef double va_double;
 
@@ -506,7 +513,6 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
 
 #undef ERROR_NEED_PY_SSIZE_T_CLEAN
 }
-
 
 PyObject *
 Py_BuildValue(const char *format, ...)

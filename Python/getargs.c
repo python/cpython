@@ -12,28 +12,32 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-int PyArg_Parse(PyObject *, const char *, ...);
-int PyArg_ParseTuple(PyObject *, const char *, ...);
-int PyArg_VaParse(PyObject *, const char *, va_list);
+// Remove alias to _SizeT version in modsupport.h
+// These functions are kept for stable ABI.
+#undef PyArg_Parse
+#undef PyArg_ParseTuple
+#undef PyArg_ParseTupleAndKeywords
+#undef PyArg_VaParse
+#undef PyArg_VaParseTupleAndKeywords
+PyAPI_FUNC(int) PyArg_Parse(PyObject *, const char *, ...);
+PyAPI_FUNC(int) PyArg_ParseTuple(PyObject *, const char *, ...);
+PyAPI_FUNC(int) PyArg_VaParse(PyObject *, const char *, va_list);
 
-int PyArg_ParseTupleAndKeywords(PyObject *, PyObject *,
-                                const char *, char **, ...);
-int PyArg_VaParseTupleAndKeywords(PyObject *, PyObject *,
-                                const char *, char **, va_list);
+PyAPI_FUNC(int) PyArg_ParseTupleAndKeywords(
+        PyObject *, PyObject *, const char *, char **, ...);
+PyAPI_FUNC(int) PyArg_VaParseTupleAndKeywords(
+        PyObject *, PyObject *, const char *, char **, va_list);
 
-int _PyArg_ParseTupleAndKeywordsFast(PyObject *, PyObject *,
-                                            struct _PyArg_Parser *, ...);
-int _PyArg_VaParseTupleAndKeywordsFast(PyObject *, PyObject *,
-                                            struct _PyArg_Parser *, va_list);
+PyAPI_FUNC(int) _PyArg_ParseTupleAndKeywordsFast(
+        PyObject *, PyObject *, struct _PyArg_Parser *, ...);
+PyAPI_FUNC(int) _PyArg_VaParseTupleAndKeywordsFast(
+        PyObject *, PyObject *, struct _PyArg_Parser *, va_list);
 
 #ifdef HAVE_DECLSPEC_DLL
 /* Export functions */
 PyAPI_FUNC(int) _PyArg_Parse_SizeT(PyObject *, const char *, ...);
 PyAPI_FUNC(int) _PyArg_ParseStack_SizeT(PyObject *const *args, Py_ssize_t nargs,
                                         const char *format, ...);
-PyAPI_FUNC(int) _PyArg_ParseStackAndKeywords_SizeT(PyObject *const *args, Py_ssize_t nargs,
-                                        PyObject *kwnames,
-                                        struct _PyArg_Parser *parser, ...);
 PyAPI_FUNC(int) _PyArg_ParseTuple_SizeT(PyObject *, const char *, ...);
 PyAPI_FUNC(int) _PyArg_ParseTupleAndKeywords_SizeT(PyObject *, PyObject *,
                                                   const char *, char **, ...);
@@ -41,11 +45,6 @@ PyAPI_FUNC(PyObject *) _Py_BuildValue_SizeT(const char *, ...);
 PyAPI_FUNC(int) _PyArg_VaParse_SizeT(PyObject *, const char *, va_list);
 PyAPI_FUNC(int) _PyArg_VaParseTupleAndKeywords_SizeT(PyObject *, PyObject *,
                                               const char *, char **, va_list);
-
-PyAPI_FUNC(int) _PyArg_ParseTupleAndKeywordsFast_SizeT(PyObject *, PyObject *,
-                                            struct _PyArg_Parser *, ...);
-PyAPI_FUNC(int) _PyArg_VaParseTupleAndKeywordsFast_SizeT(PyObject *, PyObject *,
-                                            struct _PyArg_Parser *, va_list);
 #endif
 
 #define FLAG_COMPAT 1
@@ -152,23 +151,10 @@ _PyArg_ParseStack(PyObject *const *args, Py_ssize_t nargs, const char *format, .
     va_list va;
 
     va_start(va, format);
-    retval = vgetargs1_impl(NULL, args, nargs, format, &va, 0);
-    va_end(va);
-    return retval;
-}
-
-PyAPI_FUNC(int)
-_PyArg_ParseStack_SizeT(PyObject *const *args, Py_ssize_t nargs, const char *format, ...)
-{
-    int retval;
-    va_list va;
-
-    va_start(va, format);
     retval = vgetargs1_impl(NULL, args, nargs, format, &va, FLAG_SIZE_T);
     va_end(va);
     return retval;
 }
-
 
 int
 PyArg_VaParse(PyObject *args, const char *format, va_list va)
@@ -1372,7 +1358,6 @@ _PyArg_ParseTupleAndKeywords_SizeT(PyObject *args,
     return retval;
 }
 
-
 int
 PyArg_VaParseTupleAndKeywords(PyObject *args,
                               PyObject *keywords,
@@ -1424,21 +1409,8 @@ _PyArg_VaParseTupleAndKeywords_SizeT(PyObject *args,
     return retval;
 }
 
-PyAPI_FUNC(int)
+int
 _PyArg_ParseTupleAndKeywordsFast(PyObject *args, PyObject *keywords,
-                            struct _PyArg_Parser *parser, ...)
-{
-    int retval;
-    va_list va;
-
-    va_start(va, parser);
-    retval = vgetargskeywordsfast(args, keywords, parser, &va, 0);
-    va_end(va);
-    return retval;
-}
-
-PyAPI_FUNC(int)
-_PyArg_ParseTupleAndKeywordsFast_SizeT(PyObject *args, PyObject *keywords,
                             struct _PyArg_Parser *parser, ...)
 {
     int retval;
@@ -1450,22 +1422,9 @@ _PyArg_ParseTupleAndKeywordsFast_SizeT(PyObject *args, PyObject *keywords,
     return retval;
 }
 
-PyAPI_FUNC(int)
+int
 _PyArg_ParseStackAndKeywords(PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames,
                   struct _PyArg_Parser *parser, ...)
-{
-    int retval;
-    va_list va;
-
-    va_start(va, parser);
-    retval = vgetargskeywordsfast_impl(args, nargs, NULL, kwnames, parser, &va, 0);
-    va_end(va);
-    return retval;
-}
-
-PyAPI_FUNC(int)
-_PyArg_ParseStackAndKeywords_SizeT(PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames,
-                        struct _PyArg_Parser *parser, ...)
 {
     int retval;
     va_list va;
@@ -1476,23 +1435,8 @@ _PyArg_ParseStackAndKeywords_SizeT(PyObject *const *args, Py_ssize_t nargs, PyOb
     return retval;
 }
 
-
-PyAPI_FUNC(int)
+int
 _PyArg_VaParseTupleAndKeywordsFast(PyObject *args, PyObject *keywords,
-                            struct _PyArg_Parser *parser, va_list va)
-{
-    int retval;
-    va_list lva;
-
-    va_copy(lva, va);
-
-    retval = vgetargskeywordsfast(args, keywords, parser, &lva, 0);
-    va_end(lva);
-    return retval;
-}
-
-PyAPI_FUNC(int)
-_PyArg_VaParseTupleAndKeywordsFast_SizeT(PyObject *args, PyObject *keywords,
                             struct _PyArg_Parser *parser, va_list va)
 {
     int retval;
