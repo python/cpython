@@ -1784,14 +1784,24 @@ dummy_func(
             }
         }
 
-        inst(LOAD_ATTR_INSTANCE_VALUE, (unused/1, type_version/2, index/1, unused/5, owner -- res2 if (oparg & 1), res)) {
+        op(_SKIP_COUNTER, (unused/1 --)) {
+        }
+
+        op(_TYPE_CHECK, (type_version/2, owner -- owner)) {
             PyTypeObject *tp = Py_TYPE(owner);
             assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version, LOAD_ATTR);
+        }
+
+        op(_CHECK_MANAGED_OBJECT_HAS_VALUES, (owner -- owner)) {
             assert(tp->tp_dictoffset < 0);
             assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             DEOPT_IF(!_PyDictOrValues_IsValues(dorv), LOAD_ATTR);
+        }
+
+        op(_LOAD_ATTR_INSTANCE_VALUE, (index/1, unused/5, owner -- res2 if (oparg & 1), res)) {
+            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             res = _PyDictOrValues_GetValues(dorv)->values[index];
             DEOPT_IF(res == NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
@@ -1799,6 +1809,9 @@ dummy_func(
             res2 = NULL;
             DECREF_INPUTS();
         }
+
+        macro(LOAD_ATTR_INSTANCE_VALUE) =
+            _SKIP_COUNTER + _TYPE_CHECK + _CHECK_MANAGED_OBJECT_HAS_VALUES + _LOAD_ATTR_INSTANCE_VALUE;
 
         inst(LOAD_ATTR_MODULE, (unused/1, type_version/2, index/1, unused/5, owner -- res2 if (oparg & 1), res)) {
             DEOPT_IF(!PyModule_CheckExact(owner), LOAD_ATTR);
