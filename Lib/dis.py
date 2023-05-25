@@ -397,15 +397,11 @@ class Instruction(_Instruction):
         # Column: Opcode argument
         if self.arg is not None:
             arg = repr(self.arg)
-            # If opname is longer than _OPNAME_WIDTH, but the total length together with
-            # oparg is less than _OPNAME_WIDTH + _OPARG_WIDTH (with at least one space in between),
-            # we allow opname to overflow into the space reserved for oparg.
-            # This results in fewer misaligned opargs in the disassembly output.
+            # If opname is longer than _OPNAME_WIDTH, we allow it to overflow into
+            # the space reserved for oparg. This results in fewer misaligned opargs
+            # in the disassembly output.
             opname_excess = max(0, len(self.opname) - _OPNAME_WIDTH)
-            if opname_excess + len(arg) < _OPARG_WIDTH:
-                fields.append(arg.rjust(_OPARG_WIDTH - opname_excess))
-            else:
-                fields.append(arg.rjust(_OPARG_WIDTH))
+            fields.append(arg.rjust(_OPARG_WIDTH - opname_excess))
             # Column: Opcode argument details
             if self.argrepr:
                 fields.append('(' + self.argrepr + ')')

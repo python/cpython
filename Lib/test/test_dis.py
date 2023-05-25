@@ -527,7 +527,7 @@ dis_asyncwith = """\
         >> SEND                     3 (to 24)
            YIELD_VALUE              2
            RESUME                   3
-           JUMP_BACKWARD_NO_INTERRUPT     5 (to 14)
+           JUMP_BACKWARD_NO_INTERRUPT 5 (to 14)
         >> END_SEND
            POP_TOP
 
@@ -543,7 +543,7 @@ dis_asyncwith = """\
         >> SEND                     3 (to 60)
            YIELD_VALUE              2
            RESUME                   3
-           JUMP_BACKWARD_NO_INTERRUPT     5 (to 50)
+           JUMP_BACKWARD_NO_INTERRUPT 5 (to 50)
         >> END_SEND
            POP_TOP
 
@@ -562,7 +562,7 @@ dis_asyncwith = """\
         >> SEND                     4 (to 98)
            YIELD_VALUE              3
            RESUME                   3
-           JUMP_BACKWARD_NO_INTERRUPT     5 (to 86)
+           JUMP_BACKWARD_NO_INTERRUPT 5 (to 86)
         >> CLEANUP_THROW
         >> END_SEND
            POP_JUMP_IF_TRUE         1 (to 104)
