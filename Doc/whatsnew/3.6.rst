@@ -2211,7 +2211,7 @@ Changes in the Python API
   the exception will stop a single-threaded server. (Contributed by
   Martin Panter in :issue:`23430`.)
 
-* :func:`spwd.getspnam` now raises a :exc:`PermissionError` instead of
+* :func:`!spwd.getspnam` now raises a :exc:`PermissionError` instead of
   :exc:`KeyError` if the user doesn't have privileges.
 
 * The :meth:`socket.socket.close` method now raises an exception if
@@ -2274,7 +2274,7 @@ Changes in the Python API
   :class:`~collections.OrderedDict`.
   (Contributed by Steve Holden in :issue:`27842`.)
 
-* The :const:`crypt.METHOD_CRYPT` will no longer be added to ``crypt.methods``
+* The :const:`!crypt.METHOD_CRYPT` will no longer be added to ``crypt.methods``
   if unsupported by the platform.
   (Contributed by Victor Stinner in :issue:`25287`.)
 

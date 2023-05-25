@@ -341,7 +341,11 @@ Other Language Changes
   (Contributed by Nikita Sobolev in :gh:`100581`.)
 
 * :class:`slice` objects are now hashable, allowing them to be used as dict keys and
-  set items. (Contributed by Will Bradshaw and Furkan Onder in :gh:`101264`.)
+  set items. (Contributed by Will Bradshaw, Furkan Onder, and Raymond Hettinger in :gh:`101264`.)
+
+* :func:`sum` now uses Neumaier summation to improve accuracy when summing
+  floats or mixed ints and floats.
+  (Contributed by Raymond Hettinger in :gh:`100425`.)
 
 * Exceptions raised in a typeobject's ``__set_name__`` method are no longer
   wrapped by a :exc:`RuntimeError`. Context information is added to the
@@ -493,11 +497,23 @@ itertools
   tuples where the last batch may be shorter than the rest.
   (Contributed by Raymond Hettinger in :gh:`98363`.)
 
+json
+----
+
+* Added :class:`json.AttrDict` for use with ``object_hook`` in :func:`json.load`
+  or :func:`json.loads`.  This is a subclass of :class:`dict` that also supports
+  attribute style dotted access.
+  (Contributed by Raymond Hettinger in :gh:`96145`.)
+
 math
 ----
 
 * Added :func:`math.sumprod` for computing a sum of products.
   (Contributed by Raymond Hettinger in :gh:`100485`.)
+
+* Extended :func:`math.nextafter` to include a *steps* argument
+  for moving up or down multiple steps at a time.
+  (By Matthias Goergens, Mark Dickinson, and Raymond Hettinger in :gh:`94906`.)
 
 os
 --
@@ -540,6 +556,15 @@ pdb
   and provide quick access to values like the current frame or the return
   value.
   (Contributed by Tian Gao in :gh:`103693`.)
+
+random
+------
+
+* Added :func:`random.binomialvariate`.
+  (Contributed by Raymond Hettinger in :gh:`81620`.)
+
+* Added a default of ``lamb=1.0`` to :func:`random.expovariate`.
+  (Contributed by Raymond Hettinger in :gh:`100234`.)
 
 shutil
 ------
@@ -593,6 +618,13 @@ sqlite3
   :meth:`~sqlite3.Connection.setconfig` to :class:`~sqlite3.Connection`
   to make configuration changes to a database connection.
   (Contributed by Erlend E. Aasland in :gh:`103489`.)
+
+statistics
+----------
+
+* Extended :func:`statistics.correlation` to include as a ``ranked`` method
+  for computing the Spearman correlation of ranked data.
+  (Contributed by Raymond Hettinger in :gh:`95861`.)
 
 threading
 ---------
@@ -886,25 +918,25 @@ and will be removed in Python 3.13.
 
 Modules (see :pep:`594`):
 
-* :mod:`aifc`
-* :mod:`audioop`
+* :mod:`!aifc`
+* :mod:`!audioop`
 * :mod:`!cgi`
 * :mod:`!cgitb`
-* :mod:`chunk`
-* :mod:`crypt`
+* :mod:`!chunk`
+* :mod:`!crypt`
 * :mod:`imghdr`
 * :mod:`!mailcap`
-* :mod:`msilib`
-* :mod:`nis`
-* :mod:`nntplib`
+* :mod:`!msilib`
+* :mod:`!nis`
+* :mod:`!nntplib`
 * :mod:`!ossaudiodev`
 * :mod:`!pipes`
 * :mod:`!sndhdr`
-* :mod:`spwd`
+* :mod:`!spwd`
 * :mod:`!sunau`
 * :mod:`!telnetlib`
-* :mod:`uu`
-* :mod:`xdrlib`
+* :mod:`!uu`
+* :mod:`!xdrlib`
 
 APIs:
 
@@ -915,6 +947,7 @@ APIs:
 * :func:`!unittest.makeSuite` (:gh:`50096`)
 * :func:`!unittest.getTestCaseNames` (:gh:`50096`)
 * :class:`!webbrowser.MacOSX` (:gh:`86421`)
+* :class:`classmethod` descriptor chaining (:gh:`89519`)
 
 Pending Removal in Python 3.14
 ------------------------------
