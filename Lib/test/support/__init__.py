@@ -2286,22 +2286,27 @@ def setup_venv_with_pip_setuptools_wheel(venv_dir):
             print('Run:', ' '.join(cmd))
         subprocess.run(cmd, check=True)
 
+        venv = os.path.join(temp_dir, venv_dir)
+
         # Get the Python executable of the venv
         python_exe = 'python'
         if sys.executable.endswith('.exe'):
             python_exe += '.exe'
         if sys.platform == 'win32':
-            python = os.path.join(temp_dir, venv_dir, 'Scripts', python_exe)
+            python = os.path.join(venv, 'Scripts', python_exe)
         else:
-            python = os.path.join(temp_dir, venv_dir, 'bin', python_exe)
+            python = os.path.join(venv, 'bin', python_exe)
 
         cmd = [python, '-X', 'dev',
                '-m', 'pip', 'install',
                findfile('setuptools-67.6.1-py3-none-any.whl'),
                findfile('wheel-0.40.0-py3-none-any.whl')]
+        if verbose:
+            print()
+            print('Run:', ' '.join(cmd))
         subprocess.run(cmd, check=True)
 
-        yield os.path.join(temp_dir, venv_dir), python
+        yield venv, python
 
 
 # True if Python is built with the Py_DEBUG macro defined: if
