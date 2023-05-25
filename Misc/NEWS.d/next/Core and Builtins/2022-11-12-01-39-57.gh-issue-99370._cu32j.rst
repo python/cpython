@@ -1,2 +1,0 @@
-Fix zip path for venv created from a non-installed python on POSIX
-platforms.

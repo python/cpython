@@ -1,1 +1,0 @@
-Add ``frozen_default`` parameter to :func:`typing.dataclass_transform`.

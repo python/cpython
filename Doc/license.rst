@@ -100,7 +100,7 @@ PSF LICENSE AGREEMENT FOR PYTHON |release|
       analyze, test, perform and/or display publicly, prepare derivative works,
       distribute, and otherwise use Python |release| alone or in any derivative
       version, provided, however, that PSF's License Agreement and PSF's notice of
-      copyright, i.e., "Copyright © 2001-2022 Python Software Foundation; All Rights
+      copyright, i.e., "Copyright © 2001-2023 Python Software Foundation; All Rights
       Reserved" are retained in Python |release| alone or in any derivative version
       prepared by Licensee.
 
@@ -476,7 +476,7 @@ The :mod:`trace` module contains the following notice::
 UUencode and UUdecode functions
 -------------------------------
 
-The :mod:`uu` module contains the following notice::
+The ``uu`` codec contains the following notice::
 
    Copyright 1994 by Lance Ellinghouse
    Cathedral City, California Republic, United States of America.
@@ -655,7 +655,7 @@ copyright and licensing notice::
 OpenSSL
 -------
 
-The modules :mod:`hashlib`, :mod:`posix`, :mod:`ssl`, :mod:`crypt` use
+The modules :mod:`hashlib`, :mod:`posix` and :mod:`ssl` use
 the OpenSSL library for added performance if made available by the
 operating system. Additionally, the Windows and macOS installers for
 Python may include a copy of the OpenSSL libraries, so we include a copy

@@ -9,8 +9,7 @@ from test.test_tkinter.support import (requires_tcl,
                                   AbstractDefaultRootTest)
 from test.test_tkinter.widget_tests import (
     add_standard_options,
-    AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests,
-    setUpModule)
+    AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests)
 
 requires('gui')
 
@@ -77,6 +76,8 @@ class ToplevelTest(AbstractToplevelTest, unittest.TestCase):
 
     def test_configure_screen(self):
         widget = self.create()
+        if widget._windowingsystem != 'x11':
+            self.skipTest('Not using Tk for X11')
         self.assertEqual(widget['screen'], '')
         try:
             display = os.environ['DISPLAY']
@@ -900,6 +901,12 @@ class CanvasTest(AbstractWidgetTest, unittest.TestCase):
         c.coords(i, [21, 31, 41, 51, 61, 11])
         self.assertEqual(c.coords(i), [21.0, 31.0, 41.0, 51.0, 61.0, 11.0])
 
+        c.coords(i, (22, 32), (42, 52), (62, 12))
+        self.assertEqual(c.coords(i), [22.0, 32.0, 42.0, 52.0, 62.0, 12.0])
+
+        c.coords(i, [(23, 33), (43, 53), (63, 13)])
+        self.assertEqual(c.coords(i), [23.0, 33.0, 43.0, 53.0, 63.0, 13.0])
+
         c.coords(i, 20, 30, 60, 10)
         self.assertEqual(c.coords(i), [20.0, 30.0, 60.0, 10.0])
         self.assertEqual(c.bbox(i), (18, 8, 62, 32))
@@ -1377,6 +1384,11 @@ class MenuTest(AbstractWidgetTest, unittest.TestCase):
 
     def create(self, **kwargs):
         return tkinter.Menu(self.root, **kwargs)
+
+    def test_indexcommand_none(self):
+        widget = self.create()
+        i = widget.index('none')
+        self.assertIsNone(i)
 
     def test_configure_postcommand(self):
         widget = self.create()
