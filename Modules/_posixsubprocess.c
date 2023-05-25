@@ -813,7 +813,8 @@ do_fork_exec(char *const exec_array[],
          *
          * The vfork'ed child still runs in our address space. Per POSIX it
          * must be limited to nothing but exec, but the Linux implementation
-         * is a little more usable. See the child_exec() comment.
+         * is a little more usable. See the child_exec() comment - The child
+         * MUST NOT re-acquire the GIL.
          */
         vfork_tstate_save = PyEval_SaveThread();
         pid = vfork();
