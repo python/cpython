@@ -289,8 +289,9 @@ _OPNAME_WIDTH = 20
 _OPARG_WIDTH = 5
 
 def _get_jump_target(op, arg, offset):
-    """Gets the bytecode offset of the jump target if this is a jump instruction,
-    otherwise returns None
+    """Gets the bytecode offset of the jump target if this is a jump instruction.
+
+    Otherwise return None.
     """
     deop = _deoptop(op)
     caches = _inline_cache_entries[deop]
@@ -306,7 +307,7 @@ def _get_jump_target(op, arg, offset):
     return target
 
 class Instruction(_Instruction):
-    """Details for a bytecode operation
+    """Details for a bytecode operation.
 
        Defined fields:
          opname - human readable name for operation
@@ -325,40 +326,45 @@ class Instruction(_Instruction):
 
     @property
     def oparg(self):
-        """Alias for Instruction.arg"""
+        """Alias for Instruction.arg."""
         return self.arg
 
     @property
     def baseopcode(self):
-        """numeric code for the base operation if operation is specialized.
-        Otherwise equal to Instruction.opcode
+        """Numeric code for the base operation if operation is specialized.
+
+        Otherwise equal to Instruction.opcode.
         """
         return _deoptop(self.opcode)
 
     @property
     def baseopname(self):
-        """human readable name for the base operation if operation is specialized.
-        Otherwise equal to Instruction.opname
+        """Human readable name for the base operation if operation is specialized.
+
+        Otherwise equal to Instruction.opname.
         """
         return opname[self.baseopcode]
 
     @property
     def cache_offset(self):
-        """start index of the cache entries following the operation"""
+        """Start index of the cache entries following the operation."""
         return self.offset + 2
 
     @property
     def end_offset(self):
-        """end index of the cache entries following the operation"""
+        """End index of the cache entries following the operation."""
         return self.cache_offset + _inline_cache_entries[self.opcode]*2
 
     @property
     def jump_target(self):
-        """bytecode index of the jump target if this is a jump operation, otherwise None"""
+        """Bytecode index of the jump target if this is a jump operation.
+
+        Otherwise return None.
+        """
         return _get_jump_target(self.opcode, self.arg, self.offset)
 
     def _disassemble(self, lineno_width=3, mark_as_current=False, offset_width=4):
-        """Format instruction details for inclusion in disassembly output
+        """Format instruction details for inclusion in disassembly output.
 
         *lineno_width* sets the width of the line number field (0 omits it)
         *mark_as_current* inserts a '-->' marker arrow as part of the line
