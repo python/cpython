@@ -3543,12 +3543,11 @@ finalize_thread_hang(PyObject *self, PyObject *arg)
 #endif
     PyObject_CallNoArgs(arg);
     // Should not reach here.
-    assert(0 && "thread unexpectedly did not hang");
+    Py_FatalError("thread unexpectedly did not hang");
 #ifdef _POSIX_THREADS
     pthread_cleanup_pop(0);
 #endif
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *
