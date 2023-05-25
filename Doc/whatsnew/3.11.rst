@@ -1731,13 +1731,13 @@ Modules
   slated for removal in Python 3.13:
 
   +---------------------+---------------------+---------------------+---------------------+---------------------+
-  | :mod:`aifc`         | :mod:`chunk`        | :mod:`msilib`       | :mod:`pipes`        | :mod:`telnetlib`    |
+  | :mod:`!aifc`        | :mod:`!chunk`       | :mod:`!msilib`      | :mod:`!pipes`       | :mod:`!telnetlib`   |
   +---------------------+---------------------+---------------------+---------------------+---------------------+
-  | :mod:`audioop`      | :mod:`crypt`        | :mod:`nis`          | :mod:`sndhdr`       | :mod:`uu`           |
+  | :mod:`!audioop`     | :mod:`!crypt`       | :mod:`!nis`         | :mod:`!sndhdr`      | :mod:`!uu`          |
   +---------------------+---------------------+---------------------+---------------------+---------------------+
-  | :mod:`cgi`          | :mod:`imghdr`       | :mod:`nntplib`      | :mod:`spwd`         | :mod:`xdrlib`       |
+  | :mod:`!cgi`         | :mod:`imghdr`       | :mod:`!nntplib`     | :mod:`!spwd`        | :mod:`!xdrlib`      |
   +---------------------+---------------------+---------------------+---------------------+---------------------+
-  | :mod:`cgitb`        | :mod:`mailcap`      | :mod:`ossaudiodev`  | :mod:`sunau`        |                     |
+  | :mod:`!cgitb`       | :mod:`!mailcap`     | :mod:`!ossaudiodev` | :mod:`!sunau`       |                     |
   +---------------------+---------------------+---------------------+---------------------+---------------------+
 
   (Contributed by Brett Cannon in :issue:`47061` and Victor Stinner in
@@ -1748,7 +1748,7 @@ Modules
   warnings have now been updated to note they will be removed in Python 3.12.
   (Contributed by Hugo van Kemenade in :issue:`47022`.)
 
-* The :mod:`lib2to3` package and :ref:`2to3 <2to3-reference>` tool
+* The :mod:`!lib2to3` package and ``2to3`` tool
   are now deprecated and may not be able to parse Python 3.10 or newer.
   See :pep:`617`, introducing the new PEG parser, for details.
   (Contributed by Victor Stinner in :issue:`40360`.)
@@ -1872,28 +1872,28 @@ C APIs pending removal are
 * The :mod:`asynchat` module
 * The :mod:`asyncore` module
 * The :ref:`entire distutils package <distutils-deprecated>`
-* The :mod:`imp` module
+* The :mod:`!imp` module
 * The :class:`typing.io <typing.IO>` namespace
 * The :class:`typing.re <typing.Pattern>` namespace
 * :func:`!cgi.log`
-* :func:`importlib.find_loader`
-* :meth:`importlib.abc.Loader.module_repr`
-* :meth:`importlib.abc.MetaPathFinder.find_module`
-* :meth:`importlib.abc.PathEntryFinder.find_loader`
-* :meth:`importlib.abc.PathEntryFinder.find_module`
+* :func:`!importlib.find_loader`
+* :meth:`!importlib.abc.Loader.module_repr`
+* :meth:`!importlib.abc.MetaPathFinder.find_module`
+* :meth:`!importlib.abc.PathEntryFinder.find_loader`
+* :meth:`!importlib.abc.PathEntryFinder.find_module`
 * :meth:`!importlib.machinery.BuiltinImporter.find_module`
 * :meth:`!importlib.machinery.BuiltinLoader.module_repr`
 * :meth:`!importlib.machinery.FileFinder.find_loader`
 * :meth:`!importlib.machinery.FileFinder.find_module`
 * :meth:`!importlib.machinery.FrozenImporter.find_module`
 * :meth:`!importlib.machinery.FrozenLoader.module_repr`
-* :meth:`importlib.machinery.PathFinder.find_module`
+* :meth:`!importlib.machinery.PathFinder.find_module`
 * :meth:`!importlib.machinery.WindowsRegistryFinder.find_module`
-* :func:`importlib.util.module_for_loader`
+* :func:`!importlib.util.module_for_loader`
 * :func:`!importlib.util.set_loader_wrapper`
 * :func:`!importlib.util.set_package_wrapper`
-* :class:`pkgutil.ImpImporter`
-* :class:`pkgutil.ImpLoader`
+* :class:`!pkgutil.ImpImporter`
+* :class:`!pkgutil.ImpLoader`
 * :meth:`pathlib.Path.link_to`
 * :func:`!sqlite3.enable_shared_cache`
 * :func:`!sqlite3.OptimizedUnicode`

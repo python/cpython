@@ -91,6 +91,11 @@ smartquotes_excludes = {
 # Avoid a warning with Sphinx >= 2.0
 master_doc = 'contents'
 
+# Allow translation of index directives
+gettext_additional_targets = [
+    'index',
+]
+
 # Options for HTML output
 # -----------------------
 

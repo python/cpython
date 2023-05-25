@@ -546,15 +546,19 @@ extern "C" {
     INIT_STR(dbl_close_br, "}}"), \
     INIT_STR(dbl_open_br, "{{"), \
     INIT_STR(dbl_percent, "%%"), \
+    INIT_STR(defaults, ".defaults"), \
     INIT_STR(dot, "."), \
     INIT_STR(dot_locals, ".<locals>"), \
     INIT_STR(empty, ""), \
+    INIT_STR(generic_base, ".generic_base"), \
     INIT_STR(json_decoder, "json.decoder"), \
+    INIT_STR(kwdefaults, ".kwdefaults"), \
     INIT_STR(list_err, "list index out of range"), \
     INIT_STR(newline, "\n"), \
     INIT_STR(open_br, "{"), \
     INIT_STR(percent, "%"), \
     INIT_STR(shim_name, "<shim>"), \
+    INIT_STR(type_params, ".type_params"), \
     INIT_STR(utf_8, "utf-8"), \
 }
 
@@ -587,6 +591,7 @@ extern "C" {
     INIT_ID(__await__), \
     INIT_ID(__bases__), \
     INIT_ID(__bool__), \
+    INIT_ID(__buffer__), \
     INIT_ID(__build_class__), \
     INIT_ID(__builtins__), \
     INIT_ID(__bytes__), \
@@ -595,6 +600,8 @@ extern "C" {
     INIT_ID(__class__), \
     INIT_ID(__class_getitem__), \
     INIT_ID(__classcell__), \
+    INIT_ID(__classdict__), \
+    INIT_ID(__classdictcell__), \
     INIT_ID(__complex__), \
     INIT_ID(__contains__), \
     INIT_ID(__copy__), \
@@ -686,6 +693,7 @@ extern "C" {
     INIT_ID(__rdivmod__), \
     INIT_ID(__reduce__), \
     INIT_ID(__reduce_ex__), \
+    INIT_ID(__release_buffer__), \
     INIT_ID(__repr__), \
     INIT_ID(__reversed__), \
     INIT_ID(__rfloordiv__), \
@@ -716,6 +724,7 @@ extern "C" {
     INIT_ID(__subclasshook__), \
     INIT_ID(__truediv__), \
     INIT_ID(__trunc__), \
+    INIT_ID(__type_params__), \
     INIT_ID(__typing_is_unpacked_typevartuple__), \
     INIT_ID(__typing_prepare_subst__), \
     INIT_ID(__typing_subst__), \
@@ -771,8 +780,11 @@ extern "C" {
     INIT_ID(after_in_child), \
     INIT_ID(after_in_parent), \
     INIT_ID(aggregate_class), \
+    INIT_ID(alias), \
     INIT_ID(append), \
+    INIT_ID(arg), \
     INIT_ID(argdefs), \
+    INIT_ID(args), \
     INIT_ID(arguments), \
     INIT_ID(argv), \
     INIT_ID(as_integer_ratio), \
@@ -787,6 +799,7 @@ extern "C" {
     INIT_ID(big), \
     INIT_ID(binary_form), \
     INIT_ID(block), \
+    INIT_ID(bound), \
     INIT_ID(buffer), \
     INIT_ID(buffer_callback), \
     INIT_ID(buffer_size), \
@@ -839,13 +852,16 @@ extern "C" {
     INIT_ID(code), \
     INIT_ID(command), \
     INIT_ID(comment_factory), \
+    INIT_ID(compile_mode), \
     INIT_ID(consts), \
     INIT_ID(context), \
+    INIT_ID(contravariant), \
     INIT_ID(cookie), \
     INIT_ID(copy), \
     INIT_ID(copyreg), \
     INIT_ID(coro), \
     INIT_ID(count), \
+    INIT_ID(covariant), \
     INIT_ID(cwd), \
     INIT_ID(d), \
     INIT_ID(data), \
@@ -896,6 +912,7 @@ extern "C" {
     INIT_ID(exception), \
     INIT_ID(exp), \
     INIT_ID(extend), \
+    INIT_ID(extra_tokens), \
     INIT_ID(facility), \
     INIT_ID(factory), \
     INIT_ID(false), \
@@ -955,6 +972,7 @@ extern "C" {
     INIT_ID(incoming), \
     INIT_ID(indexgroup), \
     INIT_ID(inf), \
+    INIT_ID(infer_variance), \
     INIT_ID(inheritable), \
     INIT_ID(initial), \
     INIT_ID(initial_bytes), \
@@ -1048,6 +1066,7 @@ extern "C" {
     INIT_ID(newline), \
     INIT_ID(newlines), \
     INIT_ID(next), \
+    INIT_ID(nlocals), \
     INIT_ID(node_depth), \
     INIT_ID(node_offset), \
     INIT_ID(ns), \
@@ -1071,6 +1090,7 @@ extern "C" {
     INIT_ID(optimize), \
     INIT_ID(options), \
     INIT_ID(order), \
+    INIT_ID(origin), \
     INIT_ID(out_fd), \
     INIT_ID(outgoing), \
     INIT_ID(overlapped), \
@@ -1116,6 +1136,7 @@ extern "C" {
     INIT_ID(reducer_override), \
     INIT_ID(registry), \
     INIT_ID(rel_tol), \
+    INIT_ID(release), \
     INIT_ID(reload), \
     INIT_ID(repl), \
     INIT_ID(replace), \
@@ -1167,6 +1188,7 @@ extern "C" {
     INIT_ID(stdin), \
     INIT_ID(stdout), \
     INIT_ID(step), \
+    INIT_ID(steps), \
     INIT_ID(store_name), \
     INIT_ID(strategy), \
     INIT_ID(strftime), \
@@ -1203,6 +1225,7 @@ extern "C" {
     INIT_ID(twice), \
     INIT_ID(txt), \
     INIT_ID(type), \
+    INIT_ID(type_params), \
     INIT_ID(tz), \
     INIT_ID(tzname), \
     INIT_ID(uid), \

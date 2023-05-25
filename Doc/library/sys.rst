@@ -444,7 +444,7 @@ always available.
    object <traceback-objects>` which typically encapsulates the call
    stack at the point where the exception last occurred.
 
-   .. index:: object: traceback
+   .. index:: pair: object; traceback
 
    If no exception is being handled anywhere on the stack, this function
    return a tuple containing three ``None`` values.
@@ -1177,7 +1177,7 @@ always available.
 
         :term:`Module specs <module spec>` were introduced in Python 3.4, by
         :pep:`451`. Earlier versions of Python looked for a method called
-        :meth:`~importlib.abc.MetaPathFinder.find_module`.
+        :meth:`!find_module`.
         This is still called as a fallback if a :data:`meta_path` entry doesn't
         have a :meth:`~importlib.abc.MetaPathFinder.find_spec` method.
 

@@ -11,6 +11,8 @@ from opcode import (
     _cache_format,
     _inline_cache_entries,
     _nb_ops,
+    _intrinsic_1_descs,
+    _intrinsic_2_descs,
     _specializations,
     _specialized_instructions,
 )
@@ -42,6 +44,8 @@ FOR_ITER = opmap['FOR_ITER']
 SEND = opmap['SEND']
 LOAD_ATTR = opmap['LOAD_ATTR']
 LOAD_SUPER_ATTR = opmap['LOAD_SUPER_ATTR']
+CALL_INTRINSIC_1 = opmap['CALL_INTRINSIC_1']
+CALL_INTRINSIC_2 = opmap['CALL_INTRINSIC_2']
 
 CACHE = opmap["CACHE"]
 
@@ -506,6 +510,10 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
                                     if arg & (1<<i))
             elif deop == BINARY_OP:
                 _, argrepr = _nb_ops[arg]
+            elif deop == CALL_INTRINSIC_1:
+                argrepr = _intrinsic_1_descs[arg]
+            elif deop == CALL_INTRINSIC_2:
+                argrepr = _intrinsic_2_descs[arg]
         yield Instruction(_all_opname[op], op,
                           arg, argval, argrepr,
                           offset, starts_line, is_jump_target, positions)

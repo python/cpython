@@ -4265,7 +4265,7 @@ class TestInternals(unittest.TestCase):
             'mixed types with auto() will raise in 3.13',
             )
     def test_auto_garbage_fail(self):
-        with self.assertRaisesRegex(TypeError, 'will require all values to be sortable'):
+        with self.assertRaisesRegex(TypeError, "unable to increment 'red'"):
             class Color(Enum):
                 red = 'red'
                 blue = auto()
@@ -4275,7 +4275,7 @@ class TestInternals(unittest.TestCase):
             'mixed types with auto() will raise in 3.13',
             )
     def test_auto_garbage_corrected_fail(self):
-        with self.assertRaisesRegex(TypeError, 'will require all values to be sortable'):
+        with self.assertRaisesRegex(TypeError, 'unable to sort non-numeric values'):
             class Color(Enum):
                 red = 'red'
                 blue = 2
