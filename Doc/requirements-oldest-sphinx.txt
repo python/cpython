@@ -7,7 +7,7 @@ blurb
 python-docs-theme>=2022.1
 
 # Generated from:
-#     pip install "Sphinx~=6.2.0"
+#     pip install "Sphinx==6.2.0"
 #     pip freeze
 #
 # Sphinx 6.2 comes from ``needs_sphinx = '6.2'`` in ``Doc/conf.py``.
@@ -25,7 +25,7 @@ packaging==23.1
 Pygments==2.15.1
 requests==2.31.0
 snowballstemmer==2.2.0
-Sphinx==6.2.1
+Sphinx==6.2.0
 sphinxcontrib-applehelp==1.0.4
 sphinxcontrib-devhelp==1.0.2
 sphinxcontrib-htmlhelp==2.0.1
