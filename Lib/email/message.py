@@ -7,8 +7,9 @@
 __all__ = ['Message', 'EmailMessage']
 
 import binascii
-import re
 import quopri
+import re
+import warnings
 from io import BytesIO, StringIO
 
 # Intrapackage imports
@@ -318,8 +319,15 @@ class Message:
                 self.policy.handle_defect(self, defect)
             return value
         elif cte in ('x-uuencode', 'uuencode', 'uue', 'x-uue'):
+            warnings._deprecated(
+                'Decoding legacy uuencoded payloads in messages',
+                remove=(3, 14))
             try:
-                return _decode_uu(bpayload)
+                # We already issue our own warning here
+                with warnings.catch_warnings():
+                    warnings.filterwarnings(
+                        'ignore', message='.*uu.*', category=DeprecationWarning)
+                    return _decode_uu(bpayload)
             except ValueError:
                 # Some decoding problem.
                 return bpayload

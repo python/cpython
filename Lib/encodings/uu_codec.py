@@ -7,13 +7,23 @@ adapted from uu.py which was written by Lance Ellinghouse and
 modified by Jack Jansen and Fredrik Lundh.
 """
 
-import codecs
 import binascii
+import codecs
+import warnings
 from io import BytesIO
+
+
+_uu_deprecation_warning_filter = {
+    'action': 'ignore',
+    'message': '.*uu.*',
+    'category': DeprecationWarning,
+}
+
 
 ### Codec APIs
 
 def uu_encode(input, errors='strict', filename='<data>', mode=0o666):
+    warnings._deprecated(__name__, remove=(3, 14))
     assert errors == 'strict'
     infile = BytesIO(input)
     outfile = BytesIO()
@@ -27,14 +37,19 @@ def uu_encode(input, errors='strict', filename='<data>', mode=0o666):
     # Encode
     write(('begin %o %s\n' % (mode & 0o777, filename)).encode('ascii'))
     chunk = read(45)
-    while chunk:
-        write(binascii.b2a_uu(chunk))
-        chunk = read(45)
+
+    # We already warn above on calling this function
+    with warnings.catch_warnings():
+        warnings.filterwarnings(**_uu_deprecation_warning_filter)
+        while chunk:
+            write(binascii.b2a_uu(chunk))
+            chunk = read(45)
     write(b' \nend\n')
 
     return (outfile.getvalue(), len(input))
 
 def uu_decode(input, errors='strict'):
+    warnings._deprecated(__name__, remove=(3, 14))
     assert errors == 'strict'
     infile = BytesIO(input)
     outfile = BytesIO()
@@ -55,11 +70,17 @@ def uu_decode(input, errors='strict'):
         if not s or s == b'end\n':
             break
         try:
-            data = binascii.a2b_uu(s)
+            # We already warn above on calling this function
+            with warnings.catch_warnings():
+                warnings.filterwarnings(**_uu_deprecation_warning_filter)
+                data = binascii.a2b_uu(s)
         except binascii.Error as v:
             # Workaround for broken uuencoders by /Fredrik Lundh
             nbytes = (((s[0]-32) & 63) * 4 + 5) // 3
-            data = binascii.a2b_uu(s[:nbytes])
+            # We already warn above on calling this function
+            with warnings.catch_warnings():
+                warnings.filterwarnings(**_uu_deprecation_warning_filter)
+                data = binascii.a2b_uu(s[:nbytes])
             #sys.stderr.write("Warning: %s\n" % str(v))
         write(data)
     if not s:

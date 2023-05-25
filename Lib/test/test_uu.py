@@ -135,7 +135,9 @@ class UUTest(unittest.TestCase):
 
             with self.subTest("uu_codec"):
                 import codecs
-                decoded = codecs.decode(encodedtext, "uu_codec")
+                with warnings_helper.check_warnings(
+                        (".*uu_codec.*", DeprecationWarning)):
+                    decoded = codecs.decode(encodedtext, "uu_codec")
                 self.assertEqual(decoded, plaintext)
 
     def test_newlines_escaped(self):

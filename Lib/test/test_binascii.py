@@ -1,10 +1,11 @@
 """Test the binascii C module."""
 
-import unittest
-import binascii
 import array
+import binascii
+import contextlib
 import re
-from test.support import bigmemtest, _1G, _4G
+import unittest
+from test.support import bigmemtest, _1G, _4G, warnings_helper
 
 
 # Note: "*_hex" functions are aliases for "(un)hexlify"
@@ -13,6 +14,16 @@ b2a_functions = ['b2a_base64', 'b2a_hex', 'b2a_qp', 'b2a_uu',
 a2b_functions = ['a2b_base64', 'a2b_hex', 'a2b_qp', 'a2b_uu',
                  'unhexlify']
 all_functions = a2b_functions + b2a_functions + ['crc32', 'crc_hqx']
+
+deprecated_functions = ['b2a_uu', 'a2b_uu']
+
+
+def _check_function_warning(function_name):
+    """Helper to check that deprecated functions warn, and silence them."""
+    if function_name not in deprecated_functions:
+        return contextlib.nullcontext()
+    return warnings_helper.check_warnings(
+        (f".*{function_name}.*", DeprecationWarning))
 
 
 class BinASCIITest(unittest.TestCase):
@@ -46,8 +57,10 @@ class BinASCIITest(unittest.TestCase):
             a2b = getattr(binascii, fa)
             b2a = getattr(binascii, fb)
             try:
-                a = b2a(self.type2test(raw))
-                res = a2b(self.type2test(a))
+                with _check_function_warning(fb):
+                    a = b2a(self.type2test(raw))
+                with _check_function_warning(fa):
+                    res = a2b(self.type2test(a))
             except Exception as err:
                 self.fail("{}/{} conversion raises {!r}".format(fb, fa, err))
             self.assertEqual(res, raw, "{}/{} conversion: "
@@ -185,6 +198,8 @@ class BinASCIITest(unittest.TestCase):
         assertInvalidLength(b'a' * (4 * 87 + 1))
         assertInvalidLength(b'A\tB\nC ??DE')  # only 5 valid characters
 
+    # Uuencode is deprecated
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_uu(self):
         MAX_UU = 45
         for backtick in (True, False):
@@ -383,7 +398,8 @@ class BinASCIITest(unittest.TestCase):
                 continue
             f = getattr(binascii, func)
             try:
-                f(empty)
+                with _check_function_warning(func):
+                    f(empty)
             except Exception as err:
                 self.fail("{}({!r}) raises {!r}".format(func, empty, err))
 
@@ -405,10 +421,13 @@ class BinASCIITest(unittest.TestCase):
             a2b = getattr(binascii, fa)
             b2a = getattr(binascii, fb)
             try:
-                a = b2a(self.type2test(raw))
-                binary_res = a2b(a)
+                with _check_function_warning(fb):
+                    a = b2a(self.type2test(raw))
+                with _check_function_warning(fa):
+                    binary_res = a2b(a)
                 a = a.decode('ascii')
-                res = a2b(a)
+                with _check_function_warning(fa):
+                    res = a2b(a)
             except Exception as err:
                 self.fail("{}/{} conversion raises {!r}".format(fb, fa, err))
             self.assertEqual(res, raw, "{}/{} conversion: "
