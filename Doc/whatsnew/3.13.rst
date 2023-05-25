@@ -132,6 +132,10 @@ Removed
 
   (Contributed by Hugo van Kemenade in :gh:`104835`.)
 
+* Remove the keyword argument syntax for constructing :data:`typing.TypedDict`
+  types, deprecated in Python 3.11.
+  (Contributed by Hugo van Kemenade in :gh:`104936`.)
+
 * :pep:`594`: Remove the :mod:`!cgi`` and :mod:`!cgitb` modules,
   deprecated in Python 3.11.
 

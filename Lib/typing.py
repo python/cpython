@@ -29,7 +29,6 @@ import operator
 import re as stdlib_re  # Avoid confusion with the typing.re namespace on <=3.11
 import sys
 import types
-import warnings
 from types import WrapperDescriptorType, MethodWrapperType, MethodDescriptorType, GenericAlias
 
 from _typing import (
@@ -2822,7 +2821,7 @@ class _TypedDictMeta(type):
     __instancecheck__ = __subclasscheck__
 
 
-def TypedDict(typename, fields=None, /, *, total=True, **kwargs):
+def TypedDict(typename, fields=None, /, *, total=True):
     """A simple typed namespace. At runtime it is equivalent to a plain dict.
 
     TypedDict creates a dictionary type that expects all of its
@@ -2863,20 +2862,6 @@ def TypedDict(typename, fields=None, /, *, total=True, **kwargs):
     The class syntax is only supported in Python 3.6+, while the other
     syntax form works for Python 2.7 and 3.2+
     """
-    if fields is None:
-        fields = kwargs
-    elif kwargs:
-        raise TypeError("TypedDict takes either a dict or keyword arguments,"
-                        " but not both")
-    if kwargs:
-        warnings.warn(
-            "The kwargs-based syntax for TypedDict definitions is deprecated "
-            "in Python 3.11, will be removed in Python 3.13, and may not be "
-            "understood by third-party type checkers.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
     ns = {'__annotations__': dict(fields)}
     module = _caller()
     if module is not None:
