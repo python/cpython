@@ -340,8 +340,7 @@ popd
   0. `../../configure -C --build=$BUILD --host=$BUILD`
   0. `make all`
 
-A lot of Emscripten limitations also apply to WASI. Noticeable restrictions
-are:
+XXX builder.run_build(*cm_args)
 
 ### Running
 
