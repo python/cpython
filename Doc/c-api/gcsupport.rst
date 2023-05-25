@@ -59,11 +59,30 @@ rules:
    Analogous to :c:func:`PyObject_New` but for container objects with the
    :const:`Py_TPFLAGS_HAVE_GC` flag set.
 
-
 .. c:function:: TYPE* PyObject_GC_NewVar(TYPE, PyTypeObject *type, Py_ssize_t size)
 
    Analogous to :c:func:`PyObject_NewVar` but for container objects with the
    :const:`Py_TPFLAGS_HAVE_GC` flag set.
+
+.. c:function:: PyObject* PyUnstable_Object_GC_NewWithExtraData(PyTypeObject *type, size_t extra_size)
+
+   Analogous to :c:func:`PyObject_GC_New` but allocates *extra_size*
+   bytes at the end of the object (at offset
+   :c:member:`~PyTypeObject.tp_basicsize`).
+   The allocated memory is initialized to zeros,
+   except for the :c:type:`Python object header <PyObject>`.
+
+   The extra data will be deallocated with the object, but otherwise it is
+   not managed by Python.
+
+   .. warning::
+      The function is marked as unstable because the final mechanism
+      for reserving extra data after an instance is not yet decided.
+      For allocating a variable number of fields, prefer using
+      :c:type:`PyVarObject` and :c:member:`~PyTypeObject.tp_itemsize`
+      instead.
+
+   .. versionadded:: 3.12
 
 
 .. c:function:: TYPE* PyObject_GC_Resize(TYPE, PyVarObject *op, Py_ssize_t newsize)

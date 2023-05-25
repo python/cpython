@@ -19,6 +19,9 @@
 /* The normal alignment of `long', in bytes. */
 #undef ALIGNOF_LONG
 
+/* The normal alignment of `max_align_t', in bytes. */
+#undef ALIGNOF_MAX_ALIGN_T
+
 /* The normal alignment of `size_t', in bytes. */
 #undef ALIGNOF_SIZE_T
 
@@ -1000,9 +1003,6 @@
 
 /* Define if you have readline 4.0 */
 #undef HAVE_RL_RESIZE_TERMINAL
-
-/* Define to 1 if you have the <rpc/rpc.h> header file. */
-#undef HAVE_RPC_RPC_H
 
 /* Define to 1 if you have the `rtpSpawn' function. */
 #undef HAVE_RTPSPAWN

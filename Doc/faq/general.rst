@@ -54,8 +54,8 @@ commercial use, to sell copies of Python in source or binary form (modified or
 unmodified), or to sell products that incorporate Python in some form.  We would
 still like to know about all commercial use of Python, of course.
 
-See `the PSF license page <https://www.python.org/psf/license/>`_ to find further
-explanations and a link to the full text of the license.
+See `the license page <https://docs.python.org/3/license.html>`_ to find further
+explanations and the full text of the PSF License.
 
 The Python logo is trademarked, and in certain cases permission is required to
 use it.  Consult `the Trademark Usage Policy
@@ -215,7 +215,7 @@ every day, and Usenet readers are often more able to cope with this volume.
 Announcements of new software releases and events can be found in
 comp.lang.python.announce, a low-traffic moderated list that receives about five
 postings per day.  It's available as `the python-announce mailing list
-<https://mail.python.org/mailman/listinfo/python-announce-list>`_.
+<https://mail.python.org/mailman3/lists/python-announce-list.python.org/>`_.
 
 More info about other mailing lists and newsgroups
 can be found at https://www.python.org/community/lists/.
@@ -352,7 +352,7 @@ titled "Python X.Y Release Schedule", where X.Y is a version that hasn't been
 publicly released yet.
 
 New development is discussed on `the python-dev mailing list
-<https://mail.python.org/mailman/listinfo/python-dev/>`_.
+<https://mail.python.org/mailman3/lists/python-dev.python.org/>`_.
 
 
 Is it reasonable to propose incompatible changes to Python?

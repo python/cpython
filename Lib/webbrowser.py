@@ -400,6 +400,16 @@ class Konqueror(BaseBrowser):
         return ok
 
 
+class Edge(UnixBrowser):
+    "Launcher class for Microsoft Edge browser."
+
+    remote_args = ['%action', '%s']
+    remote_action = ""
+    remote_action_newwin = "--new-window"
+    remote_action_newtab = ""
+    background = True
+
+
 #
 # Platform support for Unix
 #
@@ -456,6 +466,10 @@ def register_X_browsers():
         register("opera", None, Opera("opera"))
 
 
+    if shutil.which("microsoft-edge"):
+        register("microsoft-edge", None, Edge("microsoft-edge"))
+
+
 def register_standard_browsers():
     global _tryorder
     _tryorder = []
@@ -487,6 +501,8 @@ def register_standard_browsers():
                         "opera", edge64, edge32):
             if shutil.which(browser):
                 register(browser, None, BackgroundBrowser(browser))
+        if shutil.which("MicrosoftEdge.exe"):
+            register("microsoft-edge", None, Edge("MicrosoftEdge.exe"))
     else:
         # Prefer X browsers if present
         if os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"):
