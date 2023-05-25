@@ -22,7 +22,9 @@
             "Doc",
             "venv",
             "html"
-        ],
+        ]
+    },
+    "postCreateCommand": {
         // https://github.com/orgs/community/discussions/26026
         "umask fix: workspace": ["sudo", "setfacl", "-bnR", "."],
         "umask fix: /tmp": ["sudo", "setfacl", "-bnR", "/tmp"]
