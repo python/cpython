@@ -2500,10 +2500,12 @@ class ProtocolTests(BaseTestCase):
         @runtime_checkable
         class HasX(Protocol):
             x: int
+
         class Bar[T]:
             x: T
             def __init__(self, x):
                 self.x = x
+
         class Capybara[T]:
             y: str
             def __init__(self, y):
