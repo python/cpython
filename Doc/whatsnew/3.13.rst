@@ -120,7 +120,7 @@ Removed
 
 * Remove the undocumented :class:`!configparser.LegacyInterpolation` class,
   deprecated in the docstring since Python 3.2,
-  and with a warning since Python 3.11.
+  and with a deprecation warning since Python 3.11.
   (Contributed by Hugo van Kemenade in :gh:`104886`.)
 
 * Removed the following :mod:`unittest` functions, deprecated in Python 3.11:
