@@ -1526,7 +1526,7 @@ def main():
     global flist, root, use_subprocess
 
     capture_warnings(True)
-    use_subprocess = True
+    use_subprocess = False
     enable_shell = False
     enable_edit = False
     debug = False
