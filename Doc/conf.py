@@ -65,7 +65,8 @@ today_fmt = '%B %d, %Y'
 # By default, highlight as Python 3.
 highlight_language = 'python3'
 
-# Minimum version of sphinx required
+# Minimum version of sphinx required.
+# Sphinx 6.2 no longer uses imghdr which was removed in Python 3.13.
 needs_sphinx = '6.2'
 
 # Ignore any .rst files in the includes/ directory;

@@ -22,6 +22,8 @@ Features required to build CPython:
 
 * On Windows, Microsoft Visual Studio 2017 or later is required.
 
+* Sphinx 6.2 or newer is required to build the Python documentation.
+
 .. versionchanged:: 3.11
    C11 compiler, IEEE 754 and NaN support are now required.
    On Windows, Visual Studio 2017 or later is required.

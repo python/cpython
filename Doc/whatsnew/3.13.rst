@@ -242,6 +242,8 @@ Build Changes
 =============
 
 * Sphinx 6.2 or newer is now required to build the Python documentation.
+  Sphinx 6.2 no longer uses the :mod:`!imghdr` module which was removed in
+  Python 3.13.
   (Contributed by Victor Stinner in :gh:`104818`.)
 
 
