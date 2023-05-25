@@ -344,12 +344,14 @@ details of bytecode instructions as :class:`Instruction` instances:
 
    .. data:: baseopcode
 
-      numeric code for the base operation if operation is specialized. Otherwise equal to :data:`opcode`
+      numeric code for the base operation if operation is specialized;
+      otherwise equal to :data:`opcode`
 
 
    .. data:: baseopname
 
-      human readable name for the base operation if operation is specialized. Otherwise equal to :data:`opname`
+      human readable name for the base operation if operation is specialized;
+      otherwise equal to :data:`opname`
 
 
    .. data:: arg
@@ -378,8 +380,8 @@ details of bytecode instructions as :class:`Instruction` instances:
 
    .. data:: start_offset
 
-      start index of operation within bytecode sequence including prefixed ``EXTENDED_ARG`` operations if present.
-      Otherwise equal to :data:`offset`
+      start index of operation within bytecode sequence, including prefixed
+      ``EXTENDED_ARG`` operations if present; otherwise equal to :data:`offset`
 
 
    .. data:: cache_offset
@@ -420,7 +422,8 @@ details of bytecode instructions as :class:`Instruction` instances:
 
    .. versionchanged:: 3.13
 
-      Added fields ``start_offset``, ``cache_offset``, ``end_offset``, ``baseopname``, ``baseopcode``, ``jump_target`` and ``oparg``.
+      Added fields ``start_offset``, ``cache_offset``, ``end_offset``,
+      ``baseopname``, ``baseopcode``, ``jump_target`` and ``oparg``.
 
 
 .. class:: Positions
