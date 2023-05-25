@@ -1429,7 +1429,7 @@ changes, or look through the Subversion logs for all the details.
   become very large.
   (Contributed by Charles Cazabon; :issue:`6963`.)
 
-* The :mod:`nntplib` module now supports IPv6 addresses.
+* The :mod:`!nntplib` module now supports IPv6 addresses.
   (Contributed by Derek Morr; :issue:`1664`.)
 
 * New functions: the :mod:`os` module wraps the following POSIX system

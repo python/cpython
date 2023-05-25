@@ -714,7 +714,7 @@ Fix refleak in _Py_fopen_obj() when PySys_Audit() fails
 .. nonce: tzMy7m
 .. section: Core and Builtins
 
-Add a state to the :mod:`nis` module (:pep:`3121`) and apply the multiphase
+Add a state to the :mod:`!nis` module (:pep:`3121`) and apply the multiphase
 initialization. Patch by Dong-hee Na.
 
 ..
@@ -2986,7 +2986,7 @@ Update Windows release to include SQLite 3.32.3.
 .. nonce: jpZzzh
 .. section: Windows
 
-:mod:`msilib` now supports creating CAB files with non-ASCII file path and
+:mod:`!msilib` now supports creating CAB files with non-ASCII file path and
 adding files with non-ASCII file path to them.
 
 ..
@@ -2996,9 +2996,9 @@ adding files with non-ASCII file path to them.
 .. nonce: gaQc3C
 .. section: Windows
 
-Fixed support of non-ASCII names in functions :func:`msilib.OpenDatabase`
-and :func:`msilib.init_database` and non-ASCII SQL in method
-:meth:`msilib.Database.OpenView`.
+Fixed support of non-ASCII names in functions :func:`!msilib.OpenDatabase`
+and :func:`!msilib.init_database` and non-ASCII SQL in method
+:meth:`!msilib.Database.OpenView`.
 
 ..
 
