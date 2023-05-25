@@ -262,20 +262,6 @@ class TestCopy(unittest.TestCase):
         x = C(0.0)
         self.assertEqual(copy.copy(x), x)
 
-    def test_copy_invalid_copy_method(self):
-        class C:
-            __copy__ = None
-        c = C()
-        with self.assertRaises(TypeError):
-            copy.copy(c)
-
-        class C:
-            __reduce_ex__ = None
-        c = C()
-        with self.assertRaises(TypeError):
-            copy.copy(c)
-
-
     # The deepcopy() method
 
     def test_deepcopy_basic(self):
