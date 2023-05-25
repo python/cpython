@@ -1120,8 +1120,8 @@ The following recipes have a more mathematical flavor:
        """
        # polynomial_derivative([1, -4, -17, 60]) -> [3, -8, -17]
        n = len(coefficients)
-       powers = reversed(range(n))
-       return list(map(operator.mul, coefficients[:-1], powers))
+       powers = reversed(range(1, n))
+       return list(map(operator.mul, coefficients, powers))
 
    def nth_combination(iterable, r, index):
        "Equivalent to list(combinations(iterable, r))[index]"
