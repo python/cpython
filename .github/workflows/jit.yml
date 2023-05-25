@@ -15,18 +15,18 @@ jobs:
         debug: [false, true]
         llvm: [14, 15, 16]
         os: [macOS, Ubuntu, Windows]
-      exclude:
-        # Looks like LLVM doesn't provide Intel macOS binaries anymore...
-        - llvm: 16
-          os: macOS
-        # stdlib.h not found when compiling stencils...
-        - os: macOS
-        # libtinfo.so.5 not found when compiling stencils
-        - llvm: 16
-          os: Ubuntu
-        # Unknown issue...
-        - debug: true
-          os: Windows
+        exclude:
+          # Looks like LLVM doesn't provide Intel macOS binaries anymore...
+          - llvm: 16
+            os: macOS
+          # stdlib.h not found when compiling stencils...
+          - os: macOS
+          # libtinfo.so.5 not found when compiling stencils
+          - llvm: 16
+            os: Ubuntu
+          # Unknown issue...
+          - debug: true
+            os: Windows
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4

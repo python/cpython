@@ -98,7 +98,7 @@ _PyJIT_CompileTrace(int size, _Py_CODEUNIT **trace)
         _Py_CODEUNIT *instruction = trace[i];
         const Stencil *stencil = &stencils[instruction->op.code];
         patches[HOLE_base] = (uintptr_t)head;
-        patches[HOLE_continue] = (i != size - 1) 
+        patches[HOLE_continue] = (i != size - 1)
                                ? (uintptr_t)head + stencil->nbytes
                                : (uintptr_t)memory + trampoline_stencil.nbytes;
         patches[HOLE_next_instr] = (uintptr_t)instruction;
