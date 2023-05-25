@@ -70,9 +70,10 @@ There are three ways strings and buffers can be converted to C:
 
 .. note::
 
-   For all ``#`` variants of formats (``s#``, ``y#``, etc.), the macro
-   :c:macro:`PY_SSIZE_T_CLEAN` must be defined before including
-   :file:`Python.h`. On Python 3.9 and older, the type of the length argument
+   From Python 3.10 to 3.12, the macro :c:macro:`PY_SSIZE_T_CLEAN` had to
+   be defined before including :file:`Python.h` to use all ``#`` variants of
+   formats (``s#``, ``y#``, etc.).
+   On Python 3.9 and older, the type of the length argument
    is :c:type:`Py_ssize_t` if the :c:macro:`PY_SSIZE_T_CLEAN` macro is defined,
    or int otherwise.
 

@@ -48,7 +48,7 @@ Include Files
 All function, type and macro definitions needed to use the Python/C API are
 included in your code by the following line::
 
-   #define PY_SSIZE_T_CLEAN
+   #define PY_SSIZE_T_CLEAN  /* needed until Python 3.12 */
    #include <Python.h>
 
 This implies inclusion of the following standard headers: ``<stdio.h>``,
