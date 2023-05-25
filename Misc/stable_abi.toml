@@ -383,16 +383,21 @@
 
 [function.PyArg_Parse]
     added = '3.2'
+    abi_only = true
 [function.PyArg_ParseTuple]
     added = '3.2'
+    abi_only = true
 [function.PyArg_ParseTupleAndKeywords]
     added = '3.2'
+    abi_only = true
 [function.PyArg_UnpackTuple]
     added = '3.2'
 [function.PyArg_VaParse]
     added = '3.2'
+    abi_only = true
 [function.PyArg_VaParseTupleAndKeywords]
     added = '3.2'
+    abi_only = true
 [function.PyArg_ValidateKeywordArguments]
     added = '3.2'
 [data.PyBaseObject_Type]
@@ -1132,10 +1137,12 @@
     added = '3.2'
 [function.PyObject_CallFunction]
     added = '3.2'
+    abi_only = true
 [function.PyObject_CallFunctionObjArgs]
     added = '3.2'
 [function.PyObject_CallMethod]
     added = '3.2'
+    abi_only = true
 [function.PyObject_CallMethodObjArgs]
     added = '3.2'
 [function.PyObject_CallObject]
@@ -1595,6 +1602,7 @@
     added = '3.2'
 [function.Py_BuildValue]
     added = '3.2'
+    abi_only = true
 [function.Py_CompileString]
     added = '3.2'
 [function.Py_DecRef]
@@ -1661,6 +1669,7 @@
     added = '3.2'
 [function.Py_VaBuildValue]
     added = '3.2'
+    abi_only = true
 
 [function._PyErr_BadInternalCall]
     added = '3.2'
