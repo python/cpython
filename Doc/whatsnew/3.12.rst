@@ -926,7 +926,7 @@ Modules (see :pep:`594`):
 * :mod:`crypt`
 * :mod:`imghdr`
 * :mod:`!mailcap`
-* :mod:`msilib`
+* :mod:`!msilib`
 * :mod:`!nis`
 * :mod:`!nntplib`
 * :mod:`!ossaudiodev`

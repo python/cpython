@@ -5400,7 +5400,7 @@ Update libffi to 3.4.3
 .. nonce: kV4K_1
 .. section: Windows
 
-Fixes a potential buffer overrun in :mod:`msilib`.
+Fixes a potential buffer overrun in :mod:`!msilib`.
 
 ..
 
