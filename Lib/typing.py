@@ -29,7 +29,6 @@ import operator
 import re as stdlib_re  # Avoid confusion with the typing.re namespace on <=3.11
 import sys
 import types
-import warnings
 from types import WrapperDescriptorType, MethodWrapperType, MethodDescriptorType, GenericAlias
 
 from _typing import (

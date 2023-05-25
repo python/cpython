@@ -1768,14 +1768,14 @@ These are not used in annotations. They are building blocks for declaring types.
 
       assert Point2D(x=1, y=2, label='first') == dict(x=1, y=2, label='first')
 
-   To allow using this feature with older versions of Python that do not
-   support :pep:`526`, ``TypedDict`` supports an additional syntactic
-   form using a literal :class:`dict` as the second argument::
+   There is an alternative way to create a ``TypedDict``
+   using a literal :class:`dict` as the second argument::
 
       Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
 
-   The functional syntax should also be used when any of the keys are not valid
-   :ref:`identifiers <identifiers>`, for example because they are keywords or contain hyphens.
+   This functional syntax allows defining keys which are not valid
+   :ref:`identifiers <identifiers>`, for example because they are
+   keywords or contain hyphens.
    Example::
 
       # raises SyntaxError
