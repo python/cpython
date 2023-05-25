@@ -188,10 +188,6 @@ PYTHONPATH=$(COREPYTHONPATH)
 #syslog syslogmodule.c
 #termios termios.c
 
-# Modules with UNIX dependencies that require external libraries
-
-#_crypt _cryptmodule.c -lcrypt
-
 # Modules that require external libraries.
 
 #_bz2 _bz2module.c -lbz2
