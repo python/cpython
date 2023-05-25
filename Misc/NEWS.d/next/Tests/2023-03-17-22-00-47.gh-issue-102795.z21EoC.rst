@@ -1,1 +1,0 @@
-fix use of poll in test_epoll's test_control_and_wait

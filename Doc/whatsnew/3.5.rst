@@ -2095,7 +2095,7 @@ accepts ``"x"`` to request exclusive creation.
 Other module-level changes
 ==========================
 
-Many functions in the :mod:`mmap`, :mod:`ossaudiodev`, :mod:`socket`,
+Many functions in the :mod:`mmap`, :mod:`!ossaudiodev`, :mod:`socket`,
 :mod:`ssl`, and :mod:`codecs` modules now accept writable
 :term:`bytes-like objects <bytes-like object>`.
 (Contributed by Serhiy Storchaka in :issue:`23001`.)

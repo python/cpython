@@ -138,7 +138,6 @@ _zoneinfo
 _decimal
 _elementtree
 _hashlib
-_msi
 _multiprocessing
 _overlapped
 _socket
@@ -188,7 +187,7 @@ _ssl
     again when building.
 
 _sqlite3
-    Wraps SQLite 3.41.2, which is itself built by sqlite3.vcxproj
+    Wraps SQLite 3.42.0, which is itself built by sqlite3.vcxproj
     Homepage:
         https://www.sqlite.org/
 _tkinter

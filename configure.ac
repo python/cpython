@@ -6,7 +6,7 @@ dnl Python's configure.ac file requires autoconf 2.69 and autoconf-archive.
 dnl
 
 # Set VERSION so we only need to edit in one place (i.e., here)
-m4_define(PYTHON_VERSION, 3.12)
+m4_define(PYTHON_VERSION, 3.13)
 
 AC_PREREQ([2.69])
 
@@ -202,7 +202,7 @@ AC_SUBST([FREEZE_MODULE_DEPS])
 AC_SUBST([PYTHON_FOR_BUILD_DEPS])
 
 AC_CHECK_PROGS([PYTHON_FOR_REGEN],
-  [python$PACKAGE_VERSION python3.11 python3.10 python3.9 python3.8 python3.7 python3.6 python3 python],
+  [python$PACKAGE_VERSION python3.13 python3.12 python3.11 python3.10 python3 python],
   [python3])
 AC_SUBST(PYTHON_FOR_REGEN)
 
@@ -1929,68 +1929,6 @@ if test "$Py_LTO" = 'true' ; then
   LDFLAGS_NODIST="$LDFLAGS_NODIST $LTOFLAGS"
 fi
 
-# Enable bolt flags
-Py_BOLT='false'
-AC_MSG_CHECKING(for --enable-bolt)
-AC_ARG_ENABLE(bolt, AS_HELP_STRING(
-                [--enable-bolt],
-                [enable usage of the llvm-bolt post-link optimizer (default is no)]),
-[
-if test "$enableval" != no
-then
-  Py_BOLT='true'
-  AC_MSG_RESULT(yes);
-else
-  Py_BOLT='false'
-  AC_MSG_RESULT(no);
-fi],
-[AC_MSG_RESULT(no)])
-
-AC_SUBST(PREBOLT_RULE)
-if test "$Py_BOLT" = 'true' ; then
-  PREBOLT_RULE="${DEF_MAKE_ALL_RULE}"
-  DEF_MAKE_ALL_RULE="bolt-opt"
-  DEF_MAKE_RULE="build_all"
-
-  AC_SUBST(READELF)
-  AC_CHECK_TOOLS(READELF, [readelf], "notfound")
-  if test "$READELF" == "notfound"
-  then
-    AC_MSG_ERROR([readelf is required for a --enable-bolt build but could not be found.])
-  fi
-      
-  # -fno-reorder-blocks-and-partition is required for bolt to work.
-  # Possibly GCC only.
-  AX_CHECK_COMPILE_FLAG([-fno-reorder-blocks-and-partition],[
-      CFLAGS_NODIST="$CFLAGS_NODIST -fno-reorder-blocks-and-partition"
-  ])
-
-  # These flags are required for bolt to work:
-  LDFLAGS_NODIST="$LDFLAGS_NODIST -Wl,--emit-relocs"
-
-  # These flags are required to get good performance from bolt:
-  CFLAGS_NODIST="$CFLAGS_NODIST -fno-pie"
-  # We want to add these no-pie flags to linking executables but not shared libraries:
-  LINKCC="$LINKCC -fno-pie -no-pie"
-  AC_SUBST(LLVM_BOLT)
-  AC_PATH_TOOL(LLVM_BOLT, llvm-bolt, '', ${llvm_path})
-  if test -n "${LLVM_BOLT}" -a -x "${LLVM_BOLT}"
-  then
-    AC_MSG_RESULT("Found llvm-bolt")
-  else
-    AC_MSG_ERROR([llvm-bolt is required for a --enable-bolt build but could not be found.])
-  fi
-
-  AC_SUBST(MERGE_FDATA)
-  AC_PATH_TOOL(MERGE_FDATA, merge-fdata, '', ${llvm_path})
-  if test -n "${MERGE_FDATA}" -a -x "${MERGE_FDATA}"
-  then
-    AC_MSG_RESULT("Found merge-fdata")
-  else
-    AC_MSG_ERROR([merge-fdata is required for a --enable-bolt build but could not be found.])
-  fi
-fi
-
 # Enable PGO flags.
 AC_SUBST(PGO_PROF_GEN_FLAG)
 AC_SUBST(PGO_PROF_USE_FLAG)
@@ -2066,6 +2004,109 @@ case $CC in
     LLVM_PROF_FILE=""
     ;;
 esac
+
+# BOLT optimization. Always configured after PGO since it always runs after PGO.
+Py_BOLT='false'
+AC_MSG_CHECKING(for --enable-bolt)
+AC_ARG_ENABLE(bolt, AS_HELP_STRING(
+                [--enable-bolt],
+                [enable usage of the llvm-bolt post-link optimizer (default is no)]),
+[
+if test "$enableval" != no
+then
+  Py_BOLT='true'
+  AC_MSG_RESULT(yes);
+else
+  Py_BOLT='false'
+  AC_MSG_RESULT(no);
+fi],
+[AC_MSG_RESULT(no)])
+
+AC_SUBST(PREBOLT_RULE)
+if test "$Py_BOLT" = 'true' ; then
+  PREBOLT_RULE="${DEF_MAKE_ALL_RULE}"
+  DEF_MAKE_ALL_RULE="bolt-opt"
+  DEF_MAKE_RULE="build_all"
+
+  # -fno-reorder-blocks-and-partition is required for bolt to work.
+  # Possibly GCC only.
+  AX_CHECK_COMPILE_FLAG([-fno-reorder-blocks-and-partition],[
+      CFLAGS_NODIST="$CFLAGS_NODIST -fno-reorder-blocks-and-partition"
+  ])
+
+  # These flags are required for bolt to work:
+  LDFLAGS_NODIST="$LDFLAGS_NODIST -Wl,--emit-relocs"
+
+  # These flags are required to get good performance from bolt:
+  CFLAGS_NODIST="$CFLAGS_NODIST -fno-pie"
+  # We want to add these no-pie flags to linking executables but not shared libraries:
+  LINKCC="$LINKCC -fno-pie -no-pie"
+  AC_SUBST(LLVM_BOLT)
+  AC_PATH_TOOL(LLVM_BOLT, llvm-bolt, '', ${llvm_path})
+  if test -n "${LLVM_BOLT}" -a -x "${LLVM_BOLT}"
+  then
+    AC_MSG_RESULT("Found llvm-bolt")
+  else
+    AC_MSG_ERROR([llvm-bolt is required for a --enable-bolt build but could not be found.])
+  fi
+
+  AC_SUBST(MERGE_FDATA)
+  AC_PATH_TOOL(MERGE_FDATA, merge-fdata, '', ${llvm_path})
+  if test -n "${MERGE_FDATA}" -a -x "${MERGE_FDATA}"
+  then
+    AC_MSG_RESULT("Found merge-fdata")
+  else
+    AC_MSG_ERROR([merge-fdata is required for a --enable-bolt build but could not be found.])
+  fi
+fi
+
+dnl Enable BOLT of libpython if built.
+AC_SUBST(BOLT_BINARIES)
+BOLT_BINARIES='$(BUILDPYTHON)'
+AS_VAR_IF([enable_shared], [yes], [
+  BOLT_BINARIES="${BOLT_BINARIES} \$(INSTSONAME)"
+])
+
+AC_ARG_VAR(
+  [BOLT_INSTRUMENT_FLAGS],
+  [Arguments to llvm-bolt when instrumenting binaries]
+)
+AC_MSG_CHECKING([BOLT_INSTRUMENT_FLAGS])
+if test -z "${BOLT_INSTRUMENT_FLAGS}"
+then
+  BOLT_INSTRUMENT_FLAGS=
+fi
+AC_MSG_RESULT([$BOLT_INSTRUMENT_FLAGS])
+
+AC_ARG_VAR(
+  [BOLT_APPLY_FLAGS],
+  [Arguments to llvm-bolt when creating a BOLT optimized binary]
+)
+AC_MSG_CHECKING([BOLT_APPLY_FLAGS])
+if test -z "${BOLT_APPLY_FLAGS}"
+then
+  AS_VAR_SET(
+    [BOLT_APPLY_FLAGS],
+    [m4_normalize("
+     -update-debug-sections
+     -reorder-blocks=ext-tsp
+     -reorder-functions=hfsort+
+     -split-functions
+     -icf=1
+     -inline-all
+     -split-eh
+     -reorder-functions-use-hot-size
+     -peepholes=none
+     -jump-tables=aggressive
+     -inline-ap
+     -indirect-call-promotion=all
+     -dyno-stats
+     -use-gnu-stack
+     -frame-opt=hot
+   ")]
+  )
+fi
+AC_MSG_RESULT([$BOLT_APPLY_FLAGS])
 
 # XXX Shouldn't the code above that fiddles with BASECFLAGS and OPT be
 # merged with this chunk of code?
@@ -3852,34 +3893,6 @@ if test "$have_glibc_memmove_bug" = yes; then
     AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -U_FORTIFY_SOURCE"])
 fi
 
-
-dnl check for NIS / libnsl dependencies
-dnl libnsl dependencies include tirpc includes and lib
-PKG_CHECK_MODULES([LIBNSL], [libnsl], [have_nis=yes], [
-  LIBNSL_CFLAGS=${LIBNSL_CFLAGS-""}
-  WITH_SAVE_ENV([
-    AC_SEARCH_LIBS([yp_match], [nsl], [have_nis=yes], [have_nis=no])
-  ])
-  AS_CASE([$ac_cv_search_yp_match],
-    [no], [libnsl=""],
-    ["none required"], [libnsl=""],
-    [libnsl="$ac_cv_search_yp_match"]
-  )
-  LIBNSL_LIBS=${LIBNSL_LIBS-$libnsl}
-])
-
-AS_VAR_IF([have_nis], [yes], [
-  WITH_SAVE_ENV([
-    CPPFLAGS="$CPPFLAGS $LIBNSL_CFLAGS"
-    AC_CHECK_HEADERS([rpc/rpc.h])
-  ])
-])
-
-dnl On NetBSD, when using OSS audio, you need to link against libossaudio
-AS_CASE([$ac_sys_system],
-  [NetBSD*], [OSSAUDIODEV_LIBS="-lossaudio"],
-  [OSSAUDIODEV_LIBS=""]
-)
 
 dnl detect sqlite3 from Emscripten emport
 PY_CHECK_EMSCRIPTEN_PORT([LIBSQLITE3], [-sUSE_SQLITE3])
@@ -7047,15 +7060,15 @@ AC_DEFUN([PY_STDLIB_MOD_SET_NA], [
 
 # stdlib not available
 dnl Modules that are not available on some platforms
-dnl AIX has shadow passwords, but access is not via getspent()
 dnl VxWorks does not provide crypt() function
 AS_CASE([$ac_sys_system],
-  [AIX], [PY_STDLIB_MOD_SET_NA([_scproxy], [spwd])],
+  [AIX], [PY_STDLIB_MOD_SET_NA([_scproxy])],
   [VxWorks*], [PY_STDLIB_MOD_SET_NA([_scproxy], [_crypt], [termios], [grp])],
-  [Darwin], [PY_STDLIB_MOD_SET_NA([ossaudiodev], [spwd])],
-  [CYGWIN*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
-  [QNX*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
-  [FreeBSD*], [PY_STDLIB_MOD_SET_NA([_scproxy], [spwd])],
+  dnl The _scproxy module is available on macOS
+  [Darwin], [],
+  [CYGWIN*], [PY_STDLIB_MOD_SET_NA([_scproxy])],
+  [QNX*], [PY_STDLIB_MOD_SET_NA([_scproxy])],
+  [FreeBSD*], [PY_STDLIB_MOD_SET_NA([_scproxy])],
   [Emscripten|WASI], [
     dnl subprocess and multiprocessing are not supported (no fork syscall).
     dnl curses and tkinter user interface are not available.
@@ -7075,11 +7088,8 @@ AS_CASE([$ac_sys_system],
       [_xxsubinterpreters],
       [_xxinterpchannels],
       [grp],
-      [nis],
-      [ossaudiodev],
       [pwd],
       [resource],
-      [spwd],
       [syslog],
     )
     AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
@@ -7225,15 +7235,11 @@ PY_STDLIB_MOD([_socket],
 
 dnl platform specific extensions
 PY_STDLIB_MOD([grp], [], [test "$ac_cv_func_getgrgid" = yes -o "$ac_cv_func_getgrgid_r" = yes])
-PY_STDLIB_MOD([ossaudiodev],
-  [], [test "$ac_cv_header_linux_soundcard_h" = yes -o "$ac_cv_header_sys_soundcard_h" = yes],
-  [], [$OSSAUDIODEV_LIBS])
 PY_STDLIB_MOD([pwd], [], [test "$ac_cv_func_getpwuid" = yes -o "$ac_cv_func_getpwuid_r" = yes])
 PY_STDLIB_MOD([resource], [], [test "$ac_cv_header_sys_resource_h" = yes])
 PY_STDLIB_MOD([_scproxy],
   [test "$ac_sys_system" = "Darwin"], [],
   [], [-framework SystemConfiguration -framework CoreFoundation])
-PY_STDLIB_MOD([spwd], [], [test "$ac_cv_func_getspent" = yes -o "$ac_cv_func_getspnam" = yes])
 PY_STDLIB_MOD([syslog], [], [test "$ac_cv_header_syslog_h" = yes])
 PY_STDLIB_MOD([termios], [], [test "$ac_cv_header_termios_h" = yes])
 
@@ -7286,9 +7292,6 @@ PY_STDLIB_MOD([_dbm],
 PY_STDLIB_MOD([_gdbm],
   [test "$have_gdbm_dbmliborder" = yes], [test "$have_gdbm" = yes],
   [$GDBM_CFLAGS], [$GDBM_LIBS])
-PY_STDLIB_MOD([nis],
-  [], [test "$have_nis" = yes -a "$ac_cv_header_rpc_rpc_h" = yes],
-  [$LIBNSL_CFLAGS], [$LIBNSL_LIBS])
  PY_STDLIB_MOD([readline],
   [], [test "$with_readline" != "no"],
   [$READLINE_CFLAGS], [$READLINE_LIBS])
