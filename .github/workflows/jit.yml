@@ -19,11 +19,11 @@ jobs:
           # Looks like LLVM doesn't provide Intel macOS binaries anymore...
           - llvm: 16
             os: macOS
-          # stdlib.h not found when compiling stencils...
-          - os: macOS
-          # libtinfo.so.5 not found when compiling stencils
-          - llvm: 16
-            os: Ubuntu
+          # # stdlib.h not found when compiling stencils...
+          # - os: macOS
+          # # libtinfo.so.5 not found when compiling stencils
+          # - llvm: 16
+          #   os: Ubuntu
           # Unknown issue...
           - debug: true
             os: Windows
@@ -35,6 +35,9 @@ jobs:
       - uses: KyleMayes/install-llvm-action@v1
         with:
           version: ${{ matrix.llvm }}
+      # XXX
+      - if: matrix.os != 'Windows'
+        run: echo $(which clang); clang --version; echo $(which llvm-objdump); llvm-objdump --version
       - if: matrix.os != 'Windows' && matrix.debug
         run: ./configure --with-pydebug
       - if: matrix.os != 'Windows' && !matrix.debug

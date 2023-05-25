@@ -423,6 +423,8 @@ class Engine:
         "-fomit-frame-pointer",
         # Need this to leave room for patching our 64-bit pointers:
         "-mcmodel=large",
+        # XXX
+        "-v",
     ]
     _OFFSETOF_CO_CODE_ADAPTIVE = 192
     _SKIP = frozenset(
