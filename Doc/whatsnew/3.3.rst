@@ -1558,7 +1558,7 @@ Schlawack in :issue:`12708`.)
 nntplib
 -------
 
-The :class:`nntplib.NNTP` class now supports the context management protocol to
+The :class:`!nntplib.NNTP` class now supports the context management protocol to
 unconditionally consume :exc:`socket.error` exceptions and to close the NNTP
 connection when done::
 
@@ -1778,7 +1778,7 @@ shlex
 -----
 
 The previously undocumented helper function ``quote`` from the
-:mod:`pipes` modules has been moved to the :mod:`shlex` module and
+:mod:`!pipes` modules has been moved to the :mod:`shlex` module and
 documented.  :func:`~shlex.quote` properly escapes all characters in a string
 that might be otherwise given special meaning by the shell.
 
