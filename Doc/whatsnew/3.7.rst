@@ -1547,7 +1547,7 @@ adding ``~`` to the set of characters that are never quoted by default.
 uu
 --
 
-The :func:`uu.encode` function now accepts an optional *backtick*
+The :func:`!uu.encode` function now accepts an optional *backtick*
 keyword argument.  When it's true, zeros are represented by ``'`'``
 instead of spaces.  (Contributed by Xiang Zhang in :issue:`30103`.)
 

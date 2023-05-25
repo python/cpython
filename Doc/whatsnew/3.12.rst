@@ -935,7 +935,7 @@ Modules (see :pep:`594`):
 * :mod:`!spwd`
 * :mod:`!sunau`
 * :mod:`!telnetlib`
-* :mod:`uu`
+* :mod:`!uu`
 * :mod:`!xdrlib`
 
 APIs:

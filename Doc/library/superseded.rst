@@ -15,4 +15,3 @@ backwards compatibility. They have been superseded by other modules.
    chunk.rst
    imghdr.rst
    optparse.rst
-   uu.rst
