@@ -500,7 +500,7 @@ itertools
 json
 ----
 
-* Added :class:`json.AttrDict` for use with `object_hook` in :func:`json.load`
+* Added :class:`json.AttrDict` for use with ``object_hook`` in :func:`json.load`
   or :func:`json.loads`.  This is a subclass of :class:`dict` that also supports
   attribute style dotted access.
   (Contributed by Raymond Hettinger in :gh:`96145`.)
@@ -511,7 +511,7 @@ math
 * Added :func:`math.sumprod` for computing a sum of products.
   (Contributed by Raymond Hettinger in :gh:`100485`.)
 
-* Extended :func:`math.nextafter` to include a `steps` argument
+* Extended :func:`math.nextafter` to include a *steps* argument
   for moving up or down multiple steps at a time.
   (By Matthias Goergens, Mark Dickinson, and Raymond Hettinger in :gh:`94906`.)
 
@@ -563,7 +563,7 @@ random
 * Added :func:`random.binomialvariate`.
   (Contributed by Raymond Hettinger in :gh:`81620`.)
 
-* Added a default parameter of `lamb=1.0` to :func:`random.expovariate`.
+* Added a default of ``lamb=1.0`` to :func:`random.expovariate`.
   (Contributed by Raymond Hettinger in :gh:`100234`.)
 
 shutil
@@ -622,7 +622,7 @@ sqlite3
 statistics
 ----------
 
-* Extended :func:`statistics.correlation` to include as a `ranked` method
+* Extended :func:`statistics.correlation` to include as a ``ranked`` method
   for computing the Spearman correlation of ranked data.
   (Contributed by Raymond Hettinger in :gh:`95861`.)
 
