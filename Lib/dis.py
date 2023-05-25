@@ -318,8 +318,8 @@ class Instruction(_Instruction):
          argval - resolved arg value (if known), otherwise same as arg
          argrepr - human readable description of operation argument
          offset - start index of operation within bytecode sequence
-         start_offset - start index of operation within bytecode sequence including extended args if present.
-                        Otherwise equal to Instruction.offset
+         start_offset - start index of operation within bytecode sequence including extended args if present;
+                        otherwise equal to Instruction.offset
          starts_line - line started by this opcode (if any), otherwise None
          is_jump_target - True if other code jumps to here, otherwise False
          positions - Optional dis.Positions object holding the span of source code
@@ -401,7 +401,7 @@ class Instruction(_Instruction):
             # the space reserved for oparg. This results in fewer misaligned opargs
             # in the disassembly output.
             opname_excess = max(0, len(self.opname) - _OPNAME_WIDTH)
-            fields.append(arg.rjust(_OPARG_WIDTH - opname_excess))
+            fields.append(repr(self.arg).rjust(_OPARG_WIDTH - opname_excess))
             # Column: Opcode argument details
             if self.argrepr:
                 fields.append('(' + self.argrepr + ')')
