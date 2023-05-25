@@ -1422,7 +1422,7 @@ complete list of changes, or look through the SVN logs for all the details.
   (Contributed by Gregory K. Johnson.  Funding was provided by Google's 2005
   Summer of Code.)
 
-* New module: the :mod:`msilib` module allows creating Microsoft Installer
+* New module: the :mod:`!msilib` module allows creating Microsoft Installer
   :file:`.msi` files and CAB files.  Some support for reading the :file:`.msi`
   database is also included. (Contributed by Martin von Löwis.)
 
