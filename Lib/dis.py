@@ -276,8 +276,10 @@ _Instruction.arg.__doc__ = "Numeric argument to operation (if any), otherwise No
 _Instruction.argval.__doc__ = "Resolved arg value (if known), otherwise same as arg"
 _Instruction.argrepr.__doc__ = "Human readable description of operation argument"
 _Instruction.offset.__doc__ = "Start index of operation within bytecode sequence"
-_Instruction.start_offset.__doc__ = "Start index of operation within bytecode sequence including extended args if present. " \
-                                    "Otherwise equal to Instruction.offset"
+_Instruction.start_offset.__doc__ = (
+    "Start index of operation within bytecode sequence, including extended args if present; "
+    "otherwise equal to Instruction.offset"
+)
 _Instruction.starts_line.__doc__ = "Line started by this opcode (if any), otherwise None"
 _Instruction.is_jump_target.__doc__ = "True if other code jumps to here, otherwise False"
 _Instruction.positions.__doc__ = "dis.Positions object holding the span of source code covered by this instruction"
