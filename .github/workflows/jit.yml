@@ -32,12 +32,13 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
+      - if: matrix.os == 'macOS'
+        run: xcode-select --install
+      - if: matrix.os == 'Ubuntu' && matrix.llvm == 16
+        run: sudo apt install libtinfo5
       - uses: KyleMayes/install-llvm-action@v1
         with:
           version: ${{ matrix.llvm }}
-      # XXX
-      - if: matrix.os != 'Windows'
-        run: echo $(which clang); clang --version; echo $(which llvm-objdump); llvm-objdump --version
       - if: matrix.os != 'Windows' && matrix.debug
         run: ./configure --with-pydebug
       - if: matrix.os != 'Windows' && !matrix.debug
