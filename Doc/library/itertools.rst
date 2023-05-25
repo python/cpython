@@ -150,7 +150,7 @@ loops that truncate the stream.
       # Amortize a 5% loan of 1000 with 10 annual payments of 90
       >>> account_update = lambda bal, pmt: round(bal * 1.05) + pmt
       >>> list(accumulate(repeat(-90, 10), account_update, initial=1_000))
-      [1000, 960, 918, 874, 828, 779, 728, 674, 618, 559, 49
+      [1000, 960, 918, 874, 828, 779, 728, 674, 618, 559, 497]
 
     See :func:`functools.reduce` for a similar function that returns only the
     final accumulated value.
