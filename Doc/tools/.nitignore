@@ -84,7 +84,6 @@ Doc/library/asyncio-policy.rst
 Doc/library/asyncio-stream.rst
 Doc/library/asyncio-subprocess.rst
 Doc/library/asyncio-task.rst
-Doc/library/audioop.rst
 Doc/library/bdb.rst
 Doc/library/bisect.rst
 Doc/library/bz2.rst

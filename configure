@@ -734,8 +734,6 @@ MODULE_CMATH_FALSE
 MODULE_CMATH_TRUE
 MODULE__STATISTICS_FALSE
 MODULE__STATISTICS_TRUE
-MODULE_AUDIOOP_FALSE
-MODULE_AUDIOOP_TRUE
 MODULE__POSIXSHMEM_FALSE
 MODULE__POSIXSHMEM_TRUE
 MODULE__MULTIPROCESSING_FALSE
@@ -25662,26 +25660,6 @@ $as_echo "$py_cv_module__posixshmem" >&6; }
 
 
 
-        if test "$py_cv_module_audioop" != "n/a"; then :
-  py_cv_module_audioop=yes
-fi
-   if test "$py_cv_module_audioop" = yes; then
-  MODULE_AUDIOOP_TRUE=
-  MODULE_AUDIOOP_FALSE='#'
-else
-  MODULE_AUDIOOP_TRUE='#'
-  MODULE_AUDIOOP_FALSE=
-fi
-
-  as_fn_append MODULE_BLOCK "MODULE_AUDIOOP_STATE=$py_cv_module_audioop$as_nl"
-  if test "x$py_cv_module_audioop" = xyes; then :
-
-
-    as_fn_append MODULE_BLOCK "MODULE_AUDIOOP_LDFLAGS=$LIBM$as_nl"
-
-fi
-
-
         if test "$py_cv_module__statistics" != "n/a"; then :
   py_cv_module__statistics=yes
 fi
@@ -27592,10 +27570,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__POSIXSHMEM_TRUE}" && test -z "${MODULE__POSIXSHMEM_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__POSIXSHMEM\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${MODULE_AUDIOOP_TRUE}" && test -z "${MODULE_AUDIOOP_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE_AUDIOOP\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__STATISTICS_TRUE}" && test -z "${MODULE__STATISTICS_FALSE}"; then
