@@ -16,13 +16,15 @@
 #include "pycore_atomic_funcs.h" // _Py_atomic_int_get()
 #include "pycore_bitutils.h"     // _Py_bswap32()
 #include "pycore_compile.h"      // _PyCompile_CodeGen, _PyCompile_OptimizeCfg, _PyCompile_Assemble
+#include "pycore_ceval.h"        // _PyEval_AddPendingCall
 #include "pycore_fileutils.h"    // _Py_normpath
 #include "pycore_frame.h"        // _PyInterpreterFrame
 #include "pycore_gc.h"           // PyGC_Head
 #include "pycore_hashtable.h"    // _Py_hashtable_new()
 #include "pycore_initconfig.h"   // _Py_GetConfigsAsDict()
-#include "pycore_pathconfig.h"   // _PyPathConfig_ClearGlobal()
 #include "pycore_interp.h"       // _PyInterpreterState_GetConfigCopy()
+#include "pycore_interpreteridobject.h"  // _PyInterpreterID_LookUp()
+#include "pycore_pathconfig.h"   // _PyPathConfig_ClearGlobal()
 #include "pycore_pyerrors.h"     // _Py_UTF8_Edit_Cost()
 #include "pycore_pystate.h"      // _PyThreadState_GET()
 #include "osdefs.h"              // MAXPATHLEN
@@ -838,6 +840,123 @@ set_optimizer(PyObject *self, PyObject *opt)
     Py_RETURN_NONE;
 }
 
+
+static int _pending_callback(void *arg)
+{
+    /* we assume the argument is callable object to which we own a reference */
+    PyObject *callable = (PyObject *)arg;
+    PyObject *r = PyObject_CallNoArgs(callable);
+    Py_DECREF(callable);
+    Py_XDECREF(r);
+    return r != NULL ? 0 : -1;
+}
+
+/* The following requests n callbacks to _pending_callback.  It can be
+ * run from any python thread.
+ */
+static PyObject *
+pending_threadfunc(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    PyObject *callable;
+    int ensure_added = 0;
+    static char *kwlist[] = {"", "ensure_added", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+                                     "O|$p:pending_threadfunc", kwlist,
+                                     &callable, &ensure_added))
+    {
+        return NULL;
+    }
+    PyInterpreterState *interp = PyInterpreterState_Get();
+
+    /* create the reference for the callbackwhile we hold the lock */
+    Py_INCREF(callable);
+
+    int r;
+    Py_BEGIN_ALLOW_THREADS
+    r = _PyEval_AddPendingCall(interp, &_pending_callback, callable, 0);
+    Py_END_ALLOW_THREADS
+    if (r < 0) {
+        /* unsuccessful add */
+        if (!ensure_added) {
+            Py_DECREF(callable);
+            Py_RETURN_FALSE;
+        }
+        do {
+            Py_BEGIN_ALLOW_THREADS
+            r = _PyEval_AddPendingCall(interp, &_pending_callback, callable, 0);
+            Py_END_ALLOW_THREADS
+        } while (r < 0);
+    }
+
+    Py_RETURN_TRUE;
+}
+
+
+struct _pending_fd_data {
+    int fileno;
+    const char *text;
+};
+
+static int _pending_fd_callback(void *arg)
+{
+    union {
+        int value;
+        void *voidptr;
+    } data;
+    data.voidptr = arg;
+    int fileno = data.value;
+
+    /* Generate the text payload. */
+    PyThreadState *tstate = PyThreadState_Get();
+    int64_t interpid = PyInterpreterState_GetID(tstate->interp);
+    char buffer[256];
+    snprintf(buffer, 256, "{\"interpid\": %ld, \"threadid\": %ld}",
+             interpid, tstate->thread_id);
+
+    /* Call os.write(fileno, text). */
+    PyObject *os = PyImport_ImportModule("os");
+    assert(os != NULL);
+    PyObject *result = PyObject_CallMethod(os, "write", "iy", fileno, buffer);
+    if (result == NULL) {
+        return -1;
+    }
+    Py_DECREF(result);
+    return 0;
+}
+
+static PyObject *
+pending_fd_identify(PyObject *self, PyObject *args)
+{
+    PyObject *interpid;
+    union {
+        int value;
+        void *voidptr;
+    } fileno;
+    if (!PyArg_ParseTuple(args, "Oi:pending_fd_identify",
+                          &interpid, &fileno.value))
+    {
+        return NULL;
+    }
+    PyInterpreterState *interp = _PyInterpreterID_LookUp(interpid);
+    if (interp == NULL) {
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_ValueError, "interpreter not found");
+        }
+        return NULL;
+    }
+
+    int r;
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        r = _PyEval_AddPendingCall(interp, &_pending_fd_callback,
+                                   fileno.voidptr, 0);
+        Py_END_ALLOW_THREADS
+    } while (r < 0);
+
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -868,6 +987,9 @@ static PyMethodDef module_functions[] = {
     {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
     {"set_optimizer", set_optimizer,  METH_O, NULL},
     {"get_counter_optimizer", get_counter_optimizer, METH_NOARGS, NULL},
+    {"pending_threadfunc", _PyCFunction_CAST(pending_threadfunc),
+     METH_VARARGS | METH_KEYWORDS},
+    {"pending_fd_identify", pending_fd_identify, METH_VARARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
 
