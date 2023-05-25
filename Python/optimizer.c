@@ -76,30 +76,6 @@ PyUnstable_Insert_Executor(PyCodeObject *code, int offset, _PyExecutorObject *ex
     return 0;
 }
 
-/*
-# Finding hotspots
-
-This can be done with two counters. One on backedges and function entry points, and one global counters. We hit a hotspot when the code is executed frequently. The frequency we need to reach depends on the optimization_cost and run_cost of the optimizer, as well as how long the program has been running, optimize when frequency > threshold.
-    frequency = delta(local counter)/delta(global counter).
-
-    threshold = K * (N*(1/((global counter)+M)) + optimization_cost/run_cost)
-    where K, N and M are tunable parameters.
-
-We check frequency whenever the local counter hits 0. Since we started the local counter at some constant, then delta(local counter) == D. If we store the value of the global counter when the local counter was set to D, then we have frequency = D/((global counter) - (local value of global counter))
-
-With C = optimization_cost/run_cost
-frequency > threshold is equivalent to
-D/((global counter) - (local value of global counter)) > N*(1/((global counter)+M)) + C
-
-D / (GC - LGC) > N * ( 1 / (GC  + M) + C)
-
-
-
-
-
-It is then just algebra, to re-organize the above equations into an efficient test of frequency > threshold.
-*/
-
 static _PyInterpreterFrame *
 noop_optimize(
     _PyOptimizerObject* self,
