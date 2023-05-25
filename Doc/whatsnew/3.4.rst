@@ -605,15 +605,15 @@ Using ``ABC`` as a base class has essentially the same effect as specifying
 aifc
 ----
 
-The :meth:`~aifc.aifc.getparams` method now returns a namedtuple rather than a
+The :meth:`~!aifc.aifc.getparams` method now returns a namedtuple rather than a
 plain tuple.  (Contributed by Claudiu Popa in :issue:`17818`.)
 
-:func:`aifc.open` now supports the context management protocol: when used in a
-:keyword:`with` block, the :meth:`~aifc.aifc.close` method of the returned
+:func:`!aifc.open` now supports the context management protocol: when used in a
+:keyword:`with` block, the :meth:`~!aifc.aifc.close` method of the returned
 object will be called automatically at the end of the block.  (Contributed by
 Serhiy Storchacha in :issue:`16486`.)
 
-The :meth:`~aifc.aifc.writeframesraw` and :meth:`~aifc.aifc.writeframes`
+The :meth:`~!aifc.aifc.writeframesraw` and :meth:`~!aifc.aifc.writeframes`
 methods now accept any :term:`bytes-like object`.  (Contributed by Serhiy
 Storchaka in :issue:`8311`.)
 
