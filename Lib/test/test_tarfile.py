@@ -3043,7 +3043,7 @@ class TestExtractionFilters(unittest.TestCase):
                 self.raised_exception = None
                 try:
                     self.expected_paths = set(self.outerdir.glob('**/*'))
-                except OSError as err
+                except OSError as err:
                     if getattr(err, 'winerror', None) == 123:
                         # 123 is Windows error ERROR_INVALID_NAME
                         # glob() fails this way when symlink targets are too long
