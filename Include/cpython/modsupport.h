@@ -2,19 +2,9 @@
 #  error "this header file must not be included directly"
 #endif
 
-/* If PY_SSIZE_T_CLEAN is defined, each functions treats #-specifier
-   to mean Py_ssize_t */
-#ifdef PY_SSIZE_T_CLEAN
+/* Each functions treats #-specifier to mean Py_ssize_t
+ * regardless PY_SSIZE_T_CLEAN */
 #define _Py_VaBuildStack                _Py_VaBuildStack_SizeT
-#else
-PyAPI_FUNC(PyObject *) _Py_VaBuildValue_SizeT(const char *, va_list);
-PyAPI_FUNC(PyObject **) _Py_VaBuildStack_SizeT(
-    PyObject **small_stack,
-    Py_ssize_t small_stack_len,
-    const char *format,
-    va_list va,
-    Py_ssize_t *p_nargs);
-#endif
 
 PyAPI_FUNC(int) _PyArg_UnpackStack(
     PyObject *const *args,
@@ -63,12 +53,10 @@ typedef struct _PyArg_Parser {
     struct _PyArg_Parser *next;
 } _PyArg_Parser;
 
-#ifdef PY_SSIZE_T_CLEAN
 #define _PyArg_ParseTupleAndKeywordsFast  _PyArg_ParseTupleAndKeywordsFast_SizeT
 #define _PyArg_ParseStack  _PyArg_ParseStack_SizeT
 #define _PyArg_ParseStackAndKeywords  _PyArg_ParseStackAndKeywords_SizeT
 #define _PyArg_VaParseTupleAndKeywordsFast  _PyArg_VaParseTupleAndKeywordsFast_SizeT
-#endif
 
 PyAPI_FUNC(int) _PyArg_ParseTupleAndKeywordsFast(PyObject *, PyObject *,
                                                  struct _PyArg_Parser *, ...);

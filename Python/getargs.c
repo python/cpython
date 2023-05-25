@@ -657,7 +657,11 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
               char *msgbuf, size_t bufsize, freelist_t *freelist)
 {
 #define RETURN_ERR_OCCURRED return msgbuf
-    /* For # codes */
+    // For # codes
+    // Even though Python 3.13 uses ssize_t ragardless PY_SSIZE_T_CLEAN,
+    // extension compiled with Python ~3.9 may still use int version API.
+    // Remove this check after we drop supporting extension module built with
+    // Python ~3.9.
 #define REQUIRE_PY_SSIZE_T_CLEAN \
     if (!(flags & FLAG_SIZE_T)) { \
         PyErr_SetString(PyExc_SystemError, \

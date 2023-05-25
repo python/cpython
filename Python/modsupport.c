@@ -277,6 +277,10 @@ do_mktuple(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n, int
 static PyObject *
 do_mkvalue(const char **p_format, va_list *p_va, int flags)
 {
+    // Even though Python 3.13 uses ssize_t ragardless PY_SSIZE_T_CLEAN,
+    // extension compiled with Python ~3.9 may still use int version API.
+    // Remove this check after we drop supporting extension module built with
+    // Python ~3.9.
 #define ERROR_NEED_PY_SSIZE_T_CLEAN \
     { \
         PyErr_SetString(PyExc_SystemError, \

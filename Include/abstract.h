@@ -135,10 +135,8 @@ extern "C" {
    This function always succeeds. */
 
 
-#ifdef PY_SSIZE_T_CLEAN
-#  define PyObject_CallFunction _PyObject_CallFunction_SizeT
-#  define PyObject_CallMethod _PyObject_CallMethod_SizeT
-#endif
+#define PyObject_CallFunction _PyObject_CallFunction_SizeT
+#define PyObject_CallMethod _PyObject_CallMethod_SizeT
 
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000

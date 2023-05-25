@@ -1,0 +1,2 @@
+``PY_SSIZE_T_CLEAN`` is no longer required to use '#' specifier in APIs like
+:c:func:`PyArg_ParseTuple` and :c:func:`Py_BuildValue`.

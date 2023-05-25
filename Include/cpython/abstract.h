@@ -4,9 +4,7 @@
 
 /* === Object Protocol ================================================== */
 
-#ifdef PY_SSIZE_T_CLEAN
-#  define _PyObject_CallMethodId _PyObject_CallMethodId_SizeT
-#endif
+#define _PyObject_CallMethodId _PyObject_CallMethodId_SizeT
 
 /* Convert keyword arguments from the FASTCALL (stack: C array, kwnames: tuple)
    format to a Python dictionary ("kwargs" dict).

@@ -9,9 +9,9 @@ extern "C" {
 
 #include <stdarg.h>               // va_list
 
-/* If PY_SSIZE_T_CLEAN is defined, each functions treats #-specifier
-   to mean Py_ssize_t */
-#ifdef PY_SSIZE_T_CLEAN
+/* Since Python 3.13, each functions treats #-specifier to mean Py_ssize_t
+ * regardless PY_SSIZE_T_CLEAN is defined,
+ */
 #define PyArg_Parse                     _PyArg_Parse_SizeT
 #define PyArg_ParseTuple                _PyArg_ParseTuple_SizeT
 #define PyArg_ParseTupleAndKeywords     _PyArg_ParseTupleAndKeywords_SizeT
@@ -19,10 +19,9 @@ extern "C" {
 #define PyArg_VaParseTupleAndKeywords   _PyArg_VaParseTupleAndKeywords_SizeT
 #define Py_BuildValue                   _Py_BuildValue_SizeT
 #define Py_VaBuildValue                 _Py_VaBuildValue_SizeT
-#endif
 
 /* Due to a glitch in 3.2, the _SizeT versions weren't exported from the DLL. */
-#if !defined(PY_SSIZE_T_CLEAN) || !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 PyAPI_FUNC(int) PyArg_Parse(PyObject *, const char *, ...);
 PyAPI_FUNC(int) PyArg_ParseTuple(PyObject *, const char *, ...);
 PyAPI_FUNC(int) PyArg_ParseTupleAndKeywords(PyObject *, PyObject *,
