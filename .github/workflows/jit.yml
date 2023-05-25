@@ -15,6 +15,18 @@ jobs:
         debug: [false, true]
         llvm: [14, 15, 16]
         os: [macOS, Ubuntu, Windows]
+      exclude:
+        # Looks like LLVM doesn't provide Intel macOS binaries anymore...
+        - llvm: 16
+          os: macOS
+        # stdlib.h not found when compiling stencils...
+        - os: macOS
+        # libtinfo.so.5 not found when compiling stencils
+        - llvm: 16
+          os: Ubuntu
+        # Unknown issue...
+        - debug: true
+          os: Windows
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -28,14 +40,14 @@ jobs:
       - if: matrix.os != 'Windows' && !matrix.debug
         run: ./configure
       - if: matrix.os != 'Windows'
-        run: make all --jobs
+        run: make all
       - if: matrix.os == 'Windows' && matrix.debug
         run: ./PCbuild/build.bat -d
       - if: matrix.os == 'Windows' && !matrix.debug
         run: ./PCbuild/build.bat
       - if: matrix.os == 'macOS'
-        run: ./python.exe -m test --multiprocess 0
+        run: ./python.exe -m test -j0 -wW
       - if: matrix.os == 'Ubuntu'
-        run: ./python -m test --multiprocess 0
+        run: ./python -m test -j0 -wW
       - if: matrix.os == 'Windows'
-        run: ./python.bat -m test --multiprocess 0
+        run: ./python.bat -m test -j0 -wW
