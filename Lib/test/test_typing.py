@@ -2472,7 +2472,8 @@ class ProtocolTests(BaseTestCase):
         self.assertNotIsSubclass(types.FunctionType, P)
         self.assertNotIsInstance(f, P)
 
-    def test_runtime_checkable_pep695(self):
+    def test_runtime_checkable_generic_non_protocol(self):
+        # Make sure this doesn't raise AttributeError
         with self.assertRaisesRegex(
             TypeError,
             "@runtime_checkable can be only applied to protocol classes",
@@ -2480,6 +2481,22 @@ class ProtocolTests(BaseTestCase):
             @runtime_checkable
             class Foo[T]: ...
 
+    def test_runtime_checkable_generic(self):
+        @runtime_checkable
+        class Foo[T](Protocol):
+            def meth(self) -> T: ...
+        
+        class Impl:
+            def meth(self) -> int: ...
+        
+        self.assertIsSubclass(Impl, Foo)
+        
+        class NotImpl:
+            def method(self) -> int: ...
+        
+        self.assertNotIsSubclass(NotImpl, Foo)
+        
+    def test_pep695_generics_can_be_runtime_checkable(self):
         @runtime_checkable
         class HasX(Protocol):
             x: int
