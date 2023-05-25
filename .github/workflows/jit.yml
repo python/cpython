@@ -7,7 +7,7 @@ permissions:
 
 jobs:
   jit:
-    name: JIT / ${{ matrix.os }} / ${{ matrix.debug && 'Debug' || 'Release' }} / LLVM ${{ matrix.llvm }}
+    name: JIT / ${{ matrix.debug && 'Debug' || 'Release' }} / LLVM ${{ matrix.llvm }} / ${{ matrix.os }}
     runs-on: ${{ matrix.os }}-latest
     strategy:
       fail-fast: false
@@ -21,6 +21,8 @@ jobs:
         with:
           python-version: '3.10'
       - uses: KyleMayes/install-llvm-action@v1
+        with:
+          version: ${{ matrix.llvm }}
       - if: matrix.os != 'Windows' && matrix.debug
         run: ./configure --with-pydebug
       - if: matrix.os != 'Windows' && !matrix.debug
