@@ -449,7 +449,6 @@ PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
 #define OFF(x) offsetof(PyFunctionObject, x)
 
 static PyMemberDef func_memberlist[] = {
-    {"__closure__",   T_OBJECT,     OFF(func_closure), READONLY},
     {"__doc__",       T_OBJECT,     OFF(func_doc), 0},
     {"__globals__",   T_OBJECT,     OFF(func_globals), READONLY},
     {"__module__",    T_OBJECT,     OFF(func_module), 0},
@@ -690,8 +689,64 @@ _Py_set_function_type_params(PyThreadState *Py_UNUSED(ignored), PyObject *func,
     return Py_NewRef(func);
 }
 
+static PyObject *
+func_get_closure(PyFunctionObject *op, void *Py_UNUSED(ignored))
+{
+    if (op->func_closure == NULL) {
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    Py_INCREF(op->func_closure);
+    return op->func_closure;
+}
+
+static int
+func_set_closure(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
+{
+    PyObject *tmp;
+    Py_ssize_t nfree, nclosure;
+    PyCodeObject *code;
+
+    if (value != Py_None && !PyTuple_Check(value)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "__closure__ must be set to a tuple object or None");
+        return -1;
+    }
+
+    code = (PyCodeObject*)op->func_code;
+    nfree = PyTuple_GET_SIZE(PyCode_GetFreevars(code));
+    nclosure = value == Py_None ? 0 : PyTuple_GET_SIZE(value);
+
+    if (nfree != nclosure) {
+        PyErr_Format(PyExc_ValueError,
+                     "%U requires closure of length %zd, not %zd",
+                     code->co_name, nfree, nclosure);
+        return -1;
+    }
+
+    if (nclosure) {
+        Py_ssize_t i;
+        for (i = 0; i < nclosure; i++) {
+            PyObject *o = PyTuple_GET_ITEM(value, i);
+            if (!PyCell_Check(o)) {
+                PyErr_Format(PyExc_TypeError,
+                             "expected only cells in closure, found %s",
+                             o->ob_type->tp_name);
+                return -1;
+            }
+        }
+    }
+
+    tmp = op->func_closure;
+    Py_XINCREF(value);
+    op->func_closure = value;
+    Py_XDECREF(tmp);
+    return 0;
+}
+
 static PyGetSetDef func_getsetlist[] = {
     {"__code__", (getter)func_get_code, (setter)func_set_code},
+    {"__closure__", (getter)func_get_closure, (setter)func_set_closure},
     {"__defaults__", (getter)func_get_defaults,
      (setter)func_set_defaults},
     {"__kwdefaults__", (getter)func_get_kwdefaults,
