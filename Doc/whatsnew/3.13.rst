@@ -230,6 +230,9 @@ Removed
 * :pep:`594`: Remove the :mod:`!chunk` module, deprecated in Python 3.11.
   (Contributed by Victor Stinner in :gh:`104773`.)
 
+* Remove support for the keyword-argument method of creating
+  :class:`typing.TypedDict` types, deprecated in Python 3.11.
+  (Contributed by Tomas Roun in :gh:`104786`.)
 
 Porting to Python 3.13
 ======================

@@ -1780,25 +1780,14 @@ These are not used in annotations. They are building blocks for declaring types.
 
       assert Point2D(x=1, y=2, label='first') == dict(x=1, y=2, label='first')
 
-   To allow using this feature with older versions of Python that do not
-   support :pep:`526`, ``TypedDict`` supports two additional equivalent
-   syntactic forms:
-
-   * Using a literal :class:`dict` as the second argument::
+   An alternative way to create a ``TypedDict`` is by using
+   function-call syntax. The second argument must be a literal :class:`dict`::
 
       Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
 
-   * Using keyword arguments::
-
-      Point2D = TypedDict('Point2D', x=int, y=int, label=str)
-
-   .. deprecated-removed:: 3.11 3.13
-      The keyword-argument syntax is deprecated in 3.11 and will be removed
-      in 3.13. It may also be unsupported by static type checkers.
-
-   The functional syntax should also be used when any of the keys are not valid
-   :ref:`identifiers <identifiers>`, for example because they are keywords or contain hyphens.
-   Example::
+   This functional syntax allows defining keys which are not valid
+   :ref:`identifiers <identifiers>`, for example because they are
+   keywords or contain hyphens::
 
       # raises SyntaxError
       class Point2D(TypedDict):
@@ -1954,6 +1943,9 @@ These are not used in annotations. They are building blocks for declaring types.
 
    .. versionchanged:: 3.11
       Added support for generic ``TypedDict``\ s.
+
+   .. versionchanged:: 3.13
+      Removed support for the keyword-argument method of creating ``TypedDict``\ s.
 
 Generic concrete collections
 ----------------------------
