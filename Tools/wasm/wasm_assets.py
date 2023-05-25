@@ -43,7 +43,6 @@ OMIT_FILES = (
     "venv/",
     # deprecated
     "uu.py",
-    "xdrlib.py",
     # other platforms
     "_aix_support.py",
     "_osx_support.py",
@@ -57,22 +56,17 @@ OMIT_FILES = (
     "concurrent/futures/thread.py",
     # Misc unused or large files
     "pydoc_data/",
-    "msilib/",
 )
 
 # Synchronous network I/O and protocols are not supported; for example,
 # socket.create_connection() raises an exception:
 # "BlockingIOError: [Errno 26] Operation in progress".
 OMIT_NETWORKING_FILES = (
-    "cgi.py",
-    "cgitb.py",
     "email/",
     "ftplib.py",
     "http/",
     "imaplib.py",
     "mailbox.py",
-    "mailcap.py",
-    "nntplib.py",
     "poplib.py",
     "smtplib.py",
     "socketserver.py",
@@ -86,7 +80,7 @@ OMIT_NETWORKING_FILES = (
 
 OMIT_MODULE_FILES = {
     "_asyncio": ["asyncio/"],
-    "audioop": ["aifc.py", "sunau.py", "wave.py"],
+    "audioop": ["aifc.py", "wave.py"],
     "_crypt": ["crypt.py"],
     "_curses": ["curses/"],
     "_ctypes": ["ctypes/"],

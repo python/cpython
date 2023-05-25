@@ -373,6 +373,20 @@ class TypeVarTests(BaseTestCase):
         self.assertIs(T.__covariant__, False)
         self.assertIs(T.__contravariant__, False)
         self.assertIs(T.__infer_variance__, False)
+        self.assertEqual(T.__module__, __name__)
+
+    def test_basic_with_exec(self):
+        ns = {}
+        exec('from typing import TypeVar; T = TypeVar("T", bound=float)', ns, ns)
+        T = ns['T']
+        self.assertIsInstance(T, TypeVar)
+        self.assertEqual(T.__name__, 'T')
+        self.assertEqual(T.__constraints__, ())
+        self.assertIs(T.__bound__, float)
+        self.assertIs(T.__covariant__, False)
+        self.assertIs(T.__contravariant__, False)
+        self.assertIs(T.__infer_variance__, False)
+        self.assertIs(T.__module__, None)
 
     def test_attributes(self):
         T_bound = TypeVar('T_bound', bound=int)
@@ -938,6 +952,17 @@ class TypeVarTupleTests(BaseTestCase):
         self.assertEqual(Ts.__name__, 'Ts')
         Ts2 = TypeVarTuple('Ts2')
         self.assertEqual(Ts2.__name__, 'Ts2')
+
+    def test_module(self):
+        Ts = TypeVarTuple('Ts')
+        self.assertEqual(Ts.__module__, __name__)
+
+    def test_exec(self):
+        ns = {}
+        exec('from typing import TypeVarTuple; Ts = TypeVarTuple("Ts")', ns)
+        Ts = ns['Ts']
+        self.assertEqual(Ts.__name__, 'Ts')
+        self.assertIs(Ts.__module__, None)
 
     def test_instance_is_equal_to_itself(self):
         Ts = TypeVarTuple('Ts')
@@ -3545,6 +3570,22 @@ class ProtocolTests(BaseTestCase):
 
         self.assertIsSubclass(B, Custom)
         self.assertNotIsSubclass(A, Custom)
+
+        @runtime_checkable
+        class ReleasableBuffer(collections.abc.Buffer, Protocol):
+            def __release_buffer__(self, mv: memoryview) -> None: ...
+
+        class C: pass
+        class D:
+            def __buffer__(self, flags: int) -> memoryview:
+                return memoryview(b'')
+            def __release_buffer__(self, mv: memoryview) -> None:
+                pass
+
+        self.assertIsSubclass(D, ReleasableBuffer)
+        self.assertIsInstance(D(), ReleasableBuffer)
+        self.assertNotIsSubclass(C, ReleasableBuffer)
+        self.assertNotIsInstance(C(), ReleasableBuffer)
 
     def test_builtin_protocol_allowlist(self):
         with self.assertRaises(TypeError):
@@ -7207,10 +7248,29 @@ class TypedDictTests(BaseTestCase):
                         pass
 
     def test_is_typeddict(self):
-        assert is_typeddict(Point2D) is True
-        assert is_typeddict(Union[str, int]) is False
+        self.assertIs(is_typeddict(Point2D), True)
+        self.assertIs(is_typeddict(Union[str, int]), False)
         # classes, not instances
-        assert is_typeddict(Point2D()) is False
+        self.assertIs(is_typeddict(Point2D()), False)
+        call_based = TypedDict('call_based', {'a': int})
+        self.assertIs(is_typeddict(call_based), True)
+        self.assertIs(is_typeddict(call_based()), False)
+
+        T = TypeVar("T")
+        class BarGeneric(TypedDict, Generic[T]):
+            a: T
+        self.assertIs(is_typeddict(BarGeneric), True)
+        self.assertIs(is_typeddict(BarGeneric[int]), False)
+        self.assertIs(is_typeddict(BarGeneric()), False)
+
+        class NewGeneric[T](TypedDict):
+            a: T
+        self.assertIs(is_typeddict(NewGeneric), True)
+        self.assertIs(is_typeddict(NewGeneric[int]), False)
+        self.assertIs(is_typeddict(NewGeneric()), False)
+
+        # The TypedDict constructor is not itself a TypedDict
+        self.assertIs(is_typeddict(TypedDict), False)
 
     def test_get_type_hints(self):
         self.assertEqual(
@@ -7950,6 +8010,15 @@ class ParamSpecTests(BaseTestCase):
         self.assertEqual(P, P)
         self.assertIsInstance(P, ParamSpec)
         self.assertEqual(P.__name__, 'P')
+        self.assertEqual(P.__module__, __name__)
+
+    def test_basic_with_exec(self):
+        ns = {}
+        exec('from typing import ParamSpec; P = ParamSpec("P")', ns, ns)
+        P = ns['P']
+        self.assertIsInstance(P, ParamSpec)
+        self.assertEqual(P.__name__, 'P')
+        self.assertIs(P.__module__, None)
 
     def test_valid_uses(self):
         P = ParamSpec('P')

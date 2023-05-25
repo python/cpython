@@ -378,7 +378,7 @@
     <ClCompile Include="..\Modules\_functoolsmodule.c" />
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_MD5.c" />
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_SHA1.c" />
-    <ClCompile Include="..\Modules\_hacl\Hacl_Streaming_SHA2.c" />
+    <ClCompile Include="..\Modules\_hacl\Hacl_Hash_SHA2.c" />
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_SHA3.c" />
     <ClCompile Include="..\Modules\_heapqmodule.c" />
     <ClCompile Include="..\Modules\_json.c" />
