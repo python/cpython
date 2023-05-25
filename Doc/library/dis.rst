@@ -420,7 +420,7 @@ details of bytecode instructions as :class:`Instruction` instances:
 
    .. versionchanged:: 3.13
 
-      Fields ``start_offset``, ``cache_offset``, ``end_offset``, ``baseopname``, ``baseopcode``, ``jump_target`` and ``oparg`` are added.
+      Added fields ``start_offset``, ``cache_offset``, ``end_offset``, ``baseopname``, ``baseopcode``, ``jump_target`` and ``oparg``.
 
 
 .. class:: Positions
