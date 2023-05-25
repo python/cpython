@@ -1780,15 +1780,14 @@ These are not used in annotations. They are building blocks for declaring types.
 
       assert Point2D(x=1, y=2, label='first') == dict(x=1, y=2, label='first')
 
-   There is an alternative way to create a ``TypedDict``
-   using a literal :class:`dict` as the second argument::
+   An alternative way to create a ``TypedDict`` is by using
+   function-call syntax. The second argument must be a literal :class:`dict`::
 
       Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
 
    This functional syntax allows defining keys which are not valid
    :ref:`identifiers <identifiers>`, for example because they are
-   keywords or contain hyphens.
-   Example::
+   keywords or contain hyphens::
 
       # raises SyntaxError
       class Point2D(TypedDict):
