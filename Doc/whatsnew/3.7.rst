@@ -1940,8 +1940,8 @@ Deprecated Python modules, functions and methods
 aifc
 ----
 
-:func:`aifc.openfp` has been deprecated and will be removed in Python 3.9.
-Use :func:`aifc.open` instead.
+:func:`!aifc.openfp` has been deprecated and will be removed in Python 3.9.
+Use :func:`!aifc.open` instead.
 (Contributed by Brian Curtin in :issue:`31985`.)
 
 
