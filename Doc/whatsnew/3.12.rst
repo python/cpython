@@ -939,6 +939,7 @@ APIs:
 * :func:`!unittest.makeSuite` (:gh:`50096`)
 * :func:`!unittest.getTestCaseNames` (:gh:`50096`)
 * :class:`!webbrowser.MacOSX` (:gh:`86421`)
+* :class:`classmethod` descriptor chaining (:gh:`gh-89519`)
 
 Pending Removal in Python 3.14
 ------------------------------
