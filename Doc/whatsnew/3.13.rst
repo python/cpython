@@ -219,7 +219,7 @@ C API Changes
 New Features
 ------------
 
-* You can now use the `#`-specifier in :ref:`format codes <arg-parsing>`
+* You can now use the ``#``-specifier in :ref:`format codes <arg-parsing>`
   without ``#define PY_SSIZE_T_CLEAN`` before ``#include <Python.h>``.
   (Contributed by Inada Naoki in :gh:`104922`.)
 
