@@ -922,7 +922,7 @@ Modules (see :pep:`594`):
 * :mod:`!audioop`
 * :mod:`!cgi`
 * :mod:`!cgitb`
-* :mod:`chunk`
+* :mod:`!chunk`
 * :mod:`!crypt`
 * :mod:`imghdr`
 * :mod:`!mailcap`
