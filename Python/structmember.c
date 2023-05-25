@@ -8,6 +8,12 @@ PyObject *
 PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
 {
     PyObject *v;
+    if (l->flags & Py_RELATIVE_OFFSET) {
+        PyErr_SetString(
+            PyExc_SystemError,
+            "PyMember_GetOne used with Py_RELATIVE_OFFSET");
+        return NULL;
+    }
 
     const char* addr = obj_addr + l->offset;
     switch (l->type) {
@@ -103,6 +109,12 @@ int
 PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
 {
     PyObject *oldv;
+    if (l->flags & Py_RELATIVE_OFFSET) {
+        PyErr_SetString(
+            PyExc_SystemError,
+            "PyMember_SetOne used with Py_RELATIVE_OFFSET");
+        return -1;
+    }
 
     addr += l->offset;
 

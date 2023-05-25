@@ -19,7 +19,7 @@ all modern Unix systems, Windows, MacOS, and probably additional platforms.
 
 .. include:: ../includes/wasm-notavail.rst
 
-.. index:: object: socket
+.. index:: pair: object; socket
 
 The Python interface is a straightforward transliteration of the Unix system
 call and library interface for sockets to Python's object-oriented style: the
@@ -507,6 +507,17 @@ Constants
    .. availability:: Linux >= 5.4.
 
    .. versionadded:: 3.9
+
+
+.. data:: AF_DIVERT
+          PF_DIVERT
+
+   These two constants, documented in the FreeBSD divert(4) manual page, are
+   also defined in the socket module.
+
+   .. availability:: FreeBSD >= 14.0.
+
+   .. versionadded:: 3.12
 
 
 .. data:: AF_PACKET
@@ -1916,7 +1927,7 @@ to sockets.
 .. method:: socket.setsockopt(level, optname, None, optlen: int)
    :noindex:
 
-   .. index:: module: struct
+   .. index:: pair: module; struct
 
    Set the value of the given socket option (see the Unix manual page
    :manpage:`setsockopt(2)`).  The needed symbolic constants are defined in the

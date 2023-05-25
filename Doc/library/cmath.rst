@@ -301,7 +301,7 @@ Constants
    .. versionadded:: 3.6
 
 
-.. index:: module: math
+.. index:: pair: module; math
 
 Note that the selection of functions is similar, but not identical, to that in
 module :mod:`math`.  The reason for having two modules is that some users aren't

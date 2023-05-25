@@ -819,10 +819,27 @@ class TestPlainFlag(_EnumTests, _PlainOutputTests, _FlagTests, unittest.TestCase
 
 class TestIntEnum(_EnumTests, _MinimalOutputTests, unittest.TestCase):
     enum_type = IntEnum
+    #
+    def test_shadowed_attr(self):
+        class Number(IntEnum):
+            divisor = 1
+            numerator = 2
+        #
+        self.assertEqual(Number.divisor.numerator, 1)
+        self.assertIs(Number.numerator.divisor, Number.divisor)
 
 
 class TestStrEnum(_EnumTests, _MinimalOutputTests, unittest.TestCase):
     enum_type = StrEnum
+    #
+    def test_shadowed_attr(self):
+        class Book(StrEnum):
+            author = 'author'
+            title = 'title'
+        #
+        self.assertEqual(Book.author.title(), 'Author')
+        self.assertEqual(Book.title.title(), 'Title')
+        self.assertIs(Book.title.author, Book.author)
 
 
 class TestIntFlag(_EnumTests, _MinimalOutputTests, _FlagTests, unittest.TestCase):
@@ -4248,7 +4265,7 @@ class TestInternals(unittest.TestCase):
             'mixed types with auto() will raise in 3.13',
             )
     def test_auto_garbage_fail(self):
-        with self.assertRaisesRegex(TypeError, 'will require all values to be sortable'):
+        with self.assertRaisesRegex(TypeError, "unable to increment 'red'"):
             class Color(Enum):
                 red = 'red'
                 blue = auto()
@@ -4258,7 +4275,7 @@ class TestInternals(unittest.TestCase):
             'mixed types with auto() will raise in 3.13',
             )
     def test_auto_garbage_corrected_fail(self):
-        with self.assertRaisesRegex(TypeError, 'will require all values to be sortable'):
+        with self.assertRaisesRegex(TypeError, 'unable to sort non-numeric values'):
             class Color(Enum):
                 red = 'red'
                 blue = 2

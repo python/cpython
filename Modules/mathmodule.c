@@ -59,7 +59,6 @@ raised for division by zero and mod by zero.
 #include "Python.h"
 #include "pycore_bitutils.h"      // _Py_bit_length()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_dtoa.h"          // _Py_dg_infinity()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyObject_LookupSpecial()
@@ -389,34 +388,6 @@ lanczos_sum(double x)
     return num/den;
 }
 
-/* Constant for +infinity, generated in the same way as float('inf'). */
-
-static double
-m_inf(void)
-{
-#if _PY_SHORT_FLOAT_REPR == 1
-    return _Py_dg_infinity(0);
-#else
-    return Py_HUGE_VAL;
-#endif
-}
-
-/* Constant nan value, generated in the same way as float('nan'). */
-/* We don't currently assume that Py_NAN is defined everywhere. */
-
-#if _PY_SHORT_FLOAT_REPR == 1
-
-static double
-m_nan(void)
-{
-#if _PY_SHORT_FLOAT_REPR == 1
-    return _Py_dg_stdnan(0);
-#else
-    return Py_NAN;
-#endif
-}
-
-#endif
 
 static double
 m_tgamma(double x)
@@ -435,7 +406,7 @@ m_tgamma(double x)
     if (x == 0.0) {
         errno = EDOM;
         /* tgamma(+-0.0) = +-inf, divide-by-zero */
-        return copysign(Py_HUGE_VAL, x);
+        return copysign(Py_INFINITY, x);
     }
 
     /* integer arguments */
@@ -2096,7 +2067,7 @@ math_trunc(PyObject *module, PyObject *x)
         return PyFloat_Type.tp_as_number->nb_int(x);
     }
 
-    if (Py_TYPE(x)->tp_dict == NULL) {
+    if (_PyType_IsReady(Py_TYPE(x))) {
         if (PyType_Ready(Py_TYPE(x)) < 0)
             return NULL;
     }
@@ -2314,7 +2285,7 @@ math_log(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
 PyDoc_STRVAR(math_log_doc,
 "log(x, [base=math.e])\n\
 Return the logarithm of x to the given base.\n\n\
-If the base not specified, returns the natural logarithm (base e) of x.");
+If the base is not specified, returns the natural logarithm (base e) of x.");
 
 /*[clinic input]
 math.log2
@@ -3893,13 +3864,20 @@ math.nextafter
     x: double
     y: double
     /
+    *
+    steps: object = None
 
-Return the next floating-point value after x towards y.
+Return the floating-point value the given number of steps after x towards y.
+
+If steps is not specified or is None, it defaults to 1.
+
+Raises a TypeError, if x or y is not a double, or if steps is not an integer.
+Raises ValueError if steps is negative.
 [clinic start generated code]*/
 
 static PyObject *
-math_nextafter_impl(PyObject *module, double x, double y)
-/*[clinic end generated code: output=750c8266c1c540ce input=02b2d50cd1d9f9b6]*/
+math_nextafter_impl(PyObject *module, double x, double y, PyObject *steps)
+/*[clinic end generated code: output=cc6511f02afc099e input=7f2a5842112af2b4]*/
 {
 #if defined(_AIX)
     if (x == y) {
@@ -3914,7 +3892,101 @@ math_nextafter_impl(PyObject *module, double x, double y)
         return PyFloat_FromDouble(y);
     }
 #endif
-    return PyFloat_FromDouble(nextafter(x, y));
+    if (steps == Py_None) {
+        // fast path: we default to one step.
+        return PyFloat_FromDouble(nextafter(x, y));
+    }
+    steps = PyNumber_Index(steps);
+    if (steps == NULL) {
+        return NULL;
+    }
+    assert(PyLong_CheckExact(steps));
+    if (_PyLong_IsNegative((PyLongObject *)steps)) {
+        PyErr_SetString(PyExc_ValueError,
+                        "steps must be a non-negative integer");
+        Py_DECREF(steps);
+        return NULL;
+    }
+
+    unsigned long long usteps_ull = PyLong_AsUnsignedLongLong(steps);
+    // Conveniently, uint64_t and double have the same number of bits
+    // on all the platforms we care about.
+    // So if an overflow occurs, we can just use UINT64_MAX.
+    Py_DECREF(steps);
+    if (usteps_ull >= UINT64_MAX) {
+        // This branch includes the case where an error occurred, since
+        // (unsigned long long)(-1) = ULLONG_MAX >= UINT64_MAX. Note that
+        // usteps_ull can be strictly larger than UINT64_MAX on a machine
+        // where unsigned long long has width > 64 bits.
+        if (PyErr_Occurred()) {
+            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+                PyErr_Clear();
+            }
+            else {
+                return NULL;
+            }
+        }
+        usteps_ull = UINT64_MAX;
+    }
+    assert(usteps_ull <= UINT64_MAX);
+    uint64_t usteps = (uint64_t)usteps_ull;
+
+    if (usteps == 0) {
+        return PyFloat_FromDouble(x);
+    }
+    if (Py_IS_NAN(x)) {
+        return PyFloat_FromDouble(x);
+    }
+    if (Py_IS_NAN(y)) {
+        return PyFloat_FromDouble(y);
+    }
+
+    // We assume that double and uint64_t have the same endianness.
+    // This is not guaranteed by the C-standard, but it is true for
+    // all platforms we care about. (The most likely form of violation
+    // would be a "mixed-endian" double.)
+    union pun {double f; uint64_t i;};
+    union pun ux = {x}, uy = {y};
+    if (ux.i == uy.i) {
+        return PyFloat_FromDouble(x);
+    }
+
+    const uint64_t sign_bit = 1ULL<<63;
+
+    uint64_t ax = ux.i & ~sign_bit;
+    uint64_t ay = uy.i & ~sign_bit;
+
+    // opposite signs
+    if (((ux.i ^ uy.i) & sign_bit)) {
+        // NOTE: ax + ay can never overflow, because their most significant bit
+        // ain't set.
+        if (ax + ay <= usteps) {
+            return PyFloat_FromDouble(uy.f);
+        // This comparison has to use <, because <= would get +0.0 vs -0.0
+        // wrong.
+        } else if (ax < usteps) {
+            union pun result = {.i = (uy.i & sign_bit) | (usteps - ax)};
+            return PyFloat_FromDouble(result.f);
+        } else {
+            ux.i -= usteps;
+            return PyFloat_FromDouble(ux.f);
+        }
+    // same sign
+    } else if (ax > ay) {
+        if (ax - ay >= usteps) {
+            ux.i -= usteps;
+            return PyFloat_FromDouble(ux.f);
+        } else {
+            return PyFloat_FromDouble(uy.f);
+        }
+    } else {
+        if (ay - ax >= usteps) {
+            ux.i += usteps;
+            return PyFloat_FromDouble(ux.f);
+        } else {
+            return PyFloat_FromDouble(uy.f);
+        }
+    }
 }
 
 
@@ -3938,7 +4010,7 @@ math_ulp_impl(PyObject *module, double x)
     if (Py_IS_INFINITY(x)) {
         return x;
     }
-    double inf = m_inf();
+    double inf = Py_INFINITY;
     double x2 = nextafter(x, inf);
     if (Py_IS_INFINITY(x2)) {
         /* special case: x is the largest positive representable float */
@@ -3975,14 +4047,12 @@ math_exec(PyObject *module)
     if (PyModule_AddObject(module, "tau", PyFloat_FromDouble(Py_MATH_TAU)) < 0) {
         return -1;
     }
-    if (PyModule_AddObject(module, "inf", PyFloat_FromDouble(m_inf())) < 0) {
+    if (PyModule_AddObject(module, "inf", PyFloat_FromDouble(Py_INFINITY)) < 0) {
         return -1;
     }
-#if _PY_SHORT_FLOAT_REPR == 1
-    if (PyModule_AddObject(module, "nan", PyFloat_FromDouble(m_nan())) < 0) {
+    if (PyModule_AddObject(module, "nan", PyFloat_FromDouble(fabs(Py_NAN))) < 0) {
         return -1;
     }
-#endif
     return 0;
 }
 
@@ -4064,6 +4134,7 @@ static PyMethodDef math_methods[] = {
 
 static PyModuleDef_Slot math_slots[] = {
     {Py_mod_exec, math_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

@@ -1128,8 +1128,13 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
 
     if not getattr(cls, '__doc__'):
         # Create a class doc-string.
-        cls.__doc__ = (cls.__name__ +
-                       str(inspect.signature(cls)).replace(' -> None', ''))
+        try:
+            # In some cases fetching a signature is not possible.
+            # But, we surely should not fail in this case.
+            text_sig = str(inspect.signature(cls)).replace(' -> None', '')
+        except (TypeError, ValueError):
+            text_sig = ''
+        cls.__doc__ = (cls.__name__ + text_sig)
 
     if match_args:
         # I could probably compute this once
@@ -1222,8 +1227,10 @@ def _add_slots(cls, is_frozen, weakref_slot):
 
     if is_frozen:
         # Need this for pickling frozen classes with slots.
-        cls.__getstate__ = _dataclass_getstate
-        cls.__setstate__ = _dataclass_setstate
+        if '__getstate__' not in cls_dict:
+            cls.__getstate__ = _dataclass_getstate
+        if '__setstate__' not in cls_dict:
+            cls.__setstate__ = _dataclass_setstate
 
     return cls
 
@@ -1317,11 +1324,18 @@ def _asdict_inner(obj, dict_factory):
     if type(obj) in _ATOMIC_TYPES:
         return obj
     elif _is_dataclass_instance(obj):
-        result = []
-        for f in fields(obj):
-            value = _asdict_inner(getattr(obj, f.name), dict_factory)
-            result.append((f.name, value))
-        return dict_factory(result)
+        # fast path for the common case
+        if dict_factory is dict:
+            return {
+                f.name: _asdict_inner(getattr(obj, f.name), dict)
+                for f in fields(obj)
+            }
+        else:
+            result = []
+            for f in fields(obj):
+                value = _asdict_inner(getattr(obj, f.name), dict_factory)
+                result.append((f.name, value))
+            return dict_factory(result)
     elif isinstance(obj, tuple) and hasattr(obj, '_fields'):
         # obj is a namedtuple.  Recurse into it, but the returned
         # object is another namedtuple of the same type.  This is

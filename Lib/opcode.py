@@ -131,6 +131,7 @@ def_op('RETURN_GENERATOR', 75)
 def_op('RETURN_VALUE', 83)
 
 def_op('SETUP_ANNOTATIONS', 85)
+def_op('LOAD_LOCALS', 87)
 
 def_op('POP_EXCEPT', 89)
 
@@ -196,15 +197,16 @@ hasfree.append(138)
 def_op('DELETE_DEREF', 139)
 hasfree.append(139)
 jrel_op('JUMP_BACKWARD', 140)    # Number of words to skip (backwards)
-
+name_op('LOAD_SUPER_ATTR', 141)
 def_op('CALL_FUNCTION_EX', 142)  # Flags
+def_op('LOAD_FAST_AND_CLEAR', 143)  # Local variable number
+haslocal.append(143)
 
 def_op('EXTENDED_ARG', 144)
 EXTENDED_ARG = 144
 def_op('LIST_APPEND', 145)
 def_op('SET_ADD', 146)
 def_op('MAP_ADD', 147)
-def_op('LOAD_CLASSDEREF', 148)
 hasfree.append(148)
 def_op('COPY_FREE_VARS', 149)
 def_op('YIELD_VALUE', 150)
@@ -226,9 +228,14 @@ hasconst.append(172)
 def_op('CALL_INTRINSIC_1', 173)
 def_op('CALL_INTRINSIC_2', 174)
 
-# Instrumented instructions
-MIN_INSTRUMENTED_OPCODE = 238
+name_op('LOAD_FROM_DICT_OR_GLOBALS', 175)
+def_op('LOAD_FROM_DICT_OR_DEREF', 176)
+hasfree.append(176)
 
+# Instrumented instructions
+MIN_INSTRUMENTED_OPCODE = 237
+
+def_op('INSTRUMENTED_LOAD_SUPER_ATTR', 237)
 def_op('INSTRUMENTED_POP_JUMP_IF_NONE', 238)
 def_op('INSTRUMENTED_POP_JUMP_IF_NOT_NONE', 239)
 def_op('INSTRUMENTED_RESUME', 240)
@@ -264,6 +271,11 @@ pseudo_op('JUMP', 260, ['JUMP_FORWARD', 'JUMP_BACKWARD'])
 pseudo_op('JUMP_NO_INTERRUPT', 261, ['JUMP_FORWARD', 'JUMP_BACKWARD_NO_INTERRUPT'])
 
 pseudo_op('LOAD_METHOD', 262, ['LOAD_ATTR'])
+pseudo_op('LOAD_SUPER_METHOD', 263, ['LOAD_SUPER_ATTR'])
+pseudo_op('LOAD_ZERO_SUPER_METHOD', 264, ['LOAD_SUPER_ATTR'])
+pseudo_op('LOAD_ZERO_SUPER_ATTR', 265, ['LOAD_SUPER_ATTR'])
+
+pseudo_op('STORE_FAST_MAYBE_NULL', 266, ['STORE_FAST'])
 
 MAX_PSEUDO_OPCODE = MIN_PSEUDO_OPCODE + len(_pseudo_ops) - 1
 
@@ -301,6 +313,29 @@ _nb_ops = [
     ("NB_INPLACE_SUBTRACT", "-="),
     ("NB_INPLACE_TRUE_DIVIDE", "/="),
     ("NB_INPLACE_XOR", "^="),
+]
+
+_intrinsic_1_descs = [
+    "INTRINSIC_1_INVALID",
+    "INTRINSIC_PRINT",
+    "INTRINSIC_IMPORT_STAR",
+    "INTRINSIC_STOPITERATION_ERROR",
+    "INTRINSIC_ASYNC_GEN_WRAP",
+    "INTRINSIC_UNARY_POSITIVE",
+    "INTRINSIC_LIST_TO_TUPLE",
+    "INTRINSIC_TYPEVAR",
+    "INTRINSIC_PARAMSPEC",
+    "INTRINSIC_TYPEVARTUPLE",
+    "INTRINSIC_SUBSCRIPT_GENERIC",
+    "INTRINSIC_TYPEALIAS",
+]
+
+_intrinsic_2_descs = [
+    "INTRINSIC_2_INVALID",
+    "INTRINSIC_PREP_RERAISE_STAR",
+    "INTRINSIC_TYPEVAR_WITH_BOUND",
+    "INTRINSIC_TYPEVAR_WITH_CONSTRAINTS",
+    "INTRINSIC_SET_FUNCTION_TYPE_PARAMS",
 ]
 
 _specializations = {
@@ -349,6 +384,10 @@ _specializations = {
         "FOR_ITER_TUPLE",
         "FOR_ITER_RANGE",
         "FOR_ITER_GEN",
+    ],
+    "LOAD_SUPER_ATTR": [
+        "LOAD_SUPER_ATTR_ATTR",
+        "LOAD_SUPER_ATTR_METHOD",
     ],
     "LOAD_ATTR": [
         # These potentially push [NULL, bound method] onto the stack.
@@ -421,6 +460,9 @@ _cache_format = {
         "counter": 1,
     },
     "FOR_ITER": {
+        "counter": 1,
+    },
+    "LOAD_SUPER_ATTR": {
         "counter": 1,
     },
     "LOAD_ATTR": {
