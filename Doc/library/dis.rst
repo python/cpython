@@ -406,7 +406,8 @@ details of bytecode instructions as :class:`Instruction` instances:
 
    .. data:: jump_target
 
-      bytecode index of the jump target if this is a jump operation, otherwise ``None``
+      bytecode index of the jump target if this is a jump operation,
+      otherwise ``None``
 
 
    .. data:: positions
