@@ -2908,9 +2908,6 @@ class RawTurtle(TPen, TNavigator):
         between the orientation of the turtleshape and the heading of the
         turtle (its direction of movement).
 
-        (Incorrectly marked as deprecated since Python 3.1, it was really
-        settiltangle that was deprecated (and removed in 3.13).)
-
         Examples (for a Turtle instance named turtle):
         >>> turtle.shape("circle")
         >>> turtle.shapesize(5, 2)
