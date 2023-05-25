@@ -10,6 +10,7 @@ on:
     - 3.7
     paths:
     - 'Tools/msi/**'
+    - '.github/workflows/build_msi.yml'
   pull_request:
     branches:
     - master
@@ -19,6 +20,7 @@ on:
     - 3.7
     paths:
     - 'Tools/msi/**'
+    - '.github/workflows/build_msi.yml'
 
 permissions:
   contents: read
@@ -34,7 +36,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build CPython installer
-      run: .\Tools\msi\build.bat -x86
+      run: .\Tools\msi\build.bat --doc -x86
 
   build_win_amd64:
     name: 'Windows (x64) Installer'
@@ -42,4 +44,4 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build CPython installer
-      run: .\Tools\msi\build.bat -x64
+      run: .\Tools\msi\build.bat --doc -x64
