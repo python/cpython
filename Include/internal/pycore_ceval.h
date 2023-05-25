@@ -153,7 +153,7 @@ extern PyObject* _Py_MakeCoro(PyFunctionObject *func);
 
 extern int _Py_HandlePending(PyThreadState *tstate);
 
-struct _PyExecutorObject *_PyEval_Optimize(PyCodeObject *code, int offset);
+
 
 #ifdef __cplusplus
 }
