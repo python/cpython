@@ -2097,8 +2097,11 @@ dummy_func(
             here[1].cache += (1 << OPTIMIZER_BITS_IN_COUNTER);
             if (here[1].cache > tstate->interp->optimizer_backedge_threshold) {
                 OBJECT_STAT_INC(optimization_attempts);
-                _PyOptimizerObject *opt = tstate->interp->optimizer;
-                frame = opt->optimize(opt, frame, here, stack_pointer);
+                frame = _PyOptimizer_BackEdge(frame, here, next_instr, stack_pointer);
+                if (frame == NULL) {
+                    frame = cframe.current_frame;
+                    goto error;
+                }
                 here[1].cache &= ((1 << OPTIMIZER_BITS_IN_COUNTER) -1);
                 goto resume_frame;
             }

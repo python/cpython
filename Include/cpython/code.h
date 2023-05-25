@@ -78,7 +78,8 @@ typedef struct {
 
 
 typedef struct  _PyExecutorArray {
-    uintptr_t size;
+    int size;
+    int capacity;
     struct _PyExecutorObject *executors[1];
 } _PyExecutorArray;
 

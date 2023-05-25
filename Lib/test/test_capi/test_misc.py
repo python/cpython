@@ -1847,6 +1847,19 @@ class Test_Pep523API(unittest.TestCase):
         names = ["func", "outer", "outer", "inner", "inner", "outer", "inner"]
         self.do_test(func, names)
 
+class TestOptimizerAPI(unittest.TestCase):
+
+    def test_counter_optimizer(self):
+        opt = _testinternalcapi.get_counter_optimizer()
+        self.assertEqual(opt.get_count(), 0)
+        try:
+            _testinternalcapi.set_optimizer(opt)
+            self.assertEqual(opt.get_count(), 0)
+            for _ in range(1000):
+                pass
+            self.assertEqual(opt.get_count(), 1000)
+        finally:
+            _testinternalcapi.set_optimizer(None)
 
 if __name__ == "__main__":
     unittest.main()

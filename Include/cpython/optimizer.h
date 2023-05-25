@@ -24,7 +24,7 @@ typedef struct _PyExecutorObject {
 
 typedef struct _PyOptimizerObject _PyOptimizerObject;
 
-typedef struct _PyInterpreterFrame *(*optimize_func)(_PyOptimizerObject* self, struct _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject **stack_pointer);
+typedef _PyExecutorObject *(*optimize_func)(_PyOptimizerObject* self, PyCodeObject *code, _Py_CODEUNIT *instr);
 
 typedef struct _PyOptimizerObject {
     PyObject_HEAD
@@ -34,11 +34,17 @@ typedef struct _PyOptimizerObject {
     /* Data needed by the optimizer goes here, but is opaque to the VM */
 } _PyOptimizerObject;
 
-int PyUnstable_Insert_Executor(PyCodeObject *code, int offset, _PyExecutorObject *executor);
+PyAPI_FUNC(int) PyUnstable_Replace_Executor(PyCodeObject *code, int offset, _PyExecutorObject *executor);
 
-int PyUnstable_RegisterOptimizer(_PyOptimizerObject* optimizer);
+PyAPI_FUNC(void) PyUnstable_SetOptimizer(_PyOptimizerObject* optimizer);
+
+struct _PyInterpreterFrame *
+_PyOptimizer_BackEdge(struct _PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNIT *dest, PyObject **stack_pointer);
 
 extern _PyOptimizerObject _PyOptimizer_Default;
+
+/* For testing */
+PyAPI_FUNC(PyObject *)PyUnstable_Optimizer_NewCounter(void);
 
 #define OPTIMIZER_BITS_IN_COUNTER 4
 
