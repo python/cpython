@@ -8,12 +8,14 @@ on:
     - '3.*'
     paths:
     - 'Tools/msi/**'
+    - '.github/workflows/build_msi.yml'
   pull_request:
     branches:
     - 'main'
     - '3.*'
     paths:
     - 'Tools/msi/**'
+    - '.github/workflows/build_msi.yml'
 
 permissions:
   contents: read
