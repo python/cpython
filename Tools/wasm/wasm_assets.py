@@ -41,8 +41,6 @@ OMIT_FILES = (
     # package management
     "ensurepip/",
     "venv/",
-    # deprecated
-    "uu.py",
     # other platforms
     "_aix_support.py",
     "_osx_support.py",
