@@ -34,22 +34,25 @@ jobs:
         with:
           version: ${{ matrix.llvm }}
           directory: ${{ runner.temp }}/llvm
-      - if: matrix.os != 'Windows' && matrix.debug
+      - if: matrix.os == 'Ubuntu' && matrix.debug
         run: ./configure --with-pydebug
-      - if: matrix.os != 'Windows' && !matrix.debug
+      - if: matrix.os == 'Ubuntu' && !matrix.debug
         run: ./configure
       - if: matrix.os == 'Ubuntu'
         run: make all
-      # stdlib.h not found when compiling stencils...
+      - if: matrix.os == 'Ubuntu'
+        run: ./python -m test -j0 -wW
+      - if: matrix.os == 'macOS' && matrix.debug
+        run: SDKROOT=$(xcrun --show-sdk-path) ./configure --with-pydebug
+      - if: matrix.os == 'macOS' && !matrix.debug
+        run: SDKROOT=$(xcrun --show-sdk-path) ./configure
       - if: matrix.os == 'macOS'
         run: SDKROOT=$(xcrun --show-sdk-path) make all
+      - if: matrix.os == 'macOS'
+        run: ./python.exe -m test -j0 -wW
       - if: matrix.os == 'Windows' && matrix.debug
         run: ./PCbuild/build.bat -d
       - if: matrix.os == 'Windows' && !matrix.debug
         run: ./PCbuild/build.bat
-      - if: matrix.os == 'macOS'
-        run: ./python.exe -m test -j0 -wW
-      - if: matrix.os == 'Ubuntu'
-        run: ./python -m test -j0 -wW
       - if: matrix.os == 'Windows'
         run: ./python.bat -m test -j0 -wW
