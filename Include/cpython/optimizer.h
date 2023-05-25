@@ -38,8 +38,7 @@ PyAPI_FUNC(int) PyUnstable_Replace_Executor(PyCodeObject *code, int offset, _PyE
 
 PyAPI_FUNC(void) PyUnstable_SetOptimizer(_PyOptimizerObject* optimizer);
 
-PyAPI_FUNC(PyObject *)
-PyUnstable_GetOptimizer(void)
+PyAPI_FUNC(_PyOptimizerObject *) PyUnstable_GetOptimizer(void);
 
 struct _PyInterpreterFrame *
 _PyOptimizer_BackEdge(struct _PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNIT *dest, PyObject **stack_pointer);

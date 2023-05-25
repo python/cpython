@@ -111,14 +111,15 @@ _PyOptimizerObject _PyOptimizer_Default = {
     .backedge_threshold = UINT16_MAX,
 };
 
-PyObject *
+_PyOptimizerObject *
 PyUnstable_GetOptimizer(void)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
     if (interp->optimizer == &_PyOptimizer_Default) {
-        Py_RETURN_NONE;
+        return NULL;
     }
-    return Py_NewRef(interp->optimizer);
+    Py_INCREF(interp->optimizer);
+    return interp->optimizer;
 }
 
 void
