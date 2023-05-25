@@ -61,6 +61,7 @@ static void
 bytearray_releasebuffer(PyByteArrayObject *obj, Py_buffer *view)
 {
     obj->ob_exports--;
+    assert(obj->ob_exports >= 0);
 }
 
 static int

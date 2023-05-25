@@ -60,6 +60,9 @@ Copyright (C) 1994 Steen Lumholt.
 #error "Tk older than 8.5.12 not supported"
 #endif
 
+#ifndef TCL_WITH_EXTERNAL_TOMMATH
+#define TCL_NO_TOMMATH_H
+#endif
 #include <tclTomMath.h>
 
 #if !(defined(MS_WINDOWS) || defined(__CYGWIN__))
@@ -3282,20 +3285,6 @@ PyInit__tkinter(void)
         return NULL;
     }
     PyTclObject_Type = o;
-
-#ifdef TK_AQUA
-    /* Tk_MacOSXSetupTkNotifier must be called before Tcl's subsystems
-     * start waking up.  Note that Tcl_FindExecutable will do this, this
-     * code must be above it! The original warning from
-     * tkMacOSXAppInit.c is copied below.
-     *
-     * NB - You have to swap in the Tk Notifier BEFORE you start up the
-     * Tcl interpreter for now.  It probably should work to do this
-     * in the other order, but for now it doesn't seem to.
-     *
-     */
-    Tk_MacOSXSetupTkNotifier();
-#endif
 
 
     /* This helps the dynamic loader; in Unicode aware Tcl versions

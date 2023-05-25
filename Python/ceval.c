@@ -27,6 +27,7 @@
 #include "pycore_dict.h"
 #include "dictobject.h"
 #include "pycore_frame.h"
+#include "frameobject.h"          // _PyInterpreterFrame_GetLine
 #include "opcode.h"
 #include "pydtrace.h"
 #include "setobject.h"
@@ -651,7 +652,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     // for the big switch below (in combination with the EXTRA_CASES macro).
     uint8_t opcode;        /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
-    _Py_atomic_int * const eval_breaker = &tstate->interp->ceval.eval_breaker;
 #ifdef LLTRACE
     int lltrace = 0;
 #endif
@@ -774,6 +774,41 @@ handle_eval_breaker:
 
 #include "generated_cases.c.h"
 
+    /* INSTRUMENTED_LINE has to be here, rather than in bytecodes.c,
+     * because it needs to capture frame->prev_instr before it is updated,
+     * as happens in the standard instruction prologue.
+     */
+#if USE_COMPUTED_GOTOS
+        TARGET_INSTRUMENTED_LINE:
+#else
+        case INSTRUMENTED_LINE:
+#endif
+    {
+        _Py_CODEUNIT *prev = frame->prev_instr;
+        _Py_CODEUNIT *here = frame->prev_instr = next_instr;
+        _PyFrame_SetStackPointer(frame, stack_pointer);
+        int original_opcode = _Py_call_instrumentation_line(
+                tstate, frame, here, prev);
+        stack_pointer = _PyFrame_GetStackPointer(frame);
+        if (original_opcode < 0) {
+            next_instr = here+1;
+            goto error;
+        }
+        next_instr = frame->prev_instr;
+        if (next_instr != here) {
+            DISPATCH();
+        }
+        if (_PyOpcode_Caches[original_opcode]) {
+            _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(next_instr+1);
+            /* Prevent the underlying instruction from specializing
+             * and overwriting the instrumentation. */
+            INCREMENT_ADAPTIVE_COUNTER(cache->counter);
+        }
+        opcode = original_opcode;
+        DISPATCH_GOTO();
+    }
+
+
 #if USE_COMPUTED_GOTOS
         _unknown_opcode:
 #else
@@ -785,7 +820,7 @@ handle_eval_breaker:
             _PyErr_Format(tstate, PyExc_SystemError,
                           "%U:%d: unknown opcode %d",
                           frame->f_code->co_filename,
-                          _PyInterpreterFrame_GetLine(frame),
+                          PyUnstable_InterpreterFrame_GetLine(frame),
                           opcode);
             goto error;
 

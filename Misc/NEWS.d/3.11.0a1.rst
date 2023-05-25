@@ -1825,7 +1825,7 @@ Patch by Victor Stinner.
 .. nonce: 9nmMtB
 .. section: Library
 
-The :mod:`lib2to3` package is now deprecated and may not be able to parse
+The :mod:`!lib2to3` package is now deprecated and may not be able to parse
 Python 3.10 or newer. See the :pep:`617` (New PEG parser for CPython). Patch
 by Victor Stinner.
 
@@ -3483,9 +3483,9 @@ Improved reprs of :mod:`threading` synchronization objects:
 Deprecated the following :mod:`unittest` functions, scheduled for removal in
 Python 3.13:
 
-* :func:`~unittest.findTestCases`
-* :func:`~unittest.makeSuite`
-* :func:`~unittest.getTestCaseNames`
+* :func:`~!unittest.findTestCases`
+* :func:`~!unittest.makeSuite`
+* :func:`~!unittest.getTestCaseNames`
 
 Use :class:`~unittest.TestLoader` methods instead:
 

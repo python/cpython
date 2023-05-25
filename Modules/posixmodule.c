@@ -175,6 +175,14 @@
 #    define HAVE_PWRITEV_RUNTIME (pwritev != NULL)
 #  endif
 
+#  ifdef HAVE_MKFIFOAT
+#    define HAVE_MKFIFOAT_RUNTIME (mkfifoat != NULL)
+#  endif
+
+#  ifdef HAVE_MKNODAT
+#    define HAVE_MKNODAT_RUNTIME (mknodat != NULL)
+#  endif
+
 #endif
 
 #ifdef HAVE_FUTIMESAT
@@ -1856,6 +1864,7 @@ win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
     BY_HANDLE_FILE_INFORMATION fileInfo;
     FILE_BASIC_INFO basicInfo;
     FILE_ID_INFO idInfo;
+    FILE_ID_INFO *pIdInfo = &idInfo;
     FILE_ATTRIBUTE_TAG_INFO tagInfo = { 0 };
     DWORD fileType, error;
     BOOL isUnhandledTag = FALSE;
@@ -1992,9 +2001,7 @@ win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
 
         if (!GetFileInformationByHandle(hFile, &fileInfo) ||
             !GetFileInformationByHandleEx(hFile, FileBasicInfo,
-                                          &basicInfo, sizeof(basicInfo)) ||
-            !GetFileInformationByHandleEx(hFile, FileIdInfo,
-                                          &idInfo, sizeof(idInfo))) {
+                                          &basicInfo, sizeof(basicInfo))) {
             switch (GetLastError()) {
             case ERROR_INVALID_PARAMETER:
             case ERROR_INVALID_FUNCTION:
@@ -2010,7 +2017,12 @@ win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
         }
     }
 
-    _Py_attribute_data_to_stat(&fileInfo, tagInfo.ReparseTag, &basicInfo, &idInfo, result);
+    if (!GetFileInformationByHandleEx(hFile, FileIdInfo, &idInfo, sizeof(idInfo))) {
+        /* Failed to get FileIdInfo, so do not pass it along */
+        pIdInfo = NULL;
+    }
+
+    _Py_attribute_data_to_stat(&fileInfo, tagInfo.ReparseTag, &basicInfo, pIdInfo, result);
     update_st_mode_from_path(path, fileInfo.dwFileAttributes, result);
 
 cleanup:
@@ -4802,7 +4814,7 @@ os__path_isdir_impl(PyObject *module, PyObject *path)
     }
 
     Py_BEGIN_ALLOW_THREADS
-    if (_path.wide) {    
+    if (_path.wide) {
         if (_Py_GetFileInformationByName(_path.wide, FileStatBasicByNameInfo,
                                          &statInfo, sizeof(statInfo))) {
             if (!(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
@@ -4899,7 +4911,7 @@ os__path_isfile_impl(PyObject *module, PyObject *path)
     }
 
     Py_BEGIN_ALLOW_THREADS
-    if (_path.wide) {    
+    if (_path.wide) {
         if (_Py_GetFileInformationByName(_path.wide, FileStatBasicByNameInfo,
                                          &statInfo, sizeof(statInfo))) {
             if (!(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
@@ -4995,7 +5007,7 @@ os__path_exists_impl(PyObject *module, PyObject *path)
     }
 
     Py_BEGIN_ALLOW_THREADS
-    if (_path.wide) {    
+    if (_path.wide) {
         if (_Py_GetFileInformationByName(_path.wide, FileStatBasicByNameInfo,
                                          &statInfo, sizeof(statInfo))) {
             if (!(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
@@ -5082,7 +5094,7 @@ os__path_islink_impl(PyObject *module, PyObject *path)
     }
 
     Py_BEGIN_ALLOW_THREADS
-    if (_path.wide) {    
+    if (_path.wide) {
         if (_Py_GetFileInformationByName(_path.wide, FileStatBasicByNameInfo,
                                          &statInfo, sizeof(statInfo))) {
             slow_path = FALSE;
@@ -9015,6 +9027,10 @@ os_setgroups(PyObject *module, PyObject *groups)
     }
 
     gid_t *grouplist = PyMem_New(gid_t, len);
+    if (grouplist == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
     for (Py_ssize_t i = 0; i < len; i++) {
         PyObject *elem;
         elem = PySequence_GetItem(groups, i);
@@ -15909,6 +15925,18 @@ all_ins(PyObject *m)
 #ifdef PRIO_USER
     if (PyModule_AddIntMacro(m, PRIO_USER)) return -1;
 #endif
+#ifdef PRIO_DARWIN_THREAD
+    if (PyModule_AddIntMacro(m, PRIO_DARWIN_THREAD)) return -1;
+#endif
+#ifdef PRIO_DARWIN_PROCESS
+    if (PyModule_AddIntMacro(m, PRIO_DARWIN_PROCESS)) return -1;
+#endif
+#ifdef PRIO_DARWIN_BG
+    if (PyModule_AddIntMacro(m, PRIO_DARWIN_BG)) return -1;
+#endif
+#ifdef PRIO_DARWIN_NONUI
+    if (PyModule_AddIntMacro(m, PRIO_DARWIN_NONUI)) return -1;
+#endif
 #ifdef O_CLOEXEC
     if (PyModule_AddIntMacro(m, O_CLOEXEC)) return -1;
 #endif
@@ -16785,6 +16813,7 @@ posixmodule_exec(PyObject *m)
 
 static PyModuleDef_Slot posixmodile_slots[] = {
     {Py_mod_exec, posixmodule_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 
