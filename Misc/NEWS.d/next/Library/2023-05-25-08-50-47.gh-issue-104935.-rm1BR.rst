@@ -1,0 +1,4 @@
+Fix bugs with the interaction between :func:`typing.runtime_checkable` and
+:class:`typing.Generic` that were introduced by the :pep:`695`
+implementation. All generic classes now again have an ``_is_protocol``
+attribute. Patch by Jelle Zijlstra.
