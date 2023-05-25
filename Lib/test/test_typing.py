@@ -2485,17 +2485,17 @@ class ProtocolTests(BaseTestCase):
         @runtime_checkable
         class Foo[T](Protocol):
             def meth(self) -> T: ...
-        
+
         class Impl:
             def meth(self) -> int: ...
-        
+
         self.assertIsSubclass(Impl, Foo)
-        
+
         class NotImpl:
             def method(self) -> int: ...
-        
+
         self.assertNotIsSubclass(NotImpl, Foo)
-        
+
     def test_pep695_generics_can_be_runtime_checkable(self):
         @runtime_checkable
         class HasX(Protocol):

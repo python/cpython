@@ -1640,11 +1640,6 @@ int _Py_initialize_generic(PyInterpreterState *interp)
     MAKE_TYPE(paramspecargs);
     MAKE_TYPE(paramspeckwargs);
 #undef MAKE_TYPE
-    if (PyDict_SetItemString(interp->cached_objects.generic_type->tp_dict,
-                             "_is_protocol", Py_False) < 0) {
-        return -1;
-    }
-    PyType_Modified(interp->cached_objects.generic_type);
     return 0;
 }
 
