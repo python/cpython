@@ -78,7 +78,6 @@ OMIT_NETWORKING_FILES = (
 
 OMIT_MODULE_FILES = {
     "_asyncio": ["asyncio/"],
-    "audioop": ["wave.py"],
     "_curses": ["curses/"],
     "_ctypes": ["ctypes/"],
     "_decimal": ["decimal.py"],

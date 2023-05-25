@@ -919,7 +919,7 @@ and will be removed in Python 3.13.
 Modules (see :pep:`594`):
 
 * :mod:`!aifc`
-* :mod:`audioop`
+* :mod:`!audioop`
 * :mod:`!cgi`
 * :mod:`!cgitb`
 * :mod:`chunk`
