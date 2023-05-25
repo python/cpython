@@ -45,7 +45,6 @@ static const char* _Py_stdlib_module_names[] = {
 "_lzma",
 "_markupbase",
 "_md5",
-"_msi",
 "_multibytecodec",
 "_multiprocessing",
 "_opcode",
