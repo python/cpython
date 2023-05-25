@@ -9,7 +9,9 @@
         "-y",
         "which",
         "zsh",
-        "fish"
+        "fish",
+        // For umask fix below.
+        "/usr/bin/setfacl"
     ],
     "updateContentCommand": {
         // Using the shell for `nproc` usage.
@@ -20,7 +22,10 @@
             "Doc",
             "venv",
             "html"
-        ]
+        ],
+        // https://github.com/orgs/community/discussions/26026
+        //"umask fix": "sudo setfacl -bnR . && sudo setfacl -bn /tmp"
+        "umask fix": ["sudo", "setfacl", "-bnR", "."]
     },
     "customizations": {
         "vscode": {
@@ -32,9 +37,9 @@
                 // C auto-complete.
                 "ms-vscode.cpptools",
                 // To view built docs.
-                "ms-vscode.live-server"
-                // https://github.com/microsoft/vscode-python/issues/18073
-                // "ms-python.python"
+                "ms-vscode.live-server",
+                // Python auto-complete.
+                "ms-python.python"
             ],
             "settings": {
                 "C_Cpp.default.compilerPath": "/usr/bin/clang",
