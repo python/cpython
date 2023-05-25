@@ -505,7 +505,7 @@ math
 
 * Extended :func:`math.nextafter` to include a `steps` argument
   for moving up or down multiple steps at a time.
-  (By Matthias Goergens, Mark Dickinson, and Raymond Hettingerin :gh:`94906`.)
+  (By Matthias Goergens, Mark Dickinson, and Raymond Hettinger in :gh:`94906`.)
 
 os
 --
