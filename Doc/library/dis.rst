@@ -418,7 +418,7 @@ details of bytecode instructions as :class:`Instruction` instances:
 
       Field ``positions`` is added.
 
-   .. versionchanged:: 3.12
+   .. versionchanged:: 3.13
 
       Fields ``start_offset``, ``cache_offset``, ``end_offset``, ``baseopname``, ``baseopcode``, ``jump_target`` and ``oparg`` are added.
 
