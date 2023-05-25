@@ -95,7 +95,6 @@ static const char* _Py_stdlib_module_names[] = {
 "ast",
 "asyncio",
 "atexit",
-"audioop",
 "base64",
 "bdb",
 "binascii",

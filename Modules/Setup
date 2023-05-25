@@ -150,7 +150,6 @@ PYTHONPATH=$(COREPYTHONPATH)
 #_typing _typingmodule.c
 #_zoneinfo _zoneinfo.c
 #array arraymodule.c
-#audioop audioop.c
 #binascii binascii.c
 #cmath cmathmodule.c
 #math mathmodule.c

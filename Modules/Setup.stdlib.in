@@ -46,7 +46,6 @@
 @MODULE__ZONEINFO_TRUE@_zoneinfo _zoneinfo.c
 
 # needs libm
-@MODULE_AUDIOOP_TRUE@audioop audioop.c
 @MODULE_MATH_TRUE@math mathmodule.c
 @MODULE_CMATH_TRUE@cmath cmathmodule.c
 @MODULE__STATISTICS_TRUE@_statistics _statisticsmodule.c
