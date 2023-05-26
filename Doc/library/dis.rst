@@ -1270,11 +1270,11 @@ iterations of the loop.
    slot ``i`` of the "fast locals" storage in this mapping.
    If the name is not found there, loads it from the cell contained in
    slot ``i``, similar to :opcode:`LOAD_DEREF`. This is used for loading
-   free variables in class bodies and in
+   free variables in class bodies (which previously used
+   :opcode:`!LOAD_CLASSDEREF`) and in
    :ref:`annotation scopes <annotation-scopes>` within class bodies.
 
    .. versionadded:: 3.12
-      Replaces the previous instruction ``LOAD_CLASSDEREF``.
 
 
 .. opcode:: STORE_DEREF (i)

@@ -316,7 +316,7 @@ Or by using the :class:`TypeVar` factory directly::
        return l[0]
 
 .. versionchanged:: 3.12
-   Syntactic support for generics is new in version 3.12.
+   Syntactic support for generics is new in Python 3.12.
 
 .. _user-defined-generics:
 
@@ -1697,15 +1697,15 @@ without the dedicated syntax, as documented below.
       ``P.args`` and ``P.kwargs`` are instances respectively of
       :class:`ParamSpecArgs` and :class:`ParamSpecKwargs`.
 
+   .. attribute:: __name__
+
+      The name of the parameter specification.
+
    Parameter specification variables created with ``covariant=True`` or
    ``contravariant=True`` can be used to declare covariant or contravariant
    generic types.  The ``bound`` argument is also accepted, similar to
    :class:`TypeVar`.  However the actual semantics of these keywords are yet to
    be decided.
-
-   .. attribute:: __name__
-
-      The name of the parameter specification.
 
    .. versionadded:: 3.10
 
@@ -1755,9 +1755,7 @@ without the dedicated syntax, as documented below.
 
    .. attribute:: __name__
 
-      The name of the type alias.
-
-      Example::
+      The name of the type alias::
 
          >>> type Alias = int
          >>> Alias.__name__
@@ -1765,9 +1763,7 @@ without the dedicated syntax, as documented below.
 
    .. attribute:: __module__
 
-      The module in which the type alias was defined.
-
-      Example::
+      The module in which the type alias was defined::
 
          >>> type Alias = int
          >>> Alias.__module__
@@ -1776,11 +1772,9 @@ without the dedicated syntax, as documented below.
    .. attribute:: __type_params__
 
       The type parameters of the type alias, or an empty tuple if the alias is
-      not generic.
+      not generic:
 
-      Example::
-
-         .. doctest::
+      .. doctest::
 
          >>> type ListOrSet[T] = list[T] | set[T]
          >>> ListOrSet.__type_params__
@@ -1791,13 +1785,11 @@ without the dedicated syntax, as documented below.
 
    .. attribute:: __value__
 
-      The type alias's value. This is lazily evaluated, so names used in the
-      definition of the alias are not resolved until the ``__value__`` attribute
-      is accessed.
+      The type alias's value. This is :ref:`lazily evaluated <lazy-evaluation>`,
+      so names used in the definition of the alias are not resolved until the
+      ``__value__`` attribute is accessed:
 
-      Example::
-
-         .. doctest::
+      .. doctest::
 
          >>> type Mutually = Recursive
          >>> type Recursive = Mutually
@@ -1869,7 +1861,7 @@ These are not used in annotations. They are building blocks for declaring types.
            key: T
            group: list[T]
 
-       # For creating a NamedTuple on Python 3.5 or lower
+       # A functional syntax is also supported
        Employee = NamedTuple('Employee', [('name', str), ('id', int)])
 
    .. versionchanged:: 3.6

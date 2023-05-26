@@ -1024,7 +1024,7 @@ The :keyword:`!type` statement
 .. productionlist:: python-grammar
    type_stmt: 'type' `identifier` [`type_params`] "=" `expression`
 
-The :keyword:`!type` statement introduces a type alias, which is an instance
+The :keyword:`!type` statement declares a type alias, which is an instance
 of :class:`typing.TypeAliasType`.
 
 For example, the following statement creates a type alias::
@@ -1038,10 +1038,12 @@ This code is roughly equivalent to::
    Point = typing.TypeAliasType("Point", VALUE_OF_Point())
 
 ``annotation-def`` indicates an :ref:`annotation scope <annotation-scopes>`, which behaves
-mostly like a function, but with several small differences. The value of the
+mostly like a function, but with several small differences.
+
+The value of the
 type alias is evaluated in the annotation scope. It is not evaluated when the
 type alias is created, but only when the value is accessed through the type alias's
-``__value__`` attribute (see :ref:`lazy-evaluation`).
+:attr:`!__value__` attribute (see :ref:`lazy-evaluation`).
 This allows the type alias to refer to names that are not yet defined.
 
 Type aliases may be made generic by adding a :ref:`type parameter list <type-params>`

@@ -180,7 +180,7 @@ However, the following will succeed::
 
    class A:
        type Alias = Nested
-       class Nested: ...
+       class Nested: pass
 
    print(A.Alias.__value__)  # <type 'A.Nested'>
 
@@ -225,7 +225,7 @@ Annotation scopes differ from function scopes in the following ways:
   syntactic elements that can appear within annotation scopes can introduce new names.
 * While annotation scopes have an internal name, that name is not reflected in the
   :term:`__qualname__ <qualified name>` of objects defined within the scope.
-  Instead, the ``__qualname__``
+  Instead, the :attr:`!__qualname__`
   of such objects is as if the object were defined in the enclosing scope.
 
 .. versionadded:: 3.12

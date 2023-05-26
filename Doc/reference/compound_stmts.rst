@@ -1263,7 +1263,7 @@ the type parameters can be retrieved from the function's ``__type_params__``
 attribute. See :ref:`generic-functions` for more.
 
 .. versionchanged:: 3.12
-   Type parameters are new in version 3.12.
+   Type parameter lists are new in Python 3.12.
 
 .. index::
    triple: default; parameter; value
@@ -1450,7 +1450,7 @@ the type parameters can be retrieved from the class's ``__type_params__``
 attribute. See :ref:`generic-classes` for more.
 
 .. versionchanged:: 3.12
-   Type parameters are new in version 3.12.
+   Type parameter lists are new in Python 3.12.
 
 **Programmer's note:** Variables defined in the class definition are class
 attributes; they are shared by instances.  Instance attributes can be set in a
