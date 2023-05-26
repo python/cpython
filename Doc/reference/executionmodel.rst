@@ -211,13 +211,14 @@ Annotation scopes are used in the following contexts:
 Annotation scopes differ from function scopes in the following ways:
 
 * If an annotation scope is immediately within a class scope, or within another
-  annotation scope that is immediately within a class scope, names defined in the
-  class scope can be accessed from within the annotation scope, as if the code in the
-  annotation scope was executing directly within the class scope. (By contrast, regular
-  functions defined within classes cannot access names defined in the class scope.)
+  class scope can be accessed from within the annotation scope. The code in the
+  annotation scope can use names defined in the class scope as if it were
+  executed directly within the class body. This contrasts with regular
+  functions defined within classes, which cannot access names defined in the class scope.
 * Expressions in annotation scopes cannot contain :keyword:`yield`, ``yield from``,
-  :keyword:`await`, or :token:`:= <~python-grammar:expression>` expressions. (These
-  expressions are allowed in other scopes contained within the annotation scope.)
+  :keyword:`await`, or :token:`:= <python-grammar:assignment_expression>`
+  expressions. (These expressions are allowed in other scopes contained within the
+  annotation scope.)
 * Names defined in annotation scopes cannot be rebound with :keyword:`nonlocal`
   statements in inner scopes. This includes only type parameters, as no other
   syntactic elements that can appear within annotation scopes can introduce new names.
@@ -250,8 +251,16 @@ Example:
    Traceback (most recent call last):
      ...
    ZeroDivisionError: division by zero
+   >>> def func[T: 1/0](): pass
+   >>> T, = func.__type_params__
+   >>> T.__bound__
+   Traceback (most recent call last):
+     ...
+   ZeroDivisionError: division by zero
 
-Here the exception is raised only when the ``__value__`` attribute is accessed.
+Here the exception is raised only when the ``__value__`` attribute
+of the type alias or the ``__bound__`` attribute of the type variable
+is accessed.
 
 This behavior is primarily useful for references to types that have not
 yet been defined when the type alias or type variable is created. For example,
