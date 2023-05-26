@@ -4640,6 +4640,12 @@ class TestPEP519(unittest.TestCase):
     def test_pathlike_class_getitem(self):
         self.assertIsInstance(os.PathLike[bytes], types.GenericAlias)
 
+    def test_pathlike_subclass_slots(self):
+        class A(os.PathLike):
+            __slots__ = ()
+            def __fspath__(self):
+                return ''
+        self.assertFalse(hasattr(A(), '__dict__'))
 
 class TimesTests(unittest.TestCase):
     def test_times(self):

@@ -526,7 +526,13 @@ class NonCallableMock(Base):
             spec_list = dir(spec)
 
             for attr in spec_list:
-                if iscoroutinefunction(getattr(spec, attr, None)):
+                static_attr = inspect.getattr_static(spec, attr, None)
+                unwrapped_attr = static_attr
+                try:
+                    unwrapped_attr = inspect.unwrap(unwrapped_attr)
+                except ValueError:
+                    pass
+                if iscoroutinefunction(unwrapped_attr):
                     _spec_asyncs.append(attr)
 
             spec = spec_list
