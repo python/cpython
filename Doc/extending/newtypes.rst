@@ -379,7 +379,7 @@ Here is a sample implementation, for a datatype that is considered equal if the
 size of an internal pointer is equal::
 
    static PyObject *
-   newdatatype_richcmp(newdatatypeobj *obj1, newdatatypeobj *obj2, int op)
+   newdatatype_richcmp(newdatatypeobject *obj1, newdatatypeobject *obj2, int op)
    {
        PyObject *result;
        int c, size1, size2;
