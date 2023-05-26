@@ -455,7 +455,6 @@ variables:\n\
     class StrSequence[S: str]:  # S is a TypeVar bound to str\n\
         ...\n\
 \n\
-\n\
     class StrOrBytesSequence[A: (str, bytes)]:  # A is a TypeVar constrained to str or bytes\n\
         ...\n\
 \n\

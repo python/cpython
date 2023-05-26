@@ -1657,7 +1657,7 @@ with more precision. The scope of type parameters is modeled with a special
 function (technically, an :ref:`annotation scope <annotation-scopes>`) that
 wraps the creation of the generic object.
 
-Generic functions, classes, and type aliases have a :attr:`__type_params__`
+Generic functions, classes, and type aliases have a :attr:`!__type_params__`
 attribute listing their type parameters.
 
 Type parameters come in three kinds:
