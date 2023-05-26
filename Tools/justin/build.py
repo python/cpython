@@ -349,6 +349,8 @@ class Compiler:
         "-g0",
         # Need this to leave room for patching our 64-bit pointers:
         "-mcmodel=large",
+        # XXX
+        "-v",
     ]
     _SKIP = frozenset(
         {
