@@ -86,6 +86,12 @@ def _make_selector(pattern_parts, flavour, case_sensitive):
     return cls(pat, child_parts, flavour, case_sensitive)
 
 
+@functools.lru_cache(maxsize=256)
+def _compile_pattern(pat, case_sensitive):
+    flags = re.NOFLAG if case_sensitive else re.IGNORECASE
+    return re.compile(fnmatch.translate(pat), flags).match
+
+
 class _Selector:
     """A selector matches a specific glob pattern part against the children
     of a given path."""
@@ -133,8 +139,7 @@ class _WildcardSelector(_Selector):
         if case_sensitive is None:
             # TODO: evaluate case-sensitivity of each directory in _select_from()
             case_sensitive = _is_case_sensitive(flavour)
-        flags = re.NOFLAG if case_sensitive else re.IGNORECASE
-        self.match = re.compile(fnmatch.translate(pat), flags=flags).fullmatch
+        self.match = _compile_pattern(pat, case_sensitive)
 
     def _select_from(self, parent_path, scandir):
         try:
@@ -228,7 +233,7 @@ class _PathParents(Sequence):
         return "<{}.parents>".format(type(self._path).__name__)
 
 
-class PurePath(object):
+class PurePath(os.PathLike):
     """Base class for manipulating paths without I/O.
 
     PurePath represents a filesystem path and offers operations which
@@ -680,28 +685,27 @@ class PurePath(object):
         name = self._tail[-1].partition('.')[0].partition(':')[0].rstrip(' ')
         return name.upper() in _WIN_RESERVED_NAMES
 
-    def match(self, path_pattern):
+    def match(self, path_pattern, *, case_sensitive=None):
         """
         Return True if this path matches the given pattern.
         """
+        if case_sensitive is None:
+            case_sensitive = _is_case_sensitive(self._flavour)
         pat = self.with_segments(path_pattern)
         if not pat.parts:
             raise ValueError("empty pattern")
-        pat_parts = pat._parts_normcase
-        parts = self._parts_normcase
+        pat_parts = pat.parts
+        parts = self.parts
         if pat.drive or pat.root:
             if len(pat_parts) != len(parts):
                 return False
         elif len(pat_parts) > len(parts):
             return False
         for part, pat in zip(reversed(parts), reversed(pat_parts)):
-            if not fnmatch.fnmatchcase(part, pat):
+            match = _compile_pattern(pat, case_sensitive)
+            if not match(part):
                 return False
         return True
-
-# Can't subclass os.PathLike from PurePath and keep the constructor
-# optimizations in PurePath.__slots__.
-os.PathLike.register(PurePath)
 
 
 class PurePosixPath(PurePath):
@@ -1071,25 +1075,6 @@ class Path(PurePath):
         if cls is Path:
             cls = WindowsPath if os.name == 'nt' else PosixPath
         return object.__new__(cls)
-
-    def __enter__(self):
-        # In previous versions of pathlib, __exit__() marked this path as
-        # closed; subsequent attempts to perform I/O would raise an IOError.
-        # This functionality was never documented, and had the effect of
-        # making Path objects mutable, contrary to PEP 428.
-        # In Python 3.9 __exit__() was made a no-op.
-        # In Python 3.11 __enter__() began emitting DeprecationWarning.
-        # In Python 3.13 __enter__() and __exit__() should be removed.
-        warnings.warn("pathlib.Path.__enter__() is deprecated and scheduled "
-                      "for removal in Python 3.13; Path objects as a context "
-                      "manager is a no-op",
-                      DeprecationWarning, stacklevel=2)
-        return self
-
-    def __exit__(self, t, v, tb):
-        pass
-
-    # Public API
 
     @classmethod
     def cwd(cls):

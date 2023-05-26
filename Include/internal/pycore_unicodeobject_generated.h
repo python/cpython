@@ -1068,6 +1068,9 @@ _PyUnicode_InitStaticStrings(PyInterpreterState *interp) {
     string = &_Py_ID(extend);
     assert(_PyUnicode_CheckConsistency(string, 1));
     _PyUnicode_InternInPlace(interp, &string);
+    string = &_Py_ID(extra_tokens);
+    assert(_PyUnicode_CheckConsistency(string, 1));
+    _PyUnicode_InternInPlace(interp, &string);
     string = &_Py_ID(facility);
     assert(_PyUnicode_CheckConsistency(string, 1));
     _PyUnicode_InternInPlace(interp, &string);
@@ -1527,6 +1530,9 @@ _PyUnicode_InitStaticStrings(PyInterpreterState *interp) {
     string = &_Py_ID(next);
     assert(_PyUnicode_CheckConsistency(string, 1));
     _PyUnicode_InternInPlace(interp, &string);
+    string = &_Py_ID(nlocals);
+    assert(_PyUnicode_CheckConsistency(string, 1));
+    _PyUnicode_InternInPlace(interp, &string);
     string = &_Py_ID(node_depth);
     assert(_PyUnicode_CheckConsistency(string, 1));
     _PyUnicode_InternInPlace(interp, &string);
@@ -1888,6 +1894,9 @@ _PyUnicode_InitStaticStrings(PyInterpreterState *interp) {
     assert(_PyUnicode_CheckConsistency(string, 1));
     _PyUnicode_InternInPlace(interp, &string);
     string = &_Py_ID(step);
+    assert(_PyUnicode_CheckConsistency(string, 1));
+    _PyUnicode_InternInPlace(interp, &string);
+    string = &_Py_ID(steps);
     assert(_PyUnicode_CheckConsistency(string, 1));
     _PyUnicode_InternInPlace(interp, &string);
     string = &_Py_ID(store_name);

@@ -1,0 +1,2 @@
+Allow :class:`typing.Protocol` classes to inherit from
+:class:`collections.abc.Buffer`. Patch by Jelle Zijlstra.

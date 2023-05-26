@@ -165,7 +165,7 @@ _PyPegen_tokenize_full_source_to_check_for_errors(Parser *p) {
 
     int ret = 0;
     struct token new_token;
-    new_token.metadata = NULL;
+    _PyToken_Init(&new_token);
 
     for (;;) {
         switch (_PyTokenizer_Get(p->tok, &new_token)) {
@@ -193,7 +193,7 @@ _PyPegen_tokenize_full_source_to_check_for_errors(Parser *p) {
 
 
 exit:
-    Py_XDECREF(new_token.metadata);
+    _PyToken_Free(&new_token);
     // If we're in an f-string, we want the syntax error in the expression part
     // to propagate, so that tokenizer errors (like expecting '}') that happen afterwards
     // do not swallow it.

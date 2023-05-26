@@ -312,6 +312,11 @@ class _BasePurePathTest(object):
         # Multi-part glob-style pattern.
         self.assertFalse(P('/a/b/c.py').match('/**/*.py'))
         self.assertTrue(P('/a/b/c.py').match('/a/**/*.py'))
+        # Case-sensitive flag
+        self.assertFalse(P('A.py').match('a.PY', case_sensitive=True))
+        self.assertTrue(P('A.py').match('a.PY', case_sensitive=False))
+        self.assertFalse(P('c:/a/B.Py').match('C:/A/*.pY', case_sensitive=True))
+        self.assertTrue(P('/a/b/c.py').match('/A/*/*.Py', case_sensitive=False))
 
     def test_ordering_common(self):
         # Ordering is tuple-alike.
@@ -916,7 +921,7 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(P('//some/share/a/b%#c\xe9').as_uri(),
                          'file://some/share/a/b%25%23c%C3%A9')
 
-    def test_match_common(self):
+    def test_match(self):
         P = self.cls
         # Absolute patterns.
         self.assertTrue(P('c:/b.py').match('*:/*.py'))
@@ -2074,26 +2079,6 @@ class _BasePathTest(object):
             self.assertEqual(p.resolve(), self.cls(BASE, p))
         finally:
             os.chdir(old_cwd)
-
-    def test_with(self):
-        p = self.cls(BASE)
-        it = p.iterdir()
-        it2 = p.iterdir()
-        next(it2)
-        # bpo-46556: path context managers are deprecated in Python 3.11.
-        with self.assertWarns(DeprecationWarning):
-            with p:
-                pass
-        # Using a path as a context manager is a no-op, thus the following
-        # operations should still succeed after the context manage exits.
-        next(it)
-        next(it2)
-        p.exists()
-        p.resolve()
-        p.absolute()
-        with self.assertWarns(DeprecationWarning):
-            with p:
-                pass
 
     @os_helper.skip_unless_working_chmod
     def test_chmod(self):

@@ -8,12 +8,14 @@ on:
     - '3.*'
     paths:
     - 'Tools/msi/**'
+    - '.github/workflows/build_msi.yml'
   pull_request:
     branches:
     - 'main'
     - '3.*'
     paths:
     - 'Tools/msi/**'
+    - '.github/workflows/build_msi.yml'
 
 permissions:
   contents: read
@@ -33,4 +35,4 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build CPython installer
-      run: .\Tools\msi\build.bat -${{ matrix.type }}
+      run: .\Tools\msi\build.bat --doc -${{ matrix.type }}
