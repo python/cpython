@@ -789,6 +789,12 @@ class PurePosixPathTest(_BasePurePathTest, unittest.TestCase):
         pp = P('//a') / '/c'
         self.assertEqual(pp, P('/c'))
 
+    def test_parse_windows_path(self):
+        P = self.cls
+        p = P('c:', 'a', 'b')
+        pp = P(pathlib.PureWindowsPath('c:\\a\\b'))
+        self.assertEqual(p, pp)
+
 
 class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
     cls = pathlib.PureWindowsPath
