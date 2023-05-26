@@ -115,6 +115,11 @@ Removed
   are now removed. The items in those namespaces can be imported directly
   from :mod:`typing`. (Contributed by Sebastian Rittau in :gh:`92871`.)
 
+* Remove the untested and undocumented :mod:`webbrowser` :class:`!MacOSX` class,
+  deprecated in Python 3.11.
+  Use the :class:`!MacOSXOSAScript` class (introduced in Python 3.2) instead.
+  (Contributed by Hugo van Kemenade in :gh:`104804`.)
+
 * Remove support for using :class:`pathlib.Path` objects as context managers.
   This functionality was deprecated and made a no-op in Python 3.9.
 
@@ -243,6 +248,14 @@ Removed
 * Remove support for the keyword-argument method of creating
   :class:`typing.TypedDict` types, deprecated in Python 3.11.
   (Contributed by Tomas Roun in :gh:`104786`.)
+
+* :pep:`594`: Remove the :mod:`!imghdr` module, deprecated in Python 3.11:
+  use the projects
+  `filetype <https://pypi.org/project/filetype/>`_,
+  `puremagic <https://pypi.org/project/puremagic/>`_,
+  or `python-magic <https://pypi.org/project/python-magic/>`_ instead.
+  (Contributed by Victor Stinner in :gh:`104773`.)
+
 
 Porting to Python 3.13
 ======================

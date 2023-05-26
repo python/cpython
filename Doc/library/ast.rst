@@ -481,7 +481,7 @@ Expressions
    Comparison operator tokens.
 
 
-.. class:: Call(func, args, keywords, starargs, kwargs)
+.. class:: Call(func, args, keywords)
 
    A function call. ``func`` is the function, which will often be a
    :class:`Name` or :class:`Attribute` object. Of the arguments:
@@ -491,7 +491,7 @@ Expressions
      arguments passed by keyword.
 
    When creating a ``Call`` node, ``args`` and ``keywords`` are required, but
-   they can be empty lists. ``starargs`` and ``kwargs`` are optional.
+   they can be empty lists.
 
    .. doctest::
 
@@ -1724,7 +1724,6 @@ Function and class definitions
             body=[
                 FunctionDef(
                     name='f',
-                    type_params=[],
                     args=arguments(
                         posonlyargs=[],
                         args=[
@@ -1749,7 +1748,8 @@ Function and class definitions
                     decorator_list=[
                         Name(id='decorator1', ctx=Load()),
                         Name(id='decorator2', ctx=Load())],
-                    returns=Constant(value='return annotation'))],
+                    returns=Constant(value='return annotation'),
+                    type_params=[])],
             type_ignores=[])
 
 
@@ -1820,7 +1820,7 @@ Function and class definitions
             type_ignores=[])
 
 
-.. class:: ClassDef(name, bases, keywords, starargs, kwargs, body, decorator_list)
+.. class:: ClassDef(name, bases, keywords, body, decorator_list)
 
    A class definition.
 
@@ -1829,9 +1829,6 @@ Function and class definitions
    * ``keywords`` is a list of :class:`keyword` nodes, principally for 'metaclass'.
      Other keywords will be passed to the metaclass, as per `PEP-3115
      <https://peps.python.org/pep-3115/>`_.
-   * ``starargs`` and ``kwargs`` are each a single node, as in a function call.
-     starargs will be expanded to join the list of base classes, and kwargs will
-     be passed to the metaclass.
    * ``body`` is a list of nodes representing the code within the class
      definition.
    * ``decorator_list`` is a list of nodes, as in :class:`FunctionDef`.
@@ -1848,7 +1845,6 @@ Function and class definitions
             body=[
                 ClassDef(
                     name='Foo',
-                    type_params=[],
                     bases=[
                         Name(id='base1', ctx=Load()),
                         Name(id='base2', ctx=Load())],
@@ -1860,7 +1856,8 @@ Function and class definitions
                         Pass()],
                     decorator_list=[
                         Name(id='decorator1', ctx=Load()),
-                        Name(id='decorator2', ctx=Load())])],
+                        Name(id='decorator2', ctx=Load())],
+                    type_params=[])],
             type_ignores=[])
 
 Async and await
@@ -1887,7 +1884,6 @@ Async and await
         body=[
             AsyncFunctionDef(
                 name='f',
-                type_params=[],
                 args=arguments(
                     posonlyargs=[],
                     args=[],
@@ -1901,7 +1897,8 @@ Async and await
                                 func=Name(id='other_func', ctx=Load()),
                                 args=[],
                                 keywords=[])))],
-                decorator_list=[])],
+                decorator_list=[],
+                type_params=[])],
         type_ignores=[])
 
 
