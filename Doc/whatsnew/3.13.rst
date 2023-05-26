@@ -115,6 +115,11 @@ Removed
   are now removed. The items in those namespaces can be imported directly
   from :mod:`typing`. (Contributed by Sebastian Rittau in :gh:`92871`.)
 
+* Remove the untested and undocumented :mod:`webbrowser` :class:`!MacOSX` class,
+  deprecated in Python 3.11.
+  Use the :class:`!MacOSXOSAScript` class (introduced in Python 3.2) instead.
+  (Contributed by Hugo van Kemenade in :gh:`104804`.)
+
 * Remove support for using :class:`pathlib.Path` objects as context managers.
   This functionality was deprecated and made a no-op in Python 3.9.
 
