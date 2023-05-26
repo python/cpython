@@ -1000,7 +1000,7 @@ Pending Removal in Python 3.14
 
 * :mod:`itertools` had undocumented, inefficient, historically buggy,
   and inconsistent support for copy, deepcopy, and pickle operations.
-  This will be removed in 3.14 with a significant reduction in code
+  This will be removed in 3.14 for a significant reduction in code
   volume and maintenance burden.
   (Contributed by Raymond Hettinger in :gh:`101588`.)
 
