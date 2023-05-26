@@ -300,6 +300,9 @@ class PurePath(object):
         for arg in args:
             if isinstance(arg, PurePath):
                 path = arg._raw_path
+                if arg._flavour is ntpath and self._flavour is posixpath:
+                    # GH-103631: Convert separators for backwards compatibility.
+                    path = path.replace('\\', '/')
             else:
                 try:
                     path = os.fspath(arg)
