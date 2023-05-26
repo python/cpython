@@ -904,6 +904,7 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(P('a/B'), P('A/b'))
         self.assertEqual(P('C:a/B'), P('c:A/b'))
         self.assertEqual(P('//Some/SHARE/a/B'), P('//somE/share/A/b'))
+        self.assertEqual(P('\u0130'), P('i\u0307'))
 
     def test_as_uri(self):
         P = self.cls
