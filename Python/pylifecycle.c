@@ -1752,7 +1752,8 @@ static void wait_for_exit_blocks_to_be_released(void)
     /* We release the GIL to avoid deadlock. */
     Py_BEGIN_ALLOW_THREADS
 
-    MUTEX_LOCK(runtime->ceval.gil.mutex)
+    PyInterpreterState *main_interp = PyInterpreterState_Main();
+    MUTEX_LOCK(main_interp->ceval.gil->mutex)
     runtime->finalize_blocks |= 1;
     /* Note: It is possible that there is another concurrent call to
        `Py_FinalizeEx` in a different thread.  In that case, the LSB of
@@ -1766,9 +1767,9 @@ static void wait_for_exit_blocks_to_be_released(void)
        allowed and will not work correctly.
     */
     while(runtime->finalize_blocks != 1) {
-        COND_WAIT(runtime->ceval.gil.cond, runtime->ceval.gil.mutex)
+        COND_WAIT(main_interp->ceval.gil->cond, main_interp->ceval.gil->mutex)
     }
-    MUTEX_UNLOCK(runtime->ceval.gil.mutex)
+    MUTEX_UNLOCK(main_interp->ceval.gil->mutex)
 
     Py_END_ALLOW_THREADS
 }

@@ -2299,14 +2299,15 @@ PyThread_TryAcquireFinalizeBlock(void)
 {
     int ret;
     _PyRuntimeState *runtime = &_PyRuntime;
-    MUTEX_LOCK(runtime->ceval.gil.mutex)
+    PyInterpreterState *main_interp = PyInterpreterState_Main();
+    MUTEX_LOCK(main_interp->ceval.gil->mutex)
     if (runtime->finalize_blocks & 1) {
         ret = 0;
     } else {
         ret = 1;
         runtime->finalize_blocks += 2;
     }
-    MUTEX_UNLOCK(runtime->ceval.gil.mutex)
+    MUTEX_UNLOCK(main_interp->ceval.gil->mutex)
     return ret;
 }
 
@@ -2314,12 +2315,13 @@ void
 PyThread_ReleaseFinalizeBlock(void)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
-    MUTEX_LOCK(runtime->ceval.gil.mutex)
+    PyInterpreterState *main_interp = PyInterpreterState_Main();
+    MUTEX_LOCK(main_interp->ceval.gil->mutex)
     assert(runtime->finalize_blocks >= 2);
     if ((runtime->finalize_blocks -= 2) == 0) {
-        COND_BROADCAST(runtime->ceval.gil.cond)
+        COND_BROADCAST(main_interp->ceval.gil->cond)
     }
-    MUTEX_UNLOCK(runtime->ceval.gil.mutex)
+    MUTEX_UNLOCK(main_interp->ceval.gil->mutex)
 }
 
 PyGILState_TRY_STATE

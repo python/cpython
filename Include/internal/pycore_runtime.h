@@ -92,10 +92,10 @@ typedef struct pyruntimestate {
        currently held.  Once bit 0 is set to 1, the number of finalize blocks is
        not allowed to increase.
 
-       Protected by `ceval.gil.mutex`, and `ceval.gil.cond` must be broadcast
-       when it becomes 1.
+       Protected by the main interpreter's GIL `main_interp->ceval.gil->mutex`;
+       `main_interp->ceval.gil->cond` must be broadcast when it becomes 1.
     */
-    uintptr_t finalize_blocks;
+    unsigned long finalize_blocks;
 
     struct _pymem_allocators allocators;
     struct _obmalloc_global_state obmalloc;
