@@ -734,11 +734,6 @@ tempfile
 typing
 ------
 
-* Add :func:`typing.override`, an override decorator telling to static type
-  checkers to verify that a method overrides some method or attribute of the
-  same name on a base class, as per :pep:`698`. (Contributed by Steven Troxler in
-  :gh:`101564`.)
-
 * :func:`isinstance` checks against
   :func:`runtime-checkable protocols <typing.runtime_checkable>` now use
   :func:`inspect.getattr_static` rather than :func:`hasattr` to lookup whether
@@ -782,6 +777,13 @@ typing
   faster or more. However, ``isinstance()`` checks against protocols with fourteen
   or more members may be slower than in Python 3.11. (Contributed by Alex
   Waygood in :gh:`74690` and :gh:`103193`.)
+
+* All :data:`typing.TypedDict` and :data:`typing.NamedTuple` classes now have the
+  ``__orig_bases__`` attribute. (Contributed by Adrian Garcia Badaracco in
+  :gh:`103699`.)
+
+* Add ``frozen_default`` parameter to :func:`typing.dataclass_transform`.
+  (Contributed by Erik De Bonte in :gh:`99957`.)
 
 sys
 ---
