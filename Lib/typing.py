@@ -1177,17 +1177,9 @@ class ParamSpec(_Final, _Immutable, _BoundVarianceMixin, _PickleUsingNameMixin,
            '''Add two numbers together.'''
            return x + y
 
-    Parameter specification variables defined with covariant=True or
-    contravariant=True can be used to declare covariant or contravariant
-    generic types.  These keyword arguments are valid, but their actual semantics
-    are yet to be decided.  See PEP 612 for details.
-
     Parameter specification variables can be introspected. e.g.:
 
        P.__name__ == 'P'
-       P.__bound__ == None
-       P.__covariant__ == False
-       P.__contravariant__ == False
 
     Note that only parameter specification variables defined in global scope can
     be pickled.
