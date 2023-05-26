@@ -2289,9 +2289,7 @@ def setup_venv_with_pip_setuptools_wheel(venv_dir):
         venv = os.path.join(temp_dir, venv_dir)
 
         # Get the Python executable of the venv
-        python_exe = 'python'
-        if sys.executable.endswith('.exe'):
-            python_exe += '.exe'
+        python_exe = os.path.basename(sys.executable)
         if sys.platform == 'win32':
             python = os.path.join(venv, 'Scripts', python_exe)
         else:
