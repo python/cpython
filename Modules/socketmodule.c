@@ -1339,8 +1339,6 @@ setbdaddr(const char *name, bdaddr_t *bdaddr)
 static PyObject *
 makebdaddr(bdaddr_t *bdaddr)
 {
-    char buf[(6 * 2) + 5 + 1];
-
 #ifdef MS_WINDOWS
     int i;
     unsigned int octets[6];
@@ -1349,16 +1347,14 @@ makebdaddr(bdaddr_t *bdaddr)
         octets[i] = ((*bdaddr) >> (8 * i)) & 0xFF;
     }
 
-    sprintf(buf, "%02X:%02X:%02X:%02X:%02X:%02X",
+    return PyUnicode_FromFormat("%02X:%02X:%02X:%02X:%02X:%02X",
         octets[5], octets[4], octets[3],
         octets[2], octets[1], octets[0]);
 #else
-    sprintf(buf, "%02X:%02X:%02X:%02X:%02X:%02X",
+    return PyUnicode_FromFormat("%02X:%02X:%02X:%02X:%02X:%02X",
         bdaddr->b[5], bdaddr->b[4], bdaddr->b[3],
         bdaddr->b[2], bdaddr->b[1], bdaddr->b[0]);
 #endif
-
-    return PyUnicode_FromString(buf);
 }
 #endif
 

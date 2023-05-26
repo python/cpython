@@ -200,7 +200,7 @@ convert_fds_to_keep_to_c(PyObject *py_fds_to_keep, int *c_fds_to_keep)
     for (i = 0; i < len; ++i) {
         PyObject* fdobj = PyTuple_GET_ITEM(py_fds_to_keep, i);
         long fd = PyLong_AsLong(fdobj);
-        if (PyErr_Occurred()) {
+        if (fd == -1 && PyErr_Occurred()) {
             return -1;
         }
         if (fd < 0 || fd > INT_MAX) {
@@ -559,7 +559,7 @@ reset_signal_handlers(const sigset_t *child_sigmask)
  * required by POSIX but not supported natively on Linux. Another reason to
  * avoid this family of functions is that sharing an address space between
  * processes running with different privileges is inherently insecure.
- * See bpo-35823 for further discussion and references.
+ * See https://bugs.python.org/issue35823 for discussion and references.
  *
  * In some C libraries, setrlimit() has the same thread list/signalling
  * behavior since resource limits were per-thread attributes before
@@ -798,6 +798,7 @@ do_fork_exec(char *const exec_array[],
     pid_t pid;
 
 #ifdef VFORK_USABLE
+    PyThreadState *vfork_tstate_save;
     if (child_sigmask) {
         /* These are checked by our caller; verify them in debug builds. */
         assert(uid == (uid_t)-1);
@@ -805,7 +806,22 @@ do_fork_exec(char *const exec_array[],
         assert(extra_group_size < 0);
         assert(preexec_fn == Py_None);
 
+        /* Drop the GIL so that other threads can continue execution while this
+         * thread in the parent remains blocked per vfork-semantics on the
+         * child's exec syscall outcome. Exec does filesystem access which
+         * can take an arbitrarily long time. This addresses GH-104372.
+         *
+         * The vfork'ed child still runs in our address space. Per POSIX it
+         * must be limited to nothing but exec, but the Linux implementation
+         * is a little more usable. See the child_exec() comment - The child
+         * MUST NOT re-acquire the GIL.
+         */
+        vfork_tstate_save = PyEval_SaveThread();
         pid = vfork();
+        if (pid != 0) {
+            // Not in the child process, reacquire the GIL.
+            PyEval_RestoreThread(vfork_tstate_save);
+        }
         if (pid == (pid_t)-1) {
             /* If vfork() fails, fall back to using fork(). When it isn't
              * allowed in a process by the kernel, vfork can return -1
@@ -819,6 +835,7 @@ do_fork_exec(char *const exec_array[],
     }
 
     if (pid != 0) {
+        // Parent process.
         return pid;
     }
 
@@ -1074,7 +1091,7 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
 #endif /* HAVE_SETREUID */
     }
 
-    c_fds_to_keep = PyMem_RawMalloc(fds_to_keep_len * sizeof(int));
+    c_fds_to_keep = PyMem_Malloc(fds_to_keep_len * sizeof(int));
     if (c_fds_to_keep == NULL) {
         PyErr_SetString(PyExc_MemoryError, "failed to malloc c_fds_to_keep");
         goto cleanup;
@@ -1157,7 +1174,7 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
 
 cleanup:
     if (c_fds_to_keep != NULL) {
-        PyMem_RawFree(c_fds_to_keep);
+        PyMem_Free(c_fds_to_keep);
     }
 
     if (saved_errno != 0) {
