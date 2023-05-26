@@ -444,15 +444,13 @@ PyDoc_STRVAR(typevar_doc,
 "Type variable.\n\
 \n\
 The preferred way to construct a type variable is via the dedicated syntax\n\
-for :ref:`generic functions <generic-functions>`,\n\
-:ref:`generic classes <generic-classes>`, and\n\
-:ref:`generic type aliases <generic-type-aliases>`::\n\
+for generic functions, classes, and type aliases:\n\
 \n\
    class Sequence[T]:  # T is a TypeVar\n\
          ...\n\
 \n\
 This syntax can also be used to create bound and constrained type\n\
-variables::\n\
+variables:\n\
 \n\
    class StrSequence[S: str]:  # S is a TypeVar bound to str\n\
          ...\n\
@@ -462,7 +460,7 @@ variables::\n\
          ...\n\
 \n\
 However, if desired, reusable type variables can also be constructed\n\
-manually, like so::\n\
+manually, like so:\n\
 \n\
    T = TypeVar('T')  # Can be anything\n\
    S = TypeVar('S', bound=str)  # Can be any subtype of str\n\
@@ -473,8 +471,7 @@ checkers.  They serve as the parameters for generic types as well\n\
 as for generic function and type alias definitions.\n\
 \n\
 The variance of type variables is inferred by type checkers when they are created\n\
-through the type parameter syntax and when\n\
-``infer_variance=True`` is passed.\n\
+through the type parameter syntax and when ``infer_variance=True`` is passed.\n\
 Manually created type variables may be explicitly marked covariant or\n\
 contravariant by passing ``covariant=True`` or ``contravariant=True``.\n\
 By default, manually created type variables are invariant. See PEP 484\n\
@@ -939,7 +936,14 @@ static PyMethodDef paramspec_methods[] = {
 PyDoc_STRVAR(paramspec_doc,
 "Parameter specification variable.\n\
 \n\
-Usage::\n\
+The preferred way to construct a parameter specification is via the dedicated syntax\n\
+for generic functions, classes, and type aliases, where\n\
+the use of '**' creates a parameter specification:\n\
+\n\
+    type IntFunc[**P] = Callable[P, int]\n\
+\n\
+For compatibility with Python 3.11 and earlier, ParamSpec objects\n\
+can also be created as follows:\n\
 \n\
     P = ParamSpec('P')\n\
 \n\
@@ -949,12 +953,9 @@ callable to another callable, a pattern commonly found in higher order\n\
 functions and decorators.  They are only valid when used in ``Concatenate``,\n\
 or as the first argument to ``Callable``, or as parameters for user-defined\n\
 Generics.  See class Generic for more information on generic types.  An\n\
-example for annotating a decorator::\n\
+example for annotating a decorator:\n\
 \n\
-    T = TypeVar('T')\n\
-    P = ParamSpec('P')\n\
-\n\
-    def add_logging(f: Callable[P, T]) -> Callable[P, T]:\n\
+    def add_logging[**P, T](f: Callable[P, T]) -> Callable[P, T]:\n\
         '''A type-safe decorator to add logging to a function.'''\n\
         def inner(*args: P.args, **kwargs: P.kwargs) -> T:\n\
             logging.info(f'{f.__name__} was called')\n\
@@ -966,17 +967,9 @@ example for annotating a decorator::\n\
         '''Add two numbers together.'''\n\
         return x + y\n\
 \n\
-Parameter specification variables defined with covariant=True or\n\
-contravariant=True can be used to declare covariant or contravariant\n\
-generic types.  These keyword arguments are valid, but their actual semantics\n\
-are yet to be decided.  See PEP 612 for details.\n\
-\n\
 Parameter specification variables can be introspected. e.g.:\n\
 \n\
     P.__name__ == 'P'\n\
-    P.__bound__ == None\n\
-    P.__covariant__ == False\n\
-    P.__contravariant__ == False\n\
 \n\
 Note that only parameter specification variables defined in global scope can\n\
 be pickled.\n\
@@ -1172,9 +1165,18 @@ static PyMethodDef typevartuple_methods[] = {
 };
 
 PyDoc_STRVAR(typevartuple_doc,
-"Type variable tuple.\n\
+"Type variable tuple. A specialized form of type variable that enables\n\
+variadic generics.\n\
 \n\
-Usage:\n\
+The preferred way to construct a type variable tuple is via the dedicated syntax\n\
+for generic functions, classes, and type aliases, where a single\n\
+'*' indicates a type variable tuple:\n\
+\n\
+    def move_first_element_to_last[T, *Ts](tup: tuple[T, *Ts]) -> tuple[*Ts, T]:\n\
+        return (*tup[1:], tup[0])\n\
+\n\
+For compatibility with Python 3.11 and earlier, TypeVarTuple objects\n\
+can also be created as follows:\n\
 \n\
   Ts = TypeVarTuple('Ts')  # Can be given any name\n\
 \n\
@@ -1438,6 +1440,23 @@ PyDoc_STRVAR(typealias_doc,
 Type aliases are created through the type statement:\n\
 \n\
   type Alias = int\n\
+\n\
+In this example, Alias and int will be treated equivalently by static\n\
+type checkers.\n\
+\n\
+At runtime, Alias is an instance of TypeAliasType. The __name__ attribute\n\
+holds the name of the type alias. The value of the type\n\
+alias is stored in the __value__ attribute. It is evaluated lazily, so\n\
+the value is computed only if the attribute is accessed.\n\
+\n\
+Type aliases can also be generic:\n\
+\n\
+  type ListOrSet[T] = list[T] | set[T]\n\
+\n\
+In this case, the type parameters of the alias are stored in the\n\
+__type_params__ attribute.\n\
+\n\
+See PEP 695 for more information.\n\
 ");
 
 static PyNumberMethods typealias_as_number = {
@@ -1486,14 +1505,14 @@ PyDoc_STRVAR(generic_doc,
 \n\
 A generic type is typically declared by inheriting from\n\
 this class parameterized with one or more type variables.\n\
-For example, a generic mapping type might be defined as::\n\
+For example, a generic mapping type might be defined as:\n\
 \n\
     class Mapping(Generic[KT, VT]):\n\
         def __getitem__(self, key: KT) -> VT:\n\
             ...\n\
         # Etc.\n\
 \n\
-This class can then be used as follows::\n\
+This class can then be used as follows:\n\
 \n\
     def lookup_name(mapping: Mapping[KT, VT], key: KT, default: VT) -> VT:\n\
         try:\n\

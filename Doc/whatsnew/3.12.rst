@@ -296,7 +296,7 @@ variance.
        def append(self, element: T) -> None:
            ...
 
-In addition, the PEP introduces a new way to write :ref:`type aliases <type-aliases>`
+In addition, the PEP introduces a new way to declare :ref:`type aliases <type-aliases>`
 using the :keyword:`type` statement, which creates an instance of
 :class:`~typing.TypeAliasType`::
 
@@ -306,7 +306,7 @@ Type aliases can also be :ref:`generic <generic-type-aliases>`::
 
    type Point[T] = tuple[T, T]
 
-The new syntax also allows declaring :class:`~typing.TypeVarTuple`
+The new syntax allows declaring :class:`~typing.TypeVarTuple`
 and :class:`~typing.ParamSpec` parameters, as well as :class:`~typing.TypeVar`
 parameters with bounds or constraints::
 
@@ -316,14 +316,16 @@ parameters with bounds or constraints::
    type IntOrStrSequence[T: (int, str)] = Sequence[T]  # TypeVar with constraints
 
 The value of type aliases and the bound and constraints of type variables
-created through this syntax are evaluated only on demand, enabling the use of
-forward references to types defined later in the file.
+created through this syntax are evaluated only on demand (see
+:ref:`lazy-evaluation`). This means type aliases are able to refer to other
+types defined later in the file.
 
 Type parameters declared through a type parameter list are visible within the
 scope of the declaration and any nested scopes, but not in the outer scope. For
 example, they can be used in the type annotations for the methods of a generic
 class or in the class body. However, they cannot be used in the module scope after
-the class is defined.
+the class is defined. See :ref:`type-params` for a detailed description of the
+runtime semantics of type parameters.
 
 In order to support these scoping semantics, a new kind of scope is introduced,
 the :ref:`annotation scope <annotation-scopes>`. Annotation scopes behave for the

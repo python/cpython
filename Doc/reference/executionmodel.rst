@@ -210,8 +210,9 @@ Annotation scopes are used in the following contexts:
 
 Annotation scopes differ from function scopes in the following ways:
 
-* If an annotation scope is immediately within a class scope, or within another
-  class scope, the code in the
+* Annotation scopes have access to their enclosing class namespace.
+  If an annotation scope is immediately within a class scope, or within another
+  annotation scope that is immediately within a class scope, the code in the
   annotation scope can use names defined in the class scope as if it were
   executed directly within the class body. This contrasts with regular
   functions defined within classes, which cannot access names defined in the class scope.
