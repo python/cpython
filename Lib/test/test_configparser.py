@@ -2119,6 +2119,78 @@ class BlatantOverrideConvertersTestCase(unittest.TestCase):
             self.assertEqual(cfg['two'].getlen('one'), 5)
 
 
+class SectionlessTestCase(unittest.TestCase):
+
+    def fromstring(self, default_section, string):
+        cfg = configparser.ConfigParser(default_section=default_section)
+        cfg.read_string(string)
+        return cfg
+
+    def test_only_top_level(self):
+        cfg1 = self.fromstring(configparser.TOP_LEVEL, """
+        a = 1
+        b = 2
+        """)
+
+        self.assertEqual([], cfg1.sections())
+        self.assertEqual('1', cfg1[configparser.TOP_LEVEL]['a'])
+        self.assertEqual('2', cfg1[configparser.TOP_LEVEL]['b'])
+
+        output = io.StringIO()
+        cfg1.write(output)
+        cfg2 = self.fromstring(configparser.TOP_LEVEL, output.getvalue())
+
+        self.assertEqual([], cfg1.sections())
+        self.assertEqual('1', cfg2[configparser.TOP_LEVEL]['a'])
+        self.assertEqual('2', cfg2[configparser.TOP_LEVEL]['b'])
+
+    def test_only_regular(self):
+        cfg1 = self.fromstring(configparser.TOP_LEVEL, """
+        [sect1]
+        a = 1
+        b = 2
+        """)
+
+        self.assertEqual(['sect1'], cfg1.sections())
+        self.assertEqual('1', cfg1['sect1']['a'])
+        self.assertEqual('2', cfg1['sect1']['b'])
+
+        output = io.StringIO()
+        cfg1.write(output)
+        cfg2 = self.fromstring(configparser.TOP_LEVEL, output.getvalue())
+
+        self.assertEqual(['sect1'], cfg2.sections())
+        self.assertEqual('1', cfg2['sect1']['a'])
+        self.assertEqual('2', cfg2['sect1']['b'])
+
+    def test_top_level_and_regular(self):
+        cfg1 = self.fromstring(configparser.TOP_LEVEL, """
+        a = 1
+        b = 2
+        [sect1]
+        c = 3
+        d = %(a)s%(b)s%(c)s
+        """)
+
+        self.assertEqual(['sect1'], cfg1.sections())
+        self.assertEqual('1', cfg1[configparser.TOP_LEVEL]['a'])
+        self.assertEqual('2', cfg1[configparser.TOP_LEVEL]['b'])
+        self.assertEqual('3', cfg1['sect1']['c'])
+        self.assertEqual('1', cfg1['sect1']['a'])
+        self.assertEqual('123', cfg1['sect1']['d'])
+
+        output = io.StringIO()
+        cfg1.write(output)
+        cfg2 = self.fromstring(configparser.TOP_LEVEL, output.getvalue())
+
+        self.assertEqual(['sect1'], cfg1.sections())
+        self.assertEqual('1', cfg2[configparser.TOP_LEVEL]['a'])
+        self.assertEqual('2', cfg2[configparser.TOP_LEVEL]['b'])
+        self.assertEqual('3', cfg2['sect1']['c'])
+        self.assertEqual('1', cfg2['sect1']['a'])
+        self.assertEqual('123', cfg2['sect1']['d'])
+
+
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         support.check__all__(self, configparser, not_exported={"Error"})

@@ -18,7 +18,8 @@ ConfigParser -- responsible for parsing a list of
              delimiters=('=', ':'), comment_prefixes=('#', ';'),
              inline_comment_prefixes=None, strict=True,
              empty_lines_in_values=True, default_section='DEFAULT',
-             interpolation=<unset>, converters=<unset>):
+             interpolation=<unset>, converters=<unset>,
+             allow_unnamed_section=False):
 
         Create the parser. When `defaults` is given, it is initialized into the
         dictionary or intrinsic defaults. The keys must be strings, the values
@@ -67,6 +68,12 @@ ConfigParser -- responsible for parsing a list of
         implementing the conversion from string to the desired datatype. Every
         converter gets its corresponding get*() method on the parser object and
         section proxies.
+
+        When `allow_unnamed_section` is True (default: False), options
+        without section are accepted: the section for this is
+        ``configparser.UNNAMED_SECTION``. In the file, they are placed before
+        the first explicit section header. This also allows reading and writing
+        files that don't contain any explicit section headers.
 
     sections()
         Return all the configuration section names, sans DEFAULT.
@@ -156,7 +163,7 @@ __all__ = ("NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
            "ConfigParser", "RawConfigParser",
            "Interpolation", "BasicInterpolation",  "ExtendedInterpolation",
            "LegacyInterpolation", "SectionProxy", "ConverterMapping",
-           "DEFAULTSECT", "MAX_INTERPOLATION_DEPTH")
+           "DEFAULTSECT", "MAX_INTERPOLATION_DEPTH", "TOP_LEVEL")
 
 _default_dict = dict
 DEFAULTSECT = "DEFAULT"
@@ -321,6 +328,20 @@ class MissingSectionHeaderError(ParsingError):
         self.lineno = lineno
         self.line = line
         self.args = (filename, lineno, line)
+
+
+class _UnnamedSection:
+
+    def __repr__(self):
+        return "<TOP_LEVEL>"
+
+    def __eq__(self, other):
+        return repr(self) == repr(other)
+
+    def __hash__(self):
+        return hash(repr(self))
+
+TOP_LEVEL = _UnnamedSection()
 
 
 # Used in parser getters to indicate the default behaviour when a specific
@@ -902,7 +923,8 @@ class RawConfigParser(MutableMapping):
 
     def _write_section(self, fp, section_name, section_items, delimiter):
         """Write a single section to the specified `fp`."""
-        fp.write("[{}]\n".format(section_name))
+        if section_name is not TOP_LEVEL:
+            fp.write("[{}]\n".format(section_name))
         for key, value in section_items:
             value = self._interpolation.before_write(self, section_name, key,
                                                      value)
@@ -1038,6 +1060,10 @@ class RawConfigParser(MutableMapping):
                 cursect[optname].append(value)
             # a section header or option header?
             else:
+                if self.default_section is TOP_LEVEL and cursect is None:
+                    sectname = TOP_LEVEL
+                    cursect = self._defaults
+
                 indent_level = cur_indent_level
                 # is it a section header?
                 mo = self.SECTCRE.match(value)
@@ -1058,7 +1084,7 @@ class RawConfigParser(MutableMapping):
                         elements_added.add(sectname)
                     # So sections can't start with a continuation line
                     optname = None
-                # no section header in the file?
+                # no section header?
                 elif cursect is None:
                     raise MissingSectionHeaderError(fpname, lineno, line)
                 # an option line?
@@ -1088,6 +1114,7 @@ class RawConfigParser(MutableMapping):
                         # raised at the end of the file and will contain a
                         # list of all bogus lines
                         e = self._handle_error(e, fpname, lineno, line)
+
         self._join_multiline_values()
         # if any parsing errors occurred, raise an exception
         if e:
