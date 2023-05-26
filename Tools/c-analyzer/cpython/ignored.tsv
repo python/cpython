@@ -356,6 +356,10 @@ Python/sysmodule.c	-	perf_map_state	-
 Python/sysmodule.c	-	_PySys_ImplCacheTag	-
 Python/sysmodule.c	-	_PySys_ImplName	-
 Python/sysmodule.c	-	whatstrings	-
+Python/optimizer.c	-	DefaultOptimizer_Type	-
+Python/optimizer.c	-	CounterExecutor_Type	-
+Python/optimizer.c	-	CounterOptimizer_Type	-
+Python/optimizer.c	-	_PyOptimizer_Default	-
 
 ##-----------------------
 ## test code
