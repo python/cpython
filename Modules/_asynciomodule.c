@@ -1952,6 +1952,7 @@ static void
 register_task(asyncio_state *state, TaskObj *task)
 {
     assert(Task_Check(state, task));
+    assert(task != &state->asyncio_tasks.tail);
     assert(task->prev == NULL);
     assert(task->next == NULL);
     assert(state->asyncio_tasks.head != NULL);
@@ -1971,6 +1972,7 @@ static void
 unregister_task(asyncio_state *state, TaskObj *task)
 {
     assert(Task_Check(state, task));
+    assert(task != &state->asyncio_tasks.tail);
     assert(task->prev != NULL);
     task->prev->next = task->next;
     if (task->next == NULL) {
