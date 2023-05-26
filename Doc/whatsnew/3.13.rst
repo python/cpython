@@ -256,6 +256,10 @@ Removed
   or `python-magic <https://pypi.org/project/python-magic/>`_ instead.
   (Contributed by Victor Stinner in :gh:`104773`.)
 
+* Remove the untested and undocumented :meth:`!unittest.TestProgram.usageExit`
+  method, deprecated in Python 3.11.
+  (Contributed by Hugo van Kemenade in :gh:`104992`.)
+
 
 Porting to Python 3.13
 ======================
