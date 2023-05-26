@@ -1,4 +1,5 @@
 import itertools
+import os
 import pathlib
 import sys
 import sysconfig
@@ -27,6 +28,46 @@ def get_extra_flags(compiler_flags: str, compiler_py_flags_nodist: str) -> List[
     return f"{flags} {py_flags_nodist}".split()
 
 
+def fixup_build_ext(cmd):
+    """Function needed to make build_ext tests pass.
+
+    When Python was built with --enable-shared on Unix, -L. is not enough to
+    find libpython<blah>.so, because regrtest runs in a tempdir, not in the
+    source directory where the .so lives.
+
+    When Python was built with in debug mode on Windows, build_ext commands
+    need their debug attribute set, and it is not done automatically for
+    some reason.
+
+    This function handles both of these things.  Example use:
+
+        cmd = build_ext(dist)
+        support.fixup_build_ext(cmd)
+        cmd.ensure_finalized()
+
+    Unlike most other Unix platforms, Mac OS X embeds absolute paths
+    to shared libraries into executables, so the fixup is not needed there.
+
+    Taken from distutils (was part of the CPython stdlib until Python 3.11)
+    """
+    if os.name == 'nt':
+        cmd.debug = sys.executable.endswith('_d.exe')
+    elif sysconfig.get_config_var('Py_ENABLE_SHARED'):
+        # To further add to the shared builds fun on Unix, we can't just add
+        # library_dirs to the Extension() instance because that doesn't get
+        # plumbed through to the final compiler command.
+        runshared = sysconfig.get_config_var('RUNSHARED')
+        if runshared is None:
+            cmd.library_dirs = ['.']
+        else:
+            if sys.platform == 'darwin':
+                cmd.library_dirs = []
+            else:
+                name, equals, value = runshared.partition('=')
+                cmd.library_dirs = [d for d in value.split(os.pathsep) if d]
+
+
+
 def compile_c_extension(
     generated_source_path: str,
     build_dir: Optional[str] = None,
@@ -49,16 +90,15 @@ def compile_c_extension(
     static library of the common parser sources (this is useful in case you are
     creating multiple extensions).
     """
-    import distutils.log
-    from distutils.core import Distribution, Extension
-    from distutils.tests.support import fixup_build_ext  # type: ignore
+    import setuptools.logging
 
-    from distutils.ccompiler import new_compiler
-    from distutils.dep_util import newer_group
-    from distutils.sysconfig import customize_compiler
+    from setuptools import Extension, Distribution
+    from setuptools._distutils.dep_util import newer_group
+    from setuptools._distutils.ccompiler import new_compiler
+    from setuptools._distutils.sysconfig import customize_compiler
 
     if verbose:
-        distutils.log.set_threshold(distutils.log.DEBUG)
+        setuptools.logging.set_threshold(setuptools.logging.logging.DEBUG)
 
     source_file_path = pathlib.Path(generated_source_path)
     extension_name = source_file_path.stem
