@@ -233,7 +233,7 @@ class _PathParents(Sequence):
         return "<{}.parents>".format(type(self._path).__name__)
 
 
-class PurePath(object):
+class PurePath(os.PathLike):
     """Base class for manipulating paths without I/O.
 
     PurePath represents a filesystem path and offers operations which
@@ -706,10 +706,6 @@ class PurePath(object):
             if not match(part):
                 return False
         return True
-
-# Can't subclass os.PathLike from PurePath and keep the constructor
-# optimizations in PurePath.__slots__.
-os.PathLike.register(PurePath)
 
 
 class PurePosixPath(PurePath):

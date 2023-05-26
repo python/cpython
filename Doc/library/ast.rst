@@ -1821,7 +1821,6 @@ Function and class definitions
             body=[
                 FunctionDef(
                     name='f',
-                    type_params=[],
                     args=arguments(
                         posonlyargs=[],
                         args=[
@@ -1846,7 +1845,8 @@ Function and class definitions
                     decorator_list=[
                         Name(id='decorator1', ctx=Load()),
                         Name(id='decorator2', ctx=Load())],
-                    returns=Constant(value='return annotation'))],
+                    returns=Constant(value='return annotation'),
+                    type_params=[])],
             type_ignores=[])
 
 
@@ -1946,7 +1946,6 @@ Function and class definitions
             body=[
                 ClassDef(
                     name='Foo',
-                    type_params=[],
                     bases=[
                         Name(id='base1', ctx=Load()),
                         Name(id='base2', ctx=Load())],
@@ -1958,7 +1957,8 @@ Function and class definitions
                         Pass()],
                     decorator_list=[
                         Name(id='decorator1', ctx=Load()),
-                        Name(id='decorator2', ctx=Load())])],
+                        Name(id='decorator2', ctx=Load())],
+                    type_params=[])],
             type_ignores=[])
 
 Async and await
@@ -1985,7 +1985,6 @@ Async and await
         body=[
             AsyncFunctionDef(
                 name='f',
-                type_params=[],
                 args=arguments(
                     posonlyargs=[],
                     args=[],
@@ -1999,7 +1998,8 @@ Async and await
                                 func=Name(id='other_func', ctx=Load()),
                                 args=[],
                                 keywords=[])))],
-                decorator_list=[])],
+                decorator_list=[],
+                type_params=[])],
         type_ignores=[])
 
 
