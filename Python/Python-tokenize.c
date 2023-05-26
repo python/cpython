@@ -194,15 +194,14 @@ tokenizeriter_next(tokenizeriterobject *it)
         goto exit;
     }
 
-    Py_ssize_t size = it->tok->inp - it->tok->buf;
-    assert(it->tok->buf[size-1] == '\n');
-    size -= 1; // Remove the newline character from the end of the line
-    PyObject *line = PyUnicode_DecodeUTF8(it->tok->buf, size, "replace");
+    const char *line_start = ISSTRINGLIT(type) ? it->tok->multi_line_start : it->tok->line_start;
+    Py_ssize_t size = it->tok->inp - line_start;
+    PyObject *line = PyUnicode_DecodeUTF8(line_start, size, "replace");
     if (line == NULL) {
         Py_DECREF(str);
         goto exit;
     }
-    const char *line_start = ISSTRINGLIT(type) ? it->tok->multi_line_start : it->tok->line_start;
+
     Py_ssize_t lineno = ISSTRINGLIT(type) ? it->tok->first_lineno : it->tok->lineno;
     Py_ssize_t end_lineno = it->tok->lineno;
     Py_ssize_t col_offset = -1;
