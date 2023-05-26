@@ -270,7 +270,35 @@ typed dictionaries::
 
 See :pep:`692` for more details.
 
-(PEP written by Franek Magiera)
+(Contributed by Franek Magiera in :gh:`103629`.)
+
+PEP 698: Override Decorator for Static Typing
+---------------------------------------------
+
+A new decorator :func:`typing.override` has been added to the :mod:`typing`
+module. It indicates to type checkers that the method is intended to override
+a method in a superclass. This allows type checkers to catch mistakes where
+a method that is intended to override a base class does not in fact do so.
+
+Example::
+
+   from typing import override
+
+   class Base:
+     def get_color(self) -> str:
+       return "blue"
+
+   class GoodChild(Base):
+     @override  # ok: overrides Base.get_color
+     def get_color(self) -> str:
+       return "yellow"
+
+   class BadChild(Base):
+     @override  # type checker error: does not override Base.get_color
+     def get_colour(self) -> str:
+       return "red"
+
+(Contributed by Steven Troxler in :gh:`101561`.)
 
 Other Language Changes
 ======================
