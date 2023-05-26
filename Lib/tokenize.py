@@ -447,13 +447,8 @@ def tokenize(readline):
 
 def _tokenize(rl_gen, encoding):
     source = b"".join(rl_gen).decode(encoding)
-    token = None
     for token in _generate_tokens_from_c_tokenizer(source, extra_tokens=True):
         yield token
-    if token is not None:
-        last_line, _ = token.start
-        yield TokenInfo(ENDMARKER, '', (last_line + 1, 0), (last_line + 1, 0), '')
-
 
 def generate_tokens(readline):
     """Tokenize a source reading Python code as unicode strings.
