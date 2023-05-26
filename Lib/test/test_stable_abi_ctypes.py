@@ -918,6 +918,8 @@ if feature_macros['PY_HAVE_THREAD_NATIVE_ID']:
     )
 if feature_macros['Py_REF_DEBUG']:
     SYMBOL_NAMES += (
+        '_Py_DecRefTotal_DO_NOT_USE_THIS',
+        '_Py_IncRefTotal_DO_NOT_USE_THIS',
         '_Py_NegativeRefcount',
         '_Py_RefTotal',
     )

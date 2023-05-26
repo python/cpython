@@ -782,7 +782,7 @@
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_SHA1.c">
       <Filter>Modules</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\_hacl\Hacl_Streaming_SHA2.c">
+    <ClCompile Include="..\Modules\_hacl\Hacl_Hash_SHA2.c">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_SHA3.c">
@@ -834,9 +834,6 @@
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\atexitmodule.c">
-      <Filter>Modules</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Modules\audioop.c">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\binascii.c">

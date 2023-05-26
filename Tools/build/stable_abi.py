@@ -684,7 +684,8 @@ def main():
 
     if args.all:
         run_all_generators = True
-        args.unixy_check = True
+        if UNIXY:
+            args.unixy_check = True
 
     try:
         file = args.file.open('rb')

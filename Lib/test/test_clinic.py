@@ -774,6 +774,45 @@ Not at column 0!
         module, function = block.signatures
         self.assertIsInstance((function.parameters['path']).converter, clinic.str_converter)
 
+    def test_legacy_converters_non_string_constant_annotation(self):
+        expected_failure_message = """\
+Error on line 0:
+Annotations must be either a name, a function call, or a string.
+"""
+
+        s = self.parse_function_should_fail('module os\nos.access\n   path: 42')
+        self.assertEqual(s, expected_failure_message)
+
+        s = self.parse_function_should_fail('module os\nos.access\n   path: 42.42')
+        self.assertEqual(s, expected_failure_message)
+
+        s = self.parse_function_should_fail('module os\nos.access\n   path: 42j')
+        self.assertEqual(s, expected_failure_message)
+
+        s = self.parse_function_should_fail('module os\nos.access\n   path: b"42"')
+        self.assertEqual(s, expected_failure_message)
+
+    def test_other_bizarre_things_in_annotations_fail(self):
+        expected_failure_message = """\
+Error on line 0:
+Annotations must be either a name, a function call, or a string.
+"""
+
+        s = self.parse_function_should_fail(
+            'module os\nos.access\n   path: {"some": "dictionary"}'
+        )
+        self.assertEqual(s, expected_failure_message)
+
+        s = self.parse_function_should_fail(
+            'module os\nos.access\n   path: ["list", "of", "strings"]'
+        )
+        self.assertEqual(s, expected_failure_message)
+
+        s = self.parse_function_should_fail(
+            'module os\nos.access\n   path: (x for x in range(42))'
+        )
+        self.assertEqual(s, expected_failure_message)
+
     def test_unused_param(self):
         block = self.parse("""
             module foo

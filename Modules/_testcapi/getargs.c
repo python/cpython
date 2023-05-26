@@ -816,44 +816,6 @@ test_s_code(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_RETURN_NONE;
 }
 
-#undef PyArg_ParseTupleAndKeywords
-PyAPI_FUNC(int) PyArg_ParseTupleAndKeywords(PyObject *, PyObject *,
-                                            const char *, char **, ...);
-
-static PyObject *
-getargs_s_hash_int(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    static char *keywords[] = {"", "", "x", NULL};
-    Py_buffer buf = {NULL};
-    const char *s;
-    int len;
-    int i = 0;
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "w*|s#i", keywords,
-                                     &buf, &s, &len, &i))
-    {
-        return NULL;
-    }
-    PyBuffer_Release(&buf);
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-getargs_s_hash_int2(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    static char *keywords[] = {"", "", "x", NULL};
-    Py_buffer buf = {NULL};
-    const char *s;
-    int len;
-    int i = 0;
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "w*|(s#)i", keywords,
-                                     &buf, &s, &len, &i))
-    {
-        return NULL;
-    }
-    PyBuffer_Release(&buf);
-    Py_RETURN_NONE;
-}
-
 static PyObject *
 gh_99240_clear_args(PyObject *self, PyObject *args)
 {
@@ -906,8 +868,6 @@ static PyMethodDef test_methods[] = {
     {"getargs_positional_only_and_keywords", _PyCFunction_CAST(getargs_positional_only_and_keywords), METH_VARARGS|METH_KEYWORDS},
     {"getargs_s",               getargs_s,                       METH_VARARGS},
     {"getargs_s_hash",          getargs_s_hash,                  METH_VARARGS},
-    {"getargs_s_hash_int", _PyCFunction_CAST(getargs_s_hash_int), METH_VARARGS|METH_KEYWORDS},
-    {"getargs_s_hash_int2", _PyCFunction_CAST(getargs_s_hash_int2), METH_VARARGS|METH_KEYWORDS},
     {"getargs_s_star",          getargs_s_star,                  METH_VARARGS},
     {"getargs_tuple",           getargs_tuple,                   METH_VARARGS},
     {"getargs_u",               getargs_u,                       METH_VARARGS},
