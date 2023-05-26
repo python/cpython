@@ -781,6 +781,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(a));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(abs_tol));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(access));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(aclose));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(add));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(add_done_callback));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(after_in_child));
@@ -794,7 +795,9 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(arguments));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(argv));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(as_integer_ratio));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(asend));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(ast));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(athrow));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(attribute));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(authorizer_callback));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(autocommit));
