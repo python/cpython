@@ -2817,7 +2817,7 @@ AC_DEFINE(STDC_HEADERS, 1, [Define to 1 if you have the ANSI C header files.])
 
 # checks for header files
 AC_CHECK_HEADERS([ \
-  alloca.h asm/types.h bluetooth.h conio.h crypt.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
+  alloca.h asm/types.h bluetooth.h conio.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
   ieeefp.h io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/memfd.h \
   linux/random.h linux/soundcard.h \
   linux/tipc.h linux/wait.h netdb.h net/ethernet.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
@@ -5056,48 +5056,6 @@ AC_CHECK_FUNCS(setpgrp,
 # check for namespace functions
 AC_CHECK_FUNCS([setns unshare])
 
-dnl We search for both crypt and crypt_r as one or the other may be defined
-dnl libxcrypt provides <crypt.h> and libcrypt with crypt_r() since
-dnl at least 3.1.1 from 2015.
-dnl FreeBSD defines crypt_r() in <unistd.h>
-AH_TEMPLATE([HAVE_CRYPT_R], [Define if you have the crypt_r() function.])
-
-PKG_CHECK_MODULES([LIBCRYPT], [libxcrypt >= 3.1.1], [
-  AC_DEFINE([HAVE_CRYPT_R], [1])
-], [
-  WITH_SAVE_ENV([
-    AC_SEARCH_LIBS([crypt_r], [crypt], [
-      AC_DEFINE([HAVE_CRYPT_R], [1])
-      if test "$ac_cv_search_crypt_r" = "none required"; then
-        libcrypt=
-      else
-        libcrypt="$ac_cv_search_crypt_r"
-      fi
-      LIBCRYPT_LIBS=${LIBCRYPT_LIBS-$libcrypt}
-    ])
-  ])
-])
-
-WITH_SAVE_ENV([
-  CPPFLAGS="$CPPFLAGS $LIBCRYPT_CFLAGS"
-  LIBS="$LIBCRYPT_LIBS $LIBS"
-  AC_CACHE_CHECK([for crypt or crypt_r], [ac_cv_crypt_crypt], [
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([
-        #ifdef HAVE_CRYPT_H
-          #include <crypt.h>
-        #endif
-        #include <unistd.h>
-      ], [
-        #ifdef HAVE_CRYPT_R
-          void *x = crypt_r;
-        #else
-          void *x = crypt;
-        #endif
-      ])
-    ], [ac_cv_crypt_crypt=yes], [ac_cv_crypt_crypt=no])
-  ])
-])
-
 AC_CHECK_FUNCS(clock_gettime, [], [
     AC_CHECK_LIB(rt, clock_gettime, [
         LIBS="$LIBS -lrt"
@@ -7067,10 +7025,9 @@ AC_DEFUN([PY_STDLIB_MOD_SET_NA], [
 
 # stdlib not available
 dnl Modules that are not available on some platforms
-dnl VxWorks does not provide crypt() function
 AS_CASE([$ac_sys_system],
   [AIX], [PY_STDLIB_MOD_SET_NA([_scproxy])],
-  [VxWorks*], [PY_STDLIB_MOD_SET_NA([_scproxy], [_crypt], [termios], [grp])],
+  [VxWorks*], [PY_STDLIB_MOD_SET_NA([_scproxy], [termios], [grp])],
   dnl The _scproxy module is available on macOS
   [Darwin], [],
   [CYGWIN*], [PY_STDLIB_MOD_SET_NA([_scproxy])],
@@ -7221,7 +7178,6 @@ PY_STDLIB_MOD([_posixshmem],
   [$POSIXSHMEM_CFLAGS], [$POSIXSHMEM_LIBS])
 
 dnl needs libm
-PY_STDLIB_MOD_SIMPLE([audioop], [], [$LIBM])
 PY_STDLIB_MOD_SIMPLE([_statistics], [], [$LIBM])
 PY_STDLIB_MOD_SIMPLE([cmath], [], [$LIBM])
 PY_STDLIB_MOD_SIMPLE([math], [], [$LIBM])
@@ -7278,9 +7234,6 @@ PY_STDLIB_MOD([_blake2],
   [test "$with_builtin_blake2" = yes], [],
   [$LIBB2_CFLAGS], [$LIBB2_LIBS])
 
-PY_STDLIB_MOD([_crypt],
-  [], [test "$ac_cv_crypt_crypt" = yes],
-  [$LIBCRYPT_CFLAGS], [$LIBCRYPT_LIBS])
 PY_STDLIB_MOD([_ctypes],
   [], [test "$have_libffi" = yes],
   [$NO_STRICT_OVERFLOW_CFLAGS $LIBFFI_CFLAGS], [$LIBFFI_LIBS])
