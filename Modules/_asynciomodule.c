@@ -128,6 +128,7 @@ typedef struct {
     Py_ssize_t fi_freelist_len;
 
     struct {
+        TaskObj tail;
         TaskObj *head;
     } asyncio_tasks;
 
@@ -1953,10 +1954,10 @@ register_task(asyncio_state *state, TaskObj *task)
     assert(Task_Check(state, task));
     assert(task->prev == NULL);
     assert(task->next == NULL);
+    assert(state->asyncio_tasks.head != NULL);
+
     task->prev = state->asyncio_tasks.head;
-    if (state->asyncio_tasks.head != NULL) {
-        state->asyncio_tasks.head->next = task;
-    }
+    state->asyncio_tasks.head->next = task;
     state->asyncio_tasks.head = task;
 }
 
@@ -1970,15 +1971,13 @@ static void
 unregister_task(asyncio_state *state, TaskObj *task)
 {
     assert(Task_Check(state, task));
-    if (task->prev != NULL) {
-        task->prev->next = task->next;
-    }
-    if (task->next != NULL) {
-        task->next->prev = task->prev;
-    }
-    if (state->asyncio_tasks.head == task) {
-        assert(task->next == NULL);
+    assert(task->prev != NULL);
+    task->prev->next = task->next;
+    if (task->next == NULL) {
+        assert(state->asyncio_tasks.head == task);
         state->asyncio_tasks.head = task->prev;
+    } else {
+        task->next->prev = task->prev;
     }
     task->next = NULL;
     task->prev = NULL;
@@ -3584,7 +3583,10 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
     }
     asyncio_state *state = get_asyncio_state(module);
     TaskObj *head = state->asyncio_tasks.head;
-    while (head)
+    assert(head != NULL);
+    assert(head->next == NULL);
+    TaskObj *tail = &state->asyncio_tasks.tail;
+    while (head != tail)
     {
         if (loop == Py_None || head->task_loop == loop) {
             if (PySet_Add(tasks, (PyObject *)head) < 0) {
@@ -3801,7 +3803,7 @@ static int
 module_exec(PyObject *mod)
 {
     asyncio_state *state = get_asyncio_state(mod);
-    state->asyncio_tasks.head = NULL;
+    state->asyncio_tasks.head = &state->asyncio_tasks.tail;
 
 #define CREATE_TYPE(m, tp, spec, base)                                  \
     do {                                                                \
