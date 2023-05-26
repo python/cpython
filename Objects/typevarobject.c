@@ -446,18 +446,18 @@ PyDoc_STRVAR(typevar_doc,
 The preferred way to construct a type variable is via the dedicated syntax\n\
 for generic functions, classes, and type aliases:\n\
 \n\
-   class Sequence[T]:  # T is a TypeVar\n\
-         ...\n\
+    class Sequence[T]:  # T is a TypeVar\n\
+        ...\n\
 \n\
 This syntax can also be used to create bound and constrained type\n\
 variables:\n\
 \n\
-   class StrSequence[S: str]:  # S is a TypeVar bound to str\n\
-         ...\n\
+    class StrSequence[S: str]:  # S is a TypeVar bound to str\n\
+        ...\n\
 \n\
 \n\
-   class StrOrBytesSequence[A: (str, bytes)]:  # A is a TypeVar constrained to str or bytes\n\
-         ...\n\
+    class StrOrBytesSequence[A: (str, bytes)]:  # A is a TypeVar constrained to str or bytes\n\
+        ...\n\
 \n\
 However, if desired, reusable type variables can also be constructed\n\
 manually, like so:\n\
@@ -1184,7 +1184,7 @@ Just as a TypeVar (type variable) is a placeholder for a single type,\n\
 a TypeVarTuple is a placeholder for an *arbitrary* number of types. For\n\
 example, if we define a generic class using a TypeVarTuple:\n\
 \n\
-  class C(Generic[*Ts]): ...\n\
+  class C[*Ts]: ...\n\
 \n\
 Then we can parameterize that class with an arbitrary number of type\n\
 arguments:\n\
