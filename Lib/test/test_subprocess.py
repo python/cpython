@@ -3330,20 +3330,23 @@ class POSIXProcessTestCase(BaseTestCase):
             except subprocess.TimeoutExpired:
                 pass
 
-    def test_create_child_process_at_exit(self):
+    def test_preexec_at_exit(self):
         code = f"""if 1:
         import atexit
         import subprocess
 
+        def dummy():
+            pass
+
         def exit_handler():
-            subprocess.Popen({ZERO_RETURN_CMD})
+            subprocess.Popen({ZERO_RETURN_CMD}, preexec_fn=dummy)
             print("shouldn't be printed")
 
         atexit.register(exit_handler)
         """
         _, out, err = assert_python_ok("-c", code)
         self.assertEqual(out, b'')
-        self.assertIn(b"can't create child process at interpreter shutdown", err)
+        self.assertIn(b"preexec_fn not supported at interpreter shutdown", err)
 
 
 @unittest.skipUnless(mswindows, "Windows specific tests")
