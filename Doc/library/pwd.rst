@@ -39,10 +39,8 @@ raised if the entry asked for cannot be found.
 
 .. note::
 
-   .. index:: pair: module; crypt
-
    In traditional Unix the field ``pw_passwd`` usually contains a password
-   encrypted with a DES derived algorithm (see module :mod:`crypt`).  However most
+   encrypted with a DES derived algorithm.  However most
    modern unices  use a so-called *shadow password* system.  On those unices the
    *pw_passwd* field only contains an asterisk (``'*'``) or the  letter ``'x'``
    where the encrypted password is stored in a file :file:`/etc/shadow` which is

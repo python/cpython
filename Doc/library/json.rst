@@ -559,14 +559,14 @@ Exceptions
 
    .. doctest::
 
-        >>> json_string = '{"mercury": 88, "venus": 225, "earth": 365, "mars": 687}'
-        >>> orbital_period = json.loads(json_string, object_hook=AttrDict)
-        >>> orbital_period['earth']     # Dict style lookup
-        365
-        >>> orbital_period.earth        # Attribute style lookup
-        365
-        >>> orbital_period.keys()       # All dict methods are present
-        dict_keys(['mercury', 'venus', 'earth', 'mars'])
+       >>> json_string = '{"mercury": 88, "venus": 225, "earth": 365, "mars": 687}'
+       >>> orbital_period = json.loads(json_string, object_hook=AttrDict)
+       >>> orbital_period['earth']     # Dict style lookup
+       365
+       >>> orbital_period.earth        # Attribute style lookup
+       365
+       >>> orbital_period.keys()       # All dict methods are present
+       dict_keys(['mercury', 'venus', 'earth', 'mars'])
 
    Attribute style access only works for keys that are valid attribute
    names.  In contrast, dictionary style access works for all keys.  For

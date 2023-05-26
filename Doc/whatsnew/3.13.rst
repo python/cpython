@@ -123,6 +123,11 @@ Removed
   and with a deprecation warning since Python 3.11.
   (Contributed by Hugo van Kemenade in :gh:`104886`.)
 
+* Remove the :meth:`!turtle.RawTurtle.settiltangle` method,
+  deprecated in docs since Python 3.1
+  and with a deprecation warning since Python 3.11.
+  (Contributed by Hugo van Kemenade in :gh:`104876`.)
+
 * Removed the following :mod:`unittest` functions, deprecated in Python 3.11:
 
   * :func:`!unittest.findTestCases`
@@ -206,6 +211,38 @@ Removed
 * :pep:`594`: Remove the :mod:`!msilib` module, deprecated in Python 3.11.
   (Contributed by Zachary Ware in :gh:`104773`.)
 
+* :pep:`594`: Remove the :mod:`!crypt` module and its private :mod:`!_crypt`
+  extension, deprecated in Python 3.11.
+  The :mod:`hashlib` module is a potential replacement for certain use cases.
+  Otherwise, the following PyPI projects can be used:
+
+  * `bcrypt <https://pypi.org/project/bcrypt/>`_:
+    Modern password hashing for your software and your servers.
+  * `passlib <https://pypi.org/project/passlib/>`_:
+    Comprehensive password hashing framework supporting over 30 schemes.
+  * `argon2-cffi <https://pypi.org/project/argon2-cffi/>`_:
+    The secure Argon2 password hashing algorithm.
+  * `legacycrypt <https://pypi.org/project/legacycrypt/>`_:
+    Wrapper to the POSIX crypt library call and associated functionality.
+
+  (Contributed by Victor Stinner in :gh:`104773`.)
+
+* :pep:`594`: Remove the :mod:`!uu` module, deprecated in Python 3.11:
+  the :mod:`base64` module is a modern alternative.
+  (Contributed by Victor Stinner in :gh:`104773`.)
+
+* :pep:`594`: Remove the :mod:`!aifc` module, deprecated in Python 3.11.
+  (Contributed by Victor Stinner in :gh:`104773`.)
+
+* :pep:`594`: Remove the :mod:`!audioop` module, deprecated in Python 3.11.
+  (Contributed by Victor Stinner in :gh:`104773`.)
+
+* :pep:`594`: Remove the :mod:`!chunk` module, deprecated in Python 3.11.
+  (Contributed by Victor Stinner in :gh:`104773`.)
+
+* Remove support for the keyword-argument method of creating
+  :class:`typing.TypedDict` types, deprecated in Python 3.11.
+  (Contributed by Tomas Roun in :gh:`104786`.)
 
 Porting to Python 3.13
 ======================

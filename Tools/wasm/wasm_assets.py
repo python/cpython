@@ -41,8 +41,6 @@ OMIT_FILES = (
     # package management
     "ensurepip/",
     "venv/",
-    # deprecated
-    "uu.py",
     # other platforms
     "_aix_support.py",
     "_osx_support.py",
@@ -80,8 +78,6 @@ OMIT_NETWORKING_FILES = (
 
 OMIT_MODULE_FILES = {
     "_asyncio": ["asyncio/"],
-    "audioop": ["aifc.py", "wave.py"],
-    "_crypt": ["crypt.py"],
     "_curses": ["curses/"],
     "_ctypes": ["ctypes/"],
     "_decimal": ["decimal.py"],

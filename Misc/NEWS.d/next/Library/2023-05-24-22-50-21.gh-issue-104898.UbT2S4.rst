@@ -1,0 +1,1 @@
+Add missing :attr:`~object.__slots__` to :class:`os.PathLike`.

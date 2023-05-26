@@ -918,12 +918,12 @@ and will be removed in Python 3.13.
 
 Modules (see :pep:`594`):
 
-* :mod:`aifc`
-* :mod:`audioop`
+* :mod:`!aifc`
+* :mod:`!audioop`
 * :mod:`!cgi`
 * :mod:`!cgitb`
-* :mod:`chunk`
-* :mod:`crypt`
+* :mod:`!chunk`
+* :mod:`!crypt`
 * :mod:`imghdr`
 * :mod:`!mailcap`
 * :mod:`!msilib`
@@ -935,7 +935,7 @@ Modules (see :pep:`594`):
 * :mod:`!spwd`
 * :mod:`!sunau`
 * :mod:`!telnetlib`
-* :mod:`uu`
+* :mod:`!uu`
 * :mod:`!xdrlib`
 
 APIs:
