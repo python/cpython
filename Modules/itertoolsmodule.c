@@ -100,7 +100,7 @@ class itertools.pairwise "pairwiseobject *" "clinic_state()->pairwise_type"
             PyExc_DeprecationWarning,                                         \
             "Itertool pickle/copy/deepcopy support "                          \
             "will be removed in a Python 3.14.", 1) < 0) {                    \
-        Py_RETURN_NONE;                                                       \
+        return NULL;                                                          \
     }
 
 /* batched object ************************************************************/
