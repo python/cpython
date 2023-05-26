@@ -1526,23 +1526,45 @@ iterations of the loop.
 
    The operand determines which intrinsic function is called:
 
-   * ``INTRINSIC_1_INVALID`` Not valid
-   * ``INTRINSIC_PRINT`` Prints the argument to standard out.
-     Used in the REPL.
-   * ``INTRINSIC_IMPORT_STAR`` Performs ``import *`` for the named module.
-   * ``INTRINSIC_STOPITERATION_ERROR`` Extracts the return value from
-     a ``StopIteration`` exception.
-   * ``INTRINSIC_ASYNC_GEN_WRAP`` Wraps an aync generator value
-   * ``INTRINSIC_UNARY_POSITIVE`` Performs the unary ``+`` operation
-   * ``INTRINSIC_LIST_TO_TUPLE`` Converts a list to a tuple
-   * ``INTRINSIC_TYPEVAR`` Creates a :class:`typing.TypeVar`
-   * ``INTRINSIC_PARAMSPEC`` Creates a :class:`typing.ParamSpec`
-   * ``INTRINSIC_TYPEVARTUPLE`` Creates a :class:`typing.TypeVarTuple`
-   * ``INTRINSIC_SUBSCRIPT_GENERIC`` Returns :class:`typing.Generic`
-     subscripted with the value on top of the stack.
-   * ``INTRINSIC_TYPEALIAS`` Creates a :class:`typing.TypeAliasType`;
-     used in the :keyword:`type` statement. The argument is a tuple of
-     the type alias's name, type parameters, and value.
+   +-----------------------------------+-----------------------------------+
+   | Operand                           | Description                       |
+   +===================================+===================================+
+   | ``INTRINSIC_1_INVALID``           | Not valid                         |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_PRINT``               | Prints the argument to standard   |
+   |                                   | out. Used in the REPL.            |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_IMPORT_STAR``         | Performs ``import *`` for the     |
+   |                                   | named module.                     |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_STOPITERATION_ERROR`` | Extracts the return value from a  |
+   |                                   | ``StopIteration`` exception.      |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_ASYNC_GEN_WRAP``      | Wraps an aync generator value     |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_UNARY_POSITIVE``      | Performs the unary ``+``          |
+   |                                   | operation                         |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_LIST_TO_TUPLE``       | Converts a list to a tuple        |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_TYPEVAR``             | Creates a :class:`typing.TypeVar` |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_PARAMSPEC``           | Creates a                         |
+   |                                   | :class:`typing.ParamSpec`         |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_TYPEVARTUPLE``        | Creates a                         |
+   |                                   | :class:`typing.TypeVarTuple`      |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_SUBSCRIPT_GENERIC``   | Returns :class:`typing.Generic`   |
+   |                                   | subscripted with the argument     |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_TYPEALIAS``           | Creates a                         |
+   |                                   | :class:`typing.TypeAliasType`;    |
+   |                                   | used in the :keyword:`type`       |
+   |                                   | statement. The argument is a tuple|
+   |                                   | of the type alias's name,         |
+   |                                   | type parameters, and value.       |
+   +-----------------------------------+-----------------------------------+
 
    .. versionadded:: 3.12
 
@@ -1554,15 +1576,25 @@ iterations of the loop.
 
    The operand determines which intrinsic function is called:
 
-   * ``INTRINSIC_2_INVALID`` Not valid
-   * ``INTRINSIC_PREP_RERAISE_STAR`` Calculates the :exc:`ExceptionGroup`
-     to raise from a ``try-except*``.
-   * ``INTRINSIC_TYPEVAR_WITH_BOUND`` Creates a :class:`typing.TypeVar`
-     with a bound.
-   * ``INTRINSIC_TYPEVAR_WITH_CONSTRAINTS`` Creates a :class:`typing.TypeVar`
-     with constraints.
-   * ``INTRINSIC_SET_FUNCTION_TYPE_PARAMS`` Sets the ``__type_params__``
-     attribute of a function.
+   +----------------------------------------+-----------------------------------+
+   | Operand                                | Description                       |
+   +========================================+===================================+
+   | ``INTRINSIC_2_INVALID``                | Not valid                         |
+   +----------------------------------------+-----------------------------------+
+   | ``INTRINSIC_PREP_RERAISE_STAR``        | Calculates the                    |
+   |                                        | :exc:`ExceptionGroup` to raise    |
+   |                                        | from a ``try-except*``.           |
+   +----------------------------------------+-----------------------------------+
+   | ``INTRINSIC_TYPEVAR_WITH_BOUND``       | Creates a :class:`typing.TypeVar` |
+   |                                        | with a bound.                     |
+   +----------------------------------------+-----------------------------------+
+   | ``INTRINSIC_TYPEVAR_WITH_CONSTRAINTS`` | Creates a                         |
+   |                                        | :class:`typing.TypeVar` with      |
+   |                                        | constraints.                      |
+   +----------------------------------------+-----------------------------------+
+   | ``INTRINSIC_SET_FUNCTION_TYPE_PARAMS`` | Sets the ``__type_params__``      |
+   |                                        | attribute of a function.          |
+   +----------------------------------------+-----------------------------------+
 
    .. versionadded:: 3.12
 
