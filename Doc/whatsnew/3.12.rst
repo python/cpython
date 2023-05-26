@@ -278,7 +278,8 @@ PEP 698: Override Decorator for Static Typing
 A new decorator :func:`typing.override` has been added to the :mod:`typing`
 module. It indicates to type checkers that the method is intended to override
 a method in a superclass. This allows type checkers to catch mistakes where
-a method that is intended to override a base class does not in fact do so.
+a method that is intended to override something in a base class
+does not in fact do so.
 
 Example::
 
