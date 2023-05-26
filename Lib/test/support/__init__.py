@@ -2304,7 +2304,7 @@ def setup_venv_with_pip_setuptools_wheel(venv_dir):
             print('Run:', ' '.join(cmd))
         subprocess.run(cmd, check=True)
 
-        yield venv, python
+        yield python
 
 
 # True if Python is built with the Py_DEBUG macro defined: if

@@ -36,10 +36,10 @@ class TestCPPExt(unittest.TestCase):
     @support.requires_venv_with_pip()
     def check_build(self, std_cpp03, extension_name):
         venv_dir = 'env'
-        with support.setup_venv_with_pip_setuptools_wheel(venv_dir) as (_, python):
-            self._check_build(std_cpp03, extension_name, python)
+        with support.setup_venv_with_pip_setuptools_wheel(venv_dir) as python_exe:
+            self._check_build(std_cpp03, extension_name, python_exe)
 
-    def _check_build(self, std_cpp03, extension_name, python):
+    def _check_build(self, std_cpp03, extension_name, python_exe):
         pkg_dir = 'pkg'
         os.mkdir(pkg_dir)
         shutil.copy(SETUP_TESTCPPEXT, os.path.join(pkg_dir, "setup.py"))
@@ -63,7 +63,7 @@ class TestCPPExt(unittest.TestCase):
                         f"{operation} failed with exit code {proc.returncode}")
 
         # Build and install the C++ extension
-        cmd = [python, '-X', 'dev',
+        cmd = [python_exe, '-X', 'dev',
                '-m', 'pip', 'install', '--no-build-isolation',
                os.path.abspath(pkg_dir)]
         run_cmd('Install', cmd)
@@ -71,14 +71,14 @@ class TestCPPExt(unittest.TestCase):
         # Do a reference run. Until we test that running python
         # doesn't leak references (gh-94755), run it so one can manually check
         # -X showrefcount results against this baseline.
-        cmd = [python,
+        cmd = [python_exe,
                '-X', 'dev',
                '-X', 'showrefcount',
                '-c', 'pass']
         run_cmd('Reference run', cmd)
 
         # Import the C++ extension
-        cmd = [python,
+        cmd = [python_exe,
                '-X', 'dev',
                '-X', 'showrefcount',
                '-c', f"import {extension_name}"]

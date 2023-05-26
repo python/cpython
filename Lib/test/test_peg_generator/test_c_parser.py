@@ -1,4 +1,5 @@
 import contextlib
+import subprocess
 import sysconfig
 import textwrap
 import unittest
@@ -90,11 +91,12 @@ class TestCParser(unittest.TestCase):
         cls.addClassCleanup(shutil.rmtree, cls.library_dir)
 
         with contextlib.ExitStack() as stack:
-            full_venv_path, _ = stack.enter_context(support.setup_venv_with_pip_setuptools_wheel("venv"))
-            stack.enter_context(import_helper.DirsOnSysPath(os.path.join(full_venv_path,
-                                                    "lib",
-                                                    f"python{sysconfig.get_python_version()}",
-                                                    "site-packages")))
+            python_exe = stack.enter_context(support.setup_venv_with_pip_setuptools_wheel("venv"))
+            sitepackages = subprocess.check_output(
+                [python_exe, "-c", "import sysconfig; print(sysconfig.get_path('platlib'))"],
+                text=True,
+            ).strip()
+            stack.enter_context(import_helper.DirsOnSysPath(sitepackages))
             cls.addClassCleanup(stack.pop_all().close)
 
     @support.requires_venv_with_pip()
