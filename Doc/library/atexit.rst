@@ -48,6 +48,17 @@ a cleanup function is undefined.
    This function returns *func*, which makes it possible to use it as a
    decorator.
 
+   .. warning::
+       Starting new threads and process creation through :func:`os.fork`
+       in registered function can lead to race condition between the main
+       Python runtime thread freeing thread states while internal
+       :mod:`threading` routines are trying to allocate and use the state
+       of just created threads or forked children trying to use the mid-shutdown
+       runtime and thread state in the child process.
+
+   .. versionchanged:: 3.12
+       Attempt to start a new thread or create a new process through :func:`os.fork`
+       in registered function now leads to :exc:`RuntimeError`.
 
 .. function:: unregister(func)
 
