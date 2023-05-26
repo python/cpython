@@ -45,121 +45,111 @@ class _Name(typing.TypedDict):
     Offset: int
     Bytes: list[int]
 
-if sys.platform == "win32":
+class COFFRelocation(typing.TypedDict):
+    Offset: int
+    Type: _Value
+    Symbol: str
+    SymbolIndex: int
 
-    class Relocation(typing.TypedDict):
-        Offset: int
-        Type: _Value
-        Symbol: str
-        SymbolIndex: int
+class COFFAuxSectionDef(typing.TypedDict):
+    Length: int
+    RelocationCount: int
+    LineNumberCount: int
+    Checksum: int
+    Number: int
+    Selection: int
 
-    class AuxSectionDef(typing.TypedDict):
-        Length: int
-        RelocationCount: int
-        LineNumberCount: int
-        Checksum: int
-        Number: int
-        Selection: int
+class COFFSymbol(typing.TypedDict):
+    Name: str
+    Value: int
+    Section: _Value
+    BaseType: _Value
+    ComplexType: _Value
+    StorageClass: int
+    AuxSymbolCount: int
+    AuxSectionDef: COFFAuxSectionDef
 
-    class Symbol(typing.TypedDict):
-        Name: str
-        Value: int
-        Section: _Value
-        BaseType: _Value
-        ComplexType: _Value
-        StorageClass: int
-        AuxSymbolCount: int
-        AuxSectionDef: AuxSectionDef
-
-    class Section(typing.TypedDict):
-        Number: int
-        Name: _Name
-        VirtualSize: int
-        VirtualAddress: int
-        RawDataSize: int
-        PointerToRawData: int
-        PointerToRelocations: int
-        PointerToLineNumbers: int
-        RelocationCount: int
-        LineNumberCount: int
-        Characteristics: Flags
-        Relocations: list[dict[typing.Literal["Relocation"], Relocation]]
-        Symbols: list[dict[typing.Literal["Symbol"], Symbol]]
-        SectionData: SectionData  # XXX
-
-elif sys.platform == "darwin":
+class COFFSection(typing.TypedDict):
+    Number: int
+    Name: _Name
+    VirtualSize: int
+    VirtualAddress: int
+    RawDataSize: int
+    PointerToRawData: int
+    PointerToRelocations: int
+    PointerToLineNumbers: int
+    RelocationCount: int
+    LineNumberCount: int
+    Characteristics: Flags
+    Relocations: list[dict[typing.Literal["Relocation"], COFFRelocation]]
+    Symbols: list[dict[typing.Literal["Symbol"], COFFSymbol]]
+    SectionData: SectionData  # XXX
     
-    class Relocation(typing.TypedDict):
-        Offset: int
-        PCRel: int
-        Length: int
-        Type: _Value
-        Symbol: _Value  # XXX
-        Section: _Value  # XXX
+class MachORelocation(typing.TypedDict):
+    Offset: int
+    PCRel: int
+    Length: int
+    Type: _Value
+    Symbol: _Value  # XXX
+    Section: _Value  # XXX
 
-    class Symbol(typing.TypedDict):
-        Name: _Value
-        Type: _Value
-        Section: _Value
-        RefType: _Value
-        Flags: Flags
-        Value: int
+class MachOSymbol(typing.TypedDict):
+    Name: _Value
+    Type: _Value
+    Section: _Value
+    RefType: _Value
+    Flags: Flags
+    Value: int
 
-    class Section(typing.TypedDict):
-        Index: int
-        Name: _Name
-        Segment: _Name
-        Address: int
-        Size: int
-        Offset: int
-        Alignment: int
-        RelocationOffset: int
-        RelocationCount: int
-        Type: _Value
-        Attributes: Flags
-        Reserved1: int
-        Reserved2: int
-        Reserved3: int
-        Relocations: list[dict[typing.Literal["Relocation"], Relocation]]  # XXX
-        Symbols: list[dict[typing.Literal["Symbol"], Symbol]]  # XXX
-        SectionData: SectionData  # XXX
+class MachOSection(typing.TypedDict):
+    Index: int
+    Name: _Name
+    Segment: _Name
+    Address: int
+    Size: int
+    Offset: int
+    Alignment: int
+    RelocationOffset: int
+    RelocationCount: int
+    Type: _Value
+    Attributes: Flags
+    Reserved1: int
+    Reserved2: int
+    Reserved3: int
+    Relocations: list[dict[typing.Literal["Relocation"], MachORelocation]]  # XXX
+    Symbols: list[dict[typing.Literal["Symbol"], MachOSymbol]]  # XXX
+    SectionData: SectionData  # XXX
 
-elif sys.platform == "linux":
+class ELFRelocation(typing.TypedDict):
+    Offset: int
+    Type: _Value
+    Symbol: _Value
+    Addend: int
 
-    class Relocation(typing.TypedDict):
-        Offset: int
-        Type: _Value
-        Symbol: _Value
-        Addend: int
+class ELFSymbol(typing.TypedDict):
+    Name: _Value
+    Value: int
+    Size: int
+    Binding: _Value
+    Type: _Value
+    Other: int
+    Section: _Value
 
-    class Symbol(typing.TypedDict):
-        Name: _Value
-        Value: int
-        Size: int
-        Binding: _Value
-        Type: _Value
-        Other: int
-        Section: _Value
-
-    class Section(typing.TypedDict):
-        Index: int
-        Name: _Value
-        Type: _Value
-        Flags: Flags
-        Address: int
-        Offset: int
-        Size: int
-        Link: int
-        Info: int
-        AddressAlignment: int
-        EntrySize: int
-        Relocations: list[dict[typing.Literal["Relocation"], Relocation]]
-        Symbols: list[dict[typing.Literal["Symbol"], Symbol]]
-        SectionData: SectionData
-else:
-    assert False, sys.platform
-
-Sections = list[dict[typing.Literal["Section"], Section]]
+class ELFSection(typing.TypedDict):
+    Index: int
+    Name: _Value
+    Type: _Value
+    Flags: Flags
+    Address: int
+    Offset: int
+    Size: int
+    Link: int
+    Info: int
+    AddressAlignment: int
+    EntrySize: int
+    Relocations: list[dict[typing.Literal["Relocation"], ELFRelocation]]
+    Symbols: list[dict[typing.Literal["Symbol"], ELFSymbol]]
+    SectionData: SectionData
 
 S = typing.TypeVar("S", bound=str)
 T = typing.TypeVar("T")
@@ -170,219 +160,162 @@ def unwrap(source: list[dict[S, T]], wrapper: S) -> list[T]:
     
 # TODO: Divide into read-only data and writable/executable text.
 
-class NewObjectParser:
+class ObjectParser:
 
     _ARGS = [
         # "--demangle",
         "--elf-output-style=JSON",
         "--expand-relocs",
         # "--pretty-print",
-        "--sections",
         "--section-data",
         "--section-relocations",
         "--section-symbols",
+        "--sections",
     ]
 
     def __init__(self, path: str) -> None:
         args = ["llvm-readobj", *self._ARGS, path]
         process = subprocess.run(args, check=True, capture_output=True)
         output = process.stdout
-        output = output.replace(b"}Extern\n", b"}\n")  # XXX: macOS
-        start = output.index(b"[", 1)  # XXX
-        end = output.rindex(b"]", 0, -1) + 1  # XXX
-        self._data: Sections = json.loads(output[start:end])
+        output = output.replace(b"}Extern\n", b"}\n")  # XXX: MachO
+        start = output.index(b"[", 1)  # XXX: MachO, COFF
+        end = output.rindex(b"]", 0, -1) + 1  # XXXL MachO, COFF
+        self._data = json.loads(output[start:end])
+        self.body = bytearray()
+        self.body_symbols = {}
+        self.body_offsets = {}
+        self.relocations = {}
+        self.dupes = set()
 
-    if sys.platform == "win32":
+    def parse(self):
+        for section in unwrap(self._data, "Section"):
+            self._handle_section(section)
+        if "_justin_entry" in self.body_symbols:
+            entry = self.body_symbols["_justin_entry"]
+        else:
+            entry = self.body_symbols["_justin_trampoline"]
+        holes = []
+        for offset, (symbol, type, addend) in self.relocations.items():
+            # assert type == "IMAGE_REL_AMD64_ADDR64"
+            assert symbol not in self.dupes
+            if symbol in self.body_symbols:
+                addend += self.body_symbols[symbol] - entry
+                symbol = "_justin_base"
+            holes.append(Hole(symbol, offset, addend))
+        holes.sort(key=lambda hole: hole.offset)
+        return Stencil(bytes(self.body)[entry:], tuple(holes))  # XXX
 
-        def parse(self):
-            body = bytearray()
-            body_symbols = {}
-            body_offsets = {}
-            relocations = {}
-            dupes = set()
-            for section in unwrap(self._data, "Section"):
-                flags = {flag["Name"] for flag in section["Characteristics"]["Flags"]}
-                if "SectionData" not in section:
-                    continue
-                if flags & {"IMAGE_SCN_LINK_COMDAT", "IMAGE_SCN_MEM_EXECUTE", "IMAGE_SCN_MEM_READ", "IMAGE_SCN_MEM_WRITE"} == {"IMAGE_SCN_LINK_COMDAT", "IMAGE_SCN_MEM_READ"}:
-                    # XXX: Merge these
-                    before = body_offsets[section["Number"]] = len(body)
-                    section_data = section["SectionData"]
-                    body.extend(section_data["Bytes"])
-                elif flags & {"IMAGE_SCN_MEM_READ"} == {"IMAGE_SCN_MEM_READ"}:
-                    before = body_offsets[section["Number"]] = len(body)
-                    section_data = section["SectionData"]
-                    body.extend(section_data["Bytes"])
-                else:
-                    continue
-                for symbol in unwrap(section["Symbols"], "Symbol"):
-                    offset = before + symbol["Value"]
-                    name = symbol["Name"]
-                    if name in body_symbols:
-                        dupes.add(name)
-                    body_symbols[name] = offset
-                for relocation in unwrap(section["Relocations"], "Relocation"):
-                    offset = before + relocation["Offset"]
-                    assert offset not in relocations
-                    # XXX: Addend
-                    addend = int.from_bytes(body[offset:offset + 8], sys.byteorder)
-                    body[offset:offset + 8] = [0] * 8
-                    relocations[offset] = (relocation["Symbol"], relocation["Type"]["Value"], addend)
-            if "_justin_entry" in body_symbols:
-                entry = body_symbols["_justin_entry"]
-            else:
-                entry = body_symbols["_justin_trampoline"]
-            holes = []
-            for offset, (symbol, type, addend) in relocations.items():
-                assert type == "IMAGE_REL_AMD64_ADDR64"
-                assert symbol not in dupes
-                if symbol in body_symbols:
-                    addend += body_symbols[symbol] - entry
-                    symbol = "_justin_base"
-                holes.append(Hole(symbol, offset, addend))
-            holes.sort(key=lambda hole: hole.offset)
-            return Stencil(bytes(body)[entry:], tuple(holes))  # XXX
 
-    elif sys.platform == "darwin":
+class ObjectParserCOFF(ObjectParser):
 
-        def parse(self):
-            body = bytearray()
-            body_symbols = {}
-            body_offsets = {}
-            relocations = {}
-            dupes = set()
-            for section in unwrap(self._data, "Section"):
-                assert section["Address"] >= len(body)
-                body.extend([0] * (section["Address"] - len(body)))
-                before = body_offsets[section["Index"]] = section["Address"]
+    def _handle_section(self, section: COFFSection) -> None:
+        flags = {flag["Name"] for flag in section["Characteristics"]["Flags"]}
+        if "SectionData" not in section:
+            return
+        if flags & {"IMAGE_SCN_LINK_COMDAT", "IMAGE_SCN_MEM_EXECUTE", "IMAGE_SCN_MEM_READ", "IMAGE_SCN_MEM_WRITE"} == {"IMAGE_SCN_LINK_COMDAT", "IMAGE_SCN_MEM_READ"}:
+            # XXX: Merge these
+            before = self.body_offsets[section["Number"]] = len(self.body)
+            section_data = section["SectionData"]
+            self.body.extend(section_data["Bytes"])
+        elif flags & {"IMAGE_SCN_MEM_READ"} == {"IMAGE_SCN_MEM_READ"}:
+            before = self.body_offsets[section["Number"]] = len(self.body)
+            section_data = section["SectionData"]
+            self.body.extend(section_data["Bytes"])
+        else:
+            return
+        for symbol in unwrap(section["Symbols"], "Symbol"):
+            offset = before + symbol["Value"]
+            name = symbol["Name"]
+            if name in self.body_symbols:
+                self.dupes.add(name)
+            self.body_symbols[name] = offset
+        for relocation in unwrap(section["Relocations"], "Relocation"):
+            offset = before + relocation["Offset"]
+            assert offset not in self.relocations
+            # XXX: Addend
+            addend = int.from_bytes(self.body[offset:offset + 8], sys.byteorder)
+            self.body[offset:offset + 8] = [0] * 8
+            self.relocations[offset] = (relocation["Symbol"], relocation["Type"]["Value"], addend)
+
+class ObjectParserMachO(ObjectParser):
+
+    def _handle_section(self, section: MachOSection) -> None:
+        assert section["Address"] >= len(self.body)
+        self.body.extend([0] * (section["Address"] - len(self.body)))
+        before = self.body_offsets[section["Index"]] = section["Address"]
+        section_data = section["SectionData"]
+        self.body.extend(section_data["Bytes"])
+        name = section["Name"]["Value"]
+        assert name.startswith("_")
+        name = name.removeprefix("_")
+        if name in self.body_symbols:
+            self.dupes.add(name)
+        self.body_symbols[name] = 0  # before
+        for symbol in unwrap(section["Symbols"], "Symbol"):
+            offset = symbol["Value"]
+            name = symbol["Name"]["Value"]
+            assert name.startswith("_")
+            name = name.removeprefix("_")
+            if name in self.body_symbols:
+                self.dupes.add(name)
+            self.body_symbols[name] = offset
+        for relocation in unwrap(section["Relocations"], "Relocation"):
+            offset = before + relocation["Offset"]
+            assert offset not in self.relocations
+            # XXX: Addend
+            name = relocation["Symbol"]["Value"] if "Symbol" in relocation else relocation["Section"]["Value"]
+            assert name.startswith("_")
+            name = name.removeprefix("_")
+            if name == "__bzero":  # XXX
+                name = "bzero"  # XXX
+            addend = int.from_bytes(self.body[offset:offset + 8], sys.byteorder)
+            self.body[offset:offset + 8] = [0] * 8
+            self.relocations[offset] = (name, relocation["Type"]["Value"], addend)
+
+class ObjectParserELF(ObjectParser):
+
+    def _handle_section(self, section: ELFSection) -> None:
+        type = section["Type"]["Value"]
+        flags = {flag["Name"] for flag in section["Flags"]["Flags"]}
+        if type == "SHT_RELA":
+            assert "SHF_INFO_LINK" in flags, flags
+            before = self.body_offsets[section["Info"]]
+            assert not section["Symbols"]
+            for relocation in unwrap(section["Relocations"], "Relocation"):
+                offset = before + relocation["Offset"]
+                assert offset not in self.relocations
+                addend = int.from_bytes(self.body[offset:offset + 8], sys.byteorder)
+                self.body[offset:offset + 8] = [0] * 8
+                addend += relocation["Addend"]
+                self.relocations[offset] = (relocation["Symbol"]["Value"], relocation["Type"]["Value"], addend)
+        elif type == "SHT_PROGBITS":
+            before = self.body_offsets[section["Index"]] = len(self.body)
+            if "SHF_ALLOC" not in flags:
+                return
+            elif flags & {"SHF_EXECINSTR", "SHF_MERGE", "SHF_WRITE"} == {"SHF_MERGE"}:
+                # XXX: Merge these
                 section_data = section["SectionData"]
-                body.extend(section_data["Bytes"])
-                name = section["Name"]["Value"]
-                assert name.startswith("_")
-                name = name.removeprefix("_")
-                if name in body_symbols:
-                    dupes.add(name)
-                body_symbols[name] = 0  # before
-                for symbol in unwrap(section["Symbols"], "Symbol"):
-                    offset = symbol["Value"]
-                    name = symbol["Name"]["Value"]
-                    assert name.startswith("_")
-                    name = name.removeprefix("_")
-                    if name in body_symbols:
-                        dupes.add(name)
-                    body_symbols[name] = offset
-                for relocation in unwrap(section["Relocations"], "Relocation"):
-                    offset = before + relocation["Offset"]
-                    assert offset not in relocations
-                    # XXX: Addend
-                    name = relocation["Symbol"]["Value"] if "Symbol" in relocation else relocation["Section"]["Value"]
-                    assert name.startswith("_")
-                    name = name.removeprefix("_")
-                    if name == "__bzero":  # XXX
-                        name = "bzero"  # XXX
-                    addend = int.from_bytes(body[offset:offset + 8], sys.byteorder)
-                    body[offset:offset + 8] = [0] * 8
-                    relocations[offset] = (name, relocation["Type"]["Value"], addend)
-            if "_justin_entry" in body_symbols:
-                entry = body_symbols["_justin_entry"]
+                self.body.extend(section_data["Bytes"])
             else:
-                entry = body_symbols["_justin_trampoline"]
-            holes = []
-            for offset, (symbol, type, addend) in relocations.items():
-                assert type == "X86_64_RELOC_UNSIGNED", type
-                assert symbol not in dupes
-                if symbol in body_symbols:
-                    addend += body_symbols[symbol] - entry
-                    symbol = "_justin_base"
-                holes.append(Hole(symbol, offset, addend))
-            holes.sort(key=lambda hole: hole.offset)
-            return Stencil(bytes(body)[entry:], tuple(holes))  # XXX 
+                section_data = section["SectionData"]
+                self.body.extend(section_data["Bytes"])
+            assert not section["Relocations"]
+            for symbol in unwrap(section["Symbols"], "Symbol"):
+                offset = before + symbol["Value"]
+                name = symbol["Name"]["Value"]
+                assert name not in self.body_symbols
+                self.body_symbols[name] = offset
+        else:
+            assert type in {"SHT_LLVM_ADDRSIG", "SHT_NULL", "SHT_STRTAB", "SHT_SYMTAB"}, type
 
-    elif sys.platform == "linux":
-
-        def parse(self):
-            body = bytearray()
-            body_symbols = {}
-            body_offsets = {}
-            relocations = {}
-            dupes = set()
-            for section in unwrap(self._data, "Section"):
-                type = section["Type"]["Value"]
-                flags = {flag["Name"] for flag in section["Flags"]["Flags"]}
-                if type == "SHT_RELA":
-                    assert "SHF_INFO_LINK" in flags, flags
-                    before = body_offsets[section["Info"]]
-                    assert not section["Symbols"]
-                    for relocation in unwrap(section["Relocations"], "Relocation"):
-                        offset = before + relocation["Offset"]
-                        assert offset not in relocations
-                        addend = int.from_bytes(body[offset:offset + 8], sys.byteorder)
-                        body[offset:offset + 8] = [0] * 8
-                        addend += relocation["Addend"]
-                        relocations[offset] = (relocation["Symbol"]["Value"], relocation["Type"]["Value"], addend)
-                elif type == "SHT_PROGBITS":
-                    if "SHF_ALLOC" not in flags:
-                        continue
-                    elif flags & {"SHF_EXECINSTR", "SHF_MERGE", "SHF_WRITE"} == {"SHF_MERGE"}:
-                        # XXX: Merge these
-                        before = body_offsets[section["Index"]] = len(body)
-                        section_data = section["SectionData"]
-                        body.extend(section_data["Bytes"])
-                    else:
-                        before = body_offsets[section["Index"]] = len(body)
-                        section_data = section["SectionData"]
-                        body.extend(section_data["Bytes"])
-                    assert not section["Relocations"]
-                    for symbol in unwrap(section["Symbols"], "Symbol"):
-                        offset = before + symbol["Value"]
-                        name = symbol["Name"]["Value"]
-                        assert name not in body_symbols
-                        body_symbols[name] = offset
-                else:
-                    assert type in {"SHT_LLVM_ADDRSIG", "SHT_NULL", "SHT_STRTAB", "SHT_SYMTAB"}, type
-                    continue
-            if "_justin_entry" in body_symbols:
-                entry = body_symbols["_justin_entry"]
-            else:
-                entry = body_symbols["_justin_trampoline"]
-            holes = []
-            for offset, (symbol, type, addend) in relocations.items():
-                assert type == "R_X86_64_64"
-                assert symbol not in dupes
-                if symbol in body_symbols:
-                    addend += body_symbols[symbol] - entry
-                    symbol = "_justin_base"
-                holes.append(Hole(symbol, offset, addend))
-            holes.sort(key=lambda hole: hole.offset)
-            return Stencil(bytes(body)[entry:], tuple(holes))  # XXX   
-
-# class ObjectParserCOFFX8664(ObjectParser):
-#     _file_format = "coff-x86-64"
-#     _type = "IMAGE_REL_AMD64_ADDR64"
-#     _section_prefix = ""
-#     _fix_up_holes = True
-#     _symbol_prefix = ""
-
-# class ObjectParserELF64X8664(ObjectParser):
-#     _file_format = "elf64-x86-64"
-#     _type = "R_X86_64_64"
-#     _section_prefix = ""
-#     _fix_up_holes = True
-#     _symbol_prefix = ""
-
-# class ObjectParserMachO64BitARM64(ObjectParser):
-#     _file_format = "mach-o 64-bit arm64"
-#     _type = "ARM64_RELOC_UNSIGNED"
-#     _section_prefix = ""
-#     _fix_up_holes = True
-#     _symbol_prefix = "_"
-
-# class ObjectParserMachO64BitX8664(ObjectParser):
-#     _file_format = "mach-o 64-bit x86-64"
-#     _type = "X86_64_RELOC_UNSIGNED"
-#     _section_prefix = ""
-#     _fix_up_holes = True
-#     _symbol_prefix = "_"
+if sys.platform == "darwin":
+    ObjectParserDefault = ObjectParserMachO
+elif sys.platform == "linux":
+    ObjectParserDefault = ObjectParserELF
+elif sys.platform == "win32":
+    ObjectParserDefault = ObjectParserCOFF
+else:
+    raise NotImplementedError(sys.platform)
 
 @dataclasses.dataclass(frozen=True)
 class Hole:
@@ -396,21 +329,12 @@ class Stencil:
     holes: tuple[Hole, ...]
     # entry: int
 
-class Engine:
-    _CPPFLAGS = [
-        "-DNDEBUG",
-        "-DPy_BUILD_CORE",
-        "-D_PyJIT_ACTIVE",
-        "-I.",
-        "-I./Include",
-        "-I./Include/internal",
-        "-I./PC",
-    ]
+class Compiler:
     _CFLAGS = [
-        "-O3",
-        "-Wall",
-        "-Wextra",
+        *sys.argv[3:],
+        "-D_PyJIT_ACTIVE",
         "-Wno-unused-but-set-variable",
+        "-Wno-unused-command-line-argument",
         "-Wno-unused-label",
         "-Wno-unused-variable",
         # We don't need this (and it causes weird relocations):
@@ -421,10 +345,11 @@ class Engine:
         "-fno-stack-protector",
         # The GHC calling convention uses %rbp as an argument-passing register:
         "-fomit-frame-pointer",
+        # Disable debug info:
+        "-g0",
         # Need this to leave room for patching our 64-bit pointers:
         "-mcmodel=large",
     ]
-    _OFFSETOF_CO_CODE_ADAPTIVE = 192
     _SKIP = frozenset(
         {
             "CALL_BOUND_METHOD_EXACT_ARGS",
@@ -510,7 +435,7 @@ class Engine:
         defines = [f"-D_JUSTIN_OPCODE={opname}"]
         with tempfile.NamedTemporaryFile(suffix=".o") as o, tempfile.NamedTemporaryFile(suffix=".ll") as ll:
             subprocess.run(
-                ["clang", *self._CPPFLAGS, *defines, *self._CFLAGS, "-emit-llvm", "-S", "-o", ll.name, path],
+                ["clang", *self._CFLAGS, *defines, "-emit-llvm", "-S", "-o", ll.name, path],
                 check=True,
             )
             self._use_ghccc(ll.name)
@@ -518,7 +443,7 @@ class Engine:
                 ["clang", *self._CFLAGS, "-c", "-o", o.name, ll.name],
                 check=True,
             )
-            return NewObjectParser(o.name).parse()
+            return ObjectParserDefault(o.name).parse()
 
     def build(self) -> None:
         generated_cases = PYTHON_GENERATED_CASES_C_H.read_text()
@@ -623,8 +548,9 @@ class Engine:
 
 if __name__ == "__main__":
     # First, create our JIT engine:
-    engine = Engine(verbose=True)
+    engine = Compiler(verbose=True)
     # This performs all of the steps that normally happen at build time:
+    # TODO: Actual arg parser...
     engine.build()
     with open(sys.argv[2], "w") as file:
         file.write(engine.dump())

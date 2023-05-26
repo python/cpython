@@ -2542,7 +2542,7 @@ Python/jit_stencils.h: regen-jit-stencils
 .PHONY: regen-jit-stencils
 regen-jit-stencils: regen-cases
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/justin/build.py \
-		$(srcdir)/Python/generated_cases.c.h $(srcdir)/Python/jit_stencils.h
+		$(srcdir)/Python/generated_cases.c.h $(srcdir)/Python/jit_stencils.h $(PY_CORE_CFLAGS)
 
 # Some make's put the object file in the current directory
 .c.o:

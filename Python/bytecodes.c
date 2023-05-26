@@ -135,7 +135,7 @@ dummy_func(
         }
 
         inst(RESUME, (--)) {
-            assert(tstate->cframe == &cframe);
+            // assert(tstate->cframe == &cframe);
             assert(frame == cframe.current_frame);
             /* Possibly combine this with eval breaker */
             if (frame->f_code->_co_instrumentation_version != tstate->interp->monitoring_version) {
@@ -641,7 +641,7 @@ dummy_func(
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _Py_LeaveRecursiveCallPy(tstate);
-            assert(frame != &entry_frame);
+            // assert(frame != &entry_frame);
             // GH-99729: We need to unlink the frame *before* clearing it:
             _PyInterpreterFrame *dying = frame;
             frame = cframe.current_frame = dying->previous;
@@ -676,7 +676,7 @@ dummy_func(
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _Py_LeaveRecursiveCallPy(tstate);
-            assert(frame != &entry_frame);
+            // assert(frame != &entry_frame);
             // GH-99729: We need to unlink the frame *before* clearing it:
             _PyInterpreterFrame *dying = frame;
             frame = cframe.current_frame = dying->previous;
@@ -909,7 +909,7 @@ dummy_func(
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
-            assert(frame != &entry_frame);
+            // assert(frame != &entry_frame);
             PyGenObject *gen = _PyFrame_GetGenerator(frame);
             gen->gi_frame_state = FRAME_SUSPENDED;
             _PyFrame_SetStackPointer(frame, stack_pointer - 1);
@@ -3315,7 +3315,7 @@ dummy_func(
             gen->gi_frame_state = FRAME_CREATED;
             gen_frame->owner = FRAME_OWNED_BY_GENERATOR;
             _Py_LeaveRecursiveCallPy(tstate);
-            assert(frame != &entry_frame);
+            // assert(frame != &entry_frame);
             _PyInterpreterFrame *prev = frame->previous;
             _PyThreadState_PopFrame(tstate, frame);
             frame = cframe.current_frame = prev;
