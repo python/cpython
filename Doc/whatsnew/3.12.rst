@@ -74,6 +74,8 @@ New typing features:
 
 * :pep:`688`: Making the buffer protocol accessible in Python
 
+* :ref:`whatsnew312-pep695`
+
 * :ref:`whatsnew312-pep692`
 
 * :pep:`698`: Override Decorator for Static Typing
@@ -271,6 +273,70 @@ typed dictionaries::
 See :pep:`692` for more details.
 
 (PEP written by Franek Magiera)
+
+.. _whatsnew312-pep695:
+
+PEP 695: Type Parameter Syntax
+------------------------------
+
+Generic classes and functions under :pep:`484` were declared using a verbose syntax
+that left the scope of type parameters unclear and required explicit declarations of
+variance.
+
+:pep:`695` introduces a new, more compact and explicit way to create
+:ref:`generic classes <generic-classes>` and :ref:`functions <generic-functions>`::
+
+   def max[T](args: Iterable[T]) -> T:
+       ...
+
+   class list[T]:
+       def __getitem__(self, index: int, /) -> T:
+           ...
+
+       def append(self, element: T) -> None:
+           ...
+
+In addition, the PEP introduces a new way to declare :ref:`type aliases <type-aliases>`
+using the :keyword:`type` statement, which creates an instance of
+:class:`~typing.TypeAliasType`::
+
+   type Point = tuple[float, float]
+
+Type aliases can also be :ref:`generic <generic-type-aliases>`::
+
+   type Point[T] = tuple[T, T]
+
+The new syntax allows declaring :class:`~typing.TypeVarTuple`
+and :class:`~typing.ParamSpec` parameters, as well as :class:`~typing.TypeVar`
+parameters with bounds or constraints::
+
+   type IntFunc[**P] = Callable[P, int]  # ParamSpec
+   type LabeledTuple[*Ts] = tuple[str, *Ts]  # TypeVarTuple
+   type HashableSequence[T: Hashable] = Sequence[T]  # TypeVar with bound
+   type IntOrStrSequence[T: (int, str)] = Sequence[T]  # TypeVar with constraints
+
+The value of type aliases and the bound and constraints of type variables
+created through this syntax are evaluated only on demand (see
+:ref:`lazy-evaluation`). This means type aliases are able to refer to other
+types defined later in the file.
+
+Type parameters declared through a type parameter list are visible within the
+scope of the declaration and any nested scopes, but not in the outer scope. For
+example, they can be used in the type annotations for the methods of a generic
+class or in the class body. However, they cannot be used in the module scope after
+the class is defined. See :ref:`type-params` for a detailed description of the
+runtime semantics of type parameters.
+
+In order to support these scoping semantics, a new kind of scope is introduced,
+the :ref:`annotation scope <annotation-scopes>`. Annotation scopes behave for the
+most part like function scopes, but interact differently with enclosing class scopes.
+In Python 3.13, :term:`annotations <annotation>` will also be evaluated in
+annotation scopes.
+
+See :pep:`695` for more details.
+
+(PEP written by Eric Traut. Implementation by Jelle Zijlstra, Eric Traut,
+and others in :gh:`103764`.)
 
 Other Language Changes
 ======================
@@ -806,14 +872,19 @@ Optimizations
 CPython bytecode changes
 ========================
 
-* Removed the :opcode:`LOAD_METHOD` instruction. It has been merged into
+* Remove the :opcode:`LOAD_METHOD` instruction. It has been merged into
   :opcode:`LOAD_ATTR`. :opcode:`LOAD_ATTR` will now behave like the old
   :opcode:`LOAD_METHOD` instruction if the low bit of its oparg is set.
   (Contributed by Ken Jin in :gh:`93429`.)
 
-* Removed the :opcode:`!JUMP_IF_FALSE_OR_POP` and :opcode:`!JUMP_IF_TRUE_OR_POP`
+* Remove the :opcode:`!JUMP_IF_FALSE_OR_POP` and :opcode:`!JUMP_IF_TRUE_OR_POP`
   instructions. (Contributed by Irit Katriel in :gh:`102859`.)
 
+* Add the :opcode:`LOAD_FROM_DICT_OR_DEREF`, :opcode:`LOAD_FROM_DICT_OR_GLOBALS`,
+  and :opcode:`LOAD_LOCALS` opcodes as part of the implementation of :pep:`695`.
+  Remove the :opcode:`!LOAD_CLASSDEREF` opcode, which can be replaced with
+  :opcode:`LOAD_LOCALS` plus :opcode:`LOAD_FROM_DICT_OR_DEREF`. (Contributed
+  by Jelle Zijlstra in :gh:`103764`.)
 
 Demos and Tools
 ===============
