@@ -211,7 +211,7 @@ Annotation scopes are used in the following contexts:
 Annotation scopes differ from function scopes in the following ways:
 
 * If an annotation scope is immediately within a class scope, or within another
-  class scope can be accessed from within the annotation scope. The code in the
+  class scope, the code in the
   annotation scope can use names defined in the class scope as if it were
   executed directly within the class body. This contrasts with regular
   functions defined within classes, which cannot access names defined in the class scope.
@@ -252,7 +252,7 @@ Example:
      ...
    ZeroDivisionError: division by zero
    >>> def func[T: 1/0](): pass
-   >>> T, = func.__type_params__
+   >>> T = func.__type_params__[0]
    >>> T.__bound__
    Traceback (most recent call last):
      ...
