@@ -6474,7 +6474,7 @@ class CollectionsAbcTests(BaseTestCase):
                 return 0
 
         self.assertEqual(len(MMC()), 0)
-        assert callable(MMC.update)
+        self.assertTrue(callable(MMC.update))
         self.assertIsInstance(MMC(), typing.Mapping)
 
         class MMB(typing.MutableMapping[KT, VT]):
@@ -6669,8 +6669,8 @@ class TypeTests(BaseTestCase):
             else:
                 return a()
 
-        assert isinstance(foo(KeyboardInterrupt), KeyboardInterrupt)
-        assert foo(None) is None
+        self.assertIsInstance(foo(KeyboardInterrupt), KeyboardInterrupt)
+        self.assertIsNone(foo(None))
 
 
 class TestModules(TestCase):
@@ -7104,8 +7104,8 @@ class TypedDictTests(BaseTestCase):
         class Point2Dor3D(Point2D, total=False):
             z: int
 
-        assert Point2Dor3D.__required_keys__ == frozenset(['x', 'y'])
-        assert Point2Dor3D.__optional_keys__ == frozenset(['z'])
+        self.assertEqual(Point2Dor3D.__required_keys__, frozenset(['x', 'y']))
+        self.assertEqual(Point2Dor3D.__optional_keys__, frozenset(['z']))
 
     def test_keys_inheritance(self):
         class BaseAnimal(TypedDict):
@@ -7118,26 +7118,26 @@ class TypedDictTests(BaseTestCase):
         class Cat(Animal):
             fur_color: str
 
-        assert BaseAnimal.__required_keys__ == frozenset(['name'])
-        assert BaseAnimal.__optional_keys__ == frozenset([])
-        assert BaseAnimal.__annotations__ == {'name': str}
+        self.assertEqual(BaseAnimal.__required_keys__, frozenset(['name']))
+        self.assertEqual(BaseAnimal.__optional_keys__, frozenset([]))
+        self.assertEqual(BaseAnimal.__annotations__, {'name': str})
 
-        assert Animal.__required_keys__ == frozenset(['name'])
-        assert Animal.__optional_keys__ == frozenset(['tail', 'voice'])
-        assert Animal.__annotations__ == {
+        self.assertEqual(Animal.__required_keys__, frozenset(['name']))
+        self.assertEqual(Animal.__optional_keys__, frozenset(['tail', 'voice']))
+        self.assertEqual(Animal.__annotations__, {
             'name': str,
             'tail': bool,
             'voice': str,
-        }
+        })
 
-        assert Cat.__required_keys__ == frozenset(['name', 'fur_color'])
-        assert Cat.__optional_keys__ == frozenset(['tail', 'voice'])
-        assert Cat.__annotations__ == {
+        self.assertEqual(Cat.__required_keys__, frozenset(['name', 'fur_color']))
+        self.assertEqual(Cat.__optional_keys__, frozenset(['tail', 'voice']))
+        self.assertEqual(Cat.__annotations__, {
             'fur_color': str,
             'name': str,
             'tail': bool,
             'voice': str,
-        }
+        })
 
     def test_required_notrequired_keys(self):
         self.assertEqual(NontotalMovie.__required_keys__,
@@ -7367,11 +7367,11 @@ class TypedDictTests(BaseTestCase):
         self.assertEqual(C.__total__, True)
         self.assertEqual(C.__optional_keys__, frozenset(['b']))
         self.assertEqual(C.__required_keys__, frozenset(['a', 'c']))
-        assert C.__annotations__ == {
+        self.assertEqual(C.__annotations__, {
             'a': T,
             'b': KT,
             'c': int,
-        }
+        })
         with self.assertRaises(TypeError):
             C[str]
 
@@ -7386,11 +7386,11 @@ class TypedDictTests(BaseTestCase):
         self.assertEqual(Point3D.__total__, True)
         self.assertEqual(Point3D.__optional_keys__, frozenset())
         self.assertEqual(Point3D.__required_keys__, frozenset(['a', 'b', 'c']))
-        assert Point3D.__annotations__ == {
+        self.assertEqual(Point3D.__annotations__, {
             'a': T,
             'b': T,
             'c': KT,
-        }
+        })
         self.assertEqual(Point3D[int, str].__origin__, Point3D)
 
         with self.assertRaises(TypeError):
@@ -7417,11 +7417,11 @@ class TypedDictTests(BaseTestCase):
         self.assertEqual(WithImplicitAny.__total__, True)
         self.assertEqual(WithImplicitAny.__optional_keys__, frozenset(['b']))
         self.assertEqual(WithImplicitAny.__required_keys__, frozenset(['a', 'c']))
-        assert WithImplicitAny.__annotations__ == {
+        self.assertEqual(WithImplicitAny.__annotations__, {
             'a': T,
             'b': KT,
             'c': int,
-        }
+        })
         with self.assertRaises(TypeError):
             WithImplicitAny[str]
 
