@@ -244,9 +244,9 @@ class PurePath(os.PathLike):
     """
 
     __slots__ = (
-        # The `_raw_path` slot stores an unnormalized string path. This is set
+        # The `_raw_paths` slot stores unnormalized string paths. This is set
         # in the `__init__()` method.
-        '_raw_path',
+        '_raw_paths',
 
         # The `_drv`, `_root` and `_tail_cached` slots store parsed and
         # normalized parts of the path. They are set when any of the `drive`,
@@ -299,10 +299,11 @@ class PurePath(os.PathLike):
         paths = []
         for arg in args:
             if isinstance(arg, PurePath):
-                path = arg._raw_path
                 if arg._flavour is ntpath and self._flavour is posixpath:
                     # GH-103631: Convert separators for backwards compatibility.
-                    path = path.replace('\\', '/')
+                    paths.extend(path.replace('\\', '/') for path in arg._raw_paths)
+                else:
+                    paths.extend(arg._raw_paths)
             else:
                 try:
                     path = os.fspath(arg)
@@ -313,13 +314,8 @@ class PurePath(os.PathLike):
                         "argument should be a str or an os.PathLike "
                         "object where __fspath__ returns a str, "
                         f"not {type(path).__name__!r}")
-            paths.append(path)
-        if len(paths) == 0:
-            self._raw_path = ''
-        elif len(paths) == 1:
-            self._raw_path = paths[0]
-        else:
-            self._raw_path = self._flavour.join(*paths)
+                paths.append(path)
+        self._raw_paths = paths
 
     def with_segments(self, *pathsegments):
         """Construct a new path object from any number of path-like objects.
@@ -349,7 +345,14 @@ class PurePath(os.PathLike):
         return drv, root, parsed
 
     def _load_parts(self):
-        drv, root, tail = self._parse_path(self._raw_path)
+        paths = self._raw_paths
+        if len(paths) == 0:
+            path = ''
+        elif len(paths) == 1:
+            path = paths[0]
+        else:
+            path = self._flavour.join(*paths)
+        drv, root, tail = self._parse_path(path)
         self._drv = drv
         self._root = root
         self._tail_cached = tail
@@ -673,7 +676,11 @@ class PurePath(os.PathLike):
         # ntpath.isabs() is defective - see GH-44626 .
         if self._flavour is ntpath:
             return bool(self.drive and self.root)
-        return self._flavour.isabs(self._raw_path)
+        else:
+            for path in self._raw_paths:
+                if self._flavour.isabs(path):
+                    return True
+            return False
 
     def is_reserved(self):
         """Return True if the path contains one of the special names reserved
