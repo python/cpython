@@ -2116,7 +2116,6 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/decimaltestdata \
 		test/dtracedata \
 		test/encoded_modules \
-		test/imghdrdata \
 		test/leakers \
 		test/libregrtest \
 		test/subprocessdata \
@@ -2210,6 +2209,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_zipfile \
 		test/test_zoneinfo \
 		test/test_zoneinfo/data \
+		test/tkinterdata \
 		test/tracedmodules \
 		test/typinganndata \
 		test/xmltestdata \
