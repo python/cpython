@@ -113,6 +113,11 @@ jobs:
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
       - uses: actions/checkout@v3
+      - name: Restore config.cache
+        uses: actions/cache@v3
+        with:
+          path: config.cache
+          key: ${{ github.job }}-${{ runner.os }}-${{ hashFiles('configure', 'configure.ac', '.github/workflows/build.yml') }}
       - uses: actions/setup-python@v3
       - name: Install Dependencies
         run: sudo ./.github/workflows/posix-deps-apt.sh
@@ -129,7 +134,7 @@ jobs:
       - name: Configure CPython
         run: |
           # Build Python with the libpython dynamic library
-          ./configure --with-pydebug --enable-shared
+          ./configure --config-cache --with-pydebug --enable-shared
       - name: Regenerate autoconf files with container image
         run: make regen-configure
       - name: Build CPython
@@ -210,6 +215,11 @@ jobs:
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@v3
+    - name: Restore config.cache
+      uses: actions/cache@v3
+      with:
+        path: config.cache
+        key: ${{ github.job }}-${{ runner.os }}-${{ hashFiles('configure', 'configure.ac', '.github/workflows/build.yml') }}
     - name: Install Homebrew dependencies
       run: brew install pkg-config openssl@1.1 xz gdbm tcl-tk
     - name: Configure CPython
@@ -218,6 +228,7 @@ jobs:
         LDFLAGS="-L$(brew --prefix gdbm)/lib -I$(brew --prefix xz)/lib" \
         PKG_CONFIG_PATH="$(brew --prefix tcl-tk)/lib/pkgconfig" \
         ./configure \
+          --config-cache \
           --with-pydebug \
           --prefix=/opt/python-dev \
           --with-openssl="$(brew --prefix openssl@1.1)"
@@ -270,9 +281,18 @@ jobs:
       run: mkdir -p $CPYTHON_RO_SRCDIR $CPYTHON_BUILDDIR
     - name: Bind mount sources read-only
       run: sudo mount --bind -o ro $GITHUB_WORKSPACE $CPYTHON_RO_SRCDIR
+    - name: Restore config.cache
+      uses: actions/cache@v3
+      with:
+        path: ${{ env.CPYTHON_BUILDDIR }}/config.cache
+        key: ${{ github.job }}-${{ runner.os }}-${{ hashFiles('configure', 'configure.ac', '.github/workflows/build.yml') }}
     - name: Configure CPython out-of-tree
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
-      run: ../cpython-ro-srcdir/configure --with-pydebug --with-openssl=$OPENSSL_DIR
+      run: |
+        ../cpython-ro-srcdir/configure \
+          --config-cache \
+          --with-pydebug \
+          --with-openssl=$OPENSSL_DIR
     - name: Build CPython out-of-tree
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: make -j4
@@ -303,6 +323,11 @@ jobs:
       LD_LIBRARY_PATH: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}/lib
     steps:
     - uses: actions/checkout@v3
+    - name: Restore config.cache
+      uses: actions/cache@v3
+      with:
+        path: config.cache
+        key: ${{ github.job }}-${{ runner.os }}-${{ hashFiles('configure', 'configure.ac', '.github/workflows/build.yml') }}
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install Dependencies
@@ -327,7 +352,7 @@ jobs:
     - name: Configure ccache action
       uses: hendrikmuhs/ccache-action@v1.2
     - name: Configure CPython
-      run: ./configure --with-pydebug --with-openssl=$OPENSSL_DIR
+      run: ./configure --config-cache --with-pydebug --with-openssl=$OPENSSL_DIR
     - name: Build CPython
       run: make -j4
     - name: Display build info
@@ -336,7 +361,7 @@ jobs:
       run: ./python Lib/test/ssltests.py
 
   test_hypothesis:
-    name: "Hypothesis Tests on Ubuntu"
+    name: "Hypothesis tests on Ubuntu"
     runs-on: ubuntu-20.04
     timeout-minutes: 60
     needs: check_source
@@ -377,9 +402,18 @@ jobs:
       run: mkdir -p $CPYTHON_RO_SRCDIR $CPYTHON_BUILDDIR
     - name: Bind mount sources read-only
       run: sudo mount --bind -o ro $GITHUB_WORKSPACE $CPYTHON_RO_SRCDIR
+    - name: Restore config.cache
+      uses: actions/cache@v3
+      with:
+        path: ${{ env.CPYTHON_BUILDDIR }}/config.cache
+        key: ${{ github.job }}-${{ runner.os }}-${{ hashFiles('configure', 'configure.ac', '.github/workflows/build.yml') }}
     - name: Configure CPython out-of-tree
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
-      run: ../cpython-ro-srcdir/configure --with-pydebug --with-openssl=$OPENSSL_DIR
+      run: |
+        ../cpython-ro-srcdir/configure \
+          --config-cache \
+          --with-pydebug \
+          --with-openssl=$OPENSSL_DIR
     - name: Build CPython out-of-tree
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: make -j4
@@ -447,6 +481,11 @@ jobs:
       ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
     steps:
     - uses: actions/checkout@v3
+    - name: Restore config.cache
+      uses: actions/cache@v3
+      with:
+        path: config.cache
+        key: ${{ github.job }}-${{ runner.os }}-${{ hashFiles('configure', 'configure.ac', '.github/workflows/build.yml') }}
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install Dependencies
@@ -475,7 +514,7 @@ jobs:
     - name: Configure ccache action
       uses: hendrikmuhs/ccache-action@v1.2
     - name: Configure CPython
-      run: ./configure --with-address-sanitizer --without-pymalloc
+      run: ./configure --config-cache --with-address-sanitizer --without-pymalloc
     - name: Build CPython
       run: make -j4
     - name: Display build info
