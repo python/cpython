@@ -1174,7 +1174,7 @@ class Test_Tokenize(TestCase):
 
         # skip the initial encoding token and the end tokens
         tokens = list(_tokenize(readline(), encoding='utf-8'))[:-2]
-        expected_tokens = [TokenInfo(3, '"ЉЊЈЁЂ"', (1, 0), (1, 7), '"ЉЊЈЁЂ"')]
+        expected_tokens = [TokenInfo(3, '"ЉЊЈЁЂ"', (1, 0), (1, 7), '"ЉЊЈЁЂ"\n')]
         self.assertEqual(tokens, expected_tokens,
                          "bytes not decoded with encoding")
 
@@ -1657,7 +1657,6 @@ class TestRoundtrip(TestCase):
             code = f.encode('utf-8')
         else:
             code = f.read()
-            f.close()
         readline = iter(code.splitlines(keepends=True)).__next__
         tokens5 = list(tokenize(readline))
         tokens2 = [tok[:2] for tok in tokens5]
@@ -1671,6 +1670,17 @@ class TestRoundtrip(TestCase):
         readline5 = iter(bytes_from5.splitlines(keepends=True)).__next__
         tokens2_from5 = [tok[:2] for tok in tokenize(readline5)]
         self.assertEqual(tokens2_from5, tokens2)
+
+    def check_line_extraction(self, f):
+        if isinstance(f, str):
+            code = f.encode('utf-8')
+        else:
+            code = f.read()
+        readline = iter(code.splitlines(keepends=True)).__next__
+        for tok in tokenize(readline):
+            if tok.type in  {ENCODING, ENDMARKER}:
+                continue
+            self.assertEqual(tok.string, tok.line[tok.start[1]: tok.end[1]])
 
     def test_roundtrip(self):
         # There are some standard formatting practices that are easy to get right.
@@ -1768,6 +1778,7 @@ class TestRoundtrip(TestCase):
             with open(testfile, 'rb') as f:
                 # with self.subTest(file=testfile):
                 self.check_roundtrip(f)
+                self.check_line_extraction(f)
 
 
     def roundtrip(self, code):
