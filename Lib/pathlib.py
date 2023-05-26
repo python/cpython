@@ -421,7 +421,10 @@ class PurePath(object):
         try:
             return self._str_normcase_cached
         except AttributeError:
-            self._str_normcase_cached = self._flavour.normcase(str(self))
+            if _is_case_sensitive(self._flavour):
+                self._str_normcase_cached = str(self)
+            else:
+                self._str_normcase_cached = str(self).lower()
             return self._str_normcase_cached
 
     @property
