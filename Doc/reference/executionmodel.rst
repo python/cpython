@@ -198,9 +198,11 @@ annotation scopes in Python 3.13 when :pep:`649` is implemented.
 Annotation scopes are used in the following contexts:
 
 * Type parameter lists for :ref:`generic type aliases <generic-type-aliases>`.
-* Type parameter lists for :ref:`generic functions <generic-functions>`. The function's annotations are
+* Type parameter lists for :ref:`generic functions <generic-functions>`.
+  A generic function's annotations are
   executed within the annotation scope, but its defaults and decorators are not.
-* Type parameter lists for :ref:`generic classes <generic-classes>`. The class's base classes and
+* Type parameter lists for :ref:`generic classes <generic-classes>`.
+  A generic class's base classes and
   keyword arguments are executed within the annotation scope, but its decorators are not.
 * The bounds and constraints for type variables
   (:ref:`lazily evaluated <lazy-evaluation>`).
@@ -219,9 +221,10 @@ Annotation scopes differ from function scopes in the following ways:
 * Names defined in annotation scopes cannot be rebound with :keyword:`nonlocal`
   statements in inner scopes. This includes only type parameters, as no other
   syntactic elements that can appear within annotation scopes can introduce new names.
-* While annotation scopes internally have a name, that name is not reflected in the
-  ``__qualname__`` of objects defined within the scope. Instead, the ``__qualname__``
-  of such objects is as if the object was defined in the enclosing scope.
+* While annotation scopes have an internal name, that name is not reflected in the
+  :term:`__qualname__ <qualified name>` of objects defined within the scope.
+  Instead, the ``__qualname__``
+  of such objects is as if the object were defined in the enclosing scope.
 
 .. versionadded:: 3.12
    Annotation scopes were introduced in Python 3.12 as part of :pep:`695`.
@@ -231,11 +234,12 @@ Annotation scopes differ from function scopes in the following ways:
 Lazy evaluation
 ---------------
 
-The values of type aliases created through the :keyword:`type` statement and
-the bounds and constraints of type variables created through the
-:ref:`type parameter syntax <type-params>` are *lazily evaluated*. This means
-that they are not evaluated when the type alias or type variable is created,
-but only when evaluation is necessary to resolve an attribute access.
+The values of type aliases created through the :keyword:`type` statement are
+*lazily evaluated*. The same applies to the bounds and constraints of type
+variables created through the :ref:`type parameter syntax <type-params>`.
+This means that they are not evaluated when the type alias or type variable is
+created. Instead, they are only evaluated when doing so is necessary to resolve
+an attribute access.
 
 Example:
 
