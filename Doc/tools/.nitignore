@@ -215,7 +215,6 @@ Doc/library/threading.rst
 Doc/library/time.rst
 Doc/library/tkinter.rst
 Doc/library/tkinter.scrolledtext.rst
-Doc/library/tkinter.tix.rst
 Doc/library/tkinter.ttk.rst
 Doc/library/traceback.rst
 Doc/library/tty.rst
