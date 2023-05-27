@@ -772,7 +772,9 @@ translate_into_utf8(const char* str, const char* enc) {
 
 
 static char *
-translate_newlines(const char *s, int exec_input, struct tok_state *tok) {
+translate_newlines(const char *s, int exec_input, int preserve_crlf,
+                   struct tok_state *tok) {
+    int skip_next_lf = 0;
     size_t needed_length = strlen(s) + 2, final_length;
     char *buf, *current;
     char c = '\0';
@@ -783,8 +785,18 @@ translate_newlines(const char *s, int exec_input, struct tok_state *tok) {
     }
     for (current = buf; *s; s++, current++) {
         c = *s;
-        if (!c)
-            break;
+        if (skip_next_lf) {
+            skip_next_lf = 0;
+            if (c == '\n') {
+                c = *++s;
+                if (!c)
+                    break;
+            }
+        }
+        if (!preserve_crlf && c == '\r') {
+            skip_next_lf = 1;
+            c = '\n';
+        }
         *current = c;
     }
     /* If this is exec input, add a newline to the end of the string if
@@ -811,14 +823,14 @@ translate_newlines(const char *s, int exec_input, struct tok_state *tok) {
    inside TOK.  */
 
 static char *
-decode_str(const char *input, int single, struct tok_state *tok)
+decode_str(const char *input, int single, struct tok_state *tok, int preserve_crlf)
 {
     PyObject* utf8 = NULL;
     char *str;
     const char *s;
     const char *newl[2] = {NULL, NULL};
     int lineno = 0;
-    tok->input = str = translate_newlines(input, single, tok);
+    tok->input = str = translate_newlines(input, single, preserve_crlf, tok);
     if (str == NULL)
         return NULL;
     tok->enc = NULL;
@@ -870,14 +882,14 @@ decode_str(const char *input, int single, struct tok_state *tok)
 /* Set up tokenizer for string */
 
 struct tok_state *
-_PyTokenizer_FromString(const char *str, int exec_input)
+_PyTokenizer_FromString(const char *str, int exec_input, int preserve_crlf)
 {
     struct tok_state *tok = tok_new();
     char *decoded;
 
     if (tok == NULL)
         return NULL;
-    decoded = decode_str(str, exec_input, tok);
+    decoded = decode_str(str, exec_input, tok, preserve_crlf);
     if (decoded == NULL) {
         _PyTokenizer_Free(tok);
         return NULL;
@@ -891,13 +903,13 @@ _PyTokenizer_FromString(const char *str, int exec_input)
 /* Set up tokenizer for UTF-8 string */
 
 struct tok_state *
-_PyTokenizer_FromUTF8(const char *str, int exec_input)
+_PyTokenizer_FromUTF8(const char *str, int exec_input, int preserve_crlf)
 {
     struct tok_state *tok = tok_new();
     char *translated;
     if (tok == NULL)
         return NULL;
-    tok->input = translated = translate_newlines(str, exec_input, tok);
+    tok->input = translated = translate_newlines(str, exec_input, preserve_crlf, tok);
     if (translated == NULL) {
         _PyTokenizer_Free(tok);
         return NULL;
@@ -1039,7 +1051,7 @@ tok_underflow_interactive(struct tok_state *tok) {
     }
     char *newtok = PyOS_Readline(tok->fp ? tok->fp : stdin, stdout, tok->prompt);
     if (newtok != NULL) {
-        char *translated = translate_newlines(newtok, 0, tok);
+        char *translated = translate_newlines(newtok, 0, 0, tok);
         PyMem_Free(newtok);
         if (translated == NULL) {
             return 0;

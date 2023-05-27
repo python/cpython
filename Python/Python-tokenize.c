@@ -55,7 +55,7 @@ tokenizeriter_new_impl(PyTypeObject *type, const char *source,
     if (filename == NULL) {
         return NULL;
     }
-    self->tok = _PyTokenizer_FromUTF8(source, 1);
+    self->tok = _PyTokenizer_FromUTF8(source, 1, 1);
     if (self->tok == NULL) {
         Py_DECREF(filename);
         return NULL;
