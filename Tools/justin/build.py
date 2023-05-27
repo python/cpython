@@ -166,7 +166,7 @@ class ObjectParser:
         # "--demangle",
         "--elf-output-style=JSON",
         "--expand-relocs",
-        # "--pretty-print",
+        "--pretty-print",
         "--section-data",
         "--section-relocations",
         "--section-symbols",
@@ -177,7 +177,8 @@ class ObjectParser:
         args = ["llvm-readobj", *self._ARGS, path]
         process = subprocess.run(args, check=True, capture_output=True)
         output = process.stdout
-        output = output.replace(b"}Extern\n", b"}\n")  # XXX: MachO
+        output = output.replace(b"PrivateExtern\n", b"\n")  # XXX: MachO
+        output = output.replace(b"Extern\n", b"\n")  # XXX: MachO
         start = output.index(b"[", 1)  # XXX: MachO, COFF
         end = output.rindex(b"]", 0, -1) + 1  # XXXL MachO, COFF
         self._data = json.loads(output[start:end])
@@ -349,8 +350,6 @@ class Compiler:
         "-g0",
         # Need this to leave room for patching our 64-bit pointers:
         "-mcmodel=large",
-        # XXX
-        "-v",
     ]
     _SKIP = frozenset(
         {
