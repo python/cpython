@@ -1156,9 +1156,8 @@ class Analyzer:
         self.out.emit("")
         with self.out.block(f"TARGET({up.name})"):
             match up:
-                case MacroInstruction() as mac:
-                    if mac.predicted:
-                        self.out.emit(f"PREDICTED({mac.name});")
+                case MacroInstruction(predicted=True, name=name):
+                    self.out.emit(f"PREDICTED({name});")
             for i, var in reversed(list(enumerate(up.stack))):
                 src = None
                 if i < up.initial_sp:
