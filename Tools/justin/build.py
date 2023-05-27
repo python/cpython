@@ -84,7 +84,7 @@ class COFFSection(typing.TypedDict):
     Relocations: list[dict[typing.Literal["Relocation"], COFFRelocation]]
     Symbols: list[dict[typing.Literal["Symbol"], COFFSymbol]]
     SectionData: SectionData  # XXX
-    
+
 class MachORelocation(typing.TypedDict):
     Offset: int
     PCRel: int
@@ -157,7 +157,7 @@ T = typing.TypeVar("T")
 
 def unwrap(source: list[dict[S, T]], wrapper: S) -> list[T]:
     return [child[wrapper] for child in source]
-    
+
 # TODO: Divide into read-only data and writable/executable text.
 
 class ObjectParser:
