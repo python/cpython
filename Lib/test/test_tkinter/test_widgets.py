@@ -1402,10 +1402,8 @@ class MenuTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_configure_type(self):
         widget = self.create()
-        r = tkinter.Tk()
-        tkver = r.getvar('tk_version')
-        r.destroy()
-        opts = ('normal, tearoff, or menubar' if tkver < '8.7' else
+        opts = ('normal, tearoff, or menubar'
+                if widget.info_patchlevel() < (8, 7) else
                 'menubar, normal, or tearoff')
         self.checkEnumParam(
             widget, 'type',
