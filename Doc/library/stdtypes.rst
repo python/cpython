@@ -5476,6 +5476,14 @@ types, where they are relevant.  Some of these are not reported by the
    .. versionadded:: 3.3
 
 
+.. attribute:: definition.__type_params__
+
+   The :ref:`type parameters <type-params>` of generic classes, functions,
+   and :ref:`type aliases <type-aliases>`.
+
+   .. versionadded:: 3.12
+
+
 .. attribute:: class.__mro__
 
    This attribute is a tuple of classes that are considered when looking for

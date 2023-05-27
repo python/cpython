@@ -1,0 +1,3 @@
+Fix bugs with the interaction between :func:`typing.runtime_checkable` and
+:class:`typing.Generic` that were introduced by the :pep:`695`
+implementation. Patch by Jelle Zijlstra.

@@ -14,11 +14,6 @@ from test.test_tools import scriptsdir, import_tool, skip_if_missing
 skip_if_missing()
 
 class TestSundryScripts(unittest.TestCase):
-    # At least make sure the rest don't have syntax errors.  When tests are
-    # added for a script it should be added to the allowlist below.
-
-    skiplist = ['2to3']
-
     # import logging registers "atfork" functions which keep indirectly the
     # logging module dictionary alive. Mock the function to be able to unload
     # cleanly the logging module.
@@ -31,9 +26,6 @@ class TestSundryScripts(unittest.TestCase):
                     continue
 
                 name = fn[:-3]
-                if name in self.skiplist:
-                    continue
-
                 import_tool(name)
         finally:
             # Unload all modules loaded in this test

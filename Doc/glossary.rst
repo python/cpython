@@ -22,15 +22,6 @@ Glossary
 
       * The :const:`Ellipsis` built-in constant.
 
-   2to3
-      A tool that tries to convert Python 2.x code to Python 3.x code by
-      handling most of the incompatibilities which can be detected by parsing the
-      source and traversing the parse tree.
-
-      2to3 is available in the standard library as :mod:`lib2to3`; a standalone
-      entry point is provided as :file:`Tools/scripts/2to3`.  See
-      :ref:`2to3-reference`.
-
    abstract base class
       Abstract base classes complement :term:`duck-typing` by
       providing a way to define interfaces when other techniques like
