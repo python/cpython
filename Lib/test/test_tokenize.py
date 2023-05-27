@@ -84,6 +84,14 @@ class TokenizeTest(TestCase):
     NEWLINE    '\\n'          (4, 26) (4, 27)
     DEDENT     ''            (5, 0) (5, 0)
     """)
+
+        self.check_tokenize("foo='bar'\r\n", """\
+    NAME       'foo'         (1, 0) (1, 3)
+    OP         '='           (1, 3) (1, 4)
+    STRING     "'bar'"       (1, 4) (1, 9)
+    NEWLINE    '\\n'          (1, 9) (1, 10)
+            """)
+
         indent_error_file = b"""\
 def k(x):
     x += 2
