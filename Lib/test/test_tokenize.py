@@ -85,11 +85,20 @@ class TokenizeTest(TestCase):
     DEDENT     ''            (5, 0) (5, 0)
     """)
 
-        self.check_tokenize("foo='bar'\r\n", """\
-    NAME       'foo'         (1, 0) (1, 3)
-    OP         '='           (1, 3) (1, 4)
-    STRING     "'bar'"       (1, 4) (1, 9)
-    NEWLINE    '\\n'          (1, 9) (1, 10)
+        self.check_tokenize("if True:\r\n    # NL\r\n    foo='bar'\r\n\r\n", """\
+    NAME       'if'          (1, 0) (1, 2)
+    NAME       'True'        (1, 3) (1, 7)
+    OP         ':'           (1, 7) (1, 8)
+    NEWLINE    '\\r\\n'        (1, 8) (1, 10)
+    COMMENT    '# NL'        (2, 4) (2, 8)
+    NL         '\\r\\n'        (2, 8) (2, 10)
+    INDENT     '    '        (3, 0) (3, 4)
+    NAME       'foo'         (3, 4) (3, 7)
+    OP         '='           (3, 7) (3, 8)
+    STRING     "\'bar\'"       (3, 8) (3, 13)
+    NEWLINE    '\\r\\n'        (3, 13) (3, 15)
+    NL         '\\r\\n'        (4, 0) (4, 2)
+    DEDENT     ''            (5, 0) (5, 0)
             """)
 
         indent_error_file = b"""\

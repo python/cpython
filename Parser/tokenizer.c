@@ -773,7 +773,6 @@ translate_into_utf8(const char* str, const char* enc) {
 
 static char *
 translate_newlines(const char *s, int exec_input, struct tok_state *tok) {
-    int skip_next_lf = 0;
     size_t needed_length = strlen(s) + 2, final_length;
     char *buf, *current;
     char c = '\0';
@@ -784,18 +783,8 @@ translate_newlines(const char *s, int exec_input, struct tok_state *tok) {
     }
     for (current = buf; *s; s++, current++) {
         c = *s;
-        if (skip_next_lf) {
-            skip_next_lf = 0;
-            if (c == '\n') {
-                c = *++s;
-                if (!c)
-                    break;
-            }
-        }
-        if (c == '\r') {
-            skip_next_lf = 1;
-            c = '\n';
-        }
+        if (!c)
+            break;
         *current = c;
     }
     /* If this is exec input, add a newline to the end of the string if
@@ -1693,7 +1682,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             }
         }
         tok_backup(tok, c);
-        if (c == '#' || c == '\n') {
+        if (c == '#' || c == '\n' || c == '\r') {
             /* Lines with only whitespace and/or comments
                shouldn't affect the indentation and are
                not passed to the parser as NEWLINE tokens,
@@ -1822,7 +1811,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         const char *prefix, *type_start;
         int current_starting_col_offset;
 
-        while (c != EOF && c != '\n') {
+        while (c != EOF && c != '\n' && c != '\r') {
             c = tok_nextc(tok);
         }
 
@@ -2000,6 +1989,10 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         }
 
         return MAKE_TOKEN(NAME);
+    }
+
+    if (c == '\r') {
+        c = tok_nextc(tok);
     }
 
     /* Newline */

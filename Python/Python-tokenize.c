@@ -240,7 +240,11 @@ tokenizeriter_next(tokenizeriterobject *it)
             type = NAME;
         }
         else if (type == NEWLINE) {
-            str = PyUnicode_FromString("\n");
+            if (it->tok->start[0] == '\r') {
+                str = PyUnicode_FromString("\r\n");
+            } else {
+                str = PyUnicode_FromString("\n");
+            }
             end_col_offset++;
         }
     }
