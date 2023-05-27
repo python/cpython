@@ -9428,7 +9428,7 @@ static pytype_slotdef slotdefs[] = {
             "__buffer__($self, flags, /)\n--\n\n"
             "Return a buffer object that exposes the underlying memory of the object."),
     BUFSLOT(__release_buffer__, bf_releasebuffer, slot_bf_releasebuffer, wrap_releasebuffer,
-            "__release_buffer__($self, /)\n--\n\n"
+            "__release_buffer__($self, buffer, /)\n--\n\n"
             "Release the buffer object that exposes the underlying memory of the object."),
 
     AMSLOT(__await__, am_await, slot_am_await, wrap_unaryfunc,

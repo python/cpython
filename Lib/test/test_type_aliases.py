@@ -159,6 +159,15 @@ class TypeAliasConstructorTest(unittest.TestCase):
         self.assertEqual(TA.__type_params__, ())
         self.assertEqual(TA.__module__, __name__)
 
+    def test_attributes_with_exec(self):
+        ns = {}
+        exec("type TA = int", ns, ns)
+        TA = ns["TA"]
+        self.assertEqual(TA.__name__, "TA")
+        self.assertIs(TA.__value__, int)
+        self.assertEqual(TA.__type_params__, ())
+        self.assertIs(TA.__module__, None)
+
     def test_generic(self):
         T = TypeVar("T")
         TA = TypeAliasType("TA", list[T], type_params=(T,))

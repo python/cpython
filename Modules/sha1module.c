@@ -73,6 +73,9 @@ static SHA1object *
 newSHA1object(SHA1State *st)
 {
     SHA1object *sha = (SHA1object *)PyObject_GC_New(SHA1object, st->sha1_type);
+    if (sha == NULL) {
+        return NULL;
+    }
     sha->lock = NULL;
     PyObject_GC_Track(sha);
     return sha;

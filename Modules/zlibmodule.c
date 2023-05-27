@@ -1722,6 +1722,9 @@ ZlibDecompressor__new__(PyTypeObject *cls,
         return NULL;
     }
     ZlibDecompressor *self = PyObject_New(ZlibDecompressor, cls);
+    if (self == NULL) {
+        return NULL;
+    }
     self->eof = 0;
     self->needs_input = 1;
     self->avail_in_real = 0;

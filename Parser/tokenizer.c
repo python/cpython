@@ -800,7 +800,7 @@ translate_newlines(const char *s, int exec_input, struct tok_state *tok) {
     }
     /* If this is exec input, add a newline to the end of the string if
        there isn't one already. */
-    if (exec_input && c != '\n') {
+    if (exec_input && c != '\n' && c != '\0') {
         *current = '\n';
         current++;
     }
@@ -1760,7 +1760,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     tok->starting_col_offset = tok->col_offset;
 
     /* Return pending indents/dedents */
-   if (tok->pendin != 0) {
+    if (tok->pendin != 0) {
         if (tok->pendin < 0) {
             if (tok->tok_extra_tokens) {
                 p_start = tok->cur;
@@ -2007,6 +2007,9 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         tok->atbol = 1;
         if (blankline || tok->level > 0) {
             if (tok->tok_extra_tokens) {
+                if (tok->comment_newline) {
+                    tok->comment_newline = 0;
+                }
                 p_start = tok->start;
                 p_end = tok->cur;
                 return MAKE_TOKEN(NL);
@@ -2015,9 +2018,9 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         }
         if (tok->comment_newline && tok->tok_extra_tokens) {
             tok->comment_newline = 0;
-                p_start = tok->start;
-                p_end = tok->cur;
-                return MAKE_TOKEN(NL);
+            p_start = tok->start;
+            p_end = tok->cur;
+            return MAKE_TOKEN(NL);
         }
         p_start = tok->start;
         p_end = tok->cur - 1; /* Leave '\n' out of the string */
