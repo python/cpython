@@ -21,10 +21,6 @@ class MyBaseExc(BaseException):
     pass
 
 
-def get_error_types(eg):
-    return {type(exc) for exc in eg.exceptions}
-
-
 class TestTaskScope(unittest.IsolatedAsyncioTestCase):
 
     async def test_children_complete_on_child_error(self):
@@ -328,14 +324,24 @@ class TestTaskScope(unittest.IsolatedAsyncioTestCase):
                     await asyncio.sleep(0.5)
                     raise
 
-        r = asyncio.create_task(runner())
-        await asyncio.sleep(0.1)
+        loop = asyncio.get_running_loop()
+        exc_handler = mock.Mock()
+        with mock.patch.object(loop, 'call_exception_handler', exc_handler):
+            r = asyncio.create_task(runner())
+            await asyncio.sleep(0.1)
 
-        self.assertFalse(r.done())
-        r.cancel()
-        with self.assertRaises(ExceptionGroup) as cm:
-            await r
-        self.assertEqual(get_error_types(cm.exception), {ZeroDivisionError})
+            self.assertFalse(r.done())
+            r.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await r
+
+        exc_handler.assert_called_with({
+            'message': test_utils.MockPattern(
+                '^Task .* has errored inside the parent .*'
+            ),
+            'exception': test_utils.MockInstanceOf(ZeroDivisionError),
+            'task': mock.ANY,
+        })
 
     async def test_taskgroup_40(self):
 
@@ -356,14 +362,24 @@ class TestTaskScope(unittest.IsolatedAsyncioTestCase):
             t = asyncio.create_task(nested_runner())
             await t
 
-        r = asyncio.create_task(runner())
-        await asyncio.sleep(0.1)
+        loop = asyncio.get_running_loop()
+        exc_handler = mock.Mock()
+        with mock.patch.object(loop, 'call_exception_handler', exc_handler):
+            r = asyncio.create_task(runner())
+            await asyncio.sleep(0.1)
 
-        self.assertFalse(r.done())
-        r.cancel()
-        with self.assertRaises(ExceptionGroup) as cm:
-            await r
-        self.assertEqual(get_error_types(cm.exception), {ZeroDivisionError})
+            self.assertFalse(r.done())
+            r.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await r
+
+        exc_handler.assert_called_with({
+            'message': test_utils.MockPattern(
+                '^Task .* has errored inside the parent .*'
+            ),
+            'exception': test_utils.MockInstanceOf(ZeroDivisionError),
+            'task': mock.ANY,
+        })
 
     async def test_taskgroup_41(self):
 
@@ -409,16 +425,13 @@ class TestTaskScope(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(r.done())
         r.cancel()
 
-        try:
+        with self.assertRaises(MyExc):
             await r
-        except ExceptionGroup as t:
-            self.assertEqual(get_error_types(t),{MyExc})
-        else:
-            self.fail('ExceptionGroup was not raised')
 
         self.assertEqual(NUM, 10)
 
     async def test_taskgroup_43(self):
+        t1 = None
 
         async def crash_soon():
             await asyncio.sleep(0.1)
@@ -431,17 +444,25 @@ class TestTaskScope(unittest.IsolatedAsyncioTestCase):
                 raise MyExc
 
         async def runner():
+            nonlocal t1
             async with taskscopes.TaskScope() as g:
-                g.create_task(crash_soon())
+                t1 = g.create_task(crash_soon())
                 await nested()
 
-        r = asyncio.create_task(runner())
-        try:
-            await r
-        except ExceptionGroup as t:
-            self.assertEqual(get_error_types(t), {MyExc, ZeroDivisionError})
-        else:
-            self.fail('TasgGroupError was not raised')
+        loop = asyncio.get_running_loop()
+        exc_handler = mock.Mock()
+        with mock.patch.object(loop, 'call_exception_handler', exc_handler):
+            r = asyncio.create_task(runner())
+            with self.assertRaises(MyExc):
+                await r
+
+        exc_handler.assert_called_with({
+            'message': test_utils.MockPattern(
+                '^Task .* has errored inside the parent .*'
+            ),
+            'exception': test_utils.MockInstanceOf(ZeroDivisionError),
+            'task': t1,
+        })
 
     async def test_taskgroup_44(self):
 
@@ -492,5 +513,3 @@ class TestTaskScope(unittest.IsolatedAsyncioTestCase):
             await r
 
         self.assertEqual(NUM, 0)
-
-
