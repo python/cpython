@@ -1760,7 +1760,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     tok->starting_col_offset = tok->col_offset;
 
     /* Return pending indents/dedents */
-   if (tok->pendin != 0) {
+    if (tok->pendin != 0) {
         if (tok->pendin < 0) {
             if (tok->tok_extra_tokens) {
                 p_start = tok->cur;
