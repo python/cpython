@@ -277,12 +277,16 @@ def complex_decorated(foo=0, bar=lambda: 0):
 # line 276
 parenthesized_lambda = (
     lambda: ())
-
-# line 281
-post_line_parenthesized_lambda = (lambda: ()
-)
+parenthesized_lambda2 = [
+    lambda: ()][0]
+parenthesized_lambda3 = {0:
+    lambda: ()}[0]
 
 # line 285
+post_line_parenthesized_lambda1 = (lambda: ()
+)
+
+# line 289
 nested_lambda = (
     lambda right: [].map(
         lambda length: ()))
