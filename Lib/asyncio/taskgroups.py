@@ -2,7 +2,7 @@
 # license: PSFL.
 
 
-__all__ = ["TaskGroup"]
+__all__ = "TaskGroup",
 
 from . import events
 from . import exceptions
@@ -26,8 +26,22 @@ class TaskGroup(taskscope.TaskScope):
     The exceptions are then combined and raised as an `ExceptionGroup`.
     """
     def __init__(self):
-        super().__init__()
+        super().__init__(delegate_errors=None)
         self._errors = []
+
+    def __repr__(self):
+        info = ['']
+        if self._tasks:
+            info.append(f'tasks={len(self._tasks)}')
+        if self._errors:
+            info.append(f'errors={len(self._errors)}')
+        if self._aborting:
+            info.append('cancelling')
+        elif self._entered:
+            info.append('entered')
+
+        info_str = ' '.join(info)
+        return f'<TaskGroup {info_str}>'
 
     def create_task(self, coro, *, name=None, context=None):
         """Create a new task in this group and return it.

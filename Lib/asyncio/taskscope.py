@@ -2,11 +2,14 @@
 # license: PSFL.
 
 
-__all__ = ["TaskScope"]
+__all__ = "TaskScope",
 
 from . import events
 from . import exceptions
 from . import tasks
+
+
+_default_error_handler = object()
 
 
 class TaskScope:
@@ -22,10 +25,15 @@ class TaskScope:
     All tasks are awaited when the context manager exits.
 
     Any exceptions other than `asyncio.CancelledError` raised within
-    a task will be ignored (TODO: allow a custom exception handler?)
-    and it is the caller's responsibility to catch them in task callbacks.
+    a task will be handled differently depending on `delegate_errors`.
+
+    If `delegate_errors` is not set, it will run
+    `loop.call_exception_handler()`.
+    If it is set `None`, it will silently ignore the exception.
+    If it is set as a callable function, it will invoke it using the same
+    context argument of `loop.call_exception_handler()`.
     """
-    def __init__(self):
+    def __init__(self, delegate_errors=_default_error_handler):
         self._entered = False
         self._exiting = False
         self._aborting = False
@@ -33,28 +41,29 @@ class TaskScope:
         self._parent_task = None
         self._parent_cancel_requested = False
         self._tasks = set()
-        self._errors = []
         self._base_error = None
         self._on_completed_fut = None
+        self._delegate_errors = delegate_errors
+        self._has_errors = False
 
     def __repr__(self):
         info = ['']
         if self._tasks:
             info.append(f'tasks={len(self._tasks)}')
-        if self._errors:
-            info.append(f'errors={len(self._errors)}')
         if self._aborting:
             info.append('cancelling')
         elif self._entered:
             info.append('entered')
 
         info_str = ' '.join(info)
-        return f'<{type(self).__name__}{info_str}>'
+        return f'<TaskScope {info_str}>'
 
     async def __aenter__(self):
         if self._entered:
             raise RuntimeError(
-                f"TaskGroup {self!r} has been already entered")
+                f'{type(self).__name__} {self!r} '
+                f'has been already entered'
+            )
         self._entered = True
 
         if self._loop is None:
@@ -63,7 +72,9 @@ class TaskScope:
         self._parent_task = tasks.current_task(self._loop)
         if self._parent_task is None:
             raise RuntimeError(
-                f'TaskGroup {self!r} cannot determine the parent task')
+                f'{type(self).__name__} {self!r} '
+                f'cannot determine the parent task'
+            )
 
         return self
 
@@ -132,8 +143,11 @@ class TaskScope:
 
         # Propagate CancelledError if there is one, except if there
         # are other errors -- those have priority.
-        if propagate_cancellation_error and not self._errors:
+        if propagate_cancellation_error and not self._has_errors:
             raise propagate_cancellation_error
+
+        if et is not None and et is not exceptions.CancelledError:
+            self._has_errors = True
 
     def create_task(self, coro, *, name=None, context=None):
         """Create a new task in this group and return it.
@@ -141,11 +155,15 @@ class TaskScope:
         Similar to `asyncio.create_task`.
         """
         if not self._entered:
-            raise RuntimeError(f"TaskGroup {self!r} has not been entered")
+            raise RuntimeError(
+                f"{type(self).__name__} {self!r} has not been entered"
+            )
         if self._exiting and not self._tasks:
-            raise RuntimeError(f"TaskGroup {self!r} is finished")
+            raise RuntimeError(f"{type(self).__name__} {self!r} is finished")
         if self._aborting:
-            raise RuntimeError(f"TaskGroup {self!r} is shutting down")
+            raise RuntimeError(
+                f"{type(self).__name__} {self!r} is shutting down"
+            )
         if context is None:
             task = self._loop.create_task(coro)
         else:
@@ -191,6 +209,25 @@ class TaskScope:
         exc = task.exception()
         if exc is None:
             return
+
+        self._has_errors = True
+        match self._delegate_errors:
+            case None:
+                pass  # deliberately set to ignore errors
+            case func if callable(func):
+                func({
+                    'message': f'Task {task!r} has errored inside the parent '
+                               f'task {self._parent_task}',
+                    'exception': exc,
+                    'task': task,
+                })
+            case default if default is _default_error_handler:
+                self._loop.call_exception_handler({
+                    'message': f'Task {task!r} has errored inside the parent '
+                               f'task {self._parent_task}',
+                    'exception': exc,
+                    'task': task,
+                })
 
         is_base_error = self._is_base_error(exc)
         if is_base_error and self._base_error is None:
