@@ -107,8 +107,7 @@
                               $(opensslOutDir)LICENSE;
                               $(libffiDir)LICENSE;" />
     <_LicenseSources Include="$(tcltkDir)tcllicense.terms;
-                              $(tcltkDir)tklicense.terms;
-                              $(tcltkDir)tixlicense.terms" Condition="$(IncludeTkinter)" />
+                              $(tcltkDir)tklicense.terms" Condition="$(IncludeTkinter)" />
   </ItemGroup>
 
   <Target Name="_RegenTestFrozenmain" Inputs="@(_TestFrozenSources)" Outputs="@(_TestFrozenOutputs)"
