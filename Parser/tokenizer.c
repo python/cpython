@@ -800,7 +800,7 @@ translate_newlines(const char *s, int exec_input, struct tok_state *tok) {
     }
     /* If this is exec input, add a newline to the end of the string if
        there isn't one already. */
-    if (exec_input && c != '\n') {
+    if (exec_input && c != '\n' && c != '\0') {
         *current = '\n';
         current++;
     }
