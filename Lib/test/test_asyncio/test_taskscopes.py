@@ -166,6 +166,62 @@ class TestTaskScope(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(NUM, 5)
 
+    async def test_delegate_error_ignore(self):
+        async def zero_division():
+            1 / 0
+
+        async def value_error():
+            await asyncio.sleep(0.2)
+            raise ValueError
+
+        async def foo1():
+            await asyncio.sleep(0.4)
+            return 42
+
+        loop = asyncio.get_running_loop()
+        exc_handler = mock.Mock()
+        with mock.patch.object(loop, 'call_exception_handler', exc_handler):
+            async with taskscopes.TaskScope(delegate_errors=None) as g:
+                g.create_task(zero_division())
+                g.create_task(value_error())
+                g.create_task(foo1())
+
+        exc_handler.assert_not_called()
+
+    async def test_delegate_error_custom(self):
+        async def zero_division():
+            1 / 0
+
+        async def value_error():
+            await asyncio.sleep(0.2)
+            raise ValueError
+
+        async def foo1():
+            await asyncio.sleep(0.4)
+            return 42
+
+        catched_errors = []
+
+        def catch_error(context):
+            nonlocal catched_errors
+            catched_errors.append(context)
+
+        async with taskscopes.TaskScope(delegate_errors=catch_error) as g:
+            t1 = g.create_task(zero_division())
+            t2 = g.create_task(value_error())
+            g.create_task(foo1())
+
+        match_count = 0
+        for item in catched_errors:
+            match item["exception"]:
+                case ZeroDivisionError():
+                    self.assertIs(item["task"], t1)
+                    match_count += 1
+                case ValueError():
+                    self.assertIs(item["task"], t2)
+                    match_count += 10
+        self.assertEqual(match_count, 11)
+
     async def test_taskgroup_35(self):
 
         NUM = 0
