@@ -789,6 +789,12 @@ class PurePosixPathTest(_BasePurePathTest, unittest.TestCase):
         pp = P('//a') / '/c'
         self.assertEqual(pp, P('/c'))
 
+    def test_parse_windows_path(self):
+        P = self.cls
+        p = P('c:', 'a', 'b')
+        pp = P(pathlib.PureWindowsPath('c:\\a\\b'))
+        self.assertEqual(p, pp)
+
 
 class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
     cls = pathlib.PureWindowsPath
@@ -904,6 +910,7 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(P('a/B'), P('A/b'))
         self.assertEqual(P('C:a/B'), P('c:A/b'))
         self.assertEqual(P('//Some/SHARE/a/B'), P('//somE/share/A/b'))
+        self.assertEqual(P('\u0130'), P('i\u0307'))
 
     def test_as_uri(self):
         P = self.cls

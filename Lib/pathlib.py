@@ -300,6 +300,9 @@ class PurePath(os.PathLike):
         for arg in args:
             if isinstance(arg, PurePath):
                 path = arg._raw_path
+                if arg._flavour is ntpath and self._flavour is posixpath:
+                    # GH-103631: Convert separators for backwards compatibility.
+                    path = path.replace('\\', '/')
             else:
                 try:
                     path = os.fspath(arg)
@@ -421,7 +424,10 @@ class PurePath(os.PathLike):
         try:
             return self._str_normcase_cached
         except AttributeError:
-            self._str_normcase_cached = self._flavour.normcase(str(self))
+            if _is_case_sensitive(self._flavour):
+                self._str_normcase_cached = str(self)
+            else:
+                self._str_normcase_cached = str(self).lower()
             return self._str_normcase_cached
 
     @property

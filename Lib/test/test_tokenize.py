@@ -82,8 +82,16 @@ class TokenizeTest(TestCase):
     NAME       'False'       (4, 11) (4, 16)
     COMMENT    '# NEWLINE'   (4, 17) (4, 26)
     NEWLINE    '\\n'          (4, 26) (4, 27)
-    DEDENT     ''            (4, 27) (4, 27)
+    DEDENT     ''            (5, 0) (5, 0)
     """)
+
+        self.check_tokenize("foo='bar'\r\n", """\
+    NAME       'foo'         (1, 0) (1, 3)
+    OP         '='           (1, 3) (1, 4)
+    STRING     "'bar'"       (1, 4) (1, 9)
+    NEWLINE    '\\n'          (1, 9) (1, 10)
+            """)
+
         indent_error_file = b"""\
 def k(x):
     x += 2
@@ -755,8 +763,8 @@ def"', """\
     NEWLINE    '\\n'          (2, 5) (2, 6)
     INDENT     '        \\t'  (3, 0) (3, 9)
     NAME       'pass'        (3, 9) (3, 13)
-    DEDENT     ''            (3, 14) (3, 14)
-    DEDENT     ''            (3, 14) (3, 14)
+    DEDENT     ''            (4, 0) (4, 0)
+    DEDENT     ''            (4, 0) (4, 0)
     """)
 
     def test_non_ascii_identifiers(self):
@@ -968,7 +976,7 @@ async def foo():
     NUMBER     '1'           (2, 17) (2, 18)
     OP         ':'           (2, 18) (2, 19)
     NAME       'pass'        (2, 20) (2, 24)
-    DEDENT     ''            (2, 25) (2, 25)
+    DEDENT     ''            (3, 0) (3, 0)
     """)
 
         self.check_tokenize('''async def foo(async): await''', """\
@@ -1016,7 +1024,7 @@ def f():
     NAME       'await'       (6, 2) (6, 7)
     OP         '='           (6, 8) (6, 9)
     NUMBER     '2'           (6, 10) (6, 11)
-    DEDENT     ''            (6, 12) (6, 12)
+    DEDENT     ''            (7, 0) (7, 0)
     """)
 
         self.check_tokenize('''\
@@ -1054,7 +1062,7 @@ async def f():
     NAME       'await'       (6, 2) (6, 7)
     OP         '='           (6, 8) (6, 9)
     NUMBER     '2'           (6, 10) (6, 11)
-    DEDENT     ''            (6, 12) (6, 12)
+    DEDENT     ''            (7, 0) (7, 0)
     """)
 
     def test_newline_after_parenthesized_block_with_comment(self):
@@ -2680,7 +2688,8 @@ async def f():
 
         valid = generate_source(MAXINDENT - 1)
         tokens = list(_generate_tokens_from_c_tokenizer(valid))
-        self.assertEqual(tokens[-1].type, DEDENT)
+        self.assertEqual(tokens[-2].type, DEDENT)
+        self.assertEqual(tokens[-1].type, ENDMARKER)
         compile(valid, "<string>", "exec")
 
         invalid = generate_source(MAXINDENT)
