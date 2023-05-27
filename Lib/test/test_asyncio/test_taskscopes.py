@@ -4,7 +4,7 @@ import unittest
 from unittest import mock
 
 import asyncio
-from asyncio import taskscope
+from asyncio import taskscopes
 from test.test_asyncio import utils as test_utils
 
 
@@ -42,7 +42,7 @@ class TestTaskScope(unittest.IsolatedAsyncioTestCase):
         loop = asyncio.get_running_loop()
         exc_handler = mock.Mock()
         with mock.patch.object(loop, 'call_exception_handler', exc_handler):
-            async with taskscope.TaskScope() as g:
+            async with taskscopes.TaskScope() as g:
                 t1 = g.create_task(foo1())
                 t2 = g.create_task(foo2())
                 t3 = g.create_task(zero_division())
@@ -72,7 +72,7 @@ class TestTaskScope(unittest.IsolatedAsyncioTestCase):
         loop = asyncio.get_running_loop()
         exc_handler = mock.Mock()
         with mock.patch.object(loop, 'call_exception_handler', exc_handler):
-            async with taskscope.TaskScope() as g:
+            async with taskscopes.TaskScope() as g:
                 t1 = g.create_task(foo1())
                 t2 = g.create_task(zero_division())
                 r1 = await foo2()
@@ -102,7 +102,7 @@ class TestTaskScope(unittest.IsolatedAsyncioTestCase):
         loop = asyncio.get_running_loop()
         exc_handler = mock.Mock()
         with mock.patch.object(loop, 'call_exception_handler', exc_handler):
-            async with taskscope.TaskScope() as g:
+            async with taskscopes.TaskScope() as g:
                 t1 = g.create_task(zero_division())
                 t2 = g.create_task(value_error())
                 t3 = g.create_task(foo1())
@@ -137,7 +137,7 @@ class TestTaskScope(unittest.IsolatedAsyncioTestCase):
             return 42
 
         with self.assertRaises(ZeroDivisionError):
-            async with taskscope.TaskScope() as g:
+            async with taskscopes.TaskScope() as g:
                 t1 = g.create_task(foo1())
                 await zero_division()
 
@@ -156,7 +156,7 @@ class TestTaskScope(unittest.IsolatedAsyncioTestCase):
                 raise
 
         async def runner():
-            async with taskscope.TaskScope() as g:
+            async with taskscopes.TaskScope() as g:
                 for _ in range(5):
                     g.create_task(foo())
 
@@ -184,7 +184,7 @@ class TestTaskScope(unittest.IsolatedAsyncioTestCase):
 
         async def runner():
             nonlocal NUM
-            async with taskscope.TaskScope() as g:
+            async with taskscopes.TaskScope() as g:
                 for _ in range(5):
                     g.create_task(foo())
 
@@ -213,7 +213,7 @@ class TestTaskScope(unittest.IsolatedAsyncioTestCase):
                 1 / 0
 
         async def runner():
-            async with taskscope.TaskScope() as g:
+            async with taskscopes.TaskScope() as g:
                 for _ in range(5):
                     g.create_task(foo())
 
@@ -248,8 +248,8 @@ class TestTaskScope(unittest.IsolatedAsyncioTestCase):
                 1 / 0
 
         async def runner():
-            async with taskscope.TaskScope():
-                async with taskscope.TaskScope() as g2:
+            async with taskscopes.TaskScope():
+                async with taskscopes.TaskScope() as g2:
                     for _ in range(5):
                         g2.create_task(foo())
 
@@ -284,10 +284,10 @@ class TestTaskScope(unittest.IsolatedAsyncioTestCase):
                 1 / 0
 
         async def runner():
-            async with taskscope.TaskScope() as g1:
+            async with taskscopes.TaskScope() as g1:
                 g1.create_task(asyncio.sleep(10))
 
-                async with taskscope.TaskScope() as g2:
+                async with taskscopes.TaskScope() as g2:
                     for _ in range(5):
                         g2.create_task(foo())
 
@@ -320,7 +320,7 @@ class TestTaskScope(unittest.IsolatedAsyncioTestCase):
             1 / 0
 
         async def runner():
-            async with taskscope.TaskScope() as g1:
+            async with taskscopes.TaskScope() as g1:
                 g1.create_task(crash_soon())
                 try:
                     await asyncio.sleep(10)
@@ -344,7 +344,7 @@ class TestTaskScope(unittest.IsolatedAsyncioTestCase):
             1 / 0
 
         async def nested_runner():
-            async with taskscope.TaskScope() as g1:
+            async with taskscopes.TaskScope() as g1:
                 g1.create_task(crash_soon())
                 try:
                     await asyncio.sleep(10)
@@ -371,7 +371,7 @@ class TestTaskScope(unittest.IsolatedAsyncioTestCase):
 
         async def runner():
             nonlocal NUM
-            async with taskscope.TaskScope():
+            async with taskscopes.TaskScope():
                 try:
                     await asyncio.sleep(10)
                 except asyncio.CancelledError:
@@ -394,7 +394,7 @@ class TestTaskScope(unittest.IsolatedAsyncioTestCase):
 
         async def runner():
             nonlocal NUM
-            async with taskscope.TaskScope():
+            async with taskscopes.TaskScope():
                 try:
                     await asyncio.sleep(10)
                 except asyncio.CancelledError:
@@ -431,7 +431,7 @@ class TestTaskScope(unittest.IsolatedAsyncioTestCase):
                 raise MyExc
 
         async def runner():
-            async with taskscope.TaskScope() as g:
+            async with taskscopes.TaskScope() as g:
                 g.create_task(crash_soon())
                 await nested()
 
@@ -454,7 +454,7 @@ class TestTaskScope(unittest.IsolatedAsyncioTestCase):
             return 11
 
         async def runner():
-            async with taskscope.TaskScope() as g:
+            async with taskscopes.TaskScope() as g:
                 g.create_task(foo1())
                 g.create_task(foo2())
 
@@ -480,7 +480,7 @@ class TestTaskScope(unittest.IsolatedAsyncioTestCase):
             NUM += 2
 
         async def runner():
-            async with taskscope.TaskScope() as g:
+            async with taskscopes.TaskScope() as g:
                 g.create_task(foo1())
                 g.create_task(foo2())
 

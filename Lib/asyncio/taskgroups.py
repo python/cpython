@@ -4,12 +4,11 @@
 
 __all__ = "TaskGroup",
 
-from . import events
 from . import exceptions
-from . import taskscope
+from . import taskscopes
 
 
-class TaskGroup(taskscope.TaskScope):
+class TaskGroup(taskscopes.TaskScope):
     """Asynchronous context manager for managing groups of tasks.
 
     Example use:
