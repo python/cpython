@@ -1440,10 +1440,10 @@ for creating generic types.
 
       DType = TypeVar('DType')
 
-      class Array[DType, *Shape]:  # This is fine
+      class Array(Generic[DType, *Shape]):  # This is fine
           pass
 
-      class Array2[*Shape, DType]:  # This would also be fine
+      class Array2(Generic[*Shape, DType]):  # This would also be fine
           pass
 
       float_array_1d: Array[float, Height] = Array()     # Totally fine
