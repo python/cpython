@@ -281,3 +281,8 @@ parenthesized_lambda = (
 # line 281
 post_line_parenthesized_lambda = (lambda: ()
 )
+
+# line 285
+nested_lambda = (
+    lambda right: [].map(
+        lambda length: ()))

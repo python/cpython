@@ -786,6 +786,10 @@ class TestOneliners(GetSourceBase):
         # function.
         self.assertSourceEqual(mod2.post_line_parenthesized_lambda, 282, 283)
 
+    def test_nested_lambda(self):
+        # Test inspect.getsource with a nested lambda function.
+        self.assertSourceEqual(mod2.nested_lambda, 287, 288)
+
     def test_onelinefunc(self):
         # Test inspect.getsource with a regular one-line function.
         self.assertSourceEqual(mod2.onelinefunc, 37, 37)
