@@ -36,17 +36,13 @@ static inline char* PyBytes_AS_STRING(PyObject *op)
 {
     return _PyBytes_CAST(op)->ob_sval;
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define PyBytes_AS_STRING(op) PyBytes_AS_STRING(_PyObject_CAST(op))
-#endif
+#define PyBytes_AS_STRING(op) PyBytes_AS_STRING(_PyObject_CAST(op))
 
 static inline Py_ssize_t PyBytes_GET_SIZE(PyObject *op) {
     PyBytesObject *self = _PyBytes_CAST(op);
     return Py_SIZE(self);
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define PyBytes_GET_SIZE(self) PyBytes_GET_SIZE(_PyObject_CAST(self))
-#endif
+#define PyBytes_GET_SIZE(self) PyBytes_GET_SIZE(_PyObject_CAST(self))
 
 /* _PyBytes_Join(sep, x) is like sep.join(x).  sep must be PyBytesObject*,
    x must be an iterable object. */

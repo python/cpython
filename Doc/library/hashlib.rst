@@ -91,8 +91,8 @@ library that Python uses on your platform. On most platforms the
 
    Hashlib now uses SHA3 and SHAKE from OpenSSL 1.1.1 and newer.
 
-For example, to obtain the digest of the byte string ``b'Nobody inspects the
-spammish repetition'``::
+For example, to obtain the digest of the byte string ``b"Nobody inspects the
+spammish repetition"``::
 
    >>> import hashlib
    >>> m = hashlib.sha256()
@@ -100,15 +100,13 @@ spammish repetition'``::
    >>> m.update(b" the spammish repetition")
    >>> m.digest()
    b'\x03\x1e\xdd}Ae\x15\x93\xc5\xfe\\\x00o\xa5u+7\xfd\xdf\xf7\xbcN\x84:\xa6\xaf\x0c\x95\x0fK\x94\x06'
-   >>> m.digest_size
-   32
-   >>> m.block_size
-   64
+   >>> m.hexdigest()
+   '031edd7d41651593c5fe5c006fa5752b37fddff7bc4e843aa6af0c950f4b9406'
 
 More condensed:
 
-   >>> hashlib.sha224(b"Nobody inspects the spammish repetition").hexdigest()
-   'a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2'
+   >>> hashlib.sha256(b"Nobody inspects the spammish repetition").hexdigest()
+   '031edd7d41651593c5fe5c006fa5752b37fddff7bc4e843aa6af0c950f4b9406'
 
 .. function:: new(name[, data], *, usedforsecurity=True)
 
@@ -302,23 +300,17 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
 
    >>> from hashlib import pbkdf2_hmac
    >>> our_app_iters = 500_000  # Application specific, read above.
-   >>> dk = pbkdf2_hmac('sha256', b'password', b'bad salt'*2, our_app_iters)
+   >>> dk = pbkdf2_hmac('sha256', b'password', b'bad salt' * 2, our_app_iters)
    >>> dk.hex()
    '15530bba69924174860db778f2c6f8104d3aaf9d26241840c8c4a641c8d000a9'
 
+   Function only available when Python is compiled with OpenSSL.
+
    .. versionadded:: 3.4
 
-   .. note::
-
-      A fast implementation of *pbkdf2_hmac* is available with OpenSSL.  The
-      Python implementation uses an inline version of :mod:`hmac`. It is about
-      three times slower and doesn't release the GIL.
-
-   .. deprecated:: 3.10
-
-      Slow Python implementation of *pbkdf2_hmac* is deprecated. In the
-      future the function will only be available when Python is compiled
-      with OpenSSL.
+   .. versionchanged:: 3.12
+      Function now only available when Python is built with OpenSSL. The slow
+      pure Python implementation has been removed.
 
 .. function:: scrypt(password, *, salt, n, r, p, maxmem=0, dklen=64)
 
@@ -434,13 +426,14 @@ Constructor functions also accept the following tree hashing parameters:
   BLAKE2s, 0 in sequential mode).
 
 * *last_node*: boolean indicating whether the processed node is the last
-  one (`False` for sequential mode).
+  one (``False`` for sequential mode).
 
 .. figure:: hashlib-blake2-tree.png
    :alt: Explanation of tree mode parameters.
+   :class: invert-in-dark-mode
 
 See section 2.10 in `BLAKE2 specification
-<https://blake2.net/blake2_20130129.pdf>`_ for comprehensive review of tree
+<https://www.blake2.net/blake2_20130129.pdf>`_ for comprehensive review of tree
 hashing.
 
 
@@ -505,6 +498,7 @@ update the hash:
     >>> h = blake2b()
     >>> for item in items:
     ...     h.update(item)
+    ...
     >>> h.hexdigest()
     '6ff843ba685842aa82031d3f53c48b66326df7639a63d128974c5c14f31a0f33343a8c65551134ed1ae0f2b0dd2bb495dc81039e3eeb0aa1bb0388bbeac29183'
 
@@ -626,7 +620,7 @@ on the hash function used in digital signatures.
     by the signer.
 
     (`NIST SP-800-106 "Randomized Hashing for Digital Signatures"
-    <https://csrc.nist.gov/publications/detail/sp/800-106/final>`_)
+    <https://csrc.nist.gov/publications/detail/sp/800-106/archive/2009-02-25>`_)
 
 In BLAKE2 the salt is processed as a one-time input to the hash function during
 initialization, rather than as an input to each compression function.
@@ -635,7 +629,7 @@ initialization, rather than as an input to each compression function.
 
     *Salted hashing* (or just hashing) with BLAKE2 or any other general-purpose
     cryptographic hash function, such as SHA-256, is not suitable for hashing
-    passwords.  See `BLAKE2 FAQ <https://blake2.net/#qa>`_ for more
+    passwords.  See `BLAKE2 FAQ <https://www.blake2.net/#qa>`_ for more
     information.
 ..
 
@@ -670,7 +664,7 @@ function:
     hash function used in the protocol summarily stops this type of attack.
 
     (`The Skein Hash Function Family
-    <http://www.skein-hash.info/sites/default/files/skein1.3.pdf>`_,
+    <https://www.schneier.com/wp-content/uploads/2016/02/skein.pdf>`_,
     p. 21)
 
 BLAKE2 can be personalized by passing bytes to the *person* argument::
@@ -771,9 +765,9 @@ Domain Dedication 1.0 Universal:
 
 * *Alexandr Sokolovskiy*
 
-.. _BLAKE2: https://blake2.net
+.. _BLAKE2: https://www.blake2.net
 .. _HMAC: https://en.wikipedia.org/wiki/Hash-based_message_authentication_code
-.. _BLAKE: https://131002.net/blake/
+.. _BLAKE: https://web.archive.org/web/20200918190133/https://131002.net/blake/
 .. _SHA-3: https://en.wikipedia.org/wiki/NIST_hash_function_competition
 .. _ChaCha: https://cr.yp.to/chacha.html
 .. _pyblake2: https://pythonhosted.org/pyblake2/
@@ -789,7 +783,7 @@ Domain Dedication 1.0 Universal:
    Module :mod:`base64`
       Another way to encode binary hashes for non-binary environments.
 
-   https://blake2.net
+   https://www.blake2.net
       Official BLAKE2 website.
 
    https://csrc.nist.gov/csrc/media/publications/fips/180/2/archive/2002-08-01/documents/fips180-2.pdf

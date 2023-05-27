@@ -9,8 +9,8 @@ extern "C" {
 
 PyAPI_DATA(PyTypeObject) PyModule_Type;
 
-#define PyModule_Check(op) PyObject_TypeCheck(op, &PyModule_Type)
-#define PyModule_CheckExact(op) Py_IS_TYPE(op, &PyModule_Type)
+#define PyModule_Check(op) PyObject_TypeCheck((op), &PyModule_Type)
+#define PyModule_CheckExact(op) Py_IS_TYPE((op), &PyModule_Type)
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 PyAPI_FUNC(PyObject *) PyModule_NewObject(
@@ -43,8 +43,22 @@ PyAPI_DATA(PyTypeObject) PyModuleDef_Type;
 
 typedef struct PyModuleDef_Base {
   PyObject_HEAD
+  /* The function used to re-initialize the module.
+     This is only set for legacy (single-phase init) extension modules
+     and only used for those that support multiple initializations
+     (m_size >= 0).
+     It is set by _PyImport_LoadDynamicModuleWithSpec()
+     and _imp.create_builtin(). */
   PyObject* (*m_init)(void);
+  /* The module's index into its interpreter's modules_by_index cache.
+     This is set for all extension modules but only used for legacy ones.
+     (See PyInterpreterState.modules_by_index for more info.)
+     It is set by PyModuleDef_Init(). */
   Py_ssize_t m_index;
+  /* A copy of the module's __dict__ after the first time it was loaded.
+     This is only set/used for legacy modules that do not support
+     multiple initializations.
+     It is set by _PyImport_FixupExtensionObject(). */
   PyObject* m_copy;
 } PyModuleDef_Base;
 
@@ -64,10 +78,16 @@ struct PyModuleDef_Slot {
 
 #define Py_mod_create 1
 #define Py_mod_exec 2
+#define Py_mod_multiple_interpreters 3
 
 #ifndef Py_LIMITED_API
-#define _Py_mod_LAST_SLOT 2
+#define _Py_mod_LAST_SLOT 3
 #endif
+
+/* for Py_mod_multiple_interpreters: */
+#define Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED ((void *)0)
+#define Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED ((void *)1)
+#define Py_MOD_PER_INTERPRETER_GIL_SUPPORTED ((void *)2)
 
 #endif /* New in 3.5 */
 

@@ -345,7 +345,7 @@ BoundedSemaphore
 Barrier
 =======
 
-.. class:: Barrier(parties, action=None)
+.. class:: Barrier(parties)
 
    A barrier object.  Not thread-safe.
 
@@ -411,8 +411,8 @@ Barrier
          ...
          async with barrier as position:
             if position == 0:
-               # Only one task print this
-               print('End of *draining phasis*')
+               # Only one task prints this
+               print('End of *draining phase*')
 
       This method may raise a :class:`BrokenBarrierError` exception if the
       barrier is broken or reset while a task is waiting.
@@ -429,7 +429,7 @@ Barrier
 
       Put the barrier into a broken state.  This causes any active or future
       calls to :meth:`wait` to fail with the :class:`BrokenBarrierError`.
-      Use this for example if one of the taks needs to abort, to avoid infinite
+      Use this for example if one of the tasks needs to abort, to avoid infinite
       waiting tasks.
 
    .. attribute:: parties

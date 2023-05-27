@@ -1,2 +1,0 @@
-Speed up :func:`isinstance` and :func:`issubclass` checks for :class:`types.UnionType`.
-Patch by Yurii Karabas.

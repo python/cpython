@@ -1,1 +1,0 @@
-Fix :class:`concurrent.futures.ProcessPoolExecutor` exception memory leak

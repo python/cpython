@@ -28,7 +28,7 @@ import functools
 
 from test import support
 from unittest.mock import patch
-from test.test_sqlite3.test_dbapi import memory_database, managed_connect, cx_limit
+from test.test_sqlite3.test_dbapi import memory_database, cx_limit
 
 
 class RegressionTests(unittest.TestCase):
@@ -129,7 +129,8 @@ class RegressionTests(unittest.TestCase):
         con = sqlite.connect(":memory:",detect_types=sqlite.PARSE_DECLTYPES)
         cur = con.cursor()
         cur.execute("create table foo(bar timestamp)")
-        cur.execute("insert into foo(bar) values (?)", (datetime.datetime.now(),))
+        with self.assertWarnsRegex(DeprecationWarning, "adapter"):
+            cur.execute("insert into foo(bar) values (?)", (datetime.datetime.now(),))
         cur.execute(SELECT)
         cur.execute("drop table foo")
         cur.execute("create table foo(bar integer)")
@@ -305,7 +306,8 @@ class RegressionTests(unittest.TestCase):
         cur.execute("INSERT INTO t (x) VALUES ('2012-04-04 15:06:00.123456789')")
 
         cur.execute("SELECT * FROM t")
-        values = [x[0] for x in cur.fetchall()]
+        with self.assertWarnsRegex(DeprecationWarning, "converter"):
+            values = [x[0] for x in cur.fetchall()]
 
         self.assertEqual(values, [
             datetime.datetime(2012, 4, 4, 15, 6, 0, 456000),
@@ -422,7 +424,7 @@ class RegressionTests(unittest.TestCase):
         self.assertEqual(val, b'')
 
     def test_table_lock_cursor_replace_stmt(self):
-        with managed_connect(":memory:", in_mem=True) as con:
+        with memory_database() as con:
             cur = con.cursor()
             cur.execute("create table t(t)")
             cur.executemany("insert into t values(?)",
@@ -433,7 +435,7 @@ class RegressionTests(unittest.TestCase):
             con.commit()
 
     def test_table_lock_cursor_dealloc(self):
-        with managed_connect(":memory:", in_mem=True) as con:
+        with memory_database() as con:
             con.execute("create table t(t)")
             con.executemany("insert into t values(?)",
                             ((v,) for v in range(5)))
@@ -444,7 +446,7 @@ class RegressionTests(unittest.TestCase):
             con.commit()
 
     def test_table_lock_cursor_non_readonly_select(self):
-        with managed_connect(":memory:", in_mem=True) as con:
+        with memory_database() as con:
             con.execute("create table t(t)")
             con.executemany("insert into t values(?)",
                             ((v,) for v in range(5)))
@@ -459,7 +461,7 @@ class RegressionTests(unittest.TestCase):
             con.commit()
 
     def test_executescript_step_through_select(self):
-        with managed_connect(":memory:", in_mem=True) as con:
+        with memory_database() as con:
             values = [(v,) for v in range(5)]
             with con:
                 con.execute("create table t(t)")
@@ -489,21 +491,21 @@ class RecursiveUseOfCursors(unittest.TestCase):
     def test_recursive_cursor_init(self):
         conv = lambda x: self.cur.__init__(self.con)
         with patch.dict(sqlite.converters, {"INIT": conv}):
-            self.cur.execute(f'select x as "x [INIT]", x from test')
+            self.cur.execute('select x as "x [INIT]", x from test')
             self.assertRaisesRegex(sqlite.ProgrammingError, self.msg,
                                    self.cur.fetchall)
 
     def test_recursive_cursor_close(self):
         conv = lambda x: self.cur.close()
         with patch.dict(sqlite.converters, {"CLOSE": conv}):
-            self.cur.execute(f'select x as "x [CLOSE]", x from test')
+            self.cur.execute('select x as "x [CLOSE]", x from test')
             self.assertRaisesRegex(sqlite.ProgrammingError, self.msg,
                                    self.cur.fetchall)
 
     def test_recursive_cursor_iter(self):
         conv = lambda x, l=[]: self.cur.fetchone() if l else l.append(None)
         with patch.dict(sqlite.converters, {"ITER": conv}):
-            self.cur.execute(f'select x as "x [ITER]", x from test')
+            self.cur.execute('select x as "x [ITER]", x from test')
             self.assertRaisesRegex(sqlite.ProgrammingError, self.msg,
                                    self.cur.fetchall)
 

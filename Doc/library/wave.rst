@@ -12,7 +12,12 @@
 --------------
 
 The :mod:`wave` module provides a convenient interface to the WAV sound format.
-It does not support compression/decompression, but it does support mono/stereo.
+Only PCM encoded wave files are supported.
+
+.. versionchanged:: 3.12
+
+   Support for ``WAVE_FORMAT_EXTENSIBLE`` headers was added, provided that the
+   extended format is ``KSDATAFORMAT_SUBTYPE_PCM``.
 
 The :mod:`wave` module defines the following function and exception:
 
@@ -114,7 +119,7 @@ Wave_read objects, as returned by :func:`.open`, have the following methods:
 
    Rewind the file pointer to the beginning of the audio stream.
 
-The following two methods are defined for compatibility with the :mod:`aifc`
+The following two methods are defined for compatibility with the old :mod:`!aifc`
 module, and don't do anything interesting.
 
 

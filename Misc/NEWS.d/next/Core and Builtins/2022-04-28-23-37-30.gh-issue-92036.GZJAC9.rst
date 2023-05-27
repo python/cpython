@@ -1,5 +1,0 @@
-Fix a crash in subinterpreters related to the garbage collector. When a
-subinterpreter is deleted, untrack all objects tracked by its GC. To prevent a
-crash in deallocator functions expecting objects to be tracked by the GC, leak
-a strong reference to these objects on purpose, so they are never deleted and
-their deallocator functions are not called. Patch by Victor Stinner.

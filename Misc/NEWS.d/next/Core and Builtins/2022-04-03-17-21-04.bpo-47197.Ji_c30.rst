@@ -1,5 +1,0 @@
-ctypes used to mishandle ``void`` return types, so that for instance a
-function declared like ``ctypes.CFUNCTYPE(None, ctypes.c_int)`` would be
-called with signature ``int f(int)`` instead of ``void f(int)``. Wasm
-targets require function pointers to be called with the correct signatures
-so this led to crashes. The problem is now fixed.

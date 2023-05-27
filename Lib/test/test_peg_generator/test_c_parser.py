@@ -1,3 +1,5 @@
+import contextlib
+import subprocess
 import sysconfig
 import textwrap
 import unittest
@@ -8,7 +10,7 @@ from pathlib import Path
 
 from test import test_tools
 from test import support
-from test.support import os_helper
+from test.support import os_helper, import_helper
 from test.support.script_helper import assert_python_ok
 
 _py_cflags_nodist = sysconfig.get_config_var("PY_CFLAGS_NODIST")
@@ -24,7 +26,6 @@ with test_tools.imports_under_tool("peg_generator"):
         generate_parser_c_extension,
         generate_c_parser_source,
     )
-    from pegen.ast_dump import ast_dump
 
 
 TEST_TEMPLATE = """
@@ -75,7 +76,7 @@ class TestCParser(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        # When running under regtest, a seperate tempdir is used
+        # When running under regtest, a separate tempdir is used
         # as the current directory and watched for left-overs.
         # Reusing that as the base for temporary directories
         # ensures everything is cleaned up properly and
@@ -89,6 +90,16 @@ class TestCParser(unittest.TestCase):
         cls.library_dir = tempfile.mkdtemp(dir=cls.tmp_base)
         cls.addClassCleanup(shutil.rmtree, cls.library_dir)
 
+        with contextlib.ExitStack() as stack:
+            python_exe = stack.enter_context(support.setup_venv_with_pip_setuptools_wheel("venv"))
+            sitepackages = subprocess.check_output(
+                [python_exe, "-c", "import sysconfig; print(sysconfig.get_path('platlib'))"],
+                text=True,
+            ).strip()
+            stack.enter_context(import_helper.DirsOnSysPath(sitepackages))
+            cls.addClassCleanup(stack.pop_all().close)
+
+    @support.requires_venv_with_pip()
     def setUp(self):
         self._backup_config_vars = dict(sysconfig._CONFIG_VARS)
         cmd = support.missing_compiler_executable()
@@ -96,9 +107,7 @@ class TestCParser(unittest.TestCase):
             self.skipTest("The %r command is not found" % cmd)
         self.old_cwd = os.getcwd()
         self.tmp_path = tempfile.mkdtemp(dir=self.tmp_base)
-        change_cwd = os_helper.change_cwd(self.tmp_path)
-        change_cwd.__enter__()
-        self.addCleanup(change_cwd.__exit__, None, None, None)
+        self.enterContext(os_helper.change_cwd(self.tmp_path))
 
     def tearDown(self):
         os.chdir(self.old_cwd)

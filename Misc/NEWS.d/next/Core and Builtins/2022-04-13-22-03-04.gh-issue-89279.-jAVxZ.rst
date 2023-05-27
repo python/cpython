@@ -1,1 +1,0 @@
-Improve interpreter performance on Windows by inlining a few specific macros.

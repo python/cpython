@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(_imp_lock_held__doc__,
 "lock_held($module, /)\n"
 "--\n"
@@ -193,8 +199,31 @@ static PyObject *
 _imp_find_frozen(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(withdata), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"", "withdata", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "find_frozen", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "find_frozen",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *name;
@@ -413,6 +442,37 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_imp__override_multi_interp_extensions_check__doc__,
+"_override_multi_interp_extensions_check($module, override, /)\n"
+"--\n"
+"\n"
+"(internal-only) Override PyInterpreterConfig.check_multi_interp_extensions.\n"
+"\n"
+"(-1: \"never\", 1: \"always\", 0: no override)");
+
+#define _IMP__OVERRIDE_MULTI_INTERP_EXTENSIONS_CHECK_METHODDEF    \
+    {"_override_multi_interp_extensions_check", (PyCFunction)_imp__override_multi_interp_extensions_check, METH_O, _imp__override_multi_interp_extensions_check__doc__},
+
+static PyObject *
+_imp__override_multi_interp_extensions_check_impl(PyObject *module,
+                                                  int override);
+
+static PyObject *
+_imp__override_multi_interp_extensions_check(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int override;
+
+    override = _PyLong_AsInt(arg);
+    if (override == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _imp__override_multi_interp_extensions_check_impl(module, override);
+
+exit:
+    return return_value;
+}
+
 #if defined(HAVE_DYNAMIC_LOADING)
 
 PyDoc_STRVAR(_imp_create_dynamic__doc__,
@@ -526,8 +586,31 @@ static PyObject *
 _imp_source_hash(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(key), &_Py_ID(source), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"key", "source", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "source_hash", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "source_hash",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     long key;
     Py_buffer source = {NULL, NULL};
@@ -565,4 +648,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=8d0f4305b1d0714b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b18d46e0036eff49 input=a9049054013a1b77]*/

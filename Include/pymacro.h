@@ -3,10 +3,23 @@
 
 // gh-91782: On FreeBSD 12, if the _POSIX_C_SOURCE and _XOPEN_SOURCE macros are
 // defined, <sys/cdefs.h> disables C11 support and <assert.h> does not define
-// the static_assert() macro. Define the static_assert() macro in Python until
-// <sys/cdefs.h> suports C11:
+// the static_assert() macro.
 // https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=255290
-#if defined(__FreeBSD__) && !defined(static_assert)
+//
+// macOS <= 10.10 doesn't define static_assert in assert.h at all despite
+// having C11 compiler support.
+//
+// static_assert is defined in glibc from version 2.16. Compiler support for
+// the C11 _Static_assert keyword is in gcc >= 4.6.
+//
+// MSVC makes static_assert a keyword in C11-17, contrary to the standards.
+//
+// In C++11 and C2x, static_assert is a keyword, redefining is undefined
+// behaviour. So only define if building as C (if __STDC_VERSION__ is defined),
+// not C++, and only for C11-17.
+#if !defined(static_assert) && (defined(__GNUC__) || defined(__clang__)) \
+     && defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L \
+     && __STDC_VERSION__ <= 201710L
 #  define static_assert _Static_assert
 #endif
 
@@ -141,5 +154,10 @@
 // Prevent using an expression as a l-value.
 // For example, "int x; _Py_RVALUE(x) = 1;" fails with a compiler error.
 #define _Py_RVALUE(EXPR) ((void)0, (EXPR))
+
+// Return non-zero if the type is signed, return zero if it's unsigned.
+// Use "<= 0" rather than "< 0" to prevent the compiler warning:
+// "comparison of unsigned expression in '< 0' is always false".
+#define _Py_IS_TYPE_SIGNED(type) ((type)(-1) <= 0)
 
 #endif /* Py_PYMACRO_H */

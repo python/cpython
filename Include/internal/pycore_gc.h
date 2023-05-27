@@ -19,17 +19,29 @@ typedef struct {
     uintptr_t _gc_prev;
 } PyGC_Head;
 
-#define _Py_AS_GC(o) ((PyGC_Head *)(o)-1)
+static inline PyGC_Head* _Py_AS_GC(PyObject *op) {
+    return (_Py_CAST(PyGC_Head*, op) - 1);
+}
 #define _PyGC_Head_UNUSED PyGC_Head
 
 /* True if the object is currently tracked by the GC. */
-#define _PyObject_GC_IS_TRACKED(o) (_Py_AS_GC(o)->_gc_next != 0)
+static inline int _PyObject_GC_IS_TRACKED(PyObject *op) {
+    PyGC_Head *gc = _Py_AS_GC(op);
+    return (gc->_gc_next != 0);
+}
+#define _PyObject_GC_IS_TRACKED(op) _PyObject_GC_IS_TRACKED(_Py_CAST(PyObject*, op))
 
 /* True if the object may be tracked by the GC in the future, or already is.
    This can be useful to implement some optimizations. */
-#define _PyObject_GC_MAY_BE_TRACKED(obj) \
-    (PyObject_IS_GC(obj) && \
-        (!PyTuple_CheckExact(obj) || _PyObject_GC_IS_TRACKED(obj)))
+static inline int _PyObject_GC_MAY_BE_TRACKED(PyObject *obj) {
+    if (!PyObject_IS_GC(obj)) {
+        return 0;
+    }
+    if (PyTuple_CheckExact(obj)) {
+        return _PyObject_GC_IS_TRACKED(obj);
+    }
+    return 1;
+}
 
 
 /* Bit flags for _gc_prev */
@@ -43,26 +55,40 @@ typedef struct {
 
 // Lowest bit of _gc_next is used for flags only in GC.
 // But it is always 0 for normal code.
-#define _PyGCHead_NEXT(g)        ((PyGC_Head*)(g)->_gc_next)
-#define _PyGCHead_SET_NEXT(g, p) _Py_RVALUE((g)->_gc_next = (uintptr_t)(p))
+static inline PyGC_Head* _PyGCHead_NEXT(PyGC_Head *gc) {
+    uintptr_t next = gc->_gc_next;
+    return _Py_CAST(PyGC_Head*, next);
+}
+static inline void _PyGCHead_SET_NEXT(PyGC_Head *gc, PyGC_Head *next) {
+    gc->_gc_next = _Py_CAST(uintptr_t, next);
+}
 
 // Lowest two bits of _gc_prev is used for _PyGC_PREV_MASK_* flags.
-#define _PyGCHead_PREV(g) ((PyGC_Head*)((g)->_gc_prev & _PyGC_PREV_MASK))
-#define _PyGCHead_SET_PREV(g, p) do { \
-    assert(((uintptr_t)p & ~_PyGC_PREV_MASK) == 0); \
-    (g)->_gc_prev = ((g)->_gc_prev & ~_PyGC_PREV_MASK) \
-        | ((uintptr_t)(p)); \
-    } while (0)
+static inline PyGC_Head* _PyGCHead_PREV(PyGC_Head *gc) {
+    uintptr_t prev = (gc->_gc_prev & _PyGC_PREV_MASK);
+    return _Py_CAST(PyGC_Head*, prev);
+}
+static inline void _PyGCHead_SET_PREV(PyGC_Head *gc, PyGC_Head *prev) {
+    uintptr_t uprev = _Py_CAST(uintptr_t, prev);
+    assert((uprev & ~_PyGC_PREV_MASK) == 0);
+    gc->_gc_prev = ((gc->_gc_prev & ~_PyGC_PREV_MASK) | uprev);
+}
 
-#define _PyGCHead_FINALIZED(g) \
-    (((g)->_gc_prev & _PyGC_PREV_MASK_FINALIZED) != 0)
-#define _PyGCHead_SET_FINALIZED(g) \
-    _Py_RVALUE((g)->_gc_prev |= _PyGC_PREV_MASK_FINALIZED)
+static inline int _PyGCHead_FINALIZED(PyGC_Head *gc) {
+    return ((gc->_gc_prev & _PyGC_PREV_MASK_FINALIZED) != 0);
+}
+static inline void _PyGCHead_SET_FINALIZED(PyGC_Head *gc) {
+    gc->_gc_prev |= _PyGC_PREV_MASK_FINALIZED;
+}
 
-#define _PyGC_FINALIZED(o) \
-    _PyGCHead_FINALIZED(_Py_AS_GC(o))
-#define _PyGC_SET_FINALIZED(o) \
-    _PyGCHead_SET_FINALIZED(_Py_AS_GC(o))
+static inline int _PyGC_FINALIZED(PyObject *op) {
+    PyGC_Head *gc = _Py_AS_GC(op);
+    return _PyGCHead_FINALIZED(gc);
+}
+static inline void _PyGC_SET_FINALIZED(PyObject *op) {
+    PyGC_Head *gc = _Py_AS_GC(op);
+    _PyGCHead_SET_FINALIZED(gc);
+}
 
 
 /* GC runtime state */
@@ -176,6 +202,8 @@ extern void _PyList_ClearFreeList(PyInterpreterState *interp);
 extern void _PyDict_ClearFreeList(PyInterpreterState *interp);
 extern void _PyAsyncGen_ClearFreeLists(PyInterpreterState *interp);
 extern void _PyContext_ClearFreeList(PyInterpreterState *interp);
+extern void _Py_ScheduleGC(PyInterpreterState *interp);
+extern void _Py_RunGC(PyThreadState *tstate);
 
 #ifdef __cplusplus
 }

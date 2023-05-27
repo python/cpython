@@ -10,8 +10,17 @@ extern "C" {
 
 struct _mod;   // Type defined in pycore_ast.h
 
-typedef enum _block_type { FunctionBlock, ClassBlock, ModuleBlock, AnnotationBlock }
-    _Py_block_ty;
+typedef enum _block_type {
+    FunctionBlock, ClassBlock, ModuleBlock,
+    // Used for annotations if 'from __future__ import annotations' is active.
+    // Annotation blocks cannot bind names and are not evaluated.
+    AnnotationBlock,
+    // Used for generics and type aliases. These work mostly like functions
+    // (see PEP 695 for details). The three different blocks function identically;
+    // they are different enum entries only so that error messages can be more
+    // precise.
+    TypeVarBoundBlock, TypeAliasBlock, TypeParamBlock
+} _Py_block_ty;
 
 typedef enum _comprehension_type {
     NoComprehension = 0,
@@ -49,7 +58,7 @@ typedef struct _symtable_entry {
     PyObject *ste_varnames;  /* list of function parameters */
     PyObject *ste_children;  /* list of child blocks */
     PyObject *ste_directives;/* locations of global and nonlocal statements */
-    _Py_block_ty ste_type;   /* module, class or function */
+    _Py_block_ty ste_type;
     int ste_nested;      /* true if block is nested */
     unsigned ste_free : 1;        /* true if block has free variables */
     unsigned ste_child_free : 1;  /* true if a child block has free vars,
@@ -64,7 +73,12 @@ typedef struct _symtable_entry {
     unsigned ste_needs_class_closure : 1; /* for class scopes, true if a
                                              closure over __class__
                                              should be created */
+    unsigned ste_needs_classdict : 1; /* for class scopes, true if a closure
+                                         over the class dict should be created */
+    unsigned ste_comp_inlined : 1; /* true if this comprehension is inlined */
     unsigned ste_comp_iter_target : 1; /* true if visiting comprehension target */
+    unsigned ste_can_see_class_scope : 1; /* true if this block can see names bound in an
+                                             enclosing class scope */
     int ste_comp_iter_expr; /* non-zero if visiting a comprehension range expression */
     int ste_lineno;          /* first line of block */
     int ste_col_offset;      /* offset of first line of block */
@@ -77,10 +91,11 @@ typedef struct _symtable_entry {
 
 extern PyTypeObject PySTEntry_Type;
 
-#define PySTEntry_Check(op) Py_IS_TYPE(op, &PySTEntry_Type)
+#define PySTEntry_Check(op) Py_IS_TYPE((op), &PySTEntry_Type)
 
 extern long _PyST_GetSymbol(PySTEntryObject *, PyObject *);
 extern int _PyST_GetScope(PySTEntryObject *, PyObject *);
+extern int _PyST_IsFunctionLike(PySTEntryObject *);
 
 extern struct symtable* _PySymtable_Build(
     struct _mod *mod,
@@ -89,6 +104,8 @@ extern struct symtable* _PySymtable_Build(
 PyAPI_FUNC(PySTEntryObject *) PySymtable_Lookup(struct symtable *, void *);
 
 extern void _PySymtable_Free(struct symtable *);
+
+extern PyObject* _Py_Mangle(PyObject *p, PyObject *name);
 
 /* Flags for def-use information */
 
@@ -102,14 +119,16 @@ extern void _PySymtable_Free(struct symtable *);
 #define DEF_IMPORT 2<<6        /* assignment occurred via import */
 #define DEF_ANNOT 2<<7         /* this name is annotated */
 #define DEF_COMP_ITER 2<<8     /* this name is a comprehension iteration variable */
+#define DEF_TYPE_PARAM 2<<9    /* this name is a type parameter */
+#define DEF_COMP_CELL 2<<10    /* this name is a cell in an inlined comprehension */
 
 #define DEF_BOUND (DEF_LOCAL | DEF_PARAM | DEF_IMPORT)
 
 /* GLOBAL_EXPLICIT and GLOBAL_IMPLICIT are used internally by the symbol
    table.  GLOBAL is returned from PyST_GetScope() for either of them.
-   It is stored in ste_symbols at bits 12-15.
+   It is stored in ste_symbols at bits 13-16.
 */
-#define SCOPE_OFFSET 11
+#define SCOPE_OFFSET 12
 #define SCOPE_MASK (DEF_GLOBAL | DEF_LOCAL | DEF_PARAM | DEF_NONLOCAL)
 
 #define LOCAL 1
@@ -127,6 +146,11 @@ extern struct symtable* _Py_SymtableStringObjectFlags(
     PyObject *filename,
     int start,
     PyCompilerFlags *flags);
+
+int _PyFuture_FromAST(
+    struct _mod * mod,
+    PyObject *filename,
+    PyFutureFeatures* futures);
 
 #ifdef __cplusplus
 }

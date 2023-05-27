@@ -21,14 +21,15 @@ authentication, redirections, cookies and more.
     The `Requests package <https://requests.readthedocs.io/en/master/>`_
     is recommended for a higher-level HTTP client interface.
 
+.. include:: ../includes/wasm-notavail.rst
 
 The :mod:`urllib.request` module defines the following functions:
 
 
 .. function:: urlopen(url, data=None[, timeout], *, cafile=None, capath=None, cadefault=False, context=None)
 
-   Open the URL *url*, which can be either a string or a
-   :class:`Request` object.
+   Open *url*, which can be either a string containing a valid, properly
+   encoded URL, or a :class:`Request` object.
 
    *data* must be an object specifying additional data to be sent to the
    server, or ``None`` if no such data is needed.  See :class:`Request`
@@ -191,7 +192,7 @@ The following classes are provided:
 
    This class is an abstraction of a URL request.
 
-   *url* should be a string containing a valid URL.
+   *url* should be a string containing a valid, properly encoded URL.
 
    *data* must be an object specifying additional data to send to the
    server, or ``None`` if no such data is needed.  Currently HTTP
@@ -1279,7 +1280,7 @@ involved.  For example, the :envvar:`http_proxy` environment variable is read to
 obtain the HTTP proxy's URL.
 
 This example replaces the default :class:`ProxyHandler` with one that uses
-programmatically-supplied proxy URLs, and adds proxy authorization support with
+programmatically supplied proxy URLs, and adds proxy authorization support with
 :class:`ProxyBasicAuthHandler`. ::
 
    proxy_handler = urllib.request.ProxyHandler({'http': 'http://www.example.com:3128/'})
@@ -1629,7 +1630,7 @@ The typical response object is a :class:`urllib.response.addinfourl` instance:
       .. deprecated:: 3.9
          Deprecated in favor of :attr:`~addinfourl.status`.
 
-   .. method:: getstatus()
+   .. method:: getcode()
 
       .. deprecated:: 3.9
          Deprecated in favor of :attr:`~addinfourl.status`.

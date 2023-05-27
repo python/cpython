@@ -1,90 +1,88 @@
 # gh-91321: Build a basic C++ test extension to check that the Python C API is
 # compatible with C++ and does not emit C++ compiler warnings.
-import contextlib
-import os
+import os.path
+import shutil
 import sys
 import unittest
-import warnings
+import subprocess
+import sysconfig
 from test import support
 from test.support import os_helper
-
-with warnings.catch_warnings():
-    warnings.simplefilter('ignore', DeprecationWarning)
-    from distutils.core import setup, Extension
-    import distutils.sysconfig
 
 
 MS_WINDOWS = (sys.platform == 'win32')
 
 
-SOURCE = support.findfile('_testcppext.cpp')
-if not MS_WINDOWS:
-    # C++ compiler flags for GCC and clang
-    CPPFLAGS = [
-        # Python currently targets C++11
-        '-std=c++11',
-        # gh-91321: The purpose of _testcppext extension is to check that building
-        # a C++ extension using the Python C API does not emit C++ compiler
-        # warnings
-        '-Werror',
-        # Warn on old-style cast (C cast) like: (PyObject*)op
-        '-Wold-style-cast',
-        # Warn when using NULL rather than _Py_NULL in static inline functions
-        '-Wzero-as-null-pointer-constant',
-    ]
-else:
-    # Don't pass any compiler flag to MSVC
-    CPPFLAGS = []
+SETUP_TESTCPPEXT = support.findfile('setup_testcppext.py')
 
 
+@support.requires_subprocess()
 class TestCPPExt(unittest.TestCase):
-    def build(self):
-        cpp_ext = Extension(
-            '_testcppext',
-            sources=[SOURCE],
-            language='c++',
-            extra_compile_args=CPPFLAGS)
-        capture_stdout = (not support.verbose)
+    def test_build_cpp11(self):
+        self.check_build(False, '_testcpp11ext')
 
-        try:
-            try:
-                if capture_stdout:
-                    stdout = support.captured_stdout()
-                else:
-                    print()
-                    stdout = contextlib.nullcontext()
-                with (stdout,
-                      support.swap_attr(sys, 'argv', ['setup.py', 'build_ext', '--verbose'])):
-                    setup(name="_testcppext", ext_modules=[cpp_ext])
-                    return
-            except:
-                if capture_stdout:
-                    # Show output on error
-                    print()
-                    print(stdout.getvalue())
-                raise
-        except SystemExit:
-            self.fail("Build failed")
+    def test_build_cpp03(self):
+        self.check_build(True, '_testcpp03ext')
 
     # With MSVC, the linker fails with: cannot open file 'python311.lib'
     # https://github.com/python/cpython/pull/32175#issuecomment-1111175897
     @unittest.skipIf(MS_WINDOWS, 'test fails on Windows')
-    def test_build(self):
-        # save/restore os.environ
-        def restore_env(old_env):
-            os.environ.clear()
-            os.environ.update(old_env)
-        self.addCleanup(restore_env, dict(os.environ))
+    # Building and running an extension in clang sanitizing mode is not
+    # straightforward
+    @unittest.skipIf(
+        '-fsanitize' in (sysconfig.get_config_var('PY_CFLAGS') or ''),
+        'test does not work with analyzing builds')
+    # the test uses venv+pip: skip if it's not available
+    @support.requires_venv_with_pip()
+    def check_build(self, std_cpp03, extension_name):
+        venv_dir = 'env'
+        with support.setup_venv_with_pip_setuptools_wheel(venv_dir) as python_exe:
+            self._check_build(std_cpp03, extension_name, python_exe)
 
-        def restore_sysconfig_vars(old_config_vars):
-            distutils.sysconfig._config_vars.clear()
-            distutils.sysconfig._config_vars.update(old_config_vars)
-        self.addCleanup(restore_sysconfig_vars,
-                        dict(distutils.sysconfig._config_vars))
+    def _check_build(self, std_cpp03, extension_name, python_exe):
+        pkg_dir = 'pkg'
+        os.mkdir(pkg_dir)
+        shutil.copy(SETUP_TESTCPPEXT, os.path.join(pkg_dir, "setup.py"))
 
-        # Build in a temporary directory
-        with os_helper.temp_cwd():
-            self.build()
+        def run_cmd(operation, cmd):
+            env = os.environ.copy()
+            env['CPYTHON_TEST_CPP_STD'] = 'c++03' if std_cpp03 else 'c++11'
+            env['CPYTHON_TEST_EXT_NAME'] = extension_name
+            if support.verbose:
+                print('Run:', ' '.join(cmd))
+                subprocess.run(cmd, check=True, env=env)
+            else:
+                proc = subprocess.run(cmd,
+                                      env=env,
+                                      stdout=subprocess.PIPE,
+                                      stderr=subprocess.STDOUT,
+                                      text=True)
+                if proc.returncode:
+                    print(proc.stdout, end='')
+                    self.fail(
+                        f"{operation} failed with exit code {proc.returncode}")
+
+        # Build and install the C++ extension
+        cmd = [python_exe, '-X', 'dev',
+               '-m', 'pip', 'install', '--no-build-isolation',
+               os.path.abspath(pkg_dir)]
+        run_cmd('Install', cmd)
+
+        # Do a reference run. Until we test that running python
+        # doesn't leak references (gh-94755), run it so one can manually check
+        # -X showrefcount results against this baseline.
+        cmd = [python_exe,
+               '-X', 'dev',
+               '-X', 'showrefcount',
+               '-c', 'pass']
+        run_cmd('Reference run', cmd)
+
+        # Import the C++ extension
+        cmd = [python_exe,
+               '-X', 'dev',
+               '-X', 'showrefcount',
+               '-c', f"import {extension_name}"]
+        run_cmd('Import', cmd)
 
 
 if __name__ == "__main__":
