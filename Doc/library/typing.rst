@@ -430,8 +430,7 @@ to this is that a list of types can be used to substitute a :class:`ParamSpec`::
    >>> Z[int, [dict, float]]
    __main__.Z[int, (<class 'dict'>, <class 'float'>)]
 
-Another difference between :class:`TypeVar` and :class:`ParamSpec` is that a
-generic with only one parameter specification variable will accept
+Furthermore, a generic with only one parameter specification variable will accept
 parameter lists in the forms ``X[[Type1, Type2, ...]]`` and also
 ``X[Type1, Type2, ...]`` for aesthetic reasons.  Internally, the latter is converted
 to the former, so the following are equivalent::
@@ -1364,11 +1363,11 @@ for creating generic types.
 
    .. attribute:: __covariant__
 
-      Whether the type var has been explicitly marked as covariant.
+      Whether the type var has been marked as covariant.
 
    .. attribute:: __contravariant__
 
-      Whether the type var has been explicitly marked as contravariant.
+      Whether the type var has been marked as contravariant.
 
    .. attribute:: __bound__
 
@@ -1431,6 +1430,7 @@ for creating generic types.
    Type variable tuples can be used in the same contexts as normal type
    variables. For example, in class definitions, arguments, and return types::
 
+      Shape = TypeVarTuple("Shape")
       class Array(Generic[*Shape]):
           def __getitem__(self, key: tuple[*Shape]) -> float: ...
           def __abs__(self) -> "Array[*Shape]": ...
@@ -1452,7 +1452,7 @@ for creating generic types.
    However, note that at most one type variable tuple may appear in a single
    list of type arguments or type parameters::
 
-      x: tuple[*Ts, *Ts]            # Not valid
+      x: tuple[*Ts, *Ts]                     # Not valid
       class Array(Generic[*Shape, *Shape]):  # Not valid
           pass
 
