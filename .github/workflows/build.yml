@@ -37,6 +37,7 @@ jobs:
     outputs:
       run_tests: ${{ steps.check.outputs.run_tests }}
       run_ssl_tests: ${{ steps.check.outputs.run_ssl_tests }}
+      config_hash: ${{ steps.config_hash.outputs.hash }}
     steps:
       - uses: actions/checkout@v3
       - name: Check for source changes
@@ -63,6 +64,10 @@ jobs:
             git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qvE '(\.rst$|^Doc|^Misc)' && echo "run_tests=true" >> $GITHUB_OUTPUT || true
             git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qE '(ssl|hashlib|hmac|^.github)' && echo "run_ssl_tests=true" >> $GITHUB_OUTPUT || true
           fi
+      - name: Compute hash for config cache key
+        id: config_hash
+        run: |
+          echo "hash=${{ hashFiles('configure', 'configure.ac', '.github/workflows/build.yml') }}" >> $GITHUB_OUTPUT
 
   check_abi:
     name: 'Check if the ABI has changed'
@@ -106,7 +111,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: config.cache
-          key: ${{ github.job }}-${{ runner.os }}-${{ hashFiles('configure', 'configure.ac', '.github/workflows/build.yml') }}
+          key: ${{ github.job }}-${{ runner.os }}-${{ needs.check_source.outputs.config_hash }}
       - uses: actions/setup-python@v3
       - name: Install Dependencies
         run: sudo ./.github/workflows/posix-deps-apt.sh
@@ -205,7 +210,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: config.cache
-        key: ${{ github.job }}-${{ runner.os }}-${{ hashFiles('configure', 'configure.ac', '.github/workflows/build.yml') }}
+        key: ${{ github.job }}-${{ runner.os }}-${{ needs.check_source.outputs.config_hash }}
     - name: Install Homebrew dependencies
       run: brew install pkg-config openssl@1.1 xz gdbm tcl-tk
     - name: Configure CPython
@@ -271,7 +276,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ${{ env.CPYTHON_BUILDDIR }}/config.cache
-        key: ${{ github.job }}-${{ runner.os }}-${{ hashFiles('configure', 'configure.ac', '.github/workflows/build.yml') }}
+        key: ${{ github.job }}-${{ runner.os }}-${{ needs.check_source.outputs.config_hash }}
     - name: Configure CPython out-of-tree
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: |
@@ -313,7 +318,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: config.cache
-        key: ${{ github.job }}-${{ runner.os }}-${{ hashFiles('configure', 'configure.ac', '.github/workflows/build.yml') }}
+        key: ${{ github.job }}-${{ runner.os }}-${{ needs.check_source.outputs.config_hash }}
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install Dependencies
@@ -362,7 +367,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: config.cache
-        key: ${{ github.job }}-${{ runner.os }}-${{ hashFiles('configure', 'configure.ac', '.github/workflows/build.yml') }}
+        key: ${{ github.job }}-${{ runner.os }}-${{ needs.check_source.outputs.config_hash }}
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install Dependencies
