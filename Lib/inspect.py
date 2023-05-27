@@ -1242,6 +1242,9 @@ def getblock(lines):
             blockfinder.tokeneater(*_token)
     except (EndOfBlock, IndentationError):
         pass
+    except SyntaxError as e:
+        if "unmatched ')" not in e.msg:
+            raise e from None
     return lines[:blockfinder.last]
 
 def getsourcelines(object):

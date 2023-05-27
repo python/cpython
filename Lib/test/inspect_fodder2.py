@@ -273,3 +273,11 @@ def deco_factory(**kwargs):
 @deco_factory(foo=(1 + 2), bar=lambda: 1)
 def complex_decorated(foo=0, bar=lambda: 0):
     return foo + bar()
+
+# line 276
+parenthesized_lambda = (
+    lambda: ())
+
+# line 281
+post_line_parenthesized_lambda = (lambda: ()
+)
