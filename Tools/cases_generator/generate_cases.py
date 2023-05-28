@@ -13,8 +13,6 @@ import re
 import sys
 import typing
 
-from enum import Enum, auto
-
 import lexer as lx
 import parser
 from parser import StackEffect
@@ -495,156 +493,154 @@ class Instruction:
     def write_typeprop(self, out: Formatter) -> None:
         """Write one instruction's type propagation rules"""
 
-        # TODO: Add SWAP to DSL
+        # TODO: Detech TYPE_SWAP case
 
-        need_to_declare = []
-        # Stack input is used in local effect
-        if self.local_effects and \
-            isinstance(val := self.local_effects.value, TypeSrcStackInput):
-            need_to_declare.append(val.name)
-        # Stack input is used in output effect
-        for oeffect in self.output_effects:
-            if not (typ := oeffect.type_annotation): continue
-            ops = typ.ops
-            for op in ops:
-                if not isinstance(src := op.src, TypeSrcStackInput): continue
-                if oeffect.name in self.unmoved_names and oeffect.name == src.name:
-                    print(
-                        f"Warn: {self.name} type annotation for {oeffect.name} will be ignored "
-                        "as it is unmoved")
-                    continue
-                need_to_declare.append(src.name)
+        nullnode = "(_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT"
+        type_overwrite = "TYPE_OVERWRITE"
+        null = "NULL"
+        true_str = "true"
+        false_str = "false"
+        typenode_ptr = "_Py_TYPENODE_t *"
+        literal_root_format = "(_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT((_Py_TYPENODE_t)&%s)"
+        typestackpeek_format = "TYPESTACK_PEEK(%s)"
+        typelocalsget_format = "TYPELOCALS_GET(%s)"
+        typeconstsget_format = "(_Py_TYPENODE_t *)TYPECONST_GET(%s)"
 
-        # Write input stack effect variable declarations and initializations
+        # Write type operations in reverse
         ieffects = list(reversed(self.input_effects))
-        usable_for_local_effect = {}
-        all_input_effect_names = {}
-        for i, ieffect in enumerate(ieffects):
+        oeffects = list(reversed(self.output_effects))
 
-            if ieffect.name not in need_to_declare: continue
+        # Get all input variables we need to declare
+        need_to_declare = []
+        # Save what to output
+        to_emit_before = []
+        to_emit_after = []
 
-            isize = string_effect_size(
-                list_effect_size([ieff for ieff in ieffects[: i + 1]])
-            )
-            all_input_effect_names[ieffect.name] = (ieffect, i)
-            dst = StackEffect(ieffect.name, "_Py_TYPENODE_t *")
-            if ieffect.size:
-                # TODO: Support more cases as needed
-                raise Exception("Type propagation across sized input effect not implemented")
-            elif ieffect.cond:
-                src = StackEffect(f"({ieffect.cond}) ? TYPESTACK_PEEK({isize}) : NULL", "_Py_TYPENODE_t *")
-            else:
-                usable_for_local_effect[ieffect.name] = ieffect
-                src = StackEffect(f"TYPESTACK_PEEK({isize})", "_Py_TYPENODE_t *")
-            out.declare(dst, src)
-
-        # Write localarr effect
+        # Local effect
         if self.local_effects:
 
             idx = self.local_effects.index
             val = self.local_effects.value
 
-            typ_op = "TYPE_OVERWRITE"
-            dst = f"TYPELOCALS_GET({idx})"
+            dst = typelocalsget_format%idx
             match val:
-                case TypeSrcLiteral(name=valstr):
-                    if valstr == "NULL":
-                        src = "(_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT"
-                        flag = "true"
+                # Literal localeffect
+                case TypeSrcLiteral(literal=valstr):
+                    if valstr == null:
+                        src = null
+                        flag = true_str
                     else:
-                        src = f"(_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT((_Py_TYPENODE_t)&{valstr})"
-                        flag = "true"
-                case TypeSrcStackInput(name=valstr):
-                    assert valstr in usable_for_local_effect, \
-                        "`cond` and `size` stackvar not supported for localeffect"
-                    src = valstr
-                    flag = "false"
-                # TODO: Support more cases as needed
-                case TypeSrcConst():
-                    raise Exception("Not implemented")
-                case TypeSrcLocals():
-                    raise Exception("Not implemented")
+                        src = literal_root_format%valstr
+                        flag = true_str
+                # Input localeffect
+                case TypeSrcStackInput(name=src):
+                    need_to_declare.append(src)
+                    flag = false_str
                 case _:
                     typing.assert_never(val)
-            out.emit(f"{typ_op}({src}, {dst}, {flag});")
+            to_emit_before.append(f"{type_overwrite}({src}, {dst}, {flag});")
 
-        # Update stack size
-        out.stack_adjust(
-            0,
-            [ieff for ieff in self.input_effects],
-            [oeff for oeff in self.output_effects],
-        )
+        # Pad ieffects to be the same length as oeffects
+        padded_ieffects = ieffects[-len(oeffects):]
+        padded_ieffects = [None]*(len(oeffects) - len(padded_ieffects)) + padded_ieffects
 
         # Stack effect
-        oeffects = list(reversed(self.output_effects))
-        for i, oeffect in enumerate(oeffects):
-            osize = string_effect_size(
-                list_effect_size([oeff for oeff in oeffects[: i + 1]])
-            )
-            dst = f"TYPESTACK_PEEK({osize})"
+        for i, (ieffect, oeffect) in enumerate(zip(padded_ieffects, oeffects)):
 
-            # Check if it's even used
+            # Unused var
             if oeffect.name == UNUSED: continue
+            
+            otype = oeffect.type_annotation
+            osize = string_effect_size(list_effect_size(oeffects[: i + 1]))
+            dst = typestackpeek_format%osize
 
-            # For now assume OVERWRITE with NULL
-            if oeffect.size:
-                op = "TYPE_OVERWRITE"
-                src = "(_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT"
-                flag = "true"
-                dst = f"TYPESTACK_PEEK({osize} - i)"
+            # Unmoved var
+            if (otype is None 
+                and (ieffect is not None)
+                and (oeffect.name == ieffect.name)): 
+                continue
+
+            # New sized stackvar: Typeoverwrite NULL
+            if otype is None and oeffect.size:
+                op = type_overwrite
+                src = nullnode
+                flag = true_str
+                dst = typestackpeek_format%(f"{osize} - i")
                 opstr = "".join([
                     f"for (int i = 0; i < ({oeffect.size}); i++) {{"
                     f"{op}({src}, {dst}, {flag});"
                     f"}}"
                 ])
-                out.emit(opstr)
+                to_emit_after.append(opstr)
                 continue
 
-            # Check if there's type info
-            if typ := oeffect.type_annotation:
-                for op in typ.ops:
-                    match op.src:
-                        case TypeSrcLiteral(literal=valstr):
-                            if valstr == "NULL":
-                                src = "(_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT"
-                                flag = "true"
-                            else:
-                                src = f"(_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT((_Py_TYPENODE_t)&{valstr})"
-                                flag = "true"
-                        case TypeSrcStackInput(name=valstr):
-                            assert valstr in need_to_declare
-                            assert oeffect.name not in self.unmoved_names
-                            src = valstr
-                            flag = "false"
-                        case TypeSrcConst(index=idx):
-                            src = f"(_Py_TYPENODE_t *)TYPECONST_GET({idx})"
-                            flag = "true"
-                        case TypeSrcLocals(index=idx):
-                            src = f"TYPELOCALS_GET({idx})"
-                            flag = "false"
-                        case _:
-                            typing.assert_never(op.src)
+            assert not oeffect.size, f"Typed sized stackvar not supported!"
 
-                    opstr = f"{op.op}({src}, {dst}, {flag})"
-                    if oeffect.cond:
-                        out.emit(f"if ({oeffect.cond}) {{ {opstr}; }}")
-                    else:
-                        out.emit(f"{opstr};")
+            # New stackvar: Typeoverwrite NULL
+            if otype is None:
+                typ_op = type_overwrite
+                src = nullnode
+                flag = true_str
+                opstr = f"{typ_op}({src}, {dst}, {flag})"
+                if oeffect.cond:
+                    to_emit_after.append(f"if ({oeffect.cond}) {{ {opstr}; }}")
+                else:
+                    to_emit_after.append(f"{opstr};")
                 continue
 
-            # Don't touch unmoved stack vars
-            if oeffect.name in self.unmoved_names:
-                continue
+            # Literal/Input/Locals/Consts Typeoverwrite/Typeset
+            for op in otype.ops:
+                match op.src:
+                    case TypeSrcLiteral(literal=valstr):
+                        if valstr == null:
+                            src = nullnode
+                            flag = true_str
+                        else:
+                            src = literal_root_format%valstr
+                            flag = true_str
+                    case TypeSrcStackInput(name=src):
+                        need_to_declare.append(src)
+                        flag = false_str
+                    case TypeSrcConst(index=idx):
+                        src = typeconstsget_format%idx
+                        flag = true_str
+                    case TypeSrcLocals(index=idx):
+                        src = typelocalsget_format%idx
+                        flag = false_str
+                    case _:
+                        typing.assert_never(op.src)
 
-            # Just output null
-            typ_op = "TYPE_OVERWRITE"
-            src = "(_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT"
-            flag = "true"
-            opstr = f"{typ_op}({src}, {dst}, {flag})"
-            if oeffect.cond:
-                out.emit(f"if ({oeffect.cond}) {{ {opstr}; }}")
+                opstr = f"{op.op}({src}, {dst}, {flag})"
+                if oeffect.cond:
+                    to_emit_after.append(f"if ({oeffect.cond}) {{ {opstr}; }}")
+                else:
+                    to_emit_after.append(f"{opstr};")
+
+        # Declare input variables
+        for i, ieffect in enumerate(ieffects):
+            if ieffect.name not in need_to_declare: continue
+
+            isize = string_effect_size(list_effect_size(ieffects[: i + 1]))
+            dst = StackEffect(ieffect.name, typenode_ptr)
+            if ieffect.size:
+                # TODO: Support more cases as needed
+                raise Exception("Type propagation across sized input effect not implemented")
+            elif ieffect.cond:
+                src = StackEffect(f"({ieffect.cond}) ? {typestackpeek_format%isize} : {null}", typenode_ptr)
             else:
-                out.emit(f"{opstr};")
+                src = StackEffect(typestackpeek_format%isize, typenode_ptr)
+            out.declare(dst, src)
+
+        # Emit localeffect
+        for x in to_emit_before: out.emit(x)
+
+        # Adjust stack size
+        out.stack_adjust(0, self.input_effects, self.output_effects)
+
+        # Emit stack output effect
+        for x in to_emit_after: out.emit(x)
+
+            
 
 
 InstructionOrCacheEffect = Instruction | parser.CacheEffect

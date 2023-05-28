@@ -279,6 +279,32 @@ __type_propagate_TYPE_SET(
     }
 #endif
 
+    if (!src_is_new) {
+        // Check if they are the same tree
+        _Py_TYPENODE_t *srcrootref = src;
+        _Py_TYPENODE_t *dstrootref = dst;
+        uintptr_t dsttag = _Py_TYPENODE_GET_TAG(*dst);
+        uintptr_t srctag = _Py_TYPENODE_GET_TAG(*src);
+        switch (dsttag) {
+        case TYPE_REF: dstrootref = __typenode_get_rootptr(*dst);
+        case TYPE_ROOT:
+            switch (srctag) {
+            case TYPE_REF: srcrootref = __typenode_get_rootptr(*src);
+            case TYPE_ROOT:
+                if (srcrootref == dstrootref) {
+                    // Same tree, no point swapping
+                    return;
+                }
+                break;
+            default:
+                Py_UNREACHABLE();
+            }
+            break;
+        default:
+            Py_UNREACHABLE();
+        }
+    }
+
     uintptr_t tag = _Py_TYPENODE_GET_TAG(*dst);
     switch (tag) {
     case TYPE_ROOT: {

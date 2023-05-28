@@ -131,7 +131,7 @@ class CacheEffect(Node):
 @dataclass
 class LocalEffect(Node):
     index: str
-    value: TypeSrc
+    value: TypeSrcLiteral | TypeSrcStackInput
 
 
 @dataclass
