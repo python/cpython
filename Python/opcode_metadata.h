@@ -37,6 +37,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1+1;
         case LOAD_CONST__LOAD_FAST:
             return 0+0;
+        case POP_TOP__STORE_FAST:
+            return 1+1;
         case POP_TOP:
             return 1;
         case PUSH_NULL:
@@ -433,6 +435,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0+0;
         case LOAD_CONST__LOAD_FAST:
             return 1+1;
+        case POP_TOP__STORE_FAST:
+            return 0+0;
         case POP_TOP:
             return 0;
         case PUSH_NULL:
@@ -795,7 +799,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
 }
 #endif
 
-enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC00, INSTR_FMT_IBC000, INSTR_FMT_IBC00000000, INSTR_FMT_IBIB, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC000 };
+enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC00, INSTR_FMT_IBC000, INSTR_FMT_IBC00000000, INSTR_FMT_IBIB, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC000, INSTR_FMT_IXIB };
 struct opcode_metadata {
     bool valid_entry;
     enum InstructionFormat instr_format;
@@ -819,6 +823,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [STORE_FAST__LOAD_FAST] = { true, INSTR_FMT_IBIB },
     [STORE_FAST__STORE_FAST] = { true, INSTR_FMT_IBIB },
     [LOAD_CONST__LOAD_FAST] = { true, INSTR_FMT_IBIB },
+    [POP_TOP__STORE_FAST] = { true, INSTR_FMT_IXIB },
     [POP_TOP] = { true, INSTR_FMT_IX },
     [PUSH_NULL] = { true, INSTR_FMT_IX },
     [END_FOR] = { true, INSTR_FMT_IB },

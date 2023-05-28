@@ -60,7 +60,8 @@ extern "C" {
          (opcode) == LOAD_FAST__LOAD_CONST || \
          (opcode) == LOAD_CONST__LOAD_FAST || \
          (opcode) == STORE_FAST__LOAD_FAST || \
-         (opcode) == STORE_FAST__STORE_FAST)
+         (opcode) == STORE_FAST__STORE_FAST) || \
+         (opcode) == POP_TOP__STORE_FAST
 
 
 #define LOG_BITS_PER_INT 5

@@ -435,6 +435,9 @@ _specializations = {
     "SEND": [
         "SEND_GEN",
     ],
+    "POP_TOP": [
+        "POP_TOP__STORE_FAST"
+    ]
 }
 _specialized_instructions = [
     opcode for family in _specializations.values() for opcode in family

@@ -298,6 +298,9 @@ _PyCode_Quicken(PyCodeObject *code)
             case STORE_FAST << 8 | STORE_FAST:
                 instructions[i - 1].op.code = STORE_FAST__STORE_FAST;
                 break;
+            case POP_TOP << 8 | STORE_FAST:
+                instructions[i - 1].op.code = POP_TOP__STORE_FAST;
+                break;
         }
     }
     #endif /* ENABLE_SPECIALIZATION */

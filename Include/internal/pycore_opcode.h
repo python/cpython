@@ -201,6 +201,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [POP_JUMP_IF_NOT_NONE] = POP_JUMP_IF_NOT_NONE,
     [POP_JUMP_IF_TRUE] = POP_JUMP_IF_TRUE,
     [POP_TOP] = POP_TOP,
+    [POP_TOP__STORE_FAST] = POP_TOP,
     [PUSH_EXC_INFO] = PUSH_EXC_INFO,
     [PUSH_NULL] = PUSH_NULL,
     [RAISE_VARARGS] = RAISE_VARARGS,
@@ -414,7 +415,7 @@ static const char *const _PyOpcode_OpName[267] = {
     [UNPACK_SEQUENCE_TUPLE] = "UNPACK_SEQUENCE_TUPLE",
     [UNPACK_SEQUENCE_TWO_TUPLE] = "UNPACK_SEQUENCE_TWO_TUPLE",
     [SEND_GEN] = "SEND_GEN",
-    [169] = "<169>",
+    [POP_TOP__STORE_FAST] = "POP_TOP__STORE_FAST",
     [170] = "<170>",
     [CALL] = "CALL",
     [KW_NAMES] = "KW_NAMES",
@@ -516,7 +517,6 @@ static const char *const _PyOpcode_OpName[267] = {
 #endif
 
 #define EXTRA_CASES \
-    case 169: \
     case 170: \
     case 177: \
     case 178: \

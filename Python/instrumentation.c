@@ -1493,6 +1493,7 @@ static const uint8_t super_instructions[256] = {
     [STORE_FAST__LOAD_FAST] = 1,
     [STORE_FAST__STORE_FAST] = 1,
     [LOAD_CONST__LOAD_FAST] = 1,
+    [POP_TOP__STORE_FAST] = 1,
 };
 
 /* Should use instruction metadata for this */
