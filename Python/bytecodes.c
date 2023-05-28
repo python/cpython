@@ -210,7 +210,7 @@ dummy_func(
             U_INST(BINARY_OP_MULTIPLY_INT_REST);
         }
 
-        u_inst(BINARY_OP_MULTIPLY_INT_REST, (left, right -- prod : PyLong_Type)) {
+        u_inst(BINARY_OP_MULTIPLY_INT_REST, (left, right -- prod : <<= *left)) {
             STAT_INC(BINARY_OP, hit);
             prod = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
@@ -235,7 +235,7 @@ dummy_func(
             U_INST(BINARY_OP_SUBTRACT_INT_REST);
         }
 
-        u_inst(BINARY_OP_SUBTRACT_INT_REST, (left, right -- sub : PyLong_Type)) {
+        u_inst(BINARY_OP_SUBTRACT_INT_REST, (left, right -- sub : <<= *left)) {
             STAT_INC(BINARY_OP, hit);
             sub = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
@@ -323,19 +323,19 @@ dummy_func(
             }
         }
 
-        inst(BINARY_OP_ADD_FLOAT_UNBOXED, (left, right -- sum : PyRawFloat_Type)) {
+        inst(BINARY_OP_ADD_FLOAT_UNBOXED, (left, right -- sum : <<= *left)) {
             STAT_INC(BINARY_OP, hit);
             double temp = *(double *)(&(left)) + *(double *)(&(right));
             sum = *(PyObject **)(&temp);
         }
 
-        inst(BINARY_OP_SUBTRACT_FLOAT_UNBOXED, (left, right -- sum : PyRawFloat_Type)) {
+        inst(BINARY_OP_SUBTRACT_FLOAT_UNBOXED, (left, right -- sum : <<= *left)) {
             STAT_INC(BINARY_OP, hit);
             double temp = *(double *)(&(left)) - *(double *)(&(right));
             sum = *(PyObject **)(&temp);
         }
 
-        inst(BINARY_OP_MULTIPLY_FLOAT_UNBOXED, (left, right -- prod : PyRawFloat_Type)) {
+        inst(BINARY_OP_MULTIPLY_FLOAT_UNBOXED, (left, right -- prod : <<= *left)) {
             STAT_INC(BINARY_OP, hit);
             double temp = *(double *)(&(left)) * *(double *)(&(right));
             prod = *(PyObject **)(&temp);
@@ -364,7 +364,7 @@ dummy_func(
             bb_test = BB_TEST(is_successor, 0);
         }
 
-        u_inst(BINARY_OP_ADD_INT_REST, (left, right -- sum : PyLong_Type)) {
+        u_inst(BINARY_OP_ADD_INT_REST, (left, right -- sum : <<= *left)) {
             STAT_INC(BINARY_OP, hit);
             sum = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
@@ -507,12 +507,12 @@ dummy_func(
             DISPATCH_INLINED(new_frame);
         }
 
-        inst(LIST_APPEND, (list, unused[oparg-1], v -- list : PyList_Type, unused[oparg-1])) {
+        inst(LIST_APPEND, (list, unused[oparg-1], v -- list : <<= PyList_Type, unused[oparg-1])) {
             ERROR_IF(_PyList_AppendTakeRef((PyListObject *)list, v) < 0, error);
             PREDICT(JUMP_BACKWARD);
         }
 
-        inst(SET_ADD, (set, unused[oparg-1], v -- set, unused[oparg-1])) {
+        inst(SET_ADD, (set, unused[oparg-1], v -- set : <<= PySet_Type, unused[oparg-1])) {
             int err = PySet_Add(set, v);
             DECREF_INPUTS();
             ERROR_IF(err, error);
@@ -3232,12 +3232,12 @@ dummy_func(
             ERROR_IF(result == NULL, error);
         }
 
-        inst(COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top: *bottom)) {
+        inst(COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top: <<= *bottom)) {
             assert(oparg > 0);
             top = Py_NewRef(bottom);
         }
 
-        inst(COPY_NO_INCREF, (bottom, unused[oparg - 1] -- bottom, unused[oparg - 1], top: *bottom)) {
+        inst(COPY_NO_INCREF, (bottom, unused[oparg - 1] -- bottom, unused[oparg - 1], top: <<= *bottom)) {
             assert(oparg > 0);
             top = bottom;
         }
