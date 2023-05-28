@@ -1595,6 +1595,9 @@ tok_decimal_tail(struct tok_state *tok)
 static inline int
 tok_continuation_line(struct tok_state *tok) {
     int c = tok_nextc(tok);
+    if (c == '\r') {
+        c = tok_nextc(tok);
+    }
     if (c != '\n') {
         tok->done = E_LINECONT;
         return -1;

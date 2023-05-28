@@ -101,6 +101,17 @@ class TokenizeTest(TestCase):
     DEDENT     ''            (5, 0) (5, 0)
             """)
 
+        self.check_tokenize("x = 1 + \\\r\n1\r\n", """\
+    NAME       'x'           (1, 0) (1, 1)
+    OP         '='           (1, 2) (1, 3)
+    NUMBER     '1'           (1, 4) (1, 5)
+    OP         '+'           (1, 6) (1, 7)
+    NUMBER     '1'           (2, 0) (2, 1)
+    NEWLINE    '\\r\\n'        (2, 1) (2, 3)
+            """)
+
+
+
         indent_error_file = b"""\
 def k(x):
     x += 2
