@@ -2707,6 +2707,9 @@ f_string_middle:
             return MAKE_TOKEN(FSTRING_MIDDLE);
         } else if (c == '\\') {
             int peek = tok_nextc(tok);
+            if (peek == '\r') {
+                peek = tok_nextc(tok);
+            }
             // Special case when the backslash is right before a curly
             // brace. We have to restore and return the control back
             // to the loop for the next iteration.

@@ -2106,6 +2106,10 @@ c"""', """\
     STRING     'rb"\""a\\\\\\nb\\\\\\nc"\""' (1, 0) (3, 4)
     """)
 
+        self.check_tokenize(r'"hola\\\r\ndfgf"', """\
+    STRING     \'"hola\\\\\\\\\\\\r\\\\ndfgf"\' (1, 0) (1, 16)
+    """)
+
         self.check_tokenize('f"abc"', """\
     FSTRING_START 'f"'          (1, 0) (1, 2)
     FSTRING_MIDDLE 'abc'         (1, 2) (1, 5)
@@ -2140,6 +2144,12 @@ def"', """\
     FSTRING_START 'Rf"'         (1, 0) (1, 3)
     FSTRING_MIDDLE 'abc\\\\\\ndef'  (1, 3) (2, 3)
     FSTRING_END '"'           (2, 3) (2, 4)
+    """)
+
+        self.check_tokenize(r'f"hola\\\r\ndfgf"', """\
+    FSTRING_START \'f"\'          (1, 0) (1, 2)
+    FSTRING_MIDDLE 'hola\\\\\\\\\\\\r\\\\ndfgf' (1, 2) (1, 16)
+    FSTRING_END \'"\'           (1, 16) (1, 17)
     """)
 
     def test_function(self):
