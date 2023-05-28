@@ -425,8 +425,6 @@ init_runtime(_PyRuntimeState *runtime,
     runtime->open_code_userdata = open_code_userdata;
     runtime->audit_hook_head = audit_hook_head;
 
-    _PyEval_InitRuntimeState(&runtime->ceval);
-
     PyPreConfig_InitPythonConfig(&runtime->preconfig);
 
     PyThread_type_lock *lockptrs[NUMLOCKS] = {
@@ -682,7 +680,7 @@ init_interpreter(PyInterpreterState *interp,
         memcpy(&interp->obmalloc.pools.used, temp, sizeof(temp));
     }
 
-    _PyEval_InitState(&interp->ceval, pending_lock);
+    _PyEval_InitState(interp, pending_lock);
     _PyGC_InitState(&interp->gc);
     PyConfig_InitPythonConfig(&interp->config);
     _PyType_InitCache(interp);
@@ -1438,11 +1436,13 @@ PyThreadState_Clear(PyThreadState *tstate)
 
     if (verbose && tstate->cframe->current_frame != NULL) {
         /* bpo-20526: After the main thread calls
-           _PyRuntimeState_SetFinalizing() in Py_FinalizeEx(), threads must
-           exit when trying to take the GIL. If a thread exit in the middle of
-           _PyEval_EvalFrameDefault(), tstate->frame is not reset to its
-           previous value. It is more likely with daemon threads, but it can
-           happen with regular threads if threading._shutdown() fails
+           _PyInterpreterState_SetFinalizing() in Py_FinalizeEx()
+           (or in Py_EndInterpreter() for subinterpreters),
+           threads must exit when trying to take the GIL.
+           If a thread exit in the middle of _PyEval_EvalFrameDefault(),
+           tstate->frame is not reset to its previous value.
+           It is more likely with daemon threads, but it can happen
+           with regular threads if threading._shutdown() fails
            (ex: interrupted by CTRL+C). */
         fprintf(stderr,
           "PyThreadState_Clear: warning: thread still has a frame\n");

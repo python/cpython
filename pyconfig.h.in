@@ -175,12 +175,6 @@
 /* Define to 1 if you have the `copy_file_range' function. */
 #undef HAVE_COPY_FILE_RANGE
 
-/* Define to 1 if you have the <crypt.h> header file. */
-#undef HAVE_CRYPT_H
-
-/* Define if you have the crypt_r() function. */
-#undef HAVE_CRYPT_R
-
 /* Define to 1 if you have the `ctermid' function. */
 #undef HAVE_CTERMID
 
@@ -1003,9 +997,6 @@
 
 /* Define if you have readline 4.0 */
 #undef HAVE_RL_RESIZE_TERMINAL
-
-/* Define to 1 if you have the <rpc/rpc.h> header file. */
-#undef HAVE_RPC_RPC_H
 
 /* Define to 1 if you have the `rtpSpawn' function. */
 #undef HAVE_RTPSPAWN

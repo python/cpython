@@ -408,10 +408,15 @@ gen_close(PyGenObject *gen, PyObject *args)
         PyErr_SetString(PyExc_RuntimeError, msg);
         return NULL;
     }
-    if (PyErr_ExceptionMatches(PyExc_StopIteration)
-        || PyErr_ExceptionMatches(PyExc_GeneratorExit)) {
-        PyErr_Clear();          /* ignore these errors */
+    assert(PyErr_Occurred());
+    if (PyErr_ExceptionMatches(PyExc_GeneratorExit)) {
+        PyErr_Clear();          /* ignore this error */
         Py_RETURN_NONE;
+    }
+    /* if the generator returned a value while closing, StopIteration was
+     * raised in gen_send_ex() above; retrieve and return the value here */
+    if (_PyGen_FetchStopIterationValue(&retval) == 0) {
+        return retval;
     }
     return NULL;
 }
@@ -1406,9 +1411,6 @@ typedef struct _PyAsyncGenWrappedValue {
 #define _PyAsyncGenWrappedValue_CheckExact(o) \
                     Py_IS_TYPE(o, &_PyAsyncGenWrappedValue_Type)
 
-#define PyAsyncGenASend_CheckExact(o) \
-                    Py_IS_TYPE(o, &_PyAsyncGenASend_Type)
-
 
 static int
 async_gen_traverse(PyAsyncGenObject *gen, visitproc visit, void *arg)
@@ -1733,6 +1735,10 @@ async_gen_unwrap_value(PyAsyncGenObject *gen, PyObject *result)
 static void
 async_gen_asend_dealloc(PyAsyncGenASend *o)
 {
+    if (PyObject_CallFinalizerFromDealloc((PyObject *)o)) {
+        return;
+    }
+
     _PyObject_GC_UNTRACK((PyObject *)o);
     Py_CLEAR(o->ags_gen);
     Py_CLEAR(o->ags_sendval);
@@ -1837,6 +1843,13 @@ async_gen_asend_close(PyAsyncGenASend *o, PyObject *args)
     Py_RETURN_NONE;
 }
 
+static void
+async_gen_asend_finalize(PyAsyncGenASend *o)
+{
+    if (o->ags_state == AWAITABLE_STATE_INIT) {
+        _PyErr_WarnUnawaitedAgenMethod(o->ags_gen, &_Py_ID(asend));
+    }
+}
 
 static PyMethodDef async_gen_asend_methods[] = {
     {"send", (PyCFunction)async_gen_asend_send, METH_O, send_doc},
@@ -1894,6 +1907,7 @@ PyTypeObject _PyAsyncGenASend_Type = {
     0,                                          /* tp_init */
     0,                                          /* tp_alloc */
     0,                                          /* tp_new */
+    .tp_finalize = (destructor)async_gen_asend_finalize,
 };
 
 
@@ -2051,6 +2065,10 @@ _PyAsyncGenValueWrapperNew(PyThreadState *tstate, PyObject *val)
 static void
 async_gen_athrow_dealloc(PyAsyncGenAThrow *o)
 {
+    if (PyObject_CallFinalizerFromDealloc((PyObject *)o)) {
+        return;
+    }
+
     _PyObject_GC_UNTRACK((PyObject *)o);
     Py_CLEAR(o->agt_gen);
     Py_CLEAR(o->agt_args);
@@ -2254,6 +2272,15 @@ async_gen_athrow_close(PyAsyncGenAThrow *o, PyObject *args)
 }
 
 
+static void
+async_gen_athrow_finalize(PyAsyncGenAThrow *o)
+{
+    if (o->agt_state == AWAITABLE_STATE_INIT) {
+        PyObject *method = o->agt_args ? &_Py_ID(athrow) : &_Py_ID(aclose);
+        _PyErr_WarnUnawaitedAgenMethod(o->agt_gen, method);
+    }
+}
+
 static PyMethodDef async_gen_athrow_methods[] = {
     {"send", (PyCFunction)async_gen_athrow_send, METH_O, send_doc},
     {"throw", _PyCFunction_CAST(async_gen_athrow_throw),
@@ -2311,6 +2338,7 @@ PyTypeObject _PyAsyncGenAThrow_Type = {
     0,                                          /* tp_init */
     0,                                          /* tp_alloc */
     0,                                          /* tp_new */
+    .tp_finalize = (destructor)async_gen_athrow_finalize,
 };
 
 

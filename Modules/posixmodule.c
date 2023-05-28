@@ -1864,6 +1864,7 @@ win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
     BY_HANDLE_FILE_INFORMATION fileInfo;
     FILE_BASIC_INFO basicInfo;
     FILE_ID_INFO idInfo;
+    FILE_ID_INFO *pIdInfo = &idInfo;
     FILE_ATTRIBUTE_TAG_INFO tagInfo = { 0 };
     DWORD fileType, error;
     BOOL isUnhandledTag = FALSE;
@@ -2000,9 +2001,7 @@ win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
 
         if (!GetFileInformationByHandle(hFile, &fileInfo) ||
             !GetFileInformationByHandleEx(hFile, FileBasicInfo,
-                                          &basicInfo, sizeof(basicInfo)) ||
-            !GetFileInformationByHandleEx(hFile, FileIdInfo,
-                                          &idInfo, sizeof(idInfo))) {
+                                          &basicInfo, sizeof(basicInfo))) {
             switch (GetLastError()) {
             case ERROR_INVALID_PARAMETER:
             case ERROR_INVALID_FUNCTION:
@@ -2018,7 +2017,12 @@ win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
         }
     }
 
-    _Py_attribute_data_to_stat(&fileInfo, tagInfo.ReparseTag, &basicInfo, &idInfo, result);
+    if (!GetFileInformationByHandleEx(hFile, FileIdInfo, &idInfo, sizeof(idInfo))) {
+        /* Failed to get FileIdInfo, so do not pass it along */
+        pIdInfo = NULL;
+    }
+
+    _Py_attribute_data_to_stat(&fileInfo, tagInfo.ReparseTag, &basicInfo, pIdInfo, result);
     update_st_mode_from_path(path, fileInfo.dwFileAttributes, result);
 
 cleanup:
@@ -9023,6 +9027,10 @@ os_setgroups(PyObject *module, PyObject *groups)
     }
 
     gid_t *grouplist = PyMem_New(gid_t, len);
+    if (grouplist == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
     for (Py_ssize_t i = 0; i < len; i++) {
         PyObject *elem;
         elem = PySequence_GetItem(groups, i);
@@ -15916,6 +15924,18 @@ all_ins(PyObject *m)
 #endif
 #ifdef PRIO_USER
     if (PyModule_AddIntMacro(m, PRIO_USER)) return -1;
+#endif
+#ifdef PRIO_DARWIN_THREAD
+    if (PyModule_AddIntMacro(m, PRIO_DARWIN_THREAD)) return -1;
+#endif
+#ifdef PRIO_DARWIN_PROCESS
+    if (PyModule_AddIntMacro(m, PRIO_DARWIN_PROCESS)) return -1;
+#endif
+#ifdef PRIO_DARWIN_BG
+    if (PyModule_AddIntMacro(m, PRIO_DARWIN_BG)) return -1;
+#endif
+#ifdef PRIO_DARWIN_NONUI
+    if (PyModule_AddIntMacro(m, PRIO_DARWIN_NONUI)) return -1;
 #endif
 #ifdef O_CLOEXEC
     if (PyModule_AddIntMacro(m, O_CLOEXEC)) return -1;
