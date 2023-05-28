@@ -772,7 +772,8 @@ translate_into_utf8(const char* str, const char* enc) {
 
 
 static char *
-translate_newlines(const char *s, int exec_input, struct tok_state *tok) {
+translate_newlines(const char *s, int exec_input, int preserve_crlf,
+                   struct tok_state *tok) {
     int skip_next_lf = 0;
     size_t needed_length = strlen(s) + 2, final_length;
     char *buf, *current;
@@ -792,7 +793,7 @@ translate_newlines(const char *s, int exec_input, struct tok_state *tok) {
                     break;
             }
         }
-        if (c == '\r') {
+        if (!preserve_crlf && c == '\r') {
             skip_next_lf = 1;
             c = '\n';
         }
@@ -822,14 +823,14 @@ translate_newlines(const char *s, int exec_input, struct tok_state *tok) {
    inside TOK.  */
 
 static char *
-decode_str(const char *input, int single, struct tok_state *tok)
+decode_str(const char *input, int single, struct tok_state *tok, int preserve_crlf)
 {
     PyObject* utf8 = NULL;
     char *str;
     const char *s;
     const char *newl[2] = {NULL, NULL};
     int lineno = 0;
-    tok->input = str = translate_newlines(input, single, tok);
+    tok->input = str = translate_newlines(input, single, preserve_crlf, tok);
     if (str == NULL)
         return NULL;
     tok->enc = NULL;
@@ -881,14 +882,14 @@ decode_str(const char *input, int single, struct tok_state *tok)
 /* Set up tokenizer for string */
 
 struct tok_state *
-_PyTokenizer_FromString(const char *str, int exec_input)
+_PyTokenizer_FromString(const char *str, int exec_input, int preserve_crlf)
 {
     struct tok_state *tok = tok_new();
     char *decoded;
 
     if (tok == NULL)
         return NULL;
-    decoded = decode_str(str, exec_input, tok);
+    decoded = decode_str(str, exec_input, tok, preserve_crlf);
     if (decoded == NULL) {
         _PyTokenizer_Free(tok);
         return NULL;
@@ -902,13 +903,13 @@ _PyTokenizer_FromString(const char *str, int exec_input)
 /* Set up tokenizer for UTF-8 string */
 
 struct tok_state *
-_PyTokenizer_FromUTF8(const char *str, int exec_input)
+_PyTokenizer_FromUTF8(const char *str, int exec_input, int preserve_crlf)
 {
     struct tok_state *tok = tok_new();
     char *translated;
     if (tok == NULL)
         return NULL;
-    tok->input = translated = translate_newlines(str, exec_input, tok);
+    tok->input = translated = translate_newlines(str, exec_input, preserve_crlf, tok);
     if (translated == NULL) {
         _PyTokenizer_Free(tok);
         return NULL;
@@ -1050,7 +1051,7 @@ tok_underflow_interactive(struct tok_state *tok) {
     }
     char *newtok = PyOS_Readline(tok->fp ? tok->fp : stdin, stdout, tok->prompt);
     if (newtok != NULL) {
-        char *translated = translate_newlines(newtok, 0, tok);
+        char *translated = translate_newlines(newtok, 0, 0, tok);
         PyMem_Free(newtok);
         if (translated == NULL) {
             return 0;
@@ -1594,6 +1595,9 @@ tok_decimal_tail(struct tok_state *tok)
 static inline int
 tok_continuation_line(struct tok_state *tok) {
     int c = tok_nextc(tok);
+    if (c == '\r') {
+        c = tok_nextc(tok);
+    }
     if (c != '\n') {
         tok->done = E_LINECONT;
         return -1;
@@ -1693,7 +1697,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             }
         }
         tok_backup(tok, c);
-        if (c == '#' || c == '\n') {
+        if (c == '#' || c == '\n' || c == '\r') {
             /* Lines with only whitespace and/or comments
                shouldn't affect the indentation and are
                not passed to the parser as NEWLINE tokens,
@@ -1822,7 +1826,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         const char *prefix, *type_start;
         int current_starting_col_offset;
 
-        while (c != EOF && c != '\n') {
+        while (c != EOF && c != '\n' && c != '\r') {
             c = tok_nextc(tok);
         }
 
@@ -2000,6 +2004,10 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         }
 
         return MAKE_TOKEN(NAME);
+    }
+
+    if (c == '\r') {
+        c = tok_nextc(tok);
     }
 
     /* Newline */
@@ -2405,7 +2413,10 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             else {
                 end_quote_size = 0;
                 if (c == '\\') {
-                    tok_nextc(tok);  /* skip escaped char */
+                    c = tok_nextc(tok);  /* skip escaped char */
+                    if (c == '\r') {
+                        c = tok_nextc(tok);
+                    }
                 }
             }
         }
@@ -2696,6 +2707,9 @@ f_string_middle:
             return MAKE_TOKEN(FSTRING_MIDDLE);
         } else if (c == '\\') {
             int peek = tok_nextc(tok);
+            if (peek == '\r') {
+                peek = tok_nextc(tok);
+            }
             // Special case when the backslash is right before a curly
             // brace. We have to restore and return the control back
             // to the loop for the next iteration.
