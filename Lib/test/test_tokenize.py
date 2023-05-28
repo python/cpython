@@ -85,11 +85,29 @@ class TokenizeTest(TestCase):
     DEDENT     ''            (5, 0) (5, 0)
     """)
 
-        self.check_tokenize("foo='bar'\r\n", """\
-    NAME       'foo'         (1, 0) (1, 3)
-    OP         '='           (1, 3) (1, 4)
-    STRING     "'bar'"       (1, 4) (1, 9)
-    NEWLINE    '\\n'          (1, 9) (1, 10)
+        self.check_tokenize("if True:\r\n    # NL\r\n    foo='bar'\r\n\r\n", """\
+    NAME       'if'          (1, 0) (1, 2)
+    NAME       'True'        (1, 3) (1, 7)
+    OP         ':'           (1, 7) (1, 8)
+    NEWLINE    '\\r\\n'        (1, 8) (1, 10)
+    COMMENT    '# NL'        (2, 4) (2, 8)
+    NL         '\\r\\n'        (2, 8) (2, 10)
+    INDENT     '    '        (3, 0) (3, 4)
+    NAME       'foo'         (3, 4) (3, 7)
+    OP         '='           (3, 7) (3, 8)
+    STRING     "\'bar\'"       (3, 8) (3, 13)
+    NEWLINE    '\\r\\n'        (3, 13) (3, 15)
+    NL         '\\r\\n'        (4, 0) (4, 2)
+    DEDENT     ''            (5, 0) (5, 0)
+            """)
+
+        self.check_tokenize("x = 1 + \\\r\n1\r\n", """\
+    NAME       'x'           (1, 0) (1, 1)
+    OP         '='           (1, 2) (1, 3)
+    NUMBER     '1'           (1, 4) (1, 5)
+    OP         '+'           (1, 6) (1, 7)
+    NUMBER     '1'           (2, 0) (2, 1)
+    NEWLINE    '\\r\\n'        (2, 1) (2, 3)
             """)
 
         indent_error_file = b"""\
@@ -1784,9 +1802,9 @@ class TestRoundtrip(TestCase):
             if support.verbose >= 2:
                 print('tokenize', testfile)
             with open(testfile, 'rb') as f:
-                # with self.subTest(file=testfile):
-                self.check_roundtrip(f)
-                self.check_line_extraction(f)
+                with self.subTest(file=testfile):
+                    self.check_roundtrip(f)
+                    self.check_line_extraction(f)
 
 
     def roundtrip(self, code):
@@ -2086,6 +2104,10 @@ c"""', """\
     STRING     'rb"\""a\\\\\\nb\\\\\\nc"\""' (1, 0) (3, 4)
     """)
 
+        self.check_tokenize(r'"hola\\\r\ndfgf"', """\
+    STRING     \'"hola\\\\\\\\\\\\r\\\\ndfgf"\' (1, 0) (1, 16)
+    """)
+
         self.check_tokenize('f"abc"', """\
     FSTRING_START 'f"'          (1, 0) (1, 2)
     FSTRING_MIDDLE 'abc'         (1, 2) (1, 5)
@@ -2120,6 +2142,12 @@ def"', """\
     FSTRING_START 'Rf"'         (1, 0) (1, 3)
     FSTRING_MIDDLE 'abc\\\\\\ndef'  (1, 3) (2, 3)
     FSTRING_END '"'           (2, 3) (2, 4)
+    """)
+
+        self.check_tokenize(r'f"hola\\\r\ndfgf"', """\
+    FSTRING_START \'f"\'          (1, 0) (1, 2)
+    FSTRING_MIDDLE 'hola\\\\\\\\\\\\r\\\\ndfgf' (1, 2) (1, 16)
+    FSTRING_END \'"\'           (1, 16) (1, 17)
     """)
 
     def test_function(self):
