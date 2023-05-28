@@ -1015,8 +1015,9 @@ APIs:
 * :func:`locale.getdefaultlocale` (:gh:`90817`)
 * :meth:`!turtle.RawTurtle.settiltangle` (:gh:`50096`)
 * :func:`!unittest.findTestCases` (:gh:`50096`)
-* :func:`!unittest.makeSuite` (:gh:`50096`)
 * :func:`!unittest.getTestCaseNames` (:gh:`50096`)
+* :func:`!unittest.makeSuite` (:gh:`50096`)
+* :meth:`!unittest.TestProgram.usageExit` (:gh:`67048`)
 * :class:`!webbrowser.MacOSX` (:gh:`86421`)
 * :class:`classmethod` descriptor chaining (:gh:`89519`)
 
