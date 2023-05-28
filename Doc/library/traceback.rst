@@ -238,6 +238,10 @@ capture data for later printing in a lightweight fashion.
 
       A :class:`TracebackException` of the original ``__context__``.
 
+   .. attribute:: exceptions
+
+      For exception groups - a list of :class:`TracebackException` of the original ``exceptions``.
+
    .. attribute:: __suppress_context__
 
       The ``__suppress_context__`` value from the original exception.
@@ -266,6 +270,11 @@ capture data for later printing in a lightweight fashion.
 
       For syntax errors - the line number where the error occurred.
 
+   .. attribute:: end_lineno
+
+      For syntax errors - the end line number where the error occurred.
+      Can be `None` if not present.
+
    .. attribute:: text
 
       For syntax errors - the text where the error occurred.
@@ -273,6 +282,11 @@ capture data for later printing in a lightweight fashion.
    .. attribute:: offset
 
       For syntax errors - the offset into the text where the error occurred.
+
+   .. attribute:: end_offset
+
+      For syntax errors - the end offset into the text where the error occurred.
+      Can be `None` if not present.
 
    .. attribute:: msg
 
