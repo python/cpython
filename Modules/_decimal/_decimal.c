@@ -227,7 +227,7 @@ incr_false(void)
 static inline void
 signal_map_init(decimal_state *state)
 {
-    const DecCondMap signal_map[] = {
+    static const DecCondMap signal_map[] = {
         {"InvalidOperation", "decimal.InvalidOperation", MPD_IEEE_Invalid_operation, NULL},
         {"FloatOperation", "decimal.FloatOperation", MPD_Float_operation, NULL},
         {"DivisionByZero", "decimal.DivisionByZero", MPD_Division_by_zero, NULL},
