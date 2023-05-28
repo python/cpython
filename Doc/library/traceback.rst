@@ -242,6 +242,8 @@ capture data for later printing in a lightweight fashion.
 
       For exception groups - a list of :class:`TracebackException` of the original ``exceptions``.
 
+      .. versionadded:: 3.11
+
    .. attribute:: __suppress_context__
 
       The ``__suppress_context__`` value from the original exception.
@@ -275,6 +277,8 @@ capture data for later printing in a lightweight fashion.
       For syntax errors - the end line number where the error occurred.
       Can be `None` if not present.
 
+      .. versionadded:: 3.10
+
    .. attribute:: text
 
       For syntax errors - the text where the error occurred.
@@ -287,6 +291,8 @@ capture data for later printing in a lightweight fashion.
 
       For syntax errors - the end offset into the text where the error occurred.
       Can be `None` if not present.
+
+      .. versionadded:: 3.10
 
    .. attribute:: msg
 
