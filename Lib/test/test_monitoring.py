@@ -1,9 +1,11 @@
 """Test suite for the sys.monitoring."""
 
 import collections
+import dis
 import functools
 import operator
 import sys
+import textwrap
 import types
 import unittest
 
@@ -506,7 +508,7 @@ class LineMonitoringTest(MonitoringTestBase, unittest.TestCase):
             sys.monitoring.set_events(TEST_TOOL, 0)
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
             start = LineMonitoringTest.test_lines_single.__code__.co_firstlineno
-            self.assertEqual(events, [start+7, 14, start+8])
+            self.assertEqual(events, [start+7, 16, start+8])
         finally:
             sys.monitoring.set_events(TEST_TOOL, 0)
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
@@ -524,7 +526,7 @@ class LineMonitoringTest(MonitoringTestBase, unittest.TestCase):
             sys.monitoring.set_events(TEST_TOOL, 0)
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
             start = LineMonitoringTest.test_lines_loop.__code__.co_firstlineno
-            self.assertEqual(events, [start+7, 21, 22, 22, 21, start+8])
+            self.assertEqual(events, [start+7, 23, 24, 23, 24, 23, start+8])
         finally:
             sys.monitoring.set_events(TEST_TOOL, 0)
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
@@ -546,7 +548,7 @@ class LineMonitoringTest(MonitoringTestBase, unittest.TestCase):
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
             sys.monitoring.register_callback(TEST_TOOL2, E.LINE, None)
             start = LineMonitoringTest.test_lines_two.__code__.co_firstlineno
-            expected = [start+10, 14, start+11]
+            expected = [start+10, 16, start+11]
             self.assertEqual(events, expected)
             self.assertEqual(events2, expected)
         finally:
@@ -876,6 +878,42 @@ class TestLineAndInstructionEvents(CheckEvents):
             ('instruction', 'func3', 34),
             ('line', 'check_events', 11)])
 
+    def test_with_restart(self):
+        def func1():
+            line1 = 1
+            line2 = 2
+            line3 = 3
+
+        self.check_events(func1, recorders = LINE_AND_INSTRUCTION_RECORDERS, expected = [
+            ('line', 'check_events', 10),
+            ('line', 'func1', 1),
+            ('instruction', 'func1', 2),
+            ('instruction', 'func1', 4),
+            ('line', 'func1', 2),
+            ('instruction', 'func1', 6),
+            ('instruction', 'func1', 8),
+            ('line', 'func1', 3),
+            ('instruction', 'func1', 10),
+            ('instruction', 'func1', 12),
+            ('instruction', 'func1', 14),
+            ('line', 'check_events', 11)])
+
+        sys.monitoring.restart_events()
+
+        self.check_events(func1, recorders = LINE_AND_INSTRUCTION_RECORDERS, expected = [
+            ('line', 'check_events', 10),
+            ('line', 'func1', 1),
+            ('instruction', 'func1', 2),
+            ('instruction', 'func1', 4),
+            ('line', 'func1', 2),
+            ('instruction', 'func1', 6),
+            ('instruction', 'func1', 8),
+            ('line', 'func1', 3),
+            ('instruction', 'func1', 10),
+            ('instruction', 'func1', 12),
+            ('instruction', 'func1', 14),
+            ('line', 'check_events', 11)])
+
 class TestInstallIncrementallly(MonitoringTestBase, unittest.TestCase):
 
     def check_events(self, func, must_include, tool=TEST_TOOL, recorders=(ExceptionRecorder,)):
@@ -1014,6 +1052,8 @@ class TestLocalEvents(MonitoringTestBase, unittest.TestCase):
 def line_from_offset(code, offset):
     for start, end, line in code.co_lines():
         if start <= offset < end:
+            if line is None:
+                return f"[offset={offset}]"
             return line - code.co_firstlineno
     return -1
 
@@ -1036,9 +1076,20 @@ class BranchRecorder(JumpRecorder):
     event_type = E.BRANCH
     name = "branch"
 
+class ReturnRecorder:
+
+    event_type = E.PY_RETURN
+
+    def __init__(self, events):
+        self.events = events
+
+    def __call__(self, code, offset, val):
+        self.events.append(("return", val))
+
 
 JUMP_AND_BRANCH_RECORDERS = JumpRecorder, BranchRecorder
 JUMP_BRANCH_AND_LINE_RECORDERS = JumpRecorder, BranchRecorder, LineRecorder
+FLOW_AND_LINE_RECORDERS = JumpRecorder, BranchRecorder, LineRecorder, ExceptionRecorder, ReturnRecorder
 
 class TestBranchAndJumpEvents(CheckEvents):
     maxDiff = None
@@ -1062,7 +1113,6 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('jump', 'func', 4, 2),
             ('branch', 'func', 2, 2)])
 
-
         self.check_events(func, recorders = JUMP_BRANCH_AND_LINE_RECORDERS, expected = [
             ('line', 'check_events', 10),
             ('line', 'func', 1),
@@ -1072,14 +1122,276 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('branch', 'func', 3, 6),
             ('line', 'func', 6),
             ('jump', 'func', 6, 2),
+            ('line', 'func', 2),
             ('branch', 'func', 2, 2),
             ('line', 'func', 3),
             ('branch', 'func', 3, 4),
             ('line', 'func', 4),
             ('jump', 'func', 4, 2),
-            ('branch', 'func', 2, 2),
             ('line', 'func', 2),
+            ('branch', 'func', 2, 2),
             ('line', 'check_events', 11)])
+
+    def test_except_star(self):
+
+        class Foo:
+            def meth(self):
+                pass
+
+        def func():
+            try:
+                try:
+                    raise KeyError
+                except* Exception as e:
+                    f = Foo(); f.meth()
+            except KeyError:
+                pass
+
+
+        self.check_events(func, recorders = JUMP_BRANCH_AND_LINE_RECORDERS, expected = [
+            ('line', 'check_events', 10),
+            ('line', 'func', 1),
+            ('line', 'func', 2),
+            ('line', 'func', 3),
+            ('line', 'func', 4),
+            ('branch', 'func', 4, 4),
+            ('line', 'func', 5),
+            ('line', 'meth', 1),
+            ('jump', 'func', 5, 5),
+            ('jump', 'func', 5, '[offset=114]'),
+            ('branch', 'func', '[offset=120]', '[offset=122]'),
+            ('line', 'check_events', 11)])
+
+        self.check_events(func, recorders = FLOW_AND_LINE_RECORDERS, expected = [
+            ('line', 'check_events', 10),
+            ('line', 'func', 1),
+            ('line', 'func', 2),
+            ('line', 'func', 3),
+            ('raise', KeyError),
+            ('line', 'func', 4),
+            ('branch', 'func', 4, 4),
+            ('line', 'func', 5),
+            ('line', 'meth', 1),
+            ('return', None),
+            ('jump', 'func', 5, 5),
+            ('jump', 'func', 5, '[offset=114]'),
+            ('branch', 'func', '[offset=120]', '[offset=122]'),
+            ('return', None),
+            ('line', 'check_events', 11)])
+
+class TestLoadSuperAttr(CheckEvents):
+    RECORDERS = CallRecorder, LineRecorder, CRaiseRecorder, CReturnRecorder
+
+    def _exec(self, co):
+        d = {}
+        exec(co, d, d)
+        return d
+
+    def _exec_super(self, codestr, optimized=False):
+        # The compiler checks for statically visible shadowing of the name
+        # `super`, and declines to emit `LOAD_SUPER_ATTR` if shadowing is found.
+        # So inserting `super = super` prevents the compiler from emitting
+        # `LOAD_SUPER_ATTR`, and allows us to test that monitoring events for
+        # `LOAD_SUPER_ATTR` are equivalent to those we'd get from the
+        # un-optimized `LOAD_GLOBAL super; CALL; LOAD_ATTR` form.
+        assignment = "x = 1" if optimized else "super = super"
+        codestr = f"{assignment}\n{textwrap.dedent(codestr)}"
+        co = compile(codestr, "<string>", "exec")
+        # validate that we really do have a LOAD_SUPER_ATTR, only when optimized
+        self.assertEqual(self._has_load_super_attr(co), optimized)
+        return self._exec(co)
+
+    def _has_load_super_attr(self, co):
+        has = any(instr.opname == "LOAD_SUPER_ATTR" for instr in dis.get_instructions(co))
+        if not has:
+            has = any(
+                isinstance(c, types.CodeType) and self._has_load_super_attr(c)
+                for c in co.co_consts
+            )
+        return has
+
+    def _super_method_call(self, optimized=False):
+        codestr = """
+            class A:
+                def method(self, x):
+                    return x
+
+            class B(A):
+                def method(self, x):
+                    return super(
+                    ).method(
+                        x
+                    )
+
+            b = B()
+            def f():
+                return b.method(1)
+        """
+        d = self._exec_super(codestr, optimized)
+        expected = [
+            ('line', 'check_events', 10),
+            ('call', 'f', sys.monitoring.MISSING),
+            ('line', 'f', 1),
+            ('call', 'method', d["b"]),
+            ('line', 'method', 1),
+            ('call', 'super', sys.monitoring.MISSING),
+            ('C return', 'super', sys.monitoring.MISSING),
+            ('line', 'method', 2),
+            ('line', 'method', 3),
+            ('line', 'method', 2),
+            ('call', 'method', 1),
+            ('line', 'method', 1),
+            ('line', 'method', 1),
+            ('line', 'check_events', 11),
+            ('call', 'set_events', 2),
+        ]
+        return d["f"], expected
+
+    def test_method_call(self):
+        nonopt_func, nonopt_expected = self._super_method_call(optimized=False)
+        opt_func, opt_expected = self._super_method_call(optimized=True)
+
+        self.check_events(nonopt_func, recorders=self.RECORDERS, expected=nonopt_expected)
+        self.check_events(opt_func, recorders=self.RECORDERS, expected=opt_expected)
+
+    def _super_method_call_error(self, optimized=False):
+        codestr = """
+            class A:
+                def method(self, x):
+                    return x
+
+            class B(A):
+                def method(self, x):
+                    return super(
+                        x,
+                        self,
+                    ).method(
+                        x
+                    )
+
+            b = B()
+            def f():
+                try:
+                    return b.method(1)
+                except TypeError:
+                    pass
+                else:
+                    assert False, "should have raised TypeError"
+        """
+        d = self._exec_super(codestr, optimized)
+        expected = [
+            ('line', 'check_events', 10),
+            ('call', 'f', sys.monitoring.MISSING),
+            ('line', 'f', 1),
+            ('line', 'f', 2),
+            ('call', 'method', d["b"]),
+            ('line', 'method', 1),
+            ('line', 'method', 2),
+            ('line', 'method', 3),
+            ('line', 'method', 1),
+            ('call', 'super', 1),
+            ('C raise', 'super', 1),
+            ('line', 'f', 3),
+            ('line', 'f', 4),
+            ('line', 'check_events', 11),
+            ('call', 'set_events', 2),
+        ]
+        return d["f"], expected
+
+    def test_method_call_error(self):
+        nonopt_func, nonopt_expected = self._super_method_call_error(optimized=False)
+        opt_func, opt_expected = self._super_method_call_error(optimized=True)
+
+        self.check_events(nonopt_func, recorders=self.RECORDERS, expected=nonopt_expected)
+        self.check_events(opt_func, recorders=self.RECORDERS, expected=opt_expected)
+
+    def _super_attr(self, optimized=False):
+        codestr = """
+            class A:
+                x = 1
+
+            class B(A):
+                def method(self):
+                    return super(
+                    ).x
+
+            b = B()
+            def f():
+                return b.method()
+        """
+        d = self._exec_super(codestr, optimized)
+        expected = [
+            ('line', 'check_events', 10),
+            ('call', 'f', sys.monitoring.MISSING),
+            ('line', 'f', 1),
+            ('call', 'method', d["b"]),
+            ('line', 'method', 1),
+            ('call', 'super', sys.monitoring.MISSING),
+            ('C return', 'super', sys.monitoring.MISSING),
+            ('line', 'method', 2),
+            ('line', 'method', 1),
+            ('line', 'check_events', 11),
+            ('call', 'set_events', 2)
+        ]
+        return d["f"], expected
+
+    def test_attr(self):
+        nonopt_func, nonopt_expected = self._super_attr(optimized=False)
+        opt_func, opt_expected = self._super_attr(optimized=True)
+
+        self.check_events(nonopt_func, recorders=self.RECORDERS, expected=nonopt_expected)
+        self.check_events(opt_func, recorders=self.RECORDERS, expected=opt_expected)
+
+    def test_vs_other_type_call(self):
+        code_template = textwrap.dedent("""
+            class C:
+                def method(self):
+                    return {cls}().__repr__{call}
+            c = C()
+            def f():
+                return c.method()
+        """)
+
+        def get_expected(name, call_method, ns):
+            repr_arg = 0 if name == "int" else sys.monitoring.MISSING
+            return [
+                ('line', 'check_events', 10),
+                ('call', 'f', sys.monitoring.MISSING),
+                ('line', 'f', 1),
+                ('call', 'method', ns["c"]),
+                ('line', 'method', 1),
+                ('call', name, sys.monitoring.MISSING),
+                ('C return', name, sys.monitoring.MISSING),
+                *(
+                    [
+                        ('call', '__repr__', repr_arg),
+                        ('C return', '__repr__', repr_arg),
+                    ] if call_method else []
+                ),
+                ('line', 'check_events', 11),
+                ('call', 'set_events', 2),
+            ]
+
+        for call_method in [True, False]:
+            with self.subTest(call_method=call_method):
+                call_str = "()" if call_method else ""
+                code_super = code_template.format(cls="super", call=call_str)
+                code_int = code_template.format(cls="int", call=call_str)
+                co_super = compile(code_super, '<string>', 'exec')
+                self.assertTrue(self._has_load_super_attr(co_super))
+                ns_super = self._exec(co_super)
+                ns_int = self._exec(code_int)
+
+                self.check_events(
+                    ns_super["f"],
+                    recorders=self.RECORDERS,
+                    expected=get_expected("super", call_method, ns_super)
+                )
+                self.check_events(
+                    ns_int["f"],
+                    recorders=self.RECORDERS,
+                    expected=get_expected("int", call_method, ns_int)
+                )
 
 
 class TestSetGetEvents(MonitoringTestBase, unittest.TestCase):

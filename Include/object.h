@@ -355,6 +355,8 @@ PyAPI_FUNC(PyObject *) PyType_GetQualName(PyTypeObject *);
 #endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030C0000
 PyAPI_FUNC(PyObject *) PyType_FromMetaclass(PyTypeObject*, PyObject*, PyType_Spec*, PyObject*);
+PyAPI_FUNC(void *) PyObject_GetTypeData(PyObject *obj, PyTypeObject *cls);
+PyAPI_FUNC(Py_ssize_t) PyType_GetTypeDataSize(PyTypeObject *cls);
 #endif
 
 /* Generic type check */
@@ -521,6 +523,9 @@ given type object has a specified feature.
 // subject itself (rather than a mapped attribute on it):
 #define _Py_TPFLAGS_MATCH_SELF (1UL << 22)
 
+/* Items (ob_size*tp_itemsize) are found at the end of an instance's memory */
+#define Py_TPFLAGS_ITEMS_AT_END (1UL << 23)
+
 /* These flags are used to determine if a type is a subclass. */
 #define Py_TPFLAGS_LONG_SUBCLASS        (1UL << 24)
 #define Py_TPFLAGS_LIST_SUBCLASS        (1UL << 25)
@@ -585,7 +590,7 @@ you can count such references to the type object.)
 extern Py_ssize_t _Py_RefTotal;
 #    define _Py_INC_REFTOTAL() _Py_RefTotal++
 #    define _Py_DEC_REFTOTAL() _Py_RefTotal--
-#  elif !defined(Py_LIMITED_API) || Py_LIMITED_API+0 > 0x030C0000
+#  elif !defined(Py_LIMITED_API) || Py_LIMITED_API+0 > 0x030D0000
 PyAPI_FUNC(void) _Py_IncRefTotal_DO_NOT_USE_THIS(void);
 PyAPI_FUNC(void) _Py_DecRefTotal_DO_NOT_USE_THIS(void);
 #    define _Py_INC_REFTOTAL() _Py_IncRefTotal_DO_NOT_USE_THIS()

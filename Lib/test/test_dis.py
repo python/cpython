@@ -154,7 +154,7 @@ dis_bug708901 = """\
 
 
 def bug1333982(x=[]):
-    assert 0, ([s for s in x] +
+    assert 0, ((s for s in x) +
               1)
     pass
 
@@ -162,7 +162,7 @@ dis_bug1333982 = """\
 %3d        RESUME                   0
 
 %3d        LOAD_ASSERTION_ERROR
-           LOAD_CONST               1 (<code object <listcomp> at 0x..., file "%s", line %d>)
+           LOAD_CONST               1 (<code object <genexpr> at 0x..., file "%s", line %d>)
            MAKE_FUNCTION            0
            LOAD_FAST                0 (x)
            GET_ITER
@@ -246,6 +246,35 @@ dis_kw_names = """\
            RETURN_CONST             0 (None)
 """ % (wrap_func_w_kwargs.__code__.co_firstlineno,
        wrap_func_w_kwargs.__code__.co_firstlineno + 1)
+
+dis_intrinsic_1_2 = """\
+  0        RESUME                   0
+
+  1        LOAD_CONST               0 (0)
+           LOAD_CONST               1 (('*',))
+           IMPORT_NAME              0 (math)
+           CALL_INTRINSIC_1         2 (INTRINSIC_IMPORT_STAR)
+           POP_TOP
+           RETURN_CONST             2 (None)
+"""
+
+dis_intrinsic_1_5 = """\
+  0        RESUME                   0
+
+  1        LOAD_NAME                0 (a)
+           CALL_INTRINSIC_1         5 (INTRINSIC_UNARY_POSITIVE)
+           RETURN_VALUE
+"""
+
+dis_intrinsic_1_6 = """\
+  0        RESUME                   0
+
+  1        BUILD_LIST               0
+           LOAD_NAME                0 (a)
+           LIST_EXTEND              1
+           CALL_INTRINSIC_1         6 (INTRINSIC_LIST_TO_TUPLE)
+           RETURN_VALUE
+"""
 
 _BIG_LINENO_FORMAT = """\
   1        RESUME                   0
@@ -549,7 +578,7 @@ dis_asyncwith = """\
         >> COPY                     3
            POP_EXCEPT
            RERAISE                  1
-        >> CALL_INTRINSIC_1         3
+        >> CALL_INTRINSIC_1         3 (INTRINSIC_STOPITERATION_ERROR)
            RERAISE                  1
 ExceptionTable:
 12 rows
@@ -646,7 +675,7 @@ async def _co(x):
 def _h(y):
     def foo(x):
         '''funcdoc'''
-        return [x + z for z in y]
+        return list(x + z for z in y)
     return foo
 
 dis_nested_0 = """\
@@ -676,13 +705,15 @@ Disassembly of <code object foo at 0x..., file "%s", line %d>:
 
 %3d        RESUME                   0
 
-%3d        LOAD_CLOSURE             0 (x)
+%3d        LOAD_GLOBAL              1 (NULL + list)
+           LOAD_CLOSURE             0 (x)
            BUILD_TUPLE              1
-           LOAD_CONST               1 (<code object <listcomp> at 0x..., file "%s", line %d>)
+           LOAD_CONST               1 (<code object <genexpr> at 0x..., file "%s", line %d>)
            MAKE_FUNCTION            8 (closure)
            LOAD_DEREF               1 (y)
            GET_ITER
            CALL                     0
+           CALL                     1
            RETURN_VALUE
 """ % (dis_nested_0,
        __file__,
@@ -694,21 +725,28 @@ Disassembly of <code object foo at 0x..., file "%s", line %d>:
 )
 
 dis_nested_2 = """%s
-Disassembly of <code object <listcomp> at 0x..., file "%s", line %d>:
+Disassembly of <code object <genexpr> at 0x..., file "%s", line %d>:
            COPY_FREE_VARS           1
 
-%3d        RESUME                   0
-           BUILD_LIST               0
+%3d        RETURN_GENERATOR
+           POP_TOP
+           RESUME                   0
            LOAD_FAST                0 (.0)
-        >> FOR_ITER                 7 (to 26)
+        >> FOR_ITER                 9 (to 32)
            STORE_FAST               1 (z)
            LOAD_DEREF               2 (x)
            LOAD_FAST                1 (z)
            BINARY_OP                0 (+)
-           LIST_APPEND              2
-           JUMP_BACKWARD            9 (to 8)
+           YIELD_VALUE              1
+           RESUME                   1
+           POP_TOP
+           JUMP_BACKWARD           11 (to 10)
         >> END_FOR
-           RETURN_VALUE
+           RETURN_CONST             0 (None)
+        >> CALL_INTRINSIC_1         3 (INTRINSIC_STOPITERATION_ERROR)
+           RERAISE                  1
+ExceptionTable:
+1 row
 """ % (dis_nested_1,
        __file__,
        _h.__code__.co_firstlineno + 3,
@@ -941,6 +979,16 @@ class DisTests(DisTestBase):
     def test_kw_names(self):
         # Test that value is displayed for KW_NAMES
         self.do_disassembly_test(wrap_func_w_kwargs, dis_kw_names)
+
+    def test_intrinsic_1(self):
+        # Test that argrepr is displayed for CALL_INTRINSIC_1
+        self.do_disassembly_test("from math import *", dis_intrinsic_1_2)
+        self.do_disassembly_test("+a", dis_intrinsic_1_5)
+        self.do_disassembly_test("(*a,)", dis_intrinsic_1_6)
+
+    def test_intrinsic_2(self):
+        self.assertIn("CALL_INTRINSIC_2         1 (INTRINSIC_PREP_RERAISE_STAR)",
+                      self.get_disassembly("try: pass\nexcept* Exception: x"))
 
     def test_big_linenos(self):
         def func(count):

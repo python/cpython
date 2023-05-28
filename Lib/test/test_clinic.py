@@ -99,8 +99,9 @@ class ClinicWholeFileTest(TestCase):
         # the last line of the block got corrupted.
         c = clinic.Clinic(clinic.CLanguage(None), filename="file")
         raw = "/*[clinic]\nfoo\n[clinic]*/"
-        cooked = c.parse(raw).splitlines()
-        end_line = cooked[2].rstrip()
+        cooked, _ = c.parse(raw)
+        lines = cooked.splitlines()
+        end_line = lines[2].rstrip()
         # this test is redundant, it's just here explicitly to catch
         # the regression test so we don't forget what it looked like
         self.assertNotEqual(end_line, "[clinic]*/[clinic]*/")
@@ -259,7 +260,7 @@ xyz
         c = clinic.Clinic(language, filename="file")
         c.parsers['inert'] = InertParser(c)
         c.parsers['copy'] = CopyParser(c)
-        computed = c.parse(input)
+        computed, _ = c.parse(input)
         self.assertEqual(output, computed)
 
     def test_clinic_1(self):
@@ -773,6 +774,83 @@ Not at column 0!
         module, function = block.signatures
         self.assertIsInstance((function.parameters['path']).converter, clinic.str_converter)
 
+    def test_legacy_converters_non_string_constant_annotation(self):
+        expected_failure_message = """\
+Error on line 0:
+Annotations must be either a name, a function call, or a string.
+"""
+
+        s = self.parse_function_should_fail('module os\nos.access\n   path: 42')
+        self.assertEqual(s, expected_failure_message)
+
+        s = self.parse_function_should_fail('module os\nos.access\n   path: 42.42')
+        self.assertEqual(s, expected_failure_message)
+
+        s = self.parse_function_should_fail('module os\nos.access\n   path: 42j')
+        self.assertEqual(s, expected_failure_message)
+
+        s = self.parse_function_should_fail('module os\nos.access\n   path: b"42"')
+        self.assertEqual(s, expected_failure_message)
+
+    def test_other_bizarre_things_in_annotations_fail(self):
+        expected_failure_message = """\
+Error on line 0:
+Annotations must be either a name, a function call, or a string.
+"""
+
+        s = self.parse_function_should_fail(
+            'module os\nos.access\n   path: {"some": "dictionary"}'
+        )
+        self.assertEqual(s, expected_failure_message)
+
+        s = self.parse_function_should_fail(
+            'module os\nos.access\n   path: ["list", "of", "strings"]'
+        )
+        self.assertEqual(s, expected_failure_message)
+
+        s = self.parse_function_should_fail(
+            'module os\nos.access\n   path: (x for x in range(42))'
+        )
+        self.assertEqual(s, expected_failure_message)
+
+    def test_unused_param(self):
+        block = self.parse("""
+            module foo
+            foo.func
+                fn: object
+                k: float
+                i: float(unused=True)
+                /
+                *
+                flag: bool(unused=True) = False
+        """)
+        sig = block.signatures[1]  # Function index == 1
+        params = sig.parameters
+        conv = lambda fn: params[fn].converter
+        dataset = (
+            {"name": "fn", "unused": False},
+            {"name": "k", "unused": False},
+            {"name": "i", "unused": True},
+            {"name": "flag", "unused": True},
+        )
+        for param in dataset:
+            name, unused = param.values()
+            with self.subTest(name=name, unused=unused):
+                p = conv(name)
+                # Verify that the unused flag is parsed correctly.
+                self.assertEqual(unused, p.unused)
+
+                # Now, check that we'll produce correct code.
+                decl = p.simple_declaration(in_parser=False)
+                if unused:
+                    self.assertIn("Py_UNUSED", decl)
+                else:
+                    self.assertNotIn("Py_UNUSED", decl)
+
+                # Make sure the Py_UNUSED macro is not used in the parser body.
+                parser_decl = p.simple_declaration(in_parser=True)
+                self.assertNotIn("Py_UNUSED", parser_decl)
+
     def parse(self, text):
         c = FakeClinic()
         parser = DSLParser(c)
@@ -829,9 +907,12 @@ class ClinicExternalTest(TestCase):
         self.assertEqual(new_mtime_ns, old_mtime_ns)
 
 
-ac_tester = import_helper.import_module('_testclinic')
+try:
+    import _testclinic as ac_tester
+except ImportError:
+    ac_tester = None
 
-
+@unittest.skipIf(ac_tester is None, "_testclinic is missing")
 class ClinicFunctionalTest(unittest.TestCase):
     locals().update((name, getattr(ac_tester, name))
                     for name in dir(ac_tester) if name.startswith('test_'))
@@ -1283,6 +1364,19 @@ class ClinicFunctionalTest(unittest.TestCase):
         expected_error = r'gh_99240_double_free\(\) argument 2 must be encoded string without null bytes, not str'
         with self.assertRaisesRegex(TypeError, expected_error):
             ac_tester.gh_99240_double_free('a', '\0b')
+
+    def test_cloned_func_exception_message(self):
+        incorrect_arg = -1  # f1() and f2() accept a single str
+        with self.assertRaisesRegex(TypeError, "clone_f1"):
+            ac_tester.clone_f1(incorrect_arg)
+        with self.assertRaisesRegex(TypeError, "clone_f2"):
+            ac_tester.clone_f2(incorrect_arg)
+
+    def test_cloned_func_with_converter_exception_message(self):
+        for name in "clone_with_conv_f1", "clone_with_conv_f2":
+            with self.subTest(name=name):
+                func = getattr(ac_tester, name)
+                self.assertEqual(func(), name)
 
 
 if __name__ == "__main__":
