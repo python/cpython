@@ -110,8 +110,6 @@ class TokenizeTest(TestCase):
     NEWLINE    '\\r\\n'        (2, 1) (2, 3)
             """)
 
-
-
         indent_error_file = b"""\
 def k(x):
     x += 2
