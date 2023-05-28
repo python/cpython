@@ -3587,7 +3587,9 @@ static PyObject *
 _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
 /*[clinic end generated code: output=0e107cbb7f72aa7b input=02fab144171b1879]*/
 {
-    PyObject *tasks = PySet_New(NULL);
+
+    asyncio_state *state = get_asyncio_state(module);
+    PyObject *tasks = PySet_New(state->scheduled_tasks);
     if (tasks == NULL) {
         return NULL;
     }
@@ -3600,7 +3602,6 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
     } else {
         Py_INCREF(loop);
     }
-    asyncio_state *state = get_asyncio_state(module);
     TaskObj *head = state->asyncio_tasks.head;
     assert(head != NULL);
     assert(head->next == NULL);
