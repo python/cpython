@@ -1804,9 +1804,9 @@ class TestRoundtrip(TestCase):
             if support.verbose >= 2:
                 print('tokenize', testfile)
             with open(testfile, 'rb') as f:
-                # with self.subTest(file=testfile):
-                self.check_roundtrip(f)
-                self.check_line_extraction(f)
+                with self.subTest(file=testfile):
+                    self.check_roundtrip(f)
+                    self.check_line_extraction(f)
 
 
     def roundtrip(self, code):
