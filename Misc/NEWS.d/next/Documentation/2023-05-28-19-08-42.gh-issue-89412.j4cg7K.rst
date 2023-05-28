@@ -1,0 +1,1 @@
+Add missing documentation for the ``end_lineno``, and ``end_offset`` attributes of the :class:`traceback.TracebackException` class
