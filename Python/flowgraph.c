@@ -1515,6 +1515,12 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                     */
                 }
                 break;
+            case STORE_FAST:
+                if (opcode == nextop && oparg == bb->b_instr[i+1].i_oparg) {
+                    bb->b_instr[i].i_opcode = POP_TOP;
+                    bb->b_instr[i].i_oparg = 0;
+                }
+                break;
             case SWAP:
                 if (oparg == 1) {
                     INSTR_SET_OP0(inst, NOP);

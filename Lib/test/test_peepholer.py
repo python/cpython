@@ -1071,7 +1071,17 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('POP_TOP', 0, 4),
             ('RETURN_VALUE', 5)
         ]
-        self.cfg_optimization_test(insts, insts, consts=list(range(3)), nlocals=1)
+        expected_insts = [
+            ('LOAD_CONST', 0, 1),
+            ('LOAD_CONST', 1, 2),
+            ('LOAD_CONST', 2, 3),
+            ('SWAP', 3, 4),
+            ('POP_TOP', 0, 4),
+            ('STORE_FAST', 1, 4),
+            ('POP_TOP', 0, 4),
+            ('RETURN_VALUE', 5)
+        ]
+        self.cfg_optimization_test(insts, expected_insts, consts=list(range(3)), nlocals=1)
 
 if __name__ == "__main__":
     unittest.main()
