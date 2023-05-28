@@ -28,6 +28,7 @@ simple statements is:
               : | `future_stmt`
               : | `global_stmt`
               : | `nonlocal_stmt`
+              : | `type_stmt`
 
 
 .. _exprstmts:
@@ -1012,3 +1013,48 @@ pre-existing bindings in the local scope.
 
    :pep:`3104` - Access to Names in Outer Scopes
       The specification for the :keyword:`nonlocal` statement.
+
+.. _type:
+
+The :keyword:`!type` statement
+==============================
+
+.. index:: pair: statement; type
+
+.. productionlist:: python-grammar
+   type_stmt: 'type' `identifier` [`type_params`] "=" `expression`
+
+The :keyword:`!type` statement declares a type alias, which is an instance
+of :class:`typing.TypeAliasType`.
+
+For example, the following statement creates a type alias::
+
+   type Point = tuple[float, float]
+
+This code is roughly equivalent to::
+
+   annotation-def VALUE_OF_Point():
+       return tuple[float, float]
+   Point = typing.TypeAliasType("Point", VALUE_OF_Point())
+
+``annotation-def`` indicates an :ref:`annotation scope <annotation-scopes>`, which behaves
+mostly like a function, but with several small differences.
+
+The value of the
+type alias is evaluated in the annotation scope. It is not evaluated when the
+type alias is created, but only when the value is accessed through the type alias's
+:attr:`!__value__` attribute (see :ref:`lazy-evaluation`).
+This allows the type alias to refer to names that are not yet defined.
+
+Type aliases may be made generic by adding a :ref:`type parameter list <type-params>`
+after the name. See :ref:`generic-type-aliases` for more.
+
+:keyword:`!type` is a :ref:`soft keyword <soft-keywords>`.
+
+.. versionadded:: 3.12
+
+.. seealso::
+
+   :pep:`695` - Type Parameter Syntax
+      Introduced the :keyword:`!type` statement and syntax for
+      generic classes and functions.

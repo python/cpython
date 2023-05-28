@@ -82,12 +82,12 @@ Interpreter improvements:
 * a number of Python builtins (range, tuple, set, frozenset, list, dict) are
   now sped up using :pep:`590` vectorcall;
 * garbage collection does not block on resurrected objects;
-* a number of Python modules (:mod:`_abc`, :mod:`audioop`, :mod:`_bz2`,
-  :mod:`_codecs`, :mod:`_contextvars`, :mod:`_crypt`, :mod:`_functools`,
+* a number of Python modules (:mod:`_abc`, :mod:`!audioop`, :mod:`_bz2`,
+  :mod:`_codecs`, :mod:`_contextvars`, :mod:`!_crypt`, :mod:`_functools`,
   :mod:`_json`, :mod:`_locale`, :mod:`math`, :mod:`operator`, :mod:`resource`,
   :mod:`time`, :mod:`_weakref`) now use multiphase initialization as defined
   by PEP 489;
-* a number of standard library modules (:mod:`audioop`, :mod:`ast`, :mod:`grp`,
+* a number of standard library modules (:mod:`!audioop`, :mod:`ast`, :mod:`grp`,
   :mod:`_hashlib`, :mod:`pwd`, :mod:`_posixsubprocess`, :mod:`random`,
   :mod:`select`, :mod:`struct`, :mod:`termios`, :mod:`zlib`) are now using
   the stable ABI defined by PEP 384.

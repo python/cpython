@@ -30,6 +30,7 @@ class _tokenizer.tokenizeriter "tokenizeriterobject *" "_tokenize_get_state_by_t
 typedef struct
 {
     PyObject_HEAD struct tok_state *tok;
+    int done;
 } tokenizeriterobject;
 
 /*[clinic input]
@@ -63,6 +64,7 @@ tokenizeriter_new_impl(PyTypeObject *type, const char *source,
     if (extra_tokens) {
         self->tok->tok_extra_tokens = 1;
     }
+    self->done = 0;
     return (PyObject *)self;
 }
 
@@ -179,8 +181,9 @@ tokenizeriter_next(tokenizeriterobject *it)
         }
         goto exit;
     }
-    if (type == ERRORTOKEN || type == ENDMARKER) {
+    if (it->done || type == ERRORTOKEN) {
         PyErr_SetString(PyExc_StopIteration, "EOF");
+        it->done = 1;
         goto exit;
     }
     PyObject *str = NULL;
@@ -194,15 +197,24 @@ tokenizeriter_next(tokenizeriterobject *it)
         goto exit;
     }
 
-    Py_ssize_t size = it->tok->inp - it->tok->buf;
-    assert(it->tok->buf[size-1] == '\n');
-    size -= 1; // Remove the newline character from the end of the line
-    PyObject *line = PyUnicode_DecodeUTF8(it->tok->buf, size, "replace");
+    int is_trailing_token = 0;
+    if (type == ENDMARKER || (type == DEDENT && it->tok->done == E_EOF)) {
+        is_trailing_token = 1;
+    }
+
+    const char *line_start = ISSTRINGLIT(type) ? it->tok->multi_line_start : it->tok->line_start;
+    PyObject* line = NULL;
+    if (it->tok->tok_extra_tokens && is_trailing_token) {
+        line = PyUnicode_FromString("");
+    } else {
+        Py_ssize_t size = it->tok->inp - line_start;
+        line = PyUnicode_DecodeUTF8(line_start, size, "replace");
+    }
     if (line == NULL) {
         Py_DECREF(str);
         goto exit;
     }
-    const char *line_start = ISSTRINGLIT(type) ? it->tok->multi_line_start : it->tok->line_start;
+
     Py_ssize_t lineno = ISSTRINGLIT(type) ? it->tok->first_lineno : it->tok->lineno;
     Py_ssize_t end_lineno = it->tok->lineno;
     Py_ssize_t col_offset = -1;
@@ -215,6 +227,10 @@ tokenizeriter_next(tokenizeriterobject *it)
     }
 
     if (it->tok->tok_extra_tokens) {
+        if (is_trailing_token) {
+            lineno = end_lineno = lineno + 1;
+            col_offset = end_col_offset = 0;
+        }
         // Necessary adjustments to match the original Python tokenize
         // implementation
         if (type > DEDENT && type < OP) {
@@ -232,6 +248,9 @@ tokenizeriter_next(tokenizeriterobject *it)
     result = Py_BuildValue("(iN(nn)(nn)N)", type, str, lineno, col_offset, end_lineno, end_col_offset, line);
 exit:
     _PyToken_Free(&token);
+    if (type == ENDMARKER) {
+        it->done = 1;
+    }
     return result;
 }
 

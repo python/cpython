@@ -233,7 +233,7 @@ class _PathParents(Sequence):
         return "<{}.parents>".format(type(self._path).__name__)
 
 
-class PurePath(object):
+class PurePath(os.PathLike):
     """Base class for manipulating paths without I/O.
 
     PurePath represents a filesystem path and offers operations which
@@ -300,6 +300,9 @@ class PurePath(object):
         for arg in args:
             if isinstance(arg, PurePath):
                 path = arg._raw_path
+                if arg._flavour is ntpath and self._flavour is posixpath:
+                    # GH-103631: Convert separators for backwards compatibility.
+                    path = path.replace('\\', '/')
             else:
                 try:
                     path = os.fspath(arg)
@@ -421,7 +424,10 @@ class PurePath(object):
         try:
             return self._str_normcase_cached
         except AttributeError:
-            self._str_normcase_cached = self._flavour.normcase(str(self))
+            if _is_case_sensitive(self._flavour):
+                self._str_normcase_cached = str(self)
+            else:
+                self._str_normcase_cached = str(self).lower()
             return self._str_normcase_cached
 
     @property
@@ -706,10 +712,6 @@ class PurePath(object):
             if not match(part):
                 return False
         return True
-
-# Can't subclass os.PathLike from PurePath and keep the constructor
-# optimizations in PurePath.__slots__.
-os.PathLike.register(PurePath)
 
 
 class PurePosixPath(PurePath):

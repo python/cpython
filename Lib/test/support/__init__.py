@@ -1865,15 +1865,16 @@ def missing_compiler_executable(cmd_names=[]):
     missing.
 
     """
-    # TODO (PEP 632): alternate check without using distutils
-    from distutils import ccompiler, sysconfig, spawn, errors
+    from setuptools._distutils import ccompiler, sysconfig, spawn
+    from setuptools import errors
+
     compiler = ccompiler.new_compiler()
     sysconfig.customize_compiler(compiler)
     if compiler.compiler_type == "msvc":
         # MSVC has no executables, so check whether initialization succeeds
         try:
             compiler.initialize()
-        except errors.DistutilsPlatformError:
+        except errors.PlatformError:
             return "msvc"
     for name in compiler.executables:
         if cmd_names and name not in cmd_names:
@@ -2268,6 +2269,42 @@ def requires_venv_with_pip():
     except ImportError:
         ctypes = None
     return unittest.skipUnless(ctypes, 'venv: pip requires ctypes')
+
+
+# Context manager that creates a virtual environment, install setuptools and wheel in it
+# and returns the path to the venv directory and the path to the python executable
+@contextlib.contextmanager
+def setup_venv_with_pip_setuptools_wheel(venv_dir):
+    import subprocess
+    from .os_helper import temp_cwd
+
+    with temp_cwd() as temp_dir:
+        # Create virtual environment to get setuptools
+        cmd = [sys.executable, '-X', 'dev', '-m', 'venv', venv_dir]
+        if verbose:
+            print()
+            print('Run:', ' '.join(cmd))
+        subprocess.run(cmd, check=True)
+
+        venv = os.path.join(temp_dir, venv_dir)
+
+        # Get the Python executable of the venv
+        python_exe = os.path.basename(sys.executable)
+        if sys.platform == 'win32':
+            python = os.path.join(venv, 'Scripts', python_exe)
+        else:
+            python = os.path.join(venv, 'bin', python_exe)
+
+        cmd = [python, '-X', 'dev',
+               '-m', 'pip', 'install',
+               findfile('setuptools-67.6.1-py3-none-any.whl'),
+               findfile('wheel-0.40.0-py3-none-any.whl')]
+        if verbose:
+            print()
+            print('Run:', ' '.join(cmd))
+        subprocess.run(cmd, check=True)
+
+        yield python
 
 
 # True if Python is built with the Py_DEBUG macro defined: if
