@@ -14,7 +14,7 @@
 // Max typed version basic blocks per basic block
 #define MAX_BB_VERSIONS 10
 
-#define OVERALLOCATE_FACTOR 6
+#define OVERALLOCATE_FACTOR 7
 
 
 /* Dummy types used by the types propagator */
@@ -1090,8 +1090,8 @@ write_bb_id(_PyBBBranchCache *cache, int bb_id, bool is_type_guard) {
 */
 static int type_guard_ladder[256] = {
     -1,
-    BINARY_CHECK_FLOAT,
-    BINARY_CHECK_INT,
+    CHECK_FLOAT,
+    CHECK_INT,
     -1,
     CHECK_LIST,
     -1,
@@ -1103,8 +1103,8 @@ static int type_guard_ladder[256] = {
  * KEEP IN SYNC WITH INDEX IN type_guard_ladder
 */
 static int type_guard_to_index[256] = {
-    [BINARY_CHECK_FLOAT] = 1,
-    [BINARY_CHECK_INT] = 2,
+    [CHECK_FLOAT] = 1,
+    [CHECK_INT] = 2,
     [CHECK_LIST] = 4,
 };
 
@@ -1480,8 +1480,8 @@ infer_BINARY_OP(
     *needs_guard = false;
     PyTypeObject *right = typenode_get_type(type_context->type_stack_ptr[-1]);
     PyTypeObject *left = typenode_get_type(type_context->type_stack_ptr[-2]);
-    if (left == &PyLong_Type) {
-        if (right == &PyLong_Type) {
+    if (left == &PyLong_Type || right == &PyLong_Type) {
+        if (left == &PyLong_Type && right == &PyLong_Type) {
             int opcode = oparg == NB_ADD
                 ? BINARY_OP_ADD_INT_REST
                 : oparg == NB_SUBTRACT
@@ -1494,40 +1494,63 @@ infer_BINARY_OP(
             type_propagate(opcode, 0, type_context, NULL);
             return write_curr;
         }
+        // One is unknown
+        int other_oparg = right == NULL ? 0 : 1;
+        if (prev_type_guard != NULL &&
+            prev_type_guard->op.code == CHECK_INT &&
+            prev_type_guard->op.arg != other_oparg &&
+            (right == NULL || left == NULL)) {
+            *needs_guard = true;
+            return emit_type_guard(write_curr, CHECK_INT, other_oparg, bb_id);
+        }
     }
-    if ((left == &PyRawFloat_Type || left == &PyFloat_Type) &&
+    // One of them are floats
+    if ((left == &PyRawFloat_Type || left == &PyFloat_Type) ||
         (right == &PyRawFloat_Type || right == &PyFloat_Type)) {
-        int opcode = oparg == NB_ADD
-            ? BINARY_OP_ADD_FLOAT_UNBOXED
-            : oparg == NB_SUBTRACT
-            ? BINARY_OP_SUBTRACT_FLOAT_UNBOXED
-            : oparg == NB_MULTIPLY
-            ? BINARY_OP_MULTIPLY_FLOAT_UNBOXED
-            : (Py_UNREACHABLE(), 1);
-        if (right == &PyFloat_Type) {
-            write_curr->op.code = UNBOX_FLOAT;
-            write_curr->op.arg = 0;
+        // Both side float, emit the optimised addition instruction
+        if ((left == &PyRawFloat_Type || left == &PyFloat_Type) &&
+            (right == &PyRawFloat_Type || right == &PyFloat_Type)) {
+            int opcode = oparg == NB_ADD
+                ? BINARY_OP_ADD_FLOAT_UNBOXED
+                : oparg == NB_SUBTRACT
+                ? BINARY_OP_SUBTRACT_FLOAT_UNBOXED
+                : oparg == NB_MULTIPLY
+                ? BINARY_OP_MULTIPLY_FLOAT_UNBOXED
+                : (Py_UNREACHABLE(), 1);
+            if (right == &PyFloat_Type) {
+                write_curr->op.code = UNBOX_FLOAT;
+                write_curr->op.arg = 0;
+                write_curr++;
+                type_propagate(UNBOX_FLOAT, 0, type_context, NULL);
+            }
+            if (left == &PyFloat_Type) {
+                write_curr->op.code = UNBOX_FLOAT;
+                write_curr->op.arg = 1;
+                write_curr++;
+                type_propagate(UNBOX_FLOAT, 1, type_context, NULL);
+            }
+            write_curr->op.code = opcode;
             write_curr++;
-            type_propagate(UNBOX_FLOAT, 0, type_context, NULL);
+            type_propagate(opcode, 0, type_context, NULL);
+            return write_curr;
         }
-        if (left == &PyFloat_Type) {
-            write_curr->op.code = UNBOX_FLOAT;
-            write_curr->op.arg = 1;
-            write_curr++;
-            type_propagate(UNBOX_FLOAT, 1, type_context, NULL);
+        // One is unknown
+        int other_oparg = right == NULL ? 0 : 1;
+        if (prev_type_guard != NULL &&
+            prev_type_guard->op.code == CHECK_FLOAT &&
+            prev_type_guard->op.arg != other_oparg &&
+            (right == NULL || left == NULL)) {
+            *needs_guard = true;
+            return emit_type_guard(write_curr, CHECK_FLOAT, right == NULL ? 0 : 1, bb_id);
         }
-        write_curr->op.code = opcode;
-        write_curr++;
-        type_propagate(opcode, 0, type_context, NULL);
-        return write_curr;
     }
-    // Unknown, time to emit the chain of guards.
+    // Both unknown, time to emit the chain of guards.
     // No type guard before this, or it's not the first in the new BB.
     // First in new BB usually indicates it's already part of a pre-existing ladder.
     if (prev_type_guard == NULL || !is_first_instr) {
         write_curr = rebox_stack(write_curr, type_context, 2);
         *needs_guard = true;
-        return emit_type_guard(write_curr, BINARY_CHECK_FLOAT, 0, bb_id);
+        return emit_type_guard(write_curr, CHECK_FLOAT, 0, bb_id);
     }
     else {
         int next_guard = type_guard_ladder[
@@ -1650,8 +1673,8 @@ _PyTier2_Code_DetectAndEmitBB(
 {
     assert(
         prev_type_guard == NULL ||
-        prev_type_guard->op.code == BINARY_CHECK_INT ||
-        prev_type_guard->op.code == BINARY_CHECK_FLOAT ||
+        prev_type_guard->op.code == CHECK_INT ||
+        prev_type_guard->op.code == CHECK_FLOAT ||
         prev_type_guard->op.code == CHECK_LIST
     );
 #define END() goto end;

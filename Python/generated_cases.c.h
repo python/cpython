@@ -492,26 +492,21 @@
             DISPATCH();
         }
 
-        TARGET(BINARY_CHECK_FLOAT) {
-            PyObject *right = stack_pointer[-1];
-            PyObject *left = stack_pointer[-2];
-            PyObject *left_unboxed;
-            PyObject *right_unboxed;
+        TARGET(CHECK_FLOAT) {
+            PyObject *maybe_float = stack_pointer[-(1 + oparg)];
+            PyObject *unboxed_float;
             assert(cframe.use_tracing == 0);
-            char is_successor = PyFloat_CheckExact(left) && (Py_TYPE(left) == Py_TYPE(right));
+            char is_successor = PyFloat_CheckExact(maybe_float);
             bb_test = BB_TEST(is_successor, 0);
 
             if (is_successor) {
-                left_unboxed = *((PyObject **)(&(((PyFloatObject *)left)->ob_fval)));
-                right_unboxed = *((PyObject **)(&(((PyFloatObject *)right)->ob_fval)));
-                Py_DECREF(left);
-                Py_DECREF(right);
-            } else {
-                left_unboxed = left;
-                right_unboxed = right;
+                unboxed_float = *((PyObject **)(&(((PyFloatObject *)maybe_float)->ob_fval)));
+                Py_DECREF(maybe_float);
             }
-            stack_pointer[-1] = right_unboxed;
-            stack_pointer[-2] = left_unboxed;
+            else {
+                unboxed_float = maybe_float;
+            }
+            stack_pointer[-(1 + oparg)] = unboxed_float;
             DISPATCH();
         }
 
@@ -583,11 +578,10 @@
             DISPATCH();
         }
 
-        TARGET(BINARY_CHECK_INT) {
-            PyObject *right = stack_pointer[-1];
-            PyObject *left = stack_pointer[-2];
+        TARGET(CHECK_INT) {
+            PyObject *maybe_int = stack_pointer[-(1 + oparg)];
             assert(cframe.use_tracing == 0);
-            char is_successor = PyLong_CheckExact(left) && (Py_TYPE(left) == Py_TYPE(right));
+            char is_successor = PyLong_CheckExact(maybe_int);
             bb_test = BB_TEST(is_successor, 0);
             DISPATCH();
         }

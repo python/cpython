@@ -309,22 +309,17 @@ dummy_func(
             DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dsum, sum);
         }
 
-        inst(BINARY_CHECK_FLOAT, (
-                left, right 
-                -- left_unboxed : {<<= PyFloat_Type, PyRawFloat_Type}, 
-                   right_unboxed: {<<= PyFloat_Type, PyRawFloat_Type})
-            ) {
+        inst(CHECK_FLOAT, (maybe_float, unused[oparg] -- unboxed_float : {<<= PyFloat_Type, PyRawFloat_Type}, unused[oparg])) {
             assert(cframe.use_tracing == 0);
-            char is_successor = PyFloat_CheckExact(left) && (Py_TYPE(left) == Py_TYPE(right));
+            char is_successor = PyFloat_CheckExact(maybe_float);
             bb_test = BB_TEST(is_successor, 0);
 
             if (is_successor) {
-                left_unboxed = *((PyObject **)(&(((PyFloatObject *)left)->ob_fval)));
-                right_unboxed = *((PyObject **)(&(((PyFloatObject *)right)->ob_fval)));
+                unboxed_float = *((PyObject **)(&(((PyFloatObject *)maybe_float)->ob_fval)));
                 DECREF_INPUTS();
-            } else {
-                left_unboxed = left;
-                right_unboxed = right;
+            }
+            else {
+                unboxed_float = maybe_float;
             }
         }
 
@@ -363,9 +358,9 @@ dummy_func(
             U_INST(BINARY_OP_ADD_INT_REST);
         }
 
-        inst(BINARY_CHECK_INT, (left, right -- left : <<= PyLong_Type, right : <<= PyLong_Type)) {
+        inst(CHECK_INT, (maybe_int, unused[oparg] -- maybe_int : <<= PyLong_Type, unused[oparg])) {
             assert(cframe.use_tracing == 0);
-            char is_successor = PyLong_CheckExact(left) && (Py_TYPE(left) == Py_TYPE(right));
+            char is_successor = PyLong_CheckExact(maybe_int);
             bb_test = BB_TEST(is_successor, 0);
         }
 

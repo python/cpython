@@ -482,15 +482,8 @@ _uops = [
     # Common type checks
     # These instructions check that one operand is a certain type.
     # Their oparg is the offset from TOS to read.
-    # 'UNARY_CHECK_INT',
-    # 'UNARY_CHECK_FLOAT',
-    # 'UNARY_CHECK_STR',
-
-    # These instructions check that both operands are a certain type.
-    # The benefit is that they save some dispatch overhead versus the
-    # single operand forms.
-    'BINARY_CHECK_INT',
-    'BINARY_CHECK_FLOAT',
+    'CHECK_INT',
+    'CHECK_FLOAT',
     'CHECK_LIST',
 
     # These are guardless instructions

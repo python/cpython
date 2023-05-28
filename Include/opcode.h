@@ -203,8 +203,8 @@ extern "C" {
 #define BB_TEST_POP_IF_NOT_NONE                183
 #define BB_TEST_POP_IF_NONE                    184
 #define BB_JUMP_BACKWARD_LAZY                  185
-#define BINARY_CHECK_INT                       186
-#define BINARY_CHECK_FLOAT                     187
+#define CHECK_INT                              186
+#define CHECK_FLOAT                            187
 #define CHECK_LIST                             188
 #define BINARY_OP_ADD_INT_REST                 189
 #define BINARY_OP_ADD_FLOAT_UNBOXED            190
