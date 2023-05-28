@@ -776,6 +776,22 @@ class TestOneliners(GetSourceBase):
         # where the second line _is_ indented.
         self.assertSourceEqual(mod2.tlli, 33, 34)
 
+    def test_parenthesized_multiline_lambda(self):
+        # Test inspect.getsource with a parenthesized multi-line lambda
+        # function.
+        self.assertSourceEqual(mod2.parenthesized_lambda, 279, 279)
+        self.assertSourceEqual(mod2.parenthesized_lambda2, 281, 281)
+        self.assertSourceEqual(mod2.parenthesized_lambda3, 283, 283)
+
+    def test_post_line_parenthesized_lambda(self):
+        # Test inspect.getsource with a parenthesized multi-line lambda
+        # function.
+        self.assertSourceEqual(mod2.post_line_parenthesized_lambda1, 286, 287)
+
+    def test_nested_lambda(self):
+        # Test inspect.getsource with a nested lambda function.
+        self.assertSourceEqual(mod2.nested_lambda, 291, 292)
+
     def test_onelinefunc(self):
         # Test inspect.getsource with a regular one-line function.
         self.assertSourceEqual(mod2.onelinefunc, 37, 37)
