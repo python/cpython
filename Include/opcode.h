@@ -216,7 +216,8 @@ extern "C" {
 #define UNPACK_SEQUENCE_TUPLE                  166
 #define UNPACK_SEQUENCE_TWO_TUPLE              167
 #define SEND_GEN                               168
-#define POP_TOP__STORE_FAST                    169
+#define POP_TOP__POP_TOP                       169
+#define POP_TOP__STORE_FAST                    170
 
 #define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\
     || ((op) == JUMP) \

@@ -436,6 +436,7 @@ _specializations = {
         "SEND_GEN",
     ],
     "POP_TOP": [
+        "POP_TOP__POP_TOP",
         "POP_TOP__STORE_FAST"
     ]
 }

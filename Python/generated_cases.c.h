@@ -249,6 +249,22 @@
             DISPATCH();
         }
 
+        TARGET(POP_TOP__POP_TOP) {
+            PyObject *_tmp_1 = stack_pointer[-1];
+            PyObject *_tmp_2 = stack_pointer[-2];
+            {
+                PyObject *value = _tmp_1;
+                Py_DECREF(value);
+            }
+            oparg = (next_instr++)->op.arg;
+            {
+                PyObject *value = _tmp_2;
+                Py_DECREF(value);
+            }
+            STACK_SHRINK(2);
+            DISPATCH();
+        }
+
         TARGET(POP_TOP__STORE_FAST) {
             PyObject *_tmp_1 = stack_pointer[-1];
             PyObject *_tmp_2 = stack_pointer[-2];

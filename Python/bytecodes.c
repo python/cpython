@@ -213,6 +213,7 @@ dummy_func(
         super(STORE_FAST__LOAD_FAST)  = STORE_FAST + LOAD_FAST;
         super(STORE_FAST__STORE_FAST) = STORE_FAST + STORE_FAST;
         super(LOAD_CONST__LOAD_FAST) = LOAD_CONST + LOAD_FAST;
+        super(POP_TOP__POP_TOP) = POP_TOP + POP_TOP;
         super(POP_TOP__STORE_FAST) = POP_TOP + STORE_FAST;
 
         inst(POP_TOP, (value --)) {
