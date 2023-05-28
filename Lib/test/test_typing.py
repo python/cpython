@@ -3389,7 +3389,7 @@ class GenericTests(BaseTestCase):
                 self.assertRaises(TypeError, issubclass, typ, type)
                 self.assertRaises(TypeError, issubclass, typ, typ)
 
-                # isinstance if fine:
+                # isinstance is fine:
                 self.assertTrue(isinstance(typ, object))
                 self.assertTrue(isinstance(typ, object))
                 # but, not when the right arg is also a generic:
