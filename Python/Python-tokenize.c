@@ -240,6 +240,7 @@ tokenizeriter_next(tokenizeriterobject *it)
             type = NAME;
         }
         else if (type == NEWLINE) {
+            Py_DECREF(str);
             if (it->tok->start[0] == '\r') {
                 str = PyUnicode_FromString("\r\n");
             } else {
