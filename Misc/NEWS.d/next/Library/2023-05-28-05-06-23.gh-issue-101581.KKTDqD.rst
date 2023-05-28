@@ -1,0 +1,1 @@
+Add :class`asyncio.TaskScope` as a task cancellation scope primitive and now :class:`asyncio.TaskGroup` is an extension of it, allowing easier writing of safe coroutine lifecycle managers in 3rd party codes. Contribution by Andrea Tedeschi and Joongi Kim.
