@@ -55,7 +55,7 @@ tokenizeriter_new_impl(PyTypeObject *type, const char *source,
     if (filename == NULL) {
         return NULL;
     }
-    self->tok = _PyTokenizer_FromUTF8(source, 1);
+    self->tok = _PyTokenizer_FromUTF8(source, 1, 1);
     if (self->tok == NULL) {
         Py_DECREF(filename);
         return NULL;
@@ -240,7 +240,12 @@ tokenizeriter_next(tokenizeriterobject *it)
             type = NAME;
         }
         else if (type == NEWLINE) {
-            str = PyUnicode_FromString("\n");
+            Py_DECREF(str);
+            if (it->tok->start[0] == '\r') {
+                str = PyUnicode_FromString("\r\n");
+            } else {
+                str = PyUnicode_FromString("\n");
+            }
             end_col_offset++;
         }
     }
