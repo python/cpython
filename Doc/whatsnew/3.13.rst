@@ -90,12 +90,11 @@ Improved Modules
 csv
 ---
 
-* Improved ``has_header()`` method in CSV module to provide better
-header detection. It now checks if all columns are strings and if the
-``columnTypes`` dictionary is empty. If these conditions are met,
-the function assigns the median length of the strings.
-(Contributed by Vanille-22 & Drakariboo in :gh:`103341`.)
-
+* Improved the ``has_header()`` method in the CSV module to provide better
+  header detection. It now checks if all columns are strings and if the
+  ``columnTypes`` dictionary is empty. If these conditions are met,
+  the function assigns the median length of the strings.
+  (Contributed by Vanille-22 & Drakariboo in :gh:`103341`.)
 
 Optimizations
 =============
