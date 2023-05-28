@@ -135,8 +135,8 @@ struct tok_state {
 #endif
 };
 
-extern struct tok_state *_PyTokenizer_FromString(const char *, int);
-extern struct tok_state *_PyTokenizer_FromUTF8(const char *, int);
+extern struct tok_state *_PyTokenizer_FromString(const char *, int, int);
+extern struct tok_state *_PyTokenizer_FromUTF8(const char *, int, int);
 extern struct tok_state *_PyTokenizer_FromFile(FILE *, const char*,
                                               const char *, const char *);
 extern void _PyTokenizer_Free(struct tok_state *);
