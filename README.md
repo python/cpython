@@ -1,6 +1,6 @@
 # pyLBBVAndPatch 
 
-A Lazy Basic Block Versioning + Copy and Patch JIT Interpreter for CPython.
+A WIP Lazy Basic Block Versioning + (eventually) Copy and Patch JIT Interpreter for CPython.
 
 Python is a widely-used programming language. CPython is its reference implementation. Due to Python’s dynamic type semantics, CPython is generally unable to execute Python programs as fast as it potentially could with static type semantics.
 
