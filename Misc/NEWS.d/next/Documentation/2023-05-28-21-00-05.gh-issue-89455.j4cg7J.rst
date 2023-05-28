@@ -1,0 +1,1 @@
+Add missing documentation for the ``exceptions`` attribute of the :class:`traceback.TracebackException` class
