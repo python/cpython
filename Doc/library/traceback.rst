@@ -231,9 +231,10 @@ capture data for later printing in a lightweight fashion.
    Note that when locals are captured, they are also shown in the traceback.
 
    *max_group_width* and *max_group_depth* control the formatting of exception
-   groups (see :exc:`BaseExceptionGroup`). The depth refers to the nesting level of the group, and the width
-   refers to the size of a single exception group's exceptions array. The
-   formatted output is truncated when either limit is exceeded.
+   groups (see :exc:`BaseExceptionGroup`). The depth refers to the nesting
+   level of the group, and the width refers to the size of a single exception
+   group's exceptions array. The formatted output is truncated when either
+   limit is exceeded.
 
    .. attribute:: __cause__
 
@@ -245,7 +246,8 @@ capture data for later printing in a lightweight fashion.
 
    .. attribute:: exceptions
 
-      If ``self`` represents an :exc:`ExceptionGroup` - a list of :class:`TracebackException` instances representing the nested exceptions.
+      If ``self`` represents an :exc:`ExceptionGroup` - a list of
+      :class:`TracebackException` instances representing the nested exceptions.
 
       .. versionadded:: 3.11
 
