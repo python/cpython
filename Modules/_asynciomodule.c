@@ -1953,6 +1953,9 @@ register_task(asyncio_state *state, TaskObj *task)
 {
     assert(Task_Check(state, task));
     assert(task != &state->asyncio_tasks.tail);
+    if (task->prev != NULL) {
+        return;
+    }
     assert(task->prev == NULL);
     assert(task->next == NULL);
     assert(state->asyncio_tasks.head != NULL);
@@ -1973,7 +1976,11 @@ unregister_task(asyncio_state *state, TaskObj *task)
 {
     assert(Task_Check(state, task));
     assert(task != &state->asyncio_tasks.tail);
-    assert(task->prev != NULL);
+    if (task->prev == NULL) {
+        assert(task->next == NULL);
+        assert(state->asyncio_tasks.head != task);
+        return;
+    }
     task->prev->next = task->next;
     if (task->next == NULL) {
         assert(state->asyncio_tasks.head == task);
@@ -1983,6 +1990,7 @@ unregister_task(asyncio_state *state, TaskObj *task)
     }
     task->next = NULL;
     task->prev = NULL;
+    assert(state->asyncio_tasks.head != task);
 }
 
 static int
@@ -3583,6 +3591,15 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
     if (tasks == NULL) {
         return NULL;
     }
+    if (loop == Py_None) {
+        loop = _asyncio_get_running_loop_impl(module);
+        if (loop == NULL) {
+            Py_DECREF(tasks);
+            return NULL;
+        }
+    } else {
+        Py_INCREF(loop);
+    }
     asyncio_state *state = get_asyncio_state(module);
     TaskObj *head = state->asyncio_tasks.head;
     assert(head != NULL);
@@ -3590,14 +3607,16 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
     TaskObj *tail = &state->asyncio_tasks.tail;
     while (head != tail)
     {
-        if (loop == Py_None || head->task_loop == loop) {
+        if (head->task_loop == loop) {
             if (PySet_Add(tasks, (PyObject *)head) < 0) {
                 Py_DECREF(tasks);
+                Py_DECREF(loop);
                 return NULL;
             }
         }
         head = head->prev;
     }
+    Py_DECREF(loop);
     return tasks;
 }
 
