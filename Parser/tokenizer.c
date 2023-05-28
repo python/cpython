@@ -2413,7 +2413,10 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             else {
                 end_quote_size = 0;
                 if (c == '\\') {
-                    tok_nextc(tok);  /* skip escaped char */
+                    c = tok_nextc(tok);  /* skip escaped char */
+                    if (c == '\r') {
+                        c = tok_nextc(tok);
+                    }
                 }
             }
         }
