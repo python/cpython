@@ -52,6 +52,8 @@ A callable can also be passed from the :ref:`python-interface`::
 Note however that :func:`.timeit` will automatically determine the number of
 repetitions only when the command-line interface is used.  In the
 :ref:`timeit-examples` section you can find more advanced examples.
+Especially, the time unit can be changed by modifying :func:`default_timer`
+or passing other timer in function.
 
 
 .. _python-interface:
@@ -124,7 +126,7 @@ The module defines three convenience functions and a public class:
 
       Time *number* executions of the main statement.  This executes the setup
       statement once, and then returns the time it takes to execute the main
-      statement a number of times, measured in seconds as a float.
+      statement a number of times, measured in seconds as a float by default timer.
       The argument is the number of times through the loop, defaulting to one
       million.  The main statement, the setup statement and the timer function
       to be used are passed to the constructor.
