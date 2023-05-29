@@ -3,13 +3,15 @@ from test.support import os_helper
 from tokenize import (tokenize, _tokenize, untokenize, NUMBER, NAME, OP,
                      STRING, ENDMARKER, ENCODING, tok_name, detect_encoding,
                      open as tokenize_open, Untokenizer, generate_tokens,
-                     NEWLINE, _generate_tokens_from_c_tokenizer, DEDENT)
+                     NEWLINE, _generate_tokens_from_c_tokenizer, DEDENT, TokenInfo)
 from io import BytesIO, StringIO
 import unittest
 from textwrap import dedent
 from unittest import TestCase, mock
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
+from test.support import os_helper
+from test.support.script_helper import run_test_script, make_script, run_python_until_end
 import os
 import token
 
@@ -82,6 +84,32 @@ class TokenizeTest(TestCase):
     NEWLINE    '\\n'          (4, 26) (4, 27)
     DEDENT     ''            (5, 0) (5, 0)
     """)
+
+        self.check_tokenize("if True:\r\n    # NL\r\n    foo='bar'\r\n\r\n", """\
+    NAME       'if'          (1, 0) (1, 2)
+    NAME       'True'        (1, 3) (1, 7)
+    OP         ':'           (1, 7) (1, 8)
+    NEWLINE    '\\r\\n'        (1, 8) (1, 10)
+    COMMENT    '# NL'        (2, 4) (2, 8)
+    NL         '\\r\\n'        (2, 8) (2, 10)
+    INDENT     '    '        (3, 0) (3, 4)
+    NAME       'foo'         (3, 4) (3, 7)
+    OP         '='           (3, 7) (3, 8)
+    STRING     "\'bar\'"       (3, 8) (3, 13)
+    NEWLINE    '\\r\\n'        (3, 13) (3, 15)
+    NL         '\\r\\n'        (4, 0) (4, 2)
+    DEDENT     ''            (5, 0) (5, 0)
+            """)
+
+        self.check_tokenize("x = 1 + \\\r\n1\r\n", """\
+    NAME       'x'           (1, 0) (1, 1)
+    OP         '='           (1, 2) (1, 3)
+    NUMBER     '1'           (1, 4) (1, 5)
+    OP         '+'           (1, 6) (1, 7)
+    NUMBER     '1'           (2, 0) (2, 1)
+    NEWLINE    '\\r\\n'        (2, 1) (2, 3)
+            """)
+
         indent_error_file = b"""\
 def k(x):
     x += 2
@@ -90,9 +118,18 @@ def k(x):
         readline = BytesIO(indent_error_file).readline
         with self.assertRaisesRegex(IndentationError,
                                     "unindent does not match any "
-                                    "outer indentation level"):
+                                    "outer indentation level") as e:
             for tok in tokenize(readline):
                 pass
+        self.assertEqual(e.exception.lineno, 3)
+        self.assertEqual(e.exception.filename, '<string>')
+        self.assertEqual(e.exception.end_lineno, None)
+        self.assertEqual(e.exception.end_offset, None)
+        self.assertEqual(
+            e.exception.msg,
+            'unindent does not match any outer indentation level')
+        self.assertEqual(e.exception.offset, 9)
+        self.assertEqual(e.exception.text, '  x += 5')
 
     def test_int(self):
         # Ordinary integers and binary operators
@@ -228,6 +265,10 @@ def k(x):
                 continue
             self.assertEqual(number_token(lit), lit)
         for lit in INVALID_UNDERSCORE_LITERALS:
+            try:
+                number_token(lit)
+            except SyntaxError:
+                continue
             self.assertNotEqual(number_token(lit), lit)
 
     def test_string(self):
@@ -379,21 +420,119 @@ c"""', """\
     STRING     'rb"\""a\\\\\\nb\\\\\\nc"\""' (1, 0) (3, 4)
     """)
         self.check_tokenize('f"abc"', """\
-    STRING     'f"abc"'      (1, 0) (1, 6)
+    FSTRING_START 'f"'          (1, 0) (1, 2)
+    FSTRING_MIDDLE 'abc'         (1, 2) (1, 5)
+    FSTRING_END '"'           (1, 5) (1, 6)
     """)
         self.check_tokenize('fR"a{b}c"', """\
-    STRING     'fR"a{b}c"'   (1, 0) (1, 9)
+    FSTRING_START 'fR"'         (1, 0) (1, 3)
+    FSTRING_MIDDLE 'a'           (1, 3) (1, 4)
+    OP         '{'           (1, 4) (1, 5)
+    NAME       'b'           (1, 5) (1, 6)
+    OP         '}'           (1, 6) (1, 7)
+    FSTRING_MIDDLE 'c'           (1, 7) (1, 8)
+    FSTRING_END '"'           (1, 8) (1, 9)
+    """)
+        self.check_tokenize('fR"a{{{b!r}}}c"', """\
+    FSTRING_START 'fR"'         (1, 0) (1, 3)
+    FSTRING_MIDDLE 'a{'          (1, 3) (1, 5)
+    OP         '{'           (1, 6) (1, 7)
+    NAME       'b'           (1, 7) (1, 8)
+    OP         '!'           (1, 8) (1, 9)
+    NAME       'r'           (1, 9) (1, 10)
+    OP         '}'           (1, 10) (1, 11)
+    FSTRING_MIDDLE '}'           (1, 11) (1, 12)
+    FSTRING_MIDDLE 'c'           (1, 13) (1, 14)
+    FSTRING_END '"'           (1, 14) (1, 15)
+    """)
+        self.check_tokenize('f"{{{1+1}}}"', """\
+    FSTRING_START 'f"'          (1, 0) (1, 2)
+    FSTRING_MIDDLE '{'           (1, 2) (1, 3)
+    OP         '{'           (1, 4) (1, 5)
+    NUMBER     '1'           (1, 5) (1, 6)
+    OP         '+'           (1, 6) (1, 7)
+    NUMBER     '1'           (1, 7) (1, 8)
+    OP         '}'           (1, 8) (1, 9)
+    FSTRING_MIDDLE '}'           (1, 9) (1, 10)
+    FSTRING_END '"'           (1, 11) (1, 12)
+    """)
+        self.check_tokenize('f"""{f\'\'\'{f\'{f"{1+1}"}\'}\'\'\'}"""', """\
+    FSTRING_START 'f\"""'        (1, 0) (1, 4)
+    OP         '{'           (1, 4) (1, 5)
+    FSTRING_START "f'''"        (1, 5) (1, 9)
+    OP         '{'           (1, 9) (1, 10)
+    FSTRING_START "f'"          (1, 10) (1, 12)
+    OP         '{'           (1, 12) (1, 13)
+    FSTRING_START 'f"'          (1, 13) (1, 15)
+    OP         '{'           (1, 15) (1, 16)
+    NUMBER     '1'           (1, 16) (1, 17)
+    OP         '+'           (1, 17) (1, 18)
+    NUMBER     '1'           (1, 18) (1, 19)
+    OP         '}'           (1, 19) (1, 20)
+    FSTRING_END '"'           (1, 20) (1, 21)
+    OP         '}'           (1, 21) (1, 22)
+    FSTRING_END "'"           (1, 22) (1, 23)
+    OP         '}'           (1, 23) (1, 24)
+    FSTRING_END "'''"         (1, 24) (1, 27)
+    OP         '}'           (1, 27) (1, 28)
+    FSTRING_END '\"""'         (1, 28) (1, 31)
+    """)
+        self.check_tokenize('f"""     x\nstr(data, encoding={invalid!r})\n"""', """\
+    FSTRING_START 'f\"""'        (1, 0) (1, 4)
+    FSTRING_MIDDLE '     x\\nstr(data, encoding=' (1, 4) (2, 19)
+    OP         '{'           (2, 19) (2, 20)
+    NAME       'invalid'     (2, 20) (2, 27)
+    OP         '!'           (2, 27) (2, 28)
+    NAME       'r'           (2, 28) (2, 29)
+    OP         '}'           (2, 29) (2, 30)
+    FSTRING_MIDDLE ')\\n'         (2, 30) (3, 0)
+    FSTRING_END '\"""'         (3, 0) (3, 3)
+    """)
+        self.check_tokenize('f"""123456789\nsomething{None}bad"""', """\
+    FSTRING_START 'f\"""'        (1, 0) (1, 4)
+    FSTRING_MIDDLE '123456789\\nsomething' (1, 4) (2, 9)
+    OP         '{'           (2, 9) (2, 10)
+    NAME       'None'        (2, 10) (2, 14)
+    OP         '}'           (2, 14) (2, 15)
+    FSTRING_MIDDLE 'bad'         (2, 15) (2, 18)
+    FSTRING_END '\"""'         (2, 18) (2, 21)
     """)
         self.check_tokenize('f"""abc"""', """\
-    STRING     'f\"\"\"abc\"\"\"'  (1, 0) (1, 10)
+    FSTRING_START 'f\"""'        (1, 0) (1, 4)
+    FSTRING_MIDDLE 'abc'         (1, 4) (1, 7)
+    FSTRING_END '\"""'         (1, 7) (1, 10)
     """)
         self.check_tokenize(r'f"abc\
 def"', """\
-    STRING     'f"abc\\\\\\ndef"' (1, 0) (2, 4)
+    FSTRING_START 'f"'          (1, 0) (1, 2)
+    FSTRING_MIDDLE 'abc\\\\\\ndef'  (1, 2) (2, 3)
+    FSTRING_END '"'           (2, 3) (2, 4)
     """)
         self.check_tokenize(r'Rf"abc\
 def"', """\
-    STRING     'Rf"abc\\\\\\ndef"' (1, 0) (2, 4)
+    FSTRING_START 'Rf"'         (1, 0) (1, 3)
+    FSTRING_MIDDLE 'abc\\\\\\ndef'  (1, 3) (2, 3)
+    FSTRING_END '"'           (2, 3) (2, 4)
+    """)
+        self.check_tokenize("f'some words {a+b:.3f} more words {c+d=} final words'", """\
+    FSTRING_START "f'"          (1, 0) (1, 2)
+    FSTRING_MIDDLE 'some words ' (1, 2) (1, 13)
+    OP         '{'           (1, 13) (1, 14)
+    NAME       'a'           (1, 14) (1, 15)
+    OP         '+'           (1, 15) (1, 16)
+    NAME       'b'           (1, 16) (1, 17)
+    OP         ':'           (1, 17) (1, 18)
+    FSTRING_MIDDLE '.3f'         (1, 18) (1, 21)
+    OP         '}'           (1, 21) (1, 22)
+    FSTRING_MIDDLE ' more words ' (1, 22) (1, 34)
+    OP         '{'           (1, 34) (1, 35)
+    NAME       'c'           (1, 35) (1, 36)
+    OP         '+'           (1, 36) (1, 37)
+    NAME       'd'           (1, 37) (1, 38)
+    OP         '='           (1, 38) (1, 39)
+    OP         '}'           (1, 39) (1, 40)
+    FSTRING_MIDDLE ' final words' (1, 40) (1, 52)
+    FSTRING_END "'"           (1, 52) (1, 53)
     """)
 
     def test_function(self):
@@ -944,6 +1083,23 @@ async def f():
     DEDENT     ''            (7, 0) (7, 0)
     """)
 
+    def test_newline_after_parenthesized_block_with_comment(self):
+        self.check_tokenize('''\
+[
+    # A comment here
+    1
+]
+''', """\
+    OP         '['           (1, 0) (1, 1)
+    NL         '\\n'          (1, 1) (1, 2)
+    COMMENT    '# A comment here' (2, 4) (2, 20)
+    NL         '\\n'          (2, 20) (2, 21)
+    NUMBER     '1'           (3, 4) (3, 5)
+    NL         '\\n'          (3, 5) (3, 6)
+    OP         ']'           (4, 0) (4, 1)
+    NEWLINE    '\\n'          (4, 1) (4, 2)
+    """)
+
 class GenerateTokensTest(TokenizeTest):
     def check_tokenize(self, s, expected):
         # Format the tokens in s in a table format.
@@ -966,7 +1122,7 @@ def decistmt(s):
             ])
         else:
             result.append((toknum, tokval))
-    return untokenize(result).decode('utf-8')
+    return untokenize(result).decode('utf-8').strip()
 
 class TestMisc(TestCase):
 
@@ -1038,32 +1194,15 @@ class Test_Tokenize(TestCase):
             nonlocal first
             if not first:
                 first = True
-                return line
+                yield line
             else:
-                return b''
+                yield b''
 
         # skip the initial encoding token and the end tokens
-        tokens = list(_tokenize(readline, encoding='utf-8'))[1:-2]
-        expected_tokens = [(3, '"ЉЊЈЁЂ"', (1, 0), (1, 7), '"ЉЊЈЁЂ"')]
+        tokens = list(_tokenize(readline(), encoding='utf-8'))[:-2]
+        expected_tokens = [TokenInfo(3, '"ЉЊЈЁЂ"', (1, 0), (1, 7), '"ЉЊЈЁЂ"\n')]
         self.assertEqual(tokens, expected_tokens,
                          "bytes not decoded with encoding")
-
-    def test__tokenize_does_not_decode_with_encoding_none(self):
-        literal = '"ЉЊЈЁЂ"'
-        first = False
-        def readline():
-            nonlocal first
-            if not first:
-                first = True
-                return literal
-            else:
-                return b''
-
-        # skip the end tokens
-        tokens = list(_tokenize(readline, encoding=None))[:-2]
-        expected_tokens = [(3, '"ЉЊЈЁЂ"', (1, 0), (1, 7), '"ЉЊЈЁЂ"')]
-        self.assertEqual(tokens, expected_tokens,
-                         "string not tokenized when encoding is None")
 
 
 class TestDetectEncoding(TestCase):
@@ -1324,7 +1463,7 @@ class TestTokenize(TestCase):
 
     def test_tokenize(self):
         import tokenize as tokenize_module
-        encoding = object()
+        encoding = "utf-8"
         encoding_used = None
         def mock_detect_encoding(readline):
             return encoding, [b'first', b'second']
@@ -1334,7 +1473,10 @@ class TestTokenize(TestCase):
             encoding_used = encoding
             out = []
             while True:
-                next_line = readline()
+                try:
+                    next_line = next(readline)
+                except StopIteration:
+                    return out
                 if next_line:
                     out.append(next_line)
                     continue
@@ -1354,7 +1496,7 @@ class TestTokenize(TestCase):
         tokenize_module._tokenize = mock__tokenize
         try:
             results = tokenize(mock_readline)
-            self.assertEqual(list(results),
+            self.assertEqual(list(results)[1:],
                              [b'first', b'second', b'1', b'2', b'3', b'4'])
         finally:
             tokenize_module.detect_encoding = orig_detect_encoding
@@ -1468,6 +1610,19 @@ class TestTokenize(TestCase):
             self.assertEqual(tok_name[tokens[i + 1].exact_type], tok_name[expected_tokens[i]])
         self.assertEqual(tok_name[tokens[-1].exact_type], tok_name[token.ENDMARKER])
 
+    def test_invalid_character_in_fstring_middle(self):
+        # See gh-103824
+        script = b'''F"""
+        \xe5"""'''
+
+        with os_helper.temp_dir() as temp_dir:
+            filename = os.path.join(temp_dir, "script.py")
+            with open(filename, 'wb') as file:
+                file.write(script)
+            rs, _ = run_python_until_end(filename)
+            self.assertIn(b"SyntaxError", rs.err)
+
+
 class UntokenizeTest(TestCase):
 
     def test_bad_input_order(self):
@@ -1528,7 +1683,6 @@ class TestRoundtrip(TestCase):
             code = f.encode('utf-8')
         else:
             code = f.read()
-            f.close()
         readline = iter(code.splitlines(keepends=True)).__next__
         tokens5 = list(tokenize(readline))
         tokens2 = [tok[:2] for tok in tokens5]
@@ -1542,6 +1696,17 @@ class TestRoundtrip(TestCase):
         readline5 = iter(bytes_from5.splitlines(keepends=True)).__next__
         tokens2_from5 = [tok[:2] for tok in tokenize(readline5)]
         self.assertEqual(tokens2_from5, tokens2)
+
+    def check_line_extraction(self, f):
+        if isinstance(f, str):
+            code = f.encode('utf-8')
+        else:
+            code = f.read()
+        readline = iter(code.splitlines(keepends=True)).__next__
+        for tok in tokenize(readline):
+            if tok.type in  {ENCODING, ENDMARKER}:
+                continue
+            self.assertEqual(tok.string, tok.line[tok.start[1]: tok.end[1]])
 
     def test_roundtrip(self):
         # There are some standard formatting practices that are easy to get right.
@@ -1623,6 +1788,10 @@ class TestRoundtrip(TestCase):
         # 7 more testfiles fail.  Remove them also until the failure is diagnosed.
 
         testfiles.remove(os.path.join(tempdir, "test_unicode_identifiers.py"))
+
+        # TODO: Remove this once we can unparse PEP 701 syntax
+        testfiles.remove(os.path.join(tempdir, "test_fstring.py"))
+
         for f in ('buffer', 'builtin', 'fileio', 'inspect', 'os', 'platform', 'sys'):
             testfiles.remove(os.path.join(tempdir, "test_%s.py") % f)
 
@@ -1635,6 +1804,7 @@ class TestRoundtrip(TestCase):
             with open(testfile, 'rb') as f:
                 with self.subTest(file=testfile):
                     self.check_roundtrip(f)
+                    self.check_line_extraction(f)
 
 
     def roundtrip(self, code):
@@ -1934,26 +2104,50 @@ c"""', """\
     STRING     'rb"\""a\\\\\\nb\\\\\\nc"\""' (1, 0) (3, 4)
     """)
 
+        self.check_tokenize(r'"hola\\\r\ndfgf"', """\
+    STRING     \'"hola\\\\\\\\\\\\r\\\\ndfgf"\' (1, 0) (1, 16)
+    """)
+
         self.check_tokenize('f"abc"', """\
-    STRING     'f"abc"'      (1, 0) (1, 6)
+    FSTRING_START 'f"'          (1, 0) (1, 2)
+    FSTRING_MIDDLE 'abc'         (1, 2) (1, 5)
+    FSTRING_END '"'           (1, 5) (1, 6)
     """)
 
         self.check_tokenize('fR"a{b}c"', """\
-    STRING     'fR"a{b}c"'   (1, 0) (1, 9)
+    FSTRING_START 'fR"'         (1, 0) (1, 3)
+    FSTRING_MIDDLE 'a'           (1, 3) (1, 4)
+    LBRACE     '{'           (1, 4) (1, 5)
+    NAME       'b'           (1, 5) (1, 6)
+    RBRACE     '}'           (1, 6) (1, 7)
+    FSTRING_MIDDLE 'c'           (1, 7) (1, 8)
+    FSTRING_END '"'           (1, 8) (1, 9)
     """)
 
         self.check_tokenize('f"""abc"""', """\
-    STRING     'f\"\"\"abc\"\"\"'  (1, 0) (1, 10)
+    FSTRING_START 'f\"""'        (1, 0) (1, 4)
+    FSTRING_MIDDLE 'abc'         (1, 4) (1, 7)
+    FSTRING_END '\"""'         (1, 7) (1, 10)
     """)
 
         self.check_tokenize(r'f"abc\
 def"', """\
-    STRING     'f"abc\\\\\\ndef"' (1, 0) (2, 4)
+    FSTRING_START \'f"\'          (1, 0) (1, 2)
+    FSTRING_MIDDLE 'abc\\\\\\ndef'  (1, 2) (2, 3)
+    FSTRING_END '"'           (2, 3) (2, 4)
     """)
 
         self.check_tokenize(r'Rf"abc\
 def"', """\
-    STRING     'Rf"abc\\\\\\ndef"' (1, 0) (2, 4)
+    FSTRING_START 'Rf"'         (1, 0) (1, 3)
+    FSTRING_MIDDLE 'abc\\\\\\ndef'  (1, 3) (2, 3)
+    FSTRING_END '"'           (2, 3) (2, 4)
+    """)
+
+        self.check_tokenize(r'f"hola\\\r\ndfgf"', """\
+    FSTRING_START \'f"\'          (1, 0) (1, 2)
+    FSTRING_MIDDLE 'hola\\\\\\\\\\\\r\\\\ndfgf' (1, 2) (1, 16)
+    FSTRING_END \'"\'           (1, 16) (1, 17)
     """)
 
     def test_function(self):
@@ -2463,13 +2657,13 @@ async def f():
     def test_unicode(self):
 
         self.check_tokenize("Örter = u'places'\ngrün = U'green'", """\
-    NAME       'Örter'       (1, 0) (1, 6)
-    EQUAL      '='           (1, 7) (1, 8)
-    STRING     "u'places'"   (1, 9) (1, 18)
-    NEWLINE    ''            (1, 18) (1, 18)
-    NAME       'grün'        (2, 0) (2, 5)
-    EQUAL      '='           (2, 6) (2, 7)
-    STRING     "U'green'"    (2, 8) (2, 16)
+    NAME       'Örter'       (1, 0) (1, 5)
+    EQUAL      '='           (1, 6) (1, 7)
+    STRING     "u'places'"   (1, 8) (1, 17)
+    NEWLINE    ''            (1, 17) (1, 17)
+    NAME       'grün'        (2, 0) (2, 4)
+    EQUAL      '='           (2, 5) (2, 6)
+    STRING     "U'green'"    (2, 7) (2, 15)
     """)
 
     def test_invalid_syntax(self):
@@ -2522,12 +2716,12 @@ async def f():
 
         valid = generate_source(MAXINDENT - 1)
         tokens = list(_generate_tokens_from_c_tokenizer(valid))
-        self.assertEqual(tokens[-1].type, DEDENT)
+        self.assertEqual(tokens[-2].type, DEDENT)
+        self.assertEqual(tokens[-1].type, ENDMARKER)
         compile(valid, "<string>", "exec")
 
         invalid = generate_source(MAXINDENT)
-        tokens = list(_generate_tokens_from_c_tokenizer(invalid))
-        self.assertEqual(tokens[-1].type, NEWLINE)
+        self.assertRaises(SyntaxError, lambda: list(_generate_tokens_from_c_tokenizer(invalid)))
         self.assertRaises(
             IndentationError, compile, invalid, "<string>", "exec"
         )
@@ -2629,6 +2823,20 @@ async def f():
         """)
 
         self.assertEqual(get_tokens(code), get_tokens(code_no_cont))
+
+
+class CTokenizerBufferTests(unittest.TestCase):
+    def test_newline_at_the_end_of_buffer(self):
+        # See issue 99581: Make sure that if we need to add a new line at the
+        # end of the buffer, we have enough space in the buffer, specially when
+        # the current line is as long as the buffer space available.
+        test_script = f"""\
+        #coding: latin-1
+        #{"a"*10000}
+        #{"a"*10002}"""
+        with os_helper.temp_dir() as temp_dir:
+            file_name = make_script(temp_dir, 'foo', test_script)
+            run_test_script(file_name)
 
 
 if __name__ == "__main__":

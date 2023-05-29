@@ -1,3 +1,0 @@
-Deprecate current default auto() behavior:  In 3.13 the default will be for
-for auto() to always return the largest member value incremented by
-1, and to raise if incompatible value types are used.

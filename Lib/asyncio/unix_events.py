@@ -195,22 +195,25 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     async def _make_subprocess_transport(self, protocol, args, shell,
                                          stdin, stdout, stderr, bufsize,
                                          extra=None, **kwargs):
-        with events.get_child_watcher() as watcher:
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            watcher = events.get_child_watcher()
+
+        with watcher:
             if not watcher.is_active():
                 # Check early.
                 # Raising exception before process creation
                 # prevents subprocess execution if the watcher
                 # is not ready to handle it.
                 raise RuntimeError("asyncio.get_child_watcher() is not activated, "
-                                   "subprocess support is not installed.")
+                                "subprocess support is not installed.")
             waiter = self.create_future()
             transp = _UnixSubprocessTransport(self, protocol, args, shell,
-                                              stdin, stdout, stderr, bufsize,
-                                              waiter=waiter, extra=extra,
-                                              **kwargs)
-
+                                            stdin, stdout, stderr, bufsize,
+                                            waiter=waiter, extra=extra,
+                                            **kwargs)
             watcher.add_child_handler(transp.get_pid(),
-                                      self._child_watcher_callback, transp)
+                                    self._child_watcher_callback, transp)
             try:
                 await waiter
             except (SystemExit, KeyboardInterrupt):
@@ -482,12 +485,20 @@ class _UnixReadPipeTransport(transports.ReadTransport):
 
         self._loop.call_soon(self._protocol.connection_made, self)
         # only start reading when connection_made() has been called
-        self._loop.call_soon(self._loop._add_reader,
+        self._loop.call_soon(self._add_reader,
                              self._fileno, self._read_ready)
         if waiter is not None:
             # only wake up the waiter when connection_made() has been called
             self._loop.call_soon(futures._set_result_unless_cancelled,
                                  waiter, None)
+
+    def _add_reader(self, fd, callback):
+        if not self.is_reading():
+            return
+        self._loop._add_reader(fd, callback)
+
+    def is_reading(self):
+        return not self._paused and not self._closing
 
     def __repr__(self):
         info = [self.__class__.__name__]
@@ -529,7 +540,7 @@ class _UnixReadPipeTransport(transports.ReadTransport):
                 self._loop.call_soon(self._call_connection_lost, None)
 
     def pause_reading(self):
-        if self._closing or self._paused:
+        if not self.is_reading():
             return
         self._paused = True
         self._loop._remove_reader(self._fileno)
@@ -800,12 +811,11 @@ class _UnixSubprocessTransport(base_subprocess.BaseSubprocessTransport):
 
     def _start(self, args, shell, stdin, stdout, stderr, bufsize, **kwargs):
         stdin_w = None
-        if stdin == subprocess.PIPE:
-            # Use a socket pair for stdin, since not all platforms
+        if stdin == subprocess.PIPE and sys.platform.startswith('aix'):
+            # Use a socket pair for stdin on AIX, since it does not
             # support selecting read events on the write end of a
             # socket (which we use in order to detect closing of the
-            # other end).  Notably this is needed on AIX, and works
-            # just fine on other platforms.
+            # other end).
             stdin, stdin_w = socket.socketpair()
         try:
             self._proc = subprocess.Popen(
@@ -843,6 +853,13 @@ class AbstractChildWatcher:
         Since child watcher objects may catch the SIGCHLD signal and call
         waitpid(-1), there should be only one active object per process.
     """
+
+    def __init_subclass__(cls) -> None:
+        if cls.__module__ != __name__:
+            warnings._deprecated("AbstractChildWatcher",
+                             "{name!r} is deprecated as of Python 3.12 and will be "
+                             "removed in Python {remove}.",
+                              remove=(3, 14))
 
     def add_child_handler(self, pid, callback, *args):
         """Register a new child handler.
@@ -1470,6 +1487,9 @@ class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
         if self._watcher is None:
             self._init_watcher()
 
+        warnings._deprecated("get_child_watcher",
+                            "{name!r} is deprecated as of Python 3.12 and will be "
+                            "removed in Python {remove}.", remove=(3, 14))
         return self._watcher
 
     def set_child_watcher(self, watcher):
@@ -1481,6 +1501,9 @@ class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
             self._watcher.close()
 
         self._watcher = watcher
+        warnings._deprecated("set_child_watcher",
+                            "{name!r} is deprecated as of Python 3.12 and will be "
+                            "removed in Python {remove}.", remove=(3, 14))
 
 
 SelectorEventLoop = _UnixSelectorEventLoop

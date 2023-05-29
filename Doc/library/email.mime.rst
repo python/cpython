@@ -114,9 +114,9 @@ Here are the classes:
 
    A subclass of :class:`~email.mime.nonmultipart.MIMENonMultipart`, the
    :class:`MIMEApplication` class is used to represent MIME message objects of
-   major type :mimetype:`application`.  *_data* is a string containing the raw
-   byte data.  Optional *_subtype* specifies the MIME subtype and defaults to
-   :mimetype:`octet-stream`.
+   major type :mimetype:`application`.  *_data* contains the bytes for the raw
+   application data.  Optional *_subtype* specifies the MIME subtype and defaults
+   to :mimetype:`octet-stream`.
 
    Optional *_encoder* is a callable (i.e. function) which will perform the actual
    encoding of the data for transport.  This callable takes one argument, which is
@@ -145,7 +145,7 @@ Here are the classes:
 
    A subclass of :class:`~email.mime.nonmultipart.MIMENonMultipart`, the
    :class:`MIMEAudio` class is used to create MIME message objects of major type
-   :mimetype:`audio`. *_audiodata* is a string containing the raw audio data.  If
+   :mimetype:`audio`. *_audiodata* contains the bytes for the raw audio data.  If
    this data can be decoded as au, wav, aiff, or aifc, then the
    subtype will be automatically included in the :mailheader:`Content-Type` header.
    Otherwise you can explicitly specify the audio subtype via the *_subtype*
@@ -179,7 +179,7 @@ Here are the classes:
 
    A subclass of :class:`~email.mime.nonmultipart.MIMENonMultipart`, the
    :class:`MIMEImage` class is used to create MIME message objects of major type
-   :mimetype:`image`. *_imagedata* is a string containing the raw image data.  If
+   :mimetype:`image`. *_imagedata* contains the bytes for the raw image data.  If
    this data type can be detected (jpeg, png, gif, tiff, rgb, pbm, pgm, ppm,
    rast, xbm, bmp, webp, and exr attempted), then the subtype will be
    automatically included in the :mailheader:`Content-Type` header. Otherwise
