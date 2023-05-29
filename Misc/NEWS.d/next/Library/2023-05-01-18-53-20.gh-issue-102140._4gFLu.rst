@@ -1,3 +1,1 @@
-Enhanced the :meth:`has_header` in the :mod:`CSV` for better header detection.
-Now checks if all columns are strings and if the :py:data:`columnTypes` is empty.
-If conditions are met, it assigns the median length of the strings to :py:data:`columnTypes`.
+Improve detection in the :meth:`~csv.Sniffer.has_header` method of :class:`csv.Sniffer` when all cells in the first row are strings.
