@@ -246,8 +246,9 @@ capture data for later printing in a lightweight fashion.
 
    .. attribute:: exceptions
 
-      If ``self`` represents an :exc:`ExceptionGroup` - a list of
+      If ``self`` represents an :exc:`ExceptionGroup`, this field holds a list of
       :class:`TracebackException` instances representing the nested exceptions.
+      Otherwise it is ``None``.
 
       .. versionadded:: 3.11
 
