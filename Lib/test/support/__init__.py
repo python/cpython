@@ -2279,7 +2279,7 @@ def _findwheel(pkgname):
     """
     wheel_dir = sysconfig.get_config_var('WHEEL_PKG_DIR') or TEST_HOME_DIR
     filenames = os.listdir(wheel_dir)
-    filenames = sorted(filenames)  # sort this like ensurepip does it
+    filenames = sorted(filenames, reverse=True)  # approximate "newest" first
     for filename in filenames:
         # filename is like 'setuptools-67.6.1-py3-none-any.whl'
         if not filename.endswith(".whl"):
