@@ -46,15 +46,8 @@ One solution is to ship the application with the Tcl and Tk libraries, and point
 to them at run-time using the :envvar:`TCL_LIBRARY` and :envvar:`TK_LIBRARY`
 environment variables.
 
-To get truly stand-alone applications, the Tcl scripts that form the library
-have to be integrated into the application as well. One tool supporting that is
-SAM (stand-alone modules), which is part of the Tix distribution
-(https://tix.sourceforge.net/).
-
-Build Tix with SAM enabled, perform the appropriate call to
-:c:func:`Tclsam_init`, etc. inside Python's
-:file:`Modules/tkappinit.c`, and link with libtclsam and libtksam (you
-might include the Tix libraries as well).
+Various third-party freeze libraries such as py2exe and cx_Freeze have
+handling for Tkinter applications built-in.
 
 
 Can I have Tk events handled while waiting for I/O?
