@@ -16,7 +16,6 @@ At large scale, the structure of the module is following:
   no_type_check_decorator.
 * Generic aliases for collections.abc ABCs and few additional protocols.
 * Special types: NewType, NamedTuple, TypedDict.
-* Wrapper submodules for re and io related types.
 """
 
 from abc import abstractmethod, ABCMeta
@@ -27,10 +26,9 @@ import copyreg
 import contextlib
 import functools
 import operator
-import re as stdlib_re  # Avoid confusion with the re we export.
+import re as stdlib_re  # Avoid confusion with the typing.re namespace on <=3.11
 import sys
 import types
-import warnings
 from types import WrapperDescriptorType, MethodWrapperType, MethodDescriptorType, GenericAlias
 
 from _typing import (
@@ -157,10 +155,6 @@ __all__ = [
     'TypeAliasType',
     'Unpack',
 ]
-
-# The pseudo-submodules 're' and 'io' are part of the public
-# namespace, but excluded from __all__ because they might stomp on
-# legitimate imports of those modules.
 
 
 def _type_convert(arg, module=None, *, allow_special_forms=False):
@@ -1663,7 +1657,7 @@ class _TypingEllipsis:
 _TYPING_INTERNALS = frozenset({
     '__parameters__', '__orig_bases__',  '__orig_class__',
     '_is_protocol', '_is_runtime_protocol', '__protocol_attrs__',
-    '__callable_proto_members_only__',
+    '__callable_proto_members_only__', '__type_params__',
 })
 
 _SPECIAL_NAMES = frozenset({
@@ -1745,7 +1739,7 @@ def _allow_reckless_class_checks(depth=3):
 _PROTO_ALLOWLIST = {
     'collections.abc': [
         'Callable', 'Awaitable', 'Iterable', 'Iterator', 'AsyncIterable',
-        'Hashable', 'Sized', 'Container', 'Collection', 'Reversible',
+        'Hashable', 'Sized', 'Container', 'Collection', 'Reversible', 'Buffer',
     ],
     'contextlib': ['AbstractContextManager', 'AbstractAsyncContextManager'],
 }
@@ -1775,23 +1769,37 @@ del _pickle_psargs, _pickle_pskwargs
 
 
 class _ProtocolMeta(ABCMeta):
-    # This metaclass is really unfortunate and exists only because of
-    # the lack of __instancehook__.
+    # This metaclass is somewhat unfortunate,
+    # but is necessary for several reasons...
     def __init__(cls, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        cls.__protocol_attrs__ = _get_protocol_attrs(cls)
-        # PEP 544 prohibits using issubclass()
-        # with protocols that have non-method members.
-        cls.__callable_proto_members_only__ = all(
-            callable(getattr(cls, attr, None)) for attr in cls.__protocol_attrs__
-        )
+        if getattr(cls, "_is_protocol", False):
+            cls.__protocol_attrs__ = _get_protocol_attrs(cls)
+            # PEP 544 prohibits using issubclass()
+            # with protocols that have non-method members.
+            cls.__callable_proto_members_only__ = all(
+                callable(getattr(cls, attr, None)) for attr in cls.__protocol_attrs__
+            )
+
+    def __subclasscheck__(cls, other):
+        if (
+            getattr(cls, '_is_protocol', False)
+            and not cls.__callable_proto_members_only__
+            and not _allow_reckless_class_checks(depth=2)
+        ):
+            raise TypeError(
+                "Protocols with non-method members don't support issubclass()"
+            )
+        return super().__subclasscheck__(other)
 
     def __instancecheck__(cls, instance):
         # We need this method for situations where attributes are
         # assigned in __init__.
-        is_protocol_cls = getattr(cls, "_is_protocol", False)
+        if not getattr(cls, "_is_protocol", False):
+            # i.e., it's a concrete subclass of a protocol
+            return super().__instancecheck__(instance)
+
         if (
-            is_protocol_cls and
             not getattr(cls, '_is_runtime_protocol', False) and
             not _allow_reckless_class_checks(depth=2)
         ):
@@ -1801,17 +1809,16 @@ class _ProtocolMeta(ABCMeta):
         if super().__instancecheck__(instance):
             return True
 
-        if is_protocol_cls:
-            getattr_static = _lazy_load_getattr_static()
-            for attr in cls.__protocol_attrs__:
-                try:
-                    val = getattr_static(instance, attr)
-                except AttributeError:
-                    break
-                if val is None and callable(getattr(cls, attr, None)):
-                    break
-            else:
-                return True
+        getattr_static = _lazy_load_getattr_static()
+        for attr in cls.__protocol_attrs__:
+            try:
+                val = getattr_static(instance, attr)
+            except AttributeError:
+                break
+            if val is None and callable(getattr(cls, attr, None)):
+                break
+        else:
+            return True
 
         return False
 
@@ -1869,11 +1876,6 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
                 raise TypeError("Instance and class checks can only be used with"
                                 " @runtime_checkable protocols")
 
-            if not cls.__callable_proto_members_only__ :
-                if _allow_reckless_class_checks():
-                    return NotImplemented
-                raise TypeError("Protocols with non-method members"
-                                " don't support issubclass()")
             if not isinstance(other, type):
                 # Same error message as for issubclass(1, int).
                 raise TypeError('issubclass() arg 1 must be a class')
@@ -1891,7 +1893,7 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
                     annotations = getattr(base, '__annotations__', {})
                     if (isinstance(annotations, collections.abc.Mapping) and
                             attr in annotations and
-                            issubclass(other, Generic) and other._is_protocol):
+                            issubclass(other, Generic) and getattr(other, '_is_protocol', False)):
                         break
                 else:
                     return NotImplemented
@@ -1909,7 +1911,7 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
             if not (base in (object, Generic) or
                     base.__module__ in _PROTO_ALLOWLIST and
                     base.__name__ in _PROTO_ALLOWLIST[base.__module__] or
-                    issubclass(base, Generic) and base._is_protocol):
+                    issubclass(base, Generic) and getattr(base, '_is_protocol', False)):
                 raise TypeError('Protocols can only inherit from other'
                                 ' protocols, got %r' % base)
         if cls.__init__ is Protocol.__init__:
@@ -2056,7 +2058,7 @@ def runtime_checkable(cls):
     Warning: this will check only the presence of the required methods,
     not their type signatures!
     """
-    if not issubclass(cls, Generic) or not cls._is_protocol:
+    if not issubclass(cls, Generic) or not getattr(cls, '_is_protocol', False):
         raise TypeError('@runtime_checkable can be only applied to protocol classes,'
                         ' got %r' % cls)
     cls._is_runtime_protocol = True
@@ -2471,8 +2473,9 @@ def final(f):
     return f
 
 
-# Some unconstrained type variables.  These are used by the container types.
-# (These are not for export.)
+# Some unconstrained type variables.  These were initially used by the container types.
+# They were never meant for export and are now unused, but we keep them around to
+# avoid breaking compatibility with users who import them.
 T = TypeVar('T')  # Any type.
 KT = TypeVar('KT')  # Key type.
 VT = TypeVar('VT')  # Value type.
@@ -2577,8 +2580,6 @@ Type.__doc__ = \
     At this point the type checker knows that joe has type BasicUser.
     """
 
-# Internal type variable for callables. Not for export.
-F = TypeVar("F", bound=Callable[..., Any])
 
 @runtime_checkable
 class SupportsInt(Protocol):
@@ -2631,22 +2632,22 @@ class SupportsIndex(Protocol):
 
 
 @runtime_checkable
-class SupportsAbs(Protocol[T_co]):
+class SupportsAbs[T](Protocol):
     """An ABC with one abstract method __abs__ that is covariant in its return type."""
     __slots__ = ()
 
     @abstractmethod
-    def __abs__(self) -> T_co:
+    def __abs__(self) -> T:
         pass
 
 
 @runtime_checkable
-class SupportsRound(Protocol[T_co]):
+class SupportsRound[T](Protocol):
     """An ABC with one abstract method __round__ that is covariant in its return type."""
     __slots__ = ()
 
     @abstractmethod
-    def __round__(self, ndigits: int = 0) -> T_co:
+    def __round__(self, ndigits: int = 0) -> T:
         pass
 
 
@@ -2708,7 +2709,7 @@ class NamedTupleMeta(type):
 def NamedTuple(typename, fields=None, /, **kwargs):
     """Typed version of namedtuple.
 
-    Usage in Python versions >= 3.6::
+    Usage::
 
         class Employee(NamedTuple):
             name: str
@@ -2725,9 +2726,6 @@ def NamedTuple(typename, fields=None, /, **kwargs):
 
         Employee = NamedTuple('Employee', name=str, id=int)
 
-    In Python versions <= 3.5 use::
-
-        Employee = NamedTuple('Employee', [('name', str), ('id', int)])
     """
     if fields is None:
         fields = kwargs.items()
@@ -2820,7 +2818,7 @@ class _TypedDictMeta(type):
     __instancecheck__ = __subclasscheck__
 
 
-def TypedDict(typename, fields=None, /, *, total=True, **kwargs):
+def TypedDict(typename, fields=None, /, *, total=True):
     """A simple typed namespace. At runtime it is equivalent to a plain dict.
 
     TypedDict creates a dictionary type that expects all of its
@@ -2857,23 +2855,9 @@ def TypedDict(typename, fields=None, /, *, total=True, **kwargs):
     checker is only expected to support a literal False or True as the value of
     the total argument. True is the default, and makes all items defined in the
     class body be required.
-
-    The class syntax is only supported in Python 3.6+, while the other
-    syntax form works for Python 2.7 and 3.2+
     """
     if fields is None:
-        fields = kwargs
-    elif kwargs:
-        raise TypeError("TypedDict takes either a dict or keyword arguments,"
-                        " but not both")
-    if kwargs:
-        warnings.warn(
-            "The kwargs-based syntax for TypedDict definitions is deprecated "
-            "in Python 3.11, will be removed in Python 3.13, and may not be "
-            "understood by third-party type checkers.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
+        fields = {}
 
     ns = {'__annotations__': dict(fields)}
     module = _caller()
@@ -3143,47 +3127,11 @@ class TextIO(IO[str]):
         pass
 
 
-class _DeprecatedType(type):
-    def __getattribute__(cls, name):
-        if name not in ("__dict__", "__module__") and name in cls.__dict__:
-            warnings.warn(
-                f"{cls.__name__} is deprecated, import directly "
-                f"from typing instead. {cls.__name__} will be removed "
-                "in Python 3.12.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-        return super().__getattribute__(name)
-
-
-class io(metaclass=_DeprecatedType):
-    """Wrapper namespace for IO generic classes."""
-
-    __all__ = ['IO', 'TextIO', 'BinaryIO']
-    IO = IO
-    TextIO = TextIO
-    BinaryIO = BinaryIO
-
-
-io.__name__ = __name__ + '.io'
-sys.modules[io.__name__] = io
-
 Pattern = _alias(stdlib_re.Pattern, 1)
 Match = _alias(stdlib_re.Match, 1)
 
-class re(metaclass=_DeprecatedType):
-    """Wrapper namespace for re type aliases."""
 
-    __all__ = ['Pattern', 'Match']
-    Pattern = Pattern
-    Match = Match
-
-
-re.__name__ = __name__ + '.re'
-sys.modules[re.__name__] = re
-
-
-def reveal_type(obj: T, /) -> T:
+def reveal_type[T](obj: T, /) -> T:
     """Reveal the inferred type of a variable.
 
     When a static type checker encounters a call to ``reveal_type()``,
@@ -3203,6 +3151,11 @@ def reveal_type(obj: T, /) -> T:
     return obj
 
 
+class _IdentityCallable(Protocol):
+    def __call__[T](self, arg: T, /) -> T:
+        ...
+
+
 def dataclass_transform(
     *,
     eq_default: bool = True,
@@ -3211,7 +3164,7 @@ def dataclass_transform(
     frozen_default: bool = False,
     field_specifiers: tuple[type[Any] | Callable[..., Any], ...] = (),
     **kwargs: Any,
-) -> Callable[[T], T]:
+) -> _IdentityCallable:
     """Decorator that marks a function, class, or metaclass as providing
     dataclass-like behavior.
 
@@ -3288,8 +3241,10 @@ def dataclass_transform(
     return decorator
 
 
+type _Func = Callable[..., Any]
 
-def override(method: F, /) -> F:
+
+def override[F: _Func](method: F, /) -> F:
     """Indicate that a method is intended to override a method in a base class.
 
     Usage:

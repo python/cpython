@@ -1,2 +1,0 @@
-Decrease execution time of some :mod:`gzip` file writes by 15% by
-adding more appropriate buffering.

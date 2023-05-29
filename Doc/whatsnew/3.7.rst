@@ -848,10 +848,10 @@ alternative to script path.  (Contributed by Sanyam Khurana in :issue:`21862`.)
 crypt
 -----
 
-The :mod:`crypt` module now supports the Blowfish hashing method.
+The :mod:`!crypt` module now supports the Blowfish hashing method.
 (Contributed by Serhiy Storchaka in :issue:`31664`.)
 
-The :func:`~crypt.mksalt` function now allows specifying the number of rounds
+The :func:`~!crypt.mksalt` function now allows specifying the number of rounds
 for hashing.  (Contributed by Serhiy Storchaka in :issue:`31702`.)
 
 
@@ -1133,7 +1133,7 @@ The MIME type of .bmp has been changed from ``'image/x-ms-bmp'`` to
 msilib
 ------
 
-The new :meth:`Database.Close() <msilib.Database.Close>` method can be used
+The new :meth:`!Database.Close()` method can be used
 to close the :abbr:`MSI` database.
 (Contributed by Berker Peksag in :issue:`20486`.)
 
@@ -1547,7 +1547,7 @@ adding ``~`` to the set of characters that are never quoted by default.
 uu
 --
 
-The :func:`uu.encode` function now accepts an optional *backtick*
+The :func:`!uu.encode` function now accepts an optional *backtick*
 keyword argument.  When it's true, zeros are represented by ``'`'``
 instead of spaces.  (Contributed by Xiang Zhang in :issue:`30103`.)
 
@@ -1940,8 +1940,8 @@ Deprecated Python modules, functions and methods
 aifc
 ----
 
-:func:`aifc.openfp` has been deprecated and will be removed in Python 3.9.
-Use :func:`aifc.open` instead.
+:func:`!aifc.openfp` has been deprecated and will be removed in Python 3.9.
+Use :func:`!aifc.open` instead.
 (Contributed by Brian Curtin in :issue:`31985`.)
 
 
@@ -2061,8 +2061,8 @@ ssl
 sunau
 -----
 
-:func:`sunau.openfp` has been deprecated and will be removed in Python 3.9.
-Use :func:`sunau.open` instead.
+:func:`!sunau.openfp` has been deprecated and will be removed in Python 3.9.
+Use :func:`!sunau.open` instead.
 (Contributed by Brian Curtin in :issue:`31985`.)
 
 
@@ -2567,7 +2567,7 @@ query parameter separators in :func:`urllib.parse.parse_qs` and
 :func:`urllib.parse.parse_qsl`.  Due to security concerns, and to conform with
 newer W3C recommendations, this has been changed to allow only a single
 separator key, with ``&`` as the default.  This change also affects
-:func:`cgi.parse` and :func:`cgi.parse_multipart` as they use the affected
+:func:`!cgi.parse` and :func:`!cgi.parse_multipart` as they use the affected
 functions internally. For more details, please see their respective
 documentation.
 (Contributed by Adam Goldschmidt, Senthil Kumaran and Ken Jin in :issue:`42967`.)

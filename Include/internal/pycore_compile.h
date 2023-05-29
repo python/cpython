@@ -105,7 +105,8 @@ PyAPI_FUNC(PyObject*) _PyCompile_CodeGen(
 
 PyAPI_FUNC(PyObject*) _PyCompile_OptimizeCfg(
         PyObject *instructions,
-        PyObject *consts);
+        PyObject *consts,
+        int nlocals);
 
 PyAPI_FUNC(PyCodeObject*)
 _PyCompile_Assemble(_PyCompile_CodeUnitMetadata *umd, PyObject *filename,
