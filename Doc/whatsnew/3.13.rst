@@ -115,6 +115,11 @@ Removed
   are now removed. The items in those namespaces can be imported directly
   from :mod:`typing`. (Contributed by Sebastian Rittau in :gh:`92871`.)
 
+* Remove the untested and undocumented :mod:`webbrowser` :class:`!MacOSX` class,
+  deprecated in Python 3.11.
+  Use the :class:`!MacOSXOSAScript` class (introduced in Python 3.2) instead.
+  (Contributed by Hugo van Kemenade in :gh:`104804`.)
+
 * Remove support for using :class:`pathlib.Path` objects as context managers.
   This functionality was deprecated and made a no-op in Python 3.9.
 
@@ -250,6 +255,15 @@ Removed
   `puremagic <https://pypi.org/project/puremagic/>`_,
   or `python-magic <https://pypi.org/project/python-magic/>`_ instead.
   (Contributed by Victor Stinner in :gh:`104773`.)
+
+* Remove the untested and undocumented :meth:`!unittest.TestProgram.usageExit`
+  method, deprecated in Python 3.11.
+  (Contributed by Hugo van Kemenade in :gh:`104992`.)
+
+* Remove the :mod:`!tkinter.tix` module, deprecated in Python 3.6.  The
+  third-party Tix library which the module wrapped is unmaintained.
+  (Contributed by Zachary Ware in :gh:`75552`.)
+
 
 
 Porting to Python 3.13
