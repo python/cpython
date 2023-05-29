@@ -1266,7 +1266,7 @@ tok_underflow_file(struct tok_state *tok, int use_readline) {
         tok->done = E_EOF;
         return 0;
     }
-    if (tok->inp[-1] != '\n') {
+    if (tok->readline == NULL && tok->inp[-1] != '\n') {
         assert(tok->inp + 1 < tok->end);
         /* Last line does not end in \n, fake one */
         *tok->inp++ = '\n';
