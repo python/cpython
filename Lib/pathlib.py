@@ -235,7 +235,7 @@ class _PathParents(Sequence):
         return "<{}.parents>".format(type(self._path).__name__)
 
 
-class PurePath(os.PathLike):
+class PurePath:
     """Base class for manipulating paths without I/O.
 
     PurePath represents a filesystem path and offers operations which
@@ -714,6 +714,9 @@ class PurePath(os.PathLike):
             if not match(part):
                 return False
         return True
+
+# Subclassing os.PathLike makes __instancecheck__ slower. Register instead!
+os.PathLike.register(PurePath)
 
 
 class PurePosixPath(PurePath):
