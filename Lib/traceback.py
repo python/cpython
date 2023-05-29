@@ -658,6 +658,8 @@ class TracebackException:
 
     - :attr:`__cause__` A TracebackException of the original *__cause__*.
     - :attr:`__context__` A TracebackException of the original *__context__*.
+    - :attr:`exceptions` For exception groups - a list of TracebackException
+      instances for the nested *exceptions*.  ``None`` for other exceptions.
     - :attr:`__suppress_context__` The *__suppress_context__* value from the
       original exception.
     - :attr:`stack` A `StackSummary` representing the traceback.
