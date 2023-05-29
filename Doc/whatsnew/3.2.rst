@@ -662,7 +662,7 @@ Python's standard library has undergone significant maintenance efforts and
 quality improvements.
 
 The biggest news for Python 3.2 is that the :mod:`email` package, :mod:`mailbox`
-module, and :mod:`nntplib` modules now work correctly with the bytes/text model
+module, and :mod:`!nntplib` modules now work correctly with the bytes/text model
 in Python 3.  For the first time, there is correct handling of messages with
 mixed encodings.
 
@@ -1676,13 +1676,13 @@ for secure (encrypted, authenticated) internet connections:
 nntp
 ----
 
-The :mod:`nntplib` module has a revamped implementation with better bytes and
+The :mod:`!nntplib` module has a revamped implementation with better bytes and
 text semantics as well as more practical APIs.  These improvements break
 compatibility with the nntplib version in Python 3.1, which was partly
 dysfunctional in itself.
 
 Support for secure connections through both implicit (using
-:class:`nntplib.NNTP_SSL`) and explicit (using :meth:`nntplib.NNTP.starttls`)
+:class:`!nntplib.NNTP_SSL`) and explicit (using :meth:`!nntplib.NNTP.starttls`)
 TLS has also been added.
 
 (Contributed by Antoine Pitrou in :issue:`9360` and Andrew Vant in :issue:`1926`.)
@@ -2643,7 +2643,7 @@ require changes to your code:
   * ``""`` is now a valid value and is no longer automatically converted to an
     empty string. For empty strings, use ``"option ="`` in a line.
 
-* The :mod:`nntplib` module was reworked extensively, meaning that its APIs
+* The :mod:`!nntplib` module was reworked extensively, meaning that its APIs
   are often incompatible with the 3.1 APIs.
 
 * :class:`bytearray` objects can no longer be used as filenames; instead,

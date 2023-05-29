@@ -120,7 +120,6 @@ Objects/stringlib/*.h	Objects
 # possible system-installed headers, just in case
 Modules/_tkinter.c	/usr/include/tcl8.6
 Modules/_uuidmodule.c	/usr/include/uuid
-Modules/nismodule.c	/usr/include/tirpc
 Modules/tkappinit.c	/usr/include/tcl
 
 # @end=tsv@

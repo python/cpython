@@ -883,16 +883,19 @@ class Action(_AttributeHolder):
         raise NotImplementedError(_('.__call__() not defined'))
 
 
+# FIXME: remove together with `BooleanOptionalAction` deprecated arguments.
+_deprecated_default = object()
+
 class BooleanOptionalAction(Action):
     def __init__(self,
                  option_strings,
                  dest,
                  default=None,
-                 type=None,
-                 choices=None,
+                 type=_deprecated_default,
+                 choices=_deprecated_default,
                  required=False,
                  help=None,
-                 metavar=None):
+                 metavar=_deprecated_default):
 
         _option_strings = []
         for option_string in option_strings:
@@ -901,6 +904,24 @@ class BooleanOptionalAction(Action):
             if option_string.startswith('--'):
                 option_string = '--no-' + option_string[2:]
                 _option_strings.append(option_string)
+
+        # We need `_deprecated` special value to ban explicit arguments that
+        # match default value. Like:
+        #   parser.add_argument('-f', action=BooleanOptionalAction, type=int)
+        for field_name in ('type', 'choices', 'metavar'):
+            if locals()[field_name] is not _deprecated_default:
+                warnings._deprecated(
+                    field_name,
+                    "{name!r} is deprecated as of Python 3.12 and will be "
+                    "removed in Python {remove}.",
+                    remove=(3, 14))
+
+        if type is _deprecated_default:
+            type = None
+        if choices is _deprecated_default:
+            choices = None
+        if metavar is _deprecated_default:
+            metavar = None
 
         super().__init__(
             option_strings=_option_strings,

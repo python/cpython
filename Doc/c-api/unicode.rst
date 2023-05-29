@@ -394,98 +394,149 @@ APIs:
    arguments, calculate the size of the resulting Python Unicode string and return
    a string with the values formatted into it.  The variable arguments must be C
    types and must correspond exactly to the format characters in the *format*
-   ASCII-encoded string. The following format characters are allowed:
+   ASCII-encoded string.
 
-   .. % This should be exactly the same as the table in PyErr_Format.
+   A conversion specifier contains two or more characters and has the following
+   components, which must occur in this order:
 
-   .. tabularcolumns:: |l|l|L|
+   #. The ``'%'`` character, which marks the start of the specifier.
 
-   +-------------------+---------------------+----------------------------------+
-   | Format Characters | Type                | Comment                          |
-   +===================+=====================+==================================+
-   | :attr:`%%`        | *n/a*               | The literal % character.         |
-   +-------------------+---------------------+----------------------------------+
-   | :attr:`%c`        | int                 | A single character,              |
-   |                   |                     | represented as a C int.          |
-   +-------------------+---------------------+----------------------------------+
-   | :attr:`%d`        | int                 | Equivalent to                    |
-   |                   |                     | ``printf("%d")``. [1]_           |
-   +-------------------+---------------------+----------------------------------+
-   | :attr:`%u`        | unsigned int        | Equivalent to                    |
-   |                   |                     | ``printf("%u")``. [1]_           |
-   +-------------------+---------------------+----------------------------------+
-   | :attr:`%ld`       | long                | Equivalent to                    |
-   |                   |                     | ``printf("%ld")``. [1]_          |
-   +-------------------+---------------------+----------------------------------+
-   | :attr:`%li`       | long                | Equivalent to                    |
-   |                   |                     | ``printf("%li")``. [1]_          |
-   +-------------------+---------------------+----------------------------------+
-   | :attr:`%lu`       | unsigned long       | Equivalent to                    |
-   |                   |                     | ``printf("%lu")``. [1]_          |
-   +-------------------+---------------------+----------------------------------+
-   | :attr:`%lld`      | long long           | Equivalent to                    |
-   |                   |                     | ``printf("%lld")``. [1]_         |
-   +-------------------+---------------------+----------------------------------+
-   | :attr:`%lli`      | long long           | Equivalent to                    |
-   |                   |                     | ``printf("%lli")``. [1]_         |
-   +-------------------+---------------------+----------------------------------+
-   | :attr:`%llu`      | unsigned long long  | Equivalent to                    |
-   |                   |                     | ``printf("%llu")``. [1]_         |
-   +-------------------+---------------------+----------------------------------+
-   | :attr:`%zd`       | :c:type:`\          | Equivalent to                    |
-   |                   | Py_ssize_t`         | ``printf("%zd")``. [1]_          |
-   +-------------------+---------------------+----------------------------------+
-   | :attr:`%zi`       | :c:type:`\          | Equivalent to                    |
-   |                   | Py_ssize_t`         | ``printf("%zi")``. [1]_          |
-   +-------------------+---------------------+----------------------------------+
-   | :attr:`%zu`       | size_t              | Equivalent to                    |
-   |                   |                     | ``printf("%zu")``. [1]_          |
-   +-------------------+---------------------+----------------------------------+
-   | :attr:`%i`        | int                 | Equivalent to                    |
-   |                   |                     | ``printf("%i")``. [1]_           |
-   +-------------------+---------------------+----------------------------------+
-   | :attr:`%x`        | int                 | Equivalent to                    |
-   |                   |                     | ``printf("%x")``. [1]_           |
-   +-------------------+---------------------+----------------------------------+
-   | :attr:`%s`        | const char\*        | A null-terminated C character    |
-   |                   |                     | array.                           |
-   +-------------------+---------------------+----------------------------------+
-   | :attr:`%p`        | const void\*        | The hex representation of a C    |
-   |                   |                     | pointer. Mostly equivalent to    |
-   |                   |                     | ``printf("%p")`` except that     |
-   |                   |                     | it is guaranteed to start with   |
-   |                   |                     | the literal ``0x`` regardless    |
-   |                   |                     | of what the platform's           |
-   |                   |                     | ``printf`` yields.               |
-   +-------------------+---------------------+----------------------------------+
-   | :attr:`%A`        | PyObject\*          | The result of calling            |
-   |                   |                     | :func:`ascii`.                   |
-   +-------------------+---------------------+----------------------------------+
-   | :attr:`%U`        | PyObject\*          | A Unicode object.                |
-   +-------------------+---------------------+----------------------------------+
-   | :attr:`%V`        | PyObject\*,         | A Unicode object (which may be   |
-   |                   | const char\*        | ``NULL``) and a null-terminated  |
-   |                   |                     | C character array as a second    |
-   |                   |                     | parameter (which will be used,   |
-   |                   |                     | if the first parameter is        |
-   |                   |                     | ``NULL``).                       |
-   +-------------------+---------------------+----------------------------------+
-   | :attr:`%S`        | PyObject\*          | The result of calling            |
-   |                   |                     | :c:func:`PyObject_Str`.          |
-   +-------------------+---------------------+----------------------------------+
-   | :attr:`%R`        | PyObject\*          | The result of calling            |
-   |                   |                     | :c:func:`PyObject_Repr`.         |
-   +-------------------+---------------------+----------------------------------+
+   #. Conversion flags (optional), which affect the result of some conversion
+      types.
+
+   #. Minimum field width (optional).
+      If specified as an ``'*'`` (asterisk), the actual width is given in the
+      next argument, which must be of type :c:expr:`int`, and the object to
+      convert comes after the minimum field width and optional precision.
+
+   #. Precision (optional), given as a ``'.'`` (dot) followed by the precision.
+      If specified as ``'*'`` (an asterisk), the actual precision is given in
+      the next argument, which must be of type :c:expr:`int`, and the value to
+      convert comes after the precision.
+
+   #. Length modifier (optional).
+
+   #. Conversion type.
+
+   The conversion flag characters are:
+
+   .. tabularcolumns:: |l|L|
+
+   +-------+-------------------------------------------------------------+
+   | Flag  | Meaning                                                     |
+   +=======+=============================================================+
+   | ``0`` | The conversion will be zero padded for numeric values.      |
+   +-------+-------------------------------------------------------------+
+   | ``-`` | The converted value is left adjusted (overrides the ``0``   |
+   |       | flag if both are given).                                    |
+   +-------+-------------------------------------------------------------+
+
+   The length modifiers for following integer conversions (``d``, ``i``,
+   ``o``, ``u``, ``x``, or ``X``) specify the type of the argument
+   (:c:expr:`int` by default):
+
+   .. tabularcolumns:: |l|L|
+
+   +----------+-----------------------------------------------------+
+   | Modifier | Types                                               |
+   +==========+=====================================================+
+   | ``l``    | :c:expr:`long` or :c:expr:`unsigned long`           |
+   +----------+-----------------------------------------------------+
+   | ``ll``   | :c:expr:`long long` or :c:expr:`unsigned long long` |
+   +----------+-----------------------------------------------------+
+   | ``j``    | :c:expr:`intmax_t` or :c:expr:`uintmax_t`           |
+   +----------+-----------------------------------------------------+
+   | ``z``    | :c:expr:`size_t` or :c:expr:`ssize_t`               |
+   +----------+-----------------------------------------------------+
+   | ``t``    | :c:expr:`ptrdiff_t`                                 |
+   +----------+-----------------------------------------------------+
+
+   The length modifier ``l`` for following conversions ``s`` or ``V`` specify
+   that the type of the argument is :c:expr:`const wchar_t*`.
+
+   The conversion specifiers are:
+
+   .. list-table::
+      :widths: auto
+      :header-rows: 1
+
+      * - Conversion Specifier
+        - Type
+        - Comment
+
+      * - ``%``
+        - *n/a*
+        - The literal ``%`` character.
+
+      * - ``d``, ``i``
+        - Specified by the length modifier
+        - The decimal representation of a signed C integer.
+
+      * - ``u``
+        - Specified by the length modifier
+        - The decimal representation of an unsigned C integer.
+
+      * - ``o``
+        - Specified by the length modifier
+        - The octal representation of an unsigned C integer.
+
+      * - ``x``
+        - Specified by the length modifier
+        - The hexadecimal representation of an unsigned C integer (lowercase).
+
+      * - ``X``
+        - Specified by the length modifier
+        - The hexadecimal representation of an unsigned C integer (uppercase).
+
+      * - ``c``
+        - :c:expr:`int`
+        - A single character.
+
+      * - ``s``
+        - :c:expr:`const char*` or :c:expr:`const wchar_t*`
+        - A null-terminated C character array.
+
+      * - ``p``
+        - :c:expr:`const void*`
+        - The hex representation of a C  pointer.
+          Mostly equivalent to ``printf("%p")`` except that it is guaranteed to
+          start with the literal ``0x`` regardless of what the platform's
+          ``printf`` yields.
+
+      * - ``A``
+        - :c:expr:`PyObject*`
+        - The result of calling :func:`ascii`.
+
+      * - ``U``
+        - :c:expr:`PyObject*`
+        - A Unicode object.
+
+      * - ``V``
+        - :c:expr:`PyObject*`, :c:expr:`const char*` or :c:expr:`const wchar_t*`
+        - A Unicode object (which may be ``NULL``) and a null-terminated
+          C character array as a second parameter (which will be used,
+          if the first parameter is ``NULL``).
+
+      * - ``S``
+        - :c:expr:`PyObject*`
+        - The result of calling :c:func:`PyObject_Str`.
+
+      * - ``R``
+        - :c:expr:`PyObject*`
+        - The result of calling :c:func:`PyObject_Repr`.
 
    .. note::
       The width formatter unit is number of characters rather than bytes.
-      The precision formatter unit is number of bytes for ``"%s"`` and
+      The precision formatter unit is number of bytes or :c:expr:`wchar_t`
+      items (if the length modifier ``l`` is used) for ``"%s"`` and
       ``"%V"`` (if the ``PyObject*`` argument is ``NULL``), and a number of
       characters for ``"%A"``, ``"%U"``, ``"%S"``, ``"%R"`` and ``"%V"``
       (if the ``PyObject*`` argument is not ``NULL``).
 
-   .. [1] For integer specifiers (d, u, ld, li, lu, lld, lli, llu, zd, zi,
-      zu, i, x): the 0-conversion flag has effect even when a precision is given.
+   .. note::
+      Unlike to C :c:func:`printf` the ``0`` flag has effect even when
+      a precision is given for integer conversions (``d``, ``i``, ``u``, ``o``,
+      ``x``, or ``X``).
 
    .. versionchanged:: 3.2
       Support for ``"%lld"`` and ``"%llu"`` added.
@@ -498,6 +549,13 @@ APIs:
       ``"%V"``, ``"%S"``, ``"%R"`` added.
 
    .. versionchanged:: 3.12
+      Support for conversion specifiers ``o`` and ``X``.
+      Support for length modifiers ``j`` and ``t``.
+      Length modifiers are now applied to all integer conversions.
+      Length modifier ``l`` is now applied to conversion specifiers ``s`` and ``V``.
+      Support for variable width and precision ``*``.
+      Support for flag ``-``.
+
       An unrecognized format character now sets a :exc:`SystemError`.
       In previous versions it caused all the rest of the format string to be
       copied as-is to the result string, and any extra arguments discarded.
