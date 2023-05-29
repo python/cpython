@@ -7,7 +7,7 @@
 
 typedef double va_double;
 
-static PyObject *va_build_value(const char *, va_list, int);
+static PyObject *va_build_value(const char *, va_list);
 
 
 int
@@ -82,21 +82,21 @@ countformat(const char *format, char endchar)
 /* Generic function to create a value -- the inverse of getargs() */
 /* After an original idea and first implementation by Steven Miale */
 
-static PyObject *do_mktuple(const char**, va_list *, char, Py_ssize_t, int);
-static int do_mkstack(PyObject **, const char**, va_list *, char, Py_ssize_t, int);
-static PyObject *do_mklist(const char**, va_list *, char, Py_ssize_t, int);
-static PyObject *do_mkdict(const char**, va_list *, char, Py_ssize_t, int);
-static PyObject *do_mkvalue(const char**, va_list *, int);
+static PyObject *do_mktuple(const char**, va_list *, char, Py_ssize_t);
+static int do_mkstack(PyObject **, const char**, va_list *, char, Py_ssize_t);
+static PyObject *do_mklist(const char**, va_list *, char, Py_ssize_t);
+static PyObject *do_mkdict(const char**, va_list *, char, Py_ssize_t);
+static PyObject *do_mkvalue(const char**, va_list *);
 
 
 static void
-do_ignore(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n, int flags)
+do_ignore(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n)
 {
     assert(PyErr_Occurred());
     PyObject *v = PyTuple_New(n);
     for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *exc = PyErr_GetRaisedException();
-        PyObject *w = do_mkvalue(p_format, p_va, flags);
+        PyObject *w = do_mkvalue(p_format, p_va);
         PyErr_SetRaisedException(exc);
         if (w != NULL) {
             if (v != NULL) {
@@ -119,7 +119,7 @@ do_ignore(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n, int 
 }
 
 static PyObject *
-do_mkdict(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n, int flags)
+do_mkdict(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n)
 {
     PyObject *d;
     Py_ssize_t i;
@@ -128,27 +128,27 @@ do_mkdict(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n, int 
     if (n % 2) {
         PyErr_SetString(PyExc_SystemError,
                         "Bad dict format");
-        do_ignore(p_format, p_va, endchar, n, flags);
+        do_ignore(p_format, p_va, endchar, n);
         return NULL;
     }
     /* Note that we can't bail immediately on error as this will leak
        refcounts on any 'N' arguments. */
     if ((d = PyDict_New()) == NULL) {
-        do_ignore(p_format, p_va, endchar, n, flags);
+        do_ignore(p_format, p_va, endchar, n);
         return NULL;
     }
     for (i = 0; i < n; i+= 2) {
         PyObject *k, *v;
 
-        k = do_mkvalue(p_format, p_va, flags);
+        k = do_mkvalue(p_format, p_va);
         if (k == NULL) {
-            do_ignore(p_format, p_va, endchar, n - i - 1, flags);
+            do_ignore(p_format, p_va, endchar, n - i - 1);
             Py_DECREF(d);
             return NULL;
         }
-        v = do_mkvalue(p_format, p_va, flags);
+        v = do_mkvalue(p_format, p_va);
         if (v == NULL || PyDict_SetItem(d, k, v) < 0) {
-            do_ignore(p_format, p_va, endchar, n - i - 2, flags);
+            do_ignore(p_format, p_va, endchar, n - i - 2);
             Py_DECREF(k);
             Py_XDECREF(v);
             Py_DECREF(d);
@@ -169,7 +169,7 @@ do_mkdict(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n, int 
 }
 
 static PyObject *
-do_mklist(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n, int flags)
+do_mklist(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n)
 {
     PyObject *v;
     Py_ssize_t i;
@@ -179,13 +179,13 @@ do_mklist(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n, int 
        refcounts on any 'N' arguments. */
     v = PyList_New(n);
     if (v == NULL) {
-        do_ignore(p_format, p_va, endchar, n, flags);
+        do_ignore(p_format, p_va, endchar, n);
         return NULL;
     }
     for (i = 0; i < n; i++) {
-        PyObject *w = do_mkvalue(p_format, p_va, flags);
+        PyObject *w = do_mkvalue(p_format, p_va);
         if (w == NULL) {
-            do_ignore(p_format, p_va, endchar, n - i - 1, flags);
+            do_ignore(p_format, p_va, endchar, n - i - 1);
             Py_DECREF(v);
             return NULL;
         }
@@ -204,7 +204,7 @@ do_mklist(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n, int 
 
 static int
 do_mkstack(PyObject **stack, const char **p_format, va_list *p_va,
-           char endchar, Py_ssize_t n, int flags)
+           char endchar, Py_ssize_t n)
 {
     Py_ssize_t i;
 
@@ -214,9 +214,9 @@ do_mkstack(PyObject **stack, const char **p_format, va_list *p_va,
     /* Note that we can't bail immediately on error as this will leak
        refcounts on any 'N' arguments. */
     for (i = 0; i < n; i++) {
-        PyObject *w = do_mkvalue(p_format, p_va, flags);
+        PyObject *w = do_mkvalue(p_format, p_va);
         if (w == NULL) {
-            do_ignore(p_format, p_va, endchar, n - i - 1, flags);
+            do_ignore(p_format, p_va, endchar, n - i - 1);
             goto error;
         }
         stack[i] = w;
@@ -240,7 +240,7 @@ error:
 }
 
 static PyObject *
-do_mktuple(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n, int flags)
+do_mktuple(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n)
 {
     PyObject *v;
     Py_ssize_t i;
@@ -249,13 +249,13 @@ do_mktuple(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n, int
     /* Note that we can't bail immediately on error as this will leak
        refcounts on any 'N' arguments. */
     if ((v = PyTuple_New(n)) == NULL) {
-        do_ignore(p_format, p_va, endchar, n, flags);
+        do_ignore(p_format, p_va, endchar, n);
         return NULL;
     }
     for (i = 0; i < n; i++) {
-        PyObject *w = do_mkvalue(p_format, p_va, flags);
+        PyObject *w = do_mkvalue(p_format, p_va);
         if (w == NULL) {
-            do_ignore(p_format, p_va, endchar, n - i - 1, flags);
+            do_ignore(p_format, p_va, endchar, n - i - 1);
             Py_DECREF(v);
             return NULL;
         }
@@ -273,21 +273,21 @@ do_mktuple(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n, int
 }
 
 static PyObject *
-do_mkvalue(const char **p_format, va_list *p_va, int flags)
+do_mkvalue(const char **p_format, va_list *p_va)
 {
     for (;;) {
         switch (*(*p_format)++) {
         case '(':
             return do_mktuple(p_format, p_va, ')',
-                              countformat(*p_format, ')'), flags);
+                              countformat(*p_format, ')'));
 
         case '[':
             return do_mklist(p_format, p_va, ']',
-                             countformat(*p_format, ']'), flags);
+                             countformat(*p_format, ']'));
 
         case '{':
             return do_mkdict(p_format, p_va, '}',
-                             countformat(*p_format, '}'), flags);
+                             countformat(*p_format, '}'));
 
         case 'b':
         case 'B':
@@ -481,7 +481,7 @@ Py_BuildValue(const char *format, ...)
     va_list va;
     PyObject* retval;
     va_start(va, format);
-    retval = va_build_value(format, va, 0);
+    retval = va_build_value(format, va);
     va_end(va);
     return retval;
 }
@@ -492,7 +492,7 @@ _Py_BuildValue_SizeT(const char *format, ...)
     va_list va;
     PyObject* retval;
     va_start(va, format);
-    retval = va_build_value(format, va, 0);
+    retval = va_build_value(format, va);
     va_end(va);
     return retval;
 }
@@ -500,17 +500,17 @@ _Py_BuildValue_SizeT(const char *format, ...)
 PyObject *
 Py_VaBuildValue(const char *format, va_list va)
 {
-    return va_build_value(format, va, 0);
+    return va_build_value(format, va);
 }
 
 PyAPI_FUNC(PyObject *) /* abi only */
 _Py_VaBuildValue_SizeT(const char *format, va_list va)
 {
-    return va_build_value(format, va, 0);
+    return va_build_value(format, va);
 }
 
 static PyObject *
-va_build_value(const char *format, va_list va, int flags)
+va_build_value(const char *format, va_list va)
 {
     const char *f = format;
     Py_ssize_t n = countformat(f, '\0');
@@ -524,9 +524,9 @@ va_build_value(const char *format, va_list va, int flags)
     }
     va_copy(lva, va);
     if (n == 1) {
-        retval = do_mkvalue(&f, &lva, flags);
+        retval = do_mkvalue(&f, &lva);
     } else {
-        retval = do_mktuple(&f, &lva, '\0', n, flags);
+        retval = do_mktuple(&f, &lva, '\0', n);
     }
     va_end(lva);
     return retval;
@@ -566,7 +566,7 @@ _Py_VaBuildStack(PyObject **small_stack, Py_ssize_t small_stack_len,
 
     va_copy(lva, va);
     f = format;
-    res = do_mkstack(stack, &f, &lva, '\0', n, 0);
+    res = do_mkstack(stack, &f, &lva, '\0', n);
     va_end(lva);
 
     if (res < 0) {
