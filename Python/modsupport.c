@@ -5,11 +5,9 @@
 #include "pycore_abstract.h"   // _PyIndex_Check()
 #include "pycore_object.h"     // _PyType_IsReady()
 
-#define FLAG_SIZE_T 1
 typedef double va_double;
 
 static PyObject *va_build_value(const char *, va_list, int);
-static PyObject **va_build_stack(PyObject **small_stack, Py_ssize_t small_stack_len, const char *, va_list, int, Py_ssize_t*);
 
 
 int
@@ -277,13 +275,6 @@ do_mktuple(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n, int
 static PyObject *
 do_mkvalue(const char **p_format, va_list *p_va, int flags)
 {
-#define ERROR_NEED_PY_SSIZE_T_CLEAN \
-    { \
-        PyErr_SetString(PyExc_SystemError, \
-                        "PY_SSIZE_T_CLEAN macro must be defined for '#' formats"); \
-        return NULL; \
-    }
-
     for (;;) {
         switch (*(*p_format)++) {
         case '(':
@@ -342,13 +333,7 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
             Py_ssize_t n;
             if (**p_format == '#') {
                 ++*p_format;
-                if (flags & FLAG_SIZE_T) {
-                    n = va_arg(*p_va, Py_ssize_t);
-                }
-                else {
-                    n = va_arg(*p_va, int);
-                    ERROR_NEED_PY_SSIZE_T_CLEAN;
-                }
+                n = va_arg(*p_va, Py_ssize_t);
             }
             else
                 n = -1;
@@ -392,13 +377,7 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
             Py_ssize_t n;
             if (**p_format == '#') {
                 ++*p_format;
-                if (flags & FLAG_SIZE_T) {
-                    n = va_arg(*p_va, Py_ssize_t);
-                }
-                else {
-                    n = va_arg(*p_va, int);
-                    ERROR_NEED_PY_SSIZE_T_CLEAN;
-                }
+                n = va_arg(*p_va, Py_ssize_t);
             }
             else
                 n = -1;
@@ -427,13 +406,7 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
             Py_ssize_t n;
             if (**p_format == '#') {
                 ++*p_format;
-                if (flags & FLAG_SIZE_T) {
-                    n = va_arg(*p_va, Py_ssize_t);
-                }
-                else {
-                    n = va_arg(*p_va, int);
-                    ERROR_NEED_PY_SSIZE_T_CLEAN;
-                }
+                n = va_arg(*p_va, Py_ssize_t);
             }
             else
                 n = -1;
@@ -499,8 +472,6 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
 
         }
     }
-
-#undef ERROR_NEED_PY_SSIZE_T_CLEAN
 }
 
 
@@ -515,13 +486,13 @@ Py_BuildValue(const char *format, ...)
     return retval;
 }
 
-PyObject *
+PyAPI_FUNC(PyObject *) /* abi only */
 _Py_BuildValue_SizeT(const char *format, ...)
 {
     va_list va;
     PyObject* retval;
     va_start(va, format);
-    retval = va_build_value(format, va, FLAG_SIZE_T);
+    retval = va_build_value(format, va, 0);
     va_end(va);
     return retval;
 }
@@ -532,10 +503,10 @@ Py_VaBuildValue(const char *format, va_list va)
     return va_build_value(format, va, 0);
 }
 
-PyObject *
+PyAPI_FUNC(PyObject *) /* abi only */
 _Py_VaBuildValue_SizeT(const char *format, va_list va)
 {
-    return va_build_value(format, va, FLAG_SIZE_T);
+    return va_build_value(format, va, 0);
 }
 
 static PyObject *
@@ -564,20 +535,6 @@ va_build_value(const char *format, va_list va, int flags)
 PyObject **
 _Py_VaBuildStack(PyObject **small_stack, Py_ssize_t small_stack_len,
                 const char *format, va_list va, Py_ssize_t *p_nargs)
-{
-    return va_build_stack(small_stack, small_stack_len, format, va, 0, p_nargs);
-}
-
-PyObject **
-_Py_VaBuildStack_SizeT(PyObject **small_stack, Py_ssize_t small_stack_len,
-                       const char *format, va_list va, Py_ssize_t *p_nargs)
-{
-    return va_build_stack(small_stack, small_stack_len, format, va, FLAG_SIZE_T, p_nargs);
-}
-
-static PyObject **
-va_build_stack(PyObject **small_stack, Py_ssize_t small_stack_len,
-               const char *format, va_list va, int flags, Py_ssize_t *p_nargs)
 {
     const char *f;
     Py_ssize_t n;
@@ -609,7 +566,7 @@ va_build_stack(PyObject **small_stack, Py_ssize_t small_stack_len,
 
     va_copy(lva, va);
     f = format;
-    res = do_mkstack(stack, &f, &lva, '\0', n, flags);
+    res = do_mkstack(stack, &f, &lva, '\0', n, 0);
     va_end(lva);
 
     if (res < 0) {
