@@ -2271,6 +2271,7 @@ def requires_venv_with_pip():
     return unittest.skipUnless(ctypes, 'venv: pip requires ctypes')
 
 
+@functools.cache
 def _findwheel(pkgname):
     """Try to find a wheel with the package specified as pkgname.
 
