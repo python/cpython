@@ -93,6 +93,9 @@ pathlib
 * Add support for recursive wildcards in :meth:`pathlib.PurePath.match`.
   (Contributed by Barney Gale in :gh:`73435`.)
 
+* Add *follow_symlinks* keyword-only argument to :meth:`pathlib.Path.glob` and
+  :meth:`~pathlib.Path.rglob`.
+  (Contributed by Barney Gale in :gh:`77609`.)
 
 Optimizations
 =============
@@ -262,9 +265,14 @@ Removed
   or `python-magic <https://pypi.org/project/python-magic/>`_ instead.
   (Contributed by Victor Stinner in :gh:`104773`.)
 
+* Remove the untested and undocumented :meth:`!unittest.TestProgram.usageExit`
+  method, deprecated in Python 3.11.
+  (Contributed by Hugo van Kemenade in :gh:`104992`.)
+
 * Remove the :mod:`!tkinter.tix` module, deprecated in Python 3.6.  The
   third-party Tix library which the module wrapped is unmaintained.
   (Contributed by Zachary Ware in :gh:`75552`.)
+
 
 
 Porting to Python 3.13
