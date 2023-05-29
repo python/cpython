@@ -715,7 +715,8 @@ class PurePath:
                 return False
         return True
 
-# Subclassing os.PathLike makes __instancecheck__ slower. Register instead!
+# Subclassing os.PathLike makes isinstance() checks slower,
+# which in turn makes Path construction slower. Register instead!
 os.PathLike.register(PurePath)
 
 
