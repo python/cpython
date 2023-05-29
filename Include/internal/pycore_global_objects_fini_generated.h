@@ -570,10 +570,14 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(type_params));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(utf_8));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(CANCELLED));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(ExistingFileName));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(FINISHED));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(False));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(Flags));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(JSONDecodeError));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(NewFileName));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(PENDING));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(ProgressRoutine));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(Py_Repr));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(TextIOWrapper));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(True));

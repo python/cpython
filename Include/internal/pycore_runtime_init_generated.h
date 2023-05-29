@@ -564,10 +564,14 @@ extern "C" {
 
 #define _Py_str_identifiers_INIT { \
     INIT_ID(CANCELLED), \
+    INIT_ID(ExistingFileName), \
     INIT_ID(FINISHED), \
     INIT_ID(False), \
+    INIT_ID(Flags), \
     INIT_ID(JSONDecodeError), \
+    INIT_ID(NewFileName), \
     INIT_ID(PENDING), \
+    INIT_ID(ProgressRoutine), \
     INIT_ID(Py_Repr), \
     INIT_ID(TextIOWrapper), \
     INIT_ID(True), \

@@ -58,10 +58,14 @@ struct _Py_global_strings {
 
     struct {
         STRUCT_FOR_ID(CANCELLED)
+        STRUCT_FOR_ID(ExistingFileName)
         STRUCT_FOR_ID(FINISHED)
         STRUCT_FOR_ID(False)
+        STRUCT_FOR_ID(Flags)
         STRUCT_FOR_ID(JSONDecodeError)
+        STRUCT_FOR_ID(NewFileName)
         STRUCT_FOR_ID(PENDING)
+        STRUCT_FOR_ID(ProgressRoutine)
         STRUCT_FOR_ID(Py_Repr)
         STRUCT_FOR_ID(TextIOWrapper)
         STRUCT_FOR_ID(True)

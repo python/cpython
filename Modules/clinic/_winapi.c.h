@@ -1313,6 +1313,76 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_winapi_CopyFile2__doc__,
+"CopyFile2($module, /, ExistingFileName, NewFileName, Flags,\n"
+"          ProgressRoutine=None)\n"
+"--\n"
+"\n"
+"Copies a file from one name to a new name.\n"
+"\n"
+"This is implemented using the CopyFile2 API, which preserves all stat\n"
+"and metadata information apart from security attributes.\n"
+"\n"
+"ProgressRoutine is reserved for future use, but is currently not\n"
+"implemented. Its value is ignored.");
+
+#define _WINAPI_COPYFILE2_METHODDEF    \
+    {"CopyFile2", _PyCFunction_CAST(_winapi_CopyFile2), METH_FASTCALL|METH_KEYWORDS, _winapi_CopyFile2__doc__},
+
+static PyObject *
+_winapi_CopyFile2_impl(PyObject *module, LPCWSTR ExistingFileName,
+                       LPCWSTR NewFileName, DWORD Flags,
+                       PyObject *ProgressRoutine);
+
+static PyObject *
+_winapi_CopyFile2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 4
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(ExistingFileName), &_Py_ID(NewFileName), &_Py_ID(Flags), &_Py_ID(ProgressRoutine), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"ExistingFileName", "NewFileName", "Flags", "ProgressRoutine", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .format = "O&O&k|O:CopyFile2",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    LPCWSTR ExistingFileName = NULL;
+    LPCWSTR NewFileName = NULL;
+    DWORD Flags;
+    PyObject *ProgressRoutine = Py_None;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        _PyUnicode_WideCharString_Converter, &ExistingFileName, _PyUnicode_WideCharString_Converter, &NewFileName, &Flags, &ProgressRoutine)) {
+        goto exit;
+    }
+    return_value = _winapi_CopyFile2_impl(module, ExistingFileName, NewFileName, Flags, ProgressRoutine);
+
+exit:
+    /* Cleanup for ExistingFileName */
+    PyMem_Free((void *)ExistingFileName);
+    /* Cleanup for NewFileName */
+    PyMem_Free((void *)NewFileName);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_winapi__mimetypes_read_windows_registry__doc__,
 "_mimetypes_read_windows_registry($module, /, on_type_read)\n"
 "--\n"
@@ -1411,4 +1481,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=96ea65ece7912d0a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5e8927548ec12266 input=a9049054013a1b77]*/
