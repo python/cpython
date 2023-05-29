@@ -72,8 +72,10 @@ def _compile_pattern(pat, case_sensitive):
     return re.compile(fnmatch.translate(pat), flags).match
 
 
-def _select_children(paths, dir_only, match):
+def _select_children(paths, dir_only, follow_symlinks, match):
     """Yield direct children of given paths, filtering by name and type."""
+    if follow_symlinks is None:
+        follow_symlinks = True
     for path in paths:
         try:
             # We must close the scandir() object before proceeding to
@@ -86,7 +88,7 @@ def _select_children(paths, dir_only, match):
             for entry in entries:
                 if dir_only:
                     try:
-                        if not entry.is_dir():
+                        if not entry.is_dir(follow_symlinks=follow_symlinks):
                             continue
                     except OSError:
                         continue
@@ -95,11 +97,13 @@ def _select_children(paths, dir_only, match):
                     yield path._make_child_relpath(name)
 
 
-def _select_recursive(paths):
-    """Yield given paths and all their subdirectories, recursively."""
+def _select_recursive(paths, follow_symlinks):
+    """Yield given paths and all their subdiretories, recursively."""
+    if follow_symlinks is None:
+        follow_symlinks = False
     for path in paths:
         yield path
-        for dirpath, dirnames, _ in path.walk():
+        for dirpath, dirnames, _ in path.walk(follow_symlinks=follow_symlinks):
             for dirname in dirnames:
                 yield dirpath._make_child_relpath(dirname)
 
@@ -150,7 +154,7 @@ class _PathParents(Sequence):
         return "<{}.parents>".format(type(self._path).__name__)
 
 
-class PurePath(object):
+class PurePath(os.PathLike):
     """Base class for manipulating paths without I/O.
 
     PurePath represents a filesystem path and offers operations which
@@ -217,6 +221,9 @@ class PurePath(object):
         for arg in args:
             if isinstance(arg, PurePath):
                 path = arg._raw_path
+                if arg._flavour is ntpath and self._flavour is posixpath:
+                    # GH-103631: Convert separators for backwards compatibility.
+                    path = path.replace('\\', '/')
             else:
                 try:
                     path = os.fspath(arg)
@@ -338,7 +345,10 @@ class PurePath(object):
         try:
             return self._str_normcase_cached
         except AttributeError:
-            self._str_normcase_cached = self._flavour.normcase(str(self))
+            if _is_case_sensitive(self._flavour):
+                self._str_normcase_cached = str(self)
+            else:
+                self._str_normcase_cached = str(self).lower()
             return self._str_normcase_cached
 
     @property
@@ -624,10 +634,6 @@ class PurePath(object):
                 return False
         return True
 
-# Can't subclass os.PathLike from PurePath and keep the constructor
-# optimizations in PurePath.__slots__.
-os.PathLike.register(PurePath)
-
 
 class PurePosixPath(PurePath):
     """PurePath subclass for non-Windows systems.
@@ -909,7 +915,7 @@ class Path(PurePath):
         path._tail_cached = tail + [name]
         return path
 
-    def glob(self, pattern, *, case_sensitive=None):
+    def glob(self, pattern, *, case_sensitive=None, follow_symlinks=None):
         """Iterate over this subtree and yield all existing files (of any
         kind, including directories) matching the given relative pattern.
         """
@@ -921,9 +927,9 @@ class Path(PurePath):
             raise NotImplementedError("Non-relative patterns are unsupported")
         if pattern[-1] in (self._flavour.sep, self._flavour.altsep):
             pattern_parts.append('')
-        return self._glob(pattern_parts, case_sensitive)
+        return self._glob(pattern_parts, case_sensitive, follow_symlinks)
 
-    def rglob(self, pattern, *, case_sensitive=None):
+    def rglob(self, pattern, *, case_sensitive=None, follow_symlinks=None):
         """Recursively yield all existing files (of any kind, including
         directories) matching the given relative pattern, anywhere in
         this subtree.
@@ -934,9 +940,9 @@ class Path(PurePath):
             raise NotImplementedError("Non-relative patterns are unsupported")
         if pattern and pattern[-1] in (self._flavour.sep, self._flavour.altsep):
             pattern_parts.append('')
-        return self._glob(['**'] + pattern_parts, case_sensitive)
+        return self._glob(['**'] + pattern_parts, case_sensitive, follow_symlinks)
 
-    def _glob(self, pattern_parts, case_sensitive):
+    def _glob(self, pattern_parts, case_sensitive, follow_symlinks):
         if case_sensitive is None:
             # TODO: evaluate case-sensitivity of each directory in _select_children().
             case_sensitive = _is_case_sensitive(self._flavour)
@@ -955,7 +961,7 @@ class Path(PurePath):
                 # Collapse adjacent '**' segments.
                 while part_idx < len(pattern_parts) and pattern_parts[part_idx] == '**':
                     part_idx += 1
-                paths = _select_recursive(paths)
+                paths = _select_recursive(paths, follow_symlinks)
                 # De-duplicate if we've already seen a '**' segment.
                 if deduplicate:
                     paths = _select_unique(paths)
@@ -965,7 +971,7 @@ class Path(PurePath):
             else:
                 dir_only = part_idx < len(pattern_parts)
                 match = _compile_pattern(part, case_sensitive)
-                paths = _select_children(paths, dir_only, match)
+                paths = _select_children(paths, dir_only, follow_symlinks, match)
         return paths
 
     def walk(self, top_down=True, on_error=None, follow_symlinks=False):
@@ -1024,25 +1030,6 @@ class Path(PurePath):
         if cls is Path:
             cls = WindowsPath if os.name == 'nt' else PosixPath
         return object.__new__(cls)
-
-    def __enter__(self):
-        # In previous versions of pathlib, __exit__() marked this path as
-        # closed; subsequent attempts to perform I/O would raise an IOError.
-        # This functionality was never documented, and had the effect of
-        # making Path objects mutable, contrary to PEP 428.
-        # In Python 3.9 __exit__() was made a no-op.
-        # In Python 3.11 __enter__() began emitting DeprecationWarning.
-        # In Python 3.13 __enter__() and __exit__() should be removed.
-        warnings.warn("pathlib.Path.__enter__() is deprecated and scheduled "
-                      "for removal in Python 3.13; Path objects as a context "
-                      "manager is a no-op",
-                      DeprecationWarning, stacklevel=2)
-        return self
-
-    def __exit__(self, t, v, tb):
-        pass
-
-    # Public API
 
     @classmethod
     def cwd(cls):

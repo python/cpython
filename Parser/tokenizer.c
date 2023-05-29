@@ -111,6 +111,8 @@ tok_new(void)
     tok->interactive_underflow = IUNDERFLOW_NORMAL;
     tok->str = NULL;
     tok->report_warnings = 1;
+    tok->tok_extra_tokens = 0;
+    tok->comment_newline = 0;
     tok->tok_mode_stack[0] = (tokenizer_mode){.kind =TOK_REGULAR_MODE, .f_string_quote='\0', .f_string_quote_size = 0, .f_string_debug=0};
     tok->tok_mode_stack_index = 0;
     tok->tok_report_warnings = 1;
@@ -770,7 +772,8 @@ translate_into_utf8(const char* str, const char* enc) {
 
 
 static char *
-translate_newlines(const char *s, int exec_input, struct tok_state *tok) {
+translate_newlines(const char *s, int exec_input, int preserve_crlf,
+                   struct tok_state *tok) {
     int skip_next_lf = 0;
     size_t needed_length = strlen(s) + 2, final_length;
     char *buf, *current;
@@ -790,7 +793,7 @@ translate_newlines(const char *s, int exec_input, struct tok_state *tok) {
                     break;
             }
         }
-        if (c == '\r') {
+        if (!preserve_crlf && c == '\r') {
             skip_next_lf = 1;
             c = '\n';
         }
@@ -798,7 +801,7 @@ translate_newlines(const char *s, int exec_input, struct tok_state *tok) {
     }
     /* If this is exec input, add a newline to the end of the string if
        there isn't one already. */
-    if (exec_input && c != '\n') {
+    if (exec_input && c != '\n' && c != '\0') {
         *current = '\n';
         current++;
     }
@@ -820,14 +823,14 @@ translate_newlines(const char *s, int exec_input, struct tok_state *tok) {
    inside TOK.  */
 
 static char *
-decode_str(const char *input, int single, struct tok_state *tok)
+decode_str(const char *input, int single, struct tok_state *tok, int preserve_crlf)
 {
     PyObject* utf8 = NULL;
     char *str;
     const char *s;
     const char *newl[2] = {NULL, NULL};
     int lineno = 0;
-    tok->input = str = translate_newlines(input, single, tok);
+    tok->input = str = translate_newlines(input, single, preserve_crlf, tok);
     if (str == NULL)
         return NULL;
     tok->enc = NULL;
@@ -879,14 +882,14 @@ decode_str(const char *input, int single, struct tok_state *tok)
 /* Set up tokenizer for string */
 
 struct tok_state *
-_PyTokenizer_FromString(const char *str, int exec_input)
+_PyTokenizer_FromString(const char *str, int exec_input, int preserve_crlf)
 {
     struct tok_state *tok = tok_new();
     char *decoded;
 
     if (tok == NULL)
         return NULL;
-    decoded = decode_str(str, exec_input, tok);
+    decoded = decode_str(str, exec_input, tok, preserve_crlf);
     if (decoded == NULL) {
         _PyTokenizer_Free(tok);
         return NULL;
@@ -900,13 +903,13 @@ _PyTokenizer_FromString(const char *str, int exec_input)
 /* Set up tokenizer for UTF-8 string */
 
 struct tok_state *
-_PyTokenizer_FromUTF8(const char *str, int exec_input)
+_PyTokenizer_FromUTF8(const char *str, int exec_input, int preserve_crlf)
 {
     struct tok_state *tok = tok_new();
     char *translated;
     if (tok == NULL)
         return NULL;
-    tok->input = translated = translate_newlines(str, exec_input, tok);
+    tok->input = translated = translate_newlines(str, exec_input, preserve_crlf, tok);
     if (translated == NULL) {
         _PyTokenizer_Free(tok);
         return NULL;
@@ -980,6 +983,16 @@ _PyTokenizer_Free(struct tok_state *tok)
     PyMem_Free(tok);
 }
 
+void
+_PyToken_Free(struct token *token) {
+    Py_XDECREF(token->metadata);
+}
+
+void
+_PyToken_Init(struct token *token) {
+    token->metadata = NULL;
+}
+
 static int
 tok_readline_raw(struct tok_state *tok)
 {
@@ -1038,7 +1051,7 @@ tok_underflow_interactive(struct tok_state *tok) {
     }
     char *newtok = PyOS_Readline(tok->fp ? tok->fp : stdin, stdout, tok->prompt);
     if (newtok != NULL) {
-        char *translated = translate_newlines(newtok, 0, tok);
+        char *translated = translate_newlines(newtok, 0, 0, tok);
         PyMem_Free(newtok);
         if (translated == NULL) {
             return 0;
@@ -1124,7 +1137,7 @@ tok_underflow_interactive(struct tok_state *tok) {
 
 static int
 tok_underflow_file(struct tok_state *tok) {
-    if (tok->start == NULL) {
+    if (tok->start == NULL && !INSIDE_FSTRING(tok)) {
         tok->cur = tok->inp = tok->buf;
     }
     if (tok->decoding_state == STATE_INIT) {
@@ -1544,14 +1557,11 @@ verify_identifier(struct tok_state *tok)
             tok->cur = (char *)tok->start + PyBytes_GET_SIZE(s);
         }
         Py_DECREF(s);
-        // PyUnicode_FromFormatV() does not support %X
-        char hex[9];
-        (void)PyOS_snprintf(hex, sizeof(hex), "%04X", ch);
         if (Py_UNICODE_ISPRINTABLE(ch)) {
-            syntaxerror(tok, "invalid character '%c' (U+%s)", ch, hex);
+            syntaxerror(tok, "invalid character '%c' (U+%04X)", ch, ch);
         }
         else {
-            syntaxerror(tok, "invalid non-printable character U+%s", hex);
+            syntaxerror(tok, "invalid non-printable character U+%04X", ch);
         }
         return 0;
     }
@@ -1585,6 +1595,9 @@ tok_decimal_tail(struct tok_state *tok)
 static inline int
 tok_continuation_line(struct tok_state *tok) {
     int c = tok_nextc(tok);
+    if (c == '\r') {
+        c = tok_nextc(tok);
+    }
     if (c != '\n') {
         tok->done = E_LINECONT;
         return -1;
@@ -1636,6 +1649,7 @@ token_setup(struct tok_state *tok, struct token *token, int type, const char *st
     return type;
 }
 
+
 static int
 tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct token *token)
 {
@@ -1648,6 +1662,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     tok->start = NULL;
     tok->starting_col_offset = -1;
     blankline = 0;
+
 
     /* Get indentation level */
     if (tok->atbol) {
@@ -1682,7 +1697,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             }
         }
         tok_backup(tok, c);
-        if (c == '#' || c == '\n') {
+        if (c == '#' || c == '\n' || c == '\r') {
             /* Lines with only whitespace and/or comments
                shouldn't affect the indentation and are
                not passed to the parser as NEWLINE tokens,
@@ -1751,10 +1766,18 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     /* Return pending indents/dedents */
     if (tok->pendin != 0) {
         if (tok->pendin < 0) {
+            if (tok->tok_extra_tokens) {
+                p_start = tok->cur;
+                p_end = tok->cur;
+            }
             tok->pendin++;
             return MAKE_TOKEN(DEDENT);
         }
         else {
+            if (tok->tok_extra_tokens) {
+                p_start = tok->buf;
+                p_end = tok->cur;
+            }
             tok->pendin--;
             return MAKE_TOKEN(INDENT);
         }
@@ -1799,15 +1822,16 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     /* Skip comment, unless it's a type comment */
     if (c == '#') {
 
-        if (INSIDE_FSTRING(tok)) {
-            return MAKE_TOKEN(syntaxerror(tok, "f-string expression part cannot include '#'"));
-        }
-
-        const char *prefix, *p, *type_start;
+        const char* p = NULL;
+        const char *prefix, *type_start;
         int current_starting_col_offset;
 
-        while (c != EOF && c != '\n') {
+        while (c != EOF && c != '\n' && c != '\r') {
             c = tok_nextc(tok);
+        }
+
+        if (tok->tok_extra_tokens) {
+            p = tok->start;
         }
 
         if (tok->type_comments) {
@@ -1863,6 +1887,13 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     return MAKE_TYPE_COMMENT_TOKEN(TYPE_COMMENT, current_starting_col_offset, tok->col_offset);
                 }
             }
+        }
+        if (tok->tok_extra_tokens) {
+            tok_backup(tok, c);  /* don't eat the newline or EOF */
+            p_start = p;
+            p_end = tok->cur;
+            tok->comment_newline = blankline;
+            return MAKE_TOKEN(COMMENT);
         }
     }
 
@@ -1949,6 +1980,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
 
                 struct tok_state ahead_tok;
                 struct token ahead_token;
+                _PyToken_Init(&ahead_token);
                 int ahead_tok_kind;
 
                 memcpy(&ahead_tok, tok, sizeof(ahead_tok));
@@ -1964,19 +1996,39 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                        returning a plain NAME token, return ASYNC. */
                     tok->async_def_indent = tok->indent;
                     tok->async_def = 1;
+                    _PyToken_Free(&ahead_token);
                     return MAKE_TOKEN(ASYNC);
                 }
+                _PyToken_Free(&ahead_token);
             }
         }
 
         return MAKE_TOKEN(NAME);
     }
 
+    if (c == '\r') {
+        c = tok_nextc(tok);
+    }
+
     /* Newline */
     if (c == '\n') {
         tok->atbol = 1;
         if (blankline || tok->level > 0) {
+            if (tok->tok_extra_tokens) {
+                if (tok->comment_newline) {
+                    tok->comment_newline = 0;
+                }
+                p_start = tok->start;
+                p_end = tok->cur;
+                return MAKE_TOKEN(NL);
+            }
             goto nextline;
+        }
+        if (tok->comment_newline && tok->tok_extra_tokens) {
+            tok->comment_newline = 0;
+            p_start = tok->start;
+            p_end = tok->cur;
+            return MAKE_TOKEN(NL);
         }
         p_start = tok->start;
         p_end = tok->cur - 1; /* Leave '\n' out of the string */
@@ -2250,6 +2302,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         the_current_tok->f_string_quote_size = quote_size;
         the_current_tok->f_string_start = tok->start;
         the_current_tok->f_string_multi_line_start = tok->line_start;
+        the_current_tok->f_string_line_start = tok->lineno;
         the_current_tok->f_string_start_offset = -1;
         the_current_tok->f_string_multi_line_start_offset = -1;
         the_current_tok->last_expr_buffer = NULL;
@@ -2360,7 +2413,10 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             else {
                 end_quote_size = 0;
                 if (c == '\\') {
-                    tok_nextc(tok);  /* skip escaped char */
+                    c = tok_nextc(tok);  /* skip escaped char */
+                    if (c == '\r') {
+                        c = tok_nextc(tok);
+                    }
                 }
             }
         }
@@ -2492,9 +2548,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     }
 
     if (!Py_UNICODE_ISPRINTABLE(c)) {
-        char hex[9];
-        (void)PyOS_snprintf(hex, sizeof(hex), "%04X", c);
-        return MAKE_TOKEN(syntaxerror(tok, "invalid non-printable character U+%s", hex));
+        return MAKE_TOKEN(syntaxerror(tok, "invalid non-printable character U+%04X", c));
     }
 
     if( c == '=' && INSIDE_FSTRING_EXPR(current_tok)) {
@@ -2562,6 +2616,9 @@ tok_get_fstring_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct 
 
 f_string_middle:
 
+    // TODO: This is a bit of a hack, but it works for now. We need to find a better way to handle
+    // this.
+    tok->multi_line_start = tok->line_start;
     while (end_quote_size != current_tok->f_string_quote_size) {
         int c = tok_nextc(tok);
         if (tok->done == E_ERROR) {
@@ -2580,7 +2637,9 @@ f_string_middle:
             tok->cur++;
             tok->line_start = current_tok->f_string_multi_line_start;
             int start = tok->lineno;
-            tok->lineno = tok->first_lineno;
+
+            tokenizer_mode *the_current_tok = TOK_GET_MODE(tok);
+            tok->lineno = the_current_tok->f_string_line_start;
 
             if (current_tok->f_string_quote_size == 3) {
                 return MAKE_TOKEN(syntaxerror(tok,
@@ -2648,6 +2707,9 @@ f_string_middle:
             return MAKE_TOKEN(FSTRING_MIDDLE);
         } else if (c == '\\') {
             int peek = tok_nextc(tok);
+            if (peek == '\r') {
+                peek = tok_nextc(tok);
+            }
             // Special case when the backslash is right before a curly
             // brace. We have to restore and return the control back
             // to the loop for the next iteration.
@@ -2785,7 +2847,9 @@ _PyTokenizer_FindEncodingFilename(int fd, PyObject *filename)
     // if fetching the encoding shows a warning.
     tok->report_warnings = 0;
     while (tok->lineno < 2 && tok->done == E_OK) {
+        _PyToken_Init(&token);
         _PyTokenizer_Get(tok, &token);
+        _PyToken_Free(&token);
     }
     fclose(fp);
     if (tok->encoding) {

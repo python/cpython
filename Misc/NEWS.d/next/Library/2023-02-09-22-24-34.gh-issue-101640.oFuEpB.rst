@@ -1,1 +1,0 @@
-:class:`argparse.ArgumentParser` now catches errors when writing messages, such as when :data:`sys.stderr` is ``None``. Patch by Oleg Iarygin.
