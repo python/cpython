@@ -444,7 +444,6 @@ def copy2(src, dst, *, follow_symlinks=True):
         flags = _winapi.COPY_FILE_ALLOW_DECRYPTED_DESTINATION # for compat
         if not follow_symlinks:
             flags |= _winapi.COPY_FILE_COPY_SYMLINK
-        retry = False
         try:
             _winapi.CopyFile2(src_, dst_, flags)
             return dst
