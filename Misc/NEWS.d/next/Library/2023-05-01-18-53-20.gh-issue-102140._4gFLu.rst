@@ -1,2 +1,3 @@
-Added in the has_header() method, a condition that checks if all elements are strings type.
- If it's true (in that case, the dictionnary is empty), then we compare the average length of all strings to the header's length in the vote at the end of the function.
+Enhanced the :meth:`has_header` in the :mod:`CSV` for better header detection.
+Now checks if all columns are strings and if the :py:data:`columnTypes` is empty.
+If conditions are met, it assigns the median length of the strings to :py:data:`columnTypes`.
