@@ -295,9 +295,9 @@ The :mod:`csv` module defines the following classes:
       Twenty rows after the first row are sampled; if more than half of columns +
       rows meet the criteria, :const:`True` is returned.
 
-      Additionally, if all columns are found to be strings and :py:obj:`columnTypes`
-      is empty, the method assigns the medium length of all the strings
-      to the dictionary.
+      Additionally, if all columns are found to be strings and have varying
+      lengths, the average length of all the strings becomes a crucial factor
+      in the determination process.
 
 
    .. note::

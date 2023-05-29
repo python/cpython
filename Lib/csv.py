@@ -394,6 +394,8 @@ class Sniffer:
         # can't be determined, it is assumed to be a string in which case
         # the length of the string is the determining factor: if all of the
         # rows except for the first are the same length, it's a header.
+        # when the strings have varying length, the average length of all
+        # strings becomes a determining factor.
         # Finally, a 'vote' is taken at the end for each column, adding or
         # subtracting from the likelihood of the first row being a header.
 
