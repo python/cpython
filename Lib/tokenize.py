@@ -447,7 +447,9 @@ def tokenize(readline):
 
 def _tokenize(rl_gen, encoding):
     source = b"".join(rl_gen).decode(encoding)
-    for token in _generate_tokens_from_c_tokenizer(source, extra_tokens=True):
+    for token in _generate_tokens_from_c_tokenizer(source,
+                                                   extra_tokens=True,
+                                                   ignore_unmatched_parens=True):
         yield token
 
 def generate_tokens(readline):
@@ -531,10 +533,12 @@ def main():
         perror("unexpected error: %s" % err)
         raise
 
-def _generate_tokens_from_c_tokenizer(source, extra_tokens=False):
+def _generate_tokens_from_c_tokenizer(source, extra_tokens=False, ignore_unmatched_parens=False):
     """Tokenize a source reading Python code as unicode strings using the internal C tokenizer"""
     import _tokenize as c_tokenizer
-    for info in c_tokenizer.TokenizerIter(source, extra_tokens=extra_tokens):
+    for info in c_tokenizer.TokenizerIter(source,
+                                          extra_tokens=extra_tokens,
+                                          ignore_unmatched_parens=ignore_unmatched_parens):
         yield TokenInfo._make(info)
 
 

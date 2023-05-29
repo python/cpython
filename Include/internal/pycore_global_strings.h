@@ -463,6 +463,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(id)
         STRUCT_FOR_ID(ident)
         STRUCT_FOR_ID(ignore)
+        STRUCT_FOR_ID(ignore_unmatched_parens)
         STRUCT_FOR_ID(imag)
         STRUCT_FOR_ID(importlib)
         STRUCT_FOR_ID(in_fd)

@@ -40,12 +40,13 @@ _tokenizer.tokenizeriter.__new__ as tokenizeriter_new
     source: str
     *
     extra_tokens: bool
+    ignore_unmatched_parens: bool
 [clinic start generated code]*/
 
 static PyObject *
 tokenizeriter_new_impl(PyTypeObject *type, const char *source,
-                       int extra_tokens)
-/*[clinic end generated code: output=f6f9d8b4beec8106 input=90dc5b6a5df180c2]*/
+                       int extra_tokens, int ignore_unmatched_parens)
+/*[clinic end generated code: output=5437e7bbc30de3f4 input=7f6b22d7c235ffd7]*/
 {
     tokenizeriterobject *self = (tokenizeriterobject *)type->tp_alloc(type, 0);
     if (self == NULL) {
@@ -63,6 +64,12 @@ tokenizeriter_new_impl(PyTypeObject *type, const char *source,
     self->tok->filename = filename;
     if (extra_tokens) {
         self->tok->tok_extra_tokens = 1;
+    }
+    if (ignore_unmatched_parens) {
+        self->tok->ignore_unmatched_parens = 1;
+    }
+    if (ignore_unmatched_parens) {
+        self->tok->ignore_unmatched_parens = 1;
     }
     self->done = 0;
     return (PyObject *)self;
@@ -82,7 +89,7 @@ _tokenizer_error(struct tok_state *tok)
             msg = "invalid token";
             break;
         case E_EOF:
-            if (tok->level) {
+            if (tok->level > 0) {
                     PyErr_Format(PyExc_SyntaxError,
                                  "parenthesis '%c' was never closed",
                                 tok->parenstack[tok->level-1]);

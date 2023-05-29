@@ -113,6 +113,7 @@ tok_new(void)
     tok->report_warnings = 1;
     tok->tok_extra_tokens = 0;
     tok->comment_newline = 0;
+    tok->ignore_unmatched_parens = 0;
     tok->tok_mode_stack[0] = (tokenizer_mode){.kind =TOK_REGULAR_MODE, .f_string_quote='\0', .f_string_quote_size = 0, .f_string_debug=0};
     tok->tok_mode_stack_index = 0;
     tok->tok_report_warnings = 1;
@@ -2496,41 +2497,42 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     case ')':
     case ']':
     case '}':
-        if (!tok->level) {
+        if (!tok->ignore_unmatched_parens && !tok->level) {
             if (INSIDE_FSTRING(tok) && !current_tok->curly_bracket_depth && c == '}') {
                 return MAKE_TOKEN(syntaxerror(tok, "f-string: single '}' is not allowed"));
             }
             return MAKE_TOKEN(syntaxerror(tok, "unmatched '%c'", c));
         }
-        tok->level--;
-        int opening = tok->parenstack[tok->level];
-        if (!((opening == '(' && c == ')') ||
-              (opening == '[' && c == ']') ||
-              (opening == '{' && c == '}')))
-        {
-            /* If the opening bracket belongs to an f-string's expression
-               part (e.g. f"{)}") and the closing bracket is an arbitrary
-               nested expression, then instead of matching a different
-               syntactical construct with it; we'll throw an unmatched
-               parentheses error. */
-            if (INSIDE_FSTRING(tok) && opening == '{') {
-                assert(current_tok->curly_bracket_depth >= 0);
-                int previous_bracket = current_tok->curly_bracket_depth - 1;
-                if (previous_bracket == current_tok->curly_bracket_expr_start_depth) {
-                    return MAKE_TOKEN(syntaxerror(tok, "f-string: unmatched '%c'", c));
+        if (tok->level > 0) {
+            tok->level--;
+            int opening = tok->parenstack[tok->level];
+            if (!tok->ignore_unmatched_parens && !((opening == '(' && c == ')') ||
+                                                (opening == '[' && c == ']') ||
+                                                (opening == '{' && c == '}'))) {
+                /* If the opening bracket belongs to an f-string's expression
+                part (e.g. f"{)}") and the closing bracket is an arbitrary
+                nested expression, then instead of matching a different
+                syntactical construct with it; we'll throw an unmatched
+                parentheses error. */
+                if (INSIDE_FSTRING(tok) && opening == '{') {
+                    assert(current_tok->curly_bracket_depth >= 0);
+                    int previous_bracket = current_tok->curly_bracket_depth - 1;
+                    if (previous_bracket == current_tok->curly_bracket_expr_start_depth) {
+                        return MAKE_TOKEN(syntaxerror(tok, "f-string: unmatched '%c'", c));
+                    }
                 }
-            }
-            if (tok->parenlinenostack[tok->level] != tok->lineno) {
-                return MAKE_TOKEN(syntaxerror(tok,
-                        "closing parenthesis '%c' does not match "
-                        "opening parenthesis '%c' on line %d",
-                        c, opening, tok->parenlinenostack[tok->level]));
-            }
-            else {
-                return MAKE_TOKEN(syntaxerror(tok,
-                        "closing parenthesis '%c' does not match "
-                        "opening parenthesis '%c'",
-                        c, opening));
+                if (tok->parenlinenostack[tok->level] != tok->lineno) {
+                    return MAKE_TOKEN(syntaxerror(tok,
+                            "closing parenthesis '%c' does not match "
+                            "opening parenthesis '%c' on line %d",
+                            c, opening, tok->parenlinenostack[tok->level]));
+                }
+                else {
+                    return MAKE_TOKEN(syntaxerror(tok,
+                            "closing parenthesis '%c' does not match "
+                            "opening parenthesis '%c'",
+                            c, opening));
+                }
             }
         }
 

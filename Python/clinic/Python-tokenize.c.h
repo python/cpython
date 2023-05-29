@@ -10,7 +10,7 @@ preserve
 
 static PyObject *
 tokenizeriter_new_impl(PyTypeObject *type, const char *source,
-                       int extra_tokens);
+                       int extra_tokens, int ignore_unmatched_parens);
 
 static PyObject *
 tokenizeriter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
@@ -18,14 +18,14 @@ tokenizeriter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 3
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(source), &_Py_ID(extra_tokens), },
+        .ob_item = { &_Py_ID(source), &_Py_ID(extra_tokens), &_Py_ID(ignore_unmatched_parens), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -34,20 +34,21 @@ tokenizeriter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"source", "extra_tokens", NULL};
+    static const char * const _keywords[] = {"source", "extra_tokens", "ignore_unmatched_parens", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "tokenizeriter",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[3];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     const char *source;
     int extra_tokens;
+    int ignore_unmatched_parens;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 1, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 2, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -68,9 +69,13 @@ tokenizeriter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (extra_tokens < 0) {
         goto exit;
     }
-    return_value = tokenizeriter_new_impl(type, source, extra_tokens);
+    ignore_unmatched_parens = PyObject_IsTrue(fastargs[2]);
+    if (ignore_unmatched_parens < 0) {
+        goto exit;
+    }
+    return_value = tokenizeriter_new_impl(type, source, extra_tokens, ignore_unmatched_parens);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=940b564c67f6e0e2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=adf7070944a94fba input=a9049054013a1b77]*/
