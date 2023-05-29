@@ -12621,6 +12621,11 @@ fi
 
 
 
+if test "x$ac_cv_header_sys_time_h" = xyes; then :
+  have_libexpat=yes
+
+fi
+
 have_libffi=missing
 if test "x$ac_sys_system" = xDarwin; then :
 
@@ -26047,7 +26052,7 @@ $as_echo_n "checking for stdlib extension module pyexpat... " >&6; }
         if test "$py_cv_module_pyexpat" != "n/a"; then :
 
     if true; then :
-  if true; then :
+  if test "$have_libexpat" = "yes"; then :
   py_cv_module_pyexpat=yes
 else
   py_cv_module_pyexpat=missing
@@ -26081,7 +26086,7 @@ $as_echo_n "checking for stdlib extension module _elementtree... " >&6; }
         if test "$py_cv_module__elementtree" != "n/a"; then :
 
     if true; then :
-  if test "$ac_cv_header_sys_time_h" = "yes"; then :
+  if test "$have_libexpat" = "yes"; then :
   py_cv_module__elementtree=yes
 else
   py_cv_module__elementtree=missing

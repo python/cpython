@@ -3735,6 +3735,11 @@ AS_VAR_IF([with_system_expat], [yes], [
 AC_SUBST([LIBEXPAT_CFLAGS])
 AC_SUBST([LIBEXPAT_INTERNAL])
 
+AS_VAR_IF(
+  [ac_cv_header_sys_time_h], [yes],
+  [AS_VAR_SET([have_libexpat], [yes])]
+)
+
 dnl detect libffi
 have_libffi=missing
 AS_VAR_IF([ac_sys_system], [Darwin], [
@@ -7194,9 +7199,11 @@ PY_STDLIB_MOD([syslog], [], [test "$ac_cv_header_syslog_h" = yes])
 PY_STDLIB_MOD([termios], [], [test "$ac_cv_header_termios_h" = yes])
 
 dnl _elementtree loads libexpat via CAPI hook in pyexpat
-PY_STDLIB_MOD([pyexpat], [], [], [$LIBEXPAT_CFLAGS], [$LIBEXPAT_LDFLAGS])
+PY_STDLIB_MOD([pyexpat],
+  [], [test "$have_libexpat" = "yes"],
+  [$LIBEXPAT_CFLAGS], [$LIBEXPAT_LDFLAGS])
 PY_STDLIB_MOD([_elementtree],
-  [], [test "$ac_cv_header_sys_time_h" = "yes"],
+  [], [test "$have_libexpat" = "yes"],
   [$LIBEXPAT_CFLAGS], [])
 PY_STDLIB_MOD_SIMPLE([_codecs_cn])
 PY_STDLIB_MOD_SIMPLE([_codecs_hk])
