@@ -105,19 +105,19 @@ class _Selector:
             self.successor = _TerminatingSelector()
             self.dironly = False
 
-    def select_from(self, parent_path):
+    def select_from(self, parent_path, follow_symlinks):
         """Iterate over all child paths of `parent_path` matched by this
         selector.  This can contain parent_path itself."""
         path_cls = type(parent_path)
         scandir = path_cls._scandir
         if not parent_path.is_dir():
             return iter([])
-        return self._select_from(parent_path, scandir)
+        return self._select_from(parent_path, scandir, follow_symlinks)
 
 
 class _TerminatingSelector:
 
-    def _select_from(self, parent_path, scandir):
+    def _select_from(self, parent_path, scandir, follow_symlinks):
         yield parent_path
 
 
@@ -126,9 +126,9 @@ class _ParentSelector(_Selector):
     def __init__(self, name, child_parts, flavour, case_sensitive):
         _Selector.__init__(self, child_parts, flavour, case_sensitive)
 
-    def _select_from(self,  parent_path, scandir):
+    def _select_from(self,  parent_path, scandir, follow_symlinks):
         path = parent_path._make_child_relpath('..')
-        for p in self.successor._select_from(path, scandir):
+        for p in self.successor._select_from(path, scandir, follow_symlinks):
             yield p
 
 
@@ -141,7 +141,8 @@ class _WildcardSelector(_Selector):
             case_sensitive = _is_case_sensitive(flavour)
         self.match = _compile_pattern(pat, case_sensitive)
 
-    def _select_from(self, parent_path, scandir):
+    def _select_from(self, parent_path, scandir, follow_symlinks):
+        follow_dirlinks = True if follow_symlinks is None else follow_symlinks
         try:
             # We must close the scandir() object before proceeding to
             # avoid exhausting file descriptors when globbing deep trees.
@@ -153,14 +154,14 @@ class _WildcardSelector(_Selector):
             for entry in entries:
                 if self.dironly:
                     try:
-                        if not entry.is_dir():
+                        if not entry.is_dir(follow_symlinks=follow_dirlinks):
                             continue
                     except OSError:
                         continue
                 name = entry.name
                 if self.match(name):
                     path = parent_path._make_child_relpath(name)
-                    for p in self.successor._select_from(path, scandir):
+                    for p in self.successor._select_from(path, scandir, follow_symlinks):
                         yield p
 
 
@@ -169,16 +170,17 @@ class _RecursiveWildcardSelector(_Selector):
     def __init__(self, pat, child_parts, flavour, case_sensitive):
         _Selector.__init__(self, child_parts, flavour, case_sensitive)
 
-    def _iterate_directories(self, parent_path):
+    def _iterate_directories(self, parent_path, follow_symlinks):
         yield parent_path
-        for dirpath, dirnames, _ in parent_path.walk():
+        for dirpath, dirnames, _ in parent_path.walk(follow_symlinks=follow_symlinks):
             for dirname in dirnames:
                 yield dirpath._make_child_relpath(dirname)
 
-    def _select_from(self, parent_path, scandir):
+    def _select_from(self, parent_path, scandir, follow_symlinks):
+        follow_dirlinks = False if follow_symlinks is None else follow_symlinks
         successor_select = self.successor._select_from
-        for starting_point in self._iterate_directories(parent_path):
-            for p in successor_select(starting_point, scandir):
+        for starting_point in self._iterate_directories(parent_path, follow_dirlinks):
+            for p in successor_select(starting_point, scandir, follow_symlinks):
                 yield p
 
 
@@ -189,10 +191,10 @@ class _DoubleRecursiveWildcardSelector(_RecursiveWildcardSelector):
     multiple non-adjacent '**' segments.
     """
 
-    def _select_from(self, parent_path, scandir):
+    def _select_from(self, parent_path, scandir, follow_symlinks):
         yielded = set()
         try:
-            for p in super()._select_from(parent_path, scandir):
+            for p in super()._select_from(parent_path, scandir, follow_symlinks):
                 if p not in yielded:
                     yield p
                     yielded.add(p)
@@ -994,7 +996,7 @@ class Path(PurePath):
         path._tail_cached = tail + [name]
         return path
 
-    def glob(self, pattern, *, case_sensitive=None):
+    def glob(self, pattern, *, case_sensitive=None, follow_symlinks=None):
         """Iterate over this subtree and yield all existing files (of any
         kind, including directories) matching the given relative pattern.
         """
@@ -1007,10 +1009,10 @@ class Path(PurePath):
         if pattern[-1] in (self._flavour.sep, self._flavour.altsep):
             pattern_parts.append('')
         selector = _make_selector(tuple(pattern_parts), self._flavour, case_sensitive)
-        for p in selector.select_from(self):
+        for p in selector.select_from(self, follow_symlinks):
             yield p
 
-    def rglob(self, pattern, *, case_sensitive=None):
+    def rglob(self, pattern, *, case_sensitive=None, follow_symlinks=None):
         """Recursively yield all existing files (of any kind, including
         directories) matching the given relative pattern, anywhere in
         this subtree.
@@ -1022,7 +1024,7 @@ class Path(PurePath):
         if pattern and pattern[-1] in (self._flavour.sep, self._flavour.altsep):
             pattern_parts.append('')
         selector = _make_selector(("**",) + tuple(pattern_parts), self._flavour, case_sensitive)
-        for p in selector.select_from(self):
+        for p in selector.select_from(self, follow_symlinks):
             yield p
 
     def walk(self, top_down=True, on_error=None, follow_symlinks=False):

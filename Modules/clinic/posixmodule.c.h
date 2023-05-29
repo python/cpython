@@ -1715,6 +1715,70 @@ exit:
 
 #if defined(MS_WINDOWS)
 
+PyDoc_STRVAR(os__path_isdevdrive__doc__,
+"_path_isdevdrive($module, /, path)\n"
+"--\n"
+"\n"
+"Determines whether the specified path is on a Windows Dev Drive.");
+
+#define OS__PATH_ISDEVDRIVE_METHODDEF    \
+    {"_path_isdevdrive", _PyCFunction_CAST(os__path_isdevdrive), METH_FASTCALL|METH_KEYWORDS, os__path_isdevdrive__doc__},
+
+static PyObject *
+os__path_isdevdrive_impl(PyObject *module, path_t *path);
+
+static PyObject *
+os__path_isdevdrive(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(path), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_path_isdevdrive",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    path_t path = PATH_T_INITIALIZE("_path_isdevdrive", "path", 0, 0);
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    return_value = os__path_isdevdrive_impl(module, &path);
+
+exit:
+    /* Cleanup for path */
+    path_cleanup(&path);
+
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
+#if defined(MS_WINDOWS)
+
 PyDoc_STRVAR(os__getfullpathname__doc__,
 "_getfullpathname($module, path, /)\n"
 "--\n"
@@ -11379,6 +11443,10 @@ exit:
     #define OS_LISTMOUNTS_METHODDEF
 #endif /* !defined(OS_LISTMOUNTS_METHODDEF) */
 
+#ifndef OS__PATH_ISDEVDRIVE_METHODDEF
+    #define OS__PATH_ISDEVDRIVE_METHODDEF
+#endif /* !defined(OS__PATH_ISDEVDRIVE_METHODDEF) */
+
 #ifndef OS__GETFULLPATHNAME_METHODDEF
     #define OS__GETFULLPATHNAME_METHODDEF
 #endif /* !defined(OS__GETFULLPATHNAME_METHODDEF) */
@@ -11922,4 +11990,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=47750e0e29c8d707 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9d8b0d6717c9af54 input=a9049054013a1b77]*/
