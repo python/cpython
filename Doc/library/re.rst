@@ -1111,7 +1111,7 @@ Exceptions
    .. versionchanged:: 3.5
       Added additional attributes.
 
-   .. versionchanged:: 3.12
+   .. versionchanged:: 3.13
       ``ReCompileError`` was originally named ``error``; the latter is kept as an alias for
       backward compatibility.
 

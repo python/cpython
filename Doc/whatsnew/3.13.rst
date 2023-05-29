@@ -91,8 +91,10 @@ Improved Modules
 Optimizations
 =============
 
-
-
+re
+--
+* Rename :exc:`re.error` to :exc:`re.ReCompileError` for improved clarity.
+  :exc:`re.error` is kept for backward compabitility.
 
 Deprecated
 ==========

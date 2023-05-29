@@ -53,7 +53,7 @@ class ReCompileError(Exception):
         super().__init__(msg)
 
 
-# Backward compatibility after renaming in 3.12
+# Backward compatibility after renaming in 3.13
 error = ReCompileError
 
 class _NamedIntConstant(int):
