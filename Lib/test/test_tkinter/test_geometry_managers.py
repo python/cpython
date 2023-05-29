@@ -405,6 +405,11 @@ class PlaceTest(AbstractWidgetTest, unittest.TestCase):
         with self.assertRaisesRegex(TclError, 'bad screen distance "abcd"'):
             f2.place_configure(height='abcd')
 
+    def place_err(self, root):
+        tk86 = root.info_patchlevel() < (8, 7)
+        return ('expected floating-point number '
+                f'''{'' if tk86 else 'or "" '}but got "abcd"''')
+
     def test_place_configure_relwidth(self):
         t, f, f2 = self.create2()
         f2.place_configure(in_=f, relwidth=0.5)
@@ -413,8 +418,7 @@ class PlaceTest(AbstractWidgetTest, unittest.TestCase):
         f2.place_configure(relwidth='')
         self.root.update()
         self.assertEqual(f2.winfo_width(), 30)
-        with self.assertRaisesRegex(TclError, 'expected floating-point number '
-                                    'but got "abcd"'):
+        with self.assertRaisesRegex(TclError, self.place_err(self.root)):
             f2.place_configure(relwidth='abcd')
 
     def test_place_configure_relheight(self):
@@ -425,8 +429,7 @@ class PlaceTest(AbstractWidgetTest, unittest.TestCase):
         f2.place_configure(relheight='')
         self.root.update()
         self.assertEqual(f2.winfo_height(), 60)
-        with self.assertRaisesRegex(TclError, 'expected floating-point number '
-                                    'but got "abcd"'):
+        with self.assertRaisesRegex(TclError, self.place_err(self.root)):
             f2.place_configure(relheight='abcd')
 
     def test_place_configure_bordermode(self):

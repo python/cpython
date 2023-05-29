@@ -489,8 +489,12 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         widget = self.create()
         self.checkParam(widget, 'to', 100.0)
         self.checkFloatParam(widget, 'from', -10, 10.2, 11.7)
-        self.checkInvalidParam(widget, 'from', 200,
-                errmsg='-to value must be greater than -from value')
+        if widget.info_patchlevel() < (8, 7): 
+            self.checkInvalidParam(
+                    widget, 'from', 200,
+                    errmsg='-to value must be greater than -from value')
+        else:
+            self.checkFloatParam(widget, 'from', 200)
 
     def test_configure_increment(self):
         widget = self.create()
@@ -500,8 +504,12 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         widget = self.create()
         self.checkParam(widget, 'from', -100.0)
         self.checkFloatParam(widget, 'to', -10, 10.2, 11.7)
-        self.checkInvalidParam(widget, 'to', -200,
-                errmsg='-to value must be greater than -from value')
+        if widget.info_patchlevel() < (8, 7):
+            self.checkInvalidParam(
+                    widget, 'to', -200,
+                    errmsg='-to value must be greater than -from value')
+        else:
+            self.checkFloatParam(widget, 'to', -200)
 
     def test_configure_values(self):
         # XXX

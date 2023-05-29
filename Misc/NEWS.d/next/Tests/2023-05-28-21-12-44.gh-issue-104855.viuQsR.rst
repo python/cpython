@@ -1,0 +1,3 @@
+Where applicable update tkinter tests for 8.7 by adding '' to options in
+error messages, testing '' for validity, and testing acceptance of 'to'
+value < 'from' value in a spinbox (which switches the values).

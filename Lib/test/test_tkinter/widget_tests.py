@@ -74,8 +74,11 @@ class AbstractWidgetTest(AbstractTkTest):
 
     def checkIntegerParam(self, widget, name, *values, **kwargs):
         self.checkParams(widget, name, *values, **kwargs)
-        self.checkInvalidParam(widget, name, '',
-                errmsg='expected integer but got ""')
+        if tcl_version < (8, 7) or name == 'underline':
+            self.checkInvalidParam(widget, name, '',
+                    errmsg='expected integer but got ""')
+        else:
+            self.checkParams(widget, 'underline', '')
         self.checkInvalidParam(widget, name, '10p',
                 errmsg='expected integer but got "10p"')
         self.checkInvalidParam(widget, name, 3.2,
@@ -152,10 +155,13 @@ class AbstractWidgetTest(AbstractTkTest):
                 errmsg='bad screen distance "spam"')
 
     def checkReliefParam(self, widget, name):
-        self.checkParams(widget, name,
-                         'flat', 'groove', 'raised', 'ridge', 'solid', 'sunken')
-        errmsg='bad relief "spam": must be '\
-               'flat, groove, raised, ridge, solid, or sunken'
+        options = ['flat', 'groove', 'raised', 'ridge', 'solid', 'sunken']
+        if tcl_version >= (8, 7) and name in ('overrelief', 'proxyrelief'):
+            options.append('')
+        self.checkParams(widget, name, *options)
+        lastop = options.pop()
+        opstring = ', '.join(options)
+        errmsg=f'bad relief "spam": must be {opstring}, or {lastop}'
         if tcl_version < (8, 6):
             errmsg = None
         self.checkInvalidParam(widget, name, 'spam',
