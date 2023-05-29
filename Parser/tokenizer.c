@@ -103,6 +103,7 @@ tok_new(void)
     tok->filename = NULL;
     tok->decoding_readline = NULL;
     tok->decoding_buffer = NULL;
+    tok->readline = NULL;
     tok->type_comments = 0;
     tok->async_hacks = 0;
     tok->async_def = 0;
@@ -900,6 +901,33 @@ _PyTokenizer_FromString(const char *str, int exec_input, int preserve_crlf)
     return tok;
 }
 
+struct tok_state *
+_PyTokenizer_FromReadline(PyObject* readline, const char* enc,
+                          int exec_input, int preserve_crlf)
+{
+    struct tok_state *tok = tok_new();
+    if (tok == NULL)
+        return NULL;
+    if ((tok->buf = (char *)PyMem_Malloc(BUFSIZ)) == NULL) {
+        _PyTokenizer_Free(tok);
+        return NULL;
+    }
+    tok->cur = tok->inp = tok->buf;
+    tok->end = tok->buf + BUFSIZ;
+    tok->fp = NULL;
+    if (enc != NULL) {
+        tok->encoding = new_string(enc, strlen(enc), tok);
+        if (!tok->encoding) {
+            _PyTokenizer_Free(tok);
+            return NULL;
+        }
+    }
+    tok->decoding_state = STATE_NORMAL;
+    Py_INCREF(readline);
+    tok->readline = readline;
+    return tok;
+}
+
 /* Set up tokenizer for UTF-8 string */
 
 struct tok_state *
@@ -969,8 +997,9 @@ _PyTokenizer_Free(struct tok_state *tok)
     }
     Py_XDECREF(tok->decoding_readline);
     Py_XDECREF(tok->decoding_buffer);
+    Py_XDECREF(tok->readline);
     Py_XDECREF(tok->filename);
-    if (tok->fp != NULL && tok->buf != NULL) {
+    if ((tok->readline != NULL || tok->fp != NULL ) && tok->buf != NULL) {
         PyMem_Free(tok->buf);
     }
     if (tok->input) {
@@ -1019,6 +1048,71 @@ tok_readline_raw(struct tok_state *tok)
         }
     } while (tok->inp[-1] != '\n');
     return 1;
+}
+
+static int
+tok_readline_string(struct tok_state* tok) {
+    PyObject* line = NULL;
+    PyObject* raw_line = PyObject_CallNoArgs(tok->readline);
+    if (raw_line == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_StopIteration)) {
+            PyErr_Clear();
+            return 1;
+        }
+        error_ret(tok);
+        goto error;
+    }
+    if(tok->encoding != NULL) {
+        if (!PyBytes_Check(raw_line)) {
+            PyErr_Format(PyExc_TypeError, "readline() returned a non-bytes object");
+            error_ret(tok);
+            goto error;
+        }
+        line = PyUnicode_Decode(PyBytes_AS_STRING(raw_line), PyBytes_GET_SIZE(raw_line),
+                                tok->encoding, "replace");
+        Py_CLEAR(raw_line);
+        if (line == NULL) {
+            error_ret(tok);
+            goto error;
+        }
+    } else {
+        if(!PyUnicode_Check(raw_line)) {
+            PyErr_Format(PyExc_TypeError, "readline() returned a non-string object");
+            error_ret(tok);
+            goto error;
+        }
+        line = raw_line;
+        raw_line = NULL;
+    }
+    Py_ssize_t buflen;
+    const char* buf = PyUnicode_AsUTF8AndSize(line, &buflen);
+    if (buf == NULL) {
+        error_ret(tok);
+        goto error;
+    }
+
+    // Make room for the null terminator *and* potentially
+    // an extra newline character that we may need to artificially
+    // add.
+    size_t buffer_size = buflen + 2;
+    if (!tok_reserve_buf(tok, buffer_size)) {
+        goto error;
+    }
+    memcpy(tok->inp, buf, buflen);
+    tok->inp += buflen;
+    *tok->inp = '\0';
+
+    if (tok->start == NULL) {
+        tok->buf = tok->cur;
+    }
+    tok->line_start = tok->cur;
+
+    Py_DECREF(line);
+    return 1;
+error:
+    Py_XDECREF(raw_line);
+    Py_XDECREF(line);
+    return 0;
 }
 
 static int
@@ -1136,7 +1230,7 @@ tok_underflow_interactive(struct tok_state *tok) {
 }
 
 static int
-tok_underflow_file(struct tok_state *tok) {
+tok_underflow_file(struct tok_state *tok, int use_readline) {
     if (tok->start == NULL && !INSIDE_FSTRING(tok)) {
         tok->cur = tok->inp = tok->buf;
     }
@@ -1154,6 +1248,11 @@ tok_underflow_file(struct tok_state *tok) {
     if (tok->decoding_readline != NULL) {
         /* We already have a codec associated with this input. */
         if (!tok_readline_recode(tok)) {
+            return 0;
+        }
+    }
+    else if(use_readline) {
+        if (!tok_readline_string(tok)) {
             return 0;
         }
     }
@@ -1238,14 +1337,17 @@ tok_nextc(struct tok_state *tok)
         if (tok->done != E_OK) {
             return EOF;
         }
-        if (tok->fp == NULL) {
+        if (tok->readline) {
+            rc = tok_underflow_file(tok, 1);
+        }
+        else if (tok->fp == NULL) {
             rc = tok_underflow_string(tok);
         }
         else if (tok->prompt != NULL) {
             rc = tok_underflow_interactive(tok);
         }
         else {
-            rc = tok_underflow_file(tok);
+            rc = tok_underflow_file(tok, 0);
         }
 #if defined(Py_DEBUG)
         if (tok->debug) {
