@@ -1829,8 +1829,8 @@ Optional Packages:
                           select hash algorithm for use in Python/pyhash.c
                           (default is SipHash13)
   --with-tzpath=<list of absolute paths separated by pathsep>
-                           Select the default time zone search path for zoneinfo.TZPATH
-
+                          Select the default time zone search path for
+                          zoneinfo.TZPATH
   --with-libs='lib1 ...'  link against additional libs (default is no)
   --with-system-expat     build pyexpat module using an installed expat
                           library, see Doc/library/pyexpat.rst (default is no)
@@ -7367,6 +7367,7 @@ if test "${with_trace_refs+set}" = set; then :
   withval=$with_trace_refs;
 else
   with_trace_refs=no
+
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_trace_refs" >&5
@@ -11168,7 +11169,7 @@ case $ac_sys_system/$ac_sys_release in
 
 $as_echo "#define WITH_DYLD 1" >>confdefs.h
 
-  	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: always on for Darwin" >&5
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: always on for Darwin" >&5
 $as_echo "always on for Darwin" >&6; }
   	;;
   *)
@@ -11725,7 +11726,6 @@ _ACEOF
   LIBS="-ldl $LIBS"
 
 fi
-	# Dynamic linking for SunOS/Solaris and SYSV
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for shl_load in -ldld" >&5
 $as_echo_n "checking for shl_load in -ldld... " >&6; }
 if ${ac_cv_lib_dld_shl_load+:} false; then :
@@ -11770,7 +11770,6 @@ _ACEOF
   LIBS="-ldld $LIBS"
 
 fi
-	# Dynamic linking for HP-UX
 
 
 
@@ -11967,7 +11966,8 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_uuid_uuid_generate_time_safe" >&5
 $as_echo "$ac_cv_lib_uuid_uuid_generate_time_safe" >&6; }
 if test "x$ac_cv_lib_uuid_uuid_generate_time_safe" = xyes; then :
-  have_uuid=yes
+
+            have_uuid=yes
             $as_echo "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
 
 
@@ -12096,7 +12096,8 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_uuid_uuid_generate_time_safe" >&5
 $as_echo "$ac_cv_lib_uuid_uuid_generate_time_safe" >&6; }
 if test "x$ac_cv_lib_uuid_uuid_generate_time_safe" = xyes; then :
-  have_uuid=yes
+
+            have_uuid=yes
             $as_echo "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
 
 
@@ -12486,7 +12487,6 @@ $as_echo "$ac_cv_lib_nsl_t_open" >&6; }
 if test "x$ac_cv_lib_nsl_t_open" = xyes; then :
   LIBS="-lnsl $LIBS"
 fi
- # SVR4
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for socket in -lsocket" >&5
 $as_echo_n "checking for socket in -lsocket... " >&6; }
 if ${ac_cv_lib_socket_socket+:} false; then :
@@ -12526,7 +12526,6 @@ $as_echo "$ac_cv_lib_socket_socket" >&6; }
 if test "x$ac_cv_lib_socket_socket" = xyes; then :
   LIBS="-lsocket $LIBS"
 fi
- # SVR4 sockets
 
 case $ac_sys_system/$ac_sys_release in
     Haiku*)
@@ -15598,6 +15597,7 @@ if test "${with_valgrind+set}" = set; then :
   withval=$with_valgrind;
 else
   with_valgrind=no
+
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_valgrind" >&5
@@ -15848,8 +15848,11 @@ done
 
 fi
 
-ac_fn_c_check_decl "$LINENO" "dirfd" "ac_cv_have_decl_dirfd" "#include <sys/types.h>
-       #include <dirent.h>
+ac_fn_c_check_decl "$LINENO" "dirfd" "ac_cv_have_decl_dirfd" "
+    #include <sys/types.h>
+    #include <dirent.h>
+
+
 "
 if test "x$ac_cv_have_decl_dirfd" = xyes; then :
 
@@ -18490,6 +18493,7 @@ $as_echo "$ac_cv_lib_bsd_openpty" >&6; }
 if test "x$ac_cv_lib_bsd_openpty" = xyes; then :
   $as_echo "#define HAVE_OPENPTY 1" >>confdefs.h
  LIBS="$LIBS -lbsd"
+
 fi
 
 
@@ -18646,6 +18650,7 @@ $as_echo "$ac_cv_lib_bsd_forkpty" >&6; }
 if test "x$ac_cv_lib_bsd_forkpty" = xyes; then :
   $as_echo "#define HAVE_FORKPTY 1" >>confdefs.h
  LIBS="$LIBS -lbsd"
+
 fi
 
 
@@ -18691,9 +18696,12 @@ if test "x$ac_cv_func_getpgrp" = xyes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_GETPGRP 1
 _ACEOF
- cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <unistd.h>
+
+        #include <unistd.h>
+
 int
 main ()
 {
@@ -18719,9 +18727,12 @@ if test "x$ac_cv_func_setpgrp" = xyes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_SETPGRP 1
 _ACEOF
- cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <unistd.h>
+
+        #include <unistd.h>
+
 int
 main ()
 {
@@ -20677,7 +20688,9 @@ $as_echo_n "checking size of wchar_t... " >&6; }
 if ${ac_cv_sizeof_wchar_t+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  if ac_fn_c_compute_int "$LINENO" "(long int) (sizeof (wchar_t))" "ac_cv_sizeof_wchar_t"        "#include <wchar.h>
+  if ac_fn_c_compute_int "$LINENO" "(long int) (sizeof (wchar_t))" "ac_cv_sizeof_wchar_t"        "
+    #include <wchar.h>
+
 "; then :
 
 else

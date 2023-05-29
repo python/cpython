@@ -54,6 +54,9 @@
 /* Define if getpgrp() must be called as getpgrp(0). */
 #undef GETPGRP_HAVE_ARG
 
+/* Define to 1 if you have the <> header file. */
+#undef HAVE_
+
 /* Define if you have the 'accept' function. */
 #undef HAVE_ACCEPT
 
@@ -1850,7 +1853,7 @@
 /* Define to `unsigned int' if <sys/types.h> does not define. */
 #undef size_t
 
-/* Define to `int' if <sys/socket.h> does not define. */
+/* Define to 'int' if <sys/socket.h> does not define. */
 #undef socklen_t
 
 /* Define to `int' if <sys/types.h> doesn't define. */
