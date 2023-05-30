@@ -1719,9 +1719,9 @@
     <elf-symbol name='_Py_ctype_tolower' size='256' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
     <elf-symbol name='_Py_ctype_toupper' size='256' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
   </elf-variable-symbols>
-  <abi-instr address-size='64' path='./Modules/_abc.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='./Modules/_abc.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='_PyType_GetMRO' filepath='./Include/internal/pycore_typeobject.h' line='121' column='1' visibility='default' binding='global' size-in-bits='64'>
-      <parameter type-id='type-id-2'/>
+      <parameter type-id='type-id-1'/>
       <return type-id='type-id-2'/>
     </function-decl>
     <function-decl name='_PyType_GetSubclasses' filepath='./Include/internal/pycore_typeobject.h' line='122' column='1' visibility='default' binding='global' size-in-bits='64'>
@@ -1729,10 +1729,10 @@
       <return type-id='type-id-2'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='./Modules/_io/_iomodule.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='./Modules/_io/_iomodule.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <var-decl name='_PyIO_Module' type-id='type-id-3' visibility='default' filepath='./Modules/_io/_iomodule.h' line='143' column='1'/>
   </abi-instr>
-  <abi-instr address-size='64' path='./Modules/_io/bufferedio.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='./Modules/_io/bufferedio.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <typedef-decl name='_PyIO_State' type-id='type-id-4' filepath='./Modules/_io/_iomodule.h' line='35' column='1' id='type-id-5'/>
     <typedef-decl name='Py_off_t' type-id='type-id-6' filepath='./Modules/_io/_iomodule.h' line='109' column='1' id='type-id-7'/>
     <class-decl name='_io_state' size-in-bits='1024' is-struct='yes' visibility='default' filepath='./Modules/_io/_iomodule.h' line='145' column='1' id='type-id-4'>
@@ -1820,11 +1820,11 @@
       <return type-id='type-id-7'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='./Modules/_io/bytesio.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='./Modules/_io/bytesio.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <var-decl name='bytesio_spec' type-id='type-id-11' visibility='default' filepath='./Modules/_io/_iomodule.h' line='17' column='1'/>
     <var-decl name='bytesiobuf_spec' type-id='type-id-11' visibility='default' filepath='./Modules/_io/_iomodule.h' line='18' column='1'/>
   </abi-instr>
-  <abi-instr address-size='64' path='./Modules/_io/fileio.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='./Modules/_io/fileio.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <var-decl name='fileio_spec' type-id='type-id-11' visibility='default' filepath='./Modules/_io/_iomodule.h' line='19' column='1'/>
     <function-decl name='_PyIOBase_finalize' filepath='./Modules/_io/_iomodule.h' line='48' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-2'/>
@@ -1836,14 +1836,14 @@
       <return type-id='type-id-2'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='./Modules/_io/iobase.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='./Modules/_io/iobase.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <var-decl name='iobase_spec' type-id='type-id-11' visibility='default' filepath='./Modules/_io/_iomodule.h' line='20' column='1'/>
     <var-decl name='rawiobase_spec' type-id='type-id-11' visibility='default' filepath='./Modules/_io/_iomodule.h' line='22' column='1'/>
     <function-decl name='_PyIO_trap_eintr' filepath='./Modules/_io/_iomodule.h' line='79' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='./Modules/_io/stringio.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='./Modules/_io/stringio.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <var-decl name='stringio_spec' type-id='type-id-11' visibility='default' filepath='./Modules/_io/_iomodule.h' line='23' column='1'/>
     <function-decl name='_PyIncrementalNewlineDecoder_decode' filepath='./Modules/_io/_iomodule.h' line='55' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-2'/>
@@ -1862,7 +1862,7 @@
       <return type-id='type-id-14'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='./Modules/_io/textio.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='./Modules/_io/textio.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <var-decl name='nldecoder_spec' type-id='type-id-11' visibility='default' filepath='./Modules/_io/_iomodule.h' line='21' column='1'/>
     <var-decl name='textiobase_spec' type-id='type-id-11' visibility='default' filepath='./Modules/_io/_iomodule.h' line='24' column='1'/>
     <var-decl name='textiowrapper_spec' type-id='type-id-11' visibility='default' filepath='./Modules/_io/_iomodule.h' line='25' column='1'/>
@@ -1872,7 +1872,7 @@
       <return type-id='type-id-2'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='./Modules/_localemodule.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='./Modules/_localemodule.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='gettext' filepath='/usr/include/libintl.h' line='39' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-12'/>
       <return type-id='type-id-15'/>
@@ -1914,13 +1914,13 @@
       <return type-id='type-id-19'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='./Modules/_sre/sre.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='./Modules/_sre/sre.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='toupper' filepath='/usr/include/ctype.h' line='125' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-8'/>
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='./Modules/atexitmodule.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='./Modules/atexitmodule.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='_Py_AtExit' mangled-name='_Py_AtExit' filepath='./Modules/atexitmodule.c' line='27' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_AtExit'>
       <parameter type-id='type-id-20' name='interp' filepath='./Modules/atexitmodule.c' line='27' column='1'/>
       <parameter type-id='type-id-21' name='func' filepath='./Modules/atexitmodule.c' line='28' column='1'/>
@@ -1928,7 +1928,7 @@
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='./Modules/faulthandler.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='./Modules/faulthandler.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <enum-decl name='__rlimit_resource' filepath='/usr/include/x86_64-linux-gnu/bits/resource.h' line='31' column='1' id='type-id-23'>
       <underlying-type type-id='type-id-24'/>
       <enumerator name='RLIMIT_CPU' value='0'/>
@@ -2008,7 +2008,7 @@
     </function-decl>
     <type-decl name='unsigned long int' size-in-bits='64' id='type-id-28'/>
   </abi-instr>
-  <abi-instr address-size='64' path='./Modules/getbuildinfo.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='./Modules/getbuildinfo.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <type-decl name='char' size-in-bits='8' id='type-id-48'/>
     <type-decl name='int' size-in-bits='32' id='type-id-8'/>
     <type-decl name='unsigned long int' size-in-bits='64' id='type-id-28'/>
@@ -2039,7 +2039,7 @@
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='./Modules/getpath.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='./Modules/getpath.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='_Py_wstat' filepath='./Include/internal/pycore_fileutils.h' line='210' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-16'/>
       <parameter type-id='type-id-51'/>
@@ -2067,7 +2067,7 @@
       <return type-id='type-id-2'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='./Modules/posixmodule.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='./Modules/posixmodule.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <array-type-def dimensions='1' type-id='type-id-55' size-in-bits='1024' id='type-id-56'>
       <subrange length='16' type-id='type-id-28' id='type-id-57'/>
     </array-type-def>
@@ -3364,7 +3364,7 @@
       <return type-id='type-id-8'/>
     </function-type>
   </abi-instr>
-  <abi-instr address-size='64' path='./Modules/pwdmodule.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='./Modules/pwdmodule.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <class-decl name='passwd' size-in-bits='384' is-struct='yes' visibility='default' filepath='/usr/include/pwd.h' line='49' column='1' id='type-id-191'>
       <data-member access='public' layout-offset-in-bits='0'>
         <var-decl name='pw_name' type-id='type-id-15' visibility='default' filepath='/usr/include/pwd.h' line='51' column='1'/>
@@ -3418,7 +3418,7 @@
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='./Modules/signalmodule.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='./Modules/signalmodule.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <enum-decl name='__itimer_which' filepath='/usr/include/x86_64-linux-gnu/sys/time.h' line='114' column='1' id='type-id-196'>
       <underlying-type type-id='type-id-24'/>
       <enumerator name='ITIMER_REAL' value='0'/>
@@ -3524,7 +3524,7 @@
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='./Modules/symtablemodule.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='./Modules/symtablemodule.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='_Py_SymtableStringObjectFlags' filepath='./Include/internal/pycore_symtable.h' line='144' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-12'/>
       <parameter type-id='type-id-2'/>
@@ -3533,7 +3533,7 @@
       <return type-id='type-id-209'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='./Modules/timemodule.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='./Modules/timemodule.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <enum-decl name='__rusage_who' filepath='/usr/include/x86_64-linux-gnu/bits/resource.h' line='158' column='1' id='type-id-210'>
       <underlying-type type-id='type-id-24'/>
       <enumerator name='RUSAGE_SELF' value='0'/>
@@ -3589,7 +3589,7 @@
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='./Python/dynload_shlib.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='./Python/dynload_shlib.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <array-type-def dimensions='1' type-id='type-id-12' size-in-bits='256' id='type-id-222'>
       <subrange length='4' type-id='type-id-28' id='type-id-223'/>
     </array-type-def>
@@ -3611,12 +3611,12 @@
       <return type-id='type-id-15'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='./Python/getplatform.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='./Python/getplatform.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='Py_GetPlatform' mangled-name='Py_GetPlatform' filepath='./Python/getplatform.c' line='9' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_GetPlatform'>
       <return type-id='type-id-12'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='./Python/importdl.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='./Python/importdl.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <typedef-decl name='dl_funcptr' type-id='type-id-227' filepath='./Python/importdl.h' line='28' column='1' id='type-id-228'/>
     <function-decl name='_PyImport_SwapPackageContext' filepath='./Include/internal/pycore_import.h' line='113' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-12'/>
@@ -3633,7 +3633,7 @@
       <return type-id='type-id-46'/>
     </function-type>
   </abi-instr>
-  <abi-instr address-size='64' path='./Python/sysmodule.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='./Python/sysmodule.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='_PyEval_CallTracing' filepath='./Include/internal/pycore_ceval.h' line='37' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-2'/>
       <parameter type-id='type-id-2'/>
@@ -3775,7 +3775,7 @@
       <return type-id='type-id-127'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Modules/config.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Modules/config.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='PyInit_atexit' mangled-name='PyInit_atexit' filepath='Modules/config.c' line='26' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyInit_atexit'>
       <return type-id='type-id-2'/>
     </function-decl>
@@ -3846,7 +3846,7 @@
       <return type-id='type-id-2'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Modules/gcmodule.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Modules/gcmodule.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <typedef-decl name='gcvisitobjects_t' type-id='type-id-236' filepath='./Include/objimpl.h' line='175' column='1' id='type-id-237'/>
     <function-decl name='_PyTuple_ClearFreeList' filepath='./Include/internal/pycore_gc.h' line='199' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-20'/>
@@ -3905,7 +3905,7 @@
       <return type-id='type-id-8'/>
     </function-type>
   </abi-instr>
-  <abi-instr address-size='64' path='Modules/main.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Modules/main.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='_PyImport_Fini2' filepath='./Include/internal/pycore_import.h' line='145' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-46'/>
     </function-decl>
@@ -3928,7 +3928,7 @@
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/abstract.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/abstract.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <pointer-type-def type-id='type-id-240' size-in-bits='64' id='type-id-241'/>
     <qualified-type-def type-id='type-id-15' const='yes' id='type-id-242'/>
     <pointer-type-def type-id='type-id-242' size-in-bits='64' id='type-id-136'/>
@@ -4657,7 +4657,7 @@
     </function-decl>
     <pointer-type-def type-id='type-id-22' size-in-bits='64' id='type-id-253'/>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/boolobject.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/boolobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <var-decl name='_Py_FalseStruct' type-id='type-id-240' mangled-name='_Py_FalseStruct' visibility='default' filepath='./Include/boolobject.h' line='17' column='1' elf-symbol-id='_Py_FalseStruct'/>
     <var-decl name='_Py_TrueStruct' type-id='type-id-240' mangled-name='_Py_TrueStruct' visibility='default' filepath='./Include/boolobject.h' line='18' column='1' elf-symbol-id='_Py_TrueStruct'/>
     <function-decl name='_PyArg_NoKeywords' mangled-name='_PyArg_NoKeywords' filepath='./Include/cpython/modsupport.h' line='27' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyArg_NoKeywords'>
@@ -4691,7 +4691,7 @@
       <return type-id='type-id-2'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/bytearrayobject.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/bytearrayobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <array-type-def dimensions='1' type-id='type-id-48' size-in-bits='infinite' id='type-id-257'>
       <subrange length='infinite' id='type-id-225'/>
     </array-type-def>
@@ -5032,7 +5032,7 @@
       <return type-id='type-id-2'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/bytes_methods.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/bytes_methods.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <array-type-def dimensions='1' type-id='type-id-50' size-in-bits='984' id='type-id-263'>
       <subrange length='123' type-id='type-id-28' id='type-id-264'/>
     </array-type-def>
@@ -5129,7 +5129,7 @@
       <return type-id='type-id-22'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/bytesobject.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/bytesobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <array-type-def dimensions='1' type-id='type-id-48' size-in-bits='4096' id='type-id-300'>
       <subrange length='512' type-id='type-id-28' id='type-id-301'/>
     </array-type-def>
@@ -5317,7 +5317,7 @@
       <return type-id='type-id-22'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/call.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/call.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <class-decl name='_Py_Identifier' size-in-bits='128' is-struct='yes' visibility='default' filepath='./Include/cpython/object.h' line='42' column='1' id='type-id-307'>
       <data-member access='public' layout-offset-in-bits='0'>
         <var-decl name='string' type-id='type-id-12' visibility='default' filepath='./Include/cpython/object.h' line='43' column='1'/>
@@ -5571,7 +5571,7 @@
       <return type-id='type-id-14'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/capsule.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/capsule.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <typedef-decl name='PyCapsule_Destructor' type-id='type-id-312' filepath='./Include/pycapsule.h' line='23' column='1' id='type-id-313'/>
     <function-decl name='PyImport_ImportModule' mangled-name='PyImport_ImportModule' filepath='./Include/import.h' line='46' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyImport_ImportModule'>
       <parameter type-id='type-id-12'/>
@@ -5636,7 +5636,7 @@
       <return type-id='type-id-46'/>
     </function-type>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/cellobject.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/cellobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <var-decl name='PyCell_Type' type-id='type-id-256' mangled-name='PyCell_Type' visibility='default' filepath='./Include/cpython/cellobject.h' line='16' column='1' elf-symbol-id='PyCell_Type'/>
     <function-decl name='PyObject_RichCompare' mangled-name='PyObject_RichCompare' filepath='./Include/object.h' line='390' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyObject_RichCompare'>
       <parameter type-id='type-id-2'/>
@@ -5658,7 +5658,7 @@
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/classobject.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/classobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <var-decl name='PyMethod_Type' type-id='type-id-256' mangled-name='PyMethod_Type' visibility='default' filepath='./Include/cpython/classobject.h' line='20' column='1' elf-symbol-id='PyMethod_Type'/>
     <var-decl name='PyInstanceMethod_Type' type-id='type-id-256' mangled-name='PyInstanceMethod_Type' visibility='default' filepath='./Include/cpython/classobject.h' line='49' column='1' elf-symbol-id='PyInstanceMethod_Type'/>
     <function-decl name='_PyType_Lookup' mangled-name='_PyType_Lookup' filepath='./Include/cpython/object.h' line='274' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyType_Lookup'>
@@ -5714,7 +5714,7 @@
       <return type-id='type-id-2'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/codeobject.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/codeobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <class-decl name='_opaque' size-in-bits='192' is-struct='yes' visibility='default' filepath='./Include/cpython/code.h' line='309' column='1' id='type-id-315'>
       <data-member access='public' layout-offset-in-bits='0'>
         <var-decl name='computed_line' type-id='type-id-8' visibility='default' filepath='./Include/cpython/code.h' line='310' column='1'/>
@@ -5973,7 +5973,7 @@
       <return type-id='type-id-2'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/complexobject.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/complexobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <pointer-type-def type-id='type-id-330' size-in-bits='64' id='type-id-331'/>
     <var-decl name='PyComplex_Type' type-id='type-id-256' mangled-name='PyComplex_Type' visibility='default' filepath='./Include/complexobject.h' line='11' column='1' elf-symbol-id='PyComplex_Type'/>
     <function-decl name='_PyComplex_FormatAdvancedWriter' filepath='./Include/cpython/complexobject.h' line='38' column='1' visibility='default' binding='global' size-in-bits='64'>
@@ -6090,7 +6090,7 @@
       <return type-id='type-id-2'/>
     </function-type>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/descrobject.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/descrobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <pointer-type-def type-id='type-id-333' size-in-bits='64' id='type-id-334'/>
     <var-decl name='_PyMethodWrapper_Type' type-id='type-id-256' mangled-name='_PyMethodWrapper_Type' visibility='default' filepath='./Include/cpython/descrobject.h' line='60' column='1' elf-symbol-id='_PyMethodWrapper_Type'/>
     <function-decl name='_PyArg_UnpackStack' mangled-name='_PyArg_UnpackStack' filepath='./Include/cpython/modsupport.h' line='19' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyArg_UnpackStack'>
@@ -6227,7 +6227,7 @@
       <return type-id='type-id-2'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/dictobject.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/dictobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='_PyObject_AssertFailed' mangled-name='_PyObject_AssertFailed' filepath='./Include/cpython/object.h' line='443' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyObject_AssertFailed'>
       <parameter type-id='type-id-2'/>
       <parameter type-id='type-id-12'/>
@@ -6527,7 +6527,7 @@
       <return type-id='type-id-8'/>
     </function-type>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/enumobject.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/enumobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='_PyUnicode_EqualToASCIIString' mangled-name='_PyUnicode_EqualToASCIIString' filepath='./Include/cpython/unicodeobject.h' line='767' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_EqualToASCIIString'>
       <parameter type-id='type-id-2'/>
       <parameter type-id='type-id-12'/>
@@ -6536,7 +6536,7 @@
     <var-decl name='PyEnum_Type' type-id='type-id-256' mangled-name='PyEnum_Type' visibility='default' filepath='./Include/enumobject.h' line='10' column='1' elf-symbol-id='PyEnum_Type'/>
     <var-decl name='PyReversed_Type' type-id='type-id-256' mangled-name='PyReversed_Type' visibility='default' filepath='./Include/enumobject.h' line='11' column='1' elf-symbol-id='PyReversed_Type'/>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/exceptions.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/exceptions.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='PyDict_New' mangled-name='PyDict_New' filepath='./Include/dictobject.h' line='21' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyDict_New'>
       <return type-id='type-id-2'/>
     </function-decl>
@@ -6889,7 +6889,7 @@
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/fileobject.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/fileobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <var-decl name='PyStdPrinter_Type' type-id='type-id-256' mangled-name='PyStdPrinter_Type' visibility='default' filepath='./Include/cpython/fileobject.h' line='11' column='1' elf-symbol-id='PyStdPrinter_Type'/>
     <function-decl name='_PyUnicode_AsUTF8String' mangled-name='_PyUnicode_AsUTF8String' filepath='./Include/cpython/unicodeobject.h' line='640' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_AsUTF8String'>
       <parameter type-id='type-id-2'/>
@@ -6978,7 +6978,7 @@
       <return type-id='type-id-2'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/floatobject.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/floatobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <class-decl name='PyStructSequence_Field' size-in-bits='128' is-struct='yes' visibility='default' filepath='./Include/structseq.h' line='10' column='1' id='type-id-356'>
       <data-member access='public' layout-offset-in-bits='0'>
         <var-decl name='name' type-id='type-id-12' visibility='default' filepath='./Include/structseq.h' line='11' column='1'/>
@@ -7171,7 +7171,7 @@
       <return type-id='type-id-251'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/frameobject.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/frameobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <class-decl name='PyFrameConstructor' size-in-bits='512' is-struct='yes' naming-typedef-id='type-id-362' visibility='default' filepath='./Include/cpython/funcobject.h' line='21' column='1' id='type-id-363'>
       <data-member access='public' layout-offset-in-bits='0'>
         <var-decl name='fc_globals' type-id='type-id-2' visibility='default' filepath='./Include/cpython/funcobject.h' line='22' column='1'/>
@@ -7302,7 +7302,7 @@
       <return type-id='type-id-2'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/funcobject.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/funcobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <var-decl name='PyFunction_Type' type-id='type-id-256' mangled-name='PyFunction_Type' visibility='default' filepath='./Include/cpython/funcobject.h' line='63' column='1' elf-symbol-id='PyFunction_Type'/>
     <var-decl name='PyClassMethod_Type' type-id='type-id-256' mangled-name='PyClassMethod_Type' visibility='default' filepath='./Include/cpython/funcobject.h' line='129' column='1' elf-symbol-id='PyClassMethod_Type'/>
     <var-decl name='PyStaticMethod_Type' type-id='type-id-256' mangled-name='PyStaticMethod_Type' visibility='default' filepath='./Include/cpython/funcobject.h' line='130' column='1' elf-symbol-id='PyStaticMethod_Type'/>
@@ -7397,7 +7397,7 @@
       <return type-id='type-id-2'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/genericaliasobject.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/genericaliasobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='_PyUnicodeWriter_WriteASCIIString' mangled-name='_PyUnicodeWriter_WriteASCIIString' filepath='./Include/cpython/unicodeobject.h' line='577' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicodeWriter_WriteASCIIString'>
       <parameter type-id='type-id-332'/>
       <parameter type-id='type-id-12'/>
@@ -7426,7 +7426,7 @@
       <return type-id='type-id-46'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/genobject.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/genobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <class-decl name='PyGenObject' size-in-bits='640' is-struct='yes' naming-typedef-id='type-id-367' visibility='default' filepath='./Include/cpython/genobject.h' line='31' column='1' id='type-id-368'>
       <data-member access='public' layout-offset-in-bits='0'>
         <var-decl name='ob_base' type-id='type-id-345' visibility='default' filepath='./Include/cpython/genobject.h' line='33' column='1'/>
@@ -7567,7 +7567,7 @@
       <return type-id='type-id-2'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/interpreteridobject.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/interpreteridobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='_PyInterpreterState_LookUpID' mangled-name='_PyInterpreterState_LookUpID' filepath='./Include/internal/pycore_interp.h' line='227' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyInterpreterState_LookUpID'>
       <parameter type-id='type-id-377'/>
       <return type-id='type-id-20'/>
@@ -7623,7 +7623,7 @@
       <return type-id='type-id-20'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/iterobject.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/iterobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='_PyCoro_GetAwaitableIter' filepath='./Include/internal/pycore_genobject.h' line='12' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-2'/>
       <return type-id='type-id-2'/>
@@ -7637,7 +7637,7 @@
       <return type-id='type-id-2'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/listobject.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/listobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='_PyEval_SliceIndexNotNone' mangled-name='_PyEval_SliceIndexNotNone' filepath='./Include/cpython/ceval.h' line='33' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_SliceIndexNotNone'>
       <parameter type-id='type-id-2'/>
       <parameter type-id='type-id-13'/>
@@ -7694,7 +7694,7 @@
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/longobject.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/longobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <array-type-def dimensions='1' type-id='type-id-85' size-in-bits='2048' id='type-id-379'>
       <subrange length='256' type-id='type-id-28' id='type-id-62'/>
     </array-type-def>
@@ -7849,7 +7849,7 @@
       <return type-id='type-id-14'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/memoryobject.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/memoryobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <var-decl name='_PyManagedBuffer_Type' type-id='type-id-256' mangled-name='_PyManagedBuffer_Type' visibility='default' filepath='./Include/cpython/memoryobject.h' line='5' column='1' elf-symbol-id='_PyManagedBuffer_Type'/>
     <var-decl name='PyMemoryView_Type' type-id='type-id-256' mangled-name='PyMemoryView_Type' visibility='default' filepath='./Include/memoryobject.h' line='9' column='1' elf-symbol-id='PyMemoryView_Type'/>
     <function-decl name='PyUnicode_AsASCIIString' mangled-name='PyUnicode_AsASCIIString' filepath='./Include/unicodeobject.h' line='639' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_AsASCIIString'>
@@ -7877,7 +7877,7 @@
       <return type-id='type-id-2'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/methodobject.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/methodobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <var-decl name='PyCMethod_Type' type-id='type-id-256' mangled-name='PyCMethod_Type' visibility='default' filepath='./Include/cpython/methodobject.h' line='32' column='1' elf-symbol-id='PyCMethod_Type'/>
     <var-decl name='PyCFunction_Type' type-id='type-id-256' mangled-name='PyCFunction_Type' visibility='default' filepath='./Include/methodobject.h' line='14' column='1' elf-symbol-id='PyCFunction_Type'/>
     <function-decl name='PyCFunction_New' mangled-name='PyCFunction_New' filepath='Objects/methodobject.c' line='32' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCFunction_New'>
@@ -7904,7 +7904,7 @@
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/moduleobject.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/moduleobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <class-decl name='PyModuleDef_Base' size-in-bits='320' is-struct='yes' visibility='default' filepath='./Include/moduleobject.h' line='44' column='1' id='type-id-389'>
       <data-member access='public' layout-offset-in-bits='0'>
         <var-decl name='ob_base' type-id='type-id-345' visibility='default' filepath='./Include/moduleobject.h' line='45' column='1'/>
@@ -8086,7 +8086,7 @@
       <return type-id='type-id-2'/>
     </function-type>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/namespaceobject.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/namespaceobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <var-decl name='_PyNamespace_Type' type-id='type-id-256' mangled-name='_PyNamespace_Type' visibility='default' filepath='./Include/internal/pycore_namespace.h' line='13' column='1' elf-symbol-id='_PyNamespace_Type'/>
     <function-decl name='PyUnicode_Join' mangled-name='PyUnicode_Join' filepath='./Include/unicodeobject.h' line='889' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Join'>
       <parameter type-id='type-id-2'/>
@@ -8098,7 +8098,7 @@
       <return type-id='type-id-2'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/object.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/object.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <array-type-def dimensions='1' type-id='type-id-8' size-in-bits='192' id='type-id-91'>
       <subrange length='6' type-id='type-id-28' id='type-id-401'/>
     </array-type-def>
@@ -8396,7 +8396,7 @@
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/obmalloc.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/obmalloc.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <enum-decl name='PyMemAllocatorDomain' naming-typedef-id='type-id-413' filepath='./Include/cpython/pymem.h' line='23' column='1' id='type-id-414'>
       <underlying-type type-id='type-id-24'/>
       <enumerator name='PYMEM_DOMAIN_RAW' value='0'/>
@@ -8531,7 +8531,7 @@
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/odictobject.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/odictobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <var-decl name='PyODict_Type' type-id='type-id-256' mangled-name='PyODict_Type' visibility='default' filepath='./Include/cpython/odictobject.h' line='15' column='1' elf-symbol-id='PyODict_Type'/>
     <var-decl name='PyODictIter_Type' type-id='type-id-256' mangled-name='PyODictIter_Type' visibility='default' filepath='./Include/cpython/odictobject.h' line='16' column='1' elf-symbol-id='PyODictIter_Type'/>
     <var-decl name='PyODictKeys_Type' type-id='type-id-256' mangled-name='PyODictKeys_Type' visibility='default' filepath='./Include/cpython/odictobject.h' line='17' column='1' elf-symbol-id='PyODictKeys_Type'/>
@@ -8576,7 +8576,7 @@
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/picklebufobject.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/picklebufobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <var-decl name='PyPickleBuffer_Type' type-id='type-id-256' mangled-name='PyPickleBuffer_Type' visibility='default' filepath='./Include/cpython/picklebufobject.h' line='13' column='1' elf-symbol-id='PyPickleBuffer_Type'/>
     <function-decl name='PyPickleBuffer_FromObject' mangled-name='PyPickleBuffer_FromObject' filepath='Objects/picklebufobject.c' line='17' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyPickleBuffer_FromObject'>
       <parameter type-id='type-id-2' name='base' filepath='Objects/picklebufobject.c' line='17' column='1'/>
@@ -8591,7 +8591,7 @@
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/rangeobject.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/rangeobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <var-decl name='PyRange_Type' type-id='type-id-256' mangled-name='PyRange_Type' visibility='default' filepath='./Include/rangeobject.h' line='18' column='1' elf-symbol-id='PyRange_Type'/>
     <var-decl name='PyRangeIter_Type' type-id='type-id-256' mangled-name='PyRangeIter_Type' visibility='default' filepath='./Include/rangeobject.h' line='19' column='1' elf-symbol-id='PyRangeIter_Type'/>
     <var-decl name='PyLongRangeIter_Type' type-id='type-id-256' mangled-name='PyLongRangeIter_Type' visibility='default' filepath='./Include/rangeobject.h' line='20' column='1' elf-symbol-id='PyLongRangeIter_Type'/>
@@ -8604,7 +8604,7 @@
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/setobject.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/setobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <var-decl name='_PySet_Dummy' type-id='type-id-2' mangled-name='_PySet_Dummy' visibility='default' filepath='./Include/cpython/setobject.h' line='69' column='1' elf-symbol-id='_PySet_Dummy'/>
     <function-decl name='_PyUnicode_EQ' mangled-name='_PyUnicode_EQ' filepath='./Include/cpython/unicodeobject.h' line='953' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_EQ'>
       <parameter type-id='type-id-2'/>
@@ -8632,7 +8632,7 @@
       <return type-id='type-id-2'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/sliceobject.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/sliceobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <var-decl name='_Py_EllipsisObject' type-id='type-id-345' mangled-name='_Py_EllipsisObject' visibility='default' filepath='./Include/sliceobject.h' line='9' column='1' elf-symbol-id='_Py_EllipsisObject'/>
     <var-decl name='PySlice_Type' type-id='type-id-256' mangled-name='PySlice_Type' visibility='default' filepath='./Include/sliceobject.h' line='28' column='1' elf-symbol-id='PySlice_Type'/>
     <var-decl name='PyEllipsis_Type' type-id='type-id-256' mangled-name='PyEllipsis_Type' visibility='default' filepath='./Include/sliceobject.h' line='29' column='1' elf-symbol-id='PyEllipsis_Type'/>
@@ -8660,7 +8660,7 @@
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/structseq.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/structseq.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <class-decl name='PyType_Slot' size-in-bits='128' is-struct='yes' naming-typedef-id='type-id-425' visibility='default' filepath='./Include/object.h' line='327' column='1' id='type-id-426'>
       <data-member access='public' layout-offset-in-bits='0'>
         <var-decl name='slot' type-id='type-id-8' visibility='default' filepath='./Include/object.h' line='328' column='1'/>
@@ -8731,7 +8731,7 @@
       <return type-id='type-id-1'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/tupleobject.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/tupleobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='_PyObject_GC_Resize' mangled-name='_PyObject_GC_Resize' filepath='./Include/objimpl.h' line='182' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyObject_GC_Resize'>
       <parameter type-id='type-id-322'/>
       <parameter type-id='type-id-14'/>
@@ -8750,7 +8750,7 @@
       <return type-id='type-id-46'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/typeobject.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/typeobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <class-decl name='_PyWeakReference' size-in-bits='512' is-struct='yes' visibility='default' filepath='./Include/cpython/weakrefobject.h' line='8' column='1' id='type-id-431'>
       <data-member access='public' layout-offset-in-bits='0'>
         <var-decl name='ob_base' type-id='type-id-345' visibility='default' filepath='./Include/cpython/weakrefobject.h' line='9' column='1'/>
@@ -8971,7 +8971,7 @@
       <return type-id='type-id-46'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/typevarobject.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/typevarobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='_PyArg_UnpackKeywordsWithVararg' mangled-name='_PyArg_UnpackKeywordsWithVararg' filepath='./Include/cpython/modsupport.h' line='95' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyArg_UnpackKeywordsWithVararg'>
       <parameter type-id='type-id-248'/>
       <parameter type-id='type-id-14'/>
@@ -8987,7 +8987,7 @@
     </function-decl>
     <var-decl name='_PyTypeAlias_Type' type-id='type-id-256' visibility='default' filepath='./Include/internal/pycore_typevarobject.h' line='19' column='1'/>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/unicodectype.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/unicodectype.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='_PyUnicode_ToTitlecase' mangled-name='_PyUnicode_ToTitlecase' filepath='Objects/unicodectype.c' line='62' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_ToTitlecase'>
       <parameter type-id='type-id-250' name='ch' filepath='Objects/unicodectype.c' line='62' column='1'/>
       <return type-id='type-id-250'/>
@@ -9009,7 +9009,7 @@
       <return type-id='type-id-251'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/unicodeobject.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/unicodeobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <array-type-def dimensions='1' type-id='type-id-382' size-in-bits='1024' id='type-id-436'>
       <subrange length='128' type-id='type-id-28' id='type-id-437'/>
     </array-type-def>
@@ -9678,7 +9678,7 @@
       <return type-id='type-id-2'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/unionobject.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/unionobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <var-decl name='_PyUnion_Type' type-id='type-id-256' visibility='default' filepath='./Include/internal/pycore_unionobject.h' line='11' column='1'/>
     <function-decl name='_Py_subs_parameters' filepath='./Include/internal/pycore_unionobject.h' line='16' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-2'/>
@@ -9692,7 +9692,7 @@
       <return type-id='type-id-2'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Objects/weakrefobject.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Objects/weakrefobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <var-decl name='_PyWeakref_RefType' type-id='type-id-256' mangled-name='_PyWeakref_RefType' visibility='default' filepath='./Include/weakrefobject.h' line='11' column='1' elf-symbol-id='_PyWeakref_RefType'/>
     <var-decl name='_PyWeakref_ProxyType' type-id='type-id-256' mangled-name='_PyWeakref_ProxyType' visibility='default' filepath='./Include/weakrefobject.h' line='12' column='1' elf-symbol-id='_PyWeakref_ProxyType'/>
     <var-decl name='_PyWeakref_CallableProxyType' type-id='type-id-256' mangled-name='_PyWeakref_CallableProxyType' visibility='default' filepath='./Include/weakrefobject.h' line='13' column='1' elf-symbol-id='_PyWeakref_CallableProxyType'/>
@@ -9710,7 +9710,7 @@
       <return type-id='type-id-2'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Parser/action_helpers.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Parser/action_helpers.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <array-type-def dimensions='1' type-id='type-id-2' size-in-bits='64' id='type-id-353'>
       <subrange length='1' type-id='type-id-28' id='type-id-443'/>
     </array-type-def>
@@ -9761,11 +9761,11 @@
       <data-member access='public' layout-offset-in-bits='256'>
         <var-decl name='pos' type-id='type-id-14' visibility='default' filepath='./Include/cpython/unicodeobject.h' line='493' column='1'/>
       </data-member>
-      <data-member access='public' layout-offset-in-bits='600'>
-        <var-decl name='min_length' type-id='type-id-250' visibility='default' filepath='./Include/cpython/unicodeobject.h' line='496' column='1'/>
+      <data-member access='public' layout-offset-in-bits='320'>
+        <var-decl name='min_length' type-id='type-id-14' visibility='default' filepath='./Include/cpython/unicodeobject.h' line='496' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='384'>
-        <var-decl name='min_char' type-id='type-id-14' visibility='default' filepath='./Include/cpython/unicodeobject.h' line='499' column='1'/>
+        <var-decl name='min_char' type-id='type-id-250' visibility='default' filepath='./Include/cpython/unicodeobject.h' line='499' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='416'>
         <var-decl name='overallocate' type-id='type-id-85' visibility='default' filepath='./Include/cpython/unicodeobject.h' line='502' column='1'/>
@@ -10830,7 +10830,7 @@
       </data-member>
     </class-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Parser/myreadline.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Parser/myreadline.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <array-type-def dimensions='1' type-id='type-id-570' size-in-bits='512' id='type-id-571'>
       <subrange length='8' type-id='type-id-28' id='type-id-572'/>
     </array-type-def>
@@ -10877,10 +10877,10 @@
     <array-type-def dimensions='1' type-id='type-id-592' size-in-bits='5120' id='type-id-593'>
       <subrange length='80' type-id='type-id-28' id='type-id-575'/>
     </array-type-def>
-    <array-type-def dimensions='1' type-id='type-id-594' size-in-bits='49152' id='type-id-595'>
+    <array-type-def dimensions='1' type-id='type-id-594' size-in-bits='65536' id='type-id-595'>
       <subrange length='128' type-id='type-id-28' id='type-id-437'/>
     </array-type-def>
-    <array-type-def dimensions='1' type-id='type-id-596' size-in-bits='65536' id='type-id-597'>
+    <array-type-def dimensions='1' type-id='type-id-596' size-in-bits='49152' id='type-id-597'>
       <subrange length='128' type-id='type-id-28' id='type-id-437'/>
     </array-type-def>
     <array-type-def dimensions='1' type-id='type-id-598' size-in-bits='98304' id='type-id-599'>
@@ -13441,10 +13441,10 @@
         <var-decl name='identifiers' type-id='type-id-867' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='748' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='303232'>
-        <var-decl name='ascii' type-id='type-id-595' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='752' column='1'/>
+        <var-decl name='ascii' type-id='type-id-597' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='752' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='352384'>
-        <var-decl name='latin1' type-id='type-id-597' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='756' column='1'/>
+        <var-decl name='latin1' type-id='type-id-595' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='756' column='1'/>
       </data-member>
     </class-decl>
     <class-decl name='__anonymous_struct__23' size-in-bits='11008' is-struct='yes' is-anonymous='yes' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='30' column='1' id='type-id-866'>
@@ -13473,7 +13473,7 @@
         <var-decl name='_py_anon_unknown' type-id='type-id-869' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='38' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='3584'>
-        <var-decl name='_py_close_br' type-id='type-id-594' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='39' column='1'/>
+        <var-decl name='_py_close_br' type-id='type-id-596' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='39' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='3968'>
         <var-decl name='_py_dbl_close_br' type-id='type-id-871' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='40' column='1'/>
@@ -13488,7 +13488,7 @@
         <var-decl name='_py_defaults' type-id='type-id-869' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='43' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='5568'>
-        <var-decl name='_py_dot' type-id='type-id-594' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='44' column='1'/>
+        <var-decl name='_py_dot' type-id='type-id-596' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='44' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='5952'>
         <var-decl name='_py_dot_locals' type-id='type-id-869' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='45' column='1'/>
@@ -13509,13 +13509,13 @@
         <var-decl name='_py_list_err' type-id='type-id-876' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='50' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='8640'>
-        <var-decl name='_py_newline' type-id='type-id-594' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='51' column='1'/>
+        <var-decl name='_py_newline' type-id='type-id-596' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='51' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='9024'>
-        <var-decl name='_py_open_br' type-id='type-id-594' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='52' column='1'/>
+        <var-decl name='_py_open_br' type-id='type-id-596' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='52' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='9408'>
-        <var-decl name='_py_percent' type-id='type-id-594' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='53' column='1'/>
+        <var-decl name='_py_percent' type-id='type-id-596' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='53' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='9792'>
         <var-decl name='_py_shim_name' type-id='type-id-877' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='54' column='1'/>
@@ -13551,7 +13551,7 @@
         <var-decl name='_data' type-id='type-id-694' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='33' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='__anonymous_struct__33' size-in-bits='384' is-struct='yes' is-anonymous='yes' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='39' column='1' id='type-id-594'>
+    <class-decl name='__anonymous_struct__33' size-in-bits='384' is-struct='yes' is-anonymous='yes' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='39' column='1' id='type-id-596'>
       <data-member access='public' layout-offset-in-bits='0'>
         <var-decl name='_ascii' type-id='type-id-792' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='39' column='1'/>
       </data-member>
@@ -13652,7 +13652,7 @@
         <var-decl name='_py_WarningMessage' type-id='type-id-882' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='68' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='3776'>
-        <var-decl name='_py__' type-id='type-id-594' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='69' column='1'/>
+        <var-decl name='_py__' type-id='type-id-596' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='69' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='4160'>
         <var-decl name='_py__WindowsConsoleIO' type-id='type-id-883' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='70' column='1'/>
@@ -14252,7 +14252,7 @@
         <var-decl name='_py__xoptions' type-id='type-id-869' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='268' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='93440'>
-        <var-decl name='_py_a' type-id='type-id-594' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='269' column='1'/>
+        <var-decl name='_py_a' type-id='type-id-596' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='269' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='93824'>
         <var-decl name='_py_abs_tol' type-id='type-id-880' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='270' column='1'/>
@@ -14312,7 +14312,7 @@
         <var-decl name='_py_autocommit' type-id='type-id-868' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='288' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='101888'>
-        <var-decl name='_py_b' type-id='type-id-594' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='289' column='1'/>
+        <var-decl name='_py_b' type-id='type-id-596' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='289' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='102272'>
         <var-decl name='_py_backtick' type-id='type-id-870' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='290' column='1'/>
@@ -14366,7 +14366,7 @@
         <var-decl name='_py_bytes_per_sep' type-id='type-id-873' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='306' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='109312'>
-        <var-decl name='_py_c' type-id='type-id-594' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='307' column='1'/>
+        <var-decl name='_py_c' type-id='type-id-596' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='307' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='109696'>
         <var-decl name='_py_c_call' type-id='type-id-877' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='308' column='1'/>
@@ -14525,7 +14525,7 @@
         <var-decl name='_py_cwd' type-id='type-id-891' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='359' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='131840'>
-        <var-decl name='_py_d' type-id='type-id-594' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='360' column='1'/>
+        <var-decl name='_py_d' type-id='type-id-596' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='360' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='132224'>
         <var-decl name='_py_data' type-id='type-id-881' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='361' column='1'/>
@@ -14609,7 +14609,7 @@
         <var-decl name='_py_duration' type-id='type-id-870' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='387' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='143488'>
-        <var-decl name='_py_e' type-id='type-id-594' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='388' column='1'/>
+        <var-decl name='_py_e' type-id='type-id-596' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='388' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='143872'>
         <var-decl name='_py_eager_start' type-id='type-id-875' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='389' column='1'/>
@@ -15089,7 +15089,7 @@
         <var-decl name='_py_mycmp' type-id='type-id-878' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='547' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='209472'>
-        <var-decl name='_py_n' type-id='type-id-594' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='548' column='1'/>
+        <var-decl name='_py_n' type-id='type-id-596' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='548' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='209856'>
         <var-decl name='_py_n_arg' type-id='type-id-878' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='549' column='1'/>
@@ -15221,7 +15221,7 @@
         <var-decl name='_py_owner' type-id='type-id-878' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='591' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='227776'>
-        <var-decl name='_py_p' type-id='type-id-594' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='592' column='1'/>
+        <var-decl name='_py_p' type-id='type-id-596' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='592' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='228160'>
         <var-decl name='_py_pages' type-id='type-id-878' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='593' column='1'/>
@@ -15302,7 +15302,7 @@
         <var-decl name='_py_quotetabs' type-id='type-id-869' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='618' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='238912'>
-        <var-decl name='_py_r' type-id='type-id-594' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='619' column='1'/>
+        <var-decl name='_py_r' type-id='type-id-596' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='619' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='239296'>
         <var-decl name='_py_raw' type-id='type-id-891' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='620' column='1'/>
@@ -15374,7 +15374,7 @@
         <var-decl name='_py_reversed' type-id='type-id-870' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='642' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='248832'>
-        <var-decl name='_py_s' type-id='type-id-594' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='643' column='1'/>
+        <var-decl name='_py_s' type-id='type-id-596' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='643' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='249216'>
         <var-decl name='_py_salt' type-id='type-id-881' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='644' column='1'/>
@@ -15680,7 +15680,7 @@
         <var-decl name='_py_write_through' type-id='type-id-873' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='744' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='291072'>
-        <var-decl name='_py_x' type-id='type-id-594' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='745' column='1'/>
+        <var-decl name='_py_x' type-id='type-id-596' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='745' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='291456'>
         <var-decl name='_py_year' type-id='type-id-881' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='746' column='1'/>
@@ -15817,7 +15817,7 @@
         <var-decl name='_data' type-id='type-id-679' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='693' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='__anonymous_struct__741' size-in-bits='512' is-struct='yes' is-anonymous='yes' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='753' column='1' id='type-id-596'>
+    <class-decl name='__anonymous_struct__741' size-in-bits='512' is-struct='yes' is-anonymous='yes' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='753' column='1' id='type-id-594'>
       <data-member access='public' layout-offset-in-bits='0'>
         <var-decl name='_latin1' type-id='type-id-795' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='754' column='1'/>
       </data-member>
@@ -17369,8 +17369,8 @@
     <pointer-type-def type-id='type-id-1082' size-in-bits='64' id='type-id-754'/>
     <pointer-type-def type-id='type-id-1083' size-in-bits='64' id='type-id-760'/>
     <pointer-type-def type-id='type-id-1084' size-in-bits='64' id='type-id-761'/>
-    <qualified-type-def type-id='type-id-990' volatile='yes' id='type-id-988'/>
     <qualified-type-def type-id='type-id-989' volatile='yes' id='type-id-698'/>
+    <qualified-type-def type-id='type-id-990' volatile='yes' id='type-id-988'/>
     <pointer-type-def type-id='type-id-422' size-in-bits='64' id='type-id-52'/>
     <pointer-type-def type-id='type-id-52' size-in-bits='64' id='type-id-235'/>
     <class-decl name='PyAsyncGenASend' is-struct='yes' visibility='default' is-declaration-only='yes' id='type-id-620'/>
@@ -17440,10 +17440,10 @@
       <parameter type-id='type-id-8'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='PyOS_Readline' mangled-name='PyOS_Readline' filepath='Parser/myreadline.c' line='358' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyOS_Readline'>
-      <parameter type-id='type-id-229' name='sys_stdin' filepath='Parser/myreadline.c' line='358' column='1'/>
-      <parameter type-id='type-id-229' name='sys_stdout' filepath='Parser/myreadline.c' line='358' column='1'/>
-      <parameter type-id='type-id-12' name='prompt' filepath='Parser/myreadline.c' line='358' column='1'/>
+    <function-decl name='PyOS_Readline' mangled-name='PyOS_Readline' filepath='Parser/myreadline.c' line='364' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyOS_Readline'>
+      <parameter type-id='type-id-229' name='sys_stdin' filepath='Parser/myreadline.c' line='364' column='1'/>
+      <parameter type-id='type-id-229' name='sys_stdout' filepath='Parser/myreadline.c' line='364' column='1'/>
+      <parameter type-id='type-id-12' name='prompt' filepath='Parser/myreadline.c' line='364' column='1'/>
       <return type-id='type-id-15'/>
     </function-decl>
     <function-type size-in-bits='64' id='type-id-1053'>
@@ -17601,7 +17601,7 @@
       <return type-id='type-id-46'/>
     </function-type>
   </abi-instr>
-  <abi-instr address-size='64' path='Parser/parser.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Parser/parser.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <class-decl name='asdl_seq' size-in-bits='128' is-struct='yes' naming-typedef-id='type-id-1087' visibility='default' filepath='./Include/internal/pycore_asdl.h' line='28' column='1' id='type-id-1088'>
       <data-member access='public' layout-offset-in-bits='0'>
         <var-decl name='size' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_asdl.h' line='29' column='1'/>
@@ -18891,7 +18891,7 @@
       <return type-id='type-id-22'/>
     </function-type>
   </abi-instr>
-  <abi-instr address-size='64' path='Parser/peg_api.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Parser/peg_api.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <class-decl name='PyCompilerFlags' size-in-bits='64' is-struct='yes' naming-typedef-id='type-id-1141' visibility='default' filepath='./Include/cpython/compile.h' line='26' column='1' id='type-id-1142'>
       <data-member access='public' layout-offset-in-bits='0'>
         <var-decl name='cf_flags' type-id='type-id-8' visibility='default' filepath='./Include/cpython/compile.h' line='27' column='1'/>
@@ -18929,7 +18929,7 @@
       <return type-id='type-id-468'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Parser/pegen.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Parser/pegen.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <array-type-def dimensions='1' type-id='type-id-567' size-in-bits='64' id='type-id-1143'>
       <subrange length='1' type-id='type-id-28' id='type-id-443'/>
     </array-type-def>
@@ -20794,10 +20794,12 @@
     <function-decl name='_PyTokenizer_FromString' filepath='Parser/tokenizer.h' line='138' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-12'/>
       <parameter type-id='type-id-8'/>
+      <parameter type-id='type-id-8'/>
       <return type-id='type-id-1302'/>
     </function-decl>
     <function-decl name='_PyTokenizer_FromUTF8' filepath='Parser/tokenizer.h' line='139' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-12'/>
+      <parameter type-id='type-id-8'/>
       <parameter type-id='type-id-8'/>
       <return type-id='type-id-1302'/>
     </function-decl>
@@ -20935,7 +20937,7 @@
       <return type-id='type-id-46'/>
     </function-type>
   </abi-instr>
-  <abi-instr address-size='64' path='Parser/pegen_errors.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Parser/pegen_errors.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='_PyErr_ProgramDecodedTextObject' mangled-name='_PyErr_ProgramDecodedTextObject' filepath='./Include/cpython/pyerrors.h' line='142' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyErr_ProgramDecodedTextObject'>
       <parameter type-id='type-id-2'/>
       <parameter type-id='type-id-8'/>
@@ -21003,7 +21005,7 @@
       <return type-id='type-id-14'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Parser/string_parser.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Parser/string_parser.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <pointer-type-def type-id='type-id-12' size-in-bits='64' id='type-id-252'/>
     <function-decl name='_PyBytes_DecodeEscape' mangled-name='_PyBytes_DecodeEscape' filepath='./Include/cpython/bytesobject.h' line='28' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyBytes_DecodeEscape'>
       <parameter type-id='type-id-12'/>
@@ -21058,7 +21060,7 @@
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Parser/token.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Parser/token.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <array-type-def dimensions='1' type-id='type-id-430' size-in-bits='4416' id='type-id-1331'>
       <subrange length='69' type-id='type-id-28' id='type-id-1332'/>
     </array-type-def>
@@ -21083,7 +21085,7 @@
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Parser/tokenizer.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Parser/tokenizer.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <qualified-type-def type-id='type-id-84' const='yes' id='type-id-1334'/>
     <pointer-type-def type-id='type-id-1334' size-in-bits='64' id='type-id-1335'/>
     <pointer-type-def type-id='type-id-1335' size-in-bits='64' id='type-id-1336'/>
@@ -21227,7 +21229,7 @@
       <return type-id='type-id-19'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/Python-ast.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/Python-ast.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='PyModule_AddIntConstant' mangled-name='PyModule_AddIntConstant' filepath='./Include/modsupport.h' line='51' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyModule_AddIntConstant'>
       <parameter type-id='type-id-2'/>
       <parameter type-id='type-id-12'/>
@@ -21238,17 +21240,17 @@
       <return type-id='type-id-2'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/Python-tokenize.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/Python-tokenize.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='PyModule_AddType' mangled-name='PyModule_AddType' filepath='./Include/modsupport.h' line='56' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyModule_AddType'>
       <parameter type-id='type-id-2'/>
       <parameter type-id='type-id-1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='PyInit__tokenize' mangled-name='PyInit__tokenize' filepath='Python/Python-tokenize.c' line='322' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyInit__tokenize'>
+    <function-decl name='PyInit__tokenize' mangled-name='PyInit__tokenize' filepath='Python/Python-tokenize.c' line='350' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyInit__tokenize'>
       <return type-id='type-id-2'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/_warnings.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/_warnings.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='_Py_IsInterpreterFinalizing' mangled-name='_Py_IsInterpreterFinalizing' filepath='./Include/cpython/pylifecycle.h' line='55' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_IsInterpreterFinalizing'>
       <parameter type-id='type-id-20'/>
       <return type-id='type-id-8'/>
@@ -21316,7 +21318,7 @@
       <return type-id='type-id-2'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/assemble.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/assemble.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='_PyCompile_ConstCacheMergeOne' filepath='./Include/internal/pycore_compile.h' line='93' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-2'/>
       <parameter type-id='type-id-233'/>
@@ -21336,7 +21338,7 @@
       <return type-id='type-id-46'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/ast_opt.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/ast_opt.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='_PyAST_GetDocString' filepath='./Include/internal/pycore_ast.h' line='917' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-500'/>
       <return type-id='type-id-2'/>
@@ -21349,7 +21351,7 @@
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/bltinmodule.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/bltinmodule.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <pointer-type-def type-id='type-id-1149' size-in-bits='64' id='type-id-1337'/>
     <var-decl name='PyFilter_Type' type-id='type-id-256' mangled-name='PyFilter_Type' visibility='default' filepath='./Include/bltinmodule.h' line='7' column='1' elf-symbol-id='PyFilter_Type'/>
     <var-decl name='PyMap_Type' type-id='type-id-256' mangled-name='PyMap_Type' visibility='default' filepath='./Include/bltinmodule.h' line='8' column='1' elf-symbol-id='PyMap_Type'/>
@@ -21456,7 +21458,7 @@
       <return type-id='type-id-2'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/bootstrap_hash.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/bootstrap_hash.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='_Py_fstat' mangled-name='_Py_fstat' filepath='./Include/internal/pycore_fileutils.h' line='93' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_fstat'>
       <parameter type-id='type-id-8'/>
       <parameter type-id='type-id-51'/>
@@ -21505,7 +21507,7 @@
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/ceval.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/ceval.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='_PyEval_SetProfile' mangled-name='_PyEval_SetProfile' filepath='./Include/cpython/ceval.h' line='7' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_SetProfile'>
       <parameter type-id='type-id-177'/>
       <parameter type-id='type-id-764'/>
@@ -21897,7 +21899,7 @@
       <return type-id='type-id-46'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/ceval_gil.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/ceval_gil.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <union-decl name='pthread_mutexattr_t' size-in-bits='32' naming-typedef-id='type-id-1338' visibility='default' filepath='/usr/include/x86_64-linux-gnu/bits/pthreadtypes.h' line='32' column='1' id='type-id-1339'>
       <data-member access='public'>
         <var-decl name='__size' type-id='type-id-619' visibility='default' filepath='/usr/include/x86_64-linux-gnu/bits/pthreadtypes.h' line='34' column='1'/>
@@ -22063,7 +22065,7 @@
       <return type-id='type-id-46'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/codecs.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/codecs.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <var-decl name='Py_hexdigits' type-id='type-id-12' mangled-name='Py_hexdigits' visibility='default' filepath='./Include/codecs.h' line='242' column='1' elf-symbol-id='Py_hexdigits'/>
     <function-decl name='PyCodec_Register' mangled-name='PyCodec_Register' filepath='Python/codecs.c' line='36' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCodec_Register'>
       <parameter type-id='type-id-2' name='search_function' filepath='Python/codecs.c' line='36' column='1'/>
@@ -22154,7 +22156,7 @@
       <return type-id='type-id-2'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/compile.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/compile.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <array-type-def dimensions='1' type-id='type-id-1350' size-in-bits='1344' id='type-id-1351'>
       <subrange length='21' type-id='type-id-28' id='type-id-670'/>
     </array-type-def>
@@ -22720,7 +22722,7 @@
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/context.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/context.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <var-decl name='PyContext_Type' type-id='type-id-256' mangled-name='PyContext_Type' visibility='default' filepath='./Include/cpython/context.h' line='8' column='1' elf-symbol-id='PyContext_Type'/>
     <var-decl name='PyContextVar_Type' type-id='type-id-256' mangled-name='PyContextVar_Type' visibility='default' filepath='./Include/cpython/context.h' line='11' column='1' elf-symbol-id='PyContextVar_Type'/>
     <var-decl name='PyContextToken_Type' type-id='type-id-256' mangled-name='PyContextToken_Type' visibility='default' filepath='./Include/cpython/context.h' line='14' column='1' elf-symbol-id='PyContextToken_Type'/>
@@ -22809,7 +22811,7 @@
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/deepfreeze/deepfreeze.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/deepfreeze/deepfreeze.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='_PyStaticCode_Fini' filepath='./Include/internal/pycore_code.h' line='251' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-328'/>
       <return type-id='type-id-46'/>
@@ -22820,7 +22822,7 @@
     </function-decl>
     <var-decl name='_Py_next_func_version' type-id='type-id-352' visibility='default' filepath='./Include/internal/pycore_code.h' line='463' column='1'/>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/errors.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/errors.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='_Py_fopen_obj' mangled-name='_Py_fopen_obj' filepath='./Include/cpython/fileutils.h' line='6' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_fopen_obj'>
       <parameter type-id='type-id-2'/>
       <parameter type-id='type-id-12'/>
@@ -22978,7 +22980,7 @@
       <return type-id='type-id-2'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/fileutils.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/fileutils.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <class-decl name='__mbstate_t' size-in-bits='64' is-struct='yes' naming-typedef-id='type-id-1399' visibility='default' filepath='/usr/include/x86_64-linux-gnu/bits/types/__mbstate_t.h' line='13' column='1' id='type-id-1400'>
       <data-member access='public' layout-offset-in-bits='0'>
         <var-decl name='__count' type-id='type-id-8' visibility='default' filepath='/usr/include/x86_64-linux-gnu/bits/types/__mbstate_t.h' line='15' column='1'/>
@@ -23070,53 +23072,53 @@
     <function-decl name='_Py_GetLocaleEncodingObject' mangled-name='_Py_GetLocaleEncodingObject' filepath='Python/fileutils.c' line='936' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_GetLocaleEncodingObject'>
       <return type-id='type-id-2'/>
     </function-decl>
-    <function-decl name='_Py_stat' mangled-name='_Py_stat' filepath='Python/fileutils.c' line='1354' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_stat'>
-      <parameter type-id='type-id-2' name='path' filepath='Python/fileutils.c' line='1354' column='1'/>
-      <parameter type-id='type-id-51' name='statbuf' filepath='Python/fileutils.c' line='1354' column='1'/>
+    <function-decl name='_Py_stat' mangled-name='_Py_stat' filepath='Python/fileutils.c' line='1355' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_stat'>
+      <parameter type-id='type-id-2' name='path' filepath='Python/fileutils.c' line='1355' column='1'/>
+      <parameter type-id='type-id-51' name='statbuf' filepath='Python/fileutils.c' line='1355' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='_Py_get_inheritable' mangled-name='_Py_get_inheritable' filepath='Python/fileutils.c' line='1434' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_get_inheritable'>
-      <parameter type-id='type-id-8' name='fd' filepath='Python/fileutils.c' line='1434' column='1'/>
+    <function-decl name='_Py_get_inheritable' mangled-name='_Py_get_inheritable' filepath='Python/fileutils.c' line='1435' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_get_inheritable'>
+      <parameter type-id='type-id-8' name='fd' filepath='Python/fileutils.c' line='1435' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='_Py_set_inheritable' mangled-name='_Py_set_inheritable' filepath='Python/fileutils.c' line='1594' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_set_inheritable'>
-      <parameter type-id='type-id-8' name='fd' filepath='Python/fileutils.c' line='1594' column='1'/>
-      <parameter type-id='type-id-8' name='inheritable' filepath='Python/fileutils.c' line='1594' column='1'/>
-      <parameter type-id='type-id-179' name='atomic_flag_works' filepath='Python/fileutils.c' line='1594' column='1'/>
+    <function-decl name='_Py_set_inheritable' mangled-name='_Py_set_inheritable' filepath='Python/fileutils.c' line='1595' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_set_inheritable'>
+      <parameter type-id='type-id-8' name='fd' filepath='Python/fileutils.c' line='1595' column='1'/>
+      <parameter type-id='type-id-8' name='inheritable' filepath='Python/fileutils.c' line='1595' column='1'/>
+      <parameter type-id='type-id-179' name='atomic_flag_works' filepath='Python/fileutils.c' line='1595' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='_Py_set_inheritable_async_safe' mangled-name='_Py_set_inheritable_async_safe' filepath='Python/fileutils.c' line='1603' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_set_inheritable_async_safe'>
-      <parameter type-id='type-id-8' name='fd' filepath='Python/fileutils.c' line='1603' column='1'/>
-      <parameter type-id='type-id-8' name='inheritable' filepath='Python/fileutils.c' line='1603' column='1'/>
-      <parameter type-id='type-id-179' name='atomic_flag_works' filepath='Python/fileutils.c' line='1603' column='1'/>
+    <function-decl name='_Py_set_inheritable_async_safe' mangled-name='_Py_set_inheritable_async_safe' filepath='Python/fileutils.c' line='1604' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_set_inheritable_async_safe'>
+      <parameter type-id='type-id-8' name='fd' filepath='Python/fileutils.c' line='1604' column='1'/>
+      <parameter type-id='type-id-8' name='inheritable' filepath='Python/fileutils.c' line='1604' column='1'/>
+      <parameter type-id='type-id-179' name='atomic_flag_works' filepath='Python/fileutils.c' line='1604' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='_Py_wfopen' mangled-name='_Py_wfopen' filepath='Python/fileutils.c' line='1706' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_wfopen'>
-      <parameter type-id='type-id-16' name='path' filepath='Python/fileutils.c' line='1706' column='1'/>
-      <parameter type-id='type-id-16' name='mode' filepath='Python/fileutils.c' line='1706' column='1'/>
+    <function-decl name='_Py_wfopen' mangled-name='_Py_wfopen' filepath='Python/fileutils.c' line='1707' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_wfopen'>
+      <parameter type-id='type-id-16' name='path' filepath='Python/fileutils.c' line='1707' column='1'/>
+      <parameter type-id='type-id-16' name='mode' filepath='Python/fileutils.c' line='1707' column='1'/>
       <return type-id='type-id-229'/>
     </function-decl>
-    <function-decl name='_Py_normpath' mangled-name='_Py_normpath' filepath='Python/fileutils.c' line='2381' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_normpath'>
-      <parameter type-id='type-id-52' name='path' filepath='Python/fileutils.c' line='2381' column='1'/>
-      <parameter type-id='type-id-14' name='size' filepath='Python/fileutils.c' line='2381' column='1'/>
+    <function-decl name='_Py_normpath' mangled-name='_Py_normpath' filepath='Python/fileutils.c' line='2382' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_normpath'>
+      <parameter type-id='type-id-52' name='path' filepath='Python/fileutils.c' line='2382' column='1'/>
+      <parameter type-id='type-id-14' name='size' filepath='Python/fileutils.c' line='2382' column='1'/>
       <return type-id='type-id-52'/>
     </function-decl>
-    <function-decl name='_Py_get_blocking' mangled-name='_Py_get_blocking' filepath='Python/fileutils.c' line='2613' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_get_blocking'>
-      <parameter type-id='type-id-8' name='fd' filepath='Python/fileutils.c' line='2613' column='1'/>
+    <function-decl name='_Py_get_blocking' mangled-name='_Py_get_blocking' filepath='Python/fileutils.c' line='2614' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_get_blocking'>
+      <parameter type-id='type-id-8' name='fd' filepath='Python/fileutils.c' line='2614' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='_Py_set_blocking' mangled-name='_Py_set_blocking' filepath='Python/fileutils.c' line='2634' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_set_blocking'>
-      <parameter type-id='type-id-8' name='fd' filepath='Python/fileutils.c' line='2634' column='1'/>
-      <parameter type-id='type-id-8' name='blocking' filepath='Python/fileutils.c' line='2634' column='1'/>
+    <function-decl name='_Py_set_blocking' mangled-name='_Py_set_blocking' filepath='Python/fileutils.c' line='2635' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_set_blocking'>
+      <parameter type-id='type-id-8' name='fd' filepath='Python/fileutils.c' line='2635' column='1'/>
+      <parameter type-id='type-id-8' name='blocking' filepath='Python/fileutils.c' line='2635' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='_Py_closerange' mangled-name='_Py_closerange' filepath='Python/fileutils.c' line='2885' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_closerange'>
-      <parameter type-id='type-id-8' name='first' filepath='Python/fileutils.c' line='2885' column='1'/>
-      <parameter type-id='type-id-8' name='last' filepath='Python/fileutils.c' line='2885' column='1'/>
+    <function-decl name='_Py_closerange' mangled-name='_Py_closerange' filepath='Python/fileutils.c' line='2886' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_closerange'>
+      <parameter type-id='type-id-8' name='first' filepath='Python/fileutils.c' line='2886' column='1'/>
+      <parameter type-id='type-id-8' name='last' filepath='Python/fileutils.c' line='2886' column='1'/>
       <return type-id='type-id-46'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/flowgraph.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/flowgraph.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='_PyCompile_EnsureArrayLargeEnough' filepath='./Include/internal/pycore_compile.h' line='86' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-8'/>
       <parameter type-id='type-id-253'/>
@@ -23126,7 +23128,7 @@
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/formatter_unicode.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/formatter_unicode.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <class-decl name='lconv' size-in-bits='768' is-struct='yes' visibility='default' filepath='/usr/include/locale.h' line='51' column='1' id='type-id-1406'>
       <data-member access='public' layout-offset-in-bits='0'>
         <var-decl name='decimal_point' type-id='type-id-15' visibility='default' filepath='/usr/include/locale.h' line='55' column='1'/>
@@ -23212,7 +23214,7 @@
       <return type-id='type-id-1407'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/frame.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/frame.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='_PyFrame_New_NoTrack' filepath='./Include/internal/pycore_frame.h' line='29' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-328'/>
       <return type-id='type-id-365'/>
@@ -23226,7 +23228,7 @@
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/frozen.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/frozen.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <class-decl name='_frozen' size-in-bits='256' is-struct='yes' visibility='default' filepath='./Include/cpython/import.h' line='32' column='1' id='type-id-1408'>
       <data-member access='public' layout-offset-in-bits='0'>
         <var-decl name='name' type-id='type-id-12' visibility='default' filepath='./Include/cpython/import.h' line='33' column='1'/>
@@ -23331,7 +23333,7 @@
       <return type-id='type-id-2'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/frozenmain.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/frozenmain.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <class-decl name='PyStatus' size-in-bits='256' is-struct='yes' naming-typedef-id='type-id-54' visibility='default' filepath='./Include/cpython/initconfig.h' line='10' column='1' id='type-id-1414'>
       <data-member access='public' layout-offset-in-bits='0'>
         <var-decl name='_type' type-id='type-id-993' visibility='default' filepath='./Include/cpython/initconfig.h' line='15' column='1'/>
@@ -23403,7 +23405,7 @@
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/getargs.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/getargs.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='PyArg_Parse' mangled-name='PyArg_Parse' filepath='Python/getargs.c' line='99' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyArg_Parse'>
       <parameter type-id='type-id-2' name='args' filepath='Python/getargs.c' line='99' column='1'/>
       <parameter type-id='type-id-12' name='format' filepath='Python/getargs.c' line='99' column='1'/>
@@ -23508,21 +23510,21 @@
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/getcompiler.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/getcompiler.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='Py_GetCompiler' mangled-name='Py_GetCompiler' filepath='Python/getcompiler.c' line='24' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_GetCompiler'>
       <return type-id='type-id-12'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/getopt.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/getopt.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <var-decl name='_PyOS_opterr' type-id='type-id-8' visibility='default' filepath='./Include/internal/pycore_getopt.h' line='8' column='1'/>
     <var-decl name='_PyOS_optind' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_getopt.h' line='9' column='1'/>
     <var-decl name='_PyOS_optarg' type-id='type-id-16' visibility='default' filepath='./Include/internal/pycore_getopt.h' line='10' column='1'/>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/getversion.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/getversion.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <qualified-type-def type-id='type-id-28' const='yes' id='type-id-1415'/>
     <var-decl name='Py_Version' type-id='type-id-1415' mangled-name='Py_Version' visibility='default' filepath='./Include/pylifecycle.h' line='66' column='1' elf-symbol-id='Py_Version'/>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/hamt.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/hamt.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <var-decl name='_PyHamt_Type' type-id='type-id-256' visibility='default' filepath='./Include/internal/pycore_hamt.h' line='23' column='1'/>
     <var-decl name='_PyHamt_ArrayNode_Type' type-id='type-id-256' visibility='default' filepath='./Include/internal/pycore_hamt.h' line='24' column='1'/>
     <var-decl name='_PyHamt_BitmapNode_Type' type-id='type-id-256' visibility='default' filepath='./Include/internal/pycore_hamt.h' line='25' column='1'/>
@@ -23531,7 +23533,7 @@
     <var-decl name='_PyHamtValues_Type' type-id='type-id-256' visibility='default' filepath='./Include/internal/pycore_hamt.h' line='28' column='1'/>
     <var-decl name='_PyHamtItems_Type' type-id='type-id-256' visibility='default' filepath='./Include/internal/pycore_hamt.h' line='29' column='1'/>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/hashtable.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/hashtable.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <typedef-decl name='_Py_hashtable_foreach_func' type-id='type-id-1416' filepath='./Include/internal/pycore_hashtable.h' line='96' column='1' id='type-id-1417'/>
     <pointer-type-def type-id='type-id-917' size-in-bits='64' id='type-id-1418'/>
     <qualified-type-def type-id='type-id-910' const='yes' id='type-id-1419'/>
@@ -23605,7 +23607,7 @@
       <return type-id='type-id-8'/>
     </function-type>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/import.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/import.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <enum-decl name='_PyTime_round_t' naming-typedef-id='type-id-1422' filepath='./Include/cpython/pytime.h' line='70' column='1' id='type-id-1423'>
       <underlying-type type-id='type-id-24'/>
       <enumerator name='_PyTime_ROUND_FLOOR' value='0'/>
@@ -23821,7 +23823,7 @@
       <return type-id='type-id-2'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/initconfig.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/initconfig.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <class-decl name='_PyArgv' size-in-bits='256' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_initconfig.h' line='64' column='1' id='type-id-1425'>
       <data-member access='public' layout-offset-in-bits='0'>
         <var-decl name='argc' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_initconfig.h' line='65' column='1'/>
@@ -24162,11 +24164,11 @@
       <return type-id='type-id-2'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/instrumentation.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/instrumentation.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <var-decl name='_PyInstrumentation_MISSING' type-id='type-id-345' visibility='default' filepath='./Include/internal/pycore_instruments.h' line='102' column='1'/>
     <var-decl name='_PyInstrumentation_DISABLE' type-id='type-id-345' visibility='default' filepath='./Include/internal/pycore_instruments.h' line='103' column='1'/>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/intrinsics.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/intrinsics.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <array-type-def dimensions='1' type-id='type-id-1443' size-in-bits='768' id='type-id-1444'>
       <subrange length='12' type-id='type-id-28' id='type-id-653'/>
     </array-type-def>
@@ -24241,7 +24243,7 @@
       <return type-id='type-id-2'/>
     </function-type>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/legacy_tracing.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/legacy_tracing.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <typedef-decl name='_PyMonitoringEventSet' type-id='type-id-352' filepath='./Include/internal/pycore_instruments.h' line='47' column='1' id='type-id-1455'/>
     <function-decl name='_PyMonitoring_RegisterCallback' filepath='./Include/internal/pycore_instruments.h' line='62' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-8'/>
@@ -24260,7 +24262,7 @@
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/marshal.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/marshal.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <array-type-def dimensions='1' type-id='type-id-116' size-in-bits='192' id='type-id-1456'>
       <subrange length='3' type-id='type-id-28' id='type-id-630'/>
     </array-type-def>
@@ -24367,7 +24369,7 @@
       <return type-id='type-id-2'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/modsupport.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/modsupport.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='_Py_convert_optional_to_ssize_t' mangled-name='_Py_convert_optional_to_ssize_t' filepath='Python/modsupport.c' line='16' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_convert_optional_to_ssize_t'>
       <parameter type-id='type-id-2' name='obj' filepath='Python/modsupport.c' line='16' column='1'/>
       <parameter type-id='type-id-22' name='result' filepath='Python/modsupport.c' line='16' column='1'/>
@@ -24396,7 +24398,7 @@
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/mysnprintf.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/mysnprintf.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='vsnprintf' filepath='/usr/include/stdio.h' line='382' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-15'/>
       <parameter type-id='type-id-19'/>
@@ -24412,7 +24414,7 @@
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/pathconfig.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/pathconfig.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='_Py_wreadlink' mangled-name='_Py_wreadlink' filepath='./Include/internal/pycore_fileutils.h' line='133' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_wreadlink'>
       <parameter type-id='type-id-16'/>
       <parameter type-id='type-id-52'/>
@@ -24484,7 +24486,7 @@
       <return type-id='type-id-52'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/perf_trampoline.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/perf_trampoline.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <var-decl name='_Py_perfmap_callbacks' type-id='type-id-1462' visibility='default' filepath='./Include/internal/pycore_ceval.h' line='79' column='1'/>
     <function-decl name='mprotect' filepath='/usr/include/x86_64-linux-gnu/sys/mman.h' line='81' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-22'/>
@@ -24493,7 +24495,7 @@
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/preconfig.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/preconfig.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='_Py_CoerceLegacyLocale' mangled-name='_Py_CoerceLegacyLocale' filepath='./Include/cpython/pylifecycle.h' line='62' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_CoerceLegacyLocale'>
       <parameter type-id='type-id-8'/>
       <return type-id='type-id-8'/>
@@ -24529,7 +24531,7 @@
       <return type-id='type-id-46'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/pyctype.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/pyctype.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <array-type-def dimensions='1' type-id='type-id-382' size-in-bits='2048' id='type-id-1463'>
       <subrange length='256' type-id='type-id-28' id='type-id-62'/>
     </array-type-def>
@@ -24541,7 +24543,7 @@
     <var-decl name='_Py_ctype_tolower' type-id='type-id-1463' mangled-name='_Py_ctype_tolower' visibility='default' filepath='./Include/cpython/pyctype.h' line='29' column='1' elf-symbol-id='_Py_ctype_tolower'/>
     <var-decl name='_Py_ctype_toupper' type-id='type-id-1463' mangled-name='_Py_ctype_toupper' visibility='default' filepath='./Include/cpython/pyctype.h' line='30' column='1' elf-symbol-id='_Py_ctype_toupper'/>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/pyhash.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/pyhash.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <array-type-def dimensions='1' type-id='type-id-85' size-in-bits='128' id='type-id-1466'>
       <subrange length='16' type-id='type-id-28' id='type-id-57'/>
     </array-type-def>
@@ -24626,7 +24628,7 @@
       <return type-id='type-id-305'/>
     </function-type>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/pylifecycle.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/pylifecycle.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <class-decl name='PyInterpreterConfig' size-in-bits='224' is-struct='yes' naming-typedef-id='type-id-1480' visibility='default' filepath='./Include/cpython/initconfig.h' line='247' column='1' id='type-id-1481'>
       <data-member access='public' layout-offset-in-bits='0'>
         <var-decl name='use_main_obmalloc' type-id='type-id-8' visibility='default' filepath='./Include/cpython/initconfig.h' line='249' column='1'/>
@@ -25346,7 +25348,7 @@
       <return type-id='type-id-1485'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/pystate.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/pystate.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <pointer-type-def type-id='type-id-821' size-in-bits='64' id='type-id-1497'/>
     <pointer-type-def type-id='type-id-852' size-in-bits='64' id='type-id-1498'/>
     <qualified-type-def type-id='type-id-19' const='yes' id='type-id-1499'/>
@@ -25553,14 +25555,14 @@
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/pystrcmp.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/pystrcmp.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='PyOS_mystricmp' mangled-name='PyOS_mystricmp' filepath='Python/pystrcmp.c' line='22' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyOS_mystricmp'>
       <parameter type-id='type-id-12' name='s1' filepath='Python/pystrcmp.c' line='22' column='1'/>
       <parameter type-id='type-id-12' name='s2' filepath='Python/pystrcmp.c' line='22' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/pystrhex.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/pystrhex.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='_Py_strhex' mangled-name='_Py_strhex' filepath='Python/pystrhex.c' line='148' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_strhex'>
       <parameter type-id='type-id-12' name='argbuf' filepath='Python/pystrhex.c' line='148' column='1'/>
       <parameter type-id='type-id-246' name='arglen' filepath='Python/pystrhex.c' line='148' column='1'/>
@@ -25579,7 +25581,7 @@
       <return type-id='type-id-2'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/pythonrun.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/pythonrun.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='PyAST_mod2obj' filepath='./Include/internal/pycore_ast.h' line='905' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-468'/>
       <return type-id='type-id-2'/>
@@ -25816,7 +25818,7 @@
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/pytime.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/pytime.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <class-decl name='_Py_clock_info_t' size-in-bits='192' is-struct='yes' naming-typedef-id='type-id-1500' visibility='default' filepath='./Include/cpython/pytime.h' line='240' column='1' id='type-id-1501'>
       <data-member access='public' layout-offset-in-bits='0'>
         <var-decl name='implementation' type-id='type-id-12' visibility='default' filepath='./Include/cpython/pytime.h' line='241' column='1'/>
@@ -26073,7 +26075,7 @@
       <return type-id='type-id-788'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/specialize.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/specialize.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='_PyDictKeys_GetVersionForCurrentState' filepath='./Include/internal/pycore_dict.h' line='40' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-20'/>
       <parameter type-id='type-id-346'/>
@@ -26104,7 +26106,7 @@
       <return type-id='type-id-2'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/suggestions.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/suggestions.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='_PyCode_GetVarnames' filepath='./Include/internal/pycore_code.h' line='206' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-328'/>
       <return type-id='type-id-2'/>
@@ -26116,10 +26118,10 @@
       <return type-id='type-id-14'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/symtable.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/symtable.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <var-decl name='PySTEntry_Type' type-id='type-id-256' visibility='default' filepath='./Include/internal/pycore_symtable.h' line='92' column='1'/>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/thread.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/thread.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <array-type-def dimensions='1' type-id='type-id-48' size-in-bits='256' id='type-id-1511'>
       <subrange length='32' type-id='type-id-28' id='type-id-60'/>
     </array-type-def>
@@ -26333,7 +26335,7 @@
       <return type-id='type-id-22'/>
     </function-type>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/traceback.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/traceback.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='_PyObject_CallMethodFormat' filepath='./Include/internal/pycore_call.h' line='33' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-177'/>
       <parameter type-id='type-id-2'/>
@@ -26359,7 +26361,7 @@
       <return type-id='type-id-46'/>
     </function-decl>
   </abi-instr>
-  <abi-instr address-size='64' path='Python/tracemalloc.c' comp-dir-path='/src' language='LANG_C11'>
+  <abi-instr address-size='64' path='Python/tracemalloc.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
     <function-decl name='_PyTraceMalloc_Init' mangled-name='_PyTraceMalloc_Init' filepath='Python/tracemalloc.c' line='799' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyTraceMalloc_Init'>
       <return type-id='type-id-8'/>
     </function-decl>
