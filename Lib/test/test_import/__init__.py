@@ -2389,7 +2389,7 @@ class SinglephaseInitTests(unittest.TestCase):
                 loaded = self.load(name)
                 reloaded = self.re_load(name, loaded.module)
 
-                if name == f'{self.NAME}_with_state':
+                if name.endswith("_with_state"):
                     self.addCleanup(loaded.module._clear_module_state)
                     self.addCleanup(reloaded.module._clear_module_state)
 
