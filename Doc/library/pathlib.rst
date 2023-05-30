@@ -569,6 +569,13 @@ Pure paths provide the following methods and properties:
       >>> PurePath('a/b.py').match('/*.py')
       False
 
+   The *pattern* may be another path object; this speeds up matching the same
+   pattern against multiple files::
+
+      >>> pattern = PurePath('*.py')
+      >>> PurePath('a/b.py').match(pattern)
+      True
+
    As with other methods, case-sensitivity follows platform defaults::
 
       >>> PurePosixPath('b.py').match('*.PY')
@@ -580,6 +587,10 @@ Pure paths provide the following methods and properties:
 
    .. versionadded:: 3.12
       The *case_sensitive* argument.
+
+   .. versionchanged:: 3.13
+      Support for the recursive wildcard "``**``" was added. In previous
+      versions, it acted like the non-recursive wildcard "``*``".
 
 
 .. method:: PurePath.relative_to(other, walk_up=False)
