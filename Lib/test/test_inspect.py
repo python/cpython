@@ -557,7 +557,8 @@ class TestRetrievingSourceCode(GetSourceBase):
 
     def test_getfunctions(self):
         functions = inspect.getmembers(mod, inspect.isfunction)
-        self.assertEqual(functions, [('eggs', mod.eggs),
+        self.assertEqual(functions, [('after_closing', mod.after_closing),
+                                     ('eggs', mod.eggs),
                                      ('lobbest', mod.lobbest),
                                      ('spam', mod.spam)])
 
@@ -641,6 +642,7 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertSourceEqual(git.abuse, 29, 39)
         self.assertSourceEqual(mod.StupidGit, 21, 51)
         self.assertSourceEqual(mod.lobbest, 75, 76)
+        self.assertSourceEqual(mod.after_closing, 120, 120)
 
     def test_getsourcefile(self):
         self.assertEqual(normcase(inspect.getsourcefile(mod.spam)), modfile)
