@@ -1339,8 +1339,6 @@ setbdaddr(const char *name, bdaddr_t *bdaddr)
 static PyObject *
 makebdaddr(bdaddr_t *bdaddr)
 {
-    char buf[(6 * 2) + 5 + 1];
-
 #ifdef MS_WINDOWS
     int i;
     unsigned int octets[6];
@@ -1349,16 +1347,14 @@ makebdaddr(bdaddr_t *bdaddr)
         octets[i] = ((*bdaddr) >> (8 * i)) & 0xFF;
     }
 
-    sprintf(buf, "%02X:%02X:%02X:%02X:%02X:%02X",
+    return PyUnicode_FromFormat("%02X:%02X:%02X:%02X:%02X:%02X",
         octets[5], octets[4], octets[3],
         octets[2], octets[1], octets[0]);
 #else
-    sprintf(buf, "%02X:%02X:%02X:%02X:%02X:%02X",
+    return PyUnicode_FromFormat("%02X:%02X:%02X:%02X:%02X:%02X",
         bdaddr->b[5], bdaddr->b[4], bdaddr->b[3],
         bdaddr->b[2], bdaddr->b[1], bdaddr->b[0]);
 #endif
-
-    return PyUnicode_FromString(buf);
 }
 #endif
 
@@ -1902,6 +1898,11 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
     case AF_RDS:
         /* RDS sockets use sockaddr_in: fall-through */
 #endif /* AF_RDS */
+
+#ifdef AF_DIVERT
+    case AF_DIVERT:
+        /* FreeBSD divert(4) sockets use sockaddr_in: fall-through */
+#endif /* AF_DIVERT */
 
     case AF_INET:
     {
@@ -6878,8 +6879,10 @@ socket_getnameinfo(PyObject *self, PyObject *args)
         }
 #endif
     }
+    Py_BEGIN_ALLOW_THREADS
     error = getnameinfo(res->ai_addr, (socklen_t) res->ai_addrlen,
                     hbuf, sizeof(hbuf), pbuf, sizeof(pbuf), flags);
+    Py_END_ALLOW_THREADS
     if (error) {
         socket_state *state = get_module_state(self);
         set_gaierror(state, error);
@@ -7683,6 +7686,14 @@ socket_exec(PyObject *m)
     ADD_INT_MACRO(m, AF_SYSTEM);
 #endif
 
+/* FreeBSD divert(4) */
+#ifdef PF_DIVERT
+    PyModule_AddIntMacro(m, PF_DIVERT);
+#endif
+#ifdef AF_DIVERT
+    PyModule_AddIntMacro(m, AF_DIVERT);
+#endif
+
 #ifdef AF_PACKET
     ADD_INT_MACRO(m, AF_PACKET);
 #endif
@@ -8418,6 +8429,18 @@ socket_exec(PyObject *m)
 #ifdef IP_BIND_ADDRESS_NO_PORT
     ADD_INT_MACRO(m, IP_BIND_ADDRESS_NO_PORT);
 #endif
+#ifdef IP_UNBLOCK_SOURCE
+    ADD_INT_MACRO(m, IP_UNBLOCK_SOURCE);
+#endif
+#ifdef IP_BLOCK_SOURCE
+    ADD_INT_MACRO(m, IP_BLOCK_SOURCE);
+#endif
+#ifdef IP_ADD_SOURCE_MEMBERSHIP
+    ADD_INT_MACRO(m, IP_ADD_SOURCE_MEMBERSHIP);
+#endif
+#ifdef IP_DROP_SOURCE_MEMBERSHIP
+    ADD_INT_MACRO(m, IP_DROP_SOURCE_MEMBERSHIP);
+#endif
 
     /* IPv6 [gs]etsockopt options, defined in RFC2553 */
 #ifdef  IPV6_JOIN_GROUP
@@ -8845,6 +8868,7 @@ error:
 
 static struct PyModuleDef_Slot socket_slots[] = {
     {Py_mod_exec, socket_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL},
 };
 

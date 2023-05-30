@@ -198,7 +198,7 @@ get_warnings_attr(PyInterpreterState *interp, PyObject *attr, int try_import)
     PyObject *warnings_module, *obj;
 
     /* don't try to import after the start of the Python finallization */
-    if (try_import && !_Py_IsFinalizing()) {
+    if (try_import && !_Py_IsInterpreterFinalizing(interp)) {
         warnings_module = PyImport_Import(&_Py_ID(warnings));
         if (warnings_module == NULL) {
             /* Fallback to the C implementation if we cannot get
@@ -1366,6 +1366,20 @@ exit:
 }
 
 void
+_PyErr_WarnUnawaitedAgenMethod(PyAsyncGenObject *agen, PyObject *method)
+{
+    PyObject *exc = PyErr_GetRaisedException();
+    if (_PyErr_WarnFormat((PyObject *)agen, PyExc_RuntimeWarning, 1,
+                          "coroutine method %R of %R was never awaited",
+                          method, agen->ag_qualname) < 0)
+    {
+        PyErr_WriteUnraisable((PyObject *)agen);
+    }
+    PyErr_SetRaisedException(exc);
+}
+
+
+void
 _PyErr_WarnUnawaitedCoroutine(PyObject *coro)
 {
     /* First, we attempt to funnel the warning through
@@ -1449,6 +1463,7 @@ warnings_module_exec(PyObject *module)
 
 static PyModuleDef_Slot warnings_slots[] = {
     {Py_mod_exec, warnings_module_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

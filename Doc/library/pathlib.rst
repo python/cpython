@@ -21,6 +21,7 @@ inherit from pure paths but also provide I/O operations.
 
 .. image:: pathlib-inheritance.png
    :align: center
+   :class: invert-in-dark-mode
 
 If you've never used this module before or just aren't sure which class is
 right for your task, :class:`Path` is most likely what you need. It instantiates
@@ -530,10 +531,10 @@ Pure paths provide the following methods and properties:
    unintended effects.
 
 
-.. method:: PurePath.joinpath(*other)
+.. method:: PurePath.joinpath(*pathsegments)
 
    Calling this method is equivalent to combining the path with each of
-   the *other* arguments in turn::
+   the given *pathsegments* in turn::
 
       >>> PurePosixPath('/etc').joinpath('passwd')
       PurePosixPath('/etc/passwd')
@@ -545,7 +546,7 @@ Pure paths provide the following methods and properties:
       PureWindowsPath('c:/Program Files')
 
 
-.. method:: PurePath.match(pattern)
+.. method:: PurePath.match(pattern, *, case_sensitive=None)
 
    Match this path against the provided glob-style pattern.  Return ``True``
    if matching is successful, ``False`` otherwise.
@@ -574,6 +575,11 @@ Pure paths provide the following methods and properties:
       False
       >>> PureWindowsPath('b.py').match('*.PY')
       True
+
+   Set *case_sensitive* to ``True`` or ``False`` to override this behaviour.
+
+   .. versionadded:: 3.12
+      The *case_sensitive* argument.
 
 
 .. method:: PurePath.relative_to(other, walk_up=False)
@@ -678,6 +684,30 @@ Pure paths provide the following methods and properties:
       >>> p = PureWindowsPath('README.txt')
       >>> p.with_suffix('')
       PureWindowsPath('README')
+
+
+.. method:: PurePath.with_segments(*pathsegments)
+
+   Create a new path object of the same type by combining the given
+   *pathsegments*. This method is called whenever a derivative path is created,
+   such as from :attr:`parent` and :meth:`relative_to`. Subclasses may
+   override this method to pass information to derivative paths, for example::
+
+      from pathlib import PurePosixPath
+
+      class MyPath(PurePosixPath):
+          def __init__(self, *pathsegments, session_id):
+              super().__init__(*pathsegments)
+              self.session_id = session_id
+
+          def with_segments(self, *pathsegments):
+              return type(self)(*pathsegments, session_id=self.session_id)
+
+      etc = MyPath('/etc', session_id=42)
+      hosts = etc / 'hosts'
+      print(hosts.session_id)  # 42
+
+   .. versionadded:: 3.12
 
 
 .. _concrete-paths:
@@ -819,9 +849,14 @@ call fails (for example because the path doesn't exist).
    .. versionchanged:: 3.10
       The *follow_symlinks* parameter was added.
 
-.. method:: Path.exists()
+.. method:: Path.exists(*, follow_symlinks=True)
 
-   Whether the path points to an existing file or directory::
+   Return ``True`` if the path points to an existing file or directory.
+
+   This method normally follows symlinks; to check if a symlink exists, add
+   the argument ``follow_symlinks=False``.
+
+   ::
 
       >>> Path('.').exists()
       True
@@ -832,10 +867,8 @@ call fails (for example because the path doesn't exist).
       >>> Path('nonexistentfile').exists()
       False
 
-   .. note::
-      If the path points to a symlink, :meth:`exists` returns whether the
-      symlink *points to* an existing file or directory.
-
+   .. versionchanged:: 3.12
+      The *follow_symlinks* parameter was added.
 
 .. method:: Path.expanduser()
 
@@ -852,7 +885,7 @@ call fails (for example because the path doesn't exist).
    .. versionadded:: 3.5
 
 
-.. method:: Path.glob(pattern)
+.. method:: Path.glob(pattern, *, case_sensitive=None, follow_symlinks=None)
 
    Glob the given relative *pattern* in the directory represented by this path,
    yielding all matching files (of any kind)::
@@ -873,6 +906,16 @@ call fails (for example because the path doesn't exist).
        PosixPath('setup.py'),
        PosixPath('test_pathlib.py')]
 
+   By default, or when the *case_sensitive* keyword-only argument is set to
+   ``None``, this method matches paths using platform-specific casing rules:
+   typically, case-sensitive on POSIX, and case-insensitive on Windows.
+   Set *case_sensitive* to ``True`` or ``False`` to override this behaviour.
+
+   By default, or when the *follow_symlinks* keyword-only argument is set to
+   ``None``, this method follows symlinks except when expanding "``**``"
+   wildcards. Set *follow_symlinks* to ``True`` to always follow symlinks, or
+   ``False`` to treat all symlinks as files.
+
    .. note::
       Using the "``**``" pattern in large directory trees may consume
       an inordinate amount of time.
@@ -882,6 +925,12 @@ call fails (for example because the path doesn't exist).
    .. versionchanged:: 3.11
       Return only directories if *pattern* ends with a pathname components
       separator (:data:`~os.sep` or :data:`~os.altsep`).
+
+   .. versionadded:: 3.12
+      The *case_sensitive* argument.
+
+   .. versionadded:: 3.13
+      The *follow_symlinks* argument.
 
 .. method:: Path.group()
 
@@ -1268,7 +1317,7 @@ call fails (for example because the path doesn't exist).
    .. versionadded:: 3.6
       The *strict* argument (pre-3.6 behavior is strict).
 
-.. method:: Path.rglob(pattern)
+.. method:: Path.rglob(pattern, *, case_sensitive=None, follow_symlinks=None)
 
    Glob the given relative *pattern* recursively.  This is like calling
    :func:`Path.glob` with "``**/``" added in front of the *pattern*, where
@@ -1281,11 +1330,27 @@ call fails (for example because the path doesn't exist).
        PosixPath('setup.py'),
        PosixPath('test_pathlib.py')]
 
+   By default, or when the *case_sensitive* keyword-only argument is set to
+   ``None``, this method matches paths using platform-specific casing rules:
+   typically, case-sensitive on POSIX, and case-insensitive on Windows.
+   Set *case_sensitive* to ``True`` or ``False`` to override this behaviour.
+
+   By default, or when the *follow_symlinks* keyword-only argument is set to
+   ``None``, this method follows symlinks except when expanding "``**``"
+   wildcards. Set *follow_symlinks* to ``True`` to always follow symlinks, or
+   ``False`` to treat all symlinks as files.
+
    .. audit-event:: pathlib.Path.rglob self,pattern pathlib.Path.rglob
 
    .. versionchanged:: 3.11
       Return only directories if *pattern* ends with a pathname components
       separator (:data:`~os.sep` or :data:`~os.altsep`).
+
+   .. versionadded:: 3.12
+      The *case_sensitive* argument.
+
+   .. versionadded:: 3.13
+      The *follow_symlinks* argument.
 
 .. method:: Path.rmdir()
 

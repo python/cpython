@@ -417,45 +417,45 @@ class ExceptionTests(unittest.TestCase):
         # test that exception attributes are happy
 
         exceptionList = [
-            (BaseException, (), {'args' : ()}),
-            (BaseException, (1, ), {'args' : (1,)}),
-            (BaseException, ('foo',),
+            (BaseException, (), {}, {'args' : ()}),
+            (BaseException, (1, ), {}, {'args' : (1,)}),
+            (BaseException, ('foo',), {},
                 {'args' : ('foo',)}),
-            (BaseException, ('foo', 1),
+            (BaseException, ('foo', 1), {},
                 {'args' : ('foo', 1)}),
-            (SystemExit, ('foo',),
+            (SystemExit, ('foo',), {},
                 {'args' : ('foo',), 'code' : 'foo'}),
-            (OSError, ('foo',),
+            (OSError, ('foo',), {},
                 {'args' : ('foo',), 'filename' : None, 'filename2' : None,
                  'errno' : None, 'strerror' : None}),
-            (OSError, ('foo', 'bar'),
+            (OSError, ('foo', 'bar'), {},
                 {'args' : ('foo', 'bar'),
                  'filename' : None, 'filename2' : None,
                  'errno' : 'foo', 'strerror' : 'bar'}),
-            (OSError, ('foo', 'bar', 'baz'),
+            (OSError, ('foo', 'bar', 'baz'), {},
                 {'args' : ('foo', 'bar'),
                  'filename' : 'baz', 'filename2' : None,
                  'errno' : 'foo', 'strerror' : 'bar'}),
-            (OSError, ('foo', 'bar', 'baz', None, 'quux'),
+            (OSError, ('foo', 'bar', 'baz', None, 'quux'), {},
                 {'args' : ('foo', 'bar'), 'filename' : 'baz', 'filename2': 'quux'}),
-            (OSError, ('errnoStr', 'strErrorStr', 'filenameStr'),
+            (OSError, ('errnoStr', 'strErrorStr', 'filenameStr'), {},
                 {'args' : ('errnoStr', 'strErrorStr'),
                  'strerror' : 'strErrorStr', 'errno' : 'errnoStr',
                  'filename' : 'filenameStr'}),
-            (OSError, (1, 'strErrorStr', 'filenameStr'),
+            (OSError, (1, 'strErrorStr', 'filenameStr'), {},
                 {'args' : (1, 'strErrorStr'), 'errno' : 1,
                  'strerror' : 'strErrorStr',
                  'filename' : 'filenameStr', 'filename2' : None}),
-            (SyntaxError, (), {'msg' : None, 'text' : None,
+            (SyntaxError, (), {}, {'msg' : None, 'text' : None,
                 'filename' : None, 'lineno' : None, 'offset' : None,
                 'end_offset': None, 'print_file_and_line' : None}),
-            (SyntaxError, ('msgStr',),
+            (SyntaxError, ('msgStr',), {},
                 {'args' : ('msgStr',), 'text' : None,
                  'print_file_and_line' : None, 'msg' : 'msgStr',
                  'filename' : None, 'lineno' : None, 'offset' : None,
                  'end_offset': None}),
             (SyntaxError, ('msgStr', ('filenameStr', 'linenoStr', 'offsetStr',
-                           'textStr', 'endLinenoStr', 'endOffsetStr')),
+                           'textStr', 'endLinenoStr', 'endOffsetStr')), {},
                 {'offset' : 'offsetStr', 'text' : 'textStr',
                  'args' : ('msgStr', ('filenameStr', 'linenoStr',
                                       'offsetStr', 'textStr',
@@ -465,7 +465,7 @@ class ExceptionTests(unittest.TestCase):
                  'end_lineno': 'endLinenoStr', 'end_offset': 'endOffsetStr'}),
             (SyntaxError, ('msgStr', 'filenameStr', 'linenoStr', 'offsetStr',
                            'textStr', 'endLinenoStr', 'endOffsetStr',
-                           'print_file_and_lineStr'),
+                           'print_file_and_lineStr'), {},
                 {'text' : None,
                  'args' : ('msgStr', 'filenameStr', 'linenoStr', 'offsetStr',
                            'textStr', 'endLinenoStr', 'endOffsetStr',
@@ -473,38 +473,40 @@ class ExceptionTests(unittest.TestCase):
                  'print_file_and_line' : None, 'msg' : 'msgStr',
                  'filename' : None, 'lineno' : None, 'offset' : None,
                  'end_lineno': None, 'end_offset': None}),
-            (UnicodeError, (), {'args' : (),}),
+            (UnicodeError, (), {}, {'args' : (),}),
             (UnicodeEncodeError, ('ascii', 'a', 0, 1,
-                                  'ordinal not in range'),
+                                  'ordinal not in range'), {},
                 {'args' : ('ascii', 'a', 0, 1,
                                            'ordinal not in range'),
                  'encoding' : 'ascii', 'object' : 'a',
                  'start' : 0, 'reason' : 'ordinal not in range'}),
             (UnicodeDecodeError, ('ascii', bytearray(b'\xff'), 0, 1,
-                                  'ordinal not in range'),
+                                  'ordinal not in range'), {},
                 {'args' : ('ascii', bytearray(b'\xff'), 0, 1,
                                            'ordinal not in range'),
                  'encoding' : 'ascii', 'object' : b'\xff',
                  'start' : 0, 'reason' : 'ordinal not in range'}),
             (UnicodeDecodeError, ('ascii', b'\xff', 0, 1,
-                                  'ordinal not in range'),
+                                  'ordinal not in range'), {},
                 {'args' : ('ascii', b'\xff', 0, 1,
                                            'ordinal not in range'),
                  'encoding' : 'ascii', 'object' : b'\xff',
                  'start' : 0, 'reason' : 'ordinal not in range'}),
-            (UnicodeTranslateError, ("\u3042", 0, 1, "ouch"),
+            (UnicodeTranslateError, ("\u3042", 0, 1, "ouch"), {},
                 {'args' : ('\u3042', 0, 1, 'ouch'),
                  'object' : '\u3042', 'reason' : 'ouch',
                  'start' : 0, 'end' : 1}),
-            (NaiveException, ('foo',),
+            (NaiveException, ('foo',), {},
                 {'args': ('foo',), 'x': 'foo'}),
-            (SlottedNaiveException, ('foo',),
+            (SlottedNaiveException, ('foo',), {},
                 {'args': ('foo',), 'x': 'foo'}),
+            (AttributeError, ('foo',), dict(name='name', obj='obj'),
+                dict(args=('foo',), name='name', obj='obj')),
         ]
         try:
             # More tests are in test_WindowsError
             exceptionList.append(
-                (WindowsError, (1, 'strErrorStr', 'filenameStr'),
+                (WindowsError, (1, 'strErrorStr', 'filenameStr'), {},
                     {'args' : (1, 'strErrorStr'),
                      'strerror' : 'strErrorStr', 'winerror' : None,
                      'errno' : 1,
@@ -513,11 +515,11 @@ class ExceptionTests(unittest.TestCase):
         except NameError:
             pass
 
-        for exc, args, expected in exceptionList:
+        for exc, args, kwargs, expected in exceptionList:
             try:
-                e = exc(*args)
+                e = exc(*args, **kwargs)
             except:
-                print("\nexc=%r, args=%r" % (exc, args), file=sys.stderr)
+                print(f"\nexc={exc!r}, args={args!r}", file=sys.stderr)
                 # raise
             else:
                 # Verify module name
@@ -540,7 +542,12 @@ class ExceptionTests(unittest.TestCase):
                         new = p.loads(s)
                         for checkArgName in expected:
                             got = repr(getattr(new, checkArgName))
-                            want = repr(expected[checkArgName])
+                            if exc == AttributeError and checkArgName == 'obj':
+                                # See GH-103352, we're not pickling
+                                # obj at this point. So verify it's None.
+                                want = repr(None)
+                            else:
+                                want = repr(expected[checkArgName])
                             self.assertEqual(got, want,
                                              'pickled "%r", attribute "%s' %
                                              (e, checkArgName))

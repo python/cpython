@@ -388,16 +388,8 @@ class _EnumDict(dict):
 
         Single underscore (sunder) names are reserved.
         """
-        if _is_internal_class(self._cls_name, value):
-            import warnings
-            warnings.warn(
-                    "In 3.13 classes created inside an enum will not become a member.  "
-                    "Use the `member` decorator to keep the current behavior.",
-                    DeprecationWarning,
-                    stacklevel=2,
-                    )
         if _is_private(self._cls_name, key):
-            # also do nothing, name will be a normal attribute
+            # do nothing, name will be a normal attribute
             pass
         elif _is_sunder(key):
             if key not in (
@@ -440,10 +432,9 @@ class _EnumDict(dict):
             value = value.value
         elif _is_descriptor(value):
             pass
-        # TODO: uncomment next three lines in 3.13
-        # elif _is_internal_class(self._cls_name, value):
-        #     # do nothing, name will be a normal attribute
-        #     pass
+        elif _is_internal_class(self._cls_name, value):
+            # do nothing, name will be a normal attribute
+            pass
         else:
             if key in self:
                 # enum overwriting a descriptor?
@@ -1169,28 +1160,13 @@ class Enum(metaclass=EnumType):
         if not last_values:
             return start
         try:
-            last = last_values[-1]
-            last_values.sort()
-            if last == last_values[-1]:
-                # no difference between old and new methods
-                return last + 1
-            else:
-                # trigger old method (with warning)
-                raise TypeError
+            last_value = sorted(last_values).pop()
         except TypeError:
-            import warnings
-            warnings.warn(
-                    "In 3.13 the default `auto()`/`_generate_next_value_` will require all values to be sortable and support adding +1\n"
-                    "and the value returned will be the largest value in the enum incremented by 1",
-                    DeprecationWarning,
-                    stacklevel=3,
-                    )
-            for v in last_values:
-                try:
-                    return v + 1
-                except TypeError:
-                    pass
-            return start
+            raise TypeError('unable to sort non-numeric values') from None
+        try:
+            return last_value + 1
+        except TypeError:
+            raise TypeError('unable to increment %r' % (last_value, )) from None
 
     @classmethod
     def _missing_(cls, value):
