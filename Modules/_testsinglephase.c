@@ -252,8 +252,9 @@ PyDoc_STRVAR(basic__clear_module_state_doc, "_clear_module_state()\n\
 \n\
 Free the module state and set it to uninitialized.");
 
-static PyObject*
-basic__clear_module_state(PyObject *self, PyObject *Py_UNUSED(ignored)) {
+static PyObject *
+basic__clear_module_state(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
     module_state *state = get_module_state(self);
     if (state != NULL) {
         clear_state(state);
