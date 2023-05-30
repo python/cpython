@@ -17,27 +17,6 @@ PyAPI_FUNC(PyObject *) PyEval_EvalCodeEx(PyObject *co,
                                          PyObject *const *defs, int defc,
                                          PyObject *kwdefs, PyObject *closure);
 
-/* PyEval_CallObjectWithKeywords(), PyEval_CallObject(), PyEval_CallFunction
- * and PyEval_CallMethod are deprecated. Since they are officially part of the
- * stable ABI (PEP 384), they must be kept for backward compatibility.
- * PyObject_Call(), PyObject_CallFunction() and PyObject_CallMethod() are
- * recommended to call a callable object.
- */
-
-Py_DEPRECATED(3.9) PyAPI_FUNC(PyObject *) PyEval_CallObjectWithKeywords(
-    PyObject *callable,
-    PyObject *args,
-    PyObject *kwargs);
-
-/* Deprecated since PyEval_CallObjectWithKeywords is deprecated */
-#define PyEval_CallObject(callable, arg) \
-    PyEval_CallObjectWithKeywords((callable), (arg), _PyObject_CAST(_Py_NULL))
-
-Py_DEPRECATED(3.9) PyAPI_FUNC(PyObject *) PyEval_CallFunction(
-    PyObject *callable, const char *format, ...);
-Py_DEPRECATED(3.9) PyAPI_FUNC(PyObject *) PyEval_CallMethod(
-    PyObject *obj, const char *name, const char *format, ...);
-
 PyAPI_FUNC(PyObject *) PyEval_GetBuiltins(void);
 PyAPI_FUNC(PyObject *) PyEval_GetGlobals(void);
 PyAPI_FUNC(PyObject *) PyEval_GetLocals(void);
