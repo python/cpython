@@ -783,6 +783,8 @@ Exception Objects
    Return the :exc:`ExceptionGroup` that needs to be reraised in the end, or
    ``None`` if there is nothing to reraise.
 
+   .. versionadded:: 3.12
+
 .. _unicodeexceptions:
 
 Unicode Exception Objects
