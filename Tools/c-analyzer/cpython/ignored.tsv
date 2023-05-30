@@ -282,10 +282,6 @@ Modules/cmathmodule.c	-	tanh_special_values	-
 Modules/config.c	-	_PyImport_Inittab	-
 Modules/faulthandler.c	-	faulthandler_handlers	-
 Modules/getnameinfo.c	-	gni_afdl	-
-Modules/nismodule.c	-	TIMEOUT	-
-Modules/nismodule.c	-	aliases	-
-Modules/ossaudiodev.c	-	control_labels	-
-Modules/ossaudiodev.c	-	control_names	-
 Modules/posixmodule.c	os_getxattr_impl	buffer_sizes	-
 Modules/posixmodule.c	os_listxattr_impl	buffer_sizes	-
 Modules/posixmodule.c	-	posix_constants_confstr	-
