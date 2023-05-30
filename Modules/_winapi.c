@@ -2080,42 +2080,50 @@ _winapi_NeedCurrentDirectoryForExePath_impl(PyObject *module,
 /*[clinic input]
 _winapi.CopyFile2
 
-    ExistingFileName: LPCWSTR
-    NewFileName: LPCWSTR
-    Flags: DWORD
-    ProgressRoutine: object = None
+    existing_file_name: LPCWSTR
+    new_file_name: LPCWSTR
+    flags: DWORD
+    progress_routine: object = None
 
 Copies a file from one name to a new name.
 
 This is implemented using the CopyFile2 API, which preserves all stat
 and metadata information apart from security attributes.
 
-ProgressRoutine is reserved for future use, but is currently not
+progress_routine is reserved for future use, but is currently not
 implemented. Its value is ignored.
 [clinic start generated code]*/
 
 static PyObject *
-_winapi_CopyFile2_impl(PyObject *module, LPCWSTR ExistingFileName,
-                       LPCWSTR NewFileName, DWORD Flags,
-                       PyObject *ProgressRoutine)
-/*[clinic end generated code: output=f3f588380da0000a input=13cf59b6e1a70fe6]*/
+_winapi_CopyFile2_impl(PyObject *module, LPCWSTR existing_file_name,
+                       LPCWSTR new_file_name, DWORD flags,
+                       PyObject *progress_routine)
+/*[clinic end generated code: output=43d960d9df73d984 input=fb976b8d1492d130]*/
 {
     HRESULT hr;
     COPYFILE2_EXTENDED_PARAMETERS params = { sizeof(COPYFILE2_EXTENDED_PARAMETERS) };
-    params.dwCopyFlags = Flags;
+
+    if (PySys_Audit("_winapi.CopyFile2", "uuI",
+                    existing_file_name, new_file_name, flags) < 0) {
+        return NULL;
+    }
+
+    params.dwCopyFlags = flags;
     /* For future implementation. We ignore the value for now so that
        users only have to test for 'CopyFile2' existing and not whether
        the additional parameter exists.
-    if (ProgressRoutine != Py_None) {
+    if (progress_routine != Py_None) {
         params.pProgressRoutine = _winapi_CopyFile2ProgressRoutine;
-        params.pvCallbackContext = Py_NewRef(ProgressRoutine);
+        params.pvCallbackContext = Py_NewRef(progress_routine);
     }
     */
     Py_BEGIN_ALLOW_THREADS;
-    hr = CopyFile2(ExistingFileName, NewFileName, &params);
+    hr = CopyFile2(existing_file_name, new_file_name, &params);
     Py_END_ALLOW_THREADS;
     /* For future implementation.
-    Py_XDECREF(ProgressRoutine);
+    if (progress_routine != Py_None) {
+        Py_DECREF(progress_routine);
+    }
     */
     if (FAILED(hr)) {
         if ((hr & 0xFFFF0000) == 0x80070000) {

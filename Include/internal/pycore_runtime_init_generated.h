@@ -564,14 +564,10 @@ extern "C" {
 
 #define _Py_str_identifiers_INIT { \
     INIT_ID(CANCELLED), \
-    INIT_ID(ExistingFileName), \
     INIT_ID(FINISHED), \
     INIT_ID(False), \
-    INIT_ID(Flags), \
     INIT_ID(JSONDecodeError), \
-    INIT_ID(NewFileName), \
     INIT_ID(PENDING), \
-    INIT_ID(ProgressRoutine), \
     INIT_ID(Py_Repr), \
     INIT_ID(TextIOWrapper), \
     INIT_ID(True), \
@@ -917,6 +913,7 @@ extern "C" {
     INIT_ID(exc_value), \
     INIT_ID(excepthook), \
     INIT_ID(exception), \
+    INIT_ID(existing_file_name), \
     INIT_ID(exp), \
     INIT_ID(extend), \
     INIT_ID(extra_tokens), \
@@ -1069,6 +1066,7 @@ extern "C" {
     INIT_ID(namespaces), \
     INIT_ID(narg), \
     INIT_ID(ndigits), \
+    INIT_ID(new_file_name), \
     INIT_ID(new_limit), \
     INIT_ID(newline), \
     INIT_ID(newlines), \
@@ -1123,6 +1121,7 @@ extern "C" {
     INIT_ID(priority), \
     INIT_ID(progress), \
     INIT_ID(progress_handler), \
+    INIT_ID(progress_routine), \
     INIT_ID(proto), \
     INIT_ID(protocol), \
     INIT_ID(ps1), \
