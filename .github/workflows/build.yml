@@ -119,7 +119,7 @@ jobs:
         if: ${{ failure() && steps.check.conclusion == 'failure' }}
         with:
           name: abi-data
-          path: ./Doc/data
+          path: ./Doc/data/*.abi
 
   check_generated_files:
     name: 'Check if generated files are up to date'

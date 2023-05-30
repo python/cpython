@@ -1721,7 +1721,7 @@
   </elf-variable-symbols>
   <abi-instr address-size='64' path='./Modules/_abc.c' comp-dir-path='/src' language='LANG_C11'>
     <function-decl name='_PyType_GetMRO' filepath='./Include/internal/pycore_typeobject.h' line='121' column='1' visibility='default' binding='global' size-in-bits='64'>
-      <parameter type-id='type-id-1'/>
+      <parameter type-id='type-id-2'/>
       <return type-id='type-id-2'/>
     </function-decl>
     <function-decl name='_PyType_GetSubclasses' filepath='./Include/internal/pycore_typeobject.h' line='122' column='1' visibility='default' binding='global' size-in-bits='64'>
