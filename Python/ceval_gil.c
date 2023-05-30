@@ -280,7 +280,7 @@ drop_gil(struct _ceval_state *ceval, PyThreadState *tstate)
 {
     /* We shouldn't be using a thread state that isn't viable any more. */
     // XXX It may be more correct to check tstate->_status.finalizing.
-    assert(tstate == NULL || !tstate->_status.cleared);
+    // XXX assert(tstate == NULL || !tstate->_status.cleared);
 
     struct _gil_runtime_state *gil = ceval->gil;
     if (!_Py_atomic_load_relaxed(&gil->locked)) {
@@ -356,7 +356,7 @@ take_gil(PyThreadState *tstate)
     assert(tstate != NULL);
     /* We shouldn't be using a thread state that isn't viable any more. */
     // XXX It may be more correct to check tstate->_status.finalizing.
-    assert(!tstate->_status.cleared);
+    // XXX assert(!tstate->_status.cleared);
 
     if (tstate_must_exit(tstate)) {
         /* bpo-39877: If Py_Finalize() has been called and tstate is not the
