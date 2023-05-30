@@ -137,10 +137,14 @@ init_module(PyObject *module, module_state *state)
 
     double d = _PyTime_AsSecondsDouble(state->initialized);
     PyObject *initialized = PyFloat_FromDouble(d);
-    if (PyModule_AddObjectRef(module, "_module_initialized", initialized) != 0) {
+    if (initialized == NULL) {
         return -1;
     }
-    Py_XDECREF(initialized);
+    int rc = PyModule_AddObjectRef(module, "_module_initialized", initialized);
+    Py_DECREF(initialized);
+    if (rc != 0) {
+        return -1;
+    }
     return 0;
 }
 
