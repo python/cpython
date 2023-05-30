@@ -899,6 +899,7 @@ class Analyzer:
                     pushed = ""
             case parser.Super():
                 instr = self.super_instrs[thing.name]
+                # TODO: Same as for Macro below, if needed.
                 popped = "+".join(
                     effect_str(comp.instr.input_effects) for comp in instr.parts
                 )
@@ -908,12 +909,30 @@ class Analyzer:
             case parser.Macro():
                 instr = self.macro_instrs[thing.name]
                 parts = [comp for comp in instr.parts if isinstance(comp, Component)]
-                popped = "+".join(
-                    effect_str(comp.instr.input_effects) for comp in parts
-                )
-                pushed = "+".join(
-                    effect_str(comp.instr.output_effects) for comp in parts
-                )
+                # Note: stack_analysis() already verifies that macro components
+                # have no variable-sized stack effects.
+                low = 0
+                sp = 0
+                high = 0
+                for comp in parts:
+                    for effect in comp.instr.input_effects:
+                        assert not effect.cond, effect
+                        assert not effect.size, effect
+                        sp -= 1
+                        low = min(low, sp)
+                    for effect in comp.instr.output_effects:
+                        assert not effect.cond, effect
+                        assert not effect.size, effect
+                        sp += 1
+                        high = max(sp, high)
+                if high != max(0, sp):
+                    # If you get this, intermediate stack growth occurs,
+                    # and stack size calculations may go awry.
+                    # E.g. [push, pop]. The fix would be for stack size
+                    # calculations to use the micro ops.
+                    self.error("Macro has virtual stack growth", thing)
+                popped = str(-low)
+                pushed = str(sp - low)
             case _:
                 typing.assert_never(thing)
         return instr, popped, pushed
