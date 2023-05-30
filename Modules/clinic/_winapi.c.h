@@ -1411,4 +1411,74 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=96ea65ece7912d0a input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_winapi_CopyFile2__doc__,
+"CopyFile2($module, /, existing_file_name, new_file_name, flags,\n"
+"          progress_routine=None)\n"
+"--\n"
+"\n"
+"Copies a file from one name to a new name.\n"
+"\n"
+"This is implemented using the CopyFile2 API, which preserves all stat\n"
+"and metadata information apart from security attributes.\n"
+"\n"
+"progress_routine is reserved for future use, but is currently not\n"
+"implemented. Its value is ignored.");
+
+#define _WINAPI_COPYFILE2_METHODDEF    \
+    {"CopyFile2", _PyCFunction_CAST(_winapi_CopyFile2), METH_FASTCALL|METH_KEYWORDS, _winapi_CopyFile2__doc__},
+
+static PyObject *
+_winapi_CopyFile2_impl(PyObject *module, LPCWSTR existing_file_name,
+                       LPCWSTR new_file_name, DWORD flags,
+                       PyObject *progress_routine);
+
+static PyObject *
+_winapi_CopyFile2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 4
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(existing_file_name), &_Py_ID(new_file_name), &_Py_ID(flags), &_Py_ID(progress_routine), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"existing_file_name", "new_file_name", "flags", "progress_routine", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .format = "O&O&k|O:CopyFile2",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    LPCWSTR existing_file_name = NULL;
+    LPCWSTR new_file_name = NULL;
+    DWORD flags;
+    PyObject *progress_routine = Py_None;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        _PyUnicode_WideCharString_Converter, &existing_file_name, _PyUnicode_WideCharString_Converter, &new_file_name, &flags, &progress_routine)) {
+        goto exit;
+    }
+    return_value = _winapi_CopyFile2_impl(module, existing_file_name, new_file_name, flags, progress_routine);
+
+exit:
+    /* Cleanup for existing_file_name */
+    PyMem_Free((void *)existing_file_name);
+    /* Cleanup for new_file_name */
+    PyMem_Free((void *)new_file_name);
+
+    return return_value;
+}
+/*[clinic end generated code: output=be1343b3759e0c96 input=a9049054013a1b77]*/

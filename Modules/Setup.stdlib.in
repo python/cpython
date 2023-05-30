@@ -46,7 +46,6 @@
 @MODULE__ZONEINFO_TRUE@_zoneinfo _zoneinfo.c
 
 # needs libm
-@MODULE_AUDIOOP_TRUE@audioop audioop.c
 @MODULE_MATH_TRUE@math mathmodule.c
 @MODULE_CMATH_TRUE@cmath cmathmodule.c
 @MODULE__STATISTICS_TRUE@_statistics _statisticsmodule.c
@@ -106,14 +105,9 @@
 # Modules with some UNIX dependencies
 #
 
-# needs -lcrypt on some systems
-@MODULE__CRYPT_TRUE@_crypt _cryptmodule.c
 @MODULE_FCNTL_TRUE@fcntl fcntlmodule.c
 @MODULE_GRP_TRUE@grp grpmodule.c
 @MODULE_MMAP_TRUE@mmap mmapmodule.c
-# FreeBSD: nis/yp APIs are in libc
-# Linux: glibc has deprecated SUN RPC, APIs are in libnsl and libtirpc (bpo-32521)
-@MODULE_NIS_TRUE@nis nismodule.c
 # needs sys/soundcard.h or linux/soundcard.h (Linux, FreeBSD)
 @MODULE__POSIXSUBPROCESS_TRUE@_posixsubprocess _posixsubprocess.c
 @MODULE_RESOURCE_TRUE@resource resource.c

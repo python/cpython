@@ -41,9 +41,6 @@ OMIT_FILES = (
     # package management
     "ensurepip/",
     "venv/",
-    # deprecated
-    "uu.py",
-    "xdrlib.py",
     # other platforms
     "_aix_support.py",
     "_osx_support.py",
@@ -57,7 +54,6 @@ OMIT_FILES = (
     "concurrent/futures/thread.py",
     # Misc unused or large files
     "pydoc_data/",
-    "msilib/",
 )
 
 # Synchronous network I/O and protocols are not supported; for example,
@@ -82,8 +78,6 @@ OMIT_NETWORKING_FILES = (
 
 OMIT_MODULE_FILES = {
     "_asyncio": ["asyncio/"],
-    "audioop": ["aifc.py", "wave.py"],
-    "_crypt": ["crypt.py"],
     "_curses": ["curses/"],
     "_ctypes": ["ctypes/"],
     "_decimal": ["decimal.py"],
