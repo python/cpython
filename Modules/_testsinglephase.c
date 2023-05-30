@@ -142,7 +142,7 @@ init_module(PyObject *module, module_state *state)
     }
     int rc = PyModule_AddObjectRef(module, "_module_initialized", initialized);
     Py_DECREF(initialized);
-    if (rc != 0) {
+    if (rc < 0) {
         return -1;
     }
 
