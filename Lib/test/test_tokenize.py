@@ -64,6 +64,12 @@ class TokenizeTest(TestCase):
         with self.assertRaises(TypeError):
             list(generate_tokens(gen().__next__))
 
+        def gen():
+            yield "sdfosdg"
+            1/0
+        with self.assertRaises(ZeroDivisionError):
+            list(generate_tokens(gen().__next__))
+
     def test_implicit_newline(self):
         # Make sure that the tokenizer puts in an implicit NEWLINE
         # when the input lacks a trailing new line.

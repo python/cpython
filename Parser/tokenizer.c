@@ -140,8 +140,9 @@ static char *
 error_ret(struct tok_state *tok) /* XXX */
 {
     tok->decoding_erred = 1;
-    if (tok->fp != NULL && tok->buf != NULL) /* see _PyTokenizer_Free */
+    if ((tok->fp != NULL || tok->readline != NULL) && tok->buf != NULL) {/* see _PyTokenizer_Free */
         PyMem_Free(tok->buf);
+    }
     tok->buf = tok->cur = tok->inp = NULL;
     tok->start = NULL;
     tok->end = NULL;
