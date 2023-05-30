@@ -377,8 +377,6 @@ class Test(unittest.TestCase):
             
         class S2(_Structure):
             _fields_ = [("u1", U1), ("c", c_byte)]
-            
-        
 
 if __name__ == "__main__":
     unittest.main()
