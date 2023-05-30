@@ -281,6 +281,7 @@ _PyType_GetBases(PyTypeObject *self)
 static inline void
 set_tp_bases(PyTypeObject *self, PyObject *bases)
 {
+    assert(PyTuple_CheckExact(bases));
     if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
         assert(_Py_IsMainInterpreter(_PyInterpreterState_GET()));
         assert(self->tp_bases == NULL);
