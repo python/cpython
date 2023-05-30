@@ -1,0 +1,2 @@
+Dummy news file under "C API" to test the workflow change. This file will be
+deleted before merging.
