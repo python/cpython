@@ -427,7 +427,7 @@ finally:
 /* the _testsinglephase_with_state module */
 /******************************************/
 
-/* This is a less typical of legacy extensions in the wild:
+/* This is less typical of legacy extensions in the wild:
    - single-phase init  (same as _testsinglephase above)
    - has some module state
    - supports repeated initialization
