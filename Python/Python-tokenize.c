@@ -84,7 +84,7 @@ _tokenizer_error(struct tok_state *tok)
             msg = "invalid token";
             break;
         case E_EOF:
-            if (tok->level) {
+            if (tok->level > 0) {
                     PyErr_Format(PyExc_SyntaxError,
                                  "parenthesis '%c' was never closed",
                                 tok->parenstack[tok->level-1]);
