@@ -5,15 +5,6 @@
     <dependency name='ld-linux-x86-64.so.2'/>
   </elf-needed>
   <elf-function-symbols>
-    <elf-symbol name='PyAIter_Check' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
-    <elf-symbol name='PyArg_Parse' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
-    <elf-symbol name='PyArg_ParseTuple' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
-    <elf-symbol name='PyArg_ParseTupleAndKeywords' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
-    <elf-symbol name='PyArg_UnpackTuple' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
-    <elf-symbol name='PyArg_VaParse' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
-    <elf-symbol name='PyArg_VaParseTupleAndKeywords' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
-    <elf-symbol name='PyArg_ValidateKeywordArguments' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
-    <elf-symbol name='PyAsyncGen_New' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
     <elf-symbol name='PyBool_FromLong' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
     <elf-symbol name='PyBuffer_FillContiguousStrides' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
     <elf-symbol name='PyBuffer_FillInfo' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
