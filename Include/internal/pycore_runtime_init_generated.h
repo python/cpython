@@ -910,6 +910,7 @@ extern "C" {
     INIT_ID(exc_value), \
     INIT_ID(excepthook), \
     INIT_ID(exception), \
+    INIT_ID(existing_file_name), \
     INIT_ID(exp), \
     INIT_ID(extend), \
     INIT_ID(extra_tokens), \
@@ -1062,6 +1063,7 @@ extern "C" {
     INIT_ID(namespaces), \
     INIT_ID(narg), \
     INIT_ID(ndigits), \
+    INIT_ID(new_file_name), \
     INIT_ID(new_limit), \
     INIT_ID(newline), \
     INIT_ID(newlines), \
@@ -1116,6 +1118,7 @@ extern "C" {
     INIT_ID(priority), \
     INIT_ID(progress), \
     INIT_ID(progress_handler), \
+    INIT_ID(progress_routine), \
     INIT_ID(proto), \
     INIT_ID(protocol), \
     INIT_ID(ps1), \
