@@ -2320,6 +2320,7 @@ class SinglephaseInitTests(unittest.TestCase):
         self.add_module_cleanup(name)
         with self.subTest(name):
             loaded = self.load(name)
+            self.addCleanup(loaded.module._clear_module_state)
 
             self.check_common(loaded)
             self.assertIsNot(loaded.snapshot.state_initialized, None)
@@ -2329,8 +2330,6 @@ class SinglephaseInitTests(unittest.TestCase):
             # This should change the cached module for _testsinglephase.
             self.assertIs(basic.look_up_self(), basic_lookedup)
             self.assertEqual(basic.initialized_count(), expected_init_count)
-
-            loaded.module._clear_module_state()
 
 
     def test_basic_reloaded(self):
@@ -2391,6 +2390,10 @@ class SinglephaseInitTests(unittest.TestCase):
                 loaded = self.load(name)
                 reloaded = self.re_load(name, loaded.module)
 
+                if name == f'{self.NAME}_with_state':
+                    self.addCleanup(loaded.module._clear_module_state)
+                    self.addCleanup(reloaded.module._clear_module_state)
+
                 self.check_common(loaded)
                 self.check_common(reloaded)
 
@@ -2415,10 +2418,6 @@ class SinglephaseInitTests(unittest.TestCase):
                                        loaded.snapshot.state_initialized)
 
                 self.assertIs(reloaded.snapshot.cached, reloaded.module)
-
-                if name == f'{self.NAME}_with_state':
-                    loaded.module._clear_module_state()
-                    reloaded.module._clear_module_state()
 
 
     # Currently, for every single-phrase init module loaded
