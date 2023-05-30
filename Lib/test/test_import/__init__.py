@@ -2331,7 +2331,6 @@ class SinglephaseInitTests(unittest.TestCase):
             self.assertIs(basic.look_up_self(), basic_lookedup)
             self.assertEqual(basic.initialized_count(), expected_init_count)
 
-
     def test_basic_reloaded(self):
         # m_copy is copied into the existing module object.
         # Global state is not changed.
