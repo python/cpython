@@ -6526,7 +6526,7 @@ AC_CHECK_TYPE(
   [socklen_t], [],
   [AC_DEFINE(
     [socklen_t], [int],
-    [Define to 'int' if <sys/socket.h> does not define.]
+    [Define to `int' if <sys/socket.h> does not define.]
   )], [
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
