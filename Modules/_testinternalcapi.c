@@ -762,19 +762,24 @@ clear_extension(PyObject *self, PyObject *args)
 static PyObject *
 write_perf_map_entry(PyObject *self, PyObject *args)
 {
+    PyObject *code_addr_v;
     const void *code_addr;
     unsigned int code_size;
     const char *entry_name;
 
-    if (!PyArg_ParseTuple(args, "KIs", &code_addr, &code_size, &entry_name))
+    if (!PyArg_ParseTuple(args, "OIs", &code_addr_v, &code_size, &entry_name))
         return NULL;
-
-    int ret = PyUnstable_WritePerfMapEntry(code_addr, code_size, entry_name);
-    if (ret == -1) {
-        PyErr_SetString(PyExc_OSError, "Failed to write performance map entry");
+    code_addr = PyLong_AsVoidPtr(code_addr_v);
+    if (code_addr == NULL) {
         return NULL;
     }
-    return Py_BuildValue("i", ret);
+
+    int ret = PyUnstable_WritePerfMapEntry(code_addr, code_size, entry_name);
+    if (ret < 0) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        return NULL;
+    }
+    return PyLong_FromLong(ret);
 }
 
 static PyObject *

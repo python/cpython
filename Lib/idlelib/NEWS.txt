@@ -4,6 +4,9 @@ Released on 2023-10-02
 =========================
 
 
+gh-104719: Remove IDLE's modification of tokenize.tabsize and test
+other uses of tokenize data and methods.
+
 gh-104499: Fix completions for Tk Aqua 8.7 (currently blank).
 
 gh-104486: Make About print both tcl and tk versions if different,

@@ -2087,23 +2087,23 @@ if test -z "${BOLT_APPLY_FLAGS}"
 then
   AS_VAR_SET(
     [BOLT_APPLY_FLAGS],
-    [m4_join([ ],
-      [-update-debug-sections],
-      [-reorder-blocks=ext-tsp],
-      [-reorder-functions=hfsort+],
-      [-split-functions],
-      [-icf=1],
-      [-inline-all],
-      [-split-eh],
-      [-reorder-functions-use-hot-size],
-      [-peepholes=none],
-      [-jump-tables=aggressive],
-      [-inline-ap],
-      [-indirect-call-promotion=all],
-      [-dyno-stats],
-      [-use-gnu-stack],
-      [-frame-opt=hot]
-    )]
+    [m4_normalize("
+     -update-debug-sections
+     -reorder-blocks=ext-tsp
+     -reorder-functions=hfsort+
+     -split-functions
+     -icf=1
+     -inline-all
+     -split-eh
+     -reorder-functions-use-hot-size
+     -peepholes=none
+     -jump-tables=aggressive
+     -inline-ap
+     -indirect-call-promotion=all
+     -dyno-stats
+     -use-gnu-stack
+     -frame-opt=hot
+   ")]
   )
 fi
 AC_MSG_RESULT([$BOLT_APPLY_FLAGS])
@@ -3915,12 +3915,6 @@ AS_VAR_IF([have_nis], [yes], [
     AC_CHECK_HEADERS([rpc/rpc.h])
   ])
 ])
-
-dnl On NetBSD, when using OSS audio, you need to link against libossaudio
-AS_CASE([$ac_sys_system],
-  [NetBSD*], [OSSAUDIODEV_LIBS="-lossaudio"],
-  [OSSAUDIODEV_LIBS=""]
-)
 
 dnl detect sqlite3 from Emscripten emport
 PY_CHECK_EMSCRIPTEN_PORT([LIBSQLITE3], [-sUSE_SQLITE3])
@@ -7093,7 +7087,7 @@ dnl VxWorks does not provide crypt() function
 AS_CASE([$ac_sys_system],
   [AIX], [PY_STDLIB_MOD_SET_NA([_scproxy], [spwd])],
   [VxWorks*], [PY_STDLIB_MOD_SET_NA([_scproxy], [_crypt], [termios], [grp])],
-  [Darwin], [PY_STDLIB_MOD_SET_NA([ossaudiodev], [spwd])],
+  [Darwin], [PY_STDLIB_MOD_SET_NA([spwd])],
   [CYGWIN*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
   [QNX*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
   [FreeBSD*], [PY_STDLIB_MOD_SET_NA([_scproxy], [spwd])],
@@ -7117,7 +7111,6 @@ AS_CASE([$ac_sys_system],
       [_xxinterpchannels],
       [grp],
       [nis],
-      [ossaudiodev],
       [pwd],
       [resource],
       [spwd],
@@ -7266,9 +7259,6 @@ PY_STDLIB_MOD([_socket],
 
 dnl platform specific extensions
 PY_STDLIB_MOD([grp], [], [test "$ac_cv_func_getgrgid" = yes -o "$ac_cv_func_getgrgid_r" = yes])
-PY_STDLIB_MOD([ossaudiodev],
-  [], [test "$ac_cv_header_linux_soundcard_h" = yes -o "$ac_cv_header_sys_soundcard_h" = yes],
-  [], [$OSSAUDIODEV_LIBS])
 PY_STDLIB_MOD([pwd], [], [test "$ac_cv_func_getpwuid" = yes -o "$ac_cv_func_getpwuid_r" = yes])
 PY_STDLIB_MOD([resource], [], [test "$ac_cv_header_sys_resource_h" = yes])
 PY_STDLIB_MOD([_scproxy],
