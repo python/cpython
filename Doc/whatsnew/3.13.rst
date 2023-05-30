@@ -289,6 +289,13 @@ C API Changes
 New Features
 ------------
 
+* You no longer have to define the ``PY_SSIZE_T_CLEAN`` macro before including
+  :file:`Python.h` when using ``#`` formats in
+  :ref:`format codes <arg-parsing-string-and-buffers>`.
+  APIs accepting the format codes always use ``Py_ssize_t`` for ``#`` formats.
+  (Contributed by Inada Naoki in :gh:`104922`.)
+
+
 Porting to Python 3.13
 ----------------------
 

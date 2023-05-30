@@ -70,7 +70,7 @@ the module and a copyright notice if you like).
    headers are included.
 
    It is recommended to always define ``PY_SSIZE_T_CLEAN`` before including
-   ``Python.h``.  See :ref:`parsetuple` for a description of this macro.
+   ``Python.h``.  See :ref:`arg-parsing-string-and-buffers` for a description of this macro.
 
 All user-visible symbols defined by :file:`Python.h` have a prefix of ``Py`` or
 ``PY``, except those defined in standard header files. For convenience, and
@@ -649,7 +649,7 @@ Note that any Python object references which are provided to the caller are
 
 Some example calls::
 
-   #define PY_SSIZE_T_CLEAN  /* Make "s#" use Py_ssize_t rather than int. */
+   #define PY_SSIZE_T_CLEAN
    #include <Python.h>
 
 ::
@@ -745,7 +745,7 @@ it returns false and raises an appropriate exception.
 Here is an example module which uses keywords, based on an example by Geoff
 Philbrick (philbrick@hks.com)::
 
-   #define PY_SSIZE_T_CLEAN  /* Make "s#" use Py_ssize_t rather than int. */
+   #define PY_SSIZE_T_CLEAN
    #include <Python.h>
 
    static PyObject *
