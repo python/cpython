@@ -283,6 +283,8 @@ set_tp_bases(PyTypeObject *self, PyObject *bases)
 {
     assert(PyTuple_CheckExact(bases));
     if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        // XXX tp_bases can probably be statically allocated for each
+        // static builtin type.
         assert(_Py_IsMainInterpreter(_PyInterpreterState_GET()));
         assert(self->tp_bases == NULL);
         if (PyTuple_GET_SIZE(bases) == 0) {
@@ -335,6 +337,8 @@ set_tp_mro(PyTypeObject *self, PyObject *mro)
 {
     assert(PyTuple_CheckExact(mro));
     if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        // XXX tp_mro can probably be statically allocated for each
+        // static builtin type.
         assert(_Py_IsMainInterpreter(_PyInterpreterState_GET()));
         assert(self->tp_mro == NULL);
         /* Other checks are done via set_tp_bases. */
