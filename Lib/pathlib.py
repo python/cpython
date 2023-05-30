@@ -54,7 +54,7 @@ def _ignore_error(exception):
             getattr(exception, 'winerror', None) in _IGNORED_WINERRORS)
 
 
-@functools.lru_cache()
+@functools.cache
 def _is_case_sensitive(flavour):
     return flavour.normcase('Aa') == 'Aa'
 
