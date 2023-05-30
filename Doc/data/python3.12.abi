@@ -9761,11 +9761,11 @@
       <data-member access='public' layout-offset-in-bits='256'>
         <var-decl name='pos' type-id='type-id-14' visibility='default' filepath='./Include/cpython/unicodeobject.h' line='493' column='1'/>
       </data-member>
-      <data-member access='public' layout-offset-in-bits='320'>
-        <var-decl name='min_length' type-id='type-id-14' visibility='default' filepath='./Include/cpython/unicodeobject.h' line='496' column='1'/>
+      <data-member access='public' layout-offset-in-bits='600'>
+        <var-decl name='min_length' type-id='type-id-250' visibility='default' filepath='./Include/cpython/unicodeobject.h' line='496' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='384'>
-        <var-decl name='min_char' type-id='type-id-250' visibility='default' filepath='./Include/cpython/unicodeobject.h' line='499' column='1'/>
+        <var-decl name='min_char' type-id='type-id-14' visibility='default' filepath='./Include/cpython/unicodeobject.h' line='499' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='416'>
         <var-decl name='overallocate' type-id='type-id-85' visibility='default' filepath='./Include/cpython/unicodeobject.h' line='502' column='1'/>

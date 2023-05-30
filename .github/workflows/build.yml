@@ -106,6 +106,8 @@ jobs:
             echo "Generated ABI file is not up to date."
             echo "Please add the release manager of this branch as a reviewer of this PR."
             echo ""
+            echo "The up to date ABI file should be attached to this build as an artifact."
+            echo ""
             echo "To learn more about this check: https://devguide.python.org/setup/#regenerate-the-abi-dump"
             echo ""
             exit 1
