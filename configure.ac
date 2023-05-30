@@ -4843,7 +4843,7 @@ AC_CHECK_DECL([dirfd],
                          [Define if you have the 'dirfd' function or macro.])],
               [],
               [@%:@include <sys/types.h>
-               @%:@include <dirent.h>])])
+               @%:@include <dirent.h>])
 
 # For some functions, having a definition is not sufficient, since
 # we want to take their address.
