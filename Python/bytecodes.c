@@ -289,7 +289,7 @@ dummy_func(
             // BINARY_OP_INPLACE_ADD_UNICODE,  // See comments at that opcode.
         };
 
-        op(_BINARY_OP_INT_GUARD, (left, right -- left, right)) {
+        op(_GUARD_BOTH_INT, (left, right -- left, right)) {
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
         }
@@ -319,13 +319,13 @@ dummy_func(
         }
 
         macro(BINARY_OP_MULTIPLY_INT) =
-            _BINARY_OP_INT_GUARD + _BINARY_OP_MULTIPLY_INT;
+            _GUARD_BOTH_INT + _BINARY_OP_MULTIPLY_INT;
         macro(BINARY_OP_ADD_INT) =
-            _BINARY_OP_INT_GUARD + _BINARY_OP_ADD_INT;
+            _GUARD_BOTH_INT + _BINARY_OP_ADD_INT;
         macro(BINARY_OP_SUBTRACT_INT) =
-            _BINARY_OP_INT_GUARD + _BINARY_OP_SUBTRACT_INT;
+            _GUARD_BOTH_INT + _BINARY_OP_SUBTRACT_INT;
 
-        op(_BINARY_OP_FLOAT_GUARD, (left, right -- left, right)) {
+        op(_GUARD_BOTH_FLOAT, (left, right -- left, right)) {
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
         }
@@ -355,13 +355,13 @@ dummy_func(
         }
 
         macro(BINARY_OP_MULTIPLY_FLOAT) =
-            _BINARY_OP_FLOAT_GUARD + _BINARY_OP_MULTIPLY_FLOAT;
+            _GUARD_BOTH_FLOAT + _BINARY_OP_MULTIPLY_FLOAT;
         macro(BINARY_OP_ADD_FLOAT) =
-            _BINARY_OP_FLOAT_GUARD + _BINARY_OP_ADD_FLOAT;
+            _GUARD_BOTH_FLOAT + _BINARY_OP_ADD_FLOAT;
         macro(BINARY_OP_SUBTRACT_FLOAT) =
-            _BINARY_OP_FLOAT_GUARD + _BINARY_OP_SUBTRACT_FLOAT;
+            _GUARD_BOTH_FLOAT + _BINARY_OP_SUBTRACT_FLOAT;
 
-        op(_BINARY_OP_UNICODE_GUARD, (left, right -- left, right)) {
+        op(_GUARD_BOTH_UNICODE, (left, right -- left, right)) {
             DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyUnicode_CheckExact(right), BINARY_OP);
         }
@@ -375,7 +375,7 @@ dummy_func(
         }
 
         macro(BINARY_OP_ADD_UNICODE) =
-            _BINARY_OP_UNICODE_GUARD + _BINARY_OP_ADD_UNICODE;
+            _GUARD_BOTH_UNICODE + _BINARY_OP_ADD_UNICODE;
 
         // This is a subtle one. It's a super-instruction for
         // BINARY_OP_ADD_UNICODE followed by STORE_FAST
@@ -411,7 +411,7 @@ dummy_func(
         }
 
         macro(BINARY_OP_INPLACE_ADD_UNICODE) =
-            _BINARY_OP_UNICODE_GUARD + _BINARY_OP_INPLACE_ADD_UNICODE;
+            _GUARD_BOTH_UNICODE + _BINARY_OP_INPLACE_ADD_UNICODE;
 
         family(binary_subscr, INLINE_CACHE_ENTRIES_BINARY_SUBSCR) = {
             BINARY_SUBSCR,
