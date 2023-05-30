@@ -2419,7 +2419,6 @@ class SinglephaseInitTests(unittest.TestCase):
 
                 self.assertIs(reloaded.snapshot.cached, reloaded.module)
 
-
     # Currently, for every single-phrase init module loaded
     # in multiple interpreters, those interpreters share a
     # PyModuleDef for that object, which can be a problem.
