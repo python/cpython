@@ -2271,6 +2271,26 @@ def requires_venv_with_pip():
     return unittest.skipUnless(ctypes, 'venv: pip requires ctypes')
 
 
+@functools.cache
+def _findwheel(pkgname):
+    """Try to find a wheel with the package specified as pkgname.
+
+    If set, the wheels are searched for in WHEEL_PKG_DIR (see ensurepip).
+    Otherwise, they are searched for in the test directory.
+    """
+    wheel_dir = sysconfig.get_config_var('WHEEL_PKG_DIR') or TEST_HOME_DIR
+    filenames = os.listdir(wheel_dir)
+    filenames = sorted(filenames, reverse=True)  # approximate "newest" first
+    for filename in filenames:
+        # filename is like 'setuptools-67.6.1-py3-none-any.whl'
+        if not filename.endswith(".whl"):
+            continue
+        prefix = pkgname + '-'
+        if filename.startswith(prefix):
+            return os.path.join(wheel_dir, filename)
+    raise FileNotFoundError(f"No wheel for {pkgname} found in {wheel_dir}")
+
+
 # Context manager that creates a virtual environment, install setuptools and wheel in it
 # and returns the path to the venv directory and the path to the python executable
 @contextlib.contextmanager
@@ -2297,8 +2317,8 @@ def setup_venv_with_pip_setuptools_wheel(venv_dir):
 
         cmd = [python, '-X', 'dev',
                '-m', 'pip', 'install',
-               findfile('setuptools-67.6.1-py3-none-any.whl'),
-               findfile('wheel-0.40.0-py3-none-any.whl')]
+               _findwheel('setuptools'),
+               _findwheel('wheel')]
         if verbose:
             print()
             print('Run:', ' '.join(cmd))
