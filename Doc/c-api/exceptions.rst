@@ -774,11 +774,11 @@ Exception Objects
 
 .. c:function:: PyObject* PyUnstable_Exc_PrepReraiseStar(PyObject *orig, PyObject *excs)
 
-   Implements part of the interpreter's implementation of :keyword:`!except*`.
+   Implement part of the interpreter's implementation of :keyword:`!except*`.
    *orig* is the original exception that was caught, and *excs* is the list of
    the exceptions that need to be raised. This list contains the the unhandled
-   part of orig, if any, as well as the exceptions that were raised from the
-   ``except*`` clauses (so they have a different traceback from *orig*) and
+   part of *orig*, if any, as well as the exceptions that were raised from the
+   :keyword:`!except*` clauses (so they have a different traceback from *orig*) and
    those that were reraised (and have the same traceback as *orig*).
    Return the :exc:`ExceptionGroup` that needs to be reraised in the end, or
    ``None`` if there is nothing to reraise.
