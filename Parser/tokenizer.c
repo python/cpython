@@ -1230,7 +1230,7 @@ tok_underflow_interactive(struct tok_state *tok) {
 }
 
 static int
-tok_underflow_file(struct tok_state *tok, int use_readline) {
+tok_underflow_file(struct tok_state *tok) {
     if (tok->start == NULL && !INSIDE_FSTRING(tok)) {
         tok->cur = tok->inp = tok->buf;
     }
@@ -1248,11 +1248,6 @@ tok_underflow_file(struct tok_state *tok, int use_readline) {
     if (tok->decoding_readline != NULL) {
         /* We already have a codec associated with this input. */
         if (!tok_readline_recode(tok)) {
-            return 0;
-        }
-    }
-    else if(use_readline) {
-        if (!tok_readline_string(tok)) {
             return 0;
         }
     }
@@ -1284,6 +1279,38 @@ tok_underflow_file(struct tok_state *tok, int use_readline) {
             return 0;
         }
     }
+    /* The default encoding is UTF-8, so make sure we don't have any
+       non-UTF-8 sequences in it. */
+    if (!tok->encoding && !ensure_utf8(tok->cur, tok)) {
+        error_ret(tok);
+        return 0;
+    }
+    assert(tok->done == E_OK);
+    return tok->done == E_OK;
+}
+
+static int
+tok_underflow_readline(struct tok_state* tok) {
+    assert(tok->decoding_state == STATE_NORMAL);
+    assert(tok->fp == NULL && tok->input == NULL && tok->decoding_readline == NULL);
+    if (tok->start == NULL && !INSIDE_FSTRING(tok)) {
+        tok->cur = tok->inp = tok->buf;
+    }
+    if (!tok_readline_string(tok)) {
+        return 0;
+    }
+    if (tok->inp == tok->cur) {
+        tok->done = E_EOF;
+        return 0;
+    }
+    if (tok->inp[-1] != '\n') {
+        assert(tok->inp + 1 < tok->end);
+        /* Last line does not end in \n, fake one */
+        *tok->inp++ = '\n';
+        *tok->inp = '\0';
+    }
+
+    ADVANCE_LINENO();
     /* The default encoding is UTF-8, so make sure we don't have any
        non-UTF-8 sequences in it. */
     if (!tok->encoding && !ensure_utf8(tok->cur, tok)) {
@@ -1338,7 +1365,7 @@ tok_nextc(struct tok_state *tok)
             return EOF;
         }
         if (tok->readline) {
-            rc = tok_underflow_file(tok, 1);
+            rc = tok_underflow_readline(tok);
         }
         else if (tok->fp == NULL) {
             rc = tok_underflow_string(tok);
@@ -1347,7 +1374,7 @@ tok_nextc(struct tok_state *tok)
             rc = tok_underflow_interactive(tok);
         }
         else {
-            rc = tok_underflow_file(tok, 0);
+            rc = tok_underflow_file(tok);
         }
 #if defined(Py_DEBUG)
         if (tok->debug) {
