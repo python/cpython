@@ -68,7 +68,8 @@ def _is_case_sensitive(flavour):
 # matched, respectively. These features are undesirable for our implementation
 # of PurePatch.match(), which represents path separators as newlines and joins
 # pattern segments together. As a workaround, we define a slice object that
-# can remove the prefix and suffix from any translate() result.
+# can remove the prefix and suffix from any translate() result. See the
+# _compile_pattern_lines() function for more details.
 _FNMATCH_PREFIX, _FNMATCH_SUFFIX = fnmatch.translate('_').split('_')
 _FNMATCH_SLICE = slice(len(_FNMATCH_PREFIX), -len(_FNMATCH_SUFFIX))
 _SWAP_SEP_AND_NEWLINE = {
@@ -110,17 +111,42 @@ def _compile_pattern(pat, case_sensitive):
 
 @functools.lru_cache()
 def _compile_pattern_lines(pattern_lines, case_sensitive):
+    """Compile the given pattern lines to an `re.Pattern` object.
+
+    The *pattern_lines* argument is a glob-style pattern (e.g. '**/*.py') with
+    its path separators and newlines swapped (e.g. '**\n*.py`). By using
+    newlines to separate path components, and not setting `re.DOTALL`, we
+    ensure that the `*` wildcard cannot match path separators.
+
+    The returned `re.Pattern` object may have its `match()` method called to
+    match a complete pattern, or `search()` to match from the right. The
+    argument supplied to these methods must also have its path separators and
+    newlines swapped.
+    """
+
+    # Match the start of the path, or just after a path separator
     parts = ['^']
     for part in pattern_lines.splitlines(keepends=True):
         if part == '**\n':
+            # '**/' component: we use '[\s\S]' rather than '.' so that path
+            # separators (i.e. newlines) are matched. The trailing '^' ensures
+            # we terminate after a path separator (i.e. on a new line).
             part = r'[\s\S]*^'
         elif part == '**':
+            # '**' component.
             part = r'[\s\S]*'
         elif '**' in part:
             raise ValueError("Invalid pattern: '**' can only be an entire path component")
         else:
+            # Any other component: pass to fnmatch.translate(). We slice off
+            # the common prefix and suffix added by translate() to ensure that
+            # re.DOTALL is not set, and the end of the string not matched,
+            # respectively. With DOTALL not set, '*' wildcards will not match
+            # path separators, because the '.' characters in the pattern will
+            # not match newlines.
             part = fnmatch.translate(part)[_FNMATCH_SLICE]
         parts.append(part)
+    # Match the end of the path, always.
     parts.append(r'\Z')
     flags = re.MULTILINE
     if not case_sensitive:
