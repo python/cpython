@@ -140,11 +140,10 @@ init_module(PyObject *module, module_state *state)
     if (initialized == NULL) {
         return -1;
     }
-    int rc = PyModule_AddObjectRef(module, "_module_initialized", initialized);
-    Py_DECREF(initialized);
-    if (rc != 0) {
+    if (PyModule_AddObjectRef(module, "_module_initialized", initialized) != 0) {
         return -1;
     }
+
     return 0;
 }
 
