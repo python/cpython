@@ -7045,8 +7045,12 @@ type_ready_set_type(PyTypeObject *type)
 static int
 type_ready_set_bases(PyTypeObject *type)
 {
-    if (lookup_tp_bases(type) != NULL) {
-        return 0;
+    if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        if (!_Py_IsMainInterpreter(_PyInterpreterState_GET())) {
+            assert(lookup_tp_bases(type) != NULL);
+            return 0;
+        }
+        assert(lookup_tp_bases(type) == NULL);
     }
 
     PyObject *bases = lookup_tp_bases(type);
