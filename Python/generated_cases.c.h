@@ -4763,63 +4763,50 @@
 
         TARGET(BINARY_OP) {
             PREDICTED(BINARY_OP);
-            PyObject *_tmp_1 = stack_pointer[-1];
-            PyObject *_tmp_2 = stack_pointer[-2];
-            {
-                PyObject *rhs = _tmp_1;
-                PyObject *lhs = _tmp_2;
-                #line 3328 "Python/bytecodes.c"
-                #if ENABLE_SPECIALIZATION
-                _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
-                if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                    next_instr--;
-                    _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, &GETLOCAL(0));
-                    DISPATCH_SAME_OPARG();
-                }
-                STAT_INC(BINARY_OP, deferred);
-                DECREMENT_ADAPTIVE_COUNTER(cache->counter);
-                #endif  /* ENABLE_SPECIALIZATION */
-                #line 4783 "Python/generated_cases.c.h"
-                _tmp_2 = lhs;
-                _tmp_1 = rhs;
-            }
-            {
-                PyObject *rhs = _tmp_1;
-                PyObject *lhs = _tmp_2;
-                PyObject *res;
-                #line 3341 "Python/bytecodes.c"
-                assert(0 <= oparg);
-                assert((unsigned)oparg < Py_ARRAY_LENGTH(binary_ops));
-                assert(binary_ops[oparg]);
-                res = binary_ops[oparg](lhs, rhs);
-                #line 4796 "Python/generated_cases.c.h"
-                Py_DECREF(lhs);
-                Py_DECREF(rhs);
-                #line 3346 "Python/bytecodes.c"
-                if (res == NULL) goto pop_2_error;
-                #line 4801 "Python/generated_cases.c.h"
-                _tmp_2 = res;
-            }
-            next_instr += 1;
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
+            PyObject *rhs = stack_pointer[-1];
+            PyObject *lhs = stack_pointer[-2];
+            PyObject *res;
+            #line 3328 "Python/bytecodes.c"
+            #if ENABLE_SPECIALIZATION
+            _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
+                next_instr--;
+                _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, &GETLOCAL(0));
+                DISPATCH_SAME_OPARG();
+            }
+            STAT_INC(BINARY_OP, deferred);
+            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            #endif  /* ENABLE_SPECIALIZATION */
+            assert(0 <= oparg);
+            assert((unsigned)oparg < Py_ARRAY_LENGTH(binary_ops));
+            assert(binary_ops[oparg]);
+            res = binary_ops[oparg](lhs, rhs);
+            #line 4786 "Python/generated_cases.c.h"
+            Py_DECREF(lhs);
+            Py_DECREF(rhs);
+            #line 3343 "Python/bytecodes.c"
+            if (res == NULL) goto pop_2_error;
+            #line 4791 "Python/generated_cases.c.h"
             STACK_SHRINK(1);
-            stack_pointer[-1] = _tmp_2;
+            stack_pointer[-1] = res;
+            next_instr += 1;
             DISPATCH();
         }
 
         TARGET(SWAP) {
             PyObject *top = stack_pointer[-1];
             PyObject *bottom = stack_pointer[-(2 + (oparg-2))];
-            #line 3353 "Python/bytecodes.c"
+            #line 3348 "Python/bytecodes.c"
             assert(oparg >= 2);
-            #line 4816 "Python/generated_cases.c.h"
+            #line 4803 "Python/generated_cases.c.h"
             stack_pointer[-1] = bottom;
             stack_pointer[-(2 + (oparg-2))] = top;
             DISPATCH();
         }
 
         TARGET(INSTRUMENTED_INSTRUCTION) {
-            #line 3357 "Python/bytecodes.c"
+            #line 3352 "Python/bytecodes.c"
             int next_opcode = _Py_call_instrumentation_instruction(
                 tstate, frame, next_instr-1);
             if (next_opcode < 0) goto error;
@@ -4831,26 +4818,26 @@
             assert(next_opcode > 0 && next_opcode < 256);
             opcode = next_opcode;
             DISPATCH_GOTO();
-            #line 4835 "Python/generated_cases.c.h"
+            #line 4822 "Python/generated_cases.c.h"
         }
 
         TARGET(INSTRUMENTED_JUMP_FORWARD) {
-            #line 3371 "Python/bytecodes.c"
+            #line 3366 "Python/bytecodes.c"
             INSTRUMENTED_JUMP(next_instr-1, next_instr+oparg, PY_MONITORING_EVENT_JUMP);
-            #line 4841 "Python/generated_cases.c.h"
+            #line 4828 "Python/generated_cases.c.h"
             DISPATCH();
         }
 
         TARGET(INSTRUMENTED_JUMP_BACKWARD) {
-            #line 3375 "Python/bytecodes.c"
+            #line 3370 "Python/bytecodes.c"
             INSTRUMENTED_JUMP(next_instr-1, next_instr-oparg, PY_MONITORING_EVENT_JUMP);
-            #line 4848 "Python/generated_cases.c.h"
+            #line 4835 "Python/generated_cases.c.h"
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
         TARGET(INSTRUMENTED_POP_JUMP_IF_TRUE) {
-            #line 3380 "Python/bytecodes.c"
+            #line 3375 "Python/bytecodes.c"
             PyObject *cond = POP();
             int err = PyObject_IsTrue(cond);
             Py_DECREF(cond);
@@ -4859,12 +4846,12 @@
             assert(err == 0 || err == 1);
             int offset = err*oparg;
             INSTRUMENTED_JUMP(here, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
-            #line 4863 "Python/generated_cases.c.h"
+            #line 4850 "Python/generated_cases.c.h"
             DISPATCH();
         }
 
         TARGET(INSTRUMENTED_POP_JUMP_IF_FALSE) {
-            #line 3391 "Python/bytecodes.c"
+            #line 3386 "Python/bytecodes.c"
             PyObject *cond = POP();
             int err = PyObject_IsTrue(cond);
             Py_DECREF(cond);
@@ -4873,12 +4860,12 @@
             assert(err == 0 || err == 1);
             int offset = (1-err)*oparg;
             INSTRUMENTED_JUMP(here, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
-            #line 4877 "Python/generated_cases.c.h"
+            #line 4864 "Python/generated_cases.c.h"
             DISPATCH();
         }
 
         TARGET(INSTRUMENTED_POP_JUMP_IF_NONE) {
-            #line 3402 "Python/bytecodes.c"
+            #line 3397 "Python/bytecodes.c"
             PyObject *value = POP();
             _Py_CODEUNIT *here = next_instr-1;
             int offset;
@@ -4890,12 +4877,12 @@
                 offset = 0;
             }
             INSTRUMENTED_JUMP(here, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
-            #line 4894 "Python/generated_cases.c.h"
+            #line 4881 "Python/generated_cases.c.h"
             DISPATCH();
         }
 
         TARGET(INSTRUMENTED_POP_JUMP_IF_NOT_NONE) {
-            #line 3416 "Python/bytecodes.c"
+            #line 3411 "Python/bytecodes.c"
             PyObject *value = POP();
             _Py_CODEUNIT *here = next_instr-1;
             int offset;
@@ -4907,30 +4894,30 @@
                  offset = oparg;
             }
             INSTRUMENTED_JUMP(here, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
-            #line 4911 "Python/generated_cases.c.h"
+            #line 4898 "Python/generated_cases.c.h"
             DISPATCH();
         }
 
         TARGET(EXTENDED_ARG) {
-            #line 3430 "Python/bytecodes.c"
+            #line 3425 "Python/bytecodes.c"
             assert(oparg);
             opcode = next_instr->op.code;
             oparg = oparg << 8 | next_instr->op.arg;
             PRE_DISPATCH_GOTO();
             DISPATCH_GOTO();
-            #line 4922 "Python/generated_cases.c.h"
+            #line 4909 "Python/generated_cases.c.h"
         }
 
         TARGET(CACHE) {
-            #line 3438 "Python/bytecodes.c"
+            #line 3433 "Python/bytecodes.c"
             assert(0 && "Executing a cache.");
             Py_UNREACHABLE();
-            #line 4929 "Python/generated_cases.c.h"
+            #line 4916 "Python/generated_cases.c.h"
         }
 
         TARGET(RESERVED) {
-            #line 3443 "Python/bytecodes.c"
+            #line 3438 "Python/bytecodes.c"
             assert(0 && "Executing RESERVED instruction.");
             Py_UNREACHABLE();
-            #line 4936 "Python/generated_cases.c.h"
+            #line 4923 "Python/generated_cases.c.h"
         }
