@@ -303,9 +303,11 @@ clear_tp_bases(PyTypeObject *self)
 {
     if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
         if (_Py_IsMainInterpreter(_PyInterpreterState_GET())) {
-            if (self->tp_bases != NULL) {
+            if (self->tp_bases != NULL
+                && PyTuple_GET_SIZE(self->tp_bases) > 0)
+            {
                 assert(_Py_IsImmortal(self->tp_bases));
-                // XXX Delete the tuple?
+                _Py_ClearImmortal(self->tp_bases);
             }
         }
         return;
