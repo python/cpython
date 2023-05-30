@@ -1847,8 +1847,8 @@ Optional Packages:
                           select hash algorithm for use in Python/pyhash.c
                           (default is SipHash13)
   --with-tzpath=<list of absolute paths separated by pathsep>
-                           Select the default time zone search path for zoneinfo.TZPATH
-
+                          Select the default time zone search path for
+                          zoneinfo.TZPATH
   --with-libs='lib1 ...'  link against additional libs (default is no)
   --with-system-expat     build pyexpat module using an installed expat
                           library, see Doc/library/pyexpat.rst (default is no)
@@ -7392,6 +7392,7 @@ if test "${with_trace_refs+set}" = set; then :
   withval=$with_trace_refs;
 else
   with_trace_refs=no
+
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_trace_refs" >&5
@@ -11193,7 +11194,7 @@ case $ac_sys_system/$ac_sys_release in
 
 $as_echo "#define WITH_DYLD 1" >>confdefs.h
 
-  	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: always on for Darwin" >&5
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: always on for Darwin" >&5
 $as_echo "always on for Darwin" >&6; }
   	;;
   *)
@@ -11750,7 +11751,7 @@ _ACEOF
   LIBS="-ldl $LIBS"
 
 fi
-	# Dynamic linking for SunOS/Solaris and SYSV
+       # Dynamic linking for SunOS/Solaris and SYSV
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for shl_load in -ldld" >&5
 $as_echo_n "checking for shl_load in -ldld... " >&6; }
 if ${ac_cv_lib_dld_shl_load+:} false; then :
@@ -11795,7 +11796,7 @@ _ACEOF
   LIBS="-ldld $LIBS"
 
 fi
-	# Dynamic linking for HP-UX
+    # Dynamic linking for HP-UX
 
 
 
@@ -11810,8 +11811,7 @@ if test "x$ac_cv_header_uuid_h" = xyes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_UUID_H 1
 _ACEOF
-
-  for ac_func in uuid_create uuid_enc_be
+ for ac_func in uuid_create uuid_enc_be
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -11819,8 +11819,7 @@ if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
 #define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
 _ACEOF
-
-    have_uuid=yes
+ have_uuid=yes
     LIBUUID_CFLAGS=${LIBUUID_CFLAGS-""}
     LIBUUID_LIBS=${LIBUUID_LIBS-""}
 
@@ -11995,11 +11994,9 @@ if test "x$ac_cv_lib_uuid_uuid_generate_time_safe" = xyes; then :
   have_uuid=yes
             $as_echo "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
 
-
 fi
 
 LIBS=$py_check_lib_save_LIBS
-
 
 fi
 
@@ -12124,11 +12121,9 @@ if test "x$ac_cv_lib_uuid_uuid_generate_time_safe" = xyes; then :
   have_uuid=yes
             $as_echo "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
 
-
 fi
 
 LIBS=$py_check_lib_save_LIBS
-
 
 fi
 
@@ -12154,8 +12149,7 @@ else
 	LIBUUID_LIBS=$pkg_cv_LIBUUID_LIBS
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-
-                  have_uuid=yes
+	            have_uuid=yes
       $as_echo "#define HAVE_UUID_H 1" >>confdefs.h
 
       $as_echo "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
@@ -15900,6 +15894,7 @@ if test "${with_valgrind+set}" = set; then :
   withval=$with_valgrind;
 else
   with_valgrind=no
+
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_valgrind" >&5
@@ -16151,7 +16146,7 @@ done
 fi
 
 ac_fn_c_check_decl "$LINENO" "dirfd" "ac_cv_have_decl_dirfd" "#include <sys/types.h>
-       #include <dirent.h>
+               #include <dirent.h>
 "
 if test "x$ac_cv_have_decl_dirfd" = xyes; then :
 
@@ -18794,9 +18789,7 @@ if test "x$ac_cv_lib_bsd_openpty" = xyes; then :
  LIBS="$LIBS -lbsd"
 fi
 
-
 fi
-
 
 fi
 done
@@ -18950,9 +18943,7 @@ if test "x$ac_cv_lib_bsd_forkpty" = xyes; then :
  LIBS="$LIBS -lbsd"
 fi
 
-
 fi
-
 
 fi
 done
@@ -19010,7 +19001,6 @@ $as_echo "#define GETPGRP_HAVE_ARG 1" >>confdefs.h
 
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
 fi
 done
 
@@ -19038,7 +19028,6 @@ $as_echo "#define SETPGRP_HAVE_ARG 1" >>confdefs.h
 
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
 fi
 done
 
@@ -20458,7 +20447,6 @@ fi
 
 ac_fn_c_check_func "$LINENO" "gethostbyname_r" "ac_cv_func_gethostbyname_r"
 if test "x$ac_cv_func_gethostbyname_r" = xyes; then :
-
   $as_echo "#define HAVE_GETHOSTBYNAME_R 1" >>confdefs.h
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking gethostbyname_r with 6 args" >&5
