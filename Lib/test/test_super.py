@@ -410,6 +410,18 @@ class TestSuper(unittest.TestCase):
 
         self.assertEqual(C().method(), mysuper)
 
+    def test_unusual_getattro(self):
+        class MyType(type):
+            pass
+
+        def test(name):
+            mytype = MyType(name, (MyType,), {})
+            super(MyType, type(mytype)).__setattr__(mytype, "bar", 1)
+            self.assertEqual(mytype.bar, 1)
+
+        test("foo1")
+        test("foo2")
+
 
 if __name__ == "__main__":
     unittest.main()

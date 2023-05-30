@@ -325,6 +325,7 @@ _PyCode_Quicken(PyCodeObject *code)
 
 #define SPEC_FAIL_SUPER_BAD_CLASS 9
 #define SPEC_FAIL_SUPER_SHADOWED 10
+#define SPEC_FAIL_SUPER_BAD_GETATTRO 11
 
 /* Attributes */
 
@@ -523,6 +524,10 @@ _Py_Specialize_LoadSuperAttr(PyObject *global_super, PyObject *cls, _Py_CODEUNIT
     }
     if (!PyType_Check(cls)) {
         SPECIALIZATION_FAIL(LOAD_SUPER_ATTR, SPEC_FAIL_SUPER_BAD_CLASS);
+        goto fail;
+    }
+    if (((PyTypeObject *)cls)->tp_getattro != PyObject_GenericGetAttr) {
+        SPECIALIZATION_FAIL(LOAD_SUPER_ATTR, SPEC_FAIL_SUPER_BAD_GETATTRO);
         goto fail;
     }
     instr->op.code = load_method ? LOAD_SUPER_ATTR_METHOD : LOAD_SUPER_ATTR_ATTR;
