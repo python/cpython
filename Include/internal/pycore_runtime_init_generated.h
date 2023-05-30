@@ -969,7 +969,6 @@ extern "C" {
     INIT_ID(id), \
     INIT_ID(ident), \
     INIT_ID(ignore), \
-    INIT_ID(ignore_unmatched_parens), \
     INIT_ID(imag), \
     INIT_ID(importlib), \
     INIT_ID(in_fd), \

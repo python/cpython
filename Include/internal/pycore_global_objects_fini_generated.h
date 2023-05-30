@@ -975,7 +975,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(id));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(ident));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(ignore));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(ignore_unmatched_parens));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(imag));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(importlib));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(in_fd));
