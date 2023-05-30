@@ -18,14 +18,14 @@ tokenizeriter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 3
+    #define NUM_KEYWORDS 2
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(readline), &_Py_ID(extra_tokens), &_Py_ID(encoding), },
+        .ob_item = { &_Py_ID(extra_tokens), &_Py_ID(encoding), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -34,7 +34,7 @@ tokenizeriter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"readline", "extra_tokens", "encoding", NULL};
+    static const char * const _keywords[] = {"", "extra_tokens", "encoding", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "tokenizeriter",
@@ -80,4 +80,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=293f2b270ef7a7e1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=48be65a2808bdfa6 input=a9049054013a1b77]*/

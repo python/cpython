@@ -38,15 +38,16 @@ typedef struct
 _tokenizer.tokenizeriter.__new__ as tokenizeriter_new
 
     readline: object
+    /
     *
     extra_tokens: bool
-    encoding: str = NULL
+    encoding: str(c_default="NULL") = 'utf-8'
 [clinic start generated code]*/
 
 static PyObject *
 tokenizeriter_new_impl(PyTypeObject *type, PyObject *readline,
                        int extra_tokens, const char *encoding)
-/*[clinic end generated code: output=7501a1211683ce16 input=92c429aa8f2e6714]*/
+/*[clinic end generated code: output=7501a1211683ce16 input=f7dddf8a613ae8bd]*/
 {
     tokenizeriterobject *self = (tokenizeriterobject *)type->tp_alloc(type, 0);
     if (self == NULL) {
