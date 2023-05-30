@@ -268,12 +268,6 @@ clear_tp_dict(PyTypeObject *self)
 static inline PyObject *
 lookup_tp_bases(PyTypeObject *self)
 {
-    if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        static_builtin_state *state = _PyStaticType_GetState(interp, self);
-        assert(state != NULL);
-        return state->tp_bases;
-    }
     return self->tp_bases;
 }
 
@@ -288,11 +282,18 @@ static inline void
 set_tp_bases(PyTypeObject *self, PyObject *bases)
 {
     if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        static_builtin_state *state = _PyStaticType_GetState(interp, self);
-        assert(state != NULL);
-        state->tp_bases = bases;
-        return;
+        assert(_Py_IsMainInterpreter(_PyInterpreterState_GET()));
+        assert(self->tp_bases == NULL);
+        if (PyTuple_GET_SIZE(bases) == 0) {
+            assert(self->tp_base == NULL);
+        }
+        else {
+            assert(PyTuple_GET_SIZE(bases) == 1);
+            assert(PyTuple_GET_ITEM(bases, 0) == (PyObject *)self->tp_base);
+            assert(self->tp_base->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
+            assert(_Py_IsImmortal(self->tp_base));
+        }
+        _Py_SetImmortal(bases);
     }
     self->tp_bases = bases;
 }
@@ -301,10 +302,12 @@ static inline void
 clear_tp_bases(PyTypeObject *self)
 {
     if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        static_builtin_state *state = _PyStaticType_GetState(interp, self);
-        assert(state != NULL);
-        Py_CLEAR(state->tp_bases);
+        if (_Py_IsMainInterpreter(_PyInterpreterState_GET())) {
+            if (self->tp_bases != NULL) {
+                assert(_Py_IsImmortal(self->tp_bases));
+                // XXX Delete the tuple?
+            }
+        }
         return;
     }
     Py_CLEAR(self->tp_bases);
