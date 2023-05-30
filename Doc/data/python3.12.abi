@@ -4634,8 +4634,8 @@
       <return type-id='type-id-8'/>
     </function-decl>
     <function-decl name='PyAIter_Check' mangled-name='PyAIter_Check' filepath='Objects/abstract.c' line='2828' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyAIter_Check'>
-      <parameter type-id='type-id-14' name='obj' filepath='Objects/abstract.c' line='2828' column='1'/>
-      <return type-id='type-id-7'/>
+      <parameter type-id='type-id-2' name='obj' filepath='Objects/abstract.c' line='2828' column='1'/>
+      <return type-id='type-id-8'/>
     </function-decl>
     <function-decl name='PyIter_Next' mangled-name='PyIter_Next' filepath='Objects/abstract.c' line='2844' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyIter_Next'>
       <parameter type-id='type-id-2' name='iter' filepath='Objects/abstract.c' line='2844' column='1'/>
