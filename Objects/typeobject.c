@@ -320,12 +320,6 @@ clear_tp_bases(PyTypeObject *self)
 static inline PyObject *
 lookup_tp_mro(PyTypeObject *self)
 {
-    if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        static_builtin_state *state = _PyStaticType_GetState(interp, self);
-        assert(state != NULL);
-        return state->tp_mro;
-    }
     return self->tp_mro;
 }
 
@@ -339,12 +333,12 @@ _PyType_GetMRO(PyTypeObject *self)
 static inline void
 set_tp_mro(PyTypeObject *self, PyObject *mro)
 {
+    assert(PyTuple_CheckExact(mro));
     if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        static_builtin_state *state = _PyStaticType_GetState(interp, self);
-        assert(state != NULL);
-        state->tp_mro = mro;
-        return;
+        assert(_Py_IsMainInterpreter(_PyInterpreterState_GET()));
+        assert(self->tp_mro == NULL);
+        /* Other checks are done via set_tp_bases. */
+        _Py_SetImmortal(mro);
     }
     self->tp_mro = mro;
 }
@@ -353,10 +347,14 @@ static inline void
 clear_tp_mro(PyTypeObject *self)
 {
     if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        static_builtin_state *state = _PyStaticType_GetState(interp, self);
-        assert(state != NULL);
-        Py_CLEAR(state->tp_mro);
+        if (_Py_IsMainInterpreter(_PyInterpreterState_GET())) {
+            if (self->tp_mro != NULL
+                && PyTuple_GET_SIZE(self->tp_mro) > 0)
+            {
+                assert(_Py_IsImmortal(self->tp_mro));
+                _Py_ClearImmortal(self->tp_mro);
+            }
+        }
         return;
     }
     Py_CLEAR(self->tp_mro);
@@ -7159,6 +7157,14 @@ type_ready_preheader(PyTypeObject *type)
 static int
 type_ready_mro(PyTypeObject *type)
 {
+    if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        if (!_Py_IsMainInterpreter(_PyInterpreterState_GET())) {
+            assert(lookup_tp_mro(type) != NULL);
+            return 0;
+        }
+        assert(lookup_tp_mro(type) == NULL);
+    }
+
     /* Calculate method resolution order */
     if (mro_internal(type, NULL) < 0) {
         return -1;
