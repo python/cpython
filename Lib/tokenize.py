@@ -34,6 +34,7 @@ import re
 import sys
 from token import *
 from token import EXACT_TOKEN_TYPES
+import _tokenize
 
 cookie_re = re.compile(r'^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)', re.ASCII)
 blank_re = re.compile(br'^[ \t\f]*(?:[#\r\n]|$)', re.ASCII)
@@ -443,12 +444,7 @@ def tokenize(readline):
             # BOM will already have been stripped.
             encoding = "utf-8"
         yield TokenInfo(ENCODING, encoding, (0, 0), (0, 0), '')
-    yield from _tokenize(rl_gen, encoding)
-
-def _tokenize(rl_gen, encoding):
-    source = b"".join(rl_gen).decode(encoding)
-    for token in _generate_tokens_from_c_tokenizer(source, extra_tokens=True):
-        yield token
+    yield from _generate_tokens_from_c_tokenizer(rl_gen.__next__, encoding, extra_tokens=True)
 
 def generate_tokens(readline):
     """Tokenize a source reading Python code as unicode strings.
@@ -456,16 +452,7 @@ def generate_tokens(readline):
     This has the same API as tokenize(), except that it expects the *readline*
     callable to return str objects instead of bytes.
     """
-    def _gen():
-        while True:
-            try:
-                line = readline()
-            except StopIteration:
-                return
-            if not line:
-                return
-            yield line.encode()
-    return _tokenize(_gen(), 'utf-8')
+    return _generate_tokens_from_c_tokenizer(readline, extra_tokens=True)
 
 def main():
     import argparse
@@ -502,9 +489,9 @@ def main():
                 tokens = list(tokenize(f.readline))
         else:
             filename = "<stdin>"
-            tokens = _tokenize(
+            tokens = _generate_tokens_from_c_tokenizer(
                 (x.encode('utf-8') for x in iter(sys.stdin.readline, "")
-            ), "utf-8")
+            ), "utf-8", extra_tokens=True)
 
 
         # Output the tokenization
@@ -531,10 +518,13 @@ def main():
         perror("unexpected error: %s" % err)
         raise
 
-def _generate_tokens_from_c_tokenizer(source, extra_tokens=False):
+def _generate_tokens_from_c_tokenizer(source, encoding=None, extra_tokens=False):
     """Tokenize a source reading Python code as unicode strings using the internal C tokenizer"""
-    import _tokenize as c_tokenizer
-    for info in c_tokenizer.TokenizerIter(source, extra_tokens=extra_tokens):
+    if encoding is None:
+        it = _tokenize.TokenizerIter(source, extra_tokens=extra_tokens)
+    else:
+        it = _tokenize.TokenizerIter(source, encoding=encoding, extra_tokens=extra_tokens)
+    for info in it:
         yield TokenInfo._make(info)
 
 
