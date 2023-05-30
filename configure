@@ -15851,7 +15851,7 @@ if test "x$ac_cv_have_decl_dirfd" = xyes; then :
 $as_echo "#define HAVE_DIRFD 1" >>confdefs.h
 
 fi
-])
+
 
 # For some functions, having a definition is not sufficient, since
 # we want to take their address.
