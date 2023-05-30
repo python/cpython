@@ -822,6 +822,12 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
         p = p->next;
         HEAD_UNLOCK(runtime);
     }
+    if (tstate->interp == interp) {
+        /* We fix tstate->_status below we we for sure aren't using it
+           (e.g. no longer need the GIL). */
+        // XXX Eliminate the need to do this.
+        tstate->_status.cleared = 0;
+    }
 
     /* It is possible that any of the objects below have a finalizer
        that runs Python code or otherwise relies on a thread state
@@ -885,6 +891,12 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     Py_CLEAR(interp->sysdict);
     Py_CLEAR(interp->builtins);
     Py_CLEAR(interp->interpreter_trampoline);
+
+    if (tstate->interp == interp) {
+        /* We are now safe to fix tstate->_status.cleared. */
+        // XXX Do this (much) earlier?
+        tstate->_status.cleared = 1;
+    }
 
     for (int i=0; i < DICT_MAX_WATCHERS; i++) {
         interp->dict_state.watchers[i] = NULL;
