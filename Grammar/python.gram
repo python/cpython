@@ -254,10 +254,10 @@ class_def[stmt_ty]:
 class_def_raw[stmt_ty]:
     | invalid_class_def_raw
     | 'class' a=NAME t=[type_params] b=['(' z=[arguments] ')' { z }] ':' c=block {
-        _PyAST_ClassDef(a->v.Name.id, t,
+        _PyAST_ClassDef(a->v.Name.id,
                      (b) ? ((expr_ty) b)->v.Call.args : NULL,
                      (b) ? ((expr_ty) b)->v.Call.keywords : NULL,
-                     c, NULL, EXTRA) }
+                     c, NULL, t, EXTRA) }
 
 # Function definitions
 # --------------------
@@ -269,17 +269,17 @@ function_def[stmt_ty]:
 function_def_raw[stmt_ty]:
     | invalid_def_raw
     | 'def' n=NAME t=[type_params] &&'(' params=[params] ')' a=['->' z=expression { z }] &&':' tc=[func_type_comment] b=block {
-        _PyAST_FunctionDef(n->v.Name.id, t,
+        _PyAST_FunctionDef(n->v.Name.id,
                         (params) ? params : CHECK(arguments_ty, _PyPegen_empty_arguments(p)),
-                        b, NULL, a, NEW_TYPE_COMMENT(p, tc), EXTRA) }
+                        b, NULL, a, NEW_TYPE_COMMENT(p, tc), t, EXTRA) }
     | ASYNC 'def' n=NAME t=[type_params] &&'(' params=[params] ')' a=['->' z=expression { z }] &&':' tc=[func_type_comment] b=block {
         CHECK_VERSION(
             stmt_ty,
             5,
             "Async functions are",
-            _PyAST_AsyncFunctionDef(n->v.Name.id, t,
+            _PyAST_AsyncFunctionDef(n->v.Name.id,
                             (params) ? params : CHECK(arguments_ty, _PyPegen_empty_arguments(p)),
-                            b, NULL, a, NEW_TYPE_COMMENT(p, tc), EXTRA)
+                            b, NULL, a, NEW_TYPE_COMMENT(p, tc), t, EXTRA)
         ) }
 
 # Function parameters
