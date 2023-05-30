@@ -100,6 +100,7 @@ jobs:
           ./configure --enable-shared
           make -j4
       - name: Check for changes in the ABI
+        id: check
         run: |
           if ! make check-abidump; then
             echo "Generated ABI file is not up to date."
@@ -109,6 +110,16 @@ jobs:
             echo ""
             exit 1
           fi
+      - name: Generate updated ABI files
+        if: ${{ failure() && steps.check.conclusion == 'failure' }}
+        run: |
+          make regen-abidump
+      - uses: actions/upload-artifact@v3
+        name: Publish updated ABI files
+        if: ${{ failure() && steps.check.conclusion == 'failure' }}
+        with:
+          name: abi-data
+          path: ./Doc/data
 
   check_generated_files:
     name: 'Check if generated files are up to date'
