@@ -1,0 +1,2 @@
+The basic dead store elimination is adopted in the basic block optimization
+process. Patch by Dong-hee Na and Carl Meyer.
