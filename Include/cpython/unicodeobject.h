@@ -379,8 +379,6 @@ static inline Py_UCS4 PyUnicode_MAX_CHAR_VALUE(PyObject *op)
 
 /* === Public API ========================================================= */
 
-/* --- Plain Py_UNICODE --------------------------------------------------- */
-
 /* With PEP 393, this is the recommended way to allocate a new unicode object.
    This function will allocate the object and its buffer in a single memory
    block.  Objects created using this function are not resizable. */
@@ -827,15 +825,15 @@ PyAPI_FUNC(int) _PyUnicode_IsLinebreak(
     const Py_UCS4 ch         /* Unicode character */
     );
 
-/* Py_DEPRECATED(3.3) */ PyAPI_FUNC(Py_UCS4) _PyUnicode_ToLowercase(
+PyAPI_FUNC(Py_UCS4) _PyUnicode_ToLowercase(
     Py_UCS4 ch       /* Unicode character */
     );
 
-/* Py_DEPRECATED(3.3) */ PyAPI_FUNC(Py_UCS4) _PyUnicode_ToUppercase(
+PyAPI_FUNC(Py_UCS4) _PyUnicode_ToUppercase(
     Py_UCS4 ch       /* Unicode character */
     );
 
-Py_DEPRECATED(3.3) PyAPI_FUNC(Py_UCS4) _PyUnicode_ToTitlecase(
+PyAPI_FUNC(Py_UCS4) _PyUnicode_ToTitlecase(
     Py_UCS4 ch       /* Unicode character */
     );
 
