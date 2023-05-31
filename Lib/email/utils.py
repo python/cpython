@@ -130,9 +130,10 @@ def _post_parse_validation(parsed_email_header_tuples):
 
 
 def getaddresses(fieldvalues):
-    """Return a list of (REALNAME, EMAIL) for each fieldvalue,
-    unless the parse fails, in which case return a 2-tuple of ('', '')
-    will be returned in it's place.
+    """Return a list of (REALNAME, EMAIL) or ('','') for each fieldvalue.
+    
+    When parsing fails for a fieldvalue, a 2-tuple of ('', '') is returned in
+    its place.
 
     If the resulting list is greater than number of items in the fieldvalues
     list, a list containing a single empty 2-tuple [('', '')] will be returned.
