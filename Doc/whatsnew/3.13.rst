@@ -87,6 +87,15 @@ New Modules
 Improved Modules
 ================
 
+io
+--
+
+The :class:`io.IOBase` finalizer now logs the ``close()`` method errors with
+:data:`sys.unraisablehook`. Previously, errors were ignored silently by default,
+and only logged in :ref:`Python Development Mode <devmode>` or on :ref:`Python
+built on debug mode <debug-build>`.
+(Contributed by Victor Stinner in :gh:`62948`.)
+
 pathlib
 -------
 
@@ -106,6 +115,10 @@ Optimizations
 Deprecated
 ==========
 
+* :mod:`wave`: Deprecate the ``getmark()``, ``setmark()`` and ``getmarkers()``
+  methods of the :class:`wave.Wave_read` and :class:`wave.Wave_write` classes.
+  They will be removed in Python 3.15.
+  (Contributed by Victor Stinner in :gh:`105096`.)
 
 
 Removed
@@ -326,6 +339,13 @@ C API Changes
 New Features
 ------------
 
+* You no longer have to define the ``PY_SSIZE_T_CLEAN`` macro before including
+  :file:`Python.h` when using ``#`` formats in
+  :ref:`format codes <arg-parsing-string-and-buffers>`.
+  APIs accepting the format codes always use ``Py_ssize_t`` for ``#`` formats.
+  (Contributed by Inada Naoki in :gh:`104922`.)
+
+
 Porting to Python 3.13
 ----------------------
 
@@ -335,3 +355,18 @@ Deprecated
 Removed
 -------
 
+* Remove functions deprecated in Python 3.9.
+
+  * ``PyEval_CallObject()``, ``PyEval_CallObjectWithKeywords()``: use
+    :c:func:`PyObject_CallNoArgs` or :c:func:`PyObject_Call` instead.
+    Warning: :c:func:`PyObject_Call` positional arguments must be a
+    :class:`tuple` and must not be *NULL*, keyword arguments must be a
+    :class:`dict` or *NULL*, whereas removed functions checked arguments type
+    and accepted *NULL* positional and keyword arguments.
+    To replace ``PyEval_CallObjectWithKeywords(func, NULL, kwargs)`` with
+    :c:func:`PyObject_Call`, pass an empty tuple as positional arguments using
+    :c:func:`PyTuple_New(0) <PyTuple_New>`.
+  * ``PyEval_CallFunction()``: use :c:func:`PyObject_CallFunction` instead.
+  * ``PyEval_CallMethod()``: use :c:func:`PyObject_CallMethod` instead.
+
+  (Contributed by Victor Stinner in :gh:`105107`.)
