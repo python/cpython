@@ -203,6 +203,27 @@ same quote as the containing f-string. Let's cover these in detail:
 
 See :pep:`701` for more details.
 
+As a positive side-effect of how this feature has been implemented (by parsing f-strings
+with the PEG parser (see :pep:`617`), now error messages for f-strings are more precise
+and include the exact location of the error. For example, in Python 3.11, the following
+f-string raises a :exc:`SyntaxError`:
+
+    >>> my_string = f"{x $ y}" + f"{1 + 1}"
+    ...
+      (x $ y)
+         ^
+    SyntaxError: f-string: invalid syntax
+
+but the error message doesn't include the exact location of the error withing the line and
+also has the expression artificially surrounded by parentheses. In Python 3.12, as f-strings
+are parsed with the PEG parser, so error messages can be more precise and show the entire line:
+
+    >>> my_string = f"{x $ y}" + f"{1 + 1}"
+    ...
+      my_string = f"{x $ y}" + f"{1 + 1}"
+                      ^
+    SyntaxError: f-string: invalid syntax
+
 (Contributed by Pablo Galindo, Batuhan Taskaya, Lysandros Nikolaou, Cristián
 Maureira-Fredes and Marta Gómez in :gh:`102856`. PEP written by Pablo Galindo,
 Batuhan Taskaya, Lysandros Nikolaou and Marta Gómez).
