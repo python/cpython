@@ -89,6 +89,7 @@ _array_fmts = None, 'b', 'h', None, 'i'
 _wave_params = namedtuple('_wave_params',
                      'nchannels sampwidth framerate nframes comptype compname')
 
+
 def _byteswap(data, width):
     swapped_data = bytearray(len(data))
 
@@ -101,7 +102,6 @@ def _byteswap(data, width):
 
 class _Chunk:
     def __init__(self, file, align=True, bigendian=True, inclheader=False):
-        import struct
         self.closed = False
         self.align = align      # whether to align to word (2-byte) boundaries
         if bigendian:
@@ -209,7 +209,6 @@ class _Chunk:
             dummy = self.read(n)
             if not dummy:
                 raise EOFError
-
 
 
 class Wave_read:
@@ -392,6 +391,7 @@ class Wave_read:
         self._framesize = self._nchannels * self._sampwidth
         self._comptype = 'NONE'
         self._compname = 'not compressed'
+
 
 class Wave_write:
     """Variables used in this class:
@@ -619,6 +619,7 @@ class Wave_write:
         self._file.write(struct.pack('<L', self._datawritten))
         self._file.seek(curpos, 0)
         self._datalength = self._datawritten
+
 
 def open(f, mode=None):
     if mode is None:
