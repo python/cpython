@@ -978,18 +978,23 @@ class Path(PurePath):
 
     def _make_child_relpath(self, name):
         path_str = str(self)
+        lines_str = self._lines
         tail = self._tail
         if tail:
             path_str = f'{path_str}{self._flavour.sep}{name}'
+            lines_str = f'{lines_str}\n{name}'
         elif path_str != '.':
             path_str = f'{path_str}{name}'
+            lines_str = f'{lines_str}{name}'
         else:
             path_str = name
+            lines_str = name
         path = self.with_segments(path_str)
         path._str = path_str
         path._drv = self.drive
         path._root = self.root
         path._tail_cached = tail + [name]
+        path._lines_cached = lines_str
         return path
 
     def glob(self, pattern, *, case_sensitive=None, follow_symlinks=None):
@@ -1025,8 +1030,17 @@ class Path(PurePath):
         if case_sensitive is None:
             # TODO: evaluate case-sensitivity of each directory in _select_children().
             case_sensitive = _is_case_sensitive(self._flavour)
+
+        # If symlinks are handled consistently, and the pattern does not
+        # contain '..' components, then we can use a 'walk-and-match' strategy
+        # when expanding '**' wildcards. When a '**' wildcard is encountered,
+        # all following pattern parts are immediately consumed and used to
+        # build a `re.Pattern` object. This pattern is used to filter the
+        # recursive walk. As a result, pattern parts following a '**' wildcard
+        # do not perform any filesystem access, which can be much faster!
+        filter_paths_supported = follow_symlinks is not None and '..' not in pattern_parts
+        deduplicate_paths = False
         paths = iter([self] if self.is_dir() else [])
-        deduplicate = False
         part_idx = 0
         while part_idx < len(pattern_parts):
             part = pattern_parts[part_idx]
@@ -1037,15 +1051,29 @@ class Path(PurePath):
             elif part == '..':
                 paths = (path._make_child_relpath('..') for path in paths)
             elif part == '**':
-                # Collapse adjacent '**' segments.
-                while part_idx < len(pattern_parts) and pattern_parts[part_idx] == '**':
-                    part_idx += 1
+                filter_paths = False
+                if filter_paths_supported:
+                    # Consume remaining path components, except trailing slash.
+                    while part_idx < len(pattern_parts) and pattern_parts[part_idx] != '':
+                        filter_paths = True
+                        part_idx += 1
+                else:
+                    # Consume adjacent '**' components.
+                    while part_idx < len(pattern_parts) and pattern_parts[part_idx] == '**':
+                        part_idx += 1
+
                 dir_only = part_idx < len(pattern_parts)
                 paths = _select_recursive(paths, dir_only, follow_symlinks)
-                # De-duplicate if we've already seen a '**' segment.
-                if deduplicate:
+
+                if filter_paths:
+                    # Filter out paths that don't match pattern.
+                    pattern_lines = self.joinpath(path_pattern)._lines
+                    match = _compile_pattern_lines(pattern_lines, case_sensitive).match
+                    paths = (path for path in paths if match(path._lines))
+                elif deduplicate_paths:
+                    # De-duplicate if we've already seen a '**' component.
                     paths = _select_unique(paths)
-                deduplicate = True
+                deduplicate_paths = True
             elif '**' in part:
                 raise ValueError("Invalid pattern: '**' can only be an entire path component")
             else:
