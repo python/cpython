@@ -169,7 +169,7 @@ Removed
 
   (Contributed by Hugo van Kemenade in :gh:`104835`.)
 
-* :pep:`594`: Remove the :mod:`!cgi`` and :mod:`!cgitb` modules,
+* :pep:`594`: Remove the :mod:`!cgi` and :mod:`!cgitb` modules,
   deprecated in Python 3.11.
 
   * ``cgi.FieldStorage`` can typically be replaced with
