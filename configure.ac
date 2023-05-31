@@ -7293,9 +7293,7 @@ dnl _elementtree loads libexpat via CAPI hook in pyexpat
 PY_STDLIB_MOD([pyexpat],
   [], [test "$ac_cv_header_sys_time_h" = "yes"],
   [$LIBEXPAT_CFLAGS], [$LIBEXPAT_LDFLAGS])
-PY_STDLIB_MOD([_elementtree],
-  [], [test "$ac_cv_header_sys_time_h" = "yes"],
-  [$LIBEXPAT_CFLAGS], [])
+PY_STDLIB_MOD([_elementtree], [], [], [$LIBEXPAT_CFLAGS], [])
 PY_STDLIB_MOD_SIMPLE([_codecs_cn])
 PY_STDLIB_MOD_SIMPLE([_codecs_hk])
 PY_STDLIB_MOD_SIMPLE([_codecs_iso2022])
