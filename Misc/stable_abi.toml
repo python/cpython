@@ -667,10 +667,13 @@
     added = '3.2'
 [function.PyEval_CallFunction]
     added = '3.2'
+    abi_only = true
 [function.PyEval_CallMethod]
     added = '3.2'
+    abi_only = true
 [function.PyEval_CallObjectWithKeywords]
     added = '3.2'
+    abi_only = true
 [function.PyEval_EvalCode]
     added = '3.2'
 [function.PyEval_EvalCodeEx]
