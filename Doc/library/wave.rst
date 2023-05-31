@@ -42,7 +42,7 @@ The :mod:`wave` module defines the following function and exception:
    value for *mode*.
 
    If you pass in a file-like object, the wave object will not close it when its
-   :meth:`close` method is called; it is the caller's responsibility to close
+   ``close()`` method is called; it is the caller's responsibility to close
    the file object.
 
    The :func:`.open` function may be used in a :keyword:`with` statement.  When
@@ -111,7 +111,7 @@ Wave_read Objects
 
       Returns a :func:`~collections.namedtuple` ``(nchannels, sampwidth,
       framerate, nframes, comptype, compname)``, equivalent to output of the
-      :meth:`get\*` methods.
+      ``get*()`` methods.
 
 
    .. method:: readframes(n)
@@ -222,7 +222,7 @@ Wave_write Objects
    .. method:: setparams(tuple)
 
       The *tuple* should be ``(nchannels, sampwidth, framerate, nframes, comptype,
-      compname)``, with values valid for the :meth:`set\*` methods.  Sets all
+      compname)``, with values valid for the ``set*()`` methods.  Sets all
       parameters.
 
 
