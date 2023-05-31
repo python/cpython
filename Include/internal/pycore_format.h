@@ -14,14 +14,12 @@ extern "C" {
  * F_BLANK      ' '
  * F_ALT        '#'
  * F_ZERO       '0'
- * F_NO_NEG_0   'z'
  */
 #define F_LJUST (1<<0)
 #define F_SIGN  (1<<1)
 #define F_BLANK (1<<2)
 #define F_ALT   (1<<3)
 #define F_ZERO  (1<<4)
-#define F_NO_NEG_0 (1<<5)
 
 #ifdef __cplusplus
 }

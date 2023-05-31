@@ -159,6 +159,7 @@
     <ClCompile Include="..\Objects\structseq.c" />
     <ClCompile Include="..\Objects\tupleobject.c" />
     <ClCompile Include="..\Objects\typeobject.c" />
+    <ClCompile Include="..\Objects\typevarobject.c" />
     <ClCompile Include="..\Objects\unicodectype.c" />
     <ClCompile Include="..\Objects\unicodeobject.c" />
     <ClCompile Include="..\Objects\unionobject.c" />
@@ -209,6 +210,8 @@
     <ClCompile Include="..\Python\importdl.c" />
     <ClCompile Include="..\Python\initconfig.c" />
     <ClCompile Include="..\Python\intrinsics.c" />
+    <ClCompile Include="..\Python\instrumentation.c" />
+    <ClCompile Include="..\Python\legacy_tracing.c" />
     <ClCompile Include="..\Python\marshal.c" />
     <ClCompile Include="..\Python\modsupport.c" />
     <ClCompile Include="..\Python\mysnprintf.c" />
@@ -239,6 +242,7 @@
     </ClCompile>
     <ClCompile Include="..\Python\thread.c" />
     <ClCompile Include="..\Python\traceback.c" />
+    <ClCompile Include="..\Python\tracemalloc.c" />
   </ItemGroup>
   <ItemGroup>
     <!-- BEGIN frozen modules -->

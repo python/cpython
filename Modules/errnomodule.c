@@ -84,6 +84,7 @@ errno_exec(PyObject *module)
     PyObject *module_dict = PyModule_GetDict(module);
     PyObject *error_dict = PyDict_New();
     if (!module_dict || !error_dict) {
+        Py_XDECREF(error_dict);
         return -1;
     }
     if (PyDict_SetItemString(module_dict, "errorcode", error_dict) < 0) {
@@ -940,6 +941,7 @@ errno_exec(PyObject *module)
 
 static PyModuleDef_Slot errno_slots[] = {
     {Py_mod_exec, errno_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

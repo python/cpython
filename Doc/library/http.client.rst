@@ -10,7 +10,7 @@
    pair: HTTP; protocol
    single: HTTP; http.client (standard module)
 
-.. index:: module: urllib.request
+.. index:: pair: module; urllib.request
 
 --------------
 
@@ -264,7 +264,10 @@ HTTPConnection Objects
             encode_chunked=False)
 
    This will send a request to the server using the HTTP request
-   method *method* and the selector *url*.
+   method *method* and the request URI *url*. The provided *url* must be
+   an absolute path to conform with :rfc:`RFC 2616 §5.1.2 <2616#section-5.1.2>`
+   (unless connecting to an HTTP proxy server or using the ``OPTIONS`` or
+   ``CONNECT`` methods).
 
    If *body* is specified, the specified data is sent after the headers are
    finished.  It may be a :class:`str`, a :term:`bytes-like object`, an
@@ -279,7 +282,10 @@ HTTPConnection Objects
    iterable are sent as is until the iterable is exhausted.
 
    The *headers* argument should be a mapping of extra HTTP headers to send
-   with the request.
+   with the request. A :rfc:`Host header <2616#section-14.23>`
+   must be provided to conform with :rfc:`RFC 2616 §5.1.2 <2616#section-5.1.2>`
+   (unless connecting to an HTTP proxy server or using the ``OPTIONS`` or
+   ``CONNECT`` methods).
 
    If *headers* contains neither Content-Length nor Transfer-Encoding,
    but there is a request body, one of those
@@ -297,6 +303,16 @@ HTTPConnection Objects
    specified in *headers*.  If *encode_chunked* is ``False``, the
    HTTPConnection object assumes that all encoding is handled by the
    calling code.  If it is ``True``, the body will be chunk-encoded.
+
+   For example, to perform a ``GET`` request to ``https://docs.python.org/3/``::
+
+      >>> import http.client
+      >>> host = "docs.python.org"
+      >>> conn = http.client.HTTPSConnection(host)
+      >>> conn.request("GET", "/3/", headers={"Host": host})
+      >>> response = conn.getresponse()
+      >>> print(response.status, response.reason)
+      200 OK
 
    .. note::
       Chunked transfer encoding has been added to the HTTP protocol
@@ -354,7 +370,7 @@ HTTPConnection Objects
    the CONNECT request.
 
    As HTTP/1.1 is used for HTTP CONNECT tunnelling request, `as per the RFC
-   <https://tools.ietf.org/html/rfc7231#section-4.3.6>`_, a HTTP ``Host:``
+   <https://datatracker.ietf.org/doc/html/rfc7231#section-4.3.6>`_, a HTTP ``Host:``
    header must be provided, matching the authority-form of the request target
    provided as the destination for the CONNECT request. If a HTTP ``Host:``
    header is not provided via the headers argument, one is generated and
@@ -377,6 +393,17 @@ HTTPConnection Objects
       protocol HTTP/1.0. ``Host:`` HTTP headers are mandatory for HTTP/1.1, so
       one will be automatically generated and transmitted if not provided in
       the headers argument.
+
+
+.. method:: HTTPConnection.get_proxy_response_headers()
+
+   Returns a dictionary with the headers of the response received from
+   the proxy server to the CONNECT request.
+
+   If the CONNECT request was not sent, the method returns an empty dictionary.
+
+   .. versionadded:: 3.12
+
 
 .. method:: HTTPConnection.connect()
 

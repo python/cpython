@@ -60,6 +60,9 @@ Copyright (C) 1994 Steen Lumholt.
 #error "Tk older than 8.5.12 not supported"
 #endif
 
+#ifndef TCL_WITH_EXTERNAL_TOMMATH
+#define TCL_NO_TOMMATH_H
+#endif
 #include <tclTomMath.h>
 
 #if !(defined(MS_WINDOWS) || defined(__CYGWIN__))
@@ -324,10 +327,6 @@ static int quitMainLoop = 0;
 static int errorInCmd = 0;
 static PyObject *excInCmd;
 
-#ifdef TKINTER_PROTECT_LOADTK
-static int tk_load_failed = 0;
-#endif
-
 
 static PyObject *Tkapp_UnicodeResult(TkappObject *);
 
@@ -532,17 +531,7 @@ Tcl_AppInit(Tcl_Interp *interp)
         return TCL_OK;
     }
 
-#ifdef TKINTER_PROTECT_LOADTK
-    if (tk_load_failed) {
-        PySys_WriteStderr("Tk_Init error: %s\n", TKINTER_LOADTK_ERRMSG);
-        return TCL_ERROR;
-    }
-#endif
-
     if (Tk_Init(interp) == TCL_ERROR) {
-#ifdef TKINTER_PROTECT_LOADTK
-        tk_load_failed = 1;
-#endif
         PySys_WriteStderr("Tk_Init error: %s\n", Tcl_GetStringResult(interp));
         return TCL_ERROR;
     }
@@ -635,12 +624,6 @@ Tkapp_New(const char *screenName, const char *className,
         Tcl_SetVar(v->interp,
                         "_tkinter_skip_tk_init", "1", TCL_GLOBAL_ONLY);
     }
-#ifdef TKINTER_PROTECT_LOADTK
-    else if (tk_load_failed) {
-        Tcl_SetVar(v->interp,
-                        "_tkinter_tk_failed", "1", TCL_GLOBAL_ONLY);
-    }
-#endif
 
     /* some initial arguments need to be in argv */
     if (sync || use) {
@@ -702,18 +685,6 @@ Tkapp_New(const char *screenName, const char *className,
 
     if (Tcl_AppInit(v->interp) != TCL_OK) {
         PyObject *result = Tkinter_Error(v);
-#ifdef TKINTER_PROTECT_LOADTK
-        if (wantTk) {
-            const char *_tkinter_tk_failed;
-            _tkinter_tk_failed = Tcl_GetVar(v->interp,
-                            "_tkinter_tk_failed", TCL_GLOBAL_ONLY);
-
-            if ( _tkinter_tk_failed != NULL &&
-                            strcmp(_tkinter_tk_failed, "1") == 0) {
-                tk_load_failed = 1;
-            }
-        }
-#endif
         Py_DECREF((PyObject *)v);
         return (TkappObject *)result;
     }
@@ -2780,18 +2751,6 @@ _tkinter_tkapp_loadtk_impl(TkappObject *self)
     const char * _tk_exists = NULL;
     int err;
 
-#ifdef TKINTER_PROTECT_LOADTK
-    /* Up to Tk 8.4.13, Tk_Init deadlocks on the second call when the
-     * first call failed.
-     * To avoid the deadlock, we just refuse the second call through
-     * a static variable.
-     */
-    if (tk_load_failed) {
-        PyErr_SetString(Tkinter_TclError, TKINTER_LOADTK_ERRMSG);
-        return NULL;
-    }
-#endif
-
     /* We want to guard against calling Tk_Init() multiple times */
     CHECK_TCL_APPARTMENT;
     ENTER_TCL
@@ -2811,9 +2770,6 @@ _tkinter_tkapp_loadtk_impl(TkappObject *self)
     if (_tk_exists == NULL || strcmp(_tk_exists, "1") != 0)     {
         if (Tk_Init(interp)             == TCL_ERROR) {
             Tkinter_Error(self);
-#ifdef TKINTER_PROTECT_LOADTK
-            tk_load_failed = 1;
-#endif
             return NULL;
         }
     }
@@ -3329,20 +3285,6 @@ PyInit__tkinter(void)
         return NULL;
     }
     PyTclObject_Type = o;
-
-#ifdef TK_AQUA
-    /* Tk_MacOSXSetupTkNotifier must be called before Tcl's subsystems
-     * start waking up.  Note that Tcl_FindExecutable will do this, this
-     * code must be above it! The original warning from
-     * tkMacOSXAppInit.c is copied below.
-     *
-     * NB - You have to swap in the Tk Notifier BEFORE you start up the
-     * Tcl interpreter for now.  It probably should work to do this
-     * in the other order, but for now it doesn't seem to.
-     *
-     */
-    Tk_MacOSXSetupTkNotifier();
-#endif
 
 
     /* This helps the dynamic loader; in Unicode aware Tcl versions

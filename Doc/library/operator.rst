@@ -244,7 +244,7 @@ Operations which work with sequences (some of them with mappings too) include:
 
 .. function:: length_hint(obj, default=0)
 
-   Return an estimated length for the object *o*. First try to return its
+   Return an estimated length for the object *obj*. First try to return its
    actual length, then an estimate using :meth:`object.__length_hint__`, and
    finally return the default value.
 

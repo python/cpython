@@ -452,9 +452,7 @@ process which created it.
    importable by the children. This is covered in :ref:`multiprocessing-programming`
    however it is worth pointing out here. This means that some examples, such
    as the :class:`multiprocessing.pool.Pool` examples will not work in the
-   interactive interpreter. For example:
-
-   .. code-block:: text
+   interactive interpreter. For example::
 
       >>> from multiprocessing import Pool
       >>> p = Pool(5)

@@ -602,7 +602,7 @@ Signal Handling
 .. c:function:: int PyErr_CheckSignals()
 
    .. index::
-      module: signal
+      pair: module; signal
       single: SIGINT
       single: KeyboardInterrupt (built-in exception)
 
@@ -633,7 +633,7 @@ Signal Handling
 .. c:function:: void PyErr_SetInterrupt()
 
    .. index::
-      module: signal
+      pair: module; signal
       single: SIGINT
       single: KeyboardInterrupt (built-in exception)
 
@@ -648,7 +648,7 @@ Signal Handling
 .. c:function:: int PyErr_SetInterruptEx(int signum)
 
    .. index::
-      module: signal
+      pair: module; signal
       single: KeyboardInterrupt (built-in exception)
 
    Simulate the effect of a signal arriving. The next time
@@ -772,6 +772,18 @@ Exception Objects
 
    Set :attr:`~BaseException.args` of exception *ex* to *args*.
 
+.. c:function:: PyObject* PyUnstable_Exc_PrepReraiseStar(PyObject *orig, PyObject *excs)
+
+   Implement part of the interpreter's implementation of :keyword:`!except*`.
+   *orig* is the original exception that was caught, and *excs* is the list of
+   the exceptions that need to be raised. This list contains the the unhandled
+   part of *orig*, if any, as well as the exceptions that were raised from the
+   :keyword:`!except*` clauses (so they have a different traceback from *orig*) and
+   those that were reraised (and have the same traceback as *orig*).
+   Return the :exc:`ExceptionGroup` that needs to be reraised in the end, or
+   ``None`` if there is nothing to reraise.
+
+   .. versionadded:: 3.12
 
 .. _unicodeexceptions:
 

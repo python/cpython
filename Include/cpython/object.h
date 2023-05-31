@@ -539,20 +539,8 @@ PyAPI_FUNC(int) _PyTrash_cond(PyObject *op, destructor dealloc);
     Py_TRASHCAN_BEGIN_CONDITION((op), \
         _PyTrash_cond(_PyObject_CAST(op), (destructor)(dealloc)))
 
-/* The following two macros, Py_TRASHCAN_SAFE_BEGIN and
- * Py_TRASHCAN_SAFE_END, are deprecated since version 3.11 and
- * will be removed in the future.
- * Use Py_TRASHCAN_BEGIN and Py_TRASHCAN_END instead.
- */
-Py_DEPRECATED(3.11) typedef int UsingDeprecatedTrashcanMacro;
-#define Py_TRASHCAN_SAFE_BEGIN(op) \
-    do { \
-        UsingDeprecatedTrashcanMacro cond=1; \
-        Py_TRASHCAN_BEGIN_CONDITION((op), cond);
-#define Py_TRASHCAN_SAFE_END(op) \
-        Py_TRASHCAN_END; \
-    } while(0);
 
+PyAPI_FUNC(void *) PyObject_GetItemData(PyObject *obj);
 
 PyAPI_FUNC(int) _PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg);
 PyAPI_FUNC(void) _PyObject_ClearManagedDict(PyObject *obj);
@@ -564,3 +552,10 @@ PyAPI_FUNC(int) PyType_AddWatcher(PyType_WatchCallback callback);
 PyAPI_FUNC(int) PyType_ClearWatcher(int watcher_id);
 PyAPI_FUNC(int) PyType_Watch(int watcher_id, PyObject *type);
 PyAPI_FUNC(int) PyType_Unwatch(int watcher_id, PyObject *type);
+
+/* Attempt to assign a version tag to the given type.
+ *
+ * Returns 1 if the type already had a valid version tag or a new one was
+ * assigned, or 0 if a new tag could not be assigned.
+ */
+PyAPI_FUNC(int) PyUnstable_Type_AssignVersionTag(PyTypeObject *type);

@@ -57,7 +57,7 @@ class LineNumbersTest(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.editwin.per.close()
-        cls.root.update()
+        cls.root.update_idletasks()
         cls.root.destroy()
         del cls.text, cls.text_frame, cls.editwin, cls.root
 
@@ -328,7 +328,7 @@ class LineNumbersTest(unittest.TestCase):
         self.assertEqual(self.linenumber.sidebar_text.index('@0,0'), '11.0')
 
         # Generate a mouse-wheel event and make sure it scrolled up or down.
-        # The meaning of the "delta" is OS-dependant, so this just checks for
+        # The meaning of the "delta" is OS-dependent, so this just checks for
         # any change.
         self.linenumber.sidebar_text.event_generate('<MouseWheel>',
                                                     x=0, y=0,
@@ -691,11 +691,12 @@ class ShellSidebarTest(unittest.TestCase):
         self.assertIsNotNone(text.dlineinfo(text.index(f'{last_lineno}.0')))
 
         # Scroll up using the <MouseWheel> event.
-        # The meaning delta is platform-dependant.
+        # The meaning of delta is platform-dependent.
         delta = -1 if sys.platform == 'darwin' else 120
         sidebar.canvas.event_generate('<MouseWheel>', x=0, y=0, delta=delta)
         yield
-        self.assertIsNone(text.dlineinfo(text.index(f'{last_lineno}.0')))
+        if sys.platform != 'darwin':  # .update_idletasks() does not work.
+            self.assertIsNone(text.dlineinfo(text.index(f'{last_lineno}.0')))
 
         # Scroll back down using the <Button-5> event.
         sidebar.canvas.event_generate('<Button-5>', x=0, y=0)

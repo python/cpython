@@ -155,6 +155,8 @@ class IntTestCases(unittest.TestCase):
         self.assertEqual(int(' 0O123   ', 0), 83)
         self.assertEqual(int(' 0X123  ', 0), 291)
         self.assertEqual(int(' 0B100 ', 0), 4)
+        with self.assertRaises(ValueError):
+            int('010', 0)
 
         # without base still base 10
         self.assertEqual(int('0123'), 123)
@@ -220,6 +222,24 @@ class IntTestCases(unittest.TestCase):
         self.assertEqual(int('2qhxjlj', 34), 4294967297)
         self.assertEqual(int('2br45qc', 35), 4294967297)
         self.assertEqual(int('1z141z5', 36), 4294967297)
+
+    def test_invalid_signs(self):
+        with self.assertRaises(ValueError):
+            int('+')
+        with self.assertRaises(ValueError):
+            int('-')
+        with self.assertRaises(ValueError):
+            int('- 1')
+        with self.assertRaises(ValueError):
+            int('+ 1')
+        with self.assertRaises(ValueError):
+            int(' + 1 ')
+
+    def test_unicode(self):
+        self.assertEqual(int("१२३४५६७८९०1234567890"), 12345678901234567890)
+        self.assertEqual(int('١٢٣٤٥٦٧٨٩٠'), 1234567890)
+        self.assertEqual(int("१२३४५६७८९०1234567890", 0), 12345678901234567890)
+        self.assertEqual(int('١٢٣٤٥٦٧٨٩٠', 0), 1234567890)
 
     def test_underscores(self):
         for lit in VALID_UNDERSCORE_LITERALS:
