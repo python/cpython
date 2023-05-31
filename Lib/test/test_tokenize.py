@@ -1100,6 +1100,13 @@ async def f():
     NEWLINE    '\\n'          (4, 1) (4, 2)
     """)
 
+    def test_closing_parenthesis_from_different_line(self):
+        self.check_tokenize("); x", """\
+    OP         ')'           (1, 0) (1, 1)
+    OP         ';'           (1, 1) (1, 2)
+    NAME       'x'           (1, 3) (1, 4)
+    """)
+
 class GenerateTokensTest(TokenizeTest):
     def check_tokenize(self, s, expected):
         # Format the tokens in s in a table format.
