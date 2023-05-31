@@ -276,7 +276,7 @@ Removed
 * Remove the old trashcan macros ``Py_TRASHCAN_SAFE_BEGIN`` and
   ``Py_TRASHCAN_SAFE_END``.  They should be replaced by the new macros
   ``Py_TRASHCAN_BEGIN`` and ``Py_TRASHCAN_END``.  The new macros were
-  added in Python 3.8 and the old macros were deprecated in Python 3.11.i
+  added in Python 3.8 and the old macros were deprecated in Python 3.11.
   (Contributed by Irit Katriel in :gh:`105111`.)
 
 
