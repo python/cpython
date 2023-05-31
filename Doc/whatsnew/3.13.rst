@@ -90,6 +90,9 @@ Improved Modules
 pathlib
 -------
 
+* Add support for recursive wildcards in :meth:`pathlib.PurePath.match`.
+  (Contributed by Barney Gale in :gh:`73435`.)
+
 * Add *follow_symlinks* keyword-only argument to :meth:`pathlib.Path.glob` and
   :meth:`~pathlib.Path.rglob`.
   (Contributed by Barney Gale in :gh:`77609`.)
