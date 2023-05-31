@@ -1739,12 +1739,16 @@
 
 [function.PyObject_AsCharBuffer]
     added = '3.2'
+    abi_only = true
 [function.PyObject_AsReadBuffer]
     added = '3.2'
+    abi_only = true
 [function.PyObject_AsWriteBuffer]
     added = '3.2'
+    abi_only = true
 [function.PyObject_CheckReadBuffer]
     added = '3.2'
+    abi_only = true
 
 # Flags are implicitly part of the ABI:
 
