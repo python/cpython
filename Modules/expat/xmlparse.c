@@ -85,7 +85,6 @@
 #ifdef _WIN32
 #  define getpid GetCurrentProcessId
 #else
-// HAVE_SYS_TIME_H is enforced by configure
 #  include <sys/time.h>  /* gettimeofday() */
 #  include <sys/types.h> /* getpid() */
 #  include <unistd.h>    /* getpid() */
