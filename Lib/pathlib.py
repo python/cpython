@@ -1024,7 +1024,7 @@ class Path(PurePath):
             # GH-65238: pathlib doesn't preserve trailing slash. Add it back.
             pattern_parts.append('')
         if pattern_parts[-1] == '**':
-            # GH-102613: '**' only matches directories. Add trailing slash.
+            # GH-70303: '**' only matches directories. Add trailing slash.
             pattern_parts.append('')
 
         if case_sensitive is None:
