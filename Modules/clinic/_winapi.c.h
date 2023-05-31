@@ -397,26 +397,25 @@ PyDoc_STRVAR(_winapi_CreateProcess__doc__,
     {"CreateProcess", _PyCFunction_CAST(_winapi_CreateProcess), METH_FASTCALL, _winapi_CreateProcess__doc__},
 
 static PyObject *
-_winapi_CreateProcess_impl(PyObject *module,
-                           const Py_UNICODE *application_name,
+_winapi_CreateProcess_impl(PyObject *module, const wchar_t *application_name,
                            PyObject *command_line, PyObject *proc_attrs,
                            PyObject *thread_attrs, BOOL inherit_handles,
                            DWORD creation_flags, PyObject *env_mapping,
-                           const Py_UNICODE *current_directory,
+                           const wchar_t *current_directory,
                            PyObject *startup_info);
 
 static PyObject *
 _winapi_CreateProcess(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    const Py_UNICODE *application_name = NULL;
+    const wchar_t *application_name = NULL;
     PyObject *command_line;
     PyObject *proc_attrs;
     PyObject *thread_attrs;
     BOOL inherit_handles;
     DWORD creation_flags;
     PyObject *env_mapping;
-    const Py_UNICODE *current_directory = NULL;
+    const wchar_t *current_directory = NULL;
     PyObject *startup_info;
 
     if (!_PyArg_ParseStack(args, nargs, "O&OOOikOO&O:CreateProcess",
@@ -1481,4 +1480,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=be1343b3759e0c96 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f32fe6ecdbffd74d input=a9049054013a1b77]*/
