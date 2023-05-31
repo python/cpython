@@ -227,7 +227,6 @@ class BasicTest(BaseTest):
                         'install',
                         '--upgrade',
                         'pip',
-                        'setuptools'
                     ]
                 )
 
@@ -601,15 +600,36 @@ class BasicTest(BaseTest):
             ld_library_path_env = "DYLD_LIBRARY_PATH"
         else:
             ld_library_path_env = "LD_LIBRARY_PATH"
-        subprocess.check_call(cmd,
-                              env={"PYTHONPATH": pythonpath,
-                                   ld_library_path_env: ld_library_path})
+        child_env = {
+                "PYTHONPATH": pythonpath,
+                ld_library_path_env: ld_library_path,
+        }
+        if asan_options := os.environ.get("ASAN_OPTIONS"):
+            # prevent https://github.com/python/cpython/issues/104839
+            child_env["ASAN_OPTIONS"] = asan_options
+        subprocess.check_call(cmd, env=child_env)
         envpy = os.path.join(self.env_dir, self.bindir, self.exe)
         # Now check the venv created from the non-installed python has
         # correct zip path in pythonpath.
         cmd = [envpy, '-S', '-c', 'import sys; print(sys.path)']
         out, err = check_output(cmd)
         self.assertTrue(zip_landmark.encode() in out)
+
+    def test_activate_shell_script_has_no_dos_newlines(self):
+        """
+        Test that the `activate` shell script contains no CR LF.
+        This is relevant for Cygwin, as the Windows build might have
+        converted line endings accidentally.
+        """
+        venv_dir = pathlib.Path(self.env_dir)
+        rmtree(venv_dir)
+        [[scripts_dir], *_] = self.ENV_SUBDIRS
+        script_path = venv_dir / scripts_dir / "activate"
+        venv.create(venv_dir)
+        with open(script_path, 'rb') as script:
+            for i, line in enumerate(script, 1):
+                error_message = f"CR LF found in line {i}"
+                self.assertFalse(line.endswith(b'\r\n'), error_message)
 
 @requireVenvCreate
 class EnsurePipTest(BaseTest):
@@ -729,7 +749,6 @@ class EnsurePipTest(BaseTest):
         # future pip versions, this test can likely be relaxed further.
         out = out.decode("latin-1") # Force to text, prevent decoding errors
         self.assertIn("Successfully uninstalled pip", out)
-        self.assertIn("Successfully uninstalled setuptools", out)
         # Check pip is now gone from the virtual environment. This only
         # applies in the system_site_packages=False case, because in the
         # other case, pip may still be available in the system site-packages

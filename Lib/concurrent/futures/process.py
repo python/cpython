@@ -49,6 +49,8 @@ import os
 from concurrent.futures import _base
 import queue
 import multiprocessing as mp
+# This import is required to load the multiprocessing.connection submodule
+# so that it can be accessed later as `mp.connection`
 import multiprocessing.connection
 from multiprocessing.queues import Queue
 import threading
@@ -363,6 +365,11 @@ class _ExecutorManagerThread(threading.Thread):
 
             if self.is_shutting_down():
                 self.flag_executor_shutting_down()
+
+                # When only canceled futures remain in pending_work_items, our
+                # next call to wait_result_broken_or_wakeup would hang forever.
+                # This makes sure we have some running futures or none at all.
+                self.add_call_item_to_queue()
 
                 # Since no new work items can be added, it is safe to shutdown
                 # this thread if there are no pending work items.

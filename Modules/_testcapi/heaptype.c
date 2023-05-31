@@ -22,7 +22,7 @@ static PyObject *pytype_fromspec_meta(PyObject* self, PyObject *meta)
         "_testcapi.HeapCTypeViaMetaclass",
         sizeof(PyObject),
         0,
-        Py_TPFLAGS_DEFAULT,
+        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
         HeapCTypeViaMetaclass_slots
     };
 
@@ -174,7 +174,7 @@ test_from_spec_invalid_metatype_inheritance(PyObject *self, PyObject *Py_UNUSED(
         }
         if (res == 0) {
             PyErr_SetString(PyExc_AssertionError,
-                    "TypeError did not inlclude expected message.");
+                    "TypeError did not include expected message.");
             goto finally;
         }
         result = Py_NewRef(Py_None);
@@ -265,7 +265,7 @@ test_type_from_ephemeral_spec(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     /* deallocate the spec (and all contents) */
 
-    // (Explicitly ovewrite memory before freeing,
+    // (Explicitly overwrite memory before freeing,
     // so bugs show themselves even without the debug allocator's help.)
     memset(spec, 0xdd, sizeof(PyType_Spec));
     PyMem_Del(spec);
@@ -371,7 +371,6 @@ create_type_from_repeated_slots(PyObject *self, PyObject *variant_obj)
 }
 
 
-
 static PyObject *
 make_immutable_type_with_base(PyObject *self, PyObject *base)
 {
@@ -383,6 +382,30 @@ make_immutable_type_with_base(PyObject *self, PyObject *base)
         .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE,
     };
     return PyType_FromSpecWithBases(&ImmutableSubclass_spec, base);
+}
+
+static PyObject *
+make_type_with_base(PyObject *self, PyObject *base)
+{
+    assert(PyType_Check(base));
+    PyType_Spec ImmutableSubclass_spec = {
+        .name = "_testcapi.Subclass",
+        .basicsize = (int)((PyTypeObject*)base)->tp_basicsize,
+        .slots = empty_type_slots,
+        .flags = Py_TPFLAGS_DEFAULT,
+    };
+    return PyType_FromSpecWithBases(&ImmutableSubclass_spec, base);
+}
+
+
+static PyObject *
+pyobject_getitemdata(PyObject *self, PyObject *o)
+{
+    void *pointer = PyObject_GetItemData(o);
+    if (pointer == NULL) {
+        return NULL;
+    }
+    return PyLong_FromVoidPtr(pointer);
 }
 
 
@@ -397,6 +420,8 @@ static PyMethodDef TestMethods[] = {
      test_from_spec_invalid_metatype_inheritance,
      METH_NOARGS},
     {"make_immutable_type_with_base", make_immutable_type_with_base, METH_O},
+    {"make_type_with_base", make_type_with_base, METH_O},
+    {"pyobject_getitemdata", pyobject_getitemdata, METH_O},
     {NULL},
 };
 
@@ -623,16 +648,15 @@ heapctypesubclasswithfinalizer_init(PyObject *self, PyObject *args, PyObject *kw
 static void
 heapctypesubclasswithfinalizer_finalize(PyObject *self)
 {
-    PyObject *error_type, *error_value, *error_traceback, *m;
     PyObject *oldtype = NULL, *newtype = NULL, *refcnt = NULL;
 
     /* Save the current exception, if any. */
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+    PyObject *exc = PyErr_GetRaisedException();
 
     if (_testcapimodule == NULL) {
         goto cleanup_finalize;
     }
-    m = PyState_FindModule(_testcapimodule);
+    PyObject *m = PyState_FindModule(_testcapimodule);
     if (m == NULL) {
         goto cleanup_finalize;
     }
@@ -667,7 +691,7 @@ cleanup_finalize:
     Py_XDECREF(refcnt);
 
     /* Restore the saved exception. */
-    PyErr_Restore(error_type, error_value, error_traceback);
+    PyErr_SetRaisedException(exc);
 }
 
 static PyType_Slot HeapCTypeSubclassWithFinalizer_slots[] = {
@@ -974,6 +998,113 @@ static PyType_Spec HeapCTypeSetattr_spec = {
     HeapCTypeSetattr_slots
 };
 
+PyDoc_STRVAR(HeapCCollection_doc,
+"Tuple-like heap type that uses PyObject_GetItemData for items.");
+
+static PyObject*
+HeapCCollection_new(PyTypeObject *subtype, PyObject *args, PyObject *kwds)
+{
+    PyObject *self = NULL;
+    PyObject *result = NULL;
+
+    Py_ssize_t size = PyTuple_GET_SIZE(args);
+    self = subtype->tp_alloc(subtype, size);
+    if (!self) {
+        goto finally;
+    }
+    PyObject **data = PyObject_GetItemData(self);
+    if (!data) {
+        goto finally;
+    }
+
+    for (Py_ssize_t i = 0; i < size; i++) {
+        data[i] = Py_NewRef(PyTuple_GET_ITEM(args, i));
+    }
+
+    result = self;
+    self = NULL;
+  finally:
+    Py_XDECREF(self);
+    return result;
+}
+
+static Py_ssize_t
+HeapCCollection_length(PyVarObject *self)
+{
+    return Py_SIZE(self);
+}
+
+static PyObject*
+HeapCCollection_item(PyObject *self, Py_ssize_t i)
+{
+    if (i < 0 || i >= Py_SIZE(self)) {
+        return PyErr_Format(PyExc_IndexError, "index %zd out of range", i);
+    }
+    PyObject **data = PyObject_GetItemData(self);
+    if (!data) {
+        return NULL;
+    }
+    return Py_NewRef(data[i]);
+}
+
+static int
+HeapCCollection_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    PyObject **data = PyObject_GetItemData(self);
+    if (!data) {
+        return -1;
+    }
+    for (Py_ssize_t i = 0; i < Py_SIZE(self); i++) {
+        Py_VISIT(data[i]);
+    }
+    return 0;
+}
+
+static int
+HeapCCollection_clear(PyObject *self)
+{
+    PyObject **data = PyObject_GetItemData(self);
+    if (!data) {
+        return -1;
+    }
+    Py_ssize_t size = Py_SIZE(self);
+    Py_SET_SIZE(self, 0);
+    for (Py_ssize_t i = 0; i < size; i++) {
+        Py_CLEAR(data[i]);
+    }
+    return 0;
+}
+
+static void
+HeapCCollection_dealloc(PyObject *self)
+{
+    PyTypeObject *tp = Py_TYPE(self);
+    HeapCCollection_clear(self);
+    PyObject_GC_UnTrack(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
+}
+
+static PyType_Slot HeapCCollection_slots[] = {
+    {Py_tp_new, HeapCCollection_new},
+    {Py_sq_length, HeapCCollection_length},
+    {Py_sq_item, HeapCCollection_item},
+    {Py_tp_traverse, HeapCCollection_traverse},
+    {Py_tp_clear, HeapCCollection_clear},
+    {Py_tp_dealloc, HeapCCollection_dealloc},
+    {Py_tp_doc, (void *)HeapCCollection_doc},
+    {0, 0},
+};
+
+static PyType_Spec HeapCCollection_spec = {
+    .name = "_testcapi.HeapCCollection",
+    .basicsize = sizeof(PyVarObject),
+    .itemsize = sizeof(PyObject*),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_ITEMS_AT_END),
+    .slots = HeapCCollection_slots,
+};
+
 int
 _PyTestCapi_Init_Heaptype(PyObject *m) {
     _testcapimodule = PyModule_GetDef(m);
@@ -1096,6 +1227,17 @@ _PyTestCapi_Init_Heaptype(PyObject *m) {
         return -1;
     }
     PyModule_AddObject(m, "HeapCTypeMetaclassCustomNew", HeapCTypeMetaclassCustomNew);
+
+    PyObject *HeapCCollection = PyType_FromMetaclass(
+        NULL, m, &HeapCCollection_spec, NULL);
+    if (HeapCCollection == NULL) {
+        return -1;
+    }
+    int rc = PyModule_AddType(m, (PyTypeObject *)HeapCCollection);
+    Py_DECREF(HeapCCollection);
+    if (rc < 0) {
+        return -1;
+    }
 
     return 0;
 }

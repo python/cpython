@@ -1,2 +1,0 @@
-Fix creating install directories in ``make sharedinstall`` if they exist
-outside ``DESTDIR`` already.

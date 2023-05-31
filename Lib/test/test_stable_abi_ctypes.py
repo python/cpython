@@ -166,6 +166,7 @@ SYMBOL_NAMES = (
     "PyErr_CheckSignals",
     "PyErr_Clear",
     "PyErr_Display",
+    "PyErr_DisplayException",
     "PyErr_ExceptionMatches",
     "PyErr_Fetch",
     "PyErr_Format",
@@ -528,6 +529,7 @@ SYMBOL_NAMES = (
     "PyObject_GetBuffer",
     "PyObject_GetItem",
     "PyObject_GetIter",
+    "PyObject_GetTypeData",
     "PyObject_HasAttr",
     "PyObject_HasAttrString",
     "PyObject_Hash",
@@ -678,6 +680,7 @@ SYMBOL_NAMES = (
     "PyType_GetName",
     "PyType_GetQualName",
     "PyType_GetSlot",
+    "PyType_GetTypeDataSize",
     "PyType_IsSubtype",
     "PyType_Modified",
     "PyType_Ready",
@@ -915,6 +918,8 @@ if feature_macros['PY_HAVE_THREAD_NATIVE_ID']:
     )
 if feature_macros['Py_REF_DEBUG']:
     SYMBOL_NAMES += (
+        '_Py_DecRefTotal_DO_NOT_USE_THIS',
+        '_Py_IncRefTotal_DO_NOT_USE_THIS',
         '_Py_NegativeRefcount',
         '_Py_RefTotal',
     )

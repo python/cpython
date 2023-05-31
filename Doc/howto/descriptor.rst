@@ -1273,11 +1273,14 @@ Using the non-data descriptor protocol, a pure Python version of
 
 .. testcode::
 
+    import functools
+
     class StaticMethod:
         "Emulate PyStaticMethod_Type() in Objects/funcobject.c"
 
         def __init__(self, f):
             self.f = f
+            functools.update_wrapper(self, f)
 
         def __get__(self, obj, objtype=None):
             return self.f
@@ -1285,13 +1288,19 @@ Using the non-data descriptor protocol, a pure Python version of
         def __call__(self, *args, **kwds):
             return self.f(*args, **kwds)
 
+The :func:`functools.update_wrapper` call adds a ``__wrapped__`` attribute
+that refers to the underlying function.  Also it carries forward
+the attributes necessary to make the wrapper look like the wrapped
+function: ``__name__``, ``__qualname__``, ``__doc__``, and ``__annotations__``.
+
 .. testcode::
     :hide:
 
     class E_sim:
         @StaticMethod
-        def f(x):
-            return x * 10
+        def f(x: int) -> str:
+            "Simple function example"
+            return "!" * x
 
     wrapped_ord = StaticMethod(ord)
 
@@ -1299,11 +1308,51 @@ Using the non-data descriptor protocol, a pure Python version of
     :hide:
 
     >>> E_sim.f(3)
-    30
+    '!!!'
     >>> E_sim().f(3)
-    30
+    '!!!'
+
+    >>> sm = vars(E_sim)['f']
+    >>> type(sm).__name__
+    'StaticMethod'
+    >>> f = E_sim.f
+    >>> type(f).__name__
+    'function'
+    >>> sm.__name__
+    'f'
+    >>> f.__name__
+    'f'
+    >>> sm.__qualname__
+    'E_sim.f'
+    >>> f.__qualname__
+    'E_sim.f'
+    >>> sm.__doc__
+    'Simple function example'
+    >>> f.__doc__
+    'Simple function example'
+    >>> sm.__annotations__
+    {'x': <class 'int'>, 'return': <class 'str'>}
+    >>> f.__annotations__
+    {'x': <class 'int'>, 'return': <class 'str'>}
+    >>> sm.__module__ == f.__module__
+    True
+    >>> sm(3)
+    '!!!'
+    >>> f(3)
+    '!!!'
+
     >>> wrapped_ord('A')
     65
+    >>> wrapped_ord.__module__ == ord.__module__
+    True
+    >>> wrapped_ord.__wrapped__ == ord
+    True
+    >>> wrapped_ord.__name__ == ord.__name__
+    True
+    >>> wrapped_ord.__qualname__ == ord.__qualname__
+    True
+    >>> wrapped_ord.__doc__ == ord.__doc__
+    True
 
 
 Class methods
@@ -1359,11 +1408,14 @@ Using the non-data descriptor protocol, a pure Python version of
 
 .. testcode::
 
+    import functools
+
     class ClassMethod:
         "Emulate PyClassMethod_Type() in Objects/funcobject.c"
 
         def __init__(self, f):
             self.f = f
+            functools.update_wrapper(self, f)
 
         def __get__(self, obj, cls=None):
             if cls is None:
@@ -1380,8 +1432,9 @@ Using the non-data descriptor protocol, a pure Python version of
     # Verify the emulation works
     class T:
         @ClassMethod
-        def cm(cls, x, y):
-            return (cls, x, y)
+        def cm(cls, x: int, y: str) -> tuple[str, int, str]:
+            "Class method that returns a tuple"
+            return (cls.__name__, x, y)
 
         @ClassMethod
         @property
@@ -1393,16 +1446,39 @@ Using the non-data descriptor protocol, a pure Python version of
     :hide:
 
     >>> T.cm(11, 22)
-    (<class 'T'>, 11, 22)
+    ('T', 11, 22)
 
     # Also call it from an instance
     >>> t = T()
     >>> t.cm(11, 22)
-    (<class 'T'>, 11, 22)
+    ('T', 11, 22)
 
     # Check the alternate path for chained descriptors
     >>> T.__doc__
     "A doc for 'T'"
+
+    # Verify that T uses our emulation
+    >>> type(vars(T)['cm']).__name__
+    'ClassMethod'
+
+    # Verify that update_wrapper() correctly copied attributes
+    >>> T.cm.__name__
+    'cm'
+    >>> T.cm.__qualname__
+    'T.cm'
+    >>> T.cm.__doc__
+    'Class method that returns a tuple'
+    >>> T.cm.__annotations__
+    {'x': <class 'int'>, 'y': <class 'str'>, 'return': tuple[str, int, str]}
+
+    # Verify that __wrapped__ was added and works correctly
+    >>> f = vars(T)['cm'].__wrapped__
+    >>> type(f).__name__
+    'function'
+    >>> f.__name__
+    'cm'
+    >>> f(T, 11, 22)
+    ('T', 11, 22)
 
 
 The code path for ``hasattr(type(self.f), '__get__')`` was added in
@@ -1422,6 +1498,12 @@ chained together.  In Python 3.11, this functionality was deprecated.
 
     >>> G.__doc__
     "A doc for 'G'"
+
+The :func:`functools.update_wrapper` call in ``ClassMethod`` adds a
+``__wrapped__`` attribute that refers to the underlying function.  Also
+it carries forward the attributes necessary to make the wrapper look
+like the wrapped function: ``__name__``, ``__qualname__``, ``__doc__``,
+and ``__annotations__``.
 
 
 Member objects and __slots__

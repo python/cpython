@@ -7,7 +7,6 @@
 
 extern PyObject* PyInit__abc(void);
 extern PyObject* PyInit_array(void);
-extern PyObject* PyInit_audioop(void);
 extern PyObject* PyInit_binascii(void);
 extern PyObject* PyInit_cmath(void);
 extern PyObject* PyInit_errno(void);
@@ -43,10 +42,14 @@ extern PyObject* PyInit__collections(void);
 extern PyObject* PyInit__heapq(void);
 extern PyObject* PyInit__bisect(void);
 extern PyObject* PyInit__symtable(void);
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_GAMES)
 extern PyObject* PyInit_mmap(void);
+#endif
 extern PyObject* PyInit__csv(void);
 extern PyObject* PyInit__sre(void);
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)
 extern PyObject* PyInit_winreg(void);
+#endif
 extern PyObject* PyInit__struct(void);
 extern PyObject* PyInit__datetime(void);
 extern PyObject* PyInit__functools(void);
@@ -85,7 +88,6 @@ struct _inittab _PyImport_Inittab[] = {
     {"_abc", PyInit__abc},
     {"array", PyInit_array},
     {"_ast", PyInit__ast},
-    {"audioop", PyInit_audioop},
     {"binascii", PyInit_binascii},
     {"cmath", PyInit_cmath},
     {"errno", PyInit_errno},
@@ -122,10 +124,14 @@ struct _inittab _PyImport_Inittab[] = {
     {"itertools", PyInit_itertools},
     {"_collections", PyInit__collections},
     {"_symtable", PyInit__symtable},
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_GAMES)
     {"mmap", PyInit_mmap},
+#endif
     {"_csv", PyInit__csv},
     {"_sre", PyInit__sre},
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)
     {"winreg", PyInit_winreg},
+#endif
     {"_struct", PyInit__struct},
     {"_datetime", PyInit__datetime},
     {"_functools", PyInit__functools},

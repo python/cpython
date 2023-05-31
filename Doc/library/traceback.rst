@@ -14,11 +14,10 @@ interpreter when it prints a stack trace.  This is useful when you want to print
 stack traces under program control, such as in a "wrapper" around the
 interpreter.
 
-.. index:: object: traceback
+.. index:: pair: object; traceback
 
-The module uses traceback objects --- this is the object type that is stored in
-the :data:`sys.last_traceback` variable and returned as the third item from
-:func:`sys.exc_info`.
+The module uses traceback objects --- these are objects of type :class:`types.TracebackType`,
+which are assigned to the ``__traceback__`` field of :class:`BaseException` instances.
 
 .. seealso::
 
@@ -81,7 +80,7 @@ The module defines the following functions:
 
 .. function:: print_exc(limit=None, file=None, chain=True)
 
-   This is a shorthand for ``print_exception(*sys.exc_info(), limit, file,
+   This is a shorthand for ``print_exception(sys.exception(), limit, file,
    chain)``.
 
 
@@ -219,7 +218,7 @@ The module also defines the following classes:
 :class:`TracebackException` objects are created from actual exceptions to
 capture data for later printing in a lightweight fashion.
 
-.. class:: TracebackException(exc_type, exc_value, exc_traceback, *, limit=None, lookup_lines=True, capture_locals=False, compact=False)
+.. class:: TracebackException(exc_type, exc_value, exc_traceback, *, limit=None, lookup_lines=True, capture_locals=False, compact=False, max_group_width=15, max_group_depth=10)
 
    Capture an exception for later rendering. *limit*, *lookup_lines* and
    *capture_locals* are as for the :class:`StackSummary` class.
@@ -231,6 +230,12 @@ capture data for later printing in a lightweight fashion.
 
    Note that when locals are captured, they are also shown in the traceback.
 
+   *max_group_width* and *max_group_depth* control the formatting of exception
+   groups (see :exc:`BaseExceptionGroup`). The depth refers to the nesting
+   level of the group, and the width refers to the size of a single exception
+   group's exceptions array. The formatted output is truncated when either
+   limit is exceeded.
+
    .. attribute:: __cause__
 
       A :class:`TracebackException` of the original ``__cause__``.
@@ -238,6 +243,14 @@ capture data for later printing in a lightweight fashion.
    .. attribute:: __context__
 
       A :class:`TracebackException` of the original ``__context__``.
+
+   .. attribute:: exceptions
+
+      If ``self`` represents an :exc:`ExceptionGroup`, this field holds a list of
+      :class:`TracebackException` instances representing the nested exceptions.
+      Otherwise it is ``None``.
+
+      .. versionadded:: 3.11
 
    .. attribute:: __suppress_context__
 
@@ -323,6 +336,9 @@ capture data for later printing in a lightweight fashion.
 
    .. versionchanged:: 3.10
       Added the *compact* parameter.
+
+   .. versionchanged:: 3.11
+      Added the *max_group_width* and *max_group_depth* parameters.
 
 
 :class:`StackSummary` Objects
@@ -444,11 +460,11 @@ exception and traceback:
    try:
        lumberjack()
    except IndexError:
-       exc_type, exc_value, exc_traceback = sys.exc_info()
+       exc = sys.exception()
        print("*** print_tb:")
-       traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
+       traceback.print_tb(exc.__traceback__, limit=1, file=sys.stdout)
        print("*** print_exception:")
-       traceback.print_exception(exc_value, limit=2, file=sys.stdout)
+       traceback.print_exception(exc, limit=2, file=sys.stdout)
        print("*** print_exc:")
        traceback.print_exc(limit=2, file=sys.stdout)
        print("*** format_exc, first and last line:")
@@ -456,12 +472,12 @@ exception and traceback:
        print(formatted_lines[0])
        print(formatted_lines[-1])
        print("*** format_exception:")
-       print(repr(traceback.format_exception(exc_value)))
+       print(repr(traceback.format_exception(exc)))
        print("*** extract_tb:")
-       print(repr(traceback.extract_tb(exc_traceback)))
+       print(repr(traceback.extract_tb(exc.__traceback__)))
        print("*** format_tb:")
-       print(repr(traceback.format_tb(exc_traceback)))
-       print("*** tb_lineno:", exc_traceback.tb_lineno)
+       print(repr(traceback.format_tb(exc.__traceback__)))
+       print("*** tb_lineno:", exc.__traceback__.tb_lineno)
 
 The output for the example would look similar to this:
 

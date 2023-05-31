@@ -371,7 +371,7 @@ ordering::
     >>> from struct import *
     >>> pack(">bhl", 1, 2, 3)
     b'\x01\x00\x02\x00\x00\x00\x03'
-    >>> unpack('>bhl', b'\x01\x00\x02\x00\x00\x00\x03'
+    >>> unpack('>bhl', b'\x01\x00\x02\x00\x00\x00\x03')
     (1, 2, 3)
     >>> calcsize('>bhl')
     7
@@ -602,4 +602,4 @@ The :mod:`struct` module also defines the following type:
 
 .. _ieee 754 standard: https://en.wikipedia.org/wiki/IEEE_754-2008_revision
 
-.. _IETF RFC 1700: https://tools.ietf.org/html/rfc1700
+.. _IETF RFC 1700: https://datatracker.ietf.org/doc/html/rfc1700
