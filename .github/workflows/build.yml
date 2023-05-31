@@ -89,6 +89,7 @@ jobs:
             Doc/**
             Misc/**
             .github/workflows/reusable-docs.yml
+          format: csv  # unbreaks paths /w whitespaces; json is harder to parse
       - name: Check for docs changes
         if: >-
           github.event_name == 'pull_request'
