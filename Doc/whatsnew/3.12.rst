@@ -221,7 +221,7 @@ are parsed with the PEG parser, so error messages can be more precise and show t
     >>> my_string = f"{x $ y}" + f"{1 + 1}"
     ...
       my_string = f"{x $ y}" + f"{1 + 1}"
-                      ^
+                       ^
     SyntaxError: f-string: invalid syntax
 
 (Contributed by Pablo Galindo, Batuhan Taskaya, Lysandros Nikolaou, Cristián
