@@ -236,7 +236,7 @@ static inline PyObject *get_interned_dict(PyInterpreterState *interp)
 }
 
 Py_ssize_t
-_PyUnicode_InternedSize()
+_PyUnicode_InternedSize(void)
 {
     return PyObject_Length(get_interned_dict(_PyInterpreterState_GET()));
 }

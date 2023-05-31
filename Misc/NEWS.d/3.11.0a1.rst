@@ -1966,8 +1966,8 @@ A new function ``operator.call`` has been added, such that
 .. nonce: ofe3ms
 .. section: Library
 
-:class:`webbrowser.MacOSX` is deprecated and will be removed in Python 3.13.
-It is untested and undocumented and also not used by webbrowser itself.
+:class:`!webbrowser.MacOSX` is deprecated and will be removed in Python 3.13.
+It is untested and undocumented and also not used by :mod:`webbrowser` itself.
 Patch by Dong-hee Na.
 
 ..
