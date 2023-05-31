@@ -786,7 +786,8 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
             goto end;
         }
         if (r < 0) {
-            goto end;
+            // Ignore subclasses that throw on issubclass().
+            PyErr_Clear();
         }
     }
 
@@ -856,8 +857,7 @@ subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
         int r = PyObject_IsSubclass(subclass, rkey);
         Py_DECREF(rkey);
         if (r < 0) {
-            ret = -1;
-            break;
+            PyErr_Clear();
         }
         if (r > 0) {
             if (_add_to_weak_set(&impl->_abc_cache, subclass) < 0) {

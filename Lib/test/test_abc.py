@@ -435,16 +435,21 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
                 None,
                 lambda x: [],
                 lambda: 42,
-                lambda: [42],
             ]
 
             for i, func in enumerate(bogus_subclasses):
                 class S(metaclass=abc_ABCMeta):
                     __subclasses__ = func
 
-                with self.subTest(i=i):
+                with self.subTest(i=i, func=func):
                     with self.assertRaises(TypeError):
                         issubclass(int, S)
+
+            # If __subclasses__ contains non-classes, we suppress the error instead.
+            class S(metaclass=abc_ABCMeta):
+                __subclasses__ = lambda: [42]
+
+            self.assertIs(issubclass(int, S), False)
 
             # Also check that issubclass() propagates exceptions raised by
             # __subclasses__.
@@ -458,6 +463,35 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
 
             with self.assertRaisesRegex(Exception, exc_msg):
                 issubclass(int, S)
+
+        def test_subclass_with_broken_subclasscheck(self):
+            class A(metaclass=abc_ABCMeta):
+                pass
+
+            class Unrelated: pass
+
+            self.assertIs(issubclass(Unrelated, A), False)
+
+            class BrokenMeta(abc_ABCMeta):
+                is_broken = True
+                def __subclasscheck__(cls, subclass):
+                    if not BrokenMeta.is_broken:
+                        return super().__subclasscheck__(subclass)
+                    raise Exception("broken")
+
+            class Broken(A, metaclass=BrokenMeta):
+                pass
+
+            self.assertIs(issubclass(Unrelated, A), False)
+
+            class RegisteredBroken(metaclass=BrokenMeta):
+                pass
+
+            BrokenMeta.is_broken = False
+            A.register(RegisteredBroken)
+            BrokenMeta.is_broken = True
+
+            self.assertIs(issubclass(Unrelated, A), False)
 
         def test_subclasshook(self):
             class A(metaclass=abc.ABCMeta):

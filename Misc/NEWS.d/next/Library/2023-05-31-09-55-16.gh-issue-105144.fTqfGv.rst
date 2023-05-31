@@ -1,0 +1,3 @@
+Subclass checks on :class:`abc.ABC` subclasses no longer propagate errors
+raised by subclass checks on unrelated base classes of the ABC. Patch by
+Jelle Zijlstra.
