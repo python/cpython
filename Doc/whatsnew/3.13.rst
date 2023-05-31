@@ -370,3 +370,23 @@ Removed
   * ``PyEval_CallMethod()``: use :c:func:`PyObject_CallMethod` instead.
 
   (Contributed by Victor Stinner in :gh:`105107`.)
+
+* Remove the following old functions to configure the Python initialization,
+  deprecated in Python 3.11:
+
+  * ``PySys_AddWarnOptionUnicode()``: use :c:member:`PyConfig.warnoptions` instead.
+  * ``PySys_AddWarnOption()``: use :c:member:`PyConfig.warnoptions` instead.
+  * ``PySys_AddXOption()``: use :c:member:`PyConfig.xoptions` instead.
+  * ``PySys_HasWarnOptions()``: use :c:member:`PyConfig.xoptions` instead.
+  * ``PySys_SetArgvEx()``: set :c:member:`PyConfig.argv` instead.
+  * ``PySys_SetArgv()``: set :c:member:`PyConfig.argv` instead.
+  * ``PySys_SetPath()``: set :c:member:`PyConfig.module_search_paths` instead.
+  * ``Py_SetPath()``: set :c:member:`PyConfig.module_search_paths` instead.
+  * ``Py_SetProgramName()``: set :c:member:`PyConfig.program_name` instead.
+  * ``Py_SetPythonHome()``: set :c:member:`PyConfig.home` instead.
+  * ``Py_SetStandardStreamEncoding()``: set :c:member:`PyConfig.stdio_encoding` instead.
+  * ``_Py_SetProgramFullPath()``: set :c:member:`PyConfig.executable` instead.
+
+  Use the new :c:type:`PyConfig` API of the :ref:`Python Initialization
+  Configuration <init-config>` instead (:pep:`587`), added to Python 3.8.
+  (Contributed by Victor Stinner in :gh:`105145`.)
