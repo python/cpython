@@ -203,6 +203,31 @@ same quote as the containing f-string. Let's cover these in detail:
 
 See :pep:`701` for more details.
 
+As a positive side-effect of how this feature has been implemented (by parsing f-strings
+with the PEG parser (see :pep:`617`), now error messages for f-strings are more precise
+and include the exact location of the error. For example, in Python 3.11, the following
+f-string raises a :exc:`SyntaxError`:
+
+.. code-block:: python
+
+    >>> my_string = f"{x z y}" + f"{1 + 1}"
+      File "<stdin>", line 1
+        (x z y)
+         ^^^
+    SyntaxError: f-string: invalid syntax. Perhaps you forgot a comma?
+
+but the error message doesn't include the exact location of the error withing the line and
+also has the expression artificially surrounded by parentheses. In Python 3.12, as f-strings
+are parsed with the PEG parser, error messages can be more precise and show the entire line:
+
+.. code-block:: python
+
+    >>> my_string = f"{x z y}" + f"{1 + 1}"
+      File "<stdin>", line 1
+        my_string = f"{x z y}" + f"{1 + 1}"
+                       ^^^
+    SyntaxError: invalid syntax. Perhaps you forgot a comma?
+
 (Contributed by Pablo Galindo, Batuhan Taskaya, Lysandros Nikolaou, Cristián
 Maureira-Fredes and Marta Gómez in :gh:`102856`. PEP written by Pablo Galindo,
 Batuhan Taskaya, Lysandros Nikolaou and Marta Gómez).
