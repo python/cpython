@@ -915,6 +915,9 @@ CPython bytecode changes
 * Remove the :opcode:`!JUMP_IF_FALSE_OR_POP` and :opcode:`!JUMP_IF_TRUE_OR_POP`
   instructions. (Contributed by Irit Katriel in :gh:`102859`.)
 
+* Add the :opcode:`LOAD_FAST_AND_CLEAR` instruction as part of the
+  implementation of :pep:`709`. (Contributed by Carl Meyer in :gh:`101441`.)
+
 * Add the :opcode:`LOAD_FROM_DICT_OR_DEREF`, :opcode:`LOAD_FROM_DICT_OR_GLOBALS`,
   and :opcode:`LOAD_LOCALS` opcodes as part of the implementation of :pep:`695`.
   Remove the :opcode:`!LOAD_CLASSDEREF` opcode, which can be replaced with
