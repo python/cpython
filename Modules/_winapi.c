@@ -1058,14 +1058,13 @@ process ID, and thread ID.
 [clinic start generated code]*/
 
 static PyObject *
-_winapi_CreateProcess_impl(PyObject *module,
-                           const Py_UNICODE *application_name,
+_winapi_CreateProcess_impl(PyObject *module, const wchar_t *application_name,
                            PyObject *command_line, PyObject *proc_attrs,
                            PyObject *thread_attrs, BOOL inherit_handles,
                            DWORD creation_flags, PyObject *env_mapping,
-                           const Py_UNICODE *current_directory,
+                           const wchar_t *current_directory,
                            PyObject *startup_info)
-/*[clinic end generated code: output=9b2423a609230132 input=42ac293eaea03fc4]*/
+/*[clinic end generated code: output=a25c8e49ea1d6427 input=42ac293eaea03fc4]*/
 {
     PyObject *ret = NULL;
     BOOL result;
