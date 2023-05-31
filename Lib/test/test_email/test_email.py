@@ -3383,7 +3383,7 @@ Foo
            ['foo: ;', '"Jason R. Mastaler" <jason@dom.ain>']),
            [('', ''), ('Jason R. Mastaler', 'jason@dom.ain')])
         eq(utils.getaddresses(
-           ['Pete(A nice \) chap) <pete(his account)@silly.test(his host)>']),
+           [r'Pete(A nice \) chap) <pete(his account)@silly.test(his host)>']),
            [('Pete (A nice ) chap his account his host)', 'pete@silly.test')])
         eq(utils.getaddresses(
            ['(Empty list)(start)Undisclosed recipients  :(nobody(I know))']),
@@ -3401,7 +3401,7 @@ Foo
            ['Undisclosed recipients:;']),
            [('', '')])
         eq(utils.getaddresses(
-           ['<boss@nil.test>, "Giant; \"Big\" Box" <bob@example.net>']),
+           [r'<boss@nil.test>, "Giant; \"Big\" Box" <bob@example.net>']),
            [('', 'boss@nil.test'), ('Giant;  Big  Box', 'bob@example.net')])
 
     def test_getaddresses_embedded_comment(self):
