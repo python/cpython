@@ -1727,7 +1727,7 @@ def _caller(depth=1, default='__main__'):
         pass
     return None
 
-def _allow_reckless_class_checks(depth=3):
+def _allow_reckless_class_checks(depth=2):
     """Allow instance and class checks for special stdlib modules.
 
     The abc and functools modules indiscriminately call isinstance() and
@@ -1787,7 +1787,7 @@ class _ProtocolMeta(ABCMeta):
             raise TypeError('issubclass() arg 1 must be a class')
         if (
             getattr(cls, '_is_protocol', False)
-            and not _allow_reckless_class_checks(depth=2)
+            and not _allow_reckless_class_checks()
         ):
             if not cls.__callable_proto_members_only__:
                 raise TypeError(
@@ -1809,7 +1809,7 @@ class _ProtocolMeta(ABCMeta):
 
         if (
             not getattr(cls, '_is_runtime_protocol', False) and
-            not _allow_reckless_class_checks(depth=2)
+            not _allow_reckless_class_checks()
         ):
             raise TypeError("Instance and class checks can only be used with"
                             " @runtime_checkable protocols")
