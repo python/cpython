@@ -306,11 +306,14 @@ clear_tp_bases(PyTypeObject *self)
 {
     if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
         if (_Py_IsMainInterpreter(_PyInterpreterState_GET())) {
-            if (self->tp_bases != NULL
-                && PyTuple_GET_SIZE(self->tp_bases) > 0)
-            {
-                assert(_Py_IsImmortal(self->tp_bases));
-                _Py_ClearImmortal(self->tp_bases);
+            if (self->tp_bases != NULL) {
+                if (PyTuple_GET_SIZE(self->tp_bases) == 0) {
+                    Py_CLEAR(self->tp_bases);
+                }
+                else {
+                    assert(_Py_IsImmortal(self->tp_bases));
+                    _Py_ClearImmortal(self->tp_bases);
+                }
             }
         }
         return;
@@ -352,11 +355,14 @@ clear_tp_mro(PyTypeObject *self)
 {
     if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
         if (_Py_IsMainInterpreter(_PyInterpreterState_GET())) {
-            if (self->tp_mro != NULL
-                && PyTuple_GET_SIZE(self->tp_mro) > 0)
-            {
-                assert(_Py_IsImmortal(self->tp_mro));
-                _Py_ClearImmortal(self->tp_mro);
+            if (self->tp_mro != NULL) {
+                if (PyTuple_GET_SIZE(self->tp_mro) == 0) {
+                    Py_CLEAR(self->tp_mro);
+                }
+                else {
+                    assert(_Py_IsImmortal(self->tp_mro));
+                    _Py_ClearImmortal(self->tp_mro);
+                }
             }
         }
         return;
