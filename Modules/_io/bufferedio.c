@@ -518,6 +518,8 @@ buffered_closed_get(buffered *self, void *context)
     return PyObject_GetAttr(self->raw, &_Py_ID(closed));
 }
 
+void _PyFileIO_set_defer_close(PyObject *self, bool defer_close);
+
 /*[clinic input]
 _io._Buffered.close
 [clinic start generated code]*/
@@ -561,6 +563,10 @@ _io__Buffered_close_impl(buffered *self)
     }
     else {
         Py_DECREF(res);
+    }
+
+    if (self->fast_closed_checks) {
+        _PyFileIO_set_defer_close(self->raw, false);
     }
 
     res = PyObject_CallMethodNoArgs(self->raw, &_Py_ID(close));
@@ -1891,6 +1897,9 @@ _io_BufferedWriter___init___impl(buffered *self, PyObject *raw,
         Py_IS_TYPE(self, state->PyBufferedWriter_Type) &&
         Py_IS_TYPE(raw, state->PyFileIO_Type)
     );
+    if (self->fast_closed_checks) {
+        _PyFileIO_set_defer_close(self->raw, true);
+    }
 
     self->ok = 1;
     return 0;
