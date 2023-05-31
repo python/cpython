@@ -236,7 +236,6 @@ Doc/library/urllib.error.rst
 Doc/library/urllib.parse.rst
 Doc/library/urllib.request.rst
 Doc/library/uuid.rst
-Doc/library/wave.rst
 Doc/library/weakref.rst
 Doc/library/webbrowser.rst
 Doc/library/winreg.rst
