@@ -2627,6 +2627,60 @@ type_get_tp_mro(PyObject *self, PyObject *type)
 }
 
 
+static PyTypeObject BasicStaticType = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "BasicStaticType",
+    .tp_basicsize = sizeof(PyObject),
+};
+
+static PyObject * clear_basic_static_type(PyObject *, PyObject *);
+
+static PyObject *
+get_basic_static_type(PyObject *self, PyObject *args)
+{
+    PyObject *base = NULL;
+    if (!PyArg_ParseTuple(args, "|O", &base)) {
+        return NULL;
+    }
+    assert(base == NULL || PyType_Check(base));
+
+    PyTypeObject *cls = &BasicStaticType;
+    assert(!(cls->tp_flags & Py_TPFLAGS_READY));
+
+    if (base != NULL) {
+        cls->tp_base = (PyTypeObject *)Py_NewRef(base);
+        cls->tp_bases = Py_BuildValue("(O)", base);
+        if (cls->tp_bases == NULL) {
+            clear_basic_static_type(self, (PyObject *)cls);
+            return NULL;
+        }
+    }
+    if (PyType_Ready(cls) < 0) {
+        clear_basic_static_type(self, (PyObject *)cls);
+        return NULL;
+    }
+    Py_INCREF(cls);
+    return (PyObject *)cls;
+}
+
+static PyObject *
+clear_basic_static_type(PyObject *self, PyObject *clsobj)
+{
+    // Reset it back to the statically initialized state.
+    PyTypeObject *cls = (PyTypeObject *)clsobj;
+    Py_CLEAR(cls->ob_base.ob_base.ob_type);
+    Py_CLEAR(cls->tp_base);
+    Py_CLEAR(cls->tp_bases);
+    Py_CLEAR(cls->tp_mro);
+    Py_CLEAR(cls->tp_subclasses);
+    Py_CLEAR(cls->tp_dict);
+    cls->tp_flags &= ~Py_TPFLAGS_READY;
+    cls->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
+    cls->tp_version_tag = 0;
+    Py_RETURN_NONE;
+}
+
+
 // Test PyThreadState C API
 static PyObject *
 test_tstate_capi(PyObject *self, PyObject *Py_UNUSED(args))
@@ -3384,6 +3438,8 @@ static PyMethodDef TestMethods[] = {
     {"type_assign_version", type_assign_version, METH_O, PyDoc_STR("PyUnstable_Type_AssignVersionTag")},
     {"type_get_tp_bases", type_get_tp_bases, METH_O},
     {"type_get_tp_mro", type_get_tp_mro, METH_O},
+    {"get_basic_static_type", get_basic_static_type, METH_VARARGS, NULL},
+    {"clear_basic_static_type", clear_basic_static_type, METH_O, NULL},
     {"test_tstate_capi", test_tstate_capi, METH_NOARGS, NULL},
     {"frame_getlocals", frame_getlocals, METH_O, NULL},
     {"frame_getglobals", frame_getglobals, METH_O, NULL},
