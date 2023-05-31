@@ -823,7 +823,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
         HEAD_UNLOCK(runtime);
     }
     if (tstate->interp == interp) {
-        /* We fix tstate->_status below we we for sure aren't using it
+        /* We fix tstate->_status below when we for sure aren't using it
            (e.g. no longer need the GIL). */
         // XXX Eliminate the need to do this.
         tstate->_status.cleared = 0;
