@@ -302,6 +302,14 @@ drop_gil(struct _ceval_state *ceval, PyThreadState *tstate)
     MUTEX_UNLOCK(gil->mutex);
 
 #ifdef FORCE_SWITCHING
+    /* We check tstate first in case we might be releasing the GIL for
+       the last time in this thread.  In that case there's a possible
+       race with tstate->interp getting deleted after gil->mutex is
+       unlocked and before the following code runs, leading to a crash.
+       We can use (tstate == NULL) to indicate the thread is done with
+       the GIL, and that's the only time we might delete the
+       interpreter, so checking tstate first prevents the crash.
+       See https://github.com/python/cpython/issues/104341. */
     if (tstate != NULL && _Py_atomic_load_relaxed(&ceval->gil_drop_request)) {
         MUTEX_LOCK(gil->switch_mutex);
         /* Not switched yet => wait */
