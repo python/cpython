@@ -3706,6 +3706,9 @@ class ProtocolTests(BaseTestCase):
         Foo()  # Previously triggered RecursionError
 
     def test_interaction_with_isinstance_checks_on_superclasses_with_ABCMeta(self):
+        # Ensure the cache is empty, or this test won't work correctly
+        collections.abc.Sized._abc_registry_clear()
+
         class Foo(collections.abc.Sized, Protocol): pass
 
         # gh-105144: this previously raised TypeError
@@ -3714,6 +3717,9 @@ class ProtocolTests(BaseTestCase):
         self.assertNotIsInstance(1, collections.abc.Sized)
 
     def test_interaction_with_isinstance_checks_on_superclasses_with_ABCMeta_2(self):
+        # Ensure the cache is empty, or this test won't work correctly
+        collections.abc.Sized._abc_registry_clear()
+
         class Foo(typing.Sized, Protocol): pass
 
         # gh-105144: this previously raised TypeError
