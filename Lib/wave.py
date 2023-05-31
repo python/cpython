@@ -342,9 +342,13 @@ class Wave_read:
                        self.getcomptype(), self.getcompname())
 
     def getmarkers(self):
+        import warnings
+        warnings._deprecated("Wave_read.getmarkers", remove=(3, 15))
         return None
 
     def getmark(self, id):
+        import warnings
+        warnings._deprecated("Wave_read.getmark", remove=(3, 15))
         raise Error('no marks')
 
     def setpos(self, pos):
@@ -548,12 +552,18 @@ class Wave_write:
               self._nframes, self._comptype, self._compname)
 
     def setmark(self, id, pos, name):
+        import warnings
+        warnings._deprecated("Wave_write.setmark", remove=(3, 15))
         raise Error('setmark() not supported')
 
     def getmark(self, id):
+        import warnings
+        warnings._deprecated("Wave_write.getmark", remove=(3, 15))
         raise Error('no marks')
 
     def getmarkers(self):
+        import warnings
+        warnings._deprecated("Wave_write.getmarkers", remove=(3, 15))
         return None
 
     def tell(self):
