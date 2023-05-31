@@ -91,7 +91,7 @@ io
 --
 
 The :class:`io.IOBase` finalizer now logs the ``close()`` method errors with
-:data:`sys.excepthook`. Previously, errors were ignored silently by default,
+:data:`sys.unraisablehook`. Previously, errors were ignored silently by default,
 and only logged in :ref:`Python Development Mode <devmode>` or on :ref:`Python
 built on debug mode <debug-build>`.
 (Contributed by Victor Stinner in :gh:`62948`.)

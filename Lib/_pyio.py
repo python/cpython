@@ -413,7 +413,8 @@ class IOBase(metaclass=abc.ABCMeta):
         if closed:
             return
 
-        # Calling close() can fail: log an unraisable exception
+        # If close() fails, the caller logs the exception with
+        # sys.unraisablehook. close() must be called at the end at __del__().
         self.close()
 
     ### Inquiries ###
