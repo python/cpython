@@ -1877,7 +1877,6 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
             if not cls.__dict__.get('_is_protocol', False):
                 return NotImplemented
 
-            # Second, perform the actual structural compatibility check.
             for attr in cls.__protocol_attrs__:
                 for base in other.__mro__:
                     # Check if the members appears in the class dictionary...
