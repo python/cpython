@@ -159,7 +159,7 @@ Wave_write Objects
 
    Write a WAV file.
 
-   Wave_write objects, as returned by :func:`.open`:
+   Wave_write objects, as returned by :func:`.open`.
 
    For seekable output streams, the ``wave`` header will automatically be updated
    to reflect the number of frames actually written.  For unseekable streams, the
@@ -173,11 +173,10 @@ Wave_write Objects
    the number of frames in the data and set *nframes* accordingly before writing
    the frame data.
 
-   Wave_write objects have the following methods:
-
    .. versionchanged:: 3.4
       Added support for unseekable files.
 
+   Wave_write objects have the following methods:
 
    .. method:: close()
 
