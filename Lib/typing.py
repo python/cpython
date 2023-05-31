@@ -1782,14 +1782,22 @@ class _ProtocolMeta(ABCMeta):
             )
 
     def __subclasscheck__(cls, other):
+        if not isinstance(other, type):
+            # Same error message as for issubclass(1, int).
+            raise TypeError('issubclass() arg 1 must be a class')
         if (
             getattr(cls, '_is_protocol', False)
-            and not cls.__callable_proto_members_only__
             and not _allow_reckless_class_checks(depth=2)
         ):
-            raise TypeError(
-                "Protocols with non-method members don't support issubclass()"
-            )
+            if not cls.__callable_proto_members_only__:
+                raise TypeError(
+                    "Protocols with non-method members don't support issubclass()"
+                )
+            if not getattr(cls, '_is_runtime_protocol', False):
+                raise TypeError(
+                    "Instance and class checks can only be used with "
+                    "@runtime_checkable protocols"
+                )
         return super().__subclasscheck__(other)
 
     def __instancecheck__(cls, instance):
@@ -1868,17 +1876,6 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
         def _proto_hook(other):
             if not cls.__dict__.get('_is_protocol', False):
                 return NotImplemented
-
-            # First, perform various sanity checks.
-            if not getattr(cls, '_is_runtime_protocol', False):
-                if _allow_reckless_class_checks():
-                    return NotImplemented
-                raise TypeError("Instance and class checks can only be used with"
-                                " @runtime_checkable protocols")
-
-            if not isinstance(other, type):
-                # Same error message as for issubclass(1, int).
-                raise TypeError('issubclass() arg 1 must be a class')
 
             # Second, perform the actual structural compatibility check.
             for attr in cls.__protocol_attrs__:
