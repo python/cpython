@@ -225,7 +225,7 @@ are parsed with the PEG parser, error messages can be more precise and show the 
     >>> my_string = f"{x z y}" + f"{1 + 1}"
       File "<stdin>", line 1
         my_string = f"{x z y}" + f"{1 + 1}"
-                      ^^^
+                       ^^^
     SyntaxError: invalid syntax. Perhaps you forgot a comma?
 
 (Contributed by Pablo Galindo, Batuhan Taskaya, Lysandros Nikolaou, Cristián
