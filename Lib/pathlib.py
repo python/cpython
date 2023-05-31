@@ -977,18 +977,20 @@ class Path(PurePath):
         return os.scandir(self)
 
     def _make_child_relpath(self, name):
-        path_str = str(self)
+        sep = self._flavour.sep
+        lines_name = name.replace('\n', sep)
         lines_str = self._lines
+        path_str = str(self)
         tail = self._tail
         if tail:
-            path_str = f'{path_str}{self._flavour.sep}{name}'
-            lines_str = f'{lines_str}\n{name}'
+            path_str = f'{path_str}{sep}{name}'
+            lines_str = f'{lines_str}\n{lines_name}'
         elif path_str != '.':
             path_str = f'{path_str}{name}'
-            lines_str = f'{lines_str}{name}'
+            lines_str = f'{lines_str}{lines_name}'
         else:
             path_str = name
-            lines_str = name
+            lines_str = lines_name
         path = self.with_segments(path_str)
         path._str = path_str
         path._drv = self.drive
