@@ -1593,6 +1593,39 @@ class SubinterpreterTest(unittest.TestCase):
         self.assertEqual(main_attr_id, subinterp_attr_id)
 
 
+class BuiltinStaticTypesTests(unittest.TestCase):
+
+    TYPES = [
+        object,
+        type,
+        int,
+        str,
+        dict,
+        type(None),
+        bool,
+        BaseException,
+        Exception,
+        Warning,
+        DeprecationWarning,  # Warning subclass
+    ]
+
+    def test_tp_bases_is_set(self):
+        # PyTypeObject.tp_bases is documented as public API.
+        # See https://github.com/python/cpython/issues/105020.
+        for typeobj in self.TYPES:
+            with self.subTest(typeobj):
+                bases = _testcapi.type_get_tp_bases(typeobj)
+                self.assertIsNot(bases, None)
+
+    def test_tp_mro_is_set(self):
+        # PyTypeObject.tp_bases is documented as public API.
+        # See https://github.com/python/cpython/issues/105020.
+        for typeobj in self.TYPES:
+            with self.subTest(typeobj):
+                mro = _testcapi.type_get_tp_mro(typeobj)
+                self.assertIsNot(mro, None)
+
+
 class TestThreadState(unittest.TestCase):
 
     @threading_helper.reap_threads
