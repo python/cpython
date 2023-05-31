@@ -158,15 +158,18 @@ def _select_children(paths, dir_only, follow_symlinks, match):
                     yield path._make_child_relpath(name)
 
 
-def _select_recursive(paths, follow_symlinks):
+def _select_recursive(paths, dir_only, follow_symlinks):
     """Yield given paths and all their subdirectories, recursively."""
     if follow_symlinks is None:
         follow_symlinks = False
     for path in paths:
         yield path
-        for dirpath, dirnames, _ in path.walk(follow_symlinks=follow_symlinks):
+        for dirpath, dirnames, filenames in path.walk(follow_symlinks=follow_symlinks):
             for dirname in dirnames:
                 yield dirpath._make_child_relpath(dirname)
+            if not dir_only:
+                for filename in filenames:
+                    yield dirpath._make_child_relpath(filename)
 
 
 def _select_unique(paths):
@@ -994,14 +997,7 @@ class Path(PurePath):
         kind, including directories) matching the given relative pattern.
         """
         sys.audit("pathlib.Path.glob", self, pattern)
-        if not pattern:
-            raise ValueError("Unacceptable pattern: {!r}".format(pattern))
-        drv, root, pattern_parts = self._parse_path(pattern)
-        if drv or root:
-            raise NotImplementedError("Non-relative patterns are unsupported")
-        if pattern[-1] in (self._flavour.sep, self._flavour.altsep):
-            pattern_parts.append('')
-        return self._glob(pattern_parts, case_sensitive, follow_symlinks)
+        return self._glob(pattern, case_sensitive, follow_symlinks)
 
     def rglob(self, pattern, *, case_sensitive=None, follow_symlinks=None):
         """Recursively yield all existing files (of any kind, including
@@ -1009,14 +1005,23 @@ class Path(PurePath):
         this subtree.
         """
         sys.audit("pathlib.Path.rglob", self, pattern)
-        drv, root, pattern_parts = self._parse_path(pattern)
-        if drv or root:
-            raise NotImplementedError("Non-relative patterns are unsupported")
-        if pattern and pattern[-1] in (self._flavour.sep, self._flavour.altsep):
-            pattern_parts.append('')
-        return self._glob(['**'] + pattern_parts, case_sensitive, follow_symlinks)
+        return self._glob(f'**/{pattern}', case_sensitive, follow_symlinks)
 
-    def _glob(self, pattern_parts, case_sensitive, follow_symlinks):
+    def _glob(self, pattern, case_sensitive, follow_symlinks):
+        path_pattern = self.with_segments(pattern)
+        if path_pattern.drive or path_pattern.root:
+            raise NotImplementedError("Non-relative patterns are unsupported")
+        elif not path_pattern._tail:
+            raise ValueError("Unacceptable pattern: {!r}".format(pattern))
+
+        pattern_parts = list(path_pattern._tail)
+        if pattern[-1] in (self._flavour.sep, self._flavour.altsep):
+            # GH-65238: pathlib doesn't preserve trailing slash. Add it back.
+            pattern_parts.append('')
+        if pattern_parts[-1] == '**':
+            # GH-102613: '**' only matches directories. Add trailing slash.
+            pattern_parts.append('')
+
         if case_sensitive is None:
             # TODO: evaluate case-sensitivity of each directory in _select_children().
             case_sensitive = _is_case_sensitive(self._flavour)
@@ -1035,7 +1040,8 @@ class Path(PurePath):
                 # Collapse adjacent '**' segments.
                 while part_idx < len(pattern_parts) and pattern_parts[part_idx] == '**':
                     part_idx += 1
-                paths = _select_recursive(paths, follow_symlinks)
+                dir_only = part_idx < len(pattern_parts)
+                paths = _select_recursive(paths, dir_only, follow_symlinks)
                 # De-duplicate if we've already seen a '**' segment.
                 if deduplicate:
                     paths = _select_unique(paths)
