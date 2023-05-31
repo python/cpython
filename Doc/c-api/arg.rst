@@ -34,7 +34,7 @@ Strings and buffers
 
 .. note::
 
-   On Python 3.12 and older, the macro :c:macro:`PY_SSIZE_T_CLEAN` must be
+   On Python 3.12 and older, the macro :c:macro:`!PY_SSIZE_T_CLEAN` must be
    defined before including :file:`Python.h` to use all ``#`` variants of
    formats (``s#``, ``y#``, etc.) explained below.
    This is not necessary on Python 3.13 and later.
