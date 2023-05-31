@@ -625,11 +625,7 @@ w_clear_refs(WFILE *wf)
 }
 
 /* version currently has no effect for writing ints. */
-/* Note that while the documentation states that this function
- * can error, currently it never does. Setting an exception in
- * this function should be regarded as an API-breaking change.
- */
-void
+int
 PyMarshal_WriteLongToFile(long x, FILE *fp, int version)
 {
     char buf[4];
@@ -642,15 +638,23 @@ PyMarshal_WriteLongToFile(long x, FILE *fp, int version)
     wf.version = version;
     w_long(x, &wf);
     w_flush(&wf);
+
+    /* While the documentation states that this function can error,
+     * currently it never does. Setting an exception in this function
+     * should be regarded as an API-breaking change.
+     */
+    assert(!PyErr_Occurred());
+
+    return 0;
 }
 
-void
+int
 PyMarshal_WriteObjectToFile(PyObject *x, FILE *fp, int version)
 {
     char buf[BUFSIZ];
     WFILE wf;
     if (PySys_Audit("marshal.dumps", "Oi", x, version) < 0) {
-        return; /* caller must check PyErr_Occurred() */
+        return -1;
     }
     memset(&wf, 0, sizeof(wf));
     wf.fp = fp;
@@ -658,12 +662,13 @@ PyMarshal_WriteObjectToFile(PyObject *x, FILE *fp, int version)
     wf.end = wf.ptr + sizeof(buf);
     wf.error = WFERR_OK;
     wf.version = version;
-    if (w_init_refs(&wf, version)) {
-        return; /* caller must check PyErr_Occurred() */
+    if (w_init_refs(&wf, version) < 0) {
+        return -1;
     }
     w_object(x, &wf);
     w_clear_refs(&wf);
     w_flush(&wf);
+    return 0;
 }
 
 typedef struct {
@@ -1612,6 +1617,7 @@ PyMarshal_ReadObjectFromFile(FILE *fp)
     Py_DECREF(rf.refs);
     if (rf.buf != NULL)
         PyMem_Free(rf.buf);
+    assert((result != NULL) == !PyErr_Occurred());
     return result;
 }
 
@@ -1652,7 +1658,7 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
     wf.end = wf.ptr + PyBytes_GET_SIZE(wf.str);
     wf.error = WFERR_OK;
     wf.version = version;
-    if (w_init_refs(&wf, version)) {
+    if (w_init_refs(&wf, version) < 0) {
         Py_DECREF(wf.str);
         return NULL;
     }

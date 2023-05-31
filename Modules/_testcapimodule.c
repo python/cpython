@@ -1807,7 +1807,8 @@ pymarshal_write_long_to_file(PyObject* self, PyObject *args)
         return NULL;
     }
 
-    PyMarshal_WriteLongToFile(value, fp, version);
+    int ret = PyMarshal_WriteLongToFile(value, fp, version);
+    assert(ret == 0);
     assert(!PyErr_Occurred());
 
     fclose(fp);
@@ -1832,7 +1833,8 @@ pymarshal_write_object_to_file(PyObject* self, PyObject *args)
         return NULL;
     }
 
-    PyMarshal_WriteObjectToFile(obj, fp, version);
+    int ret = PyMarshal_WriteObjectToFile(obj, fp, version);
+    assert(ret == 0);
     assert(!PyErr_Occurred());
 
     fclose(fp);
