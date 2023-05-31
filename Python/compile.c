@@ -533,11 +533,7 @@ compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
     c->c_optimize = (optimize == -1) ? _Py_GetConfig()->optimization_level : optimize;
     c->c_nestlevel = 0;
 
-    _PyASTOptimizeState state;
-    state.optimize = c->c_optimize;
-    state.ff_features = merged;
-
-    if (!_PyAST_Optimize(mod, arena, &state)) {
+    if (!_PyAST_Optimize(mod, arena, c->c_optimize, merged)) {
         return ERROR;
     }
     c->c_st = _PySymtable_Build(mod, filename, &c->c_future);
