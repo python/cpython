@@ -61,6 +61,7 @@ extern "C" {
          (opcode) == LOAD_CONST__LOAD_FAST || \
          (opcode) == STORE_FAST__LOAD_FAST || \
          (opcode) == STORE_FAST__STORE_FAST) || \
+         (opcode) == POP_TOP__POP_TOP || \
          (opcode) == POP_TOP__STORE_FAST
 
 
