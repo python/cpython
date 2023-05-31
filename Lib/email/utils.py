@@ -106,12 +106,42 @@ def formataddr(pair, charset='utf-8'):
     return address
 
 
+def _pre_parse_validation(fieldvalues):
+    """Validate the field values are syntactically correct"""
+    for v in fieldvalues:
+        s = str(v).replace('\\(', '').replace('\\)', '')
+        if s.count('(') != s.count(')'):
+            fieldvalues.remove(v)
+            fieldvalues.append('')
+
+    return fieldvalues
+
+
+def _post_parse_validation(parsedvalues):
+    """Validate the parsed values are syntactically correct"""
+    for v in parsedvalues:
+        if '[' in v[1]:
+            parsedvalues.remove(v)
+            parsedvalues.append(('', ''))
+
+    return parsedvalues
+
 
 def getaddresses(fieldvalues):
     """Return a list of (REALNAME, EMAIL) for each fieldvalue."""
+    fieldvalues = _pre_parse_validation(fieldvalues)
     all = COMMASPACE.join(str(v) for v in fieldvalues)
     a = _AddressList(all)
-    return a.addresslist
+    result = _post_parse_validation(a.addresslist)
+
+    n = 0
+    for v in fieldvalues:
+        n += str(v).count(',') + 1
+
+    if len(result) != n:
+        return [('', '')]
+
+    return result
 
 
 def _format_timetuple_and_zone(timetuple, zone):
@@ -212,9 +242,18 @@ def parseaddr(addr):
     Return a tuple of realname and email address, unless the parse fails, in
     which case return a 2-tuple of ('', '').
     """
-    addrs = _AddressList(addr).addresslist
-    if not addrs:
-        return '', ''
+    if type(addr) == list:
+        addr = addr[0]
+
+    if type(addr) != str:
+        return ('', '')
+
+    addr = _pre_parse_validation([addr])[0]
+    addrs = _post_parse_validation(_AddressList(addr).addresslist)
+
+    if not addrs or len(addrs) > 1:
+        return ('', '')
+
     return addrs[0]
 
 
