@@ -3743,7 +3743,7 @@ class unicode_converter(CConverter):
 @add_legacy_c_converter('Z', accept={str, NoneType})
 @add_legacy_c_converter('Z#', accept={str, NoneType}, zeroes=True)
 class Py_UNICODE_converter(CConverter):
-    type = 'const Py_UNICODE *'
+    type = 'const wchar_t *'
     default_type = (str, Null, NoneType)
 
     def converter_init(
