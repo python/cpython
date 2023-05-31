@@ -899,6 +899,10 @@ Optimizations
   the :mod:`tokenize` module. (Contributed by Marta Gómez Macías and Pablo Galindo
   in :gh:`102856`.)
 
+* Speed up :func:`super` method calls and attribute loads via the
+  new :opcode:`LOAD_SUPER_ATTR` instruction. (Contributed by Carl Meyer and
+  Vladimir Matveev in :gh:`103497`.)
+
 
 CPython bytecode changes
 ========================
@@ -911,11 +915,17 @@ CPython bytecode changes
 * Remove the :opcode:`!JUMP_IF_FALSE_OR_POP` and :opcode:`!JUMP_IF_TRUE_OR_POP`
   instructions. (Contributed by Irit Katriel in :gh:`102859`.)
 
+* Add the :opcode:`LOAD_FAST_AND_CLEAR` instruction as part of the
+  implementation of :pep:`709`. (Contributed by Carl Meyer in :gh:`101441`.)
+
 * Add the :opcode:`LOAD_FROM_DICT_OR_DEREF`, :opcode:`LOAD_FROM_DICT_OR_GLOBALS`,
   and :opcode:`LOAD_LOCALS` opcodes as part of the implementation of :pep:`695`.
   Remove the :opcode:`!LOAD_CLASSDEREF` opcode, which can be replaced with
   :opcode:`LOAD_LOCALS` plus :opcode:`LOAD_FROM_DICT_OR_DEREF`. (Contributed
   by Jelle Zijlstra in :gh:`103764`.)
+
+* Add the :opcode:`LOAD_SUPER_ATTR` instruction. (Contributed by Carl Meyer and
+  Vladimir Matveev in :gh:`103497`.)
 
 Demos and Tools
 ===============
