@@ -2203,7 +2203,7 @@ def _signature_strip_non_python_syntax(signature):
         add(string)
         if (string == ','):
             add(' ')
-    clean_signature = ''.join(text).strip()
+    clean_signature = ''.join(text).strip().replace("\n", "")
     return clean_signature, self_parameter
 
 
