@@ -1461,6 +1461,9 @@ class Popen:
             else:
                 args = list2cmdline(args)
 
+            if not shell and executable is None and len(args) == 0:
+                raise ValueError("need at least an executable or non-empty args")
+
             if executable is not None:
                 executable = os.fsdecode(executable)
 
@@ -1806,6 +1809,9 @@ class Popen:
                 args = [args]
             else:
                 args = list(args)
+
+            if not shell and executable is None and len(args) == 0:
+                raise ValueError("need at least an executable or non-empty args")
 
             if shell:
                 # On Android the default shell is at '/system/bin/sh'.
