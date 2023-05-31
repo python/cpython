@@ -3266,8 +3266,6 @@ test_atexit(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 
-static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
-
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -3297,7 +3295,6 @@ static PyMethodDef TestMethods[] = {
     {"getbuffer_with_null_view", getbuffer_with_null_view,       METH_O},
     {"PyBuffer_SizeFromFormat",  test_PyBuffer_SizeFromFormat,   METH_VARARGS},
     {"test_buildvalue_N",        test_buildvalue_N,              METH_NOARGS},
-    {"test_buildvalue_issue38913", test_buildvalue_issue38913,   METH_NOARGS},
     {"test_get_statictype_slots", test_get_statictype_slots,     METH_NOARGS},
     {"test_get_type_name",        test_get_type_name,            METH_NOARGS},
     {"test_get_type_qualname",    test_get_type_qualname,        METH_NOARGS},
@@ -4066,48 +4063,4 @@ PyInit__testcapi(void)
 
     PyState_AddModule(m, &_testcapimodule);
     return m;
-}
-
-/* Test the C API exposed when PY_SSIZE_T_CLEAN is not defined */
-
-#undef Py_BuildValue
-PyAPI_FUNC(PyObject *) Py_BuildValue(const char *, ...);
-
-static PyObject *
-test_buildvalue_issue38913(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    PyObject *res;
-    const char str[] = "string";
-    const Py_UNICODE unicode[] = L"unicode";
-    assert(!PyErr_Occurred());
-
-    res = Py_BuildValue("(s#O)", str, 1, Py_None);
-    assert(res == NULL);
-    if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
-        return NULL;
-    }
-    PyErr_Clear();
-
-    res = Py_BuildValue("(z#O)", str, 1, Py_None);
-    assert(res == NULL);
-    if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
-        return NULL;
-    }
-    PyErr_Clear();
-
-    res = Py_BuildValue("(y#O)", str, 1, Py_None);
-    assert(res == NULL);
-    if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
-        return NULL;
-    }
-    PyErr_Clear();
-
-    res = Py_BuildValue("(u#O)", unicode, 1, Py_None);
-    assert(res == NULL);
-    if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
-        return NULL;
-    }
-    PyErr_Clear();
-
-    Py_RETURN_NONE;
 }
