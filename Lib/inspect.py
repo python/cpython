@@ -1242,6 +1242,14 @@ def getblock(lines):
             blockfinder.tokeneater(*_token)
     except (EndOfBlock, IndentationError):
         pass
+    except SyntaxError as e:
+        if "unmatched" not in e.msg:
+            raise e from None
+        _, *_token_info = _token
+        try:
+            blockfinder.tokeneater(tokenize.NEWLINE, *_token_info)
+        except (EndOfBlock, IndentationError):
+            pass
     return lines[:blockfinder.last]
 
 def getsourcelines(object):
@@ -2195,7 +2203,7 @@ def _signature_strip_non_python_syntax(signature):
         add(string)
         if (string == ','):
             add(' ')
-    clean_signature = ''.join(text).strip()
+    clean_signature = ''.join(text).strip().replace("\n", "")
     return clean_signature, self_parameter
 
 

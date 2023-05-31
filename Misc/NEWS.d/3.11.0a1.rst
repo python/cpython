@@ -1966,8 +1966,8 @@ A new function ``operator.call`` has been added, such that
 .. nonce: ofe3ms
 .. section: Library
 
-:class:`webbrowser.MacOSX` is deprecated and will be removed in Python 3.13.
-It is untested and undocumented and also not used by webbrowser itself.
+:class:`!webbrowser.MacOSX` is deprecated and will be removed in Python 3.13.
+It is untested and undocumented and also not used by :mod:`webbrowser` itself.
 Patch by Dong-hee Na.
 
 ..
@@ -3483,9 +3483,9 @@ Improved reprs of :mod:`threading` synchronization objects:
 Deprecated the following :mod:`unittest` functions, scheduled for removal in
 Python 3.13:
 
-* :func:`~unittest.findTestCases`
-* :func:`~unittest.makeSuite`
-* :func:`~unittest.getTestCaseNames`
+* :func:`~!unittest.findTestCases`
+* :func:`~!unittest.makeSuite`
+* :func:`~!unittest.getTestCaseNames`
 
 Use :class:`~unittest.TestLoader` methods instead:
 

@@ -138,7 +138,6 @@ _zoneinfo
 _decimal
 _elementtree
 _hashlib
-_msi
 _multiprocessing
 _overlapped
 _socket
@@ -283,7 +282,7 @@ The property files used are:
  * python (versions, directories and build names)
  * pyproject (base settings for all projects)
  * openssl (used by projects dependent upon OpenSSL)
- * tcltk (used by _tkinter, tcl, tk and tix projects)
+ * tcltk (used by _tkinter, tcl, and tk projects)
 
 The pyproject property file defines all of the build settings for each
 project, with some projects overriding certain specific values. The GUI

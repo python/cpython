@@ -42,7 +42,7 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case PUSH_NULL:
             return 0;
         case END_FOR:
-            return 1+1;
+            return 2;
         case INSTRUMENTED_END_FOR:
             return 2;
         case END_SEND:
@@ -57,19 +57,19 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case BINARY_OP_MULTIPLY_INT:
             return 2;
-        case BINARY_OP_MULTIPLY_FLOAT:
+        case BINARY_OP_ADD_INT:
             return 2;
         case BINARY_OP_SUBTRACT_INT:
+            return 2;
+        case BINARY_OP_MULTIPLY_FLOAT:
+            return 2;
+        case BINARY_OP_ADD_FLOAT:
             return 2;
         case BINARY_OP_SUBTRACT_FLOAT:
             return 2;
         case BINARY_OP_ADD_UNICODE:
             return 2;
         case BINARY_OP_INPLACE_ADD_UNICODE:
-            return 2;
-        case BINARY_OP_ADD_FLOAT:
-            return 2;
-        case BINARY_OP_ADD_INT:
             return 2;
         case BINARY_SUBSCR:
             return 2;
@@ -164,7 +164,7 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case LOAD_LOCALS:
             return 0;
         case LOAD_NAME:
-            return 0+1;
+            return 0;
         case LOAD_FROM_DICT_OR_GLOBALS:
             return 1;
         case LOAD_GLOBAL:
@@ -438,7 +438,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case PUSH_NULL:
             return 1;
         case END_FOR:
-            return 0+0;
+            return 0;
         case INSTRUMENTED_END_FOR:
             return 0;
         case END_SEND:
@@ -453,9 +453,13 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 1;
         case BINARY_OP_MULTIPLY_INT:
             return 1;
-        case BINARY_OP_MULTIPLY_FLOAT:
+        case BINARY_OP_ADD_INT:
             return 1;
         case BINARY_OP_SUBTRACT_INT:
+            return 1;
+        case BINARY_OP_MULTIPLY_FLOAT:
+            return 1;
+        case BINARY_OP_ADD_FLOAT:
             return 1;
         case BINARY_OP_SUBTRACT_FLOAT:
             return 1;
@@ -463,10 +467,6 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 1;
         case BINARY_OP_INPLACE_ADD_UNICODE:
             return 0;
-        case BINARY_OP_ADD_FLOAT:
-            return 1;
-        case BINARY_OP_ADD_INT:
-            return 1;
         case BINARY_SUBSCR:
             return 1;
         case BINARY_SLICE:
@@ -560,7 +560,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case LOAD_LOCALS:
             return 1;
         case LOAD_NAME:
-            return 1+1;
+            return 1;
         case LOAD_FROM_DICT_OR_GLOBALS:
             return 1;
         case LOAD_GLOBAL:
@@ -828,14 +828,14 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [UNARY_NEGATIVE] = { true, INSTR_FMT_IX },
     [UNARY_NOT] = { true, INSTR_FMT_IX },
     [UNARY_INVERT] = { true, INSTR_FMT_IX },
-    [BINARY_OP_MULTIPLY_INT] = { true, INSTR_FMT_IXC },
-    [BINARY_OP_MULTIPLY_FLOAT] = { true, INSTR_FMT_IXC },
-    [BINARY_OP_SUBTRACT_INT] = { true, INSTR_FMT_IXC },
-    [BINARY_OP_SUBTRACT_FLOAT] = { true, INSTR_FMT_IXC },
-    [BINARY_OP_ADD_UNICODE] = { true, INSTR_FMT_IXC },
-    [BINARY_OP_INPLACE_ADD_UNICODE] = { true, INSTR_FMT_IX },
-    [BINARY_OP_ADD_FLOAT] = { true, INSTR_FMT_IXC },
-    [BINARY_OP_ADD_INT] = { true, INSTR_FMT_IXC },
+    [BINARY_OP_MULTIPLY_INT] = { true, INSTR_FMT_IBC },
+    [BINARY_OP_ADD_INT] = { true, INSTR_FMT_IBC },
+    [BINARY_OP_SUBTRACT_INT] = { true, INSTR_FMT_IBC },
+    [BINARY_OP_MULTIPLY_FLOAT] = { true, INSTR_FMT_IBC },
+    [BINARY_OP_ADD_FLOAT] = { true, INSTR_FMT_IBC },
+    [BINARY_OP_SUBTRACT_FLOAT] = { true, INSTR_FMT_IBC },
+    [BINARY_OP_ADD_UNICODE] = { true, INSTR_FMT_IBC },
+    [BINARY_OP_INPLACE_ADD_UNICODE] = { true, INSTR_FMT_IB },
     [BINARY_SUBSCR] = { true, INSTR_FMT_IXC },
     [BINARY_SLICE] = { true, INSTR_FMT_IX },
     [STORE_SLICE] = { true, INSTR_FMT_IX },
