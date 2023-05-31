@@ -150,7 +150,6 @@ PYTHONPATH=$(COREPYTHONPATH)
 #_typing _typingmodule.c
 #_zoneinfo _zoneinfo.c
 #array arraymodule.c
-#audioop audioop.c
 #binascii binascii.c
 #cmath cmathmodule.c
 #math mathmodule.c
@@ -187,10 +186,6 @@ PYTHONPATH=$(COREPYTHONPATH)
 #resource resource.c
 #syslog syslogmodule.c
 #termios termios.c
-
-# Modules with UNIX dependencies that require external libraries
-
-#_crypt _cryptmodule.c -lcrypt
 
 # Modules that require external libraries.
 

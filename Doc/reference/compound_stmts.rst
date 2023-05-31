@@ -1206,7 +1206,7 @@ A function definition defines a user-defined function object (see section
 :ref:`types`):
 
 .. productionlist:: python-grammar
-   funcdef: [`decorators`] "def" `funcname` "(" [`parameter_list`] ")"
+   funcdef: [`decorators`] "def" `funcname` [`type_params`] "(" [`parameter_list`] ")"
           : ["->" `expression`] ":" `suite`
    decorators: `decorator`+
    decorator: "@" `assignment_expression` NEWLINE
@@ -1255,6 +1255,15 @@ except that the original function is not temporarily bound to the name ``func``.
    Functions may be decorated with any valid
    :token:`~python-grammar:assignment_expression`. Previously, the grammar was
    much more restrictive; see :pep:`614` for details.
+
+A list of :ref:`type parameters <type-params>` may be given in square brackets
+between the function's name and the opening parenthesis for its parameter list.
+This indicates to static type checkers that the function is generic. At runtime,
+the type parameters can be retrieved from the function's ``__type_params__``
+attribute. See :ref:`generic-functions` for more.
+
+.. versionchanged:: 3.12
+   Type parameter lists are new in Python 3.12.
 
 .. index::
    triple: default; parameter; value
@@ -1378,7 +1387,7 @@ Class definitions
 A class definition defines a class object (see section :ref:`types`):
 
 .. productionlist:: python-grammar
-   classdef: [`decorators`] "class" `classname` [`inheritance`] ":" `suite`
+   classdef: [`decorators`] "class" `classname` [`type_params`] [`inheritance`] ":" `suite`
    inheritance: "(" [`argument_list`] ")"
    classname: `identifier`
 
@@ -1433,6 +1442,15 @@ decorators.  The result is then bound to the class name.
    Classes may be decorated with any valid
    :token:`~python-grammar:assignment_expression`. Previously, the grammar was
    much more restrictive; see :pep:`614` for details.
+
+A list of :ref:`type parameters <type-params>` may be given in square brackets
+immediately after the class's name.
+This indicates to static type checkers that the class is generic. At runtime,
+the type parameters can be retrieved from the class's ``__type_params__``
+attribute. See :ref:`generic-classes` for more.
+
+.. versionchanged:: 3.12
+   Type parameter lists are new in Python 3.12.
 
 **Programmer's note:** Variables defined in the class definition are class
 attributes; they are shared by instances.  Instance attributes can be set in a
@@ -1589,6 +1607,228 @@ body of a coroutine function.
       The proposal that made coroutines a proper standalone concept in Python,
       and added supporting syntax.
 
+.. _type-params:
+
+Type parameter lists
+====================
+
+.. versionadded:: 3.12
+
+.. index::
+   single: type parameters
+
+.. productionlist:: python-grammar
+   type_params: "[" `type_param` ("," `type_param`)* "]"
+   type_param: `typevar` | `typevartuple` | `paramspec`
+   typevar: `identifier` (":" `expression`)?
+   typevartuple: "*" `identifier`
+   paramspec: "**" `identifier`
+
+:ref:`Functions <def>` (including :ref:`coroutines <async def>`),
+:ref:`classes <class>` and :ref:`type aliases <type>` may
+contain a type parameter list::
+
+   def max[T](args: list[T]) -> T:
+       ...
+
+   async def amax[T](args: list[T]) -> T:
+       ...
+
+   class Bag[T]:
+       def __iter__(self) -> Iterator[T]:
+           ...
+
+       def add(self, arg: T) -> None:
+           ...
+
+   type ListOrSet[T] = list[T] | set[T]
+
+Semantically, this indicates that the function, class, or type alias is
+generic over a type variable. This information is primarily used by static
+type checkers, and at runtime, generic objects behave much like their
+non-generic counterparts.
+
+Type parameters are declared in square brackets (``[]``) immediately
+after the name of the function, class, or type alias. The type parameters
+are accessible within the scope of the generic object, but not elsewhere.
+Thus, after a declaration ``def func[T](): pass``, the name ``T`` is not available in
+the module scope. Below, the semantics of generic objects are described
+with more precision. The scope of type parameters is modeled with a special
+function (technically, an :ref:`annotation scope <annotation-scopes>`) that
+wraps the creation of the generic object.
+
+Generic functions, classes, and type aliases have a :attr:`!__type_params__`
+attribute listing their type parameters.
+
+Type parameters come in three kinds:
+
+* :data:`typing.TypeVar`, introduced by a plain name (e.g., ``T``). Semantically, this
+  represents a single type to a type checker.
+* :data:`typing.TypeVarTuple`, introduced by a name prefixed with a single
+  asterisk (e.g., ``*Ts``). Semantically, this stands for a tuple of any
+  number of types.
+* :data:`typing.ParamSpec`, introduced by a name prefixed with two asterisks
+  (e.g., ``**P``). Semantically, this stands for the parameters of a callable.
+
+:data:`typing.TypeVar` declarations can define *bounds* and *constraints* with
+a colon (``:``) followed by an expression. A single expression after the colon
+indicates a bound (e.g. ``T: int``). Semantically, this means
+that the :data:`!typing.TypeVar` can only represent types that are a subtype of
+this bound. A parenthesized tuple of expressions after the colon indicates a
+set of constraints (e.g. ``T: (str, bytes)``). Each member of the tuple should be a
+type (again, this is not enforced at runtime). Constrained type variables can only
+take on one of the types in the list of constraints.
+
+For :data:`!typing.TypeVar`\ s declared using the type parameter list syntax,
+the bound and constraints are not evaluated when the generic object is created,
+but only when the value is explicitly accessed through the attributes ``__bound__``
+and ``__constraints__``. To accomplish this, the bounds or constraints are
+evaluated in a separate :ref:`annotation scope <annotation-scopes>`.
+
+:data:`typing.TypeVarTuple`\ s and :data:`typing.ParamSpec`\ s cannot have bounds
+or constraints.
+
+The following example indicates the full set of allowed type parameter declarations::
+
+   def overly_generic[
+      SimpleTypeVar,
+      TypeVarWithBound: int,
+      TypeVarWithConstraints: (str, bytes),
+      *SimpleTypeVarTuple,
+      **SimpleParamSpec,
+   ](
+      a: SimpleTypeVar,
+      b: TypeVarWithBound,
+      c: Callable[SimpleParamSpec, TypeVarWithConstraints],
+      *d: SimpleTypeVarTuple,
+   ): ...
+
+.. _generic-functions:
+
+Generic functions
+-----------------
+
+Generic functions are declared as follows::
+
+   def func[T](arg: T): ...
+
+This syntax is equivalent to::
+
+   annotation-def TYPE_PARAMS_OF_func():
+       T = typing.TypeVar("T")
+       def func(arg: T): ...
+       func.__type_params__ = (T,)
+       return func
+   func = TYPE_PARAMS_OF_func()
+
+Here ``annotation-def`` indicates an :ref:`annotation scope <annotation-scopes>`,
+which is not actually bound to any name at runtime. (One
+other liberty is taken in the translation: the syntax does not go through
+attribute access on the :mod:`typing` module, but creates an instance of
+:data:`typing.TypeVar` directly.)
+
+The annotations of generic functions are evaluated within the annotation scope
+used for declaring the type parameters, but the function's defaults and
+decorators are not.
+
+The following example illustrates the scoping rules for these cases,
+as well as for additional flavors of type parameters::
+
+   @decorator
+   def func[T: int, *Ts, **P](*args: *Ts, arg: Callable[P, T] = some_default):
+       ...
+
+Except for the :ref:`lazy evaluation <lazy-evaluation>` of the
+:class:`~typing.TypeVar` bound, this is equivalent to::
+
+   DEFAULT_OF_arg = some_default
+
+   annotation-def TYPE_PARAMS_OF_func():
+
+       annotation-def BOUND_OF_T():
+           return int
+       # In reality, BOUND_OF_T() is evaluated only on demand.
+       T = typing.TypeVar("T", bound=BOUND_OF_T())
+
+       Ts = typing.TypeVarTuple("Ts")
+       P = typing.ParamSpec("P")
+
+       def func(*args: *Ts, arg: Callable[P, T] = DEFAULT_OF_arg):
+           ...
+
+       func.__type_params__ = (T, Ts, P)
+       return func
+   func = decorator(TYPE_PARAMS_OF_func())
+
+The capitalized names like ``DEFAULT_OF_arg`` are not actually
+bound at runtime.
+
+.. _generic-classes:
+
+Generic classes
+---------------
+
+Generic classes are declared as follows::
+
+   class Bag[T]: ...
+
+This syntax is equivalent to::
+
+   annotation-def TYPE_PARAMS_OF_Bag():
+       T = typing.TypeVar("T")
+       class Bag(typing.Generic[T]):
+           __type_params__ = (T,)
+           ...
+       return Bag
+   Bag = TYPE_PARAMS_OF_Bag()
+
+Here again ``annotation-def`` (not a real keyword) indicates an
+:ref:`annotation scope <annotation-scopes>`, and the name
+``TYPE_PARAMS_OF_Bag`` is not actually bound at runtime.
+
+Generic classes implicitly inherit from :data:`typing.Generic`.
+The base classes and keyword arguments of generic classes are
+evaluated within the type scope for the type parameters,
+and decorators are evaluated outside that scope. This is illustrated
+by this example::
+
+   @decorator
+   class Bag(Base[T], arg=T): ...
+
+This is equivalent to::
+
+   annotation-def TYPE_PARAMS_OF_Bag():
+       T = typing.TypeVar("T")
+       class Bag(Base[T], typing.Generic[T], arg=T):
+           __type_params__ = (T,)
+           ...
+       return Bag
+   Bag = decorator(TYPE_PARAMS_OF_Bag())
+
+.. _generic-type-aliases:
+
+Generic type aliases
+--------------------
+
+The :keyword:`type` statement can also be used to create a generic type alias::
+
+   type ListOrSet[T] = list[T] | set[T]
+
+Except for the :ref:`lazy evaluation <lazy-evaluation>` of the value,
+this is equivalent to::
+
+   annotation-def TYPE_PARAMS_OF_ListOrSet():
+       T = typing.TypeVar("T")
+
+       annotation-def VALUE_OF_ListOrSet():
+           return list[T] | set[T]
+       # In reality, the value is lazily evaluated
+       return typing.TypeAliasType("ListOrSet", VALUE_OF_ListOrSet(), type_params=(T,))
+   ListOrSet = TYPE_PARAMS_OF_ListOrSet()
+
+Here, ``annotation-def`` (not a real keyword) indicates an
+:ref:`annotation scope <annotation-scopes>`. The capitalized names
+like ``TYPE_PARAMS_OF_ListOrSet`` are not actually bound at runtime.
 
 .. rubric:: Footnotes
 

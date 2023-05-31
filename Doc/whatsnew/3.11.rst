@@ -1731,11 +1731,11 @@ Modules
   slated for removal in Python 3.13:
 
   +---------------------+---------------------+---------------------+---------------------+---------------------+
-  | :mod:`aifc`         | :mod:`chunk`        | :mod:`!msilib`      | :mod:`!pipes`       | :mod:`!telnetlib`   |
+  | :mod:`!aifc`        | :mod:`!chunk`       | :mod:`!msilib`      | :mod:`!pipes`       | :mod:`!telnetlib`   |
   +---------------------+---------------------+---------------------+---------------------+---------------------+
-  | :mod:`audioop`      | :mod:`crypt`        | :mod:`!nis`         | :mod:`!sndhdr`      | :mod:`uu`           |
+  | :mod:`!audioop`     | :mod:`!crypt`       | :mod:`!nis`         | :mod:`!sndhdr`      | :mod:`!uu`          |
   +---------------------+---------------------+---------------------+---------------------+---------------------+
-  | :mod:`!cgi`         | :mod:`imghdr`       | :mod:`!nntplib`     | :mod:`!spwd`        | :mod:`!xdrlib`      |
+  | :mod:`!cgi`         | :mod:`!imghdr`      | :mod:`!nntplib`     | :mod:`!spwd`        | :mod:`!xdrlib`      |
   +---------------------+---------------------+---------------------+---------------------+---------------------+
   | :mod:`!cgitb`       | :mod:`!mailcap`     | :mod:`!ossaudiodev` | :mod:`!sunau`       |                     |
   +---------------------+---------------------+---------------------+---------------------+---------------------+
@@ -1817,7 +1817,7 @@ Standard Library
   They will be removed in Python 3.13.
   (Contributed by Serhiy Storchaka and Miro Hrončok in :gh:`92728`.)
 
-* :func:`turtle.settiltangle` has been deprecated since Python 3.1;
+* :func:`!turtle.settiltangle` has been deprecated since Python 3.1;
   it now emits a deprecation warning and will be removed in Python 3.13. Use
   :func:`turtle.tiltangle` instead (it was earlier incorrectly marked
   as deprecated, and its docstring is now corrected).
@@ -1855,6 +1855,10 @@ Standard Library
   * :meth:`unittest.TestLoader.getTestCaseNames`
 
   (Contributed by Erlend E. Aasland in :issue:`5846`.)
+
+* :meth:`~!unittest.TestProgram.usageExit` is marked deprecated, to be removed
+  in 3.13.
+  (Contributed by Carlos Damázio in :gh:`67048`.)
 
 
 .. _whatsnew311-pending-removal:

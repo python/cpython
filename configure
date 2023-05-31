@@ -678,8 +678,6 @@ MODULE__CURSES_FALSE
 MODULE__CURSES_TRUE
 MODULE__CTYPES_FALSE
 MODULE__CTYPES_TRUE
-MODULE__CRYPT_FALSE
-MODULE__CRYPT_TRUE
 MODULE__BLAKE2_FALSE
 MODULE__BLAKE2_TRUE
 MODULE__SHA3_FALSE
@@ -736,8 +734,6 @@ MODULE_CMATH_FALSE
 MODULE_CMATH_TRUE
 MODULE__STATISTICS_FALSE
 MODULE__STATISTICS_TRUE
-MODULE_AUDIOOP_FALSE
-MODULE_AUDIOOP_TRUE
 MODULE__POSIXSHMEM_FALSE
 MODULE__POSIXSHMEM_TRUE
 MODULE__MULTIPROCESSING_FALSE
@@ -818,8 +814,6 @@ HAVE_GETHOSTBYNAME_R
 HAVE_GETHOSTBYNAME_R_3_ARG
 HAVE_GETHOSTBYNAME_R_5_ARG
 HAVE_GETHOSTBYNAME_R_6_ARG
-LIBCRYPT_LIBS
-LIBCRYPT_CFLAGS
 LIBOBJS
 LIBLZMA_LIBS
 LIBLZMA_CFLAGS
@@ -1118,8 +1112,6 @@ BZIP2_CFLAGS
 BZIP2_LIBS
 LIBLZMA_CFLAGS
 LIBLZMA_LIBS
-LIBCRYPT_CFLAGS
-LIBCRYPT_LIBS
 LIBREADLINE_CFLAGS
 LIBREADLINE_LIBS
 LIBEDIT_CFLAGS
@@ -1837,8 +1829,8 @@ Optional Packages:
                           select hash algorithm for use in Python/pyhash.c
                           (default is SipHash13)
   --with-tzpath=<list of absolute paths separated by pathsep>
-                           Select the default time zone search path for zoneinfo.TZPATH
-
+                          Select the default time zone search path for
+                          zoneinfo.TZPATH
   --with-libs='lib1 ...'  link against additional libs (default is no)
   --with-system-expat     build pyexpat module using an installed expat
                           library, see Doc/library/pyexpat.rst (default is no)
@@ -1940,10 +1932,6 @@ Some influential environment variables:
               C compiler flags for LIBLZMA, overriding pkg-config
   LIBLZMA_LIBS
               linker flags for LIBLZMA, overriding pkg-config
-  LIBCRYPT_CFLAGS
-              C compiler flags for LIBCRYPT, overriding pkg-config
-  LIBCRYPT_LIBS
-              linker flags for LIBCRYPT, overriding pkg-config
   LIBREADLINE_CFLAGS
               C compiler flags for LIBREADLINE, overriding pkg-config
   LIBREADLINE_LIBS
@@ -7379,6 +7367,7 @@ if test "${with_trace_refs+set}" = set; then :
   withval=$with_trace_refs;
 else
   with_trace_refs=no
+
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_trace_refs" >&5
@@ -9618,7 +9607,7 @@ $as_echo "#define STDC_HEADERS 1" >>confdefs.h
 
 # checks for header files
 for ac_header in  \
-  alloca.h asm/types.h bluetooth.h conio.h crypt.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
+  alloca.h asm/types.h bluetooth.h conio.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
   ieeefp.h io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/memfd.h \
   linux/random.h linux/soundcard.h \
   linux/tipc.h linux/wait.h netdb.h net/ethernet.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
@@ -11180,7 +11169,7 @@ case $ac_sys_system/$ac_sys_release in
 
 $as_echo "#define WITH_DYLD 1" >>confdefs.h
 
-  	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: always on for Darwin" >&5
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: always on for Darwin" >&5
 $as_echo "always on for Darwin" >&6; }
   	;;
   *)
@@ -11737,7 +11726,7 @@ _ACEOF
   LIBS="-ldl $LIBS"
 
 fi
-	# Dynamic linking for SunOS/Solaris and SYSV
+       # Dynamic linking for SunOS/Solaris and SYSV
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for shl_load in -ldld" >&5
 $as_echo_n "checking for shl_load in -ldld... " >&6; }
 if ${ac_cv_lib_dld_shl_load+:} false; then :
@@ -11782,7 +11771,7 @@ _ACEOF
   LIBS="-ldld $LIBS"
 
 fi
-	# Dynamic linking for HP-UX
+    # Dynamic linking for HP-UX
 
 
 
@@ -11797,8 +11786,7 @@ if test "x$ac_cv_header_uuid_h" = xyes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_UUID_H 1
 _ACEOF
-
-  for ac_func in uuid_create uuid_enc_be
+ for ac_func in uuid_create uuid_enc_be
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -11806,8 +11794,7 @@ if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
 #define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
 _ACEOF
-
-    have_uuid=yes
+ have_uuid=yes
     LIBUUID_CFLAGS=${LIBUUID_CFLAGS-""}
     LIBUUID_LIBS=${LIBUUID_LIBS-""}
 
@@ -11982,11 +11969,9 @@ if test "x$ac_cv_lib_uuid_uuid_generate_time_safe" = xyes; then :
   have_uuid=yes
             $as_echo "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
 
-
 fi
 
 LIBS=$py_check_lib_save_LIBS
-
 
 fi
 
@@ -12111,11 +12096,9 @@ if test "x$ac_cv_lib_uuid_uuid_generate_time_safe" = xyes; then :
   have_uuid=yes
             $as_echo "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
 
-
 fi
 
 LIBS=$py_check_lib_save_LIBS
-
 
 fi
 
@@ -12141,8 +12124,7 @@ else
 	LIBUUID_LIBS=$pkg_cv_LIBUUID_LIBS
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-
-                  have_uuid=yes
+	            have_uuid=yes
       $as_echo "#define HAVE_UUID_H 1" >>confdefs.h
 
       $as_echo "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
@@ -15610,6 +15592,7 @@ if test "${with_valgrind+set}" = set; then :
   withval=$with_valgrind;
 else
   with_valgrind=no
+
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_valgrind" >&5
@@ -15861,7 +15844,7 @@ done
 fi
 
 ac_fn_c_check_decl "$LINENO" "dirfd" "ac_cv_have_decl_dirfd" "#include <sys/types.h>
-       #include <dirent.h>
+               #include <dirent.h>
 "
 if test "x$ac_cv_have_decl_dirfd" = xyes; then :
 
@@ -18504,9 +18487,7 @@ if test "x$ac_cv_lib_bsd_openpty" = xyes; then :
  LIBS="$LIBS -lbsd"
 fi
 
-
 fi
-
 
 fi
 done
@@ -18660,9 +18641,7 @@ if test "x$ac_cv_lib_bsd_forkpty" = xyes; then :
  LIBS="$LIBS -lbsd"
 fi
 
-
 fi
-
 
 fi
 done
@@ -18720,7 +18699,6 @@ $as_echo "#define GETPGRP_HAVE_ARG 1" >>confdefs.h
 
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
 fi
 done
 
@@ -18748,7 +18726,6 @@ $as_echo "#define SETPGRP_HAVE_ARG 1" >>confdefs.h
 
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
 fi
 done
 
@@ -18765,297 +18742,6 @@ _ACEOF
 
 fi
 done
-
-
-
-
-
-pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIBCRYPT" >&5
-$as_echo_n "checking for LIBCRYPT... " >&6; }
-
-if test -n "$LIBCRYPT_CFLAGS"; then
-    pkg_cv_LIBCRYPT_CFLAGS="$LIBCRYPT_CFLAGS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libxcrypt >= 3.1.1\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "libxcrypt >= 3.1.1") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_LIBCRYPT_CFLAGS=`$PKG_CONFIG --cflags "libxcrypt >= 3.1.1" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-if test -n "$LIBCRYPT_LIBS"; then
-    pkg_cv_LIBCRYPT_LIBS="$LIBCRYPT_LIBS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libxcrypt >= 3.1.1\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "libxcrypt >= 3.1.1") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_LIBCRYPT_LIBS=`$PKG_CONFIG --libs "libxcrypt >= 3.1.1" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-
-
-
-if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
-        _pkg_short_errors_supported=yes
-else
-        _pkg_short_errors_supported=no
-fi
-        if test $_pkg_short_errors_supported = yes; then
-	        LIBCRYPT_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libxcrypt >= 3.1.1" 2>&1`
-        else
-	        LIBCRYPT_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libxcrypt >= 3.1.1" 2>&1`
-        fi
-	# Put the nasty error message in config.log where it belongs
-	echo "$LIBCRYPT_PKG_ERRORS" >&5
-
-
-  save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing crypt_r" >&5
-$as_echo_n "checking for library containing crypt_r... " >&6; }
-if ${ac_cv_search_crypt_r+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_func_search_save_LIBS=$LIBS
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char crypt_r ();
-int
-main ()
-{
-return crypt_r ();
-  ;
-  return 0;
-}
-_ACEOF
-for ac_lib in '' crypt; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_crypt_r=$ac_res
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext
-  if ${ac_cv_search_crypt_r+:} false; then :
-  break
-fi
-done
-if ${ac_cv_search_crypt_r+:} false; then :
-
-else
-  ac_cv_search_crypt_r=no
-fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_crypt_r" >&5
-$as_echo "$ac_cv_search_crypt_r" >&6; }
-ac_res=$ac_cv_search_crypt_r
-if test "$ac_res" != no; then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-
-      $as_echo "#define HAVE_CRYPT_R 1" >>confdefs.h
-
-      if test "$ac_cv_search_crypt_r" = "none required"; then
-        libcrypt=
-      else
-        libcrypt="$ac_cv_search_crypt_r"
-      fi
-      LIBCRYPT_LIBS=${LIBCRYPT_LIBS-$libcrypt}
-
-fi
-
-
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
-
-
-elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-  save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing crypt_r" >&5
-$as_echo_n "checking for library containing crypt_r... " >&6; }
-if ${ac_cv_search_crypt_r+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_func_search_save_LIBS=$LIBS
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char crypt_r ();
-int
-main ()
-{
-return crypt_r ();
-  ;
-  return 0;
-}
-_ACEOF
-for ac_lib in '' crypt; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_crypt_r=$ac_res
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext
-  if ${ac_cv_search_crypt_r+:} false; then :
-  break
-fi
-done
-if ${ac_cv_search_crypt_r+:} false; then :
-
-else
-  ac_cv_search_crypt_r=no
-fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_crypt_r" >&5
-$as_echo "$ac_cv_search_crypt_r" >&6; }
-ac_res=$ac_cv_search_crypt_r
-if test "$ac_res" != no; then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-
-      $as_echo "#define HAVE_CRYPT_R 1" >>confdefs.h
-
-      if test "$ac_cv_search_crypt_r" = "none required"; then
-        libcrypt=
-      else
-        libcrypt="$ac_cv_search_crypt_r"
-      fi
-      LIBCRYPT_LIBS=${LIBCRYPT_LIBS-$libcrypt}
-
-fi
-
-
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
-
-
-else
-	LIBCRYPT_CFLAGS=$pkg_cv_LIBCRYPT_CFLAGS
-	LIBCRYPT_LIBS=$pkg_cv_LIBCRYPT_LIBS
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-  $as_echo "#define HAVE_CRYPT_R 1" >>confdefs.h
-
-
-fi
-
-save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
-
-  CPPFLAGS="$CPPFLAGS $LIBCRYPT_CFLAGS"
-  LIBS="$LIBCRYPT_LIBS $LIBS"
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for crypt or crypt_r" >&5
-$as_echo_n "checking for crypt or crypt_r... " >&6; }
-if ${ac_cv_crypt_crypt+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-        #ifdef HAVE_CRYPT_H
-          #include <crypt.h>
-        #endif
-        #include <unistd.h>
-
-int
-main ()
-{
-
-        #ifdef HAVE_CRYPT_R
-          void *x = crypt_r;
-        #else
-          void *x = crypt;
-        #endif
-
-  ;
-  return 0;
-}
-
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_crypt_crypt=yes
-else
-  ac_cv_crypt_crypt=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_crypt_crypt" >&5
-$as_echo "$ac_cv_crypt_crypt" >&6; }
-
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
 
 
 for ac_func in clock_gettime
@@ -20168,7 +19854,6 @@ fi
 
 ac_fn_c_check_func "$LINENO" "gethostbyname_r" "ac_cv_func_gethostbyname_r"
 if test "x$ac_cv_func_gethostbyname_r" = xyes; then :
-
   $as_echo "#define HAVE_GETHOSTBYNAME_R 1" >>confdefs.h
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking gethostbyname_r with 6 args" >&5
@@ -25376,7 +25061,6 @@ case $ac_sys_system in #(
 
 
     py_cv_module__scproxy=n/a
-    py_cv_module__crypt=n/a
     py_cv_module_termios=n/a
     py_cv_module_grp=n/a
  ;; #(
@@ -25962,26 +25646,6 @@ fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__posixshmem" >&5
 $as_echo "$py_cv_module__posixshmem" >&6; }
 
-
-
-        if test "$py_cv_module_audioop" != "n/a"; then :
-  py_cv_module_audioop=yes
-fi
-   if test "$py_cv_module_audioop" = yes; then
-  MODULE_AUDIOOP_TRUE=
-  MODULE_AUDIOOP_FALSE='#'
-else
-  MODULE_AUDIOOP_TRUE='#'
-  MODULE_AUDIOOP_FALSE=
-fi
-
-  as_fn_append MODULE_BLOCK "MODULE_AUDIOOP_STATE=$py_cv_module_audioop$as_nl"
-  if test "x$py_cv_module_audioop" = xyes; then :
-
-
-    as_fn_append MODULE_BLOCK "MODULE_AUDIOOP_LDFLAGS=$LIBM$as_nl"
-
-fi
 
 
         if test "$py_cv_module__statistics" != "n/a"; then :
@@ -26772,40 +26436,6 @@ fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__blake2" >&5
 $as_echo "$py_cv_module__blake2" >&6; }
 
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _crypt" >&5
-$as_echo_n "checking for stdlib extension module _crypt... " >&6; }
-        if test "$py_cv_module__crypt" != "n/a"; then :
-
-    if true; then :
-  if test "$ac_cv_crypt_crypt" = yes; then :
-  py_cv_module__crypt=yes
-else
-  py_cv_module__crypt=missing
-fi
-else
-  py_cv_module__crypt=disabled
-fi
-
-fi
-  as_fn_append MODULE_BLOCK "MODULE__CRYPT_STATE=$py_cv_module__crypt$as_nl"
-  if test "x$py_cv_module__crypt" = xyes; then :
-
-    as_fn_append MODULE_BLOCK "MODULE__CRYPT_CFLAGS=$LIBCRYPT_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__CRYPT_LDFLAGS=$LIBCRYPT_LIBS$as_nl"
-
-fi
-   if test "$py_cv_module__crypt" = yes; then
-  MODULE__CRYPT_TRUE=
-  MODULE__CRYPT_FALSE='#'
-else
-  MODULE__CRYPT_TRUE='#'
-  MODULE__CRYPT_FALSE=
-fi
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__crypt" >&5
-$as_echo "$py_cv_module__crypt" >&6; }
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _ctypes" >&5
@@ -27930,10 +27560,6 @@ if test -z "${MODULE__POSIXSHMEM_TRUE}" && test -z "${MODULE__POSIXSHMEM_FALSE}"
   as_fn_error $? "conditional \"MODULE__POSIXSHMEM\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${MODULE_AUDIOOP_TRUE}" && test -z "${MODULE_AUDIOOP_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE_AUDIOOP\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
 if test -z "${MODULE__STATISTICS_TRUE}" && test -z "${MODULE__STATISTICS_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__STATISTICS\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
@@ -28044,10 +27670,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__BLAKE2_TRUE}" && test -z "${MODULE__BLAKE2_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__BLAKE2\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${MODULE__CRYPT_TRUE}" && test -z "${MODULE__CRYPT_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__CRYPT\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__CTYPES_TRUE}" && test -z "${MODULE__CTYPES_FALSE}"; then

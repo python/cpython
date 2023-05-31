@@ -924,9 +924,9 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
 
     struct tok_state *tok;
     if (flags != NULL && flags->cf_flags & PyCF_IGNORE_COOKIE) {
-        tok = _PyTokenizer_FromUTF8(str, exec_input);
+        tok = _PyTokenizer_FromUTF8(str, exec_input, 0);
     } else {
-        tok = _PyTokenizer_FromString(str, exec_input);
+        tok = _PyTokenizer_FromString(str, exec_input, 0);
     }
     if (tok == NULL) {
         if (PyErr_Occurred()) {

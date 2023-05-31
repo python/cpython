@@ -10,10 +10,4 @@ backwards compatibility. They have been superseded by other modules.
 
 .. toctree::
 
-   aifc.rst
-   audioop.rst
-   chunk.rst
-   crypt.rst
-   imghdr.rst
    optparse.rst
-   uu.rst
