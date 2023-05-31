@@ -2793,7 +2793,7 @@ PyDoc_STRVAR(os_system__doc__,
     {"system", _PyCFunction_CAST(os_system), METH_FASTCALL|METH_KEYWORDS, os_system__doc__},
 
 static long
-os_system_impl(PyObject *module, const Py_UNICODE *command);
+os_system_impl(PyObject *module, const wchar_t *command);
 
 static PyObject *
 os_system(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -2825,7 +2825,7 @@ os_system(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    const Py_UNICODE *command = NULL;
+    const wchar_t *command = NULL;
     long _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
@@ -9367,7 +9367,7 @@ PyDoc_STRVAR(os_startfile__doc__,
 
 static PyObject *
 os_startfile_impl(PyObject *module, path_t *filepath,
-                  const Py_UNICODE *operation, const Py_UNICODE *arguments,
+                  const wchar_t *operation, const wchar_t *arguments,
                   path_t *cwd, int show_cmd);
 
 static PyObject *
@@ -9402,8 +9402,8 @@ os_startfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t filepath = PATH_T_INITIALIZE("startfile", "filepath", 0, 0);
-    const Py_UNICODE *operation = NULL;
-    const Py_UNICODE *arguments = NULL;
+    const wchar_t *operation = NULL;
+    const wchar_t *arguments = NULL;
     path_t cwd = PATH_T_INITIALIZE("startfile", "cwd", 1, 0);
     int show_cmd = 1;
 
@@ -11990,4 +11990,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=9d8b0d6717c9af54 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=02bece83d20d497b input=a9049054013a1b77]*/
