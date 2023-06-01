@@ -391,10 +391,50 @@ Removed
 
   (Contributed by Victor Stinner in :gh:`105107`.)
 
-* ``PyObject_AsCharBuffer()``, ``PyObject_AsReadBuffer()``, ``PyObject_CheckReadBuffer()``,
-  and ``PyObject_AsWriteBuffer()`` are removed. Please migrate to new buffer protocol;
-  :c:func:`PyObject_GetBuffer` and :c:func:`PyBuffer_Release`.
-  (Contributed by Inada Naoki in :gh:`85275`.
+* Remove old buffer protocols deprecated in Python 3.0. Use :ref:`bufferobjects` instead.
+
+   * :c:func:`!PyObject_CheckReadBuffer`: Use ``PyObject_CheckBuffer(obj)`` to
+     test if the ``obj`` supports the buffer protocol. To test the ``obj``
+     actually provide readable buffer, use :c:func:`PyObject_GetBuffer` and
+     :c:func:`PyBuffer_Release` instead:
+
+     .. code-block:: c
+
+        Py_buffer view;
+        int can_read = PyObject_GetBuffer(obj, &view, PyBUF_SIMPLE) == 0;
+        if (can_read) {
+            PyBuffer_Release(&view);
+        }
+        else {
+            PyErr_Clear();  // PyObject_GetBuffer() may raise TypeError.
+        }
+
+   * :c:func:`!PyObject_AsCharBuffer`, :c:func:`PyObject_AsReadBuffer`:
+     :c:func:`PyObject_GetBuffer` and :c:func:`PyBuffer_Release` instead:
+
+     .. code-block:: c
+
+        Py_buffer view;
+        if (PyObject_GetBuffer(obj, &view, PyBUF_SIMPLE) < 0) {
+            return NULL;
+        }
+        // Use `view.buf` and `view.len` to read from the buffer.
+        // You may need to cast buf as `(const char*)view.buf`.
+        PyBuffer_Release(&view);
+
+   * :c:func:`!PyObject_AsWriteBuffer`: Use
+     :c:func:`PyObject_GetBuffer` and :c:func:`PyBuffer_Release` instead:
+
+     .. code-block:: c
+
+        Py_buffer view;
+        if (PyObject_GetBuffer(obj, &view, PyBUF_WRITABLE) < 0) {
+            return NULL;
+        }
+        // Use `view.buf` and `view.len` to write to the buffer.
+        PyBuffer_Release(&view);
+
+  (Contributed by Inada Naoki in :gh:`85275`.)
 
 * Remove the following old functions to configure the Python initialization,
   deprecated in Python 3.11:
