@@ -26,7 +26,7 @@ unmarshalling.  Version 2 uses a binary format for floating point numbers.
    native :c:expr:`long` type.  *version* indicates the file format.
 
    This function can fail, in which case it sets the error indicator.
-   Use ``PyErr_Occurred()`` to check for that.
+   Use :c:func:`PyErr_Occurred` to check for that.
 
 .. c:function:: void PyMarshal_WriteObjectToFile(PyObject *value, FILE *file, int version)
 
@@ -34,7 +34,7 @@ unmarshalling.  Version 2 uses a binary format for floating point numbers.
    *version* indicates the file format.
 
    This function can fail, in which case it sets the error indicator.
-   Use ``PyErr_Occurred()`` to check for that.
+   Use :c:func:`PyErr_Occurred` to check for that.
 
 .. c:function:: PyObject* PyMarshal_WriteObjectToString(PyObject *value, int version)
 
