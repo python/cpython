@@ -352,6 +352,25 @@ Porting to Python 3.13
 Deprecated
 ----------
 
+* Deprecate the old ``Py_UNICODE`` and ``PY_UNICODE_TYPE`` types: use directly
+  the ``wchar_t`` type instead. Since Python 3.3, ``Py_UNICODE`` and
+  ``PY_UNICODE_TYPE`` are just aliases to ``wchar_t``.
+  (Contributed by Victor Stinner in :gh:`105156`.)
+
+* Deprecate old Python initialization functions:
+
+  * :c:func:`PySys_ResetWarnOptions`:
+    clear :data:`sys.warnoptions` and :data:`!warnings.filters` instead.
+  * :c:func:`Py_GetExecPrefix`: get :data:`sys.exec_prefix` instead.
+  * :c:func:`Py_GetPath`: get :data:`sys.path` instead.
+  * :c:func:`Py_GetPrefix`: get :data:`sys.prefix` instead.
+  * :c:func:`Py_GetProgramFullPath`: get :data:`sys.executable` instead.
+  * :c:func:`Py_GetProgramName`: get :data:`sys.executable` instead.
+  * :c:func:`Py_GetPythonHome`: get :c:member:`PyConfig.home` or
+    :envvar:`PYTHONHOME` environment variable instead.
+
+  (Contributed by Victor Stinner in :gh:`105145`.)
+
 Removed
 -------
 
@@ -368,5 +387,42 @@ Removed
     :c:func:`PyTuple_New(0) <PyTuple_New>`.
   * ``PyEval_CallFunction()``: use :c:func:`PyObject_CallFunction` instead.
   * ``PyEval_CallMethod()``: use :c:func:`PyObject_CallMethod` instead.
+  * ``PyCFunction_Call()``: use :c:func:`PyObject_Call` instead.
 
   (Contributed by Victor Stinner in :gh:`105107`.)
+
+* Remove the following old functions to configure the Python initialization,
+  deprecated in Python 3.11:
+
+  * ``PySys_AddWarnOptionUnicode()``: use :c:member:`PyConfig.warnoptions` instead.
+  * ``PySys_AddWarnOption()``: use :c:member:`PyConfig.warnoptions` instead.
+  * ``PySys_AddXOption()``: use :c:member:`PyConfig.xoptions` instead.
+  * ``PySys_HasWarnOptions()``: use :c:member:`PyConfig.xoptions` instead.
+  * ``PySys_SetArgvEx()``: set :c:member:`PyConfig.argv` instead.
+  * ``PySys_SetArgv()``: set :c:member:`PyConfig.argv` instead.
+  * ``PySys_SetPath()``: set :c:member:`PyConfig.module_search_paths` instead.
+  * ``Py_SetPath()``: set :c:member:`PyConfig.module_search_paths` instead.
+  * ``Py_SetProgramName()``: set :c:member:`PyConfig.program_name` instead.
+  * ``Py_SetPythonHome()``: set :c:member:`PyConfig.home` instead.
+  * ``Py_SetStandardStreamEncoding()``: set :c:member:`PyConfig.stdio_encoding` instead.
+  * ``_Py_SetProgramFullPath()``: set :c:member:`PyConfig.executable` instead.
+
+  Use the new :c:type:`PyConfig` API of the :ref:`Python Initialization
+  Configuration <init-config>` instead (:pep:`587`), added to Python 3.8.
+  (Contributed by Victor Stinner in :gh:`105145`.)
+
+* Remove ``PyEval_InitThreads()`` and ``PyEval_ThreadsInitialized()``
+  functions, deprecated in Python 3.9. Since Python 3.7, ``Py_Initialize()``
+  always creates the GIL: calling ``PyEval_InitThreads()`` did nothing and
+  ``PyEval_ThreadsInitialized()`` always returned non-zero.
+  (Contributed by Victor Stinner in :gh:`105182`.)
+
+* Remove ``PyEval_AcquireLock()`` and ``PyEval_ReleaseLock()`` functions,
+  deprecated in Python 3.2. They didn't update the current thread state.
+  They can be replaced with:
+
+  * :c:func:`PyEval_SaveThread` and :c:func:`PyEval_RestoreThread`;
+  * low-level :c:func:`PyEval_AcquireThread` and :c:func:`PyEval_RestoreThread`;
+  * or :c:func:`PyGILState_Ensure` and :c:func:`PyGILState_Release`.
+
+  (Contributed by Victor Stinner in :gh:`105182`.)
