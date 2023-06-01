@@ -282,6 +282,41 @@ dict_getitem_knownhash(PyObject *self, PyObject *args)
     return Py_XNewRef(result);
 }
 
+static PyObject*
+call_pyiter_next(PyObject* self, PyObject *args)
+{
+    PyObject *iter;
+    if (!PyArg_ParseTuple(args, "O:call_pyiter_next", &iter)) {
+        return NULL;
+    }
+    assert(PyIter_Check(iter) || PyAIter_Check(iter));
+    PyObject *item = PyIter_Next(iter);
+    if (item == NULL && !PyErr_Occurred()) {
+        Py_RETURN_NONE;
+    }
+    return item;
+}
+
+static PyObject*
+call_pyiter_nextitem(PyObject* self, PyObject *args)
+{
+    PyObject *iter;
+    if (!PyArg_ParseTuple(args, "O:call_pyiter_nextitem", &iter)) {
+        return NULL;
+    }
+    assert(PyIter_Check(iter) || PyAIter_Check(iter));
+    PyObject *item = NULL;
+    int ret = PyIter_NextItem(iter, &item);
+    if (ret < 0) {
+        return NULL;
+    }
+    if (item == NULL && !PyErr_Occurred()) {
+        Py_RETURN_NONE;
+    }
+    return item;
+}
+
+
 /* Issue #4701: Check that PyObject_Hash implicitly calls
  *   PyType_Ready if it hasn't already been called
  */
@@ -3286,6 +3321,8 @@ static PyMethodDef TestMethods[] = {
     {"test_list_api",           test_list_api,                   METH_NOARGS},
     {"test_dict_iteration",     test_dict_iteration,             METH_NOARGS},
     {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},
+    {"call_pyiter_next",        call_pyiter_next,                METH_VARARGS},
+    {"call_pyiter_nextitem",    call_pyiter_nextitem,            METH_VARARGS},
     {"test_lazy_hash_inheritance",      test_lazy_hash_inheritance,METH_NOARGS},
     {"test_xincref_doesnt_leak",test_xincref_doesnt_leak,        METH_NOARGS},
     {"test_incref_doesnt_leak", test_incref_doesnt_leak,         METH_NOARGS},

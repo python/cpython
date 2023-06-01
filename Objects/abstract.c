@@ -2833,6 +2833,29 @@ PyAIter_Check(PyObject *obj)
             tp->tp_as_async->am_anext != &_PyObject_NextNotImplemented);
 }
 
+/* Set *item to the next item. Return 0 on success and -1 on error.
+ * If the iteration terminates normally, set *item to NULL and clear
+ * the PyExc_StopIteration exception (if it was set).
+ */
+int
+PyIter_NextItem(PyObject *iter, PyObject **item)
+{
+    *item = (*Py_TYPE(iter)->tp_iternext)(iter);
+    if (*item == NULL) {
+        PyThreadState *tstate = _PyThreadState_GET();
+        if (_PyErr_Occurred(tstate)) {
+            if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
+                _PyErr_Clear(tstate);
+                *item = NULL;
+            }
+            else {
+                return -1;
+            }
+        }
+    }
+    return 0;
+}
+
 /* Return next item.
  * If an error occurs, return NULL.  PyErr_Occurred() will be true.
  * If the iteration terminates normally, return NULL and clear the
@@ -2844,14 +2867,8 @@ PyObject *
 PyIter_Next(PyObject *iter)
 {
     PyObject *result;
-    result = (*Py_TYPE(iter)->tp_iternext)(iter);
-    if (result == NULL) {
-        PyThreadState *tstate = _PyThreadState_GET();
-        if (_PyErr_Occurred(tstate)
-            && _PyErr_ExceptionMatches(tstate, PyExc_StopIteration))
-        {
-            _PyErr_Clear(tstate);
-        }
+    if (PyIter_NextItem(iter, &result) < 0) {
+        return NULL;
     }
     return result;
 }

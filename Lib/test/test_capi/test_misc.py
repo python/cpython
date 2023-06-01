@@ -410,6 +410,41 @@ class CAPITest(unittest.TestCase):
             _testcapi.sequence_del_slice(mapping, 1, 3)
         self.assertEqual(mapping, {1: 'a', 2: 'b', 3: 'c'})
 
+    def run_iter_api_test(self, next_func):
+        inputs = [ (), (1,2,3),
+                   [], [1,2,3]]
+
+        for inp in inputs:
+            items = []
+            it = iter(inp)
+            while (item := next_func(it)) is not None:
+                items.append(item)
+            self.assertEqual(items, list(inp))
+
+        class Broken:
+            def __init__(self):
+                self.count = 0
+
+            def __next__(self):
+                if self.count < 3:
+                    self.count += 1
+                    return self.count
+                else:
+                    raise TypeError('bad type')
+
+        it = Broken()
+        self.assertEqual(next_func(it), 1)
+        self.assertEqual(next_func(it), 2)
+        self.assertEqual(next_func(it), 3)
+        with self.assertRaisesRegex(TypeError, 'bad type'):
+            next_func(it)
+
+    def test_iter_next(self):
+        self.run_iter_api_test(_testcapi.call_pyiter_next)
+
+    def test_iter_nextitem(self):
+        self.run_iter_api_test(_testcapi.call_pyiter_nextitem)
+
     @unittest.skipUnless(hasattr(_testcapi, 'negative_refcount'),
                          'need _testcapi.negative_refcount')
     def test_negative_refcount(self):
