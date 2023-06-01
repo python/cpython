@@ -122,4 +122,4 @@ Ellipsis Object
    :c:data:`Py_None` it is an immortal singleton object.
 
    .. versionchanged:: 3.12
-      :const:`Py_Ellipsis` is immortal.
+      :c:data:`Py_Ellipsis` is immortal.
