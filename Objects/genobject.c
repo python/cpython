@@ -222,7 +222,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
 
     if (exc) {
         assert(_PyErr_Occurred(tstate));
-        _PyErr_ChainStackItem(NULL);
+        _PyErr_ChainStackItem();
     }
 
     gen->gi_frame_state = FRAME_EXECUTING;
