@@ -4901,8 +4901,6 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
     }
     if (PyUnicode_Check(name)) {
         if (PyUnicode_CheckExact(name)) {
-            if (PyUnicode_READY(name) == -1)
-                return -1;
             Py_INCREF(name);
         }
         else {
