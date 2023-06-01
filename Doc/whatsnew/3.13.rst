@@ -97,14 +97,6 @@ pathlib
   :meth:`~pathlib.Path.rglob`.
   (Contributed by Barney Gale in :gh:`77609`.)
 
-threading
----------
-
-* Passing any arguments to :func:`threading.RLock` is now restricted.
-  Previously C version allowed any numbers of args and kwargs,
-  but they were just ignored. Python version never allowed any arguments.
-  Now, these two implementation match.
-  (Contributed by Nikita Sobolev in :gh:`102029`.)
 
 Optimizations
 =============
@@ -115,6 +107,11 @@ Optimizations
 Deprecated
 ==========
 
+* Passing any arguments to :func:`threading.RLock` is now deprecated.
+  C version allows any numbers of args and kwargs,
+  but they are just ignored. Python version does not allow any arguments.
+  All arguments will be removed from :func:`threading.RLock` in Python 3.13.
+  (Contributed by Nikita Sobolev in :gh:`102029`.)
 
 
 Removed

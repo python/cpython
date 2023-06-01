@@ -1,2 +1,1 @@
-Sync ``__new__`` signatures of ``threading._CRLock`` and
-``threading._PyRLock``. Now they both require 0 arguments.
+Deprecate passing any arguments to :func:`threading.RLock`.

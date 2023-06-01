@@ -505,22 +505,6 @@ For internal use by `threading.Condition`.");
 static PyObject *
 rlock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    // Can later be converted to AC:
-    if (type->tp_init == PyBaseObject_Type.tp_init) {
-        int rc = 0;
-        if (args != NULL)
-            rc = PyObject_IsTrue(args);
-        if (rc == 0 && kwds != NULL)
-            rc = PyObject_IsTrue(kwds);
-        if (rc != 0) {
-            if (rc > 0) {
-                PyErr_SetString(PyExc_TypeError,
-                                "Initialization arguments are not supported");
-            }
-            return NULL;
-        }
-    }
-
     rlockobject *self = (rlockobject *) type->tp_alloc(type, 0);
     if (self == NULL) {
         return NULL;

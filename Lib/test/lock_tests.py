@@ -374,7 +374,7 @@ class RLockTypeTests(RLockTests):
         ]
         for args, kwargs in arg_types:
             with self.subTest(args=args, kwargs=kwargs):
-                with self.assertRaises(TypeError):
+                with self.assertWarns(DeprecationWarning):
                     self.locktype(*args, **kwargs)
 
         # Subtypes with custom `__init__` are allowed (but, not recommended):

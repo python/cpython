@@ -4,6 +4,7 @@ import os as _os
 import sys as _sys
 import _thread
 import functools
+import warnings
 
 from time import monotonic as _time
 from _weakrefset import WeakSet
@@ -107,7 +108,7 @@ def gettrace():
 
 Lock = _allocate_lock
 
-def RLock():
+def RLock(*args, **kwargs):
     """Factory function that returns a new reentrant lock.
 
     A reentrant lock must be released by the thread that acquired it. Once a
@@ -116,9 +117,15 @@ def RLock():
     acquired it.
 
     """
+    if args or kwargs:
+        warnings.warn(
+            'Passing arguments to RLock is deprecated and will be removed in 3.13',
+            DeprecationWarning,
+            stacklevel=2,
+        )
     if _CRLock is None:
-        return _PyRLock()
-    return _CRLock()
+        return _PyRLock(*args, **kwargs)
+    return _CRLock(*args, **kwargs)
 
 class _RLock:
     """This class implements reentrant lock objects.
