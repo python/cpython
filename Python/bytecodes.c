@@ -1314,11 +1314,25 @@ dummy_func(
             null = NULL;
         }
 
-        inst(LOAD_GLOBAL_MODULE, (unused/1, index/1, version/1, unused/1 -- null if (oparg & 1), res)) {
-            DEOPT_IF(!PyDict_CheckExact(GLOBALS()), LOAD_GLOBAL);
+        op(_SKIP_CACHE, (unused/1 -- )) {
+        }
+
+        op(_GUARD_GLOBALS_VERSION, (version/1 --)) {
             PyDictObject *dict = (PyDictObject *)GLOBALS();
+            DEOPT_IF(!PyDict_CheckExact(dict), LOAD_GLOBAL);
             DEOPT_IF(dict->ma_keys->dk_version != version, LOAD_GLOBAL);
             assert(DK_IS_UNICODE(dict->ma_keys));
+        }
+
+        op(_GUARD_BUILTINS_VERSION, (version/1 --)) {
+            PyDictObject *dict = (PyDictObject *)BUILTINS();
+            DEOPT_IF(!PyDict_CheckExact(dict), LOAD_GLOBAL);
+            DEOPT_IF(dict->ma_keys->dk_version != version, LOAD_GLOBAL);
+            assert(DK_IS_UNICODE(dict->ma_keys));
+        }
+
+        op(_LOAD_GLOBAL_MODULE, (index/1 -- null if (oparg & 1), res)) {
+            PyDictObject *dict = (PyDictObject *)GLOBALS();
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
             res = entries[index].me_value;
             DEOPT_IF(res == NULL, LOAD_GLOBAL);
@@ -1327,15 +1341,8 @@ dummy_func(
             null = NULL;
         }
 
-        inst(LOAD_GLOBAL_BUILTIN, (unused/1, index/1, mod_version/1, bltn_version/1 -- null if (oparg & 1), res)) {
-            DEOPT_IF(!PyDict_CheckExact(GLOBALS()), LOAD_GLOBAL);
-            DEOPT_IF(!PyDict_CheckExact(BUILTINS()), LOAD_GLOBAL);
-            PyDictObject *mdict = (PyDictObject *)GLOBALS();
+        op(_LOAD_GLOBAL_BUILTINS, (index/1 -- null if (oparg & 1), res)) {
             PyDictObject *bdict = (PyDictObject *)BUILTINS();
-            assert(opcode == LOAD_GLOBAL_BUILTIN);
-            DEOPT_IF(mdict->ma_keys->dk_version != mod_version, LOAD_GLOBAL);
-            DEOPT_IF(bdict->ma_keys->dk_version != bltn_version, LOAD_GLOBAL);
-            assert(DK_IS_UNICODE(bdict->ma_keys));
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(bdict->ma_keys);
             res = entries[index].me_value;
             DEOPT_IF(res == NULL, LOAD_GLOBAL);
@@ -1343,6 +1350,10 @@ dummy_func(
             STAT_INC(LOAD_GLOBAL, hit);
             null = NULL;
         }
+
+        macro(LOAD_GLOBAL_MODULE) = _SKIP_CACHE + _GUARD_GLOBALS_VERSION + _SKIP_CACHE + _LOAD_GLOBAL_MODULE;
+
+        macro(LOAD_GLOBAL_BUILTIN) = _SKIP_CACHE + _GUARD_GLOBALS_VERSION + _GUARD_BUILTINS_VERSION + _LOAD_GLOBAL_BUILTINS;
 
         inst(DELETE_FAST, (--)) {
             PyObject *v = GETLOCAL(oparg);

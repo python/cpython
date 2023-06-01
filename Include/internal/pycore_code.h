@@ -19,9 +19,9 @@ extern "C" {
 
 typedef struct {
     uint16_t counter;
-    uint16_t index;
     uint16_t module_keys_version;
     uint16_t builtin_keys_version;
+    uint16_t index;
 } _PyLoadGlobalCache;
 
 #define INLINE_CACHE_ENTRIES_LOAD_GLOBAL CACHE_ENTRIES(_PyLoadGlobalCache)
