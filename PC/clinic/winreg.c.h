@@ -1458,9 +1458,6 @@ winreg_SetValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("SetValue", "argument 4", "str", args[3]);
         goto exit;
     }
-    if (PyUnicode_READY(args[3]) == -1) {
-        goto exit;
-    }
     value_obj = args[3];
     return_value = winreg_SetValue_impl(module, key, sub_key, type, value_obj);
 
@@ -1791,4 +1788,4 @@ exit:
 #ifndef WINREG_QUERYREFLECTIONKEY_METHODDEF
     #define WINREG_QUERYREFLECTIONKEY_METHODDEF
 #endif /* !defined(WINREG_QUERYREFLECTIONKEY_METHODDEF) */
-/*[clinic end generated code: output=bbfdbb8681102d5c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d2bf1f58ad07e5f8 input=a9049054013a1b77]*/
