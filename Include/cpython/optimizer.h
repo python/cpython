@@ -9,10 +9,7 @@ extern "C" {
 typedef struct {
     uint8_t opcode;
     uint8_t oparg;
-    uint16_t _;
 } _PyVMData;
-
-typedef uint32_t _PyOptimizerCapabilities; /* Data used by the VM for executor object management */
 
 typedef struct _PyExecutorObject {
     PyObject_HEAD

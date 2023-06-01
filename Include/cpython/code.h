@@ -77,7 +77,7 @@ typedef struct {
 } _PyCoLineInstrumentationData;
 
 
-typedef struct  _PyExecutorArray {
+typedef struct {
     int size;
     int capacity;
     struct _PyExecutorObject *executors[1];
@@ -160,7 +160,7 @@ typedef struct {
     PyObject *co_qualname;        /* unicode (qualname, for reference) */      \
     PyObject *co_linetable;       /* bytes object that holds location info */  \
     PyObject *co_weakreflist;     /* to support weakrefs to code objects */    \
-    _PyExecutorArray *co_executors;      /* excecutors from optimizer */       \
+    _PyExecutorArray *co_executors;      /* executors from optimizer */        \
     _PyCoCached *_co_cached;      /* cached co_* attributes */                 \
     uint64_t _co_instrumentation_version; /* current instrumentation version */  \
     _PyCoMonitoringData *_co_monitoring; /* Monitoring data */                 \

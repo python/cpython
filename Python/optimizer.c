@@ -98,7 +98,7 @@ error_optimize(
 
 static PyTypeObject DefaultOptimizer_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    .tp_name = "No-op optimizer",
+    .tp_name = "noop_optimizer",
     .tp_basicsize = sizeof(_PyOptimizerObject),
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
@@ -157,12 +157,12 @@ _PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNI
 /** Test support **/
 
 
-typedef struct _PyCounterOptimizerObject {
+typedef struct {
     _PyOptimizerObject base;
     int64_t count;
 } _PyCounterOptimizerObject;
 
-typedef struct _PyCounterExecutorObject {
+typedef struct {
     _PyExecutorObject executor;
     _PyCounterOptimizerObject *optimizer;
     _Py_CODEUNIT *next_instr;
@@ -176,7 +176,7 @@ counter_dealloc(_PyCounterExecutorObject *self) {
 
 static PyTypeObject CounterExecutor_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    .tp_name = "Test executor",
+    .tp_name = "counting_executor",
     .tp_basicsize = sizeof(_PyCounterExecutorObject),
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,

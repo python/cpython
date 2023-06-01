@@ -33,7 +33,6 @@ extern "C" {
 #include "pycore_typeobject.h"    // struct type_cache
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
 #include "pycore_warnings.h"      // struct _warnings_runtime_state
-#include "cpython/optimizer.h"
 
 
 struct _Py_long_state {

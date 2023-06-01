@@ -3157,7 +3157,7 @@
         TARGET(JUMP_BACKWARD) {
             PREDICTED(JUMP_BACKWARD);
             #line 2118 "Python/bytecodes.c"
-            _Py_CODEUNIT *here = next_instr-1;
+            _Py_CODEUNIT *here = next_instr - 1;
             assert(oparg <= INSTR_OFFSET());
             JUMPBY(1-oparg);
             here[1].cache += (1 << OPTIMIZER_BITS_IN_COUNTER);

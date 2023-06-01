@@ -695,7 +695,7 @@ init_interpreter(PyInterpreterState *interp,
     }
     interp->sys_profile_initialized = false;
     interp->sys_trace_initialized = false;
-    interp->optimizer= &_PyOptimizer_Default;
+    interp->optimizer = &_PyOptimizer_Default;
     interp->optimizer_backedge_threshold = _PyOptimizer_Default.backedge_threshold;
     interp->optimizer_resume_threshold = _PyOptimizer_Default.backedge_threshold;
     if (interp != &runtime->_main_interpreter) {
