@@ -19,29 +19,30 @@ are available, however.
 
 .. c:var:: PyObject* Py_False
 
-   The Python ``False`` object.  This object has no methods.  It needs to be
-   treated just like any other object with respect to reference counts.
+   The Python ``False`` object.  This object has no methods and is immortal.
+
+.. versionchanged:: 3.12
+   :const:`Py_False` is immortal.
 
 
 .. c:var:: PyObject* Py_True
 
-   The Python ``True`` object.  This object has no methods.  It needs to be treated
-   just like any other object with respect to reference counts.
+   The Python ``True`` object.  This object has no methods and is immortal.
+
+.. versionchanged:: 3.12
+   :const:`Py_True` is immortal.
 
 
 .. c:macro:: Py_RETURN_FALSE
 
-   Return :const:`Py_False` from a function, properly incrementing its reference
-   count.
+   Return :const:`Py_False` from a function.
 
 
 .. c:macro:: Py_RETURN_TRUE
 
-   Return :const:`Py_True` from a function, properly incrementing its reference
-   count.
+   Return :const:`Py_True` from a function.
 
 
 .. c:function:: PyObject* PyBool_FromLong(long v)
 
-   Return a new reference to :const:`Py_True` or :const:`Py_False` depending on the
-   truth value of *v*.
+   Return :const:`Py_True` or :const:`Py_False`, depending on the truth value of *v*.
