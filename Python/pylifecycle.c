@@ -1775,6 +1775,7 @@ Py_FinalizeEx(void)
      */
 
     _PyAtExit_Call(tstate->interp);
+    PyUnstable_PerfMapState_Fini();
 
     /* Copy the core config, PyInterpreterState_Delete() free
        the core config memory */
@@ -2555,7 +2556,6 @@ error:
     res = _PyStatus_ERR("can't initialize sys standard streams");
 
 done:
-    _Py_ClearStandardStreamEncoding();
     Py_XDECREF(iomod);
     return res;
 }

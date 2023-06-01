@@ -147,10 +147,10 @@ loops that truncate the stream.
       >>> list(accumulate(data, max))              # running maximum
       [3, 4, 6, 6, 6, 9, 9, 9, 9, 9]
 
-      # Amortize a 5% loan of 1000 with 4 annual payments of 90
-      >>> cashflows = [1000, -90, -90, -90, -90]
-      >>> list(accumulate(cashflows, lambda bal, pmt: bal*1.05 + pmt))
-      [1000, 960.0, 918.0, 873.9000000000001, 827.5950000000001]
+      # Amortize a 5% loan of 1000 with 10 annual payments of 90
+      >>> account_update = lambda bal, pmt: round(bal * 1.05) + pmt
+      >>> list(accumulate(repeat(-90, 10), account_update, initial=1_000))
+      [1000, 960, 918, 874, 828, 779, 728, 674, 618, 559, 497]
 
     See :func:`functools.reduce` for a similar function that returns only the
     final accumulated value.
@@ -951,7 +951,10 @@ which incur interpreter overhead.
                nexts = cycle(islice(nexts, num_active))
 
    def partition(pred, iterable):
-       "Use a predicate to partition entries into false entries and true entries"
+       """Partition entries into false entries and true entries.
+
+       If *pred* is slow, consider wrapping it with functools.lru_cache().
+       """
        # partition(is_odd, range(10)) --> 0 2 4 6 8   and  1 3 5 7 9
        t1, t2 = tee(iterable)
        return filterfalse(pred, t1), filter(pred, t2)
@@ -1031,7 +1034,7 @@ The following recipes have a more mathematical flavor:
        return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
    def sieve(n):
-       "Primes less than n"
+       "Primes less than n."
        # sieve(30) --> 2 3 5 7 11 13 17 19 23 29
        data = bytearray((0, 1)) * (n // 2)
        data[:3] = 0, 0, 0
@@ -1068,7 +1071,7 @@ The following recipes have a more mathematical flavor:
 
    def matmul(m1, m2):
        "Multiply two matrices."
-       # matmul([(7, 5), (3, 5)], [[2, 5], [7, 9]]) --> (49, 80), (41, 60)
+       # matmul([(7, 5), (3, 5)], [(2, 5), (7, 9)]) --> (49, 80), (41, 60)
        n = len(m2[0])
        return batched(starmap(math.sumprod, product(m1, transpose(m2))), n)
 
@@ -1108,6 +1111,17 @@ The following recipes have a more mathematical flavor:
            return x * 0  # coerce zero to the type of x
        powers = map(pow, repeat(x), reversed(range(n)))
        return math.sumprod(coefficients, powers)
+
+   def polynomial_derivative(coefficients):
+       """Compute the first derivative of a polynomial.
+
+          f(x)  =  x³ -4x² -17x + 60
+          f'(x) = 3x² -8x  -17
+       """
+       # polynomial_derivative([1, -4, -17, 60]) -> [3, -8, -17]
+       n = len(coefficients)
+       powers = reversed(range(1, n))
+       return list(map(operator.mul, coefficients, powers))
 
    def nth_combination(iterable, r, index):
        "Equivalent to list(combinations(iterable, r))[index]"
@@ -1296,6 +1310,9 @@ The following recipes have a more mathematical flavor:
     >>> expanded = lambda x: x**3 -4*x**2 -17*x + 60
     >>> all(factored(x) == expanded(x) for x in range(-10, 11))
     True
+
+    >>> polynomial_derivative([1, -4, -17, 60])
+    [3, -8, -17]
 
     >>> list(iter_index('AABCADEAF', 'A'))
     [0, 1, 4, 7]

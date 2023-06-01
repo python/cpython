@@ -760,6 +760,36 @@ clear_extension(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+write_perf_map_entry(PyObject *self, PyObject *args)
+{
+    PyObject *code_addr_v;
+    const void *code_addr;
+    unsigned int code_size;
+    const char *entry_name;
+
+    if (!PyArg_ParseTuple(args, "OIs", &code_addr_v, &code_size, &entry_name))
+        return NULL;
+    code_addr = PyLong_AsVoidPtr(code_addr_v);
+    if (code_addr == NULL) {
+        return NULL;
+    }
+
+    int ret = PyUnstable_WritePerfMapEntry(code_addr, code_size, entry_name);
+    if (ret < 0) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        return NULL;
+    }
+    return PyLong_FromLong(ret);
+}
+
+static PyObject *
+perf_map_state_teardown(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
+{
+    PyUnstable_PerfMapState_Fini();
+    Py_RETURN_NONE;
+}
+
+static PyObject *
 iframe_getcode(PyObject *self, PyObject *frame)
 {
     if (!PyFrame_Check(frame)) {
@@ -815,6 +845,8 @@ static PyMethodDef module_functions[] = {
     _TESTINTERNALCAPI_ASSEMBLE_CODE_OBJECT_METHODDEF
     {"get_interp_settings", get_interp_settings, METH_VARARGS, NULL},
     {"clear_extension", clear_extension, METH_VARARGS, NULL},
+    {"write_perf_map_entry", write_perf_map_entry, METH_VARARGS},
+    {"perf_map_state_teardown", perf_map_state_teardown, METH_NOARGS},
     {"iframe_getcode", iframe_getcode, METH_O, NULL},
     {"iframe_getline", iframe_getline, METH_O, NULL},
     {"iframe_getlasti", iframe_getlasti, METH_O, NULL},

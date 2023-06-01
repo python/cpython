@@ -445,8 +445,8 @@ EventAttributes must be None.
 static PyObject *
 _overlapped_CreateEvent_impl(PyObject *module, PyObject *EventAttributes,
                              BOOL ManualReset, BOOL InitialState,
-                             const Py_UNICODE *Name)
-/*[clinic end generated code: output=8e04f0916c17b13d input=dbc36ae14375ba24]*/
+                             const wchar_t *Name)
+/*[clinic end generated code: output=b17ddc5fd506972d input=dbc36ae14375ba24]*/
 {
     HANDLE Event;
 
@@ -1600,8 +1600,8 @@ Connect to the pipe for asynchronous I/O (overlapped).
 
 static PyObject *
 _overlapped_Overlapped_ConnectPipe_impl(OverlappedObject *self,
-                                        const Py_UNICODE *Address)
-/*[clinic end generated code: output=3cc9661667d459d4 input=167c06a274efcefc]*/
+                                        const wchar_t *Address)
+/*[clinic end generated code: output=67cbd8e4d3a57855 input=167c06a274efcefc]*/
 {
     HANDLE PipeHandle;
 
