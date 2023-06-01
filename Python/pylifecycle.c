@@ -2035,7 +2035,7 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
     const PyConfig *src_config;
     if (save_tstate != NULL) {
         // XXX Might new_interpreter() have been called without the GIL held?
-        _PyEval_ReleaseLock(save_tstate);
+        _PyEval_ReleaseLock(save_tstate->interp, save_tstate);
         src_config = _PyInterpreterState_GetConfig(save_tstate->interp);
     }
     else
