@@ -1,2 +1,1 @@
-The basic dead store elimination is adopted in the basic block optimization
-process. Patch by Dong-hee Na and Carl Meyer.
+Eliminate redundant :opcode:`STORE_FAST` instructions in the compiler. Patch by Dong-hee Na and Carl Meyer.
