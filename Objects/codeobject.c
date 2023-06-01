@@ -153,10 +153,6 @@ intern_string_constants(PyObject *tuple, int *modified)
     for (Py_ssize_t i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
         PyObject *v = PyTuple_GET_ITEM(tuple, i);
         if (PyUnicode_CheckExact(v)) {
-            if (PyUnicode_READY(v) == -1) {
-                return -1;
-            }
-
             if (all_name_chars(v)) {
                 PyObject *w = v;
                 PyUnicode_InternInPlace(&v);
@@ -546,17 +542,6 @@ remove_column_info(PyObject *locations)
 PyCodeObject *
 _PyCode_New(struct _PyCodeConstructor *con)
 {
-    /* Ensure that strings are ready Unicode string */
-    if (PyUnicode_READY(con->name) < 0) {
-        return NULL;
-    }
-    if (PyUnicode_READY(con->qualname) < 0) {
-        return NULL;
-    }
-    if (PyUnicode_READY(con->filename) < 0) {
-        return NULL;
-    }
-
     if (intern_strings(con->names) < 0) {
         return NULL;
     }
