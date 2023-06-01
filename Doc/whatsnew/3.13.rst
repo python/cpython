@@ -393,21 +393,12 @@ Removed
 
 * Remove old buffer protocols deprecated in Python 3.0. Use :ref:`bufferobjects` instead.
 
-   * :c:func:`!PyObject_CheckReadBuffer`: Use ``PyObject_CheckBuffer(obj)`` to
-     test if the ``obj`` supports the buffer protocol. To test the ``obj``
-     actually provide readable buffer, use :c:func:`PyObject_GetBuffer` and
-     :c:func:`PyBuffer_Release` instead:
-
-     .. code-block:: c
-
-        Py_buffer view;
-        int can_read = PyObject_GetBuffer(obj, &view, PyBUF_SIMPLE) == 0;
-        if (can_read) {
-            PyBuffer_Release(&view);
-        }
-        else {
-            PyErr_Clear();  // PyObject_GetBuffer() may raise TypeError.
-        }
+   * :c:func:`!PyObject_CheckReadBuffer`: Use :c:func:`PyObject_CheckBuffer` to
+     test if the object supports the buffer protocol.
+     Note that :c:func:`PyObject_CheckBuffer` doesn't guarantee that
+     :c:func:`PyObject_GetBuffer` will succeed.
+     To test if the object is actually readable, see the next example
+     of :c:func:`PyObject_GetBuffer`.
 
    * :c:func:`!PyObject_AsCharBuffer`, :c:func:`PyObject_AsReadBuffer`:
      :c:func:`PyObject_GetBuffer` and :c:func:`PyBuffer_Release` instead:
