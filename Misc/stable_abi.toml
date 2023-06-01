@@ -664,6 +664,7 @@
     added = '3.2'
 [function.PyEval_AcquireLock]
     added = '3.2'
+    abi_only = true
 [function.PyEval_AcquireThread]
     added = '3.2'
 [function.PyEval_CallFunction]
@@ -697,8 +698,10 @@
     added = '3.2'
 [function.PyEval_InitThreads]
     added = '3.2'
+    abi_only = true
 [function.PyEval_ReleaseLock]
     added = '3.2'
+    abi_only = true
 [function.PyEval_ReleaseThread]
     added = '3.2'
 [function.PyEval_RestoreThread]
@@ -707,6 +710,7 @@
     added = '3.2'
 [function.PyEval_ThreadsInitialized]
     added = '3.2'
+    abi_only = true
 [data.PyExc_ArithmeticError]
     added = '3.2'
 [data.PyExc_AssertionError]
