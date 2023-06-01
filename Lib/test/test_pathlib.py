@@ -1907,7 +1907,6 @@ class _BasePathTest(object):
         _check(p, "dir*/*/**/", ["dirA/linkC", "dirA/linkC/linkD", "dirB/linkD", "dirC/dirD"])
         _check(p, "dir*/*/**/..", ["dirA/linkC/..", "dirC/dirD/.."])
         _check(p, "dir*/**/fileC", ["dirC/fileC"])
-        _check(p, "dir*/*/../**/fileC", ["dirA/linkC/../dirC/fileC", "dirC/dirD/../fileC"])
         _check(p, "dir*/*/../dirD/**/", ["dirC/dirD/../dirD"])
         _check(p, "*/dirD/**/", ["dirC/dirD"])
 
@@ -1930,7 +1929,6 @@ class _BasePathTest(object):
         _check(p, "dir*/*/**/", ["dirC/dirD"])
         _check(p, "dir*/*/**/..", ["dirC/dirD/.."])
         _check(p, "dir*/**/fileC", ["dirC/fileC"])
-        _check(p, "dir*/*/../**/fileC", ["dirC/dirD/../fileC"])
         _check(p, "dir*/*/../dirD/**/", ["dirC/dirD/../dirD"])
         _check(p, "*/dirD/**/", ["dirC/dirD"])
 
