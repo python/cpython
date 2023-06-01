@@ -667,10 +667,13 @@
     added = '3.2'
 [function.PyEval_CallFunction]
     added = '3.2'
+    abi_only = true
 [function.PyEval_CallMethod]
     added = '3.2'
+    abi_only = true
 [function.PyEval_CallObjectWithKeywords]
     added = '3.2'
+    abi_only = true
 [function.PyEval_EvalCode]
     added = '3.2'
 [function.PyEval_EvalCodeEx]
@@ -1308,8 +1311,10 @@
     added = '3.2'
 [function.PySys_AddWarnOption]
     added = '3.2'
+    abi_only = true
 [function.PySys_AddWarnOptionUnicode]
     added = '3.2'
+    abi_only = true
 [function.PySys_FormatStderr]
     added = '3.2'
 [function.PySys_FormatStdout]
@@ -1318,16 +1323,20 @@
     added = '3.2'
 [function.PySys_HasWarnOptions]
     added = '3.2'
+    abi_only = true
 [function.PySys_ResetWarnOptions]
     added = '3.2'
 [function.PySys_SetArgv]
     added = '3.2'
+    abi_only = true
 [function.PySys_SetArgvEx]
     added = '3.2'
+    abi_only = true
 [function.PySys_SetObject]
     added = '3.2'
 [function.PySys_SetPath]
     added = '3.2'
+    abi_only = true
 [function.PySys_WriteStderr]
     added = '3.2'
 [function.PySys_WriteStdout]
@@ -1655,8 +1664,10 @@
     added = '3.2'
 [function.Py_SetProgramName]
     added = '3.2'
+    abi_only = true
 [function.Py_SetPythonHome]
     added = '3.2'
+    abi_only = true
 [function.Py_SetRecursionLimit]
     added = '3.2'
 [function.Py_VaBuildValue]
@@ -1987,6 +1998,7 @@
     added = '3.7'  # (and 3.6.1 and 3.5.3)
 [function.PySys_AddXOption]
     added = '3.7'  # (and 3.6.1 and 3.5.3)
+    abi_only = true
 [function.PySys_GetXOptions]
     added = '3.7'  # (and 3.6.1 and 3.5.3)
 [function.PyUnicode_AsUCS4]
@@ -2017,6 +2029,7 @@
     added = '3.7'  # (and 3.6.1 and 3.5.3)
 [function.Py_SetPath]
     added = '3.7'  # (and 3.6.1 and 3.5.3)
+    abi_only = true
 [function.PyErr_SetExcFromWindowsErr]
     added = '3.7'  # (and 3.6.1 and 3.5.3)
     ifdef = 'MS_WINDOWS'

@@ -1830,10 +1830,10 @@ typecode_to_mformat_code(char typecode)
         return UNSIGNED_INT8;
 
     case 'u':
-        if (sizeof(Py_UNICODE) == 2) {
+        if (sizeof(wchar_t) == 2) {
             return UTF16_LE + is_big_endian;
         }
-        if (sizeof(Py_UNICODE) == 4) {
+        if (sizeof(wchar_t) == 4) {
             return UTF32_LE + is_big_endian;
         }
         return UNKNOWN_FORMAT;
