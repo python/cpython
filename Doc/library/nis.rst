@@ -11,7 +11,8 @@
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 
 .. deprecated:: 3.11
-   The :mod:`nis` module is deprecated (see :pep:`594` for details).
+   The :mod:`nis` module is deprecated
+   (see :pep:`PEP 594 <594#nis>` for details).
 
 --------------
 

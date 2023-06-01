@@ -25,7 +25,7 @@ jobs:
       run_tests: ${{ steps.check.outputs.run_tests }}
       run_ssl_tests: ${{ steps.check.outputs.run_ssl_tests }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Check for source changes
         id: check
         run: |
@@ -79,7 +79,7 @@ jobs:
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
       - name: Install Dependencies
         run: sudo ./.github/workflows/posix-deps-apt.sh
@@ -119,7 +119,7 @@ jobs:
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Build CPython
       run: .\PCbuild\build.bat -e -p Win32
     - name: Display build info
@@ -133,7 +133,7 @@ jobs:
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Build CPython
       run: .\PCbuild\build.bat -e -p x64
     - name: Display build info
@@ -149,9 +149,9 @@ jobs:
     env:
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Configure CPython
-      run: ./configure --with-pydebug --with-openssl=/usr/local/opt/openssl --prefix=/opt/python-dev
+      run: ./configure --with-pydebug --with-openssl=/usr/local/opt/openssl --prefix=/opt/python-dev --with-tcltk-includes=-I$(brew --prefix tcl-tk)/include --with-tcltk-libs="-L$(brew --prefix tcl-tk)/lib -ltcl8.6 -ltk8.6"
     - name: Build CPython
       run: make -j4
     - name: Display build info
@@ -168,7 +168,7 @@ jobs:
       OPENSSL_VER: 1.1.1u
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Install Dependencies
       run: sudo ./.github/workflows/posix-deps-apt.sh
     - name: Configure OpenSSL env vars
@@ -178,7 +178,7 @@ jobs:
         echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> $GITHUB_ENV
     - name: 'Restore OpenSSL build'
       id: cache-openssl
-      uses: actions/cache@v2.1.3
+      uses: actions/cache@v3.0.2
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
@@ -207,14 +207,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        openssl_ver: [1.0.2u, 1.1.0l, 1.1.1u, 3.0.9]
+        openssl_ver: [1.0.2u, 1.1.0l, 1.1.1u, 3.0.9, 3.1.1]
     env:
       OPENSSL_VER: ${{ matrix.openssl_ver }}
       MULTISSL_DIR: ${{ github.workspace }}/multissl
       OPENSSL_DIR: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}
       LD_LIBRARY_PATH: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}/lib
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Install Dependencies
       run: sudo ./.github/workflows/posix-deps-apt.sh
     - name: Configure OpenSSL env vars
@@ -224,7 +224,7 @@ jobs:
         echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> $GITHUB_ENV
     - name: 'Restore OpenSSL build'
       id: cache-openssl
-      uses: actions/cache@v2.1.4
+      uses: actions/cache@v3
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
@@ -235,7 +235,7 @@ jobs:
       run: |
         echo "PATH=/usr/lib/ccache:$PATH" >> $GITHUB_ENV
     - name: Configure ccache action
-      uses: hendrikmuhs/ccache-action@v1
+      uses: hendrikmuhs/ccache-action@v1.2
     - name: Configure CPython
       run: ./configure --with-pydebug --with-openssl=$OPENSSL_DIR
     - name: Build CPython

@@ -93,6 +93,7 @@ import email.utils
 import html
 import http.client
 import io
+import itertools
 import mimetypes
 import os
 import posixpath
@@ -330,6 +331,13 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
                 return False
         self.command, self.path = command, path
 
+        # gh-87389: The purpose of replacing '//' with '/' is to protect
+        # against open redirect attacks possibly triggered if the path starts
+        # with '//' because http clients treat //path as an absolute URI
+        # without scheme (similar to http://path) rather than a path.
+        if self.path.startswith('//'):
+            self.path = '/' + self.path.lstrip('/')  # Reduce to a single /
+
         # Examine the headers and look for a Connection directive.
         try:
             self.headers = http.client.parse_headers(self.rfile,
@@ -556,6 +564,11 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
 
         self.log_message(format, *args)
 
+    # https://en.wikipedia.org/wiki/List_of_Unicode_characters#Control_codes
+    _control_char_table = str.maketrans(
+            {c: fr'\x{c:02x}' for c in itertools.chain(range(0x20), range(0x7f,0xa0))})
+    _control_char_table[ord('\\')] = r'\\'
+
     def log_message(self, format, *args):
         """Log an arbitrary message.
 
@@ -571,12 +584,16 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         The client ip and current date/time are prefixed to
         every message.
 
+        Unicode control characters are replaced with escaped hex
+        before writing the output to stderr.
+
         """
 
+        message = format % args
         sys.stderr.write("%s - - [%s] %s\n" %
                          (self.address_string(),
                           self.log_date_time_string(),
-                          format%args))
+                          message.translate(self._control_char_table)))
 
     def version_string(self):
         """Return the server software version string."""
@@ -774,7 +791,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             displaypath = urllib.parse.unquote(self.path,
                                                errors='surrogatepass')
         except UnicodeDecodeError:
-            displaypath = urllib.parse.unquote(path)
+            displaypath = urllib.parse.unquote(self.path)
         displaypath = html.escape(displaypath, quote=False)
         enc = sys.getfilesystemencoding()
         title = 'Directory listing for %s' % displaypath

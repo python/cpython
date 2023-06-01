@@ -844,6 +844,14 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.8
       Falls back to :meth:`__index__` if :meth:`__int__` is not defined.
 
+   .. versionchanged:: 3.9.14
+      :class:`int` string inputs and string representations can be limited to
+      help avoid denial of service attacks. A :exc:`ValueError` is raised when
+      the limit is exceeded while converting a string *x* to an :class:`int` or
+      when converting an :class:`int` into a string would exceed the limit.
+      See the :ref:`integer string conversion length limitation
+      <int_max_str_digits>` documentation.
+
 
 .. function:: isinstance(object, classinfo)
 
@@ -862,7 +870,8 @@ are always available.  They are listed here in alphabetical order.
    Return ``True`` if *class* is a subclass (direct, indirect or :term:`virtual
    <abstract base class>`) of *classinfo*.  A
    class is considered a subclass of itself. *classinfo* may be a tuple of class
-   objects, in which case return ``True`` if *class* is a subclass of any entry
+   objects (or recursively, other such tuples),
+   in which case return ``True`` if *class* is a subclass of any entry
    in *classinfo*.  In any other case, a :exc:`TypeError` exception is raised.
 
 
@@ -1113,7 +1122,11 @@ are always available.  They are listed here in alphabetical order.
    *buffering* is an optional integer used to set the buffering policy.  Pass 0
    to switch buffering off (only allowed in binary mode), 1 to select line
    buffering (only usable in text mode), and an integer > 1 to indicate the size
-   in bytes of a fixed-size chunk buffer.  When no *buffering* argument is
+   in bytes of a fixed-size chunk buffer. Note that specifying a buffer size this
+   way applies for binary buffered I/O, but ``TextIOWrapper`` (i.e., files opened
+   with ``mode='r+'``) would have another buffering. To disable buffering in
+   ``TextIOWrapper``, consider using the ``write_through`` flag for
+   :func:`io.TextIOWrapper.reconfigure`. When no *buffering* argument is
    given, the default buffering policy works as follows:
 
    * Binary files are buffered in fixed-size chunks; the size of the buffer is

@@ -15,7 +15,8 @@
 This module offers several classes to implement SMTP (email) servers.
 
 .. deprecated:: 3.6
-   :mod:`smtpd` will be removed in Python 3.12 (:pep:`594`).
+   :mod:`smtpd` will be removed in Python 3.12
+   (see :pep:`PEP 594 <594#smtpd>` for details).
    The `aiosmtpd <https://aiosmtpd.readthedocs.io/>`_ package is a recommended
    replacement for this module.  It is based on :mod:`asyncio` and provides a
    more straightforward API.

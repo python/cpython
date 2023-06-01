@@ -23,6 +23,7 @@ import subprocess
 import sys
 import sysconfig
 import tempfile
+import textwrap
 import threading
 import time
 import types
@@ -2713,6 +2714,48 @@ class Win32NtTests(unittest.TestCase):
         handle_delta = handle_count.value - before_count
 
         self.assertEqual(0, handle_delta)
+
+    def test_stat_unlink_race(self):
+        # bpo-46785: the implementation of os.stat() falls back to reading
+        # the parent directory if CreateFileW() fails with a permission
+        # error. If reading the parent directory fails because the file or
+        # directory are subsequently unlinked, or because the volume or
+        # share are no longer available, then the original permission error
+        # should not be restored.
+        filename =  support.TESTFN
+        self.addCleanup(support.unlink, filename)
+        deadline = time.time() + 5
+        command = textwrap.dedent("""\
+            import os
+            import sys
+            import time
+
+            filename = sys.argv[1]
+            deadline = float(sys.argv[2])
+
+            while time.time() < deadline:
+                try:
+                    with open(filename, "w") as f:
+                        pass
+                except OSError:
+                    pass
+                try:
+                    os.remove(filename)
+                except OSError:
+                    pass
+            """)
+
+        with subprocess.Popen([sys.executable, '-c', command, filename, str(deadline)]) as proc:
+            while time.time() < deadline:
+                try:
+                    os.stat(filename)
+                except FileNotFoundError as e:
+                    assert e.winerror == 2  # ERROR_FILE_NOT_FOUND
+            try:
+                proc.wait(1)
+            except subprocess.TimeoutExpired:
+                proc.terminate()
+
 
 @support.skip_unless_symlink
 class NonLocalSymlinkTests(unittest.TestCase):

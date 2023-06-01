@@ -84,8 +84,8 @@ called with a non-bytes parameter.
    | :attr:`%lu`       | unsigned long | Equivalent to                  |
    |                   |               | ``printf("%lu")``. [1]_        |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%zd`       | Py_ssize_t    | Equivalent to                  |
-   |                   |               | ``printf("%zd")``. [1]_        |
+   | :attr:`%zd`       | :c:type:`\    | Equivalent to                  |
+   |                   | Py_ssize_t`   | ``printf("%zd")``. [1]_        |
    +-------------------+---------------+--------------------------------+
    | :attr:`%zu`       | size_t        | Equivalent to                  |
    |                   |               | ``printf("%zu")``. [1]_        |

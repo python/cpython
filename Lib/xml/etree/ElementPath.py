@@ -225,7 +225,6 @@ def prepare_parent(next, token):
 
 def prepare_predicate(next, token):
     # FIXME: replace with real parser!!! refs:
-    # http://effbot.org/zone/simple-iterator-parser.htm
     # http://javascript.crockford.com/tdop/tdop.html
     signature = []
     predicate = []

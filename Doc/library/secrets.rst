@@ -193,7 +193,7 @@ suitable for password recovery applications:
 .. testcode::
 
    import secrets
-   url = 'https://mydomain.com/reset=' + secrets.token_urlsafe()
+   url = 'https://example.com/reset=' + secrets.token_urlsafe()
 
 
 

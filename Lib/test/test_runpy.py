@@ -740,8 +740,7 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
                       "runpy.run_path(%r)\n") % dummy_dir
             script_name = self._make_test_script(script_dir, mod_name, source)
             zip_name, fname = make_zip_script(script_dir, 'test_zip', script_name)
-            msg = "recursion depth exceeded"
-            self.assertRaisesRegex(RecursionError, msg, run_path, zip_name)
+            self.assertRaises(RecursionError, run_path, zip_name)
 
     def test_encoding(self):
         with temp_dir() as script_dir:

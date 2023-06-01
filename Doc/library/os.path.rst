@@ -5,7 +5,7 @@
    :synopsis: Operations on pathnames.
 
 **Source code:** :source:`Lib/posixpath.py` (for POSIX) and
-:source:`Lib/ntpath.py` (for Windows NT).
+:source:`Lib/ntpath.py` (for Windows).
 
 .. index:: single: path; operations
 

@@ -801,6 +801,11 @@ local_traverse(localobject *self, visitproc visit, void *arg)
     return 0;
 }
 
+#define HEAD_LOCK(runtime) \
+    PyThread_acquire_lock((runtime)->interpreters.mutex, WAIT_LOCK)
+#define HEAD_UNLOCK(runtime) \
+    PyThread_release_lock((runtime)->interpreters.mutex)
+
 static int
 local_clear(localobject *self)
 {
@@ -810,17 +815,26 @@ local_clear(localobject *self)
     Py_CLEAR(self->dummies);
     Py_CLEAR(self->wr_callback);
     /* Remove all strong references to dummies from the thread states */
-    if (self->key
-        && (tstate = PyThreadState_Get())
-        && tstate->interp) {
-        for(tstate = PyInterpreterState_ThreadHead(tstate->interp);
-            tstate;
-            tstate = PyThreadState_Next(tstate))
-            if (tstate->dict && PyDict_GetItem(tstate->dict, self->key)) {
-                if (PyDict_DelItem(tstate->dict, self->key)) {
+    if (self->key) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        _PyRuntimeState *runtime = &_PyRuntime;
+        HEAD_LOCK(runtime);
+        PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
+        HEAD_UNLOCK(runtime);
+        while (tstate) {
+            if (tstate->dict) {
+                PyObject *v = _PyDict_Pop(tstate->dict, self->key, Py_None);
+                if (v != NULL) {
+                    Py_DECREF(v);
+                }
+                else {
                     PyErr_Clear();
                 }
             }
+            HEAD_LOCK(runtime);
+            tstate = PyThreadState_Next(tstate);
+            HEAD_UNLOCK(runtime);
+        }
     }
     return 0;
 }

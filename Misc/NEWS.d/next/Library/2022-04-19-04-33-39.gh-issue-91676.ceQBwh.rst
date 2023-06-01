@@ -1,4 +1,0 @@
-Fix :class:`unittest.IsolatedAsyncioTestCase` to shutdown the per test event
-loop executor before returning from its ``run`` method so that a not yet
-stopped or garbage collected executor state does not persist beyond the
-test.

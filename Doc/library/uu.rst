@@ -10,7 +10,9 @@
 **Source code:** :source:`Lib/uu.py`
 
 .. deprecated:: 3.11
-   The :mod:`uu` module is deprecated (see :pep:`594` for details).
+   The :mod:`uu` module is deprecated
+   (see :pep:`PEP 594 <594#uu-and-the-uu-encoding>` for details).
+   :mod:`base64` is a modern alternative.
 
 --------------
 

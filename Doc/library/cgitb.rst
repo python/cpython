@@ -17,7 +17,8 @@
    single: tracebacks; in CGI scripts
 
 .. deprecated:: 3.11
-   The :mod:`cgitb` module is deprecated (see :pep:`594` for details).
+   The :mod:`cgitb` module is deprecated
+   (see :pep:`PEP 594 <594#cgitb>` for details).
 
 --------------
 

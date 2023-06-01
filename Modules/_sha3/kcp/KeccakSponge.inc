@@ -171,7 +171,7 @@ int SpongeAbsorb(SpongeInstance *instance, const unsigned char *data, size_t dat
     i = 0;
     curData = data;
     while(i < dataByteLen) {
-        if ((instance->byteIOIndex == 0) && (dataByteLen >= (i + rateInBytes))) {
+        if ((instance->byteIOIndex == 0) && (dataByteLen-i >= rateInBytes)) {
 #ifdef SnP_FastLoop_Absorb
             /* processing full blocks first */
 
@@ -199,10 +199,10 @@ int SpongeAbsorb(SpongeInstance *instance, const unsigned char *data, size_t dat
         }
         else {
             /* normal lane: using the message queue */
-
-            partialBlock = (unsigned int)(dataByteLen - i);
-            if (partialBlock+instance->byteIOIndex > rateInBytes)
+            if (dataByteLen-i > rateInBytes-instance->byteIOIndex)
                 partialBlock = rateInBytes-instance->byteIOIndex;
+            else
+                partialBlock = (unsigned int)(dataByteLen - i);
             #ifdef KeccakReference
             displayBytes(1, "Block to be absorbed (part)", curData, partialBlock);
             #endif
@@ -281,7 +281,7 @@ int SpongeSqueeze(SpongeInstance *instance, unsigned char *data, size_t dataByte
     i = 0;
     curData = data;
     while(i < dataByteLen) {
-        if ((instance->byteIOIndex == rateInBytes) && (dataByteLen >= (i + rateInBytes))) {
+        if ((instance->byteIOIndex == rateInBytes) && (dataByteLen-i >= rateInBytes)) {
             for(j=dataByteLen-i; j>=rateInBytes; j-=rateInBytes) {
                 SnP_Permute(instance->state);
                 SnP_ExtractBytes(instance->state, curData, 0, rateInBytes);
@@ -299,9 +299,10 @@ int SpongeSqueeze(SpongeInstance *instance, unsigned char *data, size_t dataByte
                 SnP_Permute(instance->state);
                 instance->byteIOIndex = 0;
             }
-            partialBlock = (unsigned int)(dataByteLen - i);
-            if (partialBlock+instance->byteIOIndex > rateInBytes)
+            if (dataByteLen-i > rateInBytes-instance->byteIOIndex)
                 partialBlock = rateInBytes-instance->byteIOIndex;
+            else
+                partialBlock = (unsigned int)(dataByteLen - i);
             i += partialBlock;
 
             SnP_ExtractBytes(instance->state, curData, instance->byteIOIndex, partialBlock);

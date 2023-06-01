@@ -12,7 +12,8 @@
    single: External Data Representation
 
 .. deprecated:: 3.11
-   The :mod:`xdrlib` module is deprecated (see :pep:`594` for details).
+   The :mod:`xdrlib` module is deprecated
+   (see :pep:`PEP 594 <594#xdrlib>` for details).
 
 --------------
 

@@ -490,11 +490,11 @@ APIs:
    | :attr:`%llu`      | unsigned long long  | Equivalent to                    |
    |                   |                     | ``printf("%llu")``. [1]_         |
    +-------------------+---------------------+----------------------------------+
-   | :attr:`%zd`       | Py_ssize_t          | Equivalent to                    |
-   |                   |                     | ``printf("%zd")``. [1]_          |
+   | :attr:`%zd`       | :c:type:`\          | Equivalent to                    |
+   |                   | Py_ssize_t`         | ``printf("%zd")``. [1]_          |
    +-------------------+---------------------+----------------------------------+
-   | :attr:`%zi`       | Py_ssize_t          | Equivalent to                    |
-   |                   |                     | ``printf("%zi")``. [1]_          |
+   | :attr:`%zi`       | :c:type:`\          | Equivalent to                    |
+   |                   | Py_ssize_t`         | ``printf("%zi")``. [1]_          |
    +-------------------+---------------------+----------------------------------+
    | :attr:`%zu`       | size_t              | Equivalent to                    |
    |                   |                     | ``printf("%zu")``. [1]_          |
@@ -1110,7 +1110,8 @@ These are the UTF-8 codec APIs:
 
    This caches the UTF-8 representation of the string in the Unicode object, and
    subsequent calls will return a pointer to the same buffer.  The caller is not
-   responsible for deallocating the buffer.
+   responsible for deallocating the buffer. The buffer is deallocated and
+   pointers to it become invalid when the Unicode object is garbage collected.
 
    .. versionadded:: 3.3
 

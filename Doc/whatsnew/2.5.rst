@@ -1767,7 +1767,7 @@ included.
 
 The rest of this section will provide a brief overview of using ElementTree.
 Full documentation for ElementTree is available at
-http://effbot.org/zone/element-index.htm.
+https://web.archive.org/web/20201124024954/http://effbot.org/zone/element-index.htm.
 
 ElementTree represents an XML document as a tree of element nodes. The text
 content of the document is stored as the :attr:`text` and :attr:`tail`
@@ -1865,7 +1865,7 @@ read the package's official documentation for more details.
 
 .. seealso::
 
-   http://effbot.org/zone/element-index.htm
+   https://web.archive.org/web/20201124024954/http://effbot.org/zone/element-index.htm
       Official documentation for ElementTree.
 
 .. ======================================================================

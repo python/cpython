@@ -8,7 +8,8 @@
 **Source code:** :source:`Lib/imghdr.py`
 
 .. deprecated:: 3.11
-   The :mod:`imghdr` module is deprecated (see :pep:`594` for details).
+   The :mod:`imghdr` module is deprecated
+   (see :pep:`PEP 594 <594#imghdr>` for details and alternatives).
 
 --------------
 

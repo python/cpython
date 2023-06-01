@@ -79,7 +79,7 @@ Include/pytime.h              @pganssle @abalkin
 /Lib/test/test_peg_generator/ @pablogsal @lysnikolaou
 
 # SQLite 3
-**/*sqlite*                   @berkerpeksag
+**/*sqlite*                   @berkerpeksag @erlend-aasland
 
 # subprocess
 /Lib/subprocess.py            @gpshead

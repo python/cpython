@@ -13,7 +13,6 @@ on the Internet.
 
    email.rst
    json.rst
-   mailcap.rst
    mailbox.rst
    mimetypes.rst
    base64.rst

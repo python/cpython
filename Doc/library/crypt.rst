@@ -17,7 +17,9 @@
    pair: cipher; DES
 
 .. deprecated:: 3.11
-   The :mod:`crypt` module is deprecated (see :pep:`594` for details).
+   The :mod:`crypt` module is deprecated
+   (see :pep:`PEP 594 <594#crypt>` for details and alternatives).
+   The :mod:`hashlib` module is a potential replacement for certain use cases.
 
 --------------
 

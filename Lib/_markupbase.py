@@ -157,6 +157,7 @@ class ParserBase:
             match= _msmarkedsectionclose.search(rawdata, i+3)
         else:
             self.error('unknown status keyword %r in marked section' % rawdata[i+3:j])
+            match = None
         if not match:
             return -1
         if report:

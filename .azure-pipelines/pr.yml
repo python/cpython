@@ -8,7 +8,7 @@ jobs:
   displayName: Pre-build checks
 
   pool:
-    vmImage: ubuntu-20.04
+    vmImage: ubuntu-22.04
 
   steps:
   - template: ./prebuild-checks.yml
@@ -20,7 +20,7 @@ jobs:
   condition: and(succeeded(), eq(dependencies.Prebuild.outputs['docs.run'], 'true'))
 
   pool:
-    vmImage: ubuntu-20.04
+    vmImage: ubuntu-22.04
 
   steps:
   - template: ./docs-steps.yml
@@ -52,7 +52,7 @@ jobs:
   condition: and(succeeded(), eq(dependencies.Prebuild.outputs['tests.run'], 'true'))
 
   pool:
-    vmImage: ubuntu-20.04
+    vmImage: ubuntu-22.04
 
   variables:
     testRunTitle: '$(system.pullRequest.TargetBranch)-linux'
@@ -78,7 +78,7 @@ jobs:
     )
 
   pool:
-    vmImage: ubuntu-20.04
+    vmImage: ubuntu-22.04
 
   variables:
     testRunTitle: '$(Build.SourceBranchName)-linux-coverage'

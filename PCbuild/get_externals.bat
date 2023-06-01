@@ -58,7 +58,7 @@ set libraries=%libraries%                                       sqlite-3.37.2.0
 if NOT "%IncludeTkinterSrc%"=="false" set libraries=%libraries% tcl-core-8.6.12.0
 if NOT "%IncludeTkinterSrc%"=="false" set libraries=%libraries% tk-8.6.12.0
 if NOT "%IncludeTkinterSrc%"=="false" set libraries=%libraries% tix-8.4.3.6
-set libraries=%libraries%                                       xz-5.2.2
+set libraries=%libraries%                                       xz-5.2.5
 set libraries=%libraries%                                       zlib-1.2.12
 
 for %%e in (%libraries%) do (

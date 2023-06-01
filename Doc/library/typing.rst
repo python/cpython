@@ -103,7 +103,7 @@ Note that ``None`` as a type hint is a special case and is replaced by
 NewType
 =======
 
-Use the :func:`NewType` helper function to create distinct types::
+Use the :func:`NewType` helper to create distinct types::
 
    from typing import NewType
 
@@ -132,7 +132,7 @@ accidentally creating a ``UserId`` in an invalid way::
 
 Note that these checks are enforced only by the static type checker. At runtime,
 the statement ``Derived = NewType('Derived', Base)`` will make ``Derived`` a
-function that immediately returns whatever parameter you pass it. That means
+callable that immediately returns whatever parameter you pass it. That means
 the expression ``Derived(some_value)`` does not create a new class or introduce
 any overhead beyond that of a regular function call.
 
@@ -193,6 +193,10 @@ For example::
    def async_query(on_success: Callable[[int], None],
                    on_error: Callable[[int, Exception], None]) -> None:
        # Body
+
+   async def on_update(value: str) -> None:
+       # Body
+   callback: Callable[[str], Awaitable[None]] = on_update
 
 It is possible to declare the return type of a callable without specifying
 the call signature by substituting a literal ellipsis
@@ -431,7 +435,7 @@ manner. Use :data:`Any` to indicate that a value is dynamically typed.
 Nominal vs structural subtyping
 ===============================
 
-Initially :pep:`484` defined Python static type system as using
+Initially :pep:`484` defined the Python static type system as using
 *nominal subtyping*. This means that a class ``A`` is allowed where
 a class ``B`` is expected if and only if ``A`` is a subclass of ``B``.
 
@@ -749,7 +753,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    ``no_type_check`` functionality that currently exists in the ``typing``
    module which completely disables typechecking annotations on a function
    or a class, the ``Annotated`` type allows for both static typechecking
-   of ``T`` (e.g., via mypy or Pyre, which can safely ignore ``x``)
+   of ``T`` (which can safely ignore ``x``)
    together with runtime access to ``x`` within a specific application.
 
    Ultimately, the responsibility of how to interpret the annotations (if
@@ -1060,7 +1064,7 @@ These are not used in annotations. They are building blocks for declaring types.
    The resulting class has an extra attribute ``__annotations__`` giving a
    dict that maps the field names to the field types.  (The field names are in
    the ``_fields`` attribute and the default values are in the
-   ``_field_defaults`` attribute both of which are part of the namedtuple
+   ``_field_defaults`` attribute, both of which are part of the :func:`~collections.namedtuple`
    API.)
 
    ``NamedTuple`` subclasses can also have docstrings and methods::
@@ -1136,7 +1140,7 @@ These are not used in annotations. They are building blocks for declaring types.
       Point2D = TypedDict('Point2D', x=int, y=int, label=str)
 
    The functional syntax should also be used when any of the keys are not valid
-   :ref:`identifiers`, for example because they are keywords or contain hyphens.
+   :ref:`identifiers <identifiers>`, for example because they are keywords or contain hyphens.
    Example::
 
       # raises SyntaxError
@@ -1178,7 +1182,7 @@ These are not used in annotations. They are building blocks for declaring types.
           y: int
           z: int
 
-   A ``TypedDict`` cannot inherit from a non-TypedDict class,
+   A ``TypedDict`` cannot inherit from a non-\ ``TypedDict`` class,
    notably including :class:`Generic`. For example::
 
       class X(TypedDict):
@@ -1586,7 +1590,7 @@ Corresponding to other types in :mod:`collections.abc`
 
 .. class:: Hashable
 
-   An alias to :class:`collections.abc.Hashable`
+   An alias to :class:`collections.abc.Hashable`.
 
 .. class:: Reversible(Iterable[T_co])
 
@@ -1598,7 +1602,7 @@ Corresponding to other types in :mod:`collections.abc`
 
 .. class:: Sized
 
-   An alias to :class:`collections.abc.Sized`
+   An alias to :class:`collections.abc.Sized`.
 
 Asynchronous programming
 """"""""""""""""""""""""
@@ -1803,7 +1807,7 @@ Functions and decorators
               ...
       class Sub(Base):
           def done(self) -> None:  # Error reported by type checker
-                ...
+              ...
 
       @final
       class Leaf:
@@ -1940,10 +1944,10 @@ Constant
 
    .. note::
 
-      If ``from __future__ import annotations`` is used in Python 3.7 or later,
+      If ``from __future__ import annotations`` is used,
       annotations are not evaluated at function definition time.
-      Instead, they are stored as strings in ``__annotations__``,
-      This makes it unnecessary to use quotes around the annotation.
+      Instead, they are stored as strings in ``__annotations__``.
+      This makes it unnecessary to use quotes around the annotation
       (see :pep:`563`).
 
    .. versionadded:: 3.5.2
