@@ -27,7 +27,8 @@ There are two functions specifically for working with iterators.
    caller to check this).
    If there are no remaining values, set ``*item`` to ``NULL``.
 
-   Return 0 on success and -1 on error.
+   Return 1 if an item was returned from the iterator, 0 if the iterator
+   is exhausted, and -1 on error.
 
 To write a loop which iterates over an iterator, the C code should look
 something like this::
