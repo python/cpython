@@ -1058,7 +1058,7 @@ class Path(PurePath):
         # build a `re.Pattern` object. This pattern is used to filter the
         # recursive walk. As a result, pattern parts following a '**' wildcard
         # do not perform any filesystem access, which can be much faster!
-        filter_paths_supported = follow_symlinks is not None and '..' not in pattern_parts
+        filter_paths = follow_symlinks is not None and '..' not in pattern_parts
         deduplicate_paths = False
         paths = iter([self] if self.is_dir() else [])
         part_idx = 0
@@ -1071,26 +1071,22 @@ class Path(PurePath):
             elif part == '..':
                 paths = (path._make_child_relpath('..') for path in paths)
             elif part == '**':
-                filter_paths = False
-                if filter_paths_supported:
-                    # Consume remaining path components, except trailing slash.
-                    while part_idx < len(pattern_parts) and pattern_parts[part_idx] != '':
-                        filter_paths = True
-                        part_idx += 1
-                else:
-                    # Consume adjacent '**' components.
-                    while part_idx < len(pattern_parts) and pattern_parts[part_idx] == '**':
-                        part_idx += 1
+                if filter_paths and part_idx < len(pattern_parts) and pattern_parts[part_idx] != '':
+                    dir_only = pattern_parts[-1] == ''
+                    paths = _select_recursive(paths, dir_only, follow_symlinks)
 
-                dir_only = part_idx < len(pattern_parts)
-                paths = _select_recursive(paths, dir_only, follow_symlinks)
-
-                if filter_paths:
                     # Filter out paths that don't match pattern.
                     prefix_len = len(self._make_child_relpath('_')._lines) - 1
                     match = _compile_pattern_lines(path_pattern._lines, case_sensitive).match
                     paths = (path for path in paths if match(path._lines[prefix_len:]))
-                elif deduplicate_paths:
+                    return paths
+
+                # Consume adjacent '**' components.
+                while part_idx < len(pattern_parts) and pattern_parts[part_idx] == '**':
+                    part_idx += 1
+                dir_only = part_idx < len(pattern_parts)
+                paths = _select_recursive(paths, dir_only, follow_symlinks)
+                if deduplicate_paths:
                     # De-duplicate if we've already seen a '**' component.
                     paths = _select_unique(paths)
                 deduplicate_paths = True
