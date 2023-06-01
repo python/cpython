@@ -278,10 +278,10 @@ static void recreate_gil(struct _gil_runtime_state *gil)
 static void
 drop_gil(struct _ceval_state *ceval, PyThreadState *tstate)
 {
-    /* If tstate is NULL, the caller is indicateing that we're releasing
+    /* If tstate is NULL, the caller is indicating that we're releasing
        the GIL for the last time in this thread.  This is particularly
        relevant when the current thread state is finalizing or its
-       interpreter is finalizing.(either may be in an inconsistent
+       interpreter is finalizing (either may be in an inconsistent
        state).  In that case the current thread will definitely
        never try to acquire the GIL again. */
     // XXX It may be more correct to check tstate->_status.finalizing.
