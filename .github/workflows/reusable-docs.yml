@@ -46,7 +46,7 @@ jobs:
       continue-on-error: true
       run: |
         # Mark files the pull request modified
-        touch ${{ steps.changed_files.outputs.added_modified }}
+        python Doc/tools/touch-clean-files.py --clean ${{ steps.changed_files.outputs.added_modified }}
         # Build docs with the '-n' (nit-picky) option; convert warnings to annotations
         make -C Doc/ PYTHON=../python SPHINXOPTS="-q -n --keep-going" html 2>&1 |
             python Doc/tools/warnings-to-gh-actions.py
