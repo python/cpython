@@ -2363,6 +2363,19 @@ meth_fastcall_keywords(PyObject* self, PyObject* const* args,
 }
 
 static PyObject*
+test_pycfunction_call(PyObject *module, PyObject *args)
+{
+    // Function removed in the Python 3.13 API but was kept in the stable ABI.
+    extern PyObject* PyCFunction_Call(PyObject *callable, PyObject *args, PyObject *kwargs);
+
+    PyObject *func, *pos_args, *kwargs = NULL;
+    if (!PyArg_ParseTuple(args, "OO!|O!", &func, &PyTuple_Type, &pos_args, &PyDict_Type, &kwargs)) {
+        return NULL;
+    }
+    return PyCFunction_Call(func, pos_args, kwargs);
+}
+
+static PyObject*
 pynumber_tobase(PyObject *module, PyObject *args)
 {
     PyObject *obj;
@@ -3369,6 +3382,7 @@ static PyMethodDef TestMethods[] = {
     {"meth_noargs", meth_noargs, METH_NOARGS},
     {"meth_fastcall", _PyCFunction_CAST(meth_fastcall), METH_FASTCALL},
     {"meth_fastcall_keywords", _PyCFunction_CAST(meth_fastcall_keywords), METH_FASTCALL|METH_KEYWORDS},
+    {"pycfunction_call", test_pycfunction_call, METH_VARARGS},
     {"pynumber_tobase", pynumber_tobase, METH_VARARGS},
     {"test_set_type_size", test_set_type_size, METH_NOARGS},
     {"test_py_clear", test_py_clear, METH_NOARGS},
