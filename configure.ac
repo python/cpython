@@ -5305,12 +5305,6 @@ fi
 
 AC_CHECK_FUNCS([getnameinfo])
 
-dnl autoconf 2.71 deprecates AC_HEADER_TIME, keep for backwards compatibility
-dnl TIME_WITH_SYS_TIME works on all supported systems that have sys/time.h
-AS_VAR_IF([ac_cv_header_sys_time_h], [yes], [
-  AC_DEFINE([TIME_WITH_SYS_TIME], 1, [Define to 1 if you can safely include both <sys/time.h> and <time.h>.])
-])
-
 # checks for structures
 AC_STRUCT_TM
 AC_STRUCT_TIMEZONE
@@ -7296,7 +7290,9 @@ PY_STDLIB_MOD([syslog], [], [test "$ac_cv_header_syslog_h" = yes])
 PY_STDLIB_MOD([termios], [], [test "$ac_cv_header_termios_h" = yes])
 
 dnl _elementtree loads libexpat via CAPI hook in pyexpat
-PY_STDLIB_MOD([pyexpat], [], [], [$LIBEXPAT_CFLAGS], [$LIBEXPAT_LDFLAGS])
+PY_STDLIB_MOD([pyexpat],
+  [], [test "$ac_cv_header_sys_time_h" = "yes"],
+  [$LIBEXPAT_CFLAGS], [$LIBEXPAT_LDFLAGS])
 PY_STDLIB_MOD([_elementtree], [], [], [$LIBEXPAT_CFLAGS], [])
 PY_STDLIB_MOD_SIMPLE([_codecs_cn])
 PY_STDLIB_MOD_SIMPLE([_codecs_hk])
