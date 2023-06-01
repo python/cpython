@@ -1,1 +1,0 @@
-Remove unused, untested and undocumented arg of ``_PyErr_ChainStackItem``.
