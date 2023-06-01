@@ -357,6 +357,20 @@ Deprecated
   ``PY_UNICODE_TYPE`` are just aliases to ``wchar_t``.
   (Contributed by Victor Stinner in :gh:`105156`.)
 
+* Deprecate old Python initialization functions:
+
+  * :c:func:`PySys_ResetWarnOptions`:
+    clear :data:`sys.warnoptions` and :data:`warnings.filters` instead.
+  * :c:func:`Py_GetExecPrefix`: get :data:`sys.exec_prefix` instead.
+  * :c:func:`Py_GetPath`: get :data:`sys.path` instead.
+  * :c:func:`Py_GetPrefix`: get :data:`sys.prefix` instead.
+  * :c:func:`Py_GetProgramFullPath`: get :data:`sys.executable` instead.
+  * :c:func:`Py_GetProgramName`: get :data:`sys.executable` instead.
+  * :c:func:`Py_GetPythonHome`: get :c:member:`PyConfig.home` or
+    :envvar:`PYTHONHOME` environment variable instead.
+
+  (Contributed by Victor Stinner in :gh:`105145`.)
+
 Removed
 -------
 
