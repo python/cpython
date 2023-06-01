@@ -2627,13 +2627,20 @@ type_get_tp_mro(PyObject *self, PyObject *type)
 }
 
 
-static PyTypeObject BasicStaticType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "BasicStaticType",
-    .tp_basicsize = sizeof(PyObject),
+/* We only use 2 in test_capi/test_misc.py. */
+#define NUM_BASIC_STATIC_TYPES 2
+static PyTypeObject BasicStaticTypes[NUM_BASIC_STATIC_TYPES] = {
+#define INIT_BASIC_STATIC_TYPE \
+    { \
+        PyVarObject_HEAD_INIT(NULL, 0) \
+        .tp_name = "BasicStaticType", \
+        .tp_basicsize = sizeof(PyObject), \
+    }
+    INIT_BASIC_STATIC_TYPE,
+    INIT_BASIC_STATIC_TYPE,
+#undef INIT_BASIC_STATIC_TYPE
 };
-
-static PyObject * clear_basic_static_type(PyObject *, PyObject *);
+static int num_basic_static_types_used = 0;
 
 static PyObject *
 get_basic_static_type(PyObject *self, PyObject *args)
@@ -2644,40 +2651,23 @@ get_basic_static_type(PyObject *self, PyObject *args)
     }
     assert(base == NULL || PyType_Check(base));
 
-    PyTypeObject *cls = &BasicStaticType;
-    assert(!(cls->tp_flags & Py_TPFLAGS_READY));
+    if(num_basic_static_types_used >= NUM_BASIC_STATIC_TYPES) {
+        PyErr_SetString(PyExc_RuntimeError, "no more available basic static types");
+        return NULL;
+    }
+    PyTypeObject *cls = &BasicStaticTypes[num_basic_static_types_used++];
 
     if (base != NULL) {
         cls->tp_base = (PyTypeObject *)Py_NewRef(base);
         cls->tp_bases = Py_BuildValue("(O)", base);
         if (cls->tp_bases == NULL) {
-            clear_basic_static_type(self, (PyObject *)cls);
             return NULL;
         }
     }
     if (PyType_Ready(cls) < 0) {
-        clear_basic_static_type(self, (PyObject *)cls);
         return NULL;
     }
-    Py_INCREF(cls);
     return (PyObject *)cls;
-}
-
-static PyObject *
-clear_basic_static_type(PyObject *self, PyObject *clsobj)
-{
-    // Reset it back to the statically initialized state.
-    PyTypeObject *cls = (PyTypeObject *)clsobj;
-    Py_CLEAR(cls->ob_base.ob_base.ob_type);
-    Py_CLEAR(cls->tp_base);
-    Py_CLEAR(cls->tp_bases);
-    Py_CLEAR(cls->tp_mro);
-    Py_CLEAR(cls->tp_subclasses);
-    Py_CLEAR(cls->tp_dict);
-    cls->tp_flags &= ~Py_TPFLAGS_READY;
-    cls->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
-    cls->tp_version_tag = 0;
-    Py_RETURN_NONE;
 }
 
 
@@ -3439,7 +3429,6 @@ static PyMethodDef TestMethods[] = {
     {"type_get_tp_bases", type_get_tp_bases, METH_O},
     {"type_get_tp_mro", type_get_tp_mro, METH_O},
     {"get_basic_static_type", get_basic_static_type, METH_VARARGS, NULL},
-    {"clear_basic_static_type", clear_basic_static_type, METH_O, NULL},
     {"test_tstate_capi", test_tstate_capi, METH_NOARGS, NULL},
     {"frame_getlocals", frame_getlocals, METH_O, NULL},
     {"frame_getglobals", frame_getglobals, METH_O, NULL},
