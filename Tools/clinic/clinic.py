@@ -5522,7 +5522,8 @@ For more information see https://docs.python.org/3/howto/clinic.html""")
                 if rcs_dir in dirs:
                     dirs.remove(rcs_dir)
             for filename in files:
-                if not (filename.endswith('.c') or filename.endswith('.h')):
+                # handle .c, .cpp and .h files
+                if not filename.endswith(('.c', '.cpp', '.h')):
                     continue
                 path = os.path.join(root, filename)
                 if ns.verbose:
