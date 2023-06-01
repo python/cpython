@@ -1566,8 +1566,10 @@ _PyThreadState_DeleteCurrent(PyThreadState *tstate)
 {
     _Py_EnsureTstateNotNULL(tstate);
     tstate_delete_common(tstate);
-    current_fast_clear(tstate->interp->runtime);
+    assert(_Py_tss_tstate == tstate);
+    assert(_PyEval_HoldsLock(tstate));
     _PyEval_ReleaseLock(tstate);
+    current_fast_clear(tstate->interp->runtime);
     free_threadstate(tstate);
 }
 

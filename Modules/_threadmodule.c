@@ -3,6 +3,7 @@
 /* Interface to Sjoerd's portable C thread library */
 
 #include "Python.h"
+#include "pycore_ceval.h"         // _PyEval_HoldsLock()
 #include "pycore_interp.h"        // _PyInterpreterState.threads.count
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pylifecycle.h"

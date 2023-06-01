@@ -2022,8 +2022,16 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
     }
     _PyThreadState_Bind(tstate);
 
+    // We must release the GIL before swapping.
+    PyThreadState *current_tstate = _PyThreadState_GET();
+    if (current_tstate != NULL) {
+        // XXX Might new_interpreter() have been called without the GIL held?
+        _PyEval_ReleaseLock(current_tstate);
+    }
+
     // XXX For now we do this before the GIL is created.
     PyThreadState *save_tstate = _PyThreadState_SwapNoGIL(tstate);
+    assert(save_tstate == current_tstate);
     int has_gil = 0;
 
     /* From this point until the init_interp_create_gil() call,
@@ -2034,8 +2042,6 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
     /* Copy the current interpreter config into the new interpreter */
     const PyConfig *src_config;
     if (save_tstate != NULL) {
-        // XXX Might new_interpreter() have been called without the GIL held?
-        _PyEval_ReleaseLock(save_tstate);
         src_config = _PyInterpreterState_GetConfig(save_tstate->interp);
     }
     else
