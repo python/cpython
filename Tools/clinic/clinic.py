@@ -3266,9 +3266,6 @@ class int_converter(CConverter):
                     _PyArg_BadArgument("{{name}}", {displayname}, "a unicode character", {argname});
                     goto exit;
                 }}}}
-                if (PyUnicode_READY({argname})) {{{{
-                    goto exit;
-                }}}}
                 if (PyUnicode_GET_LENGTH({argname}) != 1) {{{{
                     _PyArg_BadArgument("{{name}}", {displayname}, "a unicode character", {argname});
                     goto exit;
@@ -3728,9 +3725,6 @@ class unicode_converter(CConverter):
             return """
                 if (!PyUnicode_Check({argname})) {{{{
                     _PyArg_BadArgument("{{name}}", {displayname}, "str", {argname});
-                    goto exit;
-                }}}}
-                if (PyUnicode_READY({argname}) == -1) {{{{
                     goto exit;
                 }}}}
                 {paramname} = {argname};
