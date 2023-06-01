@@ -895,6 +895,8 @@
     added = '3.2'
 [function.PyIter_Next]
     added = '3.2'
+[function.PyIter_NextItem]
+    added = '3.13'
 [data.PyListIter_Type]
     added = '3.2'
 [data.PyListRevIter_Type]
