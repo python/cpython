@@ -429,6 +429,9 @@ Process-wide parameters
    .. versionchanged:: 3.10
       It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
+   .. deprecated-removed:: 3.13 3.15
+      Get :data:`sys.executable` instead.
+
 
 .. c:function:: wchar_t* Py_GetPrefix()
 
@@ -447,6 +450,9 @@ Process-wide parameters
 
    .. versionchanged:: 3.10
       It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
+
+   .. deprecated-removed:: 3.13 3.15
+      Get :data:`sys.prefix` instead.
 
 
 .. c:function:: wchar_t* Py_GetExecPrefix()
@@ -489,6 +495,9 @@ Process-wide parameters
    .. versionchanged:: 3.10
       It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
+   .. deprecated-removed:: 3.13 3.15
+      Get :data:`sys.exec_prefix` instead.
+
 
 .. c:function:: wchar_t* Py_GetProgramFullPath()
 
@@ -506,6 +515,9 @@ Process-wide parameters
 
    .. versionchanged:: 3.10
       It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
+
+   .. deprecated-removed:: 3.13 3.15
+      Get :data:`sys.executable` instead.
 
 
 .. c:function:: wchar_t* Py_GetPath()
@@ -531,6 +543,9 @@ Process-wide parameters
 
    .. versionchanged:: 3.10
       It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
+
+   .. deprecated-removed:: 3.13 3.15
+      Get :data:`sys.path` instead.
 
 
 .. c:function:: const char* Py_GetVersion()
@@ -614,6 +629,10 @@ Process-wide parameters
 
    .. versionchanged:: 3.10
       It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
+
+   .. deprecated-removed:: 3.13 3.15
+      Get :c:member:`PyConfig.home` or :envvar:`PYTHONHOME` environment
+      variable instead.
 
 
 .. _threads:
