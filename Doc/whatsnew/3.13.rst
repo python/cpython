@@ -396,3 +396,19 @@ Removed
   Use the new :c:type:`PyConfig` API of the :ref:`Python Initialization
   Configuration <init-config>` instead (:pep:`587`), added to Python 3.8.
   (Contributed by Victor Stinner in :gh:`105145`.)
+
+* Remove ``PyEval_InitThreads()`` and ``PyEval_ThreadsInitialized()``
+  functions, deprecated in Python 3.9. Since Python 3.7, ``Py_Initialize()``
+  always creates the GIL: calling ``PyEval_InitThreads()`` did nothing and
+  ``PyEval_ThreadsInitialized()`` always returned non-zero.
+  (Contributed by Victor Stinner in :gh:`105182`.)
+
+* Remove ``PyEval_AcquireLock()`` and ``PyEval_ReleaseLock()`` functions,
+  deprecated in Python 3.2. They didn't update the current thread state.
+  They can be replaced with:
+
+  * :c:func:`PyEval_SaveThread` and :c:func:`PyEval_RestoreThread`;
+  * low-level :c:func:`PyEval_AcquireThread` and :c:func:`PyEval_RestoreThread`;
+  * or :c:func:`PyGILState_Ensure` and :c:func:`PyGILState_Release`.
+
+  (Contributed by Victor Stinner in :gh:`105182`.)
