@@ -310,7 +310,8 @@ call_pyiter_nextitem(PyObject* self, PyObject *args)
     if (ret < 0) {
         return NULL;
     }
-    if (item == NULL && !PyErr_Occurred()) {
+    if (item == NULL) {
+        assert(!PyErr_Occurred());
         Py_RETURN_NONE;
     }
     return item;
