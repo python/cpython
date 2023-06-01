@@ -5650,8 +5650,8 @@ Execute the command in a subshell.
 [clinic start generated code]*/
 
 static long
-os_system_impl(PyObject *module, const Py_UNICODE *command)
-/*[clinic end generated code: output=5b7c3599c068ca42 input=303f5ce97df606b0]*/
+os_system_impl(PyObject *module, const wchar_t *command)
+/*[clinic end generated code: output=dd528cbd5943a679 input=303f5ce97df606b0]*/
 {
     long result;
 
@@ -13571,9 +13571,9 @@ the underlying Win32 ShellExecute function doesn't work if it is.
 
 static PyObject *
 os_startfile_impl(PyObject *module, path_t *filepath,
-                  const Py_UNICODE *operation, const Py_UNICODE *arguments,
+                  const wchar_t *operation, const wchar_t *arguments,
                   path_t *cwd, int show_cmd)
-/*[clinic end generated code: output=3baa4f9795841880 input=8248997b80669622]*/
+/*[clinic end generated code: output=1c6f2f3340e31ffa input=8248997b80669622]*/
 {
     HINSTANCE rc;
 

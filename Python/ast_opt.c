@@ -1,10 +1,18 @@
 /* AST Optimizer */
 #include "Python.h"
 #include "pycore_ast.h"           // _PyAST_GetDocString()
-#include "pycore_compile.h"       // _PyASTOptimizeState
 #include "pycore_long.h"           // _PyLong
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_format.h"        // F_LJUST
+
+
+typedef struct {
+    int optimize;
+    int ff_features;
+
+    int recursion_depth;            /* current recursion depth */
+    int recursion_limit;            /* recursion limit */
+} _PyASTOptimizeState;
 
 
 static int
@@ -1106,10 +1114,14 @@ astfold_type_param(type_param_ty node_, PyArena *ctx_, _PyASTOptimizeState *stat
 #define COMPILER_STACK_FRAME_SCALE 3
 
 int
-_PyAST_Optimize(mod_ty mod, PyArena *arena, _PyASTOptimizeState *state)
+_PyAST_Optimize(mod_ty mod, PyArena *arena, int optimize, int ff_features)
 {
     PyThreadState *tstate;
     int starting_recursion_depth;
+
+    _PyASTOptimizeState state;
+    state.optimize = optimize;
+    state.ff_features = ff_features;
 
     /* Setup recursion depth check counters */
     tstate = _PyThreadState_GET();
@@ -1119,17 +1131,17 @@ _PyAST_Optimize(mod_ty mod, PyArena *arena, _PyASTOptimizeState *state)
     /* Be careful here to prevent overflow. */
     int recursion_depth = C_RECURSION_LIMIT - tstate->c_recursion_remaining;
     starting_recursion_depth = recursion_depth * COMPILER_STACK_FRAME_SCALE;
-    state->recursion_depth = starting_recursion_depth;
-    state->recursion_limit = C_RECURSION_LIMIT * COMPILER_STACK_FRAME_SCALE;
+    state.recursion_depth = starting_recursion_depth;
+    state.recursion_limit = C_RECURSION_LIMIT * COMPILER_STACK_FRAME_SCALE;
 
-    int ret = astfold_mod(mod, arena, state);
+    int ret = astfold_mod(mod, arena, &state);
     assert(ret || PyErr_Occurred());
 
     /* Check that the recursion depth counting balanced correctly */
-    if (ret && state->recursion_depth != starting_recursion_depth) {
+    if (ret && state.recursion_depth != starting_recursion_depth) {
         PyErr_Format(PyExc_SystemError,
             "AST optimizer recursion depth mismatch (before=%d, after=%d)",
-            starting_recursion_depth, state->recursion_depth);
+            starting_recursion_depth, state.recursion_depth);
         return 0;
     }
 
