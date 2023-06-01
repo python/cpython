@@ -2614,7 +2614,8 @@ _PySys_AddWarnOptionWithError(PyThreadState *tstate, PyObject *option)
     return 0;
 }
 
-void
+// Removed in Python 3.13 API, but kept for the stable ABI
+PyAPI_FUNC(void)
 PySys_AddWarnOptionUnicode(PyObject *option)
 {
     PyThreadState *tstate = _PyThreadState_GET();
@@ -2626,7 +2627,8 @@ PySys_AddWarnOptionUnicode(PyObject *option)
     }
 }
 
-void
+// Removed in Python 3.13 API, but kept for the stable ABI
+PyAPI_FUNC(void)
 PySys_AddWarnOption(const wchar_t *s)
 {
     PyThreadState *tstate = _PyThreadState_GET();
@@ -2645,7 +2647,8 @@ _Py_COMP_DIAG_POP
     Py_DECREF(unicode);
 }
 
-int
+// Removed in Python 3.13 API, but kept for the stable ABI
+PyAPI_FUNC(int)
 PySys_HasWarnOptions(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
@@ -2718,7 +2721,8 @@ error:
     return -1;
 }
 
-void
+// Removed in Python 3.13 API, but kept for the stable ABI
+PyAPI_FUNC(void)
 PySys_AddXOption(const wchar_t *s)
 {
     PyThreadState *tstate = _PyThreadState_GET();
@@ -3621,7 +3625,8 @@ makepathobject(const wchar_t *path, wchar_t delim)
     return v;
 }
 
-void
+// Removed in Python 3.13 API, but kept for the stable ABI
+PyAPI_FUNC(void)
 PySys_SetPath(const wchar_t *path)
 {
     PyObject *v;
@@ -3653,7 +3658,8 @@ make_sys_argv(int argc, wchar_t * const * argv)
     return list;
 }
 
-void
+// Removed in Python 3.13 API, but kept for the stable ABI
+PyAPI_FUNC(void)
 PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
 {
     wchar_t* empty_argv[1] = {L""};
@@ -3697,7 +3703,8 @@ PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
     }
 }
 
-void
+// Removed in Python 3.13 API, but kept for the stable ABI
+PyAPI_FUNC(void)
 PySys_SetArgv(int argc, wchar_t **argv)
 {
 _Py_COMP_DIAG_PUSH
