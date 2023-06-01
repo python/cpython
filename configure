@@ -19273,14 +19273,6 @@ fi
 done
 
 
-if test "x$ac_cv_header_sys_time_h" = xyes; then :
-
-
-$as_echo "#define TIME_WITH_SYS_TIME 1" >>confdefs.h
-
-
-fi
-
 # checks for structures
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether struct tm is in sys/time.h or time.h" >&5
 $as_echo_n "checking whether struct tm is in sys/time.h or time.h... " >&6; }
@@ -26043,7 +26035,7 @@ $as_echo_n "checking for stdlib extension module pyexpat... " >&6; }
         if test "$py_cv_module_pyexpat" != "n/a"; then :
 
     if true; then :
-  if true; then :
+  if test "$ac_cv_header_sys_time_h" = "yes"; then :
   py_cv_module_pyexpat=yes
 else
   py_cv_module_pyexpat=missing
