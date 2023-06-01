@@ -962,9 +962,6 @@ AsObj(PyObject *value)
     }
 
     if (PyUnicode_Check(value)) {
-        if (PyUnicode_READY(value) == -1)
-            return NULL;
-
         Py_ssize_t size = PyUnicode_GET_LENGTH(value);
         if (size == 0) {
             return Tcl_NewStringObj("", 0);
