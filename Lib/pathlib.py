@@ -1071,6 +1071,10 @@ class Path(PurePath):
             elif part == '..':
                 paths = (path._make_child_relpath('..') for path in paths)
             elif part == '**':
+                # Consume adjacent '**' components.
+                while part_idx < len(pattern_parts) and pattern_parts[part_idx] == '**':
+                    part_idx += 1
+
                 if filter_paths and part_idx < len(pattern_parts) and pattern_parts[part_idx] != '':
                     dir_only = pattern_parts[-1] == ''
                     paths = _select_recursive(paths, dir_only, follow_symlinks)
@@ -1081,9 +1085,6 @@ class Path(PurePath):
                     paths = (path for path in paths if match(path._lines[prefix_len:]))
                     return paths
 
-                # Consume adjacent '**' components.
-                while part_idx < len(pattern_parts) and pattern_parts[part_idx] == '**':
-                    part_idx += 1
                 dir_only = part_idx < len(pattern_parts)
                 paths = _select_recursive(paths, dir_only, follow_symlinks)
                 if deduplicate_paths:
