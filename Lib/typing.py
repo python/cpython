@@ -29,7 +29,6 @@ import operator
 import re as stdlib_re  # Avoid confusion with the typing.re namespace on <=3.11
 import sys
 import types
-import warnings
 from types import WrapperDescriptorType, MethodWrapperType, MethodDescriptorType, GenericAlias
 
 from _typing import (
@@ -1728,7 +1727,7 @@ def _caller(depth=1, default='__main__'):
         pass
     return None
 
-def _allow_reckless_class_checks(depth=3):
+def _allow_reckless_class_checks(depth=2):
     """Allow instance and class checks for special stdlib modules.
 
     The abc and functools modules indiscriminately call isinstance() and
@@ -1740,7 +1739,7 @@ def _allow_reckless_class_checks(depth=3):
 _PROTO_ALLOWLIST = {
     'collections.abc': [
         'Callable', 'Awaitable', 'Iterable', 'Iterator', 'AsyncIterable',
-        'Hashable', 'Sized', 'Container', 'Collection', 'Reversible',
+        'Hashable', 'Sized', 'Container', 'Collection', 'Reversible', 'Buffer',
     ],
     'contextlib': ['AbstractContextManager', 'AbstractAsyncContextManager'],
 }
@@ -1783,14 +1782,22 @@ class _ProtocolMeta(ABCMeta):
             )
 
     def __subclasscheck__(cls, other):
+        if not isinstance(other, type):
+            # Same error message as for issubclass(1, int).
+            raise TypeError('issubclass() arg 1 must be a class')
         if (
             getattr(cls, '_is_protocol', False)
-            and not cls.__callable_proto_members_only__
-            and not _allow_reckless_class_checks(depth=2)
+            and not _allow_reckless_class_checks()
         ):
-            raise TypeError(
-                "Protocols with non-method members don't support issubclass()"
-            )
+            if not cls.__callable_proto_members_only__:
+                raise TypeError(
+                    "Protocols with non-method members don't support issubclass()"
+                )
+            if not getattr(cls, '_is_runtime_protocol', False):
+                raise TypeError(
+                    "Instance and class checks can only be used with "
+                    "@runtime_checkable protocols"
+                )
         return super().__subclasscheck__(other)
 
     def __instancecheck__(cls, instance):
@@ -1802,7 +1809,7 @@ class _ProtocolMeta(ABCMeta):
 
         if (
             not getattr(cls, '_is_runtime_protocol', False) and
-            not _allow_reckless_class_checks(depth=2)
+            not _allow_reckless_class_checks()
         ):
             raise TypeError("Instance and class checks can only be used with"
                             " @runtime_checkable protocols")
@@ -1870,18 +1877,6 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
             if not cls.__dict__.get('_is_protocol', False):
                 return NotImplemented
 
-            # First, perform various sanity checks.
-            if not getattr(cls, '_is_runtime_protocol', False):
-                if _allow_reckless_class_checks():
-                    return NotImplemented
-                raise TypeError("Instance and class checks can only be used with"
-                                " @runtime_checkable protocols")
-
-            if not isinstance(other, type):
-                # Same error message as for issubclass(1, int).
-                raise TypeError('issubclass() arg 1 must be a class')
-
-            # Second, perform the actual structural compatibility check.
             for attr in cls.__protocol_attrs__:
                 for base in other.__mro__:
                     # Check if the members appears in the class dictionary...
@@ -1894,7 +1889,7 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
                     annotations = getattr(base, '__annotations__', {})
                     if (isinstance(annotations, collections.abc.Mapping) and
                             attr in annotations and
-                            issubclass(other, Generic) and other._is_protocol):
+                            issubclass(other, Generic) and getattr(other, '_is_protocol', False)):
                         break
                 else:
                     return NotImplemented
@@ -1912,7 +1907,7 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
             if not (base in (object, Generic) or
                     base.__module__ in _PROTO_ALLOWLIST and
                     base.__name__ in _PROTO_ALLOWLIST[base.__module__] or
-                    issubclass(base, Generic) and base._is_protocol):
+                    issubclass(base, Generic) and getattr(base, '_is_protocol', False)):
                 raise TypeError('Protocols can only inherit from other'
                                 ' protocols, got %r' % base)
         if cls.__init__ is Protocol.__init__:
@@ -2059,7 +2054,7 @@ def runtime_checkable(cls):
     Warning: this will check only the presence of the required methods,
     not their type signatures!
     """
-    if not issubclass(cls, Generic) or not cls._is_protocol:
+    if not issubclass(cls, Generic) or not getattr(cls, '_is_protocol', False):
         raise TypeError('@runtime_checkable can be only applied to protocol classes,'
                         ' got %r' % cls)
     cls._is_runtime_protocol = True
@@ -2710,7 +2705,7 @@ class NamedTupleMeta(type):
 def NamedTuple(typename, fields=None, /, **kwargs):
     """Typed version of namedtuple.
 
-    Usage in Python versions >= 3.6::
+    Usage::
 
         class Employee(NamedTuple):
             name: str
@@ -2727,9 +2722,6 @@ def NamedTuple(typename, fields=None, /, **kwargs):
 
         Employee = NamedTuple('Employee', name=str, id=int)
 
-    In Python versions <= 3.5 use::
-
-        Employee = NamedTuple('Employee', [('name', str), ('id', int)])
     """
     if fields is None:
         fields = kwargs.items()
@@ -2822,7 +2814,7 @@ class _TypedDictMeta(type):
     __instancecheck__ = __subclasscheck__
 
 
-def TypedDict(typename, fields=None, /, *, total=True, **kwargs):
+def TypedDict(typename, fields=None, /, *, total=True):
     """A simple typed namespace. At runtime it is equivalent to a plain dict.
 
     TypedDict creates a dictionary type that expects all of its
@@ -2859,23 +2851,9 @@ def TypedDict(typename, fields=None, /, *, total=True, **kwargs):
     checker is only expected to support a literal False or True as the value of
     the total argument. True is the default, and makes all items defined in the
     class body be required.
-
-    The class syntax is only supported in Python 3.6+, while the other
-    syntax form works for Python 2.7 and 3.2+
     """
     if fields is None:
-        fields = kwargs
-    elif kwargs:
-        raise TypeError("TypedDict takes either a dict or keyword arguments,"
-                        " but not both")
-    if kwargs:
-        warnings.warn(
-            "The kwargs-based syntax for TypedDict definitions is deprecated "
-            "in Python 3.11, will be removed in Python 3.13, and may not be "
-            "understood by third-party type checkers.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
+        fields = {}
 
     ns = {'__annotations__': dict(fields)}
     module = _caller()

@@ -1351,7 +1351,10 @@ is_same_exception_metadata(PyObject *exc1, PyObject *exc2)
 PyObject *
 _PyExc_PrepReraiseStar(PyObject *orig, PyObject *excs)
 {
+    /* orig must be a raised & caught exception, so it has a traceback */
     assert(PyExceptionInstance_Check(orig));
+    assert(_PyBaseExceptionObject_cast(orig)->traceback != NULL);
+
     assert(PyList_Check(excs));
 
     Py_ssize_t numexcs = PyList_GET_SIZE(excs);
@@ -1436,6 +1439,42 @@ done:
     Py_XDECREF(raised_list);
     Py_XDECREF(reraised_list);
     return result;
+}
+
+PyObject *
+PyUnstable_Exc_PrepReraiseStar(PyObject *orig, PyObject *excs)
+{
+    if (orig == NULL || !PyExceptionInstance_Check(orig)) {
+        PyErr_SetString(PyExc_TypeError, "orig must be an exception instance");
+        return NULL;
+    }
+    if (excs == NULL || !PyList_Check(excs)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "excs must be a list of exception instances");
+        return NULL;
+    }
+    Py_ssize_t numexcs = PyList_GET_SIZE(excs);
+    for (Py_ssize_t i = 0; i < numexcs; i++) {
+        PyObject *exc = PyList_GET_ITEM(excs, i);
+        if (exc == NULL || !(PyExceptionInstance_Check(exc) || Py_IsNone(exc))) {
+            PyErr_Format(PyExc_TypeError,
+                         "item %d of excs is not an exception", i);
+            return NULL;
+        }
+    }
+
+    /* Make sure that orig has something as traceback, in the interpreter
+     * it always does becuase it's a raised exception.
+     */
+    PyObject *tb = PyException_GetTraceback(orig);
+
+    if (tb == NULL) {
+        PyErr_Format(PyExc_ValueError, "orig must be a raised exception");
+        return NULL;
+    }
+    Py_DECREF(tb);
+
+    return _PyExc_PrepReraiseStar(orig, excs);
 }
 
 static PyMemberDef BaseExceptionGroup_members[] = {
