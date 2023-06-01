@@ -77,6 +77,11 @@ start_frame:
 resume_frame:
     SET_LOCALS_FROM_FRAME();
     DISPATCH();
+handle_eval_breaker:
+    if (_Py_HandlePending(tstate) != 0) {
+        goto error;
+    }
+    DISPATCH();
 pop_4_error:
     STACK_SHRINK(1);
 pop_3_error:
@@ -90,13 +95,24 @@ error:
     _PyFrame_SetStackPointer(frame, stack_pointer);
     return _JUSTIN_RETURN_GOTO_ERROR;
 exit_unwind:
-    frame->prev_instr = next_instr;
-    _PyFrame_SetStackPointer(frame, stack_pointer);
-    return _JUSTIN_RETURN_GOTO_EXIT_UNWIND;
-handle_eval_breaker:
-    frame->prev_instr = next_instr;
-    _PyFrame_SetStackPointer(frame, stack_pointer);
-    return _JUSTIN_RETURN_GOTO_HANDLE_EVAL_BREAKER;
+    assert(_PyErr_Occurred(tstate));
+    _Py_LeaveRecursiveCallPy(tstate);
+    // assert(frame != &entry_frame);
+    // GH-99729: We need to unlink the frame *before* clearing it:
+    _PyInterpreterFrame *dying = frame;
+    frame = cframe.current_frame = dying->previous;
+    _PyEvalFrameClearAndPop(tstate, dying);
+    frame->return_offset = 0;
+    // if (frame == &entry_frame) {
+    //     /* Restore previous cframe and exit */
+    //     tstate->cframe = cframe.previous;
+    //     assert(tstate->cframe->current_frame == frame->previous);
+    //     _Py_LeaveRecursiveCallTstate(tstate);
+    //     return NULL;
+    // }
+// resume_with_error:
+    // SET_LOCALS_FROM_FRAME();
+    goto error;
     // Other labels:
 _return_ok:
     frame->prev_instr = next_instr;

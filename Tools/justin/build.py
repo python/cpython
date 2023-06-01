@@ -45,11 +45,25 @@ class _Name(typing.TypedDict):
     Offset: int
     Bytes: list[int]
 
+class ELFRelocation(typing.TypedDict):
+    Offset: int
+    Type: _Value
+    Symbol: _Value
+    Addend: int
+
 class COFFRelocation(typing.TypedDict):
     Offset: int
     Type: _Value
     Symbol: str
     SymbolIndex: int
+
+class MachORelocation(typing.TypedDict):
+    Offset: int
+    PCRel: int
+    Length: int
+    Type: _Value
+    Symbol: _Value  # XXX
+    Section: _Value  # XXX
 
 class COFFAuxSectionDef(typing.TypedDict):
     Length: int
@@ -69,6 +83,39 @@ class COFFSymbol(typing.TypedDict):
     AuxSymbolCount: int
     AuxSectionDef: COFFAuxSectionDef
 
+class ELFSymbol(typing.TypedDict):
+    Name: _Value
+    Value: int
+    Size: int
+    Binding: _Value
+    Type: _Value
+    Other: int
+    Section: _Value
+
+class MachOSymbol(typing.TypedDict):
+    Name: _Value
+    Type: _Value
+    Section: _Value
+    RefType: _Value
+    Flags: Flags
+    Value: int
+
+class ELFSection(typing.TypedDict):
+    Index: int
+    Name: _Value
+    Type: _Value
+    Flags: Flags
+    Address: int
+    Offset: int
+    Size: int
+    Link: int
+    Info: int
+    AddressAlignment: int
+    EntrySize: int
+    Relocations: list[dict[typing.Literal["Relocation"], ELFRelocation]]
+    Symbols: list[dict[typing.Literal["Symbol"], ELFSymbol]]
+    SectionData: SectionData
+
 class COFFSection(typing.TypedDict):
     Number: int
     Name: _Name
@@ -84,22 +131,6 @@ class COFFSection(typing.TypedDict):
     Relocations: list[dict[typing.Literal["Relocation"], COFFRelocation]]
     Symbols: list[dict[typing.Literal["Symbol"], COFFSymbol]]
     SectionData: SectionData  # XXX
-
-class MachORelocation(typing.TypedDict):
-    Offset: int
-    PCRel: int
-    Length: int
-    Type: _Value
-    Symbol: _Value  # XXX
-    Section: _Value  # XXX
-
-class MachOSymbol(typing.TypedDict):
-    Name: _Value
-    Type: _Value
-    Section: _Value
-    RefType: _Value
-    Flags: Flags
-    Value: int
 
 class MachOSection(typing.TypedDict):
     Index: int
@@ -119,37 +150,6 @@ class MachOSection(typing.TypedDict):
     Relocations: list[dict[typing.Literal["Relocation"], MachORelocation]]  # XXX
     Symbols: list[dict[typing.Literal["Symbol"], MachOSymbol]]  # XXX
     SectionData: SectionData  # XXX
-
-class ELFRelocation(typing.TypedDict):
-    Offset: int
-    Type: _Value
-    Symbol: _Value
-    Addend: int
-
-class ELFSymbol(typing.TypedDict):
-    Name: _Value
-    Value: int
-    Size: int
-    Binding: _Value
-    Type: _Value
-    Other: int
-    Section: _Value
-
-class ELFSection(typing.TypedDict):
-    Index: int
-    Name: _Value
-    Type: _Value
-    Flags: Flags
-    Address: int
-    Offset: int
-    Size: int
-    Link: int
-    Info: int
-    AddressAlignment: int
-    EntrySize: int
-    Relocations: list[dict[typing.Literal["Relocation"], ELFRelocation]]
-    Symbols: list[dict[typing.Literal["Symbol"], ELFSymbol]]
-    SectionData: SectionData
 
 S = typing.TypeVar("S", bound=str)
 T = typing.TypeVar("T")
@@ -486,7 +486,7 @@ class Compiler:
                 else:
                     kind = f"LOAD_{hole.symbol}"
                     kinds.add(kind)
-                lines.append(f"    {{.offset = {hole.offset:3}, .addend = {hole.addend:3}, .kind = {kind}}},")
+                lines.append(f"    {{.offset = {hole.offset:4}, .addend = {hole.addend:4}, .kind = {kind}}},")
             lines.append(f"}};")
             lines.append(f"")
         lines.append(f"static const Stencil trampoline_stencil = {{")

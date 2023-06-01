@@ -2184,10 +2184,6 @@ dummy_func(
                     DISPATCH();
                 case _JUSTIN_RETURN_GOTO_ERROR:
                     goto error;
-                case _JUSTIN_RETURN_GOTO_EXIT_UNWIND:
-                    goto exit_unwind;
-                case _JUSTIN_RETURN_GOTO_HANDLE_EVAL_BREAKER:
-                    goto handle_eval_breaker;
             }
             Py_UNREACHABLE();
         }
