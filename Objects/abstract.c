@@ -2833,10 +2833,9 @@ PyAIter_Check(PyObject *obj)
             tp->tp_as_async->am_anext != &_PyObject_NextNotImplemented);
 }
 
-/* If the iterator has another value to return, set *item to this value
- * and return 1.
- * If the iterator is exhausted, set *item to NULL and return 0.
- * On error (other than StopIteration) from tp_iternext, return -1.
+/* Set *item to the next item. Return 0 on success and -1 on error.
+ * If the iteration terminates normally, set *item to NULL and clear
+ * the PyExc_StopIteration exception (if it was set).
  */
 int
 PyIter_NextItem(PyObject *iter, PyObject **item)
@@ -2853,9 +2852,8 @@ PyIter_NextItem(PyObject *iter, PyObject **item)
                 return -1;
             }
         }
-        return 0;
     }
-    return 1;
+    return 0;
 }
 
 /* Return next item.
