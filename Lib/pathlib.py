@@ -133,15 +133,15 @@ def _compile_pattern_lines(pattern_lines, case_sensitive):
     return re.compile(''.join(parts), flags=flags)
 
 
-def _select_children(paths, dir_only, follow_symlinks, match):
+def _select_children(parent_paths, dir_only, follow_symlinks, match):
     """Yield direct children of given paths, filtering by name and type."""
     if follow_symlinks is None:
         follow_symlinks = True
-    for path in paths:
+    for parent_path in parent_paths:
         try:
             # We must close the scandir() object before proceeding to
             # avoid exhausting file descriptors when globbing deep trees.
-            with path._scandir() as scandir_it:
+            with parent_path._scandir() as scandir_it:
                 entries = list(scandir_it)
         except OSError:
             pass
@@ -155,21 +155,35 @@ def _select_children(paths, dir_only, follow_symlinks, match):
                         continue
                 name = entry.name
                 if match is None or match(name):
-                    yield path._make_child_relpath(name)
+                    yield parent_path._make_child_relpath(name)
 
 
-def _select_recursive(paths, dir_only, follow_symlinks):
+def _select_recursive(parent_paths, dir_only, follow_symlinks):
     """Yield given paths and all their subdirectories, recursively."""
     if follow_symlinks is None:
         follow_symlinks = False
-    for path in paths:
-        yield path
-        for dirpath, dirnames, filenames in path.walk(follow_symlinks=follow_symlinks):
-            for dirname in dirnames:
-                yield dirpath._make_child_relpath(dirname)
-            if not dir_only:
-                for filename in filenames:
-                    yield dirpath._make_child_relpath(filename)
+    for parent_path in parent_paths:
+        paths = [parent_path]
+        while paths:
+            path = paths.pop()
+            yield path
+            try:
+                # We must close the scandir() object before proceeding to
+                # avoid exhausting file descriptors when globbing deep trees.
+                with path._scandir() as scandir_it:
+                    entries = list(scandir_it)
+            except OSError:
+                pass
+            else:
+                for entry in entries:
+                    try:
+                        if entry.is_dir(follow_symlinks=follow_symlinks):
+                            paths.append(path._make_child_relpath(entry.name))
+                            continue
+                    except OSError:
+                        pass
+                    if not dir_only:
+                        yield path._make_child_relpath(entry.name)
 
 
 def _select_unique(paths):
