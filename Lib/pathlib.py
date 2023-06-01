@@ -106,7 +106,11 @@ def _compile_pattern_lines(pattern_lines, case_sensitive):
     # Match the start of the path, or just after a path separator
     parts = ['^']
     for part in pattern_lines.splitlines(keepends=True):
-        if part == '**\n':
+        if part == '*\n':
+            part = r'.+\n'
+        elif part == '*':
+            part = r'.+'
+        elif part == '**\n':
             # '**/' component: we use '[\s\S]' rather than '.' so that path
             # separators (i.e. newlines) are matched. The trailing '^' ensures
             # we terminate after a path separator (i.e. on a new line).
@@ -1083,9 +1087,9 @@ class Path(PurePath):
 
                 if filter_paths:
                     # Filter out paths that don't match pattern.
-                    pattern_lines = self.joinpath(path_pattern)._lines
-                    match = _compile_pattern_lines(pattern_lines, case_sensitive).match
-                    paths = (path for path in paths if match(path._lines))
+                    prefix_len = len(self._make_child_relpath('_')._lines) - 1
+                    match = _compile_pattern_lines(path_pattern._lines, case_sensitive).match
+                    paths = (path for path in paths if match(path._lines[prefix_len:]))
                 elif deduplicate_paths:
                     # De-duplicate if we've already seen a '**' component.
                     paths = _select_unique(paths)
