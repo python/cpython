@@ -447,6 +447,7 @@
     added = '3.2'
 [function.PyCFunction_Call]
     added = '3.2'
+    abi_only = true
 [function.PyCFunction_GetFlags]
     added = '3.2'
 [function.PyCFunction_GetFunction]
