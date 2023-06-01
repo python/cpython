@@ -1074,9 +1074,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         expected_insts = [
             ('LOAD_CONST', 0, 1),
             ('LOAD_CONST', 1, 2),
-            ('LOAD_CONST', 2, 3),
-            ('SWAP', 3, 4),
-            ('POP_TOP', 0, 4),
+            ('NOP', 0, 3),
             ('STORE_FAST', 1, 4),
             ('POP_TOP', 0, 4),
             ('RETURN_VALUE', 5)
@@ -1096,7 +1094,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         expected_insts = [
             ('LOAD_CONST', 0, 1),
             ('LOAD_CONST', 1, 2),
-            ('NOP', None, 3),
+            ('NOP', 0, 3),
             ('POP_TOP', 0, 4),
             ('STORE_FAST', 1, 4),
             ('RETURN_VALUE', 5)

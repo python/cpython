@@ -1526,12 +1526,7 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
             case SWAP:
                 if (oparg == 1) {
                     INSTR_SET_OP0(inst, NOP);
-                    break;
                 }
-                if (swaptimize(bb, &i) < 0) {
-                    goto error;
-                }
-                apply_static_swaps(bb, i);
                 break;
             case KW_NAMES:
                 break;
@@ -1544,6 +1539,15 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
             default:
                 /* All HAS_CONST opcodes should be handled with LOAD_CONST */
                 assert (!HAS_CONST(inst->i_opcode));
+        }
+    }
+    for (int i = 0; i < bb->b_iused; i++) {
+        cfg_instr *inst = &bb->b_instr[i];
+        if (inst->i_opcode == SWAP) {
+            if (swaptimize(bb, &i) < 0) {
+                goto error;
+            }
+            apply_static_swaps(bb, i);
         }
     }
     return SUCCESS;
