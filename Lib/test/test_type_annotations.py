@@ -1,4 +1,5 @@
 import unittest
+from test.support import run_code
 
 class TypeAnnotationTests(unittest.TestCase):
 
@@ -101,3 +102,17 @@ class TypeAnnotationTests(unittest.TestCase):
         with self.assertRaises(AttributeError):
             del D.__annotations__
         self.assertEqual(D.__annotations__, {})
+
+    def test_module_level(self):
+        ns = run_code("x: int = 1")
+        self.assertEqual(ns["__annotations__"], {"x": int})
+
+        ns = run_code("if True:\n    x: int = 1")
+        self.assertEqual(ns["__annotations__"], {"x": int})
+
+        ns = run_code("""
+            match 0:
+                case 0:
+                    x: int = 1
+        """)
+        self.assertEqual(ns["__annotations__"], {"x": int})
