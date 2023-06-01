@@ -25768,8 +25768,8 @@ fi
     if ! $found; then
         OPENSSL_INCLUDES=
         for ssldir in $ssldirs; do
-            { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for openssl/ssl.h in $ssldir" >&5
-printf %s "checking for openssl/ssl.h in $ssldir... " >&6; }
+            { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for include/openssl/ssl.h in $ssldir" >&5
+printf %s "checking for include/openssl/ssl.h in $ssldir... " >&6; }
             if test -f "$ssldir/include/openssl/ssl.h"; then
                 OPENSSL_INCLUDES="-I$ssldir/include"
                 OPENSSL_LDFLAGS="-L$ssldir/lib"
