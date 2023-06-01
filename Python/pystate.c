@@ -822,6 +822,12 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
         p = p->next;
         HEAD_UNLOCK(runtime);
     }
+    if (tstate->interp == interp) {
+        /* We fix tstate->_status below when we for sure aren't using it
+           (e.g. no longer need the GIL). */
+        // XXX Eliminate the need to do this.
+        tstate->_status.cleared = 0;
+    }
 
     /* It is possible that any of the objects below have a finalizer
        that runs Python code or otherwise relies on a thread state
@@ -886,6 +892,12 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     Py_CLEAR(interp->builtins);
     Py_CLEAR(interp->interpreter_trampoline);
 
+    if (tstate->interp == interp) {
+        /* We are now safe to fix tstate->_status.cleared. */
+        // XXX Do this (much) earlier?
+        tstate->_status.cleared = 1;
+    }
+
     for (int i=0; i < DICT_MAX_WATCHERS; i++) {
         interp->dict_state.watchers[i] = NULL;
     }
@@ -930,6 +942,7 @@ _PyInterpreterState_Clear(PyThreadState *tstate)
 }
 
 
+static inline void tstate_deactivate(PyThreadState *tstate);
 static void zapthreads(PyInterpreterState *interp);
 
 void
@@ -943,7 +956,9 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
     PyThreadState *tcur = current_fast_get(runtime);
     if (tcur != NULL && interp == tcur->interp) {
         /* Unset current thread.  After this, many C API calls become crashy. */
-        _PyThreadState_Swap(runtime, NULL);
+        current_fast_clear(runtime);
+        tstate_deactivate(tcur);
+        _PyEval_ReleaseLock(interp, NULL);
     }
 
     zapthreads(interp);
@@ -1567,7 +1582,7 @@ _PyThreadState_DeleteCurrent(PyThreadState *tstate)
     _Py_EnsureTstateNotNULL(tstate);
     tstate_delete_common(tstate);
     current_fast_clear(tstate->interp->runtime);
-    _PyEval_ReleaseLock(tstate);
+    _PyEval_ReleaseLock(tstate->interp, NULL);
     free_threadstate(tstate);
 }
 
@@ -1907,7 +1922,7 @@ _PyThreadState_Swap(_PyRuntimeState *runtime, PyThreadState *newts)
 {
     PyThreadState *oldts = current_fast_get(runtime);
     if (oldts != NULL) {
-        _PyEval_ReleaseLock(oldts);
+        _PyEval_ReleaseLock(oldts->interp, oldts);
     }
     _swap_thread_states(runtime, oldts, newts);
     if (newts != NULL) {

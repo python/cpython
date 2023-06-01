@@ -278,6 +278,15 @@ static void recreate_gil(struct _gil_runtime_state *gil)
 static void
 drop_gil(struct _ceval_state *ceval, PyThreadState *tstate)
 {
+    /* If tstate is NULL, the caller is indicating that we're releasing
+       the GIL for the last time in this thread.  This is particularly
+       relevant when the current thread state is finalizing or its
+       interpreter is finalizing (either may be in an inconsistent
+       state).  In that case the current thread will definitely
+       never try to acquire the GIL again. */
+    // XXX It may be more correct to check tstate->_status.finalizing.
+    // XXX assert(tstate == NULL || !tstate->_status.cleared);
+
     struct _gil_runtime_state *gil = ceval->gil;
     if (!_Py_atomic_load_relaxed(&gil->locked)) {
         Py_FatalError("drop_gil: GIL is not locked");
@@ -298,7 +307,15 @@ drop_gil(struct _ceval_state *ceval, PyThreadState *tstate)
     MUTEX_UNLOCK(gil->mutex);
 
 #ifdef FORCE_SWITCHING
-    if (_Py_atomic_load_relaxed(&ceval->gil_drop_request) && tstate != NULL) {
+    /* We check tstate first in case we might be releasing the GIL for
+       the last time in this thread.  In that case there's a possible
+       race with tstate->interp getting deleted after gil->mutex is
+       unlocked and before the following code runs, leading to a crash.
+       We can use (tstate == NULL) to indicate the thread is done with
+       the GIL, and that's the only time we might delete the
+       interpreter, so checking tstate first prevents the crash.
+       See https://github.com/python/cpython/issues/104341. */
+    if (tstate != NULL && _Py_atomic_load_relaxed(&ceval->gil_drop_request)) {
         MUTEX_LOCK(gil->switch_mutex);
         /* Not switched yet => wait */
         if (((PyThreadState*)_Py_atomic_load_relaxed(&gil->last_holder)) == tstate)
@@ -350,6 +367,9 @@ take_gil(PyThreadState *tstate)
     int err = errno;
 
     assert(tstate != NULL);
+    /* We shouldn't be using a thread state that isn't viable any more. */
+    // XXX It may be more correct to check tstate->_status.finalizing.
+    // XXX assert(!tstate->_status.cleared);
 
     if (tstate_must_exit(tstate)) {
         /* bpo-39877: If Py_Finalize() has been called and tstate is not the
@@ -625,10 +645,12 @@ _PyEval_AcquireLock(PyThreadState *tstate)
 }
 
 void
-_PyEval_ReleaseLock(PyThreadState *tstate)
+_PyEval_ReleaseLock(PyInterpreterState *interp, PyThreadState *tstate)
 {
-    _Py_EnsureTstateNotNULL(tstate);
-    struct _ceval_state *ceval = &tstate->interp->ceval;
+    /* If tstate is NULL then we do not expect the current thread
+       to acquire the GIL ever again. */
+    assert(tstate == NULL || tstate->interp == interp);
+    struct _ceval_state *ceval = &interp->ceval;
     drop_gil(ceval, tstate);
 }
 
