@@ -40,7 +40,7 @@ something like this::
 
    PyObject *item;
    int res;
-   while ((res = PyIter_Next(iterator, &item)) == 0 && item != NULL) {
+   while ((res = PyIter_NextItem(iterator, &item)) == 0 && item != NULL) {
        /* do something with item */
        ...
        /* release reference when done */
