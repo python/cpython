@@ -6,8 +6,8 @@
    Python and represents a single Unicode element in the Unicode type.
    With PEP 393, Py_UNICODE is deprecated and replaced with a
    typedef to wchar_t. */
-#define PY_UNICODE_TYPE wchar_t
-/* Py_DEPRECATED(3.3) */ typedef wchar_t Py_UNICODE;
+Py_DEPRECATED(3.13) typedef wchar_t PY_UNICODE_TYPE;
+Py_DEPRECATED(3.13) typedef wchar_t Py_UNICODE;
 
 /* --- Internal Unicode Operations ---------------------------------------- */
 

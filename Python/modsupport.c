@@ -329,7 +329,7 @@ do_mkvalue(const char **p_format, va_list *p_va)
         case 'u':
         {
             PyObject *v;
-            Py_UNICODE *u = va_arg(*p_va, Py_UNICODE *);
+            const wchar_t *u = va_arg(*p_va, wchar_t*);
             Py_ssize_t n;
             if (**p_format == '#') {
                 ++*p_format;

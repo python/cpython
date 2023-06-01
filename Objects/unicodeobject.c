@@ -1800,14 +1800,14 @@ PyUnicode_FromWideChar(const wchar_t *u, Py_ssize_t size)
 
     switch (PyUnicode_KIND(unicode)) {
     case PyUnicode_1BYTE_KIND:
-        _PyUnicode_CONVERT_BYTES(Py_UNICODE, unsigned char,
+        _PyUnicode_CONVERT_BYTES(wchar_t, unsigned char,
                                 u, u + size, PyUnicode_1BYTE_DATA(unicode));
         break;
     case PyUnicode_2BYTE_KIND:
 #if Py_UNICODE_SIZE == 2
         memcpy(PyUnicode_2BYTE_DATA(unicode), u, size * 2);
 #else
-        _PyUnicode_CONVERT_BYTES(Py_UNICODE, Py_UCS2,
+        _PyUnicode_CONVERT_BYTES(wchar_t, Py_UCS2,
                                 u, u + size, PyUnicode_2BYTE_DATA(unicode));
 #endif
         break;
@@ -3809,9 +3809,9 @@ PyUnicode_AsUTF8(PyObject *unicode)
 PyUnicode_GetSize() has been deprecated since Python 3.3
 because it returned length of Py_UNICODE.
 
-But this function is part of stable abi, because it don't
+But this function is part of stable abi, because it doesn't
 include Py_UNICODE in signature and it was not excluded from
-stable abi in PEP 384.
+stable ABI in PEP 384.
 */
 PyAPI_FUNC(Py_ssize_t)
 PyUnicode_GetSize(PyObject *unicode)
