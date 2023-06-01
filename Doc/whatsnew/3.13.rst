@@ -373,6 +373,7 @@ Removed
     :c:func:`PyTuple_New(0) <PyTuple_New>`.
   * ``PyEval_CallFunction()``: use :c:func:`PyObject_CallFunction` instead.
   * ``PyEval_CallMethod()``: use :c:func:`PyObject_CallMethod` instead.
+  * ``PyCFunction_Call()``: use :c:func:`PyObject_Call` instead.
 
   (Contributed by Victor Stinner in :gh:`105107`.)
 
