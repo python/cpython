@@ -496,7 +496,8 @@ _PyEval_ThreadsInitialized(void)
     return gil_created(gil);
 }
 
-int
+// Function removed in the Python 3.13 API but kept in the stable ABI.
+PyAPI_FUNC(int)
 PyEval_ThreadsInitialized(void)
 {
     return _PyEval_ThreadsInitialized();
@@ -584,7 +585,8 @@ _PyEval_FiniGIL(PyInterpreterState *interp)
     interp->ceval.gil = NULL;
 }
 
-void
+// Function removed in the Python 3.13 API but kept in the stable ABI.
+PyAPI_FUNC(void)
 PyEval_InitThreads(void)
 {
     /* Do nothing: kept for backward compatibility */
@@ -597,7 +599,9 @@ _PyEval_Fini(void)
     _Py_PrintSpecializationStats(1);
 #endif
 }
-void
+
+// Function removed in the Python 3.13 API but kept in the stable ABI.
+PyAPI_FUNC(void)
 PyEval_AcquireLock(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
@@ -606,7 +610,8 @@ PyEval_AcquireLock(void)
     take_gil(tstate);
 }
 
-void
+// Function removed in the Python 3.13 API but kept in the stable ABI.
+PyAPI_FUNC(void)
 PyEval_ReleaseLock(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();

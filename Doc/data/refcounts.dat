@@ -764,8 +764,6 @@ PyErr_WarnFormat::...::
 PyErr_WriteUnraisable:void:::
 PyErr_WriteUnraisable:PyObject*:obj:0:
 
-PyEval_AcquireLock:void:::
-
 PyEval_AcquireThread:void:::
 PyEval_AcquireThread:PyThreadState*:tstate::
 
@@ -782,10 +780,6 @@ PyEval_GetFuncDesc:PyObject*:func:0:
 
 PyEval_GetFuncName:const char*:::
 PyEval_GetFuncName:PyObject*:func:0:
-
-PyEval_InitThreads:void:::
-
-PyEval_ReleaseLock:void:::
 
 PyEval_ReleaseThread:void:::
 PyEval_ReleaseThread:PyThreadState*:tstate::
