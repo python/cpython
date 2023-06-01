@@ -1783,21 +1783,21 @@ PyDoc_STRVAR(test_Py_UNICODE_converter__doc__,
     {"test_Py_UNICODE_converter", _PyCFunction_CAST(test_Py_UNICODE_converter), METH_FASTCALL, test_Py_UNICODE_converter__doc__},
 
 static PyObject *
-test_Py_UNICODE_converter_impl(PyObject *module, const Py_UNICODE *a,
-                               const Py_UNICODE *b, const Py_UNICODE *c,
-                               const Py_UNICODE *d, Py_ssize_t d_length,
-                               const Py_UNICODE *e, Py_ssize_t e_length);
+test_Py_UNICODE_converter_impl(PyObject *module, const wchar_t *a,
+                               const wchar_t *b, const wchar_t *c,
+                               const wchar_t *d, Py_ssize_t d_length,
+                               const wchar_t *e, Py_ssize_t e_length);
 
 static PyObject *
 test_Py_UNICODE_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    const Py_UNICODE *a = NULL;
-    const Py_UNICODE *b = NULL;
-    const Py_UNICODE *c = NULL;
-    const Py_UNICODE *d = NULL;
+    const wchar_t *a = NULL;
+    const wchar_t *b = NULL;
+    const wchar_t *c = NULL;
+    const wchar_t *d = NULL;
     Py_ssize_t d_length;
-    const Py_UNICODE *e = NULL;
+    const wchar_t *e = NULL;
     Py_ssize_t e_length;
 
     if (!_PyArg_ParseStack(args, nargs, "O&O&O&u#Z#:test_Py_UNICODE_converter",
@@ -1818,11 +1818,11 @@ exit:
 }
 
 static PyObject *
-test_Py_UNICODE_converter_impl(PyObject *module, const Py_UNICODE *a,
-                               const Py_UNICODE *b, const Py_UNICODE *c,
-                               const Py_UNICODE *d, Py_ssize_t d_length,
-                               const Py_UNICODE *e, Py_ssize_t e_length)
-/*[clinic end generated code: output=9f34a249b3071fdd input=064a3b68ad7f04b0]*/
+test_Py_UNICODE_converter_impl(PyObject *module, const wchar_t *a,
+                               const wchar_t *b, const wchar_t *c,
+                               const wchar_t *d, Py_ssize_t d_length,
+                               const wchar_t *e, Py_ssize_t e_length)
+/*[clinic end generated code: output=529af9cda2a20349 input=064a3b68ad7f04b0]*/
 
 
 /*[clinic input]
