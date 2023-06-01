@@ -130,7 +130,7 @@ class JSONEncoder(object):
         that JSON serializations can be compared on a day-to-day basis.
 
         If list_oneline is true, then lists/tuples will be output as arrays
-        on a single line. If false, a newline character will be placed after each 
+        on a single line. If false, a newline character will be placed after each
         array element.
 
         If indent is a non-negative integer, then JSON array
