@@ -135,12 +135,6 @@ extern "C" {
    This function always succeeds. */
 
 
-#ifdef PY_SSIZE_T_CLEAN
-#  define PyObject_CallFunction _PyObject_CallFunction_SizeT
-#  define PyObject_CallMethod _PyObject_CallMethod_SizeT
-#endif
-
-
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000
 /* Call a callable Python object without any arguments */
 PyAPI_FUNC(PyObject *) PyObject_CallNoArgs(PyObject *func);
@@ -194,15 +188,6 @@ PyAPI_FUNC(PyObject *) PyObject_CallFunction(PyObject *callable,
 PyAPI_FUNC(PyObject *) PyObject_CallMethod(PyObject *obj,
                                            const char *name,
                                            const char *format, ...);
-
-PyAPI_FUNC(PyObject *) _PyObject_CallFunction_SizeT(PyObject *callable,
-                                                    const char *format,
-                                                    ...);
-
-PyAPI_FUNC(PyObject *) _PyObject_CallMethod_SizeT(PyObject *obj,
-                                                  const char *name,
-                                                  const char *format,
-                                                  ...);
 
 /* Call a callable Python object 'callable' with a variable number of C
    arguments. The C arguments are provided as PyObject* values, terminated

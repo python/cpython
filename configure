@@ -1854,8 +1854,8 @@ Optional Packages:
                           select hash algorithm for use in Python/pyhash.c
                           (default is SipHash13)
   --with-tzpath=<list of absolute paths separated by pathsep>
-                           Select the default time zone search path for zoneinfo.TZPATH
-
+                          Select the default time zone search path for
+                          zoneinfo.TZPATH
   --with-libs='lib1 ...'  link against additional libs (default is no)
   --with-system-expat     build pyexpat module using an installed expat
                           library, see Doc/library/pyexpat.rst (default is no)
@@ -8057,6 +8057,7 @@ then :
   withval=$with_trace_refs;
 else $as_nop
   with_trace_refs=no
+
 fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_trace_refs" >&5
@@ -12477,7 +12478,7 @@ case $ac_sys_system/$ac_sys_release in
 
 printf "%s\n" "#define WITH_DYLD 1" >>confdefs.h
 
-  	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: always on for Darwin" >&5
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: always on for Darwin" >&5
 printf "%s\n" "always on for Darwin" >&6; }
   	;;
   *)
@@ -13039,7 +13040,7 @@ then :
   LIBS="-ldl $LIBS"
 
 fi
-	# Dynamic linking for SunOS/Solaris and SYSV
+       # Dynamic linking for SunOS/Solaris and SYSV
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for shl_load in -ldld" >&5
 printf %s "checking for shl_load in -ldld... " >&6; }
 if test ${ac_cv_lib_dld_shl_load+y}
@@ -13082,7 +13083,7 @@ then :
   LIBS="-ldld $LIBS"
 
 fi
-	# Dynamic linking for HP-UX
+    # Dynamic linking for HP-UX
 
 
 
@@ -13097,7 +13098,6 @@ if test "x$ac_cv_header_uuid_h" = xyes
 then :
   printf "%s\n" "#define HAVE_UUID_H 1" >>confdefs.h
 
-
   for ac_func in uuid_create uuid_enc_be
 do :
   as_ac_var=`printf "%s\n" "ac_cv_func_$ac_func" | $as_tr_sh`
@@ -13107,8 +13107,7 @@ then :
   cat >>confdefs.h <<_ACEOF
 #define `printf "%s\n" "HAVE_$ac_func" | $as_tr_cpp` 1
 _ACEOF
-
-    have_uuid=yes
+ have_uuid=yes
     LIBUUID_CFLAGS=${LIBUUID_CFLAGS-""}
     LIBUUID_LIBS=${LIBUUID_LIBS-""}
 
@@ -13282,11 +13281,9 @@ then :
   have_uuid=yes
             printf "%s\n" "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
 
-
 fi
 
 LIBS=$py_check_lib_save_LIBS
-
 
 fi
 
@@ -13410,11 +13407,9 @@ then :
   have_uuid=yes
             printf "%s\n" "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
 
-
 fi
 
 LIBS=$py_check_lib_save_LIBS
-
 
 fi
 
@@ -13440,8 +13435,7 @@ else
 	LIBUUID_LIBS=$pkg_cv_LIBUUID_LIBS
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
-
-                  have_uuid=yes
+	            have_uuid=yes
       printf "%s\n" "#define HAVE_UUID_H 1" >>confdefs.h
 
       printf "%s\n" "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
@@ -16958,6 +16952,7 @@ then :
   withval=$with_valgrind;
 else $as_nop
   with_valgrind=no
+
 fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_valgrind" >&5
@@ -18356,7 +18351,7 @@ See \`config.log' for more details" "$LINENO" 5; } ;; #(
 esac
 
 ac_fn_check_decl "$LINENO" "dirfd" "ac_cv_have_decl_dirfd" "#include <sys/types.h>
-       #include <dirent.h>
+               #include <dirent.h>
 " "$ac_c_undeclared_builtin_options" "CFLAGS"
 if test "x$ac_cv_have_decl_dirfd" = xyes
 then :
@@ -21114,9 +21109,7 @@ then :
  LIBS="$LIBS -lbsd"
 fi
 
-
 fi
-
 
 fi
 
@@ -21273,9 +21266,7 @@ then :
  LIBS="$LIBS -lbsd"
 fi
 
-
 fi
-
 
 fi
 
@@ -21359,7 +21350,6 @@ printf "%s\n" "#define GETPGRP_HAVE_ARG 1" >>confdefs.h
 
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-
 fi
 
 done
@@ -21388,7 +21378,6 @@ printf "%s\n" "#define SETPGRP_HAVE_ARG 1" >>confdefs.h
 
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-
 fi
 
 done
@@ -21942,15 +21931,6 @@ then :
 
 fi
 
-
-if test "x$ac_cv_header_sys_time_h" = xyes
-then :
-
-
-printf "%s\n" "#define TIME_WITH_SYS_TIME 1" >>confdefs.h
-
-
-fi
 
 # checks for structures
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether struct tm is in sys/time.h or time.h" >&5
@@ -22540,7 +22520,6 @@ fi
 ac_fn_c_check_func "$LINENO" "gethostbyname_r" "ac_cv_func_gethostbyname_r"
 if test "x$ac_cv_func_gethostbyname_r" = xyes
 then :
-
   printf "%s\n" "#define HAVE_GETHOSTBYNAME_R 1" >>confdefs.h
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking gethostbyname_r with 6 args" >&5
@@ -28970,7 +28949,7 @@ then :
 
     if true
 then :
-  if true
+  if test "$ac_cv_header_sys_time_h" = "yes"
 then :
   py_cv_module_pyexpat=yes
 else $as_nop
