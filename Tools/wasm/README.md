@@ -345,7 +345,7 @@ popd
 - Create the host/WASI Python
   - `mkdir builddir/wasi`
   - `pushd builddir/wasi`
-  - `../../Tools/wasm/wasi-env ../../configure -C --host=$wasm32-unknown-wasi --build=$BUILD --with-build-python=../build/python`
+  - `../../Tools/wasm/wasi-env ../../configure -C --host=wasm32-unknown-wasi --build=$BUILD --with-build-python=../build/python`
     - `CONFIG_SITE=../../Tools/wasm/config.site-wasm32-wasi`
     - `WASI_SDK_PATH=$WASI_SDK_PATH` (also set by `wasi-env`)
     - `HOSTRUNNER="wasmtime run --mapdir /::${SRCDIR} --env PYTHONPATH=/builddir/build/lib.wasi-wasm32-{python_major_minor_version} --`
