@@ -120,6 +120,7 @@ extern "C" {
 #define CALL_INTRINSIC_2                       174
 #define LOAD_FROM_DICT_OR_GLOBALS              175
 #define LOAD_FROM_DICT_OR_DEREF                176
+#define ENTER_EXECUTOR                         230
 #define MIN_INSTRUMENTED_OPCODE                237
 #define INSTRUMENTED_LOAD_SUPER_ATTR           237
 #define INSTRUMENTED_POP_JUMP_IF_NONE          238

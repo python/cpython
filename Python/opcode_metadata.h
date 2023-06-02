@@ -265,6 +265,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 0;
         case JUMP_BACKWARD:
             return 0;
+        case ENTER_EXECUTOR:
+            return 0;
         case POP_JUMP_IF_FALSE:
             return 1;
         case POP_JUMP_IF_TRUE:
@@ -661,6 +663,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case JUMP_BACKWARD:
             return 0;
+        case ENTER_EXECUTOR:
+            return 0;
         case POP_JUMP_IF_FALSE:
             return 0;
         case POP_JUMP_IF_TRUE:
@@ -933,6 +937,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [IMPORT_FROM] = { true, INSTR_FMT_IB },
     [JUMP_FORWARD] = { true, INSTR_FMT_IB },
     [JUMP_BACKWARD] = { true, INSTR_FMT_IB },
+    [ENTER_EXECUTOR] = { true, INSTR_FMT_IB },
     [POP_JUMP_IF_FALSE] = { true, INSTR_FMT_IB },
     [POP_JUMP_IF_TRUE] = { true, INSTR_FMT_IB },
     [POP_JUMP_IF_NOT_NONE] = { true, INSTR_FMT_IB },
