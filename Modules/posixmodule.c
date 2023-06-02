@@ -2564,6 +2564,7 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
         Py_DECREF(v);
         return NULL;
     }
+
     return v;
 }
 
