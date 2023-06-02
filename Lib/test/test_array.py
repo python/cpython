@@ -1141,7 +1141,7 @@ class BaseTest:
                 a = array.array(self.typecode, 'foo')
             self.assertIn("cannot use a str", str(cm.exception))
             with self.assertRaises(TypeError) as cm:
-                a = array.array(self.typecode, array.array('u', 'foo'))
+                a = array.array(self.typecode, array.array('w', 'foo'))
             self.assertIn("cannot use a unicode array", str(cm.exception))
         else:
             a = array.array(self.typecode, "foo")
