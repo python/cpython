@@ -699,15 +699,6 @@ class IncompatibleExtensionModuleRestrictionsTests(unittest.TestCase):
             with self.assertRaises(ImportError):
                 self.run_with_own_gil(script)
 
-        script = textwrap.dedent(f'''
-            import importlib.util
-            with importlib.util._incompatible_extension_module_restrictions():
-                import _testsinglephase
-            ''')
-        with self.subTest('check enabled (default)'):
-            with self.assertRaises(ImportError):
-                self.run_with_shared_gil(script)
-
     @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
     def test_incomplete_multi_phase_init_module(self):
         prescript = textwrap.dedent(f'''

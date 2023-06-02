@@ -128,8 +128,8 @@ class _incompatible_extension_module_restrictions:
     extension module development.
 
     If "disable_check" is True then the compatibility check will not
-    happen while the context manager is active.  Otherwise (and by
-    default) the check *will* happen.
+    happen while the context manager is active.  Otherwise the check
+    *will* happen.
 
     Normally, extensions that do not support multiple interpreters
     may not be imported in a subinterpreter.  That implies modules
@@ -148,8 +148,8 @@ class _incompatible_extension_module_restrictions:
     support for mulitple interpreters (or per-interpreter GIL).
     """
 
-    def __init__(self, disable_check=False):
-        self.disable_check = disable_check
+    def __init__(self, disable_check):
+        self.disable_check = bool(disable_check)
 
     def __enter__(self):
         self.old = _imp._override_multi_interp_extensions_check(self.override)
