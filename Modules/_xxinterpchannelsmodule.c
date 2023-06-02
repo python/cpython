@@ -7,7 +7,6 @@
 
 #include "Python.h"
 #include "interpreteridobject.h"
-#include "pycore_pystate.h"       // _PyThreadState_GET()
 
 
 /*
