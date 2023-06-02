@@ -1862,8 +1862,6 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
                 ...
     """
     __slots__ = ()
-    _is_protocol = True
-    _is_runtime_protocol = False
 
     def __init_subclass__(cls, *args, **kwargs):
         super().__init_subclass__(*args, **kwargs)
@@ -1904,7 +1902,7 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
 
         # ... otherwise check consistency of bases, and prohibit instantiation.
         for base in cls.__bases__:
-            if not (base in (object, Generic) or
+            if not (base in {object, Generic, Protocol} or
                     base.__module__ in _PROTO_ALLOWLIST and
                     base.__name__ in _PROTO_ALLOWLIST[base.__module__] or
                     issubclass(base, Generic) and getattr(base, '_is_protocol', False)):

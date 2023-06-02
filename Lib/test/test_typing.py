@@ -2758,6 +2758,16 @@ class ProtocolTests(BaseTestCase):
         with self.assertRaisesRegex(TypeError, only_classes_allowed):
             issubclass(1, BadPG)
 
+        for proto in P, PG, BadP, BadPG:
+            with self.subTest(proto=proto.__name__):
+                self.assertIsSubclass(proto, Protocol)
+
+        # TODO: the behaviour of some of these is questionable!
+        # For now, just check that these don't raise any Exceptions
+        issubclass(object, Protocol)
+        issubclass(str, Protocol)
+        issubclass(C, Protocol)
+
     def test_protocols_issubclass_non_callable(self):
         class C:
             x = 1
@@ -3505,8 +3515,8 @@ class ProtocolTests(BaseTestCase):
         self.assertTrue(P._is_protocol)
         self.assertTrue(PR._is_protocol)
         self.assertTrue(PG._is_protocol)
-        self.assertFalse(P._is_runtime_protocol)
-        self.assertTrue(PR._is_runtime_protocol)
+        self.assertFalse(getattr(P, "_is_runtime_protocol", False))
+        self.assertTrue(getattr(PR, "_is_runtime_protocol", False))
         self.assertTrue(PG[int]._is_protocol)
         self.assertEqual(typing._get_protocol_attrs(P), {'meth'})
         self.assertEqual(typing._get_protocol_attrs(PR), {'x'})
