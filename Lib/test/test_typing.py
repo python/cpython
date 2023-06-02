@@ -2771,6 +2771,15 @@ class ProtocolTests(BaseTestCase):
         self.assertNotIsSubclass(C, Protocol)
         self.assertNotIsInstance(C(), Protocol)
 
+        only_classes_allowed = r"issubclass\(\) arg 1 must be a class"
+
+        with self.assertRaisesRegex(TypeError, only_classes_allowed):
+            issubclass(1, Protocol)
+        with self.assertRaisesRegex(TypeError, only_classes_allowed):
+            issubclass('foo', Protocol)
+        with self.assertRaisesRegex(TypeError, only_classes_allowed):
+            issubclass(C(), Protocol)
+
         T = TypeVar('T')
 
         @runtime_checkable
