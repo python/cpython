@@ -42,6 +42,7 @@ const uint8_t _PyOpcode_Caches[256] = {
     [LOAD_GLOBAL] = 4,
     [BINARY_OP] = 1,
     [SEND] = 1,
+    [JUMP_BACKWARD] = 1,
     [LOAD_SUPER_ATTR] = 1,
     [CALL] = 3,
 };
@@ -114,6 +115,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [END_ASYNC_FOR] = END_ASYNC_FOR,
     [END_FOR] = END_FOR,
     [END_SEND] = END_SEND,
+    [ENTER_EXECUTOR] = ENTER_EXECUTOR,
     [EXTENDED_ARG] = EXTENDED_ARG,
     [FORMAT_VALUE] = FORMAT_VALUE,
     [FOR_ITER] = FOR_ITER,
@@ -475,7 +477,7 @@ static const char *const _PyOpcode_OpName[267] = {
     [227] = "<227>",
     [228] = "<228>",
     [229] = "<229>",
-    [230] = "<230>",
+    [ENTER_EXECUTOR] = "ENTER_EXECUTOR",
     [231] = "<231>",
     [232] = "<232>",
     [233] = "<233>",
@@ -571,7 +573,6 @@ static const char *const _PyOpcode_OpName[267] = {
     case 227: \
     case 228: \
     case 229: \
-    case 230: \
     case 231: \
     case 232: \
     case 233: \
