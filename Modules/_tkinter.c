@@ -65,7 +65,7 @@ Copyright (C) 1994 Steen Lumholt.
 #endif
 #include <tclTomMath.h>
 
-#if defined(TCL_WITH_EXTERNAL_TOMMATH) || (TCL_MAJOR_VERSION >= 9)
+#if defined(TCL_WITH_EXTERNAL_TOMMATH) || (TK_HEX_VERSION >= 0x08070000)
 #define USE_DEPRECATED_TOMMATH_API 0
 #else
 #define USE_DEPRECATED_TOMMATH_API 1
