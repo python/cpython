@@ -3927,6 +3927,24 @@ class TestSignatureObject(unittest.TestCase):
                            ('b', 2, ..., 'positional_or_keyword')),
                           ...))
 
+    def test_signature_on_derived_classes(self):
+        # gh-105080: Make sure that signatures are consistent on derived classes
+
+        class B:
+            def __new__(self, *args, **kwargs):
+                return super().__new__(self)
+            def __init__(self, value):
+                self.value = value
+
+        class D1(B):
+            def __init__(self, value):
+                super().__init__(value)
+
+        class D2(D1):
+            pass
+
+        self.assertEqual(inspect.signature(D2), inspect.signature(D1))
+
 
 class TestParameterObject(unittest.TestCase):
     def test_signature_parameter_kinds(self):

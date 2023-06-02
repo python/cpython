@@ -764,6 +764,16 @@ x = (
                              """f'{"s"!{"r"}}'""",
                              ])
 
+    def test_custom_format_specifier(self):
+        class CustomFormat:
+            def __format__(self, format_spec):
+                return format_spec
+
+        self.assertEqual(f'{CustomFormat():\n}', '\n')
+        self.assertEqual(f'{CustomFormat():\u2603}', '☃')
+        with self.assertWarns(SyntaxWarning):
+            exec('f"{F():¯\_(ツ)_/¯}"', {'F': CustomFormat})
+
     def test_side_effect_order(self):
         class X:
             def __init__(self):
