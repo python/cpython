@@ -116,7 +116,7 @@ def find_spec(name, package=None):
 # is imported by runpy, which means we want to avoid any unnecessary
 # dependencies.  Thus we use a class.
 
-class allowing_all_extensions:
+class _incompatible_extension_module_restrictions:
     """A context manager that can temporarily skip the compatibility check.
 
     NOTE: This function is meant to accommodate an unusual case; one

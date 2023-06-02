@@ -653,7 +653,7 @@ class MagicNumberTests(unittest.TestCase):
 
 
 @unittest.skipIf(_interpreters is None, 'subinterpreters required')
-class AllowingAllExtensionsTests(unittest.TestCase):
+class IncompatibleExtensionModuleRestrictionsTests(unittest.TestCase):
 
     ERROR = re.compile("^<class 'ImportError'>: module (.*) does not support loading in subinterpreters")
 
@@ -679,7 +679,7 @@ class AllowingAllExtensionsTests(unittest.TestCase):
     def test_single_phase_init_module(self):
         script = textwrap.dedent('''
             import importlib.util
-            with importlib.util.allowing_all_extensions(True):
+            with importlib.util._incompatible_extension_module_restrictions(True):
                 import _testsinglephase
             ''')
         with self.subTest('check disabled, shared GIL'):
@@ -689,7 +689,7 @@ class AllowingAllExtensionsTests(unittest.TestCase):
 
         script = textwrap.dedent(f'''
             import importlib.util
-            with importlib.util.allowing_all_extensions(False):
+            with importlib.util._incompatible_extension_module_restrictions(False):
                 import _testsinglephase
             ''')
         with self.subTest('check enabled, shared GIL'):
@@ -701,7 +701,7 @@ class AllowingAllExtensionsTests(unittest.TestCase):
 
         script = textwrap.dedent(f'''
             import importlib.util
-            with importlib.util.allowing_all_extensions():
+            with importlib.util._incompatible_extension_module_restrictions():
                 import _testsinglephase
             ''')
         with self.subTest('check enabled (default)'):
@@ -723,7 +723,7 @@ class AllowingAllExtensionsTests(unittest.TestCase):
 
         script = prescript + textwrap.dedent('''
             import importlib.util
-            with importlib.util.allowing_all_extensions(True):
+            with importlib.util._incompatible_extension_module_restrictions(True):
                 module = module_from_spec(spec)
                 loader.exec_module(module)
             ''')
@@ -734,7 +734,7 @@ class AllowingAllExtensionsTests(unittest.TestCase):
 
         script = prescript + textwrap.dedent('''
             import importlib.util
-            with importlib.util.allowing_all_extensions(False):
+            with importlib.util._incompatible_extension_module_restrictions(False):
                 module = module_from_spec(spec)
                 loader.exec_module(module)
             ''')
@@ -748,7 +748,7 @@ class AllowingAllExtensionsTests(unittest.TestCase):
     def test_complete_multi_phase_init_module(self):
         script = textwrap.dedent('''
             import importlib.util
-            with importlib.util.allowing_all_extensions(True):
+            with importlib.util._incompatible_extension_module_restrictions(True):
                 import _testmultiphase
             ''')
         with self.subTest('check disabled, shared GIL'):
@@ -758,7 +758,7 @@ class AllowingAllExtensionsTests(unittest.TestCase):
 
         script = textwrap.dedent(f'''
             import importlib.util
-            with importlib.util.allowing_all_extensions(False):
+            with importlib.util._incompatible_extension_module_restrictions(False):
                 import _testmultiphase
             ''')
         with self.subTest('check enabled, shared GIL'):
