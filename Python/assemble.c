@@ -145,6 +145,7 @@ assemble_exception_table(struct assembler *a, instr_sequence *instrs)
     int ioffset = 0;
     _PyCompile_ExceptHandlerInfo handler;
     handler.h_offset = -1;
+    handler.h_startdepth = -1;
     handler.h_preserve_lasti = -1;
     int start = -1;
     for (int i = 0; i < instrs->s_used; i++) {
