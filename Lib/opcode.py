@@ -232,6 +232,9 @@ name_op('LOAD_FROM_DICT_OR_GLOBALS', 175)
 def_op('LOAD_FROM_DICT_OR_DEREF', 176)
 hasfree.append(176)
 
+# Optimizer hook
+def_op('ENTER_EXECUTOR', 230)
+
 # Instrumented instructions
 MIN_INSTRUMENTED_OPCODE = 237
 
@@ -484,6 +487,9 @@ _cache_format = {
         "counter": 1,
     },
     "SEND": {
+        "counter": 1,
+    },
+    "JUMP_BACKWARD": {
         "counter": 1,
     },
 }
