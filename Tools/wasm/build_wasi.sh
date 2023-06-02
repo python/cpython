@@ -17,8 +17,8 @@ export PYTHON_VERSION=`./python -c 'import sys; print(f"{sys.version_info.major}
 popd
 
 # Create the host/WASI Python.
-export CONFIG_SITE="../../Tools/wasm/config.site-wasm32-wasi"
-export HOSTRUNNER="wasmtime run --mapdir /::../.. --env PYTHONPATH=/builddir/wasi/build/lib.wasi-wasm32-$PYTHON_VERSION python.wasm --"
+export CONFIG_SITE="$(pwd)/Tools/wasm/config.site-wasm32-wasi"
+export HOSTRUNNER="wasmtime run --mapdir /::$(pwd) --env PYTHONPATH=/builddir/wasi/build/lib.wasi-wasm32-$PYTHON_VERSION $(pwd)/builddir/wasi/python.wasm --"
 
 mkdir -p builddir/wasi
 pushd builddir/wasi

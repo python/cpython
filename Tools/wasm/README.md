@@ -299,7 +299,7 @@ AddType application/wasm wasm
 ## WASI (wasm32-wasi)
 
 WASI builds require the [WASI SDK](https://github.com/WebAssembly/wasi-sdk) 16.0+.
-See `.devcontainer/devcontainer.json` for an example of how to download and
+See `.devcontainer/Dockerfile` for an example of how to download and
 install the WASI SDK.
 
 ### Build
@@ -308,7 +308,7 @@ The script ``wasi-env`` sets necessary compiler and linker flags as well as
 ``pkg-config`` overrides. The script assumes that WASI-SDK is installed in
 ``/opt/wasi-sdk`` or ``$WASI_SDK_PATH``.
 
-There are two scripts you can use to do a WASI build. You can either use:
+There are two scripts you can use to do a WASI build from a source checkout. You can either use:
 
 ```shell
 ./Tools/wasm/wasm_build.py wasi build
@@ -341,7 +341,7 @@ The commands are equivalent to the following steps:
   - `pushd builddir/wasi`
   - `../../Tools/wasm/wasi-env ../../configure -C --host=wasm32-unknown-wasi --build=$(../../config.guess) --with-build-python=../build/python`
     - `CONFIG_SITE=../../Tools/wasm/config.site-wasm32-wasi`
-    - `HOSTRUNNER="wasmtime run --mapdir /::../.. --env PYTHONPATH=/builddir/wasi/build/lib.wasi-wasm32-$PYTHON_VERSION python.wasm --"`
+    - `HOSTRUNNER="wasmtime run --mapdir /::$(dirname $(dirname $(pwd))) --env PYTHONPATH=/builddir/wasi/build/lib.wasi-wasm32-$PYTHON_VERSION $(pwd)/python.wasm --"`
       - Maps the source checkout to `/` in the WASI runtime
       - Stdlib gets loaded from `/Lib`
       - Gets `_sysconfigdata__wasi_wasm32-wasi.py` on to `sys.path` via `PYTHONPATH`
@@ -365,13 +365,13 @@ The commands are equivalent to the following steps:
 
 ### Running
 
-If you followed the instructions above, you can run the interpreter via e.g., `wasmtime` (make sure to specify/change the `$PYTHON_VERSION` to the major.minor version that you just built):
+If you followed the instructions above, you can run the interpreter via e.g., `wasmtime` from within the `Tools/wasi` directory (make sure to set/change `$PYTHON_VERSION` and do note the paths are relative to running in`builddir/wasi` for simplicity only):
 
 ```shell
 wasmtime run --mapdir /::../.. --env PYTHONPATH=/builddir/wasi/build/lib.wasi-wasm32-$PYTHON_VERSION python.wasm -- <args>
 ```
 
-There are also helpers provided by `Tools/wasm/wasm_build.py` as listed below. Also, if you used `Tools/wasm/build_wasi.sh`, a `run_wasi.sh` file will be created in `builddir/wasi` which will run the above command for you.
+There are also helpers provided by `Tools/wasm/wasm_build.py` as listed below. Also, if you used `Tools/wasm/build_wasi.sh`, a `run_wasi.sh` file will be created in `builddir/wasi` which will run the above command for you (it also uses absolute paths, so it can be executed from anywhere).
 
 #### REPL
 
