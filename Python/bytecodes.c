@@ -31,6 +31,7 @@
 #include "dictobject.h"
 #include "pycore_frame.h"
 #include "opcode.h"
+#include "optimizer.h"
 #include "pydtrace.h"
 #include "setobject.h"
 #include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
@@ -2113,9 +2114,34 @@ dummy_func(
         }
 
         inst(JUMP_BACKWARD, (--)) {
-            assert(oparg < INSTR_OFFSET());
-            JUMPBY(-oparg);
+            _Py_CODEUNIT *here = next_instr - 1;
+            assert(oparg <= INSTR_OFFSET());
+            JUMPBY(1-oparg);
+            #if ENABLE_SPECIALIZATION
+            here[1].cache += (1 << OPTIMIZER_BITS_IN_COUNTER);
+            if (here[1].cache > tstate->interp->optimizer_backedge_threshold) {
+                OBJECT_STAT_INC(optimization_attempts);
+                frame = _PyOptimizer_BackEdge(frame, here, next_instr, stack_pointer);
+                if (frame == NULL) {
+                    frame = cframe.current_frame;
+                    goto error;
+                }
+                here[1].cache &= ((1 << OPTIMIZER_BITS_IN_COUNTER) -1);
+                goto resume_frame;
+            }
+            #endif  /* ENABLE_SPECIALIZATION */
             CHECK_EVAL_BREAKER();
+        }
+
+        inst(ENTER_EXECUTOR, (--)) {
+            _PyExecutorObject *executor = (_PyExecutorObject *)frame->f_code->co_executors->executors[oparg];
+            Py_INCREF(executor);
+            frame = executor->execute(executor, frame, stack_pointer);
+            if (frame == NULL) {
+                frame = cframe.current_frame;
+                goto error;
+            }
+            goto resume_frame;
         }
 
         inst(POP_JUMP_IF_FALSE, (cond -- )) {
@@ -3368,7 +3394,7 @@ dummy_func(
         }
 
         inst(INSTRUMENTED_JUMP_BACKWARD, ( -- )) {
-            INSTRUMENTED_JUMP(next_instr-1, next_instr-oparg, PY_MONITORING_EVENT_JUMP);
+            INSTRUMENTED_JUMP(next_instr-1, next_instr+1-oparg, PY_MONITORING_EVENT_JUMP);
             CHECK_EVAL_BREAKER();
         }
 
