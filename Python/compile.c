@@ -33,7 +33,6 @@
 #include "pycore_compile.h"
 #include "pycore_intrinsics.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
-#include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_symtable.h"      // PySTEntryObject, _PyFuture_FromAST()
 
 #include "opcode_metadata.h"      // _PyOpcode_opcode_metadata, _PyOpcode_num_popped/pushed
@@ -534,11 +533,7 @@ compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
     c->c_optimize = (optimize == -1) ? _Py_GetConfig()->optimization_level : optimize;
     c->c_nestlevel = 0;
 
-    _PyASTOptimizeState state;
-    state.optimize = c->c_optimize;
-    state.ff_features = merged;
-
-    if (!_PyAST_Optimize(mod, arena, &state)) {
+    if (!_PyAST_Optimize(mod, arena, c->c_optimize, merged)) {
         return ERROR;
     }
     c->c_st = _PySymtable_Build(mod, filename, &c->c_future);
@@ -2113,15 +2108,15 @@ wrap_in_stopiteration_handler(struct compiler *c)
 }
 
 static int
-compiler_type_params(struct compiler *c, asdl_typeparam_seq *typeparams)
+compiler_type_params(struct compiler *c, asdl_type_param_seq *type_params)
 {
-    if (!typeparams) {
+    if (!type_params) {
         return SUCCESS;
     }
-    Py_ssize_t n = asdl_seq_LEN(typeparams);
+    Py_ssize_t n = asdl_seq_LEN(type_params);
 
     for (Py_ssize_t i = 0; i < n; i++) {
-        typeparam_ty typeparam = asdl_seq_GET(typeparams, i);
+        type_param_ty typeparam = asdl_seq_GET(type_params, i);
         location loc = LOC(typeparam);
         switch(typeparam->kind) {
         case TypeVar_kind:
@@ -2170,7 +2165,7 @@ compiler_type_params(struct compiler *c, asdl_typeparam_seq *typeparams)
             break;
         }
     }
-    ADDOP_I(c, LOC(asdl_seq_GET(typeparams, 0)), BUILD_TUPLE, n);
+    ADDOP_I(c, LOC(asdl_seq_GET(type_params, 0)), BUILD_TUPLE, n);
     return SUCCESS;
 }
 
@@ -2248,7 +2243,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     expr_ty returns;
     identifier name;
     asdl_expr_seq *decos;
-    asdl_typeparam_seq *typeparams;
+    asdl_type_param_seq *type_params;
     Py_ssize_t funcflags;
     int annotations;
     int firstlineno;
@@ -2260,7 +2255,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         returns = s->v.AsyncFunctionDef.returns;
         decos = s->v.AsyncFunctionDef.decorator_list;
         name = s->v.AsyncFunctionDef.name;
-        typeparams = s->v.AsyncFunctionDef.typeparams;
+        type_params = s->v.AsyncFunctionDef.type_params;
     } else {
         assert(s->kind == FunctionDef_kind);
 
@@ -2268,7 +2263,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         returns = s->v.FunctionDef.returns;
         decos = s->v.FunctionDef.decorator_list;
         name = s->v.FunctionDef.name;
-        typeparams = s->v.FunctionDef.typeparams;
+        type_params = s->v.FunctionDef.type_params;
     }
 
     RETURN_IF_ERROR(compiler_check_debug_args(c, args));
@@ -2281,7 +2276,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
 
     location loc = LOC(s);
 
-    int is_generic = asdl_seq_LEN(typeparams) > 0;
+    int is_generic = asdl_seq_LEN(type_params) > 0;
 
     if (is_generic) {
         // Used by the CALL to the type parameters function.
@@ -2305,17 +2300,17 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         if (num_typeparam_args == 2) {
             ADDOP_I(c, loc, SWAP, 2);
         }
-        PyObject *typeparams_name = PyUnicode_FromFormat("<generic parameters of %U>", name);
-        if (!typeparams_name) {
+        PyObject *type_params_name = PyUnicode_FromFormat("<generic parameters of %U>", name);
+        if (!type_params_name) {
             return ERROR;
         }
-        if (compiler_enter_scope(c, typeparams_name, COMPILER_SCOPE_TYPEPARAMS,
-                                 (void *)typeparams, firstlineno) == -1) {
-            Py_DECREF(typeparams_name);
+        if (compiler_enter_scope(c, type_params_name, COMPILER_SCOPE_TYPEPARAMS,
+                                 (void *)type_params, firstlineno) == -1) {
+            Py_DECREF(type_params_name);
             return ERROR;
         }
-        Py_DECREF(typeparams_name);
-        RETURN_IF_ERROR_IN_SCOPE(c, compiler_type_params(c, typeparams));
+        Py_DECREF(type_params_name);
+        RETURN_IF_ERROR_IN_SCOPE(c, compiler_type_params(c, type_params));
         if ((funcflags & 0x01) || (funcflags & 0x02)) {
             RETURN_IF_ERROR_IN_SCOPE(c, codegen_addop_i(INSTR_SEQUENCE(c), LOAD_FAST, 0, loc));
         }
@@ -2416,8 +2411,8 @@ compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
         compiler_exit_scope(c);
         return ERROR;
     }
-    asdl_typeparam_seq *typeparams = s->v.ClassDef.typeparams;
-    if (asdl_seq_LEN(typeparams) > 0) {
+    asdl_type_param_seq *type_params = s->v.ClassDef.type_params;
+    if (asdl_seq_LEN(type_params) > 0) {
         if (!compiler_set_type_params_in_class(c, loc)) {
             compiler_exit_scope(c);
             return ERROR;
@@ -2486,6 +2481,10 @@ compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
     }
 
     /* 2. load the 'build_class' function */
+
+    // these instructions should be attributed to the class line,
+    // not a decorator line
+    loc = LOC(s);
     ADDOP(c, loc, PUSH_NULL);
     ADDOP(c, loc, LOAD_BUILD_CLASS);
 
@@ -2515,23 +2514,23 @@ compiler_class(struct compiler *c, stmt_ty s)
     }
     location loc = LOC(s);
 
-    asdl_typeparam_seq *typeparams = s->v.ClassDef.typeparams;
-    int is_generic = asdl_seq_LEN(typeparams) > 0;
+    asdl_type_param_seq *type_params = s->v.ClassDef.type_params;
+    int is_generic = asdl_seq_LEN(type_params) > 0;
     if (is_generic) {
         Py_XSETREF(c->u->u_private, Py_NewRef(s->v.ClassDef.name));
         ADDOP(c, loc, PUSH_NULL);
-        PyObject *typeparams_name = PyUnicode_FromFormat("<generic parameters of %U>",
+        PyObject *type_params_name = PyUnicode_FromFormat("<generic parameters of %U>",
                                                          s->v.ClassDef.name);
-        if (!typeparams_name) {
+        if (!type_params_name) {
             return ERROR;
         }
-        if (compiler_enter_scope(c, typeparams_name, COMPILER_SCOPE_TYPEPARAMS,
-                                 (void *)typeparams, firstlineno) == -1) {
-            Py_DECREF(typeparams_name);
+        if (compiler_enter_scope(c, type_params_name, COMPILER_SCOPE_TYPEPARAMS,
+                                 (void *)type_params, firstlineno) == -1) {
+            Py_DECREF(type_params_name);
             return ERROR;
         }
-        Py_DECREF(typeparams_name);
-        RETURN_IF_ERROR_IN_SCOPE(c, compiler_type_params(c, typeparams));
+        Py_DECREF(type_params_name);
+        RETURN_IF_ERROR_IN_SCOPE(c, compiler_type_params(c, type_params));
         _Py_DECLARE_STR(type_params, ".type_params");
         RETURN_IF_ERROR_IN_SCOPE(c, compiler_nameop(c, loc, &_Py_STR(type_params), Store));
     }
@@ -2633,26 +2632,26 @@ static int
 compiler_typealias(struct compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
-    asdl_typeparam_seq *typeparams = s->v.TypeAlias.typeparams;
-    int is_generic = asdl_seq_LEN(typeparams) > 0;
+    asdl_type_param_seq *type_params = s->v.TypeAlias.type_params;
+    int is_generic = asdl_seq_LEN(type_params) > 0;
     PyObject *name = s->v.TypeAlias.name->v.Name.id;
     if (is_generic) {
         ADDOP(c, loc, PUSH_NULL);
-        PyObject *typeparams_name = PyUnicode_FromFormat("<generic parameters of %U>",
+        PyObject *type_params_name = PyUnicode_FromFormat("<generic parameters of %U>",
                                                          name);
-        if (!typeparams_name) {
+        if (!type_params_name) {
             return ERROR;
         }
-        if (compiler_enter_scope(c, typeparams_name, COMPILER_SCOPE_TYPEPARAMS,
-                                 (void *)typeparams, loc.lineno) == -1) {
-            Py_DECREF(typeparams_name);
+        if (compiler_enter_scope(c, type_params_name, COMPILER_SCOPE_TYPEPARAMS,
+                                 (void *)type_params, loc.lineno) == -1) {
+            Py_DECREF(type_params_name);
             return ERROR;
         }
-        Py_DECREF(typeparams_name);
+        Py_DECREF(type_params_name);
         RETURN_IF_ERROR_IN_SCOPE(
             c, compiler_addop_load_const(c->c_const_cache, c->u, loc, name)
         );
-        RETURN_IF_ERROR_IN_SCOPE(c, compiler_type_params(c, typeparams));
+        RETURN_IF_ERROR_IN_SCOPE(c, compiler_type_params(c, type_params));
     }
     else {
         ADDOP_LOAD_CONST(c, loc, name);

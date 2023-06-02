@@ -35,39 +35,20 @@ class TestCPPExt(unittest.TestCase):
     # the test uses venv+pip: skip if it's not available
     @support.requires_venv_with_pip()
     def check_build(self, std_cpp03, extension_name):
-        # Build in a temporary directory
-        with os_helper.temp_cwd():
-            self._check_build(std_cpp03, extension_name)
+        venv_dir = 'env'
+        with support.setup_venv_with_pip_setuptools_wheel(venv_dir) as python_exe:
+            self._check_build(std_cpp03, extension_name, python_exe)
 
-    def _check_build(self, std_cpp03, extension_name):
+    def _check_build(self, std_cpp03, extension_name, python_exe):
         pkg_dir = 'pkg'
         os.mkdir(pkg_dir)
         shutil.copy(SETUP_TESTCPPEXT, os.path.join(pkg_dir, "setup.py"))
-
-        venv_dir = 'env'
-        verbose = support.verbose
-
-        # Create virtual environment to get setuptools
-        cmd = [sys.executable, '-X', 'dev', '-m', 'venv', venv_dir]
-        if verbose:
-            print()
-            print('Run:', ' '.join(cmd))
-        subprocess.run(cmd, check=True)
-
-        # Get the Python executable of the venv
-        python_exe = 'python'
-        if sys.executable.endswith('.exe'):
-            python_exe += '.exe'
-        if MS_WINDOWS:
-            python = os.path.join(venv_dir, 'Scripts', python_exe)
-        else:
-            python = os.path.join(venv_dir, 'bin', python_exe)
 
         def run_cmd(operation, cmd):
             env = os.environ.copy()
             env['CPYTHON_TEST_CPP_STD'] = 'c++03' if std_cpp03 else 'c++11'
             env['CPYTHON_TEST_EXT_NAME'] = extension_name
-            if verbose:
+            if support.verbose:
                 print('Run:', ' '.join(cmd))
                 subprocess.run(cmd, check=True, env=env)
             else:
@@ -81,14 +62,8 @@ class TestCPPExt(unittest.TestCase):
                     self.fail(
                         f"{operation} failed with exit code {proc.returncode}")
 
-        cmd = [python, '-X', 'dev',
-               '-m', 'pip', 'install',
-               support.findfile('setuptools-67.6.1-py3-none-any.whl'),
-               support.findfile('wheel-0.40.0-py3-none-any.whl')]
-        run_cmd('Install build dependencies', cmd)
-
         # Build and install the C++ extension
-        cmd = [python, '-X', 'dev',
+        cmd = [python_exe, '-X', 'dev',
                '-m', 'pip', 'install', '--no-build-isolation',
                os.path.abspath(pkg_dir)]
         run_cmd('Install', cmd)
@@ -96,14 +71,14 @@ class TestCPPExt(unittest.TestCase):
         # Do a reference run. Until we test that running python
         # doesn't leak references (gh-94755), run it so one can manually check
         # -X showrefcount results against this baseline.
-        cmd = [python,
+        cmd = [python_exe,
                '-X', 'dev',
                '-X', 'showrefcount',
                '-c', 'pass']
         run_cmd('Reference run', cmd)
 
         # Import the C++ extension
-        cmd = [python,
+        cmd = [python_exe,
                '-X', 'dev',
                '-X', 'showrefcount',
                '-c', f"import {extension_name}"]
