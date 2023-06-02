@@ -705,6 +705,9 @@
     <ClInclude Include="..\Include\internal\pycore_typeobject.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_typevarobject.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_ucnhash.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -779,7 +782,7 @@
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_SHA1.c">
       <Filter>Modules</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\_hacl\Hacl_Streaming_SHA2.c">
+    <ClCompile Include="..\Modules\_hacl\Hacl_Hash_SHA2.c">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_SHA3.c">
@@ -831,9 +834,6 @@
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\atexitmodule.c">
-      <Filter>Modules</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Modules\audioop.c">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\binascii.c">
@@ -1199,6 +1199,9 @@
     <ClCompile Include="..\Python\mystrtoul.c">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\optimizer.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\pathconfig.c">
       <Filter>Python</Filter>
     </ClCompile>
@@ -1263,6 +1266,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\traceback.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\tracemalloc.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\bootstrap_hash.c">
@@ -1362,6 +1368,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\genericaliasobject.c">
+      <Filter>Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Objects\typevarobject.c">
       <Filter>Objects</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\unionobject.c">

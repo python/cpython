@@ -1731,13 +1731,13 @@ Modules
   slated for removal in Python 3.13:
 
   +---------------------+---------------------+---------------------+---------------------+---------------------+
-  | :mod:`aifc`         | :mod:`chunk`        | :mod:`msilib`       | :mod:`pipes`        | :mod:`telnetlib`    |
+  | :mod:`!aifc`        | :mod:`!chunk`       | :mod:`!msilib`      | :mod:`!pipes`       | :mod:`!telnetlib`   |
   +---------------------+---------------------+---------------------+---------------------+---------------------+
-  | :mod:`audioop`      | :mod:`crypt`        | :mod:`nis`          | :mod:`sndhdr`       | :mod:`uu`           |
+  | :mod:`!audioop`     | :mod:`!crypt`       | :mod:`!nis`         | :mod:`!sndhdr`      | :mod:`!uu`          |
   +---------------------+---------------------+---------------------+---------------------+---------------------+
-  | :mod:`cgi`          | :mod:`imghdr`       | :mod:`nntplib`      | :mod:`spwd`         | :mod:`xdrlib`       |
+  | :mod:`!cgi`         | :mod:`!imghdr`      | :mod:`!nntplib`     | :mod:`!spwd`        | :mod:`!xdrlib`      |
   +---------------------+---------------------+---------------------+---------------------+---------------------+
-  | :mod:`cgitb`        | :mod:`mailcap`      | :mod:`ossaudiodev`  | :mod:`sunau`        |                     |
+  | :mod:`!cgitb`       | :mod:`!mailcap`     | :mod:`!ossaudiodev` | :mod:`!sunau`       |                     |
   +---------------------+---------------------+---------------------+---------------------+---------------------+
 
   (Contributed by Brett Cannon in :issue:`47061` and Victor Stinner in
@@ -1748,7 +1748,7 @@ Modules
   warnings have now been updated to note they will be removed in Python 3.12.
   (Contributed by Hugo van Kemenade in :issue:`47022`.)
 
-* The :mod:`lib2to3` package and :ref:`2to3 <2to3-reference>` tool
+* The :mod:`!lib2to3` package and ``2to3`` tool
   are now deprecated and may not be able to parse Python 3.10 or newer.
   See :pep:`617`, introducing the new PEG parser, for details.
   (Contributed by Victor Stinner in :issue:`40360`.)
@@ -1817,7 +1817,7 @@ Standard Library
   They will be removed in Python 3.13.
   (Contributed by Serhiy Storchaka and Miro Hrončok in :gh:`92728`.)
 
-* :func:`turtle.settiltangle` has been deprecated since Python 3.1;
+* :func:`!turtle.settiltangle` has been deprecated since Python 3.1;
   it now emits a deprecation warning and will be removed in Python 3.13. Use
   :func:`turtle.tiltangle` instead (it was earlier incorrectly marked
   as deprecated, and its docstring is now corrected).
@@ -1855,6 +1855,10 @@ Standard Library
   * :meth:`unittest.TestLoader.getTestCaseNames`
 
   (Contributed by Erlend E. Aasland in :issue:`5846`.)
+
+* :meth:`~!unittest.TestProgram.usageExit` is marked deprecated, to be removed
+  in 3.13.
+  (Contributed by Carlos Damázio in :gh:`67048`.)
 
 
 .. _whatsnew311-pending-removal:

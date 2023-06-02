@@ -42,6 +42,7 @@ const uint8_t _PyOpcode_Caches[256] = {
     [LOAD_GLOBAL] = 4,
     [BINARY_OP] = 1,
     [SEND] = 1,
+    [JUMP_BACKWARD] = 1,
     [LOAD_SUPER_ATTR] = 1,
     [CALL] = 3,
 };
@@ -114,6 +115,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [END_ASYNC_FOR] = END_ASYNC_FOR,
     [END_FOR] = END_FOR,
     [END_SEND] = END_SEND,
+    [ENTER_EXECUTOR] = ENTER_EXECUTOR,
     [EXTENDED_ARG] = EXTENDED_ARG,
     [FORMAT_VALUE] = FORMAT_VALUE,
     [FOR_ITER] = FOR_ITER,
@@ -138,6 +140,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [INSTRUMENTED_JUMP_BACKWARD] = INSTRUMENTED_JUMP_BACKWARD,
     [INSTRUMENTED_JUMP_FORWARD] = INSTRUMENTED_JUMP_FORWARD,
     [INSTRUMENTED_LINE] = INSTRUMENTED_LINE,
+    [INSTRUMENTED_LOAD_SUPER_ATTR] = INSTRUMENTED_LOAD_SUPER_ATTR,
     [INSTRUMENTED_POP_JUMP_IF_FALSE] = INSTRUMENTED_POP_JUMP_IF_FALSE,
     [INSTRUMENTED_POP_JUMP_IF_NONE] = INSTRUMENTED_POP_JUMP_IF_NONE,
     [INSTRUMENTED_POP_JUMP_IF_NOT_NONE] = INSTRUMENTED_POP_JUMP_IF_NOT_NONE,
@@ -167,7 +170,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [LOAD_ATTR_SLOT] = LOAD_ATTR,
     [LOAD_ATTR_WITH_HINT] = LOAD_ATTR,
     [LOAD_BUILD_CLASS] = LOAD_BUILD_CLASS,
-    [LOAD_CLASSDEREF] = LOAD_CLASSDEREF,
     [LOAD_CLOSURE] = LOAD_CLOSURE,
     [LOAD_CONST] = LOAD_CONST,
     [LOAD_CONST__LOAD_FAST] = LOAD_CONST,
@@ -177,9 +179,12 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [LOAD_FAST_CHECK] = LOAD_FAST_CHECK,
     [LOAD_FAST__LOAD_CONST] = LOAD_FAST,
     [LOAD_FAST__LOAD_FAST] = LOAD_FAST,
+    [LOAD_FROM_DICT_OR_DEREF] = LOAD_FROM_DICT_OR_DEREF,
+    [LOAD_FROM_DICT_OR_GLOBALS] = LOAD_FROM_DICT_OR_GLOBALS,
     [LOAD_GLOBAL] = LOAD_GLOBAL,
     [LOAD_GLOBAL_BUILTIN] = LOAD_GLOBAL,
     [LOAD_GLOBAL_MODULE] = LOAD_GLOBAL,
+    [LOAD_LOCALS] = LOAD_LOCALS,
     [LOAD_NAME] = LOAD_NAME,
     [LOAD_SUPER_ATTR] = LOAD_SUPER_ATTR,
     [LOAD_SUPER_ATTR_ATTR] = LOAD_SUPER_ATTR,
@@ -329,8 +334,8 @@ static const char *const _PyOpcode_OpName[267] = {
     [LOAD_CONST__LOAD_FAST] = "LOAD_CONST__LOAD_FAST",
     [SETUP_ANNOTATIONS] = "SETUP_ANNOTATIONS",
     [LOAD_FAST__LOAD_CONST] = "LOAD_FAST__LOAD_CONST",
+    [LOAD_LOCALS] = "LOAD_LOCALS",
     [LOAD_FAST__LOAD_FAST] = "LOAD_FAST__LOAD_FAST",
-    [LOAD_GLOBAL_BUILTIN] = "LOAD_GLOBAL_BUILTIN",
     [POP_EXCEPT] = "POP_EXCEPT",
     [STORE_NAME] = "STORE_NAME",
     [DELETE_NAME] = "DELETE_NAME",
@@ -353,9 +358,9 @@ static const char *const _PyOpcode_OpName[267] = {
     [IMPORT_NAME] = "IMPORT_NAME",
     [IMPORT_FROM] = "IMPORT_FROM",
     [JUMP_FORWARD] = "JUMP_FORWARD",
+    [LOAD_GLOBAL_BUILTIN] = "LOAD_GLOBAL_BUILTIN",
     [LOAD_GLOBAL_MODULE] = "LOAD_GLOBAL_MODULE",
     [STORE_ATTR_INSTANCE_VALUE] = "STORE_ATTR_INSTANCE_VALUE",
-    [STORE_ATTR_SLOT] = "STORE_ATTR_SLOT",
     [POP_JUMP_IF_FALSE] = "POP_JUMP_IF_FALSE",
     [POP_JUMP_IF_TRUE] = "POP_JUMP_IF_TRUE",
     [LOAD_GLOBAL] = "LOAD_GLOBAL",
@@ -390,7 +395,7 @@ static const char *const _PyOpcode_OpName[267] = {
     [LIST_APPEND] = "LIST_APPEND",
     [SET_ADD] = "SET_ADD",
     [MAP_ADD] = "MAP_ADD",
-    [LOAD_CLASSDEREF] = "LOAD_CLASSDEREF",
+    [STORE_ATTR_SLOT] = "STORE_ATTR_SLOT",
     [COPY_FREE_VARS] = "COPY_FREE_VARS",
     [YIELD_VALUE] = "YIELD_VALUE",
     [RESUME] = "RESUME",
@@ -417,8 +422,8 @@ static const char *const _PyOpcode_OpName[267] = {
     [KW_NAMES] = "KW_NAMES",
     [CALL_INTRINSIC_1] = "CALL_INTRINSIC_1",
     [CALL_INTRINSIC_2] = "CALL_INTRINSIC_2",
-    [175] = "<175>",
-    [176] = "<176>",
+    [LOAD_FROM_DICT_OR_GLOBALS] = "LOAD_FROM_DICT_OR_GLOBALS",
+    [LOAD_FROM_DICT_OR_DEREF] = "LOAD_FROM_DICT_OR_DEREF",
     [177] = "<177>",
     [178] = "<178>",
     [179] = "<179>",
@@ -472,14 +477,14 @@ static const char *const _PyOpcode_OpName[267] = {
     [227] = "<227>",
     [228] = "<228>",
     [229] = "<229>",
-    [230] = "<230>",
+    [ENTER_EXECUTOR] = "ENTER_EXECUTOR",
     [231] = "<231>",
     [232] = "<232>",
     [233] = "<233>",
     [234] = "<234>",
     [235] = "<235>",
     [236] = "<236>",
-    [237] = "<237>",
+    [INSTRUMENTED_LOAD_SUPER_ATTR] = "INSTRUMENTED_LOAD_SUPER_ATTR",
     [INSTRUMENTED_POP_JUMP_IF_NONE] = "INSTRUMENTED_POP_JUMP_IF_NONE",
     [INSTRUMENTED_POP_JUMP_IF_NOT_NONE] = "INSTRUMENTED_POP_JUMP_IF_NOT_NONE",
     [INSTRUMENTED_RESUME] = "INSTRUMENTED_RESUME",
@@ -515,8 +520,6 @@ static const char *const _PyOpcode_OpName[267] = {
 #define EXTRA_CASES \
     case 169: \
     case 170: \
-    case 175: \
-    case 176: \
     case 177: \
     case 178: \
     case 179: \
@@ -570,14 +573,12 @@ static const char *const _PyOpcode_OpName[267] = {
     case 227: \
     case 228: \
     case 229: \
-    case 230: \
     case 231: \
     case 232: \
     case 233: \
     case 234: \
     case 235: \
     case 236: \
-    case 237: \
     case 255: \
         ;
 

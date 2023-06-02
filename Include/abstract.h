@@ -135,12 +135,6 @@ extern "C" {
    This function always succeeds. */
 
 
-#ifdef PY_SSIZE_T_CLEAN
-#  define PyObject_CallFunction _PyObject_CallFunction_SizeT
-#  define PyObject_CallMethod _PyObject_CallMethod_SizeT
-#endif
-
-
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000
 /* Call a callable Python object without any arguments */
 PyAPI_FUNC(PyObject *) PyObject_CallNoArgs(PyObject *func);
@@ -194,15 +188,6 @@ PyAPI_FUNC(PyObject *) PyObject_CallFunction(PyObject *callable,
 PyAPI_FUNC(PyObject *) PyObject_CallMethod(PyObject *obj,
                                            const char *name,
                                            const char *format, ...);
-
-PyAPI_FUNC(PyObject *) _PyObject_CallFunction_SizeT(PyObject *callable,
-                                                    const char *format,
-                                                    ...);
-
-PyAPI_FUNC(PyObject *) _PyObject_CallMethod_SizeT(PyObject *obj,
-                                                  const char *name,
-                                                  const char *format,
-                                                  ...);
 
 /* Call a callable Python object 'callable' with a variable number of C
    arguments. The C arguments are provided as PyObject* values, terminated
@@ -334,55 +319,6 @@ PyAPI_FUNC(int) PyObject_DelItemString(PyObject *o, const char *key);
    This is the equivalent of the Python statement: del o[key]. */
 PyAPI_FUNC(int) PyObject_DelItem(PyObject *o, PyObject *key);
 
-
-/* === Old Buffer API ============================================ */
-
-/* FIXME:  usage of these should all be replaced in Python itself
-   but for backwards compatibility we will implement them.
-   Their usage without a corresponding "unlock" mechanism
-   may create issues (but they would already be there). */
-
-/* Takes an arbitrary object which must support the (character, single segment)
-   buffer interface and returns a pointer to a read-only memory location
-   usable as character based input for subsequent processing.
-
-   Return 0 on success.  buffer and buffer_len are only set in case no error
-   occurs. Otherwise, -1 is returned and an exception set. */
-Py_DEPRECATED(3.0)
-PyAPI_FUNC(int) PyObject_AsCharBuffer(PyObject *obj,
-                                      const char **buffer,
-                                      Py_ssize_t *buffer_len);
-
-/* Checks whether an arbitrary object supports the (character, single segment)
-   buffer interface.
-
-   Returns 1 on success, 0 on failure. */
-Py_DEPRECATED(3.0) PyAPI_FUNC(int) PyObject_CheckReadBuffer(PyObject *obj);
-
-/* Same as PyObject_AsCharBuffer() except that this API expects (readable,
-   single segment) buffer interface and returns a pointer to a read-only memory
-   location which can contain arbitrary data.
-
-   0 is returned on success.  buffer and buffer_len are only set in case no
-   error occurs.  Otherwise, -1 is returned and an exception set. */
-Py_DEPRECATED(3.0)
-PyAPI_FUNC(int) PyObject_AsReadBuffer(PyObject *obj,
-                                      const void **buffer,
-                                      Py_ssize_t *buffer_len);
-
-/* Takes an arbitrary object which must support the (writable, single segment)
-   buffer interface and returns a pointer to a writable memory location in
-   buffer of size 'buffer_len'.
-
-   Return 0 on success.  buffer and buffer_len are only set in case no error
-   occurs. Otherwise, -1 is returned and an exception set. */
-Py_DEPRECATED(3.0)
-PyAPI_FUNC(int) PyObject_AsWriteBuffer(PyObject *obj,
-                                       void **buffer,
-                                       Py_ssize_t *buffer_len);
-
-
-/* === New Buffer API ============================================ */
 
 /* Takes an arbitrary object and returns the result of calling
    obj.__format__(format_spec). */

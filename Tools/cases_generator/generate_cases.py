@@ -489,6 +489,7 @@ class MacroInstruction(SuperOrMacroInstruction):
 
     macro: parser.Macro
     parts: list[Component | parser.CacheEffect]
+    predicted: bool = False
 
 
 @dataclasses.dataclass
@@ -633,8 +634,8 @@ class Analyzer:
 
         Raises SystemExit if there is an error.
         """
-        self.find_predictions()
         self.analyze_supers_and_macros()
+        self.find_predictions()
         self.map_families()
         self.check_families()
 
@@ -648,6 +649,8 @@ class Analyzer:
             for target in targets:
                 if target_instr := self.instrs.get(target):
                     target_instr.predicted = True
+                elif target_macro := self.macro_instrs.get(target):
+                    target_macro.predicted = True
                 else:
                     self.error(
                         f"Unknown instruction {target!r} predicted in {instr.name!r}",
@@ -896,6 +899,7 @@ class Analyzer:
                     pushed = ""
             case parser.Super():
                 instr = self.super_instrs[thing.name]
+                # TODO: Same as for Macro below, if needed.
                 popped = "+".join(
                     effect_str(comp.instr.input_effects) for comp in instr.parts
                 )
@@ -905,12 +909,30 @@ class Analyzer:
             case parser.Macro():
                 instr = self.macro_instrs[thing.name]
                 parts = [comp for comp in instr.parts if isinstance(comp, Component)]
-                popped = "+".join(
-                    effect_str(comp.instr.input_effects) for comp in parts
-                )
-                pushed = "+".join(
-                    effect_str(comp.instr.output_effects) for comp in parts
-                )
+                # Note: stack_analysis() already verifies that macro components
+                # have no variable-sized stack effects.
+                low = 0
+                sp = 0
+                high = 0
+                for comp in parts:
+                    for effect in comp.instr.input_effects:
+                        assert not effect.cond, effect
+                        assert not effect.size, effect
+                        sp -= 1
+                        low = min(low, sp)
+                    for effect in comp.instr.output_effects:
+                        assert not effect.cond, effect
+                        assert not effect.size, effect
+                        sp += 1
+                        high = max(sp, high)
+                if high != max(0, sp):
+                    # If you get this, intermediate stack growth occurs,
+                    # and stack size calculations may go awry.
+                    # E.g. [push, pop]. The fix would be for stack size
+                    # calculations to use the micro ops.
+                    self.error("Macro has virtual stack growth", thing)
+                popped = str(-low)
+                pushed = str(sp - low)
             case _:
                 typing.assert_never(thing)
         return instr, popped, pushed
@@ -1152,6 +1174,9 @@ class Analyzer:
         # outer block, rather than trusting the compiler to optimize it.
         self.out.emit("")
         with self.out.block(f"TARGET({up.name})"):
+            match up:
+                case MacroInstruction(predicted=True, name=name):
+                    self.out.emit(f"PREDICTED({name});")
             for i, var in reversed(list(enumerate(up.stack))):
                 src = None
                 if i < up.initial_sp:

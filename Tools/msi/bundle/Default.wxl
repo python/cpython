@@ -112,10 +112,10 @@ See &lt;a href="https://docs.python.org/[ShortVersion]/whatsnew/[ShortVersion].h
   <String Id="SuccessModifyMessage">Thank you for using [WixBundleName].</String>
   <String Id="SuccessRepairMessage">Thank you for using [WixBundleName].
 
-Feel free to email &lt;a href="mailto:python-list@python.org"&gt;python-list@python.org&lt;/a&gt; if you continue to encounter issues.</String>
+Feel free to post at &lt;a href="https://discuss.python.org/c/users/7"&gt;discuss.python.org&lt;/a&gt; if you continue to encounter issues.</String>
   <String Id="SuccessRemoveMessage">Thank you for using [WixBundleName].
 
-Feel free to email &lt;a href="mailto:python-list@python.org"&gt;python-list@python.org&lt;/a&gt; if you encountered problems.</String>
+Feel free to post at &lt;a href="https://discuss.python.org/c/users/7"&gt;discuss.python.org&lt;/a&gt; if you encountered problems.</String>
   <String Id="FailureHeader">Setup failed</String>
   <String Id="FailureHyperlinkLogText">One or more issues caused the setup to fail. Please fix the issues and then retry setup. For more information see the &lt;a href="#"&gt;log file&lt;/a&gt;.</String>
   <String Id="FailureRestartText">You must restart your computer to complete the rollback of the software.</String>
@@ -123,7 +123,7 @@ Feel free to email &lt;a href="mailto:python-list@python.org"&gt;python-list@pyt
   <String Id="FailureExistingInstall">Unable to install [WixBundleName] due to an existing install. Use Programs and Features to modify, repair or remove [WixBundleName].</String>
   <String Id="FailureOldOS">At least Windows 8.1 or Windows Server 2012 are required to install [WixBundleName]
 
-Visit &lt;a href="https://www.python.org/"&gt;python.org&lt;/a&gt; to download an earlier version of Python.</String>
+Visit &lt;a href="https://www.python.org/downloads/"&gt;python.org&lt;/a&gt; to download an earlier version of Python.</String>
   <String Id="SuccessMaxPathButton">Disable path length limit</String>
   <String Id="SuccessMaxPathButtonNote">Changes your machine configuration to allow programs, including Python, to bypass the 260 character "MAX_PATH" limitation.</String>
 </WixLocalization>

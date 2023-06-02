@@ -1242,6 +1242,14 @@ def getblock(lines):
             blockfinder.tokeneater(*_token)
     except (EndOfBlock, IndentationError):
         pass
+    except SyntaxError as e:
+        if "unmatched" not in e.msg:
+            raise e from None
+        _, *_token_info = _token
+        try:
+            blockfinder.tokeneater(tokenize.NEWLINE, *_token_info)
+        except (EndOfBlock, IndentationError):
+            pass
     return lines[:blockfinder.last]
 
 def getsourcelines(object):
@@ -1835,8 +1843,10 @@ def getattr_static(obj, attr, default=_sentinel):
     klass_result = _check_class(klass, attr)
 
     if instance_result is not _sentinel and klass_result is not _sentinel:
-        if (_check_class(type(klass_result), '__get__') is not _sentinel and
-            _check_class(type(klass_result), '__set__') is not _sentinel):
+        if _check_class(type(klass_result), "__get__") is not _sentinel and (
+            _check_class(type(klass_result), "__set__") is not _sentinel
+            or _check_class(type(klass_result), "__delete__") is not _sentinel
+        ):
             return klass_result
 
     if instance_result is not _sentinel:
@@ -2185,7 +2195,7 @@ def _signature_strip_non_python_syntax(signature):
             if string == ',':
                 current_parameter += 1
 
-        if (type == ERRORTOKEN) and (string == '$'):
+        if (type == OP) and (string == '$'):
             assert self_parameter is None
             self_parameter = current_parameter
             continue
@@ -2193,7 +2203,7 @@ def _signature_strip_non_python_syntax(signature):
         add(string)
         if (string == ','):
             add(' ')
-    clean_signature = ''.join(text)
+    clean_signature = ''.join(text).strip().replace("\n", "")
     return clean_signature, self_parameter
 
 
