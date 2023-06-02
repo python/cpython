@@ -822,6 +822,22 @@ iframe_getlasti(PyObject *self, PyObject *frame)
     return PyLong_FromLong(PyUnstable_InterpreterFrame_GetLasti(f));
 }
 
+static PyObject *
+get_counter_optimizer(PyObject *self, PyObject *arg)
+{
+    return PyUnstable_Optimizer_NewCounter();
+}
+
+static PyObject *
+set_optimizer(PyObject *self, PyObject *opt)
+{
+    if (opt == Py_None) {
+        opt = NULL;
+    }
+    PyUnstable_SetOptimizer((_PyOptimizerObject*)opt);
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -850,6 +866,8 @@ static PyMethodDef module_functions[] = {
     {"iframe_getcode", iframe_getcode, METH_O, NULL},
     {"iframe_getline", iframe_getline, METH_O, NULL},
     {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
+    {"set_optimizer", set_optimizer,  METH_O, NULL},
+    {"get_counter_optimizer", get_counter_optimizer, METH_NOARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
 
