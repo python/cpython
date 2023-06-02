@@ -67,7 +67,7 @@ Printing and clearing
    of this exception, respectively.
 
    .. versionchanged:: 3.12
-      :data:`sys.last_exc` was added.
+      The setting of :data:`sys.last_exc` was added.
 
 
 .. c:function:: void PyErr_Print()
