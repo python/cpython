@@ -13,7 +13,6 @@
 #include "pycore_bytesobject.h"   // _PyBytes_Repeat
 #include "structmember.h"         // PyMemberDef
 #include <stddef.h>               // offsetof()
-#include <stddef.h>
 
 /*[clinic input]
 module array
@@ -1831,10 +1830,10 @@ typecode_to_mformat_code(char typecode)
         return UNSIGNED_INT8;
 
     case 'u':
-        if (sizeof(Py_UNICODE) == 2) {
+        if (sizeof(wchar_t) == 2) {
             return UTF16_LE + is_big_endian;
         }
-        if (sizeof(Py_UNICODE) == 4) {
+        if (sizeof(wchar_t) == 4) {
             return UTF32_LE + is_big_endian;
         }
         return UNKNOWN_FORMAT;
@@ -3112,6 +3111,7 @@ array_modexec(PyObject *m)
 
 static PyModuleDef_Slot arrayslots[] = {
     {Py_mod_exec, array_modexec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

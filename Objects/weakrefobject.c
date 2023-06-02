@@ -170,10 +170,7 @@ weakref_repr(PyWeakReference *self)
     }
 
     Py_INCREF(obj);
-    if (_PyObject_LookupAttr(obj, &_Py_ID(__name__), &name) < 0) {
-        Py_DECREF(obj);
-        return NULL;
-    }
+    name = _PyObject_LookupSpecial(obj, &_Py_ID(__name__));
     if (name == NULL || !PyUnicode_Check(name)) {
         repr = PyUnicode_FromFormat(
             "<weakref at %p; to '%s' at %p>",
@@ -959,9 +956,8 @@ PyObject_ClearWeakRefs(PyObject *object)
     if (*list != NULL) {
         PyWeakReference *current = *list;
         Py_ssize_t count = _PyWeakref_GetWeakrefCount(current);
-        PyObject *err_type, *err_value, *err_tb;
+        PyObject *exc = PyErr_GetRaisedException();
 
-        PyErr_Fetch(&err_type, &err_value, &err_tb);
         if (count == 1) {
             PyObject *callback = current->wr_callback;
 
@@ -980,7 +976,7 @@ PyObject_ClearWeakRefs(PyObject *object)
 
             tuple = PyTuple_New(count * 2);
             if (tuple == NULL) {
-                _PyErr_ChainExceptions(err_type, err_value, err_tb);
+                _PyErr_ChainExceptions1(exc);
                 return;
             }
 
@@ -1010,7 +1006,7 @@ PyObject_ClearWeakRefs(PyObject *object)
             Py_DECREF(tuple);
         }
         assert(!PyErr_Occurred());
-        PyErr_Restore(err_type, err_value, err_tb);
+        PyErr_SetRaisedException(exc);
     }
 }
 
@@ -1021,9 +1017,9 @@ PyObject_ClearWeakRefs(PyObject *object)
  * or anything else.
  */
 void
-_PyStaticType_ClearWeakRefs(PyTypeObject *type)
+_PyStaticType_ClearWeakRefs(PyInterpreterState *interp, PyTypeObject *type)
 {
-    static_builtin_state *state = _PyStaticType_GetState(type);
+    static_builtin_state *state = _PyStaticType_GetState(interp, type);
     PyObject **list = _PyStaticType_GET_WEAKREFS_LISTPTR(state);
     while (*list != NULL) {
         /* Note that clear_weakref() pops the first ref off the type's

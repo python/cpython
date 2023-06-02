@@ -882,10 +882,16 @@ class PyLongObjectPtr(PyObjectPtr):
     def proxyval(self, visited):
         '''
         Python's Include/longobjrep.h has this declaration:
-           struct _longobject {
-               PyObject_VAR_HEAD
-               digit ob_digit[1];
-           };
+
+            typedef struct _PyLongValue {
+                uintptr_t lv_tag; /* Number of digits, sign and flags */
+                digit ob_digit[1];
+            } _PyLongValue;
+
+            struct _longobject {
+                PyObject_HEAD
+               _PyLongValue long_value;
+            };
 
         with this description:
             The absolute value of a number is equal to
@@ -897,11 +903,13 @@ class PyLongObjectPtr(PyObjectPtr):
             #define PyLong_SHIFT        30
             #define PyLong_SHIFT        15
         '''
-        ob_size = int(self.field('ob_size'))
-        if ob_size == 0:
+        long_value = self.field('long_value')
+        lv_tag = int(long_value['lv_tag'])
+        size = lv_tag >> 3
+        if size == 0:
             return 0
 
-        ob_digit = self.field('ob_digit')
+        ob_digit = long_value['ob_digit']
 
         if gdb.lookup_type('digit').sizeof == 2:
             SHIFT = 15
@@ -909,9 +917,9 @@ class PyLongObjectPtr(PyObjectPtr):
             SHIFT = 30
 
         digits = [int(ob_digit[i]) * 2**(SHIFT*i)
-                  for i in safe_range(abs(ob_size))]
+                  for i in safe_range(size)]
         result = sum(digits)
-        if ob_size < 0:
+        if (lv_tag & 3) == 2:
             result = -result
         return result
 
@@ -1382,10 +1390,6 @@ def _unichr_is_printable(char):
 class PyUnicodeObjectPtr(PyObjectPtr):
     _typename = 'PyUnicodeObject'
 
-    def char_width(self):
-        _type_Py_UNICODE = gdb.lookup_type('Py_UNICODE')
-        return _type_Py_UNICODE.sizeof
-
     def proxyval(self, visited):
         compact = self.field('_base')
         ascii = compact['_base']
@@ -1406,13 +1410,13 @@ class PyUnicodeObjectPtr(PyObjectPtr):
         elif repr_kind == 4:
             field_str = field_str.cast(_type_unsigned_int_ptr())
 
-        # Gather a list of ints from the Py_UNICODE array; these are either
+        # Gather a list of ints from the code point array; these are either
         # UCS-1, UCS-2 or UCS-4 code points:
-        Py_UNICODEs = [int(field_str[i]) for i in safe_range(field_length)]
+        code_points = [int(field_str[i]) for i in safe_range(field_length)]
 
         # Convert the int code points to unicode characters, and generate a
         # local unicode instance.
-        result = u''.join(map(chr, Py_UNICODEs))
+        result = u''.join(map(chr, code_points))
         return result
 
     def write_repr(self, out, visited):

@@ -10,6 +10,7 @@ import itertools
 import gc
 import contextlib
 import sys
+import types
 
 
 class BadStr(str):
@@ -202,6 +203,37 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         msg = r"count\(\) takes no keyword arguments"
         self.assertRaisesRegex(TypeError, msg, [].count, x=2, y=2)
 
+    def test_object_not_callable(self):
+        msg = r"^'object' object is not callable$"
+        self.assertRaisesRegex(TypeError, msg, object())
+
+    def test_module_not_callable_no_suggestion_0(self):
+        msg = r"^'module' object is not callable$"
+        self.assertRaisesRegex(TypeError, msg, types.ModuleType("mod"))
+
+    def test_module_not_callable_no_suggestion_1(self):
+        msg = r"^'module' object is not callable$"
+        mod = types.ModuleType("mod")
+        mod.mod = 42
+        self.assertRaisesRegex(TypeError, msg, mod)
+
+    def test_module_not_callable_no_suggestion_2(self):
+        msg = r"^'module' object is not callable$"
+        mod = types.ModuleType("mod")
+        del mod.__name__
+        self.assertRaisesRegex(TypeError, msg, mod)
+
+    def test_module_not_callable_no_suggestion_3(self):
+        msg = r"^'module' object is not callable$"
+        mod = types.ModuleType("mod")
+        mod.__name__ = 42
+        self.assertRaisesRegex(TypeError, msg, mod)
+
+    def test_module_not_callable_suggestion(self):
+        msg = r"^'module' object is not callable\. Did you mean: 'mod\.mod\(\.\.\.\)'\?$"
+        mod = types.ModuleType("mod")
+        mod.mod = lambda: ...
+        self.assertRaisesRegex(TypeError, msg, mod)
 
 
 class TestCallingConventions(unittest.TestCase):
@@ -933,6 +965,36 @@ class TestRecursion(unittest.TestCase):
                 c_py_recurse(100_000)
         finally:
             sys.setrecursionlimit(depth)
+
+
+class TestFunctionWithManyArgs(unittest.TestCase):
+    def test_function_with_many_args(self):
+        for N in (10, 500, 1000):
+            with self.subTest(N=N):
+                args = ",".join([f"a{i}" for i in range(N)])
+                src = f"def f({args}) : return a{N//2}"
+                l = {}
+                exec(src, {}, l)
+                self.assertEqual(l['f'](*range(N)), N//2)
+
+
+@unittest.skipIf(_testcapi is None, 'need _testcapi')
+class TestCAPI(unittest.TestCase):
+    def test_cfunction_call(self):
+        def func(*args, **kwargs):
+            return (args, kwargs)
+
+        # PyCFunction_Call() was removed in Python 3.13 API, but was kept in
+        # the stable ABI.
+        def PyCFunction_Call(func, *args, **kwargs):
+            if kwargs:
+                return _testcapi.pycfunction_call(func, args, kwargs)
+            else:
+                return _testcapi.pycfunction_call(func, args)
+
+        self.assertEqual(PyCFunction_Call(func), ((), {}))
+        self.assertEqual(PyCFunction_Call(func, 1, 2, 3), ((1, 2, 3), {}))
+        self.assertEqual(PyCFunction_Call(func, "arg", num=5), (("arg",), {'num': 5}))
 
 
 if __name__ == "__main__":

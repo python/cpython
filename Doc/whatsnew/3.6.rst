@@ -238,7 +238,7 @@ and the ``__annotations__`` attribute.
       and Guido van Rossum. Implemented by Ivan Levkivskyi.
 
    Tools that use or will use the new syntax:
-   `mypy <http://www.mypy-lang.org/>`_,
+   `mypy <https://www.mypy-lang.org/>`_,
    `pytype <https://github.com/google/pytype>`_, PyCharm, etc.
 
 
@@ -1520,7 +1520,7 @@ rather than the version that is being emulated for the process
 telnetlib
 ---------
 
-:class:`~telnetlib.Telnet` is now a context manager (contributed by
+:class:`!telnetlib.Telnet` is now a context manager (contributed by
 Stéphane Wirtel in :issue:`25485`).
 
 
@@ -2049,7 +2049,7 @@ of OpenSSL. Other features are deprecated in favor of a different API.
 tkinter
 ~~~~~~~
 
-The :mod:`tkinter.tix` module is now deprecated.  :mod:`tkinter` users
+The :mod:`!tkinter.tix` module is now deprecated.  :mod:`tkinter` users
 should use :mod:`tkinter.ttk` instead.
 
 .. _whatsnew36-venv:
@@ -2180,12 +2180,12 @@ Changes in the Python API
   now raises :exc:`ValueError` for out-of-range values, rather than
   returning :const:`None`.  See :issue:`20059`.
 
-* The :mod:`imp` module now raises a :exc:`DeprecationWarning` instead of
+* The :mod:`!imp` module now raises a :exc:`DeprecationWarning` instead of
   :exc:`PendingDeprecationWarning`.
 
 * The following modules have had missing APIs added to their :attr:`__all__`
   attributes to match the documented APIs:
-  :mod:`calendar`, :mod:`cgi`, :mod:`csv`,
+  :mod:`calendar`, :mod:`!cgi`, :mod:`csv`,
   :mod:`~xml.etree.ElementTree`, :mod:`enum`,
   :mod:`fileinput`, :mod:`ftplib`, :mod:`logging`, :mod:`mailbox`,
   :mod:`mimetypes`, :mod:`optparse`, :mod:`plistlib`, :mod:`smtpd`,
@@ -2211,7 +2211,7 @@ Changes in the Python API
   the exception will stop a single-threaded server. (Contributed by
   Martin Panter in :issue:`23430`.)
 
-* :func:`spwd.getspnam` now raises a :exc:`PermissionError` instead of
+* :func:`!spwd.getspnam` now raises a :exc:`PermissionError` instead of
   :exc:`KeyError` if the user doesn't have privileges.
 
 * The :meth:`socket.socket.close` method now raises an exception if
@@ -2274,7 +2274,7 @@ Changes in the Python API
   :class:`~collections.OrderedDict`.
   (Contributed by Steve Holden in :issue:`27842`.)
 
-* The :const:`crypt.METHOD_CRYPT` will no longer be added to ``crypt.methods``
+* The :const:`!crypt.METHOD_CRYPT` will no longer be added to ``crypt.methods``
   if unsupported by the platform.
   (Contributed by Victor Stinner in :issue:`25287`.)
 
@@ -2455,7 +2455,7 @@ query parameter separators in :func:`urllib.parse.parse_qs` and
 :func:`urllib.parse.parse_qsl`.  Due to security concerns, and to conform with
 newer W3C recommendations, this has been changed to allow only a single
 separator key, with ``&`` as the default.  This change also affects
-:func:`cgi.parse` and :func:`cgi.parse_multipart` as they use the affected
+:func:`!cgi.parse` and :func:`!cgi.parse_multipart` as they use the affected
 functions internally. For more details, please see their respective
 documentation.
 (Contributed by Adam Goldschmidt, Senthil Kumaran and Ken Jin in :issue:`42967`.)
