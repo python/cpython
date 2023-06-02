@@ -679,7 +679,7 @@ class AllowingAllExtensionsTests(unittest.TestCase):
     def test_single_phase_init_module(self):
         script = textwrap.dedent('''
             import importlib.util
-            with importlib.util.allowing_all_extensions():
+            with importlib.util.allowing_all_extensions(True):
                 import _testsinglephase
             ''')
         with self.subTest('check disabled, shared GIL'):
@@ -699,6 +699,15 @@ class AllowingAllExtensionsTests(unittest.TestCase):
             with self.assertRaises(ImportError):
                 self.run_with_own_gil(script)
 
+        script = textwrap.dedent(f'''
+            import importlib.util
+            with importlib.util.allowing_all_extensions():
+                import _testsinglephase
+            ''')
+        with self.subTest('check enabled (default)'):
+            with self.assertRaises(ImportError):
+                self.run_with_shared_gil(script)
+
     @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
     def test_incomplete_multi_phase_init_module(self):
         prescript = textwrap.dedent(f'''
@@ -714,7 +723,7 @@ class AllowingAllExtensionsTests(unittest.TestCase):
 
         script = prescript + textwrap.dedent('''
             import importlib.util
-            with importlib.util.allowing_all_extensions():
+            with importlib.util.allowing_all_extensions(True):
                 module = module_from_spec(spec)
                 loader.exec_module(module)
             ''')
@@ -739,7 +748,7 @@ class AllowingAllExtensionsTests(unittest.TestCase):
     def test_complete_multi_phase_init_module(self):
         script = textwrap.dedent('''
             import importlib.util
-            with importlib.util.allowing_all_extensions():
+            with importlib.util.allowing_all_extensions(True):
                 import _testmultiphase
             ''')
         with self.subTest('check disabled, shared GIL'):

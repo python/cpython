@@ -127,6 +127,10 @@ class allowing_all_extensions:
     unexpected behavior and even crashes.  It should only be used during
     extension module development.
 
+    If "disable_check" is True then the compatibility check will not
+    happen while the context manager is active.  Otherwise (and by
+    default) the check *will* happen.
+
     Normally, extensions that do not support multiple interpreters
     may not be imported in a subinterpreter.  That implies modules
     that do not implement multi-phase init or that explicitly of out.
@@ -144,7 +148,7 @@ class allowing_all_extensions:
     support for mulitple interpreters (or per-interpreter GIL).
     """
 
-    def __init__(self, disable_check=True):
+    def __init__(self, disable_check=False):
         self.disable_check = disable_check
 
     def __enter__(self):
