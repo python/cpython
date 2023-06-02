@@ -18,6 +18,7 @@
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_moduleobject.h"  // PyModuleObject
 #include "pycore_opcode.h"        // EXTRA_CASES
+#include "pycore_opcode_utils.h"  // MAKE_FUNCTION_*
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_range.h"         // _PyRangeIterObject
@@ -3245,10 +3246,10 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        inst(MAKE_FUNCTION, (defaults    if (oparg & 0x01),
-                             kwdefaults  if (oparg & 0x02),
-                             annotations if (oparg & 0x04),
-                             closure     if (oparg & 0x08),
+        inst(MAKE_FUNCTION, (defaults    if (oparg & MAKE_FUNCTION_DEFAULTS),
+                             kwdefaults  if (oparg & MAKE_FUNCTION_KWDEFAULTS),
+                             annotations if (oparg & MAKE_FUNCTION_ANNOTATIONS),
+                             closure     if (oparg & MAKE_FUNCTION_CLOSURE),
                              codeobj -- func)) {
 
             PyFunctionObject *func_obj = (PyFunctionObject *)
@@ -3259,19 +3260,19 @@ dummy_func(
                 goto error;
             }
 
-            if (oparg & 0x08) {
+            if (oparg & MAKE_FUNCTION_CLOSURE) {
                 assert(PyTuple_CheckExact(closure));
                 func_obj->func_closure = closure;
             }
-            if (oparg & 0x04) {
+            if (oparg & MAKE_FUNCTION_ANNOTATIONS) {
                 assert(PyTuple_CheckExact(annotations));
                 func_obj->func_annotations = annotations;
             }
-            if (oparg & 0x02) {
+            if (oparg & MAKE_FUNCTION_KWDEFAULTS) {
                 assert(PyDict_CheckExact(kwdefaults));
                 func_obj->func_kwdefaults = kwdefaults;
             }
-            if (oparg & 0x01) {
+            if (oparg & MAKE_FUNCTION_DEFAULTS) {
                 assert(PyTuple_CheckExact(defaults));
                 func_obj->func_defaults = defaults;
             }
