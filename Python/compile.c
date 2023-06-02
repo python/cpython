@@ -1814,7 +1814,7 @@ compiler_make_closure(struct compiler *c, location loc,
             }
             ADDOP_I(c, loc, LOAD_CLOSURE, arg);
         }
-        flags |= 0x08;
+        flags |= MAKE_FUNCTION_CLOSURE;
         ADDOP_I(c, loc, BUILD_TUPLE, co->co_nfreevars);
     }
     ADDOP_LOAD_CONST(c, loc, (PyObject*)co);
@@ -2025,7 +2025,7 @@ compiler_default_arguments(struct compiler *c, location loc,
     Py_ssize_t funcflags = 0;
     if (args->defaults && asdl_seq_LEN(args->defaults) > 0) {
         RETURN_IF_ERROR(compiler_visit_defaults(c, args, loc));
-        funcflags |= 0x01;
+        funcflags |= MAKE_FUNCTION_DEFAULTS;
     }
     if (args->kwonlyargs) {
         int res = compiler_visit_kwonlydefaults(c, loc,
@@ -2033,7 +2033,7 @@ compiler_default_arguments(struct compiler *c, location loc,
                                                 args->kw_defaults);
         RETURN_IF_ERROR(res);
         if (res > 0) {
-            funcflags |= 0x02;
+            funcflags |= MAKE_FUNCTION_KWDEFAULTS;
         }
     }
     return funcflags;
@@ -2291,10 +2291,10 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     int num_typeparam_args = 0;
 
     if (is_generic) {
-        if (funcflags & 0x01) {
+        if (funcflags & MAKE_FUNCTION_DEFAULTS) {
             num_typeparam_args += 1;
         }
-        if (funcflags & 0x02) {
+        if (funcflags & MAKE_FUNCTION_KWDEFAULTS) {
             num_typeparam_args += 1;
         }
         if (num_typeparam_args == 2) {
@@ -2311,11 +2311,8 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         }
         Py_DECREF(type_params_name);
         RETURN_IF_ERROR_IN_SCOPE(c, compiler_type_params(c, type_params));
-        if ((funcflags & 0x01) || (funcflags & 0x02)) {
-            RETURN_IF_ERROR_IN_SCOPE(c, codegen_addop_i(INSTR_SEQUENCE(c), LOAD_FAST, 0, loc));
-        }
-        if ((funcflags & 0x01) && (funcflags & 0x02)) {
-            RETURN_IF_ERROR_IN_SCOPE(c, codegen_addop_i(INSTR_SEQUENCE(c), LOAD_FAST, 1, loc));
+        for (int i = 0; i < num_typeparam_args; i++) {
+            RETURN_IF_ERROR_IN_SCOPE(c, codegen_addop_i(INSTR_SEQUENCE(c), LOAD_FAST, i, loc));
         }
     }
 
@@ -2327,7 +2324,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         return ERROR;
     }
     if (annotations > 0) {
-        funcflags |= 0x04;
+        funcflags |= MAKE_FUNCTION_ANNOTATIONS;
     }
 
     if (compiler_function_body(c, s, is_async, funcflags, firstlineno) < 0) {
