@@ -2460,11 +2460,7 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
     if (v == NULL)
         return NULL;
 
-    PyObject *mode = PyLong_FromLong((long)st->st_mode);
-    if (mode == NULL) {
-        goto error;
-    }
-    PyStructSequence_SET_ITEM(v, 0, mode);
+    PyStructSequence_SET_ITEM(v, 0, PyLong_FromLong((long)st->st_mode));
 #ifdef MS_WINDOWS
     PyStructSequence_SET_ITEM(v, 1, _pystat_l128_from_l64_l64(st->st_ino, st->st_ino_high));
     PyStructSequence_SET_ITEM(v, 2, PyLong_FromUnsignedLongLong(st->st_dev));
@@ -2486,9 +2482,6 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
                   "stat.st_size is larger than long long");
     PyStructSequence_SET_ITEM(v, 6, PyLong_FromLongLong(st->st_size));
 
-    if (PyErr_Occurred()) {
-        goto error;
-    }
 #if defined(HAVE_STAT_TV_NSEC)
     ansec = st->st_atim.tv_nsec;
     mnsec = st->st_mtim.tv_nsec;
@@ -2506,8 +2499,10 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
 #endif
     if (!(fill_time(module, v, 7, 10, 13, st->st_atime, ansec) &&
           fill_time(module, v, 8, 11, 14, st->st_mtime, mnsec) &&
-          fill_time(module, v, 9, 12, 15, st->st_ctime, cnsec))) {
-        goto error;
+          fill_time(module, v, 9, 12, 15, st->st_ctime, cnsec)))
+    {
+        Py_DECREF(v);
+        return NULL;
     }
 
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
@@ -2541,12 +2536,11 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
                                 val);
     }
 #elif defined(MS_WINDOWS)
-    if (PyErr_Occurred()) {
-        goto error;
-    }
     if (!fill_time(module, v, -1, ST_BIRTHTIME_IDX, ST_BIRTHTIME_NS_IDX,
-              st->st_birthtime, st->st_birthtime_nsec)) {
-        goto error;
+              st->st_birthtime, st->st_birthtime_nsec))
+    {
+        Py_DECREF(v);
+        return NULL;
     }
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_FLAGS
@@ -2566,14 +2560,7 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
                               PyLong_FromUnsignedLong(st->st_reparse_tag));
 #endif
 
-    if (PyErr_Occurred()) {
-        goto error;
-    }
-
     return v;
-error:
-    Py_DECREF(v);
-    return NULL;
 }
 
 /* POSIX methods */
