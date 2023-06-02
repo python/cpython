@@ -992,6 +992,26 @@ class TestNtpath(NtpathTestCase):
         self.assertTrue(os.path.exists is nt._path_exists)
         self.assertFalse(inspect.isfunction(os.path.exists))
 
+    @unittest.skipIf(os.name != 'nt', "Dev Drives only exist on Win32")
+    def test_isdevdrive(self):
+        # Result may be True or False, but shouldn't raise
+        self.assertIn(ntpath.isdevdrive(os_helper.TESTFN), (True, False))
+        # ntpath.isdevdrive can handle relative paths
+        self.assertIn(ntpath.isdevdrive("."), (True, False))
+        self.assertIn(ntpath.isdevdrive(b"."), (True, False))
+        # Volume syntax is supported
+        self.assertIn(ntpath.isdevdrive(os.listvolumes()[0]), (True, False))
+        # Invalid volume returns False from os.path method
+        self.assertFalse(ntpath.isdevdrive(r"\\?\Volume{00000000-0000-0000-0000-000000000000}\\"))
+        # Invalid volume raises from underlying helper
+        with self.assertRaises(OSError):
+            nt._path_isdevdrive(r"\\?\Volume{00000000-0000-0000-0000-000000000000}\\")
+
+    @unittest.skipIf(os.name == 'nt', "isdevdrive fallback only used off Win32")
+    def test_isdevdrive_fallback(self):
+        # Fallback always returns False
+        self.assertFalse(ntpath.isdevdrive(os_helper.TESTFN))
+
 
 class NtCommonTest(test_genericpath.CommonTest, unittest.TestCase):
     pathmodule = ntpath

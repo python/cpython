@@ -1,4 +1,0 @@
-Prevent possible crash by disallowing instantiation of the
-:class:`!_csv.Reader` and :class:`!_csv.Writer` types.
-The regression was introduced in 3.10.0a4 with PR 23224 (:issue:`14935`).
-Patch by Radislav Chugunov.

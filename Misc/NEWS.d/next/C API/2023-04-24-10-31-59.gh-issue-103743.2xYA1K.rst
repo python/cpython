@@ -1,2 +1,0 @@
-Add :c:func:`PyUnstable_Object_GC_NewWithExtraData` function that can be used to
-allocate additional memory after an object for data not managed by Python.

@@ -1774,7 +1774,7 @@ The following features and APIs have been removed from Python 3.8:
   to help eliminate confusion as to what Python interpreter the ``pyvenv``
   script is tied to. (Contributed by Brett Cannon in :issue:`25427`.)
 
-* ``parse_qs``, ``parse_qsl``, and ``escape`` are removed from the :mod:`cgi`
+* ``parse_qs``, ``parse_qsl``, and ``escape`` are removed from the :mod:`!cgi`
   module.  They are deprecated in Python 3.2 or older. They should be imported
   from the ``urllib.parse`` and ``html`` modules instead.
 
@@ -2251,7 +2251,7 @@ query parameter separators in :func:`urllib.parse.parse_qs` and
 :func:`urllib.parse.parse_qsl`.  Due to security concerns, and to conform with
 newer W3C recommendations, this has been changed to allow only a single
 separator key, with ``&`` as the default.  This change also affects
-:func:`cgi.parse` and :func:`cgi.parse_multipart` as they use the affected
+:func:`!cgi.parse` and :func:`!cgi.parse_multipart` as they use the affected
 functions internally. For more details, please see their respective
 documentation.
 (Contributed by Adam Goldschmidt, Senthil Kumaran and Ken Jin in :issue:`42967`.)
