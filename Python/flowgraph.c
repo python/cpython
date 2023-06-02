@@ -1663,7 +1663,6 @@ scan_block_for_locals(basicblock *b, basicblock ***sp)
     for (int i = 0; i < b->b_iused; i++) {
         cfg_instr *instr = &b->b_instr[i];
         assert(instr->i_opcode != EXTENDED_ARG);
-        assert(!IS_SUPERINSTRUCTION_OPCODE(instr->i_opcode));
         if (instr->i_except != NULL) {
             maybe_push(instr->i_except, unsafe_mask, sp);
         }
@@ -1722,7 +1721,6 @@ fast_scan_many_locals(basicblock *entryblock, int nlocals)
         for (int i = 0; i < b->b_iused; i++) {
             cfg_instr *instr = &b->b_instr[i];
             assert(instr->i_opcode != EXTENDED_ARG);
-            assert(!IS_SUPERINSTRUCTION_OPCODE(instr->i_opcode));
             int arg = instr->i_oparg;
             if (arg < 64) {
                 continue;
