@@ -28,7 +28,7 @@ unmarshalling.  Version 2 uses a binary format for floating point numbers.
    Return 0 on success. Return -1 and set an exception on error.
 
    .. versionchanged:: 3.13
-   Added return value.
+      Added return value.
 
 .. c:function:: int PyMarshal_WriteObjectToFile(PyObject *value, FILE *file, int version)
 
@@ -38,7 +38,7 @@ unmarshalling.  Version 2 uses a binary format for floating point numbers.
    Return 0 on success. Return -1 and set an exception on error.
 
    .. versionchanged:: 3.13
-   Added return value.
+      Added return value.
 
 .. c:function:: PyObject* PyMarshal_WriteObjectToString(PyObject *value, int version)
 
