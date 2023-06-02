@@ -3306,10 +3306,10 @@ _curses_init_pair_impl(PyObject *module, int pair_number, int fg, int bg)
     Py_RETURN_NONE;
 }
 
-#define SetDictInt(dict, string,ch)                                     \
+#define SetDictInt(string,ch)                                           \
     do {                                                                \
         PyObject *o = PyLong_FromLong((long) (ch));                     \
-        if (o && PyDict_SetItemString(dict, string, o) == 0) {          \
+        if (o && PyDict_SetItemString(d, string, o) == 0) {             \
             Py_DECREF(o);                                               \
         }                                                               \
     } while (0)
@@ -3349,74 +3349,74 @@ _curses_initscr_impl(PyObject *module)
    where they're not defined until you've called initscr() */
     PyObject *d = PyModule_GetDict(module);
     /* Here are some graphic symbols you can use */
-    SetDictInt(d, "ACS_ULCORNER",      (ACS_ULCORNER));
-    SetDictInt(d, "ACS_LLCORNER",      (ACS_LLCORNER));
-    SetDictInt(d, "ACS_URCORNER",      (ACS_URCORNER));
-    SetDictInt(d, "ACS_LRCORNER",      (ACS_LRCORNER));
-    SetDictInt(d, "ACS_LTEE",          (ACS_LTEE));
-    SetDictInt(d, "ACS_RTEE",          (ACS_RTEE));
-    SetDictInt(d, "ACS_BTEE",          (ACS_BTEE));
-    SetDictInt(d, "ACS_TTEE",          (ACS_TTEE));
-    SetDictInt(d, "ACS_HLINE",         (ACS_HLINE));
-    SetDictInt(d, "ACS_VLINE",         (ACS_VLINE));
-    SetDictInt(d, "ACS_PLUS",          (ACS_PLUS));
+    SetDictInt("ACS_ULCORNER",      (ACS_ULCORNER));
+    SetDictInt("ACS_LLCORNER",      (ACS_LLCORNER));
+    SetDictInt("ACS_URCORNER",      (ACS_URCORNER));
+    SetDictInt("ACS_LRCORNER",      (ACS_LRCORNER));
+    SetDictInt("ACS_LTEE",          (ACS_LTEE));
+    SetDictInt("ACS_RTEE",          (ACS_RTEE));
+    SetDictInt("ACS_BTEE",          (ACS_BTEE));
+    SetDictInt("ACS_TTEE",          (ACS_TTEE));
+    SetDictInt("ACS_HLINE",         (ACS_HLINE));
+    SetDictInt("ACS_VLINE",         (ACS_VLINE));
+    SetDictInt("ACS_PLUS",          (ACS_PLUS));
 #if !defined(__hpux) || defined(HAVE_NCURSES_H)
     /* On HP/UX 11, these are of type cchar_t, which is not an
        integral type. If this is a problem on more platforms, a
        configure test should be added to determine whether ACS_S1
        is of integral type. */
-    SetDictInt(d, "ACS_S1",            (ACS_S1));
-    SetDictInt(d, "ACS_S9",            (ACS_S9));
-    SetDictInt(d, "ACS_DIAMOND",       (ACS_DIAMOND));
-    SetDictInt(d, "ACS_CKBOARD",       (ACS_CKBOARD));
-    SetDictInt(d, "ACS_DEGREE",        (ACS_DEGREE));
-    SetDictInt(d, "ACS_PLMINUS",       (ACS_PLMINUS));
-    SetDictInt(d, "ACS_BULLET",        (ACS_BULLET));
-    SetDictInt(d, "ACS_LARROW",        (ACS_LARROW));
-    SetDictInt(d, "ACS_RARROW",        (ACS_RARROW));
-    SetDictInt(d, "ACS_DARROW",        (ACS_DARROW));
-    SetDictInt(d, "ACS_UARROW",        (ACS_UARROW));
-    SetDictInt(d, "ACS_BOARD",         (ACS_BOARD));
-    SetDictInt(d, "ACS_LANTERN",       (ACS_LANTERN));
-    SetDictInt(d, "ACS_BLOCK",         (ACS_BLOCK));
+    SetDictInt("ACS_S1",            (ACS_S1));
+    SetDictInt("ACS_S9",            (ACS_S9));
+    SetDictInt("ACS_DIAMOND",       (ACS_DIAMOND));
+    SetDictInt("ACS_CKBOARD",       (ACS_CKBOARD));
+    SetDictInt("ACS_DEGREE",        (ACS_DEGREE));
+    SetDictInt("ACS_PLMINUS",       (ACS_PLMINUS));
+    SetDictInt("ACS_BULLET",        (ACS_BULLET));
+    SetDictInt("ACS_LARROW",        (ACS_LARROW));
+    SetDictInt("ACS_RARROW",        (ACS_RARROW));
+    SetDictInt("ACS_DARROW",        (ACS_DARROW));
+    SetDictInt("ACS_UARROW",        (ACS_UARROW));
+    SetDictInt("ACS_BOARD",         (ACS_BOARD));
+    SetDictInt("ACS_LANTERN",       (ACS_LANTERN));
+    SetDictInt("ACS_BLOCK",         (ACS_BLOCK));
 #endif
-    SetDictInt(d, "ACS_BSSB",          (ACS_ULCORNER));
-    SetDictInt(d, "ACS_SSBB",          (ACS_LLCORNER));
-    SetDictInt(d, "ACS_BBSS",          (ACS_URCORNER));
-    SetDictInt(d, "ACS_SBBS",          (ACS_LRCORNER));
-    SetDictInt(d, "ACS_SBSS",          (ACS_RTEE));
-    SetDictInt(d, "ACS_SSSB",          (ACS_LTEE));
-    SetDictInt(d, "ACS_SSBS",          (ACS_BTEE));
-    SetDictInt(d, "ACS_BSSS",          (ACS_TTEE));
-    SetDictInt(d, "ACS_BSBS",          (ACS_HLINE));
-    SetDictInt(d, "ACS_SBSB",          (ACS_VLINE));
-    SetDictInt(d, "ACS_SSSS",          (ACS_PLUS));
+    SetDictInt("ACS_BSSB",          (ACS_ULCORNER));
+    SetDictInt("ACS_SSBB",          (ACS_LLCORNER));
+    SetDictInt("ACS_BBSS",          (ACS_URCORNER));
+    SetDictInt("ACS_SBBS",          (ACS_LRCORNER));
+    SetDictInt("ACS_SBSS",          (ACS_RTEE));
+    SetDictInt("ACS_SSSB",          (ACS_LTEE));
+    SetDictInt("ACS_SSBS",          (ACS_BTEE));
+    SetDictInt("ACS_BSSS",          (ACS_TTEE));
+    SetDictInt("ACS_BSBS",          (ACS_HLINE));
+    SetDictInt("ACS_SBSB",          (ACS_VLINE));
+    SetDictInt("ACS_SSSS",          (ACS_PLUS));
 
     /* The following are never available with strict SYSV curses */
 #ifdef ACS_S3
-    SetDictInt(d, "ACS_S3",            (ACS_S3));
+    SetDictInt("ACS_S3",            (ACS_S3));
 #endif
 #ifdef ACS_S7
-    SetDictInt(d, "ACS_S7",            (ACS_S7));
+    SetDictInt("ACS_S7",            (ACS_S7));
 #endif
 #ifdef ACS_LEQUAL
-    SetDictInt(d, "ACS_LEQUAL",        (ACS_LEQUAL));
+    SetDictInt("ACS_LEQUAL",        (ACS_LEQUAL));
 #endif
 #ifdef ACS_GEQUAL
-    SetDictInt(d, "ACS_GEQUAL",        (ACS_GEQUAL));
+    SetDictInt("ACS_GEQUAL",        (ACS_GEQUAL));
 #endif
 #ifdef ACS_PI
-    SetDictInt(d, "ACS_PI",            (ACS_PI));
+    SetDictInt("ACS_PI",            (ACS_PI));
 #endif
 #ifdef ACS_NEQUAL
-    SetDictInt(d, "ACS_NEQUAL",        (ACS_NEQUAL));
+    SetDictInt("ACS_NEQUAL",        (ACS_NEQUAL));
 #endif
 #ifdef ACS_STERLING
-    SetDictInt(d, "ACS_STERLING",      (ACS_STERLING));
+    SetDictInt("ACS_STERLING",      (ACS_STERLING));
 #endif
 
-    SetDictInt(d, "LINES", LINES);
-    SetDictInt(d, "COLS", COLS);
+    SetDictInt("LINES", LINES);
+    SetDictInt("COLS", COLS);
 
     winobj = (PyCursesWindowObject *)PyCursesWindow_New(state, win, NULL);
     if (winobj == NULL) {
@@ -4848,7 +4848,8 @@ _curses_exec(PyObject *module)
     PyCurses_API[4] = (void *)Py_NewRef(state->PyCursesError);
 
     /* Add a capsule for the C API */
-    c_api_object = PyCapsule_New(PyCurses_API, PyCurses_CAPSULE_NAME, curses_capi_destructor);
+    c_api_object = PyCapsule_New(PyCurses_API, PyCurses_CAPSULE_NAME,
+                                 curses_capi_destructor);
     if (c_api_object == NULL) {
         PyMem_Free(PyCurses_API);
         return -1;
@@ -4883,99 +4884,99 @@ _curses_exec(PyObject *module)
     }
 #endif /* NCURSES_VERSION */
 
-    SetDictInt(d, "ERR", ERR);
-    SetDictInt(d, "OK", OK);
+    SetDictInt("ERR", ERR);
+    SetDictInt("OK", OK);
 
     /* Here are some attributes you can add to chars to print */
 
-    SetDictInt(d, "A_ATTRIBUTES",      A_ATTRIBUTES);
-    SetDictInt(d, "A_NORMAL",          A_NORMAL);
-    SetDictInt(d, "A_STANDOUT",        A_STANDOUT);
-    SetDictInt(d, "A_UNDERLINE",       A_UNDERLINE);
-    SetDictInt(d, "A_REVERSE",         A_REVERSE);
-    SetDictInt(d, "A_BLINK",           A_BLINK);
-    SetDictInt(d, "A_DIM",             A_DIM);
-    SetDictInt(d, "A_BOLD",            A_BOLD);
-    SetDictInt(d, "A_ALTCHARSET",      A_ALTCHARSET);
-    SetDictInt(d, "A_INVIS",           A_INVIS);
-    SetDictInt(d, "A_PROTECT",         A_PROTECT);
-    SetDictInt(d, "A_CHARTEXT",        A_CHARTEXT);
-    SetDictInt(d, "A_COLOR",           A_COLOR);
+    SetDictInt("A_ATTRIBUTES",      A_ATTRIBUTES);
+    SetDictInt("A_NORMAL",              A_NORMAL);
+    SetDictInt("A_STANDOUT",            A_STANDOUT);
+    SetDictInt("A_UNDERLINE",           A_UNDERLINE);
+    SetDictInt("A_REVERSE",             A_REVERSE);
+    SetDictInt("A_BLINK",               A_BLINK);
+    SetDictInt("A_DIM",                 A_DIM);
+    SetDictInt("A_BOLD",                A_BOLD);
+    SetDictInt("A_ALTCHARSET",          A_ALTCHARSET);
+    SetDictInt("A_INVIS",           A_INVIS);
+    SetDictInt("A_PROTECT",         A_PROTECT);
+    SetDictInt("A_CHARTEXT",        A_CHARTEXT);
+    SetDictInt("A_COLOR",           A_COLOR);
 
     /* The following are never available with strict SYSV curses */
 #ifdef A_HORIZONTAL
-    SetDictInt(d, "A_HORIZONTAL",      A_HORIZONTAL);
+    SetDictInt("A_HORIZONTAL",      A_HORIZONTAL);
 #endif
 #ifdef A_LEFT
-    SetDictInt(d, "A_LEFT",            A_LEFT);
+    SetDictInt("A_LEFT",            A_LEFT);
 #endif
 #ifdef A_LOW
-    SetDictInt(d, "A_LOW",             A_LOW);
+    SetDictInt("A_LOW",             A_LOW);
 #endif
 #ifdef A_RIGHT
-    SetDictInt(d, "A_RIGHT",           A_RIGHT);
+    SetDictInt("A_RIGHT",           A_RIGHT);
 #endif
 #ifdef A_TOP
-    SetDictInt(d, "A_TOP",             A_TOP);
+    SetDictInt("A_TOP",             A_TOP);
 #endif
 #ifdef A_VERTICAL
-    SetDictInt(d, "A_VERTICAL",        A_VERTICAL);
+    SetDictInt("A_VERTICAL",        A_VERTICAL);
 #endif
 
     /* ncurses extension */
 #ifdef A_ITALIC
-    SetDictInt(d, "A_ITALIC",          A_ITALIC);
+    SetDictInt("A_ITALIC",          A_ITALIC);
 #endif
 
-    SetDictInt(d, "COLOR_BLACK",       COLOR_BLACK);
-    SetDictInt(d, "COLOR_RED",         COLOR_RED);
-    SetDictInt(d, "COLOR_GREEN",       COLOR_GREEN);
-    SetDictInt(d, "COLOR_YELLOW",      COLOR_YELLOW);
-    SetDictInt(d, "COLOR_BLUE",        COLOR_BLUE);
-    SetDictInt(d, "COLOR_MAGENTA",     COLOR_MAGENTA);
-    SetDictInt(d, "COLOR_CYAN",        COLOR_CYAN);
-    SetDictInt(d, "COLOR_WHITE",       COLOR_WHITE);
+    SetDictInt("COLOR_BLACK",       COLOR_BLACK);
+    SetDictInt("COLOR_RED",         COLOR_RED);
+    SetDictInt("COLOR_GREEN",       COLOR_GREEN);
+    SetDictInt("COLOR_YELLOW",      COLOR_YELLOW);
+    SetDictInt("COLOR_BLUE",        COLOR_BLUE);
+    SetDictInt("COLOR_MAGENTA",     COLOR_MAGENTA);
+    SetDictInt("COLOR_CYAN",        COLOR_CYAN);
+    SetDictInt("COLOR_WHITE",       COLOR_WHITE);
 
 #ifdef NCURSES_MOUSE_VERSION
     /* Mouse-related constants */
-    SetDictInt(d, "BUTTON1_PRESSED",          BUTTON1_PRESSED);
-    SetDictInt(d, "BUTTON1_RELEASED",         BUTTON1_RELEASED);
-    SetDictInt(d, "BUTTON1_CLICKED",          BUTTON1_CLICKED);
-    SetDictInt(d, "BUTTON1_DOUBLE_CLICKED",   BUTTON1_DOUBLE_CLICKED);
-    SetDictInt(d, "BUTTON1_TRIPLE_CLICKED",   BUTTON1_TRIPLE_CLICKED);
+    SetDictInt("BUTTON1_PRESSED",          BUTTON1_PRESSED);
+    SetDictInt("BUTTON1_RELEASED",         BUTTON1_RELEASED);
+    SetDictInt("BUTTON1_CLICKED",          BUTTON1_CLICKED);
+    SetDictInt("BUTTON1_DOUBLE_CLICKED",   BUTTON1_DOUBLE_CLICKED);
+    SetDictInt("BUTTON1_TRIPLE_CLICKED",   BUTTON1_TRIPLE_CLICKED);
 
-    SetDictInt(d, "BUTTON2_PRESSED",          BUTTON2_PRESSED);
-    SetDictInt(d, "BUTTON2_RELEASED",         BUTTON2_RELEASED);
-    SetDictInt(d, "BUTTON2_CLICKED",          BUTTON2_CLICKED);
-    SetDictInt(d, "BUTTON2_DOUBLE_CLICKED",   BUTTON2_DOUBLE_CLICKED);
-    SetDictInt(d, "BUTTON2_TRIPLE_CLICKED",   BUTTON2_TRIPLE_CLICKED);
+    SetDictInt("BUTTON2_PRESSED",          BUTTON2_PRESSED);
+    SetDictInt("BUTTON2_RELEASED",         BUTTON2_RELEASED);
+    SetDictInt("BUTTON2_CLICKED",          BUTTON2_CLICKED);
+    SetDictInt("BUTTON2_DOUBLE_CLICKED",   BUTTON2_DOUBLE_CLICKED);
+    SetDictInt("BUTTON2_TRIPLE_CLICKED",   BUTTON2_TRIPLE_CLICKED);
 
-    SetDictInt(d, "BUTTON3_PRESSED",          BUTTON3_PRESSED);
-    SetDictInt(d, "BUTTON3_RELEASED",         BUTTON3_RELEASED);
-    SetDictInt(d, "BUTTON3_CLICKED",          BUTTON3_CLICKED);
-    SetDictInt(d, "BUTTON3_DOUBLE_CLICKED",   BUTTON3_DOUBLE_CLICKED);
-    SetDictInt(d, "BUTTON3_TRIPLE_CLICKED",   BUTTON3_TRIPLE_CLICKED);
+    SetDictInt("BUTTON3_PRESSED",          BUTTON3_PRESSED);
+    SetDictInt("BUTTON3_RELEASED",         BUTTON3_RELEASED);
+    SetDictInt("BUTTON3_CLICKED",          BUTTON3_CLICKED);
+    SetDictInt("BUTTON3_DOUBLE_CLICKED",   BUTTON3_DOUBLE_CLICKED);
+    SetDictInt("BUTTON3_TRIPLE_CLICKED",   BUTTON3_TRIPLE_CLICKED);
 
-    SetDictInt(d, "BUTTON4_PRESSED",          BUTTON4_PRESSED);
-    SetDictInt(d, "BUTTON4_RELEASED",         BUTTON4_RELEASED);
-    SetDictInt(d, "BUTTON4_CLICKED",          BUTTON4_CLICKED);
-    SetDictInt(d, "BUTTON4_DOUBLE_CLICKED",   BUTTON4_DOUBLE_CLICKED);
-    SetDictInt(d, "BUTTON4_TRIPLE_CLICKED",   BUTTON4_TRIPLE_CLICKED);
+    SetDictInt("BUTTON4_PRESSED",          BUTTON4_PRESSED);
+    SetDictInt("BUTTON4_RELEASED",         BUTTON4_RELEASED);
+    SetDictInt("BUTTON4_CLICKED",          BUTTON4_CLICKED);
+    SetDictInt("BUTTON4_DOUBLE_CLICKED",   BUTTON4_DOUBLE_CLICKED);
+    SetDictInt("BUTTON4_TRIPLE_CLICKED",   BUTTON4_TRIPLE_CLICKED);
 
 #if NCURSES_MOUSE_VERSION > 1
-    SetDictInt(d, "BUTTON5_PRESSED",          BUTTON5_PRESSED);
-    SetDictInt(d, "BUTTON5_RELEASED",         BUTTON5_RELEASED);
-    SetDictInt(d, "BUTTON5_CLICKED",          BUTTON5_CLICKED);
-    SetDictInt(d, "BUTTON5_DOUBLE_CLICKED",   BUTTON5_DOUBLE_CLICKED);
-    SetDictInt(d, "BUTTON5_TRIPLE_CLICKED",   BUTTON5_TRIPLE_CLICKED);
+    SetDictInt("BUTTON5_PRESSED",          BUTTON5_PRESSED);
+    SetDictInt("BUTTON5_RELEASED",         BUTTON5_RELEASED);
+    SetDictInt("BUTTON5_CLICKED",          BUTTON5_CLICKED);
+    SetDictInt("BUTTON5_DOUBLE_CLICKED",   BUTTON5_DOUBLE_CLICKED);
+    SetDictInt("BUTTON5_TRIPLE_CLICKED",   BUTTON5_TRIPLE_CLICKED);
 #endif
 
-    SetDictInt(d, "BUTTON_SHIFT",             BUTTON_SHIFT);
-    SetDictInt(d, "BUTTON_CTRL",              BUTTON_CTRL);
-    SetDictInt(d, "BUTTON_ALT",               BUTTON_ALT);
+    SetDictInt("BUTTON_SHIFT",             BUTTON_SHIFT);
+    SetDictInt("BUTTON_CTRL",              BUTTON_CTRL);
+    SetDictInt("BUTTON_ALT",               BUTTON_ALT);
 
-    SetDictInt(d, "ALL_MOUSE_EVENTS",         ALL_MOUSE_EVENTS);
-    SetDictInt(d, "REPORT_MOUSE_POSITION",    REPORT_MOUSE_POSITION);
+    SetDictInt("ALL_MOUSE_EVENTS",         ALL_MOUSE_EVENTS);
+    SetDictInt("REPORT_MOUSE_POSITION",    REPORT_MOUSE_POSITION);
 #endif
     /* Now set everything up for KEY_ variables */
     {
@@ -5005,12 +5006,12 @@ _curses_exec(PyObject *module)
                 *p2 = (char)0;
             } else
                 key_n2 = key_n;
-            SetDictInt(d, key_n2,key);
+            SetDictInt(key_n2,key);
             if (key_n2 != key_n)
                 PyMem_Free(key_n2);
         }
-        SetDictInt(d, "KEY_MIN", KEY_MIN);
-        SetDictInt(d, "KEY_MAX", KEY_MAX);
+        SetDictInt("KEY_MIN", KEY_MIN);
+        SetDictInt("KEY_MAX", KEY_MAX);
     }
 
     return 0;
