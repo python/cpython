@@ -2560,6 +2560,10 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
                               PyLong_FromUnsignedLong(st->st_reparse_tag));
 #endif
 
+    if (PyErr_Occurred()) {
+        Py_DECREF(v);
+        return NULL;
+    }
     return v;
 }
 
