@@ -400,7 +400,7 @@ Removed
      To test if the object is actually readable, see the next example
      of :c:func:`PyObject_GetBuffer`.
 
-   * :c:func:`!PyObject_AsCharBuffer`, :c:func:`PyObject_AsReadBuffer`:
+   * :c:func:`!PyObject_AsCharBuffer`, :c:func:`!PyObject_AsReadBuffer`:
      :c:func:`PyObject_GetBuffer` and :c:func:`PyBuffer_Release` instead:
 
      .. code-block:: c
