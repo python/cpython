@@ -43,7 +43,7 @@
     :const:`None`. An object compatible with this ABC should only be
     returned when the specified module is a package.
 
-    .. versionadded:: 3.7
+    .. versionadded:: 3.11
 
     .. deprecated-removed:: 3.12 3.14
        Use :class:`importlib.resources.abc.TraversableResources` instead.
@@ -95,7 +95,7 @@
     For a representation of the object on the file-system, use
     :meth:`importlib.resources.as_file`.
 
-    .. versionadded:: 3.9
+    .. versionadded:: 3.11
 
     .. attribute:: name
 
@@ -150,7 +150,7 @@
     Loaders that wish to support resource reading are expected to
     implement this interface.
 
-    .. versionadded:: 3.9
+    .. versionadded:: 3.11
 
     .. abstractmethod:: files()
 
