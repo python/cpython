@@ -27,7 +27,7 @@ class ArraySubclassWithKwargs(array.array):
     def __init__(self, typecode, newarg=None):
         array.array.__init__(self)
 
-typecodes = 'ubBhHiIlLfdqQ'
+typecodes = 'uwbBhHiIlLfdqQ'
 
 class MiscTest(unittest.TestCase):
 
@@ -186,11 +186,12 @@ class ArrayReconstructorTest(unittest.TestCase):
         )
         for testcase in testcases:
             mformat_code, encoding = testcase
-            a = array.array('u', teststr)
-            b = array_reconstructor(
-                array.array, 'u', mformat_code, teststr.encode(encoding))
-            self.assertEqual(a, b,
-                msg="{0!r} != {1!r}; testcase={2!r}".format(a, b, testcase))
+            for c in 'uw':
+                a = array.array(c, teststr)
+                b = array_reconstructor(
+                    array.array, c, mformat_code, teststr.encode(encoding))
+                self.assertEqual(a, b,
+                    msg="{0!r} != {1!r}; testcase={2!r}".format(a, b, testcase))
 
 
 class BaseTest:
@@ -234,7 +235,7 @@ class BaseTest:
         self.assertEqual(bi[1], len(a))
 
     def test_byteswap(self):
-        if self.typecode == 'u':
+        if self.typecode in ('u', 'w'):
             example = '\U00100100'
         else:
             example = self.example
@@ -1079,7 +1080,7 @@ class BaseTest:
         self.assertEqual(m.tobytes(), expected)
         self.assertRaises(BufferError, a.frombytes, a.tobytes())
         self.assertEqual(m.tobytes(), expected)
-        if self.typecode == 'u':
+        if self.typecode in ('u', 'w'):
             self.assertRaises(BufferError, a.fromunicode, a.tounicode())
             self.assertEqual(m.tobytes(), expected)
         self.assertRaises(BufferError, operator.imul, a, 2)
@@ -1135,7 +1136,7 @@ class BaseTest:
         support.check_sizeof(self, a, basesize)
 
     def test_initialize_with_unicode(self):
-        if self.typecode != 'u':
+        if self.typecode not in ('u', 'w'):
             with self.assertRaises(TypeError) as cm:
                 a = array.array(self.typecode, 'foo')
             self.assertIn("cannot use a str", str(cm.exception))
@@ -1145,6 +1146,7 @@ class BaseTest:
         else:
             a = array.array(self.typecode, "foo")
             a = array.array(self.typecode, array.array('u', 'foo'))
+            a = array.array(self.typecode, array.array('w', 'foo'))
 
     @support.cpython_only
     def test_obsolete_write_lock(self):
@@ -1176,7 +1178,7 @@ class UnicodeTest(StringTest, unittest.TestCase):
     def test_unicode(self):
         self.assertRaises(TypeError, array.array, 'b', 'foo')
 
-        a = array.array('u', '\xa0\xc2\u1234')
+        a = array.array(self.typecode, '\xa0\xc2\u1234')
         a.fromunicode(' ')
         a.fromunicode('')
         a.fromunicode('')
@@ -1186,24 +1188,29 @@ class UnicodeTest(StringTest, unittest.TestCase):
         self.assertEqual(a.itemsize, sizeof_wchar)
 
         s = '\x00="\'a\\b\x80\xff\u0000\u0001\u1234'
-        a = array.array('u', s)
+        a = array.array(self.typecode, s)
         self.assertEqual(
             repr(a),
-            "array('u', '\\x00=\"\\'a\\\\b\\x80\xff\\x00\\x01\u1234')")
+            f"array('{self.typecode}', '\\x00=\"\\'a\\\\b\\x80\xff\\x00\\x01\u1234')")
 
         self.assertRaises(TypeError, a.fromunicode)
 
     def test_issue17223(self):
-        # this used to crash
-        if sizeof_wchar == 4:
-            # U+FFFFFFFF is an invalid code point in Unicode 6.0
-            invalid_str = b'\xff\xff\xff\xff'
-        else:
+        if self.typecode == 'u' and sizeof_wchar == 2:
             # PyUnicode_FromUnicode() cannot fail with 16-bit wchar_t
             self.skipTest("specific to 32-bit wchar_t")
-        a = array.array('u', invalid_str)
+
+        # this used to crash
+        # U+FFFFFFFF is an invalid code point in Unicode 6.0
+        invalid_str = b'\xff\xff\xff\xff'
+
+        a = array.array(self.typecode, invalid_str)
         self.assertRaises(ValueError, a.tounicode)
         self.assertRaises(ValueError, str, a)
+
+class UCS4Test(UnicodeTest):
+    typecode = 'w'
+    minitemsize = 4
 
 class NumberTest(BaseTest):
 
