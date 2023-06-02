@@ -1588,19 +1588,24 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
 .. c:function:: int PyThread_AcquireFinalizeBlock()
 
-   Attempts to acquire a block on Python finalization.
+   Attempts to prevent finalizing the current interpreter.
 
-   While the *finalize block* is held, the Python interpreter will block before
-   it begins finalization.  Holding a finalize block ensures that the
-   :term:`GIL` can be safely acquired without the risk of hanging the thread.
-   Refer to :ref:`cautions-regarding-runtime-finalization` for more details.
+   If the interpreter is already finalizing then this returns 0 and has no
+   effect.  Likewise if the interpreter is about to begin finalization but
+   is waiting for earlier calls to ``PyThread_AcquireFinalizeBlock()`` to be
+   resolved.  The caller should then proceed knowing that they should
+   not use this interpreter any more.
 
-   If successful, returns 1.  If the interpreter is already finalizing, or about
-   to begin finalization and waiting for all previously-acquired finalize blocks
-   to be released, returns 0 without acquiring a finalize block.
+   If the interpreter is not finalizing (nor about to) then it is immediately
+   prevented from finalizing, though this does not otherwise affect it.
+   This function returns 1 for this case.
 
    Every successful call must be paired with a call to
-   :c:func:`PyThread_ReleaseFinalizeBlock`.
+   :c:func:`PyThread_ReleaseFinalizeBlock`.  Until that happens, the
+   interpreter will be prevented from finalizing.  During this period of
+   time, the caller is guaranteed that the :term:`GIL` can be safely
+   acquired without the risk of hanging the thread.
+   Refer to :ref:`cautions-regarding-runtime-finalization` for more details.
 
    This function may be safely called with or without holding the :term:`GIL`.
 
