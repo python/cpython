@@ -4621,10 +4621,10 @@
 
         TARGET(MAKE_FUNCTION) {
             PyObject *codeobj = stack_pointer[-1];
-            PyObject *closure = (oparg & 0x08) ? stack_pointer[-(1 + ((oparg & 0x08) ? 1 : 0))] : NULL;
-            PyObject *annotations = (oparg & 0x04) ? stack_pointer[-(1 + ((oparg & 0x08) ? 1 : 0) + ((oparg & 0x04) ? 1 : 0))] : NULL;
-            PyObject *kwdefaults = (oparg & 0x02) ? stack_pointer[-(1 + ((oparg & 0x08) ? 1 : 0) + ((oparg & 0x04) ? 1 : 0) + ((oparg & 0x02) ? 1 : 0))] : NULL;
-            PyObject *defaults = (oparg & 0x01) ? stack_pointer[-(1 + ((oparg & 0x08) ? 1 : 0) + ((oparg & 0x04) ? 1 : 0) + ((oparg & 0x02) ? 1 : 0) + ((oparg & 0x01) ? 1 : 0))] : NULL;
+            PyObject *closure = (oparg & MAKE_FUNCTION_CLOSURE) ? stack_pointer[-(1 + ((oparg & MAKE_FUNCTION_CLOSURE) ? 1 : 0))] : NULL;
+            PyObject *annotations = (oparg & MAKE_FUNCTION_ANNOTATIONS) ? stack_pointer[-(1 + ((oparg & MAKE_FUNCTION_CLOSURE) ? 1 : 0) + ((oparg & MAKE_FUNCTION_ANNOTATIONS) ? 1 : 0))] : NULL;
+            PyObject *kwdefaults = (oparg & MAKE_FUNCTION_KWDEFAULTS) ? stack_pointer[-(1 + ((oparg & MAKE_FUNCTION_CLOSURE) ? 1 : 0) + ((oparg & MAKE_FUNCTION_ANNOTATIONS) ? 1 : 0) + ((oparg & MAKE_FUNCTION_KWDEFAULTS) ? 1 : 0))] : NULL;
+            PyObject *defaults = (oparg & MAKE_FUNCTION_DEFAULTS) ? stack_pointer[-(1 + ((oparg & MAKE_FUNCTION_CLOSURE) ? 1 : 0) + ((oparg & MAKE_FUNCTION_ANNOTATIONS) ? 1 : 0) + ((oparg & MAKE_FUNCTION_KWDEFAULTS) ? 1 : 0) + ((oparg & MAKE_FUNCTION_DEFAULTS) ? 1 : 0))] : NULL;
             PyObject *func;
             #line 3228 "Python/bytecodes.c"
 
@@ -4636,19 +4636,19 @@
                 goto error;
             }
 
-            if (oparg & 0x08) {
+            if (oparg & MAKE_FUNCTION_CLOSURE) {
                 assert(PyTuple_CheckExact(closure));
                 func_obj->func_closure = closure;
             }
-            if (oparg & 0x04) {
+            if (oparg & MAKE_FUNCTION_ANNOTATIONS) {
                 assert(PyTuple_CheckExact(annotations));
                 func_obj->func_annotations = annotations;
             }
-            if (oparg & 0x02) {
+            if (oparg & MAKE_FUNCTION_KWDEFAULTS) {
                 assert(PyDict_CheckExact(kwdefaults));
                 func_obj->func_kwdefaults = kwdefaults;
             }
-            if (oparg & 0x01) {
+            if (oparg & MAKE_FUNCTION_DEFAULTS) {
                 assert(PyTuple_CheckExact(defaults));
                 func_obj->func_defaults = defaults;
             }
@@ -4656,7 +4656,7 @@
             func_obj->func_version = ((PyCodeObject *)codeobj)->co_version;
             func = (PyObject *)func_obj;
             #line 4659 "Python/generated_cases.c.h"
-            STACK_SHRINK(((oparg & 0x01) ? 1 : 0) + ((oparg & 0x02) ? 1 : 0) + ((oparg & 0x04) ? 1 : 0) + ((oparg & 0x08) ? 1 : 0));
+            STACK_SHRINK(((oparg & MAKE_FUNCTION_DEFAULTS) ? 1 : 0) + ((oparg & MAKE_FUNCTION_KWDEFAULTS) ? 1 : 0) + ((oparg & MAKE_FUNCTION_ANNOTATIONS) ? 1 : 0) + ((oparg & MAKE_FUNCTION_CLOSURE) ? 1 : 0));
             stack_pointer[-1] = func;
             DISPATCH();
         }
