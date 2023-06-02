@@ -312,46 +312,32 @@ The script ``wasi-env`` sets necessary compiler and linker flags as well as
 ./Tools/wasm/wasm_build.py wasi build
 ```
 
-The command is roughly equivalent to:
-
-```shell
-mkdir -p builddir/wasi
-pushd builddir/wasi
-
-CONFIG_SITE=../../Tools/wasm/config.site-wasm32-wasi \
-  ../../Tools/wasm/wasi-env ../../configure -C \
-    --host=wasm32-unknown-wasi \
-    --build=$(../../config.guess) \
-    --with-build-python=$(pwd)/../build/python
-
-make -j$(nproc)
-popd
-```
+The command is equivalent to the following steps:
 
 - Make sure `Modules/Setup.local` exists
 - Make sure the necessary build tools are installed:
-  - WASI SDK (which includes `clang`)
+  - [WASI SDK](https://github.com/WebAssembly/wasi-sdk) (which ships with `clang`)
   - `make`
   - `pkg-config` (on Linux)
 - Create the build Python
   - `mkdir -p builddir/build`
   - `pushd builddir/build`
-  - Get the host/build platform
+  - Get the build platform
     - Python: `sysconfig.get_config_var("BUILD_GNU_TYPE")`
     - Shell: `../../config.guess`
-  - `../../configure -C --build=$BUILD --host=$BUILD`
+  - `../../configure -C`
   - `make all`
+  - ```PYTHON_VERSION=`./python -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")'` ```
   - `popd`
 - Create the host/WASI Python
   - `mkdir builddir/wasi`
   - `pushd builddir/wasi`
-  - `../../Tools/wasm/wasi-env ../../configure -C --host=wasm32-unknown-wasi --build=$BUILD --with-build-python=../build/python`
+  - `../../Tools/wasm/wasi-env ../../configure -C --host=wasm32-unknown-wasi --build=$(../../config.guess) --with-build-python=../build/python`
     - `CONFIG_SITE=../../Tools/wasm/config.site-wasm32-wasi`
-    - `WASI_SDK_PATH=$WASI_SDK_PATH` (also set by `wasi-env`)
-    - `HOSTRUNNER="wasmtime run --mapdir /::${SRCDIR} --env PYTHONPATH=/builddir/build/lib.wasi-wasm32-{python_major_minor_version} --`
-      - Map the source checkout to `/` in the WASI runtime
-      - Stdlib loaded from `/Lib`
-      - Need to make sure `_sysconfigdata__wasi_wasm32-wasi.py` is somewhere on `sys.path`; done via `PYTHONPATH`
+    - `HOSTRUNNER="wasmtime run --mapdir /::../.. --env PYTHONPATH=/builddir/wasi/build/lib.wasi-wasm32-$PYTHON_VERSION python.wasm --"`
+      - Maps the source checkout to `/` in the WASI runtime
+      - Stdlib gets loaded from `/Lib`
+      - Gets `_sysconfigdata__wasi_wasm32-wasi.py` on to `sys.path` via `PYTHONPATH`
     - Set by `wasi-env`
       - `WASI_SDK_PATH`
       - `WASI_SYSROOT`
@@ -368,8 +354,6 @@ popd
       - `PKG_CONFIG_SYSROOT_DIR`
       - `PATH`
   - `make all`
-    - `WASI_SDK_PATH` (see `configure` above)
-    - `HOSTRUNNER` (see `configure` above)
 
 
 ### Running
