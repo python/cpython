@@ -2658,13 +2658,15 @@ get_basic_static_type(PyObject *self, PyObject *args)
     PyTypeObject *cls = &BasicStaticTypes[num_basic_static_types_used++];
 
     if (base != NULL) {
-        cls->tp_base = (PyTypeObject *)Py_NewRef(base);
         cls->tp_bases = Py_BuildValue("(O)", base);
         if (cls->tp_bases == NULL) {
             return NULL;
         }
+        cls->tp_base = (PyTypeObject *)Py_NewRef(base);
     }
     if (PyType_Ready(cls) < 0) {
+        Py_DECREF(cls->tp_bases);
+        Py_DECREF(cls->tp_base);
         return NULL;
     }
     return (PyObject *)cls;
