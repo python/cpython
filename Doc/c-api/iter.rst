@@ -48,7 +48,7 @@ something like this::
 
    Py_DECREF(iterator);
 
-   if (err < 0) {
+   if (err) {
        /* propagate error */
    }
    else {
