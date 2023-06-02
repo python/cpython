@@ -1589,8 +1589,10 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache)
 static void
 make_super_instruction(cfg_instr *inst1, cfg_instr *inst2, int super_op)
 {
+    int32_t line1 = inst1->i_loc.lineno;
+    int32_t line2 = inst2->i_loc.lineno;
     /* Skip if instructions are on different lines */
-    if (inst1->i_loc.lineno != inst2->i_loc.lineno) {
+    if (line1 >= 0 && line2 >= 0 && line1 != line2) {
         return;
     }
     if (inst1->i_oparg >= 16 || inst2->i_oparg >= 16) {

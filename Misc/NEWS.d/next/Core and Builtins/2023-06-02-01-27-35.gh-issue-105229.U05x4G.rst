@@ -1,1 +1,1 @@
-Replace some dynamic superinstructions will single instruction equivalents.
+Replace some dynamic superinstructions with single instruction equivalents.
