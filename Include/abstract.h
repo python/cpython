@@ -398,11 +398,14 @@ PyAPI_FUNC(int) PyIter_Check(PyObject *);
 PyAPI_FUNC(int) PyAIter_Check(PyObject *);
 
 /* Take an iterator object and call its tp_iternext slot,
-   setting *item to the next value, or to NULL if the iterator
-   is exhausted.
+   returning the next value.
 
-   Return 0 on success and -1 on error. */
-PyAPI_FUNC(int) PyIter_NextItem(PyObject *iter, PyObject **item);
+   If the iterator is exhausted, this returns NULL without setting an
+   exception, and sets *err to 0.
+
+   NULL with *err == -1 means an error occurred, and an exception has
+   been set. */
+PyAPI_FUNC(PyObject*) PyIter_NextItem(PyObject *iter, int *err);
 
 /* Takes an iterator object and calls its tp_iternext slot,
    returning the next value.

@@ -305,9 +305,9 @@ call_pyiter_nextitem(PyObject* self, PyObject *args)
         return NULL;
     }
     assert(PyIter_Check(iter) || PyAIter_Check(iter));
-    PyObject *item = NULL;
-    int ret = PyIter_NextItem(iter, &item);
-    if (ret < 0) {
+    int err;
+    PyObject *item = PyIter_NextItem(iter, &err);
+    if (err < 0) {
         return NULL;
     }
     if (item == NULL) {

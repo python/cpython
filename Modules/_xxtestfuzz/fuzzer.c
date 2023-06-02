@@ -377,7 +377,8 @@ static int fuzz_csv_reader(const char* data, size_t size) {
     if (reader) {
         /* Consume all of the reader as an iterator */
         PyObject* parsed_line;
-        while (PyIter_NextItem(reader, &parsed_line) == 0) {
+        int err;
+        while ((parsed_line = PyIter_NextItem(reader, &err))) {
             Py_DECREF(parsed_line);
         }
     }

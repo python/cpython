@@ -20,14 +20,13 @@ There are two functions specifically for working with iterators.
 
    .. versionadded:: 3.10
 
-.. c:function:: int PyIter_NextItem(PyObject *o, PyObject **item)
+.. c:function:: PyObject* PyIter_NextItem(PyObject *o, int *err)
 
-   Set ``*item`` to the next value from the iterator *o*.  The object *o*
-   must be an iterator according to :c:func:`PyIter_Check` (it is up to the
-   caller to check this).
-   If there are no remaining values, set ``*item`` to ``NULL``.
-
-   Return 0 on success and -1 on error.
+   Return the next value from the iterator *o*.  The object must be an iterator
+   according to :c:func:`PyIter_Check` (it is up to the caller to check this).
+   If there are no remaining values, returns ``NULL`` with no exception set
+   and ``*err`` set to 0.  If an error occurs while retrieving the item,
+   returns ``NULL`` and sets ``*err`` to 1.
 
 To write a loop which iterates over an iterator, the C code should look
 something like this::
@@ -39,8 +38,8 @@ something like this::
    }
 
    PyObject *item;
-   int res;
-   while ((res = PyIter_NextItem(iterator, &item)) == 0 && item != NULL) {
+   int err;
+   while (item = PyIter_NextItem(iterator, &err)) {
        /* do something with item */
        ...
        /* release reference when done */
@@ -49,7 +48,7 @@ something like this::
 
    Py_DECREF(iterator);
 
-   if (res < 0) {
+   if (err < 0) {
        /* propagate error */
    }
    else {

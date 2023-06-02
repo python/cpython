@@ -2837,23 +2837,25 @@ PyAIter_Check(PyObject *obj)
  * If the iteration terminates normally, set *item to NULL and clear
  * the PyExc_StopIteration exception (if it was set).
  */
-int
-PyIter_NextItem(PyObject *iter, PyObject **item)
+PyObject*
+PyIter_NextItem(PyObject *iter, int *err)
 {
-    *item = (*Py_TYPE(iter)->tp_iternext)(iter);
-    if (*item == NULL) {
+    PyObject *item = (*Py_TYPE(iter)->tp_iternext)(iter);
+    if (item == NULL) {
         PyThreadState *tstate = _PyThreadState_GET();
         if (_PyErr_Occurred(tstate)) {
             if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
                 _PyErr_Clear(tstate);
-                *item = NULL;
+                item = NULL;
             }
             else {
-                return -1;
+                *err = -1;
+                return NULL;
             }
         }
     }
-    return 0;
+    *err = 0;
+    return item;
 }
 
 /* Return next item.
@@ -2866,11 +2868,8 @@ PyIter_NextItem(PyObject *iter, PyObject **item)
 PyObject *
 PyIter_Next(PyObject *iter)
 {
-    PyObject *result;
-    if (PyIter_NextItem(iter, &result) < 0) {
-        return NULL;
-    }
-    return result;
+    int err;
+    return PyIter_NextItem(iter, &err);
 }
 
 PySendResult
