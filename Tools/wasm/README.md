@@ -308,11 +308,18 @@ The script ``wasi-env`` sets necessary compiler and linker flags as well as
 ``pkg-config`` overrides. The script assumes that WASI-SDK is installed in
 ``/opt/wasi-sdk`` or ``$WASI_SDK_PATH``.
 
+There are two scripts you can use to do a WASI build. You can either use:
+
 ```shell
 ./Tools/wasm/wasm_build.py wasi build
 ```
 
-The command is equivalent to the following steps:
+or:
+```shell
+./Tools/wasm/build_wasi.sh
+```
+
+The commands are equivalent to the following steps:
 
 - Make sure `Modules/Setup.local` exists
 - Make sure the necessary build tools are installed:
@@ -357,6 +364,14 @@ The command is equivalent to the following steps:
 
 
 ### Running
+
+If you followed the instructions above, you can run the interpreter via e.g., `wasmtime` (make sure to specify/change the `$PYTHON_VERSION` to the major.minor version that you just built):
+
+```shell
+wasmtime run --mapdir /::../.. --env PYTHONPATH=/builddir/wasi/build/lib.wasi-wasm32-$PYTHON_VERSION python.wasm -- <args>
+```
+
+There are also helpers provided by `Tools/wasm/wasm_build.py` as listed below. Also, if you used `Tools/wasm/build_wasi.sh`, a `run_wasi.sh` file will be created in `builddir/wasi` which will run the above command for you.
 
 #### REPL
 
