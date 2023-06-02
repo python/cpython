@@ -1862,6 +1862,8 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
                 ...
     """
     __slots__ = ()
+    _is_protocol = False
+    _is_runtime_protocol = False
 
     def __init_subclass__(cls, *args, **kwargs):
         super().__init_subclass__(*args, **kwargs)
