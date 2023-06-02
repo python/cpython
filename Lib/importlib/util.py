@@ -117,11 +117,19 @@ def find_spec(name, package=None):
 # dependencies.  Thus we use a class.
 
 class allowing_all_extensions:
-    """A context manager that lets users skip the compatibility check.
+    """A context manager that can temporarily skip the compatibility check.
+
+    NOTE: This function is meant to accommodate an unusual case; one
+    which is likely to eventually go away.  There's is a pretty good
+    chance this is not what you were looking for.
+
+    WARNING: Using this function to disable the check can lead to
+    unexpected behavior and even crashes.  It should only be used during
+    extension module development.
 
     Normally, extensions that do not support multiple interpreters
     may not be imported in a subinterpreter.  That implies modules
-    that do not implement multi-phase init.
+    that do not implement multi-phase init or that explicitly of out.
 
     Likewise for modules import in a subinterpeter with its own GIL
     when the extension does not support a per-interpreter GIL.  This
@@ -130,6 +138,10 @@ class allowing_all_extensions:
 
     In both cases, this context manager may be used to temporarily
     disable the check for compatible extension modules.
+
+    You can get the same effect as this function by implementing the
+    basic interface of multi-phase init (PEP 489) and lying about
+    support for mulitple interpreters (or per-interpreter GIL).
     """
 
     def __init__(self, disable_check=True):
