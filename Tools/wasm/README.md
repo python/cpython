@@ -371,7 +371,6 @@ popd
     - `WASI_SDK_PATH` (see `configure` above)
     - `HOSTRUNNER` (see `configure` above)
 
-XXX builder.run_build(*cm_args)
 
 ### Running
 
