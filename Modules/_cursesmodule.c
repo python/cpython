@@ -3306,14 +3306,6 @@ _curses_init_pair_impl(PyObject *module, int pair_number, int fg, int bg)
     Py_RETURN_NONE;
 }
 
-#define SetDictInt(string,ch)                                           \
-    do {                                                                \
-        PyObject *o = PyLong_FromLong((long) (ch));                     \
-        if (o && PyDict_SetItemString(d, string, o) == 0) {             \
-            Py_DECREF(o);                                               \
-        }                                                               \
-    } while (0)
-
 /*[clinic input]
 _curses.initscr
 
@@ -3347,6 +3339,14 @@ _curses_initscr_impl(PyObject *module)
 
 /* This was moved from initcurses() because it core dumped on SGI,
    where they're not defined until you've called initscr() */
+#define SetDictInt(string,ch)                                           \
+    do {                                                                \
+        PyObject *o = PyLong_FromLong((long) (ch));                     \
+        if (o && PyDict_SetItemString(d, string, o) == 0) {             \
+            Py_DECREF(o);                                               \
+        }                                                               \
+    } while (0)
+
     PyObject *d = PyModule_GetDict(module);
     /* Here are some graphic symbols you can use */
     SetDictInt("ACS_ULCORNER",      (ACS_ULCORNER));
