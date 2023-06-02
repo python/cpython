@@ -2511,8 +2511,11 @@ class TextIOWrapper(TextIOBase):
         decoder = self._decoder or self._get_decoder()
         if size < 0:
             # Read everything.
+            if input_chunk := self.buffer.read() is None and isinstance(self.buffer, BufferedReader):
+                raise BlockingIOError(
+                    "BufferedReader.read() return None, stream opened in non-blocking mode and not data is available")
             result = (self._get_decoded_chars() +
-                      decoder.decode(self.buffer.read(), final=True))
+                      decoder.decode(input_chunk, final=True))
             self._set_decoded_chars('')
             self._snapshot = None
             return result
