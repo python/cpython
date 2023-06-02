@@ -2688,27 +2688,23 @@ static PyType_Spec PyCursesWindow_spec = {
 
 #define NoArgReturnIntFunctionBody(X) \
 { \
-  _curses_state *state = get_curses_state(module); \
- PyCursesInitialised(state) \
+ PyCursesInitialised(get_curses_state(module)) \
  return PyLong_FromLong((long) X()); }
 
 
 #define NoArgReturnStringFunctionBody(X) \
 { \
-  _curses_state *state = get_curses_state(module); \
-  PyCursesInitialised(state) \
+  PyCursesInitialised(get_curses_state(module)) \
   return PyBytes_FromString(X()); }
 
 #define NoArgTrueFalseFunctionBody(X) \
 { \
-  _curses_state *state = get_curses_state(module); \
-  PyCursesInitialised(state) \
+  PyCursesInitialised(get_curses_state(module)) \
   return PyBool_FromLong(X()); }
 
 #define NoArgNoReturnVoidFunctionBody(X) \
 { \
-  _curses_state *state = get_curses_state(module); \
-  PyCursesInitialised(state) \
+  PyCursesInitialised(get_curses_state(module)) \
   X(); \
   Py_RETURN_NONE; }
 
@@ -2974,8 +2970,7 @@ _curses_erasechar_impl(PyObject *module)
 {
     char ch;
 
-    _curses_state *state = get_curses_state(module);
-    PyCursesInitialised(state);
+    PyCursesInitialised(get_curses_state(module));
 
     ch = erasechar();
 
@@ -3025,8 +3020,7 @@ _curses_getsyx_impl(PyObject *module)
     int x = 0;
     int y = 0;
 
-    _curses_state *state = get_curses_state(module);
-    PyCursesInitialised(state);
+    PyCursesInitialised(get_curses_state(module));
 
     getsyx(y, x);
 
@@ -3232,8 +3226,7 @@ static PyObject *
 _curses_has_key_impl(PyObject *module, int key)
 /*[clinic end generated code: output=19ad48319414d0b1 input=78bd44acf1a4997c]*/
 {
-    _curses_state *state = get_curses_state(module);
-    PyCursesInitialised(state);
+    PyCursesInitialised(get_curses_state(module));
 
     return PyBool_FromLong(has_key(key));
 }
@@ -3532,9 +3525,7 @@ _curses_set_escdelay_impl(PyObject *module, int ms)
         return NULL;
     }
 
-    _curses_state *state = get_curses_state(module);
-
-    return PyCursesCheckERR(state, set_escdelay(ms), "set_escdelay");
+    return PyCursesCheckERR(get_curses_state(module), set_escdelay(ms), "set_escdelay");
 }
 
 /*[clinic input]
@@ -3573,9 +3564,7 @@ _curses_set_tabsize_impl(PyObject *module, int size)
         return NULL;
     }
 
-    _curses_state *state = get_curses_state(module);
-
-    return PyCursesCheckERR(state, set_tabsize(size), "set_tabsize");
+    return PyCursesCheckERR(get_curses_state(module), set_tabsize(size), "set_tabsize");
 }
 #endif
 
@@ -3625,8 +3614,7 @@ static PyObject *
 _curses_is_term_resized_impl(PyObject *module, int nlines, int ncols)
 /*[clinic end generated code: output=aafe04afe50f1288 input=ca9c0bd0fb8ab444]*/
 {
-    _curses_state *state = get_curses_state(module);
-    PyCursesInitialised(state);
+    PyCursesInitialised(get_curses_state(module));
 
     return PyBool_FromLong(is_term_resized(nlines, ncols));
 }
@@ -3648,8 +3636,7 @@ _curses_keyname_impl(PyObject *module, int key)
 {
     const char *knp;
 
-    _curses_state *state = get_curses_state(module);
-    PyCursesInitialised(state);
+    PyCursesInitialised(get_curses_state(module));
 
     if (key < 0) {
         PyErr_SetString(PyExc_ValueError, "invalid key number");
@@ -3758,8 +3745,7 @@ _curses_mousemask_impl(PyObject *module, unsigned long newmask)
 {
     mmask_t oldmask, availmask;
 
-    _curses_state *state = get_curses_state(module);
-    PyCursesInitialised(state);
+    PyCursesInitialised(get_curses_state(module));
     availmask = mousemask((mmask_t)newmask, &oldmask);
     return Py_BuildValue("(kk)",
                          (unsigned long)availmask, (unsigned long)oldmask);
@@ -3780,8 +3766,7 @@ static PyObject *
 _curses_napms_impl(PyObject *module, int ms)
 /*[clinic end generated code: output=a40a1da2e39ea438 input=20cd3af2b6900f56]*/
 {
-    _curses_state *state = get_curses_state(module);
-    PyCursesInitialised(state);
+    PyCursesInitialised(get_curses_state(module));
 
     return Py_BuildValue("i", napms(ms));
 }
@@ -4016,8 +4001,7 @@ static PyObject *
 _curses_putp_impl(PyObject *module, const char *string)
 /*[clinic end generated code: output=e98081d1b8eb5816 input=1601faa828b44cb3]*/
 {
-    _curses_state *state = get_curses_state(module);
-    return PyCursesCheckERR(state, putp(string), "putp");
+    return PyCursesCheckERR(get_curses_state(module), putp(string), "putp");
 }
 
 /*[clinic input]
@@ -4037,8 +4021,7 @@ static PyObject *
 _curses_qiflush_impl(PyObject *module, int flag)
 /*[clinic end generated code: output=9167e862f760ea30 input=6ec8b3e2b717ec40]*/
 {
-    _curses_state *state = get_curses_state(module);
-    PyCursesInitialised(state);
+    PyCursesInitialised(get_curses_state(module));
 
     if (flag) {
         qiflush();
@@ -4273,8 +4256,7 @@ static PyObject *
 _curses_setsyx_impl(PyObject *module, int y, int x)
 /*[clinic end generated code: output=23dcf753511a2464 input=fa7f2b208e10a557]*/
 {
-    _curses_state *state = get_curses_state(module);
-    PyCursesInitialised(state);
+    PyCursesInitialised(get_curses_state(module));
 
     setsyx(y,x);
 
@@ -4370,8 +4352,7 @@ static PyObject *
 _curses_tigetflag_impl(PyObject *module, const char *capname)
 /*[clinic end generated code: output=8853c0e55542195b input=b0787af9e3e9a6ce]*/
 {
-    _curses_state *state = get_curses_state(module);
-    PyCursesSetupTermCalled(state);
+    PyCursesSetupTermCalled(get_curses_state(module));
 
     return PyLong_FromLong( (long) tigetflag( (char *)capname ) );
 }
@@ -4393,8 +4374,7 @@ static PyObject *
 _curses_tigetnum_impl(PyObject *module, const char *capname)
 /*[clinic end generated code: output=46f8b0a1b5dff42f input=5cdf2f410b109720]*/
 {
-    _curses_state *state = get_curses_state(module);
-    PyCursesSetupTermCalled(state);
+    PyCursesSetupTermCalled(get_curses_state(module));
 
     return PyLong_FromLong( (long) tigetnum( (char *)capname ) );
 }
@@ -4416,8 +4396,7 @@ static PyObject *
 _curses_tigetstr_impl(PyObject *module, const char *capname)
 /*[clinic end generated code: output=f22b576ad60248f3 input=36644df25c73c0a7]*/
 {
-    _curses_state *state = get_curses_state(module);
-    PyCursesSetupTermCalled(state);
+    PyCursesSetupTermCalled(get_curses_state(module));
 
     capname = tigetstr( (char *)capname );
     if (capname == NULL || capname == (char*) -1) {
@@ -4506,8 +4485,7 @@ _curses_unctrl(PyObject *module, PyObject *ch)
 {
     chtype ch_;
 
-    _curses_state *state = get_curses_state(module);
-    PyCursesInitialised(state);
+    PyCursesInitialised(get_curses_state(module));
 
     if (!PyCurses_ConvertToChtype(NULL, ch, &ch_))
         return NULL;
