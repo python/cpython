@@ -1,8 +1,9 @@
 # Run the _testcapi module tests (tests for the Python/C API):  by defn,
 # these are all functions _testcapi exports whose name begins with 'test_'.
 
-from collections import OrderedDict
 import _thread
+from collections import OrderedDict
+import contextlib
 import importlib.machinery
 import importlib.util
 import os
@@ -1591,6 +1592,74 @@ class SubinterpreterTest(unittest.TestCase):
         self.assertEqual(ret, 0)
         subinterp_attr_id = os.read(r, 100)
         self.assertEqual(main_attr_id, subinterp_attr_id)
+
+
+class BuiltinStaticTypesTests(unittest.TestCase):
+
+    TYPES = [
+        object,
+        type,
+        int,
+        str,
+        dict,
+        type(None),
+        bool,
+        BaseException,
+        Exception,
+        Warning,
+        DeprecationWarning,  # Warning subclass
+    ]
+
+    def test_tp_bases_is_set(self):
+        # PyTypeObject.tp_bases is documented as public API.
+        # See https://github.com/python/cpython/issues/105020.
+        for typeobj in self.TYPES:
+            with self.subTest(typeobj):
+                bases = _testcapi.type_get_tp_bases(typeobj)
+                self.assertIsNot(bases, None)
+
+    def test_tp_mro_is_set(self):
+        # PyTypeObject.tp_bases is documented as public API.
+        # See https://github.com/python/cpython/issues/105020.
+        for typeobj in self.TYPES:
+            with self.subTest(typeobj):
+                mro = _testcapi.type_get_tp_mro(typeobj)
+                self.assertIsNot(mro, None)
+
+
+class TestStaticTypes(unittest.TestCase):
+
+    _has_run = False
+
+    @classmethod
+    def setUpClass(cls):
+        # The tests here don't play nice with our approach to refleak
+        # detection, so we bail out in that case.
+        if cls._has_run:
+            raise unittest.SkipTest('these tests do not support re-running')
+        cls._has_run = True
+
+    @contextlib.contextmanager
+    def basic_static_type(self, *args):
+        cls = _testcapi.get_basic_static_type(*args)
+        yield cls
+
+    def test_pytype_ready_always_sets_tp_type(self):
+        # The point of this test is to prevent something like
+        # https://github.com/python/cpython/issues/104614
+        # from happening again.
+
+        # First check when tp_base/tp_bases is *not* set before PyType_Ready().
+        with self.basic_static_type() as cls:
+            self.assertIs(cls.__base__, object);
+            self.assertEqual(cls.__bases__, (object,));
+            self.assertIs(type(cls), type(object));
+
+        # Then check when we *do* set tp_base/tp_bases first.
+        with self.basic_static_type(object) as cls:
+            self.assertIs(cls.__base__, object);
+            self.assertEqual(cls.__bases__, (object,));
+            self.assertIs(type(cls), type(object));
 
 
 class TestThreadState(unittest.TestCase):
