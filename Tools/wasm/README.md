@@ -328,17 +328,48 @@ make -j$(nproc)
 popd
 ```
 
-0. Make sure `Modules/Setup.local` exists
-0. Make sure the necessary build tools are installed:
-  0. WASI SDK (which includes `clang`)
-  0. `make`
-  0. `pkg-config` (on Linux)
-0. Create the build/host Python
-  0. `mkdir -p builddir/build`
-  0. `pushd builddir/build`
-  0. Get the host platform: `sysconfig.get_config_var("BUILD_GNU_TYPE")`
-  0. `../../configure -C --build=$BUILD --host=$BUILD`
-  0. `make all`
+- Make sure `Modules/Setup.local` exists
+- Make sure the necessary build tools are installed:
+  - WASI SDK (which includes `clang`)
+  - `make`
+  - `pkg-config` (on Linux)
+- Create the build Python
+  - `mkdir -p builddir/build`
+  - `pushd builddir/build`
+  - Get the host/build platform
+    - Python: `sysconfig.get_config_var("BUILD_GNU_TYPE")`
+    - Shell: `../../config.guess`
+  - `../../configure -C --build=$BUILD --host=$BUILD`
+  - `make all`
+  - `popd`
+- Create the host/WASI Python
+  - `mkdir builddir/wasi`
+  - `pushd builddir/wasi`
+  - `../../Tools/wasm/wasi-env ../../configure -C --host=wasm32-unknown-wasi --build=$BUILD --with-build-python=../build/python`
+    - `CONFIG_SITE=../../Tools/wasm/config.site-wasm32-wasi`
+    - `WASI_SDK_PATH=$WASI_SDK_PATH` (also set by `wasi-env`)
+    - `HOSTRUNNER="wasmtime run --mapdir /::${SRCDIR} --env PYTHONPATH=/builddir/build/lib.wasi-wasm32-{python_major_minor_version} --`
+      - Map the source checkout to `/` in the WASI runtime
+      - Stdlib loaded from `/Lib`
+      - Need to make sure `_sysconfigdata__wasi_wasm32-wasi.py` is somewhere on `sys.path`; done via `PYTHONPATH`
+    - Set by `wasi-env`
+      - `WASI_SDK_PATH`
+      - `WASI_SYSROOT`
+      - `CC`
+      - `CPP`
+      - `CXX`
+      - `LDSHARED`
+      - `AR`
+      - `RANLIB`
+      - `CFLAGS`
+      - `LDFLAGS`
+      - `PKG_CONFIG_PATH`
+      - `PKG_CONFIG_LIBDIR`
+      - `PKG_CONFIG_SYSROOT_DIR`
+      - `PATH`
+  - `make all`
+    - `WASI_SDK_PATH` (see `configure` above)
+    - `HOSTRUNNER` (see `configure` above)
 
 XXX builder.run_build(*cm_args)
 
