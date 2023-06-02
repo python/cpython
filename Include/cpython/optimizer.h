@@ -31,7 +31,7 @@ typedef struct _PyOptimizerObject {
     /* Data needed by the optimizer goes here, but is opaque to the VM */
 } _PyOptimizerObject;
 
-PyAPI_FUNC(int) PyUnstable_Replace_Executor(PyCodeObject *code, int offset, _PyExecutorObject *executor);
+PyAPI_FUNC(int) PyUnstable_Replace_Executor(PyCodeObject *code, _Py_CODEUNIT *instr, _PyExecutorObject *executor);
 
 PyAPI_FUNC(void) PyUnstable_SetOptimizer(_PyOptimizerObject* optimizer);
 

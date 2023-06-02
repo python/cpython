@@ -9,6 +9,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+/* Returns the index of the next space, or -1 if there is no
+ * more space. Doesn't set an exception. */
 static int32_t
 get_next_free_in_executor_array(PyCodeObject *code)
 {
@@ -19,8 +21,6 @@ get_next_free_in_executor_array(PyCodeObject *code)
         size = old->size;
         capacity = old->capacity;
         if (capacity >= 256) {
-            PyErr_Format(PyExc_SystemError,
-                        "too many executors for code object");
             return -1;
         }
     }
@@ -33,7 +33,6 @@ get_next_free_in_executor_array(PyCodeObject *code)
             offsetof(_PyExecutorArray, executors) +
             new_capacity * sizeof(_PyExecutorObject *));
         if (new == NULL) {
-            PyErr_NoMemory();
             return -1;
         }
         new->capacity = new_capacity;
@@ -45,45 +44,53 @@ get_next_free_in_executor_array(PyCodeObject *code)
     return size;
 }
 
-static int
-insert_executor(PyCodeObject *code, int offset, _PyExecutorObject *executor)
+static void
+insert_executor(PyCodeObject *code, _Py_CODEUNIT *instr, int index, _PyExecutorObject *executor)
 {
-    _Py_CODEUNIT original = _PyCode_CODE(code)[offset];
-    if (original.op.code == ENTER_EXECUTOR) {
-        _PyExecutorObject *old = code->co_executors->executors[original.op.arg];
+    if (instr->op.code == ENTER_EXECUTOR) {
+        assert(index == instr->op.arg);
+        _PyExecutorObject *old = code->co_executors->executors[index];
         executor->vm_data.opcode = old->vm_data.opcode;
         executor->vm_data.oparg = old->vm_data.oparg;
         old->vm_data.opcode = 0;
         Py_INCREF(executor);
-        code->co_executors->executors[original.op.arg] = executor;
+        code->co_executors->executors[index] = executor;
         Py_DECREF(old);
     }
     else {
-        int32_t index = get_next_free_in_executor_array(code);
-        if (index < 0) {
-            return -1;
-        }
         Py_INCREF(executor);
-        executor->vm_data.opcode = original.op.code;
-        executor->vm_data.oparg = original.op.arg;
+        executor->vm_data.opcode = instr->op.code;
+        executor->vm_data.oparg = instr->op.arg;
         code->co_executors->executors[index] = executor;
         assert(index < 256);
-        _PyCode_CODE(code)[offset].op.code = ENTER_EXECUTOR;
-        _PyCode_CODE(code)[offset].op.arg = index;
+        instr->op.code = ENTER_EXECUTOR;
+        instr->op.arg = index;
     }
-    return 0;
+    return;
+}
+
+static int
+get_executor_index(PyCodeObject *code, _Py_CODEUNIT *instr)
+{
+    if (instr->op.code == ENTER_EXECUTOR) {
+        return instr->op.arg;
+    }
+    else {
+        return get_next_free_in_executor_array(code);
+    }
 }
 
 int
-PyUnstable_Replace_Executor(PyCodeObject *code, int offset, _PyExecutorObject *new)
+PyUnstable_Replace_Executor(PyCodeObject *code, _Py_CODEUNIT *instr, _PyExecutorObject *new)
 {
-
-    _Py_CODEUNIT original = _PyCode_CODE(code)[offset];
-    if (original.op.code != ENTER_EXECUTOR) {
+    if (instr->op.code != ENTER_EXECUTOR) {
         PyErr_Format(PyExc_ValueError, "No executor to replace");
         return -1;
     }
-    return insert_executor(code, offset, new);
+    int index = get_executor_index(code, instr);
+    assert(index >= 0);
+    insert_executor(code, instr, index, new);
+    return 0;
 }
 
 static _PyExecutorObject *
@@ -141,15 +148,17 @@ _PyInterpreterFrame *
 _PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNIT *dest, PyObject **stack_pointer)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
+    int index = get_executor_index(frame->f_code, src);
+    if (index < 0) {
+        _PyFrame_SetStackPointer(frame, stack_pointer);
+        return frame;
+    }
     _PyOptimizerObject *opt = interp->optimizer;
     _PyExecutorObject *executor = opt->optimize(opt, frame->f_code, dest);
     if (executor == NULL) {
         return NULL;
     }
-    if (insert_executor(frame->f_code, src - _PyCode_CODE(frame->f_code), executor)) {
-        Py_DECREF(executor);
-        return NULL;
-    }
+    insert_executor(frame->f_code, src, index, executor);
     return executor->execute(executor, frame, stack_pointer);
 }
 
