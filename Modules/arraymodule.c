@@ -1783,6 +1783,7 @@ array_array_fromunicode_impl(arrayobject *self, PyObject *ustr)
         Py_UCS4 *u = PyUnicode_AsUCS4(ustr, ((Py_UCS4*)self->ob_item) + old_size,
                                       ustr_length, 0);
         assert(u != NULL);
+        (void)u; // Suppress unused_variable warning.
     }
 
     Py_RETURN_NONE;
