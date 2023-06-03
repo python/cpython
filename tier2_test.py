@@ -447,4 +447,20 @@ with TestInfo("BB_TEST_ITER specialisation"):
     assert jmp_target.opname == "NOP" # Space for an EXTENDED_ARG
     assert insts[instidx + 1].opname == "BB_TEST_ITER_TUPLE" # The loop predicate
 
+######################################################################
+# Tests for: Tier 2 backward jump type context compatiblity check    #
+######################################################################
+with TestInfo("type context backwards jump compatibility check"):
+    # See https://github.com/pylbbv/pylbbv/issues/9 for more information.
+    def f(y,z,w):
+        d = z
+        for _ in [1,2]:
+            z+z
+            d+d
+            d=w
+
+
+    trigger_tier2(f, (1,1,1.))
+
+    # As long as it doesn't crash, everything's good.
 print("Tests completed ^-^")
