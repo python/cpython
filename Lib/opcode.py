@@ -298,6 +298,9 @@ _specializations = {
         "BINARY_SUBSCR_GETITEM",
         "BINARY_SUBSCR_LIST_INT",
         "BINARY_SUBSCR_TUPLE_INT",
+
+        # Tier 2
+        "BINARY_SUBSCR_LIST_INT_REST",
     ],
     "CALL": [
         "CALL_PY_EXACT_ARGS",
@@ -371,6 +374,9 @@ _specializations = {
     "STORE_SUBSCR": [
         "STORE_SUBSCR_DICT",
         "STORE_SUBSCR_LIST_INT",
+
+        # Tier 2
+        "STORE_SUBSCR_LIST_INT_REST",
     ],
     "UNPACK_SEQUENCE": [
         "UNPACK_SEQUENCE_LIST",
@@ -495,9 +501,6 @@ _uops = [
     'BINARY_OP_MULTIPLY_INT_REST',
     'BINARY_OP_MULTIPLY_FLOAT_UNBOXED',
 
-    # Containers
-    'BINARY_SUBSCR_LIST_INT_REST',
-    'STORE_SUBSCR_LIST_INT_REST',
 
     # Boxing / unboxing ops
     'POP_TOP_NO_DECREF',

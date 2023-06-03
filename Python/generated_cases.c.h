@@ -701,6 +701,7 @@
             Py_DECREF(list);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
+            next_instr += 4;
             DISPATCH();
         }
 
@@ -869,6 +870,7 @@
             _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
             Py_DECREF(list);
             STACK_SHRINK(3);
+            next_instr += 1;
             DISPATCH();
         }
 

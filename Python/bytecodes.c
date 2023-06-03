@@ -437,7 +437,7 @@ dummy_func(
             U_INST(BINARY_SUBSCR_LIST_INT_REST);
         }
 
-        u_inst(BINARY_SUBSCR_LIST_INT_REST, (list, sub -- res)) {
+        u_inst(BINARY_SUBSCR_LIST_INT_REST, (unused/4, list, sub -- res)) {
             Py_ssize_t index = ((PyLongObject *)sub)->long_value.ob_digit[0];
             DEOPT_IF(index >= PyList_GET_SIZE(list), BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
@@ -556,7 +556,7 @@ dummy_func(
             U_INST(STORE_SUBSCR_LIST_INT_REST);
         }
 
-        u_inst(STORE_SUBSCR_LIST_INT_REST, (value, list, sub -- )) {
+        u_inst(STORE_SUBSCR_LIST_INT_REST, (unused/1, value, list, sub -- )) {
             Py_ssize_t index = ((PyLongObject *)sub)->long_value.ob_digit[0];
             /* Ensure index < len(list) */
             DEOPT_IF(index >= PyList_GET_SIZE(list), STORE_SUBSCR);

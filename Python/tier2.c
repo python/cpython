@@ -1602,12 +1602,21 @@ infer_BINARY_SUBSCR(
     PyTypeObject *container = typenode_get_type(type_context->type_stack_ptr[-2]);
     if (container == &PyList_Type) {
         if (sub == &PySmallInt_Type) {
-            int opcode = store
-                ? STORE_SUBSCR_LIST_INT_REST : BINARY_SUBSCR_LIST_INT_REST;
-            write_curr->op.code = opcode;
-            write_curr++;
-            type_propagate(opcode, 0, type_context, NULL);
-            return write_curr;
+            if (store) {
+                int opcode = STORE_SUBSCR_LIST_INT_REST;
+                write_curr = emit_i(write_curr, opcode, oparg);
+                write_curr = emit_cache_entries(write_curr, INLINE_CACHE_ENTRIES_STORE_SUBSCR);
+                type_propagate(opcode, oparg, type_context, NULL);
+                return write_curr;
+            }
+            else {
+                int opcode = BINARY_SUBSCR_LIST_INT_REST;
+                write_curr = emit_i(write_curr, opcode, oparg);
+                write_curr = emit_cache_entries(write_curr, INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
+                type_propagate(opcode, oparg, type_context, NULL);
+                return write_curr;
+            }
+
         }
     }
     // Unknown, time to emit the chain of guards.
