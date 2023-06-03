@@ -288,10 +288,6 @@ check_decoded(PyObject *decoded)
         Py_DECREF(decoded);
         return -1;
     }
-    if (PyUnicode_READY(decoded) < 0) {
-        Py_DECREF(decoded);
-        return -1;
-    }
     return 0;
 }
 
@@ -1611,9 +1607,6 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
     int haslf = 0;
     int needflush = 0, text_needflush = 0;
 
-    if (PyUnicode_READY(text) == -1)
-        return NULL;
-
     CHECK_ATTACHED(self);
     CHECK_CLOSED(self);
 
@@ -1972,8 +1965,6 @@ _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n)
         result = textiowrapper_get_decoded_chars(self, n);
         if (result == NULL)
             goto fail;
-        if (PyUnicode_READY(result) == -1)
-            goto fail;
         remaining -= PyUnicode_GET_LENGTH(result);
 
         /* Keep reading chunks until we have n characters to return */
@@ -2184,8 +2175,6 @@ _textiowrapper_readline(textio *self, Py_ssize_t limit)
             offset_to_buffer = PyUnicode_GET_LENGTH(remaining);
             Py_CLEAR(remaining);
             if (line == NULL)
-                goto error;
-            if (PyUnicode_READY(line) == -1)
                 goto error;
         }
 
@@ -3106,7 +3095,7 @@ textiowrapper_iternext(textio *self)
         }
     }
 
-    if (line == NULL || PyUnicode_READY(line) == -1)
+    if (line == NULL)
         return NULL;
 
     if (PyUnicode_GET_LENGTH(line) == 0) {

@@ -4,7 +4,6 @@
 #include "pycore_code.h"          // write_location_entry_start()
 #include "pycore_compile.h"
 #include "pycore_opcode.h"        // _PyOpcode_Caches[] and opcode category macros
-#include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 
 
 #define DEFAULT_CODE_SIZE 128
@@ -146,6 +145,7 @@ assemble_exception_table(struct assembler *a, instr_sequence *instrs)
     int ioffset = 0;
     _PyCompile_ExceptHandlerInfo handler;
     handler.h_offset = -1;
+    handler.h_startdepth = -1;
     handler.h_preserve_lasti = -1;
     int start = -1;
     for (int i = 0; i < instrs->s_used; i++) {

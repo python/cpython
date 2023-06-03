@@ -130,11 +130,10 @@ _get_tcl_lib_path(void)
     static int already_checked = 0;
 
     if (already_checked == 0) {
-        PyObject *prefix;
         struct stat stat_buf;
         int stat_return_value;
 
-        prefix = PyUnicode_FromWideChar(Py_GetPrefix(), -1);
+        PyObject *prefix = PySys_GetObject("prefix");  // borrowed reference
         if (prefix == NULL) {
             return NULL;
         }
@@ -963,9 +962,6 @@ AsObj(PyObject *value)
     }
 
     if (PyUnicode_Check(value)) {
-        if (PyUnicode_READY(value) == -1)
-            return NULL;
-
         Py_ssize_t size = PyUnicode_GET_LENGTH(value);
         if (size == 0) {
             return Tcl_NewStringObj("", 0);
@@ -3289,8 +3285,8 @@ PyInit__tkinter(void)
 
     /* This helps the dynamic loader; in Unicode aware Tcl versions
        it also helps Tcl find its encodings. */
-    uexe = PyUnicode_FromWideChar(Py_GetProgramName(), -1);
-    if (uexe) {
+    uexe = PySys_GetObject("executable");  // borrowed reference
+    if (uexe && PyUnicode_Check(uexe)) {   // sys.executable can be None
         cexe = PyUnicode_EncodeFSDefault(uexe);
         if (cexe) {
 #ifdef MS_WINDOWS
@@ -3329,7 +3325,6 @@ PyInit__tkinter(void)
 #endif /* MS_WINDOWS */
         }
         Py_XDECREF(cexe);
-        Py_DECREF(uexe);
     }
 
     if (PyErr_Occurred()) {

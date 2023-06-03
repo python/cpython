@@ -203,6 +203,31 @@ same quote as the containing f-string. Let's cover these in detail:
 
 See :pep:`701` for more details.
 
+As a positive side-effect of how this feature has been implemented (by parsing f-strings
+with the PEG parser (see :pep:`617`), now error messages for f-strings are more precise
+and include the exact location of the error. For example, in Python 3.11, the following
+f-string raises a :exc:`SyntaxError`:
+
+.. code-block:: python
+
+    >>> my_string = f"{x z y}" + f"{1 + 1}"
+      File "<stdin>", line 1
+        (x z y)
+         ^^^
+    SyntaxError: f-string: invalid syntax. Perhaps you forgot a comma?
+
+but the error message doesn't include the exact location of the error withing the line and
+also has the expression artificially surrounded by parentheses. In Python 3.12, as f-strings
+are parsed with the PEG parser, error messages can be more precise and show the entire line:
+
+.. code-block:: python
+
+    >>> my_string = f"{x z y}" + f"{1 + 1}"
+      File "<stdin>", line 1
+        my_string = f"{x z y}" + f"{1 + 1}"
+                       ^^^
+    SyntaxError: invalid syntax. Perhaps you forgot a comma?
+
 (Contributed by Pablo Galindo, Batuhan Taskaya, Lysandros Nikolaou, Cristián
 Maureira-Fredes and Marta Gómez in :gh:`102856`. PEP written by Pablo Galindo,
 Batuhan Taskaya, Lysandros Nikolaou and Marta Gómez).
@@ -272,7 +297,36 @@ typed dictionaries::
 
 See :pep:`692` for more details.
 
-(PEP written by Franek Magiera)
+(Contributed by Franek Magiera in :gh:`103629`.)
+
+PEP 698: Override Decorator for Static Typing
+---------------------------------------------
+
+A new decorator :func:`typing.override` has been added to the :mod:`typing`
+module. It indicates to type checkers that the method is intended to override
+a method in a superclass. This allows type checkers to catch mistakes where
+a method that is intended to override something in a base class
+does not in fact do so.
+
+Example::
+
+   from typing import override
+
+   class Base:
+     def get_color(self) -> str:
+       return "blue"
+
+   class GoodChild(Base):
+     @override  # ok: overrides Base.get_color
+     def get_color(self) -> str:
+       return "yellow"
+
+   class BadChild(Base):
+     @override  # type checker error: does not override Base.get_color
+     def get_colour(self) -> str:
+       return "red"
+
+(Contributed by Steven Troxler in :gh:`101561`.)
 
 .. _whatsnew312-pep695:
 
@@ -772,11 +826,6 @@ tempfile
 typing
 ------
 
-* Add :func:`typing.override`, an override decorator telling to static type
-  checkers to verify that a method overrides some method or attribute of the
-  same name on a base class, as per :pep:`698`. (Contributed by Steven Troxler in
-  :gh:`101564`.)
-
 * :func:`isinstance` checks against
   :func:`runtime-checkable protocols <typing.runtime_checkable>` now use
   :func:`inspect.getattr_static` rather than :func:`hasattr` to lookup whether
@@ -820,6 +869,13 @@ typing
   faster or more. However, ``isinstance()`` checks against protocols with fourteen
   or more members may be slower than in Python 3.11. (Contributed by Alex
   Waygood in :gh:`74690` and :gh:`103193`.)
+
+* All :data:`typing.TypedDict` and :data:`typing.NamedTuple` classes now have the
+  ``__orig_bases__`` attribute. (Contributed by Adrian Garcia Badaracco in
+  :gh:`103699`.)
+
+* Add ``frozen_default`` parameter to :func:`typing.dataclass_transform`.
+  (Contributed by Erik De Bonte in :gh:`99957`.)
 
 sys
 ---
@@ -868,6 +924,10 @@ Optimizations
   the :mod:`tokenize` module. (Contributed by Marta Gómez Macías and Pablo Galindo
   in :gh:`102856`.)
 
+* Speed up :func:`super` method calls and attribute loads via the
+  new :opcode:`LOAD_SUPER_ATTR` instruction. (Contributed by Carl Meyer and
+  Vladimir Matveev in :gh:`103497`.)
+
 
 CPython bytecode changes
 ========================
@@ -880,11 +940,17 @@ CPython bytecode changes
 * Remove the :opcode:`!JUMP_IF_FALSE_OR_POP` and :opcode:`!JUMP_IF_TRUE_OR_POP`
   instructions. (Contributed by Irit Katriel in :gh:`102859`.)
 
+* Add the :opcode:`LOAD_FAST_AND_CLEAR` instruction as part of the
+  implementation of :pep:`709`. (Contributed by Carl Meyer in :gh:`101441`.)
+
 * Add the :opcode:`LOAD_FROM_DICT_OR_DEREF`, :opcode:`LOAD_FROM_DICT_OR_GLOBALS`,
   and :opcode:`LOAD_LOCALS` opcodes as part of the implementation of :pep:`695`.
   Remove the :opcode:`!LOAD_CLASSDEREF` opcode, which can be replaced with
   :opcode:`LOAD_LOCALS` plus :opcode:`LOAD_FROM_DICT_OR_DEREF`. (Contributed
   by Jelle Zijlstra in :gh:`103764`.)
+
+* Add the :opcode:`LOAD_SUPER_ATTR` instruction. (Contributed by Carl Meyer and
+  Vladimir Matveev in :gh:`103497`.)
 
 Demos and Tools
 ===============
@@ -1015,8 +1081,9 @@ APIs:
 * :func:`locale.getdefaultlocale` (:gh:`90817`)
 * :meth:`!turtle.RawTurtle.settiltangle` (:gh:`50096`)
 * :func:`!unittest.findTestCases` (:gh:`50096`)
-* :func:`!unittest.makeSuite` (:gh:`50096`)
 * :func:`!unittest.getTestCaseNames` (:gh:`50096`)
+* :func:`!unittest.makeSuite` (:gh:`50096`)
+* :meth:`!unittest.TestProgram.usageExit` (:gh:`67048`)
 * :class:`!webbrowser.MacOSX` (:gh:`86421`)
 * :class:`classmethod` descriptor chaining (:gh:`89519`)
 
@@ -1068,6 +1135,12 @@ Pending Removal in Python 3.14
 * :mod:`pty` has two undocumented ``master_open()`` and ``slave_open()``
   functions that have been deprecated since Python 2 but only gained a
   proper :exc:`DeprecationWarning` in 3.12. Remove them in 3.14.
+
+* :mod:`itertools` had undocumented, inefficient, historically buggy,
+  and inconsistent support for copy, deepcopy, and pickle operations.
+  This will be removed in 3.14 for a significant reduction in code
+  volume and maintenance burden.
+  (Contributed by Raymond Hettinger in :gh:`101588`.)
 
 * Accessing ``co_lnotab`` was deprecated in :pep:`626` since 3.10
   and was planned to be removed in 3.12
@@ -1457,6 +1530,10 @@ Build Changes
   (Contributed by Zhang Na in :gh:`90656`.)
 
 * ``PYTHON_FOR_REGEN`` now require Python 3.10 or newer.
+
+* Autoconf 2.71 and aclocal 1.16.4 is now required to regenerate
+  :file:`!configure`.
+  (Contributed by Christian Heimes in :gh:`89886`.)
 
 
 C API Changes

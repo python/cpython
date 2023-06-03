@@ -4534,6 +4534,95 @@ exit:
 }
 
 
+/*[clinic input]
+os._path_isdevdrive
+
+    path: path_t
+
+Determines whether the specified path is on a Windows Dev Drive.
+
+[clinic start generated code]*/
+
+static PyObject *
+os__path_isdevdrive_impl(PyObject *module, path_t *path)
+/*[clinic end generated code: output=1f437ea6677433a2 input=ee83e4996a48e23d]*/
+{
+#ifndef PERSISTENT_VOLUME_STATE_DEV_VOLUME
+    /* This flag will be documented at
+       https://learn.microsoft.com/windows-hardware/drivers/ddi/ntifs/ns-ntifs-_file_fs_persistent_volume_information
+       after release, and will be available in the latest WinSDK.
+       We include the flag to avoid a specific version dependency
+       on the latest WinSDK. */
+    const int PERSISTENT_VOLUME_STATE_DEV_VOLUME = 0x00002000;
+#endif
+    int err = 0;
+    PyObject *r = NULL;
+    wchar_t volume[MAX_PATH];
+
+    Py_BEGIN_ALLOW_THREADS
+    if (!GetVolumePathNameW(path->wide, volume, MAX_PATH)) {
+        /* invalid path of some kind */
+        /* Note that this also includes the case where a volume is mounted
+           in a path longer than 260 characters. This is likely to be rare
+           and problematic for other reasons, so a (soft) failure in this
+           check seems okay. */
+        err = GetLastError();
+    } else if (GetDriveTypeW(volume) != DRIVE_FIXED) {
+        /* only care about local dev drives */
+        r = Py_False;
+    } else {
+        HANDLE hVolume = CreateFileW(
+            volume,
+            FILE_READ_ATTRIBUTES,
+            FILE_SHARE_READ | FILE_SHARE_WRITE,
+            NULL,
+            OPEN_EXISTING,
+            FILE_FLAG_BACKUP_SEMANTICS,
+            NULL
+        );
+        if (hVolume == INVALID_HANDLE_VALUE) {
+            err = GetLastError();
+        } else {
+            FILE_FS_PERSISTENT_VOLUME_INFORMATION volumeState = {0};
+            volumeState.Version = 1;
+            volumeState.FlagMask = PERSISTENT_VOLUME_STATE_DEV_VOLUME;
+            if (!DeviceIoControl(
+                hVolume,
+                FSCTL_QUERY_PERSISTENT_VOLUME_STATE,
+                &volumeState,
+                sizeof(volumeState),
+                &volumeState,
+                sizeof(volumeState),
+                NULL,
+                NULL
+            )) {
+                err = GetLastError();
+            }
+            CloseHandle(hVolume);
+            if (err == ERROR_INVALID_PARAMETER) {
+                /* not supported on this platform */
+                r = Py_False;
+            } else if (!err) {
+                r = (volumeState.VolumeFlags & PERSISTENT_VOLUME_STATE_DEV_VOLUME)
+                    ? Py_True : Py_False;
+            }
+        }
+    }
+    Py_END_ALLOW_THREADS
+
+    if (err) {
+        PyErr_SetFromWindowsErr(err);
+        return NULL;
+    }
+
+    if (r) {
+        return Py_NewRef(r);
+    }
+
+    return NULL;
+}
+
+
 int
 _PyOS_getfullpathname(const wchar_t *path, wchar_t **abspath_p)
 {
@@ -5561,8 +5650,8 @@ Execute the command in a subshell.
 [clinic start generated code]*/
 
 static long
-os_system_impl(PyObject *module, const Py_UNICODE *command)
-/*[clinic end generated code: output=5b7c3599c068ca42 input=303f5ce97df606b0]*/
+os_system_impl(PyObject *module, const wchar_t *command)
+/*[clinic end generated code: output=dd528cbd5943a679 input=303f5ce97df606b0]*/
 {
     long result;
 
@@ -13499,9 +13588,9 @@ the underlying Win32 ShellExecute function doesn't work if it is.
 
 static PyObject *
 os_startfile_impl(PyObject *module, path_t *filepath,
-                  const Py_UNICODE *operation, const Py_UNICODE *arguments,
+                  const wchar_t *operation, const wchar_t *arguments,
                   path_t *cwd, int show_cmd)
-/*[clinic end generated code: output=3baa4f9795841880 input=8248997b80669622]*/
+/*[clinic end generated code: output=1c6f2f3340e31ffa input=8248997b80669622]*/
 {
     HINSTANCE rc;
 
@@ -15822,6 +15911,7 @@ static PyMethodDef posix_methods[] = {
     OS_SETNS_METHODDEF
     OS_UNSHARE_METHODDEF
 
+    OS__PATH_ISDEVDRIVE_METHODDEF
     OS__PATH_ISDIR_METHODDEF
     OS__PATH_ISFILE_METHODDEF
     OS__PATH_ISLINK_METHODDEF

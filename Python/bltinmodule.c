@@ -1914,8 +1914,6 @@ builtin_ord(PyObject *module, PyObject *c)
         }
     }
     else if (PyUnicode_Check(c)) {
-        if (PyUnicode_READY(c) == -1)
-            return NULL;
         size = PyUnicode_GET_LENGTH(c);
         if (size == 1) {
             ord = (long)PyUnicode_READ_CHAR(c, 0);

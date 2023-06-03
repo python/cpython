@@ -483,8 +483,9 @@ def lru_cache(maxsize=128, typed=False):
     can grow without bound.
 
     If *typed* is True, arguments of different types will be cached separately.
-    For example, f(3.0) and f(3) will be treated as distinct calls with
-    distinct results.
+    For example, f(decimal.Decimal("3.0")) and f(3.0) will be treated as
+    distinct calls with distinct results. Some types such as str and int may
+    be cached separately even when typed is false.
 
     Arguments to the cached function must be hashable.
 
