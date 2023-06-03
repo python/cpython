@@ -245,17 +245,68 @@ class PropertySubSlots(property):
 
 class PropertySubclassTests(unittest.TestCase):
 
-    def test_slots_docstring_copy_exception(self):
-        try:
-            class Foo(object):
-                @PropertySubSlots
-                def spam(self):
-                    """Trying to copy this docstring will raise an exception"""
-                    return 1
-        except AttributeError:
-            pass
-        else:
-            raise Exception("AttributeError not raised")
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
+    def test_slots_getter_docstring_inherited_from_property_subclass(self):
+        # This raised an AttributeError prior to 3.12, now it matches the
+        # other long existing behavior of not reporting errors when a property
+        # docstring cannot be set due to being a class without a dict.
+        class Foo(object):
+            @PropertySubSlots
+            def spam(self):
+                """Trying to assign this docstring should silently fail."""
+                return 1
+
+        self.assertEqual(Foo.spam.__doc__, PropertySubSlots.__doc__)
+
+    def test_property_with_slots_no_docstring(self):
+        # https://github.com/python/cpython/issues/98963#issuecomment-1574413319
+        class slotted_prop(property):
+            __slots__ = ("foo",)
+
+        p = slotted_prop()  # no AttributeError
+        self.assertIsNone(getattr(p, "__doc__", None))
+
+        def undocumented_getter():
+            return 4
+
+        p = slotted_prop(undocumented_getter)  # no AttributeError
+        self.assertIsNone(getattr(p, "__doc__", None))
+
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
+    def test_property_with_slots_docstring_silently_dropped(self):
+        # https://github.com/python/cpython/issues/98963#issuecomment-1574413319
+        class slotted_prop(property):
+            __slots__ = ("foo",)
+
+        p = slotted_prop(doc="what's up")  # no AttributeError
+        self.assertIsNone(p.__doc__)
+
+        def documented_getter():
+            """getter doc."""
+            return 4
+
+        # The getter doc, if any, is used if none is otherwise supplied.
+        p = slotted_prop(documented_getter)  # no AttributeError
+        self.assertIsNone(p.__doc__)
+
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
+    def test_property_with_slots_and_doc_slot_docstring_present(self):
+        # https://github.com/python/cpython/issues/98963#issuecomment-1574413319
+        class slotted_prop(property):
+            __slots__ = ("foo", "__doc__")
+
+        p = slotted_prop(doc="what's up")
+        self.assertEqual("what's up", p.__doc__)  # meep meep!
+
+        def documented_getter():
+            """what's up getter doc?"""
+            return 4
+
+        p = slotted_prop(documented_getter)
+        self.assertEqual("what's up getter doc?", p.__doc__)  # meep meep!
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")

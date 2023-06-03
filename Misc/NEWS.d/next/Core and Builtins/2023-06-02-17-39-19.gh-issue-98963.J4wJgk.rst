@@ -1,0 +1,3 @@
+Restore the ability for a subclass of :class:`property` to define
+``__slots__`` or otherwise be dict-less by ignoring any attempt to set a
+docstring on such a class. This behavior had regressed in 3.12beta1.

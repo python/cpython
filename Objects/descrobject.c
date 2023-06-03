@@ -1485,7 +1485,10 @@ class property(object):
         self.__get = fget
         self.__set = fset
         self.__del = fdel
-        self.__doc__ = doc
+        try:
+            self.__doc__ = doc
+        except AttributeError:  # read-only or dict-less class
+            pass
 
     def __get__(self, inst, type=None):
         if inst is None:
@@ -1806,10 +1809,9 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
     if (Py_IS_TYPE(self, &PyProperty_Type)) {
         Py_XSETREF(self->prop_doc, prop_doc);
     } else {
-        /* If this is a property subclass, put __doc__
-           in dict of the subclass instance instead,
-           otherwise it gets shadowed by __doc__ in the
-           class's dict. */
+        /* If this is a property subclass, put __doc__ in the dict
+           or designated slot of the subclass instance instead, otherwise
+           it gets shadowed by __doc__ in the class's dict. */
 
         if (prop_doc == NULL) {
             prop_doc = Py_NewRef(Py_None);
@@ -1817,8 +1819,25 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
         int err = PyObject_SetAttr(
                     (PyObject *)self, &_Py_ID(__doc__), prop_doc);
         Py_XDECREF(prop_doc);
-        if (err < 0)
-            return -1;
+        if (err < 0) {
+            if (PyErr_Occurred() == PyExc_AttributeError) {
+                PyErr_Clear();
+                // https://github.com/python/cpython/issues/98963#issuecomment-1574413319
+                // Python silently dropped this doc assignment through 3.11.
+                // We preserve that behavior for backwards compatibility.
+                if (prop_doc == Py_None) {
+                    Py_DECREF(prop_doc);
+                    return 0;
+                }
+                // If we ever want to deprecate this behavior, here is where to
+                // raise a DeprecationWarning; do not generate such noise when
+                // prop_doc is None.
+                Py_DECREF(prop_doc);
+                return 0;
+            } else {
+                return -1;
+            }
+        }
     }
 
     return 0;
