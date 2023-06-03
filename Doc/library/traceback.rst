@@ -86,10 +86,9 @@ The module defines the following functions:
 
 .. function:: print_last(limit=None, file=None, chain=True)
 
-   This is a shorthand for ``print_exception(sys.last_type, sys.last_value,
-   sys.last_traceback, limit, file, chain)``.  In general it will work only
-   after an exception has reached an interactive prompt (see
-   :data:`sys.last_type`).
+   This is a shorthand for ``print_exception(sys.last_exc, limit, file,
+   chain)``.  In general it will work only after an exception has reached
+   an interactive prompt (see :data:`sys.last_exc`).
 
 
 .. function:: print_stack(f=None, limit=None, file=None)
