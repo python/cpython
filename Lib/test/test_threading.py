@@ -345,7 +345,7 @@ class ThreadTests(BaseTestCase):
 
     def test_limbo_cleanup(self):
         # Issue 7481: Failure to start thread should cleanup the limbo map.
-        def fail_new_thread(*args):
+        def fail_new_thread(*args, **kwargs):
             raise threading.ThreadError()
         _start_new_thread = threading._start_new_thread
         threading._start_new_thread = fail_new_thread

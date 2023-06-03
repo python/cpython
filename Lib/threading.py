@@ -49,6 +49,10 @@ try:
 except AttributeError:
     _CRLock = None
 TIMEOUT_MAX = _thread.TIMEOUT_MAX
+try:
+    _internal_after_fork = _thread._after_fork
+except AttributeError:
+    _internal_after_fork = None
 del _thread
 
 
@@ -968,7 +972,7 @@ class Thread:
         with _active_limbo_lock:
             _limbo[self] = self
         try:
-            _start_new_thread(self._bootstrap, ())
+            _start_new_thread(self._bootstrap, (), daemonic=self._daemonic)
         except Exception:
             with _active_limbo_lock:
                 del _limbo[self]
@@ -1677,4 +1681,6 @@ def _after_fork():
 
 
 if hasattr(_os, "register_at_fork"):
+    if _internal_after_fork is not None:
+        _os.register_at_fork(after_in_child=_internal_after_fork)
     _os.register_at_fork(after_in_child=_after_fork)
