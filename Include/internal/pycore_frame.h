@@ -49,16 +49,20 @@ enum _frameowner {
 typedef struct _PyInterpreterFrame {
     PyCodeObject *f_code; /* Strong reference */
     struct _PyInterpreterFrame *previous;
-    PyObject *f_funcobj; /* Strong reference. Only valid if not on C stack */
-    PyObject *f_globals; /* Borrowed reference. Only valid if not on C stack */
-    PyObject *f_builtins; /* Borrowed reference. Only valid if not on C stack */
-    PyObject *f_locals; /* Strong reference, may be NULL. Only valid if not on C stack */
-    PyFrameObject *frame_obj; /* Strong reference, may be NULL. Only valid if not on C stack */
     // NOTE: This is not necessarily the last instruction started in the given
     // frame. Rather, it is the code unit *prior to* the *next* instruction. For
     // example, it may be an inline CACHE entry, an instruction we just jumped
     // over, or (in the case of a newly-created frame) a totally invalid value:
     _Py_CODEUNIT *prev_instr;
+
+    /* The fields above this line are declared as early as possible to
+       facilitate out-of-process observability tools. */
+
+    PyObject *f_funcobj; /* Strong reference. Only valid if not on C stack */
+    PyObject *f_globals; /* Borrowed reference. Only valid if not on C stack */
+    PyObject *f_builtins; /* Borrowed reference. Only valid if not on C stack */
+    PyObject *f_locals; /* Strong reference, may be NULL. Only valid if not on C stack */
+    PyFrameObject *frame_obj; /* Strong reference, may be NULL. Only valid if not on C stack */
     int stacktop;  /* Offset of TOS from localsplus  */
     /* The return_offset determines where a `RETURN` should go in the caller,
      * relative to `prev_instr`.
