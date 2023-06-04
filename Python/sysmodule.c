@@ -1862,6 +1862,18 @@ sys_gettotalrefcount_impl(PyObject *module)
 
 #endif /* Py_REF_DEBUG */
 
+PyDoc_STRVAR(sys__is_immortal__doc,
+"_is_immortal($module, object, /)\n"
+"--\n"
+"\n"
+"Return whether the given object is immortal.");
+
+static *PyObject
+sys__is_immortal(PyObject *module, PyObject *object)
+{
+    return _Py_IsImmortal(object) ? Py_True : Py_False;
+}
+
 /*[clinic input]
 sys.getallocatedblocks -> Py_ssize_t
 
@@ -2343,6 +2355,7 @@ static PyMethodDef sys_methods[] = {
 #endif
     SYS_GETTOTALREFCOUNT_METHODDEF
     SYS_GETREFCOUNT_METHODDEF
+    {"_is_immortal", _PyCFunction_CAST(sys__is_immortal), METH_O, sys__is_immortal__doc},
     SYS_GETRECURSIONLIMIT_METHODDEF
     {"getsizeof", _PyCFunction_CAST(sys_getsizeof),
      METH_VARARGS | METH_KEYWORDS, getsizeof_doc},
