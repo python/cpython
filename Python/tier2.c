@@ -2723,12 +2723,12 @@ typecontext_is_compatible(_PyTier2TypeContext *ctx1, _PyTier2TypeContext *ctx2)
     // 1. Check that the trees are the same "shape" and equivalent. This allows
     //    ctx1's trees to be a subtree of ctx2.
     // 2. Check that the trees resolve to the same root type.
+    int stack_elems1 = (int)(ctx1->type_stack_ptr - ctx1->type_stack);
 
 #ifdef Py_DEBUG
     // These should be true during runtime
     assert(ctx1->type_locals_len == ctx2->type_locals_len);
     assert(ctx1->type_stack_len == ctx2->type_stack_len);
-    int stack_elems1 = (int)(ctx1->type_stack_ptr - ctx1->type_stack);
     int stack_elems2 = (int)(ctx2->type_stack_ptr - ctx2->type_stack);
     assert(stack_elems1 == stack_elems2);
 #endif
