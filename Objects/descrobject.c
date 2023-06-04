@@ -1794,6 +1794,19 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
         if (rc <= 0) {
             return rc;
         }
+        if (!Py_IS_TYPE(self, &PyProperty_Type) &&
+            prop_doc != NULL && prop_doc != Py_None) {
+            // This oddity preserves the long existing behavior of surfacing
+            // an AttributeError when using a dict-less (__slots__) property
+            // subclass as a decorator on a getter method with a docstring.
+            // See PropertySubclassTest.test_slots_docstring_copy_exception.
+            int err = PyObject_SetAttr(
+                        (PyObject *)self, &_Py_ID(__doc__), prop_doc);
+            Py_DECREF(prop_doc);
+            if (err < 0) {
+                return -1;
+            }
+        }
         if (prop_doc == Py_None) {
             prop_doc = NULL;
             Py_DECREF(Py_None);
@@ -1818,9 +1831,9 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
         }
         int err = PyObject_SetAttr(
                     (PyObject *)self, &_Py_ID(__doc__), prop_doc);
-        Py_XDECREF(prop_doc);
         if (err < 0) {
-            if (PyErr_Occurred() == PyExc_AttributeError) {
+            assert(PyErr_Occurred());
+            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
                 PyErr_Clear();
                 // https://github.com/python/cpython/issues/98963#issuecomment-1574413319
                 // Python silently dropped this doc assignment through 3.11.
@@ -1829,8 +1842,10 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
                 // If we ever want to deprecate this behavior, only raise a
                 // warning or error when proc_doc is not None so that
                 // property without a specific doc= still works.
+                Py_DECREF(prop_doc);
                 return 0;
             } else {
+                Py_DECREF(prop_doc);
                 return -1;
             }
         }

@@ -245,19 +245,22 @@ class PropertySubSlots(property):
 
 class PropertySubclassTests(unittest.TestCase):
 
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     "Docstrings are omitted with -O2 and above")
-    def test_slots_getter_docstring_inherited_from_property_subclass(self):
-        # This raised an AttributeError prior to 3.12, now it matches the
-        # other long existing behavior of not reporting errors when a property
-        # docstring cannot be set due to being a class without a dict.
-        class Foo(object):
-            @PropertySubSlots
-            def spam(self):
-                """Trying to assign this docstring should silently fail."""
-                return 1
-
-        self.assertEqual(Foo.spam.__doc__, PropertySubSlots.__doc__)
+    def test_slots_docstring_copy_exception(self):
+        # A special case error that we preserve despite the GH-98963 behavior
+        # that would otherwise silence this error and not set a docstr.
+        # This came from https://github.com/python/cpython/commit/b18500d39d791c879e9904ebac293402b4a7cd34
+        # as part of https://bugs.python.org/issue5890 which allowed docs to
+        # be set using property subclasses in the first place.
+        try:
+            class Foo(object):
+                @PropertySubSlots
+                def spam(self):
+                    """Trying to copy this docstring will raise an exception"""
+                    return 1
+        except AttributeError:
+            pass
+        else:
+            raise Exception("AttributeError not raised")
 
     def test_property_with_slots_no_docstring(self):
         # https://github.com/python/cpython/issues/98963#issuecomment-1574413319
@@ -287,9 +290,10 @@ class PropertySubclassTests(unittest.TestCase):
             """getter doc."""
             return 4
 
-        # The getter doc, if any, is used if none is otherwise supplied.
-        p = slotted_prop(documented_getter)  # no AttributeError
-        self.assertIsNone(p.__doc__)
+        # Historical behavior: A docstring from a getter always raises.
+        # (matches test_slots_docstring_copy_exception above).
+        with self.assertRaises(AttributeError):
+            p = slotted_prop(documented_getter)
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
