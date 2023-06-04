@@ -4259,6 +4259,17 @@ class ThreadedTests(unittest.TestCase):
         with self.assertRaisesRegex(ssl.SSLError, 'Cannot add PSK client callback'):
             server_context.set_psk_client_callback(client_callback)
 
+        # test with UTF-8 identities
+        identity_hint = '身份暗示'  # Translation: "Identity hint"
+        client_identity = '客户身份'  # Translation: "Customer identity"
+
+        client_context.set_psk_client_callback(client_callback)
+        server_context.set_psk_server_callback(server_callback, identity_hint)
+        server = ThreadedEchoServer(context=server_context)
+        with server:
+            with client_context.wrap_socket(socket.socket()) as s:
+                s.connect((HOST, server.port))
+
     @requires_tls_version('TLSv1_3')
     def test_psk_tls1_3(self):
         psk = bytes.fromhex('deadbeef')
