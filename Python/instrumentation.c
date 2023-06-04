@@ -256,8 +256,8 @@ compute_line(PyCodeObject *code, int offset, int8_t line_delta)
     return PyCode_Addr2Line(code, offset * sizeof(_Py_CODEUNIT));
 }
 
-static int
-instruction_length(PyCodeObject *code, int offset)
+int
+_PyInstruction_GetLength(PyCodeObject *code, int offset)
 {
     int opcode = _PyCode_CODE(code)[offset].op.code;
     assert(opcode != 0);
@@ -395,7 +395,7 @@ dump_instrumentation_data(PyCodeObject *code, int star, FILE*out)
     dump_monitors("Active", data->active_monitors, out);
     int code_len = (int)Py_SIZE(code);
     bool starred = false;
-    for (int i = 0; i < code_len; i += instruction_length(code, i)) {
+    for (int i = 0; i < code_len; i += _PyInstruction_GetLength(code, i)) {
         _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
         int opcode = instr->op.code;
         if (i == star) {
@@ -520,7 +520,7 @@ sanity_check_instrumentation(PyCodeObject *code)
                 CHECK(local_tools == 0xff);
             }
         }
-        i += instruction_length(code, i);
+        i += _PyInstruction_GetLength(code, i);
         assert(i <= code_len);
     }
 }
@@ -1291,7 +1291,7 @@ initialize_lines(PyCodeObject *code)
         int opcode = _Py_GetBaseOpcode(code, i);
         int line = _PyCode_CheckLineNumber(i*(int)sizeof(_Py_CODEUNIT), &range);
         line_data[i].line_delta = compute_line_delta(code, i, line);
-        int length = instruction_length(code, i);
+        int length = _PyInstruction_GetLength(code, i);
         switch (opcode) {
             case END_ASYNC_FOR:
             case END_FOR:
@@ -1332,7 +1332,7 @@ initialize_lines(PyCodeObject *code)
             opcode = _Py_GetBaseOpcode(code, i);
         }
         oparg = (oparg << 8) | _PyCode_CODE(code)[i].op.arg;
-        i += instruction_length(code, i);
+        i += _PyInstruction_GetLength(code, i);
         int target = -1;
         switch (opcode) {
             case POP_JUMP_IF_FALSE:
@@ -1504,7 +1504,6 @@ is_super_instruction(uint8_t opcode) {
 int
 _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
 {
-
     if (is_version_up_to_date(code, interp)) {
         assert(
             interp->monitoring_version == 0 ||
@@ -1541,7 +1540,7 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
         return 0;
     }
     /* Insert instrumentation */
-    for (int i = 0; i < code_len; i+= instruction_length(code, i)) {
+    for (int i = 0; i < code_len; i+= _PyInstruction_GetLength(code, i)) {
         _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
         if (is_super_instruction(instr->op.code)) {
             instr->op.code = _PyOpcode_Deopt[instr->op.code];
@@ -1582,20 +1581,20 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
                     remove_line_tools(code, i, removed_line_tools);
                 }
             }
-            i += instruction_length(code, i);
+            i += _PyInstruction_GetLength(code, i);
         }
     }
     if (removed_per_instruction_tools) {
         for (int i = code->_co_firsttraceable; i < code_len;) {
             int opcode = _Py_GetBaseOpcode(code, i);
             if (opcode == RESUME || opcode == END_FOR) {
-                i += instruction_length(code, i);
+                i += _PyInstruction_GetLength(code, i);
                 continue;
             }
             if (removed_per_instruction_tools) {
                 remove_per_instruction_tools(code, i, removed_per_instruction_tools);
             }
-            i += instruction_length(code, i);
+            i += _PyInstruction_GetLength(code, i);
         }
     }
 
@@ -1610,20 +1609,20 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
                     add_line_tools(code, i, new_line_tools);
                 }
             }
-            i += instruction_length(code, i);
+            i += _PyInstruction_GetLength(code, i);
         }
     }
     if (new_per_instruction_tools) {
         for (int i = code->_co_firsttraceable; i < code_len;) {
             int opcode = _Py_GetBaseOpcode(code, i);
             if (opcode == RESUME || opcode == END_FOR) {
-                i += instruction_length(code, i);
+                i += _PyInstruction_GetLength(code, i);
                 continue;
             }
             if (new_per_instruction_tools) {
                 add_per_instruction_tools(code, i, new_per_instruction_tools);
             }
-            i += instruction_length(code, i);
+            i += _PyInstruction_GetLength(code, i);
         }
     }
 #ifdef INSTRUMENT_DEBUG

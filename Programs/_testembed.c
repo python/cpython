@@ -14,6 +14,15 @@
 #include <stdlib.h>               // putenv()
 #include <wchar.h>
 
+// These functions were removed from Python 3.13 API but are still exported
+// for the stable ABI. We want to test them in this program.
+extern void Py_SetProgramName(const wchar_t *program_name);
+extern void PySys_AddWarnOption(const wchar_t *s);
+extern void PySys_AddXOption(const wchar_t *s);
+extern void Py_SetPath(const wchar_t *path);
+extern void Py_SetPythonHome(const wchar_t *home);
+
+
 int main_argc;
 char **main_argv;
 
@@ -204,23 +213,34 @@ static int test_repeated_simple_init(void)
  * Test forcing a particular IO encoding
  *****************************************************/
 
-static void check_stdio_details(const char *encoding, const char * errors)
+static void check_stdio_details(const wchar_t *encoding, const wchar_t *errors)
 {
     /* Output info for the test case to check */
     if (encoding) {
-        printf("Expected encoding: %s\n", encoding);
+        printf("Expected encoding: %ls\n", encoding);
     } else {
         printf("Expected encoding: default\n");
     }
     if (errors) {
-        printf("Expected errors: %s\n", errors);
+        printf("Expected errors: %ls\n", errors);
     } else {
         printf("Expected errors: default\n");
     }
     fflush(stdout);
+
+    PyConfig config;
+    _PyConfig_InitCompatConfig(&config);
     /* Force the given IO encoding */
-    Py_SetStandardStreamEncoding(encoding, errors);
-    _testembed_Py_InitializeFromConfig();
+    if (encoding) {
+        config_set_string(&config, &config.stdio_encoding, encoding);
+    }
+    if (errors) {
+        config_set_string(&config, &config.stdio_errors, errors);
+    }
+    config_set_program_name(&config);
+    init_from_config_clear(&config);
+
+
     PyRun_SimpleString(
         "import sys;"
         "print('stdin: {0.encoding}:{0.errors}'.format(sys.stdin));"
@@ -237,19 +257,11 @@ static int test_forced_io_encoding(void)
     printf("--- Use defaults ---\n");
     check_stdio_details(NULL, NULL);
     printf("--- Set errors only ---\n");
-    check_stdio_details(NULL, "ignore");
+    check_stdio_details(NULL, L"ignore");
     printf("--- Set encoding only ---\n");
-    check_stdio_details("iso8859-1", NULL);
+    check_stdio_details(L"iso8859-1", NULL);
     printf("--- Set encoding and errors ---\n");
-    check_stdio_details("iso8859-1", "replace");
-
-    /* Check calling after initialization fails */
-    Py_Initialize();
-
-    if (Py_SetStandardStreamEncoding(NULL, NULL) == 0) {
-        printf("Unexpected success calling Py_SetStandardStreamEncoding");
-    }
-    Py_Finalize();
+    check_stdio_details(L"iso8859-1", L"replace");
     return 0;
 }
 
@@ -639,11 +651,7 @@ static int test_init_from_config(void)
     /* FIXME: test path config: module_search_path .. dll_path */
 
     putenv("PYTHONPLATLIBDIR=env_platlibdir");
-    status = PyConfig_SetBytesString(&config, &config.platlibdir, "my_platlibdir");
-    if (PyStatus_Exception(status)) {
-        PyConfig_Clear(&config);
-        Py_ExitStatusException(status);
-    }
+    config_set_string(&config, &config.platlibdir, L"my_platlibdir");
 
     putenv("PYTHONVERBOSE=0");
     Py_VerboseFlag = 0;
@@ -682,12 +690,6 @@ static int test_init_from_config(void)
     config.buffered_stdio = 0;
 
     putenv("PYTHONIOENCODING=cp424");
-    Py_SetStandardStreamEncoding("ascii", "ignore");
-#ifdef MS_WINDOWS
-    /* Py_SetStandardStreamEncoding() sets Py_LegacyWindowsStdioFlag to 1.
-       Force it to 0 through the config. */
-    config.legacy_windows_stdio = 0;
-#endif
     config_set_string(&config, &config.stdio_encoding, L"iso8859-1");
     config_set_string(&config, &config.stdio_errors, L"replace");
 
@@ -1410,11 +1412,7 @@ static int test_init_read_set(void)
     PyConfig config;
     PyConfig_InitPythonConfig(&config);
 
-    status = PyConfig_SetBytesString(&config, &config.program_name,
-                                     "./init_read_set");
-    if (PyStatus_Exception(status)) {
-        goto fail;
-    }
+    config_set_string(&config, &config.program_name, L"./init_read_set");
 
     status = PyConfig_Read(&config);
     if (PyStatus_Exception(status)) {
