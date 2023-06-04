@@ -217,6 +217,14 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         self._call(self._protocol.process_exited)
 
         self._try_finish()
+        self._wakeup_exit_waiters()
+
+    def _wakeup_exit_waiters(self):
+        # wake up futures waiting for wait()
+        for waiter in self._exit_waiters:
+            if not waiter.cancelled():
+                waiter.set_result(self._returncode)
+        self._exit_waiters = []
 
     async def _wait(self):
         """Wait until the process exit and return the process return code.
@@ -242,11 +250,7 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         try:
             self._protocol.connection_lost(exc)
         finally:
-            # wake up futures waiting for wait()
-            for waiter in self._exit_waiters:
-                if not waiter.cancelled():
-                    waiter.set_result(self._returncode)
-            self._exit_waiters = None
+            self._wakeup_exit_waiters()
             self._loop = None
             self._proc = None
             self._protocol = None

@@ -1,0 +1,4 @@
+Exit waiters are not resolved after subprocess handled by :class:`asyncio.Task`
+exits. This will causes a recent :func:`asyncio.wait` call hang forever if
+there are objects that are not :class:`typing.Awaitable` yield from its first
+parameter.
