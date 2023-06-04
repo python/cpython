@@ -956,7 +956,7 @@ class TestArrayWrites(unittest.TestCase):
     @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-80480 array('u')
     def test_char_write(self):
         import array, string
-        a = array.array('u', string.ascii_letters)
+        a = array.array('w', string.ascii_letters)
 
         with TemporaryFile("w+", encoding="utf-8", newline='') as fileobj:
             writer = csv.writer(fileobj, dialect="excel")
