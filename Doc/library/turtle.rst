@@ -166,7 +166,6 @@ Turtle state
       | :func:`resizemode`
       | :func:`shapesize` | :func:`turtlesize`
       | :func:`shearfactor`
-      | :func:`settiltangle`
       | :func:`tiltangle`
       | :func:`tilt`
       | :func:`shapetransform`
@@ -359,18 +358,18 @@ Turtle motion
    .. doctest::
       :skipif: _tkinter is None
 
-       >>> tp = turtle.pos()
-       >>> tp
-       (0.00,0.00)
-       >>> turtle.setpos(60,30)
-       >>> turtle.pos()
-       (60.00,30.00)
-       >>> turtle.setpos((20,80))
-       >>> turtle.pos()
-       (20.00,80.00)
-       >>> turtle.setpos(tp)
-       >>> turtle.pos()
-       (0.00,0.00)
+      >>> tp = turtle.pos()
+      >>> tp
+      (0.00,0.00)
+      >>> turtle.setpos(60,30)
+      >>> turtle.pos()
+      (60.00,30.00)
+      >>> turtle.setpos((20,80))
+      >>> turtle.pos()
+      (20.00,80.00)
+      >>> turtle.setpos(tp)
+      >>> turtle.pos()
+      (0.00,0.00)
 
 
 .. function:: teleport(x, y=None, *, fill_gap=False)
@@ -395,18 +394,18 @@ Turtle motion
    .. doctest::
       :skipif: _tkinter is None
 
-       >>> tp = turtle.pos()
-       >>> tp
-       (0.00,0.00)
-       >>> turtle.teleport(60)
-       >>> turtle.pos()
-       (60.00,0.00)
-       >>> turtle.teleport(y=10)
-       >>> turtle.pos()
-       (60.00,10.00)
-       >>> turtle.teleport(20, 30)
-       >>> turtle.pos()
-       (20.00,30.00)
+      >>> tp = turtle.pos()
+      >>> tp
+      (0.00,0.00)
+      >>> turtle.teleport(60)
+      >>> turtle.pos()
+      (60.00,0.00)
+      >>> turtle.teleport(y=10)
+      >>> turtle.pos()
+      (60.00,10.00)
+      >>> turtle.teleport(20, 30)
+      >>> turtle.pos()
+      (20.00,30.00)
 
    .. versionadded: 3.12
 
@@ -950,23 +949,23 @@ Color control
    .. doctest::
       :skipif: _tkinter is None
 
-       >>> colormode()
-       1.0
-       >>> turtle.pencolor()
-       'red'
-       >>> turtle.pencolor("brown")
-       >>> turtle.pencolor()
-       'brown'
-       >>> tup = (0.2, 0.8, 0.55)
-       >>> turtle.pencolor(tup)
-       >>> turtle.pencolor()
-       (0.2, 0.8, 0.5490196078431373)
-       >>> colormode(255)
-       >>> turtle.pencolor()
-       (51.0, 204.0, 140.0)
-       >>> turtle.pencolor('#32c18f')
-       >>> turtle.pencolor()
-       (50.0, 193.0, 143.0)
+      >>> colormode()
+      1.0
+      >>> turtle.pencolor()
+      'red'
+      >>> turtle.pencolor("brown")
+      >>> turtle.pencolor()
+      'brown'
+      >>> tup = (0.2, 0.8, 0.55)
+      >>> turtle.pencolor(tup)
+      >>> turtle.pencolor()
+      (0.2, 0.8, 0.5490196078431373)
+      >>> colormode(255)
+      >>> turtle.pencolor()
+      (51.0, 204.0, 140.0)
+      >>> turtle.pencolor('#32c18f')
+      >>> turtle.pencolor()
+      (50.0, 193.0, 143.0)
 
 
 .. function:: fillcolor(*args)
@@ -999,17 +998,17 @@ Color control
    .. doctest::
       :skipif: _tkinter is None
 
-       >>> turtle.fillcolor("violet")
-       >>> turtle.fillcolor()
-       'violet'
-       >>> turtle.pencolor()
-       (50.0, 193.0, 143.0)
-       >>> turtle.fillcolor((50, 193, 143))  # Integers, not floats
-       >>> turtle.fillcolor()
-       (50.0, 193.0, 143.0)
-       >>> turtle.fillcolor('#ffffff')
-       >>> turtle.fillcolor()
-       (255.0, 255.0, 255.0)
+      >>> turtle.fillcolor("violet")
+      >>> turtle.fillcolor()
+      'violet'
+      >>> turtle.pencolor()
+      (50.0, 193.0, 143.0)
+      >>> turtle.fillcolor((50, 193, 143))  # Integers, not floats
+      >>> turtle.fillcolor()
+      (50.0, 193.0, 143.0)
+      >>> turtle.fillcolor('#ffffff')
+      >>> turtle.fillcolor()
+      (255.0, 255.0, 255.0)
 
 
 .. function:: color(*args)
@@ -1038,12 +1037,12 @@ Color control
    .. doctest::
       :skipif: _tkinter is None
 
-       >>> turtle.color("red", "green")
-       >>> turtle.color()
-       ('red', 'green')
-       >>> color("#285078", "#a0c8f0")
-       >>> color()
-       ((40.0, 80.0, 120.0), (160.0, 200.0, 240.0))
+      >>> turtle.color("red", "green")
+      >>> turtle.color()
+      ('red', 'green')
+      >>> color("#285078", "#a0c8f0")
+      >>> color()
+      ((40.0, 80.0, 120.0), (160.0, 200.0, 240.0))
 
 
 See also: Screen method :func:`colormode`.
@@ -1065,11 +1064,11 @@ Filling
    .. doctest::
       :skipif: _tkinter is None
 
-       >>> turtle.begin_fill()
-       >>> if turtle.filling():
-       ...    turtle.pensize(5)
-       ... else:
-       ...    turtle.pensize(3)
+      >>> turtle.begin_fill()
+      >>> if turtle.filling():
+      ...    turtle.pensize(5)
+      ... else:
+      ...    turtle.pensize(3)
 
 
 
@@ -1275,11 +1274,11 @@ Appearance
    .. doctest::
       :skipif: _tkinter is None
 
-       >>> turtle.shape("circle")
-       >>> turtle.shapesize(5,2)
-       >>> turtle.shearfactor(0.5)
-       >>> turtle.shearfactor()
-       0.5
+      >>> turtle.shape("circle")
+      >>> turtle.shapesize(5,2)
+      >>> turtle.shearfactor(0.5)
+      >>> turtle.shearfactor()
+      0.5
 
 
 .. function:: tilt(angle)
@@ -1299,28 +1298,6 @@ Appearance
       >>> turtle.fd(50)
       >>> turtle.tilt(30)
       >>> turtle.fd(50)
-
-
-.. function:: settiltangle(angle)
-
-   :param angle: a number
-
-   Rotate the turtleshape to point in the direction specified by *angle*,
-   regardless of its current tilt-angle.  *Do not* change the turtle's heading
-   (direction of movement).
-
-   .. doctest::
-      :skipif: _tkinter is None or 'always; deprecated method'
-
-      >>> turtle.reset()
-      >>> turtle.shape("circle")
-      >>> turtle.shapesize(5,2)
-      >>> turtle.settiltangle(45)
-      >>> turtle.fd(50)
-      >>> turtle.settiltangle(-45)
-      >>> turtle.fd(50)
-
-   .. deprecated:: 3.1
 
 
 .. function:: tiltangle(angle=None)
@@ -1648,11 +1625,11 @@ Window control
    ``"nopic"``, delete background image, if present.  If *picname* is ``None``,
    return the filename of the current backgroundimage. ::
 
-       >>> screen.bgpic()
-       'nopic'
-       >>> screen.bgpic("landscape.gif")
-       >>> screen.bgpic()
-       "landscape.gif"
+      >>> screen.bgpic()
+      'nopic'
+      >>> screen.bgpic("landscape.gif")
+      >>> screen.bgpic()
+      "landscape.gif"
 
 
 .. function:: clear()
@@ -2059,16 +2036,16 @@ Settings and special methods
 
    Return the height of the turtle window. ::
 
-       >>> screen.window_height()
-       480
+      >>> screen.window_height()
+      480
 
 
 .. function:: window_width()
 
    Return the width of the turtle window. ::
 
-       >>> screen.window_width()
-       640
+      >>> screen.window_width()
+      640
 
 
 .. _screenspecific:
@@ -2249,12 +2226,12 @@ facilities:
          in the range 0..colormode or a 3-tuple of such numbers.
 
 
-           >>> screen.bgcolor("orange")
-           >>> screen.bgcolor()
-           "orange"
-           >>> screen.bgcolor(0.5,0,0.5)
-           >>> screen.bgcolor()
-           "#800080"
+         >>> screen.bgcolor("orange")
+         >>> screen.bgcolor()
+         "orange"
+         >>> screen.bgcolor(0.5,0,0.5)
+         >>> screen.bgcolor()
+         "#800080"
 
      >>> help(Turtle.penup)
      Help on method penup in module turtle:
@@ -2529,8 +2506,7 @@ Changes since Python 3.0
   :func:`get_shapepoly` have been added. Thus the full range of
   regular linear transforms is now available for transforming turtle shapes.
   :func:`tiltangle` has been enhanced in functionality: it now can
-  be used to get or set the tilt angle. :func:`settiltangle` has been
-  deprecated.
+  be used to get or set the tilt angle.
 
 - The :class:`Screen` method :func:`onkeypress` has been added as a complement to
   :func:`onkey`. As the latter binds actions to the key release event,

@@ -1,3 +1,5 @@
+import contextlib
+import subprocess
 import sysconfig
 import textwrap
 import unittest
@@ -8,7 +10,7 @@ from pathlib import Path
 
 from test import test_tools
 from test import support
-from test.support import os_helper
+from test.support import os_helper, import_helper
 from test.support.script_helper import assert_python_ok
 
 _py_cflags_nodist = sysconfig.get_config_var("PY_CFLAGS_NODIST")
@@ -88,6 +90,16 @@ class TestCParser(unittest.TestCase):
         cls.library_dir = tempfile.mkdtemp(dir=cls.tmp_base)
         cls.addClassCleanup(shutil.rmtree, cls.library_dir)
 
+        with contextlib.ExitStack() as stack:
+            python_exe = stack.enter_context(support.setup_venv_with_pip_setuptools_wheel("venv"))
+            sitepackages = subprocess.check_output(
+                [python_exe, "-c", "import sysconfig; print(sysconfig.get_path('platlib'))"],
+                text=True,
+            ).strip()
+            stack.enter_context(import_helper.DirsOnSysPath(sitepackages))
+            cls.addClassCleanup(stack.pop_all().close)
+
+    @support.requires_venv_with_pip()
     def setUp(self):
         self._backup_config_vars = dict(sysconfig._CONFIG_VARS)
         cmd = support.missing_compiler_executable()

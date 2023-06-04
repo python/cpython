@@ -107,9 +107,7 @@ extern PyTypeObject _PyExc_MemoryError;
             }, \
         }, \
         .dtoa = _dtoa_state_INIT(&(INTERP)), \
-        .dict_state = { \
-            .next_keys_version = 2, \
-        }, \
+        .dict_state = _dict_state_INIT, \
         .func_state = { \
             .next_version = 1, \
         }, \

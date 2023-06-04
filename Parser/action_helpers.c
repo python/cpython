@@ -122,12 +122,6 @@ _PyPegen_join_names_with_dot(Parser *p, expr_ty first_name, expr_ty second_name)
     PyObject *first_identifier = first_name->v.Name.id;
     PyObject *second_identifier = second_name->v.Name.id;
 
-    if (PyUnicode_READY(first_identifier) == -1) {
-        return NULL;
-    }
-    if (PyUnicode_READY(second_identifier) == -1) {
-        return NULL;
-    }
     const char *first_str = PyUnicode_AsUTF8(first_identifier);
     if (!first_str) {
         return NULL;
@@ -752,20 +746,25 @@ _PyPegen_function_def_decorators(Parser *p, asdl_expr_seq *decorators, stmt_ty f
     assert(function_def != NULL);
     if (function_def->kind == AsyncFunctionDef_kind) {
         return _PyAST_AsyncFunctionDef(
-            function_def->v.FunctionDef.name, function_def->v.FunctionDef.args,
-            function_def->v.FunctionDef.body, decorators, function_def->v.FunctionDef.returns,
-            function_def->v.FunctionDef.type_comment, function_def->lineno,
-            function_def->col_offset, function_def->end_lineno, function_def->end_col_offset,
-            p->arena);
+            function_def->v.AsyncFunctionDef.name,
+            function_def->v.AsyncFunctionDef.args,
+            function_def->v.AsyncFunctionDef.body, decorators,
+            function_def->v.AsyncFunctionDef.returns,
+            function_def->v.AsyncFunctionDef.type_comment,
+            function_def->v.AsyncFunctionDef.type_params,
+            function_def->lineno, function_def->col_offset,
+            function_def->end_lineno, function_def->end_col_offset, p->arena);
     }
 
     return _PyAST_FunctionDef(
-        function_def->v.FunctionDef.name, function_def->v.FunctionDef.args,
+        function_def->v.FunctionDef.name,
+        function_def->v.FunctionDef.args,
         function_def->v.FunctionDef.body, decorators,
         function_def->v.FunctionDef.returns,
-        function_def->v.FunctionDef.type_comment, function_def->lineno,
-        function_def->col_offset, function_def->end_lineno,
-        function_def->end_col_offset, p->arena);
+        function_def->v.FunctionDef.type_comment,
+        function_def->v.FunctionDef.type_params,
+        function_def->lineno, function_def->col_offset,
+        function_def->end_lineno, function_def->end_col_offset, p->arena);
 }
 
 /* Construct a ClassDef equivalent to class_def, but with decorators */
@@ -774,8 +773,10 @@ _PyPegen_class_def_decorators(Parser *p, asdl_expr_seq *decorators, stmt_ty clas
 {
     assert(class_def != NULL);
     return _PyAST_ClassDef(
-        class_def->v.ClassDef.name, class_def->v.ClassDef.bases,
-        class_def->v.ClassDef.keywords, class_def->v.ClassDef.body, decorators,
+        class_def->v.ClassDef.name,
+        class_def->v.ClassDef.bases, class_def->v.ClassDef.keywords,
+        class_def->v.ClassDef.body, decorators,
+        class_def->v.ClassDef.type_params,
         class_def->lineno, class_def->col_offset, class_def->end_lineno,
         class_def->end_col_offset, p->arena);
 }
@@ -1347,6 +1348,25 @@ _PyPegen_joined_str(Parser *p, Token* a, asdl_expr_seq* raw_expressions, Token*b
     return _PyAST_JoinedStr(resized_exprs, a->lineno, a->col_offset,
                             b->end_lineno, b->end_col_offset,
                             p->arena);
+}
+
+expr_ty _PyPegen_decoded_constant_from_token(Parser* p, Token* tok) {
+    Py_ssize_t bsize;
+    char* bstr;
+    if (PyBytes_AsStringAndSize(tok->bytes, &bstr, &bsize) == -1) {
+        return NULL;
+    }
+    PyObject* str = _PyPegen_decode_string(p, 0, bstr, bsize, tok);
+    if (str == NULL) {
+        return NULL;
+    }
+    if (_PyArena_AddPyObject(p->arena, str) < 0) {
+        Py_DECREF(str);
+        return NULL;
+    }
+    return _PyAST_Constant(str, NULL, tok->lineno, tok->col_offset,
+                           tok->end_lineno, tok->end_col_offset,
+                           p->arena);
 }
 
 expr_ty _PyPegen_constant_from_token(Parser* p, Token* tok) {

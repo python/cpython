@@ -195,9 +195,6 @@ memoryview_cast(PyMemoryViewObject *self, PyObject *const *args, Py_ssize_t narg
         _PyArg_BadArgument("cast", "argument 'format'", "str", args[0]);
         goto exit;
     }
-    if (PyUnicode_READY(args[0]) == -1) {
-        goto exit;
-    }
     format = args[0];
     if (!noptargs) {
         goto skip_optional_pos;
@@ -416,4 +413,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=01613814112cedd7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a4f6992947bcaf25 input=a9049054013a1b77]*/
