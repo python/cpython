@@ -3411,7 +3411,8 @@ PyDoc_STRVAR(getsockname_doc,
 \n\
 Return the address of the local endpoint. The format depends on the\n\
 address family. For IPv4 sockets, the address info is a pair\n\
-(hostaddr, port).");
+(hostaddr, port). For IPv6 sockets, the address info is a 4-tuple\n\
+(hostaddr, port, flowinfo, scope_id).");
 #endif
 
 
@@ -6737,8 +6738,10 @@ socket_getnameinfo(PyObject *self, PyObject *args)
         }
 #endif
     }
+    Py_BEGIN_ALLOW_THREADS
     error = getnameinfo(res->ai_addr, (socklen_t) res->ai_addrlen,
                     hbuf, sizeof(hbuf), pbuf, sizeof(pbuf), flags);
+    Py_END_ALLOW_THREADS
     if (error) {
         set_gaierror(error);
         goto fail;

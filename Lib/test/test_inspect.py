@@ -1993,6 +1993,9 @@ class TestGetattrStatic(unittest.TestCase):
         descriptor.__set__ = lambda s, i, v: None
         self.assertEqual(inspect.getattr_static(foo, 'd'), Foo.__dict__['d'])
 
+        del descriptor.__set__
+        descriptor.__delete__ = lambda s, i, o: None
+        self.assertEqual(inspect.getattr_static(foo, 'd'), Foo.__dict__['d'])
 
     def test_metaclass_with_descriptor(self):
         class descriptor(object):
@@ -2105,6 +2108,35 @@ class TestGetattrStatic(unittest.TestCase):
         with self.assertRaises(AttributeError):
             inspect.getattr_static(Thing, "spam")
         self.assertFalse(Thing.executed)
+
+    def test_custom___getattr__(self):
+        test = self
+        test.called = False
+
+        class Foo:
+            def __getattr__(self, attr):
+                test.called = True
+                return {}
+
+        with self.assertRaises(AttributeError):
+            inspect.getattr_static(Foo(), 'whatever')
+
+        self.assertFalse(test.called)
+
+    def test_custom___getattribute__(self):
+        test = self
+        test.called = False
+
+        class Foo:
+            def __getattribute__(self, attr):
+                test.called = True
+                return {}
+
+        with self.assertRaises(AttributeError):
+            inspect.getattr_static(Foo(), 'really_could_be_anything')
+
+        self.assertFalse(test.called)
+
 
 class TestGetGeneratorState(unittest.TestCase):
 

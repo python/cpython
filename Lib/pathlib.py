@@ -388,11 +388,11 @@ class _RecursiveWildcardSelector(_Selector):
             for entry in entries:
                 entry_is_dir = False
                 try:
-                    entry_is_dir = entry.is_dir()
+                    entry_is_dir = entry.is_dir(follow_symlinks=False)
                 except OSError as e:
                     if not _ignore_error(e):
                         raise
-                if entry_is_dir and not entry.is_symlink():
+                if entry_is_dir:
                     path = parent_path._make_child_relpath(entry.name)
                     for p in self._iterate_directories(path, is_dir, scandir):
                         yield p

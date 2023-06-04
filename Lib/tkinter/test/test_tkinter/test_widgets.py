@@ -77,6 +77,8 @@ class ToplevelTest(AbstractToplevelTest, unittest.TestCase):
 
     def test_configure_screen(self):
         widget = self.create()
+        if widget._windowingsystem != 'x11':
+            self.skipTest('Not using Tk for X11')
         self.assertEqual(widget['screen'], '')
         try:
             display = os.environ['DISPLAY']
@@ -1401,10 +1403,13 @@ class MenuTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_configure_type(self):
         widget = self.create()
+        opts = ('normal, tearoff, or menubar'
+                if widget.info_patchlevel() < (8, 7) else
+                'menubar, normal, or tearoff')
         self.checkEnumParam(
             widget, 'type',
             'normal', 'tearoff', 'menubar',
-            errmsg='bad type "{}": must be normal, tearoff, or menubar',
+            errmsg='bad type "{}": must be ' + opts,
             )
 
     def test_entryconfigure(self):

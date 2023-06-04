@@ -1177,17 +1177,9 @@ class ParamSpec(_Final, _Immutable, _BoundVarianceMixin, _PickleUsingNameMixin,
            '''Add two numbers together.'''
            return x + y
 
-    Parameter specification variables defined with covariant=True or
-    contravariant=True can be used to declare covariant or contravariant
-    generic types.  These keyword arguments are valid, but their actual semantics
-    are yet to be decided.  See PEP 612 for details.
-
     Parameter specification variables can be introspected. e.g.:
 
        P.__name__ == 'P'
-       P.__bound__ == None
-       P.__covariant__ == False
-       P.__contravariant__ == False
 
     Note that only parameter specification variables defined in global scope can
     be pickled.
@@ -1860,7 +1852,7 @@ class Generic:
                         base.__origin__ is Generic):
                     if gvars is not None:
                         raise TypeError(
-                            "Cannot inherit from Generic[...] multiple types.")
+                            "Cannot inherit from Generic[...] multiple times.")
                     gvars = base.__parameters__
             if gvars is not None:
                 tvarset = set(tvars)
@@ -2876,7 +2868,7 @@ class NamedTupleMeta(type):
 def NamedTuple(typename, fields=None, /, **kwargs):
     """Typed version of namedtuple.
 
-    Usage in Python versions >= 3.6::
+    Usage::
 
         class Employee(NamedTuple):
             name: str
@@ -2893,9 +2885,6 @@ def NamedTuple(typename, fields=None, /, **kwargs):
 
         Employee = NamedTuple('Employee', name=str, id=int)
 
-    In Python versions <= 3.5 use::
-
-        Employee = NamedTuple('Employee', [('name', str), ('id', int)])
     """
     if fields is None:
         fields = kwargs.items()
