@@ -1831,6 +1831,7 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
         }
         int err = PyObject_SetAttr(
                     (PyObject *)self, &_Py_ID(__doc__), prop_doc);
+        Py_DECREF(prop_doc);
         if (err < 0) {
             assert(PyErr_Occurred());
             if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
@@ -1842,10 +1843,8 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
                 // If we ever want to deprecate this behavior, only raise a
                 // warning or error when proc_doc is not None so that
                 // property without a specific doc= still works.
-                Py_DECREF(prop_doc);
                 return 0;
             } else {
-                Py_DECREF(prop_doc);
                 return -1;
             }
         }
