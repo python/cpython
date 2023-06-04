@@ -1044,7 +1044,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [BB_BRANCH] = { true, INSTR_FMT_IBC },
     [BB_BRANCH_IF_FLAG_UNSET] = { true, INSTR_FMT_IBC },
     [BB_JUMP_IF_FLAG_UNSET] = { true, INSTR_FMT_IBC },
-    [BB_BRANCH_IF_FLAG_SET] = { true, INSTR_FMT_IBC },
+    [BB_BRANCH_IF_FLAG_SET] = { true, INSTR_FMT_IXC },
     [BB_JUMP_IF_FLAG_SET] = { true, INSTR_FMT_IBC },
     [BB_JUMP_BACKWARD_LAZY] = { true, INSTR_FMT_IB },
 };

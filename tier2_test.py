@@ -477,4 +477,20 @@ with TestInfo("tier 2 unconditional forward jumps"):
     trigger_tier2(f, (1,))
 
     # As long as it doesn't crash, everything's good.
+
+######################################################################
+# Tests for: Tier 2 BB_BRANCH_IF_FLAG_SET codegen                    #
+######################################################################
+with TestInfo("tier 2 BB_BRANCH_IF_FLAG_SET codegen"):
+    # See https://github.com/pylbbv/pylbbv/issues/18 for more information.
+    def f(x,l):
+        for _ in l:
+            _
+        x+x # Force it to be optimisable
+
+    trigger_tier2(f, (1, []))
+    f(1, [1])
+
+    # As long as it doesn't crash, everything's good.
+
 print("Tests completed ^-^")

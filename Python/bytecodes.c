@@ -3355,10 +3355,10 @@ dummy_func(
                 _Py_CODEUNIT *t2_nextinstr = NULL;
                 _PyBBBranchCache *cache = (_PyBBBranchCache *)next_instr;
                 _Py_CODEUNIT *tier1_fallback = NULL;
-
                 t2_nextinstr = _PyTier2_GenerateNextBB(
                     frame, cache->bb_id_tagged, next_instr - 1,
-                    oparg, &tier1_fallback, bb_test);
+                //  v   We generate from the tier1 consequent BB, so offset (oparg) is 0.
+                    0, &tier1_fallback, bb_test);
                 if (t2_nextinstr == NULL) {
                     // Fall back to tier 1.
                     next_instr = tier1_fallback;
