@@ -557,7 +557,8 @@ class TestRetrievingSourceCode(GetSourceBase):
 
     def test_getfunctions(self):
         functions = inspect.getmembers(mod, inspect.isfunction)
-        self.assertEqual(functions, [('eggs', mod.eggs),
+        self.assertEqual(functions, [('after_closing', mod.after_closing),
+                                     ('eggs', mod.eggs),
                                      ('lobbest', mod.lobbest),
                                      ('spam', mod.spam)])
 
@@ -641,6 +642,7 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertSourceEqual(git.abuse, 29, 39)
         self.assertSourceEqual(mod.StupidGit, 21, 51)
         self.assertSourceEqual(mod.lobbest, 75, 76)
+        self.assertSourceEqual(mod.after_closing, 120, 120)
 
     def test_getsourcefile(self):
         self.assertEqual(normcase(inspect.getsourcefile(mod.spam)), modfile)
@@ -775,6 +777,22 @@ class TestOneliners(GetSourceBase):
         # Test inspect.getsource with a two-line lambda function,
         # where the second line _is_ indented.
         self.assertSourceEqual(mod2.tlli, 33, 34)
+
+    def test_parenthesized_multiline_lambda(self):
+        # Test inspect.getsource with a parenthesized multi-line lambda
+        # function.
+        self.assertSourceEqual(mod2.parenthesized_lambda, 279, 279)
+        self.assertSourceEqual(mod2.parenthesized_lambda2, 281, 281)
+        self.assertSourceEqual(mod2.parenthesized_lambda3, 283, 283)
+
+    def test_post_line_parenthesized_lambda(self):
+        # Test inspect.getsource with a parenthesized multi-line lambda
+        # function.
+        self.assertSourceEqual(mod2.post_line_parenthesized_lambda1, 286, 287)
+
+    def test_nested_lambda(self):
+        # Test inspect.getsource with a nested lambda function.
+        self.assertSourceEqual(mod2.nested_lambda, 291, 292)
 
     def test_onelinefunc(self):
         # Test inspect.getsource with a regular one-line function.
@@ -2766,6 +2784,11 @@ class TestSignatureObject(unittest.TestCase):
         # Regression test for issue #20586
         test_callable(_testcapi.docstring_with_signature_but_no_doc)
 
+        # Regression test for gh-104955
+        method = bytearray.__release_buffer__
+        sig = test_unbound_method(method)
+        self.assertEqual(list(sig.parameters), ['self', 'buffer'])
+
     @cpython_only
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
@@ -3903,6 +3926,24 @@ class TestSignatureObject(unittest.TestCase):
                          ((('a', ..., ..., 'positional_or_keyword'),
                            ('b', 2, ..., 'positional_or_keyword')),
                           ...))
+
+    def test_signature_on_derived_classes(self):
+        # gh-105080: Make sure that signatures are consistent on derived classes
+
+        class B:
+            def __new__(self, *args, **kwargs):
+                return super().__new__(self)
+            def __init__(self, value):
+                self.value = value
+
+        class D1(B):
+            def __init__(self, value):
+                super().__init__(value)
+
+        class D2(D1):
+            pass
+
+        self.assertEqual(inspect.signature(D2), inspect.signature(D1))
 
 
 class TestParameterObject(unittest.TestCase):

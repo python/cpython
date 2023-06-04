@@ -1448,8 +1448,6 @@ _elementtree_Element_iter_impl(ElementObject *self, PyTypeObject *cls,
 /*[clinic end generated code: output=bff29dc5d4566c68 input=f6944c48d3f84c58]*/
 {
     if (PyUnicode_Check(tag)) {
-        if (PyUnicode_READY(tag) < 0)
-            return NULL;
         if (PyUnicode_GET_LENGTH(tag) == 1 && PyUnicode_READ_CHAR(tag, 0) == '*')
             tag = Py_None;
     }

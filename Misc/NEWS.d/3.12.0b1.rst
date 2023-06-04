@@ -4,7 +4,7 @@
 .. release date: 2023-05-22
 .. section: Security
 
-Fixed a security in flaw in :func:`uu.decode` that could allow for directory
+Fixed a security in flaw in :func:`!uu.decode` that could allow for directory
 traversal based on the input if no ``out_file`` was specified.
 
 ..
@@ -2233,16 +2233,6 @@ Patch by Sam Schott.
 
 update curses textbox to additionally handle backspace using the
 ``curses.ascii.DEL`` key press.
-
-..
-
-.. date: 2023-04-04-13-37-28
-.. gh-issue: 103207
-.. nonce: x0vvQp
-.. section: macOS
-
-Add instructions to the macOS installer welcome display on how to workaround
-the macOS 13 Ventura “The installer encountered an error” failure.
 
 ..
 

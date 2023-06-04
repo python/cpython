@@ -395,7 +395,7 @@ Accessing attributes of extension types
 
          The string should be static, no copy is made of it.
 
-   .. c:member:: Py_ssize_t PyMemberDef.offset
+   .. c:member:: Py_ssize_t offset
 
       The offset in bytes that the member is located on the type’s object struct.
 
@@ -625,23 +625,23 @@ Defining Getters and Setters
    Structure to define property-like access for a type. See also description of
    the :c:member:`PyTypeObject.tp_getset` slot.
 
-   .. c:member:: const char* PyGetSetDef.name
+   .. c:member:: const char* name
 
       attribute name
 
-   .. c:member:: getter PyGetSetDef.get
+   .. c:member:: getter get
 
       C function to get the attribute.
 
-   .. c:member:: setter PyGetSetDef.set
+   .. c:member:: setter set
 
       Optional C function to set or delete the attribute, if omitted the attribute is readonly.
 
-   .. c:member:: const char* PyGetSetDef.doc
+   .. c:member:: const char* doc
 
       optional docstring
 
-   .. c:member:: void* PyGetSetDef.closure
+   .. c:member:: void* closure
 
       Optional function pointer, providing additional data for getter and setter.
 
