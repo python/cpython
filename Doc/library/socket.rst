@@ -436,7 +436,8 @@ Constants
       ``TCP_FASTOPEN_CONNECT``, ``TCP_ULP``, ``TCP_MD5SIG_EXT``,
       ``TCP_FASTOPEN_KEY``, ``TCP_FASTOPEN_NO_COOKIE``,
       ``TCP_ZEROCOPY_RECEIVE``, ``TCP_INQ``, ``TCP_TX_DELAY``.
-      Added ``IP_PKTINFO``.
+      Added ``IP_PKTINFO``, ``IP_UNBLOCK_SOURCE``, ``IP_BLOCK_SOURCE``,
+      ``IP_ADD_SOURCE_MEMBERSHIP``, ``IP_DROP_SOURCE_MEMBERSHIP``.
 
 .. data:: AF_CAN
           PF_CAN
@@ -1526,7 +1527,7 @@ to sockets.
    Return ``True`` if socket is in blocking mode, ``False`` if in
    non-blocking.
 
-   This is equivalent to checking ``socket.gettimeout() == 0``.
+   This is equivalent to checking ``socket.gettimeout() != 0``.
 
    .. versionadded:: 3.7
 

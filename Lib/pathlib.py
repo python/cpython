@@ -54,12 +54,29 @@ def _ignore_error(exception):
             getattr(exception, 'winerror', None) in _IGNORED_WINERRORS)
 
 
+@functools.cache
 def _is_case_sensitive(flavour):
     return flavour.normcase('Aa') == 'Aa'
 
 #
 # Globbing helpers
 #
+
+
+# fnmatch.translate() returns a regular expression that includes a prefix and
+# a suffix, which enable matching newlines and ensure the end of the string is
+# matched, respectively. These features are undesirable for our implementation
+# of PurePatch.match(), which represents path separators as newlines and joins
+# pattern segments together. As a workaround, we define a slice object that
+# can remove the prefix and suffix from any translate() result. See the
+# _compile_pattern_lines() function for more details.
+_FNMATCH_PREFIX, _FNMATCH_SUFFIX = fnmatch.translate('_').split('_')
+_FNMATCH_SLICE = slice(len(_FNMATCH_PREFIX), -len(_FNMATCH_SUFFIX))
+_SWAP_SEP_AND_NEWLINE = {
+    '/': str.maketrans({'/': '\n', '\n': '/'}),
+    '\\': str.maketrans({'\\': '\n', '\n': '\\'}),
+}
+
 
 @functools.lru_cache()
 def _make_selector(pattern_parts, flavour, case_sensitive):
@@ -92,6 +109,51 @@ def _compile_pattern(pat, case_sensitive):
     return re.compile(fnmatch.translate(pat), flags).match
 
 
+@functools.lru_cache()
+def _compile_pattern_lines(pattern_lines, case_sensitive):
+    """Compile the given pattern lines to an `re.Pattern` object.
+
+    The *pattern_lines* argument is a glob-style pattern (e.g. '**/*.py') with
+    its path separators and newlines swapped (e.g. '**\n*.py`). By using
+    newlines to separate path components, and not setting `re.DOTALL`, we
+    ensure that the `*` wildcard cannot match path separators.
+
+    The returned `re.Pattern` object may have its `match()` method called to
+    match a complete pattern, or `search()` to match from the right. The
+    argument supplied to these methods must also have its path separators and
+    newlines swapped.
+    """
+
+    # Match the start of the path, or just after a path separator
+    parts = ['^']
+    for part in pattern_lines.splitlines(keepends=True):
+        if part == '**\n':
+            # '**/' component: we use '[\s\S]' rather than '.' so that path
+            # separators (i.e. newlines) are matched. The trailing '^' ensures
+            # we terminate after a path separator (i.e. on a new line).
+            part = r'[\s\S]*^'
+        elif part == '**':
+            # '**' component.
+            part = r'[\s\S]*'
+        elif '**' in part:
+            raise ValueError("Invalid pattern: '**' can only be an entire path component")
+        else:
+            # Any other component: pass to fnmatch.translate(). We slice off
+            # the common prefix and suffix added by translate() to ensure that
+            # re.DOTALL is not set, and the end of the string not matched,
+            # respectively. With DOTALL not set, '*' wildcards will not match
+            # path separators, because the '.' characters in the pattern will
+            # not match newlines.
+            part = fnmatch.translate(part)[_FNMATCH_SLICE]
+        parts.append(part)
+    # Match the end of the path, always.
+    parts.append(r'\Z')
+    flags = re.MULTILINE
+    if not case_sensitive:
+        flags |= re.IGNORECASE
+    return re.compile(''.join(parts), flags=flags)
+
+
 class _Selector:
     """A selector matches a specific glob pattern part against the children
     of a given path."""
@@ -105,19 +167,19 @@ class _Selector:
             self.successor = _TerminatingSelector()
             self.dironly = False
 
-    def select_from(self, parent_path):
+    def select_from(self, parent_path, follow_symlinks):
         """Iterate over all child paths of `parent_path` matched by this
         selector.  This can contain parent_path itself."""
         path_cls = type(parent_path)
         scandir = path_cls._scandir
         if not parent_path.is_dir():
             return iter([])
-        return self._select_from(parent_path, scandir)
+        return self._select_from(parent_path, scandir, follow_symlinks)
 
 
 class _TerminatingSelector:
 
-    def _select_from(self, parent_path, scandir):
+    def _select_from(self, parent_path, scandir, follow_symlinks):
         yield parent_path
 
 
@@ -126,9 +188,9 @@ class _ParentSelector(_Selector):
     def __init__(self, name, child_parts, flavour, case_sensitive):
         _Selector.__init__(self, child_parts, flavour, case_sensitive)
 
-    def _select_from(self,  parent_path, scandir):
+    def _select_from(self,  parent_path, scandir, follow_symlinks):
         path = parent_path._make_child_relpath('..')
-        for p in self.successor._select_from(path, scandir):
+        for p in self.successor._select_from(path, scandir, follow_symlinks):
             yield p
 
 
@@ -141,7 +203,8 @@ class _WildcardSelector(_Selector):
             case_sensitive = _is_case_sensitive(flavour)
         self.match = _compile_pattern(pat, case_sensitive)
 
-    def _select_from(self, parent_path, scandir):
+    def _select_from(self, parent_path, scandir, follow_symlinks):
+        follow_dirlinks = True if follow_symlinks is None else follow_symlinks
         try:
             # We must close the scandir() object before proceeding to
             # avoid exhausting file descriptors when globbing deep trees.
@@ -153,14 +216,14 @@ class _WildcardSelector(_Selector):
             for entry in entries:
                 if self.dironly:
                     try:
-                        if not entry.is_dir():
+                        if not entry.is_dir(follow_symlinks=follow_dirlinks):
                             continue
                     except OSError:
                         continue
                 name = entry.name
                 if self.match(name):
                     path = parent_path._make_child_relpath(name)
-                    for p in self.successor._select_from(path, scandir):
+                    for p in self.successor._select_from(path, scandir, follow_symlinks):
                         yield p
 
 
@@ -169,16 +232,17 @@ class _RecursiveWildcardSelector(_Selector):
     def __init__(self, pat, child_parts, flavour, case_sensitive):
         _Selector.__init__(self, child_parts, flavour, case_sensitive)
 
-    def _iterate_directories(self, parent_path):
+    def _iterate_directories(self, parent_path, follow_symlinks):
         yield parent_path
-        for dirpath, dirnames, _ in parent_path.walk():
+        for dirpath, dirnames, _ in parent_path.walk(follow_symlinks=follow_symlinks):
             for dirname in dirnames:
                 yield dirpath._make_child_relpath(dirname)
 
-    def _select_from(self, parent_path, scandir):
+    def _select_from(self, parent_path, scandir, follow_symlinks):
+        follow_dirlinks = False if follow_symlinks is None else follow_symlinks
         successor_select = self.successor._select_from
-        for starting_point in self._iterate_directories(parent_path):
-            for p in successor_select(starting_point, scandir):
+        for starting_point in self._iterate_directories(parent_path, follow_dirlinks):
+            for p in successor_select(starting_point, scandir, follow_symlinks):
                 yield p
 
 
@@ -189,10 +253,10 @@ class _DoubleRecursiveWildcardSelector(_RecursiveWildcardSelector):
     multiple non-adjacent '**' segments.
     """
 
-    def _select_from(self, parent_path, scandir):
+    def _select_from(self, parent_path, scandir, follow_symlinks):
         yielded = set()
         try:
-            for p in super()._select_from(parent_path, scandir):
+            for p in super()._select_from(parent_path, scandir, follow_symlinks):
                 if p not in yielded:
                     yield p
                     yielded.add(p)
@@ -233,7 +297,7 @@ class _PathParents(Sequence):
         return "<{}.parents>".format(type(self._path).__name__)
 
 
-class PurePath(os.PathLike):
+class PurePath:
     """Base class for manipulating paths without I/O.
 
     PurePath represents a filesystem path and offers operations which
@@ -273,6 +337,10 @@ class PurePath(os.PathLike):
         # `_parts_normcase` property is accessed for the first time. It's used
         # to implement comparison methods like `__lt__()`.
         '_parts_normcase_cached',
+
+        # The `_lines_cached` slot stores the string path with path separators
+        # and newlines swapped. This is used to implement `match()`.
+        '_lines_cached',
 
         # The `_hash` slot stores the hash of the case-normalized string
         # path. It's set when `__hash__()` is called for the first time.
@@ -438,6 +506,16 @@ class PurePath(os.PathLike):
         except AttributeError:
             self._parts_normcase_cached = self._str_normcase.split(self._flavour.sep)
             return self._parts_normcase_cached
+
+    @property
+    def _lines(self):
+        # Path with separators and newlines swapped, for pattern matching.
+        try:
+            return self._lines_cached
+        except AttributeError:
+            trans = _SWAP_SEP_AND_NEWLINE[self._flavour.sep]
+            self._lines_cached = str(self).translate(trans)
+            return self._lines_cached
 
     def __eq__(self, other):
         if not isinstance(other, PurePath):
@@ -695,23 +773,22 @@ class PurePath(os.PathLike):
         """
         Return True if this path matches the given pattern.
         """
+        if not isinstance(path_pattern, PurePath):
+            path_pattern = self.with_segments(path_pattern)
         if case_sensitive is None:
             case_sensitive = _is_case_sensitive(self._flavour)
-        pat = self.with_segments(path_pattern)
-        if not pat.parts:
+        pattern = _compile_pattern_lines(path_pattern._lines, case_sensitive)
+        if path_pattern.drive or path_pattern.root:
+            return pattern.match(self._lines) is not None
+        elif path_pattern._tail:
+            return pattern.search(self._lines) is not None
+        else:
             raise ValueError("empty pattern")
-        pat_parts = pat.parts
-        parts = self.parts
-        if pat.drive or pat.root:
-            if len(pat_parts) != len(parts):
-                return False
-        elif len(pat_parts) > len(parts):
-            return False
-        for part, pat in zip(reversed(parts), reversed(pat_parts)):
-            match = _compile_pattern(pat, case_sensitive)
-            if not match(part):
-                return False
-        return True
+
+
+# Subclassing os.PathLike makes isinstance() checks slower,
+# which in turn makes Path construction slower. Register instead!
+os.PathLike.register(PurePath)
 
 
 class PurePosixPath(PurePath):
@@ -994,7 +1071,7 @@ class Path(PurePath):
         path._tail_cached = tail + [name]
         return path
 
-    def glob(self, pattern, *, case_sensitive=None):
+    def glob(self, pattern, *, case_sensitive=None, follow_symlinks=None):
         """Iterate over this subtree and yield all existing files (of any
         kind, including directories) matching the given relative pattern.
         """
@@ -1007,10 +1084,10 @@ class Path(PurePath):
         if pattern[-1] in (self._flavour.sep, self._flavour.altsep):
             pattern_parts.append('')
         selector = _make_selector(tuple(pattern_parts), self._flavour, case_sensitive)
-        for p in selector.select_from(self):
+        for p in selector.select_from(self, follow_symlinks):
             yield p
 
-    def rglob(self, pattern, *, case_sensitive=None):
+    def rglob(self, pattern, *, case_sensitive=None, follow_symlinks=None):
         """Recursively yield all existing files (of any kind, including
         directories) matching the given relative pattern, anywhere in
         this subtree.
@@ -1022,7 +1099,7 @@ class Path(PurePath):
         if pattern and pattern[-1] in (self._flavour.sep, self._flavour.altsep):
             pattern_parts.append('')
         selector = _make_selector(("**",) + tuple(pattern_parts), self._flavour, case_sensitive)
-        for p in selector.select_from(self):
+        for p in selector.select_from(self, follow_symlinks):
             yield p
 
     def walk(self, top_down=True, on_error=None, follow_symlinks=False):

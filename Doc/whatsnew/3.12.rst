@@ -203,6 +203,31 @@ same quote as the containing f-string. Let's cover these in detail:
 
 See :pep:`701` for more details.
 
+As a positive side-effect of how this feature has been implemented (by parsing f-strings
+with the PEG parser (see :pep:`617`), now error messages for f-strings are more precise
+and include the exact location of the error. For example, in Python 3.11, the following
+f-string raises a :exc:`SyntaxError`:
+
+.. code-block:: python
+
+    >>> my_string = f"{x z y}" + f"{1 + 1}"
+      File "<stdin>", line 1
+        (x z y)
+         ^^^
+    SyntaxError: f-string: invalid syntax. Perhaps you forgot a comma?
+
+but the error message doesn't include the exact location of the error withing the line and
+also has the expression artificially surrounded by parentheses. In Python 3.12, as f-strings
+are parsed with the PEG parser, error messages can be more precise and show the entire line:
+
+.. code-block:: python
+
+    >>> my_string = f"{x z y}" + f"{1 + 1}"
+      File "<stdin>", line 1
+        my_string = f"{x z y}" + f"{1 + 1}"
+                       ^^^
+    SyntaxError: invalid syntax. Perhaps you forgot a comma?
+
 (Contributed by Pablo Galindo, Batuhan Taskaya, Lysandros Nikolaou, Cristián
 Maureira-Fredes and Marta Gómez in :gh:`102856`. PEP written by Pablo Galindo,
 Batuhan Taskaya, Lysandros Nikolaou and Marta Gómez).
@@ -899,6 +924,10 @@ Optimizations
   the :mod:`tokenize` module. (Contributed by Marta Gómez Macías and Pablo Galindo
   in :gh:`102856`.)
 
+* Speed up :func:`super` method calls and attribute loads via the
+  new :opcode:`LOAD_SUPER_ATTR` instruction. (Contributed by Carl Meyer and
+  Vladimir Matveev in :gh:`103497`.)
+
 
 CPython bytecode changes
 ========================
@@ -911,11 +940,17 @@ CPython bytecode changes
 * Remove the :opcode:`!JUMP_IF_FALSE_OR_POP` and :opcode:`!JUMP_IF_TRUE_OR_POP`
   instructions. (Contributed by Irit Katriel in :gh:`102859`.)
 
+* Add the :opcode:`LOAD_FAST_AND_CLEAR` instruction as part of the
+  implementation of :pep:`709`. (Contributed by Carl Meyer in :gh:`101441`.)
+
 * Add the :opcode:`LOAD_FROM_DICT_OR_DEREF`, :opcode:`LOAD_FROM_DICT_OR_GLOBALS`,
   and :opcode:`LOAD_LOCALS` opcodes as part of the implementation of :pep:`695`.
   Remove the :opcode:`!LOAD_CLASSDEREF` opcode, which can be replaced with
   :opcode:`LOAD_LOCALS` plus :opcode:`LOAD_FROM_DICT_OR_DEREF`. (Contributed
   by Jelle Zijlstra in :gh:`103764`.)
+
+* Add the :opcode:`LOAD_SUPER_ATTR` instruction. (Contributed by Carl Meyer and
+  Vladimir Matveev in :gh:`103497`.)
 
 Demos and Tools
 ===============
@@ -1327,8 +1362,8 @@ Removed
   * Support for ``find_loader()`` and ``find_module()`` APIs have been
     removed.  (Contributed by Barry Warsaw in :gh:`98040`.)
 
-  * ``importlib.abc.Finder``, ``pkg.ImpImporter``, and ``pkg.ImpLoader`` have
-    been removed.  (Contributed by Barry Warsaw in :gh:`98040`.)
+  * ``importlib.abc.Finder``, ``pkgutil.ImpImporter``, and ``pkgutil.ImpLoader``
+    have been removed.  (Contributed by Barry Warsaw in :gh:`98040`.)
 
   * The :mod:`!imp` module has been removed.  (Contributed by Barry Warsaw in
     :gh:`98040`.)
@@ -1495,6 +1530,10 @@ Build Changes
   (Contributed by Zhang Na in :gh:`90656`.)
 
 * ``PYTHON_FOR_REGEN`` now require Python 3.10 or newer.
+
+* Autoconf 2.71 and aclocal 1.16.4 is now required to regenerate
+  :file:`!configure`.
+  (Contributed by Christian Heimes in :gh:`89886`.)
 
 
 C API Changes
