@@ -1,3 +1,0 @@
-Fix a typo in the documentation that describes the relationship between
-``socket.getblocking`` and ``socket.gettimeout``, which should be
-equivalence to ``socket.gettimeout() != 0.0.``
