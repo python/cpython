@@ -46,6 +46,9 @@ LOAD_ATTR = opmap['LOAD_ATTR']
 LOAD_SUPER_ATTR = opmap['LOAD_SUPER_ATTR']
 CALL_INTRINSIC_1 = opmap['CALL_INTRINSIC_1']
 CALL_INTRINSIC_2 = opmap['CALL_INTRINSIC_2']
+LOAD_FAST_LOAD_FAST = opmap['LOAD_FAST_LOAD_FAST']
+STORE_FAST_LOAD_FAST = opmap['STORE_FAST_LOAD_FAST']
+STORE_FAST_STORE_FAST = opmap['STORE_FAST_STORE_FAST']
 
 CACHE = opmap["CACHE"]
 
@@ -493,6 +496,13 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
                 argval = offset + 2 + signed_arg*2
                 argval += 2 * caches
                 argrepr = "to " + repr(argval)
+            elif deop in (LOAD_FAST_LOAD_FAST, STORE_FAST_LOAD_FAST, STORE_FAST_STORE_FAST):
+                arg1 = arg >> 4
+                arg2 = arg & 15
+                val1, argrepr1 = _get_name_info(arg1, varname_from_oparg)
+                val2, argrepr2 = _get_name_info(arg2, varname_from_oparg)
+                argrepr = argrepr1 + ", " + argrepr2
+                argval = val1, val2
             elif deop in haslocal or deop in hasfree:
                 argval, argrepr = _get_name_info(arg, varname_from_oparg)
             elif deop in hascompare:

@@ -775,6 +775,7 @@ extern "C" {
     INIT_ID(a), \
     INIT_ID(abs_tol), \
     INIT_ID(access), \
+    INIT_ID(aclose), \
     INIT_ID(add), \
     INIT_ID(add_done_callback), \
     INIT_ID(after_in_child), \
@@ -788,7 +789,9 @@ extern "C" {
     INIT_ID(arguments), \
     INIT_ID(argv), \
     INIT_ID(as_integer_ratio), \
+    INIT_ID(asend), \
     INIT_ID(ast), \
+    INIT_ID(athrow), \
     INIT_ID(attribute), \
     INIT_ID(authorizer_callback), \
     INIT_ID(autocommit), \
@@ -910,8 +913,10 @@ extern "C" {
     INIT_ID(exc_value), \
     INIT_ID(excepthook), \
     INIT_ID(exception), \
+    INIT_ID(existing_file_name), \
     INIT_ID(exp), \
     INIT_ID(extend), \
+    INIT_ID(extra_tokens), \
     INIT_ID(facility), \
     INIT_ID(factory), \
     INIT_ID(false), \
@@ -1061,6 +1066,7 @@ extern "C" {
     INIT_ID(namespaces), \
     INIT_ID(narg), \
     INIT_ID(ndigits), \
+    INIT_ID(new_file_name), \
     INIT_ID(new_limit), \
     INIT_ID(newline), \
     INIT_ID(newlines), \
@@ -1115,6 +1121,7 @@ extern "C" {
     INIT_ID(priority), \
     INIT_ID(progress), \
     INIT_ID(progress_handler), \
+    INIT_ID(progress_routine), \
     INIT_ID(proto), \
     INIT_ID(protocol), \
     INIT_ID(ps1), \
@@ -1187,6 +1194,7 @@ extern "C" {
     INIT_ID(stdin), \
     INIT_ID(stdout), \
     INIT_ID(step), \
+    INIT_ID(steps), \
     INIT_ID(store_name), \
     INIT_ID(strategy), \
     INIT_ID(strftime), \

@@ -8,8 +8,14 @@ from typing import Generic, Sequence, TypeVar, TypeVarTuple, ParamSpec, get_args
 
 
 class TypeParamsInvalidTest(unittest.TestCase):
-    def test_name_collision_01(self):
-        check_syntax_error(self, """def func[**A, A](): ...""")
+    def test_name_collisions(self):
+        check_syntax_error(self, 'def func[**A, A](): ...', "duplicate type parameter 'A'")
+        check_syntax_error(self, 'def func[A, *A](): ...', "duplicate type parameter 'A'")
+        check_syntax_error(self, 'def func[*A, **A](): ...', "duplicate type parameter 'A'")
+
+        check_syntax_error(self, 'class C[**A, A](): ...', "duplicate type parameter 'A'")
+        check_syntax_error(self, 'class C[A, *A](): ...', "duplicate type parameter 'A'")
+        check_syntax_error(self, 'class C[*A, **A](): ...', "duplicate type parameter 'A'")
 
     def test_name_non_collision_02(self):
         ns = run_code("""def func[A](A): return A""")
@@ -136,6 +142,9 @@ class TypeParamsInvalidTest(unittest.TestCase):
         check_syntax_error(self, "class X[T: (y := 3)]: pass")
         check_syntax_error(self, "class X[T](y := Sequence[T]): pass")
         check_syntax_error(self, "def f[T](y: (x := Sequence[T])): pass")
+        check_syntax_error(self, "class X[T]([(x := 3) for _ in range(2)] and B): pass")
+        check_syntax_error(self, "def f[T: [(x := 3) for _ in range(2)]](): pass")
+        check_syntax_error(self, "type T = [(x := 3) for _ in range(2)]")
 
 
 class TypeParamsNonlocalTest(unittest.TestCase):
@@ -813,10 +822,11 @@ class TypeParamsTypeParamsDunder(unittest.TestCase):
             class ClassA[A]():
                 pass
             ClassA.__type_params__ = ()
+            params = ClassA.__type_params__
         """
 
-        with self.assertRaisesRegex(AttributeError, "attribute '__type_params__' of 'type' objects is not writable"):
-            run_code(code)
+        ns = run_code(code)
+        self.assertEqual(ns["params"], ())
 
     def test_typeparams_dunder_function_01(self):
         def outer[A, B]():

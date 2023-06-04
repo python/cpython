@@ -18,8 +18,8 @@
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_moduleobject.h"  // PyModuleObject
 #include "pycore_opcode.h"        // EXTRA_CASES
+#include "pycore_opcode_utils.h"  // MAKE_FUNCTION_*
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
-#include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_range.h"         // _PyRangeIterObject
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
@@ -32,6 +32,7 @@
 #include "dictobject.h"
 #include "pycore_frame.h"
 #include "opcode.h"
+#include "optimizer.h"
 #include "pydtrace.h"
 #include "setobject.h"
 #include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
@@ -199,6 +200,15 @@ dummy_func(
             GETLOCAL(oparg) = NULL;
         }
 
+        inst(LOAD_FAST_LOAD_FAST, ( -- value1, value2)) {
+            uint32_t oparg1 = oparg >> 4;
+            uint32_t oparg2 = oparg & 15;
+            value1 = GETLOCAL(oparg1);
+            value2 = GETLOCAL(oparg2);
+            Py_INCREF(value1);
+            Py_INCREF(value2);
+        }
+
         inst(LOAD_CONST, (-- value)) {
             value = GETITEM(frame->f_code->co_consts, oparg);
             Py_INCREF(value);
@@ -208,10 +218,22 @@ dummy_func(
             SETLOCAL(oparg, value);
         }
 
-        super(LOAD_FAST__LOAD_FAST) = LOAD_FAST + LOAD_FAST;
+        inst(STORE_FAST_LOAD_FAST, (value1 -- value2)) {
+            uint32_t oparg1 = oparg >> 4;
+            uint32_t oparg2 = oparg & 15;
+            SETLOCAL(oparg1, value1);
+            value2 = GETLOCAL(oparg2);
+            Py_INCREF(value2);
+        }
+
+        inst(STORE_FAST_STORE_FAST, (value2, value1 --)) {
+            uint32_t oparg1 = oparg >> 4;
+            uint32_t oparg2 = oparg & 15;
+            SETLOCAL(oparg1, value1);
+            SETLOCAL(oparg2, value2);
+        }
+
         super(LOAD_FAST__LOAD_CONST) = LOAD_FAST + LOAD_CONST;
-        super(STORE_FAST__LOAD_FAST)  = STORE_FAST + LOAD_FAST;
-        super(STORE_FAST__STORE_FAST) = STORE_FAST + STORE_FAST;
         super(LOAD_CONST__LOAD_FAST) = LOAD_CONST + LOAD_FAST;
 
         inst(POP_TOP, (value --)) {
@@ -278,57 +300,94 @@ dummy_func(
 
         family(binary_op, INLINE_CACHE_ENTRIES_BINARY_OP) = {
             BINARY_OP,
-            BINARY_OP_ADD_FLOAT,
-            BINARY_OP_ADD_INT,
-            BINARY_OP_ADD_UNICODE,
-            // BINARY_OP_INPLACE_ADD_UNICODE,  // This is an odd duck.
-            BINARY_OP_MULTIPLY_FLOAT,
             BINARY_OP_MULTIPLY_INT,
-            BINARY_OP_SUBTRACT_FLOAT,
+            BINARY_OP_ADD_INT,
             BINARY_OP_SUBTRACT_INT,
+            BINARY_OP_MULTIPLY_FLOAT,
+            BINARY_OP_ADD_FLOAT,
+            BINARY_OP_SUBTRACT_FLOAT,
+            BINARY_OP_ADD_UNICODE,
+            // BINARY_OP_INPLACE_ADD_UNICODE,  // See comments at that opcode.
         };
 
-
-        inst(BINARY_OP_MULTIPLY_INT, (unused/1, left, right -- prod)) {
+        op(_GUARD_BOTH_INT, (left, right -- left, right)) {
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
-            STAT_INC(BINARY_OP, hit);
-            prod = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
-            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
-            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
-            ERROR_IF(prod == NULL, error);
         }
 
-        inst(BINARY_OP_MULTIPLY_FLOAT, (unused/1, left, right -- prod)) {
+        op(_BINARY_OP_MULTIPLY_INT, (unused/1, left, right -- res)) {
+            STAT_INC(BINARY_OP, hit);
+            res = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
+            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
+            ERROR_IF(res == NULL, error);
+        }
+
+        op(_BINARY_OP_ADD_INT, (unused/1, left, right -- res)) {
+            STAT_INC(BINARY_OP, hit);
+            res = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
+            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
+            ERROR_IF(res == NULL, error);
+        }
+
+        op(_BINARY_OP_SUBTRACT_INT, (unused/1, left, right -- res)) {
+            STAT_INC(BINARY_OP, hit);
+            res = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
+            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
+            ERROR_IF(res == NULL, error);
+        }
+
+        macro(BINARY_OP_MULTIPLY_INT) =
+            _GUARD_BOTH_INT + _BINARY_OP_MULTIPLY_INT;
+        macro(BINARY_OP_ADD_INT) =
+            _GUARD_BOTH_INT + _BINARY_OP_ADD_INT;
+        macro(BINARY_OP_SUBTRACT_INT) =
+            _GUARD_BOTH_INT + _BINARY_OP_SUBTRACT_INT;
+
+        op(_GUARD_BOTH_FLOAT, (left, right -- left, right)) {
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
+        }
+
+        op(_BINARY_OP_MULTIPLY_FLOAT, (unused/1, left, right -- res)) {
             STAT_INC(BINARY_OP, hit);
-            double dprod = ((PyFloatObject *)left)->ob_fval *
+            double dres =
+                ((PyFloatObject *)left)->ob_fval *
                 ((PyFloatObject *)right)->ob_fval;
-            DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dprod, prod);
+            DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
         }
 
-        inst(BINARY_OP_SUBTRACT_INT, (unused/1, left, right -- sub)) {
-            DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
-            DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
+        op(_BINARY_OP_ADD_FLOAT, (unused/1, left, right -- res)) {
             STAT_INC(BINARY_OP, hit);
-            sub = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
-            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
-            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
-            ERROR_IF(sub == NULL, error);
+            double dres =
+                ((PyFloatObject *)left)->ob_fval +
+                ((PyFloatObject *)right)->ob_fval;
+            DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
         }
 
-        inst(BINARY_OP_SUBTRACT_FLOAT, (unused/1, left, right -- sub)) {
-            DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
-            DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
+        op(_BINARY_OP_SUBTRACT_FLOAT, (unused/1, left, right -- res)) {
             STAT_INC(BINARY_OP, hit);
-            double dsub = ((PyFloatObject *)left)->ob_fval - ((PyFloatObject *)right)->ob_fval;
-            DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dsub, sub);
+            double dres =
+                ((PyFloatObject *)left)->ob_fval -
+                ((PyFloatObject *)right)->ob_fval;
+            DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
         }
 
-        inst(BINARY_OP_ADD_UNICODE, (unused/1, left, right -- res)) {
+        macro(BINARY_OP_MULTIPLY_FLOAT) =
+            _GUARD_BOTH_FLOAT + _BINARY_OP_MULTIPLY_FLOAT;
+        macro(BINARY_OP_ADD_FLOAT) =
+            _GUARD_BOTH_FLOAT + _BINARY_OP_ADD_FLOAT;
+        macro(BINARY_OP_SUBTRACT_FLOAT) =
+            _GUARD_BOTH_FLOAT + _BINARY_OP_SUBTRACT_FLOAT;
+
+        op(_GUARD_BOTH_UNICODE, (left, right -- left, right)) {
             DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
-            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
+            DEOPT_IF(!PyUnicode_CheckExact(right), BINARY_OP);
+        }
+
+        op(_BINARY_OP_ADD_UNICODE, (unused/1, left, right -- res)) {
             STAT_INC(BINARY_OP, hit);
             res = PyUnicode_Concat(left, right);
             _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
@@ -336,18 +395,18 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
+        macro(BINARY_OP_ADD_UNICODE) =
+            _GUARD_BOTH_UNICODE + _BINARY_OP_ADD_UNICODE;
+
         // This is a subtle one. It's a super-instruction for
         // BINARY_OP_ADD_UNICODE followed by STORE_FAST
         // where the store goes into the left argument.
         // So the inputs are the same as for all BINARY_OP
         // specializations, but there is no output.
         // At the end we just skip over the STORE_FAST.
-        inst(BINARY_OP_INPLACE_ADD_UNICODE, (left, right --)) {
-            DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
-            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
+        op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right --)) {
             _Py_CODEUNIT true_next = next_instr[INLINE_CACHE_ENTRIES_BINARY_OP];
-            assert(true_next.op.code == STORE_FAST ||
-                   true_next.op.code == STORE_FAST__LOAD_FAST);
+            assert(true_next.op.code == STORE_FAST);
             PyObject **target_local = &GETLOCAL(true_next.op.arg);
             DEOPT_IF(*target_local != left, BINARY_OP);
             STAT_INC(BINARY_OP, hit);
@@ -371,24 +430,8 @@ dummy_func(
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP + 1);
         }
 
-        inst(BINARY_OP_ADD_FLOAT, (unused/1, left, right -- sum)) {
-            DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
-            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
-            STAT_INC(BINARY_OP, hit);
-            double dsum = ((PyFloatObject *)left)->ob_fval +
-                ((PyFloatObject *)right)->ob_fval;
-            DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dsum, sum);
-        }
-
-        inst(BINARY_OP_ADD_INT, (unused/1, left, right -- sum)) {
-            DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
-            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
-            STAT_INC(BINARY_OP, hit);
-            sum = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
-            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
-            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
-            ERROR_IF(sum == NULL, error);
-        }
+        macro(BINARY_OP_INPLACE_ADD_UNICODE) =
+            _GUARD_BOTH_UNICODE + _BINARY_OP_INPLACE_ADD_UNICODE;
 
         family(binary_subscr, INLINE_CACHE_ENTRIES_BINARY_SUBSCR) = {
             BINARY_SUBSCR,
@@ -1651,8 +1694,10 @@ dummy_func(
             DEOPT_IF(!PyType_Check(class), LOAD_SUPER_ATTR);
             STAT_INC(LOAD_SUPER_ATTR, hit);
             PyObject *name = GETITEM(frame->f_code->co_names, oparg >> 2);
+            PyTypeObject *cls = (PyTypeObject *)class;
             int method_found = 0;
-            res2 = _PySuper_Lookup((PyTypeObject *)class, self, name, &method_found);
+            res2 = _PySuper_Lookup(cls, self, name,
+                                   cls->tp_getattro == PyObject_GenericGetAttr ? &method_found : NULL);
             Py_DECREF(global_super);
             Py_DECREF(class);
             if (res2 == NULL) {
@@ -2081,9 +2126,34 @@ dummy_func(
         }
 
         inst(JUMP_BACKWARD, (--)) {
-            assert(oparg < INSTR_OFFSET());
-            JUMPBY(-oparg);
+            _Py_CODEUNIT *here = next_instr - 1;
+            assert(oparg <= INSTR_OFFSET());
+            JUMPBY(1-oparg);
+            #if ENABLE_SPECIALIZATION
+            here[1].cache += (1 << OPTIMIZER_BITS_IN_COUNTER);
+            if (here[1].cache > tstate->interp->optimizer_backedge_threshold) {
+                OBJECT_STAT_INC(optimization_attempts);
+                frame = _PyOptimizer_BackEdge(frame, here, next_instr, stack_pointer);
+                if (frame == NULL) {
+                    frame = cframe.current_frame;
+                    goto error;
+                }
+                here[1].cache &= ((1 << OPTIMIZER_BITS_IN_COUNTER) -1);
+                goto resume_frame;
+            }
+            #endif  /* ENABLE_SPECIALIZATION */
             CHECK_EVAL_BREAKER();
+        }
+
+        inst(ENTER_EXECUTOR, (--)) {
+            _PyExecutorObject *executor = (_PyExecutorObject *)frame->f_code->co_executors->executors[oparg];
+            Py_INCREF(executor);
+            frame = executor->execute(executor, frame, stack_pointer);
+            if (frame == NULL) {
+                frame = cframe.current_frame;
+                goto error;
+            }
+            goto resume_frame;
         }
 
         inst(POP_JUMP_IF_FALSE, (cond -- )) {
@@ -3183,10 +3253,10 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        inst(MAKE_FUNCTION, (defaults    if (oparg & 0x01),
-                             kwdefaults  if (oparg & 0x02),
-                             annotations if (oparg & 0x04),
-                             closure     if (oparg & 0x08),
+        inst(MAKE_FUNCTION, (defaults    if (oparg & MAKE_FUNCTION_DEFAULTS),
+                             kwdefaults  if (oparg & MAKE_FUNCTION_KWDEFAULTS),
+                             annotations if (oparg & MAKE_FUNCTION_ANNOTATIONS),
+                             closure     if (oparg & MAKE_FUNCTION_CLOSURE),
                              codeobj -- func)) {
 
             PyFunctionObject *func_obj = (PyFunctionObject *)
@@ -3197,19 +3267,19 @@ dummy_func(
                 goto error;
             }
 
-            if (oparg & 0x08) {
+            if (oparg & MAKE_FUNCTION_CLOSURE) {
                 assert(PyTuple_CheckExact(closure));
                 func_obj->func_closure = closure;
             }
-            if (oparg & 0x04) {
+            if (oparg & MAKE_FUNCTION_ANNOTATIONS) {
                 assert(PyTuple_CheckExact(annotations));
                 func_obj->func_annotations = annotations;
             }
-            if (oparg & 0x02) {
+            if (oparg & MAKE_FUNCTION_KWDEFAULTS) {
                 assert(PyDict_CheckExact(kwdefaults));
                 func_obj->func_kwdefaults = kwdefaults;
             }
-            if (oparg & 0x01) {
+            if (oparg & MAKE_FUNCTION_DEFAULTS) {
                 assert(PyTuple_CheckExact(defaults));
                 func_obj->func_defaults = defaults;
             }
@@ -3332,7 +3402,7 @@ dummy_func(
         }
 
         inst(INSTRUMENTED_JUMP_BACKWARD, ( -- )) {
-            INSTRUMENTED_JUMP(next_instr-1, next_instr-oparg, PY_MONITORING_EVENT_JUMP);
+            INSTRUMENTED_JUMP(next_instr-1, next_instr+1-oparg, PY_MONITORING_EVENT_JUMP);
             CHECK_EVAL_BREAKER();
         }
 
@@ -3421,5 +3491,3 @@ dummy_func(
 }
 
 // Future families go below this point //
-
-family(store_fast) = { STORE_FAST, STORE_FAST__LOAD_FAST, STORE_FAST__STORE_FAST };

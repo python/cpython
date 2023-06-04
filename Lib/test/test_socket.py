@@ -2566,7 +2566,7 @@ class BasicHyperVTest(unittest.TestCase):
         socket.HV_GUID_BROADCAST
         socket.HV_GUID_CHILDREN
         socket.HV_GUID_LOOPBACK
-        socket.HV_GUID_LOOPBACK
+        socket.HV_GUID_PARENT
 
     def testCreateHyperVSocketWithUnknownProtoFailure(self):
         expected = r"\[WinError 10041\]"

@@ -319,12 +319,17 @@ class CAPITest(unittest.TestCase):
 
     def test_from_format(self):
         """Test PyUnicode_FromFormat()"""
+        # Length modifiers "j" and "t" are not tested here because ctypes does
+        # not expose types for intmax_t and ptrdiff_t.
+        # _testcapi.test_string_from_format() has a wider coverage of all
+        # formats.
         import_helper.import_module('ctypes')
         from ctypes import (
             c_char_p,
             pythonapi, py_object, sizeof,
             c_int, c_long, c_longlong, c_ssize_t,
-            c_uint, c_ulong, c_ulonglong, c_size_t, c_void_p)
+            c_uint, c_ulong, c_ulonglong, c_size_t, c_void_p,
+            sizeof, c_wchar, c_wchar_p)
         name = "PyUnicode_FromFormat"
         _PyUnicode_FromFormat = getattr(pythonapi, name)
         _PyUnicode_FromFormat.argtypes = (c_char_p,)
@@ -449,37 +454,28 @@ class CAPITest(unittest.TestCase):
         check_format("repr=   12",
                      b'repr=%5.2V', None, b'123')
 
-        # test integer formats (%i, %d, %u)
+        # test integer formats (%i, %d, %u, %o, %x, %X)
         check_format('010',
                      b'%03i', c_int(10))
         check_format('0010',
                      b'%0.4i', c_int(10))
-        check_format('-123',
-                     b'%i', c_int(-123))
-        check_format('-123',
-                     b'%li', c_long(-123))
-        check_format('-123',
-                     b'%lli', c_longlong(-123))
-        check_format('-123',
-                     b'%zi', c_ssize_t(-123))
-
-        check_format('-123',
-                     b'%d', c_int(-123))
-        check_format('-123',
-                     b'%ld', c_long(-123))
-        check_format('-123',
-                     b'%lld', c_longlong(-123))
-        check_format('-123',
-                     b'%zd', c_ssize_t(-123))
-
-        check_format('123',
-                     b'%u', c_uint(123))
-        check_format('123',
-                     b'%lu', c_ulong(123))
-        check_format('123',
-                     b'%llu', c_ulonglong(123))
-        check_format('123',
-                     b'%zu', c_size_t(123))
+        for conv, signed, value, expected in [
+            (b'i', True, -123, '-123'),
+            (b'd', True, -123, '-123'),
+            (b'u', False, 123, '123'),
+            (b'o', False, 0o123, '123'),
+            (b'x', False, 0xabc, 'abc'),
+            (b'X', False, 0xabc, 'ABC'),
+        ]:
+            for mod, ctype in [
+                (b'', c_int if signed else c_uint),
+                (b'l', c_long if signed else c_ulong),
+                (b'll', c_longlong if signed else c_ulonglong),
+                (b'z', c_ssize_t if signed else c_size_t),
+            ]:
+                with self.subTest(format=b'%' + mod + conv):
+                    check_format(expected,
+                                 b'%' + mod + conv, ctype(value))
 
         # test long output
         min_longlong = -(2 ** (8 * sizeof(c_longlong) - 1))
@@ -494,40 +490,144 @@ class CAPITest(unittest.TestCase):
         PyUnicode_FromFormat(b'%p', c_void_p(-1))
 
         # test padding (width and/or precision)
-        check_format('123'.rjust(10, '0'),
-                     b'%010i', c_int(123))
-        check_format('123'.rjust(100),
-                     b'%100i', c_int(123))
-        check_format('123'.rjust(100, '0'),
-                     b'%.100i', c_int(123))
-        check_format('123'.rjust(80, '0').rjust(100),
-                     b'%100.80i', c_int(123))
+        check_format('123',        b'%2i', c_int(123))
+        check_format('       123', b'%10i', c_int(123))
+        check_format('0000000123', b'%010i', c_int(123))
+        check_format('123       ', b'%-10i', c_int(123))
+        check_format('123       ', b'%-010i', c_int(123))
+        check_format('123',        b'%.2i', c_int(123))
+        check_format('0000123',    b'%.7i', c_int(123))
+        check_format('       123', b'%10.2i', c_int(123))
+        check_format('   0000123', b'%10.7i', c_int(123))
+        check_format('0000000123', b'%010.7i', c_int(123))
+        check_format('0000123   ', b'%-10.7i', c_int(123))
+        check_format('0000123   ', b'%-010.7i', c_int(123))
 
-        check_format('123'.rjust(10, '0'),
-                     b'%010u', c_uint(123))
-        check_format('123'.rjust(100),
-                     b'%100u', c_uint(123))
-        check_format('123'.rjust(100, '0'),
-                     b'%.100u', c_uint(123))
-        check_format('123'.rjust(80, '0').rjust(100),
-                     b'%100.80u', c_uint(123))
+        check_format('-123',       b'%2i', c_int(-123))
+        check_format('      -123', b'%10i', c_int(-123))
+        check_format('-000000123', b'%010i', c_int(-123))
+        check_format('-123      ', b'%-10i', c_int(-123))
+        check_format('-123      ', b'%-010i', c_int(-123))
+        check_format('-123',       b'%.2i', c_int(-123))
+        check_format('-0000123',   b'%.7i', c_int(-123))
+        check_format('      -123', b'%10.2i', c_int(-123))
+        check_format('  -0000123', b'%10.7i', c_int(-123))
+        check_format('-000000123', b'%010.7i', c_int(-123))
+        check_format('-0000123  ', b'%-10.7i', c_int(-123))
+        check_format('-0000123  ', b'%-010.7i', c_int(-123))
 
-        check_format('123'.rjust(10, '0'),
-                     b'%010x', c_int(0x123))
-        check_format('123'.rjust(100),
-                     b'%100x', c_int(0x123))
-        check_format('123'.rjust(100, '0'),
-                     b'%.100x', c_int(0x123))
-        check_format('123'.rjust(80, '0').rjust(100),
-                     b'%100.80x', c_int(0x123))
+        check_format('123',        b'%2u', c_uint(123))
+        check_format('       123', b'%10u', c_uint(123))
+        check_format('0000000123', b'%010u', c_uint(123))
+        check_format('123       ', b'%-10u', c_uint(123))
+        check_format('123       ', b'%-010u', c_uint(123))
+        check_format('123',        b'%.2u', c_uint(123))
+        check_format('0000123',    b'%.7u', c_uint(123))
+        check_format('       123', b'%10.2u', c_uint(123))
+        check_format('   0000123', b'%10.7u', c_uint(123))
+        check_format('0000000123', b'%010.7u', c_uint(123))
+        check_format('0000123   ', b'%-10.7u', c_uint(123))
+        check_format('0000123   ', b'%-010.7u', c_uint(123))
+
+        check_format('123',        b'%2o', c_uint(0o123))
+        check_format('       123', b'%10o', c_uint(0o123))
+        check_format('0000000123', b'%010o', c_uint(0o123))
+        check_format('123       ', b'%-10o', c_uint(0o123))
+        check_format('123       ', b'%-010o', c_uint(0o123))
+        check_format('123',        b'%.2o', c_uint(0o123))
+        check_format('0000123',    b'%.7o', c_uint(0o123))
+        check_format('       123', b'%10.2o', c_uint(0o123))
+        check_format('   0000123', b'%10.7o', c_uint(0o123))
+        check_format('0000000123', b'%010.7o', c_uint(0o123))
+        check_format('0000123   ', b'%-10.7o', c_uint(0o123))
+        check_format('0000123   ', b'%-010.7o', c_uint(0o123))
+
+        check_format('abc',        b'%2x', c_uint(0xabc))
+        check_format('       abc', b'%10x', c_uint(0xabc))
+        check_format('0000000abc', b'%010x', c_uint(0xabc))
+        check_format('abc       ', b'%-10x', c_uint(0xabc))
+        check_format('abc       ', b'%-010x', c_uint(0xabc))
+        check_format('abc',        b'%.2x', c_uint(0xabc))
+        check_format('0000abc',    b'%.7x', c_uint(0xabc))
+        check_format('       abc', b'%10.2x', c_uint(0xabc))
+        check_format('   0000abc', b'%10.7x', c_uint(0xabc))
+        check_format('0000000abc', b'%010.7x', c_uint(0xabc))
+        check_format('0000abc   ', b'%-10.7x', c_uint(0xabc))
+        check_format('0000abc   ', b'%-010.7x', c_uint(0xabc))
+
+        check_format('ABC',        b'%2X', c_uint(0xabc))
+        check_format('       ABC', b'%10X', c_uint(0xabc))
+        check_format('0000000ABC', b'%010X', c_uint(0xabc))
+        check_format('ABC       ', b'%-10X', c_uint(0xabc))
+        check_format('ABC       ', b'%-010X', c_uint(0xabc))
+        check_format('ABC',        b'%.2X', c_uint(0xabc))
+        check_format('0000ABC',    b'%.7X', c_uint(0xabc))
+        check_format('       ABC', b'%10.2X', c_uint(0xabc))
+        check_format('   0000ABC', b'%10.7X', c_uint(0xabc))
+        check_format('0000000ABC', b'%010.7X', c_uint(0xabc))
+        check_format('0000ABC   ', b'%-10.7X', c_uint(0xabc))
+        check_format('0000ABC   ', b'%-010.7X', c_uint(0xabc))
 
         # test %A
         check_format(r"%A:'abc\xe9\uabcd\U0010ffff'",
                      b'%%A:%A', 'abc\xe9\uabcd\U0010ffff')
 
         # test %V
-        check_format('repr=abc',
-                     b'repr=%V', 'abc', b'xyz')
+        check_format('abc',
+                     b'%V', 'abc', b'xyz')
+        check_format('xyz',
+                     b'%V', None, b'xyz')
+
+        # test %ls
+        check_format('abc', b'%ls', c_wchar_p('abc'))
+        check_format('\u4eba\u6c11', b'%ls', c_wchar_p('\u4eba\u6c11'))
+        check_format('\U0001f4bb+\U0001f40d',
+                     b'%ls', c_wchar_p('\U0001f4bb+\U0001f40d'))
+        check_format('   ab', b'%5.2ls', c_wchar_p('abc'))
+        check_format('   \u4eba\u6c11', b'%5ls', c_wchar_p('\u4eba\u6c11'))
+        check_format('  \U0001f4bb+\U0001f40d',
+                     b'%5ls', c_wchar_p('\U0001f4bb+\U0001f40d'))
+        check_format('\u4eba', b'%.1ls', c_wchar_p('\u4eba\u6c11'))
+        check_format('\U0001f4bb' if sizeof(c_wchar) > 2 else '\ud83d',
+                     b'%.1ls', c_wchar_p('\U0001f4bb+\U0001f40d'))
+        check_format('\U0001f4bb+' if sizeof(c_wchar) > 2 else '\U0001f4bb',
+                     b'%.2ls', c_wchar_p('\U0001f4bb+\U0001f40d'))
+
+        # test %lV
+        check_format('abc',
+                     b'%lV', 'abc', c_wchar_p('xyz'))
+        check_format('xyz',
+                     b'%lV', None, c_wchar_p('xyz'))
+        check_format('\u4eba\u6c11',
+                     b'%lV', None, c_wchar_p('\u4eba\u6c11'))
+        check_format('\U0001f4bb+\U0001f40d',
+                     b'%lV', None, c_wchar_p('\U0001f4bb+\U0001f40d'))
+        check_format('   ab',
+                     b'%5.2lV', None, c_wchar_p('abc'))
+        check_format('   \u4eba\u6c11',
+                     b'%5lV', None, c_wchar_p('\u4eba\u6c11'))
+        check_format('  \U0001f4bb+\U0001f40d',
+                     b'%5lV', None, c_wchar_p('\U0001f4bb+\U0001f40d'))
+        check_format('\u4eba',
+                     b'%.1lV', None, c_wchar_p('\u4eba\u6c11'))
+        check_format('\U0001f4bb' if sizeof(c_wchar) > 2 else '\ud83d',
+                     b'%.1lV', None, c_wchar_p('\U0001f4bb+\U0001f40d'))
+        check_format('\U0001f4bb+' if sizeof(c_wchar) > 2 else '\U0001f4bb',
+                     b'%.2lV', None, c_wchar_p('\U0001f4bb+\U0001f40d'))
+
+        # test variable width and precision
+        check_format('  abc', b'%*s', c_int(5), b'abc')
+        check_format('ab', b'%.*s', c_int(2), b'abc')
+        check_format('   ab', b'%*.*s', c_int(5), c_int(2), b'abc')
+        check_format('  abc', b'%*U', c_int(5), 'abc')
+        check_format('ab', b'%.*U', c_int(2), 'abc')
+        check_format('   ab', b'%*.*U', c_int(5), c_int(2), 'abc')
+        check_format('   ab', b'%*.*V', c_int(5), c_int(2), None, b'abc')
+        check_format('   ab', b'%*.*lV', c_int(5), c_int(2),
+                     None, c_wchar_p('abc'))
+        check_format('     123', b'%*i', c_int(8), c_int(123))
+        check_format('00123', b'%.*i', c_int(5), c_int(123))
+        check_format('   00123', b'%*.*i', c_int(8), c_int(5), c_int(123))
 
         # test %p
         # We cannot test the exact result,
@@ -564,10 +664,11 @@ class CAPITest(unittest.TestCase):
         check_format('',
                      b'%s', b'')
 
-        # check for crashes
+        # test invalid format strings. these tests are just here
+        # to check for crashes and should not be considered as specifications
         for fmt in (b'%', b'%0', b'%01', b'%.', b'%.1',
                     b'%0%s', b'%1%s', b'%.%s', b'%.1%s', b'%1abc',
-                    b'%l', b'%ll', b'%z', b'%ls', b'%lls', b'%zs'):
+                    b'%l', b'%ll', b'%z', b'%lls', b'%zs'):
             with self.subTest(fmt=fmt):
                 self.assertRaisesRegex(SystemError, 'invalid format string',
                     PyUnicode_FromFormat, fmt, b'abc')
