@@ -1694,7 +1694,7 @@ _PyTier2_Code_DetectAndEmitBB(
         prev_type_guard->op.code == CHECK_LIST
     );
 #define END() goto end;
-#define JUMPBY(x) i += x + 1;
+#define JUMPBY(x) i += x;
 #define DISPATCH()        write_i = emit_i(write_i, specop, curr->op.arg); \
                           write_i = copy_cache_entries(write_i, curr+1, caches); \
                           i += caches; \
@@ -2067,8 +2067,14 @@ _PyTier2_Code_DetectAndEmitBB(
 
             // Jumps may be the end of a basic block if they are conditional (a branch).
             if (IS_JUMP_OPCODE(opcode)) {
+#if BB_DEBUG
+                fprintf(stderr, "Encountered a forward jump\n");
+#endif
                 // Unconditional forward jump... continue with the BB without writing the jump.
                 if (opcode == JUMP_FORWARD) {
+#if BB_DEBUG
+                    fprintf(stderr, "Encountered an unconditional forward jump\n");
+#endif
                     // JUMP offset (oparg) + current instruction + cache entries
                     JUMPBY(oparg);
                     continue;
