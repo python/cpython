@@ -130,9 +130,12 @@ Pending Removal in Python 3.15
   They will be removed in Python 3.15.
   (Contributed by Victor Stinner in :gh:`105096`.)
 
+Pending Removal in Python 3.16
+------------------------------
+
 * :mod:`array`'s ``'u'`` format code, deprecated in docs since Python 3.3,
   emits :exc:`DeprecationWarning` since 3.13
-  and will be removed in Python 3.15.
+  and will be removed in Python 3.16.
   (contributed by Hugo van Kemenade in :gh:`80480`)
 
 Removed

@@ -103,7 +103,7 @@ class ArrayReconstructorTest(unittest.TestCase):
         warnings.filterwarnings(
             "ignore",
             message="The 'u' type code is deprecated and "
-                    "will be removed in Python 3.15",
+                    "will be removed in Python 3.16",
             category=DeprecationWarning)
 
     def test_error(self):

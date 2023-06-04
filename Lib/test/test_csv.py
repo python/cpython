@@ -953,7 +953,6 @@ class TestArrayWrites(unittest.TestCase):
             fileobj.seek(0)
             self.assertEqual(fileobj.read(), expected)
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-80480 array('u')
     def test_char_write(self):
         import array, string
         a = array.array('w', string.ascii_letters)
