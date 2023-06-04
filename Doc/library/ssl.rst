@@ -2029,7 +2029,7 @@ to speed up repeated connections from the same clients.
           return 'ClientId_1', psk_table[hint]
       context.set_psk_client_callback(callback)
 
-   .. versionadded:: 3.12
+   .. versionadded:: 3.13
 
 .. method:: SSLContext.set_psk_server_callback(callback, identity_hint=None)
 
@@ -2068,7 +2068,7 @@ to speed up repeated connections from the same clients.
           return psk_table[identity]
       context.set_psk_server_callback(callback, 'ServerId_1')
 
-   .. versionadded:: 3.12
+   .. versionadded:: 3.13
 
 .. index:: single: certificates
 
