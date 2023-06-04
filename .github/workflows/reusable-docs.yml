@@ -40,7 +40,7 @@ jobs:
       uses: Ana06/get-changed-files@v2.2.0
       with:
         filter: "Doc/**"
-        format: csv  # unbreaks paths /w whitespaces; json is harder to parse
+        format: csv  # works for paths with spaces
     - name: 'Build changed files in nit-picky mode'
       if: github.event_name == 'pull_request'
       continue-on-error: true
