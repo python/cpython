@@ -87,6 +87,13 @@ New Modules
 Improved Modules
 ================
 
+array
+-----
+
+* Add ``'w'`` type code that can be used for Unicode strings.
+  It can be used instead of ``'u'`` type code, which is deprecated.
+  (Contributed by Inada Naoki in :gh:`80480`.)
+
 io
 --
 
