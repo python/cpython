@@ -1106,9 +1106,6 @@ Pending Removal in Python 3.14
 
 APIs:
 
-* Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
-  bases using the C API (:gh:`95388`)
-
 * Deprecated :class:`collections.abc.ByteString`.
   Prefer :class:`Sequence` or :class:`collections.abc.Buffer`.
   For use in typing, prefer a union, like ``bytes | bytearray``, or :class:`collections.abc.Buffer`.
@@ -1118,7 +1115,7 @@ APIs:
   :exc:`DeprecationWarning` to be emitted when it is used.
 
 * Creating immutable types (:data:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
-  bases using the C API.
+  bases using the C API  (:gh:`95388`).
 
 * Deprecated the *isdst* parameter in :func:`email.utils.localtime`.
   (Contributed by Alan Williams in :gh:`72346`.)
