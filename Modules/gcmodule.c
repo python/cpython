@@ -2287,6 +2287,7 @@ _PyObject_GC_Link(PyObject *op)
 void
 _Py_RunGC(PyThreadState *tstate)
 {
+    assert(tstate->interp->finalization_deferred == false);
     GCState *gcstate = &tstate->interp->gc;
     gcstate->collecting = 1;
     gc_collect_generations(tstate);

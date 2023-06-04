@@ -837,6 +837,9 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     interp->optimizer_backedge_threshold = _PyOptimizer_Default.backedge_threshold;
     interp->optimizer_resume_threshold = _PyOptimizer_Default.backedge_threshold;
 
+    interp->finalization_deferred = false;
+    _Py_ClearFinalizerList(interp);
+
     /* It is possible that any of the objects below have a finalizer
        that runs Python code or otherwise relies on a thread state
        or even the interpreter state.  For now we trust that isn't
@@ -899,6 +902,8 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     Py_CLEAR(interp->sysdict);
     Py_CLEAR(interp->builtins);
     Py_CLEAR(interp->interpreter_trampoline);
+    assert(PyList_GET_SIZE(interp->finalize_list) == 0);
+    Py_CLEAR(interp->finalize_list);
 
     if (tstate->interp == interp) {
         /* We are now safe to fix tstate->_status.cleared. */

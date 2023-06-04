@@ -11,6 +11,7 @@
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_object.h"        // _Py_ClearFinalizerList()
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_signal.h"        // Py_NSIG
@@ -1759,17 +1760,30 @@ PyErr_CheckSignals(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
 
-    /* Opportunistically check if the GC is scheduled to run and run it
+    /* Opportunistically check if the GC is scheduled to run, or if there are
+       finalizers that need to run, and run them.
        if we have a request. This is done here because native code needs
        to call this API if is going to run for some time without executing
        Python code to ensure signals are handled. Checking for the GC here
        allows long running native code to clean cycles created using the C-API
        even if it doesn't run the evaluation loop */
+
+
+    bool deferred = tstate->interp->finalization_deferred;
+    tstate->interp->finalization_deferred = false;
+
     struct _ceval_state *interp_ceval_state = &tstate->interp->ceval;
+    /* Finalizers to run */
+    if (_Py_atomic_load_relaxed(&interp_ceval_state->pending_finalization)) {
+        _Py_atomic_store_relaxed(&interp_ceval_state->pending_finalization, 0);
+        _Py_ClearFinalizerList(tstate->interp);
+    }
+
     if (_Py_atomic_load_relaxed(&interp_ceval_state->gc_scheduled)) {
         _Py_atomic_store_relaxed(&interp_ceval_state->gc_scheduled, 0);
         _Py_RunGC(tstate);
     }
+    tstate->interp->finalization_deferred = deferred;
 
     if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
         return 0;

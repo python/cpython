@@ -7,6 +7,7 @@
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // _Py_RunGC()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
+#include "pycore_object.h"        // _Py_ClearFinalizerList()
 
 /*
    Notes about the implementation:
@@ -71,7 +72,8 @@ COMPUTE_EVAL_BREAKER(PyInterpreterState *interp,
         | (_Py_atomic_load_relaxed_int32(&ceval2->pending.calls_to_do)
            && _Py_ThreadCanHandlePendingCalls())
         | ceval2->pending.async_exc
-        | _Py_atomic_load_relaxed_int32(&ceval2->gc_scheduled));
+        | _Py_atomic_load_relaxed_int32(&ceval2->gc_scheduled)
+        | _Py_atomic_load_relaxed_int32(&ceval2->pending_finalization));
 }
 
 
@@ -1026,12 +1028,23 @@ _Py_HandlePending(PyThreadState *tstate)
         }
     }
 
+    bool deferred = tstate->interp->finalization_deferred;
+    tstate->interp->finalization_deferred = false;
+
+    /* Finalizers to run */
+    if (_Py_atomic_load_relaxed_int32(&interp_ceval_state->pending_finalization)) {
+        _Py_atomic_store_relaxed(&interp_ceval_state->pending_finalization, 0);
+        COMPUTE_EVAL_BREAKER(tstate->interp, ceval, interp_ceval_state);
+        _Py_ClearFinalizerList(tstate->interp);
+    }
+
     /* GC scheduled to run */
     if (_Py_atomic_load_relaxed_int32(&interp_ceval_state->gc_scheduled)) {
         _Py_atomic_store_relaxed(&interp_ceval_state->gc_scheduled, 0);
         COMPUTE_EVAL_BREAKER(tstate->interp, ceval, interp_ceval_state);
         _Py_RunGC(tstate);
     }
+    tstate->interp->finalization_deferred = deferred;
 
     /* GIL drop request */
     if (_Py_atomic_load_relaxed_int32(&interp_ceval_state->gil_drop_request)) {

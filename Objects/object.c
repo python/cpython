@@ -2556,12 +2556,39 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
 }
 
 
+static inline void
+safe_dealloc(PyObject *op)
+{
+    PyTypeObject *type = Py_TYPE(op);
+    if (type->tp_flags_internal & _Py_TPFLAG_INTERNAL_DECREF_IS_FREE) {
+        PyObject_Free(op);
+    }
+    else if (type->tp_flags_internal & _Py_TPFLAG_INTERNAL_SAFE_DECREF) {
+        type->tp_dealloc(op);
+    }
+    else {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        if (interp->finalization_deferred) {
+            /* TO DO -- Awkward error handling  */
+            int err = PyList_Append((PyObject *)interp->finalize_list, op);
+            assert(err == 0);
+            struct _ceval_state *ceval = &interp->ceval;
+            if (!_Py_atomic_load_relaxed(&ceval->pending_finalization)) {
+                _Py_atomic_store_relaxed(&ceval->pending_finalization, 1);
+                _Py_atomic_store_relaxed(&ceval->eval_breaker, 1);
+            }
+        }
+        else {
+            type->tp_dealloc(op);
+        }
+    }
+}
+
 void
 _Py_Dealloc(PyObject *op)
 {
-    PyTypeObject *type = Py_TYPE(op);
-    destructor dealloc = type->tp_dealloc;
 #ifdef Py_DEBUG
+    PyTypeObject *type = Py_TYPE(op);
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *old_exc = tstate != NULL ? tstate->current_exception : NULL;
     // Keep the old exception type alive to prevent undefined behavior
@@ -2574,7 +2601,8 @@ _Py_Dealloc(PyObject *op)
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(op);
 #endif
-    (*dealloc)(op);
+
+    safe_dealloc(op);
 
 #ifdef Py_DEBUG
     // gh-89373: The tp_dealloc function must leave the current exception
@@ -2598,6 +2626,31 @@ _Py_Dealloc(PyObject *op)
     Py_XDECREF(old_exc);
     Py_DECREF(type);
 #endif
+}
+
+void
+_Py_ClearFinalizerList(PyInterpreterState *interp)
+{
+    assert(interp->finalization_deferred == false);
+
+    PyObject *list = interp->finalize_list;
+    if (list == Py_None) {
+        return;
+    }
+
+    /* Make sure no-one else can see the list */
+    interp->finalize_list = Py_None;
+    assert(Py_REFCNT(list) == 1);
+
+    /* Don't resize the list, just empty it */
+    Py_ssize_t size = PyList_GET_SIZE(list);
+    for (Py_ssize_t i = 0; i < size; i++) {
+        PyObject *obj = PyList_GET_ITEM(list, i);
+        Py_DECREF(obj);
+    }
+    Py_SET_SIZE(list, 0);
+
+    interp->finalize_list = list;
 }
 
 

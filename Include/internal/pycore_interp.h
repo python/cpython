@@ -97,6 +97,7 @@ struct _is {
 
     struct _import_state imports;
 
+    PyObject *finalize_list;
     // Dictionary of the sys module
     PyObject *sysdict;
     // Dictionary of the builtins module
@@ -120,6 +121,7 @@ struct _is {
     PyFunction_WatchCallback func_watchers[FUNC_MAX_WATCHERS];
     // One bit is set for each non-NULL entry in func_watchers
     uint8_t active_func_watchers;
+    bool finalization_deferred;
 
     Py_ssize_t co_extra_user_count;
     freefunc co_extra_freefuncs[MAX_CO_EXTRA_USERS];

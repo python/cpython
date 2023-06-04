@@ -45,12 +45,14 @@
 #  error "ceval.c must be build with Py_BUILD_CORE define for best performance"
 #endif
 
-#if !defined(Py_DEBUG) && !defined(Py_TRACE_REFS)
 // GH-89279: The MSVC compiler does not inline these static inline functions
 // in PGO build in _PyEval_EvalFrameDefault(), because this function is over
 // the limit of PGO, and that limit cannot be configured.
 // Define them as macros to make sure that they are always inlined by the
 // preprocessor.
+
+// Use "safe DECREF in interpreter, to avoid thw world changing during execution */
+
 
 #undef Py_DECREF
 #define Py_DECREF(arg) \
@@ -61,8 +63,7 @@
         } \
         _Py_DECREF_STAT_INC(); \
         if (--op->ob_refcnt == 0) { \
-            destructor dealloc = Py_TYPE(op)->tp_dealloc; \
-            (*dealloc)(op); \
+            _Py_Dealloc(op); \
         } \
     } while (0)
 
@@ -92,7 +93,6 @@
             d(op); \
         } \
     } while (0)
-#endif
 
 // GH-89279: Similar to above, force inlining by using a macro.
 #if defined(_MSC_VER) && SIZEOF_INT == 4
@@ -669,6 +669,13 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     tstate->cframe = &cframe;
 
     assert(tstate->interp->interpreter_trampoline != NULL);
+    if (tstate->interp->finalize_list == NULL) {
+        tstate->interp->finalize_list = (PyListObject *)PyList_New(0);
+        if (tstate->interp->finalize_list == NULL) {
+            return NULL;
+        }
+        tstate->interp->finalization_deferred = true;
+    }
 #ifdef Py_DEBUG
     /* Set these to invalid but identifiable values for debugging. */
     entry_frame.f_funcobj = (PyObject*)0xaaa0;

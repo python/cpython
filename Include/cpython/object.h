@@ -221,11 +221,12 @@ struct _typeobject {
     destructor tp_del;
 
     /* Type attribute cache version tag. Added in version 2.6 */
-    unsigned int tp_version_tag;
+    uint32_t tp_version_tag;
 
     destructor tp_finalize;
     vectorcallfunc tp_vectorcall;
 
+    uint32_t tp_flags_internal;
     /* bitset of which type-watchers care about this type */
     char tp_watched;
 };

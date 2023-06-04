@@ -436,6 +436,11 @@ extern PyObject* _PyCFunctionWithKeywords_TrampolineCall(
     (meth)((self), (args), (kw))
 #endif // __EMSCRIPTEN__ && PY_CALL_TRAMPOLINE
 
+#define _Py_TPFLAG_INTERNAL_DECREF_IS_FREE 1
+#define _Py_TPFLAG_INTERNAL_SAFE_DECREF 2
+
+void _Py_ClearFinalizerList(PyInterpreterState *interp);
+
 #ifdef __cplusplus
 }
 #endif

@@ -1028,6 +1028,7 @@ PyTypeObject PyFrame_Type = {
     frame_getsetlist,                           /* tp_getset */
     0,                                          /* tp_base */
     0,                                          /* tp_dict */
+    .tp_flags_internal = _Py_TPFLAG_INTERNAL_SAFE_DECREF,
 };
 
 static void
