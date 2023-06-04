@@ -113,6 +113,13 @@ pathlib
   :meth:`~pathlib.Path.rglob`.
   (Contributed by Barney Gale in :gh:`77609`.)
 
+traceback
+---------
+
+* Add *show_group* paramter to :func:`traceback.TracebackException.format_exception_only`
+  to format the nested exceptions of a :exc:`BaseExceptionGroup` instance, recursively.
+  (Contributed by Irit Katriel in :gh:`105292`.)
+
 Optimizations
 =============
 
