@@ -87,6 +87,13 @@ New Modules
 Improved Modules
 ================
 
+array
+-----
+
+* Add ``'w'`` type code that can be used for Unicode strings.
+  It can be used instead of ``'u'`` type code, which is deprecated.
+  (Contributed by Inada Naoki in :gh:`80480`.)
+
 io
 --
 
@@ -105,13 +112,6 @@ pathlib
 * Add *follow_symlinks* keyword-only argument to :meth:`pathlib.Path.glob` and
   :meth:`~pathlib.Path.rglob`.
   (Contributed by Barney Gale in :gh:`77609`.)
-
-array
------
-
-* Add ``'w'`` type code that can be used for Unicode strings.
-  It can be used instead of ``'u'`` type code, which is deprecated.
-  (Contributed by Inada Naoki in :gh:`80480`.)
 
 Optimizations
 =============
