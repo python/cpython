@@ -131,14 +131,14 @@ check by comparing the reference count field to the immortality reference count.
 #define PyObject_HEAD_INIT(type)    \
     {                               \
         _PyObject_EXTRA_INIT        \
-        { _Py_IMMORTAL_REFCNT },    \
+        _Py_IMMORTAL_REFCNT,        \
         (type)                      \
     },
 #else
 #define PyObject_HEAD_INIT(type) \
     {                            \
         _PyObject_EXTRA_INIT     \
-        { 1 },                   \
+        1,                       \
         (type)                   \
     },
 #endif /* Py_BUILD_CORE */
@@ -165,12 +165,7 @@ check by comparing the reference count field to the immortality reference count.
  */
 struct _object {
     _PyObject_HEAD_EXTRA
-    union {
-       Py_ssize_t ob_refcnt;
-#if SIZEOF_VOID_P > 4
-       PY_UINT32_T ob_refcnt_split[2];
-#endif
-    };
+    Py_ssize_t ob_refcnt;
     PyTypeObject *ob_type;
 };
 
@@ -624,12 +619,12 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
     // directly PyObject.ob_refcnt.
 #if SIZEOF_VOID_P > 4
     // Portable saturated add, branching on the carry flag and set low bits
-    PY_UINT32_T cur_refcnt = op->ob_refcnt_split[PY_BIG_ENDIAN];
+    PY_UINT32_T cur_refcnt = _Py_CAST(PY_UINT32_T, op->ob_refcnt);
     PY_UINT32_T new_refcnt = cur_refcnt + 1;
     if (new_refcnt == 0) {
         return;
     }
-    op->ob_refcnt_split[PY_BIG_ENDIAN] = new_refcnt;
+    memcpy(&op->ob_refcnt, &new_refcnt, sizeof(new_refcnt));
 #else
     // Explicitly check immortality against the immortal value
     if (_Py_IsImmortal(op)) {
