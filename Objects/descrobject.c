@@ -1825,10 +1825,10 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
                 // https://github.com/python/cpython/issues/98963#issuecomment-1574413319
                 // Python silently dropped this doc assignment through 3.11.
                 // We preserve that behavior for backwards compatibility.
-		//
+                //
                 // If we ever want to deprecate this behavior, only raise a
-		// warning or error when proc_doc is not None so that
-		// property without a specific doc= still works.
+                // warning or error when proc_doc is not None so that
+                // property without a specific doc= still works.
                 return 0;
             } else {
                 return -1;
