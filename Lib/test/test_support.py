@@ -18,6 +18,7 @@ from test.support import os_helper
 from test.support import script_helper
 from test.support import socket_helper
 from test.support import warnings_helper
+from test.support import skip_rerun
 
 TESTFN = os_helper.TESTFN
 
@@ -683,6 +684,31 @@ class TestSupport(unittest.TestCase):
             self.assertFalse(support.has_strftime_extensions)
         else:
             self.assertTrue(support.has_strftime_extensions)
+
+    def test_skip_rerun(self):
+        @skip_rerun("This test case does not support rerunning")
+        class TestCase(unittest.TestCase):
+            counter = 0
+
+            def test(self):
+                self.assertEqual(self.counter, 0)
+                self.__class__.counter += 1
+                self.assertEqual(self.counter, 1)
+
+        test_case = TestCase("test")
+
+        output = io.StringIO()
+        unittest.TextTestRunner(output).run(unittest.TestSuite([test_case]))
+        output.seek(0)
+        self.assertRegex(output.read(), "Ran 1 test")
+
+        output = io.StringIO()
+        unittest.TextTestRunner(output).run(unittest.TestSuite([test_case]))
+        output.seek(0)
+        self.assertRegex(output.read(), "Ran 0 tests")
+
+        self.assertEqual(TestCase.counter, 1)
+
 
     # XXX -follows a list of untested API
     # make_legacy_pyc

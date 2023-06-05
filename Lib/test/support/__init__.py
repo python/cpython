@@ -2457,3 +2457,34 @@ def adjust_int_max_str_digits(max_digits):
 
 #For recursion tests, easily exceeds default recursion limit
 EXCEEDS_RECURSION_LIMIT = 5000
+
+# A decorator to skip tests that are not rerunnable.
+def skip_rerun(reason: str):
+    """
+    This decorator skips the decorated test case
+    if it has already been run.
+    """
+    def decorator(test_case: type[unittest.TestCase]):
+
+        original_setUpClass = test_case.setUpClass
+        original_tearDownClass = test_case.tearDownClass
+
+        test_case._has_run = False
+
+        @classmethod
+        def setUpClass(cls):
+            if cls._has_run:
+                raise unittest.SkipTest(reason)
+            original_setUpClass()
+
+        @classmethod
+        def tearDownClass(cls):
+            original_tearDownClass()
+            cls._has_run = True
+
+        test_case.setUpClass = setUpClass
+        test_case.tearDownClass = tearDownClass
+
+        return test_case
+
+    return decorator
