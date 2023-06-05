@@ -2689,7 +2689,6 @@ _special = frozenset({'__module__', '__name__', '__annotations__'})
 
 
 class NamedTupleMeta(type):
-
     def __new__(cls, typename, bases, ns):
         assert _NamedTuple in bases
         for base in bases:
