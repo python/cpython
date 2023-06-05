@@ -1528,8 +1528,8 @@ class _ActionsContainer(object):
         title_group_map = {}
         for group in self._action_groups:
             if group.title in title_group_map:
-                # This is practically impossible unless a derived class adds
-                # groups with duplicated titles in __init__.
+                # This branch could happen if a derived class added
+                # groups with duplicated titles in __init__
                 msg = _('cannot merge actions - two groups are named %r')
                 raise ValueError(msg % (group.title))
             title_group_map[group.title] = group
