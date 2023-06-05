@@ -760,15 +760,12 @@ def load_test(x, y=0):
 dis_load_test_quickened_code = """\
 %3d           0 RESUME                   0
 
-%3d           2 LOAD_FAST__LOAD_FAST     0 (x)
-              4 LOAD_FAST                1 (y)
-              6 STORE_FAST__STORE_FAST     3 (b)
-              8 STORE_FAST__LOAD_FAST     2 (a)
+%3d           2 LOAD_FAST_LOAD_FAST      1 (x, y)
+              4 STORE_FAST_STORE_FAST    50 (b, a)
 
-%3d          10 LOAD_FAST__LOAD_FAST     2 (a)
-             12 LOAD_FAST                3 (b)
-             14 BUILD_TUPLE              2
-             16 RETURN_VALUE
+%3d           6 LOAD_FAST_LOAD_FAST     35 (a, b)
+              8 BUILD_TUPLE              2
+             10 RETURN_VALUE
 """ % (load_test.__code__.co_firstlineno,
        load_test.__code__.co_firstlineno + 1,
        load_test.__code__.co_firstlineno + 2)
@@ -811,9 +808,8 @@ dis_extended_arg_quick_code = """\
 %3d           2 LOAD_CONST               1 (Ellipsis)
               4 EXTENDED_ARG             1
               6 UNPACK_EX              256
-              8 STORE_FAST               0 (_)
-             10 STORE_FAST               0 (_)
-             12 RETURN_CONST             0 (None)
+              8 STORE_FAST_STORE_FAST     0 (_, _)
+             10 RETURN_CONST             0 (None)
 """% (extended_arg_quick.__code__.co_firstlineno,
       extended_arg_quick.__code__.co_firstlineno + 1,)
 
@@ -1026,26 +1022,28 @@ class DisTests(DisTestBase):
             s = ['''\
   1        %*d RESUME                   0
 
-''' % (w, 0)]
-            s += ['''\
-           %*d LOAD_FAST                0 (x)
+  2        %*d LOAD_FAST                0 (x)
            %*d LOAD_CONST               1 (1)
            %*d BINARY_OP                0 (+)
-           %*d STORE_FAST               0 (x)
-''' % (w, 10*i + 2, w, 10*i + 4, w, 10*i + 6, w, 10*i + 10)
-                 for i in range(count)]
+''' % (w, 0, w, 2, w, 4, w, 6)]
             s += ['''\
+           %*d STORE_FAST_LOAD_FAST     0 (x, x)
+           %*d LOAD_CONST               1 (1)
+           %*d BINARY_OP                0 (+)
+''' % (w, 8*i + 10, w, 8*i + 12, w, 8*i + 14)
+                 for i in range(count-1)]
+            s += ['''\
+           %*d STORE_FAST               0 (x)
 
   3        %*d LOAD_FAST                0 (x)
            %*d RETURN_VALUE
-''' % (w, 10*count + 2, w, 10*count + 4)]
-            s[1] = '  2' + s[1][3:]
+''' % (w, 8*count + 2, w, 8*count + 4, w, 8*count + 6)]
             return ''.join(s)
 
         for i in range(1, 5):
             self.do_disassembly_test(func(i), expected(i, 4), True)
-        self.do_disassembly_test(func(999), expected(999, 4), True)
-        self.do_disassembly_test(func(1000), expected(1000, 5), True)
+        self.do_disassembly_test(func(1200), expected(1200, 4), True)
+        self.do_disassembly_test(func(1300), expected(1300, 5), True)
 
     def test_disassemble_str(self):
         self.do_disassembly_test(expr_str, dis_expr_str)
@@ -1646,11 +1644,10 @@ expected_opinfo_inner = [
   Instruction(opname='LOAD_DEREF', opcode=137, arg=3, argval='b', argrepr='b', offset=16, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='LOAD_DEREF', opcode=137, arg=4, argval='c', argrepr='c', offset=18, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='LOAD_DEREF', opcode=137, arg=5, argval='d', argrepr='d', offset=20, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_FAST', opcode=124, arg=0, argval='e', argrepr='e', offset=22, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='LOAD_FAST', opcode=124, arg=1, argval='f', argrepr='f', offset=24, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='CALL', opcode=171, arg=6, argval=6, argrepr='', offset=26, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=34, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='RETURN_CONST', opcode=121, arg=0, argval=None, argrepr='None', offset=36, starts_line=None, is_jump_target=False, positions=None),
+  Instruction(opname='LOAD_FAST_LOAD_FAST', opcode=168, arg=1, argval=('e', 'f'), argrepr='e, f', offset=22, starts_line=None, is_jump_target=False, positions=None),
+  Instruction(opname='CALL', opcode=171, arg=6, argval=6, argrepr='', offset=24, starts_line=None, is_jump_target=False, positions=None),
+  Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=32, starts_line=None, is_jump_target=False, positions=None),
+  Instruction(opname='RETURN_CONST', opcode=121, arg=0, argval=None, argrepr='None', offset=34, starts_line=None, is_jump_target=False, positions=None),
 ]
 
 
