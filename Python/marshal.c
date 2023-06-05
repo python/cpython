@@ -619,6 +619,10 @@ w_clear_refs(WFILE *wf)
 }
 
 /* version currently has no effect for writing ints. */
+/* Note that while the documentation states that this function
+ * can error, currently it never does. Setting an exception in
+ * this function should be regarded as an API-breaking change.
+ */
 void
 PyMarshal_WriteLongToFile(long x, FILE *fp, int version)
 {
