@@ -74,9 +74,9 @@ New typing features:
 
 * :pep:`688`: Making the buffer protocol accessible in Python
 
-* :ref:`whatsnew312-pep695`
-
 * :ref:`whatsnew312-pep692`
+
+* :ref:`whatsnew312-pep695`
 
 * :pep:`698`: Override Decorator for Static Typing
 
