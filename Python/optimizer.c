@@ -93,14 +93,15 @@ PyUnstable_Replace_Executor(PyCodeObject *code, _Py_CODEUNIT *instr, _PyExecutor
     return 0;
 }
 
-static _PyExecutorObject *
+static int
 error_optimize(
     _PyOptimizerObject* self,
     PyCodeObject *code,
-    _Py_CODEUNIT *instr)
+    _Py_CODEUNIT *instr,
+    _PyExecutorObject **exec)
 {
     PyErr_Format(PyExc_SystemError, "Should never call error_optimize");
-    return NULL;
+    return -1;
 }
 
 static PyTypeObject DefaultOptimizer_Type = {
@@ -154,14 +155,18 @@ _PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNI
         return frame;
     }
     _PyOptimizerObject *opt = interp->optimizer;
-    _PyExecutorObject *executor = opt->optimize(opt, frame->f_code, dest);
-    if (executor == NULL) {
-        return NULL;
+    _PyExecutorObject *executor;
+    int err = opt->optimize(opt, frame->f_code, dest, &executor);
+    if (err <= 0) {
+        if (err < 0) {
+            return NULL;
+        }
+        _PyFrame_SetStackPointer(frame, stack_pointer);
+        return frame;
     }
     insert_executor(frame->f_code, src, index, executor);
     return executor->execute(executor, frame, stack_pointer);
 }
-
 
 /** Test support **/
 
@@ -202,21 +207,23 @@ counter_execute(_PyExecutorObject *self, _PyInterpreterFrame *frame, PyObject **
     return frame;
 }
 
-static _PyExecutorObject *
+static int
 counter_optimize(
     _PyOptimizerObject* self,
     PyCodeObject *code,
-    _Py_CODEUNIT *instr)
+    _Py_CODEUNIT *instr,
+    _PyExecutorObject **exec_ptr)
 {
     _PyCounterExecutorObject *executor = (_PyCounterExecutorObject *)_PyObject_New(&CounterExecutor_Type);
     if (executor == NULL) {
-        return NULL;
+        return -1;
     }
     executor->executor.execute = counter_execute;
     Py_INCREF(self);
     executor->optimizer = (_PyCounterOptimizerObject *)self;
     executor->next_instr = instr;
-    return (_PyExecutorObject *)executor;
+    *exec_ptr = (_PyExecutorObject *)executor;
+    return 1;
 }
 
 static PyObject *
