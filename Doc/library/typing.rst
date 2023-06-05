@@ -3193,7 +3193,7 @@ Introspection helpers
           def a(self) -> str: ...
           b: int
 
-      is_protocol(P)  # => True
+      is_protocol(P)    # => True
       is_protocol(int)  # => False
 
    .. versionadded:: 3.13

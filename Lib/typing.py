@@ -3343,7 +3343,6 @@ def is_protocol(tp: type, /) -> bool:
         True
         >>> is_protocol(int)
         False
-
     """
     return (
         isinstance(tp, type)
@@ -3365,9 +3364,7 @@ def get_protocol_members(tp: type, /) -> frozenset[str]:
         frozenset({'a', 'b'})
 
     Raise a TypeError for arguments that are not Protocols.
-
     """
-    try:
-        return frozenset(tp.__protocol_attrs__)
-    except AttributeError:
+    if not is_protocol(tp):
         raise TypeError(f'{tp!r} is not a Protocol') from None
+    return frozenset(tp.__protocol_attrs__)
