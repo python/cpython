@@ -15,7 +15,8 @@ same reason.
 
 .. c:var:: PyObject* Py_None
 
-   The Python ``None`` object, denoting lack of value.  This object has no methods.
+   The Python ``None`` object, denoting lack of value.  This object has no methods
+   and is `immortal.<https://peps.python.org/pep-0683/>`_.
 
 .. versionchanged:: 3.12
    :const:`Py_None` is immortal.
