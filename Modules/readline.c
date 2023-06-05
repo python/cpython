@@ -6,10 +6,15 @@
 
 /* Standard definitions */
 #include "Python.h"
-#include <stddef.h>
-#include <signal.h>
+
 #include <errno.h>
+#include <signal.h>
+#include <stddef.h>
+#include <stdlib.h>               // free()
+#ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
+#endif
+#include <time.h>
 
 #if defined(HAVE_SETLOCALE)
 /* GNU readline() mistakenly sets the LC_CTYPE locale.
@@ -400,8 +405,7 @@ set_hook(const char *funcname, PyObject **hook_var, PyObject *function)
         Py_CLEAR(*hook_var);
     }
     else if (PyCallable_Check(function)) {
-        Py_INCREF(function);
-        Py_XSETREF(*hook_var, function);
+        Py_XSETREF(*hook_var, Py_NewRef(function));
     }
     else {
         PyErr_Format(PyExc_TypeError,
@@ -522,8 +526,7 @@ static PyObject *
 readline_get_begidx_impl(PyObject *module)
 /*[clinic end generated code: output=362616ee8ed1b2b1 input=e083b81c8eb4bac3]*/
 {
-    Py_INCREF(readlinestate_global->begidx);
-    return readlinestate_global->begidx;
+    return Py_NewRef(readlinestate_global->begidx);
 }
 
 /* Get the ending index for the scope of the tab-completion */
@@ -538,8 +541,7 @@ static PyObject *
 readline_get_endidx_impl(PyObject *module)
 /*[clinic end generated code: output=7f763350b12d7517 input=d4c7e34a625fd770]*/
 {
-    Py_INCREF(readlinestate_global->endidx);
-    return readlinestate_global->endidx;
+    return Py_NewRef(readlinestate_global->endidx);
 }
 
 /* Set the tab-completion word-delimiters that readline uses */
@@ -782,8 +784,7 @@ readline_get_completer_impl(PyObject *module)
     if (readlinestate_global->completer == NULL) {
         Py_RETURN_NONE;
     }
-    Py_INCREF(readlinestate_global->completer);
-    return readlinestate_global->completer;
+    return Py_NewRef(readlinestate_global->completer);
 }
 
 /* Private function to get current length of history.  XXX It may be
@@ -1014,7 +1015,7 @@ static int
 #if defined(_RL_FUNCTION_TYPEDEF)
 on_startup_hook(void)
 #else
-on_startup_hook()
+on_startup_hook(void)
 #endif
 {
     int r;
@@ -1029,7 +1030,7 @@ static int
 #if defined(_RL_FUNCTION_TYPEDEF)
 on_pre_input_hook(void)
 #else
-on_pre_input_hook()
+on_pre_input_hook(void)
 #endif
 {
     int r;
@@ -1256,9 +1257,9 @@ setup_readline(readlinestate *mod_state)
     rl_attempted_completion_function = flex_complete;
     /* Set Python word break characters */
     completer_word_break_characters =
-        rl_completer_word_break_characters =
         strdup(" \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?");
         /* All nonalphanums except '.' */
+    rl_completer_word_break_characters = completer_word_break_characters;
 
     mod_state->begidx = PyLong_FromLong(0L);
     mod_state->endidx = PyLong_FromLong(0L);

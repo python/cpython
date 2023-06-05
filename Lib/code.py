@@ -106,6 +106,7 @@ class InteractiveInterpreter:
 
         """
         type, value, tb = sys.exc_info()
+        sys.last_exc = value
         sys.last_type = type
         sys.last_value = value
         sys.last_traceback = tb
@@ -119,7 +120,7 @@ class InteractiveInterpreter:
             else:
                 # Stuff in the right filename
                 value = SyntaxError(msg, (filename, lineno, offset, line))
-                sys.last_value = value
+                sys.last_exc = sys.last_value = value
         if sys.excepthook is sys.__excepthook__:
             lines = traceback.format_exception_only(type, value)
             self.write(''.join(lines))
@@ -138,6 +139,7 @@ class InteractiveInterpreter:
         """
         sys.last_type, sys.last_value, last_tb = ei = sys.exc_info()
         sys.last_traceback = last_tb
+        sys.last_exc = ei[1]
         try:
             lines = traceback.format_exception(ei[0], ei[1], last_tb.tb_next)
             if sys.excepthook is sys.__excepthook__:

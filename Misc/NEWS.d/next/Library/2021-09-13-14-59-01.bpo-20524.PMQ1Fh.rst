@@ -1,3 +1,0 @@
-Improves error messages on ``.format()`` operation for ``str``, ``float``,
-``int``, and ``complex``. New format now shows the problematic pattern and
-the object type.

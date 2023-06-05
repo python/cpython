@@ -1,3 +1,0 @@
-:meth:`int.to_bytes` and :meth:`int.from_bytes` now take a default value of
-``"big"`` for the ``byteorder`` argument.  :meth:`int.to_bytes` also takes a
-default value of ``1`` for the ``length`` argument.

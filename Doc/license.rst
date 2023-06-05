@@ -100,7 +100,7 @@ PSF LICENSE AGREEMENT FOR PYTHON |release|
       analyze, test, perform and/or display publicly, prepare derivative works,
       distribute, and otherwise use Python |release| alone or in any derivative
       version, provided, however, that PSF's License Agreement and PSF's notice of
-      copyright, i.e., "Copyright © 2001-2021 Python Software Foundation; All Rights
+      copyright, i.e., "Copyright © 2001-2023 Python Software Foundation; All Rights
       Reserved" are retained in Python |release| alone or in any derivative version
       prepared by Licensee.
 
@@ -302,7 +302,8 @@ for third-party software incorporated in the Python distribution.
 Mersenne Twister
 ----------------
 
-The :mod:`_random` module includes code based on a download from
+The :mod:`!_random` C extension underlying the :mod:`random` module
+includes code based on a download from
 http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/MT2002/emt19937ar.html. The following are
 the verbatim comments from the original code::
 
@@ -353,7 +354,7 @@ Sockets
 
 The :mod:`socket` module uses the functions, :func:`getaddrinfo`, and
 :func:`getnameinfo`, which are coded in separate source files from the WIDE
-Project, http://www.wide.ad.jp/. ::
+Project, https://www.wide.ad.jp/. ::
 
    Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
    All rights reserved.
@@ -386,7 +387,8 @@ Project, http://www.wide.ad.jp/. ::
 Asynchronous socket services
 ----------------------------
 
-The :mod:`asynchat` and :mod:`asyncore` modules contain the following notice::
+The :mod:`test.support.asynchat` and :mod:`test.support.asyncore`
+modules contain the following notice::
 
    Copyright 1996 by Sam Rushing
 
@@ -474,7 +476,7 @@ The :mod:`trace` module contains the following notice::
 UUencode and UUdecode functions
 -------------------------------
 
-The :mod:`uu` module contains the following notice::
+The ``uu`` codec contains the following notice::
 
    Copyright 1994 by Lance Ellinghouse
    Cathedral City, California Republic, United States of America.
@@ -626,9 +628,9 @@ strtod and dtoa
 The file :file:`Python/dtoa.c`, which supplies C functions dtoa and
 strtod for conversion of C doubles to and from strings, is derived
 from the file of the same name by David M. Gay, currently available
-from http://www.netlib.org/fp/.  The original file, as retrieved on
-March 16, 2009, contains the following copyright and licensing
-notice::
+from https://web.archive.org/web/20220517033456/http://www.netlib.org/fp/dtoa.c.
+The original file, as retrieved on March 16, 2009, contains the following
+copyright and licensing notice::
 
    /****************************************************************
     *
@@ -653,7 +655,7 @@ notice::
 OpenSSL
 -------
 
-The modules :mod:`hashlib`, :mod:`posix`, :mod:`ssl`, :mod:`crypt` use
+The modules :mod:`hashlib`, :mod:`posix` and :mod:`ssl` use
 the OpenSSL library for added performance if made available by the
 operating system. Additionally, the Windows and macOS installers for
 Python may include a copy of the OpenSSL libraries, so we include a copy
@@ -819,7 +821,8 @@ sources unless the build is configured ``--with-system-expat``::
 libffi
 ------
 
-The :mod:`_ctypes` extension is built using an included copy of the libffi
+The :mod:`!_ctypes` C extension underlying the :mod:`ctypes` module
+is built using an included copy of the libffi
 sources unless the build is configured ``--with-system-libffi``::
 
    Copyright (c) 1996-2008  Red Hat, Inc and others.
@@ -920,7 +923,8 @@ on the cfuhash project::
 libmpdec
 --------
 
-The :mod:`_decimal` module is built using an included copy of the libmpdec
+The :mod:`!_decimal` C extension underlying the :mod:`decimal` module
+is built using an included copy of the libmpdec
 library unless the build is configured ``--with-system-libmpdec``::
 
    Copyright (c) 2008-2020 Stefan Krah. All rights reserved.

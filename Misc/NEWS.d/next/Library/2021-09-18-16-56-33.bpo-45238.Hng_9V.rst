@@ -1,2 +1,0 @@
-Fix :meth:`unittest.IsolatedAsyncioTestCase.debug`: it runs now asynchronous
-methods and callbacks.

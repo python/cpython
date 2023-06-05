@@ -45,7 +45,7 @@ Node classes
 
    This is the base of all AST node classes.  The actual node classes are
    derived from the :file:`Parser/Python.asdl` file, which is reproduced
-   :ref:`below <abstract-grammar>`.  They are defined in the :mod:`_ast` C
+   :ref:`above <abstract-grammar>`.  They are defined in the :mod:`_ast` C
    module and re-exported in :mod:`ast`.
 
    There is one class defined for each left-hand side symbol in the abstract
@@ -481,7 +481,7 @@ Expressions
    Comparison operator tokens.
 
 
-.. class:: Call(func, args, keywords, starargs, kwargs)
+.. class:: Call(func, args, keywords)
 
    A function call. ``func`` is the function, which will often be a
    :class:`Name` or :class:`Attribute` object. Of the arguments:
@@ -491,7 +491,7 @@ Expressions
      arguments passed by keyword.
 
    When creating a ``Call`` node, ``args`` and ``keywords`` are required, but
-   they can be empty lists. ``starargs`` and ``kwargs`` are optional.
+   they can be empty lists.
 
    .. doctest::
 
@@ -917,6 +917,25 @@ Statements
             type_ignores=[])
 
 
+.. class:: TypeAlias(name, type_params, value)
+
+   A :ref:`type alias <type-aliases>` created through the :keyword:`type`
+   statement. ``name`` is the name of the alias, ``type_params`` is a list of
+   :ref:`type parameters <ast-type-params>`, and ``value`` is the value of the
+   type alias.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('type Alias = int'), indent=4))
+        Module(
+            body=[
+                TypeAlias(
+                    name=Name(id='Alias', ctx=Store()),
+                    type_params=[],
+                    value=Name(id='int', ctx=Load()))],
+            type_ignores=[])
+
+
 Other statements which are only applicable inside functions or loops are
 described in other sections.
 
@@ -1028,10 +1047,11 @@ Control flow
 .. class:: For(target, iter, body, orelse, type_comment)
 
    A ``for`` loop. ``target`` holds the variable(s) the loop assigns to, as a
-   single :class:`Name`, :class:`Tuple` or :class:`List` node. ``iter`` holds
-   the item to be looped over, again as a single node. ``body`` and ``orelse``
-   contain lists of nodes to execute. Those in ``orelse`` are executed if the
-   loop finishes normally, rather than via a ``break`` statement.
+   single :class:`Name`, :class:`Tuple`, :class:`List`, :class:`Attribute` or
+   :class:`Subscript` node. ``iter`` holds the item to be looped over, again
+   as a single node. ``body`` and ``orelse`` contain lists of nodes to execute.
+   Those in ``orelse`` are executed if the loop finishes normally, rather than
+   via a ``break`` statement.
 
    .. attribute:: type_comment
 
@@ -1167,6 +1187,37 @@ Control flow
             type_ignores=[])
 
 
+.. class:: TryStar(body, handlers, orelse, finalbody)
+
+   ``try`` blocks which are followed by ``except*`` clauses. The attributes are the
+   same as for :class:`Try` but the :class:`ExceptHandler` nodes in ``handlers``
+   are interpreted as ``except*`` blocks rather then ``except``.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("""
+        ... try:
+        ...    ...
+        ... except* Exception:
+        ...    ...
+        ... """), indent=4))
+        Module(
+            body=[
+                TryStar(
+                    body=[
+                        Expr(
+                            value=Constant(value=Ellipsis))],
+                    handlers=[
+                        ExceptHandler(
+                            type=Name(id='Exception', ctx=Load()),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))])],
+                    orelse=[],
+                    finalbody=[])],
+            type_ignores=[])
+
+
 .. class:: ExceptHandler(type, name, body)
 
    A single ``except`` clause. ``type`` is the exception type it will match,
@@ -1266,7 +1317,7 @@ Pattern matching
    the pattern matches the subject.
 
    ``body`` contains a list of nodes to execute if the pattern matches and
-   the result of evaluating the guard expression is truthy.
+   the result of evaluating the guard expression is true.
 
    .. doctest::
 
@@ -1612,11 +1663,88 @@ Pattern matching
                                     value=Constant(value=Ellipsis))])])],
             type_ignores=[])
 
+.. _ast-type-params:
+
+Type parameters
+^^^^^^^^^^^^^^^
+
+:ref:`Type parameters <type-params>` can exist on classes, functions, and type
+aliases.
+
+.. class:: TypeVar(name, bound)
+
+   A :class:`typing.TypeVar`. ``name`` is the name of the type variable.
+   ``bound`` is the bound or constraints, if any. If ``bound`` is a :class:`Tuple`,
+   it represents constraints; otherwise it represents the bound.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("type Alias[T: int] = list[T]"), indent=4))
+        Module(
+            body=[
+                TypeAlias(
+                    name=Name(id='Alias', ctx=Store()),
+                    type_params=[
+                        TypeVar(
+                            name='T',
+                            bound=Name(id='int', ctx=Load()))],
+                    value=Subscript(
+                        value=Name(id='list', ctx=Load()),
+                        slice=Name(id='T', ctx=Load()),
+                        ctx=Load()))],
+            type_ignores=[])
+
+.. class:: ParamSpec(name)
+
+   A :class:`typing.ParamSpec`. ``name`` is the name of the parameter specification.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("type Alias[**P] = Callable[P, int]"), indent=4))
+        Module(
+            body=[
+                TypeAlias(
+                    name=Name(id='Alias', ctx=Store()),
+                    type_params=[
+                        ParamSpec(name='P')],
+                    value=Subscript(
+                        value=Name(id='Callable', ctx=Load()),
+                        slice=Tuple(
+                            elts=[
+                                Name(id='P', ctx=Load()),
+                                Name(id='int', ctx=Load())],
+                            ctx=Load()),
+                        ctx=Load()))],
+            type_ignores=[])
+
+.. class:: TypeVarTuple(name)
+
+   A :class:`typing.TypeVarTuple`. ``name`` is the name of the type variable tuple.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("type Alias[*Ts] = tuple[*Ts]"), indent=4))
+        Module(
+            body=[
+                TypeAlias(
+                    name=Name(id='Alias', ctx=Store()),
+                    type_params=[
+                        TypeVarTuple(name='Ts')],
+                    value=Subscript(
+                        value=Name(id='tuple', ctx=Load()),
+                        slice=Tuple(
+                            elts=[
+                                Starred(
+                                    value=Name(id='Ts', ctx=Load()),
+                                    ctx=Load())],
+                            ctx=Load()),
+                        ctx=Load()))],
+            type_ignores=[])
 
 Function and class definitions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. class:: FunctionDef(name, args, body, decorator_list, returns, type_comment)
+.. class:: FunctionDef(name, args, body, decorator_list, returns, type_comment, type_params)
 
    A function definition.
 
@@ -1626,6 +1754,7 @@ Function and class definitions
    * ``decorator_list`` is the list of decorators to be applied, stored outermost
      first (i.e. the first in the list will be applied last).
    * ``returns`` is the return annotation.
+   * ``type_params`` is a list of :ref:`type parameters <ast-type-params>`.
 
    .. attribute:: type_comment
 
@@ -1716,7 +1845,8 @@ Function and class definitions
                     decorator_list=[
                         Name(id='decorator1', ctx=Load()),
                         Name(id='decorator2', ctx=Load())],
-                    returns=Constant(value='return annotation'))],
+                    returns=Constant(value='return annotation'),
+                    type_params=[])],
             type_ignores=[])
 
 
@@ -1787,7 +1917,7 @@ Function and class definitions
             type_ignores=[])
 
 
-.. class:: ClassDef(name, bases, keywords, starargs, kwargs, body, decorator_list)
+.. class:: ClassDef(name, bases, keywords, body, decorator_list, type_params)
 
    A class definition.
 
@@ -1795,13 +1925,11 @@ Function and class definitions
    * ``bases`` is a list of nodes for explicitly specified base classes.
    * ``keywords`` is a list of :class:`keyword` nodes, principally for 'metaclass'.
      Other keywords will be passed to the metaclass, as per `PEP-3115
-     <https://www.python.org/dev/peps/pep-3115/>`_.
-   * ``starargs`` and ``kwargs`` are each a single node, as in a function call.
-     starargs will be expanded to join the list of base classes, and kwargs will
-     be passed to the metaclass.
+     <https://peps.python.org/pep-3115/>`_.
    * ``body`` is a list of nodes representing the code within the class
      definition.
    * ``decorator_list`` is a list of nodes, as in :class:`FunctionDef`.
+   * ``type_params`` is a list of :ref:`type parameters <ast-type-params>`.
 
    .. doctest::
 
@@ -1826,13 +1954,14 @@ Function and class definitions
                         Pass()],
                     decorator_list=[
                         Name(id='decorator1', ctx=Load()),
-                        Name(id='decorator2', ctx=Load())])],
+                        Name(id='decorator2', ctx=Load())],
+                    type_params=[])],
             type_ignores=[])
 
 Async and await
 ^^^^^^^^^^^^^^^
 
-.. class:: AsyncFunctionDef(name, args, body, decorator_list, returns, type_comment)
+.. class:: AsyncFunctionDef(name, args, body, decorator_list, returns, type_comment, type_params)
 
    An ``async def`` function definition. Has the same fields as
    :class:`FunctionDef`.
@@ -1866,7 +1995,8 @@ Async and await
                                 func=Name(id='other_func', ctx=Load()),
                                 args=[],
                                 keywords=[])))],
-                decorator_list=[])],
+                decorator_list=[],
+                type_params=[])],
         type_ignores=[])
 
 
@@ -1919,8 +2049,8 @@ and classes for traversing abstract syntax trees:
 
    If source contains a null character ('\0'), :exc:`ValueError` is raised.
 
-    .. warning::
-      Note that succesfully parsing souce code into an AST object doesn't
+   .. warning::
+      Note that successfully parsing source code into an AST object doesn't
       guarantee that the source code provided is valid Python code that can
       be executed as the compilation step can raise further :exc:`SyntaxError`
       exceptions. For instance, the source ``return 42`` generates a valid
@@ -1959,20 +2089,28 @@ and classes for traversing abstract syntax trees:
 
 .. function:: literal_eval(node_or_string)
 
-   Safely evaluate an expression node or a string containing a Python literal or
+   Evaluate an expression node or a string containing only a Python literal or
    container display.  The string or node provided may only consist of the
    following Python literal structures: strings, bytes, numbers, tuples, lists,
    dicts, sets, booleans, ``None`` and ``Ellipsis``.
 
-   This can be used for safely evaluating strings containing Python values from
-   untrusted sources without the need to parse the values oneself.  It is not
-   capable of evaluating arbitrarily complex expressions, for example involving
-   operators or indexing.
+   This can be used for evaluating strings containing Python values without the
+   need to parse the values oneself.  It is not capable of evaluating
+   arbitrarily complex expressions, for example involving operators or
+   indexing.
+
+   This function had been documented as "safe" in the past without defining
+   what that meant. That was misleading. This is specifically designed not to
+   execute Python code, unlike the more general :func:`eval`. There is no
+   namespace, no name lookups, or ability to call out. But it is not free from
+   attack: A relatively small input can lead to memory exhaustion or to C stack
+   exhaustion, crashing the process. There is also the possibility for
+   excessive CPU consumption denial of service on some inputs. Calling it on
+   untrusted data is thus not recommended.
 
    .. warning::
-      It is possible to crash the Python interpreter with a
-      sufficiently large/complex string due to stack depth limitations
-      in Python's AST compiler.
+      It is possible to crash the Python interpreter due to stack depth
+      limitations in Python's AST compiler.
 
       It can raise :exc:`ValueError`, :exc:`TypeError`, :exc:`SyntaxError`,
       :exc:`MemoryError` and :exc:`RecursionError` depending on the malformed
@@ -2237,7 +2375,7 @@ to stdout.  Otherwise, the content is read from stdin.
     code that generated them. This is helpful for tools that make source code
     transformations.
 
-    `leoAst.py <http://leoeditor.com/appendices.html#leoast-py>`_ unifies the
+    `leoAst.py <https://leoeditor.com/appendices.html#leoast-py>`_ unifies the
     token-based and parse-tree-based views of python programs by inserting
     two-way links between tokens and ast nodes.
 

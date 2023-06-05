@@ -1,3 +1,0 @@
-Removed the othergui.rst file, any references to it, and the list of GUI
-frameworks in the FAQ. In their place I've added links to the Python Wiki
-`page on GUI frameworks <https://wiki.python.org/moin/GuiProgramming>`.

@@ -1,1 +1,0 @@
-Fix integer overflow in pickling and copying the range iterator.

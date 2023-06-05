@@ -40,18 +40,25 @@ if not hasattr(sys.modules['idlelib.run'], 'firstrun'):
 
 LOCALHOST = '127.0.0.1'
 
+try:
+    eof = 'Ctrl-D (end-of-file)'
+    exit.eof = eof
+    quit.eof = eof
+except NameError: # In case subprocess started with -S (maybe in future).
+    pass
+
 
 def idle_formatwarning(message, category, filename, lineno, line=None):
     """Format warnings the IDLE way."""
 
     s = "\nWarning (from warnings module):\n"
-    s += '  File \"%s\", line %s\n' % (filename, lineno)
+    s += f'  File \"{filename}\", line {lineno}\n'
     if line is None:
         line = linecache.getline(filename, lineno)
     line = line.strip()
     if line:
         s += "    %s\n" % line
-    s += "%s: %s\n" % (category.__name__, message)
+    s += f"{category.__name__}: {message}\n"
     return s
 
 def idle_showwarning_subproc(
@@ -138,7 +145,7 @@ def main(del_exitfunc=False):
                                   args=((LOCALHOST, port),))
     sockthread.daemon = True
     sockthread.start()
-    while 1:
+    while True:
         try:
             if exit_now:
                 try:
@@ -232,6 +239,7 @@ def print_exception():
     efile = sys.stderr
     typ, val, tb = excinfo = sys.exc_info()
     sys.last_type, sys.last_value, sys.last_traceback = excinfo
+    sys.last_exc = val
     seen = set()
 
     def print_exc(typ, exc, tb):
@@ -475,9 +483,7 @@ class StdInputFile(StdioFile):
         result = self._line_buffer
         self._line_buffer = ''
         if size < 0:
-            while True:
-                line = self.shell.readline()
-                if not line: break
+            while line := self.shell.readline():
                 result += line
         else:
             while len(result) < size:

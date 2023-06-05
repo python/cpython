@@ -48,17 +48,29 @@ or on combining URL components into a URL string.
    result, except for a leading slash in the *path* component, which is retained if
    present.  For example:
 
+   .. doctest::
+      :options: +NORMALIZE_WHITESPACE
+
       >>> from urllib.parse import urlparse
-      >>> o = urlparse('http://www.cwi.nl:80/%7Eguido/Python.html')
-      >>> o   # doctest: +NORMALIZE_WHITESPACE
-      ParseResult(scheme='http', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
-                  params='', query='', fragment='')
+      >>> urlparse("scheme://netloc/path;parameters?query#fragment")
+      ParseResult(scheme='scheme', netloc='netloc', path='/path;parameters', params='',
+                  query='query', fragment='fragment')
+      >>> o = urlparse("http://docs.python.org:80/3/library/urllib.parse.html?"
+      ...              "highlight=params#url-parsing")
+      >>> o
+      ParseResult(scheme='http', netloc='docs.python.org:80',
+                  path='/3/library/urllib.parse.html', params='',
+                  query='highlight=params', fragment='url-parsing')
       >>> o.scheme
       'http'
+      >>> o.netloc
+      'docs.python.org:80'
+      >>> o.hostname
+      'docs.python.org'
       >>> o.port
       80
-      >>> o.geturl()
-      'http://www.cwi.nl:80/%7Eguido/Python.html'
+      >>> o._replace(fragment="").geturl()
+      'http://docs.python.org:80/3/library/urllib.parse.html?highlight=params'
 
    Following the syntax specifications in :rfc:`1808`, urlparse recognizes
    a netloc only if it is properly introduced by '//'.  Otherwise the
@@ -92,31 +104,31 @@ or on combining URL components into a URL string.
    The return value is a :term:`named tuple`, which means that its items can
    be accessed by index or as named attributes, which are:
 
-   +------------------+-------+--------------------------+----------------------+
-   | Attribute        | Index | Value                    | Value if not present |
-   +==================+=======+==========================+======================+
-   | :attr:`scheme`   | 0     | URL scheme specifier     | *scheme* parameter   |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`netloc`   | 1     | Network location part    | empty string         |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`path`     | 2     | Hierarchical path        | empty string         |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`params`   | 3     | Parameters for last path | empty string         |
-   |                  |       | element                  |                      |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`query`    | 4     | Query component          | empty string         |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`fragment` | 5     | Fragment identifier      | empty string         |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`username` |       | User name                | :const:`None`        |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`password` |       | Password                 | :const:`None`        |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`hostname` |       | Host name (lower case)   | :const:`None`        |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`port`     |       | Port number as integer,  | :const:`None`        |
-   |                  |       | if present               |                      |
-   +------------------+-------+--------------------------+----------------------+
+   +------------------+-------+-------------------------+------------------------+
+   | Attribute        | Index | Value                   | Value if not present   |
+   +==================+=======+=========================+========================+
+   | :attr:`scheme`   | 0     | URL scheme specifier    | *scheme* parameter     |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`netloc`   | 1     | Network location part   | empty string           |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`path`     | 2     | Hierarchical path       | empty string           |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`params`   | 3     | Parameters for last     | empty string           |
+   |                  |       | path element            |                        |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`query`    | 4     | Query component         | empty string           |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`fragment` | 5     | Fragment identifier     | empty string           |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`username` |       | User name               | :const:`None`          |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`password` |       | Password                | :const:`None`          |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`hostname` |       | Host name (lower case)  | :const:`None`          |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`port`     |       | Port number as integer, | :const:`None`          |
+   |                  |       | if present              |                        |
+   +------------------+-------+-------------------------+------------------------+
 
    Reading the :attr:`port` attribute will raise a :exc:`ValueError` if
    an invalid port is specified in the URL.  See section
@@ -147,6 +159,10 @@ or on combining URL components into a URL string.
       ParseResult(scheme='http', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
                   params='', query='', fragment='')
 
+   .. warning::
+
+      :func:`urlparse` does not perform validation.  See :ref:`URL parsing
+      security <url-parsing-security>` for details.
 
    .. versionchanged:: 3.2
       Added IPv6 URL parsing capabilities.
@@ -312,8 +328,14 @@ or on combining URL components into a URL string.
    ``#``, ``@``, or ``:`` will raise a :exc:`ValueError`. If the URL is
    decomposed before parsing, no error will be raised.
 
-   Following the `WHATWG spec`_ that updates RFC 3986, ASCII newline
-   ``\n``, ``\r`` and tab ``\t`` characters are stripped from the URL.
+   Following some of the `WHATWG spec`_ that updates RFC 3986, leading C0
+   control and space characters are stripped from the URL. ``\n``,
+   ``\r`` and tab ``\t`` characters are removed from the URL at any position.
+
+   .. warning::
+
+      :func:`urlsplit` does not perform validation.  See :ref:`URL parsing
+      security <url-parsing-security>` for details.
 
    .. versionchanged:: 3.6
       Out-of-range port numbers now raise :exc:`ValueError`, instead of
@@ -325,6 +347,9 @@ or on combining URL components into a URL string.
 
    .. versionchanged:: 3.10
       ASCII newline and tab characters are stripped from the URL.
+
+   .. versionchanged:: 3.12
+      Leading WHATWG C0 control and space characters are stripped from the URL.
 
 .. _WHATWG spec: https://url.spec.whatwg.org/#concept-basic-url-parser
 
@@ -401,6 +426,35 @@ or on combining URL components into a URL string.
    ``<URL:scheme://host/path>``, ``<scheme://host/path>``, ``URL:scheme://host/path``
    or ``scheme://host/path``). If *url* is not a wrapped URL, it is returned
    without changes.
+
+.. _url-parsing-security:
+
+URL parsing security
+--------------------
+
+The :func:`urlsplit` and :func:`urlparse` APIs do not perform **validation** of
+inputs.  They may not raise errors on inputs that other applications consider
+invalid.  They may also succeed on some inputs that might not be considered
+URLs elsewhere.  Their purpose is for practical functionality rather than
+purity.
+
+Instead of raising an exception on unusual input, they may instead return some
+component parts as empty strings. Or components may contain more than perhaps
+they should.
+
+We recommend that users of these APIs where the values may be used anywhere
+with security implications code defensively. Do some verification within your
+code before trusting a returned component part.  Does that ``scheme`` make
+sense?  Is that a sensible ``path``?  Is there anything strange about that
+``hostname``?  etc.
+
+What constitutes a URL is not universally well defined.  Different applications
+have different needs and desired constraints.  For instance the living `WHATWG
+spec`_ describes what user facing web clients such as a web browser require.
+While :rfc:`3986` is more general.  These functions incorporate some aspects of
+both, but cannot be claimed compliant with either.  The APIs and existing user
+code with expectations on specific behaviors predate both standards leading us
+to be very cautious about making API behavior changes.
 
 .. _parsing-ascii-encoded-bytes:
 

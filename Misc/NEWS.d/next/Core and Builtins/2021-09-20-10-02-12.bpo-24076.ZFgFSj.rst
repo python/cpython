@@ -1,1 +1,0 @@
-sum() was further optimised for summing up single digit integers.

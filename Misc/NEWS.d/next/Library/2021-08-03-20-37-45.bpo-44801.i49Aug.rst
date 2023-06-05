@@ -1,3 +1,0 @@
-Ensure that the :class:`~typing.ParamSpec` variable in Callable
-can only be substituted with a parameters expression (a list of types,
-an ellipsis, ParamSpec or Concatenate).

@@ -62,7 +62,7 @@ class SequenceMatcher:
     notion, pairing up elements that appear uniquely in each sequence.
     That, and the method here, appear to yield more intuitive difference
     reports than does diff.  This method appears to be the least vulnerable
-    to synching up on blocks of "junk lines", though (like blank lines in
+    to syncing up on blocks of "junk lines", though (like blank lines in
     ordinary text files, or maybe "<P>" lines in HTML files).  That may be
     because this is the only method of the 3 that has a *concept* of
     "junk" <wink>.
@@ -837,7 +837,7 @@ class Differ:
         Each sequence must contain individual single-line strings ending with
         newlines. Such sequences can be obtained from the `readlines()` method
         of file-like objects.  The delta generated also consists of newline-
-        terminated strings, ready to be printed as-is via the writeline()
+        terminated strings, ready to be printed as-is via the writelines()
         method of a file-like object.
 
         Example:

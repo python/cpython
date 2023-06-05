@@ -1,2 +1,0 @@
-A new function ``operator.call`` has been added, such that
-``operator.call(obj, *args, **kwargs) == obj(*args, **kwargs)``.

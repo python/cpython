@@ -11,8 +11,8 @@
    Copyright (c) 2001-2003 Fred L. Drake, Jr. <fdrake@users.sourceforge.net>
    Copyright (c) 2002      Greg Stein <gstein@users.sourceforge.net>
    Copyright (c) 2002-2016 Karl Waclawek <karl@waclawek.net>
-   Copyright (c) 2005-2009 Steven Solie <ssolie@users.sourceforge.net>
-   Copyright (c) 2016-2021 Sebastian Pipping <sebastian@pipping.org>
+   Copyright (c) 2005-2009 Steven Solie <steven@solie.ca>
+   Copyright (c) 2016-2022 Sebastian Pipping <sebastian@pipping.org>
    Copyright (c) 2016      Pascal Cuoq <cuoq@trust-in-soft.com>
    Copyright (c) 2016      Don Lewis <truckman@apache.org>
    Copyright (c) 2017      Rhodri James <rhodri@wildebeest.org.uk>
@@ -20,6 +20,8 @@
    Copyright (c) 2017      Benbuck Nason <bnason@netflix.com>
    Copyright (c) 2017      José Gutiérrez de la Concha <jose@zeroc.com>
    Copyright (c) 2019      David Loffredo <loffredo@steptools.com>
+   Copyright (c) 2021      Dong-hee Na <donghee.na@python.org>
+   Copyright (c) 2022      Martin Ettl <ettl.martin78@googlemail.com>
    Licensed under the MIT license:
 
    Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -42,6 +44,8 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include <expat_config.h>
+
 #include <stddef.h>
 #include <string.h> /* memcpy */
 #include <stdbool.h>
@@ -49,8 +53,6 @@
 #ifdef _WIN32
 #  include "winconfig.h"
 #endif
-
-#include <expat_config.h>
 
 #include "expat_external.h"
 #include "internal.h"
@@ -96,11 +98,6 @@
          << 3)                                                                 \
         + ((((byte)[1]) & 3) << 1) + ((((byte)[2]) >> 5) & 1)]                 \
    & (1u << (((byte)[2]) & 0x1F)))
-
-#define UTF8_GET_NAMING(pages, p, n)                                           \
-  ((n) == 2                                                                    \
-       ? UTF8_GET_NAMING2(pages, (const unsigned char *)(p))                   \
-       : ((n) == 3 ? UTF8_GET_NAMING3(pages, (const unsigned char *)(p)) : 0))
 
 /* Detection of invalid UTF-8 sequences is based on Table 3.1B
    of Unicode 3.2: http://www.unicode.org/unicode/reports/tr28/
@@ -300,7 +297,7 @@ sb_charMatches(const ENCODING *enc, const char *p, int c) {
 }
 #else
 /* c is an ASCII character */
-#  define CHAR_MATCHES(enc, p, c) (*(p) == c)
+#  define CHAR_MATCHES(enc, p, c) (*(p) == (c))
 #endif
 
 #define PREFIX(ident) normal_##ident
@@ -744,7 +741,7 @@ DEFINE_UTF16_TO_UTF16(big2_)
   ((p)[1] == 0 ? ((struct normal_encoding *)(enc))->type[(unsigned char)*(p)]  \
                : unicode_byte_type((p)[1], (p)[0]))
 #define LITTLE2_BYTE_TO_ASCII(p) ((p)[1] == 0 ? (p)[0] : -1)
-#define LITTLE2_CHAR_MATCHES(p, c) ((p)[1] == 0 && (p)[0] == c)
+#define LITTLE2_CHAR_MATCHES(p, c) ((p)[1] == 0 && (p)[0] == (c))
 #define LITTLE2_IS_NAME_CHAR_MINBPC(p)                                         \
   UCS2_GET_NAMING(namePages, (unsigned char)p[1], (unsigned char)p[0])
 #define LITTLE2_IS_NMSTRT_CHAR_MINBPC(p)                                       \
@@ -879,7 +876,7 @@ static const struct normal_encoding internal_little2_encoding
        ? ((struct normal_encoding *)(enc))->type[(unsigned char)(p)[1]]        \
        : unicode_byte_type((p)[0], (p)[1]))
 #define BIG2_BYTE_TO_ASCII(p) ((p)[0] == 0 ? (p)[1] : -1)
-#define BIG2_CHAR_MATCHES(p, c) ((p)[0] == 0 && (p)[1] == c)
+#define BIG2_CHAR_MATCHES(p, c) ((p)[0] == 0 && (p)[1] == (c))
 #define BIG2_IS_NAME_CHAR_MINBPC(p)                                            \
   UCS2_GET_NAMING(namePages, (unsigned char)p[0], (unsigned char)p[1])
 #define BIG2_IS_NMSTRT_CHAR_MINBPC(p)                                          \

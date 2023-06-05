@@ -1,2 +1,0 @@
-Match the docstring and python implementation of :func:`~operator.countOf` to the behavior
-of its c implementation.

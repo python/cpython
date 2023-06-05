@@ -1,3 +1,0 @@
-Convert the :c:func:`Py_TYPE` and :c:func:`Py_SIZE` macros to static inline
-functions. The :c:func:`Py_SET_TYPE` and :c:func:`Py_SET_SIZE` functions
-must now be used to set an object type and size. Patch by Victor Stinner.

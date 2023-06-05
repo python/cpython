@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(_dbm_dbm_close__doc__,
 "close($self, /)\n"
 "--\n"
@@ -27,7 +33,7 @@ PyDoc_STRVAR(_dbm_dbm_keys__doc__,
 "Return a list of all keys in the database.");
 
 #define _DBM_DBM_KEYS_METHODDEF    \
-    {"keys", (PyCFunction)(void(*)(void))_dbm_dbm_keys, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _dbm_dbm_keys__doc__},
+    {"keys", _PyCFunction_CAST(_dbm_dbm_keys), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _dbm_dbm_keys__doc__},
 
 static PyObject *
 _dbm_dbm_keys_impl(dbmobject *self, PyTypeObject *cls);
@@ -35,18 +41,11 @@ _dbm_dbm_keys_impl(dbmobject *self, PyTypeObject *cls);
 static PyObject *
 _dbm_dbm_keys(dbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":keys", _keywords, 0};
-
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
-        goto exit;
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "keys() takes no arguments");
+        return NULL;
     }
-    return_value = _dbm_dbm_keys_impl(self, cls);
-
-exit:
-    return return_value;
+    return _dbm_dbm_keys_impl(self, cls);
 }
 
 PyDoc_STRVAR(_dbm_dbm_get__doc__,
@@ -56,7 +55,7 @@ PyDoc_STRVAR(_dbm_dbm_get__doc__,
 "Return the value for key if present, otherwise default.");
 
 #define _DBM_DBM_GET_METHODDEF    \
-    {"get", (PyCFunction)(void(*)(void))_dbm_dbm_get, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _dbm_dbm_get__doc__},
+    {"get", _PyCFunction_CAST(_dbm_dbm_get), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _dbm_dbm_get__doc__},
 
 static PyObject *
 _dbm_dbm_get_impl(dbmobject *self, PyTypeObject *cls, const char *key,
@@ -66,8 +65,19 @@ static PyObject *
 _dbm_dbm_get(dbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
     static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {"s#|O:get", _keywords, 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .format = "s#|O:get",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     const char *key;
     Py_ssize_t key_length;
     PyObject *default_value = Py_None;
@@ -91,7 +101,7 @@ PyDoc_STRVAR(_dbm_dbm_setdefault__doc__,
 "If key is not in the database, it is inserted with default as the value.");
 
 #define _DBM_DBM_SETDEFAULT_METHODDEF    \
-    {"setdefault", (PyCFunction)(void(*)(void))_dbm_dbm_setdefault, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _dbm_dbm_setdefault__doc__},
+    {"setdefault", _PyCFunction_CAST(_dbm_dbm_setdefault), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _dbm_dbm_setdefault__doc__},
 
 static PyObject *
 _dbm_dbm_setdefault_impl(dbmobject *self, PyTypeObject *cls, const char *key,
@@ -101,8 +111,19 @@ static PyObject *
 _dbm_dbm_setdefault(dbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
     static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {"s#|O:setdefault", _keywords, 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .format = "s#|O:setdefault",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     const char *key;
     Py_ssize_t key_length;
     PyObject *default_value = NULL;
@@ -132,7 +153,7 @@ PyDoc_STRVAR(dbmopen__doc__,
 "    (e.g. os.O_RDWR).");
 
 #define DBMOPEN_METHODDEF    \
-    {"open", (PyCFunction)(void(*)(void))dbmopen, METH_FASTCALL, dbmopen__doc__},
+    {"open", _PyCFunction_CAST(dbmopen), METH_FASTCALL, dbmopen__doc__},
 
 static PyObject *
 dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
@@ -179,4 +200,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=32ef6c0f8f2d3db9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=28dcf736654137c2 input=a9049054013a1b77]*/

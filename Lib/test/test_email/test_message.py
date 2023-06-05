@@ -433,7 +433,7 @@ class TestEmailMessageBase:
                 --===
                 Content-Type: text/plain
 
-                Your message has bounced, ser.
+                Your message has bounced, sir.
 
                 --===
                 Content-Type: message/rfc822

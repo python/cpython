@@ -11,4 +11,3 @@ backwards compatibility. They have been superseded by other modules.
 .. toctree::
 
    optparse.rst
-   imp.rst

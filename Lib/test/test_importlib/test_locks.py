@@ -1,4 +1,4 @@
-from . import util as test_util
+from test.test_importlib import util as test_util
 
 init = test_util.import_importlib('importlib')
 
@@ -10,6 +10,9 @@ import weakref
 from test import support
 from test.support import threading_helper
 from test import lock_tests
+
+
+threading_helper.requires_working_threading(module=True)
 
 
 class ModuleLockAsRLockTests:
@@ -29,6 +32,11 @@ class ModuleLockAsRLockTests:
     # lock status in repr unsupported
     test_repr = None
     test_locked_repr = None
+
+    def tearDown(self):
+        for splitinit in init.values():
+            splitinit._bootstrap._blocking_on.clear()
+
 
 LOCK_TYPES = {kind: splitinit._bootstrap._ModuleLock
               for kind, splitinit in init.items()}
@@ -146,4 +154,4 @@ def setUpModule():
 
 
 if __name__ == '__main__':
-    unittets.main()
+    unittest.main()

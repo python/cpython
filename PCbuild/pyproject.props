@@ -18,14 +18,22 @@
     <SupportSigning Condition="'$(SupportSigning)' == ''">true</SupportSigning>
     <SupportSigning Condition="'$(Configuration)' == 'Debug'">false</SupportSigning>
     <SupportSigning Condition="'$(ConfigurationType)' == 'StaticLibrary'">false</SupportSigning>
+    <LinkIncremental Condition="$(Configuration) != 'Debug'">false</LinkIncremental>
+  </PropertyGroup>
+
+  <PropertyGroup Label="MSVC Bug Workarounds" Condition="$(VCToolsVersion) != ''">
+    <_VCToolsVersion>$([System.Version]::Parse(`$(VCToolsVersion)`).Major).$([System.Version]::Parse(`$(VCToolsVersion)`).Minor)</_VCToolsVersion>
+
+    <!-- See https://developercommunity.visualstudio.com/t/Regression-in-MSVC-1433-1434-ARM64-co/10224361 -->
+    <MSVCHasBrokenARM64Clamping Condition="$(_VCToolsVersion) == '14.34'">true</MSVCHasBrokenARM64Clamping>
   </PropertyGroup>
 
   <PropertyGroup>
     <_DebugPreprocessorDefinition>NDEBUG;</_DebugPreprocessorDefinition>
     <_DebugPreprocessorDefinition Condition="$(Configuration) == 'Debug'">_DEBUG;</_DebugPreprocessorDefinition>
     <_PlatformPreprocessorDefinition>_WIN32;</_PlatformPreprocessorDefinition>
-    <_PlatformPreprocessorDefinition Condition="$(Platform) == 'x64'">_WIN64;_M_X64;</_PlatformPreprocessorDefinition>
-    <_PydPreprocessorDefinition Condition="$(TargetExt) == '.pyd'">Py_BUILD_CORE_MODULE;</_PydPreprocessorDefinition>
+    <_PlatformPreprocessorDefinition Condition="$(Platform) == 'x64'">_WIN64;</_PlatformPreprocessorDefinition>
+    <_PlatformPreprocessorDefinition Condition="$(Platform) == 'x64' and $(PlatformToolset) != 'ClangCL'">_M_X64;$(_PlatformPreprocessorDefinition)</_PlatformPreprocessorDefinition>
     <_Py3NamePreprocessorDefinition>PY3_DLLNAME=L"$(Py3DllName)";</_Py3NamePreprocessorDefinition>
   </PropertyGroup>
   <ItemDefinitionGroup>
@@ -45,7 +53,11 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <WholeProgramOptimization>true</WholeProgramOptimization>
       <ControlFlowGuard Condition="$(EnableControlFlowGuard) != ''">$(EnableControlFlowGuard)</ControlFlowGuard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="$(PlatformToolset) == 'ClangCL'">-Wno-deprecated-non-prototype -Wno-unused-label -Wno-pointer-sign -Wno-incompatible-pointer-types-discards-qualifiers -Wno-unused-function %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="$(Configuration) != 'Debug' and $(PlatformToolset) == 'ClangCL'">-flto %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="$(MSVCHasBrokenARM64Clamping) == 'true' and $(Platform) == 'ARM64'">-d2pattern-opt-disable:-932189325 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ClCompile Condition="$(Configuration) == 'Debug'">
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
@@ -75,6 +87,7 @@
       <LinkTimeCodeGeneration Condition="$(SupportPGO) and $(Configuration) == 'PGUpdate'">PGUpdate</LinkTimeCodeGeneration>
       <AdditionalDependencies>advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions Condition="$(Configuration) != 'Debug'">/OPT:REF,NOICF %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="$(MSVCHasBrokenARM64Clamping) == 'true' and $(Platform) == 'ARM64'">-d2:-pattern-opt-disable:-932189325 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <Lib>
       <LinkTimeCodeGeneration Condition="$(Configuration) == 'Release'">true</LinkTimeCodeGeneration>
@@ -225,5 +238,18 @@ public override bool Execute() {
 
     <Warning Text="vcruntime*.dll not found under $(VCRedistDir)." Condition="@(VCRuntimeDLL) == ''" />
     <Message Text="VC Runtime DLL(s):%0A- @(VCRuntimeDLL,'%0A- ')" />
+  </Target>
+
+  <Target Name="FindPythonForBuild" Condition="$(PythonForBuild) == ''">
+    <Exec Command="&quot;$(MSBuildThisFileDirectory)\find_python.bat&quot; -q"
+          EchoOff="true"
+          ConsoleToMsBuild="true">
+        <Output TaskParameter="ConsoleOutput" ItemName="_CmdExeLines" />
+    </Exec>
+    <PropertyGroup>
+      <PythonForBuild>@(_CmdExeLines)</PythonForBuild>
+    </PropertyGroup>
+    <Error Text="Failed to locate suitable Python runtime for building from source." Condition="$(PythonForBuild)==''" />
+    <Message Text="Using PythonForBuild=$(PythonForBuild)" Importance="high" />
   </Target>
 </Project>

@@ -11,6 +11,7 @@ import unittest
 
 from test import support
 from test.support import os_helper
+from test.support import threading_helper
 from test.libregrtest.cmdline import Namespace
 from test.libregrtest.save_env import saved_test_environment
 from test.libregrtest.utils import clear_caches, format_duration, print_warning
@@ -79,6 +80,11 @@ class EnvChanged(Failed):
     def __str__(self) -> str:
         return f"{self.name} failed (env changed)"
 
+    # Convert Passed to EnvChanged
+    @staticmethod
+    def from_passed(other):
+        return EnvChanged(other.name, other.duration_sec, other.xml_data)
+
 
 class RefLeak(Failed):
     def __str__(self) -> str:
@@ -137,8 +143,16 @@ STDTESTS = [
 # set of tests that we don't want to be executed when using regrtest
 NOTTESTS = set()
 
+#If these test directories are encountered recurse into them and treat each
+# test_ .py or dir as a separate test module. This can increase parallelism.
+# Beware this can't generally be done for any directory with sub-tests as the
+# __init__.py may do things which alter what tests are to be run.
 
-# used by --findleaks, store for gc.garbage
+SPLITTESTDIRS = {
+    "test_asyncio",
+}
+
+# Storage of uncollectable objects
 FOUND_GARBAGE = []
 
 
@@ -152,7 +166,7 @@ def findtestdir(path=None):
     return path or os.path.dirname(os.path.dirname(__file__)) or os.curdir
 
 
-def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
+def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS, *, split_test_dirs=SPLITTESTDIRS, base_mod=""):
     """Return a list of all applicable test modules."""
     testdir = findtestdir(testdir)
     names = os.listdir(testdir)
@@ -160,8 +174,13 @@ def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
     others = set(stdtests) | nottests
     for name in names:
         mod, ext = os.path.splitext(name)
-        if mod[:5] == "test_" and ext in (".py", "") and mod not in others:
-            tests.append(mod)
+        if mod[:5] == "test_" and mod not in others:
+            if mod in split_test_dirs:
+                subdir = os.path.join(testdir, mod)
+                mod = f"{base_mod or 'test'}.{mod}"
+                tests.extend(findtests(subdir, [], nottests, split_test_dirs=split_test_dirs, base_mod=mod))
+            elif ext in (".py", ""):
+                tests.append(f"{base_mod}.{mod}" if base_mod else mod)
     return stdtests + sorted(tests)
 
 
@@ -179,7 +198,9 @@ def _runtest(ns: Namespace, test_name: str) -> TestResult:
 
     output_on_failure = ns.verbose3
 
-    use_timeout = (ns.timeout is not None)
+    use_timeout = (
+        ns.timeout is not None and threading_helper.can_start_thread
+    )
     if use_timeout:
         faulthandler.dump_traceback_later(ns.timeout, exit=True)
 
@@ -196,18 +217,30 @@ def _runtest(ns: Namespace, test_name: str) -> TestResult:
             stream = io.StringIO()
             orig_stdout = sys.stdout
             orig_stderr = sys.stderr
+            print_warning = support.print_warning
+            orig_print_warnings_stderr = print_warning.orig_stderr
+
+            output = None
             try:
                 sys.stdout = stream
                 sys.stderr = stream
+                # print_warning() writes into the temporary stream to preserve
+                # messages order. If support.environment_altered becomes true,
+                # warnings will be written to sys.stderr below.
+                print_warning.orig_stderr = stream
+
                 result = _runtest_inner(ns, test_name,
                                         display_failure=False)
                 if not isinstance(result, Passed):
                     output = stream.getvalue()
-                    orig_stderr.write(output)
-                    orig_stderr.flush()
             finally:
                 sys.stdout = orig_stdout
                 sys.stderr = orig_stderr
+                print_warning.orig_stderr = orig_print_warnings_stderr
+
+            if output is not None:
+                sys.stderr.write(output)
+                sys.stderr.flush()
         else:
             # Tell tests to be moderately quiet
             support.verbose = ns.verbose
@@ -267,7 +300,7 @@ def save_env(ns: Namespace, test_name: str):
 
 def _runtest_inner2(ns: Namespace, test_name: str) -> bool:
     # Load the test function, run the test function, handle huntrleaks
-    # and findleaks to detect leaks
+    # to detect leaks.
 
     abstest = get_abs_module(ns, test_name)
 

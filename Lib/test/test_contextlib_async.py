@@ -5,23 +5,22 @@ from contextlib import (
 import functools
 from test import support
 import unittest
+import traceback
 
 from test.test_contextlib import TestBaseExitStack
 
+support.requires_working_socket(module=True)
 
 def _async_test(func):
     """Decorator to turn an async function into a test case."""
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         coro = func(*args, **kwargs)
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        try:
-            return loop.run_until_complete(coro)
-        finally:
-            loop.close()
-            asyncio.set_event_loop_policy(None)
+        asyncio.run(coro)
     return wrapper
+
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
 
 
 class TestAbstractAsyncContextManager(unittest.TestCase):
@@ -126,6 +125,62 @@ class AsyncContextManagerTestCase(unittest.TestCase):
                 state.append(x)
                 raise ZeroDivisionError()
         self.assertEqual(state, [1, 42, 999])
+
+    @_async_test
+    async def test_contextmanager_traceback(self):
+        @asynccontextmanager
+        async def f():
+            yield
+
+        try:
+            async with f():
+                1/0
+        except ZeroDivisionError as e:
+            frames = traceback.extract_tb(e.__traceback__)
+
+        self.assertEqual(len(frames), 1)
+        self.assertEqual(frames[0].name, 'test_contextmanager_traceback')
+        self.assertEqual(frames[0].line, '1/0')
+
+        # Repeat with RuntimeError (which goes through a different code path)
+        class RuntimeErrorSubclass(RuntimeError):
+            pass
+
+        try:
+            async with f():
+                raise RuntimeErrorSubclass(42)
+        except RuntimeErrorSubclass as e:
+            frames = traceback.extract_tb(e.__traceback__)
+
+        self.assertEqual(len(frames), 1)
+        self.assertEqual(frames[0].name, 'test_contextmanager_traceback')
+        self.assertEqual(frames[0].line, 'raise RuntimeErrorSubclass(42)')
+
+        class StopIterationSubclass(StopIteration):
+            pass
+
+        class StopAsyncIterationSubclass(StopAsyncIteration):
+            pass
+
+        for stop_exc in (
+            StopIteration('spam'),
+            StopAsyncIteration('ham'),
+            StopIterationSubclass('spam'),
+            StopAsyncIterationSubclass('spam')
+        ):
+            with self.subTest(type=type(stop_exc)):
+                try:
+                    async with f():
+                        raise stop_exc
+                except type(stop_exc) as e:
+                    self.assertIs(e, stop_exc)
+                    frames = traceback.extract_tb(e.__traceback__)
+                else:
+                    self.fail(f'{stop_exc} was suppressed')
+
+                self.assertEqual(len(frames), 1)
+                self.assertEqual(frames[0].name, 'test_contextmanager_traceback')
+                self.assertEqual(frames[0].line, 'raise stop_exc')
 
     @_async_test
     async def test_contextmanager_no_reraise(self):
@@ -486,6 +541,13 @@ class TestAsyncExitStack(TestBaseExitStack, unittest.TestCase):
             return self.run_coroutine(self.__aexit__(*exc_details))
 
     exit_stack = SyncAsyncExitStack
+    callback_error_internal_frames = [
+        ('__exit__', 'return self.run_coroutine(self.__aexit__(*exc_details))'),
+        ('run_coroutine', 'raise exc'),
+        ('run_coroutine', 'raise exc'),
+        ('__aexit__', 'raise exc_details[1]'),
+        ('__aexit__', 'cb_suppress = cb(*exc_details)'),
+    ]
 
     def setUp(self):
         self.loop = asyncio.new_event_loop()
@@ -645,6 +707,41 @@ class TestAsyncExitStack(TestBaseExitStack, unittest.TestCase):
         inner_exc = saved_details[1]
         self.assertIsInstance(inner_exc, ValueError)
         self.assertIsInstance(inner_exc.__context__, ZeroDivisionError)
+
+    @_async_test
+    async def test_async_exit_exception_explicit_none_context(self):
+        # Ensure AsyncExitStack chaining matches actual nested `with` statements
+        # regarding explicit __context__ = None.
+
+        class MyException(Exception):
+            pass
+
+        @asynccontextmanager
+        async def my_cm():
+            try:
+                yield
+            except BaseException:
+                exc = MyException()
+                try:
+                    raise exc
+                finally:
+                    exc.__context__ = None
+
+        @asynccontextmanager
+        async def my_cm_with_exit_stack():
+            async with self.exit_stack() as stack:
+                await stack.enter_async_context(my_cm())
+                yield stack
+
+        for cm in (my_cm, my_cm_with_exit_stack):
+            with self.subTest():
+                try:
+                    async with cm():
+                        raise IndexError()
+                except MyException as exc:
+                    self.assertIsNone(exc.__context__)
+                else:
+                    self.fail("Expected IndexError, but no exception was raised")
 
     @_async_test
     async def test_instance_bypass_async(self):
