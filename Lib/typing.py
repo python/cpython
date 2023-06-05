@@ -2402,7 +2402,7 @@ def overload(func):
         @overload
         def utf8(value: str) -> bytes: ...
         def utf8(value):
-            # implementation goes here
+            ...  # implementation goes here
 
     The overloads for a function can be retrieved at runtime using the
     get_overloads() function.
