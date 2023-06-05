@@ -3,6 +3,7 @@ import collections
 import collections.abc
 from collections import defaultdict
 from functools import lru_cache, wraps
+import gc
 import inspect
 import itertools
 import pickle
@@ -2757,6 +2758,19 @@ class ProtocolTests(BaseTestCase):
             issubclass(1, BadP)
         with self.assertRaisesRegex(TypeError, only_classes_allowed):
             issubclass(1, BadPG)
+
+    def test_isinstance_checks_not_at_whim_of_gc(self):
+        self.addCleanup(gc.enable)
+        gc.disable()
+
+        with self.assertRaisesRegex(
+            TypeError,
+            "Protocols can only inherit from other protocols"
+        ):
+            class Foo(collections.abc.Mapping, Protocol):
+                pass
+
+        self.assertNotIsInstance([], collections.abc.Mapping)
 
     def test_issubclass_and_isinstance_on_Protocol_itself(self):
         class C:
