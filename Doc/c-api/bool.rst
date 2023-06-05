@@ -23,7 +23,7 @@ are available, however.
    `immortal.<https://peps.python.org/pep-0683/>`_
 
 .. versionchanged:: 3.12
-   :const:`Py_False` is immortal.
+   :c:data:`Py_False` is immortal.
 
 
 .. c:var:: PyObject* Py_True
@@ -32,7 +32,7 @@ are available, however.
    `immortal.<https://peps.python.org/pep-0683/>`_
 
 .. versionchanged:: 3.12
-   :const:`Py_True` is immortal.
+   :c:data:`Py_True` is immortal.
 
 
 .. c:macro:: Py_RETURN_FALSE

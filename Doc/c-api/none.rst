@@ -19,7 +19,7 @@ same reason.
    and is `immortal.<https://peps.python.org/pep-0683/>`_.
 
 .. versionchanged:: 3.12
-   :const:`Py_None` is immortal.
+   :c:data:`Py_None` is immortal.
 
 .. c:macro:: Py_RETURN_NONE
 
