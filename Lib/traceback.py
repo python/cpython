@@ -826,7 +826,7 @@ class TracebackException:
     def __str__(self):
         return self._str
 
-    def format_exception_only(self, *, show_group=False, depth=0):
+    def format_exception_only(self, *, show_group=False, _depth=0):
         """Format the exception part of the traceback.
 
         The return value is a generator of strings, each ending in a newline.
@@ -840,7 +840,7 @@ class TracebackException:
         string in the output.
         """
 
-        indent = 3 * depth * ' '
+        indent = 3 * _depth * ' '
         if self.exc_type is None:
             yield indent + _format_final_exc_line(None, self._str)
             return
@@ -869,7 +869,7 @@ class TracebackException:
 
         if self.exceptions and show_group:
             for ex in self.exceptions:
-                yield from ex.format_exception_only(show_group=show_group, depth=depth+1)
+                yield from ex.format_exception_only(show_group=show_group, _depth=_depth+1)
 
     def _format_syntax_error(self, stype):
         """Format SyntaxError exceptions (internal helper)."""
