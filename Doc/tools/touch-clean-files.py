@@ -5,8 +5,8 @@ so they are rebuilt and we can catch regressions.
 """
 import argparse
 import csv
+import sys
 from pathlib import Path
-from sys import exit as exit_with_return_code_of
 
 wrong_directory_msg = "Must run this script from the repo root"
 assert Path("Doc").exists() and Path("Doc").is_dir(), wrong_directory_msg
@@ -48,7 +48,7 @@ elif args.clean is not None:
     print(
         "Not touching any files: an empty string `--clean` arg value passed.",
     )
-    exit_with_return_code_of(0)
+    sys.exit(0)
 else:
     with Path("Doc/tools/.nitignore").open() as ignored_files:
         IGNORED = {
