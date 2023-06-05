@@ -3794,6 +3794,16 @@ type_new_impl(type_new_ctx *ctx)
     // Put the proper slots in place
     fixup_slot_dispatchers(type);
 
+    if (!_PyDict_HasOnlyStringKeys(type->tp_dict)) {
+        PyObject *name_of_class = type_name(type, NULL);
+        if (name_of_class == NULL) {
+            goto error;
+        }
+        if (PyErr_WarnFormat(NULL, 1, "non-string key in the __dict__ of class %U", name_of_class) == -1) {
+            goto error;
+        }
+    }
+
     if (type_new_set_names(type) < 0) {
         goto error;
     }

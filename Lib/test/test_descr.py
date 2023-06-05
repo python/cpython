@@ -4733,6 +4733,20 @@ order (MRO) for bases """
         with self.assertRaises(AttributeError):
             del X.__abstractmethods__
 
+    def test_gh55664(self):
+        # gh-55664: issue a warning when the
+        # __dict__ of a class contains non-string keys
+        with self.assertWarnsRegex(RuntimeWarning, 'MyClass'):
+            MyClass = type('MyClass', (), {1: 2})
+
+        class meta(type):
+            def __new__(mcls, name, bases, ns):
+                ns[1] = 2
+                return super().__new__(mcls, name, bases, ns)
+
+        with self.assertWarnsRegex(RuntimeWarning, 'MyClass'):
+            MyClass = meta('MyClass', (), {})
+
     def test_proxy_call(self):
         class FakeStr:
             __class__ = str
