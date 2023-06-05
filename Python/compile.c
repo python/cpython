@@ -4955,26 +4955,26 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
     /* The expression to be formatted. */
     VISIT(c, expr, e->v.FormattedValue.value);
 
-    switch (conversion) {
-    case 's': oparg = FVC_STR;   break;
-    case 'r': oparg = FVC_REPR;  break;
-    case 'a': oparg = FVC_ASCII; break;
-    case -1:  oparg = FVC_NONE;  break;
-    default:
-        PyErr_Format(PyExc_SystemError,
+    location loc = LOC(e);
+    if (conversion != -1) {
+        switch (conversion) {
+        case 's': oparg = FVC_STR;   break;
+        case 'r': oparg = FVC_REPR;  break;
+        case 'a': oparg = FVC_ASCII; break;
+        default:
+            PyErr_Format(PyExc_SystemError,
                      "Unrecognized conversion character %d", conversion);
-        return ERROR;
+            return ERROR;
+        }
+        ADDOP_I(c, loc, CONVERT_VALUE, oparg);
     }
     if (e->v.FormattedValue.format_spec) {
         /* Evaluate the format spec, and update our opcode arg. */
         VISIT(c, expr, e->v.FormattedValue.format_spec);
-        oparg |= FVS_HAVE_SPEC;
+        ADDOP(c, loc, FORMAT_WITH_SPEC);
+    } else {
+        ADDOP(c, loc, FORMAT_SIMPLE);
     }
-
-    /* And push our opcode and oparg */
-    location loc = LOC(e);
-    ADDOP_I(c, loc, FORMAT_VALUE, oparg);
-
     return SUCCESS;
 }
 

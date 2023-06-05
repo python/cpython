@@ -51,6 +51,8 @@
 #define super(name) static int SUPER_##name
 #define family(name, ...) static int family_##name
 
+typedef PyObject *(*convertion_func_ptr)(PyObject *);
+
 // Dummy variables for stack effects.
 static PyObject *value, *value1, *value2, *left, *right, *res, *sum, *prod, *sub;
 static PyObject *container, *start, *stop, *v, *lhs, *rhs, *res2;
@@ -3317,41 +3319,33 @@ dummy_func(
             ERROR_IF(slice == NULL, error);
         }
 
-        inst(FORMAT_VALUE, (value, fmt_spec if ((oparg & FVS_MASK) == FVS_HAVE_SPEC) -- result)) {
-            /* Handles f-string value formatting. */
-            PyObject *(*conv_fn)(PyObject *);
-            int which_conversion = oparg & FVC_MASK;
-
-            /* See if any conversion is specified. */
-            switch (which_conversion) {
-            case FVC_NONE:  conv_fn = NULL;           break;
-            case FVC_STR:   conv_fn = PyObject_Str;   break;
-            case FVC_REPR:  conv_fn = PyObject_Repr;  break;
-            case FVC_ASCII: conv_fn = PyObject_ASCII; break;
-            default:
-                _PyErr_Format(tstate, PyExc_SystemError,
-                              "unexpected conversion flag %d",
-                              which_conversion);
-                goto error;
-            }
-
-            /* If there's a conversion function, call it and replace
-               value with that result. Otherwise, just use value,
-               without conversion. */
-            if (conv_fn != NULL) {
-                result = conv_fn(value);
-                Py_DECREF(value);
-                if (result == NULL) {
-                    Py_XDECREF(fmt_spec);
-                    ERROR_IF(true, error);
-                }
-                value = result;
-            }
-
-            result = PyObject_Format(value, fmt_spec);
+        inst(CONVERT_VALUE, (value -- result)) {
+            convertion_func_ptr  conv_fn;
+            assert(oparg >= FVC_STR && oparg <= FVC_ASCII);
+            conv_fn = CONVERSION_FUNCTIONS[oparg];
+            result = conv_fn(value);
             Py_DECREF(value);
-            Py_XDECREF(fmt_spec);
             ERROR_IF(result == NULL, error);
+        }
+
+        inst(FORMAT_SIMPLE, (value -- res)) {
+            /* If value is a unicode object, then we know the result
+             * of format(value) is value itself. */
+            if (!PyUnicode_CheckExact(value)) {
+                res = PyObject_Format(value, NULL);
+                Py_DECREF(value);
+                ERROR_IF(res == NULL, error);
+            }
+            else {
+                res = value;
+            }
+        }
+
+        inst(FORMAT_WITH_SPEC, (value, fmt_spec -- res)) {
+            res = PyObject_Format(value, fmt_spec);
+            Py_DECREF(value);
+            Py_DECREF(fmt_spec);
+            ERROR_IF(res == NULL, error);
         }
 
         inst(COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {

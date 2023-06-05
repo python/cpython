@@ -443,18 +443,20 @@ dis_fstring = """\
 %3d        RESUME                   0
 
 %3d        LOAD_FAST                0 (a)
-           FORMAT_VALUE             0
+           FORMAT_SIMPLE
            LOAD_CONST               1 (' ')
            LOAD_FAST                1 (b)
            LOAD_CONST               2 ('4')
-           FORMAT_VALUE             4 (with format)
+           FORMAT_WITH_SPEC
            LOAD_CONST               1 (' ')
            LOAD_FAST                2 (c)
-           FORMAT_VALUE             2 (repr)
+           CONVERT_VALUE            2 (repr)
+           FORMAT_SIMPLE
            LOAD_CONST               1 (' ')
            LOAD_FAST                3 (d)
+           CONVERT_VALUE            2 (repr)
            LOAD_CONST               2 ('4')
-           FORMAT_VALUE             6 (repr, with format)
+           FORMAT_WITH_SPEC
            BUILD_STRING             7
            RETURN_VALUE
 """ % (_fstring.__code__.co_firstlineno, _fstring.__code__.co_firstlineno + 1)

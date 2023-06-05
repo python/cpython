@@ -219,6 +219,14 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, PyFunctionObject *func,
 static void
 _PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
 
+typedef PyObject *(*convertion_func_ptr)(PyObject *);
+
+static const convertion_func_ptr CONVERSION_FUNCTIONS[4] = {
+    [FVC_STR] = PyObject_Str,
+    [FVC_REPR] = PyObject_Repr,
+    [FVC_ASCII] = PyObject_ASCII
+};
+
 #define UNBOUNDLOCAL_ERROR_MSG \
     "cannot access local variable '%s' where it is not associated with a value"
 #define UNBOUNDFREE_ERROR_MSG \
