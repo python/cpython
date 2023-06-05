@@ -173,7 +173,7 @@ def _type_check(arg, msg, is_argument=True, module=None, *, allow_special_forms=
     As a special case, accept None and return type(None) instead. Also wrap strings
     into ForwardRef instances. Consider several corner cases, for example plain
     special forms like Union are not valid, while Union[int, str] is OK, etc.
-    The msg argument is a human-readable error message, e.g::
+    The msg argument is a human-readable error message, e.g.::
 
         "Union[arg, ...]: arg should be a type."
 
@@ -209,7 +209,7 @@ def _should_unflatten_callable_args(typ, args):
     """Internal helper for munging collections.abc.Callable's __args__.
 
     The canonical representation for a Callable's __args__ flattens the
-    argument types, see https://bugs.python.org/issue42195. For example:
+    argument types, see https://bugs.python.org/issue42195. For example::
 
         collections.abc.Callable[[int, int], str].__args__ == (int, int, str)
         collections.abc.Callable[ParamSpec, str].__args__ == (ParamSpec, str)
@@ -327,7 +327,7 @@ def _remove_dups_flatten(parameters):
 
 
 def _flatten_literal_params(parameters):
-    """An internal helper for Literal creation: flatten Literals among parameters"""
+    """An internal helper for Literal creation: flatten Literals among parameters."""
     params = []
     for p in parameters:
         if isinstance(p, _LiteralGenericAlias):
@@ -426,15 +426,16 @@ class _Immutable:
 class _NotIterable:
     """Mixin to prevent iteration, without being compatible with Iterable.
 
-    That is, we could do:
+    That is, we could do::
+
         def __iter__(self): raise TypeError()
+
     But this would make users of this mixin duck type-compatible with
     collections.abc.Iterable - isinstance(foo, Iterable) would be True.
 
     Luckily, we can instead prevent iteration by setting __iter__ to None, which
     is treated specially.
     """
-
     __slots__ = ()
     __iter__ = None
 
@@ -636,7 +637,8 @@ def Final(self, parameters):
     """Special typing construct to indicate final names to type checkers.
 
     A final name cannot be re-assigned or overridden in a subclass.
-    For example:
+
+    For example::
 
         MAX_SIZE: Final = 9000
         MAX_SIZE += 1  # Error reported by type checker
@@ -718,7 +720,7 @@ def Literal(self, *parameters):
 
     This form can be used to indicate to type checkers that the corresponding
     variable or function parameter has a value equivalent to the provided
-    literal (or one of several literals):
+    literal (or one of several literals)::
 
         def validate_simple(data: Any) -> Literal[True]:  # always returns True
             ...
@@ -1578,7 +1580,7 @@ def Unpack(self, parameters):
 
     The type unpack operator takes the child types from some container type,
     such as `tuple[int, str]` or a `TypeVarTuple`, and 'pulls them out'. For
-    example:
+    example::
 
         # For some generic class `Foo`:
         Foo[Unpack[tuple[int, str]]]  # Equivalent to Foo[int, str]
@@ -1592,18 +1594,18 @@ def Unpack(self, parameters):
         Bar[int]  # Valid
         Bar[int, str]  # Also valid
 
-    From Python 3.11, this can also be done using the `*` operator:
+    From Python 3.11, this can also be done using the `*` operator::
 
         Foo[*tuple[int, str]]
         class Bar(Generic[*Ts]): ...
 
-    And from Python 3.12, it can be done using built-in syntax for generics:
+    And from Python 3.12, it can be done using built-in syntax for generics::
 
         Foo[*tuple[int, str]]
         class Bar[*Ts]: ...
 
     The operator can also be used along with a `TypedDict` to annotate
-    `**kwargs` in a function signature. For instance:
+    `**kwargs` in a function signature. For instance::
 
         class Movie(TypedDict):
             name: str
@@ -2047,6 +2049,7 @@ def runtime_checkable(cls):
     Raise TypeError if applied to a non-protocol class.
     This allows a simple-minded structural check very similar to
     one trick ponies in collections.abc such as Iterable.
+
     For example::
 
         @runtime_checkable
@@ -2441,7 +2444,8 @@ def final(f):
 
     Use this decorator to indicate to type checkers that the decorated
     method cannot be overridden, and decorated class cannot be subclassed.
-    For example:
+
+    For example::
 
         class Base:
             @final
@@ -2886,7 +2890,7 @@ TypedDict.__mro_entries__ = lambda bases: (_TypedDict,)
 @_SpecialForm
 def Required(self, parameters):
     """A special typing construct to mark a key of a total=False TypedDict
-    as required. For example:
+    as required. For example::
 
         class Movie(TypedDict, total=False):
             title: Required[str]
@@ -2907,7 +2911,7 @@ def Required(self, parameters):
 @_SpecialForm
 def NotRequired(self, parameters):
     """A special typing construct to mark a key of a TypedDict as
-    potentially missing. For example:
+    potentially missing. For example::
 
         class Movie(TypedDict):
             title: str
@@ -3177,7 +3181,7 @@ def dataclass_transform(
     """Decorator that marks a function, class, or metaclass as providing
     dataclass-like behavior.
 
-    Example usage with a decorator function:
+    Example usage with a decorator function::
 
         @dataclass_transform()
         def create_model[T](cls: type[T]) -> type[T]:
@@ -3189,7 +3193,7 @@ def dataclass_transform(
             id: int
             name: str
 
-    On a base class:
+    On a base class::
 
         @dataclass_transform()
         class ModelBase: ...
@@ -3198,7 +3202,7 @@ def dataclass_transform(
             id: int
             name: str
 
-    On a metaclass:
+    On a metaclass::
 
         @dataclass_transform()
         class ModelMeta(type): ...
@@ -3254,7 +3258,7 @@ type _Func = Callable[..., Any]
 def override[F: _Func](method: F, /) -> F:
     """Indicate that a method is intended to override a method in a base class.
 
-    Usage:
+    Usage::
 
         class Base:
             def method(self) -> None: ...
@@ -3270,9 +3274,9 @@ def override[F: _Func](method: F, /) -> F:
     base class.  This helps prevent bugs that may occur when a base class is
     changed without an equivalent change to a child class.
 
-    There is no runtime checking of this property. The decorator sets the
-    ``__override__`` attribute to ``True`` on the decorated object to allow
-    runtime introspection.
+    There is no runtime checking of this property. The decorator attempts to
+    set the ``__override__`` attribute to ``True`` on the decorated object to
+    allow runtime introspection.
 
     See PEP 698 for details.
     """
