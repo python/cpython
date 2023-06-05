@@ -5051,7 +5051,10 @@ class TestOptionalsHelpVersionActions(TestCase):
     def test_alternate_help_version(self):
         parser = ErrorRaisingArgumentParser()
         parser.add_argument('-x', action='help')
+        parser.add_argument('-y', action='version')
         self.assertPrintHelpExit(parser, '-x')
+        self.assertArgumentParserError(parser, '-v')
+        self.assertArgumentParserError(parser, '--version')
         self.assertRaises(AttributeError, getattr, parser, 'format_version')
 
     def test_help_version_extra_arguments(self):
