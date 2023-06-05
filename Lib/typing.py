@@ -14,7 +14,7 @@ At large scale, the structure of the module is following:
 * The public counterpart of the generics API consists of two classes: Generic and Protocol.
 * Public helper functions: get_type_hints, overload, cast, final, and others.
 * Deprecated aliases for collections.abc ABCs.
-* Several additional protocols that do not exist elsewhere in the standard library:
+* Several additional protocols:
   SupportsFloat, SupportsIndex, SupportsAbs, and others.
 * Special types: NewType, NamedTuple, TypedDict.
 """
@@ -655,7 +655,7 @@ def Union(self, parameters):
     """Union type; Union[X, Y] means either X or Y.
 
     On Python 3.10 and higher, the | operator
-    can also be used to denote unions in many situations;
+    can also be used to denote unions;
     X | Y means the same thing to the type checker as Union[X, Y].
 
     To define a union, use e.g. Union[int, str]. Details:
