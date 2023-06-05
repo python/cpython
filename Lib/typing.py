@@ -2874,11 +2874,11 @@ def TypedDict(typename, fields=None, /, *, total=True):
     By default, all keys must be present in a TypedDict. It is possible
     to override this by specifying totality::
 
-        class point2D(TypedDict, total=False):
+        class Point2D(TypedDict, total=False):
             x: int
             y: int
 
-    This means that a point2D TypedDict can have any of the keys omitted. A type
+    This means that a Point2D TypedDict can have any of the keys omitted. A type
     checker is only expected to support a literal False or True as the value of
     the total argument. True is the default, and makes all items defined in the
     class body be required.
@@ -2886,7 +2886,7 @@ def TypedDict(typename, fields=None, /, *, total=True):
     The Required and NotRequired special forms can also be used to mark
     individual keys as being required or not required::
 
-        class point2D(TypedDict):
+        class Point2D(TypedDict):
             x: int               # the "x" key must always be present (Required is the default)
             y: NotRequired[int]  # the "y" key can be omitted
 
