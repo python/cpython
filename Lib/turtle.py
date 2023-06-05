@@ -127,7 +127,7 @@ _tg_turtle_functions = ['back', 'backward', 'begin_fill', 'begin_poly', 'bk',
         'isvisible', 'left', 'lt', 'onclick', 'ondrag', 'onrelease', 'pd',
         'pen', 'pencolor', 'pendown', 'pensize', 'penup', 'pos', 'position',
         'pu', 'radians', 'right', 'reset', 'resizemode', 'rt',
-        'seth', 'setheading', 'setpos', 'setposition', 'settiltangle',
+        'seth', 'setheading', 'setpos', 'setposition',
         'setundobuffer', 'setx', 'sety', 'shape', 'shapesize', 'shapetransform', 'shearfactor', 'showturtle',
         'speed', 'st', 'stamp', 'teleport', 'tilt', 'tiltangle', 'towards',
         'turtlesize', 'undo', 'undobufferentries', 'up', 'width',
@@ -2896,33 +2896,6 @@ class RawTurtle(TPen, TNavigator):
             return self._shearfactor
         self.pen(resizemode="user", shearfactor=shear)
 
-    def settiltangle(self, angle):
-        """Rotate the turtleshape to point in the specified direction
-
-        Argument: angle -- number
-
-        Rotate the turtleshape to point in the direction specified by angle,
-        regardless of its current tilt-angle. DO NOT change the turtle's
-        heading (direction of movement).
-
-        Deprecated since Python 3.1
-
-        Examples (for a Turtle instance named turtle):
-        >>> turtle.shape("circle")
-        >>> turtle.shapesize(5,2)
-        >>> turtle.settiltangle(45)
-        >>> turtle.stamp()
-        >>> turtle.fd(50)
-        >>> turtle.settiltangle(-45)
-        >>> turtle.stamp()
-        >>> turtle.fd(50)
-        """
-        warnings._deprecated("turtle.RawTurtle.settiltangle()",
-                             "{name!r} is deprecated since Python 3.1 and scheduled "
-                             "for removal in Python {remove}. Use tiltangle() instead.",
-                             remove=(3, 13))
-        self.tiltangle(angle)
-
     def tiltangle(self, angle=None):
         """Set or return the current tilt-angle.
 
@@ -2934,9 +2907,6 @@ class RawTurtle(TPen, TNavigator):
         If angle is not given: return the current tilt-angle, i. e. the angle
         between the orientation of the turtleshape and the heading of the
         turtle (its direction of movement).
-
-        (Incorrectly marked as deprecated since Python 3.1, it is really
-        settiltangle that is deprecated.)
 
         Examples (for a Turtle instance named turtle):
         >>> turtle.shape("circle")

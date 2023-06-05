@@ -686,7 +686,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         def f():
             x = 1
             y = x + x
-        self.assertInBytecode(f, 'LOAD_FAST')
+        self.assertInBytecode(f, 'LOAD_FAST_LOAD_FAST')
 
     def test_load_fast_unknown_simple(self):
         def f():
@@ -790,7 +790,10 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
                 print(a00, a01, a62, a63)
                 print(a64, a65, a78, a79)
 
-        for i in 0, 1, 62, 63:
+        self.assertInBytecode(f, 'LOAD_FAST_LOAD_FAST', ("a00", "a01"))
+        self.assertNotInBytecode(f, 'LOAD_FAST_CHECK', "a00")
+        self.assertNotInBytecode(f, 'LOAD_FAST_CHECK', "a01")
+        for i in 62, 63:
             # First 64 locals: analyze completely
             self.assertInBytecode(f, 'LOAD_FAST', f"a{i:02}")
             self.assertNotInBytecode(f, 'LOAD_FAST_CHECK', f"a{i:02}")
@@ -1071,7 +1074,16 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('POP_TOP', 0, 4),
             ('RETURN_VALUE', 5)
         ]
-        self.cfg_optimization_test(insts, insts, consts=list(range(3)), nlocals=1)
+        expected_insts = [
+            ('LOAD_CONST', 0, 1),
+            ('LOAD_CONST', 1, 2),
+            ('LOAD_CONST', 2, 3),
+            ('SWAP', 3, 4),
+            ('STORE_FAST_STORE_FAST', 17, 4),
+            ('POP_TOP', 0, 4),
+            ('RETURN_VALUE', 5)
+        ]
+        self.cfg_optimization_test(insts, expected_insts, consts=list(range(3)), nlocals=1)
 
 if __name__ == "__main__":
     unittest.main()
