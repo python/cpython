@@ -119,7 +119,7 @@ Ellipsis Object
 .. c:var:: PyObject *Py_Ellipsis
 
    The Python ``Ellipsis`` object.  This object has no methods.  Like
-   :c:data:`Py_None` it is an `immortal<https://peps.python.org/pep-0683/>`_
+   :c:data:`Py_None` it is an `immortal <https://peps.python.org/pep-0683/>`_.
    singleton object.
 
    .. versionchanged:: 3.12

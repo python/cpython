@@ -20,7 +20,7 @@ are available, however.
 .. c:var:: PyObject* Py_False
 
    The Python ``False`` object.  This object has no methods and is
-   `immortal.<https://peps.python.org/pep-0683/>`_
+   `immortal <https://peps.python.org/pep-0683/>`_.
 
 .. versionchanged:: 3.12
    :c:data:`Py_False` is immortal.
@@ -29,7 +29,7 @@ are available, however.
 .. c:var:: PyObject* Py_True
 
    The Python ``True`` object.  This object has no methods and is
-   `immortal.<https://peps.python.org/pep-0683/>`_
+   `immortal <https://peps.python.org/pep-0683/>`_.
 
 .. versionchanged:: 3.12
    :c:data:`Py_True` is immortal.
