@@ -319,7 +319,7 @@ capture data for later printing in a lightweight fashion.
       The message indicating which exception occurred is always the last
       string in the output.
 
-   .. method::  format_exception_only(show_group=False)
+   .. method::  format_exception_only(*, show_group=False)
 
       Format the exception part of the traceback.
 
