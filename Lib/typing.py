@@ -250,7 +250,9 @@ def _type_repr(obj):
 
 def _collect_parameters(args):
     """Collect all type variables and parameter specifications in args
-    in order of first appearance (lexicographic order). For example::
+    in order of first appearance (lexicographic order).
+
+    For example::
 
         assert _collect_parameters((T, Callable[P, T])) == (T, P)
     """
@@ -278,6 +280,7 @@ def _collect_parameters(args):
 
 def _check_generic(cls, parameters, elen):
     """Check correct count for parameters of a generic cls (internal helper).
+
     This gives a nice error message in case of count mismatch.
     """
     if not elen:
@@ -312,8 +315,9 @@ def _deduplicate(params):
 
 
 def _remove_dups_flatten(parameters):
-    """An internal helper for Union creation and substitution: flatten Unions
-    among parameters, then remove duplicates.
+    """Internal helper for Union creation and substitution.
+
+    Flatten Unions among parameters, then remove duplicates.
     """
     # Flatten out Union[Union[...], ...].
     params = []
@@ -327,7 +331,7 @@ def _remove_dups_flatten(parameters):
 
 
 def _flatten_literal_params(parameters):
-    """An internal helper for Literal creation: flatten Literals among parameters."""
+    """Internal helper for Literal creation: flatten Literals among parameters."""
     params = []
     for p in parameters:
         if isinstance(p, _LiteralGenericAlias):
@@ -372,6 +376,7 @@ def _tp_cache(func=None, /, *, typed=False):
 
 def _eval_type(t, globalns, localns, recursive_guard=frozenset()):
     """Evaluate all forward references in the given type t.
+
     For use of globalns and localns see the docstring for get_type_hints().
     recursive_guard is used to prevent infinite recursion with a recursive
     ForwardRef.
@@ -755,11 +760,11 @@ def Literal(self, *parameters):
 
 @_SpecialForm
 def TypeAlias(self, parameters):
-    """Special marker indicating that an assignment should
-    be recognized as a proper type alias definition by type
-    checkers.
+    """Special form for marking type aliases.
 
-    For example::
+    Use TypeAlias to indicate that an assignment should
+    be recognized as a proper type alias definition by type
+    checkers. For example::
 
         Predicate: TypeAlias = Callable[..., bool]
 
@@ -770,9 +775,11 @@ def TypeAlias(self, parameters):
 
 @_SpecialForm
 def Concatenate(self, parameters):
-    """Used in conjunction with ``ParamSpec`` and ``Callable`` to represent a
-    higher order function which adds, removes or transforms parameters of a
-    callable.
+    """Special form for annotating higher-order functions.
+
+    ``Concatenate`` can be sed in conjunction with ``ParamSpec`` and
+    ``Callable`` to represent a higher order function which adds, removes or
+    transforms the parameters of a callable.
 
     For example::
 
@@ -794,7 +801,9 @@ def Concatenate(self, parameters):
 
 @_SpecialForm
 def TypeGuard(self, parameters):
-    """Special typing form used to annotate the return type of a user-defined
+    """Special typing construct for marking user-defined type guard functions.
+
+    ``TypeGuard`` can be used to annotate the return type of a user-defined
     type guard function.  ``TypeGuard`` only accepts a single type argument.
     At runtime, functions marked this way should return a boolean.
 
@@ -2448,7 +2457,7 @@ def clear_overloads():
 
 
 def final(f):
-    """A decorator to indicate final methods and final classes.
+    """Decorator to indicate final methods and final classes.
 
     Use this decorator to indicate to type checkers that the decorated
     method cannot be overridden, and decorated class cannot be subclassed.
@@ -2903,8 +2912,9 @@ TypedDict.__mro_entries__ = lambda bases: (_TypedDict,)
 
 @_SpecialForm
 def Required(self, parameters):
-    """A special typing construct to mark a key of a total=False TypedDict
-    as required. For example::
+    """Special typing construct to mark a TypedDict key as required.
+
+    This is mainly useful for total=False TypedDicts. For example::
 
         class Movie(TypedDict, total=False):
             title: Required[str]
@@ -2924,8 +2934,9 @@ def Required(self, parameters):
 
 @_SpecialForm
 def NotRequired(self, parameters):
-    """A special typing construct to mark a key of a TypedDict as
-    potentially missing. For example::
+    """Special typing construct to mark a TypedDict key as potentially missing.
+
+    For example::
 
         class Movie(TypedDict):
             title: str
@@ -2941,8 +2952,9 @@ def NotRequired(self, parameters):
 
 
 class NewType:
-    """NewType creates simple unique types with almost zero
-    runtime overhead. NewType(name, tp) is considered a subtype of tp
+    """NewType creates simple unique types with almost zero runtime overhead.
+
+    NewType(name, tp) is considered a subtype of tp
     by static type checkers. At runtime, NewType(name, tp) returns
     a dummy callable that simply returns its argument. Usage::
 
@@ -3192,8 +3204,9 @@ def dataclass_transform(
     field_specifiers: tuple[type[Any] | Callable[..., Any], ...] = (),
     **kwargs: Any,
 ) -> _IdentityCallable:
-    """Decorator that marks a function, class, or metaclass as providing
-    dataclass-like behavior.
+    """Decorator to mark an object as providing dataclass-like behaviour.
+
+    The decorator can be applied to a function, class, or metaclass.
 
     Example usage with a decorator function::
 
