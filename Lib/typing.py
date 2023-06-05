@@ -1771,6 +1771,25 @@ del _pickle_psargs, _pickle_pskwargs
 class _ProtocolMeta(ABCMeta):
     # This metaclass is somewhat unfortunate,
     # but is necessary for several reasons...
+    def __new__(mcls, name, bases, namespace, /, **kwargs):
+        if name == "Protocol" and bases == (Generic,):
+            pass
+        elif Protocol in bases:
+            for base in bases:
+                if not (
+                    base in {object, Generic}
+                    or base.__name__ in _PROTO_ALLOWLIST.get(base.__module__, [])
+                    or (
+                        issubclass(base, Generic)
+                        and getattr(base, "_is_protocol", False)
+                    )
+                ):
+                    raise TypeError(
+                        f"Protocols can only inherit from other protocols, "
+                        f"got {base!r}"
+                    )
+        return super().__new__(mcls, name, bases, namespace, **kwargs)
+
     def __init__(cls, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if getattr(cls, "_is_protocol", False):
@@ -1906,14 +1925,7 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
         if not cls._is_protocol:
             return
 
-        # ... otherwise check consistency of bases, and prohibit instantiation.
-        for base in cls.__bases__:
-            if not (base in (object, Generic) or
-                    base.__module__ in _PROTO_ALLOWLIST and
-                    base.__name__ in _PROTO_ALLOWLIST[base.__module__] or
-                    issubclass(base, Generic) and getattr(base, '_is_protocol', False)):
-                raise TypeError('Protocols can only inherit from other'
-                                ' protocols, got %r' % base)
+        # ... otherwise prohibit instantiation.
         if cls.__init__ is Protocol.__init__:
             cls.__init__ = _no_init_or_replace_init
 
