@@ -490,8 +490,7 @@ def main():
         else:
             filename = "<stdin>"
             tokens = _generate_tokens_from_c_tokenizer(
-                (x.encode('utf-8') for x in iter(sys.stdin.readline, "")
-            ), "utf-8", extra_tokens=True)
+                sys.stdin.readline, extra_tokens=True)
 
 
         # Output the tokenization
