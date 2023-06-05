@@ -1778,7 +1778,7 @@ class _ProtocolMeta(ABCMeta):
             for base in bases:
                 if not (
                     base in {object, Generic}
-                    or base.__name__ in _PROTO_ALLOWLIST.get(base.__module__, {})
+                    or base.__name__ in _PROTO_ALLOWLIST.get(base.__module__, [])
                     or (
                         issubclass(base, Generic)
                         and getattr(base, "_is_protocol", False)
