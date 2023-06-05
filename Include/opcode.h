@@ -114,6 +114,9 @@ extern "C" {
 #define SET_UPDATE                             163
 #define DICT_MERGE                             164
 #define DICT_UPDATE                            165
+#define LOAD_FAST_LOAD_FAST                    168
+#define STORE_FAST_LOAD_FAST                   169
+#define STORE_FAST_STORE_FAST                  170
 #define CALL                                   171
 #define KW_NAMES                               172
 #define CALL_INTRINSIC_1                       173
@@ -203,20 +206,17 @@ extern "C" {
 #define LOAD_ATTR_METHOD_WITH_VALUES            82
 #define LOAD_CONST__LOAD_FAST                   84
 #define LOAD_FAST__LOAD_CONST                   86
-#define LOAD_FAST__LOAD_FAST                    88
-#define LOAD_GLOBAL_BUILTIN                    111
-#define LOAD_GLOBAL_MODULE                     112
-#define STORE_ATTR_INSTANCE_VALUE              113
-#define STORE_ATTR_SLOT                        148
-#define STORE_ATTR_WITH_HINT                   153
-#define STORE_FAST__LOAD_FAST                  154
-#define STORE_FAST__STORE_FAST                 158
-#define STORE_SUBSCR_DICT                      159
-#define STORE_SUBSCR_LIST_INT                  160
-#define UNPACK_SEQUENCE_LIST                   161
-#define UNPACK_SEQUENCE_TUPLE                  166
-#define UNPACK_SEQUENCE_TWO_TUPLE              167
-#define SEND_GEN                               168
+#define LOAD_GLOBAL_BUILTIN                     88
+#define LOAD_GLOBAL_MODULE                     111
+#define STORE_ATTR_INSTANCE_VALUE              112
+#define STORE_ATTR_SLOT                        113
+#define STORE_ATTR_WITH_HINT                   148
+#define STORE_SUBSCR_DICT                      153
+#define STORE_SUBSCR_LIST_INT                  154
+#define UNPACK_SEQUENCE_LIST                   158
+#define UNPACK_SEQUENCE_TUPLE                  159
+#define UNPACK_SEQUENCE_TWO_TUPLE              160
+#define SEND_GEN                               161
 
 #define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\
     || ((op) == JUMP) \
