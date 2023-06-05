@@ -179,7 +179,7 @@ same quote as the containing f-string. Let's cover these in detail:
   must be defined in a single line even if outside f-strings expressions could
   span multiple lines (like literal lists being defined over multiple lines),
   making them harder to read. In Python 3.12 you can now define expressions
-  spaning multiple lines and include comments on them:
+  spanning multiple lines and include comments on them:
 
     >>> f"This is the playlist: {", ".join([
     ...     'Take me back to Eden',  # My, my, those eyes like fire
@@ -216,7 +216,7 @@ f-string raises a :exc:`SyntaxError`:
          ^^^
     SyntaxError: f-string: invalid syntax. Perhaps you forgot a comma?
 
-but the error message doesn't include the exact location of the error withing the line and
+but the error message doesn't include the exact location of the error within the line and
 also has the expression artificially surrounded by parentheses. In Python 3.12, as f-strings
 are parsed with the PEG parser, error messages can be more precise and show the entire line:
 
@@ -1486,7 +1486,7 @@ Changes in the Python API
       1,13-1,17:          FSTRING_MIDDLE ' end'
       1,17-1,18:          FSTRING_END    '"'
 
-  Aditionally, there may be some minor behavioral changes as a consecuence of the
+  Additionally, there may be some minor behavioral changes as a consecuence of the
   changes required to support :pep:`701`. Some of these changes include:
 
   * Some final ``DEDENT`` tokens are now emitted within the bounds of the
@@ -1757,7 +1757,7 @@ Porting to Python 3.12
   before storing it. (Contributed by Mark Shannon in :gh:`101578`.)
 
 * ``_Py_RefTotal`` is no longer authoritative and only kept around
-  for ABI compabitility.  Note that it is an internal global and only
+  for ABI compatibility.  Note that it is an internal global and only
   available on debug builds.  If you happen to be using it then you'll
   need to start using ``_Py_GetGlobalRefTotal()``.
 
