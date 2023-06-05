@@ -566,7 +566,9 @@ def Never(self, parameters):
 
 @_SpecialForm
 def Self(self, parameters):
-    """Used to spell the type of "self" in classes::
+    """Used to spell the type of "self" in classes.
+
+    Example::
 
         from typing import Self
 
