@@ -447,7 +447,8 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.12b1 3531 (Add PEP 695 changes)
 #     Python 3.13a1 3550 (Plugin optimizer support)
 #     Python 3.13a1 3551 (Compact superinstructions)
-#     Python 3.8a1  3553 (more efficient bytecodes for f-strings #33092)
+#     Python 3.13a1 3552 (Remove LOAD_FAST__LOAD_CONST and LOAD_CONST__LOAD_FAST)
+#     Python 3.13a1 3553 (more efficient bytecodes for f-strings)
 
 #     Python 3.14 will start with 3600
 
