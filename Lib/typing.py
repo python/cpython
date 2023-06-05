@@ -526,7 +526,9 @@ class Any(metaclass=_AnyMeta):
 
 @_SpecialForm
 def NoReturn(self, parameters):
-    """Special type indicating functions that never return::
+    """Special type indicating functions that never return.
+
+    Example::
 
         from typing import NoReturn
 
