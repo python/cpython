@@ -87,7 +87,6 @@ New Modules
 Improved Modules
 ================
 
-=======
 array
 -----
 
