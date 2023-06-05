@@ -23,18 +23,18 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 0;
         case LOAD_FAST_AND_CLEAR:
             return 0;
+        case LOAD_FAST_LOAD_FAST:
+            return 0;
         case LOAD_CONST:
             return 0;
         case STORE_FAST:
             return 1;
-        case LOAD_FAST__LOAD_FAST:
-            return 0+0;
+        case STORE_FAST_LOAD_FAST:
+            return 1;
+        case STORE_FAST_STORE_FAST:
+            return 2;
         case LOAD_FAST__LOAD_CONST:
             return 0+0;
-        case STORE_FAST__LOAD_FAST:
-            return 1+0;
-        case STORE_FAST__STORE_FAST:
-            return 1+1;
         case LOAD_CONST__LOAD_FAST:
             return 0+0;
         case POP_TOP:
@@ -421,18 +421,18 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 1;
         case LOAD_FAST_AND_CLEAR:
             return 1;
+        case LOAD_FAST_LOAD_FAST:
+            return 2;
         case LOAD_CONST:
             return 1;
         case STORE_FAST:
             return 0;
-        case LOAD_FAST__LOAD_FAST:
-            return 1+1;
+        case STORE_FAST_LOAD_FAST:
+            return 1;
+        case STORE_FAST_STORE_FAST:
+            return 0;
         case LOAD_FAST__LOAD_CONST:
             return 1+1;
-        case STORE_FAST__LOAD_FAST:
-            return 0+1;
-        case STORE_FAST__STORE_FAST:
-            return 0+0;
         case LOAD_CONST__LOAD_FAST:
             return 1+1;
         case POP_TOP:
@@ -816,12 +816,12 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [LOAD_FAST_CHECK] = { true, INSTR_FMT_IB },
     [LOAD_FAST] = { true, INSTR_FMT_IB },
     [LOAD_FAST_AND_CLEAR] = { true, INSTR_FMT_IB },
+    [LOAD_FAST_LOAD_FAST] = { true, INSTR_FMT_IB },
     [LOAD_CONST] = { true, INSTR_FMT_IB },
     [STORE_FAST] = { true, INSTR_FMT_IB },
-    [LOAD_FAST__LOAD_FAST] = { true, INSTR_FMT_IBIB },
+    [STORE_FAST_LOAD_FAST] = { true, INSTR_FMT_IB },
+    [STORE_FAST_STORE_FAST] = { true, INSTR_FMT_IB },
     [LOAD_FAST__LOAD_CONST] = { true, INSTR_FMT_IBIB },
-    [STORE_FAST__LOAD_FAST] = { true, INSTR_FMT_IBIB },
-    [STORE_FAST__STORE_FAST] = { true, INSTR_FMT_IBIB },
     [LOAD_CONST__LOAD_FAST] = { true, INSTR_FMT_IBIB },
     [POP_TOP] = { true, INSTR_FMT_IX },
     [PUSH_NULL] = { true, INSTR_FMT_IX },
