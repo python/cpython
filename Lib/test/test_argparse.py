@@ -1433,8 +1433,6 @@ class TestOptionalsAlmostNumericAndPositionals(ParserTestCase):
 
 
 class TestOptionalsAndPositionalsAppend(ParserTestCase):
-    """Tests negative number args when numeric options are present"""
-
     argument_signatures = [
         Sig('foo', nargs='*', action='append'),
         Sig('--bar'),
@@ -1448,8 +1446,6 @@ class TestOptionalsAndPositionalsAppend(ParserTestCase):
 
 
 class TestOptionalsAndPositionalsExtend(ParserTestCase):
-    """Tests negative number args when numeric options are present"""
-
     argument_signatures = [
         Sig('foo', nargs='*', action='extend'),
         Sig('--bar'),
