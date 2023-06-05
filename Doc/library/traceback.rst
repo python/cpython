@@ -279,6 +279,13 @@ capture data for later printing in a lightweight fashion.
 
       For syntax errors - the line number where the error occurred.
 
+   .. attribute:: end_lineno
+
+      For syntax errors - the end line number where the error occurred.
+      Can be ``None`` if not present.
+
+      .. versionadded:: 3.10
+
    .. attribute:: text
 
       For syntax errors - the text where the error occurred.
@@ -286,6 +293,13 @@ capture data for later printing in a lightweight fashion.
    .. attribute:: offset
 
       For syntax errors - the offset into the text where the error occurred.
+
+   .. attribute:: end_offset
+
+      For syntax errors - the end offset into the text where the error occurred.
+      Can be ``None`` if not present.
+
+      .. versionadded:: 3.10
 
    .. attribute:: msg
 
