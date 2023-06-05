@@ -826,7 +826,7 @@ class TracebackException:
     def __str__(self):
         return self._str
 
-    def format_exception_only(self, show_group=False, depth=0):
+    def format_exception_only(self, *, show_group=False, depth=0):
         """Format the exception part of the traceback.
 
         The return value is a generator of strings, each ending in a newline.
