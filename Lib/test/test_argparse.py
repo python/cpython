@@ -765,6 +765,49 @@ class TestBooleanOptionalAction(ParserTestCase):
 
         self.assertIn("got an unexpected keyword argument 'const'", str(cm.exception))
 
+    def test_deprecated_init_kw(self):
+        # See gh-92248
+        parser = argparse.ArgumentParser()
+
+        with self.assertWarns(DeprecationWarning):
+            parser.add_argument(
+                '-a',
+                action=argparse.BooleanOptionalAction,
+                type=None,
+            )
+        with self.assertWarns(DeprecationWarning):
+            parser.add_argument(
+                '-b',
+                action=argparse.BooleanOptionalAction,
+                type=bool,
+            )
+
+        with self.assertWarns(DeprecationWarning):
+            parser.add_argument(
+                '-c',
+                action=argparse.BooleanOptionalAction,
+                metavar=None,
+            )
+        with self.assertWarns(DeprecationWarning):
+            parser.add_argument(
+                '-d',
+                action=argparse.BooleanOptionalAction,
+                metavar='d',
+            )
+
+        with self.assertWarns(DeprecationWarning):
+            parser.add_argument(
+                '-e',
+                action=argparse.BooleanOptionalAction,
+                choices=None,
+            )
+        with self.assertWarns(DeprecationWarning):
+            parser.add_argument(
+                '-f',
+                action=argparse.BooleanOptionalAction,
+                choices=(),
+            )
+
 class TestBooleanOptionalActionRequired(ParserTestCase):
     """Tests BooleanOptionalAction required"""
 

@@ -2650,7 +2650,7 @@ calling any callbacks. Patch by Kumar Aditya.
 .. section: Library
 
 Fail gracefully if :data:`~errno.EPERM` or :data:`~errno.ENOSYS` is raised
-when loading :mod:`crypt` methods. This may happen when trying to load
+when loading :mod:`!crypt` methods. This may happen when trying to load
 ``MD5`` on a Linux kernel with :abbr:`FIPS (Federal Information Processing
 Standard)` enabled.
 
@@ -5400,7 +5400,7 @@ Update libffi to 3.4.3
 .. nonce: kV4K_1
 .. section: Windows
 
-Fixes a potential buffer overrun in :mod:`msilib`.
+Fixes a potential buffer overrun in :mod:`!msilib`.
 
 ..
 

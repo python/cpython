@@ -21,18 +21,11 @@ PyAPI_FUNC(PyCodeObject*) _PyAST_Compile(
 
 static const _PyCompilerSrcLocation NO_LOCATION = {-1, -1, -1, -1};
 
-typedef struct {
-    int optimize;
-    int ff_features;
-
-    int recursion_depth;            /* current recursion depth */
-    int recursion_limit;            /* recursion limit */
-} _PyASTOptimizeState;
-
 extern int _PyAST_Optimize(
     struct _mod *,
     struct _arena *arena,
-    _PyASTOptimizeState *state);
+    int optimize,
+    int ff_features);
 
 typedef struct {
     int h_offset;
@@ -70,6 +63,9 @@ typedef struct {
     PyObject *u_varnames;  /* local variables */
     PyObject *u_cellvars;  /* cell variables */
     PyObject *u_freevars;  /* free variables */
+    PyObject *u_fasthidden; /* dict; keys are names that are fast-locals only
+                               temporarily within an inlined comprehension. When
+                               value is True, treat as fast-local. */
 
     Py_ssize_t u_argcount;        /* number of arguments for block */
     Py_ssize_t u_posonlyargcount;        /* number of positional only arguments for block */
@@ -102,7 +98,8 @@ PyAPI_FUNC(PyObject*) _PyCompile_CodeGen(
 
 PyAPI_FUNC(PyObject*) _PyCompile_OptimizeCfg(
         PyObject *instructions,
-        PyObject *consts);
+        PyObject *consts,
+        int nlocals);
 
 PyAPI_FUNC(PyCodeObject*)
 _PyCompile_Assemble(_PyCompile_CodeUnitMetadata *umd, PyObject *filename,

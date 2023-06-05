@@ -334,9 +334,11 @@ def test_pdb_breakpoint_commands():
     (Pdb) commands 10
     *** cannot set commands: Breakpoint number 10 out of range
     (Pdb) commands a
-    *** Usage: commands [bnum]
-            ...
-            end
+    *** Invalid argument: a
+          Usage: (Pdb) commands [bpnumber]
+                 (com) ...
+                 (com) end
+                 (Pdb)
     (Pdb) commands 4
     *** cannot set commands: Breakpoint 4 already deleted
     (Pdb) break 6, undefined
@@ -905,6 +907,34 @@ def test_pdb_skip_modules():
     --Return--
     > <doctest test.test_pdb.test_pdb_skip_modules[0]>(4)skip_module()->None
     -> string.capwords('FOO')
+    (Pdb) continue
+    """
+
+def test_pdb_invalid_arg():
+    """This tests pdb commands that have invalid arguments
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     pass
+
+    >>> with PdbTestInput([
+    ...     'a = 3',
+    ...     'll 4',
+    ...     'step 1',
+    ...     'continue'
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_invalid_arg[0]>(3)test_function()
+    -> pass
+    (Pdb) a = 3
+    *** Invalid argument: = 3
+          Usage: a(rgs)
+    (Pdb) ll 4
+    *** Invalid argument: 4
+          Usage: ll | longlist
+    (Pdb) step 1
+    *** Invalid argument: 1
+          Usage: s(tep)
     (Pdb) continue
     """
 
@@ -1793,8 +1823,32 @@ def test_pdb_issue_gh_101517():
     ...     'continue'
     ... ]):
     ...    test_function()
-    > <doctest test.test_pdb.test_pdb_issue_gh_101517[0]>(5)test_function()
-    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    --Return--
+    > <doctest test.test_pdb.test_pdb_issue_gh_101517[0]>(None)test_function()->None
+    -> Warning: lineno is None
+    (Pdb) continue
+    """
+
+def test_pdb_ambiguous_statements():
+    """See GH-104301
+
+    Make sure that ambiguous statements prefixed by '!' are properly disambiguated
+
+    >>> with PdbTestInput([
+    ...     '! n = 42',  # disambiguated statement: reassign the name n
+    ...     'n',         # advance the debugger into the print()
+    ...     'continue'
+    ... ]):
+    ...     n = -1
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     print(f"The value of n is {n}")
+    > <doctest test.test_pdb.test_pdb_ambiguous_statements[0]>(8)<module>()
+    -> print(f"The value of n is {n}")
+    (Pdb) ! n = 42
+    (Pdb) n
+    The value of n is 42
+    > <doctest test.test_pdb.test_pdb_ambiguous_statements[0]>(1)<module>()
+    -> with PdbTestInput([
     (Pdb) continue
     """
 

@@ -2610,10 +2610,6 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
         if (!haspath) {
             Py_ssize_t dot;
 
-            if (PyUnicode_READY(package) < 0) {
-                goto error;
-            }
-
             dot = PyUnicode_FindChar(package, '.',
                                         0, PyUnicode_GET_LENGTH(package), -1);
             if (dot == -2) {
@@ -2760,9 +2756,6 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     if (!PyUnicode_Check(name)) {
         _PyErr_SetString(tstate, PyExc_TypeError,
                          "module name must be a string");
-        goto error;
-    }
-    if (PyUnicode_READY(name) < 0) {
         goto error;
     }
     if (level < 0) {

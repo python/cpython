@@ -4,7 +4,6 @@
 #include "pycore_code.h"          // write_location_entry_start()
 #include "pycore_compile.h"
 #include "pycore_opcode.h"        // _PyOpcode_Caches[] and opcode category macros
-#include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 
 
 #define DEFAULT_CODE_SIZE 128
@@ -128,7 +127,7 @@ assemble_emit_exception_table_entry(struct assembler *a, int start, int end,
     assert(end > start);
     int target = handler->h_offset;
     int depth = handler->h_startdepth - 1;
-    if (handler->h_preserve_lasti) {
+    if (handler->h_preserve_lasti > 0) {
         depth -= 1;
     }
     assert(depth >= 0);
@@ -146,6 +145,8 @@ assemble_exception_table(struct assembler *a, instr_sequence *instrs)
     int ioffset = 0;
     _PyCompile_ExceptHandlerInfo handler;
     handler.h_offset = -1;
+    handler.h_startdepth = -1;
+    handler.h_preserve_lasti = -1;
     int start = -1;
     for (int i = 0; i < instrs->s_used; i++) {
         instruction *instr = &instrs->s_instrs[i];
@@ -456,6 +457,9 @@ compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
         assert(offset < nlocalsplus);
         // For now we do not distinguish arg kinds.
         _PyLocals_Kind kind = CO_FAST_LOCAL;
+        if (PyDict_Contains(umd->u_fasthidden, k)) {
+            kind |= CO_FAST_HIDDEN;
+        }
         if (PyDict_GetItem(umd->u_cellvars, k) != NULL) {
             kind |= CO_FAST_CELL;
         }

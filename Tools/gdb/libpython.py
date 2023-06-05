@@ -1390,10 +1390,6 @@ def _unichr_is_printable(char):
 class PyUnicodeObjectPtr(PyObjectPtr):
     _typename = 'PyUnicodeObject'
 
-    def char_width(self):
-        _type_Py_UNICODE = gdb.lookup_type('Py_UNICODE')
-        return _type_Py_UNICODE.sizeof
-
     def proxyval(self, visited):
         compact = self.field('_base')
         ascii = compact['_base']
@@ -1414,13 +1410,13 @@ class PyUnicodeObjectPtr(PyObjectPtr):
         elif repr_kind == 4:
             field_str = field_str.cast(_type_unsigned_int_ptr())
 
-        # Gather a list of ints from the Py_UNICODE array; these are either
+        # Gather a list of ints from the code point array; these are either
         # UCS-1, UCS-2 or UCS-4 code points:
-        Py_UNICODEs = [int(field_str[i]) for i in safe_range(field_length)]
+        code_points = [int(field_str[i]) for i in safe_range(field_length)]
 
         # Convert the int code points to unicode characters, and generate a
         # local unicode instance.
-        result = u''.join(map(chr, Py_UNICODEs))
+        result = u''.join(map(chr, code_points))
         return result
 
     def write_repr(self, out, visited):

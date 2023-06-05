@@ -60,9 +60,14 @@ Printing and clearing
    Call this function **only** when the error indicator is set.  Otherwise it
    will cause a fatal error!
 
-   If *set_sys_last_vars* is nonzero, the variables :data:`sys.last_type`,
-   :data:`sys.last_value` and :data:`sys.last_traceback` will be set to the
-   type, value and traceback of the printed exception, respectively.
+   If *set_sys_last_vars* is nonzero, the variable :data:`sys.last_exc` is
+   set to the printed exception. For backwards compatibility, the
+   deprecated variables :data:`sys.last_type`, :data:`sys.last_value` and
+   :data:`sys.last_traceback` are also set to the type, value and traceback
+   of this exception, respectively.
+
+   .. versionchanged:: 3.12
+      The setting of :data:`sys.last_exc` was added.
 
 
 .. c:function:: void PyErr_Print()
@@ -772,6 +777,18 @@ Exception Objects
 
    Set :attr:`~BaseException.args` of exception *ex* to *args*.
 
+.. c:function:: PyObject* PyUnstable_Exc_PrepReraiseStar(PyObject *orig, PyObject *excs)
+
+   Implement part of the interpreter's implementation of :keyword:`!except*`.
+   *orig* is the original exception that was caught, and *excs* is the list of
+   the exceptions that need to be raised. This list contains the the unhandled
+   part of *orig*, if any, as well as the exceptions that were raised from the
+   :keyword:`!except*` clauses (so they have a different traceback from *orig*) and
+   those that were reraised (and have the same traceback as *orig*).
+   Return the :exc:`ExceptionGroup` that needs to be reraised in the end, or
+   ``None`` if there is nothing to reraise.
+
+   .. versionadded:: 3.12
 
 .. _unicodeexceptions:
 
