@@ -1293,6 +1293,11 @@ swaptimize(basicblock *block, int *ix)
      (opcode) == STORE_FAST_MAYBE_NULL || \
      (opcode) == POP_TOP)
 
+#define STORES_TO(instr) \
+    (((instr).i_opcode == STORE_FAST || \
+      (instr).i_opcode == STORE_FAST_MAYBE_NULL) \
+     ? (instr).i_oparg : -1)
+
 static int
 next_swappable_instruction(basicblock *block, int i, int lineno)
 {
@@ -1344,6 +1349,23 @@ apply_static_swaps(basicblock *block, int i)
                 return;
             }
         }
+        // The reordering is not safe if the two instructions to be swapped
+        // store to the same location, or if any intervening instruction stores
+        // to the same location as either of them.
+        int store_j = STORES_TO(block->b_instr[j]);
+        int store_k = STORES_TO(block->b_instr[k]);
+        if (store_j >= 0 || store_k >= 0) {
+            if (store_j == store_k) {
+                return;
+            }
+            for (int idx = j + 1; idx < k; idx++) {
+                int store_idx = STORES_TO(block->b_instr[idx]);
+                if (store_idx >= 0 && (store_idx == store_j || store_idx == store_k)) {
+                    return;
+                }
+            }
+        }
+
         // Success!
         INSTR_SET_OP0(swap, NOP);
         cfg_instr temp = block->b_instr[j];
@@ -1562,6 +1584,56 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache)
     assert(no_redundant_nops(g));
     RETURN_IF_ERROR(remove_redundant_jumps(g));
     return SUCCESS;
+}
+
+static void
+make_super_instruction(cfg_instr *inst1, cfg_instr *inst2, int super_op)
+{
+    int32_t line1 = inst1->i_loc.lineno;
+    int32_t line2 = inst2->i_loc.lineno;
+    /* Skip if instructions are on different lines */
+    if (line1 >= 0 && line2 >= 0 && line1 != line2) {
+        return;
+    }
+    if (inst1->i_oparg >= 16 || inst2->i_oparg >= 16) {
+        return;
+    }
+    INSTR_SET_OP1(inst1, super_op, (inst1->i_oparg << 4) | inst2->i_oparg);
+    INSTR_SET_OP0(inst2, NOP);
+}
+
+static void
+insert_superinstructions(cfg_builder *g)
+{
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
+
+        for (int i = 0; i < b->b_iused; i++) {
+            cfg_instr *inst = &b->b_instr[i];
+            int nextop = i+1 < b->b_iused ? b->b_instr[i+1].i_opcode : 0;
+            switch(inst->i_opcode) {
+                case LOAD_FAST:
+                    if (nextop == LOAD_FAST) {
+                        make_super_instruction(inst, &b->b_instr[i + 1], LOAD_FAST_LOAD_FAST);
+                    }
+                    break;
+                case STORE_FAST:
+                    switch (nextop) {
+                        case LOAD_FAST:
+                            make_super_instruction(inst, &b->b_instr[i + 1], STORE_FAST_LOAD_FAST);
+                            break;
+                        case STORE_FAST:
+                            make_super_instruction(inst, &b->b_instr[i + 1], STORE_FAST_STORE_FAST);
+                            break;
+                    }
+                    break;
+            }
+        }
+    }
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
+        remove_redundant_nops(b);
+    }
+    eliminate_empty_basic_blocks(g);
+    assert(no_redundant_nops(g));
 }
 
 // helper functions for add_checks_for_loads_of_unknown_variables
@@ -2159,6 +2231,7 @@ _PyCfg_OptimizeCodeUnit(cfg_builder *g, PyObject *consts, PyObject *const_cache,
     RETURN_IF_ERROR(
         add_checks_for_loads_of_uninitialized_variables(
             g->g_entryblock, nlocals, nparams));
+    insert_superinstructions(g);
 
     RETURN_IF_ERROR(push_cold_blocks_to_end(g, code_flags));
     RETURN_IF_ERROR(resolve_line_numbers(g, firstlineno));

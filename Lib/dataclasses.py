@@ -627,7 +627,7 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
 def _repr_fn(fields, globals):
     fn = _create_fn('__repr__',
                     ('self',),
-                    ['return self.__class__.__qualname__ + f"(' +
+                    ['return f"{self.__class__.__qualname__}(' +
                      ', '.join([f"{f.name}={{self.{f.name}!r}}"
                                 for f in fields]) +
                      ')"'],
@@ -1085,13 +1085,17 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     if eq:
         # Create __eq__ method.  There's no need for a __ne__ method,
         # since python will call __eq__ and negate it.
-        flds = [f for f in field_list if f.compare]
-        self_tuple = _tuple_str('self', flds)
-        other_tuple = _tuple_str('other', flds)
-        _set_new_attribute(cls, '__eq__',
-                           _cmp_fn('__eq__', '==',
-                                   self_tuple, other_tuple,
-                                   globals=globals))
+        cmp_fields = (field for field in field_list if field.compare)
+        terms = [f'self.{field.name}==other.{field.name}' for field in cmp_fields]
+        field_comparisons = ' and '.join(terms) or 'True'
+        body =  [f'if other.__class__ is self.__class__:',
+                 f' return {field_comparisons}',
+                 f'return NotImplemented']
+        func = _create_fn('__eq__',
+                          ('self', 'other'),
+                          body,
+                          globals=globals)
+        _set_new_attribute(cls, '__eq__', func)
 
     if order:
         # Create and set the ordering methods.

@@ -48,6 +48,7 @@ typedef struct {
     PyObject *type_params;
     PyObject *compute_value;
     PyObject *value;
+    PyObject *module;
 } typealiasobject;
 
 #include "clinic/typevarobject.c.h"
@@ -442,45 +443,38 @@ static PyMethodDef typevar_methods[] = {
 PyDoc_STRVAR(typevar_doc,
 "Type variable.\n\
 \n\
-Usage::\n\
+The preferred way to construct a type variable is via the dedicated syntax\n\
+for generic functions, classes, and type aliases:\n\
 \n\
-  T = TypeVar('T')  # Can be anything\n\
-  A = TypeVar('A', str, bytes)  # Must be str or bytes\n\
+    class Sequence[T]:  # T is a TypeVar\n\
+        ...\n\
+\n\
+This syntax can also be used to create bound and constrained type\n\
+variables:\n\
+\n\
+    class StrSequence[S: str]:  # S is a TypeVar bound to str\n\
+        ...\n\
+\n\
+    class StrOrBytesSequence[A: (str, bytes)]:  # A is a TypeVar constrained to str or bytes\n\
+        ...\n\
+\n\
+However, if desired, reusable type variables can also be constructed\n\
+manually, like so:\n\
+\n\
+   T = TypeVar('T')  # Can be anything\n\
+   S = TypeVar('S', bound=str)  # Can be any subtype of str\n\
+   A = TypeVar('A', str, bytes)  # Must be exactly str or bytes\n\
 \n\
 Type variables exist primarily for the benefit of static type\n\
 checkers.  They serve as the parameters for generic types as well\n\
-as for generic function definitions.  See class Generic for more\n\
-information on generic types.  Generic functions work as follows:\n\
+as for generic function and type alias definitions.\n\
 \n\
-  def repeat(x: T, n: int) -> List[T]:\n\
-      '''Return a list containing n references to x.'''\n\
-      return [x]*n\n\
-\n\
-  def longest(x: A, y: A) -> A:\n\
-      '''Return the longest of two strings.'''\n\
-      return x if len(x) >= len(y) else y\n\
-\n\
-The latter example's signature is essentially the overloading\n\
-of (str, str) -> str and (bytes, bytes) -> bytes.  Also note\n\
-that if the arguments are instances of some subclass of str,\n\
-the return type is still plain str.\n\
-\n\
-At runtime, isinstance(x, T) and issubclass(C, T) will raise TypeError.\n\
-\n\
-Type variables defined with covariant=True or contravariant=True\n\
-can be used to declare covariant or contravariant generic types.\n\
-See PEP 484 for more details. By default generic types are invariant\n\
-in all type variables.\n\
-\n\
-Type variables can be introspected. e.g.:\n\
-\n\
-  T.__name__ == 'T'\n\
-  T.__constraints__ == ()\n\
-  T.__covariant__ == False\n\
-  T.__contravariant__ = False\n\
-  A.__constraints__ == (str, bytes)\n\
-\n\
-Note that only type variables defined in global scope can be pickled.\n\
+The variance of type variables is inferred by type checkers when they are created\n\
+through the type parameter syntax and when ``infer_variance=True`` is passed.\n\
+Manually created type variables may be explicitly marked covariant or\n\
+contravariant by passing ``covariant=True`` or ``contravariant=True``.\n\
+By default, manually created type variables are invariant. See PEP 484\n\
+and PEP 695 for more details.\n\
 ");
 
 static PyType_Slot typevar_slots[] = {
@@ -941,7 +935,14 @@ static PyMethodDef paramspec_methods[] = {
 PyDoc_STRVAR(paramspec_doc,
 "Parameter specification variable.\n\
 \n\
-Usage::\n\
+The preferred way to construct a parameter specification is via the dedicated syntax\n\
+for generic functions, classes, and type aliases, where\n\
+the use of '**' creates a parameter specification:\n\
+\n\
+    type IntFunc[**P] = Callable[P, int]\n\
+\n\
+For compatibility with Python 3.11 and earlier, ParamSpec objects\n\
+can also be created as follows:\n\
 \n\
     P = ParamSpec('P')\n\
 \n\
@@ -951,12 +952,9 @@ callable to another callable, a pattern commonly found in higher order\n\
 functions and decorators.  They are only valid when used in ``Concatenate``,\n\
 or as the first argument to ``Callable``, or as parameters for user-defined\n\
 Generics.  See class Generic for more information on generic types.  An\n\
-example for annotating a decorator::\n\
+example for annotating a decorator:\n\
 \n\
-    T = TypeVar('T')\n\
-    P = ParamSpec('P')\n\
-\n\
-    def add_logging(f: Callable[P, T]) -> Callable[P, T]:\n\
+    def add_logging[**P, T](f: Callable[P, T]) -> Callable[P, T]:\n\
         '''A type-safe decorator to add logging to a function.'''\n\
         def inner(*args: P.args, **kwargs: P.kwargs) -> T:\n\
             logging.info(f'{f.__name__} was called')\n\
@@ -968,17 +966,9 @@ example for annotating a decorator::\n\
         '''Add two numbers together.'''\n\
         return x + y\n\
 \n\
-Parameter specification variables defined with covariant=True or\n\
-contravariant=True can be used to declare covariant or contravariant\n\
-generic types.  These keyword arguments are valid, but their actual semantics\n\
-are yet to be decided.  See PEP 612 for details.\n\
-\n\
 Parameter specification variables can be introspected. e.g.:\n\
 \n\
     P.__name__ == 'P'\n\
-    P.__bound__ == None\n\
-    P.__covariant__ == False\n\
-    P.__contravariant__ == False\n\
 \n\
 Note that only parameter specification variables defined in global scope can\n\
 be pickled.\n\
@@ -1174,9 +1164,18 @@ static PyMethodDef typevartuple_methods[] = {
 };
 
 PyDoc_STRVAR(typevartuple_doc,
-"Type variable tuple.\n\
+"Type variable tuple. A specialized form of type variable that enables\n\
+variadic generics.\n\
 \n\
-Usage:\n\
+The preferred way to construct a type variable tuple is via the dedicated syntax\n\
+for generic functions, classes, and type aliases, where a single\n\
+'*' indicates a type variable tuple:\n\
+\n\
+    def move_first_element_to_last[T, *Ts](tup: tuple[T, *Ts]) -> tuple[*Ts, T]:\n\
+        return (*tup[1:], tup[0])\n\
+\n\
+For compatibility with Python 3.11 and earlier, TypeVarTuple objects\n\
+can also be created as follows:\n\
 \n\
   Ts = TypeVarTuple('Ts')  # Can be given any name\n\
 \n\
@@ -1184,7 +1183,7 @@ Just as a TypeVar (type variable) is a placeholder for a single type,\n\
 a TypeVarTuple is a placeholder for an *arbitrary* number of types. For\n\
 example, if we define a generic class using a TypeVarTuple:\n\
 \n\
-  class C(Generic[*Ts]): ...\n\
+  class C[*Ts]: ...\n\
 \n\
 Then we can parameterize that class with an arbitrary number of type\n\
 arguments:\n\
@@ -1252,6 +1251,7 @@ typealias_dealloc(PyObject *self)
     Py_XDECREF(ta->type_params);
     Py_XDECREF(ta->compute_value);
     Py_XDECREF(ta->value);
+    Py_XDECREF(ta->module);
     Py_TYPE(self)->tp_free(self);
     Py_DECREF(tp);
 }
@@ -1309,19 +1309,38 @@ typealias_type_params(PyObject *self, void *unused)
     return Py_NewRef(ta->type_params);
 }
 
+static PyObject *
+typealias_module(PyObject *self, void *unused)
+{
+    typealiasobject *ta = (typealiasobject *)self;
+    if (ta->module != NULL) {
+        return Py_NewRef(ta->module);
+    }
+    if (ta->compute_value != NULL) {
+        PyObject* mod = PyFunction_GetModule(ta->compute_value);
+        if (mod != NULL) {
+            // PyFunction_GetModule() returns a borrowed reference,
+            // and it may return NULL (e.g., for functions defined
+            // in an exec()'ed block).
+            return Py_NewRef(mod);
+        }
+    }
+    Py_RETURN_NONE;
+}
+
 static PyGetSetDef typealias_getset[] = {
     {"__parameters__", typealias_parameters, (setter)NULL, NULL, NULL},
     {"__type_params__", typealias_type_params, (setter)NULL, NULL, NULL},
     {"__value__", typealias_value, (setter)NULL, NULL, NULL},
+    {"__module__", typealias_module, (setter)NULL, NULL, NULL},
     {0}
 };
 
 static typealiasobject *
 typealias_alloc(PyObject *name, PyObject *type_params, PyObject *compute_value,
-                PyObject *value)
+                PyObject *value, PyObject *module)
 {
-    PyTypeObject *tp = PyInterpreterState_Get()->cached_objects.typealias_type;
-    typealiasobject *ta = PyObject_GC_New(typealiasobject, tp);
+    typealiasobject *ta = PyObject_GC_New(typealiasobject, &_PyTypeAlias_Type);
     if (ta == NULL) {
         return NULL;
     }
@@ -1329,6 +1348,7 @@ typealias_alloc(PyObject *name, PyObject *type_params, PyObject *compute_value,
     ta->type_params = Py_IsNone(type_params) ? NULL : Py_XNewRef(type_params);
     ta->compute_value = Py_XNewRef(compute_value);
     ta->value = Py_XNewRef(value);
+    ta->module = Py_XNewRef(module);
     _PyObject_GC_TRACK(ta);
     return ta;
 }
@@ -1339,6 +1359,7 @@ typealias_traverse(typealiasobject *self, visitproc visit, void *arg)
     Py_VISIT(self->type_params);
     Py_VISIT(self->compute_value);
     Py_VISIT(self->value);
+    Py_VISIT(self->module);
     return 0;
 }
 
@@ -1348,6 +1369,7 @@ typealias_clear(typealiasobject *self)
     Py_CLEAR(self->type_params);
     Py_CLEAR(self->compute_value);
     Py_CLEAR(self->value);
+    Py_CLEAR(self->module);
     return 0;
 }
 
@@ -1401,7 +1423,14 @@ typealias_new_impl(PyTypeObject *type, PyObject *name, PyObject *value,
         PyErr_SetString(PyExc_TypeError, "type_params must be a tuple");
         return NULL;
     }
-    return (PyObject *)typealias_alloc(name, type_params, NULL, value);
+    PyObject *module = caller();
+    if (module == NULL) {
+        return NULL;
+    }
+    PyObject *ta = (PyObject *)typealias_alloc(name, type_params, NULL, value,
+                                               module);
+    Py_DECREF(module);
+    return ta;
 }
 
 PyDoc_STRVAR(typealias_doc,
@@ -1410,30 +1439,51 @@ PyDoc_STRVAR(typealias_doc,
 Type aliases are created through the type statement:\n\
 \n\
   type Alias = int\n\
+\n\
+In this example, Alias and int will be treated equivalently by static\n\
+type checkers.\n\
+\n\
+At runtime, Alias is an instance of TypeAliasType. The __name__ attribute\n\
+holds the name of the type alias. The value of the type\n\
+alias is stored in the __value__ attribute. It is evaluated lazily, so\n\
+the value is computed only if the attribute is accessed.\n\
+\n\
+Type aliases can also be generic:\n\
+\n\
+  type ListOrSet[T] = list[T] | set[T]\n\
+\n\
+In this case, the type parameters of the alias are stored in the\n\
+__type_params__ attribute.\n\
+\n\
+See PEP 695 for more information.\n\
 ");
 
-static PyType_Slot typealias_slots[] = {
-    {Py_tp_doc, (void *)typealias_doc},
-    {Py_tp_members, typealias_members},
-    {Py_tp_methods, typealias_methods},
-    {Py_tp_getset, typealias_getset},
-    {Py_mp_subscript, typealias_subscript},
-    {Py_tp_dealloc, typealias_dealloc},
-    {Py_tp_alloc, PyType_GenericAlloc},
-    {Py_tp_new, typealias_new},
-    {Py_tp_free, PyObject_GC_Del},
-    {Py_tp_traverse, (traverseproc)typealias_traverse},
-    {Py_tp_clear, (inquiry)typealias_clear},
-    {Py_tp_repr, typealias_repr},
-    {Py_nb_or, _Py_union_type_or},
-    {0, 0},
+static PyNumberMethods typealias_as_number = {
+    .nb_or = _Py_union_type_or,
 };
 
-PyType_Spec typealias_spec = {
-    .name = "typing.TypeAliasType",
-    .basicsize = sizeof(typealiasobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_GC,
-    .slots = typealias_slots,
+static PyMappingMethods typealias_as_mapping = {
+    .mp_subscript = typealias_subscript,
+};
+
+PyTypeObject _PyTypeAlias_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    .tp_name = "typing.TypeAliasType",
+    .tp_basicsize = sizeof(typealiasobject),
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_GC,
+    .tp_doc = typealias_doc,
+    .tp_members = typealias_members,
+    .tp_methods = typealias_methods,
+    .tp_getset = typealias_getset,
+    .tp_alloc = PyType_GenericAlloc,
+    .tp_dealloc = typealias_dealloc,
+    .tp_new = typealias_new,
+    .tp_free = PyObject_GC_Del,
+    .tp_traverse = (traverseproc)typealias_traverse,
+    .tp_clear = (inquiry)typealias_clear,
+    .tp_repr = typealias_repr,
+    .tp_as_number = &typealias_as_number,
+    .tp_as_mapping = &typealias_as_mapping,
 };
 
 PyObject *
@@ -1445,7 +1495,8 @@ _Py_make_typealias(PyThreadState* unused, PyObject *args)
     assert(PyUnicode_Check(name));
     PyObject *type_params = PyTuple_GET_ITEM(args, 1);
     PyObject *compute_value = PyTuple_GET_ITEM(args, 2);
-    return (PyObject *)typealias_alloc(name, type_params, compute_value, NULL);
+    assert(PyFunction_Check(compute_value));
+    return (PyObject *)typealias_alloc(name, type_params, compute_value, NULL, NULL);
 }
 
 PyDoc_STRVAR(generic_doc,
@@ -1453,14 +1504,14 @@ PyDoc_STRVAR(generic_doc,
 \n\
 A generic type is typically declared by inheriting from\n\
 this class parameterized with one or more type variables.\n\
-For example, a generic mapping type might be defined as::\n\
+For example, a generic mapping type might be defined as:\n\
 \n\
     class Mapping(Generic[KT, VT]):\n\
         def __getitem__(self, key: KT) -> VT:\n\
             ...\n\
         # Etc.\n\
 \n\
-This class can then be used as follows::\n\
+This class can then be used as follows:\n\
 \n\
     def lookup_name(mapping: Mapping[KT, VT], key: KT, default: VT) -> VT:\n\
         try:\n\
@@ -1603,7 +1654,6 @@ int _Py_initialize_generic(PyInterpreterState *interp)
     MAKE_TYPE(paramspec);
     MAKE_TYPE(paramspecargs);
     MAKE_TYPE(paramspeckwargs);
-    MAKE_TYPE(typealias);
 #undef MAKE_TYPE
     return 0;
 }
@@ -1616,5 +1666,4 @@ void _Py_clear_generic_types(PyInterpreterState *interp)
     Py_CLEAR(interp->cached_objects.paramspec_type);
     Py_CLEAR(interp->cached_objects.paramspecargs_type);
     Py_CLEAR(interp->cached_objects.paramspeckwargs_type);
-    Py_CLEAR(interp->cached_objects.typealias_type);
 }

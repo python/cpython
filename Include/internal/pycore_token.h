@@ -77,7 +77,9 @@ extern "C" {
 #define FSTRING_START   61
 #define FSTRING_MIDDLE  62
 #define FSTRING_END     63
-#define ERRORTOKEN      64
+#define COMMENT         64
+#define NL              65
+#define ERRORTOKEN      66
 #define N_TOKENS        68
 #define NT_OFFSET       256
 
