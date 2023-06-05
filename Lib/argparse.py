@@ -714,10 +714,6 @@ class ArgumentDefaultsHelpFormatter(HelpFormatter):
         """
         help = action.help
         if help is None:
-            # This ensures help would always be a string in an obvious way
-            # to make sure the contain check below works.
-            # However, in practice, the only way to access this code through
-            # normal operation has a checker for help being None already
             help = ''
 
         if '%(default)' not in help:
