@@ -1780,7 +1780,7 @@ class _ProtocolMeta(ABCMeta):
                     base in {object, Generic}
                     or base.__name__ in _PROTO_ALLOWLIST.get(base.__module__, {})
                     or (
-                        isinstance(base, _ProtocolMeta)
+                        issubclass(base, Generic)
                         and getattr(base, "_is_protocol", False)
                     )
                 ):
