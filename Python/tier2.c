@@ -1822,23 +1822,15 @@ _PyTier2_Code_DetectAndEmitBB(
             }
             else {
                 if (local == &PyFloat_Type) {
-                    write_i->op.code = LOAD_FAST;
-                    write_i->op.arg = oparg;
-                    write_i++;
+                    write_i = emit_i(write_i, LOAD_FAST, oparg);
                     type_propagate(LOAD_FAST,
                         oparg, starting_type_context, consts);
-                    write_i->op.code = UNBOX_FLOAT;
-                    write_i->op.arg = 0;
-                    write_i++;
+                    write_i = emit_i(write_i, UNBOX_FLOAT, 0);
                     type_propagate(UNBOX_FLOAT, 0, starting_type_context, consts);
-                    write_i->op.code = STORE_FAST_UNBOXED_BOXED;
-                    write_i->op.arg = oparg;
-                    write_i++;
+                    write_i = emit_i(write_i, STORE_FAST_UNBOXED_BOXED, oparg);
                     type_propagate(STORE_FAST_UNBOXED_BOXED,
                         oparg, starting_type_context, consts);
-                    write_i->op.code = LOAD_FAST_NO_INCREF;
-                    write_i->op.arg = oparg;
-                    write_i++;
+                    write_i = emit_i(write_i, LOAD_FAST_NO_INCREF, oparg);
                     type_propagate(LOAD_FAST_NO_INCREF,
                         oparg, starting_type_context, consts);
                     continue;
@@ -1858,23 +1850,15 @@ _PyTier2_Code_DetectAndEmitBB(
             }
             else {
                 if (local == &PyFloat_Type) {
-                    write_i->op.code = LOAD_FAST;
-                    write_i->op.arg = oparg;
-                    write_i++;
+                    write_i = emit_i(write_i, LOAD_FAST, oparg);
                     type_propagate(LOAD_FAST,
                         oparg, starting_type_context, consts);
-                    write_i->op.code = UNBOX_FLOAT;
-                    write_i->op.arg = 0;
-                    write_i++;
+                    write_i = emit_i(write_i, UNBOX_FLOAT, 0);
                     type_propagate(UNBOX_FLOAT, 0, starting_type_context, consts);
-                    write_i->op.code = STORE_FAST_UNBOXED_BOXED;
-                    write_i->op.arg = oparg;
-                    write_i++;
+                    write_i = emit_i(write_i, STORE_FAST_UNBOXED_BOXED, oparg);
                     type_propagate(STORE_FAST_UNBOXED_BOXED,
                         oparg, starting_type_context, consts);
-                    write_i->op.code = LOAD_FAST_NO_INCREF;
-                    write_i->op.arg = oparg;
-                    write_i++;
+                    write_i = emit_i(write_i, LOAD_FAST_NO_INCREF, oparg);
                     type_propagate(LOAD_FAST_NO_INCREF,
                         oparg, starting_type_context, consts);
                     continue;
