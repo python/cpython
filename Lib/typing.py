@@ -1,22 +1,21 @@
 """
 The typing module: Support for gradual typing as defined by PEP 484 and subsequent PEPs.
 
-At large scale, the structure of the module is following:
-* Imports and exports, all public names should be explicitly added to __all__.
-* Internal helper functions: these should never be used in code outside this module.
-* _SpecialForm and its instances (special forms):
+Any name not present in __all__ is an implementation detail
+that may be changed without notice. Use at your own risk!
+
+Among other things, the module includes the following:
+* Generic, Protocol, and internal machinery to support generic aliases.
+  All subscripted types like X[int], Union[int, str] are generic aliases.
+* Various "special forms" that have unique meanings in type annotations:
   NoReturn, Never, ClassVar, Self, Concatenate, Unpack, and others.
-* Classes whose instances can be type arguments:
+* Classes whose instances can be type arguments to generic classes and functions:
   TypeVar, ParamSpec, TypeVarTuple.
-* The core of internal generics API: _GenericAlias and _VariadicGenericAlias, the latter is
-  currently only used by Tuple and Callable. All subscripted types like X[int], Union[int, str],
-  etc., are instances of either of these classes.
-* The public counterpart of the generics API consists of two classes: Generic and Protocol.
 * Public helper functions: get_type_hints, overload, cast, final, and others.
-* Deprecated aliases for collections.abc ABCs.
-* Several additional protocols:
+* Several protocols to support duck-typing:
   SupportsFloat, SupportsIndex, SupportsAbs, and others.
 * Special types: NewType, NamedTuple, TypedDict.
+* Deprecated aliases for builtin types and collections.abc ABCs.
 """
 
 from abc import abstractmethod, ABCMeta
