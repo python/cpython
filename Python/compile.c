@@ -1422,8 +1422,18 @@ find_ann(asdl_stmt_seq *stmts)
                   find_ann(st->v.TryStar.finalbody) ||
                   find_ann(st->v.TryStar.orelse);
             break;
+        case Match_kind:
+            for (j = 0; j < asdl_seq_LEN(st->v.Match.cases); j++) {
+                match_case_ty match_case = (match_case_ty)asdl_seq_GET(
+                    st->v.Match.cases, j);
+                if (find_ann(match_case->body)) {
+                    return true;
+                }
+            }
+            break;
         default:
             res = false;
+            break;
         }
         if (res) {
             break;
