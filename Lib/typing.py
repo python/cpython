@@ -3399,6 +3399,8 @@ def dataclass_transform(
 
     Example usage with a decorator function::
 
+        T = TypeVar("T")
+
         @dataclass_transform()
         def create_model(cls: type[T]) -> type[T]:
             ...
