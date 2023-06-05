@@ -2459,12 +2459,12 @@ def adjust_int_max_str_digits(max_digits):
 EXCEEDS_RECURSION_LIMIT = 5000
 
 # A decorator to skip tests that are not rerunnable.
-def skip_rerun(reason: str):
+def skip_rerun(reason):
     """
     This decorator skips the decorated test case
     if it has already been run.
     """
-    def decorator(test_case: type[unittest.TestCase]):
+    def decorator(test_case):
 
         original_setUpClass = test_case.setUpClass
         original_tearDownClass = test_case.tearDownClass
