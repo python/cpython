@@ -1487,17 +1487,6 @@ update_instrumentation_data(PyCodeObject *code, PyInterpreterState *interp)
     return 0;
 }
 
-static const uint8_t super_instructions[256] = {
-    [LOAD_FAST__LOAD_CONST] = 1,
-    [LOAD_CONST__LOAD_FAST] = 1,
-};
-
-/* Should use instruction metadata for this */
-static bool
-is_super_instruction(uint8_t opcode) {
-    return super_instructions[opcode] != 0;
-}
-
 int
 _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
 {
@@ -1539,9 +1528,6 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
     /* Insert instrumentation */
     for (int i = 0; i < code_len; i+= _PyInstruction_GetLength(code, i)) {
         _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
-        if (is_super_instruction(instr->op.code)) {
-            instr->op.code = _PyOpcode_Deopt[instr->op.code];
-        }
         CHECK(instr->op.code != 0);
         int base_opcode = _Py_GetBaseOpcode(code, i);
         if (opcode_has_event(base_opcode)) {

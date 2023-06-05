@@ -235,9 +235,6 @@ dummy_func(
             SETLOCAL(oparg2, value2);
         }
 
-        super(LOAD_FAST__LOAD_CONST) = LOAD_FAST + LOAD_CONST;
-        super(LOAD_CONST__LOAD_FAST) = LOAD_CONST + LOAD_FAST;
-
         inst(POP_TOP, (value --)) {
             DECREF_INPUTS();
         }
