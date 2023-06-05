@@ -2225,7 +2225,7 @@ def get_origin(tp):
     """Get the unsubscripted version of a type.
 
     This supports generic types, Callable, Tuple, Union, Literal, Final, ClassVar
-    Annotated, and others. Return None for unsupported types. Examples:
+    Annotated, and others. Return None for unsupported types. Examples::
 
         assert get_origin(Literal[42]) is Literal
         assert get_origin(int) is None
@@ -2384,7 +2384,7 @@ def overload(func):
     """Decorator for overloaded functions/methods.
 
     In a stub file, place two or more stub definitions for the same
-    function in a row, each decorated with @overload.  For example:
+    function in a row, each decorated with @overload.  For example::
 
         @overload
         def utf8(value: None) -> None: ...
@@ -2395,7 +2395,7 @@ def overload(func):
 
     In a non-stub file (i.e. a regular .py file), do the same but
     follow it with an implementation.  The implementation should *not*
-    be decorated with @overload.  For example:
+    be decorated with @overload.  For example::
 
         @overload
         def utf8(value: None) -> None: ...
