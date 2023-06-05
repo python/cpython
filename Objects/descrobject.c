@@ -1802,8 +1802,8 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
             // See PropertySubclassTest.test_slots_docstring_copy_exception.
             int err = PyObject_SetAttr(
                         (PyObject *)self, &_Py_ID(__doc__), prop_doc);
-            Py_DECREF(prop_doc);
             if (err < 0) {
+                Py_DECREF(prop_doc);  // release our new reference.
                 return -1;
             }
         }
