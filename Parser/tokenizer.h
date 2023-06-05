@@ -131,6 +131,7 @@ struct tok_state {
     int tok_report_warnings;
     int tok_extra_tokens;
     int comment_newline;
+    int implicit_newline;
 #ifdef Py_DEBUG
     int debug;
 #endif

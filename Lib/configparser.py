@@ -147,7 +147,6 @@ import itertools
 import os
 import re
 import sys
-import warnings
 
 __all__ = ("NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
            "NoOptionError", "InterpolationError", "InterpolationDepthError",
