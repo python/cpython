@@ -1,4 +1,6 @@
+import textwrap
 import unittest
+from test.support import run_code
 
 class TypeAnnotationTests(unittest.TestCase):
 
@@ -101,3 +103,112 @@ class TypeAnnotationTests(unittest.TestCase):
         with self.assertRaises(AttributeError):
             del D.__annotations__
         self.assertEqual(D.__annotations__, {})
+
+
+class TestSetupAnnotations(unittest.TestCase):
+    def check(self, code: str):
+        code = textwrap.dedent(code)
+        for scope in ("module", "class"):
+            with self.subTest(scope=scope):
+                if scope == "class":
+                    code = f"class C:\n{textwrap.indent(code, '    ')}"
+                ns = run_code(code)
+                if scope == "class":
+                    annotations = ns["C"].__annotations__
+                else:
+                    annotations = ns["__annotations__"]
+                self.assertEqual(annotations, {"x": int})
+
+    def test_top_level(self):
+        self.check("x: int = 1")
+
+    def test_blocks(self):
+        self.check("if True:\n    x: int = 1")
+        self.check("""
+            while True:
+                x: int = 1
+                break
+        """)
+        self.check("""
+            while False:
+                pass
+            else:
+                x: int = 1
+        """)
+        self.check("""
+            for i in range(1):
+                x: int = 1
+        """)
+        self.check("""
+            for i in range(1):
+                pass
+            else:
+                x: int = 1
+        """)
+
+    def test_try(self):
+        self.check("""
+            try:
+                x: int = 1
+            except:
+                pass
+        """)
+        self.check("""
+            try:
+                pass
+            except:
+                pass
+            else:
+                x: int = 1
+        """)
+        self.check("""
+            try:
+                pass
+            except:
+                pass
+            finally:
+                x: int = 1
+        """)
+        self.check("""
+            try:
+                1/0
+            except:
+                x: int = 1
+        """)
+
+    def test_try_star(self):
+        self.check("""
+            try:
+                x: int = 1
+            except* Exception:
+                pass
+        """)
+        self.check("""
+            try:
+                pass
+            except* Exception:
+                pass
+            else:
+                x: int = 1
+        """)
+        self.check("""
+            try:
+                pass
+            except* Exception:
+                pass
+            finally:
+                x: int = 1
+        """)
+        self.check("""
+            try:
+                1/0
+            except* Exception:
+                x: int = 1
+        """)
+
+    def test_match(self):
+        self.check("""
+            match 0:
+                case 0:
+                    x: int = 1
+        """)
