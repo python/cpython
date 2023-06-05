@@ -1724,13 +1724,6 @@ class _MutuallyExclusiveGroup(_ArgumentGroup):
         return action
 
     def _remove_action(self, action):
-        # Currently this method will never be used because the only way to
-        # trigger _remove_action() method is from _handle_conflict_resolve
-        # and _MutuallyExclusiveGroup has to be an action container.
-        # However, the _add_action() method puts the action under the container
-        # of _MutuallyExclusiveGroup, the _remove_action() of
-        # _MutuallyExclusiveGroup will never be called - only the container's
-        # _remove_action() will be called.
         self._container._remove_action(action)
         self._group_actions.remove(action)
 
