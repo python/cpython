@@ -808,8 +808,9 @@ dis_extended_arg_quick_code = """\
 %3d           2 LOAD_CONST               1 (Ellipsis)
               4 EXTENDED_ARG             1
               6 UNPACK_EX              256
-              8 STORE_FAST_STORE_FAST     0 (_, _)
-             10 RETURN_CONST             0 (None)
+              8 POP_TOP
+             10 STORE_FAST               0 (_)
+             12 RETURN_CONST             0 (None)
 """% (extended_arg_quick.__code__.co_firstlineno,
       extended_arg_quick.__code__.co_firstlineno + 1,)
 
