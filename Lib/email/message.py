@@ -299,7 +299,10 @@ class Message:
                         payload = bpayload.decode('ascii', 'replace')
             elif decode:
                 try:
-                    bpayload = payload.encode('ascii')
+                    if cte == '8bit':
+                        bpayload = payload.encode('utf-8')
+                    else:
+                        bpayload = payload.encode('ascii')
                 except UnicodeError:
                     # This won't happen for RFC compliant messages (messages
                     # containing only ASCII code points in the unicode input).
