@@ -414,6 +414,7 @@ class _Final:
 
 class _Immutable:
     """Mixin to indicate that object should not be copied."""
+
     __slots__ = ()
 
     def __copy__(self):
@@ -436,6 +437,7 @@ class _NotIterable:
     Luckily, we can instead prevent iteration by setting __iter__ to None, which
     is treated specially.
     """
+
     __slots__ = ()
     __iter__ = None
 
@@ -515,6 +517,7 @@ class Any(metaclass=_AnyMeta):
     static type checkers. At runtime, Any should not be used with instance
     checks.
     """
+
     def __new__(cls, *args, **kwargs):
         if cls is Any:
             raise TypeError("Any cannot be instantiated")
@@ -1104,6 +1107,7 @@ class _BaseGenericAlias(_Final, _root=True):
     have 'name' always set. If 'inst' is False, then the alias can't be instantiated;
     this is used by e.g. typing.List and typing.Dict.
     """
+
     def __init__(self, origin, *, inst=True, name=None):
         self._inst = inst
         self._name = name
@@ -1855,6 +1859,7 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
             def meth(self) -> T:
                 ...
     """
+
     __slots__ = ()
     _is_protocol = True
     _is_runtime_protocol = False
@@ -1930,6 +1935,7 @@ class _AnnotatedAlias(_NotIterable, _GenericAlias, _root=True):
 
     The metadata itself is stored in a '__metadata__' attribute as a tuple.
     """
+
     def __init__(self, origin, metadata):
         if isinstance(origin, _AnnotatedAlias):
             metadata = origin.__metadata__ + metadata
@@ -2590,6 +2596,7 @@ Type.__doc__ = \
 @runtime_checkable
 class SupportsInt(Protocol):
     """An ABC with one abstract method __int__."""
+
     __slots__ = ()
 
     @abstractmethod
@@ -2600,6 +2607,7 @@ class SupportsInt(Protocol):
 @runtime_checkable
 class SupportsFloat(Protocol):
     """An ABC with one abstract method __float__."""
+
     __slots__ = ()
 
     @abstractmethod
@@ -2610,6 +2618,7 @@ class SupportsFloat(Protocol):
 @runtime_checkable
 class SupportsComplex(Protocol):
     """An ABC with one abstract method __complex__."""
+
     __slots__ = ()
 
     @abstractmethod
@@ -2620,6 +2629,7 @@ class SupportsComplex(Protocol):
 @runtime_checkable
 class SupportsBytes(Protocol):
     """An ABC with one abstract method __bytes__."""
+
     __slots__ = ()
 
     @abstractmethod
@@ -2630,6 +2640,7 @@ class SupportsBytes(Protocol):
 @runtime_checkable
 class SupportsIndex(Protocol):
     """An ABC with one abstract method __index__."""
+
     __slots__ = ()
 
     @abstractmethod
@@ -2640,6 +2651,7 @@ class SupportsIndex(Protocol):
 @runtime_checkable
 class SupportsAbs[T](Protocol):
     """An ABC with one abstract method __abs__ that is covariant in its return type."""
+
     __slots__ = ()
 
     @abstractmethod
@@ -2650,6 +2662,7 @@ class SupportsAbs[T](Protocol):
 @runtime_checkable
 class SupportsRound[T](Protocol):
     """An ABC with one abstract method __round__ that is covariant in its return type."""
+
     __slots__ = ()
 
     @abstractmethod
