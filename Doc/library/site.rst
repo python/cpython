@@ -161,7 +161,7 @@ always be taken as default and other paths are ignored. To disable it, delete
    Activation of rlcompleter and history was made automatic.
 
 .. versionchanged:: 3.13
-   Prefer platform defined data directory instead of `~/.python_history`.
+   Prefer platform defined data directory instead of :file:`~/.python_history`.
 
 
 Module contents
