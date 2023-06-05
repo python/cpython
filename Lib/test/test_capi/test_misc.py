@@ -21,7 +21,6 @@ import unittest
 import warnings
 import weakref
 import operator
-import _xxsubinterpreters as _interpreters
 from test import support
 from test.support import MISSING_C_DOCSTRINGS
 from test.support import import_helper
@@ -41,6 +40,10 @@ try:
     import _testsinglephase
 except ImportError:
     _testsinglephase = None
+try:
+    import _xxsubinterpreters as _interpreters
+except ModuleNotFoundError:
+    _interpreters = None
 
 # Skip this test if the _testcapi module isn't available.
 _testcapi = import_helper.import_module('_testcapi')
@@ -50,6 +53,12 @@ import _testinternalcapi
 
 def decode_stderr(err):
     return err.decode('utf-8', 'replace').replace('\r', '')
+
+
+def requires_subinterpreters(meth):
+    """Decorator to skip a test if subinterpreters are not supported."""
+    return unittest.skipIf(_interpreters is None,
+                           'subinterpreters required')(meth)
 
 
 def testfunction(self):
@@ -1478,6 +1487,7 @@ class TestPendingCalls(unittest.TestCase):
                 self.assertNotEqual(task.requester_tid, task.runner_tid)
                 self.assertNotIn(task.requester_tid, runner_tids)
 
+    @requires_subinterpreters
     def test_isolated_subinterpreter(self):
         # We exercise the most important permutations.
 
