@@ -1782,6 +1782,8 @@ class _ProtocolMeta(ABCMeta):
             )
 
     def __subclasscheck__(cls, other):
+        if cls is Protocol:
+            return type.__subclasscheck__(cls, other)
         if not isinstance(other, type):
             # Same error message as for issubclass(1, int).
             raise TypeError('issubclass() arg 1 must be a class')
@@ -1803,6 +1805,8 @@ class _ProtocolMeta(ABCMeta):
     def __instancecheck__(cls, instance):
         # We need this method for situations where attributes are
         # assigned in __init__.
+        if cls is Protocol:
+            return type.__instancecheck__(cls, instance)
         if not getattr(cls, "_is_protocol", False):
             # i.e., it's a concrete subclass of a protocol
             return super().__instancecheck__(instance)
