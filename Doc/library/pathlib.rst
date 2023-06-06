@@ -947,6 +947,11 @@ call fails (for example because the path doesn't exist).
    .. versionadded:: 3.13
       The *follow_symlinks* argument.
 
+   .. versionchanged:: 3.13
+      Emits :exc:`FutureWarning` if the pattern ends with "``**``". In a
+      future Python release, patterns with this ending will match both files
+      and directories. Add a trailing slash to match only directories.
+
 .. method:: Path.group()
 
    Return the name of the group owning the file.  :exc:`KeyError` is raised

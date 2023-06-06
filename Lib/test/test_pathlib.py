@@ -1965,11 +1965,11 @@ class _BasePathTest(object):
                               "dirC/dirD", "dirC/dirD/fileD"])
         _check(p.rglob("file*"), ["dirC/fileC", "dirC/dirD/fileD"])
         _check(p.rglob("**/file*"), ["dirC/fileC", "dirC/dirD/fileD"])
-        _check(p.rglob("dir*/**"), ["dirC/dirD"])
+        _check(p.rglob("dir*/**/"), ["dirC/dirD"])
         _check(p.rglob("*/*"), ["dirC/dirD/fileD"])
         _check(p.rglob("*/"), ["dirC/dirD"])
         _check(p.rglob(""), ["dirC", "dirC/dirD"])
-        _check(p.rglob("**"), ["dirC", "dirC/dirD"])
+        _check(p.rglob("**/"), ["dirC", "dirC/dirD"])
         # gh-91616, a re module regression
         _check(p.rglob("*.txt"), ["dirC/novel.txt"])
         _check(p.rglob("*.*"), ["dirC/novel.txt"])
@@ -2115,7 +2115,20 @@ class _BasePathTest(object):
         path.mkdir(parents=True)
 
         with set_recursion_limit(recursion_limit):
-            list(base.glob('**'))
+            list(base.glob('**/'))
+
+    def test_glob_recursive_no_trailing_slash(self):
+        P = self.cls
+        p = P(BASE)
+        with self.assertWarns(FutureWarning):
+            p.glob('**')
+        with self.assertWarns(FutureWarning):
+            p.glob('*/**')
+        with self.assertWarns(FutureWarning):
+            p.rglob('**')
+        with self.assertWarns(FutureWarning):
+            p.rglob('*/**')
+
 
     def _check_resolve(self, p, expected, strict=True):
         q = p.resolve(strict)
