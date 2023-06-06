@@ -316,6 +316,14 @@ Removed
   method instead.
   (Contributed by Victor Stinner in :gh:`105376`.)
 
+* Remove *cafile*, *capath* and *cadefault* parameters of the
+  :func:`urllib.request.urlopen` function, deprecated in Python 3.6: use the
+  *context* parameter instead. Please use
+  :meth:`ssl.SSLContext.load_cert_chain` instead, or let
+  :func:`ssl.create_default_context` select the system's trusted CA
+  certificates for you.
+  (Contributed by Victor Stinner in :gh:`105382`.)
+
 
 Porting to Python 3.13
 ======================
