@@ -395,6 +395,7 @@ Deprecated
 
 * Deprecate the :c:func:`PyImport_ImportModuleNoBlock` function which is just
   an alias to :c:func:`PyImport_ImportModule` since Python 3.3.
+  Scheduled for removal in Python 3.15.
   (Contributed by Victor Stinner in :gh:`105396`.)
 
 Removed
