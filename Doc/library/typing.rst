@@ -64,7 +64,7 @@ annotations:
 .. raw:: html
 
    <details>
-   <summary><a>Click to see the full list of PEPs</a></summary>
+   <summary><a style="cursor:pointer;">Click to see the full list of PEPs</a></summary>
 
 * :pep:`526`: Syntax for Variable Annotations
      *Introducing* syntax for annotating variables outside of function
@@ -114,6 +114,7 @@ annotations:
 .. raw:: html
 
    </details>
+   <br>
 
 .. _type-aliases:
 
