@@ -1078,7 +1078,7 @@ Modules (see :pep:`594`):
 APIs:
 
 * :class:`!configparser.LegacyInterpolation` (:gh:`90765`)
--* :func:`locale.getdefaultlocale` (:gh:`90817`)
+* :func:`locale.getdefaultlocale` (:gh:`90817`)
 * ``locale.resetlocale()`` (:gh:`90817`)
 * :meth:`!turtle.RawTurtle.settiltangle` (:gh:`50096`)
 * :func:`!unittest.findTestCases` (:gh:`50096`)
