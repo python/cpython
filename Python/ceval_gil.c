@@ -69,7 +69,7 @@ COMPUTE_EVAL_BREAKER(PyInterpreterState *interp,
         | (_Py_atomic_load_relaxed_int32(&ceval->signals_pending)
            && _Py_ThreadCanHandleSignals(interp))
         | (_Py_atomic_load_relaxed_int32(&ceval2->pending.calls_to_do))
-        | (_Py_IsMainThread()
+        | (_Py_IsMainThread() && _Py_IsMainInterpreter(interp)
            &&_Py_atomic_load_relaxed_int32(&ceval->pending_mainthread.calls_to_do))
         | ceval2->pending.async_exc
         | _Py_atomic_load_relaxed_int32(&ceval2->gc_scheduled));
@@ -110,8 +110,7 @@ UNSIGNAL_PENDING_CALLS(PyInterpreterState *interp)
 {
     struct _ceval_runtime_state *ceval = &interp->runtime->ceval;
     struct _ceval_state *ceval2 = &interp->ceval;
-    if (_Py_IsMainThread()) {
-        assert(_Py_IsMainInterpreter(interp));
+    if (_Py_IsMainThread() && _Py_IsMainInterpreter(interp)) {
         _Py_atomic_store_relaxed(&ceval->pending_mainthread.calls_to_do, 0);
     }
     _Py_atomic_store_relaxed(&ceval2->pending.calls_to_do, 0);
@@ -886,7 +885,7 @@ has_pending_calls(PyInterpreterState *interp)
     if (_Py_atomic_load_relaxed_int32(&pending->calls_to_do)) {
         return 1;
     }
-    if (!_Py_IsMainThread()) {
+    if (!_Py_IsMainThread() || !_Py_IsMainInterpreter(interp)) {
         return 0;
     }
     pending = &_PyRuntime.ceval.pending_mainthread;
@@ -954,7 +953,7 @@ make_pending_calls(PyInterpreterState *interp)
         return -1;
     }
 
-    if (_Py_IsMainThread()) {
+    if (_Py_IsMainThread() && _Py_IsMainInterpreter(interp)) {
         if (_make_pending_calls(pending_main) != 0) {
             pending->busy = 0;
             /* There might not be more calls to make, but we play it safe. */
@@ -986,7 +985,7 @@ _PyEval_MakePendingCalls(PyThreadState *tstate)
 {
     int res;
 
-    if (_Py_IsMainThread()) {
+    if (_Py_IsMainThread() && _Py_IsMainInterpreter(tstate->interp)) {
         /* Python signal handler doesn't really queue a callback:
            it only signals that a signal was received,
            see _PyEval_SignalReceived(). */
@@ -1015,7 +1014,7 @@ Py_MakePendingCalls(void)
     assert(is_tstate_valid(tstate));
 
     /* Only execute pending calls on the main thread. */
-    if (!_Py_IsMainThread()) {
+    if (!_Py_IsMainThread() || !_Py_IsMainInterpreter(tstate->interp)) {
         return 0;
     }
     return _PyEval_MakePendingCalls(tstate);
