@@ -3,7 +3,7 @@
 # Licensed to the PSF under a contributor agreement.
 
 from test import support, test_tools
-from test.support import import_helper, os_helper
+from test.support import os_helper
 from unittest import TestCase
 import collections
 import inspect
