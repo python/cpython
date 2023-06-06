@@ -585,20 +585,14 @@ decision that's up to the implementer of each new type so if you want,
 you can count such references to the type object.)
 */
 
-#ifdef Py_REF_DEBUG
-#  if defined(Py_LIMITED_API) && Py_LIMITED_API+0 < 0x030A0000
-extern Py_ssize_t _Py_RefTotal;
-#    define _Py_INC_REFTOTAL() _Py_RefTotal++
-#    define _Py_DEC_REFTOTAL() _Py_RefTotal--
-#  elif !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030C0000
+#if defined(Py_REF_DEBUG) && !defined(Py_LIMITED_API)
+PyAPI_FUNC(void) _Py_NegativeRefcount(const char *filename, int lineno,
+                                      PyObject *op);
 PyAPI_FUNC(void) _Py_IncRefTotal_DO_NOT_USE_THIS(void);
 PyAPI_FUNC(void) _Py_DecRefTotal_DO_NOT_USE_THIS(void);
 #    define _Py_INC_REFTOTAL() _Py_IncRefTotal_DO_NOT_USE_THIS()
 #    define _Py_DEC_REFTOTAL() _Py_DecRefTotal_DO_NOT_USE_THIS()
-#  endif
-PyAPI_FUNC(void) _Py_NegativeRefcount(const char *filename, int lineno,
-                                      PyObject *op);
-#endif /* Py_REF_DEBUG */
+#endif  // Py_REF_DEBUG && !Py_LIMITED_API
 
 PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
 
@@ -616,8 +610,8 @@ PyAPI_FUNC(void) _Py_DecRef(PyObject *);
 
 static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 {
-#if defined(Py_REF_DEBUG) && defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000
-    // Stable ABI for Python 3.10 built in debug mode.
+#if defined(Py_REF_DEBUG) && defined(Py_LIMITED_API)
+    // Stable ABI for Python built in debug mode
     _Py_IncRef(op);
 #else
     // Non-limited C API and limited C API for Python 3.9 and older access
@@ -647,8 +641,8 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 #  define Py_INCREF(op) Py_INCREF(_PyObject_CAST(op))
 #endif
 
-#if defined(Py_REF_DEBUG) && defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000
-// Stable ABI for limited C API version 3.10 of Python debug build
+#if defined(Py_REF_DEBUG) && defined(Py_LIMITED_API)
+// Stable ABI for Python built in debug mode
 static inline void Py_DECREF(PyObject *op) {
     _Py_DecRef(op);
 }
