@@ -2674,6 +2674,11 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (!PyArg_ParseTuple(args, "C|O:array", &c, &initial))
         return NULL;
 
+    if (PySys_Audit("array.__new__", "CO",
+                    c, initial ? initial : Py_None) < 0) {
+        return NULL;
+    }
+
     if (c == 'u') {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                          "The 'u' type code is deprecated and "
@@ -2681,11 +2686,6 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                          1)) {
             return NULL;
         }
-    }
-
-    if (PySys_Audit("array.__new__", "CO",
-                    c, initial ? initial : Py_None) < 0) {
-        return NULL;
     }
 
     bool is_unicode = c == 'u' || c == 'w';
