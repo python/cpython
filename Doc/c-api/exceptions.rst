@@ -887,7 +887,7 @@ because the :ref:`call protocol <call>` takes care of recursion handling.
    depth limit.
 
    .. versionchanged:: 3.9
-      This function is now also available in the limited API.
+      This function is now also available in the :ref:`limited API <limited-c-api>`.
 
 .. c:function:: void Py_LeaveRecursiveCall(void)
 
@@ -895,7 +895,7 @@ because the :ref:`call protocol <call>` takes care of recursion handling.
    *successful* invocation of :c:func:`Py_EnterRecursiveCall`.
 
    .. versionchanged:: 3.9
-      This function is now also available in the limited API.
+      This function is now also available in the :ref:`limited API <limited-c-api>`.
 
 Properly implementing :c:member:`~PyTypeObject.tp_repr` for container types requires
 special recursion handling.  In addition to protecting the stack,
