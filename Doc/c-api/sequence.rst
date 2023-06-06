@@ -69,8 +69,8 @@ Sequence Protocol
    is the equivalent of the Python statement ``o[i] = v``.  This function *does
    not* steal a reference to *v*.
 
-   If *v* is ``NULL``, the element is deleted, but this feature is
-   deprecated in favour of using :c:func:`PySequence_DelItem`.
+   Delete the *i*\ th element if *v* is ``NULL``. The function
+   :c:func:`PySequence_DelItem` is preferred to delete an element.
 
 
 .. c:function:: int PySequence_DelItem(PyObject *o, Py_ssize_t i)
@@ -83,6 +83,9 @@ Sequence Protocol
 
    Assign the sequence object *v* to the slice in sequence object *o* from *i1* to
    *i2*.  This is the equivalent of the Python statement ``o[i1:i2] = v``.
+
+   Delete the  elements if *v* is ``NULL``. The function
+   :c:func:`PySequence_DelSlice` is preferred to delete elements.
 
 
 .. c:function:: int PySequence_DelSlice(PyObject *o, Py_ssize_t i1, Py_ssize_t i2)

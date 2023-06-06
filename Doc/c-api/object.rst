@@ -81,9 +81,8 @@ Object Protocol
    return ``0`` on success.  This is the equivalent of the Python statement
    ``o.attr_name = v``.
 
-   If *v* is ``NULL``, the attribute is deleted. This behaviour is deprecated
-   in favour of using :c:func:`PyObject_DelAttr`, but there are currently no
-   plans to remove it.
+   Delete the attribute named *attr_name* if *v* is ``NULL``. The function
+   :c:func:`PyObject_DelAttr` is preferred to delete an attribute.
 
 
 .. c:function:: int PyObject_SetAttrString(PyObject *o, const char *attr_name, PyObject *v)
@@ -93,8 +92,8 @@ Object Protocol
    return ``0`` on success.  This is the equivalent of the Python statement
    ``o.attr_name = v``.
 
-   If *v* is ``NULL``, the attribute is deleted, but this feature is
-   deprecated in favour of using :c:func:`PyObject_DelAttrString`.
+   Delete the attribute named *attr_name* if *v* is ``NULL``. The function
+   :c:func:`PyObject_DelAttrString` is preferred to delete an attribute.
 
 
 .. c:function:: int PyObject_GenericSetAttr(PyObject *o, PyObject *name, PyObject *value)
