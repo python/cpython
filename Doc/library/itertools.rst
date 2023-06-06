@@ -929,9 +929,7 @@ which incur interpreter overhead.
    def sliding_window(iterable, n):
        # sliding_window('ABCDEFG', 4) --> ABCD BCDE CDEF DEFG
        it = iter(iterable)
-       window = collections.deque(islice(it, n), maxlen=n)
-       if len(window) == n:
-           yield tuple(window)
+       window = collections.deque(islice(it, n-1), maxlen=n)
        for x in it:
            window.append(x)
            yield tuple(window)
@@ -1420,8 +1418,34 @@ The following recipes have a more mathematical flavor:
     >>> list(grouper('abcdefg', n=3, incomplete='ignore'))
     [('a', 'b', 'c'), ('d', 'e', 'f')]
 
+    >>> list(sliding_window('ABCDEFG', 1))
+    [('A',), ('B',), ('C',), ('D',), ('E',), ('F',), ('G',)]
+    >>> list(sliding_window('ABCDEFG', 2))
+    [('A', 'B'), ('B', 'C'), ('C', 'D'), ('D', 'E'), ('E', 'F'), ('F', 'G')]
+    >>> list(sliding_window('ABCDEFG', 3))
+    [('A', 'B', 'C'), ('B', 'C', 'D'), ('C', 'D', 'E'), ('D', 'E', 'F'), ('E', 'F', 'G')]
     >>> list(sliding_window('ABCDEFG', 4))
     [('A', 'B', 'C', 'D'), ('B', 'C', 'D', 'E'), ('C', 'D', 'E', 'F'), ('D', 'E', 'F', 'G')]
+    >>> list(sliding_window('ABCDEFG', 5))
+    [('A', 'B', 'C', 'D', 'E'), ('B', 'C', 'D', 'E', 'F'), ('C', 'D', 'E', 'F', 'G')]
+    >>> list(sliding_window('ABCDEFG', 6))
+    [('A', 'B', 'C', 'D', 'E', 'F'), ('B', 'C', 'D', 'E', 'F', 'G')]
+    >>> list(sliding_window('ABCDEFG', 7))
+    [('A', 'B', 'C', 'D', 'E', 'F', 'G')]
+    >>> list(sliding_window('ABCDEFG', 8))
+    []
+    >>> try:
+    ...     list(sliding_window('ABCDEFG', -1))
+    ... except ValueError:
+    ...     'zero or negative n not supported'
+    ...
+    'zero or negative n not supported'
+    >>> try:
+    ...     list(sliding_window('ABCDEFG', 0))
+    ... except ValueError:
+    ...     'zero or negative n not supported'
+    ...
+    'zero or negative n not supported'
 
     >>> list(roundrobin('abc', 'd', 'ef'))
     ['a', 'd', 'e', 'b', 'f', 'c']
