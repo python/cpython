@@ -923,11 +923,25 @@ make_pending_calls(PyInterpreterState *interp)
     struct _pending_calls *pending = &interp->ceval.pending;
     struct _pending_calls *pending_main = &_PyRuntime.ceval.pending_mainthread;
 
-    /* don't perform recursive pending calls */
+    /* Only one thread (per interpreter) may run the pending calls
+       at once.  In the same way, we don't do recursive pending calls. */
+    PyThread_acquire_lock(pending->lock, WAIT_LOCK);
     if (pending->busy) {
+        /* A pending call was added after another thread was already
+           handling the pending calls (and had already "unsignaled").
+           Once that thread is done, it may have taken care of all the
+           pending calls, or there might be some still waiting.
+           Regardless, this interpreter's pending calls will stay
+           "signaled" until that first thread has finished.  At that
+           point the next thread to trip the eval breaker will take
+           care of any remaining pending calls.  Until then, though,
+           all the interpreter's threads will be tripping the eval
+           breaker every time it's checked. */
+        PyThread_release_lock(pending->lock);
         return 0;
     }
     pending->busy = 1;
+    PyThread_release_lock(pending->lock);
 
     /* unsignal before starting to call callbacks, so that any callback
        added in-between re-signals */
@@ -935,6 +949,7 @@ make_pending_calls(PyInterpreterState *interp)
 
     if (_make_pending_calls(pending) != 0) {
         pending->busy = 0;
+        /* There might not be more calls to make, but we play it safe. */
         SIGNAL_PENDING_CALLS(pending, interp);
         return -1;
     }
@@ -942,6 +957,7 @@ make_pending_calls(PyInterpreterState *interp)
     if (_Py_IsMainThread()) {
         if (_make_pending_calls(pending_main) != 0) {
             pending->busy = 0;
+            /* There might not be more calls to make, but we play it safe. */
             SIGNAL_PENDING_CALLS(pending_main, interp);
             return -1;
         }
