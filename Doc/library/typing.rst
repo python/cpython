@@ -425,7 +425,9 @@ In this case ``MyDict`` has a single parameter, ``T``.
 
 Using a generic class without specifying type parameters assumes
 :data:`Any` for each position. In the following example, ``MyIterable`` is
-not generic but implicitly inherits from ``Iterable[Any]``::
+not generic but implicitly inherits from ``Iterable[Any]``:
+
+.. testcode::
 
    from collections.abc import Iterable
 
