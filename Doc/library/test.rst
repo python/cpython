@@ -803,7 +803,7 @@ The :mod:`test.support` module defines the following functions:
 
 .. decorator:: requires_limited_api
 
-   Decorator for only running the test if :ref:`Limited C API <stable>`
+   Decorator for only running the test if :ref:`Limited C API <limited-c-api>`
    is available.
 
 
