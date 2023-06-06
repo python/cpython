@@ -807,20 +807,31 @@ _push_pending_call(struct _pending_calls *pending,
     return 0;
 }
 
+static int
+_next_pending_call(struct _pending_calls *pending,
+                   int (**func)(void *), void **arg)
+{
+    int i = pending->first;
+    if (i == pending->last) {
+        /* Queue empty */
+        assert(pending->calls[i].func == NULL);
+        return -1;
+    }
+    *func = pending->calls[i].func;
+    *arg = pending->calls[i].arg;
+    return i;
+}
+
 /* Pop one item off the queue while holding the lock. */
 static void
 _pop_pending_call(struct _pending_calls *pending,
                   int (**func)(void *), void **arg)
 {
-    int i = pending->first;
-    if (i == pending->last) {
-        return; /* Queue empty */
+    int i = _next_pending_call(pending, func, arg);
+    if (i >= 0) {
+        pending->calls[i] = (struct _pending_call){0};
+        pending->first = (i + 1) % NPENDINGCALLS;
     }
-
-    *func = pending->calls[i].func;
-    *arg = pending->calls[i].arg;
-    pending->calls[i] = (struct _pending_call){0};
-    pending->first = (i + 1) % NPENDINGCALLS;
 }
 
 /* This implementation is thread-safe.  It allows
