@@ -1113,7 +1113,7 @@ Pending Removal in Python 3.14
   :exc:`DeprecationWarning` to be emitted when it is used.
 
 * Creating immutable types (:data:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
-  bases using the C API  (:gh:`95388`).
+  bases using the C API.
 
 * Deprecated the *isdst* parameter in :func:`email.utils.localtime`.
   (Contributed by Alan Williams in :gh:`72346`.)
