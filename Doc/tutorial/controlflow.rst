@@ -46,7 +46,7 @@ details see :ref:`tut-match`.
 ==========================
 
 .. index::
-   statement: for
+   pair: statement; for
 
 The :keyword:`for` statement in Python differs a bit from what you may be used
 to in C or Pascal.  Rather than always iterating over an arithmetic progression
@@ -253,8 +253,10 @@ at a more abstract level.  The :keyword:`!pass` is silently ignored::
 A :keyword:`match` statement takes an expression and compares its value to successive
 patterns given as one or more case blocks.  This is superficially
 similar to a switch statement in C, Java or JavaScript (and many
-other languages), but it can also extract components (sequence elements or
-object attributes) from the value into variables.
+other languages), but it's more similar to pattern matching in
+languages like Rust or Haskell. Only the first pattern that matches
+gets executed and it can also extract components (sequence elements
+or object attributes) from the value into variables.
 
 The simplest form compares a subject value against one or more literals::
 
@@ -838,8 +840,9 @@ will always bind to the first parameter. For example::
 
 But using ``/`` (positional only arguments), it is possible since it allows ``name`` as a positional argument and ``'name'`` as a key in the keyword arguments::
 
-    def foo(name, /, **kwds):
-        return 'name' in kwds
+    >>> def foo(name, /, **kwds):
+    ...     return 'name' in kwds
+    ...
     >>> foo(1, **{'name': 2})
     True
 

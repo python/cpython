@@ -12,7 +12,7 @@ skip_if_missing('freeze')
 with imports_under_tool('freeze', 'test'):
     import freeze as helper
 
-
+@support.requires_zlib()
 @unittest.skipIf(sys.platform.startswith('win'), 'not supported on Windows')
 @support.skip_if_buildbot('not all buildbots have enough space')
 class TestFreeze(unittest.TestCase):

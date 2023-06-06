@@ -1,2 +1,0 @@
-Add ``regen-configure`` make target to regenerate configure script with
-Christian's container image ``quay.io/tiran/cpython_autoconf:269``.

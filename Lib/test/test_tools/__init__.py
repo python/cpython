@@ -13,6 +13,10 @@ if support.check_sanitizer(address=True, memory=True):
     raise unittest.SkipTest("test too slow on ASAN/MSAN build")
 
 
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test module requires subprocess")
+
+
 basepath = os.path.normpath(
         os.path.dirname(                 # <src/install dir>
             os.path.dirname(                # Lib

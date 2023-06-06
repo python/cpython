@@ -32,12 +32,11 @@
 /* EVP is the preferred interface to hashing in OpenSSL */
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
-#include <openssl/crypto.h>
+#include <openssl/crypto.h>       // FIPS_mode()
 /* We use the object interface to discover what hashes OpenSSL supports. */
 #include <openssl/objects.h>
 #include <openssl/err.h>
 
-#include <openssl/crypto.h>       // FIPS_mode()
 
 #ifndef OPENSSL_THREADS
 #  error "OPENSSL_THREADS is not defined, Python requires thread-safe OpenSSL"
@@ -228,12 +227,16 @@ get_hashlib_state(PyObject *module)
 typedef struct {
     PyObject_HEAD
     EVP_MD_CTX          *ctx;   /* OpenSSL message digest context */
+    // Prevents undefined behavior via multiple threads entering the C API.
+    // The lock will be NULL before threaded access has been enabled.
     PyThread_type_lock   lock;  /* OpenSSL context lock */
 } EVPobject;
 
 typedef struct {
     PyObject_HEAD
     HMAC_CTX *ctx;            /* OpenSSL hmac context */
+    // Prevents undefined behavior via multiple threads entering the C API.
+    // The lock will be NULL before threaded access has been enabled.
     PyThread_type_lock lock;  /* HMAC context lock */
 } HMACobject;
 
@@ -255,11 +258,7 @@ _setException(PyObject *exc, const char* altmsg, ...)
     const char *lib, *func, *reason;
     va_list vargs;
 
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, altmsg);
-#else
-    va_start(vargs);
-#endif
     if (!errcode) {
         if (altmsg == NULL) {
             PyErr_SetString(exc, "no reason supplied");
@@ -360,7 +359,7 @@ py_digest_by_name(PyObject *module, const char *name, enum Py_hash_type py_ht)
         }
     }
     if (digest == NULL) {
-        _setException(PyExc_ValueError, "unsupported hash type %s", name);
+        _setException(state->unsupported_digestmod_error, "unsupported hash type %s", name);
         return NULL;
     }
     return digest;
@@ -901,6 +900,8 @@ py_evp_fromname(PyObject *module, const char *digestname, PyObject *data_obj,
 
     if (view.buf && view.len) {
         if (view.len >= HASHLIB_GIL_MINSIZE) {
+            /* We do not initialize self->lock here as this is the constructor
+             * where it is not yet possible to have concurrent access. */
             Py_BEGIN_ALLOW_THREADS
             result = EVP_hash(self, view.buf, view.len);
             Py_END_ALLOW_THREADS
@@ -1836,15 +1837,21 @@ typedef struct _internal_name_mapper_state {
 
 /* A callback function to pass to OpenSSL's OBJ_NAME_do_all(...) */
 static void
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+_openssl_hash_name_mapper(EVP_MD *md, void *arg)
+#else
 _openssl_hash_name_mapper(const EVP_MD *md, const char *from,
                           const char *to, void *arg)
+#endif
 {
     _InternalNameMapperState *state = (_InternalNameMapperState *)arg;
     PyObject *py_name;
 
     assert(state != NULL);
-    if (md == NULL)
+    // ignore all undefined providers
+    if ((md == NULL) || (EVP_MD_nid(md) == NID_undef)) {
         return;
+    }
 
     py_name = py_digest_name(md);
     if (py_name == NULL) {
@@ -1870,7 +1877,12 @@ hashlib_md_meth_names(PyObject *module)
         return -1;
     }
 
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+    // get algorithms from all activated providers in default context
+    EVP_MD_do_all_provided(NULL, &_openssl_hash_name_mapper, &state);
+#else
     EVP_MD_do_all(&_openssl_hash_name_mapper, &state);
+#endif
 
     if (state.error) {
         Py_DECREF(state.set);
@@ -1976,9 +1988,6 @@ _hashlib_compare_digest_impl(PyObject *module, PyObject *a, PyObject *b)
 
     /* ASCII unicode string */
     if(PyUnicode_Check(a) && PyUnicode_Check(b)) {
-        if (PyUnicode_READY(a) == -1 || PyUnicode_READY(b) == -1) {
-            return NULL;
-        }
         if (!PyUnicode_IS_ASCII(a) || !PyUnicode_IS_ASCII(b)) {
             PyErr_SetString(PyExc_TypeError,
                             "comparing strings with non-ASCII characters is "
@@ -1991,7 +2000,7 @@ _hashlib_compare_digest_impl(PyObject *module, PyObject *a, PyObject *b)
                     PyUnicode_GET_LENGTH(a),
                     PyUnicode_GET_LENGTH(b));
     }
-    /* fallback to buffer interface for bytes, bytesarray and other */
+    /* fallback to buffer interface for bytes, bytearray and other */
     else {
         Py_buffer view_a;
         Py_buffer view_b;
@@ -2254,6 +2263,7 @@ static PyModuleDef_Slot hashlib_slots[] = {
     {Py_mod_exec, hashlib_md_meth_names},
     {Py_mod_exec, hashlib_init_constructors},
     {Py_mod_exec, hashlib_exception},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

@@ -85,11 +85,11 @@ The module defines the following functions:
 
 .. function:: tcsetwinsize(fd, winsize)
 
-    Set the tty window size for file descriptor *fd* from *winsize*, which is
-    a two-item tuple ``(ws_row, ws_col)`` like the one returned by
-    :func:`tcgetwinsize`. Requires at least one of the pairs
-    (:const:`termios.TIOCGWINSZ`, :const:`termios.TIOCSWINSZ`);
-    (:const:`termios.TIOCGSIZE`, :const:`termios.TIOCSSIZE`) to be defined.
+   Set the tty window size for file descriptor *fd* from *winsize*, which is
+   a two-item tuple ``(ws_row, ws_col)`` like the one returned by
+   :func:`tcgetwinsize`. Requires at least one of the pairs
+   (:const:`termios.TIOCGWINSZ`, :const:`termios.TIOCSWINSZ`);
+   (:const:`termios.TIOCGSIZE`, :const:`termios.TIOCSSIZE`) to be defined.
 
    .. versionadded:: 3.11
 

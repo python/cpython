@@ -5,7 +5,7 @@
 List Objects
 ------------
 
-.. index:: object: list
+.. index:: pair: object; list
 
 
 .. c:type:: PyListObject
@@ -45,7 +45,7 @@ List Objects
 
 .. c:function:: Py_ssize_t PyList_Size(PyObject *list)
 
-   .. index:: builtin: len
+   .. index:: pair: built-in function; len
 
    Return the length of the list object in *list*; this is equivalent to
    ``len(list)`` on a list object.
@@ -53,7 +53,7 @@ List Objects
 
 .. c:function:: Py_ssize_t PyList_GET_SIZE(PyObject *list)
 
-   Macro form of :c:func:`PyList_Size` without error checking.
+   Similar to :c:func:`PyList_Size`, but without error checking.
 
 
 .. c:function:: PyObject* PyList_GetItem(PyObject *list, Py_ssize_t index)
@@ -66,7 +66,7 @@ List Objects
 
 .. c:function:: PyObject* PyList_GET_ITEM(PyObject *list, Py_ssize_t i)
 
-   Macro form of :c:func:`PyList_GetItem` without error checking.
+   Similar to :c:func:`PyList_GetItem`, but without error checking.
 
 
 .. c:function:: int PyList_SetItem(PyObject *list, Py_ssize_t index, PyObject *item)
@@ -138,7 +138,7 @@ List Objects
 
 .. c:function:: PyObject* PyList_AsTuple(PyObject *list)
 
-   .. index:: builtin: tuple
+   .. index:: pair: built-in function; tuple
 
    Return a new tuple object containing the contents of *list*; equivalent to
    ``tuple(list)``.

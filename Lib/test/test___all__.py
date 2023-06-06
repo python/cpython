@@ -13,9 +13,9 @@ except ModuleNotFoundError:
 
 if support.check_sanitizer(address=True, memory=True):
     # bpo-46633: test___all__ is skipped because importing some modules
-    # directly can trigger known problems with ASAN (like tk or crypt).
+    # directly can trigger known problems with ASAN (like tk).
     raise unittest.SkipTest("workaround ASAN build issues on loading tests "
-                            "like tk or crypt")
+                            "like tk")
 
 
 class NoAll(RuntimeError):
@@ -41,6 +41,7 @@ class AllTest(unittest.TestCase):
     def check_all(self, modname):
         names = {}
         with warnings_helper.check_warnings(
+            (f".*{modname}", DeprecationWarning),
             (".* (module|package)", DeprecationWarning),
             (".* (module|package)", PendingDeprecationWarning),
             ("", ResourceWarning),
@@ -99,10 +100,9 @@ class AllTest(unittest.TestCase):
             '__future__',
         ])
 
-        if not sys.platform.startswith('java'):
-            # In case _socket fails to build, make this test fail more gracefully
-            # than an AttributeError somewhere deep in CGIHTTPServer.
-            import _socket
+        # In case _socket fails to build, make this test fail more gracefully
+        # than an AttributeError somewhere deep in CGIHTTPServer.
+        import _socket
 
         ignored = []
         failed_imports = []

@@ -105,6 +105,26 @@ def frozen_modules(enabled=True):
         _imp._override_frozen_modules_for_tests(0)
 
 
+@contextlib.contextmanager
+def multi_interp_extensions_check(enabled=True):
+    """Force legacy modules to be allowed in subinterpreters (or not).
+
+    ("legacy" == single-phase init)
+
+    This only applies to modules that haven't been imported yet.
+    It overrides the PyInterpreterConfig.check_multi_interp_extensions
+    setting (see support.run_in_subinterp_with_config() and
+    _xxsubinterpreters.create()).
+
+    Also see importlib.utils.allowing_all_extensions().
+    """
+    old = _imp._override_multi_interp_extensions_check(1 if enabled else -1)
+    try:
+        yield
+    finally:
+        _imp._override_multi_interp_extensions_check(old)
+
+
 def import_fresh_module(name, fresh=(), blocked=(), *,
                         deprecated=False,
                         usefrozen=False,
@@ -246,3 +266,11 @@ def modules_cleanup(oldmodules):
     # do currently). Implicitly imported *real* modules should be left alone
     # (see issue 10556).
     sys.modules.update(oldmodules)
+
+
+def mock_register_at_fork(func):
+    # bpo-30599: Mock os.register_at_fork() when importing the random module,
+    # since this function doesn't allow to unregister callbacks and would leak
+    # memory.
+    from unittest import mock
+    return mock.patch('os.register_at_fork', create=True)(func)
