@@ -5162,6 +5162,15 @@ enables cleaner type hinting syntax compared to :data:`typing.Union`.
       def square(number: int | float) -> int | float:
           return number ** 2
 
+   .. note::
+
+      The object on both sides of the ``|`` operand must be an object that
+      defines the :meth:`~object.__or__` special method. As the :class:`str`
+      type does not define :meth:`!__or__`, the expression ``int | "Foo"``,
+      where ``"Foo"`` is a reference to a class not yet defined, will fail at
+      runtime. To annotate forward references using union-type expressions,
+      present the whole expression as a string, e.g. ``"int | Foo"``.
+
 .. describe:: union_object == other
 
    Union objects can be tested for equality with other union objects.  Details:
