@@ -1870,7 +1870,7 @@ class CTokenizeTest(TestCase):
             TokenInfo(type=NUMBER, string='1', start=(1, 0), end=(1, 1), line='1+1\n'),
             TokenInfo(type=OP, string='+', start=(1, 1), end=(1, 2), line='1+1\n'),
             TokenInfo(type=NUMBER, string='1', start=(1, 2), end=(1, 3), line='1+1\n'),
-            TokenInfo(type=NEWLINE, string='\n', start=(1, 3), end=(1, 4), line='1+1\n'),
+            TokenInfo(type=NEWLINE, string='', start=(1, 3), end=(1, 4), line='1+1\n'),
             TokenInfo(type=ENDMARKER, string='', start=(2, 0), end=(2, 0), line='')
         ]
         for encoding in ["utf-8", "latin-1", "utf-16"]:
