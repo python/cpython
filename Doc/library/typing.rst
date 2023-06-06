@@ -59,7 +59,12 @@ Relevant PEPs
 
 Since the initial introduction of type hints in :pep:`484` and :pep:`483`, a
 number of PEPs have modified and enhanced Python's framework for type
-annotations. These include:
+annotations:
+
+.. raw:: html
+
+   <details>
+   <summary><a>Click to see the full list of PEPs</a></summary>
 
 * :pep:`526`: Syntax for Variable Annotations
      *Introducing* syntax for annotating variables outside of function
@@ -105,6 +110,10 @@ annotations. These include:
     *Introducing* builtin syntax for creating generic functions, classes, and type aliases.
 * :pep:`698`: Adding an override decorator to typing
     *Introducing* the :func:`@override<override>` decorator
+
+.. raw:: html
+
+   </details>
 
 .. _type-aliases:
 
