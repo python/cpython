@@ -53,6 +53,16 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case UNARY_NOT:
             return 1;
+        case UNARY_NOT_BOOL:
+            return 1;
+        case UNARY_NOT_INT:
+            return 1;
+        case UNARY_NOT_LIST:
+            return 1;
+        case UNARY_NOT_NONE:
+            return 1;
+        case UNARY_NOT_STR:
+            return 1;
         case UNARY_INVERT:
             return 1;
         case BINARY_OP_MULTIPLY_INT:
@@ -451,6 +461,16 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 1;
         case UNARY_NOT:
             return 1;
+        case UNARY_NOT_BOOL:
+            return 1;
+        case UNARY_NOT_INT:
+            return 1;
+        case UNARY_NOT_LIST:
+            return 1;
+        case UNARY_NOT_NONE:
+            return 1;
+        case UNARY_NOT_STR:
+            return 1;
         case UNARY_INVERT:
             return 1;
         case BINARY_OP_MULTIPLY_INT:
@@ -830,7 +850,12 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [END_SEND] = { true, INSTR_FMT_IX },
     [INSTRUMENTED_END_SEND] = { true, INSTR_FMT_IX },
     [UNARY_NEGATIVE] = { true, INSTR_FMT_IX },
-    [UNARY_NOT] = { true, INSTR_FMT_IX },
+    [UNARY_NOT] = { true, INSTR_FMT_IXC },
+    [UNARY_NOT_BOOL] = { true, INSTR_FMT_IXC },
+    [UNARY_NOT_INT] = { true, INSTR_FMT_IXC },
+    [UNARY_NOT_LIST] = { true, INSTR_FMT_IXC },
+    [UNARY_NOT_NONE] = { true, INSTR_FMT_IXC },
+    [UNARY_NOT_STR] = { true, INSTR_FMT_IXC },
     [UNARY_INVERT] = { true, INSTR_FMT_IX },
     [BINARY_OP_MULTIPLY_INT] = { true, INSTR_FMT_IBC },
     [BINARY_OP_ADD_INT] = { true, INSTR_FMT_IBC },

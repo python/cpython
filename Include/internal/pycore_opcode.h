@@ -32,6 +32,7 @@ const uint32_t _PyOpcode_Jump[9] = {
 };
 
 const uint8_t _PyOpcode_Caches[256] = {
+    [UNARY_NOT] = 1,
     [BINARY_SUBSCR] = 1,
     [STORE_SUBSCR] = 1,
     [UNPACK_SEQUENCE] = 1,
@@ -235,6 +236,11 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [UNARY_INVERT] = UNARY_INVERT,
     [UNARY_NEGATIVE] = UNARY_NEGATIVE,
     [UNARY_NOT] = UNARY_NOT,
+    [UNARY_NOT_BOOL] = UNARY_NOT,
+    [UNARY_NOT_INT] = UNARY_NOT,
+    [UNARY_NOT_LIST] = UNARY_NOT,
+    [UNARY_NOT_NONE] = UNARY_NOT,
+    [UNARY_NOT_STR] = UNARY_NOT,
     [UNPACK_EX] = UNPACK_EX,
     [UNPACK_SEQUENCE] = UNPACK_SEQUENCE,
     [UNPACK_SEQUENCE_LIST] = UNPACK_SEQUENCE,
@@ -416,17 +422,17 @@ static const char *const _PyOpcode_OpName[267] = {
     [UNPACK_SEQUENCE_TUPLE] = "UNPACK_SEQUENCE_TUPLE",
     [UNPACK_SEQUENCE_TWO_TUPLE] = "UNPACK_SEQUENCE_TWO_TUPLE",
     [SEND_GEN] = "SEND_GEN",
-    [169] = "<169>",
-    [170] = "<170>",
+    [UNARY_NOT_BOOL] = "UNARY_NOT_BOOL",
+    [UNARY_NOT_INT] = "UNARY_NOT_INT",
     [CALL] = "CALL",
     [KW_NAMES] = "KW_NAMES",
     [CALL_INTRINSIC_1] = "CALL_INTRINSIC_1",
     [CALL_INTRINSIC_2] = "CALL_INTRINSIC_2",
     [LOAD_FROM_DICT_OR_GLOBALS] = "LOAD_FROM_DICT_OR_GLOBALS",
     [LOAD_FROM_DICT_OR_DEREF] = "LOAD_FROM_DICT_OR_DEREF",
-    [177] = "<177>",
-    [178] = "<178>",
-    [179] = "<179>",
+    [UNARY_NOT_LIST] = "UNARY_NOT_LIST",
+    [UNARY_NOT_NONE] = "UNARY_NOT_NONE",
+    [UNARY_NOT_STR] = "UNARY_NOT_STR",
     [180] = "<180>",
     [181] = "<181>",
     [182] = "<182>",
@@ -518,11 +524,6 @@ static const char *const _PyOpcode_OpName[267] = {
 #endif
 
 #define EXTRA_CASES \
-    case 169: \
-    case 170: \
-    case 177: \
-    case 178: \
-    case 179: \
     case 180: \
     case 181: \
     case 182: \

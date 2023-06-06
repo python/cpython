@@ -107,6 +107,8 @@ _Py_GetSpecializationStats(void) {
     err += add_stat_dict(stats, COMPARE_OP, "compare_op");
     err += add_stat_dict(stats, UNPACK_SEQUENCE, "unpack_sequence");
     err += add_stat_dict(stats, FOR_ITER, "for_iter");
+    err += add_stat_dict(stats, UNARY_NOT, "unary_not");
+    err += add_stat_dict(stats, SEND, "send");
     if (err < 0) {
         Py_DECREF(stats);
         return NULL;
@@ -127,9 +129,7 @@ print_spec_stats(FILE *out, OpcodeStats *stats)
     /* Mark some opcodes as specializable for stats,
      * even though we don't specialize them yet. */
     fprintf(out, "opcode[%d].specializable : 1\n", BINARY_SLICE);
-    fprintf(out, "opcode[%d].specializable : 1\n", COMPARE_OP);
     fprintf(out, "opcode[%d].specializable : 1\n", STORE_SLICE);
-    fprintf(out, "opcode[%d].specializable : 1\n", SEND);
     for (int i = 0; i < 256; i++) {
         if (_PyOpcode_Caches[i]) {
             fprintf(out, "opcode[%d].specializable : 1\n", i);
@@ -460,6 +460,20 @@ _PyCode_Quicken(PyCodeObject *code)
 
 #define SPEC_FAIL_UNPACK_SEQUENCE_ITERATOR 9
 #define SPEC_FAIL_UNPACK_SEQUENCE_SEQUENCE 10
+
+// UNARY_NOT
+#define SPEC_FAIL_UNARY_NOT_BYTEARRAY    9
+#define SPEC_FAIL_UNARY_NOT_BYTES       10
+#define SPEC_FAIL_UNARY_NOT_COMPLEX     11
+#define SPEC_FAIL_UNARY_NOT_DICT        12
+#define SPEC_FAIL_UNARY_NOT_DICT_ITEMS  13
+#define SPEC_FAIL_UNARY_NOT_DICT_KEYS   14
+#define SPEC_FAIL_UNARY_NOT_DICT_VALUES 15
+#define SPEC_FAIL_UNARY_NOT_FLOAT       16
+#define SPEC_FAIL_UNARY_NOT_HEAP_TYPE   17
+#define SPEC_FAIL_UNARY_NOT_MEMORY_VIEW 18
+#define SPEC_FAIL_UNARY_NOT_SET         19
+#define SPEC_FAIL_UNARY_NOT_TUPLE       20
 
 static int function_kind(PyCodeObject *code);
 static bool function_check_args(PyObject *o, int expected_argcount, int opcode);
@@ -2247,5 +2261,92 @@ failure:
     return;
 success:
     STAT_INC(SEND, success);
+    cache->counter = adaptive_counter_cooldown();
+}
+
+void
+_Py_Specialize_UnaryNot(PyObject *value, _Py_CODEUNIT *instr)
+{
+    assert(ENABLE_SPECIALIZATION);
+    assert(_PyOpcode_Caches[UNARY_NOT] == INLINE_CACHE_ENTRIES_UNARY_NOT);
+    _PyUnaryNotCache *cache = (_PyUnaryNotCache *)(instr + 1);
+    if (PyBool_Check(value)) {
+        instr->op.code = UNARY_NOT_BOOL;
+        goto success;
+    }
+    if (PyLong_CheckExact(value)) {
+        instr->op.code = UNARY_NOT_INT;
+        goto success;
+    }
+    if (PyList_CheckExact(value)) {
+        instr->op.code = UNARY_NOT_LIST;
+        goto success;
+    }
+    if (Py_IsNone(value)) {
+        instr->op.code = UNARY_NOT_NONE;
+        goto success;
+    }
+    if (PyUnicode_CheckExact(value)) {
+        instr->op.code = UNARY_NOT_STR;
+        goto success;
+    }
+#ifdef Py_STATS
+    if (PyByteArray_CheckExact(value)) {
+        SPECIALIZATION_FAIL(UNARY_NOT, SPEC_FAIL_UNARY_NOT_BYTEARRAY);
+        goto failure;
+    }
+    if (PyBytes_CheckExact(value)) {
+        SPECIALIZATION_FAIL(UNARY_NOT, SPEC_FAIL_UNARY_NOT_BYTES);
+        goto failure;
+    }
+    if (PyComplex_CheckExact(value)) {
+        SPECIALIZATION_FAIL(UNARY_NOT, SPEC_FAIL_UNARY_NOT_COMPLEX);
+        goto failure;
+    }
+    if (PyDict_CheckExact(value)) {
+        SPECIALIZATION_FAIL(UNARY_NOT, SPEC_FAIL_UNARY_NOT_DICT);
+        goto failure;
+    }
+    if (PyDictItems_Check(value)) {
+        SPECIALIZATION_FAIL(UNARY_NOT, SPEC_FAIL_UNARY_NOT_DICT_ITEMS);
+        goto failure;
+    }
+    if (PyDictKeys_Check(value)) {
+        SPECIALIZATION_FAIL(UNARY_NOT, SPEC_FAIL_UNARY_NOT_DICT_KEYS);
+        goto failure;
+    }
+    if (PyDictValues_Check(value)) {
+        SPECIALIZATION_FAIL(UNARY_NOT, SPEC_FAIL_UNARY_NOT_DICT_VALUES);
+        goto failure;
+    }
+    if (PyFloat_CheckExact(value)) {
+        SPECIALIZATION_FAIL(UNARY_NOT, SPEC_FAIL_UNARY_NOT_FLOAT);
+        goto failure;
+    }
+    if (PyType_HasFeature(Py_TYPE(value), Py_TPFLAGS_HEAPTYPE)) {
+        SPECIALIZATION_FAIL(UNARY_NOT, SPEC_FAIL_UNARY_NOT_HEAP_TYPE);
+        goto failure;
+    }
+    if (PyMemoryView_Check(value)) {
+        SPECIALIZATION_FAIL(UNARY_NOT, SPEC_FAIL_UNARY_NOT_MEMORY_VIEW);
+        goto failure;
+    }
+    if (PyAnySet_CheckExact(value)) {
+        SPECIALIZATION_FAIL(UNARY_NOT, SPEC_FAIL_UNARY_NOT_SET);
+        goto failure;
+    }
+    if (PyTuple_CheckExact(value)) {
+        SPECIALIZATION_FAIL(UNARY_NOT, SPEC_FAIL_UNARY_NOT_TUPLE);
+        goto failure;
+    }
+    SPECIALIZATION_FAIL(UNARY_NOT, SPEC_FAIL_OTHER);
+#endif
+failure:
+    STAT_INC(UNARY_NOT, failure);
+    instr->op.code = UNARY_NOT;
+    cache->counter = adaptive_counter_backoff(cache->counter);
+    return;
+success:
+    STAT_INC(UNARY_NOT, success);
     cache->counter = adaptive_counter_cooldown();
 }

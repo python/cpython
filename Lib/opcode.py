@@ -438,6 +438,13 @@ _specializations = {
     "SEND": [
         "SEND_GEN",
     ],
+    "UNARY_NOT": [
+        "UNARY_NOT_BOOL",
+        "UNARY_NOT_INT",
+        "UNARY_NOT_LIST",
+        "UNARY_NOT_NONE",
+        "UNARY_NOT_STR",
+    ]
 }
 _specialized_instructions = [
     opcode for family in _specializations.values() for opcode in family
@@ -490,6 +497,9 @@ _cache_format = {
         "counter": 1,
     },
     "JUMP_BACKWARD": {
+        "counter": 1,
+    },
+    "UNARY_NOT": {
         "counter": 1,
     },
 }

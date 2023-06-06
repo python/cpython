@@ -217,6 +217,11 @@ extern "C" {
 #define UNPACK_SEQUENCE_TUPLE                  166
 #define UNPACK_SEQUENCE_TWO_TUPLE              167
 #define SEND_GEN                               168
+#define UNARY_NOT_BOOL                         169
+#define UNARY_NOT_INT                          170
+#define UNARY_NOT_LIST                         177
+#define UNARY_NOT_NONE                         178
+#define UNARY_NOT_STR                          179
 
 #define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\
     || ((op) == JUMP) \
