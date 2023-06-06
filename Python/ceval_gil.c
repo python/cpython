@@ -110,7 +110,8 @@ UNSIGNAL_PENDING_CALLS(PyInterpreterState *interp)
 {
     struct _ceval_runtime_state *ceval = &interp->runtime->ceval;
     struct _ceval_state *ceval2 = &interp->ceval;
-    if (_Py_IsMainInterpreter(interp)) {
+    if (_Py_IsMainThread()) {
+        assert(_Py_IsMainInterpreter(interp));
         _Py_atomic_store_relaxed(&ceval->pending_mainthread.calls_to_do, 0);
     }
     _Py_atomic_store_relaxed(&ceval2->pending.calls_to_do, 0);
