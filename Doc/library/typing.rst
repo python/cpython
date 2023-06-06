@@ -2,6 +2,11 @@
 :mod:`typing` --- Support for type hints
 ========================================
 
+.. testsetup:: *
+
+   import typing
+   from typing import *
+
 .. module:: typing
    :synopsis: Support for type hints (see :pep:`484`).
 
