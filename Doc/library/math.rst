@@ -72,8 +72,7 @@ Number-theoretic and representation functions
    is negative.
 
    .. versionchanged:: 3.10
-      Floating point numbers with integral value (like ``5.0``) are no longer
-      accepted.
+      Floats with integral values (like ``5.0``) are no longer accepted.
 
 
 .. function:: floor(x)
