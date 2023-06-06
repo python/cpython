@@ -1,0 +1,4 @@
+Python built in debug mode can no longer build C extensions using the
+:ref:`limited C API <limited-c-api>` version 3.9 and older. Build C
+extensions with a release build of Python (recommended), or with Python 3.12
+and older. Patch by Victor Stinner.
