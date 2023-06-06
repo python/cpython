@@ -838,6 +838,16 @@ set_optimizer(PyObject *self, PyObject *opt)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+get_optimizer(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *opt = (PyObject *)PyUnstable_GetOptimizer();
+    if (opt == NULL) {
+        Py_RETURN_NONE;
+    }
+    return opt;
+}
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -866,6 +876,7 @@ static PyMethodDef module_functions[] = {
     {"iframe_getcode", iframe_getcode, METH_O, NULL},
     {"iframe_getline", iframe_getline, METH_O, NULL},
     {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
+    {"get_optimizer", get_optimizer,  METH_NOARGS, NULL},
     {"set_optimizer", set_optimizer,  METH_O, NULL},
     {"get_counter_optimizer", get_counter_optimizer, METH_NOARGS, NULL},
     {NULL, NULL} /* sentinel */

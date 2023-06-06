@@ -1917,17 +1917,32 @@ class Test_Pep523API(unittest.TestCase):
 
 class TestOptimizerAPI(unittest.TestCase):
 
-    def test_counter_optimizer(self):
+    def test_get_set_optimizer(self):
+        self.assertEqual(_testinternalcapi.get_optimizer(), None)
         opt = _testinternalcapi.get_counter_optimizer()
-        self.assertEqual(opt.get_count(), 0)
-        try:
-            _testinternalcapi.set_optimizer(opt)
-            self.assertEqual(opt.get_count(), 0)
+        _testinternalcapi.set_optimizer(opt)
+        self.assertEqual(_testinternalcapi.get_optimizer(), opt)
+        _testinternalcapi.set_optimizer(None)
+        self.assertEqual(_testinternalcapi.get_optimizer(), None)
+
+    def test_counter_optimizer(self):
+
+        def loop():
             for _ in range(1000):
                 pass
-            self.assertEqual(opt.get_count(), 1000)
-        finally:
-            _testinternalcapi.set_optimizer(None)
+
+        for repeat in range(5):
+            opt = _testinternalcapi.get_counter_optimizer()
+            self.assertEqual(opt.get_count(), 0)
+            try:
+                _testinternalcapi.set_optimizer(opt)
+                self.assertEqual(opt.get_count(), 0)
+                loop()
+                self.assertEqual(opt.get_count(), 1000)
+            finally:
+                _testinternalcapi.set_optimizer(None)
+                #Clear executors
+                loop.__code__ = loop.__code__.replace()
 
 if __name__ == "__main__":
     unittest.main()

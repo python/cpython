@@ -2135,6 +2135,7 @@ dummy_func(
                     frame = cframe.current_frame;
                     goto error;
                 }
+                assert(frame == cframe.current_frame);
                 here[1].cache &= ((1 << OPTIMIZER_BITS_IN_COUNTER) -1);
                 goto resume_frame;
             }
@@ -2143,7 +2144,7 @@ dummy_func(
         }
 
         inst(ENTER_EXECUTOR, (--)) {
-            _PyExecutorObject *executor = (_PyExecutorObject *)frame->f_code->co_executors->executors[oparg];
+            _PyExecutorObject *executor = (_PyExecutorObject *)frame->f_code->co_executors->executors[oparg&255];
             Py_INCREF(executor);
             frame = executor->execute(executor, frame, stack_pointer);
             if (frame == NULL) {
