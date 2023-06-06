@@ -2045,3 +2045,10 @@ Removed
 * Remove ``_use_broken_old_ctypes_structure_semantics_`` flag
   from :mod:`ctypes` module.
   (Contributed by Nikita Sobolev in :gh:`99285`.)
+
+* Remove the old private, undocumented and untested ``_PyGC_FINALIZED()`` macro
+  which was kept for backward compatibility with Python 3.8 and older: use
+  :c:func:`PyObject_GC_IsFinalized()` instead. The `pythoncapi-compat project
+  <https://github.com/python/pythoncapi-compat/>`_ can be used to get this
+  function on Python 3.8 and older.
+  (Contributed by Victor Stinner in :gh:`105268`.)
