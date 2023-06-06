@@ -3,7 +3,10 @@ from test.support import import_helper
 import types
 
 xxlimited = import_helper.import_module('xxlimited')
-xxlimited_35 = import_helper.import_module('xxlimited_35')
+try:
+    import xxlimited_35
+except ImportError:
+    xxlimited_35 = None
 
 
 class CommonTests:
@@ -70,6 +73,7 @@ class TestXXLimited(CommonTests, unittest.TestCase):
         self.assertEqual(b2[0], 1)
 
 
+@unittest.skipIf(xxlimited_35 is None, 'need xxlimited_35 extension')
 class TestXXLimited35(CommonTests, unittest.TestCase):
     module = xxlimited_35
 

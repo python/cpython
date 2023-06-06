@@ -30373,7 +30373,7 @@ printf %s "checking for stdlib extension module xxlimited_35... " >&6; }
         if test "$py_cv_module_xxlimited_35" != "n/a"
 then :
 
-    if test "$with_trace_refs" = "no"
+    if test "$with_trace_refs" = "no" -a "$Py_DEBUG" != "true"
 then :
   if test "$ac_cv_func_dlopen" = yes
 then :

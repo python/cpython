@@ -7390,7 +7390,9 @@ dnl Limited API template modules.
 dnl The limited C API is not compatible with the Py_TRACE_REFS macro.
 dnl Emscripten does not support shared libraries yet.
 PY_STDLIB_MOD([xxlimited], [test "$with_trace_refs" = "no"], [test "$ac_cv_func_dlopen" = yes])
-PY_STDLIB_MOD([xxlimited_35], [test "$with_trace_refs" = "no"], [test "$ac_cv_func_dlopen" = yes])
+dnl xxlimited_35 cannot be built with Python built in debug mode
+dnl (if the Py_REF_DEBUG macro is defined)
+PY_STDLIB_MOD([xxlimited_35], [test "$with_trace_refs" = "no" -a "$Py_DEBUG" != "true"], [test "$ac_cv_func_dlopen" = yes])
 
 # substitute multiline block, must come after last PY_STDLIB_MOD()
 AC_SUBST([MODULE_BLOCK])

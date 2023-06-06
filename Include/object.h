@@ -62,6 +62,12 @@ whose size is determined when the object is allocated.
 #  error Py_LIMITED_API is incompatible with Py_TRACE_REFS
 #endif
 
+// gh-102304: In debug mode, the limited API implements Py_INCREF() by calling
+// _Py_IncRef() which was added to Python 3.10.
+#if defined(Py_REF_DEBUG) && defined(Py_LIMITED_API) && Py_LIMITED_API+0 < 0x030a0000
+#  error "Python built in debug mode is incompatible with limited C API older than 3.10"
+#endif
+
 #ifdef Py_TRACE_REFS
 /* Define pointers to support a doubly-linked list of all live heap objects. */
 #define _PyObject_HEAD_EXTRA            \
