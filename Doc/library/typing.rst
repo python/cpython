@@ -1478,6 +1478,10 @@ without the dedicated syntax, as documented below.
 
       The name of the type variable.
 
+   .. attribute:: __module__
+
+      The module in which the type variable was defined.
+
    .. attribute:: __covariant__
 
       Whether the type var has been explicitly marked as covariant.
@@ -1625,6 +1629,10 @@ without the dedicated syntax, as documented below.
 
       The name of the type variable tuple.
 
+   .. attribute:: __module__
+
+      The module in which the type variable tuple was defined.
+
    .. versionadded:: 3.11
 
    .. versionchanged:: 3.12
@@ -1700,6 +1708,10 @@ without the dedicated syntax, as documented below.
    .. attribute:: __name__
 
       The name of the parameter specification.
+
+   .. attribute:: __module__
+
+      The module in which the parameter specification was defined.
 
    Parameter specification variables created with ``covariant=True`` or
    ``contravariant=True`` can be used to declare covariant or contravariant
