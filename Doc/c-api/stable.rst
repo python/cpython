@@ -55,6 +55,10 @@ CPython development and spend extra effort adjusting to changes.
 Stable Application Binary Interface
 ===================================
 
+For simplicity, this document talks about *extensions*, but the Limited API
+and Stable ABI work the same way for all uses of the API – for example,
+embedding Python.
+
 .. _limited-c-api:
 
 Limited C API
@@ -95,10 +99,6 @@ remain compatible across Python 3.x versions.
 The Stable ABI contains symbols exposed in the :ref:`Limited API
 <limited-c-api>`, but also other ones – for example, functions necessary to
 support older versions of the Limited API.
-
-(For simplicity, this document talks about *extensions*, but the Limited API
-and Stable ABI work the same way for all uses of the API – for example,
-embedding Python.)
 
 On Windows, extensions that use the Stable ABI should be linked against
 ``python3.dll`` rather than a version-specific library such as

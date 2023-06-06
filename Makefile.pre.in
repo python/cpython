@@ -1309,11 +1309,6 @@ check-abidump: all
 
 .PHONY: regen-limited-abi
 regen-limited-abi: all
-	# Regenerate files using using Tools/build/stable_abi.py:
-	# - Doc/data/stable_abi.dat
-	# - Lib/test/test_stable_abi_ctypes.py
-	# - Modules/_testcapi_feature_macros.inc
-	# - PC/python3dll.c
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/build/stable_abi.py --generate-all $(srcdir)/Misc/stable_abi.toml
 
 ############################################################################
