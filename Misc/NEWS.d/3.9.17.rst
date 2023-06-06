@@ -1,0 +1,131 @@
+.. date: 2023-06-01-03-24-58
+.. gh-issue: 103142
+.. nonce: GLWDMX
+.. release date: 2023-06-06
+.. section: Security
+
+The version of OpenSSL used in our binary builds has been upgraded to 1.1.1u
+to address several CVEs.
+
+..
+
+.. date: 2023-05-02-17-56-32
+.. gh-issue: 99889
+.. nonce: l664SU
+.. section: Security
+
+Fixed a security in flaw in :func:`uu.decode` that could allow for directory
+traversal based on the input if no ``out_file`` was specified.
+
+..
+
+.. date: 2023-05-01-15-03-25
+.. gh-issue: 104049
+.. nonce: b01Y3g
+.. section: Security
+
+Do not expose the local on-disk location in directory indexes produced by
+:class:`http.client.SimpleHTTPRequestHandler`.
+
+..
+
+.. date: 2023-03-07-20-59-17
+.. gh-issue: 102153
+.. nonce: 14CLSZ
+.. section: Security
+
+:func:`urllib.parse.urlsplit` now strips leading C0 control and space
+characters following the specification for URLs defined by WHATWG in
+response to CVE-2023-24329. Patch by Illia Volochii.
+
+..
+
+.. date: 2023-02-08-22-03-04
+.. gh-issue: 101727
+.. nonce: 9P5eZz
+.. section: Security
+
+Updated the OpenSSL version used in Windows and macOS binary release builds
+to 1.1.1t to address CVE-2023-0286, CVE-2022-4303, and CVE-2022-4303 per
+`the OpenSSL 2023-02-07 security advisory
+<https://www.openssl.org/news/secadv/20230207.txt>`_.
+
+..
+
+.. date: 2023-01-24-16-12-00
+.. gh-issue: 101283
+.. nonce: 9tqu39
+.. section: Security
+
+:class:`subprocess.Popen` now uses a safer approach to find ``cmd.exe`` when
+launching with ``shell=True``. Patch by Eryk Sun, based on a patch by Oleg
+Iarygin.
+
+..
+
+.. date: 2023-02-24-17-59-39
+.. gh-issue: 102126
+.. nonce: HTT8Vc
+.. section: Core and Builtins
+
+Fix deadlock at shutdown when clearing thread states if any finalizer tries
+to acquire the runtime head lock. Patch by Kumar Aditya.
+
+..
+
+.. date: 2023-01-10-14-11-17
+.. gh-issue: 100892
+.. nonce: qfBVYI
+.. section: Core and Builtins
+
+Fix race while iterating over thread states in clearing
+:class:`threading.local`. Patch by Kumar Aditya.
+
+..
+
+.. date: 2023-04-27-20-03-08
+.. gh-issue: 103935
+.. nonce: Uaf2M0
+.. section: Library
+
+Use :func:`io.open_code` for files to be executed instead of raw
+:func:`open`
+
+..
+
+.. date: 2023-03-23-15-24-38
+.. gh-issue: 102953
+.. nonce: YR4KaK
+.. section: Library
+
+The extraction methods in :mod:`tarfile`, and :func:`shutil.unpack_archive`,
+have a new a *filter* argument that allows limiting tar features than may be
+surprising or dangerous, such as creating files outside the destination
+directory. See :ref:`tarfile-extraction-filter` for details.
+
+..
+
+.. date: 2023-02-17-18-44-27
+.. gh-issue: 101997
+.. nonce: A6_blD
+.. section: Library
+
+Upgrade pip wheel bundled with ensurepip (pip 23.0.1)
+
+..
+
+.. date: 2023-01-09-23-03-57
+.. gh-issue: 100180
+.. nonce: b5phrg
+.. section: Windows
+
+Update Windows installer to OpenSSL 1.1.1s
+
+..
+
+.. date: 2023-05-30-23-30-46
+.. gh-issue: 103142
+.. nonce: 55lMXQ
+.. section: macOS
+
+Update macOS installer to use OpenSSL 1.1.1u.
