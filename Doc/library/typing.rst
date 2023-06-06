@@ -2250,8 +2250,6 @@ Corresponding to built-in types
    to use an abstract collection type such as :class:`Sequence` or
    :class:`Iterable` rather than to use :class:`list` or :class:`!typing.List`.
 
-   This type may be used as follows:
-
    This type may be used as follows::
 
       def vec2[T: (int, float)](x: T, y: T) -> List[T]:
