@@ -318,7 +318,7 @@ be finalized; only the internally used file object will be closed. See the
 .. versionadded:: 3.2
    Added support for the context management protocol.
 
-.. class:: TarFile(name=None, mode='r', fileobj=None, format=DEFAULT_FORMAT, tarinfo=TarInfo, dereference=False, ignore_zeros=False, encoding=ENCODING, errors='surrogateescape', pax_headers=None, debug=0, errorlevel=1)
+.. class:: TarFile(name=None, mode='r', fileobj=None, format=DEFAULT_FORMAT, tarinfo=TarInfo, dereference=False, ignore_zeros=False, encoding=ENCODING, errors='surrogateescape', pax_headers=None, debug=0, errorlevel=1, stream=False)
 
    All following arguments are optional and can be accessed as instance attributes
    as well.
@@ -369,6 +369,9 @@ be finalized; only the internally used file object will be closed. See the
    The *pax_headers* argument is an optional dictionary of strings which
    will be added as a pax global header if *format* is :const:`PAX_FORMAT`.
 
+   If *stream* is set to :const:`True` then while reading the archive info about files
+   in the archive are not cached, saving memory.
+
    .. versionchanged:: 3.2
       Use ``'surrogateescape'`` as the default for the *errors* argument.
 
@@ -378,6 +381,8 @@ be finalized; only the internally used file object will be closed. See the
    .. versionchanged:: 3.6
       The *name* parameter accepts a :term:`path-like object`.
 
+   .. versionchanged:: 3.13
+      Add the *stream* parameter.
 
 .. classmethod:: TarFile.open(...)
 

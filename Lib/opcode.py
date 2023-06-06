@@ -131,6 +131,7 @@ def_op('RETURN_GENERATOR', 75)
 def_op('RETURN_VALUE', 83)
 
 def_op('SETUP_ANNOTATIONS', 85)
+def_op('LOAD_LOCALS', 87)
 
 def_op('POP_EXCEPT', 89)
 
@@ -206,7 +207,6 @@ EXTENDED_ARG = 144
 def_op('LIST_APPEND', 145)
 def_op('SET_ADD', 146)
 def_op('MAP_ADD', 147)
-def_op('LOAD_CLASSDEREF', 148)
 hasfree.append(148)
 def_op('COPY_FREE_VARS', 149)
 def_op('YIELD_VALUE', 150)
@@ -222,15 +222,26 @@ def_op('SET_UPDATE', 163)
 def_op('DICT_MERGE', 164)
 def_op('DICT_UPDATE', 165)
 
+def_op('LOAD_FAST_LOAD_FAST', 168)
+def_op('STORE_FAST_LOAD_FAST', 169)
+def_op('STORE_FAST_STORE_FAST', 170)
 def_op('CALL', 171)
 def_op('KW_NAMES', 172)
 hasconst.append(172)
 def_op('CALL_INTRINSIC_1', 173)
 def_op('CALL_INTRINSIC_2', 174)
 
-# Instrumented instructions
-MIN_INSTRUMENTED_OPCODE = 238
+name_op('LOAD_FROM_DICT_OR_GLOBALS', 175)
+def_op('LOAD_FROM_DICT_OR_DEREF', 176)
+hasfree.append(176)
 
+# Optimizer hook
+def_op('ENTER_EXECUTOR', 230)
+
+# Instrumented instructions
+MIN_INSTRUMENTED_OPCODE = 237
+
+def_op('INSTRUMENTED_LOAD_SUPER_ATTR', 237)
 def_op('INSTRUMENTED_POP_JUMP_IF_NONE', 238)
 def_op('INSTRUMENTED_POP_JUMP_IF_NOT_NONE', 239)
 def_op('INSTRUMENTED_RESUME', 240)
@@ -318,12 +329,20 @@ _intrinsic_1_descs = [
     "INTRINSIC_ASYNC_GEN_WRAP",
     "INTRINSIC_UNARY_POSITIVE",
     "INTRINSIC_LIST_TO_TUPLE",
+    "INTRINSIC_TYPEVAR",
+    "INTRINSIC_PARAMSPEC",
+    "INTRINSIC_TYPEVARTUPLE",
+    "INTRINSIC_SUBSCRIPT_GENERIC",
+    "INTRINSIC_TYPEALIAS",
 ]
 
 _intrinsic_2_descs = [
-    'INTRINSIC_2_INVALID',
-    'INTRINSIC_PREP_RERAISE_STAR',
-    ]
+    "INTRINSIC_2_INVALID",
+    "INTRINSIC_PREP_RERAISE_STAR",
+    "INTRINSIC_TYPEVAR_WITH_BOUND",
+    "INTRINSIC_TYPEVAR_WITH_CONSTRAINTS",
+    "INTRINSIC_SET_FUNCTION_TYPE_PARAMS",
+]
 
 _specializations = {
     "BINARY_OP": [
@@ -373,6 +392,7 @@ _specializations = {
         "FOR_ITER_GEN",
     ],
     "LOAD_SUPER_ATTR": [
+        "LOAD_SUPER_ATTR_ATTR",
         "LOAD_SUPER_ATTR_METHOD",
     ],
     "LOAD_ATTR": [
@@ -394,7 +414,6 @@ _specializations = {
     ],
     "LOAD_FAST": [
         "LOAD_FAST__LOAD_CONST",
-        "LOAD_FAST__LOAD_FAST",
     ],
     "LOAD_GLOBAL": [
         "LOAD_GLOBAL_BUILTIN",
@@ -404,10 +423,6 @@ _specializations = {
         "STORE_ATTR_INSTANCE_VALUE",
         "STORE_ATTR_SLOT",
         "STORE_ATTR_WITH_HINT",
-    ],
-    "STORE_FAST": [
-        "STORE_FAST__LOAD_FAST",
-        "STORE_FAST__STORE_FAST",
     ],
     "STORE_SUBSCR": [
         "STORE_SUBSCR_DICT",
@@ -450,9 +465,6 @@ _cache_format = {
     },
     "LOAD_SUPER_ATTR": {
         "counter": 1,
-        "class_version": 2,
-        "self_type_version": 2,
-        "method": 4,
     },
     "LOAD_ATTR": {
         "counter": 1,
@@ -473,6 +485,9 @@ _cache_format = {
         "counter": 1,
     },
     "SEND": {
+        "counter": 1,
+    },
+    "JUMP_BACKWARD": {
         "counter": 1,
     },
 }

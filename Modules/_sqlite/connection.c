@@ -419,7 +419,7 @@ connection_close(pysqlite_Connection *self)
         {
             /* If close is implicitly called as a result of interpreter
              * tear-down, we must not call back into Python. */
-            if (_Py_IsFinalizing()) {
+            if (_Py_IsInterpreterFinalizing(PyInterpreterState_Get())) {
                 remove_callbacks(self->db);
             }
             (void)connection_exec_stmt(self, "ROLLBACK");
