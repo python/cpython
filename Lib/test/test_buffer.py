@@ -3184,7 +3184,6 @@ class TestBufferProtocol(unittest.TestCase):
                             self.assertEqual(m.tobytes(), a.tobytes())
                             cmptest(self, a, b, m, singleitem)
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-80480 array('u')
     def test_memoryview_compare_special_cases(self):
 
         a = array.array('L', [1, 2, 3])
@@ -3219,12 +3218,6 @@ class TestBufferProtocol(unittest.TestCase):
         nd[0] = (-1, float('nan'))
         self.assertNotEqual(memoryview(nd), nd)
 
-        # Depends on issue #15625: the struct module does not understand 'u'.
-        a = array.array('u', 'xyz')
-        v = memoryview(a)
-        self.assertNotEqual(a, v)
-        self.assertNotEqual(v, a)
-
         # Some ctypes format strings are unknown to the struct module.
         if ctypes:
             # format: "T{>l:x:>l:y:}"
@@ -3237,6 +3230,15 @@ class TestBufferProtocol(unittest.TestCase):
             self.assertNotEqual(a, point)
             self.assertNotEqual(point, a)
             self.assertRaises(NotImplementedError, a.tolist)
+
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-80480 array('u')
+    def test_memoryview_compare_special_cases_deprecated_u_type_code(self):
+
+        # Depends on issue #15625: the struct module does not understand 'u'.
+        a = array.array('u', 'xyz')
+        v = memoryview(a)
+        self.assertNotEqual(a, v)
+        self.assertNotEqual(v, a)
 
     def test_memoryview_compare_ndim_zero(self):
 
