@@ -1308,6 +1308,8 @@ class Flag(Enum, boundary=STRICT):
 
     def __reduce_ex__(self, proto):
         cls = self.__class__
+        if self._value_ in cls._value2member_map_:
+            return cls, (self._value_,)
         unknown = self._value_ & ~cls._flag_mask_
         member_value = self._value_ & cls._flag_mask_
         if unknown and member_value:
@@ -1318,10 +1320,7 @@ class Flag(Enum, boundary=STRICT):
                 return _or_, (cls(rest), cls._value2member_map_.get(val))
             else:
                 break
-        if self._name_ is None:
-            return cls, (self._value_,)
-        else:
-            return getattr, (cls, self._name_)
+        return cls, (self._value_,)
 
     _numeric_repr_ = repr
 

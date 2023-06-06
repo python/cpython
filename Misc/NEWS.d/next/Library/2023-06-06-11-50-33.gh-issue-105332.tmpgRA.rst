@@ -1,0 +1,1 @@
+Fix loading pickled data for :class:`enum.Flag` with specific values.
