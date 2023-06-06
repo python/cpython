@@ -120,7 +120,7 @@ class ReplaceDialog(SearchDialogBase):
         if self.engine.isre():
             try:
                 new = m.expand(repl)
-            except re.error:
+            except re.PatternError:
                 self.engine.report_error(repl, 'Invalid Replace Expression')
                 new = None
         else:
