@@ -19278,13 +19278,15 @@ fi
 printf "%s\n" "$ac_cv_flock_decl" >&6; }
 if test "x$ac_cv_flock_decl" = xyes
 then :
+
+  for ac_func in flock
+do :
   ac_fn_c_check_func "$LINENO" "flock" "ac_cv_func_flock"
 if test "x$ac_cv_func_flock" = xyes
 then :
   printf "%s\n" "#define HAVE_FLOCK 1" >>confdefs.h
 
-fi
-
+else $as_nop
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for flock in -lbsd" >&5
 printf %s "checking for flock in -lbsd... " >&6; }
 if test ${ac_cv_lib_bsd_flock+y}
@@ -19325,7 +19327,9 @@ then :
   FCNTL_LIBS="-lbsd"
 fi
 
+fi
 
+done
 fi
 
 

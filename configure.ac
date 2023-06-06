@@ -4936,9 +4936,8 @@ AC_CACHE_CHECK([for flock declaration], [ac_cv_flock_decl],
 ])
 dnl Linking with libbsd may be necessary on AIX for flock function.
 AS_VAR_IF([ac_cv_flock_decl], [yes],
-  AC_CHECK_FUNCS([flock])
-  AC_CHECK_LIB([bsd], [flock], [FCNTL_LIBS="-lbsd"])
-)
+  [AC_CHECK_FUNCS([flock], [],
+    [AC_CHECK_LIB([bsd], [flock], [FCNTL_LIBS="-lbsd"])])])
 
 PY_CHECK_FUNC([getpagesize], [#include <unistd.h>])
 
