@@ -15796,9 +15796,7 @@ if test "x$ac_cv_func_flock" = xyes; then :
 #define HAVE_FLOCK 1
 _ACEOF
 
-fi
-done
-
+else
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for flock in -lbsd" >&5
 $as_echo_n "checking for flock in -lbsd... " >&6; }
 if ${ac_cv_lib_bsd_flock+:} false; then :
@@ -15839,6 +15837,8 @@ if test "x$ac_cv_lib_bsd_flock" = xyes; then :
   FCNTL_LIBS="-lbsd"
 fi
 
+fi
+done
 
 fi
 
