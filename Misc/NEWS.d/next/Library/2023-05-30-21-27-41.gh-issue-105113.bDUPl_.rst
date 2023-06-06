@@ -1,2 +1,0 @@
-Improve performance of :meth:`pathlib.PurePath.match` by compiling an
-:class:`re.Pattern` object for the entire pattern.

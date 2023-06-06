@@ -1,4 +1,0 @@
-Fix bug where ``isinstance([], collections.abc.Mapping)`` could evaluate to
-``True`` if garbage collection happened at the wrong time. The bug was
-caused by changes to the implementation of :class:`typing.Protocol` in
-Python 3.12.
