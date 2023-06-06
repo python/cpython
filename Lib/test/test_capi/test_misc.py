@@ -11,7 +11,6 @@ import os
 import pickle
 import queue
 import random
-import subprocess
 import sys
 import textwrap
 import threading
