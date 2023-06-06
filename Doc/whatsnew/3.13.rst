@@ -489,3 +489,10 @@ Removed
   * or :c:func:`PyGILState_Ensure` and :c:func:`PyGILState_Release`.
 
   (Contributed by Victor Stinner in :gh:`105182`.)
+
+* Remove the old private, undocumented and untested ``_PyGC_FINALIZED()`` macro
+  which was kept for backward compatibility with Python 3.8 and older: use
+  :c:func:`PyObject_GC_IsFinalized()` instead. The `pythoncapi-compat project
+  <https://github.com/python/pythoncapi-compat/>`_ can be used to get this
+  function on Python 3.8 and older.
+  (Contributed by Victor Stinner in :gh:`105268`.)
