@@ -114,6 +114,7 @@ tok_new(void)
     tok->report_warnings = 1;
     tok->tok_extra_tokens = 0;
     tok->comment_newline = 0;
+    tok->implicit_newline = 0;
     tok->tok_mode_stack[0] = (tokenizer_mode){.kind =TOK_REGULAR_MODE, .f_string_quote='\0', .f_string_quote_size = 0, .f_string_debug=0};
     tok->tok_mode_stack_index = 0;
     tok->tok_report_warnings = 1;
@@ -355,10 +356,12 @@ tok_concatenate_interactive_new_line(struct tok_state *tok, const char *line) {
         return -1;
     }
     strcpy(new_str + current_size, line);
+    tok->implicit_newline = 0;
     if (last_char != '\n') {
         /* Last line does not end in \n, fake one */
         new_str[current_size + line_size - 1] = '\n';
         new_str[current_size + line_size] = '\0';
+        tok->implicit_newline = 1;
     }
     tok->interactive_src_start = new_str;
     tok->interactive_src_end = new_str + current_size + line_size;
@@ -1262,11 +1265,13 @@ tok_underflow_file(struct tok_state *tok) {
         tok->done = E_EOF;
         return 0;
     }
+    tok->implicit_newline = 0;
     if (tok->inp[-1] != '\n') {
         assert(tok->inp + 1 < tok->end);
         /* Last line does not end in \n, fake one */
         *tok->inp++ = '\n';
         *tok->inp = '\0';
+        tok->implicit_newline = 1;
     }
 
     ADVANCE_LINENO();
@@ -1304,11 +1309,13 @@ tok_underflow_readline(struct tok_state* tok) {
         tok->done = E_EOF;
         return 0;
     }
+    tok->implicit_newline = 0;
     if (tok->inp[-1] != '\n') {
         assert(tok->inp + 1 < tok->end);
         /* Last line does not end in \n, fake one */
         *tok->inp++ = '\n';
         *tok->inp = '\0';
+        tok->implicit_newline = 1;
     }
 
     ADVANCE_LINENO();
