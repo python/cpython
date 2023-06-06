@@ -2823,11 +2823,13 @@ compiler_jump_if(struct compiler *c, location loc,
                 ADDOP_I(c, LOC(e), SWAP, 2);
                 ADDOP_I(c, LOC(e), COPY, 2);
                 ADDOP_COMPARE(c, LOC(e), asdl_seq_GET(e->v.Compare.ops, i));
-                ADDOP_JUMP(c, LOC(e), POP_JUMP_IF_FALSE, cleanup);
+                ADDOP(c, LOC(e), UNARY_NOT);
+                ADDOP_JUMP(c, LOC(e), POP_JUMP_IF_TRUE, cleanup);
             }
             VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, n));
             ADDOP_COMPARE(c, LOC(e), asdl_seq_GET(e->v.Compare.ops, n));
-            ADDOP_JUMP(c, LOC(e), cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
+            ADDOP(c, LOC(e), UNARY_NOT);
+            ADDOP_JUMP(c, LOC(e), cond ? POP_JUMP_IF_FALSE : POP_JUMP_IF_TRUE, next);
             NEW_JUMP_TARGET_LABEL(c, end);
             ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
 
@@ -2850,7 +2852,8 @@ compiler_jump_if(struct compiler *c, location loc,
 
     /* general implementation */
     VISIT(c, expr, e);
-    ADDOP_JUMP(c, LOC(e), cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
+    ADDOP(c, LOC(e), UNARY_NOT);
+    ADDOP_JUMP(c, LOC(e), cond ? POP_JUMP_IF_FALSE : POP_JUMP_IF_TRUE, next);
     return SUCCESS;
 }
 
@@ -4202,9 +4205,9 @@ compiler_boolop(struct compiler *c, expr_ty e)
     location loc = LOC(e);
     assert(e->kind == BoolOp_kind);
     if (e->v.BoolOp.op == And)
-        jumpi = POP_JUMP_IF_FALSE;
-    else
         jumpi = POP_JUMP_IF_TRUE;
+    else
+        jumpi = POP_JUMP_IF_FALSE;
     NEW_JUMP_TARGET_LABEL(c, end);
     s = e->v.BoolOp.values;
     n = asdl_seq_LEN(s) - 1;
@@ -4212,6 +4215,7 @@ compiler_boolop(struct compiler *c, expr_ty e)
     for (i = 0; i < n; ++i) {
         VISIT(c, expr, (expr_ty)asdl_seq_GET(s, i));
         ADDOP_I(c, loc, COPY, 1);
+        ADDOP(c, loc, UNARY_NOT);
         ADDOP_JUMP(c, loc, jumpi, end);
         ADDOP(c, loc, POP_TOP);
     }
@@ -4519,7 +4523,8 @@ compiler_compare(struct compiler *c, expr_ty e)
             ADDOP_I(c, loc, COPY, 2);
             ADDOP_COMPARE(c, loc, asdl_seq_GET(e->v.Compare.ops, i));
             ADDOP_I(c, loc, COPY, 1);
-            ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, cleanup);
+            ADDOP(c, loc, UNARY_NOT);
+            ADDOP_JUMP(c, loc, POP_JUMP_IF_TRUE, cleanup);
             ADDOP(c, loc, POP_TOP);
         }
         VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, n));
@@ -5754,7 +5759,8 @@ compiler_visit_keyword(struct compiler *c, keyword_ty k)
 static int
 compiler_with_except_finish(struct compiler *c, jump_target_label cleanup) {
     NEW_JUMP_TARGET_LABEL(c, suppress);
-    ADDOP_JUMP(c, NO_LOCATION, POP_JUMP_IF_TRUE, suppress);
+    ADDOP(c, NO_LOCATION, UNARY_NOT);
+    ADDOP_JUMP(c, NO_LOCATION, POP_JUMP_IF_FALSE, suppress);
     ADDOP_I(c, NO_LOCATION, RERAISE, 2);
 
     USE_LABEL(c, suppress);
@@ -7162,7 +7168,8 @@ compiler_pattern_value(struct compiler *c, pattern_ty p, pattern_context *pc)
     }
     VISIT(c, expr, value);
     ADDOP_COMPARE(c, LOC(p), Eq);
-    RETURN_IF_ERROR(jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE));
+    ADDOP(c, LOC(p), UNARY_NOT);
+    RETURN_IF_ERROR(jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_TRUE));
     return SUCCESS;
 }
 

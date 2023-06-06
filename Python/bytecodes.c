@@ -2146,34 +2146,16 @@ dummy_func(
         }
 
         inst(POP_JUMP_IF_FALSE, (cond -- )) {
+            assert(PyBool_Check(cond));
             if (Py_IsFalse(cond)) {
                 JUMPBY(oparg);
-            }
-            else if (!Py_IsTrue(cond)) {
-                int err = PyObject_IsTrue(cond);
-                DECREF_INPUTS();
-                if (err == 0) {
-                    JUMPBY(oparg);
-                }
-                else {
-                    ERROR_IF(err < 0, error);
-                }
             }
         }
 
         inst(POP_JUMP_IF_TRUE, (cond -- )) {
+            assert(PyBool_Check(cond));
             if (Py_IsTrue(cond)) {
                 JUMPBY(oparg);
-            }
-            else if (!Py_IsFalse(cond)) {
-                int err = PyObject_IsTrue(cond);
-                DECREF_INPUTS();
-                if (err > 0) {
-                    JUMPBY(oparg);
-                }
-                else {
-                    ERROR_IF(err < 0, error);
-                }
             }
         }
 
@@ -3401,7 +3383,7 @@ dummy_func(
 
         inst(INSTRUMENTED_POP_JUMP_IF_TRUE, ( -- )) {
             PyObject *cond = POP();
-            int err = PyObject_IsTrue(cond);
+            int err = PyObject_IsTrue(cond);  // XXX
             Py_DECREF(cond);
             ERROR_IF(err < 0, error);
             _Py_CODEUNIT *here = next_instr-1;
@@ -3412,7 +3394,7 @@ dummy_func(
 
         inst(INSTRUMENTED_POP_JUMP_IF_FALSE, ( -- )) {
             PyObject *cond = POP();
-            int err = PyObject_IsTrue(cond);
+            int err = PyObject_IsTrue(cond);  // XXX
             Py_DECREF(cond);
             ERROR_IF(err < 0, error);
             _Py_CODEUNIT *here = next_instr-1;
