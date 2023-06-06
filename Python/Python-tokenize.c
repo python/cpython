@@ -243,10 +243,12 @@ tokenizeriter_next(tokenizeriterobject *it)
         }
         else if (type == NEWLINE) {
             Py_DECREF(str);
-            if (it->tok->start[0] == '\r') {
-                str = PyUnicode_FromString("\r\n");
-            } else {
-                str = PyUnicode_FromString("\n");
+            if (!it->tok->implicit_newline) {
+                if (it->tok->start[0] == '\r') {
+                    str = PyUnicode_FromString("\r\n");
+                } else {
+                    str = PyUnicode_FromString("\n");
+                }
             }
             end_col_offset++;
         }
