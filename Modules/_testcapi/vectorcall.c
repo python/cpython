@@ -297,8 +297,7 @@ static PyObject *
 func_descr_get(PyObject *func, PyObject *obj, PyObject *type)
 {
     if (obj == Py_None || obj == NULL) {
-        Py_INCREF(func);
-        return func;
+        return Py_NewRef(func);
     }
     return PyMethod_New(func, obj);
 }
@@ -306,15 +305,13 @@ func_descr_get(PyObject *func, PyObject *obj, PyObject *type)
 static PyObject *
 nop_descr_get(PyObject *func, PyObject *obj, PyObject *type)
 {
-    Py_INCREF(func);
-    return func;
+    return Py_NewRef(func);
 }
 
 static PyObject *
 call_return_args(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    Py_INCREF(args);
-    return args;
+    return Py_NewRef(args);
 }
 
 static PyTypeObject MethodDescriptorBase_Type = {

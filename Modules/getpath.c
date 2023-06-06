@@ -6,7 +6,6 @@
 #include "pycore_initconfig.h"
 #include "pycore_fileutils.h"
 #include "pycore_pathconfig.h"
-#include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include <wchar.h>
 
 #ifdef MS_WINDOWS
@@ -125,8 +124,7 @@ getpath_isabs(PyObject *Py_UNUSED(self), PyObject *args)
         r = _Py_isabs(path) ? Py_True : Py_False;
         PyMem_Free((void *)path);
     }
-    Py_XINCREF(r);
-    return r;
+    return Py_XNewRef(r);
 }
 
 
@@ -153,11 +151,10 @@ getpath_hassuffix(PyObject *Py_UNUSED(self), PyObject *args)
                 wcscmp(&path[len - suffixLen], suffix) != 0
 #endif
             ) {
-                r = Py_False;
+                r = Py_NewRef(Py_False);
             } else {
-                r = Py_True;
+                r = Py_NewRef(Py_True);
             }
-            Py_INCREF(r);
             PyMem_Free((void *)suffix);
         }
         PyMem_Free((void *)path);
@@ -187,8 +184,7 @@ getpath_isdir(PyObject *Py_UNUSED(self), PyObject *args)
 #endif
         PyMem_Free((void *)path);
     }
-    Py_XINCREF(r);
-    return r;
+    return Py_XNewRef(r);
 }
 
 
@@ -213,8 +209,7 @@ getpath_isfile(PyObject *Py_UNUSED(self), PyObject *args)
 #endif
         PyMem_Free((void *)path);
     }
-    Py_XINCREF(r);
-    return r;
+    return Py_XNewRef(r);
 }
 
 
@@ -231,12 +226,11 @@ getpath_isxfile(PyObject *Py_UNUSED(self), PyObject *args)
     path = PyUnicode_AsWideCharString(pathobj, &cchPath);
     if (path) {
 #ifdef MS_WINDOWS
-        const wchar_t *ext;
         DWORD attr = GetFileAttributesW(path);
         r = (attr != INVALID_FILE_ATTRIBUTES) &&
             !(attr & FILE_ATTRIBUTE_DIRECTORY) &&
-            SUCCEEDED(PathCchFindExtension(path, cchPath + 1, &ext)) &&
-            (CompareStringOrdinal(ext, -1, L".exe", -1, 1 /* ignore case */) == CSTR_EQUAL)
+            (cchPath >= 4) &&
+            (CompareStringOrdinal(path + cchPath - 4, -1, L".exe", -1, 1 /* ignore case */) == CSTR_EQUAL)
             ? Py_True : Py_False;
 #else
         struct stat st;
@@ -247,8 +241,7 @@ getpath_isxfile(PyObject *Py_UNUSED(self), PyObject *args)
 #endif
         PyMem_Free((void *)path);
     }
-    Py_XINCREF(r);
-    return r;
+    return Py_XNewRef(r);
 }
 
 
@@ -261,7 +254,7 @@ getpath_joinpath(PyObject *Py_UNUSED(self), PyObject *args)
     }
     Py_ssize_t n = PyTuple_GET_SIZE(args);
     if (n == 0) {
-        return PyUnicode_FromString(NULL);
+        return PyUnicode_FromStringAndSize(NULL, 0);
     }
     /* Convert all parts to wchar and accumulate max final length */
     wchar_t **parts = (wchar_t **)PyMem_Malloc(n * sizeof(wchar_t *));
@@ -452,7 +445,10 @@ getpath_realpath(PyObject *Py_UNUSED(self) , PyObject *args)
             if (s) {
                 *s = L'\0';
             }
-            path2 = _Py_normpath(_Py_join_relfile(path, resolved), -1);
+            path2 = _Py_join_relfile(path, resolved);
+            if (path2) {
+                path2 = _Py_normpath(path2, -1);
+            }
             PyMem_RawFree((void *)path);
             path = path2;
         }
@@ -488,8 +484,7 @@ done:
         goto done;
     }
     if (!S_ISLNK(st.st_mode)) {
-        Py_INCREF(pathobj);
-        r = pathobj;
+        r = Py_NewRef(pathobj);
         goto done;
     }
     wchar_t resolved[MAXPATHLEN+1];
@@ -504,8 +499,7 @@ done:
     return r;
 #endif
 
-    Py_INCREF(pathobj);
-    return pathobj;
+    return Py_NewRef(pathobj);
 }
 
 
@@ -591,8 +585,7 @@ wchar_to_dict(PyObject *dict, const char *key, const wchar_t *s)
             return 0;
         }
     } else {
-        u = Py_None;
-        Py_INCREF(u);
+        u = Py_NewRef(Py_None);
     }
     r = PyDict_SetItemString(dict, key, u) == 0;
     Py_DECREF(u);
@@ -617,8 +610,7 @@ decode_to_dict(PyObject *dict, const char *key, const char *s)
             return 0;
         }
     } else {
-        u = Py_None;
-        Py_INCREF(u);
+        u = Py_NewRef(Py_None);
     }
     r = PyDict_SetItemString(dict, key, u) == 0;
     Py_DECREF(u);
@@ -755,10 +747,12 @@ static int
 library_to_dict(PyObject *dict, const char *key)
 {
 #ifdef MS_WINDOWS
+#ifdef Py_ENABLE_SHARED
     extern HMODULE PyWin_DLLhModule;
     if (PyWin_DLLhModule) {
         return winmodule_to_dict(dict, key, PyWin_DLLhModule);
     }
+#endif
 #elif defined(WITH_NEXT_FRAMEWORK)
     static char modPath[MAXPATHLEN + 1];
     static int modPathInitialized = -1;

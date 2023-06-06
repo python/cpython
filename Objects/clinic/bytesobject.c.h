@@ -839,8 +839,8 @@ bytes_splitlines(PyBytesObject *self, PyObject *const *args, Py_ssize_t nargs, P
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    keepends = _PyLong_AsInt(args[0]);
-    if (keepends == -1 && PyErr_Occurred()) {
+    keepends = PyObject_IsTrue(args[0]);
+    if (keepends < 0) {
         goto exit;
     }
 skip_optional_pos:
@@ -873,9 +873,6 @@ bytes_fromhex(PyTypeObject *type, PyObject *arg)
 
     if (!PyUnicode_Check(arg)) {
         _PyArg_BadArgument("fromhex", "argument", "str", arg);
-        goto exit;
-    }
-    if (PyUnicode_READY(arg) == -1) {
         goto exit;
     }
     string = arg;
@@ -1063,4 +1060,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5e0a25b7ba749a04 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7b6e4e8b5bc4eb57 input=a9049054013a1b77]*/

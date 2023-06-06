@@ -1,1 +1,0 @@
-Fix reference counting bug in :meth:`bool.__repr__`. Patch by Kumar Aditya.

@@ -1,3 +1,0 @@
-Clarify that :option:`-W` and :envvar:`PYTHONWARNINGS` are matched literally
-and case-insensitively, rather than as regular expressions, in
-:mod:`warnings`.

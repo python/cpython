@@ -10,6 +10,7 @@ import itertools
 import gc
 import contextlib
 import sys
+import types
 
 
 class BadStr(str):
@@ -140,9 +141,9 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
                                itertools.product, 0, repeat=1, foo=2)
 
     def test_varargs15_kw(self):
-        msg = r"^ImportError\(\) takes at most 2 keyword arguments \(3 given\)$"
+        msg = r"^ImportError\(\) takes at most 3 keyword arguments \(4 given\)$"
         self.assertRaisesRegex(TypeError, msg,
-                               ImportError, 0, name=1, path=2, foo=3)
+                               ImportError, 0, name=1, path=2, name_from=3, foo=3)
 
     def test_varargs16_kw(self):
         msg = r"^min\(\) takes at most 2 keyword arguments \(3 given\)$"
@@ -202,6 +203,37 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         msg = r"count\(\) takes no keyword arguments"
         self.assertRaisesRegex(TypeError, msg, [].count, x=2, y=2)
 
+    def test_object_not_callable(self):
+        msg = r"^'object' object is not callable$"
+        self.assertRaisesRegex(TypeError, msg, object())
+
+    def test_module_not_callable_no_suggestion_0(self):
+        msg = r"^'module' object is not callable$"
+        self.assertRaisesRegex(TypeError, msg, types.ModuleType("mod"))
+
+    def test_module_not_callable_no_suggestion_1(self):
+        msg = r"^'module' object is not callable$"
+        mod = types.ModuleType("mod")
+        mod.mod = 42
+        self.assertRaisesRegex(TypeError, msg, mod)
+
+    def test_module_not_callable_no_suggestion_2(self):
+        msg = r"^'module' object is not callable$"
+        mod = types.ModuleType("mod")
+        del mod.__name__
+        self.assertRaisesRegex(TypeError, msg, mod)
+
+    def test_module_not_callable_no_suggestion_3(self):
+        msg = r"^'module' object is not callable$"
+        mod = types.ModuleType("mod")
+        mod.__name__ = 42
+        self.assertRaisesRegex(TypeError, msg, mod)
+
+    def test_module_not_callable_suggestion(self):
+        msg = r"^'module' object is not callable\. Did you mean: 'mod\.mod\(\.\.\.\)'\?$"
+        mod = types.ModuleType("mod")
+        mod.mod = lambda: ...
+        self.assertRaisesRegex(TypeError, msg, mod)
 
 
 class TestCallingConventions(unittest.TestCase):
@@ -559,7 +591,7 @@ class FastCallTests(unittest.TestCase):
                 self.kwargs.clear()
                 gc.collect()
                 return 0
-        x = IntWithDict(dont_inherit=IntWithDict())
+        x = IntWithDict(optimize=IntWithDict())
         # We test the argument handling of "compile" here, the compilation
         # itself is not relevant. When we pass flags=x below, x.__index__() is
         # called, which changes the keywords dict.
@@ -580,7 +612,7 @@ def testfunction_kw(self, *, kw):
     return self
 
 
-QUICKENING_WARMUP_DELAY = 8
+ADAPTIVE_WARMUP_DELAY = 2
 
 
 class TestPEP590(unittest.TestCase):
@@ -771,7 +803,7 @@ class TestPEP590(unittest.TestCase):
         assert_equal(11, f(num))
         function_setvectorcall(f)
         # make sure specializer is triggered by running > 50 times
-        for _ in range(10 * QUICKENING_WARMUP_DELAY):
+        for _ in range(10 * ADAPTIVE_WARMUP_DELAY):
             assert_equal("overridden", f(num))
 
     def test_setvectorcall_load_attr_specialization_skip(self):
@@ -787,7 +819,7 @@ class TestPEP590(unittest.TestCase):
         function_setvectorcall(X.__getattribute__)
         # make sure specialization doesn't trigger
         # when vectorcall is overridden
-        for _ in range(QUICKENING_WARMUP_DELAY):
+        for _ in range(ADAPTIVE_WARMUP_DELAY):
             assert_equal("overridden", x.a)
 
     def test_setvectorcall_load_attr_specialization_deopt(self):
@@ -803,20 +835,52 @@ class TestPEP590(unittest.TestCase):
         assert_equal = self.assertEqual
         x = X()
         # trigger LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN specialization
-        for _ in range(QUICKENING_WARMUP_DELAY):
+        for _ in range(ADAPTIVE_WARMUP_DELAY):
             assert_equal("a", get_a(x))
         function_setvectorcall(X.__getattribute__)
         # make sure specialized LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN
         # gets deopted due to overridden vectorcall
-        for _ in range(QUICKENING_WARMUP_DELAY):
+        for _ in range(ADAPTIVE_WARMUP_DELAY):
             assert_equal("overridden", get_a(x))
 
     @requires_limited_api
-    def test_vectorcall_limited(self):
+    def test_vectorcall_limited_incoming(self):
         from _testcapi import pyobject_vectorcall
         obj = _testcapi.LimitedVectorCallClass()
         self.assertEqual(pyobject_vectorcall(obj, (), ()), "vectorcall called")
 
+    @requires_limited_api
+    def test_vectorcall_limited_outgoing(self):
+        from _testcapi import call_vectorcall
+
+        args_captured = []
+        kwargs_captured = []
+
+        def f(*args, **kwargs):
+            args_captured.append(args)
+            kwargs_captured.append(kwargs)
+            return "success"
+
+        self.assertEqual(call_vectorcall(f), "success")
+        self.assertEqual(args_captured, [("foo",)])
+        self.assertEqual(kwargs_captured, [{"baz": "bar"}])
+
+    @requires_limited_api
+    def test_vectorcall_limited_outgoing_method(self):
+        from _testcapi import call_vectorcall_method
+
+        args_captured = []
+        kwargs_captured = []
+
+        class TestInstance:
+            def f(self, *args, **kwargs):
+                args_captured.append(args)
+                kwargs_captured.append(kwargs)
+                return "success"
+
+        self.assertEqual(call_vectorcall_method(TestInstance()), "success")
+        self.assertEqual(args_captured, [("foo",)])
+        self.assertEqual(kwargs_captured, [{"baz": "bar"}])
 
 class A:
     def method_two_args(self, x, y):
@@ -863,6 +927,74 @@ class TestErrorMessagesUseQualifiedName(unittest.TestCase):
         msg = "A.method_two_args() got multiple values for argument 'x'"
         with self.check_raises_type_error(msg):
             A().method_two_args("x", "y", x="oops")
+
+@cpython_only
+class TestRecursion(unittest.TestCase):
+
+    def test_super_deep(self):
+
+        def recurse(n):
+            if n:
+                recurse(n-1)
+
+        def py_recurse(n, m):
+            if n:
+                py_recurse(n-1, m)
+            else:
+                c_py_recurse(m-1)
+
+        def c_recurse(n):
+            if n:
+                _testcapi.pyobject_fastcall(c_recurse, (n-1,))
+
+        def c_py_recurse(m):
+            if m:
+                _testcapi.pyobject_fastcall(py_recurse, (1000, m))
+
+        depth = sys.getrecursionlimit()
+        sys.setrecursionlimit(100_000)
+        try:
+            recurse(90_000)
+            with self.assertRaises(RecursionError):
+                recurse(101_000)
+            c_recurse(100)
+            with self.assertRaises(RecursionError):
+                c_recurse(90_000)
+            c_py_recurse(90)
+            with self.assertRaises(RecursionError):
+                c_py_recurse(100_000)
+        finally:
+            sys.setrecursionlimit(depth)
+
+
+class TestFunctionWithManyArgs(unittest.TestCase):
+    def test_function_with_many_args(self):
+        for N in (10, 500, 1000):
+            with self.subTest(N=N):
+                args = ",".join([f"a{i}" for i in range(N)])
+                src = f"def f({args}) : return a{N//2}"
+                l = {}
+                exec(src, {}, l)
+                self.assertEqual(l['f'](*range(N)), N//2)
+
+
+@unittest.skipIf(_testcapi is None, 'need _testcapi')
+class TestCAPI(unittest.TestCase):
+    def test_cfunction_call(self):
+        def func(*args, **kwargs):
+            return (args, kwargs)
+
+        # PyCFunction_Call() was removed in Python 3.13 API, but was kept in
+        # the stable ABI.
+        def PyCFunction_Call(func, *args, **kwargs):
+            if kwargs:
+                return _testcapi.pycfunction_call(func, args, kwargs)
+            else:
+                return _testcapi.pycfunction_call(func, args)
+
+        self.assertEqual(PyCFunction_Call(func), ((), {}))
+        self.assertEqual(PyCFunction_Call(func, 1, 2, 3), ((1, 2, 3), {}))
+        self.assertEqual(PyCFunction_Call(func, "arg", num=5), (("arg",), {'num': 5}))
 
 
 if __name__ == "__main__":

@@ -263,7 +263,7 @@ This ExampleService demo can be invoked from the command line::
 
 
 The client that interacts with the above server is included in
-`Lib/xmlrpc/client.py`::
+``Lib/xmlrpc/client.py``::
 
     server = ServerProxy("http://localhost:8000")
 

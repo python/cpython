@@ -891,6 +891,13 @@ class SysLogHandler(logging.Handler):
                 raise
 
     def createSocket(self):
+        """
+        Try to create a socket and, if it's not a datagram socket, connect it
+        to the other end. This method is called during handler initialization,
+        but it's not regarded as an error if the other end isn't listening yet
+        --- the method will be called again when emitting an event,
+        if there is no socket at that point.
+        """
         address = self.address
         socktype = self.socktype
 
@@ -898,7 +905,7 @@ class SysLogHandler(logging.Handler):
             self.unixsocket = True
             # Syslog server may be unavailable during handler initialisation.
             # C's openlog() function also ignores connection errors.
-            # Moreover, we ignore these errors while logging, so it not worse
+            # Moreover, we ignore these errors while logging, so it's not worse
             # to ignore it also here.
             try:
                 self._connect_unixsocket(address)

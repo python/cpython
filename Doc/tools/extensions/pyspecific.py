@@ -26,8 +26,9 @@ try:
     from sphinx.errors import NoUri
 except ImportError:
     from sphinx.environment import NoUri
-from sphinx.locale import translators
+from sphinx.locale import _ as sphinx_gettext
 from sphinx.util import status_iterator, logging
+from sphinx.util.docutils import SphinxDirective
 from sphinx.util.nodes import split_explicit_title
 from sphinx.writers.text import TextWriter, TextTranslator
 
@@ -37,14 +38,10 @@ except ImportError:
     from sphinx.domains.python import PyClassmember as PyMethod
     from sphinx.domains.python import PyModulelevel as PyFunction
 
-# Support for checking for suspicious markup
-
-import suspicious
-
 
 ISSUE_URI = 'https://bugs.python.org/issue?@action=redirect&bpo=%s'
 GH_ISSUE_URI = 'https://github.com/python/cpython/issues/%s'
-SOURCE_URI = 'https://github.com/python/cpython/tree/main/%s'
+SOURCE_URI = 'https://github.com/python/cpython/tree/3.12/%s'
 
 # monkey-patch reST parser to disable alphabetic and roman enumerated lists
 from docutils.parsers.rst.states import Body
@@ -108,7 +105,7 @@ class ImplementationDetail(Directive):
     def run(self):
         self.assert_has_content()
         pnode = nodes.compound(classes=['impl-detail'])
-        label = translators['sphinx'].gettext(self.label_text)
+        label = sphinx_gettext(self.label_text)
         content = self.content
         add_text = nodes.strong(label, label)
         self.state.nested_parse(content, self.content_offset, pnode)
@@ -123,7 +120,7 @@ class ImplementationDetail(Directive):
 
 # Support for documenting platform availability
 
-class Availability(Directive):
+class Availability(SphinxDirective):
 
     has_content = True
     required_arguments = 1
@@ -143,18 +140,19 @@ class Availability(Directive):
 
     def run(self):
         availability_ref = ':ref:`Availability <availability>`: '
+        avail_nodes, avail_msgs = self.state.inline_text(
+            availability_ref + self.arguments[0],
+            self.lineno)
         pnode = nodes.paragraph(availability_ref + self.arguments[0],
-                                classes=["availability"],)
-        n, m = self.state.inline_text(availability_ref, self.lineno)
-        pnode.extend(n + m)
-        n, m = self.state.inline_text(self.arguments[0], self.lineno)
-        pnode.extend(n + m)
+                                '', *avail_nodes, *avail_msgs)
+        self.set_source_info(pnode)
+        cnode = nodes.container("", pnode, classes=["availability"])
+        self.set_source_info(cnode)
         if self.content:
-            self.state.nested_parse(self.content, self.content_offset, pnode)
-
+            self.state.nested_parse(self.content, self.content_offset, cnode)
         self.parse_platforms()
 
-        return [pnode]
+        return [cnode]
 
     def parse_platforms(self):
         """Parse platform information from arguments
@@ -256,7 +254,7 @@ class AuditEvent(Directive):
         else:
             args = []
 
-        label = translators['sphinx'].gettext(self._label[min(2, len(args))])
+        label = sphinx_gettext(self._label[min(2, len(args))])
         text = label.format(name="``{}``".format(name),
                             args=", ".join("``{}``".format(a) for a in args if a))
 
@@ -435,7 +433,7 @@ class DeprecatedRemoved(Directive):
         else:
             label = self._removed_label
 
-        label = translators['sphinx'].gettext(label)
+        label = sphinx_gettext(label)
         text = label.format(deprecated=self.arguments[0], removed=self.arguments[1])
         if len(self.arguments) == 3:
             inodes, messages = self.state.inline_text(self.arguments[2],
@@ -676,6 +674,30 @@ def process_audit_events(app, doctree, fromdocname):
         node.replace_self(table)
 
 
+def patch_pairindextypes(app, _env) -> None:
+    """Remove all entries from ``pairindextypes`` before writing POT files.
+
+    We want to run this just before writing output files, as the check to
+    circumvent is in ``I18nBuilder.write_doc()``.
+    As such, we link this to ``env-check-consistency``, even though it has
+    nothing to do with the environment consistency check.
+    """
+    if app.builder.name != 'gettext':
+        return
+
+    # allow translating deprecated index entries
+    try:
+        from sphinx.domains.python import pairindextypes
+    except ImportError:
+        pass
+    else:
+        # Sphinx checks if a 'pair' type entry on an index directive is one of
+        # the Sphinx-translated pairindextypes values. As we intend to move
+        # away from this, we need Sphinx to believe that these values don't
+        # exist, by deleting them when using the gettext builder.
+        pairindextypes.clear()
+
+
 def setup(app):
     app.add_role('issue', issue_role)
     app.add_role('gh', gh_issue_role)
@@ -686,10 +708,8 @@ def setup(app):
     app.add_directive('audit-event-table', AuditEventListDirective)
     app.add_directive('deprecated-removed', DeprecatedRemoved)
     app.add_builder(PydocTopicsBuilder)
-    app.add_builder(suspicious.CheckSuspiciousMarkupBuilder)
     app.add_object_type('opcode', 'opcode', '%s (opcode)', parse_opcode_signature)
     app.add_object_type('pdbcommand', 'pdbcmd', '%s (pdb command)', parse_pdb_command)
-    app.add_object_type('2to3fixer', '2to3fixer', '%s (2to3 fixer)')
     app.add_directive_to_domain('py', 'decorator', PyDecoratorFunction)
     app.add_directive_to_domain('py', 'decoratormethod', PyDecoratorMethod)
     app.add_directive_to_domain('py', 'coroutinefunction', PyCoroutineFunction)
@@ -698,6 +718,7 @@ def setup(app):
     app.add_directive_to_domain('py', 'awaitablemethod', PyAwaitableMethod)
     app.add_directive_to_domain('py', 'abstractmethod', PyAbstractMethod)
     app.add_directive('miscnews', MiscNews)
+    app.connect('env-check-consistency', patch_pairindextypes)
     app.connect('doctree-resolved', process_audit_events)
     app.connect('env-merge-info', audit_events_merge)
     app.connect('env-purge-doc', audit_events_purge)

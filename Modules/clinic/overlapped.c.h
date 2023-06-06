@@ -273,7 +273,7 @@ PyDoc_STRVAR(_overlapped_CreateEvent__doc__,
 static PyObject *
 _overlapped_CreateEvent_impl(PyObject *module, PyObject *EventAttributes,
                              BOOL ManualReset, BOOL InitialState,
-                             const Py_UNICODE *Name);
+                             const wchar_t *Name);
 
 static PyObject *
 _overlapped_CreateEvent(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -282,7 +282,7 @@ _overlapped_CreateEvent(PyObject *module, PyObject *const *args, Py_ssize_t narg
     PyObject *EventAttributes;
     BOOL ManualReset;
     BOOL InitialState;
-    const Py_UNICODE *Name = NULL;
+    const wchar_t *Name = NULL;
 
     if (!_PyArg_CheckPositional("CreateEvent", nargs, 4, 4)) {
         goto exit;
@@ -1041,13 +1041,13 @@ PyDoc_STRVAR(_overlapped_Overlapped_ConnectPipe__doc__,
 
 static PyObject *
 _overlapped_Overlapped_ConnectPipe_impl(OverlappedObject *self,
-                                        const Py_UNICODE *Address);
+                                        const wchar_t *Address);
 
 static PyObject *
 _overlapped_Overlapped_ConnectPipe(OverlappedObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    const Py_UNICODE *Address = NULL;
+    const wchar_t *Address = NULL;
 
     if (!PyUnicode_Check(arg)) {
         _PyArg_BadArgument("ConnectPipe", "argument", "str", arg);
@@ -1091,6 +1091,10 @@ _overlapped_WSAConnect(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     }
     ConnectSocket = PyLong_AsVoidPtr(args[0]);
     if (!ConnectSocket && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!PyTuple_Check(args[1])) {
+        _PyArg_BadArgument("WSAConnect", "argument 2", "tuple", args[1]);
         goto exit;
     }
     AddressObj = args[1];
@@ -1138,6 +1142,10 @@ _overlapped_Overlapped_WSASendTo(OverlappedObject *self, PyObject *const *args, 
         goto exit;
     }
     if (!_PyLong_UnsignedLong_Converter(args[2], &flags)) {
+        goto exit;
+    }
+    if (!PyTuple_Check(args[3])) {
+        _PyArg_BadArgument("WSASendTo", "argument 4", "tuple", args[3]);
         goto exit;
     }
     AddressObj = args[3];
@@ -1254,4 +1262,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=e0f866222bd5873b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=05fd038b8a81272d input=a9049054013a1b77]*/
