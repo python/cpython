@@ -616,16 +616,12 @@ def setlocale(category, locale=None):
 try:
     from _locale import getencoding
 except ImportError:
+    # When _locale.getencoding() is missing, locale.getencoding() uses the
+    # Python filesystem encoding.
+    _encoding = sys.getfilesystemencoding()
     def getencoding():
-        if hasattr(sys, 'getandroidapilevel'):
-            # On Android langinfo.h and CODESET are missing, and UTF-8 is
-            # always used in mbstowcs() and wcstombs().
-            return 'utf-8'
-        encoding = _getdefaultlocale()[1]
-        if encoding is None:
-            # LANG not set, default to UTF-8
-            encoding = 'utf-8'
-        return encoding
+        return _encoding
+
 
 try:
     CODESET
