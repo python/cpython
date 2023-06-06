@@ -890,7 +890,7 @@ handle_signals(PyThreadState *tstate)
 }
 
 static inline int
-has_pending_calls(PyInterpreterState *interp)
+maybe_has_pending_calls(PyInterpreterState *interp)
 {
     struct _pending_calls *pending = &interp->ceval.pending;
     if (_Py_atomic_load_relaxed_int32(&pending->calls_to_do)) {
@@ -1068,7 +1068,7 @@ _Py_HandlePending(PyThreadState *tstate)
     }
 
     /* Pending calls */
-    if (has_pending_calls(tstate->interp)) {
+    if (maybe_has_pending_calls(tstate->interp)) {
         if (make_pending_calls(tstate->interp) != 0) {
             return -1;
         }
