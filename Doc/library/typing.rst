@@ -2965,7 +2965,7 @@ Functions and decorators
    runtime but should be ignored by a type checker.  At runtime, calling
    a ``@overload``-decorated function directly will raise
    :exc:`NotImplementedError`. An example of overload that gives a more
-   precise type than can be expressed using a union or a type variable::
+   precise type than can be expressed using a union or a type variable:
 
    .. testcode::
 
