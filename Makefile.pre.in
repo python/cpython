@@ -1314,6 +1314,7 @@ regen-limited-abi: all
 	# - Lib/test/test_stable_abi_ctypes.py
 	# - Modules/_testcapi_feature_macros.inc
 	# - PC/python3dll.c
+	# https://devguide.python.org/developer-workflow/c-api/#adding-a-new-definition-to-the-limited-api
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/build/stable_abi.py --generate-all $(srcdir)/Misc/stable_abi.toml
 
 ############################################################################
