@@ -439,7 +439,6 @@ API Functions
    .. versionadded:: 3.2
 
 
-.. XXX deprecated, will be removed
 .. c:function:: int PyArg_Parse(PyObject *args, const char *format, ...)
 
    Function used to deconstruct the argument lists of "old-style" functions ---
