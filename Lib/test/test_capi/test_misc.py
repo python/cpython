@@ -672,31 +672,60 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(obj.pvalue, 0)
 
     def test_heaptype_with_custom_metaclass(self):
-        self.assertTrue(issubclass(_testcapi.HeapCTypeMetaclass, type))
-        self.assertTrue(issubclass(_testcapi.HeapCTypeMetaclassCustomNew, type))
+        metaclass = _testcapi.HeapCTypeMetaclass
+        self.assertTrue(issubclass(metaclass, type))
 
-        t = _testcapi.pytype_fromspec_meta(_testcapi.HeapCTypeMetaclass)
+        # Class creation from C
+        t = _testcapi.pytype_fromspec_meta(metaclass)
         self.assertIsInstance(t, type)
         self.assertEqual(t.__name__, "HeapCTypeViaMetaclass")
-        self.assertIs(type(t), _testcapi.HeapCTypeMetaclass)
+        self.assertIs(type(t), metaclass)
+
+        # Class creation from Python
+        t = metaclass("PyClassViaMetaclass", (), {})
+        self.assertIsInstance(t, type)
+        self.assertEqual(t.__name__, "PyClassViaMetaclass")
+
+    def test_heaptype_with_custom_metaclass_null_new(self):
+        metaclass = _testcapi.HeapCTypeMetaclassNullNew
+
+        self.assertTrue(issubclass(metaclass, type))
+
+        # Class creation from C
+        t = _testcapi.pytype_fromspec_meta(metaclass)
+        self.assertIsInstance(t, type)
+        self.assertEqual(t.__name__, "HeapCTypeViaMetaclass")
+        self.assertIs(type(t), metaclass)
+
+        # Class creation from Python
+        with self.assertRaisesRegex(TypeError, "cannot create .* instances"):
+            metaclass("PyClassViaMetaclass", (), {})
+
+    def test_heaptype_with_custom_metaclass_custom_new(self):
+        metaclass = _testcapi.HeapCTypeMetaclassCustomNew
+
+        self.assertTrue(issubclass(_testcapi.HeapCTypeMetaclassCustomNew, type))
 
         msg = "Metaclasses with custom tp_new are not supported."
         with self.assertRaisesRegex(TypeError, msg):
-            t = _testcapi.pytype_fromspec_meta(_testcapi.HeapCTypeMetaclassCustomNew)
+            t = _testcapi.pytype_fromspec_meta(metaclass)
 
     def test_heaptype_with_custom_metaclass_deprecation(self):
+        metaclass = _testcapi.HeapCTypeMetaclassCustomNew
+
         # gh-103968: a metaclass with custom tp_new is deprecated, but still
         # allowed for functions that existed in 3.11
         # (PyType_FromSpecWithBases is used here).
-        class Base(metaclass=_testcapi.HeapCTypeMetaclassCustomNew):
+        class Base(metaclass=metaclass):
             pass
 
+        # Class creation from C
         with warnings_helper.check_warnings(
                 ('.*custom tp_new.*in Python 3.14.*', DeprecationWarning),
                 ):
             sub = _testcapi.make_type_with_base(Base)
         self.assertTrue(issubclass(sub, Base))
-        self.assertIsInstance(sub, _testcapi.HeapCTypeMetaclassCustomNew)
+        self.assertIsInstance(sub, metaclass)
 
     def test_multiple_inheritance_ctypes_with_weakref_or_dict(self):
 
