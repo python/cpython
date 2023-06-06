@@ -17,10 +17,10 @@ MAGIC = 20221023
 
 from _sre import MAXREPEAT, MAXGROUPS
 
-# SRE standard exception (access as sre.ReCompileError)
+# SRE standard exception (access as sre.error)
 # should this really be here?
 
-class ReCompileError(Exception):
+class PatternError(Exception):
     """Exception raised for invalid regular expressions.
 
     Attributes:
@@ -54,7 +54,7 @@ class ReCompileError(Exception):
 
 
 # Backward compatibility after renaming in 3.13
-error = ReCompileError
+error = PatternError
 
 class _NamedIntConstant(int):
     def __new__(cls, value, name):

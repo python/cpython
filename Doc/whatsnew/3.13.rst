@@ -118,7 +118,7 @@ Optimizations
 
 re
 --
-* Rename :exc:`!re.error` to :exc:`re.ReCompileError` for improved clarity.
+* Rename :exc:`!re.error` to :exc:`re.PatternError` for improved clarity.
   :exc:`!re.error` is kept for backward compatibility.
 
 Deprecated
