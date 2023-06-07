@@ -1246,16 +1246,15 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
      .. testcode::
 
-        T = TypeVar('T')
-
         @dataclass
         class MaxLen:
             value: int
 
-        Vec = Annotated[list[tuple[T, T]], MaxLen(10)]
-        V = Vec[int]
+        type Vec[T] = Annotated[list[tuple[T, T]], MaxLen(10)]
 
-        assert V == Annotated[list[tuple[int, int]], MaxLen(10)]
+        # When used in a type annotation, a type checker will treat "V" the same as
+        # ``Annotated[list[tuple[int, int]], MaxLen(10)]``:
+        type V = Vec[int]
 
    .. attribute:: __metadata__
 
