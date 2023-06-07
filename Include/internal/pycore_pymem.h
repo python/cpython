@@ -30,6 +30,10 @@ struct _pymem_allocators {
         debug_alloc_api_t obj;
     } debug;
     PyObjectArenaAllocator obj_arena;
+    struct {
+        PyMemAllocatorEx mem;
+        PyMemAllocatorEx obj;
+    } wrapped_with_lock;
 };
 
 

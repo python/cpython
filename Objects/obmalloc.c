@@ -209,6 +209,8 @@ _PyMem_ArenaFree(void *Py_UNUSED(ctx), void *ptr,
 #define _PyObject (_PyRuntime.allocators.standard.obj)
 #define _PyMem_Debug (_PyRuntime.allocators.debug)
 #define _PyObject_Arena (_PyRuntime.allocators.obj_arena)
+#define _PyMem_Wrapped (_PyRuntime.allocators.wrapped_with_lock.mem)
+#define _PyObject_Wrapped (_PyRuntime.allocators.wrapped_with_lock.obj)
 
 
 /***************************/
@@ -530,14 +532,32 @@ PyMem_SetupDebugHooks(void)
     PyThread_release_lock(ALLOCATORS_MUTEX);
 }
 
+static int has_locking_wrapper(PyMemAllocatorEx *allocator);
+
 static void
 get_allocator_unlocked(PyMemAllocatorDomain domain, PyMemAllocatorEx *allocator)
 {
     switch(domain)
     {
-    case PYMEM_DOMAIN_RAW: *allocator = _PyMem_Raw; break;
-    case PYMEM_DOMAIN_MEM: *allocator = _PyMem; break;
-    case PYMEM_DOMAIN_OBJ: *allocator = _PyObject; break;
+    case PYMEM_DOMAIN_RAW:
+        *allocator = _PyMem_Raw;
+        break;
+    case PYMEM_DOMAIN_MEM:
+        if (has_locking_wrapper(&_PyMem)) {
+            *allocator = *(PyMemAllocatorEx *)_PyMem.ctx;
+        }
+        else {
+            *allocator = _PyMem;
+        }
+        break;
+    case PYMEM_DOMAIN_OBJ:
+        if (has_locking_wrapper(&_PyObject)) {
+            *allocator = *(PyMemAllocatorEx *)_PyObject.ctx;
+        }
+        else {
+            *allocator = _PyObject;
+        }
+        break;
     default:
         /* unknown domain: set all attributes to NULL */
         allocator->ctx = NULL;
@@ -548,15 +568,28 @@ get_allocator_unlocked(PyMemAllocatorDomain domain, PyMemAllocatorEx *allocator)
     }
 }
 
+static void maybe_add_locking_wrapper(
+        PyMemAllocatorDomain, PyMemAllocatorEx *, PyMemAllocatorEx *);
+
 static void
 set_allocator_unlocked(PyMemAllocatorDomain domain, PyMemAllocatorEx *allocator)
 {
     switch(domain)
     {
-    case PYMEM_DOMAIN_RAW: _PyMem_Raw = *allocator; break;
-    case PYMEM_DOMAIN_MEM: _PyMem = *allocator; break;
-    case PYMEM_DOMAIN_OBJ: _PyObject = *allocator; break;
-    /* ignore unknown domain */
+    case PYMEM_DOMAIN_RAW:
+        _PyMem_Raw = *allocator;
+        break;
+    case PYMEM_DOMAIN_MEM:
+        maybe_add_locking_wrapper(domain, allocator, &_PyMem_Wrapped);
+        _PyMem = *allocator;
+        break;
+    case PYMEM_DOMAIN_OBJ:
+        maybe_add_locking_wrapper(domain, allocator, &_PyObject_Wrapped);
+        _PyObject = *allocator;
+        break;
+    default:
+        /* ignore unknown domain */
+        return;
     }
 }
 
@@ -625,6 +658,174 @@ PyObject_SetArenaAllocator(PyObjectArenaAllocator *allocator)
  *
  * With the above in mind, we currently don't worry about locking
  * around these uses of the runtime-global allocators state. */
+
+
+/************************************/
+/* locking around custom allocators */
+/************************************/
+
+static int
+should_lock(void)
+{
+    // XXX check for main interpreter, etc.
+    return 1;
+}
+
+static void
+acquire_custom_allocator_lock(void)
+{
+    // XXX acquire the main interpreter's GIL
+    return;
+}
+
+static void
+release_custom_allocator_lock(void)
+{
+    // XXX release the main interpreter's GIL
+    return;
+}
+
+static void *
+_PyMem_MallocLocked(void *ctx, size_t size)
+{
+    PyMemAllocatorEx *wrapped = (PyMemAllocatorEx *)ctx;
+    void *ptr;
+    if (should_lock()) {
+        acquire_custom_allocator_lock();
+        ptr = wrapped->malloc(wrapped->ctx, size);
+        release_custom_allocator_lock();
+    }
+    else {
+        ptr = wrapped->malloc(wrapped->ctx, size);
+    }
+    return ptr;
+}
+
+static void *
+_PyMem_CallocLocked(void *ctx, size_t nelem, size_t elsize)
+{
+    PyMemAllocatorEx *wrapped = (PyMemAllocatorEx *)ctx;
+    void *ptr;
+    if (should_lock()) {
+        acquire_custom_allocator_lock();
+        ptr = wrapped->calloc(wrapped->ctx, nelem, elsize);
+        release_custom_allocator_lock();
+    }
+    else {
+        ptr = wrapped->calloc(wrapped->ctx, nelem, elsize);
+    }
+    return ptr;
+}
+
+static void *
+_PyMem_ReallocLocked(void *ctx, void *ptr, size_t new_size)
+{
+    PyMemAllocatorEx *wrapped = (PyMemAllocatorEx *)ctx;
+    if (should_lock()) {
+        acquire_custom_allocator_lock();
+        ptr = wrapped->realloc(wrapped->ctx, ptr, new_size);
+        release_custom_allocator_lock();
+    }
+    else {
+        ptr = wrapped->realloc(wrapped->ctx, ptr, new_size);
+    }
+    return ptr;
+}
+
+static void
+_PyMem_FreeLocked(void *ctx, void *ptr)
+{
+    PyMemAllocatorEx *wrapped = (PyMemAllocatorEx *)ctx;
+    if (should_lock()) {
+        acquire_custom_allocator_lock();
+        wrapped->free(wrapped->ctx, ptr);
+        release_custom_allocator_lock();
+    }
+    else {
+        wrapped->free(wrapped->ctx, ptr);
+    }
+}
+
+static int
+has_locking_wrapper(PyMemAllocatorEx *allocator)
+{
+    if (allocator->ctx == NULL) {
+        return 0;
+    }
+    return (allocator->malloc == _PyMem_MallocLocked
+            || allocator->calloc == _PyMem_CallocLocked
+            || allocator->realloc == _PyMem_ReallocLocked
+            || allocator->free == _PyMem_FreeLocked);
+}
+
+static void
+maybe_add_locking_wrapper(PyMemAllocatorDomain domain,
+                          PyMemAllocatorEx *allocator,
+                          PyMemAllocatorEx *wrapped)
+{
+    assert(domain == PYMEM_DOMAIN_MEM || domain == PYMEM_DOMAIN_OBJ);
+
+    *wrapped = (PyMemAllocatorEx){0};
+
+    if (allocator->malloc == _PyMem_DebugMalloc) {
+        /* The debug allocator only wraps an already set allocator,
+         * which would have gone through this function already. */
+        return;
+    }
+
+    void *ctx = allocator->ctx;
+
+    /* What is the likelihood of reentrancy with the wrapper funcs?
+     * For now we assume it is effectively zero. */
+
+    if (allocator->malloc != _PyMem_RawMalloc
+#ifdef WITH_PYMALLOC
+        && allocator->malloc != _PyObject_Malloc
+#endif
+        && allocator->malloc != _PyMem_MallocLocked)
+    {
+        wrapped->ctx = ctx;
+        wrapped->malloc = allocator->malloc;
+        allocator->ctx = wrapped;
+        allocator->malloc = _PyMem_MallocLocked;
+    }
+
+    if (allocator->calloc != _PyMem_RawCalloc
+#ifdef WITH_PYMALLOC
+        && allocator->calloc != _PyObject_Calloc
+#endif
+        && allocator->calloc != _PyMem_CallocLocked)
+    {
+        wrapped->ctx = ctx;
+        wrapped->calloc = allocator->calloc;
+        allocator->ctx = wrapped;
+        allocator->calloc = _PyMem_CallocLocked;
+    }
+
+    if (allocator->realloc != _PyMem_RawRealloc
+#ifdef WITH_PYMALLOC
+        && allocator->realloc != _PyObject_Realloc
+#endif
+        && allocator->realloc != _PyMem_ReallocLocked)
+    {
+        wrapped->ctx = ctx;
+        wrapped->realloc = allocator->realloc;
+        allocator->ctx = wrapped;
+        allocator->realloc = _PyMem_ReallocLocked;
+    }
+
+    if (allocator->free != _PyMem_RawFree
+#ifdef WITH_PYMALLOC
+        && allocator->free != _PyObject_Free
+#endif
+        && allocator->free != _PyMem_FreeLocked)
+    {
+        wrapped->ctx = ctx;
+        wrapped->free = allocator->free;
+        allocator->ctx = wrapped;
+        allocator->free = _PyMem_FreeLocked;
+    }
+}
 
 
 /*************************/
