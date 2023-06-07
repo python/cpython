@@ -947,7 +947,8 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
    Deprecated alias to :class:`collections.abc.Callable`.
 
-   ``Callable[[int], str]`` signifies a function of (int) -> str.
+   ``Callable[[int], str]`` signifies a function that takes a single parameter
+   of type :class:`int` and returns a :class:`str`.
 
    The subscription syntax must always be used with exactly two
    values: the argument list and the return type.  The argument list
