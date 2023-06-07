@@ -6828,10 +6828,6 @@ class TestModules(TestCase):
 
 
 class NewTypeTests(BaseTestCase):
-    def cleanup(self):
-        for f in typing._cleanups:
-            f()
-
     @classmethod
     def setUpClass(cls):
         global UserId
@@ -6843,9 +6839,6 @@ class NewTypeTests(BaseTestCase):
         global UserId
         del UserId
         del cls.UserName
-
-    def tearDown(self):
-        self.cleanup()
 
     def test_basic(self):
         self.assertIsInstance(UserId(5), int)
