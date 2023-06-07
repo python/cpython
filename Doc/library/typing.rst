@@ -309,7 +309,7 @@ Generic functions and classes can be parameterized by using
 
    from collections.abc import Sequence
 
-   def first[T](l: Sequence[T]) -> T:  # Function is generic around the TypeVar "T"
+   def first[T](l: Sequence[T]) -> T:  # Function is generic over the TypeVar "T"
        return l[0]
 
 Or by using the :class:`TypeVar` factory directly::
@@ -319,7 +319,7 @@ Or by using the :class:`TypeVar` factory directly::
 
    U = TypeVar('U')                  # Declare type variable "U"
 
-   def second(l: Sequence[U]) -> U:  # Function is generic around the TypeVar "U"
+   def second(l: Sequence[U]) -> U:  # Function is generic over the TypeVar "U"
        return l[1]
 
 .. versionchanged:: 3.12
@@ -637,7 +637,7 @@ The module defines the following classes, functions and decorators.
 
    This module defines several deprecated aliases to pre-existing
    standard library classes. These were originally included in the typing
-   module in order to support type variables inside ``[]``.
+   module in order to support parameterizing these generic classes using ``[]``.
    However, the aliases became redundant in Python 3.9 when the
    corresponding pre-existing classes were enhanced to support ``[]``.
 
@@ -924,8 +924,8 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
    The subscription syntax must always be used with exactly two
    values: the argument list and the return type.  The argument list
-   must be a list of types, a :class:`ParamSpec` or an ellipsis;
-   the return type must be a single type.
+   must be a list of types, a :class:`ParamSpec`, :data:`Concatenate`,
+   or an ellipsis. The return type must be a single type.
 
    There is no syntax to indicate optional or keyword arguments;
    such function types are rarely used as callback types.
