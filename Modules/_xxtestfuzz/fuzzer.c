@@ -193,7 +193,7 @@ PyObject* sre_error_exception = NULL;
 int SRE_FLAG_DEBUG = 0;
 /* Called by LLVMFuzzerTestOneInput for initialization */
 static int init_sre_compile(void) {
-    /* Import sre_compile.compile and sre_constants.PatternError */
+    /* Import sre_compile.compile and sre.error */
     PyObject* sre_compile_module = PyImport_ImportModule("sre_compile");
     if (sre_compile_module == NULL) {
         return 0;
