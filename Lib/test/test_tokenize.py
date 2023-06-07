@@ -1630,13 +1630,34 @@ class TestTokenize(TestCase):
     def test_comment_at_the_end_of_the_source_without_newline(self):
         # See http://bugs.python.org/issue44667
         source = 'b = 1\n\n#test'
-        expected_tokens = [token.NAME, token.EQUAL, token.NUMBER, token.NEWLINE, token.NL, token.COMMENT]
+        expected_tokens = [
+            TokenInfo(type=token.ENCODING, string='utf-8', start=(0, 0), end=(0, 0), line=''),
+            TokenInfo(type=token.NAME, string='b', start=(1, 0), end=(1, 1), line='b = 1\n'),
+            TokenInfo(type=token.OP, string='=', start=(1, 2), end=(1, 3), line='b = 1\n'),
+            TokenInfo(type=token.NUMBER, string='1', start=(1, 4), end=(1, 5), line='b = 1\n'),
+            TokenInfo(type=token.NEWLINE, string='\n', start=(1, 5), end=(1, 6), line='b = 1\n'),
+            TokenInfo(type=token.NL, string='\n', start=(2, 0), end=(2, 1), line='\n'),
+            TokenInfo(type=token.COMMENT, string='#test', start=(3, 0), end=(3, 5), line='#test\n'),
+            TokenInfo(type=token.NL, string='', start=(3, 5), end=(3, 6), line='#test\n'),
+            TokenInfo(type=token.ENDMARKER, string='', start=(4, 0), end=(4, 0), line='')
+        ]
 
         tokens = list(tokenize(BytesIO(source.encode('utf-8')).readline))
-        self.assertEqual(tok_name[tokens[0].exact_type], tok_name[ENCODING])
-        for i in range(6):
-            self.assertEqual(tok_name[tokens[i + 1].exact_type], tok_name[expected_tokens[i]])
-        self.assertEqual(tok_name[tokens[-1].exact_type], tok_name[token.ENDMARKER])
+        self.assertEqual(tokens, expected_tokens)
+
+    def test_newline_and_space_at_the_end_of_the_source_without_newline(self):
+        # See https://github.com/python/cpython/issues/105435
+        source = 'a\n '
+        expected_tokens = [
+            TokenInfo(token.ENCODING, string='utf-8', start=(0, 0), end=(0, 0), line=''),
+            TokenInfo(token.NAME, string='a', start=(1, 0), end=(1, 1), line='a\n'),
+            TokenInfo(token.NEWLINE, string='\n', start=(1, 1), end=(1, 2), line='a\n'),
+            TokenInfo(token.NL, string='', start=(2, 1), end=(2, 2), line=' \n'),
+            TokenInfo(token.ENDMARKER, string='', start=(3, 0), end=(3, 0), line='')
+        ]
+
+        tokens = list(tokenize(BytesIO(source.encode('utf-8')).readline))
+        self.assertEqual(tokens, expected_tokens)
 
     def test_invalid_character_in_fstring_middle(self):
         # See gh-103824
