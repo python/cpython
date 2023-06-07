@@ -1114,16 +1114,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('STORE_FAST', 1, 6),
             ('RETURN_VALUE', 5)
         ]
-        expected_insts = [
-            ('LOAD_CONST', 0, 1),
-            ('LOAD_CONST', 1, 2),
-            ('LOAD_CONST', 2, 3),
-            ('STORE_FAST', 1, 4),
-            ('STORE_FAST', 1, 5),
-            ('STORE_FAST', 1, 6),
-            ('RETURN_VALUE', 5)
-        ]
-        self.cfg_optimization_test(insts, expected_insts, consts=list(range(3)), nlocals=1)
+        self.cfg_optimization_test(insts, insts, consts=list(range(3)), nlocals=1)
 
 
 if __name__ == "__main__":
