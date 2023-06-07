@@ -59,7 +59,12 @@ Relevant PEPs
 
 Since the initial introduction of type hints in :pep:`484` and :pep:`483`, a
 number of PEPs have modified and enhanced Python's framework for type
-annotations. These include:
+annotations:
+
+.. raw:: html
+
+   <details>
+   <summary><a style="cursor:pointer;">The full list of PEPs</a></summary>
 
 * :pep:`526`: Syntax for Variable Annotations
      *Introducing* syntax for annotating variables outside of function
@@ -98,6 +103,11 @@ annotations. These include:
     *Introducing* :data:`LiteralString`
 * :pep:`681`: Data Class Transforms
     *Introducing* the :func:`@dataclass_transform<dataclass_transform>` decorator
+
+.. raw:: html
+
+   </details>
+   <br>
 
 .. _type-aliases:
 
