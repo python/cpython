@@ -824,7 +824,7 @@ These can be used as types in annotations and do not support ``[]``.
 
       # "Container" does not exist yet,
       # so we have to use quotes for the forward reference on Python <3.12.
-      # Using `TypeAlias` tells the type checker that this is a type alias declaration,
+      # Using ``TypeAlias`` tells the type checker that this is a type alias declaration,
       # not a variable assignment to a string.
       BoxOfStrings: TypeAlias = "Box[str]"
 
