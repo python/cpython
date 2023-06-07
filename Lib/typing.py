@@ -425,17 +425,6 @@ class _Final:
         if '_root' not in kwds:
             raise TypeError("Cannot subclass special typing classes")
 
-class _Immutable:
-    """Mixin to indicate that object should not be copied."""
-
-    __slots__ = ()
-
-    def __copy__(self):
-        return self
-
-    def __deepcopy__(self, memo):
-        return self
-
 
 class _NotIterable:
     """Mixin to prevent iteration, without being compatible with Iterable.
