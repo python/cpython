@@ -223,6 +223,7 @@ class Formatter:
     def cast(self, dst: StackEffect, src: StackEffect) -> str:
         return f"({dst.type or 'PyObject *'})" if src.type != dst.type else ""
 
+INSTRUCTION_FLAGS = ['HAS_ARG', 'HAS_CONST', 'HAS_NAME']
 
 @dataclasses.dataclass
 class Instruction:
@@ -245,6 +246,7 @@ class Instruction:
     output_effects: list[StackEffect]
     unmoved_names: frozenset[str]
     instr_fmt: str
+    flags: int
 
     # Set later
     family: parser.Family | None = None
@@ -273,7 +275,18 @@ class Instruction:
             else:
                 break
         self.unmoved_names = frozenset(unmoved_names)
-        if variable_used(inst, "oparg"):
+        if inst.name == 'YIELD_VALUE': breakpoint()
+        flag_data = {
+            'HAS_ARG'  :  variable_used(inst, "oparg"),
+            'HAS_CONST':  variable_used(inst, "frame->f_code->co_consts", delim="->"),
+            'HAS_NAME' :  variable_used(inst, "frame->f_code->co_names", delim="->"),
+        }
+        assert set(flag_data.keys()) == set(INSTRUCTION_FLAGS)
+        self.flags = 0
+        for i, name in enumerate(INSTRUCTION_FLAGS):
+            self.flags |= (1<<i) if flag_data[name] else 0
+
+        if flag_data['HAS_ARG']:
             fmt = "IB"
         else:
             fmt = "IX"
@@ -473,6 +486,7 @@ class SuperOrMacroInstruction:
     initial_sp: int
     final_sp: int
     instr_fmt: str
+    flags: int
 
 
 @dataclasses.dataclass
@@ -761,13 +775,15 @@ class Analyzer:
         sp = initial_sp
         parts: list[Component] = []
         format = ""
+        flags = 0
         for instr in components:
             part, sp = self.analyze_instruction(instr, stack, sp)
             parts.append(part)
             format += instr.instr_fmt
+            flags |= instr.flags
         final_sp = sp
         return SuperInstruction(
-            super.name, stack, initial_sp, final_sp, format, super, parts
+            super.name, stack, initial_sp, final_sp, format, flags, super, parts
         )
 
     def analyze_macro(self, macro: parser.Macro) -> MacroInstruction:
@@ -776,6 +792,7 @@ class Analyzer:
         sp = initial_sp
         parts: list[Component | parser.CacheEffect] = []
         format = "IB"
+        flags = 0
         cache = "C"
         for component in components:
             match component:
@@ -791,11 +808,12 @@ class Analyzer:
                         for _ in range(ce.size):
                             format += cache
                             cache = "0"
+                    flags |= instr.flags
                 case _:
                     typing.assert_never(component)
         final_sp = sp
         return MacroInstruction(
-            macro.name, stack, initial_sp, final_sp, format, macro, parts
+            macro.name, stack, initial_sp, final_sp, format, flags, macro, parts
         )
 
     def analyze_instruction(
@@ -1013,10 +1031,16 @@ class Analyzer:
 
             # Write type definitions
             self.out.emit(f"enum InstructionFormat {{ {', '.join(format_enums)} }};")
+            for i, name in enumerate(INSTRUCTION_FLAGS):
+                self.out.emit(f"#define {name}_FLAG ({1 << i})");
+            for name in INSTRUCTION_FLAGS:
+                self.out.emit(f"#define OPCODE_{name}(OP) (_PyOpcode_opcode_metadata[(OP)].flags & {name}_FLAG)");
+
             self.out.emit("struct opcode_metadata {")
             with self.out.indent():
                 self.out.emit("bool valid_entry;")
                 self.out.emit("enum InstructionFormat instr_format;")
+                self.out.emit("int flags;")
             self.out.emit("};")
             self.out.emit("")
 
@@ -1048,19 +1072,19 @@ class Analyzer:
     def write_metadata_for_inst(self, instr: Instruction) -> None:
         """Write metadata for a single instruction."""
         self.out.emit(
-            f"    [{instr.name}] = {{ true, {INSTR_FMT_PREFIX}{instr.instr_fmt} }},"
+            f"    [{instr.name}] = {{ true, {INSTR_FMT_PREFIX}{instr.instr_fmt}, {instr.flags} }},"
         )
 
     def write_metadata_for_super(self, sup: SuperInstruction) -> None:
         """Write metadata for a super-instruction."""
         self.out.emit(
-            f"    [{sup.name}] = {{ true, {INSTR_FMT_PREFIX}{sup.instr_fmt} }},"
+            f"    [{sup.name}] = {{ true, {INSTR_FMT_PREFIX}{sup.instr_fmt}, {sup.flags} }},"
         )
 
     def write_metadata_for_macro(self, mac: MacroInstruction) -> None:
         """Write metadata for a macro-instruction."""
         self.out.emit(
-            f"    [{mac.name}] = {{ true, {INSTR_FMT_PREFIX}{mac.instr_fmt} }},"
+            f"    [{mac.name}] = {{ true, {INSTR_FMT_PREFIX}{mac.instr_fmt}, {mac.flags} }},"
         )
 
     def write_instructions(self) -> None:
@@ -1257,11 +1281,36 @@ def always_exits(lines: list[str]) -> bool:
     )
 
 
-def variable_used(node: parser.Node, name: str) -> bool:
-    """Determine whether a variable with a given name is used in a node."""
-    return any(
-        token.kind == "IDENTIFIER" and token.text == name for token in node.tokens
-    )
+def variable_used(node: parser.Node, name: str, delim: str = None) -> bool:
+    """Determine whether a variable with a given name is used in a node.
+       If delim is not None, the name is assumed to be a chain of names
+       delimited by delim. For example: "frame->f_code->co_consts", delim="->".
+    """
+    if delim is None:
+        return any(
+            token.kind == "IDENTIFIER" and token.text == name for token in node.tokens
+        )
+
+    # delim is not None - look for the sequence of names
+    orig_names = name.split(delim)
+    orig_names.reverse()
+    names = orig_names
+
+    need_delim = False
+    for token in node.tokens:
+        if need_delim:
+            if token.text == delim:
+                need_delim = False
+            else:
+                # no match, start over
+                names = orig_names
+                continue
+        if token.kind == "IDENTIFIER" and token.text == names[-1]:
+            names.pop()
+            if not names:
+                return True
+            need_delim = True
+    return False
 
 
 def main():
