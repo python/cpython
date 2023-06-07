@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "pycore_code.h"          // stats
 #include "pycore_pystate.h"       // _PyInterpreterState_GET
+#include "pycore_ceval.h"         // _PyEval_AcquireLock()
 
 #include "pycore_obmalloc.h"
 #include "pycore_pymem.h"
@@ -664,93 +665,104 @@ PyObject_SetArenaAllocator(PyObjectArenaAllocator *allocator)
 /* locking around custom allocators */
 /************************************/
 
-static int
-should_lock(void)
+static inline int
+should_lock(PyInterpreterState *interp)
 {
-    if (_PyRuntime.allocators.num_gils <= 1) {
-        return 0;
-    }
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyInterpreterState *main_interp = _PyInterpreterState_Main();
-    if (interp->ceval.gil == main_interp->ceval.gil) {
-        return 0;
-    }
-    return 1;
+    return interp->ceval.gil != _PyInterpreterState_Main()->ceval.gil;
 }
 
-static void
-acquire_custom_allocator_lock(void)
+static PyThreadState *
+get_tstate_for_main_gil(void)
 {
-    // XXX acquire the main interpreter's GIL
-    return;
+    PyThreadState *tstate = _PyRuntimeState_GetFinalizing(&_PyRuntime);
+    if (tstate == NULL) {
+        /* To use its GIL, we only need the pointer and one field. */
+        static const PyThreadState _main_tstate = {
+            .interp = &_PyRuntime._main_interpreter,
+        };
+        tstate = (PyThreadState *)&_main_tstate;
+    }
+    return tstate;
 }
 
-static void
-release_custom_allocator_lock(void)
+static inline void
+acquire_custom_allocator_lock(PyThreadState *tstate)
 {
-    // XXX release the main interpreter's GIL
-    return;
+    _PyEval_AcquireLock(tstate);
+}
+
+static inline void
+release_custom_allocator_lock(PyThreadState *tstate)
+{
+    _PyEval_ReleaseLock(tstate->interp, tstate);
 }
 
 static void *
 _PyMem_MallocLocked(void *ctx, size_t size)
 {
     PyMemAllocatorEx *wrapped = (PyMemAllocatorEx *)ctx;
-    void *ptr;
-    if (should_lock()) {
-        acquire_custom_allocator_lock();
-        ptr = wrapped->malloc(wrapped->ctx, size);
-        release_custom_allocator_lock();
+    if (_PyRuntime.allocators.num_gils > 1) {
+        PyThreadState *tstate = _PyThreadState_GET();
+        if (should_lock(tstate->interp)) {
+            tstate = get_tstate_for_main_gil();
+            acquire_custom_allocator_lock(tstate);
+            void *ptr = wrapped->malloc(wrapped->ctx, size);
+            release_custom_allocator_lock(tstate);
+            return ptr;
+        }
     }
-    else {
-        ptr = wrapped->malloc(wrapped->ctx, size);
-    }
-    return ptr;
+    return wrapped->malloc(wrapped->ctx, size);
 }
 
 static void *
 _PyMem_CallocLocked(void *ctx, size_t nelem, size_t elsize)
 {
     PyMemAllocatorEx *wrapped = (PyMemAllocatorEx *)ctx;
-    void *ptr;
-    if (should_lock()) {
-        acquire_custom_allocator_lock();
-        ptr = wrapped->calloc(wrapped->ctx, nelem, elsize);
-        release_custom_allocator_lock();
+    if (_PyRuntime.allocators.num_gils > 1) {
+        PyThreadState *tstate = _PyThreadState_GET();
+        if (should_lock(tstate->interp)) {
+            tstate = get_tstate_for_main_gil();
+            acquire_custom_allocator_lock(tstate);
+            void *ptr = wrapped->calloc(wrapped->ctx, nelem, elsize);
+            release_custom_allocator_lock(tstate);
+            return ptr;
+        }
     }
-    else {
-        ptr = wrapped->calloc(wrapped->ctx, nelem, elsize);
-    }
-    return ptr;
+    return wrapped->calloc(wrapped->ctx, nelem, elsize);
 }
 
 static void *
 _PyMem_ReallocLocked(void *ctx, void *ptr, size_t new_size)
 {
     PyMemAllocatorEx *wrapped = (PyMemAllocatorEx *)ctx;
-    if (should_lock()) {
-        acquire_custom_allocator_lock();
-        ptr = wrapped->realloc(wrapped->ctx, ptr, new_size);
-        release_custom_allocator_lock();
+    if (_PyRuntime.allocators.num_gils > 1) {
+        PyThreadState *tstate = _PyThreadState_GET();
+        if (should_lock(tstate->interp)) {
+            tstate = get_tstate_for_main_gil();
+            acquire_custom_allocator_lock(tstate);
+            ptr = wrapped->realloc(wrapped->ctx, ptr, new_size);
+            release_custom_allocator_lock(tstate);
+            return ptr;
+        }
     }
-    else {
-        ptr = wrapped->realloc(wrapped->ctx, ptr, new_size);
-    }
-    return ptr;
+    return wrapped->realloc(wrapped->ctx, ptr, new_size);
 }
 
 static void
 _PyMem_FreeLocked(void *ctx, void *ptr)
 {
     PyMemAllocatorEx *wrapped = (PyMemAllocatorEx *)ctx;
-    if (should_lock()) {
-        acquire_custom_allocator_lock();
-        wrapped->free(wrapped->ctx, ptr);
-        release_custom_allocator_lock();
+    if (_PyRuntime.allocators.num_gils > 1) {
+        PyThreadState *tstate = _PyThreadState_GET();
+        if (should_lock(tstate->interp)) {
+            tstate = get_tstate_for_main_gil();
+            acquire_custom_allocator_lock(tstate);
+            wrapped->free(wrapped->ctx, ptr);
+            release_custom_allocator_lock(tstate);
+            return;
+        }
     }
-    else {
-        wrapped->free(wrapped->ctx, ptr);
-    }
+    wrapped->free(wrapped->ctx, ptr);
 }
 
 static int
