@@ -849,7 +849,7 @@ These can be used as types in annotations and do not support ``[]``.
 
       T = TypeVar("T")
 
-      # "Container" does not exist yet,
+      # "Box" does not exist yet,
       # so we have to use quotes for the forward reference on Python <3.12.
       # Using ``TypeAlias`` tells the type checker that this is a type alias declaration,
       # not a variable assignment to a string.
