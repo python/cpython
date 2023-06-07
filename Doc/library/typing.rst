@@ -5,6 +5,7 @@
 .. testsetup:: *
 
    import typing
+   from dataclasses import dataclass
    from typing import *
 
 .. module:: typing
@@ -1184,7 +1185,8 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    (possibly multiple pieces of it, as ``Annotated`` is variadic).
    Specifically, a type ``T`` can be annotated with metadata ``x`` via the
    typehint ``Annotated[T, x]``. This metadata can be used for either static
-   analysis or at runtime. If a library (or tool) encounters a typehint
+   analysis or at runtime: at runtime, it is stored in a :attr:`__metadata__`
+   attribute. If a library (or tool) encounters a typehint
    ``Annotated[T, x]`` and has no special logic for metadata ``x``, it
    should ignore it and simply treat the type as ``T``. Unlike the
    ``no_type_check`` functionality that currently exists in the ``typing``
@@ -1211,10 +1213,17 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    the same (or different) type(s) on any node, the tools or libraries
    consuming those annotations are in charge of dealing with potential
    duplicates. For example, if you are doing value range analysis you might
-   allow this::
+   allow this:
 
-       T1 = Annotated[int, ValueRange(-10, 5)]
-       T2 = Annotated[T1, ValueRange(-20, 3)]
+   .. testcode::
+
+      @dataclass
+      class ValueRange:
+          lo: int
+          hi: int
+
+      T1 = Annotated[int, ValueRange(-10, 5)]
+      T2 = Annotated[T1, ValueRange(-20, 3)]
 
    Passing ``include_extras=True`` to :func:`get_type_hints` lets one
    access the extra annotations at runtime.
@@ -1226,7 +1235,11 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    * Multiple type annotations are supported (``Annotated`` supports variadic
      arguments)::
 
-       Annotated[int, ValueRange(3, 10), ctype("char")]
+        @dataclass
+        class ctype:
+            kind: str
+
+        Annotated[int, ValueRange(3, 10), ctype("char")]
 
    * ``Annotated`` must be called with at least two arguments (
      ``Annotated[int]`` is not valid)
@@ -1234,30 +1247,52 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    * The order of the annotations is preserved and matters for equality
      checks::
 
-       Annotated[int, ValueRange(3, 10), ctype("char")] != Annotated[
-           int, ctype("char"), ValueRange(3, 10)
-       ]
+        assert Annotated[int, ValueRange(3, 10), ctype("char")] != Annotated[
+            int, ctype("char"), ValueRange(3, 10)
+        ]
 
    * Nested ``Annotated`` types are flattened, with metadata ordered
      starting with the innermost annotation::
 
-       Annotated[Annotated[int, ValueRange(3, 10)], ctype("char")] == Annotated[
-           int, ValueRange(3, 10), ctype("char")
-       ]
+        assert Annotated[Annotated[int, ValueRange(3, 10)], ctype("char")] == Annotated[
+            int, ValueRange(3, 10), ctype("char")
+        ]
 
    * Duplicated annotations are not removed::
 
-       Annotated[int, ValueRange(3, 10)] != Annotated[
-           int, ValueRange(3, 10), ValueRange(3, 10)
-       ]
+        assert Annotated[int, ValueRange(3, 10)] != Annotated[
+            int, ValueRange(3, 10), ValueRange(3, 10)
+        ]
 
-   * ``Annotated`` can be used with nested and generic aliases::
+   * ``Annotated`` can be used with nested and generic aliases:
 
-       T = TypeVar('T')
-       Vec = Annotated[list[tuple[T, T]], MaxLen(10)]
-       V = Vec[int]
+     .. testcode::
 
-       V == Annotated[list[tuple[int, int]], MaxLen(10)]
+        @dataclass
+        class MaxLen:
+            value: int
+
+        type Vec[T] = Annotated[list[tuple[T, T]], MaxLen(10)]
+
+        # When used in a type annotation, a type checker will treat "V" the same as
+        # ``Annotated[list[tuple[int, int]], MaxLen(10)]``:
+        type V = Vec[int]
+
+   .. attribute:: __metadata__
+
+      At runtime, the metadata associated with an ``Annotated`` type can be
+      retrieved via the ``__metadata__`` attribute.
+
+      For example:
+
+      .. doctest::
+
+         >>> from typing import Annotated
+         >>> X = Annotated[int, "very", "important", "metadata"]
+         >>> X
+         typing.Annotated[int, 'very', 'important', 'metadata']
+         >>> X.__metadata__
+         ('very', 'important', 'metadata')
 
    .. versionadded:: 3.9
 
