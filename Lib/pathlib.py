@@ -332,15 +332,43 @@ class PurePath:
         return type(self)(*pathsegments)
 
     @classmethod
-    def _parse_path(cls, path):
-        if not path:
+    def _parse_paths(cls, paths):
+        if not paths:
             return '', '', []
         sep = cls._flavour.sep
         altsep = cls._flavour.altsep
-        if altsep:
-            path = path.replace(altsep, sep)
-        drv, root, rel = cls._flavour.splitroot(path)
-        if not root and drv.startswith(sep) and not drv.endswith(sep):
+        splitroot = cls._flavour.splitroot
+
+        # Join paths like ntpath.join(), but without concatenating strings.
+        drv, root, tail = '', '', []
+        for path in paths:
+            if altsep:
+                path = path.replace(altsep, sep)
+            p_drv, p_root, p_rel = splitroot(path)
+            p_tail = p_rel.split(sep)
+            if p_root:
+                if p_drv:
+                    drv = p_drv
+                root = p_root
+                tail = p_tail
+            elif p_drv and p_drv != drv:
+                if p_drv.lower() != drv.lower():
+                    drv = p_drv
+                    root = p_root
+                    tail = p_tail
+                else:
+                    drv = p_drv
+                    tail.extend(p_tail)
+            else:
+                tail.extend(p_tail)
+
+        # Normalize UNC path.
+        if drv and not root and drv[-1] not in ':\\':
+            if any(tail):
+                # Join onto partial UNC drive - must join and re-split.
+                parts = [drv] + [x for x in tail if x]
+                drv, root, rel = splitroot(sep.join(parts))
+                tail = rel.split(sep)
             drv_parts = drv.split(sep)
             if len(drv_parts) == 4 and drv_parts[2] not in '?.':
                 # e.g. //server/share
@@ -348,18 +376,11 @@ class PurePath:
             elif len(drv_parts) == 6:
                 # e.g. //?/unc/server/share
                 root = sep
-        parsed = [sys.intern(str(x)) for x in rel.split(sep) if x and x != '.']
+        parsed = [sys.intern(str(x)) for x in tail if x and x != '.']
         return drv, root, parsed
 
     def _load_parts(self):
-        paths = self._raw_paths
-        if len(paths) == 0:
-            path = ''
-        elif len(paths) == 1:
-            path = paths[0]
-        else:
-            path = self._flavour.join(*paths)
-        drv, root, tail = self._parse_path(path)
+        drv, root, tail = self._parse_paths(self._raw_paths)
         self._drv = drv
         self._root = root
         self._tail_cached = tail
@@ -1385,7 +1406,7 @@ class Path(PurePath):
             homedir = self._flavour.expanduser(self._tail[0])
             if homedir[:1] == "~":
                 raise RuntimeError("Could not determine home directory.")
-            drv, root, tail = self._parse_path(homedir)
+            drv, root, tail = self._parse_paths((homedir,))
             return self._from_parsed_parts(drv, root, tail + self._tail[1:])
 
         return self

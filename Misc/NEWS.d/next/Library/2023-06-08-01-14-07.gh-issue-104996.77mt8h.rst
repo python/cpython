@@ -1,0 +1,2 @@
+Improve performance of path joining in :class:`pathlib.PurePath` by
+implementing a variant of :func:`os.path.join`.
