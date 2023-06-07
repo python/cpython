@@ -196,7 +196,7 @@ Browser controllers provide these methods which parallel three of the
 module-level convenience functions:
 
 
-.. attribute:: name
+.. attribute:: controller.name
 
    System-dependent name for the browser.
 

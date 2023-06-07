@@ -661,8 +661,11 @@ heapctypesubclasswithfinalizer_finalize(PyObject *self)
         goto cleanup_finalize;
     }
     oldtype = PyObject_GetAttrString(m, "HeapCTypeSubclassWithFinalizer");
+    if (oldtype == NULL) {
+        goto cleanup_finalize;
+    }
     newtype = PyObject_GetAttrString(m, "HeapCTypeSubclass");
-    if (oldtype == NULL || newtype == NULL) {
+    if (newtype == NULL) {
         goto cleanup_finalize;
     }
 

@@ -46,7 +46,7 @@ PyAPI_FUNC(PyObject *) PyImport_AddModule(
 PyAPI_FUNC(PyObject *) PyImport_ImportModule(
     const char *name            /* UTF-8 encoded string */
     );
-PyAPI_FUNC(PyObject *) PyImport_ImportModuleNoBlock(
+Py_DEPRECATED(3.13) PyAPI_FUNC(PyObject *) PyImport_ImportModuleNoBlock(
     const char *name            /* UTF-8 encoded string */
     );
 PyAPI_FUNC(PyObject *) PyImport_ImportModuleLevel(

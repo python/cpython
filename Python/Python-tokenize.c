@@ -206,6 +206,9 @@ tokenizeriter_next(tokenizeriterobject *it)
         line = PyUnicode_FromString("");
     } else {
         Py_ssize_t size = it->tok->inp - line_start;
+        if (size >= 1 && it->tok->implicit_newline) {
+            size -= 1;
+        }
         line = PyUnicode_DecodeUTF8(line_start, size, "replace");
     }
     if (line == NULL) {

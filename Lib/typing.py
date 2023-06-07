@@ -561,7 +561,7 @@ def Never(self, parameters):
                 case str():
                     print("It's a str")
                 case _:
-                    never_call_me(arg)  # ok, arg is of type Never
+                    never_call_me(arg)  # OK, arg is of type Never
     """
     raise TypeError(f"{self} is not subscriptable")
 
@@ -594,13 +594,13 @@ def LiteralString(self, parameters):
 
         from typing import LiteralString
 
-        def run_query(sql: LiteralString) -> ...
+        def run_query(sql: LiteralString) -> None:
             ...
 
         def caller(arbitrary_string: str, literal_string: LiteralString) -> None:
-            run_query("SELECT * FROM students")  # ok
-            run_query(literal_string)  # ok
-            run_query("SELECT * FROM " + literal_string)  # ok
+            run_query("SELECT * FROM students")  # OK
+            run_query(literal_string)  # OK
+            run_query("SELECT * FROM " + literal_string)  # OK
             run_query(arbitrary_string)  # type checker error
             run_query(  # type checker error
                 f"SELECT * FROM students WHERE name = {arbitrary_string}"
@@ -2015,7 +2015,7 @@ class Annotated:
 
         assert Annotated[int, '$'].__metadata__ == ('$',)
 
-    - Nested Annotated are flattened::
+    - Nested Annotated types are flattened::
 
         assert Annotated[Annotated[T, Ann1, Ann2], Ann3] == Annotated[T, Ann1, Ann2, Ann3]
 
@@ -2026,15 +2026,17 @@ class Annotated:
 
     - Annotated can be used as a generic type alias::
 
-        Optimized = Annotated[T, runtime.Optimize()]
-        assert Optimized[int] == Annotated[int, runtime.Optimize()]
+        type Optimized[T] = Annotated[T, runtime.Optimize()]
+        # type checker will treat Optimized[int]
+        # as equivalent to Annotated[int, runtime.Optimize()]
 
-        OptimizedList = Annotated[List[T], runtime.Optimize()]
-        assert OptimizedList[int] == Annotated[List[int], runtime.Optimize()]
+        type OptimizedList[T] = Annotated[list[T], runtime.Optimize()]
+        # type checker will treat OptimizedList[int]
+        # as equivalent to Annotated[list[int], runtime.Optimize()]
 
     - Annotated cannot be used with an unpacked TypeVarTuple::
 
-        Annotated[*Ts, Ann1]  # NOT valid
+        type Variadic[*Ts] = Annotated[*Ts, Ann1]  # NOT valid
 
       This would be equivalent to::
 
@@ -2116,7 +2118,7 @@ def assert_type(val, typ, /):
     emits an error if the value is not of the specified type::
 
         def greet(name: str) -> None:
-            assert_type(name, str)  # ok
+            assert_type(name, str)  # OK
             assert_type(name, int)  # type checker error
     """
     return val
