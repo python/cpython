@@ -1468,6 +1468,7 @@ for creating generic types.
    .. testcode::
 
       DType = TypeVar('DType')
+      Shape = TypeVarTuple('Shape')
 
       class Array(Generic[DType, *Shape]):  # This is fine
           pass
