@@ -261,7 +261,7 @@ static int fuzz_sre_compile(const char* data, size_t size) {
     ) {
         PyErr_Clear();
     }
-    /* Ignore re.PatternError */
+    /* Ignore re.error */
     if (compiled == NULL && PyErr_ExceptionMatches(sre_error_exception)) {
         PyErr_Clear();
     }
