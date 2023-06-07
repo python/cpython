@@ -3,7 +3,8 @@ from test.support import os_helper
 from tokenize import (tokenize, untokenize, NUMBER, NAME, OP,
                      STRING, ENDMARKER, ENCODING, tok_name, detect_encoding,
                      open as tokenize_open, Untokenizer, generate_tokens,
-                     NEWLINE, _generate_tokens_from_c_tokenizer, DEDENT, TokenInfo)
+                     NEWLINE, _generate_tokens_from_c_tokenizer, DEDENT, TokenInfo,
+                     TokenError)
 from io import BytesIO, StringIO
 import unittest
 from textwrap import dedent
@@ -286,7 +287,7 @@ def k(x):
         for lit in INVALID_UNDERSCORE_LITERALS:
             try:
                 number_token(lit)
-            except SyntaxError:
+            except TokenError:
                 continue
             self.assertNotEqual(number_token(lit), lit)
 
@@ -1379,7 +1380,7 @@ class TestDetectEncoding(TestCase):
                 self.assertEqual(found, "iso-8859-1")
 
     def test_syntaxerror_latin1(self):
-        # Issue 14629: need to raise SyntaxError if the first
+        # Issue 14629: need to raise TokenError if the first
         # line(s) have non-UTF-8 characters
         lines = (
             b'print("\xdf")', # Latin-1: LATIN SMALL LETTER SHARP S
@@ -1870,7 +1871,7 @@ class CTokenizeTest(TestCase):
             TokenInfo(type=NUMBER, string='1', start=(1, 0), end=(1, 1), line='1+1\n'),
             TokenInfo(type=OP, string='+', start=(1, 1), end=(1, 2), line='1+1\n'),
             TokenInfo(type=NUMBER, string='1', start=(1, 2), end=(1, 3), line='1+1\n'),
-            TokenInfo(type=NEWLINE, string='\n', start=(1, 3), end=(1, 4), line='1+1\n'),
+            TokenInfo(type=NEWLINE, string='', start=(1, 3), end=(1, 4), line='1+1\n'),
             TokenInfo(type=ENDMARKER, string='', start=(2, 0), end=(2, 0), line='')
         ]
         for encoding in ["utf-8", "latin-1", "utf-16"]:
@@ -2754,7 +2755,7 @@ async def f():
             "]",
         ]:
             with self.subTest(case=case):
-                self.assertRaises(SyntaxError, get_tokens, case)
+                self.assertRaises(TokenError, get_tokens, case)
 
     def test_max_indent(self):
         MAXINDENT = 100
@@ -2773,7 +2774,7 @@ async def f():
 
         invalid = generate_source(MAXINDENT)
         the_input = StringIO(invalid)
-        self.assertRaises(SyntaxError, lambda: list(_generate_tokens_from_c_tokenizer(the_input.readline)))
+        self.assertRaises(IndentationError, lambda: list(_generate_tokens_from_c_tokenizer(the_input.readline)))
         self.assertRaises(
             IndentationError, compile, invalid, "<string>", "exec"
         )

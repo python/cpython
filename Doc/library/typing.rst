@@ -2,6 +2,11 @@
 :mod:`typing` --- Support for type hints
 ========================================
 
+.. testsetup:: *
+
+   import typing
+   from typing import *
+
 .. module:: typing
    :synopsis: Support for type hints (see :pep:`484`).
 
@@ -59,7 +64,12 @@ Relevant PEPs
 
 Since the initial introduction of type hints in :pep:`484` and :pep:`483`, a
 number of PEPs have modified and enhanced Python's framework for type
-annotations. These include:
+annotations:
+
+.. raw:: html
+
+   <details>
+   <summary><a style="cursor:pointer;">The full list of PEPs</a></summary>
 
 * :pep:`526`: Syntax for Variable Annotations
      *Introducing* syntax for annotating variables outside of function
@@ -105,6 +115,11 @@ annotations. These include:
     *Introducing* builtin syntax for creating generic functions, classes, and type aliases.
 * :pep:`698`: Adding an override decorator to typing
     *Introducing* the :func:`@override<override>` decorator
+
+.. raw:: html
+
+   </details>
+   <br>
 
 .. _type-aliases:
 
@@ -236,9 +251,13 @@ See :pep:`484` for more details.
 .. versionadded:: 3.5.2
 
 .. versionchanged:: 3.10
-   ``NewType`` is now a class rather than a function.  There is some additional
-   runtime cost when calling ``NewType`` over a regular function.  However, this
-   cost will be reduced in 3.11.0.
+   ``NewType`` is now a class rather than a function.  As a result, there is
+   some additional runtime cost when calling ``NewType`` over a regular
+   function.
+
+.. versionchanged:: 3.11
+   The performance of calling ``NewType`` has been restored to its level in
+   Python 3.9.
 
 
 Callable
@@ -247,19 +266,22 @@ Callable
 Frameworks expecting callback functions of specific signatures might be
 type hinted using ``Callable[[Arg1Type, Arg2Type], ReturnType]``.
 
-For example::
+For example:
+
+.. testcode::
 
    from collections.abc import Callable
 
    def feeder(get_next_item: Callable[[], str]) -> None:
-       # Body
+       ...  # Body
 
    def async_query(on_success: Callable[[int], None],
                    on_error: Callable[[int, Exception], None]) -> None:
-       # Body
+       ...  # Body
 
    async def on_update(value: str) -> None:
-       # Body
+       ...  # Body
+
    callback: Callable[[str], Awaitable[None]] = on_update
 
 It is possible to declare the return type of a callable without specifying
@@ -417,11 +439,14 @@ In this case ``MyDict`` has a single parameter, ``T``.
 
 Using a generic class without specifying type parameters assumes
 :data:`Any` for each position. In the following example, ``MyIterable`` is
-not generic but implicitly inherits from ``Iterable[Any]``::
+not generic but implicitly inherits from ``Iterable[Any]``:
+
+.. testcode::
 
    from collections.abc import Iterable
 
    class MyIterable(Iterable): # Same as Iterable[Any]
+       ...
 
 User-defined generic type aliases are also supported. Examples::
 
@@ -687,9 +712,11 @@ These can be used as types in annotations and do not support ``[]``.
    A string created by composing ``LiteralString``-typed objects
    is also acceptable as a ``LiteralString``.
 
-   Example::
+   Example:
 
-      def run_query(sql: LiteralString) -> ...
+   .. testcode::
+
+      def run_query(sql: LiteralString) -> None:
           ...
 
       def caller(arbitrary_string: str, literal_string: LiteralString) -> None:
@@ -1582,15 +1609,18 @@ without the dedicated syntax, as documented below.
           def __abs__(self) -> "Array[*Shape]": ...
           def get_shape(self) -> tuple[*Shape]: ...
 
-   Type variable tuples can be happily combined with normal type variables::
+   Type variable tuples can be happily combined with normal type variables:
 
-      DType = TypeVar('DType')
+   .. testcode::
 
       class Array[DType, *Shape]:  # This is fine
           pass
 
       class Array2[*Shape, DType]:  # This would also be fine
           pass
+
+      class Height: ...
+      class Width: ...
 
       float_array_1d: Array[float, Height] = Array()     # Totally fine
       int_array_2d: Array[int, Height, Width] = Array()  # Yup, fine too
@@ -1745,7 +1775,9 @@ without the dedicated syntax, as documented below.
 
    The type of type aliases created through the :keyword:`type` statement.
 
-   Example::
+   Example:
+
+   .. doctest::
 
       >>> type Alias = int
       >>> type(Alias)
@@ -1755,7 +1787,9 @@ without the dedicated syntax, as documented below.
 
    .. attribute:: __name__
 
-      The name of the type alias::
+      The name of the type alias:
+
+      .. doctest::
 
          >>> type Alias = int
          >>> Alias.__name__
@@ -2133,7 +2167,11 @@ These are not used in annotations. They are building blocks for declaring types.
           group: list[T]
 
    To create a generic ``TypedDict`` that is compatible with Python 3.11
-   or lower, inherit from :class:`Generic` explicitly::
+   or lower, inherit from :class:`Generic` explicitly:
+
+   .. testcode::
+
+      T = TypeVar("T")
 
       class Group(TypedDict, Generic[T]):
           key: T
@@ -2146,7 +2184,9 @@ These are not used in annotations. They are building blocks for declaring types.
    .. attribute:: __total__
 
       ``Point2D.__total__`` gives the value of the ``total`` argument.
-      Example::
+      Example:
+
+      .. doctest::
 
          >>> from typing import TypedDict
          >>> class Point2D(TypedDict): pass
@@ -2176,7 +2216,9 @@ These are not used in annotations. They are building blocks for declaring types.
       non-required keys in the same ``TypedDict`` . This is done by declaring a
       ``TypedDict`` with one value for the ``total`` argument and then
       inheriting from it in another ``TypedDict`` with a different value for
-      ``total``::
+      ``total``:
+
+      .. doctest::
 
          >>> class Point2D(TypedDict, total=False):
          ...     x: int
@@ -2830,12 +2872,12 @@ Functions and decorators
    decorated object performs runtime "magic" that
    transforms a class, giving it :func:`dataclasses.dataclass`-like behaviors.
 
-   Example usage with a decorator function::
+   Example usage with a decorator function:
 
-      T = TypeVar("T")
+   .. testcode::
 
       @dataclass_transform()
-      def create_model(cls: type[T]) -> type[T]:
+      def create_model[T](cls: type[T]) -> type[T]:
           ...
           return cls
 
@@ -2939,7 +2981,9 @@ Functions and decorators
    runtime but should be ignored by a type checker.  At runtime, calling
    a ``@overload``-decorated function directly will raise
    :exc:`NotImplementedError`. An example of overload that gives a more
-   precise type than can be expressed using a union or a type variable::
+   precise type than can be expressed using a union or a type variable:
+
+   .. testcode::
 
       @overload
       def process(response: None) -> None:
@@ -2951,7 +2995,7 @@ Functions and decorators
       def process(response: bytes) -> str:
           ...
       def process(response):
-          <actual implementation>
+          ...  # actual implementation goes here
 
    See :pep:`484` for more details and comparison with other typing semantics.
 
@@ -3043,10 +3087,13 @@ Functions and decorators
    This helps prevent bugs that may occur when a base class is changed without
    an equivalent change to a child class.
 
-   For example::
+   For example:
+
+   .. testcode::
 
       class Base:
-           def log_status(self)
+          def log_status(self) -> None:
+              ...
 
       class Sub(Base):
           @override
@@ -3105,14 +3152,16 @@ Introspection helpers
 
    The function recursively replaces all ``Annotated[T, ...]`` with ``T``,
    unless ``include_extras`` is set to ``True`` (see :class:`Annotated` for
-   more information). For example::
+   more information). For example:
+
+   .. testcode::
 
        class Student(NamedTuple):
            name: Annotated[str, 'some marker']
 
-       get_type_hints(Student) == {'name': str}
-       get_type_hints(Student, include_extras=False) == {'name': str}
-       get_type_hints(Student, include_extras=True) == {
+       assert get_type_hints(Student) == {'name': str}
+       assert get_type_hints(Student, include_extras=False) == {'name': str}
+       assert get_type_hints(Student, include_extras=True) == {
            'name': Annotated[str, 'some marker']
        }
 
@@ -3139,7 +3188,9 @@ Introspection helpers
    If ``X`` is an instance of :class:`ParamSpecArgs` or :class:`ParamSpecKwargs`,
    return the underlying :class:`ParamSpec`.
    Return ``None`` for unsupported objects.
-   Examples::
+   Examples:
+
+   .. testcode::
 
       assert get_origin(str) is None
       assert get_origin(Dict[str, int]) is dict
@@ -3158,7 +3209,9 @@ Introspection helpers
    generic type, the order of ``(Y, Z, ...)`` may be different from the order
    of the original arguments ``[Y, Z, ...]`` due to type caching.
    Return ``()`` for unsupported objects.
-   Examples::
+   Examples:
+
+   .. testcode::
 
       assert get_args(int) == ()
       assert get_args(Dict[int, str]) == (int, str)
@@ -3170,14 +3223,20 @@ Introspection helpers
 
    Check if a type is a :class:`TypedDict`.
 
-   For example::
+   For example:
+
+   .. testcode::
 
       class Film(TypedDict):
           title: str
           year: int
 
-      is_typeddict(Film)  # => True
-      is_typeddict(list | str)  # => False
+      assert is_typeddict(Film)
+      assert not is_typeddict(list | str)
+
+      # TypedDict is a factory for creating typed dicts,
+      # not a typed dict itself
+      assert not is_typeddict(TypedDict)
 
    .. versionadded:: 3.10
 

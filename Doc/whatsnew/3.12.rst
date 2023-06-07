@@ -1079,6 +1079,7 @@ APIs:
 
 * :class:`!configparser.LegacyInterpolation` (:gh:`90765`)
 * :func:`locale.getdefaultlocale` (:gh:`90817`)
+* ``locale.resetlocale()`` (:gh:`90817`)
 * :meth:`!turtle.RawTurtle.settiltangle` (:gh:`50096`)
 * :func:`!unittest.findTestCases` (:gh:`50096`)
 * :func:`!unittest.getTestCaseNames` (:gh:`50096`)
@@ -1489,13 +1490,14 @@ Changes in the Python API
   Additionally, there may be some minor behavioral changes as a consecuence of the
   changes required to support :pep:`701`. Some of these changes include:
 
-  * Some final ``DEDENT`` tokens are now emitted within the bounds of the
-    input. This means that for a file containing 3 lines, the old version of the
-    tokenizer returned a ``DEDENT`` token in line 4 whilst the new version returns
-    the token in line 3.
-
   * The ``type`` attribute of the tokens emitted when tokenizing some invalid Python
     characters such as ``!`` has changed from ``ERRORTOKEN`` to ``OP``.
+
+  * Incomplete single-line strings now also raise :exc:`tokenize.TokenError` as incomplete
+    multiline strings do.
+
+  * Some incomplete or invalid Python code now raises :exc:`tokenize.TokenError` instead of
+    returning arbitrary ``ERRORTOKEN`` tokens when tokenizing it.
 
 Build Changes
 =============
@@ -1534,6 +1536,15 @@ Build Changes
 * Autoconf 2.71 and aclocal 1.16.4 is now required to regenerate
   :file:`!configure`.
   (Contributed by Christian Heimes in :gh:`89886`.)
+
+* C extensions built with the :ref:`limited C API <limited-c-api>`
+  on :ref:`Python build in debug mode <debug-build>` no longer support Python
+  3.9 and older. In this configuration, :c:func:`Py_INCREF` and
+  :c:func:`Py_DECREF` are now always implemented as opaque function calls,
+  but the called functions were added to Python 3.10. Build C extensions
+  with a release build of Python or with Python 3.12 and older, to keep support
+  for Python 3.9 and older.
+  (Contributed by Victor Stinner in :gh:`102304`.)
 
 
 C API Changes
