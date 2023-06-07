@@ -104,7 +104,6 @@ import math
 import time
 import inspect
 import sys
-import warnings
 
 from os.path import isfile, split, join
 from copy import deepcopy
