@@ -23,8 +23,8 @@ static void _PyMem_DebugCheckAddress(const char *func, char api_id, const void *
 
 static void set_up_debug_hooks_domain_unlocked(PyMemAllocatorDomain domain);
 static void set_up_debug_hooks_unlocked(void);
-void get_allocator_unlocked(PyMemAllocatorDomain, PyMemAllocatorEx *);
-void set_allocator_unlocked(PyMemAllocatorDomain, PyMemAllocatorEx *);
+static void get_allocator_unlocked(PyMemAllocatorDomain, PyMemAllocatorEx *);
+static void set_allocator_unlocked(PyMemAllocatorDomain, PyMemAllocatorEx *);
 
 
 /***************************************/
@@ -382,7 +382,7 @@ pymemallocator_eq(PyMemAllocatorEx *a, PyMemAllocatorEx *b)
 }
 
 
-const char*
+static const char*
 get_current_allocator_name_unlocked(void)
 {
     PyMemAllocatorEx malloc_alloc = MALLOC_ALLOC;
@@ -530,7 +530,7 @@ PyMem_SetupDebugHooks(void)
     PyThread_release_lock(ALLOCATORS_MUTEX);
 }
 
-void
+static void
 get_allocator_unlocked(PyMemAllocatorDomain domain, PyMemAllocatorEx *allocator)
 {
     switch(domain)
@@ -548,7 +548,7 @@ get_allocator_unlocked(PyMemAllocatorDomain domain, PyMemAllocatorEx *allocator)
     }
 }
 
-void
+static void
 set_allocator_unlocked(PyMemAllocatorDomain domain, PyMemAllocatorEx *allocator)
 {
     switch(domain)
