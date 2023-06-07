@@ -129,6 +129,7 @@ def_op('LOAD_ASSERTION_ERROR', 74)
 def_op('RETURN_GENERATOR', 75)
 
 def_op('RETURN_VALUE', 83)
+def_op('YIELD_VALUE', 84)
 
 def_op('SETUP_ANNOTATIONS', 85)
 def_op('LOAD_LOCALS', 87)
@@ -209,7 +210,6 @@ def_op('SET_ADD', 146)
 def_op('MAP_ADD', 147)
 hasfree.append(148)
 def_op('COPY_FREE_VARS', 149)
-def_op('YIELD_VALUE', 150)
 def_op('RESUME', 151)   # This must be kept in sync with deepfreeze.py
 def_op('MATCH_CLASS', 152)
 

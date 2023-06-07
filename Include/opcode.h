@@ -44,6 +44,7 @@ extern "C" {
 #define LOAD_ASSERTION_ERROR                    74
 #define RETURN_GENERATOR                        75
 #define RETURN_VALUE                            83
+#define YIELD_VALUE                             84
 #define SETUP_ANNOTATIONS                       85
 #define LOAD_LOCALS                             87
 #define POP_EXCEPT                              89
@@ -104,7 +105,6 @@ extern "C" {
 #define SET_ADD                                146
 #define MAP_ADD                                147
 #define COPY_FREE_VARS                         149
-#define YIELD_VALUE                            150
 #define RESUME                                 151
 #define MATCH_CLASS                            152
 #define FORMAT_VALUE                           155
@@ -204,13 +204,13 @@ extern "C" {
 #define LOAD_ATTR_METHOD_LAZY_DICT              80
 #define LOAD_ATTR_METHOD_NO_DICT                81
 #define LOAD_ATTR_METHOD_WITH_VALUES            82
-#define LOAD_CONST__LOAD_FAST                   84
-#define LOAD_FAST__LOAD_CONST                   86
-#define LOAD_GLOBAL_BUILTIN                     88
-#define LOAD_GLOBAL_MODULE                     111
-#define STORE_ATTR_INSTANCE_VALUE              112
-#define STORE_ATTR_SLOT                        113
-#define STORE_ATTR_WITH_HINT                   148
+#define LOAD_CONST__LOAD_FAST                   86
+#define LOAD_FAST__LOAD_CONST                   88
+#define LOAD_GLOBAL_BUILTIN                    111
+#define LOAD_GLOBAL_MODULE                     112
+#define STORE_ATTR_INSTANCE_VALUE              113
+#define STORE_ATTR_SLOT                        148
+#define STORE_ATTR_WITH_HINT                   150
 #define STORE_SUBSCR_DICT                      153
 #define STORE_SUBSCR_LIST_INT                  154
 #define UNPACK_SEQUENCE_LIST                   158
