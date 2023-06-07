@@ -2685,11 +2685,13 @@ Callable = _CallableType(collections.abc.Callable, 2)
 Callable.__doc__ = \
     """Deprecated alias to collections.abc.Callable.
 
-    Callable[[int], str] signifies a function of (int) -> str.
+    Callable[[int], str] signifies a function that takes a single
+    parameter of type int and returns a str.
+
     The subscription syntax must always be used with exactly two
     values: the argument list and the return type.
-    The argument list must be a list of types, a ParamSpec or ellipsis.
-    The return type must be a single type.
+    The argument list must be a list of types, a ParamSpec,
+    Concatenate or ellipsis. The return type must be a single type.
 
     There is no syntax to indicate optional or keyword arguments;
     such function types are rarely used as callback types.
