@@ -1186,7 +1186,8 @@ These can be used as types in annotations using ``[]``, each having a unique syn
         class MaxLen:
             value: int
 
-        Vec = Annotated[list[tuple[T, T]], MaxLen(10)]
+        T = TypeVar("T")
+        Vec: TypeAlias = Annotated[list[tuple[T, T]], MaxLen(10)]
 
         assert Vec[int] == Annotated[list[tuple[int, int]], MaxLen(10)]
 
