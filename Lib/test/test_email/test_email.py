@@ -3402,7 +3402,7 @@ Foo
            [('', '')])
         eq(utils.getaddresses(
            [r'<boss@nil.test>, "Giant; \"Big\" Box" <bob@example.net>']),
-           [('', 'boss@nil.test'), ('Giant;  Big  Box', 'bob@example.net')])
+           [('', 'boss@nil.test'), ('Giant; "Big" Box', 'bob@example.net')])
 
     def test_getaddresses_embedded_comment(self):
         """Test proper handling of a nested comment"""
