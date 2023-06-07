@@ -168,7 +168,7 @@ should_audit(PyInterpreterState *interp)
     if (!interp) {
         return 0;
     }
-    return (interp->runtime->audit_hook_head
+    return (interp->runtime->audit_hooks.head
             || interp->audit_hooks
             || PyDTrace_AUDIT_ENABLED());
 }
@@ -225,7 +225,7 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
     }
 
     /* Call global hooks */
-    _Py_AuditHookEntry *e = is->runtime->audit_hook_head;
+    _Py_AuditHookEntry *e = is->runtime->audit_hooks.head;
     for (; e; e = e->next) {
         if (e->hookCFunction(event, eventArgs, e->userData) < 0) {
             goto exit;
@@ -353,8 +353,8 @@ _PySys_ClearAuditHooks(PyThreadState *ts)
     _PySys_Audit(ts, "cpython._PySys_ClearAuditHooks", NULL);
     _PyErr_Clear(ts);
 
-    _Py_AuditHookEntry *e = runtime->audit_hook_head, *n;
-    runtime->audit_hook_head = NULL;
+    _Py_AuditHookEntry *e = runtime->audit_hooks.head, *n;
+    runtime->audit_hooks.head = NULL;
     while (e) {
         n = e->next;
         PyMem_RawFree(e);
@@ -389,10 +389,10 @@ PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
         }
     }
 
-    _Py_AuditHookEntry *e = runtime->audit_hook_head;
+    _Py_AuditHookEntry *e = runtime->audit_hooks.head;
     if (!e) {
         e = (_Py_AuditHookEntry*)PyMem_RawMalloc(sizeof(_Py_AuditHookEntry));
-        runtime->audit_hook_head = e;
+        runtime->audit_hooks.head = e;
     } else {
         while (e->next) {
             e = e->next;
