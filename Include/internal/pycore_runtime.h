@@ -147,7 +147,9 @@ typedef struct pyruntimestate {
     // is called multiple times.
     Py_OpenCodeHookFunction open_code_hook;
     void *open_code_userdata;
-    _Py_AuditHookEntry *audit_hook_head;
+    struct {
+        _Py_AuditHookEntry *head;
+    } audit_hooks;
 
     struct _py_object_runtime_state object_state;
     struct _Py_float_runtime_state float_state;
