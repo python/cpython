@@ -1,9 +1,6 @@
 """
 The typing module: Support for gradual typing as defined by PEP 484 and subsequent PEPs.
 
-Any name not present in __all__ is an implementation detail
-that may be changed without notice. Use at your own risk!
-
 Among other things, the module includes the following:
 * Generic, Protocol, and internal machinery to support generic aliases.
   All subscripted types like X[int], Union[int, str] are generic aliases.
@@ -17,6 +14,9 @@ Among other things, the module includes the following:
 * Special types: NewType, NamedTuple, TypedDict.
 * Deprecated wrapper submodules for re and io related types.
 * Deprecated aliases for builtin types and collections.abc ABCs.
+
+Any name not present in __all__ is an implementation detail
+that may be changed without notice. Use at your own risk!
 """
 
 from abc import abstractmethod, ABCMeta
@@ -214,10 +214,12 @@ def _should_unflatten_callable_args(typ, args):
     """Internal helper for munging collections.abc.Callable's __args__.
 
     The canonical representation for a Callable's __args__ flattens the
-    argument types, see https://bugs.python.org/issue42195. For example::
+    argument types, see https://github.com/python/cpython/issues/86361.
 
-        collections.abc.Callable[[int, int], str].__args__ == (int, int, str)
-        collections.abc.Callable[ParamSpec, str].__args__ == (ParamSpec, str)
+    For example::
+
+        assert collections.abc.Callable[[int, int], str].__args__ == (int, int, str)
+        assert collections.abc.Callable[ParamSpec, str].__args__ == (ParamSpec, str)
 
     As a result, if we need to reconstruct the Callable from its __args__,
     we need to unflatten it.
@@ -351,8 +353,9 @@ _caches = {}
 
 
 def _tp_cache(func=None, /, *, typed=False):
-    """Internal wrapper caching __getitem__ of generic types with a fallback to
-    original function for non-hashable arguments.
+    """Internal wrapper caching __getitem__ of generic types.
+
+    For non-hashable arguments, the original function is used as a fallback.
     """
     def decorator(func):
         # The callback 'inner' references the newly created lru_cache
@@ -633,10 +636,12 @@ def ClassVar(self, parameters):
 
     An annotation wrapped in ClassVar indicates that a given
     attribute is intended to be used as a class variable and
-    should not be set on instances of that class. Usage::
+    should not be set on instances of that class.
+
+    Usage::
 
         class Starship:
-            stats: ClassVar[Dict[str, int]] = {} # class variable
+            stats: ClassVar[dict[str, int]] = {} # class variable
             damage: int = 10                     # instance variable
 
     ClassVar accepts only types and cannot be further subscribed.
@@ -769,7 +774,9 @@ def TypeAlias(self, parameters):
 
     Use TypeAlias to indicate that an assignment should
     be recognized as a proper type alias definition by type
-    checkers. For example::
+    checkers.
+
+    For example::
 
         Predicate: TypeAlias = Callable[..., bool]
 
@@ -782,8 +789,8 @@ def TypeAlias(self, parameters):
 def Concatenate(self, parameters):
     """Special form for annotating higher-order functions.
 
-    ``Concatenate`` can be sed in conjunction with ``ParamSpec`` and
-    ``Callable`` to represent a higher order function which adds, removes or
+    ``Concatenate`` can be used in conjunction with ``ParamSpec`` and
+    ``Callable`` to represent a higher-order function which adds, removes or
     transforms the parameters of a callable.
 
     For example::
@@ -1599,8 +1606,9 @@ def Unpack(self, parameters):
     """Type unpack operator.
 
     The type unpack operator takes the child types from some container type,
-    such as `tuple[int, str]` or a `TypeVarTuple`, and 'pulls them out'. For
-    example::
+    such as `tuple[int, str]` or a `TypeVarTuple`, and 'pulls them out'.
+
+    For example::
 
         # For some generic class `Foo`:
         Foo[Unpack[tuple[int, str]]]  # Equivalent to Foo[int, str]
@@ -1625,7 +1633,7 @@ def Unpack(self, parameters):
         class Bar[*Ts]: ...
 
     The operator can also be used along with a `TypedDict` to annotate
-    `**kwargs` in a function signature. For instance::
+    `**kwargs` in a function signature::
 
         class Movie(TypedDict):
             name: str
@@ -1638,7 +1646,7 @@ def Unpack(self, parameters):
     Note that there is only some runtime checking of this operator. Not
     everything the runtime allows may be accepted by static type checkers.
 
-    For more information, see PEP 646.
+    For more information, see PEPs 646 and 692.
     """
     item = _type_check(parameters, f'{self} accepts only single type.')
     return _UnpackGenericAlias(origin=self, args=(item,))
@@ -1886,7 +1894,9 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
                 ...
 
     Such classes are primarily used with static type checkers that recognize
-    structural subtyping (static duck-typing), for example::
+    structural subtyping (static duck-typing).
+
+    For example::
 
         class C:
             def meth(self) -> int:
@@ -2043,7 +2053,7 @@ class Annotated:
 
         Annotated[*Ts, Ann1]  # NOT valid
 
-      This would be equivalent to
+      This would be equivalent to::
 
         Annotated[T1, T2, T3, ..., Ann1]
 
@@ -2261,8 +2271,10 @@ def _strip_annotations(t):
 def get_origin(tp):
     """Get the unsubscripted version of a type.
 
-    This supports generic types, Callable, Tuple, Union, Literal, Final, ClassVar
-    Annotated, and others. Return None for unsupported types. Examples::
+    This supports generic types, Callable, Tuple, Union, Literal, Final, ClassVar,
+    Annotated, and others. Return None for unsupported types.
+
+    Examples::
 
         assert get_origin(Literal[42]) is Literal
         assert get_origin(int) is None
@@ -2421,7 +2433,9 @@ def overload(func):
     """Decorator for overloaded functions/methods.
 
     In a stub file, place two or more stub definitions for the same
-    function in a row, each decorated with @overload.  For example::
+    function in a row, each decorated with @overload.
+
+    For example::
 
         @overload
         def utf8(value: None) -> None: ...
@@ -2432,7 +2446,7 @@ def overload(func):
 
     In a non-stub file (i.e. a regular .py file), do the same but
     follow it with an implementation.  The implementation should *not*
-    be decorated with @overload.  For example::
+    be decorated with @overload::
 
         @overload
         def utf8(value: None) -> None: ...
@@ -2942,7 +2956,9 @@ TypedDict.__mro_entries__ = lambda bases: (_TypedDict,)
 def Required(self, parameters):
     """Special typing construct to mark a TypedDict key as required.
 
-    This is mainly useful for total=False TypedDicts. For example::
+    This is mainly useful for total=False TypedDicts.
+
+    For example::
 
         class Movie(TypedDict, total=False):
             title: Required[str]
@@ -2984,7 +3000,9 @@ class NewType:
 
     NewType(name, tp) is considered a subtype of tp
     by static type checkers. At runtime, NewType(name, tp) returns
-    a dummy callable that simply returns its argument. Usage::
+    a dummy callable that simply returns its argument.
+
+    Usage::
 
         UserId = NewType('UserId', int)
 
