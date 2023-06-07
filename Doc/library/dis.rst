@@ -857,7 +857,7 @@ iterations of the loop.
 
 .. opcode:: DELETE_NAME (namei)
 
-   Implements ``del name``, where *namei* is the index into :attr:`!codeobject.co_names`
+   Implements ``del name``, where *namei* is the index into :attr:`!co_names`
    attribute of the code object.
 
 
