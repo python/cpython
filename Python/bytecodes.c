@@ -292,14 +292,14 @@ dummy_func(
         }
 
         inst(UNARY_NOT_BOOL, (unused/1, value -- res)) {
-            DEOPT_IF(!PyBool_Check(value), UNARY_NOT);
-            STAT_INC(UNARY_NOT, hit);
             if (Py_IsFalse(value)) {
                 res = Py_True;
             }
             else {
+                DEOPT_IF(!Py_IsTrue(value), UNARY_NOT);
                 res = Py_False;
             }
+            STAT_INC(UNARY_NOT, hit);
         }
 
         inst(UNARY_NOT_INT, (unused/1, value -- res)) {

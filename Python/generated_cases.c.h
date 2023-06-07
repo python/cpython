@@ -387,14 +387,14 @@
             PyObject *value = stack_pointer[-1];
             PyObject *res;
             #line 295 "Python/bytecodes.c"
-            DEOPT_IF(!PyBool_Check(value), UNARY_NOT);
-            STAT_INC(UNARY_NOT, hit);
             if (Py_IsFalse(value)) {
                 res = Py_True;
             }
             else {
+                DEOPT_IF(!Py_IsTrue(value), UNARY_NOT);
                 res = Py_False;
             }
+            STAT_INC(UNARY_NOT, hit);
             #line 399 "Python/generated_cases.c.h"
             stack_pointer[-1] = res;
             next_instr += 1;
