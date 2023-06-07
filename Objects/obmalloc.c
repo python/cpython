@@ -667,7 +667,14 @@ PyObject_SetArenaAllocator(PyObjectArenaAllocator *allocator)
 static int
 should_lock(void)
 {
-    // XXX check for main interpreter, etc.
+    if (_PyRuntime.allocators.num_gils <= 1) {
+        return 0;
+    }
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyInterpreterState *main_interp = _PyInterpreterState_Main();
+    if (interp->ceval.gil == main_interp->ceval.gil) {
+        return 0;
+    }
     return 1;
 }
 

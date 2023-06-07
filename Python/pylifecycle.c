@@ -586,6 +586,7 @@ static PyStatus
 init_interp_create_gil(PyThreadState *tstate, int own_gil)
 {
     PyStatus status;
+    _PyRuntimeState *runtime = tstate->interp->runtime;
 
     /* finalize_interp_delete() comment explains why _PyEval_FiniGIL() is
        only called here. */
@@ -603,6 +604,9 @@ init_interp_create_gil(PyThreadState *tstate, int own_gil)
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
+    HEAD_LOCK(runtime);
+    runtime->allocators.num_gils++;
+    HEAD_UNLOCK(runtime);
 
     return _PyStatus_OK();
 }
@@ -1729,6 +1733,11 @@ finalize_interp_delete(PyInterpreterState *interp)
 {
     /* Cleanup auto-thread-state */
     _PyGILState_Fini(interp);
+
+    _PyRuntimeState *runtime = interp->runtime;
+    HEAD_LOCK(runtime);
+    runtime->allocators.num_gils--;
+    HEAD_UNLOCK(runtime);
 
     /* We can't call _PyEval_FiniGIL() here because destroying the GIL lock can
        fail when it is being awaited by another running daemon thread (see
