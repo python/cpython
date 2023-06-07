@@ -1,5 +1,3 @@
-
-import ast
 import types
 
 from test.support.bytecode_helper import AssemblerTestCase
