@@ -464,16 +464,12 @@ _PyCode_Quicken(PyCodeObject *code)
 // UNARY_NOT
 #define SPEC_FAIL_UNARY_NOT_BYTEARRAY    9
 #define SPEC_FAIL_UNARY_NOT_BYTES       10
-#define SPEC_FAIL_UNARY_NOT_COMPLEX     11
-#define SPEC_FAIL_UNARY_NOT_DICT        12
-#define SPEC_FAIL_UNARY_NOT_DICT_ITEMS  13
-#define SPEC_FAIL_UNARY_NOT_DICT_KEYS   14
-#define SPEC_FAIL_UNARY_NOT_DICT_VALUES 15
-#define SPEC_FAIL_UNARY_NOT_FLOAT       16
-#define SPEC_FAIL_UNARY_NOT_HEAP_TYPE   17
-#define SPEC_FAIL_UNARY_NOT_MEMORY_VIEW 18
-#define SPEC_FAIL_UNARY_NOT_SET         19
-#define SPEC_FAIL_UNARY_NOT_TUPLE       20
+#define SPEC_FAIL_UNARY_NOT_DICT        11
+#define SPEC_FAIL_UNARY_NOT_FLOAT       12
+#define SPEC_FAIL_UNARY_NOT_HEAP_TYPE   13
+#define SPEC_FAIL_UNARY_NOT_MEMORY_VIEW 14
+#define SPEC_FAIL_UNARY_NOT_SET         15
+#define SPEC_FAIL_UNARY_NOT_TUPLE       16
 
 static int function_kind(PyCodeObject *code);
 static bool function_check_args(PyObject *o, int expected_argcount, int opcode);
@@ -2299,24 +2295,8 @@ _Py_Specialize_UnaryNot(PyObject *value, _Py_CODEUNIT *instr)
         SPECIALIZATION_FAIL(UNARY_NOT, SPEC_FAIL_UNARY_NOT_BYTES);
         goto failure;
     }
-    if (PyComplex_CheckExact(value)) {
-        SPECIALIZATION_FAIL(UNARY_NOT, SPEC_FAIL_UNARY_NOT_COMPLEX);
-        goto failure;
-    }
     if (PyDict_CheckExact(value)) {
         SPECIALIZATION_FAIL(UNARY_NOT, SPEC_FAIL_UNARY_NOT_DICT);
-        goto failure;
-    }
-    if (PyDictItems_Check(value)) {
-        SPECIALIZATION_FAIL(UNARY_NOT, SPEC_FAIL_UNARY_NOT_DICT_ITEMS);
-        goto failure;
-    }
-    if (PyDictKeys_Check(value)) {
-        SPECIALIZATION_FAIL(UNARY_NOT, SPEC_FAIL_UNARY_NOT_DICT_KEYS);
-        goto failure;
-    }
-    if (PyDictValues_Check(value)) {
-        SPECIALIZATION_FAIL(UNARY_NOT, SPEC_FAIL_UNARY_NOT_DICT_VALUES);
         goto failure;
     }
     if (PyFloat_CheckExact(value)) {
