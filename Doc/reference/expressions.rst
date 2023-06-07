@@ -725,7 +725,8 @@ which are used to control the execution of a generator function.
    because there is no yield expression that could receive the value.
 
 
-.. coroutinemethod:: agen.athrow(type[, value[, traceback]])
+.. coroutinemethod:: agen.athrow(value)
+                     agen.athrow(type[, value[, traceback]])
 
    Returns an awaitable that raises an exception of type ``type`` at the point
    where the asynchronous generator was paused, and returns the next value
