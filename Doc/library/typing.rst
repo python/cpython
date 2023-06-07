@@ -779,7 +779,7 @@ These can be used as types in annotations and do not support ``[]``.
 
       Factors: TypeAlias = list[int]
 
-   ``TypeAlias`` is particularly useful on older Python versions for annotating
+   ``TypeAlias`` is particularly useful for annotating
    aliases that make use of forward references, as it can be hard for type
    checkers to distinguish these from normal variable assignments:
 
@@ -790,7 +790,7 @@ These can be used as types in annotations and do not support ``[]``.
       T = TypeVar("T")
 
       # "Box" does not exist yet,
-      # so we have to use quotes for the forward reference on Python <3.12.
+      # so we have to use quotes for the forward reference.
       # Using ``TypeAlias`` tells the type checker that this is a type alias declaration,
       # not a variable assignment to a string.
       BoxOfStrings: TypeAlias = "Box[str]"
