@@ -1,0 +1,4 @@
+Revert undocumented behaviour change with runtime-checkable protocols
+decorated with :func:`typing.final` in Python 3.11. The behaviour change had
+meant that objects would not be considered instances of these protocols at
+runtime unless they had a ``__final__`` attribute. Patch by Alex Waygood.

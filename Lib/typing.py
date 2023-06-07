@@ -1883,7 +1883,7 @@ class _TypingEllipsis:
 
 
 _TYPING_INTERNALS = ['__parameters__', '__orig_bases__',  '__orig_class__',
-                     '_is_protocol', '_is_runtime_protocol']
+                     '_is_protocol', '_is_runtime_protocol', '__final__']
 
 _SPECIAL_NAMES = ['__abstractmethods__', '__annotations__', '__dict__', '__doc__',
                   '__init__', '__module__', '__new__', '__slots__',
