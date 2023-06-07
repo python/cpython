@@ -2,6 +2,12 @@
 :mod:`typing` --- Support for type hints
 ========================================
 
+.. testsetup:: *
+
+   import typing
+   from dataclasses import dataclass
+   from typing import *
+
 .. module:: typing
    :synopsis: Support for type hints (see :pep:`484`).
 
@@ -247,19 +253,22 @@ Callable
 Frameworks expecting callback functions of specific signatures might be
 type hinted using ``Callable[[Arg1Type, Arg2Type], ReturnType]``.
 
-For example::
+For example:
+
+.. testcode::
 
    from collections.abc import Callable
 
    def feeder(get_next_item: Callable[[], str]) -> None:
-       # Body
+       ...  # Body
 
    def async_query(on_success: Callable[[int], None],
                    on_error: Callable[[int, Exception], None]) -> None:
-       # Body
+       ...  # Body
 
    async def on_update(value: str) -> None:
-       # Body
+       ...  # Body
+
    callback: Callable[[str], Awaitable[None]] = on_update
 
 It is possible to declare the return type of a callable without specifying
@@ -402,11 +411,14 @@ In this case ``MyDict`` has a single parameter, ``T``.
 
 Using a generic class without specifying type parameters assumes
 :data:`Any` for each position. In the following example, ``MyIterable`` is
-not generic but implicitly inherits from ``Iterable[Any]``::
+not generic but implicitly inherits from ``Iterable[Any]``:
+
+.. testcode::
 
    from collections.abc import Iterable
 
    class MyIterable(Iterable): # Same as Iterable[Any]
+       ...
 
 User-defined generic type aliases are also supported. Examples::
 
@@ -654,9 +666,11 @@ These can be used as types in annotations and do not support ``[]``.
    A string created by composing ``LiteralString``-typed objects
    is also acceptable as a ``LiteralString``.
 
-   Example::
+   Example:
 
-      def run_query(sql: LiteralString) -> ...
+   .. testcode::
+
+      def run_query(sql: LiteralString) -> None:
           ...
 
       def caller(arbitrary_string: str, literal_string: LiteralString) -> None:
@@ -772,13 +786,34 @@ These can be used as types in annotations and do not support ``[]``.
 .. data:: TypeAlias
 
    Special annotation for explicitly declaring a :ref:`type alias <type-aliases>`.
+
    For example::
 
-    from typing import TypeAlias
+      from typing import TypeAlias
 
-    Factors: TypeAlias = list[int]
+      Factors: TypeAlias = list[int]
 
-   See :pep:`613` for more details about explicit type aliases.
+   ``TypeAlias`` is particularly useful for annotating
+   aliases that make use of forward references, as it can be hard for type
+   checkers to distinguish these from normal variable assignments:
+
+   .. testcode::
+
+      from typing import Generic, TypeAlias, TypeVar
+
+      T = TypeVar("T")
+
+      # "Box" does not exist yet,
+      # so we have to use quotes for the forward reference.
+      # Using ``TypeAlias`` tells the type checker that this is a type alias declaration,
+      # not a variable assignment to a string.
+      BoxOfStrings: TypeAlias = "Box[str]"
+
+      class Box(Generic[T]):
+          @classmethod
+          def make_box_of_strings(cls) -> BoxOfStrings: ...
+
+   See :pep:`613` for more details.
 
    .. versionadded:: 3.10
 
@@ -1093,7 +1128,8 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    (possibly multiple pieces of it, as ``Annotated`` is variadic).
    Specifically, a type ``T`` can be annotated with metadata ``x`` via the
    typehint ``Annotated[T, x]``. This metadata can be used for either static
-   analysis or at runtime. If a library (or tool) encounters a typehint
+   analysis or at runtime: at runtime, it is stored in a :attr:`__metadata__`
+   attribute. If a library (or tool) encounters a typehint
    ``Annotated[T, x]`` and has no special logic for metadata ``x``, it
    should ignore it and simply treat the type as ``T``. Unlike the
    ``no_type_check`` functionality that currently exists in the ``typing``
@@ -1120,10 +1156,17 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    the same (or different) type(s) on any node, the tools or libraries
    consuming those annotations are in charge of dealing with potential
    duplicates. For example, if you are doing value range analysis you might
-   allow this::
+   allow this:
 
-       T1 = Annotated[int, ValueRange(-10, 5)]
-       T2 = Annotated[T1, ValueRange(-20, 3)]
+   .. testcode::
+
+      @dataclass
+      class ValueRange:
+          lo: int
+          hi: int
+
+      T1 = Annotated[int, ValueRange(-10, 5)]
+      T2 = Annotated[T1, ValueRange(-20, 3)]
 
    Passing ``include_extras=True`` to :func:`get_type_hints` lets one
    access the extra annotations at runtime.
@@ -1135,7 +1178,11 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    * Multiple type annotations are supported (``Annotated`` supports variadic
      arguments)::
 
-       Annotated[int, ValueRange(3, 10), ctype("char")]
+        @dataclass
+        class ctype:
+            kind: str
+
+        Annotated[int, ValueRange(3, 10), ctype("char")]
 
    * ``Annotated`` must be called with at least two arguments (
      ``Annotated[int]`` is not valid)
@@ -1143,30 +1190,51 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    * The order of the annotations is preserved and matters for equality
      checks::
 
-       Annotated[int, ValueRange(3, 10), ctype("char")] != Annotated[
-           int, ctype("char"), ValueRange(3, 10)
-       ]
+        assert Annotated[int, ValueRange(3, 10), ctype("char")] != Annotated[
+            int, ctype("char"), ValueRange(3, 10)
+        ]
 
    * Nested ``Annotated`` types are flattened, with metadata ordered
      starting with the innermost annotation::
 
-       Annotated[Annotated[int, ValueRange(3, 10)], ctype("char")] == Annotated[
-           int, ValueRange(3, 10), ctype("char")
-       ]
+        assert Annotated[Annotated[int, ValueRange(3, 10)], ctype("char")] == Annotated[
+            int, ValueRange(3, 10), ctype("char")
+        ]
 
    * Duplicated annotations are not removed::
 
-       Annotated[int, ValueRange(3, 10)] != Annotated[
-           int, ValueRange(3, 10), ValueRange(3, 10)
-       ]
+        assert Annotated[int, ValueRange(3, 10)] != Annotated[
+            int, ValueRange(3, 10), ValueRange(3, 10)
+        ]
 
-   * ``Annotated`` can be used with nested and generic aliases::
+   * ``Annotated`` can be used with nested and generic aliases:
 
-       T = TypeVar('T')
-       Vec = Annotated[list[tuple[T, T]], MaxLen(10)]
-       V = Vec[int]
+     .. testcode::
 
-       V == Annotated[list[tuple[int, int]], MaxLen(10)]
+        @dataclass
+        class MaxLen:
+            value: int
+
+        T = TypeVar("T")
+        Vec: TypeAlias = Annotated[list[tuple[T, T]], MaxLen(10)]
+
+        assert Vec[int] == Annotated[list[tuple[int, int]], MaxLen(10)]
+
+   .. attribute:: __metadata__
+
+      At runtime, the metadata associated with an ``Annotated`` type can be
+      retrieved via the ``__metadata__`` attribute.
+
+      For example:
+
+      .. doctest::
+
+         >>> from typing import Annotated
+         >>> X = Annotated[int, "very", "important", "metadata"]
+         >>> X
+         typing.Annotated[int, 'very', 'important', 'metadata']
+         >>> X.__metadata__
+         ('very', 'important', 'metadata')
 
    .. versionadded:: 3.9
 
@@ -1450,15 +1518,21 @@ for creating generic types.
           def __abs__(self) -> "Array[*Shape]": ...
           def get_shape(self) -> tuple[*Shape]: ...
 
-   Type variable tuples can be happily combined with normal type variables::
+   Type variable tuples can be happily combined with normal type variables:
+
+   .. testcode::
 
       DType = TypeVar('DType')
+      Shape = TypeVarTuple('Shape')
 
       class Array(Generic[DType, *Shape]):  # This is fine
           pass
 
       class Array2(Generic[*Shape, DType]):  # This would also be fine
           pass
+
+      class Height: ...
+      class Width: ...
 
       float_array_1d: Array[float, Height] = Array()     # Totally fine
       int_array_2d: Array[int, Height, Width] = Array()  # Yup, fine too
@@ -1904,6 +1978,10 @@ These are not used in annotations. They are building blocks for declaring types.
 
    A ``TypedDict`` can be generic::
 
+   .. testcode::
+
+      T = TypeVar("T")
+
       class Group(TypedDict, Generic[T]):
           key: T
           group: list[T]
@@ -1915,7 +1993,9 @@ These are not used in annotations. They are building blocks for declaring types.
    .. attribute:: __total__
 
       ``Point2D.__total__`` gives the value of the ``total`` argument.
-      Example::
+      Example:
+
+      .. doctest::
 
          >>> from typing import TypedDict
          >>> class Point2D(TypedDict): pass
@@ -1945,7 +2025,9 @@ These are not used in annotations. They are building blocks for declaring types.
       non-required keys in the same ``TypedDict`` . This is done by declaring a
       ``TypedDict`` with one value for the ``total`` argument and then
       inheriting from it in another ``TypedDict`` with a different value for
-      ``total``::
+      ``total``:
+
+      .. doctest::
 
          >>> class Point2D(TypedDict, total=False):
          ...     x: int
@@ -2600,7 +2682,9 @@ Functions and decorators
    decorated object performs runtime "magic" that
    transforms a class, giving it :func:`dataclasses.dataclass`-like behaviors.
 
-   Example usage with a decorator function::
+   Example usage with a decorator function:
+
+   .. testcode::
 
       T = TypeVar("T")
 
@@ -2705,7 +2789,9 @@ Functions and decorators
    runtime but should be ignored by a type checker.  At runtime, calling
    a ``@overload``-decorated function directly will raise
    :exc:`NotImplementedError`. An example of overload that gives a more
-   precise type than can be expressed using a union or a type variable::
+   precise type than can be expressed using a union or a type variable:
+
+   .. testcode::
 
       @overload
       def process(response: None) -> None:
@@ -2717,7 +2803,7 @@ Functions and decorators
       def process(response: bytes) -> str:
           ...
       def process(response):
-          <actual implementation>
+          ...  # actual implementation goes here
 
    See :pep:`484` for more details and comparison with other typing semantics.
 
@@ -2835,14 +2921,16 @@ Introspection helpers
 
    The function recursively replaces all ``Annotated[T, ...]`` with ``T``,
    unless ``include_extras`` is set to ``True`` (see :class:`Annotated` for
-   more information). For example::
+   more information). For example:
+
+   .. testcode::
 
        class Student(NamedTuple):
            name: Annotated[str, 'some marker']
 
-       get_type_hints(Student) == {'name': str}
-       get_type_hints(Student, include_extras=False) == {'name': str}
-       get_type_hints(Student, include_extras=True) == {
+       assert get_type_hints(Student) == {'name': str}
+       assert get_type_hints(Student, include_extras=False) == {'name': str}
+       assert get_type_hints(Student, include_extras=True) == {
            'name': Annotated[str, 'some marker']
        }
 
@@ -2869,7 +2957,9 @@ Introspection helpers
    If ``X`` is an instance of :class:`ParamSpecArgs` or :class:`ParamSpecKwargs`,
    return the underlying :class:`ParamSpec`.
    Return ``None`` for unsupported objects.
-   Examples::
+   Examples:
+
+   .. testcode::
 
       assert get_origin(str) is None
       assert get_origin(Dict[str, int]) is dict
@@ -2888,7 +2978,9 @@ Introspection helpers
    generic type, the order of ``(Y, Z, ...)`` may be different from the order
    of the original arguments ``[Y, Z, ...]`` due to type caching.
    Return ``()`` for unsupported objects.
-   Examples::
+   Examples:
+
+   .. testcode::
 
       assert get_args(int) == ()
       assert get_args(Dict[int, str]) == (int, str)
@@ -2900,14 +2992,20 @@ Introspection helpers
 
    Check if a type is a :class:`TypedDict`.
 
-   For example::
+   For example:
+
+   .. testcode::
 
       class Film(TypedDict):
           title: str
           year: int
 
-      is_typeddict(Film)  # => True
-      is_typeddict(list | str)  # => False
+      assert is_typeddict(Film)
+      assert not is_typeddict(list | str)
+
+      # TypedDict is a factory for creating typed dicts,
+      # not a typed dict itself
+      assert not is_typeddict(TypedDict)
 
    .. versionadded:: 3.10
 
