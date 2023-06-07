@@ -1792,10 +1792,12 @@ collation_callback(void *context, int text1_length, const void *text1_data,
     }
 
     string1 = PyUnicode_FromStringAndSize((const char*)text1_data, text1_length);
+    if (string1 == NULL) {
+        goto finally;
+    }
     string2 = PyUnicode_FromStringAndSize((const char*)text2_data, text2_length);
-
-    if (!string1 || !string2) {
-        goto finally; /* failed to allocate strings */
+    if (string2 == NULL) {
+        goto finally;
     }
 
     callback_context *ctx = (callback_context *)context;
