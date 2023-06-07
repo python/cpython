@@ -2367,8 +2367,6 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
     writer.use_bytearray = use_bytearray;
 
     assert(PyUnicode_Check(string));
-    if (PyUnicode_READY(string))
-        return NULL;
     hexlen = PyUnicode_GET_LENGTH(string);
 
     if (!PyUnicode_IS_ASCII(string)) {

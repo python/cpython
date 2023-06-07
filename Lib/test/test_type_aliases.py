@@ -8,8 +8,10 @@ from typing import Callable, TypeAliasType, TypeVar, get_args
 
 
 class TypeParamsInvalidTest(unittest.TestCase):
-    def test_name_collision_01(self):
-        check_syntax_error(self, """type TA1[A, **A] = None""", "duplicate type parameter 'A'")
+    def test_name_collisions(self):
+        check_syntax_error(self, 'type TA1[A, **A] = None', "duplicate type parameter 'A'")
+        check_syntax_error(self, 'type T[A, *A] = None', "duplicate type parameter 'A'")
+        check_syntax_error(self, 'type T[*A, **A] = None', "duplicate type parameter 'A'")
 
     def test_name_non_collision_02(self):
         ns = run_code("""type TA1[A] = lambda A: A""")

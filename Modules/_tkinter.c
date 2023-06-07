@@ -65,6 +65,12 @@ Copyright (C) 1994 Steen Lumholt.
 #endif
 #include <tclTomMath.h>
 
+#if defined(TCL_WITH_EXTERNAL_TOMMATH) || (TK_HEX_VERSION >= 0x08070000)
+#define USE_DEPRECATED_TOMMATH_API 0
+#else
+#define USE_DEPRECATED_TOMMATH_API 1
+#endif
+
 #if !(defined(MS_WINDOWS) || defined(__CYGWIN__))
 #define HAVE_CREATEFILEHANDLER
 #endif
@@ -130,11 +136,10 @@ _get_tcl_lib_path(void)
     static int already_checked = 0;
 
     if (already_checked == 0) {
-        PyObject *prefix;
         struct stat stat_buf;
         int stat_return_value;
 
-        prefix = PyUnicode_FromWideChar(Py_GetPrefix(), -1);
+        PyObject *prefix = PySys_GetObject("prefix");  // borrowed reference
         if (prefix == NULL) {
             return NULL;
         }
@@ -963,9 +968,6 @@ AsObj(PyObject *value)
     }
 
     if (PyUnicode_Check(value)) {
-        if (PyUnicode_READY(value) == -1)
-            return NULL;
-
         Py_ssize_t size = PyUnicode_GET_LENGTH(value);
         if (size == 0) {
             return Tcl_NewStringObj("", 0);
@@ -1053,20 +1055,33 @@ static PyObject*
 fromBignumObj(TkappObject *tkapp, Tcl_Obj *value)
 {
     mp_int bigValue;
+    mp_err err;
+#if USE_DEPRECATED_TOMMATH_API
     unsigned long numBytes;
+#else
+    size_t numBytes;
+#endif
     unsigned char *bytes;
     PyObject *res;
 
     if (Tcl_GetBignumFromObj(Tkapp_Interp(tkapp), value, &bigValue) != TCL_OK)
         return Tkinter_Error(tkapp);
+#if USE_DEPRECATED_TOMMATH_API
     numBytes = mp_unsigned_bin_size(&bigValue);
+#else
+    numBytes = mp_ubin_size(&bigValue);
+#endif
     bytes = PyMem_Malloc(numBytes);
     if (bytes == NULL) {
         mp_clear(&bigValue);
         return PyErr_NoMemory();
     }
-    if (mp_to_unsigned_bin_n(&bigValue, bytes,
-                                &numBytes) != MP_OKAY) {
+#if USE_DEPRECATED_TOMMATH_API
+    err = mp_to_unsigned_bin_n(&bigValue, bytes, &numBytes);
+#else
+    err = mp_to_ubin(&bigValue, bytes, numBytes, NULL);
+#endif
+    if (err != MP_OKAY) {
         mp_clear(&bigValue);
         PyMem_Free(bytes);
         return PyErr_NoMemory();
@@ -3289,8 +3304,8 @@ PyInit__tkinter(void)
 
     /* This helps the dynamic loader; in Unicode aware Tcl versions
        it also helps Tcl find its encodings. */
-    uexe = PyUnicode_FromWideChar(Py_GetProgramName(), -1);
-    if (uexe) {
+    uexe = PySys_GetObject("executable");  // borrowed reference
+    if (uexe && PyUnicode_Check(uexe)) {   // sys.executable can be None
         cexe = PyUnicode_EncodeFSDefault(uexe);
         if (cexe) {
 #ifdef MS_WINDOWS
@@ -3329,7 +3344,6 @@ PyInit__tkinter(void)
 #endif /* MS_WINDOWS */
         }
         Py_XDECREF(cexe);
-        Py_DECREF(uexe);
     }
 
     if (PyErr_Occurred()) {

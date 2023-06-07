@@ -923,7 +923,7 @@ fstring_conversion[ResultTokenWithMetadata*]:
 fstring_full_format_spec[ResultTokenWithMetadata*]:
     | colon=':' spec=fstring_format_spec* { _PyPegen_setup_full_format_spec(p, colon, (asdl_expr_seq *) spec, EXTRA) }
 fstring_format_spec[expr_ty]:
-    | t=FSTRING_MIDDLE { _PyPegen_constant_from_token(p, t) }
+    | t=FSTRING_MIDDLE { _PyPegen_decoded_constant_from_token(p, t) }
     | fstring_replacement_field
 fstring[expr_ty]:
     | a=FSTRING_START b=fstring_middle* c=FSTRING_END { _PyPegen_joined_str(p, a, (asdl_expr_seq*)b, c) }

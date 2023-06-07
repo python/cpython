@@ -289,15 +289,6 @@ _PyCode_Quicken(PyCodeObject *code)
             case LOAD_FAST << 8 | LOAD_CONST:
                 instructions[i - 1].op.code = LOAD_FAST__LOAD_CONST;
                 break;
-            case LOAD_FAST << 8 | LOAD_FAST:
-                instructions[i - 1].op.code = LOAD_FAST__LOAD_FAST;
-                break;
-            case STORE_FAST << 8 | LOAD_FAST:
-                instructions[i - 1].op.code = STORE_FAST__LOAD_FAST;
-                break;
-            case STORE_FAST << 8 | STORE_FAST:
-                instructions[i - 1].op.code = STORE_FAST__STORE_FAST;
-                break;
         }
     }
     #endif /* ENABLE_SPECIALIZATION */
@@ -1914,8 +1905,7 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
             }
             if (PyUnicode_CheckExact(lhs)) {
                 _Py_CODEUNIT next = instr[INLINE_CACHE_ENTRIES_BINARY_OP + 1];
-                bool to_store = (next.op.code == STORE_FAST ||
-                                 next.op.code == STORE_FAST__LOAD_FAST);
+                bool to_store = (next.op.code == STORE_FAST);
                 if (to_store && locals[next.op.arg] == lhs) {
                     instr->op.code = BINARY_OP_INPLACE_ADD_UNICODE;
                     goto success;

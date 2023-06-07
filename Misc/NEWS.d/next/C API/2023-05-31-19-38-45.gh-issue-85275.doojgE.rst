@@ -1,0 +1,4 @@
+``PyObject_AsCharBuffer()``, ``PyObject_AsReadBuffer()``,
+``PyObject_CheckReadBuffer()``, and ``PyObject_AsWriteBuffer()`` are
+removed. Please migrate to new buffer protocol; :c:func:`PyObject_GetBuffer`
+and :c:func:`PyBuffer_Release`.

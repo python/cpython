@@ -8,8 +8,14 @@ from typing import Generic, Sequence, TypeVar, TypeVarTuple, ParamSpec, get_args
 
 
 class TypeParamsInvalidTest(unittest.TestCase):
-    def test_name_collision_01(self):
-        check_syntax_error(self, """def func[**A, A](): ...""")
+    def test_name_collisions(self):
+        check_syntax_error(self, 'def func[**A, A](): ...', "duplicate type parameter 'A'")
+        check_syntax_error(self, 'def func[A, *A](): ...', "duplicate type parameter 'A'")
+        check_syntax_error(self, 'def func[*A, **A](): ...', "duplicate type parameter 'A'")
+
+        check_syntax_error(self, 'class C[**A, A](): ...', "duplicate type parameter 'A'")
+        check_syntax_error(self, 'class C[A, *A](): ...', "duplicate type parameter 'A'")
+        check_syntax_error(self, 'class C[*A, **A](): ...', "duplicate type parameter 'A'")
 
     def test_name_non_collision_02(self):
         ns = run_code("""def func[A](A): return A""")
