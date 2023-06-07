@@ -253,19 +253,22 @@ Callable
 Frameworks expecting callback functions of specific signatures might be
 type hinted using ``Callable[[Arg1Type, Arg2Type], ReturnType]``.
 
-For example::
+For example:
+
+.. testcode::
 
    from collections.abc import Callable
 
    def feeder(get_next_item: Callable[[], str]) -> None:
-       # Body
+       ...  # Body
 
    def async_query(on_success: Callable[[int], None],
                    on_error: Callable[[int, Exception], None]) -> None:
-       # Body
+       ...  # Body
 
    async def on_update(value: str) -> None:
-       # Body
+       ...  # Body
+
    callback: Callable[[str], Awaitable[None]] = on_update
 
 It is possible to declare the return type of a callable without specifying
@@ -408,11 +411,14 @@ In this case ``MyDict`` has a single parameter, ``T``.
 
 Using a generic class without specifying type parameters assumes
 :data:`Any` for each position. In the following example, ``MyIterable`` is
-not generic but implicitly inherits from ``Iterable[Any]``::
+not generic but implicitly inherits from ``Iterable[Any]``:
+
+.. testcode::
 
    from collections.abc import Iterable
 
    class MyIterable(Iterable): # Same as Iterable[Any]
+       ...
 
 User-defined generic type aliases are also supported. Examples::
 
@@ -660,9 +666,11 @@ These can be used as types in annotations and do not support ``[]``.
    A string created by composing ``LiteralString``-typed objects
    is also acceptable as a ``LiteralString``.
 
-   Example::
+   Example:
 
-      def run_query(sql: LiteralString) -> ...
+   .. testcode::
+
+      def run_query(sql: LiteralString) -> None:
           ...
 
       def caller(arbitrary_string: str, literal_string: LiteralString) -> None:
@@ -1489,15 +1497,21 @@ for creating generic types.
           def __abs__(self) -> "Array[*Shape]": ...
           def get_shape(self) -> tuple[*Shape]: ...
 
-   Type variable tuples can be happily combined with normal type variables::
+   Type variable tuples can be happily combined with normal type variables:
+
+   .. testcode::
 
       DType = TypeVar('DType')
+      Shape = TypeVarTuple('Shape')
 
       class Array(Generic[DType, *Shape]):  # This is fine
           pass
 
       class Array2(Generic[*Shape, DType]):  # This would also be fine
           pass
+
+      class Height: ...
+      class Width: ...
 
       float_array_1d: Array[float, Height] = Array()     # Totally fine
       int_array_2d: Array[int, Height, Width] = Array()  # Yup, fine too
@@ -1943,6 +1957,10 @@ These are not used in annotations. They are building blocks for declaring types.
 
    A ``TypedDict`` can be generic::
 
+   .. testcode::
+
+      T = TypeVar("T")
+
       class Group(TypedDict, Generic[T]):
           key: T
           group: list[T]
@@ -1954,7 +1972,9 @@ These are not used in annotations. They are building blocks for declaring types.
    .. attribute:: __total__
 
       ``Point2D.__total__`` gives the value of the ``total`` argument.
-      Example::
+      Example:
+
+      .. doctest::
 
          >>> from typing import TypedDict
          >>> class Point2D(TypedDict): pass
@@ -1984,7 +2004,9 @@ These are not used in annotations. They are building blocks for declaring types.
       non-required keys in the same ``TypedDict`` . This is done by declaring a
       ``TypedDict`` with one value for the ``total`` argument and then
       inheriting from it in another ``TypedDict`` with a different value for
-      ``total``::
+      ``total``:
+
+      .. doctest::
 
          >>> class Point2D(TypedDict, total=False):
          ...     x: int
@@ -2639,7 +2661,9 @@ Functions and decorators
    decorated object performs runtime "magic" that
    transforms a class, giving it :func:`dataclasses.dataclass`-like behaviors.
 
-   Example usage with a decorator function::
+   Example usage with a decorator function:
+
+   .. testcode::
 
       T = TypeVar("T")
 
@@ -2744,7 +2768,9 @@ Functions and decorators
    runtime but should be ignored by a type checker.  At runtime, calling
    a ``@overload``-decorated function directly will raise
    :exc:`NotImplementedError`. An example of overload that gives a more
-   precise type than can be expressed using a union or a type variable::
+   precise type than can be expressed using a union or a type variable:
+
+   .. testcode::
 
       @overload
       def process(response: None) -> None:
@@ -2756,7 +2782,7 @@ Functions and decorators
       def process(response: bytes) -> str:
           ...
       def process(response):
-          <actual implementation>
+          ...  # actual implementation goes here
 
    See :pep:`484` for more details and comparison with other typing semantics.
 
@@ -2874,14 +2900,16 @@ Introspection helpers
 
    The function recursively replaces all ``Annotated[T, ...]`` with ``T``,
    unless ``include_extras`` is set to ``True`` (see :class:`Annotated` for
-   more information). For example::
+   more information). For example:
+
+   .. testcode::
 
        class Student(NamedTuple):
            name: Annotated[str, 'some marker']
 
-       get_type_hints(Student) == {'name': str}
-       get_type_hints(Student, include_extras=False) == {'name': str}
-       get_type_hints(Student, include_extras=True) == {
+       assert get_type_hints(Student) == {'name': str}
+       assert get_type_hints(Student, include_extras=False) == {'name': str}
+       assert get_type_hints(Student, include_extras=True) == {
            'name': Annotated[str, 'some marker']
        }
 
@@ -2908,7 +2936,9 @@ Introspection helpers
    If ``X`` is an instance of :class:`ParamSpecArgs` or :class:`ParamSpecKwargs`,
    return the underlying :class:`ParamSpec`.
    Return ``None`` for unsupported objects.
-   Examples::
+   Examples:
+
+   .. testcode::
 
       assert get_origin(str) is None
       assert get_origin(Dict[str, int]) is dict
@@ -2927,7 +2957,9 @@ Introspection helpers
    generic type, the order of ``(Y, Z, ...)`` may be different from the order
    of the original arguments ``[Y, Z, ...]`` due to type caching.
    Return ``()`` for unsupported objects.
-   Examples::
+   Examples:
+
+   .. testcode::
 
       assert get_args(int) == ()
       assert get_args(Dict[int, str]) == (int, str)
@@ -2939,14 +2971,20 @@ Introspection helpers
 
    Check if a type is a :class:`TypedDict`.
 
-   For example::
+   For example:
+
+   .. testcode::
 
       class Film(TypedDict):
           title: str
           year: int
 
-      is_typeddict(Film)  # => True
-      is_typeddict(list | str)  # => False
+      assert is_typeddict(Film)
+      assert not is_typeddict(list | str)
+
+      # TypedDict is a factory for creating typed dicts,
+      # not a typed dict itself
+      assert not is_typeddict(TypedDict)
 
    .. versionadded:: 3.10
 
