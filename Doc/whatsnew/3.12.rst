@@ -1489,13 +1489,14 @@ Changes in the Python API
   Additionally, there may be some minor behavioral changes as a consecuence of the
   changes required to support :pep:`701`. Some of these changes include:
 
-  * Some final ``DEDENT`` tokens are now emitted within the bounds of the
-    input. This means that for a file containing 3 lines, the old version of the
-    tokenizer returned a ``DEDENT`` token in line 4 whilst the new version returns
-    the token in line 3.
-
   * The ``type`` attribute of the tokens emitted when tokenizing some invalid Python
     characters such as ``!`` has changed from ``ERRORTOKEN`` to ``OP``.
+
+  * Incomplete single-line strings now also raise :exc:`tokenize.TokenError` as incomplete
+    multiline strings do.
+
+  * Some incomplete or invalid Python code now raises :exc:`tokenize.TokenError` instead of
+    returning arbitrary ``ERRORTOKEN`` tokens when tokenizing it.
 
 Build Changes
 =============
