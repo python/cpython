@@ -673,14 +673,17 @@ class PurePath(os.PathLike):
     def is_absolute(self):
         """True if the path is absolute (has both a root and, if applicable,
         a drive)."""
-        # ntpath.isabs() is defective - see GH-44626 .
         if self._flavour is ntpath:
+            # ntpath.isabs() is defective - see GH-44626.
             return bool(self.drive and self.root)
-        else:
+        elif self._flavour is posixpath:
+            # Optimization: work with raw paths on POSIX.
             for path in self._raw_paths:
-                if self._flavour.isabs(path):
+                if path.startswith('/'):
                     return True
             return False
+        else:
+            return self._flavour.isabs(str(self))
 
     def is_reserved(self):
         """Return True if the path contains one of the special names reserved
