@@ -1493,10 +1493,10 @@ Changes in the Python API
   * The ``type`` attribute of the tokens emitted when tokenizing some invalid Python
     characters such as ``!`` has changed from ``ERRORTOKEN`` to ``OP``.
 
-  * Incomplete single-line strings now also raise :exc:`tokenizer.TokenError` as incomplete
+  * Incomplete single-line strings now also raise :exc:`tokenize.TokenError` as incomplete
     multiline strings do.
 
-  * Some incomplete or invalid Python code now raises :exc:`tokenizer.TokenError` instead of
+  * Some incomplete or invalid Python code now raises :exc:`tokenize.TokenError` instead of
     returning arbitrary ``ERRORTOKEN`` tokens when tokenizing it.
 
 Build Changes
