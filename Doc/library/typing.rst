@@ -59,7 +59,12 @@ Relevant PEPs
 
 Since the initial introduction of type hints in :pep:`484` and :pep:`483`, a
 number of PEPs have modified and enhanced Python's framework for type
-annotations. These include:
+annotations:
+
+.. raw:: html
+
+   <details>
+   <summary><a style="cursor:pointer;">The full list of PEPs</a></summary>
 
 * :pep:`526`: Syntax for Variable Annotations
      *Introducing* syntax for annotating variables outside of function
@@ -98,6 +103,11 @@ annotations. These include:
     *Introducing* :data:`LiteralString`
 * :pep:`681`: Data Class Transforms
     *Introducing* the :func:`@dataclass_transform<dataclass_transform>` decorator
+
+.. raw:: html
+
+   </details>
+   <br>
 
 .. _type-aliases:
 
@@ -222,9 +232,13 @@ See :pep:`484` for more details.
 .. versionadded:: 3.5.2
 
 .. versionchanged:: 3.10
-   ``NewType`` is now a class rather than a function.  There is some additional
-   runtime cost when calling ``NewType`` over a regular function.  However, this
-   cost will be reduced in 3.11.0.
+   ``NewType`` is now a class rather than a function.  As a result, there is
+   some additional runtime cost when calling ``NewType`` over a regular
+   function.
+
+.. versionchanged:: 3.11
+   The performance of calling ``NewType`` has been restored to its level in
+   Python 3.9.
 
 
 Callable
