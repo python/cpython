@@ -2557,8 +2557,8 @@ Callable.__doc__ = \
     Callable[[int], str] signifies a function of (int) -> str.
     The subscription syntax must always be used with exactly two
     values: the argument list and the return type.
-    The argument list must be a list of types, a ParamSpec or ellipsis.
-    The return type must be a single type.
+    The argument list must be a list of types, a ParamSpec,
+    Concatenate or ellipsis. The return type must be a single type.
 
     There is no syntax to indicate optional or keyword arguments;
     such function types are rarely used as callback types.
