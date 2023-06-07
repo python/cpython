@@ -832,19 +832,41 @@ These can be used as types in annotations and do not support ``[]``.
 .. data:: TypeAlias
 
    Special annotation for explicitly declaring a :ref:`type alias <type-aliases>`.
+
    For example::
 
-    from typing import TypeAlias
+      from typing import TypeAlias
 
-    Factors: TypeAlias = list[int]
+      Factors: TypeAlias = list[int]
 
-   See :pep:`613` for more details about explicit type aliases.
+   ``TypeAlias`` is particularly useful on older Python versions for annotating
+   aliases that make use of forward references, as it can be hard for type
+   checkers to distinguish these from normal variable assignments:
+
+   .. testcode::
+
+      from typing import Generic, TypeAlias, TypeVar
+
+      T = TypeVar("T")
+
+      # "Box" does not exist yet,
+      # so we have to use quotes for the forward reference on Python <3.12.
+      # Using ``TypeAlias`` tells the type checker that this is a type alias declaration,
+      # not a variable assignment to a string.
+      BoxOfStrings: TypeAlias = "Box[str]"
+
+      class Box(Generic[T]):
+          @classmethod
+          def make_box_of_strings(cls) -> BoxOfStrings: ...
+
+   See :pep:`613` for more details.
 
    .. versionadded:: 3.10
 
    .. deprecated:: 3.12
       :data:`TypeAlias` is deprecated in favor of the :keyword:`type` statement,
-      which creates instances of :class:`TypeAliasType`.
+      which creates instances of :class:`TypeAliasType`
+      and which natively supports forward references.
       Note that while :data:`TypeAlias` and :class:`TypeAliasType` serve
       similar purposes and have similar names, they are distinct and the
       latter is not the type of the former.
