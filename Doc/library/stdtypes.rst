@@ -5164,10 +5164,9 @@ enables cleaner type hinting syntax compared to :data:`typing.Union`.
 
    .. note::
 
-      The object on both sides of the ``|`` operand must be an object that
-      defines the :meth:`~object.__or__` special method. As instances of
-      :class:`str` do not support :meth:`!__or__`, the expression ``int | "Foo"``,
-      where ``"Foo"`` is a reference to a class not yet defined, will fail at
+      The ``|`` operand cannot be used to define unions where one or more
+      members is a forward reference. For example, ``int | "Foo"``, where
+      ``"Foo"`` is a reference to a class not yet defined, will fail at
       runtime. To annotate forward references using union-type expressions,
       present the whole expression as a string, e.g. ``"int | Foo"``.
 
