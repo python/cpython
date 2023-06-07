@@ -272,24 +272,15 @@ These APIs can be used for fast direct character conversions:
 
    Return the character *ch* converted to lower case.
 
-   .. deprecated:: 3.3
-      This function uses simple case mappings.
-
 
 .. c:function:: Py_UCS4 Py_UNICODE_TOUPPER(Py_UCS4 ch)
 
    Return the character *ch* converted to upper case.
 
-   .. deprecated:: 3.3
-      This function uses simple case mappings.
-
 
 .. c:function:: Py_UCS4 Py_UNICODE_TOTITLE(Py_UCS4 ch)
 
    Return the character *ch* converted to title case.
-
-   .. deprecated:: 3.3
-      This function uses simple case mappings.
 
 
 .. c:function:: int Py_UNICODE_TODECIMAL(Py_UCS4 ch)
@@ -994,7 +985,7 @@ These are the UTF-8 codec APIs:
       The return type is now ``const char *`` rather of ``char *``.
 
    .. versionchanged:: 3.10
-      This function is a part of the :ref:`limited API <stable>`.
+      This function is a part of the :ref:`limited API <limited-c-api>`.
 
 
 .. c:function:: const char* PyUnicode_AsUTF8(PyObject *unicode)
