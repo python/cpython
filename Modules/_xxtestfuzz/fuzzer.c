@@ -207,7 +207,7 @@ static int init_sre_compile(void) {
     if (sre_constants == NULL) {
         return 0;
     }
-    sre_error_exception = PyObject_GetAttrString(sre_constants, "PatternError");
+    sre_error_exception = PyObject_GetAttrString(sre_constants, "error");
     if (sre_error_exception == NULL) {
         return 0;
     }
