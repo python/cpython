@@ -1944,5 +1944,31 @@ class TestOptimizerAPI(unittest.TestCase):
                 #Clear executors
                 loop.__code__ = loop.__code__.replace()
 
+    def test_long_loop(self):
+        "Check that we aren't confused by EXTENDED_ARG"
+
+        def nop():
+            pass
+
+        def long_loop():
+            for _ in range(10):
+                nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
+                nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
+                nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
+                nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
+                nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
+                nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
+                nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
+
+        try:
+            opt = _testinternalcapi.get_counter_optimizer()
+            _testinternalcapi.set_optimizer(opt)
+            self.assertEqual(opt.get_count(), 0)
+            long_loop()
+            self.assertEqual(opt.get_count(), 10)
+        finally:
+            _testinternalcapi.set_optimizer(None)
+
+
 if __name__ == "__main__":
     unittest.main()
