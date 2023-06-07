@@ -867,13 +867,21 @@ class Class4[X: int, Y: (bytes, str)]: ...
 
 
 class TypeParamsPickleTest(unittest.TestCase):
-    def test_pickling(self):
+    def test_pickling_functions(self):
         things_to_test = [
             func1,
             func2,
             func3,
             func4,
+        ]
+        for thing in things_to_test:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(thing=thing, proto=proto):
+                    pickled = pickle.dumps(thing, protocol=proto)
+                    self.assertEqual(pickle.loads(pickled), thing)
 
+    def test_pickling_classes(self):
+        things_to_test = [
             Class1,
             Class1[int],
             Class1[T],
@@ -897,3 +905,13 @@ class TypeParamsPickleTest(unittest.TestCase):
                 with self.subTest(thing=thing, proto=proto):
                     pickled = pickle.dumps(thing, protocol=proto)
                     self.assertEqual(pickle.loads(pickled), thing)
+
+        for klass in things_to_test:
+            real_class = getattr(klass, '__origin__', klass)
+            thing = klass()
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(thing=thing, proto=proto):
+                    pickled = pickle.dumps(thing, protocol=proto)
+                    # These instances are not equal,
+                    # but class check is good enough:
+                    self.assertIsInstance(pickle.loads(pickled), real_class)
