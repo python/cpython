@@ -247,6 +247,17 @@ tokenizeriter_next(tokenizeriterobject *it)
             }
             end_col_offset++;
         }
+        else if (type == NL) {
+            if (it->tok->implicit_newline) {
+                Py_DECREF(str);
+                str = PyUnicode_FromString("");
+            }
+        }
+
+        if (str == NULL) {
+            Py_DECREF(line);
+            goto exit;
+        }
     }
 
     result = Py_BuildValue("(iN(nn)(nn)N)", type, str, lineno, col_offset, end_lineno, end_col_offset, line);
