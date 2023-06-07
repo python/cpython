@@ -381,6 +381,14 @@ static const _PyRuntimeState initial = _PyRuntimeState_INIT(_PyRuntime);
 _Py_COMP_DIAG_POP
 
 #define NUMLOCKS 5
+#define LOCKS_INIT(runtime) \
+    { \
+        &(runtime)->interpreters.mutex, \
+        &(runtime)->xidregistry.mutex, \
+        &(runtime)->getargs.mutex, \
+        &(runtime)->unicode_state.ids.lock, \
+        &(runtime)->imports.extensions.mutex, \
+    }
 
 static int
 alloc_for_runtime(PyThread_type_lock locks[NUMLOCKS])
@@ -427,13 +435,7 @@ init_runtime(_PyRuntimeState *runtime,
 
     PyPreConfig_InitPythonConfig(&runtime->preconfig);
 
-    PyThread_type_lock *lockptrs[NUMLOCKS] = {
-        &runtime->interpreters.mutex,
-        &runtime->xidregistry.mutex,
-        &runtime->getargs.mutex,
-        &runtime->unicode_state.ids.lock,
-        &runtime->imports.extensions.mutex,
-    };
+    PyThread_type_lock *lockptrs[NUMLOCKS] = LOCKS_INIT(runtime);
     for (int i = 0; i < NUMLOCKS; i++) {
         assert(locks[i] != NULL);
         *lockptrs[i] = locks[i];
@@ -512,13 +514,7 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
         LOCK = NULL; \
     }
 
-    PyThread_type_lock *lockptrs[NUMLOCKS] = {
-        &runtime->interpreters.mutex,
-        &runtime->xidregistry.mutex,
-        &runtime->getargs.mutex,
-        &runtime->unicode_state.ids.lock,
-        &runtime->imports.extensions.mutex,
-    };
+    PyThread_type_lock *lockptrs[NUMLOCKS] = LOCKS_INIT(runtime);
     for (int i = 0; i < NUMLOCKS; i++) {
         FREE_LOCK(*lockptrs[i]);
     }
@@ -541,13 +537,7 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
     PyMemAllocatorEx old_alloc;
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
-    PyThread_type_lock *lockptrs[NUMLOCKS] = {
-        &runtime->interpreters.mutex,
-        &runtime->xidregistry.mutex,
-        &runtime->getargs.mutex,
-        &runtime->unicode_state.ids.lock,
-        &runtime->imports.extensions.mutex,
-    };
+    PyThread_type_lock *lockptrs[NUMLOCKS] = LOCKS_INIT(runtime);
     int reinit_err = 0;
     for (int i = 0; i < NUMLOCKS; i++) {
         reinit_err += _PyThread_at_fork_reinit(lockptrs[i]);
