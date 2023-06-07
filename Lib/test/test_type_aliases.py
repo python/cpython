@@ -264,7 +264,7 @@ class TypeAliasPickleTest(unittest.TestCase):
 
             ConstrainedGenericAlias,
             ConstrainedGenericAlias[str],
-            ConstrainedGenericAlias[T],  
+            ConstrainedGenericAlias[T],
 
             AllTypesAlias,
             AllTypesAlias[int, str, T, [T, object]],
