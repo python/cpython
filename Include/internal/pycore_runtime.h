@@ -144,6 +144,7 @@ typedef struct pyruntimestate {
     Py_OpenCodeHookFunction open_code_hook;
     void *open_code_userdata;
     struct {
+        PyThread_type_lock mutex;
         _Py_AuditHookEntry *head;
     } audit_hooks;
 
