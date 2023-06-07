@@ -1744,7 +1744,7 @@ def Unpack(self, parameters):
     Note that there is only some runtime checking of this operator. Not
     everything the runtime allows may be accepted by static type checkers.
 
-    For more information, see PEPs 646 and 692.
+    For more information, see PEP 646.
     """
     item = _type_check(parameters, f'{self} accepts only single type.')
     return _UnpackGenericAlias(origin=self, args=(item,))
