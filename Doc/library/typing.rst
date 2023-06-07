@@ -236,9 +236,13 @@ See :pep:`484` for more details.
 .. versionadded:: 3.5.2
 
 .. versionchanged:: 3.10
-   ``NewType`` is now a class rather than a function.  There is some additional
-   runtime cost when calling ``NewType`` over a regular function.  However, this
-   cost will be reduced in 3.11.0.
+   ``NewType`` is now a class rather than a function.  As a result, there is
+   some additional runtime cost when calling ``NewType`` over a regular
+   function.
+
+.. versionchanged:: 3.11
+   The performance of calling ``NewType`` has been restored to its level in
+   Python 3.9.
 
 
 Callable
