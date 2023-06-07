@@ -168,10 +168,7 @@ should_audit(PyInterpreterState *interp)
     if (!interp) {
         return 0;
     }
-    PyThread_acquire_lock(interp->runtime->audit_hooks.mutex, WAIT_LOCK);
-    int has_global_hooks = (interp->runtime->audit_hooks.head != NULL);
-    PyThread_release_lock(interp->runtime->audit_hooks.mutex);
-    return (has_global_hooks
+    return (interp->runtime->audit_hooks.head
             || interp->audit_hooks
             || PyDTrace_AUDIT_ENABLED());
 }
@@ -227,10 +224,11 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
         goto exit;
     }
 
-    /* Call global hooks */
-    PyThread_acquire_lock(is->runtime->audit_hooks.mutex, WAIT_LOCK);
+    /* Call global hooks
+     *
+     * We don't worry about any races on hooks getting added,
+     * since that would not leave is in an inconsistent state. */
     _Py_AuditHookEntry *e = is->runtime->audit_hooks.head;
-    PyThread_release_lock(is->runtime->audit_hooks.mutex);
     for (; e; e = e->next) {
         if (e->hookCFunction(event, eventArgs, e->userData) < 0) {
             goto exit;
@@ -358,14 +356,32 @@ _PySys_ClearAuditHooks(PyThreadState *ts)
     _PySys_Audit(ts, "cpython._PySys_ClearAuditHooks", NULL);
     _PyErr_Clear(ts);
 
-    PyThread_acquire_lock(runtime->audit_hooks.mutex, WAIT_LOCK);
+    /* We don't worry about the very unlikely race right here,
+     * since it's entirely benign.  Nothing else removes entries
+     * from the list and adding an entry right now would not cause
+     * any trouble. */
     _Py_AuditHookEntry *e = runtime->audit_hooks.head, *n;
     runtime->audit_hooks.head = NULL;
-    PyThread_release_lock(runtime->audit_hooks.mutex);
     while (e) {
         n = e->next;
         PyMem_RawFree(e);
         e = n;
+    }
+}
+
+static void
+add_audit_hook_entry_unlocked(_PyRuntimeState *runtime,
+                              _Py_AuditHookEntry *entry)
+{
+    if (runtime->audit_hooks.head == NULL) {
+        runtime->audit_hooks.head = entry;
+    }
+    else {
+        _Py_AuditHookEntry *last = runtime->audit_hooks.head;
+        while (last->next) {
+            last = last->next;
+        }
+        last->next = entry;
     }
 }
 
@@ -396,30 +412,27 @@ PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
         }
     }
 
-    PyThread_acquire_lock(runtime->audit_hooks.mutex, WAIT_LOCK);
-    _Py_AuditHookEntry *e = runtime->audit_hooks.head;
-    if (!e) {
-        e = (_Py_AuditHookEntry*)PyMem_RawMalloc(sizeof(_Py_AuditHookEntry));
-        runtime->audit_hooks.head = e;
-    } else {
-        while (e->next) {
-            e = e->next;
-        }
-        e = e->next = (_Py_AuditHookEntry*)PyMem_RawMalloc(
+    _Py_AuditHookEntry *e = (_Py_AuditHookEntry*)PyMem_RawMalloc(
             sizeof(_Py_AuditHookEntry));
-    }
-    PyThread_release_lock(runtime->audit_hooks.mutex);
-
     if (!e) {
         if (tstate != NULL) {
             _PyErr_NoMemory(tstate);
         }
         return -1;
     }
-
     e->next = NULL;
     e->hookCFunction = (Py_AuditHookFunction)hook;
     e->userData = userData;
+
+    if (runtime->audit_hooks.mutex == NULL) {
+        /* The runtime must not be initailized yet. */
+        add_audit_hook_entry_unlocked(runtime, e);
+    }
+    else {
+        PyThread_acquire_lock(runtime->audit_hooks.mutex, WAIT_LOCK);
+        add_audit_hook_entry_unlocked(runtime, e);
+        PyThread_release_lock(runtime->audit_hooks.mutex);
+    }
 
     return 0;
 }
