@@ -1,6 +1,8 @@
 import os
 import signal
 import sys
+import threading
+import time
 import unittest
 import warnings
 from unittest import mock
@@ -786,6 +788,35 @@ class SubprocessMixin:
             ])
 
         self.loop.run_until_complete(main())
+
+    def test_subprocess_wait_not_hang_gh105288(self):
+        # See https://github.com/python/cpython/issues/105288
+        TIMEOUT = 5
+        finished = False
+
+        async def whoami():
+            proc = await subprocess.create_subprocess_exec('whoami')
+            await proc.communicate()
+
+        async def main():
+            t = asyncio.create_task(whoami())
+            await asyncio.wait([0, t])
+
+        def _main():
+            nonlocal finished
+            try:
+                # We have to run the event loop in a separate thread,
+                # to make sure we can fail in the main thread
+                # and successfully notify the test driver.
+                self.loop.run_until_complete(main())
+            finally:
+                finished = True
+
+
+        threading.Thread(target=_main).start()
+        time.sleep(TIMEOUT)
+        if not finished:
+            self.fail('watchdog timeout, event loop is probably sleeping infinitely')
 
     def test_subprocess_communicate_stdout(self):
         # See https://github.com/python/cpython/issues/100133
