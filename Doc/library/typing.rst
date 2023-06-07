@@ -826,11 +826,11 @@ These can be used as types in annotations and do not support ``[]``.
       # so we have to use quotes for the forward reference on Python <3.12.
       # Using `TypeAlias` tells the type checker that this is a type alias declaration,
       # not a variable assignment to a string.
-      ContainerOfInts: TypeAlias = "Container[int]"
+      BoxOfStrings: TypeAlias = "Box[str]"
 
-      class Container(Generic[T]):
+      class Box(Generic[T]):
           @classmethod
-          def make_container_of_ints(cls) -> ContainerOfInts: ...
+          def make_box_of_strings(cls) -> BoxOfStrings: ...
 
    See :pep:`613` for more details.
 
