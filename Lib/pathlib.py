@@ -195,9 +195,10 @@ def _select_unique(paths):
     yielded = set()
     try:
         for path in paths:
-            if path not in yielded:
+            path_str = str(path)
+            if path_str not in yielded:
                 yield path
-                yielded.add(path)
+                yielded.add(path_str)
     finally:
         yielded.clear()
 
