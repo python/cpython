@@ -2421,7 +2421,7 @@ Corresponding to other types in :mod:`collections.abc`
 
 .. class:: Hashable
 
-   Deprecated alias to :class:`collections.abc.Hashable`.
+   Alias to :class:`collections.abc.Hashable`.
 
 .. class:: Reversible(Iterable[T_co])
 
@@ -2433,7 +2433,7 @@ Corresponding to other types in :mod:`collections.abc`
 
 .. class:: Sized
 
-   Deprecated alias to :class:`collections.abc.Sized`.
+   Alias to :class:`collections.abc.Sized`.
 
 Asynchronous programming
 """"""""""""""""""""""""
