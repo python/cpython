@@ -1363,19 +1363,19 @@ class PyShell(OutputWindow):
                 self.text.tag_remove(self.user_input_insert_tags, index_before)
             self.shell_sidebar.update_sidebar()
 
-    def open_stack_viewer(self, event=None):
+    def open_stack_viewer(self, event=None):  # -n mode only
         if self.interp.rpcclt:
             return self.interp.remote_stack_viewer()
+
+        from idlelib.stackviewer import StackBrowser
         try:
-            sys.last_traceback
+            StackBrowser(self.root, sys.last_value, self.flist)
         except:
             messagebox.showerror("No stack trace",
                 "There is no stack trace yet.\n"
-                "(sys.last_traceback is not defined)",
+                "(sys.last_value is not defined)",
                 parent=self.text)
-            return
-        from idlelib.stackviewer import StackBrowser
-        StackBrowser(self.root, self.flist)
+        return None
 
     def view_restart_mark(self, event=None):
         self.text.see("iomark")
