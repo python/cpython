@@ -2173,7 +2173,7 @@ class Annotated:
 
         assert Annotated[int, '$'].__metadata__ == ('$',)
 
-    - Nested Annotated are flattened::
+    - Nested Annotated types are flattened::
 
         assert Annotated[Annotated[T, Ann1, Ann2], Ann3] == Annotated[T, Ann1, Ann2, Ann3]
 
@@ -2184,15 +2184,15 @@ class Annotated:
 
     - Annotated can be used as a generic type alias::
 
-        Optimized = Annotated[T, runtime.Optimize()]
+        Optimized: TypeAlias = Annotated[T, runtime.Optimize()]
         assert Optimized[int] == Annotated[int, runtime.Optimize()]
 
-        OptimizedList = Annotated[List[T], runtime.Optimize()]
-        assert OptimizedList[int] == Annotated[List[int], runtime.Optimize()]
+        OptimizedList: TypeAlias = Annotated[list[T], runtime.Optimize()]
+        assert OptimizedList[int] == Annotated[list[int], runtime.Optimize()]
 
     - Annotated cannot be used with an unpacked TypeVarTuple::
 
-        Annotated[*Ts, Ann1]  # NOT valid
+        Variadic: TypeAlias = Annotated[*Ts, Ann1]  # NOT valid
 
       This would be equivalent to::
 
