@@ -151,6 +151,8 @@ class TupleSubclass(tuple):
 class DictSubclass(dict):
     pass
 
+m = memoryview(bytearray(b'noncontig'))
+NONCONTIG_WRITABLE = m[::-2]
 
 class Unsigned_TestCase(unittest.TestCase):
     def test_b(self):
@@ -835,6 +837,7 @@ class Bytes_TestCase(unittest.TestCase):
         self.assertEqual(getargs_y_star(bytearray(b'bytearray')), b'bytearray')
         self.assertEqual(getargs_y_star(memoryview(b'memoryview')), b'memoryview')
         self.assertRaises(TypeError, getargs_y_star, None)
+        self.assertRaises(BufferError, getargs_y_star, NONCONTIG_WRITABLE)
 
     def test_y_hash(self):
         from _testcapi import getargs_y_hash
@@ -844,7 +847,8 @@ class Bytes_TestCase(unittest.TestCase):
         self.assertRaises(TypeError, getargs_y_hash, bytearray(b'bytearray'))
         self.assertRaises(TypeError, getargs_y_hash, memoryview(b'memoryview'))
         self.assertRaises(TypeError, getargs_y_hash, None)
-
+        # TypeError: must be read-only bytes-like object, not memoryview
+        self.assertRaises(TypeError, getargs_y_hash, NONCONTIG_WRITABLE)
     def test_w_star(self):
         # getargs_w_star() modifies first and last byte
         from _testcapi import getargs_w_star
@@ -859,6 +863,7 @@ class Bytes_TestCase(unittest.TestCase):
         self.assertEqual(getargs_w_star(memoryview(buf)), b'[emoryvie]')
         self.assertEqual(buf, bytearray(b'[emoryvie]'))
         self.assertRaises(TypeError, getargs_w_star, None)
+        self.assertRaises(TypeError, getargs_w_star, NONCONTIG_WRITABLE)
 
 
 class String_TestCase(unittest.TestCase):
@@ -891,6 +896,7 @@ class String_TestCase(unittest.TestCase):
         self.assertEqual(getargs_s_star(bytearray(b'bytearray')), b'bytearray')
         self.assertEqual(getargs_s_star(memoryview(b'memoryview')), b'memoryview')
         self.assertRaises(TypeError, getargs_s_star, None)
+        self.assertRaises(BufferError, getargs_s_star, NONCONTIG_WRITABLE)
 
     def test_s_hash(self):
         from _testcapi import getargs_s_hash
@@ -900,6 +906,8 @@ class String_TestCase(unittest.TestCase):
         self.assertRaises(TypeError, getargs_s_hash, bytearray(b'bytearray'))
         self.assertRaises(TypeError, getargs_s_hash, memoryview(b'memoryview'))
         self.assertRaises(TypeError, getargs_s_hash, None)
+        # TypeError: must be read-only bytes-like object, not memoryview
+        self.assertRaises(TypeError, getargs_s_hash, NONCONTIG_WRITABLE)
 
     def test_z(self):
         from _testcapi import getargs_z
@@ -918,6 +926,7 @@ class String_TestCase(unittest.TestCase):
         self.assertEqual(getargs_z_star(bytearray(b'bytearray')), b'bytearray')
         self.assertEqual(getargs_z_star(memoryview(b'memoryview')), b'memoryview')
         self.assertIsNone(getargs_z_star(None))
+        self.assertRaises(BufferError, getargs_z_star, NONCONTIG_WRITABLE)
 
     def test_z_hash(self):
         from _testcapi import getargs_z_hash
@@ -927,6 +936,8 @@ class String_TestCase(unittest.TestCase):
         self.assertRaises(TypeError, getargs_z_hash, bytearray(b'bytearray'))
         self.assertRaises(TypeError, getargs_z_hash, memoryview(b'memoryview'))
         self.assertIsNone(getargs_z_hash(None))
+        # TypeError: must be read-only bytes-like object, not memoryview
+        self.assertRaises(TypeError, getargs_z_hash, NONCONTIG_WRITABLE)
 
     def test_es(self):
         from _testcapi import getargs_es
