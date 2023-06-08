@@ -1,0 +1,2 @@
+Make :data:`typing.Union` an alias for :class:`types.UnionType`. Patch by
+Jelle Zijlstra.
