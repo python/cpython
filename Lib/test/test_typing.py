@@ -1764,7 +1764,7 @@ class UnionTests(BaseTestCase):
         u = Union[List[int], int]
         self.assertEqual(repr(u), 'typing.List[int] | int')
         u = Union[list[int], dict[str, float]]
-        self.assertEqual(repr(u), f'list[int] | dict[str, float]')
+        self.assertEqual(repr(u), 'list[int] | dict[str, float]')
         u = Union[int | float]
         self.assertEqual(repr(u), 'int | float')
 
