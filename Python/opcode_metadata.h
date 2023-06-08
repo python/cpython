@@ -6,16 +6,16 @@
 
 #define IS_PSEUDO_INSTR(OP)  \
     ((OP) == STORE_FAST_MAYBE_NULL) || \
-    ((OP) == SETUP_FINALLY) || \
-    ((OP) == SETUP_CLEANUP) || \
-    ((OP) == SETUP_WITH) || \
-    ((OP) == POP_BLOCK) || \
     ((OP) == LOAD_SUPER_METHOD) || \
     ((OP) == LOAD_ZERO_SUPER_METHOD) || \
     ((OP) == LOAD_ZERO_SUPER_ATTR) || \
     ((OP) == LOAD_METHOD) || \
     ((OP) == JUMP) || \
     ((OP) == JUMP_NO_INTERRUPT) || \
+    ((OP) == SETUP_FINALLY) || \
+    ((OP) == SETUP_CLEANUP) || \
+    ((OP) == SETUP_WITH) || \
+    ((OP) == POP_BLOCK) || \
     0
 
 #ifndef NEED_OPCODE_METADATA
