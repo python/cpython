@@ -245,6 +245,8 @@ class HeaderTests(TestCase):
         self.assertIn(b'IterHeader: IterA\r\n\tIterB', conn._buffer)
         conn.putheader('LatinHeader', b'\xFF')
         self.assertIn(b'LatinHeader: \xFF', conn._buffer)
+        conn.putheader('EncodedWordHeader', 'مثل')
+        self.assertIn(b'EncodedWordHeader: =?utf-8?b?2YXYq9mE?=', conn._buffer)
         conn.putheader('Utf8Header', b'\xc3\x80')
         self.assertIn(b'Utf8Header: \xc3\x80', conn._buffer)
         conn.putheader('C1-Control', b'next\x85line')
@@ -280,6 +282,18 @@ class HeaderTests(TestCase):
         conn.sock = sock
         conn.request('GET', '/foo')
         self.assertTrue(sock.data.startswith(expected))
+
+    def test_mime_encoded_word(self):
+        # Ensure MIME encoded word header values are correctly handled
+        body = 'HTTP/1.1 200 OK\r\n' \
+                'Star: =?utf-8?b?4piF?=\r\n' \
+                'Block: =?utf-8?Q?=e2=96=88?=\r\n\r\n'
+        sock = FakeSocket(body)
+        resp = client.HTTPResponse(sock)
+        resp.begin()
+
+        self.assertEqual(resp.getheader('Star'), '★')
+        self.assertEqual(resp.getheader('Block'), '█')
 
     def test_malformed_headers_coped_with(self):
         # Issue 19996

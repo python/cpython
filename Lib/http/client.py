@@ -70,6 +70,8 @@ Req-sent-unread-response       _CS_REQ_SENT       <response_class>
 
 import email.parser
 import email.message
+import email.header
+import email.policy
 import errno
 import http
 import io
@@ -232,8 +234,9 @@ def _parse_header_lines(header_lines, _class=HTTPMessage):
     to parse.
 
     """
-    hstring = b''.join(header_lines).decode('iso-8859-1')
-    return email.parser.Parser(_class=_class).parsestr(hstring)
+    hstring = hstring = b''.join(header_lines).decode('iso-8859-1')
+    return email.parser.Parser(_class=_class,
+                               policy=email.policy.default).parsestr(hstring)
 
 def parse_headers(fp, _class=HTTPMessage):
     """Parses only RFC2822 headers from a file pointer."""
@@ -1290,7 +1293,11 @@ class HTTPConnection:
         values = list(values)
         for i, one_value in enumerate(values):
             if hasattr(one_value, 'encode'):
-                values[i] = one_value.encode('latin-1')
+                try:
+                    values[i] = one_value.encode('latin-1')
+                except UnicodeEncodeError:
+                    hdr = email.header.Header(one_value, 'UTF-8')
+                    values[i] = hdr.encode().encode('ascii')
             elif isinstance(one_value, int):
                 values[i] = str(one_value).encode('ascii')
 

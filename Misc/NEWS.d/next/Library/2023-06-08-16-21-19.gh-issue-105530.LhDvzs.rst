@@ -1,0 +1,2 @@
+Use MIME word-encoded syntax (RFC 2047) for non-ISO-8859-1 characters in
+HTTP headers.
