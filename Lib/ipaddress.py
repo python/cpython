@@ -1197,6 +1197,9 @@ class _BaseV4:
         if not ip_str:
             raise AddressValueError('Address cannot be empty')
 
+        if len(ip_str) > 15:
+            raise AddressValueError('Address cannot be more than 15 characters long')
+
         octets = ip_str.split('.')
         if len(octets) != 4:
             raise AddressValueError("Expected 4 octets in %r" % ip_str)

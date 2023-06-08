@@ -224,6 +224,17 @@ class AddressTestCase_v4(BaseTestCase, CommonTestMixin_v4):
         with self.assertAddressError("Unexpected '/' in %r", addr):
             ipaddress.IPv4Address(addr)
 
+    def test_address_length(self):
+        def assertBadLength(addr):
+            with self.assertAddressError("Address cannot be more than 15 characters long"):
+                ipaddress.IPv4Address(addr)
+
+        assertBadLength("1000000000000000")
+        assertBadLength("0x0a.0x0a.0x0a.0x0a")
+        assertBadLength("0xa.0x0a.0x0a.0x0a")
+        assertBadLength("0000.000.000.000")
+        assertBadLength("12345.67899.-54321.-98765")
+
     def test_bad_address_split(self):
         def assertBadSplit(addr):
             with self.assertAddressError("Expected 4 octets in %r", addr):
@@ -250,7 +261,7 @@ class AddressTestCase_v4(BaseTestCase, CommonTestMixin_v4):
         assertBadSplit("bogus")
         assertBadSplit("bogus.com")
         assertBadSplit("1000")
-        assertBadSplit("1000000000000000")
+        assertBadSplit("100000000000000")
         assertBadSplit("192.168.0.1.com")
 
     def test_empty_octet(self):
@@ -268,8 +279,8 @@ class AddressTestCase_v4(BaseTestCase, CommonTestMixin_v4):
             with self.assertAddressError(re.escape(msg)):
                 ipaddress.IPv4Address(addr)
 
-        assertBadOctet("0x0a.0x0a.0x0a.0x0a", "0x0a")
-        assertBadOctet("0xa.0x0a.0x0a.0x0a", "0xa")
+        assertBadOctet("0x0a.0xa.0xa.10", "0x0a")
+        assertBadOctet("0xa.0xa.0xa.0xa", "0xa")
         assertBadOctet("42.42.42.-0", "-0")
         assertBadOctet("42.42.42.+0", "+0")
         assertBadOctet("42.42.42.-42", "-42")
@@ -284,8 +295,8 @@ class AddressTestCase_v4(BaseTestCase, CommonTestMixin_v4):
             with self.assertAddressError(re.escape(msg % (octet, addr))):
                 ipaddress.IPv4Address(addr)
 
-        assertBadOctet("0000.000.000.000", "0000")
-        assertBadOctet("12345.67899.-54321.-98765", "12345")
+        assertBadOctet("0000.000.000.00", "0000")
+        assertBadOctet("1234.5.-543.-98", "1234")
 
     def test_octet_limit(self):
         def assertBadOctet(addr, octet):
