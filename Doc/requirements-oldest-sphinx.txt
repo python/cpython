@@ -27,7 +27,7 @@ Jinja2==2.11.3
 MarkupSafe==1.1.1
 packaging==23.1
 Pygments==2.15.1
-requests==2.29.0
+requests==2.31.0
 snowballstemmer==2.2.0
 sphinxcontrib-applehelp==1.0.4
 sphinxcontrib-devhelp==1.0.2

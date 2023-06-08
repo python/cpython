@@ -279,6 +279,13 @@ capture data for later printing in a lightweight fashion.
 
       For syntax errors - the line number where the error occurred.
 
+   .. attribute:: end_lineno
+
+      For syntax errors - the end line number where the error occurred.
+      Can be ``None`` if not present.
+
+      .. versionadded:: 3.10
+
    .. attribute:: text
 
       For syntax errors - the text where the error occurred.
@@ -286,6 +293,13 @@ capture data for later printing in a lightweight fashion.
    .. attribute:: offset
 
       For syntax errors - the offset into the text where the error occurred.
+
+   .. attribute:: end_offset
+
+      For syntax errors - the end offset into the text where the error occurred.
+      Can be ``None`` if not present.
+
+      .. versionadded:: 3.10
 
    .. attribute:: msg
 
@@ -319,25 +333,31 @@ capture data for later printing in a lightweight fashion.
       The message indicating which exception occurred is always the last
       string in the output.
 
-   .. method::  format_exception_only()
+   .. method::  format_exception_only(*, show_group=False)
 
       Format the exception part of the traceback.
 
       The return value is a generator of strings, each ending in a newline.
 
-      Normally, the generator emits a single string; however, for
-      :exc:`SyntaxError` exceptions, it emits several lines that (when
-      printed) display detailed information about where the syntax
-      error occurred.
+      When *show_group* is ``False``, the generator normally emits a single
+      string; however, for :exc:`SyntaxError` exceptions, it emits several
+      lines that (when printed) display detailed information about where
+      the syntax error occurred.  The message indicating which exception
+      occurred is always the last string in the output.
 
-      The message indicating which exception occurred is always the last
-      string in the output.
+      When *show_group* is ``True``, and the exception is an instance of
+      :exc:`BaseExceptionGroup`, the nested exceptions are included as
+      well, recursively, with indentation relative to their nesting depth.
+
+      .. versionchanged:: 3.13
+         Added the *show_group* parameter.
 
    .. versionchanged:: 3.10
       Added the *compact* parameter.
 
    .. versionchanged:: 3.11
       Added the *max_group_width* and *max_group_depth* parameters.
+
 
 
 :class:`StackSummary` Objects

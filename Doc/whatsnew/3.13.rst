@@ -87,6 +87,13 @@ New Modules
 Improved Modules
 ================
 
+array
+-----
+
+* Add ``'w'`` type code that can be used for Unicode strings.
+  It can be used instead of ``'u'`` type code, which is deprecated.
+  (Contributed by Inada Naoki in :gh:`80480`.)
+
 io
 --
 
@@ -105,6 +112,13 @@ pathlib
 * Add *follow_symlinks* keyword-only argument to :meth:`pathlib.Path.glob` and
   :meth:`~pathlib.Path.rglob`.
   (Contributed by Barney Gale in :gh:`77609`.)
+
+traceback
+---------
+
+* Add *show_group* paramter to :func:`traceback.TracebackException.format_exception_only`
+  to format the nested exceptions of a :exc:`BaseExceptionGroup` instance, recursively.
+  (Contributed by Irit Katriel in :gh:`105292`.)
 
 Optimizations
 =============
@@ -292,6 +306,24 @@ Removed
   added in Python 3.8 and the old macros were deprecated in Python 3.11.
   (Contributed by Irit Katriel in :gh:`105111`.)
 
+* Remove ``locale.resetlocale()`` function deprecated in Python 3.11:
+  use ``locale.setlocale(locale.LC_ALL, "")`` instead.
+  (Contributed by Victor Stinner in :gh:`104783`.)
+
+* Remove the undocumented and untested ``logging.Logger.warn()`` method,
+  deprecated since Python 3.3, which was an alias to the
+  :meth:`logging.Logger.warning` method: use the :meth:`logging.Logger.warning`
+  method instead.
+  (Contributed by Victor Stinner in :gh:`105376`.)
+
+* Remove *cafile*, *capath* and *cadefault* parameters of the
+  :func:`urllib.request.urlopen` function, deprecated in Python 3.6: use the
+  *context* parameter instead. Please use
+  :meth:`ssl.SSLContext.load_cert_chain` instead, or let
+  :func:`ssl.create_default_context` select the system's trusted CA
+  certificates for you.
+  (Contributed by Victor Stinner in :gh:`105382`.)
+
 
 Porting to Python 3.13
 ======================
@@ -466,3 +498,10 @@ Removed
   * or :c:func:`PyGILState_Ensure` and :c:func:`PyGILState_Release`.
 
   (Contributed by Victor Stinner in :gh:`105182`.)
+
+* Remove the old private, undocumented and untested ``_PyGC_FINALIZED()`` macro
+  which was kept for backward compatibility with Python 3.8 and older: use
+  :c:func:`PyObject_GC_IsFinalized()` instead. The `pythoncapi-compat project
+  <https://github.com/python/pythoncapi-compat/>`_ can be used to get this
+  function on Python 3.8 and older.
+  (Contributed by Victor Stinner in :gh:`105268`.)

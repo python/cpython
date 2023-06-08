@@ -74,9 +74,9 @@ New typing features:
 
 * :pep:`688`: Making the buffer protocol accessible in Python
 
-* :ref:`whatsnew312-pep695`
-
 * :ref:`whatsnew312-pep692`
+
+* :ref:`whatsnew312-pep695`
 
 * :pep:`698`: Override Decorator for Static Typing
 
@@ -179,7 +179,7 @@ same quote as the containing f-string. Let's cover these in detail:
   must be defined in a single line even if outside f-strings expressions could
   span multiple lines (like literal lists being defined over multiple lines),
   making them harder to read. In Python 3.12 you can now define expressions
-  spaning multiple lines and include comments on them:
+  spanning multiple lines and include comments on them:
 
     >>> f"This is the playlist: {", ".join([
     ...     'Take me back to Eden',  # My, my, those eyes like fire
@@ -216,7 +216,7 @@ f-string raises a :exc:`SyntaxError`:
          ^^^
     SyntaxError: f-string: invalid syntax. Perhaps you forgot a comma?
 
-but the error message doesn't include the exact location of the error withing the line and
+but the error message doesn't include the exact location of the error within the line and
 also has the expression artificially surrounded by parentheses. In Python 3.12, as f-strings
 are parsed with the PEG parser, error messages can be more precise and show the entire line:
 
@@ -553,46 +553,6 @@ csv
   provide finer grained control of ``None`` and empty strings by
   :class:`~csv.writer` objects.
 
-inspect
--------
-
-* Add :func:`inspect.markcoroutinefunction` to mark sync functions that return
-  a :term:`coroutine` for use with :func:`inspect.iscoroutinefunction`.
-  (Contributed Carlton Gibson in :gh:`99247`.)
-
-* Add :func:`inspect.getasyncgenstate` and :func:`inspect.getasyncgenlocals`
-  for determining the current state of asynchronous generators.
-  (Contributed by Thomas Krennwallner in :issue:`35759`.)
-
-* The performance of :func:`inspect.getattr_static` has been considerably
-  improved. Most calls to the function should be at least 2x faster than they
-  were in Python 3.11, and some may be 6x faster or more. (Contributed by Alex
-  Waygood in :gh:`103193`.)
-
-pathlib
--------
-
-* Add support for subclassing :class:`pathlib.PurePath` and
-  :class:`~pathlib.Path`, plus their Posix- and Windows-specific variants.
-  Subclasses may override the :meth:`~pathlib.PurePath.with_segments` method
-  to pass information between path instances.
-
-* Add :meth:`~pathlib.Path.walk` for walking the directory trees and generating
-  all file or directory names within them, similar to :func:`os.walk`.
-  (Contributed by Stanislav Zmiev in :gh:`90385`.)
-
-* Add *walk_up* optional parameter to :meth:`pathlib.PurePath.relative_to`
-  to allow the insertion of ``..`` entries in the result; this behavior is
-  more consistent with :func:`os.path.relpath`.
-  (Contributed by Domenico Ragusa in :issue:`40358`.)
-
-* Add :meth:`pathlib.Path.is_junction` as a proxy to :func:`os.path.isjunction`.
-  (Contributed by Charles Machalow in :gh:`99547`.)
-
-* Add *case_sensitive* optional parameter to :meth:`pathlib.Path.glob`,
-  :meth:`pathlib.Path.rglob` and :meth:`pathlib.PurePath.match` for matching
-  the path's case sensitivity, allowing for more precise control over the matching process.
-
 dis
 ---
 
@@ -609,6 +569,22 @@ fractions
 
 * Objects of type :class:`fractions.Fraction` now support float-style
   formatting. (Contributed by Mark Dickinson in :gh:`100161`.)
+
+inspect
+-------
+
+* Add :func:`inspect.markcoroutinefunction` to mark sync functions that return
+  a :term:`coroutine` for use with :func:`inspect.iscoroutinefunction`.
+  (Contributed Carlton Gibson in :gh:`99247`.)
+
+* Add :func:`inspect.getasyncgenstate` and :func:`inspect.getasyncgenlocals`
+  for determining the current state of asynchronous generators.
+  (Contributed by Thomas Krennwallner in :issue:`35759`.)
+
+* The performance of :func:`inspect.getattr_static` has been considerably
+  improved. Most calls to the function should be at least 2x faster than they
+  were in Python 3.11, and some may be 6x faster or more. (Contributed by Alex
+  Waygood in :gh:`103193`.)
 
 itertools
 ---------
@@ -668,6 +644,30 @@ os.path
 
 * Add :func:`os.path.splitroot` to split a path into a triad
   ``(drive, root, tail)``. (Contributed by Barney Gale in :gh:`101000`.)
+
+pathlib
+-------
+
+* Add support for subclassing :class:`pathlib.PurePath` and
+  :class:`~pathlib.Path`, plus their Posix- and Windows-specific variants.
+  Subclasses may override the :meth:`~pathlib.PurePath.with_segments` method
+  to pass information between path instances.
+
+* Add :meth:`~pathlib.Path.walk` for walking the directory trees and generating
+  all file or directory names within them, similar to :func:`os.walk`.
+  (Contributed by Stanislav Zmiev in :gh:`90385`.)
+
+* Add *walk_up* optional parameter to :meth:`pathlib.PurePath.relative_to`
+  to allow the insertion of ``..`` entries in the result; this behavior is
+  more consistent with :func:`os.path.relpath`.
+  (Contributed by Domenico Ragusa in :issue:`40358`.)
+
+* Add :meth:`pathlib.Path.is_junction` as a proxy to :func:`os.path.isjunction`.
+  (Contributed by Charles Machalow in :gh:`99547`.)
+
+* Add *case_sensitive* optional parameter to :meth:`pathlib.Path.glob`,
+  :meth:`pathlib.Path.rglob` and :meth:`pathlib.PurePath.match` for matching
+  the path's case sensitivity, allowing for more precise control over the matching process.
 
 pdb
 ---
@@ -746,6 +746,38 @@ statistics
   for computing the Spearman correlation of ranked data.
   (Contributed by Raymond Hettinger in :gh:`95861`.)
 
+sys
+---
+
+* Add :func:`sys.activate_stack_trampoline` and
+  :func:`sys.deactivate_stack_trampoline` for activating and deactivating
+  stack profiler trampolines,
+  and :func:`sys.is_stack_trampoline_active` for querying if stack profiler
+  trampolines are active.
+  (Contributed by Pablo Galindo and Christian Heimes
+  with contributions from Gregory P. Smith [Google] and Mark Shannon
+  in :gh:`96123`.)
+
+* Add :data:`sys.last_exc` which holds the last unhandled exception that
+  was raised (for post-mortem debugging use cases). Deprecate the
+  three fields that have the same information in its legacy form:
+  :data:`sys.last_type`, :data:`sys.last_value` and :data:`sys.last_traceback`.
+  (Contributed by Irit Katriel in :gh:`102778`.)
+
+* :func:`sys._current_exceptions` now returns a mapping from thread-id to an
+  exception instance, rather than to a ``(typ, exc, tb)`` tuple.
+  (Contributed by Irit Katriel in :gh:`103176`.)
+
+tempfile
+--------
+
+* The :class:`tempfile.NamedTemporaryFile` function has a new optional parameter
+  *delete_on_close* (Contributed by Evgeny Zorin in :gh:`58451`.)
+* :func:`tempfile.mkdtemp` now always returns an absolute path, even if the
+  argument provided to the *dir* parameter is a relative path.
+
+.. _whatsnew-typing-py312:
+
 threading
 ---------
 
@@ -779,49 +811,6 @@ types
 * Add :func:`types.get_original_bases` to allow for further introspection of
   :ref:`user-defined-generics` when subclassed. (Contributed by
   James Hilton-Balfe and Alex Waygood in :gh:`101827`.)
-
-unicodedata
------------
-
-* The Unicode database has been updated to version 15.0.0. (Contributed by
-  Benjamin Peterson in :gh:`96734`).
-
-unittest
---------
-
-Added ``--durations`` command line option, showing the N slowest test cases::
-
-  python3 -m unittest --durations=3 lib.tests.test_threading
-  .....
-  Slowest test durations
-  ----------------------------------------------------------------------
-  1.210s     test_timeout (Lib.test.test_threading.BarrierTests)
-  1.003s     test_default_timeout (Lib.test.test_threading.BarrierTests)
-  0.518s     test_timeout (Lib.test.test_threading.EventTests)
-
-  (0.000 durations hidden.  Use -v to show these durations.)
-  ----------------------------------------------------------------------
-  Ran 158 tests in 9.869s
-
-  OK (skipped=3)
-
-(Contributed by Giampaolo Rodola in :issue:`4080`)
-
-uuid
-----
-
-* Add a :ref:`command-line interface <uuid-cli>`.
-  (Contributed by Adam Chhina in :gh:`88597`.)
-
-tempfile
---------
-
-* The :class:`tempfile.NamedTemporaryFile` function has a new optional parameter
-  *delete_on_close* (Contributed by Evgeny Zorin in :gh:`58451`.)
-* :func:`tempfile.mkdtemp` now always returns an absolute path, even if the
-  argument provided to the *dir* parameter is a relative path.
-
-.. _whatsnew-typing-py312:
 
 typing
 ------
@@ -877,27 +866,38 @@ typing
 * Add ``frozen_default`` parameter to :func:`typing.dataclass_transform`.
   (Contributed by Erik De Bonte in :gh:`99957`.)
 
-sys
----
+unicodedata
+-----------
 
-* Add :func:`sys.activate_stack_trampoline` and
-  :func:`sys.deactivate_stack_trampoline` for activating and deactivating
-  stack profiler trampolines,
-  and :func:`sys.is_stack_trampoline_active` for querying if stack profiler
-  trampolines are active.
-  (Contributed by Pablo Galindo and Christian Heimes
-  with contributions from Gregory P. Smith [Google] and Mark Shannon
-  in :gh:`96123`.)
+* The Unicode database has been updated to version 15.0.0. (Contributed by
+  Benjamin Peterson in :gh:`96734`).
 
-* Add :data:`sys.last_exc` which holds the last unhandled exception that
-  was raised (for post-mortem debugging use cases). Deprecate the
-  three fields that have the same information in its legacy form:
-  :data:`sys.last_type`, :data:`sys.last_value` and :data:`sys.last_traceback`.
-  (Contributed by Irit Katriel in :gh:`102778`.)
+unittest
+--------
 
-* :func:`sys._current_exceptions` now returns a mapping from thread-id to an
-  exception instance, rather than to a ``(typ, exc, tb)`` tuple.
-  (Contributed by Irit Katriel in :gh:`103176`.)
+Added ``--durations`` command line option, showing the N slowest test cases::
+
+  python3 -m unittest --durations=3 lib.tests.test_threading
+  .....
+  Slowest test durations
+  ----------------------------------------------------------------------
+  1.210s     test_timeout (Lib.test.test_threading.BarrierTests)
+  1.003s     test_default_timeout (Lib.test.test_threading.BarrierTests)
+  0.518s     test_timeout (Lib.test.test_threading.EventTests)
+
+  (0.000 durations hidden.  Use -v to show these durations.)
+  ----------------------------------------------------------------------
+  Ran 158 tests in 9.869s
+
+  OK (skipped=3)
+
+(Contributed by Giampaolo Rodola in :issue:`4080`)
+
+uuid
+----
+
+* Add a :ref:`command-line interface <uuid-cli>`.
+  (Contributed by Adam Chhina in :gh:`88597`.)
 
 
 Optimizations
@@ -1079,6 +1079,7 @@ APIs:
 
 * :class:`!configparser.LegacyInterpolation` (:gh:`90765`)
 * :func:`locale.getdefaultlocale` (:gh:`90817`)
+* ``locale.resetlocale()`` (:gh:`90817`)
 * :meth:`!turtle.RawTurtle.settiltangle` (:gh:`50096`)
 * :func:`!unittest.findTestCases` (:gh:`50096`)
 * :func:`!unittest.getTestCaseNames` (:gh:`50096`)
@@ -1362,8 +1363,8 @@ Removed
   * Support for ``find_loader()`` and ``find_module()`` APIs have been
     removed.  (Contributed by Barry Warsaw in :gh:`98040`.)
 
-  * ``importlib.abc.Finder``, ``pkg.ImpImporter``, and ``pkg.ImpLoader`` have
-    been removed.  (Contributed by Barry Warsaw in :gh:`98040`.)
+  * ``importlib.abc.Finder``, ``pkgutil.ImpImporter``, and ``pkgutil.ImpLoader``
+    have been removed.  (Contributed by Barry Warsaw in :gh:`98040`.)
 
   * The :mod:`!imp` module has been removed.  (Contributed by Barry Warsaw in
     :gh:`98040`.)
@@ -1486,16 +1487,17 @@ Changes in the Python API
       1,13-1,17:          FSTRING_MIDDLE ' end'
       1,17-1,18:          FSTRING_END    '"'
 
-  Aditionally, there may be some minor behavioral changes as a consecuence of the
+  Additionally, there may be some minor behavioral changes as a consecuence of the
   changes required to support :pep:`701`. Some of these changes include:
-
-  * Some final ``DEDENT`` tokens are now emitted within the bounds of the
-    input. This means that for a file containing 3 lines, the old version of the
-    tokenizer returned a ``DEDENT`` token in line 4 whilst the new version returns
-    the token in line 3.
 
   * The ``type`` attribute of the tokens emitted when tokenizing some invalid Python
     characters such as ``!`` has changed from ``ERRORTOKEN`` to ``OP``.
+
+  * Incomplete single-line strings now also raise :exc:`tokenize.TokenError` as incomplete
+    multiline strings do.
+
+  * Some incomplete or invalid Python code now raises :exc:`tokenize.TokenError` instead of
+    returning arbitrary ``ERRORTOKEN`` tokens when tokenizing it.
 
 Build Changes
 =============
@@ -1534,6 +1536,15 @@ Build Changes
 * Autoconf 2.71 and aclocal 1.16.4 is now required to regenerate
   :file:`!configure`.
   (Contributed by Christian Heimes in :gh:`89886`.)
+
+* C extensions built with the :ref:`limited C API <limited-c-api>`
+  on :ref:`Python build in debug mode <debug-build>` no longer support Python
+  3.9 and older. In this configuration, :c:func:`Py_INCREF` and
+  :c:func:`Py_DECREF` are now always implemented as opaque function calls,
+  but the called functions were added to Python 3.10. Build C extensions
+  with a release build of Python or with Python 3.12 and older, to keep support
+  for Python 3.9 and older.
+  (Contributed by Victor Stinner in :gh:`102304`.)
 
 
 C API Changes
@@ -1580,7 +1591,7 @@ New Features
 
   (Contributed by Petr Viktorin in :gh:`103509`.)
 
-* Added the new limited C API function :c:func:`PyType_FromMetaclass`,
+* Added the new :ref:`limited C API <limited-c-api>` function :c:func:`PyType_FromMetaclass`,
   which generalizes the existing :c:func:`PyType_FromModuleAndSpec` using
   an additional metaclass argument.
   (Contributed by Wenzel Jakob in :gh:`93012`.)
@@ -1757,7 +1768,7 @@ Porting to Python 3.12
   before storing it. (Contributed by Mark Shannon in :gh:`101578`.)
 
 * ``_Py_RefTotal`` is no longer authoritative and only kept around
-  for ABI compabitility.  Note that it is an internal global and only
+  for ABI compatibility.  Note that it is an internal global and only
   available on debug builds.  If you happen to be using it then you'll
   need to start using ``_Py_GetGlobalRefTotal()``.
 
