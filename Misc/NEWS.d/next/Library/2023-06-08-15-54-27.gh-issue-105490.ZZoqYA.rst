@@ -1,0 +1,2 @@
+Reject strings longer than 15 characters early when parsing strings with
+ipaddress.IPv4Address
