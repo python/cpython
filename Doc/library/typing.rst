@@ -700,7 +700,7 @@ These can be used as types in annotations and do not support ``[]``.
 
    Definition::
 
-      AnyStr = TypeVar('AnyStr', str, bytes)``.
+      AnyStr = TypeVar('AnyStr', str, bytes)
 
    ``AnyStr`` is meant to be used for functions that may accept :class:`str` or
    :class:`bytes` arguments but cannot allow the two to mix.
