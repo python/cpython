@@ -14,8 +14,10 @@
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntry_Type
+#include "pycore_typevarobject.h" // _PyTypeAlias_Type, _Py_initialize_generic
+#include "pycore_typeobject.h"    // _PyBufferWrapper_Type
 #include "pycore_unionobject.h"   // _PyUnion_Type
-#include "pycore_interpreteridobject.h"  // _PyInterpreterID_Type
+#include "interpreteridobject.h"  // _PyInterpreterID_Type
 
 #ifdef Py_LIMITED_API
    // Prevent recursive call _Py_IncRef() <=> Py_INCREF()
@@ -145,7 +147,7 @@ _PyDebug_PrintTotalRefs(void) {
     _PyRuntimeState *runtime = &_PyRuntime;
     fprintf(stderr,
             "[%zd refs, %zd blocks]\n",
-            get_global_reftotal(runtime), _Py_GetAllocatedBlocks());
+            get_global_reftotal(runtime), _Py_GetGlobalAllocatedBlocks());
     /* It may be helpful to also print the "legacy" reftotal separately.
        Likewise for the total for each interpreter. */
 }
@@ -558,11 +560,6 @@ PyObject_Repr(PyObject *v)
         Py_DECREF(res);
         return NULL;
     }
-#ifndef Py_DEBUG
-    if (PyUnicode_READY(res) < 0) {
-        return NULL;
-    }
-#endif
     return res;
 }
 
@@ -581,10 +578,6 @@ PyObject_Str(PyObject *v)
     if (v == NULL)
         return PyUnicode_FromString("<NULL>");
     if (PyUnicode_CheckExact(v)) {
-#ifndef Py_DEBUG
-        if (PyUnicode_READY(v) < 0)
-            return NULL;
-#endif
         return Py_NewRef(v);
     }
     if (Py_TYPE(v)->tp_str == NULL)
@@ -616,11 +609,6 @@ PyObject_Str(PyObject *v)
         Py_DECREF(res);
         return NULL;
     }
-#ifndef Py_DEBUG
-    if (PyUnicode_READY(res) < 0) {
-        return NULL;
-    }
-#endif
     assert(_PyUnicode_CheckConsistency(res, 1));
     return res;
 }
@@ -890,7 +878,7 @@ PyObject_Hash(PyObject *v)
      * an explicit call to PyType_Ready, we implicitly call
      * PyType_Ready here and then check the tp_hash slot again
      */
-    if (tp->tp_dict == NULL) {
+    if (!_PyType_IsReady(tp)) {
         if (PyType_Ready(tp) < 0)
             return -1;
         if (tp->tp_hash != NULL)
@@ -918,13 +906,24 @@ PyObject_GetAttrString(PyObject *v, const char *name)
 int
 PyObject_HasAttrString(PyObject *v, const char *name)
 {
-    PyObject *res = PyObject_GetAttrString(v, name);
-    if (res != NULL) {
-        Py_DECREF(res);
-        return 1;
+    if (Py_TYPE(v)->tp_getattr != NULL) {
+        PyObject *res = (*Py_TYPE(v)->tp_getattr)(v, (char*)name);
+        if (res != NULL) {
+            Py_DECREF(res);
+            return 1;
+        }
+        PyErr_Clear();
+        return 0;
     }
-    PyErr_Clear();
-    return 0;
+
+    PyObject *attr_name = PyUnicode_FromString(name);
+    if (attr_name == NULL) {
+        PyErr_Clear();
+        return 0;
+    }
+    int ok = PyObject_HasAttr(v, attr_name);
+    Py_DECREF(attr_name);
+    return ok;
 }
 
 int
@@ -1033,7 +1032,7 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
     }
     else {
         PyErr_Format(PyExc_AttributeError,
-                    "'%.50s' object has no attribute '%U'",
+                    "'%.100s' object has no attribute '%U'",
                     tp->tp_name, name);
     }
 
@@ -1073,6 +1072,17 @@ _PyObject_LookupAttr(PyObject *v, PyObject *name, PyObject **result)
             // return 0 without having to clear the exception
             return 0;
         }
+    }
+    else if (tp->tp_getattro == (getattrofunc)_Py_module_getattro) {
+        // optimization: suppress attribute error from module getattro method
+        *result = _Py_module_getattro_impl((PyModuleObject*)v, name, 1);
+        if (*result != NULL) {
+            return 1;
+        }
+        if (PyErr_Occurred()) {
+            return -1;
+        }
+        return 0;
     }
     else if (tp->tp_getattro != NULL) {
         *result = (*tp->tp_getattro)(v, name);
@@ -1353,7 +1363,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     }
 
     PyErr_Format(PyExc_AttributeError,
-                 "'%.50s' object has no attribute '%U'",
+                 "'%.100s' object has no attribute '%U'",
                  tp->tp_name, name);
 
     set_attribute_error_context(obj, name);
@@ -1385,7 +1395,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
     }
     Py_INCREF(name);
 
-    if (tp->tp_dict == NULL) {
+    if (!_PyType_IsReady(tp)) {
         if (PyType_Ready(tp) < 0)
             goto done;
     }
@@ -1474,7 +1484,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
 
     if (!suppress) {
         PyErr_Format(PyExc_AttributeError,
-                     "'%.50s' object has no attribute '%U'",
+                     "'%.100s' object has no attribute '%U'",
                      tp->tp_name, name);
 
         set_attribute_error_context(obj, name);
@@ -1507,8 +1517,9 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
         return -1;
     }
 
-    if (tp->tp_dict == NULL && PyType_Ready(tp) < 0)
+    if (!_PyType_IsReady(tp) && PyType_Ready(tp) < 0) {
         return -1;
+    }
 
     Py_INCREF(name);
     Py_INCREF(tp);
@@ -1545,7 +1556,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
             }
             else {
                 PyErr_Format(PyExc_AttributeError,
-                            "'%.50s' object attribute '%U' is read-only",
+                            "'%.100s' object attribute '%U' is read-only",
                             tp->tp_name, name);
             }
             goto done;
@@ -1754,10 +1765,14 @@ none_repr(PyObject *op)
     return PyUnicode_FromString("None");
 }
 
-static void _Py_NO_RETURN
-none_dealloc(PyObject* Py_UNUSED(ignore))
+static void
+none_dealloc(PyObject* none)
 {
-    _Py_FatalRefcountError("deallocating None");
+    /* This should never get called, but we also don't want to SEGV if
+     * we accidentally decref None out of existence. Instead,
+     * since None is an immortal object, re-set the reference count.
+     */
+    _Py_SetImmortal(none);
 }
 
 static PyObject *
@@ -1823,7 +1838,7 @@ PyTypeObject _PyNone_Type = {
     "NoneType",
     0,
     0,
-    none_dealloc,       /*tp_dealloc*/ /*never called*/
+    none_dealloc,       /*tp_dealloc*/
     0,                  /*tp_vectorcall_offset*/
     0,                  /*tp_getattr*/
     0,                  /*tp_setattr*/
@@ -1860,8 +1875,9 @@ PyTypeObject _PyNone_Type = {
 };
 
 PyObject _Py_NoneStruct = {
-  _PyObject_EXTRA_INIT
-  1, &_PyNone_Type
+    _PyObject_EXTRA_INIT
+    { _Py_IMMORTAL_REFCNT },
+    &_PyNone_Type
 };
 
 /* NotImplemented is an object that can be used to signal that an
@@ -1894,13 +1910,14 @@ notimplemented_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_RETURN_NOTIMPLEMENTED;
 }
 
-static void _Py_NO_RETURN
-notimplemented_dealloc(PyObject* ignore)
+static void
+notimplemented_dealloc(PyObject *notimplemented)
 {
     /* This should never get called, but we also don't want to SEGV if
-     * we accidentally decref NotImplemented out of existence.
+     * we accidentally decref NotImplemented out of existence. Instead,
+     * since Notimplemented is an immortal object, re-set the reference count.
      */
-    Py_FatalError("deallocating NotImplemented");
+    _Py_SetImmortal(notimplemented);
 }
 
 static int
@@ -1962,16 +1979,15 @@ PyTypeObject _PyNotImplemented_Type = {
 
 PyObject _Py_NotImplementedStruct = {
     _PyObject_EXTRA_INIT
-    1, &_PyNotImplemented_Type
+    { _Py_IMMORTAL_REFCNT },
+    &_PyNotImplemented_Type
 };
 
-#ifdef MS_WINDOWS
-extern PyTypeObject PyHKEY_Type;
-#endif
 extern PyTypeObject _Py_GenericAliasIterType;
 extern PyTypeObject _PyMemoryIter_Type;
 extern PyTypeObject _PyLineIterator;
 extern PyTypeObject _PyPositionsIterator;
+extern PyTypeObject _PyLegacyEventHandler_Type;
 
 static PyTypeObject* static_types[] = {
     // The two most important base types: must be initialized first and
@@ -2017,9 +2033,6 @@ static PyTypeObject* static_types[] = {
     &PyFunction_Type,
     &PyGen_Type,
     &PyGetSetDescr_Type,
-#ifdef MS_WINDOWS
-    &PyHKEY_Type,
-#endif
     &PyInstanceMethod_Type,
     &PyListIter_Type,
     &PyListRevIter_Type,
@@ -2059,6 +2072,7 @@ static PyTypeObject* static_types[] = {
     &_PyAsyncGenASend_Type,
     &_PyAsyncGenAThrow_Type,
     &_PyAsyncGenWrappedValue_Type,
+    &_PyBufferWrapper_Type,
     &_PyContextTokenMissing_Type,
     &_PyCoroWrapper_Type,
     &_Py_GenericAliasIterType,
@@ -2069,6 +2083,7 @@ static PyTypeObject* static_types[] = {
     &_PyHamt_BitmapNode_Type,
     &_PyHamt_CollisionNode_Type,
     &_PyHamt_Type,
+    &_PyLegacyEventHandler_Type,
     &_PyInterpreterID_Type,
     &_PyLineIterator,
     &_PyManagedBuffer_Type,
@@ -2083,6 +2098,7 @@ static PyTypeObject* static_types[] = {
     &_PyWeakref_CallableProxyType,
     &_PyWeakref_ProxyType,
     &_PyWeakref_RefType,
+    &_PyTypeAlias_Type,
 
     // subclasses: _PyTypes_FiniTypes() deallocates them before their base
     // class
@@ -2098,14 +2114,10 @@ static PyTypeObject* static_types[] = {
 PyStatus
 _PyTypes_InitTypes(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return _PyStatus_OK();
-    }
-
     // All other static types (unless initialized elsewhere)
     for (size_t i=0; i < Py_ARRAY_LENGTH(static_types); i++) {
         PyTypeObject *type = static_types[i];
-        if (_PyStaticType_InitBuiltin(type) < 0) {
+        if (_PyStaticType_InitBuiltin(interp, type) < 0) {
             return _PyStatus_ERR("Can't initialize builtin type");
         }
         if (type == &PyType_Type) {
@@ -2113,6 +2125,11 @@ _PyTypes_InitTypes(PyInterpreterState *interp)
             assert(PyBaseObject_Type.tp_base == NULL);
             assert(PyType_Type.tp_base == &PyBaseObject_Type);
         }
+    }
+
+    // Must be after static types are initialized
+    if (_Py_initialize_generic(interp) < 0) {
+        return _PyStatus_ERR("Can't initialize generic types");
     }
 
     return _PyStatus_OK();
@@ -2128,15 +2145,11 @@ _PyTypes_InitTypes(PyInterpreterState *interp)
 void
 _PyTypes_FiniTypes(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return;
-    }
-
     // Deallocate types in the reverse order to deallocate subclasses before
     // their base classes.
     for (Py_ssize_t i=Py_ARRAY_LENGTH(static_types)-1; i>=0; i--) {
         PyTypeObject *type = static_types[i];
-        _PyStaticType_Dealloc(type);
+        _PyStaticType_Dealloc(interp, type);
     }
 }
 
@@ -2147,7 +2160,8 @@ new_reference(PyObject *op)
     if (_PyRuntime.tracemalloc.config.tracing) {
         _PyTraceMalloc_NewReference(op);
     }
-    Py_SET_REFCNT(op, 1);
+    // Skip the immortal object check in Py_SET_REFCNT; always set refcnt to 1
+    op->ob_refcnt = 1;
 #ifdef Py_TRACE_REFS
     _Py_AddToAllObjects(op, 1);
 #endif

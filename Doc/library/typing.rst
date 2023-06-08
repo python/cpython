@@ -2,6 +2,12 @@
 :mod:`typing` --- Support for type hints
 ========================================
 
+.. testsetup:: *
+
+   import typing
+   from dataclasses import dataclass
+   from typing import *
+
 .. module:: typing
    :synopsis: Support for type hints (see :pep:`484`).
 
@@ -19,7 +25,7 @@
 
 This module provides runtime support for type hints. The most fundamental
 support consists of the types :data:`Any`, :data:`Union`, :data:`Callable`,
-:class:`TypeVar`, and :class:`Generic`. For a full specification, please see
+:class:`TypeVar`, and :class:`Generic`. For a specification, please see
 :pep:`484`. For a simplified introduction to type hints, see :pep:`483`.
 
 
@@ -59,7 +65,12 @@ Relevant PEPs
 
 Since the initial introduction of type hints in :pep:`484` and :pep:`483`, a
 number of PEPs have modified and enhanced Python's framework for type
-annotations. These include:
+annotations:
+
+.. raw:: html
+
+   <details>
+   <summary><a style="cursor:pointer;">The full list of PEPs</a></summary>
 
 * :pep:`526`: Syntax for Variable Annotations
      *Introducing* syntax for annotating variables outside of function
@@ -98,18 +109,30 @@ annotations. These include:
     *Introducing* :data:`LiteralString`
 * :pep:`681`: Data Class Transforms
     *Introducing* the :func:`@dataclass_transform<dataclass_transform>` decorator
+* :pep:`692`: Using ``TypedDict`` for more precise ``**kwargs`` typing
+    *Introducing* a new way of typing ``**kwargs`` with :data:`Unpack` and
+    :data:`TypedDict`
+* :pep:`695`: Type Parameter Syntax
+    *Introducing* builtin syntax for creating generic functions, classes, and type aliases.
 * :pep:`698`: Adding an override decorator to typing
     *Introducing* the :func:`@override<override>` decorator
+
+.. raw:: html
+
+   </details>
+   <br>
 
 .. _type-aliases:
 
 Type aliases
 ============
 
-A type alias is defined by assigning the type to the alias. In this example,
-``Vector`` and ``list[float]`` will be treated as interchangeable synonyms::
+A type alias is defined using the :keyword:`type` statement, which creates
+an instance of :class:`TypeAliasType`. In this example,
+``Vector`` and ``list[float]`` will be treated equivalently by static type
+checkers::
 
-   Vector = list[float]
+   type Vector = list[float]
 
    def scale(scalar: float, vector: Vector) -> Vector:
        return [scalar * num for num in vector]
@@ -121,9 +144,9 @@ Type aliases are useful for simplifying complex type signatures. For example::
 
    from collections.abc import Sequence
 
-   ConnectionOptions = dict[str, str]
-   Address = tuple[str, int]
-   Server = tuple[Address, ConnectionOptions]
+   type ConnectionOptions = dict[str, str]
+   type Address = tuple[str, int]
+   type Server = tuple[Address, ConnectionOptions]
 
    def broadcast_message(message: str, servers: Sequence[Server]) -> None:
        ...
@@ -137,6 +160,18 @@ Type aliases are useful for simplifying complex type signatures. For example::
 
 Note that ``None`` as a type hint is a special case and is replaced by
 ``type(None)``.
+
+The :keyword:`type` statement is new in Python 3.12. For backwards
+compatibility, type aliases can also be created through simple assignment::
+
+   Vector = list[float]
+
+Or marked with :data:`TypeAlias` to make it explicit that this is a type alias,
+not a normal variable assignment::
+
+   from typing import TypeAlias
+
+   Vector: TypeAlias = list[float]
 
 .. _distinct:
 
@@ -203,7 +238,7 @@ See :pep:`484` for more details.
 .. note::
 
    Recall that the use of a type alias declares two types to be *equivalent* to
-   one another. Doing ``Alias = Original`` will make the static type checker
+   one another. Doing ``type Alias = Original`` will make the static type checker
    treat ``Alias`` as being *exactly equivalent* to ``Original`` in all cases.
    This is useful when you want to simplify complex type signatures.
 
@@ -217,9 +252,13 @@ See :pep:`484` for more details.
 .. versionadded:: 3.5.2
 
 .. versionchanged:: 3.10
-   ``NewType`` is now a class rather than a function.  There is some additional
-   runtime cost when calling ``NewType`` over a regular function.  However, this
-   cost will be reduced in 3.11.0.
+   ``NewType`` is now a class rather than a function.  As a result, there is
+   some additional runtime cost when calling ``NewType`` over a regular
+   function.
+
+.. versionchanged:: 3.11
+   The performance of calling ``NewType`` has been restored to its level in
+   Python 3.9.
 
 
 Callable
@@ -228,19 +267,22 @@ Callable
 Frameworks expecting callback functions of specific signatures might be
 type hinted using ``Callable[[Arg1Type, Arg2Type], ReturnType]``.
 
-For example::
+For example:
+
+.. testcode::
 
    from collections.abc import Callable
 
    def feeder(get_next_item: Callable[[], str]) -> None:
-       # Body
+       ...  # Body
 
    def async_query(on_success: Callable[[int], None],
                    on_error: Callable[[int, Exception], None]) -> None:
-       # Body
+       ...  # Body
 
    async def on_update(value: str) -> None:
-       # Body
+       ...  # Body
+
    callback: Callable[[str], Awaitable[None]] = on_update
 
 It is possible to declare the return type of a callable without specifying
@@ -269,28 +311,42 @@ Generics
 ========
 
 Since type information about objects kept in containers cannot be statically
-inferred in a generic way, abstract base classes have been extended to support
-subscription to denote expected types for container elements.
+inferred in a generic way, many container classes in the standard library support
+subscription to denote the expected types of container elements.
 
-::
+.. testcode::
 
    from collections.abc import Mapping, Sequence
 
+   class Employee: ...
+
+   # Sequence[Employee] indicates that all elements in the sequence
+   # must be instances of "Employee".
+   # Mapping[str, str] indicates that all keys and all values in the mapping
+   # must be strings.
    def notify_by_email(employees: Sequence[Employee],
                        overrides: Mapping[str, str]) -> None: ...
 
-Generics can be parameterized by using a factory available in typing
-called :class:`TypeVar`.
+Generic functions and classes can be parameterized by using
+:ref:`type parameter syntax <type-params>`::
 
-::
+   from collections.abc import Sequence
+
+   def first[T](l: Sequence[T]) -> T:  # Function is generic over the TypeVar "T"
+       return l[0]
+
+Or by using the :class:`TypeVar` factory directly::
 
    from collections.abc import Sequence
    from typing import TypeVar
 
-   T = TypeVar('T')      # Declare type variable
+   U = TypeVar('U')                  # Declare type variable "U"
 
-   def first(l: Sequence[T]) -> T:   # Generic function
-       return l[0]
+   def second(l: Sequence[U]) -> U:  # Function is generic over the TypeVar "U"
+       return l[1]
+
+.. versionchanged:: 3.12
+   Syntactic support for generics is new in Python 3.12.
 
 .. _user-defined-generics:
 
@@ -301,12 +357,9 @@ A user-defined class can be defined as a generic class.
 
 ::
 
-   from typing import TypeVar, Generic
    from logging import Logger
 
-   T = TypeVar('T')
-
-   class LoggedVar(Generic[T]):
+   class LoggedVar[T]:
        def __init__(self, value: T, name: str, logger: Logger) -> None:
            self.name = name
            self.logger = logger
@@ -323,12 +376,23 @@ A user-defined class can be defined as a generic class.
        def log(self, message: str) -> None:
            self.logger.info('%s: %s', self.name, message)
 
-``Generic[T]`` as a base class defines that the class ``LoggedVar`` takes a
-single type parameter ``T`` . This also makes ``T`` valid as a type within the
-class body.
+This syntax indicates that the class ``LoggedVar`` is parameterised around a
+single :class:`type variable <TypeVar>` ``T`` . This also makes ``T`` valid as
+a type within the class body.
 
-The :class:`Generic` base class defines :meth:`~object.__class_getitem__` so
-that ``LoggedVar[T]`` is valid as a type::
+Generic classes implicitly inherit from :class:`Generic`. For compatibility
+with Python 3.11 and lower, it is also possible to inherit explicitly from
+:class:`Generic` to indicate a generic class::
+
+   from typing import TypeVar, Generic
+
+   T = TypeVar('T')
+
+   class LoggedVar(Generic[T]):
+       ...
+
+Generic classes have :meth:`~object.__class_getitem__` methods, meaning they
+can be parameterised at runtime (e.g. ``LoggedVar[int]`` below)::
 
    from collections.abc import Iterable
 
@@ -341,11 +405,14 @@ A generic type can have any number of type variables. All varieties of
 
    from typing import TypeVar, Generic, Sequence
 
-   T = TypeVar('T', contravariant=True)
-   B = TypeVar('B', bound=Sequence[bytes], covariant=True)
-   S = TypeVar('S', int, str)
+   class WeirdTrio[T, B: Sequence[bytes], S: (int, str)]:
+       ...
 
-   class WeirdTrio(Generic[T, B, S]):
+   OldT = TypeVar('OldT', contravariant=True)
+   OldB = TypeVar('OldB', bound=Sequence[bytes], covariant=True)
+   OldS = TypeVar('OldS', int, str)
+
+   class OldWeirdTrio(Generic[OldT, OldB, OldS]):
        ...
 
 Each type variable argument to :class:`Generic` must be distinct.
@@ -354,91 +421,108 @@ This is thus invalid::
    from typing import TypeVar, Generic
    ...
 
+   class Pair[M, M]:  # SyntaxError
+       ...
+
    T = TypeVar('T')
 
    class Pair(Generic[T, T]):   # INVALID
        ...
 
-You can use multiple inheritance with :class:`Generic`::
+Generic classes can also inherit from other classes::
 
    from collections.abc import Sized
-   from typing import TypeVar, Generic
 
-   T = TypeVar('T')
-
-   class LinkedList(Sized, Generic[T]):
+   class LinkedList[T](Sized):
        ...
 
-When inheriting from generic classes, some type variables could be fixed::
+When inheriting from generic classes, some type parameters could be fixed::
 
     from collections.abc import Mapping
-    from typing import TypeVar
 
-    T = TypeVar('T')
-
-    class MyDict(Mapping[str, T]):
+    class MyDict[T](Mapping[str, T]):
         ...
 
 In this case ``MyDict`` has a single parameter, ``T``.
 
 Using a generic class without specifying type parameters assumes
 :data:`Any` for each position. In the following example, ``MyIterable`` is
-not generic but implicitly inherits from ``Iterable[Any]``::
+not generic but implicitly inherits from ``Iterable[Any]``:
+
+.. testcode::
 
    from collections.abc import Iterable
 
    class MyIterable(Iterable): # Same as Iterable[Any]
+       ...
 
-User defined generic type aliases are also supported. Examples::
+User-defined generic type aliases are also supported. Examples::
 
    from collections.abc import Iterable
-   from typing import TypeVar
-   S = TypeVar('S')
-   Response = Iterable[S] | int
+
+   type Response[S] = Iterable[S] | int
 
    # Return type here is same as Iterable[str] | int
    def response(query: str) -> Response[str]:
        ...
 
-   T = TypeVar('T', int, float, complex)
-   Vec = Iterable[tuple[T, T]]
+   type Vec[T] = Iterable[tuple[T, T]]
 
-   def inproduct(v: Vec[T]) -> T: # Same as Iterable[tuple[T, T]]
+   def inproduct[T: (int, float, complex)](v: Vec[T]) -> T: # Same as Iterable[tuple[T, T]]
        return sum(x*y for x, y in v)
+
+For backward compatibility, generic type aliases can also be created
+through a simple assignment::
+
+   from collections.abc import Iterable
+   from typing import TypeVar
+
+   S = TypeVar("S")
+   Response = Iterable[S] | int
 
 .. versionchanged:: 3.7
     :class:`Generic` no longer has a custom metaclass.
 
+.. versionchanged:: 3.12
+   Syntactic support for generics and type aliases is new in version 3.12.
+   Previously, generic classes had to explicitly inherit from :class:`Generic`
+   or contain a type variable in one of their bases.
+
 User-defined generics for parameter expressions are also supported via parameter
-specification variables in the form ``Generic[P]``.  The behavior is consistent
+specification variables in the form ``[**P]``.  The behavior is consistent
 with type variables' described above as parameter specification variables are
 treated by the typing module as a specialized type variable.  The one exception
 to this is that a list of types can be used to substitute a :class:`ParamSpec`::
 
-   >>> from typing import Generic, ParamSpec, TypeVar
-
-   >>> T = TypeVar('T')
-   >>> P = ParamSpec('P')
-
-   >>> class Z(Generic[T, P]): ...
+   >>> class Z[T, **P]: ...  # T is a TypeVar; P is a ParamSpec
    ...
    >>> Z[int, [dict, float]]
-   __main__.Z[int, (<class 'dict'>, <class 'float'>)]
+   __main__.Z[int, [dict, float]]
 
+Classes generic over a :class:`ParamSpec` can also be created using explicit
+inheritance from :class:`Generic`. In this case, ``**`` is not used::
 
-Furthermore, a generic with only one parameter specification variable will accept
+   from typing import ParamSpec, Generic
+
+   P = ParamSpec('P')
+
+   class Z(Generic[P]):
+       ...
+
+Another difference between :class:`TypeVar` and :class:`ParamSpec` is that a
+generic with only one parameter specification variable will accept
 parameter lists in the forms ``X[[Type1, Type2, ...]]`` and also
 ``X[Type1, Type2, ...]`` for aesthetic reasons.  Internally, the latter is converted
 to the former, so the following are equivalent::
 
-   >>> class X(Generic[P]): ...
+   >>> class X[**P]: ...
    ...
    >>> X[int, str]
-   __main__.X[(<class 'int'>, <class 'str'>)]
+   __main__.X[[int, str]]
    >>> X[[int, str]]
-   __main__.X[(<class 'int'>, <class 'str'>)]
+   __main__.X[[int, str]]
 
-Do note that generics with :class:`ParamSpec` may not have correct
+Note that generics with :class:`ParamSpec` may not have correct
 ``__parameters__`` after substitution in some cases because they
 are intended primarily for static type checking.
 
@@ -577,19 +661,19 @@ The module defines the following classes, functions and decorators.
 
 .. note::
 
-   This module defines several types that are subclasses of pre-existing
-   standard library classes which also extend :class:`Generic`
-   to support type variables inside ``[]``.
-   These types became redundant in Python 3.9 when the
+   This module defines several deprecated aliases to pre-existing
+   standard library classes. These were originally included in the typing
+   module in order to support parameterizing these generic classes using ``[]``.
+   However, the aliases became redundant in Python 3.9 when the
    corresponding pre-existing classes were enhanced to support ``[]``.
 
    The redundant types are deprecated as of Python 3.9 but no
-   deprecation warnings will be issued by the interpreter.
+   deprecation warnings are issued by the interpreter.
    It is expected that type checkers will flag the deprecated types
    when the checked program targets Python 3.9 or newer.
 
    The deprecated types will be removed from the :mod:`typing` module
-   in the first Python version released 5 years after the release of Python 3.9.0.
+   no sooner than the first Python version released 5 years after the release of Python 3.9.0.
    See details in :pep:`585`—*Type Hinting Generics In Standard Collections*.
 
 
@@ -613,6 +697,21 @@ These can be used as types in annotations and do not support ``[]``.
       avoiding type checker errors with classes that can duck type anywhere or
       are highly dynamic.
 
+.. data:: AnyStr
+
+   ``AnyStr`` is a :ref:`constrained type variable <typing-constrained-typevar>` defined as
+   ``AnyStr = TypeVar('AnyStr', str, bytes)``.
+
+   It is meant to be used for functions that may accept any kind of string
+   without allowing different kinds of strings to mix. For example::
+
+      def concat(a: AnyStr, b: AnyStr) -> AnyStr:
+          return a + b
+
+      concat(u"foo", u"bar")  # Ok, output has type 'unicode'
+      concat(b"foo", b"bar")  # Ok, output has type 'bytes'
+      concat(u"foo", b"bar")  # Error, cannot mix unicode and bytes
+
 .. data:: LiteralString
 
    Special type that includes only literal strings. A string
@@ -621,9 +720,11 @@ These can be used as types in annotations and do not support ``[]``.
    A string created by composing ``LiteralString``-typed objects
    is also acceptable as a ``LiteralString``.
 
-   Example::
+   Example:
 
-      def run_query(sql: LiteralString) -> ...
+   .. testcode::
+
+      def run_query(sql: LiteralString) -> None:
           ...
 
       def caller(arbitrary_string: str, literal_string: LiteralString) -> None:
@@ -652,20 +753,20 @@ These can be used as types in annotations and do not support ``[]``.
    This can be used to define a function that should never be
    called, or a function that never returns::
 
-     from typing import Never
+      from typing import Never
 
-     def never_call_me(arg: Never) -> None:
-         pass
+      def never_call_me(arg: Never) -> None:
+          pass
 
-     def int_or_str(arg: int | str) -> None:
-         never_call_me(arg)  # type checker error
-         match arg:
-             case int():
-                 print("It's an int")
-             case str():
-                 print("It's a str")
-             case _:
-                 never_call_me(arg)  # ok, arg is of type Never
+      def int_or_str(arg: int | str) -> None:
+          never_call_me(arg)  # type checker error
+          match arg:
+              case int():
+                  print("It's an int")
+              case str():
+                  print("It's a str")
+              case _:
+                  never_call_me(arg)  # ok, arg is of type Never
 
    .. versionadded:: 3.11
 
@@ -699,9 +800,9 @@ These can be used as types in annotations and do not support ``[]``.
       from typing import Self
 
       class Foo:
-         def return_self(self) -> Self:
-            ...
-            return self
+          def return_self(self) -> Self:
+              ...
+              return self
 
 
    This annotation is semantically equivalent to the following,
@@ -712,16 +813,16 @@ These can be used as types in annotations and do not support ``[]``.
       Self = TypeVar("Self", bound="Foo")
 
       class Foo:
-         def return_self(self: Self) -> Self:
-            ...
-            return self
+          def return_self(self: Self) -> Self:
+              ...
+              return self
 
    In general if something currently follows the pattern of::
 
       class Foo:
-         def return_self(self) -> "Foo":
-            ...
-            return self
+          def return_self(self) -> "Foo":
+              ...
+              return self
 
    You should use :data:`Self` as calls to ``SubclassOfFoo.return_self`` would have
    ``Foo`` as the return type and not ``SubclassOfFoo``.
@@ -739,15 +840,46 @@ These can be used as types in annotations and do not support ``[]``.
 .. data:: TypeAlias
 
    Special annotation for explicitly declaring a :ref:`type alias <type-aliases>`.
+
    For example::
 
-    from typing import TypeAlias
+      from typing import TypeAlias
 
-    Factors: TypeAlias = list[int]
+      Factors: TypeAlias = list[int]
 
-   See :pep:`613` for more details about explicit type aliases.
+   ``TypeAlias`` is particularly useful on older Python versions for annotating
+   aliases that make use of forward references, as it can be hard for type
+   checkers to distinguish these from normal variable assignments:
+
+   .. testcode::
+
+      from typing import Generic, TypeAlias, TypeVar
+
+      T = TypeVar("T")
+
+      # "Box" does not exist yet,
+      # so we have to use quotes for the forward reference on Python <3.12.
+      # Using ``TypeAlias`` tells the type checker that this is a type alias declaration,
+      # not a variable assignment to a string.
+      BoxOfStrings: TypeAlias = "Box[str]"
+
+      class Box(Generic[T]):
+          @classmethod
+          def make_box_of_strings(cls) -> BoxOfStrings: ...
+
+   See :pep:`613` for more details.
 
    .. versionadded:: 3.10
+
+   .. deprecated:: 3.12
+      :data:`TypeAlias` is deprecated in favor of the :keyword:`type` statement,
+      which creates instances of :class:`TypeAliasType`
+      and which natively supports forward references.
+      Note that while :data:`TypeAlias` and :class:`TypeAliasType` serve
+      similar purposes and have similar names, they are distinct and the
+      latter is not the type of the former.
+      Removal of :data:`TypeAlias` is not currently planned, but users
+      are encouraged to migrate to :keyword:`type` statements.
 
 Special forms
 """""""""""""
@@ -756,7 +888,9 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
 .. data:: Tuple
 
-   Tuple type; ``Tuple[X, Y]`` is the type of a tuple of two items
+   Deprecated alias for :class:`tuple`.
+
+   ``Tuple[X, Y]`` is the type of a tuple of two items
    with the first item of type X and the second of type Y. The type of
    the empty tuple can be written as ``Tuple[()]``.
 
@@ -765,8 +899,8 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    of an int, a float and a string.
 
    To specify a variable-length tuple of homogeneous type,
-   use literal ellipsis, e.g. ``Tuple[int, ...]``. A plain :data:`Tuple`
-   is equivalent to ``Tuple[Any, ...]``, and in turn to :class:`tuple`.
+   use literal ellipsis, e.g. ``Tuple[int, ...]``. A plain ``Tuple`` annotation
+   is equivalent to ``tuple``, ``Tuple[Any, ...]``, or ``tuple[Any, ...]``.
 
    .. deprecated:: 3.9
       :class:`builtins.tuple <tuple>` now supports subscripting (``[]``).
@@ -834,12 +968,15 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
 .. data:: Callable
 
-   Callable type; ``Callable[[int], str]`` is a function of (int) -> str.
+   Deprecated alias to :class:`collections.abc.Callable`.
+
+   ``Callable[[int], str]`` signifies a function that takes a single parameter
+   of type :class:`int` and returns a :class:`str`.
 
    The subscription syntax must always be used with exactly two
    values: the argument list and the return type.  The argument list
-   must be a list of types or an ellipsis; the return type must be
-   a single type.
+   must be a list of types, a :class:`ParamSpec`, :data:`Concatenate`,
+   or an ellipsis. The return type must be a single type.
 
    There is no syntax to indicate optional or keyword arguments;
    such function types are rarely used as callback types.
@@ -914,19 +1051,21 @@ These can be used as types in annotations using ``[]``, each having a unique syn
       # We don't need to pass in the lock ourselves thanks to the decorator.
       sum_threadsafe([1.1, 2.2, 3.3])
 
-.. versionadded:: 3.10
+   .. versionadded:: 3.10
 
-.. seealso::
+   .. seealso::
 
-   * :pep:`612` -- Parameter Specification Variables (the PEP which introduced
-     ``ParamSpec`` and ``Concatenate``).
-   * :class:`ParamSpec` and :class:`Callable`.
+      * :pep:`612` -- Parameter Specification Variables (the PEP which introduced
+        ``ParamSpec`` and ``Concatenate``).
+      * :class:`ParamSpec` and :class:`Callable`.
 
 
 .. class:: Type(Generic[CT_co])
 
+   Deprecated alias to :class:`type`.
+
    A variable annotated with ``C`` may accept a value of type ``C``. In
-   contrast, a variable annotated with ``Type[C]`` may accept values that are
+   contrast, a variable annotated with ``type[C]`` or ``Type[C]`` may accept values that are
    classes themselves -- specifically, it will accept the *class object* of
    ``C``. For example::
 
@@ -1060,7 +1199,8 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    (possibly multiple pieces of it, as ``Annotated`` is variadic).
    Specifically, a type ``T`` can be annotated with metadata ``x`` via the
    typehint ``Annotated[T, x]``. This metadata can be used for either static
-   analysis or at runtime. If a library (or tool) encounters a typehint
+   analysis or at runtime: at runtime, it is stored in a :attr:`__metadata__`
+   attribute. If a library (or tool) encounters a typehint
    ``Annotated[T, x]`` and has no special logic for metadata ``x``, it
    should ignore it and simply treat the type as ``T``. Unlike the
    ``no_type_check`` functionality that currently exists in the ``typing``
@@ -1087,10 +1227,17 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    the same (or different) type(s) on any node, the tools or libraries
    consuming those annotations are in charge of dealing with potential
    duplicates. For example, if you are doing value range analysis you might
-   allow this::
+   allow this:
 
-       T1 = Annotated[int, ValueRange(-10, 5)]
-       T2 = Annotated[T1, ValueRange(-20, 3)]
+   .. testcode::
+
+      @dataclass
+      class ValueRange:
+          lo: int
+          hi: int
+
+      T1 = Annotated[int, ValueRange(-10, 5)]
+      T2 = Annotated[T1, ValueRange(-20, 3)]
 
    Passing ``include_extras=True`` to :func:`get_type_hints` lets one
    access the extra annotations at runtime.
@@ -1102,7 +1249,11 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    * Multiple type annotations are supported (``Annotated`` supports variadic
      arguments)::
 
-       Annotated[int, ValueRange(3, 10), ctype("char")]
+        @dataclass
+        class ctype:
+            kind: str
+
+        Annotated[int, ValueRange(3, 10), ctype("char")]
 
    * ``Annotated`` must be called with at least two arguments (
      ``Annotated[int]`` is not valid)
@@ -1110,30 +1261,52 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    * The order of the annotations is preserved and matters for equality
      checks::
 
-       Annotated[int, ValueRange(3, 10), ctype("char")] != Annotated[
-           int, ctype("char"), ValueRange(3, 10)
-       ]
+        assert Annotated[int, ValueRange(3, 10), ctype("char")] != Annotated[
+            int, ctype("char"), ValueRange(3, 10)
+        ]
 
    * Nested ``Annotated`` types are flattened, with metadata ordered
      starting with the innermost annotation::
 
-       Annotated[Annotated[int, ValueRange(3, 10)], ctype("char")] == Annotated[
-           int, ValueRange(3, 10), ctype("char")
-       ]
+        assert Annotated[Annotated[int, ValueRange(3, 10)], ctype("char")] == Annotated[
+            int, ValueRange(3, 10), ctype("char")
+        ]
 
    * Duplicated annotations are not removed::
 
-       Annotated[int, ValueRange(3, 10)] != Annotated[
-           int, ValueRange(3, 10), ValueRange(3, 10)
-       ]
+        assert Annotated[int, ValueRange(3, 10)] != Annotated[
+            int, ValueRange(3, 10), ValueRange(3, 10)
+        ]
 
-   * ``Annotated`` can be used with nested and generic aliases::
+   * ``Annotated`` can be used with nested and generic aliases:
 
-       T = TypeVar('T')
-       Vec = Annotated[list[tuple[T, T]], MaxLen(10)]
-       V = Vec[int]
+     .. testcode::
 
-       V == Annotated[list[tuple[int, int]], MaxLen(10)]
+        @dataclass
+        class MaxLen:
+            value: int
+
+        type Vec[T] = Annotated[list[tuple[T, T]], MaxLen(10)]
+
+        # When used in a type annotation, a type checker will treat "V" the same as
+        # ``Annotated[list[tuple[int, int]], MaxLen(10)]``:
+        type V = Vec[int]
+
+   .. attribute:: __metadata__
+
+      At runtime, the metadata associated with an ``Annotated`` type can be
+      retrieved via the ``__metadata__`` attribute.
+
+      For example:
+
+      .. doctest::
+
+         >>> from typing import Annotated
+         >>> X = Annotated[int, "very", "important", "metadata"]
+         >>> X
+         typing.Annotated[int, 'very', 'important', 'metadata']
+         >>> X.__metadata__
+         ('very', 'important', 'metadata')
 
    .. versionadded:: 3.9
 
@@ -1205,205 +1378,6 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    .. versionadded:: 3.10
 
 
-Building generic types
-""""""""""""""""""""""
-
-These are not used in annotations. They are building blocks for creating generic types.
-
-.. class:: Generic
-
-   Abstract base class for generic types.
-
-   A generic type is typically declared by inheriting from an
-   instantiation of this class with one or more type variables.
-   For example, a generic mapping type might be defined as::
-
-      class Mapping(Generic[KT, VT]):
-          def __getitem__(self, key: KT) -> VT:
-              ...
-              # Etc.
-
-   This class can then be used as follows::
-
-      X = TypeVar('X')
-      Y = TypeVar('Y')
-
-      def lookup_name(mapping: Mapping[X, Y], key: X, default: Y) -> Y:
-          try:
-              return mapping[key]
-          except KeyError:
-              return default
-
-.. class:: TypeVar
-
-    Type variable.
-
-    Usage::
-
-      T = TypeVar('T')  # Can be anything
-      S = TypeVar('S', bound=str)  # Can be any subtype of str
-      A = TypeVar('A', str, bytes)  # Must be exactly str or bytes
-
-    Type variables exist primarily for the benefit of static type
-    checkers.  They serve as the parameters for generic types as well
-    as for generic function definitions.  See :class:`Generic` for more
-    information on generic types.  Generic functions work as follows::
-
-       def repeat(x: T, n: int) -> Sequence[T]:
-           """Return a list containing n references to x."""
-           return [x]*n
-
-
-       def print_capitalized(x: S) -> S:
-           """Print x capitalized, and return x."""
-           print(x.capitalize())
-           return x
-
-
-       def concatenate(x: A, y: A) -> A:
-           """Add two strings or bytes objects together."""
-           return x + y
-
-    Note that type variables can be *bound*, *constrained*, or neither, but
-    cannot be both bound *and* constrained.
-
-    Bound type variables and constrained type variables have different
-    semantics in several important ways. Using a *bound* type variable means
-    that the ``TypeVar`` will be solved using the most specific type possible::
-
-       x = print_capitalized('a string')
-       reveal_type(x)  # revealed type is str
-
-       class StringSubclass(str):
-           pass
-
-       y = print_capitalized(StringSubclass('another string'))
-       reveal_type(y)  # revealed type is StringSubclass
-
-       z = print_capitalized(45)  # error: int is not a subtype of str
-
-    Type variables can be bound to concrete types, abstract types (ABCs or
-    protocols), and even unions of types::
-
-       U = TypeVar('U', bound=str|bytes)  # Can be any subtype of the union str|bytes
-       V = TypeVar('V', bound=SupportsAbs)  # Can be anything with an __abs__ method
-
-    Using a *constrained* type variable, however, means that the ``TypeVar``
-    can only ever be solved as being exactly one of the constraints given::
-
-       a = concatenate('one', 'two')
-       reveal_type(a)  # revealed type is str
-
-       b = concatenate(StringSubclass('one'), StringSubclass('two'))
-       reveal_type(b)  # revealed type is str, despite StringSubclass being passed in
-
-       c = concatenate('one', b'two')  # error: type variable 'A' can be either str or bytes in a function call, but not both
-
-    At runtime, ``isinstance(x, T)`` will raise :exc:`TypeError`.  In general,
-    :func:`isinstance` and :func:`issubclass` should not be used with types.
-
-    Type variables may be marked covariant or contravariant by passing
-    ``covariant=True`` or ``contravariant=True``.  See :pep:`484` for more
-    details.  By default, type variables are invariant.
-
-.. class:: TypeVarTuple
-
-    Type variable tuple. A specialized form of :class:`type variable <TypeVar>`
-    that enables *variadic* generics.
-
-    A normal type variable enables parameterization with a single type. A type
-    variable tuple, in contrast, allows parameterization with an
-    *arbitrary* number of types by acting like an *arbitrary* number of type
-    variables wrapped in a tuple. For example::
-
-        T = TypeVar('T')
-        Ts = TypeVarTuple('Ts')
-
-        def move_first_element_to_last(tup: tuple[T, *Ts]) -> tuple[*Ts, T]:
-            return (*tup[1:], tup[0])
-
-        # T is bound to int, Ts is bound to ()
-        # Return value is (1,), which has type tuple[int]
-        move_first_element_to_last(tup=(1,))
-
-        # T is bound to int, Ts is bound to (str,)
-        # Return value is ('spam', 1), which has type tuple[str, int]
-        move_first_element_to_last(tup=(1, 'spam'))
-
-        # T is bound to int, Ts is bound to (str, float)
-        # Return value is ('spam', 3.0, 1), which has type tuple[str, float, int]
-        move_first_element_to_last(tup=(1, 'spam', 3.0))
-
-        # This fails to type check (and fails at runtime)
-        # because tuple[()] is not compatible with tuple[T, *Ts]
-        # (at least one element is required)
-        move_first_element_to_last(tup=())
-
-    Note the use of the unpacking operator ``*`` in ``tuple[T, *Ts]``.
-    Conceptually, you can think of ``Ts`` as a tuple of type variables
-    ``(T1, T2, ...)``. ``tuple[T, *Ts]`` would then become
-    ``tuple[T, *(T1, T2, ...)]``, which is equivalent to
-    ``tuple[T, T1, T2, ...]``. (Note that in older versions of Python, you might
-    see this written using :data:`Unpack <Unpack>` instead, as
-    ``Unpack[Ts]``.)
-
-    Type variable tuples must *always* be unpacked. This helps distinguish type
-    variable tuples from normal type variables::
-
-        x: Ts          # Not valid
-        x: tuple[Ts]   # Not valid
-        x: tuple[*Ts]  # The correct way to do it
-
-    Type variable tuples can be used in the same contexts as normal type
-    variables. For example, in class definitions, arguments, and return types::
-
-        Shape = TypeVarTuple('Shape')
-        class Array(Generic[*Shape]):
-            def __getitem__(self, key: tuple[*Shape]) -> float: ...
-            def __abs__(self) -> "Array[*Shape]": ...
-            def get_shape(self) -> tuple[*Shape]: ...
-
-    Type variable tuples can be happily combined with normal type variables::
-
-        DType = TypeVar('DType')
-
-        class Array(Generic[DType, *Shape]):  # This is fine
-            pass
-
-        class Array2(Generic[*Shape, DType]):  # This would also be fine
-            pass
-
-        float_array_1d: Array[float, Height] = Array()     # Totally fine
-        int_array_2d: Array[int, Height, Width] = Array()  # Yup, fine too
-
-    However, note that at most one type variable tuple may appear in a single
-    list of type arguments or type parameters::
-
-        x: tuple[*Ts, *Ts]                     # Not valid
-        class Array(Generic[*Shape, *Shape]):  # Not valid
-            pass
-
-    Finally, an unpacked type variable tuple can be used as the type annotation
-    of ``*args``::
-
-        def call_soon(
-                callback: Callable[[*Ts], None],
-                *args: *Ts
-        ) -> None:
-            ...
-            callback(*args)
-
-    In contrast to non-unpacked annotations of ``*args`` - e.g. ``*args: int``,
-    which would specify that *all* arguments are ``int`` - ``*args: *Ts``
-    enables reference to the types of the *individual* arguments in ``*args``.
-    Here, this allows us to ensure the types of the ``*args`` passed
-    to ``call_soon`` match the types of the (positional) arguments of
-    ``callback``.
-
-    See :pep:`646` for more details on type variable tuples.
-
-    .. versionadded:: 3.11
-
 .. data:: Unpack
 
    A typing operator that conceptually marks an object as having been
@@ -1417,8 +1391,10 @@ These are not used in annotations. They are building blocks for creating generic
       tup: tuple[Unpack[Ts]]
 
    In fact, ``Unpack`` can be used interchangeably with ``*`` in the context
-   of types. You might see ``Unpack`` being used explicitly in older versions
-   of Python, where ``*`` couldn't be used in certain places::
+   of :class:`typing.TypeVarTuple <TypeVarTuple>` and
+   :class:`builtins.tuple <tuple>` types. You might see ``Unpack`` being used
+   explicitly in older versions of Python, where ``*`` couldn't be used in
+   certain places::
 
       # In older versions of Python, TypeVarTuple and Unpack
       # are located in the `typing_extensions` backports package.
@@ -1428,14 +1404,347 @@ These are not used in annotations. They are building blocks for creating generic
       tup: tuple[*Ts]         # Syntax error on Python <= 3.10!
       tup: tuple[Unpack[Ts]]  # Semantically equivalent, and backwards-compatible
 
+   ``Unpack`` can also be used along with :class:`typing.TypedDict` for typing
+   ``**kwargs`` in a function signature::
+
+      from typing import TypedDict, Unpack
+
+      class Movie(TypedDict):
+          name: str
+          year: int
+
+      # This function expects two keyword arguments - `name` of type `str`
+      # and `year` of type `int`.
+      def foo(**kwargs: Unpack[Movie]): ...
+
+   See :pep:`692` for more details on using ``Unpack`` for ``**kwargs`` typing.
+
    .. versionadded:: 3.11
+
+Building generic types and type aliases
+"""""""""""""""""""""""""""""""""""""""
+
+The following objects are not used directly in annotations. Instead, they are building blocks
+for creating generic types and type aliases.
+
+These objects can be created through special syntax
+(:ref:`type parameter lists <type-params>` and the :keyword:`type` statement).
+For compatibility with Python 3.11 and earlier, they can also be created
+without the dedicated syntax, as documented below.
+
+.. class:: Generic
+
+   Abstract base class for generic types.
+
+   A generic type is typically declared by adding a list of type parameters
+   after the class name::
+
+      class Mapping[KT, VT]:
+          def __getitem__(self, key: KT) -> VT:
+              ...
+              # Etc.
+
+   Such a class implicitly inherits from ``Generic``.
+   The runtime semantics of this syntax are discussed in the
+   :ref:`Language Reference <generic-classes>`.
+
+   This class can then be used as follows::
+
+      def lookup_name[X, Y](mapping: Mapping[X, Y], key: X, default: Y) -> Y:
+          try:
+              return mapping[key]
+          except KeyError:
+              return default
+
+   Here the brackets after the function name indicate a
+   :ref:`generic function <generic-functions>`.
+
+   For backwards compatibility, generic classes can also be
+   declared by explicitly inheriting from
+   ``Generic``. In this case, the type parameters must be declared
+   separately::
+
+      KT = TypeVar('KT')
+      VT = TypeVar('VT')
+
+      class Mapping(Generic[KT, VT]):
+          def __getitem__(self, key: KT) -> VT:
+              ...
+              # Etc.
+
+.. class:: TypeVar(name, *constraints, bound=None, covariant=False, contravariant=False, infer_variance=False)
+
+   Type variable.
+
+   The preferred way to construct a type variable is via the dedicated syntax
+   for :ref:`generic functions <generic-functions>`,
+   :ref:`generic classes <generic-classes>`, and
+   :ref:`generic type aliases <generic-type-aliases>`::
+
+      class Sequence[T]:  # T is a TypeVar
+          ...
+
+   This syntax can also be used to create bound and constrained type
+   variables::
+
+      class StrSequence[S: str]:  # S is a TypeVar bound to str
+          ...
+
+
+      class StrOrBytesSequence[A: (str, bytes)]:  # A is a TypeVar constrained to str or bytes
+          ...
+
+   However, if desired, reusable type variables can also be constructed manually, like so::
+
+      T = TypeVar('T')  # Can be anything
+      S = TypeVar('S', bound=str)  # Can be any subtype of str
+      A = TypeVar('A', str, bytes)  # Must be exactly str or bytes
+
+   Type variables exist primarily for the benefit of static type
+   checkers.  They serve as the parameters for generic types as well
+   as for generic function and type alias definitions.
+   See :class:`Generic` for more
+   information on generic types.  Generic functions work as follows::
+
+      def repeat[T](x: T, n: int) -> Sequence[T]:
+          """Return a list containing n references to x."""
+          return [x]*n
+
+
+      def print_capitalized[S: str](x: S) -> S:
+          """Print x capitalized, and return x."""
+          print(x.capitalize())
+          return x
+
+
+      def concatenate[A: (str, bytes)](x: A, y: A) -> A:
+          """Add two strings or bytes objects together."""
+          return x + y
+
+   Note that type variables can be *bound*, *constrained*, or neither, but
+   cannot be both bound *and* constrained.
+
+   The variance of type variables is inferred by type checkers when they are created
+   through the :ref:`type parameter syntax <type-params>` or when
+   ``infer_variance=True`` is passed.
+   Manually created type variables may be explicitly marked covariant or contravariant by passing
+   ``covariant=True`` or ``contravariant=True``.
+   By default, manually created type variables are invariant.
+   See :pep:`484` and :pep:`695` for more details.
+
+   Bound type variables and constrained type variables have different
+   semantics in several important ways. Using a *bound* type variable means
+   that the ``TypeVar`` will be solved using the most specific type possible::
+
+      x = print_capitalized('a string')
+      reveal_type(x)  # revealed type is str
+
+      class StringSubclass(str):
+          pass
+
+      y = print_capitalized(StringSubclass('another string'))
+      reveal_type(y)  # revealed type is StringSubclass
+
+      z = print_capitalized(45)  # error: int is not a subtype of str
+
+   Type variables can be bound to concrete types, abstract types (ABCs or
+   protocols), and even unions of types::
+
+      # Can be anything with an __abs__ method
+      def print_abs[T: SupportsAbs](arg: T) -> None:
+          print("Absolute value:", abs(arg))
+
+      U = TypeVar('U', bound=str|bytes)  # Can be any subtype of the union str|bytes
+      V = TypeVar('V', bound=SupportsAbs)  # Can be anything with an __abs__ method
+
+   .. _typing-constrained-typevar:
+
+   Using a *constrained* type variable, however, means that the ``TypeVar``
+   can only ever be solved as being exactly one of the constraints given::
+
+      a = concatenate('one', 'two')
+      reveal_type(a)  # revealed type is str
+
+      b = concatenate(StringSubclass('one'), StringSubclass('two'))
+      reveal_type(b)  # revealed type is str, despite StringSubclass being passed in
+
+      c = concatenate('one', b'two')  # error: type variable 'A' can be either str or bytes in a function call, but not both
+
+   At runtime, ``isinstance(x, T)`` will raise :exc:`TypeError`.
+
+   .. attribute:: __name__
+
+      The name of the type variable.
+
+   .. attribute:: __covariant__
+
+      Whether the type var has been explicitly marked as covariant.
+
+   .. attribute:: __contravariant__
+
+      Whether the type var has been explicitly marked as contravariant.
+
+   .. attribute:: __infer_variance__
+
+      Whether the type variable's variance should be inferred by type checkers.
+
+      .. versionadded:: 3.12
+
+   .. attribute:: __bound__
+
+      The bound of the type variable, if any.
+
+      .. versionchanged:: 3.12
+
+         For type variables created through :ref:`type parameter syntax <type-params>`,
+         the bound is evaluated only when the attribute is accessed, not when
+         the type variable is created (see :ref:`lazy-evaluation`).
+
+   .. attribute:: __constraints__
+
+      A tuple containing the constraints of the type variable, if any.
+
+      .. versionchanged:: 3.12
+
+         For type variables created through :ref:`type parameter syntax <type-params>`,
+         the constraints are evaluated only when the attribute is accessed, not when
+         the type variable is created (see :ref:`lazy-evaluation`).
+
+   .. versionchanged:: 3.12
+
+      Type variables can now be declared using the
+      :ref:`type parameter <type-params>` syntax introduced by :pep:`695`.
+      The ``infer_variance`` parameter was added.
+
+.. class:: TypeVarTuple(name)
+
+   Type variable tuple. A specialized form of :class:`type variable <TypeVar>`
+   that enables *variadic* generics.
+
+   Type variable tuples can be declared in :ref:`type parameter lists <type-params>`
+   using a single asterisk (``*``) before the name::
+
+      def move_first_element_to_last[T, *Ts](tup: tuple[T, *Ts]) -> tuple[*Ts, T]:
+          return (*tup[1:], tup[0])
+
+   Or by explicitly invoking the ``TypeVarTuple`` constructor::
+
+      T = TypeVar("T")
+      Ts = TypeVarTuple("Ts")
+
+      def move_first_element_to_last(tup: tuple[T, *Ts]) -> tuple[*Ts, T]:
+          return (*tup[1:], tup[0])
+
+   A normal type variable enables parameterization with a single type. A type
+   variable tuple, in contrast, allows parameterization with an
+   *arbitrary* number of types by acting like an *arbitrary* number of type
+   variables wrapped in a tuple. For example::
+
+      # T is bound to int, Ts is bound to ()
+      # Return value is (1,), which has type tuple[int]
+      move_first_element_to_last(tup=(1,))
+
+      # T is bound to int, Ts is bound to (str,)
+      # Return value is ('spam', 1), which has type tuple[str, int]
+      move_first_element_to_last(tup=(1, 'spam'))
+
+      # T is bound to int, Ts is bound to (str, float)
+      # Return value is ('spam', 3.0, 1), which has type tuple[str, float, int]
+      move_first_element_to_last(tup=(1, 'spam', 3.0))
+
+      # This fails to type check (and fails at runtime)
+      # because tuple[()] is not compatible with tuple[T, *Ts]
+      # (at least one element is required)
+      move_first_element_to_last(tup=())
+
+   Note the use of the unpacking operator ``*`` in ``tuple[T, *Ts]``.
+   Conceptually, you can think of ``Ts`` as a tuple of type variables
+   ``(T1, T2, ...)``. ``tuple[T, *Ts]`` would then become
+   ``tuple[T, *(T1, T2, ...)]``, which is equivalent to
+   ``tuple[T, T1, T2, ...]``. (Note that in older versions of Python, you might
+   see this written using :data:`Unpack <Unpack>` instead, as
+   ``Unpack[Ts]``.)
+
+   Type variable tuples must *always* be unpacked. This helps distinguish type
+   variable tuples from normal type variables::
+
+      x: Ts          # Not valid
+      x: tuple[Ts]   # Not valid
+      x: tuple[*Ts]  # The correct way to do it
+
+   Type variable tuples can be used in the same contexts as normal type
+   variables. For example, in class definitions, arguments, and return types::
+
+      class Array[*Shape]:
+          def __getitem__(self, key: tuple[*Shape]) -> float: ...
+          def __abs__(self) -> "Array[*Shape]": ...
+          def get_shape(self) -> tuple[*Shape]: ...
+
+   Type variable tuples can be happily combined with normal type variables:
+
+   .. testcode::
+
+      class Array[DType, *Shape]:  # This is fine
+          pass
+
+      class Array2[*Shape, DType]:  # This would also be fine
+          pass
+
+      class Height: ...
+      class Width: ...
+
+      float_array_1d: Array[float, Height] = Array()     # Totally fine
+      int_array_2d: Array[int, Height, Width] = Array()  # Yup, fine too
+
+   However, note that at most one type variable tuple may appear in a single
+   list of type arguments or type parameters::
+
+      x: tuple[*Ts, *Ts]            # Not valid
+      class Array[*Shape, *Shape]:  # Not valid
+          pass
+
+   Finally, an unpacked type variable tuple can be used as the type annotation
+   of ``*args``::
+
+      def call_soon[*Ts](
+               callback: Callable[[*Ts], None],
+               *args: *Ts
+      ) -> None:
+          ...
+          callback(*args)
+
+   In contrast to non-unpacked annotations of ``*args`` - e.g. ``*args: int``,
+   which would specify that *all* arguments are ``int`` - ``*args: *Ts``
+   enables reference to the types of the *individual* arguments in ``*args``.
+   Here, this allows us to ensure the types of the ``*args`` passed
+   to ``call_soon`` match the types of the (positional) arguments of
+   ``callback``.
+
+   See :pep:`646` for more details on type variable tuples.
+
+   .. attribute:: __name__
+
+      The name of the type variable tuple.
+
+   .. versionadded:: 3.11
+
+   .. versionchanged:: 3.12
+
+      Type variable tuples can now be declared using the
+      :ref:`type parameter <type-params>` syntax introduced by :pep:`695`.
 
 .. class:: ParamSpec(name, *, bound=None, covariant=False, contravariant=False)
 
    Parameter specification variable.  A specialized version of
    :class:`type variables <TypeVar>`.
 
-   Usage::
+   In :ref:`type parameter lists <type-params>`, parameter specifications
+   can be declared with two asterisks (``**``)::
+
+      type IntFunc[**P] = Callable[P, int]
+
+   For compatibility with Python 3.11 and earlier, ``ParamSpec`` objects
+   can also be created as follows::
 
       P = ParamSpec('P')
 
@@ -1452,13 +1761,9 @@ These are not used in annotations. They are building blocks for creating generic
    new callable returned by it have inter-dependent type parameters::
 
       from collections.abc import Callable
-      from typing import TypeVar, ParamSpec
       import logging
 
-      T = TypeVar('T')
-      P = ParamSpec('P')
-
-      def add_logging(f: Callable[P, T]) -> Callable[P, T]:
+      def add_logging[T, **P](f: Callable[P, T]) -> Callable[P, T]:
           '''A type-safe decorator to add logging to a function.'''
           def inner(*args: P.args, **kwargs: P.kwargs) -> T:
               logging.info(f'{f.__name__} was called')
@@ -1493,6 +1798,10 @@ These are not used in annotations. They are building blocks for creating generic
       ``P.args`` and ``P.kwargs`` are instances respectively of
       :class:`ParamSpecArgs` and :class:`ParamSpecKwargs`.
 
+   .. attribute:: __name__
+
+      The name of the parameter specification.
+
    Parameter specification variables created with ``covariant=True`` or
    ``contravariant=True`` can be used to declare covariant or contravariant
    generic types.  The ``bound`` argument is also accepted, similar to
@@ -1500,6 +1809,11 @@ These are not used in annotations. They are building blocks for creating generic
    be decided.
 
    .. versionadded:: 3.10
+
+   .. versionchanged:: 3.12
+
+      Parameter specifications can now be declared using the
+      :ref:`type parameter <type-params>` syntax introduced by :pep:`695`.
 
    .. note::
       Only parameter specification variables defined in global scope can
@@ -1528,105 +1842,70 @@ These are not used in annotations. They are building blocks for creating generic
    .. versionadded:: 3.10
 
 
-.. data:: AnyStr
+.. class:: TypeAliasType(name, value, *, type_params=())
 
-   ``AnyStr`` is a :class:`constrained type variable <TypeVar>` defined as
-   ``AnyStr = TypeVar('AnyStr', str, bytes)``.
+   The type of type aliases created through the :keyword:`type` statement.
 
-   It is meant to be used for functions that may accept any kind of string
-   without allowing different kinds of strings to mix. For example::
+   Example:
 
-      def concat(a: AnyStr, b: AnyStr) -> AnyStr:
-          return a + b
+   .. doctest::
 
-      concat(u"foo", u"bar")  # Ok, output has type 'unicode'
-      concat(b"foo", b"bar")  # Ok, output has type 'bytes'
-      concat(u"foo", b"bar")  # Error, cannot mix unicode and bytes
+      >>> type Alias = int
+      >>> type(Alias)
+      <class 'typing.TypeAliasType'>
 
-.. class:: Protocol(Generic)
+   .. versionadded:: 3.12
 
-   Base class for protocol classes. Protocol classes are defined like this::
+   .. attribute:: __name__
 
-      class Proto(Protocol):
-          def meth(self) -> int:
-              ...
+      The name of the type alias:
 
-   Such classes are primarily used with static type checkers that recognize
-   structural subtyping (static duck-typing), for example::
+      .. doctest::
 
-      class C:
-          def meth(self) -> int:
-              return 0
+         >>> type Alias = int
+         >>> Alias.__name__
+         'Alias'
 
-      def func(x: Proto) -> int:
-          return x.meth()
+   .. attribute:: __module__
 
-      func(C())  # Passes static type check
+      The module in which the type alias was defined::
 
-   See :pep:`544` for more details. Protocol classes decorated with
-   :func:`runtime_checkable` (described later) act as simple-minded runtime
-   protocols that check only the presence of given attributes, ignoring their
-   type signatures.
+         >>> type Alias = int
+         >>> Alias.__module__
+         '__main__'
 
-   Protocol classes can be generic, for example::
+   .. attribute:: __type_params__
 
-      class GenProto(Protocol[T]):
-          def meth(self) -> T:
-              ...
+      The type parameters of the type alias, or an empty tuple if the alias is
+      not generic:
 
-   .. versionadded:: 3.8
+      .. doctest::
 
-.. decorator:: runtime_checkable
+         >>> type ListOrSet[T] = list[T] | set[T]
+         >>> ListOrSet.__type_params__
+         (T,)
+         >>> type NotGeneric = int
+         >>> NotGeneric.__type_params__
+         ()
 
-   Mark a protocol class as a runtime protocol.
+   .. attribute:: __value__
 
-   Such a protocol can be used with :func:`isinstance` and :func:`issubclass`.
-   This raises :exc:`TypeError` when applied to a non-protocol class.  This
-   allows a simple-minded structural check, very similar to "one trick ponies"
-   in :mod:`collections.abc` such as :class:`~collections.abc.Iterable`.  For example::
+      The type alias's value. This is :ref:`lazily evaluated <lazy-evaluation>`,
+      so names used in the definition of the alias are not resolved until the
+      ``__value__`` attribute is accessed:
 
-      @runtime_checkable
-      class Closable(Protocol):
-          def close(self): ...
+      .. doctest::
 
-      assert isinstance(open('/some/file'), Closable)
-
-      @runtime_checkable
-      class Named(Protocol):
-          name: str
-
-      import threading
-      assert isinstance(threading.Thread(name='Bob'), Named)
-
-   .. versionchanged:: 3.12
-      The internal implementation of :func:`isinstance` checks against
-      runtime-checkable protocols now uses :func:`inspect.getattr_static`
-      to look up attributes (previously, :func:`hasattr` was used).
-      As a result, some objects which used to be considered instances
-      of a runtime-checkable protocol may no longer be considered instances
-      of that protocol on Python 3.12+, and vice versa.
-      Most users are unlikely to be affected by this change.
-
-   .. note::
-
-        :func:`!runtime_checkable` will check only the presence of the required
-        methods or attributes, not their type signatures or types.
-        For example, :class:`ssl.SSLObject`
-        is a class, therefore it passes an :func:`issubclass`
-        check against :data:`Callable`.  However, the
-        ``ssl.SSLObject.__init__`` method exists only to raise a
-        :exc:`TypeError` with a more informative message, therefore making
-        it impossible to call (instantiate) :class:`ssl.SSLObject`.
-
-   .. note::
-
-        An :func:`isinstance` check against a runtime-checkable protocol can be
-        surprisingly slow compared to an ``isinstance()`` check against
-        a non-protocol class. Consider using alternative idioms such as
-        :func:`hasattr` calls for structural checks in performance-sensitive
-        code.
-
-   .. versionadded:: 3.8
+         >>> type Mutually = Recursive
+         >>> type Recursive = Mutually
+         >>> Mutually
+         Mutually
+         >>> Recursive
+         Recursive
+         >>> Mutually.__value__
+         Recursive
+         >>> Recursive.__value__
+         Mutually
 
 Other special directives
 """"""""""""""""""""""""
@@ -1676,12 +1955,18 @@ These are not used in annotations. They are building blocks for declaring types.
 
    ``NamedTuple`` subclasses can be generic::
 
-      class Group(NamedTuple, Generic[T]):
+      class Group[T](NamedTuple):
           key: T
           group: list[T]
 
    Backward-compatible usage::
 
+       # For creating a generic NamedTuple on Python 3.11 or lower
+       class Group(NamedTuple, Generic[T]):
+           key: T
+           group: list[T]
+
+       # A functional syntax is also supported
        Employee = NamedTuple('Employee', [('name', str), ('id', int)])
 
    .. versionchanged:: 3.6
@@ -1711,10 +1996,125 @@ These are not used in annotations. They are building blocks for declaring types.
       UserId = NewType('UserId', int)
       first_user = UserId(1)
 
+   .. attribute:: __module__
+
+      The module in which the new type is defined.
+
+   .. attribute:: __name__
+
+      The name of the new type.
+
+   .. attribute:: __supertype__
+
+      The type that the new type is based on.
+
    .. versionadded:: 3.5.2
 
    .. versionchanged:: 3.10
       ``NewType`` is now a class rather than a function.
+
+.. class:: Protocol(Generic)
+
+   Base class for protocol classes. Protocol classes are defined like this::
+
+      class Proto(Protocol):
+          def meth(self) -> int:
+              ...
+
+   Such classes are primarily used with static type checkers that recognize
+   structural subtyping (static duck-typing), for example::
+
+      class C:
+          def meth(self) -> int:
+              return 0
+
+      def func(x: Proto) -> int:
+          return x.meth()
+
+      func(C())  # Passes static type check
+
+   See :pep:`544` for more details. Protocol classes decorated with
+   :func:`runtime_checkable` (described later) act as simple-minded runtime
+   protocols that check only the presence of given attributes, ignoring their
+   type signatures.
+
+   Protocol classes can be generic, for example::
+
+      class GenProto[T](Protocol):
+          def meth(self) -> T:
+              ...
+
+   In code that needs to be compatible with Python 3.11 or older, generic
+   Protocols can be written as follows::
+
+      T = TypeVar("T")
+
+      class GenProto(Protocol[T]):
+          def meth(self) -> T:
+              ...
+
+   .. versionadded:: 3.8
+
+.. decorator:: runtime_checkable
+
+   Mark a protocol class as a runtime protocol.
+
+   Such a protocol can be used with :func:`isinstance` and :func:`issubclass`.
+   This raises :exc:`TypeError` when applied to a non-protocol class.  This
+   allows a simple-minded structural check, very similar to "one trick ponies"
+   in :mod:`collections.abc` such as :class:`~collections.abc.Iterable`.  For example::
+
+      @runtime_checkable
+      class Closable(Protocol):
+          def close(self): ...
+
+      assert isinstance(open('/some/file'), Closable)
+
+      @runtime_checkable
+      class Named(Protocol):
+          name: str
+
+      import threading
+      assert isinstance(threading.Thread(name='Bob'), Named)
+
+   .. note::
+
+        :func:`!runtime_checkable` will check only the presence of the required
+        methods or attributes, not their type signatures or types.
+        For example, :class:`ssl.SSLObject`
+        is a class, therefore it passes an :func:`issubclass`
+        check against :data:`Callable`.  However, the
+        ``ssl.SSLObject.__init__`` method exists only to raise a
+        :exc:`TypeError` with a more informative message, therefore making
+        it impossible to call (instantiate) :class:`ssl.SSLObject`.
+
+   .. note::
+
+        An :func:`isinstance` check against a runtime-checkable protocol can be
+        surprisingly slow compared to an ``isinstance()`` check against
+        a non-protocol class. Consider using alternative idioms such as
+        :func:`hasattr` calls for structural checks in performance-sensitive
+        code.
+
+   .. versionadded:: 3.8
+
+   .. versionchanged:: 3.12
+      The internal implementation of :func:`isinstance` checks against
+      runtime-checkable protocols now uses :func:`inspect.getattr_static`
+      to look up attributes (previously, :func:`hasattr` was used).
+      As a result, some objects which used to be considered instances
+      of a runtime-checkable protocol may no longer be considered instances
+      of that protocol on Python 3.12+, and vice versa.
+      Most users are unlikely to be affected by this change.
+
+   .. versionchanged:: 3.12
+      The members of a runtime-checkable protocol are now considered "frozen"
+      at runtime as soon as the class has been created. Monkey-patching
+      attributes onto a runtime-checkable protocol will still work, but will
+      have no impact on :func:`isinstance` checks comparing objects to the
+      protocol. See :ref:`"What's new in Python 3.12" <whatsnew-typing-py312>`
+      for more details.
+
 
 .. class:: TypedDict(dict)
 
@@ -1737,25 +2137,14 @@ These are not used in annotations. They are building blocks for declaring types.
 
       assert Point2D(x=1, y=2, label='first') == dict(x=1, y=2, label='first')
 
-   To allow using this feature with older versions of Python that do not
-   support :pep:`526`, ``TypedDict`` supports two additional equivalent
-   syntactic forms:
-
-   * Using a literal :class:`dict` as the second argument::
+   An alternative way to create a ``TypedDict`` is by using
+   function-call syntax. The second argument must be a literal :class:`dict`::
 
       Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
 
-   * Using keyword arguments::
-
-      Point2D = TypedDict('Point2D', x=int, y=int, label=str)
-
-   .. deprecated-removed:: 3.11 3.13
-      The keyword-argument syntax is deprecated in 3.11 and will be removed
-      in 3.13. It may also be unsupported by static type checkers.
-
-   The functional syntax should also be used when any of the keys are not valid
-   :ref:`identifiers <identifiers>`, for example because they are keywords or contain hyphens.
-   Example::
+   This functional syntax allows defining keys which are not valid
+   :ref:`identifiers <identifiers>`, for example because they are
+   keywords or contain hyphens::
 
       # raises SyntaxError
       class Point2D(TypedDict):
@@ -1844,6 +2233,17 @@ These are not used in annotations. They are building blocks for declaring types.
 
    A ``TypedDict`` can be generic::
 
+      class Group[T](TypedDict):
+          key: T
+          group: list[T]
+
+   To create a generic ``TypedDict`` that is compatible with Python 3.11
+   or lower, inherit from :class:`Generic` explicitly:
+
+   .. testcode::
+
+      T = TypeVar("T")
+
       class Group(TypedDict, Generic[T]):
           key: T
           group: list[T]
@@ -1855,7 +2255,9 @@ These are not used in annotations. They are building blocks for declaring types.
    .. attribute:: __total__
 
       ``Point2D.__total__`` gives the value of the ``total`` argument.
-      Example::
+      Example:
+
+      .. doctest::
 
          >>> from typing import TypedDict
          >>> class Point2D(TypedDict): pass
@@ -1885,7 +2287,9 @@ These are not used in annotations. They are building blocks for declaring types.
       non-required keys in the same ``TypedDict`` . This is done by declaring a
       ``TypedDict`` with one value for the ``total`` argument and then
       inheriting from it in another ``TypedDict`` with a different value for
-      ``total``::
+      ``total``:
+
+      .. doctest::
 
          >>> class Point2D(TypedDict, total=False):
          ...     x: int
@@ -1912,6 +2316,9 @@ These are not used in annotations. They are building blocks for declaring types.
    .. versionchanged:: 3.11
       Added support for generic ``TypedDict``\ s.
 
+   .. versionchanged:: 3.13
+      Removed support for the keyword-argument method of creating ``TypedDict``\ s.
+
 Generic concrete collections
 ----------------------------
 
@@ -1920,9 +2327,11 @@ Corresponding to built-in types
 
 .. class:: Dict(dict, MutableMapping[KT, VT])
 
-   A generic version of :class:`dict`.
-   Useful for annotating return types. To annotate arguments it is preferred
-   to use an abstract collection type such as :class:`Mapping`.
+   Deprecated alias to :class:`dict`.
+
+   Note that to annotate arguments, it is preferred
+   to use an abstract collection type such as :class:`Mapping`
+   rather than to use :class:`dict` or :class:`!typing.Dict`.
 
    This type can be used as follows::
 
@@ -1935,19 +2344,18 @@ Corresponding to built-in types
 
 .. class:: List(list, MutableSequence[T])
 
-   Generic version of :class:`list`.
-   Useful for annotating return types. To annotate arguments it is preferred
+   Deprecated alias to :class:`list`.
+
+   Note that to annotate arguments, it is preferred
    to use an abstract collection type such as :class:`Sequence` or
-   :class:`Iterable`.
+   :class:`Iterable` rather than to use :class:`list` or :class:`!typing.List`.
 
    This type may be used as follows::
 
-      T = TypeVar('T', int, float)
-
-      def vec2(x: T, y: T) -> List[T]:
+      def vec2[T: (int, float)](x: T, y: T) -> List[T]:
           return [x, y]
 
-      def keep_positives(vector: Sequence[T]) -> List[T]:
+      def keep_positives[T: (int, float)](vector: Sequence[T]) -> List[T]:
           return [item for item in vector if item > 0]
 
    .. deprecated:: 3.9
@@ -1956,9 +2364,11 @@ Corresponding to built-in types
 
 .. class:: Set(set, MutableSet[T])
 
-   A generic version of :class:`builtins.set <set>`.
-   Useful for annotating return types. To annotate arguments it is preferred
-   to use an abstract collection type such as :class:`AbstractSet`.
+   Deprecated alias to :class:`builtins.set <set>`.
+
+   Note that to annotate arguments, it is preferred
+   to use an abstract collection type such as :class:`AbstractSet`
+   rather than to use :class:`set` or :class:`!typing.Set`.
 
    .. deprecated:: 3.9
       :class:`builtins.set <set>` now supports subscripting (``[]``).
@@ -1966,7 +2376,7 @@ Corresponding to built-in types
 
 .. class:: FrozenSet(frozenset, AbstractSet[T_co])
 
-   A generic version of :class:`builtins.frozenset <frozenset>`.
+   Deprecated alias to :class:`builtins.frozenset <frozenset>`.
 
    .. deprecated:: 3.9
       :class:`builtins.frozenset <frozenset>`
@@ -1980,7 +2390,7 @@ Corresponding to types in :mod:`collections`
 
 .. class:: DefaultDict(collections.defaultdict, MutableMapping[KT, VT])
 
-   A generic version of :class:`collections.defaultdict`.
+   Deprecated alias to :class:`collections.defaultdict`.
 
    .. versionadded:: 3.5.2
 
@@ -1990,7 +2400,7 @@ Corresponding to types in :mod:`collections`
 
 .. class:: OrderedDict(collections.OrderedDict, MutableMapping[KT, VT])
 
-   A generic version of :class:`collections.OrderedDict`.
+   Deprecated alias to :class:`collections.OrderedDict`.
 
    .. versionadded:: 3.7.2
 
@@ -2000,7 +2410,7 @@ Corresponding to types in :mod:`collections`
 
 .. class:: ChainMap(collections.ChainMap, MutableMapping[KT, VT])
 
-   A generic version of :class:`collections.ChainMap`.
+   Deprecated alias to :class:`collections.ChainMap`.
 
    .. versionadded:: 3.5.4
    .. versionadded:: 3.6.1
@@ -2011,7 +2421,7 @@ Corresponding to types in :mod:`collections`
 
 .. class:: Counter(collections.Counter, Dict[T, int])
 
-   A generic version of :class:`collections.Counter`.
+   Deprecated alias to :class:`collections.Counter`.
 
    .. versionadded:: 3.5.4
    .. versionadded:: 3.6.1
@@ -2022,7 +2432,7 @@ Corresponding to types in :mod:`collections`
 
 .. class:: Deque(deque, MutableSequence[T])
 
-   A generic version of :class:`collections.deque`.
+   Deprecated alias to :class:`collections.deque`.
 
    .. versionadded:: 3.5.4
    .. versionadded:: 3.6.1
@@ -2043,10 +2453,6 @@ Other concrete types
    represent the types of I/O streams such as returned by
    :func:`open`.
 
-   .. deprecated-removed:: 3.8 3.13
-      The ``typing.io`` namespace is deprecated and will be removed.
-      These types should be directly imported from ``typing`` instead.
-
 .. class:: Pattern
            Match
 
@@ -2056,10 +2462,6 @@ Other concrete types
    are generic in ``AnyStr`` and can be made specific by writing
    ``Pattern[str]``, ``Pattern[bytes]``, ``Match[str]``, or
    ``Match[bytes]``.
-
-   .. deprecated-removed:: 3.8 3.13
-      The ``typing.re`` namespace is deprecated and will be removed.
-      These types should be directly imported from ``typing`` instead.
 
    .. deprecated:: 3.9
       Classes ``Pattern`` and ``Match`` from :mod:`re` now support ``[]``.
@@ -2083,7 +2485,7 @@ Other concrete types
       Python 2 is no longer supported, and most type checkers also no longer
       support type checking Python 2 code. Removal of the alias is not
       currently planned, but users are encouraged to use
-      :class:`str` instead of ``Text`` wherever possible.
+      :class:`str` instead of ``Text``.
 
 Abstract Base Classes
 ---------------------
@@ -2093,7 +2495,7 @@ Corresponding to collections in :mod:`collections.abc`
 
 .. class:: AbstractSet(Collection[T_co])
 
-   A generic version of :class:`collections.abc.Set`.
+   Deprecated alias to :class:`collections.abc.Set`.
 
    .. deprecated:: 3.9
       :class:`collections.abc.Set` now supports subscripting (``[]``).
@@ -2101,21 +2503,15 @@ Corresponding to collections in :mod:`collections.abc`
 
 .. class:: ByteString(Sequence[int])
 
-   A generic version of :class:`collections.abc.ByteString`.
-
    This type represents the types :class:`bytes`, :class:`bytearray`,
    and :class:`memoryview` of byte sequences.
 
-   As a shorthand for this type, :class:`bytes` can be used to
-   annotate arguments of any of the types mentioned above.
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.ByteString` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
+   .. deprecated-removed:: 3.9 3.14
+      Prefer :class:`collections.abc.Buffer`, or a union like ``bytes | bytearray | memoryview``.
 
 .. class:: Collection(Sized, Iterable[T_co], Container[T_co])
 
-   A generic version of :class:`collections.abc.Collection`
+   Deprecated alias to :class:`collections.abc.Collection`.
 
    .. versionadded:: 3.6.0
 
@@ -2125,7 +2521,7 @@ Corresponding to collections in :mod:`collections.abc`
 
 .. class:: Container(Generic[T_co])
 
-   A generic version of :class:`collections.abc.Container`.
+   Deprecated alias to :class:`collections.abc.Container`.
 
    .. deprecated:: 3.9
       :class:`collections.abc.Container` now supports subscripting (``[]``).
@@ -2133,7 +2529,7 @@ Corresponding to collections in :mod:`collections.abc`
 
 .. class:: ItemsView(MappingView, AbstractSet[tuple[KT_co, VT_co]])
 
-   A generic version of :class:`collections.abc.ItemsView`.
+   Deprecated alias to :class:`collections.abc.ItemsView`.
 
    .. deprecated:: 3.9
       :class:`collections.abc.ItemsView` now supports subscripting (``[]``).
@@ -2141,7 +2537,7 @@ Corresponding to collections in :mod:`collections.abc`
 
 .. class:: KeysView(MappingView, AbstractSet[KT_co])
 
-   A generic version of :class:`collections.abc.KeysView`.
+   Deprecated alias to :class:`collections.abc.KeysView`.
 
    .. deprecated:: 3.9
       :class:`collections.abc.KeysView` now supports subscripting (``[]``).
@@ -2149,11 +2545,11 @@ Corresponding to collections in :mod:`collections.abc`
 
 .. class:: Mapping(Collection[KT], Generic[KT, VT_co])
 
-   A generic version of :class:`collections.abc.Mapping`.
+   Deprecated alias to :class:`collections.abc.Mapping`.
    This type can be used as follows::
 
-     def get_position_in_index(word_list: Mapping[str, int], word: str) -> int:
-         return word_list[word]
+      def get_position_in_index(word_list: Mapping[str, int], word: str) -> int:
+          return word_list[word]
 
    .. deprecated:: 3.9
       :class:`collections.abc.Mapping` now supports subscripting (``[]``).
@@ -2161,7 +2557,7 @@ Corresponding to collections in :mod:`collections.abc`
 
 .. class:: MappingView(Sized)
 
-   A generic version of :class:`collections.abc.MappingView`.
+   Deprecated alias to :class:`collections.abc.MappingView`.
 
    .. deprecated:: 3.9
       :class:`collections.abc.MappingView` now supports subscripting (``[]``).
@@ -2169,7 +2565,7 @@ Corresponding to collections in :mod:`collections.abc`
 
 .. class:: MutableMapping(Mapping[KT, VT])
 
-   A generic version of :class:`collections.abc.MutableMapping`.
+   Deprecated alias to :class:`collections.abc.MutableMapping`.
 
    .. deprecated:: 3.9
       :class:`collections.abc.MutableMapping`
@@ -2178,7 +2574,7 @@ Corresponding to collections in :mod:`collections.abc`
 
 .. class:: MutableSequence(Sequence[T])
 
-   A generic version of :class:`collections.abc.MutableSequence`.
+   Deprecated alias to :class:`collections.abc.MutableSequence`.
 
    .. deprecated:: 3.9
       :class:`collections.abc.MutableSequence`
@@ -2187,7 +2583,7 @@ Corresponding to collections in :mod:`collections.abc`
 
 .. class:: MutableSet(AbstractSet[T])
 
-   A generic version of :class:`collections.abc.MutableSet`.
+   Deprecated alias to :class:`collections.abc.MutableSet`.
 
    .. deprecated:: 3.9
       :class:`collections.abc.MutableSet` now supports subscripting (``[]``).
@@ -2195,7 +2591,7 @@ Corresponding to collections in :mod:`collections.abc`
 
 .. class:: Sequence(Reversible[T_co], Collection[T_co])
 
-   A generic version of :class:`collections.abc.Sequence`.
+   Deprecated alias to :class:`collections.abc.Sequence`.
 
    .. deprecated:: 3.9
       :class:`collections.abc.Sequence` now supports subscripting (``[]``).
@@ -2203,7 +2599,7 @@ Corresponding to collections in :mod:`collections.abc`
 
 .. class:: ValuesView(MappingView, Collection[_VT_co])
 
-   A generic version of :class:`collections.abc.ValuesView`.
+   Deprecated alias to :class:`collections.abc.ValuesView`.
 
    .. deprecated:: 3.9
       :class:`collections.abc.ValuesView` now supports subscripting (``[]``).
@@ -2214,7 +2610,7 @@ Corresponding to other types in :mod:`collections.abc`
 
 .. class:: Iterable(Generic[T_co])
 
-   A generic version of :class:`collections.abc.Iterable`.
+   Deprecated alias to :class:`collections.abc.Iterable`.
 
    .. deprecated:: 3.9
       :class:`collections.abc.Iterable` now supports subscripting (``[]``).
@@ -2222,13 +2618,15 @@ Corresponding to other types in :mod:`collections.abc`
 
 .. class:: Iterator(Iterable[T_co])
 
-   A generic version of :class:`collections.abc.Iterator`.
+   Deprecated alias to :class:`collections.abc.Iterator`.
 
    .. deprecated:: 3.9
       :class:`collections.abc.Iterator` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: Generator(Iterator[T_co], Generic[T_co, T_contra, V_co])
+.. class:: Generator(Iterator[YieldType], Generic[YieldType, SendType, ReturnType])
+
+   Deprecated alias to :class:`collections.abc.Generator`.
 
    A generator can be annotated by the generic type
    ``Generator[YieldType, SendType, ReturnType]``. For example::
@@ -2265,14 +2663,14 @@ Corresponding to other types in :mod:`collections.abc`
 
 .. class:: Hashable
 
-   An alias to :class:`collections.abc.Hashable`.
+   Deprecated alias to :class:`collections.abc.Hashable`.
 
    .. deprecated:: 3.12
       Use :class:`collections.abc.Hashable` directly instead.
 
 .. class:: Reversible(Iterable[T_co])
 
-   A generic version of :class:`collections.abc.Reversible`.
+   Deprecated alias to :class:`collections.abc.Reversible`.
 
    .. deprecated:: 3.9
       :class:`collections.abc.Reversible` now supports subscripting (``[]``).
@@ -2280,7 +2678,7 @@ Corresponding to other types in :mod:`collections.abc`
 
 .. class:: Sized
 
-   An alias to :class:`collections.abc.Sized`.
+   Deprecated alias to :class:`collections.abc.Sized`.
 
    .. deprecated:: 3.12
       Use :class:`collections.abc.Sized` directly instead.
@@ -2288,9 +2686,10 @@ Corresponding to other types in :mod:`collections.abc`
 Asynchronous programming
 """"""""""""""""""""""""
 
-.. class:: Coroutine(Awaitable[V_co], Generic[T_co, T_contra, V_co])
+.. class:: Coroutine(Awaitable[ReturnType], Generic[YieldType, SendType, ReturnType])
 
-   A generic version of :class:`collections.abc.Coroutine`.
+   Deprecated alias to :class:`collections.abc.Coroutine`.
+
    The variance and order of type variables
    correspond to those of :class:`Generator`, for example::
 
@@ -2306,7 +2705,9 @@ Asynchronous programming
       :class:`collections.abc.Coroutine` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: AsyncGenerator(AsyncIterator[T_co], Generic[T_co, T_contra])
+.. class:: AsyncGenerator(AsyncIterator[YieldType], Generic[YieldType, SendType])
+
+   Deprecated alias to :class:`collections.abc.AsyncGenerator`.
 
    An async generator can be annotated by the generic type
    ``AsyncGenerator[YieldType, SendType]``. For example::
@@ -2346,7 +2747,7 @@ Asynchronous programming
 
 .. class:: AsyncIterable(Generic[T_co])
 
-   A generic version of :class:`collections.abc.AsyncIterable`.
+   Deprecated alias to :class:`collections.abc.AsyncIterable`.
 
    .. versionadded:: 3.5.2
 
@@ -2356,7 +2757,7 @@ Asynchronous programming
 
 .. class:: AsyncIterator(AsyncIterable[T_co])
 
-   A generic version of :class:`collections.abc.AsyncIterator`.
+   Deprecated alias to :class:`collections.abc.AsyncIterator`.
 
    .. versionadded:: 3.5.2
 
@@ -2366,7 +2767,7 @@ Asynchronous programming
 
 .. class:: Awaitable(Generic[T_co])
 
-   A generic version of :class:`collections.abc.Awaitable`.
+   Deprecated alias to :class:`collections.abc.Awaitable`.
 
    .. versionadded:: 3.5.2
 
@@ -2380,7 +2781,7 @@ Context manager types
 
 .. class:: ContextManager(Generic[T_co])
 
-   A generic version of :class:`contextlib.AbstractContextManager`.
+   Deprecated alias to :class:`contextlib.AbstractContextManager`.
 
    .. versionadded:: 3.5.4
    .. versionadded:: 3.6.0
@@ -2392,7 +2793,7 @@ Context manager types
 
 .. class:: AsyncContextManager(Generic[T_co])
 
-   A generic version of :class:`contextlib.AbstractAsyncContextManager`.
+   Deprecated alias to :class:`contextlib.AbstractAsyncContextManager`.
 
    .. versionadded:: 3.5.4
    .. versionadded:: 3.6.2
@@ -2455,14 +2856,15 @@ Functions and decorators
 
    Ask a static type checker to confirm that *val* has an inferred type of *typ*.
 
-   When the type checker encounters a call to ``assert_type()``, it
+   At runtime this does nothing: it returns the first argument unchanged with no
+   checks or side effects, no matter the actual type of the argument.
+
+   When a static type checker encounters a call to ``assert_type()``, it
    emits an error if the value is not of the specified type::
 
        def greet(name: str) -> None:
            assert_type(name, str)  # OK, inferred type of `name` is `str`
            assert_type(name, int)  # type checker error
-
-   At runtime this returns the first argument unchanged with no side effects.
 
    This function is useful for ensuring the type checker's understanding of a
    script is in line with the developer's intentions::
@@ -2551,12 +2953,12 @@ Functions and decorators
    decorated object performs runtime "magic" that
    transforms a class, giving it :func:`dataclasses.dataclass`-like behaviors.
 
-   Example usage with a decorator function::
+   Example usage with a decorator function:
 
-      T = TypeVar("T")
+   .. testcode::
 
       @dataclass_transform()
-      def create_model(cls: type[T]) -> type[T]:
+      def create_model[T](cls: type[T]) -> type[T]:
           ...
           return cls
 
@@ -2660,7 +3062,9 @@ Functions and decorators
    runtime but should be ignored by a type checker.  At runtime, calling
    a ``@overload``-decorated function directly will raise
    :exc:`NotImplementedError`. An example of overload that gives a more
-   precise type than can be expressed using a union or a type variable::
+   precise type than can be expressed using a union or a type variable:
+
+   .. testcode::
 
       @overload
       def process(response: None) -> None:
@@ -2672,7 +3076,7 @@ Functions and decorators
       def process(response: bytes) -> str:
           ...
       def process(response):
-          <actual implementation>
+          ...  # actual implementation goes here
 
    See :pep:`484` for more details and comparison with other typing semantics.
 
@@ -2764,10 +3168,13 @@ Functions and decorators
    This helps prevent bugs that may occur when a base class is changed without
    an equivalent change to a child class.
 
-   For example::
+   For example:
+
+   .. testcode::
 
       class Base:
-           def log_status(self)
+          def log_status(self) -> None:
+              ...
 
       class Sub(Base):
           @override
@@ -2826,14 +3233,16 @@ Introspection helpers
 
    The function recursively replaces all ``Annotated[T, ...]`` with ``T``,
    unless ``include_extras`` is set to ``True`` (see :class:`Annotated` for
-   more information). For example::
+   more information). For example:
+
+   .. testcode::
 
        class Student(NamedTuple):
            name: Annotated[str, 'some marker']
 
-       get_type_hints(Student) == {'name': str}
-       get_type_hints(Student, include_extras=False) == {'name': str}
-       get_type_hints(Student, include_extras=True) == {
+       assert get_type_hints(Student) == {'name': str}
+       assert get_type_hints(Student, include_extras=False) == {'name': str}
+       assert get_type_hints(Student, include_extras=True) == {
            'name': Annotated[str, 'some marker']
        }
 
@@ -2852,24 +3261,41 @@ Introspection helpers
       if a default value equal to ``None`` was set.
       Now the annotation is returned unchanged.
 
-.. function:: get_args(tp)
 .. function:: get_origin(tp)
 
-   Provide basic introspection for generic types and special typing forms.
-
-   For a typing object of the form ``X[Y, Z, ...]`` these functions return
-   ``X`` and ``(Y, Z, ...)``. If ``X`` is a generic alias for a builtin or
+   Get the unsubscripted version of a type: for a typing object of the form
+   ``X[Y, Z, ...]`` return ``X``. If ``X`` is a generic alias for a builtin or
    :mod:`collections` class, it gets normalized to the original class.
+   If ``X`` is an instance of :class:`ParamSpecArgs` or :class:`ParamSpecKwargs`,
+   return the underlying :class:`ParamSpec`.
+   Return ``None`` for unsupported objects.
+   Examples:
+
+   .. testcode::
+
+      assert get_origin(str) is None
+      assert get_origin(Dict[str, int]) is dict
+      assert get_origin(Union[int, str]) is Union
+      P = ParamSpec('P')
+      assert get_origin(P.args) is P
+      assert get_origin(P.kwargs) is P
+
+   .. versionadded:: 3.8
+
+.. function:: get_args(tp)
+
+   Get type arguments with all substitutions performed: for a typing object
+   of the form ``X[Y, Z, ...]`` return ``(Y, Z, ...)``.
    If ``X`` is a union or :class:`Literal` contained in another
    generic type, the order of ``(Y, Z, ...)`` may be different from the order
    of the original arguments ``[Y, Z, ...]`` due to type caching.
-   For unsupported objects return ``None`` and ``()`` correspondingly.
-   Examples::
+   Return ``()`` for unsupported objects.
+   Examples:
 
-      assert get_origin(Dict[str, int]) is dict
+   .. testcode::
+
+      assert get_args(int) == ()
       assert get_args(Dict[int, str]) == (int, str)
-
-      assert get_origin(Union[int, str]) is Union
       assert get_args(Union[int, str]) == (int, str)
 
    .. versionadded:: 3.8
@@ -2878,14 +3304,20 @@ Introspection helpers
 
    Check if a type is a :class:`TypedDict`.
 
-   For example::
+   For example:
+
+   .. testcode::
 
       class Film(TypedDict):
           title: str
           year: int
 
-      is_typeddict(Film)  # => True
-      is_typeddict(list | str)  # => False
+      assert is_typeddict(Film)
+      assert not is_typeddict(list | str)
+
+      # TypedDict is a factory for creating typed dicts,
+      # not a typed dict itself
+      assert not is_typeddict(TypedDict)
 
    .. versionadded:: 3.10
 
@@ -2942,14 +3374,15 @@ convenience. This is subject to change, and not all deprecations are listed.
 +----------------------------------+---------------+-------------------+----------------+
 |  Feature                         | Deprecated in | Projected removal | PEP/issue      |
 +==================================+===============+===================+================+
-|  ``typing.io`` and ``typing.re`` | 3.8           | 3.13              | :issue:`38291` |
-|  submodules                      |               |                   |                |
-+----------------------------------+---------------+-------------------+----------------+
 |  ``typing`` versions of standard | 3.9           | Undecided         | :pep:`585`     |
 |  collections                     |               |                   |                |
++----------------------------------+---------------+-------------------+----------------+
+|  ``typing.ByteString``           | 3.9           | 3.14              | :gh:`91896`    |
 +----------------------------------+---------------+-------------------+----------------+
 |  ``typing.Text``                 | 3.11          | Undecided         | :gh:`92332`    |
 +----------------------------------+---------------+-------------------+----------------+
 |  ``typing.Hashable`` and         | 3.12          | Undecided         | :gh:`94309`    |
 |  ``typing.Sized``                |               |                   |                |
++----------------------------------+---------------+-------------------+----------------+
+|  ``typing.TypeAlias``            | 3.12          | Undecided         | :pep:`695`     |
 +----------------------------------+---------------+-------------------+----------------+

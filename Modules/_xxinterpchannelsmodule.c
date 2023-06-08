@@ -1,13 +1,9 @@
 
 /* interpreters module */
 /* low-level access to interpreter primitives */
-#ifndef Py_BUILD_CORE_BUILTIN
-#  define Py_BUILD_CORE_MODULE 1
-#endif
 
 #include "Python.h"
-#include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_interpreteridobject.h"
+#include "interpreteridobject.h"
 
 
 /*
@@ -2418,6 +2414,7 @@ error:
 
 static struct PyModuleDef_Slot module_slots[] = {
     {Py_mod_exec, module_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL},
 };
 

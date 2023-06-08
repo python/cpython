@@ -470,7 +470,7 @@ user's system, including environment variables, system registry settings, and
 installed packages. The standard library is included as pre-compiled and
 optimized ``.pyc`` files in a ZIP, and ``python3.dll``, ``python37.dll``,
 ``python.exe`` and ``pythonw.exe`` are all provided. Tcl/tk (including all
-dependants, such as Idle), pip and the Python documentation are not included.
+dependents, such as Idle), pip and the Python documentation are not included.
 
 .. note::
 
@@ -541,7 +541,7 @@ Besides the standard CPython distribution, there are modified packages including
 additional functionality.  The following is a list of popular versions and their
 key features:
 
-`ActivePython <https://www.activestate.com/activepython/>`_
+`ActivePython <https://www.activestate.com/products/python/>`_
     Installer with multi-platform compatibility, documentation, PyWin32
 
 `Anaconda <https://www.anaconda.com/download/>`_
@@ -1169,8 +1169,8 @@ following advice will prevent conflicts with other installations:
   listed.
 
 * If you are loading :file:`python3.dll` or :file:`python37.dll` in your own
-  executable, explicitly call :c:func:`Py_SetPath` or (at least)
-  :c:func:`Py_SetProgramName` before :c:func:`Py_Initialize`.
+  executable, explicitly set :c:member:`PyConfig.module_search_paths` before
+  :c:func:`Py_InitializeFromConfig`.
 
 * Clear and/or overwrite :envvar:`PYTHONPATH` and set :envvar:`PYTHONHOME`
   before launching :file:`python.exe` from your application.

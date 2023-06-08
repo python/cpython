@@ -98,6 +98,12 @@ def _get_signature_object(func, as_instance, eat_self):
         func = func.__init__
         # Skip the `self` argument in __init__
         eat_self = True
+    elif isinstance(func, (classmethod, staticmethod)):
+        if isinstance(func, classmethod):
+            # Skip the `cls` argument of a class method
+            eat_self = True
+        # Use the original decorated method to extract the correct function signature
+        func = func.__func__
     elif not isinstance(func, FunctionTypes):
         # If we really want to model an instance of the passed type,
         # __call__ should be looked up, not __init__.
@@ -520,7 +526,13 @@ class NonCallableMock(Base):
             spec_list = dir(spec)
 
             for attr in spec_list:
-                if iscoroutinefunction(getattr(spec, attr, None)):
+                static_attr = inspect.getattr_static(spec, attr, None)
+                unwrapped_attr = static_attr
+                try:
+                    unwrapped_attr = inspect.unwrap(unwrapped_attr)
+                except ValueError:
+                    pass
+                if iscoroutinefunction(unwrapped_attr):
                     _spec_asyncs.append(attr)
 
             spec = spec_list

@@ -216,6 +216,7 @@ Modules/_io/_iomodule.c	-	static_types	-
 Modules/_io/textio.c	-	encodefuncs	-
 Modules/_io/winconsoleio.c	-	_PyWindowsConsoleIO_Type	-
 Modules/_localemodule.c	-	langinfo_constants	-
+Modules/_lsprof.c	-	callback_table	-
 Modules/_pickle.c	-	READ_WHOLE_LINE	-
 Modules/_sqlite/module.c	-	error_codes	-
 Modules/_sre/sre.c	pattern_repr	flag_names	-
@@ -281,10 +282,6 @@ Modules/cmathmodule.c	-	tanh_special_values	-
 Modules/config.c	-	_PyImport_Inittab	-
 Modules/faulthandler.c	-	faulthandler_handlers	-
 Modules/getnameinfo.c	-	gni_afdl	-
-Modules/nismodule.c	-	TIMEOUT	-
-Modules/nismodule.c	-	aliases	-
-Modules/ossaudiodev.c	-	control_labels	-
-Modules/ossaudiodev.c	-	control_names	-
 Modules/posixmodule.c	os_getxattr_impl	buffer_sizes	-
 Modules/posixmodule.c	os_listxattr_impl	buffer_sizes	-
 Modules/posixmodule.c	-	posix_constants_confstr	-
@@ -309,6 +306,7 @@ Objects/obmalloc.c	-	_PyMem	-
 Objects/obmalloc.c	-	_PyMem_Debug	-
 Objects/obmalloc.c	-	_PyMem_Raw	-
 Objects/obmalloc.c	-	_PyObject	-
+Objects/obmalloc.c	-	last_final_leaks	-
 Objects/obmalloc.c	-	usedpools	-
 Objects/typeobject.c	-	name_op	-
 Objects/typeobject.c	-	slotdefs	-
@@ -354,9 +352,14 @@ Python/pystate.c	-	initial	-
 Python/specialize.c	-	adaptive_opcodes	-
 Python/specialize.c	-	cache_requirements	-
 Python/stdlib_module_names.h	-	_Py_stdlib_module_names	-
+Python/sysmodule.c	-	perf_map_state	-
 Python/sysmodule.c	-	_PySys_ImplCacheTag	-
 Python/sysmodule.c	-	_PySys_ImplName	-
 Python/sysmodule.c	-	whatstrings	-
+Python/optimizer.c	-	DefaultOptimizer_Type	-
+Python/optimizer.c	-	CounterExecutor_Type	-
+Python/optimizer.c	-	CounterOptimizer_Type	-
+Python/optimizer.c	-	_PyOptimizer_Default	-
 
 ##-----------------------
 ## test code
@@ -403,6 +406,7 @@ Modules/_testbuffer.c	ndarray_memoryview_from_buffer	strides	-
 Modules/_testbuffer.c	ndarray_memoryview_from_buffer	suboffsets	-
 Modules/_testbuffer.c	ndarray_push	kwlist	-
 Modules/_testbuffer.c	staticarray_init	kwlist	-
+Modules/_testcapi/buffer.c	-	testBufType	-
 Modules/_testcapi/code.c	get_code_extra_index	key	-
 Modules/_testcapi/datetime.c	-	test_run_counter	-
 Modules/_testcapi/exceptions.c	-	PyRecursingInfinitelyError_Type	-
@@ -420,6 +424,8 @@ Modules/_testcapi/watchers.c	-	num_code_object_destroyed_events	-
 Modules/_testcapi/watchers.c	-	pyfunc_watchers	-
 Modules/_testcapi/watchers.c	-	func_watcher_ids	-
 Modules/_testcapi/watchers.c	-	func_watcher_callbacks	-
+Modules/_testcapimodule.c	-	BasicStaticTypes	-
+Modules/_testcapimodule.c	-	num_basic_static_types_used	-
 Modules/_testcapimodule.c	-	ContainerNoGC_members	-
 Modules/_testcapimodule.c	-	ContainerNoGC_type	-
 Modules/_testcapimodule.c	-	FmData	-

@@ -334,9 +334,11 @@ def test_pdb_breakpoint_commands():
     (Pdb) commands 10
     *** cannot set commands: Breakpoint number 10 out of range
     (Pdb) commands a
-    *** Usage: commands [bnum]
-            ...
-            end
+    *** Invalid argument: a
+          Usage: (Pdb) commands [bpnumber]
+                 (com) ...
+                 (com) end
+                 (Pdb)
     (Pdb) commands 4
     *** cannot set commands: Breakpoint 4 already deleted
     (Pdb) break 6, undefined
@@ -746,6 +748,84 @@ def test_pdb_where_command():
     (Pdb) continue
     """
 
+def test_convenience_variables():
+    """Test convenience variables
+
+    >>> def util_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     try:
+    ...         raise Exception('test')
+    ...     except:
+    ...         pass
+    ...     return 1
+
+    >>> def test_function():
+    ...     util_function()
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    ...     '$_frame.f_lineno', # Check frame convenience variable
+    ...     '$a = 10',          # Set a convenience variable
+    ...     '$a',               # Print its value
+    ...     'p $a + 2',         # Do some calculation
+    ...     'u',                # Switch frame
+    ...     '$_frame.f_lineno', # Make sure the frame changed
+    ...     '$a',               # Make sure the value persists
+    ...     'd',                # Go back to the original frame
+    ...     'next',
+    ...     '$a',               # The value should be gone
+    ...     'next',
+    ...     '$_exception',      # Check exception convenience variable
+    ...     'next',
+    ...     '$_exception',      # Exception should be gone
+    ...     'return',
+    ...     '$_retval',         # Check return convenience variable
+    ...     'continue',
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_convenience_variables[0]>(3)util_function()
+    -> try:
+    (Pdb) $_frame.f_lineno
+    3
+    (Pdb) $a = 10
+    (Pdb) $a
+    10
+    (Pdb) p $a + 2
+    12
+    (Pdb) u
+    > <doctest test.test_pdb.test_convenience_variables[1]>(2)test_function()
+    -> util_function()
+    (Pdb) $_frame.f_lineno
+    2
+    (Pdb) $a
+    10
+    (Pdb) d
+    > <doctest test.test_pdb.test_convenience_variables[0]>(3)util_function()
+    -> try:
+    (Pdb) next
+    > <doctest test.test_pdb.test_convenience_variables[0]>(4)util_function()
+    -> raise Exception('test')
+    (Pdb) $a
+    *** KeyError: 'a'
+    (Pdb) next
+    Exception: test
+    > <doctest test.test_pdb.test_convenience_variables[0]>(4)util_function()
+    -> raise Exception('test')
+    (Pdb) $_exception
+    Exception('test')
+    (Pdb) next
+    > <doctest test.test_pdb.test_convenience_variables[0]>(5)util_function()
+    -> except:
+    (Pdb) $_exception
+    *** KeyError: '_exception'
+    (Pdb) return
+    --Return--
+    > <doctest test.test_pdb.test_convenience_variables[0]>(7)util_function()->1
+    -> return 1
+    (Pdb) $_retval
+    1
+    (Pdb) continue
+    """
+
 def test_post_mortem():
     """Test post mortem traceback debugging.
 
@@ -827,6 +907,34 @@ def test_pdb_skip_modules():
     --Return--
     > <doctest test.test_pdb.test_pdb_skip_modules[0]>(4)skip_module()->None
     -> string.capwords('FOO')
+    (Pdb) continue
+    """
+
+def test_pdb_invalid_arg():
+    """This tests pdb commands that have invalid arguments
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     pass
+
+    >>> with PdbTestInput([
+    ...     'a = 3',
+    ...     'll 4',
+    ...     'step 1',
+    ...     'continue'
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_invalid_arg[0]>(3)test_function()
+    -> pass
+    (Pdb) a = 3
+    *** Invalid argument: = 3
+          Usage: a(rgs)
+    (Pdb) ll 4
+    *** Invalid argument: 4
+          Usage: ll | longlist
+    (Pdb) step 1
+    *** Invalid argument: 1
+          Usage: s(tep)
     (Pdb) continue
     """
 
@@ -1675,6 +1783,75 @@ def test_pdb_issue_gh_101673():
     (Pdb) continue
     """
 
+def test_pdb_issue_gh_103225():
+    """See GH-103225
+
+    Make sure longlist uses 1-based line numbers in frames that correspond to a module
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'longlist',
+    ...     'continue'
+    ... ]):
+    ...     a = 1
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     b = 2
+    > <doctest test.test_pdb.test_pdb_issue_gh_103225[0]>(7)<module>()
+    -> b = 2
+    (Pdb) longlist
+      1     with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+      2         'longlist',
+      3         'continue'
+      4     ]):
+      5         a = 1
+      6         import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+      7  ->     b = 2
+    (Pdb) continue
+    """
+
+def test_pdb_issue_gh_101517():
+    """See GH-101517
+
+    Make sure pdb doesn't crash when the exception is caught in a try/except* block
+
+    >>> def test_function():
+    ...     try:
+    ...         raise KeyError
+    ...     except* Exception as e:
+    ...         import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'continue'
+    ... ]):
+    ...    test_function()
+    --Return--
+    > <doctest test.test_pdb.test_pdb_issue_gh_101517[0]>(None)test_function()->None
+    -> Warning: lineno is None
+    (Pdb) continue
+    """
+
+def test_pdb_ambiguous_statements():
+    """See GH-104301
+
+    Make sure that ambiguous statements prefixed by '!' are properly disambiguated
+
+    >>> with PdbTestInput([
+    ...     '! n = 42',  # disambiguated statement: reassign the name n
+    ...     'n',         # advance the debugger into the print()
+    ...     'continue'
+    ... ]):
+    ...     n = -1
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     print(f"The value of n is {n}")
+    > <doctest test.test_pdb.test_pdb_ambiguous_statements[0]>(8)<module>()
+    -> print(f"The value of n is {n}")
+    (Pdb) ! n = 42
+    (Pdb) n
+    The value of n is 42
+    > <doctest test.test_pdb.test_pdb_ambiguous_statements[0]>(1)<module>()
+    -> with PdbTestInput([
+    (Pdb) continue
+    """
+
 
 @support.requires_subprocess()
 class PdbTestCase(unittest.TestCase):
@@ -2350,6 +2527,12 @@ def bœr():
         stdout, stderr = self._run_pdb(["gh93696_host.py"], commands)
         # verify that pdb found the source of the "frozen" function
         self.assertIn('x = "Sentinel string for gh-93696"', stdout, "Sentinel statement not found")
+
+    def test_non_utf8_encoding(self):
+        script_dir = os.path.join(os.path.dirname(__file__), 'encoded_modules')
+        for filename in os.listdir(script_dir):
+            if filename.endswith(".py"):
+                self._run_pdb([os.path.join(script_dir, filename)], 'q')
 
 class ChecklineTests(unittest.TestCase):
     def setUp(self):

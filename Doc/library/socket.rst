@@ -19,7 +19,7 @@ all modern Unix systems, Windows, MacOS, and probably additional platforms.
 
 .. include:: ../includes/wasm-notavail.rst
 
-.. index:: object: socket
+.. index:: pair: object; socket
 
 The Python interface is a straightforward transliteration of the Unix system
 call and library interface for sockets to Python's object-oriented style: the
@@ -436,7 +436,8 @@ Constants
       ``TCP_FASTOPEN_CONNECT``, ``TCP_ULP``, ``TCP_MD5SIG_EXT``,
       ``TCP_FASTOPEN_KEY``, ``TCP_FASTOPEN_NO_COOKIE``,
       ``TCP_ZEROCOPY_RECEIVE``, ``TCP_INQ``, ``TCP_TX_DELAY``.
-      Added ``IP_PKTINFO``.
+      Added ``IP_PKTINFO``, ``IP_UNBLOCK_SOURCE``, ``IP_BLOCK_SOURCE``,
+      ``IP_ADD_SOURCE_MEMBERSHIP``, ``IP_DROP_SOURCE_MEMBERSHIP``.
 
 .. data:: AF_CAN
           PF_CAN
@@ -507,6 +508,17 @@ Constants
    .. availability:: Linux >= 5.4.
 
    .. versionadded:: 3.9
+
+
+.. data:: AF_DIVERT
+          PF_DIVERT
+
+   These two constants, documented in the FreeBSD divert(4) manual page, are
+   also defined in the socket module.
+
+   .. availability:: FreeBSD >= 14.0.
+
+   .. versionadded:: 3.12
 
 
 .. data:: AF_PACKET
@@ -654,7 +666,7 @@ Constants
           HV_GUID_BROADCAST
           HV_GUID_CHILDREN
           HV_GUID_LOOPBACK
-          HV_GUID_LOOPBACK
+          HV_GUID_PARENT
 
    Constants for Windows Hyper-V sockets for host/guest communications.
 
@@ -1515,7 +1527,7 @@ to sockets.
    Return ``True`` if socket is in blocking mode, ``False`` if in
    non-blocking.
 
-   This is equivalent to checking ``socket.gettimeout() == 0``.
+   This is equivalent to checking ``socket.gettimeout() != 0``.
 
    .. versionadded:: 3.7
 
@@ -1916,7 +1928,7 @@ to sockets.
 .. method:: socket.setsockopt(level, optname, None, optlen: int)
    :noindex:
 
-   .. index:: module: struct
+   .. index:: pair: module; struct
 
    Set the value of the given socket option (see the Unix manual page
    :manpage:`setsockopt(2)`).  The needed symbolic constants are defined in the

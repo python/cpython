@@ -60,7 +60,16 @@ Copyright (C) 1994 Steen Lumholt.
 #error "Tk older than 8.5.12 not supported"
 #endif
 
+#ifndef TCL_WITH_EXTERNAL_TOMMATH
+#define TCL_NO_TOMMATH_H
+#endif
 #include <tclTomMath.h>
+
+#if defined(TCL_WITH_EXTERNAL_TOMMATH) || (TK_HEX_VERSION >= 0x08070000)
+#define USE_DEPRECATED_TOMMATH_API 0
+#else
+#define USE_DEPRECATED_TOMMATH_API 1
+#endif
 
 #if !(defined(MS_WINDOWS) || defined(__CYGWIN__))
 #define HAVE_CREATEFILEHANDLER
@@ -127,11 +136,10 @@ _get_tcl_lib_path(void)
     static int already_checked = 0;
 
     if (already_checked == 0) {
-        PyObject *prefix;
         struct stat stat_buf;
         int stat_return_value;
 
-        prefix = PyUnicode_FromWideChar(Py_GetPrefix(), -1);
+        PyObject *prefix = PySys_GetObject("prefix");  // borrowed reference
         if (prefix == NULL) {
             return NULL;
         }
@@ -323,10 +331,6 @@ static PyObject *Tkinter_TclError;
 static int quitMainLoop = 0;
 static int errorInCmd = 0;
 static PyObject *excInCmd;
-
-#ifdef TKINTER_PROTECT_LOADTK
-static int tk_load_failed = 0;
-#endif
 
 
 static PyObject *Tkapp_UnicodeResult(TkappObject *);
@@ -532,17 +536,7 @@ Tcl_AppInit(Tcl_Interp *interp)
         return TCL_OK;
     }
 
-#ifdef TKINTER_PROTECT_LOADTK
-    if (tk_load_failed) {
-        PySys_WriteStderr("Tk_Init error: %s\n", TKINTER_LOADTK_ERRMSG);
-        return TCL_ERROR;
-    }
-#endif
-
     if (Tk_Init(interp) == TCL_ERROR) {
-#ifdef TKINTER_PROTECT_LOADTK
-        tk_load_failed = 1;
-#endif
         PySys_WriteStderr("Tk_Init error: %s\n", Tcl_GetStringResult(interp));
         return TCL_ERROR;
     }
@@ -635,12 +629,6 @@ Tkapp_New(const char *screenName, const char *className,
         Tcl_SetVar(v->interp,
                         "_tkinter_skip_tk_init", "1", TCL_GLOBAL_ONLY);
     }
-#ifdef TKINTER_PROTECT_LOADTK
-    else if (tk_load_failed) {
-        Tcl_SetVar(v->interp,
-                        "_tkinter_tk_failed", "1", TCL_GLOBAL_ONLY);
-    }
-#endif
 
     /* some initial arguments need to be in argv */
     if (sync || use) {
@@ -702,18 +690,6 @@ Tkapp_New(const char *screenName, const char *className,
 
     if (Tcl_AppInit(v->interp) != TCL_OK) {
         PyObject *result = Tkinter_Error(v);
-#ifdef TKINTER_PROTECT_LOADTK
-        if (wantTk) {
-            const char *_tkinter_tk_failed;
-            _tkinter_tk_failed = Tcl_GetVar(v->interp,
-                            "_tkinter_tk_failed", TCL_GLOBAL_ONLY);
-
-            if ( _tkinter_tk_failed != NULL &&
-                            strcmp(_tkinter_tk_failed, "1") == 0) {
-                tk_load_failed = 1;
-            }
-        }
-#endif
         Py_DECREF((PyObject *)v);
         return (TkappObject *)result;
     }
@@ -992,9 +968,6 @@ AsObj(PyObject *value)
     }
 
     if (PyUnicode_Check(value)) {
-        if (PyUnicode_READY(value) == -1)
-            return NULL;
-
         Py_ssize_t size = PyUnicode_GET_LENGTH(value);
         if (size == 0) {
             return Tcl_NewStringObj("", 0);
@@ -1082,20 +1055,33 @@ static PyObject*
 fromBignumObj(TkappObject *tkapp, Tcl_Obj *value)
 {
     mp_int bigValue;
+    mp_err err;
+#if USE_DEPRECATED_TOMMATH_API
     unsigned long numBytes;
+#else
+    size_t numBytes;
+#endif
     unsigned char *bytes;
     PyObject *res;
 
     if (Tcl_GetBignumFromObj(Tkapp_Interp(tkapp), value, &bigValue) != TCL_OK)
         return Tkinter_Error(tkapp);
+#if USE_DEPRECATED_TOMMATH_API
     numBytes = mp_unsigned_bin_size(&bigValue);
+#else
+    numBytes = mp_ubin_size(&bigValue);
+#endif
     bytes = PyMem_Malloc(numBytes);
     if (bytes == NULL) {
         mp_clear(&bigValue);
         return PyErr_NoMemory();
     }
-    if (mp_to_unsigned_bin_n(&bigValue, bytes,
-                                &numBytes) != MP_OKAY) {
+#if USE_DEPRECATED_TOMMATH_API
+    err = mp_to_unsigned_bin_n(&bigValue, bytes, &numBytes);
+#else
+    err = mp_to_ubin(&bigValue, bytes, numBytes, NULL);
+#endif
+    if (err != MP_OKAY) {
         mp_clear(&bigValue);
         PyMem_Free(bytes);
         return PyErr_NoMemory();
@@ -2780,18 +2766,6 @@ _tkinter_tkapp_loadtk_impl(TkappObject *self)
     const char * _tk_exists = NULL;
     int err;
 
-#ifdef TKINTER_PROTECT_LOADTK
-    /* Up to Tk 8.4.13, Tk_Init deadlocks on the second call when the
-     * first call failed.
-     * To avoid the deadlock, we just refuse the second call through
-     * a static variable.
-     */
-    if (tk_load_failed) {
-        PyErr_SetString(Tkinter_TclError, TKINTER_LOADTK_ERRMSG);
-        return NULL;
-    }
-#endif
-
     /* We want to guard against calling Tk_Init() multiple times */
     CHECK_TCL_APPARTMENT;
     ENTER_TCL
@@ -2811,9 +2785,6 @@ _tkinter_tkapp_loadtk_impl(TkappObject *self)
     if (_tk_exists == NULL || strcmp(_tk_exists, "1") != 0)     {
         if (Tk_Init(interp)             == TCL_ERROR) {
             Tkinter_Error(self);
-#ifdef TKINTER_PROTECT_LOADTK
-            tk_load_failed = 1;
-#endif
             return NULL;
         }
     }
@@ -3330,25 +3301,11 @@ PyInit__tkinter(void)
     }
     PyTclObject_Type = o;
 
-#ifdef TK_AQUA
-    /* Tk_MacOSXSetupTkNotifier must be called before Tcl's subsystems
-     * start waking up.  Note that Tcl_FindExecutable will do this, this
-     * code must be above it! The original warning from
-     * tkMacOSXAppInit.c is copied below.
-     *
-     * NB - You have to swap in the Tk Notifier BEFORE you start up the
-     * Tcl interpreter for now.  It probably should work to do this
-     * in the other order, but for now it doesn't seem to.
-     *
-     */
-    Tk_MacOSXSetupTkNotifier();
-#endif
-
 
     /* This helps the dynamic loader; in Unicode aware Tcl versions
        it also helps Tcl find its encodings. */
-    uexe = PyUnicode_FromWideChar(Py_GetProgramName(), -1);
-    if (uexe) {
+    uexe = PySys_GetObject("executable");  // borrowed reference
+    if (uexe && PyUnicode_Check(uexe)) {   // sys.executable can be None
         cexe = PyUnicode_EncodeFSDefault(uexe);
         if (cexe) {
 #ifdef MS_WINDOWS
@@ -3387,7 +3344,6 @@ PyInit__tkinter(void)
 #endif /* MS_WINDOWS */
         }
         Py_XDECREF(cexe);
-        Py_DECREF(uexe);
     }
 
     if (PyErr_Occurred()) {

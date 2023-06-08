@@ -926,7 +926,7 @@ Each thread has its own current context which is accessed or changed using the
 You can also use the :keyword:`with` statement and the :func:`localcontext`
 function to temporarily change the active context.
 
-.. function:: localcontext(ctx=None, \*\*kwargs)
+.. function:: localcontext(ctx=None, **kwargs)
 
    Return a context manager that will set the current context for the active thread
    to a copy of *ctx* on entry to the with-statement and restore the previous context
@@ -1497,7 +1497,7 @@ are also included in the pure Python version for compatibility.
 
    The value is ``True``.  Deprecated, because Python now always has threads.
 
-.. deprecated:: 3.9
+   .. deprecated:: 3.9
 
 .. data:: HAVE_CONTEXTVAR
 

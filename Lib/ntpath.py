@@ -142,7 +142,7 @@ def join(path, *paths):
             result_path = result_path + p_path
         ## add separator between UNC and non-absolute path
         if (result_path and not result_root and
-            result_drive and result_drive[-1:] != colon):
+            result_drive and result_drive[-1:] not in colon + seps):
             return result_drive + sep + result_path
         return result_drive + result_root + result_path
     except (TypeError, AttributeError, BytesWarning):
@@ -670,7 +670,7 @@ else:
 
         # Non-strict algorithm is to find as much of the target directory
         # as we can and join the rest.
-        tail = ''
+        tail = path[:0]
         while path:
             try:
                 path = _getfinalpathname(path)
@@ -867,3 +867,19 @@ try:
 except ImportError:
     # Use genericpath.* as imported above
     pass
+
+
+try:
+    from nt import _path_isdevdrive
+except ImportError:
+    def isdevdrive(path):
+        """Determines whether the specified path is on a Windows Dev Drive."""
+        # Never a Dev Drive
+        return False
+else:
+    def isdevdrive(path):
+        """Determines whether the specified path is on a Windows Dev Drive."""
+        try:
+            return _path_isdevdrive(abspath(path))
+        except OSError:
+            return False
