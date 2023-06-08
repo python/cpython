@@ -277,8 +277,8 @@ class Instruction:
         self.unmoved_names = frozenset(unmoved_names)
         flag_data = {
             'HAS_ARG'  :  variable_used(inst, "oparg"),
-            'HAS_CONST':  variable_used(inst, "frame->f_code->co_consts", delim="->"),
-            'HAS_NAME' :  variable_used(inst, "frame->f_code->co_names", delim="->"),
+            'HAS_CONST':  variable_used(inst, "CO_CONSTS"),
+            'HAS_NAME' :  variable_used(inst, "CO_NAMES"),
         }
         assert set(flag_data.keys()) == set(INSTRUCTION_FLAGS)
         self.flags = 0
@@ -1288,35 +1288,10 @@ def always_exits(lines: list[str]) -> bool:
 
 def variable_used(node: parser.Node, name: str, delim: str = None) -> bool:
     """Determine whether a variable with a given name is used in a node.
-       If delim is not None, the name is assumed to be a chain of names
-       delimited by delim. For example: "frame->f_code->co_consts", delim="->".
     """
-    if delim is None:
-        return any(
-            token.kind == "IDENTIFIER" and token.text == name for token in node.tokens
-        )
-
-    # delim is not None - look for the sequence of names
-    orig_names = name.split(delim)
-    orig_names.reverse()
-    names = orig_names
-
-    need_delim = False
-    for token in node.tokens:
-        if need_delim:
-            if token.text == delim:
-                need_delim = False
-            else:
-                # no match, start over
-                names = orig_names
-                continue
-        if token.kind == "IDENTIFIER" and token.text == names[-1]:
-            names.pop()
-            if not names:
-                return True
-            need_delim = True
-    return False
-
+    return any(
+        token.kind == "IDENTIFIER" and token.text == name for token in node.tokens
+    )
 
 def main():
     """Parse command line, parse input, analyze, write output."""

@@ -234,6 +234,11 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define STACK_SHRINK(n)        BASIC_STACKADJ(-(n))
 #endif
 
+
+/* Data access macros */
+#define CO_CONSTS (frame->f_code->co_consts)
+#define CO_NAMES  (frame->f_code->co_names)
+
 /* Local variable macros */
 
 #define GETLOCAL(i)     (frame->localsplus[i])

@@ -125,7 +125,7 @@
             PREDICTED(LOAD_CONST);
             PyObject *value;
             #line 214 "Python/bytecodes.c"
-            value = GETITEM(frame->f_code->co_consts, oparg);
+            value = GETITEM(CO_CONSTS, oparg);
             Py_INCREF(value);
             #line 131 "Python/generated_cases.c.h"
             STACK_GROW(1);
@@ -185,7 +185,7 @@
             {
                 PyObject *value;
                 #line 214 "Python/bytecodes.c"
-                value = GETITEM(frame->f_code->co_consts, oparg);
+                value = GETITEM(CO_CONSTS, oparg);
                 Py_INCREF(value);
                 #line 191 "Python/generated_cases.c.h"
                 _tmp_1 = value;
@@ -202,7 +202,7 @@
             {
                 PyObject *value;
                 #line 214 "Python/bytecodes.c"
-                value = GETITEM(frame->f_code->co_consts, oparg);
+                value = GETITEM(CO_CONSTS, oparg);
                 Py_INCREF(value);
                 #line 208 "Python/generated_cases.c.h"
                 _tmp_2 = value;
@@ -1045,7 +1045,7 @@
 
         TARGET(RETURN_CONST) {
             #line 716 "Python/bytecodes.c"
-            PyObject *retval = GETITEM(frame->f_code->co_consts, oparg);
+            PyObject *retval = GETITEM(CO_CONSTS, oparg);
             Py_INCREF(retval);
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -1063,7 +1063,7 @@
 
         TARGET(INSTRUMENTED_RETURN_CONST) {
             #line 732 "Python/bytecodes.c"
-            PyObject *retval = GETITEM(frame->f_code->co_consts, oparg);
+            PyObject *retval = GETITEM(CO_CONSTS, oparg);
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_RETURN,
                     frame, next_instr-1, retval);
@@ -1470,7 +1470,7 @@
         TARGET(STORE_NAME) {
             PyObject *v = stack_pointer[-1];
             #line 1051 "Python/bytecodes.c"
-            PyObject *name = GETITEM(frame->f_code->co_names, oparg);
+            PyObject *name = GETITEM(CO_NAMES, oparg);
             PyObject *ns = LOCALS();
             int err;
             if (ns == NULL) {
@@ -1496,7 +1496,7 @@
 
         TARGET(DELETE_NAME) {
             #line 1069 "Python/bytecodes.c"
-            PyObject *name = GETITEM(frame->f_code->co_names, oparg);
+            PyObject *name = GETITEM(CO_NAMES, oparg);
             PyObject *ns = LOCALS();
             int err;
             if (ns == NULL) {
@@ -1624,7 +1624,7 @@
             #line 1159 "Python/bytecodes.c"
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
-                PyObject *name = GETITEM(frame->f_code->co_names, oparg);
+                PyObject *name = GETITEM(CO_NAMES, oparg);
                 next_instr--;
                 _Py_Specialize_StoreAttr(owner, next_instr, name);
                 DISPATCH_SAME_OPARG();
@@ -1635,7 +1635,7 @@
             #else
             (void)counter;  // Unused.
             #endif  /* ENABLE_SPECIALIZATION */
-            PyObject *name = GETITEM(frame->f_code->co_names, oparg);
+            PyObject *name = GETITEM(CO_NAMES, oparg);
             int err = PyObject_SetAttr(owner, name, v);
             #line 1641 "Python/generated_cases.c.h"
             Py_DECREF(v);
@@ -1651,7 +1651,7 @@
         TARGET(DELETE_ATTR) {
             PyObject *owner = stack_pointer[-1];
             #line 1179 "Python/bytecodes.c"
-            PyObject *name = GETITEM(frame->f_code->co_names, oparg);
+            PyObject *name = GETITEM(CO_NAMES, oparg);
             int err = PyObject_SetAttr(owner, name, (PyObject *)NULL);
             #line 1657 "Python/generated_cases.c.h"
             Py_DECREF(owner);
@@ -1665,7 +1665,7 @@
         TARGET(STORE_GLOBAL) {
             PyObject *v = stack_pointer[-1];
             #line 1186 "Python/bytecodes.c"
-            PyObject *name = GETITEM(frame->f_code->co_names, oparg);
+            PyObject *name = GETITEM(CO_NAMES, oparg);
             int err = PyDict_SetItem(GLOBALS(), name, v);
             #line 1671 "Python/generated_cases.c.h"
             Py_DECREF(v);
@@ -1678,7 +1678,7 @@
 
         TARGET(DELETE_GLOBAL) {
             #line 1193 "Python/bytecodes.c"
-            PyObject *name = GETITEM(frame->f_code->co_names, oparg);
+            PyObject *name = GETITEM(CO_NAMES, oparg);
             int err;
             err = PyDict_DelItem(GLOBALS(), name);
             // Can't use ERROR_IF here.
@@ -1732,7 +1732,7 @@
                 PyObject *mod_or_class_dict = _tmp_1;
                 PyObject *v;
                 #line 1219 "Python/bytecodes.c"
-                PyObject *name = GETITEM(frame->f_code->co_names, oparg);
+                PyObject *name = GETITEM(CO_NAMES, oparg);
                 if (PyDict_CheckExact(mod_or_class_dict)) {
                     v = PyDict_GetItemWithError(mod_or_class_dict, name);
                     if (v != NULL) {
@@ -1802,7 +1802,7 @@
                 PyObject *mod_or_class_dict = _tmp_1;
                 PyObject *v;
                 #line 1219 "Python/bytecodes.c"
-                PyObject *name = GETITEM(frame->f_code->co_names, oparg);
+                PyObject *name = GETITEM(CO_NAMES, oparg);
                 if (PyDict_CheckExact(mod_or_class_dict)) {
                     v = PyDict_GetItemWithError(mod_or_class_dict, name);
                     if (v != NULL) {
@@ -1874,7 +1874,7 @@
             #if ENABLE_SPECIALIZATION
             _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                PyObject *name = GETITEM(frame->f_code->co_names, oparg>>1);
+                PyObject *name = GETITEM(CO_NAMES, oparg>>1);
                 next_instr--;
                 _Py_Specialize_LoadGlobal(GLOBALS(), BUILTINS(), next_instr, name);
                 DISPATCH_SAME_OPARG();
@@ -1882,7 +1882,7 @@
             STAT_INC(LOAD_GLOBAL, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
-            PyObject *name = GETITEM(frame->f_code->co_names, oparg>>1);
+            PyObject *name = GETITEM(CO_NAMES, oparg>>1);
             if (PyDict_CheckExact(GLOBALS())
                 && PyDict_CheckExact(BUILTINS()))
             {
@@ -2391,7 +2391,7 @@
             PyObject *res2 = NULL;
             PyObject *res;
             #line 1643 "Python/bytecodes.c"
-            PyObject *name = GETITEM(frame->f_code->co_names, oparg >> 2);
+            PyObject *name = GETITEM(CO_NAMES, oparg >> 2);
             int load_method = oparg & 1;
             #if ENABLE_SPECIALIZATION
             _PySuperAttrCache *cache = (_PySuperAttrCache *)next_instr;
@@ -2461,7 +2461,7 @@
             DEOPT_IF(global_super != (PyObject *)&PySuper_Type, LOAD_SUPER_ATTR);
             DEOPT_IF(!PyType_Check(class), LOAD_SUPER_ATTR);
             STAT_INC(LOAD_SUPER_ATTR, hit);
-            PyObject *name = GETITEM(frame->f_code->co_names, oparg >> 2);
+            PyObject *name = GETITEM(CO_NAMES, oparg >> 2);
             res = _PySuper_Lookup((PyTypeObject *)class, self, name, NULL);
             #line 2467 "Python/generated_cases.c.h"
             Py_DECREF(global_super);
@@ -2489,7 +2489,7 @@
             DEOPT_IF(global_super != (PyObject *)&PySuper_Type, LOAD_SUPER_ATTR);
             DEOPT_IF(!PyType_Check(class), LOAD_SUPER_ATTR);
             STAT_INC(LOAD_SUPER_ATTR, hit);
-            PyObject *name = GETITEM(frame->f_code->co_names, oparg >> 2);
+            PyObject *name = GETITEM(CO_NAMES, oparg >> 2);
             PyTypeObject *cls = (PyTypeObject *)class;
             int method_found = 0;
             res2 = _PySuper_Lookup(cls, self, name,
@@ -2525,7 +2525,7 @@
             #if ENABLE_SPECIALIZATION
             _PyAttrCache *cache = (_PyAttrCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                PyObject *name = GETITEM(frame->f_code->co_names, oparg>>1);
+                PyObject *name = GETITEM(CO_NAMES, oparg>>1);
                 next_instr--;
                 _Py_Specialize_LoadAttr(owner, next_instr, name);
                 DISPATCH_SAME_OPARG();
@@ -2533,7 +2533,7 @@
             STAT_INC(LOAD_ATTR, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
-            PyObject *name = GETITEM(frame->f_code->co_names, oparg >> 1);
+            PyObject *name = GETITEM(CO_NAMES, oparg >> 1);
             if (oparg & 1) {
                 /* Designed to work in tandem with CALL, pushes two values. */
                 PyObject* meth = NULL;
@@ -2651,7 +2651,7 @@
             PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
             DEOPT_IF(dict == NULL, LOAD_ATTR);
             assert(PyDict_CheckExact((PyObject *)dict));
-            PyObject *name = GETITEM(frame->f_code->co_names, oparg>>1);
+            PyObject *name = GETITEM(CO_NAMES, oparg>>1);
             uint16_t hint = index;
             DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries, LOAD_ATTR);
             if (DK_IS_UNICODE(dict->ma_keys)) {
@@ -2780,7 +2780,7 @@
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
 
-            PyObject *name = GETITEM(frame->f_code->co_names, oparg >> 1);
+            PyObject *name = GETITEM(CO_NAMES, oparg >> 1);
             Py_INCREF(f);
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, f, 2);
             // Manipulate stack directly because we exit with DISPATCH_INLINED().
@@ -2839,7 +2839,7 @@
             PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
             DEOPT_IF(dict == NULL, STORE_ATTR);
             assert(PyDict_CheckExact((PyObject *)dict));
-            PyObject *name = GETITEM(frame->f_code->co_names, oparg);
+            PyObject *name = GETITEM(CO_NAMES, oparg);
             DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries, STORE_ATTR);
             PyObject *old_value;
             uint64_t new_version;
@@ -3096,7 +3096,7 @@
             PyObject *level = stack_pointer[-2];
             PyObject *res;
             #line 2123 "Python/bytecodes.c"
-            PyObject *name = GETITEM(frame->f_code->co_names, oparg);
+            PyObject *name = GETITEM(CO_NAMES, oparg);
             res = import_name(tstate, frame, name, fromlist, level);
             #line 3102 "Python/generated_cases.c.h"
             Py_DECREF(level);
@@ -3113,7 +3113,7 @@
             PyObject *from = stack_pointer[-1];
             PyObject *res;
             #line 2130 "Python/bytecodes.c"
-            PyObject *name = GETITEM(frame->f_code->co_names, oparg);
+            PyObject *name = GETITEM(CO_NAMES, oparg);
             res = import_from(tstate, from, name);
             if (res == NULL) goto error;
             #line 3120 "Python/generated_cases.c.h"
@@ -3801,8 +3801,8 @@
         TARGET(KW_NAMES) {
             #line 2611 "Python/bytecodes.c"
             assert(kwnames == NULL);
-            assert(oparg < PyTuple_GET_SIZE(frame->f_code->co_consts));
-            kwnames = GETITEM(frame->f_code->co_consts, oparg);
+            assert(oparg < PyTuple_GET_SIZE(CO_CONSTS));
+            kwnames = GETITEM(CO_CONSTS, oparg);
             #line 3807 "Python/generated_cases.c.h"
             DISPATCH();
         }
