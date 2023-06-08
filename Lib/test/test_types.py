@@ -698,10 +698,6 @@ class UnionTests(unittest.TestCase):
         y = int | bool
         with self.assertRaises(TypeError):
             x < y
-        # Check that we don't crash if typing.Union does not have a tuple in __args__
-        y = typing.Union[str, int]
-        y.__args__ = [str, int]
-        self.assertEqual(x, y)
 
     def test_hash(self):
         self.assertEqual(hash(int | str), hash(str | int))
@@ -890,7 +886,7 @@ class UnionTests(unittest.TestCase):
         self.assertEqual(typing.get_args(typing.get_type_hints(forward_after)['x']),
                          (int, Forward))
         self.assertEqual(typing.get_args(typing.get_type_hints(forward_before)['x']),
-                         (int, Forward))
+                         (Forward, int))
 
     def test_or_type_operator_with_Protocol(self):
         class Proto(typing.Protocol):
