@@ -796,6 +796,17 @@ getenvironment(PyObject* environment)
     }
 
     envsize = PyList_GET_SIZE(keys);
+
+    /* A Unicode environment block is terminated by four zero bytes:
+       two for the last string, two more to terminate the block. */
+    if (envsize == 0) {
+        buffer = PyMem_NEW(wchar_t, 2);
+        p = buffer;
+        *p++ = L'\0';
+        *p++ = L'\0';
+        goto error;
+    }
+
     if (PyList_GET_SIZE(values) != envsize) {
         PyErr_SetString(PyExc_RuntimeError,
             "environment changed size during iteration");
