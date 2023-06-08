@@ -507,7 +507,7 @@ class _ValueFormatter:
         # that means we have trailing spaces. We just squash the last 3
         # elements together as a single part
         if len(parts) > 2 and not parts[-1]:
-           parts[-3:] = ["".join(parts[-3:])]
+            parts[-3:] = ["".join(parts[-3:])]
 
         for fws, part in zip(*[iter(parts)]*2):
             self._append_chunk(fws, part)
