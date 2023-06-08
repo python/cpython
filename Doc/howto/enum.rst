@@ -517,7 +517,16 @@ from that module.
     nested in other classes.
 
 It is possible to modify how enum members are pickled/unpickled by defining
-:meth:`__reduce_ex__` in the enumeration class.
+:meth:`__reduce_ex__` in the enumeration class.  The default method is by-value,
+but enums with complicated values may want to use by-name::
+
+    >>> class MyEnum(Enum):
+    ...     __reduce_ex__ = enum.pickle_by_enum_name
+
+.. note::
+
+    Using by-name for flags is not recommended, as unnamed aliases will
+    not unpickle.
 
 
 Functional API
