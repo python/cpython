@@ -1917,6 +1917,23 @@ class Test_Pep523API(unittest.TestCase):
 
 class TestOptimizerAPI(unittest.TestCase):
 
+    @contextlib.contextmanager
+    def temporary_optimizer(self, opt):
+        # Code to acquire resource, e.g.:
+        _testinternalcapi.set_optimizer(opt)
+        try:
+            yield
+        finally:
+            _testinternalcapi.set_optimizer(None)
+
+    @contextlib.contextmanager
+    def clear_executors(self, func):
+        try:
+            yield
+        finally:
+            #Clear executors
+            func.__code__ = func.__code__.replace()
+
     def test_get_set_optimizer(self):
         self.assertEqual(_testinternalcapi.get_optimizer(), None)
         opt = _testinternalcapi.get_counter_optimizer()
@@ -1933,16 +1950,11 @@ class TestOptimizerAPI(unittest.TestCase):
 
         for repeat in range(5):
             opt = _testinternalcapi.get_counter_optimizer()
-            self.assertEqual(opt.get_count(), 0)
-            try:
-                _testinternalcapi.set_optimizer(opt)
+            with self.temporary_optimizer(opt):
                 self.assertEqual(opt.get_count(), 0)
-                loop()
+                with self.clear_executors(loop):
+                    loop()
                 self.assertEqual(opt.get_count(), 1000)
-            finally:
-                _testinternalcapi.set_optimizer(None)
-                #Clear executors
-                loop.__code__ = loop.__code__.replace()
 
     def test_long_loop(self):
         "Check that we aren't confused by EXTENDED_ARG"
@@ -1960,14 +1972,11 @@ class TestOptimizerAPI(unittest.TestCase):
                 nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
                 nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
 
-        try:
-            opt = _testinternalcapi.get_counter_optimizer()
-            _testinternalcapi.set_optimizer(opt)
+        opt = _testinternalcapi.get_counter_optimizer()
+        with self.temporary_optimizer(opt):
             self.assertEqual(opt.get_count(), 0)
             long_loop()
             self.assertEqual(opt.get_count(), 10)
-        finally:
-            _testinternalcapi.set_optimizer(None)
 
 
 if __name__ == "__main__":
