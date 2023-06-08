@@ -12,17 +12,17 @@ def StackBrowser(root, exc, flist=None, top=None):
         top = tk.Toplevel(root)
     sc = ScrolledCanvas(top, bg="white", highlightthickness=0)
     sc.frame.pack(expand=1, fill="both")
-    item = StackTreeItem(flist, exc)
+    item = StackTreeItem(exc, flist)
     node = TreeNode(sc.canvas, None, item)
     node.expand()
 
 
 class StackTreeItem(TreeItem):
 
-    def __init__(self, flist=None, exc=None):
+    def __init__(self, exc, flist=None):
         self.flist = flist
         self.stack = self.get_stack(None if exc is None else exc.__traceback__)
-        self.text = self.get_exception(exc)
+        self.text = f"{type(exc).__name__}: {str(exc)}"
 
     def get_stack(self, tb):
         stack = []
@@ -33,14 +33,7 @@ class StackTreeItem(TreeItem):
             tb = tb.tb_next
         return stack
 
-    def get_exception(self, exc):
-        typ = None if exc is None else type(exc)
-        if hasattr(typ, "__name__"):
-            typ = typ.__name__
-        s = str(typ) + ": " + str(exc)
-        return s
-
-    def GetText(self):
+    def GetText(self):  # Titlecase names are overrides.
         return self.text
 
     def GetSubList(self):
@@ -128,7 +121,7 @@ def _stack_viewer(parent):  # htest #
     try: # to obtain a traceback object
         intentional_name_error
     except NameError as e:
-        sb = StackBrowser(top, e, flist=flist, top=top)
+        StackBrowser(top, e, flist=flist, top=top)
 
 
 if __name__ == '__main__':
