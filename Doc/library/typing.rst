@@ -941,6 +941,9 @@ These can be used as types in annotations using ``[]``, each having a unique syn
       Unions can now be written as ``X | Y``. See
       :ref:`union type expressions<types-union>`.
 
+   .. versionchanged:: 3.13
+      :data:`Union` is now implemented as an alias of :class:`types.UnionType`.
+
 .. data:: Optional
 
    Optional type.
