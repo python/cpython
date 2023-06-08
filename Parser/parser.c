@@ -16323,7 +16323,7 @@ fstring_format_spec_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ fstring_format_spec[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "FSTRING_MIDDLE"));
-            _res = _PyPegen_constant_from_token ( p , t );
+            _res = _PyPegen_decoded_constant_from_token ( p , t );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;

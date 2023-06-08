@@ -288,6 +288,22 @@ _testcapi_traceback_print_impl(PyObject *module, PyObject *traceback,
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_testcapi.unstable_exc_prep_reraise_star
+    orig: object
+    excs: object
+    /
+To test PyUnstable_Exc_PrepReraiseStar.
+[clinic start generated code]*/
+
+static PyObject *
+_testcapi_unstable_exc_prep_reraise_star_impl(PyObject *module,
+                                              PyObject *orig, PyObject *excs)
+/*[clinic end generated code: output=850cf008e0563c77 input=27fbcda2203eb301]*/
+{
+    return PyUnstable_Exc_PrepReraiseStar(orig, excs);
+}
+
 
 /*
  * Define the PyRecurdingInfinitelyError_Type
@@ -328,6 +344,7 @@ static PyMethodDef test_methods[] = {
     _TESTCAPI_SET_EXCEPTION_METHODDEF
     _TESTCAPI_TRACEBACK_PRINT_METHODDEF
     _TESTCAPI_WRITE_UNRAISABLE_EXC_METHODDEF
+    _TESTCAPI_UNSTABLE_EXC_PREP_RERAISE_STAR_METHODDEF
     {NULL},
 };
 

@@ -1,7 +1,9 @@
 import contextlib
 import collections
+import collections.abc
 from collections import defaultdict
 from functools import lru_cache, wraps
+import gc
 import inspect
 import itertools
 import pickle
@@ -2722,18 +2724,112 @@ class ProtocolTests(BaseTestCase):
         self.assertIsSubclass(C, PG)
         self.assertIsSubclass(BadP, PG)
 
-        with self.assertRaises(TypeError):
+        no_subscripted_generics = (
+            "Subscripted generics cannot be used with class and instance checks"
+        )
+
+        with self.assertRaisesRegex(TypeError, no_subscripted_generics):
             issubclass(C, PG[T])
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, no_subscripted_generics):
             issubclass(C, PG[C])
-        with self.assertRaises(TypeError):
+
+        only_runtime_checkable_protocols = (
+            "Instance and class checks can only be used with "
+            "@runtime_checkable protocols"
+        )
+
+        with self.assertRaisesRegex(TypeError, only_runtime_checkable_protocols):
             issubclass(C, BadP)
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, only_runtime_checkable_protocols):
             issubclass(C, BadPG)
-        with self.assertRaises(TypeError):
+
+        with self.assertRaisesRegex(TypeError, no_subscripted_generics):
             issubclass(P, PG[T])
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, no_subscripted_generics):
             issubclass(PG, PG[int])
+
+        only_classes_allowed = r"issubclass\(\) arg 1 must be a class"
+
+        with self.assertRaisesRegex(TypeError, only_classes_allowed):
+            issubclass(1, P)
+        with self.assertRaisesRegex(TypeError, only_classes_allowed):
+            issubclass(1, PG)
+        with self.assertRaisesRegex(TypeError, only_classes_allowed):
+            issubclass(1, BadP)
+        with self.assertRaisesRegex(TypeError, only_classes_allowed):
+            issubclass(1, BadPG)
+
+    def test_isinstance_checks_not_at_whim_of_gc(self):
+        self.addCleanup(gc.enable)
+        gc.disable()
+
+        with self.assertRaisesRegex(
+            TypeError,
+            "Protocols can only inherit from other protocols"
+        ):
+            class Foo(collections.abc.Mapping, Protocol):
+                pass
+
+        self.assertNotIsInstance([], collections.abc.Mapping)
+
+    def test_issubclass_and_isinstance_on_Protocol_itself(self):
+        class C:
+            def x(self): pass
+
+        self.assertNotIsSubclass(object, Protocol)
+        self.assertNotIsInstance(object(), Protocol)
+
+        self.assertNotIsSubclass(str, Protocol)
+        self.assertNotIsInstance('foo', Protocol)
+
+        self.assertNotIsSubclass(C, Protocol)
+        self.assertNotIsInstance(C(), Protocol)
+
+        only_classes_allowed = r"issubclass\(\) arg 1 must be a class"
+
+        with self.assertRaisesRegex(TypeError, only_classes_allowed):
+            issubclass(1, Protocol)
+        with self.assertRaisesRegex(TypeError, only_classes_allowed):
+            issubclass('foo', Protocol)
+        with self.assertRaisesRegex(TypeError, only_classes_allowed):
+            issubclass(C(), Protocol)
+
+        T = TypeVar('T')
+
+        @runtime_checkable
+        class EmptyProtocol(Protocol): pass
+
+        @runtime_checkable
+        class SupportsStartsWith(Protocol):
+            def startswith(self, x: str) -> bool: ...
+
+        @runtime_checkable
+        class SupportsX(Protocol[T]):
+            def x(self): ...
+
+        for proto in EmptyProtocol, SupportsStartsWith, SupportsX:
+            with self.subTest(proto=proto.__name__):
+                self.assertIsSubclass(proto, Protocol)
+
+        # gh-105237 / PR #105239:
+        # check that the presence of Protocol subclasses
+        # where `issubclass(X, <subclass>)` evaluates to True
+        # doesn't influence the result of `issubclass(X, Protocol)`
+
+        self.assertIsSubclass(object, EmptyProtocol)
+        self.assertIsInstance(object(), EmptyProtocol)
+        self.assertNotIsSubclass(object, Protocol)
+        self.assertNotIsInstance(object(), Protocol)
+
+        self.assertIsSubclass(str, SupportsStartsWith)
+        self.assertIsInstance('foo', SupportsStartsWith)
+        self.assertNotIsSubclass(str, Protocol)
+        self.assertNotIsInstance('foo', Protocol)
+
+        self.assertIsSubclass(C, SupportsX)
+        self.assertIsInstance(C(), SupportsX)
+        self.assertNotIsSubclass(C, Protocol)
+        self.assertNotIsInstance(C(), Protocol)
 
     def test_protocols_issubclass_non_callable(self):
         class C:
@@ -2743,12 +2839,19 @@ class ProtocolTests(BaseTestCase):
         class PNonCall(Protocol):
             x = 1
 
-        with self.assertRaises(TypeError):
+        non_callable_members_illegal = (
+            "Protocols with non-method members don't support issubclass()"
+        )
+
+        with self.assertRaisesRegex(TypeError, non_callable_members_illegal):
             issubclass(C, PNonCall)
+
         self.assertIsInstance(C(), PNonCall)
         PNonCall.register(C)
-        with self.assertRaises(TypeError):
+
+        with self.assertRaisesRegex(TypeError, non_callable_members_illegal):
             issubclass(C, PNonCall)
+
         self.assertIsInstance(C(), PNonCall)
 
         # check that non-protocol subclasses are not affected
@@ -2759,7 +2862,8 @@ class ProtocolTests(BaseTestCase):
         D.register(C)
         self.assertIsSubclass(C, D)
         self.assertIsInstance(C(), D)
-        with self.assertRaises(TypeError):
+
+        with self.assertRaisesRegex(TypeError, non_callable_members_illegal):
             issubclass(D, PNonCall)
 
     def test_no_weird_caching_with_issubclass_after_isinstance(self):
@@ -2778,7 +2882,10 @@ class ProtocolTests(BaseTestCase):
         # as the cached result of the isinstance() check immediately above
         # would mean the issubclass() call would short-circuit
         # before we got to the "raise TypeError" line
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(
+            TypeError,
+            "Protocols with non-method members don't support issubclass()"
+        ):
             issubclass(Eggs, Spam)
 
     def test_no_weird_caching_with_issubclass_after_isinstance_2(self):
@@ -2795,7 +2902,10 @@ class ProtocolTests(BaseTestCase):
         # as the cached result of the isinstance() check immediately above
         # would mean the issubclass() call would short-circuit
         # before we got to the "raise TypeError" line
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(
+            TypeError,
+            "Protocols with non-method members don't support issubclass()"
+        ):
             issubclass(Eggs, Spam)
 
     def test_no_weird_caching_with_issubclass_after_isinstance_3(self):
@@ -2816,7 +2926,10 @@ class ProtocolTests(BaseTestCase):
         # as the cached result of the isinstance() check immediately above
         # would mean the issubclass() call would short-circuit
         # before we got to the "raise TypeError" line
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(
+            TypeError,
+            "Protocols with non-method members don't support issubclass()"
+        ):
             issubclass(Eggs, Spam)
 
     def test_no_weird_caching_with_issubclass_after_isinstance_pep695(self):
@@ -2835,7 +2948,10 @@ class ProtocolTests(BaseTestCase):
         # as the cached result of the isinstance() check immediately above
         # would mean the issubclass() call would short-circuit
         # before we got to the "raise TypeError" line
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(
+            TypeError,
+            "Protocols with non-method members don't support issubclass()"
+        ):
             issubclass(Eggs, Spam)
 
     def test_protocols_isinstance(self):
@@ -2883,13 +2999,21 @@ class ProtocolTests(BaseTestCase):
                 with self.subTest(klass=klass.__name__, proto=proto.__name__):
                     self.assertIsInstance(klass(), proto)
 
-        with self.assertRaises(TypeError):
+        no_subscripted_generics = "Subscripted generics cannot be used with class and instance checks"
+
+        with self.assertRaisesRegex(TypeError, no_subscripted_generics):
             isinstance(C(), PG[T])
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, no_subscripted_generics):
             isinstance(C(), PG[C])
-        with self.assertRaises(TypeError):
+
+        only_runtime_checkable_msg = (
+            "Instance and class checks can only be used "
+            "with @runtime_checkable protocols"
+        )
+
+        with self.assertRaisesRegex(TypeError, only_runtime_checkable_msg):
             isinstance(C(), BadP)
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, only_runtime_checkable_msg):
             isinstance(C(), BadPG)
 
     def test_protocols_isinstance_properties_and_descriptors(self):
@@ -3274,7 +3398,7 @@ class ProtocolTests(BaseTestCase):
 
         class C: pass
 
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, r"issubclass\(\) arg 1 must be a class"):
             issubclass(C(), P)
 
     def test_defining_generic_protocols(self):
@@ -3653,6 +3777,93 @@ class ProtocolTests(BaseTestCase):
                 super().__init__()
 
         Foo()  # Previously triggered RecursionError
+
+    def test_interaction_with_isinstance_checks_on_superclasses_with_ABCMeta(self):
+        # Ensure the cache is empty, or this test won't work correctly
+        collections.abc.Sized._abc_registry_clear()
+
+        class Foo(collections.abc.Sized, Protocol): pass
+
+        # gh-105144: this previously raised TypeError
+        # if a Protocol subclass of Sized had been created
+        # before any isinstance() checks against Sized
+        self.assertNotIsInstance(1, collections.abc.Sized)
+
+    def test_interaction_with_isinstance_checks_on_superclasses_with_ABCMeta_2(self):
+        # Ensure the cache is empty, or this test won't work correctly
+        collections.abc.Sized._abc_registry_clear()
+
+        class Foo(typing.Sized, Protocol): pass
+
+        # gh-105144: this previously raised TypeError
+        # if a Protocol subclass of Sized had been created
+        # before any isinstance() checks against Sized
+        self.assertNotIsInstance(1, typing.Sized)
+
+    def test_empty_protocol_decorated_with_final(self):
+        @final
+        @runtime_checkable
+        class EmptyProtocol(Protocol): ...
+
+        self.assertIsSubclass(object, EmptyProtocol)
+        self.assertIsInstance(object(), EmptyProtocol)
+
+    def test_protocol_decorated_with_final_callable_members(self):
+        @final
+        @runtime_checkable
+        class ProtocolWithMethod(Protocol):
+            def startswith(self, string: str) -> bool: ...
+
+        self.assertIsSubclass(str, ProtocolWithMethod)
+        self.assertNotIsSubclass(int, ProtocolWithMethod)
+        self.assertIsInstance('foo', ProtocolWithMethod)
+        self.assertNotIsInstance(42, ProtocolWithMethod)
+
+    def test_protocol_decorated_with_final_noncallable_members(self):
+        @final
+        @runtime_checkable
+        class ProtocolWithNonCallableMember(Protocol):
+            x: int
+
+        class Foo:
+            x = 42
+
+        only_callable_members_please = (
+            r"Protocols with non-method members don't support issubclass()"
+        )
+
+        with self.assertRaisesRegex(TypeError, only_callable_members_please):
+            issubclass(Foo, ProtocolWithNonCallableMember)
+
+        with self.assertRaisesRegex(TypeError, only_callable_members_please):
+            issubclass(int, ProtocolWithNonCallableMember)
+
+        self.assertIsInstance(Foo(), ProtocolWithNonCallableMember)
+        self.assertNotIsInstance(42, ProtocolWithNonCallableMember)
+
+    def test_protocol_decorated_with_final_mixed_members(self):
+        @final
+        @runtime_checkable
+        class ProtocolWithMixedMembers(Protocol):
+            x: int
+            def method(self) -> None: ...
+
+        class Foo:
+            x = 42
+            def method(self) -> None: ...
+
+        only_callable_members_please = (
+            r"Protocols with non-method members don't support issubclass()"
+        )
+
+        with self.assertRaisesRegex(TypeError, only_callable_members_please):
+            issubclass(Foo, ProtocolWithMixedMembers)
+
+        with self.assertRaisesRegex(TypeError, only_callable_members_please):
+            issubclass(int, ProtocolWithMixedMembers)
+
+        self.assertIsInstance(Foo(), ProtocolWithMixedMembers)
+        self.assertNotIsInstance(42, ProtocolWithMixedMembers)
 
 
 class GenericTests(BaseTestCase):
@@ -6682,10 +6893,6 @@ class TestModules(TestCase):
 
 
 class NewTypeTests(BaseTestCase):
-    def cleanup(self):
-        for f in typing._cleanups:
-            f()
-
     @classmethod
     def setUpClass(cls):
         global UserId
@@ -6697,9 +6904,6 @@ class NewTypeTests(BaseTestCase):
         global UserId
         del UserId
         del cls.UserName
-
-    def tearDown(self):
-        self.cleanup()
 
     def test_basic(self):
         self.assertIsInstance(UserId(5), int)

@@ -29,7 +29,7 @@ DEFAULT_METADATA_OUTPUT = os.path.relpath(
 BEGIN_MARKER = "// BEGIN BYTECODES //"
 END_MARKER = "// END BYTECODES //"
 RE_PREDICTED = (
-    r"^\s*(?:PREDICT\(|GO_TO_INSTRUCTION\(|DEOPT_IF\(.*?,\s*)(\w+)\);\s*(?://.*)?$"
+    r"^\s*(?:GO_TO_INSTRUCTION\(|DEOPT_IF\(.*?,\s*)(\w+)\);\s*(?://.*)?$"
 )
 UNUSED = "unused"
 BITS_PER_CODE_UNIT = 16
@@ -234,7 +234,6 @@ class Instruction:
     name: str
     block: parser.Block
     block_text: list[str]  # Block.text, less curlies, less PREDICT() calls
-    predictions: list[str]  # Prediction targets (instruction names)
     block_line: int  # First line of block in original code
 
     # Computed by constructor
@@ -255,7 +254,7 @@ class Instruction:
         self.kind = inst.kind
         self.name = inst.name
         self.block = inst.block
-        self.block_text, self.check_eval_breaker, self.predictions, self.block_line = \
+        self.block_text, self.check_eval_breaker, self.block_line = \
             extract_block_text(self.block)
         self.always_exits = always_exits(self.block_text)
         self.cache_effects = [
@@ -489,6 +488,7 @@ class MacroInstruction(SuperOrMacroInstruction):
 
     macro: parser.Macro
     parts: list[Component | parser.CacheEffect]
+    predicted: bool = False
 
 
 @dataclasses.dataclass
@@ -633,21 +633,23 @@ class Analyzer:
 
         Raises SystemExit if there is an error.
         """
-        self.find_predictions()
         self.analyze_supers_and_macros()
+        self.find_predictions()
         self.map_families()
         self.check_families()
 
     def find_predictions(self) -> None:
         """Find the instructions that need PREDICTED() labels."""
         for instr in self.instrs.values():
-            targets = set(instr.predictions)
+            targets = set()
             for line in instr.block_text:
                 if m := re.match(RE_PREDICTED, line):
                     targets.add(m.group(1))
             for target in targets:
                 if target_instr := self.instrs.get(target):
                     target_instr.predicted = True
+                elif target_macro := self.macro_instrs.get(target):
+                    target_macro.predicted = True
                 else:
                     self.error(
                         f"Unknown instruction {target!r} predicted in {instr.name!r}",
@@ -896,6 +898,7 @@ class Analyzer:
                     pushed = ""
             case parser.Super():
                 instr = self.super_instrs[thing.name]
+                # TODO: Same as for Macro below, if needed.
                 popped = "+".join(
                     effect_str(comp.instr.input_effects) for comp in instr.parts
                 )
@@ -905,12 +908,30 @@ class Analyzer:
             case parser.Macro():
                 instr = self.macro_instrs[thing.name]
                 parts = [comp for comp in instr.parts if isinstance(comp, Component)]
-                popped = "+".join(
-                    effect_str(comp.instr.input_effects) for comp in parts
-                )
-                pushed = "+".join(
-                    effect_str(comp.instr.output_effects) for comp in parts
-                )
+                # Note: stack_analysis() already verifies that macro components
+                # have no variable-sized stack effects.
+                low = 0
+                sp = 0
+                high = 0
+                for comp in parts:
+                    for effect in comp.instr.input_effects:
+                        assert not effect.cond, effect
+                        assert not effect.size, effect
+                        sp -= 1
+                        low = min(low, sp)
+                    for effect in comp.instr.output_effects:
+                        assert not effect.cond, effect
+                        assert not effect.size, effect
+                        sp += 1
+                        high = max(sp, high)
+                if high != max(0, sp):
+                    # If you get this, intermediate stack growth occurs,
+                    # and stack size calculations may go awry.
+                    # E.g. [push, pop]. The fix would be for stack size
+                    # calculations to use the micro ops.
+                    self.error("Macro has virtual stack growth", thing)
+                popped = str(-low)
+                pushed = str(sp - low)
             case _:
                 typing.assert_never(thing)
         return instr, popped, pushed
@@ -1095,8 +1116,6 @@ class Analyzer:
                 self.out.emit(f"PREDICTED({name});")
             instr.write(self.out)
             if not instr.always_exits:
-                for prediction in instr.predictions:
-                    self.out.emit(f"PREDICT({prediction});")
                 if instr.check_eval_breaker:
                     self.out.emit("CHECK_EVAL_BREAKER();")
                 self.out.emit(f"DISPATCH();")
@@ -1152,6 +1171,9 @@ class Analyzer:
         # outer block, rather than trusting the compiler to optimize it.
         self.out.emit("")
         with self.out.block(f"TARGET({up.name})"):
+            match up:
+                case MacroInstruction(predicted=True, name=name):
+                    self.out.emit(f"PREDICTED({name});")
             for i, var in reversed(list(enumerate(up.stack))):
                 src = None
                 if i < up.initial_sp:
@@ -1170,7 +1192,7 @@ class Analyzer:
             self.out.emit(f"DISPATCH();")
 
 
-def extract_block_text(block: parser.Block) -> tuple[list[str], bool, list[str], int]:
+def extract_block_text(block: parser.Block) -> tuple[list[str], bool, int]:
     # Get lines of text with proper dedent
     blocklines = block.text.splitlines(True)
     first_token: lx.Token = block.tokens[0]  # IndexError means the context is broken
@@ -1200,15 +1222,7 @@ def extract_block_text(block: parser.Block) -> tuple[list[str], bool, list[str],
     if check_eval_breaker:
         del blocklines[-1]
 
-    # Separate PREDICT(...) macros from end
-    predictions: list[str] = []
-    while blocklines and (
-        m := re.match(r"^\s*PREDICT\((\w+)\);\s*(?://.*)?$", blocklines[-1])
-    ):
-        predictions.insert(0, m.group(1))
-        blocklines.pop()
-
-    return blocklines, check_eval_breaker, predictions, block_line
+    return blocklines, check_eval_breaker, block_line
 
 
 def always_exits(lines: list[str]) -> bool:
