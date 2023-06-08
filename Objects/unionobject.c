@@ -13,6 +13,7 @@ typedef struct {
     PyObject_HEAD
     PyObject *args;
     PyObject *parameters;
+    PyObject *weakreflist;
 } unionobject;
 
 static void
@@ -21,6 +22,9 @@ unionobject_dealloc(PyObject *self)
     unionobject *alias = (unionobject *)self;
 
     _PyObject_GC_UNTRACK(self);
+    if (alias->weakreflist != NULL) {
+        PyObject_ClearWeakRefs((PyObject *)alias);
+    }
 
     Py_XDECREF(alias->args);
     Py_XDECREF(alias->parameters);
@@ -330,7 +334,22 @@ union_parameters(PyObject *self, void *Py_UNUSED(unused))
     return Py_NewRef(alias->parameters);
 }
 
+static PyObject *
+union_name(PyObject *Py_UNUSED(self), void *Py_UNUSED(ignored))
+{
+    return PyUnicode_FromString("Union");
+}
+
+static PyObject *
+union_origin(PyObject *Py_UNUSED(self), void *Py_UNUSED(ignored))
+{
+    return Py_NewRef(&_PyUnion_Type);
+}
+
 static PyGetSetDef union_properties[] = {
+    {"__name__", union_name, NULL, "Name of the type", NULL},
+    {"__qualname__", union_name, NULL, "Qualified name of the type", NULL},
+    {"__origin__", union_origin, NULL, "Always returns the type", NULL},
     {"__parameters__", union_parameters, (setter)NULL, "Type variables in the types.UnionType.", NULL},
     {0}
 };
@@ -517,6 +536,7 @@ PyTypeObject _PyUnion_Type = {
     .tp_as_number = &union_as_number,
     .tp_repr = union_repr,
     .tp_getset = union_properties,
+    .tp_weaklistoffset = offsetof(unionobject, weakreflist),
 };
 
 static PyObject *
@@ -531,6 +551,7 @@ make_union(PyObject *args)
 
     result->parameters = NULL;
     result->args = Py_NewRef(args);
+    result->weakreflist = NULL;
     _PyObject_GC_TRACK(result);
     return (PyObject*)result;
 }
