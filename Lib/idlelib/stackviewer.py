@@ -6,7 +6,7 @@ import tkinter as tk
 from idlelib.debugobj import ObjectTreeItem, make_objecttreeitem
 from idlelib.tree import TreeNode, TreeItem, ScrolledCanvas
 
-def StackBrowser(root, flist=None, exc=None, top=None):
+def StackBrowser(root, exc, flist=None, top=None):
     global sc, item, node  # For testing.
     if top is None:
         top = tk.Toplevel(root)
@@ -128,9 +128,7 @@ def _stack_viewer(parent):  # htest #
     try: # to obtain a traceback object
         intentional_name_error
     except NameError as e:
-        exc = e
-
-    StackBrowser(top, flist=flist, top=top, exc=exc)
+        sb = StackBrowser(top, e, flist=flist, top=top)
 
 
 if __name__ == '__main__':
