@@ -2,7 +2,7 @@
 #include "Python.h"
 #include "pycore_object.h"  // _PyObject_GC_TRACK/UNTRACK
 #include "pycore_typevarobject.h"
-#include "pycore_unionobject.h"   // _Py_union_type_or
+#include "pycore_unionobject.h"   // _Py_union_type_or, _Py_union_class_getitem
 #include "structmember.h"
 
 /*[clinic input]
@@ -99,9 +99,11 @@ type_check(PyObject *arg, const char *msg)
 static PyObject *
 make_union(PyObject *self, PyObject *other)
 {
-    PyObject *args[2] = {self, other};
-    PyObject *result = call_typing_func_object("_make_union", args, 2);
-    return result;
+    PyObject *args = PyTuple_Pack(2, self, other);
+    if (args == NULL) {
+        return NULL;
+    }
+    return _Py_union_class_getitem((PyObject *)&_PyUnion_Type, args);
 }
 
 static PyObject *

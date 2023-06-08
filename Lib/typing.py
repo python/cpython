@@ -647,15 +647,6 @@ def Final(self, parameters):
     item = _type_check(parameters, f'{self} accepts only single type.')
     return _GenericAlias(self, (item,))
 
-def _make_union(left, right):
-    """Used from the C implementation of TypeVar.
-
-    TypeVar.__or__ calls this instead of returning types.UnionType
-    because we want to allow unions between TypeVars and strings
-    (forward references).
-    """
-    return Union[left, right]
-
 @_SpecialForm
 def Optional(self, parameters):
     """Optional[X] is equivalent to Union[X, None]."""

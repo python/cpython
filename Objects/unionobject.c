@@ -460,8 +460,8 @@ add_object_to_union_args(PyObject *args_list, PyObject *args_set, PyObject *obj)
     return 0;
 }
 
-static PyObject *
-union_class_getitem(PyObject *cls, PyObject *args)
+PyObject *
+_Py_union_class_getitem(PyObject *cls, PyObject *args)
 {
     PyObject *args_list = PyList_New(0);
     if (args_list == NULL) {
@@ -511,7 +511,7 @@ union_class_getitem(PyObject *cls, PyObject *args)
 }
 
 static PyMethodDef union_methods[] = {
-    {"__class_getitem__", union_class_getitem, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", _Py_union_class_getitem, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {0}
 };
 
