@@ -2546,7 +2546,7 @@ Other concrete types
    :func:`re.compile` and :func:`re.match`.
 
    These types (and the corresponding functions) are generic over
-   :data:`AnyStr`.``Pattern`` can be specialised as ``Pattern[str]`` or
+   :data:`AnyStr`. ``Pattern`` can be specialised as ``Pattern[str]`` or
    ``Pattern[bytes]``; ``Match`` can be specialised as ``Match[str]`` or
    ``Match[bytes]``.
 
