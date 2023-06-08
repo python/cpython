@@ -639,10 +639,34 @@ def __sleep0():
     """
     yield
 
+def __check_delay(delay):
+    """Check if the value of 'delay' is valid."""
+
+    import sys
+    import math
+
+    SEC_TO_NS = 1000 * 1000 * 1000
+
+    if not (isinstance(delay, int) or isinstance(delay, float)):
+        raise TypeError(f"'{type(delay)} object cannot be interpreted as an integer'")
+
+    # According to Modules/timemodule.c
+    if (delay > sys.maxsize / SEC_TO_NS):
+        raise OverflowError("timestamp too large to convert to C _PyTime_t")
+
+    if (delay < 0):
+        raise ValueError("sleep length must be non-negative")
+
+    if (math.isnan(delay)):
+        raise ValueError("Invalid value NaN (not a number)")
+
 
 async def sleep(delay, result=None):
     """Coroutine that completes after a given time (in seconds)."""
-    if delay <= 0:
+
+    __check_delay(delay)
+
+    if delay == 0:
         await __sleep0()
         return result
 
