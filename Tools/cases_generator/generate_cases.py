@@ -550,6 +550,7 @@ class Analyzer:
         self.supers = {}
         self.macros = {}
         self.families = {}
+        self.pseudos = {}
 
         instrs_idx: dict[str, int] = dict()
 
@@ -623,6 +624,8 @@ class Analyzer:
                     self.everything.append(thing)
                 case parser.Family(name):
                     self.families[name] = thing
+                case parser.Pseudo(name):
+                    self.pseudos[name] = thing
                 case _:
                     typing.assert_never(thing)
         if not psr.eof():
@@ -1007,6 +1010,7 @@ class Analyzer:
             self.out.write_raw(self.from_source_files())
             self.out.write_raw(f"// Do not edit!\n")
 
+            self.write_pseudo_instrs()
 
             self.write_stack_effect_functions()
 
@@ -1043,6 +1047,13 @@ class Analyzer:
             # Write end of array
             self.out.emit("};")
             self.out.emit("#endif")
+
+    def write_pseudo_instrs(self) -> None:
+        """Write the IS_PSEUDO_OPCODE macro"""
+        self.out.emit("\n\n#define IS_PSEUDO_INSTR(OP)  \\")
+        for op in self.pseudos:
+            self.out.emit(f"    ((OP) == {op}) || \\")
+        self.out.emit(f"    0")
 
     def write_metadata_for_inst(self, instr: Instruction) -> None:
         """Write metadata for a single instruction."""

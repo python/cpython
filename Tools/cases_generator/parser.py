@@ -136,6 +136,11 @@ class Family(Node):
     size: str  # Variable giving the cache size in code units
     members: list[str]
 
+@dataclass
+class Pseudo(Node):
+    name: str
+    targets: list[str]  # opcodes this can be replaced by
+
 
 class Parser(PLexer):
     @contextual
@@ -148,6 +153,8 @@ class Parser(PLexer):
             return macro
         if family := self.family_def():
             return family
+        if pseudo := self.pseudo_def():
+            return pseudo
 
     @contextual
     def inst_def(self) -> InstDef | None:
@@ -361,6 +368,23 @@ class Parser(PLexer):
                                 if self.expect(lx.RBRACE) and self.expect(lx.SEMI):
                                     return Family(
                                         tkn.text, size.text if size else "", members
+                                    )
+        return None
+
+    @contextual
+    def pseudo_def(self) -> Pseudo | None:
+        if (tkn := self.expect(lx.IDENTIFIER)) and tkn.text == "pseudo":
+            size = None
+            if self.expect(lx.LPAREN):
+                if tkn := self.expect(lx.IDENTIFIER):
+                    if self.expect(lx.RPAREN):
+                        if self.expect(lx.EQUALS):
+                            if not self.expect(lx.LBRACE):
+                                raise self.make_syntax_error("Expected {")
+                            if members := self.members():
+                                if self.expect(lx.RBRACE) and self.expect(lx.SEMI):
+                                    return Pseudo(
+                                        tkn.text, members
                                     )
         return None
 
