@@ -2184,17 +2184,15 @@ class Annotated:
 
     - Annotated can be used as a generic type alias::
 
-        type Optimized[T] = Annotated[T, runtime.Optimize()]
-        # type checker will treat Optimized[int]
-        # as equivalent to Annotated[int, runtime.Optimize()]
+        Optimized: TypeAlias = Annotated[T, runtime.Optimize()]
+        assert Optimized[int] == Annotated[int, runtime.Optimize()]
 
-        type OptimizedList[T] = Annotated[list[T], runtime.Optimize()]
-        # type checker will treat OptimizedList[int]
-        # as equivalent to Annotated[list[int], runtime.Optimize()]
+        OptimizedList: TypeAlias = Annotated[list[T], runtime.Optimize()]
+        assert OptimizedList[int] == Annotated[list[int], runtime.Optimize()]
 
     - Annotated cannot be used with an unpacked TypeVarTuple::
 
-        type Variadic[*Ts] = Annotated[*Ts, Ann1]  # NOT valid
+        Variadic: TypeAlias = Annotated[*Ts, Ann1]  # NOT valid
 
       This would be equivalent to::
 
