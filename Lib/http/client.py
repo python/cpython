@@ -234,7 +234,7 @@ def _parse_header_lines(header_lines, _class=HTTPMessage):
     to parse.
 
     """
-    hstring = hstring = b''.join(header_lines).decode('iso-8859-1')
+    hstring = b''.join(header_lines).decode('iso-8859-1')
     return email.parser.Parser(_class=_class,
                                policy=email.policy.default).parsestr(hstring)
 
