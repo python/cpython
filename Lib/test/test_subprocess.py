@@ -1697,7 +1697,7 @@ class RunFuncTestCase(BaseTestCase):
         args = [path, '-c', 'import sys; sys.exit(57)']
         res = subprocess.run(args, env={})
         self.assertEqual(res.returncode, 57)
-        
+
     def test_capture_output(self):
         cp = self.run_python(("import sys;"
                               "sys.stdout.write('BDFL'); "
