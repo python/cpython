@@ -163,7 +163,7 @@ class TaskGroup:
             task = self._loop.create_task(coro)
         else:
             task = self._loop.create_task(coro, context=context)
-        tasks._set_task_name(task, name)
+        task.set_name(name)
         # optimization: Immediately call the done callback if the task is
         # already done (e.g. if the coro was able to complete eagerly),
         # and skip scheduling a done callback

@@ -32,8 +32,8 @@ FORMAT_VALUE_CONVERTERS = (
     (repr, 'repr'),
     (ascii, 'ascii'),
 )
-MAKE_FUNCTION = opmap['MAKE_FUNCTION']
-MAKE_FUNCTION_FLAGS = ('defaults', 'kwdefaults', 'annotations', 'closure')
+SET_FUNCTION_ATTRIBUTE = opmap['SET_FUNCTION_ATTRIBUTE']
+FUNCTION_ATTR_FLAGS = ('defaults', 'kwdefaults', 'annotations', 'closure')
 
 LOAD_CONST = opmap['LOAD_CONST']
 RETURN_CONST = opmap['RETURN_CONST']
@@ -586,8 +586,8 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
                     if argrepr:
                         argrepr += ', '
                     argrepr += 'with format'
-            elif deop == MAKE_FUNCTION:
-                argrepr = ', '.join(s for i, s in enumerate(MAKE_FUNCTION_FLAGS)
+            elif deop == SET_FUNCTION_ATTRIBUTE:
+                argrepr = ', '.join(s for i, s in enumerate(FUNCTION_ATTR_FLAGS)
                                     if arg & (1<<i))
             elif deop == BINARY_OP:
                 _, argrepr = _nb_ops[arg]

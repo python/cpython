@@ -1692,6 +1692,13 @@ class RunFuncTestCase(BaseTestCase):
         res = subprocess.run(args)
         self.assertEqual(res.returncode, 57)
 
+    @unittest.skipUnless(mswindows, "Maybe test trigger a leak on Ubuntu")
+    def test_run_with_an_empty_env(self):
+        # gh-105436: fix subprocess.run(..., env={}) broken on Windows
+        args = [sys.executable, "-c", 'import sys; sys.exit(57)']
+        res = subprocess.run(args, env={})
+        self.assertEqual(res.returncode, 57)
+
     def test_capture_output(self):
         cp = self.run_python(("import sys;"
                               "sys.stdout.write('BDFL'); "

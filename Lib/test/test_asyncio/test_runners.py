@@ -243,6 +243,8 @@ class RunTests(BaseTest):
             def get_loop(self, *args, **kwargs):
                 return self._task.get_loop(*args, **kwargs)
 
+            def set_name(self, *args, **kwargs):
+                return self._task.set_name(*args, **kwargs)
 
         async def main():
             interrupt_self()

@@ -4236,7 +4236,7 @@ _PyType_FromMetaclass_impl(
                      metaclass);
         goto finally;
     }
-    if (metaclass->tp_new != PyType_Type.tp_new) {
+    if (metaclass->tp_new && metaclass->tp_new != PyType_Type.tp_new) {
         if (_allow_tp_new) {
             if (PyErr_WarnFormat(
                     PyExc_DeprecationWarning, 1,
