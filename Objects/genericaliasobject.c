@@ -129,29 +129,26 @@ ga_repr_items_list(_PyUnicodeWriter *writer, PyObject *p)
     Py_ssize_t len = PyList_GET_SIZE(p);
 
     if (_PyUnicodeWriter_WriteASCIIString(writer, "[", 1) < 0) {
-        goto error;
+        return -1;
     }
 
     for (Py_ssize_t i = 0; i < len; i++) {
         if (i > 0) {
             if (_PyUnicodeWriter_WriteASCIIString(writer, ", ", 2) < 0) {
-                goto error;
+                return -1;
             }
         }
         PyObject *item = PyList_GET_ITEM(p, i);
         if (ga_repr_item(writer, item) < 0) {
-            goto error;
+            return -1;
         }
     }
 
     if (_PyUnicodeWriter_WriteASCIIString(writer, "]", 1) < 0) {
-        goto error;
+        return -1;
     }
 
     return 0;
-
-error:
-    return -1;
 }
 
 static PyObject *
