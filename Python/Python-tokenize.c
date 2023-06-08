@@ -84,13 +84,9 @@ _tokenizer_error(struct tok_state *tok)
             msg = "invalid token";
             break;
         case E_EOF:
-            if (tok->level > 0) {
-                    PyErr_Format(PyExc_SyntaxError,
-                                 "parenthesis '%c' was never closed",
-                                tok->parenstack[tok->level-1]);
-            } else {
-                PyErr_SetString(PyExc_SyntaxError, "unexpected EOF while parsing");
-            }
+            PyErr_SetString(PyExc_SyntaxError, "unexpected EOF in multi-line statement");
+            PyErr_SyntaxLocationObject(tok->filename, tok->lineno,
+                                       tok->inp - tok->buf < 0 ? 0 : (int)(tok->inp - tok->buf));
             return -1;
         case E_DEDENT:
             msg = "unindent does not match any outer indentation level";
@@ -251,6 +247,17 @@ tokenizeriter_next(tokenizeriterobject *it)
                 }
             }
             end_col_offset++;
+        }
+        else if (type == NL) {
+            if (it->tok->implicit_newline) {
+                Py_DECREF(str);
+                str = PyUnicode_FromString("");
+            }
+        }
+
+        if (str == NULL) {
+            Py_DECREF(line);
+            goto exit;
         }
     }
 
