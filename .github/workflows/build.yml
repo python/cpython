@@ -242,9 +242,8 @@ jobs:
       run: brew install pkg-config openssl@1.1 xz gdbm tcl-tk
     - name: Configure CPython
       run: |
-        CFLAGS="-I$(brew --prefix gdbm)/include -I$(brew --prefix xz)/include" \
-        LDFLAGS="-L$(brew --prefix gdbm)/lib -I$(brew --prefix xz)/lib" \
-        PKG_CONFIG_PATH="$(brew --prefix tcl-tk)/lib/pkgconfig" \
+        GDBM_CFLAGS="-I$(brew --prefix gdbm)/include" \
+        GDBM_LIBS="-L$(brew --prefix gdbm)/lib -lgdbm" \
         ./configure \
           --config-cache \
           --with-pydebug \
