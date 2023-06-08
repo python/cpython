@@ -409,12 +409,6 @@ _specializations = {
         "LOAD_ATTR_METHOD_NO_DICT",
         "LOAD_ATTR_METHOD_WITH_VALUES",
     ],
-    "LOAD_CONST": [
-        "LOAD_CONST__LOAD_FAST",
-    ],
-    "LOAD_FAST": [
-        "LOAD_FAST__LOAD_CONST",
-    ],
     "LOAD_GLOBAL": [
         "LOAD_GLOBAL_BUILTIN",
         "LOAD_GLOBAL_MODULE",

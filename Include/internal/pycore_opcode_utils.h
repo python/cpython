@@ -55,11 +55,6 @@ extern "C" {
          (opcode) == RAISE_VARARGS || \
          (opcode) == RERAISE)
 
-#define IS_SUPERINSTRUCTION_OPCODE(opcode) \
-        ((opcode) == LOAD_FAST__LOAD_CONST || \
-         (opcode) == LOAD_CONST__LOAD_FAST)
-
-
 #define LOG_BITS_PER_INT 5
 #define MASK_LOW_LOG_BITS 31
 

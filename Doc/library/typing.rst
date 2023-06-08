@@ -1194,40 +1194,36 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
 .. data:: Annotated
 
-   A type, introduced in :pep:`593` (``Flexible function and variable
-   annotations``), to decorate existing types with context-specific metadata
-   (possibly multiple pieces of it, as ``Annotated`` is variadic).
-   Specifically, a type ``T`` can be annotated with metadata ``x`` via the
-   typehint ``Annotated[T, x]``. This metadata can be used for either static
-   analysis or at runtime: at runtime, it is stored in a :attr:`__metadata__`
-   attribute. If a library (or tool) encounters a typehint
-   ``Annotated[T, x]`` and has no special logic for metadata ``x``, it
-   should ignore it and simply treat the type as ``T``. Unlike the
-   ``no_type_check`` functionality that currently exists in the ``typing``
-   module which completely disables typechecking annotations on a function
-   or a class, the ``Annotated`` type allows for both static typechecking
-   of ``T`` (which can safely ignore ``x``)
-   together with runtime access to ``x`` within a specific application.
+   Special typing form to add context-specific metadata to an annotation.
 
-   Ultimately, the responsibility of how to interpret the annotations (if
-   at all) is the responsibility of the tool or library encountering the
-   ``Annotated`` type. A tool or library encountering an ``Annotated`` type
-   can scan through the annotations to determine if they are of interest
-   (e.g., using ``isinstance()``).
+   Add metadata ``x`` to a given type ``T`` by using the annotation
+   ``Annotated[T, x]``. Metadata added using ``Annotated`` can be used by
+   static analysis tools or at runtime. At runtime, the metadata is stored
+   in a :attr:`!__metadata__` attribute.
 
-   When a tool or a library does not support annotations or encounters an
-   unknown annotation it should just ignore it and treat annotated type as
-   the underlying type.
+   If a library or tool encounters an annotation ``Annotated[T, x]`` and has
+   no special logic for the metadata, it should ignore the metadata and simply
+   treat the annotation as ``T``. As such, ``Annotated`` can be useful for code
+   that wants to use annotations for purposes outside Python's static typing
+   system.
 
-   It's up to the tool consuming the annotations to decide whether the
-   client is allowed to have several annotations on one type and how to
-   merge those annotations.
+   Using ``Annotated[T, x]`` as an annotation still allows for static
+   typechecking of ``T``, as type checkers will simply ignore the metadata ``x``.
+   In this way, ``Annotated`` differs from the
+   :func:`@no_type_check <no_type_check>` decorator, which can also be used for
+   adding annotations outside the scope of the typing system, but
+   completely disables typechecking for a function or class.
 
-   Since the ``Annotated`` type allows you to put several annotations of
-   the same (or different) type(s) on any node, the tools or libraries
-   consuming those annotations are in charge of dealing with potential
-   duplicates. For example, if you are doing value range analysis you might
-   allow this:
+   The responsibility of how to interpret the metadata
+   lies with the the tool or library encountering an
+   ``Annotated`` annotation. A tool or library encountering an ``Annotated`` type
+   can scan through the metadata elements to determine if they are of interest
+   (e.g., using :func:`isinstance`).
+
+   .. describe:: Annotated[<type>, <metadata>]
+
+   Here is an example of how you might use ``Annotated`` to add metadata to
+   type annotations if you were doing range analysis:
 
    .. testcode::
 
@@ -1239,14 +1235,11 @@ These can be used as types in annotations using ``[]``, each having a unique syn
       T1 = Annotated[int, ValueRange(-10, 5)]
       T2 = Annotated[T1, ValueRange(-20, 3)]
 
-   Passing ``include_extras=True`` to :func:`get_type_hints` lets one
-   access the extra annotations at runtime.
-
-   The details of the syntax:
+   Details of the syntax:
 
    * The first argument to ``Annotated`` must be a valid type
 
-   * Multiple type annotations are supported (``Annotated`` supports variadic
+   * Multiple metadata elements can be supplied (``Annotated`` supports variadic
      arguments)::
 
         @dataclass
@@ -1255,24 +1248,28 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
         Annotated[int, ValueRange(3, 10), ctype("char")]
 
-   * ``Annotated`` must be called with at least two arguments (
+     It is up to the tool consuming the annotations to decide whether the
+     client is allowed to add multiple metadata elements to one annotation and how to
+     merge those annotations.
+
+   * ``Annotated`` must be subscripted with at least two arguments (
      ``Annotated[int]`` is not valid)
 
-   * The order of the annotations is preserved and matters for equality
+   * The order of the metadata elements is preserved and matters for equality
      checks::
 
         assert Annotated[int, ValueRange(3, 10), ctype("char")] != Annotated[
             int, ctype("char"), ValueRange(3, 10)
         ]
 
-   * Nested ``Annotated`` types are flattened, with metadata ordered
-     starting with the innermost annotation::
+   * Nested ``Annotated`` types are flattened. The order of the metadata elements
+     starts with the innermost annotation::
 
         assert Annotated[Annotated[int, ValueRange(3, 10)], ctype("char")] == Annotated[
             int, ValueRange(3, 10), ctype("char")
         ]
 
-   * Duplicated annotations are not removed::
+   * Duplicated metadata elements are not removed::
 
         assert Annotated[int, ValueRange(3, 10)] != Annotated[
             int, ValueRange(3, 10), ValueRange(3, 10)
@@ -1292,21 +1289,46 @@ These can be used as types in annotations using ``[]``, each having a unique syn
         # ``Annotated[list[tuple[int, int]], MaxLen(10)]``:
         type V = Vec[int]
 
-   .. attribute:: __metadata__
+   * ``Annotated`` cannot be used with an unpacked :class:`TypeVarTuple`::
 
-      At runtime, the metadata associated with an ``Annotated`` type can be
-      retrieved via the ``__metadata__`` attribute.
+        type Variadic[*Ts] = Annotated[*Ts, Ann1]  # NOT valid
 
-      For example:
+     This would be equivalent to::
 
-      .. doctest::
+        Annotated[T1, T2, T3, ..., Ann1]
 
-         >>> from typing import Annotated
-         >>> X = Annotated[int, "very", "important", "metadata"]
-         >>> X
-         typing.Annotated[int, 'very', 'important', 'metadata']
-         >>> X.__metadata__
-         ('very', 'important', 'metadata')
+     where ``T1``, ``T2``, etc. are :class:`TypeVars <TypeVar>`. This would be
+     invalid: only one type should be passed to Annotated.
+
+   * By default, :func:`get_type_hints` strips the metadata from annotations.
+     Pass ``include_extras=True`` to have the metadata preserved:
+
+     .. doctest::
+
+        >>> from typing import Annotated, get_type_hints
+        >>> def func(x: Annotated[int, "metadata"]) -> None: pass
+        ...
+        >>> get_type_hints(func)
+        {'x': <class 'int'>, 'return': <class 'NoneType'>}
+        >>> get_type_hints(func, include_extras=True)
+        {'x': typing.Annotated[int, 'metadata'], 'return': <class 'NoneType'>}
+
+   * At runtime, the metadata associated with an ``Annotated`` type can be
+     retrieved via the :attr:`!__metadata__` attribute:
+
+     .. doctest::
+
+        >>> from typing import Annotated
+        >>> X = Annotated[int, "very", "important", "metadata"]
+        >>> X
+        typing.Annotated[int, 'very', 'important', 'metadata']
+        >>> X.__metadata__
+        ('very', 'important', 'metadata')
+
+   .. seealso::
+
+      :pep:`593` - Flexible function and variable annotations
+         The PEP introducing ``Annotated`` to the standard library.
 
    .. versionadded:: 3.9
 
