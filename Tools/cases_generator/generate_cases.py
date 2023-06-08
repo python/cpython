@@ -275,7 +275,6 @@ class Instruction:
             else:
                 break
         self.unmoved_names = frozenset(unmoved_names)
-        if inst.name == 'YIELD_VALUE': breakpoint()
         flag_data = {
             'HAS_ARG'  :  variable_used(inst, "oparg"),
             'HAS_CONST':  variable_used(inst, "frame->f_code->co_consts", delim="->"),
@@ -513,6 +512,7 @@ class OverriddenInstructionPlaceHolder:
 
 AnyInstruction = Instruction | SuperInstruction | MacroInstruction
 INSTR_FMT_PREFIX = "INSTR_FMT_"
+INSTR_FLAG_SUFFIX = "_FLAG"
 
 
 class Analyzer:
@@ -1031,10 +1031,13 @@ class Analyzer:
 
             # Write type definitions
             self.out.emit(f"enum InstructionFormat {{ {', '.join(format_enums)} }};")
-            for i, name in enumerate(INSTRUCTION_FLAGS):
-                self.out.emit(f"#define {name}_FLAG ({1 << i})");
-            for name in INSTRUCTION_FLAGS:
-                self.out.emit(f"#define OPCODE_{name}(OP) (_PyOpcode_opcode_metadata[(OP)].flags & {name}_FLAG)");
+            for i, flag in enumerate(INSTRUCTION_FLAGS):
+                self.out.emit(f"#define {flag}{INSTR_FLAG_SUFFIX} ({1 << i})");
+            for flag in INSTRUCTION_FLAGS:
+                flag_name = f"{flag}{INSTR_FLAG_SUFFIX}"
+                self.out.emit(
+                    f"#define OPCODE_{flag}(OP) "
+                    f"(_PyOpcode_opcode_metadata[(OP)].flags & ({flag_name}))")
 
             self.out.emit("struct opcode_metadata {")
             with self.out.indent():
@@ -1069,23 +1072,25 @@ class Analyzer:
             self.out.emit("};")
             self.out.emit("#endif")
 
+    def emit_metadata_entry(self, name: str, fmt: str, flags: int) -> None:
+        flags_strs = [f"{name}{INSTR_FLAG_SUFFIX}"
+                      for i, name in enumerate(INSTRUCTION_FLAGS) if (flags & (1<<i))]
+        flags_s = "0" if not flags_strs else '|'.join(flags_strs)
+        self.out.emit(
+            f"    [{name}] = {{ true, {INSTR_FMT_PREFIX}{fmt}, {flags_s} }},"
+        )
+
     def write_metadata_for_inst(self, instr: Instruction) -> None:
         """Write metadata for a single instruction."""
-        self.out.emit(
-            f"    [{instr.name}] = {{ true, {INSTR_FMT_PREFIX}{instr.instr_fmt}, {instr.flags} }},"
-        )
+        self.emit_metadata_entry(instr.name, instr.instr_fmt, instr.flags)
 
     def write_metadata_for_super(self, sup: SuperInstruction) -> None:
         """Write metadata for a super-instruction."""
-        self.out.emit(
-            f"    [{sup.name}] = {{ true, {INSTR_FMT_PREFIX}{sup.instr_fmt}, {sup.flags} }},"
-        )
+        self.emit_metadata_entry(sup.name, sup.instr_fmt, sup.flags)
 
     def write_metadata_for_macro(self, mac: MacroInstruction) -> None:
         """Write metadata for a macro-instruction."""
-        self.out.emit(
-            f"    [{mac.name}] = {{ true, {INSTR_FMT_PREFIX}{mac.instr_fmt}, {mac.flags} }},"
-        )
+        self.emit_metadata_entry(mac.name, mac.instr_fmt, mac.flags)
 
     def write_instructions(self) -> None:
         """Write instructions to output file."""
