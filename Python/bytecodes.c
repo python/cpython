@@ -1977,6 +1977,7 @@ dummy_func(
                 }
                 else {
                     ERROR_IF(err < 0, error);
+                    bb_test = BB_TEST(1, 0);
                 }
             }
         }
@@ -2018,6 +2019,7 @@ dummy_func(
                 }
                 else {
                     ERROR_IF(err < 0, error);
+                    bb_test = BB_TEST(1, 0);
                 }
             }
         }

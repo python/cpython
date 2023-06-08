@@ -493,4 +493,30 @@ with TestInfo("tier 2 BB_BRANCH_IF_FLAG_SET codegen"):
 
     # As long as it doesn't crash, everything's good.
 
+######################################################################
+# Tests for: Tier 2 BB_TEST_POP_IF_FALSE flag setting                #
+######################################################################
+with TestInfo("tier 2 BB_TEST_POP_IF_FALSE flag setting"):
+    # See https://github.com/pylbbv/pylbbv/issues/23 for more information.
+    import sys
+
+    class A:
+        def __init__(self): ...
+        def __add__(self, _): return "Hewwo!"
+
+    def f(a):
+        b = 1
+        if a: b = A()
+        print(b)
+        return b+b
+
+
+    for _ in range(63): f(0)
+
+    assert f(1) == "Hewwo!"
+
+    assert f(0) == 2
+
+    # As long as it doesn't crash, everything's good.
+
 print("Tests completed ^-^")

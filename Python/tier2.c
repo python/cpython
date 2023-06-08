@@ -1131,6 +1131,7 @@ emit_type_guard(_Py_CODEUNIT *write_curr, int guard_opcode, int guard_oparg, int
     fprintf(stderr, "emitted type guard %p %s\n", write_curr,
         _PyOpcode_OpName[guard_opcode]);
 #endif
+    assert(guard_oparg <= 0xFF);
     write_curr->op.code = guard_opcode;
     write_curr->op.arg = guard_oparg & 0xFF;
     write_curr++;
@@ -3009,6 +3010,7 @@ _PyTier2_RewriteForwardJump(_Py_CODEUNIT *bb_branch, _Py_CODEUNIT *target)
     }
     else {
         _py_set_opcode(write_curr, NOP);
+        write_curr->op.arg = 0;
         write_curr++;
     }
     _py_set_opcode(write_curr,
@@ -3064,6 +3066,7 @@ _PyTier2_RewriteBackwardJump(_Py_CODEUNIT *jump_backward_lazy, _Py_CODEUNIT *tar
     }
     else {
         _py_set_opcode(write_curr, NOP);
+        write_curr->op.arg = 0;
         write_curr++;
     }
     _py_set_opcode(write_curr, is_backwards_jump

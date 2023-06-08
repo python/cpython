@@ -2642,6 +2642,7 @@
                 }
                 else {
                     if (err < 0) goto pop_1_error;
+                    bb_test = BB_TEST(1, 0);
                 }
             }
             STACK_SHRINK(1);
@@ -2689,6 +2690,7 @@
                 }
                 else {
                     if (err < 0) goto pop_1_error;
+                    bb_test = BB_TEST(1, 0);
                 }
             }
             STACK_SHRINK(1);
@@ -4337,9 +4339,9 @@
                 _Py_CODEUNIT *t2_nextinstr = NULL;
                 _PyBBBranchCache *cache = (_PyBBBranchCache *)next_instr;
                 _Py_CODEUNIT *tier1_fallback = NULL;
-
                 t2_nextinstr = _PyTier2_GenerateNextBB(
                     frame, cache->bb_id_tagged, next_instr - 1,
+                //  v   We generate from the tier1 consequent BB, so offset (oparg) is 0.
                     0, &tier1_fallback, bb_test);
                 if (t2_nextinstr == NULL) {
                     // Fall back to tier 1.
