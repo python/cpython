@@ -368,6 +368,134 @@ _Py_union_args(PyObject *self)
     return ((unionobject *) self)->args;
 }
 
+static PyObject *
+call_typing_func_object(const char *name, PyObject **args, size_t nargs)
+{
+    PyObject *typing = PyImport_ImportModule("typing");
+    if (typing == NULL) {
+        return NULL;
+    }
+    PyObject *func = PyObject_GetAttrString(typing, name);
+    if (func == NULL) {
+        Py_DECREF(typing);
+        return NULL;
+    }
+    PyObject *result = PyObject_Vectorcall(func, args, nargs, NULL);
+    Py_DECREF(func);
+    Py_DECREF(typing);
+    return result;
+}
+
+static PyObject *
+type_check(PyObject *arg, const char *msg)
+{
+    // Calling typing.py here leads to bootstrapping problems
+    if (Py_IsNone(arg)) {
+        return Py_NewRef(Py_TYPE(arg));
+    }
+    // Fast path to avoid calling into typing.py
+    if (is_unionable(arg)) {
+        return Py_NewRef(arg);
+    }
+    PyObject *message_str = PyUnicode_FromString(msg);
+    if (message_str == NULL) {
+        return NULL;
+    }
+    PyObject *args[2] = {arg, message_str};
+    PyObject *result = call_typing_func_object("_type_check", args, 2);
+    Py_DECREF(message_str);
+    return result;
+}
+
+static int
+add_object_to_union_args(PyObject *args_list, PyObject *args_set, PyObject *obj)
+{
+    if (Py_IS_TYPE(obj, &_PyUnion_Type)) {
+        PyObject *args = ((unionobject *) obj)->args;
+        Py_ssize_t size = PyTuple_GET_SIZE(args);
+        for (Py_ssize_t i = 0; i < size; i++) {
+            PyObject *arg = PyTuple_GET_ITEM(args, i);
+            if (add_object_to_union_args(args_list, args_set, arg) < 0) {
+                return -1;
+            }
+        }
+        return 0;
+    }
+    PyObject *type = type_check(obj, "Union[arg, ...]: each arg must be a type.");
+    if (type == NULL) {
+        return -1;
+    }
+    if (PySet_Contains(args_set, type)) {
+        Py_DECREF(type);
+        return 0;
+    }
+    if (PyList_Append(args_list, type) < 0) {
+        Py_DECREF(type);
+        return -1;
+    }
+    if (PySet_Add(args_set, type) < 0) {
+        Py_DECREF(type);
+        return -1;
+    }
+    Py_DECREF(type);
+    return 0;
+}
+
+static PyObject *
+union_class_getitem(PyObject *cls, PyObject *args)
+{
+    PyObject *args_list = PyList_New(0);
+    if (args_list == NULL) {
+        return NULL;
+    }
+    PyObject *args_set = PySet_New(NULL);
+    if (args_set == NULL) {
+        Py_DECREF(args_list);
+        return NULL;
+    }
+    if (!PyTuple_CheckExact(args)) {
+        if (add_object_to_union_args(args_list, args_set, args) < 0) {
+            Py_DECREF(args_list);
+            Py_DECREF(args_set);
+            return NULL;
+        }
+    }
+    else {
+        Py_ssize_t size = PyTuple_GET_SIZE(args);
+        for (Py_ssize_t i = 0; i < size; i++) {
+            PyObject *arg = PyTuple_GET_ITEM(args, i);
+            if (add_object_to_union_args(args_list, args_set, arg) < 0) {
+                Py_DECREF(args_list);
+                Py_DECREF(args_set);
+                return NULL;
+            }
+        }
+    }
+    Py_DECREF(args_set);
+    if (PyList_GET_SIZE(args_list) == 0) {
+        Py_DECREF(args_list);
+        PyErr_SetString(PyExc_TypeError, "Cannot take a Union of no types.");
+        return NULL;
+    }
+    else if (PyList_GET_SIZE(args_list) == 1) {
+        PyObject *result = PyList_GET_ITEM(args_list, 0);
+        Py_INCREF(result);
+        Py_DECREF(args_list);
+        return result;
+    }
+    PyObject *args_tuple = PyList_AsTuple(args_list);
+    Py_DECREF(args_list);
+    if (args_tuple == NULL) {
+        return NULL;
+    }
+    return make_union(args_tuple);
+}
+
+static PyMethodDef union_methods[] = {
+    {"__class_getitem__", union_class_getitem, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {0}
+};
+
 PyTypeObject _PyUnion_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "types.UnionType",
@@ -383,6 +511,7 @@ PyTypeObject _PyUnion_Type = {
     .tp_hash = union_hash,
     .tp_getattro = union_getattro,
     .tp_members = union_members,
+    .tp_methods = union_methods,
     .tp_richcompare = union_richcompare,
     .tp_as_mapping = &union_as_mapping,
     .tp_as_number = &union_as_number,
