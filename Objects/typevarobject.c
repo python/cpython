@@ -618,7 +618,7 @@ Given a ParamSpec object P, P.args is an instance of ParamSpecArgs.\n\
 \n\
 ParamSpecArgs objects have a reference back to their ParamSpec::\n\
 \n\
-    >>> P = ParamSpec("P")\n\
+    >>> P = ParamSpec(\"P\")\n\
     >>> P.args.__origin__ is P\n\
     True\n\
 \n\
@@ -697,7 +697,7 @@ Given a ParamSpec object P, P.kwargs is an instance of ParamSpecKwargs.\n\
 \n\
 ParamSpecKwargs objects have a reference back to their ParamSpec::\n\
 \n\
-    >>> P = ParamSpec("P")\n\
+    >>> P = ParamSpec(\"P\")\n\
     >>> P.kwargs.__origin__ is P\n\
     True\n\
 \n\
@@ -972,7 +972,7 @@ example for annotating a decorator::\n\
 \n\
 Parameter specification variables can be introspected. e.g.::\n\
 \n\
-    >>> P = ParamSpec("P")\n\
+    >>> P = ParamSpec(\"P\")\n\
     >>> P.__name__\n\
     'P'\n\
 \n\
