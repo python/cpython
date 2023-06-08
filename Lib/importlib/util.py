@@ -148,7 +148,7 @@ class _incompatible_extension_module_restrictions:
     support for mulitple interpreters (or per-interpreter GIL).
     """
 
-    def __init__(self, disable_check):
+    def __init__(self, *, disable_check):
         self.disable_check = bool(disable_check)
 
     def __enter__(self):
