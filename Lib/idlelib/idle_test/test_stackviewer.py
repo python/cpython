@@ -30,7 +30,7 @@ class StackBrowserTest(unittest.TestCase):
         try:
             abc
         except NameError as exc:
-              sb = stackviewer.StackBrowser(self.root, exc)
+            sb = stackviewer.StackBrowser(self.root, exc)
         isi = self.assertIsInstance
         isi(stackviewer.sc, ScrolledCanvas)
         isi(stackviewer.item, stackviewer.StackTreeItem)
