@@ -1300,30 +1300,30 @@ These can be used as types in annotations using ``[]``, each having a unique syn
      where ``T1``, ``T2``, etc. are :class:`TypeVars <TypeVar>`. This would be
      invalid: only one type should be passed to Annotated.
 
-   *  By default, :func:`get_type_hints` strips the metadata from annotations.
-      Pass ``include_extras=True`` to have the metadata preserved:
+   * By default, :func:`get_type_hints` strips the metadata from annotations.
+     Pass ``include_extras=True`` to have the metadata preserved:
 
-      .. doctest::
+     .. doctest::
 
-         >>> from typing import Annotated, get_type_hints
-         >>> def func(x: Annotated[int, "metadata"]) -> None: pass
-         ...
-         >>> get_type_hints(func)
-         {'x': <class 'int'>, 'return': <class 'NoneType'>}
-         >>> get_type_hints(func, include_extras=True)
-         {'x': typing.Annotated[int, 'metadata'], 'return': <class 'NoneType'>}
+        >>> from typing import Annotated, get_type_hints
+        >>> def func(x: Annotated[int, "metadata"]) -> None: pass
+        ...
+        >>> get_type_hints(func)
+        {'x': <class 'int'>, 'return': <class 'NoneType'>}
+        >>> get_type_hints(func, include_extras=True)
+        {'x': typing.Annotated[int, 'metadata'], 'return': <class 'NoneType'>}
 
-   *  At runtime, the metadata associated with an ``Annotated`` type can be
-      retrieved via the :attr:`!__metadata__` attribute:
+   * At runtime, the metadata associated with an ``Annotated`` type can be
+     retrieved via the :attr:`!__metadata__` attribute:
 
-      .. doctest::
+     .. doctest::
 
-         >>> from typing import Annotated
-         >>> X = Annotated[int, "very", "important", "metadata"]
-         >>> X
-         typing.Annotated[int, 'very', 'important', 'metadata']
-         >>> X.__metadata__
-         ('very', 'important', 'metadata')
+        >>> from typing import Annotated
+        >>> X = Annotated[int, "very", "important", "metadata"]
+        >>> X
+        typing.Annotated[int, 'very', 'important', 'metadata']
+        >>> X.__metadata__
+        ('very', 'important', 'metadata')
 
    .. seealso::
 
