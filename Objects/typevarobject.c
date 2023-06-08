@@ -443,8 +443,8 @@ static PyMethodDef typevar_methods[] = {
 PyDoc_STRVAR(typevar_doc,
 "Type variable.\n\
 \n\
-The preferred way to construct a type variable is via the dedicated syntax\n\
-for generic functions, classes, and type aliases::\n\
+The preferred way to construct a type variable is via the dedicated\n\
+syntax for generic functions, classes, and type aliases::\n\
 \n\
     class Sequence[T]:  # T is a TypeVar\n\
         ...\n\
@@ -452,10 +452,12 @@ for generic functions, classes, and type aliases::\n\
 This syntax can also be used to create bound and constrained type\n\
 variables::\n\
 \n\
-    class StrSequence[S: str]:  # S is a TypeVar bound to str\n\
+    # S is a TypeVar bound to str\n\
+    class StrSequence[S: str]:\n\
         ...\n\
 \n\
-    class StrOrBytesSequence[A: (str, bytes)]:  # A is a TypeVar constrained to str or bytes\n\
+    # A is a TypeVar constrained to str or bytes\n\
+    class StrOrBytesSequence[A: (str, bytes)]:\n\
         ...\n\
 \n\
 However, if desired, reusable type variables can also be constructed\n\
@@ -469,12 +471,13 @@ Type variables exist primarily for the benefit of static type\n\
 checkers.  They serve as the parameters for generic types as well\n\
 as for generic function and type alias definitions.\n\
 \n\
-The variance of type variables is inferred by type checkers when they are created\n\
-through the type parameter syntax and when ``infer_variance=True`` is passed.\n\
-Manually created type variables may be explicitly marked covariant or\n\
-contravariant by passing ``covariant=True`` or ``contravariant=True``.\n\
-By default, manually created type variables are invariant. See PEP 484\n\
-and PEP 695 for more details.\n\
+The variance of type variables is inferred by type checkers when they\n\
+are created through the type parameter syntax and when\n\
+``infer_variance=True`` is passed. Manually created type variables may\n\
+be explicitly marked covariant or contravariant by passing\n\
+``covariant=True`` or ``contravariant=True``. By default, manually\n\
+created type variables are invariant. See PEP 484 and PEP 695 for more\n\
+details.\n\
 ");
 
 static PyType_Slot typevar_slots[] = {
@@ -622,8 +625,8 @@ ParamSpecArgs objects have a reference back to their ParamSpec::\n\
     >>> P.args.__origin__ is P\n\
     True\n\
 \n\
-This type is meant for runtime introspection and has no special meaning to\n\
-static type checkers.\n\
+This type is meant for runtime introspection and has no special meaning\n\
+to static type checkers.\n\
 ");
 
 static PyType_Slot paramspecargs_slots[] = {
@@ -701,8 +704,8 @@ ParamSpecKwargs objects have a reference back to their ParamSpec::\n\
     >>> P.kwargs.__origin__ is P\n\
     True\n\
 \n\
-This type is meant for runtime introspection and has no special meaning to\n\
-static type checkers.\n\
+This type is meant for runtime introspection and has no special meaning\n\
+to static type checkers.\n\
 ");
 
 static PyType_Slot paramspeckwargs_slots[] = {
@@ -939,9 +942,9 @@ static PyMethodDef paramspec_methods[] = {
 PyDoc_STRVAR(paramspec_doc,
 "Parameter specification variable.\n\
 \n\
-The preferred way to construct a parameter specification is via the dedicated syntax\n\
-for generic functions, classes, and type aliases, where\n\
-the use of '**' creates a parameter specification::\n\
+The preferred way to construct a parameter specification is via the\n\
+dedicated syntax for generic functions, classes, and type aliases,\n\
+where the use of '**' creates a parameter specification::\n\
 \n\
     type IntFunc[**P] = Callable[P, int]\n\
 \n\
@@ -950,13 +953,15 @@ can also be created as follows::\n\
 \n\
     P = ParamSpec('P')\n\
 \n\
-Parameter specification variables exist primarily for the benefit of static\n\
-type checkers.  They are used to forward the parameter types of one\n\
-callable to another callable, a pattern commonly found in higher order\n\
-functions and decorators.  They are only valid when used in ``Concatenate``,\n\
-or as the first argument to ``Callable``, or as parameters for user-defined\n\
-Generics.  See class Generic for more information on generic types.  An\n\
-example for annotating a decorator::\n\
+Parameter specification variables exist primarily for the benefit of\n\
+static type checkers.  They are used to forward the parameter types of\n\
+one callable to another callable, a pattern commonly found in\n\
+higher-order functions and decorators.  They are only valid when used\n\
+in ``Concatenate``, or as the first argument to ``Callable``, or as\n\
+parameters for user-defined Generics. See class Generic for more\n\
+information on generic types.\n\
+\n\
+An example for annotating a decorator::\n\
 \n\
     def add_logging[**P, T](f: Callable[P, T]) -> Callable[P, T]:\n\
         '''A type-safe decorator to add logging to a function.'''\n\
@@ -976,8 +981,8 @@ Parameter specification variables can be introspected. e.g.::\n\
     >>> P.__name__\n\
     'P'\n\
 \n\
-Note that only parameter specification variables defined in global scope can\n\
-be pickled.\n\
+Note that only parameter specification variables defined in the global\n\
+scope can be pickled.\n\
 ");
 
 static PyType_Slot paramspec_slots[] = {
@@ -1173,9 +1178,9 @@ PyDoc_STRVAR(typevartuple_doc,
 "Type variable tuple. A specialized form of type variable that enables\n\
 variadic generics.\n\
 \n\
-The preferred way to construct a type variable tuple is via the dedicated syntax\n\
-for generic functions, classes, and type aliases, where a single\n\
-'*' indicates a type variable tuple::\n\
+The preferred way to construct a type variable tuple is via the\n\
+dedicated syntax for generic functions, classes, and type aliases,\n\
+where a single '*' indicates a type variable tuple::\n\
 \n\
     def move_first_element_to_last[T, *Ts](tup: tuple[T, *Ts]) -> tuple[*Ts, T]:\n\
         return (*tup[1:], tup[0])\n\
@@ -1200,7 +1205,8 @@ arguments::\n\
 \n\
 For more details, see PEP 646.\n\
 \n\
-Note that only TypeVarTuples defined in global scope can be pickled.\n\
+Note that only TypeVarTuples defined in the global scope can be\n\
+pickled.\n\
 ");
 
 PyType_Slot typevartuple_slots[] = {
@@ -1449,10 +1455,10 @@ Type aliases are created through the type statement::\n\
 In this example, Alias and int will be treated equivalently by static\n\
 type checkers.\n\
 \n\
-At runtime, Alias is an instance of TypeAliasType. The __name__ attribute\n\
-holds the name of the type alias. The value of the type\n\
-alias is stored in the __value__ attribute. It is evaluated lazily, so\n\
-the value is computed only if the attribute is accessed.\n\
+At runtime, Alias is an instance of TypeAliasType. The __name__\n\
+attribute holds the name of the type alias. The value of the type alias\n\
+is stored in the __value__ attribute. It is evaluated lazily, so the\n\
+value is computed only if the attribute is accessed.\n\
 \n\
 Type aliases can also be generic::\n\
 \n\
@@ -1508,16 +1514,16 @@ _Py_make_typealias(PyThreadState* unused, PyObject *args)
 PyDoc_STRVAR(generic_doc,
 "Abstract base class for generic types.\n\
 \n\
-On Python 3.12 and newer, generic classes implicitly inherit from Generic when\n\
-they declare a parameter list after the class's name::\n\
+On Python 3.12 and newer, generic classes implicitly inherit from\n\
+Generic when they declare a parameter list after the class's name::\n\
 \n\
     class Mapping[KT, VT]:\n\
         def __getitem__(self, key: KT) -> VT:\n\
             ...\n\
         # Etc.\n\
 \n\
-On older versions of Python, however, generic classes have to explicitly\n\
-inherit from Generic.\n\
+On older versions of Python, however, generic classes have to\n\
+explicitly inherit from Generic.\n\
 \n\
 After a class has been declared to be generic, it can then be used as\n\
 follows::\n\
@@ -1532,9 +1538,9 @@ follows::\n\
 PyDoc_STRVAR(generic_class_getitem_doc,
 "Parameterizes a generic class.\n\
 \n\
-At least, parameterizing a generic class is the *main* thing this method\n\
-does. For example, for some generic class `Foo`, this is called when we\n\
-do `Foo[int]` - there, with `cls=Foo` and `params=int`.\n\
+At least, parameterizing a generic class is the *main* thing this\n\
+method does. For example, for some generic class `Foo`, this is called\n\
+when we do `Foo[int]` - there, with `cls=Foo` and `params=int`.\n\
 \n\
 However, note that this method is also called when defining generic\n\
 classes in the first place with `class Foo[T]: ...`.\n\
