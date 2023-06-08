@@ -1,1 +1,1 @@
-Fix loading pickled data for :class:`enum.Flag` with specific values.
+Revert pickling method from by-name back to by-value.
