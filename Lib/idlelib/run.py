@@ -622,7 +622,7 @@ class Executive:
 
     def stackviewer(self, flist_oid=None):
         if self.user_exc_info:
-            typ, val, tb = self.user_exc_info
+            _, exc, tb = self.user_exc_info
         else:
             return None
         flist = None
@@ -630,9 +630,8 @@ class Executive:
             flist = self.rpchandler.get_remote_proxy(flist_oid)
         while tb and tb.tb_frame.f_globals["__name__"] in ["rpc", "run"]:
             tb = tb.tb_next
-        sys.last_type = typ
-        sys.last_value = val
-        item = stackviewer.StackTreeItem(flist, tb)
+        exc.__traceback__ = tb
+        item = stackviewer.StackTreeItem(exc, flist)
         return debugobj_r.remote_object_tree_item(item)
 
 
