@@ -507,14 +507,13 @@ with TestInfo("tier 2 BB_TEST_POP_IF_FALSE flag setting"):
     def f(a):
         b = 1
         if a: b = A()
-        print(b)
         return b+b
 
 
     for _ in range(63): f(0)
-
     assert f(1) == "Hewwo!"
-
+    assert f(1) == "Hewwo!"
+    assert f(0) == 2
     assert f(0) == 2
 
     # As long as it doesn't crash, everything's good.
