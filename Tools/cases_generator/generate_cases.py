@@ -1049,7 +1049,7 @@ class Analyzer:
             self.out.emit("#endif")
 
     def write_pseudo_instrs(self) -> None:
-        """Write the IS_PSEUDO_OPCODE macro"""
+        """Write the IS_PSEUDO_INSTR macro"""
         self.out.emit("\n\n#define IS_PSEUDO_INSTR(OP)  \\")
         for op in self.pseudos:
             self.out.emit(f"    ((OP) == {op}) || \\")
