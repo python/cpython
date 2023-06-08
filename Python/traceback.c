@@ -675,16 +675,12 @@ extract_anchors_from_line(PyObject *filename, PyObject *line,
 
     PyCompilerFlags flags = _PyCompilerFlags_INIT;
 
-    _PyASTOptimizeState state;
-    state.optimize = _Py_GetConfig()->optimization_level;
-    state.ff_features = 0;
-
     mod_ty module = _PyParser_ASTFromString(segment_str, filename, Py_file_input,
                                             &flags, arena);
     if (!module) {
         goto done;
     }
-    if (!_PyAST_Optimize(module, arena, &state)) {
+    if (!_PyAST_Optimize(module, arena, _Py_GetConfig()->optimization_level, 0)) {
         goto done;
     }
 

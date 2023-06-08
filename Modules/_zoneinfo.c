@@ -694,14 +694,19 @@ zoneinfo_fromutc(PyObject *obj_self, PyObject *dt)
         }
         else {
             PyObject *replace = PyObject_GetAttrString(tmp, "replace");
-            PyObject *args = PyTuple_New(0);
-            PyObject *kwargs = PyDict_New();
-
             Py_DECREF(tmp);
-            if (args == NULL || kwargs == NULL || replace == NULL) {
-                Py_XDECREF(args);
-                Py_XDECREF(kwargs);
-                Py_XDECREF(replace);
+            if (replace == NULL) {
+                return NULL;
+            }
+            PyObject *args = PyTuple_New(0);
+            if (args == NULL) {
+                Py_DECREF(replace);
+                return NULL;
+            }
+            PyObject *kwargs = PyDict_New();
+            if (kwargs == NULL) {
+                Py_DECREF(replace);
+                Py_DECREF(args);
                 return NULL;
             }
 
@@ -1709,11 +1714,11 @@ static Py_ssize_t
 parse_abbr(const char *const p, PyObject **abbr)
 {
     const char *ptr = p;
-    char buff = *ptr;
     const char *str_start;
     const char *str_end;
 
     if (*ptr == '<') {
+        char buff;
         ptr++;
         str_start = ptr;
         while ((buff = *ptr) != '>') {
@@ -2381,7 +2386,12 @@ get_local_timestamp(PyObject *dt, int64_t *local_ts)
 /////
 // Functions for cache handling
 
-/* Constructor for StrongCacheNode */
+/* Constructor for StrongCacheNode
+ *
+ * This function doesn't set MemoryError if PyMem_Malloc fails,
+ * as the cache intentionally doesn't propagate exceptions
+ * and fails silently if error occurs.
+ */
 static StrongCacheNode *
 strong_cache_node_new(PyObject *key, PyObject *zone)
 {
@@ -2572,6 +2582,9 @@ update_strong_cache(zoneinfo_state *state, const PyTypeObject *const type,
     }
 
     StrongCacheNode *new_node = strong_cache_node_new(key, zone);
+    if (new_node == NULL) {
+        return;
+    }
     StrongCacheNode **root = &(state->ZONEINFO_STRONG_CACHE);
     move_strong_cache_node_to_front(state, root, new_node);
 

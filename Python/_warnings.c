@@ -198,7 +198,7 @@ get_warnings_attr(PyInterpreterState *interp, PyObject *attr, int try_import)
     PyObject *warnings_module, *obj;
 
     /* don't try to import after the start of the Python finallization */
-    if (try_import && !_Py_IsFinalizing()) {
+    if (try_import && !_Py_IsInterpreterFinalizing(interp)) {
         warnings_module = PyImport_Import(&_Py_ID(warnings));
         if (warnings_module == NULL) {
             /* Fallback to the C implementation if we cannot get
@@ -532,9 +532,6 @@ show_warning(PyThreadState *tstate, PyObject *filename, int lineno,
         Py_ssize_t i, len;
         Py_UCS4 ch;
         PyObject *truncated;
-
-        if (PyUnicode_READY(sourceline) < 1)
-            goto error;
 
         kind = PyUnicode_KIND(sourceline);
         data = PyUnicode_DATA(sourceline);
@@ -1301,25 +1298,29 @@ PyErr_WarnExplicit(PyObject *category, const char *text,
                    const char *module_str, PyObject *registry)
 {
     PyObject *message = PyUnicode_FromString(text);
+    if (message == NULL) {
+        return -1;
+    }
     PyObject *filename = PyUnicode_DecodeFSDefault(filename_str);
+    if (filename == NULL) {
+        Py_DECREF(message);
+        return -1;
+    }
     PyObject *module = NULL;
-    int ret = -1;
-
-    if (message == NULL || filename == NULL)
-        goto exit;
     if (module_str != NULL) {
         module = PyUnicode_FromString(module_str);
-        if (module == NULL)
-            goto exit;
+        if (module == NULL) {
+            Py_DECREF(filename);
+            Py_DECREF(message);
+            return -1;
+        }
     }
 
-    ret = PyErr_WarnExplicitObject(category, message, filename, lineno,
-                                   module, registry);
-
- exit:
-    Py_XDECREF(message);
+    int ret = PyErr_WarnExplicitObject(category, message, filename, lineno,
+                                       module, registry);
     Py_XDECREF(module);
-    Py_XDECREF(filename);
+    Py_DECREF(filename);
+    Py_DECREF(message);
     return ret;
 }
 
@@ -1364,6 +1365,20 @@ exit:
     Py_XDECREF(filename);
     return ret;
 }
+
+void
+_PyErr_WarnUnawaitedAgenMethod(PyAsyncGenObject *agen, PyObject *method)
+{
+    PyObject *exc = PyErr_GetRaisedException();
+    if (_PyErr_WarnFormat((PyObject *)agen, PyExc_RuntimeWarning, 1,
+                          "coroutine method %R of %R was never awaited",
+                          method, agen->ag_qualname) < 0)
+    {
+        PyErr_WriteUnraisable((PyObject *)agen);
+    }
+    PyErr_SetRaisedException(exc);
+}
+
 
 void
 _PyErr_WarnUnawaitedCoroutine(PyObject *coro)

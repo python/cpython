@@ -348,7 +348,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     break;
                 case JUMP_BACKWARD:
                 case JUMP_BACKWARD_NO_INTERRUPT:
-                    j = i + 1 - oparg;
+                    j = next_i - oparg;
                     assert(j >= 0);
                     assert(j < len);
                     if (stacks[j] == UNINITIALIZED && j < i) {
@@ -832,7 +832,6 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         start_stack = pop_value(start_stack);
     }
     /* Finally set the new lasti and return OK. */
-    f->f_last_traced_line = new_lineno;
     f->f_lineno = 0;
     f->f_frame->prev_instr = _PyCode_CODE(code) + best_addr;
     return 0;
@@ -855,7 +854,6 @@ frame_settrace(PyFrameObject *f, PyObject* v, void *closure)
     }
     if (v != f->f_trace) {
         Py_XSETREF(f->f_trace, Py_XNewRef(v));
-        f->f_last_traced_line = -1;
     }
     return 0;
 }
@@ -1057,7 +1055,6 @@ _PyFrame_New_NoTrack(PyCodeObject *code)
     f->f_trace_opcodes = 0;
     f->f_fast_as_locals = 0;
     f->f_lineno = 0;
-    f->f_last_traced_line = -1;
     return f;
 }
 
@@ -1225,6 +1222,10 @@ _PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame)
         }
 
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+        _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
+        if (kind & CO_FAST_HIDDEN) {
+            continue;
+        }
         if (value == NULL) {
             if (PyObject_DelItem(locals, name) != 0) {
                 if (PyErr_ExceptionMatches(PyExc_KeyError)) {

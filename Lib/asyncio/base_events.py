@@ -443,7 +443,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             else:
                 task = self._task_factory(self, coro, context=context)
 
-            tasks._set_task_name(task, name)
+            task.set_name(name)
 
         return task
 

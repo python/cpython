@@ -5,7 +5,6 @@ import os
 import pathlib
 import textwrap
 import unittest
-import warnings
 
 from test import support
 from test.support import os_helper
@@ -907,9 +906,6 @@ class ConfigParserTestCase(BasicTestCase, unittest.TestCase):
         if self.interpolation == configparser._UNSET:
             self.assertEqual(e.args, ("bar11", "Foo",
                 "something %(with11)s lots of interpolation (11 steps)"))
-        elif isinstance(self.interpolation, configparser.LegacyInterpolation):
-            self.assertEqual(e.args, ("bar11", "Foo",
-                "something %(with11)s lots of interpolation (11 steps)"))
 
     def test_interpolation_missing_value(self):
         cf = self.get_interpolation_config()
@@ -919,9 +915,6 @@ class ConfigParserTestCase(BasicTestCase, unittest.TestCase):
         self.assertEqual(e.section, "Interpolation Error")
         self.assertEqual(e.option, "name")
         if self.interpolation == configparser._UNSET:
-            self.assertEqual(e.args, ('name', 'Interpolation Error',
-                                    '%(reference)s', 'reference'))
-        elif isinstance(self.interpolation, configparser.LegacyInterpolation):
             self.assertEqual(e.args, ('name', 'Interpolation Error',
                                     '%(reference)s', 'reference'))
 
@@ -942,9 +935,6 @@ class ConfigParserTestCase(BasicTestCase, unittest.TestCase):
         self.assertEqual(cf.get("section", "ok"), "xxx/%s")
         if self.interpolation == configparser._UNSET:
             self.assertEqual(cf.get("section", "not_ok"), "xxx/xxx/%s")
-        elif isinstance(self.interpolation, configparser.LegacyInterpolation):
-            with self.assertRaises(TypeError):
-                cf.get("section", "not_ok")
 
     def test_set_malformatted_interpolation(self):
         cf = self.fromstring("[sect]\n"
@@ -1024,31 +1014,6 @@ class ConfigParserTestCaseNoInterpolation(BasicTestCase, unittest.TestCase):
         cf = CustomConfigParser()
         cf.read_string(self.ini)
         self.assertMatchesIni(cf)
-
-
-class ConfigParserTestCaseLegacyInterpolation(ConfigParserTestCase):
-    config_class = configparser.ConfigParser
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", DeprecationWarning)
-        interpolation = configparser.LegacyInterpolation()
-
-    def test_set_malformatted_interpolation(self):
-        cf = self.fromstring("[sect]\n"
-                             "option1{eq}foo\n".format(eq=self.delimiters[0]))
-
-        self.assertEqual(cf.get('sect', "option1"), "foo")
-
-        cf.set("sect", "option1", "%foo")
-        self.assertEqual(cf.get('sect', "option1"), "%foo")
-        cf.set("sect", "option1", "foo%")
-        self.assertEqual(cf.get('sect', "option1"), "foo%")
-        cf.set("sect", "option1", "f%oo")
-        self.assertEqual(cf.get('sect', "option1"), "f%oo")
-
-        # bug #5741: double percents are *not* malformed
-        cf.set("sect", "option2", "foo%%bar")
-        self.assertEqual(cf.get("sect", "option2"), "foo%%bar")
-
 
 class ConfigParserTestCaseInvalidInterpolationType(unittest.TestCase):
     def test_error_on_wrong_type_for_interpolation(self):
@@ -1635,14 +1600,6 @@ class CoverageOneHundredTestCase(unittest.TestCase):
             parser['section']['invalid_reference']
         self.assertEqual(str(cm.exception), "bad interpolation variable "
                                             "reference '%(()'")
-
-    def test_legacyinterpolation_deprecation(self):
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always", DeprecationWarning)
-            configparser.LegacyInterpolation()
-        self.assertGreaterEqual(len(w), 1)
-        for warning in w:
-            self.assertIs(warning.category, DeprecationWarning)
 
     def test_sectionproxy_repr(self):
         parser = configparser.ConfigParser()

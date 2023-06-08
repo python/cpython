@@ -1,7 +1,7 @@
 from test.support import (gc_collect, bigmemtest, _2G,
                           cpython_only, captured_stdout,
                           check_disallow_instantiation, is_emscripten, is_wasi,
-                          SHORT_TIMEOUT)
+                          warnings_helper, SHORT_TIMEOUT)
 import locale
 import re
 import string
@@ -1522,10 +1522,11 @@ class ReTests(unittest.TestCase):
         for x in not_decimal_digits:
             self.assertIsNone(re.match(r'^\d$', x))
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-80480 array('u')
     def test_empty_array(self):
         # SF buf 1647541
         import array
-        for typecode in 'bBuhHiIlLfd':
+        for typecode in 'bBhuwHiIlLfd':
             a = array.array(typecode)
             self.assertIsNone(re.compile(b"bla").match(a))
             self.assertEqual(re.compile(b"").match(a).groups(), ())

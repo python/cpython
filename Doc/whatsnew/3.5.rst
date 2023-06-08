@@ -1252,7 +1252,7 @@ Oberkirch in :issue:`21800`.)
 imghdr
 ------
 
-The :func:`~imghdr.what` function now recognizes the
+The :func:`~!imghdr.what` function now recognizes the
 `OpenEXR <https://www.openexr.com>`_ format
 (contributed by Martin Vignali and Claudiu Popa in :issue:`20295`),
 and the `WebP <https://en.wikipedia.org/wiki/WebP>`_ format
@@ -2095,7 +2095,7 @@ accepts ``"x"`` to request exclusive creation.
 Other module-level changes
 ==========================
 
-Many functions in the :mod:`mmap`, :mod:`ossaudiodev`, :mod:`socket`,
+Many functions in the :mod:`mmap`, :mod:`!ossaudiodev`, :mod:`socket`,
 :mod:`ssl`, and :mod:`codecs` modules now accept writable
 :term:`bytes-like objects <bytes-like object>`.
 (Contributed by Serhiy Storchaka in :issue:`23001`.)

@@ -426,6 +426,9 @@ Sleeping
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
 
+   .. versionchanged:: 3.13
+      Raises :exc:`ValueError` if *delay* is :data:`~math.nan`.
+
 
 Running Tasks Concurrently
 ==========================
@@ -526,6 +529,8 @@ Running Tasks Concurrently
       or not all positional arguments are Future-like objects
       and there is no running event loop.
 
+
+.. _eager-task-factory:
 
 Eager Task Factory
 ==================
@@ -1174,7 +1179,16 @@ Task Object
 
       Return the coroutine object wrapped by the :class:`Task`.
 
+      .. note::
+
+         This will return ``None`` for Tasks which have already
+         completed eagerly. See the :ref:`Eager Task Factory <eager-task-factory>`.
+
       .. versionadded:: 3.8
+
+      .. versionchanged:: 3.12
+
+         Newly added eager task execution means result may be ``None``.
 
    .. method:: get_context()
 
