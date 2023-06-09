@@ -122,12 +122,6 @@ _PyPegen_join_names_with_dot(Parser *p, expr_ty first_name, expr_ty second_name)
     PyObject *first_identifier = first_name->v.Name.id;
     PyObject *second_identifier = second_name->v.Name.id;
 
-    if (PyUnicode_READY(first_identifier) == -1) {
-        return NULL;
-    }
-    if (PyUnicode_READY(second_identifier) == -1) {
-        return NULL;
-    }
     const char *first_str = PyUnicode_AsUTF8(first_identifier);
     if (!first_str) {
         return NULL;
@@ -1354,6 +1348,25 @@ _PyPegen_joined_str(Parser *p, Token* a, asdl_expr_seq* raw_expressions, Token*b
     return _PyAST_JoinedStr(resized_exprs, a->lineno, a->col_offset,
                             b->end_lineno, b->end_col_offset,
                             p->arena);
+}
+
+expr_ty _PyPegen_decoded_constant_from_token(Parser* p, Token* tok) {
+    Py_ssize_t bsize;
+    char* bstr;
+    if (PyBytes_AsStringAndSize(tok->bytes, &bstr, &bsize) == -1) {
+        return NULL;
+    }
+    PyObject* str = _PyPegen_decode_string(p, 0, bstr, bsize, tok);
+    if (str == NULL) {
+        return NULL;
+    }
+    if (_PyArena_AddPyObject(p->arena, str) < 0) {
+        Py_DECREF(str);
+        return NULL;
+    }
+    return _PyAST_Constant(str, NULL, tok->lineno, tok->col_offset,
+                           tok->end_lineno, tok->end_col_offset,
+                           p->arena);
 }
 
 expr_ty _PyPegen_constant_from_token(Parser* p, Token* tok) {

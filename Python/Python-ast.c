@@ -5760,10 +5760,12 @@ obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, PyArena* arena)
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from Module");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -5796,10 +5798,12 @@ obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, PyArena* arena)
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"type_ignores\" missing from Module");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -5844,10 +5848,12 @@ obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, PyArena* arena)
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from Interactive");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -5922,10 +5928,12 @@ obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, PyArena* arena)
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"argtypes\" missing from FunctionType");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -6119,10 +6127,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from FunctionDef");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -6155,10 +6165,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"decorator_list\" missing from FunctionDef");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -6225,10 +6237,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"type_params\" missing from FunctionDef");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -6316,10 +6330,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from AsyncFunctionDef");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -6352,10 +6368,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"decorator_list\" missing from AsyncFunctionDef");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -6422,10 +6440,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"type_params\" missing from AsyncFunctionDef");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -6495,10 +6515,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"bases\" missing from ClassDef");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -6531,10 +6553,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"keywords\" missing from ClassDef");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -6567,10 +6591,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from ClassDef");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -6603,10 +6629,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"decorator_list\" missing from ClassDef");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -6639,10 +6667,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"type_params\" missing from ClassDef");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -6719,10 +6749,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"targets\" missing from Delete");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -6770,10 +6802,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"targets\" missing from Assign");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -6872,10 +6906,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"type_params\" missing from TypeAlias");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -7126,10 +7162,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from For");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -7162,10 +7200,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"orelse\" missing from For");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -7266,10 +7306,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from AsyncFor");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -7302,10 +7344,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"orelse\" missing from AsyncFor");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -7388,10 +7432,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from While");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -7424,10 +7470,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"orelse\" missing from While");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -7492,10 +7540,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from If");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -7528,10 +7578,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"orelse\" missing from If");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -7579,10 +7631,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"items\" missing from With");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -7615,10 +7669,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from With");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -7683,10 +7739,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"items\" missing from AsyncWith");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -7719,10 +7777,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from AsyncWith");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -7803,10 +7863,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"cases\" missing from Match");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -7903,10 +7965,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from Try");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -7939,10 +8003,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"handlers\" missing from Try");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -7975,10 +8041,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"orelse\" missing from Try");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -8011,10 +8079,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"finalbody\" missing from Try");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -8063,10 +8133,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from TryStar");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -8099,10 +8171,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"handlers\" missing from TryStar");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -8135,10 +8209,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"orelse\" missing from TryStar");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -8171,10 +8247,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"finalbody\" missing from TryStar");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -8268,10 +8346,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"names\" missing from Import");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -8336,10 +8416,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"names\" missing from ImportFrom");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -8402,10 +8484,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"names\" missing from Global");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -8451,10 +8535,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"names\" missing from Nonlocal");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -8676,10 +8762,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"values\" missing from BoolOp");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -9002,10 +9090,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"keys\" missing from Dict");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -9038,10 +9128,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"values\" missing from Dict");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -9087,10 +9179,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"elts\" missing from Set");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -9154,10 +9248,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"generators\" missing from ListComp");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -9221,10 +9317,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"generators\" missing from SetComp");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -9306,10 +9404,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"generators\" missing from DictComp");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -9373,10 +9473,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"generators\" missing from GeneratorExp");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -9531,10 +9633,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"ops\" missing from Compare");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -9567,10 +9671,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"comparators\" missing from Compare");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -9635,10 +9741,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"args\" missing from Call");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -9671,10 +9779,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"keywords\" missing from Call");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -9787,10 +9897,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"values\" missing from JoinedStr");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -10113,10 +10225,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"elts\" missing from List");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -10180,10 +10294,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"elts\" missing from Tuple");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -10666,10 +10782,12 @@ obj2ast_comprehension(struct ast_state *state, PyObject* obj, comprehension_ty*
         return 1;
     }
     if (tmp == NULL) {
-        PyErr_SetString(PyExc_TypeError, "required field \"ifs\" missing from comprehension");
-        return 1;
+        tmp = PyList_New(0);
+        if (tmp == NULL) {
+            return 1;
+        }
     }
-    else {
+    {
         int res;
         Py_ssize_t len;
         Py_ssize_t i;
@@ -10855,10 +10973,12 @@ obj2ast_excepthandler(struct ast_state *state, PyObject* obj, excepthandler_ty*
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from ExceptHandler");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -10916,10 +11036,12 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
         return 1;
     }
     if (tmp == NULL) {
-        PyErr_SetString(PyExc_TypeError, "required field \"posonlyargs\" missing from arguments");
-        return 1;
+        tmp = PyList_New(0);
+        if (tmp == NULL) {
+            return 1;
+        }
     }
-    else {
+    {
         int res;
         Py_ssize_t len;
         Py_ssize_t i;
@@ -10952,10 +11074,12 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
         return 1;
     }
     if (tmp == NULL) {
-        PyErr_SetString(PyExc_TypeError, "required field \"args\" missing from arguments");
-        return 1;
+        tmp = PyList_New(0);
+        if (tmp == NULL) {
+            return 1;
+        }
     }
-    else {
+    {
         int res;
         Py_ssize_t len;
         Py_ssize_t i;
@@ -11005,10 +11129,12 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
         return 1;
     }
     if (tmp == NULL) {
-        PyErr_SetString(PyExc_TypeError, "required field \"kwonlyargs\" missing from arguments");
-        return 1;
+        tmp = PyList_New(0);
+        if (tmp == NULL) {
+            return 1;
+        }
     }
-    else {
+    {
         int res;
         Py_ssize_t len;
         Py_ssize_t i;
@@ -11041,10 +11167,12 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
         return 1;
     }
     if (tmp == NULL) {
-        PyErr_SetString(PyExc_TypeError, "required field \"kw_defaults\" missing from arguments");
-        return 1;
+        tmp = PyList_New(0);
+        if (tmp == NULL) {
+            return 1;
+        }
     }
-    else {
+    {
         int res;
         Py_ssize_t len;
         Py_ssize_t i;
@@ -11094,10 +11222,12 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
         return 1;
     }
     if (tmp == NULL) {
-        PyErr_SetString(PyExc_TypeError, "required field \"defaults\" missing from arguments");
-        return 1;
+        tmp = PyList_New(0);
+        if (tmp == NULL) {
+            return 1;
+        }
     }
-    else {
+    {
         int res;
         Py_ssize_t len;
         Py_ssize_t i;
@@ -11613,10 +11743,12 @@ obj2ast_match_case(struct ast_state *state, PyObject* obj, match_case_ty* out,
         return 1;
     }
     if (tmp == NULL) {
-        PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from match_case");
-        return 1;
+        tmp = PyList_New(0);
+        if (tmp == NULL) {
+            return 1;
+        }
     }
-    else {
+    {
         int res;
         Py_ssize_t len;
         Py_ssize_t i;
@@ -11809,10 +11941,12 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"patterns\" missing from MatchSequence");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -11860,10 +11994,12 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"keys\" missing from MatchMapping");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -11896,10 +12032,12 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"patterns\" missing from MatchMapping");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -11982,10 +12120,12 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"patterns\" missing from MatchClass");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -12018,10 +12158,12 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"kwd_attrs\" missing from MatchClass");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -12054,10 +12196,12 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"kwd_patterns\" missing from MatchClass");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;
@@ -12182,10 +12326,12 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"patterns\" missing from MatchOr");
-            return 1;
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return 1;
+            }
         }
-        else {
+        {
             int res;
             Py_ssize_t len;
             Py_ssize_t i;

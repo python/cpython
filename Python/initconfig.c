@@ -514,94 +514,6 @@ _PyWideStringList_AsList(const PyWideStringList *list)
 }
 
 
-/* --- Py_SetStandardStreamEncoding() ----------------------------- */
-
-/* Helper to allow an embedding application to override the normal
- * mechanism that attempts to figure out an appropriate IO encoding
- */
-
-static char *_Py_StandardStreamEncoding = NULL;
-static char *_Py_StandardStreamErrors = NULL;
-
-int
-Py_SetStandardStreamEncoding(const char *encoding, const char *errors)
-{
-    if (Py_IsInitialized()) {
-        /* This is too late to have any effect */
-        return -1;
-    }
-
-    int res = 0;
-
-    /* Py_SetStandardStreamEncoding() can be called before Py_Initialize(),
-       but Py_Initialize() can change the allocator. Use a known allocator
-       to be able to release the memory later. */
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
-    /* Can't call PyErr_NoMemory() on errors, as Python hasn't been
-     * initialised yet.
-     *
-     * However, the raw memory allocators are initialised appropriately
-     * as C static variables, so _PyMem_RawStrdup is OK even though
-     * Py_Initialize hasn't been called yet.
-     */
-    if (encoding) {
-        PyMem_RawFree(_Py_StandardStreamEncoding);
-        _Py_StandardStreamEncoding = _PyMem_RawStrdup(encoding);
-        if (!_Py_StandardStreamEncoding) {
-            res = -2;
-            goto done;
-        }
-    }
-    if (errors) {
-        PyMem_RawFree(_Py_StandardStreamErrors);
-        _Py_StandardStreamErrors = _PyMem_RawStrdup(errors);
-        if (!_Py_StandardStreamErrors) {
-            PyMem_RawFree(_Py_StandardStreamEncoding);
-            _Py_StandardStreamEncoding = NULL;
-            res = -3;
-            goto done;
-        }
-    }
-#ifdef MS_WINDOWS
-    if (_Py_StandardStreamEncoding) {
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-        /* Overriding the stream encoding implies legacy streams */
-        Py_LegacyWindowsStdioFlag = 1;
-_Py_COMP_DIAG_POP
-    }
-#endif
-
-done:
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
-    return res;
-}
-
-
-void
-_Py_ClearStandardStreamEncoding(void)
-{
-    /* Use the same allocator than Py_SetStandardStreamEncoding() */
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
-    /* We won't need them anymore. */
-    if (_Py_StandardStreamEncoding) {
-        PyMem_RawFree(_Py_StandardStreamEncoding);
-        _Py_StandardStreamEncoding = NULL;
-    }
-    if (_Py_StandardStreamErrors) {
-        PyMem_RawFree(_Py_StandardStreamErrors);
-        _Py_StandardStreamErrors = NULL;
-    }
-
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-}
-
-
 /* --- Py_GetArgcArgv() ------------------------------------------- */
 
 void
@@ -1972,26 +1884,6 @@ config_init_stdio_encoding(PyConfig *config,
                            const PyPreConfig *preconfig)
 {
     PyStatus status;
-
-    /* If Py_SetStandardStreamEncoding() has been called, use its
-        arguments if they are not NULL. */
-    if (config->stdio_encoding == NULL && _Py_StandardStreamEncoding != NULL) {
-        status = CONFIG_SET_BYTES_STR(config, &config->stdio_encoding,
-                                      _Py_StandardStreamEncoding,
-                                      "_Py_StandardStreamEncoding");
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-    }
-
-    if (config->stdio_errors == NULL && _Py_StandardStreamErrors != NULL) {
-        status = CONFIG_SET_BYTES_STR(config, &config->stdio_errors,
-                                      _Py_StandardStreamErrors,
-                                      "_Py_StandardStreamErrors");
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-    }
 
     // Exit if encoding and errors are defined
     if (config->stdio_encoding != NULL && config->stdio_errors != NULL) {

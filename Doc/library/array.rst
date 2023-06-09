@@ -24,6 +24,8 @@ defined:
 +-----------+--------------------+-------------------+-----------------------+-------+
 | ``'u'``   | wchar_t            | Unicode character | 2                     | \(1)  |
 +-----------+--------------------+-------------------+-----------------------+-------+
+| ``'w'``   | Py_UCS4            | Unicode character | 4                     |       |
++-----------+--------------------+-------------------+-----------------------+-------+
 | ``'h'``   | signed short       | int               | 2                     |       |
 +-----------+--------------------+-------------------+-----------------------+-------+
 | ``'H'``   | unsigned short     | int               | 2                     |       |
@@ -56,6 +58,7 @@ Notes:
       ``Py_UNICODE`` is alias of ``wchar_t`` since Python 3.3.
 
    .. deprecated-removed:: 3.3 4.0
+      Please migrate to ``'w'`` typecode.
 
 
 The actual representation of values is determined by the machine architecture
@@ -174,9 +177,9 @@ The module defines the following type:
 
    .. method:: fromunicode(s)
 
-      Extends this array with data from the given unicode string.  The array must
-      be a type ``'u'`` array; otherwise a :exc:`ValueError` is raised.  Use
-      ``array.frombytes(unicodestring.encode(enc))`` to append Unicode data to an
+      Extends this array with data from the given unicode string.
+      The array must have type code ``'u'`` or ``'w'``; otherwise a :exc:`ValueError` is raised.
+      Use ``array.frombytes(unicodestring.encode(enc))`` to append Unicode data to an
       array of some other type.
 
 
@@ -236,21 +239,22 @@ The module defines the following type:
 
    .. method:: tounicode()
 
-      Convert the array to a unicode string.  The array must be a type ``'u'`` array;
+      Convert the array to a unicode string.  The array must have a type ``'u'`` or ``'w'``;
       otherwise a :exc:`ValueError` is raised. Use ``array.tobytes().decode(enc)`` to
       obtain a unicode string from an array of some other type.
 
 
 When an array object is printed or converted to a string, it is represented as
 ``array(typecode, initializer)``.  The *initializer* is omitted if the array is
-empty, otherwise it is a string if the *typecode* is ``'u'``, otherwise it is a
-list of numbers.  The string is guaranteed to be able to be converted back to an
+empty, otherwise it is a string if the *typecode* is ``'u'`` or ``'w'``,
+otherwise it is a list of numbers.
+The string is guaranteed to be able to be converted back to an
 array with the same type and value using :func:`eval`, so long as the
 :class:`~array.array` class has been imported using ``from array import array``.
 Examples::
 
    array('l')
-   array('u', 'hello \u2641')
+   array('w', 'hello \u2641')
    array('l', [1, 2, 3, 4, 5])
    array('d', [1.0, 2.0, 3.14])
 
