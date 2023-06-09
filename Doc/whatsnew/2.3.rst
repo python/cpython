@@ -1555,7 +1555,7 @@ complete list of changes, or look through the CVS logs for all the details.
      # [0.36831796169281006, 0.37441694736480713, 0.35304892063140869]
      # [0.17574405670166016, 0.18193507194519043, 0.17565798759460449]
 
-* The :mod:`Tix` module has received various bug fixes and updates for the
+* The :mod:`!Tix` module has received various bug fixes and updates for the
   current version of the Tix package.
 
 * The :mod:`Tkinter` module now works with a thread-enabled  version of Tcl.

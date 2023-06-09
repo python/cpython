@@ -1744,17 +1744,17 @@ aliases.
 Function and class definitions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. class:: FunctionDef(name, type_params, args, body, decorator_list, returns, type_comment)
+.. class:: FunctionDef(name, args, body, decorator_list, returns, type_comment, type_params)
 
    A function definition.
 
    * ``name`` is a raw string of the function name.
-   * ``type_params`` is a list of :ref:`type parameters <ast-type-params>`.
    * ``args`` is an :class:`arguments` node.
    * ``body`` is the list of nodes inside the function.
    * ``decorator_list`` is the list of decorators to be applied, stored outermost
      first (i.e. the first in the list will be applied last).
    * ``returns`` is the return annotation.
+   * ``type_params`` is a list of :ref:`type parameters <ast-type-params>`.
 
    .. attribute:: type_comment
 
@@ -1917,12 +1917,11 @@ Function and class definitions
             type_ignores=[])
 
 
-.. class:: ClassDef(name, type_params, bases, keywords, body, decorator_list)
+.. class:: ClassDef(name, bases, keywords, body, decorator_list, type_params)
 
    A class definition.
 
    * ``name`` is a raw string for the class name
-   * ``type_params`` is a list of :ref:`type parameters <ast-type-params>`.
    * ``bases`` is a list of nodes for explicitly specified base classes.
    * ``keywords`` is a list of :class:`keyword` nodes, principally for 'metaclass'.
      Other keywords will be passed to the metaclass, as per `PEP-3115
@@ -1930,6 +1929,7 @@ Function and class definitions
    * ``body`` is a list of nodes representing the code within the class
      definition.
    * ``decorator_list`` is a list of nodes, as in :class:`FunctionDef`.
+   * ``type_params`` is a list of :ref:`type parameters <ast-type-params>`.
 
    .. doctest::
 
@@ -1961,7 +1961,7 @@ Function and class definitions
 Async and await
 ^^^^^^^^^^^^^^^
 
-.. class:: AsyncFunctionDef(name, args, body, decorator_list, returns, type_comment)
+.. class:: AsyncFunctionDef(name, args, body, decorator_list, returns, type_comment, type_params)
 
    An ``async def`` function definition. Has the same fields as
    :class:`FunctionDef`.

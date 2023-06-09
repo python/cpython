@@ -5,7 +5,6 @@ import os
 import re
 import sys
 import unittest
-import warnings
 from test.support import import_helper
 from contextlib import contextmanager
 from test.test_importlib.util import temp_module

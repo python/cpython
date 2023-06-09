@@ -395,4 +395,35 @@ _testcapi_traceback_print(PyObject *module, PyObject *const *args, Py_ssize_t na
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ec1b2e62adea9846 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_testcapi_unstable_exc_prep_reraise_star__doc__,
+"unstable_exc_prep_reraise_star($module, orig, excs, /)\n"
+"--\n"
+"\n"
+"To test PyUnstable_Exc_PrepReraiseStar.");
+
+#define _TESTCAPI_UNSTABLE_EXC_PREP_RERAISE_STAR_METHODDEF    \
+    {"unstable_exc_prep_reraise_star", _PyCFunction_CAST(_testcapi_unstable_exc_prep_reraise_star), METH_FASTCALL, _testcapi_unstable_exc_prep_reraise_star__doc__},
+
+static PyObject *
+_testcapi_unstable_exc_prep_reraise_star_impl(PyObject *module,
+                                              PyObject *orig, PyObject *excs);
+
+static PyObject *
+_testcapi_unstable_exc_prep_reraise_star(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *orig;
+    PyObject *excs;
+
+    if (!_PyArg_CheckPositional("unstable_exc_prep_reraise_star", nargs, 2, 2)) {
+        goto exit;
+    }
+    orig = args[0];
+    excs = args[1];
+    return_value = _testcapi_unstable_exc_prep_reraise_star_impl(module, orig, excs);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=fd6aef54f195c77b input=a9049054013a1b77]*/

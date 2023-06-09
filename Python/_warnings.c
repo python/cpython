@@ -533,9 +533,6 @@ show_warning(PyThreadState *tstate, PyObject *filename, int lineno,
         Py_UCS4 ch;
         PyObject *truncated;
 
-        if (PyUnicode_READY(sourceline) < 1)
-            goto error;
-
         kind = PyUnicode_KIND(sourceline);
         data = PyUnicode_DATA(sourceline);
         len = PyUnicode_GET_LENGTH(sourceline);
