@@ -1168,10 +1168,13 @@ _Pickler_New(PickleState *st)
     self->reducer_override = NULL;
 
     self->memo = PyMemoTable_New();
+    if (self->memo == NULL) {
+        Py_DECREF(self);
+        return NULL;
+    }
     self->output_buffer = PyBytes_FromStringAndSize(NULL,
                                                     self->max_output_len);
-
-    if (self->memo == NULL || self->output_buffer == NULL) {
+    if (self->output_buffer == NULL) {
         Py_DECREF(self);
         return NULL;
     }
@@ -1654,9 +1657,12 @@ _Unpickler_New(PyObject *module)
     self->memo_size = 32;
     self->memo_len = 0;
     self->memo = _Unpickler_NewMemo(self->memo_size);
+    if (self->memo == NULL) {
+        Py_DECREF(self);
+        return NULL;
+    }
     self->stack = (Pdata *)Pdata_New(st);
-
-    if (self->memo == NULL || self->stack == NULL) {
+    if (self->stack == NULL) {
         Py_DECREF(self);
         return NULL;
     }
@@ -4834,11 +4840,12 @@ _pickle_PicklerMemoProxy_copy_impl(PicklerMemoProxyObject *self)
             PyObject *key, *value;
 
             key = PyLong_FromVoidPtr(entry.me_key);
+            if (key == NULL) {
+                goto error;
+            }
             value = Py_BuildValue("nO", entry.me_value, entry.me_key);
-
-            if (key == NULL || value == NULL) {
-                Py_XDECREF(key);
-                Py_XDECREF(value);
+            if (value == NULL) {
+                Py_DECREF(key);
                 goto error;
             }
             status = PyDict_SetItem(new_memo, key, value);
@@ -5994,12 +6001,20 @@ load_stack_global(PickleState *st, UnpicklerObject *self)
     PyObject *global_name;
 
     PDATA_POP(st, self->stack, global_name);
+    if (global_name == NULL) {
+        return -1;
+    }
     PDATA_POP(st, self->stack, module_name);
-    if (module_name == NULL || !PyUnicode_CheckExact(module_name) ||
-        global_name == NULL || !PyUnicode_CheckExact(global_name)) {
+    if (module_name == NULL) {
+        Py_DECREF(global_name);
+        return -1;
+    }
+    if (!PyUnicode_CheckExact(module_name) ||
+        !PyUnicode_CheckExact(global_name))
+    {
         PyErr_SetString(st->UnpicklingError, "STACK_GLOBAL requires str");
-        Py_XDECREF(global_name);
-        Py_XDECREF(module_name);
+        Py_DECREF(global_name);
+        Py_DECREF(module_name);
         return -1;
     }
     global = find_class(self, module_name, global_name);
