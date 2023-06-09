@@ -325,7 +325,8 @@ Removed
   (Contributed by Victor Stinner in :gh:`105382`.)
 
 * Remove deprecated ``webbrowser.MacOSXOSAScript._name`` attribute.
-  Use :attr:`webbrowser.MacOSXOSAScript.name <controller.name>` attribute instead.
+  Use :attr:`webbrowser.MacOSXOSAScript.name <webbrowser.controller.name>`
+  attribute instead.
   (Contributed by Nikita Sobolev in :gh:`105546`.)
 
 
