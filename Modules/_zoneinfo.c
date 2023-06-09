@@ -1079,11 +1079,8 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
 
     // Load UTC offsets and isdst (size num_ttinfos)
     utcoff = PyMem_Malloc(self->num_ttinfos * sizeof(long));
-    if (utcoff == NULL) {
-        goto error;
-    }
     isdst = PyMem_Malloc(self->num_ttinfos * sizeof(unsigned char));
-    if (isdst == NULL) {
+    if (utcoff == NULL || isdst == NULL) {
         goto error;
     }
 
