@@ -1302,6 +1302,8 @@ _PyTime_GetPerfCounter(void)
 int
 _PyTime_localtime(time_t t, struct tm *tm)
 {
+    assert(tm != NULL);
+
 #ifdef MS_WINDOWS
     int error;
 
@@ -1312,12 +1314,8 @@ _PyTime_localtime(time_t t, struct tm *tm)
         //   * &t is NULL (impossible in this usage)
         //   * it overflows (t < 0 or t > _MAX__TIME64_T)
         errno = error;
-        if (tm == NULL) {
-            PyErr_SetFromErrno(PyExc_OSError);
-        } else {
-            PyErr_SetString(PyExc_OverflowError,
-                            "localtime argument out of range");
-        }
+        PyErr_SetString(PyExc_OverflowError,
+                        "localtime argument out of range");
         return -1;
     }
     return 0;
