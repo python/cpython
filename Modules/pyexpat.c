@@ -1812,7 +1812,7 @@ add_errors_module(PyObject *mod)
         goto error;
     }
 
-    rc = PyModule_AddObject(errors_module, "messages", rev_codes_dict);
+    rc = PyModule_AddObjectRef(errors_module, "messages", rev_codes_dict);
     Py_CLEAR(rev_codes_dict);
     if (rc < 0) {
         goto error;
