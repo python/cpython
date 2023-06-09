@@ -1536,15 +1536,6 @@ Build Changes
   :file:`!configure`.
   (Contributed by Christian Heimes in :gh:`89886`.)
 
-* C extensions built with the :ref:`limited C API <limited-c-api>`
-  on :ref:`Python build in debug mode <debug-build>` no longer support Python
-  3.9 and older. In this configuration, :c:func:`Py_INCREF` and
-  :c:func:`Py_DECREF` are now always implemented as opaque function calls,
-  but the called functions were added to Python 3.10. Build C extensions
-  with a release build of Python or with Python 3.12 and older, to keep support
-  for Python 3.9 and older.
-  (Contributed by Victor Stinner in :gh:`102304`.)
-
 
 C API Changes
 =============
