@@ -699,7 +699,7 @@ zoneinfo_fromutc(PyObject *obj_self, PyObject *dt)
                 return NULL;
             }
             PyObject *args = PyTuple_New(0);
-            if (replace == NULL) {
+            if (args == NULL) {
                 Py_DECREF(tmp);
                 Py_DECREF(replace);
                 return NULL;
