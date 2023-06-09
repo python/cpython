@@ -561,25 +561,9 @@ PyNumber_AsOff_t(PyObject *item, PyObject *err)
     return result;
 }
 
-_PyIO_State *
-_PyIO_get_module_state(void)
-{
-    PyObject *mod = PyState_FindModule(&_PyIO_Module);
-    _PyIO_State *state;
-    if (mod == NULL || (state = get_io_state(mod)) == NULL) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "could not find io module state "
-                        "(interpreter shutdown?)");
-        return NULL;
-    }
-    return state;
-}
-
 static int
 iomodule_traverse(PyObject *mod, visitproc visit, void *arg) {
     _PyIO_State *state = get_io_state(mod);
-    if (!state->initialized)
-        return 0;
     Py_VISIT(state->unsupported_operation);
 
     Py_VISIT(state->PyIOBase_Type);
@@ -606,8 +590,6 @@ iomodule_traverse(PyObject *mod, visitproc visit, void *arg) {
 static int
 iomodule_clear(PyObject *mod) {
     _PyIO_State *state = get_io_state(mod);
-    if (!state->initialized)
-        return 0;
     Py_CLEAR(state->unsupported_operation);
 
     Py_CLEAR(state->PyIOBase_Type);
@@ -652,115 +634,57 @@ static PyMethodDef module_methods[] = {
     {NULL, NULL}
 };
 
-struct PyModuleDef _PyIO_Module = {
-    PyModuleDef_HEAD_INIT,
-    "io",
-    module_doc,
-    sizeof(_PyIO_State),
-    module_methods,
-    NULL,
-    iomodule_traverse,
-    iomodule_clear,
-    (freefunc)iomodule_free,
-};
-
-
-static PyTypeObject* static_types[] = {
-    // Base classes
-    &PyIOBase_Type,
-
-    // PyIOBase_Type subclasses
-    &PyBufferedIOBase_Type,
-    &PyRawIOBase_Type,
-    &PyTextIOBase_Type,
-};
-
-
-PyStatus
-_PyIO_InitTypes(PyInterpreterState *interp)
-{
-    for (size_t i=0; i < Py_ARRAY_LENGTH(static_types); i++) {
-        PyTypeObject *type = static_types[i];
-        if (_PyStaticType_InitBuiltin(interp, type) < 0) {
-            return _PyStatus_ERR("Can't initialize builtin type");
-        }
-    }
-
-    return _PyStatus_OK();
-}
-
-void
-_PyIO_FiniTypes(PyInterpreterState *interp)
-{
-    // Deallocate types in the reverse order to deallocate subclasses before
-    // their base classes.
-    for (Py_ssize_t i=Py_ARRAY_LENGTH(static_types) - 1; i >= 0; i--) {
-        PyTypeObject *type = static_types[i];
-        _PyStaticType_Dealloc(interp, type);
-    }
-}
-
 #define ADD_TYPE(module, type, spec, base)                               \
 do {                                                                     \
     type = (PyTypeObject *)PyType_FromModuleAndSpec(module, spec,        \
                                                     (PyObject *)base);   \
     if (type == NULL) {                                                  \
-        goto fail;                                                       \
+        return -1;                                                       \
     }                                                                    \
     if (PyModule_AddType(module, type) < 0) {                            \
-        goto fail;                                                       \
+        return -1;                                                       \
     }                                                                    \
 } while (0)
 
-PyMODINIT_FUNC
-PyInit__io(void)
+static int
+iomodule_exec(PyObject *m)
 {
-    PyObject *m = PyModule_Create(&_PyIO_Module);
-    _PyIO_State *state = NULL;
-    if (m == NULL)
-        return NULL;
-    state = get_io_state(m);
-    state->initialized = 0;
+    _PyIO_State *state = get_io_state(m);
 
     /* DEFAULT_BUFFER_SIZE */
     if (PyModule_AddIntMacro(m, DEFAULT_BUFFER_SIZE) < 0)
-        goto fail;
+        return -1;
 
     /* UnsupportedOperation inherits from ValueError and OSError */
     state->unsupported_operation = PyObject_CallFunction(
         (PyObject *)&PyType_Type, "s(OO){}",
         "UnsupportedOperation", PyExc_OSError, PyExc_ValueError);
     if (state->unsupported_operation == NULL)
-        goto fail;
+        return -1;
     if (PyModule_AddObjectRef(m, "UnsupportedOperation",
                               state->unsupported_operation) < 0)
     {
-        goto fail;
+        return -1;
     }
 
     /* BlockingIOError, for compatibility */
     if (PyModule_AddObjectRef(m, "BlockingIOError",
                               (PyObject *) PyExc_BlockingIOError) < 0) {
-        goto fail;
-    }
-
-    // Add types
-    for (size_t i=0; i < Py_ARRAY_LENGTH(static_types); i++) {
-        PyTypeObject *type = static_types[i];
-        if (PyModule_AddType(m, type) < 0) {
-            goto fail;
-        }
+        return -1;
     }
 
     // Base classes
-    state->PyIOBase_Type = (PyTypeObject *)Py_NewRef(&PyIOBase_Type);
     ADD_TYPE(m, state->PyIncrementalNewlineDecoder_Type, &nldecoder_spec, NULL);
     ADD_TYPE(m, state->PyBytesIOBuffer_Type, &bytesiobuf_spec, NULL);
+    ADD_TYPE(m, state->PyIOBase_Type, &iobase_spec, NULL);
 
     // PyIOBase_Type subclasses
-    state->PyRawIOBase_Type = (PyTypeObject *)Py_NewRef(&PyRawIOBase_Type);
-    state->PyBufferedIOBase_Type = (PyTypeObject *)Py_NewRef(&PyBufferedIOBase_Type);
-    state->PyTextIOBase_Type = (PyTypeObject *)Py_NewRef(&PyTextIOBase_Type);
+    ADD_TYPE(m, state->PyTextIOBase_Type, &textiobase_spec,
+             state->PyIOBase_Type);
+    ADD_TYPE(m, state->PyBufferedIOBase_Type, &bufferediobase_spec,
+             state->PyIOBase_Type);
+    ADD_TYPE(m, state->PyRawIOBase_Type, &rawiobase_spec,
+             state->PyIOBase_Type);
 
     // PyBufferedIOBase_Type(PyIOBase_Type) subclasses
     ADD_TYPE(m, state->PyBytesIO_Type, &bytesio_spec, state->PyBufferedIOBase_Type);
@@ -775,6 +699,7 @@ PyInit__io(void)
 
     // PyRawIOBase_Type(PyIOBase_Type) subclasses
     ADD_TYPE(m, state->PyFileIO_Type, &fileio_spec, state->PyRawIOBase_Type);
+
 #ifdef HAVE_WINDOWS_CONSOLE_IO
     ADD_TYPE(m, state->PyWindowsConsoleIO_Type, &winconsoleio_spec,
              state->PyRawIOBase_Type);
@@ -785,11 +710,30 @@ PyInit__io(void)
     ADD_TYPE(m, state->PyTextIOWrapper_Type, &textiowrapper_spec,
              state->PyTextIOBase_Type);
 
-    state->initialized = 1;
+#undef ADD_TYPE
+    return 0;
+}
 
-    return m;
+static struct PyModuleDef_Slot iomodule_slots[] = {
+    {Py_mod_exec, iomodule_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {0, NULL},
+};
 
-  fail:
-    Py_DECREF(m);
-    return NULL;
+struct PyModuleDef _PyIO_Module = {
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "io",
+    .m_doc = module_doc,
+    .m_size = sizeof(_PyIO_State),
+    .m_methods = module_methods,
+    .m_traverse = iomodule_traverse,
+    .m_clear = iomodule_clear,
+    .m_free = iomodule_free,
+    .m_slots = iomodule_slots,
+};
+
+PyMODINIT_FUNC
+PyInit__io(void)
+{
+    return PyModuleDef_Init(&_PyIO_Module);
 }

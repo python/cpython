@@ -170,8 +170,6 @@ ascii_buffer_converter(PyObject *arg, Py_buffer *buf)
         return 1;
     }
     if (PyUnicode_Check(arg)) {
-        if (PyUnicode_READY(arg) < 0)
-            return 0;
         if (!PyUnicode_IS_ASCII(arg)) {
             PyErr_SetString(PyExc_ValueError,
                             "string argument should contain only ASCII characters");

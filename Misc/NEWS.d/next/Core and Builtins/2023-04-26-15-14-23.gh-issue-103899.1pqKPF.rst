@@ -1,3 +1,0 @@
-Provide a helpful hint in the :exc:`TypeError` message when accidentally
-calling a :term:`module` object that has a callable attribute of the same
-name (such as :func:`dis.dis` or :class:`datetime.datetime`).

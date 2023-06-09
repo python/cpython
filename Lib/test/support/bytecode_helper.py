@@ -130,10 +130,10 @@ class CodegenTestCase(CompilationStepTestCase):
 
 class CfgOptimizationTestCase(CompilationStepTestCase):
 
-    def get_optimized(self, insts, consts):
+    def get_optimized(self, insts, consts, nlocals=0):
         insts = self.normalize_insts(insts)
         insts = self.complete_insts_info(insts)
-        insts = optimize_cfg(insts, consts)
+        insts = optimize_cfg(insts, consts, nlocals)
         return insts, consts
 
 class AssemblerTestCase(CompilationStepTestCase):
