@@ -390,7 +390,7 @@ class Instruction:
         names_to_skip = self.unmoved_names | frozenset({UNUSED, "null"})
         offset = 0
         context = self.block.context
-        assert context != None
+        assert context is not None and context.owner is not None
         filename = context.owner.filename
         for line in self.block_text:
             out.set_lineno(self.block_line + offset, filename)
@@ -635,7 +635,7 @@ class Analyzer:
     def find_predictions(self) -> None:
         """Find the instructions that need PREDICTED() labels."""
         for instr in self.instrs.values():
-            targets = set()
+            targets: set[str] = set()
             for line in instr.block_text:
                 if m := re.match(RE_PREDICTED, line):
                     targets.add(m.group(1))
@@ -1167,6 +1167,8 @@ class Analyzer:
             match up:
                 case MacroInstruction(predicted=True, name=name):
                     self.out.emit(f"PREDICTED({name});")
+                case _:
+                    pass
             for i, var in reversed(list(enumerate(up.stack))):
                 src = None
                 if i < up.initial_sp:

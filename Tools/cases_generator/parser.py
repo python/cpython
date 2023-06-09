@@ -412,7 +412,7 @@ if __name__ == "__main__":
             src = sys.argv[2]
             filename = "<string>"
         else:
-            with open(filename) as f:
+            with open(filename, "r") as f:
                 src = f.read()
             srclines = src.splitlines()
             begin = srclines.index("// BEGIN BYTECODES //")
