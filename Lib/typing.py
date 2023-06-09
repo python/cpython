@@ -131,7 +131,9 @@ __all__ = [
     'get_args',
     'get_origin',
     'get_overloads',
+    'get_protocol_members',
     'get_type_hints',
+    'is_protocol',
     'is_typeddict',
     'LiteralString',
     'Never',
@@ -2753,7 +2755,16 @@ class NamedTupleMeta(type):
         return nm_tpl
 
 
-def NamedTuple(typename, fields=None, /, **kwargs):
+class _Sentinel:
+    __slots__ = ()
+    def __repr__(self):
+        return '<sentinel>'
+
+
+_sentinel = _Sentinel()
+
+
+def NamedTuple(typename, fields=_sentinel, /, **kwargs):
     """Typed version of namedtuple.
 
     Usage::
@@ -2773,11 +2784,44 @@ def NamedTuple(typename, fields=None, /, **kwargs):
 
         Employee = NamedTuple('Employee', [('name', str), ('id', int)])
     """
-    if fields is None:
-        fields = kwargs.items()
+    if fields is _sentinel:
+        if kwargs:
+            deprecated_thing = "Creating NamedTuple classes using keyword arguments"
+            deprecation_msg = (
+                "{name} is deprecated and will be disallowed in Python {remove}. "
+                "Use the class-based or functional syntax instead."
+            )
+        else:
+            deprecated_thing = "Failing to pass a value for the 'fields' parameter"
+            example = f"`{typename} = NamedTuple({typename!r}, [])`"
+            deprecation_msg = (
+                "{name} is deprecated and will be disallowed in Python {remove}. "
+                "To create a NamedTuple class with 0 fields "
+                "using the functional syntax, "
+                "pass an empty list, e.g. "
+            ) + example + "."
+    elif fields is None:
+        if kwargs:
+            raise TypeError(
+                "Cannot pass `None` as the 'fields' parameter "
+                "and also specify fields using keyword arguments"
+            )
+        else:
+            deprecated_thing = "Passing `None` as the 'fields' parameter"
+            example = f"`{typename} = NamedTuple({typename!r}, [])`"
+            deprecation_msg = (
+                "{name} is deprecated and will be disallowed in Python {remove}. "
+                "To create a NamedTuple class with 0 fields "
+                "using the functional syntax, "
+                "pass an empty list, e.g. "
+            ) + example + "."
     elif kwargs:
         raise TypeError("Either list of fields or keywords"
                         " can be provided to NamedTuple, not both")
+    if fields is _sentinel or fields is None:
+        import warnings
+        warnings._deprecated(deprecated_thing, message=deprecation_msg, remove=(3, 15))
+        fields = kwargs.items()
     nt = _make_nmtuple(typename, fields, module=_caller())
     nt.__orig_bases__ = (NamedTuple,)
     return nt
@@ -3337,3 +3381,43 @@ def override[F: _Func](method: F, /) -> F:
         # read-only property, TypeError if it's a builtin class.
         pass
     return method
+
+
+def is_protocol(tp: type, /) -> bool:
+    """Return True if the given type is a Protocol.
+
+    Example::
+
+        >>> from typing import Protocol, is_protocol
+        >>> class P(Protocol):
+        ...     def a(self) -> str: ...
+        ...     b: int
+        >>> is_protocol(P)
+        True
+        >>> is_protocol(int)
+        False
+    """
+    return (
+        isinstance(tp, type)
+        and getattr(tp, '_is_protocol', False)
+        and tp != Protocol
+    )
+
+
+def get_protocol_members(tp: type, /) -> frozenset[str]:
+    """Return the set of members defined in a Protocol.
+
+    Example::
+
+        >>> from typing import Protocol, get_protocol_members
+        >>> class P(Protocol):
+        ...     def a(self) -> str: ...
+        ...     b: int
+        >>> get_protocol_members(P)
+        frozenset({'a', 'b'})
+
+    Raise a TypeError for arguments that are not Protocols.
+    """
+    if not is_protocol(tp):
+        raise TypeError(f'{tp!r} is not a Protocol')
+    return frozenset(tp.__protocol_attrs__)

@@ -2038,6 +2038,19 @@ These are not used in annotations. They are building blocks for declaring types.
    .. versionchanged:: 3.11
       Added support for generic namedtuples.
 
+   .. deprecated-removed:: 3.13 3.15
+      The undocumented keyword argument syntax for creating NamedTuple classes
+      (``NT = NamedTuple("NT", x=int)``) is deprecated, and will be disallowed
+      in 3.15. Use the class-based syntax or the functional syntax instead.
+
+   .. deprecated-removed:: 3.13 3.15
+      When using the functional syntax to create a NamedTuple class, failing to
+      pass a value to the 'fields' parameter (``NT = NamedTuple("NT")``) is
+      deprecated. Passing ``None`` to the 'fields' parameter
+      (``NT = NamedTuple("NT", None)``) is also deprecated. Both will be
+      disallowed in Python 3.15. To create a NamedTuple class with 0 fields,
+      use ``class NT(NamedTuple): pass`` or ``NT = NamedTuple("NT", [])``.
+
 .. class:: NewType(name, tp)
 
    Helper class to create low-overhead :ref:`distinct types <distinct>`.
@@ -3387,6 +3400,38 @@ Introspection helpers
       assert get_args(Union[int, str]) == (int, str)
 
    .. versionadded:: 3.8
+
+.. function:: get_protocol_members(tp)
+
+   Return the set of members defined in a :class:`Protocol`.
+
+   ::
+
+      >>> from typing import Protocol, get_protocol_members
+      >>> class P(Protocol):
+      ...     def a(self) -> str: ...
+      ...     b: int
+      >>> get_protocol_members(P)
+      frozenset({'a', 'b'})
+
+   Raise :exc:`TypeError` for arguments that are not Protocols.
+
+   .. versionadded:: 3.13
+
+.. function:: is_protocol(tp)
+
+   Determine if a type is a :class:`Protocol`.
+
+   For example::
+
+      class P(Protocol):
+          def a(self) -> str: ...
+          b: int
+
+      is_protocol(P)    # => True
+      is_protocol(int)  # => False
+
+   .. versionadded:: 3.13
 
 .. function:: is_typeddict(tp)
 

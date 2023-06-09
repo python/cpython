@@ -10405,7 +10405,7 @@ super_init_without_args(_PyInterpreterFrame *cframe, PyCodeObject *co,
         return -1;
     }
 
-    assert(cframe->f_code->co_nlocalsplus > 0);
+    assert(_PyFrame_GetCode(cframe)->co_nlocalsplus > 0);
     PyObject *firstarg = _PyFrame_GetLocalsArray(cframe)[0];
     // The first argument might be a cell.
     if (firstarg != NULL && (_PyLocals_GetKind(co->co_localspluskinds, 0) & CO_FAST_CELL)) {
@@ -10498,7 +10498,7 @@ super_init_impl(PyObject *self, PyTypeObject *type, PyObject *obj) {
                             "super(): no current frame");
             return -1;
         }
-        int res = super_init_without_args(frame, frame->f_code, &type, &obj);
+        int res = super_init_without_args(frame, _PyFrame_GetCode(frame), &type, &obj);
 
         if (res < 0) {
             return -1;

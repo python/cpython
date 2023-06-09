@@ -139,8 +139,8 @@ dummy_func(
             assert(tstate->cframe == &cframe);
             assert(frame == cframe.current_frame);
             /* Possibly combine this with eval breaker */
-            if (frame->f_code->_co_instrumentation_version != tstate->interp->monitoring_version) {
-                int err = _Py_Instrument(frame->f_code, tstate->interp);
+            if (_PyFrame_GetCode(frame)->_co_instrumentation_version != tstate->interp->monitoring_version) {
+                int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
                 ERROR_IF(err, error);
                 next_instr--;
             }
@@ -154,8 +154,8 @@ dummy_func(
              *   We need to check the eval breaker anyway, can we
              * combine the instrument verison check and the eval breaker test?
              */
-            if (frame->f_code->_co_instrumentation_version != tstate->interp->monitoring_version) {
-                if (_Py_Instrument(frame->f_code, tstate->interp)) {
+            if (_PyFrame_GetCode(frame)->_co_instrumentation_version != tstate->interp->monitoring_version) {
+                if (_Py_Instrument(_PyFrame_GetCode(frame), tstate->interp)) {
                     goto error;
                 }
                 next_instr--;
@@ -668,8 +668,6 @@ dummy_func(
         inst(INTERPRETER_EXIT, (retval --)) {
             assert(frame == &entry_frame);
             assert(_PyFrame_IsIncomplete(frame));
-            STACK_SHRINK(1);  // Since we're not going to DISPATCH()
-            assert(EMPTY());
             /* Restore previous cframe and return. */
             tstate->cframe = cframe.previous;
             assert(tstate->cframe->current_frame == frame->previous);
@@ -973,7 +971,7 @@ dummy_func(
             if (oparg) {
                 PyObject *lasti = values[0];
                 if (PyLong_Check(lasti)) {
-                    frame->prev_instr = _PyCode_CODE(frame->f_code) + PyLong_AsLong(lasti);
+                    frame->prev_instr = _PyCode_CODE(_PyFrame_GetCode(frame)) + PyLong_AsLong(lasti);
                     assert(!_PyErr_Occurred(tstate));
                 }
                 else {
@@ -1387,7 +1385,7 @@ dummy_func(
             // Can't use ERROR_IF here.
             // Fortunately we don't need its superpower.
             if (oldobj == NULL) {
-                format_exc_unbound(tstate, frame->f_code, oparg);
+                format_exc_unbound(tstate, _PyFrame_GetCode(frame), oparg);
                 goto error;
             }
             PyCell_SET(cell, NULL);
@@ -1397,8 +1395,8 @@ dummy_func(
         inst(LOAD_FROM_DICT_OR_DEREF, (class_dict -- value)) {
             PyObject *name;
             assert(class_dict);
-            assert(oparg >= 0 && oparg < frame->f_code->co_nlocalsplus);
-            name = PyTuple_GET_ITEM(frame->f_code->co_localsplusnames, oparg);
+            assert(oparg >= 0 && oparg < _PyFrame_GetCode(frame)->co_nlocalsplus);
+            name = PyTuple_GET_ITEM(_PyFrame_GetCode(frame)->co_localsplusnames, oparg);
             if (PyDict_CheckExact(class_dict)) {
                 value = PyDict_GetItemWithError(class_dict, name);
                 if (value != NULL) {
@@ -1424,7 +1422,7 @@ dummy_func(
                 PyObject *cell = GETLOCAL(oparg);
                 value = PyCell_GET(cell);
                 if (value == NULL) {
-                    format_exc_unbound(tstate, frame->f_code, oparg);
+                    format_exc_unbound(tstate, _PyFrame_GetCode(frame), oparg);
                     goto error;
                 }
                 Py_INCREF(value);
@@ -1435,7 +1433,7 @@ dummy_func(
             PyObject *cell = GETLOCAL(oparg);
             value = PyCell_GET(cell);
             if (value == NULL) {
-                format_exc_unbound(tstate, frame->f_code, oparg);
+                format_exc_unbound(tstate, _PyFrame_GetCode(frame), oparg);
                 ERROR_IF(true, error);
             }
             Py_INCREF(value);
@@ -1450,7 +1448,7 @@ dummy_func(
 
         inst(COPY_FREE_VARS, (--)) {
             /* Copy closure variables to free variables */
-            PyCodeObject *co = frame->f_code;
+            PyCodeObject *co = _PyFrame_GetCode(frame);
             assert(PyFunction_Check(frame->f_funcobj));
             PyObject *closure = ((PyFunctionObject *)frame->f_funcobj)->func_closure;
             assert(oparg == co->co_nfreevars);
@@ -2177,7 +2175,8 @@ dummy_func(
         };
 
         inst(ENTER_EXECUTOR, (--)) {
-            _PyExecutorObject *executor = (_PyExecutorObject *)frame->f_code->co_executors->executors[oparg];
+            PyCodeObject *code = _PyFrame_GetCode(frame);
+            _PyExecutorObject *executor = (_PyExecutorObject *)code->co_executors->executors[oparg];
             Py_INCREF(executor);
             frame = executor->execute(executor, frame, stack_pointer);
             if (frame == NULL) {
@@ -2294,7 +2293,7 @@ dummy_func(
             /* before: [obj]; after [getiter(obj)] */
             if (PyCoro_CheckExact(iterable)) {
                 /* `iterable` is a coroutine */
-                if (!(frame->f_code->co_flags & (CO_COROUTINE | CO_ITERABLE_COROUTINE))) {
+                if (!(_PyFrame_GetCode(frame)->co_flags & (CO_COROUTINE | CO_ITERABLE_COROUTINE))) {
                     /* and it is used in a 'yield from' expression of a
                        regular generator. */
                     _PyErr_SetString(tstate, PyExc_TypeError,

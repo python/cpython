@@ -892,7 +892,6 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     PyDict_Clear(interp->builtins);
     Py_CLEAR(interp->sysdict);
     Py_CLEAR(interp->builtins);
-    Py_CLEAR(interp->interpreter_trampoline);
 
     if (tstate->interp == interp) {
         /* We are now safe to fix tstate->_status.cleared. */
