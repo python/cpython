@@ -1200,25 +1200,8 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
    Special typing construct to mark a :class:`TypedDict` key as required.
 
-   This is mainly useful for ``total=False`` TypedDicts.
-
-   For example:
-
-   .. testcode::
-
-        class Movie(TypedDict, total=False):
-            title: Required[str]
-            year: int
-
-
-        m = Movie(title='The Matrix')  # fine ("year" is not required)
-        m = Movie(title='The Matrix', year=1999)  # fine (all keys supplied)
-        m = Movie(year=1999)  # typechecker error: "title" is a required key
-
-   There is no runtime checking that a required key is actually provided
-   when instantiating a related :class:`TypedDict`.
-
-   See :class:`TypedDict` and :pep:`655` for more details.
+   This is mainly useful for ``total=False`` TypedDicts. See :class:`TypedDict`
+   and :pep:`655` for more details.
 
    .. versionadded:: 3.11
 
@@ -1226,19 +1209,6 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
    Special typing construct to mark a :class:`TypedDict` key as potentially
    missing.
-
-   For example:
-
-   .. testcode::
-
-       class Movie(TypedDict):
-           title: str
-           year: NotRequired[int]
-
-
-       m = Movie(title='The Matrix')  # fine ("year" is not required)
-       m = Movie(title='The Matrix', year=1999)  # fine (all keys supplied)
-       m = Movie(year=1999)  # typechecker error: "title" is a required key
 
    See :class:`TypedDict` and :pep:`655` for more details.
 
