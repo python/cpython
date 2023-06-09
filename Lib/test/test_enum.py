@@ -3045,6 +3045,33 @@ class OldTestFlag(unittest.TestCase):
         WHITE = RED|GREEN|BLUE
         BLANCO = RED|GREEN|BLUE
 
+    class Complete(Flag):
+        A = 0x01
+        B = 0x02
+
+    class Partial(Flag):
+        A = 0x01
+        B = 0x02
+        MASK = 0xff
+
+    class CompleteInt(IntFlag):
+        A = 0x01
+        B = 0x02
+
+    class PartialInt(IntFlag):
+        A = 0x01
+        B = 0x02
+        MASK = 0xff
+
+    class CompleteIntStrict(IntFlag, boundary=STRICT):
+        A = 0x01
+        B = 0x02
+
+    class PartialIntStrict(IntFlag, boundary=STRICT):
+        A = 0x01
+        B = 0x02
+        MASK = 0xff
+
     def test_or(self):
         Perm = self.Perm
         for i in Perm:
@@ -3103,6 +3130,18 @@ class OldTestFlag(unittest.TestCase):
         Open = self.Open
         self.assertIs(Open.WO & ~Open.WO, Open.RO)
         self.assertIs((Open.WO|Open.CE) & ~Open.WO, Open.CE)
+        Complete = self.Complete
+        self.assertIs(~Complete.A, Complete.B)
+        Partial = self.Partial
+        self.assertIs(~Partial.A, Partial.B)
+        CompleteInt = self.CompleteInt
+        self.assertIs(~CompleteInt.A, CompleteInt.B)
+        PartialInt = self.PartialInt
+        self.assertIs(~PartialInt.A, PartialInt(254))
+        CompleteIntStrict = self.CompleteIntStrict
+        self.assertIs(~CompleteIntStrict.A, CompleteIntStrict.B)
+        PartialIntStrict = self.PartialIntStrict
+        self.assertIs(~PartialIntStrict.A, PartialIntStrict.B)
 
     def test_bool(self):
         Perm = self.Perm
