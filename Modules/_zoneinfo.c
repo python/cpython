@@ -581,14 +581,19 @@ zoneinfo_fromutc(PyObject *obj_self, PyObject *dt)
         }
         else {
             PyObject *replace = PyObject_GetAttrString(tmp, "replace");
-            PyObject *args = PyTuple_New(0);
-            PyObject *kwargs = PyDict_New();
-
             Py_DECREF(tmp);
-            if (args == NULL || kwargs == NULL || replace == NULL) {
-                Py_XDECREF(args);
-                Py_XDECREF(kwargs);
-                Py_XDECREF(replace);
+            if (replace == NULL) {
+                return NULL;
+            }
+            PyObject *args = PyTuple_New(0);
+            if (args == NULL) {
+                Py_DECREF(replace);
+                return NULL;
+            }
+            PyObject *kwargs = PyDict_New();
+            if (kwargs == NULL) {
+                Py_DECREF(replace);
+                Py_DECREF(args);
                 return NULL;
             }
 
