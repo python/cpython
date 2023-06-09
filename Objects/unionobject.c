@@ -516,7 +516,9 @@ _Py_union_from_tuple(PyObject *args)
     if (args_tuple == NULL) {
         return NULL;
     }
-    return make_union(args_tuple);
+    PyObject *u = make_union(args_tuple);
+    Py_DECREF(args_tuple);
+    return u;
 }
 
 static PyObject *

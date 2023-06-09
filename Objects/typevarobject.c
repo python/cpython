@@ -103,7 +103,9 @@ make_union(PyObject *self, PyObject *other)
     if (args == NULL) {
         return NULL;
     }
-    return _Py_union_from_tuple(args);
+    PyObject *u = _Py_union_from_tuple(args);
+    Py_DECREF(args);
+    return u;
 }
 
 static PyObject *
