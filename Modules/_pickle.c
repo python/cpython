@@ -4414,7 +4414,8 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
             goto error;
         }
         if (reduce_func != NULL) {
-            PyObject *proto = PyLong_FromLong(self->proto);
+            PyObject *proto;
+            proto = PyLong_FromLong(self->proto);
             if (proto != NULL) {
                 reduce_value = _Pickle_FastCall(reduce_func, proto);
             }
