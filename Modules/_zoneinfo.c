@@ -693,22 +693,18 @@ zoneinfo_fromutc(PyObject *obj_self, PyObject *dt)
             dt = tmp;
         }
         else {
-            PyObject *replace;
-            PyObject *args;
-            PyObject *kwargs;
-
-            replace = PyObject_GetAttrString(tmp, "replace");
+            PyObject *replace = PyObject_GetAttrString(tmp, "replace");
             if (replace == NULL) {
                 Py_DECREF(tmp);
                 return NULL;
             }
-            args = PyTuple_New(0);
+            PyObject *args = PyTuple_New(0);
             if (replace == NULL) {
                 Py_DECREF(tmp);
                 Py_DECREF(replace);
                 return NULL;
             }
-            kwargs = PyDict_New();
+            PyObject *kwargs = PyDict_New();
             if (kwargs == NULL) {
                 Py_DECREF(tmp);
                 Py_DECREF(replace);
