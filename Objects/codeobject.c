@@ -1481,25 +1481,17 @@ deopt_code(PyCodeObject *code, _Py_CODEUNIT *instructions)
     Py_ssize_t len = Py_SIZE(code);
     for (int i = 0; i < len; i++) {
         int opcode = _Py_GetBaseOpcode(code, i);
+        if (opcode == ENTER_EXECUTOR) {
+            _PyExecutorObject *exec = code->co_executors->executors[instructions[i].op.arg];
+            opcode = exec->vm_data.opcode;
+            instructions[i].op.arg = exec->vm_data.oparg;
+        }
+        assert(opcode != ENTER_EXECUTOR);
         int caches = _PyOpcode_Caches[opcode];
         instructions[i].op.code = opcode;
         for (int j = 1; j <= caches; j++) {
             instructions[i+j].cache = 0;
         }
-        i += caches;
-    }
-    if (code->co_executors == NULL) {
-        return;
-    }
-    for (int i = 0; i < len; i++) {
-        int opcode = instructions[i].op.code;
-        if (opcode == ENTER_EXECUTOR) {
-            _PyExecutorObject *exec = code->co_executors->executors[instructions[i].op.arg];
-            opcode = instructions[i].op.code = exec->vm_data.opcode;
-            instructions[i].op.arg = exec->vm_data.oparg;
-            assert(instructions[i+1].cache < (1 << OPTIMIZER_BITS_IN_COUNTER));
-        }
-        int caches = _PyOpcode_Caches[opcode];
         i += caches;
     }
 }
