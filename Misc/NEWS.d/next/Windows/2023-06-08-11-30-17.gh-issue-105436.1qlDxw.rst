@@ -1,1 +1,2 @@
-the environment block should end with two zero-valued wchar_t values
+Ensure that an empty environment block is terminated by two null characters,
+as is required by Windows.
