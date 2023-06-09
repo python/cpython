@@ -1155,7 +1155,7 @@ class Analyzer:
                 )
 
     @contextlib.contextmanager
-    def wrap_macro(self, up: MacroInstruction):
+    def wrap_macro(self, mac: MacroInstruction):
         """Boilerplate for macro instructions."""
         # TODO: Somewhere (where?) make it so that if one instruction
         # has an output that is input to another, and the variable names
@@ -1163,24 +1163,21 @@ class Analyzer:
         # that variable is declared with the right name and type in the
         # outer block, rather than trusting the compiler to optimize it.
         self.out.emit("")
-        with self.out.block(f"TARGET({up.name})"):
-            match up:
-                case MacroInstruction(predicted=True, name=name):
-                    self.out.emit(f"PREDICTED({name});")
-                case _:
-                    pass
-            for i, var in reversed(list(enumerate(up.stack))):
+        with self.out.block(f"TARGET({mac.name})"):
+            if mac.predicted:
+                self.out.emit(f"PREDICTED({mac.name});")
+            for i, var in reversed(list(enumerate(mac.stack))):
                 src = None
-                if i < up.initial_sp:
-                    src = StackEffect(f"stack_pointer[-{up.initial_sp - i}]", "")
+                if i < mac.initial_sp:
+                    src = StackEffect(f"stack_pointer[-{mac.initial_sp - i}]", "")
                 self.out.declare(var, src)
 
             yield
 
-            # TODO: Use slices of up.stack instead of numeric values
-            self.out.stack_adjust(up.final_sp - up.initial_sp, [], [])
+            # TODO: Use slices of mac.stack instead of numeric values
+            self.out.stack_adjust(mac.final_sp - mac.initial_sp, [], [])
 
-            for i, var in enumerate(reversed(up.stack[: up.final_sp]), 1):
+            for i, var in enumerate(reversed(mac.stack[: mac.final_sp]), 1):
                 dst = StackEffect(f"stack_pointer[-{i}]", "")
                 self.out.assign(dst, var)
 
