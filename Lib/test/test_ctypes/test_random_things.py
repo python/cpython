@@ -1,8 +1,9 @@
-from ctypes import *
 import contextlib
-from test import support
-import unittest
+import ctypes
 import sys
+import unittest
+from test import support
+from ctypes import CFUNCTYPE, c_void_p, c_char_p, c_int, c_double
 
 
 def callback_func(arg):
@@ -16,15 +17,17 @@ class call_function_TestCase(unittest.TestCase):
 
     def test(self):
         from _ctypes import call_function
-        windll.kernel32.LoadLibraryA.restype = c_void_p
-        windll.kernel32.GetProcAddress.argtypes = c_void_p, c_char_p
-        windll.kernel32.GetProcAddress.restype = c_void_p
 
-        hdll = windll.kernel32.LoadLibraryA(b"kernel32")
-        funcaddr = windll.kernel32.GetProcAddress(hdll, b"GetModuleHandleA")
+        kernel32 = ctypes.windll.kernel32
+        kernel32.LoadLibraryA.restype = c_void_p
+        kernel32.GetProcAddress.argtypes = c_void_p, c_char_p
+        kernel32.GetProcAddress.restype = c_void_p
+
+        hdll = kernel32.LoadLibraryA(b"kernel32")
+        funcaddr = kernel32.GetProcAddress(hdll, b"GetModuleHandleA")
 
         self.assertEqual(call_function(funcaddr, (None,)),
-                             windll.kernel32.GetModuleHandleA(None))
+                         kernel32.GetModuleHandleA(None))
 
 class CallbackTracbackTestCase(unittest.TestCase):
     # When an exception is raised in a ctypes callback function, the C

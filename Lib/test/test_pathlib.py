@@ -5,6 +5,7 @@ import sys
 import errno
 import pathlib
 import pickle
+import posixpath
 import socket
 import stat
 import tempfile
@@ -23,20 +24,23 @@ except ImportError:
     grp = pwd = None
 
 
+# Make sure any symbolic links in the base test path are resolved.
+BASE = os.path.realpath(TESTFN)
+join = lambda *x: os.path.join(BASE, *x)
+rel_join = lambda *x: os.path.join(TESTFN, *x)
+
+only_nt = unittest.skipIf(os.name != 'nt',
+                          'test requires a Windows-compatible system')
+only_posix = unittest.skipIf(os.name == 'nt',
+                             'test requires a POSIX-compatible system')
+
+
 #
 # Tests for the pure classes.
 #
 
-class _BasePurePathSubclass(object):
-    def __init__(self, *pathsegments, session_id):
-        super().__init__(*pathsegments)
-        self.session_id = session_id
-
-    def with_segments(self, *pathsegments):
-        return type(self)(*pathsegments, session_id=self.session_id)
-
-
-class _BasePurePathTest(object):
+class PurePathTest(unittest.TestCase):
+    cls = pathlib.PurePath
 
     # Keys are canonical paths, values are list of tuples of arguments
     # supposed to produce equal paths.
@@ -74,6 +78,37 @@ class _BasePurePathTest(object):
         self.assertEqual(P(P('a'), P('b')), P('a/b'))
         self.assertEqual(P(P('a'), P('b'), P('c')), P(FakePath("a/b/c")))
         self.assertEqual(P(P('./a:b')), P('./a:b'))
+
+    def test_concrete_class(self):
+        if self.cls is pathlib.PurePath:
+            expected = pathlib.PureWindowsPath if os.name == 'nt' else pathlib.PurePosixPath
+        else:
+            expected = self.cls
+        p = self.cls('a')
+        self.assertIs(type(p), expected)
+
+    def test_different_flavours_unequal(self):
+        p = self.cls('a')
+        if p._flavour is posixpath:
+            q = pathlib.PureWindowsPath('a')
+        else:
+            q = pathlib.PurePosixPath('a')
+        self.assertNotEqual(p, q)
+
+    def test_different_flavours_unordered(self):
+        p = self.cls('a')
+        if p._flavour is posixpath:
+            q = pathlib.PureWindowsPath('a')
+        else:
+            q = pathlib.PurePosixPath('a')
+        with self.assertRaises(TypeError):
+            p < q
+        with self.assertRaises(TypeError):
+            p <= q
+        with self.assertRaises(TypeError):
+            p > q
+        with self.assertRaises(TypeError):
+            p >= q
 
     def test_bytes(self):
         P = self.cls
@@ -122,8 +157,13 @@ class _BasePurePathTest(object):
         self._check_str_subclass('/a/b.txt')
 
     def test_with_segments_common(self):
-        class P(_BasePurePathSubclass, self.cls):
-            pass
+        class P(self.cls):
+            def __init__(self, *pathsegments, session_id):
+                super().__init__(*pathsegments)
+                self.session_id = session_id
+
+            def with_segments(self, *pathsegments):
+                return type(self)(*pathsegments, session_id=self.session_id)
         p = P('foo', 'bar', session_id=42)
         self.assertEqual(42, (p / 'foo').session_id)
         self.assertEqual(42, ('foo' / p).session_id)
@@ -723,7 +763,7 @@ class _BasePurePathTest(object):
             self.assertEqual(str(pp), str(p))
 
 
-class PurePosixPathTest(_BasePurePathTest, unittest.TestCase):
+class PurePosixPathTest(PurePathTest):
     cls = pathlib.PurePosixPath
 
     def test_drive_root_parts(self):
@@ -817,10 +857,10 @@ class PurePosixPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(p, pp)
 
 
-class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
+class PureWindowsPathTest(PurePathTest):
     cls = pathlib.PureWindowsPath
 
-    equivalences = _BasePurePathTest.equivalences.copy()
+    equivalences = PurePathTest.equivalences.copy()
     equivalences.update({
         './a:b': [ ('./a:b',) ],
         'c:a': [ ('c:', 'a'), ('c:', 'a/'), ('.', 'c:', 'a') ],
@@ -1491,45 +1531,14 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertIs(True, P('c:/baz/con/NUL').is_reserved())
         self.assertIs(False, P('c:/NUL/con/baz').is_reserved())
 
-class PurePathTest(_BasePurePathTest, unittest.TestCase):
-    cls = pathlib.PurePath
 
-    def test_concrete_class(self):
-        p = self.cls('a')
-        self.assertIs(type(p),
-            pathlib.PureWindowsPath if os.name == 'nt' else pathlib.PurePosixPath)
+class PurePathSubclassTest(PurePathTest):
+    class cls(pathlib.PurePath):
+        pass
 
-    def test_different_flavours_unequal(self):
-        p = pathlib.PurePosixPath('a')
-        q = pathlib.PureWindowsPath('a')
-        self.assertNotEqual(p, q)
+    # repr() roundtripping is not supported in custom subclass.
+    test_repr_roundtrips = None
 
-    def test_different_flavours_unordered(self):
-        p = pathlib.PurePosixPath('a')
-        q = pathlib.PureWindowsPath('a')
-        with self.assertRaises(TypeError):
-            p < q
-        with self.assertRaises(TypeError):
-            p <= q
-        with self.assertRaises(TypeError):
-            p > q
-        with self.assertRaises(TypeError):
-            p >= q
-
-
-#
-# Tests for the concrete classes.
-#
-
-# Make sure any symbolic links in the base test path are resolved.
-BASE = os.path.realpath(TESTFN)
-join = lambda *x: os.path.join(BASE, *x)
-rel_join = lambda *x: os.path.join(TESTFN, *x)
-
-only_nt = unittest.skipIf(os.name != 'nt',
-                          'test requires a Windows-compatible system')
-only_posix = unittest.skipIf(os.name == 'nt',
-                             'test requires a POSIX-compatible system')
 
 @only_posix
 class PosixPathAsPureTest(PurePosixPathTest):
@@ -1550,8 +1559,14 @@ class WindowsPathAsPureTest(PureWindowsPathTest):
             P('c:/').group()
 
 
-class _BasePathTest(object):
+#
+# Tests for the concrete classes.
+#
+
+class PathTest(unittest.TestCase):
     """Tests for the FS-accessing functionalities of the Path classes."""
+
+    cls = pathlib.Path
 
     # (BASE)
     #  |
@@ -1627,6 +1642,20 @@ class _BasePathTest(object):
     def assertEqualNormCase(self, path_a, path_b):
         self.assertEqual(os.path.normcase(path_a), os.path.normcase(path_b))
 
+    def test_concrete_class(self):
+        if self.cls is pathlib.Path:
+            expected = pathlib.WindowsPath if os.name == 'nt' else pathlib.PosixPath
+        else:
+            expected = self.cls
+        p = self.cls('a')
+        self.assertIs(type(p), expected)
+
+    def test_unsupported_flavour(self):
+        if self.cls._flavour is os.path:
+            self.skipTest("path flavour is supported")
+        else:
+            self.assertRaises(NotImplementedError, self.cls)
+
     def _test_cwd(self, p):
         q = self.cls(os.getcwd())
         self.assertEqual(p, q)
@@ -1683,8 +1712,13 @@ class _BasePathTest(object):
             self._test_home(self.cls.home())
 
     def test_with_segments(self):
-        class P(_BasePurePathSubclass, self.cls):
-            pass
+        class P(self.cls):
+            def __init__(self, *pathsegments, session_id):
+                super().__init__(*pathsegments)
+                self.session_id = session_id
+
+            def with_segments(self, *pathsegments):
+                return type(self)(*pathsegments, session_id=self.session_id)
         p = P(BASE, session_id=42)
         self.assertEqual(42, p.absolute().session_id)
         self.assertEqual(42, p.resolve().session_id)
@@ -1871,6 +1905,11 @@ class _BasePathTest(object):
             _check(p.glob("*/"), ["dirA", "dirB", "dirC", "dirE"])
         else:
             _check(p.glob("*/"), ["dirA", "dirB", "dirC", "dirE", "linkB"])
+
+    def test_glob_empty_pattern(self):
+        p = self.cls()
+        with self.assertRaisesRegex(ValueError, 'Unacceptable pattern'):
+            list(p.glob(''))
 
     def test_glob_case_sensitive(self):
         P = self.cls
@@ -2107,7 +2146,7 @@ class _BasePathTest(object):
         self.assertEqual(sorted(base.glob('**/*')), [bad_link])
 
     def test_glob_above_recursion_limit(self):
-        recursion_limit = 40
+        recursion_limit = 50
         # directory_depth > recursion_limit
         directory_depth = recursion_limit + 10
         base = pathlib.Path(os_helper.TESTFN, 'deep')
@@ -3022,28 +3061,8 @@ class WalkTests(unittest.TestCase):
             list(base.walk(top_down=False))
 
 
-class PathTest(_BasePathTest, unittest.TestCase):
-    cls = pathlib.Path
-
-    def test_concrete_class(self):
-        p = self.cls('a')
-        self.assertIs(type(p),
-            pathlib.WindowsPath if os.name == 'nt' else pathlib.PosixPath)
-
-    def test_unsupported_flavour(self):
-        if os.name == 'nt':
-            self.assertRaises(NotImplementedError, pathlib.PosixPath)
-        else:
-            self.assertRaises(NotImplementedError, pathlib.WindowsPath)
-
-    def test_glob_empty_pattern(self):
-        p = self.cls()
-        with self.assertRaisesRegex(ValueError, 'Unacceptable pattern'):
-            list(p.glob(''))
-
-
 @only_posix
-class PosixPathTest(_BasePathTest, unittest.TestCase):
+class PosixPathTest(PathTest):
     cls = pathlib.PosixPath
 
     def test_absolute(self):
@@ -3227,7 +3246,7 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
 
 
 @only_nt
-class WindowsPathTest(_BasePathTest, unittest.TestCase):
+class WindowsPathTest(PathTest):
     cls = pathlib.WindowsPath
 
     def test_absolute(self):
@@ -3345,15 +3364,8 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
             check()
 
 
-class PurePathSubclassTest(_BasePurePathTest, unittest.TestCase):
-    class cls(pathlib.PurePath):
-        pass
 
-    # repr() roundtripping is not supported in custom subclass.
-    test_repr_roundtrips = None
-
-
-class PathSubclassTest(_BasePathTest, unittest.TestCase):
+class PathSubclassTest(PathTest):
     class cls(pathlib.Path):
         pass
 

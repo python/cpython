@@ -1,5 +1,5 @@
 import unittest
-from ctypes import *
+from ctypes import Structure, Union, sizeof, c_char, c_int
 
 class StructFieldsTestCase(unittest.TestCase):
     # Structure/Union classes must get 'finalized' sooner or

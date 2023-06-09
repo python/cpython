@@ -1369,6 +1369,8 @@ Removed
   * The :mod:`!imp` module has been removed.  (Contributed by Barry Warsaw in
     :gh:`98040`.)
 
+  * Replace ``imp.new_module(name)`` with ``types.ModuleType(name)``.
+
 * Removed the ``suspicious`` rule from the documentation Makefile, and
   removed ``Doc/tools/rstlint.py``, both in favor of `sphinx-lint
   <https://github.com/sphinx-contrib/sphinx-lint>`_.
@@ -1499,6 +1501,9 @@ Changes in the Python API
   * Some incomplete or invalid Python code now raises :exc:`tokenize.TokenError` instead of
     returning arbitrary ``ERRORTOKEN`` tokens when tokenizing it.
 
+  * Mixing tabs and spaces as indentation in the same file is not supported anymore and will
+    raise a :exc:`TabError`.
+
 Build Changes
 =============
 
@@ -1536,15 +1541,6 @@ Build Changes
 * Autoconf 2.71 and aclocal 1.16.4 is now required to regenerate
   :file:`!configure`.
   (Contributed by Christian Heimes in :gh:`89886`.)
-
-* C extensions built with the :ref:`limited C API <limited-c-api>`
-  on :ref:`Python build in debug mode <debug-build>` no longer support Python
-  3.9 and older. In this configuration, :c:func:`Py_INCREF` and
-  :c:func:`Py_DECREF` are now always implemented as opaque function calls,
-  but the called functions were added to Python 3.10. Build C extensions
-  with a release build of Python or with Python 3.12 and older, to keep support
-  for Python 3.9 and older.
-  (Contributed by Victor Stinner in :gh:`102304`.)
 
 
 C API Changes
@@ -1697,6 +1693,11 @@ New Features
       correctly track reference counts and allocated blocks
 
   (Contributed by Eddie Elizondo in :gh:`84436`.)
+
+* In the limited C API version 3.12, :c:func:`Py_INCREF` and
+  :c:func:`Py_DECREF` functions are now implemented as opaque function calls to
+  hide implementation details.
+  (Contributed by Victor Stinner in :gh:`105387`.)
 
 Porting to Python 3.12
 ----------------------

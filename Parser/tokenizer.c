@@ -1106,11 +1106,7 @@ tok_readline_string(struct tok_state* tok) {
     tok->inp += buflen;
     *tok->inp = '\0';
 
-    if (tok->start == NULL) {
-        tok->buf = tok->cur;
-    }
     tok->line_start = tok->cur;
-
     Py_DECREF(line);
     return 1;
 error:
@@ -1600,8 +1596,12 @@ lookahead(struct tok_state *tok, const char *test)
 }
 
 static int
-verify_end_of_number(struct tok_state *tok, int c, const char *kind)
-{
+verify_end_of_number(struct tok_state *tok, int c, const char *kind) {
+    if (tok->tok_extra_tokens) {
+        // When we are parsing extra tokens, we don't want to emit warnings
+        // about invalid literals, because we want to be a bit more liberal.
+        return 1;
+    }
     /* Emit a deprecation warning only if the numeric literal is immediately
      * followed by one of keywords which can occur after a numeric literal
      * in valid code: "and", "else", "for", "if", "in", "is" and "or".
@@ -1659,6 +1659,9 @@ verify_end_of_number(struct tok_state *tok, int c, const char *kind)
 static int
 verify_identifier(struct tok_state *tok)
 {
+    if (tok->tok_extra_tokens) {
+        return 1;
+    }
     PyObject *s;
     if (tok->decoding_erred)
         return 0;
@@ -2318,7 +2321,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                 else if (c == 'j' || c == 'J') {
                     goto imaginary;
                 }
-                else if (nonzero) {
+                else if (nonzero && !tok->tok_extra_tokens) {
                     /* Old-style octal: now disallowed. */
                     tok_backup(tok, c);
                     return MAKE_TOKEN(syntaxerror_known_range(

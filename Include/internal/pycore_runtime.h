@@ -84,6 +84,13 @@ typedef struct pyruntimestate {
        to access it, don't access it directly. */
     _Py_atomic_address _finalizing;
 
+    struct _pymem_allocators allocators;
+    struct _obmalloc_global_state obmalloc;
+    struct pyhash_runtime_state pyhash_state;
+    struct _time_runtime_state time;
+    struct _pythread_runtime_state threads;
+    struct _signals_runtime_state signals;
+
     struct pyinterpreters {
         PyThread_type_lock mutex;
         /* The linked list of interpreters, newest first. */
@@ -102,24 +109,13 @@ typedef struct pyruntimestate {
            using a Python int. */
         int64_t next_id;
     } interpreters;
-
-    unsigned long main_thread;
-
-    /* The fields above this line are declared as early as possible to
-       facilitate out-of-process observability tools. */
-
     // XXX Remove this field once we have a tp_* slot.
     struct _xidregistry {
         PyThread_type_lock mutex;
         struct _xidregitem *head;
     } xidregistry;
 
-    struct _pymem_allocators allocators;
-    struct _obmalloc_global_state obmalloc;
-    struct pyhash_runtime_state pyhash_state;
-    struct _time_runtime_state time;
-    struct _pythread_runtime_state threads;
-    struct _signals_runtime_state signals;
+    unsigned long main_thread;
 
     /* Used for the thread state bound to the current thread. */
     Py_tss_t autoTSSkey;
@@ -147,7 +143,10 @@ typedef struct pyruntimestate {
     // is called multiple times.
     Py_OpenCodeHookFunction open_code_hook;
     void *open_code_userdata;
-    _Py_AuditHookEntry *audit_hook_head;
+    struct {
+        PyThread_type_lock mutex;
+        _Py_AuditHookEntry *head;
+    } audit_hooks;
 
     struct _py_object_runtime_state object_state;
     struct _Py_float_runtime_state float_state;

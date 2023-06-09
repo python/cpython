@@ -1,5 +1,10 @@
 import unittest
-from ctypes import *
+from ctypes import (CFUNCTYPE, POINTER, sizeof, Union,
+                    Structure, LittleEndianStructure, BigEndianStructure,
+                    c_char, c_byte, c_ubyte,
+                    c_short, c_ushort, c_int, c_uint,
+                    c_long, c_ulong, c_longlong, c_ulonglong, c_uint64,
+                    c_bool, c_float, c_double, c_longdouble, py_object)
 import re, sys
 
 if sys.byteorder == "little":

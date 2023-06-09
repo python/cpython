@@ -134,6 +134,17 @@ Deprecated
   They will be removed in Python 3.15.
   (Contributed by Victor Stinner in :gh:`105096`.)
 
+* :mod:`array`'s ``'u'`` format code, deprecated in docs since Python 3.3,
+  emits :exc:`DeprecationWarning` since 3.13
+  and will be removed in Python 3.16.
+  Use the ``'w'`` format code instead.
+  (contributed by Hugo van Kemenade in :gh:`80480`)
+
+* :mod:`ctypes`: Deprecate undocumented :func:`!ctypes.SetPointerType`
+  and :func:`!ctypes.ARRAY` functions.
+  Replace ``ctypes.SetPointerType(item_type, size)`` with ``item_type * size``.
+  (Contributed by Victor Stinner in :gh:`105733`.)
+
 
 Removed
 =======
@@ -324,6 +335,11 @@ Removed
   certificates for you.
   (Contributed by Victor Stinner in :gh:`105382`.)
 
+* Remove deprecated ``webbrowser.MacOSXOSAScript._name`` attribute.
+  Use :attr:`webbrowser.MacOSXOSAScript.name <webbrowser.controller.name>`
+  attribute instead.
+  (Contributed by Nikita Sobolev in :gh:`105546`.)
+
 
 Porting to Python 3.13
 ======================
@@ -406,6 +422,11 @@ Deprecated
     :envvar:`PYTHONHOME` environment variable instead.
 
   (Contributed by Victor Stinner in :gh:`105145`.)
+
+* Deprecate the :c:func:`PyImport_ImportModuleNoBlock` function which is just
+  an alias to :c:func:`PyImport_ImportModule` since Python 3.3.
+  Scheduled for removal in Python 3.15.
+  (Contributed by Victor Stinner in :gh:`105396`.)
 
 Removed
 -------

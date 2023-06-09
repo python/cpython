@@ -1,7 +1,11 @@
-import unittest, sys
-
-from ctypes import *
 import _ctypes_test
+import ctypes
+import sys
+import unittest
+from ctypes import (CDLL, CFUNCTYPE, Structure, POINTER, pointer, byref, sizeof,
+                    c_void_p, c_char_p,
+                    c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
+                    c_long, c_ulong, c_longlong, c_ulonglong, c_float, c_double)
 
 ctype_types = [c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
                  c_long, c_ulong, c_longlong, c_ulonglong, c_double, c_float]
@@ -193,7 +197,7 @@ class PointersTestCase(unittest.TestCase):
 
         # COM methods are boolean True:
         if sys.platform == "win32":
-            mth = WINFUNCTYPE(None)(42, "name", (), None)
+            mth = ctypes.WINFUNCTYPE(None)(42, "name", (), None)
             self.assertEqual(bool(mth), True)
 
     def test_pointer_type_name(self):
