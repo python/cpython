@@ -1076,10 +1076,10 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
     // Load UTC offsets and isdst (size num_ttinfos)
     utcoff = PyMem_Malloc(self->num_ttinfos * sizeof(long));
     isdst = PyMem_Malloc(self->num_ttinfos * sizeof(unsigned char));
+
     if (utcoff == NULL || isdst == NULL) {
         goto error;
     }
-
     for (size_t i = 0; i < self->num_ttinfos; ++i) {
         PyObject *num = PyTuple_GetItem(utcoff_list, i);
         if (num == NULL) {
