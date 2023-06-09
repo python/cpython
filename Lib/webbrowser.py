@@ -8,7 +8,6 @@ import shutil
 import sys
 import subprocess
 import threading
-import warnings
 
 __all__ = ["Error", "open", "open_new", "open_new_tab", "get", "register"]
 
