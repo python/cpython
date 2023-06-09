@@ -1131,8 +1131,8 @@ class AST_Tests(unittest.TestCase):
             (ast.comprehension, "target", "[spam for SPAM in spam]"),
             (ast.comprehension, "iter", "[spam for spam in SPAM]"),
             (ast.keyword, "value", "spam(**SPAM)"),
-            (ast.match_case, "pattern", "match spam:\n case SPAM: pass"),
-            (ast.withitem, "context_expr", "with SPAM: pass"),
+            (ast.match_case, "pattern", "match spam:\n case SPAM: spam"),
+            (ast.withitem, "context_expr", "with SPAM: spam"),
         ]
         for node, attr, source in tests:
             self.assert_none_check(node, attr, source)
