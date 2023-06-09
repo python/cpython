@@ -1791,7 +1791,7 @@ class UnionTests(BaseTestCase):
             class C(Union):
                 pass
         with self.assertRaisesRegex(TypeError,
-                r"cannot create 'types\.UnionType' instances"):
+                r"Union\[arg, \.\.\.\]: each arg must be a type\."):
             class C(Union[int, str]):
                 pass
 
