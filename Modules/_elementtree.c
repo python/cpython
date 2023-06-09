@@ -3262,7 +3262,7 @@ expat_start_handler(XMLParserObject* self, const XML_Char* tag_in,
             if (key == NULL) {
                 Py_DECREF(attrib);
                 Py_DECREF(tag);
-                return
+                return;
             }
             PyObject* value = PyUnicode_DecodeUTF8(attrib_in[1], strlen(attrib_in[1]), "strict");
             if (value == NULL) {
