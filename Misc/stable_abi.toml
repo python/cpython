@@ -2397,3 +2397,12 @@
     added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
 [const.Py_AUDIT_READ]
     added = '3.12'  # Before 3.12, available in "structmember.h"
+
+[function.PyObject_GetTypeData]
+    added = '3.12'
+[function.PyType_GetTypeDataSize]
+    added = '3.12'
+[const.Py_RELATIVE_OFFSET]
+    added = '3.12'
+[const.Py_TPFLAGS_ITEMS_AT_END]
+    added = '3.12'

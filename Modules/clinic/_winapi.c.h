@@ -1371,4 +1371,44 @@ _winapi__mimetypes_read_windows_registry(PyObject *module, PyObject *const *args
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=edb1a9d1bbfd6394 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_winapi_NeedCurrentDirectoryForExePath__doc__,
+"NeedCurrentDirectoryForExePath($module, exe_name, /)\n"
+"--\n"
+"\n");
+
+#define _WINAPI_NEEDCURRENTDIRECTORYFOREXEPATH_METHODDEF    \
+    {"NeedCurrentDirectoryForExePath", (PyCFunction)_winapi_NeedCurrentDirectoryForExePath, METH_O, _winapi_NeedCurrentDirectoryForExePath__doc__},
+
+static int
+_winapi_NeedCurrentDirectoryForExePath_impl(PyObject *module,
+                                            LPCWSTR exe_name);
+
+static PyObject *
+_winapi_NeedCurrentDirectoryForExePath(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    LPCWSTR exe_name = NULL;
+    int _return_value;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("NeedCurrentDirectoryForExePath", "argument", "str", arg);
+        goto exit;
+    }
+    exe_name = PyUnicode_AsWideCharString(arg, NULL);
+    if (exe_name == NULL) {
+        goto exit;
+    }
+    _return_value = _winapi_NeedCurrentDirectoryForExePath_impl(module, exe_name);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    /* Cleanup for exe_name */
+    PyMem_Free((void *)exe_name);
+
+    return return_value;
+}
+/*[clinic end generated code: output=96ea65ece7912d0a input=a9049054013a1b77]*/

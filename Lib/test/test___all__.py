@@ -13,9 +13,9 @@ except ModuleNotFoundError:
 
 if support.check_sanitizer(address=True, memory=True):
     # bpo-46633: test___all__ is skipped because importing some modules
-    # directly can trigger known problems with ASAN (like tk or crypt).
+    # directly can trigger known problems with ASAN (like tk).
     raise unittest.SkipTest("workaround ASAN build issues on loading tests "
-                            "like tk or crypt")
+                            "like tk")
 
 
 class NoAll(RuntimeError):

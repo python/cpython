@@ -53,6 +53,12 @@ typedef struct {
 
 typedef struct {
     uint16_t counter;
+} _PySuperAttrCache;
+
+#define INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR CACHE_ENTRIES(_PySuperAttrCache)
+
+typedef struct {
+    uint16_t counter;
     uint16_t version[2];
     uint16_t index;
 } _PyAttrCache;
@@ -73,7 +79,6 @@ typedef struct {
 typedef struct {
     uint16_t counter;
     uint16_t func_version[2];
-    uint16_t min_args;
 } _PyCallCache;
 
 #define INLINE_CACHE_ENTRIES_CALL CACHE_ENTRIES(_PyCallCache)
@@ -123,6 +128,7 @@ struct callable_cache {
 // Note that these all fit within a byte, as do combinations.
 // Later, we will use the smaller numbers to differentiate the different
 // kinds of locals (e.g. pos-only arg, varkwargs, local-only).
+#define CO_FAST_HIDDEN  0x10
 #define CO_FAST_LOCAL   0x20
 #define CO_FAST_CELL    0x40
 #define CO_FAST_FREE    0x80
@@ -218,6 +224,8 @@ extern int _PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
 
 /* Specialization functions */
 
+extern void _Py_Specialize_LoadSuperAttr(PyObject *global_super, PyObject *cls,
+                                         _Py_CODEUNIT *instr, int load_method);
 extern void _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr,
                                     PyObject *name);
 extern void _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr,
@@ -442,32 +450,6 @@ adaptive_counter_backoff(uint16_t counter) {
 
 /* Line array cache for tracing */
 
-extern int _PyCode_CreateLineArray(PyCodeObject *co);
-
-static inline int
-_PyCode_InitLineArray(PyCodeObject *co)
-{
-    if (co->_co_linearray) {
-        return 0;
-    }
-    return _PyCode_CreateLineArray(co);
-}
-
-static inline int
-_PyCode_LineNumberFromArray(PyCodeObject *co, int index)
-{
-    assert(co->_co_linearray != NULL);
-    assert(index >= 0);
-    assert(index < Py_SIZE(co));
-    if (co->_co_linearray_entry_size == 2) {
-        return ((int16_t *)co->_co_linearray)[index];
-    }
-    else {
-        assert(co->_co_linearray_entry_size == 4);
-        return ((int32_t *)co->_co_linearray)[index];
-    }
-}
-
 typedef struct _PyShimCodeDef {
     const uint8_t *code;
     int codelen;
@@ -500,6 +482,10 @@ extern uint32_t _Py_next_func_version;
 #define COMPARISON_EQUALS 8
 
 #define COMPARISON_NOT_EQUALS (COMPARISON_UNORDERED | COMPARISON_LESS_THAN | COMPARISON_GREATER_THAN)
+
+extern int _Py_Instrument(PyCodeObject *co, PyInterpreterState *interp);
+
+extern int _Py_GetBaseOpcode(PyCodeObject *code, int offset);
 
 
 #ifdef __cplusplus

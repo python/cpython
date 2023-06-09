@@ -16,7 +16,7 @@ functionality. The POSIX locale mechanism allows programmers to deal with
 certain cultural issues in an application, without requiring the programmer to
 know all the specifics of each country where the software is executed.
 
-.. index:: module: _locale
+.. index:: pair: module; _locale
 
 The :mod:`locale` module is implemented on top of the :mod:`_locale` module,
 which in turn uses an ANSI C locale implementation if available.
@@ -464,7 +464,7 @@ The :mod:`locale` module defines the following exception and functions:
 
 .. data:: LC_CTYPE
 
-   .. index:: module: string
+   .. index:: pair: module; string
 
    Locale category for the character type functions.  Depending on the settings of
    this category, the functions of module :mod:`string` dealing with case change

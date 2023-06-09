@@ -798,7 +798,7 @@ class RunStringTests(TestBase):
             """))
 
         shared = {'spam': b'ham'}
-        script = dedent(f"""
+        script = dedent("""
             ns2 = dict(vars())
             del ns2['__builtins__']
         """)
@@ -902,7 +902,7 @@ class RunStringTests(TestBase):
     # XXX Fix this test!
     @unittest.skip('blocking forever')
     def test_still_running_at_exit(self):
-        script = dedent(f"""
+        script = dedent("""
         from textwrap import dedent
         import threading
         import _xxsubinterpreters as _interpreters

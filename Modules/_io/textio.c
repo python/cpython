@@ -18,10 +18,18 @@
 
 /*[clinic input]
 module _io
-class _io.IncrementalNewlineDecoder "nldecoder_object *" "&PyIncrementalNewlineDecoder_Type"
+class _io.IncrementalNewlineDecoder "nldecoder_object *" "clinic_state()->PyIncrementalNewlineDecoder_Type"
 class _io.TextIOWrapper "textio *" "clinic_state()->TextIOWrapper_Type"
+class _io._TextIOBase "PyObject *" "&PyTextIOBase_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=d3f032e90f74c8f2]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=8b7f24fa13bfdd7f]*/
+
+typedef struct nldecoder_object nldecoder_object;
+typedef struct textio textio;
+
+#define clinic_state() (find_io_state_by_def(Py_TYPE(self)))
+#include "clinic/textio.c.h"
+#undef clinic_state
 
 /* TextIOBase */
 
@@ -34,62 +42,91 @@ PyDoc_STRVAR(textiobase_doc,
     );
 
 static PyObject *
-_unsupported(const char *message)
+_unsupported(_PyIO_State *state, const char *message)
 {
-    _PyIO_State *state = IO_STATE();
-    if (state != NULL)
-        PyErr_SetString(state->unsupported_operation, message);
+    PyErr_SetString(state->unsupported_operation, message);
     return NULL;
 }
 
-PyDoc_STRVAR(textiobase_detach_doc,
-    "Separate the underlying buffer from the TextIOBase and return it.\n"
-    "\n"
-    "After the underlying buffer has been detached, the TextIO is in an\n"
-    "unusable state.\n"
-    );
+/*[clinic input]
+_io._TextIOBase.detach
+    cls: defining_class
+    /
+
+Separate the underlying buffer from the TextIOBase and return it.
+
+After the underlying buffer has been detached, the TextIO is in an unusable state.
+[clinic start generated code]*/
 
 static PyObject *
-textiobase_detach(PyObject *self, PyObject *Py_UNUSED(ignored))
+_io__TextIOBase_detach_impl(PyObject *self, PyTypeObject *cls)
+/*[clinic end generated code: output=50915f40c609eaa4 input=987ca3640d0a3776]*/
 {
-    return _unsupported("detach");
+    _PyIO_State *state = get_io_state_by_cls(cls);
+    return _unsupported(state, "detach");
 }
 
-PyDoc_STRVAR(textiobase_read_doc,
-    "Read at most size characters from stream.\n"
-    "\n"
-    "Read from underlying buffer until we have size characters or we hit EOF.\n"
-    "If size is negative or omitted, read until EOF.\n"
-    );
+/*[clinic input]
+_io._TextIOBase.read
+    cls: defining_class
+    size: int(unused=True) = -1
+    /
+
+Read at most size characters from stream.
+
+Read from underlying buffer until we have size characters or we hit EOF.
+If size is negative or omitted, read until EOF.
+[clinic start generated code]*/
 
 static PyObject *
-textiobase_read(PyObject *self, PyObject *args)
+_io__TextIOBase_read_impl(PyObject *self, PyTypeObject *cls,
+                          int Py_UNUSED(size))
+/*[clinic end generated code: output=51a5178a309ce647 input=f5e37720f9fc563f]*/
 {
-    return _unsupported("read");
+    _PyIO_State *state = get_io_state_by_cls(cls);
+    return _unsupported(state, "read");
 }
 
-PyDoc_STRVAR(textiobase_readline_doc,
-    "Read until newline or EOF.\n"
-    "\n"
-    "Returns an empty string if EOF is hit immediately.\n"
-    );
+/*[clinic input]
+_io._TextIOBase.readline
+    cls: defining_class
+    size: int(unused=True) = -1
+    /
+
+Read until newline or EOF.
+
+Return an empty string if EOF is hit immediately.
+If size is specified, at most size characters will be read.
+[clinic start generated code]*/
 
 static PyObject *
-textiobase_readline(PyObject *self, PyObject *args)
+_io__TextIOBase_readline_impl(PyObject *self, PyTypeObject *cls,
+                              int Py_UNUSED(size))
+/*[clinic end generated code: output=3f47d7966d6d074e input=42eafec94107fa27]*/
 {
-    return _unsupported("readline");
+    _PyIO_State *state = get_io_state_by_cls(cls);
+    return _unsupported(state, "readline");
 }
 
-PyDoc_STRVAR(textiobase_write_doc,
-    "Write string to stream.\n"
-    "Returns the number of characters written (which is always equal to\n"
-    "the length of the string).\n"
-    );
+/*[clinic input]
+_io._TextIOBase.write
+    cls: defining_class
+    s: str(unused=True)
+    /
+
+Write string s to stream.
+
+Return the number of characters written
+(which is always equal to the length of the string).
+[clinic start generated code]*/
 
 static PyObject *
-textiobase_write(PyObject *self, PyObject *args)
+_io__TextIOBase_write_impl(PyObject *self, PyTypeObject *cls,
+                           const char *Py_UNUSED(s))
+/*[clinic end generated code: output=18b28231460275de input=e9cabaa5f6732b07]*/
 {
-    return _unsupported("write");
+    _PyIO_State *state = get_io_state_by_cls(cls);
+    return _unsupported(state, "write");
 }
 
 PyDoc_STRVAR(textiobase_encoding_doc,
@@ -132,10 +169,10 @@ textiobase_errors_get(PyObject *self, void *context)
 
 
 static PyMethodDef textiobase_methods[] = {
-    {"detach", textiobase_detach, METH_NOARGS, textiobase_detach_doc},
-    {"read", textiobase_read, METH_VARARGS, textiobase_read_doc},
-    {"readline", textiobase_readline, METH_VARARGS, textiobase_readline_doc},
-    {"write", textiobase_write, METH_VARARGS, textiobase_write_doc},
+    _IO__TEXTIOBASE_DETACH_METHODDEF
+    _IO__TEXTIOBASE_READ_METHODDEF
+    _IO__TEXTIOBASE_READLINE_METHODDEF
+    _IO__TEXTIOBASE_WRITE_METHODDEF
     {NULL, NULL}
 };
 
@@ -146,68 +183,31 @@ static PyGetSetDef textiobase_getset[] = {
     {NULL}
 };
 
-PyTypeObject PyTextIOBase_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_io._TextIOBase",          /*tp_name*/
-    0,                          /*tp_basicsize*/
-    0,                          /*tp_itemsize*/
-    0,                          /*tp_dealloc*/
-    0,                          /*tp_vectorcall_offset*/
-    0,                          /*tp_getattr*/
-    0,                          /*tp_setattr*/
-    0,                          /*tp_as_async*/
-    0,                          /*tp_repr*/
-    0,                          /*tp_as_number*/
-    0,                          /*tp_as_sequence*/
-    0,                          /*tp_as_mapping*/
-    0,                          /*tp_hash */
-    0,                          /*tp_call*/
-    0,                          /*tp_str*/
-    0,                          /*tp_getattro*/
-    0,                          /*tp_setattro*/
-    0,                          /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,  /*tp_flags*/
-    textiobase_doc,             /* tp_doc */
-    0,                          /* tp_traverse */
-    0,                          /* tp_clear */
-    0,                          /* tp_richcompare */
-    0,                          /* tp_weaklistoffset */
-    0,                          /* tp_iter */
-    0,                          /* tp_iternext */
-    textiobase_methods,         /* tp_methods */
-    0,                          /* tp_members */
-    textiobase_getset,          /* tp_getset */
-    &PyIOBase_Type,             /* tp_base */
-    0,                          /* tp_dict */
-    0,                          /* tp_descr_get */
-    0,                          /* tp_descr_set */
-    0,                          /* tp_dictoffset */
-    0,                          /* tp_init */
-    0,                          /* tp_alloc */
-    0,                          /* tp_new */
-    0,                          /* tp_free */
-    0,                          /* tp_is_gc */
-    0,                          /* tp_bases */
-    0,                          /* tp_mro */
-    0,                          /* tp_cache */
-    0,                          /* tp_subclasses */
-    0,                          /* tp_weaklist */
-    0,                          /* tp_del */
-    0,                          /* tp_version_tag */
-    0,                          /* tp_finalize */
+static PyType_Slot textiobase_slots[] = {
+    {Py_tp_doc, (void *)textiobase_doc},
+    {Py_tp_methods, textiobase_methods},
+    {Py_tp_getset, textiobase_getset},
+    {0, NULL},
 };
 
+/* Do not set Py_TPFLAGS_HAVE_GC so that tp_traverse and tp_clear are inherited */
+PyType_Spec textiobase_spec = {
+    .name = "_io._TextIOBase",
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = textiobase_slots,
+};
 
 /* IncrementalNewlineDecoder */
 
-typedef struct {
+struct nldecoder_object {
     PyObject_HEAD
     PyObject *decoder;
     PyObject *errors;
     unsigned int pendingcr: 1;
     unsigned int translate: 1;
     unsigned int seennl: 3;
-} nldecoder_object;
+};
 
 /*[clinic input]
 _io.IncrementalNewlineDecoder.__init__
@@ -248,12 +248,32 @@ _io_IncrementalNewlineDecoder___init___impl(nldecoder_object *self,
     return 0;
 }
 
-static void
-incrementalnewlinedecoder_dealloc(nldecoder_object *self)
+static int
+incrementalnewlinedecoder_traverse(nldecoder_object *self, visitproc visit,
+                                   void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    Py_VISIT(self->decoder);
+    Py_VISIT(self->errors);
+    return 0;
+}
+
+static int
+incrementalnewlinedecoder_clear(nldecoder_object *self)
 {
     Py_CLEAR(self->decoder);
     Py_CLEAR(self->errors);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    return 0;
+}
+
+static void
+incrementalnewlinedecoder_dealloc(nldecoder_object *self)
+{
+    PyTypeObject *tp = Py_TYPE(self);
+    _PyObject_GC_UNTRACK(self);
+    (void)incrementalnewlinedecoder_clear(self);
+    tp->tp_free((PyObject *)self);
+    Py_DECREF(tp);
 }
 
 static int
@@ -625,7 +645,7 @@ incrementalnewlinedecoder_newlines_get(nldecoder_object *self, void *context)
 typedef PyObject *
         (*encodefunc_t)(PyObject *, PyObject *);
 
-typedef struct
+struct textio
 {
     PyObject_HEAD
     int ok; /* initialized? */
@@ -684,7 +704,7 @@ typedef struct
     PyObject *dict;
 
     _PyIO_State *state;
-} textio;
+};
 
 static void
 textiowrapper_set_decoded_chars(textio *self, PyObject *chars);
@@ -872,8 +892,9 @@ _textiowrapper_set_decoder(textio *self, PyObject *codec_info,
         return -1;
 
     if (self->readuniversal) {
+        _PyIO_State *state = self->state;
         PyObject *incrementalDecoder = PyObject_CallFunctionObjArgs(
-            (PyObject *)&PyIncrementalNewlineDecoder_Type,
+            (PyObject *)state->PyIncrementalNewlineDecoder_Type,
             self->decoder, self->readtranslate ? Py_True : Py_False, NULL);
         if (incrementalDecoder == NULL)
             return -1;
@@ -884,11 +905,12 @@ _textiowrapper_set_decoder(textio *self, PyObject *codec_info,
 }
 
 static PyObject*
-_textiowrapper_decode(PyObject *decoder, PyObject *bytes, int eof)
+_textiowrapper_decode(_PyIO_State *state, PyObject *decoder, PyObject *bytes,
+                      int eof)
 {
     PyObject *chars;
 
-    if (Py_IS_TYPE(decoder, &PyIncrementalNewlineDecoder_Type))
+    if (Py_IS_TYPE(decoder, state->PyIncrementalNewlineDecoder_Type))
         chars = _PyIncrementalNewlineDecoder_decode(decoder, bytes, eof);
     else
         chars = PyObject_CallMethodObjArgs(decoder, &_Py_ID(decode), bytes,
@@ -1167,6 +1189,8 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     self->buffer = Py_NewRef(buffer);
 
     /* Build the decoder object */
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    self->state = state;
     if (_textiowrapper_set_decoder(self, codec_info, PyUnicode_AsUTF8(errors)) != 0)
         goto error;
 
@@ -1177,7 +1201,6 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     /* Finished sorting out the codec details */
     Py_CLEAR(codec_info);
 
-    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     if (Py_IS_TYPE(buffer, state->PyBufferedReader_Type) ||
         Py_IS_TYPE(buffer, state->PyBufferedWriter_Type) ||
         Py_IS_TYPE(buffer, state->PyBufferedRandom_Type))
@@ -1214,7 +1237,6 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
         goto error;
     }
 
-    self->state = state;
     self->ok = 1;
     return 0;
 
@@ -1327,7 +1349,8 @@ _io_TextIOWrapper_reconfigure_impl(textio *self, PyObject *encoding,
     /* Check if something is in the read buffer */
     if (self->decoded_chars != NULL) {
         if (encoding != Py_None || errors != Py_None || newline_obj != NULL) {
-            _unsupported("It is not possible to set the encoding or newline "
+            _unsupported(self->state,
+                         "It is not possible to set the encoding or newline "
                          "of stream after the first read");
             return NULL;
         }
@@ -1399,7 +1422,7 @@ textiowrapper_dealloc(textio *self)
     _PyObject_GC_UNTRACK(self);
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *)self);
-    textiowrapper_clear(self);
+    (void)textiowrapper_clear(self);
     tp->tp_free((PyObject *)self);
     Py_DECREF(tp);
 }
@@ -1594,8 +1617,9 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
     CHECK_ATTACHED(self);
     CHECK_CLOSED(self);
 
-    if (self->encoder == NULL)
-        return _unsupported("not writable");
+    if (self->encoder == NULL) {
+        return _unsupported(self->state, "not writable");
+    }
 
     Py_INCREF(text);
 
@@ -1776,7 +1800,7 @@ textiowrapper_read_chunk(textio *self, Py_ssize_t size_hint)
      */
 
     if (self->decoder == NULL) {
-        _unsupported("not readable");
+        _unsupported(self->state, "not readable");
         return -1;
     }
 
@@ -1843,7 +1867,8 @@ textiowrapper_read_chunk(textio *self, Py_ssize_t size_hint)
     nbytes = input_chunk_buf.len;
     eof = (nbytes == 0);
 
-    decoded_chars = _textiowrapper_decode(self->decoder, input_chunk, eof);
+    decoded_chars = _textiowrapper_decode(self->state, self->decoder,
+                                          input_chunk, eof);
     PyBuffer_Release(&input_chunk_buf);
     if (decoded_chars == NULL)
         goto fail;
@@ -1900,8 +1925,9 @@ _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n)
     CHECK_ATTACHED(self);
     CHECK_CLOSED(self);
 
-    if (self->decoder == NULL)
-        return _unsupported("not readable");
+    if (self->decoder == NULL) {
+        return _unsupported(self->state, "not readable");
+    }
 
     if (_textiowrapper_writeflush(self) < 0)
         return NULL;
@@ -1913,7 +1939,8 @@ _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n)
         if (bytes == NULL)
             goto fail;
 
-        if (Py_IS_TYPE(self->decoder, &PyIncrementalNewlineDecoder_Type))
+        _PyIO_State *state = self->state;
+        if (Py_IS_TYPE(self->decoder, state->PyIncrementalNewlineDecoder_Type))
             decoded = _PyIncrementalNewlineDecoder_decode(self->decoder,
                                                           bytes, 1);
         else
@@ -2431,7 +2458,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
     Py_INCREF(cookieObj);
 
     if (!self->seekable) {
-        _unsupported("underlying stream is not seekable");
+        _unsupported(self->state, "underlying stream is not seekable");
         goto fail;
     }
 
@@ -2445,7 +2472,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
             goto fail;
 
         if (cmp == 0) {
-            _unsupported("can't do nonzero cur-relative seeks");
+            _unsupported(self->state, "can't do nonzero cur-relative seeks");
             goto fail;
         }
 
@@ -2465,7 +2492,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
             goto fail;
 
         if (cmp == 0) {
-            _unsupported("can't do nonzero end-relative seeks");
+            _unsupported(self->state, "can't do nonzero end-relative seeks");
             goto fail;
         }
 
@@ -2628,7 +2655,7 @@ _io_TextIOWrapper_tell_impl(textio *self)
     CHECK_CLOSED(self);
 
     if (!self->seekable) {
-        _unsupported("underlying stream is not seekable");
+        _unsupported(self->state, "underlying stream is not seekable");
         goto fail;
     }
     if (!self->telling) {
@@ -3155,10 +3182,6 @@ textiowrapper_chunk_size_set(textio *self, PyObject *arg, void *context)
     return 0;
 }
 
-#define clinic_state() (find_io_state_by_def(Py_TYPE(self)))
-#include "clinic/textio.c.h"
-#undef clinic_state
-
 static PyMethodDef incrementalnewlinedecoder_methods[] = {
     _IO_INCREMENTALNEWLINEDECODER_DECODE_METHODDEF
     _IO_INCREMENTALNEWLINEDECODER_GETSTATE_METHODDEF
@@ -3172,45 +3195,23 @@ static PyGetSetDef incrementalnewlinedecoder_getset[] = {
     {NULL}
 };
 
-PyTypeObject PyIncrementalNewlineDecoder_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_io.IncrementalNewlineDecoder", /*tp_name*/
-    sizeof(nldecoder_object), /*tp_basicsize*/
-    0,                          /*tp_itemsize*/
-    (destructor)incrementalnewlinedecoder_dealloc, /*tp_dealloc*/
-    0,                          /*tp_vectorcall_offset*/
-    0,                          /*tp_getattr*/
-    0,                          /*tp_setattr*/
-    0,                          /*tp_as_async*/
-    0,                          /*tp_repr*/
-    0,                          /*tp_as_number*/
-    0,                          /*tp_as_sequence*/
-    0,                          /*tp_as_mapping*/
-    0,                          /*tp_hash */
-    0,                          /*tp_call*/
-    0,                          /*tp_str*/
-    0,                          /*tp_getattro*/
-    0,                          /*tp_setattro*/
-    0,                          /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,  /*tp_flags*/
-    _io_IncrementalNewlineDecoder___init____doc__, /* tp_doc */
-    0,                          /* tp_traverse */
-    0,                          /* tp_clear */
-    0,                          /* tp_richcompare */
-    0,                          /*tp_weaklistoffset*/
-    0,                          /* tp_iter */
-    0,                          /* tp_iternext */
-    incrementalnewlinedecoder_methods, /* tp_methods */
-    0,                          /* tp_members */
-    incrementalnewlinedecoder_getset, /* tp_getset */
-    0,                          /* tp_base */
-    0,                          /* tp_dict */
-    0,                          /* tp_descr_get */
-    0,                          /* tp_descr_set */
-    0,                          /* tp_dictoffset */
-    _io_IncrementalNewlineDecoder___init__, /* tp_init */
-    0,                          /* tp_alloc */
-    PyType_GenericNew,          /* tp_new */
+static PyType_Slot nldecoder_slots[] = {
+    {Py_tp_dealloc, incrementalnewlinedecoder_dealloc},
+    {Py_tp_doc, (void *)_io_IncrementalNewlineDecoder___init____doc__},
+    {Py_tp_methods, incrementalnewlinedecoder_methods},
+    {Py_tp_getset, incrementalnewlinedecoder_getset},
+    {Py_tp_traverse, incrementalnewlinedecoder_traverse},
+    {Py_tp_clear, incrementalnewlinedecoder_clear},
+    {Py_tp_init, _io_IncrementalNewlineDecoder___init__},
+    {0, NULL},
+};
+
+PyType_Spec nldecoder_spec = {
+    .name = "_io.IncrementalNewlineDecoder",
+    .basicsize = sizeof(nldecoder_object),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = nldecoder_slots,
 };
 
 
@@ -3232,6 +3233,9 @@ static PyMethodDef textiowrapper_methods[] = {
     _IO_TEXTIOWRAPPER_SEEK_METHODDEF
     _IO_TEXTIOWRAPPER_TELL_METHODDEF
     _IO_TEXTIOWRAPPER_TRUNCATE_METHODDEF
+
+    {"__reduce__", _PyIOBase_cannot_pickle, METH_VARARGS},
+    {"__reduce_ex__", _PyIOBase_cannot_pickle, METH_VARARGS},
     {NULL, NULL}
 };
 

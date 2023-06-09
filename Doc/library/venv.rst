@@ -55,7 +55,7 @@ point to the directories of the virtual environment,
 whereas :data:`sys.base_prefix` and :data:`sys.base_exec_prefix`
 point to those of the base Python used to create the environment.
 It is sufficient to check
-``sys.prefix == sys.base_prefix`` to determine if the current interpreter is
+``sys.prefix != sys.base_prefix`` to determine if the current interpreter is
 running from a virtual environment.
 
 A virtual environment may be "activated" using a script in its binary directory
@@ -284,11 +284,14 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
     .. method:: upgrade_dependencies(context)
 
-       Upgrades the core venv dependency packages (currently ``pip`` and
-       ``setuptools``) in the environment. This is done by shelling out to the
+       Upgrades the core venv dependency packages (currently ``pip``)
+       in the environment. This is done by shelling out to the
        ``pip`` executable in the environment.
 
        .. versionadded:: 3.9
+       .. versionchanged:: 3.12
+
+          ``setuptools`` is no longer a core venv dependency.
 
     .. method:: post_setup(context)
 

@@ -1712,11 +1712,11 @@ class PolicyTests(unittest.TestCase):
     def create_policy(self):
         return asyncio.DefaultEventLoopPolicy()
 
-    def test_get_default_child_watcher(self):
+    @mock.patch('asyncio.unix_events.can_use_pidfd')
+    def test_get_default_child_watcher(self, m_can_use_pidfd):
+        m_can_use_pidfd.return_value = False
         policy = self.create_policy()
         self.assertIsNone(policy._watcher)
-        unix_events.can_use_pidfd = mock.Mock()
-        unix_events.can_use_pidfd.return_value = False
         with self.assertWarns(DeprecationWarning):
             watcher = policy.get_child_watcher()
         self.assertIsInstance(watcher, asyncio.ThreadedChildWatcher)
@@ -1725,10 +1725,9 @@ class PolicyTests(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertIs(watcher, policy.get_child_watcher())
 
+        m_can_use_pidfd.return_value = True
         policy = self.create_policy()
         self.assertIsNone(policy._watcher)
-        unix_events.can_use_pidfd = mock.Mock()
-        unix_events.can_use_pidfd.return_value = True
         with self.assertWarns(DeprecationWarning):
             watcher = policy.get_child_watcher()
         self.assertIsInstance(watcher, asyncio.PidfdChildWatcher)

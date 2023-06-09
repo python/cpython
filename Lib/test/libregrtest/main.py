@@ -29,6 +29,14 @@ from test.support import threading_helper
 # Must be smaller than buildbot "1200 seconds without output" limit.
 EXIT_TIMEOUT = 120.0
 
+# gh-90681: When rerunning tests, we might need to rerun the whole
+# class or module suite if some its life-cycle hooks fail.
+# Test level hooks are not affected.
+_TEST_LIFECYCLE_HOOKS = frozenset((
+    'setUpClass', 'tearDownClass',
+    'setUpModule', 'tearDownModule',
+))
+
 EXITCODE_BAD_TEST = 2
 EXITCODE_INTERRUPTED = 130
 EXITCODE_ENV_CHANGED = 3
@@ -337,8 +345,12 @@ class Regrtest:
 
             errors = result.errors or []
             failures = result.failures or []
-            error_names = [test_full_name.split(" ")[0] for (test_full_name, *_) in errors]
-            failure_names = [test_full_name.split(" ")[0] for (test_full_name, *_) in failures]
+            error_names = [
+                self.normalize_test_name(test_full_name, is_error=True)
+                for (test_full_name, *_) in errors]
+            failure_names = [
+                self.normalize_test_name(test_full_name)
+                for (test_full_name, *_) in failures]
             self.ns.verbose = True
             orig_match_tests = self.ns.match_tests
             if errors or failures:
@@ -363,6 +375,21 @@ class Regrtest:
             printlist(self.bad)
 
         self.display_result()
+
+    def normalize_test_name(self, test_full_name, *, is_error=False):
+        short_name = test_full_name.split(" ")[0]
+        if is_error and short_name in _TEST_LIFECYCLE_HOOKS:
+            # This means that we have a failure in a life-cycle hook,
+            # we need to rerun the whole module or class suite.
+            # Basically the error looks like this:
+            #    ERROR: setUpClass (test.test_reg_ex.RegTest)
+            # or
+            #    ERROR: setUpModule (test.test_reg_ex)
+            # So, we need to parse the class / module name.
+            lpar = test_full_name.index('(')
+            rpar = test_full_name.index(')')
+            return test_full_name[lpar + 1: rpar].split('.')[-1]
+        return short_name
 
     def display_result(self):
         # If running the test suite for PGO then no one cares about results.

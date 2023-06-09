@@ -347,7 +347,7 @@ method.
 
 .. data:: METH_CLASS
 
-   .. index:: builtin: classmethod
+   .. index:: pair: built-in function; classmethod
 
    The method will be passed the type object as the first parameter rather
    than an instance of the type.  This is used to create *class methods*,
@@ -357,7 +357,7 @@ method.
 
 .. data:: METH_STATIC
 
-   .. index:: builtin: staticmethod
+   .. index:: pair: built-in function; staticmethod
 
    The method will be passed ``NULL`` as the first parameter rather than an
    instance of the type.  This is used to create *static methods*, similar to
@@ -485,6 +485,22 @@ The following flags can be used with :c:member:`PyMemberDef.flags`:
 
    Emit an ``object.__getattr__`` :ref:`audit event <audit-events>`
    before reading.
+
+.. c:macro:: Py_RELATIVE_OFFSET
+
+   Indicates that the :c:member:`~PyMemberDef.offset` of this ``PyMemberDef``
+   entry indicates an offset from the subclass-specific data, rather than
+   from ``PyObject``.
+
+   Can only be used as part of :c:member:`Py_tp_members <PyTypeObject.tp_members>`
+   :c:type:`slot <PyTypeSlot>` when creating a class using negative
+   :c:member:`~PyTypeDef.basicsize`.
+   It is mandatory in that case.
+
+   This flag is only used in :c:type:`PyTypeSlot`.
+   When setting :c:member:`~PyTypeObject.tp_members` during
+   class creation, Python clears it and sets
+   :c:member:`PyMemberDef.offset` to the offset from the ``PyObject`` struct.
 
 .. index::
    single: READ_RESTRICTED

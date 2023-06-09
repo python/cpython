@@ -90,3 +90,6 @@ PyAPI_FUNC(int) PyObject_IS_GC(PyObject *obj);
 PyAPI_FUNC(int) PyType_SUPPORTS_WEAKREFS(PyTypeObject *type);
 
 PyAPI_FUNC(PyObject **) PyObject_GET_WEAKREFS_LISTPTR(PyObject *op);
+
+PyAPI_FUNC(PyObject *) PyUnstable_Object_GC_NewWithExtraData(PyTypeObject *,
+                                                             size_t);

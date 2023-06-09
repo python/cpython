@@ -66,7 +66,7 @@ class Test_FatalError(unittest.TestCase):
             rc, out, err = assert_python_failure('-sSI', '-c', code)
 
         err = decode_stderr(err)
-        self.assertIn('Fatal Python error: test_fatal_error: MESSAGE\n',
+        self.assertIn('Fatal Python error: _testcapi_fatal_error_impl: MESSAGE\n',
                       err)
 
         match = re.search(r'^Extension modules:(.*) \(total: ([0-9]+)\)$',

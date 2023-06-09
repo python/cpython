@@ -1421,7 +1421,12 @@ _PyExc_PrepReraiseStar(PyObject *orig, PyObject *excs)
         if (res < 0) {
             goto done;
         }
-        result = _PyExc_CreateExceptionGroup("", raised_list);
+        if (PyList_GET_SIZE(raised_list) > 1) {
+            result = _PyExc_CreateExceptionGroup("", raised_list);
+        }
+        else {
+            result = Py_NewRef(PyList_GetItem(raised_list, 0));
+        }
         if (result == NULL) {
             goto done;
         }
@@ -2282,6 +2287,48 @@ AttributeError_traverse(PyAttributeErrorObject *self, visitproc visit, void *arg
     return BaseException_traverse((PyBaseExceptionObject *)self, visit, arg);
 }
 
+/* Pickling support */
+static PyObject *
+AttributeError_getstate(PyAttributeErrorObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *dict = ((PyAttributeErrorObject *)self)->dict;
+    if (self->name || self->args) {
+        dict = dict ? PyDict_Copy(dict) : PyDict_New();
+        if (dict == NULL) {
+            return NULL;
+        }
+        if (self->name && PyDict_SetItemString(dict, "name", self->name) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+        /* We specifically are not pickling the obj attribute since there are many
+        cases where it is unlikely to be picklable. See GH-103352.
+        */
+        if (self->args && PyDict_SetItemString(dict, "args", self->args) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+        return dict;
+    }
+    else if (dict) {
+        return Py_NewRef(dict);
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+AttributeError_reduce(PyAttributeErrorObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *state = AttributeError_getstate(self, NULL);
+    if (state == NULL) {
+        return NULL;
+    }
+
+    PyObject *return_value = PyTuple_Pack(3, Py_TYPE(self), self->args, state);
+    Py_DECREF(state);
+    return return_value;
+}
+
 static PyMemberDef AttributeError_members[] = {
     {"name", T_OBJECT, offsetof(PyAttributeErrorObject, name), 0, PyDoc_STR("attribute name")},
     {"obj", T_OBJECT, offsetof(PyAttributeErrorObject, obj), 0, PyDoc_STR("object")},
@@ -2289,7 +2336,9 @@ static PyMemberDef AttributeError_members[] = {
 };
 
 static PyMethodDef AttributeError_methods[] = {
-    {NULL}  /* Sentinel */
+    {"__getstate__", (PyCFunction)AttributeError_getstate, METH_NOARGS},
+    {"__reduce__", (PyCFunction)AttributeError_reduce, METH_NOARGS },
+    {NULL}
 };
 
 ComplexExtendsException(PyExc_Exception, AttributeError,
@@ -3591,13 +3640,9 @@ static struct static_exception static_exceptions[] = {
 int
 _PyExc_InitTypes(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return 0;
-    }
-
     for (size_t i=0; i < Py_ARRAY_LENGTH(static_exceptions); i++) {
         PyTypeObject *exc = static_exceptions[i].exc;
-        if (_PyStaticType_InitBuiltin(exc) < 0) {
+        if (_PyStaticType_InitBuiltin(interp, exc) < 0) {
             return -1;
         }
     }
@@ -3608,13 +3653,9 @@ _PyExc_InitTypes(PyInterpreterState *interp)
 static void
 _PyExc_FiniTypes(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return;
-    }
-
     for (Py_ssize_t i=Py_ARRAY_LENGTH(static_exceptions) - 1; i >= 0; i--) {
         PyTypeObject *exc = static_exceptions[i].exc;
-        _PyStaticType_Dealloc(exc);
+        _PyStaticType_Dealloc(interp, exc);
     }
 }
 

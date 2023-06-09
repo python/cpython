@@ -8,7 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_opcode.h"        // _PyOpcode_RelativeJump
+#include "pycore_opcode.h"        // _PyOpcode_Jump
 
 
 #define MAX_REAL_OPCODE 254
@@ -84,9 +84,6 @@ is_bit_set_in_table(const uint32_t *table, int bitindex) {
 
 #undef LOG_BITS_PER_INT
 #undef MASK_LOW_LOG_BITS
-
-#define IS_RELATIVE_JUMP(opcode) (is_bit_set_in_table(_PyOpcode_RelativeJump, opcode))
-
 
 
 #ifdef __cplusplus

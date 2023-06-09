@@ -78,7 +78,6 @@ def run_benchmark_stdlib(subcommand):
             verbose=False,
             excluded_files=[
                 "*/bad*",
-                "*/test/test_lib2to3/data/*",
             ],
             short=True,
             mode=modes[subcommand],

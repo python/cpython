@@ -119,7 +119,7 @@ Wave_read objects, as returned by :func:`.open`, have the following methods:
 
    Rewind the file pointer to the beginning of the audio stream.
 
-The following two methods are defined for compatibility with the :mod:`aifc`
+The following two methods are defined for compatibility with the old :mod:`!aifc`
 module, and don't do anything interesting.
 
 

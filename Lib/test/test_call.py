@@ -10,6 +10,7 @@ import itertools
 import gc
 import contextlib
 import sys
+import types
 
 
 class BadStr(str):
@@ -202,6 +203,37 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         msg = r"count\(\) takes no keyword arguments"
         self.assertRaisesRegex(TypeError, msg, [].count, x=2, y=2)
 
+    def test_object_not_callable(self):
+        msg = r"^'object' object is not callable$"
+        self.assertRaisesRegex(TypeError, msg, object())
+
+    def test_module_not_callable_no_suggestion_0(self):
+        msg = r"^'module' object is not callable$"
+        self.assertRaisesRegex(TypeError, msg, types.ModuleType("mod"))
+
+    def test_module_not_callable_no_suggestion_1(self):
+        msg = r"^'module' object is not callable$"
+        mod = types.ModuleType("mod")
+        mod.mod = 42
+        self.assertRaisesRegex(TypeError, msg, mod)
+
+    def test_module_not_callable_no_suggestion_2(self):
+        msg = r"^'module' object is not callable$"
+        mod = types.ModuleType("mod")
+        del mod.__name__
+        self.assertRaisesRegex(TypeError, msg, mod)
+
+    def test_module_not_callable_no_suggestion_3(self):
+        msg = r"^'module' object is not callable$"
+        mod = types.ModuleType("mod")
+        mod.__name__ = 42
+        self.assertRaisesRegex(TypeError, msg, mod)
+
+    def test_module_not_callable_suggestion(self):
+        msg = r"^'module' object is not callable\. Did you mean: 'mod\.mod\(\.\.\.\)'\?$"
+        mod = types.ModuleType("mod")
+        mod.mod = lambda: ...
+        self.assertRaisesRegex(TypeError, msg, mod)
 
 
 class TestCallingConventions(unittest.TestCase):
