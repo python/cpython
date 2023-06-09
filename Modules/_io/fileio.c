@@ -82,16 +82,13 @@ internal_close(fileio *self)
         int fd = self->fd;
         self->fd = -1;
         /* fd is accessible and someone else may have closed it */
-        if (_PyVerify_fd(fd)) {
-            Py_BEGIN_ALLOW_THREADS
-            err = close(fd);
-            if (err < 0)
-                save_errno = errno;
-            Py_END_ALLOW_THREADS
-        } else {
+        Py_BEGIN_ALLOW_THREADS
+        _Py_BEGIN_SUPPRESS_IPH
+        err = close(fd);
+        if (err < 0)
             save_errno = errno;
-            err = -1;
-        }
+        _Py_END_SUPPRESS_IPH
+        Py_END_ALLOW_THREADS
     }
     if (err < 0) {
         errno = save_errno;
@@ -172,12 +169,10 @@ check_fd(int fd)
     PyObject *exc;
     char *msg;
 
-    if (!_PyVerify_fd(fd)) {
-        goto badfd;
-    }
-
     Py_BEGIN_ALLOW_THREADS
+    _Py_BEGIN_SUPPRESS_IPH
     res = fstat(fd, &buf);
+    _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
 
     if (res < 0 && errno == EBADF) {
@@ -511,20 +506,19 @@ fileio_readinto(fileio *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "w*", &pbuf))
         return NULL;
 
-    if (_PyVerify_fd(self->fd)) {
-        len = pbuf.len;
-        Py_BEGIN_ALLOW_THREADS
-        errno = 0;
+    len = pbuf.len;
+    Py_BEGIN_ALLOW_THREADS
+    _Py_BEGIN_SUPPRESS_IPH
+    errno = 0;
 #if defined(MS_WIN64) || defined(MS_WINDOWS)
-        if (len > INT_MAX)
-            len = INT_MAX;
-        n = read(self->fd, pbuf.buf, (int)len);
+    if (len > INT_MAX)
+        len = INT_MAX;
+    n = read(self->fd, pbuf.buf, (int)len);
 #else
-        n = read(self->fd, pbuf.buf, len);
+    n = read(self->fd, pbuf.buf, len);
 #endif
-        Py_END_ALLOW_THREADS
-    } else
-        n = -1;
+    _Py_END_SUPPRESS_IPH
+    Py_END_ALLOW_THREADS
     PyBuffer_Release(&pbuf);
     if (n < 0) {
         if (errno == EAGAIN)
@@ -580,8 +574,6 @@ fileio_readall(fileio *self)
 
     if (self->fd < 0)
         return err_closed();
-    if (!_PyVerify_fd(self->fd))
-        return PyErr_SetFromErrno(PyExc_IOError);
 
     result = PyBytes_FromStringAndSize(NULL, SMALLCHUNK);
     if (result == NULL)
@@ -602,6 +594,7 @@ fileio_readall(fileio *self)
                 return NULL; /* result has been freed */
         }
         Py_BEGIN_ALLOW_THREADS
+        _Py_BEGIN_SUPPRESS_IPH
         errno = 0;
         n = newsize - total;
 #if defined(MS_WIN64) || defined(MS_WINDOWS)
@@ -615,6 +608,7 @@ fileio_readall(fileio *self)
                  PyBytes_AS_STRING(result) + total,
                  n);
 #endif
+        _Py_END_SUPPRESS_IPH
         Py_END_ALLOW_THREADS
         if (n == 0)
             break;
@@ -677,17 +671,16 @@ fileio_read(fileio *self, PyObject *args)
         return NULL;
     ptr = PyBytes_AS_STRING(bytes);
 
-    if (_PyVerify_fd(self->fd)) {
-        Py_BEGIN_ALLOW_THREADS
-        errno = 0;
+    Py_BEGIN_ALLOW_THREADS
+    _Py_BEGIN_SUPPRESS_IPH
+    errno = 0;
 #if defined(MS_WIN64) || defined(MS_WINDOWS)
-        n = read(self->fd, ptr, (int)size);
+    n = read(self->fd, ptr, (int)size);
 #else
-        n = read(self->fd, ptr, size);
+    n = read(self->fd, ptr, size);
 #endif
-        Py_END_ALLOW_THREADS
-    } else
-        n = -1;
+    _Py_END_SUPPRESS_IPH
+    Py_END_ALLOW_THREADS
 
     if (n < 0) {
         Py_DECREF(bytes);
@@ -727,20 +720,19 @@ fileio_write(fileio *self, PyObject *args)
         return NULL;
     }
 
-    if (_PyVerify_fd(self->fd)) {
-        Py_BEGIN_ALLOW_THREADS
-        errno = 0;
-        len = pbuf.len;
+    Py_BEGIN_ALLOW_THREADS
+    _Py_BEGIN_SUPPRESS_IPH
+    errno = 0;
+    len = pbuf.len;
 #if defined(MS_WIN64) || defined(MS_WINDOWS)
-        if (len > INT_MAX)
-            len = INT_MAX;
-        n = write(self->fd, pbuf.buf, (int)len);
+    if (len > INT_MAX)
+        len = INT_MAX;
+    n = write(self->fd, pbuf.buf, (int)len);
 #else
-        n = write(self->fd, pbuf.buf, len);
+    n = write(self->fd, pbuf.buf, len);
 #endif
-        Py_END_ALLOW_THREADS
-    } else
-        n = -1;
+    _Py_END_SUPPRESS_IPH
+    Py_END_ALLOW_THREADS
 
     PyBuffer_Release(&pbuf);
 
@@ -793,16 +785,15 @@ portable_lseek(int fd, PyObject *posobj, int whence)
             return NULL;
     }
 
-    if (_PyVerify_fd(fd)) {
-        Py_BEGIN_ALLOW_THREADS
+    Py_BEGIN_ALLOW_THREADS
+    _Py_BEGIN_SUPPRESS_IPH
 #if defined(MS_WIN64) || defined(MS_WINDOWS)
-        res = _lseeki64(fd, pos, whence);
+    res = _lseeki64(fd, pos, whence);
 #else
-        res = lseek(fd, pos, whence);
+    res = lseek(fd, pos, whence);
 #endif
-        Py_END_ALLOW_THREADS
-    } else
-        res = -1;
+    _Py_END_SUPPRESS_IPH
+    Py_END_ALLOW_THREADS
     if (res < 0)
         return PyErr_SetFromErrno(PyExc_IOError);
 

@@ -70,20 +70,6 @@ size_t Py_UniversalNewlineFread(char *, size_t, FILE *, PyObject *);
 */
 int _PyFile_SanitizeMode(char *mode);
 
-#if defined _MSC_VER && _MSC_VER >= 1400
-/* A routine to check if a file descriptor is valid on Windows.  Returns 0
- * and sets errno to EBADF if it isn't.  This is to avoid Assertions
- * from various functions in the Windows CRT beginning with
- * Visual Studio 2005
- */
-int _PyVerify_fd(int fd);
-#elif defined _MSC_VER && _MSC_VER >= 1200
-/* fdopen doesn't set errno EBADF and crashes for large fd on debug build */
-#define _PyVerify_fd(fd) (_get_osfhandle(fd) >= 0)
-#else
-#define _PyVerify_fd(A) (1) /* dummy */
-#endif
-
 /* A routine to check if a file descriptor can be select()-ed. */
 #ifdef HAVE_SELECT
  #define _PyIsSelectable_fd(FD) (((FD) >= 0) && ((FD) < FD_SETSIZE))
