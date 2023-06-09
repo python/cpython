@@ -1232,7 +1232,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
    * ``Annotated`` cannot be used with an unpacked :class:`TypeVarTuple`::
 
-        type Variadic[*Ts] = Annotated[*Ts, Ann1]  # NOT valid
+        Variadic: TypeAlias = Annotated[*Ts, Ann1]  # NOT valid
 
      This would be equivalent to::
 
@@ -2011,7 +2011,7 @@ These are not used in annotations. They are building blocks for declaring types.
       T = TypeVar('T')
       class XT(X, Generic[T]): pass  # raises TypeError
 
-   A ``TypedDict`` can be generic::
+   A ``TypedDict`` can be generic:
 
    .. testcode::
 
