@@ -6007,6 +6007,8 @@ load_stack_global(PickleState *st, UnpicklerObject *self)
         !PyUnicode_CheckExact(global_name))
     {
         PyErr_SetString(st->UnpicklingError, "STACK_GLOBAL requires str");
+        Py_DECREF(global_name);
+        Py_DECREF(module_name);
         return -1;
     }
     global = find_class(self, module_name, global_name);
