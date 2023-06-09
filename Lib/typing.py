@@ -567,7 +567,7 @@ def Never(self, parameters):
                 case str():
                     print("It's a str")
                 case _:
-                    never_call_me(arg)  # ok, arg is of type Never
+                    never_call_me(arg)  # OK, arg is of type Never
     """
     raise TypeError(f"{self} is not subscriptable")
 
@@ -600,13 +600,13 @@ def LiteralString(self, parameters):
 
         from typing import LiteralString
 
-        def run_query(sql: LiteralString) -> ...
+        def run_query(sql: LiteralString) -> None:
             ...
 
         def caller(arbitrary_string: str, literal_string: LiteralString) -> None:
-            run_query("SELECT * FROM students")  # ok
-            run_query(literal_string)  # ok
-            run_query("SELECT * FROM " + literal_string)  # ok
+            run_query("SELECT * FROM students")  # OK
+            run_query(literal_string)  # OK
+            run_query("SELECT * FROM " + literal_string)  # OK
             run_query(arbitrary_string)  # type checker error
             run_query(  # type checker error
                 f"SELECT * FROM students WHERE name = {arbitrary_string}"
@@ -2124,7 +2124,7 @@ def assert_type(val, typ, /):
     emits an error if the value is not of the specified type::
 
         def greet(name: str) -> None:
-            assert_type(name, str)  # ok
+            assert_type(name, str)  # OK
             assert_type(name, int)  # type checker error
     """
     return val
