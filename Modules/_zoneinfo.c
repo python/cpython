@@ -693,15 +693,26 @@ zoneinfo_fromutc(PyObject *obj_self, PyObject *dt)
             dt = tmp;
         }
         else {
-            PyObject *replace = PyObject_GetAttrString(tmp, "replace");
-            PyObject *args = PyTuple_New(0);
-            PyObject *kwargs = PyDict_New();
+            PyObject *replace;
+            PyObject *args;
+            PyObject *kwargs;
 
-            Py_DECREF(tmp);
-            if (args == NULL || kwargs == NULL || replace == NULL) {
-                Py_XDECREF(args);
-                Py_XDECREF(kwargs);
-                Py_XDECREF(replace);
+            replace = PyObject_GetAttrString(tmp, "replace");
+            if (replace == NULL) {
+                Py_DECREF(tmp);
+                return NULL;
+            }
+            args = PyTuple_New(0);
+            if (replace == NULL) {
+                Py_DECREF(tmp);
+                Py_DECREF(replace);
+                return NULL;
+            }
+            kwargs = PyDict_New();
+            if (kwargs == NULL) {
+                Py_DECREF(tmp);
+                Py_DECREF(replace);
+                Py_DECREF(args);
                 return NULL;
             }
 
@@ -1068,11 +1079,14 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
 
     // Load UTC offsets and isdst (size num_ttinfos)
     utcoff = PyMem_Malloc(self->num_ttinfos * sizeof(long));
-    isdst = PyMem_Malloc(self->num_ttinfos * sizeof(unsigned char));
-
-    if (utcoff == NULL || isdst == NULL) {
+    if (utcoff == NULL) {
         goto error;
     }
+    isdst = PyMem_Malloc(self->num_ttinfos * sizeof(unsigned char));
+    if (isdst == NULL) {
+        goto error;
+    }
+
     for (size_t i = 0; i < self->num_ttinfos; ++i) {
         PyObject *num = PyTuple_GetItem(utcoff_list, i);
         if (num == NULL) {
