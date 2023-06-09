@@ -79,9 +79,12 @@ end:
 static int
 errno_exec(PyObject *module)
 {
-    PyObject *module_dict = PyModule_GetDict(module);
+    PyObject *module_dict = PyModule_GetDict(module);  // Borrowed ref.
+    if (module_dict == NULL) {
+        return -1;
+    }
     PyObject *error_dict = PyDict_New();
-    if (!module_dict || !error_dict) {
+    if (error_dict == NULL) {
         return -1;
     }
     if (PyDict_SetItemString(module_dict, "errorcode", error_dict) < 0) {
