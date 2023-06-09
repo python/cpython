@@ -1692,9 +1692,8 @@ class RunFuncTestCase(BaseTestCase):
         res = subprocess.run(args)
         self.assertEqual(res.returncode, 57)
 
-    def test_run_with_an_empty_rnv(self):
-        path = FakePath(sys.executable)
-        args = [path, '-c', 'import sys; sys.exit(57)']
+    def test_run_with_an_empty_env(self):
+        args = [sys.executable, "-c", 'import sys; sys.exit(57)']
         res = subprocess.run(args, env={})
         self.assertEqual(res.returncode, 57)
         

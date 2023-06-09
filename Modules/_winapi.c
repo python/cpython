@@ -797,14 +797,14 @@ getenvironment(PyObject* environment)
 
     envsize = PyList_GET_SIZE(keys);
 
-    /* A Unicode environment block is terminated by four zero bytes:
-       two for the last string, two more to terminate the block. */
     if (envsize == 0) {
-        buffer = PyMem_NEW(wchar_t, 2);
-        p = buffer;
-        *p++ = L'\0';
-        *p++ = L'\0';
-        goto error;
+        // A environment block must be terminated by two null characters --
+        // one for the last string and one for the block.
+        buffer = PyMem_Calloc(2, sizeof(wchar_t));
+        if (!buffer) {
+            PyErr_NoMemory();
+        }
+        goto cleanup;
     }
 
     if (PyList_GET_SIZE(values) != envsize) {
@@ -880,7 +880,8 @@ getenvironment(PyObject* environment)
     *p++ = L'\0';
     assert(p == end);
 
- error:
+cleanup:
+error:
     Py_XDECREF(keys);
     Py_XDECREF(values);
     return buffer;
