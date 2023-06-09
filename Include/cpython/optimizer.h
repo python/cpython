@@ -21,7 +21,8 @@ typedef struct _PyExecutorObject {
 
 typedef struct _PyOptimizerObject _PyOptimizerObject;
 
-typedef _PyExecutorObject *(*optimize_func)(_PyOptimizerObject* self, PyCodeObject *code, _Py_CODEUNIT *instr);
+/* Should return > 0 if a new executor is created. O if no executor is produced and < 0 if an error occurred. */
+typedef int (*optimize_func)(_PyOptimizerObject* self, PyCodeObject *code, _Py_CODEUNIT *instr, _PyExecutorObject **);
 
 typedef struct _PyOptimizerObject {
     PyObject_HEAD
