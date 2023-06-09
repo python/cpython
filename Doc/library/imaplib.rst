@@ -108,18 +108,11 @@ There's also a subclass for secure connections:
       :attr:`ssl.SSLContext.check_hostname` and *Server Name Indication* (see
       :data:`ssl.HAS_SNI`).
 
-   .. deprecated:: 3.6
-
-       *keyfile* and *certfile* are deprecated in favor of *ssl_context*.
-       Please use :meth:`ssl.SSLContext.load_cert_chain` instead, or let
-       :func:`ssl.create_default_context` select the system's trusted CA
-       certificates for you.
-
    .. versionchanged:: 3.9
       The optional *timeout* parameter was added.
 
    .. versionchanged:: 3.12
-       The deprecated *keyfile* and *certfile* parameters have been removed.
+      The deprecated *keyfile* and *certfile* parameters have been removed.
 
 The second subclass allows for connections created by a child process:
 
