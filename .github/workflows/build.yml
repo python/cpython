@@ -233,6 +233,8 @@ jobs:
         key: ${{ github.job }}-${{ runner.os }}-${{ needs.check_source.outputs.config_hash }}
     - name: Install Homebrew dependencies
       run: brew install pkg-config openssl@3.0 xz gdbm tcl-tk
+    - name: Upgrade Homebrew OpenSSL to the most recent version
+      run: brew upgrade openssl@3.0
     - name: Configure CPython
       run: |
         GDBM_CFLAGS="-I$(brew --prefix gdbm)/include" \
