@@ -1310,7 +1310,7 @@ _PyTime_localtime(time_t t, struct tm *tm)
     error = localtime_s(tm, &t);
     if (error != 0) {
         // There are only 3 cases where an error could occur:
-        //   * tm is NULL
+        //   * tm is NULL (impossible in this usage)
         //   * &t is NULL (impossible in this usage)
         //   * it overflows (t < 0 or t > _MAX__TIME64_T)
         errno = error;
