@@ -260,91 +260,96 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        family(unary_not, INLINE_CACHE_ENTRIES_UNARY_NOT) = {
-            UNARY_NOT,
-            UNARY_NOT_BOOL,
-            UNARY_NOT_INT,
-            UNARY_NOT_LIST,
-            UNARY_NOT_NONE,
-            UNARY_NOT_STR,
+        inst(UNARY_NOT, (value -- res)) {
+            assert(PyBool_Check(value));
+            if (Py_IsFalse(value)) {
+                res = Py_True;
+            }
+            else {
+                res = Py_False;
+            }
+        }
+
+        family(to_bool, INLINE_CACHE_ENTRIES_TO_BOOL) = {
+            TO_BOOL,
+            TO_BOOL_BOOL,
+            TO_BOOL_INT,
+            TO_BOOL_LIST,
+            TO_BOOL_NONE,
+            TO_BOOL_STR,
         };
 
-        inst(UNARY_NOT, (unused/1, value -- res)) {
+        inst(TO_BOOL, (unused/1, value -- res)) {
             #if ENABLE_SPECIALIZATION
-            _PyUnaryNotCache *cache = (_PyUnaryNotCache *)next_instr;
+            _PyToBoolCache *cache = (_PyToBoolCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 next_instr--;
-                _Py_Specialize_UnaryNot(value, next_instr);
+                _Py_Specialize_ToBool(value, next_instr);
                 DISPATCH_SAME_OPARG();
             }
-            STAT_INC(UNARY_NOT, deferred);
+            STAT_INC(TO_BOOL, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
             int err = PyObject_IsTrue(value);
             DECREF_INPUTS();
             ERROR_IF(err < 0, error);
             if (err == 0) {
-                res = Py_True;
+                res = Py_False;
             }
             else {
-                res = Py_False;
+                res = Py_True;
             }
         }
 
-        inst(UNARY_NOT_BOOL, (unused/1, value -- res)) {
-            if (Py_IsFalse(value)) {
-                res = Py_True;
-            }
-            else {
-                DEOPT_IF(!Py_IsTrue(value), UNARY_NOT);
-                res = Py_False;
-            }
-            STAT_INC(UNARY_NOT, hit);
+        inst(TO_BOOL_BOOL, (unused/1, value -- value)) {
+            // Coolest (and dumbest-named) specialization ever:
+            DEOPT_IF(!PyBool_Check(value), TO_BOOL);
+            STAT_INC(TO_BOOL, hit);
         }
 
-        inst(UNARY_NOT_INT, (unused/1, value -- res)) {
-            DEOPT_IF(!PyLong_CheckExact(value), UNARY_NOT);
-            STAT_INC(UNARY_NOT, hit);
+        inst(TO_BOOL_INT, (unused/1, value -- res)) {
+            DEOPT_IF(!PyLong_CheckExact(value), TO_BOOL);
+            STAT_INC(TO_BOOL, hit);
             if (_PyLong_IsZero((PyLongObject *)value)) {
                 assert(_Py_IsImmortal(value));
-                res = Py_True;
+                res = Py_False;
             }
             else {
                 DECREF_INPUTS();
-                res = Py_False;
+                res = Py_True;
             }
         }
 
-        inst(UNARY_NOT_LIST, (unused/1, value -- res)) {
-            DEOPT_IF(!PyList_CheckExact(value), UNARY_NOT);
-            STAT_INC(UNARY_NOT, hit);
+        inst(TO_BOOL_LIST, (unused/1, value -- res)) {
+            DEOPT_IF(!PyList_CheckExact(value), TO_BOOL);
+            STAT_INC(TO_BOOL, hit);
             if (!Py_SIZE(value)) {
-                res = Py_True;
+                res = Py_False;
             }
             else {
-                res = Py_False;
+                res = Py_True;
             }
             DECREF_INPUTS();
         }
 
-        inst(UNARY_NOT_NONE, (unused/1, value -- res)) {
+        inst(TO_BOOL_NONE, (unused/1, value -- res)) {
             // This one is a bit weird, because we expect *some* failures:
-            DEOPT_IF(!Py_IsNone(value), UNARY_NOT);
-            STAT_INC(UNARY_NOT, hit);
-            res = Py_True;
+            DEOPT_IF(!Py_IsNone(value), TO_BOOL);
+            STAT_INC(TO_BOOL, hit);
+            res = Py_False;
         }
 
-        inst(UNARY_NOT_STR, (unused/1, value -- res)) {
-            DEOPT_IF(!PyUnicode_CheckExact(value), UNARY_NOT);
-            STAT_INC(UNARY_NOT, hit);
+        inst(TO_BOOL_STR, (unused/1, value -- res)) {
+            DEOPT_IF(!PyUnicode_CheckExact(value), TO_BOOL);
+            STAT_INC(TO_BOOL, hit);
             if (Py_Is(value, &_Py_STR(empty))) {
                 assert(_Py_IsImmortal(value));
-                res = Py_True;
+                res = Py_False;
             }
             else {
                 assert(Py_SIZE(value));
                 DECREF_INPUTS();
-                res = Py_False;
+                res = Py_True;
             }
         }
 

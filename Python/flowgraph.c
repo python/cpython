@@ -1443,7 +1443,7 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                             INSTR_SET_OP0(&bb->b_instr[i + 1], NOP);
                         }
                         break;
-                    case UNARY_NOT:
+                    case TO_BOOL:
                         cnt = get_const_value(opcode, oparg, consts);
                         if (cnt == NULL) {
                             goto error;
@@ -1453,7 +1453,7 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                         if (is_true == -1) {
                             goto error;
                         }
-                        cnt = PyBool_FromLong(!is_true);
+                        cnt = PyBool_FromLong(is_true);
                         int index = add_const(cnt, consts, const_cache);
                         if (index < 0) {
                             return ERROR;
@@ -1466,16 +1466,16 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                         if (cnt == NULL) {
                             goto error;
                         }
-                        int invert = i + 2 < bb->b_iused && bb->b_instr[i + 2].i_opcode == UNARY_NOT;
-                        int jump_op = i + invert + 2 < bb->b_iused ? bb->b_instr[i + invert + 2].i_opcode : 0;
+                        int to_bool = i + 2 < bb->b_iused && bb->b_instr[i + 2].i_opcode == TO_BOOL;
+                        int jump_op = i + to_bool + 2 < bb->b_iused ? bb->b_instr[i + to_bool + 2].i_opcode : 0;
                         if (Py_IsNone(cnt) && (jump_op == POP_JUMP_IF_FALSE || jump_op == POP_JUMP_IF_TRUE)) {
                             unsigned char nextarg = bb->b_instr[i+1].i_oparg;
                             INSTR_SET_OP0(inst, NOP);
                             INSTR_SET_OP0(&bb->b_instr[i + 1], NOP);
-                            if (invert) {
+                            if (to_bool) {
                                 INSTR_SET_OP0(&bb->b_instr[i + 2], NOP);
                             }
-                            bb->b_instr[i + invert + 2].i_opcode = nextarg ^ invert ^ (jump_op == POP_JUMP_IF_FALSE) ?
+                            bb->b_instr[i + to_bool + 2].i_opcode = nextarg ^ (jump_op == POP_JUMP_IF_FALSE) ?
                                     POP_JUMP_IF_NOT_NONE : POP_JUMP_IF_NONE;
                         }
                         Py_DECREF(cnt);
@@ -1489,9 +1489,9 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
             }
             case IS_OP:
             case CONTAINS_OP:
-                if (nextop == UNARY_NOT) {
+                if (nextop == TO_BOOL) {
                     INSTR_SET_OP0(inst, NOP);
-                    INSTR_SET_OP1(&bb->b_instr[i + 1], opcode, !oparg);
+                    INSTR_SET_OP1(&bb->b_instr[i + 1], opcode, oparg);
                     continue;
                 }
                 break;
