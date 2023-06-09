@@ -1,0 +1,8 @@
+Deprecate creating a :class:`typing.NamedTuple` class using keyword
+arguments to denote the fields (``NT = NamedTuple("NT", x=int, y=str)``).
+Use the class-based syntax or the functional syntax instead.
+
+Two methods of creating ``NamedTuple``\s with 0 fields using the functional
+syntax are also deprecated: ``NT = NamedTuple("NT")`` and ``NT =
+NamedTuple("NT", None)``. To create a ``NamedTuple`` class with 0 fields,
+either use ``class NT(NamedTuple): ...`` or ``NT = NamedTuple("NT", [])``.
