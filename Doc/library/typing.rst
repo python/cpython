@@ -3187,7 +3187,7 @@ Functions and decorators
    Decorator to indicate final methods and final classes.
 
    Decorating a method with ``@final`` indicates to a type checker that the
-   method cannot be overridden in a subclass. Decorating a class with ``@final`
+   method cannot be overridden in a subclass. Decorating a class with ``@final``
    indicates that it cannot be subclassed.
 
    For example::
