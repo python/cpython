@@ -1,1 +1,1 @@
-Improve error handling in :mod:`zoneinfo`.
+Fix bugs in :mod:`zoneinfo` where exceptions could be overwritten.
