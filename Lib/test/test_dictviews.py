@@ -338,6 +338,9 @@ class DictSetTest(unittest.TestCase):
         self.assertIsInstance(d.values(), collections.abc.ValuesView)
         self.assertIsInstance(d.values(), collections.abc.MappingView)
         self.assertIsInstance(d.values(), collections.abc.Sized)
+        self.assertIsInstance(d.values(), collections.abc.Collection)
+        self.assertIsInstance(d.values(), collections.abc.Iterable)
+        self.assertIsInstance(d.values(), collections.abc.Container)
 
         self.assertIsInstance(d.items(), collections.abc.ItemsView)
         self.assertIsInstance(d.items(), collections.abc.MappingView)

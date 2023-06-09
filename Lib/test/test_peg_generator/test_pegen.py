@@ -552,14 +552,14 @@ class TestPegen(unittest.TestCase):
                                 string="D",
                                 start=(1, 0),
                                 end=(1, 1),
-                                line="D A C A E",
+                                line="D A C A E\n",
                             ),
                             TokenInfo(
                                 type=NAME,
                                 string="A",
                                 start=(1, 2),
                                 end=(1, 3),
-                                line="D A C A E",
+                                line="D A C A E\n",
                             ),
                         ],
                         TokenInfo(
@@ -567,7 +567,7 @@ class TestPegen(unittest.TestCase):
                             string="C",
                             start=(1, 4),
                             end=(1, 5),
-                            line="D A C A E",
+                            line="D A C A E\n",
                         ),
                     ],
                     TokenInfo(
@@ -575,11 +575,11 @@ class TestPegen(unittest.TestCase):
                         string="A",
                         start=(1, 6),
                         end=(1, 7),
-                        line="D A C A E",
+                        line="D A C A E\n",
                     ),
                 ],
                 TokenInfo(
-                    type=NAME, string="E", start=(1, 8), end=(1, 9), line="D A C A E"
+                    type=NAME, string="E", start=(1, 8), end=(1, 9), line="D A C A E\n"
                 ),
             ],
         )
@@ -594,22 +594,22 @@ class TestPegen(unittest.TestCase):
                             string="B",
                             start=(1, 0),
                             end=(1, 1),
-                            line="B C A E",
+                            line="B C A E\n",
                         ),
                         TokenInfo(
                             type=NAME,
                             string="C",
                             start=(1, 2),
                             end=(1, 3),
-                            line="B C A E",
+                            line="B C A E\n",
                         ),
                     ],
                     TokenInfo(
-                        type=NAME, string="A", start=(1, 4), end=(1, 5), line="B C A E"
+                        type=NAME, string="A", start=(1, 4), end=(1, 5), line="B C A E\n"
                     ),
                 ],
                 TokenInfo(
-                    type=NAME, string="E", start=(1, 6), end=(1, 7), line="B C A E"
+                    type=NAME, string="E", start=(1, 6), end=(1, 7), line="B C A E\n"
                 ),
             ],
         )
@@ -650,14 +650,15 @@ class TestPegen(unittest.TestCase):
         """
         parser_class = make_parser(grammar)
         node = parse_string("foo = 12 + 12 .", parser_class)
+        self.maxDiff = None
         self.assertEqual(
             node,
             [
                 TokenInfo(
-                    NAME, string="foo", start=(1, 0), end=(1, 3), line="foo = 12 + 12 ."
+                    NAME, string="foo", start=(1, 0), end=(1, 3), line="foo = 12 + 12 .\n"
                 ),
                 TokenInfo(
-                    OP, string="=", start=(1, 4), end=(1, 5), line="foo = 12 + 12 ."
+                    OP, string="=", start=(1, 4), end=(1, 5), line="foo = 12 + 12 .\n"
                 ),
                 [
                     TokenInfo(
@@ -665,7 +666,7 @@ class TestPegen(unittest.TestCase):
                         string="12",
                         start=(1, 6),
                         end=(1, 8),
-                        line="foo = 12 + 12 .",
+                        line="foo = 12 + 12 .\n",
                     ),
                     [
                         [
@@ -674,14 +675,14 @@ class TestPegen(unittest.TestCase):
                                 string="+",
                                 start=(1, 9),
                                 end=(1, 10),
-                                line="foo = 12 + 12 .",
+                                line="foo = 12 + 12 .\n",
                             ),
                             TokenInfo(
                                 NUMBER,
                                 string="12",
                                 start=(1, 11),
                                 end=(1, 13),
-                                line="foo = 12 + 12 .",
+                                line="foo = 12 + 12 .\n",
                             ),
                         ]
                     ],
@@ -733,9 +734,9 @@ class TestPegen(unittest.TestCase):
         self.assertEqual(
             node,
             [
-                TokenInfo(OP, string="(", start=(1, 0), end=(1, 1), line="(1)"),
-                TokenInfo(NUMBER, string="1", start=(1, 1), end=(1, 2), line="(1)"),
-                TokenInfo(OP, string=")", start=(1, 2), end=(1, 3), line="(1)"),
+                TokenInfo(OP, string="(", start=(1, 0), end=(1, 1), line="(1)\n"),
+                TokenInfo(NUMBER, string="1", start=(1, 1), end=(1, 2), line="(1)\n"),
+                TokenInfo(OP, string=")", start=(1, 2), end=(1, 3), line="(1)\n"),
             ],
         )
 
@@ -794,7 +795,7 @@ class TestPegen(unittest.TestCase):
         start:
             | "number" n=NUMBER { eval(n.string) }
             | "string" n=STRING { n.string }
-            | SOFT_KEYWORD l=NAME n=(NUMBER | NAME | STRING) { f"{l.string} = {n.string}"}
+            | SOFT_KEYWORD l=NAME n=(NUMBER | NAME | STRING) { l.string + " = " + n.string }
         """
         parser_class = make_parser(grammar)
         self.assertEqual(parse_string("number 1", parser_class), 1)

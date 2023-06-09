@@ -1,2 +1,0 @@
-Skip symlink tests on WASI. wasmtime uses ``openat2(2)`` with
-``RESOLVE_BENEATH`` flag, which prevents symlinks with absolute paths.

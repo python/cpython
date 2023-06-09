@@ -1,3 +1,0 @@
-Use exponential backoff for specialization counters in the interpreter. Can
-reduce the number of failed specializations significantly and avoid slowdown
-for those parts of a program that are not suitable for specialization.

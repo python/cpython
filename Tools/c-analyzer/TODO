@@ -495,7 +495,6 @@ Python/import.c:PyImport_ImportModuleLevelObject():PyId___path__ _Py_IDENTIFIER(
 Python/import.c:PyImport_ImportModuleLevelObject():PyId___spec__ _Py_IDENTIFIER(__spec__)
 Python/import.c:PyImport_ImportModuleLevelObject():PyId__handle_fromlist _Py_IDENTIFIER(_handle_fromlist)
 Python/import.c:PyImport_ImportModuleLevelObject():PyId__lock_unlock_module _Py_IDENTIFIER(_lock_unlock_module)
-Python/import.c:PyImport_ReloadModule():PyId_imp                 _Py_IDENTIFIER(imp)
 Python/import.c:PyImport_ReloadModule():PyId_reload              _Py_IDENTIFIER(reload)
 Python/import.c:_PyImportZip_Init():PyId_zipimporter             _Py_IDENTIFIER(zipimporter)
 Python/import.c:import_find_and_load():PyId__find_and_load       _Py_IDENTIFIER(_find_and_load)

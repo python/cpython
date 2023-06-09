@@ -1,2 +1,0 @@
-Loading a file with invalid UTF-8 will now report the broken character at
-the correct location.

@@ -275,6 +275,10 @@ is the module's name in the Python package namespace.
       .. versionchanged:: 3.8
          The *stacklevel* parameter was added.
 
+      .. versionchanged:: 3.13
+         Remove the undocumented ``warn()`` method which was an alias to the
+         :meth:`warning` method.
+
 
    .. method:: Logger.info(msg, *args, **kwargs)
 
@@ -286,10 +290,6 @@ is the module's name in the Python package namespace.
 
       Logs a message with level :const:`WARNING` on this logger. The arguments are
       interpreted as for :meth:`debug`.
-
-      .. note:: There is an obsolete method ``warn`` which is functionally
-         identical to ``warning``. As ``warn`` is deprecated, please do not use
-         it - use ``warning`` instead.
 
    .. method:: Logger.error(msg, *args, **kwargs)
 
@@ -533,6 +533,22 @@ subclasses. However, the :meth:`__init__` method in subclasses needs to call
       Do whatever it takes to actually log the specified logging record. This version
       is intended to be implemented by subclasses and so raises a
       :exc:`NotImplementedError`.
+
+      .. warning:: This method is called after a handler-level lock is acquired, which
+         is released after this method returns. When you override this method, note
+         that you should be careful when calling anything that invokes other parts of
+         the logging API which might do locking, because that might result in a
+         deadlock. Specifically:
+
+         * Logging configuration APIs acquire the module-level lock, and then
+           individual handler-level locks as those handlers are configured.
+
+         * Many logging APIs lock the module-level lock. If such an API is called
+           from this method, it could cause a deadlock if a configuration call is
+           made on another thread, because that thread will try to acquire the
+           module-level lock *before* the handler-level lock, whereas this thread
+           tries to acquire the module-level lock *after* the handler-level lock
+           (because in this method, the handler-level lock has already been acquired).
 
 For a list of handlers included as standard, see :mod:`logging.handlers`.
 
@@ -797,8 +813,9 @@ wire).
    :type lineno: int
 
    :param msg: The event description message,
-      which can be a %-format string with placeholders for variable data.
-   :type msg: str
+      which can be a %-format string with placeholders for variable data,
+      or an arbitrary object (see :ref:`arbitrary-object-messages`).
+   :type msg: typing.Any
 
    :param args: Variable data to merge into the *msg* argument
       to obtain the event description.

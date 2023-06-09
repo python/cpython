@@ -16,11 +16,11 @@ parameter.  The available start symbols are :const:`Py_eval_input`,
 :const:`Py_file_input`, and :const:`Py_single_input`.  These are described
 following the functions which accept them as parameters.
 
-Note also that several of these functions take :c:type:`FILE*` parameters.  One
-particular issue which needs to be handled carefully is that the :c:type:`FILE`
+Note also that several of these functions take :c:expr:`FILE*` parameters.  One
+particular issue which needs to be handled carefully is that the :c:expr:`FILE`
 structure for different C libraries can be different and incompatible.  Under
 Windows (at least), it is possible for dynamically linked extensions to actually
-use different libraries, so care should be taken that :c:type:`FILE*` parameters
+use different libraries, so care should be taken that :c:expr:`FILE*` parameters
 are only passed to these functions if it is certain that they were created by
 the same library that the Python runtime is using.
 
@@ -82,7 +82,7 @@ the same library that the Python runtime is using.
 .. c:function:: int PyRun_SimpleString(const char *command)
 
    This is a simplified interface to :c:func:`PyRun_SimpleStringFlags` below,
-   leaving the :c:type:`PyCompilerFlags`\* argument set to ``NULL``.
+   leaving the :c:struct:`PyCompilerFlags`\* argument set to ``NULL``.
 
 
 .. c:function:: int PyRun_SimpleStringFlags(const char *command, PyCompilerFlags *flags)
@@ -167,6 +167,10 @@ the same library that the Python runtime is using.
    event loops, as done in the :file:`Modules/_tkinter.c` in the
    Python source code.
 
+   .. versionchanged:: 3.12
+      This function is only called from the
+      :ref:`main interpreter <sub-interpreter-support>`.
+
 
 .. c:var:: char* (*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, const char *)
 
@@ -186,6 +190,10 @@ the same library that the Python runtime is using.
       The result must be allocated by :c:func:`PyMem_RawMalloc` or
       :c:func:`PyMem_RawRealloc`, instead of being allocated by
       :c:func:`PyMem_Malloc` or :c:func:`PyMem_Realloc`.
+
+   .. versionchanged:: 3.12
+      This function is only called from the
+      :ref:`main interpreter <sub-interpreter-support>`.
 
 .. c:function:: PyObject* PyRun_String(const char *str, int start, PyObject *globals, PyObject *locals)
 
@@ -338,7 +346,7 @@ the same library that the Python runtime is using.
    interpreter loop.
 
 
-.. c:type:: struct PyCompilerFlags
+.. c:struct:: PyCompilerFlags
 
    This is the structure used to hold compiler flags.  In cases where code is only
    being compiled, it is passed as ``int flags``, and in cases where code is being

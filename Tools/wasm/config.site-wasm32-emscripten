@@ -14,9 +14,6 @@ ac_cv_buggy_getaddrinfo=no
 ac_cv_file__dev_ptmx=no
 ac_cv_file__dev_ptc=no
 
-# dummy readelf, Emscripten build does not need readelf.
-ac_cv_prog_ac_ct_READELF=true
-
 # new undefined symbols / unsupported features
 ac_cv_func_posix_spawn=no
 ac_cv_func_posix_spawnp=no

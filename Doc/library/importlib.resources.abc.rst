@@ -89,8 +89,11 @@
 
 .. class:: Traversable
 
-    An object with a subset of pathlib.Path methods suitable for
+    An object with a subset of :class:`pathlib.Path` methods suitable for
     traversing directories and opening files.
+
+    For a representation of the object on the file-system, use
+    :meth:`importlib.resources.as_file`.
 
     .. versionadded:: 3.9
 
@@ -145,7 +148,7 @@
     :class:`importlib.resources.abc.ResourceReader` and provides
     concrete implementations of the :class:`importlib.resources.abc.ResourceReader`'s
     abstract methods. Therefore, any loader supplying
-    :class:`importlib.abc.TraversableReader` also supplies ResourceReader.
+    :class:`importlib.abc.TraversableResources` also supplies ResourceReader.
 
     Loaders that wish to support resource reading are expected to
     implement this interface.

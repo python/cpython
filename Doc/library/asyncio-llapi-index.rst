@@ -19,7 +19,7 @@ Obtaining the Event Loop
       - The **preferred** function to get the running event loop.
 
     * - :func:`asyncio.get_event_loop`
-      - Get an event loop instance (current or via the policy).
+      - Get an event loop instance (running or current via the current policy).
 
     * - :func:`asyncio.set_event_loop`
       - Set the event loop as current via the current policy.
@@ -37,7 +37,7 @@ Event Loop Methods
 ==================
 
 See also the main documentation section about the
-:ref:`event loop methods <asyncio-event-loop>`.
+:ref:`asyncio-event-loop-methods`.
 
 .. rubric:: Lifecycle
 .. list-table::

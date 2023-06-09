@@ -1,2 +1,0 @@
-Ensures changes to :c:member:`PyConfig.module_search_paths` are ignored
-unless :c:member:`PyConfig.module_search_paths_set` is set

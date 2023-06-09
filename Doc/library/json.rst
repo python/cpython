@@ -125,7 +125,7 @@ See :ref:`json-commandline` for detailed documentation.
 
 .. note::
 
-   JSON is a subset of `YAML <http://yaml.org/>`_ 1.2.  The JSON produced by
+   JSON is a subset of `YAML <https://yaml.org/>`_ 1.2.  The JSON produced by
    this module's default settings (in particular, the default *separators*
    value) is also a subset of YAML 1.0 and 1.1.  This module can thus also be
    used as a YAML serializer.
@@ -258,7 +258,7 @@ Basic Usage
    be used to use another datatype or parser for JSON integers
    (e.g. :class:`float`).
 
-   .. versionchanged:: 3.12
+   .. versionchanged:: 3.11
       The default *parse_int* of :func:`int` now limits the maximum length of
       the integer string via the interpreter's :ref:`integer string
       conversion length limitation <int_max_str_digits>` to help avoid denial
@@ -552,21 +552,21 @@ Exceptions
            AttrDict(mapping, **kwargs)
            AttrDict(iterable, **kwargs)
 
-   Subclass of :class:`dict` object that also supports attribute style dotted access.
+   Subclass of :class:`dict` that also supports attribute style dotted access.
 
    This class is intended for use with the :attr:`object_hook` in
-   :func:`json.load` and :func:`json.loads`::
+   :func:`json.load` and :func:`json.loads`:
 
    .. doctest::
 
-        >>> json_string = '{"mercury": 88, "venus": 225, "earth": 365, "mars": 687}'
-        >>> orbital_period = json.loads(json_string, object_hook=AttrDict)
-        >>> orbital_period['earth']     # Dict style lookup
-        365
-        >>> orbital_period.earth        # Attribute style lookup
-        365
-        >>> orbital_period.keys()       # All dict methods are present
-        dict_keys(['mercury', 'venus', 'earth', 'mars'])
+       >>> json_string = '{"mercury": 88, "venus": 225, "earth": 365, "mars": 687}'
+       >>> orbital_period = json.loads(json_string, object_hook=AttrDict)
+       >>> orbital_period['earth']     # Dict style lookup
+       365
+       >>> orbital_period.earth        # Attribute style lookup
+       365
+       >>> orbital_period.keys()       # All dict methods are present
+       dict_keys(['mercury', 'venus', 'earth', 'mars'])
 
    Attribute style access only works for keys that are valid attribute
    names.  In contrast, dictionary style access works for all keys.  For

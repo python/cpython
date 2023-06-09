@@ -1,3 +1,0 @@
-The :func:`locale.resetlocale` function is deprecated and will be removed in
-Python 3.13. Use ``locale.setlocale(locale.LC_ALL, "")`` instead. Patch by
-Victor Stinner.
