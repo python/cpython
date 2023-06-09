@@ -218,10 +218,6 @@ class AsyncAutospecTest(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             create_autospec(async_func, instance=True)
 
-    @unittest.skip('Broken test from https://bugs.python.org/issue37251')
-    def test_create_autospec_awaitable_class(self):
-        self.assertIsInstance(create_autospec(AwaitableClass), AsyncMock)
-
     def test_create_autospec(self):
         spec = create_autospec(async_func_args)
         awaitable = spec(1, 2, c=3)

@@ -6,11 +6,13 @@ if __name__ != 'test.support':
 import contextlib
 import functools
 import getpass
+import opcode
 import os
 import re
 import stat
 import sys
 import sysconfig
+import textwrap
 import time
 import types
 import unittest
@@ -46,10 +48,12 @@ __all__ = [
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     "check__all__", "skip_if_buggy_ucrt_strfptime",
     "check_disallow_instantiation", "check_sanitizer", "skip_if_sanitizer",
-    "requires_limited_api",
+    "requires_limited_api", "requires_specialization",
     # sys
     "is_jython", "is_android", "is_emscripten", "is_wasi",
     "check_impl_detail", "unix_shell", "setswitchinterval",
+    # os
+    "get_pagesize",
     # network
     "open_urlresource",
     # processes
@@ -410,7 +414,7 @@ def check_sanitizer(*, address=False, memory=False, ub=False):
     )
     address_sanitizer = (
         '-fsanitize=address' in _cflags or
-        '--with-memory-sanitizer' in _config_args
+        '--with-address-sanitizer' in _config_args
     )
     ub_sanitizer = (
         '-fsanitize=undefined' in _cflags or
@@ -581,7 +585,8 @@ def darwin_malloc_err_warning(test_name):
     msg = ' NOTICE '
     detail = (f'{test_name} may generate "malloc can\'t allocate region"\n'
               'warnings on macOS systems. This behavior is known. Do not\n'
-              'report a bug unless tests are also failing. See bpo-40928.')
+              'report a bug unless tests are also failing.\n'
+              'See https://github.com/python/cpython/issues/85100')
 
     padding, _ = shutil.get_terminal_size()
     print(msg.center(padding, '-'))
@@ -614,6 +619,14 @@ def sortdict(dict):
     reprpairs = ["%r: %r" % pair for pair in items]
     withcommas = ", ".join(reprpairs)
     return "{%s}" % withcommas
+
+
+def run_code(code: str) -> dict[str, object]:
+    """Run a piece of code after dedenting it, and return its global namespace."""
+    ns = {}
+    exec(textwrap.dedent(code), ns)
+    return ns
+
 
 def check_syntax_error(testcase, statement, errtext='', *, lineno=None, offset=None):
     with testcase.assertRaisesRegex(SyntaxError, errtext) as cm:
@@ -1077,6 +1090,9 @@ def requires_limited_api(test):
     return unittest.skipUnless(
         _testcapi.LIMITED_API_AVAILABLE, 'needs Limited API support')(test)
 
+def requires_specialization(test):
+    return unittest.skipUnless(
+        opcode.ENABLE_SPECIALIZATION, "requires specialization")(test)
 
 def _filter_suite(suite, pred):
     """Recursively filter test cases in a suite based on a predicate."""
@@ -1101,7 +1117,7 @@ def _run_suite(suite):
     if junit_xml_list is not None:
         junit_xml_list.append(result.get_xml_element())
 
-    if not result.testsRun and not result.skipped:
+    if not result.testsRun and not result.skipped and not result.errors:
         raise TestDidNotRun
     if not result.wasSuccessful():
         if len(result.errors) == 1 and not result.failures:
@@ -1849,15 +1865,16 @@ def missing_compiler_executable(cmd_names=[]):
     missing.
 
     """
-    # TODO (PEP 632): alternate check without using distutils
-    from distutils import ccompiler, sysconfig, spawn, errors
+    from setuptools._distutils import ccompiler, sysconfig, spawn
+    from setuptools import errors
+
     compiler = ccompiler.new_compiler()
     sysconfig.customize_compiler(compiler)
     if compiler.compiler_type == "msvc":
         # MSVC has no executables, so check whether initialization succeeds
         try:
             compiler.initialize()
-        except errors.DistutilsPlatformError:
+        except errors.PlatformError:
             return "msvc"
     for name in compiler.executables:
         if cmd_names and name not in cmd_names:
@@ -1886,6 +1903,18 @@ def setswitchinterval(interval):
         if _is_android_emulator:
             interval = minimum_interval
     return sys.setswitchinterval(interval)
+
+
+def get_pagesize():
+    """Get size of a page in bytes."""
+    try:
+        page_size = os.sysconf('SC_PAGESIZE')
+    except (ValueError, AttributeError):
+        try:
+            page_size = os.sysconf('SC_PAGE_SIZE')
+        except (ValueError, AttributeError):
+            page_size = 4096
+    return page_size
 
 
 @contextlib.contextmanager
@@ -2240,6 +2269,62 @@ def requires_venv_with_pip():
     except ImportError:
         ctypes = None
     return unittest.skipUnless(ctypes, 'venv: pip requires ctypes')
+
+
+@functools.cache
+def _findwheel(pkgname):
+    """Try to find a wheel with the package specified as pkgname.
+
+    If set, the wheels are searched for in WHEEL_PKG_DIR (see ensurepip).
+    Otherwise, they are searched for in the test directory.
+    """
+    wheel_dir = sysconfig.get_config_var('WHEEL_PKG_DIR') or TEST_HOME_DIR
+    filenames = os.listdir(wheel_dir)
+    filenames = sorted(filenames, reverse=True)  # approximate "newest" first
+    for filename in filenames:
+        # filename is like 'setuptools-67.6.1-py3-none-any.whl'
+        if not filename.endswith(".whl"):
+            continue
+        prefix = pkgname + '-'
+        if filename.startswith(prefix):
+            return os.path.join(wheel_dir, filename)
+    raise FileNotFoundError(f"No wheel for {pkgname} found in {wheel_dir}")
+
+
+# Context manager that creates a virtual environment, install setuptools and wheel in it
+# and returns the path to the venv directory and the path to the python executable
+@contextlib.contextmanager
+def setup_venv_with_pip_setuptools_wheel(venv_dir):
+    import subprocess
+    from .os_helper import temp_cwd
+
+    with temp_cwd() as temp_dir:
+        # Create virtual environment to get setuptools
+        cmd = [sys.executable, '-X', 'dev', '-m', 'venv', venv_dir]
+        if verbose:
+            print()
+            print('Run:', ' '.join(cmd))
+        subprocess.run(cmd, check=True)
+
+        venv = os.path.join(temp_dir, venv_dir)
+
+        # Get the Python executable of the venv
+        python_exe = os.path.basename(sys.executable)
+        if sys.platform == 'win32':
+            python = os.path.join(venv, 'Scripts', python_exe)
+        else:
+            python = os.path.join(venv, 'bin', python_exe)
+
+        cmd = [python, '-X', 'dev',
+               '-m', 'pip', 'install',
+               _findwheel('setuptools'),
+               _findwheel('wheel')]
+        if verbose:
+            print()
+            print('Run:', ' '.join(cmd))
+        subprocess.run(cmd, check=True)
+
+        yield python
 
 
 # True if Python is built with the Py_DEBUG macro defined: if

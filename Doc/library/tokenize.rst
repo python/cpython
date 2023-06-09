@@ -139,11 +139,6 @@ function it uses to do this is available:
        2,
        3
 
-Note that unclosed single-quoted strings do not cause an error to be
-raised. They are tokenized as :data:`~token.ERRORTOKEN`, followed by the
-tokenization of their contents.
-
-
 .. _tokenize-cli:
 
 Command-Line Usage

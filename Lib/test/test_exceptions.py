@@ -155,6 +155,7 @@ class ExceptionTests(unittest.TestCase):
 
         ckmsg(s, "'continue' not properly in loop")
         ckmsg("continue\n", "'continue' not properly in loop")
+        ckmsg("f'{6 0}'", "invalid syntax. Perhaps you forgot a comma?")
 
     def testSyntaxErrorMissingParens(self):
         def ckmsg(src, msg, exception=SyntaxError):
@@ -227,7 +228,7 @@ class ExceptionTests(unittest.TestCase):
         check('Python = "\u1e54\xfd\u0163\u0125\xf2\xf1" +', 1, 20)
         check(b'# -*- coding: cp1251 -*-\nPython = "\xcf\xb3\xf2\xee\xed" +',
               2, 19, encoding='cp1251')
-        check(b'Python = "\xcf\xb3\xf2\xee\xed" +', 1, 18)
+        check(b'Python = "\xcf\xb3\xf2\xee\xed" +', 1, 10)
         check('x = "a', 1, 5)
         check('lambda x: x = 2', 1, 1)
         check('f{a + b + c}', 1, 2)
@@ -334,8 +335,7 @@ class ExceptionTests(unittest.TestCase):
             try:
                 _testcapi.raise_exception(BadException, 1)
             except TypeError as err:
-                exc, err, tb = sys.exc_info()
-                co = tb.tb_frame.f_code
+                co = err.__traceback__.tb_frame.f_code
                 self.assertEqual(co.co_name, "test_capi1")
                 self.assertTrue(co.co_filename.endswith('test_exceptions.py'))
             else:
@@ -346,7 +346,7 @@ class ExceptionTests(unittest.TestCase):
             try:
                 _testcapi.raise_exception(BadException, 0)
             except RuntimeError as err:
-                exc, err, tb = sys.exc_info()
+                tb = err.__traceback__.tb_next
                 co = tb.tb_frame.f_code
                 self.assertEqual(co.co_name, "__init__")
                 self.assertTrue(co.co_filename.endswith('test_exceptions.py'))
@@ -417,45 +417,45 @@ class ExceptionTests(unittest.TestCase):
         # test that exception attributes are happy
 
         exceptionList = [
-            (BaseException, (), {'args' : ()}),
-            (BaseException, (1, ), {'args' : (1,)}),
-            (BaseException, ('foo',),
+            (BaseException, (), {}, {'args' : ()}),
+            (BaseException, (1, ), {}, {'args' : (1,)}),
+            (BaseException, ('foo',), {},
                 {'args' : ('foo',)}),
-            (BaseException, ('foo', 1),
+            (BaseException, ('foo', 1), {},
                 {'args' : ('foo', 1)}),
-            (SystemExit, ('foo',),
+            (SystemExit, ('foo',), {},
                 {'args' : ('foo',), 'code' : 'foo'}),
-            (OSError, ('foo',),
+            (OSError, ('foo',), {},
                 {'args' : ('foo',), 'filename' : None, 'filename2' : None,
                  'errno' : None, 'strerror' : None}),
-            (OSError, ('foo', 'bar'),
+            (OSError, ('foo', 'bar'), {},
                 {'args' : ('foo', 'bar'),
                  'filename' : None, 'filename2' : None,
                  'errno' : 'foo', 'strerror' : 'bar'}),
-            (OSError, ('foo', 'bar', 'baz'),
+            (OSError, ('foo', 'bar', 'baz'), {},
                 {'args' : ('foo', 'bar'),
                  'filename' : 'baz', 'filename2' : None,
                  'errno' : 'foo', 'strerror' : 'bar'}),
-            (OSError, ('foo', 'bar', 'baz', None, 'quux'),
+            (OSError, ('foo', 'bar', 'baz', None, 'quux'), {},
                 {'args' : ('foo', 'bar'), 'filename' : 'baz', 'filename2': 'quux'}),
-            (OSError, ('errnoStr', 'strErrorStr', 'filenameStr'),
+            (OSError, ('errnoStr', 'strErrorStr', 'filenameStr'), {},
                 {'args' : ('errnoStr', 'strErrorStr'),
                  'strerror' : 'strErrorStr', 'errno' : 'errnoStr',
                  'filename' : 'filenameStr'}),
-            (OSError, (1, 'strErrorStr', 'filenameStr'),
+            (OSError, (1, 'strErrorStr', 'filenameStr'), {},
                 {'args' : (1, 'strErrorStr'), 'errno' : 1,
                  'strerror' : 'strErrorStr',
                  'filename' : 'filenameStr', 'filename2' : None}),
-            (SyntaxError, (), {'msg' : None, 'text' : None,
+            (SyntaxError, (), {}, {'msg' : None, 'text' : None,
                 'filename' : None, 'lineno' : None, 'offset' : None,
                 'end_offset': None, 'print_file_and_line' : None}),
-            (SyntaxError, ('msgStr',),
+            (SyntaxError, ('msgStr',), {},
                 {'args' : ('msgStr',), 'text' : None,
                  'print_file_and_line' : None, 'msg' : 'msgStr',
                  'filename' : None, 'lineno' : None, 'offset' : None,
                  'end_offset': None}),
             (SyntaxError, ('msgStr', ('filenameStr', 'linenoStr', 'offsetStr',
-                           'textStr', 'endLinenoStr', 'endOffsetStr')),
+                           'textStr', 'endLinenoStr', 'endOffsetStr')), {},
                 {'offset' : 'offsetStr', 'text' : 'textStr',
                  'args' : ('msgStr', ('filenameStr', 'linenoStr',
                                       'offsetStr', 'textStr',
@@ -465,7 +465,7 @@ class ExceptionTests(unittest.TestCase):
                  'end_lineno': 'endLinenoStr', 'end_offset': 'endOffsetStr'}),
             (SyntaxError, ('msgStr', 'filenameStr', 'linenoStr', 'offsetStr',
                            'textStr', 'endLinenoStr', 'endOffsetStr',
-                           'print_file_and_lineStr'),
+                           'print_file_and_lineStr'), {},
                 {'text' : None,
                  'args' : ('msgStr', 'filenameStr', 'linenoStr', 'offsetStr',
                            'textStr', 'endLinenoStr', 'endOffsetStr',
@@ -473,38 +473,40 @@ class ExceptionTests(unittest.TestCase):
                  'print_file_and_line' : None, 'msg' : 'msgStr',
                  'filename' : None, 'lineno' : None, 'offset' : None,
                  'end_lineno': None, 'end_offset': None}),
-            (UnicodeError, (), {'args' : (),}),
+            (UnicodeError, (), {}, {'args' : (),}),
             (UnicodeEncodeError, ('ascii', 'a', 0, 1,
-                                  'ordinal not in range'),
+                                  'ordinal not in range'), {},
                 {'args' : ('ascii', 'a', 0, 1,
                                            'ordinal not in range'),
                  'encoding' : 'ascii', 'object' : 'a',
                  'start' : 0, 'reason' : 'ordinal not in range'}),
             (UnicodeDecodeError, ('ascii', bytearray(b'\xff'), 0, 1,
-                                  'ordinal not in range'),
+                                  'ordinal not in range'), {},
                 {'args' : ('ascii', bytearray(b'\xff'), 0, 1,
                                            'ordinal not in range'),
                  'encoding' : 'ascii', 'object' : b'\xff',
                  'start' : 0, 'reason' : 'ordinal not in range'}),
             (UnicodeDecodeError, ('ascii', b'\xff', 0, 1,
-                                  'ordinal not in range'),
+                                  'ordinal not in range'), {},
                 {'args' : ('ascii', b'\xff', 0, 1,
                                            'ordinal not in range'),
                  'encoding' : 'ascii', 'object' : b'\xff',
                  'start' : 0, 'reason' : 'ordinal not in range'}),
-            (UnicodeTranslateError, ("\u3042", 0, 1, "ouch"),
+            (UnicodeTranslateError, ("\u3042", 0, 1, "ouch"), {},
                 {'args' : ('\u3042', 0, 1, 'ouch'),
                  'object' : '\u3042', 'reason' : 'ouch',
                  'start' : 0, 'end' : 1}),
-            (NaiveException, ('foo',),
+            (NaiveException, ('foo',), {},
                 {'args': ('foo',), 'x': 'foo'}),
-            (SlottedNaiveException, ('foo',),
+            (SlottedNaiveException, ('foo',), {},
                 {'args': ('foo',), 'x': 'foo'}),
+            (AttributeError, ('foo',), dict(name='name', obj='obj'),
+                dict(args=('foo',), name='name', obj='obj')),
         ]
         try:
             # More tests are in test_WindowsError
             exceptionList.append(
-                (WindowsError, (1, 'strErrorStr', 'filenameStr'),
+                (WindowsError, (1, 'strErrorStr', 'filenameStr'), {},
                     {'args' : (1, 'strErrorStr'),
                      'strerror' : 'strErrorStr', 'winerror' : None,
                      'errno' : 1,
@@ -513,11 +515,11 @@ class ExceptionTests(unittest.TestCase):
         except NameError:
             pass
 
-        for exc, args, expected in exceptionList:
+        for exc, args, kwargs, expected in exceptionList:
             try:
-                e = exc(*args)
+                e = exc(*args, **kwargs)
             except:
-                print("\nexc=%r, args=%r" % (exc, args), file=sys.stderr)
+                print(f"\nexc={exc!r}, args={args!r}", file=sys.stderr)
                 # raise
             else:
                 # Verify module name
@@ -540,7 +542,12 @@ class ExceptionTests(unittest.TestCase):
                         new = p.loads(s)
                         for checkArgName in expected:
                             got = repr(getattr(new, checkArgName))
-                            want = repr(expected[checkArgName])
+                            if exc == AttributeError and checkArgName == 'obj':
+                                # See GH-103352, we're not pickling
+                                # obj at this point. So verify it's None.
+                                want = repr(None)
+                            else:
+                                want = repr(expected[checkArgName])
                             self.assertEqual(got, want,
                                              'pickled "%r", attribute "%s' %
                                              (e, checkArgName))
@@ -598,8 +605,8 @@ class ExceptionTests(unittest.TestCase):
     def testWithTraceback(self):
         try:
             raise IndexError(4)
-        except:
-            tb = sys.exc_info()[2]
+        except Exception as e:
+            tb = e.__traceback__
 
         e = BaseException().with_traceback(tb)
         self.assertIsInstance(e, BaseException)
@@ -652,8 +659,8 @@ class ExceptionTests(unittest.TestCase):
     def testNoneClearsTracebackAttr(self):
         try:
             raise IndexError(4)
-        except:
-            tb = sys.exc_info()[2]
+        except Exception as e:
+            tb = e.__traceback__
 
         e = Exception()
         e.__traceback__ = tb
@@ -887,28 +894,28 @@ class ExceptionTests(unittest.TestCase):
             try:
                 raise KeyError("caught")
             except KeyError:
-                yield sys.exc_info()[0]
-                yield sys.exc_info()[0]
-            yield sys.exc_info()[0]
+                yield sys.exception()
+                yield sys.exception()
+            yield sys.exception()
         g = yield_raise()
-        self.assertEqual(next(g), KeyError)
-        self.assertEqual(sys.exc_info()[0], None)
-        self.assertEqual(next(g), KeyError)
-        self.assertEqual(sys.exc_info()[0], None)
-        self.assertEqual(next(g), None)
+        self.assertIsInstance(next(g), KeyError)
+        self.assertIsNone(sys.exception())
+        self.assertIsInstance(next(g), KeyError)
+        self.assertIsNone(sys.exception())
+        self.assertIsNone(next(g))
 
         # Same test, but inside an exception handler
         try:
             raise TypeError("foo")
         except TypeError:
             g = yield_raise()
-            self.assertEqual(next(g), KeyError)
-            self.assertEqual(sys.exc_info()[0], TypeError)
-            self.assertEqual(next(g), KeyError)
-            self.assertEqual(sys.exc_info()[0], TypeError)
-            self.assertEqual(next(g), TypeError)
+            self.assertIsInstance(next(g), KeyError)
+            self.assertIsInstance(sys.exception(), TypeError)
+            self.assertIsInstance(next(g), KeyError)
+            self.assertIsInstance(sys.exception(), TypeError)
+            self.assertIsInstance(next(g), TypeError)
             del g
-            self.assertEqual(sys.exc_info()[0], TypeError)
+            self.assertIsInstance(sys.exception(), TypeError)
 
     def test_generator_leaking2(self):
         # See issue 12475.
@@ -923,7 +930,7 @@ class ExceptionTests(unittest.TestCase):
             next(it)
         except StopIteration:
             pass
-        self.assertEqual(sys.exc_info(), (None, None, None))
+        self.assertIsNone(sys.exception())
 
     def test_generator_leaking3(self):
         # See issue #23353.  When gen.throw() is called, the caller's
@@ -932,17 +939,17 @@ class ExceptionTests(unittest.TestCase):
             try:
                 yield
             except ZeroDivisionError:
-                yield sys.exc_info()[1]
+                yield sys.exception()
         it = g()
         next(it)
         try:
             1/0
         except ZeroDivisionError as e:
-            self.assertIs(sys.exc_info()[1], e)
+            self.assertIs(sys.exception(), e)
             gen_exc = it.throw(e)
-            self.assertIs(sys.exc_info()[1], e)
+            self.assertIs(sys.exception(), e)
             self.assertIs(gen_exc, e)
-        self.assertEqual(sys.exc_info(), (None, None, None))
+        self.assertIsNone(sys.exception())
 
     def test_generator_leaking4(self):
         # See issue #23353.  When an exception is raised by a generator,
@@ -951,7 +958,7 @@ class ExceptionTests(unittest.TestCase):
             try:
                 1/0
             except ZeroDivisionError:
-                yield sys.exc_info()[0]
+                yield sys.exception()
                 raise
         it = g()
         try:
@@ -959,7 +966,7 @@ class ExceptionTests(unittest.TestCase):
         except TypeError:
             # The caller's exception state (TypeError) is temporarily
             # saved in the generator.
-            tp = next(it)
+            tp = type(next(it))
         self.assertIs(tp, ZeroDivisionError)
         try:
             next(it)
@@ -967,15 +974,15 @@ class ExceptionTests(unittest.TestCase):
             # with an exception, it shouldn't have restored the old
             # exception state (TypeError).
         except ZeroDivisionError as e:
-            self.assertIs(sys.exc_info()[1], e)
+            self.assertIs(sys.exception(), e)
         # We used to find TypeError here.
-        self.assertEqual(sys.exc_info(), (None, None, None))
+        self.assertIsNone(sys.exception())
 
     def test_generator_doesnt_retain_old_exc(self):
         def g():
-            self.assertIsInstance(sys.exc_info()[1], RuntimeError)
+            self.assertIsInstance(sys.exception(), RuntimeError)
             yield
-            self.assertEqual(sys.exc_info(), (None, None, None))
+            self.assertIsNone(sys.exception())
         it = g()
         try:
             raise RuntimeError
@@ -983,7 +990,7 @@ class ExceptionTests(unittest.TestCase):
             next(it)
         self.assertRaises(StopIteration, next, it)
 
-    def test_generator_finalizing_and_exc_info(self):
+    def test_generator_finalizing_and_sys_exception(self):
         # See #7173
         def simple_gen():
             yield 1
@@ -995,7 +1002,7 @@ class ExceptionTests(unittest.TestCase):
                 return next(gen)
         run_gen()
         gc_collect()
-        self.assertEqual(sys.exc_info(), (None, None, None))
+        self.assertIsNone(sys.exception())
 
     def _check_generator_cleanup_exc_state(self, testfunc):
         # Issue #12791: exception state is cleaned up as soon as a generator
@@ -1066,14 +1073,14 @@ class ExceptionTests(unittest.TestCase):
         class MyObject:
             def __del__(self):
                 nonlocal e
-                e = sys.exc_info()
+                e = sys.exception()
         e = ()
         try:
             raise Exception(MyObject())
         except:
             pass
         gc_collect()  # For PyPy or other GCs.
-        self.assertEqual(e, (None, None, None))
+        self.assertIsNone(e)
 
     def test_raise_does_not_create_context_chain_cycle(self):
         class A(Exception):
@@ -1134,7 +1141,6 @@ class ExceptionTests(unittest.TestCase):
         self.assertIsInstance(exc.__context__, ValueError)
         self.assertIs(exc.__context__.__context__, exc.__context__)
 
-    @unittest.skip("See issue 44895")
     def test_no_hang_on_context_chain_cycle2(self):
         # See issue 25782. Cycle at head of context chain.
 
@@ -1336,11 +1342,11 @@ class ExceptionTests(unittest.TestCase):
         def g():
             try:
                 return g()
-            except RecursionError:
-                return sys.exc_info()
-        e, v, tb = g()
-        self.assertIsInstance(v, RecursionError, type(v))
-        self.assertIn("maximum recursion depth exceeded", str(v))
+            except RecursionError as e:
+                return e
+        exc = g()
+        self.assertIsInstance(exc, RecursionError, type(exc))
+        self.assertIn("maximum recursion depth exceeded", str(exc))
 
 
     @cpython_only
@@ -1415,8 +1421,8 @@ class ExceptionTests(unittest.TestCase):
     @cpython_only
     def test_recursion_normalizing_infinite_exception(self):
         # Issue #30697. Test that a RecursionError is raised when
-        # PyErr_NormalizeException() maximum recursion depth has been
-        # exceeded.
+        # maximum recursion depth has been exceeded when creating
+        # an exception
         code = """if 1:
             import _testcapi
             try:
@@ -1426,8 +1432,7 @@ class ExceptionTests(unittest.TestCase):
         """
         rc, out, err = script_helper.assert_python_failure("-c", code)
         self.assertEqual(rc, 1)
-        self.assertIn(b'RecursionError: maximum recursion depth exceeded '
-                      b'while normalizing an exception', err)
+        self.assertIn(b'RecursionError: maximum recursion depth exceeded', err)
         self.assertIn(b'Done.', out)
 
 
@@ -1693,7 +1698,7 @@ class ExceptionTests(unittest.TestCase):
                 raise ValueError
             except ValueError:
                 yield 1
-            self.assertEqual(sys.exc_info(), (None, None, None))
+            self.assertIsNone(sys.exception())
             yield 2
 
         gen = g()

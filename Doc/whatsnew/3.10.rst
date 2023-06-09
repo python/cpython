@@ -2,8 +2,6 @@
   What's New In Python 3.10
 ****************************
 
-:Release: |release|
-:Date: |today|
 :Editor: Pablo Galindo Salgado
 
 .. Rules for maintenance:
@@ -1510,7 +1508,7 @@ query parameter separators in :func:`urllib.parse.parse_qs` and
 :func:`urllib.parse.parse_qsl`.  Due to security concerns, and to conform with
 newer W3C recommendations, this has been changed to allow only a single
 separator key, with ``&`` as the default.  This change also affects
-:func:`cgi.parse` and :func:`cgi.parse_multipart` as they use the affected
+:func:`!cgi.parse` and :func:`!cgi.parse_multipart` as they use the affected
 functions internally.  For more details, please see their respective
 documentation.
 (Contributed by Adam Goldschmidt, Senthil Kumaran and Ken Jin in :issue:`42967`.)
@@ -1610,11 +1608,11 @@ Deprecated
 * Starting in this release, there will be a concerted effort to begin
   cleaning up old import semantics that were kept for Python 2.7
   compatibility. Specifically,
-  :meth:`~importlib.abc.PathEntryFinder.find_loader`/:meth:`~importlib.abc.Finder.find_module`
+  :meth:`!find_loader`/:meth:`!find_module`
   (superseded by :meth:`~importlib.abc.Finder.find_spec`),
   :meth:`~importlib.abc.Loader.load_module`
   (superseded by :meth:`~importlib.abc.Loader.exec_module`),
-  :meth:`~importlib.abc.Loader.module_repr` (which the import system
+  :meth:`!module_repr` (which the import system
   takes care of for you), the ``__package__`` attribute
   (superseded by ``__spec__.parent``), the ``__loader__`` attribute
   (superseded by ``__spec__.loader``), and the ``__cached__`` attribute
@@ -1647,8 +1645,8 @@ Deprecated
   :meth:`~importlib.abc.Loader.exec_module` is preferred.
   (Contributed by Brett Cannon in :issue:`26131`.)
 
-* The use of :meth:`importlib.abc.MetaPathFinder.find_module` and
-  :meth:`importlib.abc.PathEntryFinder.find_module` by the import system now
+* The use of :meth:`!importlib.abc.MetaPathFinder.find_module` and
+  :meth:`!importlib.abc.PathEntryFinder.find_module` by the import system now
   trigger an :exc:`ImportWarning` as
   :meth:`importlib.abc.MetaPathFinder.find_spec` and
   :meth:`importlib.abc.PathEntryFinder.find_spec`
@@ -1656,53 +1654,53 @@ Deprecated
   :func:`importlib.util.spec_from_loader` to help in porting.
   (Contributed by Brett Cannon in :issue:`42134`.)
 
-* The use of :meth:`importlib.abc.PathEntryFinder.find_loader` by the import
+* The use of :meth:`!importlib.abc.PathEntryFinder.find_loader` by the import
   system now triggers an :exc:`ImportWarning` as
   :meth:`importlib.abc.PathEntryFinder.find_spec` is preferred. You can use
   :func:`importlib.util.spec_from_loader` to help in porting.
   (Contributed by Brett Cannon in :issue:`43672`.)
 
 * The various implementations of
-  :meth:`importlib.abc.MetaPathFinder.find_module` (
-  :meth:`importlib.machinery.BuiltinImporter.find_module`,
-  :meth:`importlib.machinery.FrozenImporter.find_module`,
-  :meth:`importlib.machinery.WindowsRegistryFinder.find_module`,
-  :meth:`importlib.machinery.PathFinder.find_module`,
-  :meth:`importlib.abc.MetaPathFinder.find_module` ),
-  :meth:`importlib.abc.PathEntryFinder.find_module` (
-  :meth:`importlib.machinery.FileFinder.find_module` ), and
-  :meth:`importlib.abc.PathEntryFinder.find_loader` (
-  :meth:`importlib.machinery.FileFinder.find_loader` )
+  :meth:`!importlib.abc.MetaPathFinder.find_module` (
+  :meth:`!importlib.machinery.BuiltinImporter.find_module`,
+  :meth:`!importlib.machinery.FrozenImporter.find_module`,
+  :meth:`!importlib.machinery.WindowsRegistryFinder.find_module`,
+  :meth:`!importlib.machinery.PathFinder.find_module`,
+  :meth:`!importlib.abc.MetaPathFinder.find_module` ),
+  :meth:`!importlib.abc.PathEntryFinder.find_module` (
+  :meth:`!importlib.machinery.FileFinder.find_module` ), and
+  :meth:`!importlib.abc.PathEntryFinder.find_loader` (
+  :meth:`!importlib.machinery.FileFinder.find_loader` )
   now raise :exc:`DeprecationWarning` and are slated for removal in
   Python 3.12 (previously they were documented as deprecated in Python 3.4).
   (Contributed by Brett Cannon in :issue:`42135`.)
 
-* :class:`importlib.abc.Finder` is deprecated (including its sole method,
-  :meth:`~importlib.abc.Finder.find_module`). Both
+* :class:`!importlib.abc.Finder` is deprecated (including its sole method,
+  :meth:`!find_module`). Both
   :class:`importlib.abc.MetaPathFinder` and :class:`importlib.abc.PathEntryFinder`
   no longer inherit from the class. Users should inherit from one of these two
   classes as appropriate instead.
   (Contributed by Brett Cannon in :issue:`42135`.)
 
-* The deprecations of :mod:`imp`, :func:`importlib.find_loader`,
-  :func:`importlib.util.set_package_wrapper`,
-  :func:`importlib.util.set_loader_wrapper`,
-  :func:`importlib.util.module_for_loader`,
-  :class:`pkgutil.ImpImporter`, and
-  :class:`pkgutil.ImpLoader` have all been updated to list Python 3.12 as the
+* The deprecations of :mod:`!imp`, :func:`!importlib.find_loader`,
+  :func:`!importlib.util.set_package_wrapper`,
+  :func:`!importlib.util.set_loader_wrapper`,
+  :func:`!importlib.util.module_for_loader`,
+  :class:`!pkgutil.ImpImporter`, and
+  :class:`!pkgutil.ImpLoader` have all been updated to list Python 3.12 as the
   slated version of removal (they began raising :exc:`DeprecationWarning` in
   previous versions of Python).
   (Contributed by Brett Cannon in :issue:`43720`.)
 
 * The import system now uses the ``__spec__`` attribute on modules before
-  falling back on :meth:`~importlib.abc.Loader.module_repr` for a module's
+  falling back on :meth:`!module_repr` for a module's
   ``__repr__()`` method. Removal of the use of ``module_repr()`` is scheduled
   for Python 3.12.
   (Contributed by Brett Cannon in :issue:`42137`.)
 
-* :meth:`importlib.abc.Loader.module_repr`,
-  :meth:`importlib.machinery.FrozenLoader.module_repr`, and
-  :meth:`importlib.machinery.BuiltinLoader.module_repr` are deprecated and
+* :meth:`!importlib.abc.Loader.module_repr`,
+  :meth:`!importlib.machinery.FrozenLoader.module_repr`, and
+  :meth:`!importlib.machinery.BuiltinLoader.module_repr` are deprecated and
   slated for removal in Python 3.12.
   (Contributed by Brett Cannon in :issue:`42136`.)
 
@@ -1710,19 +1708,6 @@ Deprecated
   3.3, when it was made an alias to :class:`str`.  It is now deprecated,
   scheduled for removal in Python 3.12.
   (Contributed by Erlend E. Aasland in :issue:`42264`.)
-
-* :func:`asyncio.get_event_loop` now emits a deprecation warning if there is
-  no running event loop. In the future it will be an alias of
-  :func:`~asyncio.get_running_loop`.
-  :mod:`asyncio` functions which implicitly create :class:`~asyncio.Future`
-  or :class:`~asyncio.Task` objects now emit
-  a deprecation warning if there is no running event loop and no explicit
-  *loop* argument is passed: :func:`~asyncio.ensure_future`,
-  :func:`~asyncio.wrap_future`, :func:`~asyncio.gather`,
-  :func:`~asyncio.shield`, :func:`~asyncio.as_completed` and constructors of
-  :class:`~asyncio.Future`, :class:`~asyncio.Task`,
-  :class:`~asyncio.StreamReader`, :class:`~asyncio.StreamReaderProtocol`.
-  (Contributed by Serhiy Storchaka in :issue:`39529`.)
 
 * The undocumented built-in function ``sqlite3.enable_shared_cache`` is now
   deprecated, scheduled for removal in Python 3.12.  Its use is strongly

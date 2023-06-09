@@ -1120,6 +1120,160 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, [testname],
                                   rerun={testname: "test_fail_once"})
 
+    def test_rerun_setup_class_hook_failure(self):
+        # FAILURE then FAILURE
+        code = textwrap.dedent("""
+            import unittest
+
+            class ExampleTests(unittest.TestCase):
+                @classmethod
+                def setUpClass(self):
+                    raise RuntimeError('Fail')
+
+                def test_success(self):
+                    return
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests("-w", testname, exitcode=EXITCODE_BAD_TEST)
+        self.check_executed_tests(output, testname,
+                                  failed=[testname],
+                                  rerun={testname: "ExampleTests"})
+
+    def test_rerun_teardown_class_hook_failure(self):
+        # FAILURE then FAILURE
+        code = textwrap.dedent("""
+            import unittest
+
+            class ExampleTests(unittest.TestCase):
+                @classmethod
+                def tearDownClass(self):
+                    raise RuntimeError('Fail')
+
+                def test_success(self):
+                    return
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests("-w", testname, exitcode=EXITCODE_BAD_TEST)
+        self.check_executed_tests(output, testname,
+                                  failed=[testname],
+                                  rerun={testname: "ExampleTests"})
+
+    def test_rerun_setup_module_hook_failure(self):
+        # FAILURE then FAILURE
+        code = textwrap.dedent("""
+            import unittest
+
+            def setUpModule():
+                raise RuntimeError('Fail')
+
+            class ExampleTests(unittest.TestCase):
+                def test_success(self):
+                    return
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests("-w", testname, exitcode=EXITCODE_BAD_TEST)
+        self.check_executed_tests(output, testname,
+                                  failed=[testname],
+                                  rerun={testname: testname})
+
+    def test_rerun_teardown_module_hook_failure(self):
+        # FAILURE then FAILURE
+        code = textwrap.dedent("""
+            import unittest
+
+            def tearDownModule():
+                raise RuntimeError('Fail')
+
+            class ExampleTests(unittest.TestCase):
+                def test_success(self):
+                    return
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests("-w", testname, exitcode=EXITCODE_BAD_TEST)
+        self.check_executed_tests(output, testname,
+                                  failed=[testname],
+                                  rerun={testname: testname})
+
+    def test_rerun_setup_hook_failure(self):
+        # FAILURE then FAILURE
+        code = textwrap.dedent("""
+            import unittest
+
+            class ExampleTests(unittest.TestCase):
+                def setUp(self):
+                    raise RuntimeError('Fail')
+
+                def test_success(self):
+                    return
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests("-w", testname, exitcode=EXITCODE_BAD_TEST)
+        self.check_executed_tests(output, testname,
+                                  failed=[testname],
+                                  rerun={testname: "test_success"})
+
+    def test_rerun_teardown_hook_failure(self):
+        # FAILURE then FAILURE
+        code = textwrap.dedent("""
+            import unittest
+
+            class ExampleTests(unittest.TestCase):
+                def tearDown(self):
+                    raise RuntimeError('Fail')
+
+                def test_success(self):
+                    return
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests("-w", testname, exitcode=EXITCODE_BAD_TEST)
+        self.check_executed_tests(output, testname,
+                                  failed=[testname],
+                                  rerun={testname: "test_success"})
+
+    def test_rerun_async_setup_hook_failure(self):
+        # FAILURE then FAILURE
+        code = textwrap.dedent("""
+            import unittest
+
+            class ExampleTests(unittest.IsolatedAsyncioTestCase):
+                async def asyncSetUp(self):
+                    raise RuntimeError('Fail')
+
+                async def test_success(self):
+                    return
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests("-w", testname, exitcode=EXITCODE_BAD_TEST)
+        self.check_executed_tests(output, testname,
+                                  failed=[testname],
+                                  rerun={testname: "test_success"})
+
+    def test_rerun_async_teardown_hook_failure(self):
+        # FAILURE then FAILURE
+        code = textwrap.dedent("""
+            import unittest
+
+            class ExampleTests(unittest.IsolatedAsyncioTestCase):
+                async def asyncTearDown(self):
+                    raise RuntimeError('Fail')
+
+                async def test_success(self):
+                    return
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests("-w", testname, exitcode=EXITCODE_BAD_TEST)
+        self.check_executed_tests(output, testname,
+                                  failed=[testname],
+                                  rerun={testname: "test_success"})
+
     def test_no_tests_ran(self):
         code = textwrap.dedent("""
             import unittest

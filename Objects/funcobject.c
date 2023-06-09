@@ -8,6 +8,20 @@
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "structmember.h"         // PyMemberDef
 
+static PyObject* func_repr(PyFunctionObject *op);
+
+static const char *
+func_event_name(PyFunction_WatchEvent event) {
+    switch (event) {
+        #define CASE(op)                \
+        case PyFunction_EVENT_##op:         \
+            return "PyFunction_EVENT_" #op;
+        PY_FOREACH_FUNC_EVENT(CASE)
+        #undef CASE
+    }
+    Py_UNREACHABLE();
+}
+
 static void
 notify_func_watchers(PyInterpreterState *interp, PyFunction_WatchEvent event,
                      PyFunctionObject *func, PyObject *new_value)
@@ -21,7 +35,21 @@ notify_func_watchers(PyInterpreterState *interp, PyFunction_WatchEvent event,
             // callback must be non-null if the watcher bit is set
             assert(cb != NULL);
             if (cb(event, func, new_value) < 0) {
-                PyErr_WriteUnraisable((PyObject *) func);
+                // Don't risk resurrecting the func if an unraisablehook keeps a
+                // reference; pass a string as context.
+                PyObject *context = NULL;
+                PyObject *repr = func_repr(func);
+                if (repr != NULL) {
+                    context = PyUnicode_FromFormat(
+                        "%s watcher callback for %U",
+                        func_event_name(event), repr);
+                    Py_DECREF(repr);
+                }
+                if (context == NULL) {
+                    context = Py_NewRef(Py_None);
+                }
+                PyErr_WriteUnraisable(context);
+                Py_DECREF(context);
             }
         }
         i++;
@@ -33,6 +61,7 @@ static inline void
 handle_func_event(PyFunction_WatchEvent event, PyFunctionObject *func,
                   PyObject *new_value)
 {
+    assert(Py_REFCNT(func) > 0);
     PyInterpreterState *interp = _PyInterpreterState_GET();
     assert(interp->_initialized);
     if (interp->active_func_watchers) {
@@ -87,14 +116,18 @@ _PyFunction_FromConstructor(PyFrameConstructor *constr)
     op->func_name = Py_NewRef(constr->fc_name);
     op->func_qualname = Py_NewRef(constr->fc_qualname);
     op->func_code = Py_NewRef(constr->fc_code);
-    op->func_defaults = NULL;
-    op->func_kwdefaults = NULL;
+    op->func_defaults = Py_XNewRef(constr->fc_defaults);
+    op->func_kwdefaults = Py_XNewRef(constr->fc_kwdefaults);
     op->func_closure = Py_XNewRef(constr->fc_closure);
     op->func_doc = Py_NewRef(Py_None);
     op->func_dict = NULL;
     op->func_weakreflist = NULL;
-    op->func_module = NULL;
+    op->func_module = Py_XNewRef(PyDict_GetItem(op->func_globals, &_Py_ID(__name__)));
+    if (!op->func_module) {
+        PyErr_Clear();
+    }
     op->func_annotations = NULL;
+    op->func_typeparams = NULL;
     op->vectorcall = _PyFunction_Vectorcall;
     op->func_version = 0;
     _PyObject_GC_TRACK(op);
@@ -170,6 +203,7 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     op->func_weakreflist = NULL;
     op->func_module = module;
     op->func_annotations = NULL;
+    op->func_typeparams = NULL;
     op->vectorcall = _PyFunction_Vectorcall;
     op->func_version = 0;
     _PyObject_GC_TRACK(op);
@@ -195,10 +229,11 @@ uint32_t _PyFunction_GetVersionForCurrentState(PyFunctionObject *func)
     if (func->vectorcall != _PyFunction_Vectorcall) {
         return 0;
     }
-    if (_PyRuntime.func_state.next_version == 0) {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->func_state.next_version == 0) {
         return 0;
     }
-    uint32_t v = _PyRuntime.func_state.next_version++;
+    uint32_t v = interp->func_state.next_version++;
     func->func_version = v;
     return v;
 }
@@ -619,6 +654,42 @@ func_set_annotations(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(igno
     return 0;
 }
 
+static PyObject *
+func_get_type_params(PyFunctionObject *op, void *Py_UNUSED(ignored))
+{
+    if (op->func_typeparams == NULL) {
+        return PyTuple_New(0);
+    }
+
+    assert(PyTuple_Check(op->func_typeparams));
+    return Py_NewRef(op->func_typeparams);
+}
+
+static int
+func_set_type_params(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
+{
+    /* Not legal to del f.__type_params__ or to set it to anything
+     * other than a tuple object. */
+    if (value == NULL || !PyTuple_Check(value)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "__type_params__ must be set to a tuple");
+        return -1;
+    }
+    Py_XSETREF(op->func_typeparams, Py_NewRef(value));
+    return 0;
+}
+
+PyObject *
+_Py_set_function_type_params(PyThreadState *Py_UNUSED(ignored), PyObject *func,
+                             PyObject *type_params)
+{
+    assert(PyFunction_Check(func));
+    assert(PyTuple_Check(type_params));
+    PyFunctionObject *f = (PyFunctionObject *)func;
+    Py_XSETREF(f->func_typeparams, Py_NewRef(type_params));
+    return Py_NewRef(func);
+}
+
 static PyGetSetDef func_getsetlist[] = {
     {"__code__", (getter)func_get_code, (setter)func_set_code},
     {"__defaults__", (getter)func_get_defaults,
@@ -630,6 +701,8 @@ static PyGetSetDef func_getsetlist[] = {
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
     {"__name__", (getter)func_get_name, (setter)func_set_name},
     {"__qualname__", (getter)func_get_qualname, (setter)func_set_qualname},
+    {"__type_params__", (getter)func_get_type_params,
+     (setter)func_set_type_params},
     {NULL} /* Sentinel */
 };
 
@@ -750,6 +823,7 @@ func_clear(PyFunctionObject *op)
     Py_CLEAR(op->func_dict);
     Py_CLEAR(op->func_closure);
     Py_CLEAR(op->func_annotations);
+    Py_CLEAR(op->func_typeparams);
     // Don't Py_CLEAR(op->func_code), since code is always required
     // to be non-NULL. Similarly, name and qualname shouldn't be NULL.
     // However, name and qualname could be str subclasses, so they
@@ -763,7 +837,14 @@ func_clear(PyFunctionObject *op)
 static void
 func_dealloc(PyFunctionObject *op)
 {
+    assert(Py_REFCNT(op) == 0);
+    Py_SET_REFCNT(op, 1);
     handle_func_event(PyFunction_EVENT_DESTROY, op, NULL);
+    if (Py_REFCNT(op) > 1) {
+        Py_SET_REFCNT(op, Py_REFCNT(op) - 1);
+        return;
+    }
+    Py_SET_REFCNT(op, 0);
     _PyObject_GC_UNTRACK(op);
     if (op->func_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *) op);
@@ -797,6 +878,7 @@ func_traverse(PyFunctionObject *f, visitproc visit, void *arg)
     Py_VISIT(f->func_dict);
     Py_VISIT(f->func_closure);
     Py_VISIT(f->func_annotations);
+    Py_VISIT(f->func_typeparams);
     Py_VISIT(f->func_qualname);
     return 0;
 }
@@ -902,7 +984,7 @@ functools_wraps(PyObject *wrapper, PyObject *wrapped)
 
      class C:
          @classmethod
-         def f(cls, arg1, arg2, ...):
+         def f(cls, arg1, arg2, argN):
              ...
 
    It can be called either on the class (e.g. C.f()) or on an instance
@@ -1026,7 +1108,7 @@ To declare a class method, use this idiom:\n\
 \n\
   class C:\n\
       @classmethod\n\
-      def f(cls, arg1, arg2, ...):\n\
+      def f(cls, arg1, arg2, argN):\n\
           ...\n\
 \n\
 It can be called either on the class (e.g. C.f()) or on an instance\n\
@@ -1098,7 +1180,7 @@ PyClassMethod_New(PyObject *callable)
 
      class C:
          @staticmethod
-         def f(arg1, arg2, ...):
+         def f(arg1, arg2, argN):
              ...
 
    It can be called either on the class (e.g. C.f()) or on an instance
@@ -1220,7 +1302,7 @@ To declare a static method, use this idiom:\n\
 \n\
      class C:\n\
          @staticmethod\n\
-         def f(arg1, arg2, ...):\n\
+         def f(arg1, arg2, argN):\n\
              ...\n\
 \n\
 It can be called either on the class (e.g. C.f()) or on an instance\n\

@@ -1,1 +1,0 @@
-Fix ``tuple`` subclasses being cast to ``tuple`` when used as enum values.

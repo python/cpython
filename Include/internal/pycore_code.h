@@ -20,7 +20,7 @@ extern "C" {
 typedef struct {
     uint16_t counter;
     uint16_t index;
-    uint16_t module_keys_version[2];
+    uint16_t module_keys_version;
     uint16_t builtin_keys_version;
 } _PyLoadGlobalCache;
 
@@ -41,18 +41,21 @@ typedef struct {
 
 typedef struct {
     uint16_t counter;
-    uint16_t mask;
 } _PyCompareOpCache;
 
 #define INLINE_CACHE_ENTRIES_COMPARE_OP CACHE_ENTRIES(_PyCompareOpCache)
 
 typedef struct {
     uint16_t counter;
-    uint16_t type_version[2];
-    uint16_t func_version;
 } _PyBinarySubscrCache;
 
 #define INLINE_CACHE_ENTRIES_BINARY_SUBSCR CACHE_ENTRIES(_PyBinarySubscrCache)
+
+typedef struct {
+    uint16_t counter;
+} _PySuperAttrCache;
+
+#define INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR CACHE_ENTRIES(_PySuperAttrCache)
 
 typedef struct {
     uint16_t counter;
@@ -76,7 +79,6 @@ typedef struct {
 typedef struct {
     uint16_t counter;
     uint16_t func_version[2];
-    uint16_t min_args;
 } _PyCallCache;
 
 #define INLINE_CACHE_ENTRIES_CALL CACHE_ENTRIES(_PyCallCache)
@@ -92,6 +94,12 @@ typedef struct {
 } _PyForIterCache;
 
 #define INLINE_CACHE_ENTRIES_FOR_ITER CACHE_ENTRIES(_PyForIterCache)
+
+typedef struct {
+    uint16_t counter;
+} _PySendCache;
+
+#define INLINE_CACHE_ENTRIES_SEND CACHE_ENTRIES(_PySendCache)
 
 // Borrowed references to common callables:
 struct callable_cache {
@@ -120,6 +128,7 @@ struct callable_cache {
 // Note that these all fit within a byte, as do combinations.
 // Later, we will use the smaller numbers to differentiate the different
 // kinds of locals (e.g. pos-only arg, varkwargs, local-only).
+#define CO_FAST_HIDDEN  0x10
 #define CO_FAST_LOCAL   0x20
 #define CO_FAST_CELL    0x40
 #define CO_FAST_FREE    0x80
@@ -215,6 +224,8 @@ extern int _PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
 
 /* Specialization functions */
 
+extern void _Py_Specialize_LoadSuperAttr(PyObject *global_super, PyObject *cls,
+                                         _Py_CODEUNIT *instr, int load_method);
 extern void _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr,
                                     PyObject *name);
 extern void _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr,
@@ -234,6 +245,7 @@ extern void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
 extern void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
                                           int oparg);
 extern void _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int oparg);
+extern void _Py_Specialize_Send(PyObject *receiver, _Py_CODEUNIT *instr);
 
 /* Finalizer function for static codeobjects used in deepfreeze.py */
 extern void _PyStaticCode_Fini(PyCodeObject *co);
@@ -438,32 +450,6 @@ adaptive_counter_backoff(uint16_t counter) {
 
 /* Line array cache for tracing */
 
-extern int _PyCode_CreateLineArray(PyCodeObject *co);
-
-static inline int
-_PyCode_InitLineArray(PyCodeObject *co)
-{
-    if (co->_co_linearray) {
-        return 0;
-    }
-    return _PyCode_CreateLineArray(co);
-}
-
-static inline int
-_PyCode_LineNumberFromArray(PyCodeObject *co, int index)
-{
-    assert(co->_co_linearray != NULL);
-    assert(index >= 0);
-    assert(index < Py_SIZE(co));
-    if (co->_co_linearray_entry_size == 2) {
-        return ((int16_t *)co->_co_linearray)[index];
-    }
-    else {
-        assert(co->_co_linearray_entry_size == 4);
-        return ((int32_t *)co->_co_linearray)[index];
-    }
-}
-
 typedef struct _PyShimCodeDef {
     const uint8_t *code;
     int codelen;
@@ -476,6 +462,32 @@ _Py_MakeShimCode(const _PyShimCodeDef *code);
 
 extern uint32_t _Py_next_func_version;
 
+
+/* Comparison bit masks. */
+
+/* Note this evaluates its arguments twice each */
+#define COMPARISON_BIT(x, y) (1 << (2 * ((x) >= (y)) + ((x) <= (y))))
+
+/*
+ * The following bits are chosen so that the value of
+ * COMPARSION_BIT(left, right)
+ * masked by the values below will be non-zero if the
+ * comparison is true, and zero if it is false */
+
+/* This is for values that are unordered, ie. NaN, not types that are unordered, e.g. sets */
+#define COMPARISON_UNORDERED 1
+
+#define COMPARISON_LESS_THAN 2
+#define COMPARISON_GREATER_THAN 4
+#define COMPARISON_EQUALS 8
+
+#define COMPARISON_NOT_EQUALS (COMPARISON_UNORDERED | COMPARISON_LESS_THAN | COMPARISON_GREATER_THAN)
+
+extern int _Py_Instrument(PyCodeObject *co, PyInterpreterState *interp);
+
+extern int _Py_GetBaseOpcode(PyCodeObject *code, int offset);
+
+extern int _PyInstruction_GetLength(PyCodeObject *code, int offset);
 
 #ifdef __cplusplus
 }
