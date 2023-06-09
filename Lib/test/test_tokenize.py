@@ -2241,6 +2241,16 @@ def"', """\
     FSTRING_END '"'           (2, 3) (2, 4)
     """)
 
+        self.check_tokenize('''\
+f"{
+a}"''', """\
+    FSTRING_START 'f"'          (1, 0) (1, 2)
+    LBRACE     '{'           (1, 2) (1, 3)
+    NAME       'a'           (2, 0) (2, 1)
+    RBRACE     '}'           (2, 1) (2, 2)
+    FSTRING_END '"'           (2, 2) (2, 3)
+    """)
+
         self.check_tokenize(r'Rf"abc\
 def"', """\
     FSTRING_START 'Rf"'         (1, 0) (1, 3)

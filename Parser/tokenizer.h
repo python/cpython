@@ -68,7 +68,7 @@ typedef struct _tokenizer_mode {
 struct tok_state {
     /* Input state; buf <= cur <= inp <= end */
     /* NB an entire line is held in the buffer */
-    char *buf;          /* Input buffer, or NULL; malloc'ed if fp != NULL */
+    char *buf;          /* Input buffer, or NULL; malloc'ed if fp != NULL or readline != NULL */
     char *cur;          /* Next character in buffer */
     char *inp;          /* End of data in buffer */
     int fp_interactive; /* If the file descriptor is interactive */

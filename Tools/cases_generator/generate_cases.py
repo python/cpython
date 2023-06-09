@@ -34,6 +34,11 @@ RE_PREDICTED = (
 UNUSED = "unused"
 BITS_PER_CODE_UNIT = 16
 
+RESERVED_WORDS = {
+    "co_consts" : "Use FRAME_CO_CONSTS.",
+    "co_names": "Use FRAME_CO_NAMES.",
+}
+
 arg_parser = argparse.ArgumentParser(
     description="Generate the code for the interpreter switch.",
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -223,6 +228,7 @@ class Formatter:
     def cast(self, dst: StackEffect, src: StackEffect) -> str:
         return f"({dst.type or 'PyObject *'})" if src.type != dst.type else ""
 
+INSTRUCTION_FLAGS = ['HAS_ARG', 'HAS_CONST', 'HAS_NAME']
 
 @dataclasses.dataclass
 class Instruction:
@@ -244,6 +250,7 @@ class Instruction:
     output_effects: list[StackEffect]
     unmoved_names: frozenset[str]
     instr_fmt: str
+    flags: int
 
     # Set later
     family: parser.Family | None = None
@@ -272,7 +279,17 @@ class Instruction:
             else:
                 break
         self.unmoved_names = frozenset(unmoved_names)
-        if variable_used(inst, "oparg"):
+        flag_data = {
+            'HAS_ARG'  :  variable_used(inst, "oparg"),
+            'HAS_CONST':  variable_used(inst, "FRAME_CO_CONSTS"),
+            'HAS_NAME' :  variable_used(inst, "FRAME_CO_NAMES"),
+        }
+        assert set(flag_data.keys()) == set(INSTRUCTION_FLAGS)
+        self.flags = 0
+        for i, name in enumerate(INSTRUCTION_FLAGS):
+            self.flags |= (1<<i) if flag_data[name] else 0
+
+        if flag_data['HAS_ARG']:
             fmt = "IB"
         else:
             fmt = "IX"
@@ -472,6 +489,7 @@ class MacroInstruction:
     initial_sp: int
     final_sp: int
     instr_fmt: str
+    flags: int
     macro: parser.Macro
     parts: list[Component | parser.CacheEffect]
     predicted: bool = False
@@ -482,8 +500,9 @@ class PseudoInstruction:
     """A pseudo instruction."""
 
     name: str
-    instr_fmt: str
     targets: list[Instruction]
+    instr_fmt: str
+    flags: int
 
 
 @dataclasses.dataclass
@@ -493,6 +512,7 @@ class OverriddenInstructionPlaceHolder:
 
 AnyInstruction = Instruction | MacroInstruction
 INSTR_FMT_PREFIX = "INSTR_FMT_"
+INSTR_FLAG_SUFFIX = "_FLAG"
 
 
 class Analyzer:
@@ -590,6 +610,9 @@ class Analyzer:
         thing: parser.InstDef | parser.Macro | parser.Family | None
         thing_first_token = psr.peek()
         while thing := psr.definition():
+            if ws := [w for w in RESERVED_WORDS if variable_used(thing, w)]:
+                self.error(f"'{ws[0]}' is a reserved word. {RESERVED_WORDS[ws[0]]}", thing)
+
             match thing:
                 case parser.InstDef(name=name):
                     if name in self.instrs:
@@ -740,7 +763,7 @@ class Analyzer:
         return cache, input, output
 
     def analyze_macros_and_pseudos(self) -> None:
-        """Analyze each super- and macro instruction."""
+        """Analyze each macro and pseudo instruction."""
         self.macro_instrs = {}
         self.pseudo_instrs = {}
         for name, macro in self.macros.items():
@@ -754,6 +777,7 @@ class Analyzer:
         sp = initial_sp
         parts: list[Component | parser.CacheEffect] = []
         format = "IB"
+        flags = 0
         cache = "C"
         for component in components:
             match component:
@@ -769,11 +793,12 @@ class Analyzer:
                         for _ in range(ce.size):
                             format += cache
                             cache = "0"
+                    flags |= instr.flags
                 case _:
                     typing.assert_never(component)
         final_sp = sp
         return MacroInstruction(
-            macro.name, stack, initial_sp, final_sp, format, macro, parts
+            macro.name, stack, initial_sp, final_sp, format, flags, macro, parts
         )
 
     def analyze_pseudo(self, pseudo: parser.Pseudo) -> PseudoInstruction:
@@ -782,7 +807,9 @@ class Analyzer:
         # Make sure the targets have the same fmt
         fmts = list(set([t.instr_fmt for t in targets]))
         assert(len(fmts) == 1)
-        return PseudoInstruction(pseudo.name, fmts[0], targets)
+        flags_list = list(set([t.flags for t in targets]))
+        assert(len(flags_list) == 1)
+        return PseudoInstruction(pseudo.name, targets, fmts[0], flags_list[0])
 
     def analyze_instruction(
         self, instr: Instruction, stack: list[StackEffect], sp: int
@@ -1005,10 +1032,19 @@ class Analyzer:
 
             # Write type definitions
             self.out.emit(f"enum InstructionFormat {{ {', '.join(format_enums)} }};")
+            for i, flag in enumerate(INSTRUCTION_FLAGS):
+                self.out.emit(f"#define {flag}{INSTR_FLAG_SUFFIX} ({1 << i})");
+            for flag in INSTRUCTION_FLAGS:
+                flag_name = f"{flag}{INSTR_FLAG_SUFFIX}"
+                self.out.emit(
+                    f"#define OPCODE_{flag}(OP) "
+                    f"(_PyOpcode_opcode_metadata[(OP)].flags & ({flag_name}))")
+
             self.out.emit("struct opcode_metadata {")
             with self.out.indent():
                 self.out.emit("bool valid_entry;")
                 self.out.emit("enum InstructionFormat instr_format;")
+                self.out.emit("int flags;")
             self.out.emit("};")
             self.out.emit("")
             self.out.emit("#define OPCODE_METADATA_FMT(OP) "
@@ -1049,23 +1085,25 @@ class Analyzer:
             self.out.emit(f"    ((OP) == {op}) || \\")
         self.out.emit(f"    0")
 
+    def emit_metadata_entry(self, name: str, fmt: str, flags: int) -> None:
+        flags_strs = [f"{name}{INSTR_FLAG_SUFFIX}"
+                      for i, name in enumerate(INSTRUCTION_FLAGS) if (flags & (1<<i))]
+        flags_s = "0" if not flags_strs else ' | '.join(flags_strs)
+        self.out.emit(
+            f"    [{name}] = {{ true, {INSTR_FMT_PREFIX}{fmt}, {flags_s} }},"
+        )
+
     def write_metadata_for_inst(self, instr: Instruction) -> None:
         """Write metadata for a single instruction."""
-        self.out.emit(
-            f"    [{instr.name}] = {{ true, {INSTR_FMT_PREFIX}{instr.instr_fmt} }},"
-        )
+        self.emit_metadata_entry(instr.name, instr.instr_fmt, instr.flags)
 
     def write_metadata_for_macro(self, mac: MacroInstruction) -> None:
         """Write metadata for a macro-instruction."""
-        self.out.emit(
-            f"    [{mac.name}] = {{ true, {INSTR_FMT_PREFIX}{mac.instr_fmt} }},"
-        )
+        self.emit_metadata_entry(mac.name, mac.instr_fmt, mac.flags)
 
     def write_metadata_for_pseudo(self, ps: PseudoInstruction) -> None:
         """Write metadata for a macro-instruction."""
-        self.out.emit(
-            f"    [{ps.name}] = {{ true, {INSTR_FMT_PREFIX}{ps.instr_fmt} }},"
-        )
+        self.emit_metadata_entry(ps.name, ps.instr_fmt, ps.flags)
 
     def write_instructions(self) -> None:
         """Write instructions to output file."""

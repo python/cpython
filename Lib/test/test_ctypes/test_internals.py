@@ -1,6 +1,6 @@
 # This tests the internal _objects attribute
 import unittest
-from ctypes import *
+from ctypes import Structure, POINTER, c_char_p, c_int
 from sys import getrefcount as grc
 
 # XXX This test must be reviewed for correctness!!!

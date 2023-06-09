@@ -140,6 +140,12 @@ Deprecated
   Use the ``'w'`` format code instead.
   (contributed by Hugo van Kemenade in :gh:`80480`)
 
+* :mod:`ctypes`: Deprecate undocumented :func:`!ctypes.SetPointerType`
+  and :func:`!ctypes.ARRAY` functions.
+  Replace ``ctypes.SetPointerType(item_type, size)`` with ``item_type * size``.
+  (Contributed by Victor Stinner in :gh:`105733`.)
+
+
 Removed
 =======
 
@@ -333,6 +339,10 @@ Removed
   Use :attr:`webbrowser.MacOSXOSAScript.name <webbrowser.controller.name>`
   attribute instead.
   (Contributed by Nikita Sobolev in :gh:`105546`.)
+
+* Remove undocumented, never working, and deprecated ``re.template`` function
+  and ``re.TEMPLATE`` flag (and ``re.T`` alias).
+  (Contributed by Serhiy Storchaka and Nikita Sobolev in :gh:`105687`.)
 
 
 Porting to Python 3.13
