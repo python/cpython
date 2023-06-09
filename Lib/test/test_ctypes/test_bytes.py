@@ -1,7 +1,7 @@
 """Test where byte objects are accepted"""
-import unittest
 import sys
-from ctypes import *
+import unittest
+from ctypes import Structure, c_char, c_char_p, c_wchar, c_wchar_p
 
 class BytesTest(unittest.TestCase):
     def test_c_char(self):

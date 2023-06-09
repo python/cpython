@@ -380,7 +380,7 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 static const _PyRuntimeState initial = _PyRuntimeState_INIT(_PyRuntime);
 _Py_COMP_DIAG_POP
 
-#define NUMLOCKS 8
+#define NUMLOCKS 9
 #define LOCKS_INIT(runtime) \
     { \
         &(runtime)->interpreters.mutex, \
@@ -388,6 +388,7 @@ _Py_COMP_DIAG_POP
         &(runtime)->getargs.mutex, \
         &(runtime)->unicode_state.ids.lock, \
         &(runtime)->imports.extensions.mutex, \
+        &(runtime)->ceval.pending_mainthread.lock, \
         &(runtime)->atexit.mutex, \
         &(runtime)->audit_hooks.mutex, \
         &(runtime)->allocators.mutex, \

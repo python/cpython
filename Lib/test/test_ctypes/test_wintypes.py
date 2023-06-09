@@ -5,7 +5,7 @@ import unittest
 
 # also work on POSIX
 
-from ctypes import *
+from ctypes import POINTER, cast, c_int16
 from ctypes import wintypes
 
 

@@ -5,20 +5,25 @@ show how the type behave.
 Later...
 """
 
-from ctypes import *
+import ctypes
+from ctypes import (CDLL, Structure, Array, CFUNCTYPE,
+                    byref, POINTER, pointer, ArgumentError,
+                    c_char, c_wchar, c_byte, c_char_p,
+                    c_short, c_int, c_long, c_longlong,
+                    c_float, c_double, c_longdouble)
 from test.test_ctypes import need_symbol
 import sys, unittest
 
 try:
-    WINFUNCTYPE
-except NameError:
+    WINFUNCTYPE = ctypes.WINFUNCTYPE
+except AttributeError:
     # fake to enable this test on Linux
     WINFUNCTYPE = CFUNCTYPE
 
 import _ctypes_test
 dll = CDLL(_ctypes_test.__file__)
 if sys.platform == "win32":
-    windll = WinDLL(_ctypes_test.__file__)
+    windll = ctypes.WinDLL(_ctypes_test.__file__)
 
 class POINT(Structure):
     _fields_ = [("x", c_int), ("y", c_int)]

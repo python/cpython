@@ -1369,6 +1369,8 @@ Removed
   * The :mod:`!imp` module has been removed.  (Contributed by Barry Warsaw in
     :gh:`98040`.)
 
+  * Replace ``imp.new_module(name)`` with ``types.ModuleType(name)``.
+
 * Removed the ``suspicious`` rule from the documentation Makefile, and
   removed ``Doc/tools/rstlint.py``, both in favor of `sphinx-lint
   <https://github.com/sphinx-contrib/sphinx-lint>`_.
@@ -1498,6 +1500,9 @@ Changes in the Python API
 
   * Some incomplete or invalid Python code now raises :exc:`tokenize.TokenError` instead of
     returning arbitrary ``ERRORTOKEN`` tokens when tokenizing it.
+
+  * Mixing tabs and spaces as indentation in the same file is not supported anymore and will
+    raise a :exc:`TabError`.
 
 Build Changes
 =============
@@ -1688,6 +1693,11 @@ New Features
       correctly track reference counts and allocated blocks
 
   (Contributed by Eddie Elizondo in :gh:`84436`.)
+
+* In the limited C API version 3.12, :c:func:`Py_INCREF` and
+  :c:func:`Py_DECREF` functions are now implemented as opaque function calls to
+  hide implementation details.
+  (Contributed by Victor Stinner in :gh:`105387`.)
 
 Porting to Python 3.12
 ----------------------
