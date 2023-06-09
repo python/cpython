@@ -1252,8 +1252,12 @@ compiler_enter_scope(struct compiler *c, identifier name,
     }
     u->u_metadata.u_name = Py_NewRef(name);
     u->u_metadata.u_varnames = list2dict(u->u_ste->ste_varnames);
+    if (!u->u_metadata.u_varnames) {
+        compiler_unit_free(u);
+        return ERROR;
+    }
     u->u_metadata.u_cellvars = dictbytype(u->u_ste->ste_symbols, CELL, DEF_COMP_CELL, 0);
-    if (!u->u_metadata.u_varnames || !u->u_metadata.u_cellvars) {
+    if (!u->u_metadata.u_cellvars) {
         compiler_unit_free(u);
         return ERROR;
     }
