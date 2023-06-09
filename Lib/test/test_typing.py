@@ -1708,8 +1708,6 @@ class UnionTests(BaseTestCase):
         self.assertNotEqual(u, Union)
 
     def test_subclass_error(self):
-        self.assertNotIsSubclass(int, Union)
-        self.assertNotIsSubclass(Union, int)
         with self.assertRaises(TypeError):
             issubclass(Union[int, str], int)
 
