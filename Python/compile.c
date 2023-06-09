@@ -1738,7 +1738,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
     u->u_varnames = list2dict(u->u_ste->ste_varnames);
     if (!u->u_varnames) {
         compiler_unit_free(u);
-        return ERROR;
+        return 0;
     }
     u->u_cellvars = dictbytype(u->u_ste->ste_symbols, CELL, 0, 0);
     if (!u->u_cellvars) {
