@@ -7937,7 +7937,8 @@ PyUnicode_BuildEncodingMap(PyObject* string)
         if (!result)
             return NULL;
         for (i = 0; i < length; i++) {
-            PyObject *key = PyLong_FromLong(PyUnicode_READ(kind, data, i));
+            Py_UCS4 c = PyUnicode_READ(kind, data, i);
+            PyObject *key = PyLong_FromLong(c);
             if (key == NULL) {
                 Py_DECREF(result);
                 return NULL;
