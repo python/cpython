@@ -2,7 +2,7 @@
 #include "Python.h"
 #include "pycore_object.h"  // _PyObject_GC_TRACK/UNTRACK
 #include "pycore_typevarobject.h"
-#include "pycore_unionobject.h"   // _Py_union_type_or, _Py_union_class_getitem
+#include "pycore_unionobject.h"   // _Py_union_type_or, _Py_union_from_tuple
 #include "structmember.h"
 
 /*[clinic input]
@@ -103,7 +103,7 @@ make_union(PyObject *self, PyObject *other)
     if (args == NULL) {
         return NULL;
     }
-    return _Py_union_class_getitem((PyObject *)&_PyUnion_Type, args);
+    return _Py_union_from_tuple(args);
 }
 
 static PyObject *
