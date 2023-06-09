@@ -113,10 +113,7 @@ from a different process (such as one started with
 section lists APIs that can read from pipes and watch file descriptors
 without blocking the event loop. In addition, asyncio's
 :ref:`Subprocess <asyncio-subprocess>` APIs provide a way to start a
-process and communicate with it from the event loop. Lastly, the
-aforementioned :meth:`loop.run_in_executor` method can also be used
-with a :class:`concurrent.futures.ProcessPoolExecutor` to execute
-code in a different process.
+process and communicate with it from the event loop.
 
 .. _asyncio-handle-blocking:
 
@@ -128,8 +125,8 @@ if a function performs a CPU-intensive calculation for 1 second,
 all concurrent asyncio Tasks and IO operations would be delayed
 by 1 second.
 
-An executor can be used to run a task in a different thread or even in
-a different process to avoid blocking the OS thread with the
+An executor can be used to run a task in a different thread
+to avoid blocking the OS thread with the
 event loop.  See the :meth:`loop.run_in_executor` method for more
 details.
 
