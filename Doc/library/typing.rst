@@ -1177,7 +1177,8 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
    Special typing construct to indicate final names to type checkers.
 
-   A final name cannot be re-assigned or overridden in a subclass.
+   Final names cannot be reassigned in any scope. Final names declared in class
+   scopes cannot be overridden in subclasses.
 
    For example::
 
@@ -2071,14 +2072,13 @@ These are not used in annotations. They are building blocks for declaring types.
 
    Helper class to create low-overhead :ref:`distinct types <distinct>`.
 
-   ``NewType`` creates an object that is considered a distinct type by a
-   typechecker. At runtime, however, ``NewType`` returns an object that, when
-   called, returns its argument unchanged.
+   A ``NewType`` is considered a distinct type by a typechecker. At runtime,
+   however, calling a ``NewType`` returns its argument unchanged.
 
    Usage::
 
-      UserId = NewType('UserId', int)
-      first_user = UserId(1)
+      UserId = NewType('UserId', int)  # Declare the NewType "UserId"
+      first_user = UserId(1)  # "UserId" returns the argument unchanged at runtime
 
    .. attribute:: __module__
 
