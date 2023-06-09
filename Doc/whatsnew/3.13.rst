@@ -324,6 +324,11 @@ Removed
   certificates for you.
   (Contributed by Victor Stinner in :gh:`105382`.)
 
+* Remove deprecated ``webbrowser.MacOSXOSAScript._name`` attribute.
+  Use :attr:`webbrowser.MacOSXOSAScript.name <webbrowser.controller.name>`
+  attribute instead.
+  (Contributed by Nikita Sobolev in :gh:`105546`.)
+
 
 Porting to Python 3.13
 ======================
@@ -406,6 +411,11 @@ Deprecated
     :envvar:`PYTHONHOME` environment variable instead.
 
   (Contributed by Victor Stinner in :gh:`105145`.)
+
+* Deprecate the :c:func:`PyImport_ImportModuleNoBlock` function which is just
+  an alias to :c:func:`PyImport_ImportModule` since Python 3.3.
+  Scheduled for removal in Python 3.15.
+  (Contributed by Victor Stinner in :gh:`105396`.)
 
 Removed
 -------

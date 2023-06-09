@@ -29,7 +29,7 @@ DEFAULT_METADATA_OUTPUT = os.path.relpath(
 BEGIN_MARKER = "// BEGIN BYTECODES //"
 END_MARKER = "// END BYTECODES //"
 RE_PREDICTED = (
-    r"^\s*(?:PREDICT\(|GO_TO_INSTRUCTION\(|DEOPT_IF\(.*?,\s*)(\w+)\);\s*(?://.*)?$"
+    r"^\s*(?:GO_TO_INSTRUCTION\(|DEOPT_IF\(.*?,\s*)(\w+)\);\s*(?://.*)?$"
 )
 UNUSED = "unused"
 BITS_PER_CODE_UNIT = 16
@@ -234,7 +234,6 @@ class Instruction:
     name: str
     block: parser.Block
     block_text: list[str]  # Block.text, less curlies, less PREDICT() calls
-    predictions: list[str]  # Prediction targets (instruction names)
     block_line: int  # First line of block in original code
 
     # Computed by constructor
@@ -255,7 +254,7 @@ class Instruction:
         self.kind = inst.kind
         self.name = inst.name
         self.block = inst.block
-        self.block_text, self.check_eval_breaker, self.predictions, self.block_line = \
+        self.block_text, self.check_eval_breaker, self.block_line = \
             extract_block_text(self.block)
         self.always_exits = always_exits(self.block_text)
         self.cache_effects = [
@@ -642,7 +641,7 @@ class Analyzer:
     def find_predictions(self) -> None:
         """Find the instructions that need PREDICTED() labels."""
         for instr in self.instrs.values():
-            targets = set(instr.predictions)
+            targets = set()
             for line in instr.block_text:
                 if m := re.match(RE_PREDICTED, line):
                     targets.add(m.group(1))
@@ -1117,8 +1116,6 @@ class Analyzer:
                 self.out.emit(f"PREDICTED({name});")
             instr.write(self.out)
             if not instr.always_exits:
-                for prediction in instr.predictions:
-                    self.out.emit(f"PREDICT({prediction});")
                 if instr.check_eval_breaker:
                     self.out.emit("CHECK_EVAL_BREAKER();")
                 self.out.emit(f"DISPATCH();")
@@ -1195,7 +1192,7 @@ class Analyzer:
             self.out.emit(f"DISPATCH();")
 
 
-def extract_block_text(block: parser.Block) -> tuple[list[str], bool, list[str], int]:
+def extract_block_text(block: parser.Block) -> tuple[list[str], bool, int]:
     # Get lines of text with proper dedent
     blocklines = block.text.splitlines(True)
     first_token: lx.Token = block.tokens[0]  # IndexError means the context is broken
@@ -1225,15 +1222,7 @@ def extract_block_text(block: parser.Block) -> tuple[list[str], bool, list[str],
     if check_eval_breaker:
         del blocklines[-1]
 
-    # Separate PREDICT(...) macros from end
-    predictions: list[str] = []
-    while blocklines and (
-        m := re.match(r"^\s*PREDICT\((\w+)\);\s*(?://.*)?$", blocklines[-1])
-    ):
-        predictions.insert(0, m.group(1))
-        blocklines.pop()
-
-    return blocklines, check_eval_breaker, predictions, block_line
+    return blocklines, check_eval_breaker, block_line
 
 
 def always_exits(lines: list[str]) -> bool:
