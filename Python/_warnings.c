@@ -1298,12 +1298,16 @@ PyErr_WarnExplicit(PyObject *category, const char *text,
                    const char *module_str, PyObject *registry)
 {
     PyObject *message = PyUnicode_FromString(text);
+    if (message == NULL) {
+        goto exit;
+    }
     PyObject *filename = PyUnicode_DecodeFSDefault(filename_str);
+    if (filename == NULL) {
+        goto exit;
+    }
     PyObject *module = NULL;
     int ret = -1;
 
-    if (message == NULL || filename == NULL)
-        goto exit;
     if (module_str != NULL) {
         module = PyUnicode_FromString(module_str);
         if (module == NULL)
