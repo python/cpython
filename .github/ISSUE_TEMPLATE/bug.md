@@ -15,12 +15,12 @@ labels: "type-bug"
     your problem has already been reported
 -->
 
-**Bug report**
+# Bug report
 
 A clear and concise description of what the bug is.
 Include a minimal, reproducible example (https://stackoverflow.com/help/minimal-reproducible-example), if possible.
 
-**Your environment**
+# Your environment
 
 <!-- Include as many relevant details as possible about the environment you experienced the bug in -->
 

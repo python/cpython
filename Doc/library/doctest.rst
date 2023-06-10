@@ -351,6 +351,7 @@ The fine print:
 
      >>> def f(x):
      ...     r'''Backslashes in a raw docstring: m\n'''
+     ...
      >>> print(f.__doc__)
      Backslashes in a raw docstring: m\n
 
@@ -360,6 +361,7 @@ The fine print:
 
      >>> def f(x):
      ...     '''Backslashes in a raw docstring: m\\n'''
+     ...
      >>> print(f.__doc__)
      Backslashes in a raw docstring: m\n
 
@@ -563,41 +565,35 @@ doctest decides whether actual output matches an example's expected output:
 
 .. data:: IGNORE_EXCEPTION_DETAIL
 
-   When specified, an example that expects an exception passes if an exception of
-   the expected type is raised, even if the exception detail does not match.  For
-   example, an example expecting ``ValueError: 42`` will pass if the actual
-   exception raised is ``ValueError: 3*14``, but will fail, e.g., if
-   :exc:`TypeError` is raised.
+   When specified, doctests expecting exceptions pass so long as an exception
+   of the expected type is raised, even if the details
+   (message and fully qualified exception name) don't match.
 
-   It will also ignore the module name used in Python 3 doctest reports. Hence
-   both of these variations will work with the flag specified, regardless of
-   whether the test is run under Python 2.7 or Python 3.2 (or later versions)::
+   For example, an example expecting ``ValueError: 42`` will pass if the actual
+   exception raised is ``ValueError: 3*14``, but will fail if, say, a
+   :exc:`TypeError` is raised instead.
+   It will also ignore any fully qualified name included before the
+   exception class, which can vary between implementations and versions
+   of Python and the code/libraries in use.
+   Hence, all three of these variations will work with the flag specified:
 
-      >>> raise CustomError('message')
+   .. code-block:: pycon
+
+      >>> raise Exception('message')
       Traceback (most recent call last):
-      CustomError: message
+      Exception: message
 
-      >>> raise CustomError('message')
+      >>> raise Exception('message')
       Traceback (most recent call last):
-      my_module.CustomError: message
+      builtins.Exception: message
+
+      >>> raise Exception('message')
+      Traceback (most recent call last):
+      __main__.Exception: message
 
    Note that :const:`ELLIPSIS` can also be used to ignore the
    details of the exception message, but such a test may still fail based
-   on whether or not the module details are printed as part of the
-   exception name. Using :const:`IGNORE_EXCEPTION_DETAIL` and the details
-   from Python 2.3 is also the only clear way to write a doctest that doesn't
-   care about the exception detail yet continues to pass under Python 2.3 or
-   earlier (those releases do not support :ref:`doctest directives
-   <doctest-directives>` and ignore them as irrelevant comments). For example::
-
-      >>> (1, 2)[3] = 'moo'
-      Traceback (most recent call last):
-        File "<stdin>", line 1, in <module>
-      TypeError: object doesn't support item assignment
-
-   passes under Python 2.3 and later Python versions with the flag specified,
-   even though the detail
-   changed in Python 2.4 to say "does not" instead of "doesn't".
+   on whether the module name is present or matches exactly.
 
    .. versionchanged:: 3.2
       :const:`IGNORE_EXCEPTION_DETAIL` now also ignores any information relating
@@ -702,10 +698,10 @@ special Python comments following an example's source code:
 
 .. productionlist:: doctest
    directive: "#" "doctest:" `directive_options`
-   directive_options: `directive_option` ("," `directive_option`)\*
+   directive_options: `directive_option` ("," `directive_option`)*
    directive_option: `on_or_off` `directive_option_name`
-   on_or_off: "+" \| "-"
-   directive_option_name: "DONT_ACCEPT_BLANKLINE" \| "NORMALIZE_WHITESPACE" \| ...
+   on_or_off: "+" | "-"
+   directive_option_name: "DONT_ACCEPT_BLANKLINE" | "NORMALIZE_WHITESPACE" | ...
 
 Whitespace is not allowed between the ``+`` or ``-`` and the directive option
 name.  The directive option name can be any of the option flag names explained
@@ -1061,7 +1057,7 @@ from text files and modules with doctests:
    from a text file using :func:`DocFileSuite`.
 
 
-.. function:: DocTestSuite(module=None, globs=None, extraglobs=None, test_finder=None, setUp=None, tearDown=None, checker=None)
+.. function:: DocTestSuite(module=None, globs=None, extraglobs=None, test_finder=None, setUp=None, tearDown=None, optionflags=0, checker=None)
 
    Convert doctest tests for a module to a :class:`unittest.TestSuite`.
 

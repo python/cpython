@@ -10,6 +10,7 @@ import unittest
 from unittest.mock import patch
 from test import support
 from test.support import os_helper
+from test.support import socket_helper
 from test.support import warnings_helper
 import os
 try:
@@ -22,6 +23,10 @@ from nturl2path import url2pathname, pathname2url
 
 from base64 import b64encode
 import collections
+
+
+if not socket_helper.has_gethostname:
+    raise unittest.SkipTest("test requires gethostname()")
 
 
 def hexescape(char):
@@ -592,15 +597,6 @@ Connection: close
         with warnings_helper.check_warnings(('',DeprecationWarning)):
             urllib.request.URLopener()
 
-    @unittest.skipUnless(ssl, "ssl module required")
-    def test_cafile_and_context(self):
-        context = ssl.create_default_context()
-        with warnings_helper.check_warnings(('', DeprecationWarning)):
-            with self.assertRaises(ValueError):
-                urllib.request.urlopen(
-                    "https://localhost", cafile="/nonexistent/path", context=context
-                )
-
 
 class urlopen_DataTests(unittest.TestCase):
     """Test urlopen() opening a data URL."""
@@ -1099,6 +1095,8 @@ class UnquotingTests(unittest.TestCase):
         self.assertEqual(result.count('%'), 1,
                          "using unquote(): not all characters escaped: "
                          "%s" % result)
+
+    def test_unquote_rejects_none_and_tuple(self):
         self.assertRaises((TypeError, AttributeError), urllib.parse.unquote, None)
         self.assertRaises((TypeError, AttributeError), urllib.parse.unquote, ())
 

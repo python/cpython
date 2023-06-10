@@ -3,6 +3,7 @@ import unittest
 from test import support
 from test.support import os_helper
 from test.support import socket_helper
+from test.support import ResourceDenied
 from test.test_urllib2 import sanepathname2url
 
 import os
@@ -133,7 +134,9 @@ class OtherNetworkTests(unittest.TestCase):
     # They do sometimes catch some major disasters, though.
 
     def test_ftp(self):
+        # Testing the same URL twice exercises the caching in CacheFTPHandler
         urls = [
+            'ftp://www.pythontest.net/README',
             'ftp://www.pythontest.net/README',
             ('ftp://www.pythontest.net/non-existent-file',
              None, urllib.error.URLError),

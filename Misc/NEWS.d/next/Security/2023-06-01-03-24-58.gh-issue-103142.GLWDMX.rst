@@ -1,0 +1,2 @@
+The version of OpenSSL used in our binary builds has been upgraded to 1.1.1u
+to address several CVEs.

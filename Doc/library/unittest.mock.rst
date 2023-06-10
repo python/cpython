@@ -72,6 +72,7 @@ available, and then make assertions about how they have been used:
 :attr:`side_effect` allows you to perform side effects, including raising an
 exception when a mock is called:
 
+   >>> from unittest.mock import Mock
    >>> mock = Mock(side_effect=KeyError('foo'))
    >>> mock()
    Traceback (most recent call last):
@@ -406,7 +407,7 @@ the *new_callable* argument to :func:`patch`.
             False
 
         .. versionchanged:: 3.6
-           Added two keyword only argument to the reset_mock function.
+           Added two keyword-only arguments to the reset_mock function.
 
         This can be useful where you want to make a series of assertions that
         reuse the same object. Note that :meth:`reset_mock` *doesn't* clear the
@@ -416,8 +417,8 @@ the *new_callable* argument to :func:`patch`.
         parameter as ``True``. Child mocks and the return value mock
         (if any) are reset as well.
 
-        .. note:: *return_value*, and :attr:`side_effect` are keyword only
-                  argument.
+        .. note:: *return_value*, and :attr:`side_effect` are keyword-only
+                  arguments.
 
 
     .. method:: mock_add_spec(spec, spec_set=False)
@@ -1604,6 +1605,7 @@ decorator:
     >>> @patch.dict(foo, {'newkey': 'newvalue'})
     ... def test():
     ...     assert foo == {'newkey': 'newvalue'}
+    ...
     >>> test()
     >>> assert foo == {}
 
@@ -1944,7 +1946,7 @@ Both patch_ and patch.object_ correctly patch and restore descriptors: class
 methods, static methods and properties. You should patch these on the *class*
 rather than an instance. They also work with *some* objects
 that proxy attribute access, like the `django settings object
-<http://www.voidspace.org.uk/python/weblog/arch_d7_2010_12_04.shtml#e1198>`_.
+<https://web.archive.org/web/20200603181648/http://www.voidspace.org.uk/python/weblog/arch_d7_2010_12_04.shtml#e1198>`_.
 
 
 MagicMock and magic method support
@@ -2381,7 +2383,7 @@ FILTER_DIR
 .. data:: FILTER_DIR
 
 :data:`FILTER_DIR` is a module level variable that controls the way mock objects
-respond to :func:`dir` (only for Python 2.6 or more recent). The default is ``True``,
+respond to :func:`dir`. The default is ``True``,
 which uses the filtering described below, to only show useful members. If you
 dislike this filtering, or need to switch it off for diagnostic purposes, then
 set ``mock.FILTER_DIR = False``.
