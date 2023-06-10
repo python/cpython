@@ -284,7 +284,12 @@ def k(x):
                 # this won't work with compound complex inputs
                 continue
             self.assertEqual(number_token(lit), lit)
+        # Valid cases with extra underscores in the tokenize module
+        # See gh-105549 for context
+        extra_valid_cases = {"0_7", "09_99"}
         for lit in INVALID_UNDERSCORE_LITERALS:
+            if lit in extra_valid_cases:
+                continue
             try:
                 number_token(lit)
             except TokenError:
@@ -1229,7 +1234,7 @@ class Test_Tokenize(TestCase):
         # skip the initial encoding token and the end tokens
         tokens = list(_generate_tokens_from_c_tokenizer(readline().__next__, encoding='utf-8',
                       extra_tokens=True))[:-2]
-        expected_tokens = [TokenInfo(3, '"ЉЊЈЁЂ"', (1, 0), (1, 7), '"ЉЊЈЁЂ"\n')]
+        expected_tokens = [TokenInfo(3, '"ЉЊЈЁЂ"', (1, 0), (1, 7), '"ЉЊЈЁЂ"')]
         self.assertEqual(tokens, expected_tokens,
                          "bytes not decoded with encoding")
 
@@ -1638,8 +1643,8 @@ class TestTokenize(TestCase):
             TokenInfo(type=token.NUMBER, string='1', start=(1, 4), end=(1, 5), line='b = 1\n'),
             TokenInfo(type=token.NEWLINE, string='\n', start=(1, 5), end=(1, 6), line='b = 1\n'),
             TokenInfo(type=token.NL, string='\n', start=(2, 0), end=(2, 1), line='\n'),
-            TokenInfo(type=token.COMMENT, string='#test', start=(3, 0), end=(3, 5), line='#test\n'),
-            TokenInfo(type=token.NL, string='', start=(3, 5), end=(3, 6), line='#test\n'),
+            TokenInfo(type=token.COMMENT, string='#test', start=(3, 0), end=(3, 5), line='#test'),
+            TokenInfo(type=token.NL, string='', start=(3, 5), end=(3, 6), line='#test'),
             TokenInfo(type=token.ENDMARKER, string='', start=(4, 0), end=(4, 0), line='')
         ]
 
@@ -1653,7 +1658,7 @@ class TestTokenize(TestCase):
             TokenInfo(token.ENCODING, string='utf-8', start=(0, 0), end=(0, 0), line=''),
             TokenInfo(token.NAME, string='a', start=(1, 0), end=(1, 1), line='a\n'),
             TokenInfo(token.NEWLINE, string='\n', start=(1, 1), end=(1, 2), line='a\n'),
-            TokenInfo(token.NL, string='', start=(2, 1), end=(2, 2), line=' \n'),
+            TokenInfo(token.NL, string='', start=(2, 1), end=(2, 2), line=' '),
             TokenInfo(token.ENDMARKER, string='', start=(3, 0), end=(3, 0), line='')
         ]
 
@@ -1873,6 +1878,34 @@ class TestRoundtrip(TestCase):
         self.check_roundtrip(code)
 
 
+class InvalidPythonTests(TestCase):
+    def test_number_followed_by_name(self):
+        # See issue #gh-105549
+        source = "2sin(x)"
+        expected_tokens = [
+            TokenInfo(type=token.NUMBER, string='2', start=(1, 0), end=(1, 1), line='2sin(x)'),
+            TokenInfo(type=token.NAME, string='sin', start=(1, 1), end=(1, 4), line='2sin(x)'),
+            TokenInfo(type=token.OP, string='(', start=(1, 4), end=(1, 5), line='2sin(x)'),
+            TokenInfo(type=token.NAME, string='x', start=(1, 5), end=(1, 6), line='2sin(x)'),
+            TokenInfo(type=token.OP, string=')', start=(1, 6), end=(1, 7), line='2sin(x)'),
+            TokenInfo(type=token.NEWLINE, string='', start=(1, 7), end=(1, 8), line='2sin(x)'),
+            TokenInfo(type=token.ENDMARKER, string='', start=(2, 0), end=(2, 0), line='')
+        ]
+
+        tokens = list(generate_tokens(StringIO(source).readline))
+        self.assertEqual(tokens, expected_tokens)
+
+    def test_number_starting_with_zero(self):
+        source = "01234"
+        expected_tokens = [
+            TokenInfo(type=token.NUMBER, string='01234', start=(1, 0), end=(1, 5), line='01234'),
+            TokenInfo(type=token.NEWLINE, string='', start=(1, 5), end=(1, 6), line='01234'),
+            TokenInfo(type=token.ENDMARKER, string='', start=(2, 0), end=(2, 0), line='')
+        ]
+
+        tokens = list(generate_tokens(StringIO(source).readline))
+        self.assertEqual(tokens, expected_tokens)
+
 class CTokenizeTest(TestCase):
     def check_tokenize(self, s, expected):
         # Format the tokens in s in a table format.
@@ -1889,10 +1922,10 @@ class CTokenizeTest(TestCase):
             yield "1+1".encode(encoding)
 
         expected = [
-            TokenInfo(type=NUMBER, string='1', start=(1, 0), end=(1, 1), line='1+1\n'),
-            TokenInfo(type=OP, string='+', start=(1, 1), end=(1, 2), line='1+1\n'),
-            TokenInfo(type=NUMBER, string='1', start=(1, 2), end=(1, 3), line='1+1\n'),
-            TokenInfo(type=NEWLINE, string='', start=(1, 3), end=(1, 4), line='1+1\n'),
+            TokenInfo(type=NUMBER, string='1', start=(1, 0), end=(1, 1), line='1+1'),
+            TokenInfo(type=OP, string='+', start=(1, 1), end=(1, 2), line='1+1'),
+            TokenInfo(type=NUMBER, string='1', start=(1, 2), end=(1, 3), line='1+1'),
+            TokenInfo(type=NEWLINE, string='', start=(1, 3), end=(1, 4), line='1+1'),
             TokenInfo(type=ENDMARKER, string='', start=(2, 0), end=(2, 0), line='')
         ]
         for encoding in ["utf-8", "latin-1", "utf-16"]:
