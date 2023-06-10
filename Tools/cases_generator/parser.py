@@ -144,7 +144,7 @@ class Pseudo(Node):
 
 class Parser(PLexer):
     @contextual
-    def definition(self) -> InstDef | Super | Macro | Family | None:
+    def definition(self) -> InstDef | Super | Macro | Family | Pseudo | None:
         if inst := self.inst_def():
             return inst
         if super := self.super_def():
