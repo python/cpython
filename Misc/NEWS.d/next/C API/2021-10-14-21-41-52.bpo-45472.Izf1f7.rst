@@ -1,0 +1,2 @@
+Add :c:func:`PyUnicode_DecodeUnicodeEscapeStateful` and
+:c:func:`PyUnicode_DecodeRawUnicodeEscapeStateful`.

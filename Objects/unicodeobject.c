@@ -6066,10 +6066,10 @@ _PyUnicode_DecodeUnicodeEscapeInternal(const char *s,
 }
 
 PyObject *
-_PyUnicode_DecodeUnicodeEscapeStateful(const char *s,
-                              Py_ssize_t size,
-                              const char *errors,
-                              Py_ssize_t *consumed)
+PyUnicode_DecodeUnicodeEscapeStateful(const char *s,
+                                      Py_ssize_t size,
+                                      const char *errors,
+                                      Py_ssize_t *consumed)
 {
     const char *first_invalid_escape;
     PyObject *result = _PyUnicode_DecodeUnicodeEscapeInternal(s, size, errors,
@@ -6106,7 +6106,7 @@ PyUnicode_DecodeUnicodeEscape(const char *s,
                               Py_ssize_t size,
                               const char *errors)
 {
-    return _PyUnicode_DecodeUnicodeEscapeStateful(s, size, errors, NULL);
+    return PyUnicode_DecodeUnicodeEscapeStateful(s, size, errors, NULL);
 }
 
 /* Return a Unicode-Escape string version of the Unicode object. */
@@ -6229,10 +6229,10 @@ PyUnicode_AsUnicodeEscapeString(PyObject *unicode)
 /* --- Raw Unicode Escape Codec ------------------------------------------- */
 
 PyObject *
-_PyUnicode_DecodeRawUnicodeEscapeStateful(const char *s,
-                                          Py_ssize_t size,
-                                          const char *errors,
-                                          Py_ssize_t *consumed)
+PyUnicode_DecodeRawUnicodeEscapeStateful(const char *s,
+                                         Py_ssize_t size,
+                                         const char *errors,
+                                         Py_ssize_t *consumed)
 {
     const char *starts = s;
     _PyUnicodeWriter writer;
@@ -6369,7 +6369,7 @@ PyUnicode_DecodeRawUnicodeEscape(const char *s,
                                  Py_ssize_t size,
                                  const char *errors)
 {
-    return _PyUnicode_DecodeRawUnicodeEscapeStateful(s, size, errors, NULL);
+    return PyUnicode_DecodeRawUnicodeEscapeStateful(s, size, errors, NULL);
 }
 
 

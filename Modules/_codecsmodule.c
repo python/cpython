@@ -500,9 +500,9 @@ _codecs_unicode_escape_decode_impl(PyObject *module, Py_buffer *data,
 /*[clinic end generated code: output=b284f97b12c635ee input=15019f081ffe272b]*/
 {
     Py_ssize_t consumed = data->len;
-    PyObject *decoded = _PyUnicode_DecodeUnicodeEscapeStateful(data->buf, data->len,
-                                                               errors,
-                                                               final ? NULL : &consumed);
+    PyObject *decoded = PyUnicode_DecodeUnicodeEscapeStateful(data->buf, data->len,
+                                                              errors,
+                                                              final ? NULL : &consumed);
     return codec_tuple(decoded, consumed);
 }
 
@@ -520,9 +520,9 @@ _codecs_raw_unicode_escape_decode_impl(PyObject *module, Py_buffer *data,
 /*[clinic end generated code: output=11dbd96301e2879e input=b93f823aa8c343ad]*/
 {
     Py_ssize_t consumed = data->len;
-    PyObject *decoded = _PyUnicode_DecodeRawUnicodeEscapeStateful(data->buf, data->len,
-                                                                  errors,
-                                                                  final ? NULL : &consumed);
+    PyObject *decoded = PyUnicode_DecodeRawUnicodeEscapeStateful(data->buf, data->len,
+                                                                 errors,
+                                                                 final ? NULL : &consumed);
     return codec_tuple(decoded, consumed);
 }
 

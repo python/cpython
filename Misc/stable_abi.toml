@@ -2265,6 +2265,10 @@
     added = '3.11'
 [data.PyStructSequence_UnnamedField]
     added = '3.11'
+[function.PyUnicode_DecodeUnicodeEscapeStateful]
+    added = '3.11'
+[function.PyUnicode_DecodeRawUnicodeEscapeStateful]
+    added = '3.11'
 
 # Add stable Py_buffer API in Python 3.11 (https://bugs.python.org/issue45459)
 [struct.Py_buffer]
