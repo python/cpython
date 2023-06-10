@@ -220,7 +220,7 @@ dummy_func(
         }
 
         pseudo(STORE_FAST_MAYBE_NULL) = {
-            STORE_FAST
+            STORE_FAST,
         };
 
         inst(STORE_FAST_LOAD_FAST, (value1 -- value2)) {
@@ -1680,15 +1680,15 @@ dummy_func(
         }
 
         pseudo(LOAD_SUPER_METHOD) = {
-            LOAD_SUPER_ATTR
+            LOAD_SUPER_ATTR,
         };
 
         pseudo(LOAD_ZERO_SUPER_METHOD) = {
-            LOAD_SUPER_ATTR
+            LOAD_SUPER_ATTR,
         };
 
         pseudo(LOAD_ZERO_SUPER_ATTR) = {
-            LOAD_SUPER_ATTR
+            LOAD_SUPER_ATTR,
         };
 
         inst(LOAD_SUPER_ATTR_ATTR, (unused/1, global_super, class, self -- res2 if (oparg & 1), res)) {
@@ -1790,7 +1790,7 @@ dummy_func(
         }
 
         pseudo(LOAD_METHOD) = {
-            LOAD_ATTR
+            LOAD_ATTR,
         };
 
         inst(LOAD_ATTR_INSTANCE_VALUE, (unused/1, type_version/2, index/1, unused/5, owner -- res2 if (oparg & 1), res)) {
@@ -2165,12 +2165,12 @@ dummy_func(
 
         pseudo(JUMP) = {
             JUMP_FORWARD,
-            JUMP_BACKWARD
+            JUMP_BACKWARD,
         };
 
         pseudo(JUMP_NO_INTERRUPT) = {
             JUMP_FORWARD,
-            JUMP_BACKWARD_NO_INTERRUPT
+            JUMP_BACKWARD_NO_INTERRUPT,
         };
 
         inst(ENTER_EXECUTOR, (--)) {
@@ -2562,19 +2562,19 @@ dummy_func(
         }
 
         pseudo(SETUP_FINALLY) = {
-            NOP
+            NOP,
         };
 
         pseudo(SETUP_CLEANUP) = {
-            NOP
+            NOP,
         };
 
         pseudo(SETUP_WITH) = {
-            NOP
+            NOP,
         };
 
         pseudo(POP_BLOCK) = {
-            NOP
+            NOP,
         };
 
         inst(PUSH_EXC_INFO, (new_exc -- prev_exc, new_exc)) {
