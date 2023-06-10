@@ -149,8 +149,8 @@ static inline PyDictUnicodeEntry* DK_UNICODE_ENTRIES(PyDictKeysObject *dk) {
 #define DICT_VERSION_INCREMENT (1 << DICT_MAX_WATCHERS)
 #define DICT_VERSION_MASK (DICT_VERSION_INCREMENT - 1)
 
-#define DICT_NEXT_VERSION() \
-    (_PyRuntime.dict_state.global_version += DICT_VERSION_INCREMENT)
+#define DICT_NEXT_VERSION(INTERP) \
+    ((INTERP)->dict_state.global_version += DICT_VERSION_INCREMENT)
 
 void
 _PyDict_SendEvent(int watcher_bits,
@@ -160,7 +160,8 @@ _PyDict_SendEvent(int watcher_bits,
                   PyObject *value);
 
 static inline uint64_t
-_PyDict_NotifyEvent(PyDict_WatchEvent event,
+_PyDict_NotifyEvent(PyInterpreterState *interp,
+                    PyDict_WatchEvent event,
                     PyDictObject *mp,
                     PyObject *key,
                     PyObject *value)
@@ -169,9 +170,9 @@ _PyDict_NotifyEvent(PyDict_WatchEvent event,
     int watcher_bits = mp->ma_version_tag & DICT_VERSION_MASK;
     if (watcher_bits) {
         _PyDict_SendEvent(watcher_bits, event, mp, key, value);
-        return DICT_NEXT_VERSION() | watcher_bits;
+        return DICT_NEXT_VERSION(interp) | watcher_bits;
     }
-    return DICT_NEXT_VERSION();
+    return DICT_NEXT_VERSION(interp);
 }
 
 extern PyObject *_PyObject_MakeDictFromInstanceAttributes(PyObject *obj, PyDictValues *values);

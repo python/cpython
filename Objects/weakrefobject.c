@@ -170,10 +170,7 @@ weakref_repr(PyWeakReference *self)
     }
 
     Py_INCREF(obj);
-    if (_PyObject_LookupAttr(obj, &_Py_ID(__name__), &name) < 0) {
-        Py_DECREF(obj);
-        return NULL;
-    }
+    name = _PyObject_LookupSpecial(obj, &_Py_ID(__name__));
     if (name == NULL || !PyUnicode_Check(name)) {
         repr = PyUnicode_FromFormat(
             "<weakref at %p; to '%s' at %p>",
@@ -1020,9 +1017,9 @@ PyObject_ClearWeakRefs(PyObject *object)
  * or anything else.
  */
 void
-_PyStaticType_ClearWeakRefs(PyTypeObject *type)
+_PyStaticType_ClearWeakRefs(PyInterpreterState *interp, PyTypeObject *type)
 {
-    static_builtin_state *state = _PyStaticType_GetState(type);
+    static_builtin_state *state = _PyStaticType_GetState(interp, type);
     PyObject **list = _PyStaticType_GET_WEAKREFS_LISTPTR(state);
     while (*list != NULL) {
         /* Note that clear_weakref() pops the first ref off the type's
