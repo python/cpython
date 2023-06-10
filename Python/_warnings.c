@@ -1299,28 +1299,27 @@ PyErr_WarnExplicit(PyObject *category, const char *text,
 {
     PyObject *message = PyUnicode_FromString(text);
     if (message == NULL) {
-        return NULL;
+        return -1;
     }
     PyObject *filename = PyUnicode_DecodeFSDefault(filename_str);
     if (filename == NULL) {
-        goto exit;
+        Py_DECREF(message);
+        return -1;
     }
     PyObject *module = NULL;
     if (module_str != NULL) {
         module = PyUnicode_FromString(module_str);
-        if (module == NULL)
-            goto exit;
+        if (module == NULL) {
+            Py_DECREF(filename);
+            Py_DECREF(message);
+            return -1;
+        }
     }
 
     int ret = PyErr_WarnExplicitObject(category, message, filename, lineno,
                                        module, registry);
     Py_XDECREF(module);
     return ret;
-
- exit:
-    Py_XDECREF(message);
-    Py_XDECREF(filename);
-    return -1;
 }
 
 int
