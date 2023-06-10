@@ -108,15 +108,15 @@ _io__BufferedIOBase_detach(PyObject *self, PyTypeObject *cls, PyObject *const *a
 }
 
 PyDoc_STRVAR(_io__BufferedIOBase_read__doc__,
-"read($self, /, *args)\n"
+"read($self, size=-1, /)\n"
 "--\n"
 "\n"
 "Read and return up to n bytes.\n"
 "\n"
-"If the argument is omitted, None, or negative, read and\n"
+"If the size argument is omitted, None, or negative, read and\n"
 "return all data until EOF.\n"
 "\n"
-"If the argument is positive, and the underlying raw stream is\n"
+"If the size argument is positive, and the underlying raw stream is\n"
 "not \'interactive\', multiple raw reads may be issued to satisfy\n"
 "the byte count (unless EOF is reached first).\n"
 "However, for interactive raw streams (as well as sockets and pipes),\n"
@@ -133,7 +133,7 @@ PyDoc_STRVAR(_io__BufferedIOBase_read__doc__,
 
 static PyObject *
 _io__BufferedIOBase_read_impl(PyObject *self, PyTypeObject *cls,
-                              PyObject *args);
+                              int Py_UNUSED(size));
 
 static PyObject *
 _io__BufferedIOBase_read(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -145,7 +145,7 @@ _io__BufferedIOBase_read(PyObject *self, PyTypeObject *cls, PyObject *const *arg
     #  define KWTUPLE NULL
     #endif
 
-    static const char * const _keywords[] = { NULL};
+    static const char * const _keywords[] = {"", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "read",
@@ -153,25 +153,31 @@ _io__BufferedIOBase_read(PyObject *self, PyTypeObject *cls, PyObject *const *arg
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    PyObject *__clinic_args = NULL;
+    int size = -1;
 
-    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    __clinic_args = args[0];
-    return_value = _io__BufferedIOBase_read_impl(self, cls, __clinic_args);
+    if (nargs < 1) {
+        goto skip_optional_posonly;
+    }
+    size = _PyLong_AsInt(args[0]);
+    if (size == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_posonly:
+    return_value = _io__BufferedIOBase_read_impl(self, cls, size);
 
 exit:
-    Py_XDECREF(__clinic_args);
     return return_value;
 }
 
 PyDoc_STRVAR(_io__BufferedIOBase_read1__doc__,
-"read1($self, /, *args)\n"
+"read1($self, size=-1, /)\n"
 "--\n"
 "\n"
-"Read and return up to n bytes, with at most one read() call to the underlying raw stream.\n"
+"Read and return up to size bytes, with at most one read() call to the underlying raw stream.\n"
 "\n"
 "Return an empty bytes object on EOF.\n"
 "A short result does not imply that EOF is imminent.");
@@ -181,7 +187,7 @@ PyDoc_STRVAR(_io__BufferedIOBase_read1__doc__,
 
 static PyObject *
 _io__BufferedIOBase_read1_impl(PyObject *self, PyTypeObject *cls,
-                               PyObject *args);
+                               int Py_UNUSED(size));
 
 static PyObject *
 _io__BufferedIOBase_read1(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -193,7 +199,7 @@ _io__BufferedIOBase_read1(PyObject *self, PyTypeObject *cls, PyObject *const *ar
     #  define KWTUPLE NULL
     #endif
 
-    static const char * const _keywords[] = { NULL};
+    static const char * const _keywords[] = {"", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "read1",
@@ -201,25 +207,31 @@ _io__BufferedIOBase_read1(PyObject *self, PyTypeObject *cls, PyObject *const *ar
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    PyObject *__clinic_args = NULL;
+    int size = -1;
 
-    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    __clinic_args = args[0];
-    return_value = _io__BufferedIOBase_read1_impl(self, cls, __clinic_args);
+    if (nargs < 1) {
+        goto skip_optional_posonly;
+    }
+    size = _PyLong_AsInt(args[0]);
+    if (size == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_posonly:
+    return_value = _io__BufferedIOBase_read1_impl(self, cls, size);
 
 exit:
-    Py_XDECREF(__clinic_args);
     return return_value;
 }
 
 PyDoc_STRVAR(_io__BufferedIOBase_write__doc__,
-"write($self, /, *args)\n"
+"write($self, b, /)\n"
 "--\n"
 "\n"
-"Write the given buffer to the IO stream.\n"
+"Write buffer b to the IO stream.\n"
 "\n"
 "Return the number of bytes written, which is always\n"
 "the length of b in bytes.\n"
@@ -232,7 +244,7 @@ PyDoc_STRVAR(_io__BufferedIOBase_write__doc__,
 
 static PyObject *
 _io__BufferedIOBase_write_impl(PyObject *self, PyTypeObject *cls,
-                               PyObject *args);
+                               PyObject *Py_UNUSED(b));
 
 static PyObject *
 _io__BufferedIOBase_write(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -244,7 +256,7 @@ _io__BufferedIOBase_write(PyObject *self, PyTypeObject *cls, PyObject *const *ar
     #  define KWTUPLE NULL
     #endif
 
-    static const char * const _keywords[] = { NULL};
+    static const char * const _keywords[] = {"", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "write",
@@ -252,18 +264,195 @@ _io__BufferedIOBase_write(PyObject *self, PyTypeObject *cls, PyObject *const *ar
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    PyObject *__clinic_args = NULL;
+    PyObject *b;
 
-    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    __clinic_args = args[0];
-    return_value = _io__BufferedIOBase_write_impl(self, cls, __clinic_args);
+    b = args[0];
+    return_value = _io__BufferedIOBase_write_impl(self, cls, b);
 
 exit:
-    Py_XDECREF(__clinic_args);
     return return_value;
+}
+
+PyDoc_STRVAR(_io__Buffered___sizeof____doc__,
+"__sizeof__($self, /)\n"
+"--\n"
+"\n");
+
+#define _IO__BUFFERED___SIZEOF___METHODDEF    \
+    {"__sizeof__", (PyCFunction)_io__Buffered___sizeof__, METH_NOARGS, _io__Buffered___sizeof____doc__},
+
+static PyObject *
+_io__Buffered___sizeof___impl(buffered *self);
+
+static PyObject *
+_io__Buffered___sizeof__(buffered *self, PyObject *Py_UNUSED(ignored))
+{
+    return _io__Buffered___sizeof___impl(self);
+}
+
+PyDoc_STRVAR(_io__Buffered__dealloc_warn__doc__,
+"_dealloc_warn($self, source, /)\n"
+"--\n"
+"\n");
+
+#define _IO__BUFFERED__DEALLOC_WARN_METHODDEF    \
+    {"_dealloc_warn", (PyCFunction)_io__Buffered__dealloc_warn, METH_O, _io__Buffered__dealloc_warn__doc__},
+
+PyDoc_STRVAR(_io__Buffered_simple_flush__doc__,
+"flush($self, /)\n"
+"--\n"
+"\n");
+
+#define _IO__BUFFERED_SIMPLE_FLUSH_METHODDEF    \
+    {"flush", (PyCFunction)_io__Buffered_simple_flush, METH_NOARGS, _io__Buffered_simple_flush__doc__},
+
+static PyObject *
+_io__Buffered_simple_flush_impl(buffered *self);
+
+static PyObject *
+_io__Buffered_simple_flush(buffered *self, PyObject *Py_UNUSED(ignored))
+{
+    return _io__Buffered_simple_flush_impl(self);
+}
+
+PyDoc_STRVAR(_io__Buffered_close__doc__,
+"close($self, /)\n"
+"--\n"
+"\n");
+
+#define _IO__BUFFERED_CLOSE_METHODDEF    \
+    {"close", (PyCFunction)_io__Buffered_close, METH_NOARGS, _io__Buffered_close__doc__},
+
+static PyObject *
+_io__Buffered_close_impl(buffered *self);
+
+static PyObject *
+_io__Buffered_close(buffered *self, PyObject *Py_UNUSED(ignored))
+{
+    return _io__Buffered_close_impl(self);
+}
+
+PyDoc_STRVAR(_io__Buffered_detach__doc__,
+"detach($self, /)\n"
+"--\n"
+"\n");
+
+#define _IO__BUFFERED_DETACH_METHODDEF    \
+    {"detach", (PyCFunction)_io__Buffered_detach, METH_NOARGS, _io__Buffered_detach__doc__},
+
+static PyObject *
+_io__Buffered_detach_impl(buffered *self);
+
+static PyObject *
+_io__Buffered_detach(buffered *self, PyObject *Py_UNUSED(ignored))
+{
+    return _io__Buffered_detach_impl(self);
+}
+
+PyDoc_STRVAR(_io__Buffered_seekable__doc__,
+"seekable($self, /)\n"
+"--\n"
+"\n");
+
+#define _IO__BUFFERED_SEEKABLE_METHODDEF    \
+    {"seekable", (PyCFunction)_io__Buffered_seekable, METH_NOARGS, _io__Buffered_seekable__doc__},
+
+static PyObject *
+_io__Buffered_seekable_impl(buffered *self);
+
+static PyObject *
+_io__Buffered_seekable(buffered *self, PyObject *Py_UNUSED(ignored))
+{
+    return _io__Buffered_seekable_impl(self);
+}
+
+PyDoc_STRVAR(_io__Buffered_readable__doc__,
+"readable($self, /)\n"
+"--\n"
+"\n");
+
+#define _IO__BUFFERED_READABLE_METHODDEF    \
+    {"readable", (PyCFunction)_io__Buffered_readable, METH_NOARGS, _io__Buffered_readable__doc__},
+
+static PyObject *
+_io__Buffered_readable_impl(buffered *self);
+
+static PyObject *
+_io__Buffered_readable(buffered *self, PyObject *Py_UNUSED(ignored))
+{
+    return _io__Buffered_readable_impl(self);
+}
+
+PyDoc_STRVAR(_io__Buffered_writable__doc__,
+"writable($self, /)\n"
+"--\n"
+"\n");
+
+#define _IO__BUFFERED_WRITABLE_METHODDEF    \
+    {"writable", (PyCFunction)_io__Buffered_writable, METH_NOARGS, _io__Buffered_writable__doc__},
+
+static PyObject *
+_io__Buffered_writable_impl(buffered *self);
+
+static PyObject *
+_io__Buffered_writable(buffered *self, PyObject *Py_UNUSED(ignored))
+{
+    return _io__Buffered_writable_impl(self);
+}
+
+PyDoc_STRVAR(_io__Buffered_fileno__doc__,
+"fileno($self, /)\n"
+"--\n"
+"\n");
+
+#define _IO__BUFFERED_FILENO_METHODDEF    \
+    {"fileno", (PyCFunction)_io__Buffered_fileno, METH_NOARGS, _io__Buffered_fileno__doc__},
+
+static PyObject *
+_io__Buffered_fileno_impl(buffered *self);
+
+static PyObject *
+_io__Buffered_fileno(buffered *self, PyObject *Py_UNUSED(ignored))
+{
+    return _io__Buffered_fileno_impl(self);
+}
+
+PyDoc_STRVAR(_io__Buffered_isatty__doc__,
+"isatty($self, /)\n"
+"--\n"
+"\n");
+
+#define _IO__BUFFERED_ISATTY_METHODDEF    \
+    {"isatty", (PyCFunction)_io__Buffered_isatty, METH_NOARGS, _io__Buffered_isatty__doc__},
+
+static PyObject *
+_io__Buffered_isatty_impl(buffered *self);
+
+static PyObject *
+_io__Buffered_isatty(buffered *self, PyObject *Py_UNUSED(ignored))
+{
+    return _io__Buffered_isatty_impl(self);
+}
+
+PyDoc_STRVAR(_io__Buffered_flush__doc__,
+"flush($self, /)\n"
+"--\n"
+"\n");
+
+#define _IO__BUFFERED_FLUSH_METHODDEF    \
+    {"flush", (PyCFunction)_io__Buffered_flush, METH_NOARGS, _io__Buffered_flush__doc__},
+
+static PyObject *
+_io__Buffered_flush_impl(buffered *self);
+
+static PyObject *
+_io__Buffered_flush(buffered *self, PyObject *Py_UNUSED(ignored))
+{
+    return _io__Buffered_flush_impl(self);
 }
 
 PyDoc_STRVAR(_io__Buffered_peek__doc__,
@@ -490,6 +679,23 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_io__Buffered_tell__doc__,
+"tell($self, /)\n"
+"--\n"
+"\n");
+
+#define _IO__BUFFERED_TELL_METHODDEF    \
+    {"tell", (PyCFunction)_io__Buffered_tell, METH_NOARGS, _io__Buffered_tell__doc__},
+
+static PyObject *
+_io__Buffered_tell_impl(buffered *self);
+
+static PyObject *
+_io__Buffered_tell(buffered *self, PyObject *Py_UNUSED(ignored))
+{
+    return _io__Buffered_tell_impl(self);
+}
+
 PyDoc_STRVAR(_io__Buffered_seek__doc__,
 "seek($self, target, whence=0, /)\n"
 "--\n"
@@ -532,26 +738,41 @@ PyDoc_STRVAR(_io__Buffered_truncate__doc__,
 "\n");
 
 #define _IO__BUFFERED_TRUNCATE_METHODDEF    \
-    {"truncate", _PyCFunction_CAST(_io__Buffered_truncate), METH_FASTCALL, _io__Buffered_truncate__doc__},
+    {"truncate", _PyCFunction_CAST(_io__Buffered_truncate), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__Buffered_truncate__doc__},
 
 static PyObject *
-_io__Buffered_truncate_impl(buffered *self, PyObject *pos);
+_io__Buffered_truncate_impl(buffered *self, PyTypeObject *cls, PyObject *pos);
 
 static PyObject *
-_io__Buffered_truncate(buffered *self, PyObject *const *args, Py_ssize_t nargs)
+_io__Buffered_truncate(buffered *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "truncate",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     PyObject *pos = Py_None;
 
-    if (!_PyArg_CheckPositional("truncate", nargs, 0, 1)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     if (nargs < 1) {
-        goto skip_optional;
+        goto skip_optional_posonly;
     }
     pos = args[0];
-skip_optional:
-    return_value = _io__Buffered_truncate_impl(self, pos);
+skip_optional_posonly:
+    return_value = _io__Buffered_truncate_impl(self, cls, pos);
 
 exit:
     return return_value;
@@ -877,4 +1098,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c4ea041ccc91b5d2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b7ddf84a5bc2bf34 input=a9049054013a1b77]*/

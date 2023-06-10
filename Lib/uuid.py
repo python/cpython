@@ -53,7 +53,7 @@ from enum import Enum, _simple_enum
 __author__ = 'Ka-Ping Yee <ping@zesty.ca>'
 
 # The recognized platforms - known behaviors
-if sys.platform in ('win32', 'darwin'):
+if sys.platform in ('win32', 'darwin', 'emscripten', 'wasi'):
     _AIX = _LINUX = False
 else:
     import platform

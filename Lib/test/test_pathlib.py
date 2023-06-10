@@ -1,4 +1,3 @@
-import contextlib
 import collections.abc
 import io
 import os
@@ -310,8 +309,35 @@ class _BasePurePathTest(object):
         self.assertFalse(P('/ab.py').match('/a/*.py'))
         self.assertFalse(P('/a/b/c.py').match('/a/*.py'))
         # Multi-part glob-style pattern.
-        self.assertFalse(P('/a/b/c.py').match('/**/*.py'))
+        self.assertTrue(P('a').match('**'))
+        self.assertTrue(P('c.py').match('**'))
+        self.assertTrue(P('a/b/c.py').match('**'))
+        self.assertTrue(P('/a/b/c.py').match('**'))
+        self.assertTrue(P('/a/b/c.py').match('/**'))
+        self.assertTrue(P('/a/b/c.py').match('**/'))
+        self.assertTrue(P('/a/b/c.py').match('/a/**'))
+        self.assertTrue(P('/a/b/c.py').match('**/*.py'))
+        self.assertTrue(P('/a/b/c.py').match('/**/*.py'))
         self.assertTrue(P('/a/b/c.py').match('/a/**/*.py'))
+        self.assertTrue(P('/a/b/c.py').match('/a/b/**/*.py'))
+        self.assertTrue(P('/a/b/c.py').match('/**/**/**/**/*.py'))
+        self.assertFalse(P('c.py').match('**/a.py'))
+        self.assertFalse(P('c.py').match('c/**'))
+        self.assertFalse(P('a/b/c.py').match('**/a'))
+        self.assertFalse(P('a/b/c.py').match('**/a/b'))
+        self.assertFalse(P('a/b/c.py').match('**/a/b/c'))
+        self.assertFalse(P('a/b/c.py').match('**/a/b/c.'))
+        self.assertFalse(P('a/b/c.py').match('**/a/b/c./**'))
+        self.assertFalse(P('a/b/c.py').match('**/a/b/c./**'))
+        self.assertFalse(P('a/b/c.py').match('/a/b/c.py/**'))
+        self.assertFalse(P('a/b/c.py').match('/**/a/b/c.py'))
+        self.assertRaises(ValueError, P('a').match, '**a/b/c')
+        self.assertRaises(ValueError, P('a').match, 'a/b/c**')
+        # Case-sensitive flag
+        self.assertFalse(P('A.py').match('a.PY', case_sensitive=True))
+        self.assertTrue(P('A.py').match('a.PY', case_sensitive=False))
+        self.assertFalse(P('c:/a/B.Py').match('C:/A/*.pY', case_sensitive=True))
+        self.assertTrue(P('/a/b/c.py').match('/A/*/*.Py', case_sensitive=False))
 
     def test_ordering_common(self):
         # Ordering is tuple-alike.
@@ -784,6 +810,12 @@ class PurePosixPathTest(_BasePurePathTest, unittest.TestCase):
         pp = P('//a') / '/c'
         self.assertEqual(pp, P('/c'))
 
+    def test_parse_windows_path(self):
+        P = self.cls
+        p = P('c:', 'a', 'b')
+        pp = P(pathlib.PureWindowsPath('c:\\a\\b'))
+        self.assertEqual(p, pp)
+
 
 class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
     cls = pathlib.PureWindowsPath
@@ -899,6 +931,7 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(P('a/B'), P('A/b'))
         self.assertEqual(P('C:a/B'), P('c:A/b'))
         self.assertEqual(P('//Some/SHARE/a/B'), P('//somE/share/A/b'))
+        self.assertEqual(P('\u0130'), P('i\u0307'))
 
     def test_as_uri(self):
         P = self.cls
@@ -916,7 +949,7 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(P('//some/share/a/b%#c\xe9').as_uri(),
                          'file://some/share/a/b%25%23c%C3%A9')
 
-    def test_match_common(self):
+    def test_match(self):
         P = self.cls
         # Absolute patterns.
         self.assertTrue(P('c:/b.py').match('*:/*.py'))
@@ -1851,6 +1884,53 @@ class _BasePathTest(object):
         _check(path, "dirb/file*", True, [])
         _check(path, "dirb/file*", False, ["dirB/fileB"])
 
+    @os_helper.skip_unless_symlink
+    def test_glob_follow_symlinks_common(self):
+        def _check(path, glob, expected):
+            actual = {path for path in path.glob(glob, follow_symlinks=True)
+                      if "linkD" not in path.parent.parts}  # exclude symlink loop.
+            self.assertEqual(actual, { P(BASE, q) for q in expected })
+        P = self.cls
+        p = P(BASE)
+        _check(p, "fileB", [])
+        _check(p, "dir*/file*", ["dirB/fileB", "dirC/fileC"])
+        _check(p, "*A", ["dirA", "fileA", "linkA"])
+        _check(p, "*B/*", ["dirB/fileB", "dirB/linkD", "linkB/fileB", "linkB/linkD"])
+        _check(p, "*/fileB", ["dirB/fileB", "linkB/fileB"])
+        _check(p, "*/", ["dirA", "dirB", "dirC", "dirE", "linkB"])
+        _check(p, "dir*/*/..", ["dirC/dirD/..", "dirA/linkC/.."])
+        _check(p, "dir*/**/", ["dirA", "dirA/linkC", "dirA/linkC/linkD", "dirB", "dirB/linkD",
+                                 "dirC", "dirC/dirD", "dirE"])
+        _check(p, "dir*/**/..", ["dirA/..", "dirA/linkC/..", "dirB/..",
+                                 "dirC/..", "dirC/dirD/..", "dirE/.."])
+        _check(p, "dir*/*/**/", ["dirA/linkC", "dirA/linkC/linkD", "dirB/linkD", "dirC/dirD"])
+        _check(p, "dir*/*/**/..", ["dirA/linkC/..", "dirC/dirD/.."])
+        _check(p, "dir*/**/fileC", ["dirC/fileC"])
+        _check(p, "dir*/*/../dirD/**/", ["dirC/dirD/../dirD"])
+        _check(p, "*/dirD/**/", ["dirC/dirD"])
+
+    @os_helper.skip_unless_symlink
+    def test_glob_no_follow_symlinks_common(self):
+        def _check(path, glob, expected):
+            actual = {path for path in path.glob(glob, follow_symlinks=False)}
+            self.assertEqual(actual, { P(BASE, q) for q in expected })
+        P = self.cls
+        p = P(BASE)
+        _check(p, "fileB", [])
+        _check(p, "dir*/file*", ["dirB/fileB", "dirC/fileC"])
+        _check(p, "*A", ["dirA", "fileA", "linkA"])
+        _check(p, "*B/*", ["dirB/fileB", "dirB/linkD"])
+        _check(p, "*/fileB", ["dirB/fileB"])
+        _check(p, "*/", ["dirA", "dirB", "dirC", "dirE"])
+        _check(p, "dir*/*/..", ["dirC/dirD/.."])
+        _check(p, "dir*/**/", ["dirA", "dirB", "dirC", "dirC/dirD", "dirE"])
+        _check(p, "dir*/**/..", ["dirA/..", "dirB/..", "dirC/..", "dirC/dirD/..", "dirE/.."])
+        _check(p, "dir*/*/**/", ["dirC/dirD"])
+        _check(p, "dir*/*/**/..", ["dirC/dirD/.."])
+        _check(p, "dir*/**/fileC", ["dirC/fileC"])
+        _check(p, "dir*/*/../dirD/**/", ["dirC/dirD/../dirD"])
+        _check(p, "*/dirD/**/", ["dirC/dirD"])
+
     def test_rglob_common(self):
         def _check(glob, expected):
             self.assertEqual(sorted(glob), sorted(P(BASE, q) for q in expected))
@@ -1893,6 +1973,60 @@ class _BasePathTest(object):
         # gh-91616, a re module regression
         _check(p.rglob("*.txt"), ["dirC/novel.txt"])
         _check(p.rglob("*.*"), ["dirC/novel.txt"])
+
+    @os_helper.skip_unless_symlink
+    def test_rglob_follow_symlinks_common(self):
+        def _check(path, glob, expected):
+            actual = {path for path in path.rglob(glob, follow_symlinks=True)
+                      if 'linkD' not in path.parent.parts}  # exclude symlink loop.
+            self.assertEqual(actual, { P(BASE, q) for q in expected })
+        P = self.cls
+        p = P(BASE)
+        _check(p, "fileB", ["dirB/fileB", "dirA/linkC/fileB", "linkB/fileB"])
+        _check(p, "*/fileA", [])
+        _check(p, "*/fileB", ["dirB/fileB", "dirA/linkC/fileB", "linkB/fileB"])
+        _check(p, "file*", ["fileA", "dirA/linkC/fileB", "dirB/fileB",
+                            "dirC/fileC", "dirC/dirD/fileD", "linkB/fileB"])
+        _check(p, "*/", ["dirA", "dirA/linkC", "dirA/linkC/linkD", "dirB", "dirB/linkD",
+                         "dirC", "dirC/dirD", "dirE", "linkB", "linkB/linkD"])
+        _check(p, "", ["", "dirA", "dirA/linkC", "dirA/linkC/linkD", "dirB", "dirB/linkD",
+                       "dirC", "dirE", "dirC/dirD", "linkB", "linkB/linkD"])
+
+        p = P(BASE, "dirC")
+        _check(p, "*", ["dirC/fileC", "dirC/novel.txt",
+                        "dirC/dirD", "dirC/dirD/fileD"])
+        _check(p, "file*", ["dirC/fileC", "dirC/dirD/fileD"])
+        _check(p, "*/*", ["dirC/dirD/fileD"])
+        _check(p, "*/", ["dirC/dirD"])
+        _check(p, "", ["dirC", "dirC/dirD"])
+        # gh-91616, a re module regression
+        _check(p, "*.txt", ["dirC/novel.txt"])
+        _check(p, "*.*", ["dirC/novel.txt"])
+
+    @os_helper.skip_unless_symlink
+    def test_rglob_no_follow_symlinks_common(self):
+        def _check(path, glob, expected):
+            actual = {path for path in path.rglob(glob, follow_symlinks=False)}
+            self.assertEqual(actual, { P(BASE, q) for q in expected })
+        P = self.cls
+        p = P(BASE)
+        _check(p, "fileB", ["dirB/fileB"])
+        _check(p, "*/fileA", [])
+        _check(p, "*/fileB", ["dirB/fileB"])
+        _check(p, "file*", ["fileA", "dirB/fileB", "dirC/fileC", "dirC/dirD/fileD", ])
+        _check(p, "*/", ["dirA", "dirB", "dirC", "dirC/dirD", "dirE"])
+        _check(p, "", ["", "dirA", "dirB", "dirC", "dirE", "dirC/dirD"])
+
+        p = P(BASE, "dirC")
+        _check(p, "*", ["dirC/fileC", "dirC/novel.txt",
+                        "dirC/dirD", "dirC/dirD/fileD"])
+        _check(p, "file*", ["dirC/fileC", "dirC/dirD/fileD"])
+        _check(p, "*/*", ["dirC/dirD/fileD"])
+        _check(p, "*/", ["dirC/dirD"])
+        _check(p, "", ["dirC", "dirC/dirD"])
+        # gh-91616, a re module regression
+        _check(p, "*.txt", ["dirC/novel.txt"])
+        _check(p, "*.*", ["dirC/novel.txt"])
 
     @os_helper.skip_unless_symlink
     def test_rglob_symlink_loop(self):
@@ -1949,33 +2083,39 @@ class _BasePathTest(object):
         P = self.cls
         base = P(BASE) / 'permissions'
         base.mkdir()
+        self.addCleanup(os_helper.rmtree, base)
 
-        file1 = base / "file1"
-        file1.touch()
-        file2 = base / "file2"
-        file2.touch()
+        for i in range(100):
+            link = base / f"link{i}"
+            if i % 2:
+                link.symlink_to(P(BASE, "dirE", "nonexistent"))
+            else:
+                link.symlink_to(P(BASE, "dirC"))
 
-        subdir = base / "subdir"
+        self.assertEqual(len(set(base.glob("*"))), 100)
+        self.assertEqual(len(set(base.glob("*/"))), 50)
+        self.assertEqual(len(set(base.glob("*/fileC"))), 50)
+        self.assertEqual(len(set(base.glob("*/file*"))), 50)
 
-        file3 = base / "file3"
-        file3.symlink_to(subdir / "other")
+    @os_helper.skip_unless_symlink
+    def test_glob_long_symlink(self):
+        # See gh-87695
+        base = self.cls(BASE) / 'long_symlink'
+        base.mkdir()
+        bad_link = base / 'bad_link'
+        bad_link.symlink_to("bad" * 200)
+        self.assertEqual(sorted(base.glob('**/*')), [bad_link])
 
-        # Patching is needed to avoid relying on the filesystem
-        # to return the order of the files as the error will not
-        # happen if the symlink is the last item.
-        real_scandir = os.scandir
-        def my_scandir(path):
-            with real_scandir(path) as scandir_it:
-                entries = list(scandir_it)
-            entries.sort(key=lambda entry: entry.name)
-            return contextlib.nullcontext(entries)
+    def test_glob_above_recursion_limit(self):
+        recursion_limit = 40
+        # directory_depth > recursion_limit
+        directory_depth = recursion_limit + 10
+        base = pathlib.Path(os_helper.TESTFN, 'deep')
+        path = pathlib.Path(base, *(['d'] * directory_depth))
+        path.mkdir(parents=True)
 
-        with mock.patch("os.scandir", my_scandir):
-            self.assertEqual(len(set(base.glob("*"))), 3)
-            subdir.mkdir()
-            self.assertEqual(len(set(base.glob("*"))), 4)
-            subdir.chmod(000)
-            self.assertEqual(len(set(base.glob("*"))), 4)
+        with set_recursion_limit(recursion_limit):
+            list(base.glob('**'))
 
     def _check_resolve(self, p, expected, strict=True):
         q = p.resolve(strict)
@@ -2068,26 +2208,6 @@ class _BasePathTest(object):
             self.assertEqual(p.resolve(), self.cls(BASE, p))
         finally:
             os.chdir(old_cwd)
-
-    def test_with(self):
-        p = self.cls(BASE)
-        it = p.iterdir()
-        it2 = p.iterdir()
-        next(it2)
-        # bpo-46556: path context managers are deprecated in Python 3.11.
-        with self.assertWarns(DeprecationWarning):
-            with p:
-                pass
-        # Using a path as a context manager is a no-op, thus the following
-        # operations should still succeed after the context manage exits.
-        next(it)
-        next(it2)
-        p.exists()
-        p.resolve()
-        p.absolute()
-        with self.assertWarns(DeprecationWarning):
-            with p:
-                pass
 
     @os_helper.skip_unless_working_chmod
     def test_chmod(self):

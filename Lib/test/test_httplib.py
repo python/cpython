@@ -2401,7 +2401,7 @@ class TunnelTests(TestCase):
         self.conn.set_tunnel('destination.com')
 
         self.conn.request('PUT', '/', '')
-        headers = self.conn._proxy_response_headers
+        headers = self.conn.get_proxy_response_headers()
         self.assertIn(expected_header, headers.items())
 
     def test_tunnel_leak(self):

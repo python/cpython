@@ -1,1 +1,0 @@
-:func:`socket.getnameinfo` now releases the GIL while contacting the DNS server

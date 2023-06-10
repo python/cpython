@@ -4749,6 +4749,19 @@ class TestPythonBufferProtocol(unittest.TestCase):
         c.clear()
         self.assertIs(c.buffer, None)
 
+    def test_release_buffer_with_exception_set(self):
+        class A:
+            def __buffer__(self, flags):
+                return memoryview(bytes(8))
+            def __release_buffer__(self, view):
+                pass
+
+        b = bytearray(8)
+        with memoryview(b):
+            # now b.extend will raise an exception due to exports
+            with self.assertRaises(BufferError):
+                b.extend(A())
+
 
 if __name__ == "__main__":
     unittest.main()
