@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 This script is used to build "official" universal installers on macOS.
 
