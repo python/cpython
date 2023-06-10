@@ -1312,12 +1312,13 @@ PyErr_WarnExplicit(PyObject *category, const char *text,
             goto exit;
     }
 
-    return PyErr_WarnExplicitObject(category, message, filename, lineno,
-                                    module, registry);
+    int ret = PyErr_WarnExplicitObject(category, message, filename, lineno,
+                                       module, registry);
+    Py_XDECREF(module);
+    return ret;
 
  exit:
     Py_XDECREF(message);
-    Py_XDECREF(module);
     Py_XDECREF(filename);
     return -1;
 }
