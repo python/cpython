@@ -1,0 +1,1 @@
+Display exit-codes for abruptly terminated processes in concurrent.futures, in a ``multiprocessing.ProcessError`` set as the ``__cause__`` of the raised ``BrokenProcessPool``

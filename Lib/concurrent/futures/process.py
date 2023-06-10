@@ -59,6 +59,7 @@ from functools import partial
 import itertools
 import sys
 from traceback import format_exception
+import signal
 
 
 _threads_wakeups = weakref.WeakKeyDictionary()
@@ -426,6 +427,19 @@ class _ExecutorManagerThread(threading.Thread):
         elif wakeup_reader in ready:
             is_broken = False
 
+        if cause is not None:
+            cause = _RemoteTraceback(f"\n'''\n{''.join(cause)}'''")
+
+        elif is_broken and any(s in ready for s in worker_sentinels):
+            exitcodes_and_signals = (
+                signal.Signals(-p.exitcode) if p.exitcode < 0 else p.exitcode
+                for p in self.processes.values()
+                if p.sentinel in ready
+            )
+            reasons = (str(c) for c in exitcodes_and_signals)
+            cause = mp.ProcessError(f"Processes exited with codes: "
+                                    f"{', '.join(reasons)}")
+
         with self.shutdown_lock:
             self.thread_wakeup.clear()
 
@@ -484,8 +498,7 @@ class _ExecutorManagerThread(threading.Thread):
                                 "terminated abruptly while the future was "
                                 "running or pending.")
         if cause is not None:
-            bpe.__cause__ = _RemoteTraceback(
-                f"\n'''\n{''.join(cause)}'''")
+            bpe.__cause__ = cause
 
         # Mark pending tasks as failed.
         for work_id, work_item in self.pending_work_items.items():
