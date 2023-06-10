@@ -93,6 +93,11 @@ accessible by name via :func:`new`.  See :data:`algorithms_available`.
 .. versionchanged:: 3.9
    Hashlib now uses SHA3 and SHAKE from OpenSSL if it provides it.
 
+.. versionchanged:: 3.12
+   For any of the MD5, SHA1, SHA2, or SHA3 algorithms that the linked
+   OpenSSL does not provide we fall back to a verified implementation from
+   the `HACL\* project`_.
+
 Usage
 -----
 
@@ -204,11 +209,6 @@ A hash object has the following methods:
    Repeated calls are equivalent to a single call with the
    concatenation of all the arguments: ``m.update(a); m.update(b)`` is
    equivalent to ``m.update(a+b)``.
-
-   .. versionchanged:: 3.1
-      The Python GIL is released to allow other threads to run while hash
-      updates on data larger than 2047 bytes is taking place when using hash
-      algorithms supplied by OpenSSL.
 
 
 .. method:: hash.digest()
@@ -811,6 +811,7 @@ Domain Dedication 1.0 Universal:
 .. _Attacks on cryptographic hash algorithms: https://en.wikipedia.org/wiki/Cryptographic_hash_function#Attacks_on_cryptographic_hash_algorithms
 .. _the FIPS 180-4 standard: https://csrc.nist.gov/publications/detail/fips/180/4/final
 .. _the FIPS 202 standard: https://csrc.nist.gov/publications/detail/fips/202/final
+.. _HACL\* project: https://github.com/hacl-star/hacl-star
 
 
 .. _hashlib-seealso:
