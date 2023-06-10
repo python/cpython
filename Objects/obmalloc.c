@@ -580,12 +580,12 @@ set_allocator_unlocked(PyMemAllocatorDomain domain, PyMemAllocatorEx *allocator)
         _PyMem_Raw = *allocator;
         break;
     case PYMEM_DOMAIN_MEM:
-        maybe_add_locking_wrapper(domain, allocator, &_PyMem_Wrapped);
         _PyMem = *allocator;
+        maybe_add_locking_wrapper(domain, &_PyMem, &_PyMem_Wrapped);
         break;
     case PYMEM_DOMAIN_OBJ:
-        maybe_add_locking_wrapper(domain, allocator, &_PyObject_Wrapped);
         _PyObject = *allocator;
+        maybe_add_locking_wrapper(domain, &_PyObject, &_PyObject_Wrapped);
         break;
     default:
         /* ignore unknown domain */
