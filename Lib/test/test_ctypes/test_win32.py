@@ -90,6 +90,26 @@ class TestWinError(unittest.TestCase):
         self.assertEqual(e.errno, errno.EINVAL)
         self.assertEqual(e.winerror, ERROR_INVALID_PARAMETER)
 
+    def test_winerror_dword(self):
+        # see Issue 28474
+        E_POINTER = 0x80000005
+        msg = FormatError(E_POINTER).strip()
+        args = (E_POINTER, msg, None, E_POINTER)
+
+        e = WinError(E_POINTER)
+        self.assertEqual(e.args, args)
+        self.assertEqual(e.errno, E_POINTER)
+        self.assertEqual(e.winerror, E_POINTER)
+
+        windll.kernel32.SetLastError(E_POINTER)
+        try:
+            raise WinError()
+        except OSError as exc:
+            e = exc
+        self.assertEqual(e.args, args)
+        self.assertEqual(e.errno, E_POINTER)
+        self.assertEqual(e.winerror, E_POINTER)
+
 class Structures(unittest.TestCase):
     def test_struct_by_value(self):
         class POINT(Structure):

@@ -1739,15 +1739,21 @@ oserror_parse_args(PyObject **p_args,
             return -1;
 #ifdef MS_WINDOWS
         if (*winerror && PyLong_Check(*winerror)) {
-            long errcode, winerrcode;
+            long long errcode, winerrcode;
             PyObject *newargs;
             Py_ssize_t i;
 
-            winerrcode = PyLong_AsLong(*winerror);
+            winerrcode = PyLong_AsLongLong(*winerror);
             if (winerrcode == -1 && PyErr_Occurred())
                 return -1;
-            errcode = winerror_to_errno(winerrcode);
-            *myerrno = PyLong_FromLong(errcode);
+
+            if(winerrcode < LONG_MIN || winerrcode > ULONG_MAX) {
+                PyErr_Format(PyExc_OverflowError, "error code %lld too big for int", winerrcode);
+                return -1;
+            }
+
+            errcode = (long long)winerror_to_errno((int)winerrcode);
+            *myerrno = PyLong_FromLongLong(errcode);
             if (!*myerrno)
                 return -1;
             newargs = PyTuple_New(nargs);
