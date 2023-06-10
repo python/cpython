@@ -1299,7 +1299,7 @@ PyErr_WarnExplicit(PyObject *category, const char *text,
 {
     PyObject *message = PyUnicode_FromString(text);
     if (message == NULL) {
-        goto exit;
+        return NULL;
     }
     PyObject *filename = PyUnicode_DecodeFSDefault(filename_str);
     if (filename == NULL) {
