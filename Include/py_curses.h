@@ -75,8 +75,9 @@ typedef struct {
 #else
 /* This section is used in modules that use the _cursesmodule API */
 
-static void **PyCurses_API;
+Py_DEPRECATED(3.14) static void **PyCurses_API;
 
+/* Those macros will be deprecated in 3.14 and moved into internal APIs.  */
 #define PyCursesWindow_Type (*_PyType_CAST(PyCurses_API[0]))
 #define PyCursesSetupTermCalled  {if (! ((int (*)(void))PyCurses_API[1]) () ) return NULL;}
 #define PyCursesInitialised      {if (! ((int (*)(void))PyCurses_API[2]) () ) return NULL;}
