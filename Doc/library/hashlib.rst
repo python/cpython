@@ -120,15 +120,13 @@ More condensed:
    above listed hashes as well as any other algorithms that your OpenSSL
    library may offer.
 
-   Using :func:`new` with an algorithm name:
+Using :func:`new` with an algorithm name:
 
-      >>> h = hashlib.new('sha256')
-      >>> h.update(b"Nobody inspects the spammish repetition")
-      >>> h.hexdigest()
-      '031edd7d41651593c5fe5c006fa5752b37fddff7bc4e843aa6af0c950f4b9406'
+   >>> h = hashlib.new('sha256')
+   >>> h.update(b"Nobody inspects the spammish repetition")
+   >>> h.hexdigest()
+   '031edd7d41651593c5fe5c006fa5752b37fddff7bc4e843aa6af0c950f4b9406'
 
-These named constructors below are much faster than :func:`new` and should be
-preferred:
 
 .. function:: md5([, data], \*, usedforsecurity=True)
 .. function:: sha1([, data], \*, usedforsecurity=True)
@@ -141,11 +139,10 @@ preferred:
 .. function:: sha3_384([, data], \*, usedforsecurity=True)
 .. function:: sha3_512([, data], \*, usedforsecurity=True)
 
-   >>> h = hashlib.sha3_224(b"Nobody inspects the spammish repetition")
-   >>> h.hexdigest()
-   'd6ff1bfb32cf835a3085ba18caa4a13f6307fdfb565521e0db35b064'
+Named constructors such as these are faster than passing an algorithm name to
+:func:`new`.
 
-Hashlib provides the following constant attributes:
+Hashlib provides the following constant module attributes:
 
 .. data:: algorithms_guaranteed
 
