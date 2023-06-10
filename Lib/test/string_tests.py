@@ -318,7 +318,7 @@ class BaseTest:
     def test_find_periodic_pattern(self):
         """Cover the special path for periodic patterns."""
         def reference_find(p, s):
-            for i in range(len(s)):
+            for i in range(len(s)+1):
                 if s.startswith(p, i):
                     return i
             return -1
