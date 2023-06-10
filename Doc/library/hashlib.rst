@@ -22,7 +22,8 @@
 
 This module implements a common interface to many different secure hash and
 message digest algorithms.  Included are the FIPS secure hash algorithms SHA1,
-SHA224, SHA256, SHA384, and SHA512 (defined in FIPS 180-2) as well as RSA's MD5
+SHA224, SHA256, SHA384, SHA512, (defined in `the FIPS 180-4 standard`_),
+the SHA-3 series (defined in `the FIPS 202 standard`_) as well as RSA's MD5
 algorithm (defined in internet :rfc:`1321`).  The terms "secure hash" and
 "message digest" are interchangeable.  Older algorithms were called message
 digests.  The modern term is secure hash.
@@ -803,6 +804,8 @@ Domain Dedication 1.0 Universal:
 .. _NIST-SP-800-132: https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-132.pdf
 .. _stackexchange pbkdf2 iterations question: https://security.stackexchange.com/questions/3959/recommended-of-iterations-when-using-pbkdf2-sha256/
 .. _Attacks on cryptographic hash alogorithms: https://en.wikipedia.org/wiki/Cryptographic_hash_function#Attacks_on_cryptographic_hash_algorithms
+.. _the FIPS 180-4 standard: https://csrc.nist.gov/publications/detail/fips/180/4/final
+.. _the FIPS 202 standard: https://csrc.nist.gov/publications/detail/fips/202/final
 
 
 .. seealso::
@@ -815,6 +818,9 @@ Domain Dedication 1.0 Universal:
 
    https://nvlpubs.nist.gov/nistpubs/fips/nist.fips.180-4.pdf
       The FIPS 180-4 publication on Secure Hash Algorithms.
+
+   https://csrc.nist.gov/publications/detail/fips/202/final
+      The FIPS 202 publication on the SHA-3 Standard.
 
    https://www.blake2.net/
       Official BLAKE2 website.
