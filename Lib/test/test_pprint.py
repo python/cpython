@@ -2,11 +2,15 @@
 
 import collections
 import contextlib
+import unittest.mock
 import dataclasses
 import io
 import itertools
+import os
 import pprint
 import random
+import shutil
+
 import test.support
 import test.test_set
 import types
@@ -142,6 +146,14 @@ class QueryTestCase(unittest.TestCase):
         self.assertRaises(ValueError, pprint.PrettyPrinter, depth=0)
         self.assertRaises(ValueError, pprint.PrettyPrinter, depth=-1)
         self.assertRaises(ValueError, pprint.PrettyPrinter, width=0)
+
+    def test_init_width(self):
+        self.assertEqual(pprint.PrettyPrinter(width=53)._width, 53)
+        terminal_width = shutil.get_terminal_size((80, 80)).columns
+        self.assertEqual(pprint.PrettyPrinter(width=None)._width, terminal_width)
+        mocked_size = os.terminal_size((120, 120))
+        with unittest.mock.patch('shutil.get_terminal_size', return_value=mocked_size):
+            self.assertEqual(pprint.PrettyPrinter(width=None)._width, 120)
 
     def test_basic(self):
         # Verify .isrecursive() and .isreadable() w/o recursion
@@ -1221,7 +1233,6 @@ deque([('brown', 2),
     'brown fox '
     'jumped over a '
     'lazy dog'}""")
-
 
 class DottedPrettyPrinter(pprint.PrettyPrinter):
 

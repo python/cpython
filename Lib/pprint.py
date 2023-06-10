@@ -33,6 +33,7 @@ saferepr()
     data structures.
 
 """
+import shutil
 
 import collections as _collections
 import dataclasses as _dataclasses
@@ -45,7 +46,7 @@ __all__ = ["pprint","pformat","isreadable","isrecursive","saferepr",
            "PrettyPrinter", "pp"]
 
 
-def pprint(object, stream=None, indent=1, width=80, depth=None, *,
+def pprint(object, stream=None, indent=1, width=None, depth=None, *,
            compact=False, sort_dicts=True, underscore_numbers=False):
     """Pretty-print a Python object to a stream [default is sys.stdout]."""
     printer = PrettyPrinter(
@@ -54,7 +55,7 @@ def pprint(object, stream=None, indent=1, width=80, depth=None, *,
         underscore_numbers=underscore_numbers)
     printer.pprint(object)
 
-def pformat(object, indent=1, width=80, depth=None, *,
+def pformat(object, indent=1, width=None, depth=None, *,
             compact=False, sort_dicts=True, underscore_numbers=False):
     """Format a Python object into a pretty-printed representation."""
     return PrettyPrinter(indent=indent, width=width, depth=depth,
@@ -104,7 +105,7 @@ def _safe_tuple(t):
     return _safe_key(t[0]), _safe_key(t[1])
 
 class PrettyPrinter:
-    def __init__(self, indent=1, width=80, depth=None, stream=None, *,
+    def __init__(self, indent=1, width=None, depth=None, stream=None, *,
                  compact=False, sort_dicts=True, underscore_numbers=False):
         """Handle pretty printing operations onto a stream using a set of
         configured parameters.
@@ -130,7 +131,21 @@ class PrettyPrinter:
 
         """
         indent = int(indent)
+        if stream is not None:
+            self._stream = stream
+        else:
+            self._stream = _sys.stdout
+
+        if width is None:
+            if self._stream is _sys.stdout:
+                # Detect using shutil
+                width = shutil.get_terminal_size(fallback=(80, 80)).columns
+            else:
+                # Default to 80
+                width = 80
+
         width = int(width)
+
         if indent < 0:
             raise ValueError('indent must be >= 0')
         if depth is not None and depth <= 0:
@@ -140,10 +155,7 @@ class PrettyPrinter:
         self._depth = depth
         self._indent_per_level = indent
         self._width = width
-        if stream is not None:
-            self._stream = stream
-        else:
-            self._stream = _sys.stdout
+
         self._compact = bool(compact)
         self._sort_dicts = sort_dicts
         self._underscore_numbers = underscore_numbers

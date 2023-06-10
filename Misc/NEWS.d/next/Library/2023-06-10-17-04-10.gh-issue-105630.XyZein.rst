@@ -1,0 +1,4 @@
+Change the default ``width`` argument of
+:meth:`pprint.pprint`, :meth:`pprint.pformat`
+and :class:`pprint.PrettyPrinter` to use the
+terminal width when available.
