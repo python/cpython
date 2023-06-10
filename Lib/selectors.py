@@ -348,15 +348,16 @@ class _PollLikeSelector(_BaseSelectorImpl):
         super().__init__()
         self._selector = self._selector_cls()
 
-    def register(self, fileobj, events, data=None):
+    def register(self, fileobj, events, data=None, register_flags=None):
         key = super().register(fileobj, events, data)
-        poller_events = 0
+        if register_flags is None:
+            register_flags = 0
         if events & EVENT_READ:
-            poller_events |= self._EVENT_READ
+            register_flags |= self._EVENT_READ
         if events & EVENT_WRITE:
-            poller_events |= self._EVENT_WRITE
+            register_flags |= self._EVENT_WRITE
         try:
-            self._selector.register(key.fd, poller_events)
+            self._selector.register(key.fd, register_flags)
         except:
             super().unregister(fileobj)
             raise
@@ -444,6 +445,29 @@ if hasattr(select, 'epoll'):
         _selector_cls = select.epoll
         _EVENT_READ = select.EPOLLIN
         _EVENT_WRITE = select.EPOLLOUT
+
+        def __init__(self):
+            super().__init__()
+            self._exclusive = False
+
+        @property
+        def exclusive(self):
+            return self._exclusive
+
+        def set_exclusive(self, value):
+            if not isinstance(value, bool):
+                raise ValueError("Not a boolean")
+            if not hasattr(select, "EPOLLEXCLUSIVE"):
+                raise ValueError("Python was not compiled "
+                                 "with EPOLLEXCLUSIVE")
+            self._exclusive = value
+
+        def register(self, fileobj, events, data=None):
+            register_flags = 0
+            if self._exclusive:
+                register_flags |= select.EPOLLEXCLUSIVE
+            return super().register(fileobj, events,
+                                    data=data, register_flags=register_flags)
 
         def fileno(self):
             return self._selector.fileno()

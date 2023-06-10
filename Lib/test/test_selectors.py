@@ -1,6 +1,7 @@
 import errno
 import os
 import random
+import select
 import selectors
 import signal
 import socket
@@ -531,6 +532,25 @@ class EpollSelectorTestCase(BaseSelectorTestCase, ScalableSelectorMixIn,
             # the SelectorKey has been removed
             with self.assertRaises(KeyError):
                 s.get_key(f)
+
+
+@unittest.skipUnless(hasattr(selectors, 'EpollSelector'),
+                     "Test needs selectors.EpollSelector")
+@unittest.skipUnless(hasattr(select, 'EPOLLEXCLUSIVE'),
+                     "Test needs select.EPOLLEXCLUSIVE")
+class EpollExclusiveSelectorTestCase(BaseSelectorTestCase,
+                                     ScalableSelectorMixIn):
+
+    @property
+    def SELECTOR(self):
+        sel = getattr(selectors, 'EpollSelector')()
+        sel.set_exclusive(True)
+        return lambda: sel
+
+    def test_modify(self):
+        with self.assertRaises(OSError) as ex:
+            super().test_modify()
+        self.assertEqual(ex.exception.errno, errno.EINVAL)
 
 
 @unittest.skipUnless(hasattr(selectors, 'KqueueSelector'),
