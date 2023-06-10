@@ -62,6 +62,11 @@ The following functions are defined:
    (note that under many window managers this will occur regardless of the
    setting of this variable).
 
+   On Windows, webbrowser displays *url* in the default browser via :func:`os.startfile`.
+   If no default is set, webbrowser searches for any available supported browsers
+   in the user's PATH environment variable. If one is found, it displays *url*.
+   Otherwise, webbrowser falls back to display *url* in Microsoft Edge.
+
    Note that on some platforms, trying to open a filename using this function,
    may work and start the operating system's associated program.  However, this
    is neither supported nor portable.
