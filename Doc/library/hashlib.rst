@@ -70,8 +70,8 @@ accessible by name via :func:`new`.  See :data:`algorithms_available`.
 .. warning::
 
    Some algorithms have known hash collision weaknesses (including MD5 and
-   SHA1). Refer to `Attacks on cryptographic hash alogorithms`_ and the "See
-   also" section at the end.
+   SHA1). Refer to `Attacks on cryptographic hash algorithms`_ and the
+   `hashlib-seealso`_ section at the end of this document.
 
 .. versionadded:: 3.6
    SHA3 (Keccak) and SHAKE constructors :func:`sha3_224`, :func:`sha3_256`,
@@ -808,10 +808,12 @@ Domain Dedication 1.0 Universal:
 .. _pyblake2: https://pythonhosted.org/pyblake2/
 .. _NIST-SP-800-132: https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-132.pdf
 .. _stackexchange pbkdf2 iterations question: https://security.stackexchange.com/questions/3959/recommended-of-iterations-when-using-pbkdf2-sha256/
-.. _Attacks on cryptographic hash alogorithms: https://en.wikipedia.org/wiki/Cryptographic_hash_function#Attacks_on_cryptographic_hash_algorithms
+.. _Attacks on cryptographic hash algorithms: https://en.wikipedia.org/wiki/Cryptographic_hash_function#Attacks_on_cryptographic_hash_algorithms
 .. _the FIPS 180-4 standard: https://csrc.nist.gov/publications/detail/fips/180/4/final
 .. _the FIPS 202 standard: https://csrc.nist.gov/publications/detail/fips/202/final
 
+
+.. _hashlib-seealso:
 
 .. seealso::
 
@@ -830,9 +832,9 @@ Domain Dedication 1.0 Universal:
    https://www.blake2.net/
       Official BLAKE2 website.
 
-   https://en.wikipedia.org/wiki/Cryptographic_hash_function#Attacks_on_cryptographic_hash_algorithms
-      Wikipedia article with information on which algorithms have known issues and
-      what that means regarding their use.
+   https://en.wikipedia.org/wiki/Cryptographic_hash_function
+      Wikipedia article with information on which algorithms have known issues
+      and what that means regarding their use.
 
    https://www.ietf.org/rfc/rfc8018.txt
       PKCS #5: Password-Based Cryptography Specification Version 2.1
