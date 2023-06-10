@@ -33,12 +33,6 @@ digests.  The modern term is secure hash.
    If you want the adler32 or crc32 hash functions, they are available in
    the :mod:`zlib` module.
 
-.. warning::
-
-   Some algorithms have known hash collision weaknesses (including MD5 and
-   SHA1). Refer to `Attacks on cryptographic hash alogorithms`_ and the "See
-   also" section at the end.
-
 
 .. _hash-algorithms:
 
@@ -46,22 +40,17 @@ Hash algorithms
 ---------------
 
 There is one constructor method named for each type of :dfn:`hash`.  All return
-a hash object with the same simple interface. For example: use :func:`sha256` to
-create a SHA-256 hash object. You can now feed this object with :term:`bytes-like
-objects <bytes-like object>` (normally :class:`bytes`) using the :meth:`update` method.
-At any point you can ask it for the :dfn:`digest` of the
-concatenation of the data fed to it so far using the :meth:`digest` or
-:meth:`hexdigest` methods.
+a hash object with the same simple interface. For example: use :func:`sha256`
+to create a SHA-256 hash object. You can now feed this object with
+:term:`bytes-like objects <bytes-like object>` (normally :class:`bytes`) using
+the :meth:`update<hash.update>` method.  At any point you can ask it for the
+:dfn:`digest` of the concatenation of the data fed to it so far using the
+:meth:`digest()<hash.digest>` or :meth:`hexdigest()<hash.hexdigest>` methods.
 
-.. note::
+To allow multithreading, the Python :term:`GIL` is released while computing a
+hash supplied more than 2047 bytes of data at once in its constructor or
+:meth:`.update<hash.update>` method.
 
-   For better multithreading performance, the Python :term:`GIL` is released for
-   data larger than 2047 bytes at object creation or on update.
-
-.. note::
-
-   Feeding string objects into :meth:`update` is not supported, as hashes work
-   on bytes, not on characters.
 
 .. index:: single: OpenSSL; (use in module hashlib)
 
@@ -73,11 +62,16 @@ Constructors for hash algorithms that are always present in this module are
 if you are using a rare "FIPS compliant" build of Python.
 These correspond to :data:`algorithms_guaranteed`.
 
-Additional algorithms may also be available depending upon the specific OpenSSL
-library that :mod:`hashlib` may have been linked against on your platform. They
-they *are not guaranteed available* on all installations and, when present,
-will only be accessible by name via :func:`new`.  See
-:data:`algorithms_available`.
+Additional algorithms may also be available if your Python distribution's
+:mod:`hashlib` was linked against a build of OpenSSL that provides others.
+Others *are not guaranteed available* on all installations and will only be
+accessible by name via :func:`new`.  See :data:`algorithms_available`.
+
+.. warning::
+
+   Some algorithms have known hash collision weaknesses (including MD5 and
+   SHA1). Refer to `Attacks on cryptographic hash alogorithms`_ and the "See
+   also" section at the end.
 
 .. versionadded:: 3.6
    SHA3 (Keccak) and SHAKE constructors :func:`sha3_224`, :func:`sha3_256`,
@@ -96,10 +90,14 @@ will only be accessible by name via :func:`new`.  See
    that the hashing algorithm is not used in a security context, e.g. as a
    non-cryptographic one-way compression function.
 
+.. versionchanged:: 3.9
    Hashlib now uses SHA3 and SHAKE from OpenSSL if it provides it.
 
-For example, to obtain the digest of the byte string ``b"Nobody inspects the
-spammish repetition"``::
+Usage
+-----
+
+To obtain the digest of the byte string ``b"Nobody inspects the spammish
+repetition"``::
 
    >>> import hashlib
    >>> m = hashlib.sha256()
@@ -114,6 +112,9 @@ More condensed:
 
    >>> hashlib.sha256(b"Nobody inspects the spammish repetition").hexdigest()
    '031edd7d41651593c5fe5c006fa5752b37fddff7bc4e843aa6af0c950f4b9406'
+
+Constructors
+------------
 
 .. function:: new(name[, data], \*, usedforsecurity=True)
 
@@ -144,6 +145,9 @@ Using :func:`new` with an algorithm name:
 Named constructors such as these are faster than passing an algorithm name to
 :func:`new`.
 
+Attributes
+----------
+
 Hashlib provides the following constant module attributes:
 
 .. data:: algorithms_guaranteed
@@ -165,9 +169,11 @@ Hashlib provides the following constant module attributes:
 
    .. versionadded:: 3.2
 
+Hash Objects
+------------
+
 The following values are provided as constant attributes of the hash objects
 returned by the constructors:
-
 
 .. data:: hash.digest_size
 
