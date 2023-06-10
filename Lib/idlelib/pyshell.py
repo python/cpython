@@ -1688,9 +1688,15 @@ def main():
         if prefer_tabs_preference_warning:
             shell.show_warning(prefer_tabs_preference_warning)
 
-    while flist.inversedict:  # keep IDLE running while files are open.
-        root.mainloop()
-    root.destroy()
+    try:
+        while flist.inversedict:  # keep IDLE running while files are open.
+            root.mainloop()
+    finally:
+        try:
+            root.destroy()
+        finally:
+            import _tkinter
+            _tkinter._finalize_tcl()
     capture_warnings(False)
 
 if __name__ == "__main__":

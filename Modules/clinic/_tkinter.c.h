@@ -858,6 +858,28 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_tkinter__finalize_tcl__doc__,
+"_finalize_tcl($module, /)\n"
+"--\n"
+"\n"
+"Finalize the Tcl interpreter.\n"
+"\n"
+"This should be called just before an app exits, to allow Tcl to\n"
+"execute its own finalization logic. After this, tkinter can no\n"
+"longer be used, and attempts to do so will result in errors.");
+
+#define _TKINTER__FINALIZE_TCL_METHODDEF    \
+    {"_finalize_tcl", (PyCFunction)_tkinter__finalize_tcl, METH_NOARGS, _tkinter__finalize_tcl__doc__},
+
+static PyObject *
+_tkinter__finalize_tcl_impl(PyObject *module);
+
+static PyObject *
+_tkinter__finalize_tcl(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _tkinter__finalize_tcl_impl(module);
+}
+
 #ifndef _TKINTER_TKAPP_CREATEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_CREATEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_CREATEFILEHANDLER_METHODDEF) */
@@ -865,4 +887,4 @@ exit:
 #ifndef _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF) */
-/*[clinic end generated code: output=2a4e3bf8448604b5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3f82bafa92d88b20 input=a9049054013a1b77]*/
