@@ -34,7 +34,8 @@ digests.  The modern term is secure hash.
 
 .. warning::
 
-   Some algorithms have known hash collision weaknesses, refer to the "See
+   Some algorithms have known hash collision weaknesses (including MD5 and
+   SHA1). Refer to `Attacks on cryptographic hash alogorithms`_ and the "See
    also" section at the end.
 
 
@@ -227,6 +228,9 @@ A hash object has the following methods:
 SHAKE variable length digests
 -----------------------------
 
+.. function:: shake_128([, data], \*, usedforsecurity=True)
+.. function:: shake_256([, data], \*, usedforsecurity=True)
+
 The :func:`shake_128` and :func:`shake_256` algorithms provide variable
 length digests with length_in_bits//2 up to 128 or 256 bits of security.
 As such, their digest methods require a length. Maximum length is not limited
@@ -243,8 +247,13 @@ by the SHAKE algorithm.
 
    Like :meth:`digest` except the digest is returned as a string object of
    double length, containing only hexadecimal digits.  This may be used to
-   exchange the value safely in email or other non-binary environments.
+   exchange the value in email or other non-binary environments.
 
+Example use:
+
+   >>> h = hashlib.shake_256(b'Nobody inspects the spammish repetition')
+   >>> h.hexdigest(20)
+   b'44709d6fcb83d92a76dcb0b668c98e1b1d3dafe7'
 
 File hashing
 ------------
@@ -793,6 +802,7 @@ Domain Dedication 1.0 Universal:
 .. _pyblake2: https://pythonhosted.org/pyblake2/
 .. _NIST-SP-800-132: https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-132.pdf
 .. _stackexchange pbkdf2 iterations question: https://security.stackexchange.com/questions/3959/recommended-of-iterations-when-using-pbkdf2-sha256/
+.. _Attacks on cryptographic hash alogorithms: https://en.wikipedia.org/wiki/Cryptographic_hash_function#Attacks_on_cryptographic_hash_algorithms
 
 
 .. seealso::
@@ -803,15 +813,15 @@ Domain Dedication 1.0 Universal:
    Module :mod:`base64`
       Another way to encode binary hashes for non-binary environments.
 
-   https://www.blake2.net
-      Official BLAKE2 website.
+   https://nvlpubs.nist.gov/nistpubs/fips/nist.fips.180-4.pdf
+      The FIPS 180-4 publication on Secure Hash Algorithms.
 
-   https://csrc.nist.gov/csrc/media/publications/fips/180/2/archive/2002-08-01/documents/fips180-2.pdf
-      The FIPS 180-2 publication on Secure Hash Algorithms.
+   https://www.blake2.net/
+      Official BLAKE2 website.
 
    https://en.wikipedia.org/wiki/Cryptographic_hash_function#Attacks_on_cryptographic_hash_algorithms
       Wikipedia article with information on which algorithms have known issues and
-      what that means regarding their use. (ex: MD5 and SHA1 are insecure)
+      what that means regarding their use.
 
    https://www.ietf.org/rfc/rfc8018.txt
       PKCS #5: Password-Based Cryptography Specification Version 2.1
