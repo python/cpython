@@ -1306,22 +1306,20 @@ PyErr_WarnExplicit(PyObject *category, const char *text,
         goto exit;
     }
     PyObject *module = NULL;
-    int ret = -1;
-
     if (module_str != NULL) {
         module = PyUnicode_FromString(module_str);
         if (module == NULL)
             goto exit;
     }
 
-    ret = PyErr_WarnExplicitObject(category, message, filename, lineno,
-                                   module, registry);
+    return PyErr_WarnExplicitObject(category, message, filename, lineno,
+                                    module, registry);
 
  exit:
     Py_XDECREF(message);
     Py_XDECREF(module);
     Py_XDECREF(filename);
-    return ret;
+    return -1;
 }
 
 int
