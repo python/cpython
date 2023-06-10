@@ -959,13 +959,13 @@ class Analyzer:
                 pushed = str(sp - low)
             case parser.Pseudo():
                 instr = self.pseudos[thing.name]
-                pushed = popped = None
+                popped = pushed = None
                 for target in self.pseudos[thing.name].targets:
                     target_instr = self.instrs.get(target)
                     assert target_instr
                     target_popped = effect_str(target_instr.input_effects)
                     target_pushed = effect_str(target_instr.output_effects)
-                    if pushed is None and popped is None:
+                    if popped is None and pushed is None:
                         popped, pushed = target_popped, target_pushed
                     else:
                         assert popped == target_popped
