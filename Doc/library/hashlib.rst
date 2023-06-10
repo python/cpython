@@ -71,11 +71,13 @@ Constructors for hash algorithms that are always present in this module are
 :func:`shake_128`, :func:`shake_256`, :func:`blake2b`, and :func:`blake2s`.
 :func:`md5` is normally available as well, though it may be missing or blocked
 if you are using a rare "FIPS compliant" build of Python.
+These correspond to :data:`algorithms_guaranteed`.
 
-Additional algorithms may also be available depending upon the OpenSSL library
-that Python uses on your platform but they are not guaranteed on all
-installations and will only be accessible by name via :func:`new`, if present
-at all.
+Additional algorithms may also be available depending upon the specific OpenSSL
+library that :mod:`hashlib` may have been linked against on your platform. They
+they *are not guaranteed available* on all installations and, when present,
+will only be accessible by name via :func:`new`.  See
+:data:`algorithms_available`.
 
 .. versionadded:: 3.6
    SHA3 (Keccak) and SHAKE constructors :func:`sha3_224`, :func:`sha3_256`,
