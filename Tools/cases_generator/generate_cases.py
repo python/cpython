@@ -818,6 +818,7 @@ class Analyzer:
     def analyze_pseudo(self, pseudo: parser.Pseudo) -> PseudoInstruction:
         targets = [self.instrs[target] for target in pseudo.targets]
         assert targets
+        # Make sure the targets have the same fmt
         fmts = list(set([t.instr_fmt for t in targets]))
         assert(len(fmts) == 1)
         return PseudoInstruction(pseudo.name, fmts[0], targets)
@@ -960,8 +961,13 @@ class Analyzer:
             case parser.Pseudo():
                 instr = self.pseudos[thing.name]
                 popped = pushed = None
+                # Calculate stack effect, and check that it's the the same
+                # for all targets.
                 for target in self.pseudos[thing.name].targets:
                     target_instr = self.instrs.get(target)
+                    # Currently target is always an instr. This could change
+                    # in the future, e.g., if we have a pseudo targetting a
+                    # macro instruction.
                     assert target_instr
                     target_popped = effect_str(target_instr.input_effects)
                     target_pushed = effect_str(target_instr.output_effects)
