@@ -1319,6 +1319,8 @@ PyErr_WarnExplicit(PyObject *category, const char *text,
     int ret = PyErr_WarnExplicitObject(category, message, filename, lineno,
                                        module, registry);
     Py_XDECREF(module);
+    Py_DECREF(filename);
+    Py_DECREF(message);
     return ret;
 }
 
