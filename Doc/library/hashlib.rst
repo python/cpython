@@ -11,7 +11,7 @@
 
 .. index::
    single: message digest, MD5
-   single: secure hash algorithm, SHA1, SHA224, SHA256, SHA384, SHA512
+   single: secure hash algorithm, SHA1, SHA2, SHA224, SHA256, SHA384, SHA512, SHA3, Shake, Blake2
 
 .. testsetup::
 
@@ -64,18 +64,21 @@ concatenation of the data fed to it so far using the :meth:`digest` or
 .. index:: single: OpenSSL; (use in module hashlib)
 
 Constructors for hash algorithms that are always present in this module are
-:func:`sha1`, :func:`sha224`, :func:`sha256`, :func:`sha384`,
-:func:`sha512`, :func:`blake2b`, and :func:`blake2s`.
-:func:`md5` is normally available as well, though it
-may be missing or blocked if you are using a rare "FIPS compliant" build of Python.
-Additional algorithms may also be available depending upon the OpenSSL
-library that Python uses on your platform. On most platforms the
+:func:`sha1`, :func:`sha224`, :func:`sha256`, :func:`sha384`, :func:`sha512`,
 :func:`sha3_224`, :func:`sha3_256`, :func:`sha3_384`, :func:`sha3_512`,
-:func:`shake_128`, :func:`shake_256` are also available.
+:func:`shake_128`, :func:`shake_256`, :func:`blake2b`, and :func:`blake2s`.
+:func:`md5` is normally available as well, though it may be missing or blocked
+if you are using a rare "FIPS compliant" build of Python.
+
+Additional algorithms may also be available depending upon the OpenSSL library
+that Python uses on your platform but they are not guaranteed on all
+installations and will only be accessible by name via :func:`new`, if present
+at all.
 
 .. versionadded:: 3.6
    SHA3 (Keccak) and SHAKE constructors :func:`sha3_224`, :func:`sha3_256`,
-   :func:`sha3_384`, :func:`sha3_512`, :func:`shake_128`, :func:`shake_256`.
+   :func:`sha3_384`, :func:`sha3_512`, :func:`shake_128`, :func:`shake_256`
+   were added.
 
 .. versionadded:: 3.6
    :func:`blake2b` and :func:`blake2s` were added.
@@ -89,7 +92,7 @@ library that Python uses on your platform. On most platforms the
    that the hashing algorithm is not used in a security context, e.g. as a
    non-cryptographic one-way compression function.
 
-   Hashlib now uses SHA3 and SHAKE from OpenSSL 1.1.1 and newer.
+   Hashlib now uses SHA3 and SHAKE from OpenSSL if it provides it.
 
 For example, to obtain the digest of the byte string ``b"Nobody inspects the
 spammish repetition"``::
@@ -108,20 +111,37 @@ More condensed:
    >>> hashlib.sha256(b"Nobody inspects the spammish repetition").hexdigest()
    '031edd7d41651593c5fe5c006fa5752b37fddff7bc4e843aa6af0c950f4b9406'
 
-.. function:: new(name[, data], *, usedforsecurity=True)
+.. function:: new(name[, data], \*, usedforsecurity=True)
 
    Is a generic constructor that takes the string *name* of the desired
    algorithm as its first parameter.  It also exists to allow access to the
    above listed hashes as well as any other algorithms that your OpenSSL
-   library may offer.  The named constructors are much faster than :func:`new`
-   and should be preferred.
+   library may offer.
 
-Using :func:`new` with an algorithm provided by OpenSSL:
+   Using :func:`new` with an algorithm name:
 
-   >>> h = hashlib.new('sha256')
-   >>> h.update(b"Nobody inspects the spammish repetition")
+      >>> h = hashlib.new('sha256')
+      >>> h.update(b"Nobody inspects the spammish repetition")
+      >>> h.hexdigest()
+      '031edd7d41651593c5fe5c006fa5752b37fddff7bc4e843aa6af0c950f4b9406'
+
+These named constructors below are much faster than :func:`new` and should be
+preferred:
+
+.. function:: md5([, data], \*, usedforsecurity=True)
+.. function:: sha1([, data], \*, usedforsecurity=True)
+.. function:: sha224([, data], \*, usedforsecurity=True)
+.. function:: sha256([, data], \*, usedforsecurity=True)
+.. function:: sha384([, data], \*, usedforsecurity=True)
+.. function:: sha512([, data], \*, usedforsecurity=True)
+.. function:: sha3_224([, data], \*, usedforsecurity=True)
+.. function:: sha3_256([, data], \*, usedforsecurity=True)
+.. function:: sha3_384([, data], \*, usedforsecurity=True)
+.. function:: sha3_512([, data], \*, usedforsecurity=True)
+
+   >>> h = hashlib.sha3_224(b"Nobody inspects the spammish repetition")
    >>> h.hexdigest()
-   '031edd7d41651593c5fe5c006fa5752b37fddff7bc4e843aa6af0c950f4b9406'
+   'd6ff1bfb32cf835a3085ba18caa4a13f6307fdfb565521e0db35b064'
 
 Hashlib provides the following constant attributes:
 
@@ -768,7 +788,7 @@ Domain Dedication 1.0 Universal:
 .. _BLAKE2: https://www.blake2.net
 .. _HMAC: https://en.wikipedia.org/wiki/Hash-based_message_authentication_code
 .. _BLAKE: https://web.archive.org/web/20200918190133/https://131002.net/blake/
-.. _SHA-3: https://en.wikipedia.org/wiki/NIST_hash_function_competition
+.. _SHA-3: https://en.wikipedia.org/wiki/Secure_Hash_Algorithms
 .. _ChaCha: https://cr.yp.to/chacha.html
 .. _pyblake2: https://pythonhosted.org/pyblake2/
 .. _NIST-SP-800-132: https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-132.pdf
@@ -789,9 +809,9 @@ Domain Dedication 1.0 Universal:
    https://csrc.nist.gov/csrc/media/publications/fips/180/2/archive/2002-08-01/documents/fips180-2.pdf
       The FIPS 180-2 publication on Secure Hash Algorithms.
 
-   https://en.wikipedia.org/wiki/Cryptographic_hash_function#Cryptographic_hash_algorithms
+   https://en.wikipedia.org/wiki/Cryptographic_hash_function#Attacks_on_cryptographic_hash_algorithms
       Wikipedia article with information on which algorithms have known issues and
-      what that means regarding their use.
+      what that means regarding their use. (ex: MD5 and SHA1 are insecure)
 
    https://www.ietf.org/rfc/rfc8018.txt
       PKCS #5: Password-Based Cryptography Specification Version 2.1
