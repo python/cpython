@@ -259,7 +259,7 @@ Example use:
 
    >>> h = hashlib.shake_256(b'Nobody inspects the spammish repetition')
    >>> h.hexdigest(20)
-   b'44709d6fcb83d92a76dcb0b668c98e1b1d3dafe7'
+   '44709d6fcb83d92a76dcb0b668c98e1b1d3dafe7'
 
 File hashing
 ------------
