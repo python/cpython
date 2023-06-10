@@ -1,0 +1,1 @@
+fix asyncio.sleep(float('nan')) does not raise ValueError bug
