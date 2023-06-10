@@ -1,0 +1,2 @@
+Remove the use of _PyStaticObject_CheckRefcnt since we can't guarantee that
+immortal objects will not be mutated by Extensions
