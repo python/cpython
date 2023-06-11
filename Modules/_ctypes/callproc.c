@@ -1115,7 +1115,8 @@ GetComError(HRESULT errcode, GUID *riid, IUnknown *pIunk)
         descr, source, helpfile, helpcontext,
         progid);
     if (obj) {
-        PyErr_SetObject(ComError, obj);
+        ctypes_state *st = GLOBAL_STATE();
+        PyErr_SetObject((PyObject *)st->PyComError_Type, obj);
         Py_DECREF(obj);
     }
     LocalFree(text);
@@ -1823,7 +1824,7 @@ resize(PyObject *self, PyObject *args)
     dict = PyObject_stgdict((PyObject *)obj);
     if (dict == NULL) {
         PyErr_SetString(PyExc_TypeError,
-                        "excepted ctypes instance");
+                        "expected ctypes instance");
         return NULL;
     }
     if (size < dict->size) {

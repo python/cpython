@@ -1,0 +1,1 @@
+Show CRLF lines in the tokenize string attribute in both NL and NEWLINE tokens. Patch by Marta Gómez.

@@ -892,21 +892,6 @@ class BuiltinImporter:
         else:
             return None
 
-    @classmethod
-    def find_module(cls, fullname, path=None):
-        """Find the built-in module.
-
-        If 'path' is ever specified then the search is considered a failure.
-
-        This method is deprecated.  Use find_spec() instead.
-
-        """
-        _warnings.warn("BuiltinImporter.find_module() is deprecated and "
-                       "slated for removal in Python 3.12; use find_spec() instead",
-                       DeprecationWarning)
-        spec = cls.find_spec(fullname, path)
-        return spec.loader if spec is not None else None
-
     @staticmethod
     def create_module(spec):
         """Create a built-in module"""
@@ -1076,18 +1061,6 @@ class FrozenImporter:
             spec.submodule_search_locations.insert(0, pkgdir)
         return spec
 
-    @classmethod
-    def find_module(cls, fullname, path=None):
-        """Find a frozen module.
-
-        This method is deprecated.  Use find_spec() instead.
-
-        """
-        _warnings.warn("FrozenImporter.find_module() is deprecated and "
-                       "slated for removal in Python 3.12; use find_spec() instead",
-                       DeprecationWarning)
-        return cls if _imp.is_frozen(fullname) else None
-
     @staticmethod
     def create_module(spec):
         """Set __file__, if able."""
@@ -1170,16 +1143,6 @@ def _resolve_name(name, package, level):
     return f'{base}.{name}' if name else base
 
 
-def _find_spec_legacy(finder, name, path):
-    msg = (f"{_object_name(finder)}.find_spec() not found; "
-                           "falling back to find_module()")
-    _warnings.warn(msg, ImportWarning)
-    loader = finder.find_module(name, path)
-    if loader is None:
-        return None
-    return spec_from_loader(name, loader)
-
-
 def _find_spec(name, path, target=None):
     """Find a module's spec."""
     meta_path = sys.meta_path
@@ -1200,9 +1163,7 @@ def _find_spec(name, path, target=None):
             try:
                 find_spec = finder.find_spec
             except AttributeError:
-                spec = _find_spec_legacy(finder, name, path)
-                if spec is None:
-                    continue
+                continue
             else:
                 spec = find_spec(name, path, target)
         if spec is not None:

@@ -557,7 +557,8 @@ class TestRetrievingSourceCode(GetSourceBase):
 
     def test_getfunctions(self):
         functions = inspect.getmembers(mod, inspect.isfunction)
-        self.assertEqual(functions, [('eggs', mod.eggs),
+        self.assertEqual(functions, [('after_closing', mod.after_closing),
+                                     ('eggs', mod.eggs),
                                      ('lobbest', mod.lobbest),
                                      ('spam', mod.spam)])
 
@@ -641,6 +642,7 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertSourceEqual(git.abuse, 29, 39)
         self.assertSourceEqual(mod.StupidGit, 21, 51)
         self.assertSourceEqual(mod.lobbest, 75, 76)
+        self.assertSourceEqual(mod.after_closing, 120, 120)
 
     def test_getsourcefile(self):
         self.assertEqual(normcase(inspect.getsourcefile(mod.spam)), modfile)
@@ -775,6 +777,22 @@ class TestOneliners(GetSourceBase):
         # Test inspect.getsource with a two-line lambda function,
         # where the second line _is_ indented.
         self.assertSourceEqual(mod2.tlli, 33, 34)
+
+    def test_parenthesized_multiline_lambda(self):
+        # Test inspect.getsource with a parenthesized multi-line lambda
+        # function.
+        self.assertSourceEqual(mod2.parenthesized_lambda, 279, 279)
+        self.assertSourceEqual(mod2.parenthesized_lambda2, 281, 281)
+        self.assertSourceEqual(mod2.parenthesized_lambda3, 283, 283)
+
+    def test_post_line_parenthesized_lambda(self):
+        # Test inspect.getsource with a parenthesized multi-line lambda
+        # function.
+        self.assertSourceEqual(mod2.post_line_parenthesized_lambda1, 286, 287)
+
+    def test_nested_lambda(self):
+        # Test inspect.getsource with a nested lambda function.
+        self.assertSourceEqual(mod2.nested_lambda, 291, 292)
 
     def test_onelinefunc(self):
         # Test inspect.getsource with a regular one-line function.
@@ -2052,6 +2070,9 @@ class TestGetattrStatic(unittest.TestCase):
         descriptor.__set__ = lambda s, i, v: None
         self.assertEqual(inspect.getattr_static(foo, 'd'), Foo.__dict__['d'])
 
+        del descriptor.__set__
+        descriptor.__delete__ = lambda s, i, o: None
+        self.assertEqual(inspect.getattr_static(foo, 'd'), Foo.__dict__['d'])
 
     def test_metaclass_with_descriptor(self):
         class descriptor(object):
@@ -2111,6 +2132,28 @@ class TestGetattrStatic(unittest.TestCase):
         self.assertEqual(inspect.getattr_static(foo, 'a'), 3)
         self.assertFalse(test.called)
 
+    def test_mutated_mro(self):
+        test = self
+        test.called = False
+
+        class Foo(dict):
+            a = 3
+            @property
+            def __dict__(self):
+                test.called = True
+                return {}
+
+        class Bar(dict):
+            a = 4
+
+        class Baz(Bar): pass
+
+        baz = Baz()
+        self.assertEqual(inspect.getattr_static(baz, 'a'), 4)
+        Baz.__bases__ = (Foo,)
+        self.assertEqual(inspect.getattr_static(baz, 'a'), 3)
+        self.assertFalse(test.called)
+
     def test_custom_object_dict(self):
         test = self
         test.called = False
@@ -2164,6 +2207,35 @@ class TestGetattrStatic(unittest.TestCase):
         with self.assertRaises(AttributeError):
             inspect.getattr_static(Thing, "spam")
         self.assertFalse(Thing.executed)
+
+    def test_custom___getattr__(self):
+        test = self
+        test.called = False
+
+        class Foo:
+            def __getattr__(self, attr):
+                test.called = True
+                return {}
+
+        with self.assertRaises(AttributeError):
+            inspect.getattr_static(Foo(), 'whatever')
+
+        self.assertFalse(test.called)
+
+    def test_custom___getattribute__(self):
+        test = self
+        test.called = False
+
+        class Foo:
+            def __getattribute__(self, attr):
+                test.called = True
+                return {}
+
+        with self.assertRaises(AttributeError):
+            inspect.getattr_static(Foo(), 'really_could_be_anything')
+
+        self.assertFalse(test.called)
+
 
 class TestGetGeneratorState(unittest.TestCase):
 
@@ -2711,6 +2783,11 @@ class TestSignatureObject(unittest.TestCase):
 
         # Regression test for issue #20586
         test_callable(_testcapi.docstring_with_signature_but_no_doc)
+
+        # Regression test for gh-104955
+        method = bytearray.__release_buffer__
+        sig = test_unbound_method(method)
+        self.assertEqual(list(sig.parameters), ['self', 'buffer'])
 
     @cpython_only
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
@@ -3850,6 +3927,24 @@ class TestSignatureObject(unittest.TestCase):
                            ('b', 2, ..., 'positional_or_keyword')),
                           ...))
 
+    def test_signature_on_derived_classes(self):
+        # gh-105080: Make sure that signatures are consistent on derived classes
+
+        class B:
+            def __new__(self, *args, **kwargs):
+                return super().__new__(self)
+            def __init__(self, value):
+                self.value = value
+
+        class D1(B):
+            def __init__(self, value):
+                super().__init__(value)
+
+        class D2(D1):
+            pass
+
+        self.assertEqual(inspect.signature(D2), inspect.signature(D1))
+
 
 class TestParameterObject(unittest.TestCase):
     def test_signature_parameter_kinds(self):
@@ -4229,14 +4324,14 @@ class TestSignatureBind(unittest.TestCase):
 
     @cpython_only
     def test_signature_bind_implicit_arg(self):
-        # Issue #19611: getcallargs should work with set comprehensions
+        # Issue #19611: getcallargs should work with comprehensions
         def make_set():
-            return {z * z for z in range(5)}
-        setcomp_code = make_set.__code__.co_consts[1]
-        setcomp_func = types.FunctionType(setcomp_code, {})
+            return set(z * z for z in range(5))
+        gencomp_code = make_set.__code__.co_consts[1]
+        gencomp_func = types.FunctionType(gencomp_code, {})
 
         iterator = iter(range(5))
-        self.assertEqual(self.call(setcomp_func, iterator), {0, 1, 4, 9, 16})
+        self.assertEqual(set(self.call(gencomp_func, iterator)), {0, 1, 4, 9, 16})
 
     def test_signature_bind_posonly_kwargs(self):
         def foo(bar, /, **kwargs):

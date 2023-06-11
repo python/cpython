@@ -1694,7 +1694,10 @@ Cursor objects
       ``INSERT``, ``UPDATE``, ``DELETE``, and ``REPLACE`` statements;
       is ``-1`` for other statements,
       including :abbr:`CTE (Common Table Expression)` queries.
-      It is only updated by the :meth:`execute` and :meth:`executemany` methods.
+      It is only updated by the :meth:`execute` and :meth:`executemany` methods,
+      after the statement has run to completion.
+      This means that any resulting rows must be fetched in order for
+      :attr:`!rowcount` to be updated.
 
    .. attribute:: row_factory
 
