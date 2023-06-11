@@ -1695,6 +1695,7 @@ _signal_module_free(void *module)
 
 static PyModuleDef_Slot signal_slots[] = {
     {Py_mod_exec, signal_module_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

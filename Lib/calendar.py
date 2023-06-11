@@ -83,7 +83,6 @@ class Day(IntEnum):
     SUNDAY = 6
 
 
-
 # Number of days per month (except for February in leap years)
 mdays = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
@@ -156,7 +155,7 @@ def weekday(year, month, day):
     """Return weekday (0-6 ~ Mon-Sun) for year, month (1-12), day (1-31)."""
     if not datetime.MINYEAR <= year <= datetime.MAXYEAR:
         year = 2000 + year % 400
-    return datetime.date(year, month, day).weekday()
+    return Day(datetime.date(year, month, day).weekday())
 
 
 def monthrange(year, month):
