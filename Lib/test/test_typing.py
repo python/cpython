@@ -7174,16 +7174,24 @@ class NamedTupleTests(BaseTestCase):
         self.assertEqual(a.fields, [('bar', tuple)])
 
     def test_empty_namedtuple(self):
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            "Failing to pass a value for the 'fields' parameter is deprecated"
-        ):
+        expected_warning = re.escape(
+            "Failing to pass a value for the 'fields' parameter is deprecated "
+            "and will be disallowed in Python 3.15. "
+            "To create a NamedTuple class with 0 fields "
+            "using the functional syntax, "
+            "pass an empty list, e.g. `NT1 = NamedTuple('NT1', [])`."
+        )
+        with self.assertWarnsRegex(DeprecationWarning, fr"^{expected_warning}$"):
             NT1 = NamedTuple('NT1')
 
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            "Passing `None` as the 'fields' parameter is deprecated"
-        ):
+        expected_warning = re.escape(
+            "Passing `None` as the 'fields' parameter is deprecated "
+            "and will be disallowed in Python 3.15. "
+            "To create a NamedTuple class with 0 fields "
+            "using the functional syntax, "
+            "pass an empty list, e.g. `NT2 = NamedTuple('NT2', [])`."
+        )
+        with self.assertWarnsRegex(DeprecationWarning, fr"^{expected_warning}$"):
             NT2 = NamedTuple('NT2', None)
 
         NT3 = NamedTuple('NT2', [])

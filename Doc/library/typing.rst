@@ -2040,16 +2040,16 @@ These are not used in annotations. They are building blocks for declaring types.
 
    .. deprecated-removed:: 3.13 3.15
       The undocumented keyword argument syntax for creating NamedTuple classes
-      (``NT = NamedTuple("NT", x=int)``) is deprecated, and will be removed in
-      3.15.
+      (``NT = NamedTuple("NT", x=int)``) is deprecated, and will be disallowed
+      in 3.15. Use the class-based syntax or the functional syntax instead.
 
    .. deprecated-removed:: 3.13 3.15
       When using the functional syntax to create a NamedTuple class, failing to
       pass a value to the 'fields' parameter (``NT = NamedTuple("NT")``) is
       deprecated. Passing ``None`` to the 'fields' parameter
       (``NT = NamedTuple("NT", None)``) is also deprecated. Both will be
-      removed in Python 3.15. To create a NamedTuple class with 0 fields, use
-      ``class NT(NamedTuple): ...`` or ``NT = NamedTuple("NT", [])``.
+      disallowed in Python 3.15. To create a NamedTuple class with 0 fields,
+      use ``class NT(NamedTuple): ...`` or ``NT = NamedTuple("NT", [])``.
 
 .. class:: NewType(name, tp)
 

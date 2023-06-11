@@ -2791,11 +2791,13 @@ def NamedTuple(typename, fields=_sentinel, /, **kwargs):
             )
         else:
             deprecated_thing = "Failing to pass a value for the 'fields' parameter"
+            example = f"`{typename} = NamedTuple({typename!r}, [])`"
             deprecation_msg = (
                 "{name} is deprecated and will be disallowed in Python {remove}. "
-                "To create an empty NamedTuple using functional syntax, "
-                "pass an empty list, e.g. `NT = NamedTuple('NT', [])`."
-            )
+                "To create a NamedTuple class with 0 fields "
+                "using the functional syntax, "
+                "pass an empty list, e.g. "
+            ) + example + "."
     elif fields is None:
         if kwargs:
             raise TypeError(
@@ -2804,11 +2806,13 @@ def NamedTuple(typename, fields=_sentinel, /, **kwargs):
             )
         else:
             deprecated_thing = "Passing `None` as the 'fields' parameter"
+            example = f"`{typename} = NamedTuple({typename!r}, [])`"
             deprecation_msg = (
                 "{name} is deprecated and will be disallowed in Python {remove}. "
-                "To create an empty NamedTuple using functional syntax, "
-                "pass an empty list, e.g. `NT = NamedTuple('NT', [])`."
-            )
+                "To create a NamedTuple class with 0 fields "
+                "using the functional syntax, "
+                "pass an empty list, e.g. "
+            ) + example + "."
     elif kwargs:
         raise TypeError("Either list of fields or keywords"
                         " can be provided to NamedTuple, not both")
