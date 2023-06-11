@@ -5,7 +5,7 @@
 Type Objects
 ------------
 
-.. index:: object: type
+.. index:: pair: object; type
 
 
 .. c:type:: PyTypeObject
@@ -42,7 +42,7 @@ Type Objects
    Return the :c:member:`~PyTypeObject.tp_flags` member of *type*. This function is primarily
    meant for use with ``Py_LIMITED_API``; the individual flag bits are
    guaranteed to be stable across Python releases, but access to
-   :c:member:`~PyTypeObject.tp_flags` itself is not part of the limited API.
+   :c:member:`~PyTypeObject.tp_flags` itself is not part of the :ref:`limited API <limited-c-api>`.
 
    .. versionadded:: 3.2
 
@@ -232,6 +232,15 @@ Type Objects
 
    .. versionadded:: 3.11
 
+.. c:function:: int PyUnstable_Type_AssignVersionTag(PyTypeObject *type)
+
+   Attempt to assign a version tag to the given type.
+
+   Returns 1 if the type already had a valid version tag or a new one was
+   assigned, or 0 if a new tag could not be assigned.
+
+   .. versionadded:: 3.12
+
 
 Creating Heap-Allocated Types
 .............................
@@ -247,8 +256,13 @@ The following functions and structs are used to create
    The metaclass *metaclass* is used to construct the resulting type object.
    When *metaclass* is ``NULL``, the metaclass is derived from *bases*
    (or *Py_tp_base[s]* slots if *bases* is ``NULL``, see below).
-   Note that metaclasses that override
-   :c:member:`~PyTypeObject.tp_new` are not supported.
+
+   Metaclasses that override :c:member:`~PyTypeObject.tp_new` are not
+   supported.
+   (For backwards compatibility, other ``PyType_From*`` functions allow
+   such metaclasses. They ignore ``tp_new``, which may result in incomplete
+   initialization. This is deprecated and in Python 3.14+ such metaclasses will
+   not be supported.)
 
    The *bases* argument can be used to specify base classes; it can either
    be only one class or a tuple of classes.
@@ -296,6 +310,11 @@ The following functions and structs are used to create
       The function now finds and uses a metaclass corresponding to the provided
       base classes.  Previously, only :class:`type` instances were returned.
 
+      The :c:member:`~PyTypeObject.tp_new` of the metaclass is *ignored*.
+      which may result in incomplete initialization.
+      Creating classes whose metaclass overrides
+      :c:member:`~PyTypeObject.tp_new` is deprecated and in Python 3.14+ it
+      will be no longer allowed.
 
 .. c:function:: PyObject* PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 
@@ -308,6 +327,12 @@ The following functions and structs are used to create
       The function now finds and uses a metaclass corresponding to the provided
       base classes.  Previously, only :class:`type` instances were returned.
 
+      The :c:member:`~PyTypeObject.tp_new` of the metaclass is *ignored*.
+      which may result in incomplete initialization.
+      Creating classes whose metaclass overrides
+      :c:member:`~PyTypeObject.tp_new` is deprecated and in Python 3.14+ it
+      will be no longer allowed.
+
 .. c:function:: PyObject* PyType_FromSpec(PyType_Spec *spec)
 
    Equivalent to ``PyType_FromMetaclass(NULL, NULL, spec, NULL)``.
@@ -318,41 +343,94 @@ The following functions and structs are used to create
       base classes provided in *Py_tp_base[s]* slots.
       Previously, only :class:`type` instances were returned.
 
+      The :c:member:`~PyTypeObject.tp_new` of the metaclass is *ignored*.
+      which may result in incomplete initialization.
+      Creating classes whose metaclass overrides
+      :c:member:`~PyTypeObject.tp_new` is deprecated and in Python 3.14+ it
+      will be no longer allowed.
+
+.. raw:: html
+
+   <!-- Keep old URL fragments working (see gh-97908) -->
+   <span id='c.PyType_Spec.PyType_Spec.name'></span>
+   <span id='c.PyType_Spec.PyType_Spec.basicsize'></span>
+   <span id='c.PyType_Spec.PyType_Spec.itemsize'></span>
+   <span id='c.PyType_Spec.PyType_Spec.flags'></span>
+   <span id='c.PyType_Spec.PyType_Spec.slots'></span>
+
 .. c:type:: PyType_Spec
 
    Structure defining a type's behavior.
 
-   .. c:member:: const char* PyType_Spec.name
+   .. c:member:: const char* name
 
       Name of the type, used to set :c:member:`PyTypeObject.tp_name`.
 
-   .. c:member:: int PyType_Spec.basicsize
-   .. c:member:: int PyType_Spec.itemsize
+   .. c:member:: int basicsize
 
-      Size of the instance in bytes, used to set
-      :c:member:`PyTypeObject.tp_basicsize` and
-      :c:member:`PyTypeObject.tp_itemsize`.
+      If positive, specifies the size of the instance in bytes.
+      It is used to set :c:member:`PyTypeObject.tp_basicsize`.
 
-   .. c:member:: int PyType_Spec.flags
+      If zero, specifies that :c:member:`~PyTypeObject.tp_basicsize`
+      should be inherited.
+
+      If negative, the absolute value specifies how much space instances of the
+      class need *in addition* to the superclass.
+      Use :c:func:`PyObject_GetTypeData` to get a pointer to subclass-specific
+      memory reserved this way.
+
+      .. versionchanged:: 3.12
+
+         Previously, this field could not be negative.
+
+   .. c:member:: int itemsize
+
+      Size of one element of a variable-size type, in bytes.
+      Used to set :c:member:`PyTypeObject.tp_itemsize`.
+      See ``tp_itemsize`` documentation for caveats.
+
+      If zero, :c:member:`~PyTypeObject.tp_itemsize` is inherited.
+      Extending arbitrary variable-sized classes is dangerous,
+      since some types use a fixed offset for variable-sized memory,
+      which can then overlap fixed-sized memory used by a subclass.
+      To help prevent mistakes, inheriting ``itemsize`` is only possible
+      in the following situations:
+
+      - The base is not variable-sized (its
+        :c:member:`~PyTypeObject.tp_itemsize`).
+      - The requested :c:member:`PyType_Spec.basicsize` is positive,
+        suggesting that the memory layout of the base class is known.
+      - The requested :c:member:`PyType_Spec.basicsize` is zero,
+        suggesting that the subclass does not access the instance's memory
+        directly.
+      - With the :const:`Py_TPFLAGS_ITEMS_AT_END` flag.
+
+   .. c:member:: unsigned int flags
 
       Type flags, used to set :c:member:`PyTypeObject.tp_flags`.
 
       If the ``Py_TPFLAGS_HEAPTYPE`` flag is not set,
       :c:func:`PyType_FromSpecWithBases` sets it automatically.
 
-   .. c:member:: PyType_Slot *PyType_Spec.slots
+   .. c:member:: PyType_Slot *slots
 
       Array of :c:type:`PyType_Slot` structures.
       Terminated by the special slot value ``{0, NULL}``.
 
       Each slot ID should be specified at most once.
 
+.. raw:: html
+
+   <!-- Keep old URL fragments working (see gh-97908) -->
+   <span id='c.PyType_Slot.PyType_Slot.slot'></span>
+   <span id='c.PyType_Slot.PyType_Slot.pfunc'></span>
+
 .. c:type:: PyType_Slot
 
    Structure defining optional functionality of a type, containing a slot ID
    and a value pointer.
 
-   .. c:member:: int PyType_Slot.slot
+   .. c:member:: int slot
 
       A slot ID.
 
@@ -394,9 +472,9 @@ The following functions and structs are used to create
      .. versionchanged:: 3.11
         :c:member:`~PyBufferProcs.bf_getbuffer` and
         :c:member:`~PyBufferProcs.bf_releasebuffer` are now available
-        under the limited API.
+        under the :ref:`limited API <limited-c-api>`.
 
-   .. c:member:: void *PyType_Slot.pfunc
+   .. c:member:: void *pfunc
 
       The desired value of the slot. In most cases, this is a pointer
       to a function.

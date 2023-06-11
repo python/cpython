@@ -68,8 +68,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_ctypes_test", "_ctypes_tes
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_elementtree", "_elementtree.vcxproj", "{17E1E049-C309-4D79-843F-AE483C264AEA}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_msi", "_msi.vcxproj", "{31FFC478-7B4A-43E8-9954-8D03E2187E9C}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_socket", "_socket.vcxproj", "{86937F53-C189-40EF-8CE8-8759D8E7D480}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_sqlite3", "_sqlite3.vcxproj", "{13CECB97-4119-4316-9D42-8534019A5A44}"

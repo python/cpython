@@ -574,6 +574,8 @@ Retrieving source code
    object and the line number indicates where in the original source file the first
    line of code was found.  An :exc:`OSError` is raised if the source code cannot
    be retrieved.
+   A :exc:`TypeError` is raised if the object is a built-in module, class, or
+   function.
 
    .. versionchanged:: 3.3
       :exc:`OSError` is raised instead of :exc:`IOError`, now an alias of the
@@ -586,6 +588,8 @@ Retrieving source code
    class, method, function, traceback, frame, or code object.  The source code is
    returned as a single string.  An :exc:`OSError` is raised if the source code
    cannot be retrieved.
+   A :exc:`TypeError` is raised if the object is a built-in module, class, or
+   function.
 
    .. versionchanged:: 3.3
       :exc:`OSError` is raised instead of :exc:`IOError`, now an alias of the
@@ -1598,6 +1602,39 @@ the following flags:
    It's recommended to use public APIs from the :mod:`inspect` module
    for any introspection needs.
 
+
+Buffer flags
+------------
+
+.. class:: BufferFlags
+
+   This is an :class:`enum.IntFlag` that represents the flags that
+   can be passed to the :meth:`~object.__buffer__` method of objects
+   implementing the :ref:`buffer protocol <bufferobjects>`.
+
+   The meaning of the flags is explained at :ref:`buffer-request-types`.
+
+   .. attribute:: BufferFlags.SIMPLE
+   .. attribute:: BufferFlags.WRITABLE
+   .. attribute:: BufferFlags.FORMAT
+   .. attribute:: BufferFlags.ND
+   .. attribute:: BufferFlags.STRIDES
+   .. attribute:: BufferFlags.C_CONTIGUOUS
+   .. attribute:: BufferFlags.F_CONTIGUOUS
+   .. attribute:: BufferFlags.ANY_CONTIGUOUS
+   .. attribute:: BufferFlags.INDIRECT
+   .. attribute:: BufferFlags.CONTIG
+   .. attribute:: BufferFlags.CONTIG_RO
+   .. attribute:: BufferFlags.STRIDED
+   .. attribute:: BufferFlags.STRIDED_RO
+   .. attribute:: BufferFlags.RECORDS
+   .. attribute:: BufferFlags.RECORDS_RO
+   .. attribute:: BufferFlags.FULL
+   .. attribute:: BufferFlags.FULL_RO
+   .. attribute:: BufferFlags.READ
+   .. attribute:: BufferFlags.WRITE
+
+   .. versionadded:: 3.12
 
 .. _inspect-module-cli:
 
