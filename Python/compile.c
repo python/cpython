@@ -1061,6 +1061,7 @@ compiler_addop_name(struct compiler_unit *u, location loc,
         arg <<= 1;
     }
     if (opcode == LOAD_METHOD) {
+        assert(SAME_OPCODE_METADATA(LOAD_METHOD, LOAD_ATTR));
         opcode = LOAD_ATTR;
         arg <<= 1;
         arg |= 1;
@@ -1070,15 +1071,18 @@ compiler_addop_name(struct compiler_unit *u, location loc,
         arg |= 2;
     }
     if (opcode == LOAD_SUPER_METHOD) {
+        assert(SAME_OPCODE_METADATA(LOAD_SUPER_METHOD, LOAD_SUPER_ATTR));
         opcode = LOAD_SUPER_ATTR;
         arg <<= 2;
         arg |= 3;
     }
     if (opcode == LOAD_ZERO_SUPER_ATTR) {
+        assert(SAME_OPCODE_METADATA(LOAD_ZERO_SUPER_ATTR, LOAD_SUPER_ATTR));
         opcode = LOAD_SUPER_ATTR;
         arg <<= 2;
     }
     if (opcode == LOAD_ZERO_SUPER_METHOD) {
+        assert(SAME_OPCODE_METADATA(LOAD_ZERO_SUPER_METHOD, LOAD_SUPER_ATTR));
         opcode = LOAD_SUPER_ATTR;
         arg <<= 2;
         arg |= 1;

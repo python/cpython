@@ -1072,6 +1072,11 @@ class Analyzer:
                 self.out.emit("enum InstructionFormat instr_format;")
             self.out.emit("};")
             self.out.emit("")
+            self.out.emit("#define OPCODE_METADATA_FMT(OP) "
+                          "(_PyOpcode_opcode_metadata[(OP)].instr_format)")
+            self.out.emit("#define SAME_OPCODE_METADATA(OP1, OP2) \\")
+            self.out.emit("        (OPCODE_METADATA_FMT(OP1) == OPCODE_METADATA_FMT(OP2))")
+            self.out.emit("")
 
             # Write metadata array declaration
             self.out.emit("#ifndef NEED_OPCODE_METADATA")

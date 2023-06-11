@@ -856,6 +856,10 @@ struct opcode_metadata {
     enum InstructionFormat instr_format;
 };
 
+#define OPCODE_METADATA_FMT(OP) (_PyOpcode_opcode_metadata[(OP)].instr_format)
+#define SAME_OPCODE_METADATA(OP1, OP2) \
+        (OPCODE_METADATA_FMT(OP1) == OPCODE_METADATA_FMT(OP2))
+
 #ifndef NEED_OPCODE_METADATA
 extern const struct opcode_metadata _PyOpcode_opcode_metadata[512];
 #else
