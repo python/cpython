@@ -480,17 +480,20 @@ long Call_GetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
     {
         PyObject *py_rclsid = PyLong_FromVoidPtr((void *)rclsid);
         if (py_rclsid == NULL) {
+            Py_DECREF(func);
             PyErr_WriteUnraisable(context ? context : Py_None);
             return E_FAIL;
         }
         PyObject *py_riid = PyLong_FromVoidPtr((void *)riid);
         if (py_riid == NULL) {
+            Py_DECREF(func);
             Py_DECREF(py_rclsid);
             PyErr_WriteUnraisable(context ? context : Py_None);
             return E_FAIL;
         }
         PyObject *py_ppv = PyLong_FromVoidPtr(ppv);
         if (py_ppv == NULL) {
+            Py_DECREF(func);
             Py_DECREF(py_rclsid);
             Py_DECREF(py_riid);
             PyErr_WriteUnraisable(context ? context : Py_None);
