@@ -1694,7 +1694,9 @@ class RunFuncTestCase(BaseTestCase):
 
     def test_run_with_an_empty_env(self):
         args = [sys.executable, "-c", 'import sys; sys.exit(57)']
+        env = {}
         res = subprocess.run(args, env={})
+        del env
         self.assertEqual(res.returncode, 57)
 
     def test_capture_output(self):
