@@ -15,6 +15,7 @@ import contextvars
 import functools
 import inspect
 import itertools
+import math
 import types
 import warnings
 import weakref
@@ -644,7 +645,6 @@ async def sleep(delay, result=None):
     """Coroutine that completes after a given time (in seconds)."""
 
     # check delay value is not nan
-    import math
     if math.isnan(delay):
         raise ValueError("Invalid value NaN (not a number)")
 
