@@ -159,7 +159,7 @@ the :mod:`glob` module.)
    On Unix and Windows, return the argument with an initial component of ``~`` or
    ``~user`` replaced by that *user*'s home directory.
 
-   .. index:: module: pwd
+   .. index:: pair: module; pwd
 
    On Unix, an initial ``~`` is replaced by the environment variable :envvar:`HOME`
    if it is set; otherwise the current user's home directory is looked up in the
@@ -302,6 +302,24 @@ the :mod:`glob` module.)
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+
+.. function:: isdevdrive(path)
+
+   Return ``True`` if pathname *path* is located on a Windows Dev Drive.
+   A Dev Drive is optimized for developer scenarios, and offers faster
+   performance for reading and writing files. It is recommended for use for
+   source code, temporary build directories, package caches, and other
+   IO-intensive operations.
+
+   May raise an error for an invalid path, for example, one without a
+   recognizable drive, but returns ``False`` on platforms that do not support
+   Dev Drives. See `the Windows documentation <https://learn.microsoft.com/windows/dev-drive/>`_
+   for information on enabling and creating Dev Drives.
+
+   .. availability:: Windows.
+
+   .. versionadded:: 3.12
 
 
 .. function:: join(path, *paths)

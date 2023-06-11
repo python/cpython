@@ -118,30 +118,22 @@ _PySSL_keylog_callback(const SSL *ssl, const char *line)
     PyGILState_STATE threadstate;
     PySSLSocket *ssl_obj = NULL;  /* ssl._SSLSocket, borrowed ref */
     int res, e;
-    static PyThread_type_lock *lock = NULL;
 
     threadstate = PyGILState_Ensure();
 
     ssl_obj = (PySSLSocket *)SSL_get_app_data(ssl);
     assert(Py_IS_TYPE(ssl_obj, get_state_sock(ssl_obj)->PySSLSocket_Type));
+    PyThread_type_lock lock = get_state_sock(ssl_obj)->keylog_lock;
+    assert(lock != NULL);
     if (ssl_obj->ctx->keylog_bio == NULL) {
         return;
     }
-
-    /* Allocate a static lock to synchronize writes to keylog file.
+    /*
      * The lock is neither released on exit nor on fork(). The lock is
      * also shared between all SSLContexts although contexts may write to
      * their own files. IMHO that's good enough for a non-performance
      * critical debug helper.
      */
-    if (lock == NULL) {
-        lock = PyThread_allocate_lock();
-        if (lock == NULL) {
-            PyErr_SetString(PyExc_MemoryError, "Unable to allocate lock");
-            ssl_obj->exc = PyErr_GetRaisedException();
-            return;
-        }
-    }
 
     PySSL_BEGIN_ALLOW_THREADS
     PyThread_acquire_lock(lock, 1);

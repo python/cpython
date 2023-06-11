@@ -112,7 +112,7 @@ _Py_device_encoding(int fd)
 }
 
 
-static size_t
+static int
 is_valid_wide_char(wchar_t ch)
 {
 #ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
@@ -1132,7 +1132,8 @@ _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag,
         file_id.id = id_info->FileId;
         result->st_ino = file_id.st_ino;
         result->st_ino_high = file_id.st_ino_high;
-    } else {
+    }
+    if (!result->st_ino && !result->st_ino_high) {
         /* should only occur for DirEntry_from_find_data, in which case the
            index is likely to be zero anyway. */
         result->st_ino = (((uint64_t)info->nFileIndexHigh) << 32) + info->nFileIndexLow;
