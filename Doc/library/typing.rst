@@ -1458,10 +1458,9 @@ for creating generic types.
    Note that type variables can be *bound*, *constrained*, or neither, but
    cannot be both bound *and* constrained.
 
-   Created type variables may be explicitly marked covariant or contravariant by passing
-   ``covariant=True`` or ``contravariant=True``.
-   By default, type variables are invariant.
-   See :pep:`484` and :pep:`695` for more details.
+   Type variables may be marked covariant or contravariant by passing
+   ``covariant=True`` or ``contravariant=True``.  See :pep:`484` for more
+   details.  By default, type variables are invariant.
 
    Bound type variables and constrained type variables have different
    semantics in several important ways. Using a *bound* type variable means
