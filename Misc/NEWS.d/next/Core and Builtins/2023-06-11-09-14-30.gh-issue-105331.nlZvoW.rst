@@ -1,1 +1,1 @@
-fix asyncio.sleep(float('nan')) does not raise ValueErro problem
+Add ``asyncio.sleep()`` error handel. When call ``asyncio.sleep(float('nan'))``, it should be raise ValueError.
