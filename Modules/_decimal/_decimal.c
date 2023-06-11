@@ -3615,9 +3615,13 @@ dec_as_integer_ratio(PyObject *self, PyObject *args UNUSED)
             goto error;
         }
         Py_SETREF(numerator, _py_long_floor_divide(numerator, tmp));
+        if (numerator == NULL) {
+            Py_DECREF(tmp);
+            goto error;
+        }
         Py_SETREF(denominator, _py_long_floor_divide(denominator, tmp));
         Py_DECREF(tmp);
-        if (numerator == NULL || denominator == NULL) {
+        if (denominator == NULL) {
             goto error;
         }
     }
