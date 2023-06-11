@@ -646,7 +646,7 @@ async def sleep(delay, result=None):
 
     # check delay value is not nan
     if math.isnan(delay):
-        raise ValueError("Invalid value NaN (not a number)")
+        raise ValueError("Invalid delay: NaN (not a number)")
 
     if delay <= 0:
         await __sleep0()
