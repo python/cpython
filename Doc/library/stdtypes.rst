@@ -1693,6 +1693,7 @@ expression support in the :mod:`re` module).
       >>> 'spam, spam, spam'.count('')
       17
 
+
 .. method:: str.encode(encoding="utf-8", errors="strict")
 
    Return the string encoded to :class:`bytes`.
@@ -1747,6 +1748,7 @@ expression support in the :mod:`re` module).
 
    See also :meth:`startswith`.
 
+
 .. method:: str.expandtabs(tabsize=8)
 
    Return a copy of the string where all tab characters are replaced by one or
@@ -1769,7 +1771,6 @@ expression support in the :mod:`re` module).
       >>> print('01\t012\n0123\t01234'.expandtabs(4))
       01  012
       0123    01234
-
 
 
 .. method:: str.find(sub[, start[, end]])
@@ -1876,6 +1877,7 @@ expression support in the :mod:`re` module).
       >>> ' '.isalnum()
       False
 
+
 .. method:: str.isalpha()
 
    Return ``True`` if all characters in the string are alphabetic and there is at least
@@ -1900,6 +1902,7 @@ expression support in the :mod:`re` module).
       True
 
    See Unicode Properties section in :ref:`unicode-howto`.
+
 
 .. method:: str.isascii()
 
@@ -1943,6 +1946,7 @@ expression support in the :mod:`re` module).
 
    See also :meth:`isdigit`. Decimal numbers is a digit numbers subset.
 
+
 .. method:: str.isdigit()
 
    Return ``True`` if all characters in the string are digits and there is at least one
@@ -1962,6 +1966,7 @@ expression support in the :mod:`re` module).
       (True, False)
 
    See also :meth:`isdecimal`. Digit numbers is a decimal numbers superset.
+
 
 .. method:: str.isidentifier()
 
@@ -2001,6 +2006,7 @@ expression support in the :mod:`re` module).
       False
 
    See also :meth:`isupper`.
+
 
 .. method:: str.isnumeric()
 
@@ -2049,6 +2055,7 @@ expression support in the :mod:`re` module).
 
    See also :meth:`isspace`.
 
+
 .. method:: str.isspace()
 
    Return ``True`` if there are only whitespace characters in the string and there is
@@ -2072,6 +2079,7 @@ expression support in the :mod:`re` module).
 
    See also :meth:`isprintable`.
 
+
 .. method:: str.istitle()
 
    Return ``True`` if the string is a titlecased string and there is at least one
@@ -2088,6 +2096,7 @@ expression support in the :mod:`re` module).
       False
 
    See also :meth:`title`.
+
 
 .. method:: str.isupper()
 
@@ -2106,6 +2115,7 @@ expression support in the :mod:`re` module).
       False
 
    See also :meth:`islower`.
+
 
 .. _meth-str-join:
 
@@ -2139,6 +2149,7 @@ expression support in the :mod:`re` module).
 
    See also :meth:`rjust`.
 
+
 .. method:: str.lower()
 
    Return a copy of the string with all the cased characters [4]_ converted to
@@ -2150,6 +2161,7 @@ expression support in the :mod:`re` module).
    The lowercasing algorithm used is
    `described in section 3.13 'Default Case Folding' of the Unicode Standard
    <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf>`__.
+
 
 .. method:: str.lstrip([chars])
 
@@ -2172,6 +2184,7 @@ expression support in the :mod:`re` module).
       'three!'
 
    See also :meth:`rstrip`.
+
 
 .. staticmethod:: str.maketrans(x[, y[, z]])
 
@@ -2197,6 +2210,7 @@ expression support in the :mod:`re` module).
       >>> str.maketrans('ab', 'AB', 'c')
       {97: 65, 98: 66, 99: None}
 
+
 .. method:: str.partition(sep)
 
    Split the string at the first occurrence of *sep*, and return a 3-tuple
@@ -2211,7 +2225,8 @@ expression support in the :mod:`re` module).
       >>> 'Monty Python'.partition('-')
       ('Monty Python', '', '')
 
-   See also :meth:`rpartition`
+   See also :meth:`rpartition`.
+
 
 .. method:: str.removeprefix(prefix, /)
 
@@ -2254,6 +2269,7 @@ expression support in the :mod:`re` module).
       >>> 'spam, spam, spam'.replace('spam', 'eggs', 1)
       'eggs, spam, spam'
 
+
 .. method:: str.rfind(sub[, start[, end]])
 
    Return the highest index in the string where substring *sub* is found, such
@@ -2269,6 +2285,7 @@ expression support in the :mod:`re` module).
 
    See also :meth:`find`.
 
+
 .. method:: str.rindex(sub[, start[, end]])
 
    Like :meth:`rfind` but raises :exc:`ValueError` when the substring *sub* is not
@@ -2282,6 +2299,7 @@ expression support in the :mod:`re` module).
       ValueError: substring not found
 
    See also :meth:`index`.
+
 
 .. method:: str.rjust(width[, fillchar])
 
@@ -2298,6 +2316,7 @@ expression support in the :mod:`re` module).
 
    See also :meth:`ljust`.
 
+
 .. method:: str.rpartition(sep)
 
    Split the string at the last occurrence of *sep*, and return a 3-tuple
@@ -2312,6 +2331,7 @@ expression support in the :mod:`re` module).
 
    See also :meth:`partition`.
 
+
 .. method:: str.rsplit(sep=None, maxsplit=-1)
 
    Return a list of the words in the string, using *sep* as the delimiter string.
@@ -2324,6 +2344,7 @@ expression support in the :mod:`re` module).
 
       >>> '1,2,3'.rsplit(',', maxsplit=1)
       ['1,2', '3']
+
 
 .. method:: str.rstrip([chars])
 
@@ -2346,6 +2367,7 @@ expression support in the :mod:`re` module).
       'Monty'
 
    See also :meth:`lstrip`.
+
 
 .. method:: str.split(sep=None, maxsplit=-1)
 
@@ -2387,6 +2409,7 @@ expression support in the :mod:`re` module).
       ['1', '2', '3']
 
    See also :meth:`rsplit`.
+
 
 .. index::
    single: universal newlines; str.splitlines method
@@ -2474,6 +2497,7 @@ expression support in the :mod:`re` module).
 
    See also :meth:`endswith`.
 
+
 .. method:: str.strip([chars])
 
    Return a copy of the string with the leading and trailing characters removed.
@@ -2511,6 +2535,7 @@ expression support in the :mod:`re` module).
 
    See also :meth:`upper` and :meth:`lower`.
 
+
 .. method:: str.title()
 
    Return a titlecased version of the string where words start with an uppercase
@@ -2545,6 +2570,7 @@ expression support in the :mod:`re` module).
         "They're Bill's Friends."
 
    See also :meth:`istitle`.
+
 
 .. method:: str.translate(table)
 
@@ -2592,6 +2618,7 @@ expression support in the :mod:`re` module).
 
    See also :meth:`swapcase` and :meth:`lower`.
 
+
 .. method:: str.zfill(width)
 
    Return a copy of the string left filled with ASCII ``'0'`` digits to
@@ -2606,7 +2633,6 @@ expression support in the :mod:`re` module).
       '00042'
       >>> "-42".zfill(5)
       '-0042'
-
 
 
 .. _old-string-formatting:
