@@ -642,6 +642,12 @@ def __sleep0():
 
 async def sleep(delay, result=None):
     """Coroutine that completes after a given time (in seconds)."""
+
+    # check delay value is not nan
+    import math
+    if math.isnan(delay):
+        raise ValueError("Invalid value NaN (not a number)")
+
     if delay <= 0:
         await __sleep0()
         return result
