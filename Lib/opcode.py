@@ -222,6 +222,9 @@ def_op('SET_UPDATE', 163)
 def_op('DICT_MERGE', 164)
 def_op('DICT_UPDATE', 165)
 
+def_op('LOAD_FAST_LOAD_FAST', 168)
+def_op('STORE_FAST_LOAD_FAST', 169)
+def_op('STORE_FAST_STORE_FAST', 170)
 def_op('CALL', 171)
 def_op('KW_NAMES', 172)
 hasconst.append(172)
@@ -231,6 +234,9 @@ def_op('CALL_INTRINSIC_2', 174)
 name_op('LOAD_FROM_DICT_OR_GLOBALS', 175)
 def_op('LOAD_FROM_DICT_OR_DEREF', 176)
 hasfree.append(176)
+
+# Optimizer hook
+def_op('ENTER_EXECUTOR', 230)
 
 # Instrumented instructions
 MIN_INSTRUMENTED_OPCODE = 237
@@ -403,13 +409,6 @@ _specializations = {
         "LOAD_ATTR_METHOD_NO_DICT",
         "LOAD_ATTR_METHOD_WITH_VALUES",
     ],
-    "LOAD_CONST": [
-        "LOAD_CONST__LOAD_FAST",
-    ],
-    "LOAD_FAST": [
-        "LOAD_FAST__LOAD_CONST",
-        "LOAD_FAST__LOAD_FAST",
-    ],
     "LOAD_GLOBAL": [
         "LOAD_GLOBAL_BUILTIN",
         "LOAD_GLOBAL_MODULE",
@@ -418,10 +417,6 @@ _specializations = {
         "STORE_ATTR_INSTANCE_VALUE",
         "STORE_ATTR_SLOT",
         "STORE_ATTR_WITH_HINT",
-    ],
-    "STORE_FAST": [
-        "STORE_FAST__LOAD_FAST",
-        "STORE_FAST__STORE_FAST",
     ],
     "STORE_SUBSCR": [
         "STORE_SUBSCR_DICT",
@@ -484,6 +479,9 @@ _cache_format = {
         "counter": 1,
     },
     "SEND": {
+        "counter": 1,
+    },
+    "JUMP_BACKWARD": {
         "counter": 1,
     },
 }

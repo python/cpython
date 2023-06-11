@@ -533,9 +533,6 @@ show_warning(PyThreadState *tstate, PyObject *filename, int lineno,
         Py_UCS4 ch;
         PyObject *truncated;
 
-        if (PyUnicode_READY(sourceline) < 1)
-            goto error;
-
         kind = PyUnicode_KIND(sourceline);
         data = PyUnicode_DATA(sourceline);
         len = PyUnicode_GET_LENGTH(sourceline);
@@ -1364,6 +1361,20 @@ exit:
     Py_XDECREF(filename);
     return ret;
 }
+
+void
+_PyErr_WarnUnawaitedAgenMethod(PyAsyncGenObject *agen, PyObject *method)
+{
+    PyObject *exc = PyErr_GetRaisedException();
+    if (_PyErr_WarnFormat((PyObject *)agen, PyExc_RuntimeWarning, 1,
+                          "coroutine method %R of %R was never awaited",
+                          method, agen->ag_qualname) < 0)
+    {
+        PyErr_WriteUnraisable((PyObject *)agen);
+    }
+    PyErr_SetRaisedException(exc);
+}
+
 
 void
 _PyErr_WarnUnawaitedCoroutine(PyObject *coro)

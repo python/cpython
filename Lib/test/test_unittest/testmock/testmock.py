@@ -245,6 +245,14 @@ class MockTest(unittest.TestCase):
             with mock.patch('builtins.open', mock.mock_open()):
                 mock.mock_open()  # should still be valid with open() mocked
 
+    def test_explicit_parent(self):
+        parent = Mock()
+        mock1 = Mock(parent=parent, return_value=None)
+        mock1(1, 2, 3)
+        mock2 = Mock(parent=parent, return_value=None)
+        mock2(4, 5, 6)
+
+        self.assertEqual(parent.mock_calls, [call(1, 2, 3), call(4, 5, 6)])
 
     def test_reset_mock(self):
         parent = Mock()
