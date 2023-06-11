@@ -231,6 +231,31 @@ _testfunc_bitfield_by_reference2(Test7 *in) {
     return result;
 }
 
+typedef struct{
+    uint16_t A ;
+    uint16_t B : 9;
+    uint16_t C : 1;
+    uint16_t D : 1;
+    uint16_t E : 1;
+    uint16_t F : 1;
+    uint16_t G : 3;
+    uint32_t H : 10;
+    uint32_t I : 20;
+    uint32_t J : 2;
+} Test9;
+
+EXPORT(long)
+_testfunc_bitfield_by_reference3(Test9 *in, long pos) {
+    long data[] = {in->A , in->B , in->C , in->D , in->E , in->F , in->G , in->H , in->I , in->J};
+    long data_length = (long) (sizeof(data)/sizeof(data[0]));
+    if(pos < 0)
+        return -1;
+    if(pos >= data_length)
+        return -1;
+
+    return data[pos];
+}
+
 typedef union {
     signed int A: 1, B:2, C:3, D:2;
 } Test8;
@@ -592,11 +617,54 @@ struct BITS {
  */
 #ifndef __xlc__
 #define SIGNED_SHORT_BITFIELDS
-     short M: 1, N: 2, O: 3, P: 4, Q: 5, R: 6, S: 7;
+    signed short M: 1, N: 2, O: 3, P: 4, Q: 5, R: 6, S: 7;
 #endif
 };
 
 EXPORT(int) unpack_bitfields(struct BITS *bits, char name)
+{
+    switch (name) {
+    case 'A': return bits->A;
+    case 'B': return bits->B;
+    case 'C': return bits->C;
+    case 'D': return bits->D;
+    case 'E': return bits->E;
+    case 'F': return bits->F;
+    case 'G': return bits->G;
+    case 'H': return bits->H;
+    case 'I': return bits->I;
+
+#ifdef SIGNED_SHORT_BITFIELDS
+    case 'M': return bits->M;
+    case 'N': return bits->N;
+    case 'O': return bits->O;
+    case 'P': return bits->P;
+    case 'Q': return bits->Q;
+    case 'R': return bits->R;
+    case 'S': return bits->S;
+#endif
+    }
+    return 999;
+}
+
+struct
+#ifndef MS_WIN32
+__attribute__ ((ms_struct))
+#endif
+BITS_msvc
+{
+    signed int A: 1, B:2, C:3, D:4, E: 5, F: 6, G: 7, H: 8, I: 9;
+/*
+ * The test case needs/uses "signed short" bitfields, but the
+ * IBM XLC compiler does not support this
+ */
+#ifndef __xlc__
+#define SIGNED_SHORT_BITFIELDS
+    signed short M: 1, N: 2, O: 3, P: 4, Q: 5, R: 6, S: 7;
+#endif
+};
+
+EXPORT(int) unpack_bitfields_msvc(struct BITS_msvc *bits, char name)
 {
     switch (name) {
     case 'A': return bits->A;

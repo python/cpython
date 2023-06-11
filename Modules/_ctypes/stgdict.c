@@ -375,7 +375,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     Py_ssize_t len, offset, size, align, i;
     Py_ssize_t union_size, total_align, aligned_size;
     Py_ssize_t field_size = 0;
-    int bitofs;
+    Py_ssize_t bitofs = 0;
     PyObject *tmp;
     int pack;
     Py_ssize_t ffi_ofs;
@@ -402,6 +402,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     if (tmp) {
         pack = _PyLong_AsInt(tmp);
         Py_DECREF(tmp);
+        // TODO(Matthias): It looks like pack == 0 triggers a bug.
         if (pack < 0) {
             if (!PyErr_Occurred() ||
                 PyErr_ExceptionMatches(PyExc_TypeError) ||
@@ -416,6 +417,28 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     else {
         /* Setting `_pack_ = 0` amounts to using the default alignment */
         pack = 0;
+    }
+
+    #ifdef MS_WIN32
+    int ms_struct = 1;
+    #else
+    int ms_struct = 0;
+    #endif
+
+    if (_PyObject_LookupAttr(type, &_Py_ID(_ms_struct_), &tmp) < 0) {
+        return -1;
+    }
+    if (tmp) {
+        ms_struct = _PyLong_AsInt(tmp);
+        Py_DECREF(tmp);
+        if (PyErr_Occurred()) {
+            if (PyErr_ExceptionMatches(PyExc_TypeError) ||
+                PyErr_ExceptionMatches(PyExc_OverflowError)) {
+                PyErr_SetString(PyExc_ValueError,
+                                "_pack_ must be a bool or integer");
+            }
+            return -1;
+        }
     }
 
     len = PySequence_Size(fields);
@@ -509,7 +532,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         PyObject *pair = PySequence_GetItem(fields, i);
         PyObject *prop;
         StgDictObject *dict;
-        int bitsize = 0;
+        Py_ssize_t bitsize = 0;
 
         if (!pair || !PyArg_ParseTuple(pair, "UO|i", &name, &desc, &bitsize)) {
             PyErr_SetString(PyExc_TypeError,
@@ -586,7 +609,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
             prop = PyCField_FromDesc(desc, i,
                                    &field_size, bitsize, &bitofs,
                                    &size, &offset, &align,
-                                   pack, big_endian);
+                                   pack, big_endian, ms_struct);
             if (prop == NULL) {
                 Py_DECREF(pair);
                 return -1;
@@ -634,13 +657,15 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
                 return -1;
             }
         } else /* union */ {
+            field_size = 0;
             size = 0;
+            bitofs = 0;
             offset = 0;
             align = 0;
             prop = PyCField_FromDesc(desc, i,
                                    &field_size, bitsize, &bitofs,
                                    &size, &offset, &align,
-                                   pack, big_endian);
+                                   pack, big_endian, ms_struct);
             if (prop == NULL) {
                 Py_DECREF(pair);
                 return -1;
