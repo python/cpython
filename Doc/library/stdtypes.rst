@@ -1675,7 +1675,7 @@ expression support in the :mod:`re` module).
 
    Return the number of non-overlapping occurrences of substring *sub* in the
    range [*start*, *end*].  Optional arguments *start* and *end* are
-   interpreted as in slice notation. 
+   interpreted as in slice notation.
 
    If *sub* is empty, returns the number of empty strings between characters
    which is the length of the string plus one.
