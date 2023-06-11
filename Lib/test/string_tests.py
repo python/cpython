@@ -317,9 +317,9 @@ class BaseTest:
 
     def test_find_periodic_pattern(self):
         """Cover the special path for periodic patterns."""
-        def reference_find(p, s):
-            for i in range(len(s)+1):
-                if s.startswith(p, i):
+        def reference_find(text, p):
+            for i in range(len(text) - len(p) + 1):
+                if text.startswith(p, i):
                     return i
             return -1
 
@@ -332,7 +332,7 @@ class BaseTest:
             right = ''.join(choices('abcdef', k=rr(2000)))
             text = left + p + right
             with self.subTest(p=p, text=text):
-                self.checkequal(reference_find(p, text),
+                self.checkequal(reference_find(text, p),
                                 text, 'find', p)
 
     def test_find_many_lengths(self):
