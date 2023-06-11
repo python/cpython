@@ -1,0 +1,1 @@
+Fixed an intermittent test failure in ``test_find_periodic_pattern`` from the ``string_tests`` module.
