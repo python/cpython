@@ -171,7 +171,7 @@ static void *opcode_targets[256] = {
     &&TARGET_STORE_FAST_LOAD_FAST,
     &&TARGET_STORE_FAST_STORE_FAST,
     &&TARGET_CALL,
-    &&TARGET_KW_NAMES,
+    &&_unknown_opcode,
     &&TARGET_CALL_INTRINSIC_1,
     &&TARGET_CALL_INTRINSIC_2,
     &&TARGET_LOAD_FROM_DICT_OR_GLOBALS,

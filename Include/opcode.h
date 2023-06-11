@@ -118,7 +118,6 @@ extern "C" {
 #define STORE_FAST_LOAD_FAST                   169
 #define STORE_FAST_STORE_FAST                  170
 #define CALL                                   171
-#define KW_NAMES                               172
 #define CALL_INTRINSIC_1                       173
 #define CALL_INTRINSIC_2                       174
 #define LOAD_FROM_DICT_OR_GLOBALS              175
@@ -229,7 +228,6 @@ extern "C" {
 #define HAS_CONST(op) (false\
     || ((op) == LOAD_CONST) \
     || ((op) == RETURN_CONST) \
-    || ((op) == KW_NAMES) \
     )
 
 #define NB_ADD                                   0

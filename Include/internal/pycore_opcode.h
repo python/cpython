@@ -154,7 +154,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [JUMP_BACKWARD] = JUMP_BACKWARD,
     [JUMP_BACKWARD_NO_INTERRUPT] = JUMP_BACKWARD_NO_INTERRUPT,
     [JUMP_FORWARD] = JUMP_FORWARD,
-    [KW_NAMES] = KW_NAMES,
     [LIST_APPEND] = LIST_APPEND,
     [LIST_EXTEND] = LIST_EXTEND,
     [LOAD_ASSERTION_ERROR] = LOAD_ASSERTION_ERROR,
@@ -417,7 +416,7 @@ static const char *const _PyOpcode_OpName[267] = {
     [STORE_FAST_LOAD_FAST] = "STORE_FAST_LOAD_FAST",
     [STORE_FAST_STORE_FAST] = "STORE_FAST_STORE_FAST",
     [CALL] = "CALL",
-    [KW_NAMES] = "KW_NAMES",
+    [172] = "<172>",
     [CALL_INTRINSIC_1] = "CALL_INTRINSIC_1",
     [CALL_INTRINSIC_2] = "CALL_INTRINSIC_2",
     [LOAD_FROM_DICT_OR_GLOBALS] = "LOAD_FROM_DICT_OR_GLOBALS",
@@ -520,6 +519,7 @@ static const char *const _PyOpcode_OpName[267] = {
     case 161: \
     case 166: \
     case 167: \
+    case 172: \
     case 177: \
     case 178: \
     case 179: \

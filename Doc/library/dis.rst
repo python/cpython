@@ -1370,15 +1370,6 @@ iterations of the loop.
    .. versionadded:: 3.11
 
 
-.. opcode:: KW_NAMES (consti)
-
-   Prefixes :opcode:`CALL`.
-   Stores a reference to ``co_consts[consti]`` into an internal variable
-   for use by :opcode:`CALL`. ``co_consts[consti]`` must be a tuple of strings.
-
-   .. versionadded:: 3.11
-
-
 .. opcode:: MAKE_FUNCTION (flags)
 
    Pushes a new function object on the stack.  From bottom to top, the consumed

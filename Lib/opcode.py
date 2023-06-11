@@ -226,8 +226,7 @@ def_op('LOAD_FAST_LOAD_FAST', 168)
 def_op('STORE_FAST_LOAD_FAST', 169)
 def_op('STORE_FAST_STORE_FAST', 170)
 def_op('CALL', 171)
-def_op('KW_NAMES', 172)
-hasconst.append(172)
+
 def_op('CALL_INTRINSIC_1', 173)
 def_op('CALL_INTRINSIC_2', 174)
 

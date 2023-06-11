@@ -313,46 +313,44 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case LOAD_ATTR_METHOD_LAZY_DICT:
             return 1;
-        case KW_NAMES:
-            return 0;
         case INSTRUMENTED_CALL:
             return 0;
         case CALL:
-            return oparg + 2;
+            return oparg + 3;
         case CALL_BOUND_METHOD_EXACT_ARGS:
-            return oparg + 2;
+            return oparg + 3;
         case CALL_PY_EXACT_ARGS:
-            return oparg + 2;
+            return oparg + 3;
         case CALL_PY_WITH_DEFAULTS:
-            return oparg + 2;
+            return oparg + 3;
         case CALL_NO_KW_TYPE_1:
-            return oparg + 2;
+            return oparg + 3;
         case CALL_NO_KW_STR_1:
-            return oparg + 2;
+            return oparg + 3;
         case CALL_NO_KW_TUPLE_1:
-            return oparg + 2;
+            return oparg + 3;
         case CALL_BUILTIN_CLASS:
-            return oparg + 2;
+            return oparg + 3;
         case CALL_NO_KW_BUILTIN_O:
-            return oparg + 2;
+            return oparg + 3;
         case CALL_NO_KW_BUILTIN_FAST:
-            return oparg + 2;
+            return oparg + 3;
         case CALL_BUILTIN_FAST_WITH_KEYWORDS:
-            return oparg + 2;
+            return oparg + 3;
         case CALL_NO_KW_LEN:
-            return oparg + 2;
+            return oparg + 3;
         case CALL_NO_KW_ISINSTANCE:
-            return oparg + 2;
+            return oparg + 3;
         case CALL_NO_KW_LIST_APPEND:
-            return oparg + 2;
+            return oparg + 3;
         case CALL_NO_KW_METHOD_DESCRIPTOR_O:
-            return oparg + 2;
+            return oparg + 3;
         case CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS:
-            return oparg + 2;
+            return oparg + 3;
         case CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS:
-            return oparg + 2;
+            return oparg + 3;
         case CALL_NO_KW_METHOD_DESCRIPTOR_FAST:
-            return oparg + 2;
+            return oparg + 3;
         case INSTRUMENTED_CALL_FUNCTION_EX:
             return 0;
         case CALL_FUNCTION_EX:
@@ -707,8 +705,6 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_ATTR_METHOD_LAZY_DICT:
             return ((oparg & 1) ? 1 : 0) + 1;
-        case KW_NAMES:
-            return 0;
         case INSTRUMENTED_CALL:
             return 0;
         case CALL:
@@ -953,7 +949,6 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [LOAD_ATTR_METHOD_WITH_VALUES] = { true, INSTR_FMT_IBC00000000 },
     [LOAD_ATTR_METHOD_NO_DICT] = { true, INSTR_FMT_IBC00000000 },
     [LOAD_ATTR_METHOD_LAZY_DICT] = { true, INSTR_FMT_IBC00000000 },
-    [KW_NAMES] = { true, INSTR_FMT_IB },
     [INSTRUMENTED_CALL] = { true, INSTR_FMT_IB },
     [CALL] = { true, INSTR_FMT_IBC00 },
     [CALL_BOUND_METHOD_EXACT_ARGS] = { true, INSTR_FMT_IBC00 },
