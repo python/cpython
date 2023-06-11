@@ -7934,25 +7934,30 @@ PyUnicode_BuildEncodingMap(PyObject* string)
 
     if (need_dict) {
         PyObject *result = PyDict_New();
-        PyObject *key, *value;
         if (!result)
             return NULL;
         for (i = 0; i < length; i++) {
-            key = PyLong_FromLong(PyUnicode_READ(kind, data, i));
-            value = PyLong_FromLong(i);
-            if (!key || !value)
-                goto failed1;
-            if (PyDict_SetItem(result, key, value) == -1)
-                goto failed1;
+            Py_UCS4 c = PyUnicode_READ(kind, data, i);
+            PyObject *key = PyLong_FromLong(c);
+            if (key == NULL) {
+                Py_DECREF(result);
+                return NULL;
+            }
+            PyObject *value = PyLong_FromLong(i);
+            if (value == NULL) {
+                Py_DECREF(key);
+                Py_DECREF(result);
+                return NULL;
+            }
+            int rc = PyDict_SetItem(result, key, value);
             Py_DECREF(key);
             Py_DECREF(value);
+            if (rc < 0) {
+                Py_DECREF(result);
+                return NULL;
+            }
         }
         return result;
-      failed1:
-        Py_XDECREF(key);
-        Py_XDECREF(value);
-        Py_DECREF(result);
-        return NULL;
     }
 
     /* Create a three-level trie */
