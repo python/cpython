@@ -284,7 +284,12 @@ def k(x):
                 # this won't work with compound complex inputs
                 continue
             self.assertEqual(number_token(lit), lit)
+        # Valid cases with extra underscores in the tokenize module
+        # See gh-105549 for context
+        extra_valid_cases = {"0_7", "09_99"}
         for lit in INVALID_UNDERSCORE_LITERALS:
+            if lit in extra_valid_cases:
+                continue
             try:
                 number_token(lit)
             except TokenError:
@@ -1872,6 +1877,34 @@ class TestRoundtrip(TestCase):
         self.assertEqual(codelines[1], codelines[2])
         self.check_roundtrip(code)
 
+
+class InvalidPythonTests(TestCase):
+    def test_number_followed_by_name(self):
+        # See issue #gh-105549
+        source = "2sin(x)"
+        expected_tokens = [
+            TokenInfo(type=token.NUMBER, string='2', start=(1, 0), end=(1, 1), line='2sin(x)'),
+            TokenInfo(type=token.NAME, string='sin', start=(1, 1), end=(1, 4), line='2sin(x)'),
+            TokenInfo(type=token.OP, string='(', start=(1, 4), end=(1, 5), line='2sin(x)'),
+            TokenInfo(type=token.NAME, string='x', start=(1, 5), end=(1, 6), line='2sin(x)'),
+            TokenInfo(type=token.OP, string=')', start=(1, 6), end=(1, 7), line='2sin(x)'),
+            TokenInfo(type=token.NEWLINE, string='', start=(1, 7), end=(1, 8), line='2sin(x)'),
+            TokenInfo(type=token.ENDMARKER, string='', start=(2, 0), end=(2, 0), line='')
+        ]
+
+        tokens = list(generate_tokens(StringIO(source).readline))
+        self.assertEqual(tokens, expected_tokens)
+
+    def test_number_starting_with_zero(self):
+        source = "01234"
+        expected_tokens = [
+            TokenInfo(type=token.NUMBER, string='01234', start=(1, 0), end=(1, 5), line='01234'),
+            TokenInfo(type=token.NEWLINE, string='', start=(1, 5), end=(1, 6), line='01234'),
+            TokenInfo(type=token.ENDMARKER, string='', start=(2, 0), end=(2, 0), line='')
+        ]
+
+        tokens = list(generate_tokens(StringIO(source).readline))
+        self.assertEqual(tokens, expected_tokens)
 
 class CTokenizeTest(TestCase):
     def check_tokenize(self, s, expected):
