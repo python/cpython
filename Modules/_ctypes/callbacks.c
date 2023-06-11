@@ -493,9 +493,9 @@ long Call_GetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
         }
         PyObject *py_ppv = PyLong_FromVoidPtr(ppv);
         if (py_ppv == NULL) {
-            Py_DECREF(func);
             Py_DECREF(py_rclsid);
             Py_DECREF(py_riid);
+            Py_DECREF(func);
             PyErr_WriteUnraisable(context ? context : Py_None);
             return E_FAIL;
         }
