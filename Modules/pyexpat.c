@@ -1775,6 +1775,7 @@ add_error(PyObject *errors_module, PyObject *codes_dict,
 static int
 add_errors_module(PyObject *mod)
 {
+    // add_submodule() returns a borrowed ref.
     PyObject *errors_module = add_submodule(mod, MODULE_NAME ".errors");
     if (errors_module == NULL) {
         return -1;
