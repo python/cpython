@@ -6066,7 +6066,7 @@ sslmodule_init_errorcodes(PyObject *module)
             Py_DECREF(mnemo);
             return -1;
         }
-        int rc = PyDict_SetItem(state->err_codes_to_names, key, mnemo);
+        int rc = PyDict_SetItem(state->err_names_to_codes, mnemo, key);
         Py_DECREF(key);
         Py_DECREF(mnemo);
         if (rc < 0) {
