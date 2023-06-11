@@ -2181,8 +2181,8 @@ Loading and running tests
 
       .. versionchanged:: 3.12
          ``outcome`` can be an exception instance.
-         
-   .. method:: addDuration(test, elapsed)
+
+.. method:: addDuration(test, elapsed)
 
       Called when the test case finishes.  *elapsed* is the time represented in
       seconds, and it includes the execution of cleanup functions.
