@@ -13,6 +13,7 @@ JOBS         = auto
 PAPER        =
 SOURCES      =
 DISTVERSION  = $(shell $(PYTHON) tools/extensions/patchlevel.py)
+REQUIREMENTS = requirements.txt
 SPHINXERRORHANDLING = -W
 
 # Internal variables.
@@ -154,8 +155,8 @@ venv:
 		echo "To recreate it, remove it first with \`make clean-venv'."; \
 	else \
 		$(PYTHON) -m venv $(VENVDIR); \
-		$(VENVDIR)/bin/python3 -m pip install -U pip setuptools; \
-		$(VENVDIR)/bin/python3 -m pip install -r requirements.txt; \
+		$(VENVDIR)/bin/python3 -m pip install --upgrade pip; \
+		$(VENVDIR)/bin/python3 -m pip install -r $(REQUIREMENTS); \
 		echo "The venv has been created in the $(VENVDIR) directory"; \
 	fi
 

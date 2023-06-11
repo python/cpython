@@ -399,6 +399,18 @@ class BaseTaskTests:
         self.loop.run_until_complete(t1)
         self.loop.run_until_complete(t2)
 
+    def test_task_set_name_pylong(self):
+        # test that setting the task name to a PyLong explicitly doesn't
+        # incorrectly trigger the deferred name formatting logic
+        async def notmuch():
+            return 123
+
+        t = self.new_task(self.loop, notmuch(), name=987654321)
+        self.assertEqual(t.get_name(), '987654321')
+        t.set_name(123456789)
+        self.assertEqual(t.get_name(), '123456789')
+        self.loop.run_until_complete(t)
+
     def test_task_repr_name_not_str(self):
         async def notmuch():
             return 123
@@ -606,7 +618,7 @@ class BaseTaskTests:
                     if (
                         timed_out
                         and task.uncancel() == 0
-                        and sys.exc_info()[0] is asyncio.CancelledError
+                        and type(sys.exception()) is asyncio.CancelledError
                     ):
                         # Note the five rules that are needed here to satisfy proper
                         # uncancellation:

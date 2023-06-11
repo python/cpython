@@ -67,3 +67,13 @@ as much as it can.
 .. c:function:: PyObject* PyWeakref_GET_OBJECT(PyObject *ref)
 
    Similar to :c:func:`PyWeakref_GetObject`, but does no error checking.
+
+
+.. c:function:: void PyObject_ClearWeakRefs(PyObject *object)
+
+   This function is called by the :c:member:`~PyTypeObject.tp_dealloc` handler
+   to clear weak references.
+
+   This iterates through the weak references for *object* and calls callbacks
+   for those references which have one. It returns when all callbacks have
+   been attempted.
