@@ -2360,15 +2360,21 @@ _PySys_AddXOptionWithError(const wchar_t *s)
     const wchar_t *name_end = wcschr(s, L'=');
     if (!name_end) {
         name = PyUnicode_FromWideChar(s, -1);
+        if (name == NULL) {
+            goto error;
+        }
         value = Py_True;
         Py_INCREF(value);
     }
     else {
         name = PyUnicode_FromWideChar(s, name_end - s);
+        if (name == NULL) {
+            goto error;
+        }
         value = PyUnicode_FromWideChar(name_end + 1, -1);
-    }
-    if (name == NULL || value == NULL) {
-        goto error;
+        if (value == NULL) {
+            goto error;
+        }
     }
     if (PyDict_SetItem(opts, name, value) < 0) {
         goto error;
@@ -3019,15 +3025,21 @@ sys_add_xoption(PyObject *opts, const wchar_t *s)
     const wchar_t *name_end = wcschr(s, L'=');
     if (!name_end) {
         name = PyUnicode_FromWideChar(s, -1);
+        if (name == NULL) {
+            goto error;
+        }
         value = Py_True;
         Py_INCREF(value);
     }
     else {
         name = PyUnicode_FromWideChar(s, name_end - s);
+        if (name == NULL) {
+            goto error;
+        }
         value = PyUnicode_FromWideChar(name_end + 1, -1);
-    }
-    if (name == NULL || value == NULL) {
-        goto error;
+        if (value == NULL) {
+            goto error;
+        }
     }
     if (PyDict_SetItem(opts, name, value) < 0) {
         goto error;
