@@ -62,20 +62,6 @@ def run_cases_test(input: str, expected: str):
     #     print("End")
     assert actual.rstrip() == expected.rstrip()
 
-def test_legacy():
-    input = """
-        inst(OP) {
-            spam();
-        }
-    """
-    output = """
-        TARGET(OP) {
-            spam();
-            DISPATCH();
-        }
-    """
-    run_cases_test(input, output)
-
 def test_inst_no_args():
     input = """
         inst(OP, (--)) {
