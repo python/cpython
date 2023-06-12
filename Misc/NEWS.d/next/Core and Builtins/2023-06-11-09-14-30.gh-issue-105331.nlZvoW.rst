@@ -1,1 +1,1 @@
-Add ``asyncio.sleep()`` error handel. When call ``asyncio.sleep(float('nan'))``, it should be raise ValueError.
+Raise :exc:`ValueError` if the `delay` argument to :func:`asyncio.sleep` is a NaN (matching :func:`time.sleep`). 
