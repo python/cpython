@@ -805,6 +805,17 @@ getenvironment(PyObject* environment)
     }
 
     envsize = PyList_GET_SIZE(keys);
+
+    if (envsize == 0) {
+        // A environment block must be terminated by two null characters --
+        // one for the last string and one for the block.
+        buffer = PyMem_Calloc(2, sizeof(wchar_t));
+        if (!buffer) {
+            PyErr_NoMemory();
+        }
+        goto cleanup;
+    }
+
     if (PyList_GET_SIZE(values) != envsize) {
         PyErr_SetString(PyExc_RuntimeError,
             "environment changed size during iteration");
@@ -878,7 +889,8 @@ getenvironment(PyObject* environment)
     *p++ = L'\0';
     assert(p == end);
 
- error:
+cleanup:
+error:
     Py_XDECREF(keys);
     Py_XDECREF(values);
     return buffer;
