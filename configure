@@ -28106,7 +28106,7 @@ then :
 fi
 
 
-        if test "$py_cv_module__copy" != "n/a";
+        if test "$py_cv_module__copy" != "n/a"
 then :
   py_cv_module__copy=yes
 fi
@@ -28119,7 +28119,7 @@ else
 fi
 
   as_fn_append MODULE_BLOCK "MODULE__COPY_STATE=$py_cv_module__copy$as_nl"
-  if test "x$py_cv_module__copy" = xyes;
+  if test "x$py_cv_module__copy" = xyes
 then :
 
 
