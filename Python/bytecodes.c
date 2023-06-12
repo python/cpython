@@ -44,13 +44,13 @@
 #define DEOPT_IF(cond, instname) ((void)0)
 #define ERROR_IF(cond, labelname) ((void)0)
 #define GO_TO_INSTRUCTION(instname) ((void)0)
-#define PREDICT(opname) ((void)0)
 
 #define inst(name, ...) case name:
 #define op(name, ...) /* NAME is ignored */
 #define macro(name) static int MACRO_##name
 #define super(name) static int SUPER_##name
 #define family(name, ...) static int family_##name
+#define pseudo(name) static int pseudo_##name
 
 // Dummy variables for stack effects.
 static PyObject *value, *value1, *value2, *left, *right, *res, *sum, *prod, *sub;
@@ -219,6 +219,10 @@ dummy_func(
             SETLOCAL(oparg, value);
         }
 
+        pseudo(STORE_FAST_MAYBE_NULL) = {
+            STORE_FAST,
+        };
+
         inst(STORE_FAST_LOAD_FAST, (value1 -- value2)) {
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
@@ -233,9 +237,6 @@ dummy_func(
             SETLOCAL(oparg1, value1);
             SETLOCAL(oparg2, value2);
         }
-
-        super(LOAD_FAST__LOAD_CONST) = LOAD_FAST + LOAD_CONST;
-        super(LOAD_CONST__LOAD_FAST) = LOAD_CONST + LOAD_FAST;
 
         inst(POP_TOP, (value --)) {
             DECREF_INPUTS();
@@ -562,14 +563,12 @@ dummy_func(
 
         inst(LIST_APPEND, (list, unused[oparg-1], v -- list, unused[oparg-1])) {
             ERROR_IF(_PyList_AppendTakeRef((PyListObject *)list, v) < 0, error);
-            PREDICT(JUMP_BACKWARD);
         }
 
         inst(SET_ADD, (set, unused[oparg-1], v -- set, unused[oparg-1])) {
             int err = PySet_Add(set, v);
             DECREF_INPUTS();
             ERROR_IF(err, error);
-            PREDICT(JUMP_BACKWARD);
         }
 
         family(store_subscr, INLINE_CACHE_ENTRIES_STORE_SUBSCR) = {
@@ -824,8 +823,6 @@ dummy_func(
                     Py_DECREF(next_iter);
                 }
             }
-
-            PREDICT(LOAD_CONST);
         }
 
         inst(GET_AWAITABLE, (iterable -- iter)) {
@@ -852,8 +849,6 @@ dummy_func(
             }
 
             ERROR_IF(iter == NULL, error);
-
-            PREDICT(LOAD_CONST);
         }
 
         family(send, INLINE_CACHE_ENTRIES_SEND) = {
@@ -1611,7 +1606,6 @@ dummy_func(
                 ERROR_IF(true, error);
             }
             DECREF_INPUTS();
-            PREDICT(CALL_FUNCTION_EX);
         }
 
         inst(MAP_ADD, (key, value --)) {
@@ -1620,7 +1614,6 @@ dummy_func(
             /* dict[key] = value */
             // Do not DECREF INPUTS because the function steals the references
             ERROR_IF(_PyDict_SetItem_Take2((PyDictObject *)dict, key, value) != 0, error);
-            PREDICT(JUMP_BACKWARD);
         }
 
         inst(INSTRUMENTED_LOAD_SUPER_ATTR, (unused/9, unused, unused, unused -- unused if (oparg & 1), unused)) {
@@ -1685,6 +1678,18 @@ dummy_func(
             Py_DECREF(super);
             ERROR_IF(res == NULL, error);
         }
+
+        pseudo(LOAD_SUPER_METHOD) = {
+            LOAD_SUPER_ATTR,
+        };
+
+        pseudo(LOAD_ZERO_SUPER_METHOD) = {
+            LOAD_SUPER_ATTR,
+        };
+
+        pseudo(LOAD_ZERO_SUPER_ATTR) = {
+            LOAD_SUPER_ATTR,
+        };
 
         inst(LOAD_SUPER_ATTR_ATTR, (unused/1, global_super, class, self -- res2 if (oparg & 1), res)) {
             assert(!(oparg & 1));
@@ -1783,6 +1788,10 @@ dummy_func(
                 ERROR_IF(res == NULL, error);
             }
         }
+
+        pseudo(LOAD_METHOD) = {
+            LOAD_ATTR,
+        };
 
         inst(LOAD_ATTR_INSTANCE_VALUE, (unused/1, type_version/2, index/1, unused/5, owner -- res2 if (oparg & 1), res)) {
             PyTypeObject *tp = Py_TYPE(owner);
@@ -2154,6 +2163,16 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
+        pseudo(JUMP) = {
+            JUMP_FORWARD,
+            JUMP_BACKWARD,
+        };
+
+        pseudo(JUMP_NO_INTERRUPT) = {
+            JUMP_FORWARD,
+            JUMP_BACKWARD_NO_INTERRUPT,
+        };
+
         inst(ENTER_EXECUTOR, (--)) {
             _PyExecutorObject *executor = (_PyExecutorObject *)frame->f_code->co_executors->executors[oparg];
             Py_INCREF(executor);
@@ -2248,13 +2267,11 @@ dummy_func(
         inst(MATCH_MAPPING, (subject -- subject, res)) {
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_MAPPING;
             res = match ? Py_True : Py_False;
-            PREDICT(POP_JUMP_IF_FALSE);
         }
 
         inst(MATCH_SEQUENCE, (subject -- subject, res)) {
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_SEQUENCE;
             res = match ? Py_True : Py_False;
-            PREDICT(POP_JUMP_IF_FALSE);
         }
 
         inst(MATCH_KEYS, (subject, keys -- subject, keys, values_or_none)) {
@@ -2295,7 +2312,6 @@ dummy_func(
                 }
                 DECREF_INPUTS();
             }
-            PREDICT(LOAD_CONST);
         }
 
         // Most members of this family are "secretly" super-instructions.
@@ -2485,7 +2501,6 @@ dummy_func(
                 Py_DECREF(exit);
                 ERROR_IF(true, error);
             }
-            PREDICT(GET_AWAITABLE);
         }
 
         inst(BEFORE_WITH, (mgr -- exit, res)) {
@@ -2545,6 +2560,22 @@ dummy_func(
                     3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
             ERROR_IF(res == NULL, error);
         }
+
+        pseudo(SETUP_FINALLY) = {
+            NOP,
+        };
+
+        pseudo(SETUP_CLEANUP) = {
+            NOP,
+        };
+
+        pseudo(SETUP_WITH) = {
+            NOP,
+        };
+
+        pseudo(POP_BLOCK) = {
+            NOP,
+        };
 
         inst(PUSH_EXC_INFO, (new_exc -- prev_exc, new_exc)) {
             _PyErr_StackItem *exc_info = tstate->exc_info;
