@@ -426,6 +426,8 @@ Sleeping
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
 
+   .. versionchanged:: 3.13
+      If the *delay* value is nan will raise ValueError.
 
 Running Tasks Concurrently
 ==========================
