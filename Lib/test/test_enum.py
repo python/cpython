@@ -42,26 +42,38 @@ MODULE = __name__
 SHORT_MODULE = MODULE.split('.')[-1]
 
 # for pickle tests
-class Stooges(Enum):
-    LARRY = 1
-    CURLY = 2
-    MOE = 3
+try:
+    class Stooges(Enum):
+        LARRY = 1
+        CURLY = 2
+        MOE = 3
+except Exception as exc:
+    Stooges = exc
 
-class IntStooges(int, Enum):
-    LARRY = 1
-    CURLY = 2
-    MOE = 3
+try:
+    class IntStooges(int, Enum):
+        LARRY = 1
+        CURLY = 2
+        MOE = 3
+except Exception as exc:
+    IntStooges = exc
 
-class FloatStooges(float, Enum):
-    LARRY = 1.39
-    CURLY = 2.72
-    MOE = 3.142596
+try:
+    class FloatStooges(float, Enum):
+        LARRY = 1.39
+        CURLY = 2.72
+        MOE = 3.142596
+except Exception as exc:
+    FloatStooges = exc
 
-class FlagStooges(Flag):
-    LARRY = 1
-    CURLY = 2
-    MOE = 4
-    BIG = 389
+try:
+    class FlagStooges(Flag):
+        LARRY = 1
+        CURLY = 2
+        MOE = 4
+        BIG = 389
+except Exception as exc:
+    FlagStooges = exc
 
 class FlagStoogesWithZero(Flag):
     NOFLAG = 0
@@ -88,17 +100,29 @@ class Name(StrEnum):
     BDFL = 'Guido van Rossum'
     FLUFL = 'Barry Warsaw'
 
-Question = Enum('Question', 'who what when where why', module=__name__)
+try:
+    Question = Enum('Question', 'who what when where why', module=__name__)
+except Exception as exc:
+    Question = exc
 
-Answer = Enum('Answer', 'him this then there because')
+try:
+    Answer = Enum('Answer', 'him this then there because')
+except Exception as exc:
+    Answer = exc
 
-Theory = Enum('Theory', 'rule law supposition', qualname='spanish_inquisition')
+try:
+    Theory = Enum('Theory', 'rule law supposition', qualname='spanish_inquisition')
+except Exception as exc:
+    Theory = exc
 
 # for doctests
-class Fruit(Enum):
-    TOMATO = 1
-    BANANA = 2
-    CHERRY = 3
+try:
+    class Fruit(Enum):
+        TOMATO = 1
+        BANANA = 2
+        CHERRY = 3
+except Exception:
+    pass
 
 def test_pickle_dump_load(assertion, source, target=None):
     if target is None:
@@ -1010,6 +1034,8 @@ class TestSpecial(unittest.TestCase):
                 blue = 3
 
     def test_enum_function_with_qualname(self):
+        if isinstance(Theory, Exception):
+            raise Theory
         self.assertEqual(Theory.__qualname__, 'spanish_inquisition')
 
     def test_enum_of_types(self):
@@ -1387,22 +1413,32 @@ class TestSpecial(unittest.TestCase):
                 One = 1
 
     def test_pickle_enum(self):
+        if isinstance(Stooges, Exception):
+            raise Stooges
         test_pickle_dump_load(self.assertIs, Stooges.CURLY)
         test_pickle_dump_load(self.assertIs, Stooges)
 
     def test_pickle_int(self):
+        if isinstance(IntStooges, Exception):
+            raise IntStooges
         test_pickle_dump_load(self.assertIs, IntStooges.CURLY)
         test_pickle_dump_load(self.assertIs, IntStooges)
 
     def test_pickle_float(self):
+        if isinstance(FloatStooges, Exception):
+            raise FloatStooges
         test_pickle_dump_load(self.assertIs, FloatStooges.CURLY)
         test_pickle_dump_load(self.assertIs, FloatStooges)
 
     def test_pickle_enum_function(self):
+        if isinstance(Answer, Exception):
+            raise Answer
         test_pickle_dump_load(self.assertIs, Answer.him)
         test_pickle_dump_load(self.assertIs, Answer)
 
     def test_pickle_enum_function_with_module(self):
+        if isinstance(Question, Exception):
+            raise Question
         test_pickle_dump_load(self.assertIs, Question.who)
         test_pickle_dump_load(self.assertIs, Question)
 
@@ -1466,6 +1502,8 @@ class TestSpecial(unittest.TestCase):
                 )
 
     def test_subclassing(self):
+        if isinstance(Name, Exception):
+            raise Name
         self.assertEqual(Name.BDFL, 'Guido van Rossum')
         self.assertTrue(Name.BDFL, Name('Guido van Rossum'))
         self.assertIs(Name.BDFL, getattr(Name, 'BDFL'))
@@ -3218,6 +3256,8 @@ class OldTestFlag(unittest.TestCase):
             self.assertIs(type(e), Perm)
 
     def test_pickle(self):
+        if isinstance(FlagStooges, Exception):
+            raise FlagStooges
         test_pickle_dump_load(self.assertIs, FlagStooges.CURLY)
         test_pickle_dump_load(self.assertEqual,
                         FlagStooges.CURLY|FlagStooges.MOE)
