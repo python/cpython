@@ -1512,12 +1512,15 @@ class TestPendingCalls(unittest.TestCase):
         with self.subTest('add in main, run in subinterpreter'):
             r_from_main, w_to_sub = create_pipe()
             r_from_sub, w_to_main = create_pipe()
+            timeout = time.time() + 30  # seconds
 
             def do_work():
                 _interpreters.run_string(interpid, f"""if True:
                     # Wait until this interp has handled the pending call.
                     while not os.read({r_from_main}, 1):
                         time.sleep(0.01)
+                        if time.time() > {timeout}:
+                            raise Exception('timed out!')
                     """)
             t = threading.Thread(target=do_work)
             with threading_helper.start_threads([t]):
@@ -1526,6 +1529,8 @@ class TestPendingCalls(unittest.TestCase):
                 # Wait for it to be done.
                 text = None
                 while not text:
+                    if time.time() > timeout:
+                        raise Exception('timed out!')
                     text = os.read(r_from_sub, 250)
                 # Signal the subinterpreter to stop.
                 os.write(w_to_sub, b'spam')
@@ -1536,6 +1541,7 @@ class TestPendingCalls(unittest.TestCase):
         with self.subTest('add in main, run in subinterpreter sub-thread'):
             r_from_main, w_to_sub = create_pipe()
             r_from_sub, w_to_main = create_pipe()
+            timeout = time.time() + 30  # seconds
 
             def do_work():
                 _interpreters.run_string(interpid, f"""if True:
@@ -1543,6 +1549,8 @@ class TestPendingCalls(unittest.TestCase):
                         # Wait until this interp has handled the pending call.
                         while not os.read({r_from_main}, 1):
                             time.sleep(0.01)
+                            if time.time() > {timeout}:
+                                raise Exception('timed out!')
                     t = threading.Thread(target=subthread)
                     with threading_helper.start_threads([t]):
                         pass
@@ -1554,6 +1562,8 @@ class TestPendingCalls(unittest.TestCase):
                 # Wait for it to be done.
                 text = None
                 while not text:
+                    if time.time() > timeout:
+                        raise Exception('timed out!')
                     text = os.read(r_from_sub, 250)
                 # Signal the subinterpreter to stop.
                 os.write(w_to_sub, b'spam')
