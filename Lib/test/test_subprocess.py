@@ -1694,7 +1694,7 @@ class RunFuncTestCase(BaseTestCase):
 
     @unittest.skipUnless(mswindows, "Maybe test trigger a leak on Ubuntu")
     def test_run_with_an_empty_env(self):
-        # gh-105436: fix subprocess.run(..., env={}) broken on Windows 
+        # gh-105436: fix subprocess.run(..., env={}) broken on Windows
         args = [sys.executable, "-c", 'import sys; sys.exit(57)']
         res = subprocess.run(args, env={})
         self.assertEqual(res.returncode, 57)
