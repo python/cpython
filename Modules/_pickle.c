@@ -1151,21 +1151,25 @@ _Pickler_New(PickleState *st)
     if (self == NULL)
         return NULL;
 
+    self->memo = NULL;
     self->pers_func = NULL;
+    self->pers_func_self = NULL;
     self->dispatch_table = NULL;
-    self->buffer_callback = NULL;
+    self->reducer_override = NULL;
     self->write = NULL;
+    self->output_buffer = NULL;
+    self->output_len = 0;
+    self->max_output_len = WRITE_BUF_SIZE;
     self->proto = 0;
     self->bin = 0;
     self->framing = 0;
     self->frame_start = -1;
+    self->buf_size = 0;
     self->fast = 0;
     self->fast_nesting = 0;
     self->fix_imports = 0;
     self->fast_memo = NULL;
-    self->max_output_len = WRITE_BUF_SIZE;
-    self->output_len = 0;
-    self->reducer_override = NULL;
+    self->buffer_callback = NULL;
 
     self->memo = PyMemoTable_New();
     if (self->memo == NULL) {
@@ -1635,7 +1639,13 @@ _Unpickler_New(PyObject *module)
     if (self == NULL)
         return NULL;
 
+    self->stack = NULL;
+    self->memo = NULL;
+    self->memo_size = 32;
+    self->memo_len = 0;
     self->pers_func = NULL;
+    self->pers_func_self = NULL;
+    memset(&self->buffer, 0, sizeof(Py_buffer));
     self->input_buffer = NULL;
     self->input_line = NULL;
     self->input_len = 0;
@@ -1653,9 +1663,7 @@ _Unpickler_New(PyObject *module)
     self->marks_size = 0;
     self->proto = 0;
     self->fix_imports = 0;
-    memset(&self->buffer, 0, sizeof(Py_buffer));
-    self->memo_size = 32;
-    self->memo_len = 0;
+
     self->memo = _Unpickler_NewMemo(self->memo_size);
     if (self->memo == NULL) {
         Py_DECREF(self);
