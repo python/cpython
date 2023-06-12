@@ -50,6 +50,7 @@
 #define macro(name) static int MACRO_##name
 #define super(name) static int SUPER_##name
 #define family(name, ...) static int family_##name
+#define pseudo(name) static int pseudo_##name
 
 // Dummy variables for stack effects.
 static PyObject *value, *value1, *value2, *left, *right, *res, *sum, *prod, *sub;
@@ -217,6 +218,10 @@ dummy_func(
         inst(STORE_FAST, (value --)) {
             SETLOCAL(oparg, value);
         }
+
+        pseudo(STORE_FAST_MAYBE_NULL) = {
+            STORE_FAST,
+        };
 
         inst(STORE_FAST_LOAD_FAST, (value1 -- value2)) {
             uint32_t oparg1 = oparg >> 4;
@@ -1674,6 +1679,18 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
+        pseudo(LOAD_SUPER_METHOD) = {
+            LOAD_SUPER_ATTR,
+        };
+
+        pseudo(LOAD_ZERO_SUPER_METHOD) = {
+            LOAD_SUPER_ATTR,
+        };
+
+        pseudo(LOAD_ZERO_SUPER_ATTR) = {
+            LOAD_SUPER_ATTR,
+        };
+
         inst(LOAD_SUPER_ATTR_ATTR, (unused/1, global_super, class, self -- res2 if (oparg & 1), res)) {
             assert(!(oparg & 1));
             DEOPT_IF(global_super != (PyObject *)&PySuper_Type, LOAD_SUPER_ATTR);
@@ -1771,6 +1788,10 @@ dummy_func(
                 ERROR_IF(res == NULL, error);
             }
         }
+
+        pseudo(LOAD_METHOD) = {
+            LOAD_ATTR,
+        };
 
         inst(LOAD_ATTR_INSTANCE_VALUE, (unused/1, type_version/2, index/1, unused/5, owner -- res2 if (oparg & 1), res)) {
             PyTypeObject *tp = Py_TYPE(owner);
@@ -2141,6 +2162,16 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION */
             CHECK_EVAL_BREAKER();
         }
+
+        pseudo(JUMP) = {
+            JUMP_FORWARD,
+            JUMP_BACKWARD,
+        };
+
+        pseudo(JUMP_NO_INTERRUPT) = {
+            JUMP_FORWARD,
+            JUMP_BACKWARD_NO_INTERRUPT,
+        };
 
         inst(ENTER_EXECUTOR, (--)) {
             _PyExecutorObject *executor = (_PyExecutorObject *)frame->f_code->co_executors->executors[oparg];
@@ -2529,6 +2560,22 @@ dummy_func(
                     3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
             ERROR_IF(res == NULL, error);
         }
+
+        pseudo(SETUP_FINALLY) = {
+            NOP,
+        };
+
+        pseudo(SETUP_CLEANUP) = {
+            NOP,
+        };
+
+        pseudo(SETUP_WITH) = {
+            NOP,
+        };
+
+        pseudo(POP_BLOCK) = {
+            NOP,
+        };
 
         inst(PUSH_EXC_INFO, (new_exc -- prev_exc, new_exc)) {
             _PyErr_StackItem *exc_info = tstate->exc_info;
