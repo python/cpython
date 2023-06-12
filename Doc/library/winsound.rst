@@ -102,15 +102,6 @@ provided by Windows platforms.  It includes functions and several constants.
       combination of this flag and :const:`SND_ASYNC` will raise :exc:`RuntimeError`.
 
 
-.. data:: SND_PURGE
-
-   Stop playing all instances of the specified sound.
-
-   .. note::
-
-      This flag is not supported on modern Windows platforms.
-
-
 .. data:: SND_ASYNC
 
    Return immediately, allowing sounds to play asynchronously.
@@ -124,15 +115,6 @@ provided by Windows platforms.  It includes functions and several constants.
 .. data:: SND_NOSTOP
 
    Do not interrupt sounds currently playing.
-
-
-.. data:: SND_NOWAIT
-
-   Return immediately if the sound driver is busy.
-
-   .. note::
-
-      This flag is not supported on modern Windows platforms.
 
 
 .. data:: MB_ICONASTERISK
@@ -159,3 +141,6 @@ provided by Windows platforms.  It includes functions and several constants.
 
    Play the ``SystemDefault`` sound.
 
+.. versionchanged:: 3.13
+
+   The unsupported and non-functional SND_NOWAIT and SND_PURGE flags are removed in 3.13.

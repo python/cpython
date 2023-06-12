@@ -45,11 +45,9 @@ PyDoc_STRVAR(sound_module_doc,
 "SND_ALIAS - sound is a registry sound association name\n"
 "SND_LOOP - Play the sound repeatedly; must also specify SND_ASYNC\n"
 "SND_MEMORY - sound is a memory image of a wav file\n"
-"SND_PURGE - stop all instances of the specified sound\n"
 "SND_ASYNC - PlaySound returns immediately\n"
 "SND_NODEFAULT - Do not play a default beep if the sound can not be found\n"
 "SND_NOSTOP - Do not interrupt any sounds currently playing\n"  // Raising RuntimeError if needed
-"SND_NOWAIT - Return immediately if the sound driver is busy\n" // Without any errors
 "\n"
 "Beep(frequency, duration) - Make a beep through the PC speaker.\n"
 "MessageBeep(type) - Call Windows MessageBeep.");
@@ -214,11 +212,9 @@ exec_module(PyObject *module)
     ADD_DEFINE(SND_ASYNC);
     ADD_DEFINE(SND_NODEFAULT);
     ADD_DEFINE(SND_NOSTOP);
-    ADD_DEFINE(SND_NOWAIT);
     ADD_DEFINE(SND_ALIAS);
     ADD_DEFINE(SND_FILENAME);
     ADD_DEFINE(SND_MEMORY);
-    ADD_DEFINE(SND_PURGE);
     ADD_DEFINE(SND_LOOP);
     ADD_DEFINE(SND_APPLICATION);
 
