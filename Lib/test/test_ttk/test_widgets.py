@@ -8,8 +8,7 @@ from test.test_ttk_textonly import MockTclObj
 from test.test_tkinter.support import (AbstractTkTest, tcl_version, get_tk_patchlevel,
                                   simulate_mouse_click, AbstractDefaultRootTest)
 from test.test_tkinter.widget_tests import (add_standard_options,
-    AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests,
-    setUpModule)
+    AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests)
 
 requires('gui')
 
@@ -50,7 +49,6 @@ class StandardTtkOptionsTests(StandardOptionsTests):
         widget2 = self.create(class_='Foo')
         self.assertEqual(widget2['class'], 'Foo')
         # XXX
-        pass
 
 
 class WidgetTest(AbstractTkTest, unittest.TestCase):

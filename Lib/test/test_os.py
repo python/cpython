@@ -556,6 +556,15 @@ class StatAttributeTests(unittest.TestCase):
             nanosecondy = getattr(result, name + "_ns") // 10000
             self.assertAlmostEqual(floaty, nanosecondy, delta=2)
 
+        # Ensure both birthtime and birthtime_ns roughly agree, if present
+        try:
+            floaty = int(result.st_birthtime * 100000)
+            nanosecondy = result.st_birthtime_ns // 10000
+        except AttributeError:
+            pass
+        else:
+            self.assertAlmostEqual(floaty, nanosecondy, delta=2)
+
         try:
             result[200]
             self.fail("No exception raised")
@@ -742,6 +751,7 @@ class StatAttributeTests(unittest.TestCase):
         )
         result = os.stat(fname)
         self.assertNotEqual(result.st_size, 0)
+        self.assertTrue(os.path.isfile(fname))
 
     @unittest.skipUnless(sys.platform == "win32", "Win32 specific tests")
     def test_stat_block_device(self):
@@ -2220,6 +2230,26 @@ class TestInvalidFD(unittest.TestCase):
     def test_dup2(self):
         self.check(os.dup2, 20)
 
+    @unittest.skipUnless(hasattr(os, 'dup2'), 'test needs os.dup2()')
+    @unittest.skipIf(
+        support.is_emscripten,
+        "dup2() with negative fds is broken on Emscripten (see gh-102179)"
+    )
+    def test_dup2_negative_fd(self):
+        valid_fd = os.open(__file__, os.O_RDONLY)
+        self.addCleanup(os.close, valid_fd)
+        fds = [
+            valid_fd,
+            -1,
+            -2**31,
+        ]
+        for fd, fd2 in itertools.product(fds, repeat=2):
+            if fd != fd2:
+                with self.subTest(fd=fd, fd2=fd2):
+                    with self.assertRaises(OSError) as ctx:
+                        os.dup2(fd, fd2)
+                    self.assertEqual(ctx.exception.errno, errno.EBADF)
+
     @unittest.skipUnless(hasattr(os, 'fchmod'), 'test needs os.fchmod()')
     def test_fchmod(self):
         self.check(os.fchmod, 0)
@@ -2627,6 +2657,54 @@ class Win32ListdirTests(unittest.TestCase):
                 [os.fsencode(path) for path in self.created_paths])
 
 
+@unittest.skipUnless(os.name == "nt", "NT specific tests")
+class Win32ListdriveTests(unittest.TestCase):
+    """Test listdrive, listmounts and listvolume on Windows."""
+
+    def setUp(self):
+        # Get drives and volumes from fsutil
+        out = subprocess.check_output(
+            ["fsutil.exe", "volume", "list"],
+            cwd=os.path.join(os.getenv("SystemRoot", "\\Windows"), "System32"),
+            encoding="mbcs",
+            errors="ignore",
+        )
+        lines = out.splitlines()
+        self.known_volumes = {l for l in lines if l.startswith('\\\\?\\')}
+        self.known_drives = {l for l in lines if l[1:] == ':\\'}
+        self.known_mounts = {l for l in lines if l[1:3] == ':\\'}
+
+    def test_listdrives(self):
+        drives = os.listdrives()
+        self.assertIsInstance(drives, list)
+        self.assertSetEqual(
+            self.known_drives,
+            self.known_drives & set(drives),
+        )
+
+    def test_listvolumes(self):
+        volumes = os.listvolumes()
+        self.assertIsInstance(volumes, list)
+        self.assertSetEqual(
+            self.known_volumes,
+            self.known_volumes & set(volumes),
+        )
+
+    def test_listmounts(self):
+        for volume in os.listvolumes():
+            try:
+                mounts = os.listmounts(volume)
+            except OSError as ex:
+                if support.verbose:
+                    print("Skipping", volume, "because of", ex)
+            else:
+                self.assertIsInstance(mounts, list)
+                self.assertSetEqual(
+                    set(mounts),
+                    self.known_mounts & set(mounts),
+                )
+
+
 @unittest.skipUnless(hasattr(os, 'readlink'), 'needs os.readlink()')
 class ReadlinkTests(unittest.TestCase):
     filelink = 'readlinktest'
@@ -2860,6 +2938,7 @@ class Win32SymlinkTests(unittest.TestCase):
             self.assertEqual(st, os.stat(alias))
             self.assertFalse(stat.S_ISLNK(st.st_mode))
             self.assertEqual(st.st_reparse_tag, stat.IO_REPARSE_TAG_APPEXECLINK)
+            self.assertTrue(os.path.isfile(alias))
             # testing the first one we see is sufficient
             break
         else:
@@ -3062,11 +3141,13 @@ class DeviceEncodingTests(unittest.TestCase):
 class PidTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, 'getppid'), "test needs os.getppid")
     def test_getppid(self):
-        p = subprocess.Popen([sys.executable, '-c',
+        p = subprocess.Popen([sys._base_executable, '-c',
                               'import os; print(os.getppid())'],
-                             stdout=subprocess.PIPE)
-        stdout, _ = p.communicate()
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        stdout, error = p.communicate()
         # We are the parent of our subprocess
+        self.assertEqual(error, b'')
         self.assertEqual(int(stdout), os.getpid())
 
     def check_waitpid(self, code, exitcode, callback=None):
@@ -3133,6 +3214,14 @@ class PidTests(unittest.TestCase):
 
 @support.requires_subprocess()
 class SpawnTests(unittest.TestCase):
+    @staticmethod
+    def quote_args(args):
+        # On Windows, os.spawn* simply joins arguments with spaces:
+        # arguments need to be quoted
+        if os.name != 'nt':
+            return args
+        return [f'"{arg}"' if " " in arg.strip() else arg for arg in args]
+
     def create_args(self, *, with_env=False, use_bytes=False):
         self.exitcode = 17
 
@@ -3153,115 +3242,118 @@ class SpawnTests(unittest.TestCase):
         with open(filename, "w", encoding="utf-8") as fp:
             fp.write(code)
 
-        args = [sys.executable, filename]
+        program = sys.executable
+        args = self.quote_args([program, filename])
         if use_bytes:
+            program = os.fsencode(program)
             args = [os.fsencode(a) for a in args]
             self.env = {os.fsencode(k): os.fsencode(v)
                         for k, v in self.env.items()}
 
-        return args
+        return program, args
 
     @requires_os_func('spawnl')
     def test_spawnl(self):
-        args = self.create_args()
-        exitcode = os.spawnl(os.P_WAIT, args[0], *args)
+        program, args = self.create_args()
+        exitcode = os.spawnl(os.P_WAIT, program, *args)
         self.assertEqual(exitcode, self.exitcode)
 
     @requires_os_func('spawnle')
     def test_spawnle(self):
-        args = self.create_args(with_env=True)
-        exitcode = os.spawnle(os.P_WAIT, args[0], *args, self.env)
+        program, args = self.create_args(with_env=True)
+        exitcode = os.spawnle(os.P_WAIT, program, *args, self.env)
         self.assertEqual(exitcode, self.exitcode)
 
     @requires_os_func('spawnlp')
     def test_spawnlp(self):
-        args = self.create_args()
-        exitcode = os.spawnlp(os.P_WAIT, args[0], *args)
+        program, args = self.create_args()
+        exitcode = os.spawnlp(os.P_WAIT, program, *args)
         self.assertEqual(exitcode, self.exitcode)
 
     @requires_os_func('spawnlpe')
     def test_spawnlpe(self):
-        args = self.create_args(with_env=True)
-        exitcode = os.spawnlpe(os.P_WAIT, args[0], *args, self.env)
+        program, args = self.create_args(with_env=True)
+        exitcode = os.spawnlpe(os.P_WAIT, program, *args, self.env)
         self.assertEqual(exitcode, self.exitcode)
 
     @requires_os_func('spawnv')
     def test_spawnv(self):
-        args = self.create_args()
-        exitcode = os.spawnv(os.P_WAIT, args[0], args)
+        program, args = self.create_args()
+        exitcode = os.spawnv(os.P_WAIT, program, args)
         self.assertEqual(exitcode, self.exitcode)
 
         # Test for PyUnicode_FSConverter()
-        exitcode = os.spawnv(os.P_WAIT, FakePath(args[0]), args)
+        exitcode = os.spawnv(os.P_WAIT, FakePath(program), args)
         self.assertEqual(exitcode, self.exitcode)
 
     @requires_os_func('spawnve')
     def test_spawnve(self):
-        args = self.create_args(with_env=True)
-        exitcode = os.spawnve(os.P_WAIT, args[0], args, self.env)
+        program, args = self.create_args(with_env=True)
+        exitcode = os.spawnve(os.P_WAIT, program, args, self.env)
         self.assertEqual(exitcode, self.exitcode)
 
     @requires_os_func('spawnvp')
     def test_spawnvp(self):
-        args = self.create_args()
-        exitcode = os.spawnvp(os.P_WAIT, args[0], args)
+        program, args = self.create_args()
+        exitcode = os.spawnvp(os.P_WAIT, program, args)
         self.assertEqual(exitcode, self.exitcode)
 
     @requires_os_func('spawnvpe')
     def test_spawnvpe(self):
-        args = self.create_args(with_env=True)
-        exitcode = os.spawnvpe(os.P_WAIT, args[0], args, self.env)
+        program, args = self.create_args(with_env=True)
+        exitcode = os.spawnvpe(os.P_WAIT, program, args, self.env)
         self.assertEqual(exitcode, self.exitcode)
 
     @requires_os_func('spawnv')
     def test_nowait(self):
-        args = self.create_args()
-        pid = os.spawnv(os.P_NOWAIT, args[0], args)
+        program, args = self.create_args()
+        pid = os.spawnv(os.P_NOWAIT, program, args)
         support.wait_process(pid, exitcode=self.exitcode)
 
     @requires_os_func('spawnve')
     def test_spawnve_bytes(self):
         # Test bytes handling in parse_arglist and parse_envlist (#28114)
-        args = self.create_args(with_env=True, use_bytes=True)
-        exitcode = os.spawnve(os.P_WAIT, args[0], args, self.env)
+        program, args = self.create_args(with_env=True, use_bytes=True)
+        exitcode = os.spawnve(os.P_WAIT, program, args, self.env)
         self.assertEqual(exitcode, self.exitcode)
 
     @requires_os_func('spawnl')
     def test_spawnl_noargs(self):
-        args = self.create_args()
-        self.assertRaises(ValueError, os.spawnl, os.P_NOWAIT, args[0])
-        self.assertRaises(ValueError, os.spawnl, os.P_NOWAIT, args[0], '')
+        program, __ = self.create_args()
+        self.assertRaises(ValueError, os.spawnl, os.P_NOWAIT, program)
+        self.assertRaises(ValueError, os.spawnl, os.P_NOWAIT, program, '')
 
     @requires_os_func('spawnle')
     def test_spawnle_noargs(self):
-        args = self.create_args()
-        self.assertRaises(ValueError, os.spawnle, os.P_NOWAIT, args[0], {})
-        self.assertRaises(ValueError, os.spawnle, os.P_NOWAIT, args[0], '', {})
+        program, __ = self.create_args()
+        self.assertRaises(ValueError, os.spawnle, os.P_NOWAIT, program, {})
+        self.assertRaises(ValueError, os.spawnle, os.P_NOWAIT, program, '', {})
 
     @requires_os_func('spawnv')
     def test_spawnv_noargs(self):
-        args = self.create_args()
-        self.assertRaises(ValueError, os.spawnv, os.P_NOWAIT, args[0], ())
-        self.assertRaises(ValueError, os.spawnv, os.P_NOWAIT, args[0], [])
-        self.assertRaises(ValueError, os.spawnv, os.P_NOWAIT, args[0], ('',))
-        self.assertRaises(ValueError, os.spawnv, os.P_NOWAIT, args[0], [''])
+        program, __ = self.create_args()
+        self.assertRaises(ValueError, os.spawnv, os.P_NOWAIT, program, ())
+        self.assertRaises(ValueError, os.spawnv, os.P_NOWAIT, program, [])
+        self.assertRaises(ValueError, os.spawnv, os.P_NOWAIT, program, ('',))
+        self.assertRaises(ValueError, os.spawnv, os.P_NOWAIT, program, [''])
 
     @requires_os_func('spawnve')
     def test_spawnve_noargs(self):
-        args = self.create_args()
-        self.assertRaises(ValueError, os.spawnve, os.P_NOWAIT, args[0], (), {})
-        self.assertRaises(ValueError, os.spawnve, os.P_NOWAIT, args[0], [], {})
-        self.assertRaises(ValueError, os.spawnve, os.P_NOWAIT, args[0], ('',), {})
-        self.assertRaises(ValueError, os.spawnve, os.P_NOWAIT, args[0], [''], {})
+        program, __ = self.create_args()
+        self.assertRaises(ValueError, os.spawnve, os.P_NOWAIT, program, (), {})
+        self.assertRaises(ValueError, os.spawnve, os.P_NOWAIT, program, [], {})
+        self.assertRaises(ValueError, os.spawnve, os.P_NOWAIT, program, ('',), {})
+        self.assertRaises(ValueError, os.spawnve, os.P_NOWAIT, program, [''], {})
 
     def _test_invalid_env(self, spawn):
-        args = [sys.executable, '-c', 'pass']
+        program = sys.executable
+        args = self.quote_args([program, '-c', 'pass'])
 
         # null character in the environment variable name
         newenv = os.environ.copy()
         newenv["FRUIT\0VEGETABLE"] = "cabbage"
         try:
-            exitcode = spawn(os.P_WAIT, args[0], args, newenv)
+            exitcode = spawn(os.P_WAIT, program, args, newenv)
         except ValueError:
             pass
         else:
@@ -3271,7 +3363,7 @@ class SpawnTests(unittest.TestCase):
         newenv = os.environ.copy()
         newenv["FRUIT"] = "orange\0VEGETABLE=cabbage"
         try:
-            exitcode = spawn(os.P_WAIT, args[0], args, newenv)
+            exitcode = spawn(os.P_WAIT, program, args, newenv)
         except ValueError:
             pass
         else:
@@ -3281,7 +3373,7 @@ class SpawnTests(unittest.TestCase):
         newenv = os.environ.copy()
         newenv["FRUIT=ORANGE"] = "lemon"
         try:
-            exitcode = spawn(os.P_WAIT, args[0], args, newenv)
+            exitcode = spawn(os.P_WAIT, program, args, newenv)
         except ValueError:
             pass
         else:
@@ -3294,10 +3386,11 @@ class SpawnTests(unittest.TestCase):
             fp.write('import sys, os\n'
                      'if os.getenv("FRUIT") != "orange=lemon":\n'
                      '    raise AssertionError')
-        args = [sys.executable, filename]
+
+        args = self.quote_args([program, filename])
         newenv = os.environ.copy()
         newenv["FRUIT"] = "orange=lemon"
-        exitcode = spawn(os.P_WAIT, args[0], args, newenv)
+        exitcode = spawn(os.P_WAIT, program, args, newenv)
         self.assertEqual(exitcode, 0)
 
     @requires_os_func('spawnve')
@@ -4097,6 +4190,7 @@ class PathTConverterTests(unittest.TestCase):
 @unittest.skipUnless(hasattr(os, 'get_blocking'),
                      'needs os.get_blocking() and os.set_blocking()')
 @unittest.skipIf(support.is_emscripten, "Cannot unset blocking flag")
+@unittest.skipIf(sys.platform == 'win32', 'Windows only supports blocking on pipes')
 class BlockingTests(unittest.TestCase):
     def test_blocking(self):
         fd = os.open(__file__, os.O_RDONLY)
@@ -4161,7 +4255,8 @@ class TestScandir(unittest.TestCase):
             for attr in dir(stat1):
                 if not attr.startswith("st_"):
                     continue
-                if attr in ("st_dev", "st_ino", "st_nlink"):
+                if attr in ("st_dev", "st_ino", "st_nlink", "st_ctime",
+                            "st_ctime_ns"):
                     continue
                 self.assertEqual(getattr(stat1, attr),
                                  getattr(stat2, attr),
@@ -4545,6 +4640,12 @@ class TestPEP519(unittest.TestCase):
     def test_pathlike_class_getitem(self):
         self.assertIsInstance(os.PathLike[bytes], types.GenericAlias)
 
+    def test_pathlike_subclass_slots(self):
+        class A(os.PathLike):
+            __slots__ = ()
+            def __fspath__(self):
+                return ''
+        self.assertFalse(hasattr(A(), '__dict__'))
 
 class TimesTests(unittest.TestCase):
     def test_times(self):
@@ -4604,6 +4705,22 @@ class ForkTests(unittest.TestCase):
         _, out, err = assert_python_ok("-c", code, PYTHONOPTIMIZE='0')
         self.assertEqual(err.decode("utf-8"), "")
         self.assertEqual(out.decode("utf-8"), "")
+
+    def test_fork_at_exit(self):
+        code = """if 1:
+            import atexit
+            import os
+
+            def exit_handler():
+                pid = os.fork()
+                if pid != 0:
+                    print("shouldn't be printed")
+
+            atexit.register(exit_handler)
+        """
+        _, out, err = assert_python_ok("-c", code)
+        self.assertEqual(b"", out)
+        self.assertIn(b"can't fork at interpreter shutdown", err)
 
 
 # Only test if the C version is provided, otherwise TestPEP519 already tested

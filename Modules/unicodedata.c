@@ -800,7 +800,7 @@ is_normalized_quickcheck(PyObject *self, PyObject *input, bool nfc, bool k,
 {
     /* UCD 3.2.0 is requested, quickchecks must be disabled. */
     if (UCD_Check(self)) {
-        return NO;
+        return MAYBE;
     }
 
     if (PyUnicode_IS_ASCII(input)) {
@@ -864,10 +864,6 @@ unicodedata_UCD_is_normalized_impl(PyObject *self, PyObject *form,
                                    PyObject *input)
 /*[clinic end generated code: output=11e5a3694e723ca5 input=a544f14cea79e508]*/
 {
-    if (PyUnicode_READY(input) == -1) {
-        return NULL;
-    }
-
     if (PyUnicode_GET_LENGTH(input) == 0) {
         /* special case empty input strings. */
         Py_RETURN_TRUE;
@@ -1516,6 +1512,7 @@ unicodedata_exec(PyObject *module)
 
 static PyModuleDef_Slot unicodedata_slots[] = {
     {Py_mod_exec, unicodedata_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

@@ -29,12 +29,6 @@ The following functions can be safely called before Python is initialized:
   * :c:func:`PyMem_SetAllocator`
   * :c:func:`PyMem_SetupDebugHooks`
   * :c:func:`PyObject_SetArenaAllocator`
-  * :c:func:`Py_SetPath`
-  * :c:func:`Py_SetProgramName`
-  * :c:func:`Py_SetPythonHome`
-  * :c:func:`Py_SetStandardStreamEncoding`
-  * :c:func:`PySys_AddWarnOption`
-  * :c:func:`PySys_AddXOption`
   * :c:func:`PySys_ResetWarnOptions`
 
 * Informative functions:
@@ -65,7 +59,7 @@ The following functions can be safely called before Python is initialized:
    :c:func:`Py_Initialize`: :c:func:`Py_EncodeLocale`, :c:func:`Py_GetPath`,
    :c:func:`Py_GetPrefix`, :c:func:`Py_GetExecPrefix`,
    :c:func:`Py_GetProgramFullPath`, :c:func:`Py_GetPythonHome`,
-   :c:func:`Py_GetProgramName` and :c:func:`PyEval_InitThreads`.
+   and :c:func:`Py_GetProgramName`.
 
 
 .. _global-conf-vars:
@@ -332,16 +326,12 @@ Initializing and finalizing the interpreter
 .. c:function:: void Py_Initialize()
 
    .. index::
-      single: Py_SetProgramName()
-      single: PyEval_InitThreads()
       single: modules (in module sys)
       single: path (in module sys)
-      module: builtins
-      module: __main__
-      module: sys
+      pair: module; builtins
+      pair: module; __main__
+      pair: module; sys
       triple: module; search; path
-      single: PySys_SetArgv()
-      single: PySys_SetArgvEx()
       single: Py_FinalizeEx()
 
    Initialize the Python interpreter.  In an application embedding  Python,
@@ -352,7 +342,9 @@ Initializing and finalizing the interpreter
    the table of loaded modules (``sys.modules``), and creates the fundamental
    modules :mod:`builtins`, :mod:`__main__` and :mod:`sys`.  It also initializes
    the module search path (``sys.path``). It does not set ``sys.argv``; use
-   :c:func:`PySys_SetArgvEx` for that.  This is a no-op when called for a second time
+   the new :c:type:`PyConfig` API of the :ref:`Python Initialization
+   Configuration <init-config>` for that.  This is a no-op when called for a
+   second time
    (without calling :c:func:`Py_FinalizeEx` first).  There is no return value; it is a
    fatal error if the initialization fails.
 
@@ -425,76 +417,9 @@ Process-wide parameters
 =======================
 
 
-.. c:function:: int Py_SetStandardStreamEncoding(const char *encoding, const char *errors)
-
-   .. index::
-      single: Py_Initialize()
-      single: main()
-      triple: stdin; stdout; sdterr
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.stdio_encoding` and :c:member:`PyConfig.stdio_errors`
-   should be used instead, see :ref:`Python Initialization Configuration
-   <init-config>`.
-
-   This function should be called before :c:func:`Py_Initialize`, if it is
-   called at all. It specifies which encoding and error handling to use
-   with standard IO, with the same meanings as in :func:`str.encode`.
-
-   It overrides :envvar:`PYTHONIOENCODING` values, and allows embedding code
-   to control IO encoding when the environment variable does not work.
-
-   *encoding* and/or *errors* may be ``NULL`` to use
-   :envvar:`PYTHONIOENCODING` and/or default values (depending on other
-   settings).
-
-   Note that :data:`sys.stderr` always uses the "backslashreplace" error
-   handler, regardless of this (or any other) setting.
-
-   If :c:func:`Py_FinalizeEx` is called, this function will need to be called
-   again in order to affect subsequent calls to :c:func:`Py_Initialize`.
-
-   Returns ``0`` if successful, a nonzero value on error (e.g. calling after the
-   interpreter has already been initialized).
-
-   .. versionadded:: 3.4
-
-   .. deprecated:: 3.11
-
-
-.. c:function:: void Py_SetProgramName(const wchar_t *name)
-
-   .. index::
-      single: Py_Initialize()
-      single: main()
-      single: Py_GetPath()
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.program_name` should be used instead, see :ref:`Python
-   Initialization Configuration <init-config>`.
-
-   This function should be called before :c:func:`Py_Initialize` is called for
-   the first time, if it is called at all.  It tells the interpreter the value
-   of the ``argv[0]`` argument to the :c:func:`main` function of the program
-   (converted to wide characters).
-   This is used by :c:func:`Py_GetPath` and some other functions below to find
-   the Python run-time libraries relative to the interpreter executable.  The
-   default value is ``'python'``.  The argument should point to a
-   zero-terminated wide character string in static storage whose contents will not
-   change for the duration of the program's execution.  No code in the Python
-   interpreter will change the contents of this storage.
-
-   Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:expr:`wchar_*` string.
-
-   .. deprecated:: 3.11
-
-
 .. c:function:: wchar* Py_GetProgramName()
 
-   .. index:: single: Py_SetProgramName()
-
-   Return the program name set with :c:func:`Py_SetProgramName`, or the default.
+   Return the program name set with :c:member:`PyConfig.program_name`, or the default.
    The returned string points into static storage; the caller should not modify its
    value.
 
@@ -504,16 +429,19 @@ Process-wide parameters
    .. versionchanged:: 3.10
       It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
+   .. deprecated-removed:: 3.13 3.15
+      Get :data:`sys.executable` instead.
+
 
 .. c:function:: wchar_t* Py_GetPrefix()
 
    Return the *prefix* for installed platform-independent files. This is derived
    through a number of complicated rules from the program name set with
-   :c:func:`Py_SetProgramName` and some environment variables; for example, if the
+   :c:member:`PyConfig.program_name` and some environment variables; for example, if the
    program name is ``'/usr/local/bin/python'``, the prefix is ``'/usr/local'``. The
    returned string points into static storage; the caller should not modify its
    value.  This corresponds to the :makevar:`prefix` variable in the top-level
-   :file:`Makefile` and the ``--prefix`` argument to the :program:`configure`
+   :file:`Makefile` and the :option:`--prefix` argument to the :program:`configure`
    script at build time.  The value is available to Python code as ``sys.prefix``.
    It is only useful on Unix.  See also the next function.
 
@@ -523,12 +451,15 @@ Process-wide parameters
    .. versionchanged:: 3.10
       It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
+   .. deprecated-removed:: 3.13 3.15
+      Get :data:`sys.prefix` instead.
+
 
 .. c:function:: wchar_t* Py_GetExecPrefix()
 
    Return the *exec-prefix* for installed platform-*dependent* files.  This is
    derived through a number of complicated rules from the program name set with
-   :c:func:`Py_SetProgramName` and some environment variables; for example, if the
+   :c:member:`PyConfig.program_name` and some environment variables; for example, if the
    program name is ``'/usr/local/bin/python'``, the exec-prefix is
    ``'/usr/local'``.  The returned string points into static storage; the caller
    should not modify its value.  This corresponds to the :makevar:`exec_prefix`
@@ -564,16 +495,18 @@ Process-wide parameters
    .. versionchanged:: 3.10
       It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
+   .. deprecated-removed:: 3.13 3.15
+      Get :data:`sys.exec_prefix` instead.
+
 
 .. c:function:: wchar_t* Py_GetProgramFullPath()
 
    .. index::
-      single: Py_SetProgramName()
       single: executable (in module sys)
 
    Return the full program name of the Python executable; this is  computed as a
    side-effect of deriving the default module search path  from the program name
-   (set by :c:func:`Py_SetProgramName` above). The returned string points into
+   (set by :c:member:`PyConfig.program_name`). The returned string points into
    static storage; the caller should not modify its value.  The value is available
    to Python code as ``sys.executable``.
 
@@ -583,16 +516,18 @@ Process-wide parameters
    .. versionchanged:: 3.10
       It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
+   .. deprecated-removed:: 3.13 3.15
+      Get :data:`sys.executable` instead.
+
 
 .. c:function:: wchar_t* Py_GetPath()
 
    .. index::
       triple: module; search; path
       single: path (in module sys)
-      single: Py_SetPath()
 
    Return the default module search path; this is computed from the program name
-   (set by :c:func:`Py_SetProgramName` above) and some environment variables.
+   (set by :c:member:`PyConfig.program_name`) and some environment variables.
    The returned string consists of a series of directory names separated by a
    platform dependent delimiter character.  The delimiter character is ``':'``
    on Unix and macOS, ``';'`` on Windows.  The returned string points into
@@ -609,43 +544,8 @@ Process-wide parameters
    .. versionchanged:: 3.10
       It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
-
-.. c:function::  void Py_SetPath(const wchar_t *)
-
-   .. index::
-      triple: module; search; path
-      single: path (in module sys)
-      single: Py_GetPath()
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.module_search_paths` and
-   :c:member:`PyConfig.module_search_paths_set` should be used instead, see
-   :ref:`Python Initialization Configuration <init-config>`.
-
-   Set the default module search path.  If this function is called before
-   :c:func:`Py_Initialize`, then :c:func:`Py_GetPath` won't attempt to compute a
-   default search path but uses the one provided instead.  This is useful if
-   Python is embedded by an application that has full knowledge of the location
-   of all modules.  The path components should be separated by the platform
-   dependent delimiter character, which is ``':'`` on Unix and macOS, ``';'``
-   on Windows.
-
-   This also causes :data:`sys.executable` to be set to the program
-   full path (see :c:func:`Py_GetProgramFullPath`) and for :data:`sys.prefix` and
-   :data:`sys.exec_prefix` to be empty.  It is up to the caller to modify these
-   if required after calling :c:func:`Py_Initialize`.
-
-   Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:expr:`wchar_*` string.
-
-   The path argument is copied internally, so the caller may free it after the
-   call completes.
-
-   .. versionchanged:: 3.8
-      The program full path is now used for :data:`sys.executable`, instead
-      of the program name.
-
-   .. deprecated:: 3.11
+   .. deprecated-removed:: 3.13 3.15
+      Get :data:`sys.path` instead.
 
 
 .. c:function:: const char* Py_GetVersion()
@@ -718,110 +618,10 @@ Process-wide parameters
    ``sys.version``.
 
 
-.. c:function:: void PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
+.. c:function:: wchar_t* Py_GetPythonHome()
 
-   .. index::
-      single: main()
-      single: Py_FatalError()
-      single: argv (in module sys)
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.argv`, :c:member:`PyConfig.parse_argv` and
-   :c:member:`PyConfig.safe_path` should be used instead, see :ref:`Python
-   Initialization Configuration <init-config>`.
-
-   Set :data:`sys.argv` based on *argc* and *argv*.  These parameters are
-   similar to those passed to the program's :c:func:`main` function with the
-   difference that the first entry should refer to the script file to be
-   executed rather than the executable hosting the Python interpreter.  If there
-   isn't a script that will be run, the first entry in *argv* can be an empty
-   string.  If this function fails to initialize :data:`sys.argv`, a fatal
-   condition is signalled using :c:func:`Py_FatalError`.
-
-   If *updatepath* is zero, this is all the function does.  If *updatepath*
-   is non-zero, the function also modifies :data:`sys.path` according to the
-   following algorithm:
-
-   - If the name of an existing script is passed in ``argv[0]``, the absolute
-     path of the directory where the script is located is prepended to
-     :data:`sys.path`.
-   - Otherwise (that is, if *argc* is ``0`` or ``argv[0]`` doesn't point
-     to an existing file name), an empty string is prepended to
-     :data:`sys.path`, which is the same as prepending the current working
-     directory (``"."``).
-
-   Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:expr:`wchar_*` string.
-
-   See also :c:member:`PyConfig.orig_argv` and :c:member:`PyConfig.argv`
-   members of the :ref:`Python Initialization Configuration <init-config>`.
-
-   .. note::
-      It is recommended that applications embedding the Python interpreter
-      for purposes other than executing a single script pass ``0`` as *updatepath*,
-      and update :data:`sys.path` themselves if desired.
-      See `CVE-2008-5983 <https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-5983>`_.
-
-      On versions before 3.1.3, you can achieve the same effect by manually
-      popping the first :data:`sys.path` element after having called
-      :c:func:`PySys_SetArgv`, for example using::
-
-         PyRun_SimpleString("import sys; sys.path.pop(0)\n");
-
-   .. versionadded:: 3.1.3
-
-   .. XXX impl. doesn't seem consistent in allowing ``0``/``NULL`` for the params;
-      check w/ Guido.
-
-   .. deprecated:: 3.11
-
-
-.. c:function:: void PySys_SetArgv(int argc, wchar_t **argv)
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.argv` and :c:member:`PyConfig.parse_argv` should be used
-   instead, see :ref:`Python Initialization Configuration <init-config>`.
-
-   This function works like :c:func:`PySys_SetArgvEx` with *updatepath* set
-   to ``1`` unless the :program:`python` interpreter was started with the
-   :option:`-I`.
-
-   Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:expr:`wchar_*` string.
-
-   See also :c:member:`PyConfig.orig_argv` and :c:member:`PyConfig.argv`
-   members of the :ref:`Python Initialization Configuration <init-config>`.
-
-   .. versionchanged:: 3.4 The *updatepath* value depends on :option:`-I`.
-
-   .. deprecated:: 3.11
-
-
-.. c:function:: void Py_SetPythonHome(const wchar_t *home)
-
-   This API is kept for backward compatibility: setting
-   :c:member:`PyConfig.home` should be used instead, see :ref:`Python
-   Initialization Configuration <init-config>`.
-
-   Set the default "home" directory, that is, the location of the standard
-   Python libraries.  See :envvar:`PYTHONHOME` for the meaning of the
-   argument string.
-
-   The argument should point to a zero-terminated character string in static
-   storage whose contents will not change for the duration of the program's
-   execution.  No code in the Python interpreter will change the contents of
-   this storage.
-
-   Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:expr:`wchar_*` string.
-
-   .. deprecated:: 3.11
-
-
-.. c:function:: w_char* Py_GetPythonHome()
-
-   Return the default "home", that is, the value set by a previous call to
-   :c:func:`Py_SetPythonHome`, or the value of the :envvar:`PYTHONHOME`
+   Return the default "home", that is, the value set by
+   :c:member:`PyConfig.home`, or the value of the :envvar:`PYTHONHOME`
    environment variable if it is set.
 
    This function should not be called before :c:func:`Py_Initialize`, otherwise
@@ -829,6 +629,10 @@ Process-wide parameters
 
    .. versionchanged:: 3.10
       It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
+
+   .. deprecated-removed:: 3.13 3.15
+      Get :c:member:`PyConfig.home` or :envvar:`PYTHONHOME` environment
+      variable instead.
 
 
 .. _threads:
@@ -1025,45 +829,6 @@ code, or when embedding the Python interpreter:
    This data structure represents the state of a single thread.  The only public
    data member is :attr:`interp` (:c:expr:`PyInterpreterState *`), which points to
    this thread's interpreter state.
-
-
-.. c:function:: void PyEval_InitThreads()
-
-   .. index::
-      single: PyEval_AcquireThread()
-      single: PyEval_ReleaseThread()
-      single: PyEval_SaveThread()
-      single: PyEval_RestoreThread()
-
-   Deprecated function which does nothing.
-
-   In Python 3.6 and older, this function created the GIL if it didn't exist.
-
-   .. versionchanged:: 3.9
-      The function now does nothing.
-
-   .. versionchanged:: 3.7
-      This function is now called by :c:func:`Py_Initialize()`, so you don't
-      have to call it yourself anymore.
-
-   .. versionchanged:: 3.2
-      This function cannot be called before :c:func:`Py_Initialize()` anymore.
-
-   .. deprecated:: 3.9
-
-   .. index:: module: _thread
-
-
-.. c:function:: int PyEval_ThreadsInitialized()
-
-   Returns a non-zero value if :c:func:`PyEval_InitThreads` has been called.  This
-   function can be called without holding the GIL, and therefore can be used to
-   avoid calls to the locking API when running single-threaded.
-
-   .. versionchanged:: 3.7
-      The :term:`GIL` is now initialized by :c:func:`Py_Initialize()`.
-
-   .. deprecated:: 3.9
 
 
 .. c:function:: PyThreadState* PyEval_SaveThread()
@@ -1437,39 +1202,6 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    available (even when threads have not been initialized).
 
 
-.. c:function:: void PyEval_AcquireLock()
-
-   Acquire the global interpreter lock.  The lock must have been created earlier.
-   If this thread already has the lock, a deadlock ensues.
-
-   .. deprecated:: 3.2
-      This function does not update the current thread state.  Please use
-      :c:func:`PyEval_RestoreThread` or :c:func:`PyEval_AcquireThread`
-      instead.
-
-   .. note::
-      Calling this function from a thread when the runtime is finalizing
-      will terminate the thread, even if the thread was not created by Python.
-      You can use :c:func:`_Py_IsFinalizing` or :func:`sys.is_finalizing` to
-      check if the interpreter is in process of being finalized before calling
-      this function to avoid unwanted termination.
-
-   .. versionchanged:: 3.8
-      Updated to be consistent with :c:func:`PyEval_RestoreThread`,
-      :c:func:`Py_END_ALLOW_THREADS`, and :c:func:`PyGILState_Ensure`,
-      and terminate the current thread if called while the interpreter is finalizing.
-
-
-.. c:function:: void PyEval_ReleaseLock()
-
-   Release the global interpreter lock.  The lock must have been created earlier.
-
-   .. deprecated:: 3.2
-      This function does not update the current thread state.  Please use
-      :c:func:`PyEval_SaveThread` or :c:func:`PyEval_ReleaseThread`
-      instead.
-
-
 .. _sub-interpreter-support:
 
 Sub-interpreter support
@@ -1494,9 +1226,9 @@ function. You can create and destroy them using the following functions:
 .. c:function:: PyThreadState* Py_NewInterpreter()
 
    .. index::
-      module: builtins
-      module: __main__
-      module: sys
+      pair: module; builtins
+      pair: module; __main__
+      pair: module; sys
       single: stdout (in module sys)
       single: stderr (in module sys)
       single: stdin (in module sys)
