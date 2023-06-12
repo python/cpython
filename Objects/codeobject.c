@@ -153,10 +153,6 @@ intern_string_constants(PyObject *tuple, int *modified)
     for (Py_ssize_t i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
         PyObject *v = PyTuple_GET_ITEM(tuple, i);
         if (PyUnicode_CheckExact(v)) {
-            if (PyUnicode_READY(v) == -1) {
-                return -1;
-            }
-
             if (all_name_chars(v)) {
                 PyObject *w = v;
                 PyUnicode_InternInPlace(&v);
@@ -437,6 +433,7 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_weakreflist = NULL;
     co->co_extra = NULL;
     co->_co_cached = NULL;
+    co->co_executors = NULL;
 
     memcpy(_PyCode_CODE(co), PyBytes_AS_STRING(con->code),
            PyBytes_GET_SIZE(con->code));
@@ -546,17 +543,6 @@ remove_column_info(PyObject *locations)
 PyCodeObject *
 _PyCode_New(struct _PyCodeConstructor *con)
 {
-    /* Ensure that strings are ready Unicode string */
-    if (PyUnicode_READY(con->name) < 0) {
-        return NULL;
-    }
-    if (PyUnicode_READY(con->qualname) < 0) {
-        return NULL;
-    }
-    if (PyUnicode_READY(con->filename) < 0) {
-        return NULL;
-    }
-
     if (intern_strings(con->names) < 0) {
         return NULL;
     }
@@ -1691,6 +1677,12 @@ code_dealloc(PyCodeObject *co)
         }
 
         PyMem_Free(co_extra);
+    }
+    if (co->co_executors != NULL) {
+        for (int i = 0; i < co->co_executors->size; i++) {
+            Py_CLEAR(co->co_executors->executors[i]);
+        }
+        PyMem_Free(co->co_executors);
     }
 
     Py_XDECREF(co->co_consts);

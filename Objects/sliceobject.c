@@ -26,7 +26,7 @@ ellipsis_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         PyErr_SetString(PyExc_TypeError, "EllipsisType takes no arguments");
         return NULL;
     }
-    return Py_NewRef(Py_Ellipsis);
+    return Py_Ellipsis;
 }
 
 static void

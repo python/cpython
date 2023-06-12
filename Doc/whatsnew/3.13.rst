@@ -87,6 +87,13 @@ New Modules
 Improved Modules
 ================
 
+array
+-----
+
+* Add ``'w'`` type code that can be used for Unicode strings.
+  It can be used instead of ``'u'`` type code, which is deprecated.
+  (Contributed by Inada Naoki in :gh:`80480`.)
+
 io
 --
 
@@ -106,6 +113,13 @@ pathlib
   :meth:`~pathlib.Path.rglob`.
   (Contributed by Barney Gale in :gh:`77609`.)
 
+traceback
+---------
+
+* Add *show_group* paramter to :func:`traceback.TracebackException.format_exception_only`
+  to format the nested exceptions of a :exc:`BaseExceptionGroup` instance, recursively.
+  (Contributed by Irit Katriel in :gh:`105292`.)
+
 Optimizations
 =============
 
@@ -120,6 +134,11 @@ Deprecated
   They will be removed in Python 3.15.
   (Contributed by Victor Stinner in :gh:`105096`.)
 
+* :mod:`array`'s ``'u'`` format code, deprecated in docs since Python 3.3,
+  emits :exc:`DeprecationWarning` since 3.13
+  and will be removed in Python 3.16.
+  Use the ``'w'`` format code instead.
+  (contributed by Hugo van Kemenade in :gh:`80480`)
 
 Removed
 =======
@@ -292,6 +311,29 @@ Removed
   added in Python 3.8 and the old macros were deprecated in Python 3.11.
   (Contributed by Irit Katriel in :gh:`105111`.)
 
+* Remove ``locale.resetlocale()`` function deprecated in Python 3.11:
+  use ``locale.setlocale(locale.LC_ALL, "")`` instead.
+  (Contributed by Victor Stinner in :gh:`104783`.)
+
+* Remove the undocumented and untested ``logging.Logger.warn()`` method,
+  deprecated since Python 3.3, which was an alias to the
+  :meth:`logging.Logger.warning` method: use the :meth:`logging.Logger.warning`
+  method instead.
+  (Contributed by Victor Stinner in :gh:`105376`.)
+
+* Remove *cafile*, *capath* and *cadefault* parameters of the
+  :func:`urllib.request.urlopen` function, deprecated in Python 3.6: use the
+  *context* parameter instead. Please use
+  :meth:`ssl.SSLContext.load_cert_chain` instead, or let
+  :func:`ssl.create_default_context` select the system's trusted CA
+  certificates for you.
+  (Contributed by Victor Stinner in :gh:`105382`.)
+
+* Remove deprecated ``webbrowser.MacOSXOSAScript._name`` attribute.
+  Use :attr:`webbrowser.MacOSXOSAScript.name <webbrowser.controller.name>`
+  attribute instead.
+  (Contributed by Nikita Sobolev in :gh:`105546`.)
+
 
 Porting to Python 3.13
 ======================
@@ -332,6 +374,10 @@ that may require changes to your code.
 Build Changes
 =============
 
+* Autoconf 2.71 and aclocal 1.16.4 is now required to regenerate
+  :file:`!configure`.
+  (Contributed by Christian Heimes in :gh:`89886`.)
+
 
 C API Changes
 =============
@@ -352,6 +398,30 @@ Porting to Python 3.13
 Deprecated
 ----------
 
+* Deprecate the old ``Py_UNICODE`` and ``PY_UNICODE_TYPE`` types: use directly
+  the ``wchar_t`` type instead. Since Python 3.3, ``Py_UNICODE`` and
+  ``PY_UNICODE_TYPE`` are just aliases to ``wchar_t``.
+  (Contributed by Victor Stinner in :gh:`105156`.)
+
+* Deprecate old Python initialization functions:
+
+  * :c:func:`PySys_ResetWarnOptions`:
+    clear :data:`sys.warnoptions` and :data:`!warnings.filters` instead.
+  * :c:func:`Py_GetExecPrefix`: get :data:`sys.exec_prefix` instead.
+  * :c:func:`Py_GetPath`: get :data:`sys.path` instead.
+  * :c:func:`Py_GetPrefix`: get :data:`sys.prefix` instead.
+  * :c:func:`Py_GetProgramFullPath`: get :data:`sys.executable` instead.
+  * :c:func:`Py_GetProgramName`: get :data:`sys.executable` instead.
+  * :c:func:`Py_GetPythonHome`: get :c:member:`PyConfig.home` or
+    :envvar:`PYTHONHOME` environment variable instead.
+
+  (Contributed by Victor Stinner in :gh:`105145`.)
+
+* Deprecate the :c:func:`PyImport_ImportModuleNoBlock` function which is just
+  an alias to :c:func:`PyImport_ImportModule` since Python 3.3.
+  Scheduled for removal in Python 3.15.
+  (Contributed by Victor Stinner in :gh:`105396`.)
+
 Removed
 -------
 
@@ -368,5 +438,85 @@ Removed
     :c:func:`PyTuple_New(0) <PyTuple_New>`.
   * ``PyEval_CallFunction()``: use :c:func:`PyObject_CallFunction` instead.
   * ``PyEval_CallMethod()``: use :c:func:`PyObject_CallMethod` instead.
+  * ``PyCFunction_Call()``: use :c:func:`PyObject_Call` instead.
 
   (Contributed by Victor Stinner in :gh:`105107`.)
+
+* Remove old buffer protocols deprecated in Python 3.0. Use :ref:`bufferobjects` instead.
+
+   * :c:func:`!PyObject_CheckReadBuffer`: Use :c:func:`PyObject_CheckBuffer` to
+     test if the object supports the buffer protocol.
+     Note that :c:func:`PyObject_CheckBuffer` doesn't guarantee that
+     :c:func:`PyObject_GetBuffer` will succeed.
+     To test if the object is actually readable, see the next example
+     of :c:func:`PyObject_GetBuffer`.
+
+   * :c:func:`!PyObject_AsCharBuffer`, :c:func:`!PyObject_AsReadBuffer`:
+     :c:func:`PyObject_GetBuffer` and :c:func:`PyBuffer_Release` instead:
+
+     .. code-block:: c
+
+        Py_buffer view;
+        if (PyObject_GetBuffer(obj, &view, PyBUF_SIMPLE) < 0) {
+            return NULL;
+        }
+        // Use `view.buf` and `view.len` to read from the buffer.
+        // You may need to cast buf as `(const char*)view.buf`.
+        PyBuffer_Release(&view);
+
+   * :c:func:`!PyObject_AsWriteBuffer`: Use
+     :c:func:`PyObject_GetBuffer` and :c:func:`PyBuffer_Release` instead:
+
+     .. code-block:: c
+
+        Py_buffer view;
+        if (PyObject_GetBuffer(obj, &view, PyBUF_WRITABLE) < 0) {
+            return NULL;
+        }
+        // Use `view.buf` and `view.len` to write to the buffer.
+        PyBuffer_Release(&view);
+
+  (Contributed by Inada Naoki in :gh:`85275`.)
+
+* Remove the following old functions to configure the Python initialization,
+  deprecated in Python 3.11:
+
+  * ``PySys_AddWarnOptionUnicode()``: use :c:member:`PyConfig.warnoptions` instead.
+  * ``PySys_AddWarnOption()``: use :c:member:`PyConfig.warnoptions` instead.
+  * ``PySys_AddXOption()``: use :c:member:`PyConfig.xoptions` instead.
+  * ``PySys_HasWarnOptions()``: use :c:member:`PyConfig.xoptions` instead.
+  * ``PySys_SetArgvEx()``: set :c:member:`PyConfig.argv` instead.
+  * ``PySys_SetArgv()``: set :c:member:`PyConfig.argv` instead.
+  * ``PySys_SetPath()``: set :c:member:`PyConfig.module_search_paths` instead.
+  * ``Py_SetPath()``: set :c:member:`PyConfig.module_search_paths` instead.
+  * ``Py_SetProgramName()``: set :c:member:`PyConfig.program_name` instead.
+  * ``Py_SetPythonHome()``: set :c:member:`PyConfig.home` instead.
+  * ``Py_SetStandardStreamEncoding()``: set :c:member:`PyConfig.stdio_encoding` instead.
+  * ``_Py_SetProgramFullPath()``: set :c:member:`PyConfig.executable` instead.
+
+  Use the new :c:type:`PyConfig` API of the :ref:`Python Initialization
+  Configuration <init-config>` instead (:pep:`587`), added to Python 3.8.
+  (Contributed by Victor Stinner in :gh:`105145`.)
+
+* Remove ``PyEval_InitThreads()`` and ``PyEval_ThreadsInitialized()``
+  functions, deprecated in Python 3.9. Since Python 3.7, ``Py_Initialize()``
+  always creates the GIL: calling ``PyEval_InitThreads()`` did nothing and
+  ``PyEval_ThreadsInitialized()`` always returned non-zero.
+  (Contributed by Victor Stinner in :gh:`105182`.)
+
+* Remove ``PyEval_AcquireLock()`` and ``PyEval_ReleaseLock()`` functions,
+  deprecated in Python 3.2. They didn't update the current thread state.
+  They can be replaced with:
+
+  * :c:func:`PyEval_SaveThread` and :c:func:`PyEval_RestoreThread`;
+  * low-level :c:func:`PyEval_AcquireThread` and :c:func:`PyEval_RestoreThread`;
+  * or :c:func:`PyGILState_Ensure` and :c:func:`PyGILState_Release`.
+
+  (Contributed by Victor Stinner in :gh:`105182`.)
+
+* Remove the old private, undocumented and untested ``_PyGC_FINALIZED()`` macro
+  which was kept for backward compatibility with Python 3.8 and older: use
+  :c:func:`PyObject_GC_IsFinalized()` instead. The `pythoncapi-compat project
+  <https://github.com/python/pythoncapi-compat/>`_ can be used to get this
+  function on Python 3.8 and older.
+  (Contributed by Victor Stinner in :gh:`105268`.)

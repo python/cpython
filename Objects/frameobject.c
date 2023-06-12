@@ -348,7 +348,7 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     break;
                 case JUMP_BACKWARD:
                 case JUMP_BACKWARD_NO_INTERRUPT:
-                    j = i + 1 - oparg;
+                    j = next_i - oparg;
                     assert(j >= 0);
                     assert(j < len);
                     if (stacks[j] == UNINITIALIZED && j < i) {

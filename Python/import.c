@@ -2439,6 +2439,12 @@ PyImport_ImportModule(const char *name)
 PyObject *
 PyImport_ImportModuleNoBlock(const char *name)
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+        "PyImport_ImportModuleNoBlock() is deprecated and scheduled for "
+        "removal in Python 3.15. Use PyImport_ImportModule() instead.", 1))
+    {
+        return NULL;
+    }
     return PyImport_ImportModule(name);
 }
 
@@ -2610,10 +2616,6 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
         if (!haspath) {
             Py_ssize_t dot;
 
-            if (PyUnicode_READY(package) < 0) {
-                goto error;
-            }
-
             dot = PyUnicode_FindChar(package, '.',
                                         0, PyUnicode_GET_LENGTH(package), -1);
             if (dot == -2) {
@@ -2760,9 +2762,6 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     if (!PyUnicode_Check(name)) {
         _PyErr_SetString(tstate, PyExc_TypeError,
                          "module name must be a string");
-        goto error;
-    }
-    if (PyUnicode_READY(name) < 0) {
         goto error;
     }
     if (level < 0) {

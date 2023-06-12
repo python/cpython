@@ -1,4 +1,3 @@
-import contextlib
 import collections.abc
 import io
 import os
@@ -1938,6 +1937,16 @@ class PathTest(unittest.TestCase):
         _check(p, "*B/*", ["dirB/fileB", "dirB/linkD", "linkB/fileB", "linkB/linkD"])
         _check(p, "*/fileB", ["dirB/fileB", "linkB/fileB"])
         _check(p, "*/", ["dirA", "dirB", "dirC", "dirE", "linkB"])
+        _check(p, "dir*/*/..", ["dirC/dirD/..", "dirA/linkC/.."])
+        _check(p, "dir*/**/", ["dirA", "dirA/linkC", "dirA/linkC/linkD", "dirB", "dirB/linkD",
+                                 "dirC", "dirC/dirD", "dirE"])
+        _check(p, "dir*/**/..", ["dirA/..", "dirA/linkC/..", "dirB/..",
+                                 "dirC/..", "dirC/dirD/..", "dirE/.."])
+        _check(p, "dir*/*/**/", ["dirA/linkC", "dirA/linkC/linkD", "dirB/linkD", "dirC/dirD"])
+        _check(p, "dir*/*/**/..", ["dirA/linkC/..", "dirC/dirD/.."])
+        _check(p, "dir*/**/fileC", ["dirC/fileC"])
+        _check(p, "dir*/*/../dirD/**/", ["dirC/dirD/../dirD"])
+        _check(p, "*/dirD/**/", ["dirC/dirD"])
 
     @os_helper.skip_unless_symlink
     def test_glob_no_follow_symlinks_common(self):
@@ -1952,6 +1961,14 @@ class PathTest(unittest.TestCase):
         _check(p, "*B/*", ["dirB/fileB", "dirB/linkD"])
         _check(p, "*/fileB", ["dirB/fileB"])
         _check(p, "*/", ["dirA", "dirB", "dirC", "dirE"])
+        _check(p, "dir*/*/..", ["dirC/dirD/.."])
+        _check(p, "dir*/**/", ["dirA", "dirB", "dirC", "dirC/dirD", "dirE"])
+        _check(p, "dir*/**/..", ["dirA/..", "dirB/..", "dirC/..", "dirC/dirD/..", "dirE/.."])
+        _check(p, "dir*/*/**/", ["dirC/dirD"])
+        _check(p, "dir*/*/**/..", ["dirC/dirD/.."])
+        _check(p, "dir*/**/fileC", ["dirC/fileC"])
+        _check(p, "dir*/*/../dirD/**/", ["dirC/dirD/../dirD"])
+        _check(p, "*/dirD/**/", ["dirC/dirD"])
 
     def test_rglob_common(self):
         def _check(glob, expected):
