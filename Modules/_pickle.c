@@ -1615,8 +1615,7 @@ _Unpickler_New(void)
         return NULL;
     }
 
-    PickleState *st = _Pickle_GetState(module);
-    PyObject *stack = Pdata_New(st);
+    PyObject *stack = Pdata_New();
     if (stack == NULL) {
         goto error;
     }
