@@ -337,7 +337,6 @@ Removed
 * Remove unsupported and non-functional ``SND_NOWAIT`` and ``SND_PURGE`` flags from winsound.
  (Contributed by James De Bias in :gh:`105677`.)
 
-
 Porting to Python 3.13
 ======================
 
