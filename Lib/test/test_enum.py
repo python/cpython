@@ -1075,8 +1075,6 @@ class TestSpecial(unittest.TestCase):
 
     @reraise_enum_exceptions(Theory)
     def test_enum_function_with_qualname(self):
-        if isinstance(Theory, Exception):
-            raise Theory
         self.assertEqual(Theory.__qualname__, 'spanish_inquisition')
 
     def test_enum_of_types(self):
@@ -1457,36 +1455,26 @@ class TestSpecial(unittest.TestCase):
 
     @reraise_enum_exceptions(Stooges)
     def test_pickle_enum(self):
-        if isinstance(Stooges, Exception):
-            raise Stooges
         test_pickle_dump_load(self.assertIs, Stooges.CURLY)
         test_pickle_dump_load(self.assertIs, Stooges)
 
     @reraise_enum_exceptions(IntStooges)
     def test_pickle_int(self):
-        if isinstance(IntStooges, Exception):
-            raise IntStooges
         test_pickle_dump_load(self.assertIs, IntStooges.CURLY)
         test_pickle_dump_load(self.assertIs, IntStooges)
 
     @reraise_enum_exceptions(FloatStooges)
     def test_pickle_float(self):
-        if isinstance(FloatStooges, Exception):
-            raise FloatStooges
         test_pickle_dump_load(self.assertIs, FloatStooges.CURLY)
         test_pickle_dump_load(self.assertIs, FloatStooges)
 
     @reraise_enum_exceptions(Answer)
     def test_pickle_enum_function(self):
-        if isinstance(Answer, Exception):
-            raise Answer
         test_pickle_dump_load(self.assertIs, Answer.him)
         test_pickle_dump_load(self.assertIs, Answer)
 
     @reraise_enum_exceptions(Question)
     def test_pickle_enum_function_with_module(self):
-        if isinstance(Question, Exception):
-            raise Question
         test_pickle_dump_load(self.assertIs, Question.who)
         test_pickle_dump_load(self.assertIs, Question)
 
@@ -1551,8 +1539,6 @@ class TestSpecial(unittest.TestCase):
 
     @reraise_enum_exceptions(Name)
     def test_subclassing(self):
-        if isinstance(Name, Exception):
-            raise Name
         self.assertEqual(Name.BDFL, 'Guido van Rossum')
         self.assertTrue(Name.BDFL, Name('Guido van Rossum'))
         self.assertIs(Name.BDFL, getattr(Name, 'BDFL'))
@@ -3311,8 +3297,6 @@ class OldTestFlag(unittest.TestCase):
         IntFlagStoogesWithZero,
     )
     def test_pickle(self):
-        if isinstance(FlagStooges, Exception):
-            raise FlagStooges
         test_pickle_dump_load(self.assertIs, FlagStooges.CURLY)
         test_pickle_dump_load(self.assertEqual,
                         FlagStooges.CURLY|FlagStooges.MOE)
