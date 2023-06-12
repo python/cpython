@@ -2320,6 +2320,7 @@ class SinglephaseInitTests(unittest.TestCase):
         self.add_module_cleanup(name)
         with self.subTest(name):
             loaded = self.load(name)
+            self.addCleanup(loaded.module._clear_module_state)
 
             self.check_common(loaded)
             self.assertIsNot(loaded.snapshot.state_initialized, None)
@@ -2379,14 +2380,19 @@ class SinglephaseInitTests(unittest.TestCase):
         # Keep a reference around.
         basic = self.load(self.NAME)
 
-        for name in [
-            f'{self.NAME}_with_reinit',  # m_size == 0
-            f'{self.NAME}_with_state',  # m_size > 0
+        for name, has_state in [
+            (f'{self.NAME}_with_reinit', False),  # m_size == 0
+            (f'{self.NAME}_with_state', True),    # m_size > 0
         ]:
             self.add_module_cleanup(name)
-            with self.subTest(name):
+            with self.subTest(name=name, has_state=has_state):
                 loaded = self.load(name)
+                if has_state:
+                    self.addCleanup(loaded.module._clear_module_state)
+
                 reloaded = self.re_load(name, loaded.module)
+                if has_state:
+                    self.addCleanup(reloaded.module._clear_module_state)
 
                 self.check_common(loaded)
                 self.check_common(reloaded)

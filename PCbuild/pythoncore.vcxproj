@@ -152,6 +152,7 @@
     <ClInclude Include="..\Include\cpython\genobject.h" />
     <ClInclude Include="..\Include\cpython\import.h" />
     <ClInclude Include="..\Include\cpython\initconfig.h" />
+    <ClInclude Include="..\Include\cpython\interpreteridobject.h" />
     <ClInclude Include="..\Include\cpython\listobject.h" />
     <ClInclude Include="..\Include\cpython\longintrepr.h" />
     <ClInclude Include="..\Include\cpython\longobject.h" />
@@ -234,7 +235,6 @@
     <ClInclude Include="..\Include\internal\pycore_import.h" />
     <ClInclude Include="..\Include\internal\pycore_initconfig.h" />
     <ClInclude Include="..\Include\internal\pycore_interp.h" />
-    <ClInclude Include="..\Include\internal\pycore_interpreteridobject.h" />
     <ClInclude Include="..\Include\internal\pycore_intrinsics.h" />
     <ClInclude Include="..\Include\internal\pycore_list.h" />
     <ClInclude Include="..\Include\internal\pycore_long.h" />
@@ -275,6 +275,7 @@
     <ClInclude Include="..\Include\internal\pycore_unicodeobject.h" />
     <ClInclude Include="..\Include\internal\pycore_unicodeobject_generated.h" />
     <ClInclude Include="..\Include\internal\pycore_warnings.h" />
+    <ClInclude Include="..\Include\interpreteridobject.h" />
     <ClInclude Include="..\Include\intrcheck.h" />
     <ClInclude Include="..\Include\iterobject.h" />
     <ClInclude Include="..\Include\listobject.h" />
@@ -378,7 +379,7 @@
     <ClCompile Include="..\Modules\_functoolsmodule.c" />
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_MD5.c" />
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_SHA1.c" />
-    <ClCompile Include="..\Modules\_hacl\Hacl_Streaming_SHA2.c" />
+    <ClCompile Include="..\Modules\_hacl\Hacl_Hash_SHA2.c" />
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_SHA3.c" />
     <ClCompile Include="..\Modules\_heapqmodule.c" />
     <ClCompile Include="..\Modules\_json.c" />
@@ -395,7 +396,6 @@
     <ClCompile Include="..\Modules\_weakref.c" />
     <ClCompile Include="..\Modules\arraymodule.c" />
     <ClCompile Include="..\Modules\atexitmodule.c" />
-    <ClCompile Include="..\Modules\audioop.c" />
     <ClCompile Include="..\Modules\binascii.c">
       <PreprocessorDefinitions>USE_ZLIB_CRC32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
@@ -541,6 +541,7 @@
     <ClCompile Include="..\Python\modsupport.c" />
     <ClCompile Include="..\Python\mysnprintf.c" />
     <ClCompile Include="..\Python\mystrtoul.c" />
+    <ClCompile Include="..\Python\optimizer.c" />
     <ClCompile Include="..\Python\pathconfig.c" />
     <ClCompile Include="..\Python\perf_trampoline.c" />
     <ClCompile Include="..\Python\preconfig.c" />

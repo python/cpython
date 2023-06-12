@@ -116,7 +116,9 @@ static void _PySSLFixErrno(void) {
 #endif
 
 /* Include generated data (error codes) */
-#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+#if (OPENSSL_VERSION_NUMBER >= 0x30100000L)
+#include "_ssl_data_31.h"
+#elif (OPENSSL_VERSION_NUMBER >= 0x30000000L)
 #include "_ssl_data_300.h"
 #elif (OPENSSL_VERSION_NUMBER >= 0x10101000L) && !defined(LIBRESSL_VERSION_NUMBER)
 #include "_ssl_data_111.h"
@@ -5999,15 +6001,21 @@ sslmodule_init_errorcodes(PyObject *module)
 
     errcode = error_codes;
     while (errcode->mnemonic != NULL) {
-        PyObject *mnemo, *key;
-        mnemo = PyUnicode_FromString(errcode->mnemonic);
-        key = Py_BuildValue("ii", errcode->library, errcode->reason);
-        if (mnemo == NULL || key == NULL)
+        PyObject *mnemo = PyUnicode_FromString(errcode->mnemonic);
+        if (mnemo == NULL) {
             return -1;
-        if (PyDict_SetItem(state->err_codes_to_names, key, mnemo))
+        }
+        PyObject *key = Py_BuildValue("ii", errcode->library, errcode->reason);
+        if (key == NULL) {
+            Py_DECREF(mnemo);
             return -1;
+        }
+        int rc = PyDict_SetItem(state->err_codes_to_names, key, mnemo);
         Py_DECREF(key);
         Py_DECREF(mnemo);
+        if (rc < 0) {
+            return -1;
+        }
         errcode++;
     }
 

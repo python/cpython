@@ -762,19 +762,24 @@ clear_extension(PyObject *self, PyObject *args)
 static PyObject *
 write_perf_map_entry(PyObject *self, PyObject *args)
 {
+    PyObject *code_addr_v;
     const void *code_addr;
     unsigned int code_size;
     const char *entry_name;
 
-    if (!PyArg_ParseTuple(args, "KIs", &code_addr, &code_size, &entry_name))
+    if (!PyArg_ParseTuple(args, "OIs", &code_addr_v, &code_size, &entry_name))
         return NULL;
-
-    int ret = PyUnstable_WritePerfMapEntry(code_addr, code_size, entry_name);
-    if (ret == -1) {
-        PyErr_SetString(PyExc_OSError, "Failed to write performance map entry");
+    code_addr = PyLong_AsVoidPtr(code_addr_v);
+    if (code_addr == NULL) {
         return NULL;
     }
-    return Py_BuildValue("i", ret);
+
+    int ret = PyUnstable_WritePerfMapEntry(code_addr, code_size, entry_name);
+    if (ret < 0) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        return NULL;
+    }
+    return PyLong_FromLong(ret);
 }
 
 static PyObject *
@@ -817,6 +822,22 @@ iframe_getlasti(PyObject *self, PyObject *frame)
     return PyLong_FromLong(PyUnstable_InterpreterFrame_GetLasti(f));
 }
 
+static PyObject *
+get_counter_optimizer(PyObject *self, PyObject *arg)
+{
+    return PyUnstable_Optimizer_NewCounter();
+}
+
+static PyObject *
+set_optimizer(PyObject *self, PyObject *opt)
+{
+    if (opt == Py_None) {
+        opt = NULL;
+    }
+    PyUnstable_SetOptimizer((_PyOptimizerObject*)opt);
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -845,6 +866,8 @@ static PyMethodDef module_functions[] = {
     {"iframe_getcode", iframe_getcode, METH_O, NULL},
     {"iframe_getline", iframe_getline, METH_O, NULL},
     {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
+    {"set_optimizer", set_optimizer,  METH_O, NULL},
+    {"get_counter_optimizer", get_counter_optimizer, METH_NOARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
 
