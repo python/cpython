@@ -134,7 +134,8 @@ enum {
 int
 _PyCompile_InstrSize(int opcode, int oparg)
 {
-    assert(!IS_PSEUDO_OPCODE(opcode));
+    assert(IS_PSEUDO_OPCODE(opcode) == IS_PSEUDO_INSTR(opcode));
+    assert(!IS_PSEUDO_INSTR(opcode));
     assert(HAS_ARG(opcode) || oparg == 0);
     int extended_args = (0xFFFFFF < oparg) + (0xFFFF < oparg) + (0xFF < oparg);
     int caches = _PyOpcode_Caches[opcode];
@@ -241,9 +242,14 @@ instr_sequence_use_label(instr_sequence *seq, int lbl) {
     return SUCCESS;
 }
 
+
+#define MAX_OPCODE 511
+
 static int
 instr_sequence_addop(instr_sequence *seq, int opcode, int oparg, location loc)
 {
+    assert(0 <= opcode && opcode <= MAX_OPCODE);
+    assert(IS_PSEUDO_OPCODE(opcode) == IS_PSEUDO_INSTR(opcode));
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
     assert(HAS_ARG(opcode) || HAS_TARGET(opcode) || oparg == 0);
     assert(0 <= oparg && oparg < (1 << 30));
@@ -1055,6 +1061,7 @@ compiler_addop_name(struct compiler_unit *u, location loc,
         arg <<= 1;
     }
     if (opcode == LOAD_METHOD) {
+        assert(SAME_OPCODE_METADATA(LOAD_METHOD, LOAD_ATTR));
         opcode = LOAD_ATTR;
         arg <<= 1;
         arg |= 1;
@@ -1064,15 +1071,18 @@ compiler_addop_name(struct compiler_unit *u, location loc,
         arg |= 2;
     }
     if (opcode == LOAD_SUPER_METHOD) {
+        assert(SAME_OPCODE_METADATA(LOAD_SUPER_METHOD, LOAD_SUPER_ATTR));
         opcode = LOAD_SUPER_ATTR;
         arg <<= 2;
         arg |= 3;
     }
     if (opcode == LOAD_ZERO_SUPER_ATTR) {
+        assert(SAME_OPCODE_METADATA(LOAD_ZERO_SUPER_ATTR, LOAD_SUPER_ATTR));
         opcode = LOAD_SUPER_ATTR;
         arg <<= 2;
     }
     if (opcode == LOAD_ZERO_SUPER_METHOD) {
+        assert(SAME_OPCODE_METADATA(LOAD_ZERO_SUPER_METHOD, LOAD_SUPER_ATTR));
         opcode = LOAD_SUPER_ATTR;
         arg <<= 2;
         arg |= 1;
