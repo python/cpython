@@ -1,0 +1,1 @@
+Fix bug in the compiler where an exception could end up being overwritten.

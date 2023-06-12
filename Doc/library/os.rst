@@ -493,6 +493,17 @@ process and user.
    .. versionadded:: 3.3
 
 
+.. data:: PRIO_DARWIN_THREAD
+          PRIO_DARWIN_PROCESS
+          PRIO_DARWIN_BG
+          PRIO_DARWIN_NONUI
+
+   Parameters for the :func:`getpriority` and :func:`setpriority` functions.
+
+   .. availability:: macOS
+
+   .. versionadded:: 3.12
+
 .. function:: getresuid()
 
    Return a tuple (ruid, euid, suid) denoting the current process's

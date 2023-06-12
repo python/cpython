@@ -451,6 +451,88 @@ class ExceptionTest(unittest.TestCase):
         self.assertEqual(cm.exception.value.value, 2)
 
 
+class GeneratorCloseTest(unittest.TestCase):
+
+    def test_close_no_return_value(self):
+        def f():
+            yield
+
+        gen = f()
+        gen.send(None)
+        self.assertIsNone(gen.close())
+
+    def test_close_return_value(self):
+        def f():
+            try:
+                yield
+                # close() raises GeneratorExit here, which is caught
+            except GeneratorExit:
+                return 0
+
+        gen = f()
+        gen.send(None)
+        self.assertEqual(gen.close(), 0)
+
+    def test_close_not_catching_exit(self):
+        def f():
+            yield
+            # close() raises GeneratorExit here, which isn't caught and
+            # therefore propagates -- no return value
+            return 0
+
+        gen = f()
+        gen.send(None)
+        self.assertIsNone(gen.close())
+
+    def test_close_not_started(self):
+        def f():
+            try:
+                yield
+            except GeneratorExit:
+                return 0
+
+        gen = f()
+        self.assertIsNone(gen.close())
+
+    def test_close_exhausted(self):
+        def f():
+            try:
+                yield
+            except GeneratorExit:
+                return 0
+
+        gen = f()
+        next(gen)
+        with self.assertRaises(StopIteration):
+            next(gen)
+        self.assertIsNone(gen.close())
+
+    def test_close_closed(self):
+        def f():
+            try:
+                yield
+            except GeneratorExit:
+                return 0
+
+        gen = f()
+        gen.send(None)
+        self.assertEqual(gen.close(), 0)
+        self.assertIsNone(gen.close())
+
+    def test_close_raises(self):
+        def f():
+            try:
+                yield
+            except GeneratorExit:
+                pass
+            raise RuntimeError
+
+        gen = f()
+        gen.send(None)
+        with self.assertRaises(RuntimeError):
+            gen.close()
+
+
 class GeneratorThrowTest(unittest.TestCase):
 
     def test_exception_context_with_yield(self):

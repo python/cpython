@@ -334,9 +334,11 @@ def test_pdb_breakpoint_commands():
     (Pdb) commands 10
     *** cannot set commands: Breakpoint number 10 out of range
     (Pdb) commands a
-    *** Usage: commands [bnum]
-            ...
-            end
+    *** Invalid argument: a
+          Usage: (Pdb) commands [bpnumber]
+                 (com) ...
+                 (com) end
+                 (Pdb)
     (Pdb) commands 4
     *** cannot set commands: Breakpoint 4 already deleted
     (Pdb) break 6, undefined
@@ -905,6 +907,34 @@ def test_pdb_skip_modules():
     --Return--
     > <doctest test.test_pdb.test_pdb_skip_modules[0]>(4)skip_module()->None
     -> string.capwords('FOO')
+    (Pdb) continue
+    """
+
+def test_pdb_invalid_arg():
+    """This tests pdb commands that have invalid arguments
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     pass
+
+    >>> with PdbTestInput([
+    ...     'a = 3',
+    ...     'll 4',
+    ...     'step 1',
+    ...     'continue'
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_invalid_arg[0]>(3)test_function()
+    -> pass
+    (Pdb) a = 3
+    *** Invalid argument: = 3
+          Usage: a(rgs)
+    (Pdb) ll 4
+    *** Invalid argument: 4
+          Usage: ll | longlist
+    (Pdb) step 1
+    *** Invalid argument: 1
+          Usage: s(tep)
     (Pdb) continue
     """
 

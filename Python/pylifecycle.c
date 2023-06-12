@@ -26,6 +26,7 @@
 #include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()
+#include "pycore_typevarobject.h" // _Py_clear_generic_types()
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
 #include "opcode.h"
 
@@ -1128,10 +1129,11 @@ init_interp_main(PyThreadState *tstate)
             return _PyStatus_ERR("can't initialize signals");
         }
 
-        if (_PyTraceMalloc_Init(config->tracemalloc) < 0) {
-            return _PyStatus_ERR("can't initialize tracemalloc");
+        if (config->tracemalloc) {
+           if (_PyTraceMalloc_Start(config->tracemalloc) < 0) {
+                return _PyStatus_ERR("can't start tracemalloc");
+            }
         }
-
 
 #ifdef PY_HAVE_PERF_TRAMPOLINE
         if (config->perf_profiling) {
@@ -1698,6 +1700,7 @@ finalize_interp_clear(PyThreadState *tstate)
     int is_main_interp = _Py_IsMainInterpreter(tstate->interp);
 
     _PyExc_ClearExceptionGroupType(tstate->interp);
+    _Py_clear_generic_types(tstate->interp);
 
     /* Clear interpreter state and all thread states */
     _PyInterpreterState_Clear(tstate);
@@ -1772,6 +1775,7 @@ Py_FinalizeEx(void)
      */
 
     _PyAtExit_Call(tstate->interp);
+    PyUnstable_PerfMapState_Fini();
 
     /* Copy the core config, PyInterpreterState_Delete() free
        the core config memory */
@@ -2031,7 +2035,7 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
     const PyConfig *src_config;
     if (save_tstate != NULL) {
         // XXX Might new_interpreter() have been called without the GIL held?
-        _PyEval_ReleaseLock(save_tstate);
+        _PyEval_ReleaseLock(save_tstate->interp, save_tstate);
         src_config = _PyInterpreterState_GetConfig(save_tstate->interp);
     }
     else
@@ -2552,7 +2556,6 @@ error:
     res = _PyStatus_ERR("can't initialize sys standard streams");
 
 done:
-    _Py_ClearStandardStreamEncoding();
     Py_XDECREF(iomod);
     return res;
 }
@@ -2970,24 +2973,35 @@ wait_for_thread_shutdown(PyThreadState *tstate)
 
 int Py_AtExit(void (*func)(void))
 {
-    if (_PyRuntime.atexit.ncallbacks >= NEXITFUNCS)
+    struct _atexit_runtime_state *state = &_PyRuntime.atexit;
+    PyThread_acquire_lock(state->mutex, WAIT_LOCK);
+    if (state->ncallbacks >= NEXITFUNCS) {
+        PyThread_release_lock(state->mutex);
         return -1;
-    _PyRuntime.atexit.callbacks[_PyRuntime.atexit.ncallbacks++] = func;
+    }
+    state->callbacks[state->ncallbacks++] = func;
+    PyThread_release_lock(state->mutex);
     return 0;
 }
 
 static void
 call_ll_exitfuncs(_PyRuntimeState *runtime)
 {
+    atexit_callbackfunc exitfunc;
     struct _atexit_runtime_state *state = &runtime->atexit;
+
+    PyThread_acquire_lock(state->mutex, WAIT_LOCK);
     while (state->ncallbacks > 0) {
         /* pop last function from the list */
         state->ncallbacks--;
-        atexit_callbackfunc exitfunc = state->callbacks[state->ncallbacks];
+        exitfunc = state->callbacks[state->ncallbacks];
         state->callbacks[state->ncallbacks] = NULL;
 
+        PyThread_release_lock(state->mutex);
         exitfunc();
+        PyThread_acquire_lock(state->mutex, WAIT_LOCK);
     }
+    PyThread_release_lock(state->mutex);
 
     fflush(stdout);
     fflush(stderr);

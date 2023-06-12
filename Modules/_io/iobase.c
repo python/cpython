@@ -319,20 +319,8 @@ iobase_finalize(PyObject *self)
         if (PyObject_SetAttr(self, &_Py_ID(_finalizing), Py_True))
             PyErr_Clear();
         res = PyObject_CallMethodNoArgs((PyObject *)self, &_Py_ID(close));
-        /* Silencing I/O errors is bad, but printing spurious tracebacks is
-           equally as bad, and potentially more frequent (because of
-           shutdown issues). */
         if (res == NULL) {
-#ifndef Py_DEBUG
-            if (_Py_GetConfig()->dev_mode) {
-                PyErr_WriteUnraisable(self);
-            }
-            else {
-                PyErr_Clear();
-            }
-#else
             PyErr_WriteUnraisable(self);
-#endif
         }
         else {
             Py_DECREF(res);
@@ -1036,13 +1024,6 @@ rawiobase_write(PyObject *self, PyObject *args)
     return NULL;
 }
 
-static int
-rawiobase_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
-}
-
 static PyMethodDef rawiobase_methods[] = {
     _IO__RAWIOBASE_READ_METHODDEF
     _IO__RAWIOBASE_READALL_METHODDEF
@@ -1054,13 +1035,13 @@ static PyMethodDef rawiobase_methods[] = {
 static PyType_Slot rawiobase_slots[] = {
     {Py_tp_doc, (void *)rawiobase_doc},
     {Py_tp_methods, rawiobase_methods},
-    {Py_tp_traverse, rawiobase_traverse},
     {0, NULL},
 };
 
+/* Do not set Py_TPFLAGS_HAVE_GC so that tp_traverse and tp_clear are inherited */
 PyType_Spec rawiobase_spec = {
     .name = "_io._RawIOBase",
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
               Py_TPFLAGS_IMMUTABLETYPE),
     .slots = rawiobase_slots,
 };

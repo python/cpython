@@ -1,3 +1,0 @@
-Optimize :func:`asyncio.gather` when using :func:`asyncio.eager_task_factory`
-to complete eagerly if all fututres completed eagerly.
-Avoid scheduling done callbacks for futures that complete eagerly.

@@ -268,12 +268,6 @@ clear_tp_dict(PyTypeObject *self)
 static inline PyObject *
 lookup_tp_bases(PyTypeObject *self)
 {
-    if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        static_builtin_state *state = _PyStaticType_GetState(interp, self);
-        assert(state != NULL);
-        return state->tp_bases;
-    }
     return self->tp_bases;
 }
 
@@ -287,12 +281,22 @@ _PyType_GetBases(PyTypeObject *self)
 static inline void
 set_tp_bases(PyTypeObject *self, PyObject *bases)
 {
+    assert(PyTuple_CheckExact(bases));
     if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        static_builtin_state *state = _PyStaticType_GetState(interp, self);
-        assert(state != NULL);
-        state->tp_bases = bases;
-        return;
+        // XXX tp_bases can probably be statically allocated for each
+        // static builtin type.
+        assert(_Py_IsMainInterpreter(_PyInterpreterState_GET()));
+        assert(self->tp_bases == NULL);
+        if (PyTuple_GET_SIZE(bases) == 0) {
+            assert(self->tp_base == NULL);
+        }
+        else {
+            assert(PyTuple_GET_SIZE(bases) == 1);
+            assert(PyTuple_GET_ITEM(bases, 0) == (PyObject *)self->tp_base);
+            assert(self->tp_base->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
+            assert(_Py_IsImmortal(self->tp_base));
+        }
+        _Py_SetImmortal(bases);
     }
     self->tp_bases = bases;
 }
@@ -301,10 +305,17 @@ static inline void
 clear_tp_bases(PyTypeObject *self)
 {
     if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        static_builtin_state *state = _PyStaticType_GetState(interp, self);
-        assert(state != NULL);
-        Py_CLEAR(state->tp_bases);
+        if (_Py_IsMainInterpreter(_PyInterpreterState_GET())) {
+            if (self->tp_bases != NULL) {
+                if (PyTuple_GET_SIZE(self->tp_bases) == 0) {
+                    Py_CLEAR(self->tp_bases);
+                }
+                else {
+                    assert(_Py_IsImmortal(self->tp_bases));
+                    _Py_ClearImmortal(self->tp_bases);
+                }
+            }
+        }
         return;
     }
     Py_CLEAR(self->tp_bases);
@@ -314,12 +325,6 @@ clear_tp_bases(PyTypeObject *self)
 static inline PyObject *
 lookup_tp_mro(PyTypeObject *self)
 {
-    if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        static_builtin_state *state = _PyStaticType_GetState(interp, self);
-        assert(state != NULL);
-        return state->tp_mro;
-    }
     return self->tp_mro;
 }
 
@@ -333,12 +338,14 @@ _PyType_GetMRO(PyTypeObject *self)
 static inline void
 set_tp_mro(PyTypeObject *self, PyObject *mro)
 {
+    assert(PyTuple_CheckExact(mro));
     if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        static_builtin_state *state = _PyStaticType_GetState(interp, self);
-        assert(state != NULL);
-        state->tp_mro = mro;
-        return;
+        // XXX tp_mro can probably be statically allocated for each
+        // static builtin type.
+        assert(_Py_IsMainInterpreter(_PyInterpreterState_GET()));
+        assert(self->tp_mro == NULL);
+        /* Other checks are done via set_tp_bases. */
+        _Py_SetImmortal(mro);
     }
     self->tp_mro = mro;
 }
@@ -347,10 +354,17 @@ static inline void
 clear_tp_mro(PyTypeObject *self)
 {
     if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        static_builtin_state *state = _PyStaticType_GetState(interp, self);
-        assert(state != NULL);
-        Py_CLEAR(state->tp_mro);
+        if (_Py_IsMainInterpreter(_PyInterpreterState_GET())) {
+            if (self->tp_mro != NULL) {
+                if (PyTuple_GET_SIZE(self->tp_mro) == 0) {
+                    Py_CLEAR(self->tp_mro);
+                }
+                else {
+                    assert(_Py_IsImmortal(self->tp_mro));
+                    _Py_ClearImmortal(self->tp_mro);
+                }
+            }
+        }
         return;
     }
     Py_CLEAR(self->tp_mro);
@@ -1490,6 +1504,34 @@ type_set_annotations(PyTypeObject *type, PyObject *value, void *context)
     return result;
 }
 
+static PyObject *
+type_get_type_params(PyTypeObject *type, void *context)
+{
+    PyObject *params = PyDict_GetItem(lookup_tp_dict(type), &_Py_ID(__type_params__));
+
+    if (params) {
+        return Py_NewRef(params);
+    }
+
+    return PyTuple_New(0);
+}
+
+static int
+type_set_type_params(PyTypeObject *type, PyObject *value, void *context)
+{
+    if (!check_set_special_type_attr(type, value, "__type_params__")) {
+        return -1;
+    }
+
+    PyObject *dict = lookup_tp_dict(type);
+    int result = PyDict_SetItem(dict, &_Py_ID(__type_params__), value);
+
+    if (result == 0) {
+        PyType_Modified(type);
+    }
+    return result;
+}
+
 
 /*[clinic input]
 type.__instancecheck__ -> bool
@@ -1536,6 +1578,7 @@ static PyGetSetDef type_getsets[] = {
     {"__doc__", (getter)type_get_doc, (setter)type_set_doc, NULL},
     {"__text_signature__", (getter)type_get_text_signature, NULL, NULL},
     {"__annotations__", (getter)type_get_annotations, (setter)type_set_annotations, NULL},
+    {"__type_params__", (getter)type_get_type_params, (setter)type_set_type_params, NULL},
     {0}
 };
 
@@ -3130,11 +3173,12 @@ type_new_copy_slots(type_new_ctx *ctx, PyObject *dict)
             goto error;
         }
         if (r > 0) {
-            /* CPython inserts __qualname__ and __classcell__ (when needed)
+            /* CPython inserts these names (when needed)
                into the namespace when creating a class.  They will be deleted
                below so won't act as class variables. */
             if (!_PyUnicode_Equal(slot, &_Py_ID(__qualname__)) &&
-                !_PyUnicode_Equal(slot, &_Py_ID(__classcell__)))
+                !_PyUnicode_Equal(slot, &_Py_ID(__classcell__)) &&
+                !_PyUnicode_Equal(slot, &_Py_ID(__classdictcell__)))
             {
                 PyErr_Format(PyExc_ValueError,
                              "%R in __slots__ conflicts with class variable",
@@ -3585,6 +3629,32 @@ type_new_set_classcell(PyTypeObject *type)
     return 0;
 }
 
+static int
+type_new_set_classdictcell(PyTypeObject *type)
+{
+    PyObject *dict = lookup_tp_dict(type);
+    PyObject *cell = PyDict_GetItemWithError(dict, &_Py_ID(__classdictcell__));
+    if (cell == NULL) {
+        if (PyErr_Occurred()) {
+            return -1;
+        }
+        return 0;
+    }
+
+    /* At least one method requires a reference to the dict of its defining class */
+    if (!PyCell_Check(cell)) {
+        PyErr_Format(PyExc_TypeError,
+                     "__classdictcell__ must be a nonlocal cell, not %.200R",
+                     Py_TYPE(cell));
+        return -1;
+    }
+
+    (void)PyCell_Set(cell, (PyObject *)dict);
+    if (PyDict_DelItem(dict, &_Py_ID(__classdictcell__)) < 0) {
+        return -1;
+    }
+    return 0;
+}
 
 static int
 type_new_set_attrs(const type_new_ctx *ctx, PyTypeObject *type)
@@ -3627,6 +3697,9 @@ type_new_set_attrs(const type_new_ctx *ctx, PyTypeObject *type)
     type_new_set_slots(ctx, type);
 
     if (type_new_set_classcell(type) < 0) {
+        return -1;
+    }
+    if (type_new_set_classdictcell(type) < 0) {
         return -1;
     }
     return 0;
@@ -4828,8 +4901,6 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
     }
     if (PyUnicode_Check(name)) {
         if (PyUnicode_CheckExact(name)) {
-            if (PyUnicode_READY(name) == -1)
-                return -1;
             Py_INCREF(name);
         }
         else {
@@ -6929,12 +7000,8 @@ type_ready_pre_checks(PyTypeObject *type)
 
 
 static int
-type_ready_set_bases(PyTypeObject *type)
+type_ready_set_base(PyTypeObject *type)
 {
-    if (lookup_tp_bases(type) != NULL) {
-        return 0;
-    }
-
     /* Initialize tp_base (defaults to BaseObject unless that's us) */
     PyTypeObject *base = type->tp_base;
     if (base == NULL && type != &PyBaseObject_Type) {
@@ -6958,6 +7025,12 @@ type_ready_set_bases(PyTypeObject *type)
         }
     }
 
+    return 0;
+}
+
+static int
+type_ready_set_type(PyTypeObject *type)
+{
     /* Initialize ob_type if NULL.      This means extensions that want to be
        compilable separately on Windows can call PyType_Ready() instead of
        initializing the ob_type field of their type objects. */
@@ -6965,11 +7038,25 @@ type_ready_set_bases(PyTypeObject *type)
        NULL when type is &PyBaseObject_Type, and we know its ob_type is
        not NULL (it's initialized to &PyType_Type).      But coverity doesn't
        know that. */
+    PyTypeObject *base = type->tp_base;
     if (Py_IS_TYPE(type, NULL) && base != NULL) {
         Py_SET_TYPE(type, Py_TYPE(base));
     }
 
-    /* Initialize tp_bases */
+    return 0;
+}
+
+static int
+type_ready_set_bases(PyTypeObject *type)
+{
+    if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        if (!_Py_IsMainInterpreter(_PyInterpreterState_GET())) {
+            assert(lookup_tp_bases(type) != NULL);
+            return 0;
+        }
+        assert(lookup_tp_bases(type) == NULL);
+    }
+
     PyObject *bases = lookup_tp_bases(type);
     if (bases == NULL) {
         PyTypeObject *base = type->tp_base;
@@ -7094,6 +7181,14 @@ type_ready_preheader(PyTypeObject *type)
 static int
 type_ready_mro(PyTypeObject *type)
 {
+    if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        if (!_Py_IsMainInterpreter(_PyInterpreterState_GET())) {
+            assert(lookup_tp_mro(type) != NULL);
+            return 0;
+        }
+        assert(lookup_tp_mro(type) == NULL);
+    }
+
     /* Calculate method resolution order */
     if (mro_internal(type, NULL) < 0) {
         return -1;
@@ -7369,6 +7464,12 @@ type_ready(PyTypeObject *type, int rerunbuiltin)
 
     /* Initialize tp_dict: _PyType_IsReady() tests if tp_dict != NULL */
     if (type_ready_set_dict(type) < 0) {
+        goto error;
+    }
+    if (type_ready_set_base(type) < 0) {
+        goto error;
+    }
+    if (type_ready_set_type(type) < 0) {
         goto error;
     }
     if (type_ready_set_bases(type) < 0) {
@@ -9369,7 +9470,7 @@ static pytype_slotdef slotdefs[] = {
             "__buffer__($self, flags, /)\n--\n\n"
             "Return a buffer object that exposes the underlying memory of the object."),
     BUFSLOT(__release_buffer__, bf_releasebuffer, slot_bf_releasebuffer, wrap_releasebuffer,
-            "__release_buffer__($self, /)\n--\n\n"
+            "__release_buffer__($self, buffer, /)\n--\n\n"
             "Release the buffer object that exposes the underlying memory of the object."),
 
     AMSLOT(__await__, am_await, slot_am_await, wrap_unaryfunc,

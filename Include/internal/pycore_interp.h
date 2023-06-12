@@ -48,6 +48,7 @@ struct _Py_long_state {
    */
 struct _is {
 
+    struct _ceval_state ceval;
     PyInterpreterState *next;
 
     uint64_t monitoring_version;
@@ -92,7 +93,6 @@ struct _is {
 
     struct _obmalloc_state obmalloc;
 
-    struct _ceval_state ceval;
     struct _gc_runtime_state gc;
 
     struct _import_state imports;
@@ -160,6 +160,9 @@ struct _is {
     struct types_state types;
     struct callable_cache callable_cache;
     PyCodeObject *interpreter_trampoline;
+    _PyOptimizerObject *optimizer;
+    uint16_t optimizer_resume_threshold;
+    uint16_t optimizer_backedge_threshold;
 
     _Py_Monitors monitors;
     bool f_opcode_trace_set;

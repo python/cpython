@@ -14,8 +14,8 @@
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_moduleobject.h"  // PyModuleObject
 #include "pycore_opcode.h"        // EXTRA_CASES
+#include "pycore_opcode_utils.h"  // MAKE_FUNCTION_*
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
-#include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_range.h"         // _PyRangeIterObject
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
@@ -652,7 +652,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     // for the big switch below (in combination with the EXTRA_CASES macro).
     uint8_t opcode;        /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
-    _Py_atomic_int * const eval_breaker = &tstate->interp->ceval.eval_breaker;
 #ifdef LLTRACE
     int lltrace = 0;
 #endif

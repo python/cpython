@@ -167,12 +167,6 @@ textiobase_errors_get(PyObject *self, void *context)
     Py_RETURN_NONE;
 }
 
-static int
-textiobase_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
-}
 
 static PyMethodDef textiobase_methods[] = {
     _IO__TEXTIOBASE_DETACH_METHODDEF
@@ -193,13 +187,13 @@ static PyType_Slot textiobase_slots[] = {
     {Py_tp_doc, (void *)textiobase_doc},
     {Py_tp_methods, textiobase_methods},
     {Py_tp_getset, textiobase_getset},
-    {Py_tp_traverse, textiobase_traverse},
     {0, NULL},
 };
 
+/* Do not set Py_TPFLAGS_HAVE_GC so that tp_traverse and tp_clear are inherited */
 PyType_Spec textiobase_spec = {
     .name = "_io._TextIOBase",
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
               Py_TPFLAGS_IMMUTABLETYPE),
     .slots = textiobase_slots,
 };
@@ -291,10 +285,6 @@ check_decoded(PyObject *decoded)
         PyErr_Format(PyExc_TypeError,
                      "decoder should return a string result, not '%.200s'",
                      Py_TYPE(decoded)->tp_name);
-        Py_DECREF(decoded);
-        return -1;
-    }
-    if (PyUnicode_READY(decoded) < 0) {
         Py_DECREF(decoded);
         return -1;
     }
@@ -1617,9 +1607,6 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
     int haslf = 0;
     int needflush = 0, text_needflush = 0;
 
-    if (PyUnicode_READY(text) == -1)
-        return NULL;
-
     CHECK_ATTACHED(self);
     CHECK_CLOSED(self);
 
@@ -1978,8 +1965,6 @@ _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n)
         result = textiowrapper_get_decoded_chars(self, n);
         if (result == NULL)
             goto fail;
-        if (PyUnicode_READY(result) == -1)
-            goto fail;
         remaining -= PyUnicode_GET_LENGTH(result);
 
         /* Keep reading chunks until we have n characters to return */
@@ -2190,8 +2175,6 @@ _textiowrapper_readline(textio *self, Py_ssize_t limit)
             offset_to_buffer = PyUnicode_GET_LENGTH(remaining);
             Py_CLEAR(remaining);
             if (line == NULL)
-                goto error;
-            if (PyUnicode_READY(line) == -1)
                 goto error;
         }
 
@@ -3112,7 +3095,7 @@ textiowrapper_iternext(textio *self)
         }
     }
 
-    if (line == NULL || PyUnicode_READY(line) == -1)
+    if (line == NULL)
         return NULL;
 
     if (PyUnicode_GET_LENGTH(line) == 0) {
