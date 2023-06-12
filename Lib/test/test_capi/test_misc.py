@@ -1536,7 +1536,6 @@ class TestPendingCalls(unittest.TestCase):
             def do_work():
                 _interpreters.run_string(interpid, f"""if True:
                     def subthread():
-                        import importlib.util
                         # Wait until we handle the pending call.
                         while not os.read({r_from_main}, 1):
                             time.sleep(0.01)
