@@ -119,9 +119,6 @@ typedef enum {
     PyObject *prefix##_result;                                              \
     PyObject *prefix##_source_tb;                                           \
     PyObject *prefix##_cancel_msg;                                          \
-    fut_state prefix##_state;                                               \
-    int prefix##_log_tb;                                                    \
-    int prefix##_blocking;                                                  \
     PyObject *prefix##_weakreflist;                                         \
     PyObject *prefix##_cancelled_exc;                                       \
     fut_state prefix##_state;                                               \
