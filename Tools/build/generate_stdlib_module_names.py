@@ -2,8 +2,6 @@
 # to update Python/stdlib_module_names.h
 import _imp
 import os.path
-import re
-import subprocess
 import sys
 import sysconfig
 

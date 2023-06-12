@@ -174,21 +174,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 */
 
 #define PREDICT_ID(op)          PRED_##op
-
-#if USE_COMPUTED_GOTOS
-#define PREDICT(op)             if (0) goto PREDICT_ID(op)
-#else
-#define PREDICT(next_op) \
-    do { \
-        _Py_CODEUNIT word = *next_instr; \
-        opcode = word.op.code; \
-        if (opcode == next_op) { \
-            oparg = word.op.arg; \
-            INSTRUCTION_START(next_op); \
-            goto PREDICT_ID(next_op); \
-        } \
-    } while(0)
-#endif
 #define PREDICTED(op)           PREDICT_ID(op):
 
 
@@ -300,7 +285,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 
 #define INCREMENT_ADAPTIVE_COUNTER(COUNTER)          \
     do {                                             \
-        assert(!ADAPTIVE_COUNTER_IS_MAX((COUNTER))); \
         (COUNTER) += (1 << ADAPTIVE_BACKOFF_BITS);   \
     } while (0);
 

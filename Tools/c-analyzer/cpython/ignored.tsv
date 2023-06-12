@@ -356,6 +356,10 @@ Python/sysmodule.c	-	perf_map_state	-
 Python/sysmodule.c	-	_PySys_ImplCacheTag	-
 Python/sysmodule.c	-	_PySys_ImplName	-
 Python/sysmodule.c	-	whatstrings	-
+Python/optimizer.c	-	DefaultOptimizer_Type	-
+Python/optimizer.c	-	CounterExecutor_Type	-
+Python/optimizer.c	-	CounterOptimizer_Type	-
+Python/optimizer.c	-	_PyOptimizer_Default	-
 
 ##-----------------------
 ## test code
@@ -420,6 +424,8 @@ Modules/_testcapi/watchers.c	-	num_code_object_destroyed_events	-
 Modules/_testcapi/watchers.c	-	pyfunc_watchers	-
 Modules/_testcapi/watchers.c	-	func_watcher_ids	-
 Modules/_testcapi/watchers.c	-	func_watcher_callbacks	-
+Modules/_testcapimodule.c	-	BasicStaticTypes	-
+Modules/_testcapimodule.c	-	num_basic_static_types_used	-
 Modules/_testcapimodule.c	-	ContainerNoGC_members	-
 Modules/_testcapimodule.c	-	ContainerNoGC_type	-
 Modules/_testcapimodule.c	-	FmData	-

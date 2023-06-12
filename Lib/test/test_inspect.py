@@ -557,7 +557,8 @@ class TestRetrievingSourceCode(GetSourceBase):
 
     def test_getfunctions(self):
         functions = inspect.getmembers(mod, inspect.isfunction)
-        self.assertEqual(functions, [('eggs', mod.eggs),
+        self.assertEqual(functions, [('after_closing', mod.after_closing),
+                                     ('eggs', mod.eggs),
                                      ('lobbest', mod.lobbest),
                                      ('spam', mod.spam)])
 
@@ -641,6 +642,7 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertSourceEqual(git.abuse, 29, 39)
         self.assertSourceEqual(mod.StupidGit, 21, 51)
         self.assertSourceEqual(mod.lobbest, 75, 76)
+        self.assertSourceEqual(mod.after_closing, 120, 120)
 
     def test_getsourcefile(self):
         self.assertEqual(normcase(inspect.getsourcefile(mod.spam)), modfile)
@@ -3924,6 +3926,24 @@ class TestSignatureObject(unittest.TestCase):
                          ((('a', ..., ..., 'positional_or_keyword'),
                            ('b', 2, ..., 'positional_or_keyword')),
                           ...))
+
+    def test_signature_on_derived_classes(self):
+        # gh-105080: Make sure that signatures are consistent on derived classes
+
+        class B:
+            def __new__(self, *args, **kwargs):
+                return super().__new__(self)
+            def __init__(self, value):
+                self.value = value
+
+        class D1(B):
+            def __init__(self, value):
+                super().__init__(value)
+
+        class D2(D1):
+            pass
+
+        self.assertEqual(inspect.signature(D2), inspect.signature(D1))
 
 
 class TestParameterObject(unittest.TestCase):

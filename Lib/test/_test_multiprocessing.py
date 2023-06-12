@@ -48,7 +48,7 @@ import multiprocessing.heap
 import multiprocessing.managers
 import multiprocessing.pool
 import multiprocessing.queues
-from multiprocessing.connection import wait, AuthenticationError
+from multiprocessing.connection import wait
 
 from multiprocessing import util
 

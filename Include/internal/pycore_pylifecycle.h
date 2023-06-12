@@ -23,8 +23,6 @@ extern PyStatus _PyUnicode_InitEncodings(PyThreadState *tstate);
 extern int _PyUnicode_EnableLegacyWindowsFSEncoding(void);
 #endif
 
-PyAPI_FUNC(void) _Py_ClearStandardStreamEncoding(void);
-
 PyAPI_FUNC(int) _Py_IsLocaleCoercionTarget(const char *ctype_loc);
 
 /* Various one-time initializers */

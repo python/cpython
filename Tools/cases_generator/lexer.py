@@ -4,7 +4,6 @@
 
 import re
 import sys
-import collections
 from dataclasses import dataclass
 
 def choice(*opts):
