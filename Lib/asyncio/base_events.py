@@ -439,9 +439,11 @@ class BaseEventLoop(events.AbstractEventLoop):
         else:
             if context is None:
                 # Use legacy API if context is not needed
-                task = self._task_factory(self, coro, name=name)
+                task = self._task_factory(self, coro)
             else:
-                task = self._task_factory(self, coro, name=name, context=context)
+                task = self._task_factory(self, coro, context=context)
+
+            task.set_name(name)
 
         return task
 

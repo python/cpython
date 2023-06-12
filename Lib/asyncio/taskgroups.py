@@ -160,9 +160,10 @@ class TaskGroup:
         if self._aborting:
             raise RuntimeError(f"TaskGroup {self!r} is shutting down")
         if context is None:
-            task = self._loop.create_task(coro, name=name)
+            task = self._loop.create_task(coro)
         else:
-            task = self._loop.create_task(coro, name=name, context=context)
+            task = self._loop.create_task(coro, context=context)
+        task.set_name(name)
         # optimization: Immediately call the done callback if the task is
         # already done (e.g. if the coro was able to complete eagerly),
         # and skip scheduling a done callback

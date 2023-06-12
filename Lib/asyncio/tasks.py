@@ -15,6 +15,7 @@ import contextvars
 import functools
 import inspect
 import itertools
+import math
 import types
 import warnings
 import weakref
@@ -394,10 +395,11 @@ def create_task(coro, *, name=None, context=None):
     loop = events.get_running_loop()
     if context is None:
         # Use legacy API if context is not needed
-        task = loop.create_task(coro, name=name)
+        task = loop.create_task(coro)
     else:
-        task = loop.create_task(coro, name=name, context=context)
+        task = loop.create_task(coro, context=context)
 
+    task.set_name(name)
     return task
 
 
@@ -631,6 +633,9 @@ async def sleep(delay, result=None):
     if delay <= 0:
         await __sleep0()
         return result
+
+    if math.isnan(delay):
+        raise ValueError("Invalid delay: NaN (not a number)")
 
     loop = events.get_running_loop()
     future = loop.create_future()
