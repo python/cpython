@@ -892,49 +892,26 @@ pending_threadfunc(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 
 
-struct _pending_fd_data {
-    int fileno;
-    const char *text;
-};
+static struct {
+    int64_t interpid;
+} pending_identify_result;
 
-static int _pending_fd_callback(void *arg)
+static int
+_pending_identify_callback(void *arg)
 {
-    union {
-        int value;
-        void *voidptr;
-    } data;
-    data.voidptr = arg;
-    int fileno = data.value;
-
-    /* Generate the text payload. */
+    PyThread_type_lock mutex = (PyThread_type_lock)arg;
+    assert(pending_identify_result.interpid == -1);
     PyThreadState *tstate = PyThreadState_Get();
-    int64_t interpid = PyInterpreterState_GetID(tstate->interp);
-    char buffer[256];
-    snprintf(buffer, 256, "{\"interpid\": %ld, \"threadid\": %ld}",
-             interpid, tstate->thread_id);
-
-    /* Call os.write(fileno, text). */
-    PyObject *os = PyImport_ImportModule("os");
-    assert(os != NULL);
-    PyObject *result = PyObject_CallMethod(os, "write", "iy", fileno, buffer);
-    if (result == NULL) {
-        return -1;
-    }
-    Py_DECREF(result);
+    pending_identify_result.interpid = PyInterpreterState_GetID(tstate->interp);
+    PyThread_release_lock(mutex);
     return 0;
 }
 
 static PyObject *
-pending_fd_identify(PyObject *self, PyObject *args)
+pending_identify(PyObject *self, PyObject *args)
 {
     PyObject *interpid;
-    union {
-        int value;
-        void *voidptr;
-    } fileno;
-    if (!PyArg_ParseTuple(args, "Oi:pending_fd_identify",
-                          &interpid, &fileno.value))
-    {
+    if (!PyArg_ParseTuple(args, "O:pending_identify", &interpid)) {
         return NULL;
     }
     PyInterpreterState *interp = _PyInterpreterID_LookUp(interpid);
@@ -945,15 +922,35 @@ pending_fd_identify(PyObject *self, PyObject *args)
         return NULL;
     }
 
+    pending_identify_result.interpid = -1;
+
+    PyThread_type_lock mutex = PyThread_allocate_lock();
+    if (mutex == NULL) {
+        return NULL;
+    }
+    PyThread_acquire_lock(mutex, WAIT_LOCK);
+    /* It gets released in _pending_identify_callback(). */
+
     int r;
     do {
         Py_BEGIN_ALLOW_THREADS
-        r = _PyEval_AddPendingCall(interp, &_pending_fd_callback,
-                                   fileno.voidptr, 0);
+        r = _PyEval_AddPendingCall(interp,
+                                   &_pending_identify_callback, (void *)mutex,
+                                   0);
         Py_END_ALLOW_THREADS
     } while (r < 0);
 
-    Py_RETURN_NONE;
+    /* Wait for the pending call to complete. */
+    PyThread_acquire_lock(mutex, WAIT_LOCK);
+    PyThread_release_lock(mutex);
+    PyThread_free_lock(mutex);
+
+    PyObject *res = PyLong_FromLongLong(pending_identify_result.interpid);
+    pending_identify_result.interpid = -1;
+    if (res == NULL) {
+        return NULL;
+    }
+    return res;
 }
 
 
@@ -989,7 +986,8 @@ static PyMethodDef module_functions[] = {
     {"get_counter_optimizer", get_counter_optimizer, METH_NOARGS, NULL},
     {"pending_threadfunc", _PyCFunction_CAST(pending_threadfunc),
      METH_VARARGS | METH_KEYWORDS},
-    {"pending_fd_identify", pending_fd_identify, METH_VARARGS, NULL},
+//    {"pending_fd_identify", pending_fd_identify, METH_VARARGS, NULL},
+    {"pending_identify", pending_identify, METH_VARARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
 

@@ -1494,8 +1494,11 @@ class TestPendingCalls(unittest.TestCase):
         # (eval breaker tripped) at each loop iteration
         # and at each call.
 
+        maxtext = 250
+        main_interpid = 0
         interpid = _interpreters.create()
         _interpreters.run_string(interpid, f"""if True:
+            import json
             import os
             import threading
             import time
@@ -1510,75 +1513,211 @@ class TestPendingCalls(unittest.TestCase):
             return r, w
 
         with self.subTest('add in main, run in subinterpreter'):
-            r_from_main, w_to_sub = create_pipe()
-            r_from_sub, w_to_main = create_pipe()
+            r_ready, w_ready = create_pipe()
+            r_done, w_done= create_pipe()
             timeout = time.time() + 30  # seconds
 
             def do_work():
                 _interpreters.run_string(interpid, f"""if True:
                     # Wait until this interp has handled the pending call.
-                    while not os.read({r_from_main}, 1):
-                        time.sleep(0.01)
-                        if time.time() > {timeout}:
-                            raise Exception('timed out!')
+                    waiting = False
+                    done = False
+                    def wait(os_read=os.read):
+                        global done, waiting
+                        waiting = True
+                        os_read({r_done}, 1)
+                        done = True
+                    t = threading.Thread(target=wait)
+                    with threading_helper.start_threads([t]):
+                        while not waiting:
+                            pass
+                        os.write({w_ready}, b'\\0')
+                        # Loop to trigger the eval breaker.
+                        while not done:
+                            time.sleep(0.01)
+                            if time.time() > {timeout}:
+                                raise Exception('timed out!')
                     """)
             t = threading.Thread(target=do_work)
             with threading_helper.start_threads([t]):
-                # Add the pending call.
-                _testinternalcapi.pending_fd_identify(interpid, w_to_main)
-                # Wait for it to be done.
-                text = None
-                while not text:
-                    if time.time() > timeout:
-                        raise Exception('timed out!')
-                    text = os.read(r_from_sub, 250)
+                os.read(r_ready, 1)
+                # Add the pending call and wait for it to finish.
+                actual = _testinternalcapi.pending_identify(interpid)
                 # Signal the subinterpreter to stop.
-                os.write(w_to_sub, b'spam')
-            data = json.loads(text)
+                os.write(w_done, b'\0')
 
-            self.assertEqual(data['interpid'], int(interpid))
+            self.assertEqual(actual, int(interpid))
 
         with self.subTest('add in main, run in subinterpreter sub-thread'):
-            r_from_main, w_to_sub = create_pipe()
-            r_from_sub, w_to_main = create_pipe()
+            r_ready, w_ready = create_pipe()
+            r_done, w_done= create_pipe()
             timeout = time.time() + 30  # seconds
 
             def do_work():
                 _interpreters.run_string(interpid, f"""if True:
+                    waiting = False
+                    done = False
                     def subthread():
-                        # Wait until this interp has handled the pending call.
-                        while not os.read({r_from_main}, 1):
+                        while not waiting:
+                            pass
+                        os.write({w_ready}, b'\\0')
+                        # Loop to trigger the eval breaker.
+                        while not done:
                             time.sleep(0.01)
                             if time.time() > {timeout}:
                                 raise Exception('timed out!')
                     t = threading.Thread(target=subthread)
                     with threading_helper.start_threads([t]):
-                        pass
+                        # Wait until this interp has handled the pending call.
+                        waiting = True
+                        os.read({r_done}, 1)
+                        done = True
                     """)
             t = threading.Thread(target=do_work)
             with threading_helper.start_threads([t]):
-                # Add the pending call.
-                _testinternalcapi.pending_fd_identify(interpid, w_to_main)
-                # Wait for it to be done.
-                text = None
-                while not text:
-                    if time.time() > timeout:
-                        raise Exception('timed out!')
-                    text = os.read(r_from_sub, 250)
+                os.read(r_ready, 1)
+                # Add the pending call and wait for it to finish.
+                actual = _testinternalcapi.pending_identify(interpid)
                 # Signal the subinterpreter to stop.
-                os.write(w_to_sub, b'spam')
-            data = json.loads(text)
+                os.write(w_done, b'\0')
 
-            self.assertEqual(data['interpid'], int(interpid))
-
-        with self.subTest('add in subinterpreter, run in subinterpreter sub-thread'):
-            pass
+            self.assertEqual(actual, int(interpid))
 
         with self.subTest('add in subinterpreter, run in main'):
-            pass
+            r_ready, w_ready = create_pipe()
+            r_done, w_done= create_pipe()
+            r_data, w_data= create_pipe()
+            timeout = time.time() + 30  # seconds
+
+            def add_job():
+                os.read(r_ready, 1)
+                _interpreters.run_string(interpid, f"""if True:
+                    # Add the pending call and wait for it to finish.
+                    actual = _testinternalcapi.pending_identify({main_interpid})
+                    # Signal the subinterpreter to stop.
+                    os.write({w_done}, b'\\0')
+                    os.write({w_data}, actual.to_bytes(1, 'little'))
+                    """)
+            # Wait until this interp has handled the pending call.
+            waiting = False
+            done = False
+            def wait(os_read=os.read):
+                nonlocal done, waiting
+                waiting = True
+                os_read(r_done, 1)
+                done = True
+            t1 = threading.Thread(target=add_job)
+            t2 = threading.Thread(target=wait)
+            with threading_helper.start_threads([t1, t2]):
+                while not waiting:
+                    pass
+                os.write(w_ready, b'\0')
+                # Loop to trigger the eval breaker.
+                while not done:
+                    time.sleep(0.01)
+                    if time.time() > timeout:
+                        raise Exception('timed out!')
+                text = os.read(r_data, 1)
+            actual = int.from_bytes(text, 'little')
+
+            self.assertEqual(actual, int(main_interpid))
 
         with self.subTest('add in subinterpreter, run in sub-thread'):
-            pass
+            r_ready, w_ready = create_pipe()
+            r_done, w_done= create_pipe()
+            r_data, w_data= create_pipe()
+            timeout = time.time() + 30  # seconds
+
+            def add_job():
+                os.read(r_ready, 1)
+                _interpreters.run_string(interpid, f"""if True:
+                    # Add the pending call and wait for it to finish.
+                    actual = _testinternalcapi.pending_identify({main_interpid})
+                    # Signal the subinterpreter to stop.
+                    os.write({w_done}, b'\\0')
+                    os.write({w_data}, actual.to_bytes(1, 'little'))
+                    """)
+            # Wait until this interp has handled the pending call.
+            waiting = False
+            done = False
+            def wait(os_read=os.read):
+                nonlocal done, waiting
+                waiting = True
+                os_read(r_done, 1)
+                done = True
+            def subthread():
+                while not waiting:
+                    pass
+                os.write(w_ready, b'\0')
+                # Loop to trigger the eval breaker.
+                while not done:
+                    time.sleep(0.01)
+                    if time.time() > timeout:
+                        raise Exception('timed out!')
+            t1 = threading.Thread(target=add_job)
+            t2 = threading.Thread(target=wait)
+            t3 = threading.Thread(target=subthread)
+            with threading_helper.start_threads([t1, t2, t3]):
+                pass
+            text = os.read(r_data, 1)
+            actual = int.from_bytes(text, 'little')
+
+            self.assertEqual(actual, int(main_interpid))
+
+        # XXX We can't use the rest until gh-105716 is fixed.
+        return
+
+        with self.subTest('add in subinterpreter, run in subinterpreter sub-thread'):
+            r_ready, w_ready = create_pipe()
+            r_done, w_done= create_pipe()
+            r_data, w_data= create_pipe()
+            timeout = time.time() + 30  # seconds
+
+            def do_work():
+                _interpreters.run_string(interpid, f"""if True:
+                    waiting = False
+                    done = False
+                    def subthread():
+                        while not waiting:
+                            pass
+                        print('ready 2', flush=True)
+                        os.write({w_ready}, b'\\0')
+                        # Loop to trigger the eval breaker.
+                        while not done:
+                            time.sleep(0.01)
+                            if time.time() > {timeout}:
+                                raise Exception('timed out!')
+                        print('done 2', flush=True)
+                    t = threading.Thread(target=subthread)
+                    with threading_helper.start_threads([t]):
+                        # Wait until this interp has handled the pending call.
+                        print('ready 1', flush=True)
+                        waiting = True
+                        os.read({r_done}, 1)
+                        done = True
+                        print('done 1', flush=True)
+                    """)
+            t = threading.Thread(target=do_work)
+            #with threading_helper.start_threads([t]):
+            t.start()
+            if True:
+                os.read(r_ready, 1)
+                print('ready 3', flush=True)
+                _interpreters.run_string(interpid, f"""if True:
+                    print('ready 4', flush=True)
+                    # Add the pending call and wait for it to finish.
+                    actual = _testinternalcapi.pending_identify({interpid})
+                    # Signal the subinterpreter to stop.
+                    print('done 3', flush=True)
+                    os.write({w_done}, b'\\0')
+                    os.write({w_data}, actual.to_bytes(1, 'little'))
+                    """)
+            t.join()
+            print('done 4', flush=True)
+            text = os.read(r_data, 1)
+            actual = int.from_bytes(text, 'little')
+
+            self.assertEqual(actual, int(interpid))
 
 
 class SubinterpreterTest(unittest.TestCase):
