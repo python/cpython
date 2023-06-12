@@ -15,6 +15,7 @@ import contextvars
 import functools
 import inspect
 import itertools
+import math
 import types
 import warnings
 import weakref
@@ -645,6 +646,9 @@ async def sleep(delay, result=None):
     if delay <= 0:
         await __sleep0()
         return result
+
+    if math.isnan(delay):
+        raise ValueError("Invalid delay: NaN (not a number)")
 
     loop = events.get_running_loop()
     future = loop.create_future()
