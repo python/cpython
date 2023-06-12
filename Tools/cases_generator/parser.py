@@ -101,7 +101,7 @@ UOp = OpName | CacheEffect
 class InstHeader(Node):
     override: bool
     register: bool
-    kind: Literal["inst", "op", "legacy"]  # Legacy means no (inputs -- outputs)
+    kind: Literal["inst", "op"]
     name: str
     inputs: list[InputEffect]
     outputs: list[OutputEffect]
@@ -111,7 +111,7 @@ class InstHeader(Node):
 class InstDef(Node):
     override: bool
     register: bool
-    kind: Literal["inst", "op", "legacy"]
+    kind: Literal["inst", "op"]
     name: str
     inputs: list[InputEffect]
     outputs: list[OutputEffect]
@@ -174,9 +174,6 @@ class Parser(PLexer):
                     if self.expect(lx.RPAREN):
                         if (tkn := self.peek()) and tkn.kind == lx.LBRACE:
                             return InstHeader(override, register, kind, name, inp, outp)
-                elif self.expect(lx.RPAREN) and kind == "inst":
-                    # No legacy stack effect if kind is "op".
-                    return InstHeader(override, register, "legacy", name, [], [])
         return None
 
     def io_effect(self) -> tuple[list[InputEffect], list[OutputEffect]]:
