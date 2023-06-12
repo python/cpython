@@ -1490,6 +1490,10 @@ class TestPendingCalls(unittest.TestCase):
     def test_isolated_subinterpreter(self):
         # We exercise the most important permutations.
 
+        # This test relies on pending calls getting called
+        # (eval breaker tripped) at each loop iteration
+        # and at each call.
+
         interpid = _interpreters.create()
         _interpreters.run_string(interpid, f"""if True:
             import os
@@ -1511,7 +1515,7 @@ class TestPendingCalls(unittest.TestCase):
 
             def do_work():
                 _interpreters.run_string(interpid, f"""if True:
-                    # Wait until we handle the pending call.
+                    # Wait until this interp has handled the pending call.
                     while not os.read({r_from_main}, 1):
                         time.sleep(0.01)
                     """)
@@ -1536,7 +1540,7 @@ class TestPendingCalls(unittest.TestCase):
             def do_work():
                 _interpreters.run_string(interpid, f"""if True:
                     def subthread():
-                        # Wait until we handle the pending call.
+                        # Wait until this interp has handled the pending call.
                         while not os.read({r_from_main}, 1):
                             time.sleep(0.01)
                     t = threading.Thread(target=subthread)
