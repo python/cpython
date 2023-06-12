@@ -231,7 +231,7 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
 /*[clinic end generated code: output=23413f68e6484bbd input=588aac967e0ba74b]*/
 {
 #ifdef MS_WINDOWS
-    Py_UNICODE *widename = NULL;
+    wchar_t *widename = NULL;
 #else
     const char *name = NULL;
 #endif

@@ -379,8 +379,6 @@ Modules/_decimal/_decimal.c	-	PyDecContextManager_Type	-
 Modules/_decimal/_decimal.c	-	PyDecContext_Type	-
 Modules/_decimal/_decimal.c	-	PyDecSignalDictMixin_Type	-
 Modules/_decimal/_decimal.c	-	PyDec_Type	-
-Modules/ossaudiodev.c	-	OSSAudioType	-
-Modules/ossaudiodev.c	-	OSSMixerType	-
 Modules/xxmodule.c	-	Null_Type	-
 Modules/xxmodule.c	-	Str_Type	-
 Modules/xxmodule.c	-	Xxo_Type	-
@@ -403,7 +401,6 @@ Modules/_ctypes/_ctypes.c	-	PyExc_ArgError	-
 Modules/_cursesmodule.c	-	PyCursesError	-
 Modules/_decimal/_decimal.c	-	DecimalException	-
 Modules/_tkinter.c	-	Tkinter_TclError	-
-Modules/ossaudiodev.c	-	OSSAudioError	-
 Modules/xxlimited_35.c	-	ErrorObject	-
 Modules/xxmodule.c	-	ErrorObject	-
 
@@ -456,9 +453,6 @@ Modules/_tkinter.c	-	trbInCmd	-
 
 ##-----------------------
 ## initialized once
-
-## pre-allocated buffer
-Modules/nismodule.c	nisproc_maplist_2	res	-
 
 ## other
 Include/datetime.h	-	PyDateTimeAPI	-
