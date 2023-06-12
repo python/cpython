@@ -1680,40 +1680,32 @@ class TestPendingCalls(unittest.TestCase):
                     def subthread():
                         while not waiting:
                             pass
-                        print('ready 2', flush=True)
                         os.write({w_ready}, b'\\0')
                         # Loop to trigger the eval breaker.
                         while not done:
                             time.sleep(0.01)
                             if time.time() > {timeout}:
                                 raise Exception('timed out!')
-                        print('done 2', flush=True)
                     t = threading.Thread(target=subthread)
                     with threading_helper.start_threads([t]):
                         # Wait until this interp has handled the pending call.
-                        print('ready 1', flush=True)
                         waiting = True
                         os.read({r_done}, 1)
                         done = True
-                        print('done 1', flush=True)
                     """)
             t = threading.Thread(target=do_work)
             #with threading_helper.start_threads([t]):
             t.start()
             if True:
                 os.read(r_ready, 1)
-                print('ready 3', flush=True)
                 _interpreters.run_string(interpid, f"""if True:
-                    print('ready 4', flush=True)
                     # Add the pending call and wait for it to finish.
                     actual = _testinternalcapi.pending_identify({interpid})
                     # Signal the subinterpreter to stop.
-                    print('done 3', flush=True)
                     os.write({w_done}, b'\\0')
                     os.write({w_data}, actual.to_bytes(1, 'little'))
                     """)
             t.join()
-            print('done 4', flush=True)
             text = os.read(r_data, 1)
             actual = int.from_bytes(text, 'little')
 
