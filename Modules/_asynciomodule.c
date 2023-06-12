@@ -123,7 +123,7 @@ typedef enum {
     PyObject *prefix##_cancelled_exc;                                       \
     fut_state prefix##_state;                                               \
     /* These bitfields need to be at the end of the struct
-       so that these and bitfields from TaskObj are continuous.
+       so that these and bitfields from TaskObj are contiguous.
     */                                                                      \
     unsigned prefix##_log_tb: 1;                                            \
     unsigned prefix##_blocking: 1;
