@@ -119,12 +119,6 @@ class InstDef(Node):
 
 
 @dataclass
-class Super(Node):
-    name: str
-    ops: list[OpName]
-
-
-@dataclass
 class Macro(Node):
     name: str
     uops: list[UOp]
@@ -144,11 +138,9 @@ class Pseudo(Node):
 
 class Parser(PLexer):
     @contextual
-    def definition(self) -> InstDef | Super | Macro | Family | Pseudo | None:
+    def definition(self) -> InstDef | Macro | Pseudo | Family | None:
         if inst := self.inst_def():
             return inst
-        if super := self.super_def():
-            return super
         if macro := self.macro_def():
             return macro
         if family := self.family_def():
@@ -287,25 +279,13 @@ class Parser(PLexer):
             return None
         return Expression(lx.to_text(tokens).strip())
 
-    @contextual
-    def super_def(self) -> Super | None:
-        if (tkn := self.expect(lx.IDENTIFIER)) and tkn.text == "super":
-            if self.expect(lx.LPAREN):
-                if tkn := self.expect(lx.IDENTIFIER):
-                    if self.expect(lx.RPAREN):
-                        if self.expect(lx.EQUALS):
-                            if ops := self.ops():
-                                self.require(lx.SEMI)
-                                res = Super(tkn.text, ops)
-                                return res
-
-    def ops(self) -> list[OpName] | None:
-        if op := self.op():
-            ops = [op]
-            while self.expect(lx.PLUS):
-                if op := self.op():
-                    ops.append(op)
-            return ops
+    # def ops(self) -> list[OpName] | None:
+    #     if op := self.op():
+    #         ops = [op]
+    #         while self.expect(lx.PLUS):
+    #             if op := self.op():
+    #                 ops.append(op)
+    #         return ops
 
     @contextual
     def op(self) -> OpName | None:
@@ -432,7 +412,7 @@ if __name__ == "__main__":
             src = sys.argv[2]
             filename = "<string>"
         else:
-            with open(filename) as f:
+            with open(filename, "r") as f:
                 src = f.read()
             srclines = src.splitlines()
             begin = srclines.index("// BEGIN BYTECODES //")
