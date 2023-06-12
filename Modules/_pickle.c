@@ -1684,15 +1684,17 @@ _Unpickler_SetInputStream(UnpicklerObject *self, PyObject *file)
         goto error;
     }
     if (_PyObject_LookupAttr(file, &_Py_ID(read), &self->read) < 0) {
-        PyErr_Clear();
+        goto error;
     }
     if (_PyObject_LookupAttr(file, &_Py_ID(readline), &self->readline) < 0) {
-        PyErr_Clear();
+        goto error;
     }
     if (!self->readline || !self->read) {
-        PyErr_SetString(PyExc_TypeError,
-                        "file must have 'read' and 'readline' attributes");
-        goto error;
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_TypeError,
+                            "file must have 'read' and 'readline' attributes");
+            goto error;
+        }
     }
     return 0;
 
