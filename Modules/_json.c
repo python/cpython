@@ -152,9 +152,6 @@ ascii_escape_unicode(PyObject *pystr)
     Py_UCS1 *output;
     int kind;
 
-    if (PyUnicode_READY(pystr) == -1)
-        return NULL;
-
     input_chars = PyUnicode_GET_LENGTH(pystr);
     input = PyUnicode_DATA(pystr);
     kind = PyUnicode_KIND(pystr);
@@ -217,9 +214,6 @@ escape_unicode(PyObject *pystr)
     const void *input;
     int kind;
     Py_UCS4 maxchar;
-
-    if (PyUnicode_READY(pystr) == -1)
-        return NULL;
 
     maxchar = PyUnicode_MAX_CHAR_VALUE(pystr);
     input_chars = PyUnicode_GET_LENGTH(pystr);
@@ -376,9 +370,6 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
     Py_ssize_t next /* = begin */;
     const void *buf;
     int kind;
-
-    if (PyUnicode_READY(pystr) == -1)
-        return 0;
 
     _PyUnicodeWriter writer;
     _PyUnicodeWriter_Init(&writer);
@@ -675,9 +666,6 @@ _parse_object_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ss
     int has_pairs_hook = (s->object_pairs_hook != Py_None);
     Py_ssize_t next_idx;
 
-    if (PyUnicode_READY(pystr) == -1)
-        return NULL;
-
     str = PyUnicode_DATA(pystr);
     kind = PyUnicode_KIND(pystr);
     end_idx = PyUnicode_GET_LENGTH(pystr) - 1;
@@ -801,9 +789,6 @@ _parse_array_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssi
     PyObject *rval;
     Py_ssize_t next_idx;
 
-    if (PyUnicode_READY(pystr) == -1)
-        return NULL;
-
     rval = PyList_New(0);
     if (rval == NULL)
         return NULL;
@@ -905,9 +890,6 @@ _match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
     PyObject *rval;
     PyObject *numstr = NULL;
     PyObject *custom_func;
-
-    if (PyUnicode_READY(pystr) == -1)
-        return NULL;
 
     str = PyUnicode_DATA(pystr);
     kind = PyUnicode_KIND(pystr);
@@ -1017,9 +999,6 @@ scan_once_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_
     const void *str;
     int kind;
     Py_ssize_t length;
-
-    if (PyUnicode_READY(pystr) == -1)
-        return NULL;
 
     str = PyUnicode_DATA(pystr);
     kind = PyUnicode_KIND(pystr);

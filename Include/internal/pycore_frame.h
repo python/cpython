@@ -19,7 +19,6 @@ struct _frame {
     struct _PyInterpreterFrame *f_frame; /* points to the frame data */
     PyObject *f_trace;          /* Trace function */
     int f_lineno;               /* Current line number. Only valid if non-zero */
-    int f_last_traced_line;     /* The last line traced for this frame */
     char f_trace_lines;         /* Emit per-line trace events? */
     char f_trace_opcodes;       /* Emit per-opcode trace events? */
     char f_fast_as_locals;      /* Have the fast locals of this frame been converted to a dict? */

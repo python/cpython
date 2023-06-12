@@ -1,3 +1,0 @@
-Use :meth:`datetime.datetime.fromisocalendar` in the implementation of
-:meth:`datetime.datetime.strptime`, which should now accept only valid ISO
-dates. (Patch by Paul Ganssle)

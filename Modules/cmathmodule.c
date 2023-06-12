@@ -8,7 +8,6 @@
 
 #include "Python.h"
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
-#include "pycore_dtoa.h"          // _Py_dg_stdnan()
 /* we need DBL_MAX, DBL_MIN, DBL_EPSILON, DBL_MANT_DIG and FLT_RADIX from
    float.h.  We assume that FLT_RADIX is either 2 or 16. */
 #include <float.h>
@@ -88,53 +87,6 @@ else {
 #endif
 #define CM_SCALE_DOWN (-(CM_SCALE_UP+1)/2)
 
-/* Constants cmath.inf, cmath.infj, cmath.nan, cmath.nanj.
-   cmath.nan and cmath.nanj are defined only when either
-   _PY_SHORT_FLOAT_REPR is 1 (which should be
-   the most common situation on machines using an IEEE 754
-   representation), or Py_NAN is defined. */
-
-static double
-m_inf(void)
-{
-#if _PY_SHORT_FLOAT_REPR == 1
-    return _Py_dg_infinity(0);
-#else
-    return Py_HUGE_VAL;
-#endif
-}
-
-static Py_complex
-c_infj(void)
-{
-    Py_complex r;
-    r.real = 0.0;
-    r.imag = m_inf();
-    return r;
-}
-
-#if _PY_SHORT_FLOAT_REPR == 1
-
-static double
-m_nan(void)
-{
-#if _PY_SHORT_FLOAT_REPR == 1
-    return _Py_dg_stdnan(0);
-#else
-    return Py_NAN;
-#endif
-}
-
-static Py_complex
-c_nanj(void)
-{
-    Py_complex r;
-    r.real = 0.0;
-    r.imag = m_nan();
-    return r;
-}
-
-#endif
 
 /* forward declarations */
 static Py_complex cmath_asinh_impl(PyObject *, Py_complex);
@@ -1274,23 +1226,22 @@ cmath_exec(PyObject *mod)
     if (PyModule_AddObject(mod, "tau", PyFloat_FromDouble(Py_MATH_TAU)) < 0) {
         return -1;
     }
-    if (PyModule_AddObject(mod, "inf", PyFloat_FromDouble(m_inf())) < 0) {
+    if (PyModule_AddObject(mod, "inf", PyFloat_FromDouble(Py_INFINITY)) < 0) {
         return -1;
     }
 
+    Py_complex infj = {0.0, Py_INFINITY};
     if (PyModule_AddObject(mod, "infj",
-                           PyComplex_FromCComplex(c_infj())) < 0) {
+                           PyComplex_FromCComplex(infj)) < 0) {
         return -1;
     }
-#if _PY_SHORT_FLOAT_REPR == 1
-    if (PyModule_AddObject(mod, "nan", PyFloat_FromDouble(m_nan())) < 0) {
+    if (PyModule_AddObject(mod, "nan", PyFloat_FromDouble(fabs(Py_NAN))) < 0) {
         return -1;
     }
-    if (PyModule_AddObject(mod, "nanj",
-                           PyComplex_FromCComplex(c_nanj())) < 0) {
+    Py_complex nanj = {0.0, fabs(Py_NAN)};
+    if (PyModule_AddObject(mod, "nanj", PyComplex_FromCComplex(nanj)) < 0) {
         return -1;
     }
-#endif
 
     /* initialize special value tables */
 

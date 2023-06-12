@@ -6,7 +6,7 @@
 #include "pycore_symtable.h"      // _Py_Mangle()
 #include "pycore_dict.h"          // _PyDict_KeysSize()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
-#include "pycore_memoryobject.h"  // PyMemoryView_FromObjectAndFlags()
+#include "pycore_memoryobject.h"  // _PyMemoryView_FromBufferProc()
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
 #include "pycore_object.h"        // _PyType_HasFeature()
 #include "pycore_long.h"          // _PyLong_IsNegative()
@@ -56,6 +56,11 @@ typedef struct PySlot_Offset {
     short slot_offset;
 } PySlot_Offset;
 
+static void
+slot_bf_releasebuffer(PyObject *self, Py_buffer *buffer);
+
+static void
+releasebuffer_call_python(PyObject *self, Py_buffer *buffer);
 
 static PyObject *
 slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
@@ -263,12 +268,6 @@ clear_tp_dict(PyTypeObject *self)
 static inline PyObject *
 lookup_tp_bases(PyTypeObject *self)
 {
-    if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        static_builtin_state *state = _PyStaticType_GetState(interp, self);
-        assert(state != NULL);
-        return state->tp_bases;
-    }
     return self->tp_bases;
 }
 
@@ -282,12 +281,22 @@ _PyType_GetBases(PyTypeObject *self)
 static inline void
 set_tp_bases(PyTypeObject *self, PyObject *bases)
 {
+    assert(PyTuple_CheckExact(bases));
     if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        static_builtin_state *state = _PyStaticType_GetState(interp, self);
-        assert(state != NULL);
-        state->tp_bases = bases;
-        return;
+        // XXX tp_bases can probably be statically allocated for each
+        // static builtin type.
+        assert(_Py_IsMainInterpreter(_PyInterpreterState_GET()));
+        assert(self->tp_bases == NULL);
+        if (PyTuple_GET_SIZE(bases) == 0) {
+            assert(self->tp_base == NULL);
+        }
+        else {
+            assert(PyTuple_GET_SIZE(bases) == 1);
+            assert(PyTuple_GET_ITEM(bases, 0) == (PyObject *)self->tp_base);
+            assert(self->tp_base->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
+            assert(_Py_IsImmortal(self->tp_base));
+        }
+        _Py_SetImmortal(bases);
     }
     self->tp_bases = bases;
 }
@@ -296,10 +305,17 @@ static inline void
 clear_tp_bases(PyTypeObject *self)
 {
     if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        static_builtin_state *state = _PyStaticType_GetState(interp, self);
-        assert(state != NULL);
-        Py_CLEAR(state->tp_bases);
+        if (_Py_IsMainInterpreter(_PyInterpreterState_GET())) {
+            if (self->tp_bases != NULL) {
+                if (PyTuple_GET_SIZE(self->tp_bases) == 0) {
+                    Py_CLEAR(self->tp_bases);
+                }
+                else {
+                    assert(_Py_IsImmortal(self->tp_bases));
+                    _Py_ClearImmortal(self->tp_bases);
+                }
+            }
+        }
         return;
     }
     Py_CLEAR(self->tp_bases);
@@ -309,12 +325,6 @@ clear_tp_bases(PyTypeObject *self)
 static inline PyObject *
 lookup_tp_mro(PyTypeObject *self)
 {
-    if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        static_builtin_state *state = _PyStaticType_GetState(interp, self);
-        assert(state != NULL);
-        return state->tp_mro;
-    }
     return self->tp_mro;
 }
 
@@ -328,12 +338,14 @@ _PyType_GetMRO(PyTypeObject *self)
 static inline void
 set_tp_mro(PyTypeObject *self, PyObject *mro)
 {
+    assert(PyTuple_CheckExact(mro));
     if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        static_builtin_state *state = _PyStaticType_GetState(interp, self);
-        assert(state != NULL);
-        state->tp_mro = mro;
-        return;
+        // XXX tp_mro can probably be statically allocated for each
+        // static builtin type.
+        assert(_Py_IsMainInterpreter(_PyInterpreterState_GET()));
+        assert(self->tp_mro == NULL);
+        /* Other checks are done via set_tp_bases. */
+        _Py_SetImmortal(mro);
     }
     self->tp_mro = mro;
 }
@@ -342,10 +354,17 @@ static inline void
 clear_tp_mro(PyTypeObject *self)
 {
     if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        static_builtin_state *state = _PyStaticType_GetState(interp, self);
-        assert(state != NULL);
-        Py_CLEAR(state->tp_mro);
+        if (_Py_IsMainInterpreter(_PyInterpreterState_GET())) {
+            if (self->tp_mro != NULL) {
+                if (PyTuple_GET_SIZE(self->tp_mro) == 0) {
+                    Py_CLEAR(self->tp_mro);
+                }
+                else {
+                    assert(_Py_IsImmortal(self->tp_mro));
+                    _Py_ClearImmortal(self->tp_mro);
+                }
+            }
+        }
         return;
     }
     Py_CLEAR(self->tp_mro);
@@ -1485,6 +1504,34 @@ type_set_annotations(PyTypeObject *type, PyObject *value, void *context)
     return result;
 }
 
+static PyObject *
+type_get_type_params(PyTypeObject *type, void *context)
+{
+    PyObject *params = PyDict_GetItem(lookup_tp_dict(type), &_Py_ID(__type_params__));
+
+    if (params) {
+        return Py_NewRef(params);
+    }
+
+    return PyTuple_New(0);
+}
+
+static int
+type_set_type_params(PyTypeObject *type, PyObject *value, void *context)
+{
+    if (!check_set_special_type_attr(type, value, "__type_params__")) {
+        return -1;
+    }
+
+    PyObject *dict = lookup_tp_dict(type);
+    int result = PyDict_SetItem(dict, &_Py_ID(__type_params__), value);
+
+    if (result == 0) {
+        PyType_Modified(type);
+    }
+    return result;
+}
+
 
 /*[clinic input]
 type.__instancecheck__ -> bool
@@ -1531,6 +1578,7 @@ static PyGetSetDef type_getsets[] = {
     {"__doc__", (getter)type_get_doc, (setter)type_set_doc, NULL},
     {"__text_signature__", (getter)type_get_text_signature, NULL, NULL},
     {"__annotations__", (getter)type_get_annotations, (setter)type_set_annotations, NULL},
+    {"__type_params__", (getter)type_get_type_params, (setter)type_set_type_params, NULL},
     {0}
 };
 
@@ -3125,11 +3173,12 @@ type_new_copy_slots(type_new_ctx *ctx, PyObject *dict)
             goto error;
         }
         if (r > 0) {
-            /* CPython inserts __qualname__ and __classcell__ (when needed)
+            /* CPython inserts these names (when needed)
                into the namespace when creating a class.  They will be deleted
                below so won't act as class variables. */
             if (!_PyUnicode_Equal(slot, &_Py_ID(__qualname__)) &&
-                !_PyUnicode_Equal(slot, &_Py_ID(__classcell__)))
+                !_PyUnicode_Equal(slot, &_Py_ID(__classcell__)) &&
+                !_PyUnicode_Equal(slot, &_Py_ID(__classdictcell__)))
             {
                 PyErr_Format(PyExc_ValueError,
                              "%R in __slots__ conflicts with class variable",
@@ -3580,6 +3629,32 @@ type_new_set_classcell(PyTypeObject *type)
     return 0;
 }
 
+static int
+type_new_set_classdictcell(PyTypeObject *type)
+{
+    PyObject *dict = lookup_tp_dict(type);
+    PyObject *cell = PyDict_GetItemWithError(dict, &_Py_ID(__classdictcell__));
+    if (cell == NULL) {
+        if (PyErr_Occurred()) {
+            return -1;
+        }
+        return 0;
+    }
+
+    /* At least one method requires a reference to the dict of its defining class */
+    if (!PyCell_Check(cell)) {
+        PyErr_Format(PyExc_TypeError,
+                     "__classdictcell__ must be a nonlocal cell, not %.200R",
+                     Py_TYPE(cell));
+        return -1;
+    }
+
+    (void)PyCell_Set(cell, (PyObject *)dict);
+    if (PyDict_DelItem(dict, &_Py_ID(__classdictcell__)) < 0) {
+        return -1;
+    }
+    return 0;
+}
 
 static int
 type_new_set_attrs(const type_new_ctx *ctx, PyTypeObject *type)
@@ -3622,6 +3697,9 @@ type_new_set_attrs(const type_new_ctx *ctx, PyTypeObject *type)
     type_new_set_slots(ctx, type);
 
     if (type_new_set_classcell(type) < 0) {
+        return -1;
+    }
+    if (type_new_set_classdictcell(type) < 0) {
         return -1;
     }
     return 0;
@@ -4823,8 +4901,6 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
     }
     if (PyUnicode_Check(name)) {
         if (PyUnicode_CheckExact(name)) {
-            if (PyUnicode_READY(name) == -1)
-                return -1;
             Py_INCREF(name);
         }
         else {
@@ -6924,12 +7000,8 @@ type_ready_pre_checks(PyTypeObject *type)
 
 
 static int
-type_ready_set_bases(PyTypeObject *type)
+type_ready_set_base(PyTypeObject *type)
 {
-    if (lookup_tp_bases(type) != NULL) {
-        return 0;
-    }
-
     /* Initialize tp_base (defaults to BaseObject unless that's us) */
     PyTypeObject *base = type->tp_base;
     if (base == NULL && type != &PyBaseObject_Type) {
@@ -6953,6 +7025,12 @@ type_ready_set_bases(PyTypeObject *type)
         }
     }
 
+    return 0;
+}
+
+static int
+type_ready_set_type(PyTypeObject *type)
+{
     /* Initialize ob_type if NULL.      This means extensions that want to be
        compilable separately on Windows can call PyType_Ready() instead of
        initializing the ob_type field of their type objects. */
@@ -6960,11 +7038,25 @@ type_ready_set_bases(PyTypeObject *type)
        NULL when type is &PyBaseObject_Type, and we know its ob_type is
        not NULL (it's initialized to &PyType_Type).      But coverity doesn't
        know that. */
+    PyTypeObject *base = type->tp_base;
     if (Py_IS_TYPE(type, NULL) && base != NULL) {
         Py_SET_TYPE(type, Py_TYPE(base));
     }
 
-    /* Initialize tp_bases */
+    return 0;
+}
+
+static int
+type_ready_set_bases(PyTypeObject *type)
+{
+    if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        if (!_Py_IsMainInterpreter(_PyInterpreterState_GET())) {
+            assert(lookup_tp_bases(type) != NULL);
+            return 0;
+        }
+        assert(lookup_tp_bases(type) == NULL);
+    }
+
     PyObject *bases = lookup_tp_bases(type);
     if (bases == NULL) {
         PyTypeObject *base = type->tp_base;
@@ -7089,6 +7181,14 @@ type_ready_preheader(PyTypeObject *type)
 static int
 type_ready_mro(PyTypeObject *type)
 {
+    if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        if (!_Py_IsMainInterpreter(_PyInterpreterState_GET())) {
+            assert(lookup_tp_mro(type) != NULL);
+            return 0;
+        }
+        assert(lookup_tp_mro(type) == NULL);
+    }
+
     /* Calculate method resolution order */
     if (mro_internal(type, NULL) < 0) {
         return -1;
@@ -7364,6 +7464,12 @@ type_ready(PyTypeObject *type, int rerunbuiltin)
 
     /* Initialize tp_dict: _PyType_IsReady() tests if tp_dict != NULL */
     if (type_ready_set_dict(type) < 0) {
+        goto error;
+    }
+    if (type_ready_set_base(type) < 0) {
+        goto error;
+    }
+    if (type_ready_set_type(type) < 0) {
         goto error;
     }
     if (type_ready_set_bases(type) < 0) {
@@ -8078,7 +8184,8 @@ wrap_buffer(PyObject *self, PyObject *args, void *wrapped)
         return NULL;
     }
 
-    return PyMemoryView_FromObjectAndFlags(self, Py_SAFE_DOWNCAST(flags, Py_ssize_t, int));
+    return _PyMemoryView_FromBufferProc(self, Py_SAFE_DOWNCAST(flags, Py_ssize_t, int),
+                                        (getbufferproc)wrapped);
 }
 
 static PyObject *
@@ -8094,6 +8201,10 @@ wrap_releasebuffer(PyObject *self, PyObject *args, void *wrapped)
         return NULL;
     }
     PyMemoryViewObject *mview = (PyMemoryViewObject *)arg;
+    if (mview->view.obj == NULL) {
+        // Already released, ignore
+        Py_RETURN_NONE;
+    }
     if (mview->view.obj != self) {
         PyErr_SetString(PyExc_ValueError,
                         "memoryview's buffer is not this object");
@@ -8978,12 +9089,26 @@ bufferwrapper_releasebuf(PyObject *self, Py_buffer *view)
 {
     PyBufferWrapper *bw = (PyBufferWrapper *)self;
 
-    assert(PyMemoryView_Check(bw->mv));
-    Py_TYPE(bw->mv)->tp_as_buffer->bf_releasebuffer(bw->mv, view);
-    if (Py_TYPE(bw->obj)->tp_as_buffer != NULL
-        && Py_TYPE(bw->obj)->tp_as_buffer->bf_releasebuffer != NULL) {
-        Py_TYPE(bw->obj)->tp_as_buffer->bf_releasebuffer(bw->obj, view);
+    if (bw->mv == NULL || bw->obj == NULL) {
+        // Already released
+        return;
     }
+
+    PyObject *mv = bw->mv;
+    PyObject *obj = bw->obj;
+
+    assert(PyMemoryView_Check(mv));
+    Py_TYPE(mv)->tp_as_buffer->bf_releasebuffer(mv, view);
+    // We only need to call bf_releasebuffer if it's a Python function. If it's a C
+    // bf_releasebuf, it will be called when the memoryview is released.
+    if (((PyMemoryViewObject *)mv)->view.obj != obj
+            && Py_TYPE(obj)->tp_as_buffer != NULL
+            && Py_TYPE(obj)->tp_as_buffer->bf_releasebuffer == slot_bf_releasebuffer) {
+        releasebuffer_call_python(obj, view);
+    }
+
+    Py_CLEAR(bw->mv);
+    Py_CLEAR(bw->obj);
 }
 
 static PyBufferProcs bufferwrapper_as_buffer = {
@@ -9047,30 +9172,127 @@ fail:
     return -1;
 }
 
-static void
-slot_bf_releasebuffer(PyObject *self, Py_buffer *buffer)
+static int
+releasebuffer_maybe_call_super(PyObject *self, Py_buffer *buffer)
 {
+    PyTypeObject *self_type = Py_TYPE(self);
+    PyObject *mro = lookup_tp_mro(self_type);
+    if (mro == NULL) {
+        return -1;
+    }
+
+    assert(PyTuple_Check(mro));
+    Py_ssize_t n = PyTuple_GET_SIZE(mro);
+    Py_ssize_t i;
+
+    /* No need to check the last one: it's gonna be skipped anyway.  */
+    for (i = 0;  i < n -1; i++) {
+        if ((PyObject *)(self_type) == PyTuple_GET_ITEM(mro, i))
+            break;
+    }
+    i++;  /* skip self_type */
+    if (i >= n)
+        return -1;
+
+    releasebufferproc base_releasebuffer = NULL;
+    for (; i < n; i++) {
+        PyObject *obj = PyTuple_GET_ITEM(mro, i);
+        if (!PyType_Check(obj)) {
+            continue;
+        }
+        PyTypeObject *base_type = (PyTypeObject *)obj;
+        if (base_type->tp_as_buffer != NULL
+            && base_type->tp_as_buffer->bf_releasebuffer != NULL
+            && base_type->tp_as_buffer->bf_releasebuffer != slot_bf_releasebuffer) {
+            base_releasebuffer = base_type->tp_as_buffer->bf_releasebuffer;
+            break;
+        }
+    }
+
+    if (base_releasebuffer != NULL) {
+        base_releasebuffer(self, buffer);
+    }
+    return 0;
+}
+
+static void
+releasebuffer_call_python(PyObject *self, Py_buffer *buffer)
+{
+    // bf_releasebuffer may be called while an exception is already active.
+    // We have no way to report additional errors up the stack, because
+    // this slot returns void, so we simply stash away the active exception
+    // and restore it after the call to Python returns.
+    PyObject *exc = PyErr_GetRaisedException();
+
     PyObject *mv;
-    if (Py_TYPE(buffer->obj) == &_PyBufferWrapper_Type) {
+    bool is_buffer_wrapper = Py_TYPE(buffer->obj) == &_PyBufferWrapper_Type;
+    if (is_buffer_wrapper) {
         // Make sure we pass the same memoryview to
         // __release_buffer__() that __buffer__() returned.
-        mv = Py_NewRef(((PyBufferWrapper *)buffer->obj)->mv);
+        PyBufferWrapper *bw = (PyBufferWrapper *)buffer->obj;
+        if (bw->mv == NULL) {
+            goto end;
+        }
+        mv = Py_NewRef(bw->mv);
     }
     else {
+        // This means we are not dealing with a memoryview returned
+        // from a Python __buffer__ function.
         mv = PyMemoryView_FromBuffer(buffer);
         if (mv == NULL) {
             PyErr_WriteUnraisable(self);
-            return;
+            goto end;
         }
+        // Set the memoryview to restricted mode, which forbids
+        // users from saving any reference to the underlying buffer
+        // (e.g., by doing .cast()). This is necessary to ensure
+        // no Python code retains a reference to the to-be-released
+        // buffer.
+        ((PyMemoryViewObject *)mv)->flags |= _Py_MEMORYVIEW_RESTRICTED;
     }
     PyObject *stack[2] = {self, mv};
     PyObject *ret = vectorcall_method(&_Py_ID(__release_buffer__), stack, 2);
-    Py_DECREF(mv);
     if (ret == NULL) {
         PyErr_WriteUnraisable(self);
     }
     else {
         Py_DECREF(ret);
+    }
+    if (!is_buffer_wrapper) {
+        PyObject *res = PyObject_CallMethodNoArgs(mv, &_Py_ID(release));
+        if (res == NULL) {
+            PyErr_WriteUnraisable(self);
+        }
+        else {
+            Py_DECREF(res);
+        }
+    }
+    Py_DECREF(mv);
+end:
+    assert(!PyErr_Occurred());
+
+    PyErr_SetRaisedException(exc);
+}
+
+/*
+ * bf_releasebuffer is very delicate, because we need to ensure that
+ * C bf_releasebuffer slots are called correctly (or we'll leak memory),
+ * but we cannot trust any __release_buffer__ implemented in Python to
+ * do so correctly. Therefore, if a base class has a C bf_releasebuffer
+ * slot, we call it directly here. That is safe because this function
+ * only gets called from C callers of the bf_releasebuffer slot. Python
+ * code that calls __release_buffer__ directly instead goes through
+ * wrap_releasebuffer(), which doesn't call the bf_releasebuffer slot
+ * directly but instead simply releases the associated memoryview.
+ */
+static void
+slot_bf_releasebuffer(PyObject *self, Py_buffer *buffer)
+{
+    releasebuffer_call_python(self, buffer);
+    if (releasebuffer_maybe_call_super(self, buffer) < 0) {
+        if (PyErr_Occurred()) {
+            PyErr_WriteUnraisable(self);
+        }
     }
 }
 
@@ -9248,7 +9470,7 @@ static pytype_slotdef slotdefs[] = {
             "__buffer__($self, flags, /)\n--\n\n"
             "Return a buffer object that exposes the underlying memory of the object."),
     BUFSLOT(__release_buffer__, bf_releasebuffer, slot_bf_releasebuffer, wrap_releasebuffer,
-            "__release_buffer__($self, /)\n--\n\n"
+            "__release_buffer__($self, buffer, /)\n--\n\n"
             "Release the buffer object that exposes the underlying memory of the object."),
 
     AMSLOT(__await__, am_await, slot_am_await, wrap_unaryfunc,
@@ -10140,18 +10362,6 @@ _PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj, PyObject *name, int *me
     return res;
 }
 
-PyObject *
-_PySuper_LookupDescr(PyTypeObject *su_type, PyObject *su_obj, PyObject *name)
-{
-    PyTypeObject *su_obj_type = supercheck(su_type, su_obj);
-    if (su_obj_type == NULL) {
-        return NULL;
-    }
-    PyObject *res = _super_lookup_descr(su_type, su_obj_type, name);
-    Py_DECREF(su_obj_type);
-    return res;
-}
-
 static PyObject *
 super_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
@@ -10174,8 +10384,10 @@ super_descr_get(PyObject *self, PyObject *obj, PyObject *type)
             return NULL;
         newobj = (superobject *)PySuper_Type.tp_new(&PySuper_Type,
                                                  NULL, NULL);
-        if (newobj == NULL)
+        if (newobj == NULL) {
+            Py_DECREF(obj_type);
             return NULL;
+        }
         newobj->type = (PyTypeObject*)Py_NewRef(su->type);
         newobj->obj = Py_NewRef(obj);
         newobj->obj_type = obj_type;

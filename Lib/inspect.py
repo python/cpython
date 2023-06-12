@@ -1242,6 +1242,14 @@ def getblock(lines):
             blockfinder.tokeneater(*_token)
     except (EndOfBlock, IndentationError):
         pass
+    except SyntaxError as e:
+        if "unmatched" not in e.msg:
+            raise e from None
+        _, *_token_info = _token
+        try:
+            blockfinder.tokeneater(tokenize.NEWLINE, *_token_info)
+        except (EndOfBlock, IndentationError):
+            pass
     return lines[:blockfinder.last]
 
 def getsourcelines(object):
@@ -1794,8 +1802,9 @@ def _check_class(klass, attr):
             return entry.__dict__[attr]
     return _sentinel
 
-def _shadowed_dict(klass):
-    for entry in _static_getmro(klass):
+@functools.lru_cache()
+def _shadowed_dict_from_mro_tuple(mro):
+    for entry in mro:
         dunder_dict = _get_dunder_dict_of_class(entry)
         if '__dict__' in dunder_dict:
             class_dict = dunder_dict['__dict__']
@@ -1804,6 +1813,9 @@ def _shadowed_dict(klass):
                     class_dict.__objclass__ is entry):
                 return class_dict
     return _sentinel
+
+def _shadowed_dict(klass):
+    return _shadowed_dict_from_mro_tuple(_static_getmro(klass))
 
 def getattr_static(obj, attr, default=_sentinel):
     """Retrieve attributes without triggering dynamic lookup via the
@@ -1831,8 +1843,10 @@ def getattr_static(obj, attr, default=_sentinel):
     klass_result = _check_class(klass, attr)
 
     if instance_result is not _sentinel and klass_result is not _sentinel:
-        if (_check_class(type(klass_result), '__get__') is not _sentinel and
-            _check_class(type(klass_result), '__set__') is not _sentinel):
+        if _check_class(type(klass_result), "__get__") is not _sentinel and (
+            _check_class(type(klass_result), "__set__") is not _sentinel
+            or _check_class(type(klass_result), "__delete__") is not _sentinel
+        ):
             return klass_result
 
     if instance_result is not _sentinel:
@@ -2181,7 +2195,7 @@ def _signature_strip_non_python_syntax(signature):
             if string == ',':
                 current_parameter += 1
 
-        if (type == ERRORTOKEN) and (string == '$'):
+        if (type == OP) and (string == '$'):
             assert self_parameter is None
             self_parameter = current_parameter
             continue
@@ -2189,7 +2203,7 @@ def _signature_strip_non_python_syntax(signature):
         add(string)
         if (string == ','):
             add(' ')
-    clean_signature = ''.join(text)
+    clean_signature = ''.join(text).strip().replace("\n", "")
     return clean_signature, self_parameter
 
 
@@ -2567,17 +2581,18 @@ def _signature_from_callable(obj, *,
             factory_method = None
             new = _signature_get_user_defined_method(obj, '__new__')
             init = _signature_get_user_defined_method(obj, '__init__')
-            # Now we check if the 'obj' class has an own '__new__' method
-            if '__new__' in obj.__dict__:
-                factory_method = new
-            # or an own '__init__' method
-            elif '__init__' in obj.__dict__:
-                factory_method = init
-            # If not, we take inherited '__new__' or '__init__', if present
-            elif new is not None:
-                factory_method = new
-            elif init is not None:
-                factory_method = init
+
+            # Go through the MRO and see if any class has user-defined
+            # pure Python __new__ or __init__ method
+            for base in obj.__mro__:
+                # Now we check if the 'obj' class has an own '__new__' method
+                if new is not None and '__new__' in base.__dict__:
+                    factory_method = new
+                    break
+                # or an own '__init__' method
+                elif init is not None and '__init__' in base.__dict__:
+                    factory_method = init
+                    break
 
             if factory_method is not None:
                 sig = _get_signature_of(factory_method)
