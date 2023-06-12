@@ -1145,21 +1145,31 @@ _Pickler_Write(PicklerObject *self, const char *s, Py_ssize_t data_len)
 static PicklerObject *
 _Pickler_New(PickleState *st)
 {
-    PicklerObject *self;
-
-    self = PyObject_GC_New(PicklerObject, st->Pickler_Type);
-    if (self == NULL)
+    PyMemoTable *memo = PyMemoTable_New();
+    if (memo == NULL) {
         return NULL;
+    }
 
-    self->memo = NULL;
+    const Py_ssize_t max_output_len = WRITE_BUF_SIZE;
+    PyObject *output_buffer = PyBytes_FromStringAndSize(NULL, max_output_len);
+    if (output_buffer == NULL) {
+        goto error;
+    }
+
+    PicklerObject *self = PyObject_GC_New(PicklerObject, st->Pickler_Type);
+    if (self == NULL) {
+        goto error;
+    }
+
+    self->memo = memo;
     self->pers_func = NULL;
     self->pers_func_self = NULL;
     self->dispatch_table = NULL;
     self->reducer_override = NULL;
     self->write = NULL;
-    self->output_buffer = NULL;
+    self->output_buffer = output_buffer;
     self->output_len = 0;
-    self->max_output_len = WRITE_BUF_SIZE;
+    self->max_output_len = max_output_len;
     self->proto = 0;
     self->bin = 0;
     self->framing = 0;
@@ -1171,20 +1181,13 @@ _Pickler_New(PickleState *st)
     self->fast_memo = NULL;
     self->buffer_callback = NULL;
 
-    self->memo = PyMemoTable_New();
-    if (self->memo == NULL) {
-        Py_DECREF(self);
-        return NULL;
-    }
-    self->output_buffer = PyBytes_FromStringAndSize(NULL,
-                                                    self->max_output_len);
-    if (self->output_buffer == NULL) {
-        Py_DECREF(self);
-        return NULL;
-    }
-
     PyObject_GC_Track(self);
     return self;
+
+error:
+    PyMem_Free(memo);
+    Py_XDECREF(output_buffer);
+    return NULL;
 }
 
 static int
@@ -1632,16 +1635,27 @@ _Unpickler_MemoCleanup(UnpicklerObject *self)
 static UnpicklerObject *
 _Unpickler_New(PyObject *module)
 {
-    UnpicklerObject *self;
-    PickleState *st = _Pickle_GetState(module);
-
-    self = PyObject_GC_New(UnpicklerObject, st->Unpickler_Type);
-    if (self == NULL)
+    const int MEMO_SIZE = 32;
+    PyObject **memo = _Unpickler_NewMemo(MEMO_SIZE);
+    if (memo == NULL) {
         return NULL;
+    }
 
-    self->stack = NULL;
-    self->memo = NULL;
-    self->memo_size = 32;
+    PickleState *st = _Pickle_GetState(module);
+    PyObject *stack = Pdata_New(st);
+    if (stack == NULL) {
+        goto error;
+    }
+
+    UnpicklerObject *self = PyObject_GC_New(UnpicklerObject,
+                                            st->Unpickler_Type);
+    if (self == NULL) {
+        goto error;
+    }
+
+    self->stack = (Pdata *)stack;
+    self->memo = memo;
+    self->memo_size = MEMO_SIZE;
     self->memo_len = 0;
     self->pers_func = NULL;
     self->pers_func_self = NULL;
@@ -1664,19 +1678,13 @@ _Unpickler_New(PyObject *module)
     self->proto = 0;
     self->fix_imports = 0;
 
-    self->memo = _Unpickler_NewMemo(self->memo_size);
-    if (self->memo == NULL) {
-        Py_DECREF(self);
-        return NULL;
-    }
-    self->stack = (Pdata *)Pdata_New(st);
-    if (self->stack == NULL) {
-        Py_DECREF(self);
-        return NULL;
-    }
-
     PyObject_GC_Track(self);
     return self;
+
+error:
+    PyMem_Free(memo);
+    Py_XDECREF(stack);
+    return NULL;
 }
 
 /* Returns -1 (with an exception set) on failure, 0 on success. This may
