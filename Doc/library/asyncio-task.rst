@@ -427,7 +427,8 @@ Sleeping
       Removed the *loop* parameter.
 
    .. versionchanged:: 3.13
-      If the *delay* value is nan will raise ValueError.
+      Raises :exc:`ValueError` if *delay* is :data:`math.nan`.
+
 
 Running Tasks Concurrently
 ==========================
