@@ -1,0 +1,1 @@
+Remove unsupported and non-functional SND_NOWAIT and SND_PURGE flags from :mod:`winsound`
