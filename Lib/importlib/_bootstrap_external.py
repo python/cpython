@@ -448,6 +448,8 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.13a1 3550 (Plugin optimizer support)
 #     Python 3.13a1 3551 (Compact superinstructions)
 
+#     Python 3.13a1 3554 (Add SET_FUNCTION_ATTRIBUTE)
+
 #     Python 3.14 will start with 3600
 
 #     Please don't copy-paste the same pre-release tag for new entries above!!!
@@ -463,7 +465,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3551).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3554).to_bytes(2, 'little') + b'\r\n'
 
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 

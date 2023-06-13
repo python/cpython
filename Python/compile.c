@@ -1823,7 +1823,21 @@ compiler_make_closure(struct compiler *c, location loc,
         ADDOP_I(c, loc, BUILD_TUPLE, co->co_nfreevars);
     }
     ADDOP_LOAD_CONST(c, loc, (PyObject*)co);
-    ADDOP_I(c, loc, MAKE_FUNCTION, flags);
+
+    ADDOP(c, loc, MAKE_FUNCTION);
+
+    if (flags & MAKE_FUNCTION_CLOSURE) {
+        ADDOP_I(c, loc, SET_FUNCTION_ATTRIBUTE, MAKE_FUNCTION_CLOSURE);
+    }
+    if (flags & MAKE_FUNCTION_ANNOTATIONS) {
+        ADDOP_I(c, loc, SET_FUNCTION_ATTRIBUTE, MAKE_FUNCTION_ANNOTATIONS);
+    }
+    if (flags & MAKE_FUNCTION_KWDEFAULTS) {
+        ADDOP_I(c, loc, SET_FUNCTION_ATTRIBUTE, MAKE_FUNCTION_KWDEFAULTS);
+    }
+    if (flags & MAKE_FUNCTION_DEFAULTS) {
+        ADDOP_I(c, loc, SET_FUNCTION_ATTRIBUTE, MAKE_FUNCTION_DEFAULTS);
+    }
     return SUCCESS;
 }
 
