@@ -67,17 +67,17 @@ parts of instructions, we can reduce the potential for errors considerably.
 
 ## Specification
 
-This specification is at an early stage and is likely to change considerably.
+This specification is a work in progress.
+We update it as the need arises.
 
-Syntax
-------
+### Syntax
 
 Each op definition has a kind, a name, a stack and instruction stream effect,
 and a piece of C code describing its semantics::
  
 ```
   file:
-    (definition | family)+
+    (definition | family | pseudo)+
 
   definition:
     "inst" "(" NAME ["," stack_effect] ")" "{" C-code "}"
@@ -120,7 +120,10 @@ and a piece of C code describing its semantics::
     object "[" C-expression "]"
 
   family:
-    "family" "(" NAME ")" = "{" NAME ("," NAME)+ "}" ";"
+    "family" "(" NAME ")" = "{" NAME ("," NAME)+ [","] "}" ";"
+
+  pseudo:
+    "pseudo" "(" NAME ")" = "{" NAME ("," NAME)+ [","] "}" ";"
 ```
 
 The following definitions may occur:
@@ -155,7 +158,7 @@ By convention cache effects (`stream`) must precede the input effects.
 
 The name `oparg` is pre-defined as a 32 bit value fetched from the instruction stream.
 
-## Special functions/macros
+### Special functions/macros
 
 The C code may include special functions that are understood by the tools as
 part of the DSL.
@@ -208,17 +211,20 @@ An example of the latter would be:
     }
 ```
 
-Semantics
----------
+### Semantics
 
 The underlying execution model is a stack machine.
 Operations pop values from the stack, and push values to the stack.
 They also can look at, and consume, values from the instruction stream.
 
-All members of a family must have the same stack and instruction stream effect.
+All members of a family
+(which represents a specializable instruction and its specializations)
+must have the same stack and instruction stream effect.
 
-Examples
---------
+The same is true for all members of a pseudo instruction
+(which is mapped by the bytecode compiler to one of its members).
+
+## Examples
 
 (Another source of examples can be found in the [tests](test_generator.py).)
 
@@ -339,14 +345,26 @@ For explanations see "Generating the interpreter" below.)
     }
 ```
 
-### Define an instruction family
-These opcodes all share the same instruction format):
+### Defining an instruction family
+
+A _family_ represents a specializable instruction and its specializations.
+
+Example: These opcodes all share the same instruction format):
 ```C
-    family(load_attr) = { LOAD_ATTR, LOAD_ATTR_INSTANCE_VALUE, LOAD_SLOT } ;
+    family(load_attr) = { LOAD_ATTR, LOAD_ATTR_INSTANCE_VALUE, LOAD_SLOT };
 ```
 
-Generating the interpreter
-==========================
+### Defining a pseudo instruction
+
+A _pseudo instruction_ is used by the bytecode compiler to represent a set of possible concrete instructions.
+
+Example: `JUMP` may expand to `JUMP_FORWARD` or `JUMP_BACKWARD`:
+```C
+    pseudo(JUMP) = { JUMP_FORWARD, JUMP_BACKWARD };
+```
+
+
+## Generating the interpreter
 
 The generated C code for a single instruction includes a preamble and dispatch at the end
 which can be easily inserted. What is more complex is ensuring the correct stack effects
@@ -401,9 +419,7 @@ rather than popping and pushing, such that `LOAD_ATTR_SLOT` would look something
     }
 ```
 
-Other tools
-===========
+## Other tools
 
 From the instruction definitions we can generate the stack marking code used in `frame.set_lineno()`,
 and the tables for use by disassemblers.
-
