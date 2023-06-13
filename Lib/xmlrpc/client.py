@@ -249,6 +249,9 @@ boolean = Boolean = bool
 
 
 def _iso8601_format(value):
+    if value.tzinfo is not None:
+        # XML-RPC only uses the naive portion of the datetime
+        value = value.replace(tzinfo=None)
     # XML-RPC doesn't use '-' separator in the date part
     return value.isoformat(timespec='seconds').replace('-', '')
 
