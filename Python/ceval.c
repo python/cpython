@@ -772,20 +772,20 @@ handle_eval_breaker:
      *  - cyclic garbage collection
      *  - GIL drop requests
      *  - "async" exceptions
-     *  - "pending calls"
+     *  - "pending calls"  (some only in the main thread)
      *  - signal handling (only in the main thread)
      *
      * When the need for one of the above is detected, the eval loop
-     * calls _Py_HandlePending() (from ceval_gil.c).  Then, if that
-     * didn't trigger an exception, the eval loop resumes executing
+     * pauses long enough to handle the detected case.  Then, if doing
+     * so didn't trigger an exception, the eval loop resumes executing
      * the sequential instructions.
      *
      * To make this work, the eval loop periodically checks if any
      * of the above needs to happen.  The individual checks can be
      * expensive if computed each time, so a while back we switched
      * to using pre-computed, per-interpreter variables for the checks,
-     * and later consolidated that to a single "eval breaker" variable.
-     * (See PyInterpreterState.ceval.eval_breaker in pycore_ceval_state.h.)
+     * and later consolidated that to a single "eval breaker" variable
+     * (now a PyInterpreterState field).
      *
      * For the longest time, the eval breaker check would happen
      * frequently, every 5 or so times through the loop, regardless
@@ -802,16 +802,17 @@ handle_eval_breaker:
      *
      * Currently, the eval breaker check happens here at the
      * "handle_eval_breaker" label.  Some instructions come here
-     * explicitly (goto) and some indirectly via the CHECK_EVAL_BREAKER
-     * macro (see ceval_macros.h).  Notably, the check happens at the
-     * end of the JUMP_BACKWARD instruction, which pretty much applies
-     * to all loops.  The same applies to the CALL instruction and
-     * many (but not all) of the CALL_* instructions.
-     * See bytecodes.c for exact information.
+     * explicitly (goto) and some indirectly.  Notably, the check
+     * happens on back edges in the control flow graph, which
+     * pretty much applies to all loops and most calls.
+     * (See bytecodes.c for exact information.)
      *
-     * One consequence of this approach is that it can be tricky
-     * to force any specific thread to pick up the eval breaker,
-     * or for any specific thread to not pick it up.
+     * One consequence of this approach is that it might not be obvious
+     * how to force any specific thread to pick up the eval breaker,
+     * or for any specific thread to not pick it up.  Mostly this
+     * involves judicious uses of locks and careful ordering of code,
+     * while avoiding code that might trigger the eval breaker
+     * until so desired.
      */
     if (_Py_HandlePending(tstate) != 0) {
         goto error;

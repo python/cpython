@@ -867,7 +867,8 @@ _PyEval_AddPendingCall(PyInterpreterState *interp,
 int
 Py_AddPendingCall(int (*func)(void *), void *arg)
 {
-    /* Legacy users of this API will continue to target the main thread. */
+    /* Legacy users of this API will continue to target the main thread
+       (of the main interpreter). */
     PyInterpreterState *interp = _PyInterpreterState_Main();
     return _PyEval_AddPendingCall(interp, func, arg, 1);
 }
