@@ -248,6 +248,8 @@ instr_sequence_use_label(instr_sequence *seq, int lbl) {
 static int
 instr_sequence_addop(instr_sequence *seq, int opcode, int oparg, location loc)
 {
+    assert(!HAS_ARG(opcode) == !OPCODE_HAS_ARG(opcode));
+    assert(!HAS_CONST(opcode) == !OPCODE_HAS_CONST(opcode));
     assert(0 <= opcode && opcode <= MAX_OPCODE);
     assert(IS_PSEUDO_OPCODE(opcode) == IS_PSEUDO_INSTR(opcode));
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
