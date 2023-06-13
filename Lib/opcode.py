@@ -96,6 +96,7 @@ def_op('UNARY_INVERT', 15)
 # This helps us catch cases where we attempt to execute a cache.
 def_op('RESERVED', 17)
 
+def_op('MAKE_FUNCTION', 24)
 def_op('BINARY_SUBSCR', 25)
 def_op('BINARY_SLICE', 26)
 def_op('STORE_SLICE', 27)
@@ -183,7 +184,6 @@ jrel_op('POP_JUMP_IF_NOT_NONE', 128)
 jrel_op('POP_JUMP_IF_NONE', 129)
 def_op('RAISE_VARARGS', 130)    # Number of raise arguments (1, 2, or 3)
 def_op('GET_AWAITABLE', 131)
-def_op('MAKE_FUNCTION', 132)    # Flags
 def_op('BUILD_SLICE', 133)      # Number of items
 jrel_op('JUMP_BACKWARD_NO_INTERRUPT', 134) # Number of words to skip (backwards)
 def_op('MAKE_CELL', 135)
@@ -234,6 +234,7 @@ def_op('CALL_INTRINSIC_2', 174)
 name_op('LOAD_FROM_DICT_OR_GLOBALS', 175)
 def_op('LOAD_FROM_DICT_OR_DEREF', 176)
 hasfree.append(176)
+def_op('SET_FUNCTION_ATTRIBUTE', 177)    # Attribute
 
 # Optimizer hook
 def_op('ENTER_EXECUTOR', 230)

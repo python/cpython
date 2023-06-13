@@ -395,7 +395,9 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case CALL_FUNCTION_EX:
             return ((oparg & 1) ? 1 : 0) + 3;
         case MAKE_FUNCTION:
-            return ((oparg & MAKE_FUNCTION_DEFAULTS) ? 1 : 0) + ((oparg & MAKE_FUNCTION_KWDEFAULTS) ? 1 : 0) + ((oparg & MAKE_FUNCTION_ANNOTATIONS) ? 1 : 0) + ((oparg & MAKE_FUNCTION_CLOSURE) ? 1 : 0) + 1;
+            return 1;
+        case SET_FUNCTION_ATTRIBUTE:
+            return 2;
         case RETURN_GENERATOR:
             return 0;
         case BUILD_SLICE:
@@ -812,6 +814,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 1;
         case MAKE_FUNCTION:
             return 1;
+        case SET_FUNCTION_ATTRIBUTE:
+            return 1;
         case RETURN_GENERATOR:
             return 0;
         case BUILD_SLICE:
@@ -1049,7 +1053,8 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {
     [CALL_NO_KW_METHOD_DESCRIPTOR_FAST] = { true, INSTR_FMT_IBC00 },
     [INSTRUMENTED_CALL_FUNCTION_EX] = { true, INSTR_FMT_IX },
     [CALL_FUNCTION_EX] = { true, INSTR_FMT_IB },
-    [MAKE_FUNCTION] = { true, INSTR_FMT_IB },
+    [MAKE_FUNCTION] = { true, INSTR_FMT_IX },
+    [SET_FUNCTION_ATTRIBUTE] = { true, INSTR_FMT_IB },
     [RETURN_GENERATOR] = { true, INSTR_FMT_IX },
     [BUILD_SLICE] = { true, INSTR_FMT_IB },
     [FORMAT_VALUE] = { true, INSTR_FMT_IB },
