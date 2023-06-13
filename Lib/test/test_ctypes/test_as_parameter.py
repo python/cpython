@@ -1,4 +1,5 @@
 import unittest
+import ctypes
 from ctypes import *
 from test.test_ctypes import need_symbol
 import _ctypes_test
@@ -6,8 +7,8 @@ import _ctypes_test
 dll = CDLL(_ctypes_test.__file__)
 
 try:
-    CALLBACK_FUNCTYPE = WINFUNCTYPE
-except NameError:
+    CALLBACK_FUNCTYPE = ctypes.WINFUNCTYPE
+except AttributeError:
     # fake to enable this test on Linux
     CALLBACK_FUNCTYPE = CFUNCTYPE
 

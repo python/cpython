@@ -1,5 +1,6 @@
 # Windows specific tests
 
+import ctypes
 from ctypes import *
 import unittest, sys
 from test import support
@@ -14,15 +15,17 @@ class FunctionCallTestCase(unittest.TestCase):
     def test_SEH(self):
         # Disable faulthandler to prevent logging the warning:
         # "Windows fatal exception: access violation"
+        kernel32 = ctypes.windll.kernel32
         with support.disable_faulthandler():
             # Call functions with invalid arguments, and make sure
             # that access violations are trapped and raise an
             # exception.
-            self.assertRaises(OSError, windll.kernel32.GetModuleHandleA, 32)
+            self.assertRaises(OSError, kernel32.GetModuleHandleA, 32)
 
     def test_noargs(self):
         # This is a special case on win32 x64
-        windll.user32.GetDesktopWindow()
+        user32 = ctypes.windll.user32
+        user32.GetDesktopWindow()
 
 
 @unittest.skipUnless(sys.platform == "win32", 'Windows-specific test')
@@ -73,17 +76,18 @@ class TestWinError(unittest.TestCase):
         # see Issue 16169
         import errno
         ERROR_INVALID_PARAMETER = 87
-        msg = FormatError(ERROR_INVALID_PARAMETER).strip()
+        msg = ctypes.FormatError(ERROR_INVALID_PARAMETER).strip()
         args = (errno.EINVAL, msg, None, ERROR_INVALID_PARAMETER)
 
-        e = WinError(ERROR_INVALID_PARAMETER)
+        e = ctypes.WinError(ERROR_INVALID_PARAMETER)
         self.assertEqual(e.args, args)
         self.assertEqual(e.errno, errno.EINVAL)
         self.assertEqual(e.winerror, ERROR_INVALID_PARAMETER)
 
-        windll.kernel32.SetLastError(ERROR_INVALID_PARAMETER)
+        kernel32 = ctypes.windll.kernel32
+        kernel32.SetLastError(ERROR_INVALID_PARAMETER)
         try:
-            raise WinError()
+            raise ctypes.WinError()
         except OSError as exc:
             e = exc
         self.assertEqual(e.args, args)

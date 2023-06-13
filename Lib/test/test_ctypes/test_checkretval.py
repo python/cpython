@@ -1,5 +1,6 @@
 import unittest
 
+import ctypes
 from ctypes import *
 from test.test_ctypes import need_symbol
 
@@ -28,9 +29,8 @@ class Test(unittest.TestCase):
 
     @need_symbol('oledll')
     def test_oledll(self):
-        self.assertRaises(OSError,
-                              oledll.oleaut32.CreateTypeLib2,
-                              0, None, None)
+        oleaut32 = ctypes.oledll.oleaut32
+        self.assertRaises(OSError, oleaut32.CreateTypeLib2, 0, None, None)
 
 if __name__ == "__main__":
     unittest.main()
