@@ -191,14 +191,20 @@ class Formatter:
         if osym and osym != isym:
             self.emit(f"STACK_GROW({osym});")
 
-    def declare(self, dst: StackEffect, src: StackEffect | None):
+    def declare(
+            self, dst: StackEffect,
+            src: StackEffect | None,
+            *,
+            # Don't initialize from dst.cond; used for conditional *outputs*.
+            unconditional: bool = False,
+        ):
         if dst.name == UNUSED:
             return
         typ = f"{dst.type}" if dst.type else "PyObject *"
         if src:
             cast = self.cast(dst, src)
             init = f" = {cast}{src.name}"
-        elif dst.cond:
+        elif dst.cond and not unconditional:
             init = " = NULL"
         else:
             init = ""
@@ -868,7 +874,8 @@ class Analyzer:
         # and 'lowest' and 'highest' are the extremes.
         # Note that 'lowest' may be negative.
         stack = [
-            StackEffect(f"_tmp_{i+1}", "", conditions.get(i+lowest, "")) for i in reversed(range(highest - lowest))
+            StackEffect(f"_tmp_{i}", "", conditions.get(highest - i, ""))
+            for i in reversed(range(1, highest - lowest + 1))
         ]
         return stack, -lowest
 
@@ -1187,11 +1194,11 @@ class Analyzer:
         with self.out.block(f"TARGET({mac.name})"):
             if mac.predicted:
                 self.out.emit(f"PREDICTED({mac.name});")
-            for i, var in (list(enumerate(mac.stack))):
+            for i, var in reversed(list(enumerate(mac.stack))):
                 src = None
                 if i < mac.initial_sp:
                     src = StackEffect(f"stack_pointer[-{mac.initial_sp - i}]", "")
-                self.out.declare(var, src)
+                self.out.declare(var, src, unconditional=True)
 
             yield
 
