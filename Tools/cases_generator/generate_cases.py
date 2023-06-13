@@ -34,6 +34,11 @@ RE_PREDICTED = (
 UNUSED = "unused"
 BITS_PER_CODE_UNIT = 16
 
+RESERVED_WORDS = {
+    "co_consts" : "Use FRAME_CO_CONSTS.",
+    "co_names": "Use FRAME_CO_NAMES.",
+}
+
 arg_parser = argparse.ArgumentParser(
     description="Generate the code for the interpreter switch.",
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -605,6 +610,9 @@ class Analyzer:
         thing: parser.InstDef | parser.Macro | parser.Family | None
         thing_first_token = psr.peek()
         while thing := psr.definition():
+            if ws := [w for w in RESERVED_WORDS if variable_used(thing, w)]:
+                self.error(f"'{ws[0]}' is a reserved word. {RESERVED_WORDS[ws[0]]}", thing)
+
             match thing:
                 case parser.InstDef(name=name):
                     if name in self.instrs:
