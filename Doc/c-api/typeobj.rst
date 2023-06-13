@@ -110,7 +110,7 @@ Quick Reference
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | :c:member:`~PyTypeObject.tp_base`              | :c:type:`PyTypeObject` *          | __base__          |   |   | X |   |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | :c:member:`~PyTypeObject.tp_dict`              | :c:type:`PyObject` *              | __dict__          |   |   | ? |   |
+   | <<:c:member:`~PyTypeObject.tp_dict`>>          | :c:type:`PyObject` *              | __dict__          |   |   | ? |   |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | :c:member:`~PyTypeObject.tp_descr_get`         | :c:type:`descrgetfunc`            | __get__           |   |   |   | X |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
@@ -156,6 +156,9 @@ Quick Reference
 
    **<>**: Names in angle brackets should be initially set to ``NULL`` and
    treated as read-only.
+
+   **<<>>**: Names in double angle brackets should be initially set to
+   ``NULL`` and treated as read-only after initialization.
 
    **[]**: Names in square brackets are for internal use only.
 
@@ -1717,7 +1720,17 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    called; it may also be initialized to a dictionary containing initial attributes
    for the type.  Once :c:func:`PyType_Ready` has initialized the type, extra
    attributes for the type may be added to this dictionary only if they don't
-   correspond to overloaded operations (like :meth:`__add__`).
+   correspond to overloaded operations (like :meth:`__add__`).  Once
+   initialization for the type has finished, this field should be
+   treated as read-only.
+
+   .. versionchanged:: 3.12
+
+      Internals detail: For the static builtin types this is always ``NULL``.
+      Instead, the dict for each is stored on ``PyInterpreterState``.
+      If needed, use :c:func:`PyType_GetDict` to get the corresponding
+      dict for those types.  This is not normally necessary,
+      and certainly not for user-defined type objects.
 
    **Inheritance:**
 
