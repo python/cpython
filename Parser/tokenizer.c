@@ -1106,11 +1106,7 @@ tok_readline_string(struct tok_state* tok) {
     tok->inp += buflen;
     *tok->inp = '\0';
 
-    if (tok->start == NULL) {
-        tok->buf = tok->cur;
-    }
     tok->line_start = tok->cur;
-
     Py_DECREF(line);
     return 1;
 error:
