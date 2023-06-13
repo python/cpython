@@ -881,6 +881,7 @@ class Analyzer:
                 low = 0
                 sp = 0
                 high = 0
+                pushed_symbolic: list[str] = []
                 for comp in parts:
                     for effect in comp.instr.input_effects:
                         assert not effect.cond, effect
@@ -888,8 +889,9 @@ class Analyzer:
                         sp -= 1
                         low = min(low, sp)
                     for effect in comp.instr.output_effects:
-                        assert not effect.cond, effect
                         assert not effect.size, effect
+                        if effect.cond:
+                            pushed_symbolic.append(maybe_parenthesize(f"{maybe_parenthesize(effect.cond)} ? 1 : 0"))
                         sp += 1
                         high = max(sp, high)
                 if high != max(0, sp):
@@ -899,7 +901,8 @@ class Analyzer:
                     # calculations to use the micro ops.
                     self.error("Macro has virtual stack growth", thing)
                 popped = str(-low)
-                pushed = str(sp - low)
+                pushed_symbolic.append(str(sp - low - len(pushed_symbolic)))
+                pushed = " + ".join(pushed_symbolic)
             case parser.Pseudo():
                 instr = self.pseudo_instrs[thing.name]
                 popped = pushed = None
