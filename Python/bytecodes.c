@@ -1344,7 +1344,7 @@ dummy_func(
             null = NULL;
         }
 
-        op(_LOAD_GLOBAL_BUILTIN, (unused/1, index/1, mod_version/1, bltn_version/1 -- null if (oparg & 1), res)) {
+        inst(LOAD_GLOBAL_BUILTIN, (unused/1, index/1, mod_version/1, bltn_version/1 -- null if (oparg & 1), res)) {
             DEOPT_IF(!PyDict_CheckExact(GLOBALS()), LOAD_GLOBAL);
             DEOPT_IF(!PyDict_CheckExact(BUILTINS()), LOAD_GLOBAL);
             PyDictObject *mdict = (PyDictObject *)GLOBALS();
@@ -1360,8 +1360,6 @@ dummy_func(
             STAT_INC(LOAD_GLOBAL, hit);
             null = NULL;
         }
-
-        macro(LOAD_GLOBAL_BUILTIN) = _LOAD_GLOBAL_BUILTIN;
 
         inst(DELETE_FAST, (--)) {
             PyObject *v = GETLOCAL(oparg);
