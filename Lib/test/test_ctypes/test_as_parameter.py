@@ -1,8 +1,12 @@
-import unittest
-import ctypes
-from ctypes import *
-from test.test_ctypes import need_symbol
 import _ctypes_test
+import ctypes
+import unittest
+from ctypes import (Structure, CDLL, CFUNCTYPE,
+                    POINTER, pointer, byref,
+                    c_short, c_int, c_long, c_longlong,
+                    c_byte, c_wchar, c_float, c_double,
+                    ArgumentError)
+from test.test_ctypes import need_symbol
 
 dll = CDLL(_ctypes_test.__file__)
 

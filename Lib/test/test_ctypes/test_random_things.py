@@ -1,9 +1,9 @@
-from ctypes import *
-import ctypes
 import contextlib
-from test import support
-import unittest
+import ctypes
 import sys
+import unittest
+from test import support
+from ctypes import CFUNCTYPE, c_void_p, c_char_p, c_int, c_double
 
 
 def callback_func(arg):
