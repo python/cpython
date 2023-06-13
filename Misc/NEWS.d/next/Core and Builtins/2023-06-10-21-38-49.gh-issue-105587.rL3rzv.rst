@@ -1,2 +1,3 @@
-Remove the use of _PyStaticObject_CheckRefcnt since we can't guarantee that
-immortal objects will not be mutated by Extensions
+The runtime can't guarantee that immortal objects will not be mutated by
+Extensions. Thus, this modifies _PyStaticObject_CheckRefcnt to warn
+instead of asserting.

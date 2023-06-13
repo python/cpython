@@ -9,6 +9,7 @@
 #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
 #include "pycore_floatobject.h"   // _PyFloat_InitTypes()
 #include "pycore_genobject.h"     // _PyAsyncGen_Fini()
+#include "pycore_global_objects_fini_generated.h"  // "_PyStaticObjects_CheckRefcnt()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_list.h"          // _PyList_Fini()
@@ -1687,6 +1688,9 @@ finalize_interp_types(PyInterpreterState *interp)
 
     _PyUnicode_Fini(interp);
     _PyFloat_Fini(interp);
+#ifdef Py_DEBUG
+    _PyStaticObjects_CheckRefcnt(interp);
+#endif
 }
 
 
