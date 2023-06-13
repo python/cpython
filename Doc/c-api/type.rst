@@ -58,7 +58,7 @@ Type Objects
    The returned dictionary must be treated as read-only.
 
    This function isn't intended for general use.  It's meant for
-   specific embgedding and language-binding cases, where direct access
+   specific embedding and language-binding cases, where direct access
    to the dict is necessary and indirect access (e.g. via the proxy)
    isn't adequate.  Extension modules may continue to use ``tp_dict``,
    directly or indirectly, when setting up their own types.
