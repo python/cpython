@@ -758,6 +758,61 @@ handle_eval_breaker:
      * We need to do reasonably frequently, but not too frequently.
      * All loops should include a check of the eval breaker.
      * We also check on return from any builtin function.
+     *
+     * ## More Details ###
+     *
+     * The eval loop (this function) normally executes the instructions
+     * of a code object sequentially.  However, the runtime supports a
+     * number of out-of-band execution scenarios that may pause that
+     * sequential execution long enough to do that out-of-band work
+     * in the current thread using the current PyThreadState.
+     *
+     * The scenarios include:
+     *
+     *  - cyclic garbage collection
+     *  - GIL drop requests
+     *  - "async" exceptions
+     *  - "pending calls"  (some only in the main thread)
+     *  - signal handling (only in the main thread)
+     *
+     * When the need for one of the above is detected, the eval loop
+     * pauses long enough to handle the detected case.  Then, if doing
+     * so didn't trigger an exception, the eval loop resumes executing
+     * the sequential instructions.
+     *
+     * To make this work, the eval loop periodically checks if any
+     * of the above needs to happen.  The individual checks can be
+     * expensive if computed each time, so a while back we switched
+     * to using pre-computed, per-interpreter variables for the checks,
+     * and later consolidated that to a single "eval breaker" variable
+     * (now a PyInterpreterState field).
+     *
+     * For the longest time, the eval breaker check would happen
+     * frequently, every 5 or so times through the loop, regardless
+     * of what instruction ran last or what would run next.  Then, in
+     * early 2021 (gh-18334, commit 4958f5d), we switched to checking
+     * the eval breaker less frequently, by hard-coding the check to
+     * specific places in the eval loop (e.g. certain instructions).
+     * The intent then was to check after returning from calls
+     * and on the back edges of loops.
+     *
+     * In addition to being more efficient, that approach keeps
+     * the eval loop from running arbitrary code between instructions
+     * that don't handle that well.  (See gh-74174.)
+     *
+     * Currently, the eval breaker check happens here at the
+     * "handle_eval_breaker" label.  Some instructions come here
+     * explicitly (goto) and some indirectly.  Notably, the check
+     * happens on back edges in the control flow graph, which
+     * pretty much applies to all loops and most calls.
+     * (See bytecodes.c for exact information.)
+     *
+     * One consequence of this approach is that it might not be obvious
+     * how to force any specific thread to pick up the eval breaker,
+     * or for any specific thread to not pick it up.  Mostly this
+     * involves judicious uses of locks and careful ordering of code,
+     * while avoiding code that might trigger the eval breaker
+     * until so desired.
      */
     if (_Py_HandlePending(tstate) != 0) {
         goto error;
