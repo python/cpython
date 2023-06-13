@@ -196,7 +196,7 @@ class Formatter:
             src: StackEffect | None,
             *,
             # Don't initialize from dst.cond; used for conditional *outputs*.
-            unconditional: bool = False,
+            init_null: bool = True,
         ):
         if dst.name == UNUSED:
             return
@@ -204,7 +204,7 @@ class Formatter:
         if src:
             cast = self.cast(dst, src)
             init = f" = {cast}{src.name}"
-        elif dst.cond and not unconditional:
+        elif init_null and dst.cond:
             init = " = NULL"
         else:
             init = ""
@@ -1198,7 +1198,7 @@ class Analyzer:
                 src = None
                 if i < mac.initial_sp:
                     src = StackEffect(f"stack_pointer[-{mac.initial_sp - i}]", "")
-                self.out.declare(var, src, unconditional=True)
+                self.out.declare(var, src, init_null=False)
 
             yield
 
