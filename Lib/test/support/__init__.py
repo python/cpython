@@ -2270,6 +2270,62 @@ def requires_venv_with_pip():
     return unittest.skipUnless(ctypes, 'venv: pip requires ctypes')
 
 
+@functools.cache
+def _findwheel(pkgname):
+    """Try to find a wheel with the package specified as pkgname.
+
+    If set, the wheels are searched for in WHEEL_PKG_DIR (see ensurepip).
+    Otherwise, they are searched for in the test directory.
+    """
+    wheel_dir = sysconfig.get_config_var('WHEEL_PKG_DIR') or TEST_HOME_DIR
+    filenames = os.listdir(wheel_dir)
+    filenames = sorted(filenames, reverse=True)  # approximate "newest" first
+    for filename in filenames:
+        # filename is like 'setuptools-67.6.1-py3-none-any.whl'
+        if not filename.endswith(".whl"):
+            continue
+        prefix = pkgname + '-'
+        if filename.startswith(prefix):
+            return os.path.join(wheel_dir, filename)
+    raise FileNotFoundError(f"No wheel for {pkgname} found in {wheel_dir}")
+
+
+# Context manager that creates a virtual environment, install setuptools and wheel in it
+# and returns the path to the venv directory and the path to the python executable
+@contextlib.contextmanager
+def setup_venv_with_pip_setuptools_wheel(venv_dir):
+    import subprocess
+    from .os_helper import temp_cwd
+
+    with temp_cwd() as temp_dir:
+        # Create virtual environment to get setuptools
+        cmd = [sys.executable, '-X', 'dev', '-m', 'venv', venv_dir]
+        if verbose:
+            print()
+            print('Run:', ' '.join(cmd))
+        subprocess.run(cmd, check=True)
+
+        venv = os.path.join(temp_dir, venv_dir)
+
+        # Get the Python executable of the venv
+        python_exe = os.path.basename(sys.executable)
+        if sys.platform == 'win32':
+            python = os.path.join(venv, 'Scripts', python_exe)
+        else:
+            python = os.path.join(venv, 'bin', python_exe)
+
+        cmd = [python, '-X', 'dev',
+               '-m', 'pip', 'install',
+               _findwheel('setuptools'),
+               _findwheel('wheel')]
+        if verbose:
+            print()
+            print('Run:', ' '.join(cmd))
+        subprocess.run(cmd, check=True)
+
+        yield python
+
+
 # True if Python is built with the Py_DEBUG macro defined: if
 # Python is built in debug mode (./configure --with-pydebug).
 Py_DEBUG = hasattr(sys, 'gettotalrefcount')
