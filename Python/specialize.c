@@ -273,22 +273,12 @@ _PyCode_Quicken(PyCodeObject *code)
     int opcode = 0;
     _Py_CODEUNIT *instructions = _PyCode_CODE(code);
     for (int i = 0; i < Py_SIZE(code); i++) {
-        int previous_opcode = opcode;
         opcode = _Py_GetBaseOpcode(code, i);
         assert(opcode < MIN_INSTRUMENTED_OPCODE);
         int caches = _PyOpcode_Caches[opcode];
         if (caches) {
             instructions[i + 1].cache = adaptive_counter_warmup();
             i += caches;
-            continue;
-        }
-        switch (previous_opcode << 8 | opcode) {
-            case LOAD_CONST << 8 | LOAD_FAST:
-                instructions[i - 1].op.code = LOAD_CONST__LOAD_FAST;
-                break;
-            case LOAD_FAST << 8 | LOAD_CONST:
-                instructions[i - 1].op.code = LOAD_FAST__LOAD_CONST;
-                break;
         }
     }
     #endif /* ENABLE_SPECIALIZATION */

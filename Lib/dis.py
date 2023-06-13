@@ -265,6 +265,7 @@ _Instruction = collections.namedtuple(
         'argval',
         'argrepr',
         'offset',
+        'start_offset',
         'starts_line',
         'is_jump_target',
         'positions'
@@ -278,6 +279,10 @@ _Instruction.arg.__doc__ = "Numeric argument to operation (if any), otherwise No
 _Instruction.argval.__doc__ = "Resolved arg value (if known), otherwise same as arg"
 _Instruction.argrepr.__doc__ = "Human readable description of operation argument"
 _Instruction.offset.__doc__ = "Start index of operation within bytecode sequence"
+_Instruction.start_offset.__doc__ = (
+    "Start index of operation within bytecode sequence, including extended args if present; "
+    "otherwise equal to Instruction.offset"
+)
 _Instruction.starts_line.__doc__ = "Line started by this opcode (if any), otherwise None"
 _Instruction.is_jump_target.__doc__ = "True if other code jumps to here, otherwise False"
 _Instruction.positions.__doc__ = "dis.Positions object holding the span of source code covered by this instruction"
@@ -288,8 +293,26 @@ _ExceptionTableEntry = collections.namedtuple("_ExceptionTableEntry",
 _OPNAME_WIDTH = 20
 _OPARG_WIDTH = 5
 
+def _get_jump_target(op, arg, offset):
+    """Gets the bytecode offset of the jump target if this is a jump instruction.
+
+    Otherwise return None.
+    """
+    deop = _deoptop(op)
+    caches = _inline_cache_entries[deop]
+    if deop in hasjrel:
+        if _is_backward_jump(deop):
+            arg = -arg
+        target = offset + 2 + arg*2
+        target += 2 * caches
+    elif deop in hasjabs:
+        target = arg*2
+    else:
+        target = None
+    return target
+
 class Instruction(_Instruction):
-    """Details for a bytecode operation
+    """Details for a bytecode operation.
 
        Defined fields:
          opname - human readable name for operation
@@ -298,14 +321,55 @@ class Instruction(_Instruction):
          argval - resolved arg value (if known), otherwise same as arg
          argrepr - human readable description of operation argument
          offset - start index of operation within bytecode sequence
+         start_offset - start index of operation within bytecode sequence including extended args if present;
+                        otherwise equal to Instruction.offset
          starts_line - line started by this opcode (if any), otherwise None
          is_jump_target - True if other code jumps to here, otherwise False
          positions - Optional dis.Positions object holding the span of source code
                      covered by this instruction
     """
 
+    @property
+    def oparg(self):
+        """Alias for Instruction.arg."""
+        return self.arg
+
+    @property
+    def baseopcode(self):
+        """Numeric code for the base operation if operation is specialized.
+
+        Otherwise equal to Instruction.opcode.
+        """
+        return _deoptop(self.opcode)
+
+    @property
+    def baseopname(self):
+        """Human readable name for the base operation if operation is specialized.
+
+        Otherwise equal to Instruction.opname.
+        """
+        return opname[self.baseopcode]
+
+    @property
+    def cache_offset(self):
+        """Start index of the cache entries following the operation."""
+        return self.offset + 2
+
+    @property
+    def end_offset(self):
+        """End index of the cache entries following the operation."""
+        return self.cache_offset + _inline_cache_entries[self.opcode]*2
+
+    @property
+    def jump_target(self):
+        """Bytecode index of the jump target if this is a jump operation.
+
+        Otherwise return None.
+        """
+        return _get_jump_target(self.opcode, self.arg, self.offset)
+
     def _disassemble(self, lineno_width=3, mark_as_current=False, offset_width=4):
-        """Format instruction details for inclusion in disassembly output
+        """Format instruction details for inclusion in disassembly output.
 
         *lineno_width* sets the width of the line number field (0 omits it)
         *mark_as_current* inserts a '-->' marker arrow as part of the line
@@ -335,12 +399,19 @@ class Instruction(_Instruction):
         fields.append(self.opname.ljust(_OPNAME_WIDTH))
         # Column: Opcode argument
         if self.arg is not None:
-            fields.append(repr(self.arg).rjust(_OPARG_WIDTH))
+            arg = repr(self.arg)
+            # If opname is longer than _OPNAME_WIDTH, we allow it to overflow into
+            # the space reserved for oparg. This results in fewer misaligned opargs
+            # in the disassembly output.
+            opname_excess = max(0, len(self.opname) - _OPNAME_WIDTH)
+            fields.append(repr(self.arg).rjust(_OPARG_WIDTH - opname_excess))
             # Column: Opcode argument details
             if self.argrepr:
                 fields.append('(' + self.argrepr + ')')
         return ' '.join(fields).rstrip()
 
+    def __str__(self):
+        return self._disassemble()
 
 def get_instructions(x, *, first_line=None, show_caches=False, adaptive=False):
     """Iterator for the opcodes in methods, functions or code
@@ -454,7 +525,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
         for i in range(start, end):
             labels.add(target)
     starts_line = None
-    for offset, op, arg in _unpack_opargs(code):
+    for offset, start_offset, op, arg in _unpack_opargs(code):
         if linestarts is not None:
             starts_line = linestarts.get(offset, None)
             if starts_line is not None:
@@ -526,7 +597,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
                 argrepr = _intrinsic_2_descs[arg]
         yield Instruction(_all_opname[op], op,
                           arg, argval, argrepr,
-                          offset, starts_line, is_jump_target, positions)
+                          offset, start_offset, starts_line, is_jump_target, positions)
         caches = _inline_cache_entries[deop]
         if not caches:
             continue
@@ -546,7 +617,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
                 else:
                     argrepr = ""
                 yield Instruction(
-                    "CACHE", CACHE, 0, None, argrepr, offset, None, False,
+                    "CACHE", CACHE, 0, None, argrepr, offset, offset, None, False,
                     Positions(*next(co_positions, ()))
                 )
 
@@ -632,6 +703,7 @@ _INT_OVERFLOW = 2 ** (_INT_BITS - 1)
 
 def _unpack_opargs(code):
     extended_arg = 0
+    extended_args_offset = 0  # Number of EXTENDED_ARG instructions preceding the current instruction
     caches = 0
     for i in range(0, len(code), 2):
         # Skip inline CACHE entries:
@@ -652,7 +724,13 @@ def _unpack_opargs(code):
         else:
             arg = None
             extended_arg = 0
-        yield (i, op, arg)
+        if deop == EXTENDED_ARG:
+            extended_args_offset += 1
+            yield (i, i, op, arg)
+        else:
+            start_offset = i - extended_args_offset*2
+            yield (i, start_offset, op, arg)
+            extended_args_offset = 0
 
 def findlabels(code):
     """Detect all offsets in a byte code which are jump targets.
@@ -661,18 +739,10 @@ def findlabels(code):
 
     """
     labels = []
-    for offset, op, arg in _unpack_opargs(code):
+    for offset, _, op, arg in _unpack_opargs(code):
         if arg is not None:
-            deop = _deoptop(op)
-            caches = _inline_cache_entries[deop]
-            if deop in hasjrel:
-                if _is_backward_jump(deop):
-                    arg = -arg
-                label = offset + 2 + arg*2
-                label += 2 * caches
-            elif deop in hasjabs:
-                label = arg*2
-            else:
+            label = _get_jump_target(op, arg, offset)
+            if label is None:
                 continue
             if label not in labels:
                 labels.append(label)
@@ -701,7 +771,7 @@ def _find_imports(co):
 
     consts = co.co_consts
     names = co.co_names
-    opargs = [(op, arg) for _, op, arg in _unpack_opargs(co.co_code)
+    opargs = [(op, arg) for _, _, op, arg in _unpack_opargs(co.co_code)
                   if op != EXTENDED_ARG]
     for i, (op, oparg) in enumerate(opargs):
         if op == IMPORT_NAME and i >= 2:
@@ -723,7 +793,7 @@ def _find_store_names(co):
     }
 
     names = co.co_names
-    for _, op, arg in _unpack_opargs(co.co_code):
+    for _, _, op, arg in _unpack_opargs(co.co_code):
         if op in STORE_OPS:
             yield names[arg]
 
