@@ -417,9 +417,10 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
         goto error;
 #else
         // GH-85272, GH-23327, GH-100540: On macOS,
-        // HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME is
-        // checked at runtime. Even if ffi_prep_closure_loc() is called in
-        // practice, the deprecated ffi_prep_closure() code path is needed if
+        // HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME is checked at runtime because the
+        // symbol might not be available at runtime when targeting macOS 10.14
+        // or earlier. Even if ffi_prep_closure_loc() is called in practice,
+        // the deprecated ffi_prep_closure() code path is needed if
         // HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME is false.
         //
         // On non-macOS platforms, even if HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME is
