@@ -1369,6 +1369,8 @@ Removed
   * The :mod:`!imp` module has been removed.  (Contributed by Barry Warsaw in
     :gh:`98040`.)
 
+  * Replace ``imp.new_module(name)`` with ``types.ModuleType(name)``.
+
 * Removed the ``suspicious`` rule from the documentation Makefile, and
   removed ``Doc/tools/rstlint.py``, both in favor of `sphinx-lint
   <https://github.com/sphinx-contrib/sphinx-lint>`_.
