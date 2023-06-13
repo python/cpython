@@ -1499,6 +1499,9 @@ Changes in the Python API
   * Some incomplete or invalid Python code now raises :exc:`tokenize.TokenError` instead of
     returning arbitrary ``ERRORTOKEN`` tokens when tokenizing it.
 
+  * Mixing tabs and spaces as indentation in the same file is not supported anymore and will
+    raise a :exc:`TabError`.
+
 Build Changes
 =============
 
