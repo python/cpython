@@ -277,8 +277,8 @@ class Instruction:
         self.unmoved_names = frozenset(unmoved_names)
         flag_data = {
             'HAS_ARG'  :  variable_used(inst, "oparg"),
-            'HAS_CONST':  variable_used(inst, "CO_CONSTS"),
-            'HAS_NAME' :  variable_used(inst, "CO_NAMES"),
+            'HAS_CONST':  variable_used(inst, "FRAME_CO_CONSTS"),
+            'HAS_NAME' :  variable_used(inst, "FRAME_CO_NAMES"),
         }
         assert set(flag_data.keys()) == set(INSTRUCTION_FLAGS)
         self.flags = 0
@@ -1075,7 +1075,7 @@ class Analyzer:
     def emit_metadata_entry(self, name: str, fmt: str, flags: int) -> None:
         flags_strs = [f"{name}{INSTR_FLAG_SUFFIX}"
                       for i, name in enumerate(INSTRUCTION_FLAGS) if (flags & (1<<i))]
-        flags_s = "0" if not flags_strs else '|'.join(flags_strs)
+        flags_s = "0" if not flags_strs else ' | '.join(flags_strs)
         self.out.emit(
             f"    [{name}] = {{ true, {INSTR_FMT_PREFIX}{fmt}, {flags_s} }},"
         )
@@ -1287,11 +1287,11 @@ def always_exits(lines: list[str]) -> bool:
 
 
 def variable_used(node: parser.Node, name: str, delim: str = None) -> bool:
-    """Determine whether a variable with a given name is used in a node.
-    """
+    """Determine whether a variable with a given name is used in a node."""
     return any(
         token.kind == "IDENTIFIER" and token.text == name for token in node.tokens
     )
+
 
 def main():
     """Parse command line, parse input, analyze, write output."""
