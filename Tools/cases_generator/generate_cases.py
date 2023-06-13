@@ -1266,7 +1266,7 @@ def always_exits(lines: list[str]) -> bool:
     )
 
 
-def variable_used(node: parser.Node, name: str, delim: str = None) -> bool:
+def variable_used(node: parser.Node, name: str) -> bool:
     """Determine whether a variable with a given name is used in a node."""
     return any(
         token.kind == "IDENTIFIER" and token.text == name for token in node.tokens
