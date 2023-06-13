@@ -821,9 +821,14 @@ class Analyzer:
 
         Ignore cache effects.
 
-        Return the list of variable names and the initial stack pointer.
+        Return the list of variables (as StackEffects) and the initial stack pointer.
         """
         lowest = current = highest = 0
+        conditions: dict[int, str] = {}  # Indexed by 'current'.
+        last_instr: Instruction | None = None
+        for thing in components:
+            if isinstance(thing, Instruction):
+                last_instr = thing
         for thing in components:
             match thing:
                 case Instruction() as instr:
@@ -836,9 +841,24 @@ class Analyzer:
                             "which are not supported in macro instructions",
                             instr.inst,  # TODO: Pass name+location of macro
                         )
+                    if any(eff.cond for eff in instr.input_effects):
+                        self.error(
+                            f"Instruction {instr.name!r} has conditional input stack effect, "
+                            "which are not supported in macro instructions",
+                            instr.inst,  # TODO: Pass name+location of macro
+                        )
+                    if any(eff.cond for eff in instr.output_effects) and instr is not last_instr:
+                        self.error(
+                            f"Instruction {instr.name!r} has conditional output stack effect, "
+                            "but is not the last instruction in a macro",
+                            instr.inst,  # TODO: Pass name+location of macro
+                        )
                     current -= len(instr.input_effects)
                     lowest = min(lowest, current)
-                    current += len(instr.output_effects)
+                    for eff in instr.output_effects:
+                        if eff.cond:
+                            conditions[current] = eff.cond
+                        current += 1
                     highest = max(highest, current)
                 case parser.CacheEffect():
                     pass
@@ -847,9 +867,8 @@ class Analyzer:
         # At this point, 'current' is the net stack effect,
         # and 'lowest' and 'highest' are the extremes.
         # Note that 'lowest' may be negative.
-        # TODO: Reverse the numbering.
         stack = [
-            StackEffect(f"_tmp_{i+1}", "") for i in reversed(range(highest - lowest))
+            StackEffect(f"_tmp_{i+1}", "", conditions.get(i+lowest, "")) for i in reversed(range(highest - lowest))
         ]
         return stack, -lowest
 
@@ -1168,7 +1187,7 @@ class Analyzer:
         with self.out.block(f"TARGET({mac.name})"):
             if mac.predicted:
                 self.out.emit(f"PREDICTED({mac.name});")
-            for i, var in reversed(list(enumerate(mac.stack))):
+            for i, var in (list(enumerate(mac.stack))):
                 src = None
                 if i < mac.initial_sp:
                     src = StackEffect(f"stack_pointer[-{mac.initial_sp - i}]", "")
@@ -1176,8 +1195,7 @@ class Analyzer:
 
             yield
 
-            # TODO: Use slices of mac.stack instead of numeric values
-            self.out.stack_adjust(mac.final_sp - mac.initial_sp, [], [])
+            self.out.stack_adjust(0, mac.stack[:mac.initial_sp], mac.stack[:mac.final_sp])
 
             for i, var in enumerate(reversed(mac.stack[: mac.final_sp]), 1):
                 dst = StackEffect(f"stack_pointer[-{i}]", "")
