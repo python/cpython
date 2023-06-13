@@ -439,16 +439,24 @@ API Functions
    .. versionadded:: 3.2
 
 
-.. XXX deprecated, will be removed
 .. c:function:: int PyArg_Parse(PyObject *args, const char *format, ...)
 
-   Function used to deconstruct the argument lists of "old-style" functions ---
-   these are functions which use the :const:`METH_OLDARGS` parameter parsing
-   method, which has been removed in Python 3.  This is not recommended for use
-   in parameter parsing in new code, and most code in the standard interpreter
-   has been modified to no longer use this for that purpose.  It does remain a
-   convenient way to decompose other tuples, however, and may continue to be
-   used for that purpose.
+   Parse the parameter of a function that takes a single positional parameter
+   into a local variable.  Returns true on success; on failure, it returns
+   false and raises the appropriate exception.
+
+   Example::
+
+       // Function using METH_O calling convention
+       static PyObject*
+       my_function(PyObject *module, PyObject *arg)
+       {
+           int value;
+           if (!PyArg_Parse(arg, "i:my_function", &value)) {
+               return NULL;
+           }
+           // ... use value ...
+       }
 
 
 .. c:function:: int PyArg_UnpackTuple(PyObject *args, const char *name, Py_ssize_t min, Py_ssize_t max, ...)

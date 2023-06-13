@@ -230,7 +230,7 @@ class Instruction:
 
     # Parts of the underlying instruction definition
     inst: parser.InstDef
-    kind: typing.Literal["inst", "op", "legacy"]  # Legacy means no (input -- output)
+    kind: typing.Literal["inst", "op"]
     name: str
     block: parser.Block
     block_text: list[str]  # Block.text, less curlies, less PREDICT() calls
@@ -390,7 +390,7 @@ class Instruction:
         names_to_skip = self.unmoved_names | frozenset({UNUSED, "null"})
         offset = 0
         context = self.block.context
-        assert context != None
+        assert context is not None and context.owner is not None
         filename = context.owner.filename
         for line in self.block_text:
             out.set_lineno(self.block_line + offset, filename)
@@ -464,28 +464,14 @@ class Component:
 
 
 @dataclasses.dataclass
-class SuperOrMacroInstruction:
-    """Common fields for super- and macro instructions."""
+class MacroInstruction:
+    """A macro instruction."""
 
     name: str
     stack: list[StackEffect]
     initial_sp: int
     final_sp: int
     instr_fmt: str
-
-
-@dataclasses.dataclass
-class SuperInstruction(SuperOrMacroInstruction):
-    """A super-instruction."""
-
-    super: parser.Super
-    parts: list[Component]
-
-
-@dataclasses.dataclass
-class MacroInstruction(SuperOrMacroInstruction):
-    """A macro instruction."""
-
     macro: parser.Macro
     parts: list[Component | parser.CacheEffect]
     predicted: bool = False
@@ -505,7 +491,7 @@ class OverriddenInstructionPlaceHolder:
     name: str
 
 
-AnyInstruction = Instruction | SuperInstruction | MacroInstruction
+AnyInstruction = Instruction | MacroInstruction
 INSTR_FMT_PREFIX = "INSTR_FMT_"
 
 
@@ -538,12 +524,9 @@ class Analyzer:
         self.errors += 1
 
     everything: list[
-        parser.InstDef | parser.Super | parser.Macro |
-        parser.Pseudo | OverriddenInstructionPlaceHolder
+        parser.InstDef | parser.Macro | parser.Pseudo | OverriddenInstructionPlaceHolder
     ]
     instrs: dict[str, Instruction]  # Includes ops
-    supers: dict[str, parser.Super]
-    super_instrs: dict[str, SuperInstruction]
     macros: dict[str, parser.Macro]
     macro_instrs: dict[str, MacroInstruction]
     families: dict[str, parser.Family]
@@ -558,7 +541,6 @@ class Analyzer:
 
         self.everything = []
         self.instrs = {}
-        self.supers = {}
         self.macros = {}
         self.families = {}
         self.pseudos = {}
@@ -571,7 +553,7 @@ class Analyzer:
         files = " + ".join(self.input_filenames)
         print(
             f"Read {len(self.instrs)} instructions/ops, "
-            f"{len(self.supers)} supers, {len(self.macros)} macros, "
+            f"{len(self.macros)} macros, {len(self.pseudos)} pseudos, "
             f"and {len(self.families)} families from {files}",
             file=sys.stderr,
         )
@@ -605,7 +587,7 @@ class Analyzer:
 
         # Parse from start
         psr.setpos(start)
-        thing: parser.InstDef | parser.Super | parser.Macro | parser.Family | None
+        thing: parser.InstDef | parser.Macro | parser.Family | None
         thing_first_token = psr.peek()
         while thing := psr.definition():
             match thing:
@@ -627,9 +609,6 @@ class Analyzer:
                     self.instrs[name] = Instruction(thing)
                     instrs_idx[name] = len(self.everything)
                     self.everything.append(thing)
-                case parser.Super(name):
-                    self.supers[name] = thing
-                    self.everything.append(thing)
                 case parser.Macro(name):
                     self.macros[name] = thing
                     self.everything.append(thing)
@@ -648,7 +627,7 @@ class Analyzer:
 
         Raises SystemExit if there is an error.
         """
-        self.analyze_supers_and_macros_and_pseudos()
+        self.analyze_macros_and_pseudos()
         self.find_predictions()
         self.map_families()
         self.check_families()
@@ -656,7 +635,7 @@ class Analyzer:
     def find_predictions(self) -> None:
         """Find the instructions that need PREDICTED() labels."""
         for instr in self.instrs.values():
-            targets = set()
+            targets: set[str] = set()
             for line in instr.block_text:
                 if m := re.match(RE_PREDICTED, line):
                     targets.add(m.group(1))
@@ -760,32 +739,14 @@ class Analyzer:
             assert False, f"Unknown instruction {name!r}"
         return cache, input, output
 
-    def analyze_supers_and_macros_and_pseudos(self) -> None:
-        """Analyze each super-, macro- and pseudo- instruction."""
-        self.super_instrs = {}
+    def analyze_macros_and_pseudos(self) -> None:
+        """Analyze each super- and macro instruction."""
         self.macro_instrs = {}
         self.pseudo_instrs = {}
-        for name, super in self.supers.items():
-            self.super_instrs[name] = self.analyze_super(super)
         for name, macro in self.macros.items():
             self.macro_instrs[name] = self.analyze_macro(macro)
         for name, pseudo in self.pseudos.items():
             self.pseudo_instrs[name] = self.analyze_pseudo(pseudo)
-
-    def analyze_super(self, super: parser.Super) -> SuperInstruction:
-        components = self.check_super_components(super)
-        stack, initial_sp = self.stack_analysis(components)
-        sp = initial_sp
-        parts: list[Component] = []
-        format = ""
-        for instr in components:
-            part, sp = self.analyze_instruction(instr, stack, sp)
-            parts.append(part)
-            format += instr.instr_fmt
-        final_sp = sp
-        return SuperInstruction(
-            super.name, stack, initial_sp, final_sp, format, super, parts
-        )
 
     def analyze_macro(self, macro: parser.Macro) -> MacroInstruction:
         components = self.check_macro_components(macro)
@@ -836,15 +797,6 @@ class Analyzer:
             sp += 1
         return Component(instr, input_mapping, output_mapping), sp
 
-    def check_super_components(self, super: parser.Super) -> list[Instruction]:
-        components: list[Instruction] = []
-        for op in super.ops:
-            if op.name not in self.instrs:
-                self.error(f"Unknown instruction {op.name!r}", super)
-            else:
-                components.append(self.instrs[op.name])
-        return components
-
     def check_macro_components(
         self, macro: parser.Macro
     ) -> list[InstructionOrCacheEffect]:
@@ -864,7 +816,7 @@ class Analyzer:
     def stack_analysis(
         self, components: typing.Iterable[InstructionOrCacheEffect]
     ) -> tuple[list[StackEffect], int]:
-        """Analyze a super-instruction or macro.
+        """Analyze a macro.
 
         Ignore cache effects.
 
@@ -880,8 +832,8 @@ class Analyzer:
                         # TODO: Eventually this will be needed, at least for macros.
                         self.error(
                             f"Instruction {instr.name!r} has variable-sized stack effect, "
-                            "which are not supported in super- or macro instructions",
-                            instr.inst,  # TODO: Pass name+location of super/macro
+                            "which are not supported in macro instructions",
+                            instr.inst,  # TODO: Pass name+location of macro
                         )
                     current -= len(instr.input_effects)
                     lowest = min(lowest, current)
@@ -901,11 +853,9 @@ class Analyzer:
         return stack, -lowest
 
     def get_stack_effect_info(
-        self, thing: parser.InstDef | parser.Super | parser.Macro | parser.Pseudo
+        self, thing: parser.InstDef | parser.Macro | parser.Pseudo
     ) -> tuple[AnyInstruction | None, str, str]:
         def effect_str(effects: list[StackEffect]) -> str:
-            if getattr(thing, "kind", None) == "legacy":
-                return str(-1)
             n_effect, sym_effect = list_effect_size(effects)
             if sym_effect:
                 return f"{sym_effect} + {n_effect}" if n_effect else sym_effect
@@ -922,15 +872,6 @@ class Analyzer:
                     instr = None
                     popped = ""
                     pushed = ""
-            case parser.Super():
-                instr = self.super_instrs[thing.name]
-                # TODO: Same as for Macro below, if needed.
-                popped = "+".join(
-                    effect_str(comp.instr.input_effects) for comp in instr.parts
-                )
-                pushed = "+".join(
-                    effect_str(comp.instr.output_effects) for comp in instr.parts
-                )
             case parser.Macro():
                 instr = self.macro_instrs[thing.name]
                 parts = [comp for comp in instr.parts if isinstance(comp, Component)]
@@ -1032,8 +973,6 @@ class Analyzer:
                     continue
                 case parser.InstDef():
                     format = self.instrs[thing.name].instr_fmt
-                case parser.Super():
-                    format = self.super_instrs[thing.name].instr_fmt
                 case parser.Macro():
                     format = self.macro_instrs[thing.name].instr_fmt
                 case parser.Pseudo():
@@ -1092,8 +1031,6 @@ class Analyzer:
                     case parser.InstDef():
                         if thing.kind != "op":
                             self.write_metadata_for_inst(self.instrs[thing.name])
-                    case parser.Super():
-                        self.write_metadata_for_super(self.super_instrs[thing.name])
                     case parser.Macro():
                         self.write_metadata_for_macro(self.macro_instrs[thing.name])
                     case parser.Pseudo():
@@ -1116,12 +1053,6 @@ class Analyzer:
         """Write metadata for a single instruction."""
         self.out.emit(
             f"    [{instr.name}] = {{ true, {INSTR_FMT_PREFIX}{instr.instr_fmt} }},"
-        )
-
-    def write_metadata_for_super(self, sup: SuperInstruction) -> None:
-        """Write metadata for a super-instruction."""
-        self.out.emit(
-            f"    [{sup.name}] = {{ true, {INSTR_FMT_PREFIX}{sup.instr_fmt} }},"
         )
 
     def write_metadata_for_macro(self, mac: MacroInstruction) -> None:
@@ -1149,7 +1080,6 @@ class Analyzer:
 
             # Write and count instructions of all kinds
             n_instrs = 0
-            n_supers = 0
             n_macros = 0
             n_pseudos = 0
             for thing in self.everything:
@@ -1160,9 +1090,6 @@ class Analyzer:
                         if thing.kind != "op":
                             n_instrs += 1
                             self.write_instr(self.instrs[thing.name])
-                    case parser.Super():
-                        n_supers += 1
-                        self.write_super(self.super_instrs[thing.name])
                     case parser.Macro():
                         n_macros += 1
                         self.write_macro(self.macro_instrs[thing.name])
@@ -1172,8 +1099,8 @@ class Analyzer:
                         typing.assert_never(thing)
 
         print(
-            f"Wrote {n_instrs} instructions, {n_supers} supers, {n_macros}"
-            f" macros and {n_pseudos} pseudos to {self.output_filename}",
+            f"Wrote {n_instrs} instructions, {n_macros} macros, "
+            f"and {n_pseudos} pseudos to {self.output_filename}",
             file=sys.stderr,
         )
 
@@ -1197,23 +1124,10 @@ class Analyzer:
                     self.out.emit("CHECK_EVAL_BREAKER();")
                 self.out.emit(f"DISPATCH();")
 
-    def write_super(self, sup: SuperInstruction) -> None:
-        """Write code for a super-instruction."""
-        with self.wrap_super_or_macro(sup):
-            first = True
-            for comp in sup.parts:
-                if not first:
-                    self.out.emit("oparg = (next_instr++)->op.arg;")
-                # self.out.emit("next_instr += OPSIZE(opcode) - 1;")
-                first = False
-                comp.write_body(self.out, 0)
-                if comp.instr.cache_offset:
-                    self.out.emit(f"next_instr += {comp.instr.cache_offset};")
-
     def write_macro(self, mac: MacroInstruction) -> None:
         """Write code for a macro instruction."""
         last_instr: Instruction | None = None
-        with self.wrap_super_or_macro(mac):
+        with self.wrap_macro(mac):
             cache_adjust = 0
             for part in mac.parts:
                 match part:
@@ -1239,30 +1153,29 @@ class Analyzer:
                 )
 
     @contextlib.contextmanager
-    def wrap_super_or_macro(self, up: SuperOrMacroInstruction):
-        """Shared boilerplate for super- and macro instructions."""
+    def wrap_macro(self, mac: MacroInstruction):
+        """Boilerplate for macro instructions."""
         # TODO: Somewhere (where?) make it so that if one instruction
         # has an output that is input to another, and the variable names
         # and types match and don't conflict with other instructions,
         # that variable is declared with the right name and type in the
         # outer block, rather than trusting the compiler to optimize it.
         self.out.emit("")
-        with self.out.block(f"TARGET({up.name})"):
-            match up:
-                case MacroInstruction(predicted=True, name=name):
-                    self.out.emit(f"PREDICTED({name});")
-            for i, var in reversed(list(enumerate(up.stack))):
+        with self.out.block(f"TARGET({mac.name})"):
+            if mac.predicted:
+                self.out.emit(f"PREDICTED({mac.name});")
+            for i, var in reversed(list(enumerate(mac.stack))):
                 src = None
-                if i < up.initial_sp:
-                    src = StackEffect(f"stack_pointer[-{up.initial_sp - i}]", "")
+                if i < mac.initial_sp:
+                    src = StackEffect(f"stack_pointer[-{mac.initial_sp - i}]", "")
                 self.out.declare(var, src)
 
             yield
 
-            # TODO: Use slices of up.stack instead of numeric values
-            self.out.stack_adjust(up.final_sp - up.initial_sp, [], [])
+            # TODO: Use slices of mac.stack instead of numeric values
+            self.out.stack_adjust(mac.final_sp - mac.initial_sp, [], [])
 
-            for i, var in enumerate(reversed(up.stack[: up.final_sp]), 1):
+            for i, var in enumerate(reversed(mac.stack[: mac.final_sp]), 1):
                 dst = StackEffect(f"stack_pointer[-{i}]", "")
                 self.out.assign(dst, var)
 
