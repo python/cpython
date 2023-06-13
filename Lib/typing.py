@@ -36,6 +36,7 @@ from types import (
     GenericAlias,
     UnionType as Union,
 )
+import warnings
 
 from _typing import (
     _idfunc,
@@ -1461,6 +1462,32 @@ class _TupleType(_SpecialGenericAlias, _root=True):
         msg = "Tuple[t0, t1, ...]: each t must be a type."
         params = tuple(_type_check(p, msg) for p in params)
         return self.copy_with(params)
+
+
+class _UnionGenericAliasMeta(type):
+    def __instancecheck__(self, inst: type) -> bool:
+        warnings._deprecated("_UnionGenericAlias", remove=(3, 15))
+        return isinstance(inst, types.UnionType)
+
+    def __eq__(self, other):
+        warnings._deprecated("_UnionGenericAlias", remove=(3, 15))
+        if other is Union or other is _UnionGenericAlias:
+            return True
+        return NotImplemented
+
+
+class _UnionGenericAlias(metaclass=_UnionGenericAliasMeta):
+    """Compatibility hack.
+
+    A class named _UnionGenericAlias used to be used to implement
+    typing.Union. This class exists to serve as a shim to preserve
+    the meaning of some code that used to use _UnionGenericAlias
+    directly.
+
+    """
+    def __new__(cls, self_cls, parameters, /, *, name=None):
+        warnings._deprecated("_UnionGenericAlias", remove=(3, 15))
+        return Union[parameters]
 
 
 def _value_and_type_iter(parameters):
