@@ -2152,6 +2152,9 @@ Py_EndInterpreter(PyThreadState *tstate)
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown(tstate);
 
+    // Make any remaining pending calls.
+    _Py_FinishPendingCalls(tstate);
+
     _PyAtExit_Call(tstate->interp);
 
     if (tstate != interp->threads.head || tstate->next != NULL) {
