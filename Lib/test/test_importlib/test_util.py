@@ -1,3 +1,4 @@
+from test.test_importlib import fixtures
 from test.test_importlib import util
 
 abc = util.import_importlib('importlib.abc')
@@ -12,6 +13,7 @@ import re
 import string
 import sys
 from test import support
+from test.support import import_helper, os_helper
 import textwrap
 import types
 import unittest
@@ -756,6 +758,102 @@ class IncompatibleExtensionModuleRestrictionsTests(unittest.TestCase):
             self.run_with_shared_gil(script)
         with self.subTest('check enabled, per-interpreter GIL'):
             self.run_with_own_gil(script)
+
+
+class LoadSourcePathTests(unittest.TestCase):
+    def check_module(self, mod, modname, filename, is_package=False):
+        abs_filename = os.path.abspath(filename)
+
+        self.assertIsInstance(mod, types.ModuleType)
+        self.assertEqual(mod.__name__, modname)
+        self.assertEqual(mod.__file__, abs_filename)
+        self.assertIn(modname, sys.modules)
+        self.assertIs(sys.modules[modname], mod)
+        self.assertEqual(mod.__path__, [os.path.dirname(abs_filename)])
+
+        loader = mod.__loader__
+        self.assertEqual(loader.is_package(modname), is_package)
+
+        spec = mod.__spec__
+        self.assertEqual(spec.name, modname)
+        self.assertEqual(spec.origin, abs_filename)
+
+    def test_filename(self):
+        modname = 'test_load_source_path_mod'
+        # Filename doesn't have to end with ".py" suffix
+        filename = 'load_source_path_filename'
+        side_effect = 'load_source_path_side_effect'
+
+        def delete_side_effect():
+            try:
+                delattr(sys, side_effect)
+            except AttributeError:
+                pass
+
+        self.assertNotIn(modname, sys.modules)
+        self.addCleanup(import_helper.unload, modname)
+
+        self.assertFalse(hasattr(sys, side_effect))
+        self.addCleanup(delete_side_effect)
+
+        # Use a temporary directory to remove __pycache__/ subdirectory
+        with fixtures.tempdir_as_cwd():
+            with open(filename, "w", encoding="utf8") as fp:
+                print("attr = 'load_source_path_attr'", file=fp)
+                print(f"import sys; sys.{side_effect} = 1", file=fp)
+
+            mod = importlib.util.load_source_path(modname, filename)
+
+            self.check_module(mod, modname, filename)
+            self.assertEqual(mod.attr, 'load_source_path_attr')
+            self.assertEqual(getattr(sys, side_effect), 1)
+
+            # reload cached in sys.modules: the module is executed again
+            self.assertIn(modname, sys.modules)
+            setattr(sys, side_effect, 0)
+            mod = importlib.util.load_source_path(modname, filename)
+            self.assertEqual(getattr(sys, side_effect), 1)
+
+            # reload uncached in sys.modules: the module is executed again
+            del sys.modules[modname]
+            setattr(sys, side_effect, 0)
+            mod = importlib.util.load_source_path(modname, filename)
+            self.assertEqual(getattr(sys, side_effect), 1)
+
+    def test_dots(self):
+        modname = 'package.submodule'
+        filename = __file__
+        with self.assertRaises(ValueError) as cm:
+            importlib.util.load_source_path(modname, filename)
+
+        err_msg = str(cm.exception)
+        self.assertIn("module name must not contain dots", err_msg)
+        self.assertIn(repr(modname), err_msg)
+
+    def test_package(self):
+        modname = 'test_load_source_path_package'
+        dirname = 'load_source_path_dir'
+        filename = os.path.join('load_source_path_dir', '__init__.py')
+
+        self.assertNotIn(modname, sys.modules)
+        self.addCleanup(import_helper.unload, modname)
+
+        # Use a temporary directory to remove __pycache__/ subdirectory
+        with fixtures.tempdir_as_cwd():
+            os.mkdir(dirname)
+            with open(filename, "w", encoding="utf8") as fp:
+                print("attr = 'load_source_path_pkg'", file=fp)
+
+            # Package cannot be imported from a directory. It can with
+            # IsADirectoryError on Unix and PermissionError on Windows.
+            with self.assertRaises(OSError):
+                importlib.util.load_source_path(modname, dirname)
+
+            # whereas loading a package __init__.py file is ok
+            mod = importlib.util.load_source_path(modname, filename)
+
+            self.check_module(mod, modname, filename, is_package=True)
+            self.assertEqual(mod.attr, 'load_source_path_pkg')
 
 
 if __name__ == '__main__':

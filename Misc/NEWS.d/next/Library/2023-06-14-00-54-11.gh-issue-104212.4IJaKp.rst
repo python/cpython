@@ -1,0 +1,2 @@
+Add :func:`importlib.util.load_source_path` to load a module from a filename.
+Patch by Victor Stinner.

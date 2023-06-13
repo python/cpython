@@ -1240,6 +1240,20 @@ an :term:`importer`.
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
+.. function:: load_source_path(module_name, filename)
+
+   Load a module from a filename: execute the module and cache it to
+   :data:`sys.modules`.
+
+   *module_name* must not contain dots. A package cannot be imported by its
+   directory path, whereas its ``__init__.py`` file (ex:
+   ``package/__init__.py``) can be imported.
+
+   The module is always executed even if it's already cached in
+   :data:`sys.modules`.
+
+   .. versionadded:: 3.12
+
 .. function:: source_hash(source_bytes)
 
    Return the hash of *source_bytes* as bytes. A hash-based ``.pyc`` file embeds

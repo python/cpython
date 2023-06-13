@@ -10,6 +10,7 @@ from ._bootstrap_external import cache_from_source
 from ._bootstrap_external import decode_source
 from ._bootstrap_external import source_from_cache
 from ._bootstrap_external import spec_from_file_location
+from ._bootstrap_external import SourceFileLoader
 
 import _imp
 import sys
@@ -246,3 +247,21 @@ class LazyLoader(Loader):
         loader_state['__class__'] = module.__class__
         module.__spec__.loader_state = loader_state
         module.__class__ = _LazyModule
+
+
+def load_source_path(module_name, filename):
+    """Load a module from a filename."""
+    if '.' in module_name:
+        raise ValueError(f"module name must not contain dots: {module_name!r}")
+
+    loader = SourceFileLoader(module_name, filename)
+    # use spec_from_file_location() to always set the __file__ attribute,
+    # even if the filename does not end with ".py"
+    spec = spec_from_file_location(module_name, filename,
+                                   loader=loader,
+                                   submodule_search_locations=[])
+
+    module = module_from_spec(spec)
+    sys.modules[module.__name__] = module
+    loader.exec_module(module)
+    return module
