@@ -1985,7 +1985,7 @@ class _BasePathTest(object):
         self.assertEqual(sorted(base.glob('**/*')), [bad_link])
 
     def test_glob_above_recursion_limit(self):
-        recursion_limit = 40
+        recursion_limit = 50
         # directory_depth > recursion_limit
         directory_depth = recursion_limit + 10
         base = pathlib.Path(os_helper.TESTFN, 'deep')
