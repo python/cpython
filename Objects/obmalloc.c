@@ -1,3 +1,5 @@
+/* Python's malloc wrappers (see pymem.h) */
+
 #include "Python.h"
 #include "pycore_code.h"          // stats
 #include "pycore_pystate.h"       // _PyInterpreterState_GET
@@ -15,13 +17,14 @@
 /* Defined in tracemalloc.c */
 extern void _PyMem_DumpTraceback(int fd, const void *ptr);
 
-
-/* Python's malloc wrappers (see pymem.h) */
-
 static void _PyObject_DebugDumpAddress(const void *p);
 static void _PyMem_DebugCheckAddress(const char *func, char api_id, const void *p);
 
-static void _PyMem_SetupDebugHooksDomain(PyMemAllocatorDomain domain);
+
+static void set_up_debug_hooks_domain_unlocked(PyMemAllocatorDomain domain);
+static void set_up_debug_hooks_unlocked(void);
+static void get_allocator_unlocked(PyMemAllocatorDomain, PyMemAllocatorEx *);
+static void set_allocator_unlocked(PyMemAllocatorDomain, PyMemAllocatorEx *);
 
 
 /***************************************/
@@ -200,6 +203,7 @@ _PyMem_ArenaFree(void *Py_UNUSED(ctx), void *ptr,
 #endif
 
 
+#define ALLOCATORS_MUTEX (_PyRuntime.allocators.mutex)
 #define _PyMem_Raw (_PyRuntime.allocators.standard.raw)
 #define _PyMem (_PyRuntime.allocators.standard.mem)
 #define _PyObject (_PyRuntime.allocators.standard.obj)
@@ -207,12 +211,16 @@ _PyMem_ArenaFree(void *Py_UNUSED(ctx), void *ptr,
 #define _PyObject_Arena (_PyRuntime.allocators.obj_arena)
 
 
+/***************************/
+/* managing the allocators */
+/***************************/
+
 static int
-pymem_set_default_allocator(PyMemAllocatorDomain domain, int debug,
-                            PyMemAllocatorEx *old_alloc)
+set_default_allocator_unlocked(PyMemAllocatorDomain domain, int debug,
+                               PyMemAllocatorEx *old_alloc)
 {
     if (old_alloc != NULL) {
-        PyMem_GetAllocator(domain, old_alloc);
+        get_allocator_unlocked(domain, old_alloc);
     }
 
 
@@ -232,24 +240,32 @@ pymem_set_default_allocator(PyMemAllocatorDomain domain, int debug,
         /* unknown domain */
         return -1;
     }
-    PyMem_SetAllocator(domain, &new_alloc);
+    set_allocator_unlocked(domain, &new_alloc);
     if (debug) {
-        _PyMem_SetupDebugHooksDomain(domain);
+        set_up_debug_hooks_domain_unlocked(domain);
     }
     return 0;
 }
 
 
+#ifdef Py_DEBUG
+static const int pydebug = 1;
+#else
+static const int pydebug = 0;
+#endif
+
 int
 _PyMem_SetDefaultAllocator(PyMemAllocatorDomain domain,
                            PyMemAllocatorEx *old_alloc)
 {
-#ifdef Py_DEBUG
-    const int debug = 1;
-#else
-    const int debug = 0;
-#endif
-    return pymem_set_default_allocator(domain, debug, old_alloc);
+    if (ALLOCATORS_MUTEX == NULL) {
+        /* The runtime must be initializing. */
+        return set_default_allocator_unlocked(domain, pydebug, old_alloc);
+    }
+    PyThread_acquire_lock(ALLOCATORS_MUTEX, WAIT_LOCK);
+    int res = set_default_allocator_unlocked(domain, pydebug, old_alloc);
+    PyThread_release_lock(ALLOCATORS_MUTEX);
+    return res;
 }
 
 
@@ -289,8 +305,8 @@ _PyMem_GetAllocatorName(const char *name, PyMemAllocatorName *allocator)
 }
 
 
-int
-_PyMem_SetupAllocators(PyMemAllocatorName allocator)
+static int
+set_up_allocators_unlocked(PyMemAllocatorName allocator)
 {
     switch (allocator) {
     case PYMEM_ALLOCATOR_NOT_SET:
@@ -298,15 +314,15 @@ _PyMem_SetupAllocators(PyMemAllocatorName allocator)
         break;
 
     case PYMEM_ALLOCATOR_DEFAULT:
-        (void)_PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, NULL);
-        (void)_PyMem_SetDefaultAllocator(PYMEM_DOMAIN_MEM, NULL);
-        (void)_PyMem_SetDefaultAllocator(PYMEM_DOMAIN_OBJ, NULL);
+        (void)set_default_allocator_unlocked(PYMEM_DOMAIN_RAW, pydebug, NULL);
+        (void)set_default_allocator_unlocked(PYMEM_DOMAIN_MEM, pydebug, NULL);
+        (void)set_default_allocator_unlocked(PYMEM_DOMAIN_OBJ, pydebug, NULL);
         break;
 
     case PYMEM_ALLOCATOR_DEBUG:
-        (void)pymem_set_default_allocator(PYMEM_DOMAIN_RAW, 1, NULL);
-        (void)pymem_set_default_allocator(PYMEM_DOMAIN_MEM, 1, NULL);
-        (void)pymem_set_default_allocator(PYMEM_DOMAIN_OBJ, 1, NULL);
+        (void)set_default_allocator_unlocked(PYMEM_DOMAIN_RAW, 1, NULL);
+        (void)set_default_allocator_unlocked(PYMEM_DOMAIN_MEM, 1, NULL);
+        (void)set_default_allocator_unlocked(PYMEM_DOMAIN_OBJ, 1, NULL);
         break;
 
 #ifdef WITH_PYMALLOC
@@ -314,14 +330,14 @@ _PyMem_SetupAllocators(PyMemAllocatorName allocator)
     case PYMEM_ALLOCATOR_PYMALLOC_DEBUG:
     {
         PyMemAllocatorEx malloc_alloc = MALLOC_ALLOC;
-        PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &malloc_alloc);
+        set_allocator_unlocked(PYMEM_DOMAIN_RAW, &malloc_alloc);
 
         PyMemAllocatorEx pymalloc = PYMALLOC_ALLOC;
-        PyMem_SetAllocator(PYMEM_DOMAIN_MEM, &pymalloc);
-        PyMem_SetAllocator(PYMEM_DOMAIN_OBJ, &pymalloc);
+        set_allocator_unlocked(PYMEM_DOMAIN_MEM, &pymalloc);
+        set_allocator_unlocked(PYMEM_DOMAIN_OBJ, &pymalloc);
 
         if (allocator == PYMEM_ALLOCATOR_PYMALLOC_DEBUG) {
-            PyMem_SetupDebugHooks();
+            set_up_debug_hooks_unlocked();
         }
         break;
     }
@@ -331,12 +347,12 @@ _PyMem_SetupAllocators(PyMemAllocatorName allocator)
     case PYMEM_ALLOCATOR_MALLOC_DEBUG:
     {
         PyMemAllocatorEx malloc_alloc = MALLOC_ALLOC;
-        PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &malloc_alloc);
-        PyMem_SetAllocator(PYMEM_DOMAIN_MEM, &malloc_alloc);
-        PyMem_SetAllocator(PYMEM_DOMAIN_OBJ, &malloc_alloc);
+        set_allocator_unlocked(PYMEM_DOMAIN_RAW, &malloc_alloc);
+        set_allocator_unlocked(PYMEM_DOMAIN_MEM, &malloc_alloc);
+        set_allocator_unlocked(PYMEM_DOMAIN_OBJ, &malloc_alloc);
 
         if (allocator == PYMEM_ALLOCATOR_MALLOC_DEBUG) {
-            PyMem_SetupDebugHooks();
+            set_up_debug_hooks_unlocked();
         }
         break;
     }
@@ -345,7 +361,17 @@ _PyMem_SetupAllocators(PyMemAllocatorName allocator)
         /* unknown allocator */
         return -1;
     }
+
     return 0;
+}
+
+int
+_PyMem_SetupAllocators(PyMemAllocatorName allocator)
+{
+    PyThread_acquire_lock(ALLOCATORS_MUTEX, WAIT_LOCK);
+    int res = set_up_allocators_unlocked(allocator);
+    PyThread_release_lock(ALLOCATORS_MUTEX);
+    return res;
 }
 
 
@@ -356,8 +382,8 @@ pymemallocator_eq(PyMemAllocatorEx *a, PyMemAllocatorEx *b)
 }
 
 
-const char*
-_PyMem_GetCurrentAllocatorName(void)
+static const char*
+get_current_allocator_name_unlocked(void)
 {
     PyMemAllocatorEx malloc_alloc = MALLOC_ALLOC;
 #ifdef WITH_PYMALLOC
@@ -406,6 +432,15 @@ _PyMem_GetCurrentAllocatorName(void)
     return NULL;
 }
 
+const char*
+_PyMem_GetCurrentAllocatorName(void)
+{
+    PyThread_acquire_lock(ALLOCATORS_MUTEX, WAIT_LOCK);
+    const char *name = get_current_allocator_name_unlocked();
+    PyThread_release_lock(ALLOCATORS_MUTEX);
+    return name;
+}
+
 
 #ifdef WITH_PYMALLOC
 static int
@@ -428,7 +463,7 @@ _PyMem_PymallocEnabled(void)
 
 
 static void
-_PyMem_SetupDebugHooksDomain(PyMemAllocatorDomain domain)
+set_up_debug_hooks_domain_unlocked(PyMemAllocatorDomain domain)
 {
     PyMemAllocatorEx alloc;
 
@@ -437,53 +472,66 @@ _PyMem_SetupDebugHooksDomain(PyMemAllocatorDomain domain)
             return;
         }
 
-        PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &_PyMem_Debug.raw.alloc);
+        get_allocator_unlocked(domain, &_PyMem_Debug.raw.alloc);
         alloc.ctx = &_PyMem_Debug.raw;
         alloc.malloc = _PyMem_DebugRawMalloc;
         alloc.calloc = _PyMem_DebugRawCalloc;
         alloc.realloc = _PyMem_DebugRawRealloc;
         alloc.free = _PyMem_DebugRawFree;
-        PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &alloc);
+        set_allocator_unlocked(domain, &alloc);
     }
     else if (domain == PYMEM_DOMAIN_MEM) {
         if (_PyMem.malloc == _PyMem_DebugMalloc) {
             return;
         }
 
-        PyMem_GetAllocator(PYMEM_DOMAIN_MEM, &_PyMem_Debug.mem.alloc);
+        get_allocator_unlocked(domain, &_PyMem_Debug.mem.alloc);
         alloc.ctx = &_PyMem_Debug.mem;
         alloc.malloc = _PyMem_DebugMalloc;
         alloc.calloc = _PyMem_DebugCalloc;
         alloc.realloc = _PyMem_DebugRealloc;
         alloc.free = _PyMem_DebugFree;
-        PyMem_SetAllocator(PYMEM_DOMAIN_MEM, &alloc);
+        set_allocator_unlocked(domain, &alloc);
     }
     else if (domain == PYMEM_DOMAIN_OBJ)  {
         if (_PyObject.malloc == _PyMem_DebugMalloc) {
             return;
         }
 
-        PyMem_GetAllocator(PYMEM_DOMAIN_OBJ, &_PyMem_Debug.obj.alloc);
+        get_allocator_unlocked(domain, &_PyMem_Debug.obj.alloc);
         alloc.ctx = &_PyMem_Debug.obj;
         alloc.malloc = _PyMem_DebugMalloc;
         alloc.calloc = _PyMem_DebugCalloc;
         alloc.realloc = _PyMem_DebugRealloc;
         alloc.free = _PyMem_DebugFree;
-        PyMem_SetAllocator(PYMEM_DOMAIN_OBJ, &alloc);
+        set_allocator_unlocked(domain, &alloc);
     }
 }
 
 
-void
-PyMem_SetupDebugHooks(void)
+static void
+set_up_debug_hooks_unlocked(void)
 {
-    _PyMem_SetupDebugHooksDomain(PYMEM_DOMAIN_RAW);
-    _PyMem_SetupDebugHooksDomain(PYMEM_DOMAIN_MEM);
-    _PyMem_SetupDebugHooksDomain(PYMEM_DOMAIN_OBJ);
+    set_up_debug_hooks_domain_unlocked(PYMEM_DOMAIN_RAW);
+    set_up_debug_hooks_domain_unlocked(PYMEM_DOMAIN_MEM);
+    set_up_debug_hooks_domain_unlocked(PYMEM_DOMAIN_OBJ);
 }
 
 void
-PyMem_GetAllocator(PyMemAllocatorDomain domain, PyMemAllocatorEx *allocator)
+PyMem_SetupDebugHooks(void)
+{
+    if (ALLOCATORS_MUTEX == NULL) {
+        /* The runtime must not be completely initialized yet. */
+        set_up_debug_hooks_unlocked();
+        return;
+    }
+    PyThread_acquire_lock(ALLOCATORS_MUTEX, WAIT_LOCK);
+    set_up_debug_hooks_unlocked();
+    PyThread_release_lock(ALLOCATORS_MUTEX);
+}
+
+static void
+get_allocator_unlocked(PyMemAllocatorDomain domain, PyMemAllocatorEx *allocator)
 {
     switch(domain)
     {
@@ -500,8 +548,8 @@ PyMem_GetAllocator(PyMemAllocatorDomain domain, PyMemAllocatorEx *allocator)
     }
 }
 
-void
-PyMem_SetAllocator(PyMemAllocatorDomain domain, PyMemAllocatorEx *allocator)
+static void
+set_allocator_unlocked(PyMemAllocatorDomain domain, PyMemAllocatorEx *allocator)
 {
     switch(domain)
     {
@@ -513,10 +561,75 @@ PyMem_SetAllocator(PyMemAllocatorDomain domain, PyMemAllocatorEx *allocator)
 }
 
 void
+PyMem_GetAllocator(PyMemAllocatorDomain domain, PyMemAllocatorEx *allocator)
+{
+    if (ALLOCATORS_MUTEX == NULL) {
+        /* The runtime must not be completely initialized yet. */
+        get_allocator_unlocked(domain, allocator);
+        return;
+    }
+    PyThread_acquire_lock(ALLOCATORS_MUTEX, WAIT_LOCK);
+    get_allocator_unlocked(domain, allocator);
+    PyThread_release_lock(ALLOCATORS_MUTEX);
+}
+
+void
+PyMem_SetAllocator(PyMemAllocatorDomain domain, PyMemAllocatorEx *allocator)
+{
+    if (ALLOCATORS_MUTEX == NULL) {
+        /* The runtime must not be completely initialized yet. */
+        set_allocator_unlocked(domain, allocator);
+        return;
+    }
+    PyThread_acquire_lock(ALLOCATORS_MUTEX, WAIT_LOCK);
+    set_allocator_unlocked(domain, allocator);
+    PyThread_release_lock(ALLOCATORS_MUTEX);
+}
+
+void
 PyObject_GetArenaAllocator(PyObjectArenaAllocator *allocator)
 {
+    if (ALLOCATORS_MUTEX == NULL) {
+        /* The runtime must not be completely initialized yet. */
+        *allocator = _PyObject_Arena;
+        return;
+    }
+    PyThread_acquire_lock(ALLOCATORS_MUTEX, WAIT_LOCK);
     *allocator = _PyObject_Arena;
+    PyThread_release_lock(ALLOCATORS_MUTEX);
 }
+
+void
+PyObject_SetArenaAllocator(PyObjectArenaAllocator *allocator)
+{
+    if (ALLOCATORS_MUTEX == NULL) {
+        /* The runtime must not be completely initialized yet. */
+        _PyObject_Arena = *allocator;
+        return;
+    }
+    PyThread_acquire_lock(ALLOCATORS_MUTEX, WAIT_LOCK);
+    _PyObject_Arena = *allocator;
+    PyThread_release_lock(ALLOCATORS_MUTEX);
+}
+
+
+/* Note that there is a possible, but very unlikely, race in any place
+ * below where we call one of the allocator functions.  We access two
+ * fields in each case:  "malloc", etc. and "ctx".
+ *
+ * It is unlikely that the allocator will be changed while one of those
+ * calls is happening, much less in that very narrow window.
+ * Furthermore, the likelihood of a race is drastically reduced by the
+ * fact that the allocator may not be changed after runtime init
+ * (except with a wrapper).
+ *
+ * With the above in mind, we currently don't worry about locking
+ * around these uses of the runtime-global allocators state. */
+
+
+/*************************/
+/* the "arena" allocator */
+/*************************/
 
 void *
 _PyObject_VirtualAlloc(size_t size)
@@ -530,11 +643,10 @@ _PyObject_VirtualFree(void *obj, size_t size)
     _PyObject_Arena.free(_PyObject_Arena.ctx, obj, size);
 }
 
-void
-PyObject_SetArenaAllocator(PyObjectArenaAllocator *allocator)
-{
-    _PyObject_Arena = *allocator;
-}
+
+/***********************/
+/* the "raw" allocator */
+/***********************/
 
 void *
 PyMem_RawMalloc(size_t size)
@@ -573,6 +685,10 @@ void PyMem_RawFree(void *ptr)
     _PyMem_Raw.free(_PyMem_Raw.ctx, ptr);
 }
 
+
+/***********************/
+/* the "mem" allocator */
+/***********************/
 
 void *
 PyMem_Malloc(size_t size)
@@ -616,6 +732,10 @@ PyMem_Free(void *ptr)
     _PyMem.free(_PyMem.ctx, ptr);
 }
 
+
+/***************************/
+/* pymem utility functions */
+/***************************/
 
 wchar_t*
 _PyMem_RawWcsdup(const wchar_t *str)
@@ -662,6 +782,11 @@ _PyMem_Strdup(const char *str)
     memcpy(copy, str, size);
     return copy;
 }
+
+
+/**************************/
+/* the "object" allocator */
+/**************************/
 
 void *
 PyObject_Malloc(size_t size)
