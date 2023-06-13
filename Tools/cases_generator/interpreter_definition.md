@@ -85,8 +85,6 @@ and a piece of C code describing its semantics::
     "op" "(" NAME "," stack_effect ")" "{" C-code "}"
     |
     "macro" "(" NAME ")" "=" uop ("+" uop)* ";"
-    |
-    "super" "(" NAME ")" "=" NAME ("+" NAME)* ";"
  
   stack_effect:
     "(" [inputs] "--" [outputs] ")"
@@ -130,8 +128,6 @@ The following definitions may occur:
 * `inst`: A normal instruction, as previously defined by `TARGET(NAME)` in `ceval.c`.
 * `op`: A part instruction from which macros can be constructed.
 * `macro`: A bytecode instruction constructed from ops and cache effects.
-* `super`: A super-instruction, such as `LOAD_FAST__LOAD_FAST`, constructed from
-  normal or macro instructions.
 
 `NAME` can be any ASCII identifier that is a C identifier and not a C or Python keyword.
 `foo_1` is legal. `$` is not legal, nor is `struct` or `class`.
@@ -167,7 +163,7 @@ part of the DSL.
 Those functions include:
 
 * `DEOPT_IF(cond, instruction)`. Deoptimize if `cond` is met.
-* `ERROR_IF(cond, label)`. Jump to error handler if `cond` is true.
+* `ERROR_IF(cond, label)`. Jump to error handler at `label` if `cond` is true.
 * `DECREF_INPUTS()`. Generate `Py_DECREF()` calls for the input stack effects.
 
 Note that the use of `DECREF_INPUTS()` is optional -- manual calls
@@ -193,10 +189,13 @@ These requirements result in the following constraints on the use of
    intermediate results.)
 3. No `DEOPT_IF` may follow an `ERROR_IF` in the same block.
 
-If an error condition is detected before the first `DECREF` of an input,
+(There is some wiggle room: these rules apply to dynamic code paths,
+not to static occurrences in the source code.)
+
+If code detects an error condition before the first `DECREF` of an input,
 two idioms are valid:
 
-- Just use `goto error`.
+- Use `goto error`.
 - Use a block containing the appropriate `DECREF` calls ending in
   `ERROR_IF(true, error)`.
 
@@ -255,27 +254,6 @@ This would generate:
         PyObject *value = PEEK(1);
         SETLOCAL(oparg, value);
         STACK_SHRINK(1);
-        DISPATCH();
-    }
-```
-
-### Super-instruction definition
-
-```C
-    super ( LOAD_FAST__LOAD_FAST ) = LOAD_FAST + LOAD_FAST ;
-```
-This might get translated into the following:
-```C
-    TARGET(LOAD_FAST__LOAD_FAST) {
-        PyObject *value;
-        value = frame->f_localsplus[oparg];
-        Py_INCREF(value);
-        PUSH(value);
-        NEXTOPARG();
-        next_instr++;
-        value = frame->f_localsplus[oparg];
-        Py_INCREF(value);
-        PUSH(value);
         DISPATCH();
     }
 ```
