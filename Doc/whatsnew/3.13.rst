@@ -113,7 +113,6 @@ pathlib
   :meth:`~pathlib.Path.rglob`.
   (Contributed by Barney Gale in :gh:`77609`.)
 
-=======
 traceback
 ---------
 
