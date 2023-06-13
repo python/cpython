@@ -334,11 +334,9 @@ Removed
   attribute instead.
   (Contributed by Nikita Sobolev in :gh:`105546`.)
 
-* Remove deprecated ``re.template`` function
-  and ``re.T`` and ``re.TEMPLATE`` flags.
-  Also removes ``SRE_FLAG_TEMPLATE`` constant
-  from ``sre_constants`` and ``re._constants``.
-  (Contributed by Nikita Sobolev in :gh:`105687`.)
+* Remove undocumented, never working, and deprecated ``re.template`` function
+  and ``re.TEMPLATE`` flag (and ``re.T`` alias).
+  (Contributed by Serhiy Storchaka and Nikita Sobolev in :gh:`105687`.)
 
 
 Porting to Python 3.13
