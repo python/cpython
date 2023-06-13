@@ -169,6 +169,12 @@ Modules/_xxinterpchannelsmodule.c	-	_globals	-
 Python/pyfpe.c	-	PyFPE_counter	-
 
 ##-----------------------
+## thread-local variables
+
+Python/import.c	-	pkgcontext	-
+Python/pystate.c	-	_Py_tss_tstate	-
+
+##-----------------------
 ## should be const
 # XXX Make them const.
 
