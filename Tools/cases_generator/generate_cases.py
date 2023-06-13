@@ -500,9 +500,9 @@ class PseudoInstruction:
     """A pseudo instruction."""
 
     name: str
+    targets: list[Instruction]
     instr_fmt: str
     flags: int
-    targets: list[Instruction]
 
 
 @dataclasses.dataclass
@@ -809,7 +809,7 @@ class Analyzer:
         assert(len(fmts) == 1)
         flags_list = list(set([t.flags for t in targets]))
         assert(len(flags_list) == 1)
-        return PseudoInstruction(pseudo.name, fmts[0], flags_list[0], targets)
+        return PseudoInstruction(pseudo.name, targets, fmts[0], flags_list[0])
 
     def analyze_instruction(
         self, instr: Instruction, stack: list[StackEffect], sp: int
