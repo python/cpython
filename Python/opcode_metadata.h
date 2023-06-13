@@ -3,6 +3,21 @@
 //   Python/bytecodes.c
 // Do not edit!
 
+
+#define IS_PSEUDO_INSTR(OP)  \
+    ((OP) == STORE_FAST_MAYBE_NULL) || \
+    ((OP) == LOAD_SUPER_METHOD) || \
+    ((OP) == LOAD_ZERO_SUPER_METHOD) || \
+    ((OP) == LOAD_ZERO_SUPER_ATTR) || \
+    ((OP) == LOAD_METHOD) || \
+    ((OP) == JUMP) || \
+    ((OP) == JUMP_NO_INTERRUPT) || \
+    ((OP) == SETUP_FINALLY) || \
+    ((OP) == SETUP_CLEANUP) || \
+    ((OP) == SETUP_WITH) || \
+    ((OP) == POP_BLOCK) || \
+    0
+
 #ifndef NEED_OPCODE_METADATA
 extern int _PyOpcode_num_popped(int opcode, int oparg, bool jump);
 #else
@@ -29,14 +44,12 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 0;
         case STORE_FAST:
             return 1;
+        case STORE_FAST_MAYBE_NULL:
+            return 1;
         case STORE_FAST_LOAD_FAST:
             return 1;
         case STORE_FAST_STORE_FAST:
             return 2;
-        case LOAD_FAST__LOAD_CONST:
-            return 0+0;
-        case LOAD_CONST__LOAD_FAST:
-            return 0+0;
         case POP_TOP:
             return 1;
         case PUSH_NULL:
@@ -215,11 +228,19 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 3;
         case LOAD_SUPER_ATTR:
             return 3;
+        case LOAD_SUPER_METHOD:
+            return 3;
+        case LOAD_ZERO_SUPER_METHOD:
+            return 3;
+        case LOAD_ZERO_SUPER_ATTR:
+            return 3;
         case LOAD_SUPER_ATTR_ATTR:
             return 3;
         case LOAD_SUPER_ATTR_METHOD:
             return 3;
         case LOAD_ATTR:
+            return 1;
+        case LOAD_METHOD:
             return 1;
         case LOAD_ATTR_INSTANCE_VALUE:
             return 1;
@@ -265,6 +286,10 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 0;
         case JUMP_BACKWARD:
             return 0;
+        case JUMP:
+            return 0;
+        case JUMP_NO_INTERRUPT:
+            return 0;
         case ENTER_EXECUTOR:
             return 0;
         case POP_JUMP_IF_FALSE:
@@ -309,6 +334,14 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case WITH_EXCEPT_START:
             return 4;
+        case SETUP_FINALLY:
+            return 0;
+        case SETUP_CLEANUP:
+            return 0;
+        case SETUP_WITH:
+            return 0;
+        case POP_BLOCK:
+            return 0;
         case PUSH_EXC_INFO:
             return 1;
         case LOAD_ATTR_METHOD_WITH_VALUES:
@@ -362,7 +395,9 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case CALL_FUNCTION_EX:
             return ((oparg & 1) ? 1 : 0) + 3;
         case MAKE_FUNCTION:
-            return ((oparg & MAKE_FUNCTION_DEFAULTS) ? 1 : 0) + ((oparg & MAKE_FUNCTION_KWDEFAULTS) ? 1 : 0) + ((oparg & MAKE_FUNCTION_ANNOTATIONS) ? 1 : 0) + ((oparg & MAKE_FUNCTION_CLOSURE) ? 1 : 0) + 1;
+            return 1;
+        case SET_FUNCTION_ATTRIBUTE:
+            return 2;
         case RETURN_GENERATOR:
             return 0;
         case BUILD_SLICE:
@@ -427,14 +462,12 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 1;
         case STORE_FAST:
             return 0;
+        case STORE_FAST_MAYBE_NULL:
+            return 0;
         case STORE_FAST_LOAD_FAST:
             return 1;
         case STORE_FAST_STORE_FAST:
             return 0;
-        case LOAD_FAST__LOAD_CONST:
-            return 1+1;
-        case LOAD_CONST__LOAD_FAST:
-            return 1+1;
         case POP_TOP:
             return 0;
         case PUSH_NULL:
@@ -613,11 +646,19 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_SUPER_ATTR:
             return ((oparg & 1) ? 1 : 0) + 1;
+        case LOAD_SUPER_METHOD:
+            return ((oparg & 1) ? 1 : 0) + 1;
+        case LOAD_ZERO_SUPER_METHOD:
+            return ((oparg & 1) ? 1 : 0) + 1;
+        case LOAD_ZERO_SUPER_ATTR:
+            return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_SUPER_ATTR_ATTR:
             return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_SUPER_ATTR_METHOD:
             return 2;
         case LOAD_ATTR:
+            return ((oparg & 1) ? 1 : 0) + 1;
+        case LOAD_METHOD:
             return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_ATTR_INSTANCE_VALUE:
             return ((oparg & 1) ? 1 : 0) + 1;
@@ -663,6 +704,10 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case JUMP_BACKWARD:
             return 0;
+        case JUMP:
+            return 0;
+        case JUMP_NO_INTERRUPT:
+            return 0;
         case ENTER_EXECUTOR:
             return 0;
         case POP_JUMP_IF_FALSE:
@@ -707,6 +752,14 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 2;
         case WITH_EXCEPT_START:
             return 5;
+        case SETUP_FINALLY:
+            return 0;
+        case SETUP_CLEANUP:
+            return 0;
+        case SETUP_WITH:
+            return 0;
+        case POP_BLOCK:
+            return 0;
         case PUSH_EXC_INFO:
             return 2;
         case LOAD_ATTR_METHOD_WITH_VALUES:
@@ -761,6 +814,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 1;
         case MAKE_FUNCTION:
             return 1;
+        case SET_FUNCTION_ATTRIBUTE:
+            return 1;
         case RETURN_GENERATOR:
             return 0;
         case BUILD_SLICE:
@@ -799,7 +854,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
 }
 #endif
 
-enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC00, INSTR_FMT_IBC000, INSTR_FMT_IBC00000000, INSTR_FMT_IBIB, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC000 };
+enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC00, INSTR_FMT_IBC000, INSTR_FMT_IBC00000000, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC000 };
 #define HAS_ARG_FLAG (1)
 #define HAS_CONST_FLAG (2)
 #define HAS_NAME_FLAG (4)
@@ -812,10 +867,14 @@ struct opcode_metadata {
     int flags;
 };
 
+#define OPCODE_METADATA_FMT(OP) (_PyOpcode_opcode_metadata[(OP)].instr_format)
+#define SAME_OPCODE_METADATA(OP1, OP2) \
+        (OPCODE_METADATA_FMT(OP1) == OPCODE_METADATA_FMT(OP2))
+
 #ifndef NEED_OPCODE_METADATA
-extern const struct opcode_metadata _PyOpcode_opcode_metadata[256];
+extern const struct opcode_metadata _PyOpcode_opcode_metadata[512];
 #else
-const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
+const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {
     [NOP] = { true, INSTR_FMT_IX, 0 },
     [RESUME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [INSTRUMENTED_RESUME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
@@ -826,10 +885,9 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [LOAD_FAST_LOAD_FAST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [LOAD_CONST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_CONST_FLAG },
     [STORE_FAST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
+    [STORE_FAST_MAYBE_NULL] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [STORE_FAST_LOAD_FAST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [STORE_FAST_STORE_FAST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
-    [LOAD_FAST__LOAD_CONST] = { true, INSTR_FMT_IBIB, HAS_ARG_FLAG | HAS_CONST_FLAG },
-    [LOAD_CONST__LOAD_FAST] = { true, INSTR_FMT_IBIB, HAS_ARG_FLAG | HAS_CONST_FLAG },
     [POP_TOP] = { true, INSTR_FMT_IX, 0 },
     [PUSH_NULL] = { true, INSTR_FMT_IX, 0 },
     [END_FOR] = { true, INSTR_FMT_IB, 0 },
@@ -919,9 +977,13 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [MAP_ADD] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [INSTRUMENTED_LOAD_SUPER_ATTR] = { true, INSTR_FMT_IBC00000000, HAS_ARG_FLAG },
     [LOAD_SUPER_ATTR] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_NAME_FLAG },
+    [LOAD_SUPER_METHOD] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_NAME_FLAG },
+    [LOAD_ZERO_SUPER_METHOD] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_NAME_FLAG },
+    [LOAD_ZERO_SUPER_ATTR] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_NAME_FLAG },
     [LOAD_SUPER_ATTR_ATTR] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_NAME_FLAG },
     [LOAD_SUPER_ATTR_METHOD] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_NAME_FLAG },
     [LOAD_ATTR] = { true, INSTR_FMT_IBC00000000, HAS_ARG_FLAG | HAS_NAME_FLAG },
+    [LOAD_METHOD] = { true, INSTR_FMT_IBC00000000, HAS_ARG_FLAG | HAS_NAME_FLAG },
     [LOAD_ATTR_INSTANCE_VALUE] = { true, INSTR_FMT_IBC00000000, HAS_ARG_FLAG },
     [LOAD_ATTR_MODULE] = { true, INSTR_FMT_IBC00000000, HAS_ARG_FLAG },
     [LOAD_ATTR_WITH_HINT] = { true, INSTR_FMT_IBC00000000, HAS_ARG_FLAG | HAS_NAME_FLAG },
@@ -944,6 +1006,8 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [IMPORT_FROM] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_NAME_FLAG },
     [JUMP_FORWARD] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [JUMP_BACKWARD] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
+    [JUMP] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
+    [JUMP_NO_INTERRUPT] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [ENTER_EXECUTOR] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [POP_JUMP_IF_FALSE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [POP_JUMP_IF_TRUE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
@@ -966,6 +1030,10 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [BEFORE_ASYNC_WITH] = { true, INSTR_FMT_IX, 0 },
     [BEFORE_WITH] = { true, INSTR_FMT_IX, 0 },
     [WITH_EXCEPT_START] = { true, INSTR_FMT_IX, 0 },
+    [SETUP_FINALLY] = { true, INSTR_FMT_IX, 0 },
+    [SETUP_CLEANUP] = { true, INSTR_FMT_IX, 0 },
+    [SETUP_WITH] = { true, INSTR_FMT_IX, 0 },
+    [POP_BLOCK] = { true, INSTR_FMT_IX, 0 },
     [PUSH_EXC_INFO] = { true, INSTR_FMT_IX, 0 },
     [LOAD_ATTR_METHOD_WITH_VALUES] = { true, INSTR_FMT_IBC00000000, HAS_ARG_FLAG },
     [LOAD_ATTR_METHOD_NO_DICT] = { true, INSTR_FMT_IBC00000000, HAS_ARG_FLAG },
@@ -992,7 +1060,8 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [CALL_NO_KW_METHOD_DESCRIPTOR_FAST] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG },
     [INSTRUMENTED_CALL_FUNCTION_EX] = { true, INSTR_FMT_IX, 0 },
     [CALL_FUNCTION_EX] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
-    [MAKE_FUNCTION] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
+    [MAKE_FUNCTION] = { true, INSTR_FMT_IX, 0 },
+    [SET_FUNCTION_ATTRIBUTE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [RETURN_GENERATOR] = { true, INSTR_FMT_IX, 0 },
     [BUILD_SLICE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [FORMAT_VALUE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },

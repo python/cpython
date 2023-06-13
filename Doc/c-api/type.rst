@@ -258,7 +258,7 @@ The following functions and structs are used to create
    (or *Py_tp_base[s]* slots if *bases* is ``NULL``, see below).
 
    Metaclasses that override :c:member:`~PyTypeObject.tp_new` are not
-   supported.
+   supported, except if ``tp_new`` is ``NULL``.
    (For backwards compatibility, other ``PyType_From*`` functions allow
    such metaclasses. They ignore ``tp_new``, which may result in incomplete
    initialization. This is deprecated and in Python 3.14+ such metaclasses will

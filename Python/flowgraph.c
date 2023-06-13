@@ -416,9 +416,13 @@ normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
     bool is_forward = last->i_target->b_visited == 0;
     switch(last->i_opcode) {
         case JUMP:
+            assert(SAME_OPCODE_METADATA(JUMP, JUMP_FORWARD));
+            assert(SAME_OPCODE_METADATA(JUMP, JUMP_BACKWARD));
             last->i_opcode = is_forward ? JUMP_FORWARD : JUMP_BACKWARD;
             return SUCCESS;
         case JUMP_NO_INTERRUPT:
+            assert(SAME_OPCODE_METADATA(JUMP_NO_INTERRUPT, JUMP_FORWARD));
+            assert(SAME_OPCODE_METADATA(JUMP_NO_INTERRUPT, JUMP_BACKWARD_NO_INTERRUPT));
             last->i_opcode = is_forward ?
                 JUMP_FORWARD : JUMP_BACKWARD_NO_INTERRUPT;
             return SUCCESS;
@@ -1515,15 +1519,18 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                     */
                 }
                 break;
+            case STORE_FAST:
+                if (opcode == nextop &&
+                    oparg == bb->b_instr[i+1].i_oparg &&
+                    bb->b_instr[i].i_loc.lineno == bb->b_instr[i+1].i_loc.lineno) {
+                    bb->b_instr[i].i_opcode = POP_TOP;
+                    bb->b_instr[i].i_oparg = 0;
+                }
+                break;
             case SWAP:
                 if (oparg == 1) {
                     INSTR_SET_OP0(inst, NOP);
-                    break;
                 }
-                if (swaptimize(bb, &i) < 0) {
-                    goto error;
-                }
-                apply_static_swaps(bb, i);
                 break;
             case KW_NAMES:
                 break;
@@ -1536,6 +1543,16 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
             default:
                 /* All HAS_CONST opcodes should be handled with LOAD_CONST */
                 assert (!HAS_CONST(inst->i_opcode));
+        }
+    }
+
+    for (int i = 0; i < bb->b_iused; i++) {
+        cfg_instr *inst = &bb->b_instr[i];
+        if (inst->i_opcode == SWAP) {
+            if (swaptimize(bb, &i) < 0) {
+                goto error;
+            }
+            apply_static_swaps(bb, i);
         }
     }
     return SUCCESS;
@@ -1663,7 +1680,6 @@ scan_block_for_locals(basicblock *b, basicblock ***sp)
     for (int i = 0; i < b->b_iused; i++) {
         cfg_instr *instr = &b->b_instr[i];
         assert(instr->i_opcode != EXTENDED_ARG);
-        assert(!IS_SUPERINSTRUCTION_OPCODE(instr->i_opcode));
         if (instr->i_except != NULL) {
             maybe_push(instr->i_except, unsafe_mask, sp);
         }
@@ -1722,7 +1738,6 @@ fast_scan_many_locals(basicblock *entryblock, int nlocals)
         for (int i = 0; i < b->b_iused; i++) {
             cfg_instr *instr = &b->b_instr[i];
             assert(instr->i_opcode != EXTENDED_ARG);
-            assert(!IS_SUPERINSTRUCTION_OPCODE(instr->i_opcode));
             int arg = instr->i_oparg;
             if (arg < 64) {
                 continue;
@@ -2060,9 +2075,11 @@ _PyCfg_ConvertPseudoOps(basicblock *entryblock)
         for (int i = 0; i < b->b_iused; i++) {
             cfg_instr *instr = &b->b_instr[i];
             if (is_block_push(instr) || instr->i_opcode == POP_BLOCK) {
+                assert(SAME_OPCODE_METADATA(instr->i_opcode, NOP));
                 INSTR_SET_OP0(instr, NOP);
             }
             else if (instr->i_opcode == STORE_FAST_MAYBE_NULL) {
+                assert(SAME_OPCODE_METADATA(STORE_FAST_MAYBE_NULL, STORE_FAST));
                 instr->i_opcode = STORE_FAST;
             }
         }
