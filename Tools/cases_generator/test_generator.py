@@ -435,10 +435,10 @@ def test_cond_effect():
 
 def test_macro_cond_effect():
     input = """
-        op(A, (left, right --)) {
+        op(A, (left, middle, right --)) {
             # Body of A
         }
-        op(B, (-- extra if (oparg), res)) {
+        op(B, (-- deep, extra if (oparg), res)) {
             # Body of B
         }
         macro(M) = A + B;
@@ -447,15 +447,19 @@ def test_macro_cond_effect():
         TARGET(M) {
             PyObject *_tmp_1 = stack_pointer[-1];
             PyObject *_tmp_2 = stack_pointer[-2];
+            PyObject *_tmp_3 = stack_pointer[-3];
             {
                 PyObject *right = _tmp_1;
-                PyObject *left = _tmp_2;
+                PyObject *middle = _tmp_2;
+                PyObject *left = _tmp_3;
                 # Body of A
             }
             {
+                PyObject *deep;
                 PyObject *extra = NULL;
                 PyObject *res;
                 # Body of B
+                _tmp_3 = deep;
                 if (oparg) { _tmp_2 = extra; }
                 _tmp_1 = res;
             }
@@ -463,6 +467,7 @@ def test_macro_cond_effect():
             STACK_GROW((oparg ? 1 : 0));
             stack_pointer[-1] = _tmp_1;
             if (oparg) { stack_pointer[-2] = _tmp_2; }
+            stack_pointer[-3] = _tmp_3;
             DISPATCH();
         }
     """
