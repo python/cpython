@@ -62,6 +62,13 @@ whose size is determined when the object is allocated.
 #  error Py_LIMITED_API is incompatible with Py_TRACE_REFS
 #endif
 
+#if (defined __STDC_VERSION__ && __STDC_VERSION__ >= 201112L) || defined(__cplusplus)
+   // On C11 and C++, PyObject.ob_refcnt is implemented as an anonymous union
+#  define _PYOBJECT_REFCNT_ANON_UNION
+//#elif defined(__GNUC__)
+//#  define _PYOBJECT_REFCNT_ANON_UNION
+#endif
+
 #ifdef Py_TRACE_REFS
 /* Define pointers to support a doubly-linked list of all live heap objects. */
 #define _PyObject_HEAD_EXTRA            \
@@ -134,11 +141,19 @@ check by comparing the reference count field to the immortality reference count.
         { _Py_IMMORTAL_REFCNT },    \
         (type)                      \
     },
-#else
+#elif defined(_PYOBJECT_REFCNT_ANON_UNION)
 #define PyObject_HEAD_INIT(type) \
     {                            \
         _PyObject_EXTRA_INIT     \
         { 1 },                   \
+        (type)                   \
+    },
+#else
+    // gh-105059: On C99 and older, PyObject.ob_refcnt type is Py_ssize_t
+#define PyObject_HEAD_INIT(type) \
+    {                            \
+        _PyObject_EXTRA_INIT     \
+        1,                       \
         (type)                   \
     },
 #endif /* Py_BUILD_CORE */
@@ -158,6 +173,7 @@ check by comparing the reference count field to the immortality reference count.
 #define PyObject_VAR_HEAD      PyVarObject ob_base;
 #define Py_INVALID_SIZE (Py_ssize_t)-1
 
+
 /* Nothing is actually declared to be a PyObject, but every pointer to
  * a Python object can be cast to a PyObject*.  This is inheritance built
  * by hand.  Similarly every pointer to a variable-size Python object can,
@@ -165,12 +181,23 @@ check by comparing the reference count field to the immortality reference count.
  */
 struct _object {
     _PyObject_HEAD_EXTRA
+#ifdef _PYOBJECT_REFCNT_ANON_UNION
+
+// #if defined(__GNUC__) && !(defined __STDC_VERSION__ && __STDC_VERSION__ >= 201112L)
+//     // On C99 and older, anonymous union is a GCC extension
+//     __extension__
+// #endif
     union {
        Py_ssize_t ob_refcnt;
 #if SIZEOF_VOID_P > 4
        PY_UINT32_T ob_refcnt_split[2];
 #endif
     };
+#else
+    // gh-105059: C99 and older cannot use anonymous union: implement
+    // Py_INCREF() and Py_DECREF() as opaque function calls.
+    Py_ssize_t ob_refcnt;
+#endif
     PyTypeObject *ob_type;
 };
 
@@ -611,15 +638,19 @@ PyAPI_FUNC(void) _Py_DecRef(PyObject *);
 static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 {
 #if defined(Py_LIMITED_API) && (Py_LIMITED_API+0 >= 0x030c0000 || defined(Py_REF_DEBUG))
-    // Stable ABI implements Py_INCREF() as a function call on limited C API
-    // version 3.12 and newer, and on Python built in debug mode. _Py_IncRef()
-    // was added to Python 3.10.0a7, use Py_IncRef() on older Python versions.
-    // Py_IncRef() accepts NULL whereas _Py_IncRef() doesn't.
+    // In limited C API version 3.12 and newer and on Python built in debug
+    // mode, Py_INCREF() is implemented as a function call. _Py_IncRef() was
+    // added to Python 3.10.0a7, use Py_IncRef() on older Python versions.
+    // Py_IncRef() accepts NULL, whereas _Py_IncRef() doesn't.
 #  if Py_LIMITED_API+0 >= 0x030a00A7
     _Py_IncRef(op);
 #  else
     Py_IncRef(op);
 #  endif
+#elif !defined(_PYOBJECT_REFCNT_ANON_UNION)
+    // gh-105059: On C99 and older, Py_INCREF() is implemented as an opaque
+    // function call.
+    _Py_IncRef(op);
 #else
     // Non-limited C API and limited C API for Python 3.9 and older access
     // directly PyObject.ob_refcnt.
@@ -649,16 +680,24 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 #endif
 
 #if defined(Py_LIMITED_API) && (Py_LIMITED_API+0 >= 0x030c0000 || defined(Py_REF_DEBUG))
-// Stable ABI implements Py_DECREF() as a function call on limited C API
-// version 3.12 and newer, and on Python built in debug mode. _Py_DecRef() was
-// added to Python 3.10.0a7, use Py_DecRef() on older Python versions.
-// Py_DecRef() accepts NULL whereas _Py_IncRef() doesn't.
+// In limited C API version 3.12 and newer and on Python built in debug mode,
+// Py_DECREF() is implemented as a function call. _Py_DecRef() was added to
+// Python 3.10.0a7, use Py_DecRef() on older Python versions. Py_DecRef()
+// accepts NULL, whereas _Py_DecRef() doesn't.
 static inline void Py_DECREF(PyObject *op) {
 #  if Py_LIMITED_API+0 >= 0x030a00A7
     _Py_DecRef(op);
 #  else
     Py_DecRef(op);
 #  endif
+}
+#define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
+
+#elif !defined(_PYOBJECT_REFCNT_ANON_UNION)
+// gh-105059: On C99 and older, Py_INCREF() is implemented as an opaque
+// function call.
+static inline void Py_DECREF(PyObject *op) {
+    _Py_DecRef(op);
 }
 #define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
 

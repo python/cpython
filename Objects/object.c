@@ -271,15 +271,45 @@ Py_DecRef(PyObject *o)
 }
 
 void
-_Py_IncRef(PyObject *o)
+_Py_IncRef(PyObject *op)
 {
-    Py_INCREF(o);
+#ifdef _PYOBJECT_REFCNT_ANON_UNION
+    Py_INCREF(op);
+#else
+    // Explicitly check immortality against the immortal value
+    if (_Py_IsImmortal(op)) {
+        return;
+    }
+    op->ob_refcnt++;
+#endif
+    _Py_INCREF_STAT_INC();
+#ifdef Py_REF_DEBUG
+    _Py_IncRefTotal_DO_NOT_USE_THIS();
+#endif
 }
 
 void
-_Py_DecRef(PyObject *o)
+_Py_DecRef(PyObject *op)
 {
-    Py_DECREF(o);
+#ifdef _PYOBJECT_REFCNT_ANON_UNION
+    Py_DECREF(op);
+#else
+    if (_Py_IsImmortal(op)) {
+        return;
+    }
+    _Py_DECREF_STAT_INC();
+#ifdef Py_REF_DEBUG
+    _Py_DecRefTotal_DO_NOT_USE_THIS();
+#endif
+    if (--op->ob_refcnt != 0) {
+        if (op->ob_refcnt < 0) {
+            _Py_NegativeRefcount(__FILE__, __LINE__, op);
+        }
+    }
+    else {
+        _Py_Dealloc(op);
+    }
+#endif
 }
 
 
