@@ -1,7 +1,6 @@
 import struct
 import sys
 import unittest
-import unittest
 from array import array
 from operator import truth
 from ctypes import (byref, sizeof, alignment, _SimpleCData,
