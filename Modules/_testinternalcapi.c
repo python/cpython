@@ -16,13 +16,15 @@
 #include "pycore_atomic_funcs.h" // _Py_atomic_int_get()
 #include "pycore_bitutils.h"     // _Py_bswap32()
 #include "pycore_compile.h"      // _PyCompile_CodeGen, _PyCompile_OptimizeCfg, _PyCompile_Assemble
+#include "pycore_ceval.h"        // _PyEval_AddPendingCall
 #include "pycore_fileutils.h"    // _Py_normpath
 #include "pycore_frame.h"        // _PyInterpreterFrame
 #include "pycore_gc.h"           // PyGC_Head
 #include "pycore_hashtable.h"    // _Py_hashtable_new()
 #include "pycore_initconfig.h"   // _Py_GetConfigsAsDict()
-#include "pycore_pathconfig.h"   // _PyPathConfig_ClearGlobal()
 #include "pycore_interp.h"       // _PyInterpreterState_GetConfigCopy()
+#include "pycore_interpreteridobject.h"  // _PyInterpreterID_LookUp()
+#include "pycore_pathconfig.h"   // _PyPathConfig_ClearGlobal()
 #include "pycore_pyerrors.h"     // _Py_UTF8_Edit_Cost()
 #include "pycore_pystate.h"      // _PyThreadState_GET()
 #include "osdefs.h"              // MAXPATHLEN
@@ -822,6 +824,120 @@ iframe_getlasti(PyObject *self, PyObject *frame)
     return PyLong_FromLong(PyUnstable_InterpreterFrame_GetLasti(f));
 }
 
+
+static int _pending_callback(void *arg)
+{
+    /* we assume the argument is callable object to which we own a reference */
+    PyObject *callable = (PyObject *)arg;
+    PyObject *r = PyObject_CallNoArgs(callable);
+    Py_DECREF(callable);
+    Py_XDECREF(r);
+    return r != NULL ? 0 : -1;
+}
+
+/* The following requests n callbacks to _pending_callback.  It can be
+ * run from any python thread.
+ */
+static PyObject *
+pending_threadfunc(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    PyObject *callable;
+    int ensure_added = 0;
+    static char *kwlist[] = {"", "ensure_added", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+                                     "O|$p:pending_threadfunc", kwlist,
+                                     &callable, &ensure_added))
+    {
+        return NULL;
+    }
+    PyInterpreterState *interp = PyInterpreterState_Get();
+
+    /* create the reference for the callbackwhile we hold the lock */
+    Py_INCREF(callable);
+
+    int r;
+    Py_BEGIN_ALLOW_THREADS
+    r = _PyEval_AddPendingCall(interp, &_pending_callback, callable, 0);
+    Py_END_ALLOW_THREADS
+    if (r < 0) {
+        /* unsuccessful add */
+        if (!ensure_added) {
+            Py_DECREF(callable);
+            Py_RETURN_FALSE;
+        }
+        do {
+            Py_BEGIN_ALLOW_THREADS
+            r = _PyEval_AddPendingCall(interp, &_pending_callback, callable, 0);
+            Py_END_ALLOW_THREADS
+        } while (r < 0);
+    }
+
+    Py_RETURN_TRUE;
+}
+
+
+static struct {
+    int64_t interpid;
+} pending_identify_result;
+
+static int
+_pending_identify_callback(void *arg)
+{
+    PyThread_type_lock mutex = (PyThread_type_lock)arg;
+    assert(pending_identify_result.interpid == -1);
+    PyThreadState *tstate = PyThreadState_Get();
+    pending_identify_result.interpid = PyInterpreterState_GetID(tstate->interp);
+    PyThread_release_lock(mutex);
+    return 0;
+}
+
+static PyObject *
+pending_identify(PyObject *self, PyObject *args)
+{
+    PyObject *interpid;
+    if (!PyArg_ParseTuple(args, "O:pending_identify", &interpid)) {
+        return NULL;
+    }
+    PyInterpreterState *interp = _PyInterpreterID_LookUp(interpid);
+    if (interp == NULL) {
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_ValueError, "interpreter not found");
+        }
+        return NULL;
+    }
+
+    pending_identify_result.interpid = -1;
+
+    PyThread_type_lock mutex = PyThread_allocate_lock();
+    if (mutex == NULL) {
+        return NULL;
+    }
+    PyThread_acquire_lock(mutex, WAIT_LOCK);
+    /* It gets released in _pending_identify_callback(). */
+
+    int r;
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        r = _PyEval_AddPendingCall(interp,
+                                   &_pending_identify_callback, (void *)mutex,
+                                   0);
+        Py_END_ALLOW_THREADS
+    } while (r < 0);
+
+    /* Wait for the pending call to complete. */
+    PyThread_acquire_lock(mutex, WAIT_LOCK);
+    PyThread_release_lock(mutex);
+    PyThread_free_lock(mutex);
+
+    PyObject *res = PyLong_FromLongLong(pending_identify_result.interpid);
+    pending_identify_result.interpid = -1;
+    if (res == NULL) {
+        return NULL;
+    }
+    return res;
+}
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -850,6 +966,9 @@ static PyMethodDef module_functions[] = {
     {"iframe_getcode", iframe_getcode, METH_O, NULL},
     {"iframe_getline", iframe_getline, METH_O, NULL},
     {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
+    {"pending_threadfunc", _PyCFunction_CAST(pending_threadfunc),
+     METH_VARARGS | METH_KEYWORDS},
+    {"pending_identify", pending_identify, METH_VARARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
 
