@@ -565,7 +565,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(newline));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(open_br));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(percent));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(shim_name));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(type_params));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(utf_8));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(CANCELLED));
