@@ -9,9 +9,9 @@ from ctypes import (CDLL, cdll, Structure, CFUNCTYPE,
                     c_short, c_ushort, c_int, c_uint,
                     c_long, c_longlong, c_ulonglong, c_ulong,
                     c_float, c_double, c_longdouble, py_object)
-from test.test_ctypes import need_symbol
 from _ctypes import CTYPES_MAX_ARGCOUNT
 import _ctypes_test
+
 
 class Callbacks(unittest.TestCase):
     functype = CFUNCTYPE
@@ -71,12 +71,10 @@ class Callbacks(unittest.TestCase):
     def test_ulong(self):
         self.check_type(c_ulong, 42)
 
-    @need_symbol('c_longlong')
     def test_longlong(self):
         self.check_type(c_longlong, 42)
         self.check_type(c_longlong, -42)
 
-    @need_symbol('c_ulonglong')
     def test_ulonglong(self):
         self.check_type(c_ulonglong, 42)
 
@@ -90,7 +88,6 @@ class Callbacks(unittest.TestCase):
         self.check_type(c_double, 3.14)
         self.check_type(c_double, -3.14)
 
-    @need_symbol('c_longdouble')
     def test_longdouble(self):
         self.check_type(c_longdouble, 3.14)
         self.check_type(c_longdouble, -3.14)
@@ -156,7 +153,8 @@ class Callbacks(unittest.TestCase):
                 gc.collect()
         CFUNCTYPE(None)(lambda x=Nasty(): None)
 
-    @need_symbol('WINFUNCTYPE')
+    @unittest.skipUnless(hasattr(ctypes, 'WINFUNCTYPE'),
+                         'ctypes.WINFUNCTYPE is required')
     def test_i38748_stackCorruption(self):
         callback_funcType = ctypes.WINFUNCTYPE(c_long, c_long, c_longlong)
         @callback_funcType
@@ -214,7 +212,8 @@ class SampleCallbacksTestCase(unittest.TestCase):
         libc.qsort(array, len(array), sizeof(c_int), cmp_func)
         self.assertEqual(array[:], [1, 5, 7, 33, 99])
 
-    @need_symbol('WINFUNCTYPE')
+    @unittest.skipUnless(hasattr(ctypes, 'WINFUNCTYPE'),
+                         'ctypes.WINFUNCTYPE is required')
     def test_issue_8959_b(self):
         from ctypes.wintypes import BOOL, HWND, LPARAM
         global windowCount

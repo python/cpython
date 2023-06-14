@@ -8,7 +8,6 @@ from ctypes import (Structure, Array, sizeof, addressof,
                     c_long, c_ulonglong, c_float, c_double, c_longdouble)
 from test.support import bigmemtest, _2G
 
-from test.test_ctypes import need_symbol
 
 formats = "bBhHiIlLqQfd"
 
@@ -130,7 +129,6 @@ class ArrayTestCase(unittest.TestCase):
         self.assertEqual(sz[1:4:2], b"o")
         self.assertEqual(sz.value, b"foo")
 
-    @need_symbol('create_unicode_buffer')
     def test_from_addressW(self):
         p = create_unicode_buffer("foo")
         sz = (c_wchar * 3).from_address(addressof(p))
