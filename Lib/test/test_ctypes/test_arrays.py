@@ -1,7 +1,12 @@
-import unittest
-from test.support import bigmemtest, _2G
+import ctypes
 import sys
-from ctypes import *
+import unittest
+import warnings
+from ctypes import (Structure, Array, sizeof, addressof,
+                    create_string_buffer, create_unicode_buffer,
+                    c_char, c_wchar, c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
+                    c_long, c_ulonglong, c_float, c_double, c_longdouble)
+from test.support import bigmemtest, _2G
 
 from test.test_ctypes import need_symbol
 
@@ -9,6 +14,14 @@ formats = "bBhHiIlLqQfd"
 
 formats = c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint, \
           c_long, c_ulonglong, c_float, c_double, c_longdouble
+
+
+def ARRAY(*args):
+    # ignore DeprecationWarning in tests
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', DeprecationWarning)
+        return ctypes.ARRAY(*args)
+
 
 class ArrayTestCase(unittest.TestCase):
     def test_simple(self):
@@ -233,6 +246,11 @@ class ArrayTestCase(unittest.TestCase):
     @bigmemtest(size=_2G, memuse=1, dry_run=False)
     def test_large_array(self, size):
         c_char * size
+
+    def test_deprecation(self):
+        with self.assertWarns(DeprecationWarning):
+            CharArray = ctypes.ARRAY(c_char, 3)
+
 
 if __name__ == '__main__':
     unittest.main()

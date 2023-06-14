@@ -1694,25 +1694,30 @@ _Unpickler_SetInputStream(UnpicklerObject *self, PyObject *file)
 {
     /* Optional file methods */
     if (_PyObject_LookupAttr(file, &_Py_ID(peek), &self->peek) < 0) {
-        return -1;
+        goto error;
     }
     if (_PyObject_LookupAttr(file, &_Py_ID(readinto), &self->readinto) < 0) {
-        return -1;
+        goto error;
     }
-    (void)_PyObject_LookupAttr(file, &_Py_ID(read), &self->read);
-    (void)_PyObject_LookupAttr(file, &_Py_ID(readline), &self->readline);
+    if (_PyObject_LookupAttr(file, &_Py_ID(read), &self->read) < 0) {
+        goto error;
+    }
+    if (_PyObject_LookupAttr(file, &_Py_ID(readline), &self->readline) < 0) {
+        goto error;
+    }
     if (!self->readline || !self->read) {
-        if (!PyErr_Occurred()) {
-            PyErr_SetString(PyExc_TypeError,
-                            "file must have 'read' and 'readline' attributes");
-        }
-        Py_CLEAR(self->read);
-        Py_CLEAR(self->readinto);
-        Py_CLEAR(self->readline);
-        Py_CLEAR(self->peek);
-        return -1;
+        PyErr_SetString(PyExc_TypeError,
+                        "file must have 'read' and 'readline' attributes");
+        goto error;
     }
     return 0;
+
+error:
+    Py_CLEAR(self->read);
+    Py_CLEAR(self->readinto);
+    Py_CLEAR(self->readline);
+    Py_CLEAR(self->peek);
+    return -1;
 }
 
 /* Returns -1 (with an exception set) on failure, 0 on success. This may

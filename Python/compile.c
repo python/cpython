@@ -248,6 +248,8 @@ instr_sequence_use_label(instr_sequence *seq, int lbl) {
 static int
 instr_sequence_addop(instr_sequence *seq, int opcode, int oparg, location loc)
 {
+    assert(!HAS_ARG(opcode) == !OPCODE_HAS_ARG(opcode));
+    assert(!HAS_CONST(opcode) == !OPCODE_HAS_CONST(opcode));
     assert(0 <= opcode && opcode <= MAX_OPCODE);
     assert(IS_PSEUDO_OPCODE(opcode) == IS_PSEUDO_INSTR(opcode));
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
@@ -1823,7 +1825,21 @@ compiler_make_closure(struct compiler *c, location loc,
         ADDOP_I(c, loc, BUILD_TUPLE, co->co_nfreevars);
     }
     ADDOP_LOAD_CONST(c, loc, (PyObject*)co);
-    ADDOP_I(c, loc, MAKE_FUNCTION, flags);
+
+    ADDOP(c, loc, MAKE_FUNCTION);
+
+    if (flags & MAKE_FUNCTION_CLOSURE) {
+        ADDOP_I(c, loc, SET_FUNCTION_ATTRIBUTE, MAKE_FUNCTION_CLOSURE);
+    }
+    if (flags & MAKE_FUNCTION_ANNOTATIONS) {
+        ADDOP_I(c, loc, SET_FUNCTION_ATTRIBUTE, MAKE_FUNCTION_ANNOTATIONS);
+    }
+    if (flags & MAKE_FUNCTION_KWDEFAULTS) {
+        ADDOP_I(c, loc, SET_FUNCTION_ATTRIBUTE, MAKE_FUNCTION_KWDEFAULTS);
+    }
+    if (flags & MAKE_FUNCTION_DEFAULTS) {
+        ADDOP_I(c, loc, SET_FUNCTION_ATTRIBUTE, MAKE_FUNCTION_DEFAULTS);
+    }
     return SUCCESS;
 }
 
