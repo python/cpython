@@ -2049,7 +2049,7 @@ These are not used in annotations. They are building blocks for declaring types.
       deprecated. Passing ``None`` to the 'fields' parameter
       (``NT = NamedTuple("NT", None)``) is also deprecated. Both will be
       disallowed in Python 3.15. To create a NamedTuple class with 0 fields,
-      use ``class NT(NamedTuple): ...`` or ``NT = NamedTuple("NT", [])``.
+      use ``class NT(NamedTuple): pass`` or ``NT = NamedTuple("NT", [])``.
 
 .. class:: NewType(name, tp)
 

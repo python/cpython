@@ -142,7 +142,7 @@ Deprecated
   (``NT = NamedTuple("NT")``) is deprecated. Passing ``None`` to the 'fields'
   parameter (``NT = NamedTuple("NT", None)``) is also deprecated. Both will be
   disallowed in Python 3.15. To create a NamedTuple class with 0 fields, use
-  ``class NT(NamedTuple): ...`` or ``NT = NamedTuple("NT", [])``.
+  ``class NT(NamedTuple): pass`` or ``NT = NamedTuple("NT", [])``.
   (Contributed by Alex Waygood in :gh:`105566`.)
 
 
