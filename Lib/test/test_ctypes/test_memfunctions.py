@@ -1,7 +1,11 @@
 import sys
 from test import support
 import unittest
-from ctypes import *
+from ctypes import (POINTER, sizeof, cast,
+                    create_string_buffer, string_at,
+                    create_unicode_buffer, wstring_at,
+                    memmove, memset,
+                    c_char_p, c_byte, c_ubyte, c_wchar)
 from test.test_ctypes import need_symbol
 
 class MemFunctionsTest(unittest.TestCase):

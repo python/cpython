@@ -1,4 +1,7 @@
-from ctypes import *
+from ctypes import (CDLL, CFUNCTYPE, POINTER, ArgumentError,
+                    pointer, byref, sizeof, addressof,
+                    c_void_p, c_char_p, c_wchar_p, c_char, c_wchar, c_buffer,
+                    c_short, c_int, c_long, c_longlong, c_double)
 from test.test_ctypes import need_symbol
 import unittest
 

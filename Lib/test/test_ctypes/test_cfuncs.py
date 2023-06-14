@@ -1,12 +1,13 @@
-# A lot of failures in these tests on Mac OS X.
-# Byte order related?
-
 import unittest
 import ctypes
-from ctypes import *
+from ctypes import (CDLL,
+                    c_byte, c_ubyte, c_char,
+                    c_short, c_ushort, c_int, c_uint,
+                    c_long, c_ulong, c_longlong, c_ulonglong,
+                    c_float, c_double, c_longdouble)
 from test.test_ctypes import need_symbol
-
 import _ctypes_test
+
 
 class CFunctions(unittest.TestCase):
     _dll = CDLL(_ctypes_test.__file__)
@@ -209,6 +210,7 @@ if hasattr(ctypes, 'WinDLL'):
 
     class stdcallCFunctions(CFunctions):
         _dll = stdcall_dll(_ctypes_test.__file__)
+
 
 if __name__ == '__main__':
     unittest.main()

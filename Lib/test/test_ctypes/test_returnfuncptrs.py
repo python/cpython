@@ -1,5 +1,5 @@
 import unittest
-from ctypes import *
+from ctypes import CDLL, CFUNCTYPE, ArgumentError, c_char_p, c_void_p, c_char
 
 import _ctypes_test
 
@@ -61,6 +61,7 @@ class ReturnFuncPtrTestCase(unittest.TestCase):
         self.assertEqual(strchr(b"abcdef", b"x"), None)
         self.assertRaises(ArgumentError, strchr, b"abcdef", 3.0)
         self.assertRaises(TypeError, strchr, b"abcdef")
+
 
 if __name__ == "__main__":
     unittest.main()

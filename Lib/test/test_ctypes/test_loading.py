@@ -1,14 +1,14 @@
-from ctypes import *
 import ctypes
 import os
 import shutil
 import subprocess
 import sys
-import unittest
 import test.support
-from test.support import import_helper
-from test.support import os_helper
+import unittest
+from test.support import import_helper, os_helper
+from ctypes import CDLL, cdll, addressof, c_void_p, c_char_p
 from ctypes.util import find_library
+
 
 libc_name = None
 
@@ -126,6 +126,7 @@ class LoaderTest(unittest.TestCase):
         kernel32.GetProcAddress.restype = c_void_p
         proc = kernel32.GetProcAddress(advapi32._handle, b"CloseEventLog")
         self.assertTrue(proc)
+
         # This is the real test: call the function via 'call_function'
         self.assertEqual(0, call_function(proc, (None,)))
 
@@ -194,7 +195,6 @@ class LoaderTest(unittest.TestCase):
             # User-specified directory should succeed
             should_pass("import os; p = os.add_dll_directory(os.getcwd());" +
                         "WinDLL('_sqlite3.dll'); p.close()")
-
 
 
 if __name__ == "__main__":

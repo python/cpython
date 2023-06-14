@@ -3,8 +3,10 @@ import sys
 import unittest
 from array import array
 from operator import truth
-from ctypes import *
-from ctypes import _SimpleCData
+from ctypes import (byref, sizeof, alignment, _SimpleCData,
+                    c_char, c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
+                    c_long, c_ulong, c_longlong, c_ulonglong,
+                    c_float, c_double, c_longdouble, c_bool)
 
 def valid_ranges(*types):
     # given a sequence of numeric types, collect their _type_
