@@ -1,6 +1,5 @@
 import unittest
 from ctypes import c_buffer, sizeof, byref, c_char, c_wchar
-from test.test_ctypes import need_symbol
 
 class StringArrayTestCase(unittest.TestCase):
     def test(self):
@@ -61,7 +60,6 @@ class StringArrayTestCase(unittest.TestCase):
             del buf.raw
 
 
-@need_symbol('c_wchar')
 class WStringArrayTestCase(unittest.TestCase):
     def test(self):
         BUF = c_wchar * 4
@@ -86,7 +84,6 @@ class WStringArrayTestCase(unittest.TestCase):
         self.assertEqual(w.value, u)
 
 
-@need_symbol('c_wchar')
 class WStringTestCase(unittest.TestCase):
     def test_wchar(self):
         c_wchar("x")
