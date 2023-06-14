@@ -174,14 +174,12 @@ class Formatter:
 
     def stack_adjust(
         self,
-        diff: int,
         input_effects: list[StackEffect],
         output_effects: list[StackEffect],
     ):
-        # TODO: Get rid of 'diff' parameter
         shrink, isym = list_effect_size(input_effects)
         grow, osym = list_effect_size(output_effects)
-        diff += grow - shrink
+        diff = grow - shrink
         if isym and isym != osym:
             self.emit(f"STACK_SHRINK({isym});")
         if diff < 0:
@@ -344,7 +342,6 @@ class Instruction:
 
         # Write net stack growth/shrinkage
         out.stack_adjust(
-            0,
             [ieff for ieff in self.input_effects],
             [oeff for oeff in self.output_effects],
         )
@@ -1202,7 +1199,13 @@ class Analyzer:
 
             yield
 
-            self.out.stack_adjust(0, mac.stack[:mac.initial_sp], mac.stack[:mac.final_sp])
+            # The input effects should have no conditionals.
+            # Only the output effects do (for now).
+            ieffects = [
+                StackEffect(eff.name, eff.type) if eff.cond else eff
+                for eff in mac.stack[:mac.initial_sp]
+            ]
+            self.out.stack_adjust(ieffects, mac.stack[:mac.final_sp])
 
             for i, var in enumerate(reversed(mac.stack[: mac.final_sp]), 1):
                 dst = StackEffect(f"stack_pointer[-{i}]", "")
