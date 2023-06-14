@@ -907,6 +907,9 @@ x = (
         with self.assertWarns(DeprecationWarning):  # invalid escape sequence
             value = eval(r"f'\{6*7}'")
         self.assertEqual(value, '\\42')
+        with self.assertWarns(SyntaxWarning):  # invalid escape sequence
+            value = eval(r"f'\g'")
+        self.assertEqual(value, '\\g')
         self.assertEqual(f'\\{6*7}', '\\42')
         self.assertEqual(fr'\{6*7}', '\\42')
 
