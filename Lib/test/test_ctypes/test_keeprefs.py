@@ -1,5 +1,7 @@
-from ctypes import Structure, POINTER, pointer, c_char_p, c_int
+import sys
 import unittest
+from ctypes import Structure, POINTER, pointer, c_char_p, c_int
+
 
 class SimpleTestCase(unittest.TestCase):
     def test_cint(self):
@@ -100,16 +102,15 @@ class DeletePointerTestCase(unittest.TestCase):
             _fields_ = [("p", POINTER(c_char_p))]
         x = X()
         i = c_char_p("abc def")
-        from sys import getrefcount as grc
-        print("2?", grc(i))
+        print("2?", sys.getrefcount(i))
         x.p = pointer(i)
-        print("3?", grc(i))
+        print("3?", sys.getrefcount(i))
         for i in range(320):
             c_int(99)
             x.p[0]
         print(x.p[0])
 ##        del x
-##        print "2?", grc(i)
+##        print "2?", sys.getrefcount(i)
 ##        del i
         import gc
         gc.collect()
