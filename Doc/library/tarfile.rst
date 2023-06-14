@@ -903,7 +903,7 @@ can be:
   path to where the archive is extracted (i.e. the same path is used for all
   members)::
 
-      filter(/, member: TarInfo, path: str) -> TarInfo | None
+      filter(member: TarInfo, path: str, /) -> TarInfo | None
 
   The callable is called just before each member is extracted, so it can
   take the current state of the disk into account.
@@ -923,13 +923,13 @@ Default named filters
 The pre-defined, named filters are available as functions, so they can be
 reused in custom filters:
 
-.. function:: fully_trusted_filter(/, member, path)
+.. function:: fully_trusted_filter(member, path)
 
    Return *member* unchanged.
 
    This implements the ``'fully_trusted'`` filter.
 
-.. function:: tar_filter(/, member, path)
+.. function:: tar_filter(member, path)
 
   Implements the ``'tar'`` filter.
 
@@ -946,7 +946,7 @@ reused in custom filters:
 
   Return the modified ``TarInfo`` member.
 
-.. function:: data_filter(/, member, path)
+.. function:: data_filter(member, path)
 
   Implements the ``'data'`` filter.
   In addition to what ``tar_filter`` does:
