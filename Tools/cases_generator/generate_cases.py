@@ -179,14 +179,12 @@ class Formatter:
 
     def stack_adjust(
         self,
-        diff: int,
         input_effects: list[StackEffect],
         output_effects: list[StackEffect],
     ):
-        # TODO: Get rid of 'diff' parameter
         shrink, isym = list_effect_size(input_effects)
         grow, osym = list_effect_size(output_effects)
-        diff += grow - shrink
+        diff = grow - shrink
         if isym and isym != osym:
             self.emit(f"STACK_SHRINK({isym});")
         if diff < 0:
@@ -355,7 +353,6 @@ class Instruction:
 
         # Write net stack growth/shrinkage
         out.stack_adjust(
-            0,
             [ieff for ieff in self.input_effects],
             [oeff for oeff in self.output_effects],
         )
@@ -848,9 +845,14 @@ class Analyzer:
 
         Ignore cache effects.
 
-        Return the list of variable names and the initial stack pointer.
+        Return the list of variables (as StackEffects) and the initial stack pointer.
         """
         lowest = current = highest = 0
+        conditions: dict[int, str] = {}  # Indexed by 'current'.
+        last_instr: Instruction | None = None
+        for thing in components:
+            if isinstance(thing, Instruction):
+                last_instr = thing
         for thing in components:
             match thing:
                 case Instruction() as instr:
@@ -863,9 +865,24 @@ class Analyzer:
                             "which are not supported in macro instructions",
                             instr.inst,  # TODO: Pass name+location of macro
                         )
+                    if any(eff.cond for eff in instr.input_effects):
+                        self.error(
+                            f"Instruction {instr.name!r} has conditional input stack effect, "
+                            "which are not supported in macro instructions",
+                            instr.inst,  # TODO: Pass name+location of macro
+                        )
+                    if any(eff.cond for eff in instr.output_effects) and instr is not last_instr:
+                        self.error(
+                            f"Instruction {instr.name!r} has conditional output stack effect, "
+                            "but is not the last instruction in a macro",
+                            instr.inst,  # TODO: Pass name+location of macro
+                        )
                     current -= len(instr.input_effects)
                     lowest = min(lowest, current)
-                    current += len(instr.output_effects)
+                    for eff in instr.output_effects:
+                        if eff.cond:
+                            conditions[current] = eff.cond
+                        current += 1
                     highest = max(highest, current)
                 case parser.CacheEffect():
                     pass
@@ -874,9 +891,9 @@ class Analyzer:
         # At this point, 'current' is the net stack effect,
         # and 'lowest' and 'highest' are the extremes.
         # Note that 'lowest' may be negative.
-        # TODO: Reverse the numbering.
         stack = [
-            StackEffect(f"_tmp_{i+1}", "") for i in reversed(range(highest - lowest))
+            StackEffect(f"_tmp_{i}", "", conditions.get(highest - i, ""))
+            for i in reversed(range(1, highest - lowest + 1))
         ]
         return stack, -lowest
 
@@ -908,6 +925,7 @@ class Analyzer:
                 low = 0
                 sp = 0
                 high = 0
+                pushed_symbolic: list[str] = []
                 for comp in parts:
                     for effect in comp.instr.input_effects:
                         assert not effect.cond, effect
@@ -915,8 +933,9 @@ class Analyzer:
                         sp -= 1
                         low = min(low, sp)
                     for effect in comp.instr.output_effects:
-                        assert not effect.cond, effect
                         assert not effect.size, effect
+                        if effect.cond:
+                            pushed_symbolic.append(maybe_parenthesize(f"{maybe_parenthesize(effect.cond)} ? 1 : 0"))
                         sp += 1
                         high = max(sp, high)
                 if high != max(0, sp):
@@ -926,7 +945,8 @@ class Analyzer:
                     # calculations to use the micro ops.
                     self.error("Macro has virtual stack growth", thing)
                 popped = str(-low)
-                pushed = str(sp - low)
+                pushed_symbolic.append(str(sp - low - len(pushed_symbolic)))
+                pushed = " + ".join(pushed_symbolic)
             case parser.Pseudo():
                 instr = self.pseudo_instrs[thing.name]
                 popped = pushed = None
@@ -1203,7 +1223,15 @@ class Analyzer:
         with self.out.block(f"TARGET({mac.name})"):
             if mac.predicted:
                 self.out.emit(f"PREDICTED({mac.name});")
-            for i, var in reversed(list(enumerate(mac.stack))):
+
+            # The input effects should have no conditionals.
+            # Only the output effects do (for now).
+            ieffects = [
+                StackEffect(eff.name, eff.type) if eff.cond else eff
+                for eff in mac.stack
+            ]
+
+            for i, var in reversed(list(enumerate(ieffects))):
                 src = None
                 if i < mac.initial_sp:
                     src = StackEffect(f"stack_pointer[-{mac.initial_sp - i}]", "")
@@ -1211,8 +1239,7 @@ class Analyzer:
 
             yield
 
-            # TODO: Use slices of mac.stack instead of numeric values
-            self.out.stack_adjust(mac.final_sp - mac.initial_sp, [], [])
+            self.out.stack_adjust(ieffects[:mac.initial_sp], mac.stack[:mac.final_sp])
 
             for i, var in enumerate(reversed(mac.stack[: mac.final_sp]), 1):
                 dst = StackEffect(f"stack_pointer[-{i}]", "")
