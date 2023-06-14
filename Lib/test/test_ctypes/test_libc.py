@@ -1,9 +1,12 @@
 import unittest
 
-from ctypes import *
-import _ctypes_test
+from ctypes import (CDLL, CFUNCTYPE, POINTER, create_string_buffer, sizeof,
+                    c_void_p, c_char, c_int, c_double, c_size_t)
 
+
+import _ctypes_test
 lib = CDLL(_ctypes_test.__file__)
+
 
 def three_way_cmp(x, y):
     """Return -1 if x < y, 0 if x == y and 1 if x > y"""

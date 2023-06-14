@@ -2,7 +2,13 @@ import functools
 import unittest
 from test import support
 
-from ctypes import *
+import ctypes
+from ctypes import (CDLL, cdll, Structure, CFUNCTYPE,
+                    ArgumentError, POINTER, sizeof,
+                    c_byte, c_ubyte, c_char, c_char_p,
+                    c_short, c_ushort, c_int, c_uint,
+                    c_long, c_longlong, c_ulonglong, c_ulong,
+                    c_float, c_double, c_longdouble, py_object)
 from test.test_ctypes import need_symbol
 from _ctypes import CTYPES_MAX_ARGCOUNT
 import _ctypes_test
@@ -152,7 +158,7 @@ class Callbacks(unittest.TestCase):
 
     @need_symbol('WINFUNCTYPE')
     def test_i38748_stackCorruption(self):
-        callback_funcType = WINFUNCTYPE(c_long, c_long, c_longlong)
+        callback_funcType = ctypes.WINFUNCTYPE(c_long, c_long, c_longlong)
         @callback_funcType
         def callback(a, b):
             c = a + b
@@ -163,12 +169,10 @@ class Callbacks(unittest.TestCase):
         self.assertEqual(dll._test_i38748_runCallback(callback, 5, 10), 15)
 
 
-@need_symbol('WINFUNCTYPE')
-class StdcallCallbacks(Callbacks):
-    try:
-        functype = WINFUNCTYPE
-    except NameError:
-        pass
+if hasattr(ctypes, 'WINFUNCTYPE'):
+    class StdcallCallbacks(Callbacks):
+        functype = ctypes.WINFUNCTYPE
+
 
 ################################################################
 
@@ -216,13 +220,14 @@ class SampleCallbacksTestCase(unittest.TestCase):
         global windowCount
         windowCount = 0
 
-        @WINFUNCTYPE(BOOL, HWND, LPARAM)
+        @ctypes.WINFUNCTYPE(BOOL, HWND, LPARAM)
         def EnumWindowsCallbackFunc(hwnd, lParam):
             global windowCount
             windowCount += 1
             return True #Allow windows to keep enumerating
 
-        windll.user32.EnumWindows(EnumWindowsCallbackFunc, 0)
+        user32 = ctypes.windll.user32
+        user32.EnumWindows(EnumWindowsCallbackFunc, 0)
 
     def test_callback_register_int(self):
         # Issue #8275: buggy handling of callback args under Win64

@@ -1695,9 +1695,10 @@ class RunFuncTestCase(BaseTestCase):
     @unittest.skipUnless(mswindows, "Maybe test trigger a leak on Ubuntu")
     def test_run_with_an_empty_env(self):
         # gh-105436: fix subprocess.run(..., env={}) broken on Windows
-        args = [sys.executable, "-c", 'import sys; sys.exit(57)']
-        res = subprocess.run(args, env={})
-        self.assertEqual(res.returncode, 57)
+        args = [sys.executable, "-c", 'pass']
+        # Ignore subprocess errors - we only care that the API doesn't
+        # raise an OSError
+        subprocess.run(args, env={})
 
     def test_capture_output(self):
         cp = self.run_python(("import sys;"
