@@ -1,7 +1,6 @@
 import _ctypes_test
 import sys
 import unittest
-import sys
 from test import support
 from ctypes import (CDLL, Structure, POINTER, create_string_buffer,
                     c_char, c_char_p)
