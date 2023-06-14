@@ -1,6 +1,6 @@
 import unittest
 import test.support
-from ctypes import *
+from ctypes import c_int, Union, Structure, sizeof
 
 class AnonTest(unittest.TestCase):
 

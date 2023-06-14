@@ -578,12 +578,14 @@ init_interp_settings(PyInterpreterState *interp,
         interp->feature_flags |= Py_RTFLAGS_MULTI_INTERP_EXTENSIONS;
     }
 
+    /* We check "gil" in init_interp_create_gil(). */
+
     return _PyStatus_OK();
 }
 
 
 static PyStatus
-init_interp_create_gil(PyThreadState *tstate, int own_gil)
+init_interp_create_gil(PyThreadState *tstate, int gil)
 {
     PyStatus status;
 
@@ -596,6 +598,15 @@ init_interp_create_gil(PyThreadState *tstate, int own_gil)
     status = _PyGILState_SetTstate(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
+    }
+
+    int own_gil;
+    switch (gil) {
+    case PyInterpreterConfig_DEFAULT_GIL: own_gil = 0; break;
+    case PyInterpreterConfig_SHARED_GIL: own_gil = 0; break;
+    case PyInterpreterConfig_OWN_GIL: own_gil = 1; break;
+    default:
+        return _PyStatus_ERR("invalid interpreter config 'gil' value");
     }
 
     /* Create the GIL and take it */
@@ -633,7 +644,7 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
 
     PyInterpreterConfig config = _PyInterpreterConfig_LEGACY_INIT;
     // The main interpreter always has its own GIL.
-    config.own_gil = 1;
+    config.gil = PyInterpreterConfig_OWN_GIL;
     status = init_interp_settings(interp, &config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -647,7 +658,7 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     // XXX For now we do this before the GIL is created.
     (void) _PyThreadState_SwapNoGIL(tstate);
 
-    status = init_interp_create_gil(tstate, config.own_gil);
+    status = init_interp_create_gil(tstate, config.gil);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -2035,7 +2046,7 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
     const PyConfig *src_config;
     if (save_tstate != NULL) {
         // XXX Might new_interpreter() have been called without the GIL held?
-        _PyEval_ReleaseLock(save_tstate);
+        _PyEval_ReleaseLock(save_tstate->interp, save_tstate);
         src_config = _PyInterpreterState_GetConfig(save_tstate->interp);
     }
     else
@@ -2057,7 +2068,7 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
         goto error;
     }
 
-    status = init_interp_create_gil(tstate, config->own_gil);
+    status = init_interp_create_gil(tstate, config->gil);
     if (_PyStatus_EXCEPTION(status)) {
         goto error;
     }
@@ -2140,6 +2151,9 @@ Py_EndInterpreter(PyThreadState *tstate)
 
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown(tstate);
+
+    // Make any remaining pending calls.
+    _Py_FinishPendingCalls(tstate);
 
     _PyAtExit_Call(tstate->interp);
 
@@ -2556,7 +2570,6 @@ error:
     res = _PyStatus_ERR("can't initialize sys standard streams");
 
 done:
-    _Py_ClearStandardStreamEncoding();
     Py_XDECREF(iomod);
     return res;
 }
@@ -2974,24 +2987,35 @@ wait_for_thread_shutdown(PyThreadState *tstate)
 
 int Py_AtExit(void (*func)(void))
 {
-    if (_PyRuntime.atexit.ncallbacks >= NEXITFUNCS)
+    struct _atexit_runtime_state *state = &_PyRuntime.atexit;
+    PyThread_acquire_lock(state->mutex, WAIT_LOCK);
+    if (state->ncallbacks >= NEXITFUNCS) {
+        PyThread_release_lock(state->mutex);
         return -1;
-    _PyRuntime.atexit.callbacks[_PyRuntime.atexit.ncallbacks++] = func;
+    }
+    state->callbacks[state->ncallbacks++] = func;
+    PyThread_release_lock(state->mutex);
     return 0;
 }
 
 static void
 call_ll_exitfuncs(_PyRuntimeState *runtime)
 {
+    atexit_callbackfunc exitfunc;
     struct _atexit_runtime_state *state = &runtime->atexit;
+
+    PyThread_acquire_lock(state->mutex, WAIT_LOCK);
     while (state->ncallbacks > 0) {
         /* pop last function from the list */
         state->ncallbacks--;
-        atexit_callbackfunc exitfunc = state->callbacks[state->ncallbacks];
+        exitfunc = state->callbacks[state->ncallbacks];
         state->callbacks[state->ncallbacks] = NULL;
 
+        PyThread_release_lock(state->mutex);
         exitfunc();
+        PyThread_acquire_lock(state->mutex, WAIT_LOCK);
     }
+    PyThread_release_lock(state->mutex);
 
     fflush(stdout);
     fflush(stderr);

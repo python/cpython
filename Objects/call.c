@@ -380,11 +380,11 @@ PyObject_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
 }
 
 
-PyObject *
+/* Function removed in the Python 3.13 API but kept in the stable ABI. */
+PyAPI_FUNC(PyObject *)
 PyCFunction_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    return _PyObject_Call(tstate, callable, args, kwargs);
+    return PyObject_Call(callable, args, kwargs);
 }
 
 
@@ -426,8 +426,9 @@ _PyFunction_Vectorcall(PyObject *func, PyObject* const* stack,
 /* --- More complex call functions -------------------------------- */
 
 /* External interface to call any callable object.
-   The args must be a tuple or NULL.  The kwargs must be a dict or NULL. */
-PyObject *
+   The args must be a tuple or NULL.  The kwargs must be a dict or NULL.
+   Function removed in Python 3.13 API but kept in the stable ABI. */
+PyAPI_FUNC(PyObject*)
 PyEval_CallObjectWithKeywords(PyObject *callable,
                               PyObject *args, PyObject *kwargs)
 {
@@ -583,9 +584,8 @@ PyObject_CallFunction(PyObject *callable, const char *format, ...)
 
 
 /* PyEval_CallFunction is exact copy of PyObject_CallFunction.
- * This function is kept for backward compatibility.
- */
-PyObject *
+   Function removed in Python 3.13 API but kept in the stable ABI. */
+PyAPI_FUNC(PyObject*)
 PyEval_CallFunction(PyObject *callable, const char *format, ...)
 {
     va_list va;
@@ -656,9 +656,8 @@ PyObject_CallMethod(PyObject *obj, const char *name, const char *format, ...)
 
 
 /* PyEval_CallMethod is exact copy of PyObject_CallMethod.
- * This function is kept for backward compatibility.
- */
-PyObject *
+   Function removed in Python 3.13 API but kept in the stable ABI. */
+PyAPI_FUNC(PyObject*)
 PyEval_CallMethod(PyObject *obj, const char *name, const char *format, ...)
 {
     PyThreadState *tstate = _PyThreadState_GET();

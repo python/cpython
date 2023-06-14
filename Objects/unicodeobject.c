@@ -1800,14 +1800,14 @@ PyUnicode_FromWideChar(const wchar_t *u, Py_ssize_t size)
 
     switch (PyUnicode_KIND(unicode)) {
     case PyUnicode_1BYTE_KIND:
-        _PyUnicode_CONVERT_BYTES(Py_UNICODE, unsigned char,
+        _PyUnicode_CONVERT_BYTES(wchar_t, unsigned char,
                                 u, u + size, PyUnicode_1BYTE_DATA(unicode));
         break;
     case PyUnicode_2BYTE_KIND:
 #if Py_UNICODE_SIZE == 2
         memcpy(PyUnicode_2BYTE_DATA(unicode), u, size * 2);
 #else
-        _PyUnicode_CONVERT_BYTES(Py_UNICODE, Py_UCS2,
+        _PyUnicode_CONVERT_BYTES(wchar_t, Py_UCS2,
                                 u, u + size, PyUnicode_2BYTE_DATA(unicode));
 #endif
         break;
@@ -3809,9 +3809,9 @@ PyUnicode_AsUTF8(PyObject *unicode)
 PyUnicode_GetSize() has been deprecated since Python 3.3
 because it returned length of Py_UNICODE.
 
-But this function is part of stable abi, because it don't
+But this function is part of stable abi, because it doesn't
 include Py_UNICODE in signature and it was not excluded from
-stable abi in PEP 384.
+stable ABI in PEP 384.
 */
 PyAPI_FUNC(Py_ssize_t)
 PyUnicode_GetSize(PyObject *unicode)
@@ -7934,25 +7934,30 @@ PyUnicode_BuildEncodingMap(PyObject* string)
 
     if (need_dict) {
         PyObject *result = PyDict_New();
-        PyObject *key, *value;
         if (!result)
             return NULL;
         for (i = 0; i < length; i++) {
-            key = PyLong_FromLong(PyUnicode_READ(kind, data, i));
-            value = PyLong_FromLong(i);
-            if (!key || !value)
-                goto failed1;
-            if (PyDict_SetItem(result, key, value) == -1)
-                goto failed1;
+            Py_UCS4 c = PyUnicode_READ(kind, data, i);
+            PyObject *key = PyLong_FromLong(c);
+            if (key == NULL) {
+                Py_DECREF(result);
+                return NULL;
+            }
+            PyObject *value = PyLong_FromLong(i);
+            if (value == NULL) {
+                Py_DECREF(key);
+                Py_DECREF(result);
+                return NULL;
+            }
+            int rc = PyDict_SetItem(result, key, value);
             Py_DECREF(key);
             Py_DECREF(value);
+            if (rc < 0) {
+                Py_DECREF(result);
+                return NULL;
+            }
         }
         return result;
-      failed1:
-        Py_XDECREF(key);
-        Py_XDECREF(value);
-        Py_DECREF(result);
-        return NULL;
     }
 
     /* Create a three-level trie */

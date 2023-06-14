@@ -1591,6 +1591,8 @@ class ASTValidatorTests(unittest.TestCase):
         f = ast.FunctionDef("x", a, [ast.Pass()], [],
                             ast.Name("x", ast.Store()), None, [])
         self.stmt(f, "must have Load context")
+        f = ast.FunctionDef("x", ast.arguments(), [ast.Pass()])
+        self.stmt(f)
         def fac(args):
             return ast.FunctionDef("x", args, [ast.Pass()], [], None, None, [])
         self._check_arguments(fac, self.stmt)

@@ -11,7 +11,7 @@ is None.
 
 Here is an array of string pointers:
 
->>> from ctypes import *
+>>> from ctypes import Structure, c_int, c_char_p
 >>> array = (c_char_p * 5)()
 >>> print(array._objects)
 None

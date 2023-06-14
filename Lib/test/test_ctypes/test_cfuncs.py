@@ -1,11 +1,13 @@
-# A lot of failures in these tests on Mac OS X.
-# Byte order related?
-
 import unittest
-from ctypes import *
+import ctypes
+from ctypes import (CDLL,
+                    c_byte, c_ubyte, c_char,
+                    c_short, c_ushort, c_int, c_uint,
+                    c_long, c_ulong, c_longlong, c_ulonglong,
+                    c_float, c_double, c_longdouble)
 from test.test_ctypes import need_symbol
-
 import _ctypes_test
+
 
 class CFunctions(unittest.TestCase):
     _dll = CDLL(_ctypes_test.__file__)
@@ -197,12 +199,8 @@ class CFunctions(unittest.TestCase):
 
 # The following repeats the above tests with stdcall functions (where
 # they are available)
-try:
-    WinDLL
-except NameError:
-    def stdcall_dll(*_): pass
-else:
-    class stdcall_dll(WinDLL):
+if hasattr(ctypes, 'WinDLL'):
+    class stdcall_dll(ctypes.WinDLL):
         def __getattr__(self, name):
             if name[:2] == '__' and name[-2:] == '__':
                 raise AttributeError(name)
@@ -210,9 +208,9 @@ else:
             setattr(self, name, func)
             return func
 
-@need_symbol('WinDLL')
-class stdcallCFunctions(CFunctions):
-    _dll = stdcall_dll(_ctypes_test.__file__)
+    class stdcallCFunctions(CFunctions):
+        _dll = stdcall_dll(_ctypes_test.__file__)
+
 
 if __name__ == '__main__':
     unittest.main()

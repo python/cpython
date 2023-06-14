@@ -447,6 +447,7 @@
     added = '3.2'
 [function.PyCFunction_Call]
     added = '3.2'
+    abi_only = true
 [function.PyCFunction_GetFlags]
     added = '3.2'
 [function.PyCFunction_GetFunction]
@@ -663,14 +664,18 @@
     added = '3.2'
 [function.PyEval_AcquireLock]
     added = '3.2'
+    abi_only = true
 [function.PyEval_AcquireThread]
     added = '3.2'
 [function.PyEval_CallFunction]
     added = '3.2'
+    abi_only = true
 [function.PyEval_CallMethod]
     added = '3.2'
+    abi_only = true
 [function.PyEval_CallObjectWithKeywords]
     added = '3.2'
+    abi_only = true
 [function.PyEval_EvalCode]
     added = '3.2'
 [function.PyEval_EvalCodeEx]
@@ -693,8 +698,10 @@
     added = '3.2'
 [function.PyEval_InitThreads]
     added = '3.2'
+    abi_only = true
 [function.PyEval_ReleaseLock]
     added = '3.2'
+    abi_only = true
 [function.PyEval_ReleaseThread]
     added = '3.2'
 [function.PyEval_RestoreThread]
@@ -703,6 +710,7 @@
     added = '3.2'
 [function.PyEval_ThreadsInitialized]
     added = '3.2'
+    abi_only = true
 [data.PyExc_ArithmeticError]
     added = '3.2'
 [data.PyExc_AssertionError]
@@ -1308,8 +1316,10 @@
     added = '3.2'
 [function.PySys_AddWarnOption]
     added = '3.2'
+    abi_only = true
 [function.PySys_AddWarnOptionUnicode]
     added = '3.2'
+    abi_only = true
 [function.PySys_FormatStderr]
     added = '3.2'
 [function.PySys_FormatStdout]
@@ -1318,16 +1328,20 @@
     added = '3.2'
 [function.PySys_HasWarnOptions]
     added = '3.2'
+    abi_only = true
 [function.PySys_ResetWarnOptions]
     added = '3.2'
 [function.PySys_SetArgv]
     added = '3.2'
+    abi_only = true
 [function.PySys_SetArgvEx]
     added = '3.2'
+    abi_only = true
 [function.PySys_SetObject]
     added = '3.2'
 [function.PySys_SetPath]
     added = '3.2'
+    abi_only = true
 [function.PySys_WriteStderr]
     added = '3.2'
 [function.PySys_WriteStdout]
@@ -1655,8 +1669,10 @@
     added = '3.2'
 [function.Py_SetProgramName]
     added = '3.2'
+    abi_only = true
 [function.Py_SetPythonHome]
     added = '3.2'
+    abi_only = true
 [function.Py_SetRecursionLimit]
     added = '3.2'
 [function.Py_VaBuildValue]
@@ -1739,12 +1755,16 @@
 
 [function.PyObject_AsCharBuffer]
     added = '3.2'
+    abi_only = true
 [function.PyObject_AsReadBuffer]
     added = '3.2'
+    abi_only = true
 [function.PyObject_AsWriteBuffer]
     added = '3.2'
+    abi_only = true
 [function.PyObject_CheckReadBuffer]
     added = '3.2'
+    abi_only = true
 
 # Flags are implicitly part of the ABI:
 
@@ -1987,6 +2007,7 @@
     added = '3.7'  # (and 3.6.1 and 3.5.3)
 [function.PySys_AddXOption]
     added = '3.7'  # (and 3.6.1 and 3.5.3)
+    abi_only = true
 [function.PySys_GetXOptions]
     added = '3.7'  # (and 3.6.1 and 3.5.3)
 [function.PyUnicode_AsUCS4]
@@ -2017,6 +2038,7 @@
     added = '3.7'  # (and 3.6.1 and 3.5.3)
 [function.Py_SetPath]
     added = '3.7'  # (and 3.6.1 and 3.5.3)
+    abi_only = true
 [function.PyErr_SetExcFromWindowsErr]
     added = '3.7'  # (and 3.6.1 and 3.5.3)
     ifdef = 'MS_WINDOWS'
@@ -2406,12 +2428,3 @@
     added = '3.12'
 [const.Py_TPFLAGS_ITEMS_AT_END]
     added = '3.12'
-
-[function._Py_IncRefTotal_DO_NOT_USE_THIS]
-    added = '3.12'
-    ifdef = 'Py_REF_DEBUG'
-    abi_only = true
-[function._Py_DecRefTotal_DO_NOT_USE_THIS]
-    added = '3.12'
-    ifdef = 'Py_REF_DEBUG'
-    abi_only = true

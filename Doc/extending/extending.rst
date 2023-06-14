@@ -383,14 +383,15 @@ automatically unless there's an entry in the :c:data:`PyImport_Inittab` table.
 To add the module to the initialization table, use :c:func:`PyImport_AppendInittab`,
 optionally followed by an import of the module::
 
+   #define PY_SSIZE_T_CLEAN
+   #include <Python.h>
+
    int
    main(int argc, char *argv[])
    {
-       wchar_t *program = Py_DecodeLocale(argv[0], NULL);
-       if (program == NULL) {
-           fprintf(stderr, "Fatal error: cannot decode argv[0]\n");
-           exit(1);
-       }
+       PyStatus status;
+       PyConfig config;
+       PyConfig_InitPythonConfig(&config);
 
        /* Add a built-in module, before Py_Initialize */
        if (PyImport_AppendInittab("spam", PyInit_spam) == -1) {
@@ -399,11 +400,18 @@ optionally followed by an import of the module::
        }
 
        /* Pass argv[0] to the Python interpreter */
-       Py_SetProgramName(program);
+       status = PyConfig_SetBytesString(&config, &config.program_name, argv[0]);
+       if (PyStatus_Exception(status)) {
+           goto exception;
+       }
 
        /* Initialize the Python interpreter.  Required.
           If this step fails, it will be a fatal error. */
-       Py_Initialize();
+       status = Py_InitializeFromConfig(&config);
+       if (PyStatus_Exception(status)) {
+           goto exception;
+       }
+       PyConfig_Clear(&config);
 
        /* Optionally import the module; alternatively,
           import can be deferred until the embedded script
@@ -414,10 +422,13 @@ optionally followed by an import of the module::
            fprintf(stderr, "Error: could not import module 'spam'\n");
        }
 
-       ...
+       // ... use Python C API here ...
 
-       PyMem_RawFree(program);
        return 0;
+
+     exception:
+        PyConfig_Clear(&config);
+        Py_ExitStatusException(status);
    }
 
 .. note::

@@ -168,7 +168,7 @@ should_audit(PyInterpreterState *interp)
     if (!interp) {
         return 0;
     }
-    return (interp->runtime->audit_hook_head
+    return (interp->runtime->audit_hooks.head
             || interp->audit_hooks
             || PyDTrace_AUDIT_ENABLED());
 }
@@ -224,8 +224,11 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
         goto exit;
     }
 
-    /* Call global hooks */
-    _Py_AuditHookEntry *e = is->runtime->audit_hook_head;
+    /* Call global hooks
+     *
+     * We don't worry about any races on hooks getting added,
+     * since that would not leave is in an inconsistent state. */
+    _Py_AuditHookEntry *e = is->runtime->audit_hooks.head;
     for (; e; e = e->next) {
         if (e->hookCFunction(event, eventArgs, e->userData) < 0) {
             goto exit;
@@ -353,12 +356,32 @@ _PySys_ClearAuditHooks(PyThreadState *ts)
     _PySys_Audit(ts, "cpython._PySys_ClearAuditHooks", NULL);
     _PyErr_Clear(ts);
 
-    _Py_AuditHookEntry *e = runtime->audit_hook_head, *n;
-    runtime->audit_hook_head = NULL;
+    /* We don't worry about the very unlikely race right here,
+     * since it's entirely benign.  Nothing else removes entries
+     * from the list and adding an entry right now would not cause
+     * any trouble. */
+    _Py_AuditHookEntry *e = runtime->audit_hooks.head, *n;
+    runtime->audit_hooks.head = NULL;
     while (e) {
         n = e->next;
         PyMem_RawFree(e);
         e = n;
+    }
+}
+
+static void
+add_audit_hook_entry_unlocked(_PyRuntimeState *runtime,
+                              _Py_AuditHookEntry *entry)
+{
+    if (runtime->audit_hooks.head == NULL) {
+        runtime->audit_hooks.head = entry;
+    }
+    else {
+        _Py_AuditHookEntry *last = runtime->audit_hooks.head;
+        while (last->next) {
+            last = last->next;
+        }
+        last->next = entry;
     }
 }
 
@@ -389,28 +412,27 @@ PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
         }
     }
 
-    _Py_AuditHookEntry *e = runtime->audit_hook_head;
-    if (!e) {
-        e = (_Py_AuditHookEntry*)PyMem_RawMalloc(sizeof(_Py_AuditHookEntry));
-        runtime->audit_hook_head = e;
-    } else {
-        while (e->next) {
-            e = e->next;
-        }
-        e = e->next = (_Py_AuditHookEntry*)PyMem_RawMalloc(
+    _Py_AuditHookEntry *e = (_Py_AuditHookEntry*)PyMem_RawMalloc(
             sizeof(_Py_AuditHookEntry));
-    }
-
     if (!e) {
         if (tstate != NULL) {
             _PyErr_NoMemory(tstate);
         }
         return -1;
     }
-
     e->next = NULL;
     e->hookCFunction = (Py_AuditHookFunction)hook;
     e->userData = userData;
+
+    if (runtime->audit_hooks.mutex == NULL) {
+        /* The runtime must not be initailized yet. */
+        add_audit_hook_entry_unlocked(runtime, e);
+    }
+    else {
+        PyThread_acquire_lock(runtime->audit_hooks.mutex, WAIT_LOCK);
+        add_audit_hook_entry_unlocked(runtime, e);
+        PyThread_release_lock(runtime->audit_hooks.mutex);
+    }
 
     return 0;
 }
@@ -2614,7 +2636,8 @@ _PySys_AddWarnOptionWithError(PyThreadState *tstate, PyObject *option)
     return 0;
 }
 
-void
+// Removed in Python 3.13 API, but kept for the stable ABI
+PyAPI_FUNC(void)
 PySys_AddWarnOptionUnicode(PyObject *option)
 {
     PyThreadState *tstate = _PyThreadState_GET();
@@ -2626,7 +2649,8 @@ PySys_AddWarnOptionUnicode(PyObject *option)
     }
 }
 
-void
+// Removed in Python 3.13 API, but kept for the stable ABI
+PyAPI_FUNC(void)
 PySys_AddWarnOption(const wchar_t *s)
 {
     PyThreadState *tstate = _PyThreadState_GET();
@@ -2645,7 +2669,8 @@ _Py_COMP_DIAG_POP
     Py_DECREF(unicode);
 }
 
-int
+// Removed in Python 3.13 API, but kept for the stable ABI
+PyAPI_FUNC(int)
 PySys_HasWarnOptions(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
@@ -2696,14 +2721,20 @@ _PySys_AddXOptionWithError(const wchar_t *s)
     const wchar_t *name_end = wcschr(s, L'=');
     if (!name_end) {
         name = PyUnicode_FromWideChar(s, -1);
+        if (name == NULL) {
+            goto error;
+        }
         value = Py_NewRef(Py_True);
     }
     else {
         name = PyUnicode_FromWideChar(s, name_end - s);
+        if (name == NULL) {
+            goto error;
+        }
         value = PyUnicode_FromWideChar(name_end + 1, -1);
-    }
-    if (name == NULL || value == NULL) {
-        goto error;
+        if (value == NULL) {
+            goto error;
+        }
     }
     if (PyDict_SetItem(opts, name, value) < 0) {
         goto error;
@@ -2718,7 +2749,8 @@ error:
     return -1;
 }
 
-void
+// Removed in Python 3.13 API, but kept for the stable ABI
+PyAPI_FUNC(void)
 PySys_AddXOption(const wchar_t *s)
 {
     PyThreadState *tstate = _PyThreadState_GET();
@@ -3343,19 +3375,25 @@ err_occurred:
 static int
 sys_add_xoption(PyObject *opts, const wchar_t *s)
 {
-    PyObject *name, *value;
+    PyObject *name, *value = NULL;
 
     const wchar_t *name_end = wcschr(s, L'=');
     if (!name_end) {
         name = PyUnicode_FromWideChar(s, -1);
+        if (name == NULL) {
+            goto error;
+        }
         value = Py_NewRef(Py_True);
     }
     else {
         name = PyUnicode_FromWideChar(s, name_end - s);
+        if (name == NULL) {
+            goto error;
+        }
         value = PyUnicode_FromWideChar(name_end + 1, -1);
-    }
-    if (name == NULL || value == NULL) {
-        goto error;
+        if (value == NULL) {
+            goto error;
+        }
     }
     if (PyDict_SetItem(opts, name, value) < 0) {
         goto error;
@@ -3621,7 +3659,8 @@ makepathobject(const wchar_t *path, wchar_t delim)
     return v;
 }
 
-void
+// Removed in Python 3.13 API, but kept for the stable ABI
+PyAPI_FUNC(void)
 PySys_SetPath(const wchar_t *path)
 {
     PyObject *v;
@@ -3653,7 +3692,8 @@ make_sys_argv(int argc, wchar_t * const * argv)
     return list;
 }
 
-void
+// Removed in Python 3.13 API, but kept for the stable ABI
+PyAPI_FUNC(void)
 PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
 {
     wchar_t* empty_argv[1] = {L""};
@@ -3697,7 +3737,8 @@ PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
     }
 }
 
-void
+// Removed in Python 3.13 API, but kept for the stable ABI
+PyAPI_FUNC(void)
 PySys_SetArgv(int argc, wchar_t **argv)
 {
 _Py_COMP_DIAG_PUSH

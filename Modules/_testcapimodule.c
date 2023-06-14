@@ -1426,7 +1426,7 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
     int allow_threads = -1;
     int allow_daemon_threads = -1;
     int check_multi_interp_extensions = -1;
-    int own_gil = -1;
+    int gil = -1;
     int r;
     PyThreadState *substate, *mainstate;
     /* only initialise 'cflags.cf_flags' to test backwards compatibility */
@@ -1439,15 +1439,15 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
                              "allow_threads",
                              "allow_daemon_threads",
                              "check_multi_interp_extensions",
-                             "own_gil",
+                             "gil",
                              NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                    "s$ppppppp:run_in_subinterp_with_config", kwlist,
+                    "s$ppppppi:run_in_subinterp_with_config", kwlist,
                     &code, &use_main_obmalloc,
                     &allow_fork, &allow_exec,
                     &allow_threads, &allow_daemon_threads,
                     &check_multi_interp_extensions,
-                    &own_gil)) {
+                    &gil)) {
         return NULL;
     }
     if (use_main_obmalloc < 0) {
@@ -1466,8 +1466,8 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
         PyErr_SetString(PyExc_ValueError, "missing allow_threads");
         return NULL;
     }
-    if (own_gil < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing own_gil");
+    if (gil < 0) {
+        PyErr_SetString(PyExc_ValueError, "missing gil");
         return NULL;
     }
     if (allow_daemon_threads < 0) {
@@ -1490,7 +1490,7 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
         .allow_threads = allow_threads,
         .allow_daemon_threads = allow_daemon_threads,
         .check_multi_interp_extensions = check_multi_interp_extensions,
-        .own_gil = own_gil,
+        .gil = gil,
     };
     PyStatus status = Py_NewInterpreterFromConfig(&substate, &config);
     if (PyStatus_Exception(status)) {
@@ -2363,6 +2363,19 @@ meth_fastcall_keywords(PyObject* self, PyObject* const* args,
 }
 
 static PyObject*
+test_pycfunction_call(PyObject *module, PyObject *args)
+{
+    // Function removed in the Python 3.13 API but was kept in the stable ABI.
+    extern PyObject* PyCFunction_Call(PyObject *callable, PyObject *args, PyObject *kwargs);
+
+    PyObject *func, *pos_args, *kwargs = NULL;
+    if (!PyArg_ParseTuple(args, "OO!|O!", &func, &PyTuple_Type, &pos_args, &PyDict_Type, &kwargs)) {
+        return NULL;
+    }
+    return PyCFunction_Call(func, pos_args, kwargs);
+}
+
+static PyObject*
 pynumber_tobase(PyObject *module, PyObject *args)
 {
     PyObject *obj;
@@ -2624,6 +2637,52 @@ type_get_tp_mro(PyObject *self, PyObject *type)
         Py_RETURN_NONE;
     }
     return Py_NewRef(mro);
+}
+
+
+/* We only use 2 in test_capi/test_misc.py. */
+#define NUM_BASIC_STATIC_TYPES 2
+static PyTypeObject BasicStaticTypes[NUM_BASIC_STATIC_TYPES] = {
+#define INIT_BASIC_STATIC_TYPE \
+    { \
+        PyVarObject_HEAD_INIT(NULL, 0) \
+        .tp_name = "BasicStaticType", \
+        .tp_basicsize = sizeof(PyObject), \
+    }
+    INIT_BASIC_STATIC_TYPE,
+    INIT_BASIC_STATIC_TYPE,
+#undef INIT_BASIC_STATIC_TYPE
+};
+static int num_basic_static_types_used = 0;
+
+static PyObject *
+get_basic_static_type(PyObject *self, PyObject *args)
+{
+    PyObject *base = NULL;
+    if (!PyArg_ParseTuple(args, "|O", &base)) {
+        return NULL;
+    }
+    assert(base == NULL || PyType_Check(base));
+
+    if(num_basic_static_types_used >= NUM_BASIC_STATIC_TYPES) {
+        PyErr_SetString(PyExc_RuntimeError, "no more available basic static types");
+        return NULL;
+    }
+    PyTypeObject *cls = &BasicStaticTypes[num_basic_static_types_used++];
+
+    if (base != NULL) {
+        cls->tp_bases = Py_BuildValue("(O)", base);
+        if (cls->tp_bases == NULL) {
+            return NULL;
+        }
+        cls->tp_base = (PyTypeObject *)Py_NewRef(base);
+    }
+    if (PyType_Ready(cls) < 0) {
+        Py_DECREF(cls->tp_bases);
+        Py_DECREF(cls->tp_base);
+        return NULL;
+    }
+    return (PyObject *)cls;
 }
 
 
@@ -3369,6 +3428,7 @@ static PyMethodDef TestMethods[] = {
     {"meth_noargs", meth_noargs, METH_NOARGS},
     {"meth_fastcall", _PyCFunction_CAST(meth_fastcall), METH_FASTCALL},
     {"meth_fastcall_keywords", _PyCFunction_CAST(meth_fastcall_keywords), METH_FASTCALL|METH_KEYWORDS},
+    {"pycfunction_call", test_pycfunction_call, METH_VARARGS},
     {"pynumber_tobase", pynumber_tobase, METH_VARARGS},
     {"test_set_type_size", test_set_type_size, METH_NOARGS},
     {"test_py_clear", test_py_clear, METH_NOARGS},
@@ -3381,6 +3441,7 @@ static PyMethodDef TestMethods[] = {
     {"type_assign_version", type_assign_version, METH_O, PyDoc_STR("PyUnstable_Type_AssignVersionTag")},
     {"type_get_tp_bases", type_get_tp_bases, METH_O},
     {"type_get_tp_mro", type_get_tp_mro, METH_O},
+    {"get_basic_static_type", get_basic_static_type, METH_VARARGS, NULL},
     {"test_tstate_capi", test_tstate_capi, METH_NOARGS, NULL},
     {"frame_getlocals", frame_getlocals, METH_O, NULL},
     {"frame_getglobals", frame_getglobals, METH_O, NULL},
