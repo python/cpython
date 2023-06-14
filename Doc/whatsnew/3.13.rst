@@ -340,6 +340,10 @@ Removed
   attribute instead.
   (Contributed by Nikita Sobolev in :gh:`105546`.)
 
+* Remove undocumented, never working, and deprecated ``re.template`` function
+  and ``re.TEMPLATE`` flag (and ``re.T`` alias).
+  (Contributed by Serhiy Storchaka and Nikita Sobolev in :gh:`105687`.)
+
 
 Porting to Python 3.13
 ======================
