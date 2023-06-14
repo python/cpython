@@ -3791,13 +3791,13 @@ class ProtocolTests(BaseTestCase):
         Foo()  # Previously triggered RecursionError
 
     def test_get_protocol_members(self):
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, "not a Protocol"):
             get_protocol_members(object)
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, "not a Protocol"):
             get_protocol_members(object())
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, "not a Protocol"):
             get_protocol_members(Protocol)
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, "not a Protocol"):
             get_protocol_members(Generic)
 
         class P(Protocol):
@@ -3816,9 +3816,9 @@ class ProtocolTests(BaseTestCase):
             @property
             def c(self) -> int: return 5
 
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, "not a Protocol"):
             get_protocol_members(Concrete)
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, "not a Protocol"):
             get_protocol_members(Concrete())
 
         class ConcreteInherit(P):
@@ -3827,10 +3827,9 @@ class ProtocolTests(BaseTestCase):
             @property
             def c(self) -> int: return 5
 
-        # not a protocol
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, "not a Protocol"):
             get_protocol_members(ConcreteInherit)
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, "not a Protocol"):
             get_protocol_members(ConcreteInherit())
 
     def test_is_protocol(self):
