@@ -11,7 +11,6 @@ from ctypes import (CDLL, Structure, Array, CFUNCTYPE,
                     c_char, c_wchar, c_byte, c_char_p,
                     c_short, c_int, c_long, c_longlong,
                     c_float, c_double, c_longdouble)
-from test.test_ctypes import need_symbol
 import sys, unittest
 
 try:
@@ -75,8 +74,6 @@ class FunctionTestCase(unittest.TestCase):
                          "argument 1: TypeError: one character bytes, "
                          "bytearray or integer expected")
 
-
-    @need_symbol('c_wchar')
     def test_wchar_parm(self):
         f = dll._testfunc_i_bhilfd
         f.argtypes = [c_byte, c_wchar, c_int, c_long, c_float, c_double]
@@ -96,7 +93,6 @@ class FunctionTestCase(unittest.TestCase):
                          "argument 2: TypeError: one character unicode string "
                          "expected")
 
-    @need_symbol('c_wchar')
     def test_wchar_result(self):
         f = dll._testfunc_i_bhilfd
         f.argtypes = [c_byte, c_short, c_int, c_long, c_float, c_double]
@@ -162,7 +158,6 @@ class FunctionTestCase(unittest.TestCase):
         self.assertEqual(result, -21)
         self.assertEqual(type(result), float)
 
-    @need_symbol('c_longdouble')
     def test_longdoubleresult(self):
         f = dll._testfunc_D_bhilfD
         f.argtypes = [c_byte, c_short, c_int, c_long, c_float, c_longdouble]
@@ -175,7 +170,6 @@ class FunctionTestCase(unittest.TestCase):
         self.assertEqual(result, -21)
         self.assertEqual(type(result), float)
 
-    @need_symbol('c_longlong')
     def test_longlongresult(self):
         f = dll._testfunc_q_bhilfd
         f.restype = c_longlong
@@ -304,7 +298,6 @@ class FunctionTestCase(unittest.TestCase):
         result = f(-10, cb)
         self.assertEqual(result, -18)
 
-    @need_symbol('c_longlong')
     def test_longlong_callbacks(self):
 
         f = dll._testfunc_callback_q_qf

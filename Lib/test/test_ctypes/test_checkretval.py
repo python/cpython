@@ -1,7 +1,6 @@
 import ctypes
 import unittest
 from ctypes import CDLL, c_int
-from test.test_ctypes import need_symbol
 
 
 class CHECKED(c_int):
@@ -28,7 +27,8 @@ class Test(unittest.TestCase):
         del dll._testfunc_p_p.restype
         self.assertEqual(42, dll._testfunc_p_p(42))
 
-    @need_symbol('oledll')
+    @unittest.skipUnless(hasattr(ctypes, 'oledll'),
+                         'ctypes.oledll is required')
     def test_oledll(self):
         oleaut32 = ctypes.oledll.oleaut32
         self.assertRaises(OSError, oleaut32.CreateTypeLib2, 0, None, None)

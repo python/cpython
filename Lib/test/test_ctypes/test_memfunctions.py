@@ -6,7 +6,6 @@ from ctypes import (POINTER, sizeof, cast,
                     create_unicode_buffer, wstring_at,
                     memmove, memset,
                     c_char_p, c_byte, c_ubyte, c_wchar)
-from test.test_ctypes import need_symbol
 
 class MemFunctionsTest(unittest.TestCase):
     @unittest.skip('test disabled')
@@ -67,7 +66,6 @@ class MemFunctionsTest(unittest.TestCase):
         self.assertEqual(string_at(b"foo bar", 7), b"foo bar")
         self.assertEqual(string_at(b"foo bar", 3), b"foo")
 
-    @need_symbol('create_unicode_buffer')
     def test_wstring_at(self):
         p = create_unicode_buffer("Hello, World")
         a = create_unicode_buffer(1000000)

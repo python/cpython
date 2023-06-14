@@ -2,7 +2,6 @@ from ctypes import (CDLL, CFUNCTYPE, POINTER, ArgumentError,
                     pointer, byref, sizeof, addressof,
                     c_void_p, c_char_p, c_wchar_p, c_char, c_wchar, c_buffer,
                     c_short, c_int, c_long, c_longlong, c_double)
-from test.test_ctypes import need_symbol
 import unittest
 
 # IMPORTANT INFO:
@@ -142,7 +141,6 @@ class CharPointersTestCase(unittest.TestCase):
         func(pointer(c_int()))
         func((c_int * 3)())
 
-    @need_symbol('c_wchar_p')
     def test_c_void_p_arg_with_c_wchar_p(self):
         func = testdll._testfunc_p_p
         func.restype = c_wchar_p
@@ -164,7 +162,6 @@ class CharPointersTestCase(unittest.TestCase):
         func.argtypes = None
         self.assertEqual(None, func(X()))
 
-@need_symbol('c_wchar')
 class WCharPointersTestCase(unittest.TestCase):
 
     def setUp(self):
