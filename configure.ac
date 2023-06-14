@@ -2318,7 +2318,7 @@ AS_CASE([$ac_sys_system],
       # without this, configure fails to find pthread_create, sem_init,
       # etc because they are only available in the sysroot for
       # wasm32-wasi-threads.
-      CFLAGS="$CFLAGS -target wasm32-wasi-threads -pthread"
+      AS_VAR_APPEND([CFLAGS], [" -target wasm32-wasi-threads -pthread"])
       AS_VAR_APPEND([CFLAGS_NODIST], [" -target wasm32-wasi-threads -pthread"])
       AS_VAR_APPEND([LDFLAGS_NODIST], [" -target wasm32-wasi-threads -pthread"])
       AS_VAR_APPEND([LDFLAGS_NODIST], [" -Wl,--import-memory"])

@@ -9398,13 +9398,14 @@ printf "%s\n" "#define _WASI_EMULATED_PROCESS_CLOCKS 1" >>confdefs.h
     LIBS="$LIBS -lwasi-emulated-signal -lwasi-emulated-getpid -lwasi-emulated-process-clocks"
     echo "#define _WASI_EMULATED_SIGNAL 1" >> confdefs.h
 
-    if test "x$enable_wasm_pthreads" = xyes; then :
+    if test "x$enable_wasm_pthreads" = xyes
+then :
 
       # Note: update CFLAGS because ac_compile/ac_link needs this too.
       # without this, configure fails to find pthread_create, sem_init,
       # etc because they are only available in the sysroot for
       # wasm32-wasi-threads.
-      CFLAGS="$CFLAGS -target wasm32-wasi-threads -pthread"
+      as_fn_append CFLAGS " -target wasm32-wasi-threads -pthread"
       as_fn_append CFLAGS_NODIST " -target wasm32-wasi-threads -pthread"
       as_fn_append LDFLAGS_NODIST " -target wasm32-wasi-threads -pthread"
       as_fn_append LDFLAGS_NODIST " -Wl,--import-memory"
