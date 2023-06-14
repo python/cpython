@@ -1,12 +1,13 @@
+import array
 import struct
 import sys
 import unittest
-from array import array
 from operator import truth
 from ctypes import (byref, sizeof, alignment, _SimpleCData,
                     c_char, c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
                     c_long, c_ulong, c_longlong, c_ulonglong,
                     c_float, c_double, c_longdouble, c_bool)
+
 
 def valid_ranges(*types):
     # given a sequence of numeric types, collect their _type_
@@ -25,6 +26,7 @@ def valid_ranges(*types):
         result.append((min(a, b, c, d), max(a, b, c, d)))
     return result
 
+
 ArgType = type(byref(c_int(0)))
 
 unsigned_types = [c_ubyte, c_ushort, c_uint, c_ulong, c_ulonglong]
@@ -36,7 +38,6 @@ unsigned_ranges = valid_ranges(*unsigned_types)
 signed_ranges = valid_ranges(*signed_types)
 bool_values = [True, False, 0, 1, -1, 5000, 'test', [], [1]]
 
-################################################################
 
 class NumberTestCase(unittest.TestCase):
 
@@ -152,10 +153,10 @@ class NumberTestCase(unittest.TestCase):
             # the array module doesn't support all format codes
             # (no 'q' or 'Q')
             try:
-                array(t._type_)
+                array.array(t._type_)
             except ValueError:
                 continue
-            a = array(t._type_, [100])
+            a = array.array(t._type_, [100])
 
             # v now is an integer at an 'external' memory location
             v = t.from_address(a.buffer_info()[0])
@@ -169,7 +170,7 @@ class NumberTestCase(unittest.TestCase):
 
     def test_float_from_address(self):
         for t in float_types:
-            a = array(t._type_, [3.14])
+            a = array.array(t._type_, [3.14])
             v = t.from_address(a.buffer_info()[0])
             self.assertEqual(v.value, a[0])
             self.assertIs(type(v), t)
@@ -178,7 +179,7 @@ class NumberTestCase(unittest.TestCase):
             self.assertIs(type(v), t)
 
     def test_char_from_address(self):
-        a = array('b', [0])
+        a = array.array('b', [0])
         a[0] = ord('x')
         v = c_char.from_address(a.buffer_info()[0])
         self.assertEqual(v.value, b'x')
@@ -190,7 +191,7 @@ class NumberTestCase(unittest.TestCase):
     # array does not support c_bool / 't'
     @unittest.skip('test disabled')
     def test_bool_from_address(self):
-        a = array(c_bool._type_, [True])
+        a = array.array(c_bool._type_, [True])
         v = t.from_address(a.buffer_info()[0])
         self.assertEqual(v.value, a[0])
         self.assertEqual(type(v) is t)
@@ -217,9 +218,11 @@ class NumberTestCase(unittest.TestCase):
     def test_perf(self):
         check_perf()
 
+
 class c_int_S(_SimpleCData):
     _type_ = "i"
     __slots__ = []
+
 
 def run_test(rep, msg, func, arg=None):
 ##    items = [None] * rep
@@ -236,6 +239,7 @@ def run_test(rep, msg, func, arg=None):
             func(); func(); func(); func(); func()
         stop = clock()
     print("%15s: %.2f us" % (msg, ((stop-start)*1e6/5/rep)))
+
 
 def check_perf():
     # Construct 5 objects
@@ -267,6 +271,7 @@ def check_perf():
 #     c_int(999): 10.02 us
 #      c_int_S(): 9.87 us
 #   c_int_S(999): 9.85 us
+
 
 if __name__ == '__main__':
 ##    check_perf()

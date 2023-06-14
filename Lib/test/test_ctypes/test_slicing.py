@@ -1,8 +1,8 @@
+import _ctypes_test
 import unittest
 from ctypes import (CDLL, POINTER, sizeof,
                     c_byte, c_short, c_int, c_long, c_char, c_wchar, c_char_p)
 
-import _ctypes_test
 
 class SlicesTestCase(unittest.TestCase):
     def test_getslice_cint(self):
@@ -164,7 +164,6 @@ class SlicesTestCase(unittest.TestCase):
         self.assertEqual(res[len(s)-2:5:-7], tmpl[:5:-7])
         dll.my_free(res)
 
-################################################################
 
 if __name__ == "__main__":
     unittest.main()

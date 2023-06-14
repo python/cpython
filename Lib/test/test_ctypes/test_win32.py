@@ -2,9 +2,11 @@
 
 import _ctypes_test
 import ctypes
+import errno
 import sys
 import unittest
 from ctypes import (CDLL, Structure, POINTER, pointer, sizeof, byref,
+                    _pointer_type_cache,
                     c_void_p, c_char, c_int, c_long)
 from test import support
 
@@ -47,7 +49,6 @@ class ReturnStructSizesTestCase(unittest.TestCase):
                 self.assertEqual(value, expected)
 
 
-
 @unittest.skipUnless(sys.platform == "win32", 'Windows-specific test')
 class TestWintypes(unittest.TestCase):
     def test_HWND(self):
@@ -72,11 +73,11 @@ class TestWintypes(unittest.TestCase):
         self.assertEqual(ex.text, "text")
         self.assertEqual(ex.details, ("details",))
 
+
 @unittest.skipUnless(sys.platform == "win32", 'Windows-specific test')
 class TestWinError(unittest.TestCase):
     def test_winerror(self):
         # see Issue 16169
-        import errno
         ERROR_INVALID_PARAMETER = 87
         msg = ctypes.FormatError(ERROR_INVALID_PARAMETER).strip()
         args = (errno.EINVAL, msg, None, ERROR_INVALID_PARAMETER)
@@ -136,7 +137,6 @@ class Structures(unittest.TestCase):
             self.assertEqual(ret.bottom, bottom.value)
 
         # to not leak references, we must clean _pointer_type_cache
-        from ctypes import _pointer_type_cache
         del _pointer_type_cache[RECT]
 
 

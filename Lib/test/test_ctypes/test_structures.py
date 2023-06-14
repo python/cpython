@@ -1,4 +1,6 @@
+import _ctypes_test
 import platform
+import struct
 import sys
 import unittest
 from ctypes import (CDLL, Structure, Union, POINTER, sizeof, byref, alignment,
@@ -7,13 +9,14 @@ from ctypes import (CDLL, Structure, Union, POINTER, sizeof, byref, alignment,
                     c_short, c_ushort, c_int, c_uint,
                     c_long, c_ulong, c_longlong, c_ulonglong, c_float, c_double)
 from struct import calcsize
-import _ctypes_test
 from test import support
+
 
 # The following definition is meant to be used from time to time to assist
 # temporarily disabling tests on specific architectures while investigations
 # are in progress, to keep buildbots happy.
 MACHINE = platform.machine()
+
 
 class SubclassesTest(unittest.TestCase):
     def test_subclass(self):
@@ -53,6 +56,7 @@ class SubclassesTest(unittest.TestCase):
         self.assertEqual(X._fields_, [("a", c_int)])
         self.assertEqual(Y._fields_, [("b", c_int)])
         self.assertEqual(Z._fields_, [("a", c_int)])
+
 
 class StructureTestCase(unittest.TestCase):
     formats = {"c": c_char,
@@ -187,7 +191,6 @@ class StructureTestCase(unittest.TestCase):
         self.assertEqual(sizeof(X), 10)
         self.assertEqual(X.b.offset, 2)
 
-        import struct
         longlong_size = struct.calcsize("q")
         longlong_align = struct.calcsize("bq") - longlong_size
 
@@ -740,6 +743,7 @@ class StructureTestCase(unittest.TestCase):
         self.assertEqual(ctx.exception.args[0], 'item 1 in _argtypes_ passes '
                          'a union by value, which is unsupported.')
 
+
 class PointerMemberTestCase(unittest.TestCase):
 
     def test(self):
@@ -781,6 +785,7 @@ class PointerMemberTestCase(unittest.TestCase):
         s.p = None
         self.assertEqual(s.x, 12345678)
 
+
 class TestRecursiveStructure(unittest.TestCase):
     def test_contains_itself(self):
         class Recursive(Structure):
@@ -809,6 +814,7 @@ class TestRecursiveStructure(unittest.TestCase):
             self.assertIn("_fields_ is final", str(details))
         else:
             self.fail("AttributeError not raised")
+
 
 if __name__ == '__main__':
     unittest.main()
