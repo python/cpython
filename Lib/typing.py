@@ -3358,7 +3358,7 @@ def is_protocol(tp: type, /) -> bool:
     return (
         isinstance(tp, type)
         and getattr(tp, '_is_protocol', False)
-        and tp is not Protocol
+        and tp != Protocol
     )
 
 
