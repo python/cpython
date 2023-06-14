@@ -146,9 +146,9 @@ GETITEM(PyObject *v, Py_ssize_t i) {
     } while (0)
 #define JUMPTO(x)       (next_instr = _PyCode_CODE(_PyFrame_GetCode(frame)) + (x))
 
-/* JUMPBY makes the generator identify the instruction as a jump. SKIP_OVER is for
- * advancing to the next instruction, taking into account cache entries and skipped
- * instructions into account.
+/* JUMPBY makes the generator identify the instruction as a jump. SKIP_OVER is
+ * for advancing to the next instruction, taking into account cache entries
+ * and skipped instructions into account.
  */
 #define JUMPBY(x)       (next_instr += (x))
 #define SKIP_OVER(x)    (next_instr += (x))
