@@ -110,6 +110,9 @@ def_op('PUSH_EXC_INFO', 35)
 def_op('CHECK_EXC_MATCH', 36)
 def_op('CHECK_EG_MATCH', 37)
 
+def_op('FORMAT_SIMPLE', 40)
+def_op('FORMAT_WITH_SPEC', 41)
+
 def_op('WITH_EXCEPT_START', 49)
 def_op('GET_AITER', 50)
 def_op('GET_ANEXT', 51)
@@ -213,9 +216,9 @@ def_op('YIELD_VALUE', 150)
 def_op('RESUME', 151)   # This must be kept in sync with deepfreeze.py
 def_op('MATCH_CLASS', 152)
 
-def_op('FORMAT_VALUE', 155)
 def_op('BUILD_CONST_KEY_MAP', 156)
 def_op('BUILD_STRING', 157)
+def_op('CONVERT_VALUE', 158)
 
 def_op('LIST_EXTEND', 162)
 def_op('SET_UPDATE', 163)
