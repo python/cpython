@@ -31,8 +31,6 @@ class BITS(Structure):
 func = CDLL(_ctypes_test.__file__).unpack_bitfields
 func.argtypes = POINTER(BITS), c_char
 
-##for n in "ABCDEFGHIMNOPQRS":
-##    print n, hex(getattr(BITS, n).size), getattr(BITS, n).offset
 
 class C_Test(unittest.TestCase):
 

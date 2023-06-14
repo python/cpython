@@ -81,7 +81,6 @@ class BasicWrapTestCase(unittest.TestCase):
         MyCallback = CFUNCTYPE(c_int, c_int)
 
         def callback(value):
-            #print "called back with", value
             return value
 
         cb = MyCallback(callback)
@@ -118,7 +117,6 @@ class BasicWrapTestCase(unittest.TestCase):
         f.argtypes = [c_int, MyCallback]
 
         def callback(value):
-            #print "called back with", value
             self.assertEqual(type(value), int)
             return value
 
