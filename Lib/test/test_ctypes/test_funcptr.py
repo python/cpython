@@ -1,9 +1,10 @@
 import unittest
+import ctypes
 from ctypes import *
 
 try:
-    WINFUNCTYPE
-except NameError:
+    WINFUNCTYPE = ctypes.WINFUNCTYPE
+except AttributeError:
     # fake to enable this test on Linux
     WINFUNCTYPE = CFUNCTYPE
 
@@ -39,7 +40,7 @@ class CFuncPtrTestCase(unittest.TestCase):
         # possible, as in C, to call cdecl functions with more parameters.
         #self.assertRaises(TypeError, c, 1, 2, 3)
         self.assertEqual(c(1, 2, 3, 4, 5, 6), 3)
-        if not WINFUNCTYPE is CFUNCTYPE:
+        if WINFUNCTYPE is not CFUNCTYPE:
             self.assertRaises(TypeError, s, 1, 2, 3)
 
     def test_structures(self):
@@ -91,7 +92,7 @@ class CFuncPtrTestCase(unittest.TestCase):
 
         def NoNullHandle(value):
             if not value:
-                raise WinError()
+                raise ctypes.WinError()
             return value
 
         strchr = lib.my_strchr

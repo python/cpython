@@ -1,4 +1,5 @@
 from ctypes import *
+import ctypes
 import os
 import shutil
 import subprocess
@@ -72,18 +73,18 @@ class LoaderTest(unittest.TestCase):
             print(find_library("user32"))
 
         if os.name == "nt":
-            windll.kernel32.GetModuleHandleW
-            windll["kernel32"].GetModuleHandleW
-            windll.LoadLibrary("kernel32").GetModuleHandleW
-            WinDLL("kernel32").GetModuleHandleW
+            ctypes.windll.kernel32.GetModuleHandleW
+            ctypes.windll["kernel32"].GetModuleHandleW
+            ctypes.windll.LoadLibrary("kernel32").GetModuleHandleW
+            ctypes.WinDLL("kernel32").GetModuleHandleW
             # embedded null character
-            self.assertRaises(ValueError, windll.LoadLibrary, "kernel32\0")
+            self.assertRaises(ValueError, ctypes.windll.LoadLibrary, "kernel32\0")
 
     @unittest.skipUnless(os.name == "nt",
                          'test specific to Windows')
     def test_load_ordinal_functions(self):
         import _ctypes_test
-        dll = WinDLL(_ctypes_test.__file__)
+        dll = ctypes.WinDLL(_ctypes_test.__file__)
         # We load the same function both via ordinal and name
         func_ord = dll[2]
         func_name = dll.GetString
@@ -114,14 +115,16 @@ class LoaderTest(unittest.TestCase):
         # also has a high address.  'call_function' should accept
         # addresses so large.
         from _ctypes import call_function
-        advapi32 = windll.advapi32
+
+        advapi32 = ctypes.windll.advapi32
         # Calling CloseEventLog with a NULL argument should fail,
         # but the call should not segfault or so.
         self.assertEqual(0, advapi32.CloseEventLog(None))
-        windll.kernel32.GetProcAddress.argtypes = c_void_p, c_char_p
-        windll.kernel32.GetProcAddress.restype = c_void_p
-        proc = windll.kernel32.GetProcAddress(advapi32._handle,
-                                              b"CloseEventLog")
+
+        kernel32 = ctypes.windll.kernel32
+        kernel32.GetProcAddress.argtypes = c_void_p, c_char_p
+        kernel32.GetProcAddress.restype = c_void_p
+        proc = kernel32.GetProcAddress(advapi32._handle, b"CloseEventLog")
         self.assertTrue(proc)
         # This is the real test: call the function via 'call_function'
         self.assertEqual(0, call_function(proc, (None,)))
@@ -130,7 +133,7 @@ class LoaderTest(unittest.TestCase):
                          'test specific to Windows')
     def test_load_hasattr(self):
         # bpo-34816: shouldn't raise OSError
-        self.assertFalse(hasattr(windll, 'test'))
+        self.assertFalse(hasattr(ctypes.windll, 'test'))
 
     @unittest.skipUnless(os.name == "nt",
                          'test specific to Windows')
