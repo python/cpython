@@ -6,7 +6,11 @@ Later...
 """
 
 import ctypes
-from ctypes import *
+from ctypes import (CDLL, Structure, Array, CFUNCTYPE,
+                    byref, POINTER, pointer, ArgumentError,
+                    c_char, c_wchar, c_byte, c_char_p,
+                    c_short, c_int, c_long, c_longlong,
+                    c_float, c_double, c_longdouble)
 from test.test_ctypes import need_symbol
 import sys, unittest
 

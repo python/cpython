@@ -1,5 +1,6 @@
 import unittest
-from ctypes import *
+from ctypes import (CDLL, POINTER, sizeof,
+                    c_byte, c_short, c_int, c_long, c_char, c_wchar, c_char_p)
 from test.test_ctypes import need_symbol
 
 import _ctypes_test

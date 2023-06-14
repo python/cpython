@@ -1,8 +1,11 @@
-import unittest, sys
-
-import ctypes
-from ctypes import *
 import _ctypes_test
+import ctypes
+import sys
+import unittest
+from ctypes import (CDLL, CFUNCTYPE, Structure, POINTER, pointer, byref, sizeof,
+                    c_void_p, c_char_p,
+                    c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
+                    c_long, c_ulong, c_longlong, c_ulonglong, c_float, c_double)
 
 ctype_types = [c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
                  c_long, c_ulong, c_longlong, c_ulonglong, c_double, c_float]
