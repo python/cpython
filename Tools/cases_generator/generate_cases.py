@@ -194,20 +194,14 @@ class Formatter:
         if osym and osym != isym:
             self.emit(f"STACK_GROW({osym});")
 
-    def declare(
-            self, dst: StackEffect,
-            src: StackEffect | None,
-            *,
-            # Don't initialize from dst.cond; used for conditional *outputs*.
-            init_null: bool = True,
-        ):
+    def declare(self, dst: StackEffect, src: StackEffect | None):
         if dst.name == UNUSED:
             return
         typ = f"{dst.type}" if dst.type else "PyObject *"
         if src:
             cast = self.cast(dst, src)
             init = f" = {cast}{src.name}"
-        elif init_null and dst.cond:
+        elif dst.cond:
             init = " = NULL"
         else:
             init = ""
@@ -1229,21 +1223,23 @@ class Analyzer:
         with self.out.block(f"TARGET({mac.name})"):
             if mac.predicted:
                 self.out.emit(f"PREDICTED({mac.name});")
-            for i, var in reversed(list(enumerate(mac.stack))):
-                src = None
-                if i < mac.initial_sp:
-                    src = StackEffect(f"stack_pointer[-{mac.initial_sp - i}]", "")
-                self.out.declare(var, src, init_null=False)
-
-            yield
 
             # The input effects should have no conditionals.
             # Only the output effects do (for now).
             ieffects = [
                 StackEffect(eff.name, eff.type) if eff.cond else eff
-                for eff in mac.stack[:mac.initial_sp]
+                for eff in mac.stack
             ]
-            self.out.stack_adjust(ieffects, mac.stack[:mac.final_sp])
+
+            for i, var in reversed(list(enumerate(ieffects))):
+                src = None
+                if i < mac.initial_sp:
+                    src = StackEffect(f"stack_pointer[-{mac.initial_sp - i}]", "")
+                self.out.declare(var, src)
+
+            yield
+
+            self.out.stack_adjust(ieffects[:mac.initial_sp], mac.stack[:mac.final_sp])
 
             for i, var in enumerate(reversed(mac.stack[: mac.final_sp]), 1):
                 dst = StackEffect(f"stack_pointer[-{i}]", "")
