@@ -1694,6 +1694,11 @@ New Features
 
   (Contributed by Eddie Elizondo in :gh:`84436`.)
 
+* In the limited C API version 3.12, :c:func:`Py_INCREF` and
+  :c:func:`Py_DECREF` functions are now implemented as opaque function calls to
+  hide implementation details.
+  (Contributed by Victor Stinner in :gh:`105387`.)
+
 Porting to Python 3.12
 ----------------------
 
