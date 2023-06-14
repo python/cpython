@@ -1,6 +1,8 @@
-from ctypes import *
 import unittest
 from test import support
+from ctypes import (pythonapi, POINTER, c_buffer, sizeof,
+                    py_object, c_char_p, c_char, c_long, c_size_t)
+
 
 ################################################################
 # This section should be moved into ctypes\__init__.py, when it's ready.
@@ -46,7 +48,8 @@ class PythonAPITestCase(unittest.TestCase):
         pythonapi.PyLong_AsLong.restype = c_long
 
         res = pythonapi.PyLong_AsLong(42)
-        self.assertEqual(grc(res), ref42 + 1)
+        # Small int refcnts don't change
+        self.assertEqual(grc(res), ref42)
         del res
         self.assertEqual(grc(42), ref42)
 
@@ -80,6 +83,7 @@ class PythonAPITestCase(unittest.TestCase):
         self.assertEqual(repr(py_object()), "py_object(<NULL>)")
         self.assertEqual(repr(py_object(42)), "py_object(42)")
         self.assertEqual(repr(py_object(object)), "py_object(%r)" % object)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -60,7 +60,13 @@ typedef struct _PyInterpreterFrame {
     // over, or (in the case of a newly-created frame) a totally invalid value:
     _Py_CODEUNIT *prev_instr;
     int stacktop;  /* Offset of TOS from localsplus  */
-    uint16_t yield_offset;
+    /* The return_offset determines where a `RETURN` should go in the caller,
+     * relative to `prev_instr`.
+     * It is only meaningful to the callee,
+     * so it needs to be set in any CALL (to a Python function)
+     * or SEND (to a coroutine or generator).
+     * If there is no callee, then it is meaningless. */
+    uint16_t return_offset;
     char owner;
     /* Locals and stack */
     PyObject *localsplus[1];
@@ -120,7 +126,7 @@ _PyFrame_Initialize(
     frame->stacktop = code->co_nlocalsplus;
     frame->frame_obj = NULL;
     frame->prev_instr = _PyCode_CODE(code) - 1;
-    frame->yield_offset = 0;
+    frame->return_offset = 0;
     frame->owner = FRAME_OWNED_BY_THREAD;
 
     for (int i = null_locals_from; i < code->co_nlocalsplus; i++) {
@@ -137,10 +143,16 @@ _PyFrame_GetLocalsArray(_PyInterpreterFrame *frame)
     return frame->localsplus;
 }
 
+/* Fetches the stack pointer, and sets stacktop to -1.
+   Having stacktop <= 0 ensures that invalid
+   values are not visible to the cycle GC.
+   We choose -1 rather than 0 to assist debugging. */
 static inline PyObject**
 _PyFrame_GetStackPointer(_PyInterpreterFrame *frame)
 {
-    return frame->localsplus+frame->stacktop;
+    PyObject **sp = frame->localsplus + frame->stacktop;
+    frame->stacktop = -1;
+    return sp;
 }
 
 static inline void
@@ -251,8 +263,6 @@ _PyFrame_PushUnchecked(PyThreadState *tstate, PyFunctionObject *func, int null_l
     _PyFrame_Initialize(new_frame, func, NULL, code, null_locals_from);
     return new_frame;
 }
-
-int _PyInterpreterFrame_GetLine(_PyInterpreterFrame *frame);
 
 static inline
 PyGenObject *_PyFrame_GetGenerator(_PyInterpreterFrame *frame)

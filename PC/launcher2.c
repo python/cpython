@@ -132,7 +132,7 @@ typedef BOOL (*PIsWow64Process2)(HANDLE, USHORT*, USHORT*);
 
 
 USHORT
-_getNativeMachine()
+_getNativeMachine(void)
 {
     static USHORT _nativeMachine = IMAGE_FILE_MACHINE_UNKNOWN;
     if (_nativeMachine == IMAGE_FILE_MACHINE_UNKNOWN) {
@@ -163,14 +163,14 @@ _getNativeMachine()
 
 
 bool
-isAMD64Host()
+isAMD64Host(void)
 {
     return _getNativeMachine() == IMAGE_FILE_MACHINE_AMD64;
 }
 
 
 bool
-isARM64Host()
+isARM64Host(void)
 {
     return _getNativeMachine() == IMAGE_FILE_MACHINE_ARM64;
 }

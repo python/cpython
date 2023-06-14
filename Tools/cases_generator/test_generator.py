@@ -43,7 +43,8 @@ def run_cases_test(input: str, expected: str):
     temp_input.write(generate_cases.END_MARKER)
     temp_input.flush()
     temp_output = tempfile.NamedTemporaryFile("w+")
-    a = generate_cases.Analyzer(temp_input.name, temp_output.name)
+    temp_metadata = tempfile.NamedTemporaryFile("w+")
+    a = generate_cases.Analyzer([temp_input.name], temp_output.name, temp_metadata.name)
     a.parse()
     a.analyze()
     if a.errors:
@@ -61,20 +62,6 @@ def run_cases_test(input: str, expected: str):
     #     print(expected)
     #     print("End")
     assert actual.rstrip() == expected.rstrip()
-
-def test_legacy():
-    input = """
-        inst(OP) {
-            spam();
-        }
-    """
-    output = """
-        TARGET(OP) {
-            spam();
-            DISPATCH();
-        }
-    """
-    run_cases_test(input, output)
 
 def test_inst_no_args():
     input = """
@@ -98,7 +85,7 @@ def test_inst_one_pop():
     """
     output = """
         TARGET(OP) {
-            PyObject *value = PEEK(1);
+            PyObject *value = stack_pointer[-1];
             spam();
             STACK_SHRINK(1);
             DISPATCH();
@@ -117,7 +104,7 @@ def test_inst_one_push():
             PyObject *res;
             spam();
             STACK_GROW(1);
-            POKE(1, res);
+            stack_pointer[-1] = res;
             DISPATCH();
         }
     """
@@ -131,10 +118,10 @@ def test_inst_one_push_one_pop():
     """
     output = """
         TARGET(OP) {
-            PyObject *value = PEEK(1);
+            PyObject *value = stack_pointer[-1];
             PyObject *res;
             spam();
-            POKE(1, res);
+            stack_pointer[-1] = res;
             DISPATCH();
         }
     """
@@ -148,12 +135,12 @@ def test_binary_op():
     """
     output = """
         TARGET(OP) {
-            PyObject *right = PEEK(1);
-            PyObject *left = PEEK(2);
+            PyObject *right = stack_pointer[-1];
+            PyObject *left = stack_pointer[-2];
             PyObject *res;
             spam();
             STACK_SHRINK(1);
-            POKE(1, res);
+            stack_pointer[-1] = res;
             DISPATCH();
         }
     """
@@ -167,11 +154,11 @@ def test_overlap():
     """
     output = """
         TARGET(OP) {
-            PyObject *right = PEEK(1);
-            PyObject *left = PEEK(2);
+            PyObject *right = stack_pointer[-1];
+            PyObject *left = stack_pointer[-2];
             PyObject *result;
             spam();
-            POKE(1, result);
+            stack_pointer[-1] = result;
             DISPATCH();
         }
     """
@@ -181,11 +168,8 @@ def test_predictions_and_eval_breaker():
     input = """
         inst(OP1, (--)) {
         }
-        inst(OP2, (--)) {
-        }
         inst(OP3, (arg -- res)) {
             DEOPT_IF(xxx, OP1);
-            PREDICT(OP2);
             CHECK_EVAL_BREAKER();
         }
     """
@@ -195,17 +179,11 @@ def test_predictions_and_eval_breaker():
             DISPATCH();
         }
 
-        TARGET(OP2) {
-            PREDICTED(OP2);
-            DISPATCH();
-        }
-
         TARGET(OP3) {
-            PyObject *arg = PEEK(1);
+            PyObject *arg = stack_pointer[-1];
             PyObject *res;
             DEOPT_IF(xxx, OP1);
-            POKE(1, res);
-            PREDICT(OP2);
+            stack_pointer[-1] = res;
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
@@ -248,12 +226,12 @@ def test_error_if_pop():
     """
     output = """
         TARGET(OP) {
-            PyObject *right = PEEK(1);
-            PyObject *left = PEEK(2);
+            PyObject *right = stack_pointer[-1];
+            PyObject *left = stack_pointer[-2];
             PyObject *res;
             if (cond) goto pop_2_label;
             STACK_SHRINK(1);
-            POKE(1, res);
+            stack_pointer[-1] = res;
             DISPATCH();
         }
     """
@@ -266,11 +244,11 @@ def test_cache_effect():
     """
     output = """
         TARGET(OP) {
-            PyObject *value = PEEK(1);
+            PyObject *value = stack_pointer[-1];
             uint16_t counter = read_u16(&next_instr[0].cache);
             uint32_t extra = read_u32(&next_instr[1].cache);
             STACK_SHRINK(1);
-            JUMPBY(3);
+            next_instr += 3;
             DISPATCH();
         }
     """
@@ -285,59 +263,6 @@ def test_suppress_dispatch():
     output = """
         TARGET(OP) {
             goto somewhere;
-        }
-    """
-    run_cases_test(input, output)
-
-def test_super_instruction():
-    # TODO: Test cache effect
-    input = """
-        inst(OP1, (counter/1, arg --)) {
-            op1();
-        }
-        inst(OP2, (extra/2, arg --)) {
-            op2();
-        }
-        super(OP) = OP1 + OP2;
-    """
-    output = """
-        TARGET(OP1) {
-            PyObject *arg = PEEK(1);
-            uint16_t counter = read_u16(&next_instr[0].cache);
-            op1();
-            STACK_SHRINK(1);
-            JUMPBY(1);
-            DISPATCH();
-        }
-
-        TARGET(OP2) {
-            PyObject *arg = PEEK(1);
-            uint32_t extra = read_u32(&next_instr[0].cache);
-            op2();
-            STACK_SHRINK(1);
-            JUMPBY(2);
-            DISPATCH();
-        }
-
-        TARGET(OP) {
-            PyObject *_tmp_1 = PEEK(1);
-            PyObject *_tmp_2 = PEEK(2);
-            {
-                PyObject *arg = _tmp_1;
-                uint16_t counter = read_u16(&next_instr[0].cache);
-                op1();
-            }
-            JUMPBY(1);
-            NEXTOPARG();
-            JUMPBY(1);
-            {
-                PyObject *arg = _tmp_2;
-                uint32_t extra = read_u32(&next_instr[0].cache);
-                op2();
-            }
-            JUMPBY(2);
-            STACK_SHRINK(2);
-            DISPATCH();
         }
     """
     run_cases_test(input, output)
@@ -358,18 +283,18 @@ def test_macro_instruction():
     """
     output = """
         TARGET(OP1) {
-            PyObject *right = PEEK(1);
-            PyObject *left = PEEK(2);
+            PyObject *right = stack_pointer[-1];
+            PyObject *left = stack_pointer[-2];
             uint16_t counter = read_u16(&next_instr[0].cache);
             op1(left, right);
-            JUMPBY(1);
+            next_instr += 1;
             DISPATCH();
         }
 
         TARGET(OP) {
-            PyObject *_tmp_1 = PEEK(1);
-            PyObject *_tmp_2 = PEEK(2);
-            PyObject *_tmp_3 = PEEK(3);
+            PyObject *_tmp_1 = stack_pointer[-1];
+            PyObject *_tmp_2 = stack_pointer[-2];
+            PyObject *_tmp_3 = stack_pointer[-3];
             {
                 PyObject *right = _tmp_1;
                 PyObject *left = _tmp_2;
@@ -387,22 +312,22 @@ def test_macro_instruction():
                 res = op2(arg2, left, right);
                 _tmp_3 = res;
             }
-            JUMPBY(5);
+            next_instr += 5;
             static_assert(INLINE_CACHE_ENTRIES_OP == 5, "incorrect cache size");
             STACK_SHRINK(2);
-            POKE(1, _tmp_3);
+            stack_pointer[-1] = _tmp_3;
             DISPATCH();
         }
 
         TARGET(OP3) {
-            PyObject *right = PEEK(1);
-            PyObject *left = PEEK(2);
-            PyObject *arg2 = PEEK(3);
+            PyObject *right = stack_pointer[-1];
+            PyObject *left = stack_pointer[-2];
+            PyObject *arg2 = stack_pointer[-3];
             PyObject *res;
             res = op3(arg2, left, right);
             STACK_SHRINK(2);
-            POKE(1, res);
-            JUMPBY(5);
+            stack_pointer[-1] = res;
+            next_instr += 5;
             DISPATCH();
         }
     """
@@ -416,9 +341,9 @@ def test_array_input():
     """
     output = """
         TARGET(OP) {
-            PyObject *above = PEEK(1);
-            PyObject **values = &PEEK(1 + oparg*2);
-            PyObject *below = PEEK(2 + oparg*2);
+            PyObject *above = stack_pointer[-1];
+            PyObject **values = (stack_pointer - (1 + oparg*2));
+            PyObject *below = stack_pointer[-(2 + oparg*2)];
             spam();
             STACK_SHRINK(oparg*2);
             STACK_SHRINK(2);
@@ -440,8 +365,8 @@ def test_array_output():
             PyObject *above;
             spam(values, oparg);
             STACK_GROW(oparg*3);
-            POKE(1, above);
-            POKE(2 + oparg*3, below);
+            stack_pointer[-1] = above;
+            stack_pointer[-(2 + oparg*3)] = below;
             DISPATCH();
         }
     """
@@ -455,11 +380,11 @@ def test_array_input_output():
     """
     output = """
         TARGET(OP) {
-            PyObject **values = &PEEK(oparg);
+            PyObject **values = (stack_pointer - oparg);
             PyObject *above;
             spam(values, oparg);
             STACK_GROW(1);
-            POKE(1, above);
+            stack_pointer[-1] = above;
             DISPATCH();
         }
     """
@@ -473,31 +398,11 @@ def test_array_error_if():
     """
     output = """
         TARGET(OP) {
-            PyObject **values = &PEEK(oparg);
-            PyObject *extra = PEEK(1 + oparg);
+            PyObject **values = (stack_pointer - oparg);
+            PyObject *extra = stack_pointer[-(1 + oparg)];
             if (oparg == 0) { STACK_SHRINK(oparg); goto pop_1_somewhere; }
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
-            DISPATCH();
-        }
-    """
-    run_cases_test(input, output)
-
-def test_register():
-    input = """
-        register inst(OP, (counter/1, left, right -- result)) {
-            result = op(left, right);
-        }
-    """
-    output = """
-        TARGET(OP) {
-            PyObject *left = REG(oparg1);
-            PyObject *right = REG(oparg2);
-            PyObject *result;
-            uint16_t counter = read_u16(&next_instr[0].cache);
-            result = op(left, right);
-            Py_XSETREF(REG(oparg3), result);
-            JUMPBY(1);
             DISPATCH();
         }
     """
@@ -511,18 +416,18 @@ def test_cond_effect():
     """
     output = """
         TARGET(OP) {
-            PyObject *cc = PEEK(1);
-            PyObject *input = ((oparg & 1) == 1) ? PEEK(1 + (((oparg & 1) == 1) ? 1 : 0)) : NULL;
-            PyObject *aa = PEEK(2 + (((oparg & 1) == 1) ? 1 : 0));
+            PyObject *cc = stack_pointer[-1];
+            PyObject *input = ((oparg & 1) == 1) ? stack_pointer[-(1 + (((oparg & 1) == 1) ? 1 : 0))] : NULL;
+            PyObject *aa = stack_pointer[-(2 + (((oparg & 1) == 1) ? 1 : 0))];
             PyObject *xx;
             PyObject *output = NULL;
             PyObject *zz;
             output = spam(oparg, input);
             STACK_SHRINK((((oparg & 1) == 1) ? 1 : 0));
             STACK_GROW(((oparg & 2) ? 1 : 0));
-            POKE(1, zz);
-            if (oparg & 2) { POKE(1 + ((oparg & 2) ? 1 : 0), output); }
-            POKE(2 + ((oparg & 2) ? 1 : 0), xx);
+            stack_pointer[-1] = zz;
+            if (oparg & 2) { stack_pointer[-(1 + ((oparg & 2) ? 1 : 0))] = output; }
+            stack_pointer[-(2 + ((oparg & 2) ? 1 : 0))] = xx;
             DISPATCH();
         }
     """

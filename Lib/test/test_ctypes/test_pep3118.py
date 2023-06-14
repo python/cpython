@@ -1,5 +1,10 @@
 import unittest
-from ctypes import *
+from ctypes import (CFUNCTYPE, POINTER, sizeof, Union,
+                    Structure, LittleEndianStructure, BigEndianStructure,
+                    c_char, c_byte, c_ubyte,
+                    c_short, c_ushort, c_int, c_uint,
+                    c_long, c_ulong, c_longlong, c_ulonglong, c_uint64,
+                    c_bool, c_float, c_double, c_longdouble, py_object)
 import re, sys
 
 if sys.byteorder == "little":
@@ -28,7 +33,7 @@ class Test(unittest.TestCase):
                 if shape:
                     self.assertEqual(len(v), shape[0])
                 else:
-                    self.assertEqual(len(v) * sizeof(itemtp), sizeof(ob))
+                    self.assertRaises(TypeError, len, v)
                 self.assertEqual(v.itemsize, sizeof(itemtp))
                 self.assertEqual(v.shape, shape)
                 # XXX Issue #12851: PyCData_NewGetBuffer() must provide strides
@@ -39,11 +44,10 @@ class Test(unittest.TestCase):
                 # they are always read/write
                 self.assertFalse(v.readonly)
 
-                if v.shape:
-                    n = 1
-                    for dim in v.shape:
-                        n = n * dim
-                    self.assertEqual(n * v.itemsize, len(v.tobytes()))
+                n = 1
+                for dim in v.shape:
+                    n = n * dim
+                self.assertEqual(n * v.itemsize, len(v.tobytes()))
             except:
                 # so that we can see the failing type
                 print(tp)
@@ -58,7 +62,7 @@ class Test(unittest.TestCase):
                 if shape:
                     self.assertEqual(len(v), shape[0])
                 else:
-                    self.assertEqual(len(v) * sizeof(itemtp), sizeof(ob))
+                    self.assertRaises(TypeError, len, v)
                 self.assertEqual(v.itemsize, sizeof(itemtp))
                 self.assertEqual(v.shape, shape)
                 # XXX Issue #12851
@@ -67,11 +71,10 @@ class Test(unittest.TestCase):
                 # they are always read/write
                 self.assertFalse(v.readonly)
 
-                if v.shape:
-                    n = 1
-                    for dim in v.shape:
-                        n = n * dim
-                    self.assertEqual(n, len(v))
+                n = 1
+                for dim in v.shape:
+                    n = n * dim
+                self.assertEqual(n * v.itemsize, len(v.tobytes()))
             except:
                 # so that we can see the failing type
                 print(tp)
@@ -243,7 +246,7 @@ class LEPoint(LittleEndianStructure):
 #
 endian_types = [
     (BEPoint, "T{>l:x:>l:y:}".replace('l', s_long), (), BEPoint),
-    (LEPoint, "T{<l:x:<l:y:}".replace('l', s_long), (), LEPoint),
+    (LEPoint * 1, "T{<l:x:<l:y:}".replace('l', s_long), (1,), LEPoint),
     (POINTER(BEPoint), "&T{>l:x:>l:y:}".replace('l', s_long), (), POINTER(BEPoint)),
     (POINTER(LEPoint), "&T{<l:x:<l:y:}".replace('l', s_long), (), POINTER(LEPoint)),
     ]
