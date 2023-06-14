@@ -428,7 +428,7 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
             ERROR_IF(*target_local == NULL, error);
             // The STORE_FAST is already done.
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP + 1);
+            SKIP_OVER(INLINE_CACHE_ENTRIES_BINARY_OP + 1);
         }
 
         macro(BINARY_OP_INPLACE_ADD_UNICODE) =
@@ -555,7 +555,7 @@ dummy_func(
             STACK_SHRINK(2);
             new_frame->localsplus[0] = container;
             new_frame->localsplus[1] = sub;
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
+            SKIP_OVER(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
             frame->return_offset = 0;
             DISPATCH_INLINED(new_frame);
         }
@@ -877,7 +877,7 @@ dummy_func(
                 gen->gi_frame_state = FRAME_EXECUTING;
                 gen->gi_exc_state.previous_item = tstate->exc_info;
                 tstate->exc_info = &gen->gi_exc_state;
-                JUMPBY(INLINE_CACHE_ENTRIES_SEND);
+                SKIP_OVER(INLINE_CACHE_ENTRIES_SEND);
                 DISPATCH_INLINED(gen_frame);
             }
             if (Py_IsNone(v) && PyIter_Check(receiver)) {
@@ -916,7 +916,7 @@ dummy_func(
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
-            JUMPBY(INLINE_CACHE_ENTRIES_SEND);
+            SKIP_OVER(INLINE_CACHE_ENTRIES_SEND);
             DISPATCH_INLINED(gen_frame);
         }
 
@@ -1903,7 +1903,7 @@ dummy_func(
             int shrink_stack = !(oparg & 1);
             STACK_SHRINK(shrink_stack);
             new_frame->localsplus[0] = owner;
-            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
+            SKIP_OVER(INLINE_CACHE_ENTRIES_LOAD_ATTR);
             frame->return_offset = 0;
             DISPATCH_INLINED(new_frame);
         }
@@ -1931,7 +1931,7 @@ dummy_func(
             STACK_SHRINK(shrink_stack);
             new_frame->localsplus[0] = owner;
             new_frame->localsplus[1] = Py_NewRef(name);
-            JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
+            SKIP_OVER(INLINE_CACHE_ENTRIES_LOAD_ATTR);
             frame->return_offset = 0;
             DISPATCH_INLINED(new_frame);
         }
@@ -2354,8 +2354,9 @@ dummy_func(
                        next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg].op.code == INSTRUMENTED_END_FOR);
                 Py_DECREF(iter);
                 STACK_SHRINK(1);
+                SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
                 /* Jump forward oparg, then skip following END_FOR instruction */
-                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
+                JUMPBY(oparg + 1);
                 DISPATCH();
             }
             // Common case: no jump, leave it to the code generator
@@ -2404,8 +2405,9 @@ dummy_func(
             }
             Py_DECREF(iter);
             STACK_SHRINK(1);
+            SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
             /* Jump forward oparg, then skip following END_FOR instruction */
-            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
+            JUMPBY(oparg + 1);
             DISPATCH();
         end_for_iter_list:
             // Common case: no jump, leave it to the code generator
@@ -2426,8 +2428,9 @@ dummy_func(
             }
             Py_DECREF(iter);
             STACK_SHRINK(1);
+            SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
             /* Jump forward oparg, then skip following END_FOR instruction */
-            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
+            JUMPBY(oparg + 1);
             DISPATCH();
         end_for_iter_tuple:
             // Common case: no jump, leave it to the code generator
@@ -2440,8 +2443,9 @@ dummy_func(
             if (r->len <= 0) {
                 STACK_SHRINK(1);
                 Py_DECREF(r);
+                SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
                 // Jump over END_FOR instruction.
-                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
+                JUMPBY(oparg + 1);
                 DISPATCH();
             }
             long value = r->start;
@@ -2465,7 +2469,7 @@ dummy_func(
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
-            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER);
+            SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
             assert(next_instr[oparg].op.code == END_FOR ||
                    next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
             DISPATCH_INLINED(gen_frame);
@@ -2736,7 +2740,7 @@ dummy_func(
                 if (new_frame == NULL) {
                     goto error;
                 }
-                JUMPBY(INLINE_CACHE_ENTRIES_CALL);
+                SKIP_OVER(INLINE_CACHE_ENTRIES_CALL);
                 frame->return_offset = 0;
                 DISPATCH_INLINED(new_frame);
             }
@@ -2810,7 +2814,7 @@ dummy_func(
             }
             // Manipulate stack directly since we leave using DISPATCH_INLINED().
             STACK_SHRINK(oparg + 2);
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
+            SKIP_OVER(INLINE_CACHE_ENTRIES_CALL);
             frame->return_offset = 0;
             DISPATCH_INLINED(new_frame);
         }
@@ -2848,7 +2852,7 @@ dummy_func(
             }
             // Manipulate stack and cache directly since we leave using DISPATCH_INLINED().
             STACK_SHRINK(oparg + 2);
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
+            SKIP_OVER(INLINE_CACHE_ENTRIES_CALL);
             frame->return_offset = 0;
             DISPATCH_INLINED(new_frame);
         }
@@ -3091,7 +3095,7 @@ dummy_func(
             Py_DECREF(method);
             STACK_SHRINK(3);
             // CALL + POP_TOP
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL + 1);
+            SKIP_OVER(INLINE_CACHE_ENTRIES_CALL + 1);
             assert(next_instr[-1].op.code == POP_TOP);
             DISPATCH();
         }
