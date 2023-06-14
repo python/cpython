@@ -1,11 +1,11 @@
-import unittest
+import _ctypes_test
 import ctypes
+import unittest
 from ctypes import (CDLL,
                     c_byte, c_ubyte, c_char,
                     c_short, c_ushort, c_int, c_uint,
                     c_long, c_ulong, c_longlong, c_ulonglong,
                     c_float, c_double, c_longdouble)
-import _ctypes_test
 
 
 class CFunctions(unittest.TestCase):
@@ -189,6 +189,7 @@ class CFunctions(unittest.TestCase):
         self.assertEqual(self.S(), 42)
         self.assertEqual(self._dll.tv_i(-42), None)
         self.assertEqual(self.S(), -42)
+
 
 # The following repeats the above tests with stdcall functions (where
 # they are available)

@@ -1,7 +1,7 @@
-import unittest
-import ctypes
-
 import _ctypes_test
+import ctypes
+import unittest
+
 
 class UnicodeTestCase(unittest.TestCase):
     def test_wcslen(self):

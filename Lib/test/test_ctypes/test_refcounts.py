@@ -1,17 +1,18 @@
+import _ctypes_test
 import ctypes
 import gc
 import sys
 import unittest
 from test import support
 
+
 MyCallback = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int)
 OtherCallback = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.c_ulonglong)
 
-import _ctypes_test
 dll = ctypes.CDLL(_ctypes_test.__file__)
 
-class RefcountTestCase(unittest.TestCase):
 
+class RefcountTestCase(unittest.TestCase):
     @support.refcount_test
     def test_1(self):
         f = dll._testfunc_callback_i_if
@@ -33,7 +34,6 @@ class RefcountTestCase(unittest.TestCase):
         gc.collect()
 
         self.assertEqual(sys.getrefcount(callback), 2)
-
 
     @support.refcount_test
     def test_refcount(self):
@@ -82,10 +82,9 @@ class RefcountTestCase(unittest.TestCase):
         gc.collect()
         self.assertEqual(sys.getrefcount(func), 2)
 
+
 class AnotherLeak(unittest.TestCase):
     def test_callback(self):
-        import sys
-
         proto = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.c_int)
         def func(a, b):
             return a * b * 2
@@ -109,6 +108,7 @@ class AnotherLeak(unittest.TestCase):
                 # Check that calling func does not affect None's refcount.
                 for _ in range(10000):
                     func()
+
 
 if __name__ == '__main__':
     unittest.main()

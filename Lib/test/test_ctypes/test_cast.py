@@ -4,8 +4,8 @@ from ctypes import (Structure, Union, POINTER, cast, sizeof, addressof,
                     c_void_p, c_char_p, c_wchar_p,
                     c_byte, c_short, c_int)
 
-class Test(unittest.TestCase):
 
+class Test(unittest.TestCase):
     def test_array2pointer(self):
         array = (c_int * 3)(42, 17, 2)
 
@@ -80,7 +80,7 @@ class Test(unittest.TestCase):
     def test_wchar_p(self):
         s = c_wchar_p("hiho")
         self.assertEqual(cast(cast(s, c_void_p), c_wchar_p).value,
-                             "hiho")
+                         "hiho")
 
     def test_bad_type_arg(self):
         # The type argument must be a ctypes pointer type.
@@ -94,6 +94,7 @@ class Test(unittest.TestCase):
         class MyUnion(Union):
             _fields_ = [("a", c_int)]
         self.assertRaises(TypeError, cast, array, MyUnion)
+
 
 if __name__ == "__main__":
     unittest.main()

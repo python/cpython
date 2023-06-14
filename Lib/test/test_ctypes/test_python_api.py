@@ -1,20 +1,12 @@
-import unittest
+import _ctypes
 import sys
+import unittest
 from test import support
-from ctypes import (pythonapi, POINTER, c_buffer, sizeof,
+from ctypes import (pythonapi, POINTER, create_string_buffer, sizeof,
                     py_object, c_char_p, c_char, c_long, c_size_t)
 
 
-################################################################
-# This section should be moved into ctypes\__init__.py, when it's ready.
-
-from _ctypes import PyObj_FromPtr
-
-################################################################
-
-
 class PythonAPITestCase(unittest.TestCase):
-
     def test_PyBytes_FromStringAndSize(self):
         PyBytes_FromStringAndSize = pythonapi.PyBytes_FromStringAndSize
 
@@ -58,7 +50,7 @@ class PythonAPITestCase(unittest.TestCase):
         s = "abc def ghi jkl"
         ref = sys.getrefcount(s)
         # id(python-object) is the address
-        pyobj = PyObj_FromPtr(id(s))
+        pyobj = _ctypes.PyObj_FromPtr(id(s))
         self.assertIs(s, pyobj)
 
         self.assertEqual(sys.getrefcount(s), ref + 1)
@@ -69,7 +61,7 @@ class PythonAPITestCase(unittest.TestCase):
         PyOS_snprintf = pythonapi.PyOS_snprintf
         PyOS_snprintf.argtypes = POINTER(c_char), c_size_t, c_char_p
 
-        buf = c_buffer(256)
+        buf = create_string_buffer(256)
         PyOS_snprintf(buf, sizeof(buf), b"Hello from %s", b"ctypes")
         self.assertEqual(buf.value, b"Hello from ctypes")
 
