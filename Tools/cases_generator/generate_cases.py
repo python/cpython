@@ -226,7 +226,7 @@ class Formatter:
     def cast(self, dst: StackEffect, src: StackEffect) -> str:
         return f"({dst.type or 'PyObject *'})" if src.type != dst.type else ""
 
-INSTRUCTION_FLAGS = ['HAS_ARG', 'HAS_CONST', 'HAS_NAME']
+INSTRUCTION_FLAGS = ['HAS_ARG', 'HAS_CONST', 'HAS_NAME', 'HAS_JUMP']
 
 @dataclasses.dataclass
 class Instruction:
@@ -281,6 +281,7 @@ class Instruction:
             'HAS_ARG'  :  variable_used(inst, "oparg"),
             'HAS_CONST':  variable_used(inst, "FRAME_CO_CONSTS"),
             'HAS_NAME' :  variable_used(inst, "FRAME_CO_NAMES"),
+            'HAS_JUMP' :  variable_used(inst, "JUMPBY"),
         }
         assert set(flag_data.keys()) == set(INSTRUCTION_FLAGS)
         self.flags = 0
