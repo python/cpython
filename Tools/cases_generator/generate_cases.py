@@ -510,7 +510,7 @@ class OverriddenInstructionPlaceHolder:
     name: str
 
 
-AnyInstruction = Instruction | MacroInstruction
+AnyInstruction = Instruction | MacroInstruction | PseudoInstruction
 INSTR_FMT_PREFIX = "INSTR_FMT_"
 INSTR_FLAG_SUFFIX = "_FLAG"
 
@@ -550,6 +550,7 @@ class Analyzer:
     macros: dict[str, parser.Macro]
     macro_instrs: dict[str, MacroInstruction]
     families: dict[str, parser.Family]
+    pseudos: dict[str, parser.Pseudo]
     pseudo_instrs: dict[str, PseudoInstruction]
 
     def parse(self) -> None:
@@ -607,7 +608,7 @@ class Analyzer:
 
         # Parse from start
         psr.setpos(start)
-        thing: parser.InstDef | parser.Macro | parser.Family | None
+        thing: parser.InstDef | parser.Macro | parser.Pseudo | parser.Family | None
         thing_first_token = psr.peek()
         while thing := psr.definition():
             if ws := [w for w in RESERVED_WORDS if variable_used(thing, w)]:
@@ -927,7 +928,7 @@ class Analyzer:
                 popped = str(-low)
                 pushed = str(sp - low)
             case parser.Pseudo():
-                instr = self.pseudos[thing.name]
+                instr = self.pseudo_instrs[thing.name]
                 popped = pushed = None
                 # Calculate stack effect, and check that it's the the same
                 # for all targets.
