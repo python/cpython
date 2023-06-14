@@ -12,11 +12,8 @@ extern "C" {
 static inline void
 _PyStaticObject_CheckRefcnt(PyObject *obj) {
     if (Py_REFCNT(obj) < _Py_IMMORTAL_REFCNT) {
-        PyObject *repr = PyObject_Repr(obj);
-        PySys_FormatStderr(
-            "Immortal Object has less refcnt than expected. "
-            "Object: %U\n", repr);
-        Py_DECREF(repr);
+        fprintf(stderr, "Immortal Object has less refcnt than expected.\n");
+        _PyObject_Dump(obj);
     }
 }
 #endif
