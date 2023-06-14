@@ -2388,6 +2388,14 @@ These are not used in annotations. They are building blocks for declaring types.
    .. versionchanged:: 3.13
       Removed support for the keyword-argument method of creating ``TypedDict``\ s.
 
+   .. deprecated-removed:: 3.13 3.15
+      When using the functional syntax to create a TypedDict class, failing to
+      pass a value to the 'fields' parameter (``TD = TypedDict("TD")``) is
+      deprecated. Passing ``None`` to the 'fields' parameter
+      (``TD = TypedDict("TD", None)``) is also deprecated. Both will be
+      disallowed in Python 3.15. To create a TypedDict class with 0 fields,
+      use ``class TD(TypedDict): pass`` or ``TD = TypedDict("TD", {})``.
+
 Protocols
 ---------
 
