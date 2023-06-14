@@ -1,14 +1,17 @@
+import _ctypes_test
+import ctypes
 import unittest
-from ctypes import *
+from ctypes import (CDLL, Structure, CFUNCTYPE, sizeof,
+                    c_void_p, c_char_p, c_char, c_int, c_uint, c_long)
 
 try:
-    WINFUNCTYPE
-except NameError:
+    WINFUNCTYPE = ctypes.WINFUNCTYPE
+except AttributeError:
     # fake to enable this test on Linux
     WINFUNCTYPE = CFUNCTYPE
 
-import _ctypes_test
 lib = CDLL(_ctypes_test.__file__)
+
 
 class CFuncPtrTestCase(unittest.TestCase):
     def test_basic(self):
@@ -20,8 +23,8 @@ class CFuncPtrTestCase(unittest.TestCase):
         x = X(func)
         self.assertEqual(x.restype, c_int)
         self.assertEqual(x.argtypes, (c_int, c_int))
-        self.assertEqual(sizeof(x), sizeof(c_voidp))
-        self.assertEqual(sizeof(X), sizeof(c_voidp))
+        self.assertEqual(sizeof(x), sizeof(c_void_p))
+        self.assertEqual(sizeof(X), sizeof(c_void_p))
 
     def test_first(self):
         StdCallback = WINFUNCTYPE(c_int, c_int, c_int)
@@ -39,7 +42,7 @@ class CFuncPtrTestCase(unittest.TestCase):
         # possible, as in C, to call cdecl functions with more parameters.
         #self.assertRaises(TypeError, c, 1, 2, 3)
         self.assertEqual(c(1, 2, 3, 4, 5, 6), 3)
-        if not WINFUNCTYPE is CFUNCTYPE:
+        if WINFUNCTYPE is not CFUNCTYPE:
             self.assertRaises(TypeError, s, 1, 2, 3)
 
     def test_structures(self):
@@ -91,7 +94,7 @@ class CFuncPtrTestCase(unittest.TestCase):
 
         def NoNullHandle(value):
             if not value:
-                raise WinError()
+                raise ctypes.WinError()
             return value
 
         strchr = lib.my_strchr
@@ -127,6 +130,7 @@ class CFuncPtrTestCase(unittest.TestCase):
         from ctypes import _CFuncPtr
 
         self.assertRaises(TypeError, _CFuncPtr, 13, "name", 42, "iid")
+
 
 if __name__ == '__main__':
     unittest.main()

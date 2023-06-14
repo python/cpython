@@ -936,7 +936,7 @@ call_instrumentation_vector(
     }
     assert(!_PyErr_Occurred(tstate));
     assert(args[0] == NULL);
-    PyCodeObject *code = frame->f_code;
+    PyCodeObject *code = _PyFrame_GetCode(frame);
     assert(code->_co_instrumentation_version == tstate->interp->monitoring_version);
     assert(is_version_up_to_date(code, tstate->interp));
     assert(instrumentation_cross_checks(tstate->interp, code));
@@ -1017,7 +1017,7 @@ _Py_call_instrumentation_jump(
     assert(frame->prev_instr == instr);
     /* Event should occur after the jump */
     frame->prev_instr = target;
-    PyCodeObject *code = frame->f_code;
+    PyCodeObject *code = _PyFrame_GetCode(frame);
     int to = (int)(target - _PyCode_CODE(code));
     PyObject *to_obj = PyLong_FromLong(to * (int)sizeof(_Py_CODEUNIT));
     if (to_obj == NULL) {
@@ -1094,7 +1094,7 @@ int
 _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame, _Py_CODEUNIT *instr, _Py_CODEUNIT *prev)
 {
     frame->prev_instr = instr;
-    PyCodeObject *code = frame->f_code;
+    PyCodeObject *code = _PyFrame_GetCode(frame);
     assert(is_version_up_to_date(code, tstate->interp));
     assert(instrumentation_cross_checks(tstate->interp, code));
     int i = (int)(instr - _PyCode_CODE(code));
@@ -1162,7 +1162,7 @@ done:
 int
 _Py_call_instrumentation_instruction(PyThreadState *tstate, _PyInterpreterFrame* frame, _Py_CODEUNIT *instr)
 {
-    PyCodeObject *code = frame->f_code;
+    PyCodeObject *code = _PyFrame_GetCode(frame);
     assert(is_version_up_to_date(code, tstate->interp));
     assert(instrumentation_cross_checks(tstate->interp, code));
     int offset = (int)(instr - _PyCode_CODE(code));
@@ -1632,7 +1632,7 @@ instrument_all_executing_code_objects(PyInterpreterState *interp) {
         _PyInterpreterFrame *frame = ts->cframe->current_frame;
         while (frame) {
             if (frame->owner != FRAME_OWNED_BY_CSTACK) {
-                if (_Py_Instrument(frame->f_code, interp)) {
+                if (_Py_Instrument(_PyFrame_GetCode(frame), interp)) {
                     return -1;
                 }
             }

@@ -693,8 +693,7 @@ class _BasePurePath:
             raise ValueError("empty pattern")
 
 
-
-class PurePath(_BasePurePath, os.PathLike):
+class PurePath(_BasePurePath):
     """Base class for manipulating paths without I/O.
 
     PurePath represents a filesystem path and offers operations which
