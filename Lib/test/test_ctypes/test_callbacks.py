@@ -1,4 +1,5 @@
 import functools
+import sys
 import unittest
 from test import support
 
@@ -106,15 +107,14 @@ class Callbacks(unittest.TestCase):
 
     def test_pyobject(self):
         o = ()
-        from sys import getrefcount as grc
         for o in (), [], object():
-            initial = grc(o)
+            initial = sys.getrefcount(o)
             # This call leaks a reference to 'o'...
             self.check_type(py_object, o)
-            before = grc(o)
+            before = sys.getrefcount(o)
             # ...but this call doesn't leak any more.  Where is the refcount?
             self.check_type(py_object, o)
-            after = grc(o)
+            after = sys.getrefcount(o)
             self.assertEqual((after, o), (before, o))
 
     def test_unsupported_restype_1(self):

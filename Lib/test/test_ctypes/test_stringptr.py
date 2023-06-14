@@ -1,4 +1,5 @@
 import unittest
+import sys
 from test import support
 from ctypes import CDLL, Structure, POINTER, c_buffer, c_char, c_char_p
 
@@ -17,10 +18,9 @@ class StringPtrTestCase(unittest.TestCase):
         # NULL pointer access
         self.assertRaises(ValueError, getattr, x.str, "contents")
         b = c_buffer(b"Hello, World")
-        from sys import getrefcount as grc
-        self.assertEqual(grc(b), 2)
+        self.assertEqual(sys.getrefcount(b), 2)
         x.str = b
-        self.assertEqual(grc(b), 3)
+        self.assertEqual(sys.getrefcount(b), 3)
 
         # POINTER(c_char) and Python string is NOT compatible
         # POINTER(c_char) and c_buffer() is compatible

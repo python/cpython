@@ -1,7 +1,7 @@
 # This tests the internal _objects attribute
+import sys
 import unittest
 from ctypes import Structure, POINTER, c_char_p, c_int
-from sys import getrefcount as grc
 
 # XXX This test must be reviewed for correctness!!!
 
@@ -20,16 +20,16 @@ class ObjectsTestCase(unittest.TestCase):
 
     def test_ints(self):
         i = 42000123
-        refcnt = grc(i)
+        refcnt = sys.getrefcount(i)
         ci = c_int(i)
-        self.assertEqual(refcnt, grc(i))
+        self.assertEqual(refcnt, sys.getrefcount(i))
         self.assertEqual(ci._objects, None)
 
     def test_c_char_p(self):
         s = b"Hello, World"
-        refcnt = grc(s)
+        refcnt = sys.getrefcount(s)
         cs = c_char_p(s)
-        self.assertEqual(refcnt + 1, grc(s))
+        self.assertEqual(refcnt + 1, sys.getrefcount(s))
         self.assertSame(cs._objects, s)
 
     def test_simple_struct(self):
