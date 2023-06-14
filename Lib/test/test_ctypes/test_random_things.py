@@ -1,3 +1,4 @@
+import _ctypes
 import contextlib
 import ctypes
 import sys
@@ -10,14 +11,13 @@ def callback_func(arg):
     42 / arg
     raise ValueError(arg)
 
+
 @unittest.skipUnless(sys.platform == "win32", 'Windows-specific test')
 class call_function_TestCase(unittest.TestCase):
     # _ctypes.call_function is deprecated and private, but used by
     # Gary Bishp's readline module.  If we have it, we must test it as well.
 
     def test(self):
-        from _ctypes import call_function
-
         kernel32 = ctypes.windll.kernel32
         kernel32.LoadLibraryA.restype = c_void_p
         kernel32.GetProcAddress.argtypes = c_void_p, c_char_p
@@ -26,8 +26,9 @@ class call_function_TestCase(unittest.TestCase):
         hdll = kernel32.LoadLibraryA(b"kernel32")
         funcaddr = kernel32.GetProcAddress(hdll, b"GetModuleHandleA")
 
-        self.assertEqual(call_function(funcaddr, (None,)),
+        self.assertEqual(_ctypes.call_function(funcaddr, (None,)),
                          kernel32.GetModuleHandleA(None))
+
 
 class CallbackTracbackTestCase(unittest.TestCase):
     # When an exception is raised in a ctypes callback function, the C

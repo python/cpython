@@ -1,7 +1,4 @@
 # This tests the internal _objects attribute
-import sys
-import unittest
-from ctypes import Structure, POINTER, c_char_p, c_int
 
 # XXX This test must be reviewed for correctness!!!
 
@@ -13,6 +10,11 @@ from ctypes import Structure, POINTER, c_char_p, c_int
 # for aggregate types like strings or pointers in particular.
 #
 # What about pointers?
+
+import sys
+import unittest
+from ctypes import Structure, POINTER, c_char_p, c_int
+
 
 class ObjectsTestCase(unittest.TestCase):
     def assertSame(self, a, b):
@@ -95,6 +97,7 @@ class ObjectsTestCase(unittest.TestCase):
 ##XXX        print x._objects
 ##XXX        print x.data[0]
 ##XXX        print x.data._objects
+
 
 if __name__ == '__main__':
     unittest.main()

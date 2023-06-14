@@ -1,13 +1,13 @@
+import _ctypes_test
+import os
+import unittest
 from ctypes import (CDLL, Structure, sizeof, POINTER, byref, alignment,
                     LittleEndianStructure, BigEndianStructure,
                     c_byte, c_ubyte, c_char, c_char_p, c_void_p, c_wchar,
                     c_uint32, c_uint64,
                     c_short, c_ushort, c_int, c_uint, c_long, c_ulong, c_longlong, c_ulonglong)
 from test import support
-import unittest
-import os
 
-import _ctypes_test
 
 class BITS(Structure):
     _fields_ = [("A", c_int, 1),
@@ -55,6 +55,7 @@ class C_Test(unittest.TestCase):
                 b = BITS()
                 setattr(b, name, i)
                 self.assertEqual(getattr(b, name), func(byref(b), name.encode('ascii')))
+
 
 signed_int_types = (c_byte, c_short, c_int, c_long, c_longlong)
 unsigned_int_types = (c_ubyte, c_ushort, c_uint, c_ulong, c_ulonglong)
@@ -116,7 +117,6 @@ class BitFieldTest(unittest.TestCase):
             self.assertEqual((c_typ, x.a, x.b, x.c), (c_typ, 7, 0, 0))
             x.a, x.b = 0, -1
             self.assertEqual((c_typ, x.a, x.b, x.c), (c_typ, 0, 7, 0))
-
 
     def fail_fields(self, *fields):
         return self.get_except(type(Structure), "X", (),
@@ -193,7 +193,6 @@ class BitFieldTest(unittest.TestCase):
         self.assertEqual(X.a.offset, sizeof(c_short)*0)
         self.assertEqual(X.b.offset, sizeof(c_short)*1)
         self.assertEqual(X.c.offset, sizeof(c_short)*2)
-
 
     def get_except(self, func, *args, **kw):
         try:
@@ -290,6 +289,7 @@ class BitFieldTest(unittest.TestCase):
         x.b = 1
         x.c = 2
         self.assertEqual(b, b'\xab\xcd\xef\x12')
+
 
 if __name__ == "__main__":
     unittest.main()

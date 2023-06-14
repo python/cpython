@@ -2,6 +2,7 @@ import unittest
 import test.support
 from ctypes import c_int, Union, Structure, sizeof
 
+
 class AnonTest(unittest.TestCase):
 
     def test_anon(self):
@@ -68,6 +69,7 @@ class AnonTest(unittest.TestCase):
         self.assertEqual(Y.b.offset, sizeof(c_int))
         self.assertEqual(Y._.offset, sizeof(c_int))
         self.assertEqual(Y.y.offset, sizeof(c_int) * 2)
+
 
 if __name__ == "__main__":
     unittest.main()

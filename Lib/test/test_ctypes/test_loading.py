@@ -1,3 +1,5 @@
+import _ctypes
+import _ctypes_test
 import ctypes
 import os
 import shutil
@@ -5,12 +7,13 @@ import subprocess
 import sys
 import test.support
 import unittest
-from test.support import import_helper, os_helper
 from ctypes import CDLL, cdll, addressof, c_void_p, c_char_p
 from ctypes.util import find_library
+from test.support import import_helper, os_helper
 
 
 libc_name = None
+
 
 def setUpModule():
     global libc_name
@@ -24,6 +27,7 @@ def setUpModule():
     if test.support.verbose:
         print("libc_name is", libc_name)
 
+
 class LoaderTest(unittest.TestCase):
 
     unknowndll = "xxrandomnamexx"
@@ -33,7 +37,6 @@ class LoaderTest(unittest.TestCase):
             test_lib = libc_name
         else:
             if os.name == "nt":
-                import _ctypes_test
                 test_lib = _ctypes_test.__file__
             else:
                 self.skipTest('could not find library to load')
@@ -83,7 +86,6 @@ class LoaderTest(unittest.TestCase):
     @unittest.skipUnless(os.name == "nt",
                          'test specific to Windows')
     def test_load_ordinal_functions(self):
-        import _ctypes_test
         dll = ctypes.WinDLL(_ctypes_test.__file__)
         # We load the same function both via ordinal and name
         func_ord = dll[2]
@@ -99,14 +101,13 @@ class LoaderTest(unittest.TestCase):
 
     @unittest.skipUnless(os.name == "nt", 'Windows-specific test')
     def test_1703286_A(self):
-        from _ctypes import LoadLibrary, FreeLibrary
         # On winXP 64-bit, advapi32 loads at an address that does
         # NOT fit into a 32-bit integer.  FreeLibrary must be able
         # to accept this address.
 
         # These are tests for https://bugs.python.org/issue1703286
-        handle = LoadLibrary("advapi32")
-        FreeLibrary(handle)
+        handle = _ctypes.LoadLibrary("advapi32")
+        _ctypes.FreeLibrary(handle)
 
     @unittest.skipUnless(os.name == "nt", 'Windows-specific test')
     def test_1703286_B(self):
@@ -114,7 +115,6 @@ class LoaderTest(unittest.TestCase):
         # above, the (arbitrarily selected) CloseEventLog function
         # also has a high address.  'call_function' should accept
         # addresses so large.
-        from _ctypes import call_function
 
         advapi32 = ctypes.windll.advapi32
         # Calling CloseEventLog with a NULL argument should fail,
@@ -128,7 +128,7 @@ class LoaderTest(unittest.TestCase):
         self.assertTrue(proc)
 
         # This is the real test: call the function via 'call_function'
-        self.assertEqual(0, call_function(proc, (None,)))
+        self.assertEqual(0, _ctypes.call_function(proc, (None,)))
 
     @unittest.skipUnless(os.name == "nt",
                          'test specific to Windows')
