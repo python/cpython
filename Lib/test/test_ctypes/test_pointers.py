@@ -97,7 +97,6 @@ class PointersTestCase(unittest.TestCase):
 ##        print self.result
 
     def test_basics(self):
-        from operator import delitem
         for ct, pt in zip(ctype_types, python_types):
             i = ct(42)
             p = pointer(i)
@@ -108,7 +107,8 @@ class PointersTestCase(unittest.TestCase):
 ##            self.assertEqual(p.contents, 42)
 ##            self.assertEqual(p[0], 42)
 
-            self.assertRaises(TypeError, delitem, p, 0)
+            with self.assertRaises(TypeError):
+                del p[0]
 
     def test_from_address(self):
         from array import array

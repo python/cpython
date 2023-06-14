@@ -46,9 +46,9 @@ class ArrayTestCase(unittest.TestCase):
             with self.assertRaises(IndexError): ia[-alen-1]
 
             # change the items
-            from operator import setitem
             new_values = list(range(42, 42+alen))
-            [setitem(ia, n, new_values[n]) for n in range(alen)]
+            for n in range(alen):
+                ia[n] = new_values[n]
             values = [ia[i] for i in range(alen)]
             self.assertEqual(values, new_values)
 
@@ -78,8 +78,8 @@ class ArrayTestCase(unittest.TestCase):
         self.assertEqual(len(ca), 3)
 
         # cannot delete items
-        from operator import delitem
-        self.assertRaises(TypeError, delitem, ca, 0)
+        with self.assertRaises(TypeError):
+            del ca[0]
 
     def test_step_overflow(self):
         a = (c_int * 5)()
