@@ -2,6 +2,7 @@
 # Byte order related?
 
 import unittest
+import ctypes
 from ctypes import *
 from test.test_ctypes import need_symbol
 
@@ -197,12 +198,8 @@ class CFunctions(unittest.TestCase):
 
 # The following repeats the above tests with stdcall functions (where
 # they are available)
-try:
-    WinDLL
-except NameError:
-    def stdcall_dll(*_): pass
-else:
-    class stdcall_dll(WinDLL):
+if hasattr(ctypes, 'WinDLL'):
+    class stdcall_dll(ctypes.WinDLL):
         def __getattr__(self, name):
             if name[:2] == '__' and name[-2:] == '__':
                 raise AttributeError(name)
@@ -210,9 +207,8 @@ else:
             setattr(self, name, func)
             return func
 
-@need_symbol('WinDLL')
-class stdcallCFunctions(CFunctions):
-    _dll = stdcall_dll(_ctypes_test.__file__)
+    class stdcallCFunctions(CFunctions):
+        _dll = stdcall_dll(_ctypes_test.__file__)
 
 if __name__ == '__main__':
     unittest.main()
