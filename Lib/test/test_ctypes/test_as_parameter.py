@@ -6,7 +6,7 @@ from ctypes import (Structure, CDLL, CFUNCTYPE,
                     c_short, c_int, c_long, c_longlong,
                     c_byte, c_wchar, c_float, c_double,
                     ArgumentError)
-from test.test_ctypes import need_symbol
+
 
 dll = CDLL(_ctypes_test.__file__)
 
@@ -23,7 +23,6 @@ class BasicWrapTestCase(unittest.TestCase):
     def wrap(self, param):
         return param
 
-    @need_symbol('c_wchar')
     def test_wchar_parm(self):
         f = dll._testfunc_i_bhilfd
         f.argtypes = [c_byte, c_wchar, c_int, c_long, c_float, c_double]
@@ -127,9 +126,7 @@ class BasicWrapTestCase(unittest.TestCase):
         result = f(self.wrap(-10), self.wrap(cb))
         self.assertEqual(result, -18)
 
-    @need_symbol('c_longlong')
     def test_longlong_callbacks(self):
-
         f = dll._testfunc_callback_q_qf
         f.restype = c_longlong
 

@@ -1,7 +1,6 @@
 import unittest
 from ctypes import (CDLL, POINTER, sizeof,
                     c_byte, c_short, c_int, c_long, c_char, c_wchar, c_char_p)
-from test.test_ctypes import need_symbol
 
 import _ctypes_test
 
@@ -127,7 +126,6 @@ class SlicesTestCase(unittest.TestCase):
         self.assertEqual(p[2:5:-3], s[2:5:-3])
 
 
-    @need_symbol('c_wchar')
     def test_wchar_ptr(self):
         s = "abcdefghijklmnopqrstuvwxyz\0"
 
