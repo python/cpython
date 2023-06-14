@@ -74,6 +74,14 @@ struct _pythread_runtime_state {
 #endif
 };
 
+/* Hangs the thread indefinitely without exiting it.
+ *
+ * bpo-42969: There is no safe way to exit a thread other than returning
+ * normally from its start function.  This is used during finalization in lieu
+ * of actually exiting the thread.  Since the program is expected to terminate
+ * soon anyway, it does not matter if the thread stack stays around until then.
+ */
+void _Py_NO_RETURN PyThread_hang_thread(void);
 
 #ifdef __cplusplus
 }

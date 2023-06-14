@@ -359,6 +359,14 @@ PyThread_exit_thread(void)
     pthread_exit(0);
 }
 
+void _Py_NO_RETURN
+PyThread_hang_thread(void)
+{
+    while (1) {
+        pause();
+    }
+}
+
 #ifdef USE_SEMAPHORES
 
 /*

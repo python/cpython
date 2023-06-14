@@ -7,6 +7,7 @@
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // _Py_RunGC()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
+#include "pycore_pythread.h"      // PyThread_hang_thread()
 
 /*
    Notes about the implementation:
@@ -382,7 +383,7 @@ take_gil(PyThreadState *tstate)
            This code path can be reached by a daemon thread after Py_Finalize()
            completes. In this case, tstate is a dangling pointer: points to
            PyThreadState freed memory. */
-        PyThread_exit_thread();
+        PyThread_hang_thread();
     }
 
     assert(is_tstate_valid(tstate));
@@ -424,7 +425,9 @@ take_gil(PyThreadState *tstate)
                 if (drop_requested) {
                     RESET_GIL_DROP_REQUEST(interp);
                 }
-                PyThread_exit_thread();
+                // gh-87135: hang the thread as *thread_exit() is not a safe
+                // API. It lacks stack unwind and local variable destruction.
+                PyThread_hang_thread();
             }
             assert(is_tstate_valid(tstate));
 
@@ -455,7 +458,7 @@ _ready:
 
     if (tstate_must_exit(tstate)) {
         /* bpo-36475: If Py_Finalize() has been called and tstate is not
-           the thread which called Py_Finalize(), exit immediately the
+           the thread which called Py_Finalize(), bpo-42969: hang the
            thread.
 
            This code path can be reached by a daemon thread which was waiting
@@ -463,7 +466,7 @@ _ready:
            wait_for_thread_shutdown() from Py_Finalize(). */
         MUTEX_UNLOCK(gil->mutex);
         drop_gil(ceval, tstate);
-        PyThread_exit_thread();
+        PyThread_hang_thread();
     }
     assert(is_tstate_valid(tstate));
 
@@ -1123,4 +1126,3 @@ _Py_HandlePending(PyThreadState *tstate)
 
     return 0;
 }
-
