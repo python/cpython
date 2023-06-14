@@ -1,17 +1,14 @@
-"""
-Here is probably the place to write the docs, since the test-cases
-show how the type behave.
-
-Later...
-"""
-
+import _ctypes_test
 import ctypes
+import sys
+import unittest
 from ctypes import (CDLL, Structure, Array, CFUNCTYPE,
                     byref, POINTER, pointer, ArgumentError,
                     c_char, c_wchar, c_byte, c_char_p,
                     c_short, c_int, c_long, c_longlong,
                     c_float, c_double, c_longdouble)
-import sys, unittest
+from _ctypes import _Pointer,  _SimpleCData
+
 
 try:
     WINFUNCTYPE = ctypes.WINFUNCTYPE
@@ -19,16 +16,20 @@ except AttributeError:
     # fake to enable this test on Linux
     WINFUNCTYPE = CFUNCTYPE
 
-import _ctypes_test
 dll = CDLL(_ctypes_test.__file__)
 if sys.platform == "win32":
     windll = ctypes.WinDLL(_ctypes_test.__file__)
 
+
 class POINT(Structure):
     _fields_ = [("x", c_int), ("y", c_int)]
+
+
 class RECT(Structure):
     _fields_ = [("left", c_int), ("top", c_int),
                 ("right", c_int), ("bottom", c_int)]
+
+
 class FunctionTestCase(unittest.TestCase):
 
     def test_mro(self):
@@ -44,12 +45,10 @@ class FunctionTestCase(unittest.TestCase):
                 _length_ = 5
                 _type_ = "i"
 
-        from _ctypes import _Pointer
         with self.assertRaises(TypeError):
             class X(object, _Pointer):
                 pass
 
-        from _ctypes import _SimpleCData
         with self.assertRaises(TypeError):
             class X(object, _SimpleCData):
                 _type_ = "i"
@@ -406,6 +405,7 @@ class FunctionTestCase(unittest.TestCase):
 
         callback = proto(callback)
         self.assertRaises(ArgumentError, lambda: callback((1, 2, 3, 4), POINT()))
+
 
 if __name__ == '__main__':
     unittest.main()

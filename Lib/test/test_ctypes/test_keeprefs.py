@@ -1,6 +1,8 @@
+import gc
 import sys
 import unittest
-from ctypes import Structure, POINTER, pointer, c_char_p, c_int
+from ctypes import (Structure, POINTER, pointer,  _pointer_type_cache,
+                    c_char_p, c_int)
 
 
 class SimpleTestCase(unittest.TestCase):
@@ -19,6 +21,7 @@ class SimpleTestCase(unittest.TestCase):
         self.assertEqual(x._objects, b"abc")
         x = c_char_p(b"spam")
         self.assertEqual(x._objects, b"spam")
+
 
 class StructureTestCase(unittest.TestCase):
     def test_cint_struct(self):
@@ -66,6 +69,7 @@ class StructureTestCase(unittest.TestCase):
         r.lr = POINT()
         self.assertEqual(r._objects, {'0': {}, '1': {}})
 
+
 class ArrayTestCase(unittest.TestCase):
     def test_cint_array(self):
         INTARR = c_int * 3
@@ -89,11 +93,13 @@ class ArrayTestCase(unittest.TestCase):
         x.a = ia
         self.assertEqual(x._objects, {'1': {}})
 
+
 class PointerTestCase(unittest.TestCase):
     def test_p_cint(self):
         i = c_int(42)
         x = pointer(i)
         self.assertEqual(x._objects, {'1': i})
+
 
 class DeletePointerTestCase(unittest.TestCase):
     @unittest.skip('test disabled')
@@ -112,7 +118,6 @@ class DeletePointerTestCase(unittest.TestCase):
 ##        del x
 ##        print "2?", sys.getrefcount(i)
 ##        del i
-        import gc
         gc.collect()
         for i in range(320):
             c_int(99)
@@ -125,6 +130,7 @@ class DeletePointerTestCase(unittest.TestCase):
 ##        print x.p[0]
         print("+" * 42)
         print(x._objects)
+
 
 class PointerToStructure(unittest.TestCase):
     def test(self):
@@ -147,8 +153,8 @@ class PointerToStructure(unittest.TestCase):
 
         # to avoid leaking when tests are run several times
         # clean up the types left in the cache.
-        from ctypes import _pointer_type_cache
         del _pointer_type_cache[POINT]
+
 
 if __name__ == "__main__":
     unittest.main()

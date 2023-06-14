@@ -1,3 +1,4 @@
+import _ctypes_test
 import ctypes
 import unittest
 from ctypes import CDLL, c_int
@@ -11,10 +12,7 @@ class CHECKED(c_int):
 
 
 class Test(unittest.TestCase):
-
     def test_checkretval(self):
-
-        import _ctypes_test
         dll = CDLL(_ctypes_test.__file__)
         self.assertEqual(42, dll._testfunc_p_p(42))
 
@@ -32,7 +30,6 @@ class Test(unittest.TestCase):
     def test_oledll(self):
         oleaut32 = ctypes.oledll.oleaut32
         self.assertRaises(OSError, oleaut32.CreateTypeLib2, 0, None, None)
-
 
 
 if __name__ == "__main__":

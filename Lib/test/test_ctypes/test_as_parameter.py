@@ -16,8 +16,10 @@ except AttributeError:
     # fake to enable this test on Linux
     CALLBACK_FUNCTYPE = CFUNCTYPE
 
+
 class POINT(Structure):
     _fields_ = [("x", c_int), ("y", c_int)]
+
 
 class BasicWrapTestCase(unittest.TestCase):
     def wrap(self, param):
@@ -70,8 +72,6 @@ class BasicWrapTestCase(unittest.TestCase):
         cb = CallBack(callback)
         f(self.wrap(2**18), self.wrap(cb))
         self.assertEqual(args, expected)
-
-    ################################################################
 
     def test_callbacks(self):
         f = dll._testfunc_callback_i_if
@@ -194,8 +194,6 @@ class BasicWrapTestCase(unittest.TestCase):
                              (9*2, 8*3, 7*4, 6*5, 5*6, 4*7, 3*8, 2*9))
 
     def test_recursive_as_param(self):
-        from ctypes import c_int
-
         class A(object):
             pass
 
@@ -205,8 +203,6 @@ class BasicWrapTestCase(unittest.TestCase):
             c_int.from_param(a)
 
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 class AsParamWrapper(object):
     def __init__(self, param):
         self._as_parameter_ = param
@@ -214,7 +210,6 @@ class AsParamWrapper(object):
 class AsParamWrapperTestCase(BasicWrapTestCase):
     wrap = AsParamWrapper
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 class AsParamPropertyWrapper(object):
     def __init__(self, param):
@@ -227,7 +222,6 @@ class AsParamPropertyWrapper(object):
 class AsParamPropertyWrapperTestCase(BasicWrapTestCase):
     wrap = AsParamPropertyWrapper
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 if __name__ == '__main__':
     unittest.main()

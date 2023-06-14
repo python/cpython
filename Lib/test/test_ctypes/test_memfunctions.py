@@ -1,11 +1,12 @@
 import sys
-from test import support
 import unittest
+from test import support
 from ctypes import (POINTER, sizeof, cast,
                     create_string_buffer, string_at,
                     create_unicode_buffer, wstring_at,
                     memmove, memset,
                     c_char_p, c_byte, c_ubyte, c_wchar)
+
 
 class MemFunctionsTest(unittest.TestCase):
     @unittest.skip('test disabled')
@@ -76,6 +77,7 @@ class MemFunctionsTest(unittest.TestCase):
         self.assertEqual(wstring_at(a, 5), "Hello")
         self.assertEqual(wstring_at(a, 16), "Hello, World\0\0\0\0")
         self.assertEqual(wstring_at(a, 0), "")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,24 +1,25 @@
+import _ctypes_test
+import ctypes
 import functools
+import gc
+import math
 import sys
 import unittest
-from test import support
-
-import ctypes
+from _ctypes import CTYPES_MAX_ARGCOUNT
 from ctypes import (CDLL, cdll, Structure, CFUNCTYPE,
                     ArgumentError, POINTER, sizeof,
                     c_byte, c_ubyte, c_char, c_char_p,
                     c_short, c_ushort, c_int, c_uint,
                     c_long, c_longlong, c_ulonglong, c_ulong,
                     c_float, c_double, c_longdouble, py_object)
-from _ctypes import CTYPES_MAX_ARGCOUNT
-import _ctypes_test
+from ctypes.util import find_library
+from test import support
 
 
 class Callbacks(unittest.TestCase):
     functype = CFUNCTYPE
 
 ##    def tearDown(self):
-##        import gc
 ##        gc.collect()
 
     def callback(self, *args):
@@ -81,7 +82,6 @@ class Callbacks(unittest.TestCase):
 
     def test_float(self):
         # only almost equal: double -> float -> double
-        import math
         self.check_type(c_float, math.e)
         self.check_type(c_float, -math.e)
 
@@ -138,7 +138,6 @@ class Callbacks(unittest.TestCase):
             def __init__(self):
                 self.v = proto(self.func)
 
-        import gc
         for i in range(32):
             X()
         gc.collect()
@@ -147,7 +146,6 @@ class Callbacks(unittest.TestCase):
         self.assertEqual(len(live), 0)
 
     def test_issue12483(self):
-        import gc
         class Nasty:
             def __del__(self):
                 gc.collect()
@@ -172,8 +170,6 @@ if hasattr(ctypes, 'WINFUNCTYPE'):
         functype = ctypes.WINFUNCTYPE
 
 
-################################################################
-
 class SampleCallbacksTestCase(unittest.TestCase):
 
     def test_integrate(self):
@@ -197,7 +193,6 @@ class SampleCallbacksTestCase(unittest.TestCase):
         self.assertLess(diff, 0.01, "%s not less than 0.01" % diff)
 
     def test_issue_8959_a(self):
-        from ctypes.util import find_library
         libc_path = find_library("c")
         if not libc_path:
             self.skipTest('could not find libc')

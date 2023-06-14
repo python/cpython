@@ -1,9 +1,3 @@
-from ctypes import (CDLL, CFUNCTYPE, POINTER, ArgumentError,
-                    pointer, byref, sizeof, addressof,
-                    c_void_p, c_char_p, c_wchar_p, c_char, c_wchar, c_buffer,
-                    c_short, c_int, c_long, c_longlong, c_double)
-import unittest
-
 # IMPORTANT INFO:
 #
 # Consider this call:
@@ -25,7 +19,15 @@ import unittest
 # In this case, there would have to be an additional reference to the argument...
 
 import _ctypes_test
+import unittest
+from ctypes import (CDLL, CFUNCTYPE, POINTER, ArgumentError,
+                    pointer, byref, sizeof, addressof, create_string_buffer,
+                    c_void_p, c_char_p, c_wchar_p, c_char, c_wchar,
+                    c_short, c_int, c_long, c_longlong, c_double)
+
+
 testdll = CDLL(_ctypes_test.__file__)
+
 
 # Return machine address `a` as a (possibly long) non-negative integer.
 # Starting with Python 2.5, id(anything) is always non-negative, and
@@ -40,12 +42,13 @@ def positive_address(a):
     assert a >= 0
     return a
 
+
 def c_wbuffer(init):
     n = len(init) + 1
     return (c_wchar * n)(*init)
 
-class CharPointersTestCase(unittest.TestCase):
 
+class CharPointersTestCase(unittest.TestCase):
     def setUp(self):
         func = testdll._testfunc_p_p
         func.restype = c_long
@@ -102,7 +105,7 @@ class CharPointersTestCase(unittest.TestCase):
         self.assertEqual(None, func(c_char_p(None)))
         self.assertEqual(b"123", func(c_char_p(b"123")))
 
-        self.assertEqual(b"123", func(c_buffer(b"123")))
+        self.assertEqual(b"123", func(create_string_buffer(b"123")))
         ca = c_char(b"a")
         self.assertEqual(ord(b"a"), func(pointer(ca))[0])
         self.assertEqual(ord(b"a"), func(byref(ca))[0])
@@ -117,7 +120,7 @@ class CharPointersTestCase(unittest.TestCase):
         self.assertEqual(None, func(c_char_p(None)))
         self.assertEqual(b"123", func(c_char_p(b"123")))
 
-        self.assertEqual(b"123", func(c_buffer(b"123")))
+        self.assertEqual(b"123", func(create_string_buffer(b"123")))
         ca = c_char(b"a")
         self.assertEqual(ord(b"a"), func(pointer(ca))[0])
         self.assertEqual(ord(b"a"), func(byref(ca))[0])
@@ -132,7 +135,7 @@ class CharPointersTestCase(unittest.TestCase):
         self.assertEqual(b"123", func(c_char_p(b"123")))
         self.assertEqual(None, func(c_char_p(None)))
 
-        self.assertEqual(b"123", func(c_buffer(b"123")))
+        self.assertEqual(b"123", func(create_string_buffer(b"123")))
         ca = c_char(b"a")
         self.assertEqual(ord(b"a"), func(pointer(ca))[0])
         self.assertEqual(ord(b"a"), func(byref(ca))[0])
@@ -162,8 +165,8 @@ class CharPointersTestCase(unittest.TestCase):
         func.argtypes = None
         self.assertEqual(None, func(X()))
 
-class WCharPointersTestCase(unittest.TestCase):
 
+class WCharPointersTestCase(unittest.TestCase):
     def setUp(self):
         func = testdll._testfunc_p_p
         func.restype = c_int
@@ -203,6 +206,7 @@ class WCharPointersTestCase(unittest.TestCase):
         self.assertEqual("a", func(pointer(ca))[0])
         self.assertEqual("a", func(byref(ca))[0])
 
+
 class ArrayTest(unittest.TestCase):
     def test(self):
         func = testdll._testfunc_ai8
@@ -216,7 +220,6 @@ class ArrayTest(unittest.TestCase):
         def func(): pass
         CFUNCTYPE(None, c_int * 3)(func)
 
-################################################################
 
 if __name__ == '__main__':
     unittest.main()
