@@ -148,7 +148,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 
 /* JUMPBY makes the generator identify the instruction as a jump. SKIP_OVER is
  * for advancing to the next instruction, taking into account cache entries
- * and skipped instructions into account.
+ * and skipped instructions.
  */
 #define JUMPBY(x)       (next_instr += (x))
 #define SKIP_OVER(x)    (next_instr += (x))
