@@ -680,7 +680,7 @@ class _BasePurePath:
         """
         Return True if this path matches the given pattern.
         """
-        if not isinstance(path_pattern, PurePath):
+        if not isinstance(path_pattern, _BasePurePath):
             path_pattern = self.with_segments(path_pattern)
         if case_sensitive is None:
             case_sensitive = _is_case_sensitive(self._flavour)
