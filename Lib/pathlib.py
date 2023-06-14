@@ -809,12 +809,12 @@ class Path(PurePath):
             return False
         return True
 
-    def is_dir(self):
+    def is_dir(self, *, follow_symlinks=True):
         """
         Whether this path is a directory.
         """
         try:
-            return S_ISDIR(self.stat().st_mode)
+            return S_ISDIR(self.stat(follow_symlinks=follow_symlinks).st_mode)
         except OSError as e:
             if not _ignore_error(e):
                 raise

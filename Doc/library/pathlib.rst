@@ -953,13 +953,19 @@ call fails (for example because the path doesn't exist).
    if the file's gid isn't found in the system database.
 
 
-.. method:: Path.is_dir()
+.. method:: Path.is_dir(*, follow_symlinks=True)
 
-   Return ``True`` if the path points to a directory (or a symbolic link
-   pointing to a directory), ``False`` if it points to another kind of file.
+   Return ``True`` if the path points to a directory, ``False`` if it points
+   to another kind of file.
+
+   This method normally follows symlinks; to exclude symlinks to directories,
+   add the argument ``follow_symlinks=False``.
 
    ``False`` is also returned if the path doesn't exist or is a broken symlink;
    other errors (such as permission errors) are propagated.
+
+   .. versionchanged:: 3.13
+      The *follow_symlinks* parameter was added.
 
 
 .. method:: Path.is_file()

@@ -2623,9 +2623,22 @@ class PathTest(unittest.TestCase):
         if os_helper.can_symlink():
             self.assertFalse((P / 'linkA').is_dir())
             self.assertTrue((P / 'linkB').is_dir())
-            self.assertFalse((P/ 'brokenLink').is_dir(), False)
-        self.assertIs((P / 'dirA\udfff').is_dir(), False)
-        self.assertIs((P / 'dirA\x00').is_dir(), False)
+            self.assertFalse((P/ 'brokenLink').is_dir())
+        self.assertFalse((P / 'dirA\udfff').is_dir())
+        self.assertFalse((P / 'dirA\x00').is_dir())
+
+    def test_is_dir_no_follow_symlinks(self):
+        P = self.cls(BASE)
+        self.assertTrue((P / 'dirA').is_dir(follow_symlinks=False))
+        self.assertFalse((P / 'fileA').is_dir(follow_symlinks=False))
+        self.assertFalse((P / 'non-existing').is_dir(follow_symlinks=False))
+        self.assertFalse((P / 'fileA' / 'bah').is_dir(follow_symlinks=False))
+        if os_helper.can_symlink():
+            self.assertFalse((P / 'linkA').is_dir(follow_symlinks=False))
+            self.assertFalse((P / 'linkB').is_dir(follow_symlinks=False))
+            self.assertFalse((P/ 'brokenLink').is_dir(follow_symlinks=False))
+        self.assertFalse((P / 'dirA\udfff').is_dir(follow_symlinks=False))
+        self.assertFalse((P / 'dirA\x00').is_dir(follow_symlinks=False))
 
     def test_is_file(self):
         P = self.cls(BASE)
