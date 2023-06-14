@@ -6,7 +6,6 @@ from ctypes import (CDLL, Structure, Union, POINTER, sizeof, byref, alignment,
                     c_uint8, c_uint16, c_uint32,
                     c_short, c_ushort, c_int, c_uint,
                     c_long, c_ulong, c_longlong, c_ulonglong, c_float, c_double)
-from test.test_ctypes import need_symbol
 from struct import calcsize
 import _ctypes_test
 from test import support
@@ -307,7 +306,6 @@ class StructureTestCase(unittest.TestCase):
         self.assertEqual(p.phone.number, b"5678")
         self.assertEqual(p.age, 5)
 
-    @need_symbol('c_wchar')
     def test_structures_with_wchar(self):
         class PersonW(Structure):
             _fields_ = [("name", c_wchar * 12),

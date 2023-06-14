@@ -3,7 +3,6 @@ import unittest
 from ctypes import (Structure, Union, POINTER, cast, sizeof, addressof,
                     c_void_p, c_char_p, c_wchar_p,
                     c_byte, c_short, c_int)
-from test.test_ctypes import need_symbol
 
 class Test(unittest.TestCase):
 
@@ -78,7 +77,6 @@ class Test(unittest.TestCase):
         self.assertEqual(cast(cast(s, c_void_p), c_char_p).value,
                              b"hiho")
 
-    @need_symbol('c_wchar_p')
     def test_wchar_p(self):
         s = c_wchar_p("hiho")
         self.assertEqual(cast(cast(s, c_void_p), c_wchar_p).value,

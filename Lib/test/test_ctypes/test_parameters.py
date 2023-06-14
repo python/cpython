@@ -1,5 +1,4 @@
 import unittest
-from test.test_ctypes import need_symbol
 import test.support
 
 class SimpleTypesTestCase(unittest.TestCase):
@@ -36,7 +35,6 @@ class SimpleTypesTestCase(unittest.TestCase):
         self.assertEqual(CVOIDP.from_param("abc"), "abcabc")
         self.assertEqual(CCHARP.from_param("abc"), "abcabcabcabc")
 
-    @need_symbol('c_wchar_p')
     def test_subclasses_c_wchar_p(self):
         from ctypes import c_wchar_p
 
@@ -66,7 +64,6 @@ class SimpleTypesTestCase(unittest.TestCase):
         a = c_char_p(b"123")
         self.assertIs(c_char_p.from_param(a), a)
 
-    @need_symbol('c_wchar_p')
     def test_cw_strings(self):
         from ctypes import c_wchar_p
 
@@ -86,7 +83,6 @@ class SimpleTypesTestCase(unittest.TestCase):
         self.assertEqual(str(cm.exception),
                          "one character bytes, bytearray or integer expected")
 
-    @need_symbol('c_wchar')
     def test_c_wchar(self):
         from ctypes import c_wchar
 
