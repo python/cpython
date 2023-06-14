@@ -703,10 +703,19 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
    _PyRuntime.imports.pkgcontext, and PyModule_Create*() will
    substitute this (if the name actually matches).
 */
+
+#ifdef HAVE_THREAD_LOCAL
+_Py_thread_local const char *pkgcontext = NULL;
+# undef PKGCONTEXT
+# define PKGCONTEXT pkgcontext
+#endif
+
 const char *
 _PyImport_ResolveNameWithPackageContext(const char *name)
 {
+#ifndef HAVE_THREAD_LOCAL
     PyThread_acquire_lock(EXTENSIONS.mutex, WAIT_LOCK);
+#endif
     if (PKGCONTEXT != NULL) {
         const char *p = strrchr(PKGCONTEXT, '.');
         if (p != NULL && strcmp(name, p+1) == 0) {
@@ -714,17 +723,23 @@ _PyImport_ResolveNameWithPackageContext(const char *name)
             PKGCONTEXT = NULL;
         }
     }
+#ifndef HAVE_THREAD_LOCAL
     PyThread_release_lock(EXTENSIONS.mutex);
+#endif
     return name;
 }
 
 const char *
 _PyImport_SwapPackageContext(const char *newcontext)
 {
+#ifndef HAVE_THREAD_LOCAL
     PyThread_acquire_lock(EXTENSIONS.mutex, WAIT_LOCK);
+#endif
     const char *oldcontext = PKGCONTEXT;
     PKGCONTEXT = newcontext;
+#ifndef HAVE_THREAD_LOCAL
     PyThread_release_lock(EXTENSIONS.mutex);
+#endif
     return oldcontext;
 }
 
