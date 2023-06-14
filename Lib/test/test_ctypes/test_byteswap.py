@@ -1,7 +1,13 @@
 import sys, unittest, struct, math, ctypes
 from binascii import hexlify
 
-from ctypes import *
+from ctypes import (Structure, Union, LittleEndianUnion, BigEndianUnion,
+                    BigEndianStructure, LittleEndianStructure,
+                    POINTER, sizeof, cast,
+                    c_byte, c_ubyte, c_char, c_wchar, c_void_p,
+                    c_short, c_ushort, c_int, c_uint,
+                    c_long, c_ulong, c_longlong, c_ulonglong,
+                    c_uint32, c_float, c_double)
 
 def bin(s):
     return hexlify(memoryview(s)).decode().upper()

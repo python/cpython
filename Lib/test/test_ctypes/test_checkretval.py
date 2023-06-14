@@ -1,14 +1,15 @@
-import unittest
-
 import ctypes
-from ctypes import *
+import unittest
+from ctypes import CDLL, c_int
 from test.test_ctypes import need_symbol
+
 
 class CHECKED(c_int):
     def _check_retval_(value):
         # Receives a CHECKED instance.
         return str(value.value)
     _check_retval_ = staticmethod(_check_retval_)
+
 
 class Test(unittest.TestCase):
 
@@ -31,6 +32,8 @@ class Test(unittest.TestCase):
     def test_oledll(self):
         oleaut32 = ctypes.oledll.oleaut32
         self.assertRaises(OSError, oleaut32.CreateTypeLib2, 0, None, None)
+
+
 
 if __name__ == "__main__":
     unittest.main()

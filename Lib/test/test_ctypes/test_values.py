@@ -6,7 +6,7 @@ import _imp
 import importlib.util
 import unittest
 import sys
-from ctypes import *
+from ctypes import Structure, CDLL, POINTER, pythonapi, c_ubyte, c_char_p, c_int
 from test.support import import_helper
 
 import _ctypes_test

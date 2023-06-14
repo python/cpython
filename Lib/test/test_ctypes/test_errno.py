@@ -2,14 +2,15 @@ import unittest, os, errno
 import threading
 
 import ctypes
-from ctypes import *
+from ctypes import CDLL, c_int, c_char_p, c_wchar_p, get_errno, set_errno
 from ctypes.util import find_library
 
 class Test(unittest.TestCase):
     def test_open(self):
         libc_name = find_library("c")
         if libc_name is None:
-            raise unittest.SkipTest("Unable to find C library")
+            self.skipTest("Unable to find C library")
+
         libc = CDLL(libc_name, use_errno=True)
         if os.name == "nt":
             libc_open = libc._open
@@ -72,6 +73,7 @@ class Test(unittest.TestCase):
         self.assertEqual(ctypes.get_last_error(), 32)
 
         ctypes.set_last_error(0)
+
 
 if __name__ == "__main__":
     unittest.main()

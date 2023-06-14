@@ -3,7 +3,12 @@ import unittest
 from test import support
 
 import ctypes
-from ctypes import *
+from ctypes import (CDLL, cdll, Structure, CFUNCTYPE,
+                    ArgumentError, POINTER, sizeof,
+                    c_byte, c_ubyte, c_char, c_char_p,
+                    c_short, c_ushort, c_int, c_uint,
+                    c_long, c_longlong, c_ulonglong, c_ulong,
+                    c_float, c_double, c_longdouble, py_object)
 from test.test_ctypes import need_symbol
 from _ctypes import CTYPES_MAX_ARGCOUNT
 import _ctypes_test

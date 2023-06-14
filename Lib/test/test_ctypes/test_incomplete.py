@@ -1,7 +1,7 @@
 import ctypes
 import unittest
 import warnings
-from ctypes import *
+from ctypes import Structure, POINTER, pointer, c_char_p
 
 ################################################################
 #

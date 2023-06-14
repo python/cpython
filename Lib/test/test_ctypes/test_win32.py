@@ -1,11 +1,13 @@
 # Windows specific tests
 
+import _ctypes_test
 import ctypes
-from ctypes import *
-import unittest, sys
+import sys
+import unittest
+from ctypes import (CDLL, Structure, POINTER, pointer, sizeof, byref,
+                    c_void_p, c_char, c_int, c_long)
 from test import support
 
-import _ctypes_test
 
 @unittest.skipUnless(sys.platform == "win32", 'Windows-specific test')
 class FunctionCallTestCase(unittest.TestCase):
@@ -94,6 +96,7 @@ class TestWinError(unittest.TestCase):
         self.assertEqual(e.errno, errno.EINVAL)
         self.assertEqual(e.winerror, ERROR_INVALID_PARAMETER)
 
+
 class Structures(unittest.TestCase):
     def test_struct_by_value(self):
         class POINT(Structure):
@@ -135,6 +138,7 @@ class Structures(unittest.TestCase):
         # to not leak references, we must clean _pointer_type_cache
         from ctypes import _pointer_type_cache
         del _pointer_type_cache[RECT]
+
 
 if __name__ == '__main__':
     unittest.main()
