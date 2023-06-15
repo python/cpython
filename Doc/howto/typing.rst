@@ -576,5 +576,4 @@ and ``Iterable[int]`` by static type checkers. This is known as
    result = collect(Bucket())  # Passes type check
 
 Moreover, by subclassing a special class :class:`Protocol`, a user
-can define new custom protocols to fully enjoy structural subtyping
-(see examples below).
+can define new custom protocols to fully enjoy structural subtyping.
