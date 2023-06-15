@@ -10309,6 +10309,7 @@ obj2ast_comprehension(struct ast_state *state, PyObject* obj, comprehension_ty*
         Py_CLEAR(tmp);
     }
     *out = _PyAST_comprehension(target, iter, ifs, is_async, arena);
+    if (*out == NULL) goto failed;
     return 0;
 failed:
     Py_XDECREF(tmp);
@@ -10727,6 +10728,7 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
     }
     *out = _PyAST_arguments(posonlyargs, args, vararg, kwonlyargs, kw_defaults,
                             kwarg, defaults, arena);
+    if (*out == NULL) goto failed;
     return 0;
 failed:
     Py_XDECREF(tmp);
@@ -10866,6 +10868,7 @@ obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out, PyArena* arena)
     }
     *out = _PyAST_arg(arg, annotation, type_comment, lineno, col_offset,
                       end_lineno, end_col_offset, arena);
+    if (*out == NULL) goto failed;
     return 0;
 failed:
     Py_XDECREF(tmp);
@@ -10988,6 +10991,7 @@ obj2ast_keyword(struct ast_state *state, PyObject* obj, keyword_ty* out,
     }
     *out = _PyAST_keyword(arg, value, lineno, col_offset, end_lineno,
                           end_col_offset, arena);
+    if (*out == NULL) goto failed;
     return 0;
 failed:
     Py_XDECREF(tmp);
@@ -11110,6 +11114,7 @@ obj2ast_alias(struct ast_state *state, PyObject* obj, alias_ty* out, PyArena*
     }
     *out = _PyAST_alias(name, asname, lineno, col_offset, end_lineno,
                         end_col_offset, arena);
+    if (*out == NULL) goto failed;
     return 0;
 failed:
     Py_XDECREF(tmp);
@@ -11159,6 +11164,7 @@ obj2ast_withitem(struct ast_state *state, PyObject* obj, withitem_ty* out,
         Py_CLEAR(tmp);
     }
     *out = _PyAST_withitem(context_expr, optional_vars, arena);
+    if (*out == NULL) goto failed;
     return 0;
 failed:
     Py_XDECREF(tmp);
@@ -11246,6 +11252,7 @@ obj2ast_match_case(struct ast_state *state, PyObject* obj, match_case_ty* out,
         Py_CLEAR(tmp);
     }
     *out = _PyAST_match_case(pattern, guard, body, arena);
+    if (*out == NULL) goto failed;
     return 0;
 failed:
     Py_XDECREF(tmp);
