@@ -825,13 +825,13 @@ class Path(PurePath):
             # Non-encodable path
             return False
 
-    def is_file(self):
+    def is_file(self, *, follow_symlinks=True):
         """
         Whether this path is a regular file (also True for symlinks pointing
         to regular files).
         """
         try:
-            return S_ISREG(self.stat().st_mode)
+            return S_ISREG(self.stat(follow_symlinks=follow_symlinks).st_mode)
         except OSError as e:
             if not _ignore_error(e):
                 raise

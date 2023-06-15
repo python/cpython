@@ -958,23 +958,29 @@ call fails (for example because the path doesn't exist).
    Return ``True`` if the path points to a directory, ``False`` if it points
    to another kind of file.
 
-   This method normally follows symlinks; to exclude symlinks to directories,
-   add the argument ``follow_symlinks=False``.
-
    ``False`` is also returned if the path doesn't exist or is a broken symlink;
    other errors (such as permission errors) are propagated.
+
+   This method normally follows symlinks; to exclude symlinks to directories,
+   add the argument ``follow_symlinks=False``.
 
    .. versionchanged:: 3.13
       The *follow_symlinks* parameter was added.
 
 
-.. method:: Path.is_file()
+.. method:: Path.is_file(*, follow_symlinks=True)
 
-   Return ``True`` if the path points to a regular file (or a symbolic link
-   pointing to a regular file), ``False`` if it points to another kind of file.
+   Return ``True`` if the path points to a regular file, ``False`` if it
+   points to another kind of file.
 
    ``False`` is also returned if the path doesn't exist or is a broken symlink;
    other errors (such as permission errors) are propagated.
+
+   This method normally follows symlinks; to exclude symlinks, add the
+   argument ``follow_symlinks=False``.
+
+   .. versionchanged:: 3.13
+      The *follow_symlinks* parameter was added.
 
 
 .. method:: Path.is_junction()

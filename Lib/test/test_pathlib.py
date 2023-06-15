@@ -2205,8 +2205,21 @@ class PathTest(unittest.TestCase):
             self.assertTrue((P / 'linkA').is_file())
             self.assertFalse((P / 'linkB').is_file())
             self.assertFalse((P/ 'brokenLink').is_file())
-        self.assertIs((P / 'fileA\udfff').is_file(), False)
-        self.assertIs((P / 'fileA\x00').is_file(), False)
+        self.assertFalse((P / 'fileA\udfff').is_file())
+        self.assertFalse((P / 'fileA\x00').is_file())
+
+    def test_is_file_no_follow_symlinks(self):
+        P = self.cls(BASE)
+        self.assertTrue((P / 'fileA').is_file(follow_symlinks=False))
+        self.assertFalse((P / 'dirA').is_file(follow_symlinks=False))
+        self.assertFalse((P / 'non-existing').is_file(follow_symlinks=False))
+        self.assertFalse((P / 'fileA' / 'bah').is_file(follow_symlinks=False))
+        if os_helper.can_symlink():
+            self.assertFalse((P / 'linkA').is_file(follow_symlinks=False))
+            self.assertFalse((P / 'linkB').is_file(follow_symlinks=False))
+            self.assertFalse((P/ 'brokenLink').is_file(follow_symlinks=False))
+        self.assertFalse((P / 'fileA\udfff').is_file(follow_symlinks=False))
+        self.assertFalse((P / 'fileA\x00').is_file(follow_symlinks=False))
 
     def test_is_mount(self):
         P = self.cls(BASE)
