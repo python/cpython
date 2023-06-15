@@ -404,10 +404,9 @@ class Sniffer:
         header = next(rdr) # assume first row is header
 
         columns = len(header)
-        columnTypes = {}
+        columnTypes = {i: None for i in range(columns)}
         average_size = 0
         col_are_strings = True
-        for i in range(columns): columnTypes[i] = None
 
         checked = 0
         for row in rdr:
