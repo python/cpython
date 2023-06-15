@@ -559,6 +559,19 @@ def"', """\
     FSTRING_MIDDLE ' final words' (1, 40) (1, 52)
     FSTRING_END "'"           (1, 52) (1, 53)
     """)
+        self.check_tokenize("""\
+f'''{
+3
+=}'''""", """\
+    FSTRING_START "f'''"        (1, 0) (1, 4)
+    OP         '{'           (1, 4) (1, 5)
+    NL         '\\n'          (1, 5) (1, 6)
+    NUMBER     '3'           (2, 0) (2, 1)
+    NL         '\\n'          (2, 1) (2, 2)
+    OP         '='           (3, 0) (3, 1)
+    OP         '}'           (3, 1) (3, 2)
+    FSTRING_END "'''"         (3, 2) (3, 5)
+    """)
 
     def test_function(self):
         self.check_tokenize("def d22(a, b, c=2, d=2, *k): pass", """\
