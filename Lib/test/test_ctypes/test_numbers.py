@@ -225,7 +225,6 @@ class c_int_S(_SimpleCData):
 
 
 def run_test(rep, msg, func, arg=None):
-##    items = [None] * rep
     items = range(rep)
     from time import perf_counter as clock
     if arg is not None:
@@ -243,7 +242,6 @@ def run_test(rep, msg, func, arg=None):
 
 def check_perf():
     # Construct 5 objects
-    from ctypes import c_int
 
     REP = 200000
 
