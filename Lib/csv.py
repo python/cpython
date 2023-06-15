@@ -446,7 +446,8 @@ class Sniffer:
 
         # special case when all columns are strings and columnTypes has been emptied
         if not columnTypes and col_are_strings and columns > 0:
-            # If there are only columns of strings and no column types specified, we update the dictionary to store the average length of all strings
+            # If there are only columns of strings and no column types specified,
+            # update the dictionary to store the average length of all strings
             columnTypes[0] = average_size // columns
 
         for col, colType in columnTypes.items():
