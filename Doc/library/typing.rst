@@ -2159,6 +2159,18 @@ These protocols are decorated with :func:`runtime_checkable`.
     An ABC with one abstract method ``__round__``
     that is covariant in its return type.
 
+ABCs for working with IO
+------------------------
+
+.. class:: IO
+           TextIO
+           BinaryIO
+
+   Generic type ``IO[AnyStr]`` and its subclasses ``TextIO(IO[str])``
+   and ``BinaryIO(IO[bytes])``
+   represent the types of I/O streams such as returned by
+   :func:`open`.
+
 Functions and decorators
 ------------------------
 
@@ -2670,11 +2682,15 @@ Constant
 
    .. versionadded:: 3.5.2
 
-Generic concrete collections
-----------------------------
+.. _generic-concrete-collections:
 
-Corresponding to built-in types
-"""""""""""""""""""""""""""""""
+Deprecated aliases
+------------------
+
+.. _corresponding-to-built-in-types:
+
+Aliases to built-in types
+"""""""""""""""""""""""""
 
 .. class:: Dict(dict, MutableMapping[KT, VT])
 
@@ -2738,8 +2754,10 @@ Corresponding to built-in types
 
 .. note:: :data:`Tuple` is a special form.
 
-Corresponding to types in :mod:`collections`
-""""""""""""""""""""""""""""""""""""""""""""
+.. _corresponding-to-types-in-collections:
+
+Aliases to types in :mod:`collections`
+""""""""""""""""""""""""""""""""""""""
 
 .. class:: DefaultDict(collections.defaultdict, MutableMapping[KT, VT])
 
@@ -2794,21 +2812,10 @@ Corresponding to types in :mod:`collections`
       :class:`collections.deque` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-Other concrete types
-""""""""""""""""""""
+.. _other-concrete-types:
 
-.. class:: IO
-           TextIO
-           BinaryIO
-
-   Generic type ``IO[AnyStr]`` and its subclasses ``TextIO(IO[str])``
-   and ``BinaryIO(IO[bytes])``
-   represent the types of I/O streams such as returned by
-   :func:`open`.
-
-   .. deprecated-removed:: 3.8 3.13
-      The ``typing.io`` namespace is deprecated and will be removed.
-      These types should be directly imported from ``typing`` instead.
+Aliases to other concrete types
+"""""""""""""""""""""""""""""""
 
 .. class:: Pattern
            Match
@@ -2851,11 +2858,11 @@ Other concrete types
       currently planned, but users are encouraged to use
       :class:`str` instead of ``Text``.
 
-Abstract Base Classes
----------------------
+.. _abstract-base-classes:
+.. _corresponding-to-collections-in-collections-abc:
 
-Corresponding to collections in :mod:`collections.abc`
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
+Aliases to container ABCs in :mod:`collections.abc`
+"""""""""""""""""""""""""""""""""""""""""""""""""""
 
 .. class:: AbstractSet(Collection[T_co])
 
@@ -2970,80 +2977,10 @@ Corresponding to collections in :mod:`collections.abc`
       :class:`collections.abc.ValuesView` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-Corresponding to other types in :mod:`collections.abc`
+.. _asynchronous-programming:
+
+Aliases to asynchronous ABCs in :mod:`collections.abc`
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-
-.. class:: Iterable(Generic[T_co])
-
-   Deprecated alias to :class:`collections.abc.Iterable`.
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.Iterable` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: Iterator(Iterable[T_co])
-
-   Deprecated alias to :class:`collections.abc.Iterator`.
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.Iterator` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: Generator(Iterator[YieldType], Generic[YieldType, SendType, ReturnType])
-
-   Deprecated alias to :class:`collections.abc.Generator`.
-
-   A generator can be annotated by the generic type
-   ``Generator[YieldType, SendType, ReturnType]``. For example::
-
-      def echo_round() -> Generator[int, float, str]:
-          sent = yield 0
-          while sent >= 0:
-              sent = yield round(sent)
-          return 'Done'
-
-   Note that unlike many other generics in the typing module, the ``SendType``
-   of :class:`Generator` behaves contravariantly, not covariantly or
-   invariantly.
-
-   If your generator will only yield values, set the ``SendType`` and
-   ``ReturnType`` to ``None``::
-
-      def infinite_stream(start: int) -> Generator[int, None, None]:
-          while True:
-              yield start
-              start += 1
-
-   Alternatively, annotate your generator as having a return type of
-   either ``Iterable[YieldType]`` or ``Iterator[YieldType]``::
-
-      def infinite_stream(start: int) -> Iterator[int]:
-          while True:
-              yield start
-              start += 1
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.Generator` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: Hashable
-
-   Alias to :class:`collections.abc.Hashable`.
-
-.. class:: Reversible(Iterable[T_co])
-
-   Deprecated alias to :class:`collections.abc.Reversible`.
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.Reversible` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: Sized
-
-   Alias to :class:`collections.abc.Sized`.
-
-Asynchronous programming
-""""""""""""""""""""""""
 
 .. class:: Coroutine(Awaitable[ReturnType], Generic[YieldType, SendType, ReturnType])
 
@@ -3134,9 +3071,84 @@ Asynchronous programming
       :class:`collections.abc.Awaitable` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
+.. _corresponding-to-other-types-in-collections-abc:
 
-Context manager types
-"""""""""""""""""""""
+Aliases to other ABCs in :mod:`collections.abc`
+"""""""""""""""""""""""""""""""""""""""""""""""
+
+.. class:: Iterable(Generic[T_co])
+
+   Deprecated alias to :class:`collections.abc.Iterable`.
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.Iterable` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: Iterator(Iterable[T_co])
+
+   Deprecated alias to :class:`collections.abc.Iterator`.
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.Iterator` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: Generator(Iterator[YieldType], Generic[YieldType, SendType, ReturnType])
+
+   Deprecated alias to :class:`collections.abc.Generator`.
+
+   A generator can be annotated by the generic type
+   ``Generator[YieldType, SendType, ReturnType]``. For example::
+
+      def echo_round() -> Generator[int, float, str]:
+          sent = yield 0
+          while sent >= 0:
+              sent = yield round(sent)
+          return 'Done'
+
+   Note that unlike many other generics in the typing module, the ``SendType``
+   of :class:`Generator` behaves contravariantly, not covariantly or
+   invariantly.
+
+   If your generator will only yield values, set the ``SendType`` and
+   ``ReturnType`` to ``None``::
+
+      def infinite_stream(start: int) -> Generator[int, None, None]:
+          while True:
+              yield start
+              start += 1
+
+   Alternatively, annotate your generator as having a return type of
+   either ``Iterable[YieldType]`` or ``Iterator[YieldType]``::
+
+      def infinite_stream(start: int) -> Iterator[int]:
+          while True:
+              yield start
+              start += 1
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.Generator` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: Hashable
+
+   Alias to :class:`collections.abc.Hashable`.
+
+.. class:: Reversible(Iterable[T_co])
+
+   Deprecated alias to :class:`collections.abc.Reversible`.
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.Reversible` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: Sized
+
+   Alias to :class:`collections.abc.Sized`.
+
+.. _context-manager-types:
+
+Aliases to :mod:`contextlib` ABCs
+"""""""""""""""""""""""""""""""""
 
 .. class:: ContextManager(Generic[T_co])
 
