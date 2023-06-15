@@ -2,6 +2,10 @@
 Typing HOWTO
 ============
 
+.. testsetup:: *
+   import typing
+   from typing import *
+
 .. _typing-features-guide:
 
 .. currentmodule:: typing
