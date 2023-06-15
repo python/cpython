@@ -3090,7 +3090,7 @@
         TARGET(ENTER_EXECUTOR) {
             #line 2179 "Python/bytecodes.c"
             PyCodeObject *code = _PyFrame_GetCode(frame);
-            _PyExecutorObject *executor = (_PyExecutorObject *)code->co_executors->executors[oparg];
+            _PyExecutorObject *executor = (_PyExecutorObject *)code->co_executors->executors[oparg&255];
             Py_INCREF(executor);
             frame = executor->execute(executor, frame, stack_pointer);
             if (frame == NULL) {
