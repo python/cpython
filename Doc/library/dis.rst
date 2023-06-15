@@ -1465,26 +1465,47 @@ iterations of the loop.
    an argument from two-byte to four-byte.
 
 
-.. opcode:: FORMAT_VALUE (flags)
+.. opcode:: CONVERT_VALUE (oparg)
 
-   Used for implementing formatted literal strings (f-strings).  Pops
-   an optional *fmt_spec* from the stack, then a required *value*.
-   *flags* is interpreted as follows:
+   Convert value to a string, depending on ``oparg``::
 
-   * ``(flags & 0x03) == 0x00``: *value* is formatted as-is.
-   * ``(flags & 0x03) == 0x01``: call :func:`str` on *value* before
-     formatting it.
-   * ``(flags & 0x03) == 0x02``: call :func:`repr` on *value* before
-     formatting it.
-   * ``(flags & 0x03) == 0x03``: call :func:`ascii` on *value* before
-     formatting it.
-   * ``(flags & 0x04) == 0x04``: pop *fmt_spec* from the stack and use
-     it, else use an empty *fmt_spec*.
+      value = STACK.pop()
+      result = func(value)
+      STACK.push(result)
 
-   Formatting is performed using :c:func:`PyObject_Format`.  The
-   result is pushed on the stack.
+   * ``oparg == 1``: call :func:`str` on *value*
+   * ``oparg == 2``: call :func:`repr` on *value*
+   * ``oparg == 3``: call :func:`ascii` on *value*
 
-   .. versionadded:: 3.6
+   Used for implementing formatted literal strings (f-strings).
+
+   .. versionadded:: 3.13
+
+
+.. opcode:: FORMAT_SIMPLE
+
+   Formats the value on top of stack::
+
+      value = STACK.pop()
+      result = value.__format__("")
+      STACK.push(result)
+
+   Used for implementing formatted literal strings (f-strings).
+
+   .. versionadded:: 3.13
+
+.. opcode:: FORMAT_SPEC
+
+   Formats the given value with the given format spec::
+
+      spec = STACK.pop()
+      value = STACK.pop()
+      result = value.__format__(spec)
+      STACK.push(result)
+
+   Used for implementing formatted literal strings (f-strings).
+
+   .. versionadded:: 3.13
 
 
 .. opcode:: MATCH_CLASS (count)
