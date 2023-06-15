@@ -1039,9 +1039,6 @@ tok_readline_raw(struct tok_state *tok)
         if (line == NULL) {
             return 1;
         }
-        if (tok->tok_mode_stack_index && !update_fstring_expr(tok, 0)) {
-            return 0;
-        }
         if (tok->fp_interactive &&
             tok_concatenate_interactive_new_line(tok, line) == -1) {
             return 0;
@@ -1270,6 +1267,10 @@ tok_underflow_file(struct tok_state *tok) {
         tok->implicit_newline = 1;
     }
 
+    if (tok->tok_mode_stack_index && !update_fstring_expr(tok, 0)) {
+        return 0;
+    }
+
     ADVANCE_LINENO();
     if (tok->decoding_state != STATE_NORMAL) {
         if (tok->lineno > 2) {
@@ -1312,6 +1313,10 @@ tok_underflow_readline(struct tok_state* tok) {
         *tok->inp++ = '\n';
         *tok->inp = '\0';
         tok->implicit_newline = 1;
+    }
+
+    if (tok->tok_mode_stack_index && !update_fstring_expr(tok, 0)) {
+        return 0;
     }
 
     ADVANCE_LINENO();
