@@ -380,7 +380,7 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 static const _PyRuntimeState initial = _PyRuntimeState_INIT(_PyRuntime);
 _Py_COMP_DIAG_POP
 
-#define NUMLOCKS 8
+#define NUMLOCKS 9
 #define LOCKS_INIT(runtime) \
     { \
         &(runtime)->interpreters.mutex, \
@@ -388,6 +388,7 @@ _Py_COMP_DIAG_POP
         &(runtime)->getargs.mutex, \
         &(runtime)->unicode_state.ids.lock, \
         &(runtime)->imports.extensions.mutex, \
+        &(runtime)->ceval.pending_mainthread.lock, \
         &(runtime)->atexit.mutex, \
         &(runtime)->audit_hooks.mutex, \
         &(runtime)->allocators.mutex, \
@@ -891,7 +892,6 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     PyDict_Clear(interp->builtins);
     Py_CLEAR(interp->sysdict);
     Py_CLEAR(interp->builtins);
-    Py_CLEAR(interp->interpreter_trampoline);
 
     if (tstate->interp == interp) {
         /* We are now safe to fix tstate->_status.cleared. */

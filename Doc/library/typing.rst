@@ -2038,6 +2038,19 @@ These are not used in annotations. They are building blocks for declaring types.
    .. versionchanged:: 3.11
       Added support for generic namedtuples.
 
+   .. deprecated-removed:: 3.13 3.15
+      The undocumented keyword argument syntax for creating NamedTuple classes
+      (``NT = NamedTuple("NT", x=int)``) is deprecated, and will be disallowed
+      in 3.15. Use the class-based syntax or the functional syntax instead.
+
+   .. deprecated-removed:: 3.13 3.15
+      When using the functional syntax to create a NamedTuple class, failing to
+      pass a value to the 'fields' parameter (``NT = NamedTuple("NT")``) is
+      deprecated. Passing ``None`` to the 'fields' parameter
+      (``NT = NamedTuple("NT", None)``) is also deprecated. Both will be
+      disallowed in Python 3.15. To create a NamedTuple class with 0 fields,
+      use ``class NT(NamedTuple): pass`` or ``NT = NamedTuple("NT", [])``.
+
 .. class:: NewType(name, tp)
 
    Helper class to create low-overhead :ref:`distinct types <distinct>`.
@@ -2375,493 +2388,13 @@ These are not used in annotations. They are building blocks for declaring types.
    .. versionchanged:: 3.13
       Removed support for the keyword-argument method of creating ``TypedDict``\ s.
 
-Generic concrete collections
-----------------------------
-
-Corresponding to built-in types
-"""""""""""""""""""""""""""""""
-
-.. class:: Dict(dict, MutableMapping[KT, VT])
-
-   Deprecated alias to :class:`dict`.
-
-   Note that to annotate arguments, it is preferred
-   to use an abstract collection type such as :class:`Mapping`
-   rather than to use :class:`dict` or :class:`!typing.Dict`.
-
-   This type can be used as follows::
-
-      def count_words(text: str) -> Dict[str, int]:
-          ...
-
-   .. deprecated:: 3.9
-      :class:`builtins.dict <dict>` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: List(list, MutableSequence[T])
-
-   Deprecated alias to :class:`list`.
-
-   Note that to annotate arguments, it is preferred
-   to use an abstract collection type such as :class:`Sequence` or
-   :class:`Iterable` rather than to use :class:`list` or :class:`!typing.List`.
-
-   This type may be used as follows::
-
-      def vec2[T: (int, float)](x: T, y: T) -> List[T]:
-          return [x, y]
-
-      def keep_positives[T: (int, float)](vector: Sequence[T]) -> List[T]:
-          return [item for item in vector if item > 0]
-
-   .. deprecated:: 3.9
-      :class:`builtins.list <list>` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: Set(set, MutableSet[T])
-
-   Deprecated alias to :class:`builtins.set <set>`.
-
-   Note that to annotate arguments, it is preferred
-   to use an abstract collection type such as :class:`AbstractSet`
-   rather than to use :class:`set` or :class:`!typing.Set`.
-
-   .. deprecated:: 3.9
-      :class:`builtins.set <set>` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: FrozenSet(frozenset, AbstractSet[T_co])
-
-   Deprecated alias to :class:`builtins.frozenset <frozenset>`.
-
-   .. deprecated:: 3.9
-      :class:`builtins.frozenset <frozenset>`
-      now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. note:: :data:`Tuple` is a special form.
-
-Corresponding to types in :mod:`collections`
-""""""""""""""""""""""""""""""""""""""""""""
-
-.. class:: DefaultDict(collections.defaultdict, MutableMapping[KT, VT])
-
-   Deprecated alias to :class:`collections.defaultdict`.
-
-   .. versionadded:: 3.5.2
-
-   .. deprecated:: 3.9
-      :class:`collections.defaultdict` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: OrderedDict(collections.OrderedDict, MutableMapping[KT, VT])
-
-   Deprecated alias to :class:`collections.OrderedDict`.
-
-   .. versionadded:: 3.7.2
-
-   .. deprecated:: 3.9
-      :class:`collections.OrderedDict` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: ChainMap(collections.ChainMap, MutableMapping[KT, VT])
-
-   Deprecated alias to :class:`collections.ChainMap`.
-
-   .. versionadded:: 3.5.4
-   .. versionadded:: 3.6.1
-
-   .. deprecated:: 3.9
-      :class:`collections.ChainMap` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: Counter(collections.Counter, Dict[T, int])
-
-   Deprecated alias to :class:`collections.Counter`.
-
-   .. versionadded:: 3.5.4
-   .. versionadded:: 3.6.1
-
-   .. deprecated:: 3.9
-      :class:`collections.Counter` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: Deque(deque, MutableSequence[T])
-
-   Deprecated alias to :class:`collections.deque`.
-
-   .. versionadded:: 3.5.4
-   .. versionadded:: 3.6.1
-
-   .. deprecated:: 3.9
-      :class:`collections.deque` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-Other concrete types
-""""""""""""""""""""
-
-.. class:: IO
-           TextIO
-           BinaryIO
-
-   Generic type ``IO[AnyStr]`` and its subclasses ``TextIO(IO[str])``
-   and ``BinaryIO(IO[bytes])``
-   represent the types of I/O streams such as returned by
-   :func:`open`.
-
-.. class:: Pattern
-           Match
-
-   Deprecated aliases corresponding to the return types from
-   :func:`re.compile` and :func:`re.match`.
-
-   These types (and the corresponding functions) are generic over
-   :data:`AnyStr`. ``Pattern`` can be specialised as ``Pattern[str]`` or
-   ``Pattern[bytes]``; ``Match`` can be specialised as ``Match[str]`` or
-   ``Match[bytes]``.
-
-   .. deprecated:: 3.9
-      Classes ``Pattern`` and ``Match`` from :mod:`re` now support ``[]``.
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: Text
-
-   Deprecated alias for :class:`str`.
-
-   ``Text`` is provided to supply a forward
-   compatible path for Python 2 code: in Python 2, ``Text`` is an alias for
-   ``unicode``.
-
-   Use ``Text`` to indicate that a value must contain a unicode string in
-   a manner that is compatible with both Python 2 and Python 3::
-
-       def add_unicode_checkmark(text: Text) -> Text:
-           return text + u' \u2713'
-
-   .. versionadded:: 3.5.2
-
-   .. deprecated:: 3.11
-      Python 2 is no longer supported, and most type checkers also no longer
-      support type checking Python 2 code. Removal of the alias is not
-      currently planned, but users are encouraged to use
-      :class:`str` instead of ``Text``.
-
-Abstract Base Classes
----------------------
-
-Corresponding to collections in :mod:`collections.abc`
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-.. class:: AbstractSet(Collection[T_co])
-
-   Deprecated alias to :class:`collections.abc.Set`.
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.Set` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: ByteString(Sequence[int])
-
-   This type represents the types :class:`bytes`, :class:`bytearray`,
-   and :class:`memoryview` of byte sequences.
-
-   .. deprecated-removed:: 3.9 3.14
-      Prefer :class:`collections.abc.Buffer`, or a union like ``bytes | bytearray | memoryview``.
-
-.. class:: Collection(Sized, Iterable[T_co], Container[T_co])
-
-   Deprecated alias to :class:`collections.abc.Collection`.
-
-   .. versionadded:: 3.6.0
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.Collection` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: Container(Generic[T_co])
-
-   Deprecated alias to :class:`collections.abc.Container`.
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.Container` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: ItemsView(MappingView, AbstractSet[tuple[KT_co, VT_co]])
-
-   Deprecated alias to :class:`collections.abc.ItemsView`.
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.ItemsView` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: KeysView(MappingView, AbstractSet[KT_co])
-
-   Deprecated alias to :class:`collections.abc.KeysView`.
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.KeysView` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: Mapping(Collection[KT], Generic[KT, VT_co])
-
-   Deprecated alias to :class:`collections.abc.Mapping`.
-
-   This type can be used as follows::
-
-      def get_position_in_index(word_list: Mapping[str, int], word: str) -> int:
-          return word_list[word]
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.Mapping` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: MappingView(Sized)
-
-   Deprecated alias to :class:`collections.abc.MappingView`.
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.MappingView` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: MutableMapping(Mapping[KT, VT])
-
-   Deprecated alias to :class:`collections.abc.MutableMapping`.
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.MutableMapping`
-      now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: MutableSequence(Sequence[T])
-
-   Deprecated alias to :class:`collections.abc.MutableSequence`.
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.MutableSequence`
-      now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: MutableSet(AbstractSet[T])
-
-   Deprecated alias to :class:`collections.abc.MutableSet`.
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.MutableSet` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: Sequence(Reversible[T_co], Collection[T_co])
-
-   Deprecated alias to :class:`collections.abc.Sequence`.
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.Sequence` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: ValuesView(MappingView, Collection[_VT_co])
-
-   Deprecated alias to :class:`collections.abc.ValuesView`.
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.ValuesView` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-Corresponding to other types in :mod:`collections.abc`
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-.. class:: Iterable(Generic[T_co])
-
-   Deprecated alias to :class:`collections.abc.Iterable`.
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.Iterable` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: Iterator(Iterable[T_co])
-
-   Deprecated alias to :class:`collections.abc.Iterator`.
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.Iterator` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: Generator(Iterator[YieldType], Generic[YieldType, SendType, ReturnType])
-
-   Deprecated alias to :class:`collections.abc.Generator`.
-
-   A generator can be annotated by the generic type
-   ``Generator[YieldType, SendType, ReturnType]``. For example::
-
-      def echo_round() -> Generator[int, float, str]:
-          sent = yield 0
-          while sent >= 0:
-              sent = yield round(sent)
-          return 'Done'
-
-   Note that unlike many other generics in the typing module, the ``SendType``
-   of :class:`Generator` behaves contravariantly, not covariantly or
-   invariantly.
-
-   If your generator will only yield values, set the ``SendType`` and
-   ``ReturnType`` to ``None``::
-
-      def infinite_stream(start: int) -> Generator[int, None, None]:
-          while True:
-              yield start
-              start += 1
-
-   Alternatively, annotate your generator as having a return type of
-   either ``Iterable[YieldType]`` or ``Iterator[YieldType]``::
-
-      def infinite_stream(start: int) -> Iterator[int]:
-          while True:
-              yield start
-              start += 1
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.Generator` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: Hashable
-
-   Deprecated alias to :class:`collections.abc.Hashable`.
-
-   .. deprecated:: 3.12
-      Use :class:`collections.abc.Hashable` directly instead.
-
-.. class:: Reversible(Iterable[T_co])
-
-   Deprecated alias to :class:`collections.abc.Reversible`.
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.Reversible` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: Sized
-
-   Deprecated alias to :class:`collections.abc.Sized`.
-
-   .. deprecated:: 3.12
-      Use :class:`collections.abc.Sized` directly instead.
-
-Asynchronous programming
-""""""""""""""""""""""""
-
-.. class:: Coroutine(Awaitable[ReturnType], Generic[YieldType, SendType, ReturnType])
-
-   Deprecated alias to :class:`collections.abc.Coroutine`.
-
-   The variance and order of type variables
-   correspond to those of :class:`Generator`, for example::
-
-      from collections.abc import Coroutine
-      c: Coroutine[list[str], str, int]  # Some coroutine defined elsewhere
-      x = c.send('hi')                   # Inferred type of 'x' is list[str]
-      async def bar() -> None:
-          y = await c                    # Inferred type of 'y' is int
-
-   .. versionadded:: 3.5.3
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.Coroutine` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: AsyncGenerator(AsyncIterator[YieldType], Generic[YieldType, SendType])
-
-   Deprecated alias to :class:`collections.abc.AsyncGenerator`.
-
-   An async generator can be annotated by the generic type
-   ``AsyncGenerator[YieldType, SendType]``. For example::
-
-      async def echo_round() -> AsyncGenerator[int, float]:
-          sent = yield 0
-          while sent >= 0.0:
-              rounded = await round(sent)
-              sent = yield rounded
-
-   Unlike normal generators, async generators cannot return a value, so there
-   is no ``ReturnType`` type parameter. As with :class:`Generator`, the
-   ``SendType`` behaves contravariantly.
-
-   If your generator will only yield values, set the ``SendType`` to
-   ``None``::
-
-      async def infinite_stream(start: int) -> AsyncGenerator[int, None]:
-          while True:
-              yield start
-              start = await increment(start)
-
-   Alternatively, annotate your generator as having a return type of
-   either ``AsyncIterable[YieldType]`` or ``AsyncIterator[YieldType]``::
-
-      async def infinite_stream(start: int) -> AsyncIterator[int]:
-          while True:
-              yield start
-              start = await increment(start)
-
-   .. versionadded:: 3.6.1
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.AsyncGenerator`
-      now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: AsyncIterable(Generic[T_co])
-
-   Deprecated alias to :class:`collections.abc.AsyncIterable`.
-
-   .. versionadded:: 3.5.2
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.AsyncIterable` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: AsyncIterator(AsyncIterable[T_co])
-
-   Deprecated alias to :class:`collections.abc.AsyncIterator`.
-
-   .. versionadded:: 3.5.2
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.AsyncIterator` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: Awaitable(Generic[T_co])
-
-   Deprecated alias to :class:`collections.abc.Awaitable`.
-
-   .. versionadded:: 3.5.2
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.Awaitable` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-
-Context manager types
-"""""""""""""""""""""
-
-.. class:: ContextManager(Generic[T_co])
-
-   Deprecated alias to :class:`contextlib.AbstractContextManager`.
-
-   .. versionadded:: 3.5.4
-   .. versionadded:: 3.6.0
-
-   .. deprecated:: 3.9
-      :class:`contextlib.AbstractContextManager`
-      now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: AsyncContextManager(Generic[T_co])
-
-   Deprecated alias to :class:`contextlib.AbstractAsyncContextManager`.
-
-   .. versionadded:: 3.5.4
-   .. versionadded:: 3.6.2
-
-   .. deprecated:: 3.9
-      :class:`contextlib.AbstractAsyncContextManager`
-      now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
+   .. deprecated-removed:: 3.13 3.15
+      When using the functional syntax to create a TypedDict class, failing to
+      pass a value to the 'fields' parameter (``TD = TypedDict("TD")``) is
+      deprecated. Passing ``None`` to the 'fields' parameter
+      (``TD = TypedDict("TD", None)``) is also deprecated. Both will be
+      disallowed in Python 3.15. To create a TypedDict class with 0 fields,
+      use ``class TD(TypedDict): pass`` or ``TD = TypedDict("TD", {})``.
 
 Protocols
 ---------
@@ -2899,6 +2432,18 @@ These protocols are decorated with :func:`runtime_checkable`.
 
     An ABC with one abstract method ``__round__``
     that is covariant in its return type.
+
+ABCs for working with IO
+------------------------
+
+.. class:: IO
+           TextIO
+           BinaryIO
+
+   Generic type ``IO[AnyStr]`` and its subclasses ``TextIO(IO[str])``
+   and ``BinaryIO(IO[bytes])``
+   represent the types of I/O streams such as returned by
+   :func:`open`.
 
 Functions and decorators
 ------------------------
@@ -3006,16 +2551,19 @@ Functions and decorators
 
    .. versionadded:: 3.11
 
-.. decorator:: dataclass_transform
+.. decorator:: dataclass_transform(*, eq_default=True, order_default=False, \
+                                   kw_only_default=False, frozen_default=False, \
+                                   field_specifiers=(), **kwargs)
 
    Decorator to mark an object as providing
-   :func:`~dataclasses.dataclass`-like behavior.
+   :func:`dataclass <dataclasses.dataclass>`-like behavior.
 
    ``dataclass_transform`` may be used to
    decorate a class, metaclass, or a function that is itself a decorator.
    The presence of ``@dataclass_transform()`` tells a static type checker that the
    decorated object performs runtime "magic" that
-   transforms a class in a similar way to :func:`dataclasses.dataclass`.
+   transforms a class in a similar way to
+   :func:`@dataclasses.dataclass <dataclasses.dataclass>`.
 
    Example usage with a decorator function:
 
@@ -3069,42 +2617,71 @@ Functions and decorators
    customize the default behaviors of the decorated class, metaclass, or
    function:
 
-   * ``eq_default`` indicates whether the ``eq`` parameter is assumed to be
-     ``True`` or ``False`` if it is omitted by the caller.
-   * ``order_default`` indicates whether the ``order`` parameter is
-     assumed to be True or False if it is omitted by the caller.
-   * ``kw_only_default`` indicates whether the ``kw_only`` parameter is
-     assumed to be True or False if it is omitted by the caller.
-   * ``frozen_default`` indicates whether the ``frozen`` parameter is
-     assumed to be True or False if it is omitted by the caller.
+   :param bool eq_default:
+       Indicates whether the ``eq`` parameter is assumed to be
+       ``True`` or ``False`` if it is omitted by the caller.
+       Defaults to ``True``.
 
-     .. versionadded:: 3.12
-   * ``field_specifiers`` specifies a static list of supported classes
-     or functions that describe fields, similar to ``dataclasses.field()``.
-   * Arbitrary other keyword arguments are accepted in order to allow for
-     possible future extensions.
+   :param bool order_default:
+       Indicates whether the ``order`` parameter is
+       assumed to be ``True`` or ``False`` if it is omitted by the caller.
+       Defaults to ``False``.
 
-   Type checkers recognize the following optional arguments on field
+   :param bool kw_only_default:
+       Indicates whether the ``kw_only`` parameter is
+       assumed to be ``True`` or ``False`` if it is omitted by the caller.
+       Defaults to ``False``.
+
+   :param bool frozen_default:
+       Indicates whether the ``frozen`` parameter is
+       assumed to be ``True`` or ``False`` if it is omitted by the caller.
+       Defaults to ``False``.
+
+       .. versionadded:: 3.12
+
+   :param field_specifiers:
+       Specifies a static list of supported classes
+       or functions that describe fields, similar to :func:`dataclasses.field`.
+       Defaults to ``()``.
+   :type field_specifiers: tuple[Callable[..., Any], ...]
+
+   :param Any \**kwargs:
+       Arbitrary other keyword arguments are accepted in order to allow for
+       possible future extensions.
+
+   Type checkers recognize the following optional parameters on field
    specifiers:
 
-   * ``init`` indicates whether the field should be included in the
-     synthesized ``__init__`` method. If unspecified, ``init`` defaults to
-     ``True``.
-   * ``default`` provides the default value for the field.
-   * ``default_factory`` provides a runtime callback that returns the
-     default value for the field. If neither ``default`` nor
-     ``default_factory`` are specified, the field is assumed to have no
-     default value and must be provided a value when the class is
-     instantiated.
-   * ``factory`` is an alias for ``default_factory``.
-   * ``kw_only`` indicates whether the field should be marked as
-     keyword-only. If ``True``, the field will be keyword-only. If
-     ``False``, it will not be keyword-only. If unspecified, the value of
-     the ``kw_only`` parameter on the object decorated with
-     ``dataclass_transform`` will be used, or if that is unspecified, the
-     value of ``kw_only_default`` on ``dataclass_transform`` will be used.
-   * ``alias`` provides an alternative name for the field. This alternative
-     name is used in the synthesized ``__init__`` method.
+   .. list-table:: **Recognised parameters for field specifiers**
+      :header-rows: 1
+      :widths: 20 80
+
+      * - Parameter name
+        - Description
+      * - ``init``
+        - Indicates whether the field should be included in the
+          synthesized ``__init__`` method. If unspecified, ``init`` defaults to
+          ``True``.
+      * - ``default``
+        - Provides the default value for the field.
+      * - ``default_factory``
+        - Provides a runtime callback that returns the
+          default value for the field. If neither ``default`` nor
+          ``default_factory`` are specified, the field is assumed to have no
+          default value and must be provided a value when the class is
+          instantiated.
+      * - ``factory``
+        - An alias for the ``default_factory`` parameter on field specifiers.
+      * - ``kw_only``
+        - Indicates whether the field should be marked as
+          keyword-only. If ``True``, the field will be keyword-only. If
+          ``False``, it will not be keyword-only. If unspecified, the value of
+          the ``kw_only`` parameter on the object decorated with
+          ``dataclass_transform`` will be used, or if that is unspecified, the
+          value of ``kw_only_default`` on ``dataclass_transform`` will be used.
+      * - ``alias``
+        - Provides an alternative name for the field. This alternative
+          name is used in the synthesized ``__init__`` method.
 
    At runtime, this decorator records its arguments in the
    ``__dataclass_transform__`` attribute on the decorated object.
@@ -3388,6 +2965,38 @@ Introspection helpers
 
    .. versionadded:: 3.8
 
+.. function:: get_protocol_members(tp)
+
+   Return the set of members defined in a :class:`Protocol`.
+
+   ::
+
+      >>> from typing import Protocol, get_protocol_members
+      >>> class P(Protocol):
+      ...     def a(self) -> str: ...
+      ...     b: int
+      >>> get_protocol_members(P)
+      frozenset({'a', 'b'})
+
+   Raise :exc:`TypeError` for arguments that are not Protocols.
+
+   .. versionadded:: 3.13
+
+.. function:: is_protocol(tp)
+
+   Determine if a type is a :class:`Protocol`.
+
+   For example::
+
+      class P(Protocol):
+          def a(self) -> str: ...
+          b: int
+
+      is_protocol(P)    # => True
+      is_protocol(int)  # => False
+
+   .. versionadded:: 3.13
+
 .. function:: is_typeddict(tp)
 
    Check if a type is a :class:`TypedDict`.
@@ -3454,6 +3063,498 @@ Constant
       (see :pep:`563`).
 
    .. versionadded:: 3.5.2
+
+.. _generic-concrete-collections:
+
+Deprecated aliases
+------------------
+
+.. _corresponding-to-built-in-types:
+
+Aliases to built-in types
+"""""""""""""""""""""""""
+
+.. class:: Dict(dict, MutableMapping[KT, VT])
+
+   Deprecated alias to :class:`dict`.
+
+   Note that to annotate arguments, it is preferred
+   to use an abstract collection type such as :class:`Mapping`
+   rather than to use :class:`dict` or :class:`!typing.Dict`.
+
+   This type can be used as follows::
+
+      def count_words(text: str) -> Dict[str, int]:
+          ...
+
+   .. deprecated:: 3.9
+      :class:`builtins.dict <dict>` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: List(list, MutableSequence[T])
+
+   Deprecated alias to :class:`list`.
+
+   Note that to annotate arguments, it is preferred
+   to use an abstract collection type such as :class:`Sequence` or
+   :class:`Iterable` rather than to use :class:`list` or :class:`!typing.List`.
+
+   This type may be used as follows::
+
+      def vec2[T: (int, float)](x: T, y: T) -> List[T]:
+          return [x, y]
+
+      def keep_positives[T: (int, float)](vector: Sequence[T]) -> List[T]:
+          return [item for item in vector if item > 0]
+
+   .. deprecated:: 3.9
+      :class:`builtins.list <list>` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: Set(set, MutableSet[T])
+
+   Deprecated alias to :class:`builtins.set <set>`.
+
+   Note that to annotate arguments, it is preferred
+   to use an abstract collection type such as :class:`AbstractSet`
+   rather than to use :class:`set` or :class:`!typing.Set`.
+
+   .. deprecated:: 3.9
+      :class:`builtins.set <set>` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: FrozenSet(frozenset, AbstractSet[T_co])
+
+   Deprecated alias to :class:`builtins.frozenset <frozenset>`.
+
+   .. deprecated:: 3.9
+      :class:`builtins.frozenset <frozenset>`
+      now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. note:: :data:`Tuple` is a special form.
+
+.. _corresponding-to-types-in-collections:
+
+Aliases to types in :mod:`collections`
+""""""""""""""""""""""""""""""""""""""
+
+.. class:: DefaultDict(collections.defaultdict, MutableMapping[KT, VT])
+
+   Deprecated alias to :class:`collections.defaultdict`.
+
+   .. versionadded:: 3.5.2
+
+   .. deprecated:: 3.9
+      :class:`collections.defaultdict` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: OrderedDict(collections.OrderedDict, MutableMapping[KT, VT])
+
+   Deprecated alias to :class:`collections.OrderedDict`.
+
+   .. versionadded:: 3.7.2
+
+   .. deprecated:: 3.9
+      :class:`collections.OrderedDict` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: ChainMap(collections.ChainMap, MutableMapping[KT, VT])
+
+   Deprecated alias to :class:`collections.ChainMap`.
+
+   .. versionadded:: 3.5.4
+   .. versionadded:: 3.6.1
+
+   .. deprecated:: 3.9
+      :class:`collections.ChainMap` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: Counter(collections.Counter, Dict[T, int])
+
+   Deprecated alias to :class:`collections.Counter`.
+
+   .. versionadded:: 3.5.4
+   .. versionadded:: 3.6.1
+
+   .. deprecated:: 3.9
+      :class:`collections.Counter` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: Deque(deque, MutableSequence[T])
+
+   Deprecated alias to :class:`collections.deque`.
+
+   .. versionadded:: 3.5.4
+   .. versionadded:: 3.6.1
+
+   .. deprecated:: 3.9
+      :class:`collections.deque` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. _other-concrete-types:
+
+Aliases to other concrete types
+"""""""""""""""""""""""""""""""
+
+.. class:: Pattern
+           Match
+
+   Deprecated aliases corresponding to the return types from
+   :func:`re.compile` and :func:`re.match`.
+
+   These types (and the corresponding functions) are generic over
+   :data:`AnyStr`. ``Pattern`` can be specialised as ``Pattern[str]`` or
+   ``Pattern[bytes]``; ``Match`` can be specialised as ``Match[str]`` or
+   ``Match[bytes]``.
+
+   .. deprecated:: 3.9
+      Classes ``Pattern`` and ``Match`` from :mod:`re` now support ``[]``.
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: Text
+
+   Deprecated alias for :class:`str`.
+
+   ``Text`` is provided to supply a forward
+   compatible path for Python 2 code: in Python 2, ``Text`` is an alias for
+   ``unicode``.
+
+   Use ``Text`` to indicate that a value must contain a unicode string in
+   a manner that is compatible with both Python 2 and Python 3::
+
+       def add_unicode_checkmark(text: Text) -> Text:
+           return text + u' \u2713'
+
+   .. versionadded:: 3.5.2
+
+   .. deprecated:: 3.11
+      Python 2 is no longer supported, and most type checkers also no longer
+      support type checking Python 2 code. Removal of the alias is not
+      currently planned, but users are encouraged to use
+      :class:`str` instead of ``Text``.
+
+.. _abstract-base-classes:
+.. _corresponding-to-collections-in-collections-abc:
+
+Aliases to container ABCs in :mod:`collections.abc`
+"""""""""""""""""""""""""""""""""""""""""""""""""""
+
+.. class:: AbstractSet(Collection[T_co])
+
+   Deprecated alias to :class:`collections.abc.Set`.
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.Set` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: ByteString(Sequence[int])
+
+   This type represents the types :class:`bytes`, :class:`bytearray`,
+   and :class:`memoryview` of byte sequences.
+
+   .. deprecated-removed:: 3.9 3.14
+      Prefer :class:`collections.abc.Buffer`, or a union like ``bytes | bytearray | memoryview``.
+
+.. class:: Collection(Sized, Iterable[T_co], Container[T_co])
+
+   Deprecated alias to :class:`collections.abc.Collection`.
+
+   .. versionadded:: 3.6.0
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.Collection` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: Container(Generic[T_co])
+
+   Deprecated alias to :class:`collections.abc.Container`.
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.Container` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: ItemsView(MappingView, AbstractSet[tuple[KT_co, VT_co]])
+
+   Deprecated alias to :class:`collections.abc.ItemsView`.
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.ItemsView` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: KeysView(MappingView, AbstractSet[KT_co])
+
+   Deprecated alias to :class:`collections.abc.KeysView`.
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.KeysView` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: Mapping(Collection[KT], Generic[KT, VT_co])
+
+   Deprecated alias to :class:`collections.abc.Mapping`.
+
+   This type can be used as follows::
+
+      def get_position_in_index(word_list: Mapping[str, int], word: str) -> int:
+          return word_list[word]
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.Mapping` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: MappingView(Sized)
+
+   Deprecated alias to :class:`collections.abc.MappingView`.
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.MappingView` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: MutableMapping(Mapping[KT, VT])
+
+   Deprecated alias to :class:`collections.abc.MutableMapping`.
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.MutableMapping`
+      now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: MutableSequence(Sequence[T])
+
+   Deprecated alias to :class:`collections.abc.MutableSequence`.
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.MutableSequence`
+      now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: MutableSet(AbstractSet[T])
+
+   Deprecated alias to :class:`collections.abc.MutableSet`.
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.MutableSet` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: Sequence(Reversible[T_co], Collection[T_co])
+
+   Deprecated alias to :class:`collections.abc.Sequence`.
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.Sequence` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: ValuesView(MappingView, Collection[_VT_co])
+
+   Deprecated alias to :class:`collections.abc.ValuesView`.
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.ValuesView` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. _asynchronous-programming:
+
+Aliases to asynchronous ABCs in :mod:`collections.abc`
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+.. class:: Coroutine(Awaitable[ReturnType], Generic[YieldType, SendType, ReturnType])
+
+   Deprecated alias to :class:`collections.abc.Coroutine`.
+
+   The variance and order of type variables
+   correspond to those of :class:`Generator`, for example::
+
+      from collections.abc import Coroutine
+      c: Coroutine[list[str], str, int]  # Some coroutine defined elsewhere
+      x = c.send('hi')                   # Inferred type of 'x' is list[str]
+      async def bar() -> None:
+          y = await c                    # Inferred type of 'y' is int
+
+   .. versionadded:: 3.5.3
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.Coroutine` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: AsyncGenerator(AsyncIterator[YieldType], Generic[YieldType, SendType])
+
+   Deprecated alias to :class:`collections.abc.AsyncGenerator`.
+
+   An async generator can be annotated by the generic type
+   ``AsyncGenerator[YieldType, SendType]``. For example::
+
+      async def echo_round() -> AsyncGenerator[int, float]:
+          sent = yield 0
+          while sent >= 0.0:
+              rounded = await round(sent)
+              sent = yield rounded
+
+   Unlike normal generators, async generators cannot return a value, so there
+   is no ``ReturnType`` type parameter. As with :class:`Generator`, the
+   ``SendType`` behaves contravariantly.
+
+   If your generator will only yield values, set the ``SendType`` to
+   ``None``::
+
+      async def infinite_stream(start: int) -> AsyncGenerator[int, None]:
+          while True:
+              yield start
+              start = await increment(start)
+
+   Alternatively, annotate your generator as having a return type of
+   either ``AsyncIterable[YieldType]`` or ``AsyncIterator[YieldType]``::
+
+      async def infinite_stream(start: int) -> AsyncIterator[int]:
+          while True:
+              yield start
+              start = await increment(start)
+
+   .. versionadded:: 3.6.1
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.AsyncGenerator`
+      now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: AsyncIterable(Generic[T_co])
+
+   Deprecated alias to :class:`collections.abc.AsyncIterable`.
+
+   .. versionadded:: 3.5.2
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.AsyncIterable` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: AsyncIterator(AsyncIterable[T_co])
+
+   Deprecated alias to :class:`collections.abc.AsyncIterator`.
+
+   .. versionadded:: 3.5.2
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.AsyncIterator` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: Awaitable(Generic[T_co])
+
+   Deprecated alias to :class:`collections.abc.Awaitable`.
+
+   .. versionadded:: 3.5.2
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.Awaitable` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. _corresponding-to-other-types-in-collections-abc:
+
+Aliases to other ABCs in :mod:`collections.abc`
+"""""""""""""""""""""""""""""""""""""""""""""""
+
+.. class:: Iterable(Generic[T_co])
+
+   Deprecated alias to :class:`collections.abc.Iterable`.
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.Iterable` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: Iterator(Iterable[T_co])
+
+   Deprecated alias to :class:`collections.abc.Iterator`.
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.Iterator` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: Generator(Iterator[YieldType], Generic[YieldType, SendType, ReturnType])
+
+   Deprecated alias to :class:`collections.abc.Generator`.
+
+   A generator can be annotated by the generic type
+   ``Generator[YieldType, SendType, ReturnType]``. For example::
+
+      def echo_round() -> Generator[int, float, str]:
+          sent = yield 0
+          while sent >= 0:
+              sent = yield round(sent)
+          return 'Done'
+
+   Note that unlike many other generics in the typing module, the ``SendType``
+   of :class:`Generator` behaves contravariantly, not covariantly or
+   invariantly.
+
+   If your generator will only yield values, set the ``SendType`` and
+   ``ReturnType`` to ``None``::
+
+      def infinite_stream(start: int) -> Generator[int, None, None]:
+          while True:
+              yield start
+              start += 1
+
+   Alternatively, annotate your generator as having a return type of
+   either ``Iterable[YieldType]`` or ``Iterator[YieldType]``::
+
+      def infinite_stream(start: int) -> Iterator[int]:
+          while True:
+              yield start
+              start += 1
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.Generator` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: Hashable
+
+   Deprecated alias to :class:`collections.abc.Hashable`.
+
+   .. deprecated:: 3.12
+      Use :class:`collections.abc.Hashable` directly instead.
+
+.. class:: Reversible(Iterable[T_co])
+
+   Deprecated alias to :class:`collections.abc.Reversible`.
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.Reversible` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: Sized
+
+   Deprecated alias to :class:`collections.abc.Sized`.
+
+   .. deprecated:: 3.12
+      Use :class:`collections.abc.Sized` directly instead.
+
+.. _context-manager-types:
+
+Aliases to :mod:`contextlib` ABCs
+"""""""""""""""""""""""""""""""""
+
+.. class:: ContextManager(Generic[T_co])
+
+   Deprecated alias to :class:`contextlib.AbstractContextManager`.
+
+   .. versionadded:: 3.5.4
+   .. versionadded:: 3.6.0
+
+   .. deprecated:: 3.9
+      :class:`contextlib.AbstractContextManager`
+      now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: AsyncContextManager(Generic[T_co])
+
+   Deprecated alias to :class:`contextlib.AbstractAsyncContextManager`.
+
+   .. versionadded:: 3.5.4
+   .. versionadded:: 3.6.2
+
+   .. deprecated:: 3.9
+      :class:`contextlib.AbstractAsyncContextManager`
+      now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
 Deprecation Timeline of Major Features
 ======================================

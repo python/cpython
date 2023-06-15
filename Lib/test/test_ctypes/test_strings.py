@@ -1,6 +1,6 @@
 import unittest
-from ctypes import *
-from test.test_ctypes import need_symbol
+from ctypes import create_string_buffer, sizeof, byref, c_char, c_wchar
+
 
 class StringArrayTestCase(unittest.TestCase):
     def test(self):
@@ -25,8 +25,8 @@ class StringArrayTestCase(unittest.TestCase):
         self.assertRaises(ValueError, setattr, buf, "value", b"aaaaaaaa")
         self.assertRaises(TypeError, setattr, buf, "value", 42)
 
-    def test_c_buffer_value(self):
-        buf = c_buffer(32)
+    def test_create_string_buffer_value(self):
+        buf = create_string_buffer(32)
 
         buf.value = b"Hello, World"
         self.assertEqual(buf.value, b"Hello, World")
@@ -35,8 +35,8 @@ class StringArrayTestCase(unittest.TestCase):
         self.assertRaises(TypeError, setattr, buf, "value", memoryview(b"abc"))
         self.assertRaises(ValueError, setattr, buf, "raw", memoryview(b"x" * 100))
 
-    def test_c_buffer_raw(self):
-        buf = c_buffer(32)
+    def test_create_string_buffer_raw(self):
+        buf = create_string_buffer(32)
 
         buf.raw = memoryview(b"Hello, World")
         self.assertEqual(buf.value, b"Hello, World")
@@ -61,7 +61,6 @@ class StringArrayTestCase(unittest.TestCase):
             del buf.raw
 
 
-@need_symbol('c_wchar')
 class WStringArrayTestCase(unittest.TestCase):
     def test(self):
         BUF = c_wchar * 4
@@ -86,13 +85,11 @@ class WStringArrayTestCase(unittest.TestCase):
         self.assertEqual(w.value, u)
 
 
-@need_symbol('c_wchar')
 class WStringTestCase(unittest.TestCase):
     def test_wchar(self):
         c_wchar("x")
         repr(byref(c_wchar("x")))
         c_wchar("x")
-
 
     @unittest.skip('test disabled')
     def test_basic_wstrings(self):

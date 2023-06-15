@@ -34,6 +34,11 @@ RE_PREDICTED = (
 UNUSED = "unused"
 BITS_PER_CODE_UNIT = 16
 
+RESERVED_WORDS = {
+    "co_consts" : "Use FRAME_CO_CONSTS.",
+    "co_names": "Use FRAME_CO_NAMES.",
+}
+
 arg_parser = argparse.ArgumentParser(
     description="Generate the code for the interpreter switch.",
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -174,14 +179,12 @@ class Formatter:
 
     def stack_adjust(
         self,
-        diff: int,
         input_effects: list[StackEffect],
         output_effects: list[StackEffect],
     ):
-        # TODO: Get rid of 'diff' parameter
         shrink, isym = list_effect_size(input_effects)
         grow, osym = list_effect_size(output_effects)
-        diff += grow - shrink
+        diff = grow - shrink
         if isym and isym != osym:
             self.emit(f"STACK_SHRINK({isym});")
         if diff < 0:
@@ -223,6 +226,7 @@ class Formatter:
     def cast(self, dst: StackEffect, src: StackEffect) -> str:
         return f"({dst.type or 'PyObject *'})" if src.type != dst.type else ""
 
+INSTRUCTION_FLAGS = ['HAS_ARG', 'HAS_CONST', 'HAS_NAME', 'HAS_JUMP']
 
 @dataclasses.dataclass
 class Instruction:
@@ -244,6 +248,7 @@ class Instruction:
     output_effects: list[StackEffect]
     unmoved_names: frozenset[str]
     instr_fmt: str
+    flags: int
 
     # Set later
     family: parser.Family | None = None
@@ -272,7 +277,18 @@ class Instruction:
             else:
                 break
         self.unmoved_names = frozenset(unmoved_names)
-        if variable_used(inst, "oparg"):
+        flag_data = {
+            'HAS_ARG'  :  variable_used(inst, "oparg"),
+            'HAS_CONST':  variable_used(inst, "FRAME_CO_CONSTS"),
+            'HAS_NAME' :  variable_used(inst, "FRAME_CO_NAMES"),
+            'HAS_JUMP' :  variable_used(inst, "JUMPBY"),
+        }
+        assert set(flag_data.keys()) == set(INSTRUCTION_FLAGS)
+        self.flags = 0
+        for i, name in enumerate(INSTRUCTION_FLAGS):
+            self.flags |= (1<<i) if flag_data[name] else 0
+
+        if flag_data['HAS_ARG']:
             fmt = "IB"
         else:
             fmt = "IX"
@@ -338,7 +354,6 @@ class Instruction:
 
         # Write net stack growth/shrinkage
         out.stack_adjust(
-            0,
             [ieff for ieff in self.input_effects],
             [oeff for oeff in self.output_effects],
         )
@@ -472,6 +487,7 @@ class MacroInstruction:
     initial_sp: int
     final_sp: int
     instr_fmt: str
+    flags: int
     macro: parser.Macro
     parts: list[Component | parser.CacheEffect]
     predicted: bool = False
@@ -482,8 +498,9 @@ class PseudoInstruction:
     """A pseudo instruction."""
 
     name: str
-    instr_fmt: str
     targets: list[Instruction]
+    instr_fmt: str
+    flags: int
 
 
 @dataclasses.dataclass
@@ -491,8 +508,9 @@ class OverriddenInstructionPlaceHolder:
     name: str
 
 
-AnyInstruction = Instruction | MacroInstruction
+AnyInstruction = Instruction | MacroInstruction | PseudoInstruction
 INSTR_FMT_PREFIX = "INSTR_FMT_"
+INSTR_FLAG_SUFFIX = "_FLAG"
 
 
 class Analyzer:
@@ -530,6 +548,7 @@ class Analyzer:
     macros: dict[str, parser.Macro]
     macro_instrs: dict[str, MacroInstruction]
     families: dict[str, parser.Family]
+    pseudos: dict[str, parser.Pseudo]
     pseudo_instrs: dict[str, PseudoInstruction]
 
     def parse(self) -> None:
@@ -587,9 +606,12 @@ class Analyzer:
 
         # Parse from start
         psr.setpos(start)
-        thing: parser.InstDef | parser.Macro | parser.Family | None
+        thing: parser.InstDef | parser.Macro | parser.Pseudo | parser.Family | None
         thing_first_token = psr.peek()
         while thing := psr.definition():
+            if ws := [w for w in RESERVED_WORDS if variable_used(thing, w)]:
+                self.error(f"'{ws[0]}' is a reserved word. {RESERVED_WORDS[ws[0]]}", thing)
+
             match thing:
                 case parser.InstDef(name=name):
                     if name in self.instrs:
@@ -740,7 +762,7 @@ class Analyzer:
         return cache, input, output
 
     def analyze_macros_and_pseudos(self) -> None:
-        """Analyze each super- and macro instruction."""
+        """Analyze each macro and pseudo instruction."""
         self.macro_instrs = {}
         self.pseudo_instrs = {}
         for name, macro in self.macros.items():
@@ -754,6 +776,7 @@ class Analyzer:
         sp = initial_sp
         parts: list[Component | parser.CacheEffect] = []
         format = "IB"
+        flags = 0
         cache = "C"
         for component in components:
             match component:
@@ -769,11 +792,12 @@ class Analyzer:
                         for _ in range(ce.size):
                             format += cache
                             cache = "0"
+                    flags |= instr.flags
                 case _:
                     typing.assert_never(component)
         final_sp = sp
         return MacroInstruction(
-            macro.name, stack, initial_sp, final_sp, format, macro, parts
+            macro.name, stack, initial_sp, final_sp, format, flags, macro, parts
         )
 
     def analyze_pseudo(self, pseudo: parser.Pseudo) -> PseudoInstruction:
@@ -782,7 +806,9 @@ class Analyzer:
         # Make sure the targets have the same fmt
         fmts = list(set([t.instr_fmt for t in targets]))
         assert(len(fmts) == 1)
-        return PseudoInstruction(pseudo.name, fmts[0], targets)
+        flags_list = list(set([t.flags for t in targets]))
+        assert(len(flags_list) == 1)
+        return PseudoInstruction(pseudo.name, targets, fmts[0], flags_list[0])
 
     def analyze_instruction(
         self, instr: Instruction, stack: list[StackEffect], sp: int
@@ -820,9 +846,14 @@ class Analyzer:
 
         Ignore cache effects.
 
-        Return the list of variable names and the initial stack pointer.
+        Return the list of variables (as StackEffects) and the initial stack pointer.
         """
         lowest = current = highest = 0
+        conditions: dict[int, str] = {}  # Indexed by 'current'.
+        last_instr: Instruction | None = None
+        for thing in components:
+            if isinstance(thing, Instruction):
+                last_instr = thing
         for thing in components:
             match thing:
                 case Instruction() as instr:
@@ -835,9 +866,24 @@ class Analyzer:
                             "which are not supported in macro instructions",
                             instr.inst,  # TODO: Pass name+location of macro
                         )
+                    if any(eff.cond for eff in instr.input_effects):
+                        self.error(
+                            f"Instruction {instr.name!r} has conditional input stack effect, "
+                            "which are not supported in macro instructions",
+                            instr.inst,  # TODO: Pass name+location of macro
+                        )
+                    if any(eff.cond for eff in instr.output_effects) and instr is not last_instr:
+                        self.error(
+                            f"Instruction {instr.name!r} has conditional output stack effect, "
+                            "but is not the last instruction in a macro",
+                            instr.inst,  # TODO: Pass name+location of macro
+                        )
                     current -= len(instr.input_effects)
                     lowest = min(lowest, current)
-                    current += len(instr.output_effects)
+                    for eff in instr.output_effects:
+                        if eff.cond:
+                            conditions[current] = eff.cond
+                        current += 1
                     highest = max(highest, current)
                 case parser.CacheEffect():
                     pass
@@ -846,9 +892,9 @@ class Analyzer:
         # At this point, 'current' is the net stack effect,
         # and 'lowest' and 'highest' are the extremes.
         # Note that 'lowest' may be negative.
-        # TODO: Reverse the numbering.
         stack = [
-            StackEffect(f"_tmp_{i+1}", "") for i in reversed(range(highest - lowest))
+            StackEffect(f"_tmp_{i}", "", conditions.get(highest - i, ""))
+            for i in reversed(range(1, highest - lowest + 1))
         ]
         return stack, -lowest
 
@@ -880,6 +926,7 @@ class Analyzer:
                 low = 0
                 sp = 0
                 high = 0
+                pushed_symbolic: list[str] = []
                 for comp in parts:
                     for effect in comp.instr.input_effects:
                         assert not effect.cond, effect
@@ -887,8 +934,9 @@ class Analyzer:
                         sp -= 1
                         low = min(low, sp)
                     for effect in comp.instr.output_effects:
-                        assert not effect.cond, effect
                         assert not effect.size, effect
+                        if effect.cond:
+                            pushed_symbolic.append(maybe_parenthesize(f"{maybe_parenthesize(effect.cond)} ? 1 : 0"))
                         sp += 1
                         high = max(sp, high)
                 if high != max(0, sp):
@@ -898,9 +946,10 @@ class Analyzer:
                     # calculations to use the micro ops.
                     self.error("Macro has virtual stack growth", thing)
                 popped = str(-low)
-                pushed = str(sp - low)
+                pushed_symbolic.append(str(sp - low - len(pushed_symbolic)))
+                pushed = " + ".join(pushed_symbolic)
             case parser.Pseudo():
-                instr = self.pseudos[thing.name]
+                instr = self.pseudo_instrs[thing.name]
                 popped = pushed = None
                 # Calculate stack effect, and check that it's the the same
                 # for all targets.
@@ -1005,10 +1054,19 @@ class Analyzer:
 
             # Write type definitions
             self.out.emit(f"enum InstructionFormat {{ {', '.join(format_enums)} }};")
+            for i, flag in enumerate(INSTRUCTION_FLAGS):
+                self.out.emit(f"#define {flag}{INSTR_FLAG_SUFFIX} ({1 << i})");
+            for flag in INSTRUCTION_FLAGS:
+                flag_name = f"{flag}{INSTR_FLAG_SUFFIX}"
+                self.out.emit(
+                    f"#define OPCODE_{flag}(OP) "
+                    f"(_PyOpcode_opcode_metadata[(OP)].flags & ({flag_name}))")
+
             self.out.emit("struct opcode_metadata {")
             with self.out.indent():
                 self.out.emit("bool valid_entry;")
                 self.out.emit("enum InstructionFormat instr_format;")
+                self.out.emit("int flags;")
             self.out.emit("};")
             self.out.emit("")
             self.out.emit("#define OPCODE_METADATA_FMT(OP) "
@@ -1049,23 +1107,25 @@ class Analyzer:
             self.out.emit(f"    ((OP) == {op}) || \\")
         self.out.emit(f"    0")
 
+    def emit_metadata_entry(self, name: str, fmt: str, flags: int) -> None:
+        flags_strs = [f"{name}{INSTR_FLAG_SUFFIX}"
+                      for i, name in enumerate(INSTRUCTION_FLAGS) if (flags & (1<<i))]
+        flags_s = "0" if not flags_strs else ' | '.join(flags_strs)
+        self.out.emit(
+            f"    [{name}] = {{ true, {INSTR_FMT_PREFIX}{fmt}, {flags_s} }},"
+        )
+
     def write_metadata_for_inst(self, instr: Instruction) -> None:
         """Write metadata for a single instruction."""
-        self.out.emit(
-            f"    [{instr.name}] = {{ true, {INSTR_FMT_PREFIX}{instr.instr_fmt} }},"
-        )
+        self.emit_metadata_entry(instr.name, instr.instr_fmt, instr.flags)
 
     def write_metadata_for_macro(self, mac: MacroInstruction) -> None:
         """Write metadata for a macro-instruction."""
-        self.out.emit(
-            f"    [{mac.name}] = {{ true, {INSTR_FMT_PREFIX}{mac.instr_fmt} }},"
-        )
+        self.emit_metadata_entry(mac.name, mac.instr_fmt, mac.flags)
 
     def write_metadata_for_pseudo(self, ps: PseudoInstruction) -> None:
         """Write metadata for a macro-instruction."""
-        self.out.emit(
-            f"    [{ps.name}] = {{ true, {INSTR_FMT_PREFIX}{ps.instr_fmt} }},"
-        )
+        self.emit_metadata_entry(ps.name, ps.instr_fmt, ps.flags)
 
     def write_instructions(self) -> None:
         """Write instructions to output file."""
@@ -1164,7 +1224,15 @@ class Analyzer:
         with self.out.block(f"TARGET({mac.name})"):
             if mac.predicted:
                 self.out.emit(f"PREDICTED({mac.name});")
-            for i, var in reversed(list(enumerate(mac.stack))):
+
+            # The input effects should have no conditionals.
+            # Only the output effects do (for now).
+            ieffects = [
+                StackEffect(eff.name, eff.type) if eff.cond else eff
+                for eff in mac.stack
+            ]
+
+            for i, var in reversed(list(enumerate(ieffects))):
                 src = None
                 if i < mac.initial_sp:
                     src = StackEffect(f"stack_pointer[-{mac.initial_sp - i}]", "")
@@ -1172,8 +1240,7 @@ class Analyzer:
 
             yield
 
-            # TODO: Use slices of mac.stack instead of numeric values
-            self.out.stack_adjust(mac.final_sp - mac.initial_sp, [], [])
+            self.out.stack_adjust(ieffects[:mac.initial_sp], mac.stack[:mac.final_sp])
 
             for i, var in enumerate(reversed(mac.stack[: mac.final_sp]), 1):
                 dst = StackEffect(f"stack_pointer[-{i}]", "")
