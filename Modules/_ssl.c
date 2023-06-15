@@ -116,7 +116,9 @@ static void _PySSLFixErrno(void) {
 #endif
 
 /* Include generated data (error codes) */
-#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+#if (OPENSSL_VERSION_NUMBER >= 0x30100000L)
+#include "_ssl_data_31.h"
+#elif (OPENSSL_VERSION_NUMBER >= 0x30000000L)
 #include "_ssl_data_300.h"
 #elif (OPENSSL_VERSION_NUMBER >= 0x10101000L) && !defined(LIBRESSL_VERSION_NUMBER)
 #include "_ssl_data_111.h"
@@ -1330,10 +1332,8 @@ _get_peer_alt_names (_sslmodulestate *state, X509 *certificate) {
                         p[0], p[1], p[2], p[3]
                     );
                 } else if (name->d.ip->length == 16) {
-                    /* PyUnicode_FromFormat() does not support %X */
                     unsigned char *p = name->d.ip->data;
-                    len = sprintf(
-                        buf,
+                    v = PyUnicode_FromFormat(
                         "%X:%X:%X:%X:%X:%X:%X:%X",
                         p[0] << 8 | p[1],
                         p[2] << 8 | p[3],
@@ -1344,7 +1344,6 @@ _get_peer_alt_names (_sslmodulestate *state, X509 *certificate) {
                         p[12] << 8 | p[13],
                         p[14] << 8 | p[15]
                     );
-                    v = PyUnicode_FromStringAndSize(buf, len);
                 } else {
                     v = PyUnicode_FromString("<invalid>");
                 }
@@ -2006,7 +2005,7 @@ _ssl__SSLSocket_shared_ciphers_impl(PySSLSocket *self)
 
     /* Rather than use SSL_get_shared_ciphers, we use an equivalent algorithm because:
 
-       1) It returns a colon seperated list of strings, in an undefined
+       1) It returns a colon separated list of strings, in an undefined
           order, that we would have to post process back into tuples.
        2) It will return a truncated string with no indication that it has
           done so, if the buffer is too small.
@@ -4336,8 +4335,6 @@ _ssl__SSLContext_set_ecdh_curve(PySSLContext *self, PyObject *name)
 {
     PyObject *name_bytes;
     int nid;
-    EC_KEY *key;
-
     if (!PyUnicode_FSConverter(name, &name_bytes))
         return NULL;
     assert(PyBytes_Check(name_bytes));
@@ -4348,13 +4345,20 @@ _ssl__SSLContext_set_ecdh_curve(PySSLContext *self, PyObject *name)
                      "unknown elliptic curve name %R", name);
         return NULL;
     }
-    key = EC_KEY_new_by_curve_name(nid);
+#if OPENSSL_VERSION_MAJOR < 3
+    EC_KEY *key = EC_KEY_new_by_curve_name(nid);
     if (key == NULL) {
         _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
         return NULL;
     }
     SSL_CTX_set_tmp_ecdh(self->ctx, key);
     EC_KEY_free(key);
+#else
+    if (!SSL_CTX_set1_groups(self->ctx, &nid, 1)) {
+        _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
+        return NULL;
+    }
+#endif
     Py_RETURN_NONE;
 }
 
@@ -5991,26 +5995,27 @@ sslmodule_init_errorcodes(PyObject *module)
     state->err_codes_to_names = PyDict_New();
     if (state->err_codes_to_names == NULL)
         return -1;
-    state->err_names_to_codes = PyDict_New();
-    if (state->err_names_to_codes == NULL)
-        return -1;
     state->lib_codes_to_names = PyDict_New();
     if (state->lib_codes_to_names == NULL)
         return -1;
 
     errcode = error_codes;
     while (errcode->mnemonic != NULL) {
-        PyObject *mnemo, *key;
-        mnemo = PyUnicode_FromString(errcode->mnemonic);
-        key = Py_BuildValue("ii", errcode->library, errcode->reason);
-        if (mnemo == NULL || key == NULL)
+        PyObject *mnemo = PyUnicode_FromString(errcode->mnemonic);
+        if (mnemo == NULL) {
             return -1;
-        if (PyDict_SetItem(state->err_codes_to_names, key, mnemo))
+        }
+        PyObject *key = Py_BuildValue("ii", errcode->library, errcode->reason);
+        if (key == NULL) {
+            Py_DECREF(mnemo);
             return -1;
-        if (PyDict_SetItem(state->err_names_to_codes, mnemo, key))
-            return -1;
+        }
+        int rc = PyDict_SetItem(state->err_codes_to_names, key, mnemo);
         Py_DECREF(key);
         Py_DECREF(mnemo);
+        if (rc < 0) {
+            return -1;
+        }
         errcode++;
     }
 
@@ -6027,13 +6032,6 @@ sslmodule_init_errorcodes(PyObject *module)
         Py_DECREF(mnemo);
         libcode++;
     }
-
-    if (PyModule_AddObjectRef(module, "err_codes_to_names", state->err_codes_to_names))
-        return -1;
-    if (PyModule_AddObjectRef(module, "err_names_to_codes", state->err_names_to_codes))
-        return -1;
-    if (PyModule_AddObjectRef(module, "lib_codes_to_names", state->lib_codes_to_names))
-        return -1;
 
     return 0;
 }
@@ -6160,6 +6158,18 @@ sslmodule_init_strings(PyObject *module)
     return 0;
 }
 
+static int
+sslmodule_init_lock(PyObject *module)
+{
+    _sslmodulestate *state = get_ssl_state(module);
+    state->keylog_lock = PyThread_allocate_lock();
+    if (state->keylog_lock == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    return 0;
+}
+
 static PyModuleDef_Slot sslmodule_slots[] = {
     {Py_mod_exec, sslmodule_init_types},
     {Py_mod_exec, sslmodule_init_exceptions},
@@ -6168,6 +6178,8 @@ static PyModuleDef_Slot sslmodule_slots[] = {
     {Py_mod_exec, sslmodule_init_constants},
     {Py_mod_exec, sslmodule_init_versioninfo},
     {Py_mod_exec, sslmodule_init_strings},
+    {Py_mod_exec, sslmodule_init_lock},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 
@@ -6189,7 +6201,6 @@ sslmodule_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(state->PySSLSyscallErrorObject);
     Py_VISIT(state->PySSLEOFErrorObject);
     Py_VISIT(state->err_codes_to_names);
-    Py_VISIT(state->err_names_to_codes);
     Py_VISIT(state->lib_codes_to_names);
     Py_VISIT(state->Sock_Type);
 
@@ -6214,7 +6225,6 @@ sslmodule_clear(PyObject *m)
     Py_CLEAR(state->PySSLSyscallErrorObject);
     Py_CLEAR(state->PySSLEOFErrorObject);
     Py_CLEAR(state->err_codes_to_names);
-    Py_CLEAR(state->err_names_to_codes);
     Py_CLEAR(state->lib_codes_to_names);
     Py_CLEAR(state->Sock_Type);
     Py_CLEAR(state->str_library);
@@ -6228,6 +6238,8 @@ static void
 sslmodule_free(void *m)
 {
     sslmodule_clear((PyObject *)m);
+    _sslmodulestate *state = get_ssl_state(m);
+    PyThread_free_lock(state->keylog_lock);
 }
 
 static struct PyModuleDef _sslmodule_def = {

@@ -18,7 +18,7 @@ Sequence Protocol
 .. c:function:: Py_ssize_t PySequence_Size(PyObject *o)
                Py_ssize_t PySequence_Length(PyObject *o)
 
-   .. index:: builtin: len
+   .. index:: pair: built-in function; len
 
    Returns the number of objects in sequence *o* on success, and ``-1`` on
    failure.  This is equivalent to the Python expression ``len(o)``.
@@ -120,7 +120,7 @@ Sequence Protocol
 
 .. c:function:: PyObject* PySequence_Tuple(PyObject *o)
 
-   .. index:: builtin: tuple
+   .. index:: pair: built-in function; tuple
 
    Return a tuple object with the same contents as the sequence or iterable *o*,
    or ``NULL`` on failure.  If *o* is a tuple, a new reference will be returned,

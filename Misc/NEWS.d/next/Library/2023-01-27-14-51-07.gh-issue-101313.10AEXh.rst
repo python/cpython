@@ -1,1 +1,0 @@
-Added -h and --help arguments to the webbrowser CLI

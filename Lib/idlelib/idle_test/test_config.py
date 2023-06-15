@@ -191,7 +191,7 @@ class IdleConfTest(unittest.TestCase):
             idle_dir = os.path.abspath(sys.path[0])
         for ctype in conf.config_types:
             config_path = os.path.join(idle_dir, '../config-%s.def' % ctype)
-            with open(config_path, 'r') as f:
+            with open(config_path) as f:
                 cls.config_string[ctype] = f.read()
 
         cls.orig_warn = config._warn

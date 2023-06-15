@@ -314,8 +314,11 @@ class BaseTest(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             list[int][int]
+        with self.assertRaises(TypeError):
             dict[T, int][str, int]
+        with self.assertRaises(TypeError):
             dict[str, T][str, int]
+        with self.assertRaises(TypeError):
             dict[T, T][str, int]
 
     def test_equality(self):

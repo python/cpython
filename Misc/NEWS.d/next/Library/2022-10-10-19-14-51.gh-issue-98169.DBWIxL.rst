@@ -1,2 +1,0 @@
-Fix :func:`dataclasses.astuple` crash when :class:`collections.defaultdict`
-is present in the attributes.

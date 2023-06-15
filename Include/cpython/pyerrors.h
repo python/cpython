@@ -98,7 +98,7 @@ PyAPI_FUNC(void) _PyErr_GetExcInfo(PyThreadState *, PyObject **, PyObject **, Py
 
 /* Context manipulation (PEP 3134) */
 
-PyAPI_FUNC(void) _PyErr_ChainExceptions(PyObject *, PyObject *, PyObject *);
+Py_DEPRECATED(3.12) PyAPI_FUNC(void) _PyErr_ChainExceptions(PyObject *, PyObject *, PyObject *);
 PyAPI_FUNC(void) _PyErr_ChainExceptions1(PyObject *);
 
 /* Like PyErr_Format(), but saves current exception as __context__ and
@@ -115,6 +115,10 @@ PyAPI_FUNC(PyObject *) _PyErr_FormatFromCause(
 PyAPI_FUNC(int) _PyException_AddNote(
      PyObject *exc,
      PyObject *note);
+
+PyAPI_FUNC(PyObject*) PyUnstable_Exc_PrepReraiseStar(
+     PyObject *orig,
+     PyObject *excs);
 
 /* In signalmodule.c */
 
