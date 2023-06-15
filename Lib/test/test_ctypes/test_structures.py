@@ -1,5 +1,4 @@
 import _ctypes_test
-import platform
 import struct
 import sys
 import unittest
@@ -10,12 +9,6 @@ from ctypes import (CDLL, Structure, Union, POINTER, sizeof, byref, alignment,
                     c_long, c_ulong, c_longlong, c_ulonglong, c_float, c_double)
 from struct import calcsize
 from test import support
-
-
-# The following definition is meant to be used from time to time to assist
-# temporarily disabling tests on specific architectures while investigations
-# are in progress, to keep buildbots happy.
-MACHINE = platform.machine()
 
 
 class SubclassesTest(unittest.TestCase):
