@@ -1,8 +1,9 @@
 import _ctypes_test
 import ctypes
 import unittest
-from ctypes import (CDLL, Structure, CFUNCTYPE, sizeof,
+from ctypes import (CDLL, Structure, CFUNCTYPE, sizeof, _CFuncPtr,
                     c_void_p, c_char_p, c_char, c_int, c_uint, c_long)
+
 
 try:
     WINFUNCTYPE = ctypes.WINFUNCTYPE
@@ -127,8 +128,6 @@ class CFuncPtrTestCase(unittest.TestCase):
         self.assertEqual(strtok(None, b"\n"), None)
 
     def test_abstract(self):
-        from ctypes import _CFuncPtr
-
         self.assertRaises(TypeError, _CFuncPtr, 13, "name", 42, "iid")
 
 
