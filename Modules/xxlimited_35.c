@@ -170,8 +170,8 @@ static PyObject *
 xx_roj(PyObject *self, PyObject *args)
 {
     PyObject *a;
-    long b;
-    if (!PyArg_ParseTuple(args, "O#:roj", &a, &b))
+    PyObject *b;
+    if (!PyArg_ParseTuple(args, "OO:roj", &a, &b))
         return NULL;
     return Py_NewRef(Py_None);
 }
@@ -221,7 +221,7 @@ static PyType_Spec Null_Type_spec = {
 
 static PyMethodDef xx_methods[] = {
     {"roj",             xx_roj,         METH_VARARGS,
-        PyDoc_STR("roj(a,b) -> None")},
+        PyDoc_STR("roj(a, b) -> None")},
     {"foo",             xx_foo,         METH_VARARGS,
         xx_foo_doc},
     {"new",             xx_new,         METH_VARARGS,
