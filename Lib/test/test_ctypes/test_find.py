@@ -23,7 +23,7 @@ class Test_OpenGL_libs(unittest.TestCase):
             lib_glu = find_library("GLU")
             lib_gle = find_library("gle")
 
-        ## print, for debugging
+        # print, for debugging
         if test.support.verbose:
             print("OpenGL libraries:")
             for item in (("GL", lib_gl),
