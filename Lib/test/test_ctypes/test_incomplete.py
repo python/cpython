@@ -3,13 +3,9 @@ import unittest
 import warnings
 from ctypes import Structure, POINTER, pointer, c_char_p
 
-################################################################
-#
+
 # The incomplete pointer example from the tutorial
-#
-
 class TestSetPointerType(unittest.TestCase):
-
     def tearDown(self):
         # to not leak references, we must clean _pointer_type_cache
         ctypes._reset_cache()
@@ -49,7 +45,6 @@ class TestSetPointerType(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             ctypes.SetPointerType(lpcell, cell)
 
-################################################################
 
 if __name__ == '__main__':
     unittest.main()
