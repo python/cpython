@@ -134,7 +134,8 @@ enum {
 int
 _PyCompile_InstrSize(int opcode, int oparg)
 {
-    assert(!IS_PSEUDO_OPCODE(opcode));
+    assert(IS_PSEUDO_OPCODE(opcode) == IS_PSEUDO_INSTR(opcode));
+    assert(!IS_PSEUDO_INSTR(opcode));
     assert(HAS_ARG(opcode) || oparg == 0);
     int extended_args = (0xFFFFFF < oparg) + (0xFFFF < oparg) + (0xFF < oparg);
     int caches = _PyOpcode_Caches[opcode];
@@ -241,9 +242,19 @@ instr_sequence_use_label(instr_sequence *seq, int lbl) {
     return SUCCESS;
 }
 
+
+#define MAX_OPCODE 511
+
 static int
 instr_sequence_addop(instr_sequence *seq, int opcode, int oparg, location loc)
 {
+    /* compare old and new opcode macros - use ! to compare as bools. */
+    assert(!HAS_ARG(opcode) == !OPCODE_HAS_ARG(opcode));
+    assert(!HAS_CONST(opcode) == !OPCODE_HAS_CONST(opcode));
+    assert(!OPCODE_HAS_JUMP(opcode) == !OPCODE_HAS_JUMP(opcode));
+
+    assert(0 <= opcode && opcode <= MAX_OPCODE);
+    assert(IS_PSEUDO_OPCODE(opcode) == IS_PSEUDO_INSTR(opcode));
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
     assert(HAS_ARG(opcode) || HAS_TARGET(opcode) || oparg == 0);
     assert(0 <= oparg && oparg < (1 << 30));
@@ -1055,6 +1066,7 @@ compiler_addop_name(struct compiler_unit *u, location loc,
         arg <<= 1;
     }
     if (opcode == LOAD_METHOD) {
+        assert(SAME_OPCODE_METADATA(LOAD_METHOD, LOAD_ATTR));
         opcode = LOAD_ATTR;
         arg <<= 1;
         arg |= 1;
@@ -1064,15 +1076,18 @@ compiler_addop_name(struct compiler_unit *u, location loc,
         arg |= 2;
     }
     if (opcode == LOAD_SUPER_METHOD) {
+        assert(SAME_OPCODE_METADATA(LOAD_SUPER_METHOD, LOAD_SUPER_ATTR));
         opcode = LOAD_SUPER_ATTR;
         arg <<= 2;
         arg |= 3;
     }
     if (opcode == LOAD_ZERO_SUPER_ATTR) {
+        assert(SAME_OPCODE_METADATA(LOAD_ZERO_SUPER_ATTR, LOAD_SUPER_ATTR));
         opcode = LOAD_SUPER_ATTR;
         arg <<= 2;
     }
     if (opcode == LOAD_ZERO_SUPER_METHOD) {
+        assert(SAME_OPCODE_METADATA(LOAD_ZERO_SUPER_METHOD, LOAD_SUPER_ATTR));
         opcode = LOAD_SUPER_ATTR;
         arg <<= 2;
         arg |= 1;
@@ -1102,7 +1117,7 @@ codegen_addop_j(instr_sequence *seq, location loc,
                 int opcode, jump_target_label target)
 {
     assert(IS_LABEL(target));
-    assert(IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
+    assert(OPCODE_HAS_JUMP(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
     return instr_sequence_addop(seq, opcode, target.id, loc);
 }
@@ -1814,7 +1829,21 @@ compiler_make_closure(struct compiler *c, location loc,
         ADDOP_I(c, loc, BUILD_TUPLE, co->co_nfreevars);
     }
     ADDOP_LOAD_CONST(c, loc, (PyObject*)co);
-    ADDOP_I(c, loc, MAKE_FUNCTION, flags);
+
+    ADDOP(c, loc, MAKE_FUNCTION);
+
+    if (flags & MAKE_FUNCTION_CLOSURE) {
+        ADDOP_I(c, loc, SET_FUNCTION_ATTRIBUTE, MAKE_FUNCTION_CLOSURE);
+    }
+    if (flags & MAKE_FUNCTION_ANNOTATIONS) {
+        ADDOP_I(c, loc, SET_FUNCTION_ATTRIBUTE, MAKE_FUNCTION_ANNOTATIONS);
+    }
+    if (flags & MAKE_FUNCTION_KWDEFAULTS) {
+        ADDOP_I(c, loc, SET_FUNCTION_ATTRIBUTE, MAKE_FUNCTION_KWDEFAULTS);
+    }
+    if (flags & MAKE_FUNCTION_DEFAULTS) {
+        ADDOP_I(c, loc, SET_FUNCTION_ATTRIBUTE, MAKE_FUNCTION_DEFAULTS);
+    }
     return SUCCESS;
 }
 
@@ -4969,26 +4998,26 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
     /* The expression to be formatted. */
     VISIT(c, expr, e->v.FormattedValue.value);
 
-    switch (conversion) {
-    case 's': oparg = FVC_STR;   break;
-    case 'r': oparg = FVC_REPR;  break;
-    case 'a': oparg = FVC_ASCII; break;
-    case -1:  oparg = FVC_NONE;  break;
-    default:
-        PyErr_Format(PyExc_SystemError,
+    location loc = LOC(e);
+    if (conversion != -1) {
+        switch (conversion) {
+        case 's': oparg = FVC_STR;   break;
+        case 'r': oparg = FVC_REPR;  break;
+        case 'a': oparg = FVC_ASCII; break;
+        default:
+            PyErr_Format(PyExc_SystemError,
                      "Unrecognized conversion character %d", conversion);
-        return ERROR;
+            return ERROR;
+        }
+        ADDOP_I(c, loc, CONVERT_VALUE, oparg);
     }
     if (e->v.FormattedValue.format_spec) {
         /* Evaluate the format spec, and update our opcode arg. */
         VISIT(c, expr, e->v.FormattedValue.format_spec);
-        oparg |= FVS_HAVE_SPEC;
+        ADDOP(c, loc, FORMAT_WITH_SPEC);
+    } else {
+        ADDOP(c, loc, FORMAT_SIMPLE);
     }
-
-    /* And push our opcode and oparg */
-    location loc = LOC(e);
-    ADDOP_I(c, loc, FORMAT_VALUE, oparg);
-
     return SUCCESS;
 }
 

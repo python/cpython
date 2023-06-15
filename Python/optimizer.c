@@ -148,15 +148,17 @@ PyUnstable_SetOptimizer(_PyOptimizerObject *optimizer)
 _PyInterpreterFrame *
 _PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNIT *dest, PyObject **stack_pointer)
 {
+    PyCodeObject *code = (PyCodeObject *)frame->f_executable;
+    assert(PyCode_Check(code));
     PyInterpreterState *interp = PyInterpreterState_Get();
-    int index = get_executor_index(frame->f_code, src);
+    int index = get_executor_index(code, src);
     if (index < 0) {
         _PyFrame_SetStackPointer(frame, stack_pointer);
         return frame;
     }
     _PyOptimizerObject *opt = interp->optimizer;
     _PyExecutorObject *executor;
-    int err = opt->optimize(opt, frame->f_code, dest, &executor);
+    int err = opt->optimize(opt, code, dest, &executor);
     if (err <= 0) {
         if (err < 0) {
             return NULL;
@@ -164,7 +166,7 @@ _PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNI
         _PyFrame_SetStackPointer(frame, stack_pointer);
         return frame;
     }
-    insert_executor(frame->f_code, src, index, executor);
+    insert_executor(code, src, index, executor);
     return executor->execute(executor, frame, stack_pointer);
 }
 
