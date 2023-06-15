@@ -24,6 +24,7 @@ Currently, the HOWTOs are:
    regex.rst
    sockets.rst
    sorting.rst
+   typing.rst
    unicode.rst
    urllib2.rst
    argparse.rst
