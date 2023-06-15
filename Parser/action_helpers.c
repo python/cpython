@@ -1231,7 +1231,7 @@ _PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args, asdl_comprehension_seq
 // Fstring stuff
 
 static expr_ty
-_PyPegen_decode_fstring_part(Parser* p, int is_raw, expr_ty constant) {
+_PyPegen_decode_fstring_part(Parser* p, int is_raw, expr_ty constant, Token* token) {
     assert(PyUnicode_CheckExact(constant->v.Constant.value));
 
     const char* bstr = PyUnicode_AsUTF8(constant->v.Constant.value);
@@ -1247,7 +1247,7 @@ _PyPegen_decode_fstring_part(Parser* p, int is_raw, expr_ty constant) {
     }
 
     is_raw = is_raw || strchr(bstr, '\\') == NULL;
-    PyObject *str = _PyPegen_decode_string(p, is_raw, bstr, len, NULL);
+    PyObject *str = _PyPegen_decode_string(p, is_raw, bstr, len, token);
     if (str == NULL) {
         _Pypegen_raise_decode_error(p);
         return NULL;
@@ -1321,7 +1321,7 @@ _PyPegen_joined_str(Parser *p, Token* a, asdl_expr_seq* raw_expressions, Token*b
     for (Py_ssize_t i = 0; i < n_items; i++) {
         expr_ty item = asdl_seq_GET(expr, i);
         if (item->kind == Constant_kind) {
-            item = _PyPegen_decode_fstring_part(p, is_raw, item);
+            item = _PyPegen_decode_fstring_part(p, is_raw, item, b);
             if (item == NULL) {
                 return NULL;
             }
