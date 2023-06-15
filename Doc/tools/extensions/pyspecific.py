@@ -41,7 +41,7 @@ except ImportError:
 
 ISSUE_URI = 'https://bugs.python.org/issue?@action=redirect&bpo=%s'
 GH_ISSUE_URI = 'https://github.com/python/cpython/issues/%s'
-SOURCE_URI = 'https://github.com/python/cpython/tree/main/%s'
+SOURCE_URI = 'https://github.com/python/cpython/tree/3.12/%s'
 
 # monkey-patch reST parser to disable alphabetic and roman enumerated lists
 from docutils.parsers.rst.states import Body
@@ -710,7 +710,6 @@ def setup(app):
     app.add_builder(PydocTopicsBuilder)
     app.add_object_type('opcode', 'opcode', '%s (opcode)', parse_opcode_signature)
     app.add_object_type('pdbcommand', 'pdbcmd', '%s (pdb command)', parse_pdb_command)
-    app.add_object_type('2to3fixer', '2to3fixer', '%s (2to3 fixer)')
     app.add_directive_to_domain('py', 'decorator', PyDecoratorFunction)
     app.add_directive_to_domain('py', 'decoratormethod', PyDecoratorMethod)
     app.add_directive_to_domain('py', 'coroutinefunction', PyCoroutineFunction)

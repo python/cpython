@@ -966,6 +966,7 @@ class TestRecursion(unittest.TestCase):
         finally:
             sys.setrecursionlimit(depth)
 
+
 class TestFunctionWithManyArgs(unittest.TestCase):
     def test_function_with_many_args(self):
         for N in (10, 500, 1000):
@@ -975,6 +976,25 @@ class TestFunctionWithManyArgs(unittest.TestCase):
                 l = {}
                 exec(src, {}, l)
                 self.assertEqual(l['f'](*range(N)), N//2)
+
+
+@unittest.skipIf(_testcapi is None, 'need _testcapi')
+class TestCAPI(unittest.TestCase):
+    def test_cfunction_call(self):
+        def func(*args, **kwargs):
+            return (args, kwargs)
+
+        # PyCFunction_Call() was removed in Python 3.13 API, but was kept in
+        # the stable ABI.
+        def PyCFunction_Call(func, *args, **kwargs):
+            if kwargs:
+                return _testcapi.pycfunction_call(func, args, kwargs)
+            else:
+                return _testcapi.pycfunction_call(func, args)
+
+        self.assertEqual(PyCFunction_Call(func), ((), {}))
+        self.assertEqual(PyCFunction_Call(func, 1, 2, 3), ((1, 2, 3), {}))
+        self.assertEqual(PyCFunction_Call(func, "arg", num=5), (("arg",), {'num': 5}))
 
 
 if __name__ == "__main__":

@@ -24,6 +24,7 @@ import warnings
 import sys, array, io, os
 from decimal import Decimal
 from fractions import Fraction
+from test.support import warnings_helper
 
 try:
     from _testbuffer import *
@@ -3217,12 +3218,6 @@ class TestBufferProtocol(unittest.TestCase):
         nd[0] = (-1, float('nan'))
         self.assertNotEqual(memoryview(nd), nd)
 
-        # Depends on issue #15625: the struct module does not understand 'u'.
-        a = array.array('u', 'xyz')
-        v = memoryview(a)
-        self.assertNotEqual(a, v)
-        self.assertNotEqual(v, a)
-
         # Some ctypes format strings are unknown to the struct module.
         if ctypes:
             # format: "T{>l:x:>l:y:}"
@@ -3235,6 +3230,15 @@ class TestBufferProtocol(unittest.TestCase):
             self.assertNotEqual(a, point)
             self.assertNotEqual(point, a)
             self.assertRaises(NotImplementedError, a.tolist)
+
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-80480 array('u')
+    def test_memoryview_compare_special_cases_deprecated_u_type_code(self):
+
+        # Depends on issue #15625: the struct module does not understand 'u'.
+        a = array.array('u', 'xyz')
+        v = memoryview(a)
+        self.assertNotEqual(a, v)
+        self.assertNotEqual(v, a)
 
     def test_memoryview_compare_ndim_zero(self):
 
@@ -4748,6 +4752,19 @@ class TestPythonBufferProtocol(unittest.TestCase):
             self.assertEqual(mv.tobytes(), b"hello")
         c.clear()
         self.assertIs(c.buffer, None)
+
+    def test_release_buffer_with_exception_set(self):
+        class A:
+            def __buffer__(self, flags):
+                return memoryview(bytes(8))
+            def __release_buffer__(self, view):
+                pass
+
+        b = bytearray(8)
+        with memoryview(b):
+            # now b.extend will raise an exception due to exports
+            with self.assertRaises(BufferError):
+                b.extend(A())
 
 
 if __name__ == "__main__":
