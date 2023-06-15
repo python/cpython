@@ -3,6 +3,7 @@ Typing HOWTO
 ============
 
 .. testsetup:: *
+
    import typing
    from typing import *
 
