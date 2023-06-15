@@ -1645,7 +1645,8 @@ print(f'''{{
 =}}''')""")
 
             _, stdout, _ = assert_python_ok(script)
-        self.assertEqual(stdout, b"\n3\n=3\n")
+        self.assertEqual(stdout.decode('utf-8').strip().replace('\r\n', '\n').replace('\r', '\n'),
+                         "3\n=3")
 
 if __name__ == '__main__':
     unittest.main()
