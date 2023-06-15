@@ -1151,7 +1151,7 @@ codegen_addop_j(instr_sequence *seq, location loc,
 }
 
 #define ADDOP_N(C, LOC, OP, O, TYPE) { \
-    assert(!HAS_CONST(OP)); /* use ADDOP_LOAD_CONST_NEW */ \
+    assert(!OPCODE_HAS_CONST(OP)); /* use ADDOP_LOAD_CONST_NEW */ \
     if (compiler_addop_o((C)->u, (LOC), (OP), (C)->u->u_metadata.u_ ## TYPE, (O)) < 0) { \
         Py_DECREF((O)); \
         return ERROR; \
