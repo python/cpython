@@ -1009,14 +1009,18 @@ class PyFramePtr:
         self._gdbval = gdbval
 
         if not self.is_optimized_out():
-            self.co = self._f_code()
-            self.co_name = self.co.pyop_field('co_name')
-            self.co_filename = self.co.pyop_field('co_filename')
+            try:
+                self.co = self._f_code()
+                self.co_name = self.co.pyop_field('co_name')
+                self.co_filename = self.co.pyop_field('co_filename')
 
-            self.f_lasti = self._f_lasti()
-            self.co_nlocals = int_from_int(self.co.field('co_nlocals'))
-            pnames = self.co.field('co_localsplusnames')
-            self.co_localsplusnames = PyTupleObjectPtr.from_pyobject_ptr(pnames)
+                self.f_lasti = self._f_lasti()
+                self.co_nlocals = int_from_int(self.co.field('co_nlocals'))
+                pnames = self.co.field('co_localsplusnames')
+                self.co_localsplusnames = PyTupleObjectPtr.from_pyobject_ptr(pnames)
+                self._is_code = True
+            except:
+                self._is_code = False
 
     def is_optimized_out(self):
         return self._gdbval.is_optimized_out
@@ -1051,7 +1055,10 @@ class PyFramePtr:
         return self._f_special("f_builtins")
 
     def _f_code(self):
-        return self._f_special("f_code", PyCodeObjectPtr.from_pyobject_ptr)
+        return self._f_special("f_executable", PyCodeObjectPtr.from_pyobject_ptr)
+
+    def _f_executable(self):
+        return self._f_special("f_executable")
 
     def _f_nlocalsplus(self):
         return self._f_special("nlocalsplus", int_from_int)

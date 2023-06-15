@@ -151,13 +151,15 @@ PyUnstable_SetOptimizer(_PyOptimizerObject *optimizer)
 _PyInterpreterFrame *
 _PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNIT *dest, PyObject **stack_pointer)
 {
+    PyCodeObject *code = (PyCodeObject *)frame->f_executable;
+    assert(PyCode_Check(code));
     PyInterpreterState *interp = PyInterpreterState_Get();
-    if (!has_space_for_executor(frame->f_code, src)) {
+    if (!has_space_for_executor(code, src)) {
         goto jump_to_destination;
     }
     _PyOptimizerObject *opt = interp->optimizer;
     _PyExecutorObject *executor = NULL;
-    int err = opt->optimize(opt, frame->f_code, dest, &executor);
+    int err = opt->optimize(opt, code, dest, &executor);
     if (err <= 0) {
         assert(executor == NULL);
         if (err < 0) {
@@ -165,7 +167,7 @@ _PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNI
         }
         goto jump_to_destination;
     }
-    int index = get_index_for_executor(frame->f_code, src);
+    int index = get_index_for_executor(code, src);
     if (index < 0) {
         /* Out of memory. Don't raise and assume that the
          * error will show up elsewhere.
@@ -176,7 +178,7 @@ _PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNI
         Py_DECREF(executor);
         goto jump_to_destination;
     }
-    insert_executor(frame->f_code, src, index, executor);
+    insert_executor(code, src, index, executor);
     assert(frame->prev_instr == src);
     return executor->execute(executor, frame, stack_pointer);
 jump_to_destination:

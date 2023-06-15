@@ -402,8 +402,12 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 0;
         case BUILD_SLICE:
             return ((oparg == 3) ? 1 : 0) + 2;
-        case FORMAT_VALUE:
-            return (((oparg & FVS_MASK) == FVS_HAVE_SPEC) ? 1 : 0) + 1;
+        case CONVERT_VALUE:
+            return 1;
+        case FORMAT_SIMPLE:
+            return 1;
+        case FORMAT_WITH_SPEC:
+            return 2;
         case COPY:
             return (oparg-1) + 1;
         case BINARY_OP:
@@ -820,7 +824,11 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case BUILD_SLICE:
             return 1;
-        case FORMAT_VALUE:
+        case CONVERT_VALUE:
+            return 1;
+        case FORMAT_SIMPLE:
+            return 1;
+        case FORMAT_WITH_SPEC:
             return 1;
         case COPY:
             return (oparg-1) + 2;
@@ -858,9 +866,11 @@ enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC00, INSTR_FMT
 #define HAS_ARG_FLAG (1)
 #define HAS_CONST_FLAG (2)
 #define HAS_NAME_FLAG (4)
+#define HAS_JUMP_FLAG (8)
 #define OPCODE_HAS_ARG(OP) (_PyOpcode_opcode_metadata[(OP)].flags & (HAS_ARG_FLAG))
 #define OPCODE_HAS_CONST(OP) (_PyOpcode_opcode_metadata[(OP)].flags & (HAS_CONST_FLAG))
 #define OPCODE_HAS_NAME(OP) (_PyOpcode_opcode_metadata[(OP)].flags & (HAS_NAME_FLAG))
+#define OPCODE_HAS_JUMP(OP) (_PyOpcode_opcode_metadata[(OP)].flags & (HAS_JUMP_FLAG))
 struct opcode_metadata {
     bool valid_entry;
     enum InstructionFormat instr_format;
@@ -929,7 +939,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {
     [GET_AITER] = { true, INSTR_FMT_IX, 0 },
     [GET_ANEXT] = { true, INSTR_FMT_IX, 0 },
     [GET_AWAITABLE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
-    [SEND] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG },
+    [SEND] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [SEND_GEN] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG },
     [INSTRUMENTED_YIELD_VALUE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [YIELD_VALUE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
@@ -1004,16 +1014,16 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {
     [CHECK_EXC_MATCH] = { true, INSTR_FMT_IX, 0 },
     [IMPORT_NAME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_NAME_FLAG },
     [IMPORT_FROM] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_NAME_FLAG },
-    [JUMP_FORWARD] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
-    [JUMP_BACKWARD] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
-    [JUMP] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
-    [JUMP_NO_INTERRUPT] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
+    [JUMP_FORWARD] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
+    [JUMP_BACKWARD] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
+    [JUMP] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
+    [JUMP_NO_INTERRUPT] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [ENTER_EXECUTOR] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
-    [POP_JUMP_IF_FALSE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
-    [POP_JUMP_IF_TRUE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
-    [POP_JUMP_IF_NOT_NONE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
-    [POP_JUMP_IF_NONE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
-    [JUMP_BACKWARD_NO_INTERRUPT] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
+    [POP_JUMP_IF_FALSE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
+    [POP_JUMP_IF_TRUE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
+    [POP_JUMP_IF_NOT_NONE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
+    [POP_JUMP_IF_NONE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
+    [JUMP_BACKWARD_NO_INTERRUPT] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [GET_LEN] = { true, INSTR_FMT_IX, 0 },
     [MATCH_CLASS] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [MATCH_MAPPING] = { true, INSTR_FMT_IX, 0 },
@@ -1021,11 +1031,11 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {
     [MATCH_KEYS] = { true, INSTR_FMT_IX, 0 },
     [GET_ITER] = { true, INSTR_FMT_IX, 0 },
     [GET_YIELD_FROM_ITER] = { true, INSTR_FMT_IX, 0 },
-    [FOR_ITER] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG },
+    [FOR_ITER] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [INSTRUMENTED_FOR_ITER] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
-    [FOR_ITER_LIST] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG },
-    [FOR_ITER_TUPLE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG },
-    [FOR_ITER_RANGE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG },
+    [FOR_ITER_LIST] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG },
+    [FOR_ITER_TUPLE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG },
+    [FOR_ITER_RANGE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [FOR_ITER_GEN] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG },
     [BEFORE_ASYNC_WITH] = { true, INSTR_FMT_IX, 0 },
     [BEFORE_WITH] = { true, INSTR_FMT_IX, 0 },
@@ -1064,7 +1074,9 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {
     [SET_FUNCTION_ATTRIBUTE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [RETURN_GENERATOR] = { true, INSTR_FMT_IX, 0 },
     [BUILD_SLICE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
-    [FORMAT_VALUE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
+    [CONVERT_VALUE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
+    [FORMAT_SIMPLE] = { true, INSTR_FMT_IX, 0 },
+    [FORMAT_WITH_SPEC] = { true, INSTR_FMT_IX, 0 },
     [COPY] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [BINARY_OP] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG },
     [SWAP] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },

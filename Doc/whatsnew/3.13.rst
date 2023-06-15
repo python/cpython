@@ -120,6 +120,14 @@ traceback
   to format the nested exceptions of a :exc:`BaseExceptionGroup` instance, recursively.
   (Contributed by Irit Katriel in :gh:`105292`.)
 
+typing
+------
+
+* Add :func:`typing.get_protocol_members` to return the set of members
+  defining a :class:`typing.Protocol`. Add :func:`typing.is_protocol` to
+  check whether a class is a :class:`typing.Protocol`. (Contributed by Jelle Zijlstra in
+  :gh:`104873`.)
+
 Optimizations
 =============
 
@@ -133,6 +141,20 @@ Deprecated
   methods of the :class:`wave.Wave_read` and :class:`wave.Wave_write` classes.
   They will be removed in Python 3.15.
   (Contributed by Victor Stinner in :gh:`105096`.)
+* Creating a :class:`typing.NamedTuple` class using keyword arguments to denote
+  the fields (``NT = NamedTuple("NT", x=int, y=int)``) is deprecated, and will
+  be disallowed in Python 3.15. Use the class-based syntax or the functional
+  syntax instead. (Contributed by Alex Waygood in :gh:`105566`.)
+* When using the functional syntax to create a :class:`typing.NamedTuple`
+  class or a :class:`typing.TypedDict` class, failing to pass a value to the
+  'fields' parameter (``NT = NamedTuple("NT")`` or ``TD = TypedDict("TD")``) is
+  deprecated. Passing ``None`` to the 'fields' parameter
+  (``NT = NamedTuple("NT", None)`` or ``TD = TypedDict("TD", None)``) is also
+  deprecated. Both will be disallowed in Python 3.15. To create a NamedTuple
+  class with 0 fields, use ``class NT(NamedTuple): pass`` or
+  ``NT = NamedTuple("NT", [])``. To create a TypedDict class with 0 fields, use
+  ``class TD(TypedDict): pass`` or ``TD = TypedDict("TD", {})``.
+  (Contributed by Alex Waygood in :gh:`105566` and :gh:`105570`.)
 
 * :mod:`array`'s ``'u'`` format code, deprecated in docs since Python 3.3,
   emits :exc:`DeprecationWarning` since 3.13

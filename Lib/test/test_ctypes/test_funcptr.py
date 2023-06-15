@@ -1,8 +1,9 @@
 import _ctypes_test
 import ctypes
 import unittest
-from ctypes import (CDLL, Structure, CFUNCTYPE, sizeof,
+from ctypes import (CDLL, Structure, CFUNCTYPE, sizeof, _CFuncPtr,
                     c_void_p, c_char_p, c_char, c_int, c_uint, c_long)
+
 
 try:
     WINFUNCTYPE = ctypes.WINFUNCTYPE
@@ -72,16 +73,8 @@ class CFuncPtrTestCase(unittest.TestCase):
 
         WNDPROC_2 = WINFUNCTYPE(c_long, c_int, c_int, c_int, c_int)
 
-        # This is no longer true, now that WINFUNCTYPE caches created types internally.
-        ## # CFuncPtr subclasses are compared by identity, so this raises a TypeError:
-        ## self.assertRaises(TypeError, setattr, wndclass,
-        ##                  "lpfnWndProc", WNDPROC_2(wndproc))
-        # instead:
-
         self.assertIs(WNDPROC, WNDPROC_2)
-        # 'wndclass.lpfnWndProc' leaks 94 references.  Why?
         self.assertEqual(wndclass.lpfnWndProc(1, 2, 3, 4), 10)
-
 
         f = wndclass.lpfnWndProc
 
@@ -91,24 +84,14 @@ class CFuncPtrTestCase(unittest.TestCase):
         self.assertEqual(f(10, 11, 12, 13), 46)
 
     def test_dllfunctions(self):
-
-        def NoNullHandle(value):
-            if not value:
-                raise ctypes.WinError()
-            return value
-
         strchr = lib.my_strchr
         strchr.restype = c_char_p
         strchr.argtypes = (c_char_p, c_char)
         self.assertEqual(strchr(b"abcdefghi", b"b"), b"bcdefghi")
         self.assertEqual(strchr(b"abcdefghi", b"x"), None)
 
-
         strtok = lib.my_strtok
         strtok.restype = c_char_p
-        # Neither of this does work: strtok changes the buffer it is passed
-##        strtok.argtypes = (c_char_p, c_char_p)
-##        strtok.argtypes = (c_string, c_char_p)
 
         def c_string(init):
             size = len(init) + 1
@@ -117,18 +100,12 @@ class CFuncPtrTestCase(unittest.TestCase):
         s = b"a\nb\nc"
         b = c_string(s)
 
-##        b = (c_char * (len(s)+1))()
-##        b.value = s
-
-##        b = c_string(s)
         self.assertEqual(strtok(b, b"\n"), b"a")
         self.assertEqual(strtok(None, b"\n"), b"b")
         self.assertEqual(strtok(None, b"\n"), b"c")
         self.assertEqual(strtok(None, b"\n"), None)
 
     def test_abstract(self):
-        from ctypes import _CFuncPtr
-
         self.assertRaises(TypeError, _CFuncPtr, 13, "name", 42, "iid")
 
 

@@ -327,6 +327,7 @@ Parser/parser.c	-	soft_keywords	-
 Parser/tokenizer.c	-	type_comment_prefix	-
 Python/ast_opt.c	fold_unaryop	ops	-
 Python/ceval.c	-	binary_ops	-
+Python/ceval.c	-	_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS	-
 Python/codecs.c	-	Py_hexdigits	-
 Python/codecs.c	-	ucnhash_capi	-
 Python/codecs.c	_PyCodecRegistry_Init	methods	-
