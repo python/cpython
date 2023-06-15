@@ -420,7 +420,7 @@ class Sniffer:
                 continue # skip rows that have irregular number of columns
 
             for col in list(columnTypes.keys()):
-                # checking if all col are strings
+                # check if all col are strings
                 if row[col].isnumeric():
                     col_are_strings = False
 
