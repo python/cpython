@@ -136,7 +136,7 @@ _PyCompile_InstrSize(int opcode, int oparg)
 {
     assert(IS_PSEUDO_OPCODE(opcode) == IS_PSEUDO_INSTR(opcode));
     assert(!IS_PSEUDO_INSTR(opcode));
-    assert(HAS_ARG(opcode) || oparg == 0);
+    assert(OPCODE_HAS_ARG(opcode) || oparg == 0);
     int extended_args = (0xFFFFFF < oparg) + (0xFFFF < oparg) + (0xFF < oparg);
     int caches = _PyOpcode_Caches[opcode];
     return extended_args + 1 + caches;
@@ -256,7 +256,7 @@ instr_sequence_addop(instr_sequence *seq, int opcode, int oparg, location loc)
     assert(0 <= opcode && opcode <= MAX_OPCODE);
     assert(IS_PSEUDO_OPCODE(opcode) == IS_PSEUDO_INSTR(opcode));
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
-    assert(HAS_ARG(opcode) || HAS_TARGET(opcode) || oparg == 0);
+    assert(OPCODE_HAS_ARG(opcode) || HAS_TARGET(opcode) || oparg == 0);
     assert(0 <= oparg && oparg < (1 << 30));
 
     int idx = instr_sequence_next_inst(seq);
@@ -874,7 +874,7 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
 static int
 codegen_addop_noarg(instr_sequence *seq, int opcode, location loc)
 {
-    assert(!HAS_ARG(opcode));
+    assert(!OPCODE_HAS_ARG(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
     return instr_sequence_addop(seq, opcode, 0, loc);
 }
@@ -7798,7 +7798,7 @@ instructions_to_instr_sequence(PyObject *instructions, instr_sequence *seq)
             goto error;
         }
         int oparg;
-        if (HAS_ARG(opcode)) {
+        if (OPCODE_HAS_ARG(opcode)) {
             oparg = PyLong_AsLong(PyTuple_GET_ITEM(item, 1));
             if (PyErr_Occurred()) {
                 goto error;

@@ -15,7 +15,7 @@ extern "C" {
 
 #define IS_WITHIN_OPCODE_RANGE(opcode) \
         (((opcode) >= 0 && (opcode) <= MAX_REAL_OPCODE) || \
-         IS_PSEUDO_OPCODE(opcode))
+         IS_PSEUDO_INSTR(opcode))
 
 #define IS_JUMP_OPCODE(opcode) \
          is_bit_set_in_table(_PyOpcode_Jump, opcode)

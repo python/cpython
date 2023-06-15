@@ -52,7 +52,7 @@ is_jump(cfg_instr *i)
 /* One arg*/
 #define INSTR_SET_OP1(I, OP, ARG) \
     do { \
-        assert(HAS_ARG(OP)); \
+        assert(OPCODE_HAS_ARG(OP)); \
         _PyCfgInstruction *_instr__ptr_ = (I); \
         _instr__ptr_->i_opcode = (OP); \
         _instr__ptr_->i_oparg = (ARG); \
@@ -61,7 +61,7 @@ is_jump(cfg_instr *i)
 /* No args*/
 #define INSTR_SET_OP0(I, OP) \
     do { \
-        assert(!HAS_ARG(OP)); \
+        assert(!OPCODE_HAS_ARG(OP)); \
         _PyCfgInstruction *_instr__ptr_ = (I); \
         _instr__ptr_->i_opcode = (OP); \
         _instr__ptr_->i_oparg = 0; \
@@ -111,7 +111,7 @@ basicblock_addop(basicblock *b, int opcode, int oparg, location loc)
 {
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
-    assert(HAS_ARG(opcode) || HAS_TARGET(opcode) || oparg == 0);
+    assert(OPCODE_HAS_ARG(opcode) || HAS_TARGET(opcode) || oparg == 0);
     assert(0 <= oparg && oparg < (1 << 30));
 
     int off = basicblock_next_instr(b);
@@ -193,7 +193,7 @@ dump_instr(cfg_instr *i)
     char arg[128];
 
     *arg = '\0';
-    if (HAS_ARG(i->i_opcode)) {
+    if (OPCODE_HAS_ARG(i->i_opcode)) {
         sprintf(arg, "arg: %d ", i->i_oparg);
     }
     if (HAS_TARGET(i->i_opcode)) {
