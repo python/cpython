@@ -251,7 +251,7 @@ instr_sequence_addop(instr_sequence *seq, int opcode, int oparg, location loc)
     /* compare old and new opcode macros - use ! to compare as bools. */
     assert(!HAS_ARG(opcode) == !OPCODE_HAS_ARG(opcode));
     assert(!HAS_CONST(opcode) == !OPCODE_HAS_CONST(opcode));
-    assert(!OPCODE_HAS_JUMP(opcode) == !OPCODE_HAS_JUMP(opcode));
+    assert(!IS_JUMP_OPCODE(opcode) == !OPCODE_HAS_JUMP(opcode));
 
     assert(0 <= opcode && opcode <= MAX_OPCODE);
     assert(IS_PSEUDO_OPCODE(opcode) == IS_PSEUDO_INSTR(opcode));
