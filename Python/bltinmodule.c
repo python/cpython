@@ -927,6 +927,9 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
             if (locals == NULL)
                 return NULL;
         }
+        else {
+            Py_INCREF(locals);
+        }
     }
     else if (locals == Py_None)
         locals = Py_NewRef(globals);
@@ -1015,6 +1018,9 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
             locals = PyEval_GetFrameLocals();
             if (locals == NULL)
                 return NULL;
+        }
+        else {
+            Py_INCREF(locals);
         }
         if (!globals || !locals) {
             PyErr_SetString(PyExc_SystemError,
@@ -1736,8 +1742,6 @@ static PyObject *
 builtin_locals_impl(PyObject *module)
 /*[clinic end generated code: output=b46c94015ce11448 input=7874018d478d5c4b]*/
 {
-    PyObject *d;
-
     return PyEval_GetFrameLocals();
 }
 
