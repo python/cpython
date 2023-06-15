@@ -113,7 +113,7 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
 
 #define PyUnicode_Check(op) \
     PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_UNICODE_SUBCLASS)
-#define PyUnicode_CheckExact(op) Py_IS_TYPE(op, &PyUnicode_Type)
+#define PyUnicode_CheckExact(op) Py_IS_TYPE((op), &PyUnicode_Type)
 
 /* --- Constants ---------------------------------------------------------- */
 
@@ -626,7 +626,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_AsLatin1String(
 
 /* --- ASCII Codecs -------------------------------------------------------
 
-   Only 7-bit ASCII data is excepted. All other codes generate errors.
+   Only 7-bit ASCII data is expected. All other codes generate errors.
 
 */
 

@@ -46,7 +46,7 @@ PyAPI_FUNC(PyObject *) PyImport_AddModule(
 PyAPI_FUNC(PyObject *) PyImport_ImportModule(
     const char *name            /* UTF-8 encoded string */
     );
-PyAPI_FUNC(PyObject *) PyImport_ImportModuleNoBlock(
+Py_DEPRECATED(3.13) PyAPI_FUNC(PyObject *) PyImport_ImportModuleNoBlock(
     const char *name            /* UTF-8 encoded string */
     );
 PyAPI_FUNC(PyObject *) PyImport_ImportModuleLevel(
@@ -67,7 +67,7 @@ PyAPI_FUNC(PyObject *) PyImport_ImportModuleLevelObject(
 #endif
 
 #define PyImport_ImportModuleEx(n, g, l, f) \
-    PyImport_ImportModuleLevel(n, g, l, f, 0)
+    PyImport_ImportModuleLevel((n), (g), (l), (f), 0)
 
 PyAPI_FUNC(PyObject *) PyImport_GetImporter(PyObject *path);
 PyAPI_FUNC(PyObject *) PyImport_Import(PyObject *name);

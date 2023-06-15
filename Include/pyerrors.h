@@ -18,6 +18,8 @@ PyAPI_FUNC(PyObject *) PyErr_Occurred(void);
 PyAPI_FUNC(void) PyErr_Clear(void);
 PyAPI_FUNC(void) PyErr_Fetch(PyObject **, PyObject **, PyObject **);
 PyAPI_FUNC(void) PyErr_Restore(PyObject *, PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) PyErr_GetRaisedException(void);
+PyAPI_FUNC(void) PyErr_SetRaisedException(PyObject *);
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030b0000
 PyAPI_FUNC(PyObject*) PyErr_GetHandledException(void);
 PyAPI_FUNC(void) PyErr_SetHandledException(PyObject *);
@@ -51,6 +53,10 @@ PyAPI_FUNC(void) PyException_SetCause(PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyException_GetContext(PyObject *);
 PyAPI_FUNC(void) PyException_SetContext(PyObject *, PyObject *);
 
+
+PyAPI_FUNC(PyObject *) PyException_GetArgs(PyObject *);
+PyAPI_FUNC(void) PyException_SetArgs(PyObject *, PyObject *);
+
 /* */
 
 #define PyExceptionClass_Check(x)                                       \
@@ -62,10 +68,10 @@ PyAPI_FUNC(void) PyException_SetContext(PyObject *, PyObject *);
 
 PyAPI_FUNC(const char *) PyExceptionClass_Name(PyObject *);
 
-#define PyExceptionInstance_Class(x) ((PyObject*)Py_TYPE(x))
+#define PyExceptionInstance_Class(x) _PyObject_CAST(Py_TYPE(x))
 
 #define _PyBaseExceptionGroup_Check(x)                   \
-    PyObject_TypeCheck(x, (PyTypeObject *)PyExc_BaseExceptionGroup)
+    PyObject_TypeCheck((x), (PyTypeObject *)PyExc_BaseExceptionGroup)
 
 /* Predefined exceptions */
 

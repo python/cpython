@@ -351,6 +351,7 @@ The fine print:
 
      >>> def f(x):
      ...     r'''Backslashes in a raw docstring: m\n'''
+     ...
      >>> print(f.__doc__)
      Backslashes in a raw docstring: m\n
 
@@ -360,6 +361,7 @@ The fine print:
 
      >>> def f(x):
      ...     '''Backslashes in a raw docstring: m\\n'''
+     ...
      >>> print(f.__doc__)
      Backslashes in a raw docstring: m\n
 
@@ -565,12 +567,12 @@ doctest decides whether actual output matches an example's expected output:
 
    When specified, doctests expecting exceptions pass so long as an exception
    of the expected type is raised, even if the details
-   (message and fully-qualified exception name) don't match.
+   (message and fully qualified exception name) don't match.
 
    For example, an example expecting ``ValueError: 42`` will pass if the actual
    exception raised is ``ValueError: 3*14``, but will fail if, say, a
    :exc:`TypeError` is raised instead.
-   It will also ignore any fully-qualified name included before the
+   It will also ignore any fully qualified name included before the
    exception class, which can vary between implementations and versions
    of Python and the code/libraries in use.
    Hence, all three of these variations will work with the flag specified:
@@ -696,10 +698,10 @@ special Python comments following an example's source code:
 
 .. productionlist:: doctest
    directive: "#" "doctest:" `directive_options`
-   directive_options: `directive_option` ("," `directive_option`)\*
+   directive_options: `directive_option` ("," `directive_option`)*
    directive_option: `on_or_off` `directive_option_name`
-   on_or_off: "+" \| "-"
-   directive_option_name: "DONT_ACCEPT_BLANKLINE" \| "NORMALIZE_WHITESPACE" \| ...
+   on_or_off: "+" | "-"
+   directive_option_name: "DONT_ACCEPT_BLANKLINE" | "NORMALIZE_WHITESPACE" | ...
 
 Whitespace is not allowed between the ``+`` or ``-`` and the directive option
 name.  The directive option name can be any of the option flag names explained
@@ -1055,7 +1057,7 @@ from text files and modules with doctests:
    from a text file using :func:`DocFileSuite`.
 
 
-.. function:: DocTestSuite(module=None, globs=None, extraglobs=None, test_finder=None, setUp=None, tearDown=None, checker=None)
+.. function:: DocTestSuite(module=None, globs=None, extraglobs=None, test_finder=None, setUp=None, tearDown=None, optionflags=0, checker=None)
 
    Convert doctest tests for a module to a :class:`unittest.TestSuite`.
 

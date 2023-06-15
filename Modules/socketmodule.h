@@ -249,6 +249,11 @@ typedef int SOCKET_T;
 #define PyLong_AsSocket_t(fd) (SOCKET_T)PyLong_AsLongLong(fd)
 #endif
 
+// AF_HYPERV is only supported on Windows
+#if defined(AF_HYPERV) && defined(MS_WINDOWS)
+#  define HAVE_AF_HYPERV
+#endif
+
 /* Socket address */
 typedef union sock_addr {
     struct sockaddr_in in;
@@ -297,7 +302,7 @@ typedef union sock_addr {
 #ifdef HAVE_LINUX_TIPC_H
     struct sockaddr_tipc tipc;
 #endif
-#ifdef AF_HYPERV
+#ifdef HAVE_AF_HYPERV
     SOCKADDR_HV hv;
 #endif
 } sock_addr_t;
@@ -317,6 +322,7 @@ typedef struct {
                                         sets a Python exception */
     _PyTime_t sock_timeout;     /* Operation timeout in seconds;
                                         0.0 means non-blocking */
+    struct _socket_state *state;
 } PySocketSockObject;
 
 /* --- C API ----------------------------------------------------*/

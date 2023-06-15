@@ -812,15 +812,12 @@ class ItimerTest(unittest.TestCase):
         signal.signal(signal.SIGVTALRM, self.sig_vtalrm)
         signal.setitimer(self.itimer, 0.3, 0.2)
 
-        start_time = time.monotonic()
-        while time.monotonic() - start_time < 60.0:
+        for _ in support.busy_retry(support.LONG_TIMEOUT):
             # use up some virtual time by doing real work
             _ = pow(12345, 67890, 10000019)
             if signal.getitimer(self.itimer) == (0.0, 0.0):
-                break # sig_vtalrm handler stopped this itimer
-        else: # Issue 8424
-            self.skipTest("timeout: likely cause: machine too slow or load too "
-                          "high")
+                # sig_vtalrm handler stopped this itimer
+                break
 
         # virtual itimer should be (0.0, 0.0) now
         self.assertEqual(signal.getitimer(self.itimer), (0.0, 0.0))
@@ -832,15 +829,12 @@ class ItimerTest(unittest.TestCase):
         signal.signal(signal.SIGPROF, self.sig_prof)
         signal.setitimer(self.itimer, 0.2, 0.2)
 
-        start_time = time.monotonic()
-        while time.monotonic() - start_time < 60.0:
+        for _ in support.busy_retry(support.LONG_TIMEOUT):
             # do some work
             _ = pow(12345, 67890, 10000019)
             if signal.getitimer(self.itimer) == (0.0, 0.0):
-                break # sig_prof handler stopped this itimer
-        else: # Issue 8424
-            self.skipTest("timeout: likely cause: machine too slow or load too "
-                          "high")
+                # sig_prof handler stopped this itimer
+                break
 
         # profiling itimer should be (0.0, 0.0) now
         self.assertEqual(signal.getitimer(self.itimer), (0.0, 0.0))
@@ -1307,8 +1301,6 @@ class StressTest(unittest.TestCase):
         self.setsig(signal.SIGALRM, handler)  # for ITIMER_REAL
 
         expected_sigs = 0
-        deadline = time.monotonic() + support.SHORT_TIMEOUT
-
         while expected_sigs < N:
             # Hopefully the SIGALRM will be received somewhere during
             # initial processing of SIGUSR1.
@@ -1317,8 +1309,9 @@ class StressTest(unittest.TestCase):
 
             expected_sigs += 2
             # Wait for handlers to run to avoid signal coalescing
-            while len(sigs) < expected_sigs and time.monotonic() < deadline:
-                time.sleep(1e-5)
+            for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+                if len(sigs) >= expected_sigs:
+                    break
 
         # All ITIMER_REAL signals should have been delivered to the
         # Python handler
@@ -1412,6 +1405,21 @@ class RaiseSignalTest(unittest.TestCase):
 
         signal.raise_signal(signal.SIGINT)
         self.assertTrue(is_ok)
+
+    def test__thread_interrupt_main(self):
+        # See https://github.com/python/cpython/issues/102397
+        code = """if 1:
+        import _thread
+        class Foo():
+            def __del__(self):
+                _thread.interrupt_main()
+
+        x = Foo()
+        """
+
+        rc, out, err = assert_python_ok('-c', code)
+        self.assertIn(b'OSError: Signal 2 ignored due to race condition', err)
+
 
 
 class PidfdSignalTest(unittest.TestCase):
