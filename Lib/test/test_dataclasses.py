@@ -4545,11 +4545,11 @@ class TestKeywordArgs(unittest.TestCase):
     def test_dataclass_derived_slots(self):
         class A:
             pass
-            
+
         @dataclass(slots=True, weakref_slot=True)
         class B(A):
             pass
-        
+
         B()
 
 
