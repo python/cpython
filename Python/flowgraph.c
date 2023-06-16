@@ -45,7 +45,6 @@ is_block_push(cfg_instr *i)
 static inline int
 is_jump(cfg_instr *i)
 {
-    assert(!OPCODE_HAS_JUMP(i->i_opcode) == !IS_JUMP_OPCODE(i->i_opcode));
     return OPCODE_HAS_JUMP(i->i_opcode);
 }
 
