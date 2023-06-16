@@ -1055,17 +1055,17 @@ class TestDescriptions(unittest.TestCase):
         self.assertIn(list.__doc__.strip().splitlines()[0], doc)
 
     def test_union_type(self):
-        self.assertEqual(pydoc.describe(typing.Union[int, str]), 'UnionType')
+        self.assertEqual(pydoc.describe(typing.Union[int, str]), 'Union')
         doc = pydoc.render_doc(typing.Union[int, str], renderer=pydoc.plaintext)
-        self.assertIn('UnionType in module types', doc)
-        self.assertIn('class UnionType(builtins.object)', doc)
+        self.assertIn('Union in module typing', doc)
+        self.assertIn('class Union(builtins.object)', doc)
         if typing.Union.__doc__:
             self.assertIn(typing.Union.__doc__.strip().splitlines()[0], doc)
 
-        self.assertEqual(pydoc.describe(int | str), 'UnionType')
+        self.assertEqual(pydoc.describe(int | str), 'Union')
         doc = pydoc.render_doc(int | str, renderer=pydoc.plaintext)
-        self.assertIn('UnionType in module types', doc)
-        self.assertIn('class UnionType(builtins.object)', doc)
+        self.assertIn('Union in module typing', doc)
+        self.assertIn('class Union(builtins.object)', doc)
         self.assertIn(types.UnionType.__doc__.strip().splitlines()[0], doc)
 
     def test_special_form(self):
