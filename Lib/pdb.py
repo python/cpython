@@ -76,6 +76,7 @@ import bdb
 import dis
 import code
 import glob
+import codeop
 import pprint
 import signal
 import inspect
@@ -444,7 +445,30 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         locals = self.curframe_locals
         globals = self.curframe.f_globals
         try:
-            code = compile(line + '\n', '<stdin>', 'single')
+            if (code := codeop.compile_command(line + '\n', '<stdin>', 'single')) is None:
+                # Multi-line mode
+                buffer = line
+                continue_prompt = "...   "
+                while (code := codeop.compile_command(buffer, '<stdin>', 'single')) is None:
+                    if self.use_rawinput:
+                        try:
+                            line = input(continue_prompt)
+                        except (EOFError, KeyboardInterrupt):
+                            self.lastcmd = ""
+                            print('\n')
+                            return
+                    else:
+                        self.stdout.write(continue_prompt)
+                        self.stdout.flush()
+                        line = self.stdin.readline()
+                        if not len(line):
+                            self.lastcmd = ""
+                            self.stdout.write('\n')
+                            self.stdout.flush()
+                            return
+                        else:
+                            line = line.rstrip('\r\n')
+                    buffer += '\n' + line
             save_stdout = sys.stdout
             save_stdin = sys.stdin
             save_displayhook = sys.displayhook
@@ -644,7 +668,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             try:
                 bnum = int(arg)
             except:
-                self.error("Usage: commands [bnum]\n        ...\n        end")
+                self._print_invalid_arg(arg)
                 return
         try:
             self.get_bpbynumber(bnum)
@@ -941,14 +965,22 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         condition evaluates to true.
         """
         args = arg.split()
-        try:
-            count = int(args[1].strip())
-        except:
+        if not args:
+            self.error('Breakpoint number expected')
+            return
+        if len(args) == 1:
             count = 0
+        elif len(args) == 2:
+            try:
+                count = int(args[1])
+            except ValueError:
+                self._print_invalid_arg(arg)
+                return
+        else:
+            self._print_invalid_arg(arg)
+            return
         try:
             bp = self.get_bpbynumber(args[0].strip())
-        except IndexError:
-            self.error('Breakpoint number expected')
         except ValueError as err:
             self.error(err)
         else:
@@ -1025,6 +1057,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         An arrow indicates the "current frame", which determines the
         context of most commands.  'bt' is an alias for this command.
         """
+        if arg:
+            self._print_invalid_arg(arg)
+            return
         self.print_stack_trace()
     do_w = do_where
     do_bt = do_where
@@ -1112,6 +1147,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         (either in a function that is called or in the current
         function).
         """
+        if arg:
+            self._print_invalid_arg(arg)
+            return
         self.set_step()
         return 1
     do_s = do_step
@@ -1122,6 +1160,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         Continue execution until the next line in the current function
         is reached or it returns.
         """
+        if arg:
+            self._print_invalid_arg(arg)
+            return
         self.set_next(self.curframe)
         return 1
     do_n = do_next
@@ -1153,6 +1194,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         Continue execution until the current function returns.
         """
+        if arg:
+            self._print_invalid_arg(arg)
+            return
         self.set_return(self.curframe)
         return 1
     do_r = do_return
@@ -1162,6 +1206,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         Continue execution, only stop when a breakpoint is encountered.
         """
+        if arg:
+            self._print_invalid_arg(arg)
+            return
         if not self.nosigint:
             try:
                 Pdb._previous_sigint_handler = \
@@ -1256,6 +1303,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         Print the argument list of the current function.
         """
+        if arg:
+            self._print_invalid_arg(arg)
+            return
         co = self.curframe.f_code
         dict = self.curframe_locals
         n = co.co_argcount + co.co_kwonlyargcount
@@ -1274,6 +1324,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         Print the return value for the last return of a function.
         """
+        if arg:
+            self._print_invalid_arg(arg)
+            return
         if '__return__' in self.curframe_locals:
             self.message(repr(self.curframe_locals['__return__']))
         else:
@@ -1390,6 +1443,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         List the whole source code for the current function or frame.
         """
+        if arg:
+            self._print_invalid_arg(arg)
+            return
         filename = self.curframe.f_code.co_filename
         breaklist = self.get_file_breaks(filename)
         try:
@@ -1570,7 +1626,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         Delete the specified alias.
         """
         args = arg.split()
-        if len(args) == 0: return
+        if len(args) == 0:
+            self._print_invalid_arg(arg)
+            return
         if args[0] in self.aliases:
             del self.aliases[args[0]]
 
@@ -1723,7 +1781,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         lineno = max(1, lineno)
         return lines, lineno
 
-    def _help_message_from_doc(self, doc):
+    def _help_message_from_doc(self, doc, usage_only=False):
         lines = [line.strip() for line in doc.rstrip().splitlines()]
         if not lines:
             return "No help message found."
@@ -1739,9 +1797,23 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             elif i < usage_end:
                 prefix = "       "
             else:
+                if usage_only:
+                    break
                 prefix = ""
             formatted.append(indent + prefix + line)
         return "\n".join(formatted)
+
+    def _print_invalid_arg(self, arg):
+        """Return the usage string for a function."""
+
+        self.error(f"Invalid argument: {arg}")
+
+        # Yes it's a bit hacky. Get the caller name, get the method based on
+        # that name, and get the docstring from that method.
+        # This should NOT fail if the caller is a method of this class.
+        doc = inspect.getdoc(getattr(self, sys._getframe(1).f_code.co_name))
+        if doc is not None:
+            self.message(self._help_message_from_doc(doc, usage_only=True))
 
 # Collect all command help into docstring, if not run with -OO
 

@@ -169,6 +169,12 @@ Modules/_xxinterpchannelsmodule.c	-	_globals	-
 Python/pyfpe.c	-	PyFPE_counter	-
 
 ##-----------------------
+## thread-local variables
+
+Python/import.c	-	pkgcontext	-
+Python/pystate.c	-	_Py_tss_tstate	-
+
+##-----------------------
 ## should be const
 # XXX Make them const.
 
@@ -321,6 +327,7 @@ Parser/parser.c	-	soft_keywords	-
 Parser/tokenizer.c	-	type_comment_prefix	-
 Python/ast_opt.c	fold_unaryop	ops	-
 Python/ceval.c	-	binary_ops	-
+Python/ceval.c	-	_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS	-
 Python/codecs.c	-	Py_hexdigits	-
 Python/codecs.c	-	ucnhash_capi	-
 Python/codecs.c	_PyCodecRegistry_Init	methods	-
@@ -356,6 +363,10 @@ Python/sysmodule.c	-	perf_map_state	-
 Python/sysmodule.c	-	_PySys_ImplCacheTag	-
 Python/sysmodule.c	-	_PySys_ImplName	-
 Python/sysmodule.c	-	whatstrings	-
+Python/optimizer.c	-	DefaultOptimizer_Type	-
+Python/optimizer.c	-	CounterExecutor_Type	-
+Python/optimizer.c	-	CounterOptimizer_Type	-
+Python/optimizer.c	-	_PyOptimizer_Default	-
 
 ##-----------------------
 ## test code
@@ -420,6 +431,8 @@ Modules/_testcapi/watchers.c	-	num_code_object_destroyed_events	-
 Modules/_testcapi/watchers.c	-	pyfunc_watchers	-
 Modules/_testcapi/watchers.c	-	func_watcher_ids	-
 Modules/_testcapi/watchers.c	-	func_watcher_callbacks	-
+Modules/_testcapimodule.c	-	BasicStaticTypes	-
+Modules/_testcapimodule.c	-	num_basic_static_types_used	-
 Modules/_testcapimodule.c	-	ContainerNoGC_members	-
 Modules/_testcapimodule.c	-	ContainerNoGC_type	-
 Modules/_testcapimodule.c	-	FmData	-
@@ -511,6 +524,7 @@ Modules/_testcapimodule.c	-	g_type_watchers_installed	-
 Modules/_testimportmultiple.c	-	_barmodule	-
 Modules/_testimportmultiple.c	-	_foomodule	-
 Modules/_testimportmultiple.c	-	_testimportmultiple	-
+Modules/_testinternalcapi.c	-	pending_identify_result	-
 Modules/_testmultiphase.c	-	Example_Type_slots	-
 Modules/_testmultiphase.c	-	Example_Type_spec	-
 Modules/_testmultiphase.c	-	Example_methods	-

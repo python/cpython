@@ -8,19 +8,19 @@ module Python
         | Expression(expr body)
         | FunctionType(expr* argtypes, expr returns)
 
-    stmt = FunctionDef(identifier name, type_param* type_params, arguments args,
+    stmt = FunctionDef(identifier name, arguments args,
                        stmt* body, expr* decorator_list, expr? returns,
-                       string? type_comment)
-          | AsyncFunctionDef(identifier name, type_param* type_params, arguments args,
+                       string? type_comment, type_param* type_params)
+          | AsyncFunctionDef(identifier name, arguments args,
                              stmt* body, expr* decorator_list, expr? returns,
-                             string? type_comment)
+                             string? type_comment, type_param* type_params)
 
           | ClassDef(identifier name,
-             type_param* type_params,
              expr* bases,
              keyword* keywords,
              stmt* body,
-             expr* decorator_list)
+             expr* decorator_list,
+             type_param* type_params)
           | Return(expr? value)
 
           | Delete(expr* targets)

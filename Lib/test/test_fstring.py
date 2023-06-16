@@ -15,7 +15,7 @@ import decimal
 import unittest
 from test import support
 from test.support.os_helper import temp_cwd
-from test.support.script_helper import assert_python_failure
+from test.support.script_helper import assert_python_failure, assert_python_ok
 
 a_global = 'global variable'
 
@@ -764,6 +764,16 @@ x = (
                              """f'{"s"!{"r"}}'""",
                              ])
 
+    def test_custom_format_specifier(self):
+        class CustomFormat:
+            def __format__(self, format_spec):
+                return format_spec
+
+        self.assertEqual(f'{CustomFormat():\n}', '\n')
+        self.assertEqual(f'{CustomFormat():\u2603}', '☃')
+        with self.assertWarns(SyntaxWarning):
+            exec('f"{F():¯\_(ツ)_/¯}"', {'F': CustomFormat})
+
     def test_side_effect_order(self):
         class X:
             def __init__(self):
@@ -897,6 +907,9 @@ x = (
         with self.assertWarns(DeprecationWarning):  # invalid escape sequence
             value = eval(r"f'\{6*7}'")
         self.assertEqual(value, '\\42')
+        with self.assertWarns(SyntaxWarning):  # invalid escape sequence
+            value = eval(r"f'\g'")
+        self.assertEqual(value, '\\g')
         self.assertEqual(f'\\{6*7}', '\\42')
         self.assertEqual(fr'\{6*7}', '\\42')
 
@@ -1621,6 +1634,19 @@ sdfsdfs{1+
                                 "f'{1=}{1;'",
                                 "f'{1=}{1;}'",
                             ])
+
+    def test_debug_in_file(self):
+        with temp_cwd():
+            script = 'script.py'
+            with open('script.py', 'w') as f:
+                f.write(f"""\
+print(f'''{{
+3
+=}}''')""")
+
+            _, stdout, _ = assert_python_ok(script)
+        self.assertEqual(stdout.decode('utf-8').strip().replace('\r\n', '\n').replace('\r', '\n'),
+                         "3\n=3")
 
 if __name__ == '__main__':
     unittest.main()
