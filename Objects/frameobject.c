@@ -425,9 +425,8 @@ mark_stacks(PyCodeObject *code_obj, int len)
                 }
                 case CALL:
                 {
-                    int args = oparg >> 1;
-                    bool kwnames = oparg & 1;
-                    for (int j = 0; j < 2 + args + kwnames; j++) {
+                    int args = (oparg >> 1) + (oparg & 1);
+                    for (int j = 0; j < args+2; j++) {
                         next_stack = pop_value(next_stack);
                     }
                     next_stack = push_value(next_stack, Object);
