@@ -4,6 +4,7 @@ from collections import defaultdict
 from functools import lru_cache, wraps
 import inspect
 import itertools
+import gc
 import pickle
 import re
 import sys
