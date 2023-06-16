@@ -1154,7 +1154,6 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
 
     if frozen and set(_get_all_slots(cls)).difference(('__dict__', '__weakref__')):
         # Need this for pickling frozen classes with slots.
-        print(cls, fields, _get_all_slots(cls))
         _set_new_attribute(cls, '__getstate__', _dataclass_getstate)
         _set_new_attribute(cls, '__setstate__', _dataclass_setstate)
 
