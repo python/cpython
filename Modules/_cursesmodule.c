@@ -167,20 +167,18 @@ class _curses.window "PyCursesWindowObject *" "clinic_state()->PyCursesWindow_Ty
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=83369be6e20ef0da]*/
 
-/* Tells whether setupterm() has been called to initialise terminfo.  */
-static int initialised_setupterm = FALSE;
-
-/* Tells whether initscr() has been called to initialise curses.  */
-static int initialised = FALSE;
-
-/* Tells whether start_color() has been called to initialise color usage. */
-static int initialisedcolors = FALSE;
-
 
 typedef struct _curses_state {
     PyTypeObject *PyCursesWindow_Type;
     PyObject *PyCursesError;
     char *screen_encoding;
+
+    /* Tells whether setupterm() has been called to initialise terminfo.  */
+    int initialised_setupterm;
+    /* Tells whether initscr() has been called to initialise curses.  */
+    int initialised;
+    /* Tells whether start_color() has been called to initialise color usage. */
+    int initialisedcolors;
 } _curses_state;
 
 static struct PyModuleDef _curses_module;
@@ -227,19 +225,19 @@ _curses_free(void *mod)
 
 /* Utility Macros */
 #define PyCursesSetupTermCalled(state)                                  \
-    if (initialised_setupterm != TRUE) {                                \
+    if (state->initialised_setupterm != TRUE) {                         \
         PyErr_SetString(state->PyCursesError,                           \
                         "must call (at least) setupterm() first");      \
         return 0; }
 
 #define PyCursesInitialised(state)                      \
-    if (initialised != TRUE) {                          \
+    if (state->initialised != TRUE) {                   \
         PyErr_SetString(state->PyCursesError,           \
                         "must call initscr() first");   \
         return 0; }
 
 #define PyCursesInitialisedColor(state)                         \
-    if (initialisedcolors != TRUE) {                            \
+    if (state->initialisedcolors != TRUE) {                     \
         PyErr_SetString(state->PyCursesError,                   \
                         "must call start_color() first");       \
         return 0; }
@@ -575,36 +573,6 @@ class component_converter(CConverter):
 /* Function versions of the 3 functions for testing whether curses has been
    initialised or not. */
 
-
-static int func_PyCursesSetupTermCalled(void *exc)
-{
-    if (initialised_setupterm != TRUE) {
-        PyErr_SetString((PyObject *)exc,
-                        "must call (at least) setupterm() first");
-        return 0;
-    }
-    return 1;
-}
-
-static int func_PyCursesInitialised(void *exc)
-{
-    if (initialised != TRUE) {
-        PyErr_SetString((PyObject *)exc,
-                        "must call initscr() first");
-        return 0;
-    }
-    return 1;
-}
-
-static int func_PyCursesInitialisedColor(void *exc)
-{
-    if (initialisedcolors != TRUE) {
-        PyErr_SetString((PyObject *)exc,
-                        "must call start_color() first");
-        return 0;
-    }
-    return 1;
-}
 
 /*****************************************************************************
  The Window Object
@@ -3323,7 +3291,7 @@ _curses_initscr_impl(PyObject *module)
 
     _curses_state *state = get_curses_state(module);
 
-    if (initialised) {
+    if (state->initialised) {
         wrefresh(stdscr);
         return (PyObject *)PyCursesWindow_New(state, stdscr, NULL);
     }
@@ -3335,7 +3303,8 @@ _curses_initscr_impl(PyObject *module)
         return NULL;
     }
 
-    initialised = initialised_setupterm = TRUE;
+    state->initialised = TRUE;
+    state->initialised_setupterm = TRUE;
 
 /* This was moved from initcurses() because it core dumped on SGI,
    where they're not defined until you've called initscr() */
@@ -3466,7 +3435,7 @@ _curses_setupterm_impl(PyObject *module, const char *term, int fd)
         }
     }
 
-    if (!initialised_setupterm && setupterm((char *)term, fd, &err) == ERR) {
+    if (!state->initialised_setupterm && setupterm((char *)term, fd, &err) == ERR) {
         const char* s = "setupterm: unknown error";
 
         if (err == 0) {
@@ -3479,7 +3448,7 @@ _curses_setupterm_impl(PyObject *module, const char *term, int fd)
         return NULL;
     }
 
-    initialised_setupterm = TRUE;
+    state->initialised_setupterm = TRUE;
 
     Py_RETURN_NONE;
 }
@@ -4289,7 +4258,7 @@ _curses_start_color_impl(PyObject *module)
 
     code = start_color();
     if (code != ERR) {
-        initialisedcolors = TRUE;
+        state->initialisedcolors = TRUE;
         c = PyLong_FromLong((long) COLORS);
         if (c == NULL)
             return NULL;
@@ -4834,6 +4803,10 @@ _curses_exec(PyObject *module)
     state->PyCursesError = error;
     state->screen_encoding = NULL;
 
+    state->initialised = FALSE;
+    state->initialised_setupterm = FALSE;
+    state->initialisedcolors = FALSE;
+
     /* Allocate C API pointer array */
     void **PyCurses_API = PyMem_Calloc(PyCurses_API_pointers, sizeof(void *));
     if (PyCurses_API == NULL) {
@@ -4842,9 +4815,9 @@ _curses_exec(PyObject *module)
     }
     /* Initialize the C API pointer array */
     PyCurses_API[0] = (void *)Py_NewRef(state->PyCursesWindow_Type);
-    PyCurses_API[1] = (void *)func_PyCursesSetupTermCalled;
-    PyCurses_API[2] = (void *)func_PyCursesInitialised;
-    PyCurses_API[3] = (void *)func_PyCursesInitialisedColor;
+    PyCurses_API[1] = (void *)&state->initialised;
+    PyCurses_API[2] = (void *)&state->initialised_setupterm;
+    PyCurses_API[3] = (void *)&state->initialisedcolors;
     PyCurses_API[4] = (void *)Py_NewRef(state->PyCursesError);
 
     /* Add a capsule for the C API */
