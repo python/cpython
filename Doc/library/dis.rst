@@ -342,10 +342,25 @@ details of bytecode instructions as :class:`Instruction` instances:
       human readable name for operation
 
 
+   .. data:: baseopcode
+
+      numeric code for the base operation if operation is specialized;
+      otherwise equal to :data:`opcode`
+
+
+   .. data:: baseopname
+
+      human readable name for the base operation if operation is specialized;
+      otherwise equal to :data:`opname`
+
+
    .. data:: arg
 
       numeric argument to operation (if any), otherwise ``None``
 
+   .. data:: oparg
+
+      alias for :data:`arg`
 
    .. data:: argval
 
@@ -363,6 +378,22 @@ details of bytecode instructions as :class:`Instruction` instances:
       start index of operation within bytecode sequence
 
 
+   .. data:: start_offset
+
+      start index of operation within bytecode sequence, including prefixed
+      ``EXTENDED_ARG`` operations if present; otherwise equal to :data:`offset`
+
+
+   .. data:: cache_offset
+
+      start index of the cache entries following the operation
+
+
+   .. data:: end_offset
+
+      end index of the cache entries following the operation
+
+
    .. data:: starts_line
 
       line started by this opcode (if any), otherwise ``None``
@@ -371,6 +402,12 @@ details of bytecode instructions as :class:`Instruction` instances:
    .. data:: is_jump_target
 
       ``True`` if other code jumps to here, otherwise ``False``
+
+
+   .. data:: jump_target
+
+      bytecode index of the jump target if this is a jump operation,
+      otherwise ``None``
 
 
    .. data:: positions
@@ -383,6 +420,11 @@ details of bytecode instructions as :class:`Instruction` instances:
    .. versionchanged:: 3.11
 
       Field ``positions`` is added.
+
+   .. versionchanged:: 3.13
+
+      Added fields ``start_offset``, ``cache_offset``, ``end_offset``,
+      ``baseopname``, ``baseopcode``, ``jump_target`` and ``oparg``.
 
 
 .. class:: Positions
@@ -1379,21 +1421,35 @@ iterations of the loop.
    .. versionadded:: 3.11
 
 
-.. opcode:: MAKE_FUNCTION (flags)
+.. opcode:: MAKE_FUNCTION
 
-   Pushes a new function object on the stack.  From bottom to top, the consumed
-   stack must consist of values if the argument carries a specified flag value
+   Pushes a new function object on the stack built from the code object at ``STACK[1]``.
+
+   .. versionchanged:: 3.10
+      Flag value ``0x04`` is a tuple of strings instead of dictionary
+
+   .. versionchanged:: 3.11
+      Qualified name at ``STACK[-1]`` was removed.
+
+   .. versionchanged:: 3.13
+      Extra function attributes on the stack, signaled by oparg flags, were
+      removed. They now use :opcode:`SET_FUNCTION_ATTRIBUTE`.
+
+
+.. opcode:: SET_FUNCTION_ATTRIBUTE (flag)
+
+   Sets an attribute on a function object. Expects the function at ``STACK[-1]``
+   and the attribute value to set at ``STACK[-2]``; consumes both and leaves the
+   function at ``STACK[-1]``. The flag determines which attribute to set:
 
    * ``0x01`` a tuple of default values for positional-only and
      positional-or-keyword parameters in positional order
    * ``0x02`` a dictionary of keyword-only parameters' default values
    * ``0x04`` a tuple of strings containing parameters' annotations
    * ``0x08`` a tuple containing cells for free variables, making a closure
-   * the code associated with the function (at ``STACK[-2]``)
-   * the :term:`qualified name` of the function (at ``STACK[-1]``)
 
-   .. versionchanged:: 3.10
-      Flag value ``0x04`` is a tuple of strings instead of dictionary
+   .. versionadded:: 3.13
+
 
 .. opcode:: BUILD_SLICE (argc)
 
@@ -1423,26 +1479,47 @@ iterations of the loop.
    an argument from two-byte to four-byte.
 
 
-.. opcode:: FORMAT_VALUE (flags)
+.. opcode:: CONVERT_VALUE (oparg)
 
-   Used for implementing formatted literal strings (f-strings).  Pops
-   an optional *fmt_spec* from the stack, then a required *value*.
-   *flags* is interpreted as follows:
+   Convert value to a string, depending on ``oparg``::
 
-   * ``(flags & 0x03) == 0x00``: *value* is formatted as-is.
-   * ``(flags & 0x03) == 0x01``: call :func:`str` on *value* before
-     formatting it.
-   * ``(flags & 0x03) == 0x02``: call :func:`repr` on *value* before
-     formatting it.
-   * ``(flags & 0x03) == 0x03``: call :func:`ascii` on *value* before
-     formatting it.
-   * ``(flags & 0x04) == 0x04``: pop *fmt_spec* from the stack and use
-     it, else use an empty *fmt_spec*.
+      value = STACK.pop()
+      result = func(value)
+      STACK.push(result)
 
-   Formatting is performed using :c:func:`PyObject_Format`.  The
-   result is pushed on the stack.
+   * ``oparg == 1``: call :func:`str` on *value*
+   * ``oparg == 2``: call :func:`repr` on *value*
+   * ``oparg == 3``: call :func:`ascii` on *value*
 
-   .. versionadded:: 3.6
+   Used for implementing formatted literal strings (f-strings).
+
+   .. versionadded:: 3.13
+
+
+.. opcode:: FORMAT_SIMPLE
+
+   Formats the value on top of stack::
+
+      value = STACK.pop()
+      result = value.__format__("")
+      STACK.push(result)
+
+   Used for implementing formatted literal strings (f-strings).
+
+   .. versionadded:: 3.13
+
+.. opcode:: FORMAT_SPEC
+
+   Formats the given value with the given format spec::
+
+      spec = STACK.pop()
+      value = STACK.pop()
+      result = value.__format__(spec)
+      STACK.push(result)
+
+   Used for implementing formatted literal strings (f-strings).
+
+   .. versionadded:: 3.13
 
 
 .. opcode:: MATCH_CLASS (count)

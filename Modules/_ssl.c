@@ -6001,15 +6001,21 @@ sslmodule_init_errorcodes(PyObject *module)
 
     errcode = error_codes;
     while (errcode->mnemonic != NULL) {
-        PyObject *mnemo, *key;
-        mnemo = PyUnicode_FromString(errcode->mnemonic);
-        key = Py_BuildValue("ii", errcode->library, errcode->reason);
-        if (mnemo == NULL || key == NULL)
+        PyObject *mnemo = PyUnicode_FromString(errcode->mnemonic);
+        if (mnemo == NULL) {
             return -1;
-        if (PyDict_SetItem(state->err_codes_to_names, key, mnemo))
+        }
+        PyObject *key = Py_BuildValue("ii", errcode->library, errcode->reason);
+        if (key == NULL) {
+            Py_DECREF(mnemo);
             return -1;
+        }
+        int rc = PyDict_SetItem(state->err_codes_to_names, key, mnemo);
         Py_DECREF(key);
         Py_DECREF(mnemo);
+        if (rc < 0) {
+            return -1;
+        }
         errcode++;
     }
 

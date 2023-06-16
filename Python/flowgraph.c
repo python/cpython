@@ -45,7 +45,8 @@ is_block_push(cfg_instr *i)
 static inline int
 is_jump(cfg_instr *i)
 {
-    return IS_JUMP_OPCODE(i->i_opcode);
+    assert(!OPCODE_HAS_JUMP(i->i_opcode) == !IS_JUMP_OPCODE(i->i_opcode));
+    return OPCODE_HAS_JUMP(i->i_opcode);
 }
 
 /* One arg*/
@@ -416,9 +417,13 @@ normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
     bool is_forward = last->i_target->b_visited == 0;
     switch(last->i_opcode) {
         case JUMP:
+            assert(SAME_OPCODE_METADATA(JUMP, JUMP_FORWARD));
+            assert(SAME_OPCODE_METADATA(JUMP, JUMP_BACKWARD));
             last->i_opcode = is_forward ? JUMP_FORWARD : JUMP_BACKWARD;
             return SUCCESS;
         case JUMP_NO_INTERRUPT:
+            assert(SAME_OPCODE_METADATA(JUMP_NO_INTERRUPT, JUMP_FORWARD));
+            assert(SAME_OPCODE_METADATA(JUMP_NO_INTERRUPT, JUMP_BACKWARD_NO_INTERRUPT));
             last->i_opcode = is_forward ?
                 JUMP_FORWARD : JUMP_BACKWARD_NO_INTERRUPT;
             return SUCCESS;
@@ -2071,9 +2076,11 @@ _PyCfg_ConvertPseudoOps(basicblock *entryblock)
         for (int i = 0; i < b->b_iused; i++) {
             cfg_instr *instr = &b->b_instr[i];
             if (is_block_push(instr) || instr->i_opcode == POP_BLOCK) {
+                assert(SAME_OPCODE_METADATA(instr->i_opcode, NOP));
                 INSTR_SET_OP0(instr, NOP);
             }
             else if (instr->i_opcode == STORE_FAST_MAYBE_NULL) {
+                assert(SAME_OPCODE_METADATA(STORE_FAST_MAYBE_NULL, STORE_FAST));
                 instr->i_opcode = STORE_FAST;
             }
         }

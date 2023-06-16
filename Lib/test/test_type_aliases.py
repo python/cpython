@@ -228,8 +228,69 @@ class TypeAliasTypeTest(unittest.TestCase):
         self.assertEqual(mod_generics_cache.OldStyle.__module__,
                          mod_generics_cache.__name__)
 
+
+# All these type aliases are used for pickling tests:
+T = TypeVar('T')
+type SimpleAlias = int
+type RecursiveAlias = dict[str, RecursiveAlias]
+type GenericAlias[X] = list[X]
+type GenericAliasMultipleTypes[X, Y] = dict[X, Y]
+type RecursiveGenericAlias[X] = dict[str, RecursiveAlias[X]]
+type BoundGenericAlias[X: int] = set[X]
+type ConstrainedGenericAlias[LongName: (str, bytes)] = list[LongName]
+type AllTypesAlias[A, *B, **C] = Callable[C, A] | tuple[*B]
+
+
+class TypeAliasPickleTest(unittest.TestCase):
     def test_pickling(self):
-        pickled = pickle.dumps(mod_generics_cache.Alias)
-        self.assertIs(pickle.loads(pickled), mod_generics_cache.Alias)
-        pickled = pickle.dumps(mod_generics_cache.OldStyle)
-        self.assertIs(pickle.loads(pickled), mod_generics_cache.OldStyle)
+        things_to_test = [
+            SimpleAlias,
+            RecursiveAlias,
+
+            GenericAlias,
+            GenericAlias[T],
+            GenericAlias[int],
+
+            GenericAliasMultipleTypes,
+            GenericAliasMultipleTypes[str, T],
+            GenericAliasMultipleTypes[T, str],
+            GenericAliasMultipleTypes[int, str],
+
+            RecursiveGenericAlias,
+            RecursiveGenericAlias[T],
+            RecursiveGenericAlias[int],
+
+            BoundGenericAlias,
+            BoundGenericAlias[int],
+            BoundGenericAlias[T],
+
+            ConstrainedGenericAlias,
+            ConstrainedGenericAlias[str],
+            ConstrainedGenericAlias[T],
+
+            AllTypesAlias,
+            AllTypesAlias[int, str, T, [T, object]],
+
+            # Other modules:
+            mod_generics_cache.Alias,
+            mod_generics_cache.OldStyle,
+        ]
+        for thing in things_to_test:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(thing=thing, proto=proto):
+                    pickled = pickle.dumps(thing, protocol=proto)
+                    self.assertEqual(pickle.loads(pickled), thing)
+
+    type ClassLevel = str
+
+    def test_pickling_local(self):
+        type A = int
+        things_to_test = [
+            self.ClassLevel,
+            A,
+        ]
+        for thing in things_to_test:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(thing=thing, proto=proto):
+                    with self.assertRaises(pickle.PickleError):
+                        pickle.dumps(thing, protocol=proto)

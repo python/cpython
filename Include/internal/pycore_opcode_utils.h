@@ -26,11 +26,11 @@ extern "C" {
          (opcode) == SETUP_CLEANUP)
 
 #define HAS_TARGET(opcode) \
-        (IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode))
+        (OPCODE_HAS_JUMP(opcode) || IS_BLOCK_PUSH_OPCODE(opcode))
 
 /* opcodes that must be last in the basicblock */
 #define IS_TERMINATOR_OPCODE(opcode) \
-        (IS_JUMP_OPCODE(opcode) || IS_SCOPE_EXIT_OPCODE(opcode))
+        (OPCODE_HAS_JUMP(opcode) || IS_SCOPE_EXIT_OPCODE(opcode))
 
 /* opcodes which are not emitted in codegen stage, only by the assembler */
 #define IS_ASSEMBLER_OPCODE(opcode) \
