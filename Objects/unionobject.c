@@ -417,9 +417,9 @@ call_typing_func_object(const char *name, PyObject **args, size_t nargs)
 static PyObject *
 type_check(PyObject *arg, const char *msg)
 {
-    // Calling typing.py here leads to bootstrapping problems
     if (Py_IsNone(arg)) {
-        return Py_NewRef(Py_TYPE(arg));
+        // NoneType is immortal, so don't need an INCREF
+        return Py_TYPE(arg);
     }
     // Fast path to avoid calling into typing.py
     if (is_unionable(arg)) {
