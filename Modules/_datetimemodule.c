@@ -5004,8 +5004,12 @@ time_fromisoformat(PyObject *cls, PyObject *tstr) {
         return NULL;
     }
 
-    if (hour == 24 && minute == 0 && second == 0 && microsecond == 0) {
-        hour = 0;
+    if (hour == 24) {
+        if (minute == 0 && second == 0 && microsecond == 0) {
+            hour = 0;
+        } else {
+            goto invalid_iso_midnight;
+        }
     }
 
     PyObject *t;
@@ -5018,6 +5022,10 @@ time_fromisoformat(PyObject *cls, PyObject *tstr) {
 
     Py_DECREF(tzinfo);
     return t;
+
+invalid_iso_midnight:
+    PyErr_SetString(PyExc_ValueError, "minute, second, and microsecond must be 0 when hour is 24");
+    return NULL;
 
 invalid_string_error:
     PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %R", tstr);
@@ -5865,20 +5873,21 @@ datetime_fromisoformat(PyObject *cls, PyObject *dtstr)
         goto error;
     }
 
-    if (
-        (hour == 24 && minute == 0 && second == 0 && microsecond == 0) && // provided alternate to midnight of next day
-        (month <= 12 && day <= days_in_month(year, month)) // month and day component was previously valid
-    ) {
-        // Calculate midnight of the next day
-        hour = 0;
-        day += 1;
-        if (day > days_in_month(year, month)) {
-            day = 1;
-            month += 1;
-            if (month > 12) {
-                month = 1;
-                year += 1;
+    if ((hour == 24) && (month <= 12 && day <= days_in_month(year, month))) {
+        if (minute == 0 && second == 0 && microsecond == 0) {
+            // Calculate midnight of the next day
+            hour = 0;
+            day += 1;
+            if (day > days_in_month(year, month)) {
+                day = 1;
+                month += 1;
+                if (month > 12) {
+                    month = 1;
+                    year += 1;
+                }
             }
+        } else {
+            goto invalid_iso_midnight;
         }
     }
     PyObject *dt = new_datetime_subclass_ex(year, month, day, hour, minute,
@@ -5887,6 +5896,10 @@ datetime_fromisoformat(PyObject *cls, PyObject *dtstr)
     Py_DECREF(tzinfo);
     Py_DECREF(dtstr_clean);
     return dt;
+
+invalid_iso_midnight:
+    PyErr_SetString(PyExc_ValueError, "minute, second, and microsecond must be 0 when hour is 24");
+    return NULL;
 
 invalid_string_error:
     PyErr_Format(PyExc_ValueError, "Invalid isoformat string: %R", dtstr);
