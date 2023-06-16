@@ -1431,7 +1431,7 @@ iterations of the loop.
    .. versionchanged:: 3.11
       Qualified name at ``STACK[-1]`` was removed.
 
-   .. versionchanged:: 3.12
+   .. versionchanged:: 3.13
       Extra function attributes on the stack, signaled by oparg flags, were
       removed. They now use :opcode:`SET_FUNCTION_ATTRIBUTE`.
 
