@@ -1925,6 +1925,13 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
                         if base.__dict__[attr] is None:
                             return NotImplemented
                         break
+
+                    # ...or in annotations, if it is a sub-protocol.
+                    annotations = getattr(base, '__annotations__', {})
+                    if (isinstance(annotations, collections.abc.Mapping) and
+                            attr in annotations and
+                            issubclass(other, Generic) and getattr(other, '_is_protocol', False)):
+                        break
                 else:
                     return NotImplemented
             return True
