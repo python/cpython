@@ -419,7 +419,7 @@ type_check(PyObject *arg, const char *msg)
 {
     if (Py_IsNone(arg)) {
         // NoneType is immortal, so don't need an INCREF
-        return Py_TYPE(arg);
+        return (PyObject *)Py_TYPE(arg);
     }
     // Fast path to avoid calling into typing.py
     if (is_unionable(arg)) {
