@@ -26,11 +26,11 @@ extern "C" {
          (opcode) == SETUP_CLEANUP)
 
 #define HAS_TARGET(opcode) \
-        (IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode))
+        (OPCODE_HAS_JUMP(opcode) || IS_BLOCK_PUSH_OPCODE(opcode))
 
 /* opcodes that must be last in the basicblock */
 #define IS_TERMINATOR_OPCODE(opcode) \
-        (IS_JUMP_OPCODE(opcode) || IS_SCOPE_EXIT_OPCODE(opcode))
+        (OPCODE_HAS_JUMP(opcode) || IS_SCOPE_EXIT_OPCODE(opcode))
 
 /* opcodes which are not emitted in codegen stage, only by the assembler */
 #define IS_ASSEMBLER_OPCODE(opcode) \
@@ -55,14 +55,6 @@ extern "C" {
          (opcode) == RAISE_VARARGS || \
          (opcode) == RERAISE)
 
-#define IS_SUPERINSTRUCTION_OPCODE(opcode) \
-        ((opcode) == LOAD_FAST__LOAD_FAST || \
-         (opcode) == LOAD_FAST__LOAD_CONST || \
-         (opcode) == LOAD_CONST__LOAD_FAST || \
-         (opcode) == STORE_FAST__LOAD_FAST || \
-         (opcode) == STORE_FAST__STORE_FAST)
-
-
 #define LOG_BITS_PER_INT 5
 #define MASK_LOW_LOG_BITS 31
 
@@ -84,6 +76,12 @@ is_bit_set_in_table(const uint32_t *table, int bitindex) {
 
 #undef LOG_BITS_PER_INT
 #undef MASK_LOW_LOG_BITS
+
+/* Flags used in the oparg for MAKE_FUNCTION */
+#define MAKE_FUNCTION_DEFAULTS    0x01
+#define MAKE_FUNCTION_KWDEFAULTS  0x02
+#define MAKE_FUNCTION_ANNOTATIONS 0x04
+#define MAKE_FUNCTION_CLOSURE     0x08
 
 
 #ifdef __cplusplus

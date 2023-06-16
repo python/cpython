@@ -96,6 +96,7 @@ def_op('UNARY_INVERT', 15)
 # This helps us catch cases where we attempt to execute a cache.
 def_op('RESERVED', 17)
 
+def_op('MAKE_FUNCTION', 24)
 def_op('BINARY_SUBSCR', 25)
 def_op('BINARY_SLICE', 26)
 def_op('STORE_SLICE', 27)
@@ -108,6 +109,9 @@ def_op('MATCH_KEYS', 33)
 def_op('PUSH_EXC_INFO', 35)
 def_op('CHECK_EXC_MATCH', 36)
 def_op('CHECK_EG_MATCH', 37)
+
+def_op('FORMAT_SIMPLE', 40)
+def_op('FORMAT_WITH_SPEC', 41)
 
 def_op('WITH_EXCEPT_START', 49)
 def_op('GET_AITER', 50)
@@ -183,7 +187,6 @@ jrel_op('POP_JUMP_IF_NOT_NONE', 128)
 jrel_op('POP_JUMP_IF_NONE', 129)
 def_op('RAISE_VARARGS', 130)    # Number of raise arguments (1, 2, or 3)
 def_op('GET_AWAITABLE', 131)
-def_op('MAKE_FUNCTION', 132)    # Flags
 def_op('BUILD_SLICE', 133)      # Number of items
 jrel_op('JUMP_BACKWARD_NO_INTERRUPT', 134) # Number of words to skip (backwards)
 def_op('MAKE_CELL', 135)
@@ -213,15 +216,18 @@ def_op('YIELD_VALUE', 150)
 def_op('RESUME', 151)   # This must be kept in sync with deepfreeze.py
 def_op('MATCH_CLASS', 152)
 
-def_op('FORMAT_VALUE', 155)
 def_op('BUILD_CONST_KEY_MAP', 156)
 def_op('BUILD_STRING', 157)
+def_op('CONVERT_VALUE', 158)
 
 def_op('LIST_EXTEND', 162)
 def_op('SET_UPDATE', 163)
 def_op('DICT_MERGE', 164)
 def_op('DICT_UPDATE', 165)
 
+def_op('LOAD_FAST_LOAD_FAST', 168)
+def_op('STORE_FAST_LOAD_FAST', 169)
+def_op('STORE_FAST_STORE_FAST', 170)
 def_op('CALL', 171)
 def_op('KW_NAMES', 172)
 hasconst.append(172)
@@ -231,6 +237,10 @@ def_op('CALL_INTRINSIC_2', 174)
 name_op('LOAD_FROM_DICT_OR_GLOBALS', 175)
 def_op('LOAD_FROM_DICT_OR_DEREF', 176)
 hasfree.append(176)
+def_op('SET_FUNCTION_ATTRIBUTE', 177)    # Attribute
+
+# Optimizer hook
+def_op('ENTER_EXECUTOR', 230)
 
 # Instrumented instructions
 MIN_INSTRUMENTED_OPCODE = 237
@@ -403,13 +413,6 @@ _specializations = {
         "LOAD_ATTR_METHOD_NO_DICT",
         "LOAD_ATTR_METHOD_WITH_VALUES",
     ],
-    "LOAD_CONST": [
-        "LOAD_CONST__LOAD_FAST",
-    ],
-    "LOAD_FAST": [
-        "LOAD_FAST__LOAD_CONST",
-        "LOAD_FAST__LOAD_FAST",
-    ],
     "LOAD_GLOBAL": [
         "LOAD_GLOBAL_BUILTIN",
         "LOAD_GLOBAL_MODULE",
@@ -418,10 +421,6 @@ _specializations = {
         "STORE_ATTR_INSTANCE_VALUE",
         "STORE_ATTR_SLOT",
         "STORE_ATTR_WITH_HINT",
-    ],
-    "STORE_FAST": [
-        "STORE_FAST__LOAD_FAST",
-        "STORE_FAST__STORE_FAST",
     ],
     "STORE_SUBSCR": [
         "STORE_SUBSCR_DICT",
@@ -484,6 +483,9 @@ _cache_format = {
         "counter": 1,
     },
     "SEND": {
+        "counter": 1,
+    },
+    "JUMP_BACKWARD": {
         "counter": 1,
     },
 }

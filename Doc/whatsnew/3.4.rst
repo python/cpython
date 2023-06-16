@@ -605,15 +605,15 @@ Using ``ABC`` as a base class has essentially the same effect as specifying
 aifc
 ----
 
-The :meth:`~aifc.aifc.getparams` method now returns a namedtuple rather than a
+The :meth:`~!aifc.aifc.getparams` method now returns a namedtuple rather than a
 plain tuple.  (Contributed by Claudiu Popa in :issue:`17818`.)
 
-:func:`aifc.open` now supports the context management protocol: when used in a
-:keyword:`with` block, the :meth:`~aifc.aifc.close` method of the returned
+:func:`!aifc.open` now supports the context management protocol: when used in a
+:keyword:`with` block, the :meth:`~!aifc.aifc.close` method of the returned
 object will be called automatically at the end of the block.  (Contributed by
 Serhiy Storchacha in :issue:`16486`.)
 
-The :meth:`~aifc.aifc.writeframesraw` and :meth:`~aifc.aifc.writeframes`
+The :meth:`~!aifc.aifc.writeframesraw` and :meth:`~!aifc.aifc.writeframes`
 methods now accept any :term:`bytes-like object`.  (Contributed by Serhiy
 Storchaka in :issue:`8311`.)
 
@@ -629,14 +629,14 @@ by Lucas Maystre in :issue:`11175`.)
 audioop
 -------
 
-:mod:`audioop` now supports 24-bit samples.  (Contributed by Serhiy Storchaka
+:mod:`!audioop` now supports 24-bit samples.  (Contributed by Serhiy Storchaka
 in :issue:`12866`.)
 
-New :func:`~audioop.byteswap` function converts big-endian samples to
+New :func:`~!audioop.byteswap` function converts big-endian samples to
 little-endian and vice versa.  (Contributed by Serhiy Storchaka in
 :issue:`19641`.)
 
-All :mod:`audioop` functions now accept any :term:`bytes-like object`.  Strings
+All :mod:`!audioop` functions now accept any :term:`bytes-like object`.  Strings
 are not accepted: they didn't work before, now they raise an error right away.
 (Contributed by Serhiy Storchaka in :issue:`16685`.)
 
@@ -2434,7 +2434,7 @@ Changes in the Python API
   matched the input type, so if your code was depending on the return value
   being, say, a ``bytearray``, you will need to change your code.
 
-* :mod:`audioop` functions now raise an error immediately if passed string
+* :mod:`!audioop` functions now raise an error immediately if passed string
   input, instead of failing randomly later on (:issue:`16685`).
 
 * The new *convert_charrefs* argument to :class:`~html.parser.HTMLParser`

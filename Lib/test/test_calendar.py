@@ -8,7 +8,6 @@ import locale
 import sys
 import datetime
 import os
-import warnings
 
 # From https://en.wikipedia.org/wiki/Leap_year_starting_on_Saturday
 result_0_02_text = """\

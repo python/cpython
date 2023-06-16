@@ -361,15 +361,19 @@ Soft Keywords
 .. versionadded:: 3.10
 
 Some identifiers are only reserved under specific contexts. These are known as
-*soft keywords*.  The identifiers ``match``, ``case`` and ``_`` can
-syntactically act as keywords in contexts related to the pattern matching
-statement, but this distinction is done at the parser level, not when
-tokenizing.
+*soft keywords*.  The identifiers ``match``, ``case``, ``type`` and ``_`` can
+syntactically act as keywords in certain contexts,
+but this distinction is done at the parser level, not when tokenizing.
 
-As soft keywords, their use with pattern matching is possible while still
-preserving compatibility with existing code that uses ``match``, ``case`` and ``_`` as
+As soft keywords, their use in the grammar is possible while still
+preserving compatibility with existing code that uses these names as
 identifier names.
 
+``match``, ``case``, and ``_`` are used in the :keyword:`match` statement.
+``type`` is used in the :keyword:`type` statement.
+
+.. versionchanged:: 3.12
+   ``type`` is now a soft keyword.
 
 .. index::
    single: _, identifiers
