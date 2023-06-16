@@ -1,2 +1,1 @@
-Replace the ``KW_NAMES`` opcode with either a :opcode:`PUSH_NULL` or a
-:opcode:`LOAD_CONST` immediately before all :opcode:`CALL` instructions.
+Replace the ``KW_NAMES`` opcode with a flag on the low bit of :opcode:`CALL` instructions indicating the presence of keyword names on the stack.
