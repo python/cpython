@@ -160,7 +160,8 @@ jobs:
         CC=clang \
         CPPFLAGS="-I$(brew --prefix gdbm)/include -I$(brew --prefix xz)/include" \
         LDFLAGS="-L$(brew --prefix gdbm)/lib -L$(brew --prefix xz)/lib" \
-        ./configure --with-pydebug \
+        ./configure --prefix=/opt/python-dev \
+            --with-pydebug \
             --with-openssl="$(brew --prefix openssl@3.0)" \
             --with-tcltk-libs="$(pkg-config --libs tk)" \
             --with-tcltk-includes="$(pkg-config --cflags tk)"
