@@ -1362,14 +1362,14 @@ iterations of the loop.
 .. opcode:: CALL (argc)
 
    Calls a callable object with the number of arguments specified by ``argc``,
-   including the named arguments specified by the preceding
-   :opcode:`KW_NAMES`, if any.
+   including the named arguments, if any.
    On the stack are (in ascending order), either:
 
    * NULL
    * The callable
    * The positional arguments
    * The named arguments
+   * A tuple of keyword names (or ``NULL``)
 
    or:
 
@@ -1377,6 +1377,7 @@ iterations of the loop.
    * ``self``
    * The remaining positional arguments
    * The named arguments
+   * A tuple of keyword names (or ``NULL``)
 
    ``argc`` is the total of the positional and named arguments, excluding
    ``self`` when a ``NULL`` is not present.
@@ -1386,6 +1387,10 @@ iterations of the loop.
    returned by the callable object.
 
    .. versionadded:: 3.11
+   
+   .. versionchanged:: 3.12
+      Keyword names are now pushed to the stack instead of being indicated by
+      a preceding ``KW_NAMES`` instruction.
 
 
 .. opcode:: CALL_FUNCTION_EX (flags)
