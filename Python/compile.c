@@ -134,7 +134,6 @@ enum {
 int
 _PyCompile_InstrSize(int opcode, int oparg)
 {
-    assert(IS_PSEUDO_OPCODE(opcode) == IS_PSEUDO_INSTR(opcode));
     assert(!IS_PSEUDO_INSTR(opcode));
     assert(OPCODE_HAS_ARG(opcode) || oparg == 0);
     int extended_args = (0xFFFFFF < oparg) + (0xFFFF < oparg) + (0xFF < oparg);
@@ -249,7 +248,6 @@ static int
 instr_sequence_addop(instr_sequence *seq, int opcode, int oparg, location loc)
 {
     assert(0 <= opcode && opcode <= MAX_OPCODE);
-    assert(IS_PSEUDO_OPCODE(opcode) == IS_PSEUDO_INSTR(opcode));
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
     assert(OPCODE_HAS_ARG(opcode) || HAS_TARGET(opcode) || oparg == 0);
     assert(0 <= oparg && oparg < (1 << 30));

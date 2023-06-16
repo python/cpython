@@ -248,8 +248,6 @@ extern "C" {
 /* Defined in Lib/opcode.py */
 #define ENABLE_SPECIALIZATION 1
 
-#define IS_PSEUDO_OPCODE(op) (((op) >= MIN_PSEUDO_OPCODE) && ((op) <= MAX_PSEUDO_OPCODE))
-
 #ifdef __cplusplus
 }
 #endif

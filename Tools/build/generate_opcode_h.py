@@ -21,8 +21,6 @@ extern "C" {{
 
 footer = """
 
-#define IS_PSEUDO_OPCODE(op) (((op) >= MIN_PSEUDO_OPCODE) && ((op) <= MAX_PSEUDO_OPCODE))
-
 #ifdef __cplusplus
 }
 #endif

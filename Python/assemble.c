@@ -339,7 +339,6 @@ static void
 write_instr(_Py_CODEUNIT *codestr, instruction *instr, int ilen)
 {
     int opcode = instr->i_opcode;
-    assert(IS_PSEUDO_OPCODE(opcode) == IS_PSEUDO_INSTR(opcode));
     assert(!IS_PSEUDO_INSTR(opcode));
     int oparg = instr->i_oparg;
     assert(OPCODE_HAS_ARG(opcode) || oparg == 0);
