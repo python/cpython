@@ -25,15 +25,10 @@ del _opcodes_all
 _have_code = (types.MethodType, types.FunctionType, types.CodeType,
               classmethod, staticmethod, type)
 
-FORMAT_VALUE = opmap['FORMAT_VALUE']
-FORMAT_VALUE_CONVERTERS = (
-    (None, ''),
-    (str, 'str'),
-    (repr, 'repr'),
-    (ascii, 'ascii'),
-)
-MAKE_FUNCTION = opmap['MAKE_FUNCTION']
-MAKE_FUNCTION_FLAGS = ('defaults', 'kwdefaults', 'annotations', 'closure')
+CONVERT_VALUE = opmap['CONVERT_VALUE']
+
+SET_FUNCTION_ATTRIBUTE = opmap['SET_FUNCTION_ATTRIBUTE']
+FUNCTION_ATTR_FLAGS = ('defaults', 'kwdefaults', 'annotations', 'closure')
 
 LOAD_CONST = opmap['LOAD_CONST']
 RETURN_CONST = opmap['RETURN_CONST']
@@ -579,15 +574,11 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
             elif deop in hascompare:
                 argval = cmp_op[arg>>4]
                 argrepr = argval
-            elif deop == FORMAT_VALUE:
-                argval, argrepr = FORMAT_VALUE_CONVERTERS[arg & 0x3]
-                argval = (argval, bool(arg & 0x4))
-                if argval[1]:
-                    if argrepr:
-                        argrepr += ', '
-                    argrepr += 'with format'
-            elif deop == MAKE_FUNCTION:
-                argrepr = ', '.join(s for i, s in enumerate(MAKE_FUNCTION_FLAGS)
+            elif deop == CONVERT_VALUE:
+                argval = (None, str, repr, ascii)[arg]
+                argrepr = ('', 'str', 'repr', 'ascii')[arg]
+            elif deop == SET_FUNCTION_ATTRIBUTE:
+                argrepr = ', '.join(s for i, s in enumerate(FUNCTION_ATTR_FLAGS)
                                     if arg & (1<<i))
             elif deop == BINARY_OP:
                 _, argrepr = _nb_ops[arg]

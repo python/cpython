@@ -29,7 +29,7 @@ static const char *ASYNC_GEN_IGNORED_EXIT_MSG =
 static inline PyCodeObject *
 _PyGen_GetCode(PyGenObject *gen) {
     _PyInterpreterFrame *frame = (_PyInterpreterFrame *)(gen->gi_iframe);
-    return frame->f_code;
+    return _PyFrame_GetCode(frame);
 }
 
 PyCodeObject *
@@ -957,7 +957,7 @@ static PyObject *
 gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
                       PyObject *name, PyObject *qualname)
 {
-    PyCodeObject *code = f->f_frame->f_code;
+    PyCodeObject *code = _PyFrame_GetCode(f->f_frame);
     int size = code->co_nlocalsplus + code->co_stacksize;
     PyGenObject *gen = PyObject_GC_NewVar(PyGenObject, type, size);
     if (gen == NULL) {
@@ -1339,7 +1339,7 @@ compute_cr_origin(int origin_depth, _PyInterpreterFrame *current_frame)
     }
     frame = current_frame;
     for (int i = 0; i < frame_count; ++i) {
-        PyCodeObject *code = frame->f_code;
+        PyCodeObject *code = _PyFrame_GetCode(frame);
         int line = PyUnstable_InterpreterFrame_GetLine(frame);
         PyObject *frameinfo = Py_BuildValue("OiO", code->co_filename, line,
                                             code->co_name);
