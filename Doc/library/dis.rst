@@ -1387,7 +1387,7 @@ iterations of the loop.
    returned by the callable object.
 
    .. versionadded:: 3.11
-   
+
    .. versionchanged:: 3.12
       Keyword names are now pushed to the stack instead of being indicated by
       a preceding ``KW_NAMES`` instruction.
