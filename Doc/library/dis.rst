@@ -1421,23 +1421,34 @@ iterations of the loop.
    .. versionadded:: 3.11
 
 
-.. opcode:: MAKE_FUNCTION (flags)
+.. opcode:: MAKE_FUNCTION
 
-   Pushes a new function object on the stack.  From bottom to top, the consumed
-   stack must consist of values if the argument carries a specified flag value
-
-   * ``0x01`` a tuple of default values for positional-only and
-     positional-or-keyword parameters in positional order
-   * ``0x02`` a dictionary of keyword-only parameters' default values
-   * ``0x04`` a tuple of strings containing parameters' annotations
-   * ``0x08`` a tuple containing cells for free variables, making a closure
-   * the code associated with the function (at ``STACK[-1]``)
+   Pushes a new function object on the stack built from the code object at ``STACK[1]``.
 
    .. versionchanged:: 3.10
       Flag value ``0x04`` is a tuple of strings instead of dictionary
 
    .. versionchanged:: 3.11
       Qualified name at ``STACK[-1]`` was removed.
+
+   .. versionchanged:: 3.13
+      Extra function attributes on the stack, signaled by oparg flags, were
+      removed. They now use :opcode:`SET_FUNCTION_ATTRIBUTE`.
+
+
+.. opcode:: SET_FUNCTION_ATTRIBUTE (flag)
+
+   Sets an attribute on a function object. Expects the function at ``STACK[-1]``
+   and the attribute value to set at ``STACK[-2]``; consumes both and leaves the
+   function at ``STACK[-1]``. The flag determines which attribute to set:
+
+   * ``0x01`` a tuple of default values for positional-only and
+     positional-or-keyword parameters in positional order
+   * ``0x02`` a dictionary of keyword-only parameters' default values
+   * ``0x04`` a tuple of strings containing parameters' annotations
+   * ``0x08`` a tuple containing cells for free variables, making a closure
+
+   .. versionadded:: 3.13
 
 
 .. opcode:: BUILD_SLICE (argc)
