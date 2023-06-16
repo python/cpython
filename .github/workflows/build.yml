@@ -239,7 +239,7 @@ jobs:
         path: config.cache
         key: ${{ github.job }}-${{ runner.os }}-${{ needs.check_source.outputs.config_hash }}
     - name: Install Homebrew dependencies
-      run: brew install pkg-config openssl@1.1 xz gdbm tcl-tk
+      run: brew install pkg-config openssl@3.0 xz gdbm tcl-tk
     - name: Configure CPython
       run: |
         GDBM_CFLAGS="-I$(brew --prefix gdbm)/include" \
@@ -248,7 +248,7 @@ jobs:
           --config-cache \
           --with-pydebug \
           --prefix=/opt/python-dev \
-          --with-openssl="$(brew --prefix openssl@1.1)"
+          --with-openssl="$(brew --prefix openssl@3.0)"
     - name: Build CPython
       run: make -j4
     - name: Display build info
