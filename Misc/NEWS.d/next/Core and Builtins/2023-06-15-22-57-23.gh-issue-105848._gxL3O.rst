@@ -1,1 +1,0 @@
-Replace the ``KW_NAMES`` opcode with a flag on the low bit of :opcode:`CALL` instructions indicating the presence of keyword names on the stack.
