@@ -4,6 +4,7 @@ from collections import defaultdict
 from functools import lru_cache, wraps
 import inspect
 import itertools
+import gc
 import pickle
 import re
 import sys
@@ -2642,6 +2643,104 @@ class ProtocolTests(BaseTestCase):
             issubclass(P, PG[T])
         with self.assertRaises(TypeError):
             issubclass(PG, PG[int])
+
+        only_classes_allowed = r"issubclass\(\) arg 1 must be a class"
+
+        with self.assertRaisesRegex(TypeError, only_classes_allowed):
+            issubclass(1, P)
+        with self.assertRaisesRegex(TypeError, only_classes_allowed):
+            issubclass(1, PG)
+        with self.assertRaisesRegex(TypeError, only_classes_allowed):
+            issubclass(1, BadP)
+        with self.assertRaisesRegex(TypeError, only_classes_allowed):
+            issubclass(1, BadPG)
+
+    def test_implicit_issubclass_between_two_protocols(self):
+        @runtime_checkable
+        class CallableMembersProto(Protocol):
+            def meth(self): ...
+
+        # All the below protocols should be considered "subclasses"
+        # of CallableMembersProto at runtime,
+        # even though none of them explicitly subclass CallableMembersProto
+
+        class IdenticalProto(Protocol):
+            def meth(self): ...
+
+        class SupersetProto(Protocol):
+            def meth(self): ...
+            def meth2(self): ...
+
+        class NonCallableMembersProto(Protocol):
+            meth: Callable[[], None]
+
+        class NonCallableMembersSupersetProto(Protocol):
+            meth: Callable[[], None]
+            meth2: Callable[[str, int], bool]
+
+        class MixedMembersProto1(Protocol):
+            meth: Callable[[], None]
+            def meth2(self): ...
+
+        class MixedMembersProto2(Protocol):
+            def meth(self): ...
+            meth2: Callable[[str, int], bool]
+
+        for proto in (
+            IdenticalProto, SupersetProto, NonCallableMembersProto,
+            NonCallableMembersSupersetProto, MixedMembersProto1, MixedMembersProto2
+        ):
+            with self.subTest(proto=proto.__name__):
+                self.assertIsSubclass(proto, CallableMembersProto)
+
+        # These two shouldn't be considered subclasses of CallableMembersProto, however,
+        # since they don't have the `meth` protocol member
+
+        class EmptyProtocol(Protocol): ...
+        class UnrelatedProtocol(Protocol):
+            def wut(self): ...
+
+        self.assertNotIsSubclass(EmptyProtocol, CallableMembersProto)
+        self.assertNotIsSubclass(UnrelatedProtocol, CallableMembersProto)
+
+        # These aren't protocols at all (despite having annotations),
+        # so they should only be considered subclasses of CallableMembersProto
+        # if they *actually have an attribute* matching the `meth` member
+        # (just having an annotation is insufficient)
+
+        class AnnotatedButNotAProtocol:
+            meth: Callable[[], None]
+
+        class NotAProtocolButAnImplicitSubclass:
+            def meth(self): pass
+
+        class NotAProtocolButAnImplicitSubclass2:
+            meth: Callable[[], None]
+            def meth(self): pass
+
+        class NotAProtocolButAnImplicitSubclass3:
+            meth: Callable[[], None]
+            meth2: Callable[[int, str], bool]
+            def meth(self): pass
+            def meth(self, x, y): return True
+
+        self.assertNotIsSubclass(AnnotatedButNotAProtocol, CallableMembersProto)
+        self.assertIsSubclass(NotAProtocolButAnImplicitSubclass, CallableMembersProto)
+        self.assertIsSubclass(NotAProtocolButAnImplicitSubclass2, CallableMembersProto)
+        self.assertIsSubclass(NotAProtocolButAnImplicitSubclass3, CallableMembersProto)
+
+    def test_isinstance_checks_not_at_whim_of_gc(self):
+        self.addCleanup(gc.enable)
+        gc.disable()
+
+        with self.assertRaisesRegex(
+            TypeError,
+            "Protocols can only inherit from other protocols"
+        ):
+            class Foo(collections.abc.Mapping, Protocol):
+                pass
+
+        self.assertNotIsInstance([], collections.abc.Mapping)
 
     def test_protocols_issubclass_non_callable(self):
         class C:
