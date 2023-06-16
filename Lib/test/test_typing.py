@@ -1785,7 +1785,7 @@ class UnionTests(BaseTestCase):
 
     def test_cannot_subclass(self):
         with self.assertRaisesRegex(TypeError,
-                r"type 'types\.UnionType' is not an acceptable base type"):
+                r"type 'typing\.Union' is not an acceptable base type"):
             class C(Union):
                 pass
         with self.assertRaisesRegex(TypeError,
@@ -9007,8 +9007,7 @@ class SpecialAttrsTests(BaseTestCase):
             with self.subTest(cls=cls):
                 self.assertEqual(cls.__name__, name, str(cls))
                 self.assertEqual(cls.__qualname__, name, str(cls))
-                mod = 'types' if isinstance(cls, types.UnionType) else 'typing'
-                self.assertEqual(cls.__module__, mod, str(cls))
+                self.assertEqual(cls.__module__, 'typing', str(cls))
                 for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                     s = pickle.dumps(cls, proto)
                     loaded = pickle.loads(s)

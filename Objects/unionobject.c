@@ -534,8 +534,8 @@ static PyMethodDef union_methods[] = {
 
 PyTypeObject _PyUnion_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    .tp_name = "types.UnionType",
-    .tp_doc = PyDoc_STR("Represent a PEP 604 union type\n"
+    .tp_name = "typing.Union",
+    .tp_doc = PyDoc_STR("Represent a union type\n"
               "\n"
               "E.g. for int | str"),
     .tp_basicsize = sizeof(unionobject),
