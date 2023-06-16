@@ -3046,7 +3046,7 @@ class TestFrozen(unittest.TestCase):
             # as the actual class is different from the one we have here.
             super(TestFrozen.FrozenDerivingSlotsClass, self).__init__(foo)
             object.__setattr__(self, "bar", bar)
-    
+
     def test_frozen_pickle_with_derived_slots(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             with self.subTest(proto=proto):
