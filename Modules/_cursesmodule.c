@@ -220,7 +220,7 @@ _curses_traverse(PyObject *mod, visitproc visit, void *arg)
 static void
 _curses_free(void *mod)
 {
-    _curses_clear((PyObject *)mod);
+    (void)_curses_clear((PyObject *)mod);
 }
 
 /* Utility Macros */
