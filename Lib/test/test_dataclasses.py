@@ -3400,6 +3400,17 @@ class TestSlots(unittest.TestCase):
         self.assertIs(a.__weakref__, a_ref)
 
 
+    def test_dataclass_derived_weakref_slot(self):
+        class A:
+            pass
+
+        @dataclass(slots=True, weakref_slot=True)
+        class B(A):
+            pass
+
+        B()
+
+
 class TestDescriptors(unittest.TestCase):
     def test_set_name(self):
         # See bpo-33141.
@@ -4541,16 +4552,6 @@ class TestKeywordArgs(unittest.TestCase):
                            kw_only=True)
         self.assertTrue(fields(B)[0].kw_only)
         self.assertFalse(fields(B)[1].kw_only)
-
-    def test_dataclass_derived_weakref_slot(self):
-        class A:
-            pass
-
-        @dataclass(slots=True, weakref_slot=True)
-        class B(A):
-            pass
-
-        B()
 
 
 if __name__ == '__main__':
