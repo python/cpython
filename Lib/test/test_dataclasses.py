@@ -3048,9 +3048,7 @@ class TestFrozen(unittest.TestCase):
             object.__setattr__(self, "bar", bar)
     
     def test_frozen_pickle_with_derived_slots(self):
-        # pickling classes with __slots__ and without __getstate__
-        # does not work with protocol < 2 anyway.
-        for proto in range(2, pickle.HIGHEST_PROTOCOL + 1):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             with self.subTest(proto=proto):
                 obj = self.FrozenDerivingSlotsClass("a", 1)
                 p = pickle.loads(pickle.dumps(obj, protocol=proto))
