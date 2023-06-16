@@ -135,7 +135,7 @@ Python versions are numbered "A.B.C" or "A.B":
 
 See :pep:`6` for more information about bugfix releases.
 
-Not all releases are bugfix releases.  In the run-up to a new major release, a
+Not all releases are bugfix releases.  In the run-up to a new minor release, a
 series of development releases are made, denoted as alpha, beta, or release
 candidate.  Alphas are early releases in which interfaces aren't yet finalized;
 it's not unexpected to see an interface change between two alpha releases.
@@ -297,7 +297,7 @@ How stable is Python?
 
 Very stable.  New, stable releases have been coming out roughly every 6 to 18
 months since 1991, and this seems likely to continue.  As of version 3.9,
-Python will have a major new release every 12 months (:pep:`602`).
+Python will have a minor new release every 12 months (:pep:`602`).
 
 The developers issue "bugfix" releases of older versions, so the stability of
 existing releases gradually improves.  Bugfix releases, indicated by a third
