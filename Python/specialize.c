@@ -1502,7 +1502,7 @@ specialize_class_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
     }
     if (tp->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) {
         int oparg = instr->op.arg;
-        if (nargs == 1 && kwnames == NULL && oparg == 1) {
+        if (nargs == 1 && kwnames == NULL && (oparg >> 1) == 1) {
             if (tp == &PyUnicode_Type) {
                 instr->op.code = CALL_NO_KW_STR_1;
                 return 0;
@@ -1605,7 +1605,7 @@ specialize_method_descriptor(PyMethodDescrObject *descr, _Py_CODEUNIT *instr,
             _Py_CODEUNIT next = instr[INLINE_CACHE_ENTRIES_CALL + 1];
             bool pop = (next.op.code == POP_TOP);
             int oparg = instr->op.arg;
-            if ((PyObject *)descr == list_append && oparg == 1 && pop) {
+            if ((PyObject *)descr == list_append && (oparg >> 1) == 1 && pop) {
                 instr->op.code = CALL_NO_KW_LIST_APPEND;
                 return 0;
             }

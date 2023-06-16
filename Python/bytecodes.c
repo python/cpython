@@ -2642,11 +2642,11 @@ dummy_func(
         }
 
         inst(INSTRUMENTED_CALL, ( -- )) {
-            int is_meth = PEEK(oparg + 3) != NULL;
-            int total_args = oparg + is_meth;
-            PyObject *function = PEEK(total_args + 2);
+            int is_meth = PEEK((oparg >> 1) + 2 + (oparg & 1)) != NULL;
+            int total_args = (oparg >> 1) + is_meth;
+            PyObject *function = PEEK(total_args + 1 + (oparg & 1));
             PyObject *arg = total_args == 0 ?
-                &_PyInstrumentation_MISSING : PEEK(total_args + 1);
+                &_PyInstrumentation_MISSING : PEEK(total_args + (oparg & 1));
             int err = _Py_call_instrumentation_2args(
                     tstate, PY_MONITORING_EVENT_CALL,
                     frame, next_instr-1, function, arg);
@@ -2680,14 +2680,14 @@ dummy_func(
         };
 
         // On entry, the stack is either
-        //   [NULL, callable, arg1, arg2, ..., kwnames]
+        //   [NULL, callable, arg1, arg2, ..., (kwnames)]
         // or
-        //   [method, self, arg1, arg2, ..., kwnames]
+        //   [method, self, arg1, arg2, ..., (kwnames)]
         // On exit, the stack is [result].
         // When calling Python, inline the call using DISPATCH_INLINED().
-        inst(CALL, (unused/1, unused/2, method, callable, args[oparg], kwnames -- res)) {
+        inst(CALL, (unused/1, unused/2, method, callable, args[oparg >> 1], kwnames if (oparg & 1) -- res)) {
             int is_meth = method != NULL;
-            int total_args = oparg;
+            int total_args = oparg >> 1;
             if (is_meth) {
                 callable = method;
                 args--;
@@ -2704,7 +2704,7 @@ dummy_func(
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
             if (!is_meth && Py_TYPE(callable) == &PyMethod_Type) {
-                is_meth = 1;  // For consistenct; it's dead, though
+                is_meth = 1;  // For consistency; it's dead, though
                 args--;
                 total_args++;
                 PyObject *self = ((PyMethodObject *)callable)->im_self;
@@ -2728,7 +2728,7 @@ dummy_func(
                 );
                 Py_XDECREF(kwnames);
                 // Manipulate stack directly since we leave using DISPATCH_INLINED().
-                STACK_SHRINK(oparg + 3);
+                STACK_SHRINK((oparg >> 1) + 2 + (oparg & 1));
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
                 if (new_frame == NULL) {
@@ -2745,7 +2745,7 @@ dummy_func(
                 kwnames);
             if (opcode == INSTRUMENTED_CALL) {
                 PyObject *arg = total_args == 0 ?
-                    &_PyInstrumentation_MISSING : PEEK(total_args + 1);
+                    &_PyInstrumentation_MISSING : PEEK(total_args + (oparg & 1));
                 if (res == NULL) {
                     _Py_call_instrumentation_exc2(
                         tstate, PY_MONITORING_EVENT_C_RAISE,
@@ -2773,23 +2773,24 @@ dummy_func(
         // Start out with [NULL, bound_method, arg1, arg2, ...]
         // Transform to [callable, self, arg1, arg2, ...]
         // Then fall through to CALL_PY_EXACT_ARGS
-        inst(CALL_BOUND_METHOD_EXACT_ARGS, (unused/1, unused/2, method, callable, unused[oparg], unused -- unused)) {
+        inst(CALL_BOUND_METHOD_EXACT_ARGS, (unused/1, unused/2, method, callable, unused[oparg >> 1], unused if (oparg & 1) -- unused)) {
+            assert((oparg & 1) == 0);
             DEOPT_IF(method != NULL, CALL);
             DEOPT_IF(Py_TYPE(callable) != &PyMethod_Type, CALL);
             STAT_INC(CALL, hit);
             PyObject *self = ((PyMethodObject *)callable)->im_self;
-            PEEK(oparg + 2) = Py_NewRef(self);  // callable
+            PEEK((oparg >> 1) + 1) = Py_NewRef(self);  // callable
             PyObject *meth = ((PyMethodObject *)callable)->im_func;
-            PEEK(oparg + 3) = Py_NewRef(meth);  // method
+            PEEK((oparg >> 1) + 2) = Py_NewRef(meth);  // method
             Py_DECREF(callable);
             GO_TO_INSTRUCTION(CALL_PY_EXACT_ARGS);
         }
 
-        inst(CALL_PY_EXACT_ARGS, (unused/1, func_version/2, method, callable, args[oparg], kwnames -- unused)) {
-            assert(kwnames == NULL);
+        inst(CALL_PY_EXACT_ARGS, (unused/1, func_version/2, method, callable, args[oparg >> 1], unused if (oparg & 1) -- unused)) {
+            assert((oparg & 1) == 0);
             DEOPT_IF(tstate->interp->eval_frame, CALL);
             int is_meth = method != NULL;
-            int argcount = oparg;
+            int argcount = oparg >> 1;
             if (is_meth) {
                 callable = method;
                 args--;
@@ -2807,17 +2808,17 @@ dummy_func(
                 new_frame->localsplus[i] = args[i];
             }
             // Manipulate stack directly since we leave using DISPATCH_INLINED().
-            STACK_SHRINK(oparg + 3);
+            STACK_SHRINK((oparg >> 1) + 2);
             SKIP_OVER(INLINE_CACHE_ENTRIES_CALL);
             frame->return_offset = 0;
             DISPATCH_INLINED(new_frame);
         }
 
-        inst(CALL_PY_WITH_DEFAULTS, (unused/1, func_version/2, method, callable, args[oparg], kwnames -- unused)) {
-            assert(kwnames == NULL);
+        inst(CALL_PY_WITH_DEFAULTS, (unused/1, func_version/2, method, callable, args[oparg >> 1], unused if (oparg & 1) -- unused)) {
+            assert((oparg & 1) == 0);
             DEOPT_IF(tstate->interp->eval_frame, CALL);
             int is_meth = method != NULL;
-            int argcount = oparg;
+            int argcount = oparg >> 1;
             if (is_meth) {
                 callable = method;
                 args--;
@@ -2845,15 +2846,15 @@ dummy_func(
                 new_frame->localsplus[i] = Py_NewRef(def);
             }
             // Manipulate stack and cache directly since we leave using DISPATCH_INLINED().
-            STACK_SHRINK(oparg + 3);
+            STACK_SHRINK((oparg >> 1) + 2);
             SKIP_OVER(INLINE_CACHE_ENTRIES_CALL);
             frame->return_offset = 0;
             DISPATCH_INLINED(new_frame);
         }
 
-        inst(CALL_NO_KW_TYPE_1, (unused/1, unused/2, null, callable, args[oparg], kwnames -- res)) {
-            assert(kwnames == NULL);
-            assert(oparg == 1);
+        inst(CALL_NO_KW_TYPE_1, (unused/1, unused/2, null, callable, args[oparg >> 1], unused if (oparg & 1) -- res)) {
+            assert((oparg & 1) == 0);
+            assert(oparg >> 1 == 1);
             DEOPT_IF(null != NULL, CALL);
             PyObject *obj = args[0];
             DEOPT_IF(callable != (PyObject *)&PyType_Type, CALL);
@@ -2863,9 +2864,9 @@ dummy_func(
             Py_DECREF(&PyType_Type);  // I.e., callable
         }
 
-        inst(CALL_NO_KW_STR_1, (unused/1, unused/2, null, callable, args[oparg], kwnames -- res)) {
-            assert(kwnames == NULL);
-            assert(oparg == 1);
+        inst(CALL_NO_KW_STR_1, (unused/1, unused/2, null, callable, args[oparg >> 1], unused if (oparg & 1) -- res)) {
+            assert((oparg & 1) == 0);
+            assert(oparg >> 1 == 1);
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(callable != (PyObject *)&PyUnicode_Type, CALL);
             STAT_INC(CALL, hit);
@@ -2877,9 +2878,9 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        inst(CALL_NO_KW_TUPLE_1, (unused/1, unused/2, null, callable, args[oparg], kwnames -- res)) {
-            assert(kwnames == NULL);
-            assert(oparg == 1);
+        inst(CALL_NO_KW_TUPLE_1, (unused/1, unused/2, null, callable, args[oparg >> 1], unused if (oparg & 1) -- res)) {
+            assert((oparg & 1) == 0);
+            assert(oparg >> 1 == 1);
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(callable != (PyObject *)&PyTuple_Type, CALL);
             STAT_INC(CALL, hit);
@@ -2891,9 +2892,9 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        inst(CALL_BUILTIN_CLASS, (unused/1, unused/2, method, callable, args[oparg], kwnames -- res)) {
+        inst(CALL_BUILTIN_CLASS, (unused/1, unused/2, method, callable, args[oparg >> 1], kwnames if (oparg & 1) -- res)) {
             int is_meth = method != NULL;
-            int total_args = oparg;
+            int total_args = oparg >> 1;
             if (is_meth) {
                 callable = method;
                 args--;
@@ -2916,11 +2917,11 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        inst(CALL_NO_KW_BUILTIN_O, (unused/1, unused/2, method, callable, args[oparg], kwnames -- res)) {
+        inst(CALL_NO_KW_BUILTIN_O, (unused/1, unused/2, method, callable, args[oparg >> 1], unused if (oparg & 1) -- res)) {
             /* Builtin METH_O functions */
-            assert(kwnames == NULL);
+            assert((oparg & 1) == 0);
             int is_meth = method != NULL;
-            int total_args = oparg;
+            int total_args = oparg >> 1;
             if (is_meth) {
                 callable = method;
                 args--;
@@ -2947,11 +2948,11 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        inst(CALL_NO_KW_BUILTIN_FAST, (unused/1, unused/2, method, callable, args[oparg], kwnames -- res)) {
+        inst(CALL_NO_KW_BUILTIN_FAST, (unused/1, unused/2, method, callable, args[oparg >> 1], unused if (oparg & 1) -- res)) {
             /* Builtin METH_FASTCALL functions, without keywords */
-            assert(kwnames == NULL);
+            assert((oparg & 1) == 0);
             int is_meth = method != NULL;
-            int total_args = oparg;
+            int total_args = oparg >> 1;
             if (is_meth) {
                 callable = method;
                 args--;
@@ -2982,10 +2983,10 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        inst(CALL_BUILTIN_FAST_WITH_KEYWORDS, (unused/1, unused/2, method, callable, args[oparg], kwnames -- res)) {
+        inst(CALL_BUILTIN_FAST_WITH_KEYWORDS, (unused/1, unused/2, method, callable, args[oparg >> 1], kwnames if (oparg & 1) -- res)) {
             /* Builtin METH_FASTCALL | METH_KEYWORDS functions */
             int is_meth = method != NULL;
-            int total_args = oparg;
+            int total_args = oparg >> 1;
             if (is_meth) {
                 callable = method;
                 args--;
@@ -3017,11 +3018,11 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        inst(CALL_NO_KW_LEN, (unused/1, unused/2, method, callable, args[oparg], kwnames -- res)) {
-            assert(kwnames == NULL);
+        inst(CALL_NO_KW_LEN, (unused/1, unused/2, method, callable, args[oparg >> 1], unused if (oparg & 1) -- res)) {
+            assert((oparg & 1) == 0);
             /* len(o) */
             int is_meth = method != NULL;
-            int total_args = oparg;
+            int total_args = oparg >> 1;
             if (is_meth) {
                 callable = method;
                 args--;
@@ -3044,11 +3045,11 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        inst(CALL_NO_KW_ISINSTANCE, (unused/1, unused/2, method, callable, args[oparg], kwnames -- res)) {
-            assert(kwnames == NULL);
+        inst(CALL_NO_KW_ISINSTANCE, (unused/1, unused/2, method, callable, args[oparg >> 1], unused if (oparg & 1) -- res)) {
+            assert((oparg & 1) == 0);
             /* isinstance(o, o2) */
             int is_meth = method != NULL;
-            int total_args = oparg;
+            int total_args = oparg >> 1;
             if (is_meth) {
                 callable = method;
                 args--;
@@ -3074,9 +3075,9 @@ dummy_func(
         }
 
         // This is secretly a super-instruction
-        inst(CALL_NO_KW_LIST_APPEND, (unused/1, unused/2, method, self, args[oparg], kwnames -- unused)) {
-            assert(kwnames == NULL);
-            assert(oparg == 1);
+        inst(CALL_NO_KW_LIST_APPEND, (unused/1, unused/2, method, self, args[oparg >> 1], unused if (oparg & 1) -- unused)) {
+            assert((oparg & 1) == 0);
+            assert(oparg >> 1 == 1);
             assert(method != NULL);
             PyInterpreterState *interp = _PyInterpreterState_GET();
             DEOPT_IF(method != interp->callable_cache.list_append, CALL);
@@ -3087,23 +3088,23 @@ dummy_func(
             }
             Py_DECREF(self);
             Py_DECREF(method);
-            STACK_SHRINK(4);
+            STACK_SHRINK(3);
             // CALL + POP_TOP
             SKIP_OVER(INLINE_CACHE_ENTRIES_CALL + 1);
             assert(next_instr[-1].op.code == POP_TOP);
             DISPATCH();
         }
 
-        inst(CALL_NO_KW_METHOD_DESCRIPTOR_O, (unused/1, unused/2, method, unused, args[oparg], kwnames -- res)) {
-            assert(kwnames == NULL);
+        inst(CALL_NO_KW_METHOD_DESCRIPTOR_O, (unused/1, unused/2, method, unused, args[oparg >> 1], unused if (oparg & 1) -- res)) {
+            assert((oparg & 1) == 0);
             int is_meth = method != NULL;
-            int total_args = oparg;
+            int total_args = oparg >> 1;
             if (is_meth) {
                 args--;
                 total_args++;
             }
             PyMethodDescrObject *callable =
-                (PyMethodDescrObject *)PEEK(total_args + 2);
+                (PyMethodDescrObject *)PEEK(total_args + 1);
             DEOPT_IF(total_args != 2, CALL);
             DEOPT_IF(!Py_IS_TYPE(callable, &PyMethodDescr_Type), CALL);
             PyMethodDef *meth = callable->d_method;
@@ -3128,15 +3129,15 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        inst(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, (unused/1, unused/2, method, unused, args[oparg], kwnames -- res)) {
+        inst(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, (unused/1, unused/2, method, unused, args[oparg >> 1], kwnames if (oparg & 1) -- res)) {
             int is_meth = method != NULL;
-            int total_args = oparg;
+            int total_args = oparg >> 1;
             if (is_meth) {
                 args--;
                 total_args++;
             }
             PyMethodDescrObject *callable =
-                (PyMethodDescrObject *)PEEK(total_args + 2);
+                (PyMethodDescrObject *)PEEK(total_args + 1 + (oparg & 1));
             DEOPT_IF(!Py_IS_TYPE(callable, &PyMethodDescr_Type), CALL);
             PyMethodDef *meth = callable->d_method;
             DEOPT_IF(meth->ml_flags != (METH_FASTCALL|METH_KEYWORDS), CALL);
@@ -3160,11 +3161,11 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        inst(CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS, (unused/1, unused/2, method, unused, args[oparg], kwnames -- res)) {
-            assert(kwnames == NULL);
-            assert(oparg == 0 || oparg == 1);
+        inst(CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS, (unused/1, unused/2, method, unused, args[oparg >> 1], unused if (oparg & 1) -- res)) {
+            assert((oparg & 1) == 0);
+            assert(oparg >> 1 == 0 || oparg >> 1 == 1);
             int is_meth = method != NULL;
-            int total_args = oparg;
+            int total_args = oparg >> 1;
             if (is_meth) {
                 args--;
                 total_args++;
@@ -3192,16 +3193,16 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        inst(CALL_NO_KW_METHOD_DESCRIPTOR_FAST, (unused/1, unused/2, method, unused, args[oparg], kwnames -- res)) {
-            assert(kwnames == NULL);
+        inst(CALL_NO_KW_METHOD_DESCRIPTOR_FAST, (unused/1, unused/2, method, unused, args[oparg >> 1], unused if (oparg & 1) -- res)) {
+            assert((oparg & 1) == 0);
             int is_meth = method != NULL;
-            int total_args = oparg;
+            int total_args = oparg >> 1;
             if (is_meth) {
                 args--;
                 total_args++;
             }
             PyMethodDescrObject *callable =
-                (PyMethodDescrObject *)PEEK(total_args + 2);
+                (PyMethodDescrObject *)PEEK(total_args + 1);
             /* Builtin METH_FASTCALL methods, without keywords */
             DEOPT_IF(!Py_IS_TYPE(callable, &PyMethodDescr_Type), CALL);
             PyMethodDef *meth = callable->d_method;

@@ -44,6 +44,7 @@ CALL_INTRINSIC_2 = opmap['CALL_INTRINSIC_2']
 LOAD_FAST_LOAD_FAST = opmap['LOAD_FAST_LOAD_FAST']
 STORE_FAST_LOAD_FAST = opmap['STORE_FAST_LOAD_FAST']
 STORE_FAST_STORE_FAST = opmap['STORE_FAST_STORE_FAST']
+CALL = opmap['CALL']
 
 CACHE = opmap["CACHE"]
 
@@ -586,6 +587,12 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
                 argrepr = _intrinsic_1_descs[arg]
             elif deop == CALL_INTRINSIC_2:
                 argrepr = _intrinsic_2_descs[arg]
+            elif deop == CALL:
+                argval = arg >> 1
+                if arg & 1:
+                    argrepr = f"{argval} + keywords"
+                else:
+                    argrepr = repr(argval)
         yield Instruction(_all_opname[op], op,
                           arg, argval, argrepr,
                           offset, start_offset, starts_line, is_jump_target, positions)

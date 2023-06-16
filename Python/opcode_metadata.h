@@ -353,41 +353,41 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case INSTRUMENTED_CALL:
             return 0;
         case CALL:
-            return oparg + 3;
+            return (oparg >> 1) + ((oparg & 1) ? 1 : 0) + 2;
         case CALL_BOUND_METHOD_EXACT_ARGS:
-            return oparg + 3;
+            return (oparg >> 1) + ((oparg & 1) ? 1 : 0) + 2;
         case CALL_PY_EXACT_ARGS:
-            return oparg + 3;
+            return (oparg >> 1) + ((oparg & 1) ? 1 : 0) + 2;
         case CALL_PY_WITH_DEFAULTS:
-            return oparg + 3;
+            return (oparg >> 1) + ((oparg & 1) ? 1 : 0) + 2;
         case CALL_NO_KW_TYPE_1:
-            return oparg + 3;
+            return (oparg >> 1) + ((oparg & 1) ? 1 : 0) + 2;
         case CALL_NO_KW_STR_1:
-            return oparg + 3;
+            return (oparg >> 1) + ((oparg & 1) ? 1 : 0) + 2;
         case CALL_NO_KW_TUPLE_1:
-            return oparg + 3;
+            return (oparg >> 1) + ((oparg & 1) ? 1 : 0) + 2;
         case CALL_BUILTIN_CLASS:
-            return oparg + 3;
+            return (oparg >> 1) + ((oparg & 1) ? 1 : 0) + 2;
         case CALL_NO_KW_BUILTIN_O:
-            return oparg + 3;
+            return (oparg >> 1) + ((oparg & 1) ? 1 : 0) + 2;
         case CALL_NO_KW_BUILTIN_FAST:
-            return oparg + 3;
+            return (oparg >> 1) + ((oparg & 1) ? 1 : 0) + 2;
         case CALL_BUILTIN_FAST_WITH_KEYWORDS:
-            return oparg + 3;
+            return (oparg >> 1) + ((oparg & 1) ? 1 : 0) + 2;
         case CALL_NO_KW_LEN:
-            return oparg + 3;
+            return (oparg >> 1) + ((oparg & 1) ? 1 : 0) + 2;
         case CALL_NO_KW_ISINSTANCE:
-            return oparg + 3;
+            return (oparg >> 1) + ((oparg & 1) ? 1 : 0) + 2;
         case CALL_NO_KW_LIST_APPEND:
-            return oparg + 3;
+            return (oparg >> 1) + ((oparg & 1) ? 1 : 0) + 2;
         case CALL_NO_KW_METHOD_DESCRIPTOR_O:
-            return oparg + 3;
+            return (oparg >> 1) + ((oparg & 1) ? 1 : 0) + 2;
         case CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS:
-            return oparg + 3;
+            return (oparg >> 1) + ((oparg & 1) ? 1 : 0) + 2;
         case CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS:
-            return oparg + 3;
+            return (oparg >> 1) + ((oparg & 1) ? 1 : 0) + 2;
         case CALL_NO_KW_METHOD_DESCRIPTOR_FAST:
-            return oparg + 3;
+            return (oparg >> 1) + ((oparg & 1) ? 1 : 0) + 2;
         case INSTRUMENTED_CALL_FUNCTION_EX:
             return 0;
         case CALL_FUNCTION_EX:

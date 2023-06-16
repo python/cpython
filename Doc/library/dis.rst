@@ -58,9 +58,8 @@ the following command can be used to display the disassembly of
    <BLANKLINE>
      3           2 LOAD_GLOBAL              1 (NULL + len)
                 12 LOAD_FAST                0 (alist)
-                14 PUSH_NULL
-                16 CALL                     1
-                24 RETURN_VALUE
+                14 CALL                     2 (1)
+                22 RETURN_VALUE
 
 (The "2" is a line number).
 
@@ -139,7 +138,6 @@ Example:
     RESUME
     LOAD_GLOBAL
     LOAD_FAST
-    PUSH_NULL
     CALL
     RETURN_VALUE
 
@@ -1363,23 +1361,23 @@ iterations of the loop.
 
 .. opcode:: CALL (argc)
 
-   Calls a callable object with the number of arguments specified by ``argc``,
-   including the named arguments, if any.
+   Calls a callable object with the number of arguments specified by ``argc >> 1``,
+   including the named arguments, if ``argc & 1``.
    On the stack are (in ascending order), either:
 
    * NULL
    * The callable
    * The positional arguments
-   * The named arguments
-   * A tuple of keyword names (or ``NULL``)
+   * The named arguments (if ``argc & 1``)
+   * A tuple of keyword names (if ``argc & 1``)
 
    or:
 
    * The callable
    * ``self``
    * The remaining positional arguments
-   * The named arguments
-   * A tuple of keyword names (or ``NULL``)
+   * The named arguments (if ``argc & 1``)
+   * A tuple of keyword names (if ``argc & 1``)
 
    ``argc`` is the total of the positional and named arguments, excluding
    ``self`` when a ``NULL`` is not present.
@@ -1390,9 +1388,10 @@ iterations of the loop.
 
    .. versionadded:: 3.11
 
-   .. versionchanged:: 3.12
-      Keyword names are now pushed to the stack instead of being indicated by
-      a preceding ``KW_NAMES`` instruction.
+   .. versionchanged:: 3.13
+      Keyword names are now found to the stack, and the presence of keyword
+      arguments is indicated by the low bit of the oparg (rather than a separate
+      ``KW_NAMES`` instruction).
 
 
 .. opcode:: CALL_FUNCTION_EX (flags)
