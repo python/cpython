@@ -4542,6 +4542,16 @@ class TestKeywordArgs(unittest.TestCase):
         self.assertTrue(fields(B)[0].kw_only)
         self.assertFalse(fields(B)[1].kw_only)
 
+    def test_dataclass_derived_slots(self):
+        class A:
+            pass
+            
+        @dataclass(slots=True, weakref_slot=True)
+        class B(A):
+            pass
+        
+        B()
+
 
 if __name__ == '__main__':
     unittest.main()
