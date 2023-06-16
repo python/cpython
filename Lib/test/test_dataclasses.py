@@ -2174,7 +2174,6 @@ class TestCase(unittest.TestCase):
             A()
 
 
-
 class TestFieldNoAnnotation(unittest.TestCase):
     def test_field_without_annotation(self):
         with self.assertRaisesRegex(TypeError,
@@ -3188,6 +3187,7 @@ class TestSlots(unittest.TestCase):
         self.assertFalse(hasattr(A, "__slots__"))
         self.assertTrue(hasattr(B, "__slots__"))
 
+    # Can't be local to test_frozen_pickle.
     @dataclass(frozen=True, slots=True)
     class FrozenSlotsClass:
         foo: str
@@ -4582,6 +4582,7 @@ class TestKeywordArgs(unittest.TestCase):
                            kw_only=True)
         self.assertTrue(fields(B)[0].kw_only)
         self.assertFalse(fields(B)[1].kw_only)
+
 
 if __name__ == '__main__':
     unittest.main()
