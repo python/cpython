@@ -1151,6 +1151,13 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     if slots:
         cls = _add_slots(cls, frozen, weakref_slot)
 
+
+    if frozen and set(_get_all_slots(cls)).difference(('__dict__', '__weakref__')):
+        # Need this for pickling frozen classes with slots.
+        print(cls, fields, _get_all_slots(cls))
+        _set_new_attribute(cls, '__getstate__', _dataclass_getstate)
+        _set_new_attribute(cls, '__setstate__', _dataclass_setstate)
+
     abc.update_abstractmethods(cls)
 
     return cls
@@ -1161,13 +1168,13 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
 # the code instead of iterating over fields.  But that can be a project for
 # another day, if performance becomes an issue.
 def _dataclass_getstate(self):
-    return [getattr(self, f.name) for f in fields(self)]
+    return [getattr(self, f) for f in _get_all_slots_for_pickle(self.__class__)]
 
 
 def _dataclass_setstate(self, state):
-    for field, value in zip(fields(self), state):
+    for field, value in zip(_get_all_slots_for_pickle(self.__class__), state):
         # use setattr because dataclass may be frozen
-        object.__setattr__(self, field.name, value)
+        object.__setattr__(self, field, value)
 
 
 def _get_slots(cls):
@@ -1183,6 +1190,15 @@ def _get_slots(cls):
         case _:
             raise TypeError(f"Slots of '{cls.__name__}' cannot be determined")
 
+def _get_all_slots(cls):
+    # We use dictionary and not set to preserve order.
+    return list(dict.fromkeys(itertools.chain.from_iterable(map(_get_slots, cls.__mro__[:-1][::-1]))))
+
+def _get_all_slots_for_pickle(cls):
+    """
+    Get all slots for cls and its parents, but exclude __weakref__.
+    """
+    return [x for x in _get_all_slots(cls) if x != '__weakref__']
 
 def _add_slots(cls, is_frozen, weakref_slot):
     # Need to create a new class, since we can't set __slots__
@@ -1228,13 +1244,6 @@ def _add_slots(cls, is_frozen, weakref_slot):
     cls = type(cls)(cls.__name__, cls.__bases__, cls_dict)
     if qualname is not None:
         cls.__qualname__ = qualname
-
-    if is_frozen:
-        # Need this for pickling frozen classes with slots.
-        if '__getstate__' not in cls_dict:
-            cls.__getstate__ = _dataclass_getstate
-        if '__setstate__' not in cls_dict:
-            cls.__setstate__ = _dataclass_setstate
 
     return cls
 
