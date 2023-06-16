@@ -58,8 +58,9 @@ the following command can be used to display the disassembly of
    <BLANKLINE>
      3           2 LOAD_GLOBAL              1 (NULL + len)
                 12 LOAD_FAST                0 (alist)
-                14 CALL                     1
-                22 RETURN_VALUE
+                14 PUSH_NULL
+                16 CALL                     1
+                24 RETURN_VALUE
 
 (The "2" is a line number).
 
@@ -138,6 +139,7 @@ Example:
     RESUME
     LOAD_GLOBAL
     LOAD_FAST
+    PUSH_NULL
     CALL
     RETURN_VALUE
 
