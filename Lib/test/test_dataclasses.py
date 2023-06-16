@@ -2174,6 +2174,39 @@ class TestCase(unittest.TestCase):
             A()
 
 
+    # Can't be local to test_frozen_pickle_with_derived_slots.
+    class SlotNonDataclass:
+        __slots__ = ("foo",)
+
+        def __init__(self, foo: str):
+            # To support frozen derived classes.
+            object.__setattr__(self, "foo", foo)
+
+    @dataclass(frozen=True)
+    class FrozenDerivingSlotsClass(SlotNonDataclass):
+        bar: int
+
+        def __init__(self, foo: str, bar: int):
+            # super() without arguments does not work with slots=True,
+            # as the actual class is different from the one we have here.
+            super(TestCase.FrozenDerivingSlotsClass, self).__init__(foo)
+            object.__setattr__(self, "bar", bar)
+    
+    def test_frozen_pickle_with_derived_slots(self):
+        # pickling classes with __slots__ and without __getstate__
+        # does not work with protocol < 2 anyway.
+        for proto in range(2, pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                obj = self.FrozenDerivingSlotsClass("a", 1)
+                p = pickle.loads(pickle.dumps(obj, protocol=proto))
+
+                self.assertIsNot(obj, p)
+                self.assertEqual(obj, p)
+
+                self.assertEqual(obj.foo, p.foo)
+                self.assertEqual(obj.bar, p.bar)
+
+
 class TestFieldNoAnnotation(unittest.TestCase):
     def test_field_without_annotation(self):
         with self.assertRaisesRegex(TypeError,
@@ -3157,7 +3190,6 @@ class TestSlots(unittest.TestCase):
         self.assertFalse(hasattr(A, "__slots__"))
         self.assertTrue(hasattr(B, "__slots__"))
 
-    # Can't be local to test_frozen_pickle.
     @dataclass(frozen=True, slots=True)
     class FrozenSlotsClass:
         foo: str
@@ -4541,7 +4573,6 @@ class TestKeywordArgs(unittest.TestCase):
                            kw_only=True)
         self.assertTrue(fields(B)[0].kw_only)
         self.assertFalse(fields(B)[1].kw_only)
-
 
 if __name__ == '__main__':
     unittest.main()
