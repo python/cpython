@@ -157,6 +157,7 @@ jobs:
       run: brew install pkg-config openssl@3.0 xz gdbm tcl-tk
     - name: Configure CPython
       run: |
+        CC=clang \
         CPPFLAGS="-I$(brew --prefix gdbm)/include -I$(brew --prefix xz)/include" \
         LDFLAGS="-L$(brew --prefix gdbm)/lib -L$(brew --prefix xz)/lib" \
         ./configure --with-pydebug \
