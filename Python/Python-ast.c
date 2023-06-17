@@ -6,6 +6,7 @@
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall
 #include "pycore_interp.h"        // _PyInterpreterState.ast
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_unionobject.h"   // _Py_union_type_or
 #include "structmember.h"
 #include <stddef.h>
 
@@ -794,6 +795,3171 @@ static const char * const TypeVarTuple_fields[]={
 };
 
 
+static int
+add_ast_annotations(struct ast_state *state)
+{
+    bool cond;
+    PyObject *Module_annotations = PyDict_New();
+    if (!Module_annotations) return 0;
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Module_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Module_annotations, "body", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Module_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->type_ignore_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Module_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Module_annotations, "type_ignores", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Module_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Module_type, "__annotations__",
+                                  Module_annotations) == 0;
+    Py_DECREF(Module_annotations);
+    if (!cond) return 0;
+    PyObject *Interactive_annotations = PyDict_New();
+    if (!Interactive_annotations) return 0;
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Interactive_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Interactive_annotations, "body", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Interactive_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Interactive_type, "__annotations__",
+                                  Interactive_annotations) == 0;
+    Py_DECREF(Interactive_annotations);
+    if (!cond) return 0;
+    PyObject *Expression_annotations = PyDict_New();
+    if (!Expression_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Expression_annotations, "body", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Expression_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Expression_type, "__annotations__",
+                                  Expression_annotations) == 0;
+    Py_DECREF(Expression_annotations);
+    if (!cond) return 0;
+    PyObject *FunctionType_annotations = PyDict_New();
+    if (!FunctionType_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(FunctionType_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(FunctionType_annotations, "argtypes", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(FunctionType_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(FunctionType_annotations, "returns", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(FunctionType_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->FunctionType_type, "__annotations__",
+                                  FunctionType_annotations) == 0;
+    Py_DECREF(FunctionType_annotations);
+    if (!cond) return 0;
+    PyObject *FunctionDef_annotations = PyDict_New();
+    if (!FunctionDef_annotations) return 0;
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(FunctionDef_annotations, "name", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(FunctionDef_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->arguments_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(FunctionDef_annotations, "args", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(FunctionDef_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(FunctionDef_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(FunctionDef_annotations, "body", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(FunctionDef_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(FunctionDef_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(FunctionDef_annotations, "decorator_list",
+                                    type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(FunctionDef_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(FunctionDef_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(FunctionDef_annotations, "returns", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(FunctionDef_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(FunctionDef_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(FunctionDef_annotations, "type_comment",
+                                    type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(FunctionDef_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->type_param_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(FunctionDef_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(FunctionDef_annotations, "type_params",
+                                    type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(FunctionDef_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->FunctionDef_type, "__annotations__",
+                                  FunctionDef_annotations) == 0;
+    Py_DECREF(FunctionDef_annotations);
+    if (!cond) return 0;
+    PyObject *AsyncFunctionDef_annotations = PyDict_New();
+    if (!AsyncFunctionDef_annotations) return 0;
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(AsyncFunctionDef_annotations, "name", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AsyncFunctionDef_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->arguments_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(AsyncFunctionDef_annotations, "args", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AsyncFunctionDef_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(AsyncFunctionDef_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(AsyncFunctionDef_annotations, "body", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AsyncFunctionDef_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(AsyncFunctionDef_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(AsyncFunctionDef_annotations,
+                                    "decorator_list", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AsyncFunctionDef_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(AsyncFunctionDef_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(AsyncFunctionDef_annotations, "returns",
+                                    type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AsyncFunctionDef_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(AsyncFunctionDef_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(AsyncFunctionDef_annotations,
+                                    "type_comment", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AsyncFunctionDef_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->type_param_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(AsyncFunctionDef_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(AsyncFunctionDef_annotations,
+                                    "type_params", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AsyncFunctionDef_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->AsyncFunctionDef_type,
+                                  "__annotations__",
+                                  AsyncFunctionDef_annotations) == 0;
+    Py_DECREF(AsyncFunctionDef_annotations);
+    if (!cond) return 0;
+    PyObject *ClassDef_annotations = PyDict_New();
+    if (!ClassDef_annotations) return 0;
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(ClassDef_annotations, "name", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(ClassDef_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(ClassDef_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(ClassDef_annotations, "bases", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(ClassDef_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->keyword_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(ClassDef_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(ClassDef_annotations, "keywords", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(ClassDef_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(ClassDef_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(ClassDef_annotations, "body", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(ClassDef_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(ClassDef_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(ClassDef_annotations, "decorator_list",
+                                    type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(ClassDef_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->type_param_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(ClassDef_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(ClassDef_annotations, "type_params", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(ClassDef_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->ClassDef_type, "__annotations__",
+                                  ClassDef_annotations) == 0;
+    Py_DECREF(ClassDef_annotations);
+    if (!cond) return 0;
+    PyObject *Return_annotations = PyDict_New();
+    if (!Return_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Return_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Return_annotations, "value", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Return_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Return_type, "__annotations__",
+                                  Return_annotations) == 0;
+    Py_DECREF(Return_annotations);
+    if (!cond) return 0;
+    PyObject *Delete_annotations = PyDict_New();
+    if (!Delete_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Delete_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Delete_annotations, "targets", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Delete_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Delete_type, "__annotations__",
+                                  Delete_annotations) == 0;
+    Py_DECREF(Delete_annotations);
+    if (!cond) return 0;
+    PyObject *Assign_annotations = PyDict_New();
+    if (!Assign_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Assign_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Assign_annotations, "targets", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Assign_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Assign_annotations, "value", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Assign_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Assign_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Assign_annotations, "type_comment", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Assign_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Assign_type, "__annotations__",
+                                  Assign_annotations) == 0;
+    Py_DECREF(Assign_annotations);
+    if (!cond) return 0;
+    PyObject *TypeAlias_annotations = PyDict_New();
+    if (!TypeAlias_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(TypeAlias_annotations, "name", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(TypeAlias_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->type_param_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(TypeAlias_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(TypeAlias_annotations, "type_params", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(TypeAlias_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(TypeAlias_annotations, "value", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(TypeAlias_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->TypeAlias_type, "__annotations__",
+                                  TypeAlias_annotations) == 0;
+    Py_DECREF(TypeAlias_annotations);
+    if (!cond) return 0;
+    PyObject *AugAssign_annotations = PyDict_New();
+    if (!AugAssign_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(AugAssign_annotations, "target", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AugAssign_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->operator_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(AugAssign_annotations, "op", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AugAssign_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(AugAssign_annotations, "value", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AugAssign_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->AugAssign_type, "__annotations__",
+                                  AugAssign_annotations) == 0;
+    Py_DECREF(AugAssign_annotations);
+    if (!cond) return 0;
+    PyObject *AnnAssign_annotations = PyDict_New();
+    if (!AnnAssign_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(AnnAssign_annotations, "target", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AnnAssign_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(AnnAssign_annotations, "annotation", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AnnAssign_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(AnnAssign_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(AnnAssign_annotations, "value", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AnnAssign_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyLong_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(AnnAssign_annotations, "simple", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AnnAssign_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->AnnAssign_type, "__annotations__",
+                                  AnnAssign_annotations) == 0;
+    Py_DECREF(AnnAssign_annotations);
+    if (!cond) return 0;
+    PyObject *For_annotations = PyDict_New();
+    if (!For_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(For_annotations, "target", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(For_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(For_annotations, "iter", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(For_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(For_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(For_annotations, "body", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(For_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(For_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(For_annotations, "orelse", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(For_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(For_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(For_annotations, "type_comment", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(For_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->For_type, "__annotations__",
+                                  For_annotations) == 0;
+    Py_DECREF(For_annotations);
+    if (!cond) return 0;
+    PyObject *AsyncFor_annotations = PyDict_New();
+    if (!AsyncFor_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(AsyncFor_annotations, "target", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AsyncFor_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(AsyncFor_annotations, "iter", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AsyncFor_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(AsyncFor_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(AsyncFor_annotations, "body", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AsyncFor_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(AsyncFor_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(AsyncFor_annotations, "orelse", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AsyncFor_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(AsyncFor_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(AsyncFor_annotations, "type_comment", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AsyncFor_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->AsyncFor_type, "__annotations__",
+                                  AsyncFor_annotations) == 0;
+    Py_DECREF(AsyncFor_annotations);
+    if (!cond) return 0;
+    PyObject *While_annotations = PyDict_New();
+    if (!While_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(While_annotations, "test", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(While_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(While_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(While_annotations, "body", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(While_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(While_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(While_annotations, "orelse", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(While_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->While_type, "__annotations__",
+                                  While_annotations) == 0;
+    Py_DECREF(While_annotations);
+    if (!cond) return 0;
+    PyObject *If_annotations = PyDict_New();
+    if (!If_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(If_annotations, "test", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(If_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(If_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(If_annotations, "body", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(If_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(If_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(If_annotations, "orelse", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(If_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->If_type, "__annotations__",
+                                  If_annotations) == 0;
+    Py_DECREF(If_annotations);
+    if (!cond) return 0;
+    PyObject *With_annotations = PyDict_New();
+    if (!With_annotations) return 0;
+    {
+        PyObject *type = state->withitem_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(With_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(With_annotations, "items", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(With_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(With_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(With_annotations, "body", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(With_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(With_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(With_annotations, "type_comment", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(With_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->With_type, "__annotations__",
+                                  With_annotations) == 0;
+    Py_DECREF(With_annotations);
+    if (!cond) return 0;
+    PyObject *AsyncWith_annotations = PyDict_New();
+    if (!AsyncWith_annotations) return 0;
+    {
+        PyObject *type = state->withitem_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(AsyncWith_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(AsyncWith_annotations, "items", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AsyncWith_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(AsyncWith_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(AsyncWith_annotations, "body", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AsyncWith_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(AsyncWith_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(AsyncWith_annotations, "type_comment",
+                                    type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AsyncWith_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->AsyncWith_type, "__annotations__",
+                                  AsyncWith_annotations) == 0;
+    Py_DECREF(AsyncWith_annotations);
+    if (!cond) return 0;
+    PyObject *Match_annotations = PyDict_New();
+    if (!Match_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Match_annotations, "subject", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Match_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->match_case_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Match_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Match_annotations, "cases", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Match_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Match_type, "__annotations__",
+                                  Match_annotations) == 0;
+    Py_DECREF(Match_annotations);
+    if (!cond) return 0;
+    PyObject *Raise_annotations = PyDict_New();
+    if (!Raise_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Raise_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Raise_annotations, "exc", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Raise_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Raise_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Raise_annotations, "cause", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Raise_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Raise_type, "__annotations__",
+                                  Raise_annotations) == 0;
+    Py_DECREF(Raise_annotations);
+    if (!cond) return 0;
+    PyObject *Try_annotations = PyDict_New();
+    if (!Try_annotations) return 0;
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Try_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Try_annotations, "body", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Try_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->excepthandler_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Try_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Try_annotations, "handlers", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Try_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Try_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Try_annotations, "orelse", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Try_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Try_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Try_annotations, "finalbody", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Try_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Try_type, "__annotations__",
+                                  Try_annotations) == 0;
+    Py_DECREF(Try_annotations);
+    if (!cond) return 0;
+    PyObject *TryStar_annotations = PyDict_New();
+    if (!TryStar_annotations) return 0;
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(TryStar_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(TryStar_annotations, "body", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(TryStar_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->excepthandler_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(TryStar_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(TryStar_annotations, "handlers", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(TryStar_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(TryStar_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(TryStar_annotations, "orelse", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(TryStar_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(TryStar_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(TryStar_annotations, "finalbody", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(TryStar_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->TryStar_type, "__annotations__",
+                                  TryStar_annotations) == 0;
+    Py_DECREF(TryStar_annotations);
+    if (!cond) return 0;
+    PyObject *Assert_annotations = PyDict_New();
+    if (!Assert_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Assert_annotations, "test", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Assert_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Assert_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Assert_annotations, "msg", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Assert_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Assert_type, "__annotations__",
+                                  Assert_annotations) == 0;
+    Py_DECREF(Assert_annotations);
+    if (!cond) return 0;
+    PyObject *Import_annotations = PyDict_New();
+    if (!Import_annotations) return 0;
+    {
+        PyObject *type = state->alias_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Import_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Import_annotations, "names", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Import_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Import_type, "__annotations__",
+                                  Import_annotations) == 0;
+    Py_DECREF(Import_annotations);
+    if (!cond) return 0;
+    PyObject *ImportFrom_annotations = PyDict_New();
+    if (!ImportFrom_annotations) return 0;
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(ImportFrom_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(ImportFrom_annotations, "module", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(ImportFrom_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->alias_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(ImportFrom_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(ImportFrom_annotations, "names", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(ImportFrom_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyLong_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(ImportFrom_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(ImportFrom_annotations, "level", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(ImportFrom_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->ImportFrom_type, "__annotations__",
+                                  ImportFrom_annotations) == 0;
+    Py_DECREF(ImportFrom_annotations);
+    if (!cond) return 0;
+    PyObject *Global_annotations = PyDict_New();
+    if (!Global_annotations) return 0;
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Global_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Global_annotations, "names", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Global_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Global_type, "__annotations__",
+                                  Global_annotations) == 0;
+    Py_DECREF(Global_annotations);
+    if (!cond) return 0;
+    PyObject *Nonlocal_annotations = PyDict_New();
+    if (!Nonlocal_annotations) return 0;
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Nonlocal_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Nonlocal_annotations, "names", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Nonlocal_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Nonlocal_type, "__annotations__",
+                                  Nonlocal_annotations) == 0;
+    Py_DECREF(Nonlocal_annotations);
+    if (!cond) return 0;
+    PyObject *Expr_annotations = PyDict_New();
+    if (!Expr_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Expr_annotations, "value", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Expr_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Expr_type, "__annotations__",
+                                  Expr_annotations) == 0;
+    Py_DECREF(Expr_annotations);
+    if (!cond) return 0;
+    PyObject *Pass_annotations = PyDict_New();
+    if (!Pass_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Pass_type, "__annotations__",
+                                  Pass_annotations) == 0;
+    Py_DECREF(Pass_annotations);
+    if (!cond) return 0;
+    PyObject *Break_annotations = PyDict_New();
+    if (!Break_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Break_type, "__annotations__",
+                                  Break_annotations) == 0;
+    Py_DECREF(Break_annotations);
+    if (!cond) return 0;
+    PyObject *Continue_annotations = PyDict_New();
+    if (!Continue_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Continue_type, "__annotations__",
+                                  Continue_annotations) == 0;
+    Py_DECREF(Continue_annotations);
+    if (!cond) return 0;
+    PyObject *BoolOp_annotations = PyDict_New();
+    if (!BoolOp_annotations) return 0;
+    {
+        PyObject *type = state->boolop_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(BoolOp_annotations, "op", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(BoolOp_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(BoolOp_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(BoolOp_annotations, "values", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(BoolOp_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->BoolOp_type, "__annotations__",
+                                  BoolOp_annotations) == 0;
+    Py_DECREF(BoolOp_annotations);
+    if (!cond) return 0;
+    PyObject *NamedExpr_annotations = PyDict_New();
+    if (!NamedExpr_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(NamedExpr_annotations, "target", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(NamedExpr_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(NamedExpr_annotations, "value", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(NamedExpr_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->NamedExpr_type, "__annotations__",
+                                  NamedExpr_annotations) == 0;
+    Py_DECREF(NamedExpr_annotations);
+    if (!cond) return 0;
+    PyObject *BinOp_annotations = PyDict_New();
+    if (!BinOp_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(BinOp_annotations, "left", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(BinOp_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->operator_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(BinOp_annotations, "op", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(BinOp_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(BinOp_annotations, "right", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(BinOp_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->BinOp_type, "__annotations__",
+                                  BinOp_annotations) == 0;
+    Py_DECREF(BinOp_annotations);
+    if (!cond) return 0;
+    PyObject *UnaryOp_annotations = PyDict_New();
+    if (!UnaryOp_annotations) return 0;
+    {
+        PyObject *type = state->unaryop_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(UnaryOp_annotations, "op", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(UnaryOp_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(UnaryOp_annotations, "operand", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(UnaryOp_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->UnaryOp_type, "__annotations__",
+                                  UnaryOp_annotations) == 0;
+    Py_DECREF(UnaryOp_annotations);
+    if (!cond) return 0;
+    PyObject *Lambda_annotations = PyDict_New();
+    if (!Lambda_annotations) return 0;
+    {
+        PyObject *type = state->arguments_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Lambda_annotations, "args", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Lambda_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Lambda_annotations, "body", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Lambda_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Lambda_type, "__annotations__",
+                                  Lambda_annotations) == 0;
+    Py_DECREF(Lambda_annotations);
+    if (!cond) return 0;
+    PyObject *IfExp_annotations = PyDict_New();
+    if (!IfExp_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(IfExp_annotations, "test", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(IfExp_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(IfExp_annotations, "body", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(IfExp_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(IfExp_annotations, "orelse", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(IfExp_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->IfExp_type, "__annotations__",
+                                  IfExp_annotations) == 0;
+    Py_DECREF(IfExp_annotations);
+    if (!cond) return 0;
+    PyObject *Dict_annotations = PyDict_New();
+    if (!Dict_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Dict_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Dict_annotations, "keys", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Dict_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Dict_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Dict_annotations, "values", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Dict_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Dict_type, "__annotations__",
+                                  Dict_annotations) == 0;
+    Py_DECREF(Dict_annotations);
+    if (!cond) return 0;
+    PyObject *Set_annotations = PyDict_New();
+    if (!Set_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Set_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Set_annotations, "elts", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Set_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Set_type, "__annotations__",
+                                  Set_annotations) == 0;
+    Py_DECREF(Set_annotations);
+    if (!cond) return 0;
+    PyObject *ListComp_annotations = PyDict_New();
+    if (!ListComp_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(ListComp_annotations, "elt", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(ListComp_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->comprehension_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(ListComp_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(ListComp_annotations, "generators", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(ListComp_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->ListComp_type, "__annotations__",
+                                  ListComp_annotations) == 0;
+    Py_DECREF(ListComp_annotations);
+    if (!cond) return 0;
+    PyObject *SetComp_annotations = PyDict_New();
+    if (!SetComp_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(SetComp_annotations, "elt", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(SetComp_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->comprehension_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(SetComp_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(SetComp_annotations, "generators", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(SetComp_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->SetComp_type, "__annotations__",
+                                  SetComp_annotations) == 0;
+    Py_DECREF(SetComp_annotations);
+    if (!cond) return 0;
+    PyObject *DictComp_annotations = PyDict_New();
+    if (!DictComp_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(DictComp_annotations, "key", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(DictComp_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(DictComp_annotations, "value", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(DictComp_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->comprehension_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(DictComp_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(DictComp_annotations, "generators", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(DictComp_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->DictComp_type, "__annotations__",
+                                  DictComp_annotations) == 0;
+    Py_DECREF(DictComp_annotations);
+    if (!cond) return 0;
+    PyObject *GeneratorExp_annotations = PyDict_New();
+    if (!GeneratorExp_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(GeneratorExp_annotations, "elt", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(GeneratorExp_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->comprehension_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(GeneratorExp_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(GeneratorExp_annotations, "generators",
+                                    type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(GeneratorExp_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->GeneratorExp_type, "__annotations__",
+                                  GeneratorExp_annotations) == 0;
+    Py_DECREF(GeneratorExp_annotations);
+    if (!cond) return 0;
+    PyObject *Await_annotations = PyDict_New();
+    if (!Await_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Await_annotations, "value", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Await_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Await_type, "__annotations__",
+                                  Await_annotations) == 0;
+    Py_DECREF(Await_annotations);
+    if (!cond) return 0;
+    PyObject *Yield_annotations = PyDict_New();
+    if (!Yield_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Yield_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Yield_annotations, "value", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Yield_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Yield_type, "__annotations__",
+                                  Yield_annotations) == 0;
+    Py_DECREF(Yield_annotations);
+    if (!cond) return 0;
+    PyObject *YieldFrom_annotations = PyDict_New();
+    if (!YieldFrom_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(YieldFrom_annotations, "value", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(YieldFrom_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->YieldFrom_type, "__annotations__",
+                                  YieldFrom_annotations) == 0;
+    Py_DECREF(YieldFrom_annotations);
+    if (!cond) return 0;
+    PyObject *Compare_annotations = PyDict_New();
+    if (!Compare_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Compare_annotations, "left", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Compare_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->cmpop_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Compare_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Compare_annotations, "ops", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Compare_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Compare_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Compare_annotations, "comparators", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Compare_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Compare_type, "__annotations__",
+                                  Compare_annotations) == 0;
+    Py_DECREF(Compare_annotations);
+    if (!cond) return 0;
+    PyObject *Call_annotations = PyDict_New();
+    if (!Call_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Call_annotations, "func", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Call_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Call_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Call_annotations, "args", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Call_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->keyword_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Call_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Call_annotations, "keywords", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Call_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Call_type, "__annotations__",
+                                  Call_annotations) == 0;
+    Py_DECREF(Call_annotations);
+    if (!cond) return 0;
+    PyObject *FormattedValue_annotations = PyDict_New();
+    if (!FormattedValue_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(FormattedValue_annotations, "value", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(FormattedValue_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyLong_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(FormattedValue_annotations, "conversion",
+                                    type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(FormattedValue_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(FormattedValue_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(FormattedValue_annotations, "format_spec",
+                                    type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(FormattedValue_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->FormattedValue_type,
+                                  "__annotations__",
+                                  FormattedValue_annotations) == 0;
+    Py_DECREF(FormattedValue_annotations);
+    if (!cond) return 0;
+    PyObject *JoinedStr_annotations = PyDict_New();
+    if (!JoinedStr_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(JoinedStr_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(JoinedStr_annotations, "values", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(JoinedStr_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->JoinedStr_type, "__annotations__",
+                                  JoinedStr_annotations) == 0;
+    Py_DECREF(JoinedStr_annotations);
+    if (!cond) return 0;
+    PyObject *Constant_annotations = PyDict_New();
+    if (!Constant_annotations) return 0;
+    {
+        PyObject *type = (PyObject *)&PyBaseObject_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Constant_annotations, "value", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Constant_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Constant_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Constant_annotations, "kind", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Constant_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Constant_type, "__annotations__",
+                                  Constant_annotations) == 0;
+    Py_DECREF(Constant_annotations);
+    if (!cond) return 0;
+    PyObject *Attribute_annotations = PyDict_New();
+    if (!Attribute_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Attribute_annotations, "value", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Attribute_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Attribute_annotations, "attr", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Attribute_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_context_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Attribute_annotations, "ctx", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Attribute_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Attribute_type, "__annotations__",
+                                  Attribute_annotations) == 0;
+    Py_DECREF(Attribute_annotations);
+    if (!cond) return 0;
+    PyObject *Subscript_annotations = PyDict_New();
+    if (!Subscript_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Subscript_annotations, "value", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Subscript_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Subscript_annotations, "slice", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Subscript_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_context_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Subscript_annotations, "ctx", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Subscript_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Subscript_type, "__annotations__",
+                                  Subscript_annotations) == 0;
+    Py_DECREF(Subscript_annotations);
+    if (!cond) return 0;
+    PyObject *Starred_annotations = PyDict_New();
+    if (!Starred_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Starred_annotations, "value", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Starred_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_context_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Starred_annotations, "ctx", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Starred_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Starred_type, "__annotations__",
+                                  Starred_annotations) == 0;
+    Py_DECREF(Starred_annotations);
+    if (!cond) return 0;
+    PyObject *Name_annotations = PyDict_New();
+    if (!Name_annotations) return 0;
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Name_annotations, "id", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Name_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_context_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Name_annotations, "ctx", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Name_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Name_type, "__annotations__",
+                                  Name_annotations) == 0;
+    Py_DECREF(Name_annotations);
+    if (!cond) return 0;
+    PyObject *List_annotations = PyDict_New();
+    if (!List_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(List_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(List_annotations, "elts", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(List_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_context_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(List_annotations, "ctx", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(List_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->List_type, "__annotations__",
+                                  List_annotations) == 0;
+    Py_DECREF(List_annotations);
+    if (!cond) return 0;
+    PyObject *Tuple_annotations = PyDict_New();
+    if (!Tuple_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Tuple_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Tuple_annotations, "elts", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Tuple_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_context_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Tuple_annotations, "ctx", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Tuple_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Tuple_type, "__annotations__",
+                                  Tuple_annotations) == 0;
+    Py_DECREF(Tuple_annotations);
+    if (!cond) return 0;
+    PyObject *Slice_annotations = PyDict_New();
+    if (!Slice_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Slice_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Slice_annotations, "lower", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Slice_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Slice_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Slice_annotations, "upper", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Slice_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Slice_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Slice_annotations, "step", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Slice_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Slice_type, "__annotations__",
+                                  Slice_annotations) == 0;
+    Py_DECREF(Slice_annotations);
+    if (!cond) return 0;
+    PyObject *Load_annotations = PyDict_New();
+    if (!Load_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Load_type, "__annotations__",
+                                  Load_annotations) == 0;
+    Py_DECREF(Load_annotations);
+    if (!cond) return 0;
+    PyObject *Store_annotations = PyDict_New();
+    if (!Store_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Store_type, "__annotations__",
+                                  Store_annotations) == 0;
+    Py_DECREF(Store_annotations);
+    if (!cond) return 0;
+    PyObject *Del_annotations = PyDict_New();
+    if (!Del_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Del_type, "__annotations__",
+                                  Del_annotations) == 0;
+    Py_DECREF(Del_annotations);
+    if (!cond) return 0;
+    PyObject *And_annotations = PyDict_New();
+    if (!And_annotations) return 0;
+    cond = PyObject_SetAttrString(state->And_type, "__annotations__",
+                                  And_annotations) == 0;
+    Py_DECREF(And_annotations);
+    if (!cond) return 0;
+    PyObject *Or_annotations = PyDict_New();
+    if (!Or_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Or_type, "__annotations__",
+                                  Or_annotations) == 0;
+    Py_DECREF(Or_annotations);
+    if (!cond) return 0;
+    PyObject *Add_annotations = PyDict_New();
+    if (!Add_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Add_type, "__annotations__",
+                                  Add_annotations) == 0;
+    Py_DECREF(Add_annotations);
+    if (!cond) return 0;
+    PyObject *Sub_annotations = PyDict_New();
+    if (!Sub_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Sub_type, "__annotations__",
+                                  Sub_annotations) == 0;
+    Py_DECREF(Sub_annotations);
+    if (!cond) return 0;
+    PyObject *Mult_annotations = PyDict_New();
+    if (!Mult_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Mult_type, "__annotations__",
+                                  Mult_annotations) == 0;
+    Py_DECREF(Mult_annotations);
+    if (!cond) return 0;
+    PyObject *MatMult_annotations = PyDict_New();
+    if (!MatMult_annotations) return 0;
+    cond = PyObject_SetAttrString(state->MatMult_type, "__annotations__",
+                                  MatMult_annotations) == 0;
+    Py_DECREF(MatMult_annotations);
+    if (!cond) return 0;
+    PyObject *Div_annotations = PyDict_New();
+    if (!Div_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Div_type, "__annotations__",
+                                  Div_annotations) == 0;
+    Py_DECREF(Div_annotations);
+    if (!cond) return 0;
+    PyObject *Mod_annotations = PyDict_New();
+    if (!Mod_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Mod_type, "__annotations__",
+                                  Mod_annotations) == 0;
+    Py_DECREF(Mod_annotations);
+    if (!cond) return 0;
+    PyObject *Pow_annotations = PyDict_New();
+    if (!Pow_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Pow_type, "__annotations__",
+                                  Pow_annotations) == 0;
+    Py_DECREF(Pow_annotations);
+    if (!cond) return 0;
+    PyObject *LShift_annotations = PyDict_New();
+    if (!LShift_annotations) return 0;
+    cond = PyObject_SetAttrString(state->LShift_type, "__annotations__",
+                                  LShift_annotations) == 0;
+    Py_DECREF(LShift_annotations);
+    if (!cond) return 0;
+    PyObject *RShift_annotations = PyDict_New();
+    if (!RShift_annotations) return 0;
+    cond = PyObject_SetAttrString(state->RShift_type, "__annotations__",
+                                  RShift_annotations) == 0;
+    Py_DECREF(RShift_annotations);
+    if (!cond) return 0;
+    PyObject *BitOr_annotations = PyDict_New();
+    if (!BitOr_annotations) return 0;
+    cond = PyObject_SetAttrString(state->BitOr_type, "__annotations__",
+                                  BitOr_annotations) == 0;
+    Py_DECREF(BitOr_annotations);
+    if (!cond) return 0;
+    PyObject *BitXor_annotations = PyDict_New();
+    if (!BitXor_annotations) return 0;
+    cond = PyObject_SetAttrString(state->BitXor_type, "__annotations__",
+                                  BitXor_annotations) == 0;
+    Py_DECREF(BitXor_annotations);
+    if (!cond) return 0;
+    PyObject *BitAnd_annotations = PyDict_New();
+    if (!BitAnd_annotations) return 0;
+    cond = PyObject_SetAttrString(state->BitAnd_type, "__annotations__",
+                                  BitAnd_annotations) == 0;
+    Py_DECREF(BitAnd_annotations);
+    if (!cond) return 0;
+    PyObject *FloorDiv_annotations = PyDict_New();
+    if (!FloorDiv_annotations) return 0;
+    cond = PyObject_SetAttrString(state->FloorDiv_type, "__annotations__",
+                                  FloorDiv_annotations) == 0;
+    Py_DECREF(FloorDiv_annotations);
+    if (!cond) return 0;
+    PyObject *Invert_annotations = PyDict_New();
+    if (!Invert_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Invert_type, "__annotations__",
+                                  Invert_annotations) == 0;
+    Py_DECREF(Invert_annotations);
+    if (!cond) return 0;
+    PyObject *Not_annotations = PyDict_New();
+    if (!Not_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Not_type, "__annotations__",
+                                  Not_annotations) == 0;
+    Py_DECREF(Not_annotations);
+    if (!cond) return 0;
+    PyObject *UAdd_annotations = PyDict_New();
+    if (!UAdd_annotations) return 0;
+    cond = PyObject_SetAttrString(state->UAdd_type, "__annotations__",
+                                  UAdd_annotations) == 0;
+    Py_DECREF(UAdd_annotations);
+    if (!cond) return 0;
+    PyObject *USub_annotations = PyDict_New();
+    if (!USub_annotations) return 0;
+    cond = PyObject_SetAttrString(state->USub_type, "__annotations__",
+                                  USub_annotations) == 0;
+    Py_DECREF(USub_annotations);
+    if (!cond) return 0;
+    PyObject *Eq_annotations = PyDict_New();
+    if (!Eq_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Eq_type, "__annotations__",
+                                  Eq_annotations) == 0;
+    Py_DECREF(Eq_annotations);
+    if (!cond) return 0;
+    PyObject *NotEq_annotations = PyDict_New();
+    if (!NotEq_annotations) return 0;
+    cond = PyObject_SetAttrString(state->NotEq_type, "__annotations__",
+                                  NotEq_annotations) == 0;
+    Py_DECREF(NotEq_annotations);
+    if (!cond) return 0;
+    PyObject *Lt_annotations = PyDict_New();
+    if (!Lt_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Lt_type, "__annotations__",
+                                  Lt_annotations) == 0;
+    Py_DECREF(Lt_annotations);
+    if (!cond) return 0;
+    PyObject *LtE_annotations = PyDict_New();
+    if (!LtE_annotations) return 0;
+    cond = PyObject_SetAttrString(state->LtE_type, "__annotations__",
+                                  LtE_annotations) == 0;
+    Py_DECREF(LtE_annotations);
+    if (!cond) return 0;
+    PyObject *Gt_annotations = PyDict_New();
+    if (!Gt_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Gt_type, "__annotations__",
+                                  Gt_annotations) == 0;
+    Py_DECREF(Gt_annotations);
+    if (!cond) return 0;
+    PyObject *GtE_annotations = PyDict_New();
+    if (!GtE_annotations) return 0;
+    cond = PyObject_SetAttrString(state->GtE_type, "__annotations__",
+                                  GtE_annotations) == 0;
+    Py_DECREF(GtE_annotations);
+    if (!cond) return 0;
+    PyObject *Is_annotations = PyDict_New();
+    if (!Is_annotations) return 0;
+    cond = PyObject_SetAttrString(state->Is_type, "__annotations__",
+                                  Is_annotations) == 0;
+    Py_DECREF(Is_annotations);
+    if (!cond) return 0;
+    PyObject *IsNot_annotations = PyDict_New();
+    if (!IsNot_annotations) return 0;
+    cond = PyObject_SetAttrString(state->IsNot_type, "__annotations__",
+                                  IsNot_annotations) == 0;
+    Py_DECREF(IsNot_annotations);
+    if (!cond) return 0;
+    PyObject *In_annotations = PyDict_New();
+    if (!In_annotations) return 0;
+    cond = PyObject_SetAttrString(state->In_type, "__annotations__",
+                                  In_annotations) == 0;
+    Py_DECREF(In_annotations);
+    if (!cond) return 0;
+    PyObject *NotIn_annotations = PyDict_New();
+    if (!NotIn_annotations) return 0;
+    cond = PyObject_SetAttrString(state->NotIn_type, "__annotations__",
+                                  NotIn_annotations) == 0;
+    Py_DECREF(NotIn_annotations);
+    if (!cond) return 0;
+    PyObject *comprehension_annotations = PyDict_New();
+    if (!comprehension_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(comprehension_annotations, "target", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(comprehension_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(comprehension_annotations, "iter", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(comprehension_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(comprehension_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(comprehension_annotations, "ifs", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(comprehension_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyLong_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(comprehension_annotations, "is_async",
+                                    type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(comprehension_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->comprehension_type, "__annotations__",
+                                  comprehension_annotations) == 0;
+    Py_DECREF(comprehension_annotations);
+    if (!cond) return 0;
+    PyObject *ExceptHandler_annotations = PyDict_New();
+    if (!ExceptHandler_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(ExceptHandler_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(ExceptHandler_annotations, "type", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(ExceptHandler_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(ExceptHandler_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(ExceptHandler_annotations, "name", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(ExceptHandler_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(ExceptHandler_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(ExceptHandler_annotations, "body", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(ExceptHandler_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->ExceptHandler_type, "__annotations__",
+                                  ExceptHandler_annotations) == 0;
+    Py_DECREF(ExceptHandler_annotations);
+    if (!cond) return 0;
+    PyObject *arguments_annotations = PyDict_New();
+    if (!arguments_annotations) return 0;
+    {
+        PyObject *type = state->arg_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(arguments_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(arguments_annotations, "posonlyargs", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(arguments_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->arg_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(arguments_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(arguments_annotations, "args", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(arguments_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->arg_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(arguments_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(arguments_annotations, "vararg", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(arguments_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->arg_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(arguments_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(arguments_annotations, "kwonlyargs", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(arguments_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(arguments_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(arguments_annotations, "kw_defaults", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(arguments_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->arg_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(arguments_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(arguments_annotations, "kwarg", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(arguments_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(arguments_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(arguments_annotations, "defaults", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(arguments_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->arguments_type, "__annotations__",
+                                  arguments_annotations) == 0;
+    Py_DECREF(arguments_annotations);
+    if (!cond) return 0;
+    PyObject *arg_annotations = PyDict_New();
+    if (!arg_annotations) return 0;
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(arg_annotations, "arg", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(arg_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(arg_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(arg_annotations, "annotation", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(arg_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(arg_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(arg_annotations, "type_comment", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(arg_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->arg_type, "__annotations__",
+                                  arg_annotations) == 0;
+    Py_DECREF(arg_annotations);
+    if (!cond) return 0;
+    PyObject *keyword_annotations = PyDict_New();
+    if (!keyword_annotations) return 0;
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(keyword_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(keyword_annotations, "arg", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(keyword_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(keyword_annotations, "value", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(keyword_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->keyword_type, "__annotations__",
+                                  keyword_annotations) == 0;
+    Py_DECREF(keyword_annotations);
+    if (!cond) return 0;
+    PyObject *alias_annotations = PyDict_New();
+    if (!alias_annotations) return 0;
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(alias_annotations, "name", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(alias_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(alias_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(alias_annotations, "asname", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(alias_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->alias_type, "__annotations__",
+                                  alias_annotations) == 0;
+    Py_DECREF(alias_annotations);
+    if (!cond) return 0;
+    PyObject *withitem_annotations = PyDict_New();
+    if (!withitem_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(withitem_annotations, "context_expr", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(withitem_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(withitem_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(withitem_annotations, "optional_vars",
+                                    type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(withitem_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->withitem_type, "__annotations__",
+                                  withitem_annotations) == 0;
+    Py_DECREF(withitem_annotations);
+    if (!cond) return 0;
+    PyObject *match_case_annotations = PyDict_New();
+    if (!match_case_annotations) return 0;
+    {
+        PyObject *type = state->pattern_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(match_case_annotations, "pattern", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(match_case_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(match_case_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(match_case_annotations, "guard", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(match_case_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->stmt_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(match_case_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(match_case_annotations, "body", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(match_case_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->match_case_type, "__annotations__",
+                                  match_case_annotations) == 0;
+    Py_DECREF(match_case_annotations);
+    if (!cond) return 0;
+    PyObject *MatchValue_annotations = PyDict_New();
+    if (!MatchValue_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(MatchValue_annotations, "value", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(MatchValue_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->MatchValue_type, "__annotations__",
+                                  MatchValue_annotations) == 0;
+    Py_DECREF(MatchValue_annotations);
+    if (!cond) return 0;
+    PyObject *MatchSingleton_annotations = PyDict_New();
+    if (!MatchSingleton_annotations) return 0;
+    {
+        PyObject *type = (PyObject *)&PyBaseObject_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(MatchSingleton_annotations, "value", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(MatchSingleton_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->MatchSingleton_type,
+                                  "__annotations__",
+                                  MatchSingleton_annotations) == 0;
+    Py_DECREF(MatchSingleton_annotations);
+    if (!cond) return 0;
+    PyObject *MatchSequence_annotations = PyDict_New();
+    if (!MatchSequence_annotations) return 0;
+    {
+        PyObject *type = state->pattern_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(MatchSequence_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(MatchSequence_annotations, "patterns",
+                                    type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(MatchSequence_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->MatchSequence_type, "__annotations__",
+                                  MatchSequence_annotations) == 0;
+    Py_DECREF(MatchSequence_annotations);
+    if (!cond) return 0;
+    PyObject *MatchMapping_annotations = PyDict_New();
+    if (!MatchMapping_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(MatchMapping_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(MatchMapping_annotations, "keys", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(MatchMapping_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->pattern_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(MatchMapping_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(MatchMapping_annotations, "patterns", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(MatchMapping_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(MatchMapping_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(MatchMapping_annotations, "rest", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(MatchMapping_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->MatchMapping_type, "__annotations__",
+                                  MatchMapping_annotations) == 0;
+    Py_DECREF(MatchMapping_annotations);
+    if (!cond) return 0;
+    PyObject *MatchClass_annotations = PyDict_New();
+    if (!MatchClass_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(MatchClass_annotations, "cls", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(MatchClass_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->pattern_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(MatchClass_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(MatchClass_annotations, "patterns", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(MatchClass_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(MatchClass_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(MatchClass_annotations, "kwd_attrs", type)
+                                    == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(MatchClass_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->pattern_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(MatchClass_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(MatchClass_annotations, "kwd_patterns",
+                                    type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(MatchClass_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->MatchClass_type, "__annotations__",
+                                  MatchClass_annotations) == 0;
+    Py_DECREF(MatchClass_annotations);
+    if (!cond) return 0;
+    PyObject *MatchStar_annotations = PyDict_New();
+    if (!MatchStar_annotations) return 0;
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(MatchStar_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(MatchStar_annotations, "name", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(MatchStar_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->MatchStar_type, "__annotations__",
+                                  MatchStar_annotations) == 0;
+    Py_DECREF(MatchStar_annotations);
+    if (!cond) return 0;
+    PyObject *MatchAs_annotations = PyDict_New();
+    if (!MatchAs_annotations) return 0;
+    {
+        PyObject *type = state->pattern_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(MatchAs_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(MatchAs_annotations, "pattern", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(MatchAs_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(MatchAs_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(MatchAs_annotations, "name", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(MatchAs_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->MatchAs_type, "__annotations__",
+                                  MatchAs_annotations) == 0;
+    Py_DECREF(MatchAs_annotations);
+    if (!cond) return 0;
+    PyObject *MatchOr_annotations = PyDict_New();
+    if (!MatchOr_annotations) return 0;
+    {
+        PyObject *type = state->pattern_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(MatchOr_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(MatchOr_annotations, "patterns", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(MatchOr_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->MatchOr_type, "__annotations__",
+                                  MatchOr_annotations) == 0;
+    Py_DECREF(MatchOr_annotations);
+    if (!cond) return 0;
+    PyObject *TypeIgnore_annotations = PyDict_New();
+    if (!TypeIgnore_annotations) return 0;
+    {
+        PyObject *type = (PyObject *)&PyLong_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(TypeIgnore_annotations, "lineno", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(TypeIgnore_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(TypeIgnore_annotations, "tag", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(TypeIgnore_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->TypeIgnore_type, "__annotations__",
+                                  TypeIgnore_annotations) == 0;
+    Py_DECREF(TypeIgnore_annotations);
+    if (!cond) return 0;
+    PyObject *TypeVar_annotations = PyDict_New();
+    if (!TypeVar_annotations) return 0;
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(TypeVar_annotations, "name", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(TypeVar_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(TypeVar_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(TypeVar_annotations, "bound", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(TypeVar_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->TypeVar_type, "__annotations__",
+                                  TypeVar_annotations) == 0;
+    Py_DECREF(TypeVar_annotations);
+    if (!cond) return 0;
+    PyObject *ParamSpec_annotations = PyDict_New();
+    if (!ParamSpec_annotations) return 0;
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(ParamSpec_annotations, "name", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(ParamSpec_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->ParamSpec_type, "__annotations__",
+                                  ParamSpec_annotations) == 0;
+    Py_DECREF(ParamSpec_annotations);
+    if (!cond) return 0;
+    PyObject *TypeVarTuple_annotations = PyDict_New();
+    if (!TypeVarTuple_annotations) return 0;
+    {
+        PyObject *type = (PyObject *)&PyUnicode_Type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(TypeVarTuple_annotations, "name", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(TypeVarTuple_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->TypeVarTuple_type, "__annotations__",
+                                  TypeVarTuple_annotations) == 0;
+    Py_DECREF(TypeVarTuple_annotations);
+    if (!cond) return 0;
+
+    return 1;
+}
+
+
 
 typedef struct {
     PyObject_HEAD
@@ -838,7 +4004,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
 
     Py_ssize_t i, numfields = 0;
     int res = -1;
-    PyObject *key, *value, *fields;
+    PyObject *key, *value, *fields, *remaining_fields = NULL;
     if (_PyObject_LookupAttr((PyObject*)Py_TYPE(self), state->_fields, &fields) < 0) {
         goto cleanup;
     }
@@ -847,6 +4013,13 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
         if (numfields == -1) {
             goto cleanup;
         }
+        remaining_fields = PySet_New(fields);
+    }
+    else {
+        remaining_fields = PySet_New(NULL);
+    }
+    if (remaining_fields == NULL) {
+        goto cleanup;
     }
 
     res = 0; /* if no error occurs, this stays 0 to the end */
@@ -866,6 +4039,11 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
             goto cleanup;
         }
         res = PyObject_SetAttr(self, name, PyTuple_GET_ITEM(args, i));
+        if (PySet_Discard(remaining_fields, name) < 0) {
+            res = -1;
+            Py_DECREF(name);
+            goto cleanup;
+        }
         Py_DECREF(name);
         if (res < 0) {
             goto cleanup;
@@ -878,17 +4056,34 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
             if (contains == -1) {
                 res = -1;
                 goto cleanup;
-            } else if (contains == 1) {
-                Py_ssize_t p = PySequence_Index(fields, key);
+            }
+            else if (contains == 1) {
+                int p = PySet_Discard(remaining_fields, key);
                 if (p == -1) {
                     res = -1;
                     goto cleanup;
                 }
-                if (p < PyTuple_GET_SIZE(args)) {
+                if (p == 0) {
                     PyErr_Format(PyExc_TypeError,
                         "%.400s got multiple values for argument '%U'",
                         Py_TYPE(self)->tp_name, key);
                     res = -1;
+                    goto cleanup;
+                }
+            }
+            else if (
+                PyUnicode_CompareWithASCIIString(key, "lineno") != 0 &&
+                PyUnicode_CompareWithASCIIString(key, "col_offset") != 0 &&
+                PyUnicode_CompareWithASCIIString(key, "end_lineno") != 0 &&
+                PyUnicode_CompareWithASCIIString(key, "end_col_offset") != 0
+            ) {
+                if (PyErr_WarnFormat(
+                    PyExc_DeprecationWarning, 1,
+                    "%.400s.__init__ got an unexpected keyword argument '%U'. "
+                    "Support for arbitrary keyword arguments is deprecated "
+                    "and will be removed in Python 3.15.",
+                    Py_TYPE(self)->tp_name, key
+                ) < 0) {
                     goto cleanup;
                 }
             }
@@ -898,9 +4093,64 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
             }
         }
     }
+    Py_ssize_t size = PySet_Size(remaining_fields);
+    PyObject *annotations = NULL, *remaining_list = NULL;
+    if (size > 0) {
+        if (!_PyObject_LookupAttr((PyObject*)Py_TYPE(self), &_Py_ID(__annotations__), &annotations)) {
+            res = -1;
+            goto cleanup;
+        }
+        remaining_list = PySequence_List(remaining_fields);
+        if (!remaining_list) {
+            goto set_remaining_cleanup;
+        }
+        for (Py_ssize_t i = 0; i < size; i++) {
+            PyObject *name = PyList_GET_ITEM(remaining_list, i);
+            PyObject *type = PyDict_GetItemWithError(annotations, name);
+            if (!type) {
+                if (!PyErr_Occurred()) {
+                    PyErr_SetObject(PyExc_KeyError, name);
+                }
+                goto set_remaining_cleanup;
+            }
+            if (_PyUnion_Check(type)) {
+                // optional field
+                // do nothing, we'll have set a None default on the class
+            }
+            else if (Py_IS_TYPE(type, &Py_GenericAliasType)) {
+                // list field
+                PyObject *empty = PyList_New(0);
+                if (!empty) {
+                    goto set_remaining_cleanup;
+                }
+                res = PyObject_SetAttr(self, name, empty);
+                Py_DECREF(empty);
+                if (res < 0) {
+                    goto set_remaining_cleanup;
+                }
+            }
+            else {
+                // simple field (e.g., identifier)
+                if (PyErr_WarnFormat(
+                    PyExc_DeprecationWarning, 1,
+                    "%.400s.__init__ missing 1 required positional argument: '%U'. "
+                    "This will become an error in Python 3.15.",
+                    Py_TYPE(self)->tp_name, name
+                ) < 0) {
+                    goto cleanup;
+                }
+            }
+        }
+    }
   cleanup:
     Py_XDECREF(fields);
+    Py_XDECREF(remaining_fields);
     return res;
+  set_remaining_cleanup:
+    Py_XDECREF(remaining_list);
+    Py_XDECREF(annotations);
+    res = -1;
+    goto cleanup;
 }
 
 /* Pickling support */
@@ -1925,6 +5175,9 @@ init_types(struct ast_state *state)
         "TypeVarTuple(identifier name)");
     if (!state->TypeVarTuple_type) return 0;
 
+    if (!add_ast_annotations(state)) {
+        return 0;
+    }
     state->recursion_depth = 0;
     state->recursion_limit = 0;
     state->initialized = 1;
