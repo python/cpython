@@ -5873,22 +5873,26 @@ datetime_fromisoformat(PyObject *cls, PyObject *dtstr)
         goto error;
     }
 
-    if ((hour == 24) && (month <= 12 && day <= days_in_month(year, month))) {
-        if (minute == 0 && second == 0 && microsecond == 0) {
-            // Calculate midnight of the next day
-            hour = 0;
-            day += 1;
-            if (day > days_in_month(year, month)) {
-                day = 1;
-                month += 1;
-                if (month > 12) {
-                    month = 1;
-                    year += 1;
+    if ((hour == 24) && (month <= 12))  {
+        int d_in_month = days_in_month(year, month);
+        if (day <= d_in_month) {
+            if (minute == 0 && second == 0 && microsecond == 0) {
+                // Calculate midnight of the next day
+                hour = 0;
+                day += 1;
+                if (day > d_in_month) {
+                    day = 1;
+                    month += 1;
+                    if (month > 12) {
+                        month = 1;
+                        year += 1;
+                    }
                 }
+            } else {
+                goto invalid_iso_midnight;
             }
-        } else {
-            goto invalid_iso_midnight;
         }
+        
     }
     PyObject *dt = new_datetime_subclass_ex(year, month, day, hour, minute,
                                             second, microsecond, tzinfo, cls);
