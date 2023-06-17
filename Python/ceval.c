@@ -29,6 +29,7 @@
 #include "pycore_frame.h"
 #include "frameobject.h"          // _PyInterpreterFrame_GetLine
 #include "opcode.h"
+#include "opcode_metadata.h"
 #include "pydtrace.h"
 #include "setobject.h"
 #include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
@@ -141,7 +142,7 @@ lltrace_instruction(_PyInterpreterFrame *frame,
     const char *opname = _PyOpcode_OpName[opcode];
     assert(opname != NULL);
     int offset = (int)(next_instr - _PyCode_CODE(_PyFrame_GetCode(frame)));
-    if (HAS_ARG((int)_PyOpcode_Deopt[opcode])) {
+    if (OPCODE_HAS_ARG((int)_PyOpcode_Deopt[opcode])) {
         printf("%d: %s %d\n", offset * 2, opname, oparg);
     }
     else {
@@ -882,7 +883,7 @@ handle_eval_breaker:
 #if USE_COMPUTED_GOTOS
         _unknown_opcode:
 #else
-        EXTRA_CASES  // From opcode.h, a 'case' for each unused opcode
+        EXTRA_CASES  // From pycore_opcode.h, a 'case' for each unused opcode
 #endif
             /* Tell C compilers not to hold the opcode variable in the loop.
                next_instr points the current instruction without TARGET(). */

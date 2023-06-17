@@ -27,25 +27,16 @@ _opcode_stack_effect_impl(PyObject *module, int opcode, PyObject *oparg,
                           PyObject *jump)
 /*[clinic end generated code: output=64a18f2ead954dbb input=461c9d4a44851898]*/
 {
-    int effect;
     int oparg_int = 0;
     int jump_int;
-    if (HAS_ARG(opcode)) {
-        if (oparg == Py_None) {
-            PyErr_SetString(PyExc_ValueError,
-                    "stack_effect: opcode requires oparg but oparg was not specified");
-            return -1;
-        }
+
+    if (oparg != Py_None) {
         oparg_int = (int)PyLong_AsLong(oparg);
         if ((oparg_int == -1) && PyErr_Occurred()) {
             return -1;
         }
     }
-    else if (oparg != Py_None) {
-        PyErr_SetString(PyExc_ValueError,
-                "stack_effect: opcode does not permit oparg but oparg was specified");
-        return -1;
-    }
+
     if (jump == Py_None) {
         jump_int = -1;
     }
@@ -60,11 +51,10 @@ _opcode_stack_effect_impl(PyObject *module, int opcode, PyObject *oparg,
                 "stack_effect: jump must be False, True or None");
         return -1;
     }
-    effect = PyCompile_OpcodeStackEffectWithJump(opcode, oparg_int, jump_int);
+    int effect = PyCompile_OpcodeStackEffectWithJump(opcode, oparg_int, jump_int);
     if (effect == PY_INVALID_STACK_EFFECT) {
-            PyErr_SetString(PyExc_ValueError,
-                    "invalid opcode or oparg");
-            return -1;
+        PyErr_SetString(PyExc_ValueError, "invalid opcode or oparg");
+        return -1;
     }
     return effect;
 }
