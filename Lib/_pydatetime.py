@@ -465,13 +465,14 @@ def _parse_isoformat_time(tstr):
 
     hour, minute, second, microsecond = time_comps
     became_next_day = False
+    error_from_components = False
     if (hour == 24):
-        if not all(time_comp == 0 for time_comp in time_comps[1:]):
-            raise ValueError("minute, second, and microsecond must be 0 when hour is 24")
-
-        hour = 0
-        time_comps[0] = hour
-        became_next_day = True
+        if all(time_comp == 0 for time_comp in time_comps[1:]):
+            hour = 0
+            time_comps[0] = hour
+            became_next_day = True
+        else:
+            error_from_components = True
 
     tzi = None
     if tz_pos == len_str and tstr[-1] == 'Z':
@@ -505,7 +506,7 @@ def _parse_isoformat_time(tstr):
 
     time_comps.append(tzi)
 
-    return time_comps, became_next_day
+    return time_comps, became_next_day, error_from_components
 
 # tuple[int, int, int] -> tuple[int, int, int] version of date.fromisocalendar
 def _isoweek_to_gregorian(year, week, day):
@@ -1912,11 +1913,14 @@ class datetime(date):
 
         if tstr:
             try:
-                time_components, became_next_day = _parse_isoformat_time(tstr)
+                time_components, became_next_day, error_from_components = _parse_isoformat_time(tstr)
             except ValueError:
                 raise ValueError(
                     f'Invalid isoformat string: {date_string!r}') from None
             else:
+                if error_from_components:
+                    raise ValueError("minute, second, and microsecond must be 0 when hour is 24")
+
                 if became_next_day:
                     year, month, day = date_components
                     # Only wrap day/month when it was previously valid
