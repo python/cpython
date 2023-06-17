@@ -948,7 +948,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
       :ref:`union type expressions<types-union>`.
 
    .. versionchanged:: 3.13
-      :data:`Union` and :class:`types.UnionType` are now aliases, and both
+      :class:`types.UnionType` is now an alias for :data:`Union`, and both
       ``Union[int, str]`` and ``int | str`` create instances of the same class.
       To check whether an object is a ``Union`` at runtime, use
       ``isinstance(obj, Union)``.
