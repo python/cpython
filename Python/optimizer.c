@@ -278,3 +278,95 @@ PyUnstable_Optimizer_NewCounter(void)
     opt->count = 0;
     return (PyObject *)opt;
 }
+
+///////////////////// Experimental UOp Interpreter /////////////////////
+
+typedef struct {
+    _PyOptimizerObject base;
+    // ...
+} UOpOptimizerObject;
+
+typedef struct {
+    _PyExecutorObject executor;
+    // Modeled after CounterExecutorObject
+    UOpOptimizerObject *optimizer;
+    _Py_CODEUNIT *next_instr;
+} UOpExecutorObject;
+
+static void
+uop_dealloc(UOpExecutorObject *self) {
+    Py_DECREF(self->optimizer);
+    PyObject_Free(self);
+}
+
+static PyTypeObject UOpExecutor_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    .tp_name = "uop_executor",
+    .tp_basicsize = sizeof(UOpExecutorObject),
+    .tp_itemsize = 0,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .tp_dealloc = (destructor)uop_dealloc,
+};
+
+static _PyInterpreterFrame *
+uop_execute(_PyExecutorObject *self, _PyInterpreterFrame *frame, PyObject **stack_pointer)
+{
+    // Do some work here...
+    _PyFrame_SetStackPointer(frame, stack_pointer);
+    frame->prev_instr = ((UOpExecutorObject *)self)->next_instr - 1;
+    Py_DECREF(self);
+    return frame;
+}
+
+static int
+uop_optimize(
+    _PyOptimizerObject* self,
+    PyCodeObject *code,
+    _Py_CODEUNIT *instr,
+    _PyExecutorObject **exec_ptr)
+{
+    UOpExecutorObject *executor = (UOpExecutorObject *)_PyObject_New(&UOpExecutor_Type);
+    if (executor == NULL) {
+        return -1;
+    }
+    executor->executor.execute = uop_execute;
+    Py_INCREF(self);
+    executor->optimizer = self;
+    executor->next_instr = instr;
+    *exec_ptr = (_PyExecutorObject *)executor;
+    return 1;
+}
+
+static PyObject *
+uop_get_state(PyObject *self, PyObject *args)
+{
+    return PyLong_FromLongLong(42);  // XXX TODO GUIDO
+}
+
+static PyMethodDef uop_methods[] = {
+    { "state", uop_get_state, METH_NOARGS, NULL },
+    { NULL, NULL },
+};
+
+static PyTypeObject UOpOptimizer_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    .tp_name = "UOp Optimizer",
+    .tp_basicsize = sizeof(UOpOptimizerObject),
+    .tp_itemsize = 0,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .tp_methods = uop_methods,
+};
+
+PyObject *
+PyUnstable_Optimizer_NewUOpOptimizer(void)
+{
+    UOpOptimizerObject *opt = (UOpOptimizerObject *)_PyObject_New(&UOpOptimizer_Type);
+    if (opt == NULL) {
+        return NULL;
+    }
+    opt->base.optimize = uop_optimize;
+    opt->base.resume_threshold = UINT16_MAX;
+    opt->base.backedge_threshold = 0;
+    // Other initializations ...
+    return (PyObject *)opt;
+}
