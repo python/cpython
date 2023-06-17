@@ -318,6 +318,12 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.8
       Added *jump* parameter.
 
+   .. versionchanged:: 3.13
+      If ``oparg`` is omitted (or ``None``), the stack effect is now returned
+      for ``oparg=0``. Previously this was an error for opcodes that use their
+      arg. It is also no longer an error to pass an integer ``oparg`` when
+      the ``opcode`` does not use it; the ``oparg`` in this case is ignored.
+
 
 .. _bytecodes:
 
