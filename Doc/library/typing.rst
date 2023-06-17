@@ -24,7 +24,7 @@
 --------------
 
 This module provides runtime support for type hints. The most fundamental
-support consists of the types :data:`Any`, :data:`Union`, :data:`Callable`,
+support consists of the types :data:`Any`, :class:`Union`, :data:`Callable`,
 :class:`TypeVar`, and :class:`Generic`. For a specification, please see
 :pep:`484`. For a simplified introduction to type hints, see :pep:`483`.
 
@@ -912,7 +912,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
       :class:`builtins.tuple <tuple>` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. data:: Union
+.. class:: Union
 
    Union type; ``Union[X, Y]`` is equivalent to ``X | Y`` and means either X or Y.
 
@@ -948,7 +948,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
       :ref:`union type expressions<types-union>`.
 
    .. versionchanged:: 3.13
-      :class:`types.UnionType` is now an alias for :data:`Union`, and both
+      :class:`types.UnionType` is now an alias for :class:`Union`, and both
       ``Union[int, str]`` and ``int | str`` create instances of the same class.
       To check whether an object is a ``Union`` at runtime, use
       ``isinstance(obj, Union)``.

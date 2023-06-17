@@ -5150,7 +5150,7 @@ Union Type
 A union object holds the value of the ``|`` (bitwise or) operation on
 multiple :ref:`type objects <bltin-type-objects>`.  These types are intended
 primarily for :term:`type annotations <annotation>`. The union type expression
-enables cleaner type hinting syntax compared to :data:`typing.Union`.
+enables cleaner type hinting syntax compared to subscripting :class:`typing.Union`.
 
 .. describe:: X | Y | ...
 
@@ -5186,9 +5186,10 @@ enables cleaner type hinting syntax compared to :data:`typing.Union`.
 
       int | str == str | int
 
-   * It is compatible with :data:`typing.Union`::
+   * It creates instances of :class:`typing.Union`::
 
       int | str == typing.Union[int, str]
+      type(int | str) is typing.Union
 
    * Optional types can be spelled as a union with ``None``::
 
@@ -5212,7 +5213,7 @@ enables cleaner type hinting syntax compared to :data:`typing.Union`.
       TypeError: isinstance() argument 2 cannot contain a parameterized generic
 
 The user-exposed type for the union object can be accessed from
-:data:`typing.Union` and used for :func:`isinstance` checks::
+:class:`typing.Union` and used for :func:`isinstance` checks::
 
    >>> import types
    >>> isinstance(int | str, typing.Union)

@@ -1,4 +1,4 @@
-// types.UnionType -- used to represent e.g. Union[int, str], int | str
+// typing.Union -- used to represent e.g. Union[int, str], int | str
 #include "Python.h"
 #include "pycore_object.h"  // _PyObject_GC_TRACK/UNTRACK
 #include "pycore_typevarobject.h"  // _PyTypeAlias_Type

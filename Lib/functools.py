@@ -19,7 +19,7 @@ from collections import namedtuple
 # import types, weakref  # Deferred to single_dispatch()
 from reprlib import recursive_repr
 from _thread import RLock
-from types import GenericAlias
+from types import GenericAlias, UnionType
 
 
 ################################################################################
@@ -840,15 +840,13 @@ def singledispatch(func):
         return impl
 
     def _is_union_type(cls):
-        from typing import get_origin, Union
-        return get_origin(cls) in {Union, types.UnionType}
+        return isinstance(cls, UnionType)
 
     def _is_valid_dispatch_type(cls):
         if isinstance(cls, type):
             return True
-        from typing import get_args
         return (_is_union_type(cls) and
-                all(isinstance(arg, type) for arg in get_args(cls)))
+                all(isinstance(arg, type) for arg in cls.__args__))
 
     def register(cls, func=None):
         """generic_func.register(cls, func) -> func
@@ -891,9 +889,7 @@ def singledispatch(func):
                     )
 
         if _is_union_type(cls):
-            from typing import get_args
-
-            for arg in get_args(cls):
+            for arg in cls.__args__:
                 registry[arg] = func
         else:
             registry[cls] = func

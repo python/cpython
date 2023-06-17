@@ -1,2 +1,3 @@
-Make :data:`typing.Union` an alias for :class:`types.UnionType`. Patch by
-Jelle Zijlstra.
+Make :class:`types.UnionType` an alias for :class:`typing.Union`. Both
+``int | str`` and ``Union[int, str]`` now create instances of the same
+type. Patch by Jelle Zijlstra.

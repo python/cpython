@@ -163,7 +163,7 @@ Deprecated
   (Contributed by Hugo van Kemenade in :gh:`80480`)
 
 * The internal class ``typing._UnionGenericAlias`` is no longer used to implement
-  :data:`typing.Union`. To preserve compatibility with users using this private
+  :class:`typing.Union`. To preserve compatibility with users using this private
   class, a compatibility shim will be provided until Python 3.15. (Contributed by
   Jelle Zijlstra in :gh:`105499`.)
 

@@ -4939,7 +4939,7 @@ class GenericTests(BaseTestCase):
             __parameters__ = (T,)
         # Bare classes should be skipped
         for a in (List, list):
-            for b in (A, int, TypeVar, TypeVarTuple, ParamSpec, types.GenericAlias, types.UnionType):
+            for b in (A, int, TypeVar, TypeVarTuple, ParamSpec, types.GenericAlias, Union):
                 with self.subTest(generic=a, sub=b):
                     with self.assertRaisesRegex(TypeError, '.* is not a generic class'):
                         a[b][str]
@@ -4958,7 +4958,7 @@ class GenericTests(BaseTestCase):
 
         for s in (int, G, A, List, list,
                   TypeVar, TypeVarTuple, ParamSpec,
-                  types.GenericAlias, types.UnionType):
+                  types.GenericAlias, Union):
 
             for t in Tuple, tuple:
                 with self.subTest(tuple=t, sub=s):
@@ -6386,7 +6386,7 @@ class GetUtilitiesTestCase(TestCase):
         self.assertIs(get_origin(Callable), collections.abc.Callable)
         self.assertIs(get_origin(list[int]), list)
         self.assertIs(get_origin(list), None)
-        self.assertIs(get_origin(list | str), types.UnionType)
+        self.assertIs(get_origin(list | str), Union)
         self.assertIs(get_origin(P.args), P)
         self.assertIs(get_origin(P.kwargs), P)
         self.assertIs(get_origin(Required[int]), Required)
@@ -9084,7 +9084,7 @@ class SpecialAttrsTests(BaseTestCase):
                 for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                     s = pickle.dumps(cls, proto)
                     loaded = pickle.loads(s)
-                    if isinstance(cls, types.UnionType):
+                    if isinstance(cls, Union):
                         self.assertEqual(cls, loaded)
                     else:
                         self.assertIs(cls, loaded)

@@ -34,7 +34,6 @@ from types import (
     MethodWrapperType,
     MethodDescriptorType,
     GenericAlias,
-    UnionType as Union,
 )
 import warnings
 
@@ -47,6 +46,7 @@ from _typing import (
     ParamSpecKwargs,
     TypeAliasType,
     Generic,
+    Union,
 )
 
 # Please keep __all__ alphabetized within each category.
@@ -378,7 +378,7 @@ def _eval_type(t, globalns, localns, recursive_guard=frozenset()):
     """
     if isinstance(t, ForwardRef):
         return t._evaluate(globalns, localns, recursive_guard)
-    if isinstance(t, (_GenericAlias, GenericAlias, types.UnionType)):
+    if isinstance(t, (_GenericAlias, GenericAlias, Union)):
         if isinstance(t, GenericAlias):
             args = tuple(
                 ForwardRef(arg) if isinstance(arg, str) else arg
@@ -396,7 +396,7 @@ def _eval_type(t, globalns, localns, recursive_guard=frozenset()):
             return t
         if isinstance(t, GenericAlias):
             return GenericAlias(t.__origin__, ev_args)
-        if isinstance(t, types.UnionType):
+        if isinstance(t, Union):
             return functools.reduce(operator.or_, ev_args)
         else:
             return t.copy_with(ev_args)
@@ -1469,7 +1469,7 @@ class _TupleType(_SpecialGenericAlias, _root=True):
 class _UnionGenericAliasMeta(type):
     def __instancecheck__(self, inst: type) -> bool:
         warnings._deprecated("_UnionGenericAlias", remove=(3, 15))
-        return isinstance(inst, types.UnionType)
+        return isinstance(inst, Union)
 
     def __eq__(self, other):
         warnings._deprecated("_UnionGenericAlias", remove=(3, 15))
@@ -2176,7 +2176,7 @@ def _strip_annotations(t):
         if stripped_args == t.__args__:
             return t
         return GenericAlias(t.__origin__, stripped_args)
-    if isinstance(t, types.UnionType):
+    if isinstance(t, Union):
         stripped_args = tuple(_strip_annotations(a) for a in t.__args__)
         if stripped_args == t.__args__:
             return t
@@ -2209,8 +2209,8 @@ def get_origin(tp):
         return tp.__origin__
     if tp is Generic:
         return Generic
-    if isinstance(tp, types.UnionType):
-        return types.UnionType
+    if isinstance(tp, Union):
+        return Union
     return None
 
 
@@ -2234,7 +2234,7 @@ def get_args(tp):
         if _should_unflatten_callable_args(tp, res):
             res = (list(res[:-1]), res[-1])
         return res
-    if isinstance(tp, types.UnionType):
+    if isinstance(tp, Union):
         return tp.__args__
     return ()
 

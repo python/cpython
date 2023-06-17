@@ -367,7 +367,7 @@ Standard names are defined for the following types:
 
    .. versionchanged:: 3.13
 
-      This is now an alias for :data:`typing.Union`.
+      This is now an alias for :class:`typing.Union`.
 
 .. class:: TracebackType(tb_next, tb_frame, tb_lasti, tb_lineno)
 
