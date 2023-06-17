@@ -1,0 +1,1 @@
+Fix performance degradation in logging logging RotatingFileHandler.
