@@ -2349,7 +2349,6 @@ class TestOptimizerAPI(unittest.TestCase):
 
     @contextlib.contextmanager
     def temporary_optimizer(self, opt):
-        # Code to acquire resource, e.g.:
         _testinternalcapi.set_optimizer(opt)
         try:
             yield
