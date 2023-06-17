@@ -283,14 +283,14 @@ PyUnstable_Optimizer_NewCounter(void)
 
 typedef struct {
     _PyOptimizerObject base;
-    // ...
+    int instrs_executed;
 } UOpOptimizerObject;
 
 typedef struct {
     _PyExecutorObject executor;
-    // Modeled after CounterExecutorObject
     UOpOptimizerObject *optimizer;
-    _Py_CODEUNIT *next_instr;
+    uint16_t oparg;  // The LOAD_FAST oparg
+    _Py_CODEUNIT *next_instr;  // The instruction after the LOAD_FAST
 } UOpExecutorObject;
 
 static void
@@ -309,30 +309,43 @@ static PyTypeObject UOpExecutor_Type = {
 };
 
 static _PyInterpreterFrame *
-uop_execute(_PyExecutorObject *self, _PyInterpreterFrame *frame, PyObject **stack_pointer)
+uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
-    // Do some work here...
+    UOpExecutorObject *self = (UOpExecutorObject *)executor;
+    // Hardcode LOAD_FAST with oparg from self->oparg
+    fprintf(stderr, "LOAD_FAST %d\n", (int)self->oparg);
+    self->optimizer->instrs_executed++;
+    PyObject *value = frame->localsplus[self->oparg];
+    assert(value != 0);
+    Py_INCREF(value);
+    *stack_pointer++ = value;
     _PyFrame_SetStackPointer(frame, stack_pointer);
-    frame->prev_instr = ((UOpExecutorObject *)self)->next_instr - 1;
+    frame->prev_instr = self->next_instr - 1;
     Py_DECREF(self);
     return frame;
 }
 
 static int
 uop_optimize(
-    _PyOptimizerObject* self,
+    _PyOptimizerObject *self,
     PyCodeObject *code,
     _Py_CODEUNIT *instr,
     _PyExecutorObject **exec_ptr)
 {
+    // We know 'instr' is a jump target so if the LOAD_FAST
+    // has an EXTENDED_ARG this test will fail.
+    if (instr->op.code != LOAD_FAST) {
+        return 0;
+    }
     UOpExecutorObject *executor = (UOpExecutorObject *)_PyObject_New(&UOpExecutor_Type);
     if (executor == NULL) {
         return -1;
     }
     executor->executor.execute = uop_execute;
     Py_INCREF(self);
-    executor->optimizer = self;
-    executor->next_instr = instr;
+    executor->optimizer = (UOpOptimizerObject *)self;
+    executor->oparg = instr->op.arg;
+    executor->next_instr = instr + 1;  // Skip the LOAD_FAST!
     *exec_ptr = (_PyExecutorObject *)executor;
     return 1;
 }
@@ -340,7 +353,7 @@ uop_optimize(
 static PyObject *
 uop_get_state(PyObject *self, PyObject *args)
 {
-    return PyLong_FromLongLong(42);  // XXX TODO GUIDO
+    return PyLong_FromLongLong(((UOpOptimizerObject *)self)->instrs_executed);
 }
 
 static PyMethodDef uop_methods[] = {
@@ -367,6 +380,6 @@ PyUnstable_Optimizer_NewUOpOptimizer(void)
     opt->base.optimize = uop_optimize;
     opt->base.resume_threshold = UINT16_MAX;
     opt->base.backedge_threshold = 0;
-    // Other initializations ...
+    opt->instrs_executed = 0;
     return (PyObject *)opt;
 }
