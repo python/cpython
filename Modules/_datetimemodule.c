@@ -5892,7 +5892,6 @@ datetime_fromisoformat(PyObject *cls, PyObject *dtstr)
                 goto invalid_iso_midnight;
             }
         }
-        
     }
     PyObject *dt = new_datetime_subclass_ex(year, month, day, hour, minute,
                                             second, microsecond, tzinfo, cls);

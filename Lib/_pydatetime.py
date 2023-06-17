@@ -1919,7 +1919,6 @@ class datetime(date):
             else:
                 if became_next_day:
                     year, month, day = date_components
-                    
                     # Only wrap day/month when it was previously valid
                     if month <= 12 and day <= (days_in_month := _days_in_month(year, month)):
                         # Calculate midnight of the next day
