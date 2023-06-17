@@ -5218,8 +5218,6 @@ instantiated from the type::
    >>> import types
    >>> isinstance(int | str, typing.Union)
    True
-   >>> types.UnionType(int, str)
-   int | str
 
 .. note::
    The :meth:`__or__` method for type objects was added to support the syntax
