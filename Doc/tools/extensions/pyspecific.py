@@ -27,10 +27,15 @@ try:
 except ImportError:
     from sphinx.environment import NoUri
 from sphinx.locale import _ as sphinx_gettext
-from sphinx.util import status_iterator, logging
+from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
 from sphinx.util.nodes import split_explicit_title
 from sphinx.writers.text import TextWriter, TextTranslator
+
+try:
+    from sphinx.util.display import status_iterator
+except ImportError:
+    from sphinx.util import status_iterator
 
 try:
     from sphinx.domains.python import PyFunction, PyMethod
