@@ -527,7 +527,15 @@ union_class_getitem(PyObject *cls, PyObject *args)
     return _Py_union_from_tuple(args);
 }
 
+static PyObject *
+union_mro_entries(PyObject *self, PyObject *args)
+{
+    return PyErr_Format(PyExc_TypeError,
+                        "Cannot subclass %R", self);
+}
+
 static PyMethodDef union_methods[] = {
+    {"__mro_entries__", union_mro_entries, METH_O},
     {"__class_getitem__", union_class_getitem, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {0}
 };

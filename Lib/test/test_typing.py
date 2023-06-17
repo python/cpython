@@ -1788,8 +1788,7 @@ class UnionTests(BaseTestCase):
                 r"type 'typing\.Union' is not an acceptable base type"):
             class C(Union):
                 pass
-        with self.assertRaisesRegex(TypeError,
-                r"Union\[arg, \.\.\.\]: each arg must be a type\."):
+        with self.assertRaisesRegex(TypeError, r"Cannot subclass int | str"):
             class C(Union[int, str]):
                 pass
 
