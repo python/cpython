@@ -2923,7 +2923,6 @@ dummy_func(
                 goto error;
             }
             Py_DECREF(tp);
-            CALL_STAT_INC(inlined_py_calls);
             if (_Py_EnterRecursivePy(tstate)) {
                 goto exit_unwind;
             }
@@ -2940,14 +2939,16 @@ dummy_func(
             for (int i = 0; i < oparg; i++) {
                 init_frame->localsplus[i+1] = args[i];
             }
+            SKIP_OVER(INLINE_CACHE_ENTRIES_CALL);
+            frame->prev_instr = next_instr - 1;
+            frame->return_offset = 0;
             STACK_SHRINK(oparg+2);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
-            frame->prev_instr = next_instr - 1;
             /* Link frames */
             init_frame->previous = shim;
             shim->previous = frame;
             frame = cframe.current_frame = init_frame;
+            CALL_STAT_INC(inlined_py_calls);
             goto start_frame;
         }
 
@@ -2960,7 +2961,6 @@ dummy_func(
                 goto error;
             }
         }
-
 
         inst(CALL_BUILTIN_CLASS, (unused/1, unused/2, method, callable, args[oparg] -- res)) {
             int is_meth = method != NULL;

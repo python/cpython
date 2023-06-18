@@ -2291,11 +2291,11 @@ success:
  * so must not access globals or builtins.
  */
 
-#define NO_LOC (128 | (PY_CODE_LOCATION_INFO_NONE << 3) | 7)
+#define NO_LOC_4 (128 | (PY_CODE_LOCATION_INFO_NONE << 3) | 3)
 
 static PyBytesObject no_location = {
     PyVarObject_HEAD_INIT(&PyBytes_Type, 1)
-    .ob_sval = { NO_LOC }
+    .ob_sval = { NO_LOC_4 }
 };
 
 struct _PyCode_DEF(8) _Py_InitCleanup = {

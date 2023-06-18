@@ -281,10 +281,10 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     _PyInterpreterFrame *frame = (_PyInterpreterFrame *)tstate->datastack_top;
     tstate->datastack_top += code->co_framesize;
     assert(tstate->datastack_top < tstate->datastack_limit);
-    frame->f_funcobj = Py_NewRef(Py_None);
+    frame->f_funcobj = Py_None;
     frame->f_executable = Py_NewRef(code);
 #ifdef Py_DEBUG
-    frame->f_builtins = (PyObject*)0xaaaa;
+    frame->f_builtins = NULL;
     frame->f_globals = NULL;
 #endif
     frame->f_locals = NULL;
