@@ -14,18 +14,15 @@ import io
 from os import getenv, path
 from time import asctime
 from pprint import pformat
+
+from docutils import nodes, utils
 from docutils.io import StringOutput
 from docutils.parsers.rst import Directive
 from docutils.utils import new_document
-
-from docutils import nodes, utils
-
 from sphinx import addnodes
 from sphinx.builders import Builder
-try:
-    from sphinx.errors import NoUri
-except ImportError:
-    from sphinx.environment import NoUri
+from sphinx.domains.python import PyFunction, PyMethod
+from sphinx.errors import NoUri
 from sphinx.locale import _ as sphinx_gettext
 from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
@@ -33,15 +30,11 @@ from sphinx.util.nodes import split_explicit_title
 from sphinx.writers.text import TextWriter, TextTranslator
 
 try:
+    # Sphinx 6+
     from sphinx.util.display import status_iterator
 except ImportError:
+    # Deprecated in Sphinx 6.1, will be removed in Sphinx 8
     from sphinx.util import status_iterator
-
-try:
-    from sphinx.domains.python import PyFunction, PyMethod
-except ImportError:
-    from sphinx.domains.python import PyClassmember as PyMethod
-    from sphinx.domains.python import PyModulelevel as PyFunction
 
 
 ISSUE_URI = 'https://bugs.python.org/issue?@action=redirect&bpo=%s'
