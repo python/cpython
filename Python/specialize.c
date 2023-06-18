@@ -2284,8 +2284,6 @@ success:
  * CALL_NO_KW_ALLOC_AND_ENTER_INIT will set up
  * the frame to execute the EXIT_INIT_CHECK
  * instruction.
- * Starts with an assertion error, in case it is called
- * directly.
  * Ends with a RESUME so that it is not traced.
  * This is used as a plain code object, not a function,
  * so must not access globals or builtins.
