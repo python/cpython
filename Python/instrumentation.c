@@ -936,7 +936,7 @@ call_instrumentation_vector(
     }
     assert(!_PyErr_Occurred(tstate));
     assert(args[0] == NULL);
-    PyCodeObject *code = frame->f_code;
+    PyCodeObject *code = _PyFrame_GetCode(frame);
     assert(code->_co_instrumentation_version == tstate->interp->monitoring_version);
     assert(is_version_up_to_date(code, tstate->interp));
     assert(instrumentation_cross_checks(tstate->interp, code));
@@ -1017,7 +1017,7 @@ _Py_call_instrumentation_jump(
     assert(frame->prev_instr == instr);
     /* Event should occur after the jump */
     frame->prev_instr = target;
-    PyCodeObject *code = frame->f_code;
+    PyCodeObject *code = _PyFrame_GetCode(frame);
     int to = (int)(target - _PyCode_CODE(code));
     PyObject *to_obj = PyLong_FromLong(to * (int)sizeof(_Py_CODEUNIT));
     if (to_obj == NULL) {
@@ -1094,7 +1094,7 @@ int
 _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame, _Py_CODEUNIT *instr, _Py_CODEUNIT *prev)
 {
     frame->prev_instr = instr;
-    PyCodeObject *code = frame->f_code;
+    PyCodeObject *code = _PyFrame_GetCode(frame);
     assert(is_version_up_to_date(code, tstate->interp));
     assert(instrumentation_cross_checks(tstate->interp, code));
     int i = (int)(instr - _PyCode_CODE(code));
@@ -1162,7 +1162,7 @@ done:
 int
 _Py_call_instrumentation_instruction(PyThreadState *tstate, _PyInterpreterFrame* frame, _Py_CODEUNIT *instr)
 {
-    PyCodeObject *code = frame->f_code;
+    PyCodeObject *code = _PyFrame_GetCode(frame);
     assert(is_version_up_to_date(code, tstate->interp));
     assert(instrumentation_cross_checks(tstate->interp, code));
     int offset = (int)(instr - _PyCode_CODE(code));
@@ -1487,17 +1487,6 @@ update_instrumentation_data(PyCodeObject *code, PyInterpreterState *interp)
     return 0;
 }
 
-static const uint8_t super_instructions[256] = {
-    [LOAD_FAST__LOAD_CONST] = 1,
-    [LOAD_CONST__LOAD_FAST] = 1,
-};
-
-/* Should use instruction metadata for this */
-static bool
-is_super_instruction(uint8_t opcode) {
-    return super_instructions[opcode] != 0;
-}
-
 int
 _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
 {
@@ -1539,9 +1528,6 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
     /* Insert instrumentation */
     for (int i = 0; i < code_len; i+= _PyInstruction_GetLength(code, i)) {
         _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
-        if (is_super_instruction(instr->op.code)) {
-            instr->op.code = _PyOpcode_Deopt[instr->op.code];
-        }
         CHECK(instr->op.code != 0);
         int base_opcode = _Py_GetBaseOpcode(code, i);
         if (opcode_has_event(base_opcode)) {
@@ -1646,7 +1632,7 @@ instrument_all_executing_code_objects(PyInterpreterState *interp) {
         _PyInterpreterFrame *frame = ts->cframe->current_frame;
         while (frame) {
             if (frame->owner != FRAME_OWNED_BY_CSTACK) {
-                if (_Py_Instrument(frame->f_code, interp)) {
+                if (_Py_Instrument(_PyFrame_GetCode(frame), interp)) {
                     return -1;
                 }
             }

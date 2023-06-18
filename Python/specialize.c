@@ -273,22 +273,12 @@ _PyCode_Quicken(PyCodeObject *code)
     int opcode = 0;
     _Py_CODEUNIT *instructions = _PyCode_CODE(code);
     for (int i = 0; i < Py_SIZE(code); i++) {
-        int previous_opcode = opcode;
         opcode = _Py_GetBaseOpcode(code, i);
         assert(opcode < MIN_INSTRUMENTED_OPCODE);
         int caches = _PyOpcode_Caches[opcode];
         if (caches) {
             instructions[i + 1].cache = adaptive_counter_warmup();
             i += caches;
-            continue;
-        }
-        switch (previous_opcode << 8 | opcode) {
-            case LOAD_CONST << 8 | LOAD_FAST:
-                instructions[i - 1].op.code = LOAD_CONST__LOAD_FAST;
-                break;
-            case LOAD_FAST << 8 | LOAD_CONST:
-                instructions[i - 1].op.code = LOAD_FAST__LOAD_CONST;
-                break;
         }
     }
     #endif /* ENABLE_SPECIALIZATION */
@@ -1657,9 +1647,9 @@ specialize_py_call(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
     }
     int argcount = code->co_argcount;
     int defcount = func->func_defaults == NULL ? 0 : (int)PyTuple_GET_SIZE(func->func_defaults);
-    assert(defcount <= argcount);
     int min_args = argcount-defcount;
-    if (nargs > argcount || nargs < min_args) {
+    // GH-105840: min_args is negative when somebody sets too many __defaults__!
+    if (min_args < 0 || nargs > argcount || nargs < min_args) {
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
         return -1;
     }
