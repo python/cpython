@@ -70,9 +70,8 @@ typedef struct _object_stats {
     uint64_t type_cache_dunder_hits;
     uint64_t type_cache_dunder_misses;
     uint64_t type_cache_collisions;
+    uint64_t optimization_attempts;
 } ObjectStats;
-
-#
 
 typedef struct _stats {
     OpcodeStats opcode_stats[256];

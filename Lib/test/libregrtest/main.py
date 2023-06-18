@@ -29,6 +29,14 @@ from test.support import threading_helper
 # Must be smaller than buildbot "1200 seconds without output" limit.
 EXIT_TIMEOUT = 120.0
 
+# gh-90681: When rerunning tests, we might need to rerun the whole
+# class or module suite if some its life-cycle hooks fail.
+# Test level hooks are not affected.
+_TEST_LIFECYCLE_HOOKS = frozenset((
+    'setUpClass', 'tearDownClass',
+    'setUpModule', 'tearDownModule',
+))
+
 EXITCODE_BAD_TEST = 2
 EXITCODE_INTERRUPTED = 130
 EXITCODE_ENV_CHANGED = 3
@@ -337,8 +345,12 @@ class Regrtest:
 
             errors = result.errors or []
             failures = result.failures or []
-            error_names = [test_full_name.split(" ")[0] for (test_full_name, *_) in errors]
-            failure_names = [test_full_name.split(" ")[0] for (test_full_name, *_) in failures]
+            error_names = [
+                self.normalize_test_name(test_full_name, is_error=True)
+                for (test_full_name, *_) in errors]
+            failure_names = [
+                self.normalize_test_name(test_full_name)
+                for (test_full_name, *_) in failures]
             self.ns.verbose = True
             orig_match_tests = self.ns.match_tests
             if errors or failures:
@@ -363,6 +375,21 @@ class Regrtest:
             printlist(self.bad)
 
         self.display_result()
+
+    def normalize_test_name(self, test_full_name, *, is_error=False):
+        short_name = test_full_name.split(" ")[0]
+        if is_error and short_name in _TEST_LIFECYCLE_HOOKS:
+            # This means that we have a failure in a life-cycle hook,
+            # we need to rerun the whole module or class suite.
+            # Basically the error looks like this:
+            #    ERROR: setUpClass (test.test_reg_ex.RegTest)
+            # or
+            #    ERROR: setUpModule (test.test_reg_ex)
+            # So, we need to parse the class / module name.
+            lpar = test_full_name.index('(')
+            rpar = test_full_name.index(')')
+            return test_full_name[lpar + 1: rpar].split('.')[-1]
+        return short_name
 
     def display_result(self):
         # If running the test suite for PGO then no one cares about results.
@@ -499,6 +526,26 @@ class Regrtest:
             print("== CPU count:", cpu_count)
         print("== encodings: locale=%s, FS=%s"
               % (locale.getencoding(), sys.getfilesystemencoding()))
+        asan = support.check_sanitizer(address=True)
+        msan = support.check_sanitizer(memory=True)
+        ubsan = support.check_sanitizer(ub=True)
+        # This makes it easier to remember what to set in your local
+        # environment when trying to reproduce a sanitizer failure.
+        if asan or msan or ubsan:
+            names = [n for n in (asan and "address",
+                                 msan and "memory",
+                                 ubsan and "undefined behavior")
+                     if n]
+            print(f"== sanitizers: {', '.join(names)}")
+            a_opts = os.environ.get("ASAN_OPTIONS")
+            if asan and a_opts is not None:
+                print(f"==  ASAN_OPTIONS={a_opts}")
+            m_opts = os.environ.get("ASAN_OPTIONS")
+            if msan and m_opts is not None:
+                print(f"==  MSAN_OPTIONS={m_opts}")
+            ub_opts = os.environ.get("UBSAN_OPTIONS")
+            if ubsan and ub_opts is not None:
+                print(f"==  UBSAN_OPTIONS={ub_opts}")
 
     def no_tests_run(self):
         return not any((self.good, self.bad, self.skipped, self.interrupted,

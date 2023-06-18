@@ -5,7 +5,7 @@
 Dictionary Objects
 ------------------
 
-.. index:: object: dictionary
+.. index:: pair: object; dictionary
 
 
 .. c:type:: PyDictObject
@@ -154,7 +154,7 @@ Dictionary Objects
 
 .. c:function:: Py_ssize_t PyDict_Size(PyObject *p)
 
-   .. index:: builtin: len
+   .. index:: pair: built-in function; len
 
    Return the number of items in the dictionary.  This is equivalent to
    ``len(p)`` on a dictionary.

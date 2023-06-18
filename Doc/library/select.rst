@@ -505,7 +505,7 @@ Kqueue Objects
 Kevent Objects
 --------------
 
-https://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
+https://man.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
 
 .. attribute:: kevent.ident
 

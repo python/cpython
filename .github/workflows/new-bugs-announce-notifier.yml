@@ -11,6 +11,7 @@ permissions:
 jobs:
   notify-new-bugs-announce:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/setup-node@v3
         with:

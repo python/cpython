@@ -1,4 +1,4 @@
-"""Test suite for statistics module, including helper NumericTestCase and
+x = """Test suite for statistics module, including helper NumericTestCase and
 approx_equal function.
 
 """
@@ -2609,6 +2609,16 @@ class TestLinearRegression(unittest.TestCase):
         slope, intercept = statistics.linear_regression(x, y, proportional=True)
         self.assertAlmostEqual(slope, 20 + 1/150)
         self.assertEqual(intercept, 0.0)
+
+    def test_float_output(self):
+        x = [Fraction(2, 3), Fraction(3, 4)]
+        y = [Fraction(4, 5), Fraction(5, 6)]
+        slope, intercept = statistics.linear_regression(x, y)
+        self.assertTrue(isinstance(slope, float))
+        self.assertTrue(isinstance(intercept, float))
+        slope, intercept = statistics.linear_regression(x, y, proportional=True)
+        self.assertTrue(isinstance(slope, float))
+        self.assertTrue(isinstance(intercept, float))
 
 class TestNormalDist:
 

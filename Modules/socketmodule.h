@@ -322,6 +322,7 @@ typedef struct {
                                         sets a Python exception */
     _PyTime_t sock_timeout;     /* Operation timeout in seconds;
                                         0.0 means non-blocking */
+    struct _socket_state *state;
 } PySocketSockObject;
 
 /* --- C API ----------------------------------------------------*/
