@@ -481,7 +481,7 @@ Expressions
    Comparison operator tokens.
 
 
-.. class:: Call(func, args, keywords, starargs, kwargs)
+.. class:: Call(func, args, keywords)
 
    A function call. ``func`` is the function, which will often be a
    :class:`Name` or :class:`Attribute` object. Of the arguments:
@@ -491,7 +491,7 @@ Expressions
      arguments passed by keyword.
 
    When creating a ``Call`` node, ``args`` and ``keywords`` are required, but
-   they can be empty lists. ``starargs`` and ``kwargs`` are optional.
+   they can be empty lists.
 
    .. doctest::
 
@@ -914,6 +914,25 @@ Statements
         Module(
             body=[
                 Pass()],
+            type_ignores=[])
+
+
+.. class:: TypeAlias(name, type_params, value)
+
+   A :ref:`type alias <type-aliases>` created through the :keyword:`type`
+   statement. ``name`` is the name of the alias, ``type_params`` is a list of
+   :ref:`type parameters <ast-type-params>`, and ``value`` is the value of the
+   type alias.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('type Alias = int'), indent=4))
+        Module(
+            body=[
+                TypeAlias(
+                    name=Name(id='Alias', ctx=Store()),
+                    type_params=[],
+                    value=Name(id='int', ctx=Load()))],
             type_ignores=[])
 
 
@@ -1644,11 +1663,88 @@ Pattern matching
                                     value=Constant(value=Ellipsis))])])],
             type_ignores=[])
 
+.. _ast-type-params:
+
+Type parameters
+^^^^^^^^^^^^^^^
+
+:ref:`Type parameters <type-params>` can exist on classes, functions, and type
+aliases.
+
+.. class:: TypeVar(name, bound)
+
+   A :class:`typing.TypeVar`. ``name`` is the name of the type variable.
+   ``bound`` is the bound or constraints, if any. If ``bound`` is a :class:`Tuple`,
+   it represents constraints; otherwise it represents the bound.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("type Alias[T: int] = list[T]"), indent=4))
+        Module(
+            body=[
+                TypeAlias(
+                    name=Name(id='Alias', ctx=Store()),
+                    type_params=[
+                        TypeVar(
+                            name='T',
+                            bound=Name(id='int', ctx=Load()))],
+                    value=Subscript(
+                        value=Name(id='list', ctx=Load()),
+                        slice=Name(id='T', ctx=Load()),
+                        ctx=Load()))],
+            type_ignores=[])
+
+.. class:: ParamSpec(name)
+
+   A :class:`typing.ParamSpec`. ``name`` is the name of the parameter specification.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("type Alias[**P] = Callable[P, int]"), indent=4))
+        Module(
+            body=[
+                TypeAlias(
+                    name=Name(id='Alias', ctx=Store()),
+                    type_params=[
+                        ParamSpec(name='P')],
+                    value=Subscript(
+                        value=Name(id='Callable', ctx=Load()),
+                        slice=Tuple(
+                            elts=[
+                                Name(id='P', ctx=Load()),
+                                Name(id='int', ctx=Load())],
+                            ctx=Load()),
+                        ctx=Load()))],
+            type_ignores=[])
+
+.. class:: TypeVarTuple(name)
+
+   A :class:`typing.TypeVarTuple`. ``name`` is the name of the type variable tuple.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("type Alias[*Ts] = tuple[*Ts]"), indent=4))
+        Module(
+            body=[
+                TypeAlias(
+                    name=Name(id='Alias', ctx=Store()),
+                    type_params=[
+                        TypeVarTuple(name='Ts')],
+                    value=Subscript(
+                        value=Name(id='tuple', ctx=Load()),
+                        slice=Tuple(
+                            elts=[
+                                Starred(
+                                    value=Name(id='Ts', ctx=Load()),
+                                    ctx=Load())],
+                            ctx=Load()),
+                        ctx=Load()))],
+            type_ignores=[])
 
 Function and class definitions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. class:: FunctionDef(name, args, body, decorator_list, returns, type_comment)
+.. class:: FunctionDef(name, args, body, decorator_list, returns, type_comment, type_params)
 
    A function definition.
 
@@ -1658,6 +1754,7 @@ Function and class definitions
    * ``decorator_list`` is the list of decorators to be applied, stored outermost
      first (i.e. the first in the list will be applied last).
    * ``returns`` is the return annotation.
+   * ``type_params`` is a list of :ref:`type parameters <ast-type-params>`.
 
    .. attribute:: type_comment
 
@@ -1748,7 +1845,8 @@ Function and class definitions
                     decorator_list=[
                         Name(id='decorator1', ctx=Load()),
                         Name(id='decorator2', ctx=Load())],
-                    returns=Constant(value='return annotation'))],
+                    returns=Constant(value='return annotation'),
+                    type_params=[])],
             type_ignores=[])
 
 
@@ -1819,7 +1917,7 @@ Function and class definitions
             type_ignores=[])
 
 
-.. class:: ClassDef(name, bases, keywords, starargs, kwargs, body, decorator_list)
+.. class:: ClassDef(name, bases, keywords, body, decorator_list, type_params)
 
    A class definition.
 
@@ -1828,12 +1926,10 @@ Function and class definitions
    * ``keywords`` is a list of :class:`keyword` nodes, principally for 'metaclass'.
      Other keywords will be passed to the metaclass, as per `PEP-3115
      <https://peps.python.org/pep-3115/>`_.
-   * ``starargs`` and ``kwargs`` are each a single node, as in a function call.
-     starargs will be expanded to join the list of base classes, and kwargs will
-     be passed to the metaclass.
    * ``body`` is a list of nodes representing the code within the class
      definition.
    * ``decorator_list`` is a list of nodes, as in :class:`FunctionDef`.
+   * ``type_params`` is a list of :ref:`type parameters <ast-type-params>`.
 
    .. doctest::
 
@@ -1858,13 +1954,14 @@ Function and class definitions
                         Pass()],
                     decorator_list=[
                         Name(id='decorator1', ctx=Load()),
-                        Name(id='decorator2', ctx=Load())])],
+                        Name(id='decorator2', ctx=Load())],
+                    type_params=[])],
             type_ignores=[])
 
 Async and await
 ^^^^^^^^^^^^^^^
 
-.. class:: AsyncFunctionDef(name, args, body, decorator_list, returns, type_comment)
+.. class:: AsyncFunctionDef(name, args, body, decorator_list, returns, type_comment, type_params)
 
    An ``async def`` function definition. Has the same fields as
    :class:`FunctionDef`.
@@ -1898,7 +1995,8 @@ Async and await
                                 func=Name(id='other_func', ctx=Load()),
                                 args=[],
                                 keywords=[])))],
-                decorator_list=[])],
+                decorator_list=[],
+                type_params=[])],
         type_ignores=[])
 
 

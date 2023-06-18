@@ -57,8 +57,10 @@ extern void bzero(void *, int);
 #endif
 
 #ifdef MS_WINDOWS
-#  define WIN32_LEAN_AND_MEAN
-#  include <winsock.h>
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#  endif
+#  include <winsock2.h>
 #else
 #  define SOCKET int
 #endif
@@ -1847,14 +1849,11 @@ static PyObject *
 
 kqueue_event_repr(kqueue_event_Object *s)
 {
-    char buf[1024];
-    PyOS_snprintf(
-        buf, sizeof(buf),
+    return PyUnicode_FromFormat(
         "<select.kevent ident=%zu filter=%d flags=0x%x fflags=0x%x "
         "data=0x%llx udata=%p>",
         (size_t)(s->e.ident), (int)s->e.filter, (unsigned int)s->e.flags,
         (unsigned int)s->e.fflags, (long long)(s->e.data), (void *)s->e.udata);
-    return PyUnicode_FromString(buf);
 }
 
 static int
@@ -2649,6 +2648,7 @@ _select_exec(PyObject *m)
 
 static PyModuleDef_Slot _select_slots[] = {
     {Py_mod_exec, _select_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

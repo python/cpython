@@ -340,10 +340,12 @@ adding a ``filters`` section parallel to ``formatters`` and ``handlers``:
 
 .. code-block:: json
 
-    "filters": {
-        "warnings_and_below": {
-            "()" : "__main__.filter_maker",
-            "level": "WARNING"
+    {
+        "filters": {
+            "warnings_and_below": {
+                "()" : "__main__.filter_maker",
+                "level": "WARNING"
+            }
         }
     }
 
@@ -351,12 +353,14 @@ and changing the section on the ``stdout`` handler to add it:
 
 .. code-block:: json
 
-    "stdout": {
-        "class": "logging.StreamHandler",
-        "level": "INFO",
-        "formatter": "simple",
-        "stream": "ext://sys.stdout",
-        "filters": ["warnings_and_below"]
+    {
+        "stdout": {
+            "class": "logging.StreamHandler",
+            "level": "INFO",
+            "formatter": "simple",
+            "stream": "ext://sys.stdout",
+            "filters": ["warnings_and_below"]
+        }
     }
 
 A filter is just a function, so we can define the ``filter_maker`` (a factory

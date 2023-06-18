@@ -1,2 +1,0 @@
-Fix deadlock on shutdown if ``test_current_{exception,frames}`` fails. Patch
-by Jacob Bower.

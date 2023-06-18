@@ -1,2 +1,0 @@
-On Android, python.pc now correctly reports the library to link to, the same
-as python-config.sh.
