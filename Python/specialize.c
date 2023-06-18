@@ -2293,12 +2293,12 @@ success:
 
 #define NO_LOC_4 (128 | (PY_CODE_LOCATION_INFO_NONE << 3) | 3)
 
-static PyBytesObject no_location = {
+static const PyBytesObject no_location = {
     PyVarObject_HEAD_INIT(&PyBytes_Type, 1)
     .ob_sval = { NO_LOC_4 }
 };
 
-struct _PyCode_DEF(8) _Py_InitCleanup = {
+const struct _PyCode_DEF(8) _Py_InitCleanup = {
     _PyVarObject_HEAD_INIT(&PyCode_Type, 4)
     .co_consts = (PyObject *)&_Py_SINGLETON(tuple_empty),
     .co_names = (PyObject *)&_Py_SINGLETON(tuple_empty),

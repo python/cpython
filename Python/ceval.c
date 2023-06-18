@@ -641,7 +641,7 @@ static const _Py_CODEUNIT _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS[] = {
     { .op.code = RESUME, .op.arg = 0 }
 };
 
-extern struct _PyCode_DEF(8) _Py_InitCleanup;
+extern const struct _PyCode_DEF(8) _Py_InitCleanup;
 
 /* Disable unused label warnings.  They are handy for debugging, even
    if computed gotos aren't used. */
