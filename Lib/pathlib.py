@@ -64,78 +64,12 @@ def _is_case_sensitive(flavour):
 #
 
 
-# fnmatch.translate() returns a regular expression that includes a prefix and
-# a suffix, which enable matching newlines and ensure the end of the string is
-# matched, respectively. These features are undesirable for our implementation
-# of PurePatch.match(), which represents path separators as newlines and joins
-# pattern segments together. As a workaround, we define a slice object that
-# can remove the prefix and suffix from any translate() result. See the
-# _compile_pattern_lines() function for more details.
-_FNMATCH_PREFIX, _FNMATCH_SUFFIX = fnmatch.translate('_').split('_')
-_FNMATCH_SLICE = slice(len(_FNMATCH_PREFIX), -len(_FNMATCH_SUFFIX))
-_SWAP_SEP_AND_NEWLINE = {
-    '/': str.maketrans({'/': '\n', '\n': '/'}),
-    '\\': str.maketrans({'\\': '\n', '\n': '\\'}),
-}
-
-
 @functools.lru_cache(maxsize=256)
-def _compile_pattern(pat, case_sensitive):
+def _compile_pattern(pat, sep, case_sensitive):
     """Compile given glob pattern to a re.Pattern object (observing case
     sensitivity), or None if the pattern should match everything."""
-    if pat == '*':
-        return None
     flags = re.NOFLAG if case_sensitive else re.IGNORECASE
-    return re.compile(fnmatch.translate(pat), flags).match
-
-
-@functools.lru_cache()
-def _compile_pattern_lines(pattern_lines, case_sensitive):
-    """Compile the given pattern lines to an `re.Pattern` object.
-
-    The *pattern_lines* argument is a glob-style pattern (e.g. '**/*.py') with
-    its path separators and newlines swapped (e.g. '**\n*.py`). By using
-    newlines to separate path components, and not setting `re.DOTALL`, we
-    ensure that the `*` wildcard cannot match path separators.
-
-    The returned `re.Pattern` object may have its `match()` method called to
-    match a complete pattern, or `search()` to match from the right. The
-    argument supplied to these methods must also have its path separators and
-    newlines swapped.
-    """
-
-    # Match the start of the path, or just after a path separator
-    parts = ['^']
-    for part in pattern_lines.splitlines(keepends=True):
-        if part == '*\n':
-            part = r'.+\n'
-        elif part == '*':
-            part = r'.+'
-        elif part == '**\n':
-            # '**/' component: we use '[\s\S]' rather than '.' so that path
-            # separators (i.e. newlines) are matched. The trailing '^' ensures
-            # we terminate after a path separator (i.e. on a new line).
-            part = r'[\s\S]*^'
-        elif part == '**':
-            # '**' component.
-            part = r'[\s\S]*'
-        elif '**' in part:
-            raise ValueError("Invalid pattern: '**' can only be an entire path component")
-        else:
-            # Any other component: pass to fnmatch.translate(). We slice off
-            # the common prefix and suffix added by translate() to ensure that
-            # re.DOTALL is not set, and the end of the string not matched,
-            # respectively. With DOTALL not set, '*' wildcards will not match
-            # path separators, because the '.' characters in the pattern will
-            # not match newlines.
-            part = fnmatch.translate(part)[_FNMATCH_SLICE]
-        parts.append(part)
-    # Match the end of the path, always.
-    parts.append(r'\Z')
-    flags = re.MULTILINE
-    if not case_sensitive:
-        flags |= re.IGNORECASE
-    return re.compile(''.join(parts), flags=flags)
+    return re.compile(fnmatch.translate(pat, sep), flags).match
 
 
 def _select_children(parent_paths, dir_only, follow_symlinks, match):
@@ -159,7 +93,7 @@ def _select_children(parent_paths, dir_only, follow_symlinks, match):
                     except OSError:
                         continue
                 name = entry.name
-                if match is None or match(name):
+                if match(name):
                     yield parent_path._make_child_relpath(name)
 
 
@@ -196,7 +130,7 @@ def _select_unique(paths):
     yielded = set()
     try:
         for path in paths:
-            path_str = str(path)
+            path_str = path._str
             if path_str not in yielded:
                 yield path
                 yielded.add(path_str)
@@ -268,10 +202,10 @@ class PurePath:
         # tail are normalized.
         '_drv', '_root', '_tail_cached',
 
-        # The `_str` slot stores the string representation of the path,
+        # The `_str_cached` slot stores the string representation of the path,
         # computed from the drive, root and tail when `__str__()` is called
         # for the first time. It's used to implement `_str_normcase`
-        '_str',
+        '_str_cached',
 
         # The `_str_normcase_cached` slot stores the string path with
         # normalized case. It is set when the `_str_normcase` property is
@@ -284,10 +218,6 @@ class PurePath:
         # `_parts_normcase` property is accessed for the first time. It's used
         # to implement comparison methods like `__lt__()`.
         '_parts_normcase_cached',
-
-        # The `_lines_cached` slot stores the string path with path separators
-        # and newlines swapped. This is used to implement `match()`.
-        '_lines_cached',
 
         # The `_hash` slot stores the hash of the case-normalized string
         # path. It's set when `__hash__()` is called for the first time.
@@ -375,7 +305,7 @@ class PurePath:
     def _from_parsed_parts(self, drv, root, tail):
         path_str = self._format_parsed_parts(drv, root, tail)
         path = self.with_segments(path_str)
-        path._str = path_str or '.'
+        path._str_cached = path_str
         path._drv = drv
         path._root = root
         path._tail_cached = tail
@@ -392,12 +322,7 @@ class PurePath:
     def __str__(self):
         """Return the string representation of the path, suitable for
         passing to system calls."""
-        try:
-            return self._str
-        except AttributeError:
-            self._str = self._format_parsed_parts(self.drive, self.root,
-                                                  self._tail) or '.'
-            return self._str
+        return self._str or '.'
 
     def __fspath__(self):
         return str(self)
@@ -437,15 +362,24 @@ class PurePath:
         return prefix + urlquote_from_bytes(os.fsencode(path))
 
     @property
+    def _str(self):
+        try:
+            return self._str_cached
+        except AttributeError:
+            self._str_cached = self._format_parsed_parts(
+                self.drive, self.root, self._tail)
+            return self._str_cached
+
+    @property
     def _str_normcase(self):
         # String with normalized case, for hashing and equality checks
         try:
             return self._str_normcase_cached
         except AttributeError:
             if _is_case_sensitive(self._flavour):
-                self._str_normcase_cached = str(self)
+                self._str_normcase_cached = self._str
             else:
-                self._str_normcase_cached = str(self).lower()
+                self._str_normcase_cached = self._str.lower()
             return self._str_normcase_cached
 
     @property
@@ -456,20 +390,6 @@ class PurePath:
         except AttributeError:
             self._parts_normcase_cached = self._str_normcase.split(self._flavour.sep)
             return self._parts_normcase_cached
-
-    @property
-    def _lines(self):
-        # Path with separators and newlines swapped, for pattern matching.
-        try:
-            return self._lines_cached
-        except AttributeError:
-            path_str = str(self)
-            if path_str == '.':
-                self._lines_cached = ''
-            else:
-                trans = _SWAP_SEP_AND_NEWLINE[self._flavour.sep]
-                self._lines_cached = path_str.translate(trans)
-            return self._lines_cached
 
     def __eq__(self, other):
         if not isinstance(other, PurePath):
@@ -738,13 +658,16 @@ class PurePath:
             path_pattern = self.with_segments(path_pattern)
         if case_sensitive is None:
             case_sensitive = _is_case_sensitive(self._flavour)
-        pattern = _compile_pattern_lines(path_pattern._lines, case_sensitive)
+        sep = path_pattern._flavour.sep
+        pattern_str = path_pattern._str
         if path_pattern.drive or path_pattern.root:
-            return pattern.match(self._lines) is not None
+            pass
         elif path_pattern._tail:
-            return pattern.search(self._lines) is not None
+            pattern_str = f'**{sep}{pattern_str}'
         else:
             raise ValueError("empty pattern")
+        match = _compile_pattern(pattern_str, sep, case_sensitive)
+        return match(self._str) is not None
 
 
 # Subclassing os.PathLike makes isinstance() checks slower,
@@ -1017,26 +940,19 @@ class Path(PurePath):
         return os.scandir(self)
 
     def _make_child_relpath(self, name):
-        sep = self._flavour.sep
-        lines_name = name.replace('\n', sep)
-        lines_str = self._lines
-        path_str = str(self)
+        path_str = self._str
         tail = self._tail
         if tail:
-            path_str = f'{path_str}{sep}{name}'
-            lines_str = f'{lines_str}\n{lines_name}'
-        elif path_str != '.':
+            path_str = f'{path_str}{self._flavour.sep}{name}'
+        elif path_str:
             path_str = f'{path_str}{name}'
-            lines_str = f'{lines_str}{lines_name}'
         else:
             path_str = name
-            lines_str = lines_name
         path = self.with_segments(path_str)
-        path._str = path_str
+        path._str_cached = path_str
         path._drv = self.drive
         path._root = self.root
         path._tail_cached = tail + [name]
-        path._lines_cached = lines_str
         return path
 
     def glob(self, pattern, *, case_sensitive=None, follow_symlinks=None):
@@ -1082,6 +998,7 @@ class Path(PurePath):
         # do not perform any filesystem access, which can be much faster!
         filter_paths = follow_symlinks is not None and '..' not in pattern_parts
         deduplicate_paths = False
+        sep = self._flavour.sep
         paths = iter([self] if self.is_dir() else [])
         part_idx = 0
         while part_idx < len(pattern_parts):
@@ -1102,9 +1019,9 @@ class Path(PurePath):
                     paths = _select_recursive(paths, dir_only, follow_symlinks)
 
                     # Filter out paths that don't match pattern.
-                    prefix_len = len(self._make_child_relpath('_')._lines) - 1
-                    match = _compile_pattern_lines(path_pattern._lines, case_sensitive).match
-                    paths = (path for path in paths if match(path._lines[prefix_len:]))
+                    prefix_len = len(self._make_child_relpath('_')._str) - 1
+                    match = _compile_pattern(path_pattern._str, sep, case_sensitive)
+                    paths = (path for path in paths if match(path._str[prefix_len:]))
                     return paths
 
                 dir_only = part_idx < len(pattern_parts)
@@ -1117,7 +1034,7 @@ class Path(PurePath):
                 raise ValueError("Invalid pattern: '**' can only be an entire path component")
             else:
                 dir_only = part_idx < len(pattern_parts)
-                match = _compile_pattern(part, case_sensitive)
+                match = _compile_pattern(part, sep, case_sensitive)
                 paths = _select_children(paths, dir_only, follow_symlinks, match)
         return paths
 
@@ -1210,11 +1127,11 @@ class Path(PurePath):
             # Fast path for "empty" paths, e.g. Path("."), Path("") or Path().
             # We pass only one argument to with_segments() to avoid the cost
             # of joining, and we exploit the fact that getcwd() returns a
-            # fully-normalized string by storing it in _str. This is used to
-            # implement Path.cwd().
+            # fully-normalized string by storing it in _str_cached. This is
+            # used to implement Path.cwd().
             if not self.root and not self._tail:
                 result = self.with_segments(cwd)
-                result._str = cwd
+                result._str_cached = cwd
                 return result
         return self.with_segments(cwd, self)
 

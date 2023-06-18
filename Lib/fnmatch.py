@@ -71,13 +71,19 @@ def fnmatchcase(name, pat):
     return match(name) is not None
 
 
-def translate(pat):
+def translate(pat, seps=None):
     """Translate a shell PATTERN to a regular expression.
 
     There is no way to quote meta-characters.
     """
 
     STAR = object()
+    if seps:
+        SEPS = re.escape(seps)
+        DOT = f'[^{SEPS}]'
+    else:
+        SEPS = None
+        DOT = '.'
     res = []
     add = res.append
     i, n = 0, len(pat)
@@ -86,10 +92,30 @@ def translate(pat):
         i = i+1
         if c == '*':
             # compress consecutive `*` into one
-            if (not res) or res[-1] is not STAR:
+            h = i - 1
+            while i < n and pat[i] == '*':
+                i = i + 1
+
+            if seps:
+                star_count = i - h
+                is_segment = (h == 0 or pat[h - 1] in seps) and (i == n or pat[i] in seps)
+                if star_count == 1:
+                    if is_segment:
+                        add(f'{DOT}+')
+                    else:
+                        add(f'{DOT}*')
+                elif star_count == 2 and is_segment:
+                    if i == n:
+                        add('.*')
+                    else:
+                        add(f'(.*[{SEPS}])?')
+                        i += 1
+                else:
+                    raise ValueError("Invalid pattern: '**' can only be an entire path component")
+            else:
                 add(STAR)
         elif c == '?':
-            add('.')
+            add(DOT)
         elif c == '[':
             j = i
             if j < n and pat[j] == '!':
@@ -136,7 +162,7 @@ def translate(pat):
                     add('(?!)')
                 elif stuff == '!':
                     # Negated empty range: match any character.
-                    add('.')
+                    add(DOT)
                 else:
                     if stuff[0] == '!':
                         stuff = '^' + stuff[1:]
