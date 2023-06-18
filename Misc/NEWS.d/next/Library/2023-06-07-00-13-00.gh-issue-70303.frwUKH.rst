@@ -1,4 +1,3 @@
-Emit :exc:`FutureWarning` from :meth:`pathlib.Path.glob` and
-:meth:`~pathlib.Path.rglob` if the given pattern ends with "``**``". In a
-future Python release, patterns with this ending will match both files and
-directories. Add a trailing slash to match only directories.
+:meth:`pathlib.Path.glob` and :meth:`~pathlib.Path.rglob` now yield files and
+directories when expanding a pattern that ends with "``**``". In a earlier
+Python releases, patterns with this ending match only directories.

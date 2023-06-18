@@ -906,8 +906,8 @@ call fails (for example because the path doesn't exist).
       >>> sorted(Path('.').glob('*/*.py'))
       [PosixPath('docs/conf.py')]
 
-   Patterns are the same as for :mod:`fnmatch`, with the addition of "``**``"
-   which means "this directory and all subdirectories, recursively".  In other
+   Pattern segments are the same as for :mod:`fnmatch`, with the addition of
+   "``**``" which matches all files, directories and subdirectories.  In other
    words, it enables recursive globbing::
 
       >>> sorted(Path('.').glob('**/*.py'))
@@ -948,9 +948,9 @@ call fails (for example because the path doesn't exist).
       The *follow_symlinks* argument.
 
    .. versionchanged:: 3.13
-      Emits :exc:`FutureWarning` if the pattern ends with "``**``". In a
-      future Python release, patterns with this ending will match both files
-      and directories. Add a trailing slash to match only directories.
+      Patterns ending with "``**``" match files and directories. In previous
+      versions, patterns with this ending match only directories.
+
 
 .. method:: Path.group()
 
