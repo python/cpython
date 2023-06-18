@@ -4320,7 +4320,7 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
 
             with self.subTest(tstr=tstr):
                 t_rt = self.theclass.fromisoformat(tstr)
-                assert t == t_rt, t_rt
+                assert t == t_rt
 
     def test_fromisoformat_timespecs(self):
         time_bases = [
