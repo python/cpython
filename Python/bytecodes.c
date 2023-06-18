@@ -2911,14 +2911,15 @@ dummy_func(
             _PyCallCache *cache = (_PyCallCache *)next_instr;
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(!PyType_Check(callable), CALL);
-            PyHeapTypeObject *tp = (PyHeapTypeObject *)callable;
-            DEOPT_IF(tp->ht_type.tp_version_tag != read_u32(cache->func_version), CALL);
-            PyFunctionObject *init = (PyFunctionObject *)tp->_spec_cache.init;
+            PyTypeObject *tp = (PyTypeObject *)callable;
+            DEOPT_IF(tp->tp_version_tag != read_u32(cache->func_version), CALL);
+            PyHeapTypeObject *cls = (PyHeapTypeObject *)callable;
+            PyFunctionObject *init = (PyFunctionObject *)cls->_spec_cache.init;
             PyCodeObject *code = (PyCodeObject *)init->func_code;
-            DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize + FRAME_SPECIALS_SIZE + 2), CALL);
-            STAT_INC(CALL, hit);
             DEOPT_IF(code->co_argcount != oparg+1, CALL);
-            PyObject *self = _PyType_NewManagedObject(&tp->ht_type);
+            DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize + _Py_InitCleanup.co_framesize), CALL);
+            STAT_INC(CALL, hit);
+            PyObject *self = _PyType_NewManagedObject(tp);
             if (self == NULL) {
                 goto error;
             }
