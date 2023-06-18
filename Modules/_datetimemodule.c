@@ -4997,19 +4997,19 @@ time_fromisoformat(PyObject *cls, PyObject *tstr) {
         goto invalid_string_error;
     }
 
-    PyObject *tzinfo = tzinfo_from_isoformat_results(rv, tzoffset,
-                                                     tzimicrosecond);
-
-    if (tzinfo == NULL) {
-        return NULL;
-    }
-
     if (hour == 24) {
         if (minute == 0 && second == 0 && microsecond == 0) {
             hour = 0;
         } else {
             goto invalid_iso_midnight;
         }
+    }
+
+    PyObject *tzinfo = tzinfo_from_isoformat_results(rv, tzoffset,
+                                                     tzimicrosecond);
+
+    if (tzinfo == NULL) {
+        return NULL;
     }
 
     PyObject *t;
