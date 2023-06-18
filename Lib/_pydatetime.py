@@ -499,8 +499,8 @@ def _parse_isoformat_time(tstr):
         else:
             tzsign = -1 if tstr[tz_pos - 1] == '-' else 1
 
-            td = timedelta(hours=hour, minutes=minute,
-                           seconds=second, microseconds=microsecond)
+            td = timedelta(hours=tz_comps[0], minutes=tz_comps[1],
+                           seconds=tz_comps[2], microseconds=tz_comps[3])
 
             tzi = timezone(tzsign * td)
 
