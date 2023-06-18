@@ -4,14 +4,7 @@
   HOWTO Fetch Internet Resources Using The urllib Package
 ***********************************************************
 
-:Author: `Michael Foord <http://www.voidspace.org.uk/python/index.shtml>`_
-
-.. note::
-
-    There is a French translation of an earlier revision of this
-    HOWTO, available at `urllib2 - Le Manuel manquant
-    <http://www.voidspace.org.uk/python/articles/urllib2_francais.shtml>`_.
-
+:Author: `Michael Foord <https://agileabstractions.com/>`_
 
 
 Introduction
@@ -22,7 +15,7 @@ Introduction
     You may also find useful the following article on fetching web resources
     with Python:
 
-    * `Basic Authentication <http://www.voidspace.org.uk/python/articles/authentication.shtml>`_
+    * `Basic Authentication <https://web.archive.org/web/20201215133350/http://www.voidspace.org.uk/python/articles/authentication.shtml>`_
 
         A tutorial on *Basic Authentication*, with examples in Python.
 
@@ -86,7 +79,7 @@ response::
 
     import urllib.request
 
-    req = urllib.request.Request('http://www.voidspace.org.uk')
+    req = urllib.request.Request('http://python.org/')
     with urllib.request.urlopen(req) as response:
        the_page = response.read()
 
@@ -411,7 +404,7 @@ fetched, particularly the headers sent by the server. It is currently an
 :class:`http.client.HTTPMessage` instance.
 
 Typical headers include 'Content-length', 'Content-type', and so on. See the
-`Quick Reference to HTTP Headers <http://jkorpela.fi/http.html>`_
+`Quick Reference to HTTP Headers <https://jkorpela.fi/http.html>`_
 for a useful listing of HTTP headers with brief explanations of their meaning
 and use.
 
@@ -420,7 +413,7 @@ Openers and Handlers
 ====================
 
 When you fetch a URL you use an opener (an instance of the perhaps
-confusingly-named :class:`urllib.request.OpenerDirector`). Normally we have been using
+confusingly named :class:`urllib.request.OpenerDirector`). Normally we have been using
 the default opener - via ``urlopen`` - but you can create custom
 openers. Openers use handlers. All the "heavy lifting" is done by the
 handlers. Each handler knows how to open URLs for a particular URL scheme (http,
@@ -458,7 +451,7 @@ To illustrate creating and installing a handler we will use the
 ``HTTPBasicAuthHandler``. For a more detailed discussion of this subject --
 including an explanation of how Basic Authentication works - see the `Basic
 Authentication Tutorial
-<http://www.voidspace.org.uk/python/articles/authentication.shtml>`_.
+<https://web.archive.org/web/20201215133350/http://www.voidspace.org.uk/python/articles/authentication.shtml>`__.
 
 When authentication is required, the server sends a header (as well as the 401
 error code) requesting authentication.  This specifies the authentication scheme

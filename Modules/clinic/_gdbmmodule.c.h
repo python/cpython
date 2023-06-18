@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(_gdbm_gdbm_get__doc__,
 "get($self, key, default=None, /)\n"
 "--\n"
@@ -9,7 +15,7 @@ PyDoc_STRVAR(_gdbm_gdbm_get__doc__,
 "Get the value for key, or default if not present.");
 
 #define _GDBM_GDBM_GET_METHODDEF    \
-    {"get", (PyCFunction)(void(*)(void))_gdbm_gdbm_get, METH_FASTCALL, _gdbm_gdbm_get__doc__},
+    {"get", _PyCFunction_CAST(_gdbm_gdbm_get), METH_FASTCALL, _gdbm_gdbm_get__doc__},
 
 static PyObject *
 _gdbm_gdbm_get_impl(gdbmobject *self, PyObject *key, PyObject *default_value);
@@ -43,7 +49,7 @@ PyDoc_STRVAR(_gdbm_gdbm_setdefault__doc__,
 "Get value for key, or set it to default and return default if not present.");
 
 #define _GDBM_GDBM_SETDEFAULT_METHODDEF    \
-    {"setdefault", (PyCFunction)(void(*)(void))_gdbm_gdbm_setdefault, METH_FASTCALL, _gdbm_gdbm_setdefault__doc__},
+    {"setdefault", _PyCFunction_CAST(_gdbm_gdbm_setdefault), METH_FASTCALL, _gdbm_gdbm_setdefault__doc__},
 
 static PyObject *
 _gdbm_gdbm_setdefault_impl(gdbmobject *self, PyObject *key,
@@ -96,7 +102,7 @@ PyDoc_STRVAR(_gdbm_gdbm_keys__doc__,
 "Get a list of all keys in the database.");
 
 #define _GDBM_GDBM_KEYS_METHODDEF    \
-    {"keys", (PyCFunction)(void(*)(void))_gdbm_gdbm_keys, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _gdbm_gdbm_keys__doc__},
+    {"keys", _PyCFunction_CAST(_gdbm_gdbm_keys), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _gdbm_gdbm_keys__doc__},
 
 static PyObject *
 _gdbm_gdbm_keys_impl(gdbmobject *self, PyTypeObject *cls);
@@ -104,18 +110,11 @@ _gdbm_gdbm_keys_impl(gdbmobject *self, PyTypeObject *cls);
 static PyObject *
 _gdbm_gdbm_keys(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":keys", _keywords, 0};
-
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
-        goto exit;
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "keys() takes no arguments");
+        return NULL;
     }
-    return_value = _gdbm_gdbm_keys_impl(self, cls);
-
-exit:
-    return return_value;
+    return _gdbm_gdbm_keys_impl(self, cls);
 }
 
 PyDoc_STRVAR(_gdbm_gdbm_firstkey__doc__,
@@ -129,7 +128,7 @@ PyDoc_STRVAR(_gdbm_gdbm_firstkey__doc__,
 "hash values, and won\'t be sorted by the key values.");
 
 #define _GDBM_GDBM_FIRSTKEY_METHODDEF    \
-    {"firstkey", (PyCFunction)(void(*)(void))_gdbm_gdbm_firstkey, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _gdbm_gdbm_firstkey__doc__},
+    {"firstkey", _PyCFunction_CAST(_gdbm_gdbm_firstkey), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _gdbm_gdbm_firstkey__doc__},
 
 static PyObject *
 _gdbm_gdbm_firstkey_impl(gdbmobject *self, PyTypeObject *cls);
@@ -137,18 +136,11 @@ _gdbm_gdbm_firstkey_impl(gdbmobject *self, PyTypeObject *cls);
 static PyObject *
 _gdbm_gdbm_firstkey(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":firstkey", _keywords, 0};
-
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
-        goto exit;
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "firstkey() takes no arguments");
+        return NULL;
     }
-    return_value = _gdbm_gdbm_firstkey_impl(self, cls);
-
-exit:
-    return return_value;
+    return _gdbm_gdbm_firstkey_impl(self, cls);
 }
 
 PyDoc_STRVAR(_gdbm_gdbm_nextkey__doc__,
@@ -166,7 +158,7 @@ PyDoc_STRVAR(_gdbm_gdbm_nextkey__doc__,
 "          k = db.nextkey(k)");
 
 #define _GDBM_GDBM_NEXTKEY_METHODDEF    \
-    {"nextkey", (PyCFunction)(void(*)(void))_gdbm_gdbm_nextkey, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _gdbm_gdbm_nextkey__doc__},
+    {"nextkey", _PyCFunction_CAST(_gdbm_gdbm_nextkey), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _gdbm_gdbm_nextkey__doc__},
 
 static PyObject *
 _gdbm_gdbm_nextkey_impl(gdbmobject *self, PyTypeObject *cls, const char *key,
@@ -176,8 +168,19 @@ static PyObject *
 _gdbm_gdbm_nextkey(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
     static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {"s#:nextkey", _keywords, 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .format = "s#:nextkey",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     const char *key;
     Py_ssize_t key_length;
 
@@ -204,7 +207,7 @@ PyDoc_STRVAR(_gdbm_gdbm_reorganize__doc__,
 "kept and reused as new (key,value) pairs are added.");
 
 #define _GDBM_GDBM_REORGANIZE_METHODDEF    \
-    {"reorganize", (PyCFunction)(void(*)(void))_gdbm_gdbm_reorganize, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _gdbm_gdbm_reorganize__doc__},
+    {"reorganize", _PyCFunction_CAST(_gdbm_gdbm_reorganize), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _gdbm_gdbm_reorganize__doc__},
 
 static PyObject *
 _gdbm_gdbm_reorganize_impl(gdbmobject *self, PyTypeObject *cls);
@@ -212,18 +215,11 @@ _gdbm_gdbm_reorganize_impl(gdbmobject *self, PyTypeObject *cls);
 static PyObject *
 _gdbm_gdbm_reorganize(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":reorganize", _keywords, 0};
-
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
-        goto exit;
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "reorganize() takes no arguments");
+        return NULL;
     }
-    return_value = _gdbm_gdbm_reorganize_impl(self, cls);
-
-exit:
-    return return_value;
+    return _gdbm_gdbm_reorganize_impl(self, cls);
 }
 
 PyDoc_STRVAR(_gdbm_gdbm_sync__doc__,
@@ -236,7 +232,7 @@ PyDoc_STRVAR(_gdbm_gdbm_sync__doc__,
 "any unwritten data to be written to the disk.");
 
 #define _GDBM_GDBM_SYNC_METHODDEF    \
-    {"sync", (PyCFunction)(void(*)(void))_gdbm_gdbm_sync, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _gdbm_gdbm_sync__doc__},
+    {"sync", _PyCFunction_CAST(_gdbm_gdbm_sync), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _gdbm_gdbm_sync__doc__},
 
 static PyObject *
 _gdbm_gdbm_sync_impl(gdbmobject *self, PyTypeObject *cls);
@@ -244,18 +240,11 @@ _gdbm_gdbm_sync_impl(gdbmobject *self, PyTypeObject *cls);
 static PyObject *
 _gdbm_gdbm_sync(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":sync", _keywords, 0};
-
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
-        goto exit;
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "sync() takes no arguments");
+        return NULL;
     }
-    return_value = _gdbm_gdbm_sync_impl(self, cls);
-
-exit:
-    return return_value;
+    return _gdbm_gdbm_sync_impl(self, cls);
 }
 
 PyDoc_STRVAR(dbmopen__doc__,
@@ -286,7 +275,7 @@ PyDoc_STRVAR(dbmopen__doc__,
 "when the database has to be created.  It defaults to octal 0o666.");
 
 #define DBMOPEN_METHODDEF    \
-    {"open", (PyCFunction)(void(*)(void))dbmopen, METH_FASTCALL, dbmopen__doc__},
+    {"open", _PyCFunction_CAST(dbmopen), METH_FASTCALL, dbmopen__doc__},
 
 static PyObject *
 dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
@@ -333,4 +322,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=63c507f93d84a3a4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c6e721d82335adb3 input=a9049054013a1b77]*/

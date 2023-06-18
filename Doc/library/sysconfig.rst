@@ -25,7 +25,7 @@ Configuration variables
 
 A Python distribution contains a :file:`Makefile` and a :file:`pyconfig.h`
 header file that are necessary to build both the Python binary itself and
-third-party C extensions compiled using :mod:`distutils`.
+third-party C extensions compiled using ``setuptools``.
 
 :mod:`sysconfig` puts all variables found in these files in a dictionary that
 can be accessed using :func:`get_config_vars` or :func:`get_config_var`.
@@ -121,7 +121,7 @@ identifier.  Python currently uses eight paths:
 
    Return the default scheme name for the current platform.
 
-   .. versionchanged:: 3.10
+   .. versionadded:: 3.10
       This function was previously named ``_get_default_scheme()`` and
       considered an implementation detail.
 

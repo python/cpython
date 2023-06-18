@@ -1,6 +1,0 @@
-Move the private ``_PyFrameEvalFunction`` type, and private
-``_PyInterpreterState_GetEvalFrameFunc()`` and
-``_PyInterpreterState_SetEvalFrameFunc()`` functions to the internal C API. The
-``_PyFrameEvalFunction`` callback function type now uses the
-``_PyInterpreterFrame`` type which is part of the internal C API. Patch by
-Victor Stinner.

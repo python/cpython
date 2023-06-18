@@ -484,7 +484,7 @@ class CommonTest(GenericTest):
         # invalid UTF-8 name. Windows allows creating a directory with an
         # arbitrary bytes name, but fails to enter this directory
         # (when the bytes name is used).
-        and sys.platform not in ('win32', 'darwin', 'emscripten')):
+        and sys.platform not in ('win32', 'darwin', 'emscripten', 'wasi')):
             name = os_helper.TESTFN_UNDECODABLE
         elif os_helper.TESTFN_NONASCII:
             name = os_helper.TESTFN_NONASCII

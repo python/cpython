@@ -1,1 +1,0 @@
-Fix thread safety of :meth:`zipfile._SharedFile.tell` to avoid a "zipfile.BadZipFile: Bad CRC-32 for file" exception when reading a :class:`ZipFile` from multiple threads.

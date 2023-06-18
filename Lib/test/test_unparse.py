@@ -1,4 +1,4 @@
-"""Tests for the unparse.py script in the Tools/parser directory."""
+"""Tests for ast.unparse."""
 
 import unittest
 import test.support
@@ -6,6 +6,7 @@ import pathlib
 import random
 import tokenize
 import ast
+from test.support.ast_helper import ASTTestMixin
 
 
 def read_pyfile(filename):
@@ -128,10 +129,7 @@ docstring_prefixes = (
     "async def foo():\n    ",
 )
 
-class ASTTestCase(unittest.TestCase):
-    def assertASTEqual(self, ast1, ast2):
-        self.assertEqual(ast.dump(ast1), ast.dump(ast2))
-
+class ASTTestCase(ASTTestMixin, unittest.TestCase):
     def check_ast_roundtrip(self, code1, **kwargs):
         with self.subTest(code1=code1, ast_parse_kwargs=kwargs):
             ast1 = ast.parse(code1, **kwargs)
@@ -386,6 +384,12 @@ class UnparseTestCase(ASTTestCase):
     def test_invalid_yield_from(self):
         self.check_invalid(ast.YieldFrom(value=None))
 
+    def test_import_from_level_none(self):
+        tree = ast.ImportFrom(module='mod', names=[ast.alias(name='x')])
+        self.assertEqual(ast.unparse(tree), "from mod import x")
+        tree = ast.ImportFrom(module='mod', names=[ast.alias(name='x')], level=None)
+        self.assertEqual(ast.unparse(tree), "from mod import x")
+
     def test_docstrings(self):
         docstrings = (
             'this ends with double quote"',
@@ -612,11 +616,86 @@ class CosmeticTestCase(ASTTestCase):
                     self.check_src_roundtrip(source.format(target=target))
 
     def test_star_expr_assign_target_multiple(self):
+        self.check_src_roundtrip("() = []")
+        self.check_src_roundtrip("[] = ()")
+        self.check_src_roundtrip("() = [a] = c, = [d] = e, f = () = g = h")
         self.check_src_roundtrip("a = b = c = d")
         self.check_src_roundtrip("a, b = c, d = e, f = g")
         self.check_src_roundtrip("[a, b] = [c, d] = [e, f] = g")
         self.check_src_roundtrip("a, b = [c, d] = e, f = g")
 
+
+class ManualASTCreationTestCase(unittest.TestCase):
+    """Test that AST nodes created without a type_params field unparse correctly."""
+
+    def test_class(self):
+        node = ast.ClassDef(name="X", bases=[], keywords=[], body=[ast.Pass()], decorator_list=[])
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "class X:\n    pass")
+
+    def test_class_with_type_params(self):
+        node = ast.ClassDef(name="X", bases=[], keywords=[], body=[ast.Pass()], decorator_list=[],
+                             type_params=[ast.TypeVar("T")])
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "class X[T]:\n    pass")
+
+    def test_function(self):
+        node = ast.FunctionDef(
+            name="f",
+            args=ast.arguments(posonlyargs=[], args=[], vararg=None, kwonlyargs=[], kw_defaults=[], kwarg=None, defaults=[]),
+            body=[ast.Pass()],
+            decorator_list=[],
+            returns=None,
+        )
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "def f():\n    pass")
+
+    def test_function_with_type_params(self):
+        node = ast.FunctionDef(
+            name="f",
+            args=ast.arguments(posonlyargs=[], args=[], vararg=None, kwonlyargs=[], kw_defaults=[], kwarg=None, defaults=[]),
+            body=[ast.Pass()],
+            decorator_list=[],
+            returns=None,
+            type_params=[ast.TypeVar("T")],
+        )
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "def f[T]():\n    pass")
+
+    def test_function_with_type_params_and_bound(self):
+        node = ast.FunctionDef(
+            name="f",
+            args=ast.arguments(posonlyargs=[], args=[], vararg=None, kwonlyargs=[], kw_defaults=[], kwarg=None, defaults=[]),
+            body=[ast.Pass()],
+            decorator_list=[],
+            returns=None,
+            type_params=[ast.TypeVar("T", bound=ast.Name("int"))],
+        )
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "def f[T: int]():\n    pass")
+
+    def test_async_function(self):
+        node = ast.AsyncFunctionDef(
+            name="f",
+            args=ast.arguments(posonlyargs=[], args=[], vararg=None, kwonlyargs=[], kw_defaults=[], kwarg=None, defaults=[]),
+            body=[ast.Pass()],
+            decorator_list=[],
+            returns=None,
+        )
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "async def f():\n    pass")
+
+    def test_async_function_with_type_params(self):
+        node = ast.AsyncFunctionDef(
+            name="f",
+            args=ast.arguments(posonlyargs=[], args=[], vararg=None, kwonlyargs=[], kw_defaults=[], kwarg=None, defaults=[]),
+            body=[ast.Pass()],
+            decorator_list=[],
+            returns=None,
+            type_params=[ast.TypeVar("T")],
+        )
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "async def f[T]():\n    pass")
 
 
 class DirectoryTestCase(ASTTestCase):

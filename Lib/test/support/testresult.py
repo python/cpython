@@ -18,10 +18,13 @@ class RegressionTestResult(unittest.TextTestResult):
         self.buffer = True
         if self.USE_XML:
             from xml.etree import ElementTree as ET
-            from datetime import datetime
+            from datetime import datetime, UTC
             self.__ET = ET
             self.__suite = ET.Element('testsuite')
-            self.__suite.set('start', datetime.utcnow().isoformat(' '))
+            self.__suite.set('start',
+                             datetime.now(UTC)
+                                     .replace(tzinfo=None)
+                                     .isoformat(' '))
             self.__e = None
         self.__start_time = None
 
@@ -145,11 +148,7 @@ def get_test_runner_class(verbosity, buffer=False):
         return functools.partial(unittest.TextTestRunner,
                                  resultclass=RegressionTestResult,
                                  buffer=buffer,
-                                 verbosity=verbosity,
-                                 # disable descriptions so errors are
-                                 # readily traceable. bpo-46126
-                                 descriptions=False,
-                                 )
+                                 verbosity=verbosity)
     return functools.partial(QuietRegressionTestRunner, buffer=buffer)
 
 def get_test_runner(stream, verbosity, capture_output=False):

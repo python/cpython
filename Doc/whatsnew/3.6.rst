@@ -238,7 +238,7 @@ and the ``__annotations__`` attribute.
       and Guido van Rossum. Implemented by Ivan Levkivskyi.
 
    Tools that use or will use the new syntax:
-   `mypy <http://www.mypy-lang.org/>`_,
+   `mypy <https://www.mypy-lang.org/>`_,
    `pytype <https://github.com/google/pytype>`_, PyCharm, etc.
 
 
@@ -960,8 +960,8 @@ contextlib
 
 The :class:`contextlib.AbstractContextManager` class has been added to
 provide an abstract base class for context managers.  It provides a
-sensible default implementation for `__enter__()` which returns
-``self`` and leaves `__exit__()` an abstract method.  A matching
+sensible default implementation for ``__enter__()`` which returns
+``self`` and leaves ``__exit__()`` an abstract method.  A matching
 class has been added to the :mod:`typing` module as
 :class:`typing.ContextManager`.
 (Contributed by Brett Cannon in :issue:`25609`.)
@@ -1012,7 +1012,7 @@ distutils
 ---------
 
 The ``default_format`` attribute has been removed from
-:class:`distutils.command.sdist.sdist` and the ``formats``
+``distutils.command.sdist.sdist`` and the ``formats``
 attribute defaults to ``['gztar']``. Although not anticipated,
 any code relying on the presence of ``default_format`` may
 need to be adapted. See :issue:`27819` for more details.
@@ -1388,7 +1388,7 @@ are treated as punctuation.
 site
 ----
 
-When specifying paths to add to :attr:`sys.path` in a `.pth` file,
+When specifying paths to add to :attr:`sys.path` in a ``.pth`` file,
 you may now specify file paths on top of directories (e.g. zip files).
 (Contributed by Wolfgang Langner in :issue:`26587`).
 
@@ -1520,7 +1520,7 @@ rather than the version that is being emulated for the process
 telnetlib
 ---------
 
-:class:`~telnetlib.Telnet` is now a context manager (contributed by
+:class:`!telnetlib.Telnet` is now a context manager (contributed by
 Stéphane Wirtel in :issue:`25485`).
 
 
@@ -1644,7 +1644,7 @@ unicodedata
 -----------
 
 The :mod:`unicodedata` module now uses data from `Unicode 9.0.0
-<http://unicode.org/versions/Unicode9.0.0/>`_.
+<https://unicode.org/versions/Unicode9.0.0/>`_.
 (Contributed by Benjamin Peterson.)
 
 
@@ -1986,7 +1986,7 @@ distutils
 ~~~~~~~~~
 
 The undocumented ``extra_path`` argument to the
-:class:`~distutils.Distribution` constructor is now considered deprecated
+``distutils.Distribution`` constructor is now considered deprecated
 and will raise a warning if set.   Support for this parameter will be
 removed in a future Python release.  See :issue:`27919` for details.
 
@@ -2049,8 +2049,10 @@ of OpenSSL. Other features are deprecated in favor of a different API.
 tkinter
 ~~~~~~~
 
-The :mod:`tkinter.tix` module is now deprecated.  :mod:`tkinter` users
+The :mod:`!tkinter.tix` module is now deprecated.  :mod:`tkinter` users
 should use :mod:`tkinter.ttk` instead.
+
+.. _whatsnew36-venv:
 
 venv
 ~~~~
@@ -2117,7 +2119,8 @@ API and Feature Removals
   platform specific ``Lib/plat-*/`` directories, but were chronically out of
   date, inconsistently available across platforms, and unmaintained.  The
   script that created these modules is still available in the source
-  distribution at :source:`Tools/scripts/h2py.py`.
+  distribution at `Tools/scripts/h2py.py
+  <https://github.com/python/cpython/blob/v3.6.15/Tools/scripts/h2py.py>`_.
 
 * The deprecated ``asynchat.fifo`` class has been removed.
 
@@ -2177,12 +2180,12 @@ Changes in the Python API
   now raises :exc:`ValueError` for out-of-range values, rather than
   returning :const:`None`.  See :issue:`20059`.
 
-* The :mod:`imp` module now raises a :exc:`DeprecationWarning` instead of
+* The :mod:`!imp` module now raises a :exc:`DeprecationWarning` instead of
   :exc:`PendingDeprecationWarning`.
 
 * The following modules have had missing APIs added to their :attr:`__all__`
   attributes to match the documented APIs:
-  :mod:`calendar`, :mod:`cgi`, :mod:`csv`,
+  :mod:`calendar`, :mod:`!cgi`, :mod:`csv`,
   :mod:`~xml.etree.ElementTree`, :mod:`enum`,
   :mod:`fileinput`, :mod:`ftplib`, :mod:`logging`, :mod:`mailbox`,
   :mod:`mimetypes`, :mod:`optparse`, :mod:`plistlib`, :mod:`smtpd`,
@@ -2208,7 +2211,7 @@ Changes in the Python API
   the exception will stop a single-threaded server. (Contributed by
   Martin Panter in :issue:`23430`.)
 
-* :func:`spwd.getspnam` now raises a :exc:`PermissionError` instead of
+* :func:`!spwd.getspnam` now raises a :exc:`PermissionError` instead of
   :exc:`KeyError` if the user doesn't have privileges.
 
 * The :meth:`socket.socket.close` method now raises an exception if
@@ -2242,7 +2245,7 @@ Changes in the Python API
   accepting additional keyword arguments will need to adjust their calls to
   :meth:`type.__new__` (whether direct or via :class:`super`) accordingly.
 
-* In :class:`distutils.command.sdist.sdist`, the ``default_format``
+* In ``distutils.command.sdist.sdist``, the ``default_format``
   attribute has been removed and is no longer honored. Instead, the
   gzipped tarfile format is the default on all platforms and no
   platform-specific selection is made.
@@ -2271,7 +2274,7 @@ Changes in the Python API
   :class:`~collections.OrderedDict`.
   (Contributed by Steve Holden in :issue:`27842`.)
 
-* The :const:`crypt.METHOD_CRYPT` will no longer be added to ``crypt.methods``
+* The :const:`!crypt.METHOD_CRYPT` will no longer be added to ``crypt.methods``
   if unsupported by the platform.
   (Contributed by Victor Stinner in :issue:`25287`.)
 
@@ -2452,7 +2455,7 @@ query parameter separators in :func:`urllib.parse.parse_qs` and
 :func:`urllib.parse.parse_qsl`.  Due to security concerns, and to conform with
 newer W3C recommendations, this has been changed to allow only a single
 separator key, with ``&`` as the default.  This change also affects
-:func:`cgi.parse` and :func:`cgi.parse_multipart` as they use the affected
+:func:`!cgi.parse` and :func:`!cgi.parse_multipart` as they use the affected
 functions internally. For more details, please see their respective
 documentation.
 (Contributed by Adam Goldschmidt, Senthil Kumaran and Ken Jin in :issue:`42967`.)

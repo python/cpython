@@ -68,7 +68,7 @@
 #include "cpython/classobject.h"
 #include "fileobject.h"
 #include "pycapsule.h"
-#include "code.h"
+#include "cpython/code.h"
 #include "pyframe.h"
 #include "traceback.h"
 #include "sliceobject.h"
@@ -105,5 +105,6 @@
 #include "fileutils.h"
 #include "cpython/pyfpe.h"
 #include "tracemalloc.h"
+#include "cpython/optimizer.h"
 
 #endif /* !Py_PYTHON_H */

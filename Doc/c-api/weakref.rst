@@ -35,7 +35,7 @@ as much as it can.
    callable object that receives notification when *ob* is garbage collected; it
    should accept a single parameter, which will be the weak reference object
    itself. *callback* may also be ``None`` or ``NULL``.  If *ob* is not a
-   weakly-referencable object, or if *callback* is not callable, ``None``, or
+   weakly referencable object, or if *callback* is not callable, ``None``, or
    ``NULL``, this will return ``NULL`` and raise :exc:`TypeError`.
 
 
@@ -47,7 +47,7 @@ as much as it can.
    be a callable object that receives notification when *ob* is garbage
    collected; it should accept a single parameter, which will be the weak
    reference object itself. *callback* may also be ``None`` or ``NULL``.  If *ob*
-   is not a weakly-referencable object, or if *callback* is not callable,
+   is not a weakly referencable object, or if *callback* is not callable,
    ``None``, or ``NULL``, this will return ``NULL`` and raise :exc:`TypeError`.
 
 
@@ -66,5 +66,14 @@ as much as it can.
 
 .. c:function:: PyObject* PyWeakref_GET_OBJECT(PyObject *ref)
 
-   Similar to :c:func:`PyWeakref_GetObject`, but implemented as a macro that does no
-   error checking.
+   Similar to :c:func:`PyWeakref_GetObject`, but does no error checking.
+
+
+.. c:function:: void PyObject_ClearWeakRefs(PyObject *object)
+
+   This function is called by the :c:member:`~PyTypeObject.tp_dealloc` handler
+   to clear weak references.
+
+   This iterates through the weak references for *object* and calls callbacks
+   for those references which have one. It returns when all callbacks have
+   been attempted.
