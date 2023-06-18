@@ -70,6 +70,7 @@ import sys
 import sysconfig
 import time
 import tokenize
+import typing
 import urllib.parse
 import warnings
 from collections import deque
@@ -1830,7 +1831,6 @@ class Helper:
         'async': ('async', ''),
         'await': ('await', ''),
         'break': ('break', 'while for'),
-        'case':  'match',
         'class': ('class', 'CLASSES SPECIALMETHODS'),
         'continue': ('continue', 'while for'),
         'def': ('function', ''),
@@ -1847,7 +1847,6 @@ class Helper:
         'in': ('in', 'SEQUENCEMETHODS'),
         'is': 'COMPARISON',
         'lambda': ('lambda', 'FUNCTIONS'),
-        'match': ('match', ''),
         'nonlocal': ('nonlocal', 'global NAMESPACES'),
         'not': 'BOOLEAN',
         'or': 'BOOLEAN',
@@ -1858,6 +1857,12 @@ class Helper:
         'while': ('while', 'break continue if TRUTHVALUE'),
         'with': ('with', 'CONTEXTMANAGERS EXCEPTIONS yield'),
         'yield': ('yield', ''),
+    }
+    soft_keywords = {
+        '_': '',
+        'case': 'match',
+        'match': ('match', ''),
+        'type': ''
     }
     # Either add symbols to this dictionary or to the symbols dictionary
     # directly: Whichever is easier. They are merged later.
@@ -2065,6 +2070,10 @@ has the same effect as typing a particular string at the help> prompt.
                 # special case these keywords since they are objects too
                 doc(eval(request), 'Help on %s:', is_cli=is_cli)
             elif request in self.keywords: self.showtopic(request)
+            elif request == 'type':
+                # special case for type alias
+                doc(typing.TypeAliasType, 'Help on %s:', is_cli=is_cli)
+            elif request in self.soft_keywords: self.showtopic(request)
             elif request in self.topics: self.showtopic(request)
             elif request: doc(request, 'Help on %s:', output=self._output, is_cli=is_cli)
             else: doc(str, 'Help on %s:', output=self._output, is_cli=is_cli)
@@ -2133,7 +2142,8 @@ Sorry, topic and keyword documentation is not available because the
 module "pydoc_data.topics" could not be found.
 ''')
             return
-        target = self.topics.get(topic, self.keywords.get(topic))
+        target = self.topics.get(topic, self.keywords.get(topic) or
+                                        self.soft_keywords.get(topic))
         if not target:
             self.output.write('no documentation found for %s\n' % repr(topic))
             return
