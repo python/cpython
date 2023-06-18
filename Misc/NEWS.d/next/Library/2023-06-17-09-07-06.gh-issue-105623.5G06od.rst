@@ -1,1 +1,2 @@
-Fix performance degradation in logging logging RotatingFileHandler.
+Fix performance degradation in
+:class:`logging.handlers.RotatingFileHandler`. Patch by Craig Robson.
