@@ -286,11 +286,19 @@ typedef struct {
     int instrs_executed;
 } UOpOptimizerObject;
 
+const int MAX_TRACE_LENGTH = 16;
+
 typedef struct {
-    _PyExecutorObject executor;
+    int opcode;
+    int oparg;
+} uop_instruction;
+
+typedef struct {
+    _PyExecutorObject executor;  // Base
     UOpOptimizerObject *optimizer;
-    uint16_t oparg;  // The LOAD_FAST oparg
-    _Py_CODEUNIT *next_instr;  // The instruction after the LOAD_FAST
+    uop_instruction trace[MAX_TRACE_LENGTH];  // TODO: variable length
+    // TODO: drop the rest
+    _Py_CODEUNIT *next_instr;  // The instruction after the trace
 } UOpExecutorObject;
 
 static void
@@ -312,10 +320,11 @@ static _PyInterpreterFrame *
 uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
     UOpExecutorObject *self = (UOpExecutorObject *)executor;
-    // Hardcode LOAD_FAST with oparg from self->oparg
-    fprintf(stderr, "LOAD_FAST %d\n", (int)self->oparg);
+    assert(self->trace[0].opcode == LOAD_FAST);
+    int oparg = self->trace[0].oparg;
+    fprintf(stderr, "LOAD_FAST %d\n", oparg);
     self->optimizer->instrs_executed++;
-    PyObject *value = frame->localsplus[self->oparg];
+    PyObject *value = frame->localsplus[oparg];
     assert(value != 0);
     Py_INCREF(value);
     *stack_pointer++ = value;
@@ -326,16 +335,36 @@ uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **
 }
 
 static int
+translate_bytecode_to_trace(_Py_CODEUNIT *instr, uop_instruction *trace, int max_length)
+{
+    int trace_length = 0;
+    while (trace_length < max_length) {
+        if (trace_length >= 1) {
+            break;  // Temporarily, only handle one instruction
+        }
+        if (instr->op.code != LOAD_FAST) {
+            break;  // Temporarily, only handle LOAD_FAST
+        }
+        trace[trace_length].opcode = instr->op.code;
+        trace[trace_length].oparg = instr->op.arg;
+        instr++;
+        trace_length++;
+    }
+    return trace_length;
+}
+
+static int
 uop_optimize(
     _PyOptimizerObject *self,
     PyCodeObject *code,
     _Py_CODEUNIT *instr,
     _PyExecutorObject **exec_ptr)
 {
-    // We know 'instr' is a jump target so if the LOAD_FAST
-    // has an EXTENDED_ARG this test will fail.
-    if (instr->op.code != LOAD_FAST) {
-        return 0;
+    uop_instruction trace[MAX_TRACE_LENGTH];
+    int trace_length = translate_bytecode_to_trace(instr, trace, MAX_TRACE_LENGTH);
+    if (trace_length <= 0) {
+        // Error or nothing translated
+        return trace_length;
     }
     UOpExecutorObject *executor = (UOpExecutorObject *)_PyObject_New(&UOpExecutor_Type);
     if (executor == NULL) {
@@ -344,7 +373,7 @@ uop_optimize(
     executor->executor.execute = uop_execute;
     Py_INCREF(self);
     executor->optimizer = (UOpOptimizerObject *)self;
-    executor->oparg = instr->op.arg;
+    memcpy(executor->trace, trace, trace_length * sizeof(uop_instruction));
     executor->next_instr = instr + 1;  // Skip the LOAD_FAST!
     *exec_ptr = (_PyExecutorObject *)executor;
     return 1;
