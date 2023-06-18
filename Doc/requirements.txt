@@ -10,7 +10,6 @@ sphinx==4.5.0
 
 blurb
 
-sphinx-lint==0.6.7
 sphinxext-opengraph==0.7.5
 
 # The theme used by the documentation is stored separately, so we need
