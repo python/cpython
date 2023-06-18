@@ -1435,7 +1435,7 @@ class PydocUrlHandlerTest(PydocBaseTest):
 class TestHelper(unittest.TestCase):
     def test_keywords(self):
         self.assertEqual(sorted(pydoc.Helper.keywords),
-                         sorted(keyword.kwlist))
+                         sorted(keyword.kwlist + ['match', 'case']))
 
 
 class PydocWithMetaClasses(unittest.TestCase):
