@@ -27,7 +27,7 @@ DEFAULT_METADATA_OUTPUT = os.path.relpath(
     os.path.join(ROOT, "Python/opcode_metadata.h")
 )
 DEFAULT_PYMETADATA_OUTPUT = os.path.relpath(
-    os.path.join(ROOT, "LIB/_opcode_metadata.py")
+    os.path.join(ROOT, "Lib/_opcode_metadata.py")
 )
 BEGIN_MARKER = "// BEGIN BYTECODES //"
 END_MARKER = "// END BYTECODES //"
