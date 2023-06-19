@@ -74,9 +74,9 @@ def get_python_module_dict(filename):
     return mod
 
 def main(opcode_py, outfile='Include/opcode.h',
+         _opcode_metadata_py='Lib/_opcode_metadata.py',
          internaloutfile='Include/internal/pycore_opcode.h',
-         intrinsicoutfile='Include/internal/pycore_intrinsics.h',
-         _opcode_metadata_py='Lib/_opcode_metadata.py'):
+         intrinsicoutfile='Include/internal/pycore_intrinsics.h'):
 
     _opcode_metadata = get_python_module_dict(_opcode_metadata_py)
 
