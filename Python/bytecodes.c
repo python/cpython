@@ -1740,6 +1740,9 @@ dummy_func(
             LOAD_ATTR_METHOD_WITH_VALUES,
             LOAD_ATTR_METHOD_NO_DICT,
             LOAD_ATTR_METHOD_LAZY_DICT,
+            LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES,
+            LOAD_ATTR_NONDESCRIPTOR_NO_DICT,
+            LOAD_ATTR_NONDESCRIPTOR_LAZY_DICT,
         };
 
         inst(LOAD_ATTR, (unused/9, owner -- res2 if (oparg & 1), res)) {
@@ -2625,6 +2628,51 @@ dummy_func(
             res2 = Py_NewRef(descr);
             res = self;
             assert(oparg & 1);
+        }
+
+        inst(LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES, (unused/1, type_version/2, keys_version/2, descr/4, self -- res2 if (oparg & 1), res)) {
+            PyTypeObject *self_cls = Py_TYPE(self);
+            assert(type_version != 0);
+            DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_ATTR);
+            assert(self_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(self);
+            DEOPT_IF(!_PyDictOrValues_IsValues(dorv), LOAD_ATTR);
+            PyHeapTypeObject *self_heap_type = (PyHeapTypeObject *)self_cls;
+            DEOPT_IF(self_heap_type->ht_cached_keys->dk_version !=
+                     keys_version, LOAD_ATTR);
+            STAT_INC(LOAD_ATTR, hit);
+            assert(descr != NULL);
+            Py_DECREF(self);
+            res = Py_NewRef(descr);
+            assert((oparg & 1) == 0);
+        }
+
+        inst(LOAD_ATTR_NONDESCRIPTOR_NO_DICT, (unused/1, type_version/2, unused/2, descr/4, self -- res2 if (oparg & 1), res)) {
+            PyTypeObject *self_cls = Py_TYPE(self);
+            assert(type_version != 0);
+            DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_ATTR);
+            assert(self_cls->tp_dictoffset == 0);
+            STAT_INC(LOAD_ATTR, hit);
+            assert(descr != NULL);
+            Py_DECREF(self);
+            res = Py_NewRef(descr);
+            assert((oparg & 1) == 0);
+        }
+
+        inst(LOAD_ATTR_NONDESCRIPTOR_LAZY_DICT, (unused/1, type_version/2, unused/2, descr/4, self -- res2 if (oparg & 1), res)) {
+            PyTypeObject *self_cls = Py_TYPE(self);
+            assert(type_version != 0);
+            DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_ATTR);
+            Py_ssize_t dictoffset = self_cls->tp_dictoffset;
+            assert(dictoffset > 0);
+            PyObject *dict = *(PyObject **)((char *)self + dictoffset);
+            /* This object has a __dict__, just not yet created */
+            DEOPT_IF(dict != NULL, LOAD_ATTR);
+            STAT_INC(LOAD_ATTR, hit);
+            assert(descr != NULL);
+            Py_DECREF(self);
+            res = Py_NewRef(descr);
+            assert((oparg & 1) == 0);
         }
 
         inst(LOAD_ATTR_METHOD_LAZY_DICT, (unused/1, type_version/2, unused/2, descr/4, self -- res2 if (oparg & 1), res)) {
