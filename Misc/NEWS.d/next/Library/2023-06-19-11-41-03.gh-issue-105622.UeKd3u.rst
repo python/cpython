@@ -1,0 +1,3 @@
+Update :func:`http.client.parse_headers` to use the default email policy
+:data:`email.policy.default` when parsing headers. Previously no email
+policy was specified which is not reccomended.

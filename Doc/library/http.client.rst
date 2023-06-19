@@ -124,8 +124,9 @@ This module provides the following function:
 .. function:: parse_headers(fp)
 
    Parse the headers from a file pointer *fp* representing a HTTP
-   request/response. The file has to be a :class:`BufferedIOBase` reader
-   (i.e. not text) and must provide a valid :rfc:`2822` style header.
+   request/response according to the the default email policy
+   :data:`email.policy.default`. The file has to be a :class:`BufferedIOBase`
+   reader (i.e. not text) and must provide a valid :rfc:`2822` style header.
 
    This function returns an instance of :class:`http.client.HTTPMessage`
    that holds the header fields, but no payload
