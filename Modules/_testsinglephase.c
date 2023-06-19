@@ -140,7 +140,9 @@ init_module(PyObject *module, module_state *state)
     if (initialized == NULL) {
         return -1;
     }
-    if (PyModule_AddObjectRef(module, "_initialized", initialized) != 0) {
+    int rc = PyModule_AddObjectRef(module, "_module_initialized", initialized);
+    Py_DECREF(initialized);
+    if (rc < 0) {
         return -1;
     }
 
@@ -148,13 +150,13 @@ init_module(PyObject *module, module_state *state)
 }
 
 
-PyDoc_STRVAR(common_initialized_doc,
-"initialized()\n\
+PyDoc_STRVAR(common_state_initialized_doc,
+"state_initialized()\n\
 \n\
-Return the seconds-since-epoch when the module was initialized.");
+Return the seconds-since-epoch when the module state was initialized.");
 
 static PyObject *
-common_initialized(PyObject *self, PyObject *Py_UNUSED(ignored))
+common_state_initialized(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     module_state *state = get_module_state(self);
     if (state == NULL) {
@@ -164,9 +166,9 @@ common_initialized(PyObject *self, PyObject *Py_UNUSED(ignored))
     return PyFloat_FromDouble(d);
 }
 
-#define INITIALIZED_METHODDEF \
-    {"initialized", common_initialized, METH_NOARGS, \
-     common_initialized_doc}
+#define STATE_INITIALIZED_METHODDEF \
+    {"state_initialized", common_state_initialized, METH_NOARGS, \
+     common_state_initialized_doc}
 
 
 PyDoc_STRVAR(common_look_up_self_doc,
@@ -246,6 +248,25 @@ basic__clear_globals(PyObject *self, PyObject *Py_UNUSED(ignored))
      basic__clear_globals_doc}
 
 
+PyDoc_STRVAR(basic__clear_module_state_doc, "_clear_module_state()\n\
+\n\
+Free the module state and set it to uninitialized.");
+
+static PyObject *
+basic__clear_module_state(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    module_state *state = get_module_state(self);
+    if (state != NULL) {
+        clear_state(state);
+    }
+    Py_RETURN_NONE;
+}
+
+#define _CLEAR_MODULE_STATE_METHODDEF \
+    {"_clear_module_state", basic__clear_module_state, METH_NOARGS, \
+     basic__clear_module_state_doc}
+
+
 /*********************************************/
 /* the _testsinglephase module (and aliases) */
 /*********************************************/
@@ -265,7 +286,7 @@ basic__clear_globals(PyObject *self, PyObject *Py_UNUSED(ignored))
 static PyMethodDef TestMethods_Basic[] = {
     LOOK_UP_SELF_METHODDEF,
     SUM_METHODDEF,
-    INITIALIZED_METHODDEF,
+    STATE_INITIALIZED_METHODDEF,
     INITIALIZED_COUNT_METHODDEF,
     _CLEAR_GLOBALS_METHODDEF,
     {NULL, NULL}           /* sentinel */
@@ -360,7 +381,7 @@ PyInit__testsinglephase_basic_copy(void)
 static PyMethodDef TestMethods_Reinit[] = {
     LOOK_UP_SELF_METHODDEF,
     SUM_METHODDEF,
-    INITIALIZED_METHODDEF,
+    STATE_INITIALIZED_METHODDEF,
     {NULL, NULL}           /* sentinel */
 };
 
@@ -406,7 +427,7 @@ finally:
 /* the _testsinglephase_with_state module */
 /******************************************/
 
-/* This ia less typical of legacy extensions in the wild:
+/* This is less typical of legacy extensions in the wild:
    - single-phase init  (same as _testsinglephase above)
    - has some module state
    - supports repeated initialization
@@ -421,7 +442,8 @@ finally:
 static PyMethodDef TestMethods_WithState[] = {
     LOOK_UP_SELF_METHODDEF,
     SUM_METHODDEF,
-    INITIALIZED_METHODDEF,
+    STATE_INITIALIZED_METHODDEF,
+    _CLEAR_MODULE_STATE_METHODDEF,
     {NULL, NULL}           /* sentinel */
 };
 

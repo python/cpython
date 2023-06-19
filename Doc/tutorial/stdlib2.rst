@@ -394,7 +394,7 @@ point::
 
    >>> sum([Decimal('0.1')]*10) == Decimal('1.0')
    True
-   >>> sum([0.1]*10) == 1.0
+   >>> 0.1 + 0.1 + 0.1 + 0.1 + 0.1 + 0.1 + 0.1 + 0.1 + 0.1 + 0.1 == 1.0
    False
 
 The :mod:`decimal` module provides arithmetic with as much precision as needed::

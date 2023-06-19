@@ -13,7 +13,6 @@ import socket
 from test.support import verbose, run_with_tz, run_with_locale, cpython_only
 from test.support import hashlib_helper
 from test.support import threading_helper
-from test.support import warnings_helper
 import unittest
 from unittest import mock
 from datetime import datetime, timezone, timedelta
@@ -751,7 +750,6 @@ class ThreadedNetworkedTests(unittest.TestCase):
                 typ, data = client.login('user', 'pass')
                 self.assertEqual(typ, 'OK')
                 client.enable('UTF8=ACCEPT')
-                pass
 
     @threading_helper.reap_threads
     def test_enable_UTF8_True_append(self):

@@ -531,7 +531,17 @@ PyConfig
 
    .. c:member:: PyWideStringList argv
 
-      Command line arguments: :data:`sys.argv`.
+      .. index::
+         single: main()
+         single: argv (in module sys)
+
+      Set :data:`sys.argv` command line arguments based on
+      :c:member:`~PyConfig.argv`.  These parameters are similar to those passed
+      to the program's :c:func:`main` function with the difference that the
+      first entry should refer to the script file to be executed rather than
+      the executable hosting the Python interpreter.  If there isn't a script
+      that will be run, the first entry in :c:member:`~PyConfig.argv` can be an
+      empty string.
 
       Set :c:member:`~PyConfig.parse_argv` to ``1`` to parse
       :c:member:`~PyConfig.argv` the same way the regular Python parses Python
@@ -572,6 +582,8 @@ PyConfig
 
       Part of the :ref:`Python Path Configuration <init-path-config>` output.
 
+      See also :c:member:`PyConfig.exec_prefix`.
+
    .. c:member:: wchar_t* base_executable
 
       Python base executable: :data:`sys._base_executable`.
@@ -584,6 +596,8 @@ PyConfig
 
       Part of the :ref:`Python Path Configuration <init-path-config>` output.
 
+      See also :c:member:`PyConfig.executable`.
+
    .. c:member:: wchar_t* base_prefix
 
       :data:`sys.base_prefix`.
@@ -591,6 +605,8 @@ PyConfig
       Default: ``NULL``.
 
       Part of the :ref:`Python Path Configuration <init-path-config>` output.
+
+      See also :c:member:`PyConfig.prefix`.
 
    .. c:member:: int buffered_stdio
 
@@ -700,6 +716,8 @@ PyConfig
 
       Part of the :ref:`Python Path Configuration <init-path-config>` output.
 
+      See also :c:member:`PyConfig.base_exec_prefix`.
+
    .. c:member:: wchar_t* executable
 
       The absolute path of the executable binary for the Python interpreter:
@@ -708,6 +726,8 @@ PyConfig
       Default: ``NULL``.
 
       Part of the :ref:`Python Path Configuration <init-path-config>` output.
+
+      See also :c:member:`PyConfig.base_executable`.
 
    .. c:member:: int faulthandler
 
@@ -780,10 +800,8 @@ PyConfig
 
    .. c:member:: wchar_t* home
 
-      Python home directory.
-
-      If :c:func:`Py_SetPythonHome` has been called, use its argument if it is
-      not ``NULL``.
+      Set the default Python "home" directory, that is, the location of the
+      standard Python libraries (see :envvar:`PYTHONHOME`).
 
       Set by the :envvar:`PYTHONHOME` environment variable.
 
@@ -1029,12 +1047,13 @@ PyConfig
 
       Part of the :ref:`Python Path Configuration <init-path-config>` output.
 
+      See also :c:member:`PyConfig.base_prefix`.
+
    .. c:member:: wchar_t* program_name
 
       Program name used to initialize :c:member:`~PyConfig.executable` and in
       early error messages during Python initialization.
 
-      * If :func:`Py_SetProgramName` has been called, use its argument.
       * On macOS, use :envvar:`PYTHONEXECUTABLE` environment variable if set.
       * If the ``WITH_NEXT_FRAMEWORK`` macro is defined, use
         :envvar:`__PYVENV_LAUNCHER__` environment variable if set.
@@ -1144,9 +1163,6 @@ PyConfig
       :data:`sys.stderr` (but :data:`sys.stderr` always uses
       ``"backslashreplace"`` error handler).
 
-      If :c:func:`Py_SetStandardStreamEncoding` has been called, use its
-      *error* and *errors* arguments if they are not ``NULL``.
-
       Use the :envvar:`PYTHONIOENCODING` environment variable if it is
       non-empty.
 
@@ -1161,6 +1177,8 @@ PyConfig
       * ``"surrogateescape"`` if :c:member:`PyPreConfig.utf8_mode` is non-zero,
         or if the LC_CTYPE locale is "C" or "POSIX".
       * ``"strict"`` otherwise.
+
+      See also :c:member:`PyConfig.legacy_windows_stdio`.
 
    .. c:member:: int tracemalloc
 
@@ -1509,7 +1527,7 @@ If a ``._pth`` file is present:
 * Set :c:member:`~PyConfig.safe_path` to ``1``.
 
 The ``__PYVENV_LAUNCHER__`` environment variable is used to set
-:c:member:`PyConfig.base_executable`
+:c:member:`PyConfig.base_executable`.
 
 
 Py_RunMain()

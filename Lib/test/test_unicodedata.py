@@ -12,8 +12,7 @@ import sys
 import unicodedata
 import unittest
 from test.support import (open_urlresource, requires_resource, script_helper,
-                          cpython_only, check_disallow_instantiation,
-                          ResourceDenied)
+                          cpython_only, check_disallow_instantiation)
 
 
 class UnicodeMethodsTest(unittest.TestCase):
