@@ -374,26 +374,37 @@ translate_bytecode_to_trace(
     uop_instruction *trace,
     int max_length)
 {
-    assert(max_length >= 3);  // One op, one SET_IP, one END_TRACE
+#define ADD_TO_TRACE(OPCODE, OPARG) \
+        trace[trace_length].opcode = (OPCODE); \
+        trace[trace_length].oparg = (OPARG); \
+        trace_length++;
+
     int trace_length = 0;
     while (trace_length + 2 < max_length) {
-        if (trace_length >= 1) {
-            break;  // Temporarily, only handle one instruction
+        int opcode = instr->op.code;
+        int oparg = instr->op.arg;
+        switch (opcode) {
+            // TODO: Tools/cases_generator should generate these from Python/bytecodes.c,
+            // or it should generate metadata that can be used to generate these.
+            case LOAD_FAST:
+            {
+                ADD_TO_TRACE(opcode, oparg);
+                break;
+            }
+            default:
+            {
+                goto done;  // Break out of while loop
+            }
         }
-        if (instr->op.code != LOAD_FAST) {
-            break;  // Temporarily, only handle LOAD_FAST
-        }
-        trace[trace_length].opcode = instr->op.code;
-        trace[trace_length].oparg = instr->op.arg;
         instr++;
-        trace_length++;
     }
-    int ip_offset = instr - (_Py_CODEUNIT *)code->co_code_adaptive;
-    trace[trace_length].opcode = SET_IP;
-    trace[trace_length].oparg = ip_offset;
-    trace[trace_length + 1].opcode = EXIT_TRACE;
-    trace[trace_length + 1].oparg = 0;
-    return trace_length + 2;
+done:
+    if (trace_length > 0) {
+        int ip_offset = instr - (_Py_CODEUNIT *)code->co_code_adaptive;
+        ADD_TO_TRACE(SET_IP, ip_offset);
+        ADD_TO_TRACE(EXIT_TRACE, 0);
+    }
+    return trace_length;
 }
 
 static int
