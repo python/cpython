@@ -458,22 +458,12 @@ uop_optimize(
     return 1;
 }
 
-static PyObject *
-uop_get_traces(PyObject *self, PyObject *args)
-{
-    return PyLong_FromLongLong(((UOpOptimizerObject *)self)->traces_executed);
-}
-
-static PyObject *
-uop_get_instrs(PyObject *self, PyObject *args)
-{
-    return PyLong_FromLongLong(((UOpOptimizerObject *)self)->instrs_executed);
-}
-
-static PyMethodDef uop_methods[] = {
-    { "get_traces", uop_get_traces, METH_NOARGS, NULL },
-    { "get_instrs", uop_get_instrs, METH_NOARGS, NULL },
-    { NULL, NULL },
+static PyMemberDef uop_members[] = {
+    {"traces_executed", Py_T_INT, offsetof(UOpOptimizerObject, traces_executed), 0,
+     "Total number of traces executed since inception"},
+    {"instrs_executed", Py_T_INT, offsetof(UOpOptimizerObject, instrs_executed), 0,
+     "Total number of instructions executed since inception"},
+    {NULL}
 };
 
 static PyTypeObject UOpOptimizer_Type = {
@@ -482,12 +472,15 @@ static PyTypeObject UOpOptimizer_Type = {
     .tp_basicsize = sizeof(UOpOptimizerObject),
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
-    .tp_methods = uop_methods,
+    .tp_members = uop_members,
 };
 
 PyObject *
 PyUnstable_Optimizer_NewUOpOptimizer(void)
 {
+    if (PyType_Ready(&UOpOptimizer_Type) < 0) {
+        return NULL;
+    }
     UOpOptimizerObject *opt = (UOpOptimizerObject *)_PyObject_New(&UOpOptimizer_Type);
     if (opt == NULL) {
         return NULL;
