@@ -1182,7 +1182,7 @@ init_interp_main(PyThreadState *tstate)
 
     if (is_main_interp) {
         PyObject *opt = PyUnstable_Optimizer_NewUOpOptimizer();
-        PyUnstable_SetOptimizer(opt);
+        PyUnstable_SetOptimizer((_PyOptimizerObject *)opt);
     }
 
     assert(!_PyErr_Occurred(tstate));
