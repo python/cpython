@@ -2,6 +2,7 @@ import dis
 from test.support.import_helper import import_module
 import unittest
 import opcode
+import _opcode_metadata
 
 _opcode = import_module("_opcode")
 from _opcode import stack_effect
@@ -66,7 +67,7 @@ class SpecializationStatsTests(unittest.TestCase):
         stat_names = ["success", "failure", "hit", "deferred", "miss", "deopt"]
         specialized_opcodes = [
             op.lower()
-            for op in opcode._specializations
+            for op in _opcode_metadata._specializations
             if opcode._inline_cache_entries[opcode.opmap[op]]
         ]
         self.assertIn('load_attr', specialized_opcodes)
