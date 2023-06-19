@@ -424,7 +424,7 @@ translate_bytecode_to_trace(
             }
         }
         instr++;
-        ADD_TO_TRACE(SET_IP, instr - (_Py_CODEUNIT *)code->co_code_adaptive);
+        ADD_TO_TRACE(SET_IP, (int)(instr - (_Py_CODEUNIT *)code->co_code_adaptive));
     }
 done:
     if (trace_length > 0) {
