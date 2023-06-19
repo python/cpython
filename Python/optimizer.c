@@ -287,11 +287,11 @@ typedef struct {
     int instrs_executed;
 } UOpOptimizerObject;
 
-const int MAX_TRACE_LENGTH = 16;
+#define MAX_TRACE_LENGTH 16
 
 // UOp opcodes are outside the range of bytecodes or pseudo ops
-const int EXIT_TRACE = 512;
-const int SET_IP = 513;
+#define EXIT_TRACE 512
+#define SET_IP 513
 
 typedef struct {
     int opcode;
