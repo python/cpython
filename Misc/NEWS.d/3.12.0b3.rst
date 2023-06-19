@@ -1,0 +1,411 @@
+.. date: 2023-06-15-22-11-43
+.. gh-issue: 105840
+.. nonce: Fum_g_
+.. release date: 2023-06-19
+.. section: Core and Builtins
+
+Fix possible crashes when specializing function calls with too many
+``__defaults__``.
+
+..
+
+.. date: 2023-06-15-15-54-47
+.. gh-issue: 105831
+.. nonce: -MC9Zs
+.. section: Core and Builtins
+
+Fix an f-string bug, where using a debug expression (the ``=`` sign) that
+appears in the last line of a file results to the debug buffer that holds
+the expression text being one character too small.
+
+..
+
+.. date: 2023-06-14-22-52-06
+.. gh-issue: 105800
+.. nonce: hdpPzZ
+.. section: Core and Builtins
+
+Correctly issue :exc:`SyntaxWarning` in f-strings if invalid sequences are
+used. Patch by Pablo Galindo
+
+..
+
+.. date: 2023-06-10-21-38-49
+.. gh-issue: 105587
+.. nonce: rL3rzv
+.. section: Core and Builtins
+
+The runtime can't guarantee that immortal objects will not be mutated by
+Extensions. Thus, this modifies _PyStaticObject_CheckRefcnt to warn instead
+of asserting.
+
+..
+
+.. date: 2023-06-09-15-25-12
+.. gh-issue: 105564
+.. nonce: sFdUu4
+.. section: Core and Builtins
+
+Don't include artificil newlines in the ``line`` attribute of tokens in the
+APIs of the :mod:`tokenize` module. Patch by Pablo Galindo
+
+..
+
+.. date: 2023-06-09-12-59-18
+.. gh-issue: 105549
+.. nonce: PYfTNp
+.. section: Core and Builtins
+
+Tokenize separately ``NUMBER`` and ``NAME`` tokens that are not ambiguous.
+Patch by Pablo Galindo.
+
+..
+
+.. date: 2023-06-09-11-19-51
+.. gh-issue: 105588
+.. nonce: Y5ovpY
+.. section: Core and Builtins
+
+Fix an issue that could result in crashes when compiling malformed
+:mod:`ast` nodes.
+
+..
+
+.. date: 2023-06-08-10-10-07
+.. gh-issue: 105375
+.. nonce: 35VGDd
+.. section: Core and Builtins
+
+Fix bugs in the :mod:`builtins` module where exceptions could end up being
+overwritten.
+
+..
+
+.. date: 2023-06-08-09-54-37
+.. gh-issue: 105375
+.. nonce: kqKT3E
+.. section: Core and Builtins
+
+Fix bug in the compiler where an exception could end up being overwritten.
+
+..
+
+.. date: 2023-06-08-09-25-52
+.. gh-issue: 105375
+.. nonce: ocB7fT
+.. section: Core and Builtins
+
+Improve error handling in :c:func:`PyUnicode_BuildEncodingMap` where an
+exception could end up being overwritten.
+
+..
+
+.. date: 2023-06-07-12-20-59
+.. gh-issue: 105435
+.. nonce: 6VllI0
+.. section: Core and Builtins
+
+Fix spurious newline character if file ends on a comment without a newline.
+Patch by Pablo Galindo
+
+..
+
+.. date: 2023-06-06-17-10-42
+.. gh-issue: 105390
+.. nonce: DvqI-e
+.. section: Core and Builtins
+
+Correctly raise :exc:`tokenize.TokenError` exceptions instead of
+:exc:`SyntaxError` for tokenize errors such as incomplete input. Patch by
+Pablo Galindo
+
+..
+
+.. date: 2023-06-02-15-15-41
+.. gh-issue: 104812
+.. nonce: dfZiG5
+.. section: Core and Builtins
+
+The "pending call" machinery now works for all interpreters, not just the
+main interpreter, and runs in all threads, not just the main thread. Some
+calls are still only done in the main thread, ergo in the main interpreter.
+This change does not affect signal handling nor the existing public C-API
+(``Py_AddPendingCall()``), which both still only target the main thread. The
+new functionality is meant strictly for internal use for now, since
+consequences of its use are not well understood yet outside some very
+restricted cases.  This change brings the capability in line with the
+intention when the state was made per-interpreter several years ago.
+
+..
+
+.. date: 2023-06-19-11-31-55
+.. gh-issue: 105808
+.. nonce: NL-quu
+.. section: Library
+
+Fix a regression introduced in GH-101251 for 3.12, causing
+:meth:`gzip.GzipFile.flush` to not flush the compressor (nor pass along the
+``zip_mode`` argument).
+
+..
+
+.. date: 2023-06-15-18-11-47
+.. gh-issue: 104799
+.. nonce: BcLzbP
+.. section: Library
+
+Enable :func:`ast.unparse` to unparse function and class definitions created
+without the new ``type_params`` field from :pep:`695`. Patch by Jelle
+Zijlstra.
+
+..
+
+.. date: 2023-06-14-10-27-34
+.. gh-issue: 105745
+.. nonce: l1ttOQ
+.. section: Library
+
+Fix ``webbrowser.Konqueror.open`` method.
+
+..
+
+.. date: 2023-06-11-22-46-06
+.. gh-issue: 105375
+.. nonce: YkhSNt
+.. section: Library
+
+Fix a bug in :c:func:`!_Unpickler_SetInputStream` where an exception could
+end up being overwritten in case of failure.
+
+..
+
+.. date: 2023-06-09-23-46-23
+.. gh-issue: 105375
+.. nonce: 9KaioS
+.. section: Library
+
+Fix bugs in :mod:`sys` where exceptions could end up being overwritten
+because of deferred error handling.
+
+..
+
+.. date: 2023-06-09-23-00-13
+.. gh-issue: 105605
+.. nonce: YuwqxY
+.. section: Library
+
+Harden :mod:`pyexpat` error handling during module initialisation to prevent
+exceptions from possibly being overwritten, and objects from being
+dereferenced twice.
+
+..
+
+.. date: 2023-06-09-22-52-45
+.. gh-issue: 105375
+.. nonce: 6igkhn
+.. section: Library
+
+Fix bug in :mod:`decimal` where an exception could end up being overwritten.
+
+..
+
+.. date: 2023-06-09-22-45-26
+.. gh-issue: 105375
+.. nonce: 9rp6tG
+.. section: Library
+
+Fix bugs in :mod:`!_datetime` where exceptions could be overwritten in case
+of module initialisation failure.
+
+..
+
+.. date: 2023-06-09-22-16-46
+.. gh-issue: 105375
+.. nonce: EgVJOP
+.. section: Library
+
+Fix bugs in :mod:`!_ssl` initialisation which could lead to leaked
+references and overwritten exceptions.
+
+..
+
+.. date: 2023-06-09-21-46-52
+.. gh-issue: 105375
+.. nonce: yrJelV
+.. section: Library
+
+Fix a bug in :class:`array.array` where an exception could end up being
+overwritten.
+
+..
+
+.. date: 2023-06-09-21-40-45
+.. gh-issue: 105375
+.. nonce: _sZilh
+.. section: Library
+
+Fix bugs in :mod:`_ctypes` where exceptions could end up being overwritten.
+
+..
+
+.. date: 2023-06-09-21-30-59
+.. gh-issue: 105375
+.. nonce: eewafp
+.. section: Library
+
+Fix a bug in the :mod:`posix` module where an exception could be
+overwritten.
+
+..
+
+.. date: 2023-06-09-21-25-14
+.. gh-issue: 105375
+.. nonce: 95g1eI
+.. section: Library
+
+Fix bugs in :mod:`!_elementtree` where exceptions could be overwritten.
+
+..
+
+.. date: 2023-06-09-21-11-28
+.. gh-issue: 105375
+.. nonce: 4Mxn7t
+.. section: Library
+
+Fix bugs in :mod:`zoneinfo` where exceptions could be overwritten.
+
+..
+
+.. date: 2023-06-09-21-04-39
+.. gh-issue: 105375
+.. nonce: bTcqS9
+.. section: Library
+
+Fix bugs in :mod:`pickle` where exceptions could be overwritten.
+
+..
+
+.. date: 2023-06-08-08-58-36
+.. gh-issue: 105375
+.. nonce: bTcqS9
+.. section: Library
+
+Fix bugs in :mod:`pickle` where exceptions could be overwritten.
+
+..
+
+.. date: 2023-06-07-00-09-52
+.. gh-issue: 105375
+.. nonce: Y_9D4n
+.. section: Library
+
+Fix a bug in :mod:`sqlite3` where an exception could be overwritten in the
+:meth:`collation <sqlite3.Connection.create_collation>` callback.
+
+..
+
+.. date: 2023-06-06-11-50-33
+.. gh-issue: 105332
+.. nonce: tmpgRA
+.. section: Library
+
+Revert pickling method from by-name back to by-value.
+
+..
+
+.. date: 2023-06-02-14-23-41
+.. gh-issue: 104310
+.. nonce: UamCOB
+.. section: Library
+
+In the beta 1 release we added a utility function for extension module
+authors, to use when testing their module for support in multiple
+interpreters or under a per-interpreter GIL.  The name of that function has
+changed from ``allowing_all_extensions`` to
+``_incompatible_extension_module_restrictions``.  The default for the
+"disable_check" argument has change from ``True`` to ``False``, to better
+match the new function name.
+
+..
+
+.. date: 2023-05-26-21-24-06
+.. gh-issue: 104996
+.. nonce: aaW78g
+.. section: Library
+
+Improve performance of :class:`pathlib.PurePath` initialisation by deferring
+joining of paths when multiple arguments are given.
+
+..
+
+.. date: 2023-03-12-01-17-15
+.. gh-issue: 102541
+.. nonce: LK1adc
+.. section: Library
+
+Hide traceback in :func:`help` prompt, when import failed.
+
+..
+
+.. date: 2023-05-29-14-49-46
+.. gh-issue: 105084
+.. nonce: lvVvoj
+.. section: Tests
+
+When the Python build is configured ``--with-wheel-pkg-dir``, tests
+requiring the ``setuptools`` and ``wheel`` wheels will search for the wheels
+in ``WHEEL_PKG_DIR``.
+
+..
+
+.. date: 2023-06-08-11-30-17
+.. gh-issue: 105436
+.. nonce: 1qlDxw
+.. section: Windows
+
+Ensure that an empty environment block is terminated by two null characters,
+as is required by Windows.
+
+..
+
+.. date: 2023-06-09-23-34-25
+.. gh-issue: 105375
+.. nonce: n7amiF
+.. section: C API
+
+Fix a bug in :c:func:`PyErr_WarnExplicit` where an exception could end up
+being overwritten if the API failed internally.
+
+..
+
+.. date: 2023-06-09-19-16-57
+.. gh-issue: 105603
+.. nonce: -z6G22
+.. section: C API
+
+We've renamed the new (in 3.12) ``PyInterpreterConfig.own_gil`` to
+``PyInterpreterConfig.gil`` and changed the meaning of the value from "bool"
+to an integer with supported values of ``PyInterpreterConfig_DEFAULT_GIL``,
+``PyInterpreterConfig_SHARED_GIL``, and ``PyInterpreterConfig_OWN_GIL``. The
+default is "shared".
+
+..
+
+.. date: 2023-06-09-12-35-55
+.. gh-issue: 105387
+.. nonce: wM_oL-
+.. section: C API
+
+In the limited C API version 3.12, :c:func:`Py_INCREF` and
+:c:func:`Py_DECREF` functions are now implemented as opaque function calls
+to hide implementation details. Patch by Victor Stinner.
+
+..
+
+.. date: 2023-06-06-14-14-41
+.. gh-issue: 103968
+.. nonce: BTO6II
+.. section: C API
+
+:c:func:`PyType_FromMetaclass` now allows metaclasses with ``tp_new`` set to
+``NULL``.
