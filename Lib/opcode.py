@@ -21,7 +21,11 @@ try:
 except ImportError:
     pass
 
-from _opcode_metadata import _specializations, _specialized_instructions
+# _opcode_metadata may not be ready during early stages of the build
+try:
+    from _opcode_metadata import _specializations, _specialized_instructions
+except ModuleNotFoundError:
+    pass
 
 cmp_op = ('<', '<=', '==', '!=', '>', '>=')
 
