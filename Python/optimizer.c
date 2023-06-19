@@ -391,6 +391,14 @@ translate_bytecode_to_trace(
                 ADD_TO_TRACE(opcode, oparg);
                 break;
             }
+            case LOAD_FAST_LOAD_FAST:
+            {
+                int oparg1 = oparg >> 4;
+                int oparg2 = oparg & 15;
+                ADD_TO_TRACE(LOAD_FAST, oparg1);
+                ADD_TO_TRACE(LOAD_FAST, oparg2);
+                break;
+            }
             default:
             {
                 goto done;  // Break out of while loop
