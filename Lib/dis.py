@@ -13,9 +13,9 @@ from opcode import (
     _nb_ops,
     _intrinsic_1_descs,
     _intrinsic_2_descs,
+    _specializations,
+    _specialized_instructions,
 )
-
-from _opcode_metadata import _specializations, _specialized_instructions
 
 __all__ = ["code_info", "dis", "disassemble", "distb", "disco",
            "findlinestarts", "findlabels", "show_code",

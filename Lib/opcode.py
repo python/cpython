@@ -21,6 +21,8 @@ try:
 except ImportError:
     pass
 
+from _opcode_metadata import _specializations, _specialized_instructions
+
 cmp_op = ('<', '<=', '==', '!=', '>', '>=')
 
 hasarg = []
