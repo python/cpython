@@ -335,7 +335,7 @@ uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **
             // TODO: Tools/cases_generator should generate these from Python/bytecodes.c
             case LOAD_FAST:
             {
-                fprintf(stderr, "LOAD_FAST %d\n", oparg);
+                // fprintf(stderr, "LOAD_FAST %d\n", oparg);
                 PyObject *value = frame->localsplus[oparg];
                 assert(value != NULL);
                 Py_INCREF(value);
@@ -344,7 +344,7 @@ uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **
             }
             case LOAD_CONST:
             {
-                fprintf(stderr, "LOAD_CONST %d\n", oparg);
+                // fprintf(stderr, "LOAD_CONST %d\n", oparg);
                 PyObject *value = PyTuple_GET_ITEM(_PyFrame_GetCode(frame)->co_consts, oparg);
                 assert(value != NULL);
                 Py_INCREF(value);
@@ -353,20 +353,20 @@ uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **
             }
             case SET_IP:
             {
-                fprintf(stderr, "SET_IP %d\n", oparg);
+                // fprintf(stderr, "SET_IP %d\n", oparg);
                 frame->prev_instr = ip_offset + oparg;
                 break;
             }
             case EXIT_TRACE:
             {
-                fprintf(stderr, "EXIT_TRACE\n");
+                // fprintf(stderr, "EXIT_TRACE\n");
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 Py_DECREF(self);
                 return frame;
             }
             default:
             {
-                fprintf(stderr, "Unknown uop %d, oparg %d\n", opcode, oparg);
+                // fprintf(stderr, "Unknown uop %d, oparg %d\n", opcode, oparg);
                 Py_FatalError("Unknown uop");
                 abort();  // Unreachable
                 for (;;) {}
