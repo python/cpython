@@ -8,7 +8,7 @@ import unittest
 from _ctypes import CTYPES_MAX_ARGCOUNT
 from ctypes import (CDLL, cdll, Structure, CFUNCTYPE,
                     ArgumentError, POINTER, sizeof,
-                    c_byte, c_ubyte, c_char, c_char_p,
+                    c_byte, c_ubyte, c_char,
                     c_short, c_ushort, c_int, c_uint,
                     c_long, c_longlong, c_ulonglong, c_ulong,
                     c_float, c_double, c_longdouble, py_object)
@@ -18,9 +18,6 @@ from test import support
 
 class Callbacks(unittest.TestCase):
     functype = CFUNCTYPE
-
-##    def tearDown(self):
-##        gc.collect()
 
     def callback(self, *args):
         self.got_args = args
@@ -42,8 +39,6 @@ class Callbacks(unittest.TestCase):
         else:
             self.assertEqual(self.got_args, (-3, arg))
             self.assertEqual(result, arg)
-
-    ################
 
     def test_byte(self):
         self.check_type(c_byte, 42)
@@ -96,14 +91,6 @@ class Callbacks(unittest.TestCase):
     def test_char(self):
         self.check_type(c_char, b"x")
         self.check_type(c_char, b"a")
-
-    # disabled: would now (correctly) raise a RuntimeWarning about
-    # a memory leak.  A callback function cannot return a non-integral
-    # C type without causing a memory leak.
-    @unittest.skip('test disabled')
-    def test_char_p(self):
-        self.check_type(c_char_p, "abc")
-        self.check_type(c_char_p, "def")
 
     def test_pyobject(self):
         o = ()

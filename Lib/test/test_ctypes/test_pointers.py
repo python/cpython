@@ -37,7 +37,6 @@ class PointersTestCase(unittest.TestCase):
             func.restype = c_long
 
         i = c_int(12345678)
-##        func.argtypes = (POINTER(c_int),)
         address = func(byref(i))
         self.assertEqual(c_int.from_address(address).value, 12345678)
 
@@ -80,9 +79,7 @@ class PointersTestCase(unittest.TestCase):
 
         def func(arg):
             for i in range(10):
-##                print arg[i],
                 self.result.append(arg[i])
-##            print
             return 0
         callback = PROTOTYPE(func)
 
@@ -92,25 +89,15 @@ class PointersTestCase(unittest.TestCase):
         # The int pointer points to a table containing the numbers 1..10
         doit = dll._testfunc_callback_with_pointer
 
-##        i = c_int(42)
-##        callback(byref(i))
-##        self.assertEqual(i.value, 84)
-
         doit(callback)
-##        print self.result
         doit(callback)
-##        print self.result
 
     def test_basics(self):
         for ct, pt in zip(ctype_types, python_types):
             i = ct(42)
             p = pointer(i)
-##            print type(p.contents), ct
             self.assertIs(type(p.contents), ct)
             # p.contents is the same as p[0]
-##            print p.contents
-##            self.assertEqual(p.contents, 42)
-##            self.assertEqual(p[0], 42)
 
             with self.assertRaises(TypeError):
                 del p[0]
@@ -118,11 +105,7 @@ class PointersTestCase(unittest.TestCase):
     def test_from_address(self):
         a = array.array('i', [100, 200, 300, 400, 500])
         addr = a.buffer_info()[0]
-
         p = POINTER(POINTER(c_int))
-##        print dir(p)
-##        print p.from_address
-##        print p.from_address(addr)[0][0]
 
     def test_other(self):
         class Table(Structure):

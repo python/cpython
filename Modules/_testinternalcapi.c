@@ -840,6 +840,15 @@ set_optimizer(PyObject *self, PyObject *opt)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+get_optimizer(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *opt = (PyObject *)PyUnstable_GetOptimizer();
+    if (opt == NULL) {
+        Py_RETURN_NONE;
+    }
+    return opt;
+}
 
 static int _pending_callback(void *arg)
 {
@@ -982,6 +991,7 @@ static PyMethodDef module_functions[] = {
     {"iframe_getcode", iframe_getcode, METH_O, NULL},
     {"iframe_getline", iframe_getline, METH_O, NULL},
     {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
+    {"get_optimizer", get_optimizer,  METH_NOARGS, NULL},
     {"set_optimizer", set_optimizer,  METH_O, NULL},
     {"get_counter_optimizer", get_counter_optimizer, METH_NOARGS, NULL},
     {"pending_threadfunc", _PyCFunction_CAST(pending_threadfunc),

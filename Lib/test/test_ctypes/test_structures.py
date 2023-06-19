@@ -1,5 +1,4 @@
 import _ctypes_test
-import platform
 import struct
 import sys
 import unittest
@@ -10,12 +9,6 @@ from ctypes import (CDLL, Structure, Union, POINTER, sizeof, byref, alignment,
                     c_long, c_ulong, c_longlong, c_ulonglong, c_float, c_double)
 from struct import calcsize
 from test import support
-
-
-# The following definition is meant to be used from time to time to assist
-# temporarily disabling tests on specific architectures while investigations
-# are in progress, to keep buildbots happy.
-MACHINE = platform.machine()
 
 
 class SubclassesTest(unittest.TestCase):
@@ -364,15 +357,6 @@ class StructureTestCase(unittest.TestCase):
         except Exception as detail:
             return detail.__class__, str(detail)
 
-    @unittest.skip('test disabled')
-    def test_subclass_creation(self):
-        meta = type(Structure)
-        # same as 'class X(Structure): pass'
-        # fails, since we need either a _fields_ or a _abstract_ attribute
-        cls, msg = self.get_except(meta, "X", (Structure,), {})
-        self.assertEqual((cls, msg),
-                (AttributeError, "class must define a '_fields_' attribute"))
-
     def test_abstract_class(self):
         class X(Structure):
             _abstract_ = "something"
@@ -381,9 +365,6 @@ class StructureTestCase(unittest.TestCase):
         self.assertEqual((cls, msg), (TypeError, "abstract class"))
 
     def test_methods(self):
-##        class X(Structure):
-##            _fields_ = []
-
         self.assertIn("in_dll", dir(type(Structure)))
         self.assertIn("from_address", dir(type(Structure)))
         self.assertIn("in_dll", dir(type(Structure)))
@@ -769,8 +750,6 @@ class PointerMemberTestCase(unittest.TestCase):
         self.assertEqual(items, [42, 2, 3])
 
         s.array[0] = 1
-
-##        s.array[1] = 42
 
         items = [s.array[i] for i in range(3)]
         self.assertEqual(items, [1, 2, 3])

@@ -21,8 +21,6 @@ extern "C" {{
 
 footer = """
 
-#define IS_PSEUDO_OPCODE(op) (((op) >= MIN_PSEUDO_OPCODE) && ((op) <= MAX_PSEUDO_OPCODE))
-
 #ifdef __cplusplus
 }
 #endif
@@ -68,16 +66,6 @@ DEFINE = "#define {:<38} {:>3}\n"
 
 UINT32_MASK = (1<<32)-1
 
-def write_int_array_from_ops(name, ops, out):
-    bits = 0
-    for op in ops:
-        bits |= 1<<op
-    out.write(f"const uint32_t {name}[9] = {{\n")
-    for i in range(9):
-        out.write(f"    {bits & UINT32_MASK}U,\n")
-        bits >>= 32
-    assert bits == 0
-    out.write(f"}};\n")
 
 def main(opcode_py, outfile='Include/opcode.h',
          internaloutfile='Include/internal/pycore_opcode.h',
@@ -100,7 +88,6 @@ def main(opcode_py, outfile='Include/opcode.h',
     _pseudo_ops = opcode['_pseudo_ops']
 
     ENABLE_SPECIALIZATION = opcode["ENABLE_SPECIALIZATION"]
-    HAVE_ARGUMENT = opcode["HAVE_ARGUMENT"]
     MIN_PSEUDO_OPCODE = opcode["MIN_PSEUDO_OPCODE"]
     MAX_PSEUDO_OPCODE = opcode["MAX_PSEUDO_OPCODE"]
     MIN_INSTRUMENTED_OPCODE = opcode["MIN_INSTRUMENTED_OPCODE"]
@@ -130,8 +117,6 @@ def main(opcode_py, outfile='Include/opcode.h',
         for name in opname:
             if name in opmap:
                 op = opmap[name]
-                if op == HAVE_ARGUMENT:
-                    fobj.write(DEFINE.format("HAVE_ARGUMENT", HAVE_ARGUMENT))
                 if op == MIN_PSEUDO_OPCODE:
                     fobj.write(DEFINE.format("MIN_PSEUDO_OPCODE", MIN_PSEUDO_OPCODE))
                 if op == MIN_INSTRUMENTED_OPCODE:
@@ -146,11 +131,9 @@ def main(opcode_py, outfile='Include/opcode.h',
         for name, op in specialized_opmap.items():
             fobj.write(DEFINE.format(name, op))
 
-        iobj.write("\nextern const uint32_t _PyOpcode_Jump[9];\n")
         iobj.write("\nextern const uint8_t _PyOpcode_Caches[256];\n")
         iobj.write("\nextern const uint8_t _PyOpcode_Deopt[256];\n")
         iobj.write("\n#ifdef NEED_OPCODE_TABLES\n")
-        write_int_array_from_ops("_PyOpcode_Jump", opcode['hasjrel'] + opcode['hasjabs'], iobj)
 
         iobj.write("\nconst uint8_t _PyOpcode_Caches[256] = {\n")
         for i, entries in enumerate(opcode["_inline_cache_entries"]):
@@ -170,19 +153,6 @@ def main(opcode_py, outfile='Include/opcode.h',
             iobj.write(f"    [{opt}] = {deopt},\n")
         iobj.write("};\n")
         iobj.write("#endif   // NEED_OPCODE_TABLES\n")
-
-        fobj.write("\n")
-        fobj.write("#define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\\")
-        for op in _pseudo_ops:
-            if opmap[op] in hasarg:
-                fobj.write(f"\n    || ((op) == {op}) \\")
-        fobj.write("\n    )\n")
-
-        fobj.write("\n")
-        fobj.write("#define HAS_CONST(op) (false\\")
-        for op in hasconst:
-            fobj.write(f"\n    || ((op) == {opname[op]}) \\")
-        fobj.write("\n    )\n")
 
         fobj.write("\n")
         for i, (op, _) in enumerate(opcode["_nb_ops"]):

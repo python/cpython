@@ -23,10 +23,9 @@
 
 --------------
 
-This module provides runtime support for type hints. The most fundamental
-support consists of the types :data:`Any`, :data:`Union`, :data:`Callable`,
-:class:`TypeVar`, and :class:`Generic`. For a specification, please see
-:pep:`484`. For a simplified introduction to type hints, see :pep:`483`.
+This module provides runtime support for type hints. For the original
+specification of the typing system, see :pep:`484`. For a simplified
+introduction to type hints, see :pep:`483`.
 
 
 The function below takes and returns a string and is annotated as follows::
@@ -47,16 +46,18 @@ For a summary of deprecated features and a deprecation timeline, please see
 
 .. seealso::
 
-   For a quick overview of type hints, refer to
-   `this cheat sheet <https://mypy.readthedocs.io/en/stable/cheat_sheet_py3.html>`_.
+   `"Typing cheat sheet" <https://mypy.readthedocs.io/en/stable/cheat_sheet_py3.html>`_
+       A quick overview of type hints (hosted at the mypy docs)
 
-   The "Type System Reference" section of https://mypy.readthedocs.io/ -- since
-   the Python typing system is standardised via PEPs, this reference should
-   broadly apply to most Python type checkers, although some parts may still be
-   specific to mypy.
+   "Type System Reference" section of `the mypy docs <https://mypy.readthedocs.io/en/stable/index.html>`_
+      The Python typing system is standardised via PEPs, so this reference
+      should broadly apply to most Python type checkers. (Some parts may still
+      be specific to mypy.)
 
-   The documentation at https://typing.readthedocs.io/ serves as useful reference
-   for type system features, useful typing related tools and typing best practices.
+   `"Static Typing with Python" <https://typing.readthedocs.io/en/latest/>`_
+      Type-checker-agnostic documentation written by the community detailing
+      type system features, useful typing related tools and typing best
+      practices.
 
 .. _relevant-peps:
 
@@ -654,25 +655,7 @@ can define new custom protocols to fully enjoy structural subtyping
 Module contents
 ===============
 
-The module defines the following classes, functions and decorators.
-
-.. note::
-
-   This module defines several deprecated aliases to pre-existing
-   standard library classes. These were originally included in the typing
-   module in order to support parameterizing these generic classes using ``[]``.
-   However, the aliases became redundant in Python 3.9 when the
-   corresponding pre-existing classes were enhanced to support ``[]``.
-
-   The redundant types are deprecated as of Python 3.9 but no
-   deprecation warnings are issued by the interpreter.
-   It is expected that type checkers will flag the deprecated types
-   when the checked program targets Python 3.9 or newer.
-
-   The deprecated types will be removed from the :mod:`typing` module
-   no sooner than the first Python version released 5 years after the release of Python 3.9.0.
-   See details in :pep:`585`—*Type Hinting Generics In Standard Collections*.
-
+The ``typing`` module defines the following classes, functions and decorators.
 
 Special typing primitives
 -------------------------
@@ -680,7 +663,8 @@ Special typing primitives
 Special types
 """""""""""""
 
-These can be used as types in annotations and do not support ``[]``.
+These can be used as types in annotations. They do not support subscription
+using ``[]``.
 
 .. data:: Any
 
@@ -890,7 +874,8 @@ These can be used as types in annotations and do not support ``[]``.
 Special forms
 """""""""""""
 
-These can be used as types in annotations using ``[]``, each having a unique syntax.
+These can be used as types in annotations. They all support subscription using
+``[]``, but each has a unique syntax.
 
 .. data:: Tuple
 
@@ -1471,7 +1456,8 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 Building generic types and type aliases
 """""""""""""""""""""""""""""""""""""""
 
-The following objects are not used directly in annotations. Instead, they are building blocks
+The following classes should not be used directly as annotations.
+Their intended purpose is to be building blocks
 for creating generic types and type aliases.
 
 These objects can be created through special syntax
@@ -1962,7 +1948,9 @@ without the dedicated syntax, as documented below.
 Other special directives
 """"""""""""""""""""""""
 
-These are not used in annotations. They are building blocks for declaring types.
+These functions and classes should not be used directly as annotations.
+Their intended purpose is to be building blocks for creating and declaring
+types.
 
 .. class:: NamedTuple
 
@@ -2399,7 +2387,8 @@ These are not used in annotations. They are building blocks for declaring types.
 Protocols
 ---------
 
-These protocols are decorated with :func:`runtime_checkable`.
+The following protocols are provided by the typing module. All are decorated
+with :func:`@runtime_checkable <runtime_checkable>`.
 
 .. class:: SupportsAbs
 
@@ -2432,6 +2421,18 @@ These protocols are decorated with :func:`runtime_checkable`.
 
     An ABC with one abstract method ``__round__``
     that is covariant in its return type.
+
+ABCs for working with IO
+------------------------
+
+.. class:: IO
+           TextIO
+           BinaryIO
+
+   Generic type ``IO[AnyStr]`` and its subclasses ``TextIO(IO[str])``
+   and ``BinaryIO(IO[bytes])``
+   represent the types of I/O streams such as returned by
+   :func:`open`.
 
 Functions and decorators
 ------------------------
@@ -2539,16 +2540,19 @@ Functions and decorators
 
    .. versionadded:: 3.11
 
-.. decorator:: dataclass_transform
+.. decorator:: dataclass_transform(*, eq_default=True, order_default=False, \
+                                   kw_only_default=False, frozen_default=False, \
+                                   field_specifiers=(), **kwargs)
 
    Decorator to mark an object as providing
-   :func:`~dataclasses.dataclass`-like behavior.
+   :func:`dataclass <dataclasses.dataclass>`-like behavior.
 
    ``dataclass_transform`` may be used to
    decorate a class, metaclass, or a function that is itself a decorator.
    The presence of ``@dataclass_transform()`` tells a static type checker that the
    decorated object performs runtime "magic" that
-   transforms a class in a similar way to :func:`dataclasses.dataclass`.
+   transforms a class in a similar way to
+   :func:`@dataclasses.dataclass <dataclasses.dataclass>`.
 
    Example usage with a decorator function:
 
@@ -2602,42 +2606,71 @@ Functions and decorators
    customize the default behaviors of the decorated class, metaclass, or
    function:
 
-   * ``eq_default`` indicates whether the ``eq`` parameter is assumed to be
-     ``True`` or ``False`` if it is omitted by the caller.
-   * ``order_default`` indicates whether the ``order`` parameter is
-     assumed to be True or False if it is omitted by the caller.
-   * ``kw_only_default`` indicates whether the ``kw_only`` parameter is
-     assumed to be True or False if it is omitted by the caller.
-   * ``frozen_default`` indicates whether the ``frozen`` parameter is
-     assumed to be True or False if it is omitted by the caller.
+   :param bool eq_default:
+       Indicates whether the ``eq`` parameter is assumed to be
+       ``True`` or ``False`` if it is omitted by the caller.
+       Defaults to ``True``.
 
-     .. versionadded:: 3.12
-   * ``field_specifiers`` specifies a static list of supported classes
-     or functions that describe fields, similar to ``dataclasses.field()``.
-   * Arbitrary other keyword arguments are accepted in order to allow for
-     possible future extensions.
+   :param bool order_default:
+       Indicates whether the ``order`` parameter is
+       assumed to be ``True`` or ``False`` if it is omitted by the caller.
+       Defaults to ``False``.
 
-   Type checkers recognize the following optional arguments on field
+   :param bool kw_only_default:
+       Indicates whether the ``kw_only`` parameter is
+       assumed to be ``True`` or ``False`` if it is omitted by the caller.
+       Defaults to ``False``.
+
+   :param bool frozen_default:
+       Indicates whether the ``frozen`` parameter is
+       assumed to be ``True`` or ``False`` if it is omitted by the caller.
+       Defaults to ``False``.
+
+       .. versionadded:: 3.12
+
+   :param field_specifiers:
+       Specifies a static list of supported classes
+       or functions that describe fields, similar to :func:`dataclasses.field`.
+       Defaults to ``()``.
+   :type field_specifiers: tuple[Callable[..., Any], ...]
+
+   :param Any \**kwargs:
+       Arbitrary other keyword arguments are accepted in order to allow for
+       possible future extensions.
+
+   Type checkers recognize the following optional parameters on field
    specifiers:
 
-   * ``init`` indicates whether the field should be included in the
-     synthesized ``__init__`` method. If unspecified, ``init`` defaults to
-     ``True``.
-   * ``default`` provides the default value for the field.
-   * ``default_factory`` provides a runtime callback that returns the
-     default value for the field. If neither ``default`` nor
-     ``default_factory`` are specified, the field is assumed to have no
-     default value and must be provided a value when the class is
-     instantiated.
-   * ``factory`` is an alias for ``default_factory``.
-   * ``kw_only`` indicates whether the field should be marked as
-     keyword-only. If ``True``, the field will be keyword-only. If
-     ``False``, it will not be keyword-only. If unspecified, the value of
-     the ``kw_only`` parameter on the object decorated with
-     ``dataclass_transform`` will be used, or if that is unspecified, the
-     value of ``kw_only_default`` on ``dataclass_transform`` will be used.
-   * ``alias`` provides an alternative name for the field. This alternative
-     name is used in the synthesized ``__init__`` method.
+   .. list-table:: **Recognised parameters for field specifiers**
+      :header-rows: 1
+      :widths: 20 80
+
+      * - Parameter name
+        - Description
+      * - ``init``
+        - Indicates whether the field should be included in the
+          synthesized ``__init__`` method. If unspecified, ``init`` defaults to
+          ``True``.
+      * - ``default``
+        - Provides the default value for the field.
+      * - ``default_factory``
+        - Provides a runtime callback that returns the
+          default value for the field. If neither ``default`` nor
+          ``default_factory`` are specified, the field is assumed to have no
+          default value and must be provided a value when the class is
+          instantiated.
+      * - ``factory``
+        - An alias for the ``default_factory`` parameter on field specifiers.
+      * - ``kw_only``
+        - Indicates whether the field should be marked as
+          keyword-only. If ``True``, the field will be keyword-only. If
+          ``False``, it will not be keyword-only. If unspecified, the value of
+          the ``kw_only`` parameter on the object decorated with
+          ``dataclass_transform`` will be used, or if that is unspecified, the
+          value of ``kw_only_default`` on ``dataclass_transform`` will be used.
+      * - ``alias``
+        - Provides an alternative name for the field. This alternative
+          name is used in the synthesized ``__init__`` method.
 
    At runtime, this decorator records its arguments in the
    ``__dataclass_transform__`` attribute on the decorated object.
@@ -3020,11 +3053,30 @@ Constant
 
    .. versionadded:: 3.5.2
 
-Generic concrete collections
-----------------------------
+.. _generic-concrete-collections:
 
-Corresponding to built-in types
-"""""""""""""""""""""""""""""""
+Deprecated aliases
+------------------
+
+This module defines several deprecated aliases to pre-existing
+standard library classes. These were originally included in the typing
+module in order to support parameterizing these generic classes using ``[]``.
+However, the aliases became redundant in Python 3.9 when the
+corresponding pre-existing classes were enhanced to support ``[]``.
+
+The redundant types are deprecated as of Python 3.9 but no
+deprecation warnings are issued by the interpreter.
+It is expected that type checkers will flag the deprecated types
+when the checked program targets Python 3.9 or newer.
+
+The deprecated types will be removed from the :mod:`typing` module
+no sooner than the first Python version released 5 years after the release of Python 3.9.0.
+See details in :pep:`585`—*Type Hinting Generics In Standard Collections*.
+
+.. _corresponding-to-built-in-types:
+
+Aliases to built-in types
+"""""""""""""""""""""""""
 
 .. class:: Dict(dict, MutableMapping[KT, VT])
 
@@ -3086,8 +3138,10 @@ Corresponding to built-in types
 
 .. note:: :data:`Tuple` is a special form.
 
-Corresponding to types in :mod:`collections`
-""""""""""""""""""""""""""""""""""""""""""""
+.. _corresponding-to-types-in-collections:
+
+Aliases to types in :mod:`collections`
+""""""""""""""""""""""""""""""""""""""
 
 .. class:: DefaultDict(collections.defaultdict, MutableMapping[KT, VT])
 
@@ -3142,17 +3196,10 @@ Corresponding to types in :mod:`collections`
       :class:`collections.deque` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-Other concrete types
-""""""""""""""""""""
+.. _other-concrete-types:
 
-.. class:: IO
-           TextIO
-           BinaryIO
-
-   Generic type ``IO[AnyStr]`` and its subclasses ``TextIO(IO[str])``
-   and ``BinaryIO(IO[bytes])``
-   represent the types of I/O streams such as returned by
-   :func:`open`.
+Aliases to other concrete types
+"""""""""""""""""""""""""""""""
 
 .. class:: Pattern
            Match
@@ -3191,11 +3238,11 @@ Other concrete types
       currently planned, but users are encouraged to use
       :class:`str` instead of ``Text``.
 
-Abstract Base Classes
----------------------
+.. _abstract-base-classes:
+.. _corresponding-to-collections-in-collections-abc:
 
-Corresponding to collections in :mod:`collections.abc`
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
+Aliases to container ABCs in :mod:`collections.abc`
+"""""""""""""""""""""""""""""""""""""""""""""""""""
 
 .. class:: AbstractSet(Collection[T_co])
 
@@ -3310,86 +3357,10 @@ Corresponding to collections in :mod:`collections.abc`
       :class:`collections.abc.ValuesView` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-Corresponding to other types in :mod:`collections.abc`
+.. _asynchronous-programming:
+
+Aliases to asynchronous ABCs in :mod:`collections.abc`
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-
-.. class:: Iterable(Generic[T_co])
-
-   Deprecated alias to :class:`collections.abc.Iterable`.
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.Iterable` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: Iterator(Iterable[T_co])
-
-   Deprecated alias to :class:`collections.abc.Iterator`.
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.Iterator` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: Generator(Iterator[YieldType], Generic[YieldType, SendType, ReturnType])
-
-   Deprecated alias to :class:`collections.abc.Generator`.
-
-   A generator can be annotated by the generic type
-   ``Generator[YieldType, SendType, ReturnType]``. For example::
-
-      def echo_round() -> Generator[int, float, str]:
-          sent = yield 0
-          while sent >= 0:
-              sent = yield round(sent)
-          return 'Done'
-
-   Note that unlike many other generics in the typing module, the ``SendType``
-   of :class:`Generator` behaves contravariantly, not covariantly or
-   invariantly.
-
-   If your generator will only yield values, set the ``SendType`` and
-   ``ReturnType`` to ``None``::
-
-      def infinite_stream(start: int) -> Generator[int, None, None]:
-          while True:
-              yield start
-              start += 1
-
-   Alternatively, annotate your generator as having a return type of
-   either ``Iterable[YieldType]`` or ``Iterator[YieldType]``::
-
-      def infinite_stream(start: int) -> Iterator[int]:
-          while True:
-              yield start
-              start += 1
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.Generator` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: Hashable
-
-   Deprecated alias to :class:`collections.abc.Hashable`.
-
-   .. deprecated:: 3.12
-      Use :class:`collections.abc.Hashable` directly instead.
-
-.. class:: Reversible(Iterable[T_co])
-
-   Deprecated alias to :class:`collections.abc.Reversible`.
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.Reversible` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: Sized
-
-   Deprecated alias to :class:`collections.abc.Sized`.
-
-   .. deprecated:: 3.12
-      Use :class:`collections.abc.Sized` directly instead.
-
-Asynchronous programming
-""""""""""""""""""""""""
 
 .. class:: Coroutine(Awaitable[ReturnType], Generic[YieldType, SendType, ReturnType])
 
@@ -3480,9 +3451,90 @@ Asynchronous programming
       :class:`collections.abc.Awaitable` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
+.. _corresponding-to-other-types-in-collections-abc:
 
-Context manager types
-"""""""""""""""""""""
+Aliases to other ABCs in :mod:`collections.abc`
+"""""""""""""""""""""""""""""""""""""""""""""""
+
+.. class:: Iterable(Generic[T_co])
+
+   Deprecated alias to :class:`collections.abc.Iterable`.
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.Iterable` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: Iterator(Iterable[T_co])
+
+   Deprecated alias to :class:`collections.abc.Iterator`.
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.Iterator` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: Generator(Iterator[YieldType], Generic[YieldType, SendType, ReturnType])
+
+   Deprecated alias to :class:`collections.abc.Generator`.
+
+   A generator can be annotated by the generic type
+   ``Generator[YieldType, SendType, ReturnType]``. For example::
+
+      def echo_round() -> Generator[int, float, str]:
+          sent = yield 0
+          while sent >= 0:
+              sent = yield round(sent)
+          return 'Done'
+
+   Note that unlike many other generics in the typing module, the ``SendType``
+   of :class:`Generator` behaves contravariantly, not covariantly or
+   invariantly.
+
+   If your generator will only yield values, set the ``SendType`` and
+   ``ReturnType`` to ``None``::
+
+      def infinite_stream(start: int) -> Generator[int, None, None]:
+          while True:
+              yield start
+              start += 1
+
+   Alternatively, annotate your generator as having a return type of
+   either ``Iterable[YieldType]`` or ``Iterator[YieldType]``::
+
+      def infinite_stream(start: int) -> Iterator[int]:
+          while True:
+              yield start
+              start += 1
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.Generator` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: Hashable
+
+   Deprecated alias to :class:`collections.abc.Hashable`.
+
+   .. deprecated:: 3.12
+      Use :class:`collections.abc.Hashable` directly instead.
+
+.. class:: Reversible(Iterable[T_co])
+
+   Deprecated alias to :class:`collections.abc.Reversible`.
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.Reversible` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: Sized
+
+   Deprecated alias to :class:`collections.abc.Sized`.
+
+   .. deprecated:: 3.12
+      Use :class:`collections.abc.Sized` directly instead.
+
+.. _context-manager-types:
+
+Aliases to :mod:`contextlib` ABCs
+"""""""""""""""""""""""""""""""""
 
 .. class:: ContextManager(Generic[T_co])
 
