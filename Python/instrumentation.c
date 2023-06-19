@@ -913,16 +913,24 @@ get_tools_for_instruction(PyCodeObject *code, PyInterpreterState *interp, int i,
                 event == PY_MONITORING_EVENT_C_RETURN);
         event = PY_MONITORING_EVENT_CALL;
     }
-    if (event < PY_MONITORING_INSTRUMENTED_EVENTS && code->_co_monitoring->tools) {
+    if (event < PY_MONITORING_INSTRUMENTED_EVENTS) {
         CHECK(is_version_up_to_date(code, interp));
         CHECK(instrumentation_cross_checks(interp, code));
-        tools = code->_co_monitoring->tools[i];
+        if (code->_co_monitoring->tools) {
+            tools = code->_co_monitoring->tools[i];
+        }
+        else {
+            tools = code->_co_monitoring->active_monitors.tools[event];
+        }
     }
     else {
-        tools = code->_co_monitoring->active_monitors.tools[event];
+        if (code->_co_monitoring) {
+            tools = code->_co_monitoring->active_monitors.tools[event];
+        }
+        else {
+            tools = interp->monitors.tools[event];
+        }
     }
-    CHECK(tools_is_subset_for_event(code, event, tools));
-    CHECK((tools & code->_co_monitoring->active_monitors.tools[event]) == tools);
     return tools;
 }
 
