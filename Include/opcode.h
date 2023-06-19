@@ -50,7 +50,6 @@ extern "C" {
 #define SETUP_ANNOTATIONS                       85
 #define LOAD_LOCALS                             87
 #define POP_EXCEPT                              89
-#define HAVE_ARGUMENT                           90
 #define STORE_NAME                              90
 #define DELETE_NAME                             91
 #define UNPACK_SEQUENCE                         92
@@ -219,22 +218,6 @@ extern "C" {
 #define UNPACK_SEQUENCE_TWO_TUPLE              160
 #define SEND_GEN                               161
 
-#define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\
-    || ((op) == JUMP) \
-    || ((op) == JUMP_NO_INTERRUPT) \
-    || ((op) == LOAD_METHOD) \
-    || ((op) == LOAD_SUPER_METHOD) \
-    || ((op) == LOAD_ZERO_SUPER_METHOD) \
-    || ((op) == LOAD_ZERO_SUPER_ATTR) \
-    || ((op) == STORE_FAST_MAYBE_NULL) \
-    )
-
-#define HAS_CONST(op) (false\
-    || ((op) == LOAD_CONST) \
-    || ((op) == RETURN_CONST) \
-    || ((op) == KW_NAMES) \
-    )
-
 #define NB_ADD                                   0
 #define NB_AND                                   1
 #define NB_FLOOR_DIVIDE                          2
@@ -264,8 +247,6 @@ extern "C" {
 
 /* Defined in Lib/opcode.py */
 #define ENABLE_SPECIALIZATION 1
-
-#define IS_PSEUDO_OPCODE(op) (((op) >= MIN_PSEUDO_OPCODE) && ((op) <= MAX_PSEUDO_OPCODE))
 
 #ifdef __cplusplus
 }

@@ -24,7 +24,7 @@
 --------------
 
 This module provides runtime support for type hints. For the original
-specification of the typing system, please see :pep:`484`. For a simplified
+specification of the typing system, see :pep:`484`. For a simplified
 introduction to type hints, see :pep:`483`.
 
 New features are frequently added to the ``typing`` module.
