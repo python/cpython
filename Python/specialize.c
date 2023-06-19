@@ -1089,7 +1089,7 @@ PyObject *descr, DescriptorClassification kind, bool is_method)
         if (dictoffset == 0) {
             instr->op.code = is_method ? LOAD_ATTR_METHOD_NO_DICT : LOAD_ATTR_NONDESCRIPTOR_NO_DICT;
         }
-        else {
+        else if (is_method) {
             PyObject *dict = *(PyObject **) ((char *)owner + dictoffset);
             if (dict) {
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_NOT_MANAGED_DICT);
@@ -1097,7 +1097,7 @@ PyObject *descr, DescriptorClassification kind, bool is_method)
             }
             assert(owner_cls->tp_dictoffset > 0);
             assert(owner_cls->tp_dictoffset <= INT16_MAX);
-            instr->op.code = is_method ? LOAD_ATTR_METHOD_LAZY_DICT : LOAD_ATTR_NONDESCRIPTOR_LAZY_DICT;
+            instr->op.code = LOAD_ATTR_METHOD_LAZY_DICT;
         }
     }
     /* `descr` is borrowed. This is safe for methods (even inherited ones from
