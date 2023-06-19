@@ -389,7 +389,8 @@ translate_bytecode_to_trace(
         trace_length++;
 
     int trace_length = 0;
-    while (trace_length + 2 < max_length) {
+    // ALways reserve space for one uop, plus SET_UP, plus EXIT_TRACE
+    while (trace_length + 3 <= max_length) {
         int opcode = instr->op.code;
         int oparg = instr->op.arg;
         switch (opcode) {
@@ -402,6 +403,10 @@ translate_bytecode_to_trace(
             }
             case LOAD_FAST_LOAD_FAST:
             {
+                // Reserve space for two uops (+ SETUP + EXIT_TRACE)
+                if (trace_length + 4 > max_length) {
+                    goto done;
+                }
                 int oparg1 = oparg >> 4;
                 int oparg2 = oparg & 15;
                 ADD_TO_TRACE(LOAD_FAST, oparg1);
