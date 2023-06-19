@@ -88,6 +88,19 @@ Opening a file::
    '#!/bin/bash\n'
 
 
+Exceptions
+----------
+
+.. exception:: UnsupportedOperation
+
+   An exception inheriting :exc:`NotImplementedError` that is raised when an
+   unsupported operation is called on a path object.
+
+   .. versionadded:: 3.13
+      This exception class. In earlier versions of pathlib,
+      :exc:`NotImplementedError` is raised instead.
+
+
 .. _pure-paths:
 
 Pure paths
@@ -778,7 +791,7 @@ bugs or failures in your application)::
      File "<stdin>", line 1, in <module>
      File "pathlib.py", line 798, in __new__
        % (cls.__name__,))
-   NotImplementedError: cannot instantiate 'WindowsPath' on your system
+   UnsupportedOperation: cannot instantiate 'WindowsPath' on your system
 
 
 Methods
@@ -951,6 +964,9 @@ call fails (for example because the path doesn't exist).
 
    Return the name of the group owning the file.  :exc:`KeyError` is raised
    if the file's gid isn't found in the system database.
+
+   If the :mod:`grp` module is not available, this method raises
+   :exc:`UnsupportedOperation`.
 
 
 .. method:: Path.is_dir()
@@ -1210,6 +1226,9 @@ call fails (for example because the path doesn't exist).
    Return the name of the user owning the file.  :exc:`KeyError` is raised
    if the file's uid isn't found in the system database.
 
+   If the :mod:`pwd` module is not available, this method raises
+   :exc:`UnsupportedOperation`.
+
 
 .. method:: Path.read_bytes()
 
@@ -1249,6 +1268,9 @@ call fails (for example because the path doesn't exist).
       >>> p.symlink_to('setup.py')
       >>> p.readlink()
       PosixPath('setup.py')
+
+   If :func:`os.readlink` is not available, this method raises
+   :exc:`UnsupportedOperation`.
 
    .. versionadded:: 3.9
 
@@ -1410,6 +1432,9 @@ call fails (for example because the path doesn't exist).
       >>> p.lstat().st_size
       8
 
+   If :func:`os.symlink` is not available, this method raises
+   :exc:`UnsupportedOperation`.
+
    .. note::
       The order of arguments (link, target) is the reverse
       of :func:`os.symlink`'s.
@@ -1417,6 +1442,9 @@ call fails (for example because the path doesn't exist).
 .. method:: Path.hardlink_to(target)
 
    Make this path a hard link to the same file as *target*.
+
+   If :func:`os.link` is not available, this method raises
+   :exc:`UnsupportedOperation`.
 
    .. note::
       The order of arguments (link, target) is the reverse
