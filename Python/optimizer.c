@@ -424,11 +424,10 @@ translate_bytecode_to_trace(
             }
         }
         instr++;
+        ADD_TO_TRACE(SET_IP, instr - (_Py_CODEUNIT *)code->co_code_adaptive);
     }
 done:
     if (trace_length > 0) {
-        int ip_offset = instr - (_Py_CODEUNIT *)code->co_code_adaptive;
-        ADD_TO_TRACE(SET_IP, ip_offset);
         ADD_TO_TRACE(EXIT_TRACE, 0);
     }
     return trace_length;
