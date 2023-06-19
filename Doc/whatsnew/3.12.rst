@@ -1379,7 +1379,7 @@ Removed
     ``imp.find_module()``              :func:`importlib.util.find_spec`
     ``imp.get_magic()``                :attr:`importlib.util.MAGIC_NUMBER`
     ``imp.get_suffixes()``             :attr:`importlib.machinery.SOURCE_SUFFIXES`, :attr:`importlib.machinery.EXTENSION_SUFFIXES`, and :attr:`importlib.machinery.BYTECODE_SUFFIXES`
-    ``imp.get_tag()``                  :attr:`sys.implementation.cache_tag`
+    ``imp.get_tag()``                  :attr:`sys.implementation.cache_tag <sys.implementation>`
     ``imp.load_module()``              :func:`importlib.import_module`
     ``imp.new_module(name)``           ``types.ModuleType(name)``.
     ``imp.reload()``                   :func:`importlib.reload`
@@ -1398,7 +1398,7 @@ Removed
 
     * ``imp.lock_held()``, ``imp.acquire_lock()``, ``imp.release_lock()``:
       the locking scheme has changed in Python 3.3 to per-module locks.
-    * :func:`find_module` constants: ``SEARCH_ERROR``, ``PY_SOURCE``,
+    * ``imp.find_module()`` constants: ``SEARCH_ERROR``, ``PY_SOURCE``,
       ``PY_COMPILED``, ``C_EXTENSION``, ``PY_RESOURCE``, ``PKG_DIRECTORY``,
       ``C_BUILTIN``, ``PY_FROZEN``, ``PY_CODERESOURCE``, ``IMP_HOOK``.
 
