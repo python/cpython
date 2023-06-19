@@ -283,10 +283,15 @@ PyUnstable_Optimizer_NewCounter(void)
 
 typedef struct {
     _PyOptimizerObject base;
+    int traces_executed;
     int instrs_executed;
 } UOpOptimizerObject;
 
 const int MAX_TRACE_LENGTH = 16;
+
+// UOp opcodes are outside the range of bytecodes or pseudo ops
+const int EXIT_TRACE = 512;
+const int SET_IP = 513;
 
 typedef struct {
     int opcode;
@@ -297,8 +302,6 @@ typedef struct {
     _PyExecutorObject executor;  // Base
     UOpOptimizerObject *optimizer;
     uop_instruction trace[MAX_TRACE_LENGTH];  // TODO: variable length
-    // TODO: drop the rest
-    _Py_CODEUNIT *next_instr;  // The instruction after the trace
 } UOpExecutorObject;
 
 static void
@@ -320,25 +323,60 @@ static _PyInterpreterFrame *
 uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
     UOpExecutorObject *self = (UOpExecutorObject *)executor;
-    assert(self->trace[0].opcode == LOAD_FAST);
-    int oparg = self->trace[0].oparg;
-    fprintf(stderr, "LOAD_FAST %d\n", oparg);
-    self->optimizer->instrs_executed++;
-    PyObject *value = frame->localsplus[oparg];
-    assert(value != 0);
-    Py_INCREF(value);
-    *stack_pointer++ = value;
-    _PyFrame_SetStackPointer(frame, stack_pointer);
-    frame->prev_instr = self->next_instr - 1;
-    Py_DECREF(self);
-    return frame;
+    self->optimizer->traces_executed++;
+    _Py_CODEUNIT *ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive - 1;
+    int pc = 0;
+    for (;;) {
+        int opcode = self->trace[pc].opcode;
+        int oparg = self->trace[pc].oparg;
+        pc++;
+        self->optimizer->instrs_executed++;
+        switch (opcode) {
+            // TODO: Tools/cases_generator should generate these from Python/bytecodes.c
+            case LOAD_FAST:
+            {
+                fprintf(stderr, "LOAD_FAST %d\n", oparg);
+                PyObject *value = frame->localsplus[oparg];
+                assert(value != 0);
+                Py_INCREF(value);
+                *stack_pointer++ = value;
+                break;
+            }
+            case SET_IP:
+            {
+                fprintf(stderr, "SET_IP %d\n", oparg);
+                frame->prev_instr = ip_offset + oparg;
+                break;
+            }
+            case EXIT_TRACE:
+            {
+                fprintf(stderr, "EXIT_TRACE\n");
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                Py_DECREF(self);
+                return frame;
+            }
+            default:
+            {
+                fprintf(stderr, "Unknown uop %d, oparg %d\n", opcode, oparg);
+                Py_FatalError("Unknown uop");
+                abort();  // Unreachable
+                for (;;) {}
+                // Really unreachable
+            }
+        }
+    }
 }
 
 static int
-translate_bytecode_to_trace(_Py_CODEUNIT *instr, uop_instruction *trace, int max_length)
+translate_bytecode_to_trace(
+    PyCodeObject *code,
+    _Py_CODEUNIT *instr,
+    uop_instruction *trace,
+    int max_length)
 {
+    assert(max_length >= 3);  // One op, one SET_IP, one END_TRACE
     int trace_length = 0;
-    while (trace_length < max_length) {
+    while (trace_length + 2 < max_length) {
         if (trace_length >= 1) {
             break;  // Temporarily, only handle one instruction
         }
@@ -350,7 +388,12 @@ translate_bytecode_to_trace(_Py_CODEUNIT *instr, uop_instruction *trace, int max
         instr++;
         trace_length++;
     }
-    return trace_length;
+    int ip_offset = instr - (_Py_CODEUNIT *)code->co_code_adaptive;
+    trace[trace_length].opcode = SET_IP;
+    trace[trace_length].oparg = ip_offset;
+    trace[trace_length + 1].opcode = EXIT_TRACE;
+    trace[trace_length + 1].oparg = 0;
+    return trace_length + 2;
 }
 
 static int
@@ -361,7 +404,7 @@ uop_optimize(
     _PyExecutorObject **exec_ptr)
 {
     uop_instruction trace[MAX_TRACE_LENGTH];
-    int trace_length = translate_bytecode_to_trace(instr, trace, MAX_TRACE_LENGTH);
+    int trace_length = translate_bytecode_to_trace(code, instr, trace, MAX_TRACE_LENGTH);
     if (trace_length <= 0) {
         // Error or nothing translated
         return trace_length;
@@ -374,19 +417,25 @@ uop_optimize(
     Py_INCREF(self);
     executor->optimizer = (UOpOptimizerObject *)self;
     memcpy(executor->trace, trace, trace_length * sizeof(uop_instruction));
-    executor->next_instr = instr + 1;  // Skip the LOAD_FAST!
     *exec_ptr = (_PyExecutorObject *)executor;
     return 1;
 }
 
 static PyObject *
-uop_get_state(PyObject *self, PyObject *args)
+uop_get_traces(PyObject *self, PyObject *args)
+{
+    return PyLong_FromLongLong(((UOpOptimizerObject *)self)->traces_executed);
+}
+
+static PyObject *
+uop_get_instrs(PyObject *self, PyObject *args)
 {
     return PyLong_FromLongLong(((UOpOptimizerObject *)self)->instrs_executed);
 }
 
 static PyMethodDef uop_methods[] = {
-    { "state", uop_get_state, METH_NOARGS, NULL },
+    { "get_traces", uop_get_traces, METH_NOARGS, NULL },
+    { "get_instrs", uop_get_instrs, METH_NOARGS, NULL },
     { NULL, NULL },
 };
 
@@ -409,6 +458,7 @@ PyUnstable_Optimizer_NewUOpOptimizer(void)
     opt->base.optimize = uop_optimize;
     opt->base.resume_threshold = UINT16_MAX;
     opt->base.backedge_threshold = 0;
+    opt->traces_executed = 0;
     opt->instrs_executed = 0;
     return (PyObject *)opt;
 }
