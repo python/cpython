@@ -337,7 +337,16 @@ uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **
             {
                 fprintf(stderr, "LOAD_FAST %d\n", oparg);
                 PyObject *value = frame->localsplus[oparg];
-                assert(value != 0);
+                assert(value != NULL);
+                Py_INCREF(value);
+                *stack_pointer++ = value;
+                break;
+            }
+            case LOAD_CONST:
+            {
+                fprintf(stderr, "LOAD_CONST %d\n", oparg);
+                PyObject *value = PyTuple_GET_ITEM(_PyFrame_GetCode(frame)->co_consts, oparg);
+                assert(value != NULL);
                 Py_INCREF(value);
                 *stack_pointer++ = value;
                 break;
@@ -397,6 +406,11 @@ translate_bytecode_to_trace(
                 int oparg2 = oparg & 15;
                 ADD_TO_TRACE(LOAD_FAST, oparg1);
                 ADD_TO_TRACE(LOAD_FAST, oparg2);
+                break;
+            }
+            case LOAD_CONST:
+            {
+                ADD_TO_TRACE(opcode, oparg);
                 break;
             }
             default:
