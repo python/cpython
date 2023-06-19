@@ -496,6 +496,8 @@ static int
 compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
                PyCompilerFlags *flags, int optimize, PyArena *arena)
 {
+    PyCompilerFlags local_flags = _PyCompilerFlags_INIT;
+
     c->c_const_cache = PyDict_New();
     if (!c->c_const_cache) {
         return ERROR;
@@ -512,7 +514,7 @@ compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
         return ERROR;
     }
     if (!flags) {
-        flags = &_PyCompilerFlags_INIT;
+        flags = &local_flags;
     }
     int merged = c->c_future.ff_features | flags->cf_flags;
     c->c_future.ff_features = merged;
