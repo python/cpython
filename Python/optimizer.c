@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
+#include "opcode_metadata.h"
 
 static bool
 has_space_for_executor(PyCodeObject *code, _Py_CODEUNIT *instr)
@@ -352,6 +353,7 @@ uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **
     for (;;) {
         int opcode = self->trace[pc].opcode;
         int oparg = self->trace[pc].oparg;
+        // fprintf(stderr, "uop %d, oparg %d\n", opcode, oparg);
         pc++;
         self->optimizer->instrs_executed++;
         switch (opcode) {
@@ -375,7 +377,7 @@ uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **
 
             default:
             {
-                // fprintf(stderr, "Unknown uop %d, oparg %d\n", opcode, oparg);
+                fprintf(stderr, "Unknown uop %d, oparg %d\n", opcode, oparg);
                 Py_FatalError("Unknown uop");
                 abort();  // Unreachable
                 for (;;) {}
@@ -394,6 +396,7 @@ translate_bytecode_to_trace(
     int max_length)
 {
 #define ADD_TO_TRACE(OPCODE, OPARG) \
+        /* fprintf(stderr, "ADD_TO_TRACE(%d, %d)\n", (OPCODE), (OPARG)); */ \
         trace[trace_length].opcode = (OPCODE); \
         trace[trace_length].oparg = (OPARG); \
         trace_length++;
@@ -404,13 +407,6 @@ translate_bytecode_to_trace(
         int opcode = instr->op.code;
         int oparg = instr->op.arg;
         switch (opcode) {
-            // TODO: Tools/cases_generator should generate these from Python/bytecodes.c,
-            // or it should generate metadata that can be used to generate these.
-            case LOAD_FAST:
-            {
-                ADD_TO_TRACE(opcode, oparg);
-                break;
-            }
             case LOAD_FAST_LOAD_FAST:
             {
                 // Reserve space for two uops (+ SETUP + EXIT_TRACE)
@@ -423,13 +419,12 @@ translate_bytecode_to_trace(
                 ADD_TO_TRACE(LOAD_FAST, oparg2);
                 break;
             }
-            case LOAD_CONST:
-            {
-                ADD_TO_TRACE(opcode, oparg);
-                break;
-            }
             default:
             {
+                if (OPCODE_IS_UOP(opcode)) {
+                    ADD_TO_TRACE(opcode, oparg);
+                    break;
+                }
                 goto done;  // Break out of while loop
             }
         }

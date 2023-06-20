@@ -27,21 +27,6 @@
             break;
         }
 
-        case LOAD_FAST_LOAD_FAST: {
-            PyObject *value1;
-            PyObject *value2;
-            uint32_t oparg1 = oparg >> 4;
-            uint32_t oparg2 = oparg & 15;
-            value1 = GETLOCAL(oparg1);
-            value2 = GETLOCAL(oparg2);
-            Py_INCREF(value1);
-            Py_INCREF(value2);
-            STACK_GROW(2);
-            stack_pointer[-1] = value2;
-            stack_pointer[-2] = value1;
-            break;
-        }
-
         case LOAD_CONST: {
             PyObject *value;
             value = GETITEM(FRAME_CO_CONSTS, oparg);
@@ -55,29 +40,6 @@
             PyObject *value = stack_pointer[-1];
             SETLOCAL(oparg, value);
             STACK_SHRINK(1);
-            break;
-        }
-
-        case STORE_FAST_LOAD_FAST: {
-            PyObject *value1 = stack_pointer[-1];
-            PyObject *value2;
-            uint32_t oparg1 = oparg >> 4;
-            uint32_t oparg2 = oparg & 15;
-            SETLOCAL(oparg1, value1);
-            value2 = GETLOCAL(oparg2);
-            Py_INCREF(value2);
-            stack_pointer[-1] = value2;
-            break;
-        }
-
-        case STORE_FAST_STORE_FAST: {
-            PyObject *value1 = stack_pointer[-1];
-            PyObject *value2 = stack_pointer[-2];
-            uint32_t oparg1 = oparg >> 4;
-            uint32_t oparg2 = oparg & 15;
-            SETLOCAL(oparg1, value1);
-            SETLOCAL(oparg2, value2);
-            STACK_SHRINK(2);
             break;
         }
 

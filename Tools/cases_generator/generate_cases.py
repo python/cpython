@@ -244,13 +244,14 @@ class Formatter:
     def cast(self, dst: StackEffect, src: StackEffect) -> str:
         return f"({dst.type or 'PyObject *'})" if src.type != dst.type else ""
 
-INSTRUCTION_FLAGS = ['HAS_ARG', 'HAS_CONST', 'HAS_NAME', 'HAS_JUMP']
+INSTRUCTION_FLAGS = ['HAS_ARG', 'HAS_CONST', 'HAS_NAME', 'HAS_JUMP', 'IS_UOP']
 
 FORBIDDEN_INSTRUCTIONS = (
     "cframe",
     "resume_with_error",  # Proxy for "goto", which isn't an IDENTIFIER
     "kwnames",
     "next_instr",
+    "oparg1",  # Proxy for super-instructions like LOAD_FAST_LOAD_FAST
     "tstate",
     "JUMPBY",
     "DEOPT_IF",
@@ -315,6 +316,7 @@ class Instruction:
             'HAS_CONST':  variable_used(inst, "FRAME_CO_CONSTS"),
             'HAS_NAME' :  variable_used(inst, "FRAME_CO_NAMES"),
             'HAS_JUMP' :  variable_used(inst, "JUMPBY"),
+            'IS_UOP'   :  self.is_viable_uop(),
         }
         assert set(flag_data.keys()) == set(INSTRUCTION_FLAGS)
         self.flags = 0
