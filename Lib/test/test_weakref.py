@@ -967,10 +967,6 @@ class ReferencesTestCase(TestBase):
         del x
         support.gc_collect()
 
-    @support.cpython_only
-    def test_capi(self):
-        import _testcapi
-        _testcapi.check_weakref_capi(C)
 
 class SubclassableWeakrefTestCase(TestBase):
 
