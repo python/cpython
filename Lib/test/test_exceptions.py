@@ -1939,7 +1939,7 @@ class AssertionErrorTests(unittest.TestCase):
     def write_source(self, source):
         with open(TESTFN, 'w') as testfile:
             testfile.write(dedent(source))
-        _rc, _out, err = script_helper.assert_python_failure('-Wd', TESTFN)
+        _rc, _out, err = script_helper.assert_python_failure('-Wd', '-X', 'utf8', TESTFN)
         return err.decode('utf-8').splitlines()
 
     def test_assertion_error_location(self):
