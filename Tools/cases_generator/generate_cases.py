@@ -855,7 +855,7 @@ class Analyzer:
                         for _ in range(ce.size):
                             format += cache
                             cache = "0"
-                    flags |= instr.flags
+                    flags |= instr.flags & 0x0F  # Strip out IS_UOP
                 case _:
                     typing.assert_never(component)
         final_sp = sp
