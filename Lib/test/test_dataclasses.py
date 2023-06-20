@@ -2820,6 +2820,23 @@ class TestFrozen(unittest.TestCase):
         self.assertEqual(c.i, 10)
         with self.assertRaises(FrozenInstanceError):
             c.i = 5
+        with self.assertRaises(FrozenInstanceError):
+            c.j = 5
+
+        self.assertEqual(c.i, 10)
+
+    def test_frozen_with_slots(self):
+        @dataclass(frozen=True, slots=True)
+        class C:
+            i: int
+
+        c = C(10)
+        self.assertEqual(c.i, 10)
+        with self.assertRaises(FrozenInstanceError):
+            c.i = 5
+        with self.assertRaises(FrozenInstanceError):
+            c.j = 5
+
         self.assertEqual(c.i, 10)
 
     def test_frozen_empty(self):
@@ -2937,6 +2954,43 @@ class TestFrozen(unittest.TestCase):
         # See bpo-32953.
 
         @dataclass(frozen=True)
+        class D:
+            x: int
+            y: int = 10
+
+        class S(D):
+            pass
+
+        s = S(3)
+        self.assertEqual(s.x, 3)
+        self.assertEqual(s.y, 10)
+        s.cached = True
+
+        # But can't change the frozen attributes.
+        with self.assertRaises(FrozenInstanceError):
+            s.x = 5
+        with self.assertRaises(FrozenInstanceError):
+            s.y = 5
+        self.assertEqual(s.x, 3)
+        self.assertEqual(s.y, 10)
+        self.assertEqual(s.cached, True)
+
+        with self.assertRaises(FrozenInstanceError):
+            del s.x
+        self.assertEqual(s.x, 3)
+        with self.assertRaises(FrozenInstanceError):
+            del s.y
+        self.assertEqual(s.y, 10)
+        del s.cached
+        self.assertFalse(hasattr(s, 'cached'))
+        with self.assertRaises(AttributeError) as cm:
+            del s.cached
+        self.assertNotIsInstance(cm.exception, FrozenInstanceError)
+
+    def test_non_frozen_normal_derived_with_slots(self):
+        # See bpo-32953.
+
+        @dataclass(frozen=True, slots=True)
         class D:
             x: int
             y: int = 10
