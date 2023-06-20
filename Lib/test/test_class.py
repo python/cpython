@@ -740,6 +740,25 @@ class ClassTests(unittest.TestCase):
         class A(0, *range(1, 8), **d, foo='bar'): pass
         self.assertEqual(A, (tuple(range(8)), {'foo': 'bar'}))
 
+    def testClassCallRecursionLimit(self):
+        class C:
+            def __init__(self):
+                self.c = C()
+
+        try:
+            C()
+        except RecursionError:
+            # OK
+            pass
+        def add_one_level():
+            #Each call to C() consumes 2 levels, so offset by 1.
+            C()
+        try:
+            add_one_level()
+        except RecursionError:
+            # OK
+            pass
+
 
 if __name__ == '__main__':
     unittest.main()
