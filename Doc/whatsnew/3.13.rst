@@ -410,6 +410,9 @@ Build Changes
   :file:`!configure`.
   (Contributed by Christian Heimes in :gh:`89886`.)
 
+* SQLite 3.15.2 or newer is required to build the :mod:`sqlite3` extension module.
+  (Contributed by Erlend Aasland in :gh:`105875`.)
+
 
 C API Changes
 =============
@@ -422,6 +425,11 @@ New Features
   :ref:`format codes <arg-parsing-string-and-buffers>`.
   APIs accepting the format codes always use ``Py_ssize_t`` for ``#`` formats.
   (Contributed by Inada Naoki in :gh:`104922`.)
+
+* Add :c:func:`PyImport_AddModuleRef`: similar to
+  :c:func:`PyImport_AddModule`, but return a :term:`strong reference` instead
+  of a :term:`borrowed reference`.
+  (Contributed by Victor Stinner in :gh:`105922`.)
 
 
 Porting to Python 3.13
