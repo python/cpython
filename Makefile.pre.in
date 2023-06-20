@@ -1565,6 +1565,9 @@ Python/ceval.o: \
 		$(srcdir)/Python/opcode_metadata.h \
 		$(srcdir)/Python/opcode_targets.h
 
+Python/flowgraph.o: \
+		$(srcdir)/Python/opcode_metadata.h
+
 Python/frozen.o: $(FROZEN_FILES_OUT)
 
 # Generate DTrace probe macros, then rename them (PYTHON_ -> PyDTrace_) to
