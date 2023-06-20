@@ -1048,10 +1048,10 @@ x = (
         self.assertEqual(fr'{1+1}\}}', '2\\}')
 
     def test_fstring_backslash_before_double_bracket_warns_once(self):
-        with warnings.catch_warnings(record=True) as w:
+        with self.assertWarns(SyntaxWarning) as w:
             eval(r"f'\{{'")
-        self.assertEqual(len(w), 1)
-        self.assertEqual(w[0].category, SyntaxWarning)
+        self.assertEqual(len(w.warnings), 1)
+        self.assertEqual(w.warnings[0].category, SyntaxWarning)
 
     def test_fstring_backslash_prefix_raw(self):
         self.assertEqual(f'\\', '\\')
