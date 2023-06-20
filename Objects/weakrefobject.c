@@ -402,6 +402,9 @@ proxy_check_ref(PyObject *obj)
             if (!proxy_check_ref(o)) { \
                 return NULL; \
             } \
+        } \
+        else { \
+            Py_INCREF(o); \
         }
 
 #define WRAP_UNARY(method, generic) \
