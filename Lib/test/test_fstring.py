@@ -773,7 +773,7 @@ x = (
         self.assertEqual(f'{CustomFormat():\n}', '\n')
         self.assertEqual(f'{CustomFormat():\u2603}', '☃')
         with self.assertWarns(SyntaxWarning):
-            exec('f"{F():¯\_(ツ)_/¯}"', {'F': CustomFormat})
+            exec(r'f"{F():¯\_(ツ)_/¯}"', {'F': CustomFormat})
 
     def test_side_effect_order(self):
         class X:
