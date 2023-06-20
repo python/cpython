@@ -351,19 +351,37 @@ import_add_module(PyThreadState *tstate, PyObject *name)
 }
 
 PyObject *
+PyImport_AddModuleRef(const char *name)
+{
+    PyObject *name_obj = PyUnicode_FromString(name);
+    if (name_obj == NULL) {
+        return NULL;
+    }
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *module = import_add_module(tstate, name_obj);
+    Py_DECREF(name_obj);
+    return module;
+}
+
+
+PyObject *
 PyImport_AddModuleObject(PyObject *name)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *mod = import_add_module(tstate, name);
-    if (mod) {
-        PyObject *ref = PyWeakref_NewRef(mod, NULL);
-        Py_DECREF(mod);
-        if (ref == NULL) {
-            return NULL;
-        }
-        mod = PyWeakref_GetObject(ref);
-        Py_DECREF(ref);
+    if (!mod) {
+        return NULL;
     }
+
+    // gh-86160: PyImport_AddModuleObject() returns a borrowed reference
+    PyObject *ref = PyWeakref_NewRef(mod, NULL);
+    Py_DECREF(mod);
+    if (ref == NULL) {
+        return NULL;
+    }
+
+    mod = PyWeakref_GetObject(ref);
+    Py_DECREF(ref);
     return mod; /* borrowed reference */
 }
 
@@ -2240,11 +2258,12 @@ init_importlib(PyThreadState *tstate, PyObject *sysmod)
     if (PyImport_ImportFrozenModule("_frozen_importlib") <= 0) {
         return -1;
     }
-    PyObject *importlib = PyImport_AddModule("_frozen_importlib"); // borrowed
+
+    PyObject *importlib = PyImport_AddModuleRef("_frozen_importlib");
     if (importlib == NULL) {
         return -1;
     }
-    IMPORTLIB(interp) = Py_NewRef(importlib);
+    IMPORTLIB(interp) = importlib;
 
     // Import the _imp module
     if (verbose) {

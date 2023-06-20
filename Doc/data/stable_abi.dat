@@ -298,6 +298,7 @@ type,PyGetSetDef,3.2,,full-abi
 var,PyGetSetDescr_Type,3.2,,
 function,PyImport_AddModule,3.2,,
 function,PyImport_AddModuleObject,3.7,,
+function,PyImport_AddModuleRef,3.13,,
 function,PyImport_AppendInittab,3.2,,
 function,PyImport_ExecCodeModule,3.2,,
 function,PyImport_ExecCodeModuleEx,3.2,,

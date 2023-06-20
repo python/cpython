@@ -66,18 +66,22 @@ DEFINE = "#define {:<38} {:>3}\n"
 
 UINT32_MASK = (1<<32)-1
 
+def get_python_module_dict(filename):
+    mod = {}
+    with tokenize.open(filename) as fp:
+        code = fp.read()
+    exec(code, mod)
+    return mod
 
-def main(opcode_py, outfile='Include/opcode.h',
+def main(opcode_py,
+         _opcode_metadata_py='Lib/_opcode_metadata.py',
+         outfile='Include/opcode.h',
          internaloutfile='Include/internal/pycore_opcode.h',
          intrinsicoutfile='Include/internal/pycore_intrinsics.h'):
-    opcode = {}
-    if hasattr(tokenize, 'open'):
-        fp = tokenize.open(opcode_py)   # Python 3.2+
-    else:
-        fp = open(opcode_py)            # Python 2.7
-    with fp:
-        code = fp.read()
-    exec(code, opcode)
+
+    _opcode_metadata = get_python_module_dict(_opcode_metadata_py)
+
+    opcode = get_python_module_dict(opcode_py)
     opmap = opcode['opmap']
     opname = opcode['opname']
     hasarg = opcode['hasarg']
@@ -86,6 +90,7 @@ def main(opcode_py, outfile='Include/opcode.h',
     hasjabs = opcode['hasjabs']
     is_pseudo = opcode['is_pseudo']
     _pseudo_ops = opcode['_pseudo_ops']
+
 
     ENABLE_SPECIALIZATION = opcode["ENABLE_SPECIALIZATION"]
     MIN_PSEUDO_OPCODE = opcode["MIN_PSEUDO_OPCODE"]
@@ -101,7 +106,7 @@ def main(opcode_py, outfile='Include/opcode.h',
 
     specialized_opmap = {}
     opname_including_specialized = opname.copy()
-    for name in opcode['_specialized_instructions']:
+    for name in _opcode_metadata['_specialized_instructions']:
         while used[next_op]:
             next_op += 1
         specialized_opmap[name] = next_op
@@ -145,7 +150,7 @@ def main(opcode_py, outfile='Include/opcode.h',
         for basic, op in opmap.items():
             if not is_pseudo(op):
                 deoptcodes[basic] = basic
-        for basic, family in opcode["_specializations"].items():
+        for basic, family in _opcode_metadata["_specializations"].items():
             for specialized in family:
                 deoptcodes[specialized] = basic
         iobj.write("\nconst uint8_t _PyOpcode_Deopt[256] = {\n")
@@ -203,4 +208,4 @@ def main(opcode_py, outfile='Include/opcode.h',
 
 
 if __name__ == '__main__':
-    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])
