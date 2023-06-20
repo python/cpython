@@ -3383,7 +3383,7 @@ check_weakref_capi(PyObject *self, PyObject *factory)
     Py_ssize_t refcnt = Py_REFCNT(obj);
     assert(refcnt == 1);
 
-    // test PyWeakref_GetRef()
+    // test PyWeakref_NewRef()
     PyObject *weakref = PyWeakref_NewRef(obj, NULL);
     if (weakref == NULL) {
         Py_DECREF(obj);
