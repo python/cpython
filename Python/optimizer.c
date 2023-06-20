@@ -2,6 +2,7 @@
 #include "Python.h"
 #include "opcode.h"
 #include "pycore_interp.h"
+#include "pycore_object.h"
 #include "pycore_opcode.h"
 #include "pycore_pystate.h"
 #include "cpython/optimizer.h"
@@ -9,6 +10,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "opcode_metadata.h"
+#include "ceval_macros.h"
 
 static bool
 has_space_for_executor(PyCodeObject *code, _Py_CODEUNIT *instr)
@@ -327,25 +329,6 @@ static PyTypeObject UOpExecutor_Type = {
 static _PyInterpreterFrame *
 uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
-// TODO: These macros should be imported from ceval_macros.h or similar
-#define GETLOCAL(i)     (frame->localsplus[i])
-#define SETLOCAL(i, v)  do { \
-                            PyObject *tmp = GETLOCAL(i); \
-                            GETLOCAL(i) = (v); \
-                            Py_XDECREF(tmp); \
-                        } while (0)
-#define GETITEM(v, i)   PyTuple_GET_ITEM((v), (i))
-#define STACK_GROW(n)   (stack_pointer += (n))
-#define STACK_SHRINK(n) (stack_pointer -= (n))
-#define FRAME_CO_CONSTS (_PyFrame_GetCode(frame)->co_consts)
-#define FRAME_CO_NAMES  (_PyFrame_GetCode(frame)->co_names)
-#define DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dval, result) do {\
-        result = PyFloat_FromDouble(dval); \
-        /* if ((result) == NULL) goto error; */ \
-        Py_DECREF(left); \
-        Py_DECREF(right); \
-    } while (0)
-
     UOpExecutorObject *self = (UOpExecutorObject *)executor;
     self->optimizer->traces_executed++;
     _Py_CODEUNIT *ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive - 1;
@@ -385,6 +368,10 @@ uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **
             }
 
         }
+        continue;
+    error:
+        fprintf(stderr, "[Opcode %d, oparg %d]\n", opcode, oparg);
+        Py_FatalError("Errors not yet supported");
     }
 }
 
