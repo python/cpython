@@ -1386,15 +1386,78 @@ Removed
     ``imp.source_from_cache()``        :func:`importlib.util.source_from_cache`
     =================================  =======================================
 
+  * Replace ``imp.load_source()`` with::
+
+        import importlib.util
+        import importlib.machinery
+
+        def load_source(modname, filename):
+            loader = importlib.machinery.SourceFileLoader(modname, filename)
+            spec = importlib.util.spec_from_file_location(modname, filename, loader=loader)
+            module = importlib.util.module_from_spec(spec)
+            # The module is always executed and not cached in sys.modules.
+            # Uncomment the following line to cache the module.
+            # sys.modules[module.__name__] = module
+            loader.exec_module(module)
+            return module
+
+  * Replace ``imp.load_compiled()`` with::
+
+        import importlib.util
+        import importlib.machinery
+
+        def load_compiled(modname, filename):
+            loader = importlib.machinery.SourcelessFileLoader(modname, filename)
+            spec = importlib.util.spec_from_file_location(modname, filename, loader=loader)
+            module = importlib.util.module_from_spec(spec)
+            # The module is always executed and not cached in sys.modules.
+            # Uncomment the following line to cache the module.
+            # sys.modules[module.__name__] = module
+            loader.exec_module(module)
+            return module
+
+  * Replace ``imp.load_package()`` with::
+
+        import sys
+        import os.path
+        import importlib
+
+        def load_package(name, path):
+            old_path = list(sys.path)
+            try:
+                sys.path.insert(0, os.path.dirname(path))
+                return importlib.import_module(name)
+            finally:
+                sys.path.clear()
+                sys.path.extend(old_path)
+
+  * Replace ``imp.load_dynamic()`` with::
+
+        import importlib.machinery
+        import importlib.util
+
+        def load_dynamic(name, filename):
+            loader = importlib.machinery.ExtensionFileLoader(name, filename)
+            spec = importlib.util.spec_from_loader(name, loader)
+            module = importlib.util.module_from_spec(spec)
+            # The module is always executed and not cached in sys.modules.
+            # Uncomment the following line to cache the module.
+            # sys.modules[module.__name__] = module
+            loader.exec_module(module)
+            return module
+
+  * Replace ``imp.init_builtin()`` with::
+
+        import importlib.machinery
+        import importlib.util
+
+        def init_builtin(name):
+            spec = importlib.machinery.BuiltinImporter.find_spec(name)
+            if spec is None:
+                raise ImportError(f'no built-in module named: {name!r}')
+            return importlib.util.module_from_spec(spec)
+
   * Removed :mod:`!imp` functions and attributes with no replacements:
-
-    * undocumented functions:
-
-      * ``imp.init_builtin()``
-      * ``imp.load_compiled()``
-      * ``imp.load_dynamic()``
-      * ``imp.load_package()``
-      * ``imp.load_source()``
 
     * ``imp.lock_held()``, ``imp.acquire_lock()``, ``imp.release_lock()``:
       the locking scheme has changed in Python 3.3 to per-module locks.
