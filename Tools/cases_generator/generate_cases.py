@@ -29,6 +29,9 @@ DEFAULT_METADATA_OUTPUT = os.path.relpath(
 DEFAULT_PYMETADATA_OUTPUT = os.path.relpath(
     os.path.join(ROOT, "Lib/_opcode_metadata.py")
 )
+DEFAULT_EXECUTOR_OUTPUT = os.path.relpath(
+    os.path.join(ROOT, "Python/executor_cases.c.h")
+)
 BEGIN_MARKER = "// BEGIN BYTECODES //"
 END_MARKER = "// END BYTECODES //"
 RE_PREDICTED = (
@@ -60,6 +63,13 @@ arg_parser.add_argument(
 )
 arg_parser.add_argument(
     "input", nargs=argparse.REMAINDER, help="Instruction definition file(s)"
+)
+arg_parser.add_argument(
+    "-e",
+    "--executor-cases",
+    type=str,
+    help="Write executor cases to this file",
+    default=DEFAULT_EXECUTOR_OUTPUT,
 )
 
 
@@ -236,6 +246,21 @@ class Formatter:
 
 INSTRUCTION_FLAGS = ['HAS_ARG', 'HAS_CONST', 'HAS_NAME', 'HAS_JUMP']
 
+FORBIDDEN_INSTRUCTIONS = (
+    "cframe",
+    "resume_with_error",  # Proxy for "goto", which isn't an IDENTIFIER
+    "kwnames",
+    "next_instr",
+    "tstate",
+    "JUMPBY",
+    "DEOPT_IF",
+    "DISPATCH",
+    "ERROR_IF",
+    "GLOBALS",
+    "INSTRUMENTED_JUMP",
+    "MAKE_FUNCTION_CLOSURE",  # Proxy for 'opcode == SET_FUNCTION_ATTRIBUTE
+)
+
 @dataclasses.dataclass
 class Instruction:
     """An instruction with additional data and code."""
@@ -307,7 +332,19 @@ class Instruction:
                 cache = "0"
         self.instr_fmt = fmt
 
-    def write(self, out: Formatter) -> None:
+    def is_viable_uop(self) -> bool:
+        """Whether this instruction is viable as a uop."""
+        if self.always_exits:
+            return False
+        for c in self.cache_effects:
+            if c.name != UNUSED:
+                return False
+        for forbidden in FORBIDDEN_INSTRUCTIONS:
+            if variable_used(self.inst, forbidden):
+                return False
+        return True
+
+    def write(self, out: Formatter, adjust_cache=True) -> None:
         """Write one instruction, sans prologue and epilogue."""
         # Write a static assertion that a family's cache size is correct
         if family := self.family:
@@ -381,7 +418,7 @@ class Instruction:
             out.assign(dst, oeffect)
 
         # Write cache effect
-        if self.cache_offset:
+        if adjust_cache and self.cache_offset:
             out.emit(f"next_instr += {self.cache_offset};")
 
     def write_body(self, out: Formatter, dedent: int, cache_adjust: int = 0) -> None:
@@ -528,16 +565,19 @@ class Analyzer:
     output_filename: str
     metadata_filename: str
     pymetadata_filename: str
+    executor_filename: str
     errors: int = 0
     emit_line_directives: bool = False
 
     def __init__(self, input_filenames: list[str], output_filename: str,
-                 metadata_filename: str, pymetadata_filename: str):
+                 metadata_filename: str, pymetadata_filename: str,
+                 executor_filename: str):
         """Read the input file."""
         self.input_filenames = input_filenames
         self.output_filename = output_filename
         self.metadata_filename = metadata_filename
         self.pymetadata_filename = pymetadata_filename
+        self.executor_filename = executor_filename
 
     def error(self, msg: str, node: parser.Node) -> None:
         lineno = 0
@@ -1207,6 +1247,33 @@ class Analyzer:
             file=sys.stderr,
         )
 
+    def write_executor_instructions(self) -> None:
+        """Generate cases for the Tier 2 interpreter."""
+        with open(self.executor_filename, "w") as f:
+            self.out = Formatter(f, 8)
+            self.write_provenance_header()
+            for thing in self.everything:
+                match thing:
+                    case OverriddenInstructionPlaceHolder():
+                        self.write_overridden_instr_place_holder(thing)
+                    case parser.InstDef():
+                        instr = self.instrs[thing.name]
+                        if instr.is_viable_uop():
+                            self.out.emit("")
+                            with self.out.block(f"case {thing.name}:"):
+                                instr.write(self.out, adjust_cache=False)
+                                self.out.emit("break;")
+                    case parser.Macro():
+                        pass  # TODO
+                    case parser.Pseudo():
+                        pass
+                    case _:
+                        typing.assert_never(thing)
+        print(
+            f"Wrote some stuff to {self.executor_filename}",
+            file=sys.stderr,
+        )
+
     def write_overridden_instr_place_holder(self,
             place_holder: OverriddenInstructionPlaceHolder) -> None:
         self.out.emit("")
@@ -1360,7 +1427,7 @@ def main():
         args.input.append(DEFAULT_INPUT)
 
     # Raises OSError if input unreadable
-    a = Analyzer(args.input, args.output, args.metadata, args.pymetadata)
+    a = Analyzer(args.input, args.output, args.metadata, args.pymetadata, args.executor_cases)
 
     if args.emit_line_directives:
         a.emit_line_directives = True
@@ -1370,6 +1437,7 @@ def main():
         sys.exit(f"Found {a.errors} errors")
     a.write_instructions()  # Raises OSError if output can't be written
     a.write_metadata()
+    a.write_executor_instructions()
 
 
 if __name__ == "__main__":

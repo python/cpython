@@ -292,6 +292,10 @@ typedef struct {
 // UOp opcodes are outside the range of bytecodes or pseudo ops
 #define EXIT_TRACE 512
 #define SET_IP 513
+// TODOL Generate these in Tools/cases_generator
+#define _BINARY_OP_MULTIPLY_FLOAT 514
+#define _BINARY_OP_ADD_FLOAT 515
+#define _BINARY_OP_SUBTRACT_FLOAT 516
 
 typedef struct {
     int opcode;
@@ -322,6 +326,25 @@ static PyTypeObject UOpExecutor_Type = {
 static _PyInterpreterFrame *
 uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
+// TODO: These macros should be imported from ceval_macros.h or similar
+#define GETLOCAL(i)     (frame->localsplus[i])
+#define SETLOCAL(i, v)  do { \
+                            PyObject *tmp = GETLOCAL(i); \
+                            GETLOCAL(i) = (v); \
+                            Py_XDECREF(tmp); \
+                        } while (0)
+#define GETITEM(v, i)   PyTuple_GET_ITEM((v), (i))
+#define STACK_GROW(n)   (stack_pointer += (n))
+#define STACK_SHRINK(n) (stack_pointer -= (n))
+#define FRAME_CO_CONSTS (_PyFrame_GetCode(frame)->co_consts)
+#define FRAME_CO_NAMES  (_PyFrame_GetCode(frame)->co_names)
+#define DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dval, result) do {\
+        result = PyFloat_FromDouble(dval); \
+        /* if ((result) == NULL) goto error; */ \
+        Py_DECREF(left); \
+        Py_DECREF(right); \
+    } while (0)
+
     UOpExecutorObject *self = (UOpExecutorObject *)executor;
     self->optimizer->traces_executed++;
     _Py_CODEUNIT *ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive - 1;
@@ -332,31 +355,16 @@ uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **
         pc++;
         self->optimizer->instrs_executed++;
         switch (opcode) {
-            // TODO: Tools/cases_generator should generate these from Python/bytecodes.c
-            case LOAD_FAST:
-            {
-                // fprintf(stderr, "LOAD_FAST %d\n", oparg);
-                PyObject *value = frame->localsplus[oparg];
-                assert(value != NULL);
-                Py_INCREF(value);
-                *stack_pointer++ = value;
-                break;
-            }
-            case LOAD_CONST:
-            {
-                // fprintf(stderr, "LOAD_CONST %d\n", oparg);
-                PyObject *value = PyTuple_GET_ITEM(_PyFrame_GetCode(frame)->co_consts, oparg);
-                assert(value != NULL);
-                Py_INCREF(value);
-                *stack_pointer++ = value;
-                break;
-            }
+
+#include "executor_cases.c.h"
+
             case SET_IP:
             {
                 // fprintf(stderr, "SET_IP %d\n", oparg);
                 frame->prev_instr = ip_offset + oparg;
                 break;
             }
+
             case EXIT_TRACE:
             {
                 // fprintf(stderr, "EXIT_TRACE\n");
@@ -364,6 +372,7 @@ uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **
                 Py_DECREF(self);
                 return frame;
             }
+
             default:
             {
                 // fprintf(stderr, "Unknown uop %d, oparg %d\n", opcode, oparg);
@@ -372,6 +381,7 @@ uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **
                 for (;;) {}
                 // Really unreachable
             }
+
         }
     }
 }
@@ -431,6 +441,8 @@ done:
         ADD_TO_TRACE(EXIT_TRACE, 0);
     }
     return trace_length;
+
+#undef ADD_TO_TRACE
 }
 
 static int
