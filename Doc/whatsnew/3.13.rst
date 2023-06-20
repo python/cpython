@@ -426,6 +426,11 @@ New Features
   APIs accepting the format codes always use ``Py_ssize_t`` for ``#`` formats.
   (Contributed by Inada Naoki in :gh:`104922`.)
 
+* Add :c:func:`PyImport_AddModuleRef`: similar to
+  :c:func:`PyImport_AddModule`, but return a :term:`strong reference` instead
+  of a :term:`borrowed reference`.
+  (Contributed by Victor Stinner in :gh:`105922`.)
+
 
 Porting to Python 3.13
 ----------------------

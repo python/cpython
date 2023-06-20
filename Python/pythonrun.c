@@ -406,7 +406,7 @@ _PyRun_SimpleFileObject(FILE *fp, PyObject *filename, int closeit,
 {
     int ret = -1;
 
-    PyObject *main_module = Py_XNewRef(PyImport_AddModule("__main__"));
+    PyObject *main_module = PyImport_AddModuleRef("__main__");
     if (main_module == NULL)
         return -1;
     PyObject *dict = PyModule_GetDict(main_module);  // borrowed ref
@@ -502,7 +502,7 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
 int
 PyRun_SimpleStringFlags(const char *command, PyCompilerFlags *flags)
 {
-    PyObject *main_module = Py_XNewRef(PyImport_AddModule("__main__"));
+    PyObject *main_module = PyImport_AddModuleRef("__main__");
     if (main_module == NULL) {
         return -1;
     }

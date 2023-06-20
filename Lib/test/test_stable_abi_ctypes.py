@@ -328,6 +328,7 @@ SYMBOL_NAMES = (
     "PyGetSetDescr_Type",
     "PyImport_AddModule",
     "PyImport_AddModuleObject",
+    "PyImport_AddModuleRef",
     "PyImport_AppendInittab",
     "PyImport_ExecCodeModule",
     "PyImport_ExecCodeModuleEx",

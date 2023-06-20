@@ -2428,3 +2428,5 @@
     added = '3.12'
 [const.Py_TPFLAGS_ITEMS_AT_END]
     added = '3.12'
+[function.PyImport_AddModuleRef]
+    added = '3.13'
