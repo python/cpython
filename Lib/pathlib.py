@@ -1043,6 +1043,14 @@ class Path(PurePath):
         if pattern[-1] in (self._flavour.sep, self._flavour.altsep):
             # GH-65238: pathlib doesn't preserve trailing slash. Add it back.
             pattern_parts.append('')
+        if pattern_parts[-1] == '**':
+            # GH-70303: '**' only matches directories. Add trailing slash.
+            warnings.warn(
+                "Pattern ending '**' will match files and directories in a "
+                "future Python release. Add a trailing slash to match only "
+                "directories and remove this warning.",
+                FutureWarning, 3)
+            pattern_parts.append('')
 
         if case_sensitive is None:
             # TODO: evaluate case-sensitivity of each directory in _select_children().
