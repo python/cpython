@@ -635,7 +635,7 @@ def _repr_fn(fields, globals):
     return _recursive_repr(fn)
 
 
-def _frozen_get_del_attr(cls, fields, globals):
+def _frozen_set_del_attr(cls, fields, globals):
     locals = {'cls': cls,
               'FrozenInstanceError': FrozenInstanceError}
     condition = 'type(self) is cls'
@@ -1121,7 +1121,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                                 'functools.total_ordering')
 
     if frozen:
-        for fn in _frozen_get_del_attr(cls, field_list, globals):
+        for fn in _frozen_set_del_attr(cls, field_list, globals):
             if _set_new_attribute(cls, fn.__name__, fn):
                 raise TypeError(f'Cannot overwrite attribute {fn.__name__} '
                                 f'in class {cls.__name__}')
