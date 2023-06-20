@@ -1416,21 +1416,6 @@ Removed
             loader.exec_module(module)
             return module
 
-  * Replace ``imp.load_package()`` with::
-
-        import sys
-        import os.path
-        import importlib
-
-        def load_package(name, path):
-            old_path = list(sys.path)
-            try:
-                sys.path.insert(0, os.path.dirname(path))
-                return importlib.import_module(name)
-            finally:
-                sys.path.clear()
-                sys.path.extend(old_path)
-
   * Replace ``imp.load_dynamic()`` with::
 
         import importlib.machinery
@@ -1445,6 +1430,21 @@ Removed
             # sys.modules[module.__name__] = module
             loader.exec_module(module)
             return module
+
+  * Replace ``imp.load_package()`` with::
+
+        import sys
+        import os.path
+        import importlib
+
+        def load_package(name, path):
+            old_path = list(sys.path)
+            try:
+                sys.path.insert(0, os.path.dirname(path))
+                return importlib.import_module(name)
+            finally:
+                sys.path.clear()
+                sys.path.extend(old_path)
 
   * Replace ``imp.init_builtin()`` with::
 
