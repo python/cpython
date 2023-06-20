@@ -1,0 +1,1 @@
+Fixed frozen dataclasses with slots' ``__setattr__`` and ``__delattr_``.
