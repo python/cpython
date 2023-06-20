@@ -2641,7 +2641,7 @@ dummy_func(
                      keys_version, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
-            Py_DECREF(self);
+            DECREF_INPUTS();
             res = Py_NewRef(descr);
             assert((oparg & 1) == 0);
         }
@@ -2653,7 +2653,7 @@ dummy_func(
             assert(self_cls->tp_dictoffset == 0);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
-            Py_DECREF(self);
+            DECREF_INPUTS();
             res = Py_NewRef(descr);
             assert((oparg & 1) == 0);
         }

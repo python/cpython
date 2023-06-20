@@ -1099,6 +1099,10 @@ PyObject *descr, DescriptorClassification kind, bool is_method)
             assert(owner_cls->tp_dictoffset <= INT16_MAX);
             instr->op.code = LOAD_ATTR_METHOD_LAZY_DICT;
         }
+        else {
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_CLASS_ATTR_SIMPLE);
+            return 0;
+        }
     }
     /* `descr` is borrowed. This is safe for methods (even inherited ones from
     *  super classes!) as long as tp_version_tag is validated for two main reasons:
