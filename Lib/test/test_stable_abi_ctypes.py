@@ -794,6 +794,7 @@ SYMBOL_NAMES = (
     "PyVectorcall_Call",
     "PyVectorcall_NARGS",
     "PyWeakref_GetObject",
+    "PyWeakref_GetRef",
     "PyWeakref_NewProxy",
     "PyWeakref_NewRef",
     "PyWrapperDescr_Type",

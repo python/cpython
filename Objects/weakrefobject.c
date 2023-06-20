@@ -894,11 +894,33 @@ PyWeakref_NewProxy(PyObject *ob, PyObject *callback)
 }
 
 
+int
+PyWeakref_GetRef(PyObject *ref, PyObject **pobj)
+{
+    if (ref == NULL) {
+        *pobj = NULL;
+        PyErr_BadInternalCall();
+        return -1;
+    }
+    if (!PyWeakref_Check(ref)) {
+        *pobj = NULL;
+        PyErr_SetString(PyExc_TypeError, "expected a weakref");
+        return -1;
+    }
+    *pobj = _PyWeakref_GET_REF(ref);
+    return 0;
+}
+
+
 PyObject *
 PyWeakref_GetObject(PyObject *ref)
 {
-    if (ref == NULL || !PyWeakref_Check(ref)) {
+    if (ref == NULL) {
         PyErr_BadInternalCall();
+        return NULL;
+    }
+    if (!PyWeakref_Check(ref)) {
+        PyErr_SetString(PyExc_TypeError, "expected a weakref");
         return NULL;
     }
     return PyWeakref_GET_OBJECT(ref);

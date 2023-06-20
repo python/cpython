@@ -3372,6 +3372,73 @@ error:
 }
 
 
+static PyObject *
+check_weakref_capi(PyObject *self, PyObject *factory)
+{
+    // obj = factory()
+    PyObject *obj = PyObject_CallNoArgs(factory);
+    if (obj == NULL) {
+        return NULL;
+    }
+    Py_ssize_t refcnt = Py_REFCNT(obj);
+    assert(refcnt == 1);
+
+    // test PyWeakref_GetRef()
+    PyObject *weakref = PyWeakref_NewRef(obj, NULL);
+    if (weakref == NULL) {
+        Py_DECREF(obj);
+        return NULL;
+    }
+    assert(PyWeakref_Check(weakref));
+    assert(PyWeakref_CheckRefExact(weakref));
+    assert(PyWeakref_CheckRefExact(weakref));
+    assert(Py_REFCNT(obj) == refcnt);
+
+    // test PyWeakref_GetRef()
+    PyObject *ref1;
+    assert(PyWeakref_GetRef(weakref, &ref1) == 0);
+    assert(ref1 == obj);
+    assert(Py_REFCNT(obj) == (refcnt + 1));
+    Py_DECREF(ref1);
+
+    // test PyWeakref_GetObject()
+    PyObject *ref2 = PyWeakref_GetObject(weakref);
+    assert(ref2 == obj);
+    assert(Py_REFCNT(obj) == refcnt);
+
+    // test PyWeakref_GET_OBJECT()
+    PyObject *ref3 = PyWeakref_GET_OBJECT(weakref);
+    assert(ref3 == obj);
+    assert(Py_REFCNT(obj) == refcnt);
+
+    // delete the object
+    assert(refcnt == 1);
+    Py_DECREF(obj);
+    assert(PyWeakref_GET_OBJECT(weakref) == Py_None);
+    PyObject *ref4;
+    assert(PyWeakref_GetRef(weakref, &ref4) == 0);
+    assert(ref4 == NULL);
+
+    // None is not a weak reference object
+    PyObject *invalid_weakref = Py_None;
+    assert(!PyWeakref_Check(invalid_weakref));
+    assert(!PyWeakref_CheckRefExact(invalid_weakref));
+    assert(!PyWeakref_CheckRefExact(invalid_weakref));
+
+    assert(!PyErr_Occurred());
+    PyObject *ref5 = factory;  // marker to check that value was set
+    assert(PyWeakref_GetRef(invalid_weakref, &ref5) == -1);
+    assert(PyErr_ExceptionMatches(PyExc_TypeError));
+    PyErr_Clear();
+
+    assert(PyWeakref_GetObject(invalid_weakref) == NULL);
+    assert(PyErr_ExceptionMatches(PyExc_TypeError));
+    PyErr_Clear();
+
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -3516,6 +3583,7 @@ static PyMethodDef TestMethods[] = {
     {"function_set_kw_defaults", function_set_kw_defaults, METH_VARARGS, NULL},
     {"test_atexit", test_atexit, METH_NOARGS},
     {"check_pyimport_addmodule", check_pyimport_addmodule, METH_VARARGS},
+    {"check_weakref_capi", check_weakref_capi, METH_O},
     {NULL, NULL} /* sentinel */
 };
 
