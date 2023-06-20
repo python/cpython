@@ -580,7 +580,7 @@ The :mod:`functools` module defines the following functions:
 
    .. versionchanged:: 3.11
       The :func:`register` attribute now supports
-      and :class:`typing.Union` as type annotations.
+      :class:`typing.Union` as a type annotation.
 
 
 .. class:: singledispatchmethod(func)
