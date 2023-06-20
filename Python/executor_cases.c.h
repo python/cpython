@@ -109,6 +109,34 @@
             break;
         }
 
+        case STORE_SUBSCR: {
+            static_assert(INLINE_CACHE_ENTRIES_STORE_SUBSCR == 1, "incorrect cache size");
+            PyObject *sub = stack_pointer[-1];
+            PyObject *container = stack_pointer[-2];
+            PyObject *v = stack_pointer[-3];
+            uint16_t counter = oparg;
+            #if ENABLE_SPECIALIZATION
+            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
+                next_instr--;
+                _Py_Specialize_StoreSubscr(container, sub, next_instr);
+                DISPATCH_SAME_OPARG();
+            }
+            STAT_INC(STORE_SUBSCR, deferred);
+            _PyStoreSubscrCache *cache = (_PyStoreSubscrCache *)next_instr;
+            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            #else
+            (void)counter;  // Unused.
+            #endif  /* ENABLE_SPECIALIZATION */
+            /* container[sub] = v */
+            int err = PyObject_SetItem(container, sub, v);
+            Py_DECREF(v);
+            Py_DECREF(container);
+            Py_DECREF(sub);
+            if (err) goto pop_3_error;
+            STACK_SHRINK(3);
+            break;
+        }
+
         case LOAD_ASSERTION_ERROR: {
             PyObject *value;
             value = Py_NewRef(PyExc_AssertionError);

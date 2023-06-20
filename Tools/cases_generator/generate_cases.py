@@ -283,6 +283,7 @@ class Instruction:
     unmoved_names: frozenset[str]
     instr_fmt: str
     flags: int
+    flag_data: dict[str, bool]
 
     # Set later
     family: parser.Family | None = None
@@ -311,19 +312,19 @@ class Instruction:
             else:
                 break
         self.unmoved_names = frozenset(unmoved_names)
-        flag_data = {
+        self.flag_data = {
             'HAS_ARG'  :  variable_used(inst, "oparg"),
             'HAS_CONST':  variable_used(inst, "FRAME_CO_CONSTS"),
             'HAS_NAME' :  variable_used(inst, "FRAME_CO_NAMES"),
             'HAS_JUMP' :  variable_used(inst, "JUMPBY"),
             'IS_UOP'   :  self.is_viable_uop(),
         }
-        assert set(flag_data.keys()) == set(INSTRUCTION_FLAGS)
+        assert set(self.flag_data.keys()) == set(INSTRUCTION_FLAGS)
         self.flags = 0
         for i, name in enumerate(INSTRUCTION_FLAGS):
-            self.flags |= (1<<i) if flag_data[name] else 0
+            self.flags |= (1<<i) if self.flag_data[name] else 0
 
-        if flag_data['HAS_ARG']:
+        if self.flag_data['HAS_ARG']:
             fmt = "IB"
         else:
             fmt = "IX"
@@ -393,7 +394,7 @@ class Instruction:
 
         # out.emit(f"next_instr += OPSIZE({self.inst.name}) - 1;")
 
-        self.write_body(out, 0)
+        self.write_body(out, 0, adjust_caches=adjust_cache)
 
         # Skip the rest if the block always exits
         if self.always_exits:
@@ -423,7 +424,13 @@ class Instruction:
         if adjust_cache and self.cache_offset:
             out.emit(f"next_instr += {self.cache_offset};")
 
-    def write_body(self, out: Formatter, dedent: int, cache_adjust: int = 0) -> None:
+    def write_body(
+            self,
+            out: Formatter,
+            dedent: int,
+            cache_adjust: int = 0,
+            adjust_caches: bool = True,
+        ) -> None:
         """Write the instruction body."""
         # Write cache effect variable declarations and initializations
         cache_offset = cache_adjust
@@ -440,9 +447,14 @@ class Instruction:
                 else:
                     typ = f"uint{bits}_t "
                     func = f"read_u{bits}"
-                out.emit(
-                    f"{typ}{ceffect.name} = {func}(&next_instr[{cache_offset}].cache);"
-                )
+                if adjust_caches:
+                    out.emit(
+                        f"{typ}{ceffect.name} = {func}(&next_instr[{cache_offset}].cache);"
+                    )
+                else:
+                    # Tier 2
+                    assert bits <= 32
+                    out.emit(f"{typ}{ceffect.name} = oparg;")
             cache_offset += ceffect.size
         assert cache_offset == self.cache_offset + cache_adjust
 
@@ -1265,6 +1277,20 @@ class Analyzer:
                             with self.out.block(f"case {thing.name}:"):
                                 instr.write(self.out, adjust_cache=False)
                                 self.out.emit("break;")
+                        else:
+                            if not instr.flag_data['HAS_ARG']:
+                                caches: list[parser.CacheEffect] = []
+                                cache_offset = 0
+                                for c in instr.cache_effects:
+                                    if c.name != UNUSED:
+                                        caches.append(c)
+                                    cache_offset += c.size
+                                if len(caches) == 1:
+                                    self.out.emit("")
+                                    with self.out.block(f"case {thing.name}:"):
+                                        instr.write(self.out, adjust_cache=False)
+                                        self.out.emit("break;")
+
                     case parser.Macro():
                         pass  # TODO
                     case parser.Pseudo():

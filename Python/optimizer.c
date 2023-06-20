@@ -341,6 +341,8 @@ uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **
         self->optimizer->instrs_executed++;
         switch (opcode) {
 
+#undef ENABLE_SPECIALIZATION
+#define ENABLE_SPECIALIZATION 0
 #include "executor_cases.c.h"
 
             case SET_IP:
@@ -369,6 +371,7 @@ uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **
 
         }
         continue;
+    pop_3_error:
     error:
         fprintf(stderr, "[Opcode %d, oparg %d]\n", opcode, oparg);
         Py_FatalError("Errors not yet supported");
