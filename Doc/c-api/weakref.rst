@@ -53,10 +53,10 @@ as much as it can.
 
 .. c:function:: int PyWeakref_GetRef(PyObject *ref, PyObject **pobj)
 
-   Get the referenced object from a weak reference, *ref*, into ``*pobj``.
+   Get the referenced object from a weak reference, *ref*, into *\*pobj*.
    Return 0 on success. Raise an exception and return -1 on error.
 
-   If the referent is no longer live, set ``*pobj`` to ``NULL`` and return 0.
+   If the referent is no longer live, set *\*pobj* to ``NULL`` and return 0.
 
    .. versionadded:: 3.13
 

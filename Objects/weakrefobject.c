@@ -915,12 +915,8 @@ PyWeakref_GetRef(PyObject *ref, PyObject **pobj)
 PyObject *
 PyWeakref_GetObject(PyObject *ref)
 {
-    if (ref == NULL) {
+    if (ref == NULL || !PyWeakref_Check(ref)) {
         PyErr_BadInternalCall();
-        return NULL;
-    }
-    if (!PyWeakref_Check(ref)) {
-        PyErr_SetString(PyExc_TypeError, "expected a weakref");
         return NULL;
     }
     return PyWeakref_GET_OBJECT(ref);

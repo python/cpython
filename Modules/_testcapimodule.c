@@ -3432,7 +3432,7 @@ check_weakref_capi(PyObject *self, PyObject *factory)
     PyErr_Clear();
 
     assert(PyWeakref_GetObject(invalid_weakref) == NULL);
-    assert(PyErr_ExceptionMatches(PyExc_TypeError));
+    assert(PyErr_ExceptionMatches(PyExc_SystemError));
     PyErr_Clear();
 
     Py_RETURN_NONE;
