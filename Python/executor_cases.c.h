@@ -7,6 +7,27 @@
             break;
         }
 
+        case LOAD_CLOSURE: {
+            PyObject *value;
+            /* We keep LOAD_CLOSURE so that the bytecode stays more readable. */
+            value = GETLOCAL(oparg);
+            if (value == NULL) goto unbound_local_error;
+            Py_INCREF(value);
+            STACK_GROW(1);
+            stack_pointer[-1] = value;
+            break;
+        }
+
+        case LOAD_FAST_CHECK: {
+            PyObject *value;
+            value = GETLOCAL(oparg);
+            if (value == NULL) goto unbound_local_error;
+            Py_INCREF(value);
+            STACK_GROW(1);
+            stack_pointer[-1] = value;
+            break;
+        }
+
         case LOAD_FAST: {
             PyObject *value;
             value = GETLOCAL(oparg);
@@ -67,6 +88,84 @@
             break;
         }
 
+        case UNARY_NEGATIVE: {
+            PyObject *value = stack_pointer[-1];
+            PyObject *res;
+            res = PyNumber_Negative(value);
+            Py_DECREF(value);
+            if (res == NULL) goto pop_1_error;
+            stack_pointer[-1] = res;
+            break;
+        }
+
+        case UNARY_NOT: {
+            PyObject *value = stack_pointer[-1];
+            PyObject *res;
+            int err = PyObject_IsTrue(value);
+            Py_DECREF(value);
+            if (err < 0) goto pop_1_error;
+            if (err == 0) {
+                res = Py_True;
+            }
+            else {
+                res = Py_False;
+            }
+            stack_pointer[-1] = res;
+            break;
+        }
+
+        case UNARY_INVERT: {
+            PyObject *value = stack_pointer[-1];
+            PyObject *res;
+            res = PyNumber_Invert(value);
+            Py_DECREF(value);
+            if (res == NULL) goto pop_1_error;
+            stack_pointer[-1] = res;
+            break;
+        }
+
+        case _BINARY_OP_MULTIPLY_INT: {
+            PyObject *right = stack_pointer[-1];
+            PyObject *left = stack_pointer[-2];
+            PyObject *res;
+            STAT_INC(BINARY_OP, hit);
+            res = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
+            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
+            if (res == NULL) goto pop_2_error;
+            STACK_SHRINK(1);
+            stack_pointer[-1] = res;
+            break;
+        }
+
+        case _BINARY_OP_ADD_INT: {
+            PyObject *right = stack_pointer[-1];
+            PyObject *left = stack_pointer[-2];
+            PyObject *res;
+            STAT_INC(BINARY_OP, hit);
+            res = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
+            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
+            if (res == NULL) goto pop_2_error;
+            STACK_SHRINK(1);
+            stack_pointer[-1] = res;
+            break;
+        }
+
+        case _BINARY_OP_SUBTRACT_INT: {
+            PyObject *right = stack_pointer[-1];
+            PyObject *left = stack_pointer[-2];
+            PyObject *res;
+            STAT_INC(BINARY_OP, hit);
+            res = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
+            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
+            if (res == NULL) goto pop_2_error;
+            STACK_SHRINK(1);
+            stack_pointer[-1] = res;
+            break;
+        }
+
         case _BINARY_OP_MULTIPLY_FLOAT: {
             PyObject *right = stack_pointer[-1];
             PyObject *left = stack_pointer[-2];
@@ -109,6 +208,81 @@
             break;
         }
 
+        case _BINARY_OP_ADD_UNICODE: {
+            PyObject *right = stack_pointer[-1];
+            PyObject *left = stack_pointer[-2];
+            PyObject *res;
+            STAT_INC(BINARY_OP, hit);
+            res = PyUnicode_Concat(left, right);
+            _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
+            if (res == NULL) goto pop_2_error;
+            STACK_SHRINK(1);
+            stack_pointer[-1] = res;
+            break;
+        }
+
+        case BINARY_SLICE: {
+            PyObject *stop = stack_pointer[-1];
+            PyObject *start = stack_pointer[-2];
+            PyObject *container = stack_pointer[-3];
+            PyObject *res;
+            PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
+            // Can't use ERROR_IF() here, because we haven't
+            // DECREF'ed container yet, and we still own slice.
+            if (slice == NULL) {
+                res = NULL;
+            }
+            else {
+                res = PyObject_GetItem(container, slice);
+                Py_DECREF(slice);
+            }
+            Py_DECREF(container);
+            if (res == NULL) goto pop_3_error;
+            STACK_SHRINK(2);
+            stack_pointer[-1] = res;
+            break;
+        }
+
+        case STORE_SLICE: {
+            PyObject *stop = stack_pointer[-1];
+            PyObject *start = stack_pointer[-2];
+            PyObject *container = stack_pointer[-3];
+            PyObject *v = stack_pointer[-4];
+            PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
+            int err;
+            if (slice == NULL) {
+                err = 1;
+            }
+            else {
+                err = PyObject_SetItem(container, slice, v);
+                Py_DECREF(slice);
+            }
+            Py_DECREF(v);
+            Py_DECREF(container);
+            if (err) goto pop_4_error;
+            STACK_SHRINK(4);
+            break;
+        }
+
+        case LIST_APPEND: {
+            PyObject *v = stack_pointer[-1];
+            PyObject *list = stack_pointer[-(2 + (oparg-1))];
+            if (_PyList_AppendTakeRef((PyListObject *)list, v) < 0) goto pop_1_error;
+            STACK_SHRINK(1);
+            break;
+        }
+
+        case SET_ADD: {
+            PyObject *v = stack_pointer[-1];
+            PyObject *set = stack_pointer[-(2 + (oparg-1))];
+            int err = PySet_Add(set, v);
+            Py_DECREF(v);
+            if (err) goto pop_1_error;
+            STACK_SHRINK(1);
+            break;
+        }
+
         case STORE_SUBSCR: {
             static_assert(INLINE_CACHE_ENTRIES_STORE_SUBSCR == 1, "incorrect cache size");
             PyObject *sub = stack_pointer[-1];
@@ -137,11 +311,50 @@
             break;
         }
 
+        case DELETE_SUBSCR: {
+            PyObject *sub = stack_pointer[-1];
+            PyObject *container = stack_pointer[-2];
+            /* del container[sub] */
+            int err = PyObject_DelItem(container, sub);
+            Py_DECREF(container);
+            Py_DECREF(sub);
+            if (err) goto pop_2_error;
+            STACK_SHRINK(2);
+            break;
+        }
+
         case LOAD_ASSERTION_ERROR: {
             PyObject *value;
             value = Py_NewRef(PyExc_AssertionError);
             STACK_GROW(1);
             stack_pointer[-1] = value;
+            break;
+        }
+
+        case DELETE_ATTR: {
+            PyObject *owner = stack_pointer[-1];
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+            int err = PyObject_SetAttr(owner, name, (PyObject *)NULL);
+            Py_DECREF(owner);
+            if (err) goto pop_1_error;
+            STACK_SHRINK(1);
+            break;
+        }
+
+        case STORE_GLOBAL: {
+            PyObject *v = stack_pointer[-1];
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+            int err = PyDict_SetItem(GLOBALS(), name, v);
+            Py_DECREF(v);
+            if (err) goto pop_1_error;
+            STACK_SHRINK(1);
+            break;
+        }
+
+        case DELETE_FAST: {
+            PyObject *v = GETLOCAL(oparg);
+            if (v == NULL) goto unbound_local_error;
+            SETLOCAL(oparg, NULL);
             break;
         }
 
@@ -169,6 +382,107 @@
             break;
         }
 
+        case BUILD_STRING: {
+            PyObject **pieces = (stack_pointer - oparg);
+            PyObject *str;
+            str = _PyUnicode_JoinArray(&_Py_STR(empty), pieces, oparg);
+            for (int _i = oparg; --_i >= 0;) {
+                Py_DECREF(pieces[_i]);
+            }
+            if (str == NULL) { STACK_SHRINK(oparg); goto error; }
+            STACK_SHRINK(oparg);
+            STACK_GROW(1);
+            stack_pointer[-1] = str;
+            break;
+        }
+
+        case BUILD_TUPLE: {
+            PyObject **values = (stack_pointer - oparg);
+            PyObject *tup;
+            tup = _PyTuple_FromArraySteal(values, oparg);
+            if (tup == NULL) { STACK_SHRINK(oparg); goto error; }
+            STACK_SHRINK(oparg);
+            STACK_GROW(1);
+            stack_pointer[-1] = tup;
+            break;
+        }
+
+        case BUILD_LIST: {
+            PyObject **values = (stack_pointer - oparg);
+            PyObject *list;
+            list = _PyList_FromArraySteal(values, oparg);
+            if (list == NULL) { STACK_SHRINK(oparg); goto error; }
+            STACK_SHRINK(oparg);
+            STACK_GROW(1);
+            stack_pointer[-1] = list;
+            break;
+        }
+
+        case SET_UPDATE: {
+            PyObject *iterable = stack_pointer[-1];
+            PyObject *set = stack_pointer[-(2 + (oparg-1))];
+            int err = _PySet_Update(set, iterable);
+            Py_DECREF(iterable);
+            if (err < 0) goto pop_1_error;
+            STACK_SHRINK(1);
+            break;
+        }
+
+        case BUILD_SET: {
+            PyObject **values = (stack_pointer - oparg);
+            PyObject *set;
+            set = PySet_New(NULL);
+            if (set == NULL)
+                goto error;
+            int err = 0;
+            for (int i = 0; i < oparg; i++) {
+                PyObject *item = values[i];
+                if (err == 0)
+                    err = PySet_Add(set, item);
+                Py_DECREF(item);
+            }
+            if (err != 0) {
+                Py_DECREF(set);
+                if (true) { STACK_SHRINK(oparg); goto error; }
+            }
+            STACK_SHRINK(oparg);
+            STACK_GROW(1);
+            stack_pointer[-1] = set;
+            break;
+        }
+
+        case BUILD_MAP: {
+            PyObject **values = (stack_pointer - oparg*2);
+            PyObject *map;
+            map = _PyDict_FromItems(
+                    values, 2,
+                    values+1, 2,
+                    oparg);
+            if (map == NULL)
+                goto error;
+
+            for (int _i = oparg*2; --_i >= 0;) {
+                Py_DECREF(values[_i]);
+            }
+            if (map == NULL) { STACK_SHRINK(oparg*2); goto error; }
+            STACK_SHRINK(oparg*2);
+            STACK_GROW(1);
+            stack_pointer[-1] = map;
+            break;
+        }
+
+        case MAP_ADD: {
+            PyObject *value = stack_pointer[-1];
+            PyObject *key = stack_pointer[-2];
+            PyObject *dict = PEEK(oparg + 2);  // key, value are still on the stack
+            assert(PyDict_CheckExact(dict));
+            /* dict[key] = value */
+            // Do not DECREF INPUTS because the function steals the references
+            if (_PyDict_SetItem_Take2((PyDictObject *)dict, key, value) != 0) goto pop_2_error;
+            STACK_SHRINK(2);
+            break;
+        }
+
         case IS_OP: {
             PyObject *right = stack_pointer[-1];
             PyObject *left = stack_pointer[-2];
@@ -179,6 +493,33 @@
             b = res ? Py_True : Py_False;
             STACK_SHRINK(1);
             stack_pointer[-1] = b;
+            break;
+        }
+
+        case CONTAINS_OP: {
+            PyObject *right = stack_pointer[-1];
+            PyObject *left = stack_pointer[-2];
+            PyObject *b;
+            int res = PySequence_Contains(right, left);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            if (res < 0) goto pop_2_error;
+            b = (res ^ oparg) ? Py_True : Py_False;
+            STACK_SHRINK(1);
+            stack_pointer[-1] = b;
+            break;
+        }
+
+        case GET_LEN: {
+            PyObject *obj = stack_pointer[-1];
+            PyObject *len_o;
+            // PUSH(len(TOS))
+            Py_ssize_t len_i = PyObject_Length(obj);
+            if (len_i < 0) goto error;
+            len_o = PyLong_FromSsize_t(len_i);
+            if (len_o == NULL) goto error;
+            STACK_GROW(1);
+            stack_pointer[-1] = len_o;
             break;
         }
 
@@ -198,6 +539,124 @@
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_SEQUENCE;
             res = match ? Py_True : Py_False;
             STACK_GROW(1);
+            stack_pointer[-1] = res;
+            break;
+        }
+
+        case GET_ITER: {
+            PyObject *iterable = stack_pointer[-1];
+            PyObject *iter;
+            /* before: [obj]; after [getiter(obj)] */
+            iter = PyObject_GetIter(iterable);
+            Py_DECREF(iterable);
+            if (iter == NULL) goto pop_1_error;
+            stack_pointer[-1] = iter;
+            break;
+        }
+
+        case WITH_EXCEPT_START: {
+            PyObject *val = stack_pointer[-1];
+            PyObject *lasti = stack_pointer[-3];
+            PyObject *exit_func = stack_pointer[-4];
+            PyObject *res;
+            /* At the top of the stack are 4 values:
+               - val: TOP = exc_info()
+               - unused: SECOND = previous exception
+               - lasti: THIRD = lasti of exception in exc_info()
+               - exit_func: FOURTH = the context.__exit__ bound method
+               We call FOURTH(type(TOP), TOP, GetTraceback(TOP)).
+               Then we push the __exit__ return value.
+            */
+            PyObject *exc, *tb;
+
+            assert(val && PyExceptionInstance_Check(val));
+            exc = PyExceptionInstance_Class(val);
+            tb = PyException_GetTraceback(val);
+            Py_XDECREF(tb);
+            assert(PyLong_Check(lasti));
+            (void)lasti; // Shut up compiler warning if asserts are off
+            PyObject *stack[4] = {NULL, exc, val, tb};
+            res = PyObject_Vectorcall(exit_func, stack + 1,
+                    3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+            if (res == NULL) goto error;
+            STACK_GROW(1);
+            stack_pointer[-1] = res;
+            break;
+        }
+
+        case MAKE_FUNCTION: {
+            PyObject *codeobj = stack_pointer[-1];
+            PyObject *func;
+
+            PyFunctionObject *func_obj = (PyFunctionObject *)
+                PyFunction_New(codeobj, GLOBALS());
+
+            Py_DECREF(codeobj);
+            if (func_obj == NULL) {
+                goto error;
+            }
+
+            func_obj->func_version = ((PyCodeObject *)codeobj)->co_version;
+            func = (PyObject *)func_obj;
+            stack_pointer[-1] = func;
+            break;
+        }
+
+        case BUILD_SLICE: {
+            PyObject *step = (oparg == 3) ? stack_pointer[-(((oparg == 3) ? 1 : 0))] : NULL;
+            PyObject *stop = stack_pointer[-(1 + ((oparg == 3) ? 1 : 0))];
+            PyObject *start = stack_pointer[-(2 + ((oparg == 3) ? 1 : 0))];
+            PyObject *slice;
+            slice = PySlice_New(start, stop, step);
+            Py_DECREF(start);
+            Py_DECREF(stop);
+            Py_XDECREF(step);
+            if (slice == NULL) { STACK_SHRINK(((oparg == 3) ? 1 : 0)); goto pop_2_error; }
+            STACK_SHRINK(((oparg == 3) ? 1 : 0));
+            STACK_SHRINK(1);
+            stack_pointer[-1] = slice;
+            break;
+        }
+
+        case CONVERT_VALUE: {
+            PyObject *value = stack_pointer[-1];
+            PyObject *result;
+            convertion_func_ptr  conv_fn;
+            assert(oparg >= FVC_STR && oparg <= FVC_ASCII);
+            conv_fn = CONVERSION_FUNCTIONS[oparg];
+            result = conv_fn(value);
+            Py_DECREF(value);
+            if (result == NULL) goto pop_1_error;
+            stack_pointer[-1] = result;
+            break;
+        }
+
+        case FORMAT_SIMPLE: {
+            PyObject *value = stack_pointer[-1];
+            PyObject *res;
+            /* If value is a unicode object, then we know the result
+             * of format(value) is value itself. */
+            if (!PyUnicode_CheckExact(value)) {
+                res = PyObject_Format(value, NULL);
+                Py_DECREF(value);
+                if (res == NULL) goto pop_1_error;
+            }
+            else {
+                res = value;
+            }
+            stack_pointer[-1] = res;
+            break;
+        }
+
+        case FORMAT_WITH_SPEC: {
+            PyObject *fmt_spec = stack_pointer[-1];
+            PyObject *value = stack_pointer[-2];
+            PyObject *res;
+            res = PyObject_Format(value, fmt_spec);
+            Py_DECREF(value);
+            Py_DECREF(fmt_spec);
+            if (res == NULL) goto pop_2_error;
+            STACK_SHRINK(1);
             stack_pointer[-1] = res;
             break;
         }

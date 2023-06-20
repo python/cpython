@@ -1,10 +1,13 @@
 
 #include "Python.h"
 #include "opcode.h"
+#include "pycore_dict.h"
 #include "pycore_interp.h"
+#include "pycore_long.h"
 #include "pycore_object.h"
 #include "pycore_opcode.h"
 #include "pycore_pystate.h"
+#include "pycore_sliceobject.h"
 #include "cpython/optimizer.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -299,6 +302,10 @@ typedef struct {
 #define _BINARY_OP_MULTIPLY_FLOAT 514
 #define _BINARY_OP_ADD_FLOAT 515
 #define _BINARY_OP_SUBTRACT_FLOAT 516
+#define _BINARY_OP_MULTIPLY_INT 517
+#define _BINARY_OP_ADD_INT 518
+#define _BINARY_OP_SUBTRACT_INT 519
+#define _BINARY_OP_ADD_UNICODE 520
 
 typedef struct {
     int opcode;
@@ -371,8 +378,12 @@ uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **
 
         }
         continue;
+    pop_1_error:
+    pop_2_error:
     pop_3_error:
+    pop_4_error:
     error:
+    unbound_local_error:
         fprintf(stderr, "[Opcode %d, oparg %d]\n", opcode, oparg);
         Py_FatalError("Errors not yet supported");
     }
