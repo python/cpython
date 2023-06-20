@@ -1559,12 +1559,12 @@ warn_invalid_escape_sequence(struct tok_state *tok, int first_invalid_escape_cha
         return -1;
     }
 
-    if (PyErr_WarnExplicitObject(PyExc_DeprecationWarning, msg, tok->filename,
+    if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, msg, tok->filename,
                                  tok->lineno, NULL, NULL) < 0) {
         Py_DECREF(msg);
 
-        if (PyErr_ExceptionMatches(PyExc_DeprecationWarning)) {
-            /* Replace the DeprecationWarning exception with a SyntaxError
+        if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
+            /* Replace the SyntaxWarning exception with a SyntaxError
                to get a more accurate error report */
             PyErr_Clear();
             return syntaxerror(tok, "invalid escape sequence '\\%c'", (char) first_invalid_escape_char);
