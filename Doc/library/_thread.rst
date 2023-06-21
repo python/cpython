@@ -57,6 +57,8 @@ This module defines the following constants and functions:
    When the function raises a :exc:`SystemExit` exception, it is silently
    ignored.
 
+   .. audit-event:: _thread.start_new_thread function,args,kwargs start_new_thread
+
    .. versionchanged:: 3.8
       :func:`sys.unraisablehook` is now used to handle unhandled exceptions.
 
@@ -206,7 +208,7 @@ In addition to these methods, lock objects can also be used via the
 
 **Caveats:**
 
-  .. index:: module: signal
+  .. index:: pair: module; signal
 
 * Threads interact strangely with interrupts: the :exc:`KeyboardInterrupt`
   exception will be received by an arbitrary thread.  (When the :mod:`signal`

@@ -106,9 +106,9 @@ class SqliteTypeTests(unittest.TestCase):
     @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
     @support.bigmemtest(size=2**31, memuse=4, dry_run=False)
     def test_too_large_string(self, maxsize):
-        with self.assertRaises(sqlite.InterfaceError):
+        with self.assertRaises(sqlite.DataError):
             self.cur.execute("insert into test(s) values (?)", ('x'*(2**31-1),))
-        with self.assertRaises(OverflowError):
+        with self.assertRaises(sqlite.DataError):
             self.cur.execute("insert into test(s) values (?)", ('x'*(2**31),))
         self.cur.execute("select 1 from test")
         row = self.cur.fetchone()
@@ -117,9 +117,9 @@ class SqliteTypeTests(unittest.TestCase):
     @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
     @support.bigmemtest(size=2**31, memuse=3, dry_run=False)
     def test_too_large_blob(self, maxsize):
-        with self.assertRaises(sqlite.InterfaceError):
+        with self.assertRaises(sqlite.DataError):
             self.cur.execute("insert into test(s) values (?)", (b'x'*(2**31-1),))
-        with self.assertRaises(OverflowError):
+        with self.assertRaises(sqlite.DataError):
             self.cur.execute("insert into test(s) values (?)", (b'x'*(2**31),))
         self.cur.execute("select 1 from test")
         row = self.cur.fetchone()
@@ -371,7 +371,6 @@ class ColNamesTests(unittest.TestCase):
         self.assertIsNone(self.cur.description)
 
 
-@unittest.skipIf(sqlite.sqlite_version_info < (3, 8, 3), "CTEs not supported")
 class CommonTableExpressionTests(unittest.TestCase):
 
     def setUp(self):
@@ -517,7 +516,7 @@ class DateTimeTests(unittest.TestCase):
         self.assertEqual(ts, ts2)
 
     def test_sql_timestamp(self):
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(tz=datetime.UTC)
         self.cur.execute("insert into test(ts) values (current_timestamp)")
         self.cur.execute("select ts from test")
         with self.assertWarnsRegex(DeprecationWarning, "converter"):

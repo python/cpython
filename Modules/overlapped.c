@@ -445,8 +445,8 @@ EventAttributes must be None.
 static PyObject *
 _overlapped_CreateEvent_impl(PyObject *module, PyObject *EventAttributes,
                              BOOL ManualReset, BOOL InitialState,
-                             const Py_UNICODE *Name)
-/*[clinic end generated code: output=8e04f0916c17b13d input=dbc36ae14375ba24]*/
+                             const wchar_t *Name)
+/*[clinic end generated code: output=b17ddc5fd506972d input=dbc36ae14375ba24]*/
 {
     HANDLE Event;
 
@@ -912,8 +912,7 @@ _overlapped_Overlapped_getresult_impl(OverlappedObject *self, BOOL wait)
                 _PyBytes_Resize(&self->allocated_buffer, transferred))
                 return NULL;
 
-            Py_INCREF(self->allocated_buffer);
-            return self->allocated_buffer;
+            return Py_NewRef(self->allocated_buffer);
         case TYPE_READ_FROM:
             assert(PyBytes_CheckExact(self->read_from.allocated_buffer));
 
@@ -940,14 +939,12 @@ _overlapped_Overlapped_getresult_impl(OverlappedObject *self, BOOL wait)
             }
 
             // first item: message
-            Py_INCREF(self->read_from.allocated_buffer);
             PyTuple_SET_ITEM(self->read_from.result, 0,
-                             self->read_from.allocated_buffer);
+                             Py_NewRef(self->read_from.allocated_buffer));
             // second item: address
             PyTuple_SET_ITEM(self->read_from.result, 1, addr);
 
-            Py_INCREF(self->read_from.result);
-            return self->read_from.result;
+            return Py_NewRef(self->read_from.result);
         case TYPE_READ_FROM_INTO:
             // unparse the address
             addr = unparse_address((SOCKADDR*)&self->read_from_into.address,
@@ -970,8 +967,7 @@ _overlapped_Overlapped_getresult_impl(OverlappedObject *self, BOOL wait)
             // second item: address
             PyTuple_SET_ITEM(self->read_from_into.result, 1, addr);
 
-            Py_INCREF(self->read_from_into.result);
-            return self->read_from_into.result;
+            return Py_NewRef(self->read_from_into.result);
         default:
             return PyLong_FromUnsignedLong((unsigned long) transferred);
     }
@@ -1604,8 +1600,8 @@ Connect to the pipe for asynchronous I/O (overlapped).
 
 static PyObject *
 _overlapped_Overlapped_ConnectPipe_impl(OverlappedObject *self,
-                                        const Py_UNICODE *Address)
-/*[clinic end generated code: output=3cc9661667d459d4 input=167c06a274efcefc]*/
+                                        const wchar_t *Address)
+/*[clinic end generated code: output=67cbd8e4d3a57855 input=167c06a274efcefc]*/
 {
     HANDLE PipeHandle;
 
@@ -2054,6 +2050,7 @@ overlapped_exec(PyObject *module)
 
 static PyModuleDef_Slot overlapped_slots[] = {
     {Py_mod_exec, overlapped_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

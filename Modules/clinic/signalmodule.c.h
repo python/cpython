@@ -211,8 +211,9 @@ PyDoc_STRVAR(signal_strsignal__doc__,
 "\n"
 "Return the system description of the given signal.\n"
 "\n"
-"The return values can be such as \"Interrupt\", \"Segmentation fault\", etc.\n"
-"Returns None if the signal is not recognized.");
+"Returns the description of signal *signalnum*, such as \"Interrupt\"\n"
+"for :const:`SIGINT`. Returns :const:`None` if *signalnum* has no\n"
+"description. Raises :exc:`ValueError` if *signalnum* is invalid.");
 
 #define SIGNAL_STRSIGNAL_METHODDEF    \
     {"strsignal", (PyCFunction)signal_strsignal, METH_O, signal_strsignal__doc__},
@@ -704,4 +705,4 @@ exit:
 #ifndef SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
     #define SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
 #endif /* !defined(SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF) */
-/*[clinic end generated code: output=f2a3321b32b0637c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2b54dc607f6e3146 input=a9049054013a1b77]*/

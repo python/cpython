@@ -73,7 +73,7 @@ def reflow_c_string(s, depth):
 def is_simple(sum_type):
     """Return True if a sum is a simple.
 
-    A sum is simple if it's types have no fields and itself
+    A sum is simple if its types have no fields and itself
     doesn't have any attributes. Instances of these types are
     cached at C level, and they act like singletons when propagating
     parser generated nodes into Python level, e.g.
@@ -352,7 +352,7 @@ class PrototypeVisitor(EmitVisitor):
                 self.visit(t, name, sum.attributes)
 
     def get_args(self, fields):
-        """Return list of C argument into, one for each field.
+        """Return list of C argument info, one for each field.
 
         Argument info is 3-tuple of a C type, variable name, and flag
         that is true if type can be NULL.
@@ -601,6 +601,7 @@ class Obj2ModVisitor(PickleVisitor):
         args = [f.name for f in prod.fields]
         args.extend([a.name for a in prod.attributes])
         self.emit("*out = %s(%s);" % (ast_func_name(name), self.buildArgs(args)), 1)
+        self.emit("if (*out == NULL) goto failed;", 1)
         self.emit("return 0;", 1)
         self.emit("failed:", 0)
         self.emit("Py_XDECREF(tmp);", 1)
@@ -632,29 +633,38 @@ class Obj2ModVisitor(PickleVisitor):
         self.emit(line % field.name, depth)
         self.emit("return 1;", depth+1)
         self.emit("}", depth)
-        if not field.opt:
+        if field.seq:
             self.emit("if (tmp == NULL) {", depth)
-            message = "required field \\\"%s\\\" missing from %s" % (field.name, name)
-            format = "PyErr_SetString(PyExc_TypeError, \"%s\");"
-            self.emit(format % message, depth+1, reflow=False)
-            self.emit("return 1;", depth+1)
+            self.emit("tmp = PyList_New(0);", depth+1)
+            self.emit("if (tmp == NULL) {", depth+1)
+            self.emit("return 1;", depth+2)
+            self.emit("}", depth+1)
+            self.emit("}", depth)
+            self.emit("{", depth)
         else:
-            self.emit("if (tmp == NULL || tmp == Py_None) {", depth)
-            self.emit("Py_CLEAR(tmp);", depth+1)
-            if self.isNumeric(field):
-                if field.name in self.attribute_special_defaults:
-                    self.emit(
-                        "%s = %s;" % (field.name, self.attribute_special_defaults[field.name]),
-                        depth+1,
-                    )
-                else:
-                    self.emit("%s = 0;" % field.name, depth+1)
-            elif not self.isSimpleType(field):
-                self.emit("%s = NULL;" % field.name, depth+1)
+            if not field.opt:
+                self.emit("if (tmp == NULL) {", depth)
+                message = "required field \\\"%s\\\" missing from %s" % (field.name, name)
+                format = "PyErr_SetString(PyExc_TypeError, \"%s\");"
+                self.emit(format % message, depth+1, reflow=False)
+                self.emit("return 1;", depth+1)
             else:
-                raise TypeError("could not determine the default value for %s" % field.name)
-        self.emit("}", depth)
-        self.emit("else {", depth)
+                self.emit("if (tmp == NULL || tmp == Py_None) {", depth)
+                self.emit("Py_CLEAR(tmp);", depth+1)
+                if self.isNumeric(field):
+                    if field.name in self.attribute_special_defaults:
+                        self.emit(
+                            "%s = %s;" % (field.name, self.attribute_special_defaults[field.name]),
+                            depth+1,
+                        )
+                    else:
+                        self.emit("%s = 0;" % field.name, depth+1)
+                elif not self.isSimpleType(field):
+                    self.emit("%s = NULL;" % field.name, depth+1)
+                else:
+                    raise TypeError("could not determine the default value for %s" % field.name)
+            self.emit("}", depth)
+            self.emit("else {", depth)
 
         self.emit("int res;", depth+1)
         if field.seq:
@@ -675,8 +685,7 @@ class Obj2ModVisitor(PickleVisitor):
             self.emit("if (%s == NULL) goto failed;" % field.name, depth+1)
             self.emit("for (i = 0; i < len; i++) {", depth+1)
             self.emit("%s val;" % ctype, depth+2)
-            self.emit("PyObject *tmp2 = PyList_GET_ITEM(tmp, i);", depth+2)
-            self.emit("Py_INCREF(tmp2);", depth+2)
+            self.emit("PyObject *tmp2 = Py_NewRef(PyList_GET_ITEM(tmp, i));", depth+2)
             with self.recursive_call(name, depth+2):
                 self.emit("res = obj2ast_%s(state, tmp2, &val, arena);" %
                           field.type, depth+2, reflow=False)
@@ -995,10 +1004,11 @@ static PyObject* ast2obj_list(struct ast_state *state, asdl_seq *seq, PyObject* 
 
 static PyObject* ast2obj_object(struct ast_state *Py_UNUSED(state), void *o)
 {
-    if (!o)
-        o = Py_None;
-    Py_INCREF((PyObject*)o);
-    return (PyObject*)o;
+    PyObject *op = (PyObject*)o;
+    if (!op) {
+        op = Py_None;
+    }
+    return Py_NewRef(op);
 }
 #define ast2obj_constant ast2obj_object
 #define ast2obj_identifier ast2obj_object
@@ -1020,9 +1030,11 @@ static int obj2ast_object(struct ast_state *Py_UNUSED(state), PyObject* obj, PyO
             *out = NULL;
             return -1;
         }
-        Py_INCREF(obj);
+        *out = Py_NewRef(obj);
     }
-    *out = obj;
+    else {
+        *out = NULL;
+    }
     return 0;
 }
 
@@ -1032,8 +1044,7 @@ static int obj2ast_constant(struct ast_state *Py_UNUSED(state), PyObject* obj, P
         *out = NULL;
         return -1;
     }
-    Py_INCREF(obj);
-    *out = obj;
+    *out = Py_NewRef(obj);
     return 0;
 }
 
@@ -1205,6 +1216,7 @@ class ASTModuleVisitor(PickleVisitor):
         self.emit("""
 static PyModuleDef_Slot astmodule_slots[] = {
     {Py_mod_exec, astmodule_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 
@@ -1301,8 +1313,7 @@ class ObjVisitor(PickleVisitor):
         self.emit("switch(o) {", 1)
         for t in sum.types:
             self.emit("case %s:" % t.name, 2)
-            self.emit("Py_INCREF(state->%s_singleton);" % t.name, 3)
-            self.emit("return state->%s_singleton;" % t.name, 3)
+            self.emit("return Py_NewRef(state->%s_singleton);" % t.name, 3)
         self.emit("}", 1)
         self.emit("Py_UNREACHABLE();", 1);
         self.emit("}", 0)
@@ -1484,6 +1495,8 @@ def generate_ast_fini(module_state, f):
     for s in module_state:
         f.write("    Py_CLEAR(state->" + s + ');\n')
     f.write(textwrap.dedent("""
+                Py_CLEAR(_Py_INTERP_CACHED_OBJECT(interp, str_replace_inf));
+
             #if !defined(NDEBUG)
                 state->initialized = -1;
             #else

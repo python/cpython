@@ -12,44 +12,17 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-int PyArg_Parse(PyObject *, const char *, ...);
-int PyArg_ParseTuple(PyObject *, const char *, ...);
-int PyArg_VaParse(PyObject *, const char *, va_list);
 
-int PyArg_ParseTupleAndKeywords(PyObject *, PyObject *,
-                                const char *, char **, ...);
-int PyArg_VaParseTupleAndKeywords(PyObject *, PyObject *,
-                                const char *, char **, va_list);
-
-int _PyArg_ParseTupleAndKeywordsFast(PyObject *, PyObject *,
-                                            struct _PyArg_Parser *, ...);
-int _PyArg_VaParseTupleAndKeywordsFast(PyObject *, PyObject *,
-                                            struct _PyArg_Parser *, va_list);
-
-#ifdef HAVE_DECLSPEC_DLL
-/* Export functions */
+/* Export Stable ABIs (abi only) */
 PyAPI_FUNC(int) _PyArg_Parse_SizeT(PyObject *, const char *, ...);
-PyAPI_FUNC(int) _PyArg_ParseStack_SizeT(PyObject *const *args, Py_ssize_t nargs,
-                                        const char *format, ...);
-PyAPI_FUNC(int) _PyArg_ParseStackAndKeywords_SizeT(PyObject *const *args, Py_ssize_t nargs,
-                                        PyObject *kwnames,
-                                        struct _PyArg_Parser *parser, ...);
 PyAPI_FUNC(int) _PyArg_ParseTuple_SizeT(PyObject *, const char *, ...);
 PyAPI_FUNC(int) _PyArg_ParseTupleAndKeywords_SizeT(PyObject *, PyObject *,
                                                   const char *, char **, ...);
-PyAPI_FUNC(PyObject *) _Py_BuildValue_SizeT(const char *, ...);
 PyAPI_FUNC(int) _PyArg_VaParse_SizeT(PyObject *, const char *, va_list);
 PyAPI_FUNC(int) _PyArg_VaParseTupleAndKeywords_SizeT(PyObject *, PyObject *,
                                               const char *, char **, va_list);
 
-PyAPI_FUNC(int) _PyArg_ParseTupleAndKeywordsFast_SizeT(PyObject *, PyObject *,
-                                            struct _PyArg_Parser *, ...);
-PyAPI_FUNC(int) _PyArg_VaParseTupleAndKeywordsFast_SizeT(PyObject *, PyObject *,
-                                            struct _PyArg_Parser *, va_list);
-#endif
-
 #define FLAG_COMPAT 1
-#define FLAG_SIZE_T 2
 
 typedef int (*destr_t)(PyObject *, void *);
 
@@ -114,7 +87,7 @@ _PyArg_Parse_SizeT(PyObject *args, const char *format, ...)
     va_list va;
 
     va_start(va, format);
-    retval = vgetargs1(args, format, &va, FLAG_COMPAT|FLAG_SIZE_T);
+    retval = vgetargs1(args, format, &va, FLAG_COMPAT);
     va_end(va);
     return retval;
 }
@@ -132,14 +105,14 @@ PyArg_ParseTuple(PyObject *args, const char *format, ...)
     return retval;
 }
 
-PyAPI_FUNC(int)
+int
 _PyArg_ParseTuple_SizeT(PyObject *args, const char *format, ...)
 {
     int retval;
     va_list va;
 
     va_start(va, format);
-    retval = vgetargs1(args, format, &va, FLAG_SIZE_T);
+    retval = vgetargs1(args, format, &va, 0);
     va_end(va);
     return retval;
 }
@@ -157,19 +130,6 @@ _PyArg_ParseStack(PyObject *const *args, Py_ssize_t nargs, const char *format, .
     return retval;
 }
 
-PyAPI_FUNC(int)
-_PyArg_ParseStack_SizeT(PyObject *const *args, Py_ssize_t nargs, const char *format, ...)
-{
-    int retval;
-    va_list va;
-
-    va_start(va, format);
-    retval = vgetargs1_impl(NULL, args, nargs, format, &va, FLAG_SIZE_T);
-    va_end(va);
-    return retval;
-}
-
-
 int
 PyArg_VaParse(PyObject *args, const char *format, va_list va)
 {
@@ -183,7 +143,7 @@ PyArg_VaParse(PyObject *args, const char *format, va_list va)
     return retval;
 }
 
-PyAPI_FUNC(int)
+int
 _PyArg_VaParse_SizeT(PyObject *args, const char *format, va_list va)
 {
     va_list lva;
@@ -191,7 +151,7 @@ _PyArg_VaParse_SizeT(PyObject *args, const char *format, va_list va)
 
     va_copy(lva, va);
 
-    retval = vgetargs1(args, format, &lva, FLAG_SIZE_T);
+    retval = vgetargs1(args, format, &lva, 0);
     va_end(lva);
     return retval;
 }
@@ -202,9 +162,9 @@ _PyArg_VaParse_SizeT(PyObject *args, const char *format, va_list va)
 static int
 cleanup_ptr(PyObject *self, void *ptr)
 {
-    if (ptr) {
-        PyMem_Free(ptr);
-    }
+    void **pptr = (void **)ptr;
+    PyMem_Free(*pptr);
+    *pptr = NULL;
     return 0;
 }
 
@@ -657,13 +617,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
               char *msgbuf, size_t bufsize, freelist_t *freelist)
 {
 #define RETURN_ERR_OCCURRED return msgbuf
-    /* For # codes */
-#define REQUIRE_PY_SSIZE_T_CLEAN \
-    if (!(flags & FLAG_SIZE_T)) { \
-        PyErr_SetString(PyExc_SystemError, \
-                        "PY_SSIZE_T_CLEAN macro must be defined for '#' formats"); \
-        RETURN_ERR_OCCURRED; \
-    }
 
     const char *format = *p_format;
     char c = *format++;
@@ -871,9 +824,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         if (!PyUnicode_Check(arg))
             return converterr("a unicode character", arg, msgbuf, bufsize);
 
-        if (PyUnicode_READY(arg))
-            RETURN_ERR_OCCURRED;
-
         if (PyUnicode_GET_LENGTH(arg) != 1)
             return converterr("a unicode character", arg, msgbuf, bufsize);
 
@@ -917,7 +867,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         if (count < 0)
             return converterr(buf, arg, msgbuf, bufsize);
         if (*format == '#') {
-            REQUIRE_PY_SSIZE_T_CLEAN;
             Py_ssize_t *psize = va_arg(*p_va, Py_ssize_t*);
             *psize = count;
             format++;
@@ -961,7 +910,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         } else if (*format == '#') { /* a string or read-only bytes-like object */
             /* "s#" or "z#" */
             const void **p = (const void **)va_arg(*p_va, const char **);
-            REQUIRE_PY_SSIZE_T_CLEAN;
             Py_ssize_t *psize = va_arg(*p_va, Py_ssize_t*);
 
             if (c == 'z' && arg == Py_None) {
@@ -1046,8 +994,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         /* Encode object */
         if (!recode_strings &&
             (PyBytes_Check(arg) || PyByteArray_Check(arg))) {
-            s = arg;
-            Py_INCREF(s);
+            s = Py_NewRef(arg);
             if (PyBytes_Check(arg)) {
                 size = PyBytes_GET_SIZE(s);
                 ptr = PyBytes_AS_STRING(s);
@@ -1100,7 +1047,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                trailing 0-byte
 
             */
-            REQUIRE_PY_SSIZE_T_CLEAN;
             Py_ssize_t *psize = va_arg(*p_va, Py_ssize_t*);
 
             format++;
@@ -1117,7 +1063,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                     PyErr_NoMemory();
                     RETURN_ERR_OCCURRED;
                 }
-                if (addcleanup(*buffer, freelist, cleanup_ptr)) {
+                if (addcleanup(buffer, freelist, cleanup_ptr)) {
                     Py_DECREF(s);
                     return converterr(
                         "(cleanup problem)",
@@ -1163,7 +1109,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                 PyErr_NoMemory();
                 RETURN_ERR_OCCURRED;
             }
-            if (addcleanup(*buffer, freelist, cleanup_ptr)) {
+            if (addcleanup(buffer, freelist, cleanup_ptr)) {
                 Py_DECREF(s);
                 return converterr("(cleanup problem)",
                                 arg, msgbuf, bufsize);
@@ -1195,8 +1141,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     case 'U': { /* PyUnicode object */
         PyObject **p = va_arg(*p_va, PyObject **);
         if (PyUnicode_Check(arg)) {
-            if (PyUnicode_READY(arg) == -1)
-                RETURN_ERR_OCCURRED;
             *p = arg;
         }
         else
@@ -1275,7 +1219,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     *p_format = format;
     return NULL;
 
-#undef REQUIRE_PY_SSIZE_T_CLEAN
 #undef RETURN_ERR_OCCURRED
 }
 
@@ -1344,7 +1287,7 @@ PyArg_ParseTupleAndKeywords(PyObject *args,
     return retval;
 }
 
-PyAPI_FUNC(int)
+int
 _PyArg_ParseTupleAndKeywords_SizeT(PyObject *args,
                                   PyObject *keywords,
                                   const char *format,
@@ -1364,7 +1307,7 @@ _PyArg_ParseTupleAndKeywords_SizeT(PyObject *args,
 
     va_start(va, kwlist);
     retval = vgetargskeywords(args, keywords, format,
-                              kwlist, &va, FLAG_SIZE_T);
+                              kwlist, &va, 0);
     va_end(va);
     return retval;
 }
@@ -1395,7 +1338,7 @@ PyArg_VaParseTupleAndKeywords(PyObject *args,
     return retval;
 }
 
-PyAPI_FUNC(int)
+int
 _PyArg_VaParseTupleAndKeywords_SizeT(PyObject *args,
                                     PyObject *keywords,
                                     const char *format,
@@ -1416,7 +1359,7 @@ _PyArg_VaParseTupleAndKeywords_SizeT(PyObject *args,
     va_copy(lva, va);
 
     retval = vgetargskeywords(args, keywords, format,
-                              kwlist, &lva, FLAG_SIZE_T);
+                              kwlist, &lva, 0);
     va_end(lva);
     return retval;
 }
@@ -1434,7 +1377,7 @@ _PyArg_ParseTupleAndKeywordsFast(PyObject *args, PyObject *keywords,
     return retval;
 }
 
-PyAPI_FUNC(int)
+int
 _PyArg_ParseTupleAndKeywordsFast_SizeT(PyObject *args, PyObject *keywords,
                             struct _PyArg_Parser *parser, ...)
 {
@@ -1442,12 +1385,12 @@ _PyArg_ParseTupleAndKeywordsFast_SizeT(PyObject *args, PyObject *keywords,
     va_list va;
 
     va_start(va, parser);
-    retval = vgetargskeywordsfast(args, keywords, parser, &va, FLAG_SIZE_T);
+    retval = vgetargskeywordsfast(args, keywords, parser, &va, 0);
     va_end(va);
     return retval;
 }
 
-PyAPI_FUNC(int)
+int
 _PyArg_ParseStackAndKeywords(PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames,
                   struct _PyArg_Parser *parser, ...)
 {
@@ -1460,7 +1403,7 @@ _PyArg_ParseStackAndKeywords(PyObject *const *args, Py_ssize_t nargs, PyObject *
     return retval;
 }
 
-PyAPI_FUNC(int)
+int
 _PyArg_ParseStackAndKeywords_SizeT(PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames,
                         struct _PyArg_Parser *parser, ...)
 {
@@ -1468,7 +1411,7 @@ _PyArg_ParseStackAndKeywords_SizeT(PyObject *const *args, Py_ssize_t nargs, PyOb
     va_list va;
 
     va_start(va, parser);
-    retval = vgetargskeywordsfast_impl(args, nargs, NULL, kwnames, parser, &va, FLAG_SIZE_T);
+    retval = vgetargskeywordsfast_impl(args, nargs, NULL, kwnames, parser, &va, 0);
     va_end(va);
     return retval;
 }
@@ -1484,20 +1427,6 @@ _PyArg_VaParseTupleAndKeywordsFast(PyObject *args, PyObject *keywords,
     va_copy(lva, va);
 
     retval = vgetargskeywordsfast(args, keywords, parser, &lva, 0);
-    va_end(lva);
-    return retval;
-}
-
-PyAPI_FUNC(int)
-_PyArg_VaParseTupleAndKeywordsFast_SizeT(PyObject *args, PyObject *keywords,
-                            struct _PyArg_Parser *parser, va_list va)
-{
-    int retval;
-    va_list lva;
-
-    va_copy(lva, va);
-
-    retval = vgetargskeywordsfast(args, keywords, parser, &lva, FLAG_SIZE_T);
     va_end(lva);
     return retval;
 }
@@ -1847,9 +1776,6 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
 }
 
 
-/* List of static parsers. */
-static struct _PyArg_Parser *static_arg_parsers = NULL;
-
 static int
 scan_keywords(const char * const *keywords, int *ptotal, int *pposonly)
 {
@@ -2025,8 +1951,8 @@ _parser_init(struct _PyArg_Parser *parser)
     parser->initialized = owned ? 1 : -1;
 
     assert(parser->next == NULL);
-    parser->next = static_arg_parsers;
-    static_arg_parsers = parser;
+    parser->next = _PyRuntime.getargs.static_parsers;
+    _PyRuntime.getargs.static_parsers = parser;
     return 1;
 }
 
@@ -2575,8 +2501,7 @@ _PyArg_UnpackKeywordsWithVararg(PyObject *const *args, Py_ssize_t nargs,
     /* copy tuple args */
     for (i = 0; i < nargs; i++) {
         if (i >= vararg) {
-            Py_INCREF(args[i]);
-            PyTuple_SET_ITEM(buf[vararg], i - vararg, args[i]);
+            PyTuple_SET_ITEM(buf[vararg], i - vararg, Py_NewRef(args[i]));
             continue;
         }
         else {
@@ -2603,7 +2528,25 @@ _PyArg_UnpackKeywordsWithVararg(PyObject *const *args, Py_ssize_t nargs,
             current_arg = NULL;
         }
 
-        buf[i + vararg + 1] = current_arg;
+        /* If an arguments is passed in as a keyword argument,
+         * it should be placed before `buf[vararg]`.
+         *
+         * For example:
+         * def f(a, /, b, *args):
+         *     pass
+         * f(1, b=2)
+         *
+         * This `buf` array should be: [1, 2, NULL].
+         * In this case, nargs < vararg.
+         *
+         * Otherwise, we leave a place at `buf[vararg]` for vararg tuple
+         * so the index is `i + 1`. */
+        if (nargs < vararg) {
+            buf[i] = current_arg;
+        }
+        else {
+            buf[i + 1] = current_arg;
+        }
 
         if (current_arg) {
             --nkwargs;
@@ -2697,9 +2640,6 @@ skipitem(const char **p_format, va_list *p_va, int flags)
             }
             if (*format == '#') {
                 if (p_va != NULL) {
-                    if (!(flags & FLAG_SIZE_T)) {
-                        return "PY_SSIZE_T_CLEAN macro must be defined for '#' formats";
-                    }
                     (void) va_arg(*p_va, Py_ssize_t *);
                 }
                 format++;
@@ -2932,14 +2872,14 @@ _PyArg_NoKwnames(const char *funcname, PyObject *kwnames)
 void
 _PyArg_Fini(void)
 {
-    struct _PyArg_Parser *tmp, *s = static_arg_parsers;
+    struct _PyArg_Parser *tmp, *s = _PyRuntime.getargs.static_parsers;
     while (s) {
         tmp = s->next;
         s->next = NULL;
         parser_clear(s);
         s = tmp;
     }
-    static_arg_parsers = NULL;
+    _PyRuntime.getargs.static_parsers = NULL;
 }
 
 #ifdef __cplusplus

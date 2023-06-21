@@ -1,2 +1,0 @@
-:func:`shutil.copytree` now applies the *ignore_dangling_symlinks* argument
-recursively.

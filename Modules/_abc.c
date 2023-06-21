@@ -7,6 +7,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyType_GetSubclasses()
 #include "pycore_runtime.h"       // _Py_ID()
+#include "pycore_typeobject.h"    // _PyType_GetMRO()
 #include "clinic/_abc.c.h"
 
 /*[clinic input]
@@ -79,7 +80,7 @@ abc_data_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    state = PyType_GetModuleState(type);
+    state = _PyType_GetModuleState(type);
     if (state == NULL) {
         Py_DECREF(self);
         return NULL;
@@ -452,7 +453,8 @@ _abc__abc_init(PyObject *module, PyObject *self)
      * their special status w.r.t. pattern matching. */
     if (PyType_Check(self)) {
         PyTypeObject *cls = (PyTypeObject *)self;
-        PyObject *flags = PyDict_GetItemWithError(cls->tp_dict,
+        PyObject *dict = _PyType_GetDict(cls);
+        PyObject *flags = PyDict_GetItemWithError(dict,
                                                   &_Py_ID(__abc_tpflags__));
         if (flags == NULL) {
             if (PyErr_Occurred()) {
@@ -471,7 +473,7 @@ _abc__abc_init(PyObject *module, PyObject *self)
                 }
                 ((PyTypeObject *)self)->tp_flags |= (val & COLLECTION_FLAGS);
             }
-            if (PyDict_DelItem(cls->tp_dict, &_Py_ID(__abc_tpflags__)) < 0) {
+            if (PyDict_DelItem(dict, &_Py_ID(__abc_tpflags__)) < 0) {
                 return NULL;
             }
         }
@@ -524,8 +526,7 @@ _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
     }
     int result = PyObject_IsSubclass(subclass, self);
     if (result > 0) {
-        Py_INCREF(subclass);
-        return subclass;  /* Already a subclass. */
+        return Py_NewRef(subclass);  /* Already a subclass. */
     }
     if (result < 0) {
         return NULL;
@@ -561,8 +562,7 @@ _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
             set_collection_flag_recursive((PyTypeObject *)subclass, collection_flag);
         }
     }
-    Py_INCREF(subclass);
-    return subclass;
+    return Py_NewRef(subclass);
 }
 
 
@@ -598,8 +598,7 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
         goto end;
     }
     if (incache > 0) {
-        result = Py_True;
-        Py_INCREF(result);
+        result = Py_NewRef(Py_True);
         goto end;
     }
     subtype = (PyObject *)Py_TYPE(instance);
@@ -610,8 +609,7 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
                 goto end;
             }
             if (incache > 0) {
-                result = Py_False;
-                Py_INCREF(result);
+                result = Py_NewRef(Py_False);
                 goto end;
             }
         }
@@ -628,8 +626,7 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
 
     switch (PyObject_IsTrue(result)) {
     case -1:
-        Py_DECREF(result);
-        result = NULL;
+        Py_SETREF(result, NULL);
         break;
     case 0:
         Py_DECREF(result);
@@ -747,7 +744,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     Py_DECREF(ok);
 
     /* 4. Check if it's a direct subclass. */
-    PyObject *mro = ((PyTypeObject *)subclass)->tp_mro;
+    PyObject *mro = _PyType_GetMRO((PyTypeObject *)subclass);
     assert(PyTuple_Check(mro));
     for (pos = 0; pos < PyTuple_GET_SIZE(mro); pos++) {
         PyObject *mro_item = PyTuple_GET_ITEM(mro, pos);
@@ -802,8 +799,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
 end:
     Py_DECREF(impl);
     Py_XDECREF(subclasses);
-    Py_XINCREF(result);
-    return result;
+    return Py_XNewRef(result);
 }
 
 
@@ -842,8 +838,7 @@ subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
     Py_ssize_t i = 0;
 
     while (_PySet_NextEntry(impl->_abc_registry, &pos, &key, &hash)) {
-        Py_INCREF(key);
-        copy[i++] = key;
+        copy[i++] = Py_NewRef(key);
     }
     assert(i == registry_size);
 
@@ -949,6 +944,7 @@ _abcmodule_free(void *module)
 
 static PyModuleDef_Slot _abcmodule_slots[] = {
     {Py_mod_exec, _abcmodule_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

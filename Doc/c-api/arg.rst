@@ -27,40 +27,55 @@ unit; the entry in (round) parentheses is the Python object type that matches
 the format unit; and the entry in [square] brackets is the type of the C
 variable(s) whose address should be passed.
 
+.. _arg-parsing-string-and-buffers:
+
 Strings and buffers
 -------------------
+
+.. note::
+
+   On Python 3.12 and older, the macro :c:macro:`!PY_SSIZE_T_CLEAN` must be
+   defined before including :file:`Python.h` to use all ``#`` variants of
+   formats (``s#``, ``y#``, etc.) explained below.
+   This is not necessary on Python 3.13 and later.
 
 These formats allow accessing an object as a contiguous chunk of memory.
 You don't have to provide raw storage for the returned unicode or bytes
 area.
 
-In general, when a format sets a pointer to a buffer, the buffer is
-managed by the corresponding Python object, and the buffer shares
-the lifetime of this object.  You won't have to release any memory yourself.
-The only exceptions are ``es``, ``es#``, ``et`` and ``et#``.
-
-However, when a :c:type:`Py_buffer` structure gets filled, the underlying
-buffer is locked so that the caller can subsequently use the buffer even
-inside a :c:type:`Py_BEGIN_ALLOW_THREADS` block without the risk of mutable data
-being resized or destroyed.  As a result, **you have to call**
-:c:func:`PyBuffer_Release` after you have finished processing the data (or
-in any early abort case).
-
 Unless otherwise stated, buffers are not NUL-terminated.
 
-Some formats require a read-only :term:`bytes-like object`, and set a
-pointer instead of a buffer structure.  They work by checking that
-the object's :c:member:`PyBufferProcs.bf_releasebuffer` field is ``NULL``,
-which disallows mutable objects such as :class:`bytearray`.
+There are three ways strings and buffers can be converted to C:
 
-.. note::
+*  Formats such as ``y*`` and ``s*`` fill a :c:type:`Py_buffer` structure.
+   This locks the underlying buffer so that the caller can subsequently use
+   the buffer even inside a :c:type:`Py_BEGIN_ALLOW_THREADS`
+   block without the risk of mutable data being resized or destroyed.
+   As a result, **you have to call** :c:func:`PyBuffer_Release` after you have
+   finished processing the data (or in any early abort case).
 
-   For all ``#`` variants of formats (``s#``, ``y#``, etc.), the macro
-   :c:macro:`PY_SSIZE_T_CLEAN` must be defined before including
-   :file:`Python.h`. On Python 3.9 and older, the type of the length argument
-   is :c:type:`Py_ssize_t` if the :c:macro:`PY_SSIZE_T_CLEAN` macro is defined,
-   or int otherwise.
+*  The ``es``, ``es#``, ``et`` and ``et#`` formats allocate the result buffer.
+   **You have to call** :c:func:`PyMem_Free` after you have finished
+   processing the data (or in any early abort case).
 
+*  .. _c-arg-borrowed-buffer:
+
+   Other formats take a :class:`str` or a read-only :term:`bytes-like object`,
+   such as :class:`bytes`, and provide a ``const char *`` pointer to
+   its buffer.
+   In this case the buffer is "borrowed": it is managed by the corresponding
+   Python object, and shares the lifetime of this object.
+   You won't have to release any memory yourself.
+
+   To ensure that the underlying buffer may be safely borrowed, the object's
+   :c:member:`PyBufferProcs.bf_releasebuffer` field must be ``NULL``.
+   This disallows common mutable objects such as :class:`bytearray`,
+   but also some read-only objects such as :class:`memoryview` of
+   :class:`bytes`.
+
+   Besides this ``bf_releasebuffer`` requirement, there is no check to verify
+   whether the input object is immutable (e.g. whether it would honor a request
+   for a writable buffer, or whether another thread can mutate the data).
 
 ``s`` (:class:`str`) [const char \*]
    Convert a Unicode object to a C pointer to a character string.
@@ -89,7 +104,7 @@ which disallows mutable objects such as :class:`bytearray`.
    Unicode objects are converted to C strings using ``'utf-8'`` encoding.
 
 ``s#`` (:class:`str`, read-only :term:`bytes-like object`) [const char \*, :c:type:`Py_ssize_t`]
-   Like ``s*``, except that it doesn't accept mutable objects.
+   Like ``s*``, except that it provides a :ref:`borrowed buffer <c-arg-borrowed-buffer>`.
    The result is stored into two C variables,
    the first one a pointer to a C string, the second one its length.
    The string may contain embedded null bytes. Unicode objects are converted
@@ -108,8 +123,9 @@ which disallows mutable objects such as :class:`bytearray`.
    pointer is set to ``NULL``.
 
 ``y`` (read-only :term:`bytes-like object`) [const char \*]
-   This format converts a bytes-like object to a C pointer to a character
-   string; it does not accept Unicode objects.  The bytes buffer must not
+   This format converts a bytes-like object to a C pointer to a
+   :ref:`borrowed <c-arg-borrowed-buffer>` character string;
+   it does not accept Unicode objects.  The bytes buffer must not
    contain embedded null bytes; if it does, a :exc:`ValueError`
    exception is raised.
 
@@ -423,16 +439,24 @@ API Functions
    .. versionadded:: 3.2
 
 
-.. XXX deprecated, will be removed
 .. c:function:: int PyArg_Parse(PyObject *args, const char *format, ...)
 
-   Function used to deconstruct the argument lists of "old-style" functions ---
-   these are functions which use the :const:`METH_OLDARGS` parameter parsing
-   method, which has been removed in Python 3.  This is not recommended for use
-   in parameter parsing in new code, and most code in the standard interpreter
-   has been modified to no longer use this for that purpose.  It does remain a
-   convenient way to decompose other tuples, however, and may continue to be
-   used for that purpose.
+   Parse the parameter of a function that takes a single positional parameter
+   into a local variable.  Returns true on success; on failure, it returns
+   false and raises the appropriate exception.
+
+   Example::
+
+       // Function using METH_O calling convention
+       static PyObject*
+       my_function(PyObject *module, PyObject *arg)
+       {
+           int value;
+           if (!PyArg_Parse(arg, "i:my_function", &value)) {
+               return NULL;
+           }
+           // ... use value ...
+       }
 
 
 .. c:function:: int PyArg_UnpackTuple(PyObject *args, const char *name, Py_ssize_t min, Py_ssize_t max, ...)
