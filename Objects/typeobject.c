@@ -7639,6 +7639,9 @@ get_subclasses_key(PyTypeObject *type, PyTypeObject *base)
     if (subclasses != NULL) {
         while (PyDict_Next(subclasses, &i, &key, &ref)) {
             PyTypeObject *subclass = type_from_ref(ref);
+            if (subclass == NULL) {
+                continue;
+            }
             if (subclass == type) {
                 Py_DECREF(subclass);
                 return Py_NewRef(key);
