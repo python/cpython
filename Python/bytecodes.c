@@ -52,8 +52,6 @@
 #define family(name, ...) static int family_##name
 #define pseudo(name) static int pseudo_##name
 
-typedef PyObject *(*convertion_func_ptr)(PyObject *);
-
 // Dummy variables for stack effects.
 static PyObject *value, *value1, *value2, *left, *right, *res, *sum, *prod, *sub;
 static PyObject *container, *start, *stop, *v, *lhs, *rhs, *res2;
@@ -2182,7 +2180,7 @@ dummy_func(
             frame = executor->execute(executor, frame, stack_pointer);
             if (frame == NULL) {
                 frame = cframe.current_frame;
-                goto error;
+                goto resume_with_error;
             }
             goto resume_frame;
         }

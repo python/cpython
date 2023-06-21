@@ -593,14 +593,6 @@ itertools
   tuples where the last batch may be shorter than the rest.
   (Contributed by Raymond Hettinger in :gh:`98363`.)
 
-json
-----
-
-* Added :class:`json.AttrDict` for use with ``object_hook`` in :func:`json.load`
-  or :func:`json.loads`.  This is a subclass of :class:`dict` that also supports
-  attribute style dotted access.
-  (Contributed by Raymond Hettinger in :gh:`96145`.)
-
 math
 ----
 
