@@ -923,7 +923,12 @@ PyWeakref_GetObject(PyObject *ref)
         PyErr_BadInternalCall();
         return NULL;
     }
-    return PyWeakref_GET_OBJECT(ref);
+    PyObject *obj = _PyWeakref_GET_REF(ref);
+    if (obj == NULL) {
+        return Py_None;
+    }
+    Py_DECREF(obj);
+    return obj;  // borrowed reference
 }
 
 /* Note that there's an inlined copy-paste of handle_callback() in gcmodule.c's
