@@ -2270,16 +2270,12 @@ dummy_func(
 
         inst(POP_JUMP_IF_FALSE, (cond -- )) {
             assert(PyBool_Check(cond));
-            if (Py_IsFalse(cond)) {
-                JUMPBY(oparg);
-            }
+            JUMPBY(oparg * Py_IsFalse(cond));
         }
 
         inst(POP_JUMP_IF_TRUE, (cond -- )) {
             assert(PyBool_Check(cond));
-            if (Py_IsTrue(cond)) {
-                JUMPBY(oparg);
-            }
+            JUMPBY(oparg * Py_IsTrue(cond));
         }
 
         inst(POP_JUMP_IF_NOT_NONE, (value -- )) {
