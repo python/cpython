@@ -2175,6 +2175,8 @@ dummy_func(
 
         inst(ENTER_EXECUTOR, (--)) {
             CHECK_EVAL_BREAKER();
+            JUMPBY(1-oparg);
+            frame->prev_instr = next_instr - 1;
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _PyExecutorObject *executor = (_PyExecutorObject *)code->co_executors->executors[oparg&255];
             Py_INCREF(executor);
