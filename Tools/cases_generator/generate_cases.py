@@ -234,44 +234,32 @@ class Formatter:
     def cast(self, dst: StackEffect, src: StackEffect) -> str:
         return f"({dst.type or 'PyObject *'})" if src.type != dst.type else ""
 
-
+@dataclasses.dataclass
 class InstructionFlags:
     """Construct and manipulate instruction flags"""
 
-    INSTRUCTION_FLAGS = ["HAS_ARG", "HAS_CONST", "HAS_NAME", "HAS_JUMP"]
-    INSTR_FLAG_SUFFIX = "_FLAG"
+    HAS_ARG_FLAG: bool
+    HAS_CONST_FLAG: bool
+    HAS_NAME_FLAG: bool
+    HAS_JUMP_FLAG: bool
 
-    def __init__(
-        self, has_arg: bool, has_const: bool, has_name: bool, has_jump: bool
-    ):
-
-        self.data = {
-            "HAS_ARG": has_arg,
-            "HAS_CONST": has_const,
-            "HAS_NAME": has_name,
-            "HAS_JUMP": has_jump,
+    def __post_init__(self):
+        self.bitmask = {
+            name : (1 << i) for i, name in enumerate(self.names())
         }
-        assert set(self.data.keys()) == set(self.INSTRUCTION_FLAGS)
 
     @staticmethod
     def fromInstruction(instr: "AnyInstruction"):
         return InstructionFlags(
-            has_arg=variable_used(instr, "oparg"),
-            has_const=variable_used(instr, "FRAME_CO_CONSTS"),
-            has_name=variable_used(instr, "FRAME_CO_NAMES"),
-            has_jump=variable_used(instr, "JUMPBY"),
+            HAS_ARG_FLAG=variable_used(instr, "oparg"),
+            HAS_CONST_FLAG=variable_used(instr, "FRAME_CO_CONSTS"),
+            HAS_NAME_FLAG=variable_used(instr, "FRAME_CO_NAMES"),
+            HAS_JUMP_FLAG=variable_used(instr, "JUMPBY"),
         )
 
     @staticmethod
     def newEmpty():
         return InstructionFlags(False, False, False, False)
-
-    def names(self) -> list[str]:
-        return [
-            f"{name}{self.INSTR_FLAG_SUFFIX}"
-            for name in self.INSTRUCTION_FLAGS
-            if self.is_set(name)
-        ]
 
     def __eq__(self, other: "InstructionFlags") -> False:
         return self.bitmap() == other.bitmap()
@@ -280,29 +268,32 @@ class InstructionFlags:
         return hash(self.bitmap())
 
     def add(self, other: "InstructionFlags") -> None:
-        for name, value in other.data.items():
-            self.data[name] |= value;
+        for name, value in dataclasses.asdict(other).items():
+            if value:
+                setattr(self, name, value)
+
+    def names(self, value=None):
+        if value is None:
+            return dataclasses.asdict(self).keys()
+        return [n for n, v in dataclasses.asdict(self).items() if v == value]
 
     def bitmap(self) -> int:
         flags = 0
-        for i, name in enumerate(self.INSTRUCTION_FLAGS):
-            flags |= (1<<i) if self.data[name] else 0
+        for name in self.names():
+            if getattr(self, name):
+                flags |= self.bitmask[name]
         return flags
-
-    def is_set(self, name: str) -> bool:
-        return self.data[name]
 
     @classmethod
     def emit_macros(cls, out: Formatter):
-        for i, flag in enumerate(cls.INSTRUCTION_FLAGS):
-            flag_name = f"{flag}{cls.INSTR_FLAG_SUFFIX}"
-            out.emit(f"#define {flag_name} ({1 << i})");
+        flags = cls.newEmpty()
+        for name, value in flags.bitmask.items():
+            out.emit(f"#define {name} ({value})");
 
-        for flag in cls.INSTRUCTION_FLAGS:
-            flag_name = f"{flag}{cls.INSTR_FLAG_SUFFIX}"
+        for name, value in flags.bitmask.items():
             out.emit(
-                f"#define OPCODE_{flag}(OP) "
-                f"(_PyOpcode_opcode_metadata[(OP)].flags & ({flag_name}))")
+                f"#define OPCODE_{name[:-len('_FLAG')]}(OP) "
+                f"(_PyOpcode_opcode_metadata[(OP)].flags & ({name}))")
 
 
 @dataclasses.dataclass
@@ -357,7 +348,7 @@ class Instruction:
 
         self.instr_flags = InstructionFlags.fromInstruction(inst)
 
-        if self.instr_flags.is_set('HAS_ARG'):
+        if self.instr_flags.HAS_ARG_FLAG:
             fmt = "IB"
         else:
             fmt = "IX"
@@ -1211,10 +1202,12 @@ class Analyzer:
     def emit_metadata_entry(
         self, name: str, fmt: str, flags: InstructionFlags
     ) -> None:
-        if not (names := flags.names()):
-            names.append("0")
+        flag_names = flags.names(value=True)
+        if not flag_names:
+            flag_names.append("0")
         self.out.emit(
-            f"    [{name}] = {{ true, {INSTR_FMT_PREFIX}{fmt}, {' | '.join(names)} }},"
+            f"    [{name}] = {{ true, {INSTR_FMT_PREFIX}{fmt},"
+            f" {' | '.join(flag_names)} }},"
         )
 
     def write_metadata_for_inst(self, instr: Instruction) -> None:
