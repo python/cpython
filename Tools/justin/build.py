@@ -189,6 +189,7 @@ class ObjectParser:
         self.relocations = {}
         self.dupes = set()
         self.got_entries = []
+        self.relocations_todo = []
 
     def parse(self):
         for section in unwrap(self._data, "Section"):
@@ -198,35 +199,33 @@ class ObjectParser:
         else:
             entry = self.body_symbols["_justin_trampoline"]
         holes = []
-        for _, newhole in self.relocations.items():
-            # assert type == "IMAGE_REL_AMD64_ADDR64"
-            assert newhole.symbol not in self.dupes
-            if newhole.symbol in self.body_symbols:
-                addend = newhole.addend + self.body_symbols[newhole.symbol] - entry
-                newhole = Hole("_justin_base", newhole.offset, addend, newhole.got, newhole.pc)
-            holes.append(newhole)
+        for before, relocation in self.relocations_todo:
+            for newhole in handle_one_relocation(self.got_entries, self.body, before, relocation):
+                assert newhole.symbol not in self.dupes
+                if newhole.symbol in self.body_symbols:
+                    addend = newhole.addend + self.body_symbols[newhole.symbol] - entry
+                    newhole = Hole("_justin_base", newhole.offset, addend, newhole.pc)
+                holes.append(newhole)
         got = len(self.body)
         for i, got_symbol in enumerate(self.got_entries):
             if got_symbol in self.body_symbols:
                 self.body_symbols[got_symbol] -= entry
-            holes.append(Hole(got_symbol, got + 8 * i, 0, 0, 0))
+            holes.append(Hole(got_symbol, got + 8 * i, 0, 0))
         self.body.extend([0] * 8 * len(self.got_entries))
         holes.sort(key=lambda hole: hole.offset)
-        return Stencil(bytes(self.body)[entry:], tuple(holes), got)  # XXX
+        return Stencil(bytes(self.body)[entry:], tuple(holes))  # XXX
 
 @dataclasses.dataclass(frozen=True)
 class Hole:
     symbol: str
     offset: int
     addend: int
-    got: int
     pc: int
 
 @dataclasses.dataclass(frozen=True)
 class Stencil:
     body: bytes
     holes: tuple[Hole, ...]
-    got: int
     # entry: int
 
 def handle_one_relocation(
@@ -246,7 +245,7 @@ def handle_one_relocation(
             where = slice(offset, offset + 8)
             what = int.from_bytes(body[where], sys.byteorder)
             assert not what, what
-            yield Hole(symbol, offset, addend, 0, 0)
+            yield Hole(symbol, offset, addend, 0)
         case {
             "Addend": int(addend),
             "Offset": int(offset),
@@ -260,7 +259,7 @@ def handle_one_relocation(
             if symbol not in got_entries:
                 got_entries.append(symbol)
             addend += got_entries.index(symbol) * 8
-            yield Hole("_justin_zero", offset, addend, 0, 0)
+            body[where] = int(addend).to_bytes(8, sys.byteorder)
         case {
             "Addend": int(addend),
             "Offset": int(offset),
@@ -271,7 +270,8 @@ def handle_one_relocation(
             where = slice(offset, offset + 8)
             what = int.from_bytes(body[where], sys.byteorder)
             assert not what, what
-            yield Hole(symbol, offset, addend, -1, 0)
+            addend += offset - len(body)
+            yield Hole(symbol, offset, addend, -1)
         case {
             "Addend": int(addend),
             "Offset": int(offset),
@@ -282,7 +282,8 @@ def handle_one_relocation(
             where = slice(offset, offset + 8)
             what = int.from_bytes(body[where], sys.byteorder)
             assert not what, what
-            yield Hole("_justin_zero", offset, addend, 1, -1)
+            addend += len(body) - offset
+            body[where] = int(addend).to_bytes(8, sys.byteorder)
         case {
             "Addend": int(addend),
             "Offset": int(offset),
@@ -293,7 +294,7 @@ def handle_one_relocation(
             where = slice(offset, offset + 4)  # XXX: The jit can only do 8 right now...
             what = int.from_bytes(body[where], sys.byteorder)
             assert not what, what
-            yield Hole(symbol, offset, addend, 0, -1)
+            yield Hole(symbol, offset, addend, -1)
         case {
             "Length": 3,
             "Offset": int(offset),
@@ -309,7 +310,7 @@ def handle_one_relocation(
             body[where] = [0] * 8
             assert section.startswith("_")
             section = section.removeprefix("_")
-            yield Hole(section, offset, addend, 0, 0)
+            yield Hole(section, offset, addend, 0)
         case {
             "Length": 3,
             "Offset": int(offset),
@@ -327,7 +328,7 @@ def handle_one_relocation(
             symbol = symbol.removeprefix("_")
             if symbol == "__bzero":  # XXX
                 symbol = "bzero"  # XXX
-            yield Hole(symbol, offset, addend, 0, 0)
+            yield Hole(symbol, offset, addend, 0)
         case _:
             raise NotImplementedError(relocation)
 
@@ -386,9 +387,7 @@ class ObjectParserMachO(ObjectParser):
                 self.dupes.add(name)
             self.body_symbols[name] = offset
         for relocation in unwrap(section["Relocations"], "Relocation"):
-            for hole in handle_one_relocation(self.got_entries, self.body, before, relocation):
-                assert hole.offset not in self.relocations
-                self.relocations[hole.offset] = hole
+            self.relocations_todo.append((before, relocation))
 
 
 class ObjectParserELF(ObjectParser):
@@ -401,9 +400,7 @@ class ObjectParserELF(ObjectParser):
             before = self.body_offsets[section["Info"]]
             assert not section["Symbols"]
             for relocation in unwrap(section["Relocations"], "Relocation"):
-                for hole in handle_one_relocation(self.got_entries, self.body, before, relocation):
-                    assert hole.offset not in self.relocations
-                    self.relocations[hole.offset] = hole
+                self.relocations_todo.append((before, relocation))
         elif type == "SHT_PROGBITS":
             before = self.body_offsets[section["Index"]] = len(self.body)
             if "SHF_ALLOC" not in flags:
@@ -573,7 +570,6 @@ class Compiler:
             "HOLE_next_instr",
             "HOLE_next_trace",
             "HOLE_oparg",
-            "HOLE_zero",
         }
         opnames = []
         for opname, stencil in sorted(self._stencils_built.items()) + [("trampoline", self._trampoline_built)]:
@@ -591,16 +587,14 @@ class Compiler:
                 else:
                     kind = f"LOAD_{hole.symbol}"
                     kinds.add(kind)
-                lines.append(f"    {{.offset = {hole.offset:4}, .addend = {hole.addend:4}, .kind = {kind}, .got = {hole.got}, .pc = {hole.pc}}},")
+                lines.append(f"    {{.offset = {hole.offset:4}, .addend = {hole.addend:4}, .kind = {kind}, .pc = {hole.pc}}},")
             lines.append(f"}};")
-            lines.append(f"static const int {opname}_stencil_got = {stencil.got};")
             lines.append(f"")
         lines.append(f"static const Stencil trampoline_stencil = {{")
         lines.append(f"    .nbytes = Py_ARRAY_LENGTH(trampoline_stencil_bytes),")
         lines.append(f"    .bytes = trampoline_stencil_bytes,")
         lines.append(f"    .nholes = Py_ARRAY_LENGTH(trampoline_stencil_holes),")
         lines.append(f"    .holes = trampoline_stencil_holes,")
-        lines.append(f"    .got = trampoline_stencil_got,")
         lines.append(f"}};")
         lines.append(f"")
         lines.append(f"#define INIT_STENCIL(OP) [(OP)] = {{                \\")
@@ -608,7 +602,6 @@ class Compiler:
         lines.append(f"    .bytes = OP##_stencil_bytes,                   \\")
         lines.append(f"    .nholes = Py_ARRAY_LENGTH(OP##_stencil_holes), \\")
         lines.append(f"    .holes = OP##_stencil_holes,                   \\")
-        lines.append(f"    .got = OP##_stencil_got,                       \\")
         lines.append(f"}}")
         lines.append(f"")
         lines.append(f"static const Stencil stencils[256] = {{")
@@ -643,7 +636,6 @@ class Compiler:
         header.append(f"    const uintptr_t offset;")
         header.append(f"    const uintptr_t addend;")
         header.append(f"    const HoleKind kind;")
-        header.append(f"    const int got;")
         header.append(f"    const int pc;")
         header.append(f"}} Hole;")
         header.append(f"")
@@ -652,7 +644,6 @@ class Compiler:
         header.append(f"    const unsigned char * const bytes;")
         header.append(f"    const size_t nholes;")
         header.append(f"    const Hole * const holes;")
-        header.append(f"    const size_t got;")
         header.append(f"}} Stencil;")
         header.append(f"")
         lines[:0] = header

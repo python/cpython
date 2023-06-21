@@ -63,11 +63,8 @@ copy_and_patch(unsigned char *memory, const Stencil *stencil, uintptr_t patches[
         uintptr_t *addr = (uintptr_t *)(memory + hole->offset);
         // XXX: This can't handle 32-bit relocations...
         // XXX: Use += to allow multiple relocations for one offset.
-        // XXX: Get rid of got and pc, and replace them with HOLE_base + addend.
-        *addr = patches[hole->kind]
-                 + hole->addend
-                 + hole->got * (uintptr_t)(memory + stencil->got)
-                 + hole->pc * (uintptr_t)addr;
+        // XXX: Get rid of pc, and replace it with HOLE_base + addend.
+        *addr = patches[hole->kind] + hole->addend + hole->pc * (uintptr_t)addr;
     }
     return memory + stencil->nbytes;
 }
@@ -97,8 +94,6 @@ _PyJIT_CompileTrace(int size, _Py_CODEUNIT **trace)
     const Stencil *stencil = &trampoline_stencil;
     patches[HOLE_base] = (uintptr_t)head;
     patches[HOLE_continue] = (uintptr_t)head + stencil->nbytes;
-    // XXX: Get rid of this zero patch.
-    patches[HOLE_zero] = (uintptr_t)0;
     head = copy_and_patch(head, stencil, patches);
     // Then, all of the stencils:
     for (int i = 0; i < size; i++) {
