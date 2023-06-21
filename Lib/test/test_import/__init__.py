@@ -1640,9 +1640,10 @@ class SubinterpImportTests(unittest.TestCase):
     )
     ISOLATED = dict(
         use_main_obmalloc=False,
-        own_gil=True,
+        gil=2,
     )
     NOT_ISOLATED = {k: not v for k, v in ISOLATED.items()}
+    NOT_ISOLATED['gil'] = 1
 
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def pipe(self):
@@ -2618,6 +2619,30 @@ class SinglephaseInitTests(unittest.TestCase):
         #  * mod init func ran again
         #  * m_copy was copied from interp2 (was from interp1)
         #  * module's global state was initialized, not reset
+
+
+@cpython_only
+class CAPITests(unittest.TestCase):
+    def test_pyimport_addmodule(self):
+        # gh-105922: Test PyImport_AddModuleRef(), PyImport_AddModule()
+        # and PyImport_AddModuleObject()
+        import _testcapi
+        for name in (
+            'sys',     # frozen module
+            'test',    # package
+            __name__,  # package.module
+        ):
+            _testcapi.check_pyimport_addmodule(name)
+
+    def test_pyimport_addmodule_create(self):
+        # gh-105922: Test PyImport_AddModuleRef(), create a new module
+        import _testcapi
+        name = 'dontexist'
+        self.assertNotIn(name, sys.modules)
+        self.addCleanup(unload, name)
+
+        mod = _testcapi.check_pyimport_addmodule(name)
+        self.assertIs(mod, sys.modules[name])
 
 
 if __name__ == '__main__':

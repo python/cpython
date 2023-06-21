@@ -354,9 +354,6 @@ test_unicode_converter(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("test_unicode_converter", "argument", "str", arg);
         goto exit;
     }
-    if (PyUnicode_READY(arg) == -1) {
-        goto exit;
-    }
     a = arg;
     return_value = test_unicode_converter_impl(module, a);
 
@@ -366,7 +363,7 @@ exit:
 
 static PyObject *
 test_unicode_converter_impl(PyObject *module, PyObject *a)
-/*[clinic end generated code: output=18f1e3880c862611 input=aa33612df92aa9c5]*/
+/*[clinic end generated code: output=8c1625cc272c1f3d input=aa33612df92aa9c5]*/
 
 
 /*[clinic input]
@@ -972,9 +969,6 @@ test_int_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("test_int_converter", "argument 3", "a unicode character", args[2]);
         goto exit;
     }
-    if (PyUnicode_READY(args[2])) {
-        goto exit;
-    }
     if (PyUnicode_GET_LENGTH(args[2]) != 1) {
         _PyArg_BadArgument("test_int_converter", "argument 3", "a unicode character", args[2]);
         goto exit;
@@ -996,7 +990,7 @@ exit:
 
 static PyObject *
 test_int_converter_impl(PyObject *module, int a, int b, int c, myenum d)
-/*[clinic end generated code: output=800993036e078c07 input=d20541fc1ca0553e]*/
+/*[clinic end generated code: output=375eedba5ca9a5b3 input=d20541fc1ca0553e]*/
 
 
 /*[clinic input]

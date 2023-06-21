@@ -101,7 +101,7 @@ UOp = OpName | CacheEffect
 class InstHeader(Node):
     override: bool
     register: bool
-    kind: Literal["inst", "op", "legacy"]  # Legacy means no (inputs -- outputs)
+    kind: Literal["inst", "op"]
     name: str
     inputs: list[InputEffect]
     outputs: list[OutputEffect]
@@ -111,17 +111,11 @@ class InstHeader(Node):
 class InstDef(Node):
     override: bool
     register: bool
-    kind: Literal["inst", "op", "legacy"]
+    kind: Literal["inst", "op"]
     name: str
     inputs: list[InputEffect]
     outputs: list[OutputEffect]
     block: Block
-
-
-@dataclass
-class Super(Node):
-    name: str
-    ops: list[OpName]
 
 
 @dataclass
@@ -136,18 +130,23 @@ class Family(Node):
     size: str  # Variable giving the cache size in code units
     members: list[str]
 
+@dataclass
+class Pseudo(Node):
+    name: str
+    targets: list[str]  # opcodes this can be replaced by
+
 
 class Parser(PLexer):
     @contextual
-    def definition(self) -> InstDef | Super | Macro | Family | None:
+    def definition(self) -> InstDef | Macro | Pseudo | Family | None:
         if inst := self.inst_def():
             return inst
-        if super := self.super_def():
-            return super
         if macro := self.macro_def():
             return macro
         if family := self.family_def():
             return family
+        if pseudo := self.pseudo_def():
+            return pseudo
 
     @contextual
     def inst_def(self) -> InstDef | None:
@@ -175,9 +174,6 @@ class Parser(PLexer):
                     if self.expect(lx.RPAREN):
                         if (tkn := self.peek()) and tkn.kind == lx.LBRACE:
                             return InstHeader(override, register, kind, name, inp, outp)
-                elif self.expect(lx.RPAREN) and kind == "inst":
-                    # No legacy stack effect if kind is "op".
-                    return InstHeader(override, register, "legacy", name, [], [])
         return None
 
     def io_effect(self) -> tuple[list[InputEffect], list[OutputEffect]]:
@@ -280,25 +276,13 @@ class Parser(PLexer):
             return None
         return Expression(lx.to_text(tokens).strip())
 
-    @contextual
-    def super_def(self) -> Super | None:
-        if (tkn := self.expect(lx.IDENTIFIER)) and tkn.text == "super":
-            if self.expect(lx.LPAREN):
-                if tkn := self.expect(lx.IDENTIFIER):
-                    if self.expect(lx.RPAREN):
-                        if self.expect(lx.EQUALS):
-                            if ops := self.ops():
-                                self.require(lx.SEMI)
-                                res = Super(tkn.text, ops)
-                                return res
-
-    def ops(self) -> list[OpName] | None:
-        if op := self.op():
-            ops = [op]
-            while self.expect(lx.PLUS):
-                if op := self.op():
-                    ops.append(op)
-            return ops
+    # def ops(self) -> list[OpName] | None:
+    #     if op := self.op():
+    #         ops = [op]
+    #         while self.expect(lx.PLUS):
+    #             if op := self.op():
+    #                 ops.append(op)
+    #         return ops
 
     @contextual
     def op(self) -> OpName | None:
@@ -364,6 +348,23 @@ class Parser(PLexer):
                                     )
         return None
 
+    @contextual
+    def pseudo_def(self) -> Pseudo | None:
+        if (tkn := self.expect(lx.IDENTIFIER)) and tkn.text == "pseudo":
+            size = None
+            if self.expect(lx.LPAREN):
+                if tkn := self.expect(lx.IDENTIFIER):
+                    if self.expect(lx.RPAREN):
+                        if self.expect(lx.EQUALS):
+                            if not self.expect(lx.LBRACE):
+                                raise self.make_syntax_error("Expected {")
+                            if members := self.members():
+                                if self.expect(lx.RBRACE) and self.expect(lx.SEMI):
+                                    return Pseudo(
+                                        tkn.text, members
+                                    )
+        return None
+
     def members(self) -> list[str] | None:
         here = self.getpos()
         if tkn := self.expect(lx.IDENTIFIER):
@@ -408,7 +409,7 @@ if __name__ == "__main__":
             src = sys.argv[2]
             filename = "<string>"
         else:
-            with open(filename) as f:
+            with open(filename, "r") as f:
                 src = f.read()
             srclines = src.splitlines()
             begin = srclines.index("// BEGIN BYTECODES //")

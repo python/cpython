@@ -37,10 +37,6 @@
 
 #include "opcode_metadata.h"      // _PyOpcode_opcode_metadata, _PyOpcode_num_popped/pushed
 
-#define DEFAULT_CODE_SIZE 128
-#define DEFAULT_LNOTAB_SIZE 16
-#define DEFAULT_CNOTAB_SIZE 32
-
 #define COMP_GENEXP   0
 #define COMP_LISTCOMP 1
 #define COMP_SETCOMP  2
@@ -64,21 +60,6 @@
     if ((X) == -1) {        \
         return ERROR;       \
     }
-
-/* If we exceed this limit, it should
- * be considered a compiler bug.
- * Currently it should be impossible
- * to exceed STACK_USE_GUIDELINE * 100,
- * as 100 is the maximum parse depth.
- * For performance reasons we will
- * want to reduce this to a
- * few hundred in the future.
- *
- * NOTE: Whatever MAX_ALLOWED_STACK_USE is
- * set to, it should never restrict what Python
- * we can write, just how we compile it.
- */
-#define MAX_ALLOWED_STACK_USE (STACK_USE_GUIDELINE * 100)
 
 #define IS_TOP_LEVEL_AWAIT(C) ( \
         ((C)->c_flags.cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) \
@@ -153,8 +134,8 @@ enum {
 int
 _PyCompile_InstrSize(int opcode, int oparg)
 {
-    assert(!IS_PSEUDO_OPCODE(opcode));
-    assert(HAS_ARG(opcode) || oparg == 0);
+    assert(!IS_PSEUDO_INSTR(opcode));
+    assert(OPCODE_HAS_ARG(opcode) || oparg == 0);
     int extended_args = (0xFFFFFF < oparg) + (0xFFFF < oparg) + (0xFF < oparg);
     int caches = _PyOpcode_Caches[opcode];
     return extended_args + 1 + caches;
@@ -260,11 +241,15 @@ instr_sequence_use_label(instr_sequence *seq, int lbl) {
     return SUCCESS;
 }
 
+
+#define MAX_OPCODE 511
+
 static int
 instr_sequence_addop(instr_sequence *seq, int opcode, int oparg, location loc)
 {
+    assert(0 <= opcode && opcode <= MAX_OPCODE);
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
-    assert(HAS_ARG(opcode) || HAS_TARGET(opcode) || oparg == 0);
+    assert(OPCODE_HAS_ARG(opcode) || HAS_TARGET(opcode) || oparg == 0);
     assert(0 <= oparg && oparg < (1 << 30));
 
     int idx = instr_sequence_next_inst(seq);
@@ -509,8 +494,10 @@ static PyCodeObject *optimize_and_assemble(struct compiler *, int addNone);
 
 static int
 compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
-               PyCompilerFlags flags, int optimize, PyArena *arena)
+               PyCompilerFlags *flags, int optimize, PyArena *arena)
 {
+    PyCompilerFlags local_flags = _PyCompilerFlags_INIT;
+
     c->c_const_cache = PyDict_New();
     if (!c->c_const_cache) {
         return ERROR;
@@ -526,10 +513,13 @@ compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
     if (!_PyFuture_FromAST(mod, filename, &c->c_future)) {
         return ERROR;
     }
-    int merged = c->c_future.ff_features | flags.cf_flags;
+    if (!flags) {
+        flags = &local_flags;
+    }
+    int merged = c->c_future.ff_features | flags->cf_flags;
     c->c_future.ff_features = merged;
-    flags.cf_flags = merged;
-    c->c_flags = flags;
+    flags->cf_flags = merged;
+    c->c_flags = *flags;
     c->c_optimize = (optimize == -1) ? _Py_GetConfig()->optimization_level : optimize;
     c->c_nestlevel = 0;
 
@@ -550,12 +540,11 @@ static struct compiler*
 new_compiler(mod_ty mod, PyObject *filename, PyCompilerFlags *pflags,
              int optimize, PyArena *arena)
 {
-    PyCompilerFlags flags = pflags ? *pflags : _PyCompilerFlags_INIT;
     struct compiler *c = PyMem_Calloc(1, sizeof(struct compiler));
     if (c == NULL) {
         return NULL;
     }
-    if (compiler_setup(c, mod, filename, flags, optimize, arena) < 0) {
+    if (compiler_setup(c, mod, filename, pflags, optimize, arena) < 0) {
         compiler_free(c);
         return NULL;
     }
@@ -882,7 +871,7 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
 static int
 codegen_addop_noarg(instr_sequence *seq, int opcode, location loc)
 {
-    assert(!HAS_ARG(opcode));
+    assert(!OPCODE_HAS_ARG(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
     return instr_sequence_addop(seq, opcode, 0, loc);
 }
@@ -919,10 +908,10 @@ static PyObject*
 merge_consts_recursive(PyObject *const_cache, PyObject *o)
 {
     assert(PyDict_CheckExact(const_cache));
-    // None and Ellipsis are singleton, and key is the singleton.
+    // None and Ellipsis are immortal objects, and key is the singleton.
     // No need to merge object and key.
     if (o == Py_None || o == Py_Ellipsis) {
-        return Py_NewRef(o);
+        return o;
     }
 
     PyObject *key = _PyCode_ConstantKey(o);
@@ -1074,6 +1063,7 @@ compiler_addop_name(struct compiler_unit *u, location loc,
         arg <<= 1;
     }
     if (opcode == LOAD_METHOD) {
+        assert(SAME_OPCODE_METADATA(LOAD_METHOD, LOAD_ATTR));
         opcode = LOAD_ATTR;
         arg <<= 1;
         arg |= 1;
@@ -1083,15 +1073,18 @@ compiler_addop_name(struct compiler_unit *u, location loc,
         arg |= 2;
     }
     if (opcode == LOAD_SUPER_METHOD) {
+        assert(SAME_OPCODE_METADATA(LOAD_SUPER_METHOD, LOAD_SUPER_ATTR));
         opcode = LOAD_SUPER_ATTR;
         arg <<= 2;
         arg |= 3;
     }
     if (opcode == LOAD_ZERO_SUPER_ATTR) {
+        assert(SAME_OPCODE_METADATA(LOAD_ZERO_SUPER_ATTR, LOAD_SUPER_ATTR));
         opcode = LOAD_SUPER_ATTR;
         arg <<= 2;
     }
     if (opcode == LOAD_ZERO_SUPER_METHOD) {
+        assert(SAME_OPCODE_METADATA(LOAD_ZERO_SUPER_METHOD, LOAD_SUPER_ATTR));
         opcode = LOAD_SUPER_ATTR;
         arg <<= 2;
         arg |= 1;
@@ -1121,7 +1114,7 @@ codegen_addop_j(instr_sequence *seq, location loc,
                 int opcode, jump_target_label target)
 {
     assert(IS_LABEL(target));
-    assert(IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
+    assert(OPCODE_HAS_JUMP(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
     return instr_sequence_addop(seq, opcode, target.id, loc);
 }
@@ -1155,7 +1148,7 @@ codegen_addop_j(instr_sequence *seq, location loc,
 }
 
 #define ADDOP_N(C, LOC, OP, O, TYPE) { \
-    assert(!HAS_CONST(OP)); /* use ADDOP_LOAD_CONST_NEW */ \
+    assert(!OPCODE_HAS_CONST(OP)); /* use ADDOP_LOAD_CONST_NEW */ \
     if (compiler_addop_o((C)->u, (LOC), (OP), (C)->u->u_metadata.u_ ## TYPE, (O)) < 0) { \
         Py_DECREF((O)); \
         return ERROR; \
@@ -1247,8 +1240,12 @@ compiler_enter_scope(struct compiler *c, identifier name,
     }
     u->u_metadata.u_name = Py_NewRef(name);
     u->u_metadata.u_varnames = list2dict(u->u_ste->ste_varnames);
+    if (!u->u_metadata.u_varnames) {
+        compiler_unit_free(u);
+        return ERROR;
+    }
     u->u_metadata.u_cellvars = dictbytype(u->u_ste->ste_symbols, CELL, DEF_COMP_CELL, 0);
-    if (!u->u_metadata.u_varnames || !u->u_metadata.u_cellvars) {
+    if (!u->u_metadata.u_cellvars) {
         compiler_unit_free(u);
         return ERROR;
     }
@@ -1417,8 +1414,18 @@ find_ann(asdl_stmt_seq *stmts)
                   find_ann(st->v.TryStar.finalbody) ||
                   find_ann(st->v.TryStar.orelse);
             break;
+        case Match_kind:
+            for (j = 0; j < asdl_seq_LEN(st->v.Match.cases); j++) {
+                match_case_ty match_case = (match_case_ty)asdl_seq_GET(
+                    st->v.Match.cases, j);
+                if (find_ann(match_case->body)) {
+                    return true;
+                }
+            }
+            break;
         default:
             res = false;
+            break;
         }
         if (res) {
             break;
@@ -1814,11 +1821,25 @@ compiler_make_closure(struct compiler *c, location loc,
             }
             ADDOP_I(c, loc, LOAD_CLOSURE, arg);
         }
-        flags |= 0x08;
+        flags |= MAKE_FUNCTION_CLOSURE;
         ADDOP_I(c, loc, BUILD_TUPLE, co->co_nfreevars);
     }
     ADDOP_LOAD_CONST(c, loc, (PyObject*)co);
-    ADDOP_I(c, loc, MAKE_FUNCTION, flags);
+
+    ADDOP(c, loc, MAKE_FUNCTION);
+
+    if (flags & MAKE_FUNCTION_CLOSURE) {
+        ADDOP_I(c, loc, SET_FUNCTION_ATTRIBUTE, MAKE_FUNCTION_CLOSURE);
+    }
+    if (flags & MAKE_FUNCTION_ANNOTATIONS) {
+        ADDOP_I(c, loc, SET_FUNCTION_ATTRIBUTE, MAKE_FUNCTION_ANNOTATIONS);
+    }
+    if (flags & MAKE_FUNCTION_KWDEFAULTS) {
+        ADDOP_I(c, loc, SET_FUNCTION_ATTRIBUTE, MAKE_FUNCTION_KWDEFAULTS);
+    }
+    if (flags & MAKE_FUNCTION_DEFAULTS) {
+        ADDOP_I(c, loc, SET_FUNCTION_ATTRIBUTE, MAKE_FUNCTION_DEFAULTS);
+    }
     return SUCCESS;
 }
 
@@ -2025,7 +2046,7 @@ compiler_default_arguments(struct compiler *c, location loc,
     Py_ssize_t funcflags = 0;
     if (args->defaults && asdl_seq_LEN(args->defaults) > 0) {
         RETURN_IF_ERROR(compiler_visit_defaults(c, args, loc));
-        funcflags |= 0x01;
+        funcflags |= MAKE_FUNCTION_DEFAULTS;
     }
     if (args->kwonlyargs) {
         int res = compiler_visit_kwonlydefaults(c, loc,
@@ -2033,7 +2054,7 @@ compiler_default_arguments(struct compiler *c, location loc,
                                                 args->kw_defaults);
         RETURN_IF_ERROR(res);
         if (res > 0) {
-            funcflags |= 0x02;
+            funcflags |= MAKE_FUNCTION_KWDEFAULTS;
         }
     }
     return funcflags;
@@ -2291,10 +2312,10 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     int num_typeparam_args = 0;
 
     if (is_generic) {
-        if (funcflags & 0x01) {
+        if (funcflags & MAKE_FUNCTION_DEFAULTS) {
             num_typeparam_args += 1;
         }
-        if (funcflags & 0x02) {
+        if (funcflags & MAKE_FUNCTION_KWDEFAULTS) {
             num_typeparam_args += 1;
         }
         if (num_typeparam_args == 2) {
@@ -2311,11 +2332,8 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         }
         Py_DECREF(type_params_name);
         RETURN_IF_ERROR_IN_SCOPE(c, compiler_type_params(c, type_params));
-        if ((funcflags & 0x01) || (funcflags & 0x02)) {
-            RETURN_IF_ERROR_IN_SCOPE(c, codegen_addop_i(INSTR_SEQUENCE(c), LOAD_FAST, 0, loc));
-        }
-        if ((funcflags & 0x01) && (funcflags & 0x02)) {
-            RETURN_IF_ERROR_IN_SCOPE(c, codegen_addop_i(INSTR_SEQUENCE(c), LOAD_FAST, 1, loc));
+        for (int i = 0; i < num_typeparam_args; i++) {
+            RETURN_IF_ERROR_IN_SCOPE(c, codegen_addop_i(INSTR_SEQUENCE(c), LOAD_FAST, i, loc));
         }
     }
 
@@ -2327,7 +2345,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         return ERROR;
     }
     if (annotations > 0) {
-        funcflags |= 0x04;
+        funcflags |= MAKE_FUNCTION_ANNOTATIONS;
     }
 
     if (compiler_function_body(c, s, is_async, funcflags, firstlineno) < 0) {
@@ -4967,26 +4985,26 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
     /* The expression to be formatted. */
     VISIT(c, expr, e->v.FormattedValue.value);
 
-    switch (conversion) {
-    case 's': oparg = FVC_STR;   break;
-    case 'r': oparg = FVC_REPR;  break;
-    case 'a': oparg = FVC_ASCII; break;
-    case -1:  oparg = FVC_NONE;  break;
-    default:
-        PyErr_Format(PyExc_SystemError,
+    location loc = LOC(e);
+    if (conversion != -1) {
+        switch (conversion) {
+        case 's': oparg = FVC_STR;   break;
+        case 'r': oparg = FVC_REPR;  break;
+        case 'a': oparg = FVC_ASCII; break;
+        default:
+            PyErr_Format(PyExc_SystemError,
                      "Unrecognized conversion character %d", conversion);
-        return ERROR;
+            return ERROR;
+        }
+        ADDOP_I(c, loc, CONVERT_VALUE, oparg);
     }
     if (e->v.FormattedValue.format_spec) {
         /* Evaluate the format spec, and update our opcode arg. */
         VISIT(c, expr, e->v.FormattedValue.format_spec);
-        oparg |= FVS_HAVE_SPEC;
+        ADDOP(c, loc, FORMAT_WITH_SPEC);
+    } else {
+        ADDOP(c, loc, FORMAT_SIMPLE);
     }
-
-    /* And push our opcode and oparg */
-    location loc = LOC(e);
-    ADDOP_I(c, loc, FORMAT_VALUE, oparg);
-
     return SUCCESS;
 }
 
@@ -6367,7 +6385,7 @@ compiler_error(struct compiler *c, location loc,
     }
     PyObject *loc_obj = PyErr_ProgramTextObject(c->c_filename, loc.lineno);
     if (loc_obj == NULL) {
-        loc_obj = Py_NewRef(Py_None);
+        loc_obj = Py_None;
     }
     PyObject *args = Py_BuildValue("O(OiiOii)", msg, c->c_filename,
                                    loc.lineno, loc.col_offset + 1, loc_obj,
@@ -7777,7 +7795,7 @@ instructions_to_instr_sequence(PyObject *instructions, instr_sequence *seq)
             goto error;
         }
         int oparg;
-        if (HAS_ARG(opcode)) {
+        if (OPCODE_HAS_ARG(opcode)) {
             oparg = PyLong_AsLong(PyTuple_GET_ITEM(item, 1));
             if (PyErr_Occurred()) {
                 goto error;

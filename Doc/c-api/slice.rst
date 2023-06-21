@@ -113,7 +113,7 @@ Slice Objects
 
 
 Ellipsis Object
----------------
+^^^^^^^^^^^^^^^
 
 
 .. c:var:: PyObject *Py_Ellipsis
