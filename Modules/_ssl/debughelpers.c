@@ -33,6 +33,7 @@ _PySSL_msg_callback(int write_p, int version, int content_type,
         ssl_socket = _PyWeakref_GET_REF(ssl_obj->Socket);
     else
         ssl_socket = (PyObject *)Py_NewRef(ssl_obj);
+    assert(ssl_socket != NULL);  // _PyWeakref_GET_REF() can return NULL
 
     /* assume that OpenSSL verifies all payload and buf len is of sufficient
        length */
