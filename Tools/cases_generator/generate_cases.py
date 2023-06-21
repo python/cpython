@@ -238,38 +238,40 @@ class Formatter:
 class InstructionFlags:
     """Construct and manipulate instruction flags"""
 
-    INSTRUCTION_FLAGS = ['HAS_ARG', 'HAS_CONST', 'HAS_NAME', 'HAS_JUMP']
+    INSTRUCTION_FLAGS = ["HAS_ARG", "HAS_CONST", "HAS_NAME", "HAS_JUMP"]
     INSTR_FLAG_SUFFIX = "_FLAG"
 
-    def __init__(self, has_arg: bool, has_const: bool, has_name: bool,
-                 has_jump: bool):
+    def __init__(
+        self, has_arg: bool, has_const: bool, has_name: bool, has_jump: bool
+    ):
 
         self.data = {
-            'HAS_ARG': has_arg,
-            'HAS_CONST': has_const,
-            'HAS_NAME': has_name,
-            'HAS_JUMP': has_jump,
+            "HAS_ARG": has_arg,
+            "HAS_CONST": has_const,
+            "HAS_NAME": has_name,
+            "HAS_JUMP": has_jump,
         }
         assert set(self.data.keys()) == set(self.INSTRUCTION_FLAGS)
 
     @staticmethod
     def fromInstruction(instr: "AnyInstruction"):
         return InstructionFlags(
-            has_arg = variable_used(instr, "oparg"),
-            has_const = variable_used(instr, "FRAME_CO_CONSTS"),
-            has_name = variable_used(instr, "FRAME_CO_NAMES"),
-            has_jump = variable_used(instr, "JUMPBY"),
+            has_arg=variable_used(instr, "oparg"),
+            has_const=variable_used(instr, "FRAME_CO_CONSTS"),
+            has_name=variable_used(instr, "FRAME_CO_NAMES"),
+            has_jump=variable_used(instr, "JUMPBY"),
         )
 
     @staticmethod
     def newEmpty():
         return InstructionFlags(False, False, False, False)
 
-    def __str__(self) -> str:
-        flags_strs = [f"{name}{self.INSTR_FLAG_SUFFIX}" for i, name in
-                        enumerate(self.INSTRUCTION_FLAGS) if self.is_set(name)]
-        if (len(flags_strs)) == 4: breakpoint()
-        return "0" if not flags_strs else ' | '.join(flags_strs)
+    def names(self) -> list[str]:
+        return [
+            f"{name}{self.INSTR_FLAG_SUFFIX}"
+            for name in self.INSTRUCTION_FLAGS
+            if self.is_set(name)
+        ]
 
     def __eq__(self, other: "InstructionFlags") -> False:
         return self.bitmap() == other.bitmap()
@@ -291,14 +293,14 @@ class InstructionFlags:
         return self.data[name]
 
     @classmethod
-    def emit_macros(cls, formatter: Formatter):
+    def emit_macros(cls, out: Formatter):
         for i, flag in enumerate(cls.INSTRUCTION_FLAGS):
             flag_name = f"{flag}{cls.INSTR_FLAG_SUFFIX}"
-            formatter.emit(f"#define {flag_name} ({1 << i})");
+            out.emit(f"#define {flag_name} ({1 << i})");
 
         for flag in cls.INSTRUCTION_FLAGS:
             flag_name = f"{flag}{cls.INSTR_FLAG_SUFFIX}"
-            formatter.emit(
+            out.emit(
                 f"#define OPCODE_{flag}(OP) "
                 f"(_PyOpcode_opcode_metadata[(OP)].flags & ({flag_name}))")
 
@@ -1206,9 +1208,13 @@ class Analyzer:
             self.out.emit(f"    ((OP) == {op}) || \\")
         self.out.emit(f"    0")
 
-    def emit_metadata_entry(self, name: str, fmt: str, flags: InstructionFlags) -> None:
+    def emit_metadata_entry(
+        self, name: str, fmt: str, flags: InstructionFlags
+    ) -> None:
+        if not (names := flags.names()):
+            names.append("0")
         self.out.emit(
-            f"    [{name}] = {{ true, {INSTR_FMT_PREFIX}{fmt}, {flags} }},"
+            f"    [{name}] = {{ true, {INSTR_FMT_PREFIX}{fmt}, {' | '.join(names)} }},"
         )
 
     def write_metadata_for_inst(self, instr: Instruction) -> None:
