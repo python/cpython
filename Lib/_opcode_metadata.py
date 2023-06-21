@@ -5,6 +5,7 @@
 
 _specializations = {
     "TO_BOOL": [
+        "TO_BOOL_ALWAYS_TRUE",
         "TO_BOOL_BOOL",
         "TO_BOOL_INT",
         "TO_BOOL_LIST",

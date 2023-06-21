@@ -103,6 +103,7 @@ typedef struct {
 
 typedef struct {
     uint16_t counter;
+    uint16_t version[2];
 } _PyToBoolCache;
 
 #define INLINE_CACHE_ENTRIES_TO_BOOL CACHE_ENTRIES(_PyToBoolCache)

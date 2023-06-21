@@ -406,6 +406,7 @@ _cache_format = {
     },
     "TO_BOOL": {
         "counter": 1,
+        "version": 2,
     },
 }
 

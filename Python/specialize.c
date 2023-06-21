@@ -443,17 +443,16 @@ _PyCode_Quicken(PyCodeObject *code)
 #define SPEC_FAIL_UNPACK_SEQUENCE_SEQUENCE 10
 
 // TO_BOOL
-#define SPEC_FAIL_TO_BOOL_BYTEARRAY           9
-#define SPEC_FAIL_TO_BOOL_BYTES              10
-#define SPEC_FAIL_TO_BOOL_DICT               11
-#define SPEC_FAIL_TO_BOOL_FLOAT              12
-#define SPEC_FAIL_TO_BOOL_HEAP_TYPE_MAPPING  13
-#define SPEC_FAIL_TO_BOOL_HEAP_TYPE_NUMBER   14
-#define SPEC_FAIL_TO_BOOL_HEAP_TYPE_SEQUENCE 15
-#define SPEC_FAIL_TO_BOOL_HEAP_TYPE_TRUE     16
-#define SPEC_FAIL_TO_BOOL_MEMORY_VIEW        17
-#define SPEC_FAIL_TO_BOOL_SET                18
-#define SPEC_FAIL_TO_BOOL_TUPLE              19
+#define SPEC_FAIL_TO_BOOL_BYTEARRAY    9
+#define SPEC_FAIL_TO_BOOL_BYTES       10
+#define SPEC_FAIL_TO_BOOL_DICT        11
+#define SPEC_FAIL_TO_BOOL_FLOAT       12
+#define SPEC_FAIL_TO_BOOL_MAPPING     13
+#define SPEC_FAIL_TO_BOOL_NUMBER      14
+#define SPEC_FAIL_TO_BOOL_SEQUENCE    15
+#define SPEC_FAIL_TO_BOOL_MEMORY_VIEW 16
+#define SPEC_FAIL_TO_BOOL_SET         17
+#define SPEC_FAIL_TO_BOOL_TUPLE       18
 
 static int function_kind(PyCodeObject *code);
 static bool function_check_args(PyObject *o, int expected_argcount, int opcode);
@@ -2271,6 +2270,32 @@ _Py_Specialize_ToBool(PyObject *value, _Py_CODEUNIT *instr)
         instr->op.code = TO_BOOL_STR;
         goto success;
     }
+    if (PyType_HasFeature(Py_TYPE(value), Py_TPFLAGS_HEAPTYPE)) {
+        PyNumberMethods *nb = Py_TYPE(value)->tp_as_number;
+        if (nb && nb->nb_bool) {
+            SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_NUMBER);
+            goto failure;
+        }
+        PyMappingMethods *mp = Py_TYPE(value)->tp_as_mapping;
+        if (mp && mp->mp_length) {
+            SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_MAPPING);
+            goto failure;
+        }
+        PySequenceMethods *sq = Py_TYPE(value)->tp_as_sequence;
+        if (sq && sq->sq_length) {
+            SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_SEQUENCE);
+            goto failure;
+        }
+        if (PyUnstable_Type_AssignVersionTag(Py_TYPE(value))) {
+            SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_OUT_OF_VERSIONS);
+            goto failure;
+        }
+        uint32_t version = Py_TYPE(value)->tp_version_tag;
+        instr->op.code = TO_BOOL_ALWAYS_TRUE;
+        write_u32(cache->version, version);
+        assert(version);
+        goto success;
+    }
 #ifdef Py_STATS
     if (PyByteArray_CheckExact(value)) {
         SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_BYTEARRAY);
@@ -2288,25 +2313,6 @@ _Py_Specialize_ToBool(PyObject *value, _Py_CODEUNIT *instr)
         SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_FLOAT);
         goto failure;
     }
-    if (PyType_HasFeature(Py_TYPE(value), Py_TPFLAGS_HEAPTYPE)) {
-        PyNumberMethods *nb = Py_TYPE(value)->tp_as_number;
-        if (nb && nb->nb_bool) {
-            SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_HEAP_TYPE_NUMBER);
-            goto failure;
-        }
-        PyMappingMethods *mp = Py_TYPE(value)->tp_as_mapping;
-        if (mp && mp->mp_length) {
-            SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_HEAP_TYPE_MAPPING);
-            goto failure;
-        }
-        PySequenceMethods *sq = Py_TYPE(value)->tp_as_sequence;
-        if (sq && sq->sq_length) {
-            SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_HEAP_TYPE_SEQUENCE);
-            goto failure;
-        }
-        SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_HEAP_TYPE_TRUE);
-        goto failure;
-    }
     if (PyMemoryView_Check(value)) {
         SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_MEMORY_VIEW);
         goto failure;
@@ -2320,8 +2326,8 @@ _Py_Specialize_ToBool(PyObject *value, _Py_CODEUNIT *instr)
         goto failure;
     }
     SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_OTHER);
-failure:
 #endif
+failure:
     STAT_INC(TO_BOOL, failure);
     instr->op.code = TO_BOOL;
     cache->counter = adaptive_counter_backoff(cache->counter);

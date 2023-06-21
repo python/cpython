@@ -295,6 +295,7 @@ dummy_func(
 
         family(to_bool, INLINE_CACHE_ENTRIES_TO_BOOL) = {
             TO_BOOL,
+            TO_BOOL_ALWAYS_TRUE,
             TO_BOOL_BOOL,
             TO_BOOL_INT,
             TO_BOOL_LIST,
@@ -302,7 +303,7 @@ dummy_func(
             TO_BOOL_STR,
         };
 
-        inst(TO_BOOL, (unused/1, value -- res)) {
+        inst(TO_BOOL, (unused/1, unused/2, value -- res)) {
             #if ENABLE_SPECIALIZATION
             _PyToBoolCache *cache = (_PyToBoolCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
@@ -324,13 +325,13 @@ dummy_func(
             }
         }
 
-        inst(TO_BOOL_BOOL, (unused/1, value -- value)) {
+        inst(TO_BOOL_BOOL, (unused/1, unused/2, value -- value)) {
             // Coolest (and dumbest-named) specialization ever:
             DEOPT_IF(!PyBool_Check(value), TO_BOOL);
             STAT_INC(TO_BOOL, hit);
         }
 
-        inst(TO_BOOL_INT, (unused/1, value -- res)) {
+        inst(TO_BOOL_INT, (unused/1, unused/2, value -- res)) {
             DEOPT_IF(!PyLong_CheckExact(value), TO_BOOL);
             STAT_INC(TO_BOOL, hit);
             if (_PyLong_IsZero((PyLongObject *)value)) {
@@ -343,7 +344,7 @@ dummy_func(
             }
         }
 
-        inst(TO_BOOL_LIST, (unused/1, value -- res)) {
+        inst(TO_BOOL_LIST, (unused/1, unused/2, value -- res)) {
             DEOPT_IF(!PyList_CheckExact(value), TO_BOOL);
             STAT_INC(TO_BOOL, hit);
             if (!Py_SIZE(value)) {
@@ -355,14 +356,15 @@ dummy_func(
             DECREF_INPUTS();
         }
 
-        inst(TO_BOOL_NONE, (unused/1, value -- res)) {
-            // This one is a bit weird, because we expect *some* failures:
+        inst(TO_BOOL_NONE, (unused/1, unused/2, value -- res)) {
+            // This one is a bit weird, because we expect *some* failures...
+            // it might be worth combining with TO_BOOL_ALWAYS_TRUE somehow:
             DEOPT_IF(!Py_IsNone(value), TO_BOOL);
             STAT_INC(TO_BOOL, hit);
             res = Py_False;
         }
 
-        inst(TO_BOOL_STR, (unused/1, value -- res)) {
+        inst(TO_BOOL_STR, (unused/1, unused/2, value -- res)) {
             DEOPT_IF(!PyUnicode_CheckExact(value), TO_BOOL);
             STAT_INC(TO_BOOL, hit);
             if (Py_Is(value, &_Py_STR(empty))) {
@@ -374,6 +376,15 @@ dummy_func(
                 DECREF_INPUTS();
                 res = Py_True;
             }
+        }
+
+        inst(TO_BOOL_ALWAYS_TRUE, (unused/1, version/2, value -- res)) {
+            // This one is a bit weird, because we expect *some* failures...
+            // it might be worth combining with TO_BOOL_NONE somehow:
+            assert(version);
+            DEOPT_IF(Py_TYPE(value)->tp_version_tag != version, TO_BOOL);
+            STAT_INC(TO_BOOL, hit);
+            res = Py_True;
         }
 
         inst(UNARY_INVERT, (value -- res)) {

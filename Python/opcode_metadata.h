@@ -78,6 +78,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case TO_BOOL_STR:
             return 1;
+        case TO_BOOL_ALWAYS_TRUE:
+            return 1;
         case UNARY_INVERT:
             return 1;
         case BINARY_OP_MULTIPLY_INT:
@@ -512,6 +514,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 1;
         case TO_BOOL_STR:
             return 1;
+        case TO_BOOL_ALWAYS_TRUE:
+            return 1;
         case UNARY_INVERT:
             return 1;
         case BINARY_OP_MULTIPLY_INT:
@@ -886,7 +890,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
 }
 #endif
 
-enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC00, INSTR_FMT_IBC000, INSTR_FMT_IBC00000000, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC000 };
+enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC00, INSTR_FMT_IBC000, INSTR_FMT_IBC00000000, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC00, INSTR_FMT_IXC000 };
 #define HAS_ARG_FLAG (1)
 #define HAS_CONST_FLAG (2)
 #define HAS_NAME_FLAG (4)
@@ -930,12 +934,13 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {
     [INSTRUMENTED_END_SEND] = { true, INSTR_FMT_IX, 0 },
     [UNARY_NEGATIVE] = { true, INSTR_FMT_IX, 0 },
     [UNARY_NOT] = { true, INSTR_FMT_IX, 0 },
-    [TO_BOOL] = { true, INSTR_FMT_IXC, 0 },
-    [TO_BOOL_BOOL] = { true, INSTR_FMT_IXC, 0 },
-    [TO_BOOL_INT] = { true, INSTR_FMT_IXC, 0 },
-    [TO_BOOL_LIST] = { true, INSTR_FMT_IXC, 0 },
-    [TO_BOOL_NONE] = { true, INSTR_FMT_IXC, 0 },
-    [TO_BOOL_STR] = { true, INSTR_FMT_IXC, 0 },
+    [TO_BOOL] = { true, INSTR_FMT_IXC00, 0 },
+    [TO_BOOL_BOOL] = { true, INSTR_FMT_IXC00, 0 },
+    [TO_BOOL_INT] = { true, INSTR_FMT_IXC00, 0 },
+    [TO_BOOL_LIST] = { true, INSTR_FMT_IXC00, 0 },
+    [TO_BOOL_NONE] = { true, INSTR_FMT_IXC00, 0 },
+    [TO_BOOL_STR] = { true, INSTR_FMT_IXC00, 0 },
+    [TO_BOOL_ALWAYS_TRUE] = { true, INSTR_FMT_IXC00, 0 },
     [UNARY_INVERT] = { true, INSTR_FMT_IX, 0 },
     [BINARY_OP_MULTIPLY_INT] = { true, INSTR_FMT_IBC, 0 },
     [BINARY_OP_ADD_INT] = { true, INSTR_FMT_IBC, 0 },
