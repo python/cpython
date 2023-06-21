@@ -410,7 +410,7 @@ API Functions
    than a variable number of arguments.
 
 
-.. c:function:: int PyArg_ParseTupleAndKeywords(PyObject *args, PyObject *kw, const char *format, char *keywords[], ...)
+.. c:function:: int PyArg_ParseTupleAndKeywords(PyObject *args, PyObject *kw, const char *format, /*const*/ char * const *keywords, ...)
 
    Parse the parameters of a function that takes both positional and keyword
    parameters into local variables.  The *keywords* argument is a
@@ -419,12 +419,24 @@ API Functions
    Returns true on success; on failure, it returns false and raises the
    appropriate exception.
 
+   .. note::
+
+      The *keywords* parameter declaration is :c:expr:`char * const *` in C and
+      :c:expr:`const char * const *` in C++.
+      This can be overridden by defining the macro :c:macro:`PY_CXX_CONST`
+      before including :file:`Python.h` as ``const`` for the latter and as
+      empty value for the former.
+
    .. versionchanged:: 3.6
       Added support for :ref:`positional-only parameters
       <positional-only_parameter>`.
 
+   .. versionchanged:: 3.13
+      The *keywords* parameter has now type :c:expr:`char * const *` in C and
+      :c:expr:`const char * const *` in C++, instead of :c:expr:`char **`.
 
-.. c:function:: int PyArg_VaParseTupleAndKeywords(PyObject *args, PyObject *kw, const char *format, char *keywords[], va_list vargs)
+
+.. c:function:: int PyArg_VaParseTupleAndKeywords(PyObject *args, PyObject *kw, const char *format, /*const*/ char * const *keywords, va_list vargs)
 
    Identical to :c:func:`PyArg_ParseTupleAndKeywords`, except that it accepts a
    va_list rather than a variable number of arguments.

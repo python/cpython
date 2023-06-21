@@ -776,4 +776,12 @@ extern char * _getpty(int *, int, mode_t, int);
 #   define ALIGNOF_MAX_ALIGN_T _Alignof(long double)
 #endif
 
+#ifndef PY_CXX_CONST
+#  ifdef __cplusplus
+#    define PY_CXX_CONST const
+#  else
+#    define PY_CXX_CONST
+#  endif
+#endif
+
 #endif /* Py_PYPORT_H */
