@@ -666,7 +666,7 @@ Constants
           HV_GUID_BROADCAST
           HV_GUID_CHILDREN
           HV_GUID_LOOPBACK
-          HV_GUID_LOOPBACK
+          HV_GUID_PARENT
 
    Constants for Windows Hyper-V sockets for host/guest communications.
 
@@ -1527,7 +1527,7 @@ to sockets.
    Return ``True`` if socket is in blocking mode, ``False`` if in
    non-blocking.
 
-   This is equivalent to checking ``socket.gettimeout() == 0``.
+   This is equivalent to checking ``socket.gettimeout() != 0``.
 
    .. versionadded:: 3.7
 

@@ -1497,7 +1497,7 @@ are also included in the pure Python version for compatibility.
 
    The value is ``True``.  Deprecated, because Python now always has threads.
 
-.. deprecated:: 3.9
+   .. deprecated:: 3.9
 
 .. data:: HAVE_CONTEXTVAR
 

@@ -68,7 +68,7 @@ Python/traceback.c            @iritkatriel
 /Tools/build/parse_html5_entities.py   @ezio-melotti
 
 # Import (including importlib).
-**/*import*                   @brettcannon @encukou @ericsnowcurrently @ncoghlan @warsaw
+**/*import*                   @brettcannon @ericsnowcurrently @ncoghlan @warsaw
 **/*importlib/resources/*      @jaraco @warsaw @FFY00
 **/importlib/metadata/*       @jaraco @warsaw
 
@@ -117,6 +117,12 @@ Lib/ast.py                    @isidentical
 /Lib/subprocess.py            @gpshead
 /Lib/test/test_subprocess.py  @gpshead
 /Modules/*subprocess*         @gpshead
+
+# Limited C API & stable ABI
+Tools/build/stable_abi.py     @encukou
+Misc/stable_abi.toml          @encukou
+Doc/data/*.abi                @encukou
+Doc/c-api/stable.rst          @encukou
 
 # Windows
 /PC/                          @python/windows-team

@@ -81,6 +81,7 @@ lock_dealloc(lockobject *self)
 static PyLockStatus
 acquire_timed(PyThread_type_lock lock, _PyTime_t timeout)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     _PyTime_t endtime = 0;
     if (timeout > 0) {
         endtime = _PyDeadline_Init(timeout);
@@ -103,7 +104,7 @@ acquire_timed(PyThread_type_lock lock, _PyTime_t timeout)
             /* Run signal handlers if we were interrupted.  Propagate
              * exceptions from signal handlers, such as KeyboardInterrupt, by
              * passing up PY_LOCK_INTR.  */
-            if (Py_MakePendingCalls() < 0) {
+            if (_PyEval_MakePendingCalls(tstate) < 0) {
                 return PY_LOCK_INTR;
             }
 
@@ -1153,6 +1154,11 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
     if (!_PyInterpreterState_HasFeature(interp, Py_RTFLAGS_THREADS)) {
         PyErr_SetString(PyExc_RuntimeError,
                         "thread is not supported for isolated subinterpreters");
+        return NULL;
+    }
+    if (interp->finalizing) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "can't create new thread at interpreter shutdown");
         return NULL;
     }
 

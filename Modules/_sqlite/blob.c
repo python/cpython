@@ -108,14 +108,6 @@ static void
 blob_seterror(pysqlite_Blob *self, int rc)
 {
     assert(self->connection != NULL);
-#if SQLITE_VERSION_NUMBER < 3008008
-    // SQLite pre 3.8.8 does not set this blob error on the connection
-    if (rc == SQLITE_ABORT) {
-        PyErr_SetString(self->connection->OperationalError,
-                        "Cannot operate on an expired blob handle");
-        return;
-    }
-#endif
     _pysqlite_seterror(self->connection->state, self->connection->db);
 }
 

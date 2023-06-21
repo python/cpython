@@ -9,20 +9,31 @@
 #include <stdint.h>
 #include <stddef.h>
 
-/* Returns the index of the next space, or -1 if there is no
- * more space. Doesn't set an exception. */
-static int32_t
-get_next_free_in_executor_array(PyCodeObject *code)
+static bool
+has_space_for_executor(PyCodeObject *code, _Py_CODEUNIT *instr)
 {
+    if (instr->op.code == ENTER_EXECUTOR) {
+        return true;
+    }
+    if (code->co_executors == NULL) {
+        return true;
+    }
+    return code->co_executors->size < 256;
+}
+
+static int32_t
+get_index_for_executor(PyCodeObject *code, _Py_CODEUNIT *instr)
+{
+    if (instr->op.code == ENTER_EXECUTOR) {
+        return instr->op.arg;
+    }
     _PyExecutorArray *old = code->co_executors;
     int size = 0;
     int capacity = 0;
     if (old != NULL) {
         size = old->size;
         capacity = old->capacity;
-        if (capacity >= 256) {
-            return -1;
-        }
+        assert(size < 256);
     }
     assert(size <= capacity);
     if (size == capacity) {
@@ -40,44 +51,34 @@ get_next_free_in_executor_array(PyCodeObject *code)
         code->co_executors = new;
     }
     assert(size < code->co_executors->capacity);
-    code->co_executors->size++;
     return size;
 }
 
 static void
 insert_executor(PyCodeObject *code, _Py_CODEUNIT *instr, int index, _PyExecutorObject *executor)
 {
+    Py_INCREF(executor);
     if (instr->op.code == ENTER_EXECUTOR) {
         assert(index == instr->op.arg);
         _PyExecutorObject *old = code->co_executors->executors[index];
         executor->vm_data.opcode = old->vm_data.opcode;
         executor->vm_data.oparg = old->vm_data.oparg;
         old->vm_data.opcode = 0;
-        Py_INCREF(executor);
         code->co_executors->executors[index] = executor;
         Py_DECREF(old);
     }
     else {
-        Py_INCREF(executor);
+        assert(code->co_executors->size == index);
+        assert(code->co_executors->capacity > index);
         executor->vm_data.opcode = instr->op.code;
         executor->vm_data.oparg = instr->op.arg;
         code->co_executors->executors[index] = executor;
         assert(index < 256);
         instr->op.code = ENTER_EXECUTOR;
         instr->op.arg = index;
+        code->co_executors->size++;
     }
     return;
-}
-
-static int
-get_executor_index(PyCodeObject *code, _Py_CODEUNIT *instr)
-{
-    if (instr->op.code == ENTER_EXECUTOR) {
-        return instr->op.arg;
-    }
-    else {
-        return get_next_free_in_executor_array(code);
-    }
 }
 
 int
@@ -87,20 +88,21 @@ PyUnstable_Replace_Executor(PyCodeObject *code, _Py_CODEUNIT *instr, _PyExecutor
         PyErr_Format(PyExc_ValueError, "No executor to replace");
         return -1;
     }
-    int index = get_executor_index(code, instr);
+    int index = instr->op.arg;
     assert(index >= 0);
     insert_executor(code, instr, index, new);
     return 0;
 }
 
-static _PyExecutorObject *
+static int
 error_optimize(
     _PyOptimizerObject* self,
     PyCodeObject *code,
-    _Py_CODEUNIT *instr)
+    _Py_CODEUNIT *instr,
+    _PyExecutorObject **exec)
 {
     PyErr_Format(PyExc_SystemError, "Should never call error_optimize");
-    return NULL;
+    return -1;
 }
 
 static PyTypeObject DefaultOptimizer_Type = {
@@ -125,6 +127,8 @@ PyUnstable_GetOptimizer(void)
     if (interp->optimizer == &_PyOptimizer_Default) {
         return NULL;
     }
+    assert(interp->optimizer_backedge_threshold == interp->optimizer->backedge_threshold);
+    assert(interp->optimizer_resume_threshold == interp->optimizer->resume_threshold);
     Py_INCREF(interp->optimizer);
     return interp->optimizer;
 }
@@ -147,21 +151,41 @@ PyUnstable_SetOptimizer(_PyOptimizerObject *optimizer)
 _PyInterpreterFrame *
 _PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNIT *dest, PyObject **stack_pointer)
 {
+    PyCodeObject *code = (PyCodeObject *)frame->f_executable;
+    assert(PyCode_Check(code));
     PyInterpreterState *interp = PyInterpreterState_Get();
-    int index = get_executor_index(frame->f_code, src);
-    if (index < 0) {
-        _PyFrame_SetStackPointer(frame, stack_pointer);
-        return frame;
+    if (!has_space_for_executor(code, src)) {
+        goto jump_to_destination;
     }
     _PyOptimizerObject *opt = interp->optimizer;
-    _PyExecutorObject *executor = opt->optimize(opt, frame->f_code, dest);
-    if (executor == NULL) {
-        return NULL;
+    _PyExecutorObject *executor = NULL;
+    int err = opt->optimize(opt, code, dest, &executor);
+    if (err <= 0) {
+        assert(executor == NULL);
+        if (err < 0) {
+            return NULL;
+        }
+        goto jump_to_destination;
     }
-    insert_executor(frame->f_code, src, index, executor);
+    int index = get_index_for_executor(code, src);
+    if (index < 0) {
+        /* Out of memory. Don't raise and assume that the
+         * error will show up elsewhere.
+         *
+         * If an optimizer has already produced an executor,
+         * it might get confused by the executor disappearing,
+         * but there is not much we can do about that here. */
+        Py_DECREF(executor);
+        goto jump_to_destination;
+    }
+    insert_executor(code, src, index, executor);
+    assert(frame->prev_instr == src);
     return executor->execute(executor, frame, stack_pointer);
+jump_to_destination:
+    frame->prev_instr = dest - 1;
+    _PyFrame_SetStackPointer(frame, stack_pointer);
+    return frame;
 }
-
 
 /** Test support **/
 
@@ -202,21 +226,23 @@ counter_execute(_PyExecutorObject *self, _PyInterpreterFrame *frame, PyObject **
     return frame;
 }
 
-static _PyExecutorObject *
+static int
 counter_optimize(
     _PyOptimizerObject* self,
     PyCodeObject *code,
-    _Py_CODEUNIT *instr)
+    _Py_CODEUNIT *instr,
+    _PyExecutorObject **exec_ptr)
 {
     _PyCounterExecutorObject *executor = (_PyCounterExecutorObject *)_PyObject_New(&CounterExecutor_Type);
     if (executor == NULL) {
-        return NULL;
+        return -1;
     }
     executor->executor.execute = counter_execute;
     Py_INCREF(self);
     executor->optimizer = (_PyCounterOptimizerObject *)self;
     executor->next_instr = instr;
-    return (_PyExecutorObject *)executor;
+    *exec_ptr = (_PyExecutorObject *)executor;
+    return 1;
 }
 
 static PyObject *

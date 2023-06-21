@@ -1425,6 +1425,7 @@ regen-opcode:
 	# using Tools/build/generate_opcode_h.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_opcode_h.py \
 		$(srcdir)/Lib/opcode.py \
+		$(srcdir)/Lib/_opcode_metadata.py \
 		$(srcdir)/Include/opcode.h.new \
 		$(srcdir)/Include/internal/pycore_opcode.h.new \
 		$(srcdir)/Include/internal/pycore_intrinsics.h.new
@@ -1800,6 +1801,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_unicodeobject.h \
 		$(srcdir)/Include/internal/pycore_unicodeobject_generated.h \
 		$(srcdir)/Include/internal/pycore_warnings.h \
+		$(srcdir)/Include/internal/pycore_weakref.h \
 		$(DTRACE_HEADERS) \
 		@PLATFORM_HEADERS@ \
 		\
@@ -2017,7 +2019,11 @@ altbininstall: $(BUILDPYTHON) @FRAMEWORKPYTHONW@
 	fi
 
 .PHONY: bininstall
-bininstall: altbininstall
+# We depend on commoninstall here to make sure the installation is already usable
+# before we possibly overwrite the global 'python3' symlink to avoid causing
+# problems for anything else trying to run 'python3' while we install, particularly
+# if we're installing in parallel with -j.
+bininstall: commoninstall altbininstall
 	if test ! -d $(DESTDIR)$(LIBPC); then \
 		echo "Creating directory $(LIBPC)"; \
 		$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(LIBPC); \

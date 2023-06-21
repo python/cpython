@@ -1426,7 +1426,7 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
     int allow_threads = -1;
     int allow_daemon_threads = -1;
     int check_multi_interp_extensions = -1;
-    int own_gil = -1;
+    int gil = -1;
     int r;
     PyThreadState *substate, *mainstate;
     /* only initialise 'cflags.cf_flags' to test backwards compatibility */
@@ -1439,15 +1439,15 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
                              "allow_threads",
                              "allow_daemon_threads",
                              "check_multi_interp_extensions",
-                             "own_gil",
+                             "gil",
                              NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                    "s$ppppppp:run_in_subinterp_with_config", kwlist,
+                    "s$ppppppi:run_in_subinterp_with_config", kwlist,
                     &code, &use_main_obmalloc,
                     &allow_fork, &allow_exec,
                     &allow_threads, &allow_daemon_threads,
                     &check_multi_interp_extensions,
-                    &own_gil)) {
+                    &gil)) {
         return NULL;
     }
     if (use_main_obmalloc < 0) {
@@ -1466,8 +1466,8 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
         PyErr_SetString(PyExc_ValueError, "missing allow_threads");
         return NULL;
     }
-    if (own_gil < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing own_gil");
+    if (gil < 0) {
+        PyErr_SetString(PyExc_ValueError, "missing gil");
         return NULL;
     }
     if (allow_daemon_threads < 0) {
@@ -1490,7 +1490,7 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
         .allow_threads = allow_threads,
         .allow_daemon_threads = allow_daemon_threads,
         .check_multi_interp_extensions = check_multi_interp_extensions,
-        .own_gil = own_gil,
+        .gil = gil,
     };
     PyStatus status = Py_NewInterpreterFromConfig(&substate, &config);
     if (PyStatus_Exception(status)) {
@@ -3325,6 +3325,53 @@ test_atexit(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 
+static PyObject *
+check_pyimport_addmodule(PyObject *self, PyObject *args)
+{
+    const char *name;
+    if (!PyArg_ParseTuple(args, "s", &name)) {
+        return NULL;
+    }
+
+    // test PyImport_AddModuleRef()
+    PyObject *module = PyImport_AddModuleRef(name);
+    if (module == NULL) {
+        return NULL;
+    }
+    assert(PyModule_Check(module));
+    // module is a strong reference
+
+    // test PyImport_AddModule()
+    PyObject *module2 = PyImport_AddModule(name);
+    if (module2 == NULL) {
+        goto error;
+    }
+    assert(PyModule_Check(module2));
+    assert(module2 == module);
+    // module2 is a borrowed ref
+
+    // test PyImport_AddModuleObject()
+    PyObject *name_obj = PyUnicode_FromString(name);
+    if (name_obj == NULL) {
+        goto error;
+    }
+    PyObject *module3 = PyImport_AddModuleObject(name_obj);
+    Py_DECREF(name_obj);
+    if (module3 == NULL) {
+        goto error;
+    }
+    assert(PyModule_Check(module3));
+    assert(module3 == module);
+    // module3 is a borrowed ref
+
+    return module;
+
+error:
+    Py_DECREF(module);
+    return NULL;
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -3468,6 +3515,7 @@ static PyMethodDef TestMethods[] = {
     {"function_get_kw_defaults", function_get_kw_defaults, METH_O, NULL},
     {"function_set_kw_defaults", function_set_kw_defaults, METH_VARARGS, NULL},
     {"test_atexit", test_atexit, METH_NOARGS},
+    {"check_pyimport_addmodule", check_pyimport_addmodule, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 
