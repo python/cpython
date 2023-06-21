@@ -37,14 +37,14 @@ are available, however.
 
 .. c:macro:: Py_RETURN_FALSE
 
-   Return :const:`Py_False` from a function.
+   Return :c:data:`Py_False` from a function.
 
 
 .. c:macro:: Py_RETURN_TRUE
 
-   Return :const:`Py_True` from a function.
+   Return :c:data:`Py_True` from a function.
 
 
 .. c:function:: PyObject* PyBool_FromLong(long v)
 
-   Return :const:`Py_True` or :const:`Py_False`, depending on the truth value of *v*.
+   Return :c:data:`Py_True` or :c:data:`Py_False`, depending on the truth value of *v*.
