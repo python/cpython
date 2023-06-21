@@ -856,6 +856,8 @@ Python/hamt.c:_PyHamt_ArrayNode_Type                             PyTypeObject _P
 Python/hamt.c:_PyHamt_BitmapNode_Type                            PyTypeObject _PyHamt_BitmapNode_Type
 Python/hamt.c:_PyHamt_CollisionNode_Type                         PyTypeObject _PyHamt_CollisionNode_Type
 Python/hamt.c:_PyHamt_Type                                       PyTypeObject _PyHamt_Type
+Python/optimizer.c:UOpExecutor_Type                              static PyTypeObject UOpExecutor_Type
+Python/optimizer.c:UOpOptimizer_Type                             static PyTypeObject UOpOptimizer_Type
 Python/symtable.c:PySTEntry_Type                                 PyTypeObject PySTEntry_Type
 Python/sysmodule.c:AsyncGenHooksType                             static PyTypeObject AsyncGenHooksType
 Python/sysmodule.c:FlagsType                                     static PyTypeObject FlagsType
