@@ -306,6 +306,9 @@ typedef struct {
 #define _BINARY_OP_ADD_INT 518
 #define _BINARY_OP_SUBTRACT_INT 519
 #define _BINARY_OP_ADD_UNICODE 520
+#define _GUARD_BOTH_INT 521
+#define _GUARD_BOTH_FLOAT 522
+#define _GUARD_BOTH_UNICODE 523
 
 typedef struct {
     int opcode;
@@ -340,10 +343,12 @@ uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **
     self->optimizer->traces_executed++;
     _Py_CODEUNIT *ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive - 1;
     int pc = 0;
+    int opcode;
+    int oparg;
     for (;;) {
-        int opcode = self->trace[pc].opcode;
-        int oparg = self->trace[pc].oparg;
-        // fprintf(stderr, "uop %d, oparg %d\n", opcode, oparg);
+        opcode = self->trace[pc].opcode;
+        oparg = self->trace[pc].oparg;
+        // fprintf(stderr, "uop %d, oparg %d, stack_level %d\n", opcode, oparg, (int)(stack_pointer - _PyFrame_Stackbase(frame)));
         pc++;
         self->optimizer->instrs_executed++;
         switch (opcode) {
@@ -377,16 +382,29 @@ uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **
             }
 
         }
-        continue;
-    pop_1_error:
-    pop_2_error:
-    pop_3_error:
-    pop_4_error:
-    error:
-    unbound_local_error:
-        fprintf(stderr, "[Opcode %d, oparg %d]\n", opcode, oparg);
-        Py_FatalError("Errors not yet supported");
     }
+
+pop_1_error:
+pop_2_error:
+pop_3_error:
+pop_4_error:
+error:
+unbound_local_error:
+    fprintf(stderr, "error: [Opcode %d, oparg %d]\n", opcode, oparg);
+    Py_FatalError("Errors not yet supported");
+
+PREDICTED(UNPACK_SEQUENCE)
+PREDICTED(COMPARE_OP)
+PREDICTED(LOAD_SUPER_ATTR)
+PREDICTED(STORE_SUBSCR)
+PREDICTED(BINARY_SUBSCR)
+PREDICTED(BINARY_OP)
+    // On DEOPT_IF we just repeat the last instruction.
+    // This presumes nothing was popped from the stack (nor pushed).
+    // fprintf(stderr, "DEOPT: [Opcode %d, oparg %d]\n", opcode, oparg);
+    _PyFrame_SetStackPointer(frame, stack_pointer);
+    Py_DECREF(self);
+    return frame;
 }
 
 static int
@@ -426,15 +444,19 @@ translate_bytecode_to_trace(
                     ADD_TO_TRACE(opcode, oparg);
                     break;
                 }
+                // fprintf(stderr, "Unsupported opcode %d\n", opcode);
                 goto done;  // Break out of while loop
             }
         }
         instr++;
+        // Add cache size for opcode
+        instr += _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
         ADD_TO_TRACE(SET_IP, (int)(instr - (_Py_CODEUNIT *)code->co_code_adaptive));
     }
 done:
     if (trace_length > 0) {
         ADD_TO_TRACE(EXIT_TRACE, 0);
+        // fprintf(stderr, "Created a new trace of length %d\n", trace_length);
     }
     return trace_length;
 

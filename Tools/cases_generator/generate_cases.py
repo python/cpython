@@ -254,7 +254,6 @@ FORBIDDEN_INSTRUCTIONS = (
     "oparg1",  # Proxy for super-instructions like LOAD_FAST_LOAD_FAST
     "tstate",
     "JUMPBY",
-    "DEOPT_IF",
     "DISPATCH",
     "INSTRUMENTED_JUMP",
     "MAKE_FUNCTION_CLOSURE",  # Proxy for 'opcode == SET_FUNCTION_ATTRIBUTE

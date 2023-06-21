@@ -124,6 +124,14 @@
             break;
         }
 
+        case _GUARD_BOTH_INT: {
+            PyObject *right = stack_pointer[-1];
+            PyObject *left = stack_pointer[-2];
+            DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
+            DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
+            break;
+        }
+
         case _BINARY_OP_MULTIPLY_INT: {
             PyObject *right = stack_pointer[-1];
             PyObject *left = stack_pointer[-2];
@@ -166,6 +174,14 @@
             break;
         }
 
+        case _GUARD_BOTH_FLOAT: {
+            PyObject *right = stack_pointer[-1];
+            PyObject *left = stack_pointer[-2];
+            DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
+            DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
+            break;
+        }
+
         case _BINARY_OP_MULTIPLY_FLOAT: {
             PyObject *right = stack_pointer[-1];
             PyObject *left = stack_pointer[-2];
@@ -205,6 +221,14 @@
             DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
+            break;
+        }
+
+        case _GUARD_BOTH_UNICODE: {
+            PyObject *right = stack_pointer[-1];
+            PyObject *left = stack_pointer[-2];
+            DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
+            DEOPT_IF(!PyUnicode_CheckExact(right), BINARY_OP);
             break;
         }
 
@@ -265,6 +289,50 @@
             break;
         }
 
+        case BINARY_SUBSCR_LIST_INT: {
+            PyObject *sub = stack_pointer[-1];
+            PyObject *list = stack_pointer[-2];
+            PyObject *res;
+            DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
+            DEOPT_IF(!PyList_CheckExact(list), BINARY_SUBSCR);
+
+            // Deopt unless 0 <= sub < PyList_Size(list)
+            DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub), BINARY_SUBSCR);
+            Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
+            DEOPT_IF(index >= PyList_GET_SIZE(list), BINARY_SUBSCR);
+            STAT_INC(BINARY_SUBSCR, hit);
+            res = PyList_GET_ITEM(list, index);
+            assert(res != NULL);
+            Py_INCREF(res);
+            _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
+            Py_DECREF(list);
+            STACK_SHRINK(1);
+            stack_pointer[-1] = res;
+            break;
+        }
+
+        case BINARY_SUBSCR_TUPLE_INT: {
+            PyObject *sub = stack_pointer[-1];
+            PyObject *tuple = stack_pointer[-2];
+            PyObject *res;
+            DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
+            DEOPT_IF(!PyTuple_CheckExact(tuple), BINARY_SUBSCR);
+
+            // Deopt unless 0 <= sub < PyTuple_Size(list)
+            DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub), BINARY_SUBSCR);
+            Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
+            DEOPT_IF(index >= PyTuple_GET_SIZE(tuple), BINARY_SUBSCR);
+            STAT_INC(BINARY_SUBSCR, hit);
+            res = PyTuple_GET_ITEM(tuple, index);
+            assert(res != NULL);
+            Py_INCREF(res);
+            _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
+            Py_DECREF(tuple);
+            STACK_SHRINK(1);
+            stack_pointer[-1] = res;
+            break;
+        }
+
         case LIST_APPEND: {
             PyObject *v = stack_pointer[-1];
             PyObject *list = stack_pointer[-(2 + (oparg-1))];
@@ -311,6 +379,43 @@
             break;
         }
 
+        case STORE_SUBSCR_LIST_INT: {
+            PyObject *sub = stack_pointer[-1];
+            PyObject *list = stack_pointer[-2];
+            PyObject *value = stack_pointer[-3];
+            DEOPT_IF(!PyLong_CheckExact(sub), STORE_SUBSCR);
+            DEOPT_IF(!PyList_CheckExact(list), STORE_SUBSCR);
+
+            // Ensure nonnegative, zero-or-one-digit ints.
+            DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub), STORE_SUBSCR);
+            Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
+            // Ensure index < len(list)
+            DEOPT_IF(index >= PyList_GET_SIZE(list), STORE_SUBSCR);
+            STAT_INC(STORE_SUBSCR, hit);
+
+            PyObject *old_value = PyList_GET_ITEM(list, index);
+            PyList_SET_ITEM(list, index, value);
+            assert(old_value != NULL);
+            Py_DECREF(old_value);
+            _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
+            Py_DECREF(list);
+            STACK_SHRINK(3);
+            break;
+        }
+
+        case STORE_SUBSCR_DICT: {
+            PyObject *sub = stack_pointer[-1];
+            PyObject *dict = stack_pointer[-2];
+            PyObject *value = stack_pointer[-3];
+            DEOPT_IF(!PyDict_CheckExact(dict), STORE_SUBSCR);
+            STAT_INC(STORE_SUBSCR, hit);
+            int err = _PyDict_SetItem_Take2((PyDictObject *)dict, sub, value);
+            Py_DECREF(dict);
+            if (err) goto pop_3_error;
+            STACK_SHRINK(3);
+            break;
+        }
+
         case DELETE_SUBSCR: {
             PyObject *sub = stack_pointer[-1];
             PyObject *container = stack_pointer[-2];
@@ -328,6 +433,53 @@
             value = Py_NewRef(PyExc_AssertionError);
             STACK_GROW(1);
             stack_pointer[-1] = value;
+            break;
+        }
+
+        case UNPACK_SEQUENCE_TWO_TUPLE: {
+            PyObject *seq = stack_pointer[-1];
+            PyObject **values = stack_pointer - (1);
+            DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
+            DEOPT_IF(PyTuple_GET_SIZE(seq) != 2, UNPACK_SEQUENCE);
+            assert(oparg == 2);
+            STAT_INC(UNPACK_SEQUENCE, hit);
+            values[0] = Py_NewRef(PyTuple_GET_ITEM(seq, 1));
+            values[1] = Py_NewRef(PyTuple_GET_ITEM(seq, 0));
+            Py_DECREF(seq);
+            STACK_SHRINK(1);
+            STACK_GROW(oparg);
+            break;
+        }
+
+        case UNPACK_SEQUENCE_TUPLE: {
+            PyObject *seq = stack_pointer[-1];
+            PyObject **values = stack_pointer - (1);
+            DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
+            DEOPT_IF(PyTuple_GET_SIZE(seq) != oparg, UNPACK_SEQUENCE);
+            STAT_INC(UNPACK_SEQUENCE, hit);
+            PyObject **items = _PyTuple_ITEMS(seq);
+            for (int i = oparg; --i >= 0; ) {
+                *values++ = Py_NewRef(items[i]);
+            }
+            Py_DECREF(seq);
+            STACK_SHRINK(1);
+            STACK_GROW(oparg);
+            break;
+        }
+
+        case UNPACK_SEQUENCE_LIST: {
+            PyObject *seq = stack_pointer[-1];
+            PyObject **values = stack_pointer - (1);
+            DEOPT_IF(!PyList_CheckExact(seq), UNPACK_SEQUENCE);
+            DEOPT_IF(PyList_GET_SIZE(seq) != oparg, UNPACK_SEQUENCE);
+            STAT_INC(UNPACK_SEQUENCE, hit);
+            PyObject **items = _PyList_ITEMS(seq);
+            for (int i = oparg; --i >= 0; ) {
+                *values++ = Py_NewRef(items[i]);
+            }
+            Py_DECREF(seq);
+            STACK_SHRINK(1);
+            STACK_GROW(oparg);
             break;
         }
 
@@ -480,6 +632,125 @@
             // Do not DECREF INPUTS because the function steals the references
             if (_PyDict_SetItem_Take2((PyDictObject *)dict, key, value) != 0) goto pop_2_error;
             STACK_SHRINK(2);
+            break;
+        }
+
+        case LOAD_SUPER_ATTR_ATTR: {
+            PyObject *self = stack_pointer[-1];
+            PyObject *class = stack_pointer[-2];
+            PyObject *global_super = stack_pointer[-3];
+            PyObject *res2 = NULL;
+            PyObject *res;
+            assert(!(oparg & 1));
+            DEOPT_IF(global_super != (PyObject *)&PySuper_Type, LOAD_SUPER_ATTR);
+            DEOPT_IF(!PyType_Check(class), LOAD_SUPER_ATTR);
+            STAT_INC(LOAD_SUPER_ATTR, hit);
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
+            res = _PySuper_Lookup((PyTypeObject *)class, self, name, NULL);
+            Py_DECREF(global_super);
+            Py_DECREF(class);
+            Py_DECREF(self);
+            if (res == NULL) goto pop_3_error;
+            STACK_SHRINK(2);
+            STACK_GROW(((oparg & 1) ? 1 : 0));
+            stack_pointer[-1] = res;
+            if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = res2; }
+            break;
+        }
+
+        case LOAD_SUPER_ATTR_METHOD: {
+            PyObject *self = stack_pointer[-1];
+            PyObject *class = stack_pointer[-2];
+            PyObject *global_super = stack_pointer[-3];
+            PyObject *res2;
+            PyObject *res;
+            assert(oparg & 1);
+            DEOPT_IF(global_super != (PyObject *)&PySuper_Type, LOAD_SUPER_ATTR);
+            DEOPT_IF(!PyType_Check(class), LOAD_SUPER_ATTR);
+            STAT_INC(LOAD_SUPER_ATTR, hit);
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
+            PyTypeObject *cls = (PyTypeObject *)class;
+            int method_found = 0;
+            res2 = _PySuper_Lookup(cls, self, name,
+                                   cls->tp_getattro == PyObject_GenericGetAttr ? &method_found : NULL);
+            Py_DECREF(global_super);
+            Py_DECREF(class);
+            if (res2 == NULL) {
+                Py_DECREF(self);
+                if (true) goto pop_3_error;
+            }
+            if (method_found) {
+                res = self; // transfer ownership
+            } else {
+                Py_DECREF(self);
+                res = res2;
+                res2 = NULL;
+            }
+            STACK_SHRINK(1);
+            stack_pointer[-1] = res;
+            stack_pointer[-2] = res2;
+            break;
+        }
+
+        case COMPARE_OP_FLOAT: {
+            PyObject *right = stack_pointer[-1];
+            PyObject *left = stack_pointer[-2];
+            PyObject *res;
+            DEOPT_IF(!PyFloat_CheckExact(left), COMPARE_OP);
+            DEOPT_IF(!PyFloat_CheckExact(right), COMPARE_OP);
+            STAT_INC(COMPARE_OP, hit);
+            double dleft = PyFloat_AS_DOUBLE(left);
+            double dright = PyFloat_AS_DOUBLE(right);
+            // 1 if NaN, 2 if <, 4 if >, 8 if ==; this matches low four bits of the oparg
+            int sign_ish = COMPARISON_BIT(dleft, dright);
+            _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
+            res = (sign_ish & oparg) ? Py_True : Py_False;
+            STACK_SHRINK(1);
+            stack_pointer[-1] = res;
+            break;
+        }
+
+        case COMPARE_OP_INT: {
+            PyObject *right = stack_pointer[-1];
+            PyObject *left = stack_pointer[-2];
+            PyObject *res;
+            DEOPT_IF(!PyLong_CheckExact(left), COMPARE_OP);
+            DEOPT_IF(!PyLong_CheckExact(right), COMPARE_OP);
+            DEOPT_IF(!_PyLong_IsCompact((PyLongObject *)left), COMPARE_OP);
+            DEOPT_IF(!_PyLong_IsCompact((PyLongObject *)right), COMPARE_OP);
+            STAT_INC(COMPARE_OP, hit);
+            assert(_PyLong_DigitCount((PyLongObject *)left) <= 1 &&
+                   _PyLong_DigitCount((PyLongObject *)right) <= 1);
+            Py_ssize_t ileft = _PyLong_CompactValue((PyLongObject *)left);
+            Py_ssize_t iright = _PyLong_CompactValue((PyLongObject *)right);
+            // 2 if <, 4 if >, 8 if ==; this matches the low 4 bits of the oparg
+            int sign_ish = COMPARISON_BIT(ileft, iright);
+            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
+            res = (sign_ish & oparg) ? Py_True : Py_False;
+            STACK_SHRINK(1);
+            stack_pointer[-1] = res;
+            break;
+        }
+
+        case COMPARE_OP_STR: {
+            PyObject *right = stack_pointer[-1];
+            PyObject *left = stack_pointer[-2];
+            PyObject *res;
+            DEOPT_IF(!PyUnicode_CheckExact(left), COMPARE_OP);
+            DEOPT_IF(!PyUnicode_CheckExact(right), COMPARE_OP);
+            STAT_INC(COMPARE_OP, hit);
+            int eq = _PyUnicode_Equal(left, right);
+            assert((oparg >>4) == Py_EQ || (oparg >>4) == Py_NE);
+            _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
+            assert(eq == 0 || eq == 1);
+            assert((oparg & 0xf) == COMPARISON_NOT_EQUALS || (oparg & 0xf) == COMPARISON_EQUALS);
+            assert(COMPARISON_NOT_EQUALS + 1 == COMPARISON_EQUALS);
+            res = ((COMPARISON_NOT_EQUALS + eq) & oparg) ? Py_True : Py_False;
+            STACK_SHRINK(1);
+            stack_pointer[-1] = res;
             break;
         }
 
