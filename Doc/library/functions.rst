@@ -147,7 +147,7 @@ are always available.  They are listed here in alphabetical order.
    or omitted, this returns ``False``; otherwise, it returns ``True``.  The
    :class:`bool` class is a subclass of :class:`int` (see :ref:`typesnumeric`).
    It cannot be subclassed further.  Its only instances are ``False`` and
-   ``True`` (see :ref:`bltin-boolean-values`).
+   ``True`` (see :ref:`typebool`).
 
    .. index:: pair: Boolean; type
 
@@ -167,6 +167,13 @@ are always available.  They are listed here in alphabetical order.
    the debugger of choice.
    If :func:`sys.breakpointhook` is not accessible, this function will
    raise :exc:`RuntimeError`.
+
+   By default, the behavior of :func:`breakpoint` can be changed with
+   the :envvar:`PYTHONBREAKPOINT` environment variable.
+   See :func:`sys.breakpointhook` for usage details.
+
+   Note that this is not guaranteed if :func:`sys.breakpointhook`
+   has been replaced.
 
    .. audit-event:: builtins.breakpoint breakpointhook breakpoint
 
@@ -562,7 +569,7 @@ are always available.  They are listed here in alphabetical order.
       Raises an :ref:`auditing event <auditing>` ``exec`` with the code object
       as the argument. Code compilation events may also be raised.
 
-.. index:: builtin: exec
+.. index:: pair: built-in function; exec
 
 .. function:: exec(object, globals=None, locals=None, /, *, closure=None)
 
@@ -1340,7 +1347,7 @@ are always available.  They are listed here in alphabetical order.
       single: I/O control; buffering
       single: binary mode
       single: text mode
-      module: sys
+      pair: module; sys
 
    See also the file handling modules, such as :mod:`fileinput`, :mod:`io`
    (where :func:`open` is declared), :mod:`os`, :mod:`os.path`, :mod:`tempfile`,
@@ -1830,7 +1837,7 @@ are always available.  They are listed here in alphabetical order.
 .. class:: type(object)
            type(name, bases, dict, **kwds)
 
-   .. index:: object: type
+   .. index:: pair: object; type
 
    With one argument, return the type of an *object*.  The return value is a
    type object and generally the same object as returned by
@@ -1986,8 +1993,8 @@ are always available.  They are listed here in alphabetical order.
 .. function:: __import__(name, globals=None, locals=None, fromlist=(), level=0)
 
    .. index::
-      statement: import
-      module: imp
+      pair: statement; import
+      pair: module; builtins
 
    .. note::
 

@@ -10,6 +10,7 @@ import datetime
 from enum import IntEnum, global_enum
 import locale as _locale
 from itertools import repeat
+import warnings
 
 __all__ = ["IllegalMonthError", "IllegalWeekdayError", "setfirstweekday",
            "firstweekday", "isleap", "leapdays", "weekday", "monthrange",
@@ -41,6 +42,18 @@ class IllegalWeekdayError(ValueError):
         return "bad weekday number %r; must be 0 (Monday) to 6 (Sunday)" % self.weekday
 
 
+def __getattr__(name):
+    if name in ('January', 'February'):
+        warnings.warn(f"The '{name}' attribute is deprecated, use '{name.upper()}' instead",
+                      DeprecationWarning, stacklevel=2)
+        if name == 'January':
+            return 1
+        else:
+            return 2
+
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+
+
 # Constants for months
 @global_enum
 class Month(IntEnum):
@@ -68,7 +81,6 @@ class Day(IntEnum):
     FRIDAY = 4
     SATURDAY = 5
     SUNDAY = 6
-
 
 
 # Number of days per month (except for February in leap years)
@@ -143,7 +155,7 @@ def weekday(year, month, day):
     """Return weekday (0-6 ~ Mon-Sun) for year, month (1-12), day (1-31)."""
     if not datetime.MINYEAR <= year <= datetime.MAXYEAR:
         year = 2000 + year % 400
-    return datetime.date(year, month, day).weekday()
+    return Day(datetime.date(year, month, day).weekday())
 
 
 def monthrange(year, month):

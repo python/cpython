@@ -57,20 +57,20 @@ the extracted data in a :class:`argparse.Namespace` object::
 Quick Links for add_argument()
 ------------------------------
 
-====================== =========================================================== ==========================================================================================================================
-Name                   Description                                                 Values
-====================== =========================================================== ==========================================================================================================================
-action_                Specify how an argument should be handled                   ``'store'``, ``'store_const'``, ``'store_true'``, ``'append'``, ``'append_const'``, ``'count'``, ``'help'``, ``'version'``
-choices_               Limit values to a specific set of choices                   ``['foo', 'bar']``, ``range(1, 10)``, or :class:`~collections.abc.Container` instance
-const_                 Store a constant value
-default_               Default value used when an argument is not provided         Defaults to ``None``
-dest_                  Specify the attribute name used in the result namespace
-help_                  Help message for an argument
-metavar_               Alternate display name for the argument as shown in help
-nargs_                 Number of times the argument can be used                    :class:`int`, ``'?'``, ``'*'``, or ``'+'``
-required_              Indicate whether an argument is required or optional        ``True`` or ``False``
-type_                  Automatically convert an argument to the given type         :class:`int`, :class:`float`, ``argparse.FileType('w')``, or callable function
-====================== =========================================================== ==========================================================================================================================
+============================ =========================================================== ==========================================================================================================================
+Name                         Description                                                 Values
+============================ =========================================================== ==========================================================================================================================
+action_                      Specify how an argument should be handled                   ``'store'``, ``'store_const'``, ``'store_true'``, ``'append'``, ``'append_const'``, ``'count'``, ``'help'``, ``'version'``
+choices_                     Limit values to a specific set of choices                   ``['foo', 'bar']``, ``range(1, 10)``, or :class:`~collections.abc.Container` instance
+const_                       Store a constant value
+default_                     Default value used when an argument is not provided         Defaults to ``None``
+dest_                        Specify the attribute name used in the result namespace
+help_                        Help message for an argument
+metavar_                     Alternate display name for the argument as shown in help
+nargs_                       Number of times the argument can be used                    :class:`int`, ``'?'``, ``'*'``, or ``'+'``
+required_                    Indicate whether an argument is required or optional        ``True`` or ``False``
+:ref:`type <argparse-type>`  Automatically convert an argument to the given type         :class:`int`, :class:`float`, ``argparse.FileType('w')``, or callable function
+============================ =========================================================== ==========================================================================================================================
 
 
 Example
@@ -1132,7 +1132,7 @@ command-line argument was not present::
    Namespace(foo='1')
 
 
-.. _type:
+.. _argparse-type:
 
 type
 ^^^^

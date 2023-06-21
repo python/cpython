@@ -45,13 +45,13 @@ is_block_push(cfg_instr *i)
 static inline int
 is_jump(cfg_instr *i)
 {
-    return IS_JUMP_OPCODE(i->i_opcode);
+    return OPCODE_HAS_JUMP(i->i_opcode);
 }
 
 /* One arg*/
 #define INSTR_SET_OP1(I, OP, ARG) \
     do { \
-        assert(HAS_ARG(OP)); \
+        assert(OPCODE_HAS_ARG(OP)); \
         _PyCfgInstruction *_instr__ptr_ = (I); \
         _instr__ptr_->i_opcode = (OP); \
         _instr__ptr_->i_oparg = (ARG); \
@@ -60,7 +60,7 @@ is_jump(cfg_instr *i)
 /* No args*/
 #define INSTR_SET_OP0(I, OP) \
     do { \
-        assert(!HAS_ARG(OP)); \
+        assert(!OPCODE_HAS_ARG(OP)); \
         _PyCfgInstruction *_instr__ptr_ = (I); \
         _instr__ptr_->i_opcode = (OP); \
         _instr__ptr_->i_oparg = 0; \
@@ -110,7 +110,7 @@ basicblock_addop(basicblock *b, int opcode, int oparg, location loc)
 {
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
-    assert(HAS_ARG(opcode) || HAS_TARGET(opcode) || oparg == 0);
+    assert(OPCODE_HAS_ARG(opcode) || HAS_TARGET(opcode) || oparg == 0);
     assert(0 <= oparg && oparg < (1 << 30));
 
     int off = basicblock_next_instr(b);
@@ -166,16 +166,10 @@ _PyBasicblock_InsertInstruction(basicblock *block, int pos, cfg_instr *instr) {
     return SUCCESS;
 }
 
-int
-_PyCfg_InstrSize(cfg_instr *instruction)
+static int
+instr_size(cfg_instr *instruction)
 {
-    int opcode = instruction->i_opcode;
-    assert(!IS_PSEUDO_OPCODE(opcode));
-    int oparg = instruction->i_oparg;
-    assert(HAS_ARG(opcode) || oparg == 0);
-    int extended_args = (0xFFFFFF < oparg) + (0xFFFF < oparg) + (0xFF < oparg);
-    int caches = _PyOpcode_Caches[opcode];
-    return extended_args + 1 + caches;
+    return _PyCompile_InstrSize(instruction->i_opcode, instruction->i_oparg);
 }
 
 static int
@@ -183,7 +177,7 @@ blocksize(basicblock *b)
 {
     int size = 0;
     for (int i = 0; i < b->b_iused; i++) {
-        size += _PyCfg_InstrSize(&b->b_instr[i]);
+        size += instr_size(&b->b_instr[i]);
     }
     return size;
 }
@@ -198,7 +192,7 @@ dump_instr(cfg_instr *i)
     char arg[128];
 
     *arg = '\0';
-    if (HAS_ARG(i->i_opcode)) {
+    if (OPCODE_HAS_ARG(i->i_opcode)) {
         sprintf(arg, "arg: %d ", i->i_oparg);
     }
     if (HAS_TARGET(i->i_opcode)) {
@@ -229,6 +223,15 @@ dump_basicblock(const basicblock *b)
         }
     }
 }
+
+void
+_PyCfgBuilder_DumpGraph(const basicblock *entryblock)
+{
+    for (const basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        dump_basicblock(b);
+    }
+}
+
 #endif
 
 
@@ -413,9 +416,13 @@ normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
     bool is_forward = last->i_target->b_visited == 0;
     switch(last->i_opcode) {
         case JUMP:
+            assert(SAME_OPCODE_METADATA(JUMP, JUMP_FORWARD));
+            assert(SAME_OPCODE_METADATA(JUMP, JUMP_BACKWARD));
             last->i_opcode = is_forward ? JUMP_FORWARD : JUMP_BACKWARD;
             return SUCCESS;
         case JUMP_NO_INTERRUPT:
+            assert(SAME_OPCODE_METADATA(JUMP_NO_INTERRUPT, JUMP_FORWARD));
+            assert(SAME_OPCODE_METADATA(JUMP_NO_INTERRUPT, JUMP_BACKWARD_NO_INTERRUPT));
             last->i_opcode = is_forward ?
                 JUMP_FORWARD : JUMP_BACKWARD_NO_INTERRUPT;
             return SUCCESS;
@@ -492,7 +499,7 @@ resolve_jump_offsets(basicblock *entryblock)
             bsize = b->b_offset;
             for (int i = 0; i < b->b_iused; i++) {
                 cfg_instr *instr = &b->b_instr[i];
-                int isize = _PyCfg_InstrSize(instr);
+                int isize = instr_size(instr);
                 /* jump offsets are computed relative to
                  * the instruction pointer after fetching
                  * the jump instruction.
@@ -508,7 +515,7 @@ resolve_jump_offsets(basicblock *entryblock)
                         assert(!IS_BACKWARDS_JUMP_OPCODE(instr->i_opcode));
                         instr->i_oparg -= bsize;
                     }
-                    if (_PyCfg_InstrSize(instr) != isize) {
+                    if (instr_size(instr) != isize) {
                         extended_arg_recompile = 1;
                     }
                 }
@@ -520,7 +527,7 @@ resolve_jump_offsets(basicblock *entryblock)
         with a better solution.
 
         The issue is that in the first loop blocksize() is called
-        which calls _PyCfg_InstrSize() which requires i_oparg be set
+        which calls instr_size() which requires i_oparg be set
         appropriately. There is a bootstrap problem because
         i_oparg is calculated in the second loop above.
 
@@ -598,6 +605,11 @@ translate_jump_labels_to_targets(basicblock *entryblock)
     return SUCCESS;
 }
 
+int
+_PyCfg_JumpLabelsToTargets(basicblock *entryblock)
+{
+    return translate_jump_labels_to_targets(entryblock);
+}
 
 static int
 mark_except_handlers(basicblock *entryblock) {
@@ -1095,7 +1107,7 @@ static PyObject*
 get_const_value(int opcode, int oparg, PyObject *co_consts)
 {
     PyObject *constant = NULL;
-    assert(HAS_CONST(opcode));
+    assert(OPCODE_HAS_CONST(opcode));
     if (opcode == LOAD_CONST) {
         constant = PyList_GET_ITEM(co_consts, oparg);
     }
@@ -1126,7 +1138,7 @@ fold_tuple_on_constants(PyObject *const_cache,
     assert(inst[n].i_oparg == n);
 
     for (int i = 0; i < n; i++) {
-        if (!HAS_CONST(inst[i].i_opcode)) {
+        if (!OPCODE_HAS_CONST(inst[i].i_opcode)) {
             return SUCCESS;
         }
     }
@@ -1281,7 +1293,14 @@ swaptimize(basicblock *block, int *ix)
 // - can't invoke arbitrary code (besides finalizers)
 // - only touch the TOS (and pop it when finished)
 #define SWAPPABLE(opcode) \
-    ((opcode) == STORE_FAST || (opcode) == POP_TOP)
+    ((opcode) == STORE_FAST || \
+     (opcode) == STORE_FAST_MAYBE_NULL || \
+     (opcode) == POP_TOP)
+
+#define STORES_TO(instr) \
+    (((instr).i_opcode == STORE_FAST || \
+      (instr).i_opcode == STORE_FAST_MAYBE_NULL) \
+     ? (instr).i_oparg : -1)
 
 static int
 next_swappable_instruction(basicblock *block, int i, int lineno)
@@ -1334,6 +1353,23 @@ apply_static_swaps(basicblock *block, int i)
                 return;
             }
         }
+        // The reordering is not safe if the two instructions to be swapped
+        // store to the same location, or if any intervening instruction stores
+        // to the same location as either of them.
+        int store_j = STORES_TO(block->b_instr[j]);
+        int store_k = STORES_TO(block->b_instr[k]);
+        if (store_j >= 0 || store_k >= 0) {
+            if (store_j == store_k) {
+                return;
+            }
+            for (int idx = j + 1; idx < k; idx++) {
+                int store_idx = STORES_TO(block->b_instr[idx]);
+                if (store_idx >= 0 && (store_idx == store_j || store_idx == store_k)) {
+                    return;
+                }
+            }
+        }
+
         // Success!
         INSTR_SET_OP0(swap, NOP);
         cfg_instr temp = block->b_instr[j];
@@ -1483,15 +1519,18 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                     */
                 }
                 break;
+            case STORE_FAST:
+                if (opcode == nextop &&
+                    oparg == bb->b_instr[i+1].i_oparg &&
+                    bb->b_instr[i].i_loc.lineno == bb->b_instr[i+1].i_loc.lineno) {
+                    bb->b_instr[i].i_opcode = POP_TOP;
+                    bb->b_instr[i].i_oparg = 0;
+                }
+                break;
             case SWAP:
                 if (oparg == 1) {
                     INSTR_SET_OP0(inst, NOP);
-                    break;
                 }
-                if (swaptimize(bb, &i) < 0) {
-                    goto error;
-                }
-                apply_static_swaps(bb, i);
                 break;
             case KW_NAMES:
                 break;
@@ -1502,8 +1541,18 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 }
                 break;
             default:
-                /* All HAS_CONST opcodes should be handled with LOAD_CONST */
-                assert (!HAS_CONST(inst->i_opcode));
+                /* All OPCODE_HAS_CONST opcodes should be handled with LOAD_CONST */
+                assert (!OPCODE_HAS_CONST(inst->i_opcode));
+        }
+    }
+
+    for (int i = 0; i < bb->b_iused; i++) {
+        cfg_instr *inst = &bb->b_instr[i];
+        if (inst->i_opcode == SWAP) {
+            if (swaptimize(bb, &i) < 0) {
+                goto error;
+            }
+            apply_static_swaps(bb, i);
         }
     }
     return SUCCESS;
@@ -1554,6 +1603,56 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache)
     return SUCCESS;
 }
 
+static void
+make_super_instruction(cfg_instr *inst1, cfg_instr *inst2, int super_op)
+{
+    int32_t line1 = inst1->i_loc.lineno;
+    int32_t line2 = inst2->i_loc.lineno;
+    /* Skip if instructions are on different lines */
+    if (line1 >= 0 && line2 >= 0 && line1 != line2) {
+        return;
+    }
+    if (inst1->i_oparg >= 16 || inst2->i_oparg >= 16) {
+        return;
+    }
+    INSTR_SET_OP1(inst1, super_op, (inst1->i_oparg << 4) | inst2->i_oparg);
+    INSTR_SET_OP0(inst2, NOP);
+}
+
+static void
+insert_superinstructions(cfg_builder *g)
+{
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
+
+        for (int i = 0; i < b->b_iused; i++) {
+            cfg_instr *inst = &b->b_instr[i];
+            int nextop = i+1 < b->b_iused ? b->b_instr[i+1].i_opcode : 0;
+            switch(inst->i_opcode) {
+                case LOAD_FAST:
+                    if (nextop == LOAD_FAST) {
+                        make_super_instruction(inst, &b->b_instr[i + 1], LOAD_FAST_LOAD_FAST);
+                    }
+                    break;
+                case STORE_FAST:
+                    switch (nextop) {
+                        case LOAD_FAST:
+                            make_super_instruction(inst, &b->b_instr[i + 1], STORE_FAST_LOAD_FAST);
+                            break;
+                        case STORE_FAST:
+                            make_super_instruction(inst, &b->b_instr[i + 1], STORE_FAST_STORE_FAST);
+                            break;
+                    }
+                    break;
+            }
+        }
+    }
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
+        remove_redundant_nops(b);
+    }
+    eliminate_empty_basic_blocks(g);
+    assert(no_redundant_nops(g));
+}
+
 // helper functions for add_checks_for_loads_of_unknown_variables
 static inline void
 maybe_push(basicblock *b, uint64_t unsafe_mask, basicblock ***sp)
@@ -1581,7 +1680,6 @@ scan_block_for_locals(basicblock *b, basicblock ***sp)
     for (int i = 0; i < b->b_iused; i++) {
         cfg_instr *instr = &b->b_instr[i];
         assert(instr->i_opcode != EXTENDED_ARG);
-        assert(!IS_SUPERINSTRUCTION_OPCODE(instr->i_opcode));
         if (instr->i_except != NULL) {
             maybe_push(instr->i_except, unsafe_mask, sp);
         }
@@ -1592,6 +1690,8 @@ scan_block_for_locals(basicblock *b, basicblock ***sp)
         uint64_t bit = (uint64_t)1 << instr->i_oparg;
         switch (instr->i_opcode) {
             case DELETE_FAST:
+            case LOAD_FAST_AND_CLEAR:
+            case STORE_FAST_MAYBE_NULL:
                 unsafe_mask |= bit;
                 break;
             case STORE_FAST:
@@ -1631,13 +1731,13 @@ fast_scan_many_locals(basicblock *entryblock, int nlocals)
     Py_ssize_t blocknum = 0;
     // state[i - 64] == blocknum if local i is guaranteed to
     // be initialized, i.e., if it has had a previous LOAD_FAST or
-    // STORE_FAST within that basicblock (not followed by DELETE_FAST).
+    // STORE_FAST within that basicblock (not followed by
+    // DELETE_FAST/LOAD_FAST_AND_CLEAR/STORE_FAST_MAYBE_NULL).
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         blocknum++;
         for (int i = 0; i < b->b_iused; i++) {
             cfg_instr *instr = &b->b_instr[i];
             assert(instr->i_opcode != EXTENDED_ARG);
-            assert(!IS_SUPERINSTRUCTION_OPCODE(instr->i_opcode));
             int arg = instr->i_oparg;
             if (arg < 64) {
                 continue;
@@ -1645,6 +1745,8 @@ fast_scan_many_locals(basicblock *entryblock, int nlocals)
             assert(arg >= 0);
             switch (instr->i_opcode) {
                 case DELETE_FAST:
+                case LOAD_FAST_AND_CLEAR:
+                case STORE_FAST_MAYBE_NULL:
                     states[arg - 64] = blocknum - 1;
                     break;
                 case STORE_FAST:
@@ -1690,7 +1792,7 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
     /* mark used consts */
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
-            if (HAS_CONST(b->b_instr[i].i_opcode)) {
+            if (OPCODE_HAS_CONST(b->b_instr[i].i_opcode)) {
                 int index = b->b_instr[i].i_oparg;
                 index_map[index] = index;
             }
@@ -1743,7 +1845,7 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
 
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
-            if (HAS_CONST(b->b_instr[i].i_opcode)) {
+            if (OPCODE_HAS_CONST(b->b_instr[i].i_opcode)) {
                 int index = b->b_instr[i].i_oparg;
                 assert(reverse_index_map[index] >= 0);
                 assert(reverse_index_map[index] < n_used_consts);
@@ -1967,13 +2069,18 @@ push_cold_blocks_to_end(cfg_builder *g, int code_flags) {
 }
 
 void
-_PyCfg_ConvertExceptionHandlersToNops(basicblock *entryblock)
+_PyCfg_ConvertPseudoOps(basicblock *entryblock)
 {
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
             cfg_instr *instr = &b->b_instr[i];
             if (is_block_push(instr) || instr->i_opcode == POP_BLOCK) {
+                assert(SAME_OPCODE_METADATA(instr->i_opcode, NOP));
                 INSTR_SET_OP0(instr, NOP);
+            }
+            else if (instr->i_opcode == STORE_FAST_MAYBE_NULL) {
+                assert(SAME_OPCODE_METADATA(STORE_FAST_MAYBE_NULL, STORE_FAST));
+                instr->i_opcode = STORE_FAST;
             }
         }
     }
@@ -2141,6 +2248,7 @@ _PyCfg_OptimizeCodeUnit(cfg_builder *g, PyObject *consts, PyObject *const_cache,
     RETURN_IF_ERROR(
         add_checks_for_loads_of_uninitialized_variables(
             g->g_entryblock, nlocals, nparams));
+    insert_superinstructions(g);
 
     RETURN_IF_ERROR(push_cold_blocks_to_end(g, code_flags));
     RETURN_IF_ERROR(resolve_line_numbers(g, firstlineno));

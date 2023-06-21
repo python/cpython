@@ -314,12 +314,18 @@ upon normal program termination.\n\
 Two public functions, register and unregister, are defined.\n\
 ");
 
+static PyModuleDef_Slot atexitmodule_slots[] = {
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {0, NULL}
+};
+
 static struct PyModuleDef atexitmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "atexit",
     .m_doc = atexit__doc__,
     .m_size = 0,
     .m_methods = atexit_methods,
+    .m_slots = atexitmodule_slots,
 };
 
 PyMODINIT_FUNC
