@@ -1,1 +1,0 @@
-Disallow the "z" format specifier in %-format of bytes objects.

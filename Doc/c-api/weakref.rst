@@ -11,20 +11,20 @@ simple reference object, and the second acts as a proxy for the original object
 as much as it can.
 
 
-.. c:function:: int PyWeakref_Check(ob)
+.. c:function:: int PyWeakref_Check(PyObject *ob)
 
-   Return true if *ob* is either a reference or proxy object.  This function
+   Return non-zero if *ob* is either a reference or proxy object.  This function
    always succeeds.
 
 
-.. c:function:: int PyWeakref_CheckRef(ob)
+.. c:function:: int PyWeakref_CheckRef(PyObject *ob)
 
-   Return true if *ob* is a reference object.  This function always succeeds.
+   Return non-zero if *ob* is a reference object.  This function always succeeds.
 
 
-.. c:function:: int PyWeakref_CheckProxy(ob)
+.. c:function:: int PyWeakref_CheckProxy(PyObject *ob)
 
-   Return true if *ob* is a proxy object.  This function always succeeds.
+   Return non-zero if *ob* is a proxy object.  This function always succeeds.
 
 
 .. c:function:: PyObject* PyWeakref_NewRef(PyObject *ob, PyObject *callback)
@@ -51,10 +51,21 @@ as much as it can.
    ``None``, or ``NULL``, this will return ``NULL`` and raise :exc:`TypeError`.
 
 
+.. c:function:: int PyWeakref_GetRef(PyObject *ref, PyObject **pobj)
+
+   Get a :term:`strong reference` to the referenced object from a weak
+   reference, *ref*, into *\*pobj*.
+   Return 0 on success. Raise an exception and return -1 on error.
+
+   If the referent is no longer live, set *\*pobj* to ``NULL`` and return 0.
+
+   .. versionadded:: 3.13
+
+
 .. c:function:: PyObject* PyWeakref_GetObject(PyObject *ref)
 
-   Return the referenced object from a weak reference, *ref*.  If the referent is
-   no longer live, returns :const:`Py_None`.
+   Return a :term:`borrowed reference` to the referenced object from a weak
+   reference, *ref*.  If the referent is no longer live, returns ``Py_None``.
 
    .. note::
 
