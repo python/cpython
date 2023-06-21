@@ -384,6 +384,7 @@ dummy_func(
             assert(version);
             DEOPT_IF(Py_TYPE(value)->tp_version_tag != version, TO_BOOL);
             STAT_INC(TO_BOOL, hit);
+            DECREF_INPUTS();
             res = Py_True;
         }
 

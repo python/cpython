@@ -2286,7 +2286,7 @@ _Py_Specialize_ToBool(PyObject *value, _Py_CODEUNIT *instr)
             SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_SEQUENCE);
             goto failure;
         }
-        if (PyUnstable_Type_AssignVersionTag(Py_TYPE(value))) {
+        if (!PyUnstable_Type_AssignVersionTag(Py_TYPE(value))) {
             SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_OUT_OF_VERSIONS);
             goto failure;
         }
