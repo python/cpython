@@ -1127,7 +1127,8 @@ iterations of the loop.
 .. opcode:: COMPARE_OP (opname)
 
    Performs a Boolean operation.  The operation name can be found in
-   ``cmp_op[opname]``.
+   ``cmp_op[opname >> 5]``. If the fifth-lowest bit of ``opname`` is set
+   (``opname & 16``), the result should be coerced to ``bool``.
 
 
 .. opcode:: IS_OP (invert)
