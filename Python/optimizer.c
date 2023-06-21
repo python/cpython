@@ -384,14 +384,21 @@ uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **
         }
     }
 
-pop_1_error:
-pop_2_error:
-pop_3_error:
 pop_4_error:
+    STACK_SHRINK(1);
+pop_3_error:
+    STACK_SHRINK(1);
+pop_2_error:
+    STACK_SHRINK(1);
+pop_1_error:
+    STACK_SHRINK(1);
 error:
-unbound_local_error:
-    fprintf(stderr, "error: [Opcode %d, oparg %d]\n", opcode, oparg);
-    Py_FatalError("Errors not yet supported");
+    // On ERROR_IF we return NULL as the frame.
+    // The caller recovers the frame from cframe.current_frame.
+    // fprintf(stderr, "error: [Opcode %d, oparg %d]\n", opcode, oparg);
+    _PyFrame_SetStackPointer(frame, stack_pointer);
+    Py_DECREF(self);
+    return NULL;
 
 PREDICTED(UNPACK_SEQUENCE)
 PREDICTED(COMPARE_OP)

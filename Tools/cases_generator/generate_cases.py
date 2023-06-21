@@ -249,6 +249,7 @@ INSTRUCTION_FLAGS = ['HAS_ARG', 'HAS_CONST', 'HAS_NAME', 'HAS_JUMP', 'IS_UOP']
 FORBIDDEN_INSTRUCTIONS = (
     "cframe",
     "resume_with_error",  # Proxy for "goto", which isn't an IDENTIFIER
+    "unbound_local_error",
     "kwnames",
     "next_instr",
     "oparg1",  # Proxy for super-instructions like LOAD_FAST_LOAD_FAST

@@ -7,27 +7,6 @@
             break;
         }
 
-        case LOAD_CLOSURE: {
-            PyObject *value;
-            /* We keep LOAD_CLOSURE so that the bytecode stays more readable. */
-            value = GETLOCAL(oparg);
-            if (value == NULL) goto unbound_local_error;
-            Py_INCREF(value);
-            STACK_GROW(1);
-            stack_pointer[-1] = value;
-            break;
-        }
-
-        case LOAD_FAST_CHECK: {
-            PyObject *value;
-            value = GETLOCAL(oparg);
-            if (value == NULL) goto unbound_local_error;
-            Py_INCREF(value);
-            STACK_GROW(1);
-            stack_pointer[-1] = value;
-            break;
-        }
-
         case LOAD_FAST: {
             PyObject *value;
             value = GETLOCAL(oparg);
@@ -500,13 +479,6 @@
             Py_DECREF(v);
             if (err) goto pop_1_error;
             STACK_SHRINK(1);
-            break;
-        }
-
-        case DELETE_FAST: {
-            PyObject *v = GETLOCAL(oparg);
-            if (v == NULL) goto unbound_local_error;
-            SETLOCAL(oparg, NULL);
             break;
         }
 
