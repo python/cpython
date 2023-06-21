@@ -594,7 +594,7 @@ getargs_y_hash(PyObject *self, PyObject *args)
 static PyObject *
 getargs_u(PyObject *self, PyObject *args)
 {
-    Py_UNICODE *str;
+    wchar_t *str;
     if (!PyArg_ParseTuple(args, "u", &str)) {
         return NULL;
     }
@@ -604,7 +604,7 @@ getargs_u(PyObject *self, PyObject *args)
 static PyObject *
 getargs_u_hash(PyObject *self, PyObject *args)
 {
-    Py_UNICODE *str;
+    wchar_t *str;
     Py_ssize_t size;
     if (!PyArg_ParseTuple(args, "u#", &str, &size)) {
         return NULL;
@@ -615,7 +615,7 @@ getargs_u_hash(PyObject *self, PyObject *args)
 static PyObject *
 getargs_Z(PyObject *self, PyObject *args)
 {
-    Py_UNICODE *str;
+    wchar_t *str;
     if (!PyArg_ParseTuple(args, "Z", &str)) {
         return NULL;
     }
@@ -628,7 +628,7 @@ getargs_Z(PyObject *self, PyObject *args)
 static PyObject *
 getargs_Z_hash(PyObject *self, PyObject *args)
 {
-    Py_UNICODE *str;
+    wchar_t *str;
     Py_ssize_t size;
     if (!PyArg_ParseTuple(args, "Z#", &str, &size)) {
         return NULL;

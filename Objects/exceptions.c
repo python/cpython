@@ -2480,8 +2480,6 @@ my_basename(PyObject *name)
     int kind;
     const void *data;
 
-    if (PyUnicode_READY(name))
-        return NULL;
     kind = PyUnicode_KIND(name);
     data = PyUnicode_DATA(name);
     size = PyUnicode_GET_LENGTH(name);

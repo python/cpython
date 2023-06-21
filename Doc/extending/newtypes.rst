@@ -168,7 +168,7 @@ representation of the instance for which it is called.  Here is a simple
 example::
 
    static PyObject *
-   newdatatype_repr(newdatatypeobject * obj)
+   newdatatype_repr(newdatatypeobject *obj)
    {
        return PyUnicode_FromFormat("Repr-ified_newdatatype{{size:%d}}",
                                    obj->obj_UnderlyingDatatypePtr->size);
@@ -188,7 +188,7 @@ used instead.
 Here is a simple example::
 
    static PyObject *
-   newdatatype_str(newdatatypeobject * obj)
+   newdatatype_str(newdatatypeobject *obj)
    {
        return PyUnicode_FromFormat("Stringified_newdatatype{{size:%d}}",
                                    obj->obj_UnderlyingDatatypePtr->size);
@@ -338,7 +338,7 @@ Here is an example::
 
        PyErr_Format(PyExc_AttributeError,
                     "'%.100s' object has no attribute '%.400s'",
-                    tp->tp_name, name);
+                    Py_TYPE(obj)->tp_name, name);
        return NULL;
    }
 
@@ -379,7 +379,7 @@ Here is a sample implementation, for a datatype that is considered equal if the
 size of an internal pointer is equal::
 
    static PyObject *
-   newdatatype_richcmp(PyObject *obj1, PyObject *obj2, int op)
+   newdatatype_richcmp(newdatatypeobject *obj1, newdatatypeobject *obj2, int op)
    {
        PyObject *result;
        int c, size1, size2;
@@ -478,7 +478,7 @@ This function takes three arguments:
 Here is a toy ``tp_call`` implementation::
 
    static PyObject *
-   newdatatype_call(newdatatypeobject *self, PyObject *args, PyObject *kwds)
+   newdatatype_call(newdatatypeobject *obj, PyObject *args, PyObject *kwds)
    {
        PyObject *result;
        const char *arg1;

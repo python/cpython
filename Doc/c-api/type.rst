@@ -42,7 +42,7 @@ Type Objects
    Return the :c:member:`~PyTypeObject.tp_flags` member of *type*. This function is primarily
    meant for use with ``Py_LIMITED_API``; the individual flag bits are
    guaranteed to be stable across Python releases, but access to
-   :c:member:`~PyTypeObject.tp_flags` itself is not part of the limited API.
+   :c:member:`~PyTypeObject.tp_flags` itself is not part of the :ref:`limited API <limited-c-api>`.
 
    .. versionadded:: 3.2
 
@@ -258,7 +258,7 @@ The following functions and structs are used to create
    (or *Py_tp_base[s]* slots if *bases* is ``NULL``, see below).
 
    Metaclasses that override :c:member:`~PyTypeObject.tp_new` are not
-   supported.
+   supported, except if ``tp_new`` is ``NULL``.
    (For backwards compatibility, other ``PyType_From*`` functions allow
    such metaclasses. They ignore ``tp_new``, which may result in incomplete
    initialization. This is deprecated and in Python 3.14+ such metaclasses will
@@ -472,7 +472,7 @@ The following functions and structs are used to create
      .. versionchanged:: 3.11
         :c:member:`~PyBufferProcs.bf_getbuffer` and
         :c:member:`~PyBufferProcs.bf_releasebuffer` are now available
-        under the limited API.
+        under the :ref:`limited API <limited-c-api>`.
 
    .. c:member:: void *pfunc
 

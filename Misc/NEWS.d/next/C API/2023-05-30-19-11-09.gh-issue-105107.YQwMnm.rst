@@ -5,5 +5,6 @@ Remove functions deprecated in Python 3.9.
   arguments must not be *NULL*) instead.
 * ``PyEval_CallFunction()``: use :c:func:`PyObject_CallFunction` instead.
 * ``PyEval_CallMethod()``: use :c:func:`PyObject_CallMethod` instead.
+* ``PyCFunction_Call()``: use :c:func:`PyObject_Call` instead.
 
 Patch by Victor Stinner.

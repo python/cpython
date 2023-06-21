@@ -380,11 +380,11 @@ PyObject_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
 }
 
 
-PyObject *
+/* Function removed in the Python 3.13 API but kept in the stable ABI. */
+PyAPI_FUNC(PyObject *)
 PyCFunction_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    return _PyObject_Call(tstate, callable, args, kwargs);
+    return PyObject_Call(callable, args, kwargs);
 }
 
 
