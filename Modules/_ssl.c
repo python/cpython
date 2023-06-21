@@ -14,6 +14,10 @@
        http://bugs.python.org/issue8108#msg102867 ?
 */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 /* Don't warn about deprecated functions, */
 #ifndef OPENSSL_API_COMPAT
   // 0x10101000L == 1.1.1, 30000 == 3.0.0
@@ -24,6 +28,7 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 /* Include symbols from _socket module */
 #include "socketmodule.h"
@@ -379,8 +384,14 @@ typedef enum {
 #define ERRSTR(x) ERRSTR1("_ssl.c", Py_STRINGIFY(__LINE__), x)
 
 /* Get the socket from a PySSLSocket, if it has one */
-#define GET_SOCKET(obj) ((obj)->Socket ? \
-    (PySocketSockObject *) PyWeakref_GetObject((obj)->Socket) : NULL)
+static inline PySocketSockObject* GET_SOCKET(PySSLSocket *obj) {
+    if (obj->Socket) {
+        return (PySocketSockObject *)PyWeakref_GetObject(obj->Socket);
+    }
+    else {
+        return NULL;
+    }
+}
 
 /* If sock is NULL, use a timeout of 0 second */
 #define GET_SOCKET_TIMEOUT(sock) \
@@ -2177,13 +2188,14 @@ PyDoc_STRVAR(PySSL_get_server_hostname_doc,
 static PyObject *
 PySSL_get_owner(PySSLSocket *self, void *c)
 {
-    PyObject *owner;
-
-    if (self->owner == NULL)
+    if (self->owner == NULL) {
         Py_RETURN_NONE;
-
-    owner = PyWeakref_GetObject(self->owner);
-    return Py_NewRef(owner);
+    }
+    PyObject *owner = _PyWeakref_GET_REF(self->owner);
+    if (owner == NULL) {
+        Py_RETURN_NONE;
+    }
+    return owner;
 }
 
 static int
@@ -4393,14 +4405,13 @@ _servername_callback(SSL *s, int *al, void *args)
      * will be passed. If both do not exist only then the C-level object is
      * passed. */
     if (ssl->owner)
-        ssl_socket = PyWeakref_GetObject(ssl->owner);
+        ssl_socket = _PyWeakref_GET_REF(ssl->owner);
     else if (ssl->Socket)
-        ssl_socket = PyWeakref_GetObject(ssl->Socket);
+        ssl_socket = _PyWeakref_GET_REF(ssl->Socket);
     else
-        ssl_socket = (PyObject *) ssl;
+        ssl_socket = Py_NewRef(ssl);
 
-    Py_INCREF(ssl_socket);
-    if (ssl_socket == Py_None)
+    if (ssl_socket == NULL)
         goto error;
 
     if (servername == NULL) {
