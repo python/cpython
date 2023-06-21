@@ -862,9 +862,8 @@ class Analyzer:
         # Make sure the targets have the same fmt
         fmts = list(set([t.instr_fmt for t in targets]))
         assert(len(fmts) == 1)
-        flags_list = list(set([t.instr_flags for t in targets]))
-        assert(len(flags_list) == 1)
-        return PseudoInstruction(pseudo.name, targets, fmts[0], flags_list[0])
+        assert(len(list(set([t.instr_flags.bitmap() for t in targets]))) == 1)
+        return PseudoInstruction(pseudo.name, targets, fmts[0], targets[0].instr_flags)
 
     def analyze_instruction(
         self, instr: Instruction, stack: list[StackEffect], sp: int
