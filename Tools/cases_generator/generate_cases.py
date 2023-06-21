@@ -261,12 +261,6 @@ class InstructionFlags:
     def newEmpty():
         return InstructionFlags(False, False, False, False)
 
-    def __eq__(self, other: "InstructionFlags") -> False:
-        return self.bitmap() == other.bitmap()
-
-    def __hash__(self) -> int:
-        return hash(self.bitmap())
-
     def add(self, other: "InstructionFlags") -> None:
         for name, value in dataclasses.asdict(other).items():
             if value:
