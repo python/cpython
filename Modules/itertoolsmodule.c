@@ -1,6 +1,7 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
@@ -2115,7 +2116,12 @@ chain_next(chainobject *lz)
                 return NULL;            /* input not iterable */
             }
         }
+        PyThreadState *tstate = _PyThreadState_GET();
+        if (_Py_EnterRecursiveCallTstate(tstate, " while calling a Python object")) {
+            return NULL;
+        }
         item = (*Py_TYPE(lz->active)->tp_iternext)(lz->active);
+        _Py_LeaveRecursiveCallTstate(tstate);
         if (item != NULL)
             return item;
         if (PyErr_Occurred()) {

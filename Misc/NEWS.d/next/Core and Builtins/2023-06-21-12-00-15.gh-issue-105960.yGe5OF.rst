@@ -1,0 +1,2 @@
+Fix a bug with :func:`itertools.chain.from_iterable` that can caused it to
+stack overflow when called recursively. Patch by Pablo Galindo

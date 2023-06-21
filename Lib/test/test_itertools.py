@@ -2432,6 +2432,14 @@ class RegressionTests(unittest.TestCase):
         for j in range(2):
             next(g, None)  # shouldn't crash
 
+    def test_infinite_recursion_chain(self):
+        # See gh-105960 for more information
+        def f(xs):
+            m = map(f, xs)
+            return chain.from_iterable(m)
+        with self.assertRaises(RecursionError):
+            list(f("a"))
+
 
 class SubclassWithKwargsTest(unittest.TestCase):
     def test_keywords_in_subclass(self):
