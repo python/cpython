@@ -443,14 +443,17 @@ _PyCode_Quicken(PyCodeObject *code)
 #define SPEC_FAIL_UNPACK_SEQUENCE_SEQUENCE 10
 
 // TO_BOOL
-#define SPEC_FAIL_TO_BOOL_BYTEARRAY    9
-#define SPEC_FAIL_TO_BOOL_BYTES       10
-#define SPEC_FAIL_TO_BOOL_DICT        11
-#define SPEC_FAIL_TO_BOOL_FLOAT       12
-#define SPEC_FAIL_TO_BOOL_HEAP_TYPE   13
-#define SPEC_FAIL_TO_BOOL_MEMORY_VIEW 14
-#define SPEC_FAIL_TO_BOOL_SET         15
-#define SPEC_FAIL_TO_BOOL_TUPLE       16
+#define SPEC_FAIL_TO_BOOL_BYTEARRAY           9
+#define SPEC_FAIL_TO_BOOL_BYTES              10
+#define SPEC_FAIL_TO_BOOL_DICT               11
+#define SPEC_FAIL_TO_BOOL_FLOAT              12
+#define SPEC_FAIL_TO_BOOL_HEAP_TYPE_MAPPING  13
+#define SPEC_FAIL_TO_BOOL_HEAP_TYPE_NUMBER   14
+#define SPEC_FAIL_TO_BOOL_HEAP_TYPE_SEQUENCE 15
+#define SPEC_FAIL_TO_BOOL_HEAP_TYPE_TRUE     16
+#define SPEC_FAIL_TO_BOOL_MEMORY_VIEW        17
+#define SPEC_FAIL_TO_BOOL_SET                18
+#define SPEC_FAIL_TO_BOOL_TUPLE              19
 
 static int function_kind(PyCodeObject *code);
 static bool function_check_args(PyObject *o, int expected_argcount, int opcode);
@@ -2286,7 +2289,22 @@ _Py_Specialize_ToBool(PyObject *value, _Py_CODEUNIT *instr)
         goto failure;
     }
     if (PyType_HasFeature(Py_TYPE(value), Py_TPFLAGS_HEAPTYPE)) {
-        SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_HEAP_TYPE);
+        PyNumberMethods *nb = Py_TYPE(value)->tp_as_number;
+        if (nb && nb->nb_bool) {
+            SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_HEAP_TYPE_NUMBER);
+            goto failure;
+        }
+        PyMappingMethods *mp = Py_TYPE(value)->tp_as_mapping;
+        if (mp && mp->mp_length) {
+            SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_HEAP_TYPE_MAPPING);
+            goto failure;
+        }
+        PySequenceMethods *sq = Py_TYPE(value)->tp_as_sequence;
+        if (sq && sq->sq_length) {
+            SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_HEAP_TYPE_SEQUENCE);
+            goto failure;
+        }
+        SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_HEAP_TYPE_TRUE);
         goto failure;
     }
     if (PyMemoryView_Check(value)) {
