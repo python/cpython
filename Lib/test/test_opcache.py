@@ -539,7 +539,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
                 item = C()
                 items.append(item)
             return items
-        
+
         def read(items):
             for item in items:
                 try:
@@ -554,7 +554,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
                 except AttributeError:
                     pass
                 type(item).__getitem__ = lambda self, item: None
-        
+
         opname = "BINARY_SUBSCR_GETITEM"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
@@ -565,7 +565,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
                 item = [None]
                 items.append(item)
             return items
-        
+
         def read(items):
             for item in items:
                 try:
@@ -577,7 +577,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
             for item in items:
                 item.clear()
                 item.append(None)
-        
+
         opname = "BINARY_SUBSCR_LIST_INT"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
@@ -592,7 +592,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
                 item = g()
                 items.append(item)
             return items
-        
+
         def read(items):
             for item in items:
                 try:
@@ -608,7 +608,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
                         break
                 except ValueError:
                     pass
-        
+
         opname = "FOR_ITER_GEN"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
@@ -619,7 +619,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
                 item = [None]
                 items.append(item)
             return items
-        
+
         def read(items):
             for item in items:
                 for item in item:
@@ -629,7 +629,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
             for item in items:
                 item.clear()
                 item.append(None)
-        
+
         opname = "FOR_ITER_LIST"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
@@ -643,7 +643,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
                 item = C
                 items.append(item)
             return items
-        
+
         def read(items):
             for item in items:
                 try:
@@ -658,7 +658,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
                 except AttributeError:
                     pass
                 item.a = object()
-        
+
         opname = "LOAD_ATTR_CLASS"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
@@ -672,7 +672,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
                 item = C()
                 items.append(item)
             return items
-        
+
         def read(items):
             for item in items:
                 try:
@@ -687,7 +687,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
                 except AttributeError:
                     pass
                 type(item).__getattribute__ = lambda self, name: None
-        
+
         opname = "LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
@@ -702,7 +702,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
                 item.a = None
                 items.append(item)
             return items
-        
+
         def read(items):
             for item in items:
                 item.a
@@ -710,7 +710,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
         def write(items):
             for item in items:
                 item.__dict__[None] = None
-        
+
         opname = "LOAD_ATTR_INSTANCE_VALUE"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
@@ -724,7 +724,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
                 item = C()
                 items.append(item)
             return items
-        
+
         def read(items):
             for item in items:
                 try:
@@ -739,7 +739,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
                 except AttributeError:
                     pass
                 type(item).m = lambda self: None
-        
+
         opname = "LOAD_ATTR_METHOD_LAZY_DICT"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
@@ -754,7 +754,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
                 item = C()
                 items.append(item)
             return items
-        
+
         def read(items):
             for item in items:
                 try:
@@ -769,7 +769,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
                 except AttributeError:
                     pass
                 type(item).m = lambda self: None
-        
+
         opname = "LOAD_ATTR_METHOD_NO_DICT"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
@@ -783,7 +783,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
                 item = C()
                 items.append(item)
             return items
-        
+
         def read(items):
             for item in items:
                 try:
@@ -798,7 +798,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
                 except AttributeError:
                     pass
                 type(item).m = lambda self: None
-        
+
         opname = "LOAD_ATTR_METHOD_WITH_VALUES"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
@@ -809,7 +809,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
                 item = types.ModuleType("<item>")
                 items.append(item)
             return items
-        
+
         def read(items):
             for item in items:
                 try:
@@ -822,7 +822,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
                 d = item.__dict__.copy()
                 item.__dict__.clear()
                 item.__dict__.update(d)
-        
+
         opname = "LOAD_ATTR_MODULE"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
@@ -836,7 +836,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
                 item = C()
                 items.append(item)
             return items
-        
+
         def read(items):
             for item in items:
                 try:
@@ -851,7 +851,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
                 except AttributeError:
                     pass
                 type(item).a = property(lambda self: None)
-        
+
         opname = "LOAD_ATTR_PROPERTY"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
@@ -867,7 +867,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
                 item.a = None
                 items.append(item)
             return items
-        
+
         def read(items):
             for item in items:
                 item.a
@@ -875,7 +875,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
         def write(items):
             for item in items:
                 item.__dict__[None] = None
-        
+
         opname = "LOAD_ATTR_WITH_HINT"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
@@ -894,7 +894,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
         def write(items):
             for item in items:
                 item.__globals__[None] = None
-        
+
         opname = "LOAD_GLOBAL_MODULE"
         self.assert_races_do_not_crash(
             opname, get_items, read, write, check_items=True
@@ -910,7 +910,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
                 item = C()
                 items.append(item)
             return items
-        
+
         def read(items):
             for item in items:
                 item.a = None
@@ -918,7 +918,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
         def write(items):
             for item in items:
                 item.__dict__[None] = None
-        
+
         opname = "STORE_ATTR_INSTANCE_VALUE"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
@@ -933,7 +933,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
                 item.__dict__
                 items.append(item)
             return items
-        
+
         def read(items):
             for item in items:
                 item.a = None
@@ -941,7 +941,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
         def write(items):
             for item in items:
                 item.__dict__[None] = None
-        
+
         opname = "STORE_ATTR_WITH_HINT"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
@@ -952,7 +952,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
                 item = [None]
                 items.append(item)
             return items
-        
+
         def read(items):
             for item in items:
                 try:
@@ -964,7 +964,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
             for item in items:
                 item.clear()
                 item.append(None)
-        
+
         opname = "STORE_SUBSCR_LIST_INT"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
