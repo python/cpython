@@ -763,8 +763,6 @@ resume_frame:
 
     DISPATCH();
 
-handle_eval_breaker:
-
     /* Do periodic things, like check for signals and async I/0.
      * We need to do reasonably frequently, but not too frequently.
      * All loops should include a check of the eval breaker.
