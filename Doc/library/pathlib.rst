@@ -763,6 +763,11 @@ calls on path objects.  There are three ways to instantiate concrete paths:
 
    *pathsegments* is specified similarly to :class:`PurePath`.
 
+   .. versionchanged:: 3.13
+      Raises :exc:`UnsupportedOperation` on Windows. In previous versions,
+      :exc:`NotImplementedError` was raised instead.
+
+
 .. class:: WindowsPath(*pathsegments)
 
    A subclass of :class:`Path` and :class:`PureWindowsPath`, this class
@@ -772,6 +777,11 @@ calls on path objects.  There are three ways to instantiate concrete paths:
       WindowsPath('c:/Program Files')
 
    *pathsegments* is specified similarly to :class:`PurePath`.
+
+   .. versionchanged:: 3.13
+      Raises :exc:`UnsupportedOperation` on non-Windows platforms. In previous
+      versions, :exc:`NotImplementedError` was raised instead.
+
 
 You can only instantiate the class flavour that corresponds to your system
 (allowing system calls on non-compatible path flavours could lead to
