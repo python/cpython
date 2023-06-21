@@ -42,7 +42,7 @@ extern _PyJITReturnCode _justin_continue(PyThreadState *tstate,
                                          PyObject **stack_pointer,
                                          _Py_CODEUNIT *next_instr);
 extern _Py_CODEUNIT _justin_next_instr;
-extern void _justin_oparg;
+extern void _justin_oparg_plus_one;
 
 // XXX
 #define cframe (*tstate->cframe)
@@ -52,7 +52,8 @@ _justin_entry(PyThreadState *tstate, _PyInterpreterFrame *frame,
               PyObject **stack_pointer, _Py_CODEUNIT *next_instr)
 {
     // Locals that the instruction implementations expect to exist:
-    int oparg = (uintptr_t)&_justin_oparg;
+    // The address of an extern can't be 0:
+    int oparg = (uintptr_t)&_justin_oparg_plus_one - 1;
     uint8_t opcode = _JUSTIN_OPCODE;
     // XXX: This temporary solution only works because we don't trace KW_NAMES:
     PyObject *kwnames = NULL;

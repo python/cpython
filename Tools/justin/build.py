@@ -569,7 +569,7 @@ class Compiler:
             "HOLE_continue",
             "HOLE_next_instr",
             "HOLE_next_trace",
-            "HOLE_oparg",
+            "HOLE_oparg_plus_one",
         }
         opnames = []
         for opname, stencil in sorted(self._stencils_built.items()) + [("trampoline", self._trampoline_built)]:
