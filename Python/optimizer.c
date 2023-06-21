@@ -287,6 +287,10 @@ PyUnstable_Optimizer_NewCounter(void)
 
 ///////////////////// Experimental UOp Interpreter /////////////////////
 
+#ifdef Py_DEBUG
+#define LLTRACE 1
+#endif
+
 typedef struct {
     _PyOptimizerObject base;
     int traces_executed;
@@ -298,7 +302,7 @@ typedef struct {
 // UOp opcodes are outside the range of bytecodes or pseudo ops
 #define EXIT_TRACE 512
 #define SET_IP 513
-// TODOL Generate these in Tools/cases_generator
+// TODO: Generate these in Tools/cases_generator
 #define _BINARY_OP_MULTIPLY_FLOAT 514
 #define _BINARY_OP_ADD_FLOAT 515
 #define _BINARY_OP_SUBTRACT_FLOAT 516
@@ -339,6 +343,9 @@ static PyTypeObject UOpExecutor_Type = {
 static _PyInterpreterFrame *
 uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
+#ifdef LLTRACE
+    int lltrace = PyDict_Contains(GLOBALS(), &_Py_ID(__lltrace__));
+#endif
     UOpExecutorObject *self = (UOpExecutorObject *)executor;
     self->optimizer->traces_executed++;
     _Py_CODEUNIT *ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive - 1;
@@ -348,7 +355,15 @@ uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **
     for (;;) {
         opcode = self->trace[pc].opcode;
         oparg = self->trace[pc].oparg;
-        // fprintf(stderr, "uop %d, oparg %d, stack_level %d\n", opcode, oparg, (int)(stack_pointer - _PyFrame_Stackbase(frame)));
+#ifdef LLTRACE
+        if (lltrace) {
+            // TODO: Print line numbers; uop names.
+            char *opname = opcode < 256 ? _PyOpcode_OpName[opcode] : "";
+            int stack_level = (int)(stack_pointer - _PyFrame_Stackbase(frame));
+            fprintf(stderr, "uop %s %d, oparg %d, stack_level %d\n",
+                    opname, opcode, oparg, stack_level);
+        }
+#endif
         pc++;
         self->optimizer->instrs_executed++;
         switch (opcode) {
@@ -359,14 +374,12 @@ uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **
 
             case SET_IP:
             {
-                // fprintf(stderr, "SET_IP %d\n", oparg);
                 frame->prev_instr = ip_offset + oparg;
                 break;
             }
 
             case EXIT_TRACE:
             {
-                // fprintf(stderr, "EXIT_TRACE\n");
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 Py_DECREF(self);
                 return frame;
@@ -395,7 +408,11 @@ pop_1_error:
 error:
     // On ERROR_IF we return NULL as the frame.
     // The caller recovers the frame from cframe.current_frame.
-    // fprintf(stderr, "error: [Opcode %d, oparg %d]\n", opcode, oparg);
+#ifdef LLTRACE
+    if (lltrace) {
+        fprintf(stderr, "error: [Opcode %d, oparg %d]\n", opcode, oparg);
+    }
+#endif
     _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(self);
     return NULL;
@@ -408,7 +425,11 @@ PREDICTED(BINARY_SUBSCR)
 PREDICTED(BINARY_OP)
     // On DEOPT_IF we just repeat the last instruction.
     // This presumes nothing was popped from the stack (nor pushed).
-    // fprintf(stderr, "DEOPT: [Opcode %d, oparg %d]\n", opcode, oparg);
+#ifdef LLTRACE
+    if (lltrace) {
+        fprintf(stderr, "DEOPT: [Opcode %d, oparg %d]\n", opcode, oparg);
+    }
+#endif
     _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(self);
     return frame;
