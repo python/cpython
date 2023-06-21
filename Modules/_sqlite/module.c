@@ -29,8 +29,8 @@
 #include "row.h"
 #include "blob.h"
 
-#if SQLITE_VERSION_NUMBER < 3007015
-#error "SQLite 3.7.15 or higher required"
+#if SQLITE_VERSION_NUMBER < 3015002
+#error "SQLite 3.15.2 or higher required"
 #endif
 
 #define clinic_state() (pysqlite_get_state(module))
@@ -245,12 +245,6 @@ static PyMethodDef module_methods[] = {
 
 /* SQLite C API result codes. See also:
  * - https://www.sqlite.org/c3ref/c_abort_rollback.html
- * - https://sqlite.org/changes.html#version_3_3_8
- * - https://sqlite.org/changes.html#version_3_7_16
- * - https://sqlite.org/changes.html#version_3_7_17
- * - https://sqlite.org/changes.html#version_3_8_0
- * - https://sqlite.org/changes.html#version_3_8_3
- * - https://sqlite.org/changes.html#version_3_14
  *
  * Note: the SQLite changelogs rarely mention new result codes, so in order to
  * keep the 'error_codes' table in sync with SQLite, we must manually inspect
@@ -294,10 +288,8 @@ static const struct {
     DECLARE_ERROR_CODE(SQLITE_ROW),
     DECLARE_ERROR_CODE(SQLITE_SCHEMA),
     DECLARE_ERROR_CODE(SQLITE_TOOBIG),
-#if SQLITE_VERSION_NUMBER >= 3007017
     DECLARE_ERROR_CODE(SQLITE_NOTICE),
     DECLARE_ERROR_CODE(SQLITE_WARNING),
-#endif
     // Extended result code list
     DECLARE_ERROR_CODE(SQLITE_ABORT_ROLLBACK),
     DECLARE_ERROR_CODE(SQLITE_BUSY_RECOVERY),
@@ -331,7 +323,6 @@ static const struct {
     DECLARE_ERROR_CODE(SQLITE_LOCKED_SHAREDCACHE),
     DECLARE_ERROR_CODE(SQLITE_READONLY_CANTLOCK),
     DECLARE_ERROR_CODE(SQLITE_READONLY_RECOVERY),
-#if SQLITE_VERSION_NUMBER >= 3007016
     DECLARE_ERROR_CODE(SQLITE_CONSTRAINT_CHECK),
     DECLARE_ERROR_CODE(SQLITE_CONSTRAINT_COMMITHOOK),
     DECLARE_ERROR_CODE(SQLITE_CONSTRAINT_FOREIGNKEY),
@@ -342,39 +333,20 @@ static const struct {
     DECLARE_ERROR_CODE(SQLITE_CONSTRAINT_UNIQUE),
     DECLARE_ERROR_CODE(SQLITE_CONSTRAINT_VTAB),
     DECLARE_ERROR_CODE(SQLITE_READONLY_ROLLBACK),
-#endif
-#if SQLITE_VERSION_NUMBER >= 3007017
     DECLARE_ERROR_CODE(SQLITE_IOERR_MMAP),
     DECLARE_ERROR_CODE(SQLITE_NOTICE_RECOVER_ROLLBACK),
     DECLARE_ERROR_CODE(SQLITE_NOTICE_RECOVER_WAL),
-#endif
-#if SQLITE_VERSION_NUMBER >= 3008000
     DECLARE_ERROR_CODE(SQLITE_BUSY_SNAPSHOT),
     DECLARE_ERROR_CODE(SQLITE_IOERR_GETTEMPPATH),
     DECLARE_ERROR_CODE(SQLITE_WARNING_AUTOINDEX),
-#endif
-#if SQLITE_VERSION_NUMBER >= 3008001
     DECLARE_ERROR_CODE(SQLITE_CANTOPEN_CONVPATH),
     DECLARE_ERROR_CODE(SQLITE_IOERR_CONVPATH),
-#endif
-#if SQLITE_VERSION_NUMBER >= 3008002
     DECLARE_ERROR_CODE(SQLITE_CONSTRAINT_ROWID),
-#endif
-#if SQLITE_VERSION_NUMBER >= 3008003
     DECLARE_ERROR_CODE(SQLITE_READONLY_DBMOVED),
-#endif
-#if SQLITE_VERSION_NUMBER >= 3008007
     DECLARE_ERROR_CODE(SQLITE_AUTH_USER),
-#endif
-#if SQLITE_VERSION_NUMBER >= 3009000
     DECLARE_ERROR_CODE(SQLITE_IOERR_VNODE),
-#endif
-#if SQLITE_VERSION_NUMBER >= 3010000
     DECLARE_ERROR_CODE(SQLITE_IOERR_AUTH),
-#endif
-#if SQLITE_VERSION_NUMBER >= 3014001
     DECLARE_ERROR_CODE(SQLITE_OK_LOAD_PERMANENTLY),
-#endif
 #if SQLITE_VERSION_NUMBER >= 3021000
     DECLARE_ERROR_CODE(SQLITE_IOERR_BEGIN_ATOMIC),
     DECLARE_ERROR_CODE(SQLITE_IOERR_COMMIT_ATOMIC),
@@ -481,9 +453,7 @@ add_integer_constants(PyObject *module) {
     ADD_INT(SQLITE_DROP_VTABLE);
     ADD_INT(SQLITE_FUNCTION);
     ADD_INT(SQLITE_SAVEPOINT);
-#if SQLITE_VERSION_NUMBER >= 3008003
     ADD_INT(SQLITE_RECURSIVE);
-#endif
     // Run-time limit categories
     ADD_INT(SQLITE_LIMIT_LENGTH);
     ADD_INT(SQLITE_LIMIT_SQL_LENGTH);
@@ -496,9 +466,7 @@ add_integer_constants(PyObject *module) {
     ADD_INT(SQLITE_LIMIT_LIKE_PATTERN_LENGTH);
     ADD_INT(SQLITE_LIMIT_VARIABLE_NUMBER);
     ADD_INT(SQLITE_LIMIT_TRIGGER_DEPTH);
-#if SQLITE_VERSION_NUMBER >= 3008007
     ADD_INT(SQLITE_LIMIT_WORKER_THREADS);
-#endif
 
     /*
      * Database connection configuration options.
@@ -506,12 +474,8 @@ add_integer_constants(PyObject *module) {
      */
     ADD_INT(SQLITE_DBCONFIG_ENABLE_FKEY);
     ADD_INT(SQLITE_DBCONFIG_ENABLE_TRIGGER);
-#if SQLITE_VERSION_NUMBER >= 3012002
     ADD_INT(SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER);
-#endif
-#if SQLITE_VERSION_NUMBER >= 3013000
     ADD_INT(SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION);
-#endif
 #if SQLITE_VERSION_NUMBER >= 3016000
     ADD_INT(SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE);
 #endif
@@ -678,8 +642,8 @@ do {                                                     \
 static int
 module_exec(PyObject *module)
 {
-    if (sqlite3_libversion_number() < 3007015) {
-        PyErr_SetString(PyExc_ImportError, MODULE_NAME ": SQLite 3.7.15 or higher required");
+    if (sqlite3_libversion_number() < 3015002) {
+        PyErr_SetString(PyExc_ImportError, MODULE_NAME ": SQLite 3.15.2 or higher required");
         return -1;
     }
 

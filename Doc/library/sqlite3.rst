@@ -29,7 +29,7 @@ PostgreSQL or Oracle.
 
 The :mod:`!sqlite3` module was written by Gerhard Häring.  It provides an SQL interface
 compliant with the DB-API 2.0 specification described by :pep:`249`, and
-requires SQLite 3.7.15 or newer.
+requires SQLite 3.15.2 or newer.
 
 This document includes four main sections:
 
@@ -733,9 +733,6 @@ Connection objects
           If ``True``, the created SQL function is marked as
           `deterministic <https://sqlite.org/deterministic.html>`_,
           which allows SQLite to perform additional optimizations.
-
-      :raises NotSupportedError:
-          If *deterministic* is used with SQLite versions older than 3.8.3.
 
       .. versionadded:: 3.8
          The *deterministic* parameter.

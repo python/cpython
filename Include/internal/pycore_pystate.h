@@ -60,14 +60,6 @@ _Py_ThreadCanHandleSignals(PyInterpreterState *interp)
 }
 
 
-/* Only execute pending calls on the main thread. */
-static inline int
-_Py_ThreadCanHandlePendingCalls(void)
-{
-    return _Py_IsMainThread();
-}
-
-
 /* Variable and static inline functions for in-line access to current thread
    and interpreter state */
 
