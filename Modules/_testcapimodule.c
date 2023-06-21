@@ -3446,6 +3446,8 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     assert(PyErr_ExceptionMatches(PyExc_SystemError));
     PyErr_Clear();
 
+    Py_DECREF(weakref);
+
     Py_RETURN_NONE;
 }
 
