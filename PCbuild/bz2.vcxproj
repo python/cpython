@@ -61,7 +61,18 @@
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
   </PropertyGroup>
-  <ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="$(BZIP2_DIR) != ''">
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(bz2Dir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_FILE_OFFSET_BITS=64;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <DisableSpecificWarnings>4244;4267;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(bz2Dir)lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libbz2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="$(BZIP2_DIR) == ''">
     <ClCompile>
       <AdditionalIncludeDirectories>$(bz2Dir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_FILE_OFFSET_BITS=64;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -70,16 +81,25 @@
       <BaseAddress>0x1D170000</BaseAddress>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="..\Modules\bz2module.c" />
-    <ClCompile Include="$(bz2Dir)\blocksort.c" />
-    <ClCompile Include="$(bz2Dir)\bzlib.c" />
-    <ClCompile Include="$(bz2Dir)\compress.c" />
-    <ClCompile Include="$(bz2Dir)\crctable.c" />
-    <ClCompile Include="$(bz2Dir)\decompress.c" />
-    <ClCompile Include="$(bz2Dir)\huffman.c" />
-    <ClCompile Include="$(bz2Dir)\randtable.c" />
-  </ItemGroup>
+  <Choose>
+    <When Condition="$(BZIP2_DIR) == ''">
+      <ItemGroup>
+        <ClCompile Include="..\Modules\bz2module.c" />
+        <ClCompile Include="$(bz2Dir)\blocksort.c" />
+        <ClCompile Include="$(bz2Dir)\bzlib.c" />
+        <ClCompile Include="$(bz2Dir)\compress.c" />
+        <ClCompile Include="$(bz2Dir)\crctable.c" />
+        <ClCompile Include="$(bz2Dir)\decompress.c" />
+        <ClCompile Include="$(bz2Dir)\huffman.c" />
+        <ClCompile Include="$(bz2Dir)\randtable.c" />
+      </ItemGroup>
+    </When>
+    <Otherwise>
+      <ItemGroup>
+        <ClCompile Include="..\Modules\bz2module.c" />
+      </ItemGroup>
+    </Otherwise>
+  </Choose>
   <ItemGroup>
     <ClInclude Include="$(bz2Dir)\bzlib.h" />
     <ClInclude Include="$(bz2Dir)\bzlib_private.h" />
