@@ -431,6 +431,10 @@ New Features
   of a :term:`borrowed reference`.
   (Contributed by Victor Stinner in :gh:`105922`.)
 
+* Add :c:func:`PyWeakref_GetRef` function: similar to
+  :c:func:`PyWeakref_GetObject` but returns a :term:`strong reference`, or
+  ``NULL`` if the referent is no longer live.
+  (Contributed by Victor Stinner in :gh:`105927`.)
 
 Porting to Python 3.13
 ----------------------
