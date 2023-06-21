@@ -214,73 +214,6 @@ class ObjectParser:
         holes.sort(key=lambda hole: hole.offset)
         return Stencil(bytes(self.body)[entry:], tuple(holes), got)  # XXX
 
-
-class ObjectParserCOFF(ObjectParser):
-
-    def _handle_section(self, section: COFFSection) -> None:
-        flags = {flag["Name"] for flag in section["Characteristics"]["Flags"]}
-        if "SectionData" not in section:
-            return
-        if flags & {"IMAGE_SCN_LINK_COMDAT", "IMAGE_SCN_MEM_EXECUTE", "IMAGE_SCN_MEM_READ", "IMAGE_SCN_MEM_WRITE"} == {"IMAGE_SCN_LINK_COMDAT", "IMAGE_SCN_MEM_READ"}:
-            # XXX: Merge these
-            before = self.body_offsets[section["Number"]] = len(self.body)
-            section_data = section["SectionData"]
-            self.body.extend(section_data["Bytes"])
-        elif flags & {"IMAGE_SCN_MEM_READ"} == {"IMAGE_SCN_MEM_READ"}:
-            before = self.body_offsets[section["Number"]] = len(self.body)
-            section_data = section["SectionData"]
-            self.body.extend(section_data["Bytes"])
-        else:
-            return
-        for symbol in unwrap(section["Symbols"], "Symbol"):
-            offset = before + symbol["Value"]
-            name = symbol["Name"]
-            if name in self.body_symbols:
-                self.dupes.add(name)
-            self.body_symbols[name] = offset
-        for relocation in unwrap(section["Relocations"], "Relocation"):
-            offset = before + relocation["Offset"]
-            assert offset not in self.relocations
-            # XXX: Addend
-            addend = int.from_bytes(self.body[offset:offset + 8], sys.byteorder)
-            self.body[offset:offset + 8] = [0] * 8
-            self.relocations[offset] = (relocation["Symbol"], relocation["Type"]["Value"], addend)
-
-class ObjectParserMachO(ObjectParser):
-
-    def _handle_section(self, section: MachOSection) -> None:
-        assert section["Address"] >= len(self.body)
-        self.body.extend([0] * (section["Address"] - len(self.body)))
-        before = self.body_offsets[section["Index"]] = section["Address"]
-        section_data = section["SectionData"]
-        self.body.extend(section_data["Bytes"])
-        name = section["Name"]["Value"]
-        assert name.startswith("_")
-        name = name.removeprefix("_")
-        if name in self.body_symbols:
-            self.dupes.add(name)
-        self.body_symbols[name] = 0  # before
-        for symbol in unwrap(section["Symbols"], "Symbol"):
-            offset = symbol["Value"]
-            name = symbol["Name"]["Value"]
-            assert name.startswith("_")
-            name = name.removeprefix("_")
-            if name in self.body_symbols:
-                self.dupes.add(name)
-            self.body_symbols[name] = offset
-        for relocation in unwrap(section["Relocations"], "Relocation"):
-            offset = before + relocation["Offset"]
-            assert offset not in self.relocations
-            # XXX: Addend
-            name = relocation["Symbol"]["Value"] if "Symbol" in relocation else relocation["Section"]["Value"]
-            assert name.startswith("_")
-            name = name.removeprefix("_")
-            if name == "__bzero":  # XXX
-                name = "bzero"  # XXX
-            addend = int.from_bytes(self.body[offset:offset + 8], sys.byteorder)
-            self.body[offset:offset + 8] = [0] * 8
-            self.relocations[offset] = (name, relocation["Type"]["Value"], addend)
-
 @dataclasses.dataclass(frozen=True)
 class Hole:
     symbol: str
@@ -361,8 +294,101 @@ def handle_one_relocation(
             what = int.from_bytes(body[where], sys.byteorder)
             assert not what, what
             yield Hole(symbol, offset, addend, 0, -1)
+        case {
+            "Length": 3,
+            "Offset": int(offset),
+            "PCRel": 0,
+            "Section": {"Value": str(section)},
+            "Type": {"Value": "X86_64_RELOC_UNSIGNED"},
+        }:
+            offset += base
+            where = slice(offset, offset + 8)
+            what = int.from_bytes(body[where], sys.byteorder)
+            # assert not what, what
+            addend = what
+            body[where] = [0] * 8
+            assert section.startswith("_")
+            section = section.removeprefix("_")
+            yield Hole(section, offset, addend, 0, 0)
+        case {
+            "Length": 3,
+            "Offset": int(offset),
+            "PCRel": 0,
+            "Symbol": {"Value": str(symbol)},
+            "Type": {"Value": "X86_64_RELOC_UNSIGNED"},
+        }:
+            offset += base
+            where = slice(offset, offset + 8)
+            what = int.from_bytes(body[where], sys.byteorder)
+            # assert not what, what
+            addend = what
+            body[where] = [0] * 8
+            assert symbol.startswith("_")
+            symbol = symbol.removeprefix("_")
+            if symbol == "__bzero":  # XXX
+                symbol = "bzero"  # XXX
+            yield Hole(symbol, offset, addend, 0, 0)
         case _:
             raise NotImplementedError(relocation)
+
+
+class ObjectParserCOFF(ObjectParser):
+
+    def _handle_section(self, section: COFFSection) -> None:
+        flags = {flag["Name"] for flag in section["Characteristics"]["Flags"]}
+        if "SectionData" not in section:
+            return
+        if flags & {"IMAGE_SCN_LINK_COMDAT", "IMAGE_SCN_MEM_EXECUTE", "IMAGE_SCN_MEM_READ", "IMAGE_SCN_MEM_WRITE"} == {"IMAGE_SCN_LINK_COMDAT", "IMAGE_SCN_MEM_READ"}:
+            # XXX: Merge these
+            before = self.body_offsets[section["Number"]] = len(self.body)
+            section_data = section["SectionData"]
+            self.body.extend(section_data["Bytes"])
+        elif flags & {"IMAGE_SCN_MEM_READ"} == {"IMAGE_SCN_MEM_READ"}:
+            before = self.body_offsets[section["Number"]] = len(self.body)
+            section_data = section["SectionData"]
+            self.body.extend(section_data["Bytes"])
+        else:
+            return
+        for symbol in unwrap(section["Symbols"], "Symbol"):
+            offset = before + symbol["Value"]
+            name = symbol["Name"]
+            if name in self.body_symbols:
+                self.dupes.add(name)
+            self.body_symbols[name] = offset
+        for relocation in unwrap(section["Relocations"], "Relocation"):
+            offset = before + relocation["Offset"]
+            assert offset not in self.relocations
+            # XXX: Addend
+            addend = int.from_bytes(self.body[offset:offset + 8], sys.byteorder)
+            self.body[offset:offset + 8] = [0] * 8
+            self.relocations[offset] = (relocation["Symbol"], relocation["Type"]["Value"], addend)
+
+class ObjectParserMachO(ObjectParser):
+
+    def _handle_section(self, section: MachOSection) -> None:
+        assert section["Address"] >= len(self.body)
+        self.body.extend([0] * (section["Address"] - len(self.body)))
+        before = self.body_offsets[section["Index"]] = section["Address"]
+        section_data = section["SectionData"]
+        self.body.extend(section_data["Bytes"])
+        name = section["Name"]["Value"]
+        assert name.startswith("_")
+        name = name.removeprefix("_")
+        if name in self.body_symbols:
+            self.dupes.add(name)
+        self.body_symbols[name] = 0  # before
+        for symbol in unwrap(section["Symbols"], "Symbol"):
+            offset = symbol["Value"]
+            name = symbol["Name"]["Value"]
+            assert name.startswith("_")
+            name = name.removeprefix("_")
+            if name in self.body_symbols:
+                self.dupes.add(name)
+            self.body_symbols[name] = offset
+        for relocation in unwrap(section["Relocations"], "Relocation"):
+            for hole in handle_one_relocation(self.got_entries, self.body, before, relocation):
+                assert hole.offset not in self.relocations
+                self.relocations[hole.offset] = hole
 
 
 class ObjectParserELF(ObjectParser):
@@ -411,22 +437,23 @@ class Compiler:
     _CFLAGS = [
         *sys.argv[3:],
         "-D_PyJIT_ACTIVE",
+        "-Wno-unreachable-code",
         "-Wno-unused-but-set-variable",
         "-Wno-unused-command-line-argument",
         "-Wno-unused-label",
         "-Wno-unused-variable",
         # We don't need this (and it causes weird relocations):
-        "-fno-asynchronous-unwind-tables",
-        # # Don't want relocations to use the global offset table:
+        "-fno-asynchronous-unwind-tables",  # XXX
+        # # Don't need the overhead of position-independent code, if posssible:
         # "-fno-pic",
-        # # Disable stack-smashing canaries, which use the global offset table:
-        # "-fno-stack-protector",
+        # Disable stack-smashing canaries, which use magic symbols:
+        "-fno-stack-protector",  # XXX
         # The GHC calling convention uses %rbp as an argument-passing register:
-        "-fomit-frame-pointer",
+        "-fomit-frame-pointer",  # XXX
         # Disable debug info:
-        "-g0",
+        "-g0",  # XXX
         # Need this to leave room for patching our 64-bit pointers:
-        "-mcmodel=large",
+        "-mcmodel=large",  # XXX
     ]
     _SKIP = frozenset(
         {
