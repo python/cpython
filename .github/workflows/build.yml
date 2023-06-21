@@ -78,6 +78,7 @@ jobs:
             Doc/**
             Misc/**
             .github/workflows/reusable-docs.yml
+          format: csv  # works for paths with spaces
       - name: Check for docs changes
         if: >-
           github.event_name == 'pull_request'
