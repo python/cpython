@@ -258,7 +258,7 @@ _PyDict_GetItemProxy(PyObject *dict, PyObject *key, PyObject **presult)
     if (PyWeakref_GetRef(item, &ref) < 0) {
         return -1;
     }
-    // Return NULL if the referenced object was destroyed
+    // ref is NULL if the referenced object was destroyed
     *presult = ref;
     return 0;
 }
