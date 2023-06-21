@@ -1,7 +1,7 @@
 This is Python version 3.7.17
 =============================
 
-.. image:: https://travis-ci.org/python/cpython.svg?branch=3.7
+.. image:: https://travis-ci.org/python/cpython.svg?branch=3.7 
    :alt: CPython build status on Travis CI
    :target: https://travis-ci.org/python/cpython/branches
 
