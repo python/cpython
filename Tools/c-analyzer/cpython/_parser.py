@@ -297,7 +297,6 @@ Objects/stringlib/codecs.h	STRINGLIB_IS_UNICODE	1
 SAME = {
     _abs('Include/*.h'): [_abs('Include/cpython/')],
     _abs('Python/ceval.c'): ['Python/generated_cases.c.h'],
-    _abs('Python/optimizer.c'): ['Python/executor_cases.c.h'],
 }
 
 MAX_SIZES = {
