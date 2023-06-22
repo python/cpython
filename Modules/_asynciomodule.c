@@ -2040,13 +2040,14 @@ swap_current_task(asyncio_state *state, PyObject *loop, PyObject *task)
         return NULL;
     }
 
-    prev_task = Py_XNewRef(_PyDict_GetItem_KnownHash(state->current_tasks, loop, hash));
+    prev_task = _PyDict_GetItem_KnownHash(state->current_tasks, loop, hash);
     if (prev_task == NULL) {
         if (PyErr_Occurred()) {
             return NULL;
         }
         prev_task = Py_None;
     }
+    Py_INCREF(prev_task);
 
     if (task == Py_None) {
         if (_PyDict_DelItem_KnownHash(state->current_tasks, loop, hash) == -1) {
