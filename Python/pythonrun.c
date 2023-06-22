@@ -276,7 +276,7 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
         return parse_res;
     }
 
-    PyObject *main_module = Py_XNewRef(PyImport_AddModuleObject(&_Py_ID(__main__)));
+    PyObject *main_module = PyImport_AddModuleRef("__main__");
     if (main_module == NULL) {
         _PyArena_Free(arena);
         return -1;
