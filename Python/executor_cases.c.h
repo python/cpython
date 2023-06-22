@@ -312,6 +312,29 @@
             break;
         }
 
+        case BINARY_SUBSCR_DICT: {
+            PyObject *sub = stack_pointer[-1];
+            PyObject *dict = stack_pointer[-2];
+            PyObject *res;
+            DEOPT_IF(!PyDict_CheckExact(dict), BINARY_SUBSCR);
+            STAT_INC(BINARY_SUBSCR, hit);
+            res = PyDict_GetItemWithError(dict, sub);
+            if (res == NULL) {
+                if (!_PyErr_Occurred(tstate)) {
+                    _PyErr_SetKeyError(sub);
+                }
+                Py_DECREF(dict);
+                Py_DECREF(sub);
+                if (true) goto pop_2_error;
+            }
+            Py_INCREF(res);  // Do this before DECREF'ing dict, sub
+            Py_DECREF(dict);
+            Py_DECREF(sub);
+            STACK_SHRINK(1);
+            stack_pointer[-1] = res;
+            break;
+        }
+
         case LIST_APPEND: {
             PyObject *v = stack_pointer[-1];
             PyObject *list = stack_pointer[-(2 + (oparg-1))];
@@ -379,11 +402,230 @@
             break;
         }
 
+        case CALL_INTRINSIC_1: {
+            PyObject *value = stack_pointer[-1];
+            PyObject *res;
+            assert(oparg <= MAX_INTRINSIC_1);
+            res = _PyIntrinsics_UnaryFunctions[oparg](tstate, value);
+            Py_DECREF(value);
+            if (res == NULL) goto pop_1_error;
+            stack_pointer[-1] = res;
+            break;
+        }
+
+        case CALL_INTRINSIC_2: {
+            PyObject *value1 = stack_pointer[-1];
+            PyObject *value2 = stack_pointer[-2];
+            PyObject *res;
+            assert(oparg <= MAX_INTRINSIC_2);
+            res = _PyIntrinsics_BinaryFunctions[oparg](tstate, value2, value1);
+            Py_DECREF(value2);
+            Py_DECREF(value1);
+            if (res == NULL) goto pop_2_error;
+            STACK_SHRINK(1);
+            stack_pointer[-1] = res;
+            break;
+        }
+
+        case GET_AITER: {
+            PyObject *obj = stack_pointer[-1];
+            PyObject *iter;
+            unaryfunc getter = NULL;
+            PyTypeObject *type = Py_TYPE(obj);
+
+            if (type->tp_as_async != NULL) {
+                getter = type->tp_as_async->am_aiter;
+            }
+
+            if (getter == NULL) {
+                _PyErr_Format(tstate, PyExc_TypeError,
+                              "'async for' requires an object with "
+                              "__aiter__ method, got %.100s",
+                              type->tp_name);
+                Py_DECREF(obj);
+                if (true) goto pop_1_error;
+            }
+
+            iter = (*getter)(obj);
+            Py_DECREF(obj);
+            if (iter == NULL) goto pop_1_error;
+
+            if (Py_TYPE(iter)->tp_as_async == NULL ||
+                    Py_TYPE(iter)->tp_as_async->am_anext == NULL) {
+
+                _PyErr_Format(tstate, PyExc_TypeError,
+                              "'async for' received an object from __aiter__ "
+                              "that does not implement __anext__: %.100s",
+                              Py_TYPE(iter)->tp_name);
+                Py_DECREF(iter);
+                if (true) goto pop_1_error;
+            }
+            stack_pointer[-1] = iter;
+            break;
+        }
+
+        case GET_ANEXT: {
+            PyObject *aiter = stack_pointer[-1];
+            PyObject *awaitable;
+            unaryfunc getter = NULL;
+            PyObject *next_iter = NULL;
+            PyTypeObject *type = Py_TYPE(aiter);
+
+            if (PyAsyncGen_CheckExact(aiter)) {
+                awaitable = type->tp_as_async->am_anext(aiter);
+                if (awaitable == NULL) {
+                    goto error;
+                }
+            } else {
+                if (type->tp_as_async != NULL){
+                    getter = type->tp_as_async->am_anext;
+                }
+
+                if (getter != NULL) {
+                    next_iter = (*getter)(aiter);
+                    if (next_iter == NULL) {
+                        goto error;
+                    }
+                }
+                else {
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                                  "'async for' requires an iterator with "
+                                  "__anext__ method, got %.100s",
+                                  type->tp_name);
+                    goto error;
+                }
+
+                awaitable = _PyCoro_GetAwaitableIter(next_iter);
+                if (awaitable == NULL) {
+                    _PyErr_FormatFromCause(
+                        PyExc_TypeError,
+                        "'async for' received an invalid object "
+                        "from __anext__: %.100s",
+                        Py_TYPE(next_iter)->tp_name);
+
+                    Py_DECREF(next_iter);
+                    goto error;
+                } else {
+                    Py_DECREF(next_iter);
+                }
+            }
+            STACK_GROW(1);
+            stack_pointer[-1] = awaitable;
+            break;
+        }
+
+        case GET_AWAITABLE: {
+            PyObject *iterable = stack_pointer[-1];
+            PyObject *iter;
+            iter = _PyCoro_GetAwaitableIter(iterable);
+
+            if (iter == NULL) {
+                format_awaitable_error(tstate, Py_TYPE(iterable), oparg);
+            }
+
+            Py_DECREF(iterable);
+
+            if (iter != NULL && PyCoro_CheckExact(iter)) {
+                PyObject *yf = _PyGen_yf((PyGenObject*)iter);
+                if (yf != NULL) {
+                    /* `iter` is a coroutine object that is being
+                       awaited, `yf` is a pointer to the current awaitable
+                       being awaited on. */
+                    Py_DECREF(yf);
+                    Py_CLEAR(iter);
+                    _PyErr_SetString(tstate, PyExc_RuntimeError,
+                                     "coroutine is being awaited already");
+                    /* The code below jumps to `error` if `iter` is NULL. */
+                }
+            }
+
+            if (iter == NULL) goto pop_1_error;
+            stack_pointer[-1] = iter;
+            break;
+        }
+
+        case POP_EXCEPT: {
+            PyObject *exc_value = stack_pointer[-1];
+            _PyErr_StackItem *exc_info = tstate->exc_info;
+            Py_XSETREF(exc_info->exc_value, exc_value);
+            STACK_SHRINK(1);
+            break;
+        }
+
         case LOAD_ASSERTION_ERROR: {
             PyObject *value;
             value = Py_NewRef(PyExc_AssertionError);
             STACK_GROW(1);
             stack_pointer[-1] = value;
+            break;
+        }
+
+        case LOAD_BUILD_CLASS: {
+            PyObject *bc;
+            if (PyDict_CheckExact(BUILTINS())) {
+                bc = _PyDict_GetItemWithError(BUILTINS(),
+                                              &_Py_ID(__build_class__));
+                if (bc == NULL) {
+                    if (!_PyErr_Occurred(tstate)) {
+                        _PyErr_SetString(tstate, PyExc_NameError,
+                                         "__build_class__ not found");
+                    }
+                    if (true) goto error;
+                }
+                Py_INCREF(bc);
+            }
+            else {
+                bc = PyObject_GetItem(BUILTINS(), &_Py_ID(__build_class__));
+                if (bc == NULL) {
+                    if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError))
+                        _PyErr_SetString(tstate, PyExc_NameError,
+                                         "__build_class__ not found");
+                    if (true) goto error;
+                }
+            }
+            STACK_GROW(1);
+            stack_pointer[-1] = bc;
+            break;
+        }
+
+        case STORE_NAME: {
+            PyObject *v = stack_pointer[-1];
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+            PyObject *ns = LOCALS();
+            int err;
+            if (ns == NULL) {
+                _PyErr_Format(tstate, PyExc_SystemError,
+                              "no locals found when storing %R", name);
+                Py_DECREF(v);
+                if (true) goto pop_1_error;
+            }
+            if (PyDict_CheckExact(ns))
+                err = PyDict_SetItem(ns, name, v);
+            else
+                err = PyObject_SetItem(ns, name, v);
+            Py_DECREF(v);
+            if (err) goto pop_1_error;
+            STACK_SHRINK(1);
+            break;
+        }
+
+        case DELETE_NAME: {
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+            PyObject *ns = LOCALS();
+            int err;
+            if (ns == NULL) {
+                _PyErr_Format(tstate, PyExc_SystemError,
+                              "no locals when deleting %R", name);
+                goto error;
+            }
+            err = PyObject_DelItem(ns, name);
+            // Can't use ERROR_IF here.
+            if (err != 0) {
+                format_exc_check_arg(tstate, PyExc_NameError,
+                                     NAME_ERROR_MSG,
+                                     name);
+                goto error;
+            }
             break;
         }
 
@@ -434,6 +676,17 @@
             break;
         }
 
+        case UNPACK_EX: {
+            PyObject *seq = stack_pointer[-1];
+            int totalargs = 1 + (oparg & 0xFF) + (oparg >> 8);
+            PyObject **top = stack_pointer + totalargs - 1;
+            int res = unpack_iterable(tstate, seq, oparg & 0xFF, oparg >> 8, top);
+            Py_DECREF(seq);
+            if (res == 0) goto pop_1_error;
+            STACK_GROW((oparg & 0xFF) + (oparg >> 8));
+            break;
+        }
+
         case DELETE_ATTR: {
             PyObject *owner = stack_pointer[-1];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
@@ -451,6 +704,167 @@
             Py_DECREF(v);
             if (err) goto pop_1_error;
             STACK_SHRINK(1);
+            break;
+        }
+
+        case DELETE_GLOBAL: {
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+            int err;
+            err = PyDict_DelItem(GLOBALS(), name);
+            // Can't use ERROR_IF here.
+            if (err != 0) {
+                if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
+                    format_exc_check_arg(tstate, PyExc_NameError,
+                                         NAME_ERROR_MSG, name);
+                }
+                goto error;
+            }
+            break;
+        }
+
+        case _LOAD_LOCALS: {
+            PyObject *locals;
+            locals = LOCALS();
+            if (locals == NULL) {
+                _PyErr_SetString(tstate, PyExc_SystemError,
+                                 "no locals found");
+                if (true) goto error;
+            }
+            Py_INCREF(locals);
+            STACK_GROW(1);
+            stack_pointer[-1] = locals;
+            break;
+        }
+
+        case _LOAD_FROM_DICT_OR_GLOBALS: {
+            PyObject *mod_or_class_dict = stack_pointer[-1];
+            PyObject *v;
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+            if (PyDict_CheckExact(mod_or_class_dict)) {
+                v = PyDict_GetItemWithError(mod_or_class_dict, name);
+                if (v != NULL) {
+                    Py_INCREF(v);
+                }
+                else if (_PyErr_Occurred(tstate)) {
+                    Py_DECREF(mod_or_class_dict);
+                    goto error;
+                }
+            }
+            else {
+                v = PyObject_GetItem(mod_or_class_dict, name);
+                if (v == NULL) {
+                    if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
+                        Py_DECREF(mod_or_class_dict);
+                        goto error;
+                    }
+                    _PyErr_Clear(tstate);
+                }
+            }
+            Py_DECREF(mod_or_class_dict);
+            if (v == NULL) {
+                v = PyDict_GetItemWithError(GLOBALS(), name);
+                if (v != NULL) {
+                    Py_INCREF(v);
+                }
+                else if (_PyErr_Occurred(tstate)) {
+                    goto error;
+                }
+                else {
+                    if (PyDict_CheckExact(BUILTINS())) {
+                        v = PyDict_GetItemWithError(BUILTINS(), name);
+                        if (v == NULL) {
+                            if (!_PyErr_Occurred(tstate)) {
+                                format_exc_check_arg(
+                                        tstate, PyExc_NameError,
+                                        NAME_ERROR_MSG, name);
+                            }
+                            goto error;
+                        }
+                        Py_INCREF(v);
+                    }
+                    else {
+                        v = PyObject_GetItem(BUILTINS(), name);
+                        if (v == NULL) {
+                            if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
+                                format_exc_check_arg(
+                                            tstate, PyExc_NameError,
+                                            NAME_ERROR_MSG, name);
+                            }
+                            goto error;
+                        }
+                    }
+                }
+            }
+            stack_pointer[-1] = v;
+            break;
+        }
+
+        case DELETE_DEREF: {
+            PyObject *cell = GETLOCAL(oparg);
+            PyObject *oldobj = PyCell_GET(cell);
+            // Can't use ERROR_IF here.
+            // Fortunately we don't need its superpower.
+            if (oldobj == NULL) {
+                format_exc_unbound(tstate, _PyFrame_GetCode(frame), oparg);
+                goto error;
+            }
+            PyCell_SET(cell, NULL);
+            Py_DECREF(oldobj);
+            break;
+        }
+
+        case LOAD_FROM_DICT_OR_DEREF: {
+            PyObject *class_dict = stack_pointer[-1];
+            PyObject *value;
+            PyObject *name;
+            assert(class_dict);
+            assert(oparg >= 0 && oparg < _PyFrame_GetCode(frame)->co_nlocalsplus);
+            name = PyTuple_GET_ITEM(_PyFrame_GetCode(frame)->co_localsplusnames, oparg);
+            if (PyDict_CheckExact(class_dict)) {
+                value = PyDict_GetItemWithError(class_dict, name);
+                if (value != NULL) {
+                    Py_INCREF(value);
+                }
+                else if (_PyErr_Occurred(tstate)) {
+                    Py_DECREF(class_dict);
+                    goto error;
+                }
+            }
+            else {
+                value = PyObject_GetItem(class_dict, name);
+                if (value == NULL) {
+                    if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
+                        Py_DECREF(class_dict);
+                        goto error;
+                    }
+                    _PyErr_Clear(tstate);
+                }
+            }
+            Py_DECREF(class_dict);
+            if (!value) {
+                PyObject *cell = GETLOCAL(oparg);
+                value = PyCell_GET(cell);
+                if (value == NULL) {
+                    format_exc_unbound(tstate, _PyFrame_GetCode(frame), oparg);
+                    goto error;
+                }
+                Py_INCREF(value);
+            }
+            stack_pointer[-1] = value;
+            break;
+        }
+
+        case LOAD_DEREF: {
+            PyObject *value;
+            PyObject *cell = GETLOCAL(oparg);
+            value = PyCell_GET(cell);
+            if (value == NULL) {
+                format_exc_unbound(tstate, _PyFrame_GetCode(frame), oparg);
+                if (true) goto error;
+            }
+            Py_INCREF(value);
+            STACK_GROW(1);
+            stack_pointer[-1] = value;
             break;
         }
 
@@ -514,6 +928,28 @@
             break;
         }
 
+        case LIST_EXTEND: {
+            PyObject *iterable = stack_pointer[-1];
+            PyObject *list = stack_pointer[-(2 + (oparg-1))];
+            PyObject *none_val = _PyList_Extend((PyListObject *)list, iterable);
+            if (none_val == NULL) {
+                if (_PyErr_ExceptionMatches(tstate, PyExc_TypeError) &&
+                   (Py_TYPE(iterable)->tp_iter == NULL && !PySequence_Check(iterable)))
+                {
+                    _PyErr_Clear(tstate);
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                          "Value after * must be an iterable, not %.200s",
+                          Py_TYPE(iterable)->tp_name);
+                }
+                Py_DECREF(iterable);
+                if (true) goto pop_1_error;
+            }
+            assert(Py_IsNone(none_val));
+            Py_DECREF(iterable);
+            STACK_SHRINK(1);
+            break;
+        }
+
         case SET_UPDATE: {
             PyObject *iterable = stack_pointer[-1];
             PyObject *set = stack_pointer[-(2 + (oparg-1))];
@@ -564,6 +1000,103 @@
             STACK_SHRINK(oparg*2);
             STACK_GROW(1);
             stack_pointer[-1] = map;
+            break;
+        }
+
+        case SETUP_ANNOTATIONS: {
+            int err;
+            PyObject *ann_dict;
+            if (LOCALS() == NULL) {
+                _PyErr_Format(tstate, PyExc_SystemError,
+                              "no locals found when setting up annotations");
+                if (true) goto error;
+            }
+            /* check if __annotations__ in locals()... */
+            if (PyDict_CheckExact(LOCALS())) {
+                ann_dict = _PyDict_GetItemWithError(LOCALS(),
+                                                    &_Py_ID(__annotations__));
+                if (ann_dict == NULL) {
+                    if (_PyErr_Occurred(tstate)) goto error;
+                    /* ...if not, create a new one */
+                    ann_dict = PyDict_New();
+                    if (ann_dict == NULL) goto error;
+                    err = PyDict_SetItem(LOCALS(), &_Py_ID(__annotations__),
+                                         ann_dict);
+                    Py_DECREF(ann_dict);
+                    if (err) goto error;
+                }
+            }
+            else {
+                /* do the same if locals() is not a dict */
+                ann_dict = PyObject_GetItem(LOCALS(), &_Py_ID(__annotations__));
+                if (ann_dict == NULL) {
+                    if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) goto error;
+                    _PyErr_Clear(tstate);
+                    ann_dict = PyDict_New();
+                    if (ann_dict == NULL) goto error;
+                    err = PyObject_SetItem(LOCALS(), &_Py_ID(__annotations__),
+                                           ann_dict);
+                    Py_DECREF(ann_dict);
+                    if (err) goto error;
+                }
+                else {
+                    Py_DECREF(ann_dict);
+                }
+            }
+            break;
+        }
+
+        case BUILD_CONST_KEY_MAP: {
+            PyObject *keys = stack_pointer[-1];
+            PyObject **values = (stack_pointer - (1 + oparg));
+            PyObject *map;
+            if (!PyTuple_CheckExact(keys) ||
+                PyTuple_GET_SIZE(keys) != (Py_ssize_t)oparg) {
+                _PyErr_SetString(tstate, PyExc_SystemError,
+                                 "bad BUILD_CONST_KEY_MAP keys argument");
+                goto error;  // Pop the keys and values.
+            }
+            map = _PyDict_FromItems(
+                    &PyTuple_GET_ITEM(keys, 0), 1,
+                    values, 1, oparg);
+            for (int _i = oparg; --_i >= 0;) {
+                Py_DECREF(values[_i]);
+            }
+            Py_DECREF(keys);
+            if (map == NULL) { STACK_SHRINK(oparg); goto pop_1_error; }
+            STACK_SHRINK(oparg);
+            stack_pointer[-1] = map;
+            break;
+        }
+
+        case DICT_UPDATE: {
+            PyObject *update = stack_pointer[-1];
+            PyObject *dict = PEEK(oparg + 1);  // update is still on the stack
+            if (PyDict_Update(dict, update) < 0) {
+                if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                                    "'%.200s' object is not a mapping",
+                                    Py_TYPE(update)->tp_name);
+                }
+                Py_DECREF(update);
+                if (true) goto pop_1_error;
+            }
+            Py_DECREF(update);
+            STACK_SHRINK(1);
+            break;
+        }
+
+        case DICT_MERGE: {
+            PyObject *update = stack_pointer[-1];
+            PyObject *dict = PEEK(oparg + 1);  // update is still on the stack
+
+            if (_PyDict_MergeEx(dict, update, 2) < 0) {
+                format_kwargs_error(tstate, PEEK(3 + oparg), update);
+                Py_DECREF(update);
+                if (true) goto pop_1_error;
+            }
+            Py_DECREF(update);
+            STACK_SHRINK(1);
             break;
         }
 
@@ -725,6 +1258,53 @@
             break;
         }
 
+        case CHECK_EG_MATCH: {
+            PyObject *match_type = stack_pointer[-1];
+            PyObject *exc_value = stack_pointer[-2];
+            PyObject *rest;
+            PyObject *match;
+            if (check_except_star_type_valid(tstate, match_type) < 0) {
+                Py_DECREF(exc_value);
+                Py_DECREF(match_type);
+                if (true) goto pop_2_error;
+            }
+
+            match = NULL;
+            rest = NULL;
+            int res = exception_group_match(exc_value, match_type,
+                                            &match, &rest);
+            Py_DECREF(exc_value);
+            Py_DECREF(match_type);
+            if (res < 0) goto pop_2_error;
+
+            assert((match == NULL) == (rest == NULL));
+            if (match == NULL) goto pop_2_error;
+
+            if (!Py_IsNone(match)) {
+                PyErr_SetHandledException(match);
+            }
+            stack_pointer[-1] = match;
+            stack_pointer[-2] = rest;
+            break;
+        }
+
+        case CHECK_EXC_MATCH: {
+            PyObject *right = stack_pointer[-1];
+            PyObject *left = stack_pointer[-2];
+            PyObject *b;
+            assert(PyExceptionInstance_Check(left));
+            if (check_except_type_valid(tstate, right) < 0) {
+                 Py_DECREF(right);
+                 if (true) goto pop_1_error;
+            }
+
+            int res = PyErr_GivenExceptionMatches(left, right);
+            Py_DECREF(right);
+            b = res ? Py_True : Py_False;
+            stack_pointer[-1] = b;
+            break;
+        }
+
         case GET_LEN: {
             PyObject *obj = stack_pointer[-1];
             PyObject *len_o;
@@ -735,6 +1315,30 @@
             if (len_o == NULL) goto error;
             STACK_GROW(1);
             stack_pointer[-1] = len_o;
+            break;
+        }
+
+        case MATCH_CLASS: {
+            PyObject *names = stack_pointer[-1];
+            PyObject *type = stack_pointer[-2];
+            PyObject *subject = stack_pointer[-3];
+            PyObject *attrs;
+            // Pop TOS and TOS1. Set TOS to a tuple of attributes on success, or
+            // None on failure.
+            assert(PyTuple_CheckExact(names));
+            attrs = match_class(tstate, subject, type, oparg, names);
+            Py_DECREF(subject);
+            Py_DECREF(type);
+            Py_DECREF(names);
+            if (attrs) {
+                assert(PyTuple_CheckExact(attrs));  // Success!
+            }
+            else {
+                if (_PyErr_Occurred(tstate)) goto pop_3_error;
+                attrs = Py_None;  // Failure!
+            }
+            STACK_SHRINK(2);
+            stack_pointer[-1] = attrs;
             break;
         }
 
@@ -758,6 +1362,18 @@
             break;
         }
 
+        case MATCH_KEYS: {
+            PyObject *keys = stack_pointer[-1];
+            PyObject *subject = stack_pointer[-2];
+            PyObject *values_or_none;
+            // On successful match, PUSH(values). Otherwise, PUSH(None).
+            values_or_none = match_keys(tstate, subject, keys);
+            if (values_or_none == NULL) goto error;
+            STACK_GROW(1);
+            stack_pointer[-1] = values_or_none;
+            break;
+        }
+
         case GET_ITER: {
             PyObject *iterable = stack_pointer[-1];
             PyObject *iter;
@@ -766,6 +1382,118 @@
             Py_DECREF(iterable);
             if (iter == NULL) goto pop_1_error;
             stack_pointer[-1] = iter;
+            break;
+        }
+
+        case GET_YIELD_FROM_ITER: {
+            PyObject *iterable = stack_pointer[-1];
+            PyObject *iter;
+            /* before: [obj]; after [getiter(obj)] */
+            if (PyCoro_CheckExact(iterable)) {
+                /* `iterable` is a coroutine */
+                if (!(_PyFrame_GetCode(frame)->co_flags & (CO_COROUTINE | CO_ITERABLE_COROUTINE))) {
+                    /* and it is used in a 'yield from' expression of a
+                       regular generator. */
+                    _PyErr_SetString(tstate, PyExc_TypeError,
+                                     "cannot 'yield from' a coroutine object "
+                                     "in a non-coroutine generator");
+                    goto error;
+                }
+                iter = iterable;
+            }
+            else if (PyGen_CheckExact(iterable)) {
+                iter = iterable;
+            }
+            else {
+                /* `iterable` is not a generator. */
+                iter = PyObject_GetIter(iterable);
+                if (iter == NULL) {
+                    goto error;
+                }
+                Py_DECREF(iterable);
+            }
+            stack_pointer[-1] = iter;
+            break;
+        }
+
+        case BEFORE_ASYNC_WITH: {
+            PyObject *mgr = stack_pointer[-1];
+            PyObject *exit;
+            PyObject *res;
+            PyObject *enter = _PyObject_LookupSpecial(mgr, &_Py_ID(__aenter__));
+            if (enter == NULL) {
+                if (!_PyErr_Occurred(tstate)) {
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                                  "'%.200s' object does not support the "
+                                  "asynchronous context manager protocol",
+                                  Py_TYPE(mgr)->tp_name);
+                }
+                goto error;
+            }
+            exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__aexit__));
+            if (exit == NULL) {
+                if (!_PyErr_Occurred(tstate)) {
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                                  "'%.200s' object does not support the "
+                                  "asynchronous context manager protocol "
+                                  "(missed __aexit__ method)",
+                                  Py_TYPE(mgr)->tp_name);
+                }
+                Py_DECREF(enter);
+                goto error;
+            }
+            Py_DECREF(mgr);
+            res = _PyObject_CallNoArgs(enter);
+            Py_DECREF(enter);
+            if (res == NULL) {
+                Py_DECREF(exit);
+                if (true) goto pop_1_error;
+            }
+            STACK_GROW(1);
+            stack_pointer[-1] = res;
+            stack_pointer[-2] = exit;
+            break;
+        }
+
+        case BEFORE_WITH: {
+            PyObject *mgr = stack_pointer[-1];
+            PyObject *exit;
+            PyObject *res;
+            /* pop the context manager, push its __exit__ and the
+             * value returned from calling its __enter__
+             */
+            PyObject *enter = _PyObject_LookupSpecial(mgr, &_Py_ID(__enter__));
+            if (enter == NULL) {
+                if (!_PyErr_Occurred(tstate)) {
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                                  "'%.200s' object does not support the "
+                                  "context manager protocol",
+                                  Py_TYPE(mgr)->tp_name);
+                }
+                goto error;
+            }
+            exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__exit__));
+            if (exit == NULL) {
+                if (!_PyErr_Occurred(tstate)) {
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                                  "'%.200s' object does not support the "
+                                  "context manager protocol "
+                                  "(missed __exit__ method)",
+                                  Py_TYPE(mgr)->tp_name);
+                }
+                Py_DECREF(enter);
+                goto error;
+            }
+            Py_DECREF(mgr);
+            res = _PyObject_CallNoArgs(enter);
+            Py_DECREF(enter);
+            if (res == NULL) {
+                Py_DECREF(exit);
+                if (true) goto pop_1_error;
+            }
+            STACK_GROW(1);
+            stack_pointer[-1] = res;
+            stack_pointer[-2] = exit;
             break;
         }
 
@@ -796,6 +1524,24 @@
             if (res == NULL) goto error;
             STACK_GROW(1);
             stack_pointer[-1] = res;
+            break;
+        }
+
+        case PUSH_EXC_INFO: {
+            PyObject *new_exc = stack_pointer[-1];
+            PyObject *prev_exc;
+            _PyErr_StackItem *exc_info = tstate->exc_info;
+            if (exc_info->exc_value != NULL) {
+                prev_exc = exc_info->exc_value;
+            }
+            else {
+                prev_exc = Py_None;
+            }
+            assert(PyExceptionInstance_Check(new_exc));
+            exc_info->exc_value = Py_NewRef(new_exc);
+            STACK_GROW(1);
+            stack_pointer[-1] = new_exc;
+            stack_pointer[-2] = prev_exc;
             break;
         }
 

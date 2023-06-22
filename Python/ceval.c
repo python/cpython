@@ -2788,6 +2788,8 @@ typedef struct {
 #define _GUARD_BOTH_INT 521
 #define _GUARD_BOTH_FLOAT 522
 #define _GUARD_BOTH_UNICODE 523
+#define _LOAD_LOCALS 524
+#define _LOAD_FROM_DICT_OR_GLOBALS 525
 
 typedef struct {
     int opcode;
@@ -2825,6 +2827,7 @@ uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **
         lltrace = 2;
     }
 #endif
+    PyThreadState *tstate = _PyThreadState_GET();
     UOpExecutorObject *self = (UOpExecutorObject *)executor;
     self->optimizer->traces_executed++;
     _Py_CODEUNIT *ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive - 1;
