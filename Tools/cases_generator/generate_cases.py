@@ -648,9 +648,14 @@ class Analyzer:
     errors: int = 0
     emit_line_directives: bool = False
 
-    def __init__(self, input_filenames: list[str], output_filename: str,
-                 metadata_filename: str, pymetadata_filename: str,
-                 executor_filename: str):
+    def __init__(
+        self,
+        input_filenames: list[str],
+        output_filename: str,
+        metadata_filename: str,
+        pymetadata_filename: str,
+        executor_filename: str,
+    ):
         """Read the input file."""
         self.input_filenames = input_filenames
         self.output_filename = output_filename
