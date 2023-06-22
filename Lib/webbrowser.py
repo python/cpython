@@ -100,7 +100,7 @@ def open(url, new=0, autoraise=True):
     - 0: the same browser window (the default).
     - 1: a new browser window.
     - 2: a new browser page ("tab").
-    - 3: a incognito/ private browser.
+    - 3: an incognito/ private browser.
     If possible, autoraise raises the window (the default) or not.
     """
     if _tryorder is None:
