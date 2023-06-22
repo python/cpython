@@ -614,18 +614,6 @@ use ``p.read(n)``.
    <https://pypi.org/project/pexpect/>`_.
 
 
-How do I access the serial (RS232) port?
-----------------------------------------
-
-For Win32, OSX, Linux, BSD, Jython, IronPython:
-
-   https://pypi.org/project/pyserial/
-
-For Unix, see a Usenet post by Mitch Chapman:
-
-   https://groups.google.com/groups?selm=34A04430.CF9@ohioee.com
-
-
 Why doesn't closing sys.stdout (stdin, stderr) really close it?
 ---------------------------------------------------------------
 
