@@ -345,6 +345,10 @@ uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **
 {
 #ifdef LLTRACE
     int lltrace = PyDict_Contains(GLOBALS(), &_Py_ID(__lltrace__));
+    char *uop_debug = Py_GETENV("PYTHON_UOP_DEBUG");
+    if (uop_debug != NULL && *uop_debug >= '2') {
+        lltrace = 2;
+    }
 #endif
     UOpExecutorObject *self = (UOpExecutorObject *)executor;
     self->optimizer->traces_executed++;
@@ -508,6 +512,17 @@ uop_optimize(
     if (executor == NULL) {
         return -1;
     }
+#ifdef Py_DEBUG
+    char *uop_debug = Py_GETENV("PYTHON_UOP_DEBUG");
+    if (uop_debug != NULL && *uop_debug >= '1') {
+        fprintf(stderr, "Optimizing %s (%s:%d) at offset %ld -- %d uops\n",
+                PyUnicode_AsUTF8(code->co_qualname),
+                PyUnicode_AsUTF8(code->co_filename),
+                code->co_firstlineno,
+                (long)(instr - (_Py_CODEUNIT *)code->co_code_adaptive),
+                trace_length);
+    }
+#endif
     executor->executor.execute = uop_execute;
     Py_INCREF(self);
     executor->optimizer = (UOpOptimizerObject *)self;
