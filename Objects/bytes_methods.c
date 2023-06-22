@@ -258,9 +258,12 @@ _Py_bytes_istitle(const char *cptr, Py_ssize_t len)
     const unsigned char *e;
     int cased, previous_is_cased;
 
-    /* Shortcut for single character strings */
-    if (len == 1)
-        return PyBool_FromLong(Py_ISUPPER(*p));
+    if (len == 1) {
+        if (Py_ISUPPER(*p)) {
+            Py_RETURN_TRUE;
+        }
+        Py_RETURN_FALSE;
+    }
 
     /* Special case for empty strings */
     if (len == 0)
@@ -431,6 +434,7 @@ _Py_bytes_maketrans(Py_buffer *frm, Py_buffer *to)
 #define STRINGLIB(F) stringlib_##F
 #define STRINGLIB_CHAR char
 #define STRINGLIB_SIZEOF_CHAR 1
+#define STRINGLIB_FAST_MEMCHR memchr
 
 #include "stringlib/fastsearch.h"
 #include "stringlib/count.h"
@@ -773,7 +777,7 @@ _Py_bytes_tailmatch(const char *str, Py_ssize_t len,
 {
     Py_ssize_t start = 0;
     Py_ssize_t end = PY_SSIZE_T_MAX;
-    PyObject *subobj;
+    PyObject *subobj = NULL;
     int result;
 
     if (!stringlib_parse_args_finds(function_name, args, &subobj, &start, &end))

@@ -18,10 +18,8 @@ from c_common.scriptutil import (
     configure_logger,
     get_prog,
     filter_filenames,
-    iter_marks,
 )
 from c_parser.info import KIND
-from c_parser.match import is_type_decl
 from .match import filter_forward
 from . import (
     analyze as _analyze,
@@ -482,7 +480,7 @@ COMMANDS = {
         cmd_analyze,
     ),
     'data': (
-        'check/manage local data (e.g. knwon types, ignored vars, caches)',
+        'check/manage local data (e.g. known types, ignored vars, caches)',
         [_cli_data],
         cmd_data,
     ),

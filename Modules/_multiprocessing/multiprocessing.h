@@ -12,7 +12,9 @@
  */
 
 #ifdef MS_WINDOWS
-#  define WIN32_LEAN_AND_MEAN
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#  endif
 #  include <windows.h>
 #  include <winsock2.h>
 #  include <process.h>               /* getpid() */
@@ -21,9 +23,11 @@
 #  endif
 #  define SEM_HANDLE HANDLE
 #  define SEM_VALUE_MAX LONG_MAX
+#  define HAVE_MP_SEMAPHORE
 #else
 #  include <fcntl.h>                 /* O_CREAT and O_EXCL */
 #  if defined(HAVE_SEM_OPEN) && !defined(POSIX_SEMAPHORES_NOT_ENABLED)
+#    define HAVE_MP_SEMAPHORE
 #    include <semaphore.h>
      typedef sem_t *SEM_HANDLE;
 #  endif
@@ -87,7 +91,7 @@ PyObject *_PyMp_SetError(PyObject *Type, int num);
  * Externs - not all will really exist on all platforms
  */
 
-extern PyTypeObject _PyMp_SemLockType;
+extern PyType_Spec _PyMp_SemLockType_spec;
 extern PyObject *_PyMp_sem_unlink(const char *name);
 
 #endif /* MULTIPROCESSING_H */

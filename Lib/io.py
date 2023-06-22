@@ -56,7 +56,6 @@ from _io import (DEFAULT_BUFFER_SIZE, BlockingIOError, UnsupportedOperation,
                  BufferedWriter, BufferedRWPair, BufferedRandom,
                  IncrementalNewlineDecoder, text_encoding, TextIOWrapper)
 
-OpenWrapper = _io.open # for compatibility with _pyio
 
 # Pretend this exception was created here.
 UnsupportedOperation.__module__ = "io"

@@ -31,15 +31,14 @@ class OpcodeTest(unittest.TestCase):
         except OSError:
             pass
 
-    def test_no_annotations_if_not_needed(self):
+    def test_default_annotations_exist(self):
         class C: pass
-        with self.assertRaises(AttributeError):
-            C.__annotations__
+        self.assertEqual(C.__annotations__, {})
 
     def test_use_existing_annotations(self):
         ns = {'__annotations__': {1: 2}}
         exec('x: int', ns)
-        self.assertEqual(ns['__annotations__'], {'x': 'int', 1: 2})
+        self.assertEqual(ns['__annotations__'], {'x': int, 1: 2})
 
     def test_do_not_recreate_annotations(self):
         # Don't rely on the existence of the '__annotations__' global.
