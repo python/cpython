@@ -106,6 +106,10 @@ built on debug mode <debug-build>`.
 pathlib
 -------
 
+* Add :exc:`pathlib.UnsupportedOperation`, which is raised instead of
+  :exc:`NotImplementedError` when a path operation isn't supported.
+  (Contributed by Barney Gale in :gh:`89812`.)
+
 * Add support for recursive wildcards in :meth:`pathlib.PurePath.match`.
   (Contributed by Barney Gale in :gh:`73435`.)
 
