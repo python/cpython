@@ -368,6 +368,10 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return oparg + 2;
         case CALL_NO_KW_TUPLE_1:
             return oparg + 2;
+        case CALL_NO_KW_ALLOC_AND_ENTER_INIT:
+            return oparg + 2;
+        case EXIT_INIT_CHECK:
+            return 1;
         case CALL_BUILTIN_CLASS:
             return oparg + 2;
         case CALL_NO_KW_BUILTIN_O:
@@ -790,6 +794,10 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 1;
         case CALL_NO_KW_TUPLE_1:
             return 1;
+        case CALL_NO_KW_ALLOC_AND_ENTER_INIT:
+            return 1;
+        case EXIT_INIT_CHECK:
+            return 0;
         case CALL_BUILTIN_CLASS:
             return 1;
         case CALL_NO_KW_BUILTIN_O:
@@ -1057,6 +1065,8 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {
     [CALL_NO_KW_TYPE_1] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG },
     [CALL_NO_KW_STR_1] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG },
     [CALL_NO_KW_TUPLE_1] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG },
+    [CALL_NO_KW_ALLOC_AND_ENTER_INIT] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG },
+    [EXIT_INIT_CHECK] = { true, INSTR_FMT_IX, 0 },
     [CALL_BUILTIN_CLASS] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG },
     [CALL_NO_KW_BUILTIN_O] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG },
     [CALL_NO_KW_BUILTIN_FAST] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG },

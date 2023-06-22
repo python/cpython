@@ -3395,27 +3395,29 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
         Py_DECREF(obj);
         return NULL;
     }
+
+    // test PyWeakref_Check(), valid weakref object
     assert(PyWeakref_Check(weakref));
     assert(PyWeakref_CheckRefExact(weakref));
     assert(PyWeakref_CheckRefExact(weakref));
     assert(Py_REFCNT(obj) == refcnt);
 
     // test PyWeakref_GetRef(), reference is alive
-    PyObject *ref1;
-    assert(PyWeakref_GetRef(weakref, &ref1) == 0);
-    assert(ref1 == obj);
+    PyObject *ref = Py_True;  // marker to check that value was set
+    assert(PyWeakref_GetRef(weakref, &ref) == 0);
+    assert(ref == obj);
     assert(Py_REFCNT(obj) == (refcnt + 1));
-    Py_DECREF(ref1);
+    Py_DECREF(ref);
 
     // test PyWeakref_GetObject(), reference is alive
-    PyObject *ref2 = PyWeakref_GetObject(weakref);
-    assert(ref2 == obj);
+    ref = PyWeakref_GetObject(weakref);  // borrowed ref
+    assert(ref == obj);
 
     // test PyWeakref_GET_OBJECT(), reference is alive
-    PyObject *ref3 = PyWeakref_GET_OBJECT(weakref);
-    assert(ref3 == obj);
+    ref = PyWeakref_GET_OBJECT(weakref);  // borrowed ref
+    assert(ref == obj);
 
-    // delete the referenced object
+    // delete the referenced object: clear the weakref
     assert(Py_REFCNT(obj) == 1);
     Py_DECREF(obj);
 
@@ -3423,11 +3425,11 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     assert(PyWeakref_GET_OBJECT(weakref) == Py_None);
 
     // test PyWeakref_GetRef(), reference is dead
-    PyObject *ref4 = Py_True;  // marker to check that value was set
-    assert(PyWeakref_GetRef(weakref, &ref4) == 0);
-    assert(ref4 == NULL);
+    ref = Py_True;
+    assert(PyWeakref_GetRef(weakref, &ref) == 0);
+    assert(ref == NULL);
 
-    // None is not a weak reference object
+    // test PyWeakref_Check(), not a weakref object
     PyObject *invalid_weakref = Py_None;
     assert(!PyWeakref_Check(invalid_weakref));
     assert(!PyWeakref_CheckRefExact(invalid_weakref));
@@ -3435,16 +3437,30 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 
     // test PyWeakref_GetRef(), invalid type
     assert(!PyErr_Occurred());
-    PyObject *ref5 = Py_True;  // marker to check that value was set
-    assert(PyWeakref_GetRef(invalid_weakref, &ref5) == -1);
+    ref = Py_True;
+    assert(PyWeakref_GetRef(invalid_weakref, &ref) == -1);
     assert(PyErr_ExceptionMatches(PyExc_TypeError));
     PyErr_Clear();
-    assert(ref5 == NULL);
+    assert(ref == NULL);
 
     // test PyWeakref_GetObject(), invalid type
     assert(PyWeakref_GetObject(invalid_weakref) == NULL);
     assert(PyErr_ExceptionMatches(PyExc_SystemError));
     PyErr_Clear();
+
+    // test PyWeakref_GetRef(NULL)
+    ref = Py_True;  // marker to check that value was set
+    assert(PyWeakref_GetRef(NULL, &ref) == -1);
+    assert(PyErr_ExceptionMatches(PyExc_SystemError));
+    assert(ref == NULL);
+    PyErr_Clear();
+
+    // test PyWeakref_GetObject(NULL)
+    assert(PyWeakref_GetObject(NULL) == NULL);
+    assert(PyErr_ExceptionMatches(PyExc_SystemError));
+    PyErr_Clear();
+
+    Py_DECREF(weakref);
 
     Py_RETURN_NONE;
 }

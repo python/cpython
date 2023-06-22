@@ -13,7 +13,8 @@
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
-#include "pycore_sysmodule.h"
+#include "pycore_sysmodule.h"     // _PySys_Audit()
+#include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 /* --------------------------------------------------------------------------
 CAUTION
@@ -2589,16 +2590,18 @@ _xidregistry_find_type(struct _xidregistry *xidregistry, PyTypeObject *cls)
 {
     struct _xidregitem *cur = xidregistry->head;
     while (cur != NULL) {
-        PyObject *registered = PyWeakref_GetObject(cur->cls);
-        if (registered == Py_None) {
+        PyObject *registered = _PyWeakref_GET_REF(cur->cls);
+        if (registered == NULL) {
             // The weakly ref'ed object was freed.
             cur = _xidregistry_remove_entry(xidregistry, cur);
         }
         else {
             assert(PyType_Check(registered));
             if (registered == (PyObject *)cls) {
+                Py_DECREF(registered);
                 return cur;
             }
+            Py_DECREF(registered);
             cur = cur->next;
         }
     }

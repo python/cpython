@@ -504,7 +504,7 @@ PyModule_GetDict(PyObject *m)
         PyErr_BadInternalCall();
         return NULL;
     }
-    return _PyModule_GetDict(m);
+    return _PyModule_GetDict(m);  // borrowed reference
 }
 
 PyObject*
