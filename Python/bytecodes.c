@@ -2685,6 +2685,7 @@ dummy_func(
             CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS,
             CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS,
             CALL_NO_KW_METHOD_DESCRIPTOR_FAST,
+            CALL_NO_KW_ALLOC_AND_ENTER_INIT,
         };
 
         // On entry, the stack is either
@@ -2898,6 +2899,68 @@ dummy_func(
             Py_DECREF(&PyTuple_Type);  // I.e., tuple
             ERROR_IF(res == NULL, error);
             CHECK_EVAL_BREAKER();
+        }
+
+        inst(CALL_NO_KW_ALLOC_AND_ENTER_INIT, (unused/1, unused/2, null, callable, args[oparg] -- unused)) {
+            /* This instruction does the following:
+             * 1. Creates the object (by calling ``object.__new__``)
+             * 2. Pushes a shim frame to the frame stack (to cleanup after ``__init__``)
+             * 3. Pushes the frame for ``__init__`` to the frame stack
+             * */
+            assert(kwnames == NULL);
+            _PyCallCache *cache = (_PyCallCache *)next_instr;
+            DEOPT_IF(null != NULL, CALL);
+            DEOPT_IF(!PyType_Check(callable), CALL);
+            PyTypeObject *tp = (PyTypeObject *)callable;
+            DEOPT_IF(tp->tp_version_tag != read_u32(cache->func_version), CALL);
+            PyHeapTypeObject *cls = (PyHeapTypeObject *)callable;
+            PyFunctionObject *init = (PyFunctionObject *)cls->_spec_cache.init;
+            PyCodeObject *code = (PyCodeObject *)init->func_code;
+            DEOPT_IF(code->co_argcount != oparg+1, CALL);
+            DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize + _Py_InitCleanup.co_framesize), CALL);
+            STAT_INC(CALL, hit);
+            PyObject *self = _PyType_NewManagedObject(tp);
+            if (self == NULL) {
+                goto error;
+            }
+            Py_DECREF(tp);
+            if (_Py_EnterRecursivePy(tstate)) {
+                goto exit_unwind;
+            }
+            _PyInterpreterFrame *shim = _PyFrame_PushTrampolineUnchecked(
+                tstate, (PyCodeObject *)&_Py_InitCleanup, 1, 0);
+            assert(_PyCode_CODE((PyCodeObject *)shim->f_executable)[1].op.code == EXIT_INIT_CHECK);
+            /* Push self onto stack of shim */
+            Py_INCREF(self);
+            shim->localsplus[0] = self;
+            Py_INCREF(init);
+            _PyInterpreterFrame *init_frame = _PyFrame_PushUnchecked(tstate, init, oparg+1);
+            /* Copy self followed by args to __init__ frame */
+            init_frame->localsplus[0] = self;
+            for (int i = 0; i < oparg; i++) {
+                init_frame->localsplus[i+1] = args[i];
+            }
+            SKIP_OVER(INLINE_CACHE_ENTRIES_CALL);
+            frame->prev_instr = next_instr - 1;
+            frame->return_offset = 0;
+            STACK_SHRINK(oparg+2);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            /* Link frames */
+            init_frame->previous = shim;
+            shim->previous = frame;
+            frame = cframe.current_frame = init_frame;
+            CALL_STAT_INC(inlined_py_calls);
+            goto start_frame;
+        }
+
+        inst(EXIT_INIT_CHECK, (should_be_none -- )) {
+            assert(STACK_LEVEL() == 2);
+            if (should_be_none != Py_None) {
+                PyErr_Format(PyExc_TypeError,
+                    "__init__() should return None, not '%.200s'",
+                    Py_TYPE(should_be_none)->tp_name);
+                goto error;
+            }
         }
 
         inst(CALL_BUILTIN_CLASS, (unused/1, unused/2, method, callable, args[oparg] -- res)) {

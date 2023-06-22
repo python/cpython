@@ -641,6 +641,8 @@ static const _Py_CODEUNIT _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS[] = {
     { .op.code = RESUME, .op.arg = 0 }
 };
 
+extern const struct _PyCode_DEF(8) _Py_InitCleanup;
+
 /* Disable unused label warnings.  They are handy for debugging, even
    if computed gotos aren't used. */
 
@@ -746,7 +748,7 @@ resume_frame:
 
 #ifdef LLTRACE
     {
-        if (frame != &entry_frame) {
+        if (frame != &entry_frame && GLOBALS()) {
             int r = PyDict_Contains(GLOBALS(), &_Py_ID(__lltrace__));
             if (r < 0) {
                 goto exit_unwind;
