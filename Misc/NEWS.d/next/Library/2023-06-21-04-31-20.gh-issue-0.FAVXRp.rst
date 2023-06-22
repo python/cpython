@@ -1,8 +1,0 @@
-I ran into a bug while using OpenCV, Flask, and Japanese fonts through Pillow. Here's the pertinent section of the traceback:
-
-\AppData\Local\Programs\Python\Python311\Lib\http\server.py", line 513, in send_response_only
-    (self.protocol_version, code, message)).encode(
-                                            ^^^^^^^
-UnicodeEncodeError: 'latin-1' codec can't encode character '\u3007' in position 120: ordinal not in range(256)
-
-I simply changed latin-1 in two spots to utf-8, and the problem seems to be solved.

@@ -1,0 +1,2 @@
+Use utf-8 in places of :class:`http.server` that can raise
+:class:`UnicodeEncodeError`.
