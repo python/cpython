@@ -827,6 +827,19 @@
             break;
         }
 
+        case EXIT_INIT_CHECK: {
+            PyObject *should_be_none = stack_pointer[-1];
+            assert(STACK_LEVEL() == 2);
+            if (should_be_none != Py_None) {
+                PyErr_Format(PyExc_TypeError,
+                    "__init__() should return None, not '%.200s'",
+                    Py_TYPE(should_be_none)->tp_name);
+                goto error;
+            }
+            STACK_SHRINK(1);
+            break;
+        }
+
         case MAKE_FUNCTION: {
             PyObject *codeobj = stack_pointer[-1];
             PyObject *func;

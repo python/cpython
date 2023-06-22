@@ -8,6 +8,7 @@
 #include "pycore_object.h"        // _PyType_GetSubclasses()
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_typeobject.h"    // _PyType_GetMRO()
+#include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 #include "clinic/_abc.c.h"
 
 /*[clinic input]
@@ -150,12 +151,10 @@ _in_weak_set(PyObject *set, PyObject *obj)
 static PyObject *
 _destroy(PyObject *setweakref, PyObject *objweakref)
 {
-    PyObject *set;
-    set = PyWeakref_GET_OBJECT(setweakref);
-    if (set == Py_None) {
+    PyObject *set = _PyWeakref_GET_REF(setweakref);
+    if (set == NULL) {
         Py_RETURN_NONE;
     }
-    Py_INCREF(set);
     if (PySet_Discard(set, objweakref) < 0) {
         Py_DECREF(set);
         return NULL;
@@ -843,16 +842,16 @@ subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
     assert(i == registry_size);
 
     for (i = 0; i < registry_size; i++) {
-        PyObject *rkey = PyWeakref_GetObject(copy[i]);
-        if (rkey == NULL) {
+        PyObject *rkey;
+        if (PyWeakref_GetRef(copy[i], &rkey) < 0) {
             // Someone inject non-weakref type in the registry.
             ret = -1;
             break;
         }
-        if (rkey == Py_None) {
+
+        if (rkey == NULL) {
             continue;
         }
-        Py_INCREF(rkey);
         int r = PyObject_IsSubclass(subclass, rkey);
         Py_DECREF(rkey);
         if (r < 0) {

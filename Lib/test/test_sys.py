@@ -1557,7 +1557,7 @@ class SizeofTest(unittest.TestCase):
                   '10P'                 # PySequenceMethods
                   '2P'                  # PyBufferProcs
                   '6P'
-                  '1PI'                 # Specializer cache
+                  '1PIP'                 # Specializer cache
                   )
         class newstyleclass(object): pass
         # Separate block for PyDictKeysObject with 8 keys and 5 entries

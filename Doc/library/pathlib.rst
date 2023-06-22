@@ -88,6 +88,17 @@ Opening a file::
    '#!/bin/bash\n'
 
 
+Exceptions
+----------
+
+.. exception:: UnsupportedOperation
+
+   An exception inheriting :exc:`NotImplementedError` that is raised when an
+   unsupported operation is called on a path object.
+
+   .. versionadded:: 3.13
+
+
 .. _pure-paths:
 
 Pure paths
@@ -752,6 +763,11 @@ calls on path objects.  There are three ways to instantiate concrete paths:
 
    *pathsegments* is specified similarly to :class:`PurePath`.
 
+   .. versionchanged:: 3.13
+      Raises :exc:`UnsupportedOperation` on Windows. In previous versions,
+      :exc:`NotImplementedError` was raised instead.
+
+
 .. class:: WindowsPath(*pathsegments)
 
    A subclass of :class:`Path` and :class:`PureWindowsPath`, this class
@@ -761,6 +777,11 @@ calls on path objects.  There are three ways to instantiate concrete paths:
       WindowsPath('c:/Program Files')
 
    *pathsegments* is specified similarly to :class:`PurePath`.
+
+   .. versionchanged:: 3.13
+      Raises :exc:`UnsupportedOperation` on non-Windows platforms. In previous
+      versions, :exc:`NotImplementedError` was raised instead.
+
 
 You can only instantiate the class flavour that corresponds to your system
 (allowing system calls on non-compatible path flavours could lead to
@@ -778,7 +799,7 @@ bugs or failures in your application)::
      File "<stdin>", line 1, in <module>
      File "pathlib.py", line 798, in __new__
        % (cls.__name__,))
-   NotImplementedError: cannot instantiate 'WindowsPath' on your system
+   UnsupportedOperation: cannot instantiate 'WindowsPath' on your system
 
 
 Methods
@@ -951,6 +972,10 @@ call fails (for example because the path doesn't exist).
 
    Return the name of the group owning the file.  :exc:`KeyError` is raised
    if the file's gid isn't found in the system database.
+
+   .. versionchanged:: 3.13
+      Raises :exc:`UnsupportedOperation` if the :mod:`grp` module is not
+      available. In previous versions, :exc:`NotImplementedError` was raised.
 
 
 .. method:: Path.is_dir()
@@ -1210,6 +1235,10 @@ call fails (for example because the path doesn't exist).
    Return the name of the user owning the file.  :exc:`KeyError` is raised
    if the file's uid isn't found in the system database.
 
+   .. versionchanged:: 3.13
+      Raises :exc:`UnsupportedOperation` if the :mod:`pwd` module is not
+      available. In previous versions, :exc:`NotImplementedError` was raised.
+
 
 .. method:: Path.read_bytes()
 
@@ -1251,6 +1280,10 @@ call fails (for example because the path doesn't exist).
       PosixPath('setup.py')
 
    .. versionadded:: 3.9
+
+   .. versionchanged:: 3.13
+      Raises :exc:`UnsupportedOperation` if :func:`os.readlink` is not
+      available. In previous versions, :exc:`NotImplementedError` was raised.
 
 
 .. method:: Path.rename(target)
@@ -1414,6 +1447,11 @@ call fails (for example because the path doesn't exist).
       The order of arguments (link, target) is the reverse
       of :func:`os.symlink`'s.
 
+   .. versionchanged:: 3.13
+      Raises :exc:`UnsupportedOperation` if :func:`os.symlink` is not
+      available. In previous versions, :exc:`NotImplementedError` was raised.
+
+
 .. method:: Path.hardlink_to(target)
 
    Make this path a hard link to the same file as *target*.
@@ -1423,6 +1461,10 @@ call fails (for example because the path doesn't exist).
       of :func:`os.link`'s.
 
    .. versionadded:: 3.10
+
+   .. versionchanged:: 3.13
+      Raises :exc:`UnsupportedOperation` if :func:`os.link` is not
+      available. In previous versions, :exc:`NotImplementedError` was raised.
 
 
 .. method:: Path.touch(mode=0o666, exist_ok=True)
