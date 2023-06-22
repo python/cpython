@@ -368,6 +368,14 @@ class HeaderTests(TestCase):
         self.assertEqual(lines[2], "header: Second: val1")
         self.assertEqual(lines[3], "header: Second: val2")
 
+    def test_header_whitespace_removal(self):
+        request = b"Host: example.com\r\nContent-Length: 12 \r\n\r\n"
+        fh = io.BytesIO(request)
+        parsed = client.parse_headers(fh)
+
+        # Check whether the trailing whitespace has been preserved
+        self.assertTrue(parsed.get('content-length') == "12",
+                        'Header parsing did not strip trailing whitespace from value')
 
 class HttpMethodTests(TestCase):
     def test_invalid_method_names(self):
