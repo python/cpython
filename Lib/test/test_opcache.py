@@ -487,10 +487,10 @@ class TestCallCache(unittest.TestCase):
 class TestRacesDoNotCrash(unittest.TestCase):
     # Careful with these. Bigger numbers have a higher chance of catching bugs,
     # but you can also burn through a *ton* of type/dict/function versions:
-    ITEMS = 1 << 10
-    LOOPS = 1 << 2
-    WARMUPS = 1 << 1
-    WRITERS = 1 << 1
+    ITEMS = 1000
+    LOOPS = 4
+    WARMUPS = 2
+    WRITERS = 2
 
     def assert_specialized(self, f, opname):
         instructions = dis.get_instructions(f, adaptive=True)
