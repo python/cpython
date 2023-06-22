@@ -258,7 +258,7 @@ class UnixBrowser(BaseBrowser):
     # used for new=1 (open_new).  If newtab is not None, it is used for
     # new=3 (open_new_tab).  After both substitutions are made, any empty
     # strings in the transformed remote_args list will be removed.
-    remote_args = ["%action", "%s", "%incognito"]
+    remote_args = ["%action", "%s"]
     remote_action = None
     remote_action_newwin = None
     remote_action_newtab = None
