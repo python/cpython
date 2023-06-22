@@ -34,7 +34,7 @@ A Cookbook Approach
 ===================
 
 There are two approaches to building extension modules on Windows, just as there
-are on Unix: use the ``setuptools`` package to control the build process, or
+are on Unix: use the :mod:`!setuptools` package to control the build process, or
 do things manually.  The ``setuptools`` approach works well for most extensions.
 If you find you really need to do things manually, it may be instructive to study
 the project file for the :source:`winsound <PCbuild/winsound.vcxproj>` standard
