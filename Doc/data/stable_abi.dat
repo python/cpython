@@ -781,6 +781,7 @@ function,PyVectorcall_Call,3.12,,
 function,PyVectorcall_NARGS,3.12,,
 type,PyWeakReference,3.2,,opaque
 function,PyWeakref_GetObject,3.2,,
+function,PyWeakref_GetRef,3.13,,
 function,PyWeakref_NewProxy,3.2,,
 function,PyWeakref_NewRef,3.2,,
 var,PyWrapperDescr_Type,3.2,,
