@@ -66,7 +66,7 @@ class BitmapImageTest(AbstractTkTest, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         AbstractTkTest.setUpClass.__func__(cls)
-        cls.testfile = support.findfile('python.xbm', subdir='imghdrdata')
+        cls.testfile = support.findfile('python.xbm', subdir='tkinterdata')
 
     def test_create_from_file(self):
         image = tkinter.BitmapImage('::img::test', master=self.root,
@@ -150,7 +150,7 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         AbstractTkTest.setUpClass.__func__(cls)
-        cls.testfile = support.findfile('python.gif', subdir='imghdrdata')
+        cls.testfile = support.findfile('python.gif', subdir='tkinterdata')
 
     def create(self):
         return tkinter.PhotoImage('::img::test', master=self.root,
@@ -163,7 +163,7 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
             return tkinter._join(args)
 
     def check_create_from_file(self, ext):
-        testfile = support.findfile('python.' + ext, subdir='imghdrdata')
+        testfile = support.findfile('python.' + ext, subdir='tkinterdata')
         image = tkinter.PhotoImage('::img::test', master=self.root,
                                    file=testfile)
         self.assertEqual(str(image), '::img::test')
@@ -178,7 +178,7 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         self.assertNotIn('::img::test', self.root.image_names())
 
     def check_create_from_data(self, ext):
-        testfile = support.findfile('python.' + ext, subdir='imghdrdata')
+        testfile = support.findfile('python.' + ext, subdir='tkinterdata')
         with open(testfile, 'rb') as f:
             data = f.read()
         image = tkinter.PhotoImage('::img::test', master=self.root,

@@ -16,6 +16,8 @@ extern PyObject *_Py_subscript_generic(PyThreadState *, PyObject *);
 extern int _Py_initialize_generic(PyInterpreterState *);
 extern void _Py_clear_generic_types(PyInterpreterState *);
 
+extern PyTypeObject _PyTypeAlias_Type;
+
 #ifdef __cplusplus
 }
 #endif
