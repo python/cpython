@@ -369,9 +369,8 @@ class HeaderTests(TestCase):
         self.assertEqual(lines[3], "header: Second: val2")
 
     def test_header_whitespace_removal(self):
-        request = b"Host: example.com\r\nContent-Length: 12 \r\nuser-agent: web browser \r\n"
-        fh = io.BytesIO(request)
-        parsed = client.parse_headers(fh)
+        request = b"Host: example.com\r\nContent-Length: 12 \r\nuser-agent: web browser \r\nset-cookie: foo 1234; \r\nset-cookie: bar 5432\r\n"
+        parsed = client.parse_headers(io.BytesIO(request))
 
         # Check whether the trailing whitespace has been preserved
         self.assertTrue(parsed.get('content-length') == "12",
@@ -382,6 +381,14 @@ class HeaderTests(TestCase):
         # whitespace within header values should be preserved
         self.assertTrue(parsed.get('user-agent') == "web browser",
                         'Header parsing stripped whitespace from middle of header value')
+        # TODO: add test for the multi-header
+
+    def test_empty_header_handling(self):
+        # Ensure that and empty header string does not trigger exceptions
+        # and do not result in the return of headers
+        parsed = client.parse_headers(io.BytesIO(b""))
+        self.assertTrue(not parsed,
+                        'Empty headers still resulted in headers being returned')
 
 
 class HttpMethodTests(TestCase):
