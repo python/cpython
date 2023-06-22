@@ -236,10 +236,14 @@ class _PathParents(Sequence):
         return "<{}.parents>".format(type(self._path).__name__)
 
 
-class _BasePurePath:
-    """Base class for manipulating paths using only lexical operations.
+class PurePath:
+    """Base class for manipulating paths without I/O.
 
-    This class does not provide the methods __fspath__, __bytes__ or as_uri.
+    PurePath represents a filesystem path and offers operations which
+    don't imply any actual filesystem I/O.  Depending on your system,
+    instantiating a PurePath will return either a PurePosixPath or a
+    PureWindowsPath object.  You can also instantiate either of these classes
+    directly, regardless of your system.
     """
 
     __slots__ = (
@@ -283,6 +287,16 @@ class _BasePurePath:
     )
     _flavour = os.path
 
+    def __new__(cls, *args, **kwargs):
+        """Construct a PurePath from one or several strings and or existing
+        PurePath objects.  The strings and path objects are combined so as
+        to yield a canonicalized path, which is incorporated into the
+        new PurePath object.
+        """
+        if cls is PurePath:
+            cls = PureWindowsPath if os.name == 'nt' else PurePosixPath
+        return object.__new__(cls)
+
     def __reduce__(self):
         # Using the parts tuple helps share interned path parts
         # when pickling related paths.
@@ -291,7 +305,7 @@ class _BasePurePath:
     def __init__(self, *args):
         paths = []
         for arg in args:
-            if isinstance(arg, _BasePurePath):
+            if isinstance(arg, PurePath):
                 if arg._flavour is ntpath and self._flavour is posixpath:
                     # GH-103631: Convert separators for backwards compatibility.
                     paths.extend(path.replace('\\', '/') for path in arg._raw_paths)
@@ -418,7 +432,7 @@ class _BasePurePath:
             return self._lines_cached
 
     def __eq__(self, other):
-        if not isinstance(other, _BasePurePath):
+        if not isinstance(other, PurePath):
             return NotImplemented
         return self._str_normcase == other._str_normcase and self._flavour is other._flavour
 
@@ -430,22 +444,22 @@ class _BasePurePath:
             return self._hash
 
     def __lt__(self, other):
-        if not isinstance(other, _BasePurePath) or self._flavour is not other._flavour:
+        if not isinstance(other, PurePath) or self._flavour is not other._flavour:
             return NotImplemented
         return self._parts_normcase < other._parts_normcase
 
     def __le__(self, other):
-        if not isinstance(other, _BasePurePath) or self._flavour is not other._flavour:
+        if not isinstance(other, PurePath) or self._flavour is not other._flavour:
             return NotImplemented
         return self._parts_normcase <= other._parts_normcase
 
     def __gt__(self, other):
-        if not isinstance(other, _BasePurePath) or self._flavour is not other._flavour:
+        if not isinstance(other, PurePath) or self._flavour is not other._flavour:
             return NotImplemented
         return self._parts_normcase > other._parts_normcase
 
     def __ge__(self, other):
-        if not isinstance(other, _BasePurePath) or self._flavour is not other._flavour:
+        if not isinstance(other, PurePath) or self._flavour is not other._flavour:
             return NotImplemented
         return self._parts_normcase >= other._parts_normcase
 
@@ -680,7 +694,7 @@ class _BasePurePath:
         """
         Return True if this path matches the given pattern.
         """
-        if not isinstance(path_pattern, _BasePurePath):
+        if not isinstance(path_pattern, PurePath):
             path_pattern = self.with_segments(path_pattern)
         if case_sensitive is None:
             case_sensitive = _is_case_sensitive(self._flavour)
@@ -693,26 +707,12 @@ class _BasePurePath:
             raise ValueError("empty pattern")
 
 
-class PurePath(_BasePurePath):
-    """Base class for manipulating paths without I/O.
+class _PurePathExt(PurePath):
+    """PurePath subclass that adds some non-lexical methods.
 
-    PurePath represents a filesystem path and offers operations which
-    don't imply any actual filesystem I/O.  Depending on your system,
-    instantiating a PurePath will return either a PurePosixPath or a
-    PureWindowsPath object.  You can also instantiate either of these classes
-    directly, regardless of your system.
+    This class provides the methods __fspath__, __bytes__ and as_uri.
     """
     __slots__ = ()
-
-    def __new__(cls, *args, **kwargs):
-        """Construct a PurePath from one or several strings and or existing
-        PurePath objects.  The strings and path objects are combined so as
-        to yield a canonicalized path, which is incorporated into the
-        new PurePath object.
-        """
-        if cls is PurePath:
-            cls = PureWindowsPath if os.name == 'nt' else PurePosixPath
-        return object.__new__(cls)
 
     def __fspath__(self):
         return str(self)
@@ -745,10 +745,10 @@ class PurePath(_BasePurePath):
 
 # Subclassing os.PathLike makes isinstance() checks slower,
 # which in turn makes Path construction slower. Register instead!
-os.PathLike.register(PurePath)
+os.PathLike.register(_PurePathExt)
 
 
-class PurePosixPath(PurePath):
+class PurePosixPath(_PurePathExt):
     """PurePath subclass for non-Windows systems.
 
     On a POSIX system, instantiating a PurePath should return this object.
@@ -758,7 +758,7 @@ class PurePosixPath(PurePath):
     __slots__ = ()
 
 
-class PureWindowsPath(PurePath):
+class PureWindowsPath(_PurePathExt):
     """PurePath subclass for Windows systems.
 
     On a Windows system, instantiating a PurePath should return this object.
@@ -771,7 +771,7 @@ class PureWindowsPath(PurePath):
 # Filesystem-accessing classes
 
 
-class Path(PurePath):
+class Path(_PurePathExt):
     """PurePath subclass that can make system calls.
 
     Path represents a filesystem path but unlike PurePath, also offers

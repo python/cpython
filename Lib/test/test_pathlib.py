@@ -39,8 +39,8 @@ only_posix = unittest.skipIf(os.name == 'nt',
 # Tests for the pure classes.
 #
 
-class BasePurePathTest(unittest.TestCase):
-    cls = pathlib._BasePurePath
+class PurePathTest(unittest.TestCase):
+    cls = pathlib.PurePath
 
     # Keys are canonical paths, values are list of tuples of arguments
     # supposed to produce equal paths.
@@ -78,6 +78,14 @@ class BasePurePathTest(unittest.TestCase):
         self.assertEqual(P(P('a'), P('b')), P('a/b'))
         self.assertEqual(P(P('a'), P('b'), P('c')), P(FakePath("a/b/c")))
         self.assertEqual(P(P('./a:b')), P('./a:b'))
+
+    def test_concrete_class(self):
+        if self.cls is pathlib.PurePath:
+            expected = pathlib.PureWindowsPath if os.name == 'nt' else pathlib.PurePosixPath
+        else:
+            expected = self.cls
+        p = self.cls('a')
+        self.assertIs(type(p), expected)
 
     def test_different_flavours_unequal(self):
         p = self.cls('a')
@@ -737,16 +745,8 @@ class BasePurePathTest(unittest.TestCase):
             self.assertEqual(str(pp), str(p))
 
 
-class PurePathTest(BasePurePathTest):
-    cls = pathlib.PurePath
-
-    def test_concrete_class(self):
-        if self.cls is pathlib.PurePath:
-            expected = pathlib.PureWindowsPath if os.name == 'nt' else pathlib.PurePosixPath
-        else:
-            expected = self.cls
-        p = self.cls('a')
-        self.assertIs(type(p), expected)
+class PurePathExtTest(PurePathTest):
+    cls = pathlib._PurePathExt
 
     def test_fspath_common(self):
         P = self.cls
@@ -767,7 +767,7 @@ class PurePathTest(BasePurePathTest):
             P().as_uri()
 
 
-class PurePosixPathTest(PurePathTest):
+class PurePosixPathTest(PurePathExtTest):
     cls = pathlib.PurePosixPath
 
     def test_drive_root_parts(self):
@@ -861,7 +861,7 @@ class PurePosixPathTest(PurePathTest):
         self.assertEqual(p, pp)
 
 
-class PureWindowsPathTest(PurePathTest):
+class PureWindowsPathTest(PurePathExtTest):
     cls = pathlib.PureWindowsPath
 
     equivalences = PurePathTest.equivalences.copy()
