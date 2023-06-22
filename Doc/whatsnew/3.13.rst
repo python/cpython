@@ -433,7 +433,7 @@ New Features
   :c:expr:`const char * const *`, :c:expr:`const char **` or
   :c:expr:`char * const *` in C++ and :c:expr:`char * const *` in C
   without explicit type cast.
-  This can be overridden by defining the macro :c:macro:`PY_CXX_CONST`
+  This can be overridden by defining the macro ``PY_CXX_CONST``
   before including :file:`Python.h` as ``const`` for the latter and as
   empty value for the former.
   (Contributed by Serhiy Storchaka in :gh:`65210`.)
