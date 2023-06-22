@@ -1,0 +1,1 @@
+support for incognito / private browsing for module webbroser
