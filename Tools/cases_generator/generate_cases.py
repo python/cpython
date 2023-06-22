@@ -312,7 +312,6 @@ FORBIDDEN_INSTRUCTIONS = (
     "JUMPBY",
     "DISPATCH",
     "INSTRUMENTED_JUMP",
-    "MAKE_FUNCTION_CLOSURE",  # Proxy for 'opcode == SET_FUNCTION_ATTRIBUTE
 )
 
 @dataclasses.dataclass

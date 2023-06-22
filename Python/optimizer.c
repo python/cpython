@@ -6,6 +6,7 @@
 #include "pycore_long.h"
 #include "pycore_object.h"
 #include "pycore_opcode.h"
+#include "pycore_opcode_utils.h"
 #include "pycore_pystate.h"
 #include "pycore_sliceobject.h"
 #include "cpython/optimizer.h"
@@ -362,7 +363,7 @@ uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **
 #ifdef LLTRACE
         if (lltrace) {
             // TODO: Print line numbers; uop names.
-            char *opname = opcode < 256 ? _PyOpcode_OpName[opcode] : "";
+            const char *opname = opcode < 256 ? _PyOpcode_OpName[opcode] : "";
             int stack_level = (int)(stack_pointer - _PyFrame_Stackbase(frame));
             fprintf(stderr, "uop %s %d, oparg %d, stack_level %d\n",
                     opname, opcode, oparg, stack_level);
