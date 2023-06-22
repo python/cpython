@@ -6899,7 +6899,11 @@ cat > conftest.c <<EOF
 #  if defined(__EMSCRIPTEN__)
 	wasm32-emscripten
 #  elif defined(__wasi__)
+#    if defined(_REENTRANT)
+	wasm32-wasi-threads
+#    else
 	wasm32-wasi
+#    endif
 #  else
 #    error unknown wasm32 platform
 #  endif
@@ -7185,7 +7189,7 @@ then :
   Emscripten) :
      ;; #(
   WASI) :
-    as_fn_error $? "WASI threading is not implemented yet." "$LINENO" 5 ;; #(
+     ;; #(
   *) :
     as_fn_error $? "--enable-wasm-pthreads only applies to Emscripten and WASI" "$LINENO" 5
    ;;
@@ -9418,6 +9422,21 @@ printf "%s\n" "#define _WASI_EMULATED_PROCESS_CLOCKS 1" >>confdefs.h
 
     LIBS="$LIBS -lwasi-emulated-signal -lwasi-emulated-getpid -lwasi-emulated-process-clocks"
     echo "#define _WASI_EMULATED_SIGNAL 1" >> confdefs.h
+
+    if test "x$enable_wasm_pthreads" = xyes
+then :
+
+      # Note: update CFLAGS because ac_compile/ac_link needs this too.
+      # without this, configure fails to find pthread_create, sem_init,
+      # etc because they are only available in the sysroot for
+      # wasm32-wasi-threads.
+      as_fn_append CFLAGS " -target wasm32-wasi-threads -pthread"
+      as_fn_append CFLAGS_NODIST " -target wasm32-wasi-threads -pthread"
+      as_fn_append LDFLAGS_NODIST " -target wasm32-wasi-threads -pthread"
+      as_fn_append LDFLAGS_NODIST " -Wl,--import-memory"
+      as_fn_append LDFLAGS_NODIST " -Wl,--max-memory=10485760"
+
+fi
 
             as_fn_append LDFLAGS_NODIST " -z stack-size=524288 -Wl,--stack-first -Wl,--initial-memory=10485760"
 
