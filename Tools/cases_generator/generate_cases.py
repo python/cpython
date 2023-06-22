@@ -316,6 +316,13 @@ FORBIDDEN_INSTRUCTIONS = (
     "import_name",
 )
 
+
+# Interpreter tiers
+TIER_ONE = 1  # Specializing adaptive interpreter (PEP 659)
+TIER_TWO = 2  # Experimental tracing interpreter
+Tiers: typing.TypeAlias = typing.Literal[TIER_ONE, TIER_TWO]
+
+
 @dataclasses.dataclass
 class Instruction:
     """An instruction with additional data and code."""
@@ -407,7 +414,7 @@ class Instruction:
                 return False
         return True
 
-    def write(self, out: Formatter, adjust_cache=True) -> None:
+    def write(self, out: Formatter, tier: Tiers = TIER_ONE) -> None:
         """Write one instruction, sans prologue and epilogue."""
         # Write a static assertion that a family's cache size is correct
         if family := self.family:
@@ -454,7 +461,7 @@ class Instruction:
 
         # out.emit(f"next_instr += OPSIZE({self.inst.name}) - 1;")
 
-        self.write_body(out, 0, adjust_caches=adjust_cache)
+        self.write_body(out, 0, tier=tier)
 
         # Skip the rest if the block always exits
         if self.always_exits:
@@ -481,7 +488,7 @@ class Instruction:
             out.assign(dst, oeffect)
 
         # Write cache effect
-        if adjust_cache and self.cache_offset:
+        if tier == TIER_ONE and self.cache_offset:
             out.emit(f"next_instr += {self.cache_offset};")
 
     def write_body(
@@ -489,7 +496,7 @@ class Instruction:
             out: Formatter,
             dedent: int,
             cache_adjust: int = 0,
-            adjust_caches: bool = True,
+            tier: Tiers = TIER_ONE,
         ) -> None:
         """Write the instruction body."""
         # Write cache effect variable declarations and initializations
@@ -507,12 +514,11 @@ class Instruction:
                 else:
                     typ = f"uint{bits}_t "
                     func = f"read_u{bits}"
-                if adjust_caches:
+                if tier == TIER_ONE:
                     out.emit(
                         f"{typ}{ceffect.name} = {func}(&next_instr[{cache_offset}].cache);"
                     )
                 else:
-                    # Tier 2
                     assert bits <= 32
                     out.emit(f"{typ}{ceffect.name} = oparg;")
             cache_offset += ceffect.size
@@ -1332,7 +1338,7 @@ class Analyzer:
                         if instr.is_viable_uop():
                             self.out.emit("")
                             with self.out.block(f"case {thing.name}:"):
-                                instr.write(self.out, adjust_cache=False)
+                                instr.write(self.out, tier=TIER_TWO)
                                 self.out.emit("break;")
                     case parser.Macro():
                         pass  # TODO
