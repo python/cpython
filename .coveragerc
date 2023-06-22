@@ -5,8 +5,8 @@ exclude_lines =
     if 0:
     if __name__ == .__main__.:
 
-    # pragma: no cover
-    # pragma: no branch
+    .*# pragma: no cover
+    .*# pragma: no branch
 
     # Additions for IDLE:
     .*# htest #
