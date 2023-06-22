@@ -1831,9 +1831,9 @@ dummy_func(
             assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version, LOAD_ATTR);
             assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
-            DEOPT_IF(_PyDictOrValues_IsValues(dorv), LOAD_ATTR);
-            PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
+            PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(owner);
+            DEOPT_IF(_PyDictOrValues_IsValues(*dorv), LOAD_ATTR);
+            PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(*dorv);
             DEOPT_IF(dict == NULL, LOAD_ATTR);
             assert(PyDict_CheckExact((PyObject *)dict));
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
@@ -1849,7 +1849,29 @@ dummy_func(
                 DEOPT_IF(ep->me_key != name, LOAD_ATTR);
                 res = ep->me_value;
             }
-            DEOPT_IF(res == NULL, LOAD_ATTR);
+            if (res == NULL) {
+                // This is almost never an AttributeError... it's way more
+                // likely that this __dict__ still shares its keys (for example,
+                // if it was materialized on request and not heavily modified).
+                // If that's the case, we probably have an opportunity to do
+                // something *really* cool: un-materialize it!
+                PyDictKeysObject *keys = dict->ma_keys;
+                PyDictValues *values = dict->ma_values;
+                if (Py_REFCNT(dict) == 1
+                    && _PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE)
+                    && keys == ((PyHeapTypeObject *)tp)->ht_cached_keys)
+                {
+                    assert(values);
+                    // Don't try this at home, kids:
+                    dict->ma_keys = NULL;
+                    dict->ma_values = NULL;
+                    Py_DECREF(dict);
+                    _PyDictKeys_DecRef(keys);
+                    _PyDictOrValues_SetValues(dorv, values);
+                    GO_TO_INSTRUCTION(LOAD_ATTR_INSTANCE_VALUE);
+                }
+                DEOPT_IF(true, LOAD_ATTR);
+            }
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(res);
             res2 = NULL;
