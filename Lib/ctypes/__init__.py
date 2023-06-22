@@ -523,7 +523,7 @@ _string_at = PYFUNCTYPE(py_object, c_void_p, c_int)(_string_at_addr)
 def string_at(ptr, size=-1):
     """string_at(ptr[, size]) -> string
 
-    Return the string at ptr."""
+    Return the byte string at void *ptr."""
     return _string_at(ptr, size)
 
 try:
@@ -535,7 +535,7 @@ else:
     def wstring_at(ptr, size=-1):
         """wstring_at(ptr[, size]) -> string
 
-        Return the string at ptr."""
+        Return the wide-character string at void *ptr."""
         return _wstring_at(ptr, size)
 
 
