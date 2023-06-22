@@ -819,9 +819,11 @@ class AnnotationsVisitor(PickleVisitor):
             self.emit("Py_DECREF(type);", 2)
             self.emit_annotations_error(name, 2)
             self.emit("}", 1)
+        self.emit(f'cond = PyObject_SetAttrString(state->{name}_type, "_field_types", {name}_annotations) == 0;', 1)
+        self.emit_annotations_error(name, 1)
         self.emit(f'cond = PyObject_SetAttrString(state->{name}_type, "__annotations__", {name}_annotations) == 0;', 1)
+        self.emit_annotations_error(name, 1)
         self.emit(f"Py_DECREF({name}_annotations);", 1)
-        self.emit("if (!cond) return 0;", 1)
 
     def emit_annotations_error(self, name, depth):
         self.emit("if (!cond) {", depth)
@@ -968,9 +970,9 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
         }
     }
     Py_ssize_t size = PySet_Size(remaining_fields);
-    PyObject *annotations = NULL, *remaining_list = NULL;
+    PyObject *field_types = NULL, *remaining_list = NULL;
     if (size > 0) {
-        if (!_PyObject_LookupAttr((PyObject*)Py_TYPE(self), &_Py_ID(__annotations__), &annotations)) {
+        if (!_PyObject_LookupAttr((PyObject*)Py_TYPE(self), &_Py_ID(_field_types), &field_types)) {
             res = -1;
             goto cleanup;
         }
@@ -980,7 +982,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
         }
         for (Py_ssize_t i = 0; i < size; i++) {
             PyObject *name = PyList_GET_ITEM(remaining_list, i);
-            PyObject *type = PyDict_GetItemWithError(annotations, name);
+            PyObject *type = PyDict_GetItemWithError(field_types, name);
             if (!type) {
                 if (!PyErr_Occurred()) {
                     PyErr_SetObject(PyExc_KeyError, name);
@@ -1022,7 +1024,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
     return res;
   set_remaining_cleanup:
     Py_XDECREF(remaining_list);
-    Py_XDECREF(annotations);
+    Py_XDECREF(field_types);
     res = -1;
     goto cleanup;
 }
