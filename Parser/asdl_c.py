@@ -960,6 +960,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                     "and will be removed in Python 3.15.",
                     Py_TYPE(self)->tp_name, key
                 ) < 0) {
+                    res = -1;
                     goto cleanup;
                 }
             }
@@ -1013,6 +1014,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                     "This will become an error in Python 3.15.",
                     Py_TYPE(self)->tp_name, name
                 ) < 0) {
+                    res = -1;
                     goto cleanup;
                 }
             }
