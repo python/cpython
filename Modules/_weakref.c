@@ -1,5 +1,6 @@
 #include "Python.h"
-#include "pycore_object.h"   // _PyObject_GET_WEAKREFS_LISTPTR
+#include "pycore_object.h"        // _PyObject_GET_WEAKREFS_LISTPTR
+#include "pycore_weakref.h"       // _PyWeakref_IS_DEAD()
 
 
 #define GET_WEAKREFS_LISTPTR(o) \
@@ -43,7 +44,7 @@ is_dead_weakref(PyObject *value)
         PyErr_SetString(PyExc_TypeError, "not a weakref");
         return -1;
     }
-    return PyWeakref_GET_OBJECT(value) == Py_None;
+    return _PyWeakref_IS_DEAD(value);
 }
 
 /*[clinic input]

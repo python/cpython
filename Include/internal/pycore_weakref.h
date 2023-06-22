@@ -33,6 +33,19 @@ static inline PyObject* _PyWeakref_GET_REF(PyObject *ref_obj) {
     return Py_NewRef(obj);
 }
 
+static inline int _PyWeakref_IS_DEAD(PyObject *ref_obj) {
+    assert(PyWeakref_Check(ref_obj));
+    PyWeakReference *ref = _Py_CAST(PyWeakReference*, ref_obj);
+    PyObject *obj = ref->wr_object;
+    if (obj == Py_None) {
+        // clear_weakref() was called
+        return 1;
+    }
+
+    // See _PyWeakref_GET_REF() for the rationale of this test
+    return (Py_REFCNT(obj) == 0);
+}
+
 #ifdef __cplusplus
 }
 #endif
