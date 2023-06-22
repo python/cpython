@@ -372,16 +372,7 @@ PyImport_AddModuleObject(PyObject *name)
     if (!mod) {
         return NULL;
     }
-
-    // gh-86160: PyImport_AddModuleObject() returns a borrowed reference
-    PyObject *ref = PyWeakref_NewRef(mod, NULL);
-    Py_DECREF(mod);
-    if (ref == NULL) {
-        return NULL;
-    }
-
-    mod = PyWeakref_GetObject(ref);
-    Py_DECREF(ref);
+    Py_DECREF(mod);  // sys.modules holds a strong reference
     return mod; /* borrowed reference */
 }
 
