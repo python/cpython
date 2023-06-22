@@ -1,6 +1,29 @@
 import unittest
 
 
+class TestLoadSuperAttrCache(unittest.TestCase):
+    def test_descriptor_not_double_executed_on_spec_fail(self):
+        calls = []
+        class Descriptor:
+            def __get__(self, instance, owner):
+                calls.append((instance, owner))
+                return lambda: 1
+
+        class C:
+            d = Descriptor()
+
+        class D(C):
+            def f(self):
+                return super().d()
+
+        d = D()
+
+        self.assertEqual(d.f(), 1)  # warmup
+        calls.clear()
+        self.assertEqual(d.f(), 1)  # try to specialize
+        self.assertEqual(calls, [(d, D)])
+
+
 class TestLoadAttrCache(unittest.TestCase):
     def test_descriptor_added_after_optimization(self):
         class Descriptor:
@@ -427,6 +450,35 @@ class TestLoadMethodCache(unittest.TestCase):
 
         for _ in range(1025):
             self.assertFalse(f())
+
+
+class TestCallCache(unittest.TestCase):
+    def test_too_many_defaults_0(self):
+        def f():
+            pass
+
+        f.__defaults__ = (None,)
+        for _ in range(1025):
+            f()
+
+    def test_too_many_defaults_1(self):
+        def f(x):
+            pass
+
+        f.__defaults__ = (None, None)
+        for _ in range(1025):
+            f(None)
+            f()
+
+    def test_too_many_defaults_2(self):
+        def f(x, y):
+            pass
+
+        f.__defaults__ = (None, None, None)
+        for _ in range(1025):
+            f(None, None)
+            f(None)
+            f()
 
 
 if __name__ == "__main__":

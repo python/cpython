@@ -20,7 +20,7 @@ See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
 .. c:function:: Py_ssize_t PyMapping_Size(PyObject *o)
                Py_ssize_t PyMapping_Length(PyObject *o)
 
-   .. index:: builtin: len
+   .. index:: pair: built-in function; len
 
    Returns the number of keys in object *o* on success, and ``-1`` on failure.
    This is equivalent to the Python expression ``len(o)``.

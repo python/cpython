@@ -662,6 +662,19 @@ bind_parameters(pysqlite_state *state, pysqlite_Statement *self,
             return;
         }
         for (i = 0; i < num_params; i++) {
+            const char *name = sqlite3_bind_parameter_name(self->st, i+1);
+            if (name != NULL) {
+                int ret = PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                        "Binding %d ('%s') is a named parameter, but you "
+                        "supplied a sequence which requires nameless (qmark) "
+                        "placeholders. Starting with Python 3.14 an "
+                        "sqlite3.ProgrammingError will be raised.",
+                        i+1, name);
+                if (ret < 0) {
+                    return;
+                }
+            }
+
             if (PyTuple_CheckExact(parameters)) {
                 PyObject *item = PyTuple_GET_ITEM(parameters, i);
                 current_param = Py_NewRef(item);
@@ -692,11 +705,10 @@ bind_parameters(pysqlite_state *state, pysqlite_Statement *self,
             Py_DECREF(adapted);
 
             if (rc != SQLITE_OK) {
-                PyObject *exc, *val, *tb;
-                PyErr_Fetch(&exc, &val, &tb);
+                PyObject *exc = PyErr_GetRaisedException();
                 sqlite3 *db = sqlite3_db_handle(self->st);
                 _pysqlite_seterror(state, db);
-                _PyErr_ChainExceptions(exc, val, tb);
+                _PyErr_ChainExceptions1(exc);
                 return;
             }
         }
@@ -752,11 +764,10 @@ bind_parameters(pysqlite_state *state, pysqlite_Statement *self,
             Py_DECREF(adapted);
 
             if (rc != SQLITE_OK) {
-                PyObject *exc, *val, *tb;
-                PyErr_Fetch(&exc, &val, &tb);
+                PyObject *exc = PyErr_GetRaisedException();
                 sqlite3 *db = sqlite3_db_handle(self->st);
                 _pysqlite_seterror(state, db);
-                _PyErr_ChainExceptions(exc, val, tb);
+                _PyErr_ChainExceptions1(exc);
                 return;
            }
         }

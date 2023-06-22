@@ -372,7 +372,7 @@ To save a some tedious error-handling boilerplate code, you can combine
 these two steps with :c:func:`PyType_GetModuleState`, resulting in::
 
    my_struct *state = (my_struct*)PyType_GetModuleState(type);
-   if (state === NULL) {
+   if (state == NULL) {
        return NULL;
    }
 
@@ -435,7 +435,7 @@ For example::
            PyObject *kwnames)
    {
        my_struct *state = (my_struct*)PyType_GetModuleState(defining_class);
-       if (state === NULL) {
+       if (state == NULL) {
            return NULL;
        }
        ... // rest of logic
@@ -461,7 +461,7 @@ Module State Access from Slot Methods, Getters and Setters
 
    .. After adding to limited API:
 
-      If you use the :ref:`limited API <stable>,
+      If you use the :ref:`limited API <limited-c-api>`,
       you must update ``Py_LIMITED_API`` to ``0x030b0000``, losing ABI
       compatibility with earlier versions.
 
@@ -479,7 +479,7 @@ to get the state::
 
     PyObject *module = PyType_GetModuleByDef(Py_TYPE(self), &module_def);
     my_struct *state = (my_struct*)PyModule_GetState(module);
-    if (state === NULL) {
+    if (state == NULL) {
         return NULL;
     }
 

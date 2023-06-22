@@ -1,2 +1,0 @@
-Add float-style formatting support for :class:`fractions.Fraction`
-instances.

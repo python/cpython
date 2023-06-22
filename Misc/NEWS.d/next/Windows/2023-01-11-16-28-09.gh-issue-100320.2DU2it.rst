@@ -1,3 +1,0 @@
-Ensures the ``PythonPath`` registry key from an install is used when
-launching from a different copy of Python that relies on an existing install
-to provide a copy of its modules and standard library.

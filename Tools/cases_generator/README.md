@@ -1,5 +1,8 @@
 # Tooling to generate interpreters
 
+Documentation for the instruction definitions in `Python/bytecodes.c`
+("the DSL") is [here](interpreter_definition.md).
+
 What's currently here:
 
 - `lexer.py`: lexer for C, originally written by Mark Shannon
@@ -7,10 +10,10 @@ What's currently here:
 - `parser.py`: Parser for instruction definition DSL; main class `Parser`
 - `generate_cases.py`: driver script to read `Python/bytecodes.c` and
   write `Python/generated_cases.c.h`
+- `test_generator.py`: tests, require manual running using `pytest`
 
-The DSL for the instruction definitions in `Python/bytecodes.c` is described
-[here](https://github.com/faster-cpython/ideas/blob/main/3.12/interpreter_definition.md).
-Note that there is some dummy C code at the top and bottom of the file
+Note that there is some dummy C code at the top and bottom of
+`Python/bytecodes.c`
 to fool text editors like VS Code into believing this is valid C code.
 
 ## A bit about the parser
