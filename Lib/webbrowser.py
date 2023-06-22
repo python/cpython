@@ -262,7 +262,7 @@ class UnixBrowser(BaseBrowser):
     remote_action = None
     remote_action_newwin = None
     remote_action_newtab = None
-    remote_action_incognito = None
+    remote_action_incognito = ""
 
     def _invoke(self, args, remote, autoraise, url=None):
         raise_opt = []
@@ -381,7 +381,6 @@ class Opera(UnixBrowser):
     remote_action = ""
     remote_action_newwin = "--new-window"
     remote_action_newtab = ""
-    remote_action_incognito = ""
     background = True
 
 
