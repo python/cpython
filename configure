@@ -14552,12 +14552,12 @@ if test -n "$LIBSQLITE3_CFLAGS"; then
     pkg_cv_LIBSQLITE3_CFLAGS="$LIBSQLITE3_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"sqlite3 >= 3.7.15\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "sqlite3 >= 3.7.15") 2>&5
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"sqlite3 >= 3.15.2\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "sqlite3 >= 3.15.2") 2>&5
   ac_status=$?
   printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_LIBSQLITE3_CFLAGS=`$PKG_CONFIG --cflags "sqlite3 >= 3.7.15" 2>/dev/null`
+  pkg_cv_LIBSQLITE3_CFLAGS=`$PKG_CONFIG --cflags "sqlite3 >= 3.15.2" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -14569,12 +14569,12 @@ if test -n "$LIBSQLITE3_LIBS"; then
     pkg_cv_LIBSQLITE3_LIBS="$LIBSQLITE3_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"sqlite3 >= 3.7.15\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "sqlite3 >= 3.7.15") 2>&5
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"sqlite3 >= 3.15.2\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "sqlite3 >= 3.15.2") 2>&5
   ac_status=$?
   printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_LIBSQLITE3_LIBS=`$PKG_CONFIG --libs "sqlite3 >= 3.7.15" 2>/dev/null`
+  pkg_cv_LIBSQLITE3_LIBS=`$PKG_CONFIG --libs "sqlite3 >= 3.15.2" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -14595,9 +14595,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        LIBSQLITE3_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "sqlite3 >= 3.7.15" 2>&1`
+	        LIBSQLITE3_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "sqlite3 >= 3.15.2" 2>&1`
         else
-	        LIBSQLITE3_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "sqlite3 >= 3.7.15" 2>&1`
+	        LIBSQLITE3_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "sqlite3 >= 3.15.2" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$LIBSQLITE3_PKG_ERRORS" >&5
@@ -14646,8 +14646,8 @@ then :
 
 
         #include <sqlite3.h>
-        #if SQLITE_VERSION_NUMBER < 3007015
-        #  error "SQLite 3.7.15 or higher required"
+        #if SQLITE_VERSION_NUMBER < 3015002
+        #  error "SQLite 3.15.2 or higher required"
         #endif
 
 int

@@ -21,6 +21,12 @@ try:
 except ImportError:
     pass
 
+# _opcode_metadata may not be ready during early stages of the build
+try:
+    from _opcode_metadata import _specializations, _specialized_instructions
+except ModuleNotFoundError:
+    pass
+
 cmp_op = ('<', '<=', '==', '!=', '>', '>=')
 
 hasarg = []
@@ -348,96 +354,6 @@ _intrinsic_2_descs = [
     "INTRINSIC_SET_FUNCTION_TYPE_PARAMS",
 ]
 
-_specializations = {
-    "BINARY_OP": [
-        "BINARY_OP_ADD_FLOAT",
-        "BINARY_OP_ADD_INT",
-        "BINARY_OP_ADD_UNICODE",
-        "BINARY_OP_INPLACE_ADD_UNICODE",
-        "BINARY_OP_MULTIPLY_FLOAT",
-        "BINARY_OP_MULTIPLY_INT",
-        "BINARY_OP_SUBTRACT_FLOAT",
-        "BINARY_OP_SUBTRACT_INT",
-    ],
-    "BINARY_SUBSCR": [
-        "BINARY_SUBSCR_DICT",
-        "BINARY_SUBSCR_GETITEM",
-        "BINARY_SUBSCR_LIST_INT",
-        "BINARY_SUBSCR_TUPLE_INT",
-    ],
-    "CALL": [
-        "CALL_PY_EXACT_ARGS",
-        "CALL_PY_WITH_DEFAULTS",
-        "CALL_BOUND_METHOD_EXACT_ARGS",
-        "CALL_BUILTIN_CLASS",
-        "CALL_BUILTIN_FAST_WITH_KEYWORDS",
-        "CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS",
-        "CALL_NO_KW_BUILTIN_FAST",
-        "CALL_NO_KW_BUILTIN_O",
-        "CALL_NO_KW_ISINSTANCE",
-        "CALL_NO_KW_LEN",
-        "CALL_NO_KW_LIST_APPEND",
-        "CALL_NO_KW_METHOD_DESCRIPTOR_FAST",
-        "CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS",
-        "CALL_NO_KW_METHOD_DESCRIPTOR_O",
-        "CALL_NO_KW_STR_1",
-        "CALL_NO_KW_TUPLE_1",
-        "CALL_NO_KW_TYPE_1",
-    ],
-    "COMPARE_OP": [
-        "COMPARE_OP_FLOAT",
-        "COMPARE_OP_INT",
-        "COMPARE_OP_STR",
-    ],
-    "FOR_ITER": [
-        "FOR_ITER_LIST",
-        "FOR_ITER_TUPLE",
-        "FOR_ITER_RANGE",
-        "FOR_ITER_GEN",
-    ],
-    "LOAD_SUPER_ATTR": [
-        "LOAD_SUPER_ATTR_ATTR",
-        "LOAD_SUPER_ATTR_METHOD",
-    ],
-    "LOAD_ATTR": [
-        # These potentially push [NULL, bound method] onto the stack.
-        "LOAD_ATTR_CLASS",
-        "LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN",
-        "LOAD_ATTR_INSTANCE_VALUE",
-        "LOAD_ATTR_MODULE",
-        "LOAD_ATTR_PROPERTY",
-        "LOAD_ATTR_SLOT",
-        "LOAD_ATTR_WITH_HINT",
-        # These will always push [unbound method, self] onto the stack.
-        "LOAD_ATTR_METHOD_LAZY_DICT",
-        "LOAD_ATTR_METHOD_NO_DICT",
-        "LOAD_ATTR_METHOD_WITH_VALUES",
-    ],
-    "LOAD_GLOBAL": [
-        "LOAD_GLOBAL_BUILTIN",
-        "LOAD_GLOBAL_MODULE",
-    ],
-    "STORE_ATTR": [
-        "STORE_ATTR_INSTANCE_VALUE",
-        "STORE_ATTR_SLOT",
-        "STORE_ATTR_WITH_HINT",
-    ],
-    "STORE_SUBSCR": [
-        "STORE_SUBSCR_DICT",
-        "STORE_SUBSCR_LIST_INT",
-    ],
-    "UNPACK_SEQUENCE": [
-        "UNPACK_SEQUENCE_LIST",
-        "UNPACK_SEQUENCE_TUPLE",
-        "UNPACK_SEQUENCE_TWO_TUPLE",
-    ],
-    "SEND": [
-        "SEND_GEN",
-    ],
-}
-_specialized_instructions = [
-    opcode for family in _specializations.values() for opcode in family
-]
 
 _cache_format = {
     "LOAD_GLOBAL": {

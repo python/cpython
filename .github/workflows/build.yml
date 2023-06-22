@@ -87,21 +87,9 @@ jobs:
         with:
           filter: |
             Doc/**
-            # Temporarily skip paths with spaces
-            # (i.e. "C API", "Core and Builtins")
-            # to avoid "Error: One of your files includes a space".
-            # Pending https://github.com/python/core-workflow/issues/186
-            # Misc/**
-            Misc/NEWS.d/next/Build/**
-            Misc/NEWS.d/next/Documentation/**
-            Misc/NEWS.d/next/IDLE/**
-            Misc/NEWS.d/next/Library/**
-            Misc/NEWS.d/next/Security/**
-            Misc/NEWS.d/next/Tests/**
-            Misc/NEWS.d/next/Tools-Demos/**
-            Misc/NEWS.d/next/Windows/**
-            Misc/NEWS.d/next/macOS/**
+            Misc/**
             .github/workflows/reusable-docs.yml
+          format: csv  # works for paths with spaces
       - name: Check for docs changes
         if: >-
           github.event_name == 'pull_request'

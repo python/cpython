@@ -26,6 +26,9 @@ DEFAULT_OUTPUT = os.path.relpath(os.path.join(ROOT, "Python/generated_cases.c.h"
 DEFAULT_METADATA_OUTPUT = os.path.relpath(
     os.path.join(ROOT, "Python/opcode_metadata.h")
 )
+DEFAULT_PYMETADATA_OUTPUT = os.path.relpath(
+    os.path.join(ROOT, "Lib/_opcode_metadata.py")
+)
 BEGIN_MARKER = "// BEGIN BYTECODES //"
 END_MARKER = "// END BYTECODES //"
 RE_PREDICTED = (
@@ -47,7 +50,10 @@ arg_parser.add_argument(
     "-o", "--output", type=str, help="Generated code", default=DEFAULT_OUTPUT
 )
 arg_parser.add_argument(
-    "-m", "--metadata", type=str, help="Generated metadata", default=DEFAULT_METADATA_OUTPUT
+    "-m", "--metadata", type=str, help="Generated C metadata", default=DEFAULT_METADATA_OUTPUT
+)
+arg_parser.add_argument(
+    "-p", "--pymetadata", type=str, help="Generated Python metadata", default=DEFAULT_PYMETADATA_OUTPUT
 )
 arg_parser.add_argument(
     "-l", "--emit-line-directives", help="Emit #line directives", action="store_true"
@@ -121,11 +127,13 @@ class Formatter:
     nominal_filename: str
 
     def __init__(
-            self, stream: typing.TextIO, indent: int, emit_line_directives: bool = False
+            self, stream: typing.TextIO, indent: int,
+                  emit_line_directives: bool = False, comment: str = "//",
     ) -> None:
         self.stream = stream
         self.prefix = " " * indent
         self.emit_line_directives = emit_line_directives
+        self.comment = comment
         self.lineno = 1
         filename = os.path.relpath(self.stream.name, ROOT)
         # Make filename more user-friendly and less platform-specific
@@ -226,7 +234,61 @@ class Formatter:
     def cast(self, dst: StackEffect, src: StackEffect) -> str:
         return f"({dst.type or 'PyObject *'})" if src.type != dst.type else ""
 
-INSTRUCTION_FLAGS = ['HAS_ARG', 'HAS_CONST', 'HAS_NAME', 'HAS_JUMP']
+@dataclasses.dataclass
+class InstructionFlags:
+    """Construct and manipulate instruction flags"""
+
+    HAS_ARG_FLAG: bool
+    HAS_CONST_FLAG: bool
+    HAS_NAME_FLAG: bool
+    HAS_JUMP_FLAG: bool
+
+    def __post_init__(self):
+        self.bitmask = {
+            name : (1 << i) for i, name in enumerate(self.names())
+        }
+
+    @staticmethod
+    def fromInstruction(instr: "AnyInstruction"):
+        return InstructionFlags(
+            HAS_ARG_FLAG=variable_used(instr, "oparg"),
+            HAS_CONST_FLAG=variable_used(instr, "FRAME_CO_CONSTS"),
+            HAS_NAME_FLAG=variable_used(instr, "FRAME_CO_NAMES"),
+            HAS_JUMP_FLAG=variable_used(instr, "JUMPBY"),
+        )
+
+    @staticmethod
+    def newEmpty():
+        return InstructionFlags(False, False, False, False)
+
+    def add(self, other: "InstructionFlags") -> None:
+        for name, value in dataclasses.asdict(other).items():
+            if value:
+                setattr(self, name, value)
+
+    def names(self, value=None):
+        if value is None:
+            return dataclasses.asdict(self).keys()
+        return [n for n, v in dataclasses.asdict(self).items() if v == value]
+
+    def bitmap(self) -> int:
+        flags = 0
+        for name in self.names():
+            if getattr(self, name):
+                flags |= self.bitmask[name]
+        return flags
+
+    @classmethod
+    def emit_macros(cls, out: Formatter):
+        flags = cls.newEmpty()
+        for name, value in flags.bitmask.items():
+            out.emit(f"#define {name} ({value})");
+
+        for name, value in flags.bitmask.items():
+            out.emit(
+                f"#define OPCODE_{name[:-len('_FLAG')]}(OP) "
+                f"(_PyOpcode_opcode_metadata[(OP)].flags & ({name}))")
+
 
 @dataclasses.dataclass
 class Instruction:
@@ -248,7 +310,7 @@ class Instruction:
     output_effects: list[StackEffect]
     unmoved_names: frozenset[str]
     instr_fmt: str
-    flags: int
+    instr_flags: InstructionFlags
 
     # Set later
     family: parser.Family | None = None
@@ -277,18 +339,10 @@ class Instruction:
             else:
                 break
         self.unmoved_names = frozenset(unmoved_names)
-        flag_data = {
-            'HAS_ARG'  :  variable_used(inst, "oparg"),
-            'HAS_CONST':  variable_used(inst, "FRAME_CO_CONSTS"),
-            'HAS_NAME' :  variable_used(inst, "FRAME_CO_NAMES"),
-            'HAS_JUMP' :  variable_used(inst, "JUMPBY"),
-        }
-        assert set(flag_data.keys()) == set(INSTRUCTION_FLAGS)
-        self.flags = 0
-        for i, name in enumerate(INSTRUCTION_FLAGS):
-            self.flags |= (1<<i) if flag_data[name] else 0
 
-        if flag_data['HAS_ARG']:
+        self.instr_flags = InstructionFlags.fromInstruction(inst)
+
+        if self.instr_flags.HAS_ARG_FLAG:
             fmt = "IB"
         else:
             fmt = "IX"
@@ -487,7 +541,7 @@ class MacroInstruction:
     initial_sp: int
     final_sp: int
     instr_fmt: str
-    flags: int
+    instr_flags: InstructionFlags
     macro: parser.Macro
     parts: list[Component | parser.CacheEffect]
     predicted: bool = False
@@ -500,7 +554,7 @@ class PseudoInstruction:
     name: str
     targets: list[Instruction]
     instr_fmt: str
-    flags: int
+    instr_flags: InstructionFlags
 
 
 @dataclasses.dataclass
@@ -510,7 +564,6 @@ class OverriddenInstructionPlaceHolder:
 
 AnyInstruction = Instruction | MacroInstruction | PseudoInstruction
 INSTR_FMT_PREFIX = "INSTR_FMT_"
-INSTR_FLAG_SUFFIX = "_FLAG"
 
 
 class Analyzer:
@@ -519,14 +572,17 @@ class Analyzer:
     input_filenames: list[str]
     output_filename: str
     metadata_filename: str
+    pymetadata_filename: str
     errors: int = 0
     emit_line_directives: bool = False
 
-    def __init__(self, input_filenames: list[str], output_filename: str, metadata_filename: str):
+    def __init__(self, input_filenames: list[str], output_filename: str,
+                 metadata_filename: str, pymetadata_filename: str):
         """Read the input file."""
         self.input_filenames = input_filenames
         self.output_filename = output_filename
         self.metadata_filename = metadata_filename
+        self.pymetadata_filename = pymetadata_filename
 
     def error(self, msg: str, node: parser.Node) -> None:
         lineno = 0
@@ -776,7 +832,7 @@ class Analyzer:
         sp = initial_sp
         parts: list[Component | parser.CacheEffect] = []
         format = "IB"
-        flags = 0
+        flags = InstructionFlags.newEmpty()
         cache = "C"
         for component in components:
             match component:
@@ -792,7 +848,7 @@ class Analyzer:
                         for _ in range(ce.size):
                             format += cache
                             cache = "0"
-                    flags |= instr.flags
+                    flags.add(instr.instr_flags)
                 case _:
                     typing.assert_never(component)
         final_sp = sp
@@ -806,9 +862,8 @@ class Analyzer:
         # Make sure the targets have the same fmt
         fmts = list(set([t.instr_fmt for t in targets]))
         assert(len(fmts) == 1)
-        flags_list = list(set([t.flags for t in targets]))
-        assert(len(flags_list) == 1)
-        return PseudoInstruction(pseudo.name, targets, fmts[0], flags_list[0])
+        assert(len(list(set([t.instr_flags.bitmap() for t in targets]))) == 1)
+        return PseudoInstruction(pseudo.name, targets, fmts[0], targets[0].instr_flags)
 
     def analyze_instruction(
         self, instr: Instruction, stack: list[StackEffect], sp: int
@@ -1005,11 +1060,16 @@ class Analyzer:
         self.out.emit("")
 
     def from_source_files(self) -> str:
-        paths = "\n//   ".join(
+        paths = f"\n{self.out.comment}   ".join(
             os.path.relpath(filename, ROOT).replace(os.path.sep, posixpath.sep)
             for filename in self.input_filenames
         )
-        return f"// from:\n//   {paths}\n"
+        return f"{self.out.comment} from:\n{self.out.comment}   {paths}\n"
+
+    def write_provenance_header(self):
+        self.out.write_raw(f"{self.out.comment} This file is generated by {THIS}\n")
+        self.out.write_raw(self.from_source_files())
+        self.out.write_raw(f"{self.out.comment} Do not edit!\n")
 
     def write_metadata(self) -> None:
         """Write instruction metadata to output file."""
@@ -1043,10 +1103,7 @@ class Analyzer:
             # Create formatter
             self.out = Formatter(f, 0)
 
-            # Write provenance header
-            self.out.write_raw(f"// This file is generated by {THIS}\n")
-            self.out.write_raw(self.from_source_files())
-            self.out.write_raw(f"// Do not edit!\n")
+            self.write_provenance_header()
 
             self.write_pseudo_instrs()
 
@@ -1054,13 +1111,8 @@ class Analyzer:
 
             # Write type definitions
             self.out.emit(f"enum InstructionFormat {{ {', '.join(format_enums)} }};")
-            for i, flag in enumerate(INSTRUCTION_FLAGS):
-                self.out.emit(f"#define {flag}{INSTR_FLAG_SUFFIX} ({1 << i})");
-            for flag in INSTRUCTION_FLAGS:
-                flag_name = f"{flag}{INSTR_FLAG_SUFFIX}"
-                self.out.emit(
-                    f"#define OPCODE_{flag}(OP) "
-                    f"(_PyOpcode_opcode_metadata[(OP)].flags & ({flag_name}))")
+
+            InstructionFlags.emit_macros(self.out)
 
             self.out.emit("struct opcode_metadata {")
             with self.out.indent():
@@ -1100,6 +1152,39 @@ class Analyzer:
             self.out.emit("};")
             self.out.emit("#endif")
 
+        with open(self.pymetadata_filename, "w") as f:
+            # Create formatter
+            self.out = Formatter(f, 0, comment = "#")
+
+            self.write_provenance_header()
+
+            self.out.emit("")
+            self.out.emit("_specializations = {")
+            for name, family in self.families.items():
+                assert len(family.members) > 1
+                with self.out.indent():
+                    self.out.emit(f"\"{family.members[0]}\": [")
+                    with self.out.indent():
+                        for m in family.members[1:]:
+                            self.out.emit(f"\"{m}\",")
+                    self.out.emit(f"],")
+            self.out.emit("}")
+
+            # Handle special case
+            self.out.emit("")
+            self.out.emit("# An irregular case:")
+            self.out.emit(
+                "_specializations[\"BINARY_OP\"].append("
+                    "\"BINARY_OP_INPLACE_ADD_UNICODE\")")
+
+            # Make list of specialized instructions
+            self.out.emit("")
+            self.out.emit(
+                "_specialized_instructions = ["
+                    "opcode for family in _specializations.values() for opcode in family"
+                "]")
+
+
     def write_pseudo_instrs(self) -> None:
         """Write the IS_PSEUDO_INSTR macro"""
         self.out.emit("\n\n#define IS_PSEUDO_INSTR(OP)  \\")
@@ -1107,25 +1192,28 @@ class Analyzer:
             self.out.emit(f"    ((OP) == {op}) || \\")
         self.out.emit(f"    0")
 
-    def emit_metadata_entry(self, name: str, fmt: str, flags: int) -> None:
-        flags_strs = [f"{name}{INSTR_FLAG_SUFFIX}"
-                      for i, name in enumerate(INSTRUCTION_FLAGS) if (flags & (1<<i))]
-        flags_s = "0" if not flags_strs else ' | '.join(flags_strs)
+    def emit_metadata_entry(
+        self, name: str, fmt: str, flags: InstructionFlags
+    ) -> None:
+        flag_names = flags.names(value=True)
+        if not flag_names:
+            flag_names.append("0")
         self.out.emit(
-            f"    [{name}] = {{ true, {INSTR_FMT_PREFIX}{fmt}, {flags_s} }},"
+            f"    [{name}] = {{ true, {INSTR_FMT_PREFIX}{fmt},"
+            f" {' | '.join(flag_names)} }},"
         )
 
     def write_metadata_for_inst(self, instr: Instruction) -> None:
         """Write metadata for a single instruction."""
-        self.emit_metadata_entry(instr.name, instr.instr_fmt, instr.flags)
+        self.emit_metadata_entry(instr.name, instr.instr_fmt, instr.instr_flags)
 
     def write_metadata_for_macro(self, mac: MacroInstruction) -> None:
         """Write metadata for a macro-instruction."""
-        self.emit_metadata_entry(mac.name, mac.instr_fmt, mac.flags)
+        self.emit_metadata_entry(mac.name, mac.instr_fmt, mac.instr_flags)
 
     def write_metadata_for_pseudo(self, ps: PseudoInstruction) -> None:
         """Write metadata for a macro-instruction."""
-        self.emit_metadata_entry(ps.name, ps.instr_fmt, ps.flags)
+        self.emit_metadata_entry(ps.name, ps.instr_fmt, ps.instr_flags)
 
     def write_instructions(self) -> None:
         """Write instructions to output file."""
@@ -1134,9 +1222,9 @@ class Analyzer:
             self.out = Formatter(f, 8, self.emit_line_directives)
 
             # Write provenance header
-            self.out.write_raw(f"// This file is generated by {THIS}\n")
+            self.out.write_raw(f"{self.out.comment} This file is generated by {THIS}\n")
             self.out.write_raw(self.from_source_files())
-            self.out.write_raw(f"// Do not edit!\n")
+            self.out.write_raw(f"{self.out.comment} Do not edit!\n")
 
             # Write and count instructions of all kinds
             n_instrs = 0
@@ -1168,13 +1256,13 @@ class Analyzer:
             place_holder: OverriddenInstructionPlaceHolder) -> None:
         self.out.emit("")
         self.out.emit(
-            f"// TARGET({place_holder.name}) overridden by later definition")
+            f"{self.out.comment} TARGET({place_holder.name}) overridden by later definition")
 
     def write_instr(self, instr: Instruction) -> None:
         name = instr.name
         self.out.emit("")
         if instr.inst.override:
-            self.out.emit("// Override")
+            self.out.emit("{self.out.comment} Override")
         with self.out.block(f"TARGET({name})"):
             if instr.predicted:
                 self.out.emit(f"PREDICTED({name});")
@@ -1315,7 +1403,10 @@ def main():
     args = arg_parser.parse_args()  # Prints message and sys.exit(2) on error
     if len(args.input) == 0:
         args.input.append(DEFAULT_INPUT)
-    a = Analyzer(args.input, args.output, args.metadata)  # Raises OSError if input unreadable
+
+    # Raises OSError if input unreadable
+    a = Analyzer(args.input, args.output, args.metadata, args.pymetadata)
+
     if args.emit_line_directives:
         a.emit_line_directives = True
     a.parse()  # Raises SyntaxError on failure

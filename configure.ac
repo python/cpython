@@ -3952,7 +3952,7 @@ PY_CHECK_EMSCRIPTEN_PORT([LIBSQLITE3], [-sUSE_SQLITE3])
 
 dnl Check for SQLite library. Use pkg-config if available.
 PKG_CHECK_MODULES(
-  [LIBSQLITE3], [sqlite3 >= 3.7.15], [], [
+  [LIBSQLITE3], [sqlite3 >= 3.15.2], [], [
     LIBSQLITE3_CFLAGS=${LIBSQLITE3_CFLAGS-""}
     LIBSQLITE3_LIBS=${LIBSQLITE3_LIBS-"-lsqlite3"}
   ]
@@ -3978,8 +3978,8 @@ dnl hence CPPFLAGS instead of CFLAGS.
     AC_COMPILE_IFELSE([
       AC_LANG_PROGRAM([
         #include <sqlite3.h>
-        #if SQLITE_VERSION_NUMBER < 3007015
-        #  error "SQLite 3.7.15 or higher required"
+        #if SQLITE_VERSION_NUMBER < 3015002
+        #  error "SQLite 3.15.2 or higher required"
         #endif
       ], [])
     ], [

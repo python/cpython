@@ -15,10 +15,7 @@ extern "C" {
 
 #define IS_WITHIN_OPCODE_RANGE(opcode) \
         (((opcode) >= 0 && (opcode) <= MAX_REAL_OPCODE) || \
-         IS_PSEUDO_OPCODE(opcode))
-
-#define IS_JUMP_OPCODE(opcode) \
-         is_bit_set_in_table(_PyOpcode_Jump, opcode)
+         IS_PSEUDO_INSTR(opcode))
 
 #define IS_BLOCK_PUSH_OPCODE(opcode) \
         ((opcode) == SETUP_FINALLY || \
@@ -55,27 +52,6 @@ extern "C" {
          (opcode) == RAISE_VARARGS || \
          (opcode) == RERAISE)
 
-#define LOG_BITS_PER_INT 5
-#define MASK_LOW_LOG_BITS 31
-
-static inline int
-is_bit_set_in_table(const uint32_t *table, int bitindex) {
-    /* Is the relevant bit set in the relevant word? */
-    /* 512 bits fit into 9 32-bits words.
-     * Word is indexed by (bitindex>>ln(size of int in bits)).
-     * Bit within word is the low bits of bitindex.
-     */
-    if (bitindex >= 0 && bitindex < 512) {
-        uint32_t word = table[bitindex >> LOG_BITS_PER_INT];
-        return (word >> (bitindex & MASK_LOW_LOG_BITS)) & 1;
-    }
-    else {
-        return 0;
-    }
-}
-
-#undef LOG_BITS_PER_INT
-#undef MASK_LOW_LOG_BITS
 
 /* Flags used in the oparg for MAKE_FUNCTION */
 #define MAKE_FUNCTION_DEFAULTS    0x01
