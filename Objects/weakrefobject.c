@@ -140,7 +140,11 @@ weakref_vectorcall(PyObject *self, PyObject *const *args,
     if (!_PyArg_CheckPositional("weakref", nargs, 0, 0)) {
         return NULL;
     }
-    return Py_NewRef(PyWeakref_GET_OBJECT(self));
+    PyObject *obj = _PyWeakref_GET_REF(self);
+    if (obj == NULL) {
+        Py_RETURN_NONE;
+    }
+    return obj;
 }
 
 static Py_hash_t
