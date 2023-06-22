@@ -28,6 +28,7 @@
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()
 #include "pycore_typevarobject.h" // _Py_clear_generic_types()
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
+#include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 #include "opcode.h"
 
 #include <locale.h>               // setlocale()
@@ -1464,16 +1465,16 @@ finalize_modules_clear_weaklist(PyInterpreterState *interp,
     for (Py_ssize_t i = PyList_GET_SIZE(weaklist) - 1; i >= 0; i--) {
         PyObject *tup = PyList_GET_ITEM(weaklist, i);
         PyObject *name = PyTuple_GET_ITEM(tup, 0);
-        PyObject *mod = PyWeakref_GET_OBJECT(PyTuple_GET_ITEM(tup, 1));
-        if (mod == Py_None) {
+        PyObject *mod = _PyWeakref_GET_REF(PyTuple_GET_ITEM(tup, 1));
+        if (mod == NULL) {
             continue;
         }
         assert(PyModule_Check(mod));
-        PyObject *dict = PyModule_GetDict(mod);
+        PyObject *dict = _PyModule_GetDict(mod);  // borrowed reference
         if (dict == interp->builtins || dict == interp->sysdict) {
+            Py_DECREF(mod);
             continue;
         }
-        Py_INCREF(mod);
         if (verbose && PyUnicode_Check(name)) {
             PySys_FormatStderr("# cleanup[3] wiping %U\n", name);
         }
