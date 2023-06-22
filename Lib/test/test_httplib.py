@@ -371,6 +371,7 @@ class HeaderTests(TestCase):
     def test_header_whitespace_removal(self):
         request = b"Host: example.com\r\nContent-Length: 12 \r\nuser-agent: web browser \r\nset-cookie: foo 1234; \r\nset-cookie: bar 5432\r\n"
         parsed = client.parse_headers(io.BytesIO(request))
+        set_cookie_headers = parsed.get_all("set-cookie")
 
         # Check whether the trailing whitespace has been preserved
         self.assertTrue(parsed.get('content-length') == "12",
@@ -381,7 +382,8 @@ class HeaderTests(TestCase):
         # whitespace within header values should be preserved
         self.assertTrue(parsed.get('user-agent') == "web browser",
                         'Header parsing stripped whitespace from middle of header value')
-        # TODO: add test for the multi-header
+        self.assertEqual(len(set_cookie_headers), 2)
+
 
     def test_empty_header_handling(self):
         # Ensure that and empty header string does not trigger exceptions
