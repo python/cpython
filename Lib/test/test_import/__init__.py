@@ -2644,6 +2644,29 @@ class CAPITests(unittest.TestCase):
         mod = _testcapi.check_pyimport_addmodule(name)
         self.assertIs(mod, sys.modules[name])
 
+    def test_pyimport_addmodule_borrowed_ref(self):
+        # gh-105922: Test PyImport_AddModule() with a custom sys.modules which
+        # doesn't keep a strong reference to the newly created module
+        import _testcapi
+        module_name = 'dontexist'
+
+        self.assertNotIn(module_name, sys.modules)
+        self.addCleanup(unload, module_name)
+
+        class CustomModules(dict):
+            def __setitem__(self, key, value):
+                if key == module_name:
+                    value = "REPLACE_VALUE"
+                super().__setitem__(key, value)
+
+        custom_modules = CustomModules()
+        with swap_attr(sys, 'modules', custom_modules):
+            _testcapi.pyimport_addmodule(module_name)
+
+        if module_name in sys.modules:
+            print("sys.modules CANNOT be overriden: "
+                  "{module_name} is in sys.modules")
+
 
 if __name__ == '__main__':
     # Test needs to be a package, so we can do relative imports.

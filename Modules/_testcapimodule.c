@@ -3373,6 +3373,26 @@ error:
 
 
 static PyObject *
+test_pyimport_addmodule(PyObject *self, PyObject *args)
+{
+    const char *name;
+    if (!PyArg_ParseTuple(args, "s", &name)) {
+        return NULL;
+    }
+    PyObject *mod = PyImport_AddModule(name);
+    if (mod == NULL) {
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_AssertionError,
+                            "PyImport_AddModule returns NULL "
+                            "without setting an exception");
+        }
+        return NULL;
+    }
+    return Py_NewRef(mod);
+}
+
+
+static PyObject *
 test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 {
     // Create a new heap type, create an instance of this type, and delete the
@@ -3610,6 +3630,7 @@ static PyMethodDef TestMethods[] = {
     {"function_set_kw_defaults", function_set_kw_defaults, METH_VARARGS, NULL},
     {"test_atexit", test_atexit, METH_NOARGS},
     {"check_pyimport_addmodule", check_pyimport_addmodule, METH_VARARGS},
+    {"pyimport_addmodule", test_pyimport_addmodule, METH_VARARGS},
     {"test_weakref_capi", test_weakref_capi, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
