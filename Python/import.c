@@ -372,8 +372,21 @@ PyImport_AddModuleObject(PyObject *name)
     if (!mod) {
         return NULL;
     }
-    Py_DECREF(mod);  // sys.modules holds a strong reference
-    return mod; /* borrowed reference */
+
+    // Convert to a borrowed reference
+    Py_ssize_t old_refcnt = Py_REFCNT(mod);
+    Py_DECREF(mod);
+    if (old_refcnt == 1) {
+        // gh-86160, gh-105922: The module got deleted. It can happen if
+        // sys.modules does not hold a strong reference to the module. For
+        // example, if sys.modules is not a regular dict but a custom type.
+        PyErr_SetString(PyExc_RuntimeError,
+                        "sys.modules does not hold a strong reference "
+                        "to the module");
+        return NULL;
+    }
+
+    return mod;  // borrowed reference, sys.modules holds a strong reference
 }
 
 
