@@ -383,10 +383,25 @@ class Instruction:
         """Whether this instruction is viable as a uop."""
         if self.always_exits:
             return False
-        for c in self.cache_effects:
-            if c.name != UNUSED:
+        if self.instr_flags.HAS_ARG_FLAG:
+            # If the instruction uses oparg, it cannot use any caches
+            for c in self.cache_effects:
+                if c.name != UNUSED:
+                    return False
+        else:
+            # If it doesn't use oparg, it can have one short cache entry
+            caches: list[parser.CacheEffect] = []
+            cache_offset = 0
+            for c in self.cache_effects:
+                if c.name != UNUSED:
+                    if c.size > 2:
+                        return False
+                    caches.append(c)
+                cache_offset += c.size
+            if len(caches) > 1:
                 return False
         for forbidden in FORBIDDEN_INSTRUCTIONS:
+            # TODO: Don't check in '#ifdef ENABLE_SPECIALIZATION' regions
             if variable_used(self.inst, forbidden):
                 return False
         return True
@@ -1318,20 +1333,6 @@ class Analyzer:
                             with self.out.block(f"case {thing.name}:"):
                                 instr.write(self.out, adjust_cache=False)
                                 self.out.emit("break;")
-                        else:
-                            if not instr.instr_flags.HAS_ARG_FLAG:
-                                caches: list[parser.CacheEffect] = []
-                                cache_offset = 0
-                                for c in instr.cache_effects:
-                                    if c.name != UNUSED:
-                                        caches.append(c)
-                                    cache_offset += c.size
-                                if len(caches) == 1:
-                                    self.out.emit("")
-                                    with self.out.block(f"case {thing.name}:"):
-                                        instr.write(self.out, adjust_cache=False)
-                                        self.out.emit("break;")
-
                     case parser.Macro():
                         pass  # TODO
                     case parser.Pseudo():
