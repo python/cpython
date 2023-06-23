@@ -5,6 +5,7 @@ paths with operations that have semantics appropriate for different
 operating systems.
 """
 
+import contextlib
 import fnmatch
 import functools
 import io
@@ -15,9 +16,18 @@ import re
 import sys
 import warnings
 from _collections_abc import Sequence
-from errno import ENOENT, ENOTDIR, EBADF, ELOOP
+from errno import ENOENT, ENOTDIR, EBADF, ELOOP, EINVAL
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from urllib.parse import quote_from_bytes as urlquote_from_bytes
+
+try:
+    import pwd
+except ImportError:
+    pwd = None
+try:
+    import grp
+except ImportError:
+    grp = None
 
 
 __all__ = [
@@ -771,23 +781,20 @@ class PureWindowsPath(PurePath):
 # Filesystem-accessing classes
 
 
-class Path(PurePath):
-    """PurePath subclass that can make system calls.
-
-    Path represents a filesystem path but unlike PurePath, also offers
-    methods to do system calls on path objects. Depending on your system,
-    instantiating a Path will return either a PosixPath or a WindowsPath
-    object. You can also instantiate a PosixPath or WindowsPath directly,
-    but cannot instantiate a WindowsPath on a POSIX system or vice versa.
+class _VirtualPath(PurePath):
+    """PurePath subclass for virtual filesystems, such as archives and remote
+    storage.
     """
     __slots__ = ()
+    __bytes__ = None
+    __fspath__ = None
 
     def stat(self, *, follow_symlinks=True):
         """
         Return the result of the stat() system call on this path, like
         os.stat() does.
         """
-        return os.stat(self, follow_symlinks=follow_symlinks)
+        raise UnsupportedOperation(f"{type(self).__name__}.stat()")
 
     def lstat(self):
         """
@@ -854,7 +861,21 @@ class Path(PurePath):
         """
         Check if this path is a mount point
         """
-        return self._flavour.ismount(self)
+        # Need to exist and be a dir
+        if not self.exists() or not self.is_dir():
+            return False
+
+        try:
+            parent_dev = self.parent.stat().st_dev
+        except OSError:
+            return False
+
+        dev = self.stat().st_dev
+        if dev != parent_dev:
+            return True
+        ino = self.stat().st_ino
+        parent_ino = self.parent.stat().st_ino
+        return ino == parent_ino
 
     def is_symlink(self):
         """
@@ -875,7 +896,15 @@ class Path(PurePath):
         """
         Whether this path is a junction.
         """
-        return self._flavour.isjunction(self)
+        import stat
+        try:
+            return self.lstat().st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT
+        except OSError as e:
+            if not _ignore_error(e):
+                raise
+            return False
+        except (ValueError, AttributeError):
+            return False
 
     def is_block_device(self):
         """
@@ -958,9 +987,7 @@ class Path(PurePath):
         Open the file pointed by this path and return a file object, as
         the built-in open() function does.
         """
-        if "b" not in mode:
-            encoding = io.text_encoding(encoding)
-        return io.open(self, mode, buffering, encoding, errors, newline)
+        raise UnsupportedOperation(f"{type(self).__name__}.open()")
 
     def read_bytes(self):
         """
@@ -1003,14 +1030,10 @@ class Path(PurePath):
         The children are yielded in arbitrary order, and the
         special entries '.' and '..' are not included.
         """
-        for name in os.listdir(self):
-            yield self._make_child_relpath(name)
+        raise UnsupportedOperation(f"{type(self).__name__}.iterdir()")
 
     def _scandir(self):
-        # bpo-24132: a future version of pathlib will support subclassing of
-        # pathlib.Path to customize how the filesystem is accessed. This
-        # includes scandir(), which is used to implement glob().
-        return os.scandir(self)
+        return contextlib.nullcontext(list(self.iterdir()))
 
     def _make_child_relpath(self, name):
         sep = self._flavour.sep
@@ -1134,13 +1157,13 @@ class Path(PurePath):
             # blow up for a minor reason when (say) a thousand readable
             # directories are still left to visit. That logic is copied here.
             try:
-                scandir_it = path._scandir()
+                scandir_obj = path._scandir()
             except OSError as error:
                 if on_error is not None:
                     on_error(error)
                 continue
 
-            with scandir_it:
+            with scandir_obj as scandir_it:
                 dirnames = []
                 filenames = []
                 for entry in scandir_it:
@@ -1162,6 +1185,210 @@ class Path(PurePath):
 
             paths += [path._make_child_relpath(d) for d in reversed(dirnames)]
 
+    def absolute(self):
+        """Return an absolute version of this path by prepending the current
+        working directory. No normalization or symlink resolution is performed.
+
+        Use resolve() to get the canonical path to a file.
+        """
+        raise UnsupportedOperation(f"{type(self).__name__}.absolute()")
+
+    @classmethod
+    def cwd(cls):
+        """Return a new path pointing to the current working directory."""
+        return cls().absolute()
+
+    def expanduser(self):
+        """ Return a new path with expanded ~ and ~user constructs
+        (as returned by os.path.expanduser)
+        """
+        raise UnsupportedOperation(f"{type(self).__name__}.expanduser()")
+
+    @classmethod
+    def home(cls):
+        """Return a new path pointing to the user's home directory (as
+        returned by os.path.expanduser('~')).
+        """
+        return cls("~").expanduser()
+
+    def readlink(self):
+        """
+        Return the path to which the symbolic link points.
+        """
+        raise UnsupportedOperation(f"{type(self).__name__}.readlink()")
+
+    def resolve(self, strict=False):
+        """
+        Resolve '..' segments in the path. Where possible, make the path
+        absolute and resolve symlinks on the way.
+        """
+        try:
+            path = self.absolute()
+            tail_idx = len(path._tail) - len(self._tail)
+        except UnsupportedOperation:
+            path = self
+            tail_idx = 0
+        if not path._tail:
+            return path
+        drv = path.drive
+        root = path.root
+        tail = list(path._tail)
+        dirty = False
+        link_count = 0
+        readlink_supported = True
+        while tail_idx < len(tail):
+            if tail[tail_idx] == '..':
+                if tail_idx == 0:
+                    if root:
+                        # Delete '..' part immediately following root.
+                        del tail[tail_idx]
+                        dirty = True
+                        continue
+                elif tail[tail_idx - 1] != '..':
+                    # Delete '..' part and its predecessor.
+                    tail_idx -= 1
+                    del tail[tail_idx:tail_idx + 2]
+                    dirty = True
+                    continue
+            elif readlink_supported:
+                link = self._from_parsed_parts(drv, root, tail[:tail_idx + 1])
+                try:
+                    link_target = link.readlink()
+                except UnsupportedOperation:
+                    readlink_supported = False
+                except OSError as e:
+                    if e.errno != EINVAL:
+                        if strict:
+                            raise
+                        else:
+                            break
+                else:
+                    link_count += 1
+                    if link_count >= 40:
+                        raise OSError(ELOOP, "Symlink loop", path)
+                    elif link_target.root or link_target.drive:
+                        link_target = link.parent / link_target
+                        drv = link_target.drive
+                        root = link_target.root
+                        tail[:tail_idx + 1] = link_target._tail
+                        tail_idx = 0
+                    else:
+                        tail[tail_idx:tail_idx + 1] = link_target._tail
+                    dirty = True
+                    continue
+            tail_idx += 1
+        if dirty:
+            path = self._from_parsed_parts(drv, root, tail)
+        return path
+
+    def symlink_to(self, target, target_is_directory=False):
+        """
+        Make this path a symlink pointing to the target path.
+        Note the order of arguments (link, target) is the reverse of os.symlink.
+        """
+        raise UnsupportedOperation(f"{type(self).__name__}.symlink_to()")
+
+    def hardlink_to(self, target):
+        """
+        Make this path a hard link pointing to the same file as *target*.
+
+        Note the order of arguments (self, target) is the reverse of os.link's.
+        """
+        raise UnsupportedOperation(f"{type(self).__name__}.hardlink_to()")
+
+    def touch(self, mode=0o666, exist_ok=True):
+        """
+        Create this file with the given access mode, if it doesn't exist.
+        """
+        raise UnsupportedOperation(f"{type(self).__name__}.touch()")
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        raise UnsupportedOperation(f"{type(self).__name__}.mkdir()")
+
+    def rename(self, target):
+        """
+        Rename this path to the target path.
+
+        The target path may be absolute or relative. Relative paths are
+        interpreted relative to the current working directory, *not* the
+        directory of the Path object.
+
+        Returns the new Path instance pointing to the target path.
+        """
+        raise UnsupportedOperation(f"{type(self).__name__}.rename()")
+
+    def replace(self, target):
+        """
+        Rename this path to the target path, overwriting if that path exists.
+
+        The target path may be absolute or relative. Relative paths are
+        interpreted relative to the current working directory, *not* the
+        directory of the Path object.
+
+        Returns the new Path instance pointing to the target path.
+        """
+        raise UnsupportedOperation(f"{type(self).__name__}.replace()")
+
+    def chmod(self, mode, *, follow_symlinks=True):
+        """
+        Change the permissions of the path, like os.chmod().
+        """
+        raise UnsupportedOperation(f"{type(self).__name__}.chmod()")
+
+    def lchmod(self, mode):
+        """
+        Like chmod(), except if the path points to a symlink, the symlink's
+        permissions are changed, rather than its target's.
+        """
+        self.chmod(mode, follow_symlinks=False)
+
+    def unlink(self, missing_ok=False):
+        """
+        Remove this file or link.
+        If the path is a directory, use rmdir() instead.
+        """
+        raise UnsupportedOperation(f"{type(self).__name__}.unlink()")
+
+    def rmdir(self):
+        """
+        Remove this directory.  The directory must be empty.
+        """
+        raise UnsupportedOperation(f"{type(self).__name__}.rmdir()")
+
+    def owner(self):
+        """
+        Return the login name of the file owner.
+        """
+        raise UnsupportedOperation(f"{type(self).__name__}.owner()")
+
+    def group(self):
+        """
+        Return the group name of the file gid.
+        """
+        raise UnsupportedOperation(f"{type(self).__name__}.group()")
+
+    def as_uri(self):
+        """Return the path as a URI."""
+        raise UnsupportedOperation(f"{type(self).__name__}.as_uri()")
+
+
+class Path(_VirtualPath):
+    """PurePath subclass that can make system calls.
+
+    Path represents a filesystem path but unlike PurePath, also offers
+    methods to do system calls on path objects. Depending on your system,
+    instantiating a Path will return either a PosixPath or a WindowsPath
+    object. You can also instantiate a PosixPath or WindowsPath directly,
+    but cannot instantiate a WindowsPath on a POSIX system or vice versa.
+    """
+    __slots__ = ()
+    __bytes__ = PurePath.__bytes__
+    __fspath__ = PurePath.__fspath__
+    as_uri = PurePath.as_uri
+
     def __init__(self, *args, **kwargs):
         if kwargs:
             msg = ("support for supplying keyword arguments to pathlib.PurePath "
@@ -1174,21 +1401,46 @@ class Path(PurePath):
             cls = WindowsPath if os.name == 'nt' else PosixPath
         return object.__new__(cls)
 
-    @classmethod
-    def cwd(cls):
-        """Return a new path pointing to the current working directory."""
-        # We call 'absolute()' rather than using 'os.getcwd()' directly to
-        # enable users to replace the implementation of 'absolute()' in a
-        # subclass and benefit from the new behaviour here. This works because
-        # os.path.abspath('.') == os.getcwd().
-        return cls().absolute()
-
-    @classmethod
-    def home(cls):
-        """Return a new path pointing to the user's home directory (as
-        returned by os.path.expanduser('~')).
+    def stat(self, *, follow_symlinks=True):
         """
-        return cls("~").expanduser()
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+        return os.stat(self, follow_symlinks=follow_symlinks)
+
+    def is_mount(self):
+        """
+        Check if this path is a mount point
+        """
+        return self._flavour.ismount(self)
+
+    def is_junction(self):
+        """
+        Whether this path is a junction.
+        """
+        return self._flavour.isjunction(self)
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+        return io.open(self, mode, buffering, encoding, errors, newline)
+
+    def iterdir(self):
+        """Yield path objects of the directory contents.
+
+        The children are yielded in arbitrary order, and the
+        special entries '.' and '..' are not included.
+        """
+        for name in os.listdir(self):
+            yield self._make_child_relpath(name)
+
+    def _scandir(self):
+        return os.scandir(self)
 
     def absolute(self):
         """Return an absolute version of this path by prepending the current
@@ -1241,34 +1493,26 @@ class Path(PurePath):
                 check_eloop(e)
         return p
 
-    def owner(self):
-        """
-        Return the login name of the file owner.
-        """
-        try:
-            import pwd
+    if pwd:
+        def owner(self):
+            """
+            Return the login name of the file owner.
+            """
             return pwd.getpwuid(self.stat().st_uid).pw_name
-        except ImportError:
-            raise UnsupportedOperation("Path.owner() is unsupported on this system")
 
-    def group(self):
-        """
-        Return the group name of the file gid.
-        """
-
-        try:
-            import grp
+    if grp:
+        def group(self):
+            """
+            Return the group name of the file gid.
+            """
             return grp.getgrgid(self.stat().st_gid).gr_name
-        except ImportError:
-            raise UnsupportedOperation("Path.group() is unsupported on this system")
 
-    def readlink(self):
-        """
-        Return the path to which the symbolic link points.
-        """
-        if not hasattr(os, "readlink"):
-            raise UnsupportedOperation("os.readlink() not available on this system")
-        return self.with_segments(os.readlink(self))
+    if hasattr(os, "readlink"):
+        def readlink(self):
+            """
+            Return the path to which the symbolic link points.
+            """
+            return self.with_segments(os.readlink(self))
 
     def touch(self, mode=0o666, exist_ok=True):
         """
@@ -1315,13 +1559,6 @@ class Path(PurePath):
         """
         os.chmod(self, mode, follow_symlinks=follow_symlinks)
 
-    def lchmod(self, mode):
-        """
-        Like chmod(), except if the path points to a symlink, the symlink's
-        permissions are changed, rather than its target's.
-        """
-        self.chmod(mode, follow_symlinks=False)
-
     def unlink(self, missing_ok=False):
         """
         Remove this file or link.
@@ -1365,24 +1602,22 @@ class Path(PurePath):
         os.replace(self, target)
         return self.with_segments(target)
 
-    def symlink_to(self, target, target_is_directory=False):
-        """
-        Make this path a symlink pointing to the target path.
-        Note the order of arguments (link, target) is the reverse of os.symlink.
-        """
-        if not hasattr(os, "symlink"):
-            raise UnsupportedOperation("os.symlink() not available on this system")
-        os.symlink(target, self, target_is_directory)
+    if hasattr(os, "symlink"):
+        def symlink_to(self, target, target_is_directory=False):
+            """
+            Make this path a symlink pointing to the target path.
+            Note the order of arguments (link, target) is the reverse of os.symlink.
+            """
+            os.symlink(target, self, target_is_directory)
 
-    def hardlink_to(self, target):
-        """
-        Make this path a hard link pointing to the same file as *target*.
+    if hasattr(os, "link"):
+        def hardlink_to(self, target):
+            """
+            Make this path a hard link pointing to the same file as *target*.
 
-        Note the order of arguments (self, target) is the reverse of os.link's.
-        """
-        if not hasattr(os, "link"):
-            raise UnsupportedOperation("os.link() not available on this system")
-        os.link(target, self)
+            Note the order of arguments (self, target) is the reverse of os.link's.
+            """
+            os.link(target, self)
 
     def expanduser(self):
         """ Return a new path with expanded ~ and ~user constructs
