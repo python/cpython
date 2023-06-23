@@ -397,7 +397,7 @@ of the same type ``T``, use ``tuple[T, ...]``. To denote an empty tuple, use
    # These reassignments are OK: ``tuple[int, ...]`` indicates x can be of any length
    x = (1, 2, 3)
    x = ()
-   # This reassignment is an error: all elements in ``x`` must be strings
+   # This reassignment is an error: all elements in ``x`` must be ints
    x = ("foo", "bar")
 
    # y can only ever be assigned to an empty tuple
