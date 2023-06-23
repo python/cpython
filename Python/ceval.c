@@ -2933,8 +2933,16 @@ translate_bytecode_to_trace(
             }
             default:
             {
-                if (OPCODE_IS_UOP(opcode)) {
-                    ADD_TO_TRACE(opcode, oparg);
+                const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
+                if (expansion->nuops > 0) {
+                    // Reserve space for nuops (+ SETUP + EXIT_TRACE)
+                    if (trace_length + expansion->nuops + 2 > max_length) {
+                        goto done;
+                    }
+                    for (int i = 0; i < expansion->nuops; i++) {
+                        assert(expansion->uops[0].size == 0);  // TODO
+                        ADD_TO_TRACE(expansion->uops[i].uop, oparg);  // TODO: oparg?
+                    }
                     break;
                 }
                 // fprintf(stderr, "Unsupported opcode %d\n", opcode);

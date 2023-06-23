@@ -186,14 +186,14 @@ class Formatter:
         self.prefix = self.prefix[:-4]
 
     @contextlib.contextmanager
-    def block(self, head: str):
+    def block(self, head: str, tail: str = ""):
         if head:
             self.emit(head + " {")
         else:
             self.emit("{")
         with self.indent():
             yield
-        self.emit("}")
+        self.emit("}" + tail)
 
     def stack_adjust(
         self,
@@ -1196,12 +1196,17 @@ class Analyzer:
 
             InstructionFlags.emit_macros(self.out)
 
-            self.out.emit("struct opcode_metadata {")
-            with self.out.indent():
+            with self.out.block("struct opcode_metadata", ";"):
                 self.out.emit("bool valid_entry;")
                 self.out.emit("enum InstructionFormat instr_format;")
                 self.out.emit("int flags;")
-            self.out.emit("};")
+            self.out.emit("")
+
+            with self.out.block("struct opcode_macro_expansion", ";"):
+                self.out.emit("int nuops;")
+                self.out.emit("struct { int16_t uop; int8_t size; int8_t offset; } uops[8];")
+            self.out.emit("")
+
             self.out.emit("")
             self.out.emit("#define OPCODE_METADATA_FMT(OP) "
                           "(_PyOpcode_opcode_metadata[(OP)].instr_format)")
@@ -1212,7 +1217,9 @@ class Analyzer:
             # Write metadata array declaration
             self.out.emit("#ifndef NEED_OPCODE_METADATA")
             self.out.emit("extern const struct opcode_metadata _PyOpcode_opcode_metadata[512];")
+            self.out.emit("extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[256];")
             self.out.emit("#else")
+
             self.out.emit("const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {")
 
             # Write metadata for each instruction
@@ -1232,6 +1239,31 @@ class Analyzer:
 
             # Write end of array
             self.out.emit("};")
+
+            with self.out.block(
+                "const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] =",
+                ";",
+            ):
+                # Write macro expansion for each non-pseudo instruction
+                for thing in self.everything:
+                    match thing:
+                        case OverriddenInstructionPlaceHolder():
+                            pass
+                        case parser.InstDef(name=name):
+                            instr = self.instrs[name]
+                            if instr.kind != "op" and instr.is_viable_uop():
+                                self.out.emit(
+                                    f"[{name}] = "
+                                    f"{{ .nuops = 1, .uops = {{ {{ {name}, 0, 0 }} }} }},"
+                                )
+                        case parser.Macro():
+                            # TODO: emit expansion if all parts are viable uops
+                            pass
+                        case parser.Pseudo():
+                            pass
+                        case _:
+                            typing.assert_never(thing)
+
             self.out.emit("#endif")
 
         with open(self.pymetadata_filename, "w") as f:
