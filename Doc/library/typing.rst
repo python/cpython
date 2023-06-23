@@ -362,8 +362,8 @@ the container will be of the same type. For example::
    # Type checker error: ``list`` only accepts a single type argument:
    y: list[int, str] = [1, 'foo']
 
-   # Type checker will infer that all keys in ``y`` are meant to be strings,
-   # and that all values in ``y`` are meant to be either strings or ints
+   # Type checker will infer that all keys in ``z`` are meant to be strings,
+   # and that all values in ``z`` are meant to be either strings or ints
    z: Mapping[str, str | int] = {}
 
 :class:`list` only accepts one type argument, so a type checker would emit an
