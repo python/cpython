@@ -928,7 +928,7 @@ their subgroups based on the types of the contained exceptions.
       true for such an exception group, it is included in the result in full.
 
       .. versionadded:: 3.13
-         ``condition`` can be any callable other than a type object.
+         ``condition`` can be any callable which is not a type object.
 
    .. method:: split(condition)
 
