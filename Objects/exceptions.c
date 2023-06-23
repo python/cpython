@@ -992,7 +992,7 @@ get_matcher_type(PyObject *value,
 {
     assert(value);
 
-    if (PyFunction_Check(value)) {
+    if (PyCallable_Check(value) && !PyType_Check(value)) {
         *type = EXCEPTION_GROUP_MATCH_BY_PREDICATE;
         return 0;
     }
@@ -1016,7 +1016,7 @@ get_matcher_type(PyObject *value,
 error:
     PyErr_SetString(
         PyExc_TypeError,
-        "expected a function, exception type or tuple of exception types");
+        "expected an exception type, a tuple of exception types, or a callable (other than a class)");
     return -1;
 }
 
@@ -1032,7 +1032,7 @@ exceptiongroup_split_check_match(PyObject *exc,
         return PyErr_GivenExceptionMatches(exc, matcher_value);
     }
     case EXCEPTION_GROUP_MATCH_BY_PREDICATE: {
-        assert(PyFunction_Check(matcher_value));
+        assert(PyCallable_Check(matcher_value) && !PyType_Check(matcher_value));
         PyObject *exc_matches = PyObject_CallOneArg(matcher_value, exc);
         if (exc_matches == NULL) {
             return -1;
