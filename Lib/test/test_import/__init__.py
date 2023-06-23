@@ -2518,6 +2518,7 @@ class SinglephaseInitTests(unittest.TestCase):
         #  * m_copy was copied from interp2 (was from interp1)
         #  * module's global state was updated, not reset
 
+    @no_rerun(reason="rerun not possible; module state is never cleared (see gh-102251)")
     @requires_subinterpreters
     def test_basic_multiple_interpreters_deleted_no_reset(self):
         # without resetting; already loaded in a deleted interpreter
