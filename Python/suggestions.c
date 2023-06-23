@@ -157,7 +157,7 @@ calculate_suggestions(PyObject *dir,
             PyMem_Free(buffer);
             return NULL;
         }
-        if (PyUnicode_CompareWithASCIIString(name, item_str) == 0) {
+        if (PyUnicode_Compare(name, item) == 0) {
             continue;
         }
         // No more than 1/3 of the involved characters should need changed.
