@@ -37,9 +37,16 @@
     <bz2Dir Condition="$(bz2Dir) == ''">$(ExternalsDir)bzip2-1.0.6\</bz2Dir>
     <bz2Dir Condition="!HasTrailingSlash($(bz2Dir))">$(bz2Dir)\</bz2Dir>
     <bsddbDir>$(ExternalsDir)bsddb-4.7.25.0</bsddbDir>
-    <opensslDir>$(ExternalsDir)openssl-1.0.2t\</opensslDir>
-    <opensslIncludeDir>$(opensslDir)include32</opensslIncludeDir>
-    <opensslIncludeDir Condition="'$(ArchName)' == 'amd64'">$(opensslDir)include64</opensslIncludeDir>
+    <opensslDir>$(OPENSSL_DIR)</opensslDir>
+    <opensslIncludeDir/>
+    <opensslLibdir/>
+    <opensslOutDir Condition="$(opensslDir) == ''">$(ExternalsDir)openssl-bin-1.0.2t\$(ArchName)\</opensslOutDir>
+    <opensslLibDir Condition="$(opensslDir) == ''">$(opensslOutDir)</opensslLibDir>
+    <opensslIncludeDir Condition="$(opensslDir) == ''">$(opensslOutDir)include</opensslIncludeDir>
+    <opensslDir Condition="$(opensslDir) == ''">$(ExternalsDir)openssl-1.0.2t\</opensslDir>
+    <opensslDir Condition="!HasTrailingSlash($(opensslDir))">$(opensslDir)\</opensslDir>
+    <opensslIncludeDir Condition="$(opensslIncludeDir) == ''">$(opensslDir)include</opensslIncludeDir>
+    <opensslLibDir Condition="$(opensslLibDir) == ''">$(opensslDir)lib</opensslLibDir>
     <nasmDir>$(ExternalsDir)\nasm-2.11.06\</nasmDir>
 
     <!-- Suffix for all binaries when building for debug -->

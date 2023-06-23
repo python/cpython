@@ -42,7 +42,7 @@
     <ExternalModules Include="_sqlite3" />
     <!-- _ssl will build _socket as well, which may cause conflicts in parallel builds -->
     <ExtensionModules Include="_socket" Condition="!$(IncludeSSL) or !$(IncludeExternals)" />
-    <ExternalModules Include="_ssl;_hashlib" Condition="$(IncludeSSL)" />
+    <ExtensionModules Include="_ssl;_hashlib" Condition="$(IncludeSSL)" />
     <ExtensionModules Include="bz2" Condition="$(IncludeBzip2) or $(IncludeExternals)" />
     <ExternalModules Include="_tkinter;tix" Condition="$(IncludeTkinter)" />
     <ExternalModules Include="_bsddb" Condition="$(IncludeBsddb)" />
