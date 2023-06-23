@@ -301,7 +301,7 @@ class UnixBrowser(BaseBrowser):
             action = self.remote_action_incognito
         else:
             raise Error("Bad 'new' parameter to open(); " +
-                        "expected 0, 1, 2, or 3, got %s" % new)
+                        f"expected 0, 1, 2, or 3, got {new}")
 
         args = [arg.replace("%s", url).replace("%action", action)
                 for arg in self.remote_args]
