@@ -1138,15 +1138,13 @@ print_exception_notes(struct exception_print_context *ctx, PyObject *value)
         return 0;
     }
 
-    if (!PyObject_HasAttr(value, &_Py_ID(__notes__))) {
-        return 0;
-    }
-    PyObject *notes = PyObject_GetAttr(value, &_Py_ID(__notes__));
-    if (notes == NULL) {
-        return -1;
+    PyObject *notes;
+    int res = _PyObject_LookupAttr(value, &_Py_ID(__notes__), &notes);
+    if (res <= 0) {
+        return res;
     }
     if (!PySequence_Check(notes)) {
-        int res = 0;
+        res = 0;
         if (write_indented_margin(ctx, f) < 0) {
             res = -1;
         }

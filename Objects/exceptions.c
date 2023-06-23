@@ -210,22 +210,21 @@ BaseException_add_note(PyObject *self, PyObject *note)
         return NULL;
     }
 
-    if (!PyObject_HasAttr(self, &_Py_ID(__notes__))) {
-        PyObject *new_notes = PyList_New(0);
-        if (new_notes == NULL) {
-            return NULL;
-        }
-        if (PyObject_SetAttr(self, &_Py_ID(__notes__), new_notes) < 0) {
-            Py_DECREF(new_notes);
-            return NULL;
-        }
-        Py_DECREF(new_notes);
-    }
-    PyObject *notes = PyObject_GetAttr(self, &_Py_ID(__notes__));
-    if (notes == NULL) {
+    PyObject *notes;
+    if (_PyObject_LookupAttr(self, &_Py_ID(__notes__), &notes) < 0) {
         return NULL;
     }
-    if (!PyList_Check(notes)) {
+    if (notes == NULL) {
+        notes = PyList_New(0);
+        if (notes == NULL) {
+            return NULL;
+        }
+        if (PyObject_SetAttr(self, &_Py_ID(__notes__), notes) < 0) {
+            Py_DECREF(notes);
+            return NULL;
+        }
+    }
+    else if (!PyList_Check(notes)) {
         Py_DECREF(notes);
         PyErr_SetString(PyExc_TypeError, "Cannot add note: __notes__ is not a list");
         return NULL;
@@ -943,11 +942,11 @@ exceptiongroup_subset(
     PyException_SetContext(eg, PyException_GetContext(orig));
     PyException_SetCause(eg, PyException_GetCause(orig));
 
-    if (PyObject_HasAttr(orig, &_Py_ID(__notes__))) {
-        PyObject *notes = PyObject_GetAttr(orig, &_Py_ID(__notes__));
-        if (notes == NULL) {
-            goto error;
-        }
+    PyObject *notes;
+    if (_PyObject_LookupAttr(orig, &_Py_ID(__notes__), &notes) < 0) {
+        goto error;
+    }
+    if (notes) {
         if (PySequence_Check(notes)) {
             /* Make a copy so the parts have independent notes lists. */
             PyObject *notes_copy = PySequence_List(notes);
