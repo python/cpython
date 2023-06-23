@@ -300,7 +300,7 @@ class InstructionFlags:
                 f"(_PyOpcode_opcode_metadata[(OP)].flags & ({name}))")
 
 
-FORBIDDEN_INSTRUCTIONS = (
+FORBIDDEN_NAMES_IN_UOPS = (
     "resume_with_error",  # Proxy for "goto", which isn't an IDENTIFIER
     "unbound_local_error",
     "kwnames",
@@ -404,7 +404,7 @@ class Instruction:
                 cache_offset += c.size
             if len(caches) > 1:
                 return False
-        for forbidden in FORBIDDEN_INSTRUCTIONS:
+        for forbidden in FORBIDDEN_NAMES_IN_UOPS:
             # TODO: Don't check in '#ifdef ENABLE_SPECIALIZATION' regions
             if variable_used(self.inst, forbidden):
                 return False
