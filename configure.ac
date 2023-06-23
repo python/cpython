@@ -1079,7 +1079,11 @@ cat > conftest.c <<EOF
 #  if defined(__EMSCRIPTEN__)
 	wasm32-emscripten
 #  elif defined(__wasi__)
+#    if defined(_REENTRANT)
+	wasm32-wasi-threads
+#    else
 	wasm32-wasi
+#    endif
 #  else
 #    error unknown wasm32 platform
 #  endif
@@ -1272,7 +1276,7 @@ AC_ARG_ENABLE([wasm-pthreads],
 [
   AS_CASE([$ac_sys_system],
     [Emscripten], [],
-    [WASI], [AC_MSG_ERROR([WASI threading is not implemented yet.])],
+    [WASI], [],
     [AC_MSG_ERROR([--enable-wasm-pthreads only applies to Emscripten and WASI])]
   )
 ], [
@@ -2308,6 +2312,18 @@ AS_CASE([$ac_sys_system],
     AC_DEFINE([_WASI_EMULATED_PROCESS_CLOCKS], [1], [Define to 1 if you want to emulate process clocks on WASI])
     LIBS="$LIBS -lwasi-emulated-signal -lwasi-emulated-getpid -lwasi-emulated-process-clocks"
     echo "#define _WASI_EMULATED_SIGNAL 1" >> confdefs.h
+
+    AS_VAR_IF([enable_wasm_pthreads], [yes], [
+      # Note: update CFLAGS because ac_compile/ac_link needs this too.
+      # without this, configure fails to find pthread_create, sem_init,
+      # etc because they are only available in the sysroot for
+      # wasm32-wasi-threads.
+      AS_VAR_APPEND([CFLAGS], [" -target wasm32-wasi-threads -pthread"])
+      AS_VAR_APPEND([CFLAGS_NODIST], [" -target wasm32-wasi-threads -pthread"])
+      AS_VAR_APPEND([LDFLAGS_NODIST], [" -target wasm32-wasi-threads -pthread"])
+      AS_VAR_APPEND([LDFLAGS_NODIST], [" -Wl,--import-memory"])
+      AS_VAR_APPEND([LDFLAGS_NODIST], [" -Wl,--max-memory=10485760"])
+    ])
 
     dnl increase initial memory and stack size, move stack first
     dnl https://github.com/WebAssembly/wasi-libc/issues/233

@@ -106,6 +106,10 @@ built on debug mode <debug-build>`.
 pathlib
 -------
 
+* Add :exc:`pathlib.UnsupportedOperation`, which is raised instead of
+  :exc:`NotImplementedError` when a path operation isn't supported.
+  (Contributed by Barney Gale in :gh:`89812`.)
+
 * Add support for recursive wildcards in :meth:`pathlib.PurePath.match`.
   (Contributed by Barney Gale in :gh:`73435`.)
 
@@ -426,6 +430,15 @@ New Features
   APIs accepting the format codes always use ``Py_ssize_t`` for ``#`` formats.
   (Contributed by Inada Naoki in :gh:`104922`.)
 
+* Add :c:func:`PyImport_AddModuleRef`: similar to
+  :c:func:`PyImport_AddModule`, but return a :term:`strong reference` instead
+  of a :term:`borrowed reference`.
+  (Contributed by Victor Stinner in :gh:`105922`.)
+
+* Add :c:func:`PyWeakref_GetRef` function: similar to
+  :c:func:`PyWeakref_GetObject` but returns a :term:`strong reference`, or
+  ``NULL`` if the referent is no longer live.
+  (Contributed by Victor Stinner in :gh:`105927`.)
 
 Porting to Python 3.13
 ----------------------

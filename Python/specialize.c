@@ -391,7 +391,7 @@ _PyCode_Quicken(PyCodeObject *code)
 #define SPEC_FAIL_CALL_METH_DESCR_VARARGS_KEYWORDS 18
 #define SPEC_FAIL_CALL_METH_DESCR_METHOD_FASTCALL_KEYWORDS 19
 #define SPEC_FAIL_CALL_BAD_CALL_FLAGS 20
-#define SPEC_FAIL_CALL_PYTHON_CLASS 21
+#define SPEC_FAIL_CALL_INIT_NOT_PYTHON 21
 #define SPEC_FAIL_CALL_PEP_523 22
 #define SPEC_FAIL_CALL_BOUND_METHOD 23
 #define SPEC_FAIL_CALL_STR 24
@@ -400,6 +400,7 @@ _PyCode_Quicken(PyCodeObject *code)
 #define SPEC_FAIL_CALL_KWNAMES 27
 #define SPEC_FAIL_CALL_METHOD_WRAPPER 28
 #define SPEC_FAIL_CALL_OPERATOR_WRAPPER 29
+#define SPEC_FAIL_CALL_INIT_NOT_SIMPLE 30
 
 /* COMPARE_OP */
 #define SPEC_FAIL_COMPARE_OP_DIFFERENT_TYPES 12
@@ -1491,15 +1492,46 @@ success:
     cache->counter = adaptive_counter_cooldown();
 }
 
+/* Returns a borrowed reference.
+ * The reference is only valid if guarded by a type version check.
+ */
+static PyFunctionObject *
+get_init_for_simple_managed_python_class(PyTypeObject *tp)
+{
+    assert(tp->tp_new == PyBaseObject_Type.tp_new);
+    if (tp->tp_alloc != PyType_GenericAlloc) {
+        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_OVERRIDDEN);
+        return NULL;
+    }
+    if ((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
+        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_NO_DICT);
+        return NULL;
+    }
+    if (!(tp->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+        /* Is this possible? */
+        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_EXPECTED_ERROR);
+        return NULL;
+    }
+    PyObject *init = _PyType_Lookup(tp, &_Py_ID(__init__));
+    if (init == NULL || !PyFunction_Check(init)) {
+        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_INIT_NOT_PYTHON);
+        return NULL;
+    }
+    int kind = function_kind((PyCodeObject *)PyFunction_GET_CODE(init));
+    if (kind != SIMPLE_FUNCTION) {
+        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_INIT_NOT_SIMPLE);
+        return NULL;
+    }
+    ((PyHeapTypeObject *)tp)->_spec_cache.init = init;
+    return (PyFunctionObject *)init;
+}
+
 static int
 specialize_class_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
                       PyObject *kwnames)
 {
+    assert(PyType_Check(callable));
     PyTypeObject *tp = _PyType_CAST(callable);
-    if (tp->tp_new == PyBaseObject_Type.tp_new) {
-        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_PYTHON_CLASS);
-        return -1;
-    }
     if (tp->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) {
         int oparg = instr->op.arg;
         if (nargs == 1 && kwnames == NULL && oparg == 1) {
@@ -1522,6 +1554,24 @@ specialize_class_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
         }
         SPECIALIZATION_FAIL(CALL, tp == &PyUnicode_Type ?
             SPEC_FAIL_CALL_STR : SPEC_FAIL_CALL_CLASS_NO_VECTORCALL);
+        return -1;
+    }
+    if (tp->tp_new == PyBaseObject_Type.tp_new) {
+        PyFunctionObject *init = get_init_for_simple_managed_python_class(tp);
+        if (init != NULL) {
+            if (((PyCodeObject *)init->func_code)->co_argcount != nargs+1) {
+                SPECIALIZATION_FAIL(CALL, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
+                return -1;
+            }
+            if (kwnames) {
+                SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_KWNAMES);
+                return -1;
+            }
+            _PyCallCache *cache = (_PyCallCache *)(instr + 1);
+            write_u32(cache->func_version, tp->tp_version_tag);
+            _Py_SET_OPCODE(*instr, CALL_NO_KW_ALLOC_AND_ENTER_INIT);
+            return 0;
+        }
         return -1;
     }
     SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_CLASS_MUTABLE);
@@ -2229,3 +2279,42 @@ success:
     STAT_INC(SEND, success);
     cache->counter = adaptive_counter_cooldown();
 }
+
+/* Code init cleanup.
+ * CALL_NO_KW_ALLOC_AND_ENTER_INIT will set up
+ * the frame to execute the EXIT_INIT_CHECK
+ * instruction.
+ * Ends with a RESUME so that it is not traced.
+ * This is used as a plain code object, not a function,
+ * so must not access globals or builtins.
+ */
+
+#define NO_LOC_4 (128 | (PY_CODE_LOCATION_INFO_NONE << 3) | 3)
+
+static const PyBytesObject no_location = {
+    PyVarObject_HEAD_INIT(&PyBytes_Type, 1)
+    .ob_sval = { NO_LOC_4 }
+};
+
+const struct _PyCode_DEF(8) _Py_InitCleanup = {
+    _PyVarObject_HEAD_INIT(&PyCode_Type, 4)
+    .co_consts = (PyObject *)&_Py_SINGLETON(tuple_empty),
+    .co_names = (PyObject *)&_Py_SINGLETON(tuple_empty),
+    .co_exceptiontable = (PyObject *)&_Py_SINGLETON(bytes_empty),
+    .co_flags = CO_OPTIMIZED,
+    .co_localsplusnames = (PyObject *)&_Py_SINGLETON(tuple_empty),
+    .co_localspluskinds = (PyObject *)&_Py_SINGLETON(bytes_empty),
+    .co_filename = &_Py_ID(__init__),
+    .co_name = &_Py_ID(__init__),
+    .co_qualname = &_Py_ID(__init__),
+    .co_linetable = (PyObject *)&no_location,
+    ._co_firsttraceable = 4,
+    .co_stacksize = 2,
+    .co_framesize = 2 + FRAME_SPECIALS_SIZE,
+    .co_code_adaptive = {
+        NOP, 0,
+        EXIT_INIT_CHECK, 0,
+        RETURN_VALUE, 0,
+        RESUME, 0,
+    }
+};

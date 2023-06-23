@@ -24,6 +24,12 @@ except ImportError:
     grp = pwd = None
 
 
+class UnsupportedOperationTest(unittest.TestCase):
+    def test_is_notimplemented(self):
+        self.assertTrue(issubclass(pathlib.UnsupportedOperation, NotImplementedError))
+        self.assertTrue(isinstance(pathlib.UnsupportedOperation(), NotImplementedError))
+
+
 # Make sure any symbolic links in the base test path are resolved.
 BASE = os.path.realpath(TESTFN)
 join = lambda *x: os.path.join(BASE, *x)
@@ -1550,12 +1556,12 @@ class WindowsPathAsPureTest(PureWindowsPathTest):
 
     def test_owner(self):
         P = self.cls
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(pathlib.UnsupportedOperation):
             P('c:/').owner()
 
     def test_group(self):
         P = self.cls
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(pathlib.UnsupportedOperation):
             P('c:/').group()
 
 
@@ -2055,6 +2061,13 @@ class PathTest(unittest.TestCase):
         with self.assertRaises(OSError):
             (P / 'fileA').readlink()
 
+    @unittest.skipIf(hasattr(os, "readlink"), "os.readlink() is present")
+    def test_readlink_unsupported(self):
+        P = self.cls(BASE)
+        p = P / 'fileA'
+        with self.assertRaises(pathlib.UnsupportedOperation):
+            q.readlink(p)
+
     def _check_resolve(self, p, expected, strict=True):
         q = p.resolve(strict)
         self.assertEqual(q, expected)
@@ -2343,7 +2356,7 @@ class PathTest(unittest.TestCase):
         if self.cls._flavour is os.path:
             self.skipTest("path flavour is supported")
         else:
-            self.assertRaises(NotImplementedError, self.cls)
+            self.assertRaises(pathlib.UnsupportedOperation, self.cls)
 
     def _test_cwd(self, p):
         q = self.cls(os.getcwd())
@@ -2543,12 +2556,12 @@ class PathTest(unittest.TestCase):
         self.assertTrue(link2.exists())
 
     @unittest.skipIf(hasattr(os, "link"), "os.link() is present")
-    def test_link_to_not_implemented(self):
+    def test_hardlink_to_unsupported(self):
         P = self.cls(BASE)
         p = P / 'fileA'
         # linking to another path.
         q = P / 'dirA' / 'fileAA'
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(pathlib.UnsupportedOperation):
             q.hardlink_to(p)
 
     def test_rename(self):
@@ -2775,6 +2788,15 @@ class PathTest(unittest.TestCase):
         self.assertNotEqual(link.lstat(), target.stat())
         self.assertTrue(link.is_dir())
         self.assertTrue(list(link.iterdir()))
+
+    @unittest.skipIf(hasattr(os, "symlink"), "os.symlink() is present")
+    def test_symlink_to_unsupported(self):
+        P = self.cls(BASE)
+        p = P / 'fileA'
+        # linking to another path.
+        q = P / 'dirA' / 'fileAA'
+        with self.assertRaises(pathlib.UnsupportedOperation):
+            q.symlink_to(p)
 
     def test_is_junction(self):
         P = self.cls(BASE)

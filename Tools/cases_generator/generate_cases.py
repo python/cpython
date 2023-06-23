@@ -234,7 +234,61 @@ class Formatter:
     def cast(self, dst: StackEffect, src: StackEffect) -> str:
         return f"({dst.type or 'PyObject *'})" if src.type != dst.type else ""
 
-INSTRUCTION_FLAGS = ['HAS_ARG', 'HAS_CONST', 'HAS_NAME', 'HAS_JUMP']
+@dataclasses.dataclass
+class InstructionFlags:
+    """Construct and manipulate instruction flags"""
+
+    HAS_ARG_FLAG: bool
+    HAS_CONST_FLAG: bool
+    HAS_NAME_FLAG: bool
+    HAS_JUMP_FLAG: bool
+
+    def __post_init__(self):
+        self.bitmask = {
+            name : (1 << i) for i, name in enumerate(self.names())
+        }
+
+    @staticmethod
+    def fromInstruction(instr: "AnyInstruction"):
+        return InstructionFlags(
+            HAS_ARG_FLAG=variable_used(instr, "oparg"),
+            HAS_CONST_FLAG=variable_used(instr, "FRAME_CO_CONSTS"),
+            HAS_NAME_FLAG=variable_used(instr, "FRAME_CO_NAMES"),
+            HAS_JUMP_FLAG=variable_used(instr, "JUMPBY"),
+        )
+
+    @staticmethod
+    def newEmpty():
+        return InstructionFlags(False, False, False, False)
+
+    def add(self, other: "InstructionFlags") -> None:
+        for name, value in dataclasses.asdict(other).items():
+            if value:
+                setattr(self, name, value)
+
+    def names(self, value=None):
+        if value is None:
+            return dataclasses.asdict(self).keys()
+        return [n for n, v in dataclasses.asdict(self).items() if v == value]
+
+    def bitmap(self) -> int:
+        flags = 0
+        for name in self.names():
+            if getattr(self, name):
+                flags |= self.bitmask[name]
+        return flags
+
+    @classmethod
+    def emit_macros(cls, out: Formatter):
+        flags = cls.newEmpty()
+        for name, value in flags.bitmask.items():
+            out.emit(f"#define {name} ({value})");
+
+        for name, value in flags.bitmask.items():
+            out.emit(
+                f"#define OPCODE_{name[:-len('_FLAG')]}(OP) "
+                f"(_PyOpcode_opcode_metadata[(OP)].flags & ({name}))")
+
 
 @dataclasses.dataclass
 class Instruction:
@@ -256,7 +310,7 @@ class Instruction:
     output_effects: list[StackEffect]
     unmoved_names: frozenset[str]
     instr_fmt: str
-    flags: int
+    instr_flags: InstructionFlags
 
     # Set later
     family: parser.Family | None = None
@@ -285,18 +339,10 @@ class Instruction:
             else:
                 break
         self.unmoved_names = frozenset(unmoved_names)
-        flag_data = {
-            'HAS_ARG'  :  variable_used(inst, "oparg"),
-            'HAS_CONST':  variable_used(inst, "FRAME_CO_CONSTS"),
-            'HAS_NAME' :  variable_used(inst, "FRAME_CO_NAMES"),
-            'HAS_JUMP' :  variable_used(inst, "JUMPBY"),
-        }
-        assert set(flag_data.keys()) == set(INSTRUCTION_FLAGS)
-        self.flags = 0
-        for i, name in enumerate(INSTRUCTION_FLAGS):
-            self.flags |= (1<<i) if flag_data[name] else 0
 
-        if flag_data['HAS_ARG']:
+        self.instr_flags = InstructionFlags.fromInstruction(inst)
+
+        if self.instr_flags.HAS_ARG_FLAG:
             fmt = "IB"
         else:
             fmt = "IX"
@@ -495,7 +541,7 @@ class MacroInstruction:
     initial_sp: int
     final_sp: int
     instr_fmt: str
-    flags: int
+    instr_flags: InstructionFlags
     macro: parser.Macro
     parts: list[Component | parser.CacheEffect]
     predicted: bool = False
@@ -508,7 +554,7 @@ class PseudoInstruction:
     name: str
     targets: list[Instruction]
     instr_fmt: str
-    flags: int
+    instr_flags: InstructionFlags
 
 
 @dataclasses.dataclass
@@ -518,7 +564,6 @@ class OverriddenInstructionPlaceHolder:
 
 AnyInstruction = Instruction | MacroInstruction | PseudoInstruction
 INSTR_FMT_PREFIX = "INSTR_FMT_"
-INSTR_FLAG_SUFFIX = "_FLAG"
 
 
 class Analyzer:
@@ -787,7 +832,7 @@ class Analyzer:
         sp = initial_sp
         parts: list[Component | parser.CacheEffect] = []
         format = "IB"
-        flags = 0
+        flags = InstructionFlags.newEmpty()
         cache = "C"
         for component in components:
             match component:
@@ -803,7 +848,7 @@ class Analyzer:
                         for _ in range(ce.size):
                             format += cache
                             cache = "0"
-                    flags |= instr.flags
+                    flags.add(instr.instr_flags)
                 case _:
                     typing.assert_never(component)
         final_sp = sp
@@ -817,9 +862,8 @@ class Analyzer:
         # Make sure the targets have the same fmt
         fmts = list(set([t.instr_fmt for t in targets]))
         assert(len(fmts) == 1)
-        flags_list = list(set([t.flags for t in targets]))
-        assert(len(flags_list) == 1)
-        return PseudoInstruction(pseudo.name, targets, fmts[0], flags_list[0])
+        assert(len(list(set([t.instr_flags.bitmap() for t in targets]))) == 1)
+        return PseudoInstruction(pseudo.name, targets, fmts[0], targets[0].instr_flags)
 
     def analyze_instruction(
         self, instr: Instruction, stack: list[StackEffect], sp: int
@@ -1067,13 +1111,8 @@ class Analyzer:
 
             # Write type definitions
             self.out.emit(f"enum InstructionFormat {{ {', '.join(format_enums)} }};")
-            for i, flag in enumerate(INSTRUCTION_FLAGS):
-                self.out.emit(f"#define {flag}{INSTR_FLAG_SUFFIX} ({1 << i})");
-            for flag in INSTRUCTION_FLAGS:
-                flag_name = f"{flag}{INSTR_FLAG_SUFFIX}"
-                self.out.emit(
-                    f"#define OPCODE_{flag}(OP) "
-                    f"(_PyOpcode_opcode_metadata[(OP)].flags & ({flag_name}))")
+
+            InstructionFlags.emit_macros(self.out)
 
             self.out.emit("struct opcode_metadata {")
             with self.out.indent():
@@ -1153,25 +1192,28 @@ class Analyzer:
             self.out.emit(f"    ((OP) == {op}) || \\")
         self.out.emit(f"    0")
 
-    def emit_metadata_entry(self, name: str, fmt: str, flags: int) -> None:
-        flags_strs = [f"{name}{INSTR_FLAG_SUFFIX}"
-                      for i, name in enumerate(INSTRUCTION_FLAGS) if (flags & (1<<i))]
-        flags_s = "0" if not flags_strs else ' | '.join(flags_strs)
+    def emit_metadata_entry(
+        self, name: str, fmt: str, flags: InstructionFlags
+    ) -> None:
+        flag_names = flags.names(value=True)
+        if not flag_names:
+            flag_names.append("0")
         self.out.emit(
-            f"    [{name}] = {{ true, {INSTR_FMT_PREFIX}{fmt}, {flags_s} }},"
+            f"    [{name}] = {{ true, {INSTR_FMT_PREFIX}{fmt},"
+            f" {' | '.join(flag_names)} }},"
         )
 
     def write_metadata_for_inst(self, instr: Instruction) -> None:
         """Write metadata for a single instruction."""
-        self.emit_metadata_entry(instr.name, instr.instr_fmt, instr.flags)
+        self.emit_metadata_entry(instr.name, instr.instr_fmt, instr.instr_flags)
 
     def write_metadata_for_macro(self, mac: MacroInstruction) -> None:
         """Write metadata for a macro-instruction."""
-        self.emit_metadata_entry(mac.name, mac.instr_fmt, mac.flags)
+        self.emit_metadata_entry(mac.name, mac.instr_fmt, mac.instr_flags)
 
     def write_metadata_for_pseudo(self, ps: PseudoInstruction) -> None:
         """Write metadata for a macro-instruction."""
-        self.emit_metadata_entry(ps.name, ps.instr_fmt, ps.flags)
+        self.emit_metadata_entry(ps.name, ps.instr_fmt, ps.instr_flags)
 
     def write_instructions(self) -> None:
         """Write instructions to output file."""

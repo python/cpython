@@ -5334,11 +5334,10 @@ _PyDict_NewKeysForClass(void)
 
 #define CACHED_KEYS(tp) (((PyHeapTypeObject*)tp)->ht_cached_keys)
 
-static int
-init_inline_values(PyObject *obj, PyTypeObject *tp)
+int
+_PyObject_InitInlineValues(PyObject *obj, PyTypeObject *tp)
 {
     assert(tp->tp_flags & Py_TPFLAGS_HEAPTYPE);
-    // assert(type->tp_dictoffset > 0);  -- TO DO Update this assert.
     assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
     PyDictKeysObject *keys = CACHED_KEYS(tp);
     assert(keys != NULL);
@@ -5370,7 +5369,7 @@ _PyObject_InitializeDict(PyObject *obj)
     }
     if (tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
         OBJECT_STAT_INC(new_values);
-        return init_inline_values(obj, tp);
+        return _PyObject_InitInlineValues(obj, tp);
     }
     PyObject *dict;
     if (_PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE) && CACHED_KEYS(tp)) {
