@@ -2566,7 +2566,7 @@ class SinglephaseInitTestsNoRerun(SinglephaseInitTestMixin, unittest.TestCase):
     def setUpClass(cls):
         super().setUpClass()
         if cls._has_run:
-            raise unittest.SkipTest("requires single-phase init")
+            raise unittest.SkipTest("Tests do not support rerunning")
         cls._has_run = True
 
     @requires_subinterpreters
