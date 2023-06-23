@@ -629,7 +629,7 @@ def _get_supported_browsers():
     _brow = []
     for bt in _browsers_types:
         try:
-            _ = get(bt)
+            get(bt)
             _brow.append(bt)
         except:
             pass
