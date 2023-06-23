@@ -2776,7 +2776,7 @@ typedef struct {
 
 typedef struct {
     int opcode;
-    int oparg;
+    uintptr_t oparg;
 } uop_instruction;
 
 typedef struct {

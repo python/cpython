@@ -319,7 +319,7 @@ FORBIDDEN_INSTRUCTIONS = (
 # Interpreter tiers
 TIER_ONE = 1  # Specializing adaptive interpreter (PEP 659)
 TIER_TWO = 2  # Experimental tracing interpreter
-Tiers: typing.TypeAlias = typing.Literal[TIER_ONE, TIER_TWO]
+Tiers: typing.TypeAlias = typing.Literal[1, 2]
 
 
 @dataclasses.dataclass
@@ -395,13 +395,11 @@ class Instruction:
                 if c.name != UNUSED:
                     return False
         else:
-            # If it doesn't use oparg, it can have one short cache entry
+            # If it doesn't use oparg, it can have one cache entry
             caches: list[parser.CacheEffect] = []
             cache_offset = 0
             for c in self.cache_effects:
                 if c.name != UNUSED:
-                    if c.size > 2:
-                        return False
                     caches.append(c)
                 cache_offset += c.size
             if len(caches) > 1:
@@ -517,7 +515,6 @@ class Instruction:
                         f"{typ}{ceffect.name} = {func}(&next_instr[{cache_offset}].cache);"
                     )
                 else:
-                    assert bits <= 32
                     out.emit(f"{typ}{ceffect.name} = oparg;")
             cache_offset += ceffect.size
         assert cache_offset == self.cache_offset + cache_adjust
