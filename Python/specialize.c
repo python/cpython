@@ -195,6 +195,10 @@ print_object_stats(FILE *out, ObjectStats *stats)
     fprintf(out, "Object method cache collisions: %" PRIu64 "\n", stats->type_cache_collisions);
     fprintf(out, "Object method cache dunder hits: %" PRIu64 "\n", stats->type_cache_dunder_hits);
     fprintf(out, "Object method cache dunder misses: %" PRIu64 "\n", stats->type_cache_dunder_misses);
+    fprintf(out, "Ootimization attempts: %" PRIu64 "\n", stats->optimization_attempts);
+    fprintf(out, "Ootimization traces created: %" PRIu64 "\n", stats->optimization_traces_created);
+    fprintf(out, "Ootimization traces executed: %" PRIu64 "\n", stats->optimization_traces_executed);
+    fprintf(out, "Ootimization uops executed: %" PRIu64 "\n", stats->optimization_uops_executed);
 }
 
 static void

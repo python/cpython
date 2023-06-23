@@ -2792,6 +2792,11 @@ static PyTypeObject UOpExecutor_Type = {
     .tp_dealloc = (destructor)uop_dealloc,
 };
 
+// UPDATE_MISS_STATS (called by DEOPT_IF) uses next_instr
+// TODO: Make it do something useful
+#undef UPDATE_MISS_STATS
+#define UPDATE_MISS_STATS(INSTNAME) ((void)0)
+
 static _PyInterpreterFrame *
 uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
@@ -2804,7 +2809,7 @@ uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **
 #endif
     PyThreadState *tstate = _PyThreadState_GET();
     UOpExecutorObject *self = (UOpExecutorObject *)executor;
-    // TODO: Increment count of traces started
+    OBJECT_STAT_INC(optimization_traces_executed);
     _Py_CODEUNIT *ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive - 1;
     int pc = 0;
     int opcode;
@@ -2814,7 +2819,6 @@ uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **
         oparg = self->trace[pc].oparg;
 #ifdef LLTRACE
         if (lltrace) {
-            // TODO: Print line numbers; uop names.
             const char *opname = opcode < 256 ? _PyOpcode_OpName[opcode] : "";
             int stack_level = (int)(stack_pointer - _PyFrame_Stackbase(frame));
             fprintf(stderr, "uop %s %d, oparg %d, stack_level %d\n",
@@ -2822,7 +2826,7 @@ uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **
         }
 #endif
         pc++;
-        // TODO: Increment stats of executed uops
+        OBJECT_STAT_INC(optimization_uops_executed);
         switch (opcode) {
 
 #undef ENABLE_SPECIALIZATION
@@ -2969,6 +2973,7 @@ uop_optimize(
         // Error or nothing translated
         return trace_length;
     }
+    OBJECT_STAT_INC(optimization_traces_created);
     UOpExecutorObject *executor = (UOpExecutorObject *)_PyObject_New(&UOpExecutor_Type);
     if (executor == NULL) {
         return -1;
