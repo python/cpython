@@ -1134,15 +1134,13 @@ print_exception_notes(struct exception_print_context *ctx, PyObject *value)
         return 0;
     }
 
-    if (!PyObject_HasAttr(value, &_Py_ID(__notes__))) {
-        return 0;
-    }
-    PyObject *notes = PyObject_GetAttr(value, &_Py_ID(__notes__));
-    if (notes == NULL) {
-        return -1;
+    PyObject *notes;
+    int res = _PyObject_LookupAttr(value, &_Py_ID(__notes__), &notes);
+    if (res <= 0) {
+        return res;
     }
     if (!PySequence_Check(notes) || PyUnicode_Check(notes) || PyBytes_Check(notes)) {
-        int res = 0;
+        res = 0;
         if (write_indented_margin(ctx, f) < 0) {
             res = -1;
         }
@@ -1155,10 +1153,10 @@ print_exception_notes(struct exception_print_context *ctx, PyObject *value)
             res = PyFile_WriteObject(s, f, Py_PRINT_RAW);
             Py_DECREF(s);
         }
-        Py_DECREF(notes);
         if (PyFile_WriteString("\n", f) < 0) {
             res = -1;
         }
+        Py_DECREF(notes);
         return res;
     }
     Py_ssize_t num_notes = PySequence_Length(notes);
