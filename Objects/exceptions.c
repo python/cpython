@@ -211,7 +211,7 @@ BaseException_add_note(PyObject *self, PyObject *note)
     if (_PyObject_LookupAttr(self, &_Py_ID(__notes__), &notes) < 0) {
         return NULL;
     }
-    if (!notes) {
+    if (notes == NULL) {
         notes = PyList_New(0);
         if (notes == NULL) {
             return NULL;
@@ -221,7 +221,7 @@ BaseException_add_note(PyObject *self, PyObject *note)
             return NULL;
         }
     }
-    if (!PyList_Check(notes)) {
+    else if (!PyList_Check(notes)) {
         Py_DECREF(notes);
         PyErr_SetString(PyExc_TypeError, "Cannot add note: __notes__ is not a list");
         return NULL;

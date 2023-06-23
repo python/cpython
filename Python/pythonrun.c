@@ -1153,10 +1153,10 @@ print_exception_notes(struct exception_print_context *ctx, PyObject *value)
             res = PyFile_WriteObject(s, f, Py_PRINT_RAW);
             Py_DECREF(s);
         }
+        Py_DECREF(notes);
         if (PyFile_WriteString("\n", f) < 0) {
             res = -1;
         }
-        Py_DECREF(notes);
         return res;
     }
     Py_ssize_t num_notes = PySequence_Length(notes);
