@@ -89,7 +89,7 @@ class EmailPolicy(Policy):
     refold_source = 'long'
     header_factory = HeaderRegistry()
     content_manager = raw_data_manager
-    allow_trailing_whitespace = True
+    rstrip_whitespace = False
 
     def __init__(self, **kw):
         # Ensure that each new instance gets a unique header factory
@@ -129,7 +129,7 @@ class EmailPolicy(Policy):
         value = value.lstrip(' \t') + ''.join(sourcelines[1:])
 
         # Should trailing whitespace be stripped from the value?
-        if self.allow_trailing_whitespace:
+        if not self.rstrip_whitespace:
             return (name, value.rstrip('\r\n'))
         return (name, value.rstrip('\r\n \t'))
 
@@ -225,5 +225,5 @@ default = EmailPolicy()
 del default.header_factory
 strict = default.clone(raise_on_defect=True)
 SMTP = default.clone(linesep='\r\n')
-HTTP = default.clone(linesep='\r\n', max_line_length=None, allow_trailing_whitespace=False)
+HTTP = default.clone(linesep='\r\n', max_line_length=None, rstrip_whitespace=True)
 SMTPUTF8 = SMTP.clone(utf8=True)
