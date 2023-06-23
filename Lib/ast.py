@@ -1051,7 +1051,8 @@ class _Unparser(NodeVisitor):
             self.fill("@")
             self.traverse(deco)
         self.fill("class " + node.name)
-        self._type_params_helper(node.type_params)
+        if hasattr(node, "type_params"):
+            self._type_params_helper(node.type_params)
         with self.delimit_if("(", ")", condition = node.bases or node.keywords):
             comma = False
             for e in node.bases:
@@ -1083,7 +1084,8 @@ class _Unparser(NodeVisitor):
             self.traverse(deco)
         def_str = fill_suffix + " " + node.name
         self.fill(def_str)
-        self._type_params_helper(node.type_params)
+        if hasattr(node, "type_params"):
+            self._type_params_helper(node.type_params)
         with self.delimit("(", ")"):
             self.traverse(node.args)
         if node.returns:

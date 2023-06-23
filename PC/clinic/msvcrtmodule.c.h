@@ -399,9 +399,6 @@ msvcrt_putwch(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("putwch", "argument", "a unicode character", arg);
         goto exit;
     }
-    if (PyUnicode_READY(arg)) {
-        goto exit;
-    }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
         _PyArg_BadArgument("putwch", "argument", "a unicode character", arg);
         goto exit;
@@ -475,9 +472,6 @@ msvcrt_ungetwch(PyObject *module, PyObject *arg)
 
     if (!PyUnicode_Check(arg)) {
         _PyArg_BadArgument("ungetwch", "argument", "a unicode character", arg);
-        goto exit;
-    }
-    if (PyUnicode_READY(arg)) {
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
@@ -707,4 +701,4 @@ exit:
 #ifndef MSVCRT_GETERRORMODE_METHODDEF
     #define MSVCRT_GETERRORMODE_METHODDEF
 #endif /* !defined(MSVCRT_GETERRORMODE_METHODDEF) */
-/*[clinic end generated code: output=2db6197608a6aab3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9dd12bf210e362a4 input=a9049054013a1b77]*/

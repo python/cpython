@@ -52,7 +52,7 @@ objects considered false:
      single: None (Built-in object)
      single: False (Built-in object)
 
-* constants defined to be false: ``None`` and ``False``.
+* constants defined to be false: ``None`` and ``False``
 
 * zero of any numeric type: ``0``, ``0.0``, ``0j``, ``Decimal(0)``,
   ``Fraction(0, 1)``
@@ -5161,6 +5161,14 @@ enables cleaner type hinting syntax compared to :data:`typing.Union`.
 
       def square(number: int | float) -> int | float:
           return number ** 2
+
+   .. note::
+
+      The ``|`` operand cannot be used at runtime to define unions where one or
+      more members is a forward reference. For example, ``int | "Foo"``, where
+      ``"Foo"`` is a reference to a class not yet defined, will fail at
+      runtime. For unions which include forward references, present the
+      whole expression as a string, e.g. ``"int | Foo"``.
 
 .. describe:: union_object == other
 
