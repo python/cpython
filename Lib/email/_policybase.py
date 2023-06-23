@@ -165,6 +165,7 @@ class Policy(_PolicyBase, metaclass=abc.ABCMeta):
     max_line_length = 78
     mangle_from_ = False
     message_factory = None
+    allow_trailing_whitespace = True
 
     def handle_defect(self, obj, defect):
         """Based on policy, either raise defect or call register_defect.
@@ -300,7 +301,10 @@ class Compat32(Policy):
         """
         name, value = sourcelines[0].split(':', 1)
         value = value.lstrip(' \t') + ''.join(sourcelines[1:])
-        return (name, value.rstrip('\r\n'))
+        # Should trailing whitespace be stripped from the value?
+        if self.allow_trailing_whitespace:
+            return (name, value.rstrip('\r\n'))
+        return (name, value.rstrip('\r\n \t'))
 
     def header_store_parse(self, name, value):
         """+
