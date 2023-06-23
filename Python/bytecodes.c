@@ -316,7 +316,6 @@ dummy_func(
         }
 
         inst(TO_BOOL_BOOL, (unused/1, unused/2, value -- value)) {
-            // Coolest (and dumbest-named) specialization ever:
             DEOPT_IF(!PyBool_Check(value), TO_BOOL);
             STAT_INC(TO_BOOL, hit);
         }
@@ -342,8 +341,7 @@ dummy_func(
         }
 
         inst(TO_BOOL_NONE, (unused/1, unused/2, value -- res)) {
-            // This one is a bit weird, because we expect *some* failures...
-            // it might be worth combining with TO_BOOL_ALWAYS_TRUE somehow:
+            // This one is a bit weird, because we expect *some* failures:
             DEOPT_IF(!Py_IsNone(value), TO_BOOL);
             STAT_INC(TO_BOOL, hit);
             res = Py_False;
@@ -352,7 +350,7 @@ dummy_func(
         inst(TO_BOOL_STR, (unused/1, unused/2, value -- res)) {
             DEOPT_IF(!PyUnicode_CheckExact(value), TO_BOOL);
             STAT_INC(TO_BOOL, hit);
-            if (Py_Is(value, &_Py_STR(empty))) {
+            if (value == &_Py_STR(empty)) {
                 assert(_Py_IsImmortal(value));
                 res = Py_False;
             }
@@ -364,8 +362,7 @@ dummy_func(
         }
 
         inst(TO_BOOL_ALWAYS_TRUE, (unused/1, version/2, value -- res)) {
-            // This one is a bit weird, because we expect *some* failures...
-            // it might be worth combining with TO_BOOL_NONE somehow:
+            // This one is a bit weird, because we expect *some* failures:
             assert(version);
             DEOPT_IF(Py_TYPE(value)->tp_version_tag != version, TO_BOOL);
             STAT_INC(TO_BOOL, hit);
