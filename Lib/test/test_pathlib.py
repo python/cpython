@@ -266,6 +266,13 @@ class PurePathTest(unittest.TestCase):
             self.assertEqual(P(pathstr).as_posix(), pathstr)
         # Other tests for as_posix() are in test_equivalences().
 
+    def test_as_uri_common(self):
+        P = self.cls
+        with self.assertRaises(ValueError):
+            P('a').as_uri()
+        with self.assertRaises(ValueError):
+            P().as_uri()
+
     def test_repr_common(self):
         for pathstr in ('a', 'a/b', 'a/b/c', '/', '/a/b', '/a/b/c'):
             with self.subTest(pathstr=pathstr):
@@ -758,13 +765,6 @@ class PurePathExtTest(PurePathTest):
         sep = os.fsencode(self.sep)
         P = self.cls
         self.assertEqual(bytes(P('a/b')), b'a' + sep + b'b')
-
-    def test_as_uri_common(self):
-        P = self.cls
-        with self.assertRaises(ValueError):
-            P('a').as_uri()
-        with self.assertRaises(ValueError):
-            P().as_uri()
 
 
 class PurePosixPathTest(PurePathExtTest):

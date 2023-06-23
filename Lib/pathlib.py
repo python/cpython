@@ -400,6 +400,26 @@ class PurePath:
     def __repr__(self):
         return "{}({!r})".format(self.__class__.__name__, self.as_posix())
 
+    def as_uri(self):
+        """Return the path as a 'file' URI."""
+        if not self.is_absolute():
+            raise ValueError("relative path can't be expressed as a file URI")
+
+        drive = self.drive
+        if len(drive) == 2 and drive[1] == ':':
+            # It's a path on a local drive => 'file:///c:/a/b'
+            prefix = 'file:///' + drive
+            path = self.as_posix()[2:]
+        elif drive:
+            # It's a path on a network drive => 'file://host/share/a/b'
+            prefix = 'file:'
+            path = self.as_posix()
+        else:
+            # It's a posix path => 'file:///etc/hosts'
+            prefix = 'file://'
+            path = str(self)
+        return prefix + urlquote_from_bytes(os.fsencode(path))
+
     @property
     def _str_normcase(self):
         # String with normalized case, for hashing and equality checks
@@ -708,10 +728,7 @@ class PurePath:
 
 
 class _PurePathExt(PurePath):
-    """PurePath subclass that adds some non-lexical methods.
-
-    This class provides the methods __fspath__, __bytes__ and as_uri.
-    """
+    """PurePath subclass that provides __fspath__ and __bytes__ methods."""
     __slots__ = ()
 
     def __fspath__(self):
@@ -721,26 +738,6 @@ class _PurePathExt(PurePath):
         """Return the bytes representation of the path.  This is only
         recommended to use under Unix."""
         return os.fsencode(self)
-
-    def as_uri(self):
-        """Return the path as a 'file' URI."""
-        if not self.is_absolute():
-            raise ValueError("relative path can't be expressed as a file URI")
-
-        drive = self.drive
-        if len(drive) == 2 and drive[1] == ':':
-            # It's a path on a local drive => 'file:///c:/a/b'
-            prefix = 'file:///' + drive
-            path = self.as_posix()[2:]
-        elif drive:
-            # It's a path on a network drive => 'file://host/share/a/b'
-            prefix = 'file:'
-            path = self.as_posix()
-        else:
-            # It's a posix path => 'file:///etc/hosts'
-            prefix = 'file://'
-            path = str(self)
-        return prefix + urlquote_from_bytes(os.fsencode(path))
 
 
 # Subclassing os.PathLike makes isinstance() checks slower,
