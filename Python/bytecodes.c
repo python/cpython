@@ -285,12 +285,7 @@ dummy_func(
 
         inst(UNARY_NOT, (value -- res)) {
             assert(PyBool_Check(value));
-            if (Py_IsFalse(value)) {
-                res = Py_True;
-            }
-            else {
-                res = Py_False;
-            }
+            res = Py_IsFalse(value) ? Py_True : Py_False;
         }
 
         family(to_bool, INLINE_CACHE_ENTRIES_TO_BOOL) = {
@@ -317,12 +312,7 @@ dummy_func(
             int err = PyObject_IsTrue(value);
             DECREF_INPUTS();
             ERROR_IF(err < 0, error);
-            if (err == 0) {
-                res = Py_False;
-            }
-            else {
-                res = Py_True;
-            }
+            res = err ? Py_True : Py_False;
         }
 
         inst(TO_BOOL_BOOL, (unused/1, unused/2, value -- value)) {
@@ -347,12 +337,7 @@ dummy_func(
         inst(TO_BOOL_LIST, (unused/1, unused/2, value -- res)) {
             DEOPT_IF(!PyList_CheckExact(value), TO_BOOL);
             STAT_INC(TO_BOOL, hit);
-            if (!Py_SIZE(value)) {
-                res = Py_False;
-            }
-            else {
-                res = Py_True;
-            }
+            res = Py_SIZE(value) ? Py_True : Py_False;
             DECREF_INPUTS();
         }
 
@@ -3600,23 +3585,17 @@ dummy_func(
 
         inst(INSTRUMENTED_POP_JUMP_IF_TRUE, ( -- )) {
             PyObject *cond = POP();
-            int err = PyObject_IsTrue(cond);  // XXX
-            Py_DECREF(cond);
-            ERROR_IF(err < 0, error);
-            _Py_CODEUNIT *here = next_instr-1;
-            assert(err == 0 || err == 1);
-            int offset = err*oparg;
+            assert(PyBool_Check(cond));
+            _Py_CODEUNIT *here = next_instr - 1;
+            int offset = Py_IsTrue(cond) * oparg;
             INSTRUMENTED_JUMP(here, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_FALSE, ( -- )) {
             PyObject *cond = POP();
-            int err = PyObject_IsTrue(cond);  // XXX
-            Py_DECREF(cond);
-            ERROR_IF(err < 0, error);
-            _Py_CODEUNIT *here = next_instr-1;
-            assert(err == 0 || err == 1);
-            int offset = (1-err)*oparg;
+            assert(PyBool_Check(cond));
+            _Py_CODEUNIT *here = next_instr - 1;
+            int offset = Py_IsFalse(cond) * oparg;
             INSTRUMENTED_JUMP(here, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
         }
 
@@ -3643,7 +3622,7 @@ dummy_func(
             }
             else {
                 Py_DECREF(value);
-                 offset = oparg;
+                offset = oparg;
             }
             INSTRUMENTED_JUMP(here, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
         }
