@@ -3499,6 +3499,24 @@ class ProtocolTests(BaseTestCase):
         self.assertIsSubclass(ImplementsHasX, HasX)
         self.assertNotIsSubclass(Empty, HasX)
 
+        # isinstance() and issubclass() checks against this still raise TypeError,
+        # despite the presence of the custom __subclasshook__ method,
+        # as it's not decorated with @runtime_checkable
+        class NotRuntimeCheckable(Protocol):
+            @classmethod
+            def __subclasshook__(cls, other):
+                return hasattr(other, 'x')
+
+        must_be_runtime_checkable = (
+            "Instance and class checks can only be used "
+            "with @runtime_checkable protocols"
+        )
+
+        with self.assertRaisesRegex(TypeError, must_be_runtime_checkable):
+            issubclass(object, NotRuntimeCheckable)
+        with self.assertRaisesRegex(TypeError, must_be_runtime_checkable):
+            isinstance(object(), NotRuntimeCheckable)
+
     def test_issubclass_fails_correctly(self):
         @runtime_checkable
         class P(Protocol):

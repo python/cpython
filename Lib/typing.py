@@ -1821,12 +1821,14 @@ class _ProtocolMeta(ABCMeta):
         if (
             getattr(cls, '_is_protocol', False)
             and not _allow_reckless_class_checks()
-            and cls.__dict__.get("__subclasshook__") is _proto_hook
         ):
             if not isinstance(other, type):
                 # Same error message as for issubclass(1, int).
                 raise TypeError('issubclass() arg 1 must be a class')
-            if not cls.__callable_proto_members_only__:
+            if (
+                not cls.__callable_proto_members_only__
+                and cls.__dict__.get("__subclasshook__") is _proto_hook
+            ):
                 raise TypeError(
                     "Protocols with non-method members don't support issubclass()"
                 )
