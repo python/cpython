@@ -362,7 +362,7 @@ the container will be of the same type. For example::
    # Type checker error: ``list`` only accepts a single type argument:
    y: list[int, str] = [1, 'foo']
 
-   # Type checker will infer that all keys in ``y`` meant to be strings,
+   # Type checker will infer that all keys in ``y`` are meant to be strings,
    # and that all values in ``y`` are meant to be either strings or ints
    z: Mapping[str, str | int] = {}
 
