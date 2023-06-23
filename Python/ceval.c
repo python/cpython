@@ -2766,12 +2766,6 @@ void Py_LeaveRecursiveCall(void)
 
 ///////////////////// Experimental UOp Interpreter /////////////////////
 
-typedef struct {
-    _PyOptimizerObject base;
-    int traces_executed;
-    int instrs_executed;
-} UOpOptimizerObject;
-
 #define MAX_TRACE_LENGTH 16
 
 typedef struct {
@@ -2780,14 +2774,12 @@ typedef struct {
 } uop_instruction;
 
 typedef struct {
-    _PyExecutorObject executor;  // Base
-    UOpOptimizerObject *optimizer;
+    _PyExecutorObject base;
     uop_instruction trace[MAX_TRACE_LENGTH];  // TODO: variable length
 } UOpExecutorObject;
 
 static void
 uop_dealloc(UOpExecutorObject *self) {
-    Py_DECREF(self->optimizer);
     PyObject_Free(self);
 }
 
@@ -2812,7 +2804,7 @@ uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **
 #endif
     PyThreadState *tstate = _PyThreadState_GET();
     UOpExecutorObject *self = (UOpExecutorObject *)executor;
-    self->optimizer->traces_executed++;
+    // TODO: Increment count of traces started
     _Py_CODEUNIT *ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive - 1;
     int pc = 0;
     int opcode;
@@ -2830,7 +2822,7 @@ uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **
         }
 #endif
         pc++;
-        self->optimizer->instrs_executed++;
+        // TODO: Increment stats of executed uops
         switch (opcode) {
 
 #undef ENABLE_SPECIALIZATION
@@ -2992,45 +2984,30 @@ uop_optimize(
                 trace_length);
     }
 #endif
-    executor->executor.execute = uop_execute;
+    executor->base.execute = uop_execute;
     Py_INCREF(self);
-    executor->optimizer = (UOpOptimizerObject *)self;
     memcpy(executor->trace, trace, trace_length * sizeof(uop_instruction));
     *exec_ptr = (_PyExecutorObject *)executor;
     return 1;
 }
 
-static PyMemberDef uop_members[] = {
-    {"traces_executed", Py_T_INT, offsetof(UOpOptimizerObject, traces_executed), 0,
-     "Total number of traces executed since inception"},
-    {"instrs_executed", Py_T_INT, offsetof(UOpOptimizerObject, instrs_executed), 0,
-     "Total number of instructions executed since inception"},
-    {NULL}
-};
-
 static PyTypeObject UOpOptimizer_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "UOp Optimizer",
-    .tp_basicsize = sizeof(UOpOptimizerObject),
+    .tp_basicsize = sizeof(_PyOptimizerObject),
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
-    .tp_members = uop_members,
 };
 
 PyObject *
 PyUnstable_Optimizer_NewUOpOptimizer(void)
 {
-    if (PyType_Ready(&UOpOptimizer_Type) < 0) {
-        return NULL;
-    }
-    UOpOptimizerObject *opt = (UOpOptimizerObject *)_PyObject_New(&UOpOptimizer_Type);
+    _PyOptimizerObject *opt = (_PyOptimizerObject *)_PyObject_New(&UOpOptimizer_Type);
     if (opt == NULL) {
         return NULL;
     }
-    opt->base.optimize = uop_optimize;
-    opt->base.resume_threshold = UINT16_MAX;
-    opt->base.backedge_threshold = 0;
-    opt->traces_executed = 0;
-    opt->instrs_executed = 0;
+    opt->optimize = uop_optimize;
+    opt->resume_threshold = UINT16_MAX;
+    opt->backedge_threshold = 0;
     return (PyObject *)opt;
 }
