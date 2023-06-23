@@ -1,0 +1,3 @@
+Fix misidentification of :class:`pathlib.PurePath` user subclasses as
+:class:`os.PathLike`. Subclasses are free to define an
+:meth:`~os.PathLike.__fspath__` method, but do not inherit one.

@@ -399,9 +399,6 @@ class PurePath:
                                                   self._tail) or '.'
             return self._str
 
-    def __fspath__(self):
-        return str(self)
-
     def as_posix(self):
         """Return the string representation of the path with forward (/)
         slashes."""
@@ -411,7 +408,7 @@ class PurePath:
     def __bytes__(self):
         """Return the bytes representation of the path.  This is only
         recommended to use under Unix."""
-        return os.fsencode(self)
+        return os.fsencode(str(self))
 
     def __repr__(self):
         return "{}({!r})".format(self.__class__.__name__, self.as_posix())
@@ -743,11 +740,6 @@ class PurePath:
             raise ValueError("empty pattern")
 
 
-# Subclassing os.PathLike makes isinstance() checks slower,
-# which in turn makes Path construction slower. Register instead!
-os.PathLike.register(PurePath)
-
-
 class PurePosixPath(PurePath):
     """PurePath subclass for non-Windows systems.
 
@@ -757,6 +749,8 @@ class PurePosixPath(PurePath):
     _flavour = posixpath
     __slots__ = ()
 
+    def __fspath__(self):
+        return str(self)
 
 class PureWindowsPath(PurePath):
     """PurePath subclass for Windows systems.
@@ -767,6 +761,13 @@ class PureWindowsPath(PurePath):
     _flavour = ntpath
     __slots__ = ()
 
+    def __fspath__(self):
+        return str(self)
+
+
+# These classes implement os.PathLike for backwards compatibility.
+os.PathLike.register(PurePosixPath)
+os.PathLike.register(PureWindowsPath)
 
 # Filesystem-accessing classes
 
@@ -1174,6 +1175,9 @@ class Path(PurePath):
             cls = WindowsPath if os.name == 'nt' else PosixPath
         return object.__new__(cls)
 
+    def __fspath__(self):
+        return str(self)
+
     @classmethod
     def cwd(cls):
         """Return a new path pointing to the current working directory."""
@@ -1397,6 +1401,10 @@ class Path(PurePath):
             return self._from_parsed_parts(drv, root, tail + self._tail[1:])
 
         return self
+
+# Subclassing os.PathLike makes isinstance() checks slower,
+# which in turn makes Path construction slower. Register instead!
+os.PathLike.register(Path)
 
 
 class PosixPath(Path, PurePosixPath):
