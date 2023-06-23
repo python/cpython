@@ -252,7 +252,6 @@ class InstructionFlags:
     HAS_CONST_FLAG: bool
     HAS_NAME_FLAG: bool
     HAS_JUMP_FLAG: bool
-    IS_UOP_FLAG: bool = False  # Set later
 
     def __post_init__(self):
         self.bitmask = {
@@ -374,7 +373,6 @@ class Instruction:
         self.unmoved_names = frozenset(unmoved_names)
 
         self.instr_flags = InstructionFlags.fromInstruction(inst)
-        self.instr_flags.IS_UOP_FLAG = self.is_viable_uop()
 
         if self.instr_flags.HAS_ARG_FLAG:
             fmt = "IB"
@@ -931,7 +929,6 @@ class Analyzer:
                 case _:
                     typing.assert_never(component)
         final_sp = sp
-        flags.IS_UOP_FLAG = False  # Macros are never uops
         return MacroInstruction(
             macro.name, stack, initial_sp, final_sp, format, flags, macro, parts
         )
