@@ -107,6 +107,25 @@ def remove_files(name):
     rmtree('__pycache__')
 
 
+def no_rerun(reason):
+    """Skip rerunning for a particular test.
+
+    WARNING: Use this decorator with care; skipping rerunning makes it
+    impossible to find reference leaks. Provide a clear reason for skipping the
+    test using the 'reason' parameter.
+    """
+    def deco(func):
+        _has_run = False
+        def wrapper(self):
+            nonlocal _has_run
+            if _has_run:
+                self.skipTest(reason)
+            func(self)
+            _has_run = True
+        return wrapper
+    return deco
+
+
 @contextlib.contextmanager
 def _ready_to_import(name=None, source=""):
     # sets up a temporary directory and removes it
@@ -1989,10 +2008,6 @@ class SinglephaseInitTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        if '-R' in sys.argv or '--huntrleaks' in sys.argv:
-            # https://github.com/python/cpython/issues/102251
-            raise unittest.SkipTest('unresolved refleaks (see gh-102251)')
-
         spec = importlib.util.find_spec(cls.NAME)
         from importlib.machinery import ExtensionFileLoader
         cls.FILE = spec.origin
@@ -2434,6 +2449,7 @@ class SinglephaseInitTests(unittest.TestCase):
     # Also, we test with a single-phase module that has global state,
     # which is shared by all interpreters.
 
+    #@no_rerun(reason="rerun not possible; module state is never cleared (see gh-102251)")
     @requires_subinterpreters
     def test_basic_multiple_interpreters_main_no_reset(self):
         # without resetting; already loaded in main interpreter
