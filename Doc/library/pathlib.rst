@@ -106,9 +106,9 @@ we also call *flavours*:
       PurePosixPath('setup.py')
 
    Each element of *pathsegments* can be either a string representing a
-   path segment, or an object implementing the :class:`os.PathLike` interface
+   path segment, an object implementing the :class:`os.PathLike` interface
    where the :meth:`~os.PathLike.__fspath__` method returns a string,
-   such as another path object::
+   or another path object::
 
       >>> PurePath('foo', 'some/path', 'bar')
       PurePosixPath('foo/some/path/bar')
@@ -151,11 +151,6 @@ we also call *flavours*:
    to ``PurePosixPath('bar')``, which is wrong if ``foo`` is a symbolic link
    to another directory)
 
-   Pure path objects implement the :class:`os.PathLike` interface, allowing them
-   to be used anywhere the interface is accepted.
-
-   .. versionchanged:: 3.6
-      Added support for the :class:`os.PathLike` interface.
 
 .. class:: PurePosixPath(*pathsegments)
 
@@ -232,14 +227,6 @@ relative path (e.g., ``r'\foo'``)::
    >>> PureWindowsPath('c:/Windows', '/Program Files')
    PureWindowsPath('c:/Program Files')
 
-A path object can be used anywhere an object implementing :class:`os.PathLike`
-is accepted::
-
-   >>> import os
-   >>> p = PurePath('/etc')
-   >>> os.fspath(p)
-   '/etc'
-
 The string representation of a path is the raw filesystem path itself
 (in native form, e.g. with backslashes under Windows), which you can
 pass to any function taking a file path as a string::
@@ -250,16 +237,6 @@ pass to any function taking a file path as a string::
    >>> p = PureWindowsPath('c:/Program Files')
    >>> str(p)
    'c:\\Program Files'
-
-Similarly, calling :class:`bytes` on a path gives the raw filesystem path as a
-bytes object, as encoded by :func:`os.fsencode`::
-
-   >>> bytes(p)
-   b'/etc'
-
-.. note::
-   Calling :class:`bytes` is only recommended under Unix.  Under Windows,
-   the unicode form is the canonical representation of filesystem paths.
 
 
 Accessing individual parts
@@ -779,6 +756,34 @@ bugs or failures in your application)::
      File "pathlib.py", line 798, in __new__
        % (cls.__name__,))
    NotImplementedError: cannot instantiate 'WindowsPath' on your system
+
+
+Operators
+^^^^^^^^^
+
+Concrete path objects implement the :class:`os.PathLike` interface,
+allowing them to be used anywhere the interface is accepted::
+
+   >>> import os
+   >>> p = Path('/etc')
+   >>> os.fspath(p)
+   '/etc'
+
+.. versionchanged:: 3.6
+   Added support for the :class:`os.PathLike` interface.
+
+Calling :class:`bytes` on a concrete path gives the raw filesystem path as a
+bytes object, as encoded by :func:`os.fsencode`::
+
+   >>> bytes(p)
+   b'/etc'
+
+.. note::
+   Calling :class:`bytes` is only recommended under Unix.  Under Windows,
+   the unicode form is the canonical representation of filesystem paths.
+
+For backwards compatibility, these operations are also supported by
+instances of :class:`PurePosixPath` and :class:`PureWindowsPath`.
 
 
 Methods
