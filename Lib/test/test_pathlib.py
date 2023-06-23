@@ -1543,6 +1543,17 @@ class PurePathSubclassTest(PurePathTest):
     # repr() roundtripping is not supported in custom subclass.
     test_repr_roundtrips = None
 
+    def test_not_path_like(self):
+        p = self.cls()
+        self.assertNotIsInstance(p, os.PathLike)
+        with self.assertRaises(TypeError):
+            os.fspath(p)
+
+    def test_not_bytes_like(self):
+        p = self.cls()
+        with self.assertRaises(TypeError):
+            bytes(p)
+
 
 @only_posix
 class PosixPathAsPureTest(PurePosixPathTest):
