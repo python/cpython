@@ -94,7 +94,7 @@ class ChromeCommandTest(CommandTestMixin, unittest.TestCase):
                    options=[],
                    arguments=[URL])
 
-    def test_open_new_tab(self):
+    def test_open_incognito(self):
         self._test('open_incognito',
                    options=["--incognito"],
                    arguments=[URL])
@@ -149,7 +149,7 @@ class MozillaCommandTest(CommandTestMixin, unittest.TestCase):
                    options=[],
                    arguments=['-new-tab', URL])
 
-    def test_open_new_tab(self):
+    def test_open_incognito(self):
         self._test('open_incognito',
                    options=["--private-window"],
                    arguments=[URL])
@@ -178,7 +178,7 @@ class EpiphanyCommandTest(CommandTestMixin, unittest.TestCase):
                    options=['-w'],
                    arguments=[URL])
 
-    def test_open_new_tab(self):
+    def test_open_incognito(self):
         self._test('open_incognito',
                    options=["--incognito-mode"],
                    arguments=[URL])
