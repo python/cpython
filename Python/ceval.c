@@ -2774,23 +2774,6 @@ typedef struct {
 
 #define MAX_TRACE_LENGTH 16
 
-// UOp opcodes are outside the range of bytecodes or pseudo ops
-#define EXIT_TRACE 512
-#define SET_IP 513
-// TODO: Generate these in Tools/cases_generator
-#define _BINARY_OP_MULTIPLY_FLOAT 514
-#define _BINARY_OP_ADD_FLOAT 515
-#define _BINARY_OP_SUBTRACT_FLOAT 516
-#define _BINARY_OP_MULTIPLY_INT 517
-#define _BINARY_OP_ADD_INT 518
-#define _BINARY_OP_SUBTRACT_INT 519
-#define _BINARY_OP_ADD_UNICODE 520
-#define _GUARD_BOTH_INT 521
-#define _GUARD_BOTH_FLOAT 522
-#define _GUARD_BOTH_UNICODE 523
-#define _LOAD_LOCALS 524
-#define _LOAD_FROM_DICT_OR_GLOBALS 525
-
 typedef struct {
     int opcode;
     int oparg;

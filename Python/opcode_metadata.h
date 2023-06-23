@@ -18,6 +18,21 @@
     ((OP) == POP_BLOCK) || \
     0
 
+#define EXIT_TRACE 300
+#define SET_IP 301
+#define _GUARD_BOTH_INT 302
+#define _BINARY_OP_MULTIPLY_INT 303
+#define _BINARY_OP_ADD_INT 304
+#define _BINARY_OP_SUBTRACT_INT 305
+#define _GUARD_BOTH_FLOAT 306
+#define _BINARY_OP_MULTIPLY_FLOAT 307
+#define _BINARY_OP_ADD_FLOAT 308
+#define _BINARY_OP_SUBTRACT_FLOAT 309
+#define _GUARD_BOTH_UNICODE 310
+#define _BINARY_OP_ADD_UNICODE 311
+#define _LOAD_LOCALS 312
+#define _LOAD_FROM_DICT_OR_GLOBALS 313
+
 #ifndef NEED_OPCODE_METADATA
 extern int _PyOpcode_num_popped(int opcode, int oparg, bool jump);
 #else

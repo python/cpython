@@ -1187,6 +1187,8 @@ class Analyzer:
 
             self.write_pseudo_instrs()
 
+            self.write_uop_defines()
+
             self.write_stack_effect_functions()
 
             # Write type definitions
@@ -1264,13 +1266,26 @@ class Analyzer:
                     "opcode for family in _specializations.values() for opcode in family"
                 "]")
 
-
     def write_pseudo_instrs(self) -> None:
         """Write the IS_PSEUDO_INSTR macro"""
         self.out.emit("\n\n#define IS_PSEUDO_INSTR(OP)  \\")
         for op in self.pseudos:
             self.out.emit(f"    ((OP) == {op}) || \\")
         self.out.emit(f"    0")
+
+    def write_uop_defines(self) -> None:
+        """Write '#define XXX NNN' for each uop"""
+        self.out.emit("")
+        counter = 300
+        def add(name: str) -> None:
+            nonlocal counter
+            self.out.emit(f"#define {name} {counter}")
+            counter += 1
+        add("EXIT_TRACE")
+        add("SET_IP")
+        for instr in self.instrs.values():
+            if instr.kind == "op" and instr.is_viable_uop():
+                add(instr.name)
 
     def emit_metadata_entry(
         self, name: str, fmt: str, flags: InstructionFlags
