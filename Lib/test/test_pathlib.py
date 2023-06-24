@@ -2035,8 +2035,8 @@ class PathTest(unittest.TestCase):
         recursion_limit = 50
         # directory_depth > recursion_limit
         directory_depth = recursion_limit + 10
-        base = pathlib.Path(os_helper.TESTFN, 'deep')
-        path = pathlib.Path(base, *(['d'] * directory_depth))
+        base = self.cls(BASE, 'deep')
+        path = self.cls(base, *(['d'] * directory_depth))
         path.mkdir(parents=True)
 
         with set_recursion_limit(recursion_limit):
