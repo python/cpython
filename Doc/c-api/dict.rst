@@ -98,7 +98,7 @@ Dictionary Objects
    Return the object from dictionary *p* which has a key *key*.  Return ``NULL``
    if the key *key* is not present, but *without* setting an exception.
 
-   .. note::
+   .. caution::
 
       Exceptions that occur while this calls :meth:`__hash__` and
       :meth:`__eq__` methods are silently ignored.
