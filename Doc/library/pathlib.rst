@@ -965,7 +965,7 @@ call fails (for example because the path doesn't exist).
    .. versionchanged:: 3.12
       The *case_sensitive* parameter was added.
 
-   .. versioncjamnged:: 3.13
+   .. versionchanged:: 3.13
       The *follow_symlinks* parameter was added.
 
 .. method:: Path.group()
