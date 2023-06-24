@@ -93,6 +93,8 @@ import warnings
 
 from gettext import gettext as _, ngettext
 
+from functools import override
+
 SUPPRESS = '==SUPPRESS=='
 
 OPTIONAL = '?'
@@ -115,6 +117,7 @@ class _AttributeHolder(object):
     '_kwarg_names', or by inspecting the instance __dict__.
     """
 
+    @override
     def __repr__(self):
         type_name = type(self).__name__
         arg_strings = []
