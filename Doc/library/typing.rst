@@ -346,6 +346,68 @@ Or by using the :class:`TypeVar` factory directly::
 .. versionchanged:: 3.12
    Syntactic support for generics is new in Python 3.12.
 
+.. _annotating-tuples:
+
+Annotating tuples
+=================
+
+For most containers in Python, the typing system assumes that all elements in
+the container will be of the same type. For example::
+
+   from collections.abc import Mapping
+
+   # Type checker will infer that all elements in ``x`` are meant to be ints
+   x: list[int] = []
+
+   # Type checker error: ``list`` only accepts a single type argument:
+   y: list[int, str] = [1, 'foo']
+
+   # Type checker will infer that all keys in ``z`` are meant to be strings,
+   # and that all values in ``z`` are meant to be either strings or ints
+   z: Mapping[str, str | int] = {}
+
+:class:`list` only accepts one type argument, so a type checker would emit an
+error on the ``y`` assignment above. Similarly,
+:class:`~collections.abc.Mapping` only accepts two type arguments: the first
+indicates the type of the keys, and the second indicates the type of the
+values.
+
+Unlike most other Python containers, however, it is common in idiomatic Python
+code for tuples to have elements which are not all of the same type. For this
+reason, tuples are special-cased in Python's typing system. :class:`tuple`
+accepts *any number* of type arguments::
+
+   # OK: ``x`` is assigned to a tuple of length 1 where the sole element is an int
+   x: tuple[int] = (5,)
+
+   # OK: ``y`` is assigned to a tuple of length 2;
+   # element 1 is an int, element 2 is a str
+   y: tuple[int, str] = (5, "foo")
+
+   # Error: the type annotation indicates a tuple of length 1,
+   # but ``z`` has been assigned to a tuple of length 3
+   z: tuple[int] = (1, 2, 3)
+
+To denote a tuple which could be of *any* length, and in which all elements are
+of the same type ``T``, use ``tuple[T, ...]``. To denote an empty tuple, use
+``tuple[()]``. Using plain ``tuple`` as an annotation is equivalent to using
+``tuple[Any, ...]``::
+
+   x: tuple[int, ...] = (1, 2)
+   # These reassignments are OK: ``tuple[int, ...]`` indicates x can be of any length
+   x = (1, 2, 3)
+   x = ()
+   # This reassignment is an error: all elements in ``x`` must be ints
+   x = ("foo", "bar")
+
+   # ``y`` can only ever be assigned to an empty tuple
+   y: tuple[()] = ()
+
+   z: tuple = ("foo", "bar")
+   # These reassignments are OK: plain ``tuple`` is equivalent to ``tuple[Any, ...]``
+   z = (1, 2, 3)
+   z = ()
+
 .. _user-defined-generics:
 
 User-defined generic types
@@ -876,26 +938,6 @@ Special forms
 
 These can be used as types in annotations. They all support subscription using
 ``[]``, but each has a unique syntax.
-
-.. data:: Tuple
-
-   Deprecated alias for :class:`tuple`.
-
-   ``Tuple[X, Y]`` is the type of a tuple of two items
-   with the first item of type X and the second of type Y. The type of
-   the empty tuple can be written as ``Tuple[()]``.
-
-   Example: ``Tuple[T1, T2]`` is a tuple of two elements corresponding
-   to type variables T1 and T2.  ``Tuple[int, float, str]`` is a tuple
-   of an int, a float and a string.
-
-   To specify a variable-length tuple of homogeneous type,
-   use literal ellipsis, e.g. ``Tuple[int, ...]``. A plain ``Tuple`` annotation
-   is equivalent to ``tuple``, ``Tuple[Any, ...]``, or ``tuple[Any, ...]``.
-
-   .. deprecated:: 3.9
-      :class:`builtins.tuple <tuple>` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
 
 .. data:: Union
 
@@ -3136,7 +3178,16 @@ Aliases to built-in types
       now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. note:: :data:`Tuple` is a special form.
+.. data:: Tuple
+
+   Deprecated alias for :class:`tuple`.
+
+   :class:`tuple` and ``Tuple`` are special-cased in the type system; see
+   :ref:`annotating-tuples` for more details.
+
+   .. deprecated:: 3.9
+      :class:`builtins.tuple <tuple>` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
 .. _corresponding-to-types-in-collections:
 

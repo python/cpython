@@ -7,6 +7,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"       // _PyThreadState_SetCurrent()
+#include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 #include <stddef.h>               // offsetof()
 #include "structmember.h"         // PyMemberDef
 
@@ -1024,15 +1025,13 @@ local_getattro(localobject *self, PyObject *name)
 static PyObject *
 _localdummy_destroyed(PyObject *localweakref, PyObject *dummyweakref)
 {
-    assert(PyWeakref_CheckRef(localweakref));
-    PyObject *obj = PyWeakref_GET_OBJECT(localweakref);
-    if (obj == Py_None) {
+    localobject *self = (localobject *)_PyWeakref_GET_REF(localweakref);
+    if (self == NULL) {
         Py_RETURN_NONE;
     }
 
     /* If the thread-local object is still alive and not being cleared,
        remove the corresponding local dict */
-    localobject *self = (localobject *)Py_NewRef(obj);
     if (self->dummies != NULL) {
         PyObject *ldict;
         ldict = PyDict_GetItemWithError(self->dummies, dummyweakref);
@@ -1040,9 +1039,9 @@ _localdummy_destroyed(PyObject *localweakref, PyObject *dummyweakref)
             PyDict_DelItem(self->dummies, dummyweakref);
         }
         if (PyErr_Occurred())
-            PyErr_WriteUnraisable(obj);
+            PyErr_WriteUnraisable((PyObject*)self);
     }
-    Py_DECREF(obj);
+    Py_DECREF(self);
     Py_RETURN_NONE;
 }
 
@@ -1314,24 +1313,25 @@ This function is meant for internal and specialized purposes only.\n\
 In most applications `threading.enumerate()` should be used instead.");
 
 static void
-release_sentinel(void *wr_raw)
+release_sentinel(void *weakref_raw)
 {
-    PyObject *wr = _PyObject_CAST(wr_raw);
+    PyObject *weakref = _PyObject_CAST(weakref_raw);
+
     /* Tricky: this function is called when the current thread state
        is being deleted.  Therefore, only simple C code can safely
        execute here. */
-    PyObject *obj = PyWeakref_GET_OBJECT(wr);
-    lockobject *lock;
-    if (obj != Py_None) {
-        lock = (lockobject *) obj;
+    lockobject *lock = (lockobject *)_PyWeakref_GET_REF(weakref);
+    if (lock != NULL) {
         if (lock->locked) {
             PyThread_release_lock(lock->lock_lock);
             lock->locked = 0;
         }
+        Py_DECREF(lock);
     }
+
     /* Deallocating a weakref with a NULL callback only calls
        PyObject_GC_Del(), which can't call any Python code. */
-    Py_DECREF(wr);
+    Py_DECREF(weakref);
 }
 
 static PyObject *
