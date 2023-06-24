@@ -1635,11 +1635,6 @@ class PathTest(unittest.TestCase):
         def dirlink(self, src, dest):
             os.symlink(src, dest)
 
-    def assertSame(self, path_a, path_b):
-        self.assertTrue(os.path.samefile(str(path_a), str(path_b)),
-                        "%r and %r don't point to the same file" %
-                        (path_a, path_b))
-
     def assertFileNotFound(self, func, *args, **kwargs):
         with self.assertRaises(FileNotFoundError) as cm:
             func(*args, **kwargs)
