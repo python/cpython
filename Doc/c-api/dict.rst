@@ -125,7 +125,7 @@ Dictionary Objects
    .. note::
 
       Exceptions that occur while this calls :meth:`__hash__` and
-      :meth:`__eq__` methods or while creating the temporary ``str``
+      :meth:`~object.__eq__` methods or while creating the temporary :class:`str`
       object are silently ignored.
       Prefer using the :c:func:`PyDict_GetItemWithError` function with your own
       :c:func:`PyUnicode_FromString` *key* instead.
