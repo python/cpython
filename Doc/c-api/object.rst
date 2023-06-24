@@ -48,7 +48,7 @@ Object Protocol
 
    .. note::
 
-      Exceptions that occur when this calls :meth:`__getattr__` and
+      Exceptions that occur when this calls :meth:`~object.__getattr__` and
       :meth:`__getattribute__` methods or while creating the temporary ``str``
       object are silently ignored.
       For proper error handling, use :c:func:`PyObject_GetAttrString` instead.
