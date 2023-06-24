@@ -2801,10 +2801,20 @@ static _PyInterpreterFrame *
 uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
 #ifdef LLTRACE
-    int lltrace = PyDict_Contains(GLOBALS(), &_Py_ID(__lltrace__));
     char *uop_debug = Py_GETENV("PYTHON_UOP_DEBUG");
-    if (uop_debug != NULL && *uop_debug >= '2') {
-        lltrace = 2;
+    int lltrace = 0;
+    if (uop_debug != NULL && *uop_debug >= '0') {
+        lltrace = *uop_debug - '0';  // TODO: Parse an int and all that
+    }
+    if (lltrace >= 2) {
+        PyCodeObject *code = _PyFrame_GetCode(frame);
+        _Py_CODEUNIT *instr = frame->prev_instr + 1;
+        fprintf(stderr,
+                "Entering uop_execute for %s (%s:%d) at offset %ld\n",
+                PyUnicode_AsUTF8(code->co_qualname),
+                PyUnicode_AsUTF8(code->co_filename),
+                code->co_firstlineno,
+                (long)(instr - (_Py_CODEUNIT *)code->co_code_adaptive));
     }
 #endif
     PyThreadState *tstate = _PyThreadState_GET();
@@ -2818,10 +2828,10 @@ uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **
         opcode = self->trace[pc].opcode;
         oparg = self->trace[pc].oparg;
 #ifdef LLTRACE
-        if (lltrace) {
+        if (lltrace >= 3) {
             const char *opname = opcode < 256 ? _PyOpcode_OpName[opcode] : "";
             int stack_level = (int)(stack_pointer - _PyFrame_Stackbase(frame));
-            fprintf(stderr, "uop %s %d, oparg %d, stack_level %d\n",
+            fprintf(stderr, "  uop %s %d, oparg %d, stack_level %d\n",
                     opname, opcode, oparg, stack_level);
         }
 #endif
@@ -2870,8 +2880,8 @@ error:
     // On ERROR_IF we return NULL as the frame.
     // The caller recovers the frame from cframe.current_frame.
 #ifdef LLTRACE
-    if (lltrace) {
-        fprintf(stderr, "error: [Opcode %d, oparg %d]\n", opcode, oparg);
+    if (lltrace >= 2) {
+        fprintf(stderr, "Error: [Opcode %d, oparg %d]\n", opcode, oparg);
     }
 #endif
     _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -2887,7 +2897,7 @@ PREDICTED(BINARY_OP)
     // On DEOPT_IF we just repeat the last instruction.
     // This presumes nothing was popped from the stack (nor pushed).
 #ifdef LLTRACE
-    if (lltrace) {
+    if (lltrace >= 2) {
         fprintf(stderr, "DEOPT: [Opcode %d, oparg %d]\n", opcode, oparg);
     }
 #endif
@@ -2903,14 +2913,34 @@ translate_bytecode_to_trace(
     uop_instruction *trace,
     int max_length)
 {
+#ifdef LLTRACE
+    char *uop_debug = Py_GETENV("PYTHON_UOP_DEBUG");
+    int lltrace = 0;
+    if (uop_debug != NULL && *uop_debug >= '0') {
+        lltrace = *uop_debug - '0';  // TODO: Parse an int and all that
+    }
+    if (lltrace >= 2) {
+        fprintf(stderr,
+                "Optimizing %s (%s:%d) at offset %ld\n",
+                PyUnicode_AsUTF8(code->co_qualname),
+                PyUnicode_AsUTF8(code->co_filename),
+                code->co_firstlineno,
+                (long)(instr - (_Py_CODEUNIT *)code->co_code_adaptive));
+    }
 #define ADD_TO_TRACE(OPCODE, OPARG) \
-        /* fprintf(stderr, "ADD_TO_TRACE(%d, %d)\n", (OPCODE), (OPARG)); */ \
+        if (lltrace >= 2) fprintf(stderr, "  ADD_TO_TRACE(%d, %d)\n", (OPCODE), (OPARG)); \
         trace[trace_length].opcode = (OPCODE); \
         trace[trace_length].oparg = (OPARG); \
         trace_length++;
+#else
+#define ADD_TO_TRACE(OPCODE, OPARG) \
+        trace[trace_length].opcode = (OPCODE); \
+        trace[trace_length].oparg = (OPARG); \
+        trace_length++;
+#endif
 
     int trace_length = 0;
-    // ALways reserve space for one uop, plus SET_UP, plus EXIT_TRACE
+    // Always reserve space for one uop, plus SET_UP, plus EXIT_TRACE
     while (trace_length + 3 <= max_length) {
         int opcode = instr->op.code;
         int oparg = instr->op.arg;
@@ -2953,7 +2983,29 @@ translate_bytecode_to_trace(
 done:
     if (trace_length > 0) {
         ADD_TO_TRACE(EXIT_TRACE, 0);
-        // fprintf(stderr, "Created a new trace of length %d\n", trace_length);
+#ifdef LLTRACE
+        if (lltrace >= 1) {
+            fprintf(stderr,
+                    "Created a trace for %s (%s:%d) at offset %ld -- length %d\n",
+                    PyUnicode_AsUTF8(code->co_qualname),
+                    PyUnicode_AsUTF8(code->co_filename),
+                    code->co_firstlineno,
+                    (long)(instr - (_Py_CODEUNIT *)code->co_code_adaptive),
+                    trace_length);
+        }
+#endif
+    }
+    else {
+#ifdef LLTRACE
+        if (lltrace >= 2) {
+            fprintf(stderr,
+                    "No trace for %s (%s:%d) at offset %ld\n",
+                    PyUnicode_AsUTF8(code->co_qualname),
+                    PyUnicode_AsUTF8(code->co_filename),
+                    code->co_firstlineno,
+                    (long)(instr - (_Py_CODEUNIT *)code->co_code_adaptive));
+        }
+#endif
     }
     return trace_length;
 
@@ -2978,17 +3030,6 @@ uop_optimize(
     if (executor == NULL) {
         return -1;
     }
-#ifdef Py_DEBUG
-    char *uop_debug = Py_GETENV("PYTHON_UOP_DEBUG");
-    if (uop_debug != NULL && *uop_debug >= '1') {
-        fprintf(stderr, "Optimizing %s (%s:%d) at offset %ld -- %d uops\n",
-                PyUnicode_AsUTF8(code->co_qualname),
-                PyUnicode_AsUTF8(code->co_filename),
-                code->co_firstlineno,
-                (long)(instr - (_Py_CODEUNIT *)code->co_code_adaptive),
-                trace_length);
-    }
-#endif
     executor->base.execute = uop_execute;
     Py_INCREF(self);
     memcpy(executor->trace, trace, trace_length * sizeof(uop_instruction));
