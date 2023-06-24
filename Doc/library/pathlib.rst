@@ -596,8 +596,8 @@ Pure paths provide the following methods and properties:
 
    Set *case_sensitive* to ``True`` or ``False`` to override this behaviour.
 
-   .. versionadded:: 3.12
-      The *case_sensitive* argument.
+   .. versionchanged:: 3.12
+      The *case_sensitive* parameter was added.
 
    .. versionchanged:: 3.13
       Support for the recursive wildcard "``**``" was added. In previous
@@ -965,8 +965,8 @@ call fails (for example because the path doesn't exist).
    .. versionchanged:: 3.12
       The *case_sensitive* parameter was added.
 
-   .. versionadded:: 3.13
-      The *follow_symlinks* argument.
+   .. versioncjamnged:: 3.13
+      The *follow_symlinks* parameter was added.
 
 .. method:: Path.group()
 
@@ -1397,8 +1397,8 @@ call fails (for example because the path doesn't exist).
    .. versionchanged:: 3.12
       The *case_sensitive* parameter was added.
 
-   .. versionadded:: 3.13
-      The *follow_symlinks* argument.
+   .. versionchanged:: 3.13
+      The *follow_symlinks* parameter was added.
 
 .. method:: Path.rmdir()
 
