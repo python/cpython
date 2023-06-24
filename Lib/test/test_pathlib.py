@@ -2438,6 +2438,12 @@ class PathTest(unittest.TestCase):
         for dirpath, dirnames, filenames in p.walk():
             self.assertEqual(42, dirpath.session_id)
 
+    def test_open_unbuffered(self):
+        p = self.cls(BASE)
+        with (p / 'fileA').open('rb', buffering=0) as f:
+            self.assertIsInstance(f, io.RawIOBase)
+            self.assertEqual(f.read().strip(), b"this is file A")
+
     def test_resolve_nonexist_relative_issue38671(self):
         p = self.cls('non', 'exist')
 
@@ -3111,12 +3117,6 @@ class PosixPathTest(PathTest):
             pass
         st = os.stat(join('other_new_file'))
         self.assertEqual(stat.S_IMODE(st.st_mode), 0o644)
-
-    def test_open_unbuffered(self):
-        p = self.cls(BASE)
-        with (p / 'fileA').open('rb', buffering=0) as f:
-            self.assertIsInstance(f, io.RawIOBase)
-            self.assertEqual(f.read().strip(), b"this is file A")
 
     def test_resolve_root(self):
         current_directory = os.getcwd()
