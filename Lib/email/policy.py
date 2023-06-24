@@ -221,9 +221,10 @@ class EmailPolicy(Policy):
 
 
 default = EmailPolicy()
+compat = Compat32()
 # Make the default policy use the class default header_factory
 del default.header_factory
 strict = default.clone(raise_on_defect=True)
+HTTP = compat.clone(linesep='\r\n', max_line_length=None, rstrip_whitespace=True)
 SMTP = default.clone(linesep='\r\n')
-HTTP = default.clone(linesep='\r\n', max_line_length=None, rstrip_whitespace=True)
 SMTPUTF8 = SMTP.clone(utf8=True)
