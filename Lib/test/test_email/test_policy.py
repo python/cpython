@@ -54,7 +54,7 @@ class PolicyAPITests(unittest.TestCase):
         email.policy.SMTPUTF8: make_defaults(policy_defaults,
                                              {'linesep': '\r\n',
                                               'utf8': True}),
-        email.policy.HTTP: make_defaults(policy_defaults,
+        email.policy.HTTP: make_defaults(compat32_defaults,
                                          {'linesep': '\r\n',
                                           'max_line_length': None,
                                           'rstrip_whitespace': True
