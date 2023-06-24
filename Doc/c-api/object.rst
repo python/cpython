@@ -36,7 +36,7 @@ Object Protocol
    .. caution::
 
       Exceptions that occur when this calls :meth:`__getattr__` and
-      :meth:`__getattribute__` methods are silently ignored.
+      :meth:`~object.__getattribute__` methods are silently ignored.
       For proper error handling, use :c:func:`PyObject_GetAttr` instead.
 
 
