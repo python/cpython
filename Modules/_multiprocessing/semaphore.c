@@ -79,7 +79,7 @@ _GetSemaphoreValue(HANDLE handle, long *value)
 /*[clinic input]
 _multiprocessing.SemLock.acquire
 
-    block as blocking: bool(accept={int}) = True
+    block as blocking: bool = True
     timeout as timeout_obj: object = None
 
 Acquire the semaphore/lock.
@@ -88,7 +88,7 @@ Acquire the semaphore/lock.
 static PyObject *
 _multiprocessing_SemLock_acquire_impl(SemLockObject *self, int blocking,
                                       PyObject *timeout_obj)
-/*[clinic end generated code: output=f9998f0b6b0b0872 input=86f05662cf753eb4]*/
+/*[clinic end generated code: output=f9998f0b6b0b0872 input=e5b45f5cbb775166]*/
 {
     double timeout;
     DWORD res, full_msecs, nhandles;
@@ -295,7 +295,7 @@ sem_timedwait_save(sem_t *sem, struct timespec *deadline, PyThreadState *_save)
 /*[clinic input]
 _multiprocessing.SemLock.acquire
 
-    block as blocking: bool(accept={int}) = True
+    block as blocking: bool = True
     timeout as timeout_obj: object = None
 
 Acquire the semaphore/lock.
@@ -304,7 +304,7 @@ Acquire the semaphore/lock.
 static PyObject *
 _multiprocessing_SemLock_acquire_impl(SemLockObject *self, int blocking,
                                       PyObject *timeout_obj)
-/*[clinic end generated code: output=f9998f0b6b0b0872 input=86f05662cf753eb4]*/
+/*[clinic end generated code: output=f9998f0b6b0b0872 input=e5b45f5cbb775166]*/
 {
     int res, err = 0;
     struct timespec deadline = {0};
@@ -474,14 +474,14 @@ _multiprocessing.SemLock.__new__
     value: int
     maxvalue: int
     name: str
-    unlink: bool(accept={int})
+    unlink: bool
 
 [clinic start generated code]*/
 
 static PyObject *
 _multiprocessing_SemLock_impl(PyTypeObject *type, int kind, int value,
                               int maxvalue, const char *name, int unlink)
-/*[clinic end generated code: output=30727e38f5f7577a input=b378c3ee27d3a0fa]*/
+/*[clinic end generated code: output=30727e38f5f7577a input=fdaeb69814471c5b]*/
 {
     SEM_HANDLE handle = SEM_FAILED;
     PyObject *result;

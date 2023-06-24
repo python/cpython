@@ -392,8 +392,8 @@ provides three different variants:
       contents of the file are output. If the file's MIME type starts with
       ``text/`` the file is opened in text mode; otherwise binary mode is used.
 
-      For example usage, see the implementation of the :func:`test` function
-      invocation in the :mod:`http.server` module.
+      For example usage, see the implementation of the ``test`` function
+      in :source:`Lib/http/server.py`.
 
       .. versionchanged:: 3.7
          Support of the ``'If-Modified-Since'`` header.
@@ -412,6 +412,11 @@ the current directory::
    with socketserver.TCPServer(("", PORT), Handler) as httpd:
        print("serving at port", PORT)
        httpd.serve_forever()
+
+
+:class:`SimpleHTTPRequestHandler` can also be subclassed to enhance behavior,
+such as using different index file names by overriding the class attribute
+:attr:`index_pages`.
 
 .. _http-server-cli:
 
@@ -512,3 +517,12 @@ Security Considerations
 :class:`SimpleHTTPRequestHandler` will follow symbolic links when handling
 requests, this makes it possible for files outside of the specified directory
 to be served.
+
+Earlier versions of Python did not scrub control characters from the
+log messages emitted to stderr from ``python -m http.server`` or the
+default :class:`BaseHTTPRequestHandler` ``.log_message``
+implementation. This could allow remote clients connecting to your
+server to send nefarious control codes to your terminal.
+
+.. versionadded:: 3.12
+   Control characters are scrubbed in stderr logs.

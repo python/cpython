@@ -1,2 +1,0 @@
-Improve the performance of reading and writing inline bytecode caches on
-some platforms.

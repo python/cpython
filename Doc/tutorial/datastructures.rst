@@ -122,7 +122,7 @@ An example that uses most of the list methods::
 
 You might have noticed that methods like ``insert``, ``remove`` or ``sort`` that
 only modify the list have no return value printed -- they return the default
-``None``. [1]_  This is a design principle for all mutable data structures in
+``None``. [#]_  This is a design principle for all mutable data structures in
 Python.
 
 Another thing you might notice is that not all data can be sorted or
@@ -731,5 +731,5 @@ interpreter will raise a :exc:`TypeError` exception.
 
 .. rubric:: Footnotes
 
-.. [1] Other languages may return the mutated object, which allows method
+.. [#] Other languages may return the mutated object, which allows method
        chaining, such as ``d->insert("a")->remove("b")->sort();``.

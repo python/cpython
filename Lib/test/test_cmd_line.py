@@ -882,7 +882,8 @@ class CmdLineTest(unittest.TestCase):
             return tuple(int(i) for i in out.split())
 
         res = assert_python_ok('-c', code)
-        self.assertEqual(res2int(res), (-1, sys.get_int_max_str_digits()))
+        current_max = sys.get_int_max_str_digits()
+        self.assertEqual(res2int(res), (current_max, current_max))
         res = assert_python_ok('-X', 'int_max_str_digits=0', '-c', code)
         self.assertEqual(res2int(res), (0, 0))
         res = assert_python_ok('-X', 'int_max_str_digits=4000', '-c', code)

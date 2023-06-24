@@ -1,2 +1,0 @@
-Fix ``logging`` shutdown handler so it respects
-``MemoryHandler.flushOnClose``.

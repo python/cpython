@@ -1,3 +1,0 @@
-Fix ``TypeVarTuple.__typing_prepare_subst__``. ``TypeError`` was not raised
-when using more than one ``TypeVarTuple``, like ``[*T, *V]`` in type alias
-substitutions.

@@ -19,6 +19,24 @@ can be used to get a frame object.
 
 See also :ref:`Reflection <reflection>`.
 
+.. c:var:: PyTypeObject PyFrame_Type
+
+   The type of frame objects.
+   It is the same object as :py:class:`types.FrameType` in the Python layer.
+
+   .. versionchanged:: 3.11
+
+      Previously, this type was only available after including
+      ``<frameobject.h>``.
+
+.. c:function:: int PyFrame_Check(PyObject *obj)
+
+   Return non-zero if *obj* is a frame object.
+
+   .. versionchanged:: 3.11
+
+      Previously, this function was only available after including
+      ``<frameobject.h>``.
 
 .. c:function:: PyFrameObject* PyFrame_GetBack(PyFrameObject *frame)
 
@@ -79,6 +97,27 @@ See also :ref:`Reflection <reflection>`.
    .. versionadded:: 3.11
 
 
+.. c:function:: PyObject* PyFrame_GetVar(PyFrameObject *frame, PyObject *name)
+
+   Get the variable *name* of *frame*.
+
+   * Return a :term:`strong reference` to the variable value on success.
+   * Raise :exc:`NameError` and return ``NULL`` if the variable does not exist.
+   * Raise an exception and return ``NULL`` on error.
+
+   *name* type must be a :class:`str`.
+
+   .. versionadded:: 3.12
+
+
+.. c:function:: PyObject* PyFrame_GetVarString(PyFrameObject *frame, const char *name)
+
+   Similar to :c:func:`PyFrame_GetVar`, but the variable name is a C string
+   encoded in UTF-8.
+
+   .. versionadded:: 3.12
+
+
 .. c:function:: PyObject* PyFrame_GetLocals(PyFrameObject *frame)
 
    Get the *frame*'s ``f_locals`` attribute (:class:`dict`).
@@ -91,3 +130,38 @@ See also :ref:`Reflection <reflection>`.
 .. c:function:: int PyFrame_GetLineNumber(PyFrameObject *frame)
 
    Return the line number that *frame* is currently executing.
+
+
+
+Internal Frames
+^^^^^^^^^^^^^^^
+
+Unless using :pep:`523`, you will not need this.
+
+.. c:struct:: _PyInterpreterFrame
+
+   The interpreter's internal frame representation.
+
+   .. versionadded:: 3.11
+
+.. c:function:: PyObject* PyUnstable_InterpreterFrame_GetCode(struct _PyInterpreterFrame *frame);
+
+    Return a :term:`strong reference` to the code object for the frame.
+
+   .. versionadded:: 3.12
+
+
+.. c:function:: int PyUnstable_InterpreterFrame_GetLasti(struct _PyInterpreterFrame *frame);
+
+   Return the byte offset into the last executed instruction.
+
+   .. versionadded:: 3.12
+
+
+.. c:function:: int PyUnstable_InterpreterFrame_GetLine(struct _PyInterpreterFrame *frame);
+
+   Return the currently executing line number, or -1 if there is no line number.
+
+   .. versionadded:: 3.12
+
+

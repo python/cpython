@@ -1,3 +1,0 @@
-``wasm32-emscripten`` platform no longer builds :mod:`resource` module,
-:func:`~os.getresuid`, :func:`~os.getresgid`, and their setters. The APIs
-are stubs and not functional.

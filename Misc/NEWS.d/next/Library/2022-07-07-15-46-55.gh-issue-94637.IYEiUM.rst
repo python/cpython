@@ -1,3 +1,0 @@
-:meth:`SSLContext.set_default_verify_paths` now releases the GIL around
-``SSL_CTX_set_default_verify_paths`` call. The function call performs I/O
-and CPU intensive work.

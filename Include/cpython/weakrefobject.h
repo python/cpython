@@ -32,10 +32,6 @@ struct _PyWeakReference {
     vectorcallfunc vectorcall;
 };
 
-PyAPI_FUNC(Py_ssize_t) _PyWeakref_GetWeakrefCount(PyWeakReference *head);
-
-PyAPI_FUNC(void) _PyWeakref_ClearRef(PyWeakReference *self);
-
 static inline PyObject* PyWeakref_GET_OBJECT(PyObject *ref_obj) {
     PyWeakReference *ref;
     PyObject *obj;

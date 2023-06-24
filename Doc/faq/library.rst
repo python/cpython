@@ -609,7 +609,7 @@ use ``p.read(n)``.
    substituted for standard input and output.  You will have to use pseudo ttys
    ("ptys") instead of pipes. Or you can use a Python interface to Don Libes'
    "expect" library.  A Python extension that interfaces to expect is called
-   "expy" and available from http://expectpy.sourceforge.net.  A pure Python
+   "expy" and available from https://expectpy.sourceforge.net.  A pure Python
    solution that works like expect is `pexpect
    <https://pypi.org/project/pexpect/>`_.
 
@@ -780,7 +780,7 @@ socket to :meth:`select.select` to check if it's writable.
    The :mod:`asyncio` module provides a general purpose single-threaded and
    concurrent asynchronous library, which can be used for writing non-blocking
    network code.
-   The third-party `Twisted <https://twistedmatrix.com/trac/>`_ library is
+   The third-party `Twisted <https://twisted.org/>`_ library is
    a popular and feature-rich alternative.
 
 

@@ -204,7 +204,9 @@ PyDoc_STRVAR(object___format____doc__,
 "__format__($self, format_spec, /)\n"
 "--\n"
 "\n"
-"Default object formatter.");
+"Default object formatter.\n"
+"\n"
+"Return str(self) if format_spec is empty. Raise TypeError otherwise.");
 
 #define OBJECT___FORMAT___METHODDEF    \
     {"__format__", (PyCFunction)object___format__, METH_O, object___format____doc__},
@@ -220,9 +222,6 @@ object___format__(PyObject *self, PyObject *arg)
 
     if (!PyUnicode_Check(arg)) {
         _PyArg_BadArgument("__format__", "argument", "str", arg);
-        goto exit;
-    }
-    if (PyUnicode_READY(arg) == -1) {
         goto exit;
     }
     format_spec = arg;
@@ -267,4 +266,4 @@ object___dir__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return object___dir___impl(self);
 }
-/*[clinic end generated code: output=3312f873c970bfd1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=43533e6981550e9e input=a9049054013a1b77]*/

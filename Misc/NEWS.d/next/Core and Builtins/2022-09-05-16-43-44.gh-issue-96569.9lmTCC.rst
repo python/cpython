@@ -1,1 +1,0 @@
-Remove two cases of undefined behavoir, by adding NULL checks.

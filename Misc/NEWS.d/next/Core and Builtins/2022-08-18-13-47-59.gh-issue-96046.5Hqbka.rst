@@ -1,4 +1,0 @@
-:c:func:`PyType_Ready` now initializes ``ht_cached_keys`` and performs
-additional checks to ensure that type objects are properly configured. This
-avoids crashes in 3rd party packages that don't use regular API to create
-new types.

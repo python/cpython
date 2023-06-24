@@ -1,3 +1,0 @@
-Reduce :func:`urllib.parse.quote_from_bytes` memory use on large values.
-
-Contributed by Dennis Sweeney.

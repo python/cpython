@@ -1,4 +1,4 @@
-"""Test suite for statistics module, including helper NumericTestCase and
+x = """Test suite for statistics module, including helper NumericTestCase and
 approx_equal function.
 
 """
@@ -2610,6 +2610,16 @@ class TestLinearRegression(unittest.TestCase):
         self.assertAlmostEqual(slope, 20 + 1/150)
         self.assertEqual(intercept, 0.0)
 
+    def test_float_output(self):
+        x = [Fraction(2, 3), Fraction(3, 4)]
+        y = [Fraction(4, 5), Fraction(5, 6)]
+        slope, intercept = statistics.linear_regression(x, y)
+        self.assertTrue(isinstance(slope, float))
+        self.assertTrue(isinstance(intercept, float))
+        slope, intercept = statistics.linear_regression(x, y, proportional=True)
+        self.assertTrue(isinstance(slope, float))
+        self.assertTrue(isinstance(intercept, float))
+
 class TestNormalDist:
 
     # General note on precision: The pdf(), cdf(), and overlap() methods
@@ -3003,14 +3013,19 @@ class TestNormalDist:
         nd = NormalDist(100, 15)
         self.assertNotEqual(nd, lnd)
 
-    def test_pickle_and_copy(self):
+    def test_copy(self):
         nd = self.module.NormalDist(37.5, 5.625)
         nd1 = copy.copy(nd)
         self.assertEqual(nd, nd1)
         nd2 = copy.deepcopy(nd)
         self.assertEqual(nd, nd2)
-        nd3 = pickle.loads(pickle.dumps(nd))
-        self.assertEqual(nd, nd3)
+
+    def test_pickle(self):
+        nd = self.module.NormalDist(37.5, 5.625)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                pickled = pickle.loads(pickle.dumps(nd, protocol=proto))
+                self.assertEqual(nd, pickled)
 
     def test_hashability(self):
         ND = self.module.NormalDist
