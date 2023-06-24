@@ -134,7 +134,7 @@ dummy_func(
 // BEGIN BYTECODES //
         inst(NOP, (--)) {
         }
-
+        
         inst(RESUME, (--)) {
             assert(tstate->cframe == &cframe);
             assert(frame == cframe.current_frame);
@@ -177,12 +177,9 @@ dummy_func(
             }
         }
 
-        inst(LOAD_CLOSURE, (-- value)) {
-            /* We keep LOAD_CLOSURE so that the bytecode stays more readable. */
-            value = GETLOCAL(oparg);
-            ERROR_IF(value == NULL, unbound_local_error);
-            Py_INCREF(value);
-        }
+        pseudo(LOAD_CLOSURE) = {
+            LOAD_FAST,
+        };
 
         inst(LOAD_FAST_CHECK, (-- value)) {
             value = GETLOCAL(oparg);
@@ -195,7 +192,7 @@ dummy_func(
             assert(value != NULL);
             Py_INCREF(value);
         }
-
+        
         inst(LOAD_FAST_AND_CLEAR, (-- value)) {
             value = GETLOCAL(oparg);
             // do not use SETLOCAL here, it decrefs the old value

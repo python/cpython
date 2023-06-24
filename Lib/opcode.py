@@ -198,8 +198,6 @@ def_op('BUILD_SLICE', 133)      # Number of items
 jrel_op('JUMP_BACKWARD_NO_INTERRUPT', 134) # Number of words to skip (backwards)
 def_op('MAKE_CELL', 135)
 hasfree.append(135)
-def_op('LOAD_CLOSURE', 136)
-hasfree.append(136)
 def_op('LOAD_DEREF', 137)
 hasfree.append(137)
 def_op('STORE_DEREF', 138)
@@ -291,6 +289,7 @@ pseudo_op('LOAD_METHOD', 262, ['LOAD_ATTR'])
 pseudo_op('LOAD_SUPER_METHOD', 263, ['LOAD_SUPER_ATTR'])
 pseudo_op('LOAD_ZERO_SUPER_METHOD', 264, ['LOAD_SUPER_ATTR'])
 pseudo_op('LOAD_ZERO_SUPER_ATTR', 265, ['LOAD_SUPER_ATTR'])
+pseudo_op('LOAD_CLOSURE', 267, ['LOAD_FAST'])
 
 pseudo_op('STORE_FAST_MAYBE_NULL', 266, ['STORE_FAST'])
 
