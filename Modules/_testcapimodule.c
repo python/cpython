@@ -1426,7 +1426,7 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
     int allow_threads = -1;
     int allow_daemon_threads = -1;
     int check_multi_interp_extensions = -1;
-    int own_gil = -1;
+    int gil = -1;
     int r;
     PyThreadState *substate, *mainstate;
     /* only initialise 'cflags.cf_flags' to test backwards compatibility */
@@ -1439,15 +1439,15 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
                              "allow_threads",
                              "allow_daemon_threads",
                              "check_multi_interp_extensions",
-                             "own_gil",
+                             "gil",
                              NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                    "s$ppppppp:run_in_subinterp_with_config", kwlist,
+                    "s$ppppppi:run_in_subinterp_with_config", kwlist,
                     &code, &use_main_obmalloc,
                     &allow_fork, &allow_exec,
                     &allow_threads, &allow_daemon_threads,
                     &check_multi_interp_extensions,
-                    &own_gil)) {
+                    &gil)) {
         return NULL;
     }
     if (use_main_obmalloc < 0) {
@@ -1466,8 +1466,8 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
         PyErr_SetString(PyExc_ValueError, "missing allow_threads");
         return NULL;
     }
-    if (own_gil < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing own_gil");
+    if (gil < 0) {
+        PyErr_SetString(PyExc_ValueError, "missing gil");
         return NULL;
     }
     if (allow_daemon_threads < 0) {
@@ -1490,7 +1490,7 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
         .allow_threads = allow_threads,
         .allow_daemon_threads = allow_daemon_threads,
         .check_multi_interp_extensions = check_multi_interp_extensions,
-        .own_gil = own_gil,
+        .gil = gil,
     };
     PyStatus status = Py_NewInterpreterFromConfig(&substate, &config);
     if (PyStatus_Exception(status)) {
@@ -3325,6 +3325,147 @@ test_atexit(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 
+static PyObject *
+check_pyimport_addmodule(PyObject *self, PyObject *args)
+{
+    const char *name;
+    if (!PyArg_ParseTuple(args, "s", &name)) {
+        return NULL;
+    }
+
+    // test PyImport_AddModuleRef()
+    PyObject *module = PyImport_AddModuleRef(name);
+    if (module == NULL) {
+        return NULL;
+    }
+    assert(PyModule_Check(module));
+    // module is a strong reference
+
+    // test PyImport_AddModule()
+    PyObject *module2 = PyImport_AddModule(name);
+    if (module2 == NULL) {
+        goto error;
+    }
+    assert(PyModule_Check(module2));
+    assert(module2 == module);
+    // module2 is a borrowed ref
+
+    // test PyImport_AddModuleObject()
+    PyObject *name_obj = PyUnicode_FromString(name);
+    if (name_obj == NULL) {
+        goto error;
+    }
+    PyObject *module3 = PyImport_AddModuleObject(name_obj);
+    Py_DECREF(name_obj);
+    if (module3 == NULL) {
+        goto error;
+    }
+    assert(PyModule_Check(module3));
+    assert(module3 == module);
+    // module3 is a borrowed ref
+
+    return module;
+
+error:
+    Py_DECREF(module);
+    return NULL;
+}
+
+
+static PyObject *
+test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
+{
+    // Create a new heap type, create an instance of this type, and delete the
+    // type. This object supports weak references.
+    PyObject *new_type = PyObject_CallFunction((PyObject*)&PyType_Type,
+                                               "s(){}", "TypeName");
+    if (new_type == NULL) {
+        return NULL;
+    }
+    PyObject *obj = PyObject_CallNoArgs(new_type);
+    Py_DECREF(new_type);
+    if (obj == NULL) {
+        return NULL;
+    }
+    Py_ssize_t refcnt = Py_REFCNT(obj);
+
+    // test PyWeakref_NewRef(), reference is alive
+    PyObject *weakref = PyWeakref_NewRef(obj, NULL);
+    if (weakref == NULL) {
+        Py_DECREF(obj);
+        return NULL;
+    }
+
+    // test PyWeakref_Check(), valid weakref object
+    assert(PyWeakref_Check(weakref));
+    assert(PyWeakref_CheckRefExact(weakref));
+    assert(PyWeakref_CheckRefExact(weakref));
+    assert(Py_REFCNT(obj) == refcnt);
+
+    // test PyWeakref_GetRef(), reference is alive
+    PyObject *ref = Py_True;  // marker to check that value was set
+    assert(PyWeakref_GetRef(weakref, &ref) == 0);
+    assert(ref == obj);
+    assert(Py_REFCNT(obj) == (refcnt + 1));
+    Py_DECREF(ref);
+
+    // test PyWeakref_GetObject(), reference is alive
+    ref = PyWeakref_GetObject(weakref);  // borrowed ref
+    assert(ref == obj);
+
+    // test PyWeakref_GET_OBJECT(), reference is alive
+    ref = PyWeakref_GET_OBJECT(weakref);  // borrowed ref
+    assert(ref == obj);
+
+    // delete the referenced object: clear the weakref
+    assert(Py_REFCNT(obj) == 1);
+    Py_DECREF(obj);
+
+    // test PyWeakref_GET_OBJECT(), reference is dead
+    assert(PyWeakref_GET_OBJECT(weakref) == Py_None);
+
+    // test PyWeakref_GetRef(), reference is dead
+    ref = Py_True;
+    assert(PyWeakref_GetRef(weakref, &ref) == 0);
+    assert(ref == NULL);
+
+    // test PyWeakref_Check(), not a weakref object
+    PyObject *invalid_weakref = Py_None;
+    assert(!PyWeakref_Check(invalid_weakref));
+    assert(!PyWeakref_CheckRefExact(invalid_weakref));
+    assert(!PyWeakref_CheckRefExact(invalid_weakref));
+
+    // test PyWeakref_GetRef(), invalid type
+    assert(!PyErr_Occurred());
+    ref = Py_True;
+    assert(PyWeakref_GetRef(invalid_weakref, &ref) == -1);
+    assert(PyErr_ExceptionMatches(PyExc_TypeError));
+    PyErr_Clear();
+    assert(ref == NULL);
+
+    // test PyWeakref_GetObject(), invalid type
+    assert(PyWeakref_GetObject(invalid_weakref) == NULL);
+    assert(PyErr_ExceptionMatches(PyExc_SystemError));
+    PyErr_Clear();
+
+    // test PyWeakref_GetRef(NULL)
+    ref = Py_True;  // marker to check that value was set
+    assert(PyWeakref_GetRef(NULL, &ref) == -1);
+    assert(PyErr_ExceptionMatches(PyExc_SystemError));
+    assert(ref == NULL);
+    PyErr_Clear();
+
+    // test PyWeakref_GetObject(NULL)
+    assert(PyWeakref_GetObject(NULL) == NULL);
+    assert(PyErr_ExceptionMatches(PyExc_SystemError));
+    PyErr_Clear();
+
+    Py_DECREF(weakref);
+
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -3468,6 +3609,8 @@ static PyMethodDef TestMethods[] = {
     {"function_get_kw_defaults", function_get_kw_defaults, METH_O, NULL},
     {"function_set_kw_defaults", function_set_kw_defaults, METH_VARARGS, NULL},
     {"test_atexit", test_atexit, METH_NOARGS},
+    {"check_pyimport_addmodule", check_pyimport_addmodule, METH_VARARGS},
+    {"test_weakref_capi", test_weakref_capi, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

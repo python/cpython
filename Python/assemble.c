@@ -4,6 +4,7 @@
 #include "pycore_code.h"          // write_location_entry_start()
 #include "pycore_compile.h"
 #include "pycore_opcode.h"        // _PyOpcode_Caches[] and opcode category macros
+#include "opcode_metadata.h"      // IS_PSEUDO_INSTR
 
 
 #define DEFAULT_CODE_SIZE 128
@@ -338,9 +339,9 @@ static void
 write_instr(_Py_CODEUNIT *codestr, instruction *instr, int ilen)
 {
     int opcode = instr->i_opcode;
-    assert(!IS_PSEUDO_OPCODE(opcode));
+    assert(!IS_PSEUDO_INSTR(opcode));
     int oparg = instr->i_oparg;
-    assert(HAS_ARG(opcode) || oparg == 0);
+    assert(OPCODE_HAS_ARG(opcode) || oparg == 0);
     int caches = _PyOpcode_Caches[opcode];
     switch (ilen - caches) {
         case 4:

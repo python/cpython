@@ -1369,6 +1369,53 @@ Removed
   * The :mod:`!imp` module has been removed.  (Contributed by Barry Warsaw in
     :gh:`98040`.)
 
+  * Replace removed :mod:`!imp` functions with :mod:`importlib` functions:
+
+    =================================  =======================================
+       imp                                importlib
+    =================================  =======================================
+    ``imp.NullImporter``               Insert ``None`` into ``sys.path_importer_cache``
+    ``imp.cache_from_source()``        :func:`importlib.util.cache_from_source`
+    ``imp.find_module()``              :func:`importlib.util.find_spec`
+    ``imp.get_magic()``                :attr:`importlib.util.MAGIC_NUMBER`
+    ``imp.get_suffixes()``             :attr:`importlib.machinery.SOURCE_SUFFIXES`, :attr:`importlib.machinery.EXTENSION_SUFFIXES`, and :attr:`importlib.machinery.BYTECODE_SUFFIXES`
+    ``imp.get_tag()``                  :attr:`sys.implementation.cache_tag <sys.implementation>`
+    ``imp.load_module()``              :func:`importlib.import_module`
+    ``imp.new_module(name)``           ``types.ModuleType(name)``
+    ``imp.reload()``                   :func:`importlib.reload`
+    ``imp.source_from_cache()``        :func:`importlib.util.source_from_cache`
+    =================================  =======================================
+
+  * Replace ``imp.load_source()`` with::
+
+        import importlib.util
+        import importlib.machinery
+
+        def load_source(modname, filename):
+            loader = importlib.machinery.SourceFileLoader(modname, filename)
+            spec = importlib.util.spec_from_file_location(modname, filename, loader=loader)
+            module = importlib.util.module_from_spec(spec)
+            # The module is always executed and not cached in sys.modules.
+            # Uncomment the following line to cache the module.
+            # sys.modules[module.__name__] = module
+            loader.exec_module(module)
+            return module
+
+  * Removed :mod:`!imp` functions and attributes with no replacements:
+
+    * undocumented functions:
+
+      * ``imp.init_builtin()``
+      * ``imp.load_compiled()``
+      * ``imp.load_dynamic()``
+      * ``imp.load_package()``
+
+    * ``imp.lock_held()``, ``imp.acquire_lock()``, ``imp.release_lock()``:
+      the locking scheme has changed in Python 3.3 to per-module locks.
+    * ``imp.find_module()`` constants: ``SEARCH_ERROR``, ``PY_SOURCE``,
+      ``PY_COMPILED``, ``C_EXTENSION``, ``PY_RESOURCE``, ``PKG_DIRECTORY``,
+      ``C_BUILTIN``, ``PY_FROZEN``, ``PY_CODERESOURCE``, ``IMP_HOOK``.
+
 * Removed the ``suspicious`` rule from the documentation Makefile, and
   removed ``Doc/tools/rstlint.py``, both in favor of `sphinx-lint
   <https://github.com/sphinx-contrib/sphinx-lint>`_.
@@ -1499,6 +1546,9 @@ Changes in the Python API
   * Some incomplete or invalid Python code now raises :exc:`tokenize.TokenError` instead of
     returning arbitrary ``ERRORTOKEN`` tokens when tokenizing it.
 
+  * Mixing tabs and spaces as indentation in the same file is not supported anymore and will
+    raise a :exc:`TabError`.
+
 Build Changes
 =============
 
@@ -1536,15 +1586,6 @@ Build Changes
 * Autoconf 2.71 and aclocal 1.16.4 is now required to regenerate
   :file:`!configure`.
   (Contributed by Christian Heimes in :gh:`89886`.)
-
-* C extensions built with the :ref:`limited C API <limited-c-api>`
-  on :ref:`Python build in debug mode <debug-build>` no longer support Python
-  3.9 and older. In this configuration, :c:func:`Py_INCREF` and
-  :c:func:`Py_DECREF` are now always implemented as opaque function calls,
-  but the called functions were added to Python 3.10. Build C extensions
-  with a release build of Python or with Python 3.12 and older, to keep support
-  for Python 3.9 and older.
-  (Contributed by Victor Stinner in :gh:`102304`.)
 
 
 C API Changes
@@ -1697,6 +1738,11 @@ New Features
       correctly track reference counts and allocated blocks
 
   (Contributed by Eddie Elizondo in :gh:`84436`.)
+
+* In the limited C API version 3.12, :c:func:`Py_INCREF` and
+  :c:func:`Py_DECREF` functions are now implemented as opaque function calls to
+  hide implementation details.
+  (Contributed by Victor Stinner in :gh:`105387`.)
 
 Porting to Python 3.12
 ----------------------

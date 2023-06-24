@@ -13,7 +13,8 @@
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
-#include "pycore_sysmodule.h"
+#include "pycore_sysmodule.h"     // _PySys_Audit()
+#include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 /* --------------------------------------------------------------------------
 CAUTION
@@ -380,7 +381,7 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 static const _PyRuntimeState initial = _PyRuntimeState_INIT(_PyRuntime);
 _Py_COMP_DIAG_POP
 
-#define NUMLOCKS 7
+#define NUMLOCKS 9
 #define LOCKS_INIT(runtime) \
     { \
         &(runtime)->interpreters.mutex, \
@@ -388,8 +389,10 @@ _Py_COMP_DIAG_POP
         &(runtime)->getargs.mutex, \
         &(runtime)->unicode_state.ids.lock, \
         &(runtime)->imports.extensions.mutex, \
+        &(runtime)->ceval.pending_mainthread.lock, \
         &(runtime)->atexit.mutex, \
         &(runtime)->audit_hooks.mutex, \
+        &(runtime)->allocators.mutex, \
     }
 
 static int
@@ -890,7 +893,6 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     PyDict_Clear(interp->builtins);
     Py_CLEAR(interp->sysdict);
     Py_CLEAR(interp->builtins);
-    Py_CLEAR(interp->interpreter_trampoline);
 
     if (tstate->interp == interp) {
         /* We are now safe to fix tstate->_status.cleared. */
@@ -2588,16 +2590,18 @@ _xidregistry_find_type(struct _xidregistry *xidregistry, PyTypeObject *cls)
 {
     struct _xidregitem *cur = xidregistry->head;
     while (cur != NULL) {
-        PyObject *registered = PyWeakref_GetObject(cur->cls);
-        if (registered == Py_None) {
+        PyObject *registered = _PyWeakref_GET_REF(cur->cls);
+        if (registered == NULL) {
             // The weakly ref'ed object was freed.
             cur = _xidregistry_remove_entry(xidregistry, cur);
         }
         else {
             assert(PyType_Check(registered));
             if (registered == (PyObject *)cls) {
+                Py_DECREF(registered);
                 return cur;
             }
+            Py_DECREF(registered);
             cur = cur->next;
         }
     }

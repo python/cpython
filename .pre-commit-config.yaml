@@ -5,3 +5,11 @@ repos:
       - id: check-yaml
       - id: trailing-whitespace
         types_or: [c, python, rst]
+
+  - repo: https://github.com/sphinx-contrib/sphinx-lint
+    rev: v0.6.7
+    hooks:
+      - id: sphinx-lint
+        args: [--enable=default-role]
+        files: ^Doc/
+        types: [rst]

@@ -87,21 +87,9 @@ jobs:
         with:
           filter: |
             Doc/**
-            # Temporarily skip paths with spaces
-            # (i.e. "C API", "Core and Builtins")
-            # to avoid "Error: One of your files includes a space".
-            # Pending https://github.com/python/core-workflow/issues/186
-            # Misc/**
-            Misc/NEWS.d/next/Build/**
-            Misc/NEWS.d/next/Documentation/**
-            Misc/NEWS.d/next/IDLE/**
-            Misc/NEWS.d/next/Library/**
-            Misc/NEWS.d/next/Security/**
-            Misc/NEWS.d/next/Tests/**
-            Misc/NEWS.d/next/Tools-Demos/**
-            Misc/NEWS.d/next/Windows/**
-            Misc/NEWS.d/next/macOS/**
+            Misc/**
             .github/workflows/reusable-docs.yml
+          format: csv  # works for paths with spaces
       - name: Check for docs changes
         if: >-
           github.event_name == 'pull_request'
@@ -232,17 +220,16 @@ jobs:
         path: config.cache
         key: ${{ github.job }}-${{ runner.os }}-${{ needs.check_source.outputs.config_hash }}
     - name: Install Homebrew dependencies
-      run: brew install pkg-config openssl@1.1 xz gdbm tcl-tk
+      run: brew install pkg-config openssl@3.0 xz gdbm tcl-tk
     - name: Configure CPython
       run: |
-        CFLAGS="-I$(brew --prefix gdbm)/include -I$(brew --prefix xz)/include" \
-        LDFLAGS="-L$(brew --prefix gdbm)/lib -I$(brew --prefix xz)/lib" \
-        PKG_CONFIG_PATH="$(brew --prefix tcl-tk)/lib/pkgconfig" \
+        GDBM_CFLAGS="-I$(brew --prefix gdbm)/include" \
+        GDBM_LIBS="-L$(brew --prefix gdbm)/lib -lgdbm" \
         ./configure \
           --config-cache \
           --with-pydebug \
           --prefix=/opt/python-dev \
-          --with-openssl="$(brew --prefix openssl@1.1)"
+          --with-openssl="$(brew --prefix openssl@3.0)"
     - name: Build CPython
       run: make -j4
     - name: Display build info

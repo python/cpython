@@ -12,6 +12,7 @@
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_sysmodule.h"     // _PySys_Audit()
+#include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 #include "marshal.h"              // PyMarshal_ReadObjectFromString()
 #include "importdl.h"             // _PyImport_DynLoadFiletab
 #include "pydtrace.h"             // PyDTrace_IMPORT_FIND_LOAD_START_ENABLED()
@@ -351,18 +352,51 @@ import_add_module(PyThreadState *tstate, PyObject *name)
 }
 
 PyObject *
+PyImport_AddModuleRef(const char *name)
+{
+    PyObject *name_obj = PyUnicode_FromString(name);
+    if (name_obj == NULL) {
+        return NULL;
+    }
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *module = import_add_module(tstate, name_obj);
+    Py_DECREF(name_obj);
+    return module;
+}
+
+
+PyObject *
 PyImport_AddModuleObject(PyObject *name)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *mod = import_add_module(tstate, name);
-    if (mod) {
-        PyObject *ref = PyWeakref_NewRef(mod, NULL);
-        Py_DECREF(mod);
-        if (ref == NULL) {
-            return NULL;
-        }
-        mod = PyWeakref_GetObject(ref);
-        Py_DECREF(ref);
+    if (!mod) {
+        return NULL;
+    }
+
+    // gh-86160: PyImport_AddModuleObject() returns a borrowed reference.
+    // Create a weak reference to produce a borrowed reference, since it can
+    // become NULL. sys.modules type can be different than dict and it is not
+    // guaranteed that it keeps a strong reference to the module. It can be a
+    // custom mapping with __getitem__() which returns a new object or removes
+    // returned object, or __setitem__ which does nothing. There is so much
+    // unknown.  With weakref we can be sure that we get either a reference to
+    // live object or NULL.
+    //
+    // Use PyImport_AddModuleRef() to avoid these issues.
+    PyObject *ref = PyWeakref_NewRef(mod, NULL);
+    Py_DECREF(mod);
+    if (ref == NULL) {
+        return NULL;
+    }
+    mod = _PyWeakref_GET_REF(ref);
+    Py_DECREF(ref);
+    Py_XDECREF(mod);
+
+    if (mod == NULL && !PyErr_Occurred()) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "sys.modules does not hold a strong reference "
+                        "to the module");
     }
     return mod; /* borrowed reference */
 }
@@ -703,10 +737,19 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
    _PyRuntime.imports.pkgcontext, and PyModule_Create*() will
    substitute this (if the name actually matches).
 */
+
+#ifdef HAVE_THREAD_LOCAL
+_Py_thread_local const char *pkgcontext = NULL;
+# undef PKGCONTEXT
+# define PKGCONTEXT pkgcontext
+#endif
+
 const char *
 _PyImport_ResolveNameWithPackageContext(const char *name)
 {
+#ifndef HAVE_THREAD_LOCAL
     PyThread_acquire_lock(EXTENSIONS.mutex, WAIT_LOCK);
+#endif
     if (PKGCONTEXT != NULL) {
         const char *p = strrchr(PKGCONTEXT, '.');
         if (p != NULL && strcmp(name, p+1) == 0) {
@@ -714,17 +757,23 @@ _PyImport_ResolveNameWithPackageContext(const char *name)
             PKGCONTEXT = NULL;
         }
     }
+#ifndef HAVE_THREAD_LOCAL
     PyThread_release_lock(EXTENSIONS.mutex);
+#endif
     return name;
 }
 
 const char *
 _PyImport_SwapPackageContext(const char *newcontext)
 {
+#ifndef HAVE_THREAD_LOCAL
     PyThread_acquire_lock(EXTENSIONS.mutex, WAIT_LOCK);
+#endif
     const char *oldcontext = PKGCONTEXT;
     PKGCONTEXT = newcontext;
+#ifndef HAVE_THREAD_LOCAL
     PyThread_release_lock(EXTENSIONS.mutex);
+#endif
     return oldcontext;
 }
 
@@ -1349,8 +1398,7 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
         if (_PyUnicode_EqualToASCIIString(name, p->name)) {
             if (p->initfunc == NULL) {
                 /* Cannot re-init internal module ("sys" or "builtins") */
-                mod = PyImport_AddModuleObject(name);
-                return Py_XNewRef(mod);
+                return import_add_module(tstate, name);
             }
             mod = _PyImport_InitFunc_TrampolineCall(*p->initfunc);
             if (mod == NULL) {
@@ -2038,6 +2086,7 @@ unmarshal_frozen_code(PyInterpreterState *interp, struct frozen_info *info)
     PyObject *co = PyMarshal_ReadObjectFromString(info->data, info->size);
     if (co == NULL) {
         /* Does not contain executable code. */
+        PyErr_Clear();
         set_frozen_error(FROZEN_INVALID, info->nameobj);
         return NULL;
     }
@@ -2225,11 +2274,12 @@ init_importlib(PyThreadState *tstate, PyObject *sysmod)
     if (PyImport_ImportFrozenModule("_frozen_importlib") <= 0) {
         return -1;
     }
-    PyObject *importlib = PyImport_AddModule("_frozen_importlib"); // borrowed
+
+    PyObject *importlib = PyImport_AddModuleRef("_frozen_importlib");
     if (importlib == NULL) {
         return -1;
     }
-    IMPORTLIB(interp) = Py_NewRef(importlib);
+    IMPORTLIB(interp) = importlib;
 
     // Import the _imp module
     if (verbose) {
@@ -2439,6 +2489,12 @@ PyImport_ImportModule(const char *name)
 PyObject *
 PyImport_ImportModuleNoBlock(const char *name)
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+        "PyImport_ImportModuleNoBlock() is deprecated and scheduled for "
+        "removal in Python 3.15. Use PyImport_ImportModule() instead.", 1))
+    {
+        return NULL;
+    }
     return PyImport_ImportModule(name);
 }
 

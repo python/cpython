@@ -106,6 +106,10 @@ built on debug mode <debug-build>`.
 pathlib
 -------
 
+* Add :exc:`pathlib.UnsupportedOperation`, which is raised instead of
+  :exc:`NotImplementedError` when a path operation isn't supported.
+  (Contributed by Barney Gale in :gh:`89812`.)
+
 * Add support for recursive wildcards in :meth:`pathlib.PurePath.match`.
   (Contributed by Barney Gale in :gh:`73435`.)
 
@@ -120,6 +124,14 @@ traceback
   to format the nested exceptions of a :exc:`BaseExceptionGroup` instance, recursively.
   (Contributed by Irit Katriel in :gh:`105292`.)
 
+typing
+------
+
+* Add :func:`typing.get_protocol_members` to return the set of members
+  defining a :class:`typing.Protocol`. Add :func:`typing.is_protocol` to
+  check whether a class is a :class:`typing.Protocol`. (Contributed by Jelle Zijlstra in
+  :gh:`104873`.)
+
 Optimizations
 =============
 
@@ -133,6 +145,31 @@ Deprecated
   methods of the :class:`wave.Wave_read` and :class:`wave.Wave_write` classes.
   They will be removed in Python 3.15.
   (Contributed by Victor Stinner in :gh:`105096`.)
+* Creating a :class:`typing.NamedTuple` class using keyword arguments to denote
+  the fields (``NT = NamedTuple("NT", x=int, y=int)``) is deprecated, and will
+  be disallowed in Python 3.15. Use the class-based syntax or the functional
+  syntax instead. (Contributed by Alex Waygood in :gh:`105566`.)
+* When using the functional syntax to create a :class:`typing.NamedTuple`
+  class or a :class:`typing.TypedDict` class, failing to pass a value to the
+  'fields' parameter (``NT = NamedTuple("NT")`` or ``TD = TypedDict("TD")``) is
+  deprecated. Passing ``None`` to the 'fields' parameter
+  (``NT = NamedTuple("NT", None)`` or ``TD = TypedDict("TD", None)``) is also
+  deprecated. Both will be disallowed in Python 3.15. To create a NamedTuple
+  class with 0 fields, use ``class NT(NamedTuple): pass`` or
+  ``NT = NamedTuple("NT", [])``. To create a TypedDict class with 0 fields, use
+  ``class TD(TypedDict): pass`` or ``TD = TypedDict("TD", {})``.
+  (Contributed by Alex Waygood in :gh:`105566` and :gh:`105570`.)
+
+* :mod:`array`'s ``'u'`` format code, deprecated in docs since Python 3.3,
+  emits :exc:`DeprecationWarning` since 3.13
+  and will be removed in Python 3.16.
+  Use the ``'w'`` format code instead.
+  (contributed by Hugo van Kemenade in :gh:`80480`)
+
+* :mod:`ctypes`: Deprecate undocumented :func:`!ctypes.SetPointerType`
+  and :func:`!ctypes.ARRAY` functions.
+  Replace ``ctypes.SetPointerType(item_type, size)`` with ``item_type * size``.
+  (Contributed by Victor Stinner in :gh:`105733`.)
 
 
 Removed
@@ -324,6 +361,15 @@ Removed
   certificates for you.
   (Contributed by Victor Stinner in :gh:`105382`.)
 
+* Remove deprecated ``webbrowser.MacOSXOSAScript._name`` attribute.
+  Use :attr:`webbrowser.MacOSXOSAScript.name <webbrowser.controller.name>`
+  attribute instead.
+  (Contributed by Nikita Sobolev in :gh:`105546`.)
+
+* Remove undocumented, never working, and deprecated ``re.template`` function
+  and ``re.TEMPLATE`` flag (and ``re.T`` alias).
+  (Contributed by Serhiy Storchaka and Nikita Sobolev in :gh:`105687`.)
+
 
 Porting to Python 3.13
 ======================
@@ -368,6 +414,9 @@ Build Changes
   :file:`!configure`.
   (Contributed by Christian Heimes in :gh:`89886`.)
 
+* SQLite 3.15.2 or newer is required to build the :mod:`sqlite3` extension module.
+  (Contributed by Erlend Aasland in :gh:`105875`.)
+
 
 C API Changes
 =============
@@ -381,6 +430,15 @@ New Features
   APIs accepting the format codes always use ``Py_ssize_t`` for ``#`` formats.
   (Contributed by Inada Naoki in :gh:`104922`.)
 
+* Add :c:func:`PyImport_AddModuleRef`: similar to
+  :c:func:`PyImport_AddModule`, but return a :term:`strong reference` instead
+  of a :term:`borrowed reference`.
+  (Contributed by Victor Stinner in :gh:`105922`.)
+
+* Add :c:func:`PyWeakref_GetRef` function: similar to
+  :c:func:`PyWeakref_GetObject` but returns a :term:`strong reference`, or
+  ``NULL`` if the referent is no longer live.
+  (Contributed by Victor Stinner in :gh:`105927`.)
 
 Porting to Python 3.13
 ----------------------
@@ -406,6 +464,11 @@ Deprecated
     :envvar:`PYTHONHOME` environment variable instead.
 
   (Contributed by Victor Stinner in :gh:`105145`.)
+
+* Deprecate the :c:func:`PyImport_ImportModuleNoBlock` function which is just
+  an alias to :c:func:`PyImport_ImportModule` since Python 3.3.
+  Scheduled for removal in Python 3.15.
+  (Contributed by Victor Stinner in :gh:`105396`.)
 
 Removed
 -------

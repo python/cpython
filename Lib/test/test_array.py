@@ -13,11 +13,14 @@ import pickle
 import operator
 import struct
 import sys
+import warnings
 
 import array
 from array import _array_reconstructor as array_reconstructor
 
-sizeof_wchar = array.array('u').itemsize
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore', DeprecationWarning)
+    sizeof_wchar = array.array('u').itemsize
 
 
 class ArraySubclass(array.array):
@@ -93,7 +96,15 @@ UTF16_BE = 19
 UTF32_LE = 20
 UTF32_BE = 21
 
+
 class ArrayReconstructorTest(unittest.TestCase):
+
+    def setUp(self):
+        warnings.filterwarnings(
+            "ignore",
+            message="The 'u' type code is deprecated and "
+                    "will be removed in Python 3.16",
+            category=DeprecationWarning)
 
     def test_error(self):
         self.assertRaises(TypeError, array_reconstructor,
@@ -1208,9 +1219,15 @@ class UnicodeTest(StringTest, unittest.TestCase):
         self.assertRaises(ValueError, a.tounicode)
         self.assertRaises(ValueError, str, a)
 
+    def test_typecode_u_deprecation(self):
+        with self.assertWarns(DeprecationWarning):
+            array.array("u")
+
+
 class UCS4Test(UnicodeTest):
     typecode = 'w'
     minitemsize = 4
+
 
 class NumberTest(BaseTest):
 
