@@ -22,6 +22,7 @@
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_typeobject.h"    // _PySuper_Lookup()
+#include "pycore_uops.h"          // _PyUOpExecutorObject
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 
 #include "pycore_dict.h"
@@ -2766,39 +2767,13 @@ void Py_LeaveRecursiveCall(void)
 
 ///////////////////// Experimental UOp Interpreter /////////////////////
 
-#define MAX_TRACE_LENGTH 16
-
-typedef struct {
-    int opcode;
-    uintptr_t oparg;
-} uop_instruction;
-
-typedef struct {
-    _PyExecutorObject base;
-    uop_instruction trace[MAX_TRACE_LENGTH];  // TODO: variable length
-} UOpExecutorObject;
-
-static void
-uop_dealloc(UOpExecutorObject *self) {
-    PyObject_Free(self);
-}
-
-static PyTypeObject UOpExecutor_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    .tp_name = "uop_executor",
-    .tp_basicsize = sizeof(UOpExecutorObject),
-    .tp_itemsize = 0,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
-    .tp_dealloc = (destructor)uop_dealloc,
-};
-
 // UPDATE_MISS_STATS (called by DEOPT_IF) uses next_instr
 // TODO: Make it do something useful
 #undef UPDATE_MISS_STATS
 #define UPDATE_MISS_STATS(INSTNAME) ((void)0)
 
-static _PyInterpreterFrame *
-uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **stack_pointer)
+_PyInterpreterFrame *
+_PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
 #ifdef LLTRACE
     char *uop_debug = Py_GETENV("PYTHON_UOP_DEBUG");
@@ -2810,7 +2785,7 @@ uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **
         PyCodeObject *code = _PyFrame_GetCode(frame);
         _Py_CODEUNIT *instr = frame->prev_instr + 1;
         fprintf(stderr,
-                "Entering uop_execute for %s (%s:%d) at offset %ld\n",
+                "Entering _PyUopExecute for %s (%s:%d) at offset %ld\n",
                 PyUnicode_AsUTF8(code->co_qualname),
                 PyUnicode_AsUTF8(code->co_filename),
                 code->co_firstlineno,
@@ -2818,7 +2793,7 @@ uop_execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **
     }
 #endif
     PyThreadState *tstate = _PyThreadState_GET();
-    UOpExecutorObject *self = (UOpExecutorObject *)executor;
+    _PyUOpExecutorObject *self = (_PyUOpExecutorObject *)executor;
     OBJECT_STAT_INC(optimization_traces_executed);
     _Py_CODEUNIT *ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive - 1;
     int pc = 0;
@@ -2904,156 +2879,4 @@ PREDICTED(BINARY_OP)
     _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(self);
     return frame;
-}
-
-static int
-translate_bytecode_to_trace(
-    PyCodeObject *code,
-    _Py_CODEUNIT *instr,
-    uop_instruction *trace,
-    int max_length)
-{
-#ifdef LLTRACE
-    char *uop_debug = Py_GETENV("PYTHON_UOP_DEBUG");
-    int lltrace = 0;
-    if (uop_debug != NULL && *uop_debug >= '0') {
-        lltrace = *uop_debug - '0';  // TODO: Parse an int and all that
-    }
-    if (lltrace >= 2) {
-        fprintf(stderr,
-                "Optimizing %s (%s:%d) at offset %ld\n",
-                PyUnicode_AsUTF8(code->co_qualname),
-                PyUnicode_AsUTF8(code->co_filename),
-                code->co_firstlineno,
-                (long)(instr - (_Py_CODEUNIT *)code->co_code_adaptive));
-    }
-#define ADD_TO_TRACE(OPCODE, OPARG) \
-        if (lltrace >= 2) fprintf(stderr, "  ADD_TO_TRACE(%d, %d)\n", (OPCODE), (OPARG)); \
-        trace[trace_length].opcode = (OPCODE); \
-        trace[trace_length].oparg = (OPARG); \
-        trace_length++;
-#else
-#define ADD_TO_TRACE(OPCODE, OPARG) \
-        trace[trace_length].opcode = (OPCODE); \
-        trace[trace_length].oparg = (OPARG); \
-        trace_length++;
-#endif
-
-    int trace_length = 0;
-    // Always reserve space for one uop, plus SET_UP, plus EXIT_TRACE
-    while (trace_length + 3 <= max_length) {
-        int opcode = instr->op.code;
-        int oparg = instr->op.arg;
-        switch (opcode) {
-            case LOAD_FAST_LOAD_FAST:
-            {
-                // Reserve space for two uops (+ SETUP + EXIT_TRACE)
-                if (trace_length + 4 > max_length) {
-                    goto done;
-                }
-                int oparg1 = oparg >> 4;
-                int oparg2 = oparg & 15;
-                ADD_TO_TRACE(LOAD_FAST, oparg1);
-                ADD_TO_TRACE(LOAD_FAST, oparg2);
-                break;
-            }
-            default:
-            {
-                const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
-                if (expansion->nuops > 0) {
-                    // Reserve space for nuops (+ SETUP + EXIT_TRACE)
-                    if (trace_length + expansion->nuops + 2 > max_length) {
-                        goto done;
-                    }
-                    for (int i = 0; i < expansion->nuops; i++) {
-                        assert(expansion->uops[0].size == 0);  // TODO
-                        ADD_TO_TRACE(expansion->uops[i].uop, oparg);  // TODO: oparg?
-                    }
-                    break;
-                }
-                // fprintf(stderr, "Unsupported opcode %d\n", opcode);
-                goto done;  // Break out of while loop
-            }
-        }
-        instr++;
-        // Add cache size for opcode
-        instr += _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
-        ADD_TO_TRACE(SET_IP, (int)(instr - (_Py_CODEUNIT *)code->co_code_adaptive));
-    }
-done:
-    if (trace_length > 0) {
-        ADD_TO_TRACE(EXIT_TRACE, 0);
-#ifdef LLTRACE
-        if (lltrace >= 1) {
-            fprintf(stderr,
-                    "Created a trace for %s (%s:%d) at offset %ld -- length %d\n",
-                    PyUnicode_AsUTF8(code->co_qualname),
-                    PyUnicode_AsUTF8(code->co_filename),
-                    code->co_firstlineno,
-                    (long)(instr - (_Py_CODEUNIT *)code->co_code_adaptive),
-                    trace_length);
-        }
-#endif
-    }
-    else {
-#ifdef LLTRACE
-        if (lltrace >= 2) {
-            fprintf(stderr,
-                    "No trace for %s (%s:%d) at offset %ld\n",
-                    PyUnicode_AsUTF8(code->co_qualname),
-                    PyUnicode_AsUTF8(code->co_filename),
-                    code->co_firstlineno,
-                    (long)(instr - (_Py_CODEUNIT *)code->co_code_adaptive));
-        }
-#endif
-    }
-    return trace_length;
-
-#undef ADD_TO_TRACE
-}
-
-static int
-uop_optimize(
-    _PyOptimizerObject *self,
-    PyCodeObject *code,
-    _Py_CODEUNIT *instr,
-    _PyExecutorObject **exec_ptr)
-{
-    uop_instruction trace[MAX_TRACE_LENGTH];
-    int trace_length = translate_bytecode_to_trace(code, instr, trace, MAX_TRACE_LENGTH);
-    if (trace_length <= 0) {
-        // Error or nothing translated
-        return trace_length;
-    }
-    OBJECT_STAT_INC(optimization_traces_created);
-    UOpExecutorObject *executor = (UOpExecutorObject *)_PyObject_New(&UOpExecutor_Type);
-    if (executor == NULL) {
-        return -1;
-    }
-    executor->base.execute = uop_execute;
-    Py_INCREF(self);
-    memcpy(executor->trace, trace, trace_length * sizeof(uop_instruction));
-    *exec_ptr = (_PyExecutorObject *)executor;
-    return 1;
-}
-
-static PyTypeObject UOpOptimizer_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    .tp_name = "UOp Optimizer",
-    .tp_basicsize = sizeof(_PyOptimizerObject),
-    .tp_itemsize = 0,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
-};
-
-PyObject *
-PyUnstable_Optimizer_NewUOpOptimizer(void)
-{
-    _PyOptimizerObject *opt = (_PyOptimizerObject *)_PyObject_New(&UOpOptimizer_Type);
-    if (opt == NULL) {
-        return NULL;
-    }
-    opt->optimize = uop_optimize;
-    opt->resume_threshold = UINT16_MAX;
-    opt->backedge_threshold = 0;
-    return (PyObject *)opt;
 }
