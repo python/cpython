@@ -602,9 +602,17 @@ can be overridden by the local file.
 
    Execute the (one-line) *statement* in the context of the current stack frame.
    The exclamation point can be omitted unless the first word of the statement
-   resembles a debugger command.  To set a global variable, you can prefix the
-   assignment command with a :keyword:`global` statement on the same line,
-   e.g.::
+   resembles a debugger command, e.g.:
+
+   .. code-block:: none
+
+      (Pdb) ! n=42
+      (Pdb)
+
+   To set a global variable, you can prefix the assignment command with a
+   :keyword:`global` statement on the same line, e.g.:
+
+   .. code-block:: none
 
       (Pdb) global list_options; list_options = ['-l']
       (Pdb)

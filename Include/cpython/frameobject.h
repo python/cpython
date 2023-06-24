@@ -35,7 +35,7 @@ PyAPI_FUNC(void) PyFrame_FastToLocals(PyFrameObject *);
 
 /* Returns the code object of the frame (strong reference).
  * Does not raise an exception. */
-PyAPI_FUNC(PyCodeObject *) PyUnstable_InterpreterFrame_GetCode(struct _PyInterpreterFrame *frame);
+PyAPI_FUNC(PyObject *) PyUnstable_InterpreterFrame_GetCode(struct _PyInterpreterFrame *frame);
 
 /* Returns a byte ofsset into the last executed instruction.
  * Does not raise an exception. */

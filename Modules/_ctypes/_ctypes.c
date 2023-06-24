@@ -238,20 +238,29 @@ PyDict_SetItemProxy(PyObject *dict, PyObject *key, PyObject *item)
     return result;
 }
 
-PyObject *
-PyDict_GetItemProxy(PyObject *dict, PyObject *key)
+static int
+_PyDict_GetItemProxy(PyObject *dict, PyObject *key, PyObject **presult)
 {
-    PyObject *result;
     PyObject *item = PyDict_GetItemWithError(dict, key);
+    if (item == NULL) {
+        if (PyErr_Occurred()) {
+            return -1;
+        }
+        *presult = NULL;
+        return 0;
+    }
 
-    if (item == NULL)
-        return NULL;
-    if (!PyWeakref_CheckProxy(item))
-        return item;
-    result = PyWeakref_GET_OBJECT(item);
-    if (result == Py_None)
-        return NULL;
-    return result;
+    if (!PyWeakref_CheckProxy(item)) {
+        *presult = Py_NewRef(item);
+        return 0;
+    }
+    PyObject *ref;
+    if (PyWeakref_GetRef(item, &ref) < 0) {
+        return -1;
+    }
+    // ref is NULL if the referenced object was destroyed
+    *presult = ref;
+    return 0;
 }
 
 /******************************************************************/
@@ -4832,7 +4841,6 @@ PyCArrayType_from_ctype(PyObject *itemtype, Py_ssize_t length)
 {
     static PyObject *cache;
     PyObject *key;
-    PyObject *result;
     char name[256];
     PyObject *len;
 
@@ -4848,15 +4856,15 @@ PyCArrayType_from_ctype(PyObject *itemtype, Py_ssize_t length)
     Py_DECREF(len);
     if (!key)
         return NULL;
-    result = PyDict_GetItemProxy(cache, key);
-    if (result) {
-        Py_INCREF(result);
-        Py_DECREF(key);
-        return result;
-    }
-    else if (PyErr_Occurred()) {
+
+    PyObject *result;
+    if (_PyDict_GetItemProxy(cache, key, &result) < 0) {
         Py_DECREF(key);
         return NULL;
+    }
+    if (result) {
+        Py_DECREF(key);
+        return result;
     }
 
     if (!PyType_Check(itemtype)) {
@@ -5477,10 +5485,16 @@ comerror_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static int
+comerror_clear(PyObject *self)
+{
+    return ((PyTypeObject *)PyExc_BaseException)->tp_clear(self);
+}
+
+static int
 comerror_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
-    return 0;
+    return ((PyTypeObject *)PyExc_BaseException)->tp_traverse(self, visit, arg);
 }
 
 static void
@@ -5488,6 +5502,7 @@ comerror_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
+    (void)comerror_clear(self);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -5497,6 +5512,7 @@ static PyType_Slot comerror_slots[] = {
     {Py_tp_init, comerror_init},
     {Py_tp_traverse, comerror_traverse},
     {Py_tp_dealloc, comerror_dealloc},
+    {Py_tp_clear, comerror_clear},
     {0, NULL},
 };
 
