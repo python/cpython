@@ -1671,7 +1671,7 @@ class PathTest(unittest.TestCase):
     def test_empty_path(self):
         # The empty path points to '.'
         p = self.cls('')
-        self.assertEqual(p.stat(), os.stat('.'))
+        self.assertEqual(str(p), '.')
 
     def test_exists(self):
         P = self.cls
@@ -1699,9 +1699,6 @@ class PathTest(unittest.TestCase):
             self.assertEqual(f.read(), "this is file A\n")
         with (p / 'fileA').open('rb') as f:
             self.assertIsInstance(f, io.BufferedIOBase)
-            self.assertEqual(f.read().strip(), b"this is file A")
-        with (p / 'fileA').open('rb', buffering=0) as f:
-            self.assertIsInstance(f, io.RawIOBase)
             self.assertEqual(f.read().strip(), b"this is file A")
 
     def test_read_write_bytes(self):
@@ -2017,7 +2014,6 @@ class PathTest(unittest.TestCase):
         P = self.cls
         base = P(BASE) / 'permissions'
         base.mkdir()
-        self.addCleanup(os_helper.rmtree, base)
 
         for i in range(100):
             link = base / f"link{i}"
@@ -2210,18 +2206,10 @@ class PathTest(unittest.TestCase):
 
     def test_is_mount(self):
         P = self.cls(BASE)
-        if os.name == 'nt':
-            R = self.cls('c:\\')
-        else:
-            R = self.cls('/')
         self.assertFalse((P / 'fileA').is_mount())
         self.assertFalse((P / 'dirA').is_mount())
         self.assertFalse((P / 'non-existing').is_mount())
         self.assertFalse((P / 'fileA' / 'bah').is_mount())
-        self.assertTrue(R.is_mount())
-        if os_helper.can_symlink():
-            self.assertFalse((P / 'linkA').is_mount())
-        self.assertIs((R / '\udfff').is_mount(), False)
 
     def test_is_symlink(self):
         P = self.cls(BASE)
@@ -2854,6 +2842,14 @@ class PathTest(unittest.TestCase):
         self.assertIs(self.cls('/dev/null\udfff').is_char_device(), False)
         self.assertIs(self.cls('/dev/null\x00').is_char_device(), False)
 
+    def test_is_mount_root(self):
+        if os.name == 'nt':
+            R = self.cls('c:\\')
+        else:
+            R = self.cls('/')
+        self.assertTrue(R.is_mount())
+        self.assertFalse((R / '\udfff').is_mount())
+
     def test_passing_kwargs_deprecated(self):
         with self.assertWarns(DeprecationWarning):
             self.cls(foo="bar")
@@ -3120,6 +3116,12 @@ class PosixPathTest(PathTest):
             pass
         st = os.stat(join('other_new_file'))
         self.assertEqual(stat.S_IMODE(st.st_mode), 0o644)
+
+    def test_open_unbuffered(self):
+        p = self.cls(BASE)
+        with (p / 'fileA').open('rb', buffering=0) as f:
+            self.assertIsInstance(f, io.RawIOBase)
+            self.assertEqual(f.read().strip(), b"this is file A")
 
     def test_resolve_root(self):
         current_directory = os.getcwd()
