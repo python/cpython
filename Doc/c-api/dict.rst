@@ -124,7 +124,7 @@ Dictionary Objects
 
    .. note::
 
-      Exceptions that occur while this calls :meth:`__hash__` and
+      Exceptions that occur while this calls :meth:`~object.__hash__` and
       :meth:`~object.__eq__` methods or while creating the temporary :class:`str`
       object are silently ignored.
       Prefer using the :c:func:`PyDict_GetItemWithError` function with your own
