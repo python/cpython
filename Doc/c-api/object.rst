@@ -33,7 +33,7 @@ Object Protocol
    is equivalent to the Python expression ``hasattr(o, attr_name)``.  This function
    always succeeds.
 
-   .. note::
+   .. caution::
 
       Exceptions that occur when this calls :meth:`__getattr__` and
       :meth:`__getattribute__` methods are silently ignored.
