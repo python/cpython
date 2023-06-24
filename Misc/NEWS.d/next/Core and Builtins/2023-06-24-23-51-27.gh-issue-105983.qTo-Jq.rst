@@ -1,0 +1,2 @@
+Add incognito / private mode to webbrowser module
+open browser in incognito mode when in open() function new parameter is equal 3
