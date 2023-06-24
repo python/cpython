@@ -98,7 +98,7 @@ Dictionary Objects
    Return the object from dictionary *p* which has a key *key*.  Return ``NULL``
    if the key *key* is not present, but *without* setting an exception.
 
-   .. caution::
+   .. note::
 
       Exceptions that occur while this calls :meth:`~object.__hash__` and
       :meth:`~object.__eq__` methods are silently ignored.
@@ -122,7 +122,7 @@ Dictionary Objects
    This is the same as :c:func:`PyDict_GetItem`, but *key* is specified as a
    :c:expr:`const char*`, rather than a :c:expr:`PyObject*`.
 
-   .. caution::
+   .. note::
 
       Exceptions that occur while this calls :meth:`~object.__hash__` and
       :meth:`~object.__eq__` methods or while creating the temporary :class:`str`
