@@ -101,7 +101,7 @@ Dictionary Objects
    .. caution::
 
       Exceptions that occur while this calls :meth:`~object.__hash__` and
-      :meth:`__eq__` methods are silently ignored.
+      :meth:`~object.__eq__` methods are silently ignored.
       Prefer the :c:func:`PyDict_GetItemWithError` function instead.
 
    .. versionchanged:: 3.10
