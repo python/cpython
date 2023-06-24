@@ -271,10 +271,10 @@ class UnixBrowser(BaseBrowser):
         elif new == 1:
             action = self.remote_action_newwin
         elif new == 2:
-            if action := self.remote_action_newtab is None:
+            if (action := self.remote_action_newtab) is None:
                 action = self.remote_action_newwin
         elif new == 3:
-            if action := self.remote_action_new_incognito_tab is None:
+            if (action := self.remote_action_new_incognito_tab) is None:
                 action = self.remote_action_newwin
         else:
             raise Error("Bad 'new' parameter to open(); " +
