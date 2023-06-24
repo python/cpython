@@ -134,7 +134,6 @@ dummy_func(
 // BEGIN BYTECODES //
         inst(NOP, (--)) {
         }
-        
         inst(RESUME, (--)) {
             assert(tstate->cframe == &cframe);
             assert(frame == cframe.current_frame);
@@ -192,13 +191,12 @@ dummy_func(
             assert(value != NULL);
             Py_INCREF(value);
         }
-        
+
         inst(LOAD_FAST_AND_CLEAR, (-- value)) {
             value = GETLOCAL(oparg);
             // do not use SETLOCAL here, it decrefs the old value
             GETLOCAL(oparg) = NULL;
         }
-
         inst(LOAD_FAST_LOAD_FAST, ( -- value1, value2)) {
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
