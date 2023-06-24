@@ -102,6 +102,13 @@ def open_new_tab(url):
     return open(url, 2)
 
 
+def open_new_incognito_tab(url):
+    """Open url in a new incognito / private page ("tab") of the default browser.
+    
+    If not possible, then the behavior becomes equivalent to open_new().
+    """
+    return open(url, 3)
+
 def _synthesize(browser, *, preferred=False):
     """Attempt to synthesize a controller based on existing controllers.
 
@@ -153,7 +160,9 @@ class BaseBrowser(object):
 
     def open_new_tab(self, url):
         return self.open(url, 2)
-
+    
+    def open_new_incognito_tab(self, url):
+        return self.open(url, 3)
 
 class GenericBrowser(BaseBrowser):
     """Class for all browsers started with a command
@@ -218,6 +227,7 @@ class UnixBrowser(BaseBrowser):
     remote_action = None
     remote_action_newwin = None
     remote_action_newtab = None
+    remote_action_new_incognito_tab = None
 
     def _invoke(self, args, remote, autoraise, url=None):
         raise_opt = []
@@ -261,10 +271,11 @@ class UnixBrowser(BaseBrowser):
         elif new == 1:
             action = self.remote_action_newwin
         elif new == 2:
-            if self.remote_action_newtab is None:
+            if action := self.remote_action_newtab is None:
                 action = self.remote_action_newwin
-            else:
-                action = self.remote_action_newtab
+        elif new == 3:
+            if action := self.remote_action_new_incognito_tab is None:
+                action = self.remote_action_newwin
         else:
             raise Error("Bad 'new' parameter to open(); " +
                         "expected 0, 1, or 2, got %s" % new)
@@ -288,6 +299,7 @@ class Mozilla(UnixBrowser):
     remote_action = ""
     remote_action_newwin = "-new-window"
     remote_action_newtab = "-new-tab"
+    remote_action_new_incognito_tab = "--private-window"
     background = True
 
 
@@ -298,6 +310,7 @@ class Epiphany(UnixBrowser):
     remote_args = ['%action', '%s']
     remote_action = "-n"
     remote_action_newwin = "-w"
+    remote_action_new_incognito_tab = "-i"
     background = True
 
 
@@ -308,6 +321,7 @@ class Chrome(UnixBrowser):
     remote_action = ""
     remote_action_newwin = "--new-window"
     remote_action_newtab = ""
+    remote_action_new_incognito_tab = "--incognito"
     background = True
 
 Chromium = Chrome
@@ -320,6 +334,7 @@ class Opera(UnixBrowser):
     remote_action = ""
     remote_action_newwin = "--new-window"
     remote_action_newtab = ""
+    remote_action_new_incognito_tab = "--private"
     background = True
 
 
@@ -330,6 +345,7 @@ class Elinks(UnixBrowser):
     remote_action = ""
     remote_action_newwin = ",new-window"
     remote_action_newtab = ",new-tab"
+    remote_action_new_incognito_tab = ""
     background = False
 
     # elinks doesn't like its stdout to be redirected -
@@ -397,6 +413,7 @@ class Edge(UnixBrowser):
     remote_action = ""
     remote_action_newwin = "--new-window"
     remote_action_newtab = ""
+    remote_action_new_incognito_tab = "--private"
     background = True
 
 
@@ -590,23 +607,24 @@ if sys.platform == 'darwin':
 
 def main():
     import getopt
-    usage = """Usage: %s [-n | -t | -h] url
+    usage = """Usage: %s [-n | -t | -h | -i] url
     -n: open new window
     -t: open new tab
+    -i: open new incognito / private tab
     -h, --help: show help""" % sys.argv[0]
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'ntdh',['help'])
+        opts, args = getopt.getopt(sys.argv[1:], 'ntdhi',['help'])
     except getopt.error as msg:
         print(msg, file=sys.stderr)
         print(usage, file=sys.stderr)
         sys.exit(1)
     new_win = 0
     for o, a in opts:
-        if o == '-n': new_win = 1
-        elif o == '-t': new_win = 2
-        elif o == '-h' or o == '--help':
-            print(usage, file=sys.stderr)
-            sys.exit()
+        match o:
+            case '-n': new_win = 1
+            case '-t': new_win = 2
+            case '-i': new_win = 3
+            case '-h' | '--help': print(usage, file=sys.stderr); sys.exit()
     if len(args) != 1:
         print(usage, file=sys.stderr)
         sys.exit(1)
