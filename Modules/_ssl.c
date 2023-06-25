@@ -383,10 +383,20 @@ typedef enum {
 #define ERRSTR1(x,y,z) (x ":" y ": " z)
 #define ERRSTR(x) ERRSTR1("_ssl.c", Py_STRINGIFY(__LINE__), x)
 
-/* Get the socket from a PySSLSocket, if it has one */
+// Get the socket from a PySSLSocket, if it has one.
+// Return a borrowed reference.
 static inline PySocketSockObject* GET_SOCKET(PySSLSocket *obj) {
     if (obj->Socket) {
-        return (PySocketSockObject *)PyWeakref_GetObject(obj->Socket);
+        PyObject *sock = _PyWeakref_GET_REF(obj->Socket);
+        if (sock != NULL) {
+            // GET_SOCKET() returns a borrowed reference
+            Py_DECREF(sock);
+        }
+        else {
+            // dead weak reference
+            sock = Py_None;
+        }
+        return (PySocketSockObject *)sock;  // borrowed reference
     }
     else {
         return NULL;
