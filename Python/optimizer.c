@@ -358,12 +358,33 @@ translate_bytecode_to_trace(
                 const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
                 if (expansion->nuops > 0) {
                     // Reserve space for nuops (+ SETUP + EXIT_TRACE)
-                    if (trace_length + expansion->nuops + 2 > max_length) {
+                    int nuops = expansion->nuops;
+                    if (trace_length + nuops + 2 > max_length) {
                         goto done;
                     }
-                    for (int i = 0; i < expansion->nuops; i++) {
+                    for (int i = 0; i < nuops; i++) {
+                        switch (expansion->uops[i].size) {
+                            case 0:
+                                break;
+                            case 1:
+                                oparg = read_u16(instr + expansion->uops[i].offset);
+                                break;
+                            case 2:
+                                oparg = read_u32(instr + expansion->uops[i].offset);
+                                break;
+                            case 4:
+                                oparg = read_u64(instr + expansion->uops[i].offset);
+                                break;
+                            default:
+                                fprintf(stderr,
+                                        "opcode=%d, oparg=%d; nuops=%d, i=%d; size=%d, offset=%d\n",
+                                        opcode, oparg, nuops, i,
+                                        expansion->uops[i].size,
+                                        expansion->uops[i].offset);
+                                Py_FatalError("garbled expansion");
+                        }
+                        ADD_TO_TRACE(expansion->uops[i].uop, oparg);
                         assert(expansion->uops[0].size == 0);  // TODO
-                        ADD_TO_TRACE(expansion->uops[i].uop, oparg);  // TODO: oparg?
                     }
                     break;
                 }
