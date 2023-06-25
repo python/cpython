@@ -9,6 +9,8 @@ from functools import wraps
 import asyncio
 from test.support import import_helper
 
+import _testinternalcapi
+
 support.requires_working_socket(module=True)
 
 class tracecontext:
@@ -326,6 +328,8 @@ class Tracer:
         return self.trace
 
 
+@unittest.skipIf(_testinternalcapi.get_optimizer(),
+                    "The optimizer changes the test behavior")
 class TraceTestCase(unittest.TestCase):
 
     # Disable gc collection when tracing, otherwise the
