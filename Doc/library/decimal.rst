@@ -2098,16 +2098,16 @@ precision than current context.  Computations process with those
 exact inputs and then rounding (or other context operations) is
 applied to the *result* of the computation::
 
-       >>> getcontext().prec = 5
-       >>> pi = Decimal('3.1415926535')   # More than 5 digits
-       >>> pi                             # All digits are retained
-       Decimal('3.1415926535')
-       >>> pi + 0                         # Rounded after an addition
-       Decimal('3.1416')
-       >>> pi - Decimal('0.00005')        # Subtract unrounded numbers, then round
-       Decimal('3.1415')
-       >>> pi + 0 - Decimal('0.00005').   # Intermediate values are rounded
-       Decimal('3.1416')
+   >>> getcontext().prec = 5
+   >>> pi = Decimal('3.1415926535')   # More than 5 digits
+   >>> pi                             # All digits are retained
+   Decimal('3.1415926535')
+   >>> pi + 0                         # Rounded after an addition
+   Decimal('3.1416')
+   >>> pi - Decimal('0.00005')        # Subtract unrounded numbers, then round
+   Decimal('3.1415')
+   >>> pi + 0 - Decimal('0.00005').   # Intermediate values are rounded
+   Decimal('3.1416')
 
 Q. Some decimal values always print with exponential notation.  Is there a way
 to get a non-exponential representation?
