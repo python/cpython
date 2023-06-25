@@ -1271,11 +1271,11 @@ path_converter(PyObject *o, void *p)
             path->function_name ? path->function_name : "",
             path->function_name ? ": "                : "",
             path->argument_name ? path->argument_name : "path",
-            path->allow_fd && path->nullable ? "str, bytes, os.PathLike, "
-                                               "int or None" :
-            path->allow_fd ? "str, bytes, os.PathLike or int" :
-            path->nullable ? "str, bytes, os.PathLike or None" :
-                             "str, bytes or os.PathLike",
+            path->allow_fd && path->nullable ? "string, bytes, os.PathLike, "
+                                               "integer or None" :
+            path->allow_fd ? "string, bytes, os.PathLike or integer" :
+            path->nullable ? "string, bytes, os.PathLike or None" :
+                             "string, bytes or os.PathLike",
             _PyType_Name(Py_TYPE(o)));
         goto error_exit;
     }

@@ -4659,7 +4659,7 @@ class TestPEP519(unittest.TestCase):
             __fspath__ = None
 
         good_error_msg = (
-            r"((expected)|(should be)) str, bytes or os.PathLike( object)?, not {}".format
+            r"expected str, bytes or os.PathLike object, not {}".format
         )
 
         with self.assertRaisesRegex(TypeError, good_error_msg("Foo")):
@@ -4676,10 +4676,14 @@ class TestPEP519(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, good_error_msg("Baz")):
             open(Baz())
 
-        with self.assertRaisesRegex(TypeError, good_error_msg("Foo")):
+        other_good_error_msg = (
+            r"should be string, bytes or os.PathLike, not {}".format
+        )
+
+        with self.assertRaisesRegex(TypeError, other_good_error_msg("Foo")):
             os.rename(Foo(), "foooo")
 
-        with self.assertRaisesRegex(TypeError, good_error_msg("Baz")):
+        with self.assertRaisesRegex(TypeError, other_good_error_msg("Baz")):
             os.rename(Baz(), "bazzz")
 
 class TimesTests(unittest.TestCase):
