@@ -1385,6 +1385,21 @@ Removed
     ``imp.source_from_cache()``        :func:`importlib.util.source_from_cache`
     =================================  =======================================
 
+  * Replace ``imp.load_source()`` with::
+
+        import importlib.util
+        import importlib.machinery
+
+        def load_source(modname, filename):
+            loader = importlib.machinery.SourceFileLoader(modname, filename)
+            spec = importlib.util.spec_from_file_location(modname, filename, loader=loader)
+            module = importlib.util.module_from_spec(spec)
+            # The module is always executed and not cached in sys.modules.
+            # Uncomment the following line to cache the module.
+            # sys.modules[module.__name__] = module
+            loader.exec_module(module)
+            return module
+
   * Removed :mod:`!imp` functions and attributes with no replacements:
 
     * undocumented functions:
@@ -1393,7 +1408,6 @@ Removed
       * ``imp.load_compiled()``
       * ``imp.load_dynamic()``
       * ``imp.load_package()``
-      * ``imp.load_source()``
 
     * ``imp.lock_held()``, ``imp.acquire_lock()``, ``imp.release_lock()``:
       the locking scheme has changed in Python 3.3 to per-module locks.
