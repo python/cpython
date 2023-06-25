@@ -1197,7 +1197,7 @@ path_converter(PyObject *o, void *p)
         PyObject *func, *res;
 
         func = _PyObject_LookupSpecial(o, &_Py_ID(__fspath__));
-        if (NULL == func) {
+        if ((NULL == func) || (func == Py_None)) {
             goto error_format;
         }
         res = _PyObject_CallNoArgs(func);
@@ -1271,11 +1271,11 @@ path_converter(PyObject *o, void *p)
             path->function_name ? path->function_name : "",
             path->function_name ? ": "                : "",
             path->argument_name ? path->argument_name : "path",
-            path->allow_fd && path->nullable ? "string, bytes, os.PathLike, "
-                                               "integer or None" :
-            path->allow_fd ? "string, bytes, os.PathLike or integer" :
-            path->nullable ? "string, bytes, os.PathLike or None" :
-                             "string, bytes or os.PathLike",
+            path->allow_fd && path->nullable ? "str, bytes, os.PathLike, "
+                                               "int or None" :
+            path->allow_fd ? "str, bytes, os.PathLike or int" :
+            path->nullable ? "str, bytes, os.PathLike or None" :
+                             "str, bytes or os.PathLike",
             _PyType_Name(Py_TYPE(o)));
         goto error_exit;
     }
@@ -15430,7 +15430,7 @@ PyOS_FSPath(PyObject *path)
     }
 
     func = _PyObject_LookupSpecial(path, &_Py_ID(__fspath__));
-    if (NULL == func) {
+    if ((NULL == func) || (func == Py_None)) {
         return PyErr_Format(PyExc_TypeError,
                             "expected str, bytes or os.PathLike object, "
                             "not %.200s",
