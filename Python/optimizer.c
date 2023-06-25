@@ -315,7 +315,7 @@ translate_bytecode_to_trace(
     if (uop_debug != NULL && *uop_debug >= '0') {
         lltrace = *uop_debug - '0';  // TODO: Parse an int and all that
     }
-    if (lltrace >= 2) {
+    if (lltrace >= 4) {
         fprintf(stderr,
                 "Optimizing %s (%s:%d) at offset %ld\n",
                 PyUnicode_AsUTF8(code->co_qualname),
@@ -363,17 +363,18 @@ translate_bytecode_to_trace(
                         goto done;
                     }
                     for (int i = 0; i < nuops; i++) {
+                        int offset = expansion->uops[i].offset;
                         switch (expansion->uops[i].size) {
                             case 0:
                                 break;
                             case 1:
-                                oparg = read_u16(instr + expansion->uops[i].offset);
+                                oparg = read_u16(&instr[offset].cache);
                                 break;
                             case 2:
-                                oparg = read_u32(instr + expansion->uops[i].offset);
+                                oparg = read_u32(&instr[offset].cache);
                                 break;
                             case 4:
-                                oparg = read_u64(instr + expansion->uops[i].offset);
+                                oparg = read_u64(&instr[offset].cache);
                                 break;
                             default:
                                 fprintf(stderr,
@@ -414,7 +415,7 @@ done:
     }
     else {
 #ifdef LLTRACE
-        if (lltrace >= 2) {
+        if (lltrace >= 4) {
             fprintf(stderr,
                     "No trace for %s (%s:%d) at offset %ld\n",
                     PyUnicode_AsUTF8(code->co_qualname),
