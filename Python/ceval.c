@@ -2792,8 +2792,18 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
                 (long)(instr - (_Py_CODEUNIT *)code->co_code_adaptive));
     }
 #endif
+
     PyThreadState *tstate = _PyThreadState_GET();
     _PyUOpExecutorObject *self = (_PyUOpExecutorObject *)executor;
+
+    // Equivalent to CHECK_EVAL_BREAKER()
+    _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+    if (_Py_atomic_load_relaxed_int32(&tstate->interp->ceval.eval_breaker)) {
+        if (_Py_HandlePending(tstate) != 0) {
+            goto error;
+        }
+    }
+
     OBJECT_STAT_INC(optimization_traces_executed);
     _Py_CODEUNIT *ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive - 1;
     int pc = 0;
