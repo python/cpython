@@ -753,7 +753,7 @@ Decimal objects
       by ten and the exponent is incremented by 1. Otherwise (the coefficient is
       zero) the exponent is set to 0. In all cases the sign is unchanged.
 
-      For example, ``Decimal('32.100')`` and ``Decimal('0.321000e+2')``both
+      For example, ``Decimal('32.100')`` and ``Decimal('0.321000e+2')`` both
       normalize to the equivalent value ``Decimal('32.1')``.
 
       Note that rounding is applied *before* reducing to simplest form.
