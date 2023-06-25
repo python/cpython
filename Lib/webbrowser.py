@@ -413,7 +413,7 @@ class Edge(UnixBrowser):
     remote_action = ""
     remote_action_newwin = "--new-window"
     remote_action_newtab = ""
-    remote_action_new_incognito_tab = "--private"
+    remote_action_new_incognito_tab = "--inprivate"
     background = True
 
 
