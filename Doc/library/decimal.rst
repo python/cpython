@@ -2090,12 +2090,13 @@ representative:
    [Decimal('2E+2'), Decimal('2E+2'), Decimal('2E+2'), Decimal('2E+2')]
 
 Q. When does rounding occur in a computation?
+
 A. It occurs *after* the computation.  The philosophy of the decimal
-   specification is that numbers are considered exact and are created
-   independent of the current context.  They can even have greater
-   precision than current context.  Computations process with those
-   exact inputs and then rounding (or other context operations) is
-   applied to the *result* of the computation::
+specification is that numbers are considered exact and are created
+independent of the current context.  They can even have greater
+precision than current context.  Computations process with those
+exact inputs and then rounding (or other context operations) is
+applied to the *result* of the computation::
 
        >>> getcontext().prec = 5
        >>> pi = Decimal('3.1415926535')   # More than 5 digits
