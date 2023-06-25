@@ -4659,7 +4659,7 @@ class TestPEP519(unittest.TestCase):
             __fspath__ = None
 
         good_error_msg = (
-            r"((expected)|(should be)) str, bytes or os.PathLike( object)?, not {}".format
+            r"(expected|should be) str, bytes or os.PathLike( object)?, not {}".format
         )
 
         with self.assertRaisesRegex(TypeError, good_error_msg("Foo")):
