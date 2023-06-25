@@ -449,11 +449,11 @@ state:
    Add an object to *module* as *name*.  This is a convenience function which
    can be used from the module's initialization function.
 
-   On success, return ``0``. On error, raise an exception and return ``-1``.
+   On success, return ``0``.
 
-   If *value* is ``NULL`` and an exception is set, return ``-1``. If *value*
-   is ``NULL`` and no exception is set, raise :exc:`SystemError` and return
-   ``-1``.
+   If *value* is ``NULL`` (indicating failure), raise an exception and return
+   ``-1``.  If an exception is set, raise that exception.  If no exception is
+   set, raise :exc:`SystemError`.
 
    Example usage::
 
