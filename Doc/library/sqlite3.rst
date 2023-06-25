@@ -413,15 +413,15 @@ Module functions
 
 .. function:: register_adapter(type, adapter, /)
 
-   Register an *adapter* callable to adapt the Python type *type* into an
-   SQLite type.
+   Register an *adapter* :term:`callable` to adapt the Python type *type*
+   into an SQLite type.
    The adapter is called with a Python object of type *type* as its sole
    argument, and must return a value of a
    :ref:`type that SQLite natively understands <sqlite3-types>`.
 
 .. function:: register_converter(typename, converter, /)
 
-   Register the *converter* callable to convert SQLite objects of type
+   Register the *converter* :term:`callable` to convert SQLite objects of type
    *typename* into a Python object of a specific type.
    The converter is invoked for all SQLite values of type *typename*;
    it is passed a :class:`bytes` object and should return an object of the
@@ -484,7 +484,7 @@ Module constants
           SQLITE_DENY
           SQLITE_IGNORE
 
-   Flags that should be returned by the *authorizer_callback* callable
+   Flags that should be returned by the *authorizer_callback* :term:`callable`
    passed to :meth:`Connection.set_authorizer`, to indicate whether:
 
    * Access is allowed (:const:`!SQLITE_OK`),
@@ -629,8 +629,8 @@ Connection objects
 
       Create and return a :class:`Cursor` object.
       The cursor method accepts a single optional parameter *factory*. If
-      supplied, this must be a callable returning an instance of :class:`Cursor`
-      or its subclasses.
+      supplied, this must be a :term:`callable` returning
+      an instance of :class:`Cursor` or its subclasses.
 
    .. method:: blobopen(table, column, row, /, *, readonly=False, name="main")
 
@@ -723,7 +723,7 @@ Connection objects
           If ``-1``, it may take any number of arguments.
 
       :param func:
-          A callable that is called when the SQL function is invoked.
+          A :term:`callable` that is called when the SQL function is invoked.
           The callable must return :ref:`a type natively supported by SQLite
           <sqlite3-types>`.
           Set to ``None`` to remove an existing SQL function.
@@ -948,9 +948,10 @@ Connection objects
 
    .. method:: set_authorizer(authorizer_callback)
 
-      Register callable *authorizer_callback* to be invoked for each attempt to
-      access a column of a table in the database. The callback should return
-      one of :const:`SQLITE_OK`, :const:`SQLITE_DENY`, or :const:`SQLITE_IGNORE`
+      Register :term:`callable` *authorizer_callback* to be invoked
+      for each attempt to access a column of a table in the database.
+      The callback should return one of :const:`SQLITE_OK`,
+      :const:`SQLITE_DENY`, or :const:`SQLITE_IGNORE`
       to signal how access to the column should be handled
       by the underlying SQLite library.
 
@@ -973,7 +974,7 @@ Connection objects
 
    .. method:: set_progress_handler(progress_handler, n)
 
-      Register callable *progress_handler* to be invoked for every *n*
+      Register :term:`callable` *progress_handler* to be invoked for every *n*
       instructions of the SQLite virtual machine. This is useful if you want to
       get called from SQLite during long-running operations, for example to update
       a GUI.
@@ -988,8 +989,8 @@ Connection objects
 
    .. method:: set_trace_callback(trace_callback)
 
-      Register callable *trace_callback* to be invoked for each SQL statement
-      that is actually executed by the SQLite backend.
+      Register :term:`callable` *trace_callback* to be invoked
+      for each SQL statement that is actually executed by the SQLite backend.
 
       The only argument passed to the callback is the statement (as
       :class:`str`) that is being executed. The return value of the callback is
@@ -1139,8 +1140,8 @@ Connection objects
           Defaults to ``-1``.
 
       :param progress:
-          If set to a callable, it is invoked with three integer arguments for
-          every backup iteration:
+          If set to a :term:`callable`,
+          it is invoked with three integer arguments for every backup iteration:
           the *status* of the last iteration,
           the *remaining* number of pages still to be copied,
           and the *total* number of pages.
@@ -1404,8 +1405,8 @@ Connection objects
 
    .. attribute:: text_factory
 
-      A callable that accepts a :class:`bytes` parameter and returns a text
-      representation of it.
+      A :term:`callable` that accepts a :class:`bytes` parameter
+      and returns a text representation of it.
       The callable is invoked for SQLite values with the ``TEXT`` data type.
       By default, this attribute is set to :class:`str`.
       If you want to return ``bytes`` instead, set *text_factory* to ``bytes``.
