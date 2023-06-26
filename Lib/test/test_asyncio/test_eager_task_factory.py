@@ -12,7 +12,7 @@ from asyncio import base_events
 from asyncio import tasks
 from test.test_asyncio import utils as test_utils
 from test.test_asyncio.test_tasks import get_innermost_context
-from test import support
+from test.support.script_helper import assert_python_ok
 
 MOCK_ANY = mock.ANY
 
@@ -228,6 +228,23 @@ class PyEagerTaskFactoryLoopTests(EagerTaskFactoryLoopTests, test_utils.TestCase
 class CEagerTaskFactoryLoopTests(EagerTaskFactoryLoopTests, test_utils.TestCase):
     Task = getattr(tasks, '_CTask', None)
 
+    def test_issue105987(self):
+        code = """if 1:
+        from _asyncio import _swap_current_task
+
+        class DummyTask:
+            pass
+
+        class DummyLoop:
+            pass
+
+        l = DummyLoop()
+        _swap_current_task(l, DummyTask())
+        t = _swap_current_task(l, None)
+        """
+
+        _, out, err = assert_python_ok("-c", code)
+        self.assertFalse(err)
 
 class AsyncTaskCounter:
     def __init__(self, loop, *, task_class, eager):
