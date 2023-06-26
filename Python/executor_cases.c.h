@@ -225,49 +225,6 @@
             break;
         }
 
-        case BINARY_SLICE: {
-            PyObject *stop = stack_pointer[-1];
-            PyObject *start = stack_pointer[-2];
-            PyObject *container = stack_pointer[-3];
-            PyObject *res;
-            PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
-            // Can't use ERROR_IF() here, because we haven't
-            // DECREF'ed container yet, and we still own slice.
-            if (slice == NULL) {
-                res = NULL;
-            }
-            else {
-                res = PyObject_GetItem(container, slice);
-                Py_DECREF(slice);
-            }
-            Py_DECREF(container);
-            if (res == NULL) goto pop_3_error;
-            STACK_SHRINK(2);
-            stack_pointer[-1] = res;
-            break;
-        }
-
-        case STORE_SLICE: {
-            PyObject *stop = stack_pointer[-1];
-            PyObject *start = stack_pointer[-2];
-            PyObject *container = stack_pointer[-3];
-            PyObject *v = stack_pointer[-4];
-            PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
-            int err;
-            if (slice == NULL) {
-                err = 1;
-            }
-            else {
-                err = PyObject_SetItem(container, slice, v);
-                Py_DECREF(slice);
-            }
-            Py_DECREF(v);
-            Py_DECREF(container);
-            if (err) goto pop_4_error;
-            STACK_SHRINK(4);
-            break;
-        }
-
         case BINARY_SUBSCR_LIST_INT: {
             PyObject *sub = stack_pointer[-1];
             PyObject *list = stack_pointer[-2];

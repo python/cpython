@@ -1135,8 +1135,6 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] = {
     [UNARY_NEGATIVE] = { .nuops = 1, .uops = { { UNARY_NEGATIVE, 0, 0 } } },
     [UNARY_NOT] = { .nuops = 1, .uops = { { UNARY_NOT, 0, 0 } } },
     [UNARY_INVERT] = { .nuops = 1, .uops = { { UNARY_INVERT, 0, 0 } } },
-    [BINARY_SLICE] = { .nuops = 1, .uops = { { BINARY_SLICE, 0, 0 } } },
-    [STORE_SLICE] = { .nuops = 1, .uops = { { STORE_SLICE, 0, 0 } } },
     [BINARY_SUBSCR_LIST_INT] = { .nuops = 1, .uops = { { BINARY_SUBSCR_LIST_INT, 0, 0 } } },
     [BINARY_SUBSCR_TUPLE_INT] = { .nuops = 1, .uops = { { BINARY_SUBSCR_TUPLE_INT, 0, 0 } } },
     [BINARY_SUBSCR_DICT] = { .nuops = 1, .uops = { { BINARY_SUBSCR_DICT, 0, 0 } } },
