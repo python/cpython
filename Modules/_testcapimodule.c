@@ -3375,6 +3375,10 @@ error:
 static PyObject *
 test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 {
+    // Ignore PyWeakref_GetObject() deprecation, we test it on purpose
+    _Py_COMP_DIAG_PUSH
+    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
+
     // Create a new heap type, create an instance of this type, and delete the
     // type. This object supports weak references.
     PyObject *new_type = PyObject_CallFunction((PyObject*)&PyType_Type,
@@ -3463,6 +3467,8 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     Py_DECREF(weakref);
 
     Py_RETURN_NONE;
+
+    _Py_COMP_DIAG_POP
 }
 
 
