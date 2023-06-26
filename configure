@@ -26701,7 +26701,6 @@ SRCDIRS="\
   Modules/_hacl \
   Modules/_io \
   Modules/_multiprocessing \
-  Modules/_sha3 \
   Modules/_sqlite \
   Modules/_sre \
   Modules/_testcapi \
@@ -32093,4 +32092,3 @@ Platform \"$host\" with compiler \"$ac_cv_cc_name\" is not supported by the
 CPython core team, see https://peps.python.org/pep-0011/ for more information.
 " >&2;}
 fi
-
