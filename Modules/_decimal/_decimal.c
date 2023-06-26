@@ -2308,10 +2308,11 @@ PyDecType_FromFloatExact(PyTypeObject *type, PyObject *v,
     mpd_t *d1, *d2;
     uint32_t status = 0;
     mpd_context_t maxctx;
+
+#ifdef Py_DEBUG
     decimal_state *state = GLOBAL_STATE();
-
     assert(PyType_IsSubtype(type, state->PyDec_Type));
-
+#endif
     if (PyLong_Check(v)) {
         return PyDecType_FromLongExact(type, v, context);
     }
@@ -4606,10 +4607,11 @@ dec_richcompare(PyObject *v, PyObject *w, int op)
     uint32_t status = 0;
     int a_issnan, b_issnan;
     int r;
+
+#ifdef Py_DEBUG
     decimal_state *state = GLOBAL_STATE();
-
     assert(PyDec_Check(state, v));
-
+#endif
     CURRENT_CONTEXT(context);
     CONVERT_BINOP_CMP(&a, &b, v, w, op, context);
 
