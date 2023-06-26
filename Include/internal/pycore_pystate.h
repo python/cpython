@@ -60,15 +60,7 @@ _Py_ThreadCanHandleSignals(PyInterpreterState *interp)
 }
 
 
-/* Only execute pending calls on the main thread. */
-static inline int
-_Py_ThreadCanHandlePendingCalls(void)
-{
-    return _Py_IsMainThread();
-}
-
-
-/* Variable and macro for in-line access to current thread
+/* Variable and static inline functions for in-line access to current thread
    and interpreter state */
 
 #if defined(HAVE_THREAD_LOCAL) && !defined(Py_BUILD_CORE_MODULE)
@@ -93,12 +85,6 @@ _PyThreadState_GET(void)
 #endif
 }
 
-static inline PyThreadState*
-_PyRuntimeState_GetThreadState(_PyRuntimeState *Py_UNUSED(runtime))
-{
-    return _PyThreadState_GET();
-}
-
 
 static inline void
 _Py_EnsureFuncTstateNotNULL(const char *func, PyThreadState *tstate)
@@ -118,7 +104,7 @@ _Py_EnsureFuncTstateNotNULL(const char *func, PyThreadState *tstate)
 
 /* Get the current interpreter state.
 
-   The macro is unsafe: it does not check for error and it can return NULL.
+   The function is unsafe: it does not check for error and it can return NULL.
 
    The caller must hold the GIL.
 

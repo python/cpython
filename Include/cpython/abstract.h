@@ -4,10 +4,6 @@
 
 /* === Object Protocol ================================================== */
 
-#ifdef PY_SSIZE_T_CLEAN
-#  define _PyObject_CallMethodId _PyObject_CallMethodId_SizeT
-#endif
-
 /* Convert keyword arguments from the FASTCALL (stack: C array, kwnames: tuple)
    format to a Python dictionary ("kwargs" dict).
 
@@ -62,15 +58,6 @@ _PyVectorcall_NARGS(size_t n)
 
 PyAPI_FUNC(vectorcallfunc) PyVectorcall_Function(PyObject *callable);
 
-// Backwards compatibility aliases for API that was provisional in Python 3.8
-#define _PyObject_Vectorcall PyObject_Vectorcall
-#define _PyObject_VectorcallMethod PyObject_VectorcallMethod
-#define _PyObject_FastCallDict PyObject_VectorcallDict
-#define _PyVectorcall_Function PyVectorcall_Function
-#define _PyObject_CallOneArg PyObject_CallOneArg
-#define _PyObject_CallMethodNoArgs PyObject_CallMethodNoArgs
-#define _PyObject_CallMethodOneArg PyObject_CallMethodOneArg
-
 /* Same as PyObject_Vectorcall except that keyword arguments are passed as
    dict, which may be NULL if there are no keyword arguments. */
 PyAPI_FUNC(PyObject *) PyObject_VectorcallDict(
@@ -112,11 +99,6 @@ PyAPI_FUNC(PyObject *) _PyObject_CallMethod(PyObject *obj,
 PyAPI_FUNC(PyObject *) _PyObject_CallMethodId(PyObject *obj,
                                               _Py_Identifier *name,
                                               const char *format, ...);
-
-PyAPI_FUNC(PyObject *) _PyObject_CallMethodId_SizeT(PyObject *obj,
-                                                    _Py_Identifier *name,
-                                                    const char *format,
-                                                    ...);
 
 PyAPI_FUNC(PyObject *) _PyObject_CallMethodIdObjArgs(
     PyObject *obj,
@@ -188,10 +170,6 @@ PyAPI_FUNC(Py_ssize_t) _PySequence_IterSearch(PyObject *seq,
 PyAPI_FUNC(int) _PyObject_RealIsInstance(PyObject *inst, PyObject *cls);
 
 PyAPI_FUNC(int) _PyObject_RealIsSubclass(PyObject *derived, PyObject *cls);
-
-PyAPI_FUNC(char *const *) _PySequence_BytesToCharpArray(PyObject* self);
-
-PyAPI_FUNC(void) _Py_FreeCharPArray(char *const array[]);
 
 /* For internal use by buffer API functions */
 PyAPI_FUNC(void) _Py_add_one_to_index_F(int nd, Py_ssize_t *index,

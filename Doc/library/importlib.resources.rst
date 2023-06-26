@@ -1,5 +1,5 @@
-:mod:`importlib.resources` -- Resources
----------------------------------------
+:mod:`importlib.resources` -- Package resource reading, opening and access
+--------------------------------------------------------------------------
 
 .. module:: importlib.resources
     :synopsis: Package resource reading, opening, and access
@@ -97,7 +97,7 @@ for example, a package and its resources can be imported from a zip file using
 
 
 Deprecated functions
---------------------
+^^^^^^^^^^^^^^^^^^^^
 
 An older, deprecated set of functions is still available, but is
 scheduled for removal in a future version of Python.

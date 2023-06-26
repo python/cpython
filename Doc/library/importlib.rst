@@ -127,28 +127,6 @@ Functions
     .. versionchanged:: 3.3
        Parent packages are automatically imported.
 
-.. function:: find_loader(name, path=None)
-
-   Find the loader for a module, optionally within the specified *path*. If the
-   module is in :attr:`sys.modules`, then ``sys.modules[name].__loader__`` is
-   returned (unless the loader would be ``None`` or is not set, in which case
-   :exc:`ValueError` is raised). Otherwise a search using :attr:`sys.meta_path`
-   is done. ``None`` is returned if no loader is found.
-
-   A dotted name does not have its parents implicitly imported as that requires
-   loading them and that may not be desired. To properly import a submodule you
-   will need to import all parent packages of the submodule and use the correct
-   argument to *path*.
-
-   .. versionadded:: 3.3
-
-   .. versionchanged:: 3.4
-      If ``__loader__`` is not set, raise :exc:`ValueError`, just like when the
-      attribute is set to ``None``.
-
-   .. deprecated:: 3.4
-      Use :func:`importlib.util.find_spec` instead.
-
 .. function:: invalidate_caches()
 
    Invalidate the internal caches of finders stored at
@@ -247,7 +225,6 @@ are also provided to help in implementing the core ABCs.
 ABC hierarchy::
 
     object
-     +-- Finder (deprecated)
      +-- MetaPathFinder
      +-- PathEntryFinder
      +-- Loader
@@ -258,28 +235,6 @@ ABC hierarchy::
                                      +-- SourceLoader
 
 
-.. class:: Finder
-
-   An abstract base class representing a :term:`finder`.
-
-   .. deprecated:: 3.3
-      Use :class:`MetaPathFinder` or :class:`PathEntryFinder` instead.
-
-   .. abstractmethod:: find_module(fullname, path=None)
-
-      An abstract method for finding a :term:`loader` for the specified
-      module.  Originally specified in :pep:`302`, this method was meant
-      for use in :data:`sys.meta_path` and in the path-based import subsystem.
-
-      .. versionchanged:: 3.4
-         Returns ``None`` when called instead of raising
-         :exc:`NotImplementedError`.
-
-      .. deprecated:: 3.10
-         Implement :meth:`MetaPathFinder.find_spec` or
-         :meth:`PathEntryFinder.find_spec` instead.
-
-
 .. class:: MetaPathFinder
 
    An abstract base class representing a :term:`meta path finder`.
@@ -287,7 +242,7 @@ ABC hierarchy::
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.10
-      No longer a subclass of :class:`Finder`.
+      No longer a subclass of :class:`!Finder`.
 
    .. method:: find_spec(fullname, path, target=None)
 
@@ -302,25 +257,6 @@ ABC hierarchy::
       concrete ``MetaPathFinders``.
 
       .. versionadded:: 3.4
-
-   .. method:: find_module(fullname, path)
-
-      A legacy method for finding a :term:`loader` for the specified
-      module.  If this is a top-level import, *path* will be ``None``.
-      Otherwise, this is a search for a subpackage or module and *path*
-      will be the value of :attr:`__path__` from the parent
-      package. If a loader cannot be found, ``None`` is returned.
-
-      If :meth:`find_spec` is defined, backwards-compatible functionality is
-      provided.
-
-      .. versionchanged:: 3.4
-         Returns ``None`` when called instead of raising
-         :exc:`NotImplementedError`. Can use :meth:`find_spec` to provide
-         functionality.
-
-      .. deprecated:: 3.4
-         Use :meth:`find_spec` instead.
 
    .. method:: invalidate_caches()
 
@@ -342,7 +278,7 @@ ABC hierarchy::
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.10
-      No longer a subclass of :class:`Finder`.
+      No longer a subclass of :class:`!Finder`.
 
    .. method:: find_spec(fullname, target=None)
 
@@ -355,36 +291,6 @@ ABC hierarchy::
       may be useful for implementing concrete ``PathEntryFinders``.
 
       .. versionadded:: 3.4
-
-   .. method:: find_loader(fullname)
-
-      A legacy method for finding a :term:`loader` for the specified
-      module.  Returns a 2-tuple of ``(loader, portion)`` where ``portion``
-      is a sequence of file system locations contributing to part of a namespace
-      package. The loader may be ``None`` while specifying ``portion`` to
-      signify the contribution of the file system locations to a namespace
-      package. An empty list can be used for ``portion`` to signify the loader
-      is not part of a namespace package. If ``loader`` is ``None`` and
-      ``portion`` is the empty list then no loader or location for a namespace
-      package were found (i.e. failure to find anything for the module).
-
-      If :meth:`find_spec` is defined then backwards-compatible functionality is
-      provided.
-
-      .. versionchanged:: 3.4
-         Returns ``(None, [])`` instead of raising :exc:`NotImplementedError`.
-         Uses :meth:`find_spec` when available to provide functionality.
-
-      .. deprecated:: 3.4
-         Use :meth:`find_spec` instead.
-
-   .. method:: find_module(fullname)
-
-      A concrete implementation of :meth:`Finder.find_module` which is
-      equivalent to ``self.find_loader(fullname)[0]``.
-
-      .. deprecated:: 3.4
-         Use :meth:`find_spec` instead.
 
    .. method:: invalidate_caches()
 
@@ -881,13 +787,6 @@ find and load modules.
          is no longer valid then ``None`` is returned but no value is cached
          in :data:`sys.path_importer_cache`.
 
-   .. classmethod:: find_module(fullname, path=None)
-
-      A legacy wrapper around :meth:`find_spec`.
-
-      .. deprecated:: 3.4
-         Use :meth:`find_spec` instead.
-
    .. classmethod:: invalidate_caches()
 
       Calls :meth:`importlib.abc.PathEntryFinder.invalidate_caches` on all
@@ -937,13 +836,6 @@ find and load modules.
       Attempt to find the spec to handle *fullname* within :attr:`path`.
 
       .. versionadded:: 3.4
-
-   .. method:: find_loader(fullname)
-
-      Attempt to find the loader to handle *fullname* within :attr:`path`.
-
-      .. deprecated:: 3.10
-         Use :meth:`find_spec` instead.
 
    .. method:: invalidate_caches()
 
