@@ -12,7 +12,7 @@ extern "C" {
 
 typedef struct {
     int opcode;
-    uintptr_t oparg;
+    uint64_t operand;  // Sometimes oparg, sometimes a cache entry
 } _PyUOpInstruction;
 
 typedef struct {

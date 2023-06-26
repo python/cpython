@@ -323,18 +323,18 @@ translate_bytecode_to_trace(
                 code->co_firstlineno,
                 (long)(instr - (_Py_CODEUNIT *)code->co_code_adaptive));
     }
-#define ADD_TO_TRACE(OPCODE, OPARG) \
+#define ADD_TO_TRACE(OPCODE, OPERAND) \
         if (lltrace >= 2) { \
             const char *opname = (OPCODE) < 256 ? _PyOpcode_OpName[(OPCODE)] : ""; \
-            fprintf(stderr, "  ADD_TO_TRACE(%s %d, %d)\n", opname, (OPCODE), (OPARG)); \
+            fprintf(stderr, "  ADD_TO_TRACE(%s %d, %llu)\n", opname, (OPCODE), (uint64_t)(OPERAND)); \
         } \
         trace[trace_length].opcode = (OPCODE); \
-        trace[trace_length].oparg = (OPARG); \
+        trace[trace_length].operand = (OPERAND); \
         trace_length++;
 #else
-#define ADD_TO_TRACE(OPCODE, OPARG) \
+#define ADD_TO_TRACE(OPCODE, OPERAND) \
         trace[trace_length].opcode = (OPCODE); \
-        trace[trace_length].oparg = (OPARG); \
+        trace[trace_length].operand = (OPERAND); \
         trace_length++;
 #endif
 
@@ -342,7 +342,7 @@ translate_bytecode_to_trace(
     // Always reserve space for one uop, plus SET_UP, plus EXIT_TRACE
     while (trace_length + 3 <= max_length) {
         int opcode = instr->op.code;
-        int oparg = instr->op.arg;
+        uint64_t operand = instr->op.arg;
         switch (opcode) {
             case LOAD_FAST_LOAD_FAST:
             {
@@ -350,8 +350,8 @@ translate_bytecode_to_trace(
                 if (trace_length + 4 > max_length) {
                     goto done;
                 }
-                int oparg1 = oparg >> 4;
-                int oparg2 = oparg & 15;
+                uint64_t oparg1 = operand >> 4;
+                uint64_t oparg2 = operand & 15;
                 ADD_TO_TRACE(LOAD_FAST, oparg1);
                 ADD_TO_TRACE(LOAD_FAST, oparg2);
                 break;
@@ -371,23 +371,23 @@ translate_bytecode_to_trace(
                             case 0:
                                 break;
                             case 1:
-                                oparg = read_u16(&instr[offset].cache);
+                                operand = read_u16(&instr[offset].cache);
                                 break;
                             case 2:
-                                oparg = read_u32(&instr[offset].cache);
+                                operand = read_u32(&instr[offset].cache);
                                 break;
                             case 4:
-                                oparg = read_u64(&instr[offset].cache);
+                                operand = read_u64(&instr[offset].cache);
                                 break;
                             default:
                                 fprintf(stderr,
-                                        "opcode=%d, oparg=%d; nuops=%d, i=%d; size=%d, offset=%d\n",
-                                        opcode, oparg, nuops, i,
+                                        "opcode=%d, operand=%llu; nuops=%d, i=%d; size=%d, offset=%d\n",
+                                        opcode, operand, nuops, i,
                                         expansion->uops[i].size,
                                         expansion->uops[i].offset);
                                 Py_FatalError("garbled expansion");
                         }
-                        ADD_TO_TRACE(expansion->uops[i].uop, oparg);
+                        ADD_TO_TRACE(expansion->uops[i].uop, operand);
                         assert(expansion->uops[0].size == 0);  // TODO
                     }
                     break;

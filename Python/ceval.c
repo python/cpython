@@ -2808,10 +2808,12 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
     _Py_CODEUNIT *ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive - 1;
     int pc = 0;
     int opcode;
+    uint64_t operand;
     int oparg;
     for (;;) {
         opcode = self->trace[pc].opcode;
-        oparg = self->trace[pc].oparg;
+        operand = self->trace[pc].operand;
+        oparg = (int)operand;
 #ifdef LLTRACE
         if (lltrace >= 3) {
             const char *opname = opcode < 256 ? _PyOpcode_OpName[opcode] : "";

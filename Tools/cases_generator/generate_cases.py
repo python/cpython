@@ -515,7 +515,7 @@ class Instruction:
                         f"{typ}{ceffect.name} = {func}(&next_instr[{cache_offset}].cache);"
                     )
                 else:
-                    out.emit(f"{typ}{ceffect.name} = oparg;")
+                    out.emit(f"{typ}{ceffect.name} = operand;")
             cache_offset += ceffect.size
         assert cache_offset == self.cache_offset + cache_adjust
 
