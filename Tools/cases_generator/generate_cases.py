@@ -313,8 +313,6 @@ FORBIDDEN_NAMES_IN_UOPS = (
     "exception_unwind",
     "import_from",
     "import_name",
-    "_PyObject_CallNoArgs",  # Proxy for BEFORE_WITH
-    "_PyBuildSlice_ConsumeRefs",  # Proxy for BINARY_SLICE, STORE_SLICE
 )
 
 

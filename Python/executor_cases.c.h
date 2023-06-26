@@ -225,6 +225,49 @@
             break;
         }
 
+        case BINARY_SLICE: {
+            PyObject *stop = stack_pointer[-1];
+            PyObject *start = stack_pointer[-2];
+            PyObject *container = stack_pointer[-3];
+            PyObject *res;
+            PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
+            // Can't use ERROR_IF() here, because we haven't
+            // DECREF'ed container yet, and we still own slice.
+            if (slice == NULL) {
+                res = NULL;
+            }
+            else {
+                res = PyObject_GetItem(container, slice);
+                Py_DECREF(slice);
+            }
+            Py_DECREF(container);
+            if (res == NULL) goto pop_3_error;
+            STACK_SHRINK(2);
+            stack_pointer[-1] = res;
+            break;
+        }
+
+        case STORE_SLICE: {
+            PyObject *stop = stack_pointer[-1];
+            PyObject *start = stack_pointer[-2];
+            PyObject *container = stack_pointer[-3];
+            PyObject *v = stack_pointer[-4];
+            PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
+            int err;
+            if (slice == NULL) {
+                err = 1;
+            }
+            else {
+                err = PyObject_SetItem(container, slice, v);
+                Py_DECREF(slice);
+            }
+            Py_DECREF(v);
+            Py_DECREF(container);
+            if (err) goto pop_4_error;
+            STACK_SHRINK(4);
+            break;
+        }
+
         case BINARY_SUBSCR_LIST_INT: {
             PyObject *sub = stack_pointer[-1];
             PyObject *list = stack_pointer[-2];
@@ -1370,6 +1413,87 @@
                 Py_DECREF(iterable);
             }
             stack_pointer[-1] = iter;
+            break;
+        }
+
+        case BEFORE_ASYNC_WITH: {
+            PyObject *mgr = stack_pointer[-1];
+            PyObject *exit;
+            PyObject *res;
+            PyObject *enter = _PyObject_LookupSpecial(mgr, &_Py_ID(__aenter__));
+            if (enter == NULL) {
+                if (!_PyErr_Occurred(tstate)) {
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                                  "'%.200s' object does not support the "
+                                  "asynchronous context manager protocol",
+                                  Py_TYPE(mgr)->tp_name);
+                }
+                goto error;
+            }
+            exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__aexit__));
+            if (exit == NULL) {
+                if (!_PyErr_Occurred(tstate)) {
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                                  "'%.200s' object does not support the "
+                                  "asynchronous context manager protocol "
+                                  "(missed __aexit__ method)",
+                                  Py_TYPE(mgr)->tp_name);
+                }
+                Py_DECREF(enter);
+                goto error;
+            }
+            Py_DECREF(mgr);
+            res = _PyObject_CallNoArgs(enter);
+            Py_DECREF(enter);
+            if (res == NULL) {
+                Py_DECREF(exit);
+                if (true) goto pop_1_error;
+            }
+            STACK_GROW(1);
+            stack_pointer[-1] = res;
+            stack_pointer[-2] = exit;
+            break;
+        }
+
+        case BEFORE_WITH: {
+            PyObject *mgr = stack_pointer[-1];
+            PyObject *exit;
+            PyObject *res;
+            /* pop the context manager, push its __exit__ and the
+             * value returned from calling its __enter__
+             */
+            PyObject *enter = _PyObject_LookupSpecial(mgr, &_Py_ID(__enter__));
+            if (enter == NULL) {
+                if (!_PyErr_Occurred(tstate)) {
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                                  "'%.200s' object does not support the "
+                                  "context manager protocol",
+                                  Py_TYPE(mgr)->tp_name);
+                }
+                goto error;
+            }
+            exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__exit__));
+            if (exit == NULL) {
+                if (!_PyErr_Occurred(tstate)) {
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                                  "'%.200s' object does not support the "
+                                  "context manager protocol "
+                                  "(missed __exit__ method)",
+                                  Py_TYPE(mgr)->tp_name);
+                }
+                Py_DECREF(enter);
+                goto error;
+            }
+            Py_DECREF(mgr);
+            res = _PyObject_CallNoArgs(enter);
+            Py_DECREF(enter);
+            if (res == NULL) {
+                Py_DECREF(exit);
+                if (true) goto pop_1_error;
+            }
+            STACK_GROW(1);
+            stack_pointer[-1] = res;
+            stack_pointer[-2] = exit;
             break;
         }
 

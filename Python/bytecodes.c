@@ -2180,7 +2180,7 @@ dummy_func(
             frame = executor->execute(executor, frame, stack_pointer);
             if (frame == NULL) {
                 frame = cframe.current_frame;
-                goto error;
+                goto resume_with_error;
             }
             goto resume_frame;
         }
