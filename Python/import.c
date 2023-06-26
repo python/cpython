@@ -2053,6 +2053,7 @@ unmarshal_frozen_code(PyInterpreterState *interp, struct frozen_info *info)
     PyObject *co = PyMarshal_ReadObjectFromString(info->data, info->size);
     if (co == NULL) {
         /* Does not contain executable code. */
+        PyErr_Clear();
         set_frozen_error(FROZEN_INVALID, info->nameobj);
         return NULL;
     }

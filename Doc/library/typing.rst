@@ -408,6 +408,52 @@ of the same type ``T``, use ``tuple[T, ...]``. To denote an empty tuple, use
    z = (1, 2, 3)
    z = ()
 
+.. _type-of-class-objects:
+
+The type of class objects
+=========================
+
+A variable annotated with ``C`` may accept a value of type ``C``. In
+contrast, a variable annotated with ``type[C]`` (or
+:class:`typing.Type[C] <Type>`) may accept values that are classes
+themselves -- specifically, it will accept the *class object* of ``C``. For
+example::
+
+   a = 3         # Has type ``int```
+   b = int       # Has type ``type[int]``
+   c = type(a)   # Also has type ``type[int]``
+
+Note that ``type[C]`` is covariant::
+
+   class User: ...
+   class ProUser(User): ...
+   class TeamUser(User): ...
+
+   def make_new_user(user_class: type[User]) -> User:
+       # ...
+       return user_class()
+
+   make_new_user(User)      # OK
+   make_new_user(ProUser)   # Also OK: ``type[ProUser]`` is a subtype of ``type[User]``
+   make_new_user(TeamUser)  # Still fine
+   make_new_user(User())    # Error: expected ``type[User]`` but got ``User``
+   make_new_user(int)       # Error: ``type[int]`` is not a subtype of ``type[User]``
+
+The only legal parameters for :class:`type` are classes, :data:`Any`,
+:ref:`type variables <generics>`, and unions of any of these types.
+For example::
+
+   def new_non_team_user(user_class: type[BasicUser | ProUser]): ...
+
+   new_non_team_user(BasicUser)  # OK
+   new_non_team_user(ProUser)    # OK
+   new_non_team_user(TeamUser)   # Error: ``type[TeamUser]`` is not a subtype
+                                 # of ``type[BasicUser | ProUser]``
+   new_non_team_user(User)       # Also an error
+
+``type[Any]`` is equivalent to :class:`type`, which is the root of Python's
+:ref:`metaclass hierarchy <metaclasses>`.
+
 .. _user-defined-generics:
 
 User-defined generic types
@@ -1092,55 +1138,6 @@ These can be used as types in annotations. They all support subscription using
       * :pep:`612` -- Parameter Specification Variables (the PEP which introduced
         ``ParamSpec`` and ``Concatenate``).
       * :class:`ParamSpec` and :class:`Callable`.
-
-
-.. class:: Type(Generic[CT_co])
-
-   Deprecated alias to :class:`type`.
-
-   A variable annotated with ``C`` may accept a value of type ``C``. In
-   contrast, a variable annotated with ``type[C]`` or ``Type[C]`` may accept values that are
-   classes themselves -- specifically, it will accept the *class object* of
-   ``C``. For example::
-
-      a = 3         # Has type 'int'
-      b = int       # Has type 'Type[int]'
-      c = type(a)   # Also has type 'Type[int]'
-
-   Note that ``Type[C]`` is covariant::
-
-      class User: ...
-      class BasicUser(User): ...
-      class ProUser(User): ...
-      class TeamUser(User): ...
-
-      # Accepts User, BasicUser, ProUser, TeamUser, ...
-      def make_new_user(user_class: Type[User]) -> User:
-          # ...
-          return user_class()
-
-   The fact that ``Type[C]`` is covariant implies that all subclasses of
-   ``C`` should implement the same constructor signature and class method
-   signatures as ``C``. The type checker should flag violations of this,
-   but should also allow constructor calls in subclasses that match the
-   constructor calls in the indicated base class. How the type checker is
-   required to handle this particular case may change in future revisions of
-   :pep:`484`.
-
-   The only legal parameters for :class:`Type` are classes, :data:`Any`,
-   :ref:`type variables <generics>`, and unions of any of these types.
-   For example::
-
-      def new_non_team_user(user_class: Type[BasicUser | ProUser]): ...
-
-   ``Type[Any]`` is equivalent to ``Type`` which in turn is equivalent
-   to ``type``, which is the root of Python's metaclass hierarchy.
-
-   .. versionadded:: 3.5.2
-
-   .. deprecated:: 3.9
-      :class:`builtins.type <type>` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
 
 .. data:: Literal
 
@@ -3142,6 +3139,19 @@ Aliases to built-in types
 
    .. deprecated:: 3.9
       :class:`builtins.tuple <tuple>` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: Type(Generic[CT_co])
+
+   Deprecated alias to :class:`type`.
+
+   See :ref:`type-of-class-objects` for details on using :class:`type` or
+   ``typing.Type`` in type annotations.
+
+   .. versionadded:: 3.5.2
+
+   .. deprecated:: 3.9
+      :class:`builtins.type <type>` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
 .. _corresponding-to-types-in-collections:
