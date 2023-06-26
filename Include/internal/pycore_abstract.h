@@ -41,6 +41,13 @@ extern int _PyObject_HasLen(PyObject *o);
 extern Py_ssize_t _PySequence_IterSearch(PyObject *seq,
                                          PyObject *obj, int operation);
 
+/* === Mapping protocol ================================================= */
+
+extern int _PyObject_RealIsInstance(PyObject *inst, PyObject *cls);
+
+extern int _PyObject_RealIsSubclass(PyObject *derived, PyObject *cls);
+
+
 #ifdef __cplusplus
 }
 #endif
