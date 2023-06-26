@@ -58,15 +58,6 @@ _PyVectorcall_NARGS(size_t n)
 
 PyAPI_FUNC(vectorcallfunc) PyVectorcall_Function(PyObject *callable);
 
-// Backwards compatibility aliases for API that was provisional in Python 3.8
-#define _PyObject_Vectorcall PyObject_Vectorcall
-#define _PyObject_VectorcallMethod PyObject_VectorcallMethod
-#define _PyObject_FastCallDict PyObject_VectorcallDict
-#define _PyVectorcall_Function PyVectorcall_Function
-#define _PyObject_CallOneArg PyObject_CallOneArg
-#define _PyObject_CallMethodNoArgs PyObject_CallMethodNoArgs
-#define _PyObject_CallMethodOneArg PyObject_CallMethodOneArg
-
 /* Same as PyObject_Vectorcall except that keyword arguments are passed as
    dict, which may be NULL if there are no keyword arguments. */
 PyAPI_FUNC(PyObject *) PyObject_VectorcallDict(
