@@ -452,7 +452,6 @@ uop_optimize(
         return -1;
     }
     executor->base.execute = _PyUopExecute;
-    Py_INCREF(self);
     memcpy(executor->trace, trace, trace_length * sizeof(_PyUOpInstruction));
     *exec_ptr = (_PyExecutorObject *)executor;
     return 1;
