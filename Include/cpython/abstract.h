@@ -58,15 +58,6 @@ _PyVectorcall_NARGS(size_t n)
 
 PyAPI_FUNC(vectorcallfunc) PyVectorcall_Function(PyObject *callable);
 
-// Backwards compatibility aliases for API that was provisional in Python 3.8
-#define _PyObject_Vectorcall PyObject_Vectorcall
-#define _PyObject_VectorcallMethod PyObject_VectorcallMethod
-#define _PyObject_FastCallDict PyObject_VectorcallDict
-#define _PyVectorcall_Function PyVectorcall_Function
-#define _PyObject_CallOneArg PyObject_CallOneArg
-#define _PyObject_CallMethodNoArgs PyObject_CallMethodNoArgs
-#define _PyObject_CallMethodOneArg PyObject_CallMethodOneArg
-
 /* Same as PyObject_Vectorcall except that keyword arguments are passed as
    dict, which may be NULL if there are no keyword arguments. */
 PyAPI_FUNC(PyObject *) PyObject_VectorcallDict(
@@ -142,8 +133,6 @@ _PyObject_CallMethodIdOneArg(PyObject *self, _Py_Identifier *name, PyObject *arg
     return _PyObject_VectorcallMethodId(name, args, nargsf, _Py_NULL);
 }
 
-PyAPI_FUNC(int) _PyObject_HasLen(PyObject *o);
-
 /* Guess the size of object 'o' using len(o) or o.__length_hint__().
    If neither of those return a non-negative value, then return the default
    value.  If one of the calls fails, this function returns -1. */
@@ -156,42 +145,12 @@ PyAPI_FUNC(Py_ssize_t) PyObject_LengthHint(PyObject *o, Py_ssize_t);
 #define PySequence_ITEM(o, i)\
     ( Py_TYPE(o)->tp_as_sequence->sq_item((o), (i)) )
 
-#define PY_ITERSEARCH_COUNT    1
-#define PY_ITERSEARCH_INDEX    2
-#define PY_ITERSEARCH_CONTAINS 3
-
-/* Iterate over seq.
-
-   Result depends on the operation:
-
-   PY_ITERSEARCH_COUNT:  return # of times obj appears in seq; -1 if
-     error.
-   PY_ITERSEARCH_INDEX:  return 0-based index of first occurrence of
-     obj in seq; set ValueError and return -1 if none found;
-     also return -1 on error.
-   PY_ITERSEARCH_CONTAINS:  return 1 if obj in seq, else 0; -1 on
-     error. */
-PyAPI_FUNC(Py_ssize_t) _PySequence_IterSearch(PyObject *seq,
-                                              PyObject *obj, int operation);
-
 /* === Mapping protocol ================================================= */
 
-PyAPI_FUNC(int) _PyObject_RealIsInstance(PyObject *inst, PyObject *cls);
-
-PyAPI_FUNC(int) _PyObject_RealIsSubclass(PyObject *derived, PyObject *cls);
-
-PyAPI_FUNC(char *const *) _PySequence_BytesToCharpArray(PyObject* self);
-
-PyAPI_FUNC(void) _Py_FreeCharPArray(char *const array[]);
-
-/* For internal use by buffer API functions */
-PyAPI_FUNC(void) _Py_add_one_to_index_F(int nd, Py_ssize_t *index,
-                                        const Py_ssize_t *shape);
-PyAPI_FUNC(void) _Py_add_one_to_index_C(int nd, Py_ssize_t *index,
-                                        const Py_ssize_t *shape);
-
-/* Convert Python int to Py_ssize_t. Do nothing if the argument is None. */
+// Convert Python int to Py_ssize_t. Do nothing if the argument is None.
+// Cannot be moved to the internal C API: used by Argument Clinic.
 PyAPI_FUNC(int) _Py_convert_optional_to_ssize_t(PyObject *, void *);
 
-/* Same as PyNumber_Index but can return an instance of a subclass of int. */
+// Same as PyNumber_Index but can return an instance of a subclass of int.
+// Cannot be moved to the internal C API: used by Argument Clinic.
 PyAPI_FUNC(PyObject *) _PyNumber_Index(PyObject *o);

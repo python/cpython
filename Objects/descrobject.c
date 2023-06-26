@@ -1,6 +1,7 @@
 /* Descriptors -- a new, flexible way to describe attributes */
 
 #include "Python.h"
+#include "pycore_abstract.h"      // _PyObject_RealIsSubclass()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -1110,9 +1111,9 @@ mappingproxy_get(mappingproxyobject *pp, PyObject *const *args, Py_ssize_t nargs
     {
         return NULL;
     }
-    return _PyObject_VectorcallMethod(&_Py_ID(get), newargs,
-                                        3 | PY_VECTORCALL_ARGUMENTS_OFFSET,
-                                        NULL);
+    return PyObject_VectorcallMethod(&_Py_ID(get), newargs,
+                                     3 | PY_VECTORCALL_ARGUMENTS_OFFSET,
+                                     NULL);
 }
 
 static PyObject *
