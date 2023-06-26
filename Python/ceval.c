@@ -2776,7 +2776,7 @@ _PyInterpreterFrame *
 _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
 #ifdef LLTRACE
-    char *uop_debug = Py_GETENV("PYTHON_UOP_DEBUG");
+    char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
     int lltrace = 0;
     if (uop_debug != NULL && *uop_debug >= '0') {
         lltrace = *uop_debug - '0';  // TODO: Parse an int and all that
@@ -2845,7 +2845,7 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
 
             default:
             {
-                fprintf(stderr, "Unknown uop %d, operand %ld\n", opcode, operand);
+                fprintf(stderr, "Unknown uop %d, operand %lld\n", opcode, operand);
                 Py_FatalError("Unknown uop");
                 abort();  // Unreachable
                 for (;;) {}

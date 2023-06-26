@@ -310,7 +310,7 @@ translate_bytecode_to_trace(
     int max_length)
 {
 #ifdef LLTRACE
-    char *uop_debug = Py_GETENV("PYTHON_UOP_DEBUG");
+    char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
     int lltrace = 0;
     if (uop_debug != NULL && *uop_debug >= '0') {
         lltrace = *uop_debug - '0';  // TODO: Parse an int and all that

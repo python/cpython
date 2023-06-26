@@ -1181,9 +1181,17 @@ init_interp_main(PyThreadState *tstate)
 #endif
     }
 
+    // Turn on experimental tier 2 (uops-based) optimizer
     if (is_main_interp) {
-        PyObject *opt = PyUnstable_Optimizer_NewUOpOptimizer();
-        PyUnstable_SetOptimizer((_PyOptimizerObject *)opt);
+        char *envvar = Py_GETENV("PYTHONUOPS");
+        int enabled = envvar != NULL && *envvar > '0';
+        if (_Py_get_xoption(&config->xoptions, L"uops") != NULL) {
+            enabled = 1;
+        }
+        if (enabled) {
+            PyObject *opt = PyUnstable_Optimizer_NewUOpOptimizer();
+            PyUnstable_SetOptimizer((_PyOptimizerObject *)opt);
+        }
     }
 
     assert(!_PyErr_Occurred(tstate));
