@@ -119,11 +119,14 @@ typedef enum {
     PyObject *prefix##_result;                                              \
     PyObject *prefix##_source_tb;                                           \
     PyObject *prefix##_cancel_msg;                                          \
-    fut_state prefix##_state;                                               \
-    int prefix##_log_tb;                                                    \
-    int prefix##_blocking;                                                  \
     PyObject *prefix##_weakreflist;                                         \
-    PyObject *prefix##_cancelled_exc;
+    PyObject *prefix##_cancelled_exc;                                       \
+    fut_state prefix##_state;                                               \
+    /* These bitfields need to be at the end of the struct
+       so that these and bitfields from TaskObj are contiguous.
+    */                                                                      \
+    unsigned prefix##_log_tb: 1;                                            \
+    unsigned prefix##_blocking: 1;
 
 typedef struct {
     FutureObj_HEAD(fut)
@@ -131,13 +134,13 @@ typedef struct {
 
 typedef struct {
     FutureObj_HEAD(task)
+    unsigned task_must_cancel: 1;
+    unsigned task_log_destroy_pending: 1;
+    int task_num_cancels_requested;
     PyObject *task_fut_waiter;
     PyObject *task_coro;
     PyObject *task_name;
     PyObject *task_context;
-    int task_must_cancel;
-    int task_log_destroy_pending;
-    int task_num_cancels_requested;
 } TaskObj;
 
 typedef struct {
@@ -2044,20 +2047,23 @@ swap_current_task(asyncio_state *state, PyObject *loop, PyObject *task)
         }
         prev_task = Py_None;
     }
+    Py_INCREF(prev_task);
 
     if (task == Py_None) {
         if (_PyDict_DelItem_KnownHash(state->current_tasks, loop, hash) == -1) {
-            return NULL;
+            goto error;
         }
     } else {
         if (_PyDict_SetItem_KnownHash(state->current_tasks, loop, task, hash) == -1) {
-            return NULL;
+            goto error;
         }
     }
 
-    Py_INCREF(prev_task);
-
     return prev_task;
+
+error:
+    Py_DECREF(prev_task);
+    return NULL;
 }
 
 /* ----- Task */

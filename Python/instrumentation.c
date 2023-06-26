@@ -903,26 +903,34 @@ instrumentation_cross_checks(PyInterpreterState *interp, PyCodeObject *code)
 #endif
 
 static inline uint8_t
-get_tools_for_instruction(PyCodeObject * code, int i, int event)
+get_tools_for_instruction(PyCodeObject *code, PyInterpreterState *interp, int i, int event)
 {
     uint8_t tools;
     assert(event != PY_MONITORING_EVENT_LINE);
     assert(event != PY_MONITORING_EVENT_INSTRUCTION);
-    assert(instrumentation_cross_checks(PyThreadState_GET()->interp, code));
-    _PyCoMonitoringData *monitoring = code->_co_monitoring;
     if (event >= PY_MONITORING_UNGROUPED_EVENTS) {
         assert(event == PY_MONITORING_EVENT_C_RAISE ||
                 event == PY_MONITORING_EVENT_C_RETURN);
         event = PY_MONITORING_EVENT_CALL;
     }
-    if (event < PY_MONITORING_INSTRUMENTED_EVENTS && monitoring->tools) {
-        tools = monitoring->tools[i];
+    if (event < PY_MONITORING_INSTRUMENTED_EVENTS) {
+        CHECK(is_version_up_to_date(code, interp));
+        CHECK(instrumentation_cross_checks(interp, code));
+        if (code->_co_monitoring->tools) {
+            tools = code->_co_monitoring->tools[i];
+        }
+        else {
+            tools = code->_co_monitoring->active_monitors.tools[event];
+        }
     }
     else {
-        tools = code->_co_monitoring->active_monitors.tools[event];
+        if (code->_co_monitoring) {
+            tools = code->_co_monitoring->active_monitors.tools[event];
+        }
+        else {
+            tools = interp->monitors.tools[event];
+        }
     }
-    CHECK(tools_is_subset_for_event(code, event, tools));
-    CHECK((tools & code->_co_monitoring->active_monitors.tools[event]) == tools);
     return tools;
 }
 
@@ -936,10 +944,7 @@ call_instrumentation_vector(
     }
     assert(!_PyErr_Occurred(tstate));
     assert(args[0] == NULL);
-    PyCodeObject *code = frame->f_code;
-    assert(code->_co_instrumentation_version == tstate->interp->monitoring_version);
-    assert(is_version_up_to_date(code, tstate->interp));
-    assert(instrumentation_cross_checks(tstate->interp, code));
+    PyCodeObject *code = _PyFrame_GetCode(frame);
     assert(args[1] == NULL);
     args[1] = (PyObject *)code;
     int offset = (int)(instr - _PyCode_CODE(code));
@@ -952,11 +957,11 @@ call_instrumentation_vector(
     }
     assert(args[2] == NULL);
     args[2] = offset_obj;
-    uint8_t tools = get_tools_for_instruction(code, offset, event);
+    PyInterpreterState *interp = tstate->interp;
+    uint8_t tools = get_tools_for_instruction(code, interp, offset, event);
     Py_ssize_t nargsf = nargs | PY_VECTORCALL_ARGUMENTS_OFFSET;
     PyObject **callargs = &args[1];
     int err = 0;
-    PyInterpreterState *interp = tstate->interp;
     while (tools) {
         int tool = most_significant_bit(tools);
         assert(tool >= 0 && tool < 8);
@@ -1017,7 +1022,7 @@ _Py_call_instrumentation_jump(
     assert(frame->prev_instr == instr);
     /* Event should occur after the jump */
     frame->prev_instr = target;
-    PyCodeObject *code = frame->f_code;
+    PyCodeObject *code = _PyFrame_GetCode(frame);
     int to = (int)(target - _PyCode_CODE(code));
     PyObject *to_obj = PyLong_FromLong(to * (int)sizeof(_Py_CODEUNIT));
     if (to_obj == NULL) {
@@ -1094,7 +1099,7 @@ int
 _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame, _Py_CODEUNIT *instr, _Py_CODEUNIT *prev)
 {
     frame->prev_instr = instr;
-    PyCodeObject *code = frame->f_code;
+    PyCodeObject *code = _PyFrame_GetCode(frame);
     assert(is_version_up_to_date(code, tstate->interp));
     assert(instrumentation_cross_checks(tstate->interp, code));
     int i = (int)(instr - _PyCode_CODE(code));
@@ -1162,7 +1167,7 @@ done:
 int
 _Py_call_instrumentation_instruction(PyThreadState *tstate, _PyInterpreterFrame* frame, _Py_CODEUNIT *instr)
 {
-    PyCodeObject *code = frame->f_code;
+    PyCodeObject *code = _PyFrame_GetCode(frame);
     assert(is_version_up_to_date(code, tstate->interp));
     assert(instrumentation_cross_checks(tstate->interp, code));
     int offset = (int)(instr - _PyCode_CODE(code));
@@ -1526,7 +1531,7 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
         return 0;
     }
     /* Insert instrumentation */
-    for (int i = 0; i < code_len; i+= _PyInstruction_GetLength(code, i)) {
+    for (int i = code->_co_firsttraceable; i < code_len; i+= _PyInstruction_GetLength(code, i)) {
         _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
         CHECK(instr->op.code != 0);
         int base_opcode = _Py_GetBaseOpcode(code, i);
@@ -1632,7 +1637,7 @@ instrument_all_executing_code_objects(PyInterpreterState *interp) {
         _PyInterpreterFrame *frame = ts->cframe->current_frame;
         while (frame) {
             if (frame->owner != FRAME_OWNED_BY_CSTACK) {
-                if (_Py_Instrument(frame->f_code, interp)) {
+                if (_Py_Instrument(_PyFrame_GetCode(frame), interp)) {
                     return -1;
                 }
             }

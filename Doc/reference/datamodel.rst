@@ -3179,8 +3179,9 @@ An example of an asynchronous context manager class::
    lead to some very strange behaviour if it is handled incorrectly.
 
 .. [#] The :meth:`~object.__hash__`, :meth:`~object.__iter__`,
-   :meth:`~object.__reversed__`, and :meth:`~object.__contains__` methods have
-   special handling for this; others
+   :meth:`~object.__reversed__`, :meth:`~object.__contains__`,
+   :meth:`~object.__class_getitem__` and :meth:`~os.PathLike.__fspath__`
+   methods have special handling for this. Others
    will still raise a :exc:`TypeError`, but may do so by relying on
    the behavior that ``None`` is not callable.
 
