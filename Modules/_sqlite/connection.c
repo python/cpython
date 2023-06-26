@@ -983,10 +983,10 @@ static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self)
 
     for (Py_ssize_t i = 0; i < PyList_Size(self->cursors); i++) {
         PyObject *weakref = PyList_GetItem(self->cursors, i);
-        PyObject *item;
         if (!PyWeakref_Check(weakref)) {
             continue;
         }
+        PyObject *item;
         if (PyWeakref_GetRef(weakref, &item) < 0) {
             PyErr_WriteUnraisable((PyObject *)self);
             continue;
