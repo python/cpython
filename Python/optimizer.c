@@ -324,7 +324,10 @@ translate_bytecode_to_trace(
                 (long)(instr - (_Py_CODEUNIT *)code->co_code_adaptive));
     }
 #define ADD_TO_TRACE(OPCODE, OPARG) \
-        if (lltrace >= 2) fprintf(stderr, "  ADD_TO_TRACE(%d, %d)\n", (OPCODE), (OPARG)); \
+        if (lltrace >= 2) { \
+            const char *opname = (OPCODE) < 256 ? _PyOpcode_OpName[(OPCODE)] : ""; \
+            fprintf(stderr, "  ADD_TO_TRACE(%s %d, %d)\n", opname, (OPCODE), (OPARG)); \
+        } \
         trace[trace_length].opcode = (OPCODE); \
         trace[trace_length].oparg = (OPARG); \
         trace_length++;
