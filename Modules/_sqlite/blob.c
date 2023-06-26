@@ -1,10 +1,5 @@
-#ifndef Py_BUILD_CORE_BUILTIN
-#  define Py_BUILD_CORE_MODULE 1
-#endif
-
 #include "blob.h"
 #include "util.h"
-#include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 #define clinic_state() (pysqlite_get_state_by_type(Py_TYPE(self)))
 #include "clinic/blob.c.h"
@@ -102,12 +97,18 @@ pysqlite_close_all_blobs(pysqlite_Connection *self)
 {
     for (int i = 0; i < PyList_GET_SIZE(self->blobs); i++) {
         PyObject *weakref = PyList_GET_ITEM(self->blobs, i);
-        PyObject *blob = _PyWeakref_GET_REF(weakref);
-        if (blob == NULL) {
+        PyObject *blob;
+        if (!PyWeakref_Check(weakref)) {
             continue;
         }
-        close_blob((pysqlite_Blob *)blob);
-        Py_DECREF(blob);
+        if (PyWeakref_GetRef(weakref, &blob) < 0) {
+            PyErr_WriteUnraisable((PyObject *)self);
+            continue;
+        }
+        if (blob) {
+            close_blob((pysqlite_Blob *)blob);
+            Py_DECREF(blob);
+        }
     }
 }
 
