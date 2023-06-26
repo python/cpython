@@ -326,7 +326,7 @@ translate_bytecode_to_trace(
 #define ADD_TO_TRACE(OPCODE, OPERAND) \
         if (lltrace >= 2) { \
             const char *opname = (OPCODE) < 256 ? _PyOpcode_OpName[(OPCODE)] : ""; \
-            fprintf(stderr, "  ADD_TO_TRACE(%s %d, %llu)\n", opname, (OPCODE), (uint64_t)(OPERAND)); \
+            fprintf(stderr, "  ADD_TO_TRACE(%s %d, %" PRIu64 ")\n", opname, (OPCODE), (uint64_t)(OPERAND)); \
         } \
         trace[trace_length].opcode = (OPCODE); \
         trace[trace_length].operand = (OPERAND); \
@@ -381,7 +381,7 @@ translate_bytecode_to_trace(
                                 break;
                             default:
                                 fprintf(stderr,
-                                        "opcode=%d, operand=%llu; nuops=%d, i=%d; size=%d, offset=%d\n",
+                                        "opcode=%d, operand=%" PRIu64 "; nuops=%d, i=%d; size=%d, offset=%d\n",
                                         opcode, operand, nuops, i,
                                         expansion->uops[i].size,
                                         expansion->uops[i].offset);
