@@ -171,10 +171,6 @@ PyAPI_FUNC(int) _PyObject_RealIsInstance(PyObject *inst, PyObject *cls);
 
 PyAPI_FUNC(int) _PyObject_RealIsSubclass(PyObject *derived, PyObject *cls);
 
-PyAPI_FUNC(char *const *) _PySequence_BytesToCharpArray(PyObject* self);
-
-PyAPI_FUNC(void) _Py_FreeCharPArray(char *const array[]);
-
 /* For internal use by buffer API functions */
 PyAPI_FUNC(void) _Py_add_one_to_index_F(int nd, Py_ssize_t *index,
                                         const Py_ssize_t *shape);
