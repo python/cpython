@@ -9,8 +9,6 @@ import textwrap
 import types
 import unittest
 
-import _testinternalcapi
-
 
 PAIR = (0,1)
 
@@ -499,8 +497,6 @@ class MultipleMonitorsTest(MonitoringTestBase, unittest.TestCase):
 
 class LineMonitoringTest(MonitoringTestBase, unittest.TestCase):
 
-    @unittest.skipIf(_testinternalcapi.get_optimizer(),
-                     "The optimizer changes the test behavior")
     def test_lines_single(self):
         try:
             self.assertEqual(sys.monitoring._all_events(), {})
@@ -519,8 +515,6 @@ class LineMonitoringTest(MonitoringTestBase, unittest.TestCase):
             self.assertEqual(sys.monitoring._all_events(), {})
             sys.monitoring.restart_events()
 
-    @unittest.skipIf(_testinternalcapi.get_optimizer(),
-                     "The optimizer changes the test behavior")
     def test_lines_loop(self):
         try:
             self.assertEqual(sys.monitoring._all_events(), {})
@@ -539,8 +533,6 @@ class LineMonitoringTest(MonitoringTestBase, unittest.TestCase):
             self.assertEqual(sys.monitoring._all_events(), {})
             sys.monitoring.restart_events()
 
-    @unittest.skipIf(_testinternalcapi.get_optimizer(),
-                     "The optimizer changes the test behavior")
     def test_lines_two(self):
         try:
             self.assertEqual(sys.monitoring._all_events(), {})

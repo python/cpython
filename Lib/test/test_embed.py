@@ -18,8 +18,6 @@ import sysconfig
 import tempfile
 import textwrap
 
-import _testinternalcapi
-
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
 
@@ -1779,8 +1777,6 @@ class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
 
     @unittest.skipUnless(support.Py_DEBUG,
                          '-X showrefcount requires a Python debug build')
-    @unittest.skipIf(_testinternalcapi.get_optimizer(),
-                     'There are known leaks in the optimizer')
     def test_no_memleak(self):
         # bpo-1635741: Python must release all memory at exit
         tests = (
