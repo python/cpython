@@ -916,6 +916,17 @@ call fails (for example because the path doesn't exist).
 
    .. versionadded:: 3.5
 
+.. method:: Path.chdir()
+
+   Set the current working directory to this path
+
+   ::
+
+      >>> Path('/etc').chdir()
+      >>> Path.cwd()
+      PosixPath('/etc')
+
+   .. versionadded:: 3.13
 
 .. method:: Path.glob(pattern, *, case_sensitive=None, follow_symlinks=None)
 
@@ -1544,6 +1555,7 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 ====================================   ==============================
 :func:`os.path.abspath`                :meth:`Path.absolute` [#]_
 :func:`os.path.realpath`               :meth:`Path.resolve`
+:func:`os.chdir`                       :meth:`Path.chdir`
 :func:`os.chmod`                       :meth:`Path.chmod`
 :func:`os.mkdir`                       :meth:`Path.mkdir`
 :func:`os.makedirs`                    :meth:`Path.mkdir`
