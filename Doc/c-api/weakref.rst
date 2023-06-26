@@ -74,10 +74,16 @@ as much as it can.
       except when it cannot be destroyed before the last usage of the borrowed
       reference.
 
+   .. deprecated-removed:: 3.13 3.15
+      Use :c:func:`PyWeakref_GetRef` instead.
+
 
 .. c:function:: PyObject* PyWeakref_GET_OBJECT(PyObject *ref)
 
    Similar to :c:func:`PyWeakref_GetObject`, but does no error checking.
+
+   .. deprecated-removed:: 3.13 3.15
+      Use :c:func:`PyWeakref_GetRef` instead.
 
 
 .. c:function:: void PyObject_ClearWeakRefs(PyObject *object)
