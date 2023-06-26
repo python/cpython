@@ -133,8 +133,6 @@ _PyObject_CallMethodIdOneArg(PyObject *self, _Py_Identifier *name, PyObject *arg
     return _PyObject_VectorcallMethodId(name, args, nargsf, _Py_NULL);
 }
 
-PyAPI_FUNC(int) _PyObject_HasLen(PyObject *o);
-
 /* Guess the size of object 'o' using len(o) or o.__length_hint__().
    If neither of those return a non-negative value, then return the default
    value.  If one of the calls fails, this function returns -1. */
@@ -146,24 +144,6 @@ PyAPI_FUNC(Py_ssize_t) PyObject_LengthHint(PyObject *o, Py_ssize_t);
    need to be corrected for a negative index. */
 #define PySequence_ITEM(o, i)\
     ( Py_TYPE(o)->tp_as_sequence->sq_item((o), (i)) )
-
-#define PY_ITERSEARCH_COUNT    1
-#define PY_ITERSEARCH_INDEX    2
-#define PY_ITERSEARCH_CONTAINS 3
-
-/* Iterate over seq.
-
-   Result depends on the operation:
-
-   PY_ITERSEARCH_COUNT:  return # of times obj appears in seq; -1 if
-     error.
-   PY_ITERSEARCH_INDEX:  return 0-based index of first occurrence of
-     obj in seq; set ValueError and return -1 if none found;
-     also return -1 on error.
-   PY_ITERSEARCH_CONTAINS:  return 1 if obj in seq, else 0; -1 on
-     error. */
-PyAPI_FUNC(Py_ssize_t) _PySequence_IterSearch(PyObject *seq,
-                                              PyObject *obj, int operation);
 
 /* === Mapping protocol ================================================= */
 

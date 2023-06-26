@@ -1,11 +1,11 @@
 /* Type object implementation */
 
 #include "Python.h"
-#include "pycore_call.h"
+#include "pycore_abstract.h"      // _PySequence_IterSearch()
+#include "pycore_call.h"          // _PyObject_VectorcallTstate()
 #include "pycore_code.h"          // CO_FAST_FREE
 #include "pycore_dict.h"          // _PyDict_KeysSize()
 #include "pycore_frame.h"         // _PyInterpreterFrame
-#include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_memoryobject.h"  // _PyMemoryView_FromBufferProc()
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
