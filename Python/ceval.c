@@ -2818,8 +2818,8 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
         if (lltrace >= 3) {
             const char *opname = opcode < 256 ? _PyOpcode_OpName[opcode] : "";
             int stack_level = (int)(stack_pointer - _PyFrame_Stackbase(frame));
-            fprintf(stderr, "  uop %s %d, oparg %d, stack_level %d\n",
-                    opname, opcode, oparg, stack_level);
+            fprintf(stderr, "  uop %s %d, operand %lld, stack_level %d\n",
+                    opname, opcode, operand, stack_level);
         }
 #endif
         pc++;
@@ -2845,7 +2845,7 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
 
             default:
             {
-                fprintf(stderr, "Unknown uop %d, oparg %d\n", opcode, oparg);
+                fprintf(stderr, "Unknown uop %d, operand %ld\n", opcode, operand);
                 Py_FatalError("Unknown uop");
                 abort();  // Unreachable
                 for (;;) {}
@@ -2868,7 +2868,7 @@ error:
     // The caller recovers the frame from cframe.current_frame.
 #ifdef LLTRACE
     if (lltrace >= 2) {
-        fprintf(stderr, "Error: [Opcode %d, oparg %d]\n", opcode, oparg);
+        fprintf(stderr, "Error: [Opcode %d, operand %lld]\n", opcode, operand);
     }
 #endif
     _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -2885,7 +2885,7 @@ PREDICTED(BINARY_OP)
     // This presumes nothing was popped from the stack (nor pushed).
 #ifdef LLTRACE
     if (lltrace >= 2) {
-        fprintf(stderr, "DEOPT: [Opcode %d, oparg %d]\n", opcode, oparg);
+        fprintf(stderr, "DEOPT: [Opcode %d, operand %lld]\n", opcode, operand);
     }
 #endif
     _PyFrame_SetStackPointer(frame, stack_pointer);
