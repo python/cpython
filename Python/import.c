@@ -278,7 +278,7 @@ import_ensure_initialized(PyInterpreterState *interp, PyObject *mod, PyObject *n
     Py_XDECREF(spec);
     if (busy) {
         /* Wait until module is done importing. */
-        PyObject *value = _PyObject_CallMethodOneArg(
+        PyObject *value = PyObject_CallMethodOneArg(
             IMPORTLIB(interp), &_Py_ID(_lock_unlock_module), name);
         if (value == NULL) {
             return -1;
@@ -1660,7 +1660,7 @@ PyImport_ExecCodeModuleWithPathnames(const char *name, PyObject *co,
         external= PyObject_GetAttrString(IMPORTLIB(interp),
                                          "_bootstrap_external");
         if (external != NULL) {
-            pathobj = _PyObject_CallMethodOneArg(
+            pathobj = PyObject_CallMethodOneArg(
                 external, &_Py_ID(_get_sourcefile), cpathobj);
             Py_DECREF(external);
         }
