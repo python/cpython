@@ -2369,6 +2369,21 @@ class PathTest(unittest.TestCase):
         p = self.cls.cwd()
         self._test_cwd(p)
 
+    def test_chdir(self):
+        P = self.cls
+
+        old_cwd = os.getcwd()
+        try:
+            p = P(BASE) / 'dirA'
+            p.chdir()
+            self.assertEqual(p.name, P.cwd().name) # dirA
+
+            p = P('../dirB')
+            p.chdir()
+            self.assertEqual(p.name, P.cwd().name) # dirB
+        finally:
+            os.chdir(old_cwd)
+
     def test_absolute_common(self):
         P = self.cls
 
