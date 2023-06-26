@@ -147,18 +147,10 @@ PyAPI_FUNC(Py_ssize_t) PyObject_LengthHint(PyObject *o, Py_ssize_t);
 
 /* === Mapping protocol ================================================= */
 
-PyAPI_FUNC(int) _PyObject_RealIsInstance(PyObject *inst, PyObject *cls);
-
-PyAPI_FUNC(int) _PyObject_RealIsSubclass(PyObject *derived, PyObject *cls);
-
-/* For internal use by buffer API functions */
-PyAPI_FUNC(void) _Py_add_one_to_index_F(int nd, Py_ssize_t *index,
-                                        const Py_ssize_t *shape);
-PyAPI_FUNC(void) _Py_add_one_to_index_C(int nd, Py_ssize_t *index,
-                                        const Py_ssize_t *shape);
-
-/* Convert Python int to Py_ssize_t. Do nothing if the argument is None. */
+// Convert Python int to Py_ssize_t. Do nothing if the argument is None.
+// Cannot be moved to the internal C API: used by Argument Clinic.
 PyAPI_FUNC(int) _Py_convert_optional_to_ssize_t(PyObject *, void *);
 
-/* Same as PyNumber_Index but can return an instance of a subclass of int. */
+// Same as PyNumber_Index but can return an instance of a subclass of int.
+// Cannot be moved to the internal C API: used by Argument Clinic.
 PyAPI_FUNC(PyObject *) _PyNumber_Index(PyObject *o);

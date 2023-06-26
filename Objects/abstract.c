@@ -517,7 +517,7 @@ PyBuffer_GetPointer(const Py_buffer *view, const Py_ssize_t *indices)
 }
 
 
-void
+static void
 _Py_add_one_to_index_F(int nd, Py_ssize_t *index, const Py_ssize_t *shape)
 {
     int k;
@@ -533,7 +533,7 @@ _Py_add_one_to_index_F(int nd, Py_ssize_t *index, const Py_ssize_t *shape)
     }
 }
 
-void
+static void
 _Py_add_one_to_index_C(int nd, Py_ssize_t *index, const Py_ssize_t *shape)
 {
     int k;
