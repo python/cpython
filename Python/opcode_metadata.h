@@ -1195,8 +1195,6 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] = {
     [MATCH_KEYS] = { .nuops = 1, .uops = { { MATCH_KEYS, 0, 0 } } },
     [GET_ITER] = { .nuops = 1, .uops = { { GET_ITER, 0, 0 } } },
     [GET_YIELD_FROM_ITER] = { .nuops = 1, .uops = { { GET_YIELD_FROM_ITER, 0, 0 } } },
-    [BEFORE_ASYNC_WITH] = { .nuops = 1, .uops = { { BEFORE_ASYNC_WITH, 0, 0 } } },
-    [BEFORE_WITH] = { .nuops = 1, .uops = { { BEFORE_WITH, 0, 0 } } },
     [WITH_EXCEPT_START] = { .nuops = 1, .uops = { { WITH_EXCEPT_START, 0, 0 } } },
     [PUSH_EXC_INFO] = { .nuops = 1, .uops = { { PUSH_EXC_INFO, 0, 0 } } },
     [EXIT_INIT_CHECK] = { .nuops = 1, .uops = { { EXIT_INIT_CHECK, 0, 0 } } },

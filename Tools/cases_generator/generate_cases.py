@@ -313,6 +313,7 @@ FORBIDDEN_NAMES_IN_UOPS = (
     "exception_unwind",
     "import_from",
     "import_name",
+    "_PyObject_CallNoArgs",  # Proxy for BEFORE_WITH
 )
 
 
