@@ -1398,6 +1398,12 @@ class Path(PurePath):
 
         return self
 
+    def chdir(self):
+        """
+        Set the current working directory to this path
+        """
+        os.chdir(self)
+
 
 class PosixPath(Path, PurePosixPath):
     """Path subclass for non-Windows systems.
