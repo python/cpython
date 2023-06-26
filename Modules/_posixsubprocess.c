@@ -5,6 +5,7 @@
 
 #include "Python.h"
 #include "pycore_fileutils.h"
+#include "pycore_pystate.h"
 #if defined(HAVE_PIPE2) && !defined(_GNU_SOURCE)
 # define _GNU_SOURCE
 #endif
@@ -180,6 +181,88 @@ _is_fd_in_sorted_fd_sequence(int fd, int *fd_sequence,
     } while (search_min <= search_max);
     return 0;
 }
+
+
+// Forward declaration
+static void _Py_FreeCharPArray(char *const array[]);
+
+/*
+ * Flatten a sequence of bytes() objects into a C array of
+ * NULL terminated string pointers with a NULL char* terminating the array.
+ * (ie: an argv or env list)
+ *
+ * Memory allocated for the returned list is allocated using PyMem_Malloc()
+ * and MUST be freed by _Py_FreeCharPArray().
+ */
+static char *const *
+_PySequence_BytesToCharpArray(PyObject* self)
+{
+    char **array;
+    Py_ssize_t i, argc;
+    PyObject *item = NULL;
+    Py_ssize_t size;
+
+    argc = PySequence_Size(self);
+    if (argc == -1)
+        return NULL;
+
+    assert(argc >= 0);
+
+    if ((size_t)argc > (PY_SSIZE_T_MAX-sizeof(char *)) / sizeof(char *)) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    array = PyMem_Malloc((argc + 1) * sizeof(char *));
+    if (array == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    for (i = 0; i < argc; ++i) {
+        char *data;
+        item = PySequence_GetItem(self, i);
+        if (item == NULL) {
+            /* NULL terminate before freeing. */
+            array[i] = NULL;
+            goto fail;
+        }
+        /* check for embedded null bytes */
+        if (PyBytes_AsStringAndSize(item, &data, NULL) < 0) {
+            /* NULL terminate before freeing. */
+            array[i] = NULL;
+            goto fail;
+        }
+        size = PyBytes_GET_SIZE(item) + 1;
+        array[i] = PyMem_Malloc(size);
+        if (!array[i]) {
+            PyErr_NoMemory();
+            goto fail;
+        }
+        memcpy(array[i], data, size);
+        Py_DECREF(item);
+    }
+    array[argc] = NULL;
+
+    return array;
+
+fail:
+    Py_XDECREF(item);
+    _Py_FreeCharPArray(array);
+    return NULL;
+}
+
+
+/* Free's a NULL terminated char** array of C strings. */
+static void
+_Py_FreeCharPArray(char *const array[])
+{
+    Py_ssize_t i;
+    for (i = 0; array[i] != NULL; ++i) {
+        PyMem_Free(array[i]);
+    }
+    PyMem_Free((void*)array);
+}
+
 
 /*
  * Do all the Python C API calls in the parent process to turn the pass_fds
@@ -559,7 +642,7 @@ reset_signal_handlers(const sigset_t *child_sigmask)
  * required by POSIX but not supported natively on Linux. Another reason to
  * avoid this family of functions is that sharing an address space between
  * processes running with different privileges is inherently insecure.
- * See bpo-35823 for further discussion and references.
+ * See https://bugs.python.org/issue35823 for discussion and references.
  *
  * In some C libraries, setrlimit() has the same thread list/signalling
  * behavior since resource limits were per-thread attributes before
@@ -798,6 +881,7 @@ do_fork_exec(char *const exec_array[],
     pid_t pid;
 
 #ifdef VFORK_USABLE
+    PyThreadState *vfork_tstate_save;
     if (child_sigmask) {
         /* These are checked by our caller; verify them in debug builds. */
         assert(uid == (uid_t)-1);
@@ -805,7 +889,22 @@ do_fork_exec(char *const exec_array[],
         assert(extra_group_size < 0);
         assert(preexec_fn == Py_None);
 
+        /* Drop the GIL so that other threads can continue execution while this
+         * thread in the parent remains blocked per vfork-semantics on the
+         * child's exec syscall outcome. Exec does filesystem access which
+         * can take an arbitrarily long time. This addresses GH-104372.
+         *
+         * The vfork'ed child still runs in our address space. Per POSIX it
+         * must be limited to nothing but exec, but the Linux implementation
+         * is a little more usable. See the child_exec() comment - The child
+         * MUST NOT re-acquire the GIL.
+         */
+        vfork_tstate_save = PyEval_SaveThread();
         pid = vfork();
+        if (pid != 0) {
+            // Not in the child process, reacquire the GIL.
+            PyEval_RestoreThread(vfork_tstate_save);
+        }
         if (pid == (pid_t)-1) {
             /* If vfork() fails, fall back to using fork(). When it isn't
              * allowed in a process by the kernel, vfork can return -1
@@ -819,6 +918,7 @@ do_fork_exec(char *const exec_array[],
     }
 
     if (pid != 0) {
+        // Parent process.
         return pid;
     }
 
@@ -926,6 +1026,11 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
     Py_ssize_t fds_to_keep_len = PyTuple_GET_SIZE(py_fds_to_keep);
 
     PyInterpreterState *interp = PyInterpreterState_Get();
+    if ((preexec_fn != Py_None) && interp->finalizing) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "preexec_fn not supported at interpreter shutdown");
+        return NULL;
+    }
     if ((preexec_fn != Py_None) && (interp != PyInterpreterState_Main())) {
         PyErr_SetString(PyExc_RuntimeError,
                         "preexec_fn not supported within subinterpreters");

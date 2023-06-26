@@ -908,7 +908,6 @@ class Thread:
         self._ident = None
         if _HAVE_THREAD_NATIVE_ID:
             self._native_id = None
-        self._running_lock = None
         self._tstate_lock = None
         self._started = Event()
         self._is_stopped = False
@@ -927,9 +926,6 @@ class Thread:
             # bpo-42350: If the fork happens when the thread is already stopped
             # (ex: after threading._shutdown() has been called), _tstate_lock
             # is None. Do nothing in this case.
-            if self._running_lock is not None:
-                self._running_lock._at_fork_reinit()
-                self._running_lock.acquire()
             if self._tstate_lock is not None:
                 self._tstate_lock._at_fork_reinit()
                 self._tstate_lock.acquire()
@@ -937,7 +933,6 @@ class Thread:
             # The thread isn't alive after fork: it doesn't have a tstate
             # anymore.
             self._is_stopped = True
-            self._running_lock = None
             self._tstate_lock = None
 
     def __repr__(self):
@@ -1024,14 +1019,6 @@ class Thread:
         def _set_native_id(self):
             self._native_id = get_native_id()
 
-    def _set_running_lock(self):
-        """
-        Set a lock object which will be released by the interpreter when
-        the target func has finished running.
-        """
-        self._running_lock = _allocate_lock()
-        self._running_lock.acquire()
-
     def _set_tstate_lock(self):
         """
         Set a lock object which will be released by the interpreter when
@@ -1048,7 +1035,6 @@ class Thread:
     def _bootstrap_inner(self):
         try:
             self._set_ident()
-            self._set_running_lock()
             self._set_tstate_lock()
             if _HAVE_THREAD_NATIVE_ID:
                 self._set_native_id()
@@ -1068,29 +1054,29 @@ class Thread:
                 self._invoke_excepthook(self)
         finally:
             self._delete()
-            self._running_lock.release()
 
     def _stop(self):
         # After calling ._stop(), .is_alive() returns False and .join() returns
-        # immediately.  ._running_lock must be released before calling ._stop().
+        # immediately.  ._tstate_lock must be released before calling ._stop().
         #
-        # Normal case:  ._bootstrap_inner() releases ._running_lock, and
-        # that's detected by our ._wait_for_running_lock(), called by .join()
+        # Normal case:  C code at the end of the thread's life
+        # (release_sentinel in _threadmodule.c) releases ._tstate_lock, and
+        # that's detected by our ._wait_for_tstate_lock(), called by .join()
         # and .is_alive().  Any number of threads _may_ call ._stop()
         # simultaneously (for example, if multiple threads are blocked in
         # .join() calls), and they're not serialized.  That's harmless -
         # they'll just make redundant rebindings of ._is_stopped and
-        # ._running_lock.  Obscure:  we rebind ._running_lock last so that the
-        # "assert self._is_stopped" in ._wait_for_running_lock() always works
-        # (the assert is executed only if ._running_lock is None).
+        # ._tstate_lock.  Obscure:  we rebind ._tstate_lock last so that the
+        # "assert self._is_stopped" in ._wait_for_tstate_lock() always works
+        # (the assert is executed only if ._tstate_lock is None).
         #
-        # Special case:  _main_thread releases ._running_lock via this
+        # Special case:  _main_thread releases ._tstate_lock via this
         # module's _shutdown() function.
-        lock = self._running_lock
+        lock = self._tstate_lock
         if lock is not None:
             assert not lock.locked()
         self._is_stopped = True
-        self._running_lock = None
+        self._tstate_lock = None
         if not self.daemon:
             with _shutdown_locks_lock:
                 # Remove our lock and other released locks from _shutdown_locks
@@ -1137,17 +1123,20 @@ class Thread:
             raise RuntimeError("cannot join current thread")
 
         if timeout is None:
-            self._wait_for_running_lock()
+            self._wait_for_tstate_lock()
         else:
             # the behavior of a negative timeout isn't documented, but
             # historically .join(timeout=x) for x<0 has acted as if timeout=0
-            self._wait_for_running_lock(timeout=max(timeout, 0))
+            self._wait_for_tstate_lock(timeout=max(timeout, 0))
 
-    def _wait_for_running_lock(self, block=True, timeout=-1):
-        # This method passes its arguments to _running_lock.acquire().
-        # If the lock is acquired, the python code is done, and self._stop() is
-        # called.  That sets ._is_stopped to True, and ._running_lock to None.
-        lock = self._running_lock
+    def _wait_for_tstate_lock(self, block=True, timeout=-1):
+        # Issue #18808: wait for the thread state to be gone.
+        # At the end of the thread's life, after all knowledge of the thread
+        # is removed from C data structures, C code releases our _tstate_lock.
+        # This method passes its arguments to _tstate_lock.acquire().
+        # If the lock is acquired, the C code is done, and self._stop() is
+        # called.  That sets ._is_stopped to True, and ._tstate_lock to None.
+        lock = self._tstate_lock
         if lock is None:
             # already determined that the C code is done
             assert self._is_stopped
@@ -1218,7 +1207,7 @@ class Thread:
         assert self._initialized, "Thread.__init__() not called"
         if self._is_stopped or not self._started.is_set():
             return False
-        self._wait_for_running_lock(False)
+        self._wait_for_tstate_lock(False)
         return not self._is_stopped
 
     @property
@@ -1428,7 +1417,7 @@ class _MainThread(Thread):
 
     def __init__(self):
         Thread.__init__(self, name="MainThread", daemon=False)
-        self._set_running_lock()
+        self._set_tstate_lock()
         self._started.set()
         self._set_ident()
         if _HAVE_THREAD_NATIVE_ID:
@@ -1569,7 +1558,7 @@ def _shutdown():
     # dubious, but some code does it.  We can't wait for C code to release
     # the main thread's tstate_lock - that won't happen until the interpreter
     # is nearly dead.  So we release it here.  Note that just calling _stop()
-    # isn't enough:  other threads may already be waiting on _running_lock.
+    # isn't enough:  other threads may already be waiting on _tstate_lock.
     if _main_thread._is_stopped:
         # _shutdown() was already called
         return
@@ -1584,13 +1573,12 @@ def _shutdown():
 
     # Main thread
     if _main_thread.ident == get_ident():
-        assert _main_thread._tstate_lock is None
-        running_lock = _main_thread._running_lock
-        # The main thread isn't finished yet, so its running lock can't
+        tlock = _main_thread._tstate_lock
+        # The main thread isn't finished yet, so its thread state lock can't
         # have been released.
-        assert running_lock is not None
-        assert running_lock.locked()
-        running_lock.release()
+        assert tlock is not None
+        assert tlock.locked()
+        tlock.release()
         _main_thread._stop()
     else:
         # bpo-1596321: _shutdown() must be called in the main thread.

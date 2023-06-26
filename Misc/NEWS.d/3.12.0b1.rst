@@ -4,7 +4,7 @@
 .. release date: 2023-05-22
 .. section: Security
 
-Fixed a security in flaw in :func:`uu.decode` that could allow for directory
+Fixed a security in flaw in :func:`!uu.decode` that could allow for directory
 traversal based on the input if no ``out_file`` was specified.
 
 ..

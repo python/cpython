@@ -675,16 +675,12 @@ extract_anchors_from_line(PyObject *filename, PyObject *line,
 
     PyCompilerFlags flags = _PyCompilerFlags_INIT;
 
-    _PyASTOptimizeState state;
-    state.optimize = _Py_GetConfig()->optimization_level;
-    state.ff_features = 0;
-
     mod_ty module = _PyParser_ASTFromString(segment_str, filename, Py_file_input,
                                             &flags, arena);
     if (!module) {
         goto done;
     }
-    if (!_PyAST_Optimize(module, arena, &state)) {
+    if (!_PyAST_Optimize(module, arena, _Py_GetConfig()->optimization_level, 0)) {
         goto done;
     }
 
@@ -789,7 +785,7 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     }
 
     int code_offset = tb->tb_lasti;
-    PyCodeObject* code = frame->f_frame->f_code;
+    PyCodeObject* code = _PyFrame_GetCode(frame->f_frame);
     const Py_ssize_t source_line_len = PyUnicode_GET_LENGTH(source_line);
 
     int start_line;
@@ -1168,7 +1164,7 @@ done:
 static void
 dump_frame(int fd, _PyInterpreterFrame *frame)
 {
-    PyCodeObject *code = frame->f_code;
+    PyCodeObject *code =_PyFrame_GetCode(frame);
     PUTS(fd, "  File ");
     if (code->co_filename != NULL
         && PyUnicode_Check(code->co_filename))
