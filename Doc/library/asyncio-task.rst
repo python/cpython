@@ -1121,7 +1121,7 @@ Task Object
       If the Task has been *cancelled*, this method raises a
       :exc:`CancelledError` exception.
 
-      If the Task isn't *done* yet, this method raises a
+      If the Task isn't *done* yet, this method raises an
       :exc:`InvalidStateError` exception.
 
    .. method:: add_done_callback(callback, *, context=None)
