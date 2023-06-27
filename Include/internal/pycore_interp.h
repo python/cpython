@@ -103,13 +103,18 @@ struct _is {
        basis.  Also see _PyRuntimeState regarding the various mutex fields.
        */
 
-    /* The per-interpreter GIL, which might not be used. */
-    struct _gil_runtime_state _gil;
-
     // Dictionary of the sys module
     PyObject *sysdict;
+
     // Dictionary of the builtins module
     PyObject *builtins;
+
+    struct _ceval_state ceval;
+
+    struct _import_state imports;
+
+    /* The per-interpreter GIL, which might not be used. */
+    struct _gil_runtime_state _gil;
 
      /* ---------- IMPORTANT ---------------------------
      The fields above this line are declared as early as
@@ -147,11 +152,7 @@ struct _is {
     struct _warnings_runtime_state warnings;
     struct atexit_state atexit;
 
-    struct _ceval_state ceval;
-
     struct _obmalloc_state obmalloc;
-
-    struct _import_state imports;
 
     PyObject *audit_hooks;
     PyType_WatchCallback type_watchers[TYPE_MAX_WATCHERS];
