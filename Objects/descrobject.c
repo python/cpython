@@ -1,6 +1,7 @@
 /* Descriptors -- a new, flexible way to describe attributes */
 
 #include "Python.h"
+#include "pycore_abstract.h"      // _PyObject_RealIsSubclass()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -978,6 +979,12 @@ PyDescr_NewMember(PyTypeObject *type, PyMemberDef *member)
 {
     PyMemberDescrObject *descr;
 
+    if (member->flags & Py_RELATIVE_OFFSET) {
+        PyErr_SetString(
+            PyExc_SystemError,
+            "PyDescr_NewMember used with Py_RELATIVE_OFFSET");
+        return NULL;
+    }
     descr = (PyMemberDescrObject *)descr_new(&PyMemberDescr_Type,
                                              type, member->name);
     if (descr != NULL)
@@ -1104,9 +1111,9 @@ mappingproxy_get(mappingproxyobject *pp, PyObject *const *args, Py_ssize_t nargs
     {
         return NULL;
     }
-    return _PyObject_VectorcallMethod(&_Py_ID(get), newargs,
-                                        3 | PY_VECTORCALL_ARGUMENTS_OFFSET,
-                                        NULL);
+    return PyObject_VectorcallMethod(&_Py_ID(get), newargs,
+                                     3 | PY_VECTORCALL_ARGUMENTS_OFFSET,
+                                     NULL);
 }
 
 static PyObject *
@@ -1479,7 +1486,10 @@ class property(object):
         self.__get = fget
         self.__set = fset
         self.__del = fdel
-        self.__doc__ = doc
+        try:
+            self.__doc__ = doc
+        except AttributeError:  # read-only or dict-less class
+            pass
 
     def __get__(self, inst, type=None):
         if inst is None:
@@ -1785,6 +1795,19 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
         if (rc <= 0) {
             return rc;
         }
+        if (!Py_IS_TYPE(self, &PyProperty_Type) &&
+            prop_doc != NULL && prop_doc != Py_None) {
+            // This oddity preserves the long existing behavior of surfacing
+            // an AttributeError when using a dict-less (__slots__) property
+            // subclass as a decorator on a getter method with a docstring.
+            // See PropertySubclassTest.test_slots_docstring_copy_exception.
+            int err = PyObject_SetAttr(
+                        (PyObject *)self, &_Py_ID(__doc__), prop_doc);
+            if (err < 0) {
+                Py_DECREF(prop_doc);  // release our new reference.
+                return -1;
+            }
+        }
         if (prop_doc == Py_None) {
             prop_doc = NULL;
             Py_DECREF(Py_None);
@@ -1800,19 +1823,32 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
     if (Py_IS_TYPE(self, &PyProperty_Type)) {
         Py_XSETREF(self->prop_doc, prop_doc);
     } else {
-        /* If this is a property subclass, put __doc__
-           in dict of the subclass instance instead,
-           otherwise it gets shadowed by __doc__ in the
-           class's dict. */
+        /* If this is a property subclass, put __doc__ in the dict
+           or designated slot of the subclass instance instead, otherwise
+           it gets shadowed by __doc__ in the class's dict. */
 
         if (prop_doc == NULL) {
             prop_doc = Py_NewRef(Py_None);
         }
         int err = PyObject_SetAttr(
                     (PyObject *)self, &_Py_ID(__doc__), prop_doc);
-        Py_XDECREF(prop_doc);
-        if (err < 0)
-            return -1;
+        Py_DECREF(prop_doc);
+        if (err < 0) {
+            assert(PyErr_Occurred());
+            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                PyErr_Clear();
+                // https://github.com/python/cpython/issues/98963#issuecomment-1574413319
+                // Python silently dropped this doc assignment through 3.11.
+                // We preserve that behavior for backwards compatibility.
+                //
+                // If we ever want to deprecate this behavior, only raise a
+                // warning or error when proc_doc is not None so that
+                // property without a specific doc= still works.
+                return 0;
+            } else {
+                return -1;
+            }
+        }
     }
 
     return 0;

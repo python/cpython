@@ -1992,7 +1992,7 @@ def get_address_list(value):
         try:
             token, value = get_address(value)
             address_list.append(token)
-        except errors.HeaderParseError as err:
+        except errors.HeaderParseError:
             leader = None
             if value[0] in CFWS_LEADER:
                 leader, value = get_cfws(value)
@@ -2101,7 +2101,7 @@ def get_msg_id(value):
     except errors.HeaderParseError:
         try:
             token, value = get_no_fold_literal(value)
-        except errors.HeaderParseError as e:
+        except errors.HeaderParseError:
             try:
                 token, value = get_domain(value)
                 msg_id.defects.append(errors.ObsoleteHeaderDefect(
@@ -2448,7 +2448,6 @@ def get_parameter(value):
         raise errors.HeaderParseError("Parameter not followed by '='")
     param.append(ValueTerminal('=', 'parameter-separator'))
     value = value[1:]
-    leader = None
     if value and value[0] in CFWS_LEADER:
         token, value = get_cfws(value)
         param.append(token)
@@ -2573,7 +2572,7 @@ def parse_mime_parameters(value):
         try:
             token, value = get_parameter(value)
             mime_parameters.append(token)
-        except errors.HeaderParseError as err:
+        except errors.HeaderParseError:
             leader = None
             if value[0] in CFWS_LEADER:
                 leader, value = get_cfws(value)
@@ -2631,7 +2630,6 @@ def parse_content_type_header(value):
     don't do that.
     """
     ctype = ContentType()
-    recover = False
     if not value:
         ctype.defects.append(errors.HeaderMissingRequiredValue(
             "Missing content type specification"))

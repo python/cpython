@@ -12,6 +12,7 @@
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_sysmodule.h"     // _PySys_Audit()
+#include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 #include "marshal.h"              // PyMarshal_ReadObjectFromString()
 #include "importdl.h"             // _PyImport_DynLoadFiletab
 #include "pydtrace.h"             // PyDTrace_IMPORT_FIND_LOAD_START_ENABLED()
@@ -277,7 +278,7 @@ import_ensure_initialized(PyInterpreterState *interp, PyObject *mod, PyObject *n
     Py_XDECREF(spec);
     if (busy) {
         /* Wait until module is done importing. */
-        PyObject *value = _PyObject_CallMethodOneArg(
+        PyObject *value = PyObject_CallMethodOneArg(
             IMPORTLIB(interp), &_Py_ID(_lock_unlock_module), name);
         if (value == NULL) {
             return -1;
@@ -351,18 +352,51 @@ import_add_module(PyThreadState *tstate, PyObject *name)
 }
 
 PyObject *
+PyImport_AddModuleRef(const char *name)
+{
+    PyObject *name_obj = PyUnicode_FromString(name);
+    if (name_obj == NULL) {
+        return NULL;
+    }
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *module = import_add_module(tstate, name_obj);
+    Py_DECREF(name_obj);
+    return module;
+}
+
+
+PyObject *
 PyImport_AddModuleObject(PyObject *name)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *mod = import_add_module(tstate, name);
-    if (mod) {
-        PyObject *ref = PyWeakref_NewRef(mod, NULL);
-        Py_DECREF(mod);
-        if (ref == NULL) {
-            return NULL;
-        }
-        mod = PyWeakref_GetObject(ref);
-        Py_DECREF(ref);
+    if (!mod) {
+        return NULL;
+    }
+
+    // gh-86160: PyImport_AddModuleObject() returns a borrowed reference.
+    // Create a weak reference to produce a borrowed reference, since it can
+    // become NULL. sys.modules type can be different than dict and it is not
+    // guaranteed that it keeps a strong reference to the module. It can be a
+    // custom mapping with __getitem__() which returns a new object or removes
+    // returned object, or __setitem__ which does nothing. There is so much
+    // unknown.  With weakref we can be sure that we get either a reference to
+    // live object or NULL.
+    //
+    // Use PyImport_AddModuleRef() to avoid these issues.
+    PyObject *ref = PyWeakref_NewRef(mod, NULL);
+    Py_DECREF(mod);
+    if (ref == NULL) {
+        return NULL;
+    }
+    mod = _PyWeakref_GET_REF(ref);
+    Py_DECREF(ref);
+    Py_XDECREF(mod);
+
+    if (mod == NULL && !PyErr_Occurred()) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "sys.modules does not hold a strong reference "
+                        "to the module");
     }
     return mod; /* borrowed reference */
 }
@@ -413,8 +447,11 @@ remove_module(PyThreadState *tstate, PyObject *name)
 Py_ssize_t
 _PyImport_GetNextModuleIndex(void)
 {
+    PyThread_acquire_lock(EXTENSIONS.mutex, WAIT_LOCK);
     LAST_MODULE_INDEX++;
-    return LAST_MODULE_INDEX;
+    Py_ssize_t index = LAST_MODULE_INDEX;
+    PyThread_release_lock(EXTENSIONS.mutex);
+    return index;
 }
 
 static const char *
@@ -591,11 +628,11 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
 /*
     It may help to have a big picture view of what happens
     when an extension is loaded.  This includes when it is imported
-    for the first time or via imp.load_dynamic().
+    for the first time.
 
-    Here's a summary, using imp.load_dynamic() as the starting point:
+    Here's a summary, using importlib._boostrap._load() as a starting point.
 
-    1.  imp.load_dynamic() -> importlib._bootstrap._load()
+    1.  importlib._bootstrap._load()
     2.    _load():  acquire import lock
     3.    _load() -> importlib._bootstrap._load_unlocked()
     4.      _load_unlocked() -> importlib._bootstrap.module_from_spec()
@@ -700,9 +737,19 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
    _PyRuntime.imports.pkgcontext, and PyModule_Create*() will
    substitute this (if the name actually matches).
 */
+
+#ifdef HAVE_THREAD_LOCAL
+_Py_thread_local const char *pkgcontext = NULL;
+# undef PKGCONTEXT
+# define PKGCONTEXT pkgcontext
+#endif
+
 const char *
 _PyImport_ResolveNameWithPackageContext(const char *name)
 {
+#ifndef HAVE_THREAD_LOCAL
+    PyThread_acquire_lock(EXTENSIONS.mutex, WAIT_LOCK);
+#endif
     if (PKGCONTEXT != NULL) {
         const char *p = strrchr(PKGCONTEXT, '.');
         if (p != NULL && strcmp(name, p+1) == 0) {
@@ -710,14 +757,23 @@ _PyImport_ResolveNameWithPackageContext(const char *name)
             PKGCONTEXT = NULL;
         }
     }
+#ifndef HAVE_THREAD_LOCAL
+    PyThread_release_lock(EXTENSIONS.mutex);
+#endif
     return name;
 }
 
 const char *
 _PyImport_SwapPackageContext(const char *newcontext)
 {
+#ifndef HAVE_THREAD_LOCAL
+    PyThread_acquire_lock(EXTENSIONS.mutex, WAIT_LOCK);
+#endif
     const char *oldcontext = PKGCONTEXT;
     PKGCONTEXT = newcontext;
+#ifndef HAVE_THREAD_LOCAL
+    PyThread_release_lock(EXTENSIONS.mutex);
+#endif
     return oldcontext;
 }
 
@@ -865,13 +921,13 @@ gets even messier.
 static inline void
 extensions_lock_acquire(void)
 {
-    // XXX For now the GIL is sufficient.
+    PyThread_acquire_lock(_PyRuntime.imports.extensions.mutex, WAIT_LOCK);
 }
 
 static inline void
 extensions_lock_release(void)
 {
-    // XXX For now the GIL is sufficient.
+    PyThread_release_lock(_PyRuntime.imports.extensions.mutex);
 }
 
 /* Magic for extension modules (built-in as well as dynamically
@@ -1342,8 +1398,7 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
         if (_PyUnicode_EqualToASCIIString(name, p->name)) {
             if (p->initfunc == NULL) {
                 /* Cannot re-init internal module ("sys" or "builtins") */
-                mod = PyImport_AddModuleObject(name);
-                return Py_XNewRef(mod);
+                return import_add_module(tstate, name);
             }
             mod = _PyImport_InitFunc_TrampolineCall(*p->initfunc);
             if (mod == NULL) {
@@ -1605,7 +1660,7 @@ PyImport_ExecCodeModuleWithPathnames(const char *name, PyObject *co,
         external= PyObject_GetAttrString(IMPORTLIB(interp),
                                          "_bootstrap_external");
         if (external != NULL) {
-            pathobj = _PyObject_CallMethodOneArg(
+            pathobj = PyObject_CallMethodOneArg(
                 external, &_Py_ID(_get_sourcefile), cpathobj);
             Py_DECREF(external);
         }
@@ -2021,9 +2076,9 @@ find_frozen(PyObject *nameobj, struct frozen_info *info)
 }
 
 static PyObject *
-unmarshal_frozen_code(struct frozen_info *info)
+unmarshal_frozen_code(PyInterpreterState *interp, struct frozen_info *info)
 {
-    if (info->get_code) {
+    if (info->get_code && _Py_IsMainInterpreter(interp)) {
         PyObject *code = info->get_code();
         assert(code != NULL);
         return code;
@@ -2031,6 +2086,7 @@ unmarshal_frozen_code(struct frozen_info *info)
     PyObject *co = PyMarshal_ReadObjectFromString(info->data, info->size);
     if (co == NULL) {
         /* Does not contain executable code. */
+        PyErr_Clear();
         set_frozen_error(FROZEN_INVALID, info->nameobj);
         return NULL;
     }
@@ -2070,7 +2126,7 @@ PyImport_ImportFrozenModuleObject(PyObject *name)
         set_frozen_error(status, name);
         return -1;
     }
-    co = unmarshal_frozen_code(&info);
+    co = unmarshal_frozen_code(tstate->interp, &info);
     if (co == NULL) {
         return -1;
     }
@@ -2218,11 +2274,12 @@ init_importlib(PyThreadState *tstate, PyObject *sysmod)
     if (PyImport_ImportFrozenModule("_frozen_importlib") <= 0) {
         return -1;
     }
-    PyObject *importlib = PyImport_AddModule("_frozen_importlib"); // borrowed
+
+    PyObject *importlib = PyImport_AddModuleRef("_frozen_importlib");
     if (importlib == NULL) {
         return -1;
     }
-    IMPORTLIB(interp) = Py_NewRef(importlib);
+    IMPORTLIB(interp) = importlib;
 
     // Import the _imp module
     if (verbose) {
@@ -2432,6 +2489,12 @@ PyImport_ImportModule(const char *name)
 PyObject *
 PyImport_ImportModuleNoBlock(const char *name)
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+        "PyImport_ImportModuleNoBlock() is deprecated and scheduled for "
+        "removal in Python 3.15. Use PyImport_ImportModule() instead.", 1))
+    {
+        return NULL;
+    }
     return PyImport_ImportModule(name);
 }
 
@@ -2603,10 +2666,6 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
         if (!haspath) {
             Py_ssize_t dot;
 
-            if (PyUnicode_READY(package) < 0) {
-                goto error;
-            }
-
             dot = PyUnicode_FindChar(package, '.',
                                         0, PyUnicode_GET_LENGTH(package), -1);
             if (dot == -2) {
@@ -2753,9 +2812,6 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     if (!PyUnicode_Check(name)) {
         _PyErr_SetString(tstate, PyExc_TypeError,
                          "module name must be a string");
-        goto error;
-    }
-    if (PyUnicode_READY(name) < 0) {
         goto error;
     }
     if (level < 0) {
@@ -3528,7 +3584,8 @@ _imp_get_frozen_object_impl(PyObject *module, PyObject *name,
         return NULL;
     }
 
-    PyObject *codeobj = unmarshal_frozen_code(&info);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyObject *codeobj = unmarshal_frozen_code(interp, &info);
     if (dataobj != Py_None) {
         PyBuffer_Release(&buf);
     }
@@ -3786,7 +3843,7 @@ _imp_source_hash_impl(PyObject *module, long key, Py_buffer *source)
 
 
 PyDoc_STRVAR(doc_imp,
-"(Extremely) low-level import machinery bits as used by importlib and imp.");
+"(Extremely) low-level import machinery bits as used by importlib.");
 
 static PyMethodDef imp_methods[] = {
     _IMP_EXTENSION_SUFFIXES_METHODDEF
@@ -3832,6 +3889,7 @@ imp_module_exec(PyObject *module)
 
 static PyModuleDef_Slot imp_slots[] = {
     {Py_mod_exec, imp_module_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

@@ -5,7 +5,7 @@
 Function Objects
 ----------------
 
-.. index:: object: function
+.. index:: pair: object; function
 
 There are a few functions specific to Python functions.
 
