@@ -10,29 +10,112 @@ extern "C" {
 
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
-PyAPI_FUNC(PyObject *) _PyObject_Call_Prepend(
+// Export for shared stdlib extensions like the math extension,
+// function used via inlined _PyObject_VectorcallTstate() function.
+PyAPI_FUNC(PyObject*) _Py_CheckFunctionResult(
+    PyThreadState *tstate,
+    PyObject *callable,
+    PyObject *result,
+    const char *where);
+
+/* Convert keyword arguments from the FASTCALL (stack: C array, kwnames: tuple)
+   format to a Python dictionary ("kwargs" dict).
+
+   The type of kwnames keys is not checked. The final function getting
+   arguments is responsible to check if all keys are strings, for example using
+   PyArg_ParseTupleAndKeywords() or PyArg_ValidateKeywordArguments().
+
+   Duplicate keys are merged using the last value. If duplicate keys must raise
+   an exception, the caller is responsible to implement an explicit keys on
+   kwnames. */
+extern PyObject* _PyStack_AsDict(PyObject *const *values, PyObject *kwnames);
+
+extern PyObject* _PyObject_Call_Prepend(
     PyThreadState *tstate,
     PyObject *callable,
     PyObject *obj,
     PyObject *args,
     PyObject *kwargs);
 
-PyAPI_FUNC(PyObject *) _PyObject_FastCallDictTstate(
+extern PyObject* _PyObject_FastCallDictTstate(
     PyThreadState *tstate,
     PyObject *callable,
     PyObject *const *args,
     size_t nargsf,
     PyObject *kwargs);
 
-PyAPI_FUNC(PyObject *) _PyObject_Call(
+extern PyObject* _PyObject_Call(
     PyThreadState *tstate,
     PyObject *callable,
     PyObject *args,
     PyObject *kwargs);
 
 extern PyObject * _PyObject_CallMethodFormat(
-        PyThreadState *tstate, PyObject *callable, const char *format, ...);
+    PyThreadState *tstate,
+    PyObject *callable,
+    const char *format,
+    ...);
 
+// Export for shared stdlib extensions like the array extension
+PyAPI_FUNC(PyObject*) _PyObject_CallMethod(
+    PyObject *obj,
+    PyObject *name,
+    const char *format, ...);
+
+/* Like PyObject_CallMethod(), but expect a _Py_Identifier*
+   as the method name. */
+extern PyObject* _PyObject_CallMethodId(
+    PyObject *obj,
+    _Py_Identifier *name,
+    const char *format, ...);
+
+extern PyObject* _PyObject_CallMethodIdObjArgs(
+    PyObject *obj,
+    _Py_Identifier *name,
+    ...);
+
+static inline PyObject *
+_PyObject_VectorcallMethodId(
+    _Py_Identifier *name, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *oname = _PyUnicode_FromId(name); /* borrowed */
+    if (!oname) {
+        return _Py_NULL;
+    }
+    return PyObject_VectorcallMethod(oname, args, nargsf, kwnames);
+}
+
+static inline PyObject *
+_PyObject_CallMethodIdNoArgs(PyObject *self, _Py_Identifier *name)
+{
+    size_t nargsf = 1 | PY_VECTORCALL_ARGUMENTS_OFFSET;
+    return _PyObject_VectorcallMethodId(name, &self, nargsf, _Py_NULL);
+}
+
+static inline PyObject *
+_PyObject_CallMethodIdOneArg(PyObject *self, _Py_Identifier *name, PyObject *arg)
+{
+    PyObject *args[2] = {self, arg};
+    size_t nargsf = 2 | PY_VECTORCALL_ARGUMENTS_OFFSET;
+    assert(arg != NULL);
+    return _PyObject_VectorcallMethodId(name, args, nargsf, _Py_NULL);
+}
+
+
+/* === Vectorcall protocol (PEP 590) ============================= */
+
+// Call callable using tp_call. Arguments are like PyObject_Vectorcall()
+// or PyObject_FastCallDict() (both forms are supported),
+// except that nargs is plainly the number of arguments without flags.
+//
+// Export for shared stdlib extensions like the math extension,
+// function used via inlined _PyObject_VectorcallTstate() function.
+PyAPI_FUNC(PyObject*) _PyObject_MakeTpCall(
+    PyThreadState *tstate,
+    PyObject *callable,
+    PyObject *const *args, Py_ssize_t nargs,
+    PyObject *keywords);
 
 // Static inline variant of public PyVectorcall_Function().
 static inline vectorcallfunc
@@ -110,22 +193,26 @@ _PyObject_CallNoArgs(PyObject *func) {
 
 
 static inline PyObject *
-_PyObject_FastCallTstate(PyThreadState *tstate, PyObject *func, PyObject *const *args, Py_ssize_t nargs)
+_PyObject_FastCallTstate(PyThreadState *tstate, PyObject *func,
+                         PyObject *const *args, Py_ssize_t nargs)
 {
     EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_API, func);
     return _PyObject_VectorcallTstate(tstate, func, args, (size_t)nargs, NULL);
 }
 
-PyObject *const *
+extern PyObject *const *
 _PyStack_UnpackDict(PyThreadState *tstate,
     PyObject *const *args, Py_ssize_t nargs,
     PyObject *kwargs, PyObject **p_kwnames);
 
-void
-_PyStack_UnpackDict_Free(PyObject *const *stack, Py_ssize_t nargs,
+extern void _PyStack_UnpackDict_Free(
+    PyObject *const *stack,
+    Py_ssize_t nargs,
     PyObject *kwnames);
 
-void _PyStack_UnpackDict_FreeNoDecRef(PyObject *const *stack, PyObject *kwnames);
+extern void _PyStack_UnpackDict_FreeNoDecRef(
+    PyObject *const *stack,
+    PyObject *kwnames);
 
 #ifdef __cplusplus
 }
