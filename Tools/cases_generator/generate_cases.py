@@ -1182,7 +1182,8 @@ class Analyzer:
 
             self.write_pseudo_instrs()
 
-            self.write_uop_defines()
+            self.out.emit("")
+            self.write_uop_items(lambda name, counter: f"#define {name} {counter}")
 
             self.write_stack_effect_functions()
 
@@ -1213,6 +1214,7 @@ class Analyzer:
             self.out.emit("#ifndef NEED_OPCODE_METADATA")
             self.out.emit("extern const struct opcode_metadata _PyOpcode_opcode_metadata[512];")
             self.out.emit("extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[256];")
+            self.out.emit("extern const char *_PyOpcode_uop_name[512];")
             self.out.emit("#else")
 
             self.out.emit("const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {")
@@ -1263,6 +1265,9 @@ class Analyzer:
                         case _:
                             typing.assert_never(thing)
 
+            with self.out.block("const char *_PyOpcode_uop_name[512] =", ";"):
+                self.write_uop_items(lambda name, counter: f"[{counter}] = \"{name}\",")
+
             self.out.emit("#endif")
 
         with open(self.pymetadata_filename, "w") as f:
@@ -1304,13 +1309,12 @@ class Analyzer:
             self.out.emit(f"    ((OP) == {op}) || \\")
         self.out.emit(f"    0")
 
-    def write_uop_defines(self) -> None:
+    def write_uop_items(self, make_text: typing.Callable[[str, int], str]) -> None:
         """Write '#define XXX NNN' for each uop"""
-        self.out.emit("")
         counter = 300  # TODO: Avoid collision with pseudo instructions
         def add(name: str) -> None:
             nonlocal counter
-            self.out.emit(f"#define {name} {counter}")
+            self.out.emit(make_text(name, counter))
             counter += 1
         add("EXIT_TRACE")
         add("SET_IP")

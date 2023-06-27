@@ -913,6 +913,7 @@ struct opcode_macro_expansion {
 #ifndef NEED_OPCODE_METADATA
 extern const struct opcode_metadata _PyOpcode_opcode_metadata[512];
 extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[256];
+extern const char *_PyOpcode_uop_name[512];
 #else
 const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {
     [NOP] = { true, INSTR_FMT_IX, 0 },
@@ -1217,5 +1218,21 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] = {
     [FORMAT_WITH_SPEC] = { .nuops = 1, .uops = { { FORMAT_WITH_SPEC, 0, 0 } } },
     [COPY] = { .nuops = 1, .uops = { { COPY, 0, 0 } } },
     [SWAP] = { .nuops = 1, .uops = { { SWAP, 0, 0 } } },
+};
+const char *_PyOpcode_uop_name[512] = {
+    [300] = "EXIT_TRACE",
+    [301] = "SET_IP",
+    [302] = "_GUARD_BOTH_INT",
+    [303] = "_BINARY_OP_MULTIPLY_INT",
+    [304] = "_BINARY_OP_ADD_INT",
+    [305] = "_BINARY_OP_SUBTRACT_INT",
+    [306] = "_GUARD_BOTH_FLOAT",
+    [307] = "_BINARY_OP_MULTIPLY_FLOAT",
+    [308] = "_BINARY_OP_ADD_FLOAT",
+    [309] = "_BINARY_OP_SUBTRACT_FLOAT",
+    [310] = "_GUARD_BOTH_UNICODE",
+    [311] = "_BINARY_OP_ADD_UNICODE",
+    [312] = "_LOAD_LOCALS",
+    [313] = "_LOAD_FROM_DICT_OR_GLOBALS",
 };
 #endif
