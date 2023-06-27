@@ -451,7 +451,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.13a1 3553 (Add SET_FUNCTION_ATTRIBUTE)
 #     Python 3.13a1 3554 (more efficient bytecodes for f-strings)
 #     Python 3.13a1 3555 (generate specialized opcodes metadata from bytecodes.c)
-#     Python 3.13a1 3556 (Remove LOAD_CLOSURE)
+#     Python 3.13a1 3556 (Convert LOAD_CLOSURE to a pseudo-op)
 
 #     Python 3.14 will start with 3600
 

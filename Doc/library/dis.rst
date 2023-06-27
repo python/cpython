@@ -1721,7 +1721,7 @@ but are replaced by real opcodes or removed before bytecode is generated.
    Note that ``LOAD_CLOSURE`` is replaced with ``LOAD_FAST`` in the assembler.
 
    .. versionchanged:: 3.13
-      This opcode was demoted from full opcode to pseudo-instruction
+      This opcode is now a pseudo-instruction.
 
 
 .. opcode:: LOAD_METHOD

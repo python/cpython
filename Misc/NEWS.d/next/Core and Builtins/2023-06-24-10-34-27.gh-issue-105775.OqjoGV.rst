@@ -1,1 +1,1 @@
-Remove the LOAD_CLOSURE opcode and make it a pseudo-op instead.
+Convert :opcode:`LOAD_CLOSURE` to a pseudo-op.

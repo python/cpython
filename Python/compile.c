@@ -843,6 +843,7 @@ stack_effect(int opcode, int oparg, int jump)
              * of __(a)enter__ and push 2 values before jumping to the handler
              * if an exception be raised. */
             return jump ? 1 : 0;
+
         case STORE_FAST_MAYBE_NULL:
             return -1;
         case LOAD_CLOSURE:

@@ -289,9 +289,9 @@ pseudo_op('LOAD_METHOD', 262, ['LOAD_ATTR'])
 pseudo_op('LOAD_SUPER_METHOD', 263, ['LOAD_SUPER_ATTR'])
 pseudo_op('LOAD_ZERO_SUPER_METHOD', 264, ['LOAD_SUPER_ATTR'])
 pseudo_op('LOAD_ZERO_SUPER_ATTR', 265, ['LOAD_SUPER_ATTR'])
-pseudo_op('LOAD_CLOSURE', 267, ['LOAD_FAST'])
 
 pseudo_op('STORE_FAST_MAYBE_NULL', 266, ['STORE_FAST'])
+pseudo_op('LOAD_CLOSURE', 267, ['LOAD_FAST'])
 
 MAX_PSEUDO_OPCODE = MIN_PSEUDO_OPCODE + len(_pseudo_ops) - 1
 
