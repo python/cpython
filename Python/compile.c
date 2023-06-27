@@ -131,16 +131,6 @@ enum {
 };
 
 
-int
-_PyCompile_InstrSize(int opcode, int oparg)
-{
-    assert(!IS_PSEUDO_INSTR(opcode));
-    assert(OPCODE_HAS_ARG(opcode) || oparg == 0);
-    int extended_args = (0xFFFFFF < oparg) + (0xFFFF < oparg) + (0xFF < oparg);
-    int caches = _PyOpcode_Caches[opcode];
-    return extended_args + 1 + caches;
-}
-
 typedef _PyCompile_Instruction instruction;
 typedef _PyCompile_InstructionSequence instr_sequence;
 
@@ -7717,17 +7707,20 @@ cfg_to_instr_sequence(cfg_builder *g, instr_sequence *seq)
         RETURN_IF_ERROR(instr_sequence_use_label(seq, b->b_label.id));
         for (int i = 0; i < b->b_iused; i++) {
             cfg_instr *instr = &b->b_instr[i];
+            if (OPCODE_HAS_JUMP(instr->i_opcode)) {
+                instr->i_oparg = instr->i_target->b_label.id;
+            }
             RETURN_IF_ERROR(
                 instr_sequence_addop(seq, instr->i_opcode, instr->i_oparg, instr->i_loc));
 
             _PyCompile_ExceptHandlerInfo *hi = &seq->s_instrs[seq->s_used-1].i_except_handler_info;
             if (instr->i_except != NULL) {
-                hi->h_offset = instr->i_except->b_offset;
+                hi->h_label = instr->i_except->b_label.id;
                 hi->h_startdepth = instr->i_except->b_startdepth;
                 hi->h_preserve_lasti = instr->i_except->b_preserve_lasti;
             }
             else {
-                hi->h_offset = -1;
+                hi->h_label = -1;
             }
         }
     }
