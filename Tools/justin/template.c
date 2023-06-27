@@ -40,7 +40,12 @@
 extern _PyJITReturnCode _justin_continue(PyThreadState *tstate,
                                          _PyInterpreterFrame *frame,
                                          PyObject **stack_pointer,
-                                         _Py_CODEUNIT *next_instr);
+                                         _Py_CODEUNIT *next_instr
+                                         , PyObject *_tos1
+                                         , PyObject *_tos2
+                                         , PyObject *_tos3
+                                         , PyObject *_tos4
+                                         );
 extern _Py_CODEUNIT _justin_next_instr;
 extern void _justin_oparg_plus_one;
 
@@ -49,8 +54,17 @@ extern void _justin_oparg_plus_one;
 
 _PyJITReturnCode
 _justin_entry(PyThreadState *tstate, _PyInterpreterFrame *frame,
-              PyObject **stack_pointer, _Py_CODEUNIT *next_instr)
+              PyObject **stack_pointer, _Py_CODEUNIT *next_instr
+              , PyObject *_tos1
+              , PyObject *_tos2
+              , PyObject *_tos3
+              , PyObject *_tos4
+              )
 {
+    __builtin_assume(_tos1 == stack_pointer[/* DON'T REPLACE ME */ -1]);
+    __builtin_assume(_tos2 == stack_pointer[/* DON'T REPLACE ME */ -2]);
+    __builtin_assume(_tos3 == stack_pointer[/* DON'T REPLACE ME */ -3]);
+    __builtin_assume(_tos4 == stack_pointer[/* DON'T REPLACE ME */ -4]);
     // Locals that the instruction implementations expect to exist:
     // The address of an extern can't be 0:
     int oparg = (uintptr_t)&_justin_oparg_plus_one - 1;
@@ -125,6 +139,15 @@ _return_deopt:
 _continue:
     ;  // XXX
     // Finally, the continuation:
+    _tos1 = stack_pointer[/* DON'T REPLACE ME */ -1];
+    _tos2 = stack_pointer[/* DON'T REPLACE ME */ -2];
+    _tos3 = stack_pointer[/* DON'T REPLACE ME */ -3];
+    _tos4 = stack_pointer[/* DON'T REPLACE ME */ -4];
     __attribute__((musttail))
-    return _justin_continue(tstate, frame, stack_pointer, next_instr);
+    return _justin_continue(tstate, frame, stack_pointer, next_instr
+                            , _tos1
+                            , _tos2
+                            , _tos3
+                            , _tos4
+                            );
 }

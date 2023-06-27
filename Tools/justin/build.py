@@ -173,7 +173,7 @@ class ObjectParser:
         "--sections",
     ]
 
-    def __init__(self, path: str) -> None:
+    def __init__(self, path: pathlib.Path) -> None:
         args = ["llvm-readobj", *self._ARGS, path]
         # subprocess.run(["llvm-objdump", path, "-dr"], check=True)
         process = subprocess.run(args, check=True, capture_output=True)
@@ -236,9 +236,9 @@ def handle_one_relocation(
 ) -> typing.Generator[Hole, None, None]:
     match relocation:
         case {
-            'Offset': int(offset),
-            'Symbol': str(symbol),
-            'Type': {'Value': 'IMAGE_REL_AMD64_ADDR64'},
+            "Offset": int(offset),
+            "Symbol": str(symbol),
+            "Type": {"Value": "IMAGE_REL_AMD64_ADDR64"},
         }:
             offset += base
             where = slice(offset, offset + 8)
@@ -546,30 +546,43 @@ class Compiler:
             print(*args, **kwargs, file=sys.stderr)
 
     @staticmethod
-    def _use_ghccc(path: str) -> None:  # XXX
-        # ll = pathlib.Path(path)
-        path.seek(0)
-        ir = path.read().decode()
-        ir = ir.replace("i32 @_justin_continue", "ghccc i32 @_justin_continue")
-        ir = ir.replace("i32 @_justin_entry", "ghccc i32 @_justin_entry")
-        path.seek(0)
-        path.write(ir.encode())
-        path.seek(0)
+    def _use_ghccc(ll: pathlib.Path, enable: bool = False) -> None:
+        ir = ll.read_text()
+        if enable:
+            ir = ir.replace("i32 @_justin_continue", "ghccc i32 @_justin_continue")
+            ir = ir.replace("i32 @_justin_entry", "ghccc i32 @_justin_entry")
+        ll.write_text(ir)
 
-    def _compile(self, opname, path) -> Stencil:
+    @staticmethod
+    def _use_tos_caching(c: pathlib.Path, enable: int = 0) -> None:
+        sc = c.read_text()
+        for i in range(1, enable + 1):
+            sc = sc.replace(f" = stack_pointer[-{i}];", f" = _tos{i};")
+        for i in range(enable + 1, 5):
+            sc = "".join(
+                line for line in sc.splitlines(True) if f"_tos{i}" not in line
+            )
+        c.write_text(sc)
+
+    def _compile(self, opname, body) -> Stencil:
         self._stderr(f"Building stencil for {opname}.")
         defines = [f"-D_JUSTIN_OPCODE={opname}"]
-        with tempfile.NamedTemporaryFile(suffix=".o") as o, tempfile.NamedTemporaryFile(suffix=".ll") as ll:
+        with tempfile.TemporaryDirectory() as tempdir:
+            c = pathlib.Path(tempdir, f"{opname}.c")
+            ll = pathlib.Path(tempdir, f"{opname}.ll")
+            o = pathlib.Path(tempdir, f"{opname}.o")
+            c.write_text(body)
+            self._use_tos_caching(c, 4)
             subprocess.run(
-                ["clang", *CFLAGS, "-emit-llvm", "-S", *defines, "-o", ll.name, path],
+                ["clang", *CFLAGS, "-emit-llvm", "-S", *defines, "-o", ll, c],
                 check=True,
             )
-            self._use_ghccc(ll)
+            self._use_ghccc(ll, True)
             subprocess.run(
-                ["clang", *CFLAGS, "-c", "-o", o.name, ll.name],
+                ["clang", *CFLAGS, "-c", "-o", o, ll],
                 check=True,
             )
-            return ObjectParserDefault(o.name).parse()
+            return ObjectParserDefault(o).parse()
 
     def build(self) -> None:
         generated_cases = PYTHON_GENERATED_CASES_C_H.read_text()
@@ -580,11 +593,10 @@ class Compiler:
         template = TOOLS_JUSTIN_TEMPLATE.read_text()
         for opname in sorted(self._cases.keys() - self._SKIP):
             body = template % self._cases[opname]
-            with tempfile.NamedTemporaryFile("w", suffix=".c") as c:
-                c.write(body)
-                c.flush()
-                self._stencils_built[opname] = self._compile(opname, c.name)
-        self._trampoline_built = self._compile("<trampoline>", TOOLS_JUSTIN_TRAMPOLINE)
+            self._stencils_built[opname] = self._compile(opname, body)
+        opname = "<trampoline>"
+        body = TOOLS_JUSTIN_TRAMPOLINE.read_text()
+        self._trampoline_built = self._compile(opname, body)
 
     def dump(self) -> str:
         lines = []
