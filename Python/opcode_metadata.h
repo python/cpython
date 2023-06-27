@@ -18,6 +18,21 @@
     ((OP) == POP_BLOCK) || \
     0
 
+#define EXIT_TRACE 300
+#define SET_IP 301
+#define _GUARD_BOTH_INT 302
+#define _BINARY_OP_MULTIPLY_INT 303
+#define _BINARY_OP_ADD_INT 304
+#define _BINARY_OP_SUBTRACT_INT 305
+#define _GUARD_BOTH_FLOAT 306
+#define _BINARY_OP_MULTIPLY_FLOAT 307
+#define _BINARY_OP_ADD_FLOAT 308
+#define _BINARY_OP_SUBTRACT_FLOAT 309
+#define _GUARD_BOTH_UNICODE 310
+#define _BINARY_OP_ADD_UNICODE 311
+#define _LOAD_LOCALS 312
+#define _LOAD_FROM_DICT_OR_GLOBALS 313
+
 #ifndef NEED_OPCODE_METADATA
 extern int _PyOpcode_num_popped(int opcode, int oparg, bool jump);
 #else
@@ -885,12 +900,19 @@ struct opcode_metadata {
     int flags;
 };
 
+struct opcode_macro_expansion {
+    int nuops;
+    struct { int16_t uop; int8_t size; int8_t offset; } uops[8];
+};
+
+
 #define OPCODE_METADATA_FMT(OP) (_PyOpcode_opcode_metadata[(OP)].instr_format)
 #define SAME_OPCODE_METADATA(OP1, OP2) \
         (OPCODE_METADATA_FMT(OP1) == OPCODE_METADATA_FMT(OP2))
 
 #ifndef NEED_OPCODE_METADATA
 extern const struct opcode_metadata _PyOpcode_opcode_metadata[512];
+extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[256];
 #else
 const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {
     [NOP] = { true, INSTR_FMT_IX, 0 },
@@ -1100,5 +1122,89 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {
     [EXTENDED_ARG] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [CACHE] = { true, INSTR_FMT_IX, 0 },
     [RESERVED] = { true, INSTR_FMT_IX, 0 },
+};
+const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] = {
+    [NOP] = { .nuops = 1, .uops = { { NOP, 0, 0 } } },
+    [LOAD_FAST] = { .nuops = 1, .uops = { { LOAD_FAST, 0, 0 } } },
+    [LOAD_FAST_AND_CLEAR] = { .nuops = 1, .uops = { { LOAD_FAST_AND_CLEAR, 0, 0 } } },
+    [LOAD_CONST] = { .nuops = 1, .uops = { { LOAD_CONST, 0, 0 } } },
+    [STORE_FAST] = { .nuops = 1, .uops = { { STORE_FAST, 0, 0 } } },
+    [POP_TOP] = { .nuops = 1, .uops = { { POP_TOP, 0, 0 } } },
+    [PUSH_NULL] = { .nuops = 1, .uops = { { PUSH_NULL, 0, 0 } } },
+    [END_SEND] = { .nuops = 1, .uops = { { END_SEND, 0, 0 } } },
+    [UNARY_NEGATIVE] = { .nuops = 1, .uops = { { UNARY_NEGATIVE, 0, 0 } } },
+    [UNARY_NOT] = { .nuops = 1, .uops = { { UNARY_NOT, 0, 0 } } },
+    [UNARY_INVERT] = { .nuops = 1, .uops = { { UNARY_INVERT, 0, 0 } } },
+    [BINARY_SLICE] = { .nuops = 1, .uops = { { BINARY_SLICE, 0, 0 } } },
+    [STORE_SLICE] = { .nuops = 1, .uops = { { STORE_SLICE, 0, 0 } } },
+    [BINARY_SUBSCR_LIST_INT] = { .nuops = 1, .uops = { { BINARY_SUBSCR_LIST_INT, 0, 0 } } },
+    [BINARY_SUBSCR_TUPLE_INT] = { .nuops = 1, .uops = { { BINARY_SUBSCR_TUPLE_INT, 0, 0 } } },
+    [BINARY_SUBSCR_DICT] = { .nuops = 1, .uops = { { BINARY_SUBSCR_DICT, 0, 0 } } },
+    [LIST_APPEND] = { .nuops = 1, .uops = { { LIST_APPEND, 0, 0 } } },
+    [SET_ADD] = { .nuops = 1, .uops = { { SET_ADD, 0, 0 } } },
+    [STORE_SUBSCR_LIST_INT] = { .nuops = 1, .uops = { { STORE_SUBSCR_LIST_INT, 0, 0 } } },
+    [STORE_SUBSCR_DICT] = { .nuops = 1, .uops = { { STORE_SUBSCR_DICT, 0, 0 } } },
+    [DELETE_SUBSCR] = { .nuops = 1, .uops = { { DELETE_SUBSCR, 0, 0 } } },
+    [CALL_INTRINSIC_1] = { .nuops = 1, .uops = { { CALL_INTRINSIC_1, 0, 0 } } },
+    [CALL_INTRINSIC_2] = { .nuops = 1, .uops = { { CALL_INTRINSIC_2, 0, 0 } } },
+    [GET_AITER] = { .nuops = 1, .uops = { { GET_AITER, 0, 0 } } },
+    [GET_ANEXT] = { .nuops = 1, .uops = { { GET_ANEXT, 0, 0 } } },
+    [GET_AWAITABLE] = { .nuops = 1, .uops = { { GET_AWAITABLE, 0, 0 } } },
+    [POP_EXCEPT] = { .nuops = 1, .uops = { { POP_EXCEPT, 0, 0 } } },
+    [LOAD_ASSERTION_ERROR] = { .nuops = 1, .uops = { { LOAD_ASSERTION_ERROR, 0, 0 } } },
+    [LOAD_BUILD_CLASS] = { .nuops = 1, .uops = { { LOAD_BUILD_CLASS, 0, 0 } } },
+    [STORE_NAME] = { .nuops = 1, .uops = { { STORE_NAME, 0, 0 } } },
+    [DELETE_NAME] = { .nuops = 1, .uops = { { DELETE_NAME, 0, 0 } } },
+    [UNPACK_SEQUENCE_TWO_TUPLE] = { .nuops = 1, .uops = { { UNPACK_SEQUENCE_TWO_TUPLE, 0, 0 } } },
+    [UNPACK_SEQUENCE_TUPLE] = { .nuops = 1, .uops = { { UNPACK_SEQUENCE_TUPLE, 0, 0 } } },
+    [UNPACK_SEQUENCE_LIST] = { .nuops = 1, .uops = { { UNPACK_SEQUENCE_LIST, 0, 0 } } },
+    [UNPACK_EX] = { .nuops = 1, .uops = { { UNPACK_EX, 0, 0 } } },
+    [DELETE_ATTR] = { .nuops = 1, .uops = { { DELETE_ATTR, 0, 0 } } },
+    [STORE_GLOBAL] = { .nuops = 1, .uops = { { STORE_GLOBAL, 0, 0 } } },
+    [DELETE_GLOBAL] = { .nuops = 1, .uops = { { DELETE_GLOBAL, 0, 0 } } },
+    [DELETE_DEREF] = { .nuops = 1, .uops = { { DELETE_DEREF, 0, 0 } } },
+    [LOAD_FROM_DICT_OR_DEREF] = { .nuops = 1, .uops = { { LOAD_FROM_DICT_OR_DEREF, 0, 0 } } },
+    [LOAD_DEREF] = { .nuops = 1, .uops = { { LOAD_DEREF, 0, 0 } } },
+    [STORE_DEREF] = { .nuops = 1, .uops = { { STORE_DEREF, 0, 0 } } },
+    [COPY_FREE_VARS] = { .nuops = 1, .uops = { { COPY_FREE_VARS, 0, 0 } } },
+    [BUILD_STRING] = { .nuops = 1, .uops = { { BUILD_STRING, 0, 0 } } },
+    [BUILD_TUPLE] = { .nuops = 1, .uops = { { BUILD_TUPLE, 0, 0 } } },
+    [BUILD_LIST] = { .nuops = 1, .uops = { { BUILD_LIST, 0, 0 } } },
+    [LIST_EXTEND] = { .nuops = 1, .uops = { { LIST_EXTEND, 0, 0 } } },
+    [SET_UPDATE] = { .nuops = 1, .uops = { { SET_UPDATE, 0, 0 } } },
+    [BUILD_SET] = { .nuops = 1, .uops = { { BUILD_SET, 0, 0 } } },
+    [BUILD_MAP] = { .nuops = 1, .uops = { { BUILD_MAP, 0, 0 } } },
+    [SETUP_ANNOTATIONS] = { .nuops = 1, .uops = { { SETUP_ANNOTATIONS, 0, 0 } } },
+    [BUILD_CONST_KEY_MAP] = { .nuops = 1, .uops = { { BUILD_CONST_KEY_MAP, 0, 0 } } },
+    [DICT_UPDATE] = { .nuops = 1, .uops = { { DICT_UPDATE, 0, 0 } } },
+    [DICT_MERGE] = { .nuops = 1, .uops = { { DICT_MERGE, 0, 0 } } },
+    [MAP_ADD] = { .nuops = 1, .uops = { { MAP_ADD, 0, 0 } } },
+    [LOAD_SUPER_ATTR_ATTR] = { .nuops = 1, .uops = { { LOAD_SUPER_ATTR_ATTR, 0, 0 } } },
+    [LOAD_SUPER_ATTR_METHOD] = { .nuops = 1, .uops = { { LOAD_SUPER_ATTR_METHOD, 0, 0 } } },
+    [COMPARE_OP_FLOAT] = { .nuops = 1, .uops = { { COMPARE_OP_FLOAT, 0, 0 } } },
+    [COMPARE_OP_INT] = { .nuops = 1, .uops = { { COMPARE_OP_INT, 0, 0 } } },
+    [COMPARE_OP_STR] = { .nuops = 1, .uops = { { COMPARE_OP_STR, 0, 0 } } },
+    [IS_OP] = { .nuops = 1, .uops = { { IS_OP, 0, 0 } } },
+    [CONTAINS_OP] = { .nuops = 1, .uops = { { CONTAINS_OP, 0, 0 } } },
+    [CHECK_EG_MATCH] = { .nuops = 1, .uops = { { CHECK_EG_MATCH, 0, 0 } } },
+    [CHECK_EXC_MATCH] = { .nuops = 1, .uops = { { CHECK_EXC_MATCH, 0, 0 } } },
+    [GET_LEN] = { .nuops = 1, .uops = { { GET_LEN, 0, 0 } } },
+    [MATCH_CLASS] = { .nuops = 1, .uops = { { MATCH_CLASS, 0, 0 } } },
+    [MATCH_MAPPING] = { .nuops = 1, .uops = { { MATCH_MAPPING, 0, 0 } } },
+    [MATCH_SEQUENCE] = { .nuops = 1, .uops = { { MATCH_SEQUENCE, 0, 0 } } },
+    [MATCH_KEYS] = { .nuops = 1, .uops = { { MATCH_KEYS, 0, 0 } } },
+    [GET_ITER] = { .nuops = 1, .uops = { { GET_ITER, 0, 0 } } },
+    [GET_YIELD_FROM_ITER] = { .nuops = 1, .uops = { { GET_YIELD_FROM_ITER, 0, 0 } } },
+    [WITH_EXCEPT_START] = { .nuops = 1, .uops = { { WITH_EXCEPT_START, 0, 0 } } },
+    [PUSH_EXC_INFO] = { .nuops = 1, .uops = { { PUSH_EXC_INFO, 0, 0 } } },
+    [EXIT_INIT_CHECK] = { .nuops = 1, .uops = { { EXIT_INIT_CHECK, 0, 0 } } },
+    [MAKE_FUNCTION] = { .nuops = 1, .uops = { { MAKE_FUNCTION, 0, 0 } } },
+    [SET_FUNCTION_ATTRIBUTE] = { .nuops = 1, .uops = { { SET_FUNCTION_ATTRIBUTE, 0, 0 } } },
+    [BUILD_SLICE] = { .nuops = 1, .uops = { { BUILD_SLICE, 0, 0 } } },
+    [CONVERT_VALUE] = { .nuops = 1, .uops = { { CONVERT_VALUE, 0, 0 } } },
+    [FORMAT_SIMPLE] = { .nuops = 1, .uops = { { FORMAT_SIMPLE, 0, 0 } } },
+    [FORMAT_WITH_SPEC] = { .nuops = 1, .uops = { { FORMAT_WITH_SPEC, 0, 0 } } },
+    [COPY] = { .nuops = 1, .uops = { { COPY, 0, 0 } } },
+    [SWAP] = { .nuops = 1, .uops = { { SWAP, 0, 0 } } },
 };
 #endif
