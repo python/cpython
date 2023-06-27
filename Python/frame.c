@@ -50,13 +50,13 @@ _PyFrame_MakeAndSetFrameObject(_PyInterpreterFrame *frame)
         // Just pretend that we have an owned, cleared frame so frame_dealloc
         // doesn't make the situation worse:
         f->f_frame = (_PyInterpreterFrame *)f->_f_frame_data;
-        f->f_frame->owner = FRAME_CLEARED;
+        f->f_frame->owner = FRAME_OWNED_BY_ACCIDENT;
         f->f_frame->frame_obj = f;
         Py_DECREF(f);
         return frame->frame_obj;
     }
     assert(frame->owner != FRAME_OWNED_BY_FRAME_OBJECT);
-    assert(frame->owner != FRAME_CLEARED);
+    assert(frame->owner != FRAME_OWNED_BY_ACCIDENT);
     f->f_frame = frame;
     frame->frame_obj = f;
     return f;
@@ -79,7 +79,7 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
 {
     assert(frame->owner != FRAME_OWNED_BY_CSTACK);
     assert(frame->owner != FRAME_OWNED_BY_FRAME_OBJECT);
-    assert(frame->owner != FRAME_CLEARED);
+    assert(frame->owner != FRAME_OWNED_BY_ACCIDENT);
     Py_ssize_t size = ((char*)&frame->localsplus[frame->stacktop]) - (char *)frame;
     Py_INCREF(_PyFrame_GetCode(frame));
     memcpy((_PyInterpreterFrame *)f->_f_frame_data, frame, size);
