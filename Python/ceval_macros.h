@@ -1,4 +1,4 @@
-// Macros needed by ceval.c and bytecodes.c
+// Macros and other things needed by ceval.c and bytecodes.c
 
 /* Computed GOTOs, or
        the-optimization-commonly-but-improperly-known-as-"threaded code"
@@ -264,11 +264,12 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define UPDATE_MISS_STATS(INSTNAME) ((void)0)
 #endif
 
+// NOTE: in the uops version, opcode may be > 255
 #define DEOPT_IF(COND, INSTNAME)                            \
     if ((COND)) {                                           \
         /* This is only a single jump on release builds! */ \
         UPDATE_MISS_STATS((INSTNAME));                      \
-        assert(_PyOpcode_Deopt[opcode] == (INSTNAME));      \
+        assert(opcode >= 256 || _PyOpcode_Deopt[opcode] == (INSTNAME)); \
         GO_TO_INSTRUCTION(INSTNAME);                        \
     }
 
@@ -339,3 +340,11 @@ do { \
         goto error; \
     } \
 } while (0);
+
+typedef PyObject *(*convertion_func_ptr)(PyObject *);
+
+static const convertion_func_ptr CONVERSION_FUNCTIONS[4] = {
+    [FVC_STR] = PyObject_Str,
+    [FVC_REPR] = PyObject_Repr,
+    [FVC_ASCII] = PyObject_ASCII
+};
