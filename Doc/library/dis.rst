@@ -1719,7 +1719,6 @@ but are replaced by real opcodes or removed before bytecode is generated.
    storage.
 
    Note that ``LOAD_CLOSURE`` is replaced with ``LOAD_FAST`` in the assembler.
-   It exists to keep bytecode a little more readable.
 
    .. versionchanged:: 3.13
       This opcode was demoted from full opcode to pseudo-instruction

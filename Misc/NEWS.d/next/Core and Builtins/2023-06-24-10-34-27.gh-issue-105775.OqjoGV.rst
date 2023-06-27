@@ -1,4 +1,1 @@
-Remove the LOAD_CLOSURE opcode and make it a pseudo-op instead. This enables
-
-* Superinstruction formation
-* Removal of checks for uninitialized variables
+Remove the LOAD_CLOSURE opcode and make it a pseudo-op instead.
