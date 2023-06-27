@@ -80,6 +80,12 @@ The following functions are defined:
    equivalent to :func:`open_new`.
 
 
+.. function:: open_incognito(url)
+
+   Open *url* in incognito, or private, mode of the default browser, if possible, otherwise
+   equivalent to :func:`open_new`.
+
+
 .. function:: get(using=None)
 
    Return a controller object for the browser type *using*.  If *using* is
@@ -218,6 +224,12 @@ module-level convenience functions:
 .. method:: controller.open_new_tab(url)
 
    Open *url* in a new page ("tab") of the browser handled by this controller, if
+   possible, otherwise equivalent to :func:`open_new`.
+
+
+.. method:: controller.open_incognito(url)
+
+   Open *url* in a incognito, or private, mode of the browser handled by this controller, if
    possible, otherwise equivalent to :func:`open_new`.
 
 
