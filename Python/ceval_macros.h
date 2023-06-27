@@ -264,11 +264,12 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define UPDATE_MISS_STATS(INSTNAME) ((void)0)
 #endif
 
+// NOTE: in the uops version, opcode may be > 255
 #define DEOPT_IF(COND, INSTNAME)                            \
     if ((COND)) {                                           \
         /* This is only a single jump on release builds! */ \
         UPDATE_MISS_STATS((INSTNAME));                      \
-        assert(_PyOpcode_Deopt[opcode] == (INSTNAME));      \
+        assert(opcode >= 256 || _PyOpcode_Deopt[opcode] == (INSTNAME)); \
         GO_TO_INSTRUCTION(INSTNAME);                        \
     }
 
