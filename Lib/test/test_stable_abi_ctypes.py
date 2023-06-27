@@ -274,6 +274,7 @@ SYMBOL_NAMES = (
     "PyExc_ResourceWarning",
     "PyExc_RuntimeError",
     "PyExc_RuntimeWarning",
+    "PyExc_SoftDeprecationWarning",
     "PyExc_StopAsyncIteration",
     "PyExc_StopIteration",
     "PyExc_SyntaxError",

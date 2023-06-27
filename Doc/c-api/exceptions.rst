@@ -1166,6 +1166,7 @@ the variables:
    single: PyExc_PendingDeprecationWarning
    single: PyExc_ResourceWarning
    single: PyExc_RuntimeWarning
+   single: PyExc_SoftDeprecationWarning
    single: PyExc_SyntaxWarning
    single: PyExc_UnicodeWarning
    single: PyExc_UserWarning
@@ -1189,6 +1190,8 @@ the variables:
 +------------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_RuntimeWarning`           | :exc:`RuntimeWarning`           |          |
 +------------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_SoftDeprecationWarning`   | :exc:`SoftDeprecationWarning`   |          |
++------------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_SyntaxWarning`            | :exc:`SyntaxWarning`            |          |
 +------------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_UnicodeWarning`           | :exc:`UnicodeWarning`           |          |
@@ -1198,6 +1201,9 @@ the variables:
 
 .. versionadded:: 3.2
    :c:data:`PyExc_ResourceWarning`.
+
+.. versionadded:: 3.13
+   :c:data:`PyExc_SoftDeprecationWarning`.
 
 Notes:
 

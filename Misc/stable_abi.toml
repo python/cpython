@@ -2432,3 +2432,5 @@
     added = '3.13'
 [function.PyWeakref_GetRef]
     added = '3.13'
+[data.PyExc_SoftDeprecationWarning]
+    added = '3.13'

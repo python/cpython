@@ -153,6 +153,7 @@ PyAPI_DATA(PyObject *) PyExc_Warning;
 PyAPI_DATA(PyObject *) PyExc_UserWarning;
 PyAPI_DATA(PyObject *) PyExc_DeprecationWarning;
 PyAPI_DATA(PyObject *) PyExc_PendingDeprecationWarning;
+PyAPI_DATA(PyObject *) PyExc_SoftDeprecationWarning;
 PyAPI_DATA(PyObject *) PyExc_SyntaxWarning;
 PyAPI_DATA(PyObject *) PyExc_RuntimeWarning;
 PyAPI_DATA(PyObject *) PyExc_FutureWarning;

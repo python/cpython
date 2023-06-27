@@ -1242,8 +1242,10 @@ class EnvironmentVariableTests(BaseTest):
                 main_module_filter = "__main__"
             expected_default_filters = [
                 ('default', None, DeprecationWarning, main_module_filter, 0),
+                ('default', None, SoftDeprecationWarning, main_module_filter, 0),
                 ('ignore', None, DeprecationWarning, None, 0),
                 ('ignore', None, PendingDeprecationWarning, None, 0),
+                ('ignore', None, SoftDeprecationWarning, None, 0),
                 ('ignore', None, ImportWarning, None, 0),
                 ('ignore', None, ResourceWarning, None, 0),
             ]

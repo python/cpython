@@ -76,6 +76,9 @@ New Features
 Other Language Changes
 ======================
 
+* Add :exc:`SoftDeprecationWarning` warning category to implement soft
+  deprecation. The soft deprecation policy is described in :pep:`387`.
+  (Contributed by Victor Stinner in :gh:`106137`.)
 
 
 New Modules
@@ -446,6 +449,10 @@ New Features
   :c:func:`PyList_SET_ITEM` now check the index argument with an assertion.
   If the assertion fails, make sure that the size is set before.
   (Contributed by Victor Stinner in :gh:`106168`.)
+
+* Add ``PyExc_SoftDeprecationWarning`` warning category to implement soft
+  deprecation. The soft deprecation policy is described in :pep:`387`.
+  (Contributed by Victor Stinner in :gh:`106137`.)
 
 Porting to Python 3.13
 ----------------------

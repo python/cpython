@@ -802,6 +802,19 @@ The following exceptions are used as warning categories; see the
    The deprecation policy is described in :pep:`387`.
 
 
+.. exception:: SoftDeprecationWarning
+
+   Base class for warnings about soft deprecated features when those warnings
+   are intended for other Python developers.
+
+   Ignored by the default warning filters, except in the ``__main__`` module.
+   Enabling the :ref:`Python Development Mode <devmode>` shows this warning.
+
+   The soft deprecation policy is described in :pep:`387`.
+
+   .. versionadded:: 3.13
+
+
 .. exception:: PendingDeprecationWarning
 
    Base class for warnings about features which are obsolete and

@@ -529,6 +529,13 @@ def _deprecated(name, message=_DEPRECATED_MSG, *, remove, _version=sys.version_i
         warn(msg, DeprecationWarning, stacklevel=3)
 
 
+def _soft_deprecated(msg):
+    # only emit SoftDeprecationWarning in the Python Development Mode
+    # and if Python is built in debug mode
+    if sys.flags.dev_mode or hasattr(sys, 'gettotalrefcount'):
+        warn(msg, SoftDeprecationWarning, stacklevel=3)
+
+
 # Private utility function called by _PyErr_WarnUnawaitedCoroutine
 def _warn_unawaited_coroutine(coro):
     msg_lines = [
@@ -587,8 +594,11 @@ if not _warnings_defaults:
     if not hasattr(sys, 'gettotalrefcount'):
         filterwarnings("default", category=DeprecationWarning,
                        module="__main__", append=1)
+        filterwarnings("default", category=SoftDeprecationWarning,
+                       module="__main__", append=1)
         simplefilter("ignore", category=DeprecationWarning, append=1)
         simplefilter("ignore", category=PendingDeprecationWarning, append=1)
+        simplefilter("ignore", category=SoftDeprecationWarning, append=1)
         simplefilter("ignore", category=ImportWarning, append=1)
         simplefilter("ignore", category=ResourceWarning, append=1)
 

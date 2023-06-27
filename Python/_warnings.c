@@ -96,7 +96,7 @@ init_filters(PyInterpreterState *interp)
     return PyList_New(0);
 #else
     /* Other builds ignore a number of warning categories by default */
-    PyObject *filters = PyList_New(5);
+    PyObject *filters = PyList_New(7);
     if (filters == NULL) {
         return NULL;
     }
@@ -106,8 +106,10 @@ init_filters(PyInterpreterState *interp)
     PyList_SET_ITEM(filters, pos++, \
                     create_filter(TYPE, &_Py_ID(ACTION), MODNAME));
     ADD(PyExc_DeprecationWarning, default, "__main__");
+    ADD(PyExc_SoftDeprecationWarning, default, "__main__");
     ADD(PyExc_DeprecationWarning, ignore, NULL);
     ADD(PyExc_PendingDeprecationWarning, ignore, NULL);
+    ADD(PyExc_SoftDeprecationWarning, ignore, NULL);
     ADD(PyExc_ImportWarning, ignore, NULL);
     ADD(PyExc_ResourceWarning, ignore, NULL);
 #undef ADD

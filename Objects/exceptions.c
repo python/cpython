@@ -3462,6 +3462,13 @@ SimpleExtendsException(PyExc_Warning, PendingDeprecationWarning,
 
 
 /*
+ *    SoftDeprecationWarning extends Warning
+ */
+SimpleExtendsException(PyExc_Warning, SoftDeprecationWarning,
+                       "Base class for warnings about soft deprecated features.");
+
+
+/*
  *    SyntaxWarning extends Warning
  */
 SimpleExtendsException(PyExc_Warning, SyntaxWarning,
@@ -3630,6 +3637,7 @@ static struct static_exception static_exceptions[] = {
     ITEM(PendingDeprecationWarning),
     ITEM(ResourceWarning),
     ITEM(RuntimeWarning),
+    ITEM(SoftDeprecationWarning),
     ITEM(SyntaxWarning),
     ITEM(UnicodeWarning),
     ITEM(UserWarning),

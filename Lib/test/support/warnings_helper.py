@@ -13,6 +13,13 @@ def import_deprecated(name):
         return importlib.import_module(name)
 
 
+def import_soft_deprecated(name):
+    """Import *name* while suppressing SoftDeprecationWarning."""
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', category=SoftDeprecationWarning)
+        return importlib.import_module(name)
+
+
 def check_syntax_warning(testcase, statement, errtext='',
                          *, lineno=1, offset=None):
     # Test also that a warning is emitted only once.
