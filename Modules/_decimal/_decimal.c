@@ -5834,11 +5834,10 @@ PyInit__decimal(void)
 
 
     /* Init types */
-#define CREATE_TYPE(mod, type, spec)                                        \
-    do {                                                                    \
-        type = (PyTypeObject *)PyType_FromMetaclass(NULL, mod, spec, NULL); \
-        CHECK_PTR(type);                                                    \
-    } while (0)
+#define CREATE_TYPE(MOD, TP, SPEC) do {                               \
+    TP = (PyTypeObject *)PyType_FromMetaclass(NULL, MOD, SPEC, NULL); \
+    CHECK_PTR(TP);                                                    \
+} while (0)
 
     CREATE_TYPE(m, state->PyDec_Type, &dec_spec);
     CREATE_TYPE(m, state->PyDecContext_Type, &context_spec);
