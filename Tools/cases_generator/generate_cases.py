@@ -1246,14 +1246,18 @@ class Analyzer:
                             pass
                         case parser.InstDef(name=name):
                             instr = self.instrs[name]
+                            # Since an 'op' is not a bytecode, it has no expansion
                             if instr.kind != "op" and instr.is_viable_uop():
+                                # Double check there aren't any used cache effects.
+                                # If this fails, see write_macro_expansions().
+                                assert not [e for e in instr.cache_effects if e.name != UNUSED], \
+                                    (instr.name, instr.cache_effects)
                                 self.out.emit(
                                     f"[{name}] = "
                                     f"{{ .nuops = 1, .uops = {{ {{ {name}, 0, 0 }} }} }},"
                                 )
                         case parser.Macro():
-                            # TODO: emit expansion if all parts are viable uops
-                            pass
+                            self.write_macro_expansions(self.macro_instrs[thing.name])
                         case parser.Pseudo():
                             pass
                         case _:
@@ -1303,7 +1307,7 @@ class Analyzer:
     def write_uop_defines(self) -> None:
         """Write '#define XXX NNN' for each uop"""
         self.out.emit("")
-        counter = 300
+        counter = 300  # TODO: Avoid collision with pseudo instructions
         def add(name: str) -> None:
             nonlocal counter
             self.out.emit(f"#define {name} {counter}")
@@ -1313,6 +1317,47 @@ class Analyzer:
         for instr in self.instrs.values():
             if instr.kind == "op" and instr.is_viable_uop():
                 add(instr.name)
+
+    def write_macro_expansions(self, mac: MacroInstruction) -> None:
+        """Write the macro expansions for a macro-instruction."""
+        # TODO: Refactor to share code with write_cody(), is_viaible_uop(), etc.
+        offset = 0  # Cache effect offset
+        expansions: list[tuple[str, int, int]] = []  # [(name, size, offset), ...]
+        for part in mac.parts:
+            match part:
+                case parser.CacheEffect():
+                    offset += part.size
+                case Component():
+                    # All component instructions must be viable uops
+                    if not part.instr.is_viable_uop():
+                        print(f"Part {part.instr.name} of {mac.name} is not a viable uop")
+                        return
+                    effect = None
+                    effect_offset = 0
+                    for eff in part.instr.cache_effects:
+                        if eff.name != UNUSED:
+                            assert effect is None, \
+                                f"{mac.name} has multiple cache effects {eff.name}"
+                            effect = eff
+                            effect_offset = offset
+                        offset += eff.size
+                    if effect is not None:
+                        # We don't seem to have examples of this yet; remove the print once we do
+                        print(f"Part {part.instr.name} of {mac.name} has cache effect {effect.name}")
+                        assert not part.instr.instr_flags.HAS_ARG_FLAG, \
+                            f"{mac.name} has both cache effect and arg flag"
+                        exp = (part.instr.name, effect.size, effect_offset)
+                    else:
+                        exp = (part.instr.name, 0, 0)
+                        expansions.append(exp)
+                case _:
+                    typing.assert_never(part)
+        assert len(expansions) > 0, f"Macro {mac.name} has empty expansion?!"
+        pieces = [f"{{ {name}, {size}, {offset} }}" for name, size, offset in expansions]
+        self.out.emit(
+            f"[{mac.name}] = "
+            f"{{ .nuops = {len(expansions)}, .uops = {{ {', '.join(pieces)} }} }},"
+        )
 
     def emit_metadata_entry(
         self, name: str, fmt: str, flags: InstructionFlags
@@ -1379,6 +1424,7 @@ class Analyzer:
             for thing in self.everything:
                 match thing:
                     case OverriddenInstructionPlaceHolder():
+                        # TODO: Is this helpful?
                         self.write_overridden_instr_place_holder(thing)
                     case parser.InstDef():
                         instr = self.instrs[thing.name]
@@ -1388,7 +1434,7 @@ class Analyzer:
                                 instr.write(self.out, tier=TIER_TWO)
                                 self.out.emit("break;")
                     case parser.Macro():
-                        pass  # TODO
+                        pass
                     case parser.Pseudo():
                         pass
                     case _:

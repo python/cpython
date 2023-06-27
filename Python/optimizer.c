@@ -474,6 +474,8 @@ PyUnstable_Optimizer_NewUOpOptimizer(void)
     }
     opt->optimize = uop_optimize;
     opt->resume_threshold = UINT16_MAX;
-    opt->backedge_threshold = 0;
+    // Need at least 3 iterations to settle specializations.
+    // A few lower bits of the counter are reserved for other flags.
+    opt->backedge_threshold = 3 << OPTIMIZER_BITS_IN_COUNTER;
     return (PyObject *)opt;
 }
