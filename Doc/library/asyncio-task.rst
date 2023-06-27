@@ -838,7 +838,7 @@ Waiting Primitives
    +-----------------------------+----------------------------------------+
    | :const:`FIRST_EXCEPTION`    | The function will return when any      |
    |                             | future finishes by raising an          |
-   |                             | exception.  If no future raises a     |
+   |                             | exception.  If no future raises an     |
    |                             | exception then it is equivalent to     |
    |                             | :const:`ALL_COMPLETED`.                |
    +-----------------------------+----------------------------------------+
@@ -862,7 +862,7 @@ Waiting Primitives
 .. function:: as_completed(aws, *, timeout=None)
 
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
-   iterable concurrently.  Return a iterator of coroutines.
+   iterable concurrently.  Return an iterator of coroutines.
    Each coroutine returned can be awaited to get the earliest next
    result from the iterable of the remaining awaitables.
 
