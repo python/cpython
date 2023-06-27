@@ -1,0 +1,20 @@
+select = [
+    "F811",
+]
+extend-exclude = [
+    # Failed to lint
+    "Lib/test/badsyntax_pep3120.py",
+    "Lib/test/encoded_modules/module_iso_8859_1.py",
+    "Lib/test/encoded_modules/module_koi8_r.py",
+    # Failed to parse
+    "Lib/test/mod_generics_cache.py",
+    "Lib/test/badsyntax_3131.py",
+    "Lib/test/support/socket_helper.py",
+    "Lib/test/test_builtin.py",
+    "Lib/test/test_fstring.py",
+    "Lib/test/test_funcattrs.py",
+    "Lib/test/test_functools.py",
+    "Lib/test/test_type_aliases.py",
+    "Lib/test/test_type_params.py",
+    "Lib/test/test_typing.py",
+]
