@@ -17,6 +17,15 @@
   </PropertyGroup>
 
   <ItemDefinitionGroup>
+    <JITProjects>
+      <Platform>$(Platform)</Platform>
+      <Configuration>$(Configuration)</Configuration>
+      <Properties></Properties>
+      <BuildTarget>Build</BuildTarget>
+      <CleanTarget>Clean</CleanTarget>
+      <CleanAllTarget>CleanAll</CleanAllTarget>
+      <BuildInParallel>true</BuildInParallel>
+    </JITProjects>
     <FreezeProjects>
       <Platform>$(PreferredToolArchitecture)</Platform>
       <Configuration>$(Configuration)</Configuration>
@@ -92,9 +101,16 @@
     <Projects2 Include="python_uwp.vcxproj;pythonw_uwp.vcxproj" Condition="$(IncludeUwp)" />
     <!-- venv[w]launcher.exe -->
     <Projects2 Include="venvlauncher.vcxproj;venvwlauncher.vcxproj" />
+    <!-- JIT -->
+    <JITProjects Include="justin.vcxproj"/>
   </ItemGroup>
 
   <Target Name="Build">
+    <MSBuild Projects="@(JITProjects)"
+             Properties="Configuration=%(Configuration);Platform=%(Platform);%(Properties)"
+             BuildInParallel="%(BuildInParallel)"
+             StopOnFirstFailure="true"
+             Targets="%(BuildTarget)" />
     <MSBuild Projects="@(FreezeProjects)"
              Properties="Configuration=%(Configuration);Platform=%(Platform);%(Properties)"
              BuildInParallel="%(BuildInParallel)"
@@ -131,6 +147,12 @@
             StopOnFirstFailure="false"
             Condition="%(CleanTarget) != ''"
             Targets="%(CleanTarget)" />
+    <MSBuild Projects="@(JITProjects)"
+             Properties="Configuration=%(Configuration);Platform=%(Platform);%(Properties)"
+             BuildInParallel="%(BuildInParallel)"
+             StopOnFirstFailure="false"
+             Condition="%(CleanTarget) != ''"
+             Targets="%(CleanTarget)" />
   </Target>
 
   <Target Name="CleanAll">
@@ -152,6 +174,12 @@
             StopOnFirstFailure="false"
             Condition="%(CleanTarget) != ''"
             Targets="%(CleanTarget)" />
+    <MSBuild Projects="@(JITProjects)"
+             Properties="Configuration=%(Configuration);Platform=%(Platform);%(Properties)"
+             BuildInParallel="%(BuildInParallel)"
+             StopOnFirstFailure="false"
+             Condition="%(CleanAllTarget) != ''"
+             Targets="%(CleanAllTarget)" />
   </Target>
 
   <Target Name="Rebuild" DependsOnTargets="Clean;Build" />

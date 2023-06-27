@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|ARM"/>
+    <ProjectConfiguration Include="Debug|ARM64"/>
+    <ProjectConfiguration Include="Debug|Win32"/>
+    <ProjectConfiguration Include="Debug|x64"/>
+    <ProjectConfiguration Include="PGInstrument|ARM"/>
+    <ProjectConfiguration Include="PGInstrument|ARM64"/>
+    <ProjectConfiguration Include="PGInstrument|Win32"/>
+    <ProjectConfiguration Include="PGInstrument|x64"/>
+    <ProjectConfiguration Include="PGUpdate|ARM"/>
+    <ProjectConfiguration Include="PGUpdate|ARM64"/>
+    <ProjectConfiguration Include="PGUpdate|Win32"/>
+    <ProjectConfiguration Include="PGUpdate|x64"/>
+    <ProjectConfiguration Include="Release|ARM"/>
+    <ProjectConfiguration Include="Release|ARM64"/>
+    <ProjectConfiguration Include="Release|Win32"/>
+    <ProjectConfiguration Include="Release|x64"/>
+  </ItemGroup>
+  <Import Project="pyproject.props"/>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props"/>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets"/>
+  <Target Name="Build" DependsOnTargets="FindPythonForBuild">
+	  <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\justin\build.py" --windows "$(Configuration)|$(Platform)" "$(PySourcePath)Python/generated_cases.c.h" "$(PySourcePath)Python\jit_stencils.h"' WorkingDirectory="$(PySourcePath)"/>
+  </Target>
+</Project>

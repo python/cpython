@@ -175,7 +175,7 @@ class ObjectParser:
 
     def __init__(self, path: str) -> None:
         args = ["llvm-readobj", *self._ARGS, path]
-        # subprocess.run(["llvm-objdump", path, "-dr"])
+        # subprocess.run(["llvm-objdump", path, "-dr"], check=True)
         process = subprocess.run(args, check=True, capture_output=True)
         output = process.stdout
         output = output.replace(b"PrivateExtern\n", b"\n")  # XXX: MachO
@@ -235,6 +235,18 @@ def handle_one_relocation(
     relocation: typing.Mapping[str, typing.Any],
 ) -> typing.Generator[Hole, None, None]:
     match relocation:
+        case {
+            'Offset': int(offset),
+            'Symbol': str(symbol),
+            'Type': {'Value': 'IMAGE_REL_AMD64_ADDR64'},
+        }:
+            offset += base
+            where = slice(offset, offset + 8)
+            what = int.from_bytes(body[where], sys.byteorder)
+            # assert not what, what
+            addend = what
+            body[where] = [0] * 8
+            yield Hole(symbol, offset, addend, 0)
         case {
             "Addend": int(addend),
             "Offset": int(offset),
@@ -357,12 +369,7 @@ class ObjectParserCOFF(ObjectParser):
                 self.dupes.add(name)
             self.body_symbols[name] = offset
         for relocation in unwrap(section["Relocations"], "Relocation"):
-            offset = before + relocation["Offset"]
-            assert offset not in self.relocations
-            # XXX: Addend
-            addend = int.from_bytes(self.body[offset:offset + 8], sys.byteorder)
-            self.body[offset:offset + 8] = [0] * 8
-            self.relocations[offset] = (relocation["Symbol"], relocation["Type"]["Value"], addend)
+            self.relocations_todo.append((before, relocation))
 
 class ObjectParserMachO(ObjectParser):
 
@@ -421,37 +428,50 @@ class ObjectParserELF(ObjectParser):
         else:
             assert type in {"SHT_LLVM_ADDRSIG", "SHT_NULL", "SHT_STRTAB", "SHT_SYMTAB"}, type
 
+
+CFLAGS = [
+    "-DPy_BUILD_CORE",
+    "-D_PyJIT_ACTIVE",
+    "-I.",
+    "-I./Include",
+    "-I./Include/internal",
+    "-I./PC",
+    "-O3",
+    "-Wno-unreachable-code",
+    "-Wno-unused-but-set-variable",
+    "-Wno-unused-command-line-argument",
+    "-Wno-unused-label",
+    "-Wno-unused-variable",
+    # We don't need this (and it causes weird relocations):
+    "-fno-asynchronous-unwind-tables",  # XXX
+    # # Don't need the overhead of position-independent code, if posssible:
+    # "-fno-pic",
+    # Disable stack-smashing canaries, which use magic symbols:
+    "-fno-stack-protector",  # XXX
+    # The GHC calling convention uses %rbp as an argument-passing register:
+    "-fomit-frame-pointer",  # XXX
+    # Disable debug info:
+    "-g0",  # XXX
+    # Need this to leave room for patching our 64-bit pointers:
+    "-mcmodel=large",  # XXX
+]
+
 if sys.platform == "darwin":
     ObjectParserDefault = ObjectParserMachO
 elif sys.platform == "linux":
     ObjectParserDefault = ObjectParserELF
 elif sys.platform == "win32":
     ObjectParserDefault = ObjectParserCOFF
+    assert sys.argv[1] == "--windows"
+    if sys.argv[2].startswith("Debug|"):
+        CFLAGS += ["-D_DEBUG"]
+    else:
+        CFLAGS += ["-DNDEBUG"]
+    sys.argv[1:] = sys.argv[3:]
 else:
     raise NotImplementedError(sys.platform)
 
 class Compiler:
-    _CFLAGS = [
-        *sys.argv[3:],
-        "-D_PyJIT_ACTIVE",
-        "-Wno-unreachable-code",
-        "-Wno-unused-but-set-variable",
-        "-Wno-unused-command-line-argument",
-        "-Wno-unused-label",
-        "-Wno-unused-variable",
-        # We don't need this (and it causes weird relocations):
-        "-fno-asynchronous-unwind-tables",  # XXX
-        # # Don't need the overhead of position-independent code, if posssible:
-        # "-fno-pic",
-        # Disable stack-smashing canaries, which use magic symbols:
-        "-fno-stack-protector",  # XXX
-        # The GHC calling convention uses %rbp as an argument-passing register:
-        "-fomit-frame-pointer",  # XXX
-        # Disable debug info:
-        "-g0",  # XXX
-        # Need this to leave room for patching our 64-bit pointers:
-        "-mcmodel=large",  # XXX
-    ]
     _SKIP = frozenset(
         {
             "CALL_BOUND_METHOD_EXACT_ARGS",
@@ -525,24 +545,27 @@ class Compiler:
             print(*args, **kwargs, file=sys.stderr)
 
     @staticmethod
-    def _use_ghccc(path: str) -> None:
-        ll = pathlib.Path(path)
-        ir = ll.read_text()
+    def _use_ghccc(path: str) -> None:  # XXX
+        # ll = pathlib.Path(path)
+        path.seek(0)
+        ir = path.read().decode()
         ir = ir.replace("i32 @_justin_continue", "ghccc i32 @_justin_continue")
         ir = ir.replace("i32 @_justin_entry", "ghccc i32 @_justin_entry")
-        ll.write_text(ir)
+        path.seek(0)
+        path.write(ir.encode())
+        path.seek(0)
 
     def _compile(self, opname, path) -> Stencil:
         self._stderr(f"Building stencil for {opname}.")
         defines = [f"-D_JUSTIN_OPCODE={opname}"]
         with tempfile.NamedTemporaryFile(suffix=".o") as o, tempfile.NamedTemporaryFile(suffix=".ll") as ll:
             subprocess.run(
-                ["clang", *self._CFLAGS, *defines, "-emit-llvm", "-S", "-o", ll.name, path],
+                ["clang", *CFLAGS, "-emit-llvm", "-S", *defines, "-o", ll.name, path],
                 check=True,
             )
-            self._use_ghccc(ll.name)
+            self._use_ghccc(ll)
             subprocess.run(
-                ["clang", *self._CFLAGS, "-c", "-o", o.name, ll.name],
+                ["clang", *CFLAGS, "-c", "-o", o.name, ll.name],
                 check=True,
             )
             return ObjectParserDefault(o.name).parse()

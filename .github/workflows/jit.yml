@@ -19,9 +19,6 @@ jobs:
           # Looks like LLVM doesn't provide Intel macOS binaries anymore...
           - llvm: 16
             os: macOS
-          # Unknown issue...
-          - debug: true
-            os: Windows
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
