@@ -1116,10 +1116,10 @@ Exceptions
 Regular Expression Objects
 --------------------------
 
-Compiled regular expression objects support the following methods and
-attributes:
-
 .. class:: Pattern
+
+   Compiled regular expression object returned by :func:`re.compile`.
+   It supports the following methods and attributes:
 
 .. method:: Pattern.search(string[, pos[, endpos]])
 
