@@ -170,7 +170,7 @@ other coroutines::
    In this documentation the term "coroutine" can be used for
    two closely related concepts:
 
-   * a *coroutine function*: a :keyword:`async def` function;
+   * a *coroutine function*: an :keyword:`async def` function;
 
    * a *coroutine object*: an object returned by calling a
      *coroutine function*.
