@@ -1,4 +1,4 @@
-// Macros needed by ceval.c and bytecodes.c
+// Macros and other things needed by ceval.c and bytecodes.c
 
 /* Computed GOTOs, or
        the-optimization-commonly-but-improperly-known-as-"threaded code"
@@ -339,3 +339,11 @@ do { \
         goto error; \
     } \
 } while (0);
+
+typedef PyObject *(*convertion_func_ptr)(PyObject *);
+
+static const convertion_func_ptr CONVERSION_FUNCTIONS[4] = {
+    [FVC_STR] = PyObject_Str,
+    [FVC_REPR] = PyObject_Repr,
+    [FVC_ASCII] = PyObject_ASCII
+};

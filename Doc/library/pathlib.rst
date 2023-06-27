@@ -596,8 +596,8 @@ Pure paths provide the following methods and properties:
 
    Set *case_sensitive* to ``True`` or ``False`` to override this behaviour.
 
-   .. versionadded:: 3.12
-      The *case_sensitive* argument.
+   .. versionchanged:: 3.12
+      The *case_sensitive* parameter was added.
 
    .. versionchanged:: 3.13
       Support for the recursive wildcard "``**``" was added. In previous
@@ -642,8 +642,8 @@ Pure paths provide the following methods and properties:
       are present in the path; call :meth:`~Path.resolve` first if
       necessary to resolve symlinks.
 
-   .. versionadded:: 3.12
-      The *walk_up* argument (old behavior is the same as ``walk_up=False``).
+   .. versionchanged:: 3.12
+      The *walk_up* parameter was added (old behavior is the same as ``walk_up=False``).
 
    .. deprecated-removed:: 3.12 3.14
 
@@ -962,11 +962,11 @@ call fails (for example because the path doesn't exist).
       Return only directories if *pattern* ends with a pathname components
       separator (:data:`~os.sep` or :data:`~os.altsep`).
 
-   .. versionadded:: 3.12
-      The *case_sensitive* argument.
+   .. versionchanged:: 3.12
+      The *case_sensitive* parameter was added.
 
-   .. versionadded:: 3.13
-      The *follow_symlinks* argument.
+   .. versionchanged:: 3.13
+      The *follow_symlinks* parameter was added.
 
 .. method:: Path.group()
 
@@ -978,22 +978,34 @@ call fails (for example because the path doesn't exist).
       available. In previous versions, :exc:`NotImplementedError` was raised.
 
 
-.. method:: Path.is_dir()
+.. method:: Path.is_dir(*, follow_symlinks=True)
 
-   Return ``True`` if the path points to a directory (or a symbolic link
-   pointing to a directory), ``False`` if it points to another kind of file.
+   Return ``True`` if the path points to a directory, ``False`` if it points
+   to another kind of file.
+
+   ``False`` is also returned if the path doesn't exist or is a broken symlink;
+   other errors (such as permission errors) are propagated.
+
+   This method normally follows symlinks; to exclude symlinks to directories,
+   add the argument ``follow_symlinks=False``.
+
+   .. versionchanged:: 3.13
+      The *follow_symlinks* parameter was added.
+
+
+.. method:: Path.is_file(*, follow_symlinks=True)
+
+   Return ``True`` if the path points to a regular file, ``False`` if it
+   points to another kind of file.
 
    ``False`` is also returned if the path doesn't exist or is a broken symlink;
    other errors (such as permission errors) are propagated.
 
+   This method normally follows symlinks; to exclude symlinks, add the
+   argument ``follow_symlinks=False``.
 
-.. method:: Path.is_file()
-
-   Return ``True`` if the path points to a regular file (or a symbolic link
-   pointing to a regular file), ``False`` if it points to another kind of file.
-
-   ``False`` is also returned if the path doesn't exist or is a broken symlink;
-   other errors (such as permission errors) are propagated.
+   .. versionchanged:: 3.13
+      The *follow_symlinks* parameter was added.
 
 
 .. method:: Path.is_junction()
@@ -1362,8 +1374,8 @@ call fails (for example because the path doesn't exist).
    infinite loop is encountered along the resolution path, :exc:`RuntimeError`
    is raised.
 
-   .. versionadded:: 3.6
-      The *strict* argument (pre-3.6 behavior is strict).
+   .. versionchanged:: 3.6
+      The *strict* parameter was added (pre-3.6 behavior is strict).
 
 .. method:: Path.rglob(pattern, *, case_sensitive=None, follow_symlinks=None)
 
@@ -1394,11 +1406,11 @@ call fails (for example because the path doesn't exist).
       Return only directories if *pattern* ends with a pathname components
       separator (:data:`~os.sep` or :data:`~os.altsep`).
 
-   .. versionadded:: 3.12
-      The *case_sensitive* argument.
+   .. versionchanged:: 3.12
+      The *case_sensitive* parameter was added.
 
-   .. versionadded:: 3.13
-      The *follow_symlinks* argument.
+   .. versionchanged:: 3.13
+      The *follow_symlinks* parameter was added.
 
 .. method:: Path.rmdir()
 
