@@ -1552,7 +1552,7 @@ static PyObject *
 current_context_from_dict(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    decimal_state *state = GLOBAL_STATE();
+    decimal_state *modstate = GLOBAL_STATE();
 #ifdef Py_DEBUG
     // The caller must hold the GIL
     _Py_EnsureTstateNotNULL(tstate);
@@ -1568,7 +1568,7 @@ current_context_from_dict(void)
     PyObject *tl_context = PyDict_GetItemWithError(dict, tls_context_key);
     if (tl_context != NULL) {
         /* We already have a thread local context. */
-        CONTEXT_CHECK(state, tl_context);
+        CONTEXT_CHECK(modstate, tl_context);
     }
     else {
         if (PyErr_Occurred()) {
@@ -1766,7 +1766,6 @@ ctxmanager_new(PyTypeObject *type UNUSED, PyObject *args, PyObject *kwds)
       "clamp", "flags", "traps",
       NULL
     };
-    PyDecContextManagerObject *self;
     PyObject *local = Py_None;
     PyObject *global;
 
@@ -1809,6 +1808,7 @@ ctxmanager_new(PyTypeObject *type UNUSED, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
+    PyDecContextManagerObject *self;
     self = PyObject_GC_New(PyDecContextManagerObject,
                            state->PyDecContextManager_Type);
     if (self == NULL) {
@@ -2684,36 +2684,36 @@ PyDecType_FromSequenceExact(PyTypeObject *type, PyObject *v,
 }
 
 #define PyDec_FromCString(st, str, context) \
-        PyDecType_FromCString(st->PyDec_Type, str, context)
+        PyDecType_FromCString((st)->PyDec_Type, str, context)
 #define PyDec_FromCStringExact(st, str, context) \
-        PyDecType_FromCStringExact(st->PyDec_Type, str, context)
+        PyDecType_FromCStringExact((st)->PyDec_Type, str, context)
 
 #define PyDec_FromUnicode(st, unicode, context) \
-        PyDecType_FromUnicode(st->PyDec_Type, unicode, context)
+        PyDecType_FromUnicode((st)->PyDec_Type, unicode, context)
 #define PyDec_FromUnicodeExact(st, unicode, context) \
-        PyDecType_FromUnicodeExact(st->PyDec_Type, unicode, context)
+        PyDecType_FromUnicodeExact((st)->PyDec_Type, unicode, context)
 #define PyDec_FromUnicodeExactWS(st, unicode, context) \
-        PyDecType_FromUnicodeExactWS(st->PyDec_Type, unicode, context)
+        PyDecType_FromUnicodeExactWS((st)->PyDec_Type, unicode, context)
 
 #define PyDec_FromSsize(st, v, context) \
-        PyDecType_FromSsize(st->PyDec_Type, v, context)
+        PyDecType_FromSsize((st)->PyDec_Type, v, context)
 #define PyDec_FromSsizeExact(st, v, context) \
-        PyDecType_FromSsizeExact(st->PyDec_Type, v, context)
+        PyDecType_FromSsizeExact((st)->PyDec_Type, v, context)
 
 #define PyDec_FromLong(st, pylong, context) \
-        PyDecType_FromLong(st->PyDec_Type, pylong, context)
+        PyDecType_FromLong((st)->PyDec_Type, pylong, context)
 #define PyDec_FromLongExact(st, pylong, context) \
-        PyDecType_FromLongExact(st->PyDec_Type, pylong, context)
+        PyDecType_FromLongExact((st)->PyDec_Type, pylong, context)
 
 #define PyDec_FromFloat(st, pyfloat, context) \
-        PyDecType_FromFloat(st->PyDec_Type, pyfloat, context)
+        PyDecType_FromFloat((st)->PyDec_Type, pyfloat, context)
 #define PyDec_FromFloatExact(st, pyfloat, context) \
-        PyDecType_FromFloatExact(st->PyDec_Type, pyfloat, context)
+        PyDecType_FromFloatExact((st)->PyDec_Type, pyfloat, context)
 
 #define PyDec_FromSequence(st, sequence, context) \
-        PyDecType_FromSequence(st->PyDec_Type, sequence, context)
+        PyDecType_FromSequence((st)->PyDec_Type, sequence, context)
 #define PyDec_FromSequenceExact(st, sequence, context) \
-        PyDecType_FromSequenceExact(st->PyDec_Type, sequence, context)
+        PyDecType_FromSequenceExact((st)->PyDec_Type, sequence, context)
 
 /* class method */
 static PyObject *
@@ -3616,9 +3616,9 @@ dec_as_integer_ratio(PyObject *self, PyObject *args UNUSED)
         return NULL;
     }
 
-    decimal_state *state = GLOBAL_STATE();
     CURRENT_CONTEXT(context);
 
+    decimal_state *state = GLOBAL_STATE();
     tmp = dec_alloc(state);
     if (tmp == NULL) {
         return NULL;
