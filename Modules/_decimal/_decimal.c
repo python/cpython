@@ -111,9 +111,9 @@ typedef struct {
 
 #undef MPD
 #undef CTX
-#define PyDec_CheckExact(st, v) Py_IS_TYPE(v, st->PyDec_Type)
-#define PyDec_Check(st, v) PyObject_TypeCheck(v, st->PyDec_Type)
-#define PyDecSignalDict_Check(st, v) Py_IS_TYPE(v, st->PyDecSignalDict_Type)
+#define PyDec_CheckExact(st, v) Py_IS_TYPE(v, (st)->PyDec_Type)
+#define PyDec_Check(st, v) PyObject_TypeCheck(v, (st)->PyDec_Type)
+#define PyDecSignalDict_Check(st, v) Py_IS_TYPE(v, (st)->PyDecSignalDict_Type)
 #define PyDecContext_Check(st, v) PyObject_TypeCheck(v, st->PyDecContext_Type)
 #define MPD(v) (&((PyDecObject *)v)->dec)
 #define SdFlagAddr(v) (((PyDecSignalDictObject *)v)->flags)
