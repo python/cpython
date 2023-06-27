@@ -1134,15 +1134,13 @@ print_exception_notes(struct exception_print_context *ctx, PyObject *value)
         return 0;
     }
 
-    if (!PyObject_HasAttr(value, &_Py_ID(__notes__))) {
-        return 0;
-    }
-    PyObject *notes = PyObject_GetAttr(value, &_Py_ID(__notes__));
-    if (notes == NULL) {
-        return -1;
+    PyObject *notes;
+    int res = _PyObject_LookupAttr(value, &_Py_ID(__notes__), &notes);
+    if (res <= 0) {
+        return res;
     }
     if (!PySequence_Check(notes) || PyUnicode_Check(notes) || PyBytes_Check(notes)) {
-        int res = 0;
+        res = 0;
         if (write_indented_margin(ctx, f) < 0) {
             res = -1;
         }
@@ -1567,7 +1565,7 @@ _PyErr_Display(PyObject *file, PyObject *unused, PyObject *value, PyObject *tb)
     Py_XDECREF(ctx.seen);
 
     /* Call file.flush() */
-    PyObject *res = _PyObject_CallMethodNoArgs(file, &_Py_ID(flush));
+    PyObject *res = PyObject_CallMethodNoArgs(file, &_Py_ID(flush));
     if (!res) {
         /* Silently ignore file.flush() error */
         PyErr_Clear();
@@ -1679,7 +1677,7 @@ flush_io_stream(PyThreadState *tstate, PyObject *name)
 {
     PyObject *f = _PySys_GetAttr(tstate, name);
     if (f != NULL) {
-        PyObject *r = _PyObject_CallMethodNoArgs(f, &_Py_ID(flush));
+        PyObject *r = PyObject_CallMethodNoArgs(f, &_Py_ID(flush));
         if (r) {
             Py_DECREF(r);
         }

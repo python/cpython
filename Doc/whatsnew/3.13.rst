@@ -113,9 +113,10 @@ pathlib
 * Add support for recursive wildcards in :meth:`pathlib.PurePath.match`.
   (Contributed by Barney Gale in :gh:`73435`.)
 
-* Add *follow_symlinks* keyword-only argument to :meth:`pathlib.Path.glob` and
-  :meth:`~pathlib.Path.rglob`.
-  (Contributed by Barney Gale in :gh:`77609`.)
+* Add *follow_symlinks* keyword-only argument to :meth:`pathlib.Path.glob`,
+  :meth:`~pathlib.Path.rglob`, :meth:`~pathlib.Path.is_file`, and
+  :meth:`~pathlib.Path.is_dir`.
+  (Contributed by Barney Gale in :gh:`77609` and :gh:`105793`.)
 
 traceback
 ---------
@@ -470,6 +471,14 @@ Deprecated
   Scheduled for removal in Python 3.15.
   (Contributed by Victor Stinner in :gh:`105396`.)
 
+* Deprecate the :c:func:`PyWeakref_GetObject` and
+  :c:func:`PyWeakref_GET_OBJECT` functions, which return a :term:`borrowed
+  reference`: use the new :c:func:`PyWeakref_GetRef` function instead, it
+  returns a :term:`strong reference`. The `pythoncapi-compat project
+  <https://github.com/python/pythoncapi-compat/>`__ can be used to get
+  :c:func:`PyWeakref_GetRef` on Python 3.12 and older.
+  (Contributed by Victor Stinner in :gh:`105927`.)
+
 Removed
 -------
 
@@ -565,6 +574,20 @@ Removed
 * Remove the old private, undocumented and untested ``_PyGC_FINALIZED()`` macro
   which was kept for backward compatibility with Python 3.8 and older: use
   :c:func:`PyObject_GC_IsFinalized()` instead. The `pythoncapi-compat project
-  <https://github.com/python/pythoncapi-compat/>`_ can be used to get this
+  <https://github.com/python/pythoncapi-compat/>`__ can be used to get this
   function on Python 3.8 and older.
   (Contributed by Victor Stinner in :gh:`105268`.)
+
+* Remove the old aliases to functions calling functions which were kept for
+  backward compatibility with Python 3.8 provisional API:
+
+  * ``_PyObject_CallMethodNoArgs()``: use ``PyObject_CallMethodNoArgs()``
+  * ``_PyObject_CallMethodOneArg()``: use ``PyObject_CallMethodOneArg()``
+  * ``_PyObject_CallOneArg()``: use ``PyObject_CallOneArg()``
+  * ``_PyObject_FastCallDict()``: use ``PyObject_VectorcallDict()``
+  * ``_PyObject_Vectorcall()``: use ``PyObject_Vectorcall()``
+  * ``_PyObject_VectorcallMethod()``: use ``PyObject_VectorcallMethod()``
+  * ``_PyVectorcall_Function()``: use ``PyVectorcall_Function()``
+
+  Just remove the underscore prefix to update your code.
+  (Contributed by Victor Stinner in :gh:`106084`.)
