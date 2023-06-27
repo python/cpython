@@ -1936,7 +1936,7 @@ PyDecType_New(PyTypeObject *type)
 
     return (PyObject *)dec;
 }
-#define dec_alloc(st) PyDecType_New(st->PyDec_Type)
+#define dec_alloc(st) PyDecType_New((st)->PyDec_Type)
 
 static int
 dec_traverse(PyObject *dec, visitproc visit, void *arg)
