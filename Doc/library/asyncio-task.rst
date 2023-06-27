@@ -170,7 +170,7 @@ other coroutines::
    In this documentation the term "coroutine" can be used for
    two closely related concepts:
 
-   * a *coroutine function*: an :keyword:`async def` function;
+   * a *coroutine function*: a :keyword:`async def` function;
 
    * a *coroutine object*: an object returned by calling a
      *coroutine function*.
@@ -654,12 +654,12 @@ Timeouts
     If ``long_running_task`` takes more than 10 seconds to complete,
     the context manager will cancel the current task and handle
     the resulting :exc:`asyncio.CancelledError` internally, transforming it
-    into an :exc:`TimeoutError` which can be caught and handled.
+    into a :exc:`TimeoutError` which can be caught and handled.
 
     .. note::
 
       The :func:`asyncio.timeout` context manager is what transforms
-      the :exc:`asyncio.CancelledError` into an :exc:`TimeoutError`,
+      the :exc:`asyncio.CancelledError` into a :exc:`TimeoutError`,
       which means the :exc:`TimeoutError` can only be caught
       *outside* of the context manager.
 
@@ -838,7 +838,7 @@ Waiting Primitives
    +-----------------------------+----------------------------------------+
    | :const:`FIRST_EXCEPTION`    | The function will return when any      |
    |                             | future finishes by raising an          |
-   |                             | exception.  If no future raises an     |
+   |                             | exception.  If no future raises a     |
    |                             | exception then it is equivalent to     |
    |                             | :const:`ALL_COMPLETED`.                |
    +-----------------------------+----------------------------------------+
@@ -862,7 +862,7 @@ Waiting Primitives
 .. function:: as_completed(aws, *, timeout=None)
 
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
-   iterable concurrently.  Return an iterator of coroutines.
+   iterable concurrently.  Return a iterator of coroutines.
    Each coroutine returned can be awaited to get the earliest next
    result from the iterable of the remaining awaitables.
 
@@ -1121,7 +1121,7 @@ Task Object
       If the Task has been *cancelled*, this method raises a
       :exc:`CancelledError` exception.
 
-      If the Task isn't *done* yet, this method raises an
+      If the Task isn't *done* yet, this method raises a
       :exc:`InvalidStateError` exception.
 
    .. method:: add_done_callback(callback, *, context=None)
