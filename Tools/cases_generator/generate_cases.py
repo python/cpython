@@ -29,6 +29,9 @@ DEFAULT_METADATA_OUTPUT = os.path.relpath(
 DEFAULT_PYMETADATA_OUTPUT = os.path.relpath(
     os.path.join(ROOT, "Lib/_opcode_metadata.py")
 )
+DEFAULT_EXECUTOR_OUTPUT = os.path.relpath(
+    os.path.join(ROOT, "Python/executor_cases.c.h")
+)
 BEGIN_MARKER = "// BEGIN BYTECODES //"
 END_MARKER = "// END BYTECODES //"
 RE_PREDICTED = (
@@ -60,6 +63,13 @@ arg_parser.add_argument(
 )
 arg_parser.add_argument(
     "input", nargs=argparse.REMAINDER, help="Instruction definition file(s)"
+)
+arg_parser.add_argument(
+    "-e",
+    "--executor-cases",
+    type=str,
+    help="Write executor cases to this file",
+    default=DEFAULT_EXECUTOR_OUTPUT,
 )
 
 
@@ -176,14 +186,14 @@ class Formatter:
         self.prefix = self.prefix[:-4]
 
     @contextlib.contextmanager
-    def block(self, head: str):
+    def block(self, head: str, tail: str = ""):
         if head:
             self.emit(head + " {")
         else:
             self.emit("{")
         with self.indent():
             yield
-        self.emit("}")
+        self.emit("}" + tail)
 
     def stack_adjust(
         self,
@@ -290,6 +300,29 @@ class InstructionFlags:
                 f"(_PyOpcode_opcode_metadata[(OP)].flags & ({name}))")
 
 
+FORBIDDEN_NAMES_IN_UOPS = (
+    "resume_with_error",  # Proxy for "goto", which isn't an IDENTIFIER
+    "unbound_local_error",
+    "kwnames",
+    "next_instr",
+    "oparg1",  # Proxy for super-instructions like LOAD_FAST_LOAD_FAST
+    "JUMPBY",
+    "DISPATCH",
+    "INSTRUMENTED_JUMP",
+    "throwflag",
+    "exception_unwind",
+    "import_from",
+    "import_name",
+    "_PyObject_CallNoArgs",  # Proxy for BEFORE_WITH
+)
+
+
+# Interpreter tiers
+TIER_ONE = 1  # Specializing adaptive interpreter (PEP 659)
+TIER_TWO = 2  # Experimental tracing interpreter
+Tiers: typing.TypeAlias = typing.Literal[1, 2]
+
+
 @dataclasses.dataclass
 class Instruction:
     """An instruction with additional data and code."""
@@ -353,7 +386,32 @@ class Instruction:
                 cache = "0"
         self.instr_fmt = fmt
 
-    def write(self, out: Formatter) -> None:
+    def is_viable_uop(self) -> bool:
+        """Whether this instruction is viable as a uop."""
+        if self.always_exits:
+            return False
+        if self.instr_flags.HAS_ARG_FLAG:
+            # If the instruction uses oparg, it cannot use any caches
+            for c in self.cache_effects:
+                if c.name != UNUSED:
+                    return False
+        else:
+            # If it doesn't use oparg, it can have one cache entry
+            caches: list[parser.CacheEffect] = []
+            cache_offset = 0
+            for c in self.cache_effects:
+                if c.name != UNUSED:
+                    caches.append(c)
+                cache_offset += c.size
+            if len(caches) > 1:
+                return False
+        for forbidden in FORBIDDEN_NAMES_IN_UOPS:
+            # TODO: Don't check in '#ifdef ENABLE_SPECIALIZATION' regions
+            if variable_used(self.inst, forbidden):
+                return False
+        return True
+
+    def write(self, out: Formatter, tier: Tiers = TIER_ONE) -> None:
         """Write one instruction, sans prologue and epilogue."""
         # Write a static assertion that a family's cache size is correct
         if family := self.family:
@@ -400,7 +458,7 @@ class Instruction:
 
         # out.emit(f"next_instr += OPSIZE({self.inst.name}) - 1;")
 
-        self.write_body(out, 0)
+        self.write_body(out, 0, tier=tier)
 
         # Skip the rest if the block always exits
         if self.always_exits:
@@ -427,10 +485,16 @@ class Instruction:
             out.assign(dst, oeffect)
 
         # Write cache effect
-        if self.cache_offset:
+        if tier == TIER_ONE and self.cache_offset:
             out.emit(f"next_instr += {self.cache_offset};")
 
-    def write_body(self, out: Formatter, dedent: int, cache_adjust: int = 0) -> None:
+    def write_body(
+            self,
+            out: Formatter,
+            dedent: int,
+            cache_adjust: int = 0,
+            tier: Tiers = TIER_ONE,
+        ) -> None:
         """Write the instruction body."""
         # Write cache effect variable declarations and initializations
         cache_offset = cache_adjust
@@ -447,9 +511,12 @@ class Instruction:
                 else:
                     typ = f"uint{bits}_t "
                     func = f"read_u{bits}"
-                out.emit(
-                    f"{typ}{ceffect.name} = {func}(&next_instr[{cache_offset}].cache);"
-                )
+                if tier == TIER_ONE:
+                    out.emit(
+                        f"{typ}{ceffect.name} = {func}(&next_instr[{cache_offset}].cache);"
+                    )
+                else:
+                    out.emit(f"{typ}{ceffect.name} = operand;")
             cache_offset += ceffect.size
         assert cache_offset == self.cache_offset + cache_adjust
 
@@ -573,16 +640,24 @@ class Analyzer:
     output_filename: str
     metadata_filename: str
     pymetadata_filename: str
+    executor_filename: str
     errors: int = 0
     emit_line_directives: bool = False
 
-    def __init__(self, input_filenames: list[str], output_filename: str,
-                 metadata_filename: str, pymetadata_filename: str):
+    def __init__(
+        self,
+        input_filenames: list[str],
+        output_filename: str,
+        metadata_filename: str,
+        pymetadata_filename: str,
+        executor_filename: str,
+    ):
         """Read the input file."""
         self.input_filenames = input_filenames
         self.output_filename = output_filename
         self.metadata_filename = metadata_filename
         self.pymetadata_filename = pymetadata_filename
+        self.executor_filename = executor_filename
 
     def error(self, msg: str, node: parser.Node) -> None:
         lineno = 0
@@ -1107,6 +1182,8 @@ class Analyzer:
 
             self.write_pseudo_instrs()
 
+            self.write_uop_defines()
+
             self.write_stack_effect_functions()
 
             # Write type definitions
@@ -1114,12 +1191,17 @@ class Analyzer:
 
             InstructionFlags.emit_macros(self.out)
 
-            self.out.emit("struct opcode_metadata {")
-            with self.out.indent():
+            with self.out.block("struct opcode_metadata", ";"):
                 self.out.emit("bool valid_entry;")
                 self.out.emit("enum InstructionFormat instr_format;")
                 self.out.emit("int flags;")
-            self.out.emit("};")
+            self.out.emit("")
+
+            with self.out.block("struct opcode_macro_expansion", ";"):
+                self.out.emit("int nuops;")
+                self.out.emit("struct { int16_t uop; int8_t size; int8_t offset; } uops[8];")
+            self.out.emit("")
+
             self.out.emit("")
             self.out.emit("#define OPCODE_METADATA_FMT(OP) "
                           "(_PyOpcode_opcode_metadata[(OP)].instr_format)")
@@ -1130,7 +1212,9 @@ class Analyzer:
             # Write metadata array declaration
             self.out.emit("#ifndef NEED_OPCODE_METADATA")
             self.out.emit("extern const struct opcode_metadata _PyOpcode_opcode_metadata[512];")
+            self.out.emit("extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[256];")
             self.out.emit("#else")
+
             self.out.emit("const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {")
 
             # Write metadata for each instruction
@@ -1150,6 +1234,31 @@ class Analyzer:
 
             # Write end of array
             self.out.emit("};")
+
+            with self.out.block(
+                "const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] =",
+                ";",
+            ):
+                # Write macro expansion for each non-pseudo instruction
+                for thing in self.everything:
+                    match thing:
+                        case OverriddenInstructionPlaceHolder():
+                            pass
+                        case parser.InstDef(name=name):
+                            instr = self.instrs[name]
+                            if instr.kind != "op" and instr.is_viable_uop():
+                                self.out.emit(
+                                    f"[{name}] = "
+                                    f"{{ .nuops = 1, .uops = {{ {{ {name}, 0, 0 }} }} }},"
+                                )
+                        case parser.Macro():
+                            # TODO: emit expansion if all parts are viable uops
+                            pass
+                        case parser.Pseudo():
+                            pass
+                        case _:
+                            typing.assert_never(thing)
+
             self.out.emit("#endif")
 
         with open(self.pymetadata_filename, "w") as f:
@@ -1184,13 +1293,26 @@ class Analyzer:
                     "opcode for family in _specializations.values() for opcode in family"
                 "]")
 
-
     def write_pseudo_instrs(self) -> None:
         """Write the IS_PSEUDO_INSTR macro"""
         self.out.emit("\n\n#define IS_PSEUDO_INSTR(OP)  \\")
         for op in self.pseudos:
             self.out.emit(f"    ((OP) == {op}) || \\")
         self.out.emit(f"    0")
+
+    def write_uop_defines(self) -> None:
+        """Write '#define XXX NNN' for each uop"""
+        self.out.emit("")
+        counter = 300
+        def add(name: str) -> None:
+            nonlocal counter
+            self.out.emit(f"#define {name} {counter}")
+            counter += 1
+        add("EXIT_TRACE")
+        add("SET_IP")
+        for instr in self.instrs.values():
+            if instr.kind == "op" and instr.is_viable_uop():
+                add(instr.name)
 
     def emit_metadata_entry(
         self, name: str, fmt: str, flags: InstructionFlags
@@ -1221,10 +1343,7 @@ class Analyzer:
             # Create formatter
             self.out = Formatter(f, 8, self.emit_line_directives)
 
-            # Write provenance header
-            self.out.write_raw(f"{self.out.comment} This file is generated by {THIS}\n")
-            self.out.write_raw(self.from_source_files())
-            self.out.write_raw(f"{self.out.comment} Do not edit!\n")
+            self.write_provenance_header()
 
             # Write and count instructions of all kinds
             n_instrs = 0
@@ -1249,6 +1368,33 @@ class Analyzer:
         print(
             f"Wrote {n_instrs} instructions, {n_macros} macros, "
             f"and {n_pseudos} pseudos to {self.output_filename}",
+            file=sys.stderr,
+        )
+
+    def write_executor_instructions(self) -> None:
+        """Generate cases for the Tier 2 interpreter."""
+        with open(self.executor_filename, "w") as f:
+            self.out = Formatter(f, 8)
+            self.write_provenance_header()
+            for thing in self.everything:
+                match thing:
+                    case OverriddenInstructionPlaceHolder():
+                        self.write_overridden_instr_place_holder(thing)
+                    case parser.InstDef():
+                        instr = self.instrs[thing.name]
+                        if instr.is_viable_uop():
+                            self.out.emit("")
+                            with self.out.block(f"case {thing.name}:"):
+                                instr.write(self.out, tier=TIER_TWO)
+                                self.out.emit("break;")
+                    case parser.Macro():
+                        pass  # TODO
+                    case parser.Pseudo():
+                        pass
+                    case _:
+                        typing.assert_never(thing)
+        print(
+            f"Wrote some stuff to {self.executor_filename}",
             file=sys.stderr,
         )
 
@@ -1405,7 +1551,7 @@ def main():
         args.input.append(DEFAULT_INPUT)
 
     # Raises OSError if input unreadable
-    a = Analyzer(args.input, args.output, args.metadata, args.pymetadata)
+    a = Analyzer(args.input, args.output, args.metadata, args.pymetadata, args.executor_cases)
 
     if args.emit_line_directives:
         a.emit_line_directives = True
@@ -1415,6 +1561,7 @@ def main():
         sys.exit(f"Found {a.errors} errors")
     a.write_instructions()  # Raises OSError if output can't be written
     a.write_metadata()
+    a.write_executor_instructions()
 
 
 if __name__ == "__main__":

@@ -366,6 +366,8 @@ Python/sysmodule.c	-	whatstrings	-
 Python/optimizer.c	-	DefaultOptimizer_Type	-
 Python/optimizer.c	-	CounterExecutor_Type	-
 Python/optimizer.c	-	CounterOptimizer_Type	-
+Python/optimizer.c	-	UOpExecutor_Type	-
+Python/optimizer.c	-	UOpOptimizer_Type	-
 Python/optimizer.c	-	_PyOptimizer_Default	-
 
 ##-----------------------
