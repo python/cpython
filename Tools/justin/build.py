@@ -430,6 +430,7 @@ class ObjectParserELF(ObjectParser):
 
 
 CFLAGS = [
+    "-DNDEBUG",  # XXX
     "-DPy_BUILD_CORE",
     "-D_PyJIT_ACTIVE",
     "-I.",
@@ -465,8 +466,8 @@ elif sys.platform == "win32":
     assert sys.argv[1] == "--windows"
     if sys.argv[2].startswith("Debug|"):
         CFLAGS += ["-D_DEBUG"]
-    else:
-        CFLAGS += ["-DNDEBUG"]
+    # else:  # XXX
+    #     CFLAGS += ["-DNDEBUG"]
     sys.argv[1:] = sys.argv[3:]
 else:
     raise NotImplementedError(sys.platform)
