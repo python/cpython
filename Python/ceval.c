@@ -2767,10 +2767,11 @@ void Py_LeaveRecursiveCall(void)
 
 ///////////////////// Experimental UOp Interpreter /////////////////////
 
-// UPDATE_MISS_STATS (called by DEOPT_IF) uses next_instr
-// TODO: Make it do something useful
-#undef UPDATE_MISS_STATS
-#define UPDATE_MISS_STATS(INSTNAME) ((void)0)
+#undef DEOPT_IF
+#define DEOPT_IF(COND, INSTNAME) \
+    if ((COND)) {                \
+        goto deoptimize;         \
+    }
 
 _PyInterpreterFrame *
 _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **stack_pointer)
@@ -2875,12 +2876,7 @@ error:
     Py_DECREF(self);
     return NULL;
 
-PREDICTED(UNPACK_SEQUENCE)
-PREDICTED(COMPARE_OP)
-PREDICTED(LOAD_SUPER_ATTR)
-PREDICTED(STORE_SUBSCR)
-PREDICTED(BINARY_SUBSCR)
-PREDICTED(BINARY_OP)
+deoptimize:
     // On DEOPT_IF we just repeat the last instruction.
     // This presumes nothing was popped from the stack (nor pushed).
 #ifdef LLTRACE
