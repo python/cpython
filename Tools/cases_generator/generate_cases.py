@@ -1214,7 +1214,9 @@ class Analyzer:
             self.out.emit("#ifndef NEED_OPCODE_METADATA")
             self.out.emit("extern const struct opcode_metadata _PyOpcode_opcode_metadata[512];")
             self.out.emit("extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[256];")
+            self.out.emit("#ifdef Py_DEBUG")
             self.out.emit("extern const char *_PyOpcode_uop_name[512];")
+            self.out.emit("#endif")
             self.out.emit("#else")
 
             self.out.emit("const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {")
@@ -1265,8 +1267,10 @@ class Analyzer:
                         case _:
                             typing.assert_never(thing)
 
+            self.out.emit("#ifdef Py_DEBUG")
             with self.out.block("const char *_PyOpcode_uop_name[512] =", ";"):
                 self.write_uop_items(lambda name, counter: f"[{counter}] = \"{name}\",")
+            self.out.emit("#endif")
 
             self.out.emit("#endif")
 
