@@ -1374,7 +1374,7 @@ class Analyzer:
     def write_executor_instructions(self) -> None:
         """Generate cases for the Tier 2 interpreter."""
         with open(self.executor_filename, "w") as f:
-            self.out = Formatter(f, 8)
+            self.out = Formatter(f, 8, self.emit_line_directives)
             self.write_provenance_header()
             for thing in self.everything:
                 match thing:
