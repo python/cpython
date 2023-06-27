@@ -1824,7 +1824,8 @@ ctxmanager_new(PyTypeObject *type UNUSED, PyObject *args, PyObject *kwds)
 }
 
 static int
-ctxmanager_traverse(PyDecContextManagerObject *self, visitproc visit, void *arg)
+ctxmanager_traverse(PyDecContextManagerObject *self, visitproc visit,
+                    void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->local);
