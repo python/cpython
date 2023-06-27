@@ -2722,8 +2722,8 @@ dec_from_float(PyObject *type, PyObject *pyfloat)
     PyObject *context;
     PyObject *result;
 
-    decimal_state *state = GLOBAL_STATE();
     CURRENT_CONTEXT(context);
+    decimal_state *state = GLOBAL_STATE();
     result = PyDecType_FromFloatExact(state->PyDec_Type, pyfloat, context);
     if (type != (PyObject *)state->PyDec_Type && result != NULL) {
         Py_SETREF(result, PyObject_CallFunctionObjArgs(type, result, NULL));
@@ -3819,7 +3819,6 @@ PyDec_Round(PyObject *dec, PyObject *args)
     uint32_t status = 0;
     PyObject *context;
 
-    decimal_state *state = GLOBAL_STATE();
     CURRENT_CONTEXT(context);
     if (!PyArg_ParseTuple(args, "|O", &x)) {
         return NULL;
@@ -3840,6 +3839,7 @@ PyDec_Round(PyObject *dec, PyObject *args)
         if (y == -1 && PyErr_Occurred()) {
             return NULL;
         }
+        decimal_state *state = GLOBAL_STATE();
         result = dec_alloc(state);
         if (result == NULL) {
             return NULL;
@@ -4220,10 +4220,10 @@ nm_mpd_qdivmod(PyObject *v, PyObject *w)
     uint32_t status = 0;
     PyObject *ret;
 
-    decimal_state *state = GLOBAL_STATE();
     CURRENT_CONTEXT(context);
     CONVERT_BINOP(&a, &b, v, w, context);
 
+    decimal_state *state = GLOBAL_STATE();
     q = dec_alloc(state);
     if (q == NULL) {
         Py_DECREF(a);
@@ -4261,7 +4261,6 @@ nm_mpd_qpow(PyObject *base, PyObject *exp, PyObject *mod)
     PyObject *context;
     uint32_t status = 0;
 
-    decimal_state *state = GLOBAL_STATE();
     CURRENT_CONTEXT(context);
     CONVERT_BINOP(&a, &b, base, exp, context);
 
@@ -4273,6 +4272,7 @@ nm_mpd_qpow(PyObject *base, PyObject *exp, PyObject *mod)
         }
     }
 
+    decimal_state *state = GLOBAL_STATE();
     result = dec_alloc(state);
     if (result == NULL) {
         Py_DECREF(a);
