@@ -3756,7 +3756,7 @@ sys_pyfile_write_unicode(PyObject *unicode, PyObject *file)
     if (file == NULL)
         return -1;
     assert(unicode != NULL);
-    PyObject *result = _PyObject_CallMethodOneArg(file, &_Py_ID(write), unicode);
+    PyObject *result = PyObject_CallMethodOneArg(file, &_Py_ID(write), unicode);
     if (result == NULL) {
         return -1;
     }
