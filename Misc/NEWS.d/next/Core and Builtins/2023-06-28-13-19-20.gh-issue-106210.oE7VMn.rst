@@ -1,0 +1,1 @@
+Removed Emscripten import trampoline
