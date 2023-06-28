@@ -290,6 +290,9 @@ Objects/exceptions.c	-	PyExc_UnicodeWarning	-
 Objects/exceptions.c	-	PyExc_BytesWarning	-
 Objects/exceptions.c	-	PyExc_ResourceWarning	-
 Objects/exceptions.c	-	PyExc_EncodingWarning	-
+Objects/exceptions.c	-	_PyExc_SoftDeprecationWarning	-
+Objects/exceptions.c	-	PyExc_SoftDeprecationWarning	-
+
 
 ##-----------------------
 ## singletons
