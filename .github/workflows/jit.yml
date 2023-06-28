@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        configuration: [false, true]
+        configuration: [Debug, Release]
         llvm: [14, 15, 16]
         os: [macOS, Ubuntu, Windows]
         # This is awkward, but whatever...
