@@ -1558,6 +1558,10 @@ class ArgsTestCase(BaseTestCase):
             encoding = locale.getencoding()
         else:
             encoding = sys.stdout.encoding
+            if encoding is None:
+                encoding = sys.__stdout__.encoding
+                if encoding is None:
+                    self.skipTest(f"cannot get regrtest worker encoding")
 
         nonascii = b"byte:\xa0\xa9\xff\n"
         try:
