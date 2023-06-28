@@ -572,7 +572,7 @@ class Compiler:
             ll = pathlib.Path(tempdir, f"{opname}.ll")
             o = pathlib.Path(tempdir, f"{opname}.o")
             c.write_text(body)
-            self._use_tos_caching(c, 4)
+            self._use_tos_caching(c, 0)
             subprocess.run(
                 ["clang", *CFLAGS, "-emit-llvm", "-S", *defines, "-o", ll, c],
                 check=True,
@@ -594,7 +594,7 @@ class Compiler:
         for opname in sorted(self._cases.keys() - self._SKIP):
             body = template % self._cases[opname]
             self._stencils_built[opname] = self._compile(opname, body)
-        opname = "<trampoline>"
+        opname = "__TRAMPOLINE__"
         body = TOOLS_JUSTIN_TRAMPOLINE.read_text()
         self._trampoline_built = self._compile(opname, body)
 
