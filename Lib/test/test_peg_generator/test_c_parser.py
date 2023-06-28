@@ -74,8 +74,18 @@ unittest.main()
 @support.requires_subprocess()
 class TestCParser(unittest.TestCase):
 
+    _has_run = False
+
     @classmethod
     def setUpClass(cls):
+        if cls._has_run:
+            # Since gh-104798 (Use setuptools in peg-generator and reenable
+            # tests), this test case has been producing ref leaks. Initial
+            # debugging points to bug(s) in setuptools and/or importlib.
+            # See gh-105063 for more info.
+            raise unittest.SkipTest("gh-105063: can not rerun because of ref. leaks")
+        cls._has_run = True
+
         # When running under regtest, a separate tempdir is used
         # as the current directory and watched for left-overs.
         # Reusing that as the base for temporary directories

@@ -45,13 +45,13 @@ is_block_push(cfg_instr *i)
 static inline int
 is_jump(cfg_instr *i)
 {
-    return IS_JUMP_OPCODE(i->i_opcode);
+    return OPCODE_HAS_JUMP(i->i_opcode);
 }
 
 /* One arg*/
 #define INSTR_SET_OP1(I, OP, ARG) \
     do { \
-        assert(HAS_ARG(OP)); \
+        assert(OPCODE_HAS_ARG(OP)); \
         _PyCfgInstruction *_instr__ptr_ = (I); \
         _instr__ptr_->i_opcode = (OP); \
         _instr__ptr_->i_oparg = (ARG); \
@@ -60,7 +60,7 @@ is_jump(cfg_instr *i)
 /* No args*/
 #define INSTR_SET_OP0(I, OP) \
     do { \
-        assert(!HAS_ARG(OP)); \
+        assert(!OPCODE_HAS_ARG(OP)); \
         _PyCfgInstruction *_instr__ptr_ = (I); \
         _instr__ptr_->i_opcode = (OP); \
         _instr__ptr_->i_oparg = 0; \
@@ -110,7 +110,7 @@ basicblock_addop(basicblock *b, int opcode, int oparg, location loc)
 {
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
-    assert(HAS_ARG(opcode) || HAS_TARGET(opcode) || oparg == 0);
+    assert(OPCODE_HAS_ARG(opcode) || HAS_TARGET(opcode) || oparg == 0);
     assert(0 <= oparg && oparg < (1 << 30));
 
     int off = basicblock_next_instr(b);
@@ -166,22 +166,6 @@ _PyBasicblock_InsertInstruction(basicblock *block, int pos, cfg_instr *instr) {
     return SUCCESS;
 }
 
-static int
-instr_size(cfg_instr *instruction)
-{
-    return _PyCompile_InstrSize(instruction->i_opcode, instruction->i_oparg);
-}
-
-static int
-blocksize(basicblock *b)
-{
-    int size = 0;
-    for (int i = 0; i < b->b_iused; i++) {
-        size += instr_size(&b->b_instr[i]);
-    }
-    return size;
-}
-
 /* For debugging purposes only */
 #if 0
 static void
@@ -192,7 +176,7 @@ dump_instr(cfg_instr *i)
     char arg[128];
 
     *arg = '\0';
-    if (HAS_ARG(i->i_opcode)) {
+    if (OPCODE_HAS_ARG(i->i_opcode)) {
         sprintf(arg, "arg: %d ", i->i_oparg);
     }
     if (HAS_TARGET(i->i_opcode)) {
@@ -212,9 +196,9 @@ static void
 dump_basicblock(const basicblock *b)
 {
     const char *b_return = basicblock_returns(b) ? "return " : "";
-    fprintf(stderr, "%d: [EH=%d CLD=%d WRM=%d NO_FT=%d %p] used: %d, depth: %d, offset: %d %s\n",
+    fprintf(stderr, "%d: [EH=%d CLD=%d WRM=%d NO_FT=%d %p] used: %d, depth: %d, %s\n",
         b->b_label.id, b->b_except_handler, b->b_cold, b->b_warm, BB_NO_FALLTHROUGH(b), b, b->b_iused,
-        b->b_startdepth, b->b_offset, b_return);
+        b->b_startdepth, b_return);
     if (b->b_instr) {
         int i;
         for (i = 0; i < b->b_iused; i++) {
@@ -416,9 +400,13 @@ normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
     bool is_forward = last->i_target->b_visited == 0;
     switch(last->i_opcode) {
         case JUMP:
+            assert(SAME_OPCODE_METADATA(JUMP, JUMP_FORWARD));
+            assert(SAME_OPCODE_METADATA(JUMP, JUMP_BACKWARD));
             last->i_opcode = is_forward ? JUMP_FORWARD : JUMP_BACKWARD;
             return SUCCESS;
         case JUMP_NO_INTERRUPT:
+            assert(SAME_OPCODE_METADATA(JUMP_NO_INTERRUPT, JUMP_FORWARD));
+            assert(SAME_OPCODE_METADATA(JUMP_NO_INTERRUPT, JUMP_BACKWARD_NO_INTERRUPT));
             last->i_opcode = is_forward ?
                 JUMP_FORWARD : JUMP_BACKWARD_NO_INTERRUPT;
             return SUCCESS;
@@ -476,71 +464,11 @@ normalize_jumps(_PyCfgBuilder *g)
     return SUCCESS;
 }
 
-static void
-resolve_jump_offsets(basicblock *entryblock)
-{
-    int bsize, totsize, extended_arg_recompile;
-
-    /* Compute the size of each block and fixup jump args.
-       Replace block pointer with position in bytecode. */
-    do {
-        totsize = 0;
-        for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-            bsize = blocksize(b);
-            b->b_offset = totsize;
-            totsize += bsize;
-        }
-        extended_arg_recompile = 0;
-        for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-            bsize = b->b_offset;
-            for (int i = 0; i < b->b_iused; i++) {
-                cfg_instr *instr = &b->b_instr[i];
-                int isize = instr_size(instr);
-                /* jump offsets are computed relative to
-                 * the instruction pointer after fetching
-                 * the jump instruction.
-                 */
-                bsize += isize;
-                if (is_jump(instr)) {
-                    instr->i_oparg = instr->i_target->b_offset;
-                    if (instr->i_oparg < bsize) {
-                        assert(IS_BACKWARDS_JUMP_OPCODE(instr->i_opcode));
-                        instr->i_oparg = bsize - instr->i_oparg;
-                    }
-                    else {
-                        assert(!IS_BACKWARDS_JUMP_OPCODE(instr->i_opcode));
-                        instr->i_oparg -= bsize;
-                    }
-                    if (instr_size(instr) != isize) {
-                        extended_arg_recompile = 1;
-                    }
-                }
-            }
-        }
-
-    /* XXX: This is an awful hack that could hurt performance, but
-        on the bright side it should work until we come up
-        with a better solution.
-
-        The issue is that in the first loop blocksize() is called
-        which calls instr_size() which requires i_oparg be set
-        appropriately. There is a bootstrap problem because
-        i_oparg is calculated in the second loop above.
-
-        So we loop until we stop seeing new EXTENDED_ARGs.
-        The only EXTENDED_ARGs that could be popping up are
-        ones in jump instructions.  So this should converge
-        fairly quickly.
-    */
-    } while (extended_arg_recompile);
-}
-
 int
 _PyCfg_ResolveJumps(_PyCfgBuilder *g)
 {
     RETURN_IF_ERROR(normalize_jumps(g));
     assert(no_redundant_jumps(g));
-    resolve_jump_offsets(g->g_entryblock);
     return SUCCESS;
 }
 
@@ -1103,7 +1031,7 @@ static PyObject*
 get_const_value(int opcode, int oparg, PyObject *co_consts)
 {
     PyObject *constant = NULL;
-    assert(HAS_CONST(opcode));
+    assert(OPCODE_HAS_CONST(opcode));
     if (opcode == LOAD_CONST) {
         constant = PyList_GET_ITEM(co_consts, oparg);
     }
@@ -1134,7 +1062,7 @@ fold_tuple_on_constants(PyObject *const_cache,
     assert(inst[n].i_oparg == n);
 
     for (int i = 0; i < n; i++) {
-        if (!HAS_CONST(inst[i].i_opcode)) {
+        if (!OPCODE_HAS_CONST(inst[i].i_opcode)) {
             return SUCCESS;
         }
     }
@@ -1537,8 +1465,8 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 }
                 break;
             default:
-                /* All HAS_CONST opcodes should be handled with LOAD_CONST */
-                assert (!HAS_CONST(inst->i_opcode));
+                /* All OPCODE_HAS_CONST opcodes should be handled with LOAD_CONST */
+                assert (!OPCODE_HAS_CONST(inst->i_opcode));
         }
     }
 
@@ -1788,7 +1716,7 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
     /* mark used consts */
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
-            if (HAS_CONST(b->b_instr[i].i_opcode)) {
+            if (OPCODE_HAS_CONST(b->b_instr[i].i_opcode)) {
                 int index = b->b_instr[i].i_oparg;
                 index_map[index] = index;
             }
@@ -1841,7 +1769,7 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
 
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
-            if (HAS_CONST(b->b_instr[i].i_opcode)) {
+            if (OPCODE_HAS_CONST(b->b_instr[i].i_opcode)) {
                 int index = b->b_instr[i].i_oparg;
                 assert(reverse_index_map[index] >= 0);
                 assert(reverse_index_map[index] < n_used_consts);
@@ -2071,9 +1999,11 @@ _PyCfg_ConvertPseudoOps(basicblock *entryblock)
         for (int i = 0; i < b->b_iused; i++) {
             cfg_instr *instr = &b->b_instr[i];
             if (is_block_push(instr) || instr->i_opcode == POP_BLOCK) {
+                assert(SAME_OPCODE_METADATA(instr->i_opcode, NOP));
                 INSTR_SET_OP0(instr, NOP);
             }
             else if (instr->i_opcode == STORE_FAST_MAYBE_NULL) {
+                assert(SAME_OPCODE_METADATA(STORE_FAST_MAYBE_NULL, STORE_FAST));
                 instr->i_opcode = STORE_FAST;
             }
         }
