@@ -913,6 +913,9 @@ struct opcode_macro_expansion {
 #ifndef NEED_OPCODE_METADATA
 extern const struct opcode_metadata _PyOpcode_opcode_metadata[512];
 extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[256];
+#ifdef Py_DEBUG
+extern const char * const _PyOpcode_uop_name[512];
+#endif
 #else
 const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {
     [NOP] = { true, INSTR_FMT_IX, 0 },
@@ -1131,10 +1134,18 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] = {
     [STORE_FAST] = { .nuops = 1, .uops = { { STORE_FAST, 0, 0 } } },
     [POP_TOP] = { .nuops = 1, .uops = { { POP_TOP, 0, 0 } } },
     [PUSH_NULL] = { .nuops = 1, .uops = { { PUSH_NULL, 0, 0 } } },
+    [END_FOR] = { .nuops = 2, .uops = { { POP_TOP, 0, 0 }, { POP_TOP, 0, 0 } } },
     [END_SEND] = { .nuops = 1, .uops = { { END_SEND, 0, 0 } } },
     [UNARY_NEGATIVE] = { .nuops = 1, .uops = { { UNARY_NEGATIVE, 0, 0 } } },
     [UNARY_NOT] = { .nuops = 1, .uops = { { UNARY_NOT, 0, 0 } } },
     [UNARY_INVERT] = { .nuops = 1, .uops = { { UNARY_INVERT, 0, 0 } } },
+    [BINARY_OP_MULTIPLY_INT] = { .nuops = 2, .uops = { { _GUARD_BOTH_INT, 0, 0 }, { _BINARY_OP_MULTIPLY_INT, 0, 0 } } },
+    [BINARY_OP_ADD_INT] = { .nuops = 2, .uops = { { _GUARD_BOTH_INT, 0, 0 }, { _BINARY_OP_ADD_INT, 0, 0 } } },
+    [BINARY_OP_SUBTRACT_INT] = { .nuops = 2, .uops = { { _GUARD_BOTH_INT, 0, 0 }, { _BINARY_OP_SUBTRACT_INT, 0, 0 } } },
+    [BINARY_OP_MULTIPLY_FLOAT] = { .nuops = 2, .uops = { { _GUARD_BOTH_FLOAT, 0, 0 }, { _BINARY_OP_MULTIPLY_FLOAT, 0, 0 } } },
+    [BINARY_OP_ADD_FLOAT] = { .nuops = 2, .uops = { { _GUARD_BOTH_FLOAT, 0, 0 }, { _BINARY_OP_ADD_FLOAT, 0, 0 } } },
+    [BINARY_OP_SUBTRACT_FLOAT] = { .nuops = 2, .uops = { { _GUARD_BOTH_FLOAT, 0, 0 }, { _BINARY_OP_SUBTRACT_FLOAT, 0, 0 } } },
+    [BINARY_OP_ADD_UNICODE] = { .nuops = 2, .uops = { { _GUARD_BOTH_UNICODE, 0, 0 }, { _BINARY_OP_ADD_UNICODE, 0, 0 } } },
     [BINARY_SLICE] = { .nuops = 1, .uops = { { BINARY_SLICE, 0, 0 } } },
     [STORE_SLICE] = { .nuops = 1, .uops = { { STORE_SLICE, 0, 0 } } },
     [BINARY_SUBSCR_LIST_INT] = { .nuops = 1, .uops = { { BINARY_SUBSCR_LIST_INT, 0, 0 } } },
@@ -1162,6 +1173,9 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] = {
     [DELETE_ATTR] = { .nuops = 1, .uops = { { DELETE_ATTR, 0, 0 } } },
     [STORE_GLOBAL] = { .nuops = 1, .uops = { { STORE_GLOBAL, 0, 0 } } },
     [DELETE_GLOBAL] = { .nuops = 1, .uops = { { DELETE_GLOBAL, 0, 0 } } },
+    [LOAD_LOCALS] = { .nuops = 1, .uops = { { _LOAD_LOCALS, 0, 0 } } },
+    [LOAD_NAME] = { .nuops = 2, .uops = { { _LOAD_LOCALS, 0, 0 }, { _LOAD_FROM_DICT_OR_GLOBALS, 0, 0 } } },
+    [LOAD_FROM_DICT_OR_GLOBALS] = { .nuops = 1, .uops = { { _LOAD_FROM_DICT_OR_GLOBALS, 0, 0 } } },
     [DELETE_DEREF] = { .nuops = 1, .uops = { { DELETE_DEREF, 0, 0 } } },
     [LOAD_FROM_DICT_OR_DEREF] = { .nuops = 1, .uops = { { LOAD_FROM_DICT_OR_DEREF, 0, 0 } } },
     [LOAD_DEREF] = { .nuops = 1, .uops = { { LOAD_DEREF, 0, 0 } } },
@@ -1207,4 +1221,22 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] = {
     [COPY] = { .nuops = 1, .uops = { { COPY, 0, 0 } } },
     [SWAP] = { .nuops = 1, .uops = { { SWAP, 0, 0 } } },
 };
+#ifdef Py_DEBUG
+const char * const _PyOpcode_uop_name[512] = {
+    [300] = "EXIT_TRACE",
+    [301] = "SET_IP",
+    [302] = "_GUARD_BOTH_INT",
+    [303] = "_BINARY_OP_MULTIPLY_INT",
+    [304] = "_BINARY_OP_ADD_INT",
+    [305] = "_BINARY_OP_SUBTRACT_INT",
+    [306] = "_GUARD_BOTH_FLOAT",
+    [307] = "_BINARY_OP_MULTIPLY_FLOAT",
+    [308] = "_BINARY_OP_ADD_FLOAT",
+    [309] = "_BINARY_OP_SUBTRACT_FLOAT",
+    [310] = "_GUARD_BOTH_UNICODE",
+    [311] = "_BINARY_OP_ADD_UNICODE",
+    [312] = "_LOAD_LOCALS",
+    [313] = "_LOAD_FROM_DICT_OR_GLOBALS",
+};
+#endif
 #endif
