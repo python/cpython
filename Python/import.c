@@ -839,16 +839,6 @@ _PyImport_ClearExtension(PyObject *name, PyObject *filename)
 }
 
 
-/*******************/
-
-#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
-#include <emscripten.h>
-EM_JS(PyObject*, _PyImport_InitFunc_TrampolineCall, (PyModInitFunction func), {
-    return wasmTable.get(func)();
-});
-#endif // __EMSCRIPTEN__ && PY_CALL_TRAMPOLINE
-
-
 /*****************************/
 /* single-phase init modules */
 /*****************************/
@@ -1285,7 +1275,7 @@ import_find_extension(PyThreadState *tstate, PyObject *name,
     else {
         if (def->m_base.m_init == NULL)
             return NULL;
-        mod = _PyImport_InitFunc_TrampolineCall(def->m_base.m_init);
+        mod = def->m_base.m_init();
         if (mod == NULL)
             return NULL;
         if (PyObject_SetItem(modules, name, mod) == -1) {
@@ -1400,7 +1390,7 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
                 /* Cannot re-init internal module ("sys" or "builtins") */
                 return import_add_module(tstate, name);
             }
-            mod = _PyImport_InitFunc_TrampolineCall(*p->initfunc);
+            mod = (*p->initfunc)();
             if (mod == NULL) {
                 return NULL;
             }
