@@ -325,8 +325,8 @@ translate_bytecode_to_trace(
     }
 #define ADD_TO_TRACE(OPCODE, OPERAND) \
         if (lltrace >= 2) { \
-            const char *opname = (OPCODE) < 256 ? _PyOpcode_OpName[(OPCODE)] : ""; \
-            fprintf(stderr, "  ADD_TO_TRACE(%s %d, %" PRIu64 ")\n", opname, (OPCODE), (uint64_t)(OPERAND)); \
+            const char *opname = (OPCODE) < 256 ? _PyOpcode_OpName[(OPCODE)] : _PyOpcode_uop_name[(OPCODE)]; \
+            fprintf(stderr, "  ADD_TO_TRACE(%s, %" PRIu64 ")\n", opname, (uint64_t)(OPERAND)); \
         } \
         trace[trace_length].opcode = (OPCODE); \
         trace[trace_length].operand = (OPERAND); \
@@ -474,6 +474,8 @@ PyUnstable_Optimizer_NewUOpOptimizer(void)
     }
     opt->optimize = uop_optimize;
     opt->resume_threshold = UINT16_MAX;
-    opt->backedge_threshold = 0;
+    // Need at least 3 iterations to settle specializations.
+    // A few lower bits of the counter are reserved for other flags.
+    opt->backedge_threshold = 3 << OPTIMIZER_BITS_IN_COUNTER;
     return (PyObject *)opt;
 }

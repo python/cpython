@@ -2817,10 +2817,10 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
         oparg = (int)operand;
 #ifdef LLTRACE
         if (lltrace >= 3) {
-            const char *opname = opcode < 256 ? _PyOpcode_OpName[opcode] : "";
+            const char *opname = opcode < 256 ? _PyOpcode_OpName[opcode] : _PyOpcode_uop_name[opcode];
             int stack_level = (int)(stack_pointer - _PyFrame_Stackbase(frame));
-            fprintf(stderr, "  uop %s %d, operand %" PRIu64 ", stack_level %d\n",
-                    opname, opcode, operand, stack_level);
+            fprintf(stderr, "  uop %s, operand %" PRIu64 ", stack_level %d\n",
+                    opname, operand, stack_level);
         }
 #endif
         pc++;
