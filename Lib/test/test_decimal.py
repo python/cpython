@@ -2902,13 +2902,13 @@ class CDecimalTypesTest(unittest.TestCase):
             decimal.Context,
         )
         self.decimal = decimal
-    
+
     def test_immutable_types(self):
         for tp in self.dataset:
             with self.subTest(tp=tp):
                 with self.assertRaisesRegex(TypeError, "immutable"):
                     tp.foo = 1
-    
+
     def test_disallow_instantiation(self):
         decimal = self.decimal
         ctxmanager_type = type(decimal.localcontext())
