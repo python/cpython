@@ -7,6 +7,7 @@ Note: test_regrtest cannot be run twice in parallel.
 import contextlib
 import glob
 import io
+import locale
 import os.path
 import platform
 import re
