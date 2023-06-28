@@ -698,8 +698,10 @@ class CmdLineTest(unittest.TestCase):
         else:
             expected_filters = ("default::Warning "
                                 "default::DeprecationWarning "
+                                "default::SoftDeprecationWarning "
                                 "ignore::DeprecationWarning "
                                 "ignore::PendingDeprecationWarning "
+                                "ignore::SoftDeprecationWarning "
                                 "ignore::ImportWarning "
                                 "ignore::ResourceWarning")
 
@@ -768,8 +770,10 @@ class CmdLineTest(unittest.TestCase):
         if not support.Py_DEBUG:
             expected_filters += (" "
                                  "default::DeprecationWarning "
+                                 "default::SoftDeprecationWarning "
                                  "ignore::DeprecationWarning "
                                  "ignore::PendingDeprecationWarning "
+                                 "ignore::SoftDeprecationWarning "
                                  "ignore::ImportWarning "
                                  "ignore::ResourceWarning")
 
