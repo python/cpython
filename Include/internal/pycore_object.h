@@ -426,11 +426,19 @@ PyAPI_FUNC(PyObject *) _PyObject_LookupSpecial(PyObject *, PyObject *);
  * trampoline mitigates common occurrences of bad fpcasts on Emscripten.
  */
 #if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
+extern PyObject*
+_PyEM_TrampolineCall(PyCFunctionWithKeywords func,
+                     PyObject* self,
+                     PyObject* args,
+                     PyObject* kw);
+
 #define _PyCFunction_TrampolineCall(meth, self, args) \
-    _PyCFunctionWithKeywords_TrampolineCall( \
+    _PyEM_TrampolineCall( \
         (*(PyCFunctionWithKeywords)(void(*)(void))(meth)), (self), (args), NULL)
-extern PyObject* _PyCFunctionWithKeywords_TrampolineCall(
-    PyCFunctionWithKeywords meth, PyObject *, PyObject *, PyObject *);
+
+#define _PyCFunctionWithKeywords_TrampolineCall(meth, self, args, kw) \
+    _PyEM_TrampolineCall((meth), (self), (args), (kw))
+
 #else
 #define _PyCFunction_TrampolineCall(meth, self, args) \
     (meth)((self), (args))
