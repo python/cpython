@@ -1,1 +1,1 @@
-Convert :opcode:`LOAD_CLOSURE` to a pseudo-op.
+:opcode:`LOAD_CLOSURE` is now a pseudo-op.
