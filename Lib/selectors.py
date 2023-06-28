@@ -93,13 +93,14 @@ class BaseSelector(metaclass=ABCMeta):
     """
 
     @abstractmethod
-    def register(self, fileobj, events, data=None):
+    def register(self, fileobj, events, data=None, *, extra_events=0):
         """Register a file object.
 
         Parameters:
         fileobj -- file object or file descriptor
         events  -- events to monitor (bitwise mask of EVENT_READ|EVENT_WRITE)
         data    -- attached data
+        extra_events -- extra events which is supported in select module
 
         Returns:
         SelectorKey instance
@@ -134,7 +135,7 @@ class BaseSelector(metaclass=ABCMeta):
         """
         raise NotImplementedError
 
-    def modify(self, fileobj, events, data=None):
+    def modify(self, fileobj, events, data=None, *, extra_events=0):
         """Change a registered file object monitored events or attached data.
 
         Parameters:
@@ -149,7 +150,7 @@ class BaseSelector(metaclass=ABCMeta):
         Anything that unregister() or register() raises
         """
         self.unregister(fileobj)
-        return self.register(fileobj, events, data)
+        return self.register(fileobj, events, data, extra_events=extra_events)
 
     @abstractmethod
     def select(self, timeout=None):
@@ -231,7 +232,7 @@ class _BaseSelectorImpl(BaseSelector):
             # Raise ValueError after all.
             raise
 
-    def register(self, fileobj, events, data=None):
+    def register(self, fileobj, events, data=None, *, extra_events=0):
         if (not events) or (events & ~(EVENT_READ | EVENT_WRITE)):
             raise ValueError("Invalid events: {!r}".format(events))
 
@@ -251,14 +252,14 @@ class _BaseSelectorImpl(BaseSelector):
             raise KeyError("{!r} is not registered".format(fileobj)) from None
         return key
 
-    def modify(self, fileobj, events, data=None):
+    def modify(self, fileobj, events, data=None, *, extra_events=0):
         try:
             key = self._fd_to_key[self._fileobj_lookup(fileobj)]
         except KeyError:
             raise KeyError("{!r} is not registered".format(fileobj)) from None
         if events != key.events:
             self.unregister(fileobj)
-            key = self.register(fileobj, events, data)
+            key = self.register(fileobj, events, data, extra_events=extra_events)
         elif data != key.data:
             # Use a shortcut to update the data.
             key = key._replace(data=data)
@@ -295,7 +296,7 @@ class SelectSelector(_BaseSelectorImpl):
         self._readers = set()
         self._writers = set()
 
-    def register(self, fileobj, events, data=None):
+    def register(self, fileobj, events, data=None, *, extra_events=0):
         key = super().register(fileobj, events, data)
         if events & EVENT_READ:
             self._readers.add(key.fd)
@@ -348,13 +349,15 @@ class _PollLikeSelector(_BaseSelectorImpl):
         super().__init__()
         self._selector = self._selector_cls()
 
-    def register(self, fileobj, events, data=None):
+    def register(self, fileobj, events, data=None, *, extra_events=0):
         key = super().register(fileobj, events, data)
         poller_events = 0
         if events & EVENT_READ:
             poller_events |= self._EVENT_READ
         if events & EVENT_WRITE:
             poller_events |= self._EVENT_WRITE
+        # allow user use events defiend in select
+        poller_events |= extra_events
         try:
             self._selector.register(key.fd, poller_events)
         except:
@@ -372,7 +375,7 @@ class _PollLikeSelector(_BaseSelectorImpl):
             pass
         return key
 
-    def modify(self, fileobj, events, data=None):
+    def modify(self, fileobj, events, data=None, *, extra_events=0):
         try:
             key = self._fd_to_key[self._fileobj_lookup(fileobj)]
         except KeyError:
@@ -385,6 +388,7 @@ class _PollLikeSelector(_BaseSelectorImpl):
                 selector_events |= self._EVENT_READ
             if events & EVENT_WRITE:
                 selector_events |= self._EVENT_WRITE
+            selector_events |= extra_events
             try:
                 self._selector.modify(key.fd, selector_events)
             except:
@@ -513,7 +517,7 @@ if hasattr(select, 'kqueue'):
         def fileno(self):
             return self._selector.fileno()
 
-        def register(self, fileobj, events, data=None):
+        def register(self, fileobj, events, data=None, *, extra_events=0):
             key = super().register(fileobj, events, data)
             try:
                 if events & EVENT_READ:
