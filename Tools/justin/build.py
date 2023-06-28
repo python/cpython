@@ -203,7 +203,7 @@ class ObjectParser:
         holes = []
         for before, relocation in self.relocations_todo:
             for newhole in handle_one_relocation(self.got_entries, self.body, before, relocation):
-                assert newhole.symbol not in self.dupes
+                assert newhole.symbol not in self.dupes, (newhole.symbol, self.dupes)
                 if newhole.symbol in self.body_symbols:
                     addend = newhole.addend + self.body_symbols[newhole.symbol] - entry
                     newhole = Hole("_justin_base", newhole.offset, addend, newhole.pc)
@@ -478,37 +478,28 @@ CFLAGS = [
 ]
 
 if sys.platform == "darwin":
-    ObjectParserDefault = ObjectParserMachO
+    ObjectParserDefault = functools.partial(ObjectParserMachO, symbol_prefix="_")  # XXX
 elif sys.platform == "linux":
     ObjectParserDefault = ObjectParserELF
 elif sys.platform == "win32":
-    ObjectParserDefault = ObjectParserCOFF
-    match sys.argv:
-        case [_, "--windows", "Debug|ARM", *rest]:
-            CFLAGS += ["-D_DEBUG", "-arch=arm", "-m32"]
-        case [_, "--windows", "Debug|ARM64", *rest]:
-            CFLAGS += ["-D_DEBUG", "-arch=aarch64", "-m64"]
-        case [_, "--windows", "Debug|Win32", *rest]:
-            CFLAGS += ["-D_DEBUG", "-arch=x86", "-m32"]
-            ObjectParserDefault = functools.partial(ObjectParserDefault, symbol_prefix="_")  # XXX
-        case [_, "--windows", "Debug|x64", *rest]:
-            CFLAGS += ["-D_DEBUG", "-arch=x86-64", "-m64"]
-        case [_, "--windows", "Release|ARM", *rest]:
-            # CFLAGS += ["-DNDEBUG", "-arch=arm"]  # XXX
-            CFLAGS += ["-arch=arm", "-m32"]
-        case [_, "--windows", "Release|ARM64", *rest]:
-            # CFLAGS += ["-DNDEBUG", "-arch=aarch64"]  # XXX
-            CFLAGS += ["-arh=aarch64", "-m64"]
-        case [_, "--windows", "Release|Win32", *rest]:
-            # CFLAGS += ["-DNDEBUG", "-arch=x86"]  # XXX
-            ObjectParserDefault = functools.partial(ObjectParserDefault, symbol_prefix="_")  # XXX
-            CFLAGS += ["-arch=x86", "-m32"]
-        case [_, "--windows", "Release|x64", *rest]:
-            # CFLAGS += ["-DNDEBUG", "-arch=x86-64"]  # XXX
-            CFLAGS += ["-arch=x86-64", "-m64"]
-        case _:
-            assert False, sys.argv
-    sys.argv[1:] = rest
+    assert sys.argv[1] == "--windows", sys.argv[1]
+    if sys.argv[2] == "Debug|Win32":
+        ObjectParserDefault = functools.partial(ObjectParserCOFF, symbol_prefix="_")  # XXX
+        CFLAGS += ["-D_DEBUG", "-m32"]
+    elif sys.argv[2] == "Debug|x64":
+        ObjectParserDefault = ObjectParserCOFF
+        CFLAGS += ["-D_DEBUG"]
+    elif sys.argv[2] == "Release|Win32":
+        ObjectParserDefault = functools.partial(ObjectParserCOFF, symbol_prefix="_")  # XXX
+        # CFLAGS += ["-DNDEBUG", "-m32"]  # XXX
+        CFLAGS += ["-m32"]
+    elif sys.argv[2] == "Release|x64":
+        ObjectParserDefault = ObjectParserCOFF
+        # CFLAGS += ["-DNDEBUG"]  # XXX
+        pass
+    else:
+        assert False, sys.argv[2]
+    sys.argv[1:] = sys.argv[3:]
 else:
     raise NotImplementedError(sys.platform)
 
