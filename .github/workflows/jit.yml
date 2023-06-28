@@ -7,7 +7,7 @@ permissions:
 
 jobs:
   jit:
-    name: JIT / ${{ matrix.debug && 'Debug' || 'Release' }} / LLVM ${{ matrix.llvm }} / ${{ matrix.os }}
+    name: JIT / ${{ matrix.configuration }} / LLVM ${{ matrix.llvm }} / ${{ matrix.os }} / ${{ matrix.platform }}
     runs-on: ${{ matrix.os }}-latest
     strategy:
       fail-fast: false
@@ -15,10 +15,17 @@ jobs:
         debug: [false, true]
         llvm: [14, 15, 16]
         os: [macOS, Ubuntu, Windows]
+        # This is awkward, but whatever...
+        platform: [x64, Win32]
         exclude:
           # Looks like LLVM doesn't provide Intel macOS binaries anymore...
           - llvm: 16
             os: macOS
+          # Duh...
+          - os: macOS
+            platform: Win32
+          - os: Ubuntu
+            platform: Win32
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -31,25 +38,19 @@ jobs:
         with:
           version: ${{ matrix.llvm }}
           directory: ${{ runner.temp }}/llvm
-      - if: matrix.os == 'Ubuntu' && matrix.debug
-        run: ./configure --with-pydebug
-      - if: matrix.os == 'Ubuntu' && !matrix.debug
-        run: ./configure
+      - if: matrix.os == 'Ubuntu'
+        run: ./configure ${{ matrix.configuration == 'Debug' && '--with-pydebug' || '' }}
       - if: matrix.os == 'Ubuntu'
         run: make all
       - if: matrix.os == 'Ubuntu'
         run: ./python -m test -j0 -wW
-      - if: matrix.os == 'macOS' && matrix.debug
-        run: SDKROOT=$(xcrun --show-sdk-path) ./configure --with-pydebug
-      - if: matrix.os == 'macOS' && !matrix.debug
-        run: SDKROOT=$(xcrun --show-sdk-path) ./configure
+      - if: matrix.os == 'macOS'
+        run: SDKROOT=$(xcrun --show-sdk-path) ./configure ${{ matrix.configuration == 'Debug' && '--with-pydebug' || '' }}
       - if: matrix.os == 'macOS'
         run: SDKROOT=$(xcrun --show-sdk-path) make all
       - if: matrix.os == 'macOS'
         run: ./python.exe -m test -j0 -wW
-      - if: matrix.os == 'Windows' && matrix.debug
-        run: ./PCbuild/build.bat -d
-      - if: matrix.os == 'Windows' && !matrix.debug
-        run: ./PCbuild/build.bat
+      - if: matrix.os == 'Windows'
+        run: ./PCbuild/build.bat -c ${{ matrix.configuration }} -p ${{ matrix.platform }}
       - if: matrix.os == 'Windows'
         run: ./python.bat -m test -j0 -wW

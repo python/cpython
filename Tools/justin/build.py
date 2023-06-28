@@ -1,6 +1,7 @@
 """The Justin(time) template JIT for CPython 3.13, based on copy-and-patch."""
 
 import dataclasses
+import functools
 import itertools
 import json
 import pathlib
@@ -173,7 +174,7 @@ class ObjectParser:
         "--sections",
     ]
 
-    def __init__(self, path: pathlib.Path) -> None:
+    def __init__(self, path: pathlib.Path, symbol_prefix: str = "") -> None:
         args = ["llvm-readobj", *self._ARGS, path]
         # subprocess.run(["llvm-objdump", path, "-dr"], check=True)
         process = subprocess.run(args, check=True, capture_output=True)
@@ -190,6 +191,7 @@ class ObjectParser:
         self.dupes = set()
         self.got_entries = []
         self.relocations_todo = []
+        self.symbol_prefix = symbol_prefix
 
     def parse(self):
         for section in unwrap(self._data, "Section"):
@@ -246,6 +248,20 @@ def handle_one_relocation(
             # assert not what, what
             addend = what
             body[where] = [0] * 8
+            yield Hole(symbol, offset, addend, 0)
+        case {
+            "Offset": int(offset),
+            "Symbol": str(symbol),
+            "Type": {"Value": "IMAGE_REL_I386_DIR32"},
+        }:
+            offset += base
+            where = slice(offset, offset + 4)
+            what = int.from_bytes(body[where], sys.byteorder)
+            # assert not what, what
+            addend = what
+            body[where] = [0] * 4
+            # assert symbol.startswith("_")
+            symbol = symbol.removeprefix("_")
             yield Hole(symbol, offset, addend, 0)
         case {
             "Addend": int(addend),
@@ -365,6 +381,8 @@ class ObjectParserCOFF(ObjectParser):
         for symbol in unwrap(section["Symbols"], "Symbol"):
             offset = before + symbol["Value"]
             name = symbol["Name"]
+            # assert name.startswith("_")  # XXX
+            name = name.removeprefix(self.symbol_prefix)  # XXX
             if name in self.body_symbols:
                 self.dupes.add(name)
             self.body_symbols[name] = offset
@@ -380,16 +398,16 @@ class ObjectParserMachO(ObjectParser):
         section_data = section["SectionData"]
         self.body.extend(section_data["Bytes"])
         name = section["Name"]["Value"]
-        assert name.startswith("_")
-        name = name.removeprefix("_")
+        # assert name.startswith("_")  # XXX
+        name = name.removeprefix(self.symbol_prefix)  # XXX
         if name in self.body_symbols:
             self.dupes.add(name)
         self.body_symbols[name] = 0  # before
         for symbol in unwrap(section["Symbols"], "Symbol"):
             offset = symbol["Value"]
             name = symbol["Name"]["Value"]
-            assert name.startswith("_")
-            name = name.removeprefix("_")
+            # assert name.startswith(self.symbol_prefix)  # XXX
+            name = name.removeprefix(self.symbol_prefix)  # XXX
             if name in self.body_symbols:
                 self.dupes.add(name)
             self.body_symbols[name] = offset
@@ -423,6 +441,8 @@ class ObjectParserELF(ObjectParser):
             for symbol in unwrap(section["Symbols"], "Symbol"):
                 offset = before + symbol["Value"]
                 name = symbol["Name"]["Value"]
+                # assert name.startswith("_")  # XXX
+                name = name.removeprefix(self.symbol_prefix)  # XXX
                 assert name not in self.body_symbols
                 self.body_symbols[name] = offset
         else:
@@ -463,12 +483,32 @@ elif sys.platform == "linux":
     ObjectParserDefault = ObjectParserELF
 elif sys.platform == "win32":
     ObjectParserDefault = ObjectParserCOFF
-    assert sys.argv[1] == "--windows"
-    if sys.argv[2].startswith("Debug|"):
-        CFLAGS += ["-D_DEBUG"]
-    # else:  # XXX
-    #     CFLAGS += ["-DNDEBUG"]
-    sys.argv[1:] = sys.argv[3:]
+    match sys.argv:
+        case [_, "--windows", "Debug|ARM", *rest]:
+            CFLAGS += ["-D_DEBUG", "-arch=arm", "-m32"]
+        case [_, "--windows", "Debug|ARM64", *rest]:
+            CFLAGS += ["-D_DEBUG", "-arch=aarch64", "-m64"]
+        case [_, "--windows", "Debug|Win32", *rest]:
+            CFLAGS += ["-D_DEBUG", "-arch=x86", "-m32"]
+            ObjectParserDefault = functools.partial(ObjectParserDefault, symbol_prefix="_")  # XXX
+        case [_, "--windows", "Debug|x64", *rest]:
+            CFLAGS += ["-D_DEBUG", "-arch=x86-64", "-m64"]
+        case [_, "--windows", "Release|ARM", *rest]:
+            # CFLAGS += ["-DNDEBUG", "-arch=arm"]  # XXX
+            CFLAGS += ["-arch=arm", "-m32"]
+        case [_, "--windows", "Release|ARM64", *rest]:
+            # CFLAGS += ["-DNDEBUG", "-arch=aarch64"]  # XXX
+            CFLAGS += ["-arh=aarch64", "-m64"]
+        case [_, "--windows", "Release|Win32", *rest]:
+            # CFLAGS += ["-DNDEBUG", "-arch=x86"]  # XXX
+            ObjectParserDefault = functools.partial(ObjectParserDefault, symbol_prefix="_")  # XXX
+            CFLAGS += ["-arch=x86", "-m32"]
+        case [_, "--windows", "Release|x64", *rest]:
+            # CFLAGS += ["-DNDEBUG", "-arch=x86-64"]  # XXX
+            CFLAGS += ["-arch=x86-64", "-m64"]
+        case _:
+            assert False, sys.argv
+    sys.argv[1:] = rest
 else:
     raise NotImplementedError(sys.platform)
 
