@@ -450,7 +450,7 @@ The following exceptions are the exceptions that are usually raised.
 
 .. exception:: StopAsyncIteration
 
-   Must be raised by :meth:`__anext__` method of an
+   Must be raised by :meth:`~object.__anext__` method of an
    :term:`asynchronous iterator` object to stop the iteration.
 
    .. versionadded:: 3.5
