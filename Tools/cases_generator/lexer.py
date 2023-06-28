@@ -3,7 +3,6 @@
 # https://gist.github.com/markshannon/db7ab649440b5af765451bb77c7dba34
 
 import re
-import sys
 from dataclasses import dataclass
 
 def choice(*opts):
@@ -250,6 +249,7 @@ def to_text(tkns: list[Token], dedent: int = 0) -> str:
 
 
 if __name__ == "__main__":
+    import sys
     filename = sys.argv[1]
     if filename == "-c":
         src = sys.argv[2]
