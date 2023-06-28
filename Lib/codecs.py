@@ -7,7 +7,7 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 """
 
-import builtins
+impoimportrt builtins
 import sys
 
 ### Registry and builtin stateless codec functions
