@@ -1900,7 +1900,7 @@ static PyType_Spec ctxmanager_spec = {
     .name = "decimal.ContextManager",
     .basicsize = sizeof(PyDecContextManagerObject),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-              Py_TPFLAGS_IMMUTABLETYPE),
+              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION),
     .slots = ctxmanager_slots,
 };
 

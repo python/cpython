@@ -34,7 +34,8 @@ import numbers
 import locale
 from test.support import (run_unittest, run_doctest, is_resource_enabled,
                           requires_IEEE_754, requires_docstrings,
-                          requires_legacy_unicode_capi, check_sanitizer)
+                          requires_legacy_unicode_capi, check_sanitizer,
+                          check_disallow_instantiation)
 from test.support import (TestFailed,
                           run_with_locale, cpython_only,
                           darwin_malloc_err_warning, is_emscripten)
@@ -2888,6 +2889,30 @@ class CPythonAPItests(PythonAPItests):
     decimal = C
 class PyPythonAPItests(PythonAPItests):
     decimal = P
+
+@cpython_only
+class CDecimalTypesTest(unittest.TestCase):
+    def setUp(self):
+        decimal = C
+        siganldict_type = type(decimal.Context().flags)
+        self.dataset = (
+            siganldict_type.__bases__[0],  # SignalDictMixin type
+            type(decimal.localcontext()),  # ContextManager type
+            decimal.Decimal,
+            decimal.Context,
+        )
+        self.decimal = decimal
+    
+    def test_immutable_types(self):
+        for tp in self.dataset:
+            with self.subTest(tp=tp):
+                with self.assertRaisesRegex(TypeError, "immutable"):
+                    tp.foo = 1
+    
+    def test_disallow_instantiation(self):
+        decimal = self.decimal
+        ctxmanager_type = type(decimal.localcontext())
+        check_disallow_instantiation(self, ctxmanager_type)
 
 class ContextAPItests(unittest.TestCase):
 
@@ -5817,6 +5842,7 @@ all_tests = [
   CFunctionality,            PyFunctionality,
   CWhitebox,                 PyWhitebox,
   CIBMTestCases,             PyIBMTestCases,
+  CDecimalTypesTest,
 ]
 
 # Delete C tests if _decimal.so is not present.
