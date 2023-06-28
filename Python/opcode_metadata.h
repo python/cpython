@@ -914,7 +914,7 @@ struct opcode_macro_expansion {
 extern const struct opcode_metadata _PyOpcode_opcode_metadata[512];
 extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[256];
 #ifdef Py_DEBUG
-extern const char *_PyOpcode_uop_name[512];
+extern const char * const _PyOpcode_uop_name[512];
 #endif
 #else
 const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {
@@ -1222,7 +1222,7 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] = {
     [SWAP] = { .nuops = 1, .uops = { { SWAP, 0, 0 } } },
 };
 #ifdef Py_DEBUG
-const char *_PyOpcode_uop_name[512] = {
+const char * const _PyOpcode_uop_name[512] = {
     [300] = "EXIT_TRACE",
     [301] = "SET_IP",
     [302] = "_GUARD_BOTH_INT",
