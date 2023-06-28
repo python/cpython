@@ -1358,7 +1358,7 @@ The whole point of creating and populating an OptionParser is to call its
    and the return value is a pair ``(options, args)`` where
 
    ``options``
-      the same object that was passed in as *values*, or the `optparse.Values`
+      the same object that was passed in as *values*, or the ``optparse.Values``
       instance created by :mod:`optparse`
 
    ``args``
