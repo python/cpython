@@ -9,7 +9,7 @@ get_code_extra_index(PyInterpreterState* interp) {
     PyObject *interp_dict = PyInterpreterState_GetDict(interp); // borrowed
     assert(interp_dict);  // real users would handle missing dict... somehow
 
-    PyObject *index_obj = PyDict_GetItemString(interp_dict, key); // borrowed
+    PyObject *index_obj = _PyDict_GetItemStringWithError(interp_dict, key); // borrowed
     Py_ssize_t index = 0;
     if (!index_obj) {
         if (PyErr_Occurred()) {

@@ -3,6 +3,9 @@ repos:
     rev: v4.4.0
     hooks:
       - id: check-yaml
+      - id: end-of-file-fixer
+        types: [python]
+        exclude: Lib/test/coding20731.py
       - id: trailing-whitespace
         types_or: [c, python, rst]
 

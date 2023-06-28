@@ -1,11 +1,11 @@
 /* Type object implementation */
 
 #include "Python.h"
-#include "pycore_call.h"
+#include "pycore_abstract.h"      // _PySequence_IterSearch()
+#include "pycore_call.h"          // _PyObject_VectorcallTstate()
 #include "pycore_code.h"          // CO_FAST_FREE
 #include "pycore_dict.h"          // _PyDict_KeysSize()
 #include "pycore_frame.h"         // _PyInterpreterFrame
-#include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_memoryobject.h"  // _PyMemoryView_FromBufferProc()
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
@@ -1508,10 +1508,13 @@ type_set_annotations(PyTypeObject *type, PyObject *value, void *context)
 static PyObject *
 type_get_type_params(PyTypeObject *type, void *context)
 {
-    PyObject *params = PyDict_GetItem(lookup_tp_dict(type), &_Py_ID(__type_params__));
+    PyObject *params = PyDict_GetItemWithError(lookup_tp_dict(type), &_Py_ID(__type_params__));
 
     if (params) {
         return Py_NewRef(params);
+    }
+    if (PyErr_Occurred()) {
+        return NULL;
     }
 
     return PyTuple_New(0);
@@ -1677,6 +1680,26 @@ type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
         else {
             assert(!_PyErr_Occurred(tstate));
         }
+    }
+    return obj;
+}
+
+PyObject *
+_PyType_NewManagedObject(PyTypeObject *type)
+{
+    assert(type->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+    assert(_PyType_IS_GC(type));
+    assert(type->tp_new == PyBaseObject_Type.tp_new);
+    assert(type->tp_alloc == PyType_GenericAlloc);
+    assert(type->tp_itemsize == 0);
+    PyObject *obj = PyType_GenericAlloc(type, 0);
+    if (obj == NULL) {
+        return PyErr_NoMemory();
+    }
+    _PyObject_DictOrValuesPointer(obj)->dict = NULL;
+    if (_PyObject_InitInlineValues(obj, type)) {
+        Py_DECREF(obj);
+        return NULL;
     }
     return obj;
 }

@@ -122,7 +122,7 @@ _PyObject_FastCallDictTstate(PyThreadState *tstate, PyObject *callable,
     assert(nargs == 0 || args != NULL);
     assert(kwargs == NULL || PyDict_Check(kwargs));
 
-    vectorcallfunc func = _PyVectorcall_Function(callable);
+    vectorcallfunc func = PyVectorcall_Function(callable);
     if (func == NULL) {
         /* Use tp_call instead */
         return _PyObject_MakeTpCall(tstate, callable, args, nargs, kwargs);
@@ -349,7 +349,7 @@ _PyObject_Call(PyThreadState *tstate, PyObject *callable,
     assert(PyTuple_Check(args));
     assert(kwargs == NULL || PyDict_Check(kwargs));
     EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_API, callable);
-    vectorcallfunc vector_func = _PyVectorcall_Function(callable);
+    vectorcallfunc vector_func = PyVectorcall_Function(callable);
     if (vector_func != NULL) {
         return _PyVectorcall_Call(tstate, vector_func, callable, args, kwargs);
     }

@@ -28,7 +28,7 @@ extern int _PyAST_Optimize(
     int ff_features);
 
 typedef struct {
-    int h_offset;
+    int h_label;
     int h_startdepth;
     int h_preserve_lasti;
 } _PyCompile_ExceptHandlerInfo;
@@ -38,6 +38,10 @@ typedef struct {
     int i_oparg;
     _PyCompilerSrcLocation i_loc;
     _PyCompile_ExceptHandlerInfo i_except_handler_info;
+
+    /* Used by the assembler */
+    int i_target;
+    int i_offset;
 } _PyCompile_Instruction;
 
 typedef struct {
@@ -84,8 +88,6 @@ int _PyCompile_EnsureArrayLargeEnough(
         size_t item_size);
 
 int _PyCompile_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj);
-
-int _PyCompile_InstrSize(int opcode, int oparg);
 
 /* Access compiler internals for unit testing */
 

@@ -1542,19 +1542,9 @@ regen-opcode-targets:
 
 .PHONY: regen-cases
 regen-cases:
-	# Regenerate Python/generated_cases.c.h
-	# and Python/opcode_metadata.h
-	# from Python/bytecodes.c
-	# using Tools/cases_generator/generate_cases.py
+	# Regenerate various files from Python/bytecodes.c
 	PYTHONPATH=$(srcdir)/Tools/cases_generator \
-	$(PYTHON_FOR_REGEN) \
-	    $(srcdir)/Tools/cases_generator/generate_cases.py \
-		--emit-line-directives \
-		-o $(srcdir)/Python/generated_cases.c.h.new \
-		-m $(srcdir)/Python/opcode_metadata.h.new \
-		$(srcdir)/Python/bytecodes.c
-	$(UPDATE_FILE) $(srcdir)/Python/generated_cases.c.h $(srcdir)/Python/generated_cases.c.h.new
-	$(UPDATE_FILE) $(srcdir)/Python/opcode_metadata.h $(srcdir)/Python/opcode_metadata.h.new
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/generate_cases.py -l
 
 Python/compile.o: $(srcdir)/Python/opcode_metadata.h
 
@@ -1564,6 +1554,13 @@ Python/ceval.o: \
 		$(srcdir)/Python/generated_cases.c.h \
 		$(srcdir)/Python/opcode_metadata.h \
 		$(srcdir)/Python/opcode_targets.h
+
+Python/flowgraph.o: \
+		$(srcdir)/Python/opcode_metadata.h
+
+Python/optimizer.o: \
+		$(srcdir)/Python/executor_cases.c.h \
+		$(srcdir)/Python/opcode_metadata.h
 
 Python/frozen.o: $(FROZEN_FILES_OUT)
 

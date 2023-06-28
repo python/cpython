@@ -2277,7 +2277,10 @@ PyAPI_FUNC(int) PyUnstable_PerfMapState_Init(void) {
     char filename[100];
     pid_t pid = getpid();
     // Use nofollow flag to prevent symlink attacks.
-    int flags = O_WRONLY | O_CREAT | O_APPEND | O_NOFOLLOW | O_CLOEXEC;
+    int flags = O_WRONLY | O_CREAT | O_APPEND | O_NOFOLLOW;
+#ifdef O_CLOEXEC
+    flags |= O_CLOEXEC;
+#endif
     snprintf(filename, sizeof(filename) - 1, "/tmp/perf-%jd.map",
                 (intmax_t)pid);
     int fd = open(filename, flags, 0600);
@@ -3756,7 +3759,7 @@ sys_pyfile_write_unicode(PyObject *unicode, PyObject *file)
     if (file == NULL)
         return -1;
     assert(unicode != NULL);
-    PyObject *result = _PyObject_CallMethodOneArg(file, &_Py_ID(write), unicode);
+    PyObject *result = PyObject_CallMethodOneArg(file, &_Py_ID(write), unicode);
     if (result == NULL) {
         return -1;
     }
