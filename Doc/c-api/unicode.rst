@@ -1411,8 +1411,8 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    Rich compare two Unicode strings and return one of the following:
 
    * ``NULL`` in case an exception was raised
-   * :const:`Py_True` or :const:`Py_False` for successful comparisons
-   * :const:`Py_NotImplemented` in case the type combination is unknown
+   * :c:data:`Py_True` or :c:data:`Py_False` for successful comparisons
+   * :c:data:`Py_NotImplemented` in case the type combination is unknown
 
    Possible values for *op* are :const:`Py_GT`, :const:`Py_GE`, :const:`Py_EQ`,
    :const:`Py_NE`, :const:`Py_LT`, and :const:`Py_LE`.
