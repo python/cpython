@@ -1685,7 +1685,7 @@ class AsyncGenAsyncioTest(unittest.TestCase):
 
         async def run():
             ag = async_generator()
-            asyncio.create_task(ag.aclose())
+            task = asyncio.create_task(ag.aclose())
             tasks = asyncio.all_tasks()
             for task in tasks:
                 # No AttributeError raised
