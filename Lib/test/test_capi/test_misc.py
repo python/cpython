@@ -1823,7 +1823,6 @@ class SubinterpreterTest(unittest.TestCase):
         1-to-1 with the new interpreter's settings.  This test verifies
         that they match.
         """
-        import json
 
         OBMALLOC = 1<<5
         EXTENSIONS = 1<<8
@@ -1902,7 +1901,6 @@ class SubinterpreterTest(unittest.TestCase):
         This verifies that the override works but does not modify
         the underlying setting.
         """
-        import json
 
         OBMALLOC = 1<<5
         EXTENSIONS = 1<<8
