@@ -7,12 +7,12 @@ permissions:
 
 jobs:
   jit:
-    name: JIT / ${{ matrix.configuration }} / LLVM ${{ matrix.llvm }} / ${{ matrix.os }} / ${{ matrix.platform }}
+    name: JIT / ${{ matrix.debug && 'Debug' || 'Release' }} / LLVM ${{ matrix.llvm }} / ${{ matrix.os }} / ${{ matrix.platform }}
     runs-on: ${{ matrix.os }}-latest
     strategy:
       fail-fast: false
       matrix:
-        configuration: [Debug, Release]
+        debug: [false, true]
         llvm: [14, 15, 16]
         os: [macOS, Ubuntu, Windows]
         # This is awkward, but whatever...
@@ -39,18 +39,18 @@ jobs:
           version: ${{ matrix.llvm }}
           directory: ${{ runner.temp }}/llvm
       - if: matrix.os == 'Ubuntu'
-        run: ./configure ${{ matrix.configuration == 'Debug' && '--with-pydebug' || '' }}
+        run: ./configure${{ matrix.debug && ' --with-pydebug' || '' }}
       - if: matrix.os == 'Ubuntu'
         run: make all
       - if: matrix.os == 'Ubuntu'
         run: ./python -m test -j0 -wW
       - if: matrix.os == 'macOS'
-        run: SDKROOT=$(xcrun --show-sdk-path) ./configure ${{ matrix.configuration == 'Debug' && '--with-pydebug' || '' }}
+        run: SDKROOT=$(xcrun --show-sdk-path) ./configure${{ matrix.debug && ' --with-pydebug' || '' }}
       - if: matrix.os == 'macOS'
         run: SDKROOT=$(xcrun --show-sdk-path) make all
       - if: matrix.os == 'macOS'
         run: ./python.exe -m test -j0 -wW
       - if: matrix.os == 'Windows'
-        run: ./PCbuild/build.bat -c ${{ matrix.configuration }} -p ${{ matrix.platform }}
+        run: ./PCbuild/build${{ matrix.debug && ' -d' || '' }} -p ${{ matrix.platform }}
       - if: matrix.os == 'Windows'
-        run: ./python.bat -m test -j0 -wW
+        run: ./PCbuild/rt${{ matrix.debug && ' -d' || '' }} -p ${{ matrix.platform }} -q -j0 -wW

@@ -203,7 +203,7 @@ class ObjectParser:
         holes = []
         for before, relocation in self.relocations_todo:
             for newhole in handle_one_relocation(self.got_entries, self.body, before, relocation):
-                assert newhole.symbol not in self.dupes, (newhole.symbol, self.dupes)
+                assert newhole.symbol not in self.dupes
                 if newhole.symbol in self.body_symbols:
                     addend = newhole.addend + self.body_symbols[newhole.symbol] - entry
                     newhole = Hole("_justin_base", newhole.offset, addend, newhole.pc)
@@ -519,6 +519,7 @@ class Compiler:
             "END_ASYNC_FOR",
             "EXTENDED_ARG",  # XXX: Only because we don't handle extended args correctly...
             "FOR_ITER",
+            "FORMAT_VALUE",
             "GET_AWAITABLE",
             "IMPORT_FROM",
             "IMPORT_NAME",
