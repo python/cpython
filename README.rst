@@ -1,23 +1,22 @@
 This is Python version 3.7.17
 =============================
 
-.. image:: https://travis-ci.org/python/cpython.svg?branch=3.7
-   :alt: CPython build status on Travis CI
-   :target: https://travis-ci.org/python/cpython/branches
-
-.. image:: https://dev.azure.com/python/cpython/_apis/build/status/Azure%20Pipelines%20CI?branchName=3.7
-   :alt: CPython build status on Azure Pipelines
-   :target: https://dev.azure.com/python/cpython/_build/latest?definitionId=4&branchName=3.7
-
-.. image:: https://codecov.io/gh/python/cpython/branch/3.7/graph/badge.svg
-   :alt: CPython code coverage on Codecov
-   :target: https://codecov.io/gh/python/cpython/branch/3.7
 
 Copyright © 2001-2023 Python Software Foundation.  All rights reserved.
 
 See the end of this file for further copyright and license information.
 
 .. contents::
+
+End-of-life Status
+------------------
+
+As of 2023-06-27, 3.7 has reached the
+`end-of-life phase <https://devguide.python.org/devcycle/#end-of-life-branches>`_
+of its release cycle. 3.7.17 was the final security release. The code base for
+3.7 is now frozen and no further updates will be provided nor issues of any
+kind will be accepted on the bug tracker.
+
 
 General Information
 -------------------
@@ -146,8 +145,7 @@ entitled "Installing multiple versions".
 Documentation
 -------------
 
-`Documentation for Python 3.7 <https://docs.python.org/3.7/>`_ is online,
-updated daily.
+`Documentation for Python 3.7 <https://docs.python.org/3.7/>`_ is online.
 
 It can also be downloaded in many formats for faster access.  The documentation
 is downloadable in HTML, PDF, and reStructuredText formats; the latter version
