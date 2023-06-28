@@ -85,6 +85,8 @@ class _BlockingOnManager:
     def __exit__(self, *args, **kwargs):
         """Remove self.lock from this thread's _blocking_on list."""
         self.blocked_on.remove(self.lock)
+        if not self.blocked_on:
+            del _blocking_on[self.thread_id]
 
 
 class _DeadlockError(RuntimeError):
