@@ -250,7 +250,6 @@ def to_text(tkns: list[Token], dedent: int = 0) -> str:
 
 
 if __name__ == "__main__":
-    import sys
     filename = sys.argv[1]
     if filename == "-c":
         src = sys.argv[2]
