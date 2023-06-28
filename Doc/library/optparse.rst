@@ -42,8 +42,8 @@ on the command-line, for example::
    <yourscript> --file=outfile -q
 
 As it parses the command line, :mod:`optparse` sets attributes of the
-``options`` object returned by :meth:`parse_args` based on user-supplied
-command-line values.  When :meth:`parse_args` returns from parsing this command
+``options`` object returned by :meth:`~OptionParser.parse_args` based on user-supplied
+command-line values.  When :meth:`~OptionParser.parse_args` returns from parsing this command
 line, ``options.filename`` will be ``"outfile"`` and ``options.verbose`` will be
 ``False``.  :mod:`optparse` supports both long and short options, allows short
 options to be merged together, and allows options to be associated with their
@@ -285,10 +285,10 @@ program's command line::
 
    (options, args) = parser.parse_args()
 
-(If you like, you can pass a custom argument list to :meth:`parse_args`, but
+(If you like, you can pass a custom argument list to :meth:`~OptionParser.parse_args`, but
 that's rarely necessary: by default it uses ``sys.argv[1:]``.)
 
-:meth:`parse_args` returns two values:
+:meth:`~OptionParser.parse_args` returns two values:
 
 * ``options``, an object containing values for all of your options---e.g. if
   ``--file`` takes a single string argument, then ``options.file`` will be the
@@ -339,7 +339,7 @@ Now let's make up a fake command line and ask :mod:`optparse` to parse it::
 
 When :mod:`optparse` sees the option string ``-f``, it consumes the next
 argument, ``foo.txt``, and stores it in ``options.filename``.  So, after this
-call to :meth:`parse_args`, ``options.filename`` is ``"foo.txt"``.
+call to :meth:`~OptionParser.parse_args`, ``options.filename`` is ``"foo.txt"``.
 
 Some other option types supported by :mod:`optparse` are ``int`` and ``float``.
 Here's an option that expects an integer argument::
@@ -453,7 +453,8 @@ Again, the default value for ``verbose`` will be ``True``: the last default
 value supplied for any particular destination is the one that counts.
 
 A clearer way to specify default values is the :meth:`set_defaults` method of
-OptionParser, which you can call at any time before calling :meth:`parse_args`::
+OptionParser, which you can call at any time before calling
+:meth:`~OptionParser.parse_args`::
 
    parser.set_defaults(verbose=True)
    parser.add_option(...)
@@ -1338,35 +1339,37 @@ Parsing arguments
 ^^^^^^^^^^^^^^^^^
 
 The whole point of creating and populating an OptionParser is to call its
-:meth:`parse_args` method::
+:meth:`~OptionParser.parse_args` method.
 
-   (options, args) = parser.parse_args(args=None, values=None)
+.. method:: OptionParser.parse_args(args=None, values=None)
 
-where the input parameters are
+   Parse the command-line options found in *args*.
 
-``args``
-   the list of arguments to process (default: ``sys.argv[1:]``)
+   The input parameters are
 
-``values``
-   an :class:`optparse.Values` object to store option arguments in (default: a
-   new instance of :class:`Values`) -- if you give an existing object, the
-   option defaults will not be initialized on it
+   ``args``
+      the list of arguments to process (default: ``sys.argv[1:]``)
 
-and the return values are
+   ``values``
+      an :class:`Values` object to store option arguments in (default: a
+      new instance of :class:`Values`) -- if you give an existing object, the
+      option defaults will not be initialized on it
 
-``options``
-   the same object that was passed in as ``values``, or the optparse.Values
-   instance created by :mod:`optparse`
+   and the return value is a pair ``(options, args)`` where
 
-``args``
-   the leftover positional arguments after all options have been processed
+   ``options``
+      the same object that was passed in as *values*, or the ``optparse.Values``
+      instance created by :mod:`optparse`
+
+   ``args``
+      the leftover positional arguments after all options have been processed
 
 The most common usage is to supply neither keyword argument.  If you supply
 ``values``, it will be modified with repeated :func:`setattr` calls (roughly one
 for every option argument stored to an option destination) and returned by
-:meth:`parse_args`.
+:meth:`~OptionParser.parse_args`.
 
-If :meth:`parse_args` encounters any errors in the argument list, it calls the
+If :meth:`~OptionParser.parse_args` encounters any errors in the argument list, it calls the
 OptionParser's :meth:`error` method with an appropriate end-user error message.
 This ultimately terminates your process with an exit status of 2 (the
 traditional Unix exit status for command-line errors).
@@ -1661,7 +1664,7 @@ where
       the current list of leftover arguments, ie. arguments that have been
       consumed but are neither options nor option arguments. Feel free to modify
       ``parser.largs``, e.g. by adding more arguments to it.  (This list will
-      become ``args``, the second return value of :meth:`parse_args`.)
+      become ``args``, the second return value of :meth:`~OptionParser.parse_args`.)
 
    ``parser.rargs``
       the current list of remaining arguments, ie. with ``opt_str`` and
