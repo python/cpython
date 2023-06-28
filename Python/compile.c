@@ -131,17 +131,6 @@ enum {
 };
 
 
-int
-_PyCompile_InstrSize(int opcode, int oparg)
-{
-    assert(IS_PSEUDO_OPCODE(opcode) == IS_PSEUDO_INSTR(opcode));
-    assert(!IS_PSEUDO_INSTR(opcode));
-    assert(HAS_ARG(opcode) || oparg == 0);
-    int extended_args = (0xFFFFFF < oparg) + (0xFFFF < oparg) + (0xFF < oparg);
-    int caches = _PyOpcode_Caches[opcode];
-    return extended_args + 1 + caches;
-}
-
 typedef _PyCompile_Instruction instruction;
 typedef _PyCompile_InstructionSequence instr_sequence;
 
@@ -248,15 +237,9 @@ instr_sequence_use_label(instr_sequence *seq, int lbl) {
 static int
 instr_sequence_addop(instr_sequence *seq, int opcode, int oparg, location loc)
 {
-    /* compare old and new opcode macros - use ! to compare as bools. */
-    assert(!HAS_ARG(opcode) == !OPCODE_HAS_ARG(opcode));
-    assert(!HAS_CONST(opcode) == !OPCODE_HAS_CONST(opcode));
-    assert(!OPCODE_HAS_JUMP(opcode) == !OPCODE_HAS_JUMP(opcode));
-
     assert(0 <= opcode && opcode <= MAX_OPCODE);
-    assert(IS_PSEUDO_OPCODE(opcode) == IS_PSEUDO_INSTR(opcode));
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
-    assert(HAS_ARG(opcode) || HAS_TARGET(opcode) || oparg == 0);
+    assert(OPCODE_HAS_ARG(opcode) || HAS_TARGET(opcode) || oparg == 0);
     assert(0 <= oparg && oparg < (1 << 30));
 
     int idx = instr_sequence_next_inst(seq);
@@ -501,8 +484,10 @@ static PyCodeObject *optimize_and_assemble(struct compiler *, int addNone);
 
 static int
 compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
-               PyCompilerFlags flags, int optimize, PyArena *arena)
+               PyCompilerFlags *flags, int optimize, PyArena *arena)
 {
+    PyCompilerFlags local_flags = _PyCompilerFlags_INIT;
+
     c->c_const_cache = PyDict_New();
     if (!c->c_const_cache) {
         return ERROR;
@@ -518,10 +503,13 @@ compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
     if (!_PyFuture_FromAST(mod, filename, &c->c_future)) {
         return ERROR;
     }
-    int merged = c->c_future.ff_features | flags.cf_flags;
+    if (!flags) {
+        flags = &local_flags;
+    }
+    int merged = c->c_future.ff_features | flags->cf_flags;
     c->c_future.ff_features = merged;
-    flags.cf_flags = merged;
-    c->c_flags = flags;
+    flags->cf_flags = merged;
+    c->c_flags = *flags;
     c->c_optimize = (optimize == -1) ? _Py_GetConfig()->optimization_level : optimize;
     c->c_nestlevel = 0;
 
@@ -542,12 +530,11 @@ static struct compiler*
 new_compiler(mod_ty mod, PyObject *filename, PyCompilerFlags *pflags,
              int optimize, PyArena *arena)
 {
-    PyCompilerFlags flags = pflags ? *pflags : _PyCompilerFlags_INIT;
     struct compiler *c = PyMem_Calloc(1, sizeof(struct compiler));
     if (c == NULL) {
         return NULL;
     }
-    if (compiler_setup(c, mod, filename, flags, optimize, arena) < 0) {
+    if (compiler_setup(c, mod, filename, pflags, optimize, arena) < 0) {
         compiler_free(c);
         return NULL;
     }
@@ -828,6 +815,9 @@ stack_effect(int opcode, int oparg, int jump)
         case JUMP_NO_INTERRUPT:
             return 0;
 
+        case EXIT_INIT_CHECK:
+            return -1;
+
         /* Exception handling pseudo-instructions */
         case SETUP_FINALLY:
             /* 0 in the normal flow.
@@ -874,7 +864,7 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
 static int
 codegen_addop_noarg(instr_sequence *seq, int opcode, location loc)
 {
-    assert(!HAS_ARG(opcode));
+    assert(!OPCODE_HAS_ARG(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
     return instr_sequence_addop(seq, opcode, 0, loc);
 }
@@ -1151,7 +1141,7 @@ codegen_addop_j(instr_sequence *seq, location loc,
 }
 
 #define ADDOP_N(C, LOC, OP, O, TYPE) { \
-    assert(!HAS_CONST(OP)); /* use ADDOP_LOAD_CONST_NEW */ \
+    assert(!OPCODE_HAS_CONST(OP)); /* use ADDOP_LOAD_CONST_NEW */ \
     if (compiler_addop_o((C)->u, (LOC), (OP), (C)->u->u_metadata.u_ ## TYPE, (O)) < 0) { \
         Py_DECREF((O)); \
         return ERROR; \
@@ -7717,17 +7707,20 @@ cfg_to_instr_sequence(cfg_builder *g, instr_sequence *seq)
         RETURN_IF_ERROR(instr_sequence_use_label(seq, b->b_label.id));
         for (int i = 0; i < b->b_iused; i++) {
             cfg_instr *instr = &b->b_instr[i];
+            if (OPCODE_HAS_JUMP(instr->i_opcode)) {
+                instr->i_oparg = instr->i_target->b_label.id;
+            }
             RETURN_IF_ERROR(
                 instr_sequence_addop(seq, instr->i_opcode, instr->i_oparg, instr->i_loc));
 
             _PyCompile_ExceptHandlerInfo *hi = &seq->s_instrs[seq->s_used-1].i_except_handler_info;
             if (instr->i_except != NULL) {
-                hi->h_offset = instr->i_except->b_offset;
+                hi->h_label = instr->i_except->b_label.id;
                 hi->h_startdepth = instr->i_except->b_startdepth;
                 hi->h_preserve_lasti = instr->i_except->b_preserve_lasti;
             }
             else {
-                hi->h_offset = -1;
+                hi->h_label = -1;
             }
         }
     }
@@ -7798,7 +7791,7 @@ instructions_to_instr_sequence(PyObject *instructions, instr_sequence *seq)
             goto error;
         }
         int oparg;
-        if (HAS_ARG(opcode)) {
+        if (OPCODE_HAS_ARG(opcode)) {
             oparg = PyLong_AsLong(PyTuple_GET_ITEM(item, 1));
             if (PyErr_Occurred()) {
                 goto error;

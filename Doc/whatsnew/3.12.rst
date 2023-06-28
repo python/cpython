@@ -593,14 +593,6 @@ itertools
   tuples where the last batch may be shorter than the rest.
   (Contributed by Raymond Hettinger in :gh:`98363`.)
 
-json
-----
-
-* Added :class:`json.AttrDict` for use with ``object_hook`` in :func:`json.load`
-  or :func:`json.loads`.  This is a subclass of :class:`dict` that also supports
-  attribute style dotted access.
-  (Contributed by Raymond Hettinger in :gh:`96145`.)
-
 math
 ----
 
@@ -1369,7 +1361,52 @@ Removed
   * The :mod:`!imp` module has been removed.  (Contributed by Barry Warsaw in
     :gh:`98040`.)
 
-  * Replace ``imp.new_module(name)`` with ``types.ModuleType(name)``.
+  * Replace removed :mod:`!imp` functions with :mod:`importlib` functions:
+
+    =================================  =======================================
+       imp                                importlib
+    =================================  =======================================
+    ``imp.NullImporter``               Insert ``None`` into ``sys.path_importer_cache``
+    ``imp.cache_from_source()``        :func:`importlib.util.cache_from_source`
+    ``imp.find_module()``              :func:`importlib.util.find_spec`
+    ``imp.get_magic()``                :attr:`importlib.util.MAGIC_NUMBER`
+    ``imp.get_suffixes()``             :attr:`importlib.machinery.SOURCE_SUFFIXES`, :attr:`importlib.machinery.EXTENSION_SUFFIXES`, and :attr:`importlib.machinery.BYTECODE_SUFFIXES`
+    ``imp.get_tag()``                  :attr:`sys.implementation.cache_tag <sys.implementation>`
+    ``imp.load_module()``              :func:`importlib.import_module`
+    ``imp.new_module(name)``           ``types.ModuleType(name)``
+    ``imp.reload()``                   :func:`importlib.reload`
+    ``imp.source_from_cache()``        :func:`importlib.util.source_from_cache`
+    =================================  =======================================
+
+  * Replace ``imp.load_source()`` with::
+
+        import importlib.util
+        import importlib.machinery
+
+        def load_source(modname, filename):
+            loader = importlib.machinery.SourceFileLoader(modname, filename)
+            spec = importlib.util.spec_from_file_location(modname, filename, loader=loader)
+            module = importlib.util.module_from_spec(spec)
+            # The module is always executed and not cached in sys.modules.
+            # Uncomment the following line to cache the module.
+            # sys.modules[module.__name__] = module
+            loader.exec_module(module)
+            return module
+
+  * Removed :mod:`!imp` functions and attributes with no replacements:
+
+    * undocumented functions:
+
+      * ``imp.init_builtin()``
+      * ``imp.load_compiled()``
+      * ``imp.load_dynamic()``
+      * ``imp.load_package()``
+
+    * ``imp.lock_held()``, ``imp.acquire_lock()``, ``imp.release_lock()``:
+      the locking scheme has changed in Python 3.3 to per-module locks.
+    * ``imp.find_module()`` constants: ``SEARCH_ERROR``, ``PY_SOURCE``,
+      ``PY_COMPILED``, ``C_EXTENSION``, ``PY_RESOURCE``, ``PKG_DIRECTORY``,
+      ``C_BUILTIN``, ``PY_FROZEN``, ``PY_CODERESOURCE``, ``IMP_HOOK``.
 
 * Removed the ``suspicious`` rule from the documentation Makefile, and
   removed ``Doc/tools/rstlint.py``, both in favor of `sphinx-lint

@@ -21,8 +21,6 @@ extern "C" {{
 
 footer = """
 
-#define IS_PSEUDO_OPCODE(op) (((op) >= MIN_PSEUDO_OPCODE) && ((op) <= MAX_PSEUDO_OPCODE))
-
 #ifdef __cplusplus
 }
 #endif
@@ -68,28 +66,22 @@ DEFINE = "#define {:<38} {:>3}\n"
 
 UINT32_MASK = (1<<32)-1
 
-def write_int_array_from_ops(name, ops, out):
-    bits = 0
-    for op in ops:
-        bits |= 1<<op
-    out.write(f"const uint32_t {name}[9] = {{\n")
-    for i in range(9):
-        out.write(f"    {bits & UINT32_MASK}U,\n")
-        bits >>= 32
-    assert bits == 0
-    out.write(f"}};\n")
+def get_python_module_dict(filename):
+    mod = {}
+    with tokenize.open(filename) as fp:
+        code = fp.read()
+    exec(code, mod)
+    return mod
 
-def main(opcode_py, outfile='Include/opcode.h',
+def main(opcode_py,
+         _opcode_metadata_py='Lib/_opcode_metadata.py',
+         outfile='Include/opcode.h',
          internaloutfile='Include/internal/pycore_opcode.h',
          intrinsicoutfile='Include/internal/pycore_intrinsics.h'):
-    opcode = {}
-    if hasattr(tokenize, 'open'):
-        fp = tokenize.open(opcode_py)   # Python 3.2+
-    else:
-        fp = open(opcode_py)            # Python 2.7
-    with fp:
-        code = fp.read()
-    exec(code, opcode)
+
+    _opcode_metadata = get_python_module_dict(_opcode_metadata_py)
+
+    opcode = get_python_module_dict(opcode_py)
     opmap = opcode['opmap']
     opname = opcode['opname']
     hasarg = opcode['hasarg']
@@ -99,8 +91,8 @@ def main(opcode_py, outfile='Include/opcode.h',
     is_pseudo = opcode['is_pseudo']
     _pseudo_ops = opcode['_pseudo_ops']
 
+
     ENABLE_SPECIALIZATION = opcode["ENABLE_SPECIALIZATION"]
-    HAVE_ARGUMENT = opcode["HAVE_ARGUMENT"]
     MIN_PSEUDO_OPCODE = opcode["MIN_PSEUDO_OPCODE"]
     MAX_PSEUDO_OPCODE = opcode["MAX_PSEUDO_OPCODE"]
     MIN_INSTRUMENTED_OPCODE = opcode["MIN_INSTRUMENTED_OPCODE"]
@@ -114,7 +106,7 @@ def main(opcode_py, outfile='Include/opcode.h',
 
     specialized_opmap = {}
     opname_including_specialized = opname.copy()
-    for name in opcode['_specialized_instructions']:
+    for name in _opcode_metadata['_specialized_instructions']:
         while used[next_op]:
             next_op += 1
         specialized_opmap[name] = next_op
@@ -130,8 +122,6 @@ def main(opcode_py, outfile='Include/opcode.h',
         for name in opname:
             if name in opmap:
                 op = opmap[name]
-                if op == HAVE_ARGUMENT:
-                    fobj.write(DEFINE.format("HAVE_ARGUMENT", HAVE_ARGUMENT))
                 if op == MIN_PSEUDO_OPCODE:
                     fobj.write(DEFINE.format("MIN_PSEUDO_OPCODE", MIN_PSEUDO_OPCODE))
                 if op == MIN_INSTRUMENTED_OPCODE:
@@ -146,11 +136,9 @@ def main(opcode_py, outfile='Include/opcode.h',
         for name, op in specialized_opmap.items():
             fobj.write(DEFINE.format(name, op))
 
-        iobj.write("\nextern const uint32_t _PyOpcode_Jump[9];\n")
         iobj.write("\nextern const uint8_t _PyOpcode_Caches[256];\n")
         iobj.write("\nextern const uint8_t _PyOpcode_Deopt[256];\n")
         iobj.write("\n#ifdef NEED_OPCODE_TABLES\n")
-        write_int_array_from_ops("_PyOpcode_Jump", opcode['hasjrel'] + opcode['hasjabs'], iobj)
 
         iobj.write("\nconst uint8_t _PyOpcode_Caches[256] = {\n")
         for i, entries in enumerate(opcode["_inline_cache_entries"]):
@@ -162,7 +150,7 @@ def main(opcode_py, outfile='Include/opcode.h',
         for basic, op in opmap.items():
             if not is_pseudo(op):
                 deoptcodes[basic] = basic
-        for basic, family in opcode["_specializations"].items():
+        for basic, family in _opcode_metadata["_specializations"].items():
             for specialized in family:
                 deoptcodes[specialized] = basic
         iobj.write("\nconst uint8_t _PyOpcode_Deopt[256] = {\n")
@@ -170,19 +158,6 @@ def main(opcode_py, outfile='Include/opcode.h',
             iobj.write(f"    [{opt}] = {deopt},\n")
         iobj.write("};\n")
         iobj.write("#endif   // NEED_OPCODE_TABLES\n")
-
-        fobj.write("\n")
-        fobj.write("#define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\\")
-        for op in _pseudo_ops:
-            if opmap[op] in hasarg:
-                fobj.write(f"\n    || ((op) == {op}) \\")
-        fobj.write("\n    )\n")
-
-        fobj.write("\n")
-        fobj.write("#define HAS_CONST(op) (false\\")
-        for op in hasconst:
-            fobj.write(f"\n    || ((op) == {opname[op]}) \\")
-        fobj.write("\n    )\n")
 
         fobj.write("\n")
         for i, (op, _) in enumerate(opcode["_nb_ops"]):
@@ -233,4 +208,4 @@ def main(opcode_py, outfile='Include/opcode.h',
 
 
 if __name__ == '__main__':
-    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])

@@ -831,6 +831,12 @@ get_counter_optimizer(PyObject *self, PyObject *arg)
 }
 
 static PyObject *
+get_uop_optimizer(PyObject *self, PyObject *arg)
+{
+    return PyUnstable_Optimizer_NewUOpOptimizer();
+}
+
+static PyObject *
 set_optimizer(PyObject *self, PyObject *opt)
 {
     if (opt == Py_None) {
@@ -840,6 +846,15 @@ set_optimizer(PyObject *self, PyObject *opt)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+get_optimizer(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *opt = (PyObject *)PyUnstable_GetOptimizer();
+    if (opt == NULL) {
+        Py_RETURN_NONE;
+    }
+    return opt;
+}
 
 static int _pending_callback(void *arg)
 {
@@ -982,8 +997,10 @@ static PyMethodDef module_functions[] = {
     {"iframe_getcode", iframe_getcode, METH_O, NULL},
     {"iframe_getline", iframe_getline, METH_O, NULL},
     {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
+    {"get_optimizer", get_optimizer,  METH_NOARGS, NULL},
     {"set_optimizer", set_optimizer,  METH_O, NULL},
     {"get_counter_optimizer", get_counter_optimizer, METH_NOARGS, NULL},
+    {"get_uop_optimizer", get_uop_optimizer, METH_NOARGS, NULL},
     {"pending_threadfunc", _PyCFunction_CAST(pending_threadfunc),
      METH_VARARGS | METH_KEYWORDS},
 //    {"pending_fd_identify", pending_fd_identify, METH_VARARGS, NULL},
