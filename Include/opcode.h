@@ -18,7 +18,9 @@ extern "C" {
 #define UNARY_NEGATIVE                          11
 #define UNARY_NOT                               12
 #define UNARY_INVERT                            15
+#define EXIT_INIT_CHECK                         16
 #define RESERVED                                17
+#define MAKE_FUNCTION                           24
 #define BINARY_SUBSCR                           25
 #define BINARY_SLICE                            26
 #define STORE_SLICE                             27
@@ -29,6 +31,8 @@ extern "C" {
 #define PUSH_EXC_INFO                           35
 #define CHECK_EXC_MATCH                         36
 #define CHECK_EG_MATCH                          37
+#define FORMAT_SIMPLE                           40
+#define FORMAT_WITH_SPEC                        41
 #define WITH_EXCEPT_START                       49
 #define GET_AITER                               50
 #define GET_ANEXT                               51
@@ -47,7 +51,6 @@ extern "C" {
 #define SETUP_ANNOTATIONS                       85
 #define LOAD_LOCALS                             87
 #define POP_EXCEPT                              89
-#define HAVE_ARGUMENT                           90
 #define STORE_NAME                              90
 #define DELETE_NAME                             91
 #define UNPACK_SEQUENCE                         92
@@ -87,7 +90,6 @@ extern "C" {
 #define POP_JUMP_IF_NONE                       129
 #define RAISE_VARARGS                          130
 #define GET_AWAITABLE                          131
-#define MAKE_FUNCTION                          132
 #define BUILD_SLICE                            133
 #define JUMP_BACKWARD_NO_INTERRUPT             134
 #define MAKE_CELL                              135
@@ -107,9 +109,9 @@ extern "C" {
 #define YIELD_VALUE                            150
 #define RESUME                                 151
 #define MATCH_CLASS                            152
-#define FORMAT_VALUE                           155
 #define BUILD_CONST_KEY_MAP                    156
 #define BUILD_STRING                           157
+#define CONVERT_VALUE                          158
 #define LIST_EXTEND                            162
 #define SET_UPDATE                             163
 #define DICT_MERGE                             164
@@ -123,6 +125,7 @@ extern "C" {
 #define CALL_INTRINSIC_2                       174
 #define LOAD_FROM_DICT_OR_GLOBALS              175
 #define LOAD_FROM_DICT_OR_DEREF                176
+#define SET_FUNCTION_ATTRIBUTE                 177
 #define ENTER_EXECUTOR                         230
 #define MIN_INSTRUMENTED_OPCODE                237
 #define INSTRUMENTED_LOAD_SUPER_ATTR           237
@@ -156,81 +159,66 @@ extern "C" {
 #define LOAD_ZERO_SUPER_ATTR                   265
 #define STORE_FAST_MAYBE_NULL                  266
 #define MAX_PSEUDO_OPCODE                      266
-#define BINARY_OP_ADD_FLOAT                      6
+#define BINARY_OP_MULTIPLY_INT                   6
 #define BINARY_OP_ADD_INT                        7
-#define BINARY_OP_ADD_UNICODE                    8
-#define BINARY_OP_INPLACE_ADD_UNICODE           10
-#define BINARY_OP_MULTIPLY_FLOAT                13
-#define BINARY_OP_MULTIPLY_INT                  14
-#define BINARY_OP_SUBTRACT_FLOAT                16
-#define BINARY_OP_SUBTRACT_INT                  18
-#define BINARY_SUBSCR_DICT                      19
-#define BINARY_SUBSCR_GETITEM                   20
-#define BINARY_SUBSCR_LIST_INT                  21
-#define BINARY_SUBSCR_TUPLE_INT                 22
-#define CALL_PY_EXACT_ARGS                      23
-#define CALL_PY_WITH_DEFAULTS                   24
-#define CALL_BOUND_METHOD_EXACT_ARGS            28
-#define CALL_BUILTIN_CLASS                      29
-#define CALL_BUILTIN_FAST_WITH_KEYWORDS         34
-#define CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS  38
-#define CALL_NO_KW_BUILTIN_FAST                 39
-#define CALL_NO_KW_BUILTIN_O                    40
-#define CALL_NO_KW_ISINSTANCE                   41
-#define CALL_NO_KW_LEN                          42
-#define CALL_NO_KW_LIST_APPEND                  43
-#define CALL_NO_KW_METHOD_DESCRIPTOR_FAST       44
-#define CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS     45
-#define CALL_NO_KW_METHOD_DESCRIPTOR_O          46
-#define CALL_NO_KW_STR_1                        47
-#define CALL_NO_KW_TUPLE_1                      48
-#define CALL_NO_KW_TYPE_1                       56
-#define COMPARE_OP_FLOAT                        57
-#define COMPARE_OP_INT                          58
-#define COMPARE_OP_STR                          59
-#define FOR_ITER_LIST                           62
-#define FOR_ITER_TUPLE                          63
-#define FOR_ITER_RANGE                          64
-#define FOR_ITER_GEN                            65
-#define LOAD_SUPER_ATTR_ATTR                    66
-#define LOAD_SUPER_ATTR_METHOD                  67
-#define LOAD_ATTR_CLASS                         70
-#define LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN       72
-#define LOAD_ATTR_INSTANCE_VALUE                73
-#define LOAD_ATTR_MODULE                        76
-#define LOAD_ATTR_PROPERTY                      77
-#define LOAD_ATTR_SLOT                          78
-#define LOAD_ATTR_WITH_HINT                     79
-#define LOAD_ATTR_METHOD_LAZY_DICT              80
-#define LOAD_ATTR_METHOD_NO_DICT                81
-#define LOAD_ATTR_METHOD_WITH_VALUES            82
-#define LOAD_GLOBAL_BUILTIN                     84
-#define LOAD_GLOBAL_MODULE                      86
-#define STORE_ATTR_INSTANCE_VALUE               88
-#define STORE_ATTR_SLOT                        111
-#define STORE_ATTR_WITH_HINT                   112
-#define STORE_SUBSCR_DICT                      113
-#define STORE_SUBSCR_LIST_INT                  148
-#define UNPACK_SEQUENCE_LIST                   153
-#define UNPACK_SEQUENCE_TUPLE                  154
-#define UNPACK_SEQUENCE_TWO_TUPLE              158
-#define SEND_GEN                               159
-
-#define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\
-    || ((op) == JUMP) \
-    || ((op) == JUMP_NO_INTERRUPT) \
-    || ((op) == LOAD_METHOD) \
-    || ((op) == LOAD_SUPER_METHOD) \
-    || ((op) == LOAD_ZERO_SUPER_METHOD) \
-    || ((op) == LOAD_ZERO_SUPER_ATTR) \
-    || ((op) == STORE_FAST_MAYBE_NULL) \
-    )
-
-#define HAS_CONST(op) (false\
-    || ((op) == LOAD_CONST) \
-    || ((op) == RETURN_CONST) \
-    || ((op) == KW_NAMES) \
-    )
+#define BINARY_OP_SUBTRACT_INT                   8
+#define BINARY_OP_MULTIPLY_FLOAT                10
+#define BINARY_OP_ADD_FLOAT                     13
+#define BINARY_OP_SUBTRACT_FLOAT                14
+#define BINARY_OP_ADD_UNICODE                   18
+#define BINARY_OP_INPLACE_ADD_UNICODE           19
+#define BINARY_SUBSCR_DICT                      20
+#define BINARY_SUBSCR_GETITEM                   21
+#define BINARY_SUBSCR_LIST_INT                  22
+#define BINARY_SUBSCR_TUPLE_INT                 23
+#define STORE_SUBSCR_DICT                       28
+#define STORE_SUBSCR_LIST_INT                   29
+#define SEND_GEN                                34
+#define UNPACK_SEQUENCE_TWO_TUPLE               38
+#define UNPACK_SEQUENCE_TUPLE                   39
+#define UNPACK_SEQUENCE_LIST                    42
+#define STORE_ATTR_INSTANCE_VALUE               43
+#define STORE_ATTR_SLOT                         44
+#define STORE_ATTR_WITH_HINT                    45
+#define LOAD_GLOBAL_MODULE                      46
+#define LOAD_GLOBAL_BUILTIN                     47
+#define LOAD_SUPER_ATTR_ATTR                    48
+#define LOAD_SUPER_ATTR_METHOD                  56
+#define LOAD_ATTR_INSTANCE_VALUE                57
+#define LOAD_ATTR_MODULE                        58
+#define LOAD_ATTR_WITH_HINT                     59
+#define LOAD_ATTR_SLOT                          62
+#define LOAD_ATTR_CLASS                         63
+#define LOAD_ATTR_PROPERTY                      64
+#define LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN       65
+#define LOAD_ATTR_METHOD_WITH_VALUES            66
+#define LOAD_ATTR_METHOD_NO_DICT                67
+#define LOAD_ATTR_METHOD_LAZY_DICT              70
+#define COMPARE_OP_FLOAT                        72
+#define COMPARE_OP_INT                          73
+#define COMPARE_OP_STR                          76
+#define FOR_ITER_LIST                           77
+#define FOR_ITER_TUPLE                          78
+#define FOR_ITER_RANGE                          79
+#define FOR_ITER_GEN                            80
+#define CALL_BOUND_METHOD_EXACT_ARGS            81
+#define CALL_PY_EXACT_ARGS                      82
+#define CALL_PY_WITH_DEFAULTS                   84
+#define CALL_NO_KW_TYPE_1                       86
+#define CALL_NO_KW_STR_1                        88
+#define CALL_NO_KW_TUPLE_1                     111
+#define CALL_BUILTIN_CLASS                     112
+#define CALL_NO_KW_BUILTIN_O                   113
+#define CALL_NO_KW_BUILTIN_FAST                132
+#define CALL_BUILTIN_FAST_WITH_KEYWORDS        148
+#define CALL_NO_KW_LEN                         153
+#define CALL_NO_KW_ISINSTANCE                  154
+#define CALL_NO_KW_LIST_APPEND                 155
+#define CALL_NO_KW_METHOD_DESCRIPTOR_O         159
+#define CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS 160
+#define CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS    161
+#define CALL_NO_KW_METHOD_DESCRIPTOR_FAST      166
+#define CALL_NO_KW_ALLOC_AND_ENTER_INIT        167
 
 #define NB_ADD                                   0
 #define NB_AND                                   1
@@ -261,8 +249,6 @@ extern "C" {
 
 /* Defined in Lib/opcode.py */
 #define ENABLE_SPECIALIZATION 1
-
-#define IS_PSEUDO_OPCODE(op) (((op) >= MIN_PSEUDO_OPCODE) && ((op) <= MAX_PSEUDO_OPCODE))
 
 #ifdef __cplusplus
 }

@@ -23,7 +23,3 @@ sphinxcontrib-serializinghtml<1.2
 
 # Direct dependencies of Jinja2 (Jinja is a dependency of Sphinx, see above)
 MarkupSafe<2.2
-
-# Direct dependencies of sphinx-lint
-polib<1.3
-regex<2024
