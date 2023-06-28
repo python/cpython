@@ -2779,7 +2779,7 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
     if (uop_debug != NULL && *uop_debug >= '0') {
         lltrace = *uop_debug - '0';  // TODO: Parse an int and all that
     }
-    if (lltrace >= 2) {
+    if (lltrace >= 3) {
         PyCodeObject *code = _PyFrame_GetCode(frame);
         _Py_CODEUNIT *instr = frame->prev_instr + 1;
         fprintf(stderr,

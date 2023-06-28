@@ -340,20 +340,41 @@ translate_bytecode_to_trace(
 
     int trace_length = 0;
     // Always reserve space for one uop, plus SET_UP, plus EXIT_TRACE
-    while (trace_length + 3 <= max_length) {
+    for (;;) {
         int opcode = instr->op.code;
         uint64_t operand = instr->op.arg;
         switch (opcode) {
             case LOAD_FAST_LOAD_FAST:
+            case STORE_FAST_LOAD_FAST:
+            case STORE_FAST_STORE_FAST:
             {
                 // Reserve space for two uops (+ SETUP + EXIT_TRACE)
                 if (trace_length + 4 > max_length) {
+#ifdef LLTRACE
+                    if (lltrace >= 1) {
+                        fprintf(stderr, "Ran out of space for LOAD_FAST_LOAD_FAST\n");
+                    }
+#endif
                     goto done;
                 }
                 uint64_t oparg1 = operand >> 4;
                 uint64_t oparg2 = operand & 15;
-                ADD_TO_TRACE(LOAD_FAST, oparg1);
-                ADD_TO_TRACE(LOAD_FAST, oparg2);
+                switch (opcode) {
+                    case LOAD_FAST_LOAD_FAST:
+                        ADD_TO_TRACE(LOAD_FAST, oparg1);
+                        ADD_TO_TRACE(LOAD_FAST, oparg2);
+                        break;
+                    case STORE_FAST_LOAD_FAST:
+                        ADD_TO_TRACE(STORE_FAST, oparg1);
+                        ADD_TO_TRACE(LOAD_FAST, oparg2);
+                        break;
+                    case STORE_FAST_STORE_FAST:
+                        ADD_TO_TRACE(STORE_FAST, oparg1);
+                        ADD_TO_TRACE(STORE_FAST, oparg2);
+                        break;
+                    default:
+                        Py_FatalError("Missing case");
+                }
                 break;
             }
             default:
@@ -363,6 +384,14 @@ translate_bytecode_to_trace(
                     // Reserve space for nuops (+ SETUP + EXIT_TRACE)
                     int nuops = expansion->nuops;
                     if (trace_length + nuops + 2 > max_length) {
+#ifdef LLTRACE
+                        if (lltrace >= 1) {
+                            fprintf(stderr,
+                                    "Ran out of space for %s\n",
+                                    opcode < 256 ? _PyOpcode_OpName[opcode] : _PyOpcode_uop_name[opcode]
+                            );
+                        }
+#endif
                         goto done;
                     }
                     for (int i = 0; i < nuops; i++) {
@@ -392,8 +421,15 @@ translate_bytecode_to_trace(
                     }
                     break;
                 }
-                // fprintf(stderr, "Unsupported opcode %d\n", opcode);
-                goto done;  // Break out of while loop
+#ifdef LLTRACE
+                if (lltrace >= 1) {
+                    fprintf(stderr,
+                            "Unsupported opcode %s\n",
+                            opcode < 256 ? _PyOpcode_OpName[opcode] : _PyOpcode_uop_name[opcode]
+                    );
+                }
+#endif
+                goto done;  // Break out of loop
             }
         }
         instr++;
