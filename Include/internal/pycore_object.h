@@ -10,9 +10,12 @@ extern "C" {
 
 #include <stdbool.h>
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
+#include "pycore_emscripten_trampoline.h" // _PyCFunction_TrampolineCall()
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_runtime.h"       // _PyRuntime
+
+
 
 /* We need to maintain an internal copy of Py{Var}Object_HEAD_INIT to avoid
    designated initializer conflicts in C++20. If we use the deinition in
@@ -410,41 +413,6 @@ extern void _PyObject_FreeInstanceAttributes(PyObject *obj);
 extern int _PyObject_IsInstanceDictEmpty(PyObject *);
 
 PyAPI_FUNC(PyObject *) _PyObject_LookupSpecial(PyObject *, PyObject *);
-
-/* C function call trampolines to mitigate bad function pointer casts.
- *
- * Typical native ABIs ignore additional arguments or fill in missing
- * values with 0/NULL in function pointer cast. Compilers do not show
- * warnings when a function pointer is explicitly casted to an
- * incompatible type.
- *
- * Bad fpcasts are an issue in WebAssembly. WASM's indirect_call has strict
- * function signature checks. Argument count, types, and return type must
- * match.
- *
- * Third party code unintentionally rely on problematic fpcasts. The call
- * trampoline mitigates common occurrences of bad fpcasts on Emscripten.
- */
-#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
-extern PyObject*
-_PyEM_TrampolineCall(PyCFunctionWithKeywords func,
-                     PyObject* self,
-                     PyObject* args,
-                     PyObject* kw);
-
-#define _PyCFunction_TrampolineCall(meth, self, args) \
-    _PyEM_TrampolineCall( \
-        (*(PyCFunctionWithKeywords)(void(*)(void))(meth)), (self), (args), NULL)
-
-#define _PyCFunctionWithKeywords_TrampolineCall(meth, self, args, kw) \
-    _PyEM_TrampolineCall((meth), (self), (args), (kw))
-
-#else
-#define _PyCFunction_TrampolineCall(meth, self, args) \
-    (meth)((self), (args))
-#define _PyCFunctionWithKeywords_TrampolineCall(meth, self, args, kw) \
-    (meth)((self), (args), (kw))
-#endif // __EMSCRIPTEN__ && PY_CALL_TRAMPOLINE
 
 #ifdef __cplusplus
 }

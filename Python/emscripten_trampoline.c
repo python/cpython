@@ -3,14 +3,30 @@
 #include <emscripten.h>
 #include <Python.h>
 
-EMSCRIPTEN_KEEPALIVE int _PyEM_type_reflection_available;
+static int _PyEM_type_reflection_available;
 
+/**
+ * This is the GoogleChromeLabs approved way to feature detect type-reflection:
+ * https://github.com/GoogleChromeLabs/wasm-feature-detect/blob/main/src/detectors/type-reflection/index.js
+ */
+void
+_Py_EmscriptenTrampoline_Init(){
+  _PyEM_type_reflection_available = EM_ASM_INT({return "function" in WebAssembly});
+}
+
+/**
+ * Backwards compatible trampoline works with all JS runtimes
+ */
 EM_JS_DEPS(_PyEMJS_TrampolineCall, "$getWasmTableEntry")
 EM_JS(PyObject*, _PyEMJS_TrampolineCall, (PyCFunctionWithKeywords func, PyObject *arg1, PyObject *arg2, PyObject *arg3), {
     return getWasmTableEntry(func)(arg1, arg2, arg3);
 }
 );
 
+/**
+ * In runtimes with WebAssembly type reflection, count the number of parameters
+ * and cast to the appropriate signature
+ */
 EM_JS(int, _PyEM_CountFuncParams, (PyCFunctionWithKeywords func), {
   let n = _PyEM_CountFuncParams.cache.get(func);
   if (n !== undefined) {
@@ -21,15 +37,6 @@ EM_JS(int, _PyEM_CountFuncParams, (PyCFunctionWithKeywords func), {
   return n;
 }
 _PyEM_CountFuncParams.cache = new Map();
-switch(typeof Module.preRun) {
-    case "undefined":
-        Module.preRun = [];
-        break;
-    case "function":
-        Module.preRun = [Module.preRun];
-        break;
-}
-Module.preRun.push(() => HEAP32[__PyEM_type_reflection_available/4] = "Function" in WebAssembly);
 )
 
 
@@ -37,6 +44,7 @@ typedef PyObject* (*zero_arg)(void);
 typedef PyObject* (*one_arg)(PyObject*);
 typedef PyObject* (*two_arg)(PyObject*, PyObject*);
 typedef PyObject* (*three_arg)(PyObject*, PyObject*, PyObject*);
+
 
 PyObject*
 _PyEM_TrampolineCall(PyCFunctionWithKeywords func,
