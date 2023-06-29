@@ -6,7 +6,6 @@ from io import BytesIO, StringIO
 from textwrap import dedent
 from unittest import TestCase, mock
 from test import support
-from test.support import os_helper
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
 from test.support import os_helper

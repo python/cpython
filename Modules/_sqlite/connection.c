@@ -21,6 +21,10 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "module.h"
 #include "structmember.h"         // PyMemberDef
 #include "connection.h"
@@ -29,6 +33,7 @@
 #include "blob.h"
 #include "prepare_protocol.h"
 #include "util.h"
+#include "pycore_weakref.h"       // _PyWeakref_IS_DEAD()
 
 #include <stdbool.h>
 
@@ -969,10 +974,6 @@ error:
 
 static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self)
 {
-    PyObject* new_list;
-    PyObject* weakref;
-    int i;
-
     /* we only need to do this once in a while */
     if (self->created_cursors++ < 200) {
         return;
@@ -980,18 +981,19 @@ static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self)
 
     self->created_cursors = 0;
 
-    new_list = PyList_New(0);
+    PyObject* new_list = PyList_New(0);
     if (!new_list) {
         return;
     }
 
-    for (i = 0; i < PyList_Size(self->cursors); i++) {
-        weakref = PyList_GetItem(self->cursors, i);
-        if (PyWeakref_GetObject(weakref) != Py_None) {
-            if (PyList_Append(new_list, weakref) != 0) {
-                Py_DECREF(new_list);
-                return;
-            }
+    for (Py_ssize_t i = 0; i < PyList_Size(self->cursors); i++) {
+        PyObject* weakref = PyList_GetItem(self->cursors, i);
+        if (_PyWeakref_IS_DEAD(weakref)) {
+            continue;
+        }
+        if (PyList_Append(new_list, weakref) != 0) {
+            Py_DECREF(new_list);
+            return;
         }
     }
 

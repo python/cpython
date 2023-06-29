@@ -831,6 +831,12 @@ get_counter_optimizer(PyObject *self, PyObject *arg)
 }
 
 static PyObject *
+get_uop_optimizer(PyObject *self, PyObject *arg)
+{
+    return PyUnstable_Optimizer_NewUOpOptimizer();
+}
+
+static PyObject *
 set_optimizer(PyObject *self, PyObject *opt)
 {
     if (opt == Py_None) {
@@ -994,6 +1000,7 @@ static PyMethodDef module_functions[] = {
     {"get_optimizer", get_optimizer,  METH_NOARGS, NULL},
     {"set_optimizer", set_optimizer,  METH_O, NULL},
     {"get_counter_optimizer", get_counter_optimizer, METH_NOARGS, NULL},
+    {"get_uop_optimizer", get_uop_optimizer, METH_NOARGS, NULL},
     {"pending_threadfunc", _PyCFunction_CAST(pending_threadfunc),
      METH_VARARGS | METH_KEYWORDS},
 //    {"pending_fd_identify", pending_fd_identify, METH_VARARGS, NULL},
