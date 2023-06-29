@@ -5682,24 +5682,24 @@ class CWhitebox(unittest.TestCase):
             self.assertEqual(Decimal(4) / 2, 2)
             self.assertEqual(Decimal(400) ** -1, Decimal('0.0025'))
 
-    def test_immutable_types(self):
-        decimal = C
-        siganldict_type = type(decimal.Context().flags)
-        self.dataset = (
-            siganldict_type.__bases__[0],  # SignalDictMixin type
-            type(decimal.localcontext()),  # ContextManager type
-            decimal.Decimal,
-            decimal.Context,
+    def test_c_immutable_types(self):
+        SignalDict = type(C.Context().flags)
+        SignalDictMixin = SignalDict.__bases__[0]
+        ContextManager = type(C.localcontext())
+        types = (
+            SignalDictMixin,
+            ContextManager,
+            C.Decimal,
+            C.Context,
         )
-        for tp in self.dataset:
+        for tp in types:
             with self.subTest(tp=tp):
                 with self.assertRaisesRegex(TypeError, "immutable"):
                     tp.foo = 1
 
-    def test_disallow_instantiation(self):
-        decimal = C
-        ctxmanager_type = type(decimal.localcontext())
-        check_disallow_instantiation(self, ctxmanager_type)
+    def test_c_disallow_instantiation(self):
+        ContextManager = type(C.localcontext())
+        check_disallow_instantiation(self, ContextManager)
 
 @requires_docstrings
 @requires_cdecimal
