@@ -9,7 +9,6 @@ import pathlib
 import struct
 import sys
 import unittest
-import zlib
 from subprocess import PIPE, Popen
 from test.support import import_helper
 from test.support import os_helper
@@ -17,6 +16,7 @@ from test.support import _4G, bigmemtest, requires_subprocess
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
 gzip = import_helper.import_module('gzip')
+zlib = import_helper.import_module('zlib')
 
 data1 = b"""  int length=DEFAULTALLOC, err = Z_OK;
   PyObject *RetVal;

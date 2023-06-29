@@ -21,6 +21,7 @@ from urllib.parse import quote_from_bytes as urlquote_from_bytes
 
 
 __all__ = [
+    "UnsupportedOperation",
     "PurePath", "PurePosixPath", "PureWindowsPath",
     "Path", "PosixPath", "WindowsPath",
     ]
@@ -206,6 +207,13 @@ def _select_unique(paths):
 #
 # Public API
 #
+
+class UnsupportedOperation(NotImplementedError):
+    """An exception that is raised when an unsupported operation is called on
+    a path object.
+    """
+    pass
+
 
 class _PathParents(Sequence):
     """This object provides sequence-like access to the logical ancestors
@@ -809,12 +817,12 @@ class Path(PurePath):
             return False
         return True
 
-    def is_dir(self):
+    def is_dir(self, *, follow_symlinks=True):
         """
         Whether this path is a directory.
         """
         try:
-            return S_ISDIR(self.stat().st_mode)
+            return S_ISDIR(self.stat(follow_symlinks=follow_symlinks).st_mode)
         except OSError as e:
             if not _ignore_error(e):
                 raise
@@ -825,13 +833,13 @@ class Path(PurePath):
             # Non-encodable path
             return False
 
-    def is_file(self):
+    def is_file(self, *, follow_symlinks=True):
         """
         Whether this path is a regular file (also True for symlinks pointing
         to regular files).
         """
         try:
-            return S_ISREG(self.stat().st_mode)
+            return S_ISREG(self.stat(follow_symlinks=follow_symlinks).st_mode)
         except OSError as e:
             if not _ignore_error(e):
                 raise
@@ -1241,7 +1249,7 @@ class Path(PurePath):
             import pwd
             return pwd.getpwuid(self.stat().st_uid).pw_name
         except ImportError:
-            raise NotImplementedError("Path.owner() is unsupported on this system")
+            raise UnsupportedOperation("Path.owner() is unsupported on this system")
 
     def group(self):
         """
@@ -1252,14 +1260,14 @@ class Path(PurePath):
             import grp
             return grp.getgrgid(self.stat().st_gid).gr_name
         except ImportError:
-            raise NotImplementedError("Path.group() is unsupported on this system")
+            raise UnsupportedOperation("Path.group() is unsupported on this system")
 
     def readlink(self):
         """
         Return the path to which the symbolic link points.
         """
         if not hasattr(os, "readlink"):
-            raise NotImplementedError("os.readlink() not available on this system")
+            raise UnsupportedOperation("os.readlink() not available on this system")
         return self.with_segments(os.readlink(self))
 
     def touch(self, mode=0o666, exist_ok=True):
@@ -1363,7 +1371,7 @@ class Path(PurePath):
         Note the order of arguments (link, target) is the reverse of os.symlink.
         """
         if not hasattr(os, "symlink"):
-            raise NotImplementedError("os.symlink() not available on this system")
+            raise UnsupportedOperation("os.symlink() not available on this system")
         os.symlink(target, self, target_is_directory)
 
     def hardlink_to(self, target):
@@ -1373,7 +1381,7 @@ class Path(PurePath):
         Note the order of arguments (self, target) is the reverse of os.link's.
         """
         if not hasattr(os, "link"):
-            raise NotImplementedError("os.link() not available on this system")
+            raise UnsupportedOperation("os.link() not available on this system")
         os.link(target, self)
 
     def expanduser(self):
@@ -1400,7 +1408,7 @@ class PosixPath(Path, PurePosixPath):
 
     if os.name == 'nt':
         def __new__(cls, *args, **kwargs):
-            raise NotImplementedError(
+            raise UnsupportedOperation(
                 f"cannot instantiate {cls.__name__!r} on your system")
 
 class WindowsPath(Path, PureWindowsPath):
@@ -1412,5 +1420,5 @@ class WindowsPath(Path, PureWindowsPath):
 
     if os.name != 'nt':
         def __new__(cls, *args, **kwargs):
-            raise NotImplementedError(
+            raise UnsupportedOperation(
                 f"cannot instantiate {cls.__name__!r} on your system")

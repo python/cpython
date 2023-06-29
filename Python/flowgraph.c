@@ -166,22 +166,6 @@ _PyBasicblock_InsertInstruction(basicblock *block, int pos, cfg_instr *instr) {
     return SUCCESS;
 }
 
-static int
-instr_size(cfg_instr *instruction)
-{
-    return _PyCompile_InstrSize(instruction->i_opcode, instruction->i_oparg);
-}
-
-static int
-blocksize(basicblock *b)
-{
-    int size = 0;
-    for (int i = 0; i < b->b_iused; i++) {
-        size += instr_size(&b->b_instr[i]);
-    }
-    return size;
-}
-
 /* For debugging purposes only */
 #if 0
 static void
@@ -212,9 +196,9 @@ static void
 dump_basicblock(const basicblock *b)
 {
     const char *b_return = basicblock_returns(b) ? "return " : "";
-    fprintf(stderr, "%d: [EH=%d CLD=%d WRM=%d NO_FT=%d %p] used: %d, depth: %d, offset: %d %s\n",
+    fprintf(stderr, "%d: [EH=%d CLD=%d WRM=%d NO_FT=%d %p] used: %d, depth: %d, %s\n",
         b->b_label.id, b->b_except_handler, b->b_cold, b->b_warm, BB_NO_FALLTHROUGH(b), b, b->b_iused,
-        b->b_startdepth, b->b_offset, b_return);
+        b->b_startdepth, b_return);
     if (b->b_instr) {
         int i;
         for (i = 0; i < b->b_iused; i++) {
@@ -480,71 +464,11 @@ normalize_jumps(_PyCfgBuilder *g)
     return SUCCESS;
 }
 
-static void
-resolve_jump_offsets(basicblock *entryblock)
-{
-    int bsize, totsize, extended_arg_recompile;
-
-    /* Compute the size of each block and fixup jump args.
-       Replace block pointer with position in bytecode. */
-    do {
-        totsize = 0;
-        for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-            bsize = blocksize(b);
-            b->b_offset = totsize;
-            totsize += bsize;
-        }
-        extended_arg_recompile = 0;
-        for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-            bsize = b->b_offset;
-            for (int i = 0; i < b->b_iused; i++) {
-                cfg_instr *instr = &b->b_instr[i];
-                int isize = instr_size(instr);
-                /* jump offsets are computed relative to
-                 * the instruction pointer after fetching
-                 * the jump instruction.
-                 */
-                bsize += isize;
-                if (is_jump(instr)) {
-                    instr->i_oparg = instr->i_target->b_offset;
-                    if (instr->i_oparg < bsize) {
-                        assert(IS_BACKWARDS_JUMP_OPCODE(instr->i_opcode));
-                        instr->i_oparg = bsize - instr->i_oparg;
-                    }
-                    else {
-                        assert(!IS_BACKWARDS_JUMP_OPCODE(instr->i_opcode));
-                        instr->i_oparg -= bsize;
-                    }
-                    if (instr_size(instr) != isize) {
-                        extended_arg_recompile = 1;
-                    }
-                }
-            }
-        }
-
-    /* XXX: This is an awful hack that could hurt performance, but
-        on the bright side it should work until we come up
-        with a better solution.
-
-        The issue is that in the first loop blocksize() is called
-        which calls instr_size() which requires i_oparg be set
-        appropriately. There is a bootstrap problem because
-        i_oparg is calculated in the second loop above.
-
-        So we loop until we stop seeing new EXTENDED_ARGs.
-        The only EXTENDED_ARGs that could be popping up are
-        ones in jump instructions.  So this should converge
-        fairly quickly.
-    */
-    } while (extended_arg_recompile);
-}
-
 int
 _PyCfg_ResolveJumps(_PyCfgBuilder *g)
 {
     RETURN_IF_ERROR(normalize_jumps(g));
     assert(no_redundant_jumps(g));
-    resolve_jump_offsets(g->g_entryblock);
     return SUCCESS;
 }
 

@@ -246,6 +246,7 @@ struct _specialization_cache {
     //   *args nor **kwargs (as required by BINARY_SUBSCR_GETITEM):
     PyObject *getitem;
     uint32_t getitem_version;
+    PyObject *init;
 };
 
 /* The *real* layout of a type object when allocated on the heap */
