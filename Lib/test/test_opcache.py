@@ -866,6 +866,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
             for _ in range(self.ITEMS):
                 o = C()
                 o.a = None
+                # Need to keep a __dict__ reference so it isn't un-materialized:
                 item = o, o.__dict__
                 items.append(item)
             return items
