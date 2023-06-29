@@ -1,0 +1,1 @@
+Fix rare concurrency bug in lock acquire by the logging library.
