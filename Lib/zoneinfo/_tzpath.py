@@ -45,6 +45,7 @@ def _parse_python_tzpath(env_var):
             "Invalid paths specified in PYTHONTZPATH environment variable. "
             + msg,
             InvalidTZPathWarning,
+            stacklevel=5,
         )
 
     return new_tzpath
