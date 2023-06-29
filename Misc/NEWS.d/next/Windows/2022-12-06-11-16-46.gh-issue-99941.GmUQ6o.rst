@@ -1,2 +1,0 @@
-Ensure that :func:`asyncio.Protocol.data_received` receives an immutable
-:class:`bytes` object (as documented), instead of :class:`bytearray`.

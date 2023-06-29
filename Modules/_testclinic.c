@@ -9,6 +9,19 @@
 
 #include "Python.h"
 
+
+// Used for clone_with_conv_f1 and clone_with_conv_v2
+typedef struct {
+    const char *name;
+} custom_t;
+
+static int
+custom_converter(PyObject *obj, custom_t *val)
+{
+    return 1;
+}
+
+
 #include "clinic/_testclinic.c.h"
 
 
@@ -1117,6 +1130,70 @@ gh_99240_double_free_impl(PyObject *module, char *a, char *b)
 }
 
 
+/*[clinic input]
+_testclinic.clone_f1 as clone_f1
+   path: str
+[clinic start generated code]*/
+
+static PyObject *
+clone_f1_impl(PyObject *module, const char *path)
+/*[clinic end generated code: output=8c30b5620ba86715 input=9c614b7f025ebf70]*/
+{
+    Py_RETURN_NONE;
+}
+
+
+/*[clinic input]
+_testclinic.clone_f2 as clone_f2 = _testclinic.clone_f1
+[clinic start generated code]*/
+
+static PyObject *
+clone_f2_impl(PyObject *module, const char *path)
+/*[clinic end generated code: output=6aa1c39bec3f5d9b input=1aaaf47d6ed2324a]*/
+{
+    Py_RETURN_NONE;
+}
+
+
+/*[python input]
+class custom_t_converter(CConverter):
+    type = 'custom_t'
+    converter = 'custom_converter'
+
+    def pre_render(self):
+        self.c_default = f'''{{
+            .name = "{self.function.name}",
+        }}'''
+
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=b2fb801e99a06bf6]*/
+
+
+/*[clinic input]
+_testclinic.clone_with_conv_f1 as clone_with_conv_f1
+    path: custom_t = None
+[clinic start generated code]*/
+
+static PyObject *
+clone_with_conv_f1_impl(PyObject *module, custom_t path)
+/*[clinic end generated code: output=f7e030ffd5439cb0 input=bc77bc80dec3f46d]*/
+{
+    return PyUnicode_FromString(path.name);
+}
+
+
+/*[clinic input]
+_testclinic.clone_with_conv_f2 as clone_with_conv_f2 = _testclinic.clone_with_conv_f1
+[clinic start generated code]*/
+
+static PyObject *
+clone_with_conv_f2_impl(PyObject *module, custom_t path)
+/*[clinic end generated code: output=9d7fdd6a75eecee4 input=cff459a205fa83bb]*/
+{
+    return PyUnicode_FromString(path.name);
+}
+
+
 static PyMethodDef tester_methods[] = {
     TEST_EMPTY_FUNCTION_METHODDEF
     OBJECTS_CONVERTER_METHODDEF
@@ -1168,6 +1245,10 @@ static PyMethodDef tester_methods[] = {
     GH_32092_KW_PASS_METHODDEF
     GH_99233_REFCOUNT_METHODDEF
     GH_99240_DOUBLE_FREE_METHODDEF
+    CLONE_F1_METHODDEF
+    CLONE_F2_METHODDEF
+    CLONE_WITH_CONV_F1_METHODDEF
+    CLONE_WITH_CONV_F2_METHODDEF
     {NULL, NULL}
 };
 

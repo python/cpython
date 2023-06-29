@@ -5,8 +5,8 @@
 Integer Objects
 ---------------
 
-.. index:: object: long integer
-           object: integer
+.. index:: pair: object; long integer
+           pair: object; integer
 
 All integers are implemented as "long" integer objects of arbitrary size.
 
@@ -93,6 +93,10 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    whitespace and single underscores after a base specifier and between digits are
    ignored.  If there are no digits or *str* is not NULL-terminated following the
    digits and trailing whitespace, :exc:`ValueError` will be raised.
+
+   .. seealso:: Python methods :meth:`int.to_bytes` and :meth:`int.from_bytes`
+      to convert a :c:type:`PyLongObject` to/from an array of bytes in base
+      ``256``. You can call those from C using :c:func:`PyObject_CallMethod`.
 
 
 .. c:function:: PyObject* PyLong_FromUnicodeObject(PyObject *u, int base)
@@ -318,3 +322,27 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    with :c:func:`PyLong_FromVoidPtr`.
 
    Returns ``NULL`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
+
+
+.. c:function:: int PyUnstable_Long_IsCompact(const PyLongObject* op)
+
+   Return 1 if *op* is compact, 0 otherwise.
+
+   This function makes it possible for performance-critical code to implement
+   a “fast path” for small integers. For compact values use
+   :c:func:`PyUnstable_Long_CompactValue`; for others fall back to a
+   :c:func:`PyLong_As* <PyLong_AsSize_t>` function or
+   :c:func:`calling <PyObject_CallMethod>` :meth:`int.to_bytes`.
+
+   The speedup is expected to be negligible for most users.
+
+   Exactly what values are considered compact is an implementation detail
+   and is subject to change.
+
+.. c:function:: Py_ssize_t PyUnstable_Long_CompactValue(const PyLongObject* op)
+
+   If *op* is compact, as determined by :c:func:`PyUnstable_Long_IsCompact`,
+   return its value.
+
+   Otherwise, the return value is undefined.
+

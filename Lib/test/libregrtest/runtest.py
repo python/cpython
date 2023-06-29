@@ -143,6 +143,14 @@ STDTESTS = [
 # set of tests that we don't want to be executed when using regrtest
 NOTTESTS = set()
 
+#If these test directories are encountered recurse into them and treat each
+# test_ .py or dir as a separate test module. This can increase parallelism.
+# Beware this can't generally be done for any directory with sub-tests as the
+# __init__.py may do things which alter what tests are to be run.
+
+SPLITTESTDIRS = {
+    "test_asyncio",
+}
 
 # Storage of uncollectable objects
 FOUND_GARBAGE = []
@@ -158,7 +166,7 @@ def findtestdir(path=None):
     return path or os.path.dirname(os.path.dirname(__file__)) or os.curdir
 
 
-def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
+def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS, *, split_test_dirs=SPLITTESTDIRS, base_mod=""):
     """Return a list of all applicable test modules."""
     testdir = findtestdir(testdir)
     names = os.listdir(testdir)
@@ -166,8 +174,13 @@ def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
     others = set(stdtests) | nottests
     for name in names:
         mod, ext = os.path.splitext(name)
-        if mod[:5] == "test_" and ext in (".py", "") and mod not in others:
-            tests.append(mod)
+        if mod[:5] == "test_" and mod not in others:
+            if mod in split_test_dirs:
+                subdir = os.path.join(testdir, mod)
+                mod = f"{base_mod or 'test'}.{mod}"
+                tests.extend(findtests(subdir, [], nottests, split_test_dirs=split_test_dirs, base_mod=mod))
+            elif ext in (".py", ""):
+                tests.append(f"{base_mod}.{mod}" if base_mod else mod)
     return stdtests + sorted(tests)
 
 

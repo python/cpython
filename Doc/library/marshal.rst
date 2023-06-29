@@ -15,8 +15,8 @@ undocumented on purpose; it may change between Python versions (although it
 rarely does). [#]_
 
 .. index::
-   module: pickle
-   module: shelve
+   pair: module; pickle
+   pair: module; shelve
 
 This is not a general "persistence" module.  For general persistence and
 transfer of Python objects through RPC calls, see the modules :mod:`pickle` and

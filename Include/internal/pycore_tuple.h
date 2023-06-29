@@ -14,7 +14,6 @@ extern "C" {
 /* runtime lifecycle */
 
 extern PyStatus _PyTuple_InitGlobalObjects(PyInterpreterState *);
-extern PyStatus _PyTuple_InitTypes(PyInterpreterState *);
 extern void _PyTuple_Fini(PyInterpreterState *);
 
 

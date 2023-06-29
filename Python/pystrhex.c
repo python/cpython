@@ -21,8 +21,6 @@ static PyObject *_Py_strhex_impl(const char* argbuf, const Py_ssize_t arglen,
             return NULL;
         }
         if (PyUnicode_Check(sep)) {
-            if (PyUnicode_READY(sep))
-                return NULL;
             if (PyUnicode_KIND(sep) != PyUnicode_1BYTE_KIND) {
                 PyErr_SetString(PyExc_ValueError, "sep must be ASCII.");
                 return NULL;

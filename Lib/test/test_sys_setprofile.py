@@ -2,7 +2,6 @@ import gc
 import pprint
 import sys
 import unittest
-from test import support
 
 
 class TestGetProfile(unittest.TestCase):

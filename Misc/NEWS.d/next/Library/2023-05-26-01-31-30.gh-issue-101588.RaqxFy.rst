@@ -1,0 +1,1 @@
+Deprecate undocumented copy/deepcopy/pickle support for itertools.

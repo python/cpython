@@ -21,6 +21,9 @@ datetime.datetime objects.
 
 Generate Plist example:
 
+    import datetime
+    import plistlib
+
     pl = dict(
         aString = "Doodah",
         aList = ["A", "B", 12, 32.1, [1, 2, 3]],
@@ -28,22 +31,28 @@ Generate Plist example:
         anInt = 728,
         aDict = dict(
             anotherString = "<hello & hi there!>",
-            aUnicodeValue = "M\xe4ssig, Ma\xdf",
+            aThirdString = "M\xe4ssig, Ma\xdf",
             aTrueValue = True,
             aFalseValue = False,
         ),
         someData = b"<binary gunk>",
         someMoreData = b"<lots of binary gunk>" * 10,
-        aDate = datetime.datetime.fromtimestamp(time.mktime(time.gmtime())),
+        aDate = datetime.datetime.now()
     )
-    with open(fileName, 'wb') as fp:
-        dump(pl, fp)
+    print(plistlib.dumps(pl).decode())
 
 Parse Plist example:
 
-    with open(fileName, 'rb') as fp:
-        pl = load(fp)
-    print(pl["aKey"])
+    import plistlib
+
+    plist = b'''<plist version="1.0">
+    <dict>
+        <key>foo</key>
+        <string>bar</string>
+    </dict>
+    </plist>'''
+    pl = plistlib.loads(plist)
+    print(pl["foo"])
 """
 __all__ = [
     "InvalidFileException", "FMT_XML", "FMT_BINARY", "load", "dump", "loads", "dumps", "UID"

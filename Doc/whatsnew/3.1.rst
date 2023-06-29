@@ -377,7 +377,7 @@ New, Improved, and Deprecated Modules
 
   (Contributed by Ross Light; :issue:`4285`.)
 
-* The :mod:`nntplib` and :mod:`imaplib` modules now support IPv6.
+* The :mod:`!nntplib` and :mod:`imaplib` modules now support IPv6.
 
   (Contributed by Derek Morr; :issue:`1655` and :issue:`1664`.)
 

@@ -16,7 +16,7 @@ functionality. The POSIX locale mechanism allows programmers to deal with
 certain cultural issues in an application, without requiring the programmer to
 know all the specifics of each country where the software is executed.
 
-.. index:: module: _locale
+.. index:: pair: module; _locale
 
 The :mod:`locale` module is implemented on top of the :mod:`_locale` module,
 which in turn uses an ANSI C locale implementation if available.
@@ -370,16 +370,6 @@ The :mod:`locale` module defines the following exception and functions:
    encoding for the locale code just like :func:`setlocale`.
 
 
-.. function:: resetlocale(category=LC_ALL)
-
-   Sets the locale for *category* to the default setting.
-
-   The default setting is determined by calling :func:`getdefaultlocale`.
-   *category* defaults to :const:`LC_ALL`.
-
-   .. deprecated-removed:: 3.11 3.13
-
-
 .. function:: strcoll(string1, string2)
 
    Compares two strings according to the current :const:`LC_COLLATE` setting. As
@@ -464,7 +454,7 @@ The :mod:`locale` module defines the following exception and functions:
 
 .. data:: LC_CTYPE
 
-   .. index:: module: string
+   .. index:: pair: module; string
 
    Locale category for the character type functions.  Depending on the settings of
    this category, the functions of module :mod:`string` dealing with case change
@@ -495,6 +485,9 @@ The :mod:`locale` module defines the following exception and functions:
    application specific locale-aware messages.  Messages displayed by the operating
    system, like those returned by :func:`os.strerror` might be affected by this
    category.
+
+   This value may not be available on operating systems not conforming to the
+   POSIX standard, most notably Windows.
 
 
 .. data:: LC_NUMERIC

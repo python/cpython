@@ -1,0 +1,2 @@
+Fix :func:`super` calls on types with custom :attr:`tp_getattro`
+implementation (e.g. meta-types.)

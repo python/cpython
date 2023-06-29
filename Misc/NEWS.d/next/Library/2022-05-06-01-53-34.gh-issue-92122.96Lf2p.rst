@@ -1,1 +1,0 @@
-Fix reStructuredText syntax errors in docstrings in the :mod:`enum` module.

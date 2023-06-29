@@ -696,7 +696,7 @@ is supplied to suppress this behaviour.  So you could simply edit
    import sys
    sys.path.append('/www/python/')
 
-However, if you reinstall the same major version of Python (perhaps when
+However, if you reinstall the same minor version of Python (perhaps when
 upgrading from 2.2 to 2.2.2, for example) :file:`site.py` will be overwritten by
 the stock version.  You'd have to remember that it was modified and save a copy
 before doing the installation.

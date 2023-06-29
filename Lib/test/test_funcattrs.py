@@ -1,5 +1,6 @@
 import textwrap
 import types
+import typing
 import unittest
 
 
@@ -189,6 +190,20 @@ class FunctionPropertiesTest(FuncAttrsTest):
         self.assertEqual(self.b.__qualname__, 'd')
         # __qualname__ must be a string
         self.cannot_set_attr(self.b, '__qualname__', 7, TypeError)
+
+    def test___type_params__(self):
+        def generic[T](): pass
+        def not_generic(): pass
+        T, = generic.__type_params__
+        self.assertIsInstance(T, typing.TypeVar)
+        self.assertEqual(generic.__type_params__, (T,))
+        self.assertEqual(not_generic.__type_params__, ())
+        with self.assertRaises(TypeError):
+            del not_generic.__type_params__
+        with self.assertRaises(TypeError):
+            not_generic.__type_params__ = 42
+        not_generic.__type_params__ = (T,)
+        self.assertEqual(not_generic.__type_params__, (T,))
 
     def test___code__(self):
         num_one, num_two = 7, 8

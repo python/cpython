@@ -207,8 +207,9 @@ their completion.
       Interact with process:
 
       1. send data to *stdin* (if *input* is not ``None``);
-      2. read data from *stdout* and *stderr*, until EOF is reached;
-      3. wait for process to terminate.
+      2. closes *stdin*;
+      3. read data from *stdout* and *stderr*, until EOF is reached;
+      4. wait for process to terminate.
 
       The optional *input* argument is the data (:class:`bytes` object)
       that will be sent to the child process.
@@ -228,6 +229,10 @@ their completion.
 
       Note, that the data read is buffered in memory, so do not use
       this method if the data size is large or unlimited.
+
+      .. versionchanged:: 3.12
+
+         *stdin* gets closed when `input=None` too.
 
    .. method:: send_signal(signal)
 

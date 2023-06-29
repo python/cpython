@@ -288,7 +288,7 @@ There are these calling conventions:
 
    .. versionchanged:: 3.10
 
-      ``METH_FASTCALL`` is now part of the stable ABI.
+      ``METH_FASTCALL`` is now part of the :ref:`stable ABI <stable-abi>`.
 
 
 .. data:: METH_FASTCALL | METH_KEYWORDS
@@ -347,7 +347,7 @@ method.
 
 .. data:: METH_CLASS
 
-   .. index:: builtin: classmethod
+   .. index:: pair: built-in function; classmethod
 
    The method will be passed the type object as the first parameter rather
    than an instance of the type.  This is used to create *class methods*,
@@ -357,7 +357,7 @@ method.
 
 .. data:: METH_STATIC
 
-   .. index:: builtin: staticmethod
+   .. index:: pair: built-in function; staticmethod
 
    The method will be passed ``NULL`` as the first parameter rather than an
    instance of the type.  This is used to create *static methods*, similar to
@@ -395,7 +395,7 @@ Accessing attributes of extension types
 
          The string should be static, no copy is made of it.
 
-   .. c:member:: Py_ssize_t PyMemberDef.offset
+   .. c:member:: Py_ssize_t offset
 
       The offset in bytes that the member is located on the type’s object struct.
 
@@ -485,6 +485,22 @@ The following flags can be used with :c:member:`PyMemberDef.flags`:
 
    Emit an ``object.__getattr__`` :ref:`audit event <audit-events>`
    before reading.
+
+.. c:macro:: Py_RELATIVE_OFFSET
+
+   Indicates that the :c:member:`~PyMemberDef.offset` of this ``PyMemberDef``
+   entry indicates an offset from the subclass-specific data, rather than
+   from ``PyObject``.
+
+   Can only be used as part of :c:member:`Py_tp_members <PyTypeObject.tp_members>`
+   :c:type:`slot <PyTypeSlot>` when creating a class using negative
+   :c:member:`~PyTypeDef.basicsize`.
+   It is mandatory in that case.
+
+   This flag is only used in :c:type:`PyTypeSlot`.
+   When setting :c:member:`~PyTypeObject.tp_members` during
+   class creation, Python clears it and sets
+   :c:member:`PyMemberDef.offset` to the offset from the ``PyObject`` struct.
 
 .. index::
    single: READ_RESTRICTED
@@ -609,23 +625,23 @@ Defining Getters and Setters
    Structure to define property-like access for a type. See also description of
    the :c:member:`PyTypeObject.tp_getset` slot.
 
-   .. c:member:: const char* PyGetSetDef.name
+   .. c:member:: const char* name
 
       attribute name
 
-   .. c:member:: getter PyGetSetDef.get
+   .. c:member:: getter get
 
-      C funtion to get the attribute.
+      C function to get the attribute.
 
-   .. c:member:: setter PyGetSetDef.set
+   .. c:member:: setter set
 
       Optional C function to set or delete the attribute, if omitted the attribute is readonly.
 
-   .. c:member:: const char* PyGetSetDef.doc
+   .. c:member:: const char* doc
 
       optional docstring
 
-   .. c:member:: void* PyGetSetDef.closure
+   .. c:member:: void* closure
 
       Optional function pointer, providing additional data for getter and setter.
 

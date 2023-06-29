@@ -63,9 +63,6 @@ module___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         _PyArg_BadArgument("module", "argument 'name'", "str", fastargs[0]);
         goto exit;
     }
-    if (PyUnicode_READY(fastargs[0]) == -1) {
-        goto exit;
-    }
     name = fastargs[0];
     if (!noptargs) {
         goto skip_optional_pos;
@@ -77,4 +74,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2f897c9e4721f03f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a5a750cc8190576e input=a9049054013a1b77]*/

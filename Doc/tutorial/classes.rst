@@ -344,7 +344,7 @@ list objects have methods called append, insert, remove, sort, and so on.
 However, in the following discussion, we'll use the term method exclusively to
 mean methods of class instance objects, unless explicitly stated otherwise.)
 
-.. index:: object: method
+.. index:: pair: object; method
 
 Valid method names of an instance object depend on its class.  By definition,
 all attributes of a class that are function  objects define corresponding
@@ -738,18 +738,24 @@ Odds and Ends
 =============
 
 Sometimes it is useful to have a data type similar to the Pascal "record" or C
-"struct", bundling together a few named data items.  An empty class definition
-will do nicely::
+"struct", bundling together a few named data items. The idiomatic approach
+is to use :mod:`dataclasses` for this purpose::
 
-   class Employee:
-       pass
+    from dataclasses import dataclass
 
-   john = Employee()  # Create an empty employee record
+    @dataclass
+    class Employee:
+        name: str
+        dept: str
+        salary: int
 
-   # Fill the fields of the record
-   john.name = 'John Doe'
-   john.dept = 'computer lab'
-   john.salary = 1000
+::
+
+    >>> john = Employee('john', 'computer lab', 1000)
+    >>> john.dept
+    'computer lab'
+    >>> john.salary
+    1000
 
 A piece of Python code that expects a particular abstract data type can often be
 passed a class that emulates the methods of that data type instead.  For

@@ -1,6 +1,5 @@
 from collections import namedtuple
 import enum
-import os.path
 import re
 
 from c_common import fsutil
@@ -8,7 +7,7 @@ from c_common.clsutil import classonly
 import c_common.misc as _misc
 import c_common.strutil as _strutil
 import c_common.tables as _tables
-from .parser._regexes import SIMPLE_TYPE, _STORAGE
+from .parser._regexes import _STORAGE
 
 
 FIXED_TYPE = _misc.Labeled('FIXED_TYPE')

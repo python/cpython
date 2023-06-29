@@ -457,7 +457,7 @@ class ClassTests(unittest.TestCase):
         a = A()
         self.assertEqual(_testcapi.hasattr_string(a, "attr"), True)
         self.assertEqual(_testcapi.hasattr_string(a, "noattr"), False)
-        self.assertEqual(sys.exc_info(), (None, None, None))
+        self.assertIsNone(sys.exception())
 
     def testDel(self):
         x = []

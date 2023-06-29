@@ -509,7 +509,7 @@ Add SSLContext.num_tickets to control the number of TLSv1.3 session tickets.
 .. nonce: nobzc9
 .. section: Library
 
-Fix the error handling in :meth:`msilib.SummaryInformation.GetProperty`.
+Fix the error handling in :meth:`!msilib.SummaryInformation.GetProperty`.
 Patch by Zackery Spytz.
 
 ..
@@ -538,7 +538,7 @@ module.
 .. nonce: TQFOR4
 .. section: Library
 
-:meth:`msilib.Directory.start_component()` no longer fails if *keyfile* is
+:meth:`!msilib.Directory.start_component()` no longer fails if *keyfile* is
 not ``None``.
 
 ..

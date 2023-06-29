@@ -1,4 +1,0 @@
-Unify error messages in JSON serialization between
-``json.dumps(float('nan'), allow_nan=False)`` and ``json.dumps(float('nan'),
-allow_nan=False, indent=<SOMETHING>)``. Now both include the representation
-of the value that could not be serialized.

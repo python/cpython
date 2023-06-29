@@ -10,8 +10,8 @@
 
 One of the most common tasks is to generate the flat (serialized) version of
 the email message represented by a message object structure.  You will need to
-do this if you want to send your message via :meth:`smtplib.SMTP.sendmail` or
-the :mod:`nntplib` module, or print the message on the console.  Taking a
+do this if you want to send your message via :meth:`smtplib.SMTP.sendmail`,
+or print the message on the console.  Taking a
 message object structure and producing a serialized representation is the job
 of the generator classes.
 

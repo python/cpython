@@ -19,10 +19,21 @@ typedef struct {
     uintptr_t _gc_prev;
 } PyGC_Head;
 
-static inline PyGC_Head* _Py_AS_GC(PyObject *op) {
-    return (_Py_CAST(PyGC_Head*, op) - 1);
-}
 #define _PyGC_Head_UNUSED PyGC_Head
+
+
+/* Get an object's GC head */
+static inline PyGC_Head* _Py_AS_GC(PyObject *op) {
+    char *gc = ((char*)op) - sizeof(PyGC_Head);
+    return (PyGC_Head*)gc;
+}
+
+/* Get the object given the GC head */
+static inline PyObject* _Py_FROM_GC(PyGC_Head *gc) {
+    char *op = ((char *)gc) + sizeof(PyGC_Head);
+    return (PyObject *)op;
+}
+
 
 /* True if the object is currently tracked by the GC. */
 static inline int _PyObject_GC_IS_TRACKED(PyObject *op) {
@@ -57,19 +68,19 @@ static inline int _PyObject_GC_MAY_BE_TRACKED(PyObject *obj) {
 // But it is always 0 for normal code.
 static inline PyGC_Head* _PyGCHead_NEXT(PyGC_Head *gc) {
     uintptr_t next = gc->_gc_next;
-    return _Py_CAST(PyGC_Head*, next);
+    return (PyGC_Head*)next;
 }
 static inline void _PyGCHead_SET_NEXT(PyGC_Head *gc, PyGC_Head *next) {
-    gc->_gc_next = _Py_CAST(uintptr_t, next);
+    gc->_gc_next = (uintptr_t)next;
 }
 
 // Lowest two bits of _gc_prev is used for _PyGC_PREV_MASK_* flags.
 static inline PyGC_Head* _PyGCHead_PREV(PyGC_Head *gc) {
     uintptr_t prev = (gc->_gc_prev & _PyGC_PREV_MASK);
-    return _Py_CAST(PyGC_Head*, prev);
+    return (PyGC_Head*)prev;
 }
 static inline void _PyGCHead_SET_PREV(PyGC_Head *gc, PyGC_Head *prev) {
-    uintptr_t uprev = _Py_CAST(uintptr_t, prev);
+    uintptr_t uprev = (uintptr_t)prev;
     assert((uprev & ~_PyGC_PREV_MASK) == 0);
     gc->_gc_prev = ((gc->_gc_prev & ~_PyGC_PREV_MASK) | uprev);
 }

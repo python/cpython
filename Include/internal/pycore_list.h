@@ -49,8 +49,8 @@ _PyList_AppendTakeRef(PyListObject *self, PyObject *newitem)
     Py_ssize_t allocated = self->allocated;
     assert((size_t)len + 1 < PY_SSIZE_T_MAX);
     if (allocated > len) {
-        PyList_SET_ITEM(self, len, newitem);
         Py_SET_SIZE(self, len + 1);
+        PyList_SET_ITEM(self, len, newitem);
         return 0;
     }
     return _PyList_AppendTakeRefListResize(self, newitem);
@@ -74,6 +74,8 @@ typedef struct {
     Py_ssize_t it_index;
     PyListObject *it_seq; /* Set to NULL when iterator is exhausted */
 } _PyListIterObject;
+
+extern PyObject *_PyList_FromArraySteal(PyObject *const *src, Py_ssize_t n);
 
 #ifdef __cplusplus
 }

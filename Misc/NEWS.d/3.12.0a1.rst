@@ -2028,8 +2028,8 @@ resources.
 .. nonce: NzdREm
 .. section: Library
 
-Remove deprecated :func:`importlib.utils.set_loader` and
-:func:`importlib.utils.module_for_loader` from :mod:`importlib.utils`.
+Remove deprecated :func:`!importlib.util.set_loader` and
+:func:`!importlib.util.module_for_loader` from :mod:`importlib.util`.
 
 ..
 
@@ -2650,7 +2650,7 @@ calling any callbacks. Patch by Kumar Aditya.
 .. section: Library
 
 Fail gracefully if :data:`~errno.EPERM` or :data:`~errno.ENOSYS` is raised
-when loading :mod:`crypt` methods. This may happen when trying to load
+when loading :mod:`!crypt` methods. This may happen when trying to load
 ``MD5`` on a Linux kernel with :abbr:`FIPS (Federal Information Processing
 Standard)` enabled.
 
@@ -4559,8 +4559,7 @@ The minimum Sphinx version required to build the documentation is now 3.2.
 .. section: Documentation
 
 Augmented documentation of asyncio.create_task(). Clarified the need to keep
-strong references to tasks and added a code snippet detailing how to to
-this.
+strong references to tasks and added a code snippet detailing how to do this.
 
 ..
 
@@ -5066,7 +5065,7 @@ are stubs and not functional.
 .. nonce: Bsswsc
 .. section: Build
 
-Add a new ``--with-dsymutil`` configure option to to link debug information
+Add a new ``--with-dsymutil`` configure option to link debug information
 in macOS. Patch by Pablo Galindo.
 
 ..
@@ -5401,7 +5400,7 @@ Update libffi to 3.4.3
 .. nonce: kV4K_1
 .. section: Windows
 
-Fixes a potential buffer overrun in :mod:`msilib`.
+Fixes a potential buffer overrun in :mod:`!msilib`.
 
 ..
 

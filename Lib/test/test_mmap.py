@@ -407,7 +407,6 @@ class MmapTests(unittest.TestCase):
         m.move(0, 0, 1)
         m.move(0, 0, 0)
 
-
     def test_anonymous(self):
         # anonymous mmap.mmap(-1, PAGE)
         m = mmap.mmap(-1, PAGESIZE)
@@ -886,6 +885,92 @@ class MmapTests(unittest.TestCase):
         self.assertEqual(m1.size(), start_size)
         self.assertEqual(m1[:data_length], data)
         self.assertEqual(m2[:data_length], data)
+
+    def test_mmap_closed_by_int_scenarios(self):
+        """
+        gh-103987: Test that mmap objects raise ValueError
+                for closed mmap files
+        """
+
+        class MmapClosedByIntContext:
+            def __init__(self, access) -> None:
+                self.access = access
+
+            def __enter__(self):
+                self.f = open(TESTFN, "w+b")
+                self.f.write(random.randbytes(100))
+                self.f.flush()
+
+                m = mmap.mmap(self.f.fileno(), 100, access=self.access)
+
+                class X:
+                    def __index__(self):
+                        m.close()
+                        return 10
+
+                return (m, X)
+
+            def __exit__(self, exc_type, exc_value, traceback):
+                self.f.close()
+
+        read_access_modes = [
+            mmap.ACCESS_READ,
+            mmap.ACCESS_WRITE,
+            mmap.ACCESS_COPY,
+            mmap.ACCESS_DEFAULT,
+        ]
+
+        write_access_modes = [
+            mmap.ACCESS_WRITE,
+            mmap.ACCESS_COPY,
+            mmap.ACCESS_DEFAULT,
+        ]
+
+        for access in read_access_modes:
+            with MmapClosedByIntContext(access) as (m, X):
+                with self.assertRaisesRegex(ValueError, "mmap closed or invalid"):
+                    m[X()]
+
+            with MmapClosedByIntContext(access) as (m, X):
+                with self.assertRaisesRegex(ValueError, "mmap closed or invalid"):
+                    m[X() : 20]
+
+            with MmapClosedByIntContext(access) as (m, X):
+                with self.assertRaisesRegex(ValueError, "mmap closed or invalid"):
+                    m[X() : 20 : 2]
+
+            with MmapClosedByIntContext(access) as (m, X):
+                with self.assertRaisesRegex(ValueError, "mmap closed or invalid"):
+                    m[20 : X() : -2]
+
+            with MmapClosedByIntContext(access) as (m, X):
+                with self.assertRaisesRegex(ValueError, "mmap closed or invalid"):
+                    m.read(X())
+
+            with MmapClosedByIntContext(access) as (m, X):
+                with self.assertRaisesRegex(ValueError, "mmap closed or invalid"):
+                    m.find(b"1", 1, X())
+
+        for access in write_access_modes:
+            with MmapClosedByIntContext(access) as (m, X):
+                with self.assertRaisesRegex(ValueError, "mmap closed or invalid"):
+                    m[X() : 20] = b"1" * 10
+
+            with MmapClosedByIntContext(access) as (m, X):
+                with self.assertRaisesRegex(ValueError, "mmap closed or invalid"):
+                    m[X() : 20 : 2] = b"1" * 5
+
+            with MmapClosedByIntContext(access) as (m, X):
+                with self.assertRaisesRegex(ValueError, "mmap closed or invalid"):
+                    m[20 : X() : -2] = b"1" * 5
+
+            with MmapClosedByIntContext(access) as (m, X):
+                with self.assertRaisesRegex(ValueError, "mmap closed or invalid"):
+                    m.move(1, 2, X())
+
+            with MmapClosedByIntContext(access) as (m, X):
+                with self.assertRaisesRegex(ValueError, "mmap closed or invalid"):
+                    m.write_byte(X())
 
 class LargeMmapTests(unittest.TestCase):
 

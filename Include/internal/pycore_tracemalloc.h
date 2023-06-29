@@ -36,11 +36,13 @@ struct _PyTraceMalloc_Config {
 
 /* Pack the frame_t structure to reduce the memory footprint on 64-bit
    architectures: 12 bytes instead of 16. */
+#if defined(_MSC_VER)
+#pragma pack(push, 4)
+#endif
+
 struct
 #ifdef __GNUC__
 __attribute__((packed))
-#elif defined(_MSC_VER)
-#pragma pack(push, 4)
 #endif
 tracemalloc_frame {
     /* filename cannot be NULL: "<unknown>" is used if the Python frame

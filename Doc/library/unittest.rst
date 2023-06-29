@@ -72,7 +72,7 @@ test runner
    a GUI tool for test discovery and execution.  This is intended largely for ease of use
    for those new to unit testing.  For production environments it is
    recommended that tests be driven by a continuous integration system such as
-   `Buildbot <https://buildbot.net/>`_, `Jenkins <https://jenkins.io/>`_,
+   `Buildbot <https://buildbot.net/>`_, `Jenkins <https://www.jenkins.io/>`_,
    `GitHub Actions <https://github.com/features/actions>`_, or
    `AppVeyor <https://www.appveyor.com/>`_.
 
@@ -244,6 +244,10 @@ Command-line options
 
    Show local variables in tracebacks.
 
+.. cmdoption:: --durations N
+
+   Show the N slowest test cases (N=0 for all).
+
 .. versionadded:: 3.2
    The command-line options ``-b``, ``-c`` and ``-f`` were added.
 
@@ -253,9 +257,11 @@ Command-line options
 .. versionadded:: 3.7
    The command-line option ``-k``.
 
+.. versionadded:: 3.12
+   The command-line option ``--durations``.
+
 The command line can also be used for test discovery, for running all of the
 tests in a project or just a subset.
-
 
 .. _unittest-test-discovery:
 
@@ -1947,12 +1953,12 @@ Loading and running tests
    .. attribute:: testNamePatterns
 
       List of Unix shell-style wildcard test name patterns that test methods
-      have to match to be included in test suites (see ``-v`` option).
+      have to match to be included in test suites (see ``-k`` option).
 
       If this attribute is not ``None`` (the default), all test methods to be
       included in test suites must match one of the patterns in this list.
       Note that matches are always performed using :meth:`fnmatch.fnmatchcase`,
-      so unlike patterns passed to the ``-v`` option, simple substring patterns
+      so unlike patterns passed to the ``-k`` option, simple substring patterns
       will have to be converted using ``*`` wildcards.
 
       This affects all the :meth:`loadTestsFrom\*` methods.
@@ -2008,6 +2014,13 @@ Loading and running tests
 
       A list containing :class:`TestCase` instances that were marked as expected
       failures, but succeeded.
+
+   .. attribute:: collectedDurations
+
+      A list containing 2-tuples of :class:`TestCase` instances and floats
+      representing the elapsed time of each test which was run.
+
+      .. versionadded:: 3.12
 
    .. attribute:: shouldStop
 
@@ -2160,14 +2173,23 @@ Loading and running tests
 
       .. versionadded:: 3.4
 
+   .. method:: addDuration(test, elapsed)
 
-.. class:: TextTestResult(stream, descriptions, verbosity)
+      Called when the test case finishes.  *elapsed* is the time represented in
+      seconds, and it includes the execution of cleanup functions.
+
+      .. versionadded:: 3.12
+
+.. class:: TextTestResult(stream, descriptions, verbosity, *, durations=None)
 
    A concrete implementation of :class:`TestResult` used by the
-   :class:`TextTestRunner`.
+   :class:`TextTestRunner`. Subclasses should accept ``**kwargs`` to ensure
+   compatibility as the interface changes.
 
    .. versionadded:: 3.2
 
+   .. versionadded:: 3.12
+      Added *durations* keyword argument.
 
 .. data:: defaultTestLoader
 
@@ -2177,7 +2199,8 @@ Loading and running tests
 
 
 .. class:: TextTestRunner(stream=None, descriptions=True, verbosity=1, failfast=False, \
-                          buffer=False, resultclass=None, warnings=None, *, tb_locals=False)
+                          buffer=False, resultclass=None, warnings=None, *, \
+                          tb_locals=False, durations=None)
 
    A basic test runner implementation that outputs results to a stream. If *stream*
    is ``None``, the default, :data:`sys.stderr` is used as the output stream. This class
@@ -2195,14 +2218,17 @@ Loading and running tests
    *warnings* to ``None``.
 
    .. versionchanged:: 3.2
-      Added the ``warnings`` argument.
+      Added the *warnings* parameter.
 
    .. versionchanged:: 3.2
       The default stream is set to :data:`sys.stderr` at instantiation time rather
       than import time.
 
    .. versionchanged:: 3.5
-      Added the tb_locals parameter.
+      Added the *tb_locals* parameter.
+
+   .. versionchanged:: 3.12
+      Added the *durations* parameter.
 
    .. method:: _makeResult()
 
@@ -2255,7 +2281,8 @@ Loading and running tests
 
    The *testRunner* argument can either be a test runner class or an already
    created instance of it. By default ``main`` calls :func:`sys.exit` with
-   an exit code indicating success or failure of the tests run.
+   an exit code indicating success (0) or failure (1) of the tests run.
+   An exit code of 5 indicates that no tests were run.
 
    The *testLoader* argument has to be a :class:`TestLoader` instance,
    and defaults to :data:`defaultTestLoader`.

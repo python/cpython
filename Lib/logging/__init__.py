@@ -173,8 +173,8 @@ else: #pragma: no cover
         """Return the frame object for the caller's stack frame."""
         try:
             raise Exception
-        except Exception:
-            return sys.exc_info()[2].tb_frame.f_back
+        except Exception as exc:
+            return exc.__traceback__.tb_frame.f_back
 
 #
 # _srcfile is used when walking the stack to check when we've got the first
@@ -1549,11 +1549,6 @@ class Logger(Filterer):
         """
         if self.isEnabledFor(WARNING):
             self._log(WARNING, msg, args, **kwargs)
-
-    def warn(self, msg, *args, **kwargs):
-        warnings.warn("The 'warn' method is deprecated, "
-            "use 'warning' instead", DeprecationWarning, 2)
-        self.warning(msg, *args, **kwargs)
 
     def error(self, msg, *args, **kwargs):
         """

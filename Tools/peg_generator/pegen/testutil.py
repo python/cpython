@@ -83,7 +83,9 @@ def generate_c_parser_source(grammar: Grammar) -> str:
 
 
 def generate_parser_c_extension(
-    grammar: Grammar, path: pathlib.PurePath, debug: bool = False,
+    grammar: Grammar,
+    path: pathlib.PurePath,
+    debug: bool = False,
     library_dir: Optional[str] = None,
 ) -> Any:
     """Generate a parser c extension for the given grammar in the given path
@@ -112,7 +114,7 @@ def generate_parser_c_extension(
 
 
 def print_memstats() -> bool:
-    MiB: Final = 2 ** 20
+    MiB: Final = 2**20
     try:
         import psutil  # type: ignore
     except ImportError:

@@ -1832,11 +1832,6 @@ unpackiter_iternext(unpackiterobject *self)
     return result;
 }
 
-PyObject *unpackiter_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
-    PyErr_Format(PyExc_TypeError, "Cannot create '%.200s objects", _PyType_Name(type));
-    return NULL;
-}
-
 static PyType_Slot unpackiter_type_slots[] = {
     {Py_tp_dealloc, unpackiter_dealloc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
@@ -1844,7 +1839,6 @@ static PyType_Slot unpackiter_type_slots[] = {
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, unpackiter_iternext},
     {Py_tp_methods, unpackiter_methods},
-    {Py_tp_new, unpackiter_new},
     {0, 0},
 };
 
@@ -1853,7 +1847,7 @@ static PyType_Spec unpackiter_type_spec = {
     sizeof(unpackiterobject),
     0,
     (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-     Py_TPFLAGS_IMMUTABLETYPE),
+     Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION),
     unpackiter_type_slots
 };
 
@@ -2572,6 +2566,7 @@ _structmodule_exec(PyObject *m)
 
 static PyModuleDef_Slot _structmodule_slots[] = {
     {Py_mod_exec, _structmodule_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

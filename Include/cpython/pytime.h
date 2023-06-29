@@ -53,6 +53,10 @@ functions and constants
 extern "C" {
 #endif
 
+#ifdef __clang__
+struct timeval;
+#endif
+
 /* _PyTime_t: Python timestamp with subsecond precision. It can be used to
    store a duration, and so indirectly a date (related to another date, like
    UNIX epoch). */

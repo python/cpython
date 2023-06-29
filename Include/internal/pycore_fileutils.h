@@ -66,7 +66,7 @@ PyAPI_FUNC(PyObject *) _Py_device_encoding(int);
 
 #ifdef MS_WINDOWS
 struct _Py_stat_struct {
-    unsigned long st_dev;
+    uint64_t st_dev;
     uint64_t st_ino;
     unsigned short st_mode;
     int st_nlink;
@@ -80,8 +80,11 @@ struct _Py_stat_struct {
     int st_mtime_nsec;
     time_t st_ctime;
     int st_ctime_nsec;
+    time_t st_birthtime;
+    int st_birthtime_nsec;
     unsigned long st_file_attributes;
     unsigned long st_reparse_tag;
+    uint64_t st_ino_high;
 };
 #else
 #  define _Py_stat_struct stat
@@ -160,11 +163,11 @@ PyAPI_FUNC(int) _Py_set_inheritable_async_safe(int fd, int inheritable,
 
 PyAPI_FUNC(int) _Py_dup(int fd);
 
-#ifndef MS_WINDOWS
 PyAPI_FUNC(int) _Py_get_blocking(int fd);
 
 PyAPI_FUNC(int) _Py_set_blocking(int fd, int blocking);
-#else   /* MS_WINDOWS */
+
+#ifdef MS_WINDOWS
 PyAPI_FUNC(void*) _Py_get_osfhandle_noraise(int fd);
 
 PyAPI_FUNC(void*) _Py_get_osfhandle(int fd);
@@ -251,6 +254,14 @@ extern int _Py_add_relfile(wchar_t *dirname,
 extern size_t _Py_find_basename(const wchar_t *filename);
 PyAPI_FUNC(wchar_t *) _Py_normpath(wchar_t *path, Py_ssize_t size);
 
+// The Windows Games API family does not provide these functions
+// so provide our own implementations. Remove them in case they get added
+// to the Games API family
+#if defined(MS_WINDOWS_GAMES) && !defined(MS_WINDOWS_DESKTOP)
+#include <winerror.h>
+
+extern HRESULT PathCchSkipRoot(const wchar_t *pszPath, const wchar_t **ppszRootEnd);
+#endif /* defined(MS_WINDOWS_GAMES) && !defined(MS_WINDOWS_DESKTOP) */
 
 // Macros to protect CRT calls against instant termination when passed an
 // invalid parameter (bpo-23524). IPH stands for Invalid Parameter Handler.

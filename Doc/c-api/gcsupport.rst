@@ -59,11 +59,30 @@ rules:
    Analogous to :c:func:`PyObject_New` but for container objects with the
    :const:`Py_TPFLAGS_HAVE_GC` flag set.
 
-
 .. c:function:: TYPE* PyObject_GC_NewVar(TYPE, PyTypeObject *type, Py_ssize_t size)
 
    Analogous to :c:func:`PyObject_NewVar` but for container objects with the
    :const:`Py_TPFLAGS_HAVE_GC` flag set.
+
+.. c:function:: PyObject* PyUnstable_Object_GC_NewWithExtraData(PyTypeObject *type, size_t extra_size)
+
+   Analogous to :c:func:`PyObject_GC_New` but allocates *extra_size*
+   bytes at the end of the object (at offset
+   :c:member:`~PyTypeObject.tp_basicsize`).
+   The allocated memory is initialized to zeros,
+   except for the :c:type:`Python object header <PyObject>`.
+
+   The extra data will be deallocated with the object, but otherwise it is
+   not managed by Python.
+
+   .. warning::
+      The function is marked as unstable because the final mechanism
+      for reserving extra data after an instance is not yet decided.
+      For allocating a variable number of fields, prefer using
+      :c:type:`PyVarObject` and :c:member:`~PyTypeObject.tp_itemsize`
+      instead.
+
+   .. versionadded:: 3.12
 
 
 .. c:function:: TYPE* PyObject_GC_Resize(TYPE, PyVarObject *op, Py_ssize_t newsize)
@@ -228,3 +247,36 @@ garbage collection runs.
    Returns the current state, 0 for disabled and 1 for enabled.
 
    .. versionadded:: 3.10
+
+
+Querying Garbage Collector State
+--------------------------------
+
+The C-API provides the following interface for querying information about
+the garbage collector.
+
+.. c:function:: void PyUnstable_GC_VisitObjects(gcvisitobjects_t callback, void *arg)
+
+   Run supplied *callback* on all live GC-capable objects. *arg* is passed through to
+   all invocations of *callback*.
+
+   .. warning::
+      If new objects are (de)allocated by the callback it is undefined if they
+      will be visited.
+
+      Garbage collection is disabled during operation. Explicitly running a collection
+      in the callback may lead to undefined behaviour e.g. visiting the same objects
+      multiple times or not at all.
+
+   .. versionadded:: 3.12
+
+.. c:type:: int (*gcvisitobjects_t)(PyObject *object, void *arg)
+
+   Type of the visitor function to be passed to :c:func:`PyUnstable_GC_VisitObjects`.
+   *arg* is the same as the *arg* passed to ``PyUnstable_GC_VisitObjects``.
+   Return ``0`` to continue iteration, return ``1`` to stop iteration. Other return
+   values are reserved for now so behavior on returning anything else is undefined.
+
+   .. versionadded:: 3.12
+
+

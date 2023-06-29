@@ -1,8 +1,19 @@
+import functools
+import warnings
 import re
 import textwrap
 import email.message
 
 from ._text import FoldedCase
+
+
+# Do not remove prior to 2024-01-01 or Python 3.14
+_warn = functools.partial(
+    warnings.warn,
+    "Implicit None on return values is deprecated and will raise KeyErrors.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 
 class Message(email.message.Message):
@@ -38,6 +49,16 @@ class Message(email.message.Message):
     # suppress spurious error from mypy
     def __iter__(self):
         return super().__iter__()
+
+    def __getitem__(self, item):
+        """
+        Warn users that a ``KeyError`` can be expected when a
+        mising key is supplied. Ref python/importlib_metadata#371.
+        """
+        res = super().__getitem__(item)
+        if res is None:
+            _warn()
+        return res
 
     def _repair_headers(self):
         def redent(value):

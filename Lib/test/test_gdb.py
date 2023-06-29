@@ -962,7 +962,7 @@ id(42)
         cmd = textwrap.dedent('''
             class MyList(list):
                 def __init__(self):
-                    super().__init__()   # wrapper_call()
+                    super(*[]).__init__()   # wrapper_call()
 
             id("first break point")
             l = MyList()

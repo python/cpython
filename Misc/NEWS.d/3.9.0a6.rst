@@ -343,7 +343,7 @@ https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=242274
 .. nonce: Er8sv-
 .. section: Library
 
-The :mod:`lib2to3` module is pending deprecation due to :pep:`617`.
+The :mod:`!lib2to3` module is pending deprecation due to :pep:`617`.
 
 ..
 

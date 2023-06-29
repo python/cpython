@@ -11,7 +11,7 @@ This module provides access to operating system functionality that is
 standardized by the C Standard and the POSIX standard (a thinly disguised Unix
 interface).
 
-.. index:: module: os
+.. index:: pair: module; os
 
 **Do not import this module directly.**  Instead, import the module :mod:`os`,
 which provides a *portable* version of this interface.  On Unix, the :mod:`os`

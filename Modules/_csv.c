@@ -82,7 +82,8 @@ typedef enum {
 } ParserState;
 
 typedef enum {
-    QUOTE_MINIMAL, QUOTE_ALL, QUOTE_NONNUMERIC, QUOTE_NONE
+    QUOTE_MINIMAL, QUOTE_ALL, QUOTE_NONNUMERIC, QUOTE_NONE,
+    QUOTE_STRINGS, QUOTE_NOTNULL
 } QuoteStyle;
 
 typedef struct {
@@ -95,6 +96,8 @@ static const StyleDesc quote_styles[] = {
     { QUOTE_ALL,        "QUOTE_ALL" },
     { QUOTE_NONNUMERIC, "QUOTE_NONNUMERIC" },
     { QUOTE_NONE,       "QUOTE_NONE" },
+    { QUOTE_STRINGS,    "QUOTE_STRINGS" },
+    { QUOTE_NOTNULL,    "QUOTE_NOTNULL" },
     { 0 }
 };
 
@@ -263,7 +266,6 @@ _set_char_or_none(const char *name, Py_UCS4 *target, PyObject *src, Py_UCS4 dflt
                     name);
                 return -1;
             }
-            /* PyUnicode_READY() is called in PyUnicode_GetLength() */
             *target = PyUnicode_READ_CHAR(src, 0);
         }
     }
@@ -293,7 +295,6 @@ _set_char(const char *name, Py_UCS4 *target, PyObject *src, Py_UCS4 dflt)
                          name);
             return -1;
         }
-        /* PyUnicode_READY() is called in PyUnicode_GetLength() */
         *target = PyUnicode_READ_CHAR(src, 0);
     }
     return 0;
@@ -313,8 +314,6 @@ _set_str(const char *name, PyObject **target, PyObject *src, const char *dflt)
             return -1;
         }
         else {
-            if (PyUnicode_READY(src) == -1)
-                return -1;
             Py_XSETREF(*target, Py_NewRef(src));
         }
     }
@@ -901,10 +900,6 @@ Reader_iternext(ReaderObj *self)
             Py_DECREF(lineobj);
             return NULL;
         }
-        if (PyUnicode_READY(lineobj) == -1) {
-            Py_DECREF(lineobj);
-            return NULL;
-        }
         ++self->line_num;
         kind = PyUnicode_KIND(lineobj);
         data = PyUnicode_DATA(lineobj);
@@ -997,7 +992,7 @@ PyType_Spec Reader_Type_spec = {
     .name = "_csv.reader",
     .basicsize = sizeof(ReaderObj),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
-              Py_TPFLAGS_IMMUTABLETYPE),
+              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION),
     .slots = Reader_Type_slots
 };
 
@@ -1182,8 +1177,6 @@ join_append(WriterObj *self, PyObject *field, int quoted)
     Py_ssize_t rec_len;
 
     if (field != NULL) {
-        if (PyUnicode_READY(field) == -1)
-            return 0;
         field_kind = PyUnicode_KIND(field);
         field_data = PyUnicode_DATA(field);
         field_len = PyUnicode_GET_LENGTH(field);
@@ -1263,6 +1256,12 @@ csv_writerow(WriterObj *self, PyObject *seq)
             break;
         case QUOTE_ALL:
             quoted = 1;
+            break;
+        case QUOTE_STRINGS:
+            quoted = PyUnicode_Check(field);
+            break;
+        case QUOTE_NOTNULL:
+            quoted = field != Py_None;
             break;
         default:
             quoted = 0;
@@ -1422,7 +1421,7 @@ PyType_Spec Writer_Type_spec = {
     .name = "_csv.writer",
     .basicsize = sizeof(WriterObj),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
-              Py_TPFLAGS_IMMUTABLETYPE),
+              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION),
     .slots = Writer_Type_slots,
 };
 
@@ -1506,8 +1505,6 @@ csv_register_dialect(PyObject *module, PyObject *args, PyObject *kwargs)
                         "dialect name must be a string");
         return NULL;
     }
-    if (PyUnicode_READY(name_obj) == -1)
-        return NULL;
     dialect = _call_dialect(module_state, dialect_obj, kwargs);
     if (dialect == NULL)
         return NULL;
@@ -1659,6 +1656,11 @@ PyDoc_STRVAR(csv_module_doc,
 "        csv.QUOTE_NONNUMERIC means that quotes are always placed around\n"
 "            fields which do not parse as integers or floating point\n"
 "            numbers.\n"
+"        csv.QUOTE_STRINGS means that quotes are always placed around\n"
+"            fields which are strings.  Note that the Python value None\n"
+"            is not a string.\n"
+"        csv.QUOTE_NOTNULL means that quotes are only placed around fields\n"
+"            that are not the Python value None.\n"
 "        csv.QUOTE_NONE means that quotes are never placed around fields.\n"
 "    * escapechar - specifies a one-character string used to escape\n"
 "        the delimiter when quoting is set to QUOTE_NONE.\n"
@@ -1784,6 +1786,7 @@ csv_exec(PyObject *module) {
 
 static PyModuleDef_Slot csv_slots[] = {
     {Py_mod_exec, csv_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

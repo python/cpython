@@ -4,7 +4,6 @@
 # Keep this script in sync with python-config.sh.in
 
 import getopt
-import os
 import sys
 import sysconfig
 

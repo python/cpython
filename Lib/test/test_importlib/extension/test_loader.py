@@ -1,4 +1,3 @@
-from warnings import catch_warnings
 from test.test_importlib import abc, util
 
 machinery = util.import_importlib('importlib.machinery')
@@ -10,7 +9,6 @@ import unittest
 import warnings
 import importlib.util
 import importlib
-from test.support.script_helper import assert_python_failure
 
 
 class LoaderTests:
@@ -262,15 +260,16 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
 
     def test_try_registration(self):
         # Assert that the PyState_{Find,Add,Remove}Module C API doesn't work.
-        module = self.load_module()
-        with self.subTest('PyState_FindModule'):
-            self.assertEqual(module.call_state_registration_func(0), None)
-        with self.subTest('PyState_AddModule'):
-            with self.assertRaises(SystemError):
-                module.call_state_registration_func(1)
-        with self.subTest('PyState_RemoveModule'):
-            with self.assertRaises(SystemError):
-                module.call_state_registration_func(2)
+        with util.uncache(self.name):
+            module = self.load_module()
+            with self.subTest('PyState_FindModule'):
+                self.assertEqual(module.call_state_registration_func(0), None)
+            with self.subTest('PyState_AddModule'):
+                with self.assertRaises(SystemError):
+                    module.call_state_registration_func(1)
+            with self.subTest('PyState_RemoveModule'):
+                with self.assertRaises(SystemError):
+                    module.call_state_registration_func(2)
 
     def test_load_submodule(self):
         # Test loading a simulated submodule.
@@ -348,11 +347,18 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
                 'exec_err',
                 'exec_raise',
                 'exec_unreported_exception',
+                'multiple_create_slots',
+                'multiple_multiple_interpreters_slots',
                 ]:
             with self.subTest(name_base):
                 name = self.name + '_' + name_base
-                with self.assertRaises(SystemError):
+                with self.assertRaises(SystemError) as cm:
                     self.load_module_by_name(name)
+
+                # If there is an unreported exception, it should be chained
+                # with the `SystemError`.
+                if "unreported_exception" in name_base:
+                    self.assertIsNotNone(cm.exception.__cause__)
 
     def test_nonascii(self):
         # Test that modules with non-ASCII names can be loaded.

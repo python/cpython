@@ -244,7 +244,8 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
         called with None as its argument.
         """
         self._closed = True
-        self._ssl_protocol._abort()
+        if self._ssl_protocol is not None:
+            self._ssl_protocol._abort()
 
     def _force_close(self, exc):
         self._closed = True

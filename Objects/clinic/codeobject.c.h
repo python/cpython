@@ -30,6 +30,7 @@ static PyObject *
 code_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    PyTypeObject *base_tp = &PyCode_Type;
     int argcount;
     int posonlyargcount;
     int kwonlyargcount;
@@ -49,8 +50,7 @@ code_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *freevars = NULL;
     PyObject *cellvars = NULL;
 
-    if ((type == &PyCode_Type ||
-         type->tp_init == PyCode_Type.tp_init) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoKeywords("CodeType", kwargs)) {
         goto exit;
     }
@@ -105,23 +105,14 @@ code_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         _PyArg_BadArgument("CodeType", "argument 11", "str", PyTuple_GET_ITEM(args, 10));
         goto exit;
     }
-    if (PyUnicode_READY(PyTuple_GET_ITEM(args, 10)) == -1) {
-        goto exit;
-    }
     filename = PyTuple_GET_ITEM(args, 10);
     if (!PyUnicode_Check(PyTuple_GET_ITEM(args, 11))) {
         _PyArg_BadArgument("CodeType", "argument 12", "str", PyTuple_GET_ITEM(args, 11));
         goto exit;
     }
-    if (PyUnicode_READY(PyTuple_GET_ITEM(args, 11)) == -1) {
-        goto exit;
-    }
     name = PyTuple_GET_ITEM(args, 11);
     if (!PyUnicode_Check(PyTuple_GET_ITEM(args, 12))) {
         _PyArg_BadArgument("CodeType", "argument 13", "str", PyTuple_GET_ITEM(args, 12));
-        goto exit;
-    }
-    if (PyUnicode_READY(PyTuple_GET_ITEM(args, 12)) == -1) {
         goto exit;
     }
     qualname = PyTuple_GET_ITEM(args, 12);
@@ -373,9 +364,6 @@ types_CodeType_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nar
             _PyArg_BadArgument("replace", "argument 'co_filename'", "str", args[13]);
             goto exit;
         }
-        if (PyUnicode_READY(args[13]) == -1) {
-            goto exit;
-        }
         co_filename = args[13];
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -386,9 +374,6 @@ types_CodeType_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nar
             _PyArg_BadArgument("replace", "argument 'co_name'", "str", args[14]);
             goto exit;
         }
-        if (PyUnicode_READY(args[14]) == -1) {
-            goto exit;
-        }
         co_name = args[14];
         if (!--noptargs) {
             goto skip_optional_kwonly;
@@ -397,9 +382,6 @@ types_CodeType_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nar
     if (args[15]) {
         if (!PyUnicode_Check(args[15])) {
             _PyArg_BadArgument("replace", "argument 'co_qualname'", "str", args[15]);
-            goto exit;
-        }
-        if (PyUnicode_READY(args[15]) == -1) {
             goto exit;
         }
         co_qualname = args[15];
@@ -488,4 +470,4 @@ types_CodeType__varname_from_oparg(PyCodeObject *self, PyObject *const *args, Py
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e2540ad099c750c9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d746327b18c9675f input=a9049054013a1b77]*/

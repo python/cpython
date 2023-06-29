@@ -143,6 +143,12 @@ The module defines the following items:
       :func:`time.time` and the :attr:`~os.stat_result.st_mtime` attribute of
       the object returned by :func:`os.stat`.
 
+   .. attribute:: name
+
+      The path to the gzip file on disk, as a :class:`str` or :class:`bytes`.
+      Equivalent to the output of :func:`os.fspath` on the original input path,
+      with no other normalization, resolution or expansion.
+
    .. versionchanged:: 3.1
       Support for the :keyword:`with` statement was added, along with the
       *mtime* constructor argument and :attr:`mtime` attribute.

@@ -72,16 +72,6 @@ def _maybe_compile(compiler, source, filename, symbol):
 
     return compiler(source, filename, symbol)
 
-
-def _is_syntax_error(err1, err2):
-    rep1 = repr(err1)
-    rep2 = repr(err2)
-    if "was never closed" in rep1 and "was never closed" in rep2:
-        return False
-    if rep1 == rep2:
-        return True
-    return False
-
 def _compile(source, filename, symbol):
     return compile(source, filename, symbol, PyCF_DONT_IMPLY_DEDENT | PyCF_ALLOW_INCOMPLETE_INPUT)
 

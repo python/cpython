@@ -73,7 +73,7 @@ Builds require a clean source directory. Please use a clean checkout or
 run "make clean -C '{SRCDIR}'".
 """
 
-INSTALL_NATIVE = f"""
+INSTALL_NATIVE = """
 Builds require a C compiler (gcc, clang), make, pkg-config, and development
 headers for dependencies like zlib.
 
@@ -480,7 +480,6 @@ class BuildProfile:
             cmd.append(f"--{opt}-wasm-dynamic-linking")
 
         if self.pthreads is not None:
-            assert self.host.is_emscripten
             opt = "enable" if self.pthreads else "disable"
             cmd.append(f"--{opt}-wasm-pthreads")
 
@@ -598,7 +597,7 @@ class BuildProfile:
         end = time.monotonic() + 3.0
         while time.monotonic() < end and srv.returncode is None:
             try:
-                with socket.create_connection((bind, port), timeout=0.1) as s:
+                with socket.create_connection((bind, port), timeout=0.1) as _:
                     pass
             except OSError:
                 time.sleep(0.01)
@@ -744,6 +743,13 @@ _profiles = [
         "wasi",
         support_level=SupportLevel.supported,
         host=Host.wasm32_wasi,
+    ),
+    # wasm32-wasi-threads
+    BuildProfile(
+        "wasi-threads",
+        support_level=SupportLevel.experimental,
+        host=Host.wasm32_wasi,
+        pthreads=True,
     ),
     # no SDK available yet
     # BuildProfile(
