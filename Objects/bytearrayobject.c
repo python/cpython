@@ -1387,7 +1387,7 @@ The bytes objects frm and to must be of the same length.
 
 static PyObject *
 bytearray_maketrans_impl(Py_buffer *frm, Py_buffer *to)
-/*[clinic end generated code: output=1df267d99f56b15e input=5925a81d2fbbf151]*/
+/*[clinic end generated code: output=1df267d99f56b15e input=b10de38c85950a63]*/
 {
     return _Py_bytes_maketrans(frm, to);
 }
