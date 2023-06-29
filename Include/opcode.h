@@ -93,7 +93,6 @@ extern "C" {
 #define BUILD_SLICE                            133
 #define JUMP_BACKWARD_NO_INTERRUPT             134
 #define MAKE_CELL                              135
-#define LOAD_CLOSURE                           136
 #define LOAD_DEREF                             137
 #define STORE_DEREF                            138
 #define DELETE_DEREF                           139
@@ -158,7 +157,8 @@ extern "C" {
 #define LOAD_ZERO_SUPER_METHOD                 264
 #define LOAD_ZERO_SUPER_ATTR                   265
 #define STORE_FAST_MAYBE_NULL                  266
-#define MAX_PSEUDO_OPCODE                      266
+#define LOAD_CLOSURE                           267
+#define MAX_PSEUDO_OPCODE                      267
 #define BINARY_OP_MULTIPLY_INT                   6
 #define BINARY_OP_ADD_INT                        7
 #define BINARY_OP_SUBTRACT_INT                   8
@@ -210,15 +210,15 @@ extern "C" {
 #define CALL_BUILTIN_CLASS                     112
 #define CALL_NO_KW_BUILTIN_O                   113
 #define CALL_NO_KW_BUILTIN_FAST                132
-#define CALL_BUILTIN_FAST_WITH_KEYWORDS        148
-#define CALL_NO_KW_LEN                         153
-#define CALL_NO_KW_ISINSTANCE                  154
-#define CALL_NO_KW_LIST_APPEND                 155
-#define CALL_NO_KW_METHOD_DESCRIPTOR_O         159
-#define CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS 160
-#define CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS    161
-#define CALL_NO_KW_METHOD_DESCRIPTOR_FAST      166
-#define CALL_NO_KW_ALLOC_AND_ENTER_INIT        167
+#define CALL_BUILTIN_FAST_WITH_KEYWORDS        136
+#define CALL_NO_KW_LEN                         148
+#define CALL_NO_KW_ISINSTANCE                  153
+#define CALL_NO_KW_LIST_APPEND                 154
+#define CALL_NO_KW_METHOD_DESCRIPTOR_O         155
+#define CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS 159
+#define CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS    160
+#define CALL_NO_KW_METHOD_DESCRIPTOR_FAST      161
+#define CALL_NO_KW_ALLOC_AND_ENTER_INIT        166
 
 #define NB_ADD                                   0
 #define NB_AND                                   1

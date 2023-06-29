@@ -836,6 +836,8 @@ stack_effect(int opcode, int oparg, int jump)
 
         case STORE_FAST_MAYBE_NULL:
             return -1;
+        case LOAD_CLOSURE:
+            return 1;
         case LOAD_METHOD:
             return 1;
         case LOAD_SUPER_METHOD:
