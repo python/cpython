@@ -107,6 +107,8 @@ _Py_GetSpecializationStats(void) {
     err += add_stat_dict(stats, COMPARE_OP, "compare_op");
     err += add_stat_dict(stats, UNPACK_SEQUENCE, "unpack_sequence");
     err += add_stat_dict(stats, FOR_ITER, "for_iter");
+    err += add_stat_dict(stats, TO_BOOL, "to_bool");
+    err += add_stat_dict(stats, SEND, "send");
     if (err < 0) {
         Py_DECREF(stats);
         return NULL;
@@ -127,9 +129,7 @@ print_spec_stats(FILE *out, OpcodeStats *stats)
     /* Mark some opcodes as specializable for stats,
      * even though we don't specialize them yet. */
     fprintf(out, "opcode[%d].specializable : 1\n", BINARY_SLICE);
-    fprintf(out, "opcode[%d].specializable : 1\n", COMPARE_OP);
     fprintf(out, "opcode[%d].specializable : 1\n", STORE_SLICE);
-    fprintf(out, "opcode[%d].specializable : 1\n", SEND);
     for (int i = 0; i < 256; i++) {
         if (_PyOpcode_Caches[i]) {
             fprintf(out, "opcode[%d].specializable : 1\n", i);
@@ -446,6 +446,18 @@ _PyCode_Quicken(PyCodeObject *code)
 
 #define SPEC_FAIL_UNPACK_SEQUENCE_ITERATOR 9
 #define SPEC_FAIL_UNPACK_SEQUENCE_SEQUENCE 10
+
+// TO_BOOL
+#define SPEC_FAIL_TO_BOOL_BYTEARRAY    9
+#define SPEC_FAIL_TO_BOOL_BYTES       10
+#define SPEC_FAIL_TO_BOOL_DICT        11
+#define SPEC_FAIL_TO_BOOL_FLOAT       12
+#define SPEC_FAIL_TO_BOOL_MAPPING     13
+#define SPEC_FAIL_TO_BOOL_MEMORY_VIEW 14
+#define SPEC_FAIL_TO_BOOL_NUMBER      15
+#define SPEC_FAIL_TO_BOOL_SEQUENCE    16
+#define SPEC_FAIL_TO_BOOL_SET         17
+#define SPEC_FAIL_TO_BOOL_TUPLE       18
 
 static int function_kind(PyCodeObject *code);
 static bool function_check_args(PyObject *o, int expected_argcount, int opcode);
@@ -2047,6 +2059,8 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
 {
     assert(ENABLE_SPECIALIZATION);
     assert(_PyOpcode_Caches[COMPARE_OP] == INLINE_CACHE_ENTRIES_COMPARE_OP);
+    // All of these specializations compute boolean values, so they're all valid
+    // regardless of the fifth-lowest oparg bit.
     _PyCompareOpCache *cache = (_PyCompareOpCache *)(instr + 1);
     if (Py_TYPE(lhs) != Py_TYPE(rhs)) {
         SPECIALIZATION_FAIL(COMPARE_OP, compare_op_fail_kind(lhs, rhs));
@@ -2067,7 +2081,7 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
         }
     }
     if (PyUnicode_CheckExact(lhs)) {
-        int cmp = oparg >> 4;
+        int cmp = oparg >> 5;
         if (cmp != Py_EQ && cmp != Py_NE) {
             SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_COMPARE_OP_STRING);
             goto failure;
@@ -2281,6 +2295,99 @@ failure:
     return;
 success:
     STAT_INC(SEND, success);
+    cache->counter = adaptive_counter_cooldown();
+}
+
+void
+_Py_Specialize_ToBool(PyObject *value, _Py_CODEUNIT *instr)
+{
+    assert(ENABLE_SPECIALIZATION);
+    assert(_PyOpcode_Caches[TO_BOOL] == INLINE_CACHE_ENTRIES_TO_BOOL);
+    _PyToBoolCache *cache = (_PyToBoolCache *)(instr + 1);
+    if (PyBool_Check(value)) {
+        instr->op.code = TO_BOOL_BOOL;
+        goto success;
+    }
+    if (PyLong_CheckExact(value)) {
+        instr->op.code = TO_BOOL_INT;
+        goto success;
+    }
+    if (PyList_CheckExact(value)) {
+        instr->op.code = TO_BOOL_LIST;
+        goto success;
+    }
+    if (Py_IsNone(value)) {
+        instr->op.code = TO_BOOL_NONE;
+        goto success;
+    }
+    if (PyUnicode_CheckExact(value)) {
+        instr->op.code = TO_BOOL_STR;
+        goto success;
+    }
+    if (PyType_HasFeature(Py_TYPE(value), Py_TPFLAGS_HEAPTYPE)) {
+        PyNumberMethods *nb = Py_TYPE(value)->tp_as_number;
+        if (nb && nb->nb_bool) {
+            SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_NUMBER);
+            goto failure;
+        }
+        PyMappingMethods *mp = Py_TYPE(value)->tp_as_mapping;
+        if (mp && mp->mp_length) {
+            SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_MAPPING);
+            goto failure;
+        }
+        PySequenceMethods *sq = Py_TYPE(value)->tp_as_sequence;
+        if (sq && sq->sq_length) {
+            SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_SEQUENCE);
+            goto failure;
+        }
+        if (!PyUnstable_Type_AssignVersionTag(Py_TYPE(value))) {
+            SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_OUT_OF_VERSIONS);
+            goto failure;
+        }
+        uint32_t version = Py_TYPE(value)->tp_version_tag;
+        instr->op.code = TO_BOOL_ALWAYS_TRUE;
+        write_u32(cache->version, version);
+        assert(version);
+        goto success;
+    }
+#ifdef Py_STATS
+    if (PyByteArray_CheckExact(value)) {
+        SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_BYTEARRAY);
+        goto failure;
+    }
+    if (PyBytes_CheckExact(value)) {
+        SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_BYTES);
+        goto failure;
+    }
+    if (PyDict_CheckExact(value)) {
+        SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_DICT);
+        goto failure;
+    }
+    if (PyFloat_CheckExact(value)) {
+        SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_FLOAT);
+        goto failure;
+    }
+    if (PyMemoryView_Check(value)) {
+        SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_MEMORY_VIEW);
+        goto failure;
+    }
+    if (PyAnySet_CheckExact(value)) {
+        SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_SET);
+        goto failure;
+    }
+    if (PyTuple_CheckExact(value)) {
+        SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_TO_BOOL_TUPLE);
+        goto failure;
+    }
+    SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_OTHER);
+#endif
+failure:
+    STAT_INC(TO_BOOL, failure);
+    instr->op.code = TO_BOOL;
+    cache->counter = adaptive_counter_backoff(cache->counter);
+    return;
+success:
+    STAT_INC(TO_BOOL, success);
     cache->counter = adaptive_counter_cooldown();
 }
 

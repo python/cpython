@@ -82,6 +82,20 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case UNARY_NOT:
             return 1;
+        case TO_BOOL:
+            return 1;
+        case TO_BOOL_BOOL:
+            return 1;
+        case TO_BOOL_INT:
+            return 1;
+        case TO_BOOL_LIST:
+            return 1;
+        case TO_BOOL_NONE:
+            return 1;
+        case TO_BOOL_STR:
+            return 1;
+        case TO_BOOL_ALWAYS_TRUE:
+            return 1;
         case UNARY_INVERT:
             return 1;
         case BINARY_OP_MULTIPLY_INT:
@@ -508,6 +522,20 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 1;
         case UNARY_NOT:
             return 1;
+        case TO_BOOL:
+            return 1;
+        case TO_BOOL_BOOL:
+            return 1;
+        case TO_BOOL_INT:
+            return 1;
+        case TO_BOOL_LIST:
+            return 1;
+        case TO_BOOL_NONE:
+            return 1;
+        case TO_BOOL_STR:
+            return 1;
+        case TO_BOOL_ALWAYS_TRUE:
+            return 1;
         case UNARY_INVERT:
             return 1;
         case BINARY_OP_MULTIPLY_INT:
@@ -886,7 +914,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
 }
 #endif
 
-enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC00, INSTR_FMT_IBC000, INSTR_FMT_IBC00000000, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC000 };
+enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC00, INSTR_FMT_IBC000, INSTR_FMT_IBC00000000, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC00, INSTR_FMT_IXC000 };
 #define HAS_ARG_FLAG (1)
 #define HAS_CONST_FLAG (2)
 #define HAS_NAME_FLAG (4)
@@ -940,6 +968,13 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {
     [INSTRUMENTED_END_SEND] = { true, INSTR_FMT_IX, 0 },
     [UNARY_NEGATIVE] = { true, INSTR_FMT_IX, 0 },
     [UNARY_NOT] = { true, INSTR_FMT_IX, 0 },
+    [TO_BOOL] = { true, INSTR_FMT_IXC00, 0 },
+    [TO_BOOL_BOOL] = { true, INSTR_FMT_IXC00, 0 },
+    [TO_BOOL_INT] = { true, INSTR_FMT_IXC00, 0 },
+    [TO_BOOL_LIST] = { true, INSTR_FMT_IXC00, 0 },
+    [TO_BOOL_NONE] = { true, INSTR_FMT_IXC00, 0 },
+    [TO_BOOL_STR] = { true, INSTR_FMT_IXC00, 0 },
+    [TO_BOOL_ALWAYS_TRUE] = { true, INSTR_FMT_IXC00, 0 },
     [UNARY_INVERT] = { true, INSTR_FMT_IX, 0 },
     [BINARY_OP_MULTIPLY_INT] = { true, INSTR_FMT_IBC, 0 },
     [BINARY_OP_ADD_INT] = { true, INSTR_FMT_IBC, 0 },
@@ -1139,6 +1174,12 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] = {
     [END_SEND] = { .nuops = 1, .uops = { { END_SEND, 0, 0 } } },
     [UNARY_NEGATIVE] = { .nuops = 1, .uops = { { UNARY_NEGATIVE, 0, 0 } } },
     [UNARY_NOT] = { .nuops = 1, .uops = { { UNARY_NOT, 0, 0 } } },
+    [TO_BOOL_BOOL] = { .nuops = 1, .uops = { { TO_BOOL_BOOL, 0, 0 } } },
+    [TO_BOOL_INT] = { .nuops = 1, .uops = { { TO_BOOL_INT, 0, 0 } } },
+    [TO_BOOL_LIST] = { .nuops = 1, .uops = { { TO_BOOL_LIST, 0, 0 } } },
+    [TO_BOOL_NONE] = { .nuops = 1, .uops = { { TO_BOOL_NONE, 0, 0 } } },
+    [TO_BOOL_STR] = { .nuops = 1, .uops = { { TO_BOOL_STR, 0, 0 } } },
+    [TO_BOOL_ALWAYS_TRUE] = { .nuops = 1, .uops = { { TO_BOOL_ALWAYS_TRUE, 2, 1 } } },
     [UNARY_INVERT] = { .nuops = 1, .uops = { { UNARY_INVERT, 0, 0 } } },
     [BINARY_OP_MULTIPLY_INT] = { .nuops = 2, .uops = { { _GUARD_BOTH_INT, 0, 0 }, { _BINARY_OP_MULTIPLY_INT, 0, 0 } } },
     [BINARY_OP_ADD_INT] = { .nuops = 2, .uops = { { _GUARD_BOTH_INT, 0, 0 }, { _BINARY_OP_ADD_INT, 0, 0 } } },
