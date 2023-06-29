@@ -1147,7 +1147,7 @@ add_const(PyObject *newconst, PyObject *consts, PyObject *const_cache)
         }
     }
     Py_DECREF(newconst);
-    return index;
+    return (int)index;
 }
 
 /* Replace LOAD_CONST c1, LOAD_CONST c2 ... LOAD_CONST cn, BUILD_TUPLE n
