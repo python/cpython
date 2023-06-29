@@ -175,12 +175,9 @@ dummy_func(
             }
         }
 
-        inst(LOAD_CLOSURE, (-- value)) {
-            /* We keep LOAD_CLOSURE so that the bytecode stays more readable. */
-            value = GETLOCAL(oparg);
-            ERROR_IF(value == NULL, unbound_local_error);
-            Py_INCREF(value);
-        }
+        pseudo(LOAD_CLOSURE) = {
+            LOAD_FAST,
+        };
 
         inst(LOAD_FAST_CHECK, (-- value)) {
             value = GETLOCAL(oparg);
