@@ -2890,30 +2890,6 @@ class CPythonAPItests(PythonAPItests):
 class PyPythonAPItests(PythonAPItests):
     decimal = P
 
-@cpython_only
-class CDecimalTypesTest(unittest.TestCase):
-    def setUp(self):
-        decimal = C
-        siganldict_type = type(decimal.Context().flags)
-        self.dataset = (
-            siganldict_type.__bases__[0],  # SignalDictMixin type
-            type(decimal.localcontext()),  # ContextManager type
-            decimal.Decimal,
-            decimal.Context,
-        )
-        self.decimal = decimal
-
-    def test_immutable_types(self):
-        for tp in self.dataset:
-            with self.subTest(tp=tp):
-                with self.assertRaisesRegex(TypeError, "immutable"):
-                    tp.foo = 1
-
-    def test_disallow_instantiation(self):
-        decimal = self.decimal
-        ctxmanager_type = type(decimal.localcontext())
-        check_disallow_instantiation(self, ctxmanager_type)
-
 class ContextAPItests(unittest.TestCase):
 
     def test_none_args(self):
@@ -5686,6 +5662,24 @@ class CWhitebox(unittest.TestCase):
             self.assertEqual(Decimal(4) / 2, 2)
             self.assertEqual(Decimal(400) ** -1, Decimal('0.0025'))
 
+    def test_immutable_types(self):
+        decimal = C
+        siganldict_type = type(decimal.Context().flags)
+        self.dataset = (
+            siganldict_type.__bases__[0],  # SignalDictMixin type
+            type(decimal.localcontext()),  # ContextManager type
+            decimal.Decimal,
+            decimal.Context,
+        )
+        for tp in self.dataset:
+            with self.subTest(tp=tp):
+                with self.assertRaisesRegex(TypeError, "immutable"):
+                    tp.foo = 1
+
+    def test_disallow_instantiation(self):
+        decimal = C
+        ctxmanager_type = type(decimal.localcontext())
+        check_disallow_instantiation(self, ctxmanager_type)
 
 @requires_docstrings
 @unittest.skipUnless(C, "test requires C version")
@@ -5842,7 +5836,6 @@ all_tests = [
   CFunctionality,            PyFunctionality,
   CWhitebox,                 PyWhitebox,
   CIBMTestCases,             PyIBMTestCases,
-  CDecimalTypesTest,
 ]
 
 # Delete C tests if _decimal.so is not present.
