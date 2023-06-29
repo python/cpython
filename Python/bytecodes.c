@@ -1850,27 +1850,25 @@ dummy_func(
                 res = ep->me_value;
             }
             if (res == NULL) {
-                // This is almost never an AttributeError... it's way more
-                // likely that this __dict__ still shares its keys (for example,
-                // if it was materialized on request and not heavily modified).
-                // If that's the case, we probably have an opportunity to do
-                // something *really* cool: un-materialize it!
-                PyDictKeysObject *keys = dict->ma_keys;
-                PyDictValues *values = dict->ma_values;
-                if (Py_REFCNT(dict) == 1
-                    && _PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE)
-                    && keys == ((PyHeapTypeObject *)tp)->ht_cached_keys)
-                {
-                    assert(values);
-                    // Don't try this at home, kids:
-                    dict->ma_keys = NULL;
-                    dict->ma_values = NULL;
-                    Py_DECREF(dict);
-                    _PyDictKeys_DecRef(keys);
-                    _PyDictOrValues_SetValues(dorv, values);
-                    GO_TO_INSTRUCTION(LOAD_ATTR_INSTANCE_VALUE);
-                }
-                DEOPT_IF(true, LOAD_ATTR);
+                // This is almost never an AttributeError. It's way more likely
+                // that this __dict__ still shares its keys (for example, if it
+                // was materialized on request and not heavily modified):
+                DEOPT_IF(!_PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE), LOAD_ATTR);
+                PyHeapTypeObject *ht = (PyHeapTypeObject *)tp;
+                DEOPT_IF(dict->ma_keys != ht->ht_cached_keys, LOAD_ATTR);
+                assert(dict->ma_values);
+                DEOPT_IF(Py_REFCNT(dict) != 1, LOAD_ATTR);
+                // We have an opportunity to do something *really* cool:
+                // un-materialize it!
+                _PyDictKeys_DecRef(dict->ma_keys);
+                _PyDictOrValues_SetValues(dorv, dict->ma_values);
+                OBJECT_STAT_INC(dict_unmaterialized);
+                // Don't try this at home, kids:
+                dict->ma_keys = NULL;
+                dict->ma_values = NULL;
+                Py_DECREF(dict);
+                // Guess what... our caches are still valid!
+                GO_TO_INSTRUCTION(LOAD_ATTR_INSTANCE_VALUE);
             }
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(res);
