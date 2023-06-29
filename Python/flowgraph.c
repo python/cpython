@@ -1044,6 +1044,36 @@ get_const_value(int opcode, int oparg, PyObject *co_consts)
     return Py_NewRef(constant);
 }
 
+// Steals a reference to newconst.
+static int
+add_const(PyObject *newconst, PyObject *consts, PyObject *const_cache)
+{
+    if (_PyCompile_ConstCacheMergeOne(const_cache, &newconst) < 0) {
+        Py_DECREF(newconst);
+        return -1;
+    }
+
+    Py_ssize_t index;
+    for (index = 0; index < PyList_GET_SIZE(consts); index++) {
+        if (PyList_GET_ITEM(consts, index) == newconst) {
+            break;
+        }
+    }
+    if (index == PyList_GET_SIZE(consts)) {
+        if ((size_t)index >= (size_t)INT_MAX - 1) {
+            PyErr_SetString(PyExc_OverflowError, "too many constants");
+            Py_DECREF(newconst);
+            return -1;
+        }
+        if (PyList_Append(consts, newconst)) {
+            Py_DECREF(newconst);
+            return -1;
+        }
+    }
+    Py_DECREF(newconst);
+    return (int)index;
+}
+
 /* Replace LOAD_CONST c1, LOAD_CONST c2 ... LOAD_CONST cn, BUILD_TUPLE n
    with    LOAD_CONST (c1, c2, ... cn).
    The consts table must still be in list form so that the
@@ -1081,33 +1111,14 @@ fold_tuple_on_constants(PyObject *const_cache,
         }
         PyTuple_SET_ITEM(newconst, i, constant);
     }
-    if (_PyCompile_ConstCacheMergeOne(const_cache, &newconst) < 0) {
-        Py_DECREF(newconst);
+    int index = add_const(newconst, consts, const_cache);
+    if (index < 0) {
         return ERROR;
     }
-
-    Py_ssize_t index;
-    for (index = 0; index < PyList_GET_SIZE(consts); index++) {
-        if (PyList_GET_ITEM(consts, index) == newconst) {
-            break;
-        }
-    }
-    if (index == PyList_GET_SIZE(consts)) {
-        if ((size_t)index >= (size_t)INT_MAX - 1) {
-            Py_DECREF(newconst);
-            PyErr_SetString(PyExc_OverflowError, "too many constants");
-            return ERROR;
-        }
-        if (PyList_Append(consts, newconst)) {
-            Py_DECREF(newconst);
-            return ERROR;
-        }
-    }
-    Py_DECREF(newconst);
     for (int i = 0; i < n; i++) {
         INSTR_SET_OP0(&inst[i], NOP);
     }
-    INSTR_SET_OP1(&inst[n], LOAD_CONST, (int)index);
+    INSTR_SET_OP1(&inst[n], LOAD_CONST, index);
     return SUCCESS;
 }
 
@@ -1361,23 +1372,70 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                         }
                         break;
                     case IS_OP:
+                        // Fold to POP_JUMP_IF_NONE:
+                        // - LOAD_CONST(None) IS_OP(0) POP_JUMP_IF_TRUE
+                        // - LOAD_CONST(None) IS_OP(1) POP_JUMP_IF_FALSE
+                        // - LOAD_CONST(None) IS_OP(0) TO_BOOL POP_JUMP_IF_TRUE
+                        // - LOAD_CONST(None) IS_OP(1) TO_BOOL POP_JUMP_IF_FALSE
+                        // Fold to POP_JUMP_IF_NOT_NONE:
+                        // - LOAD_CONST(None) IS_OP(0) POP_JUMP_IF_FALSE
+                        // - LOAD_CONST(None) IS_OP(1) POP_JUMP_IF_TRUE
+                        // - LOAD_CONST(None) IS_OP(0) TO_BOOL POP_JUMP_IF_FALSE
+                        // - LOAD_CONST(None) IS_OP(1) TO_BOOL POP_JUMP_IF_TRUE
                         cnt = get_const_value(opcode, oparg, consts);
                         if (cnt == NULL) {
                             goto error;
                         }
-                        int jump_op = i+2 < bb->b_iused ? bb->b_instr[i+2].i_opcode : 0;
-                        if (Py_IsNone(cnt) && (jump_op == POP_JUMP_IF_FALSE || jump_op == POP_JUMP_IF_TRUE)) {
-                            unsigned char nextarg = bb->b_instr[i+1].i_oparg;
-                            INSTR_SET_OP0(inst, NOP);
-                            INSTR_SET_OP0(&bb->b_instr[i + 1], NOP);
-                            bb->b_instr[i+2].i_opcode = nextarg ^ (jump_op == POP_JUMP_IF_FALSE) ?
-                                    POP_JUMP_IF_NOT_NONE : POP_JUMP_IF_NONE;
+                        if (!Py_IsNone(cnt)) {
+                            break;
                         }
                         Py_DECREF(cnt);
+                        if (bb->b_iused <= i + 2) {
+                            break;
+                        }
+                        cfg_instr *is_instr = &bb->b_instr[i + 1];
+                        cfg_instr *jump_instr = &bb->b_instr[i + 2];
+                        // Get rid of TO_BOOL regardless:
+                        if (jump_instr->i_opcode == TO_BOOL) {
+                            INSTR_SET_OP0(jump_instr, NOP);
+                            if (bb->b_iused <= i + 3) {
+                                break;
+                            }
+                            jump_instr = &bb->b_instr[i + 3];
+                        }
+                        bool invert = is_instr->i_oparg;
+                        if (jump_instr->i_opcode == POP_JUMP_IF_FALSE) {
+                            invert = !invert;
+                        }
+                        else if (jump_instr->i_opcode != POP_JUMP_IF_TRUE) {
+                            break;
+                        }
+                        INSTR_SET_OP0(inst, NOP);
+                        INSTR_SET_OP0(is_instr, NOP);
+                        jump_instr->i_opcode = invert ? POP_JUMP_IF_NOT_NONE
+                                                      : POP_JUMP_IF_NONE;
                         break;
                     case RETURN_VALUE:
                         INSTR_SET_OP0(inst, NOP);
                         INSTR_SET_OP1(&bb->b_instr[++i], RETURN_CONST, oparg);
+                        break;
+                    case TO_BOOL:
+                        cnt = get_const_value(opcode, oparg, consts);
+                        if (cnt == NULL) {
+                            goto error;
+                        }
+                        is_true = PyObject_IsTrue(cnt);
+                        Py_DECREF(cnt);
+                        if (is_true == -1) {
+                            goto error;
+                        }
+                        cnt = PyBool_FromLong(is_true);
+                        int index = add_const(cnt, consts, const_cache);
+                        if (index < 0) {
+                            return ERROR;
+                        }
+                        INSTR_SET_OP0(inst, NOP);
+                        INSTR_SET_OP1(&bb->b_instr[i + 1], LOAD_CONST, index);
                         break;
                 }
                 break;
@@ -1462,6 +1520,39 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 if (nextop == LOAD_GLOBAL && (inst[1].i_opcode & 1) == 0) {
                     INSTR_SET_OP0(inst, NOP);
                     inst[1].i_oparg |= 1;
+                }
+                break;
+            case COMPARE_OP:
+                if (nextop == TO_BOOL) {
+                    INSTR_SET_OP0(inst, NOP);
+                    INSTR_SET_OP1(&bb->b_instr[i + 1], COMPARE_OP, oparg | 16);
+                    continue;
+                }
+                break;
+            case CONTAINS_OP:
+            case IS_OP:
+                if (nextop == TO_BOOL) {
+                    INSTR_SET_OP0(inst, NOP);
+                    INSTR_SET_OP1(&bb->b_instr[i + 1], opcode, oparg);
+                    continue;
+                }
+                break;
+            case TO_BOOL:
+                if (nextop == TO_BOOL) {
+                    INSTR_SET_OP0(inst, NOP);
+                    continue;
+                }
+                break;
+            case UNARY_NOT:
+                if (nextop == TO_BOOL) {
+                    INSTR_SET_OP0(inst, NOP);
+                    INSTR_SET_OP0(&bb->b_instr[i + 1], UNARY_NOT);
+                    continue;
+                }
+                if (nextop == UNARY_NOT) {
+                    INSTR_SET_OP0(inst, NOP);
+                    INSTR_SET_OP0(&bb->b_instr[i + 1], NOP);
+                    continue;
                 }
                 break;
             default:
