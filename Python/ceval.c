@@ -2849,6 +2849,7 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
 
         }
     }
+
 unbound_local_error:
     format_exc_check_arg(tstate, PyExc_UnboundLocalError,
         UNBOUNDLOCAL_ERROR_MSG,

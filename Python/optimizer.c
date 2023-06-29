@@ -309,6 +309,14 @@ translate_bytecode_to_trace(
     _PyUOpInstruction *trace,
     int max_length)
 {
+    int trace_length = 0;
+
+#define ADD_TO_TRACE_BASIC(OPCODE, OPERAND) \
+    assert(trace_length < max_length); \
+    trace[trace_length].opcode = (OPCODE); \
+    trace[trace_length].operand = (OPERAND); \
+    trace_length++;
+
 #ifdef LLTRACE
     char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
     int lltrace = 0;
@@ -324,23 +332,18 @@ translate_bytecode_to_trace(
                 (long)(instr - (_Py_CODEUNIT *)code->co_code_adaptive));
     }
 #define ADD_TO_TRACE(OPCODE, OPERAND) \
-        if (lltrace >= 2) { \
-            const char *opname = (OPCODE) < 256 ? _PyOpcode_OpName[(OPCODE)] : _PyOpcode_uop_name[(OPCODE)]; \
-            fprintf(stderr, "  ADD_TO_TRACE(%s, %" PRIu64 ")\n", opname, (uint64_t)(OPERAND)); \
-        } \
-        trace[trace_length].opcode = (OPCODE); \
-        trace[trace_length].operand = (OPERAND); \
-        trace_length++;
+    if (lltrace >= 2) { \
+        const char *opname = (OPCODE) < 256 ? _PyOpcode_OpName[(OPCODE)] : _PyOpcode_uop_name[(OPCODE)]; \
+        fprintf(stderr, "  ADD_TO_TRACE(%s, %" PRIu64 ")\n", opname, (uint64_t)(OPERAND)); \
+    } \
+    ADD_TO_TRACE_BASIC(OPCODE, OPERAND)
 #else
 #define ADD_TO_TRACE(OPCODE, OPERAND) \
-        trace[trace_length].opcode = (OPCODE); \
-        trace[trace_length].operand = (OPERAND); \
-        trace_length++;
+    ADD_TO_TRACE_BASIC(OPCODE, OPERAND)
 #endif
 
-    int trace_length = 0;
-    // Always reserve space for one uop, plus SET_UP, plus EXIT_TRACE
     for (;;) {
+        ADD_TO_TRACE(SET_IP, (int)(instr - (_Py_CODEUNIT *)code->co_code_adaptive));
         int opcode = instr->op.code;
         uint64_t operand = instr->op.arg;
         switch (opcode) {
@@ -348,7 +351,7 @@ translate_bytecode_to_trace(
             case STORE_FAST_LOAD_FAST:
             case STORE_FAST_STORE_FAST:
             {
-                // Reserve space for two uops (+ SETUP + EXIT_TRACE)
+                // Reserve space for two uops (+ SET_IP + EXIT_TRACE)
                 if (trace_length + 4 > max_length) {
 #ifdef LLTRACE
                     if (lltrace >= 1) {
@@ -381,7 +384,7 @@ translate_bytecode_to_trace(
             {
                 const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
                 if (expansion->nuops > 0) {
-                    // Reserve space for nuops (+ SETUP + EXIT_TRACE)
+                    // Reserve space for nuops (+ SET_IP + EXIT_TRACE)
                     int nuops = expansion->nuops;
                     if (trace_length + nuops + 2 > max_length) {
 #ifdef LLTRACE
@@ -417,12 +420,11 @@ translate_bytecode_to_trace(
                                 Py_FatalError("garbled expansion");
                         }
                         ADD_TO_TRACE(expansion->uops[i].uop, operand);
-                        assert(expansion->uops[0].size == 0);  // TODO
                     }
                     break;
                 }
 #ifdef LLTRACE
-                if (lltrace >= 1) {
+                if (lltrace >= 2) {
                     fprintf(stderr,
                             "Unsupported opcode %s\n",
                             opcode < 256 ? _PyOpcode_OpName[opcode] : _PyOpcode_uop_name[opcode]
@@ -435,10 +437,11 @@ translate_bytecode_to_trace(
         instr++;
         // Add cache size for opcode
         instr += _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
-        ADD_TO_TRACE(SET_IP, (int)(instr - (_Py_CODEUNIT *)code->co_code_adaptive));
     }
+
 done:
-    if (trace_length > 0) {
+    // Skip short traces like SET_IP, LOAD_FAST, SET_IP, EXIT_TRACE
+    if (trace_length > 3) {
         ADD_TO_TRACE(EXIT_TRACE, 0);
 #ifdef LLTRACE
         if (lltrace >= 1) {
@@ -451,6 +454,7 @@ done:
                     trace_length);
         }
 #endif
+        return trace_length;
     }
     else {
 #ifdef LLTRACE
@@ -464,9 +468,10 @@ done:
         }
 #endif
     }
-    return trace_length;
+    return 0;
 
 #undef ADD_TO_TRACE
+#undef ADD_TO_TRACE_BASIC
 }
 
 static int
