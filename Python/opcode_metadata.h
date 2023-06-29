@@ -5,6 +5,7 @@
 
 
 #define IS_PSEUDO_INSTR(OP)  \
+    ((OP) == LOAD_CLOSURE) || \
     ((OP) == STORE_FAST_MAYBE_NULL) || \
     ((OP) == LOAD_SUPER_METHOD) || \
     ((OP) == LOAD_ZERO_SUPER_METHOD) || \
