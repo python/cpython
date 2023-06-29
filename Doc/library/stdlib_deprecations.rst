@@ -28,7 +28,7 @@ Standard library deprecations.
 
       Version when the API was or will be removed (tuple of int, or None).
 
-   .. attribute:: remove
+   .. attribute:: message
 
       Message about the deprecation, usually explain how to replace the
       deprecated API (str or None).
