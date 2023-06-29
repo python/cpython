@@ -602,6 +602,9 @@ class Component:
                 out.assign(var, oeffect)
 
 
+MacroParts = list[Component | parser.CacheEffect]
+
+
 @dataclasses.dataclass
 class MacroInstruction:
     """A macro instruction."""
@@ -613,7 +616,7 @@ class MacroInstruction:
     instr_fmt: str
     instr_flags: InstructionFlags
     macro: parser.Macro
-    parts: list[Component | parser.CacheEffect]
+    parts: MacroParts
     cache_offset: int
     predicted: bool = False
 
@@ -906,7 +909,7 @@ class Analyzer:
         components = self.check_macro_components(macro)
         stack, initial_sp = self.stack_analysis(components)
         sp = initial_sp
-        parts: list[Component | parser.CacheEffect] = []
+        parts: MacroParts = []
         flags = InstructionFlags.newEmpty()
         offset = 0
         for component in components:
@@ -1253,17 +1256,14 @@ class Analyzer:
                             pass
                         case parser.InstDef(name=name):
                             instr = self.instrs[name]
-                            # Since an 'op' is not a bytecode, it has no expansion
-                            if instr.kind != "op" and instr.is_viable_uop():
-                                # Double check there aren't any used cache effects.
-                                # If this fails, see write_macro_expansions().
-                                assert not instr.active_caches, (instr.name, instr.cache_effects)
-                                self.out.emit(
-                                    f"[{name}] = "
-                                    f"{{ .nuops = 1, .uops = {{ {{ {name}, 0, 0 }} }} }},"
-                                )
+                            # Since an 'op' is not a bytecode, it has no expansion; but 'inst' is
+                            if instr.kind == "inst" and instr.is_viable_uop():
+                                # Construct a dummy Component -- input/output mappings are not used
+                                part = Component(instr, [], [], instr.active_caches)
+                                self.write_macro_expansions(instr.name, [part])
                         case parser.Macro():
-                            self.write_macro_expansions(self.macro_instrs[thing.name])
+                            mac = self.macro_instrs[thing.name]
+                            self.write_macro_expansions(mac.name, mac.parts)
                         case parser.Pseudo():
                             pass
                         case _:
@@ -1328,29 +1328,29 @@ class Analyzer:
             if instr.kind == "op" and instr.is_viable_uop():
                 add(instr.name)
 
-    def write_macro_expansions(self, mac: MacroInstruction) -> None:
+    def write_macro_expansions(self, name: str, parts: MacroParts) -> None:
         """Write the macro expansions for a macro-instruction."""
         # TODO: Refactor to share code with write_cody(), is_viaible_uop(), etc.
         offset = 0  # Cache effect offset
         expansions: list[tuple[str, int, int]] = []  # [(name, size, offset), ...]
-        for part in mac.parts:
+        for part in parts:
             if isinstance(part, Component):
                 # All component instructions must be viable uops
                 if not part.instr.is_viable_uop():
-                    print(f"NOTE: Part {part.instr.name} of {mac.name} is not a viable uop")
+                    print(f"NOTE: Part {part.instr.name} of {name} is not a viable uop")
                     return
                 if part.instr.instr_flags.HAS_ARG_FLAG or not part.active_caches:
                     size, offset = 0, 0
                 else:
                     # If this assert triggers, is_viable_uops() lied
-                    assert len(part.active_caches) == 1, (mac.name, part.instr.name)
+                    assert len(part.active_caches) == 1, (name, part.instr.name)
                     cache = part.active_caches[0]
                     size, offset = cache.effect.size, cache.offset
                 expansions.append((part.instr.name, size, offset))
-        assert len(expansions) > 0, f"Macro {mac.name} has empty expansion?!"
+        assert len(expansions) > 0, f"Macro {name} has empty expansion?!"
         pieces = [f"{{ {name}, {size}, {offset} }}" for name, size, offset in expansions]
         self.out.emit(
-            f"[{mac.name}] = "
+            f"[{name}] = "
             f"{{ .nuops = {len(expansions)}, .uops = {{ {', '.join(pieces)} }} }},"
         )
 
