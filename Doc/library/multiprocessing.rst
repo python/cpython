@@ -460,9 +460,9 @@ process which created it.
       Traceback (most recent call last):
       Traceback (most recent call last):
       Traceback (most recent call last):
-      AttributeError: Can't get attribute 'f' on <module '__main__' (<class '_frozen_importlib.BuiltinImporter'>)>
-      AttributeError: Can't get attribute 'f' on <module '__main__' (<class '_frozen_importlib.BuiltinImporter'>)>
-      AttributeError: Can't get attribute 'f' on <module '__main__' (<class '_frozen_importlib.BuiltinImporter'>)>
+      AttributeError: Can't get attribute 'f' on <module '__main__' (built-in)>
+      AttributeError: Can't get attribute 'f' on <module '__main__' (built-in)>
+      AttributeError: Can't get attribute 'f' on <module '__main__' (built-in)>
 
    (If you try this it will actually output three full tracebacks
    interleaved in a semi-random fashion, and then you may have to
