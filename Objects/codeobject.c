@@ -1967,6 +1967,7 @@ code_linesiterator(PyCodeObject *code, PyObject *Py_UNUSED(args))
 }
 
 /*[clinic input]
+@text_signature "($self, /, **changes)"
 code.replace
 
     *
@@ -2002,7 +2003,7 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
                   PyObject *co_filename, PyObject *co_name,
                   PyObject *co_qualname, PyObject *co_linetable,
                   PyObject *co_exceptiontable)
-/*[clinic end generated code: output=e75c48a15def18b9 input=520204253f64c415]*/
+/*[clinic end generated code: output=e75c48a15def18b9 input=18e280e07846c122]*/
 {
 #define CHECK_INT_ARG(ARG) \
         if (ARG < 0) { \

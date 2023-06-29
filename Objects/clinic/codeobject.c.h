@@ -154,15 +154,7 @@ exit:
 }
 
 PyDoc_STRVAR(code_replace__doc__,
-"replace($self, /, *, co_argcount=unchanged,\n"
-"        co_posonlyargcount=unchanged, co_kwonlyargcount=unchanged,\n"
-"        co_nlocals=unchanged, co_stacksize=unchanged,\n"
-"        co_flags=unchanged, co_firstlineno=unchanged,\n"
-"        co_code=unchanged, co_consts=unchanged, co_names=unchanged,\n"
-"        co_varnames=unchanged, co_freevars=unchanged,\n"
-"        co_cellvars=unchanged, co_filename=unchanged,\n"
-"        co_name=unchanged, co_qualname=unchanged,\n"
-"        co_linetable=unchanged, co_exceptiontable=unchanged)\n"
+"replace($self, /, **changes)\n"
 "--\n"
 "\n"
 "Return a copy of the code object with new values for the specified fields.");
@@ -472,4 +464,4 @@ code__varname_from_oparg(PyCodeObject *self, PyObject *const *args, Py_ssize_t n
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ac5dc77c07bafee5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=16c95266bbc4bc03 input=a9049054013a1b77]*/
