@@ -113,6 +113,7 @@ _PyFunction_FromConstructor(PyFrameConstructor *constr)
 
     PyFunctionObject *op = PyObject_GC_New(PyFunctionObject, &PyFunction_Type);
     if (op == NULL) {
+        Py_XDECREF(module);
         return NULL;
     }
     op->func_globals = Py_NewRef(constr->fc_globals);
