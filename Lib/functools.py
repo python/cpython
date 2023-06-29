@@ -200,6 +200,120 @@ def total_ordering(cls):
 
 
 ################################################################################
+### retype class decorator
+################################################################################
+
+_to_wrap = {
+    "__add__", "__sub__", "__mul__", "__matmul__", "__truediv__", "__floordiv__", "__mod__",
+    "__radd__", "__rsub__", "__rmul__", "__rmatmul__", "__rtruediv__", "__rfloordiv__", "__rmod__",
+    "__divmod__", "__rdivmod__", # special case
+    "__pow__", "__rpow__",
+    "__lshift__", "__rshift__", "__rlshift__", "__rrshift__",
+    "__and__", "__or__", "__xor__",
+    "__rand__", "__ror__", "__rxor__",
+
+    "__neg__", "__pos__", "__abs__", "__invert__",
+    "__round__", # special case, only when the second parameter is passed
+
+    "__getitem__", # special case, only when passed a slice
+}
+
+def retype(cls=None, /, *, exclude=frozenset(), include=frozenset()):
+    """Class decorator that makes operators return instances of the class itself
+
+    Can be used with or without parameters.
+
+    By default, wraps the dunder methods for the arithmetic operators (and
+    __getitem__) which usually return instances of the class they're used on.
+    For example, `asequence[:]` or `-number`, when implemented, are usually
+    expected to return instances of the same type as the original values.
+    Wrapped methods will return instances of the class being decorated, instead
+    of instances of its superclass, except in cases returning NotImplemented.
+    The methods directly defined in the class body will not be wrapped.
+    Subclasses of the decorated class will need to be decorated too, otherwise
+    their operators will return instances of the last decorated superclass.
+
+    The `exclude` parameter provides an iterable of method names which will not
+    be wrapped.
+
+    The `include` parameter provides an iterable of additional method names
+    which will be wrapped, despite not being dunders, not usually returning
+    instances of the current class (`__len__` for example) or being defined
+    directly in the class body.
+    Giving the name of a method not defined in the decorated class or any of its
+    superclasses is an error.
+    """
+
+    def deco(cls):
+        to_wrap = _to_wrap.intersection(dir(cls)).difference(cls.__dict__, exclude).union(include)
+        mro = list(cls.mro())
+        mro.remove(cls)
+
+        def find_meth(mn):
+            for c in mro:
+                m = getattr(c, mn, None)
+                if m is not None:
+                    return m
+            raise TypeError(f"{cls} has no method {mn!r}")
+
+
+        # special cases here
+        if "__divmod__" in to_wrap:
+            to_wrap.remove("__divmod__")
+            find_meth("__divmod__") # raise error appropriately
+            def __divmod__(self, other, /):
+                return self//other, self%other
+            cls.__divmod__ = __divmod__
+        if "__rdivmod__" in to_wrap:
+            to_wrap.remove("__rdivmod__")
+            find_meth("__rdivmod__") # raise error appropriately
+            def __rdivmod__(self, other, /):
+                return other//self, other%self
+            cls.__rdivmod__ = __rdivmod__
+
+        if "__getitem__" in to_wrap:
+            to_wrap.remove("__getitem__")
+            _getitem = find_meth("__getitem__")
+            def __getitem__(self, key, /):
+                if isinstance(key, slice):
+                    return cls(_getitem(self, key))
+                else:
+                    return _getitem(self, key)
+            cls.__getitem__ = __getitem__
+
+        if "__round__" in to_wrap:
+            to_wrap.remove("__round__")
+            _round = find_meth("__round__")
+            notpassed = object()
+            def __round__(self, ndigits=notpassed, /):
+                if ndigits is notpassed:
+                    return _round(self)
+                else:
+                    return cls(_round(self, ndigits))
+            cls.__round__ = __round__
+
+
+        def retyper(meth):
+            def wrapper(self, *args):
+                rv = meth(self, *args)
+                if rv is NotImplemented:
+                    return rv
+                return cls(rv)
+            return wrapper
+
+        for mname in to_wrap:
+            m = find_meth(mname)
+            setattr(cls, mname, retyper(m))
+
+        return cls
+
+    if cls is None:
+        return deco
+    else:
+        return deco(cls)
+
+
+################################################################################
 ### cmp_to_key() function converter
 ################################################################################
 
