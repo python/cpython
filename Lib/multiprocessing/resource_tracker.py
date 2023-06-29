@@ -222,8 +222,8 @@ def main(fd):
             if rtype_cache:
                 try:
                     warnings.warn('resource_tracker: There appear to be %d '
-                                  'leaked %s objects to clean up at shutdown' %
-                                  (len(rtype_cache), rtype))
+                                  'leaked %s objects to clean up at shutdown: %s' %
+                                  (len(rtype_cache), rtype, rtype_cache))
                 except Exception:
                     pass
             for name in rtype_cache:
