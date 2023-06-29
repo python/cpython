@@ -546,7 +546,6 @@ pycore_init_runtime(_PyRuntimeState *runtime,
     _Py_EmscriptenTrampoline_Init();
 
     return _PyStatus_OK();
-
 }
 
 
