@@ -53,7 +53,7 @@ The :mod:`poplib` module provides two classes:
       If the *timeout* parameter is set to be zero, it will raise a
       :class:`ValueError` to prevent the creation of a non-blocking socket.
 
-.. class:: POP3_SSL(host, port=POP3_SSL_PORT, keyfile=None, certfile=None, timeout=None, context=None)
+.. class:: POP3_SSL(host, port=POP3_SSL_PORT, *, timeout=None, context=None)
 
    This is a subclass of :class:`POP3` that connects to the server over an SSL
    encrypted socket.  If *port* is not specified, 995, the standard POP3-over-SSL
@@ -62,10 +62,6 @@ The :mod:`poplib` module provides two classes:
    bundling SSL configuration options, certificates and private keys into a
    single (potentially long-lived) structure.  Please read :ref:`ssl-security`
    for best practices.
-
-   *keyfile* and *certfile* are a legacy alternative to *context* - they can
-   point to PEM-formatted private key and certificate chain files,
-   respectively, for the SSL connection.
 
    .. audit-event:: poplib.connect self,host,port poplib.POP3_SSL
 
@@ -83,16 +79,12 @@ The :mod:`poplib` module provides two classes:
       :attr:`ssl.SSLContext.check_hostname` and *Server Name Indication* (see
       :data:`ssl.HAS_SNI`).
 
-   .. deprecated:: 3.6
-
-       *keyfile* and *certfile* are deprecated in favor of *context*.
-       Please use :meth:`ssl.SSLContext.load_cert_chain` instead, or let
-       :func:`ssl.create_default_context` select the system's trusted CA
-       certificates for you.
-
    .. versionchanged:: 3.9
       If the *timeout* parameter is set to be zero, it will raise a
       :class:`ValueError` to prevent the creation of a non-blocking socket.
+
+   .. versionchanged:: 3.12
+      The deprecated *keyfile* and *certfile* parameters have been removed.
 
 One exception is defined as an attribute of the :mod:`poplib` module:
 

@@ -275,6 +275,10 @@ is the module's name in the Python package namespace.
       .. versionchanged:: 3.8
          The *stacklevel* parameter was added.
 
+      .. versionchanged:: 3.13
+         Remove the undocumented ``warn()`` method which was an alias to the
+         :meth:`warning` method.
+
 
    .. method:: Logger.info(msg, *args, **kwargs)
 
@@ -286,10 +290,6 @@ is the module's name in the Python package namespace.
 
       Logs a message with level :const:`WARNING` on this logger. The arguments are
       interpreted as for :meth:`debug`.
-
-      .. note:: There is an obsolete method ``warn`` which is functionally
-         identical to ``warning``. As ``warn`` is deprecated, please do not use
-         it - use ``warning`` instead.
 
    .. method:: Logger.error(msg, *args, **kwargs)
 
@@ -813,8 +813,9 @@ wire).
    :type lineno: int
 
    :param msg: The event description message,
-      which can be a %-format string with placeholders for variable data.
-   :type msg: str
+      which can be a %-format string with placeholders for variable data,
+      or an arbitrary object (see :ref:`arbitrary-object-messages`).
+   :type msg: typing.Any
 
    :param args: Variable data to merge into the *msg* argument
       to obtain the event description.

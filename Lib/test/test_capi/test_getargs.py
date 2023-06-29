@@ -901,23 +901,6 @@ class String_TestCase(unittest.TestCase):
         self.assertRaises(TypeError, getargs_s_hash, memoryview(b'memoryview'))
         self.assertRaises(TypeError, getargs_s_hash, None)
 
-    def test_s_hash_int(self):
-        # "s#" without PY_SSIZE_T_CLEAN defined.
-        from _testcapi import getargs_s_hash_int
-        from _testcapi import getargs_s_hash_int2
-        buf = bytearray([1, 2])
-        self.assertRaises(SystemError, getargs_s_hash_int, buf, "abc")
-        self.assertRaises(SystemError, getargs_s_hash_int, buf, x=42)
-        self.assertRaises(SystemError, getargs_s_hash_int, buf, x="abc")
-        self.assertRaises(SystemError, getargs_s_hash_int2, buf, ("abc",))
-        self.assertRaises(SystemError, getargs_s_hash_int2, buf, x=42)
-        self.assertRaises(SystemError, getargs_s_hash_int2, buf, x="abc")
-        buf.append(3)  # still mutable -- not locked by a buffer export
-        # getargs_s_hash_int(buf) may not raise SystemError because skipitem()
-        # is not called. But it is an implementation detail.
-        # getargs_s_hash_int(buf)
-        # getargs_s_hash_int2(buf)
-
     def test_z(self):
         from _testcapi import getargs_z
         self.assertEqual(getargs_z('abc\xe9'), b'abc\xc3\xa9')
@@ -1084,6 +1067,10 @@ class String_TestCase(unittest.TestCase):
             self.assertRaises(TypeError, getargs_Z_hash, memoryview(b'memoryview'))
         with self.assertWarns(DeprecationWarning):
             self.assertIsNone(getargs_Z_hash(None))
+
+    def test_gh_99240_clear_args(self):
+        from _testcapi import gh_99240_clear_args
+        self.assertRaises(TypeError, gh_99240_clear_args, 'a', '\0b')
 
 
 class Object_TestCase(unittest.TestCase):

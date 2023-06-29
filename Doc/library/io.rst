@@ -1021,8 +1021,8 @@ Text I/O
 
       .. versionadded:: 3.7
 
-   .. method:: reconfigure(*[, encoding][, errors][, newline][, \
-                           line_buffering][, write_through])
+   .. method:: reconfigure(*, encoding=None, errors=None, newline=None, \
+                           line_buffering=None, write_through=None)
 
       Reconfigure this text stream using new settings for *encoding*,
       *errors*, *newline*, *line_buffering* and *write_through*.
