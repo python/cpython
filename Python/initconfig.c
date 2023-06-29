@@ -538,7 +538,7 @@ _Py_SetArgcArgv(Py_ssize_t argc, wchar_t * const *argv)
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
     // XXX _PyRuntime.orig_argv only gets cleared by Py_Main(),
-    // so it it currently leaks for embedders.
+    // so it currently leaks for embedders.
     res = _PyWideStringList_Copy(&_PyRuntime.orig_argv, &argv_list);
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
