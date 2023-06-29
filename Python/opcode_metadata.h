@@ -1164,6 +1164,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {
 };
 const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] = {
     [NOP] = { .nuops = 1, .uops = { { NOP, 0, 0 } } },
+    [LOAD_FAST_CHECK] = { .nuops = 1, .uops = { { LOAD_FAST_CHECK, 0, 0 } } },
     [LOAD_FAST] = { .nuops = 1, .uops = { { LOAD_FAST, 0, 0 } } },
     [LOAD_FAST_AND_CLEAR] = { .nuops = 1, .uops = { { LOAD_FAST_AND_CLEAR, 0, 0 } } },
     [LOAD_CONST] = { .nuops = 1, .uops = { { LOAD_CONST, 0, 0 } } },
@@ -1218,6 +1219,7 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] = {
     [LOAD_LOCALS] = { .nuops = 1, .uops = { { _LOAD_LOCALS, 0, 0 } } },
     [LOAD_NAME] = { .nuops = 2, .uops = { { _LOAD_LOCALS, 0, 0 }, { _LOAD_FROM_DICT_OR_GLOBALS, 0, 0 } } },
     [LOAD_FROM_DICT_OR_GLOBALS] = { .nuops = 1, .uops = { { _LOAD_FROM_DICT_OR_GLOBALS, 0, 0 } } },
+    [DELETE_FAST] = { .nuops = 1, .uops = { { DELETE_FAST, 0, 0 } } },
     [DELETE_DEREF] = { .nuops = 1, .uops = { { DELETE_DEREF, 0, 0 } } },
     [LOAD_FROM_DICT_OR_DEREF] = { .nuops = 1, .uops = { { LOAD_FROM_DICT_OR_DEREF, 0, 0 } } },
     [LOAD_DEREF] = { .nuops = 1, .uops = { { LOAD_DEREF, 0, 0 } } },

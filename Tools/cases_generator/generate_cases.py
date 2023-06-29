@@ -308,8 +308,7 @@ class ActiveCacheEffect:
 
 
 FORBIDDEN_NAMES_IN_UOPS = (
-    "resume_with_error",  # Proxy for "goto", which isn't an IDENTIFIER
-    "unbound_local_error",
+    "resume_with_error",
     "kwnames",
     "next_instr",
     "oparg1",  # Proxy for super-instructions like LOAD_FAST_LOAD_FAST

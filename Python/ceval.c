@@ -2849,6 +2849,12 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
 
         }
     }
+unbound_local_error:
+    format_exc_check_arg(tstate, PyExc_UnboundLocalError,
+        UNBOUNDLOCAL_ERROR_MSG,
+        PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
+    );
+    goto error;
 
 pop_4_error:
     STACK_SHRINK(1);
