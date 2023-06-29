@@ -1197,7 +1197,7 @@ path_converter(PyObject *o, void *p)
         PyObject *func, *res;
 
         func = _PyObject_LookupSpecial(o, &_Py_ID(__fspath__));
-        if (NULL == func) {
+        if ((NULL == func) || (func == Py_None)) {
             goto error_format;
         }
         res = _PyObject_CallNoArgs(func);
@@ -15430,7 +15430,7 @@ PyOS_FSPath(PyObject *path)
     }
 
     func = _PyObject_LookupSpecial(path, &_Py_ID(__fspath__));
-    if (NULL == func) {
+    if ((NULL == func) || (func == Py_None)) {
         return PyErr_Format(PyExc_TypeError,
                             "expected str, bytes or os.PathLike object, "
                             "not %.200s",

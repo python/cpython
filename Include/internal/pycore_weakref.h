@@ -46,6 +46,10 @@ static inline int _PyWeakref_IS_DEAD(PyObject *ref_obj) {
     return (Py_REFCNT(obj) == 0);
 }
 
+extern Py_ssize_t _PyWeakref_GetWeakrefCount(PyWeakReference *head);
+
+extern void _PyWeakref_ClearRef(PyWeakReference *self);
+
 #ifdef __cplusplus
 }
 #endif

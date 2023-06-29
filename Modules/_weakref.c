@@ -89,25 +89,22 @@ static PyObject *
 _weakref_getweakrefs(PyObject *module, PyObject *object)
 /*[clinic end generated code: output=25c7731d8e011824 input=00c6d0e5d3206693]*/
 {
-    PyObject *result = NULL;
-
-    if (_PyType_SUPPORTS_WEAKREFS(Py_TYPE(object))) {
-        PyWeakReference **list = GET_WEAKREFS_LISTPTR(object);
-        Py_ssize_t count = _PyWeakref_GetWeakrefCount(*list);
-
-        result = PyList_New(count);
-        if (result != NULL) {
-            PyWeakReference *current = *list;
-            Py_ssize_t i;
-            for (i = 0; i < count; ++i) {
-                PyList_SET_ITEM(result, i, (PyObject *) current);
-                Py_INCREF(current);
-                current = current->wr_next;
-            }
-        }
+    if (!_PyType_SUPPORTS_WEAKREFS(Py_TYPE(object))) {
+        return PyList_New(0);
     }
-    else {
-        result = PyList_New(0);
+
+    PyWeakReference **list = GET_WEAKREFS_LISTPTR(object);
+    Py_ssize_t count = _PyWeakref_GetWeakrefCount(*list);
+
+    PyObject *result = PyList_New(count);
+    if (result == NULL) {
+        return NULL;
+    }
+
+    PyWeakReference *current = *list;
+    for (Py_ssize_t i = 0; i < count; ++i) {
+        PyList_SET_ITEM(result, i, Py_NewRef(current));
+        current = current->wr_next;
     }
     return result;
 }
