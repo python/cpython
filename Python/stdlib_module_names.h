@@ -233,6 +233,7 @@ static const char* _Py_stdlib_module_names[] = {
 "ssl",
 "stat",
 "statistics",
+"stdlib_deprecations",
 "string",
 "stringprep",
 "struct",
