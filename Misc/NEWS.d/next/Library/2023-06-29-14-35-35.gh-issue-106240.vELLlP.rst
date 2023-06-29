@@ -1,0 +1,1 @@
+Add :mod:`stdlib_deprecations` module. Patch by Victor Stinner.

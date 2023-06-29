@@ -81,7 +81,8 @@ Other Language Changes
 New Modules
 ===========
 
-* None yet.
+* Add :mod:`stdlib_deprecations` module.
+  (Contributed by Victor Stinner in :gh:`106240`.)
 
 
 Improved Modules
