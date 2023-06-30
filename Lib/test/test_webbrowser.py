@@ -124,6 +124,11 @@ class EdgeCommandTest(CommandTestMixin, unittest.TestCase):
                    options=[],
                    arguments=[URL])
 
+    def test_open_incognito(self):
+        self._test('open_incognito',
+                   options=["--inprivate"],
+                   arguments=[URL])
+
 
 class MozillaCommandTest(CommandTestMixin, unittest.TestCase):
 
