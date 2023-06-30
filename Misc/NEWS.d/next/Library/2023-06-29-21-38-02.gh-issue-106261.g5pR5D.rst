@@ -1,0 +1,2 @@
+Fixes TypeError raised when __getitem__ method for ChainMap hits a python
+list object in maps.
