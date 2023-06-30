@@ -56,7 +56,7 @@ _PyEM_TrampolineCall(PyCFunctionWithKeywords func,
               PyObject* args,
               PyObject* kw)
 {
-  if (!_PyEM_type_reflection_available) {
+  if (!type_reflection_available) {
     return _PyEMJS_TrampolineCall(func, self, args, kw);
   } else {
     switch (_PyEM_CountFuncParams(func)) {
