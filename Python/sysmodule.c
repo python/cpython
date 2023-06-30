@@ -863,6 +863,13 @@ sys_exit_impl(PyObject *module, PyObject *status)
 }
 
 
+static PyObject *
+get_utf8_unicode(void)
+{
+    _Py_DECLARE_STR(utf_8, "utf-8");
+    PyObject *ret = &_Py_STR(utf_8);
+    return Py_NewRef(ret);
+}
 
 /*[clinic input]
 sys.getdefaultencoding
@@ -874,9 +881,7 @@ static PyObject *
 sys_getdefaultencoding_impl(PyObject *module)
 /*[clinic end generated code: output=256d19dfcc0711e6 input=d416856ddbef6909]*/
 {
-    _Py_DECLARE_STR(utf_8, "utf-8");
-    PyObject *ret = &_Py_STR(utf_8);
-    return Py_NewRef(ret);
+    return get_utf8_unicode();
 }
 
 /*[clinic input]
@@ -891,7 +896,17 @@ sys_getfilesystemencoding_impl(PyObject *module)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     const PyConfig *config = _PyInterpreterState_GetConfig(interp);
-    return PyUnicode_FromWideChar(config->filesystem_encoding, -1);
+
+    if (wcscmp(config->filesystem_encoding, L"utf-8") == 0) {
+        return get_utf8_unicode();
+    }
+
+    PyObject *u = PyUnicode_FromWideChar(config->filesystem_encoding, -1);
+    if (u == NULL) {
+        return NULL;
+    }
+    _PyUnicode_InternInPlace(interp, &u);
+    return u;
 }
 
 /*[clinic input]
@@ -906,7 +921,12 @@ sys_getfilesystemencodeerrors_impl(PyObject *module)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     const PyConfig *config = _PyInterpreterState_GetConfig(interp);
-    return PyUnicode_FromWideChar(config->filesystem_errors, -1);
+    PyObject *u = PyUnicode_FromWideChar(config->filesystem_errors, -1);
+    if (u == NULL) {
+        return NULL;
+    }
+    _PyUnicode_InternInPlace(interp, &u);
+    return u;
 }
 
 /*[clinic input]
