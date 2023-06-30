@@ -209,6 +209,7 @@
     <ClInclude Include="..\Include\internal\pycore_ceval_state.h" />
     <ClInclude Include="..\Include\internal\pycore_cfg.h" />
     <ClInclude Include="..\Include\internal\pycore_code.h" />
+    <ClInclude Include="..\Include\internal\pycore_codecs.h" />
     <ClInclude Include="..\Include\internal\pycore_compile.h" />
     <ClInclude Include="..\Include\internal\pycore_condvar.h" />
     <ClInclude Include="..\Include\internal\pycore_context.h" />
