@@ -5702,7 +5702,7 @@ class CWhitebox(unittest.TestCase):
         check_disallow_instantiation(self, ContextManager)
 
     def test_c_signaldict_repr_segfault(self):
-        # See issue 106263 for details.
+        # See gh-106263 for details.
         SignalDict = type(C.Context().flags)
         s = repr(SignalDict())  # This should not segfault
         t = "{<class 'decimal.InvalidOperation'>:False, <class 'decimal.FloatOperation'>:False, " \
