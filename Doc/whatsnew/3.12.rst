@@ -1857,6 +1857,7 @@ Deprecated
   * :c:var:`Py_LegacyWindowsFSEncodingFlag`: use :c:member:`PyPreConfig.legacy_windows_fs_encoding`
   * :c:var:`Py_LegacyWindowsStdioFlag`: use :c:member:`PyConfig.legacy_windows_stdio`
   * :c:var:`!Py_FileSystemDefaultEncoding`: use :c:member:`PyConfig.filesystem_encoding`
+  * :c:var:`!Py_HasFileSystemDefaultEncoding`: use :c:member:`PyConfig.filesystem_encoding`
   * :c:var:`!Py_FileSystemDefaultEncodeErrors`: use :c:member:`PyConfig.filesystem_errors`
   * :c:var:`!Py_UTF8Mode`: use :c:member:`PyPreConfig.utf8_mode` (see :c:func:`Py_PreInitialize`)
 
