@@ -611,6 +611,19 @@ all:		@DEF_MAKE_ALL_RULE@
 # all.
 .PHONY: all
 
+.PHONY: help
+help:
+	@echo "Please use \`make <target>' where <target> is one of"
+	@echo "  clean      to remove build files"
+	@echo "  clinic     run Argument Clinic over source files"
+	@echo "  distclean  to remove other generated files (patch, exe, etc)"
+	@echo "  install    install built files"
+	@echo "  recheck    rerun configure with last cmdline options"
+	@echo "  regen-all  regenerate a number of generated source files"
+	@echo "  reindent   reindent .py files in Lib directory"
+	@echo "  tags       build a tags file (useful for Emacs and other editors)"
+	@echo "  test       run the test suite"
+
 .PHONY: build_all
 build_all:	check-clean-src $(BUILDPYTHON) platform sharedmods \
 		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil
