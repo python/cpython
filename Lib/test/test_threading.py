@@ -253,10 +253,10 @@ class ThreadTests(BaseTestCase):
         self.assertRegex(repr(threading._active[tid]), '_DummyThread')
 
         # Issue gh-106236:
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(RuntimeError):
             threading._active[tid].join()
         threading._active[tid]._started.clear()
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(RuntimeError):
             threading._active[tid].is_alive()
 
         del threading._active[tid]

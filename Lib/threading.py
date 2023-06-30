@@ -1453,10 +1453,10 @@ class _DummyThread(Thread):
     def is_alive(self):
         if not self._is_stopped and self._started.is_set():
             return True
-        raise AssertionError("thread is not alive")
+        raise RuntimeError("thread is not alive")
 
     def join(self, timeout=None):
-        raise AssertionError("cannot join a dummy thread")
+        raise RuntimeError("cannot join a dummy thread")
 
 
 # Global API functions
