@@ -8,7 +8,6 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
-#include "pycore_call.h"          // _PyObject_FastCallDictTstate()
 #include "pycore_ceval.h"         // _PyEval_SignalAsyncExc()
 #include "pycore_code.h"
 #include "pycore_function.h"
@@ -175,12 +174,9 @@ dummy_func(
             }
         }
 
-        inst(LOAD_CLOSURE, (-- value)) {
-            /* We keep LOAD_CLOSURE so that the bytecode stays more readable. */
-            value = GETLOCAL(oparg);
-            ERROR_IF(value == NULL, unbound_local_error);
-            Py_INCREF(value);
-        }
+        pseudo(LOAD_CLOSURE) = {
+            LOAD_FAST,
+        };
 
         inst(LOAD_FAST_CHECK, (-- value)) {
             value = GETLOCAL(oparg);
@@ -282,15 +278,90 @@ dummy_func(
         }
 
         inst(UNARY_NOT, (value -- res)) {
+            assert(PyBool_Check(value));
+            res = Py_IsFalse(value) ? Py_True : Py_False;
+        }
+
+        family(to_bool, INLINE_CACHE_ENTRIES_TO_BOOL) = {
+            TO_BOOL,
+            TO_BOOL_ALWAYS_TRUE,
+            TO_BOOL_BOOL,
+            TO_BOOL_INT,
+            TO_BOOL_LIST,
+            TO_BOOL_NONE,
+            TO_BOOL_STR,
+        };
+
+        inst(TO_BOOL, (unused/1, unused/2, value -- res)) {
+            #if ENABLE_SPECIALIZATION
+            _PyToBoolCache *cache = (_PyToBoolCache *)next_instr;
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
+                next_instr--;
+                _Py_Specialize_ToBool(value, next_instr);
+                DISPATCH_SAME_OPARG();
+            }
+            STAT_INC(TO_BOOL, deferred);
+            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            #endif  /* ENABLE_SPECIALIZATION */
             int err = PyObject_IsTrue(value);
             DECREF_INPUTS();
             ERROR_IF(err < 0, error);
-            if (err == 0) {
-                res = Py_True;
-            }
-            else {
+            res = err ? Py_True : Py_False;
+        }
+
+        inst(TO_BOOL_BOOL, (unused/1, unused/2, value -- value)) {
+            DEOPT_IF(!PyBool_Check(value), TO_BOOL);
+            STAT_INC(TO_BOOL, hit);
+        }
+
+        inst(TO_BOOL_INT, (unused/1, unused/2, value -- res)) {
+            DEOPT_IF(!PyLong_CheckExact(value), TO_BOOL);
+            STAT_INC(TO_BOOL, hit);
+            if (_PyLong_IsZero((PyLongObject *)value)) {
+                assert(_Py_IsImmortal(value));
                 res = Py_False;
             }
+            else {
+                DECREF_INPUTS();
+                res = Py_True;
+            }
+        }
+
+        inst(TO_BOOL_LIST, (unused/1, unused/2, value -- res)) {
+            DEOPT_IF(!PyList_CheckExact(value), TO_BOOL);
+            STAT_INC(TO_BOOL, hit);
+            res = Py_SIZE(value) ? Py_True : Py_False;
+            DECREF_INPUTS();
+        }
+
+        inst(TO_BOOL_NONE, (unused/1, unused/2, value -- res)) {
+            // This one is a bit weird, because we expect *some* failures:
+            DEOPT_IF(!Py_IsNone(value), TO_BOOL);
+            STAT_INC(TO_BOOL, hit);
+            res = Py_False;
+        }
+
+        inst(TO_BOOL_STR, (unused/1, unused/2, value -- res)) {
+            DEOPT_IF(!PyUnicode_CheckExact(value), TO_BOOL);
+            STAT_INC(TO_BOOL, hit);
+            if (value == &_Py_STR(empty)) {
+                assert(_Py_IsImmortal(value));
+                res = Py_False;
+            }
+            else {
+                assert(Py_SIZE(value));
+                DECREF_INPUTS();
+                res = Py_True;
+            }
+        }
+
+        inst(TO_BOOL_ALWAYS_TRUE, (unused/1, version/2, value -- res)) {
+            // This one is a bit weird, because we expect *some* failures:
+            assert(version);
+            DEOPT_IF(Py_TYPE(value)->tp_version_tag != version, TO_BOOL);
+            STAT_INC(TO_BOOL, hit);
+            DECREF_INPUTS();
+            res = Py_True;
         }
 
         inst(UNARY_INVERT, (value -- res)) {
@@ -2027,10 +2098,16 @@ dummy_func(
             STAT_INC(COMPARE_OP, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
-            assert((oparg >> 4) <= Py_GE);
-            res = PyObject_RichCompare(left, right, oparg>>4);
+            assert((oparg >> 5) <= Py_GE);
+            res = PyObject_RichCompare(left, right, oparg >> 5);
             DECREF_INPUTS();
             ERROR_IF(res == NULL, error);
+            if (oparg & 16) {
+                int res_bool = PyObject_IsTrue(res);
+                Py_DECREF(res);
+                ERROR_IF(res_bool < 0, error);
+                res = res_bool ? Py_True : Py_False;
+            }
         }
 
         inst(COMPARE_OP_FLOAT, (unused/1, left, right -- res)) {
@@ -2044,6 +2121,7 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
             res = (sign_ish & oparg) ? Py_True : Py_False;
+            // It's always a bool, so we don't care about oparg & 16.
         }
 
         // Similar to COMPARE_OP_FLOAT
@@ -2062,6 +2140,7 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             res = (sign_ish & oparg) ? Py_True : Py_False;
+            // It's always a bool, so we don't care about oparg & 16.
         }
 
         // Similar to COMPARE_OP_FLOAT, but for ==, != only
@@ -2070,13 +2149,14 @@ dummy_func(
             DEOPT_IF(!PyUnicode_CheckExact(right), COMPARE_OP);
             STAT_INC(COMPARE_OP, hit);
             int eq = _PyUnicode_Equal(left, right);
-            assert((oparg >>4) == Py_EQ || (oparg >>4) == Py_NE);
+            assert((oparg >> 5) == Py_EQ || (oparg >> 5) == Py_NE);
             _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
             _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
             assert(eq == 0 || eq == 1);
             assert((oparg & 0xf) == COMPARISON_NOT_EQUALS || (oparg & 0xf) == COMPARISON_EQUALS);
             assert(COMPARISON_NOT_EQUALS + 1 == COMPARISON_EQUALS);
             res = ((COMPARISON_NOT_EQUALS + eq) & oparg) ? Py_True : Py_False;
+            // It's always a bool, so we don't care about oparg & 16.
         }
 
         inst(IS_OP, (left, right -- b)) {
@@ -2186,35 +2266,13 @@ dummy_func(
         }
 
         inst(POP_JUMP_IF_FALSE, (cond -- )) {
-            if (Py_IsFalse(cond)) {
-                JUMPBY(oparg);
-            }
-            else if (!Py_IsTrue(cond)) {
-                int err = PyObject_IsTrue(cond);
-                DECREF_INPUTS();
-                if (err == 0) {
-                    JUMPBY(oparg);
-                }
-                else {
-                    ERROR_IF(err < 0, error);
-                }
-            }
+            assert(PyBool_Check(cond));
+            JUMPBY(oparg * Py_IsFalse(cond));
         }
 
         inst(POP_JUMP_IF_TRUE, (cond -- )) {
-            if (Py_IsTrue(cond)) {
-                JUMPBY(oparg);
-            }
-            else if (!Py_IsFalse(cond)) {
-                int err = PyObject_IsTrue(cond);
-                DECREF_INPUTS();
-                if (err > 0) {
-                    JUMPBY(oparg);
-                }
-                else {
-                    ERROR_IF(err < 0, error);
-                }
-            }
+            assert(PyBool_Check(cond));
+            JUMPBY(oparg * Py_IsTrue(cond));
         }
 
         inst(POP_JUMP_IF_NOT_NONE, (value -- )) {
@@ -3518,23 +3576,17 @@ dummy_func(
 
         inst(INSTRUMENTED_POP_JUMP_IF_TRUE, ( -- )) {
             PyObject *cond = POP();
-            int err = PyObject_IsTrue(cond);
-            Py_DECREF(cond);
-            ERROR_IF(err < 0, error);
-            _Py_CODEUNIT *here = next_instr-1;
-            assert(err == 0 || err == 1);
-            int offset = err*oparg;
+            assert(PyBool_Check(cond));
+            _Py_CODEUNIT *here = next_instr - 1;
+            int offset = Py_IsTrue(cond) * oparg;
             INSTRUMENTED_JUMP(here, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_FALSE, ( -- )) {
             PyObject *cond = POP();
-            int err = PyObject_IsTrue(cond);
-            Py_DECREF(cond);
-            ERROR_IF(err < 0, error);
-            _Py_CODEUNIT *here = next_instr-1;
-            assert(err == 0 || err == 1);
-            int offset = (1-err)*oparg;
+            assert(PyBool_Check(cond));
+            _Py_CODEUNIT *here = next_instr - 1;
+            int offset = Py_IsFalse(cond) * oparg;
             INSTRUMENTED_JUMP(here, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
         }
 
@@ -3561,7 +3613,7 @@ dummy_func(
             }
             else {
                 Py_DECREF(value);
-                 offset = oparg;
+                offset = oparg;
             }
             INSTRUMENTED_JUMP(here, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
         }

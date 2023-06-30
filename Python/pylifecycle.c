@@ -2,10 +2,12 @@
 
 #include "Python.h"
 
+#include "pycore_call.h"          // _PyObject_CallMethod()
 #include "pycore_ceval.h"         // _PyEval_FiniGIL()
+#include "pycore_codecs.h"        // _PyCodec_Lookup()
 #include "pycore_context.h"       // _PyContext_Init()
-#include "pycore_exceptions.h"    // _PyExc_InitTypes()
 #include "pycore_dict.h"          // _PyDict_Fini()
+#include "pycore_exceptions.h"    // _PyExc_InitTypes()
 #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
 #include "pycore_floatobject.h"   // _PyFloat_InitTypes()
 #include "pycore_genobject.h"     // _PyAsyncGen_Fini()

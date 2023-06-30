@@ -4,7 +4,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
-#include "pycore_call.h"          // _PyObject_FastCallDictTstate()
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_SignalAsyncExc()
 #include "pycore_code.h"
 #include "pycore_function.h"
@@ -2431,40 +2431,37 @@ static PyObject *
 import_name(PyThreadState *tstate, _PyInterpreterFrame *frame,
             PyObject *name, PyObject *fromlist, PyObject *level)
 {
-    PyObject *import_func, *res;
-    PyObject* stack[5];
-
-    import_func = _PyDict_GetItemWithError(frame->f_builtins, &_Py_ID(__import__));
+    PyObject *import_func = _PyDict_GetItemWithError(frame->f_builtins,
+                                                     &_Py_ID(__import__));
     if (import_func == NULL) {
         if (!_PyErr_Occurred(tstate)) {
             _PyErr_SetString(tstate, PyExc_ImportError, "__import__ not found");
         }
         return NULL;
     }
+
     PyObject *locals = frame->f_locals;
+    if (locals == NULL) {
+        locals = Py_None;
+    }
+
     /* Fast path for not overloaded __import__. */
     if (_PyImport_IsDefaultImportFunc(tstate->interp, import_func)) {
         int ilevel = _PyLong_AsInt(level);
         if (ilevel == -1 && _PyErr_Occurred(tstate)) {
             return NULL;
         }
-        res = PyImport_ImportModuleLevelObject(
+        return PyImport_ImportModuleLevelObject(
                         name,
                         frame->f_globals,
-                        locals == NULL ? Py_None :locals,
+                        locals,
                         fromlist,
                         ilevel);
-        return res;
     }
 
+    PyObject* args[5] = {name, frame->f_globals, locals, fromlist, level};
     Py_INCREF(import_func);
-
-    stack[0] = name;
-    stack[1] = frame->f_globals;
-    stack[2] = locals == NULL ? Py_None : locals;
-    stack[3] = fromlist;
-    stack[4] = level;
-    res = _PyObject_FastCall(import_func, stack, 5);
+    PyObject *res = PyObject_Vectorcall(import_func, args, 5, NULL);
     Py_DECREF(import_func);
     return res;
 }
@@ -2767,10 +2764,11 @@ void Py_LeaveRecursiveCall(void)
 
 ///////////////////// Experimental UOp Interpreter /////////////////////
 
-// UPDATE_MISS_STATS (called by DEOPT_IF) uses next_instr
-// TODO: Make it do something useful
-#undef UPDATE_MISS_STATS
-#define UPDATE_MISS_STATS(INSTNAME) ((void)0)
+#undef DEOPT_IF
+#define DEOPT_IF(COND, INSTNAME) \
+    if ((COND)) {                \
+        goto deoptimize;         \
+    }
 
 _PyInterpreterFrame *
 _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **stack_pointer)
@@ -2816,10 +2814,10 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
         oparg = (int)operand;
 #ifdef LLTRACE
         if (lltrace >= 3) {
-            const char *opname = opcode < 256 ? _PyOpcode_OpName[opcode] : "";
+            const char *opname = opcode < 256 ? _PyOpcode_OpName[opcode] : _PyOpcode_uop_name[opcode];
             int stack_level = (int)(stack_pointer - _PyFrame_Stackbase(frame));
-            fprintf(stderr, "  uop %s %d, operand %" PRIu64 ", stack_level %d\n",
-                    opname, opcode, operand, stack_level);
+            fprintf(stderr, "  uop %s, operand %" PRIu64 ", stack_level %d\n",
+                    opname, operand, stack_level);
         }
 #endif
         pc++;
@@ -2875,12 +2873,7 @@ error:
     Py_DECREF(self);
     return NULL;
 
-PREDICTED(UNPACK_SEQUENCE)
-PREDICTED(COMPARE_OP)
-PREDICTED(LOAD_SUPER_ATTR)
-PREDICTED(STORE_SUBSCR)
-PREDICTED(BINARY_SUBSCR)
-PREDICTED(BINARY_OP)
+deoptimize:
     // On DEOPT_IF we just repeat the last instruction.
     // This presumes nothing was popped from the stack (nor pushed).
 #ifdef LLTRACE
