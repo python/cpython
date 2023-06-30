@@ -1620,20 +1620,12 @@ class PathTest(unittest.TestCase):
             # Relative symlinks.
             os.symlink('fileA', join('linkA'))
             os.symlink('non-existing', join('brokenLink'))
-            self.dirlink('dirB', join('linkB'))
-            self.dirlink(os.path.join('..', 'dirB'), join('dirA', 'linkC'))
+            os.symlink('dirB', join('linkB'), target_is_directory=True)
+            os.symlink(os.path.join('..', 'dirB'), join('dirA', 'linkC'), target_is_directory=True)
             # This one goes upwards, creating a loop.
-            self.dirlink(os.path.join('..', 'dirB'), join('dirB', 'linkD'))
+            os.symlink(os.path.join('..', 'dirB'), join('dirB', 'linkD'), target_is_directory=True)
             # Broken symlink (pointing to itself).
             os.symlink('brokenLinkLoop',  join('brokenLinkLoop'))
-
-    if os.name == 'nt':
-        # Workaround for http://bugs.python.org/issue13772.
-        def dirlink(self, src, dest):
-            os.symlink(src, dest, target_is_directory=True)
-    else:
-        def dirlink(self, src, dest):
-            os.symlink(src, dest)
 
     def assertSame(self, path_a, path_b):
         self.assertTrue(os.path.samefile(str(path_a), str(path_b)),
@@ -2118,8 +2110,8 @@ class PathTest(unittest.TestCase):
         d = os_helper._longpath(tempfile.mkdtemp(suffix='-dirD',
                                                  dir=os.getcwd()))
         self.addCleanup(os_helper.rmtree, d)
-        os.symlink(os.path.join(d), join('dirA', 'linkX'))
-        os.symlink(join('dirB'), os.path.join(d, 'linkY'))
+        P(BASE, 'dirA', 'linkX').symlink_to(d)
+        P(BASE, str(d), 'linkY').symlink_to(join('dirB'))
         p = P(BASE, 'dirA', 'linkX', 'linkY', 'fileB')
         self._check_resolve_absolute(p, P(BASE, 'dirB', 'fileB'))
         # Non-strict
@@ -2140,9 +2132,9 @@ class PathTest(unittest.TestCase):
     def test_resolve_dot(self):
         # See http://web.archive.org/web/20200623062557/https://bitbucket.org/pitrou/pathlib/issues/9/
         p = self.cls(BASE)
-        self.dirlink('.', join('0'))
-        self.dirlink(os.path.join('0', '0'), join('1'))
-        self.dirlink(os.path.join('1', '1'), join('2'))
+        p.joinpath('0').symlink_to('.', target_is_directory=True)
+        p.joinpath('1').symlink_to(os.path.join('0', '0'), target_is_directory=True)
+        p.joinpath('2').symlink_to(os.path.join('1', '1'), target_is_directory=True)
         q = p / '2'
         self.assertEqual(q.resolve(strict=True), p)
         r = q / '3' / '4'
@@ -2320,10 +2312,10 @@ class PathTest(unittest.TestCase):
     def _check_complex_symlinks(self, link0_target):
         # Test solving a non-looping chain of symlinks (issue #19887).
         P = self.cls(BASE)
-        self.dirlink(os.path.join('link0', 'link0'), join('link1'))
-        self.dirlink(os.path.join('link1', 'link1'), join('link2'))
-        self.dirlink(os.path.join('link2', 'link2'), join('link3'))
-        self.dirlink(link0_target, join('link0'))
+        P.joinpath('link1').symlink_to(os.path.join('link0', 'link0'), target_is_directory=True)
+        P.joinpath('link2').symlink_to(os.path.join('link1', 'link1'), target_is_directory=True)
+        P.joinpath('link3').symlink_to(os.path.join('link2', 'link2'), target_is_directory=True)
+        P.joinpath('link0').symlink_to(link0_target, target_is_directory=True)
 
         # Resolve absolute paths.
         p = (P / 'link0').resolve()
