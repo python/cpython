@@ -681,7 +681,7 @@ resolve_unconditional_jumps(instr_sequence *instrs)
 
     for (int i = 0; i < instrs->s_used; i++) {
         instruction *instr = &instrs->s_instrs[i];
-        bool is_forward = (instr->i_oparg >= i);
+        bool is_forward = (instr->i_oparg > i);
         switch(instr->i_opcode) {
             case JUMP:
                 assert(SAME_OPCODE_METADATA(JUMP, JUMP_FORWARD));
