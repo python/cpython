@@ -902,8 +902,8 @@ def test():
     '''Test program.
     Usage: ftp [-d] [-r[file]] host [-l[dir]] [-d[dir]] [-p] [file] ...
 
-    -d dir
     -l list
+    -d change directory
     -p toggle passive mode
     '''
 
