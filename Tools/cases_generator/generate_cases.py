@@ -520,7 +520,7 @@ class Instruction:
                     f"{typ}{ceffect.name} = {func}(&next_instr[{active.offset}].cache);"
                 )
             else:
-                out.emit(f"{typ}{ceffect.name} = operand;")
+                out.emit(f"{typ}{ceffect.name} = ({typ.strip()})operand;")
 
         # Write the body, substituting a goto for ERROR_IF() and other stuff
         assert dedent <= 0
