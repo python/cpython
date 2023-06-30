@@ -1013,9 +1013,9 @@ on_hook(PyObject *func)
 
 static int
 #if defined(_RL_FUNCTION_TYPEDEF)
-on_startup_hook(void)
+on_startup_hook(const char *, int)
 #else
-on_startup_hook(void)
+on_startup_hook(const char *, int)
 #endif
 {
     int r;
@@ -1028,9 +1028,9 @@ on_startup_hook(void)
 #ifdef HAVE_RL_PRE_INPUT_HOOK
 static int
 #if defined(_RL_FUNCTION_TYPEDEF)
-on_pre_input_hook(void)
+on_pre_input_hook(const char *, int)
 #else
-on_pre_input_hook(void)
+on_pre_input_hook(const char *, int)
 #endif
 {
     int r;
@@ -1249,9 +1249,9 @@ setup_readline(readlinestate *mod_state)
     sigwinch_ohandler = PyOS_setsig(SIGWINCH, readline_sigwinch_handler);
 #endif
     /* Set our hook functions */
-    rl_startup_hook = (Function *)on_startup_hook;
+    rl_startup_hook = on_startup_hook;
 #ifdef HAVE_RL_PRE_INPUT_HOOK
-    rl_pre_input_hook = (Function *)on_pre_input_hook;
+    rl_pre_input_hook = on_pre_input_hook;
 #endif
     /* Set our completion function */
     rl_attempted_completion_function = flex_complete;
