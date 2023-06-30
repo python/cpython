@@ -3,15 +3,19 @@
 #include <emscripten.h>
 #include <Python.h>
 
-static int _PyEM_type_reflection_available;
+static int type_reflection_available;
 
 /**
  * This is the GoogleChromeLabs approved way to feature detect type-reflection:
  * https://github.com/GoogleChromeLabs/wasm-feature-detect/blob/main/src/detectors/type-reflection/index.js
  */
+EM_JS(int, _PyEM_detect_type_reflection, (), {
+  return "function" in WebAssembly;
+});
+
 void
 _Py_EmscriptenTrampoline_Init(){
-  _PyEM_type_reflection_available = EM_ASM_INT({return "function" in WebAssembly});
+  type_reflection_available = _PyEM_detect_type_reflection();
 }
 
 /**
@@ -70,6 +74,5 @@ _PyEM_TrampolineCall(PyCFunctionWithKeywords func,
     }
   }
 }
-
 
 #endif
