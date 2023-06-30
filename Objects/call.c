@@ -106,9 +106,9 @@ PyObject_CallNoArgs(PyObject *func)
 
 
 PyObject *
-_PyObject_FastCallDictTstate(PyThreadState *tstate, PyObject *callable,
-                             PyObject *const *args, size_t nargsf,
-                             PyObject *kwargs)
+_PyObject_VectorcallDictTstate(PyThreadState *tstate, PyObject *callable,
+                               PyObject *const *args, size_t nargsf,
+                               PyObject *kwargs)
 {
     assert(callable != NULL);
 
@@ -154,7 +154,7 @@ PyObject_VectorcallDict(PyObject *callable, PyObject *const *args,
                        size_t nargsf, PyObject *kwargs)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    return _PyObject_FastCallDictTstate(tstate, callable, args, nargsf, kwargs);
+    return _PyObject_VectorcallDictTstate(tstate, callable, args, nargsf, kwargs);
 }
 
 static void
@@ -453,7 +453,8 @@ PyEval_CallObjectWithKeywords(PyObject *callable,
     }
 
     if (args == NULL) {
-        return _PyObject_FastCallDictTstate(tstate, callable, NULL, 0, kwargs);
+        return _PyObject_VectorcallDictTstate(tstate, callable,
+                                              NULL, 0, kwargs);
     }
     else {
         return _PyObject_Call(tstate, callable, args, kwargs);
@@ -506,9 +507,9 @@ _PyObject_Call_Prepend(PyThreadState *tstate, PyObject *callable,
            _PyTuple_ITEMS(args),
            argcount * sizeof(PyObject *));
 
-    PyObject *result = _PyObject_FastCallDictTstate(tstate, callable,
-                                                    stack, argcount + 1,
-                                                    kwargs);
+    PyObject *result = _PyObject_VectorcallDictTstate(tstate, callable,
+                                                      stack, argcount + 1,
+                                                      kwargs);
     if (stack != small_stack) {
         PyMem_Free(stack);
     }

@@ -49,7 +49,7 @@ extern PyObject* _PyObject_Call_Prepend(
     PyObject *args,
     PyObject *kwargs);
 
-extern PyObject* _PyObject_FastCallDictTstate(
+extern PyObject* _PyObject_VectorcallDictTstate(
     PyThreadState *tstate,
     PyObject *callable,
     PyObject *const *args,
