@@ -38,6 +38,7 @@ _browsers_types = [
     "chrome",
     "chromium",
     "chromium-browser",
+    "microsoft-edge",
 ]
 
 def register(name, klass, instance=None, *, preferred=False):
