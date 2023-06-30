@@ -904,7 +904,7 @@ def test():
 
     -d dir
     -l list
-    -p password
+    -p toggle passive mode
     '''
 
     if len(sys.argv) < 2:
