@@ -328,14 +328,6 @@ PyObject_Vectorcall(PyObject *callable, PyObject *const *args,
 
 
 PyObject *
-_PyObject_FastCall(PyObject *func, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyThreadState *tstate = _PyThreadState_GET();
-    return _PyObject_FastCallTstate(tstate, func, args, nargs);
-}
-
-
-PyObject *
 _PyObject_Call(PyThreadState *tstate, PyObject *callable,
                PyObject *args, PyObject *kwargs)
 {
