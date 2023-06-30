@@ -1,7 +1,6 @@
 """The Justin(time) template JIT for CPython 3.13, based on copy-and-patch."""
 
 import dataclasses
-import functools
 import itertools
 import json
 import pathlib
@@ -195,10 +194,11 @@ class ObjectParser:
     def parse(self):
         for section in unwrap(self._data, "Section"):
             self._handle_section(section)
-        if "_justin_entry" in self.body_symbols:
-            entry = self.body_symbols["_justin_entry"]
-        else:
-            entry = self.body_symbols["_justin_trampoline"]
+        # if "_justin_entry" in self.body_symbols:
+        #     entry = self.body_symbols["_justin_entry"]
+        # else:
+        #     entry = self.body_symbols["_justin_trampoline"]
+        entry = 0  # XXX
         holes = []
         for before, relocation in self.relocations_todo:
             for newhole in handle_one_relocation(self.got_entries, self.body, before, relocation):
@@ -433,7 +433,7 @@ class ObjectParserELF(ObjectParser):
 
 
 CFLAGS = [
-    "-DNDEBUG",  # XXX
+    # "-DNDEBUG",  # XXX
     "-DPy_BUILD_CORE",
     "-D_PyJIT_ACTIVE",
     "-I.",
@@ -626,47 +626,47 @@ class Compiler:
         for opname, stencil in sorted(self._stencils_built.items()) + [("trampoline", self._trampoline_built)]:
             opnames.append(opname)
             lines.append(f"// {opname}")
+            assert stencil.body
             lines.append(f"static const unsigned char {opname}_stencil_bytes[] = {{")
             for chunk in batched(stencil.body, 8):
                 lines.append(f"    {', '.join(f'0x{byte:02X}' for byte in chunk)},")
             lines.append(f"}};")
-            lines.append(f"static const Hole {opname}_stencil_holes[] = {{")
+            holes = []
+            loads = []
             for hole in stencil.holes:
                 if hole.symbol.startswith("_justin_"):
                     kind = f"HOLE_{hole.symbol.removeprefix('_justin_')}"
                     assert kind in kinds, kind
-                    lines.append(f"    {{.offset = {hole.offset:4}, .addend = {hole.addend:4}, .kind = {kind}, .pc = {hole.pc}}},")
+                    holes.append(f"    {{.offset = {hole.offset:4}, .addend = {hole.addend:4}, .kind = {kind}, .pc = {hole.pc}}},")
+                else:
+                    loads.append(f"    {{.offset = {hole.offset:4}, .addend = {hole.addend:4}, .symbol = \"{hole.symbol}\", .pc = {hole.pc}}},")
+            assert holes
+            lines.append(f"static const Hole {opname}_stencil_holes[] = {{")
+            for hole in holes:
+                lines.append(hole)
             lines.append(f"}};")
             lines.append(f"static const SymbolLoad {opname}_stencil_loads[] = {{")
-            for hole in stencil.holes:
-                if not hole.symbol.startswith("_justin_"):
-                    lines.append(f"    {{.offset = {hole.offset:4}, .addend = {hole.addend:4}, .symbol = \"{hole.symbol}\", .pc = {hole.pc}}},")
+            for  load in loads:
+                lines.append(load)
+            lines.append(f"    {{.offset =    0, .addend =    0, .symbol = NULL, .pc = 0}},")
             lines.append(f"}};")
             lines.append(f"")
-        lines.append(f"static const Stencil trampoline_stencil = {{")
-        lines.append(f"    .nbytes = Py_ARRAY_LENGTH(trampoline_stencil_bytes),")
-        lines.append(f"    .bytes = trampoline_stencil_bytes,")
-        lines.append(f"    .nholes = Py_ARRAY_LENGTH(trampoline_stencil_holes),")
-        lines.append(f"    .holes = trampoline_stencil_holes,")
-        lines.append(f"    .nloads = Py_ARRAY_LENGTH(trampoline_stencil_loads),")
-        lines.append(f"    .loads = trampoline_stencil_loads,")
-        lines.append(f"}};")
-        lines.append(f"")
-        lines.append(f"#define INIT_STENCIL(OP) [(OP)] = {{                \\")
-        lines.append(f"    .nbytes = Py_ARRAY_LENGTH(OP##_stencil_bytes), \\")
-        lines.append(f"    .bytes = OP##_stencil_bytes,                   \\")
-        lines.append(f"    .nholes = Py_ARRAY_LENGTH(OP##_stencil_holes), \\")
-        lines.append(f"    .holes = OP##_stencil_holes,                   \\")
-        lines.append(f"    .nloads = Py_ARRAY_LENGTH(OP##_stencil_loads), \\")
-        lines.append(f"    .loads = OP##_stencil_loads,                   \\")
+        lines.append(f"#define INIT_STENCIL(OP) {{                             \\")
+        lines.append(f"    .nbytes = Py_ARRAY_LENGTH(OP##_stencil_bytes),     \\")
+        lines.append(f"    .bytes = OP##_stencil_bytes,                       \\")
+        lines.append(f"    .nholes = Py_ARRAY_LENGTH(OP##_stencil_holes),     \\")
+        lines.append(f"    .holes = OP##_stencil_holes,                       \\")
+        lines.append(f"    .nloads = Py_ARRAY_LENGTH(OP##_stencil_loads) - 1, \\")
+        lines.append(f"    .loads = OP##_stencil_loads,                       \\")
         lines.append(f"}}")
+        lines.append(f"")
+        lines.append(f"static const Stencil trampoline_stencil = INIT_STENCIL(trampoline);")
         lines.append(f"")
         lines.append(f"static const Stencil stencils[256] = {{")
         assert opnames[-1] == "trampoline"
         for opname in opnames[:-1]:
-            lines.append(f"    INIT_STENCIL({opname}),")
+            lines.append(f"    [{opname}] = INIT_STENCIL({opname}),")
         lines.append(f"}};")
-
         lines.append(f"")
         lines.append(f"#define INIT_HOLE(NAME) [HOLE_##NAME] = (uintptr_t)0xBAD0BAD0BAD0BAD0")
         lines.append(f"")

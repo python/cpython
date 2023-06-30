@@ -7,8 +7,29 @@
 #include "ceval_macros.h"
 #include "jit_stencils.h"
 
+// XXX: Pre-populate symbol addresses once.
+
 #ifdef MS_WINDOWS
+    #include <psapi.h>
     #include <windows.h>
+    FARPROC
+    dlsym(LPCSTR symbol)
+    {
+        DWORD cbNeeded;
+        HMODULE hMods[1024];
+        HANDLE hProcess = GetCurrentProcess();
+        if (EnumProcessModules(hProcess, hMods, sizeof(hMods), &cbNeeded)) {
+            for (unsigned int i = 0; i < (cbNeeded / sizeof(HMODULE)); i++) {
+                FARPROC value = GetProcAddress(hMods[i], symbol);
+                if (value) {
+                    return value;
+                }
+            }
+        }
+        return NULL;
+    }
+    #define DLSYM(SYMBOL) \
+        dlsym((SYMBOL))
     #define MAP_FAILED NULL
     #define MMAP(SIZE) \
         VirtualAlloc(NULL, (SIZE), MEM_COMMIT, PAGE_EXECUTE_READWRITE)
@@ -16,6 +37,8 @@
         VirtualFree((MEMORY), 0, MEM_RELEASE)
 #else
     #include <sys/mman.h>
+    #define DLSYM(SYMBOL) \
+        dlsym(RTLD_DEFAULT, (SYMBOL))
     #define MMAP(SIZE)                                         \
         mmap(NULL, (SIZE), PROT_READ | PROT_WRITE | PROT_EXEC, \
              MAP_PRIVATE | MAP_ANONYMOUS, -1, 0)
@@ -62,8 +85,8 @@ copy_and_patch(unsigned char *memory, const Stencil *stencil, uintptr_t patches[
     for (size_t i = 0; i < stencil->nloads; i++) {
         const SymbolLoad *load = &stencil->loads[i];
         uintptr_t *addr = (uintptr_t *)(memory + load->offset);
-        uintptr_t value = (uintptr_t)dlsym(RTLD_DEFAULT, load->symbol);
-        if (value == 0 && dlerror()) {
+        uintptr_t value = (uintptr_t)DLSYM(load->symbol);
+        if (value == 0) {
             return NULL;
         }
         *addr = value + load->addend + load->pc * (uintptr_t)addr;
@@ -76,19 +99,13 @@ copy_and_patch(unsigned char *memory, const Stencil *stencil, uintptr_t patches[
 _PyJITFunction
 _PyJIT_CompileTrace(int size, _Py_CODEUNIT **trace)
 {
-    // // XXX: Testing
-    // printf("XXX: Searching for symbols...\n");
+    // XXX: For testing!
     // for (size_t i = 0; i < Py_ARRAY_LENGTH(stencils); i++) {
     //     const Stencil *stencil = &stencils[i];
     //     for (size_t j = 0; j < stencil->nloads; j++) {
-    //         const SymbolLoad *load = &stencil->loads[j];
-    //         uintptr_t value = (uintptr_t)dlsym(RTLD_DEFAULT, load->symbol);
-    //         if (value == 0) {
-    //             printf("XXX: - %s (%s)\n", dlerror(), load->symbol);
-    //         }
+    //         assert(DLSYM(stencil->loads[j].symbol));
     //     }
     // }
-    // printf("XXX: Done searching for symbols!\n");
     // First, loop over everything once to find the total compiled size:
     size_t nbytes = trampoline_stencil.nbytes;
     for (int i = 0; i < size; i++) {
