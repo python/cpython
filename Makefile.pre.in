@@ -611,6 +611,7 @@ all:		@DEF_MAKE_ALL_RULE@
 # all.
 .PHONY: all
 
+# Provide quick help for common Makefile targets.
 .PHONY: help
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
