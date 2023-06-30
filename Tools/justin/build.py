@@ -634,13 +634,13 @@ class Compiler:
             holes = []
             loads = []
             for hole in stencil.holes:
-                if hole.symbol.startswith("_justin_"):
-                    kind = f"HOLE_{hole.symbol.removeprefix('_justin_')}"
+                if hole.symbol.lstrip("_").startswith("justin_"):
+                    kind = f"HOLE_{hole.symbol.lstrip('_').removeprefix('justin_')}"
                     assert kind in kinds, kind
                     holes.append(f"    {{.offset = {hole.offset:4}, .addend = {hole.addend:4}, .kind = {kind}, .pc = {hole.pc}}},")
                 else:
                     loads.append(f"    {{.offset = {hole.offset:4}, .addend = {hole.addend:4}, .symbol = \"{hole.symbol}\", .pc = {hole.pc}}},")
-            assert holes
+            assert holes, stencil.holes
             lines.append(f"static const Hole {opname}_stencil_holes[] = {{")
             for hole in holes:
                 lines.append(hole)
