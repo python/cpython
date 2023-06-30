@@ -895,7 +895,7 @@ are always available.  They are listed here in alphabetical order.
    Return an integer object constructed from a number or string *x*, or return
    ``0`` if no arguments are given.  If *x* defines :meth:`~object.__int__`,
    ``int(x)`` returns ``x.__int__()``.  If *x* defines :meth:`~object.__index__`,
-   it returns ``x.__index__()``.  If *x* defines :meth:`__trunc__`,
+   it returns ``x.__index__()``.  If *x* defines :meth:`~object.__trunc__`,
    it returns ``x.__trunc__()``.
    For floating point numbers, this truncates towards zero.
 
@@ -935,7 +935,7 @@ are always available.  They are listed here in alphabetical order.
       Falls back to :meth:`~object.__index__` if :meth:`~object.__int__` is not defined.
 
    .. versionchanged:: 3.11
-      The delegation to :meth:`__trunc__` is deprecated.
+      The delegation to :meth:`~object.__trunc__` is deprecated.
 
    .. versionchanged:: 3.11
       :class:`int` string inputs and string representations can be limited to
