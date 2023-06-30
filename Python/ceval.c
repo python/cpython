@@ -4,7 +4,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
-#include "pycore_call.h"          // _PyObject_FastCallDictTstate()
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_SignalAsyncExc()
 #include "pycore_code.h"
 #include "pycore_function.h"
@@ -2431,40 +2431,37 @@ static PyObject *
 import_name(PyThreadState *tstate, _PyInterpreterFrame *frame,
             PyObject *name, PyObject *fromlist, PyObject *level)
 {
-    PyObject *import_func, *res;
-    PyObject* stack[5];
-
-    import_func = _PyDict_GetItemWithError(frame->f_builtins, &_Py_ID(__import__));
+    PyObject *import_func = _PyDict_GetItemWithError(frame->f_builtins,
+                                                     &_Py_ID(__import__));
     if (import_func == NULL) {
         if (!_PyErr_Occurred(tstate)) {
             _PyErr_SetString(tstate, PyExc_ImportError, "__import__ not found");
         }
         return NULL;
     }
+
     PyObject *locals = frame->f_locals;
+    if (locals == NULL) {
+        locals = Py_None;
+    }
+
     /* Fast path for not overloaded __import__. */
     if (_PyImport_IsDefaultImportFunc(tstate->interp, import_func)) {
         int ilevel = _PyLong_AsInt(level);
         if (ilevel == -1 && _PyErr_Occurred(tstate)) {
             return NULL;
         }
-        res = PyImport_ImportModuleLevelObject(
+        return PyImport_ImportModuleLevelObject(
                         name,
                         frame->f_globals,
-                        locals == NULL ? Py_None :locals,
+                        locals,
                         fromlist,
                         ilevel);
-        return res;
     }
 
+    PyObject* args[5] = {name, frame->f_globals, locals, fromlist, level};
     Py_INCREF(import_func);
-
-    stack[0] = name;
-    stack[1] = frame->f_globals;
-    stack[2] = locals == NULL ? Py_None : locals;
-    stack[3] = fromlist;
-    stack[4] = level;
-    res = _PyObject_FastCall(import_func, stack, 5);
+    PyObject *res = PyObject_Vectorcall(import_func, args, 5, NULL);
     Py_DECREF(import_func);
     return res;
 }
