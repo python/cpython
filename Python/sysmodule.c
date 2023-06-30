@@ -425,7 +425,7 @@ PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
     e->userData = userData;
 
     if (runtime->audit_hooks.mutex == NULL) {
-        /* The runtime must not be initailized yet. */
+        /* The runtime must not be initialized yet. */
         add_audit_hook_entry_unlocked(runtime, e);
     }
     else {
