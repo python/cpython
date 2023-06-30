@@ -42,8 +42,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_atomic_funcs.h"  // _Py_atomic_size_get()
-#include "pycore_bytesobject.h"   // _PyBytes_Repeat()
 #include "pycore_bytes_methods.h" // _Py_bytes_lower()
+#include "pycore_bytesobject.h"   // _PyBytes_Repeat()
+#include "pycore_codecs.h"        // _PyCodec_Lookup()
 #include "pycore_format.h"        // F_LJUST
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // PyInterpreterState.fs_codec

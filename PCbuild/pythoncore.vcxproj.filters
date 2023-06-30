@@ -537,6 +537,9 @@
     <ClInclude Include="..\Include\internal\pycore_code.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_codecs.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_compile.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
