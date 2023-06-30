@@ -5701,6 +5701,17 @@ class CWhitebox(unittest.TestCase):
         ContextManager = type(C.localcontext())
         check_disallow_instantiation(self, ContextManager)
 
+    def test_c_signaldict_repr_segfault(self):
+        # See issue 106263 for details.
+        SignalDict = type(C.Context().flags)
+        s = repr(SignalDict())  # This should not segfault
+        t = "{<class 'decimal.InvalidOperation'>:False, <class 'decimal.FloatOperation'>:False, " \
+            "<class 'decimal.DivisionByZero'>:False, <class 'decimal.Overflow'>:False, " \
+            "<class 'decimal.Underflow'>:False, <class 'decimal.Subnormal'>:False, " \
+            "<class 'decimal.Inexact'>:False, <class 'decimal.Rounded'>:False, " \
+            "<class 'decimal.Clamped'>:False}"
+        self.assertEqual(s, t)
+
 @requires_docstrings
 @requires_cdecimal
 class SignatureTest(unittest.TestCase):

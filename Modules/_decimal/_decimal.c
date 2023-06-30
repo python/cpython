@@ -548,10 +548,12 @@ getround(PyObject *v)
    initialized to new SignalDicts. Once a SignalDict is tied to
    a context, it cannot be deleted. */
 
+static mpd_context_t dflt_ctx;
+
 static int
 signaldict_init(PyObject *self, PyObject *args UNUSED, PyObject *kwds UNUSED)
 {
-    SdFlagAddr(self) = NULL;
+    SdFlagAddr(self) = &dflt_ctx.status;
     return 0;
 }
 
