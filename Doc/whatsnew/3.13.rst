@@ -597,3 +597,8 @@ Removed
 
   Just remove the underscore prefix to update your code.
   (Contributed by Victor Stinner in :gh:`106084`.)
+
+* Remove private ``_PyObject_FastCall()`` function:
+  use ``PyObject_Vectorcall()`` which is available since Python 3.8
+  (:pep:`590`).
+  (Contributed by Victor Stinner in :gh:`106023`.)
