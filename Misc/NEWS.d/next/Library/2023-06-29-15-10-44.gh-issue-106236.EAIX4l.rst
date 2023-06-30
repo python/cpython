@@ -1,3 +1,2 @@
 Replace ``assert`` statements with ``raise AssertionError`` in
-:mod:`threading`, so the behaviour of ``_DummyThread`` with and without
-``-OO`` is consistent.
+:mod:`threading`, so that ``_DummyThread`` cannot be joined even with ``-OO``.
