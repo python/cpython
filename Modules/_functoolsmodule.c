@@ -594,21 +594,15 @@ keyobject_call(keyobject *ko, PyObject *args, PyObject *kwds)
 static PyObject *
 keyobject_richcompare(PyObject *ko, PyObject *other, int op)
 {
-    PyObject *res;
-    PyObject *x;
-    PyObject *y;
-    PyObject *compare;
-    PyObject *answer;
-    PyObject* stack[2];
-
     if (!Py_IS_TYPE(other, Py_TYPE(ko))) {
         PyErr_Format(PyExc_TypeError, "other argument must be K instance");
         return NULL;
     }
-    compare = ((keyobject *) ko)->cmp;
+
+    PyObject *compare = ((keyobject *) ko)->cmp;
     assert(compare != NULL);
-    x = ((keyobject *) ko)->object;
-    y = ((keyobject *) other)->object;
+    PyObject *x = ((keyobject *) ko)->object;
+    PyObject *y = ((keyobject *) other)->object;
     if (!x || !y){
         PyErr_Format(PyExc_AttributeError, "object");
         return NULL;
@@ -617,14 +611,13 @@ keyobject_richcompare(PyObject *ko, PyObject *other, int op)
     /* Call the user's comparison function and translate the 3-way
      * result into true or false (or error).
      */
-    stack[0] = x;
-    stack[1] = y;
-    res = _PyObject_FastCall(compare, stack, 2);
+    PyObject* args[2] = {x, y};
+    PyObject *res = PyObject_Vectorcall(compare, args, 2, NULL);
     if (res == NULL) {
         return NULL;
     }
 
-    answer = PyObject_RichCompare(res, _PyLong_GetZero(), op);
+    PyObject *answer = PyObject_RichCompare(res, _PyLong_GetZero(), op);
     Py_DECREF(res);
     return answer;
 }

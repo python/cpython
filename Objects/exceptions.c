@@ -1464,7 +1464,7 @@ PyUnstable_Exc_PrepReraiseStar(PyObject *orig, PyObject *excs)
     }
 
     /* Make sure that orig has something as traceback, in the interpreter
-     * it always does becuase it's a raised exception.
+     * it always does because it's a raised exception.
      */
     PyObject *tb = PyException_GetTraceback(orig);
 
