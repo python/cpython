@@ -907,7 +907,7 @@ def test():
     -p toggle passive mode
     '''
 
-    if len(sys.argv) < 2:
+    if len(sys.argv) < 2 or sys.argv[1] in ('-h', '--help'):
         print(test.__doc__)
         sys.exit(0)
 
