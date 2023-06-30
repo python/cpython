@@ -187,7 +187,7 @@
         case TO_BOOL_ALWAYS_TRUE: {
             PyObject *value = stack_pointer[-1];
             PyObject *res;
-            uint32_t version = operand;
+            uint32_t version = (uint32_t)operand;
             #line 359 "Python/bytecodes.c"
             // This one is a bit weird, because we expect *some* failures:
             assert(version);
