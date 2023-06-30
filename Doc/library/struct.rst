@@ -266,11 +266,11 @@ Notes:
 
 (2)
    When attempting to pack a non-integer using any of the integer conversion
-   codes, if the non-integer has a :meth:`__index__` method then that method is
+   codes, if the non-integer has a :meth:`~object.__index__` method then that method is
    called to convert the argument to an integer before packing.
 
    .. versionchanged:: 3.2
-      Added use of the :meth:`__index__` method for non-integers.
+      Added use of the :meth:`~object.__index__` method for non-integers.
 
 (3)
    The ``'n'`` and ``'N'`` conversion codes are only available for the native
