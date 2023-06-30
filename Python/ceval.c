@@ -2845,9 +2845,6 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
             {
                 fprintf(stderr, "Unknown uop %d, operand %" PRIu64 "\n", opcode, operand);
                 Py_FatalError("Unknown uop");
-                abort();  // Unreachable
-                for (;;) {}
-                // Really unreachable
             }
 
         }
