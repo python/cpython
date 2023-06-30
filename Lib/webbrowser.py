@@ -642,6 +642,8 @@ def main():
     usage = """Usage: %s [-l] | [-b browser] [-i | -n | -t | -h] url
     -n: open new window
     -t: open new tab
+    -i: open with private mode
+    -l: list available browsers
     -b <browser>: uses <browser> to open
     -h, --help: show help""" % sys.argv[0]
     try:
