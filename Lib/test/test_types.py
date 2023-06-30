@@ -745,15 +745,15 @@ class UnionTests(unittest.TestCase):
                 self.assertIsInstance(True, x)
                 self.assertIsInstance('a', x)
                 self.assertNotIsInstance(None, x)
-                self.assertTrue(issubclass(int, x))
-                self.assertTrue(issubclass(bool, x))
-                self.assertTrue(issubclass(str, x))
-                self.assertFalse(issubclass(type(None), x))
+                self.assertIsSubclass(int, x)
+                self.assertIsSubclass(bool, x)
+                self.assertIsSubclass(str, x)
+                self.assertNotIsSubclass(type(None), x)
 
         for x in (int | None, typing.Union[int, None]):
             with self.subTest(x=x):
                 self.assertIsInstance(None, x)
-                self.assertTrue(issubclass(type(None), x))
+                self.assertIsSubclass(type(None), x)
 
         for x in (
             int | collections.abc.Mapping,
@@ -762,8 +762,8 @@ class UnionTests(unittest.TestCase):
             with self.subTest(x=x):
                 self.assertIsInstance({}, x)
                 self.assertNotIsInstance((), x)
-                self.assertTrue(issubclass(dict, x))
-                self.assertFalse(issubclass(list, x))
+                self.assertIsSubclass(dict, x)
+                self.assertNotIsSubclass(list, x)
 
     def test_instancecheck_and_subclasscheck_order(self):
         T = typing.TypeVar('T')
@@ -775,7 +775,7 @@ class UnionTests(unittest.TestCase):
         for x in will_resolve:
             with self.subTest(x=x):
                 self.assertIsInstance(1, x)
-                self.assertTrue(issubclass(int, x))
+                self.assertIsSubclass(int, x)
 
         wont_resolve = (
             T | int,
@@ -808,7 +808,7 @@ class UnionTests(unittest.TestCase):
             def __subclasscheck__(cls, sub):
                 1/0
         x = int | BadMeta('A', (), {})
-        self.assertTrue(issubclass(int, x))
+        self.assertIsSubclass(int, x)
         self.assertRaises(ZeroDivisionError, issubclass, list, x)
 
     def test_or_type_operator_with_TypeVar(self):
@@ -1298,7 +1298,7 @@ class ClassCreationTests(unittest.TestCase):
 
     def test_new_class_subclass(self):
         C = types.new_class("C", (int,))
-        self.assertTrue(issubclass(C, int))
+        self.assertIsSubclass(C, int)
 
     def test_new_class_meta(self):
         Meta = self.Meta
@@ -1343,7 +1343,7 @@ class ClassCreationTests(unittest.TestCase):
                             bases=(int,),
                             kwds=dict(metaclass=Meta, z=2),
                             exec_body=func)
-        self.assertTrue(issubclass(C, int))
+        self.assertIsSubclass(C, int)
         self.assertIsInstance(C, Meta)
         self.assertEqual(C.x, 0)
         self.assertEqual(C.y, 1)

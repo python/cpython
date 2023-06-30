@@ -3251,14 +3251,14 @@ class ProtocolTests(BaseTestCase):
         class EmptyProtocol(Protocol): pass
 
         @runtime_checkable
-        class SupportsStartsWith(Protocol):
+        class SupportsStartswith(Protocol):
             def startswith(self, x: str) -> bool: ...
 
         @runtime_checkable
         class SupportsX(Protocol[T]):
             def x(self): ...
 
-        for proto in EmptyProtocol, SupportsStartsWith, SupportsX:
+        for proto in EmptyProtocol, SupportsStartswith, SupportsX:
             with self.subTest(proto=proto.__name__):
                 self.assertIsSubclass(proto, Protocol)
 
@@ -3272,8 +3272,8 @@ class ProtocolTests(BaseTestCase):
         self.assertNotIsSubclass(object, Protocol)
         self.assertNotIsInstance(object(), Protocol)
 
-        self.assertIsSubclass(str, SupportsStartsWith)
-        self.assertIsInstance('foo', SupportsStartsWith)
+        self.assertIsSubclass(str, SupportsStartswith)
+        self.assertIsInstance('foo', SupportsStartswith)
         self.assertNotIsSubclass(str, Protocol)
         self.assertNotIsInstance('foo', Protocol)
 

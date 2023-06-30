@@ -58,7 +58,7 @@ class AbstractDefaultRootTest:
         destroy_default_root()
         tkinter.NoDefaultRoot()
         self.assertRaises(RuntimeError, constructor)
-        self.assertFalse(hasattr(tkinter, '_default_root'))
+        self.assertNotHasAttr(tkinter, '_default_root')
 
 
 def destroy_default_root():

@@ -151,7 +151,7 @@ class TestMain(unittest.TestCase):
     def test_help_flag(self):
         rc, out, err = assert_python_ok('-m', self.module, '-h')
         self.assertEqual(rc, 0)
-        self.assertTrue(out.startswith(b'usage: '))
+        self.assertStartsWith(out, b'usage: ')
         self.assertEqual(err, b'')
 
     def test_sort_keys_flag(self):

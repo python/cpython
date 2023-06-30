@@ -547,11 +547,11 @@ class TestSuper(unittest.TestCase):
             self.assertEqual(s.__reduce__, e.__reduce__)
             self.assertEqual(s.__reduce_ex__, e.__reduce_ex__)
             self.assertEqual(s.__getstate__, e.__getstate__)
-            self.assertFalse(hasattr(s, '__getnewargs__'))
-            self.assertFalse(hasattr(s, '__getnewargs_ex__'))
-            self.assertFalse(hasattr(s, '__setstate__'))
-            self.assertFalse(hasattr(s, '__copy__'))
-            self.assertFalse(hasattr(s, '__deepcopy__'))
+            self.assertNotHasAttr(s, '__getnewargs__')
+            self.assertNotHasAttr(s, '__getnewargs_ex__')
+            self.assertNotHasAttr(s, '__setstate__')
+            self.assertNotHasAttr(s, '__copy__')
+            self.assertNotHasAttr(s, '__deepcopy__')
 
     def test_pickling(self):
         e = E()

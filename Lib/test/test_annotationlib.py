@@ -301,8 +301,8 @@ class TestForwardRefClass(unittest.TestCase):
         # __qualname__ make little sense for forward refs as they can store
         # complex typing expressions.
         fr = annotationlib.ForwardRef("set[Any]")
-        self.assertFalse(hasattr(fr, "__name__"))
-        self.assertFalse(hasattr(fr, "__qualname__"))
+        self.assertNotHasAttr(fr, "__name__")
+        self.assertNotHasAttr(fr, "__qualname__")
         self.assertEqual(fr.__module__, "annotationlib")
         # Forward refs are currently unpicklable once they contain a code object.
         fr.__forward_code__  # fill the cache

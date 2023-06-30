@@ -116,8 +116,7 @@ class CAPITest(unittest.TestCase):
                    "after Python initialization and before Python finalization, "
                    "but it was called without an active thread state. "
                    "Are you trying to call the C API inside of a Py_BEGIN_ALLOW_THREADS block?").encode()
-        self.assertTrue(err.rstrip().startswith(msg),
-                        err)
+        self.assertStartsWith(err.rstrip(), msg)
 
     def test_memoryview_from_NULL_pointer(self):
         self.assertRaises(ValueError, _testcapi.make_memoryview_from_NULL_pointer)
@@ -720,7 +719,7 @@ class CAPITest(unittest.TestCase):
 
     def test_heaptype_with_custom_metaclass(self):
         metaclass = _testcapi.HeapCTypeMetaclass
-        self.assertTrue(issubclass(metaclass, type))
+        self.assertIsSubclass(metaclass, type)
 
         # Class creation from C
         t = _testcapi.pytype_fromspec_meta(metaclass)
@@ -736,7 +735,7 @@ class CAPITest(unittest.TestCase):
     def test_heaptype_with_custom_metaclass_null_new(self):
         metaclass = _testcapi.HeapCTypeMetaclassNullNew
 
-        self.assertTrue(issubclass(metaclass, type))
+        self.assertIsSubclass(metaclass, type)
 
         # Class creation from C
         t = _testcapi.pytype_fromspec_meta(metaclass)
@@ -751,7 +750,7 @@ class CAPITest(unittest.TestCase):
     def test_heaptype_with_custom_metaclass_custom_new(self):
         metaclass = _testcapi.HeapCTypeMetaclassCustomNew
 
-        self.assertTrue(issubclass(_testcapi.HeapCTypeMetaclassCustomNew, type))
+        self.assertIsSubclass(_testcapi.HeapCTypeMetaclassCustomNew, type)
 
         msg = "Metaclasses with custom tp_new are not supported."
         with self.assertRaisesRegex(TypeError, msg):
@@ -910,8 +909,7 @@ class CAPITest(unittest.TestCase):
             names.append('Py_FrozenMain')
 
         for name in names:
-            with self.subTest(name=name):
-                self.assertTrue(hasattr(ctypes.pythonapi, name))
+            self.assertHasAttr(ctypes.pythonapi, name)
 
     def test_clear_managed_dict(self):
 
@@ -2365,7 +2363,7 @@ class SubinterpreterTest(unittest.TestCase):
 
         support.run_in_subinterp("import binascii; binascii.Error.foobar = 'foobar'")
 
-        self.assertFalse(hasattr(binascii.Error, "foobar"))
+        self.assertNotHasAttr(binascii.Error, "foobar")
 
     @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
     # gh-117649: The free-threaded build does not currently support sharing
