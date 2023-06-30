@@ -384,7 +384,7 @@ are always available.  They are listed here in alphabetical order.
 
    For a general Python object ``x``, ``complex(x)`` delegates to
    ``x.__complex__()``.  If :meth:`~object.__complex__` is not defined then it falls back
-   to :meth:`~object.__float__`.  If :meth:`~object.__float__` is not defined then it falls back
+   to :meth:`~object.__float__`.  If :meth:`!__float__` is not defined then it falls back
    to :meth:`~object.__index__`.
 
    .. note::
