@@ -129,8 +129,8 @@ Complex Numbers as Python Objects
 
    If *op* is not a Python complex number object but has a :meth:`~object.__complex__`
    method, this method will first be called to convert *op* to a Python complex
-   number object.  If `~object.__complex__` is not defined then it falls back to
-   :meth:`~object.__float__`.  If `~object.__float__` is not defined then it falls back
+   number object.  If :meth:`~object.__complex__` is not defined then it falls back to
+   :meth:`~object.__float__`.  If :meth:`~object.__float__` is not defined then it falls back
    to :meth:`~object.__index__`.  Upon failure, this method returns ``-1.0`` as a real
    value.
 
