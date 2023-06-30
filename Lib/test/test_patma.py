@@ -2749,6 +2749,17 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(f(1), 1)
         self.assertEqual(f({"x": 1}), 1)
 
+    def test_patma_255(self):
+        x = []
+        match x:
+            case [] as z if z.append(None):
+                y = 0
+            case [None]:
+                y = 1
+        self.assertEqual(x, [None])
+        self.assertEqual(y, 1)
+        self.assertIs(z, x)
+
 
 class TestSyntaxErrors(unittest.TestCase):
 
