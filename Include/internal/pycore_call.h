@@ -117,8 +117,7 @@ _PyObject_CallMethodIdOneArg(PyObject *self, _Py_Identifier *name, PyObject *arg
 
 /* === Vectorcall protocol (PEP 590) ============================= */
 
-// Call callable using tp_call. Arguments are like PyObject_Vectorcall()
-// or PyObject_FastCallDict() (both forms are supported),
+// Call callable using tp_call. Arguments are like PyObject_Vectorcall(),
 // except that nargs is plainly the number of arguments without flags.
 //
 // Export for shared stdlib extensions like the math extension,
@@ -203,14 +202,6 @@ _PyObject_CallNoArgs(PyObject *func) {
     return _PyObject_VectorcallTstate(tstate, func, NULL, 0, NULL);
 }
 
-
-static inline PyObject *
-_PyObject_FastCallTstate(PyThreadState *tstate, PyObject *func,
-                         PyObject *const *args, Py_ssize_t nargs)
-{
-    EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_API, func);
-    return _PyObject_VectorcallTstate(tstate, func, args, (size_t)nargs, NULL);
-}
 
 extern PyObject *const *
 _PyStack_UnpackDict(PyThreadState *tstate,

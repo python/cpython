@@ -113,19 +113,6 @@ function as with any other callable.
 :c:func:`PyObject_Vectorcall` will usually be most efficient.
 
 
-.. note::
-
-   In CPython 3.8, the vectorcall API and related functions were available
-   provisionally under names with a leading underscore:
-   ``_PyObject_Vectorcall``, ``_Py_TPFLAGS_HAVE_VECTORCALL``,
-   ``_PyObject_VectorcallMethod``, ``_PyVectorcall_Function``,
-   ``_PyObject_CallOneArg``, ``_PyObject_CallMethodNoArgs``,
-   ``_PyObject_CallMethodOneArg``.
-   Additionally, ``PyObject_VectorcallDict`` was available as
-   ``_PyObject_FastCallDict``.
-   The old names are still defined as aliases of the new, non-underscored names.
-
-
 Recursion Control
 .................
 
