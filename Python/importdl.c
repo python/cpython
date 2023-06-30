@@ -166,7 +166,7 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
 
     /* Package context is needed for single-phase init */
     oldcontext = _PyImport_SwapPackageContext(newcontext);
-    m = _PyImport_InitFunc_TrampolineCall(p0);
+    m = p0();
     _PyImport_SwapPackageContext(oldcontext);
 
     if (m == NULL) {
