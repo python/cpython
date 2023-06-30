@@ -46,6 +46,23 @@
         munmap((MEMORY), (SIZE))
 #endif
 
+static int stencils_loaded = 0;
+
+static int
+preload_stencil(const Stencil *loading)
+{
+    for (size_t i = 0; i < loading->nloads; i++) {
+        const SymbolLoad *load = &loading->loads[i];
+        uintptr_t *addr = (uintptr_t *)(loading->bytes + load->offset);
+        uintptr_t value = (uintptr_t)DLSYM(load->symbol);
+        if (value == 0) {
+            printf("XXX: Failed to preload symbol %s!\n", load->symbol);
+            return -1;
+        }
+        *addr = value + load->addend + load->pc * (uintptr_t)addr;
+    }
+    return 0;
+}
 
 static unsigned char *
 alloc(size_t nbytes)
@@ -70,7 +87,7 @@ _PyJIT_Free(_PyJITFunction trace)
 }
 
 
-static unsigned char *
+static void
 copy_and_patch(unsigned char *memory, const Stencil *stencil, uintptr_t patches[])
 {
     memcpy(memory, stencil->bytes, stencil->nbytes);
@@ -82,16 +99,6 @@ copy_and_patch(unsigned char *memory, const Stencil *stencil, uintptr_t patches[
         // XXX: Get rid of pc, and replace it with HOLE_base + addend.
         *addr = patches[hole->kind] + hole->addend + hole->pc * (uintptr_t)addr;
     }
-    for (size_t i = 0; i < stencil->nloads; i++) {
-        const SymbolLoad *load = &stencil->loads[i];
-        uintptr_t *addr = (uintptr_t *)(memory + load->offset);
-        uintptr_t value = (uintptr_t)DLSYM(load->symbol);
-        if (value == 0) {
-            return NULL;
-        }
-        *addr = value + load->addend + load->pc * (uintptr_t)addr;
-    }
-    return memory + stencil->nbytes;
 }
 
 // The world's smallest compiler?
@@ -99,13 +106,19 @@ copy_and_patch(unsigned char *memory, const Stencil *stencil, uintptr_t patches[
 _PyJITFunction
 _PyJIT_CompileTrace(int size, _Py_CODEUNIT **trace)
 {
-    // XXX: For testing!
-    // for (size_t i = 0; i < Py_ARRAY_LENGTH(stencils); i++) {
-    //     const Stencil *stencil = &stencils[i];
-    //     for (size_t j = 0; j < stencil->nloads; j++) {
-    //         assert(DLSYM(stencil->loads[j].symbol));
-    //     }
-    // }
+    if (!stencils_loaded) {
+        stencils_loaded = 1;
+        for (int i = 0; i < Py_ARRAY_LENGTH(stencils); i++) {
+            if (preload_stencil(&stencils[i])) {
+                stencils_loaded = -1;
+                break;
+            }
+        }
+    }
+    if (stencils_loaded < 0) {
+        printf("XXX: JIT disabled!\n");
+        return NULL;
+    }
     // First, loop over everything once to find the total compiled size:
     size_t nbytes = trampoline_stencil.nbytes;
     for (int i = 0; i < size; i++) {
@@ -126,11 +139,8 @@ _PyJIT_CompileTrace(int size, _Py_CODEUNIT **trace)
     const Stencil *stencil = &trampoline_stencil;
     patches[HOLE_base] = (uintptr_t)head;
     patches[HOLE_continue] = (uintptr_t)head + stencil->nbytes;
-    head = copy_and_patch(head, stencil, patches);
-    if (head == NULL) {
-        _PyJIT_Free((_PyJITFunction)memory);
-        return NULL;
-    }
+    copy_and_patch(head, stencil, patches);
+    head += stencil->nbytes;
     // Then, all of the stencils:
     for (int i = 0; i < size; i++) {
         _Py_CODEUNIT *instruction = trace[i];
@@ -141,11 +151,8 @@ _PyJIT_CompileTrace(int size, _Py_CODEUNIT **trace)
                                : (uintptr_t)memory + trampoline_stencil.nbytes;
         patches[HOLE_next_instr] = (uintptr_t)instruction;
         patches[HOLE_oparg_plus_one] = instruction->op.arg + 1;
-        head = copy_and_patch(head, stencil, patches);
-        if (head == NULL) {
-            _PyJIT_Free((_PyJITFunction)memory);
-            return NULL;
-        }
+        copy_and_patch(head, stencil, patches);
+        head += stencil->nbytes;
     };
     // Wow, done already?
     assert(memory + nbytes == head);
