@@ -1006,8 +1006,8 @@ class ChainMap(_collections_abc.MutableMapping):
     def __getitem__(self, key):
         for mapping in self.maps:
             try:
-                return mapping[key]             # can't use 'key in mapping' with defaultdict
-            except KeyError:
+                return mapping[key]             # can't use 'key in mapping' with defaultdict or list
+            except (KeyError, TypeError):
                 pass
         return self.__missing__(key)            # support subclasses that define __missing__
 
