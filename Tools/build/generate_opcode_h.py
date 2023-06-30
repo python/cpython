@@ -60,8 +60,8 @@ intrinsic_header = f"""
 intrinsic_footer = """
 typedef PyObject *(*instrinsic_func1)(PyThreadState* tstate, PyObject *value);
 typedef PyObject *(*instrinsic_func2)(PyThreadState* tstate, PyObject *value1, PyObject *value2);
-extern const instrinsic_func1 _PyIntrinsics_UnaryFunctions[];
-extern const instrinsic_func2 _PyIntrinsics_BinaryFunctions[];
+PyAPI_DATA(const instrinsic_func1) _PyIntrinsics_UnaryFunctions[];
+PyAPI_DATA(const instrinsic_func2) _PyIntrinsics_BinaryFunctions[];
 """
 
 DEFINE = "#define {:<38} {:>3}\n"
@@ -147,7 +147,7 @@ def main(opcode_py, outfile='Include/opcode.h',
             fobj.write(DEFINE.format(name, op))
 
         iobj.write("\nextern const uint32_t _PyOpcode_Jump[9];\n")
-        iobj.write("\nextern const uint8_t _PyOpcode_Caches[256];\n")
+        iobj.write("\nPyAPI_DATA(const uint8_t) _PyOpcode_Caches[256];\n")
         iobj.write("\nextern const uint8_t _PyOpcode_Deopt[256];\n")
         iobj.write("\n#ifdef NEED_OPCODE_TABLES\n")
         write_int_array_from_ops("_PyOpcode_Jump", opcode['hasjrel'] + opcode['hasjabs'], iobj)

@@ -174,7 +174,7 @@ class ObjectParser:
         "--sections",
     ]
 
-    def __init__(self, path: pathlib.Path, symbol_prefix: str = "") -> None:
+    def __init__(self, path: pathlib.Path) -> None:
         args = ["llvm-readobj", *self._ARGS, path]
         # subprocess.run(["llvm-objdump", path, "-dr"], check=True)
         process = subprocess.run(args, check=True, capture_output=True)
@@ -191,7 +191,6 @@ class ObjectParser:
         self.dupes = set()
         self.got_entries = []
         self.relocations_todo = []
-        self.symbol_prefix = symbol_prefix
 
     def parse(self):
         for section in unwrap(self._data, "Section"):
@@ -260,8 +259,6 @@ def handle_one_relocation(
             # assert not what, what
             addend = what
             body[where] = [0] * 4
-            # assert symbol.startswith("_")
-            symbol = symbol.removeprefix("_")
             yield Hole(symbol, offset, addend, 0)
         case {
             "Addend": int(addend),
@@ -336,8 +333,6 @@ def handle_one_relocation(
             # assert not what, what
             addend = what
             body[where] = [0] * 8
-            assert section.startswith("_")
-            section = section.removeprefix("_")
             yield Hole(section, offset, addend, 0)
         case {
             "Length": 3,
@@ -352,10 +347,6 @@ def handle_one_relocation(
             # assert not what, what
             addend = what
             body[where] = [0] * 8
-            assert symbol.startswith("_")
-            symbol = symbol.removeprefix("_")
-            if symbol == "__bzero":  # XXX
-                symbol = "bzero"  # XXX
             yield Hole(symbol, offset, addend, 0)
         case _:
             raise NotImplementedError(relocation)
@@ -381,8 +372,6 @@ class ObjectParserCOFF(ObjectParser):
         for symbol in unwrap(section["Symbols"], "Symbol"):
             offset = before + symbol["Value"]
             name = symbol["Name"]
-            # assert name.startswith("_")  # XXX
-            name = name.removeprefix(self.symbol_prefix)  # XXX
             if name in self.body_symbols:
                 self.dupes.add(name)
             self.body_symbols[name] = offset
@@ -398,16 +387,12 @@ class ObjectParserMachO(ObjectParser):
         section_data = section["SectionData"]
         self.body.extend(section_data["Bytes"])
         name = section["Name"]["Value"]
-        # assert name.startswith("_")  # XXX
-        name = name.removeprefix(self.symbol_prefix)  # XXX
         if name in self.body_symbols:
             self.dupes.add(name)
         self.body_symbols[name] = 0  # before
         for symbol in unwrap(section["Symbols"], "Symbol"):
             offset = symbol["Value"]
             name = symbol["Name"]["Value"]
-            # assert name.startswith(self.symbol_prefix)  # XXX
-            name = name.removeprefix(self.symbol_prefix)  # XXX
             if name in self.body_symbols:
                 self.dupes.add(name)
             self.body_symbols[name] = offset
@@ -441,8 +426,6 @@ class ObjectParserELF(ObjectParser):
             for symbol in unwrap(section["Symbols"], "Symbol"):
                 offset = before + symbol["Value"]
                 name = symbol["Name"]["Value"]
-                # assert name.startswith("_")  # XXX
-                name = name.removeprefix(self.symbol_prefix)  # XXX
                 assert name not in self.body_symbols
                 self.body_symbols[name] = offset
         else:
@@ -478,19 +461,19 @@ CFLAGS = [
 ]
 
 if sys.platform == "darwin":
-    ObjectParserDefault = functools.partial(ObjectParserMachO, symbol_prefix="_")  # XXX
+    ObjectParserDefault = ObjectParserMachO
 elif sys.platform == "linux":
     ObjectParserDefault = ObjectParserELF
 elif sys.platform == "win32":
     assert sys.argv[1] == "--windows", sys.argv[1]
     if sys.argv[2] == "Debug|Win32":
-        ObjectParserDefault = functools.partial(ObjectParserCOFF, symbol_prefix="_")  # XXX
+        ObjectParserDefault = ObjectParserCOFF
         CFLAGS += ["-D_DEBUG", "-m32"]
     elif sys.argv[2] == "Debug|x64":
         ObjectParserDefault = ObjectParserCOFF
         CFLAGS += ["-D_DEBUG"]
     elif sys.argv[2] == "Release|Win32":
-        ObjectParserDefault = functools.partial(ObjectParserCOFF, symbol_prefix="_")  # XXX
+        ObjectParserDefault = ObjectParserCOFF
         # CFLAGS += ["-DNDEBUG", "-m32"]  # XXX
         CFLAGS += ["-m32"]
     elif sys.argv[2] == "Release|x64":
@@ -652,10 +635,12 @@ class Compiler:
                 if hole.symbol.startswith("_justin_"):
                     kind = f"HOLE_{hole.symbol.removeprefix('_justin_')}"
                     assert kind in kinds, kind
-                else:
-                    kind = f"LOAD_{hole.symbol}"
-                    kinds.add(kind)
-                lines.append(f"    {{.offset = {hole.offset:4}, .addend = {hole.addend:4}, .kind = {kind}, .pc = {hole.pc}}},")
+                    lines.append(f"    {{.offset = {hole.offset:4}, .addend = {hole.addend:4}, .kind = {kind}, .pc = {hole.pc}}},")
+            lines.append(f"}};")
+            lines.append(f"static const SymbolLoad {opname}_stencil_loads[] = {{")
+            for hole in stencil.holes:
+                if not hole.symbol.startswith("_justin_"):
+                    lines.append(f"    {{.offset = {hole.offset:4}, .addend = {hole.addend:4}, .symbol = \"{hole.symbol}\", .pc = {hole.pc}}},")
             lines.append(f"}};")
             lines.append(f"")
         lines.append(f"static const Stencil trampoline_stencil = {{")
@@ -663,6 +648,8 @@ class Compiler:
         lines.append(f"    .bytes = trampoline_stencil_bytes,")
         lines.append(f"    .nholes = Py_ARRAY_LENGTH(trampoline_stencil_holes),")
         lines.append(f"    .holes = trampoline_stencil_holes,")
+        lines.append(f"    .nloads = Py_ARRAY_LENGTH(trampoline_stencil_loads),")
+        lines.append(f"    .loads = trampoline_stencil_loads,")
         lines.append(f"}};")
         lines.append(f"")
         lines.append(f"#define INIT_STENCIL(OP) [(OP)] = {{                \\")
@@ -670,6 +657,8 @@ class Compiler:
         lines.append(f"    .bytes = OP##_stencil_bytes,                   \\")
         lines.append(f"    .nholes = Py_ARRAY_LENGTH(OP##_stencil_holes), \\")
         lines.append(f"    .holes = OP##_stencil_holes,                   \\")
+        lines.append(f"    .nloads = Py_ARRAY_LENGTH(OP##_stencil_loads), \\")
+        lines.append(f"    .loads = OP##_stencil_loads,                   \\")
         lines.append(f"}}")
         lines.append(f"")
         lines.append(f"static const Stencil stencils[256] = {{")
@@ -680,17 +669,12 @@ class Compiler:
 
         lines.append(f"")
         lines.append(f"#define INIT_HOLE(NAME) [HOLE_##NAME] = (uintptr_t)0xBAD0BAD0BAD0BAD0")
-        lines.append(f"#define INIT_LOAD(NAME) [LOAD_##NAME] = (uintptr_t)&(NAME)")
         lines.append(f"")
         lines.append(f"#define GET_PATCHES() {{ \\")
         for kind in sorted(kinds):
             if kind.startswith("HOLE_"):
                 name = kind.removeprefix("HOLE_")
                 lines.append(f"    INIT_HOLE({name}), \\")
-            else:
-                assert kind.startswith("LOAD_")
-                name = kind.removeprefix("LOAD_")
-                lines.append(f"    INIT_LOAD({name}), \\")
         lines.append(f"}}")
         header = []
         header.append(f"// Don't be scared... this entire file is generated by Justin!")
@@ -708,10 +692,19 @@ class Compiler:
         header.append(f"}} Hole;")
         header.append(f"")
         header.append(f"typedef struct {{")
+        header.append(f"    const uintptr_t offset;")
+        header.append(f"    const uintptr_t addend;")
+        header.append(f"    const char * const symbol;")
+        header.append(f"    const int pc;")
+        header.append(f"}} SymbolLoad;")
+        header.append(f"")
+        header.append(f"typedef struct {{")
         header.append(f"    const size_t nbytes;")
         header.append(f"    const unsigned char * const bytes;")
         header.append(f"    const size_t nholes;")
         header.append(f"    const Hole * const holes;")
+        header.append(f"    const size_t nloads;")
+        header.append(f"    const SymbolLoad * const loads;")
         header.append(f"}} Stencil;")
         header.append(f"")
         lines[:0] = header

@@ -125,7 +125,7 @@ PyAPI_FUNC(int) _Py_CheckRecursiveCall(
     PyThreadState *tstate,
     const char *where);
 
-int _Py_CheckRecursiveCallPy(
+PyAPI_FUNC(int) _Py_CheckRecursiveCallPy(
     PyThreadState *tstate);
 
 static inline int _Py_EnterRecursivePy(PyThreadState *tstate) {
@@ -158,14 +158,12 @@ static inline void _Py_LeaveRecursiveCall(void)  {
 
 extern struct _PyInterpreterFrame* _PyEval_GetFrame(void);
 
-extern PyObject* _Py_MakeCoro(PyFunctionObject *func);
+PyAPI_FUNC(PyObject *)_Py_MakeCoro(PyFunctionObject *func);
 
-extern int _Py_HandlePending(PyThreadState *tstate);
+PyAPI_FUNC(int) _Py_HandlePending(PyThreadState *tstate);
 
-void _PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
-_PyInterpreterFrame *_PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func, PyObject *locals, PyObject* const* args, size_t argcount, PyObject *kwnames);
-
-
+PyAPI_FUNC(void) _PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
+PyAPI_FUNC(_PyInterpreterFrame *)_PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func, PyObject *locals, PyObject* const* args, size_t argcount, PyObject *kwnames);
 
 #ifdef __cplusplus
 }

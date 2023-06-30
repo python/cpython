@@ -107,7 +107,7 @@ _PyFrame_NumSlotsForCodeObject(PyCodeObject *code)
     return code->co_framesize - FRAME_SPECIALS_SIZE;
 }
 
-void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest);
+PyAPI_FUNC(void) _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest);
 
 /* Consumes reference to func and locals.
    Does not initialize frame->previous, which happens
@@ -247,7 +247,7 @@ _PyThreadState_HasStackSpace(PyThreadState *tstate, int size)
 extern _PyInterpreterFrame *
 _PyThreadState_PushFrame(PyThreadState *tstate, size_t size);
 
-void _PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame *frame);
+PyAPI_FUNC(void) _PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame *frame);
 
 /* Pushes a frame without checking for space.
  * Must be guarded by _PyThreadState_HasStackSpace()

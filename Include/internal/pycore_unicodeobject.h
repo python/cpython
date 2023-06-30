@@ -11,7 +11,7 @@ extern "C" {
 #include "pycore_fileutils.h"     // _Py_error_handler
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 
-void _PyUnicode_ExactDealloc(PyObject *op);
+PyAPI_FUNC(void) _PyUnicode_ExactDealloc(PyObject *op);
 Py_ssize_t _PyUnicode_InternedSize(void);
 
 /* runtime lifecycle */

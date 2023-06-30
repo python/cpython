@@ -37,7 +37,7 @@ struct _Py_list_state {
 
 #define _PyList_ITEMS(op) _Py_RVALUE(_PyList_CAST(op)->ob_item)
 
-extern int
+PyAPI_FUNC(int)
 _PyList_AppendTakeRefListResize(PyListObject *self, PyObject *newitem);
 
 static inline int
@@ -75,7 +75,7 @@ typedef struct {
     PyListObject *it_seq; /* Set to NULL when iterator is exhausted */
 } _PyListIterObject;
 
-extern PyObject *_PyList_FromArraySteal(PyObject *const *src, Py_ssize_t n);
+PyAPI_FUNC(PyObject *)_PyList_FromArraySteal(PyObject *const *src, Py_ssize_t n);
 
 #ifdef __cplusplus
 }

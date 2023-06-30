@@ -1,15 +1,8 @@
 #include "Python.h"
 #include "pycore_abstract.h"
 #include "pycore_ceval.h"
-#include "pycore_dict.h"
-#include "pycore_floatobject.h"
-#include "pycore_intrinsics.h"
 #include "pycore_jit.h"
-#include "pycore_long.h"
-#include "pycore_object.h"
 #include "pycore_opcode.h"
-#include "pycore_pyerrors.h"
-#include "pycore_sliceobject.h"
 
 #include "ceval_macros.h"
 #include "jit_stencils.h"
@@ -66,6 +59,15 @@ copy_and_patch(unsigned char *memory, const Stencil *stencil, uintptr_t patches[
         // XXX: Get rid of pc, and replace it with HOLE_base + addend.
         *addr = patches[hole->kind] + hole->addend + hole->pc * (uintptr_t)addr;
     }
+    for (size_t i = 0; i < stencil->nloads; i++) {
+        const SymbolLoad *load = &stencil->loads[i];
+        uintptr_t *addr = (uintptr_t *)(memory + load->offset);
+        uintptr_t value = (uintptr_t)dlsym(RTLD_DEFAULT, load->symbol);
+        if (value == 0 && dlerror()) {
+            return NULL;
+        }
+        *addr = value + load->addend + load->pc * (uintptr_t)addr;
+    }
     return memory + stencil->nbytes;
 }
 
@@ -74,6 +76,19 @@ copy_and_patch(unsigned char *memory, const Stencil *stencil, uintptr_t patches[
 _PyJITFunction
 _PyJIT_CompileTrace(int size, _Py_CODEUNIT **trace)
 {
+    // // XXX: Testing
+    // printf("XXX: Searching for symbols...\n");
+    // for (size_t i = 0; i < Py_ARRAY_LENGTH(stencils); i++) {
+    //     const Stencil *stencil = &stencils[i];
+    //     for (size_t j = 0; j < stencil->nloads; j++) {
+    //         const SymbolLoad *load = &stencil->loads[j];
+    //         uintptr_t value = (uintptr_t)dlsym(RTLD_DEFAULT, load->symbol);
+    //         if (value == 0) {
+    //             printf("XXX: - %s (%s)\n", dlerror(), load->symbol);
+    //         }
+    //     }
+    // }
+    // printf("XXX: Done searching for symbols!\n");
     // First, loop over everything once to find the total compiled size:
     size_t nbytes = trampoline_stencil.nbytes;
     for (int i = 0; i < size; i++) {
@@ -95,6 +110,10 @@ _PyJIT_CompileTrace(int size, _Py_CODEUNIT **trace)
     patches[HOLE_base] = (uintptr_t)head;
     patches[HOLE_continue] = (uintptr_t)head + stencil->nbytes;
     head = copy_and_patch(head, stencil, patches);
+    if (head == NULL) {
+        _PyJIT_Free((_PyJITFunction)memory);
+        return NULL;
+    }
     // Then, all of the stencils:
     for (int i = 0; i < size; i++) {
         _Py_CODEUNIT *instruction = trace[i];
@@ -106,6 +125,10 @@ _PyJIT_CompileTrace(int size, _Py_CODEUNIT **trace)
         patches[HOLE_next_instr] = (uintptr_t)instruction;
         patches[HOLE_oparg_plus_one] = instruction->op.arg + 1;
         head = copy_and_patch(head, stencil, patches);
+        if (head == NULL) {
+            _PyJIT_Free((_PyJITFunction)memory);
+            return NULL;
+        }
     };
     // Wow, done already?
     assert(memory + nbytes == head);
