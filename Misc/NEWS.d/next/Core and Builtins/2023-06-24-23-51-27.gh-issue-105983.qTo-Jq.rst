@@ -1,1 +1,0 @@
-Add incognito / private mode to webbrowser module
