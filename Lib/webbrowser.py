@@ -19,27 +19,6 @@ _browsers = {}                  # Dictionary of available browser controllers
 _tryorder = None                # Preference order of available browsers
 _os_preferred_browser = None    # The preferred browser
 
-_browsers_types = [
-    "mozilla",
-    "firefox",
-    "epiphany",
-    "kfmclient",
-    "konqueror",
-    "kfm",
-    "opera",
-    "links",
-    "elinks",
-    "lynx",
-    "w3m",
-    "windows-default",
-    "macosx",
-    "safari",
-    "google-chrome",
-    "chrome",
-    "chromium",
-    "chromium-browser",
-    "microsoft-edge",
-]
 
 def register(name, klass, instance=None, *, preferred=False):
     """Register a browser connector."""
@@ -628,14 +607,9 @@ if sys.platform == 'darwin':
 
 
 def _get_supported_browsers():
-    _brow = []
-    for bt in _browsers_types:
-        try:
-            get(bt)
-            _brow.append(bt)
-        except:
-            pass
-    return _brow
+    if _tryorder is None:
+        register_standard_browsers()
+    return _browsers.keys()
 
 
 def main():
