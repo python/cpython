@@ -38,8 +38,7 @@
     <Projects Include="python.vcxproj;pythonw.vcxproj" />
     <!-- Extension modules -->
     <ExtensionModules Include="_ctypes;_elementtree;_msi;_multiprocessing;pyexpat;select;unicodedata;winsound" />
-    <!-- Extension modules that require external sources -->
-    <ExternalModules Include="_sqlite3" />
+    <ExtensionModules Include="_sqlite3" Condition="$(IncludeSqlite3) or $(IncludeExternals)" />
     <!-- _ssl will build _socket as well, which may cause conflicts in parallel builds -->
     <ExtensionModules Include="_socket" Condition="!$(IncludeSSL) or !$(IncludeExternals)" />
     <ExtensionModules Include="_ssl;_hashlib" Condition="$(IncludeSSL)" />
