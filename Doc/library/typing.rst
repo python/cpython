@@ -2844,6 +2844,9 @@ Functions and decorators
    This wraps the decorator with something that wraps the decorated
    function in :func:`no_type_check`.
 
+   .. deprecated-removed:: 3.13 3.15
+      No type checker ever added support for ``@no_type_check_decorator``. It
+      is therefore deprecated, and will be removed in Python 3.15.
 
 .. decorator:: override
 
