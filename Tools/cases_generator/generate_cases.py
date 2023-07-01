@@ -1310,10 +1310,10 @@ class Analyzer:
 
     def write_pseudo_instrs(self) -> None:
         """Write the IS_PSEUDO_INSTR macro"""
-        self.out.emit("\n\n#define IS_PSEUDO_INSTR(OP)  \\")
+        self.out.emit("\n\n#define IS_PSEUDO_INSTR(OP)  ( \\")
         for op in self.pseudos:
             self.out.emit(f"    ((OP) == {op}) || \\")
-        self.out.emit(f"    0")
+        self.out.emit(f"    0)")
 
     def write_uop_items(self, make_text: typing.Callable[[str, int], str]) -> None:
         """Write '#define XXX NNN' for each uop"""
