@@ -121,6 +121,36 @@ done:
     return err;
 }
 
+static int
+ga_repr_items_list(_PyUnicodeWriter *writer, PyObject *p)
+{
+    assert(PyList_CheckExact(p));
+
+    Py_ssize_t len = PyList_GET_SIZE(p);
+
+    if (_PyUnicodeWriter_WriteASCIIString(writer, "[", 1) < 0) {
+        return -1;
+    }
+
+    for (Py_ssize_t i = 0; i < len; i++) {
+        if (i > 0) {
+            if (_PyUnicodeWriter_WriteASCIIString(writer, ", ", 2) < 0) {
+                return -1;
+            }
+        }
+        PyObject *item = PyList_GET_ITEM(p, i);
+        if (ga_repr_item(writer, item) < 0) {
+            return -1;
+        }
+    }
+
+    if (_PyUnicodeWriter_WriteASCIIString(writer, "]", 1) < 0) {
+        return -1;
+    }
+
+    return 0;
+}
+
 static PyObject *
 ga_repr(PyObject *self)
 {
@@ -148,7 +178,13 @@ ga_repr(PyObject *self)
             }
         }
         PyObject *p = PyTuple_GET_ITEM(alias->args, i);
-        if (ga_repr_item(&writer, p) < 0) {
+        if (PyList_CheckExact(p)) {
+            // Looks like we are working with ParamSpec's list of type args:
+            if (ga_repr_items_list(&writer, p) < 0) {
+                goto error;
+            }
+        }
+        else if (ga_repr_item(&writer, p) < 0) {
             goto error;
         }
     }

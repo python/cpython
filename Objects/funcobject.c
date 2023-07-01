@@ -106,9 +106,14 @@ PyFunction_ClearWatcher(int watcher_id)
 PyFunctionObject *
 _PyFunction_FromConstructor(PyFrameConstructor *constr)
 {
+    PyObject *module = Py_XNewRef(PyDict_GetItemWithError(constr->fc_globals, &_Py_ID(__name__)));
+    if (!module && PyErr_Occurred()) {
+        return NULL;
+    }
 
     PyFunctionObject *op = PyObject_GC_New(PyFunctionObject, &PyFunction_Type);
     if (op == NULL) {
+        Py_XDECREF(module);
         return NULL;
     }
     op->func_globals = Py_NewRef(constr->fc_globals);
@@ -122,10 +127,7 @@ _PyFunction_FromConstructor(PyFrameConstructor *constr)
     op->func_doc = Py_NewRef(Py_None);
     op->func_dict = NULL;
     op->func_weakreflist = NULL;
-    op->func_module = Py_XNewRef(PyDict_GetItem(op->func_globals, &_Py_ID(__name__)));
-    if (!op->func_module) {
-        PyErr_Clear();
-    }
+    op->func_module = module;
     op->func_annotations = NULL;
     op->func_typeparams = NULL;
     op->vectorcall = _PyFunction_Vectorcall;

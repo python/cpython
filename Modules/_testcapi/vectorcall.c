@@ -27,23 +27,6 @@ fastcall_args(PyObject *args, PyObject ***stack, Py_ssize_t *nargs)
 
 
 static PyObject *
-test_pyobject_fastcall(PyObject *self, PyObject *args)
-{
-    PyObject *func, *func_args;
-    PyObject **stack;
-    Py_ssize_t nargs;
-
-    if (!PyArg_ParseTuple(args, "OO", &func, &func_args)) {
-        return NULL;
-    }
-
-    if (fastcall_args(func_args, &stack, &nargs) < 0) {
-        return NULL;
-    }
-    return _PyObject_FastCall(func, stack, nargs);
-}
-
-static PyObject *
 test_pyobject_fastcalldict(PyObject *self, PyObject *args)
 {
     PyObject *func, *func_args, *kwargs;
@@ -259,7 +242,6 @@ _testcapi_has_vectorcall_flag_impl(PyObject *module, PyTypeObject *type)
 }
 
 static PyMethodDef TestMethods[] = {
-    {"pyobject_fastcall", test_pyobject_fastcall, METH_VARARGS},
     {"pyobject_fastcalldict", test_pyobject_fastcalldict, METH_VARARGS},
     {"pyobject_vectorcall", test_pyobject_vectorcall, METH_VARARGS},
     {"function_setvectorcall", function_setvectorcall, METH_O},

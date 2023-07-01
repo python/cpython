@@ -346,6 +346,114 @@ Or by using the :class:`TypeVar` factory directly::
 .. versionchanged:: 3.12
    Syntactic support for generics is new in Python 3.12.
 
+.. _annotating-tuples:
+
+Annotating tuples
+=================
+
+For most containers in Python, the typing system assumes that all elements in
+the container will be of the same type. For example::
+
+   from collections.abc import Mapping
+
+   # Type checker will infer that all elements in ``x`` are meant to be ints
+   x: list[int] = []
+
+   # Type checker error: ``list`` only accepts a single type argument:
+   y: list[int, str] = [1, 'foo']
+
+   # Type checker will infer that all keys in ``z`` are meant to be strings,
+   # and that all values in ``z`` are meant to be either strings or ints
+   z: Mapping[str, str | int] = {}
+
+:class:`list` only accepts one type argument, so a type checker would emit an
+error on the ``y`` assignment above. Similarly,
+:class:`~collections.abc.Mapping` only accepts two type arguments: the first
+indicates the type of the keys, and the second indicates the type of the
+values.
+
+Unlike most other Python containers, however, it is common in idiomatic Python
+code for tuples to have elements which are not all of the same type. For this
+reason, tuples are special-cased in Python's typing system. :class:`tuple`
+accepts *any number* of type arguments::
+
+   # OK: ``x`` is assigned to a tuple of length 1 where the sole element is an int
+   x: tuple[int] = (5,)
+
+   # OK: ``y`` is assigned to a tuple of length 2;
+   # element 1 is an int, element 2 is a str
+   y: tuple[int, str] = (5, "foo")
+
+   # Error: the type annotation indicates a tuple of length 1,
+   # but ``z`` has been assigned to a tuple of length 3
+   z: tuple[int] = (1, 2, 3)
+
+To denote a tuple which could be of *any* length, and in which all elements are
+of the same type ``T``, use ``tuple[T, ...]``. To denote an empty tuple, use
+``tuple[()]``. Using plain ``tuple`` as an annotation is equivalent to using
+``tuple[Any, ...]``::
+
+   x: tuple[int, ...] = (1, 2)
+   # These reassignments are OK: ``tuple[int, ...]`` indicates x can be of any length
+   x = (1, 2, 3)
+   x = ()
+   # This reassignment is an error: all elements in ``x`` must be ints
+   x = ("foo", "bar")
+
+   # ``y`` can only ever be assigned to an empty tuple
+   y: tuple[()] = ()
+
+   z: tuple = ("foo", "bar")
+   # These reassignments are OK: plain ``tuple`` is equivalent to ``tuple[Any, ...]``
+   z = (1, 2, 3)
+   z = ()
+
+.. _type-of-class-objects:
+
+The type of class objects
+=========================
+
+A variable annotated with ``C`` may accept a value of type ``C``. In
+contrast, a variable annotated with ``type[C]`` (or
+:class:`typing.Type[C] <Type>`) may accept values that are classes
+themselves -- specifically, it will accept the *class object* of ``C``. For
+example::
+
+   a = 3         # Has type ``int```
+   b = int       # Has type ``type[int]``
+   c = type(a)   # Also has type ``type[int]``
+
+Note that ``type[C]`` is covariant::
+
+   class User: ...
+   class ProUser(User): ...
+   class TeamUser(User): ...
+
+   def make_new_user(user_class: type[User]) -> User:
+       # ...
+       return user_class()
+
+   make_new_user(User)      # OK
+   make_new_user(ProUser)   # Also OK: ``type[ProUser]`` is a subtype of ``type[User]``
+   make_new_user(TeamUser)  # Still fine
+   make_new_user(User())    # Error: expected ``type[User]`` but got ``User``
+   make_new_user(int)       # Error: ``type[int]`` is not a subtype of ``type[User]``
+
+The only legal parameters for :class:`type` are classes, :data:`Any`,
+:ref:`type variables <generics>`, and unions of any of these types.
+For example::
+
+   def new_non_team_user(user_class: type[BasicUser | ProUser]): ...
+
+   new_non_team_user(BasicUser)  # OK
+   new_non_team_user(ProUser)    # OK
+   new_non_team_user(TeamUser)   # Error: ``type[TeamUser]`` is not a subtype
+                                 # of ``type[BasicUser | ProUser]``
+   new_non_team_user(User)       # Also an error
+
+``type[Any]`` is equivalent to :class:`type`, which is the root of Python's
+:ref:`metaclass hierarchy <metaclasses>`.
+
 .. _user-defined-generics:
 
 User-defined generic types
@@ -877,26 +985,6 @@ Special forms
 These can be used as types in annotations. They all support subscription using
 ``[]``, but each has a unique syntax.
 
-.. data:: Tuple
-
-   Deprecated alias for :class:`tuple`.
-
-   ``Tuple[X, Y]`` is the type of a tuple of two items
-   with the first item of type X and the second of type Y. The type of
-   the empty tuple can be written as ``Tuple[()]``.
-
-   Example: ``Tuple[T1, T2]`` is a tuple of two elements corresponding
-   to type variables T1 and T2.  ``Tuple[int, float, str]`` is a tuple
-   of an int, a float and a string.
-
-   To specify a variable-length tuple of homogeneous type,
-   use literal ellipsis, e.g. ``Tuple[int, ...]``. A plain ``Tuple`` annotation
-   is equivalent to ``tuple``, ``Tuple[Any, ...]``, or ``tuple[Any, ...]``.
-
-   .. deprecated:: 3.9
-      :class:`builtins.tuple <tuple>` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
 .. data:: Union
 
    Union type; ``Union[X, Y]`` is equivalent to ``X | Y`` and means either X or Y.
@@ -1050,55 +1138,6 @@ These can be used as types in annotations. They all support subscription using
       * :pep:`612` -- Parameter Specification Variables (the PEP which introduced
         ``ParamSpec`` and ``Concatenate``).
       * :class:`ParamSpec` and :class:`Callable`.
-
-
-.. class:: Type(Generic[CT_co])
-
-   Deprecated alias to :class:`type`.
-
-   A variable annotated with ``C`` may accept a value of type ``C``. In
-   contrast, a variable annotated with ``type[C]`` or ``Type[C]`` may accept values that are
-   classes themselves -- specifically, it will accept the *class object* of
-   ``C``. For example::
-
-      a = 3         # Has type 'int'
-      b = int       # Has type 'Type[int]'
-      c = type(a)   # Also has type 'Type[int]'
-
-   Note that ``Type[C]`` is covariant::
-
-      class User: ...
-      class BasicUser(User): ...
-      class ProUser(User): ...
-      class TeamUser(User): ...
-
-      # Accepts User, BasicUser, ProUser, TeamUser, ...
-      def make_new_user(user_class: Type[User]) -> User:
-          # ...
-          return user_class()
-
-   The fact that ``Type[C]`` is covariant implies that all subclasses of
-   ``C`` should implement the same constructor signature and class method
-   signatures as ``C``. The type checker should flag violations of this,
-   but should also allow constructor calls in subclasses that match the
-   constructor calls in the indicated base class. How the type checker is
-   required to handle this particular case may change in future revisions of
-   :pep:`484`.
-
-   The only legal parameters for :class:`Type` are classes, :data:`Any`,
-   :ref:`type variables <generics>`, and unions of any of these types.
-   For example::
-
-      def new_non_team_user(user_class: Type[BasicUser | ProUser]): ...
-
-   ``Type[Any]`` is equivalent to ``Type`` which in turn is equivalent
-   to ``type``, which is the root of Python's metaclass hierarchy.
-
-   .. versionadded:: 3.5.2
-
-   .. deprecated:: 3.9
-      :class:`builtins.type <type>` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
 
 .. data:: Literal
 
@@ -3136,7 +3175,29 @@ Aliases to built-in types
       now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. note:: :data:`Tuple` is a special form.
+.. data:: Tuple
+
+   Deprecated alias for :class:`tuple`.
+
+   :class:`tuple` and ``Tuple`` are special-cased in the type system; see
+   :ref:`annotating-tuples` for more details.
+
+   .. deprecated:: 3.9
+      :class:`builtins.tuple <tuple>` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: Type(Generic[CT_co])
+
+   Deprecated alias to :class:`type`.
+
+   See :ref:`type-of-class-objects` for details on using :class:`type` or
+   ``typing.Type`` in type annotations.
+
+   .. versionadded:: 3.5.2
+
+   .. deprecated:: 3.9
+      :class:`builtins.type <type>` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
 .. _corresponding-to-types-in-collections:
 
