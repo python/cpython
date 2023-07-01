@@ -4216,9 +4216,6 @@ PyInit__testcapi(void)
     if (_PyTestCapi_Init_GetArgs(m) < 0) {
         return NULL;
     }
-    if (_PyTestCapi_Init_PyTime(m) < 0) {
-        return NULL;
-    }
     if (_PyTestCapi_Init_DateTime(m) < 0) {
         return NULL;
     }
