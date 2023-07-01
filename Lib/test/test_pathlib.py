@@ -2145,15 +2145,25 @@ class PathTest(unittest.TestCase):
         # Non-strict
         self.assertEqual(r.resolve(strict=False), p / '3' / '4')
 
-    @os_helper.skip_unless_working_chmod
     def test_stat(self):
-        p = self.cls(BASE) / 'fileA'
-        st = p.stat()
-        self.assertEqual(p.stat(), st)
-        # Change file mode by flipping write bit.
-        p.chmod(st.st_mode ^ 0o222)
-        self.addCleanup(p.chmod, st.st_mode)
-        self.assertNotEqual(p.stat(), st)
+        statA = self.cls(BASE).joinpath('fileA').stat()
+        statB = self.cls(BASE).joinpath('dirB', 'fileB').stat()
+        statC = self.cls(BASE).joinpath('dirC').stat()
+        # st_mode: files are the same, directory differs.
+        self.assertIsInstance(statA.st_mode, int)
+        self.assertEqual(statA.st_mode, statB.st_mode)
+        self.assertNotEqual(statA.st_mode, statC.st_mode)
+        self.assertNotEqual(statB.st_mode, statC.st_mode)
+        # st_ino: all different,
+        self.assertIsInstance(statA.st_ino, int)
+        self.assertNotEqual(statA.st_ino, statB.st_ino)
+        self.assertNotEqual(statA.st_ino, statC.st_ino)
+        self.assertNotEqual(statB.st_ino, statC.st_ino)
+        # st_dev: all the same.
+        self.assertIsInstance(statA.st_dev, int)
+        self.assertEqual(statA.st_dev, statB.st_dev)
+        self.assertEqual(statA.st_dev, statC.st_dev)
+        # other attributes not used by pathlib.
 
     def test_stat_no_follow_symlinks(self):
         if not self.can_symlink:
