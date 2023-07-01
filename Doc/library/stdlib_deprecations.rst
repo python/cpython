@@ -14,7 +14,7 @@ Standard library deprecations.
 
 .. class:: Deprecated
 
-   Attributes::
+   Attributes:
 
    .. attribute:: name
 
