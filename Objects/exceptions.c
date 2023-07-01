@@ -7,6 +7,7 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <stdbool.h>
+#include "pycore_abstract.h"      // _PyObject_RealIsSubclass()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall
 #include "pycore_pyerrors.h"      // struct _PyErr_SetRaisedException
 #include "pycore_exceptions.h"    // struct _Py_exc_state
@@ -1463,7 +1464,7 @@ PyUnstable_Exc_PrepReraiseStar(PyObject *orig, PyObject *excs)
     }
 
     /* Make sure that orig has something as traceback, in the interpreter
-     * it always does becuase it's a raised exception.
+     * it always does because it's a raised exception.
      */
     PyObject *tb = PyException_GetTraceback(orig);
 

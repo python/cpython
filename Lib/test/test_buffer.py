@@ -4722,7 +4722,7 @@ class TestPythonBufferProtocol(unittest.TestCase):
         with self.assertRaises(ValueError):
             c.buffer.tobytes()
 
-    def test_multiple_inheritance_buffer_last(self):
+    def test_multiple_inheritance_buffer_last_raising(self):
         class A:
             def __buffer__(self, flags):
                 raise RuntimeError("should not be called")

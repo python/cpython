@@ -4,7 +4,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
-#include "pycore_call.h"          // _PyObject_FastCallDictTstate()
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_SignalAsyncExc()
 #include "pycore_code.h"
 #include "pycore_function.h"
@@ -22,6 +22,7 @@
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_typeobject.h"    // _PySuper_Lookup()
+#include "pycore_uops.h"          // _PyUOpExecutorObject
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 
 #include "pycore_dict.h"
@@ -222,14 +223,6 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, PyFunctionObject *func,
     PyObject *locals, Py_ssize_t nargs, PyObject *callargs, PyObject *kwargs);
 static void
 _PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
-
-typedef PyObject *(*convertion_func_ptr)(PyObject *);
-
-static const convertion_func_ptr CONVERSION_FUNCTIONS[4] = {
-    [FVC_STR] = PyObject_Str,
-    [FVC_REPR] = PyObject_Repr,
-    [FVC_ASCII] = PyObject_ASCII
-};
 
 #define UNBOUNDLOCAL_ERROR_MSG \
     "cannot access local variable '%s' where it is not associated with a value"
@@ -2438,40 +2431,37 @@ static PyObject *
 import_name(PyThreadState *tstate, _PyInterpreterFrame *frame,
             PyObject *name, PyObject *fromlist, PyObject *level)
 {
-    PyObject *import_func, *res;
-    PyObject* stack[5];
-
-    import_func = _PyDict_GetItemWithError(frame->f_builtins, &_Py_ID(__import__));
+    PyObject *import_func = _PyDict_GetItemWithError(frame->f_builtins,
+                                                     &_Py_ID(__import__));
     if (import_func == NULL) {
         if (!_PyErr_Occurred(tstate)) {
             _PyErr_SetString(tstate, PyExc_ImportError, "__import__ not found");
         }
         return NULL;
     }
+
     PyObject *locals = frame->f_locals;
+    if (locals == NULL) {
+        locals = Py_None;
+    }
+
     /* Fast path for not overloaded __import__. */
     if (_PyImport_IsDefaultImportFunc(tstate->interp, import_func)) {
         int ilevel = _PyLong_AsInt(level);
         if (ilevel == -1 && _PyErr_Occurred(tstate)) {
             return NULL;
         }
-        res = PyImport_ImportModuleLevelObject(
+        return PyImport_ImportModuleLevelObject(
                         name,
                         frame->f_globals,
-                        locals == NULL ? Py_None :locals,
+                        locals,
                         fromlist,
                         ilevel);
-        return res;
     }
 
+    PyObject* args[5] = {name, frame->f_globals, locals, fromlist, level};
     Py_INCREF(import_func);
-
-    stack[0] = name;
-    stack[1] = frame->f_globals;
-    stack[2] = locals == NULL ? Py_None : locals;
-    stack[3] = fromlist;
-    stack[4] = level;
-    res = _PyObject_FastCall(import_func, stack, 5);
+    PyObject *res = PyObject_Vectorcall(import_func, args, 5, NULL);
     Py_DECREF(import_func);
     return res;
 }
@@ -2770,4 +2760,125 @@ int Py_EnterRecursiveCall(const char *where)
 void Py_LeaveRecursiveCall(void)
 {
     _Py_LeaveRecursiveCall();
+}
+
+///////////////////// Experimental UOp Interpreter /////////////////////
+
+#undef DEOPT_IF
+#define DEOPT_IF(COND, INSTNAME) \
+    if ((COND)) {                \
+        goto deoptimize;         \
+    }
+
+_PyInterpreterFrame *
+_PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **stack_pointer)
+{
+#ifdef LLTRACE
+    char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
+    int lltrace = 0;
+    if (uop_debug != NULL && *uop_debug >= '0') {
+        lltrace = *uop_debug - '0';  // TODO: Parse an int and all that
+    }
+    if (lltrace >= 2) {
+        PyCodeObject *code = _PyFrame_GetCode(frame);
+        _Py_CODEUNIT *instr = frame->prev_instr + 1;
+        fprintf(stderr,
+                "Entering _PyUopExecute for %s (%s:%d) at offset %ld\n",
+                PyUnicode_AsUTF8(code->co_qualname),
+                PyUnicode_AsUTF8(code->co_filename),
+                code->co_firstlineno,
+                (long)(instr - (_Py_CODEUNIT *)code->co_code_adaptive));
+    }
+#endif
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyUOpExecutorObject *self = (_PyUOpExecutorObject *)executor;
+
+    // Equivalent to CHECK_EVAL_BREAKER()
+    _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+    if (_Py_atomic_load_relaxed_int32(&tstate->interp->ceval.eval_breaker)) {
+        if (_Py_HandlePending(tstate) != 0) {
+            goto error;
+        }
+    }
+
+    OBJECT_STAT_INC(optimization_traces_executed);
+    _Py_CODEUNIT *ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive - 1;
+    int pc = 0;
+    int opcode;
+    uint64_t operand;
+    int oparg;
+    for (;;) {
+        opcode = self->trace[pc].opcode;
+        operand = self->trace[pc].operand;
+        oparg = (int)operand;
+#ifdef LLTRACE
+        if (lltrace >= 3) {
+            const char *opname = opcode < 256 ? _PyOpcode_OpName[opcode] : _PyOpcode_uop_name[opcode];
+            int stack_level = (int)(stack_pointer - _PyFrame_Stackbase(frame));
+            fprintf(stderr, "  uop %s, operand %" PRIu64 ", stack_level %d\n",
+                    opname, operand, stack_level);
+        }
+#endif
+        pc++;
+        OBJECT_STAT_INC(optimization_uops_executed);
+        switch (opcode) {
+
+#undef ENABLE_SPECIALIZATION
+#define ENABLE_SPECIALIZATION 0
+#include "executor_cases.c.h"
+
+            case SET_IP:
+            {
+                frame->prev_instr = ip_offset + oparg;
+                break;
+            }
+
+            case EXIT_TRACE:
+            {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                Py_DECREF(self);
+                return frame;
+            }
+
+            default:
+            {
+                fprintf(stderr, "Unknown uop %d, operand %" PRIu64 "\n", opcode, operand);
+                Py_FatalError("Unknown uop");
+            }
+
+        }
+    }
+
+pop_4_error:
+    STACK_SHRINK(1);
+pop_3_error:
+    STACK_SHRINK(1);
+pop_2_error:
+    STACK_SHRINK(1);
+pop_1_error:
+    STACK_SHRINK(1);
+error:
+    // On ERROR_IF we return NULL as the frame.
+    // The caller recovers the frame from cframe.current_frame.
+#ifdef LLTRACE
+    if (lltrace >= 2) {
+        fprintf(stderr, "Error: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
+    }
+#endif
+    _PyFrame_SetStackPointer(frame, stack_pointer);
+    Py_DECREF(self);
+    return NULL;
+
+deoptimize:
+    // On DEOPT_IF we just repeat the last instruction.
+    // This presumes nothing was popped from the stack (nor pushed).
+#ifdef LLTRACE
+    if (lltrace >= 2) {
+        fprintf(stderr, "DEOPT: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
+    }
+#endif
+    _PyFrame_SetStackPointer(frame, stack_pointer);
+    Py_DECREF(self);
+    return frame;
 }

@@ -87,9 +87,9 @@ def_op('CACHE', 0)
 def_op('POP_TOP', 1)
 def_op('PUSH_NULL', 2)
 def_op('INTERPRETER_EXIT', 3)
-
 def_op('END_FOR', 4)
 def_op('END_SEND', 5)
+def_op('TO_BOOL', 6)
 
 def_op('NOP', 9)
 
@@ -142,6 +142,7 @@ def_op('RETURN_GENERATOR', 75)
 def_op('RETURN_VALUE', 83)
 
 def_op('SETUP_ANNOTATIONS', 85)
+
 def_op('LOAD_LOCALS', 87)
 
 def_op('POP_EXCEPT', 89)
@@ -171,6 +172,7 @@ hascompare.append(107)
 name_op('IMPORT_NAME', 108)     # Index in name list
 name_op('IMPORT_FROM', 109)     # Index in name list
 jrel_op('JUMP_FORWARD', 110)    # Number of words to skip
+
 jrel_op('POP_JUMP_IF_FALSE', 114)
 jrel_op('POP_JUMP_IF_TRUE', 115)
 name_op('LOAD_GLOBAL', 116)     # Index in name list
@@ -198,8 +200,6 @@ def_op('BUILD_SLICE', 133)      # Number of items
 jrel_op('JUMP_BACKWARD_NO_INTERRUPT', 134) # Number of words to skip (backwards)
 def_op('MAKE_CELL', 135)
 hasfree.append(135)
-def_op('LOAD_CLOSURE', 136)
-hasfree.append(136)
 def_op('LOAD_DEREF', 137)
 hasfree.append(137)
 def_op('STORE_DEREF', 138)
@@ -211,7 +211,6 @@ name_op('LOAD_SUPER_ATTR', 141)
 def_op('CALL_FUNCTION_EX', 142)  # Flags
 def_op('LOAD_FAST_AND_CLEAR', 143)  # Local variable number
 haslocal.append(143)
-
 def_op('EXTENDED_ARG', 144)
 EXTENDED_ARG = 144
 def_op('LIST_APPEND', 145)
@@ -240,7 +239,6 @@ def_op('KW_NAMES', 172)
 hasconst.append(172)
 def_op('CALL_INTRINSIC_1', 173)
 def_op('CALL_INTRINSIC_2', 174)
-
 name_op('LOAD_FROM_DICT_OR_GLOBALS', 175)
 def_op('LOAD_FROM_DICT_OR_DEREF', 176)
 hasfree.append(176)
@@ -293,6 +291,7 @@ pseudo_op('LOAD_ZERO_SUPER_METHOD', 264, ['LOAD_SUPER_ATTR'])
 pseudo_op('LOAD_ZERO_SUPER_ATTR', 265, ['LOAD_SUPER_ATTR'])
 
 pseudo_op('STORE_FAST_MAYBE_NULL', 266, ['STORE_FAST'])
+pseudo_op('LOAD_CLOSURE', 267, ['LOAD_FAST'])
 
 MAX_PSEUDO_OPCODE = MIN_PSEUDO_OPCODE + len(_pseudo_ops) - 1
 
@@ -404,6 +403,10 @@ _cache_format = {
     },
     "JUMP_BACKWARD": {
         "counter": 1,
+    },
+    "TO_BOOL": {
+        "counter": 1,
+        "version": 2,
     },
 }
 

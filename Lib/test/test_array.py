@@ -100,6 +100,7 @@ UTF32_BE = 21
 class ArrayReconstructorTest(unittest.TestCase):
 
     def setUp(self):
+        self.enterContext(warnings.catch_warnings())
         warnings.filterwarnings(
             "ignore",
             message="The 'u' type code is deprecated and "
