@@ -261,9 +261,6 @@ struct _ts {
 
 /* other API */
 
-// Alias for backward compatibility with Python 3.8
-#define _PyInterpreterState_Get PyInterpreterState_Get
-
 /* An alias for the internal _PyThreadState_New(),
    kept for stable ABI compatibility. */
 PyAPI_FUNC(PyThreadState *) _PyThreadState_Prealloc(PyInterpreterState *);
@@ -295,7 +292,7 @@ PyAPI_FUNC(int) PyGILState_Check(void);
    This function doesn't check for error. Return NULL before _PyGILState_Init()
    is called and after _PyGILState_Fini() is called.
 
-   See also _PyInterpreterState_Get() and _PyInterpreterState_GET(). */
+   See also PyInterpreterState_Get() and _PyInterpreterState_GET(). */
 PyAPI_FUNC(PyInterpreterState *) _PyGILState_GetInterpreterStateUnsafe(void);
 
 /* The implementation of sys._current_frames()  Returns a dict mapping
