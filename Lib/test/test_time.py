@@ -970,7 +970,7 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
             return divmod(us, SEC_TO_US)
 
         if sys.platform == 'win32':
-            from _testinternalcapi import LONG_MIN, LONG_MAX
+            from _testcapi import LONG_MIN, LONG_MAX
 
             # On Windows, timeval.tv_sec type is a C long
             def seconds_filter(secs):
@@ -1002,7 +1002,7 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
         from _testinternalcapi import _PyTime_AsTimeval_clamp
 
         if sys.platform == 'win32':
-            from _testinternalcapi import LONG_MIN, LONG_MAX
+            from _testcapi import LONG_MIN, LONG_MAX
             tv_sec_max = LONG_MAX
             tv_sec_min = LONG_MIN
         else:
