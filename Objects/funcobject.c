@@ -944,7 +944,7 @@ functools_copy_attr(PyObject *wrapper, PyObject *wrapped, PyObject *name)
 {
     PyObject *value;
     int res = _PyObject_LookupAttr(wrapped, name, &value);
-    if (res > 0) {
+    if (value != NULL) {
         res = PyObject_SetAttr(wrapper, name, value);
         Py_DECREF(value);
     }
