@@ -602,3 +602,6 @@ Removed
   use ``PyObject_Vectorcall()`` which is available since Python 3.8
   (:pep:`590`).
   (Contributed by Victor Stinner in :gh:`106023`.)
+
+* Remove ``cpython/pytime.h`` header file: it only contained private functions.
+  (Contributed by Victor Stinner in :gh:`106316`.)
