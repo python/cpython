@@ -2886,6 +2886,7 @@ deoptimize:
         fprintf(stderr, "DEOPT: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
     }
 #endif
+    frame->prev_instr--;  // Back up to just before destination
     _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(self);
     return frame;
