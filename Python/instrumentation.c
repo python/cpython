@@ -1,5 +1,3 @@
-
-
 #include "Python.h"
 #include "pycore_call.h"
 #include "pycore_frame.h"
@@ -9,7 +7,7 @@
 #include "pycore_object.h"
 #include "pycore_opcode.h"
 #include "pycore_pyerrors.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 /* Uncomment this to dump debugging output when assertions fail */
 // #define INSTRUMENT_DEBUG 1
@@ -390,7 +388,7 @@ dump_instrumentation_data(PyCodeObject *code, int star, FILE*out)
         fprintf(out, "NULL\n");
         return;
     }
-    dump_monitors("Global", PyInterpreterState_Get()->monitors, out);
+    dump_monitors("Global", _PyInterpreterState_GET()->monitors, out);
     dump_monitors("Code", data->local_monitors, out);
     dump_monitors("Active", data->active_monitors, out);
     int code_len = (int)Py_SIZE(code);
@@ -449,7 +447,7 @@ sanity_check_instrumentation(PyCodeObject *code)
     if (data == NULL) {
         return;
     }
-    _Py_Monitors active_monitors = PyInterpreterState_Get()->monitors;
+    _Py_Monitors active_monitors = _PyInterpreterState_GET()->monitors;
     if (code->_co_monitoring) {
         _Py_Monitors local_monitors = code->_co_monitoring->local_monitors;
         active_monitors = monitors_or(active_monitors, local_monitors);
@@ -740,7 +738,7 @@ remove_tools(PyCodeObject * code, int offset, int event, int tools)
 static bool
 tools_is_subset_for_event(PyCodeObject * code, int event, int tools)
 {
-    int global_tools = PyInterpreterState_Get()->monitors.tools[event];
+    int global_tools = _PyInterpreterState_GET()->monitors.tools[event];
     int local_tools = code->_co_monitoring->local_monitors.tools[event];
     return tools == ((global_tools | local_tools) & tools);
 }
