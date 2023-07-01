@@ -393,24 +393,17 @@ no_redundant_jumps(cfg_builder *g) {
 static int
 normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
     cfg_instr *last = _PyCfg_BasicblockLastInstr(b);
-    if (last == NULL || !is_jump(last)) {
+    if (last == NULL || !is_jump(last) ||
+        IS_UNCONDITIONAL_JUMP_OPCODE(last->i_opcode)) {
         return SUCCESS;
     }
     assert(!IS_ASSEMBLER_OPCODE(last->i_opcode));
+
     bool is_forward = last->i_target->b_visited == 0;
-    switch(last->i_opcode) {
-        case JUMP:
-            assert(SAME_OPCODE_METADATA(JUMP, JUMP_FORWARD));
-            assert(SAME_OPCODE_METADATA(JUMP, JUMP_BACKWARD));
-            last->i_opcode = is_forward ? JUMP_FORWARD : JUMP_BACKWARD;
-            return SUCCESS;
-        case JUMP_NO_INTERRUPT:
-            assert(SAME_OPCODE_METADATA(JUMP_NO_INTERRUPT, JUMP_FORWARD));
-            assert(SAME_OPCODE_METADATA(JUMP_NO_INTERRUPT, JUMP_BACKWARD_NO_INTERRUPT));
-            last->i_opcode = is_forward ?
-                JUMP_FORWARD : JUMP_BACKWARD_NO_INTERRUPT;
-            return SUCCESS;
+    if (is_forward) {
+        return SUCCESS;
     }
+
     int reversed_opcode = 0;
     switch(last->i_opcode) {
         case POP_JUMP_IF_NOT_NONE:
@@ -425,9 +418,6 @@ normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
         case POP_JUMP_IF_TRUE:
             reversed_opcode = POP_JUMP_IF_FALSE;
             break;
-    }
-    if (is_forward) {
-        return SUCCESS;
     }
     /* transform 'conditional jump T' to
      * 'reversed_jump b_next' followed by 'jump_backwards T'
