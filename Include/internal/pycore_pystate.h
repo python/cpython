@@ -108,7 +108,7 @@ _Py_EnsureFuncTstateNotNULL(const char *func, PyThreadState *tstate)
 
    The caller must hold the GIL.
 
-   See also _PyInterpreterState_Get()
+   See also PyInterpreterState_Get()
    and _PyGILState_GetInterpreterStateUnsafe(). */
 static inline PyInterpreterState* _PyInterpreterState_GET(void) {
     PyThreadState *tstate = _PyThreadState_GET();
