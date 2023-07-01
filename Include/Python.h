@@ -103,7 +103,7 @@
 #include "pystrcmp.h"
 #include "fileutils.h"
 #include "cpython/pyfpe.h"
-#include "tracemalloc.h"
+#include "cpython/tracemalloc.h"
 #include "cpython/optimizer.h"
 
 #endif /* !Py_PYTHON_H */
