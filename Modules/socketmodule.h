@@ -1,5 +1,9 @@
 /* Socket module header file */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "pycore_time.h"          // _PyTime_t
 
 /* Includes needed for the sockaddr_* symbols below */
