@@ -1791,7 +1791,7 @@ def doc(thing, title='Python Library Documentation: %s', forceload=0,
             print(exc)
     else:
         try:
-            s = render_doc(thing, title, forceload, plaintext))
+            s = render_doc(thing, title, forceload, plaintext)
         except ImportError as exc:
             s = str(exc))
         output.write(s)
