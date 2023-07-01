@@ -20,7 +20,7 @@
     0)
 
 #define EXIT_TRACE 300
-#define SET_IP 301
+#define SAVE_IP 301
 #define _GUARD_BOTH_INT 302
 #define _BINARY_OP_MULTIPLY_INT 303
 #define _BINARY_OP_ADD_INT 304
@@ -1268,7 +1268,7 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] = {
 #ifdef Py_DEBUG
 const char * const _PyOpcode_uop_name[512] = {
     [300] = "EXIT_TRACE",
-    [301] = "SET_IP",
+    [301] = "SAVE_IP",
     [302] = "_GUARD_BOTH_INT",
     [303] = "_BINARY_OP_MULTIPLY_INT",
     [304] = "_BINARY_OP_ADD_INT",

@@ -2828,7 +2828,7 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
 #define ENABLE_SPECIALIZATION 0
 #include "executor_cases.c.h"
 
-            case SET_IP:
+            case SAVE_IP:
             {
                 frame->prev_instr = ip_offset + oparg;
                 break;

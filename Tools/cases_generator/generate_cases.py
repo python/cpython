@@ -1327,7 +1327,7 @@ class Analyzer:
             self.out.emit(make_text(name, counter))
             counter += 1
         add("EXIT_TRACE")
-        add("SET_IP")
+        add("SAVE_IP")
         for instr in self.instrs.values():
             if instr.kind == "op" and instr.is_viable_uop():
                 add(instr.name)
