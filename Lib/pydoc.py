@@ -1793,7 +1793,7 @@ def doc(thing, title='Python Library Documentation: %s', forceload=0,
         try:
             s = render_doc(thing, title, forceload, plaintext)
         except ImportError as exc:
-            s = str(exc))
+            s = str(exc)
         output.write(s)
 
 def writedoc(thing, forceload=0):
