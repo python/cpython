@@ -5831,7 +5831,7 @@ _PyUnicode_DecodeUnicodeEscapeInternal(const char *s,
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
     _PyUnicode_Name_CAPI *ucnhash_capi;
-    PyInterpreterState *interp = _PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
 
     // so we can remember if we've seen an invalid escape char or not
     *first_invalid_escape = NULL;
