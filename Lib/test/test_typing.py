@@ -5794,14 +5794,11 @@ class ForwardRefTests(BaseTestCase):
                 get_type_hints(clazz)
 
     def test_meta_no_type_check(self):
-
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            (
-                "'typing.no_type_check_decorator' is deprecated "
-                "and slated for removal in Python 3.15"
-            )
-        ):
+        depr_msg = (
+            "'typing.no_type_check_decorator' is deprecated "
+            "and slated for removal in Python 3.15"
+        )
+        with self.assertWarnsRegex(DeprecationWarning, depr_msg):
             @no_type_check_decorator
             def magic_decorator(func):
                 return func
