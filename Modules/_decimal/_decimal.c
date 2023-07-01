@@ -46,7 +46,7 @@ typedef struct {
     PyTypeObject *PyDec_Type;
     PyTypeObject *PyDecSignalDict_Type;
     PyTypeObject *DecimalTuple;
-    
+
     /* Top level Exception; inherits from ArithmeticError */
     PyObject *DecimalException;
 } decimal_state;
