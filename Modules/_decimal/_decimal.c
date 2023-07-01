@@ -548,25 +548,33 @@ getround(PyObject *v)
    initialized to new SignalDicts. Once a SignalDict is tied to
    a context, it cannot be deleted. */
 
-static mpd_context_t dflt_ctx;
-
 static int
 signaldict_init(PyObject *self, PyObject *args UNUSED, PyObject *kwds UNUSED)
 {
-    SdFlagAddr(self) = &dflt_ctx.status;
+    SdFlagAddr(self) = NULL;
     return 0;
 }
 
 static Py_ssize_t
-signaldict_len(PyObject *self UNUSED)
+signaldict_len(PyObject *self)
 {
+    if (SdFlagAddr(self) == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+            "invalid signal dict");
+        return -1;
+    }
     return SIGNAL_MAP_LEN;
 }
 
 static PyObject *SignalTuple;
 static PyObject *
-signaldict_iter(PyObject *self UNUSED)
+signaldict_iter(PyObject *self)
 {
+    if (SdFlagAddr(self) == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+            "invalid signal dict");
+        return NULL;
+    }
     return PyTuple_Type.tp_iter(SignalTuple);
 }
 
@@ -574,6 +582,12 @@ static PyObject *
 signaldict_getitem(PyObject *self, PyObject *key)
 {
     uint32_t flag;
+
+    if (SdFlagAddr(self) == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+            "invalid signal dict");
+        return NULL;
+    }
 
     flag = exception_as_flag(key);
     if (flag & DEC_ERRORS) {
@@ -588,6 +602,12 @@ signaldict_setitem(PyObject *self, PyObject *key, PyObject *value)
 {
     uint32_t flag;
     int x;
+
+    if (SdFlagAddr(self) == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+            "invalid signal dict");
+        return -1;
+    }
 
     if (value == NULL) {
         return value_error_int("signal keys cannot be deleted");
@@ -637,6 +657,12 @@ signaldict_repr(PyObject *self)
     const char *b[SIGNAL_MAP_LEN]; /* bool */
     int i;
 
+    if (SdFlagAddr(self) == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+            "invalid signal dict");
+        return NULL;
+    }
+
     assert(SIGNAL_MAP_LEN == 9);
 
     for (cm=signal_map, i=0; cm->name != NULL; cm++, i++) {
@@ -659,6 +685,12 @@ signaldict_richcompare(PyObject *v, PyObject *w, int op)
 
     decimal_state *state = GLOBAL_STATE();
     assert(PyDecSignalDict_Check(state, v));
+
+    if ((SdFlagAddr(v) == NULL) || (SdFlagAddr(w) == NULL)) {
+        PyErr_SetString(PyExc_ValueError,
+            "invalid signal dict");
+        return NULL;
+    }
 
     if (op == Py_EQ || op == Py_NE) {
         if (PyDecSignalDict_Check(state, w)) {
@@ -687,6 +719,11 @@ signaldict_richcompare(PyObject *v, PyObject *w, int op)
 static PyObject *
 signaldict_copy(PyObject *self, PyObject *args UNUSED)
 {
+    if (SdFlagAddr(self) == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+            "invalid signal dict");
+        return NULL;
+    }
     return flags_as_dict(SdFlags(self));
 }
 
