@@ -2271,6 +2271,15 @@ class PathTest(unittest.TestCase):
             self.assertIs((P / 'linkA\udfff').is_file(), False)
             self.assertIs((P / 'linkA\x00').is_file(), False)
 
+    def test_is_junction_false(self):
+        P = self.cls(BASE)
+        self.assertFalse((P / 'fileA').is_junction())
+        self.assertFalse((P / 'dirA').is_junction())
+        self.assertFalse((P / 'non-existing').is_junction())
+        self.assertFalse((P / 'fileA' / 'bah').is_junction())
+        self.assertFalse((P / 'fileA\udfff').is_junction())
+        self.assertFalse((P / 'fileA\x00').is_junction())
+
     def test_is_fifo_false(self):
         P = self.cls(BASE)
         self.assertFalse((P / 'fileA').is_fifo())
