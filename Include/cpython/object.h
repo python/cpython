@@ -320,6 +320,17 @@ PyAPI_FUNC(int)
 _PyObject_GenericSetAttrWithDict(PyObject *, PyObject *,
                                  PyObject *, PyObject *);
 
+/* Replacements of PyObject_GetItem() which don't raise KeyError.
+
+   Return 1 and set *result != NULL if a key is found.
+   Return 0 and set *result == NULL if a key is not found;
+   a KeyError is silenced.
+   Return -1 and set *result == NULL if an error other than KeyError
+   is raised.
+*/
+PyAPI_FUNC(int) _PyMapping_LookupItem(PyObject *, PyObject *, PyObject **);
+PyAPI_FUNC(int) _PyMapping_LookupItemString(PyObject *, const char *, PyObject **);
+
 PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
 
 /* Safely decref `dst` and set `dst` to `src`.
