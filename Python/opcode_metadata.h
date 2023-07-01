@@ -4,7 +4,7 @@
 // Do not edit!
 
 
-#define IS_PSEUDO_INSTR(OP)  \
+#define IS_PSEUDO_INSTR(OP)  ( \
     ((OP) == LOAD_CLOSURE) || \
     ((OP) == STORE_FAST_MAYBE_NULL) || \
     ((OP) == LOAD_SUPER_METHOD) || \
@@ -17,7 +17,7 @@
     ((OP) == SETUP_CLEANUP) || \
     ((OP) == SETUP_WITH) || \
     ((OP) == POP_BLOCK) || \
-    0
+    0)
 
 #define EXIT_TRACE 300
 #define SET_IP 301

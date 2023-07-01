@@ -674,11 +674,45 @@ resolve_jump_offsets(instr_sequence *instrs)
     return SUCCESS;
 }
 
+static int
+resolve_unconditional_jumps(instr_sequence *instrs)
+{
+    /* Resolve directions of unconditional jumps */
+
+    for (int i = 0; i < instrs->s_used; i++) {
+        instruction *instr = &instrs->s_instrs[i];
+        bool is_forward = (instr->i_oparg > i);
+        switch(instr->i_opcode) {
+            case JUMP:
+                assert(SAME_OPCODE_METADATA(JUMP, JUMP_FORWARD));
+                assert(SAME_OPCODE_METADATA(JUMP, JUMP_BACKWARD));
+                instr->i_opcode = is_forward ? JUMP_FORWARD : JUMP_BACKWARD;
+                break;
+            case JUMP_NO_INTERRUPT:
+                assert(SAME_OPCODE_METADATA(JUMP_NO_INTERRUPT, JUMP_FORWARD));
+                assert(SAME_OPCODE_METADATA(JUMP_NO_INTERRUPT, JUMP_BACKWARD_NO_INTERRUPT));
+                instr->i_opcode = is_forward ?
+                    JUMP_FORWARD : JUMP_BACKWARD_NO_INTERRUPT;
+                break;
+            default:
+                if (OPCODE_HAS_JUMP(instr->i_opcode) &&
+                    IS_PSEUDO_INSTR(instr->i_opcode)) {
+                    Py_UNREACHABLE();
+                }
+        }
+    }
+    return SUCCESS;
+}
+
 PyCodeObject *
 _PyAssemble_MakeCodeObject(_PyCompile_CodeUnitMetadata *umd, PyObject *const_cache,
                            PyObject *consts, int maxdepth, instr_sequence *instrs,
                            int nlocalsplus, int code_flags, PyObject *filename)
 {
+
+    if (resolve_unconditional_jumps(instrs) < 0) {
+        return NULL;
+    }
     if (resolve_jump_offsets(instrs) < 0) {
         return NULL;
     }
