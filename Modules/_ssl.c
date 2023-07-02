@@ -25,8 +25,6 @@
 #endif
 #define OPENSSL_NO_DEPRECATED 1
 
-#define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
