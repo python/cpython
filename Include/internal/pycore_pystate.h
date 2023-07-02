@@ -172,7 +172,7 @@ PyAPI_FUNC(int) _PyOS_InterruptOccurred(PyThreadState *tstate);
 
 // Get the configuration of the current interpreter.
 // The caller must hold the GIL.
-extern const PyConfig* _Py_GetConfig(void);
+PyAPI_FUNC(const PyConfig*) _Py_GetConfig(void);
 
 
 #ifdef __cplusplus
