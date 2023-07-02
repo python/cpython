@@ -636,11 +636,15 @@ class PydocDocTest(unittest.TestCase):
         fd, name = tempfile.mkstemp()
         self.addCleanup(os_helper.unlink, name)
         with open(fd, "w") as f:
-            f.write("help('abd')")
+            f.write("help()")
         with spawn_python(name) as proc:
-            out, _ = proc.communicate()
-            out = out.decode()
-            expected = missing_pattern % "abd"
+            out, _ = proc.communicate(b"abd")
+            pretty_string = out.decode().replace("help> ", "")
+            pretty_expected = missing_pattern.replace(os.linesep, "")
+            lines = pretty_string.splitlines()
+            last_lines = lines[-10:-6]
+            out = "".join(last_lines)
+            expected = pretty_expected % "abd"
             self.assertEqual(expected, out.strip())
 
     def test_fail_help_output_redirect(self):
