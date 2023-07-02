@@ -38,7 +38,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 */
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_atomic_funcs.h"  // _Py_atomic_size_get()
@@ -5831,7 +5830,7 @@ _PyUnicode_DecodeUnicodeEscapeInternal(const char *s,
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
     _PyUnicode_Name_CAPI *ucnhash_capi;
-    PyInterpreterState *interp = _PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
 
     // so we can remember if we've seen an invalid escape char or not
     *first_invalid_escape = NULL;

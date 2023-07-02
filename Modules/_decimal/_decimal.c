@@ -46,6 +46,9 @@ typedef struct {
     PyTypeObject *PyDec_Type;
     PyTypeObject *PyDecSignalDict_Type;
     PyTypeObject *DecimalTuple;
+
+    /* Top level Exception; inherits from ArithmeticError */
+    PyObject *DecimalException;
 } decimal_state;
 
 static decimal_state global_state;
@@ -163,9 +166,6 @@ typedef struct {
     uint32_t flag;      /* libmpdec flag */
     PyObject *ex;       /* corresponding exception */
 } DecCondMap;
-
-/* Top level Exception; inherits from ArithmeticError */
-static PyObject *DecimalException = NULL;
 
 /* Exceptions that correspond to IEEE signals */
 #define SUBNORMAL 5
@@ -5902,10 +5902,10 @@ PyInit__decimal(void)
     CHECK_INT(PyModule_AddType(m, state->DecimalTuple));
 
     /* Create top level exception */
-    ASSIGN_PTR(DecimalException, PyErr_NewException(
+    ASSIGN_PTR(state->DecimalException, PyErr_NewException(
                                      "decimal.DecimalException",
                                      PyExc_ArithmeticError, NULL));
-    CHECK_INT(PyModule_AddObject(m, "DecimalException", Py_NewRef(DecimalException)));
+    CHECK_INT(PyModule_AddType(m, (PyTypeObject *)state->DecimalException));
 
     /* Create signal tuple */
     ASSIGN_PTR(SignalTuple, PyTuple_New(SIGNAL_MAP_LEN));
@@ -5918,10 +5918,11 @@ PyInit__decimal(void)
 
         switch (cm->flag) {
         case MPD_Float_operation:
-            base = PyTuple_Pack(2, DecimalException, PyExc_TypeError);
+            base = PyTuple_Pack(2, state->DecimalException, PyExc_TypeError);
             break;
         case MPD_Division_by_zero:
-            base = PyTuple_Pack(2, DecimalException, PyExc_ZeroDivisionError);
+            base = PyTuple_Pack(2, state->DecimalException,
+                                PyExc_ZeroDivisionError);
             break;
         case MPD_Overflow:
             base = PyTuple_Pack(2, signal_map[INEXACT].ex,
@@ -5933,7 +5934,7 @@ PyInit__decimal(void)
                                    signal_map[SUBNORMAL].ex);
             break;
         default:
-            base = PyTuple_Pack(1, DecimalException);
+            base = PyTuple_Pack(1, state->DecimalException);
             break;
         }
 

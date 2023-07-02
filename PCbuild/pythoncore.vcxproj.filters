@@ -219,9 +219,6 @@
     <ClInclude Include="..\Include\traceback.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\tracemalloc.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\tupleobject.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -447,14 +444,14 @@
     <ClInclude Include="..\Include\cpython\pylifecycle.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\cpython\pytime.h">
-      <Filter>Include\cpython</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\cpython\tupleobject.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\traceback.h">
       <Filter>Include\cpython</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\tracemalloc.h">
+      <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\frameobject.h">
       <Filter>Include\cpython</Filter>

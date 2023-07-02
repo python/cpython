@@ -1186,7 +1186,7 @@ frame_get_var(_PyInterpreterFrame *frame, PyCodeObject *co, int i,
                     // (likely) MAKE_CELL must have executed already.
                     value = PyCell_GET(value);
                 }
-                // (likely) Otherwise it it is an arg (kind & CO_FAST_LOCAL),
+                // (likely) Otherwise it is an arg (kind & CO_FAST_LOCAL),
                 // with the initial value set when the frame was created...
                 // (unlikely) ...or it was set to some initial value by
                 // an earlier call to PyFrame_LocalsToFast().

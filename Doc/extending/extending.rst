@@ -69,8 +69,10 @@ the module and a copyright notice if you like).
    headers on some systems, you *must* include :file:`Python.h` before any standard
    headers are included.
 
-   It is recommended to always define ``PY_SSIZE_T_CLEAN`` before including
-   ``Python.h``.  See :ref:`arg-parsing-string-and-buffers` for a description of this macro.
+   ``#define PY_SSIZE_T_CLEAN`` was used to indicate that ``Py_ssize_t`` should be
+   used in some APIs instead of ``int``.
+   It is not necessary since Python 3.13, but we keep it here for backward compatibility.
+   See :ref:`arg-parsing-string-and-buffers` for a description of this macro.
 
 All user-visible symbols defined by :file:`Python.h` have a prefix of ``Py`` or
 ``PY``, except those defined in standard header files. For convenience, and

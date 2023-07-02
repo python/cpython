@@ -6362,7 +6362,7 @@ object___reduce_ex___impl(PyObject *self, int protocol)
 /*[clinic end generated code: output=2e157766f6b50094 input=f326b43fb8a4c5ff]*/
 {
 #define objreduce \
-    (_Py_INTERP_CACHED_OBJECT(_PyInterpreterState_Get(), objreduce))
+    (_Py_INTERP_CACHED_OBJECT(_PyInterpreterState_GET(), objreduce))
     PyObject *reduce, *res;
 
     if (objreduce == NULL) {
@@ -9688,7 +9688,7 @@ resolve_slotdups(PyTypeObject *type, PyObject *name)
     /* XXX Maybe this could be optimized more -- but is it worth it? */
 
     /* pname and ptrs act as a little cache */
-    PyInterpreterState *interp = _PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
 #define pname _Py_INTERP_CACHED_OBJECT(interp, type_slots_pname)
 #define ptrs _Py_INTERP_CACHED_OBJECT(interp, type_slots_ptrs)
     pytype_slotdef *p, **pp;

@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_time.h"          // _PyTime_t
 #ifdef MS_WINDOWS
 #  include <winsock2.h>           // struct timeval
 #endif

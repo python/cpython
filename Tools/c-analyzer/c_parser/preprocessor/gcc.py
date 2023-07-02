@@ -60,6 +60,13 @@ def preprocess(filename,
     if not cwd or not os.path.isabs(cwd):
         cwd = os.path.abspath(cwd or '.')
     filename = _normpath(filename, cwd)
+
+    postargs = POST_ARGS
+    if os.path.basename(filename) == 'socketmodule.h':
+        # Modules/socketmodule.h uses pycore_time.h which needs Py_BUILD_CORE.
+        # Usually it's defined by the C file which includes it.
+        postargs += ('-DPy_BUILD_CORE=1',)
+
     text = _common.preprocess(
         TOOL,
         filename,
@@ -67,7 +74,7 @@ def preprocess(filename,
         includes=includes,
         macros=macros,
         #preargs=PRE_ARGS,
-        postargs=POST_ARGS,
+        postargs=postargs,
         executable=['gcc'],
         compiler='unix',
         cwd=cwd,

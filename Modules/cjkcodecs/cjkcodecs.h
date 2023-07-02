@@ -7,7 +7,6 @@
 #ifndef _CJKCODECS_H_
 #define _CJKCODECS_H_
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "multibytecodec.h"
 
