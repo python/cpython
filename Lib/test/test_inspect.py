@@ -596,9 +596,44 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertEqual(finddoc(int.from_bytes), int.from_bytes.__doc__)
         self.assertEqual(finddoc(int.real), int.real.__doc__)
 
+    cleandoc_testdata = [
+        # first line should have different margin
+        (' An\n  indented\n   docstring.', 'An\nindented\n docstring.'),
+        # trailing whitespace are not removed.
+        (' An \n   \n  indented \n   docstring. ',
+         'An \n \nindented \n docstring. '),
+        # NUL is not termination.
+        ('doc\0string\n\n  second\0line\n  third\0line\0',
+         'doc\0string\n\nsecond\0line\nthird\0line\0'),
+        # first line is lstrip()-ped. other lines are kept when no margin.[w:
+        ('   ', ''),
+    ]
+
     def test_cleandoc(self):
-        self.assertEqual(inspect.cleandoc('An\n    indented\n    docstring.'),
-                         'An\nindented\ndocstring.')
+        func = inspect.cleandoc
+        testdata = self.cleandoc_testdata + [
+            # leading and trailing empty lines should be removed
+            ('\n\n\n  first paragraph\n\n   second paragraph\n\n',
+             'first paragraph\n\n second paragraph'),
+            ('   \n \n  \n   ', ' \n  \n   '),
+        ]
+        for i, (input, expected) in enumerate(testdata):
+            with self.subTest(i=i):
+                self.assertEqual(func(input), expected)
+
+    @cpython_only
+    def test_c_cleandoc(self):
+        import _testinternalcapi
+        func = _testinternalcapi.compiler_cleandoc
+        testdata = self.cleandoc_testdata + [
+            # leading and trailing empty lines are not removed
+            ('\n\n\n  first paragraph\n\n   second paragraph\n\n',
+             '\n\n\nfirst paragraph\n\n second paragraph\n\n'),
+            ('   \n \n  \n   ', '\n \n  \n   '),
+        ]
+        for i, (input, expected) in enumerate(self.cleandoc_testdata):
+            with self.subTest(i=i):
+                self.assertEqual(func(input), expected)
 
     def test_getcomments(self):
         self.assertEqual(inspect.getcomments(mod), '# line 1\n')
