@@ -4508,7 +4508,7 @@ class DSLParser:
         if line is not None:
             self.state(line)
 
-    def state_dsl_start(self, line: str | None):
+    def state_dsl_start(self, line: str | None) -> None:
         # self.block = self.ClinicOutputBlock(self)
         if not self.valid_line(line):
             return
