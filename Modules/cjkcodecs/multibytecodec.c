@@ -4,7 +4,6 @@
  * Written by Hye-Shik Chang <perky@FreeBSD.org>
  */
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "structmember.h"         // PyMemberDef
 #include "multibytecodec.h"
