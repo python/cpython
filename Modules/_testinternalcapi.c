@@ -559,7 +559,7 @@ static PyObject *
 set_eval_frame_default(PyObject *self, PyObject *Py_UNUSED(args))
 {
     module_state *state = get_module_state(self);
-    _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState_Get(), _PyEval_EvalFrameDefault);
+    _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), _PyEval_EvalFrameDefault);
     Py_CLEAR(state->record_list);
     Py_RETURN_NONE;
 }
@@ -587,7 +587,7 @@ set_eval_frame_record(PyObject *self, PyObject *list)
         return NULL;
     }
     Py_XSETREF(state->record_list, Py_NewRef(list));
-    _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState_Get(), record_eval);
+    _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), record_eval);
     Py_RETURN_NONE;
 }
 
@@ -883,7 +883,7 @@ pending_threadfunc(PyObject *self, PyObject *args, PyObject *kwargs)
     {
         return NULL;
     }
-    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
 
     /* create the reference for the callbackwhile we hold the lock */
     Py_INCREF(callable);
