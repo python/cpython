@@ -264,7 +264,10 @@ class InstructionFlags:
             HAS_ARG_FLAG=variable_used(instr, "oparg"),
             HAS_CONST_FLAG=variable_used(instr, "FRAME_CO_CONSTS"),
             HAS_NAME_FLAG=variable_used(instr, "FRAME_CO_NAMES"),
-            HAS_JUMP_FLAG=variable_used(instr, "JUMPBY"),
+            HAS_JUMP_FLAG=(
+                variable_used(instr, "JUMPBY")
+                or variable_used(instr, "JUMP_POP_DISPATCH")
+            ),
         )
 
     @staticmethod
@@ -314,12 +317,18 @@ FORBIDDEN_NAMES_IN_UOPS = (
     "oparg1",  # Proxy for super-instructions like LOAD_FAST_LOAD_FAST
     "JUMPBY",
     "DISPATCH",
+    "GO_TO_INSTRUCTION",
+    "SKIP_OVER",
     "INSTRUMENTED_JUMP",
     "throwflag",
     "exception_unwind",
     "import_from",
     "import_name",
     "_PyObject_CallNoArgs",  # Proxy for BEFORE_WITH
+    "cframe",
+    "resume_frame",
+    "CACHE",
+    "RESERVED",
 )
 
 
@@ -399,9 +408,6 @@ class Instruction:
 
     def is_viable_uop(self) -> bool:
         """Whether this instruction is viable as a uop."""
-        if self.always_exits:
-            # print(f"Skipping {self.name} because it always exits")
-            return False
         if self.instr_flags.HAS_ARG_FLAG:
             # If the instruction uses oparg, it cannot use any caches
             if self.active_caches:
@@ -1573,6 +1579,7 @@ def always_exits(lines: list[str]) -> bool:
             "goto ",
             "return ",
             "DISPATCH",
+            "JUMP_POP_DISPATCH",
             "GO_TO_",
             "Py_UNREACHABLE()",
             "ERROR_IF(true, ",

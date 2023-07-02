@@ -2219,7 +2219,7 @@ dummy_func(
         }
 
         inst(JUMP_FORWARD, (--)) {
-            JUMPBY(oparg);
+            JUMP_POP_DISPATCH(oparg, 0);
         }
 
         inst(JUMP_BACKWARD, (--)) {
@@ -2272,24 +2272,24 @@ dummy_func(
 
         inst(POP_JUMP_IF_FALSE, (cond -- )) {
             assert(PyBool_Check(cond));
-            JUMPBY(oparg * Py_IsFalse(cond));
+            JUMP_POP_DISPATCH(oparg * Py_IsFalse(cond), 1);
         }
 
         inst(POP_JUMP_IF_TRUE, (cond -- )) {
             assert(PyBool_Check(cond));
-            JUMPBY(oparg * Py_IsTrue(cond));
+            JUMP_POP_DISPATCH(oparg * Py_IsTrue(cond), 1);
         }
 
         inst(POP_JUMP_IF_NOT_NONE, (value -- )) {
             if (!Py_IsNone(value)) {
                 DECREF_INPUTS();
-                JUMPBY(oparg);
+                JUMP_POP_DISPATCH(oparg, 1);
             }
         }
 
         inst(POP_JUMP_IF_NONE, (value -- )) {
             if (Py_IsNone(value)) {
-                JUMPBY(oparg);
+                JUMP_POP_DISPATCH(oparg, 1);
             }
             else {
                 DECREF_INPUTS();
@@ -2417,11 +2417,11 @@ dummy_func(
                 assert(next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg].op.code == END_FOR ||
                        next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg].op.code == INSTRUMENTED_END_FOR);
                 Py_DECREF(iter);
-                STACK_SHRINK(1);
-                SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
+                // STACK_SHRINK(1);
+                // SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
                 /* Jump forward oparg, then skip following END_FOR instruction */
-                JUMPBY(oparg + 1);
-                DISPATCH();
+                JUMP_POP_DISPATCH(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1, 1);
+                // DISPATCH();
             }
             // Common case: no jump, leave it to the code generator
         }
@@ -2468,11 +2468,11 @@ dummy_func(
                 Py_DECREF(seq);
             }
             Py_DECREF(iter);
-            STACK_SHRINK(1);
-            SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
+            // STACK_SHRINK(1);
+            // SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
             /* Jump forward oparg, then skip following END_FOR instruction */
-            JUMPBY(oparg + 1);
-            DISPATCH();
+            JUMP_POP_DISPATCH(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1, 1);
+            // DISPATCH();
         end_for_iter_list:
             // Common case: no jump, leave it to the code generator
         }
@@ -2491,11 +2491,11 @@ dummy_func(
                 Py_DECREF(seq);
             }
             Py_DECREF(iter);
-            STACK_SHRINK(1);
-            SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
+            // STACK_SHRINK(1);
+            // SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
             /* Jump forward oparg, then skip following END_FOR instruction */
-            JUMPBY(oparg + 1);
-            DISPATCH();
+            JUMP_POP_DISPATCH(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1, 1);
+            // DISPATCH();
         end_for_iter_tuple:
             // Common case: no jump, leave it to the code generator
         }
@@ -2505,12 +2505,12 @@ dummy_func(
             DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type, FOR_ITER);
             STAT_INC(FOR_ITER, hit);
             if (r->len <= 0) {
-                STACK_SHRINK(1);
+                // STACK_SHRINK(1);
                 Py_DECREF(r);
-                SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
+                // SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
                 // Jump over END_FOR instruction.
-                JUMPBY(oparg + 1);
-                DISPATCH();
+                JUMP_POP_DISPATCH(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1, 1);
+                // DISPATCH();
             }
             long value = r->start;
             r->start = value + r->step;
