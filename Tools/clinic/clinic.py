@@ -29,7 +29,15 @@ import traceback
 
 from collections.abc import Callable
 from types import FunctionType, NoneType
-from typing import Any, Final, NamedTuple, NoReturn, Literal, overload
+from typing import (
+    Any,
+    Final,
+    Literal,
+    NamedTuple,
+    NoReturn,
+    TypeGuard,
+    overload,
+)
 
 # TODO:
 #
@@ -4471,17 +4479,20 @@ class DSLParser:
             block.output = self.saved_output
 
     @staticmethod
-    def ignore_line(line):
+    def valid_line(line: str | None) -> TypeGuard[str]:
+        if line is None:
+            return False
+
         # ignore comment-only lines
         if line.lstrip().startswith('#'):
-            return True
+            return False
 
         # Ignore empty lines too
         # (but not in docstring sections!)
         if not line.strip():
-            return True
+            return False
 
-        return False
+        return True
 
     @staticmethod
     def calculate_indent(line: str) -> int:
@@ -4497,9 +4508,9 @@ class DSLParser:
         if line is not None:
             self.state(line)
 
-    def state_dsl_start(self, line):
+    def state_dsl_start(self, line: str | None) -> None:
         # self.block = self.ClinicOutputBlock(self)
-        if self.ignore_line(line):
+        if not self.valid_line(line):
             return
 
         # is it a directive?
@@ -4716,8 +4727,8 @@ class DSLParser:
     ps_start, ps_left_square_before, ps_group_before, ps_required, \
     ps_optional, ps_group_after, ps_right_square_after = range(7)
 
-    def state_parameters_start(self, line):
-        if self.ignore_line(line):
+    def state_parameters_start(self, line: str) -> None:
+        if not self.valid_line(line):
             return
 
         # if this line is not indented, we have no parameters
@@ -4742,7 +4753,7 @@ class DSLParser:
             line = self.parameter_continuation + ' ' + line.lstrip()
             self.parameter_continuation = ''
 
-        if self.ignore_line(line):
+        if not self.valid_line(line):
             return
 
         assert self.indent.depth == 2
@@ -5075,7 +5086,7 @@ class DSLParser:
                     fail("Function " + self.function.name + " mixes keyword-only and positional-only parameters, which is unsupported.")
                 p.kind = inspect.Parameter.POSITIONAL_ONLY
 
-    def state_parameter_docstring_start(self, line):
+    def state_parameter_docstring_start(self, line: str) -> None:
         self.parameter_docstring_indent = len(self.indent.margin)
         assert self.indent.depth == 3
         return self.next(self.state_parameter_docstring, line)
