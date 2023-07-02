@@ -4,7 +4,6 @@
  * Written by Hye-Shik Chang <perky@FreeBSD.org>
  */
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "structmember.h"         // PyMemberDef
 #include "multibytecodec.h"
@@ -490,8 +489,6 @@ multibytecodec_encode(const MultibyteCodec *codec,
     int kind;
     const void *data;
 
-    if (PyUnicode_READY(text) < 0)
-        return NULL;
     datalen = PyUnicode_GET_LENGTH(text);
 
     if (datalen == 0 && !(flags & MBENC_RESET))
@@ -603,10 +600,6 @@ _multibytecodec_MultibyteCodec_encode_impl(MultibyteCodecObject *self,
         }
     }
 
-    if (PyUnicode_READY(input) < 0) {
-        Py_XDECREF(ucvt);
-        return NULL;
-    }
     datalen = PyUnicode_GET_LENGTH(input);
 
     errorcb = internal_error_callback(errors);
@@ -809,8 +802,6 @@ encoder_encode_stateful(MultibyteStatefulEncoderContext *ctx,
 
         inbuf = Py_NewRef(unistr);
     }
-    if (PyUnicode_READY(inbuf) < 0)
-        goto errorexit;
     inpos = 0;
     datalen = PyUnicode_GET_LENGTH(inbuf);
 
@@ -1723,7 +1714,7 @@ mbstreamwriter_iwrite(MultibyteStreamWriterObject *self,
     if (str == NULL)
         return -1;
 
-    wr = _PyObject_CallMethodOneArg(self->stream, str_write, str);
+    wr = PyObject_CallMethodOneArg(self->stream, str_write, str);
     Py_DECREF(str);
     if (wr == NULL)
         return -1;
@@ -1834,7 +1825,7 @@ _multibytecodec_MultibyteStreamWriter_reset_impl(MultibyteStreamWriterObject *se
     if (PyBytes_Size(pwrt) > 0) {
         PyObject *wr;
 
-        wr = _PyObject_CallMethodOneArg(self->stream, state->str_write, pwrt);
+        wr = PyObject_CallMethodOneArg(self->stream, state->str_write, pwrt);
         if (wr == NULL) {
             Py_DECREF(pwrt);
             return NULL;
@@ -2062,6 +2053,7 @@ static struct PyMethodDef _multibytecodec_methods[] = {
 
 static PyModuleDef_Slot _multibytecodec_slots[] = {
     {Py_mod_exec, _multibytecodec_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

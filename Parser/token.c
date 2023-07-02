@@ -70,9 +70,9 @@ const char * const _PyParser_TokenNames[] = {
     "FSTRING_START",
     "FSTRING_MIDDLE",
     "FSTRING_END",
+    "COMMENT",
+    "NL",
     "<ERRORTOKEN>",
-    "<COMMENT>",
-    "<NL>",
     "<ENCODING>",
     "<N_TOKENS>",
 };

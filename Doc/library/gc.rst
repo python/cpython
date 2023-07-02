@@ -50,6 +50,9 @@ The :mod:`gc` module provides the following functions:
    is run.  Not all items in some free lists may be freed due to the
    particular implementation, in particular :class:`float`.
 
+   The effect of calling ``gc.collect()`` while the interpreter is already
+   performing a collection is undefined.
+
 
 .. function:: set_debug(flags)
 

@@ -69,13 +69,13 @@ _Py_call_instrumentation(PyThreadState *tstate, int event,
 
 extern int
 _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
-                              _Py_CODEUNIT *instr);
+                              _Py_CODEUNIT *instr, _Py_CODEUNIT *prev);
 
 extern int
 _Py_call_instrumentation_instruction(
     PyThreadState *tstate, _PyInterpreterFrame* frame, _Py_CODEUNIT *instr);
 
-int
+_Py_CODEUNIT *
 _Py_call_instrumentation_jump(
     PyThreadState *tstate, int event,
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, _Py_CODEUNIT *target);
@@ -100,6 +100,7 @@ extern int
 _Py_Instrumentation_GetLine(PyCodeObject *code, int index);
 
 extern PyObject _PyInstrumentation_MISSING;
+extern PyObject _PyInstrumentation_DISABLE;
 
 #ifdef __cplusplus
 }

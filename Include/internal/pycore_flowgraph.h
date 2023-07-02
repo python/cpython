@@ -55,8 +55,6 @@ typedef struct _PyCfgBasicblock_ {
     int b_predecessors;
     /* depth of stack upon entry of block, computed by stackdepth() */
     int b_startdepth;
-    /* instruction offset for block, computed by assemble_jump_offsets() */
-    int b_offset;
     /* Basic block is an exception handler that preserves lasti */
     unsigned b_preserve_lasti : 1;
     /* Used by compiler passes to mark whether they have visited a basic block. */
@@ -94,7 +92,7 @@ _PyCfgInstruction* _PyCfg_BasicblockLastInstr(const _PyCfgBasicblock *b);
 int _PyCfg_OptimizeCodeUnit(_PyCfgBuilder *g, PyObject *consts, PyObject *const_cache,
                             int code_flags, int nlocals, int nparams, int firstlineno);
 int _PyCfg_Stackdepth(_PyCfgBasicblock *entryblock, int code_flags);
-void _PyCfg_ConvertExceptionHandlersToNops(_PyCfgBasicblock *entryblock);
+void _PyCfg_ConvertPseudoOps(_PyCfgBasicblock *entryblock);
 int _PyCfg_ResolveJumps(_PyCfgBuilder *g);
 
 

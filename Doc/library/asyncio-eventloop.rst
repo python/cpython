@@ -529,7 +529,7 @@ Opening network connections
       specifies requirements for algorithms that reduce this user-visible
       delay and provides an algorithm.
 
-      For more information: https://tools.ietf.org/html/rfc6555
+      For more information: https://datatracker.ietf.org/doc/html/rfc6555
 
    .. versionchanged:: 3.11
 
@@ -894,6 +894,9 @@ TLS Upgrade
    must stop using the original *transport* and communicate with the returned
    object only because the coder caches *protocol*-side data and sporadically
    exchanges extra TLS session packets with *transport*.
+
+   In some situations (e.g. when the passed transport is already closing) this
+   may return ``None``.
 
    Parameters:
 

@@ -50,9 +50,20 @@ struct _is {
 
     PyInterpreterState *next;
 
+    int64_t id;
+    int64_t id_refcount;
+    int requires_idref;
+    PyThread_type_lock id_mutex;
+
+    /* Has been initialized to a safe state.
+
+       In order to be effective, this must be set to 0 during or right
+       after allocation. */
+    int _initialized;
+    int finalizing;
+
     uint64_t monitoring_version;
     uint64_t last_restart_version;
-
     struct pythreads {
         uint64_t next_unique_id;
         /* The linked list of threads, newest first. */
@@ -71,29 +82,44 @@ struct _is {
        Get runtime from tstate: tstate->interp->runtime. */
     struct pyruntimestate *runtime;
 
-    int64_t id;
-    int64_t id_refcount;
-    int requires_idref;
-    PyThread_type_lock id_mutex;
+    /* Set by Py_EndInterpreter().
 
-    /* Has been initialized to a safe state.
+       Use _PyInterpreterState_GetFinalizing()
+       and _PyInterpreterState_SetFinalizing()
+       to access it, don't access it directly. */
+    _Py_atomic_address _finalizing;
 
-       In order to be effective, this must be set to 0 during or right
-       after allocation. */
-    int _initialized;
-    int finalizing;
-
-    struct _obmalloc_state obmalloc;
-
-    struct _ceval_state ceval;
     struct _gc_runtime_state gc;
 
-    struct _import_state imports;
+    /* The following fields are here to avoid allocation during init.
+       The data is exposed through PyInterpreterState pointer fields.
+       These fields should not be accessed directly outside of init.
+
+       All other PyInterpreterState pointer fields are populated when
+       needed and default to NULL.
+
+       For now there are some exceptions to that rule, which require
+       allocation during init.  These will be addressed on a case-by-case
+       basis.  Also see _PyRuntimeState regarding the various mutex fields.
+       */
 
     // Dictionary of the sys module
     PyObject *sysdict;
+
     // Dictionary of the builtins module
     PyObject *builtins;
+
+    struct _ceval_state ceval;
+
+    struct _import_state imports;
+
+    /* The per-interpreter GIL, which might not be used. */
+    struct _gil_runtime_state _gil;
+
+     /* ---------- IMPORTANT ---------------------------
+     The fields above this line are declared as early as
+     possible to facilitate out-of-process observability
+     tools. */
 
     PyObject *codec_search_path;
     PyObject *codec_search_cache;
@@ -126,6 +152,8 @@ struct _is {
     struct _warnings_runtime_state warnings;
     struct atexit_state atexit;
 
+    struct _obmalloc_state obmalloc;
+
     PyObject *audit_hooks;
     PyType_WatchCallback type_watchers[TYPE_MAX_WATCHERS];
     PyCode_WatchCallback code_watchers[CODE_MAX_WATCHERS];
@@ -152,7 +180,9 @@ struct _is {
     struct ast_state ast;
     struct types_state types;
     struct callable_cache callable_cache;
-    PyCodeObject *interpreter_trampoline;
+    _PyOptimizerObject *optimizer;
+    uint16_t optimizer_resume_threshold;
+    uint16_t optimizer_backedge_threshold;
 
     _Py_Monitors monitors;
     bool f_opcode_trace_set;
@@ -166,19 +196,7 @@ struct _is {
     struct _Py_interp_cached_objects cached_objects;
     struct _Py_interp_static_objects static_objects;
 
-    /* The following fields are here to avoid allocation during init.
-       The data is exposed through PyInterpreterState pointer fields.
-       These fields should not be accessed directly outside of init.
-
-       All other PyInterpreterState pointer fields are populated when
-       needed and default to NULL.
-
-       For now there are some exceptions to that rule, which require
-       allocation during init.  These will be addressed on a case-by-case
-       basis.  Also see _PyRuntimeState regarding the various mutex fields.
-       */
-
-    /* the initial PyInterpreterState.threads.head */
+   /* the initial PyInterpreterState.threads.head */
     PyThreadState _initial_thread;
 };
 
@@ -186,6 +204,17 @@ struct _is {
 /* other API */
 
 extern void _PyInterpreterState_Clear(PyThreadState *tstate);
+
+
+static inline PyThreadState*
+_PyInterpreterState_GetFinalizing(PyInterpreterState *interp) {
+    return (PyThreadState*)_Py_atomic_load_relaxed(&interp->_finalizing);
+}
+
+static inline void
+_PyInterpreterState_SetFinalizing(PyInterpreterState *interp, PyThreadState *tstate) {
+    _Py_atomic_store_relaxed(&interp->_finalizing, (uintptr_t)tstate);
+}
 
 
 /* cross-interpreter data registry */
@@ -208,6 +237,43 @@ PyAPI_FUNC(PyInterpreterState*) _PyInterpreterState_LookUpID(int64_t);
 PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
 PyAPI_FUNC(int) _PyInterpreterState_IDIncref(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
+
+PyAPI_FUNC(PyObject*) _PyInterpreterState_GetMainModule(PyInterpreterState *);
+
+extern const PyConfig* _PyInterpreterState_GetConfig(PyInterpreterState *interp);
+
+/* Get a copy of the current interpreter configuration.
+
+   Return 0 on success. Raise an exception and return -1 on error.
+
+   The caller must initialize 'config', using PyConfig_InitPythonConfig()
+   for example.
+
+   Python must be preinitialized to call this method.
+   The caller must hold the GIL.
+
+   Once done with the configuration, PyConfig_Clear() must be called to clear
+   it. */
+PyAPI_FUNC(int) _PyInterpreterState_GetConfigCopy(
+    struct PyConfig *config);
+
+/* Set the configuration of the current interpreter.
+
+   This function should be called during or just after the Python
+   initialization.
+
+   Update the sys module with the new configuration. If the sys module was
+   modified directly after the Python initialization, these changes are lost.
+
+   Some configuration like faulthandler or warnoptions can be updated in the
+   configuration, but don't reconfigure Python (don't enable/disable
+   faulthandler and don't reconfigure warnings filters).
+
+   Return 0 on success. Raise an exception and return -1 on error.
+
+   The configuration should come from _PyInterpreterState_GetConfigCopy(). */
+PyAPI_FUNC(int) _PyInterpreterState_SetConfig(
+    const struct PyConfig *config);
 
 #ifdef __cplusplus
 }

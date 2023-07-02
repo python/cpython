@@ -517,7 +517,7 @@ def _deprecated(name, message=_DEPRECATED_MSG, *, remove, _version=sys.version_i
     the current Python version or the same version but past the alpha.
 
     The *message* argument is formatted with *name* and *remove* as a Python
-    version (e.g. "3.11").
+    version tuple (e.g. (3, 11)).
 
     """
     remove_formatted = f"{remove[0]}.{remove[1]}"

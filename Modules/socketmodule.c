@@ -105,7 +105,6 @@ Local naming conventions:
 # pragma weak inet_aton
 #endif
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
 #include "pycore_moduleobject.h"  // _PyModule_GetState
@@ -1339,8 +1338,6 @@ setbdaddr(const char *name, bdaddr_t *bdaddr)
 static PyObject *
 makebdaddr(bdaddr_t *bdaddr)
 {
-    char buf[(6 * 2) + 5 + 1];
-
 #ifdef MS_WINDOWS
     int i;
     unsigned int octets[6];
@@ -1349,16 +1346,14 @@ makebdaddr(bdaddr_t *bdaddr)
         octets[i] = ((*bdaddr) >> (8 * i)) & 0xFF;
     }
 
-    sprintf(buf, "%02X:%02X:%02X:%02X:%02X:%02X",
+    return PyUnicode_FromFormat("%02X:%02X:%02X:%02X:%02X:%02X",
         octets[5], octets[4], octets[3],
         octets[2], octets[1], octets[0]);
 #else
-    sprintf(buf, "%02X:%02X:%02X:%02X:%02X:%02X",
+    return PyUnicode_FromFormat("%02X:%02X:%02X:%02X:%02X:%02X",
         bdaddr->b[5], bdaddr->b[4], bdaddr->b[3],
         bdaddr->b[2], bdaddr->b[1], bdaddr->b[0]);
 #endif
-
-    return PyUnicode_FromString(buf);
 }
 #endif
 
@@ -1721,9 +1716,6 @@ idna_converter(PyObject *obj, struct maybe_idna *data)
         len = PyByteArray_Size(obj);
     }
     else if (PyUnicode_Check(obj)) {
-        if (PyUnicode_READY(obj) == -1) {
-            return 0;
-        }
         if (PyUnicode_IS_COMPACT_ASCII(obj)) {
             data->buf = PyUnicode_DATA(obj);
             len = PyUnicode_GET_LENGTH(obj);
@@ -1902,6 +1894,11 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
     case AF_RDS:
         /* RDS sockets use sockaddr_in: fall-through */
 #endif /* AF_RDS */
+
+#ifdef AF_DIVERT
+    case AF_DIVERT:
+        /* FreeBSD divert(4) sockets use sockaddr_in: fall-through */
+#endif /* AF_DIVERT */
 
     case AF_INET:
     {
@@ -6878,8 +6875,10 @@ socket_getnameinfo(PyObject *self, PyObject *args)
         }
 #endif
     }
+    Py_BEGIN_ALLOW_THREADS
     error = getnameinfo(res->ai_addr, (socklen_t) res->ai_addrlen,
                     hbuf, sizeof(hbuf), pbuf, sizeof(pbuf), flags);
+    Py_END_ALLOW_THREADS
     if (error) {
         socket_state *state = get_module_state(self);
         set_gaierror(state, error);
@@ -7681,6 +7680,14 @@ socket_exec(PyObject *m)
 #endif
 #ifdef AF_SYSTEM
     ADD_INT_MACRO(m, AF_SYSTEM);
+#endif
+
+/* FreeBSD divert(4) */
+#ifdef PF_DIVERT
+    PyModule_AddIntMacro(m, PF_DIVERT);
+#endif
+#ifdef AF_DIVERT
+    PyModule_AddIntMacro(m, AF_DIVERT);
 #endif
 
 #ifdef AF_PACKET
@@ -8857,6 +8864,7 @@ error:
 
 static struct PyModuleDef_Slot socket_slots[] = {
     {Py_mod_exec, socket_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL},
 };
 

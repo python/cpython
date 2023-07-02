@@ -5004,7 +5004,7 @@ order (MRO) for bases """
         self.assertEqual(Parent.__subclasses__(), [])
 
     def test_attr_raise_through_property(self):
-        # add test case for gh-103272
+        # test case for gh-103272
         class A:
             def __getattr__(self, name):
                 raise ValueError("FOO")
@@ -5015,6 +5015,19 @@ order (MRO) for bases """
 
         with self.assertRaisesRegex(ValueError, "FOO"):
             A().foo
+
+        # test case for gh-103551
+        class B:
+            @property
+            def __getattr__(self, name):
+                raise ValueError("FOO")
+
+            @property
+            def foo(self):
+                raise NotImplementedError("BAR")
+
+        with self.assertRaisesRegex(NotImplementedError, "BAR"):
+            B().foo
 
 
 class DictProxyTests(unittest.TestCase):
