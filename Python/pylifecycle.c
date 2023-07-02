@@ -1190,7 +1190,6 @@ init_interp_main(PyThreadState *tstate)
         if (_Py_get_xoption(&config->xoptions, L"uops") != NULL) {
             enabled = 1;
         }
-        enabled = 1;  // TEMPORARY
         if (enabled) {
             PyObject *opt = PyUnstable_Optimizer_NewUOpOptimizer();
             PyUnstable_SetOptimizer((_PyOptimizerObject *)opt);
