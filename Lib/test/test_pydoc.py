@@ -24,7 +24,9 @@ from collections import namedtuple
 from urllib.request import urlopen, urlcleanup
 from test.support import import_helper
 from test.support import os_helper
-from test.support.script_helper import assert_python_ok, assert_python_failure
+from test.support.script_helper import (assert_python_ok, kill_python,
+                                        assert_python_failure, spawn_python)
+
 from test.support import threading_helper
 from test.support import (reap_children, captured_output, captured_stdout,
                           captured_stderr, is_emscripten, is_wasi,
@@ -630,6 +632,17 @@ class PydocDocTest(unittest.TestCase):
         text = doc.docclass(type)
         # Testing that the subclasses section does not appear
         self.assertNotIn('Built-in subclasses', text)
+
+    def test_fail_help_cli(self):
+        fd, name = tempfile.mkstemp()
+        self.addCleanup(os_helper.unlink, name)
+        with open(fd, "w") as f:
+            f.write("help('abd')")
+        with spawn_python(name) as proc:
+            out, _ = proc.communicate()
+            out = out.decode()
+            expected = missing_pattern % "abd"
+            self.assertEqual(expected, out.strip())
 
     def test_fail_help_output_redirect(self):
         with StringIO() as buf:
