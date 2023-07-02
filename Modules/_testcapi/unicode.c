@@ -1,6 +1,5 @@
 #include <stddef.h>               // ptrdiff_t
 
-#define PY_SSIZE_T_CLEAN
 #include "parts.h"
 
 static struct PyModuleDef *_testcapimodule = NULL;  // set at initialization
