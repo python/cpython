@@ -212,6 +212,7 @@
     <ClInclude Include="..\Include\internal\pycore_code.h" />
     <ClInclude Include="..\Include\internal\pycore_codecs.h" />
     <ClInclude Include="..\Include\internal\pycore_compile.h" />
+    <ClInclude Include="..\Include\internal\pycore_complexobject.h" />
     <ClInclude Include="..\Include\internal\pycore_condvar.h" />
     <ClInclude Include="..\Include\internal\pycore_context.h" />
     <ClInclude Include="..\Include\internal\pycore_descrobject.h" />
