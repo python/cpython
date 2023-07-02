@@ -1752,24 +1752,25 @@ class DummyVirtualPathTest(unittest.TestCase):
         cls._files.clear()
         cls._directories.clear()
         cls._symlinks.clear()
+        join = cls._flavour.join
         cls._files.update({
-            f'{BASE}/fileA': b'this is file A\n',
-            f'{BASE}/dirB/fileB': b'this is file B\n',
-            f'{BASE}/dirC/fileC': b'this is file C\n',
-            f'{BASE}/dirC/dirD/fileD': b'this is file D\n',
-            f'{BASE}/dirC/novel.txt': b'this is a novel\n',
+            join(BASE, 'fileA'): b'this is file A\n',
+            join(BASE, 'dirB', 'fileB'): b'this is file B\n',
+            join(BASE, 'dirC', 'fileC'): b'this is file C\n',
+            join(BASE, 'dirC', 'dirD', 'fileD'): b'this is file D\n',
+            join(BASE, 'dirC', 'novel.txt'): b'this is a novel\n',
         })
         cls._directories.update({
-            BASE: {'dirA', 'dirB', 'dirC', 'dirE', 'fileA', },
-            f'{BASE}/dirA': set(),
-            f'{BASE}/dirB': {'fileB'},
-            f'{BASE}/dirC': {'dirD', 'fileC', 'novel.txt'},
-            f'{BASE}/dirC/dirD': {'fileD'},
-            f'{BASE}/dirE': {},
+            BASE: {'dirA', 'dirB', 'dirC', 'dirE', 'fileA'},
+            join(BASE, 'dirA'): set(),
+            join(BASE, 'dirB'): {'fileB'},
+            join(BASE, 'dirC'): {'dirD', 'fileC', 'novel.txt'},
+            join(BASE, 'dirC', 'dirD'): {'fileD'},
+            join(BASE, 'dirE'): {},
         })
         dirname = BASE
         while True:
-            dirname, basename = os.path.split(dirname)
+            dirname, basename = cls._flavour.split(dirname)
             if not basename:
                 break
             cls._directories[dirname] = {basename}
@@ -2558,17 +2559,18 @@ class DummyVirtualPathWithSymlinksTest(DummyVirtualPathTest):
     def setUp(self):
         super().setUp()
         cls = self.cls
+        join = cls._flavour.join
         cls._symlinks.update({
-            f'{BASE}/linkA': 'fileA',
-            f'{BASE}/linkB': 'dirB',
-            f'{BASE}/dirA/linkC': '../dirB',
-            f'{BASE}/dirB/linkD': '../dirB',
-            f'{BASE}/brokenLink': 'non-existing',
-            f'{BASE}/brokenLinkLoop': 'brokenLinkLoop',
+            join(BASE, 'linkA'): 'fileA',
+            join(BASE, 'linkB'): 'dirB',
+            join(BASE, 'dirA', 'linkC'): join('..', 'dirB'),
+            join(BASE, 'dirB', 'linkD'): join('..', 'dirB'),
+            join(BASE, 'brokenLink'): 'non-existing',
+            join(BASE, 'brokenLinkLoop'): 'brokenLinkLoop',
         })
         cls._directories[BASE].update({'linkA', 'linkB', 'brokenLink', 'brokenLinkLoop'})
-        cls._directories[f'{BASE}/dirA'].add('linkC')
-        cls._directories[f'{BASE}/dirB'].add('linkD')
+        cls._directories[join(BASE, 'dirA')].add('linkC')
+        cls._directories[join(BASE, 'dirB')].add('linkD')
 
 
 #
