@@ -5921,7 +5921,8 @@ PyInit__decimal(void)
             base = PyTuple_Pack(2, state->DecimalException, PyExc_TypeError);
             break;
         case MPD_Division_by_zero:
-            base = PyTuple_Pack(2, state->DecimalException, PyExc_ZeroDivisionError);
+            base = PyTuple_Pack(2, state->DecimalException,
+                                PyExc_ZeroDivisionError);
             break;
         case MPD_Overflow:
             base = PyTuple_Pack(2, signal_map[INEXACT].ex,
