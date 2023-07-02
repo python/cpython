@@ -1216,6 +1216,24 @@ test_pytime_object_to_timespec(PyObject *self, PyObject *args)
 }
 
 
+static PyObject *
+tracemalloc_get_traceback(PyObject *self, PyObject *args)
+{
+    unsigned int domain;
+    PyObject *ptr_obj;
+
+    if (!PyArg_ParseTuple(args, "IO", &domain, &ptr_obj)) {
+        return NULL;
+    }
+    void *ptr = PyLong_AsVoidPtr(ptr_obj);
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+
+    return _PyTraceMalloc_GetTraceback(domain, (uintptr_t)ptr);
+}
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -1250,7 +1268,6 @@ static PyMethodDef module_functions[] = {
     {"get_uop_optimizer", get_uop_optimizer, METH_NOARGS, NULL},
     {"pending_threadfunc", _PyCFunction_CAST(pending_threadfunc),
      METH_VARARGS | METH_KEYWORDS},
-//    {"pending_fd_identify", pending_fd_identify, METH_VARARGS, NULL},
     {"pending_identify", pending_identify, METH_VARARGS, NULL},
     {"_PyTime_AsMicroseconds",    test_PyTime_AsMicroseconds,     METH_VARARGS},
     {"_PyTime_AsMilliseconds",    test_PyTime_AsMilliseconds,     METH_VARARGS},
@@ -1266,6 +1283,7 @@ static PyMethodDef module_functions[] = {
     {"_PyTime_ObjectToTime_t",    test_pytime_object_to_time_t,   METH_VARARGS},
     {"_PyTime_ObjectToTimespec",  test_pytime_object_to_timespec, METH_VARARGS},
     {"_PyTime_ObjectToTimeval",   test_pytime_object_to_timeval,  METH_VARARGS},
+    {"_PyTraceMalloc_GetTraceback", tracemalloc_get_traceback, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 
