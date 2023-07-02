@@ -24,9 +24,8 @@ from collections import namedtuple
 from urllib.request import urlopen, urlcleanup
 from test.support import import_helper
 from test.support import os_helper
-from test.support.script_helper import (assert_python_ok, kill_python,
+from test.support.script_helper import (assert_python_ok,
                                         assert_python_failure, spawn_python)
-
 from test.support import threading_helper
 from test.support import (reap_children, captured_output, captured_stdout,
                           captured_stderr, is_emscripten, is_wasi,
