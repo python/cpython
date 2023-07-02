@@ -1234,6 +1234,27 @@ tracemalloc_get_traceback(PyObject *self, PyObject *args)
 }
 
 
+// Test PyThreadState C API
+static PyObject *
+test_tstate_capi(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    // PyThreadState_Get()
+    PyThreadState *tstate = PyThreadState_Get();
+    assert(tstate != NULL);
+
+    // test _PyThreadState_GetDict()
+    PyObject *dict = PyThreadState_GetDict();
+    assert(dict != NULL);
+    // dict is a borrowed reference
+
+    PyObject *dict2 = _PyThreadState_GetDict(tstate);
+    assert(dict2 == dict);
+    // dict2 is a borrowed reference
+
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -1284,6 +1305,7 @@ static PyMethodDef module_functions[] = {
     {"_PyTime_ObjectToTimespec",  test_pytime_object_to_timespec, METH_VARARGS},
     {"_PyTime_ObjectToTimeval",   test_pytime_object_to_timeval,  METH_VARARGS},
     {"_PyTraceMalloc_GetTraceback", tracemalloc_get_traceback, METH_VARARGS},
+    {"test_tstate_capi", test_tstate_capi, METH_NOARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
 
