@@ -783,7 +783,7 @@ class ClinicParserTest(TestCase):
         """)
         self.assertIn("Function bar uses '*' more than once.", out)
 
-    def test_parameters_required_after_star_without_initial_parameters_or_docstring(self):
+    def test_parameters_required_after_star(self):
         dataset = (
             "module foo\nfoo.bar\n  *",
             "module foo\nfoo.bar\n  *\nDocstring here.",
