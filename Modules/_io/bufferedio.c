@@ -10,6 +10,7 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_object.h"
+#include "pycore_pyerrors.h"      // _Py_FatalErrorFormat()
 #include "structmember.h"         // PyMemberDef
 #include "_iomodule.h"
 
