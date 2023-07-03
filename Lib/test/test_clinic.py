@@ -786,23 +786,27 @@ class ClinicParserTest(TestCase):
         """)
 
     def test_parameters_required_after_cross(self):
-        self.parse_function_should_fail("""
-module foo
-foo.bar
-    this: int
-    x
-Docstring.
-""")
+        out = self.parse_function_should_fail("""
+            module foo
+            foo.bar
+                this: int
+                x
+            Docstring.
+        """)
+        msg = "Function bar specifies + without any parameters afterwards."
+        self.assertIn(msg, out)
 
     def test_cross_must_come_before_star(self):
-        self.parse_function_should_fail("""
-module foo
-foo.bar
-    this: int
-    *
-    x
-Docstring.
-""")
+        out = self.parse_function_should_fail("""
+            module foo
+            foo.bar
+                this: int
+                *
+                x
+            Docstring.
+        """)
+        msg = "Function bar: 'x' must come before '*'"
+        self.assertIn(msg, out)
 
     def test_single_slash(self):
         self.parse_function_should_fail("""
