@@ -374,9 +374,7 @@ translate_bytecode_to_trace(
     _PyUOpInstruction *trace,
     int max_length)
 {
-#ifdef Py_DEBUG
     _Py_CODEUNIT *initial_instr = instr;
-#endif
     int trace_length = 0;
 
 #ifdef Py_DEBUG
@@ -454,6 +452,14 @@ translate_bytecode_to_trace(
                         Py_FatalError("Missing case");
                 }
                 break;
+            }
+            case JUMP_BACKWARD:
+            {
+                if (instr + 2 - operand == initial_instr) {
+                    ADD_TO_TRACE(JUMP_TO_TOP, 0);
+                    break;
+                }
+                // Else fall through!
             }
             default:
             {

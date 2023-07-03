@@ -1332,6 +1332,7 @@ class Analyzer:
             counter += 1
         add("EXIT_TRACE")
         add("SAVE_IP")
+        add("JUMP_TO_TOP")
         for instr in self.instrs.values():
             if instr.kind == "op" and instr.is_viable_uop():
                 add(instr.name)

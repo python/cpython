@@ -2776,6 +2776,13 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
 #define ENABLE_SPECIALIZATION 0
 #include "executor_cases.c.h"
 
+            case JUMP_TO_TOP:
+            {
+                pc = 0;
+                CHECK_EVAL_BREAKER();
+                break;
+            }
+
             case SAVE_IP:
             {
                 frame->prev_instr = ip_offset + oparg;
