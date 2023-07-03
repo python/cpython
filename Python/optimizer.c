@@ -419,6 +419,12 @@ translate_bytecode_to_trace(
             opcode = instr->op.code;
             operand = (operand << 8) | instr->op.arg;
         }
+        if (opcode == ENTER_EXECUTOR) {
+            _PyExecutorObject *executor = (_PyExecutorObject *)code->co_executors->executors[operand&255];
+            opcode = executor->vm_data.opcode;
+            DPRINTF(2, "  * ENTER_EXECUTOR -> %s\n",  _PyOpcode_OpName[opcode]);
+            operand = (operand & 0xffffff00) | executor->vm_data.oparg;
+        }
         switch (opcode) {
             case LOAD_FAST_LOAD_FAST:
             case STORE_FAST_LOAD_FAST:
