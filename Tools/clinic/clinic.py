@@ -4,6 +4,7 @@
 # Copyright 2012-2013 by Larry Hastings.
 # Licensed to the PSF under a contributor agreement.
 #
+from __future__ import annotations
 
 import abc
 import ast
@@ -2448,7 +2449,7 @@ class Function:
             cls: Class | None = None,
             c_basename: str | None = None,
             full_name: str | None = None,
-            return_converter: ReturnConverterType,
+            return_converter: CReturnConverter,
             return_annotation = inspect.Signature.empty,
             docstring: str | None = None,
             kind: str = CALLABLE,
@@ -2467,7 +2468,7 @@ class Function:
         self.docstring = docstring or ''
         self.kind = kind
         self.coexist = coexist
-        self.self_converter = None
+        self.self_converter: self_converter | None = None
         # docstring_only means "don't generate a machine-readable
         # signature, just a normal docstring".  it's True for
         # functions with optional groups because we can't represent
@@ -2531,7 +2532,7 @@ class Parameter:
     def __init__(
             self,
             name: str,
-            kind: str,
+            kind: inspect._ParameterKind,
             *,
             default = inspect.Parameter.empty,
             function: Function,
@@ -4539,7 +4540,7 @@ class DSLParser:
 
         self.next(self.state_modulename_name, line)
 
-    def state_modulename_name(self, line):
+    def state_modulename_name(self, line: str | None) -> None:
         # looking for declaration, which establishes the leftmost column
         # line should be
         #     modulename.fnname [as c_basename] [-> return annotation]
@@ -4556,13 +4557,14 @@ class DSLParser:
         # this line is permitted to start with whitespace.
         # we'll call this number of spaces F (for "function").
 
-        if not line.strip():
+        if not self.valid_line(line):
             return
 
         self.indent.infer(line)
 
         # are we cloning?
         before, equals, existing = line.rpartition('=')
+        c_basename: str | None
         if equals:
             full_name, _, c_basename = before.partition(' as ')
             full_name = full_name.strip()
@@ -4665,8 +4667,9 @@ class DSLParser:
         if cls and type == "PyObject *":
             kwargs['type'] = cls.typedef
         sc = self.function.self_converter = self_converter(name, name, self.function, **kwargs)
-        p_self = Parameter(sc.name, inspect.Parameter.POSITIONAL_ONLY, function=self.function, converter=sc)
-        self.function.parameters[sc.name] = p_self
+        p_self = Parameter(name, inspect.Parameter.POSITIONAL_ONLY,
+                           function=self.function, converter=sc)
+        self.function.parameters[name] = p_self
 
         (cls or module).functions.append(self.function)
         self.next(self.state_parameters_start)
@@ -4740,7 +4743,7 @@ class DSLParser:
     ps_start, ps_left_square_before, ps_group_before, ps_required, \
     ps_optional, ps_group_after, ps_right_square_after = range(7)
 
-    def state_parameters_start(self, line: str) -> None:
+    def state_parameters_start(self, line: str | None) -> None:
         if not self.valid_line(line):
             return
 
