@@ -154,7 +154,7 @@ extern PyObject* _Py_MakeCoro(PyFunctionObject *func);
 
 extern int _Py_HandlePending(PyThreadState *tstate);
 
-PyAPI_FUNC(PyObject *) _PyEval_GetLocals(void);
+extern PyObject * _PyEval_GetLocals(void);
 
 
 #ifdef __cplusplus
