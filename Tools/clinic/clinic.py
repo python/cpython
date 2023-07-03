@@ -4291,6 +4291,7 @@ class IndentStack:
 
 
 StateKeeper = Callable[[str | None], None]
+ConverterArgs = dict[str, Any]
 
 class DSLParser:
     function: Function | None
@@ -5033,10 +5034,10 @@ class DSLParser:
         key = f"{parameter_name}_as_{c_name}" if c_name else parameter_name
         self.function.parameters[key] = p
 
-    KwargDict = dict[str, Any]
-
     @staticmethod
-    def parse_converter(annotation: ast.expr | None) -> tuple[str, bool, KwargDict]:
+    def parse_converter(
+            annotation: ast.expr | None
+    ) -> tuple[str, bool, ConverterArgs]:
         msg = "Annotations must be either a name, a function call, or a string."
         match annotation:
             case ast.Constant(value=str() as value):
@@ -5045,7 +5046,7 @@ class DSLParser:
                 return name, False, {}
             case ast.Call(func=ast.Name(name)):
                 symbols = globals()
-                kwargs: dict[str, Any] = {}
+                kwargs: ConverterArgs = {}
                 for node in annotation.keywords:
                     if not isinstance(node.arg, str):
                         fail(msg)
