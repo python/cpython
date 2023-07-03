@@ -1746,7 +1746,7 @@ expression support in the :mod:`re` module).
       >>> 'Python is amazing'.endswith('is', 0, 9)
       True
 
-   See also :meth:`startswith`.
+   See also :meth:`startswith` and :meth:`removesuffix`.
 
 
 .. method:: str.expandtabs(tabsize=8)
@@ -1785,7 +1785,7 @@ expression support in the :mod:`re` module).
       >>> 'spam, spam, spam'.find('sp', 5)
       6
 
-   See also :meth:`rfind`.
+   See also :meth:`rfind` and :meth:`index`.
 
    .. note::
 
@@ -2495,7 +2495,7 @@ expression support in the :mod:`re` module).
       >>> 'Python is amazing'.startswith('is', 7)
       True
 
-   See also :meth:`endswith`.
+   See also :meth:`endswith` and :meth:`removeprefix`.
 
 
 .. method:: str.strip([chars])
