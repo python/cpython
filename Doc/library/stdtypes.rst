@@ -1944,7 +1944,7 @@ expression support in the :mod:`re` module).
 
       >>> '0123456789'.isdigit()
       True
-      >>> '٠١٢٣٤٥٦٧٨٩'.isdigit() #ARABIC-INDIC DIGIT ZERO TO NINE
+      >>> '٠١٢٣٤٥٦٧٨٩'.isdigit() # ARABIC-INDIC DIGIT ZERO TO NINE
       True
       >>> '²'.isdigit(), '²'.isdecimal()
       (True, False)
@@ -1998,7 +1998,7 @@ expression support in the :mod:`re` module).
 
       >>> '0123456789'.isnumeric()
       True
-      >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric() #ARABIC-INDIC DIGIT ZERO TO NINE
+      >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric() # ARABIC-INDIC DIGIT ZERO TO NINE
       True
       >>> '⅕'.isnumeric() # VULGAR FRACTION ONE FIFTH
       True
