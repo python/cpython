@@ -298,27 +298,27 @@ Dictionary displays
 .. index::
    pair: dictionary; display
    pair: dictionary; comprehensions
-   key, datum, key/datum pair
+   key, value, key/value pair
    pair: object; dictionary
    single: {} (curly brackets); dictionary expression
    single: : (colon); in dictionary expressions
    single: , (comma); in dictionary displays
 
-A dictionary display is a possibly empty series of key/datum pairs enclosed in
-curly braces:
+A dictionary display is a possibly empty series of dict items (key/value pairs)
+enclosed in curly braces:
 
 .. productionlist:: python-grammar
-   dict_display: "{" [`key_datum_list` | `dict_comprehension`] "}"
-   key_datum_list: `key_datum` ("," `key_datum`)* [","]
-   key_datum: `expression` ":" `expression` | "**" `or_expr`
+   dict_display: "{" [`dict_item_list` | `dict_comprehension`] "}"
+   dict_item_list: `dict_item` ("," `dict_item`)* [","]
+   dict_item: `expression` ":" `expression` | "**" `or_expr`
    dict_comprehension: `expression` ":" `expression` `comp_for`
 
 A dictionary display yields a new dictionary object.
 
-If a comma-separated sequence of key/datum pairs is given, they are evaluated
+If a comma-separated sequence of dict items is given, they are evaluated
 from left to right to define the entries of the dictionary: each key object is
-used as a key into the dictionary to store the corresponding datum.  This means
-that you can specify the same key multiple times in the key/datum list, and the
+used as a key into the dictionary to store the corresponding value.  This means
+that you can specify the same key multiple times in the dict item list, and the
 final dictionary's value for that key will be the last one given.
 
 .. index::
@@ -328,7 +328,7 @@ final dictionary's value for that key will be the last one given.
 A double asterisk ``**`` denotes :dfn:`dictionary unpacking`.
 Its operand must be a :term:`mapping`.  Each mapping item is added
 to the new dictionary.  Later values replace values already set by
-earlier key/datum pairs and earlier dictionary unpackings.
+earlier dict items and earlier dictionary unpackings.
 
 .. versionadded:: 3.5
    Unpacking into dictionary displays, originally proposed by :pep:`448`.
@@ -344,7 +344,7 @@ in the new dictionary in the order they are produced.
 Restrictions on the types of the key values are listed earlier in section
 :ref:`types`.  (To summarize, the key type should be :term:`hashable`, which excludes
 all mutable objects.)  Clashes between duplicate keys are not detected; the last
-datum (textually rightmost in the display) stored for a given key value
+value (textually rightmost in the display) stored for a given key value
 prevails.
 
 .. versionchanged:: 3.8

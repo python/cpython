@@ -45,6 +45,7 @@ extern _PyOptimizerObject _PyOptimizer_Default;
 
 /* For testing */
 PyAPI_FUNC(PyObject *)PyUnstable_Optimizer_NewCounter(void);
+PyAPI_FUNC(PyObject *)PyUnstable_Optimizer_NewUOpOptimizer(void);
 
 #define OPTIMIZER_BITS_IN_COUNTER 4
 

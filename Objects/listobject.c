@@ -5,6 +5,7 @@
 #include "pycore_interp.h"        // PyInterpreterState.list
 #include "pycore_list.h"          // struct _Py_list_state, _PyListIterObject
 #include "pycore_long.h"          // _PyLong_DigitCount
+#include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 #include <stddef.h>
@@ -953,8 +954,9 @@ list_extend(PyListObject *self, PyObject *iterable)
         }
         if (Py_SIZE(self) < self->allocated) {
             /* steals ref */
-            PyList_SET_ITEM(self, Py_SIZE(self), item);
-            Py_SET_SIZE(self, Py_SIZE(self) + 1);
+            Py_ssize_t len = Py_SIZE(self);
+            Py_SET_SIZE(self, len + 1);
+            PyList_SET_ITEM(self, len, item);
         }
         else {
             if (_PyList_AppendTakeRef(self, item) < 0)
