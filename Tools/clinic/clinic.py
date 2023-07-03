@@ -4309,7 +4309,7 @@ class ParamState(enum.IntEnum):
     GROUP_BEFORE = 2
 
     # Required params, positional-or-keyword or positional-only (we
-    # don't know yet). Renumber lefft groups!
+    # don't know yet). Renumber left groups!
     REQUIRED = 3
 
     # Positional-or-keyword or positional-only params that now must have
@@ -4772,7 +4772,7 @@ class DSLParser:
         """
         Transition to the "required" parameter state.
         """
-        if self.parameter_state != ParamState.REQUIRED:
+        if self.parameter_state is not ParamState.REQUIRED:
             self.parameter_state = ParamState.REQUIRED
             for p in self.function.parameters.values():
                 p.group = -p.group
@@ -4877,7 +4877,7 @@ class DSLParser:
         name, legacy, kwargs = self.parse_converter(parameter.annotation)
 
         if not default:
-            if self.parameter_state == ParamState.OPTIONAL:
+            if self.parameter_state is ParamState.OPTIONAL:
                 fail(f"Can't have a parameter without a default ({parameter_name!r})\n"
                       "after a parameter with a default!")
             if is_vararg:
@@ -4891,7 +4891,7 @@ class DSLParser:
             if is_vararg:
                 fail("Vararg can't take a default value!")
 
-            if self.parameter_state == ParamState.REQUIRED:
+            if self.parameter_state is ParamState.REQUIRED:
                 self.parameter_state = ParamState.OPTIONAL
             default = default.strip()
             bad = False
@@ -5016,7 +5016,7 @@ class DSLParser:
 
         if isinstance(converter, self_converter):
             if len(self.function.parameters) == 1:
-                if (self.parameter_state != ParamState.REQUIRED):
+                if self.parameter_state is not ParamState.REQUIRED:
                     fail("A 'self' parameter cannot be marked optional.")
                 if value is not unspecified:
                     fail("A 'self' parameter cannot have a default value.")
@@ -5031,7 +5031,7 @@ class DSLParser:
         if isinstance(converter, defining_class_converter):
             _lp = len(self.function.parameters)
             if _lp == 1:
-                if (self.parameter_state != ParamState.REQUIRED):
+                if self.parameter_state is not ParamState.REQUIRED:
                     fail("A 'defining_class' parameter cannot be marked optional.")
                 if value is not unspecified:
                     fail("A 'defining_class' parameter cannot have a default value.")
@@ -5107,12 +5107,12 @@ class DSLParser:
             self.positional_only = True
             # REQUIRED and OPTIONAL are allowed here, that allows positional-only without option groups
             # to work (and have default values!)
-            allowed = (
+            allowed = {
                 ParamState.REQUIRED,
                 ParamState.OPTIONAL,
                 ParamState.RIGHT_SQUARE_AFTER,
                 ParamState.GROUP_BEFORE,
-            )
+            }
             if (self.parameter_state not in allowed) or self.group:
                 fail(f"Function {self.function.name} has an unsupported group configuration. (Unexpected state {self.parameter_state}.d)")
             if self.keyword_only:
