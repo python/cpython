@@ -1,2 +1,2 @@
-Argument Clinic now explicitly require that keys are string if the provided
-parameter annotation is a dict.
+Argument Clinic now explicitly forbids "kwarg splats" in function calls used as 
+annotations
