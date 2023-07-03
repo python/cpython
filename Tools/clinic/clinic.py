@@ -5104,7 +5104,9 @@ class DSLParser:
                     "Annotations must be either a name, a function call, or a string."
                 )
 
-    def parse_special_symbol(self, symbol):
+    def parse_special_symbol(self, symbol: str) -> None:
+        assert isinstance(self.function, Function)
+
         if symbol == 'x':
             if self.keyword_only:
                 fail("Function " + self.function.name + ": 'x' must come before '*'")
@@ -5474,7 +5476,12 @@ class DSLParser:
         if not self.function:
             return
 
-        def check_remaining_params(symbol, condition):
+        def check_remaining_params(
+                symbol: str,
+                condition: Callable[[Parameter], bool]
+        ) -> None:
+            assert isinstance(self.function, Function)
+
             values = self.function.parameters.values()
             if not values:
                 no_param_after_symbol = True
