@@ -14,6 +14,44 @@ extern "C" {
 void _PyUnicode_ExactDealloc(PyObject *op);
 Py_ssize_t _PyUnicode_InternedSize(void);
 
+/* Get a copy of a Unicode string. */
+PyAPI_FUNC(PyObject*) _PyUnicode_Copy(
+    PyObject *unicode
+    );
+
+/* Unsafe version of PyUnicode_Fill(): don't check arguments and so may crash
+   if parameters are invalid (e.g. if length is longer than the string). */
+extern void _PyUnicode_FastFill(
+    PyObject *unicode,
+    Py_ssize_t start,
+    Py_ssize_t length,
+    Py_UCS4 fill_char
+    );
+
+/* Unsafe version of PyUnicode_CopyCharacters(): don't check arguments and so
+   may crash if parameters are invalid (e.g. if the output string
+   is too short). */
+extern void _PyUnicode_FastCopyCharacters(
+    PyObject *to,
+    Py_ssize_t to_start,
+    PyObject *from,
+    Py_ssize_t from_start,
+    Py_ssize_t how_many
+    );
+
+/* Create a new string from a buffer of ASCII characters.
+   WARNING: Don't check if the string contains any non-ASCII character. */
+extern PyObject* _PyUnicode_FromASCII(
+    const char *buffer,
+    Py_ssize_t size);
+
+/* Compute the maximum character of the substring unicode[start:end].
+   Return 127 for an empty string. */
+extern Py_UCS4 _PyUnicode_FindMaxChar (
+    PyObject *unicode,
+    Py_ssize_t start,
+    Py_ssize_t end);
+
 /* --- _PyUnicodeWriter API ----------------------------------------------- */
 
 typedef struct {
@@ -141,10 +179,40 @@ PyAPI_FUNC(int) _PyUnicode_FormatAdvancedWriter(
 
 /* --- Methods & Slots ---------------------------------------------------- */
 
+extern PyObject* _PyUnicode_JoinArray(
+    PyObject *separator,
+    PyObject *const *items,
+    Py_ssize_t seqlen
+    );
+
+/* Test whether a unicode is equal to ASCII identifier.  Return 1 if true,
+   0 otherwise.  The right argument must be ASCII identifier.
+   Any error occurs inside will be cleared before return. */
+extern int _PyUnicode_EqualToASCIIId(
+    PyObject *left,             /* Left string */
+    _Py_Identifier *right       /* Right identifier */
+    );
+
+/* Test whether a unicode is equal to ASCII string.  Return 1 if true,
+   0 otherwise.  The right argument must be ASCII-encoded string.
+   Any error occurs inside will be cleared before return. */
+PyAPI_FUNC(int) _PyUnicode_EqualToASCIIString(
+    PyObject *left,
+    const char *right           /* ASCII-encoded string */
+    );
+
+/* Externally visible for str.strip(unicode) */
+extern PyObject* _PyUnicode_XStrip(
+    PyObject *self,
+    int striptype,
+    PyObject *sepobj
+    );
+
+
 /* Using explicit passed-in values, insert the thousands grouping
    into the string pointed to by buffer.  For the argument descriptions,
    see Objects/stringlib/localeutil.h */
-PyAPI_FUNC(Py_ssize_t) _PyUnicode_InsertThousandsGrouping(
+extern Py_ssize_t _PyUnicode_InsertThousandsGrouping(
     _PyUnicodeWriter *writer,
     Py_ssize_t n_buffer,
     PyObject *digits,
