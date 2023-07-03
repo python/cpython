@@ -2531,7 +2531,7 @@ class Parameter:
     def __init__(
             self,
             name: str,
-            kind: str,
+            kind: inspect._ParameterKind,
             *,
             default = inspect.Parameter.empty,
             function: Function,
