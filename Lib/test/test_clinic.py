@@ -821,8 +821,8 @@ Annotations must be either a name, a function call, or a string.
         dataset = (
             'module fo\nfo.barbaz\n   o: bool(**{None: "bang!"})',
             'module fo\nfo.barbaz -> bool(**{None: "bang!"})',
-            'module fo\nfo.barbaz -> bool(**{bang: 42})',
-            'module fo\nfo.barbaz\n   o: bool(**{bang: None})',
+            'module fo\nfo.barbaz -> bool(**{"bang": 42})',
+            'module fo\nfo.barbaz\n   o: bool(**{"bang": None})',
         )
         for fn in dataset:
             with self.subTest(fn=fn):
