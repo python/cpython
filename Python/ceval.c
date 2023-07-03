@@ -763,68 +763,6 @@ resume_frame:
 
     DISPATCH();
 
-handle_eval_breaker:
-
-    /* Do periodic things, like check for signals and async I/0.
-     * We need to do reasonably frequently, but not too frequently.
-     * All loops should include a check of the eval breaker.
-     * We also check on return from any builtin function.
-     *
-     * ## More Details ###
-     *
-     * The eval loop (this function) normally executes the instructions
-     * of a code object sequentially.  However, the runtime supports a
-     * number of out-of-band execution scenarios that may pause that
-     * sequential execution long enough to do that out-of-band work
-     * in the current thread using the current PyThreadState.
-     *
-     * The scenarios include:
-     *
-     *  - cyclic garbage collection
-     *  - GIL drop requests
-     *  - "async" exceptions
-     *  - "pending calls"  (some only in the main thread)
-     *  - signal handling (only in the main thread)
-     *
-     * When the need for one of the above is detected, the eval loop
-     * pauses long enough to handle the detected case.  Then, if doing
-     * so didn't trigger an exception, the eval loop resumes executing
-     * the sequential instructions.
-     *
-     * To make this work, the eval loop periodically checks if any
-     * of the above needs to happen.  The individual checks can be
-     * expensive if computed each time, so a while back we switched
-     * to using pre-computed, per-interpreter variables for the checks,
-     * and later consolidated that to a single "eval breaker" variable
-     * (now a PyInterpreterState field).
-     *
-     * For the longest time, the eval breaker check would happen
-     * frequently, every 5 or so times through the loop, regardless
-     * of what instruction ran last or what would run next.  Then, in
-     * early 2021 (gh-18334, commit 4958f5d), we switched to checking
-     * the eval breaker less frequently, by hard-coding the check to
-     * specific places in the eval loop (e.g. certain instructions).
-     * The intent then was to check after returning from calls
-     * and on the back edges of loops.
-     *
-     * In addition to being more efficient, that approach keeps
-     * the eval loop from running arbitrary code between instructions
-     * that don't handle that well.  (See gh-74174.)
-     *
-     * Currently, the eval breaker check happens here at the
-     * "handle_eval_breaker" label.  Some instructions come here
-     * explicitly (goto) and some indirectly.  Notably, the check
-     * happens on back edges in the control flow graph, which
-     * pretty much applies to all loops and most calls.
-     * (See bytecodes.c for exact information.)
-     *
-     * One consequence of this approach is that it might not be obvious
-     * how to force any specific thread to pick up the eval breaker,
-     * or for any specific thread to not pick it up.  Mostly this
-     * involves judicious uses of locks and careful ordering of code,
-     * while avoiding code that might trigger the eval breaker
-     * until so desired.
-     */
     if (_Py_HandlePending(tstate) != 0) {
         goto error;
     }
@@ -2773,37 +2711,33 @@ void Py_LeaveRecursiveCall(void)
 _PyInterpreterFrame *
 _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
-#ifdef LLTRACE
+#ifdef Py_DEBUG
     char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
     int lltrace = 0;
     if (uop_debug != NULL && *uop_debug >= '0') {
         lltrace = *uop_debug - '0';  // TODO: Parse an int and all that
     }
-    if (lltrace >= 2) {
-        PyCodeObject *code = _PyFrame_GetCode(frame);
-        _Py_CODEUNIT *instr = frame->prev_instr + 1;
-        fprintf(stderr,
-                "Entering _PyUopExecute for %s (%s:%d) at offset %ld\n",
-                PyUnicode_AsUTF8(code->co_qualname),
-                PyUnicode_AsUTF8(code->co_filename),
-                code->co_firstlineno,
-                (long)(instr - (_Py_CODEUNIT *)code->co_code_adaptive));
-    }
+#define DPRINTF(level, ...) \
+    if (lltrace >= (level)) { fprintf(stderr, __VA_ARGS__); }
+#else
+#define DPRINTF(level, ...)
 #endif
+
+    DPRINTF(3,
+            "Entering _PyUopExecute for %s (%s:%d) at offset %ld\n",
+            PyUnicode_AsUTF8(_PyFrame_GetCode(frame)->co_qualname),
+            PyUnicode_AsUTF8(_PyFrame_GetCode(frame)->co_filename),
+            _PyFrame_GetCode(frame)->co_firstlineno,
+            (long)(frame->prev_instr + 1 -
+                   (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive));
 
     PyThreadState *tstate = _PyThreadState_GET();
     _PyUOpExecutorObject *self = (_PyUOpExecutorObject *)executor;
 
-    // Equivalent to CHECK_EVAL_BREAKER()
-    _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
-    if (_Py_atomic_load_relaxed_int32(&tstate->interp->ceval.eval_breaker)) {
-        if (_Py_HandlePending(tstate) != 0) {
-            goto error;
-        }
-    }
+    CHECK_EVAL_BREAKER();
 
     OBJECT_STAT_INC(optimization_traces_executed);
-    _Py_CODEUNIT *ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive - 1;
+    _Py_CODEUNIT *ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive;
     int pc = 0;
     int opcode;
     uint64_t operand;
@@ -2812,14 +2746,11 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
         opcode = self->trace[pc].opcode;
         operand = self->trace[pc].operand;
         oparg = (int)operand;
-#ifdef LLTRACE
-        if (lltrace >= 3) {
-            const char *opname = opcode < 256 ? _PyOpcode_OpName[opcode] : _PyOpcode_uop_name[opcode];
-            int stack_level = (int)(stack_pointer - _PyFrame_Stackbase(frame));
-            fprintf(stderr, "  uop %s, operand %" PRIu64 ", stack_level %d\n",
-                    opname, operand, stack_level);
-        }
-#endif
+        DPRINTF(3,
+                "  uop %s, operand %" PRIu64 ", stack_level %d\n",
+                opcode < 256 ? _PyOpcode_OpName[opcode] : _PyOpcode_uop_name[opcode],
+                operand,
+                (int)(stack_pointer - _PyFrame_Stackbase(frame)));
         pc++;
         OBJECT_STAT_INC(optimization_uops_executed);
         switch (opcode) {
@@ -2828,7 +2759,7 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
 #define ENABLE_SPECIALIZATION 0
 #include "executor_cases.c.h"
 
-            case SET_IP:
+            case SAVE_IP:
             {
                 frame->prev_instr = ip_offset + oparg;
                 break;
@@ -2836,6 +2767,7 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
 
             case EXIT_TRACE:
             {
+                frame->prev_instr--;  // Back up to just before destination
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 Py_DECREF(self);
                 return frame;
@@ -2850,6 +2782,13 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
         }
     }
 
+unbound_local_error:
+    format_exc_check_arg(tstate, PyExc_UnboundLocalError,
+        UNBOUNDLOCAL_ERROR_MSG,
+        PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
+    );
+    goto error;
+
 pop_4_error:
     STACK_SHRINK(1);
 pop_3_error:
@@ -2861,11 +2800,7 @@ pop_1_error:
 error:
     // On ERROR_IF we return NULL as the frame.
     // The caller recovers the frame from cframe.current_frame.
-#ifdef LLTRACE
-    if (lltrace >= 2) {
-        fprintf(stderr, "Error: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
-    }
-#endif
+    DPRINTF(2, "Error: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
     _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(self);
     return NULL;
@@ -2873,11 +2808,8 @@ error:
 deoptimize:
     // On DEOPT_IF we just repeat the last instruction.
     // This presumes nothing was popped from the stack (nor pushed).
-#ifdef LLTRACE
-    if (lltrace >= 2) {
-        fprintf(stderr, "DEOPT: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
-    }
-#endif
+    DPRINTF(2, "DEOPT: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
+    frame->prev_instr--;  // Back up to just before destination
     _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(self);
     return frame;
