@@ -4652,7 +4652,7 @@ class DSLParser:
         if cls and type == "PyObject *":
             kwargs['type'] = cls.typedef
         sc = self.function.self_converter = self_converter(name, name, self.function, **kwargs)
-        p_self = Parameter(sc.name, inspect.Parameter.POSITIONAL_ONLY, function=self.function, converter=sc)
+        p_self = Parameter(name, inspect.Parameter.POSITIONAL_ONLY, function=self.function, converter=sc)
         self.function.parameters[sc.name] = p_self
 
         (cls or module).functions.append(self.function)
