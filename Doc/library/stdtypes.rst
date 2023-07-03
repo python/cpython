@@ -1944,7 +1944,7 @@ expression support in the :mod:`re` module).
 
       >>> '0123456789'.isdigit()
       True
-      >>> '٠١٢٣٤٥٦٧٨٩'.isdigit() # ARABIC-INDIC DIGIT ZERO TO NINE
+      >>> '٠١٢٣٤٥٦٧٨٩'.isdigit()  # ARABIC-INDIC DIGIT ZERO TO NINE
       True
       >>> '²'.isdigit(), '²'.isdecimal()
       (True, False)
@@ -1998,9 +1998,9 @@ expression support in the :mod:`re` module).
 
       >>> '0123456789'.isnumeric()
       True
-      >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric() # ARABIC-INDIC DIGIT ZERO TO NINE
+      >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric()  # ARABIC-INDIC DIGIT ZERO TO NINE
       True
-      >>> '⅕'.isnumeric() # VULGAR FRACTION ONE FIFTH
+      >>> '⅕'.isnumeric()  # VULGAR FRACTION ONE FIFTH
       True
       >>> '²'.isdigit(), '²'.isdecimal(), '²'.isnumeric()
       (True, False, True)
@@ -2023,9 +2023,9 @@ expression support in the :mod:`re` module).
       True
       >>> ' '.isprintable()
       True
-      >>> '\t\n'.isprintable() # TAB and BREAK LINE
+      >>> '\t\n'.isprintable()  # TAB and BREAK LINE
       False
-      >>> '\u3000'.isprintable() # IDEOGRAPHIC SPACE
+      >>> '\u3000'.isprintable()  # IDEOGRAPHIC SPACE
       False
 
    See also :meth:`isspace`.
@@ -2045,9 +2045,9 @@ expression support in the :mod:`re` module).
       False
       >>> ' '.isspace()
       True
-      >>> '\t\n'.isspace() # TAB and BREAK LINE
+      >>> '\t\n'.isspace()  # TAB and BREAK LINE
       True
-      >>> '\u3000'.isspace() # IDEOGRAPHIC SPACE
+      >>> '\u3000'.isspace()  # IDEOGRAPHIC SPACE
       True
 
    See also :meth:`isprintable`.
@@ -2552,7 +2552,7 @@ expression support in the :mod:`re` module).
 
       >>> 'Monty Python'.upper()
       'MONTY PYTHON'
-      >>> '𐊠'.upper().isupper() # 'CARIAN LETTER A'
+      >>> '𐊠'.upper().isupper()  # 'CARIAN LETTER A'
       False
 
    The uppercasing algorithm used is
