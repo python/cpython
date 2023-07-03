@@ -1,7 +1,5 @@
 /* bytes object implementation */
 
-#define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_bytesobject.h"   // _PyBytes_Find(), _PyBytes_Repeat()

@@ -393,7 +393,6 @@ Modules/xxlimited_35.c	-	Xxo_Type	-
 ## exception types
 Modules/_ctypes/_ctypes.c	-	PyExc_ArgError	-
 Modules/_cursesmodule.c	-	PyCursesError	-
-Modules/_decimal/_decimal.c	-	DecimalException	-
 Modules/_tkinter.c	-	Tkinter_TclError	-
 Modules/xxlimited_35.c	-	ErrorObject	-
 Modules/xxmodule.c	-	ErrorObject	-
@@ -423,10 +422,7 @@ Modules/_datetimemodule.c	-	us_per_day	-
 Modules/_datetimemodule.c	-	us_per_week	-
 Modules/_datetimemodule.c	-	seconds_per_day	-
 Modules/_decimal/_decimal.c	-	global_state	-
-Modules/_decimal/_decimal.c	-	basic_context_template	-
 Modules/_decimal/_decimal.c	-	current_context_var	-
-Modules/_decimal/_decimal.c	-	default_context_template	-
-Modules/_decimal/_decimal.c	-	extended_context_template	-
 Modules/_decimal/_decimal.c	-	round_map	-
 Modules/_decimal/_decimal.c	-	Rational	-
 Modules/_decimal/_decimal.c	-	SignalTuple	-

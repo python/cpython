@@ -46,6 +46,17 @@ typedef struct {
     PyTypeObject *PyDec_Type;
     PyTypeObject *PyDecSignalDict_Type;
     PyTypeObject *DecimalTuple;
+
+    /* Top level Exception; inherits from ArithmeticError */
+    PyObject *DecimalException;
+
+    /* Template for creating new thread contexts, calling Context() without
+     * arguments and initializing the module_context on first access. */
+    PyObject *default_context_template;
+
+    /* Basic and extended context templates */
+    PyObject *basic_context_template;
+    PyObject *extended_context_template;
 } decimal_state;
 
 static decimal_state global_state;
@@ -144,14 +155,6 @@ static PyDecContextObject *cached_context = NULL;
 static PyObject *current_context_var = NULL;
 #endif
 
-/* Template for creating new thread contexts, calling Context() without
- * arguments and initializing the module_context on first access. */
-static PyObject *default_context_template = NULL;
-/* Basic and extended context templates */
-static PyObject *basic_context_template = NULL;
-static PyObject *extended_context_template = NULL;
-
-
 /* Error codes for functions that return signals or conditions */
 #define DEC_INVALID_SIGNALS (MPD_Max_status+1U)
 #define DEC_ERR_OCCURRED (DEC_INVALID_SIGNALS<<1)
@@ -163,9 +166,6 @@ typedef struct {
     uint32_t flag;      /* libmpdec flag */
     PyObject *ex;       /* corresponding exception */
 } DecCondMap;
-
-/* Top level Exception; inherits from ArithmeticError */
-static PyObject *DecimalException = NULL;
 
 /* Exceptions that correspond to IEEE signals */
 #define SUBNORMAL 5
@@ -1272,8 +1272,8 @@ context_new(PyTypeObject *type, PyObject *args UNUSED, PyObject *kwds UNUSED)
 
     ctx = CTX(self);
 
-    if (default_context_template) {
-        *ctx = *CTX(default_context_template);
+    if (state->default_context_template) {
+        *ctx = *CTX(state->default_context_template);
     }
     else {
         *ctx = dflt_ctx;
@@ -1576,7 +1576,7 @@ current_context_from_dict(void)
         }
 
         /* Set up a new thread local context. */
-        tl_context = context_copy(default_context_template, NULL);
+        tl_context = context_copy(state->default_context_template, NULL);
         if (tl_context == NULL) {
             return NULL;
         }
@@ -1649,9 +1649,9 @@ PyDec_SetCurrentContext(PyObject *self UNUSED, PyObject *v)
 
     /* If the new context is one of the templates, make a copy.
      * This is the current behavior of decimal.py. */
-    if (v == default_context_template ||
-        v == basic_context_template ||
-        v == extended_context_template) {
+    if (v == state->default_context_template ||
+        v == state->basic_context_template ||
+        v == state->extended_context_template) {
         v = context_copy(v, NULL);
         if (v == NULL) {
             return NULL;
@@ -1675,7 +1675,8 @@ PyDec_SetCurrentContext(PyObject *self UNUSED, PyObject *v)
 static PyObject *
 init_current_context(void)
 {
-    PyObject *tl_context = context_copy(default_context_template, NULL);
+    decimal_state *state = GLOBAL_STATE();
+    PyObject *tl_context = context_copy(state->default_context_template, NULL);
     if (tl_context == NULL) {
         return NULL;
     }
@@ -1730,9 +1731,9 @@ PyDec_SetCurrentContext(PyObject *self UNUSED, PyObject *v)
 
     /* If the new context is one of the templates, make a copy.
      * This is the current behavior of decimal.py. */
-    if (v == default_context_template ||
-        v == basic_context_template ||
-        v == extended_context_template) {
+    if (v == state->default_context_template ||
+        v == state->basic_context_template ||
+        v == state->extended_context_template) {
         v = context_copy(v, NULL);
         if (v == NULL) {
             return NULL;
@@ -5902,10 +5903,10 @@ PyInit__decimal(void)
     CHECK_INT(PyModule_AddType(m, state->DecimalTuple));
 
     /* Create top level exception */
-    ASSIGN_PTR(DecimalException, PyErr_NewException(
+    ASSIGN_PTR(state->DecimalException, PyErr_NewException(
                                      "decimal.DecimalException",
                                      PyExc_ArithmeticError, NULL));
-    CHECK_INT(PyModule_AddObject(m, "DecimalException", Py_NewRef(DecimalException)));
+    CHECK_INT(PyModule_AddType(m, (PyTypeObject *)state->DecimalException));
 
     /* Create signal tuple */
     ASSIGN_PTR(SignalTuple, PyTuple_New(SIGNAL_MAP_LEN));
@@ -5918,10 +5919,11 @@ PyInit__decimal(void)
 
         switch (cm->flag) {
         case MPD_Float_operation:
-            base = PyTuple_Pack(2, DecimalException, PyExc_TypeError);
+            base = PyTuple_Pack(2, state->DecimalException, PyExc_TypeError);
             break;
         case MPD_Division_by_zero:
-            base = PyTuple_Pack(2, DecimalException, PyExc_ZeroDivisionError);
+            base = PyTuple_Pack(2, state->DecimalException,
+                                PyExc_ZeroDivisionError);
             break;
         case MPD_Overflow:
             base = PyTuple_Pack(2, signal_map[INEXACT].ex,
@@ -5933,7 +5935,7 @@ PyInit__decimal(void)
                                    signal_map[SUBNORMAL].ex);
             break;
         default:
-            base = PyTuple_Pack(1, DecimalException);
+            base = PyTuple_Pack(1, state->DecimalException);
             break;
         }
 
@@ -5979,10 +5981,10 @@ PyInit__decimal(void)
 
 
     /* Init default context template first */
-    ASSIGN_PTR(default_context_template,
+    ASSIGN_PTR(state->default_context_template,
                PyObject_CallObject((PyObject *)state->PyDecContext_Type, NULL));
     CHECK_INT(PyModule_AddObject(m, "DefaultContext",
-                                 Py_NewRef(default_context_template)));
+                                 Py_NewRef(state->default_context_template)));
 
 #ifndef WITH_DECIMAL_CONTEXTVAR
     ASSIGN_PTR(tls_context_key, PyUnicode_FromString("___DECIMAL_CTX__"));
@@ -5994,18 +5996,18 @@ PyInit__decimal(void)
     CHECK_INT(PyModule_AddObject(m, "HAVE_THREADS", Py_NewRef(Py_True)));
 
     /* Init basic context template */
-    ASSIGN_PTR(basic_context_template,
+    ASSIGN_PTR(state->basic_context_template,
                PyObject_CallObject((PyObject *)state->PyDecContext_Type, NULL));
-    init_basic_context(basic_context_template);
+    init_basic_context(state->basic_context_template);
     CHECK_INT(PyModule_AddObject(m, "BasicContext",
-                                 Py_NewRef(basic_context_template)));
+                                 Py_NewRef(state->basic_context_template)));
 
     /* Init extended context template */
-    ASSIGN_PTR(extended_context_template,
+    ASSIGN_PTR(state->extended_context_template,
                PyObject_CallObject((PyObject *)state->PyDecContext_Type, NULL));
-    init_extended_context(extended_context_template);
+    init_extended_context(state->extended_context_template);
     CHECK_INT(PyModule_AddObject(m, "ExtendedContext",
-                                 Py_NewRef(extended_context_template)));
+                                 Py_NewRef(state->extended_context_template)));
 
 
     /* Init mpd_ssize_t constants */
@@ -6045,14 +6047,14 @@ error:
     Py_CLEAR(MutableMapping); /* GCOV_NOT_REACHED */
     Py_CLEAR(SignalTuple); /* GCOV_NOT_REACHED */
     Py_CLEAR(state->DecimalTuple); /* GCOV_NOT_REACHED */
-    Py_CLEAR(default_context_template); /* GCOV_NOT_REACHED */
+    Py_CLEAR(state->default_context_template); /* GCOV_NOT_REACHED */
 #ifndef WITH_DECIMAL_CONTEXTVAR
     Py_CLEAR(tls_context_key); /* GCOV_NOT_REACHED */
 #else
     Py_CLEAR(current_context_var); /* GCOV_NOT_REACHED */
 #endif
-    Py_CLEAR(basic_context_template); /* GCOV_NOT_REACHED */
-    Py_CLEAR(extended_context_template); /* GCOV_NOT_REACHED */
+    Py_CLEAR(state->basic_context_template); /* GCOV_NOT_REACHED */
+    Py_CLEAR(state->extended_context_template); /* GCOV_NOT_REACHED */
     Py_CLEAR(m); /* GCOV_NOT_REACHED */
 
     return NULL; /* GCOV_NOT_REACHED */

@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+#include "pycore_time.h"          // _PyTime_t
+
 
 struct _import_runtime_state {
     /* The builtin modules (defined in config.c). */

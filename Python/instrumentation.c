@@ -1,15 +1,14 @@
-
-
 #include "Python.h"
 #include "pycore_call.h"
 #include "pycore_frame.h"
 #include "pycore_interp.h"
 #include "pycore_long.h"
+#include "pycore_modsupport.h"    // _PyModule_CreateInitialized()
 #include "pycore_namespace.h"
 #include "pycore_object.h"
 #include "pycore_opcode.h"
 #include "pycore_pyerrors.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 /* Uncomment this to dump debugging output when assertions fail */
 // #define INSTRUMENT_DEBUG 1
@@ -390,7 +389,7 @@ dump_instrumentation_data(PyCodeObject *code, int star, FILE*out)
         fprintf(out, "NULL\n");
         return;
     }
-    dump_monitors("Global", PyInterpreterState_Get()->monitors, out);
+    dump_monitors("Global", _PyInterpreterState_GET()->monitors, out);
     dump_monitors("Code", data->local_monitors, out);
     dump_monitors("Active", data->active_monitors, out);
     int code_len = (int)Py_SIZE(code);
@@ -449,7 +448,7 @@ sanity_check_instrumentation(PyCodeObject *code)
     if (data == NULL) {
         return;
     }
-    _Py_Monitors active_monitors = PyInterpreterState_Get()->monitors;
+    _Py_Monitors active_monitors = _PyInterpreterState_GET()->monitors;
     if (code->_co_monitoring) {
         _Py_Monitors local_monitors = code->_co_monitoring->local_monitors;
         active_monitors = monitors_or(active_monitors, local_monitors);
@@ -740,7 +739,7 @@ remove_tools(PyCodeObject * code, int offset, int event, int tools)
 static bool
 tools_is_subset_for_event(PyCodeObject * code, int event, int tools)
 {
-    int global_tools = PyInterpreterState_Get()->monitors.tools[event];
+    int global_tools = _PyInterpreterState_GET()->monitors.tools[event];
     int local_tools = code->_co_monitoring->local_monitors.tools[event];
     return tools == ((global_tools | local_tools) & tools);
 }
@@ -1219,7 +1218,7 @@ _Py_call_instrumentation_instruction(PyThreadState *tstate, _PyInterpreterFrame*
 PyObject *
 _PyMonitoring_RegisterCallback(int tool_id, int event_id, PyObject *obj)
 {
-    PyInterpreterState *is = _PyInterpreterState_Get();
+    PyInterpreterState *is = _PyInterpreterState_GET();
     assert(0 <= tool_id && tool_id < PY_MONITORING_TOOL_IDS);
     assert(0 <= event_id && event_id < PY_MONITORING_EVENTS);
     PyObject *callback = is->monitoring_callables[tool_id][event_id];
@@ -1678,7 +1677,7 @@ int
 _PyMonitoring_SetEvents(int tool_id, _PyMonitoringEventSet events)
 {
     assert(0 <= tool_id && tool_id < PY_MONITORING_TOOL_IDS);
-    PyInterpreterState *interp = _PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     assert(events < (1 << PY_MONITORING_UNGROUPED_EVENTS));
     if (check_tool(interp, tool_id)) {
         return -1;
@@ -1696,7 +1695,7 @@ int
 _PyMonitoring_SetLocalEvents(PyCodeObject *code, int tool_id, _PyMonitoringEventSet events)
 {
     assert(0 <= tool_id && tool_id < PY_MONITORING_TOOL_IDS);
-    PyInterpreterState *interp = _PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     assert(events < (1 << PY_MONITORING_UNGROUPED_EVENTS));
     if (check_tool(interp, tool_id)) {
         return -1;
@@ -1758,7 +1757,7 @@ monitoring_use_tool_id_impl(PyObject *module, int tool_id, PyObject *name)
         PyErr_SetString(PyExc_ValueError, "tool name must be a str");
         return NULL;
     }
-    PyInterpreterState *interp = _PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->monitoring_tool_names[tool_id] != NULL) {
         PyErr_Format(PyExc_ValueError, "tool %d is already in use", tool_id);
         return NULL;
@@ -1782,7 +1781,7 @@ monitoring_free_tool_id_impl(PyObject *module, int tool_id)
     if (check_valid_tool(tool_id))  {
         return NULL;
     }
-    PyInterpreterState *interp = _PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     Py_CLEAR(interp->monitoring_tool_names[tool_id]);
     Py_RETURN_NONE;
 }
@@ -1804,7 +1803,7 @@ monitoring_get_tool_impl(PyObject *module, int tool_id)
     if (check_valid_tool(tool_id))  {
         return NULL;
     }
-    PyInterpreterState *interp = _PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     PyObject *name = interp->monitoring_tool_names[tool_id];
     if (name == NULL) {
         Py_RETURN_NONE;
@@ -1865,7 +1864,7 @@ monitoring_get_events_impl(PyObject *module, int tool_id)
     if (check_valid_tool(tool_id))  {
         return -1;
     }
-    _Py_Monitors *m = &_PyInterpreterState_Get()->monitors;
+    _Py_Monitors *m = &_PyInterpreterState_GET()->monitors;
     _PyMonitoringEventSet event_set = get_events(m, tool_id);
     return event_set;
 }
@@ -1990,7 +1989,7 @@ monitoring_restart_events_impl(PyObject *module)
      * last restart version > instrumented version for all code objects
      * last restart version < current version
      */
-    PyInterpreterState *interp = _PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     interp->last_restart_version = interp->monitoring_version + 1;
     interp->monitoring_version = interp->last_restart_version + 1;
     if (instrument_all_executing_code_objects(interp)) {
@@ -2038,7 +2037,7 @@ static PyObject *
 monitoring__all_events_impl(PyObject *module)
 /*[clinic end generated code: output=6b7581e2dbb690f6 input=62ee9672c17b7f0e]*/
 {
-    PyInterpreterState *interp = _PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     PyObject *res = PyDict_New();
     if (res == NULL) {
         return NULL;
