@@ -814,7 +814,7 @@ Annotations must be either a name, a function call, or a string.
         self.assertEqual(s, expected_failure_message)
 
     def test_bizarre_parseable_annotations(self):
-        msg = "Annotation dicts must have str keys"
+        msg = "Cannot use a kwarg splat in a function-call annotation"
         dataset = (
             'module fo\nfo.barbaz\n   o: bool(**{None: "bang!"})',
             'module fo\nfo.barbaz -> bool(**{None: "bang!"})',
