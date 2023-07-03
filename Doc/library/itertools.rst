@@ -1085,8 +1085,8 @@ The following recipes have a more mathematical flavor:
        kernel = tuple(kernel)[::-1]
        n = len(kernel)
        padded_signal = chain(repeat(0, n-1), signal, repeat(0, n-1))
-       for window in sliding_window(padded_signal, n):
-           yield math.sumprod(kernel, window)
+       windowed_signal = sliding_window(padded_signal, n)
+       return map(math.sumprod, repeat(kernel), windowed_signal)
 
    def polynomial_from_roots(roots):
        """Compute a polynomial's coefficients from its roots.
