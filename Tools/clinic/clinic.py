@@ -4878,7 +4878,8 @@ class DSLParser:
 
         if not default:
             if self.parameter_state == ParamState.OPTIONAL:
-                fail("Can't have a parameter without a default (" + repr(parameter_name) + ")\nafter a parameter with a default!")
+                fail(f"Can't have a parameter without a default ({parameter_name!r})\n"
+                      "after a parameter with a default!")
             if is_vararg:
                 value = NULL
                 kwargs.setdefault('c_default', "NULL")
@@ -5078,12 +5079,13 @@ class DSLParser:
                 fail("Function " + self.function.name + " uses '*' more than once.")
             self.keyword_only = True
         elif symbol == '[':
-            if self.parameter_state in (ParamState.START, ParamState.LEFT_SQUARE_BEFORE):
-                self.parameter_state = ParamState.LEFT_SQUARE_BEFORE
-            elif self.parameter_state in (ParamState.REQUIRED, ParamState.GROUP_AFTER):
-                self.parameter_state = ParamState.GROUP_AFTER
-            else:
-                fail("Function " + self.function.name + " has an unsupported group configuration. (Unexpected state " + str(self.parameter_state) + ".b)")
+            match self.parameter_state:
+                case ParamState.START | ParamState.LEFT_SQUARE_BEFORE:
+                    self.parameter_state = ParamState.LEFT_SQUARE_BEFORE
+                case ParamState.REQUIRED | ParamState.GROUP_AFTER:
+                    self.parameter_state = ParamState.GROUP_AFTER
+                case st:
+                    fail(f"Function {self.function.name} has an unsupported group configuration. (Unexpected state {st}.b)")
             self.group += 1
             self.function.docstring_only = True
         elif symbol == ']':
@@ -5092,20 +5094,27 @@ class DSLParser:
             if not any(p.group == self.group for p in self.function.parameters.values()):
                 fail("Function " + self.function.name + " has an empty group.\nAll groups must contain at least one parameter.")
             self.group -= 1
-            if self.parameter_state in (ParamState.LEFT_SQUARE_BEFORE, ParamState.GROUP_BEFORE):
-                self.parameter_state = ParamState.GROUP_BEFORE
-            elif self.parameter_state in (ParamState.GROUP_AFTER, ParamState.RIGHT_SQUARE_AFTER):
-                self.parameter_state = ParamState.RIGHT_SQUARE_AFTER
-            else:
-                fail("Function " + self.function.name + " has an unsupported group configuration. (Unexpected state " + str(self.parameter_state) + ".c)")
+            match self.parameter_state:
+                case ParamState.LEFT_SQUARE_BEFORE | ParamState.GROUP_BEFORE:
+                    self.parameter_state = ParamState.GROUP_BEFORE
+                case ParamState.GROUP_AFTER | ParamState.RIGHT_SQUARE_AFTER:
+                    self.parameter_state = ParamState.RIGHT_SQUARE_AFTER
+                case st:
+                    fail(f"Function {self.function.name} has an unsupported group configuration. (Unexpected state {st}.c)")
         elif symbol == '/':
             if self.positional_only:
                 fail("Function " + self.function.name + " uses '/' more than once.")
             self.positional_only = True
-            # REQUIREDD and OPTIONAL are allowed here, that allows positional-only without option groups
+            # REQUIRED and OPTIONAL are allowed here, that allows positional-only without option groups
             # to work (and have default values!)
-            if (self.parameter_state not in (ParamState.REQUIRED, ParamState.OPTIONAL, ParamState.RIGHT_SQUARE_AFTER, ParamState.GROUP_BEFORE)) or self.group:
-                fail("Function " + self.function.name + " has an unsupported group configuration. (Unexpected state " + str(self.parameter_state) + ".d)")
+            allowed = (
+                ParamState.REQUIRED,
+                ParamState.OPTIONAL,
+                ParamState.RIGHT_SQUARE_AFTER,
+                ParamState.GROUP_BEFORE,
+            )
+            if (self.parameter_state not in allowed) or self.group:
+                fail(f"Function {self.function.name} has an unsupported group configuration. (Unexpected state {self.parameter_state}.d)")
             if self.keyword_only:
                 fail("Function " + self.function.name + " mixes keyword-only and positional-only parameters, which is unsupported.")
             # fixup preceding parameters
