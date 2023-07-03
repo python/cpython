@@ -4806,17 +4806,18 @@ class DSLParser:
             self.parse_special_symbol(line)
             return
 
-        if self.parameter_state in (ParamState.START, ParamState.REQUIRED):
-            self.to_required()
-        elif self.parameter_state == ParamState.LEFT_SQUARE_BEFORE:
-            self.parameter_state = ParamState.GROUP_BEFORE
-        elif self.parameter_state == ParamState.GROUP_BEFORE:
-            if not self.group:
+        match self.parameter_state:
+            case ParamState.START | ParamState.REQUIRED:
                 self.to_required()
-        elif self.parameter_state in (ParamState.GROUP_AFTER, ParamState.OPTIONAL):
-            pass
-        else:
-            fail("Function " + self.function.name + " has an unsupported group configuration. (Unexpected state " + str(self.parameter_state) + ".a)")
+            case ParamState.LEFT_SQUARE_BEFORE:
+                self.parameter_state = ParamState.GROUP_BEFORE
+            case ParamState.GROUP_BEFORE:
+                if not self.group:
+                    self.to_required()
+            case ParamState.GROUP_AFTER | ParamState.OPTIONAL:
+                pass
+            case st:
+                fail(f"Function {self.function.name} has an unsupported group configuration. (Unexpected state {st}.a)")
 
         # handle "as" for  parameters too
         c_name = None
