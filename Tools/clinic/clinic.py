@@ -5031,7 +5031,6 @@ class DSLParser:
             case ast.Name(name):
                 return name, False, {}
             case ast.Call(func=ast.Name(name)):
-                assert isinstance(ast.expr, str)
                 symbols = globals()
                 kwargs = {
                     node.arg: eval_ast_expr(node.value, symbols)
