@@ -7,8 +7,6 @@
    of the compiler used.  Different compilers define their own feature
    test macro, e.g. '_MSC_VER'. */
 
-#define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
 
 #ifdef __VXWORKS__

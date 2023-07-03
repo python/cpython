@@ -17,8 +17,6 @@
 /* Always enable assertions */
 #undef NDEBUG
 
-#define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
 #include "frameobject.h"          // PyFrame_New
 #include "marshal.h"              // PyMarshal_WriteLongToFile
@@ -2714,11 +2712,6 @@ test_tstate_capi(PyObject *self, PyObject *Py_UNUSED(args))
     assert(PyDict_Check(dict));
     // dict is a borrowed reference
 
-    // private _PyThreadState_GetDict()
-    PyObject *dict2 = _PyThreadState_GetDict(tstate);
-    assert(dict2 == dict);
-    // dict2 is a borrowed reference
-
     // PyThreadState_GetInterpreter()
     PyInterpreterState *interp = PyThreadState_GetInterpreter(tstate);
     assert(interp != NULL);
@@ -4214,9 +4207,6 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_GetArgs(m) < 0) {
-        return NULL;
-    }
-    if (_PyTestCapi_Init_PyTime(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_DateTime(m) < 0) {

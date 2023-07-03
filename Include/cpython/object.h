@@ -231,7 +231,7 @@ struct _typeobject {
 };
 
 /* This struct is used by the specializer
- * It should should be treated as an opaque blob
+ * It should be treated as an opaque blob
  * by code other than the specializer and interpreter. */
 struct _specialization_cache {
     // In order to avoid bloating the bytecode with lots of inline caches, the

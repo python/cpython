@@ -520,7 +520,7 @@ class Instruction:
                     f"{typ}{ceffect.name} = {func}(&next_instr[{active.offset}].cache);"
                 )
             else:
-                out.emit(f"{typ}{ceffect.name} = operand;")
+                out.emit(f"{typ}{ceffect.name} = ({typ.strip()})operand;")
 
         # Write the body, substituting a goto for ERROR_IF() and other stuff
         assert dedent <= 0
@@ -1310,10 +1310,10 @@ class Analyzer:
 
     def write_pseudo_instrs(self) -> None:
         """Write the IS_PSEUDO_INSTR macro"""
-        self.out.emit("\n\n#define IS_PSEUDO_INSTR(OP)  \\")
+        self.out.emit("\n\n#define IS_PSEUDO_INSTR(OP)  ( \\")
         for op in self.pseudos:
             self.out.emit(f"    ((OP) == {op}) || \\")
-        self.out.emit(f"    0")
+        self.out.emit(f"    0)")
 
     def write_uop_items(self, make_text: typing.Callable[[str, int], str]) -> None:
         """Write '#define XXX NNN' for each uop"""
