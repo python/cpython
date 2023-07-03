@@ -50,8 +50,6 @@
   <PropertyGroup>
     <MakeVersionInfoBeforeTarget>ClCompile</MakeVersionInfoBeforeTarget>
     <KillPython>true</KillPython>
-    <IncludeExternals Condition="$(IncludeExternals) == '' and Exists('$(zlibIncludeDir)\zlib.h')">true</IncludeExternals>
-    <IncludeExternals Condition="$(IncludeExternals) == ''">false</IncludeExternals>
   </PropertyGroup>
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -71,9 +69,8 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalOptions>/Zm200  %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(PySourcePath)Python;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="$(IncludeExternals)">$(zlibIncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_USRDLL;Py_BUILD_CORE;Py_BUILD_CORE_BUILTIN;Py_ENABLE_SHARED;_Py_HAVE_ZLIB;MS_DLL_ID="$(SysWinVer)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(PySourcePath)Python;$(zlibIncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_USRDLL;Py_BUILD_CORE;Py_ENABLE_SHARED;_Py_HAVE_ZLIB;_CRT_SECURE_NO_WARNINGS;MS_DLL_ID="$(SysWinVer)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>version.lib;shlwapi.lib;ws2_32.lib;pathcch.lib;zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>

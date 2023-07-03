@@ -54,7 +54,9 @@ extern void init_struct(void);
 extern void initdatetime(void);
 extern void init_functools(void);
 extern void init_json(void);
+#ifdef _Py_HAVE_ZLIB
 extern void initzlib(void);
+#endif
 
 extern void init_multibytecodec(void);
 extern void init_codecs_cn(void);
@@ -136,7 +138,9 @@ struct _inittab _PyImport_Inittab[] = {
 
     {"xxsubtype", initxxsubtype},
     {"zipimport", initzipimport},
+#ifdef _Py_HAVE_ZLIB
     {"zlib", initzlib},
+#endif
 
     /* CJK codecs */
     {"_multibytecodec", init_multibytecodec},
