@@ -1939,7 +1939,7 @@ expression support in the :mod:`re` module).
 
       >>> '0123456789'.isdecimal()
       True
-      >>> '٠١٢٣٤٥٦٧٨٩'.isdecimal() #ARABIC-INDIC DIGIT ZERO TO NINE
+      >>> '٠١٢٣٤٥٦٧٨٩'.isdecimal()  # ARABIC-INDIC DIGIT ZERO TO NINE
       True
       >>> '²'.isdecimal(), '²'.isdigit()
       (False, True)
