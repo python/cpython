@@ -118,6 +118,13 @@ pathlib
   :meth:`~pathlib.Path.is_dir`.
   (Contributed by Barney Gale in :gh:`77609` and :gh:`105793`.)
 
+tarfile
+-------
+
+* Add :class:`tarfile.TarPath` class, which provides access to tar archive
+  members via the :class:`pathlib.Path` interface.
+  (Contributed by Barney Gale in :gh:`89812`.)
+
 traceback
 ---------
 

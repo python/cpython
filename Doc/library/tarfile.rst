@@ -854,6 +854,47 @@ A :class:`TarInfo` object also provides some convenient query methods:
    Return :const:`True` if it is one of character device, block device or FIFO.
 
 
+TarPath Objects
+---------------
+
+The :class:`TarPath` class provides an interface for tar files that's
+compatible with :class:`pathlib.Path`.
+
+.. class:: TarPath(*pathsegments, tarfile)
+
+    Create a :class:`TarPath` object from a given :class:`TarFile` object.
+    If *pathsegments* are supplied, they are joined together to form a path
+    within the archive; otherwise the path is positioned at the archive root.
+
+    .. versionadded:: 3.13
+
+.. attribute:: TarPath.tarfile
+
+    The backing :class:`TarFile` instance, as supplied to the initializer.
+
+Features such as testing file types, reading or writing files, and iterating
+or globbing directories are supported::
+
+   import tarfile
+   with tarfile.open("sample.tar.gz", "r:gz") as tar:
+       root = tarfile.TarPath(tarfile=tar)
+       for readme in root.glob("**/README*", case_sensitive=False):
+           print(f"Found README file at {readme}:")
+           print(readme.read_text())
+           break
+
+Some :class:`TarPath` methods unconditionally raise
+:exc:`pathlib.UnsupportedOperation`. They are:
+
+- ``absolute()``, ``cwd()``, ``expanduser()``, ``home()`` and ``as_uri()``,
+  because tar archives lack these features.
+- ``touch()``, ``rename()``, ``replace()``, ``chmod()``, ``lchmod()``,
+  ``unlink()`` and ``rmdir()``, because the :class:`TarFile` class does not
+  support reading and writing the same archive.
+
+Refer to the :mod:`pathlib` documentation for information about other methods.
+
+
 .. _tarfile-extraction-filter:
 
 Extraction filters
