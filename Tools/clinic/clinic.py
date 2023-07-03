@@ -38,6 +38,7 @@ from typing import (
     TypeGuard,
     overload,
 )
+from __future__ import annotations
 
 # TODO:
 #
@@ -2467,7 +2468,7 @@ class Function:
         self.docstring = docstring or ''
         self.kind = kind
         self.coexist = coexist
-        self.self_converter: CConverter | None = None
+        self.self_converter: self_converter | None = None
         # docstring_only means "don't generate a machine-readable
         # signature, just a normal docstring".  it's True for
         # functions with optional groups because we can't represent
