@@ -4564,9 +4564,9 @@ class DSLParser:
         # are we cloning?
         before, equals, existing = line.rpartition('=')
         if equals:
-            full_name, _, c_basename = before.partition(' as ')
-            full_name = full_name.strip()
-            c_basename = c_basename.strip()
+            left, _, right = before.partition(' as ')
+            full_name = left.strip()
+            c_basename: str | None = right.strip()
             existing = existing.strip()
             if (is_legal_py_identifier(full_name) and
                 (not c_basename or is_legal_c_identifier(c_basename)) and
