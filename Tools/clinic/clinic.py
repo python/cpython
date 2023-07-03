@@ -4,6 +4,7 @@
 # Copyright 2012-2013 by Larry Hastings.
 # Licensed to the PSF under a contributor agreement.
 #
+from __future__ import annotations
 
 import abc
 import ast
@@ -38,7 +39,6 @@ from typing import (
     TypeGuard,
     overload,
 )
-from __future__ import annotations
 
 # TODO:
 #
