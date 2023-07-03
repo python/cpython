@@ -730,6 +730,18 @@ class ClinicParserTest(TestCase):
         )
         self.assertIn(msg, out)
 
+    def test_disallowed_grouping__no_matching_bracket(self):
+        out = self.parse_function_should_fail("""
+            module foo
+            foo.empty_group
+                param: int
+                ]
+                group2: int
+                ]
+        """)
+        msg = "Function empty_group has a ] without a matching [."
+        self.assertIn(msg, out)
+
     def test_no_parameters(self):
         function = self.parse_function("""
             module foo
@@ -807,6 +819,18 @@ class ClinicParserTest(TestCase):
             "Function bar has an unsupported group configuration. "
             "(Unexpected state 0.d)"
         )
+        self.assertIn(msg, out)
+
+    def test_double_slash(self):
+        out = self.parse_function_should_fail("""
+            module foo
+            foo.bar
+                a: int
+                /
+                b: int
+                /
+        """)
+        msg = "Function bar uses '/' more than once."
         self.assertIn(msg, out)
 
     def test_mix_star_and_slash(self):
