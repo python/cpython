@@ -283,11 +283,6 @@ PyUnstable_Optimizer_NewCounter(void)
 
 ///////////////////// Experimental UOp Optimizer /////////////////////
 
-#ifdef Py_DEBUG
-   /* For debugging the interpreter: */
-#  define LLTRACE  1      /* Low-level trace feature */
-#endif
-
 static void
 uop_dealloc(_PyUOpExecutorObject *self) {
     PyObject_Free(self);
@@ -311,36 +306,34 @@ translate_bytecode_to_trace(
 {
     int trace_length = 0;
 
-#define ADD_TO_TRACE_BASIC(OPCODE, OPERAND) \
-    assert(trace_length < max_length); \
-    trace[trace_length].opcode = (OPCODE); \
-    trace[trace_length].operand = (OPERAND); \
-    trace_length++;
-
-#ifdef LLTRACE
+#ifdef Py_DEBUG
     char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
     int lltrace = 0;
     if (uop_debug != NULL && *uop_debug >= '0') {
         lltrace = *uop_debug - '0';  // TODO: Parse an int and all that
     }
-    if (lltrace >= 4) {
-        fprintf(stderr,
-                "Optimizing %s (%s:%d) at offset %ld\n",
-                PyUnicode_AsUTF8(code->co_qualname),
-                PyUnicode_AsUTF8(code->co_filename),
-                code->co_firstlineno,
-                (long)(instr - (_Py_CODEUNIT *)code->co_code_adaptive));
-    }
-#define ADD_TO_TRACE(OPCODE, OPERAND) \
-    if (lltrace >= 2) { \
-        const char *opname = (OPCODE) < 256 ? _PyOpcode_OpName[(OPCODE)] : _PyOpcode_uop_name[(OPCODE)]; \
-        fprintf(stderr, "  ADD_TO_TRACE(%s, %" PRIu64 ")\n", opname, (uint64_t)(OPERAND)); \
-    } \
-    ADD_TO_TRACE_BASIC(OPCODE, OPERAND)
+#define DPRINTF(level, ...) \
+    if (lltrace >= (level)) { fprintf(stderr, __VA_ARGS__); }
 #else
-#define ADD_TO_TRACE(OPCODE, OPERAND) \
-    ADD_TO_TRACE_BASIC(OPCODE, OPERAND)
+#define DPRINTF(level, ...)
 #endif
+
+#define ADD_TO_TRACE(OPCODE, OPERAND) \
+    DPRINTF(2, \
+            "  ADD_TO_TRACE(%s, %" PRIu64 ")\n", \
+            (OPCODE) < 256 ? _PyOpcode_OpName[(OPCODE)] : _PyOpcode_uop_name[(OPCODE)], \
+            (uint64_t)(OPERAND)); \
+    assert(trace_length < max_length); \
+    trace[trace_length].opcode = (OPCODE); \
+    trace[trace_length].operand = (OPERAND); \
+    trace_length++;
+
+    DPRINTF(4,
+            "Optimizing %s (%s:%d) at offset %ld\n",
+            PyUnicode_AsUTF8(code->co_qualname),
+            PyUnicode_AsUTF8(code->co_filename),
+            code->co_firstlineno,
+            (long)(instr - (_Py_CODEUNIT *)code->co_code_adaptive));
 
     for (;;) {
         ADD_TO_TRACE(SAVE_IP, (int)(instr - (_Py_CODEUNIT *)code->co_code_adaptive));
@@ -353,11 +346,7 @@ translate_bytecode_to_trace(
             {
                 // Reserve space for two uops (+ SAVE_IP + EXIT_TRACE)
                 if (trace_length + 4 > max_length) {
-#ifdef LLTRACE
-                    if (lltrace >= 1) {
-                        fprintf(stderr, "Ran out of space for LOAD_FAST_LOAD_FAST\n");
-                    }
-#endif
+                    DPRINTF(1, "Ran out of space for LOAD_FAST_LOAD_FAST\n");
                     goto done;
                 }
                 uint64_t oparg1 = operand >> 4;
@@ -387,14 +376,9 @@ translate_bytecode_to_trace(
                     // Reserve space for nuops (+ SAVE_IP + EXIT_TRACE)
                     int nuops = expansion->nuops;
                     if (trace_length + nuops + 2 > max_length) {
-#ifdef LLTRACE
-                        if (lltrace >= 1) {
-                            fprintf(stderr,
-                                    "Ran out of space for %s\n",
-                                    opcode < 256 ? _PyOpcode_OpName[opcode] : _PyOpcode_uop_name[opcode]
-                            );
-                        }
-#endif
+                        DPRINTF(1,
+                                "Ran out of space for %s\n",
+                                opcode < 256 ? _PyOpcode_OpName[opcode] : _PyOpcode_uop_name[opcode]);
                         goto done;
                     }
                     for (int i = 0; i < nuops; i++) {
@@ -423,14 +407,9 @@ translate_bytecode_to_trace(
                     }
                     break;
                 }
-#ifdef LLTRACE
-                if (lltrace >= 2) {
-                    fprintf(stderr,
-                            "Unsupported opcode %s\n",
-                            opcode < 256 ? _PyOpcode_OpName[opcode] : _PyOpcode_uop_name[opcode]
-                    );
-                }
-#endif
+                DPRINTF(2,
+                        "Unsupported opcode %s\n",
+                        opcode < 256 ? _PyOpcode_OpName[opcode] : _PyOpcode_uop_name[opcode]);
                 goto done;  // Break out of loop
             }
         }
@@ -443,30 +422,22 @@ done:
     // Skip short traces like SAVE_IP, LOAD_FAST, SAVE_IP, EXIT_TRACE
     if (trace_length > 3) {
         ADD_TO_TRACE(EXIT_TRACE, 0);
-#ifdef LLTRACE
-        if (lltrace >= 1) {
-            fprintf(stderr,
-                    "Created a trace for %s (%s:%d) at offset %ld -- length %d\n",
-                    PyUnicode_AsUTF8(code->co_qualname),
-                    PyUnicode_AsUTF8(code->co_filename),
-                    code->co_firstlineno,
-                    (long)(instr - (_Py_CODEUNIT *)code->co_code_adaptive),
-                    trace_length);
-        }
-#endif
+        DPRINTF(1,
+                "Created a trace for %s (%s:%d) at offset %ld -- length %d\n",
+                PyUnicode_AsUTF8(code->co_qualname),
+                PyUnicode_AsUTF8(code->co_filename),
+                code->co_firstlineno,
+                (long)(instr - (_Py_CODEUNIT *)code->co_code_adaptive),
+                trace_length);
         return trace_length;
     }
     else {
-#ifdef LLTRACE
-        if (lltrace >= 4) {
-            fprintf(stderr,
-                    "No trace for %s (%s:%d) at offset %ld\n",
-                    PyUnicode_AsUTF8(code->co_qualname),
-                    PyUnicode_AsUTF8(code->co_filename),
-                    code->co_firstlineno,
-                    (long)(instr - (_Py_CODEUNIT *)code->co_code_adaptive));
-        }
-#endif
+        DPRINTF(4,
+                "No trace for %s (%s:%d) at offset %ld\n",
+                PyUnicode_AsUTF8(code->co_qualname),
+                PyUnicode_AsUTF8(code->co_filename),
+                code->co_firstlineno,
+                (long)(instr - (_Py_CODEUNIT *)code->co_code_adaptive));
     }
     return 0;
 
