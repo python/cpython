@@ -4781,13 +4781,15 @@ class DSLParser:
             for p in self.function.parameters.values():
                 p.group = -p.group
 
-    def state_parameter(self, line):
-        if self.parameter_continuation:
-            line = self.parameter_continuation + ' ' + line.lstrip()
-            self.parameter_continuation = ''
+    def state_parameter(self, line: str | None) -> None:
+        assert isinstance(self.function, Function)
 
         if not self.valid_line(line):
             return
+
+        if self.parameter_continuation:
+            line = self.parameter_continuation + ' ' + line.lstrip()
+            self.parameter_continuation = ''
 
         assert self.indent.depth == 2
         indent = self.indent.infer(line)
@@ -4839,6 +4841,7 @@ class DSLParser:
                 fields[0] = name
                 line = ' '.join(fields)
 
+        default: str | None
         base, equals, default = line.rpartition('=')
         if not equals:
             base = default
@@ -4861,7 +4864,9 @@ class DSLParser:
         if not module:
             fail("Function " + self.function.name + " has an invalid parameter declaration:\n\t" + line)
 
-        function_args = module.body[0].args
+        function = module.body[0]
+        assert isinstance(function, ast.FunctionDef)
+        function_args = function.args
 
         if len(function_args.args) > 1:
             fail("Function " + self.function.name + " has an invalid parameter declaration (comma?):\n\t" + line)
@@ -4884,6 +4889,7 @@ class DSLParser:
             if self.parameter_state is ParamState.OPTIONAL:
                 fail(f"Can't have a parameter without a default ({parameter_name!r})\n"
                       "after a parameter with a default!")
+            value: Sentinels | Null
             if is_vararg:
                 value = NULL
                 kwargs.setdefault('c_default', "NULL")
@@ -4946,8 +4952,11 @@ class DSLParser:
                 if bad:
                     fail("Unsupported expression as default value: " + repr(default))
 
-                expr = module.body[0].value
+                assignment = module.body[0]
+                assert isinstance(assignment, ast.Assign)
+                expr = assignment.value
                 # mild hack: explicitly support NULL as a default value
+                c_default: str | None
                 if isinstance(expr, ast.Name) and expr.id == 'NULL':
                     value = NULL
                     py_default = '<unrepresentable>'
@@ -4964,7 +4973,7 @@ class DSLParser:
                     value = unknown
                 elif isinstance(expr, ast.Attribute):
                     a = []
-                    n = expr
+                    n: ast.expr | ast.Attribute = expr
                     while isinstance(n, ast.Attribute):
                         a.append(n.attr)
                         n = n.value
@@ -4984,7 +4993,7 @@ class DSLParser:
                 else:
                     value = ast.literal_eval(expr)
                     py_default = repr(value)
-                    if isinstance(value, (bool, None.__class__)):
+                    if isinstance(value, (bool, NoneType)):
                         c_default = "Py_" + py_default
                     elif isinstance(value, str):
                         c_default = c_repr(value)
@@ -5011,6 +5020,7 @@ class DSLParser:
         # but the parameter object gets the python name
         converter = dict[name](c_name or parameter_name, parameter_name, self.function, value, **kwargs)
 
+        kind: inspect._ParameterKind
         if is_vararg:
             kind = inspect.Parameter.VAR_POSITIONAL
         elif self.keyword_only:
@@ -5130,7 +5140,7 @@ class DSLParser:
                     fail("Function " + self.function.name + " mixes keyword-only and positional-only parameters, which is unsupported.")
                 p.kind = inspect.Parameter.POSITIONAL_ONLY
 
-    def state_parameter_docstring_start(self, line: str) -> None:
+    def state_parameter_docstring_start(self, line: str | None) -> None:
         self.parameter_docstring_indent = len(self.indent.margin)
         assert self.indent.depth == 3
         return self.next(self.state_parameter_docstring, line)
