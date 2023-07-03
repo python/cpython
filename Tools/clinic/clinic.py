@@ -4653,7 +4653,7 @@ class DSLParser:
             kwargs['type'] = cls.typedef
         sc = self.function.self_converter = self_converter(name, name, self.function, **kwargs)
         p_self = Parameter(name, inspect.Parameter.POSITIONAL_ONLY, function=self.function, converter=sc)
-        self.function.parameters[sc.name] = p_self
+        self.function.parameters[name] = p_self
 
         (cls or module).functions.append(self.function)
         self.next(self.state_parameters_start)
