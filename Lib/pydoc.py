@@ -1790,7 +1790,11 @@ def doc(thing, title='Python Library Documentation: %s', forceload=0,
                 raise
             print(exc)
     else:
-        output.write(render_doc(thing, title, forceload, plaintext))
+        try:
+            s = render_doc(thing, title, forceload, plaintext)
+        except ImportError as exc:
+            s = str(exc)
+        output.write(s)
 
 def writedoc(thing, forceload=0):
     """Write HTML documentation to a file in the current directory."""

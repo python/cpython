@@ -1,10 +1,9 @@
-
 #include "Python.h"
 #include "opcode.h"
 #include "pycore_interp.h"
 #include "pycore_opcode.h"
 #include "opcode_metadata.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_uops.h"
 #include "cpython/optimizer.h"
 #include <stdbool.h>
@@ -125,7 +124,7 @@ _PyOptimizerObject _PyOptimizer_Default = {
 _PyOptimizerObject *
 PyUnstable_GetOptimizer(void)
 {
-    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->optimizer == &_PyOptimizer_Default) {
         return NULL;
     }
@@ -138,7 +137,7 @@ PyUnstable_GetOptimizer(void)
 void
 PyUnstable_SetOptimizer(_PyOptimizerObject *optimizer)
 {
-    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (optimizer == NULL) {
         optimizer = &_PyOptimizer_Default;
     }
@@ -155,7 +154,7 @@ _PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNI
 {
     PyCodeObject *code = (PyCodeObject *)frame->f_executable;
     assert(PyCode_Check(code));
-    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (!has_space_for_executor(code, src)) {
         goto jump_to_destination;
     }

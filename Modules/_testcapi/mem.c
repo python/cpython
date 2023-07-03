@@ -655,23 +655,6 @@ tracemalloc_untrack(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-static PyObject *
-tracemalloc_get_traceback(PyObject *self, PyObject *args)
-{
-    unsigned int domain;
-    PyObject *ptr_obj;
-
-    if (!PyArg_ParseTuple(args, "IO", &domain, &ptr_obj)) {
-        return NULL;
-    }
-    void *ptr = PyLong_AsVoidPtr(ptr_obj);
-    if (PyErr_Occurred()) {
-        return NULL;
-    }
-
-    return _PyTraceMalloc_GetTraceback(domain, (uintptr_t)ptr);
-}
-
 static PyMethodDef test_methods[] = {
     {"check_pyobject_forbidden_bytes_is_freed",
                             check_pyobject_forbidden_bytes_is_freed, METH_NOARGS},
@@ -697,7 +680,6 @@ static PyMethodDef test_methods[] = {
     // Tracemalloc tests
     {"tracemalloc_track",             tracemalloc_track,             METH_VARARGS},
     {"tracemalloc_untrack",           tracemalloc_untrack,           METH_VARARGS},
-    {"tracemalloc_get_traceback",     tracemalloc_get_traceback,     METH_VARARGS},
     {NULL},
 };
 
