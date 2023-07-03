@@ -2253,7 +2253,7 @@ class DummyVirtualPathTest(unittest.TestCase):
         self._check_resolve_relative(p, P(BASE, 'dirB', 'fileB', 'foo', 'in',
                                           'spam'), False)
         p = P(BASE, 'dirA', 'linkC', '..', 'foo', 'in', 'spam')
-        if os.name == 'nt':
+        if isinstance(p, pathlib.WindowsPath):
             # In Windows, if linkY points to dirB, 'dirA\linkY\..'
             # resolves to 'dirA' without resolving linkY first.
             self._check_resolve_relative(p, P(BASE, 'dirA', 'foo', 'in',
