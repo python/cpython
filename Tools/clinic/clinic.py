@@ -4727,7 +4727,7 @@ class DSLParser:
     ps_start, ps_left_square_before, ps_group_before, ps_required, \
     ps_optional, ps_group_after, ps_right_square_after = range(7)
 
-    def state_parameters_start(self, line: str) -> None:
+    def state_parameters_start(self, line: str | None) -> None:
         if not self.valid_line(line):
             return
 
