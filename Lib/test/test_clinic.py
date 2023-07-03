@@ -643,7 +643,7 @@ class ClinicParserTest(TestCase):
         self.assertEqual(out, expected_msg)
 
     def test_disallowed_grouping__two_top_groups_on_right(self):
-        self.parse_function_should_fail("""
+        out = self.parse_function_should_fail("""
             module foo
             foo.two_top_groups_on_right
                 param: int
@@ -654,9 +654,14 @@ class ClinicParserTest(TestCase):
                 group2 : int
                 ]
         """)
+        msg = (
+            "Function two_top_groups_on_right has an unsupported group "
+            "configuration. (Unexpected state 6.b)"
+        )
+        self.assertIn(msg, out)
 
     def test_disallowed_grouping__parameter_after_group_on_right(self):
-        self.parse_function_should_fail("""
+        out = self.parse_function_should_fail("""
             module foo
             foo.parameter_after_group_on_right
                 param: int
@@ -667,9 +672,14 @@ class ClinicParserTest(TestCase):
                 group2 : int
                 ]
         """)
+        msg = (
+            "Function parameter_after_group_on_right has an unsupported group "
+            "configuration. (Unexpected state 6.a)"
+        )
+        self.assertIn(msg, out)
 
     def test_disallowed_grouping__group_after_parameter_on_left(self):
-        self.parse_function_should_fail("""
+        out = self.parse_function_should_fail("""
             module foo
             foo.group_after_parameter_on_left
                 [
@@ -680,9 +690,14 @@ class ClinicParserTest(TestCase):
                 ]
                 param: int
         """)
+        msg = (
+            "Function group_after_parameter_on_left has an unsupported group "
+            "configuration. (Unexpected state 2.b)"
+        )
+        self.assertIn(msg, out)
 
     def test_disallowed_grouping__empty_group_on_left(self):
-        self.parse_function_should_fail("""
+        out = self.parse_function_should_fail("""
             module foo
             foo.empty_group
                 [
@@ -692,9 +707,14 @@ class ClinicParserTest(TestCase):
                 ]
                 param: int
         """)
+        msg = (
+            "Function empty_group has an empty group.\n"
+            "All groups must contain at least one parameter."
+        )
+        self.assertIn(msg, out)
 
     def test_disallowed_grouping__empty_group_on_right(self):
-        self.parse_function_should_fail("""
+        out = self.parse_function_should_fail("""
             module foo
             foo.empty_group
                 param: int
@@ -704,6 +724,11 @@ class ClinicParserTest(TestCase):
                 group2 : int
                 ]
         """)
+        msg = (
+            "Function empty_group has an empty group.\n"
+            "All groups must contain at least one parameter."
+        )
+        self.assertIn(msg, out)
 
     def test_no_parameters(self):
         function = self.parse_function("""
@@ -732,69 +757,60 @@ class ClinicParserTest(TestCase):
         self.assertEqual(1, len(function.parameters))
 
     def test_illegal_module_line(self):
-        self.parse_function_should_fail("""
+        out = self.parse_function_should_fail("""
             module foo
             foo.bar => int
                 /
         """)
+        msg = "Illegal function name: foo.bar => int"
+        self.assertIn(msg, out)
 
     def test_illegal_c_basename(self):
-        self.parse_function_should_fail("""
+        out = self.parse_function_should_fail("""
             module foo
             foo.bar as 935
                 /
         """)
+        msg = "Illegal C basename: 935"
+        self.assertIn(msg, out)
 
     def test_single_star(self):
-        self.parse_function_should_fail("""
+        out = self.parse_function_should_fail("""
             module foo
             foo.bar
                 *
                 *
         """)
+        self.assertIn("Function bar uses '*' more than once.", out)
 
-    def test_parameters_required_after_star_without_initial_parameters_or_docstring(self):
-        self.parse_function_should_fail("""
-            module foo
-            foo.bar
-                *
-        """)
-
-    def test_parameters_required_after_star_without_initial_parameters_with_docstring(self):
-        self.parse_function_should_fail("""
-            module foo
-            foo.bar
-                *
-            Docstring here.
-        """)
-
-    def test_parameters_required_after_star_with_initial_parameters_without_docstring(self):
-        self.parse_function_should_fail("""
-            module foo
-            foo.bar
-                this: int
-                *
-        """)
-
-    def test_parameters_required_after_star_with_initial_parameters_and_docstring(self):
-        self.parse_function_should_fail("""
-            module foo
-            foo.bar
-                this: int
-                *
-            Docstring.
-        """)
+    def test_parameters_required_after_star(self):
+        dataset = (
+            "module foo\nfoo.bar\n  *",
+            "module foo\nfoo.bar\n  *\nDocstring here.",
+            "module foo\nfoo.bar\n  this: int\n  *",
+            "module foo\nfoo.bar\n  this: int\n  *\nDocstring.",
+        )
+        msg = "Function bar specifies '*' without any parameters afterwards."
+        for block in dataset:
+            with self.subTest(block=block):
+                out = self.parse_function_should_fail(block)
+                self.assertIn(msg, out)
 
     def test_single_slash(self):
-        self.parse_function_should_fail("""
+        out = self.parse_function_should_fail("""
             module foo
             foo.bar
                 /
                 /
         """)
+        msg = (
+            "Function bar has an unsupported group configuration. "
+            "(Unexpected state 0.d)"
+        )
+        self.assertIn(msg, out)
 
     def test_mix_star_and_slash(self):
-        self.parse_function_should_fail("""
+        out = self.parse_function_should_fail("""
             module foo
             foo.bar
                x: int
@@ -803,14 +819,24 @@ class ClinicParserTest(TestCase):
                z: int
                /
         """)
+        msg = (
+            "Function bar mixes keyword-only and positional-only parameters, "
+            "which is unsupported."
+        )
+        self.assertIn(msg, out)
 
     def test_parameters_not_permitted_after_slash_for_now(self):
-        self.parse_function_should_fail("""
+        out = self.parse_function_should_fail("""
             module foo
             foo.bar
                 /
                 x: int
         """)
+        msg = (
+            "Function bar has an unsupported group configuration. "
+            "(Unexpected state 0.d)"
+        )
+        self.assertIn(msg, out)
 
     def test_parameters_no_more_than_one_vararg(self):
         expected_msg = (
