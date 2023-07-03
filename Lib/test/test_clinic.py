@@ -797,18 +797,33 @@ Annotations must be either a name, a function call, or a string.
 Error on line 0:
 Annotations must be either a name, a function call, or a string.
 """
+
+        s = self.parse_function_should_fail(
+            'module os\nos.access\n   path: {"some": "dictionary"}'
+        )
+        self.assertEqual(s, expected_failure_message)
+
+        s = self.parse_function_should_fail(
+            'module os\nos.access\n   path: ["list", "of", "strings"]'
+        )
+        self.assertEqual(s, expected_failure_message)
+
+        s = self.parse_function_should_fail(
+            'module os\nos.access\n   path: (x for x in range(42))'
+        )
+        self.assertEqual(s, expected_failure_message)
+
+    def test_bizarre_parseable_annotations(self):
+        msg = "Annotation dicts must have str keys"
         dataset = (
-            'module os\nos.access\n   path: {"some": "dictionary"}',
-            'module os\nos.access\n   path: ["list", "of", "strings"]',
-            'module os\nos.access\n   path: (x for x in range(42))',
             'module fo\nfo.barbaz\n   o: bool(**{None: "bang!"})',
             'module fo\nfo.barbaz -> bool(**{None: "bang!"})',
         )
-
         for fn in dataset:
             with self.subTest(fn=fn):
-                actual = self.parse_function_should_fail(fn)
-                self.assertEqual(actual, expected_failure_message)
+                out = self.parse_function_should_fail(fn)
+                self.assertTrue(out.startswith("Error on line 0"))
+                self.assertIn(msg, out)
 
     def test_unused_param(self):
         block = self.parse("""

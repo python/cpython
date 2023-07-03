@@ -5038,7 +5038,6 @@ class DSLParser:
     def parse_converter(
             annotation: ast.expr | None
     ) -> tuple[str, bool, ConverterArgs]:
-        msg = "Annotations must be either a name, a function call, or a string."
         match annotation:
             case ast.Constant(value=str() as value):
                 return value, True, {}
@@ -5049,11 +5048,13 @@ class DSLParser:
                 kwargs: ConverterArgs = {}
                 for node in annotation.keywords:
                     if not isinstance(node.arg, str):
-                        fail(msg)
+                        fail("Annotation dicts must have str keys")
                     kwargs[node.arg] = eval_ast_expr(node.value, symbols)
                 return name, False, kwargs
             case _:
-                fail(msg)
+                fail(
+                    "Annotations must be either a name, a function call, or a string."
+                )
 
     def parse_special_symbol(self, symbol):
         if symbol == '*':

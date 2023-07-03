@@ -1,1 +1,2 @@
-Fix bizarre bugs.
+Argument Clinic now explicitly require that keys are string if the provided
+parameter annotation is a dict.
