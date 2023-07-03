@@ -24,8 +24,8 @@ extern int _PyImport_FixupBuiltin(
 extern int _PyImport_FixupExtensionObject(PyObject*, PyObject *,
                                           PyObject *, PyObject *);
 
-PyAPI_DATA(PyObject *) _PyImport_GetModuleAttr(PyObject *, PyObject *);
-PyAPI_DATA(PyObject *) _PyImport_GetModuleAttrString(const char *, const char *);
+PyAPI_FUNC(PyObject *) _PyImport_GetModuleAttr(PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) _PyImport_GetModuleAttrString(const char *, const char *);
 
 
 struct _import_runtime_state {
