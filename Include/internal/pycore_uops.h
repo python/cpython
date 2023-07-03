@@ -8,7 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#define _Py_UOP_MAX_TRACE_LENGTH 16
+#define _Py_UOP_MAX_TRACE_LENGTH 32
 
 typedef struct {
     int opcode;
