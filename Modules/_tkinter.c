@@ -1199,7 +1199,8 @@ FromObj(TkappObject *tkapp, Tcl_Obj *value)
     }
 
     if (value->typePtr == tkapp->StringType ||
-        value->typePtr == tkapp->UTF32StringType) {
+        value->typePtr == tkapp->UTF32StringType)
+    {
         return unicodeFromTclObj(value);
     }
 
