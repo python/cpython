@@ -4526,7 +4526,7 @@ class DSLParser:
 
         self.next(self.state_modulename_name, line)
 
-    def state_modulename_name(self, line):
+    def state_modulename_name(self, line: str | None) -> None:
         # looking for declaration, which establishes the leftmost column
         # line should be
         #     modulename.fnname [as c_basename] [-> return annotation]
@@ -4543,7 +4543,7 @@ class DSLParser:
         # this line is permitted to start with whitespace.
         # we'll call this number of spaces F (for "function").
 
-        if not line.strip():
+        if not self.valid_line(line):
             return
 
         self.indent.infer(line)
