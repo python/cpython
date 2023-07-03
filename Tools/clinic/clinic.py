@@ -4293,6 +4293,19 @@ class IndentStack:
 StateKeeper = Callable[[str | None], None]
 
 class DSLParser:
+    function: Function | None
+    state: StateKeeper
+    keyword_only: bool
+    positional_only: bool
+    group: int
+    parameter_state: int
+    seen_positional_with_default: bool
+    indent: IndentStack
+    kind: str
+    coexist: bool
+    parameter_continuation: str
+    preserve_output: bool
+
     def __init__(self, clinic: Clinic) -> None:
         self.clinic = clinic
 
@@ -4311,8 +4324,8 @@ class DSLParser:
         self.reset()
 
     def reset(self) -> None:
-        self.function: Function | None = None
-        self.state: StateKeeper = self.state_dsl_start
+        self.function = None
+        self.state = self.state_dsl_start
         self.parameter_indent = None
         self.keyword_only = False
         self.positional_only = False
