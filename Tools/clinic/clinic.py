@@ -4564,10 +4564,11 @@ class DSLParser:
 
         # are we cloning?
         before, equals, existing = line.rpartition('=')
+        c_basename: str | None
         if equals:
-            left, _, right = before.partition(' as ')
-            full_name = left.strip()
-            c_basename: str | None = right.strip()
+            full_name, _, c_basename = before.partition(' as ')
+            full_name = full_name.strip()
+            c_basename = c_basename.strip()
             existing = existing.strip()
             if (is_legal_py_identifier(full_name) and
                 (not c_basename or is_legal_c_identifier(c_basename)) and
@@ -4602,9 +4603,9 @@ class DSLParser:
 
         line, _, returns = line.partition('->')
 
-        left, _, right = line.partition(' as ')
-        full_name = left.strip()
-        c_basename = right.strip() or None
+        full_name, _, c_basename = line.partition(' as ')
+        full_name = full_name.strip()
+        c_basename = c_basename.strip() or None
 
         if not is_legal_py_identifier(full_name):
             fail("Illegal function name:", full_name)
