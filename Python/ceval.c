@@ -2773,23 +2773,25 @@ void Py_LeaveRecursiveCall(void)
 _PyInterpreterFrame *
 _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
-#ifdef LLTRACE
+#ifdef Py_DEBUG
     char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
     int lltrace = 0;
     if (uop_debug != NULL && *uop_debug >= '0') {
         lltrace = *uop_debug - '0';  // TODO: Parse an int and all that
     }
-    if (lltrace >= 3) {
-        PyCodeObject *code = _PyFrame_GetCode(frame);
-        _Py_CODEUNIT *instr = frame->prev_instr + 1;
-        fprintf(stderr,
-                "Entering _PyUopExecute for %s (%s:%d) at offset %ld\n",
-                PyUnicode_AsUTF8(code->co_qualname),
-                PyUnicode_AsUTF8(code->co_filename),
-                code->co_firstlineno,
-                (long)(instr - (_Py_CODEUNIT *)code->co_code_adaptive));
-    }
+#define DPRINTF(level, ...) \
+    if (lltrace >= (level)) { fprintf(stderr, __VA_ARGS__); }
+#else
+#define DPRINTF(level, ...)
 #endif
+
+    DPRINTF(3,
+            "Entering _PyUopExecute for %s (%s:%d) at offset %ld\n",
+            PyUnicode_AsUTF8(_PyFrame_GetCode(frame)->co_qualname),
+            PyUnicode_AsUTF8(_PyFrame_GetCode(frame)->co_filename),
+            _PyFrame_GetCode(frame)->co_firstlineno,
+            (long)(frame->prev_instr + 1 -
+                   (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive));
 
     PyThreadState *tstate = _PyThreadState_GET();
     _PyUOpExecutorObject *self = (_PyUOpExecutorObject *)executor;
@@ -2812,14 +2814,11 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
         opcode = self->trace[pc].opcode;
         operand = self->trace[pc].operand;
         oparg = (int)operand;
-#ifdef LLTRACE
-        if (lltrace >= 3) {
-            const char *opname = opcode < 256 ? _PyOpcode_OpName[opcode] : _PyOpcode_uop_name[opcode];
-            int stack_level = (int)(stack_pointer - _PyFrame_Stackbase(frame));
-            fprintf(stderr, "  uop %s, operand %" PRIu64 ", stack_level %d\n",
-                    opname, operand, stack_level);
-        }
-#endif
+        DPRINTF(3,
+                "  uop %s, operand %" PRIu64 ", stack_level %d\n",
+                opcode < 256 ? _PyOpcode_OpName[opcode] : _PyOpcode_uop_name[opcode],
+                operand,
+                (int)(stack_pointer - _PyFrame_Stackbase(frame)));
         pc++;
         OBJECT_STAT_INC(optimization_uops_executed);
         switch (opcode) {
@@ -2869,11 +2868,7 @@ pop_1_error:
 error:
     // On ERROR_IF we return NULL as the frame.
     // The caller recovers the frame from cframe.current_frame.
-#ifdef LLTRACE
-    if (lltrace >= 2) {
-        fprintf(stderr, "Error: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
-    }
-#endif
+    DPRINTF(2, "Error: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
     _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(self);
     return NULL;
@@ -2881,11 +2876,7 @@ error:
 deoptimize:
     // On DEOPT_IF we just repeat the last instruction.
     // This presumes nothing was popped from the stack (nor pushed).
-#ifdef LLTRACE
-    if (lltrace >= 2) {
-        fprintf(stderr, "DEOPT: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
-    }
-#endif
+    DPRINTF(2, "DEOPT: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
     frame->prev_instr--;  // Back up to just before destination
     _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(self);
