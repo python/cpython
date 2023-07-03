@@ -432,9 +432,9 @@ allocate_too_many_code_watchers(PyObject *self, PyObject *args)
 
 // Test function watchers
 
-#define NUM_FUNC_WATCHERS 2
-static PyObject *pyfunc_watchers[NUM_FUNC_WATCHERS];
-static int func_watcher_ids[NUM_FUNC_WATCHERS] = {-1, -1};
+#define NUM_TEST_FUNC_WATCHERS 2
+static PyObject *pyfunc_watchers[NUM_TEST_FUNC_WATCHERS];
+static int func_watcher_ids[NUM_TEST_FUNC_WATCHERS] = {-1, -1};
 
 static PyObject *
 get_id(PyObject *obj)
@@ -508,7 +508,7 @@ second_func_watcher_callback(PyFunction_WatchEvent event,
     return call_pyfunc_watcher(pyfunc_watchers[1], event, func, new_value);
 }
 
-static PyFunction_WatchCallback func_watcher_callbacks[NUM_FUNC_WATCHERS] = {
+static PyFunction_WatchCallback func_watcher_callbacks[NUM_TEST_FUNC_WATCHERS] = {
     first_func_watcher_callback,
     second_func_watcher_callback
 };
@@ -533,26 +533,25 @@ add_func_watcher(PyObject *self, PyObject *func)
         return NULL;
     }
     int idx = -1;
-    for (int i = 0; i < NUM_FUNC_WATCHERS; i++) {
+    for (int i = 0; i < NUM_TEST_FUNC_WATCHERS; i++) {
         if (func_watcher_ids[i] == -1) {
             idx = i;
             break;
         }
     }
     if (idx == -1) {
-        PyErr_SetString(PyExc_RuntimeError, "no free watchers");
-        return NULL;
-    }
-    PyObject *result = PyLong_FromLong(idx);
-    if (result == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "no free test watchers");
         return NULL;
     }
     func_watcher_ids[idx] = PyFunction_AddWatcher(func_watcher_callbacks[idx]);
     if (func_watcher_ids[idx] < 0) {
-        Py_DECREF(result);
         return NULL;
     }
     pyfunc_watchers[idx] = Py_NewRef(func);
+    PyObject *result = PyLong_FromLong(func_watcher_ids[idx]);
+    if (result == NULL) {
+        return NULL;
+    }
     return result;
 }
 
@@ -569,7 +568,7 @@ clear_func_watcher(PyObject *self, PyObject *watcher_id_obj)
         return NULL;
     }
     int idx = -1;
-    for (int i = 0; i < NUM_FUNC_WATCHERS; i++) {
+    for (int i = 0; i < NUM_TEST_FUNC_WATCHERS; i++) {
         if (func_watcher_ids[i] == wid) {
             idx = i;
             break;
