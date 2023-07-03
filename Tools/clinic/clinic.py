@@ -4289,6 +4289,7 @@ class IndentStack:
 
 
 StateKeeper = Callable[[str | None], None]
+ConverterArgs = dict[str, Any]
 
 class DSLParser:
     def __init__(self, clinic: Clinic) -> None:
@@ -5016,10 +5017,10 @@ class DSLParser:
         key = f"{parameter_name}_as_{c_name}" if c_name else parameter_name
         self.function.parameters[key] = p
 
-    KwargDict = dict[str | None, Any]
-
     @staticmethod
-    def parse_converter(annotation: ast.expr | None) -> tuple[str, bool, KwargDict]:
+    def parse_converter(
+            annotation: ast.expr | None
+    ) -> tuple[str, bool, ConverterArgs]:
         match annotation:
             case ast.Constant(value=str() as value):
                 return value, True, {}
@@ -5027,10 +5028,11 @@ class DSLParser:
                 return name, False, {}
             case ast.Call(func=ast.Name(name)):
                 symbols = globals()
-                kwargs = {
-                    node.arg: eval_ast_expr(node.value, symbols)
-                    for node in annotation.keywords
-                }
+                kwargs: ConverterArgs = {}
+                for node in annotation.keywords:
+                    if not isinstance(node.arg, str):
+                        fail("Cannot use a kwarg splat in a function-call annotation")
+                    kwargs[node.arg] = eval_ast_expr(node.value, symbols)
                 return name, False, kwargs
             case _:
                 fail(
