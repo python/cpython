@@ -5021,7 +5021,7 @@ class DSLParser:
         key = f"{parameter_name}_as_{c_name}" if c_name else parameter_name
         self.function.parameters[key] = p
 
-    KwargDict = dict[str | None, Any]
+    KwargDict = dict[str, Any]
 
     @staticmethod
     def parse_converter(annotation: ast.expr | None) -> tuple[str, bool, KwargDict]:
@@ -5031,6 +5031,7 @@ class DSLParser:
             case ast.Name(name):
                 return name, False, {}
             case ast.Call(func=ast.Name(name)):
+                assert isinstance(ast.expr, str)
                 symbols = globals()
                 kwargs = {
                     node.arg: eval_ast_expr(node.value, symbols)
