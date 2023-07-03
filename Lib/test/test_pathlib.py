@@ -2253,7 +2253,7 @@ class DummyVirtualPathTest(unittest.TestCase):
         self._check_resolve_relative(p, P(BASE, 'dirB', 'fileB', 'foo', 'in',
                                           'spam'), False)
         p = P(BASE, 'dirA', 'linkC', '..', 'foo', 'in', 'spam')
-        if isinstance(p, pathlib.WindowsPath):
+        if os.name == 'nt' and isinstance(p, pathlib.Path):
             # In Windows, if linkY points to dirB, 'dirA\linkY\..'
             # resolves to 'dirA' without resolving linkY first.
             self._check_resolve_relative(p, P(BASE, 'dirA', 'foo', 'in',
@@ -2273,7 +2273,7 @@ class DummyVirtualPathTest(unittest.TestCase):
         self._check_resolve_relative(p, P(BASE, 'dirB', 'foo', 'in', 'spam'),
                                      False)
         p = P(BASE, 'dirA', 'linkX', 'linkY', '..', 'foo', 'in', 'spam')
-        if isinstance(p, pathlib.WindowsPath):
+        if os.name == 'nt' and isinstance(p, pathlib.Path):
             # In Windows, if linkY points to dirB, 'dirA\linkY\..'
             # resolves to 'dirA' without resolving linkY first.
             self._check_resolve_relative(p, P(d, 'foo', 'in', 'spam'), False)
