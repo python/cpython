@@ -4267,86 +4267,86 @@ mangle2_impl(PyObject *module, PyObject *args, PyObject *kwargs,
 /*[clinic end generated code: output=2ebb62aaefe7590a input=391766fee51bad7a]*/
 
 /*[clinic input]
- test_deprecate_positional_use
+test_deprecate_positional_use
 
-     pos: object
-     x
-     optarg: int = 5
- [clinic start generated code]*/
+    pos: object
+    x
+    optarg: int = 5
+[clinic start generated code]*/
 
- PyDoc_STRVAR(test_deprecate_positional_use__doc__,
- "test_deprecate_positional_use($module, /, pos, optarg=5)\n"
- "--\n"
- "\n");
+PyDoc_STRVAR(test_deprecate_positional_use__doc__,
+"test_deprecate_positional_use($module, /, pos, optarg=5)\n"
+"--\n"
+"\n");
 
- #define TEST_DEPRECATE_POSITIONAL_USE_METHODDEF    \
-     {"test_deprecate_positional_use", _PyCFunction_CAST(test_deprecate_positional_use), METH_FASTCALL|METH_KEYWORDS, test_deprecate_positional_use__doc__},
+#define TEST_DEPRECATE_POSITIONAL_USE_METHODDEF    \
+    {"test_deprecate_positional_use", _PyCFunction_CAST(test_deprecate_positional_use), METH_FASTCALL|METH_KEYWORDS, test_deprecate_positional_use__doc__},
 
- static PyObject *
- test_deprecate_positional_use_impl(PyObject *module, PyObject *pos,
-                                    int optarg);
+static PyObject *
+test_deprecate_positional_use_impl(PyObject *module, PyObject *pos,
+                                   int optarg);
 
- static PyObject *
- test_deprecate_positional_use(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
- {
-     PyObject *return_value = NULL;
-     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+static PyObject *
+test_deprecate_positional_use(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-     #define NUM_KEYWORDS 2
-     static struct {
-         PyGC_Head _this_is_not_used;
-         PyObject_VAR_HEAD
-         PyObject *ob_item[NUM_KEYWORDS];
-     } _kwtuple = {
-         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-         .ob_item = { &_Py_ID(pos), &_Py_ID(optarg), },
-     };
-     #undef NUM_KEYWORDS
-     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(pos), &_Py_ID(optarg), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
 
-     #else  // !Py_BUILD_CORE
-     #  define KWTUPLE NULL
-     #endif  // !Py_BUILD_CORE
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
 
-     static const char * const _keywords[] = {"pos", "optarg", NULL};
-     static _PyArg_Parser _parser = {
-         .keywords = _keywords,
-         .fname = "test_deprecate_positional_use",
-         .kwtuple = KWTUPLE,
-     };
-     #undef KWTUPLE
-     PyObject *argsbuf[2];
-     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
-     PyObject *pos;
-     int optarg = 5;
+    static const char * const _keywords[] = {"pos", "optarg", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "test_deprecate_positional_use",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *pos;
+    int optarg = 5;
 
-     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
-     if (!args) {
-         goto exit;
-     }
-     pos = args[0];
-     if (!noptargs) {
-         goto skip_optional_pos;
-     }
-     if (nargs == 2) {
-         if (PyErr_WarnEx(PyExc_DeprecationWarning,
-             "Using 'optarg' as a positional argument is deprecated", 2))
-         {
-             goto exit;
-         }
-     }
-     optarg = _PyLong_AsInt(args[1]);
-     if (optarg == -1 && PyErr_Occurred()) {
-         goto exit;
-     }
- skip_optional_pos:
-     return_value = test_deprecate_positional_use_impl(module, pos, optarg);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    pos = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (nargs == 2) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+            "Using 'optarg' as a positional argument is deprecated", 2))
+        {
+            goto exit;
+        }
+    }
+    optarg = _PyLong_AsInt(args[1]);
+    if (optarg == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = test_deprecate_positional_use_impl(module, pos, optarg);
 
- exit:
-     return return_value;
- }
+exit:
+    return return_value;
+}
 
- static PyObject *
- test_deprecate_positional_use_impl(PyObject *module, PyObject *pos,
-                                    int optarg)
- /*[clinic end generated code: output=b47aecf1c5245c0e input=462e9741eb865665]*/
+static PyObject *
+test_deprecate_positional_use_impl(PyObject *module, PyObject *pos,
+                                   int optarg)
+/*[clinic end generated code: output=b47aecf1c5245c0e input=462e9741eb865665]*/
