@@ -1,10 +1,9 @@
-
 #include "Python.h"
 #include "opcode.h"
 #include "pycore_interp.h"
 #include "pycore_opcode.h"
 #include "opcode_metadata.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_uops.h"
 #include "cpython/optimizer.h"
 #include <stdbool.h>
@@ -125,7 +124,7 @@ _PyOptimizerObject _PyOptimizer_Default = {
 _PyOptimizerObject *
 PyUnstable_GetOptimizer(void)
 {
-    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->optimizer == &_PyOptimizer_Default) {
         return NULL;
     }
@@ -138,7 +137,7 @@ PyUnstable_GetOptimizer(void)
 void
 PyUnstable_SetOptimizer(_PyOptimizerObject *optimizer)
 {
-    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (optimizer == NULL) {
         optimizer = &_PyOptimizer_Default;
     }
@@ -155,7 +154,7 @@ _PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNI
 {
     PyCodeObject *code = (PyCodeObject *)frame->f_executable;
     assert(PyCode_Check(code));
-    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (!has_space_for_executor(code, src)) {
         goto jump_to_destination;
     }
@@ -325,8 +324,8 @@ translate_bytecode_to_trace(
     }
 #define ADD_TO_TRACE(OPCODE, OPERAND) \
         if (lltrace >= 2) { \
-            const char *opname = (OPCODE) < 256 ? _PyOpcode_OpName[(OPCODE)] : ""; \
-            fprintf(stderr, "  ADD_TO_TRACE(%s %d, %" PRIu64 ")\n", opname, (OPCODE), (uint64_t)(OPERAND)); \
+            const char *opname = (OPCODE) < 256 ? _PyOpcode_OpName[(OPCODE)] : _PyOpcode_uop_name[(OPCODE)]; \
+            fprintf(stderr, "  ADD_TO_TRACE(%s, %" PRIu64 ")\n", opname, (uint64_t)(OPERAND)); \
         } \
         trace[trace_length].opcode = (OPCODE); \
         trace[trace_length].operand = (OPERAND); \
@@ -474,6 +473,8 @@ PyUnstable_Optimizer_NewUOpOptimizer(void)
     }
     opt->optimize = uop_optimize;
     opt->resume_threshold = UINT16_MAX;
-    opt->backedge_threshold = 0;
+    // Need at least 3 iterations to settle specializations.
+    // A few lower bits of the counter are reserved for other flags.
+    opt->backedge_threshold = 3 << OPTIMIZER_BITS_IN_COUNTER;
     return (PyObject *)opt;
 }

@@ -491,7 +491,7 @@ _ready:
 
 void _PyEval_SetSwitchInterval(unsigned long microseconds)
 {
-    PyInterpreterState *interp = _PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     struct _gil_runtime_state *gil = interp->ceval.gil;
     assert(gil != NULL);
     gil->interval = microseconds;
@@ -499,7 +499,7 @@ void _PyEval_SetSwitchInterval(unsigned long microseconds)
 
 unsigned long _PyEval_GetSwitchInterval(void)
 {
-    PyInterpreterState *interp = _PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     struct _gil_runtime_state *gil = interp->ceval.gil;
     assert(gil != NULL);
     return gil->interval;

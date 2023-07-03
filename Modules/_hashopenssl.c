@@ -22,8 +22,6 @@
 #  define Py_BUILD_CORE_MODULE 1
 #endif
 
-#define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
 #include "pycore_hashtable.h"
 #include "hashlib.h"

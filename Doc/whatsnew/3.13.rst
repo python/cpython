@@ -441,6 +441,12 @@ New Features
   ``NULL`` if the referent is no longer live.
   (Contributed by Victor Stinner in :gh:`105927`.)
 
+* If Python is built in :ref:`debug mode <debug-build>` or :option:`with
+  assertions <--with-assertions>`, :c:func:`PyTuple_SET_ITEM` and
+  :c:func:`PyList_SET_ITEM` now check the index argument with an assertion.
+  If the assertion fails, make sure that the size is set before.
+  (Contributed by Victor Stinner in :gh:`106168`.)
+
 Porting to Python 3.13
 ----------------------
 
@@ -591,3 +597,18 @@ Removed
 
   Just remove the underscore prefix to update your code.
   (Contributed by Victor Stinner in :gh:`106084`.)
+
+* Remove private ``_PyObject_FastCall()`` function:
+  use ``PyObject_Vectorcall()`` which is available since Python 3.8
+  (:pep:`590`).
+  (Contributed by Victor Stinner in :gh:`106023`.)
+
+* Remove ``cpython/pytime.h`` header file: it only contained private functions.
+  (Contributed by Victor Stinner in :gh:`106316`.)
+
+* Remove ``_PyInterpreterState_Get()`` alias to
+  :c:func:`PyInterpreterState_Get()` which was kept for backward compatibility
+  with Python 3.8. The `pythoncapi-compat project
+  <https://github.com/python/pythoncapi-compat/>`__ can be used to get
+  :c:func:`PyInterpreterState_Get()` on Python 3.8 and older.
+  (Contributed by Victor Stinner in :gh:`106320`.)
