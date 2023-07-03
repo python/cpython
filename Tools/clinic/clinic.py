@@ -4311,6 +4311,7 @@ class DSLParser:
     state: StateKeeper
     keyword_only: bool
     positional_only: bool
+    deprecated_positional: bool
     group: int
     parameter_state: int
     seen_positional_with_default: bool
