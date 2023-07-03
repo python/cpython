@@ -4588,9 +4588,9 @@ class DSLParser:
 
         line, _, returns = line.partition('->')
 
-        full_name, _, c_basename = line.partition(' as ')
-        full_name = full_name.strip()
-        c_basename = c_basename.strip() or None
+        left, _, right = line.partition(' as ')
+        full_name = left.strip()
+        c_basename = right.strip() or None
 
         if not is_legal_py_identifier(full_name):
             fail("Illegal function name:", full_name)
