@@ -7,6 +7,10 @@
 #ifndef _CJKCODECS_H_
 #define _CJKCODECS_H_
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 #include "multibytecodec.h"
 
