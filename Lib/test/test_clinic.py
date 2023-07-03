@@ -730,7 +730,7 @@ class ClinicParserTest(TestCase):
         )
         self.assertIn(msg, out)
 
-    def test_disallowed_gropuing__no_matching_bracket(self):
+    def test_disallowed_grouping__no_matching_bracket(self):
         out = self.parse_function_should_fail("""
             module foo
             foo.empty_group
