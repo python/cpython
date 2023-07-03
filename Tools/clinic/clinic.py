@@ -4292,6 +4292,32 @@ class IndentStack:
 
 StateKeeper = Callable[[str | None], None]
 
+class ParamState(enum.IntEnum):
+    # Before we've seen anything.
+    # Legal transitions: to LEFT_SQUARE_BEFORE or REQUIRED
+    START = enum.auto()
+
+    # Left square backets before required params.
+    LEFT_SQUARE_BEFORE = enum.auto()
+
+    # In a group, before required params.
+    GROUP_BEFORE = enum.auto()
+
+    # Required params, positional-or-keyword or positional-only (we
+    # don't know yet). Renumber lefft groups!
+    REQUIRED = enum.auto()
+
+    # Positional-or-keyword or positional-only params that now must have
+    # default values.
+    OPTIONAL = enum.auto()
+
+    # In a group, after required params.
+    GROUP_AFTER = enum.auto()
+
+    # Right square brackets after required params.
+    RIGHT_SQUARE_AFTER = enum.auto()
+
+
 class DSLParser:
     function: Function | None
     state: StateKeeper
