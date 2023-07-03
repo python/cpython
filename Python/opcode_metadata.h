@@ -1249,6 +1249,7 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] = {
     [POP_JUMP_IF_TRUE] = { .nuops = 1, .uops = { { POP_JUMP_IF_TRUE, 0, 0 } } },
     [POP_JUMP_IF_NOT_NONE] = { .nuops = 1, .uops = { { POP_JUMP_IF_NOT_NONE, 0, 0 } } },
     [POP_JUMP_IF_NONE] = { .nuops = 1, .uops = { { POP_JUMP_IF_NONE, 0, 0 } } },
+    [JUMP_BACKWARD_NO_INTERRUPT] = { .nuops = 1, .uops = { { JUMP_BACKWARD_NO_INTERRUPT, 0, 0 } } },
     [GET_LEN] = { .nuops = 1, .uops = { { GET_LEN, 0, 0 } } },
     [MATCH_CLASS] = { .nuops = 1, .uops = { { MATCH_CLASS, 0, 0 } } },
     [MATCH_MAPPING] = { .nuops = 1, .uops = { { MATCH_MAPPING, 0, 0 } } },

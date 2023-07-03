@@ -2800,11 +2800,7 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
     }
 
 exit:
-#ifdef LLTRACE
-    if (lltrace >= 2) {
-        fprintf(stderr, "Jumping!\n");
-    }
-#endif
+    DPRINTF(2, "Jumping!\n");
     _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(self);
     return frame;

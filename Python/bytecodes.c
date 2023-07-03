@@ -2224,12 +2224,12 @@ dummy_func(
 
         inst(JUMP_BACKWARD, (--)) {
             CHECK_EVAL_BREAKER();
+            #if ENABLE_SPECIALIZATION
             _Py_CODEUNIT *here = next_instr - 1;
             assert(oparg <= INSTR_OFFSET());
-            JUMPBY(1-oparg);
-            #if ENABLE_SPECIALIZATION
             here[1].cache += (1 << OPTIMIZER_BITS_IN_COUNTER);
             if (here[1].cache > tstate->interp->optimizer_backedge_threshold) {
+                JUMPBY(1 - oparg);
                 OBJECT_STAT_INC(optimization_attempts);
                 frame = _PyOptimizer_BackEdge(frame, here, next_instr, stack_pointer);
                 if (frame == NULL) {
@@ -2241,6 +2241,7 @@ dummy_func(
                 goto resume_frame;
             }
             #endif  /* ENABLE_SPECIALIZATION */
+            JUMP_POP_DISPATCH(1 - oparg, 0);
         }
 
         pseudo(JUMP) = {
@@ -2302,7 +2303,7 @@ dummy_func(
              * generator or coroutine, so we deliberately do not check it here.
              * (see bpo-30039).
              */
-            JUMPBY(-oparg);
+            JUMP_POP_DISPATCH(-oparg, 0);
         }
 
         inst(GET_LEN, (obj -- obj, len_o)) {
