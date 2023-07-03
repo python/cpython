@@ -13,6 +13,7 @@
 
 #include "Python.h"
 #include "multibytecodec.h"
+#include "pycore_import.h"        // _PyImport_GetModuleAttrString()
 
 
 /* a unicode "undefined" code point */
