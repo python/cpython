@@ -2379,7 +2379,7 @@ _Py_find_basename(const wchar_t *filename)
    the path, if known. If -1, the first null character will be assumed
    to be the end of the path. */
 wchar_t *
-_Py_normpath(wchar_t *path, Py_ssize_t size)
+_Py_normpathAndSize(wchar_t *path, Py_ssize_t size, Py_ssize_t *length)
 {
     assert(path != NULL);
     if (!path[0] || size == 0) {
@@ -2447,8 +2447,11 @@ _Py_normpath(wchar_t *path, Py_ssize_t size)
     }
 #endif /* MS_WINDOWS */
 
+    *length = size;
+
     /* if pEnd is specified, check that. Else, check for null terminator */
     for (; !IS_END(p1); ++p1) {
+        *length++;
         wchar_t c = *p1;
 #ifdef ALTSEP
         if (c == ALTSEP) {
@@ -2500,6 +2503,13 @@ _Py_normpath(wchar_t *path, Py_ssize_t size)
 #undef IS_SEP
 #undef IS_END
     return path;
+}
+
+wchar_t *
+_Py_normpath(wchar_t *path, Py_ssize_t size)
+{
+    Py_ssize_t length;
+    return _Py_normpathAndSize(path, size, &length);
 }
 
 
