@@ -141,8 +141,8 @@ dummy_func(
                 ERROR_IF(err, error);
                 next_instr--;
             }
-            else if (_Py_atomic_load_relaxed_int32(&tstate->interp->ceval.eval_breaker) && oparg < 2) {
-                goto handle_eval_breaker;
+            else if (oparg < 2) {
+                CHECK_EVAL_BREAKER();
             }
         }
 
@@ -158,6 +158,9 @@ dummy_func(
                 next_instr--;
             }
             else {
+                if (oparg < 2) {
+                    CHECK_EVAL_BREAKER();
+                }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 int err = _Py_call_instrumentation(
                         tstate, oparg > 0, frame, next_instr-1);
@@ -167,9 +170,6 @@ dummy_func(
                     /* Instrumentation has jumped */
                     next_instr = frame->prev_instr;
                     DISPATCH();
-                }
-                if (_Py_atomic_load_relaxed_int32(&tstate->interp->ceval.eval_breaker) && oparg < 2) {
-                    goto handle_eval_breaker;
                 }
             }
         }
@@ -2223,6 +2223,7 @@ dummy_func(
         }
 
         inst(JUMP_BACKWARD, (--)) {
+            CHECK_EVAL_BREAKER();
             _Py_CODEUNIT *here = next_instr - 1;
             assert(oparg <= INSTR_OFFSET());
             JUMPBY(1-oparg);
@@ -2240,7 +2241,6 @@ dummy_func(
                 goto resume_frame;
             }
             #endif  /* ENABLE_SPECIALIZATION */
-            CHECK_EVAL_BREAKER();
         }
 
         pseudo(JUMP) = {
@@ -2254,8 +2254,13 @@ dummy_func(
         };
 
         inst(ENTER_EXECUTOR, (--)) {
+            CHECK_EVAL_BREAKER();
+
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _PyExecutorObject *executor = (_PyExecutorObject *)code->co_executors->executors[oparg&255];
+            int original_oparg = executor->vm_data.oparg | (oparg & 0xfffff00);
+            JUMPBY(1-original_oparg);
+            frame->prev_instr = next_instr - 1;
             Py_INCREF(executor);
             frame = executor->execute(executor, frame, stack_pointer);
             if (frame == NULL) {
@@ -3570,8 +3575,8 @@ dummy_func(
         }
 
         inst(INSTRUMENTED_JUMP_BACKWARD, ( -- )) {
-            INSTRUMENTED_JUMP(next_instr-1, next_instr+1-oparg, PY_MONITORING_EVENT_JUMP);
             CHECK_EVAL_BREAKER();
+            INSTRUMENTED_JUMP(next_instr-1, next_instr+1-oparg, PY_MONITORING_EVENT_JUMP);
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_TRUE, ( -- )) {

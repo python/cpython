@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "pycore_call.h"
 #include "pycore_import.h"
+#include "pycore_pyerrors.h"      // _PyErr_FormatFromCause()
 #include "pycore_pystate.h"
 #include "pycore_runtime.h"
 

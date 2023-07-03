@@ -1100,7 +1100,7 @@ test_string_from_format(PyObject *self, PyObject *Py_UNUSED(ignored))
     }                                                               \
     else if (result == NULL)                                        \
         return NULL;                                                \
-    else if (!_PyUnicode_EqualToASCIIString(result, EXPECTED)) {    \
+    else if (PyUnicode_CompareWithASCIIString(result, EXPECTED) != 0) { \
         PyErr_Format(PyExc_AssertionError,                          \
                      "test_string_from_format: failed at \"%s\" "   \
                      "expected \"%s\" got \"%s\"",                  \

@@ -832,6 +832,79 @@ Annotations must be either a name, a function call, or a string.
         )
         self.assertEqual(s, expected_failure_message)
 
+    def test_kwarg_splats_disallowed_in_function_call_annotations(self):
+        expected_error_msg = (
+            "Error on line 0:\n"
+            "Cannot use a kwarg splat in a function-call annotation\n"
+        )
+        dataset = (
+            'module fo\nfo.barbaz\n   o: bool(**{None: "bang!"})',
+            'module fo\nfo.barbaz -> bool(**{None: "bang!"})',
+            'module fo\nfo.barbaz -> bool(**{"bang": 42})',
+            'module fo\nfo.barbaz\n   o: bool(**{"bang": None})',
+        )
+        for fn in dataset:
+            with self.subTest(fn=fn):
+                out = self.parse_function_should_fail(fn)
+                self.assertEqual(out, expected_error_msg)
+
+    def test_self_param_placement(self):
+        expected_error_msg = (
+            "Error on line 0:\n"
+            "A 'self' parameter, if specified, must be the very first thing "
+            "in the parameter block.\n"
+        )
+        block = """
+            module foo
+            foo.func
+                a: int
+                self: self(type="PyObject *")
+        """
+        out = self.parse_function_should_fail(block)
+        self.assertEqual(out, expected_error_msg)
+
+    def test_self_param_cannot_be_optional(self):
+        expected_error_msg = (
+            "Error on line 0:\n"
+            "A 'self' parameter cannot be marked optional.\n"
+        )
+        block = """
+            module foo
+            foo.func
+                self: self(type="PyObject *") = None
+        """
+        out = self.parse_function_should_fail(block)
+        self.assertEqual(out, expected_error_msg)
+
+    def test_defining_class_param_placement(self):
+        expected_error_msg = (
+            "Error on line 0:\n"
+            "A 'defining_class' parameter, if specified, must either be the "
+            "first thing in the parameter block, or come just after 'self'.\n"
+        )
+        block = """
+            module foo
+            foo.func
+                self: self(type="PyObject *")
+                a: int
+                cls: defining_class
+        """
+        out = self.parse_function_should_fail(block)
+        self.assertEqual(out, expected_error_msg)
+
+    def test_defining_class_param_cannot_be_optional(self):
+        expected_error_msg = (
+            "Error on line 0:\n"
+            "A 'defining_class' parameter cannot be marked optional.\n"
+        )
+        block = """
+            module foo
+            foo.func
+                cls: defining_class(type="PyObject *") = None
+        """
+        out = self.parse_function_should_fail(block)
+        self.assertEqual(out, expected_error_msg)
+
     def test_unused_param(self):
         block = self.parse("""
             module foo
