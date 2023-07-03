@@ -815,8 +815,8 @@ Annotations must be either a name, a function call, or a string.
 
     def test_kwarg_splats_disallowed_in_function_call_annotations(self):
         expected_error_msg = (
-            "Error on line 0\n"
-            "Cannot use a kwarg splat in a function-call annotation"
+            "Error on line 0:\n"
+            "Cannot use a kwarg splat in a function-call annotation\n"
         )
         dataset = (
             'module fo\nfo.barbaz\n   o: bool(**{None: "bang!"})',
