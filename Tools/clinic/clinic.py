@@ -5146,7 +5146,9 @@ class DSLParser:
                     "Annotations must be either a name, a function call, or a string."
                 )
 
-    def parse_special_symbol(self, symbol):
+    def parse_special_symbol(self, symbol: str):
+        assert isinstance(self.function, Function)
+
         if symbol == '*':
             if self.keyword_only:
                 fail("Function " + self.function.name + " uses '*' more than once.")
