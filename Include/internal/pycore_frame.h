@@ -47,7 +47,7 @@ enum _frameowner {
 };
 
 typedef struct _PyInterpreterFrame {
-    PyCodeObject *f_code; /* Strong reference */
+    PyObject *f_executable; /* Strong reference */
     struct _PyInterpreterFrame *previous;
     PyObject *f_funcobj; /* Strong reference. Only valid if not on C stack */
     PyObject *f_globals; /* Borrowed reference. Only valid if not on C stack */
@@ -73,20 +73,25 @@ typedef struct _PyInterpreterFrame {
 } _PyInterpreterFrame;
 
 #define _PyInterpreterFrame_LASTI(IF) \
-    ((int)((IF)->prev_instr - _PyCode_CODE((IF)->f_code)))
+    ((int)((IF)->prev_instr - _PyCode_CODE(_PyFrame_GetCode(IF))))
+
+static inline PyCodeObject *_PyFrame_GetCode(_PyInterpreterFrame *f) {
+    assert(PyCode_Check(f->f_executable));
+    return (PyCodeObject *)f->f_executable;
+}
 
 static inline PyObject **_PyFrame_Stackbase(_PyInterpreterFrame *f) {
-    return f->localsplus + f->f_code->co_nlocalsplus;
+    return f->localsplus + _PyFrame_GetCode(f)->co_nlocalsplus;
 }
 
 static inline PyObject *_PyFrame_StackPeek(_PyInterpreterFrame *f) {
-    assert(f->stacktop > f->f_code->co_nlocalsplus);
+    assert(f->stacktop > _PyFrame_GetCode(f)->co_nlocalsplus);
     assert(f->localsplus[f->stacktop-1] != NULL);
     return f->localsplus[f->stacktop-1];
 }
 
 static inline PyObject *_PyFrame_StackPop(_PyInterpreterFrame *f) {
-    assert(f->stacktop > f->f_code->co_nlocalsplus);
+    assert(f->stacktop > _PyFrame_GetCode(f)->co_nlocalsplus);
     f->stacktop--;
     return f->localsplus[f->stacktop];
 }
@@ -119,7 +124,7 @@ _PyFrame_Initialize(
     PyObject *locals, PyCodeObject *code, int null_locals_from)
 {
     frame->f_funcobj = (PyObject *)func;
-    frame->f_code = (PyCodeObject *)Py_NewRef(code);
+    frame->f_executable = Py_NewRef(code);
     frame->f_builtins = func->func_builtins;
     frame->f_globals = func->func_globals;
     frame->f_locals = locals;
@@ -172,8 +177,11 @@ _PyFrame_SetStackPointer(_PyInterpreterFrame *frame, PyObject **stack_pointer)
 static inline bool
 _PyFrame_IsIncomplete(_PyInterpreterFrame *frame)
 {
+    if (frame->owner == FRAME_OWNED_BY_CSTACK) {
+        return true;
+    }
     return frame->owner != FRAME_OWNED_BY_GENERATOR &&
-    frame->prev_instr < _PyCode_CODE(frame->f_code) + frame->f_code->_co_firsttraceable;
+    frame->prev_instr < _PyCode_CODE(_PyFrame_GetCode(frame)) + _PyFrame_GetCode(frame)->_co_firsttraceable;
 }
 
 static inline _PyInterpreterFrame *
@@ -264,6 +272,30 @@ _PyFrame_PushUnchecked(PyThreadState *tstate, PyFunctionObject *func, int null_l
     return new_frame;
 }
 
+/* Pushes a trampoline frame without checking for space.
+ * Must be guarded by _PyThreadState_HasStackSpace() */
+static inline _PyInterpreterFrame *
+_PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int stackdepth, int prev_instr)
+{
+    CALL_STAT_INC(frames_pushed);
+    _PyInterpreterFrame *frame = (_PyInterpreterFrame *)tstate->datastack_top;
+    tstate->datastack_top += code->co_framesize;
+    assert(tstate->datastack_top < tstate->datastack_limit);
+    frame->f_funcobj = Py_None;
+    frame->f_executable = Py_NewRef(code);
+#ifdef Py_DEBUG
+    frame->f_builtins = NULL;
+    frame->f_globals = NULL;
+#endif
+    frame->f_locals = NULL;
+    frame->stacktop = code->co_nlocalsplus + stackdepth;
+    frame->frame_obj = NULL;
+    frame->prev_instr = _PyCode_CODE(code) + prev_instr;
+    frame->owner = FRAME_OWNED_BY_THREAD;
+    frame->return_offset = 0;
+    return frame;
+}
+
 static inline
 PyGenObject *_PyFrame_GetGenerator(_PyInterpreterFrame *frame)
 {
@@ -271,6 +303,14 @@ PyGenObject *_PyFrame_GetGenerator(_PyInterpreterFrame *frame)
     size_t offset_in_gen = offsetof(PyGenObject, gi_iframe);
     return (PyGenObject *)(((char *)frame) - offset_in_gen);
 }
+
+#define PY_EXECUTABLE_KIND_SKIP 0
+#define PY_EXECUTABLE_KIND_PY_FUNCTION 1
+#define PY_EXECUTABLE_KIND_BUILTIN_FUNCTION 3
+#define PY_EXECUTABLE_KIND_METHOD_DESCRIPTOR 4
+#define PY_EXECUTABLE_KINDS 5
+
+PyAPI_DATA(const PyTypeObject *) const PyUnstable_ExecutableKinds[PY_EXECUTABLE_KINDS+1];
 
 #ifdef __cplusplus
 }

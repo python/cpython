@@ -8,10 +8,10 @@
 */
 
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_call.h"          // _PyObject_CallMethod()
 #include "pycore_long.h"          // _PyLong_GetOne()
-#include "pycore_object.h"
+#include "pycore_object.h"        // _PyType_HasFeature()
 #include <stddef.h>               // offsetof()
 #include "_iomodule.h"
 

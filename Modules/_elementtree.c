@@ -11,8 +11,6 @@
  *--------------------------------------------------------------------
  */
 
-#define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
 #include "structmember.h"         // PyMemberDef
 #include "expat.h"
@@ -882,7 +880,6 @@ LOCAL(PyObject *)
 deepcopy(elementtreestate *st, PyObject *object, PyObject *memo)
 {
     /* do a deep copy of the given object */
-    PyObject *stack[2];
 
     /* Fast paths */
     if (object == Py_None || PyUnicode_CheckExact(object)) {
@@ -917,9 +914,8 @@ deepcopy(elementtreestate *st, PyObject *object, PyObject *memo)
         return NULL;
     }
 
-    stack[0] = object;
-    stack[1] = memo;
-    return _PyObject_FastCall(st->deepcopy_obj, stack, 2);
+    PyObject *args[2] = {object, memo};
+    return PyObject_Vectorcall(st->deepcopy_obj, args, 2, NULL);
 }
 
 
@@ -2852,14 +2848,14 @@ treebuilder_handle_pi(TreeBuilderObject* self, PyObject* target, PyObject* text)
 {
     PyObject* pi;
     PyObject* this;
-    PyObject* stack[2] = {target, text};
 
     if (treebuilder_flush_data(self) < 0) {
         return NULL;
     }
 
     if (self->pi_factory) {
-        pi = _PyObject_FastCall(self->pi_factory, stack, 2);
+        PyObject* args[2] = {target, text};
+        pi = PyObject_Vectorcall(self->pi_factory, args, 2, NULL);
         if (!pi) {
             return NULL;
         }
@@ -3372,7 +3368,6 @@ expat_start_ns_handler(XMLParserObject* self, const XML_Char* prefix_in,
     PyObject* res = NULL;
     PyObject* uri;
     PyObject* prefix;
-    PyObject* stack[2];
 
     if (PyErr_Occurred())
         return;
@@ -3411,9 +3406,8 @@ expat_start_ns_handler(XMLParserObject* self, const XML_Char* prefix_in,
             return;
         }
 
-        stack[0] = prefix;
-        stack[1] = uri;
-        res = _PyObject_FastCall(self->handle_start_ns, stack, 2);
+        PyObject* args[2] = {prefix, uri};
+        res = PyObject_Vectorcall(self->handle_start_ns, args, 2, NULL);
         Py_DECREF(uri);
         Py_DECREF(prefix);
     }
@@ -3551,7 +3545,6 @@ expat_pi_handler(XMLParserObject* self, const XML_Char* target_in,
     PyObject* pi_target;
     PyObject* data;
     PyObject* res;
-    PyObject* stack[2];
 
     if (PyErr_Occurred())
         return;
@@ -3581,9 +3574,8 @@ expat_pi_handler(XMLParserObject* self, const XML_Char* target_in,
         if (!data)
             goto error;
 
-        stack[0] = pi_target;
-        stack[1] = data;
-        res = _PyObject_FastCall(self->handle_pi, stack, 2);
+        PyObject* args[2] = {pi_target, data};
+        res = PyObject_Vectorcall(self->handle_pi, args, 2, NULL);
         Py_XDECREF(res);
         Py_DECREF(data);
         Py_DECREF(pi_target);

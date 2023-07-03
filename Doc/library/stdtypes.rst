@@ -52,7 +52,7 @@ objects considered false:
      single: None (Built-in object)
      single: False (Built-in object)
 
-* constants defined to be false: ``None`` and ``False``.
+* constants defined to be false: ``None`` and ``False``
 
 * zero of any numeric type: ``0``, ``0.0``, ``0j``, ``Decimal(0)``,
   ``Fraction(0, 1)``

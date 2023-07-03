@@ -105,7 +105,6 @@ Local naming conventions:
 # pragma weak inet_aton
 #endif
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
 #include "pycore_moduleobject.h"  // _PyModule_GetState
