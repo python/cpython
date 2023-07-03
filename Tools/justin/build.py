@@ -189,10 +189,11 @@ class ObjectParser:
     async def parse(self):
         # subprocess.run(["llvm-objdump", path, "-dr"], check=True)
         process = await asyncio.create_subprocess_exec("llvm-readobj", *self._ARGS, self.path, stdout=subprocess.PIPE)
-        await process.wait()
+        stdout, stderr = await process.communicate()
+        assert stderr is None, stderr
         if process.returncode:
             raise RuntimeError(f"llvm-readobj exited with {process.returncode}")
-        output = await process.stdout.read()
+        output = stdout
         output = output.replace(b"PrivateExtern\n", b"\n")  # XXX: MachO
         output = output.replace(b"Extern\n", b"\n")  # XXX: MachO
         start = output.index(b"[", 1)  # XXX: MachO, COFF
@@ -579,11 +580,11 @@ class Compiler:
 
     @staticmethod
     def _use_ghccc(ll: pathlib.Path, enable: bool = False) -> None:
-        ir = ll.read_text()
         if enable:
+            ir = ll.read_text()
             ir = ir.replace("i32 @_justin_continue", "ghccc i32 @_justin_continue")
             ir = ir.replace("i32 @_justin_entry", "ghccc i32 @_justin_entry")
-        ll.write_text(ir)
+            ll.write_text(ir)
 
     @staticmethod
     def _use_tos_caching(c: pathlib.Path, enable: int = 0) -> None:
@@ -606,13 +607,17 @@ class Compiler:
             self._use_tos_caching(c, 0)
             self._stderr(f"Compiling {opname}...")
             process = await asyncio.create_subprocess_exec("clang", *CFLAGS, "-emit-llvm", "-S", *defines, "-o", ll, c)
-            await process.wait()
+            stdout, stderr = await process.communicate()
+            assert stdout is None, stdout
+            assert stderr is None, stderr
             if process.returncode:
                 raise RuntimeError(f"clang exited with {process.returncode}")
             self._use_ghccc(ll, True)
             self._stderr(f"Recompiling {opname}...")
             process = await asyncio.create_subprocess_exec("clang", *CFLAGS, "-c", "-o", o, ll)
-            await process.wait()
+            stdout, stderr = await process.communicate()
+            assert stdout is None, stdout
+            assert stderr is None, stderr
             if process.returncode:
                 raise RuntimeError(f"clang exited with {process.returncode}")
             self._stderr(f"Parsing {opname}...")
