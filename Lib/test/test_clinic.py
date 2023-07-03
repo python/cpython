@@ -287,6 +287,11 @@ xyz
 
 
 class ClinicParserTest(TestCase):
+    def checkDocstring(self, fn, expected):
+        self.assertTrue(hasattr(fn, "docstring"))
+        self.assertEqual(fn.docstring.strip(),
+                         dedent(expected).strip())
+
     def test_trivial(self):
         parser = DSLParser(FakeClinic())
         block = clinic.Block("""
@@ -407,7 +412,7 @@ class ClinicParserTest(TestCase):
 
             Perform a stat system call on the given path.
         """)
-        expected = dedent("""
+        self.checkDocstring(function, """
             stat($module, /, path)
             --
 
@@ -415,8 +420,7 @@ class ClinicParserTest(TestCase):
 
               path
                 Path to be examined
-        """).strip()
-        self.assertEqual(function.docstring, expected)
+        """)
 
     def test_explicit_parameters_in_docstring(self):
         function = self.parse_function(dedent("""
@@ -430,7 +434,7 @@ class ClinicParserTest(TestCase):
 
             Okay, we're done here.
         """))
-        expected = dedent("""
+        self.checkDocstring(function, """
             bar($module, /, x, y)
             --
 
@@ -440,8 +444,7 @@ class ClinicParserTest(TestCase):
                 Documentation for x.
 
             Okay, we're done here.
-        """).strip()
-        self.assertEqual(function.docstring, expected)
+        """)
 
     def test_parser_regression_special_character_in_parameter_column_of_docstring_first_line(self):
         function = self.parse_function(dedent("""
@@ -450,13 +453,12 @@ class ClinicParserTest(TestCase):
                 path: str
             This/used to break Clinic!
         """))
-        expected = dedent("""
+        self.checkDocstring(function, """
             stat($module, /, path)
             --
 
             This/used to break Clinic!
-        """).strip()
-        self.assertEqual(function.docstring, expected)
+        """)
 
     def test_c_name(self):
         function = self.parse_function("""
@@ -523,7 +525,7 @@ class ClinicParserTest(TestCase):
                 p = function.parameters[name]
                 self.assertEqual(p.group, group)
                 self.assertEqual(p.kind, inspect.Parameter.POSITIONAL_ONLY)
-        expected = dedent("""
+        self.checkDocstring(function, """
             addch([y, x,] ch, [attr])
 
 
@@ -535,8 +537,7 @@ class ClinicParserTest(TestCase):
                 Character to add.
               attr
                 Attributes for the character.
-        """).strip()
-        self.assertEqual(function.docstring.strip(), expected)
+        """)
 
     def test_nested_groups(self):
         function = self.parse_function("""
@@ -587,7 +588,7 @@ class ClinicParserTest(TestCase):
                 self.assertEqual(p.group, group)
                 self.assertEqual(p.kind, inspect.Parameter.POSITIONAL_ONLY)
 
-        expected = dedent("""
+        self.checkDocstring(function, """
             imaginary([[y1, y2,] x1, x2,] ch, [attr1, attr2, attr3, [attr4, attr5,
                       attr6]])
 
@@ -614,8 +615,7 @@ class ClinicParserTest(TestCase):
                 Attributes for the character.
               attr6
                 Attributes for the character.
-        """).strip()
-        self.assertEqual(function.docstring.strip(), expected)
+        """)
 
     def parse_function_should_fail(self, s):
         with support.captured_stdout() as stdout:
@@ -835,7 +835,7 @@ class ClinicParserTest(TestCase):
                 y: str
               Not at column 0!
         """)
-        self.assertEqual(dedent("""
+        self.checkDocstring(function, """
             bar($module, /, x, *, y)
             --
 
@@ -843,7 +843,7 @@ class ClinicParserTest(TestCase):
 
               x
                 Nested docstring here, goeth.
-        """).strip(), function.docstring)
+        """)
 
     def test_directive(self):
         c = FakeClinic()
