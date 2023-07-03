@@ -4864,7 +4864,9 @@ class DSLParser:
         if not module:
             fail("Function " + self.function.name + " has an invalid parameter declaration:\n\t" + line)
 
-        function_args = module.body[0].args
+        function = module.body[0]
+        assert isinstance(function, ast.FunctionDef)
+        function_args = function.args
 
         if len(function_args.args) > 1:
             fail("Function " + self.function.name + " has an invalid parameter declaration (comma?):\n\t" + line)
@@ -4950,7 +4952,9 @@ class DSLParser:
                 if bad:
                     fail("Unsupported expression as default value: " + repr(default))
 
-                expr = module.body[0].value
+                assignment = module.body[0]
+                assert isinstance(assignment, ast.Assign)
+                expr = assignment.value
                 # mild hack: explicitly support NULL as a default value
                 c_default: str | None
                 if isinstance(expr, ast.Name) and expr.id == 'NULL':
@@ -4989,7 +4993,7 @@ class DSLParser:
                 else:
                     value = ast.literal_eval(expr)
                     py_default = repr(value)
-                    if isinstance(value, (bool, None.__class__)):
+                    if isinstance(value, (bool, NoneType)):
                         c_default = "Py_" + py_default
                     elif isinstance(value, str):
                         c_default = c_repr(value)
