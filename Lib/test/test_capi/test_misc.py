@@ -2415,5 +2415,24 @@ class TestOptimizerAPI(unittest.TestCase):
             self.assertEqual(opt.get_count(), 10)
 
 
-if __name__ == "__main__":
-    unittest.main()
+class TestUops(unittest.TestCase):
+
+    def test_basic_loop(self):
+
+        def testfunc(x):
+            i = 0
+            while i < x:
+                i += 1
+
+        testfunc(1000)
+
+        ex = None
+        for offset in range(0, 100, 2):
+            try:
+                ex = _testinternalcapi.get_executor(testfunc.__code__, offset)
+                break
+            except ValueError:
+                pass
+        if ex is None:
+            return
+        self.assertIn("SET_IP", str(ex))

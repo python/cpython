@@ -188,6 +188,23 @@ jump_to_destination:
     return frame;
 }
 
+_PyExecutorObject *
+PyUnstable_GetExecutor(PyCodeObject *code, int offset)
+{
+    int code_len = (int)Py_SIZE(code);
+    for (int i = 0 ; i < code_len;) {
+        if (_PyCode_CODE(code)[i].op.code == ENTER_EXECUTOR && i*2 == offset) {
+            int oparg = _PyCode_CODE(code)[i].op.arg;
+            _PyExecutorObject *res = code->co_executors->executors[oparg];
+            Py_INCREF(res);
+            return res;
+        }
+        i += _PyInstruction_GetLength(code, i);
+    }
+    PyErr_SetString(PyExc_ValueError, "no executor at given offset");
+    return NULL;
+}
+
 /** Test support **/
 
 
@@ -292,6 +309,51 @@ uop_dealloc(_PyUOpExecutorObject *self) {
     PyObject_Free(self);
 }
 
+static const char *
+uop_name(int index) {
+    if (index < EXIT_TRACE) {
+        return _PyOpcode_OpName[index];
+    }
+    return _PyOpcode_uop_name[index];
+}
+
+#ifdef Py_DEBUG
+static PyObject *
+uop_str(_PyUOpExecutorObject *self)
+{
+    int count = 1;
+    for (; count < _Py_UOP_MAX_TRACE_LENGTH; count++) {
+        if (self->trace[count-1].opcode == EXIT_TRACE) {
+            break;
+        }
+    }
+    _PyUnicodeWriter writer;
+    _PyUnicodeWriter_Init(&writer);
+    for (int i = 0; i < count; i++) {
+        const char *name = uop_name(self->trace[i].opcode);
+        if (_PyUnicodeWriter_WriteASCIIString(&writer,
+            name, strlen(name)) < 0) {
+            goto error;
+        }
+        if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ", 2) < 0) {
+            goto error;
+        }
+        char operand_buffer[24];
+        int len = snprintf(operand_buffer, 23, "%lu", self->trace[i].operand);
+        if (_PyUnicodeWriter_WriteASCIIString(&writer, operand_buffer, len) < 0) {
+                goto error;
+        }
+        if (_PyUnicodeWriter_WriteASCIIString(&writer, "\n", 1) < 0) {
+            goto error;
+        }
+    }
+    return _PyUnicodeWriter_Finish(&writer);
+error:
+    _PyUnicodeWriter_Dealloc(&writer);
+    return NULL;
+}
+#endif
+
 static PyTypeObject UOpExecutor_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "uop_executor",
@@ -299,6 +361,9 @@ static PyTypeObject UOpExecutor_Type = {
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .tp_dealloc = (destructor)uop_dealloc,
+#ifdef Py_DEBUG
+    .tp_str = (reprfunc)uop_str,
+#endif
 };
 
 static int
