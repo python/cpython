@@ -4311,7 +4311,7 @@ class DSLParser:
         self.reset()
 
     def reset(self) -> None:
-        self.function = None
+        self.function: Function | None = None
         self.state: StateKeeper = self.state_dsl_start
         self.parameter_indent = None
         self.keyword_only = False
