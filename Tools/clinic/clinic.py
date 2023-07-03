@@ -5051,7 +5051,6 @@ class DSLParser:
                     if not isinstance(node.arg, str):
                         fail(msg)
                     kwargs[node.arg] = eval_ast_expr(node.value, symbols)
-                    print(kwargs)
                 return name, False, kwargs
             case _:
                 fail(msg)
