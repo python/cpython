@@ -2273,12 +2273,16 @@ dummy_func(
 
         inst(POP_JUMP_IF_FALSE, (cond -- )) {
             assert(PyBool_Check(cond));
-            JUMP_POP_DISPATCH(oparg * Py_IsFalse(cond), 1);
+            if (Py_IsFalse(cond)) {
+                JUMP_POP_DISPATCH(oparg, 1);
+            }
         }
 
         inst(POP_JUMP_IF_TRUE, (cond -- )) {
             assert(PyBool_Check(cond));
-            JUMP_POP_DISPATCH(oparg * Py_IsTrue(cond), 1);
+            if (Py_IsTrue(cond)) {
+                JUMP_POP_DISPATCH(oparg, 1);
+            }
         }
 
         inst(POP_JUMP_IF_NOT_NONE, (value -- )) {
