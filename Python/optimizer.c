@@ -442,7 +442,7 @@ done:
     return 0;
 
 #undef ADD_TO_TRACE
-#undef ADD_TO_TRACE_BASIC
+#undef DPRINTF
 }
 
 static int
