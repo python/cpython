@@ -814,7 +814,10 @@ Annotations must be either a name, a function call, or a string.
         self.assertEqual(s, expected_failure_message)
 
     def test_bizarre_parseable_annotations(self):
-        msg = "Cannot use a kwarg splat in a function-call annotation"
+        expected_error_msg = (
+            "Error on line 0\n"
+            "Cannot use a kwarg splat in a function-call annotation"
+        )
         dataset = (
             'module fo\nfo.barbaz\n   o: bool(**{None: "bang!"})',
             'module fo\nfo.barbaz -> bool(**{None: "bang!"})',
@@ -822,8 +825,7 @@ Annotations must be either a name, a function call, or a string.
         for fn in dataset:
             with self.subTest(fn=fn):
                 out = self.parse_function_should_fail(fn)
-                self.assertTrue(out.startswith("Error on line 0"))
-                self.assertIn(msg, out)
+                self.assertEqual(out, expected_error_msg)
 
     def test_unused_param(self):
         block = self.parse("""
