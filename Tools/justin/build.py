@@ -1,5 +1,6 @@
 """The Justin(time) template JIT for CPython 3.13, based on copy-and-patch."""
 
+import asyncio
 import dataclasses
 import functools
 import itertools
@@ -175,15 +176,7 @@ class ObjectParser:
     ]
 
     def __init__(self, path: pathlib.Path, symbol_prefix: str = "") -> None:
-        args = ["llvm-readobj", *self._ARGS, path]
-        # subprocess.run(["llvm-objdump", path, "-dr"], check=True)
-        process = subprocess.run(args, check=True, capture_output=True)
-        output = process.stdout
-        output = output.replace(b"PrivateExtern\n", b"\n")  # XXX: MachO
-        output = output.replace(b"Extern\n", b"\n")  # XXX: MachO
-        start = output.index(b"[", 1)  # XXX: MachO, COFF
-        end = output.rindex(b"]", 0, -1) + 1  # XXXL MachO, COFF
-        self._data = json.loads(output[start:end])
+        self.path = path
         self.body = bytearray()
         self.body_symbols = {}
         self.body_offsets = {}
@@ -193,7 +186,18 @@ class ObjectParser:
         self.relocations_todo = []
         self.symbol_prefix = symbol_prefix
 
-    def parse(self):
+    async def parse(self):
+        # subprocess.run(["llvm-objdump", path, "-dr"], check=True)
+        process = await asyncio.create_subprocess_exec("llvm-readobj", *self._ARGS, self.path, stdout=subprocess.PIPE)
+        await process.wait()
+        if process.returncode:
+            raise RuntimeError(f"llvm-readobj exited with {process.returncode}")
+        output = await process.stdout.read()
+        output = output.replace(b"PrivateExtern\n", b"\n")  # XXX: MachO
+        output = output.replace(b"Extern\n", b"\n")  # XXX: MachO
+        start = output.index(b"[", 1)  # XXX: MachO, COFF
+        end = output.rindex(b"]", 0, -1) + 1  # XXXL MachO, COFF
+        self._data = json.loads(output[start:end])
         for section in unwrap(self._data, "Section"):
             self._handle_section(section)
         # if "_justin_entry" in self.body_symbols:
@@ -567,9 +571,6 @@ class Compiler:
 
     def __init__(self, *, verbose: bool = False) -> None:
         self._stencils_built = {}
-        self._stencils_loaded = {}
-        self._trampoline_built = None
-        self._trampoline_loaded = None
         self._verbose = verbose
 
     def _stderr(self, *args, **kwargs) -> None:
@@ -595,8 +596,7 @@ class Compiler:
             )
         c.write_text(sc)
 
-    def _compile(self, opname, body) -> Stencil:
-        self._stderr(f"Building stencil for {opname}.")
+    async def _compile(self, opname, body) -> None:
         defines = [f"-D_JUSTIN_OPCODE={opname}"]
         with tempfile.TemporaryDirectory() as tempdir:
             c = pathlib.Path(tempdir, f"{opname}.c")
@@ -604,30 +604,36 @@ class Compiler:
             o = pathlib.Path(tempdir, f"{opname}.o")
             c.write_text(body)
             self._use_tos_caching(c, 0)
-            subprocess.run(
-                ["clang", *CFLAGS, "-emit-llvm", "-S", *defines, "-o", ll, c],
-                check=True,
-            )
+            self._stderr(f"Compiling {opname}...")
+            process = await asyncio.create_subprocess_exec("clang", *CFLAGS, "-emit-llvm", "-S", *defines, "-o", ll, c)
+            await process.wait()
+            if process.returncode:
+                raise RuntimeError(f"clang exited with {process.returncode}")
             self._use_ghccc(ll, True)
-            subprocess.run(
-                ["clang", *CFLAGS, "-c", "-o", o, ll],
-                check=True,
-            )
-            return ObjectParserDefault(o).parse()
+            self._stderr(f"Recompiling {opname}...")
+            process = await asyncio.create_subprocess_exec("clang", *CFLAGS, "-c", "-o", o, ll)
+            await process.wait()
+            if process.returncode:
+                raise RuntimeError(f"clang exited with {process.returncode}")
+            self._stderr(f"Parsing {opname}...")
+            self._stencils_built[opname] = await ObjectParserDefault(o).parse()
+        self._stderr(f"Built {opname}!")
 
-    def build(self) -> None:
+    async def build(self) -> None:
         generated_cases = PYTHON_GENERATED_CASES_C_H.read_text()
         pattern = r"(?s:\n( {8}TARGET\((\w+)\) \{\n.*?\n {8}\})\n)"
         self._cases = {}
         for body, opname in re.findall(pattern, generated_cases):
             self._cases[opname] = body.replace(" " * 8, " " * 4)
         template = TOOLS_JUSTIN_TEMPLATE.read_text()
+        tasks = []
         for opname in sorted(self._cases.keys() - self._SKIP):
             body = template % self._cases[opname]
-            self._stencils_built[opname] = self._compile(opname, body)
-        opname = "__TRAMPOLINE__"
+            tasks.append(self._compile(opname, body))
+        opname = "trampoline"
         body = TOOLS_JUSTIN_TRAMPOLINE.read_text()
-        self._trampoline_built = self._compile(opname, body)
+        tasks.append(self._compile(opname, body))
+        await asyncio.gather(*tasks)
 
     def dump(self) -> str:
         lines = []
@@ -639,7 +645,7 @@ class Compiler:
             "HOLE_oparg_plus_one",
         }
         opnames = []
-        for opname, stencil in sorted(self._stencils_built.items()) + [("trampoline", self._trampoline_built)]:
+        for opname, stencil in sorted(self._stencils_built.items()):
             opnames.append(opname)
             lines.append(f"// {opname}")
             assert stencil.body
@@ -732,6 +738,6 @@ if __name__ == "__main__":
     engine = Compiler(verbose=True)
     # This performs all of the steps that normally happen at build time:
     # TODO: Actual arg parser...
-    engine.build()
+    asyncio.run(engine.build())
     with open(sys.argv[2], "w") as file:
         file.write(engine.dump())

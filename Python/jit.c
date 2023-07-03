@@ -108,7 +108,7 @@ _PyJIT_CompileTrace(int size, _Py_CODEUNIT **trace)
 {
     if (!stencils_loaded) {
         stencils_loaded = 1;
-        for (int i = 0; i < Py_ARRAY_LENGTH(stencils); i++) {
+        for (size_t i = 0; i < Py_ARRAY_LENGTH(stencils); i++) {
             if (preload_stencil(&stencils[i])) {
                 stencils_loaded = -1;
                 break;
