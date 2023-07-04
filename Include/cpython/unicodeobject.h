@@ -167,10 +167,6 @@ typedef struct {
     } data;                     /* Canonical, smallest-form Unicode buffer */
 } PyUnicodeObject;
 
-PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
-    PyObject *op,
-    int check_content);
-
 
 #define _PyASCIIObject_CAST(op) \
     (assert(PyUnicode_Check(op)), \
@@ -461,19 +457,6 @@ PyAPI_FUNC(const char *) PyUnicode_AsUTF8(PyObject *unicode);
 
 #define _PyUnicode_AsString PyUnicode_AsUTF8
 
-/* --- Decimal Encoder ---------------------------------------------------- */
-
-/* Coverts a Unicode object holding a decimal value to an ASCII string
-   for using in int, float and complex parsers.
-   Transforms code points that have decimal digit property to the
-   corresponding ASCII digit code points.  Transforms spaces to ASCII.
-   Transforms code points starting from the first non-ASCII code point that
-   is neither a decimal digit nor a space to the end into '?'. */
-
-PyAPI_FUNC(PyObject*) _PyUnicode_TransformDecimalAndSpaceToASCII(
-    PyObject *unicode           /* Unicode object */
-    );
-
 /* === Characters Type APIs =============================================== */
 
 /* These should not be used directly. Use the Py_UNICODE_IS* and
@@ -623,23 +606,3 @@ static inline int Py_UNICODE_ISALNUM(Py_UCS4 ch) {
            || Py_UNICODE_ISDIGIT(ch)
            || Py_UNICODE_ISNUMERIC(ch));
 }
-
-
-/* === Misc functions ===================================================== */
-
-PyAPI_FUNC(PyObject*) _PyUnicode_FormatLong(PyObject *, int, int, int);
-
-/* Return an interned Unicode object for an Identifier; may fail if there is no memory.*/
-PyAPI_FUNC(PyObject*) _PyUnicode_FromId(_Py_Identifier*);
-
-/* Fast equality check when the inputs are known to be exact unicode types
-   and where the hash values are equal (i.e. a very probable match) */
-PyAPI_FUNC(int) _PyUnicode_EQ(PyObject *, PyObject *);
-
-/* Equality check. */
-PyAPI_FUNC(int) _PyUnicode_Equal(PyObject *, PyObject *);
-
-PyAPI_FUNC(int) _PyUnicode_WideCharString_Converter(PyObject *, void *);
-PyAPI_FUNC(int) _PyUnicode_WideCharString_Opt_Converter(PyObject *, void *);
-
-PyAPI_FUNC(Py_ssize_t) _PyUnicode_ScanIdentifier(PyObject *);
