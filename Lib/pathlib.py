@@ -127,12 +127,19 @@ def _compile_pattern_lines(pattern_lines, case_sensitive):
     # Match the start of the path, or just after a path separator
     parts = ['^']
     for part in pattern_lines.splitlines(keepends=True):
-        # We slice off the common prefix and suffix added by translate() to
-        # ensure that re.DOTALL is not set, and the end of the string not
-        # matched, respectively. With DOTALL not set, '*' wildcards will not
-        # match path separators, because the '.' characters in the pattern
-        # will not match newlines.
-        parts.append(fnmatch.translate(part)[_FNMATCH_SLICE])
+        if part == '*\n':
+            part = r'.+\n'
+        elif part == '*':
+            part = r'.+'
+        else:
+            # Any other component: pass to fnmatch.translate(). We slice off
+            # the common prefix and suffix added by translate() to ensure that
+            # re.DOTALL is not set, and the end of the string not matched,
+            # respectively. With DOTALL not set, '*' wildcards will not match
+            # path separators, because the '.' characters in the pattern will
+            # not match newlines.
+            part = fnmatch.translate(part)[_FNMATCH_SLICE]
+        parts.append(part)
     # Match the end of the path, always.
     parts.append(r'\Z')
     flags = re.MULTILINE
@@ -501,8 +508,12 @@ class PurePath(object):
         try:
             return self._lines_cached
         except AttributeError:
-            trans = _SWAP_SEP_AND_NEWLINE[self._flavour.sep]
-            self._lines_cached = str(self).translate(trans)
+            path_str = str(self)
+            if path_str == '.':
+                self._lines_cached = ''
+            else:
+                trans = _SWAP_SEP_AND_NEWLINE[self._flavour.sep]
+                self._lines_cached = path_str.translate(trans)
             return self._lines_cached
 
     def __eq__(self, other):
