@@ -2607,7 +2607,10 @@ class LandMine:
         fail("Stepped on a land mine, trying to access attribute " + repr(name) + ":\n" + self.__message__)
 
 
-def add_c_converter(f, name=None):
+def add_c_converter(
+        f: ConverterType,
+        name: str | None = None
+) -> ConverterType:
     if not name:
         name = f.__name__
         if not name.endswith('_converter'):
