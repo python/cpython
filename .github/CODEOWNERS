@@ -176,3 +176,4 @@ Doc/c-api/stable.rst          @encukou
 
 # Argument Clinic
 /Tools/clinic/**              @erlend-aasland @AlexWaygood
+/Lib/test/test_clinic.py      @erlend-aasland @AlexWaygood
