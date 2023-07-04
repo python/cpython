@@ -2435,7 +2435,7 @@ class TestUops(unittest.TestCase):
                 pass
         if ex is None:
             return
-        self.assertIn("SET_IP", str(ex))
+        self.assertIn("SAVE_IP", str(ex))
 
 
 if __name__ == "__main__":
