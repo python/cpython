@@ -20,7 +20,7 @@
     0)
 
 #define EXIT_TRACE 300
-#define SET_IP 301
+#define SAVE_IP 301
 #define _GUARD_BOTH_INT 302
 #define _BINARY_OP_MULTIPLY_INT 303
 #define _BINARY_OP_ADD_INT 304
@@ -942,9 +942,7 @@ struct opcode_macro_expansion {
 #ifndef NEED_OPCODE_METADATA
 extern const struct opcode_metadata _PyOpcode_opcode_metadata[512];
 extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[256];
-#ifdef Py_DEBUG
 extern const char * const _PyOpcode_uop_name[512];
-#endif
 #else
 const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {
     [NOP] = { true, INSTR_FMT_IX, 0 },
@@ -1087,7 +1085,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {
     [JUMP_BACKWARD] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [JUMP] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [JUMP_NO_INTERRUPT] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
-    [ENTER_EXECUTOR] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
+    [ENTER_EXECUTOR] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [POP_JUMP_IF_FALSE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [POP_JUMP_IF_TRUE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [POP_JUMP_IF_NOT_NONE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
@@ -1164,6 +1162,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {
 };
 const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] = {
     [NOP] = { .nuops = 1, .uops = { { NOP, 0, 0 } } },
+    [LOAD_FAST_CHECK] = { .nuops = 1, .uops = { { LOAD_FAST_CHECK, 0, 0 } } },
     [LOAD_FAST] = { .nuops = 1, .uops = { { LOAD_FAST, 0, 0 } } },
     [LOAD_FAST_AND_CLEAR] = { .nuops = 1, .uops = { { LOAD_FAST_AND_CLEAR, 0, 0 } } },
     [LOAD_CONST] = { .nuops = 1, .uops = { { LOAD_CONST, 0, 0 } } },
@@ -1218,6 +1217,7 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] = {
     [LOAD_LOCALS] = { .nuops = 1, .uops = { { _LOAD_LOCALS, 0, 0 } } },
     [LOAD_NAME] = { .nuops = 2, .uops = { { _LOAD_LOCALS, 0, 0 }, { _LOAD_FROM_DICT_OR_GLOBALS, 0, 0 } } },
     [LOAD_FROM_DICT_OR_GLOBALS] = { .nuops = 1, .uops = { { _LOAD_FROM_DICT_OR_GLOBALS, 0, 0 } } },
+    [DELETE_FAST] = { .nuops = 1, .uops = { { DELETE_FAST, 0, 0 } } },
     [DELETE_DEREF] = { .nuops = 1, .uops = { { DELETE_DEREF, 0, 0 } } },
     [LOAD_FROM_DICT_OR_DEREF] = { .nuops = 1, .uops = { { LOAD_FROM_DICT_OR_DEREF, 0, 0 } } },
     [LOAD_DEREF] = { .nuops = 1, .uops = { { LOAD_DEREF, 0, 0 } } },
@@ -1263,10 +1263,10 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] = {
     [COPY] = { .nuops = 1, .uops = { { COPY, 0, 0 } } },
     [SWAP] = { .nuops = 1, .uops = { { SWAP, 0, 0 } } },
 };
-#ifdef Py_DEBUG
+#ifdef NEED_OPCODE_METADATA
 const char * const _PyOpcode_uop_name[512] = {
     [300] = "EXIT_TRACE",
-    [301] = "SET_IP",
+    [301] = "SAVE_IP",
     [302] = "_GUARD_BOTH_INT",
     [303] = "_BINARY_OP_MULTIPLY_INT",
     [304] = "_BINARY_OP_ADD_INT",
@@ -1280,5 +1280,5 @@ const char * const _PyOpcode_uop_name[512] = {
     [312] = "_LOAD_LOCALS",
     [313] = "_LOAD_FROM_DICT_OR_GLOBALS",
 };
-#endif
+#endif // NEED_OPCODE_METADATA
 #endif

@@ -3,6 +3,14 @@ import re
 
 from . import common as _common
 
+# Modules/socketmodule.h uses pycore_time.h which needs the Py_BUILD_CORE
+# macro. Usually it's defined by the C file which includes it.
+# Other header files have a similar issue.
+NEED_BUILD_CORE = {
+    'cjkcodecs.h',
+    'multibytecodec.h',
+    'socketmodule.h',
+}
 
 TOOL = 'gcc'
 
@@ -62,9 +70,7 @@ def preprocess(filename,
     filename = _normpath(filename, cwd)
 
     postargs = POST_ARGS
-    if os.path.basename(filename) == 'socketmodule.h':
-        # Modules/socketmodule.h uses pycore_time.h which needs Py_BUILD_CORE.
-        # Usually it's defined by the C file which includes it.
+    if os.path.basename(filename) in NEED_BUILD_CORE:
         postargs += ('-DPy_BUILD_CORE=1',)
 
     text = _common.preprocess(
