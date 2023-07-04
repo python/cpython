@@ -34,6 +34,7 @@
 #include "prepare_protocol.h"
 #include "util.h"
 #include "pycore_import.h"        // _PyImport_GetModuleAttrString()
+#include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_weakref.h"       // _PyWeakref_IS_DEAD()
 
 #include <stdbool.h>
