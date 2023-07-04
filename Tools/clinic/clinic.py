@@ -28,7 +28,12 @@ import sys
 import textwrap
 import traceback
 
-from collections.abc import Callable, Generator, Iterable, Reversible
+from collections.abc import (
+    Callable,
+    Iterable,
+    Iterator,
+    Sequence,
+)
 from types import FunctionType, NoneType
 from typing import (
     Any,
@@ -516,13 +521,12 @@ class PythonLanguage(Language):
     checksum_line = "#/*[{dsl_name} end generated code: {arguments}]*/"
 
 
-ParamGroup = Iterable["Parameter"]
-ParamGenerator = Generator[tuple[ParamGroup, ...], None, None]
+ParamTuple = tuple["Parameter", ...]
 
 
 def permute_left_option_groups(
-        l: Reversible[ParamGroup]
-) -> ParamGenerator:
+        l: Sequence[ParamTuple]
+) -> Iterator[ParamTuple]:
     """
     Given [(1,), (2,), (3,)], should yield:
        ()
@@ -531,15 +535,15 @@ def permute_left_option_groups(
        (1, 2, 3)
     """
     yield tuple()
-    accumulator: list[ParamGroup] = []
+    accumulator: list[Parameter] = []
     for group in reversed(l):
         accumulator = list(group) + accumulator
         yield tuple(accumulator)
 
 
 def permute_right_option_groups(
-        l: Iterable[ParamGroup]
-) -> ParamGenerator:
+        l: Sequence[ParamTuple]
+) -> Iterator[ParamTuple]:
     """
     Given [(1,), (2,), (3,)], should yield:
       ()
@@ -548,17 +552,17 @@ def permute_right_option_groups(
       (1, 2, 3)
     """
     yield tuple()
-    accumulator: list[ParamGroup] = []
+    accumulator: list[Parameter] = []
     for group in l:
         accumulator.extend(group)
         yield tuple(accumulator)
 
 
 def permute_optional_groups(
-        left: Reversible[ParamGroup],
-        required: Iterable[ParamGroup],
-        right: Iterable[ParamGroup]
-) -> tuple[ParamGroup, ...]:
+        left: Sequence[ParamTuple],
+        required: ParamTuple,
+        right: Sequence[ParamTuple]
+) -> tuple[ParamTuple, ...]:
     """
     Generator function that computes the set of acceptable
     argument lists for the provided iterables of
@@ -573,7 +577,7 @@ def permute_optional_groups(
         if left:
             raise ValueError("required is empty but left is not")
 
-    accumulator: list[ParamGroup] = []
+    accumulator: list[ParamTuple] = []
     counts = set()
     for r in permute_right_option_groups(right):
         for l in permute_left_option_groups(left):
