@@ -459,9 +459,11 @@ translate_bytecode_to_trace(
                     && trace_length + 3 <= max_length)
                 {
                     ADD_TO_TRACE(JUMP_TO_TOP, 0);
-                    goto done;
                 }
-                // Else fall through!
+                else {
+                    DPRINTF(2, "JUMP_BACKWARD not to top ends trace\n");
+                }
+                goto done;
             }
             default:
             {
