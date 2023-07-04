@@ -2639,7 +2639,10 @@ def add_default_legacy_c_converter(cls):
         legacy_converters[cls.format_unit] = cls
     return cls
 
-def add_legacy_c_converter(format_unit, **kwargs):
+def add_legacy_c_converter(
+        format_unit: str,
+        **kwargs
+) -> Callable[[ConverterType], ConverterType]:
     """
     Adds a legacy converter.
     """
