@@ -188,6 +188,23 @@ jump_to_destination:
     return frame;
 }
 
+_PyExecutorObject *
+PyUnstable_GetExecutor(PyCodeObject *code, int offset)
+{
+    int code_len = (int)Py_SIZE(code);
+    for (int i = 0 ; i < code_len;) {
+        if (_PyCode_CODE(code)[i].op.code == ENTER_EXECUTOR && i*2 == offset) {
+            int oparg = _PyCode_CODE(code)[i].op.arg;
+            _PyExecutorObject *res = code->co_executors->executors[oparg];
+            Py_INCREF(res);
+            return res;
+        }
+        i += _PyInstruction_GetLength(code, i);
+    }
+    PyErr_SetString(PyExc_ValueError, "no executor at given offset");
+    return NULL;
+}
+
 /** Test support **/
 
 
@@ -287,6 +304,58 @@ uop_dealloc(_PyUOpExecutorObject *self) {
     PyObject_Free(self);
 }
 
+static const char *
+uop_name(int index) {
+    if (index < EXIT_TRACE) {
+        return _PyOpcode_OpName[index];
+    }
+    return _PyOpcode_uop_name[index];
+}
+
+static Py_ssize_t
+uop_len(_PyUOpExecutorObject *self)
+{
+    int count = 1;
+    for (; count < _Py_UOP_MAX_TRACE_LENGTH; count++) {
+        if (self->trace[count-1].opcode == EXIT_TRACE) {
+            break;
+        }
+    }
+    return count;
+}
+
+static PyObject *
+uop_item(_PyUOpExecutorObject *self, Py_ssize_t index)
+{
+    for (int i = 0; i < _Py_UOP_MAX_TRACE_LENGTH; i++) {
+        if (self->trace[i].opcode == EXIT_TRACE) {
+            break;
+        }
+        if (i != index) {
+            continue;
+        }
+        const char *name = uop_name(self->trace[i].opcode);
+        PyObject *oname = _PyUnicode_FromASCII(name, strlen(name));
+        if (oname == NULL) {
+            return NULL;
+        }
+        PyObject *operand = PyLong_FromUnsignedLongLong(self->trace[i].operand);
+        if (operand == NULL) {
+            Py_DECREF(oname);
+            return NULL;
+        }
+        PyObject *args[2] = { oname, operand };
+        return _PyTuple_FromArraySteal(args, 2);
+    }
+    PyErr_SetNone(PyExc_IndexError);
+    return NULL;
+}
+
+PySequenceMethods uop_as_sequence = {
+    .sq_length = (lenfunc)uop_len,
+    .sq_item = (ssizeargfunc)uop_item,
+};
+
 static PyTypeObject UOpExecutor_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "uop_executor",
@@ -294,6 +363,7 @@ static PyTypeObject UOpExecutor_Type = {
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .tp_dealloc = (destructor)uop_dealloc,
+    .tp_as_sequence = &uop_as_sequence,
 };
 
 static int
