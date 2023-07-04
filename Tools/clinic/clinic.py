@@ -585,7 +585,11 @@ def strip_leading_and_trailing_blank_lines(s: str) -> str:
     return '\n'.join(lines)
 
 @functools.lru_cache()
-def normalize_snippet(s: str, *, indent=0) -> str:
+def normalize_snippet(
+        s: str,
+        *,
+        indent: int = 0
+) -> str:
     """
     Reformats s:
         * removes leading and trailing blank lines
@@ -599,7 +603,11 @@ def normalize_snippet(s: str, *, indent=0) -> str:
     return s
 
 
-def declare_parser(f: Function, *, hasformat=False) -> str:
+def declare_parser(
+        f: Function,
+        *,
+        hasformat: bool = False
+) -> str:
     """
     Generates the code template for a static local PyArg_Parser variable,
     with an initializer.  For core code (incl. builtin modules) the
@@ -658,7 +666,10 @@ def declare_parser(f: Function, *, hasformat=False) -> str:
     return normalize_snippet(declarations)
 
 
-def wrap_declarations(text: str, length=78) -> str:
+def wrap_declarations(
+        text: str,
+        length: int = 78
+) -> str:
     """
     A simple-minded text wrapper for C function declarations.
 
