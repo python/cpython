@@ -39,31 +39,6 @@
 
 #include "docstrings.h"
 
-typedef struct {
-    PyTypeObject *PyDecContextManager_Type;
-    PyTypeObject *PyDecContext_Type;
-    PyTypeObject *PyDecSignalDictMixin_Type;
-    PyTypeObject *PyDec_Type;
-    PyTypeObject *PyDecSignalDict_Type;
-    PyTypeObject *DecimalTuple;
-
-    /* Top level Exception; inherits from ArithmeticError */
-    PyObject *DecimalException;
-
-#ifndef WITH_DECIMAL_CONTEXTVAR
-    /* Key for thread state dictionary */
-    PyObject *tls_context_key;
-    /* Invariant: NULL or the most recently accessed thread local context */
-    PyDecContextObject *cached_context;
-#else
-    PyObject *current_context_var;
-#endif
-} decimal_state;
-
-static decimal_state global_state;
-
-#define GLOBAL_STATE() (&global_state)
-
 #if !defined(MPD_VERSION_HEX) || MPD_VERSION_HEX < 0x02050000
   #error "libmpdec version >= 2.5.0 required"
 #endif
@@ -120,6 +95,30 @@ typedef struct {
     PyObject *global;
 } PyDecContextManagerObject;
 
+typedef struct {
+    PyTypeObject *PyDecContextManager_Type;
+    PyTypeObject *PyDecContext_Type;
+    PyTypeObject *PyDecSignalDictMixin_Type;
+    PyTypeObject *PyDec_Type;
+    PyTypeObject *PyDecSignalDict_Type;
+    PyTypeObject *DecimalTuple;
+
+    /* Top level Exception; inherits from ArithmeticError */
+    PyObject *DecimalException;
+
+#ifndef WITH_DECIMAL_CONTEXTVAR
+    /* Key for thread state dictionary */
+    PyObject *tls_context_key;
+    /* Invariant: NULL or the most recently accessed thread local context */
+    PyDecContextObject *cached_context;
+#else
+    PyObject *current_context_var;
+#endif
+} decimal_state;
+
+static decimal_state global_state;
+
+#define GLOBAL_STATE() (&global_state)
 
 #undef MPD
 #undef CTX
@@ -1564,8 +1563,8 @@ current_context_from_dict(void)
         return NULL;
     }
 
-    PyObject *tl_context = PyDict_GetItemWithError(dict,
-                                                   state->tls_context_key);
+    PyObject *tl_context;
+    tl_context = PyDict_GetItemWithError(dict, modstate->tls_context_key);
     if (tl_context != NULL) {
         /* We already have a thread local context. */
         CONTEXT_CHECK(modstate, tl_context);
@@ -1582,7 +1581,7 @@ current_context_from_dict(void)
         }
         CTX(tl_context)->status = 0;
 
-        if (PyDict_SetItem(dict, state->tls_context_key, tl_context) < 0) {
+        if (PyDict_SetItem(dict, modstate->tls_context_key, tl_context) < 0) {
             Py_DECREF(tl_context);
             return NULL;
         }
@@ -1591,8 +1590,8 @@ current_context_from_dict(void)
 
     /* Cache the context of the current thread, assuming that it
      * will be accessed several times before a thread switch. */
-    state->cached_context = (PyDecContextObject *)tl_context;
-    state->cached_context->tstate = tstate;
+    modstate->cached_context = (PyDecContextObject *)tl_context;
+    modstate->cached_context->tstate = tstate;
 
     /* Borrowed reference with refcount==1 */
     return tl_context;
