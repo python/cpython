@@ -1590,7 +1590,7 @@ class CLanguage(Language):
 
 
 @contextlib.contextmanager
-def OverrideStdioWith(stdout: io.TextIOWrapper):
+def OverrideStdioWith(stdout):
     saved_stdout = sys.stdout
     sys.stdout = stdout
     try:
