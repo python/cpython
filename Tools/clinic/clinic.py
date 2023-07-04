@@ -1589,7 +1589,12 @@ def OverrideStdioWith(stdout: io.TextIOWrapper):
         sys.stdout = saved_stdout
 
 
-def create_regex(before, after, word=True, whole_line=True):
+def create_regex(
+        before: str,
+        after: str,
+        word: bool = True,
+        whole_line: bool = True
+) -> re.Pattern[str]:
     """Create an re object for matching marker lines."""
     group_re = r"\w+" if word else ".+"
     pattern = r'{}({}){}'
