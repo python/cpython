@@ -230,7 +230,7 @@ extern PyObject* _PyUnicode_DecodeUnicodeEscapeStateful(
 
 /* Helper for PyUnicode_DecodeUnicodeEscape that detects invalid escape
    chars. */
-extern PyObject* _PyUnicode_DecodeUnicodeEscapeInternal(
+PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscapeInternal(
     const char *string,     /* Unicode-Escape encoded string */
     Py_ssize_t length,      /* size of string */
     const char *errors,     /* error handling */
