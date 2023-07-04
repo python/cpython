@@ -738,7 +738,11 @@ class CLanguage(Language):
     def parse_line(self, line: str) -> None:
         self.cpp.writeline(line)
 
-    def render(self, clinic, signatures):
+    def render(
+            self,
+            clinic: Clinic | None,
+            signatures
+    ) -> str:
         function = None
         for o in signatures:
             if isinstance(o, Function):
