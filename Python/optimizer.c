@@ -317,7 +317,6 @@ uop_name(int index) {
     return _PyOpcode_uop_name[index];
 }
 
-#ifdef Py_DEBUG
 static PyObject *
 uop_str(_PyUOpExecutorObject *self)
 {
@@ -352,7 +351,50 @@ error:
     _PyUnicodeWriter_Dealloc(&writer);
     return NULL;
 }
-#endif
+
+static Py_ssize_t
+uop_len(_PyUOpExecutorObject *self)
+{
+    int count = 1;
+    for (; count < _Py_UOP_MAX_TRACE_LENGTH; count++) {
+        if (self->trace[count-1].opcode == EXIT_TRACE) {
+            break;
+        }
+    }
+    return count;
+}
+
+static PyObject *
+uop_item(_PyUOpExecutorObject *self, Py_ssize_t index)
+{
+    for (int i = 0; i < _Py_UOP_MAX_TRACE_LENGTH; i++) {
+        if (self->trace[i].opcode == EXIT_TRACE) {
+            break;
+        }
+        if (i != index) {
+            continue;
+        }
+        const char *name = uop_name(self->trace[i].opcode);
+        PyObject *oname = _PyUnicode_FromASCII(name, strlen(name));
+        if (oname == NULL) {
+            return NULL;
+        }
+        PyObject *operand = PyLong_FromUnsignedLongLong(self->trace[i].operand);
+        if (operand == NULL) {
+            Py_DECREF(oname);
+            return NULL;
+        }
+        PyObject *args[2] = { oname, operand };
+        return _PyTuple_FromArraySteal(args, 2);
+    }
+    PyErr_SetNone(PyExc_IndexError);
+    return NULL;
+}
+
+PySequenceMethods uop_as_sequence = {
+    .sq_length = (lenfunc)uop_len,
+    .sq_item = (ssizeargfunc)uop_item,
+};
 
 static PyTypeObject UOpExecutor_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
@@ -361,9 +403,8 @@ static PyTypeObject UOpExecutor_Type = {
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .tp_dealloc = (destructor)uop_dealloc,
-#ifdef Py_DEBUG
     .tp_str = (reprfunc)uop_str,
-#endif
+    .tp_as_sequence = &uop_as_sequence,
 };
 
 static int
