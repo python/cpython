@@ -752,10 +752,14 @@ class CLanguage(Language):
         self.cpp = cpp.Monitor(filename)
         self.cpp.fail = fail
 
-    def parse_line(self, line):
+    def parse_line(self, line: str) -> None:
         self.cpp.writeline(line)
 
-    def render(self, clinic, signatures):
+    def render(
+            self,
+            clinic: Clinic | None,
+            signatures: Iterable[Function]
+    ) -> str:
         function = None
         for o in signatures:
             if isinstance(o, Function):
@@ -764,7 +768,10 @@ class CLanguage(Language):
                 function = o
         return self.render_function(clinic, function)
 
-    def docstring_for_c_string(self, f):
+    def docstring_for_c_string(
+            self,
+            f: Function
+    ) -> str:
         if re.search(r'[^\x00-\x7F]', f.docstring):
             warn("Non-ascii character appear in docstring.")
 
@@ -1345,7 +1352,7 @@ class CLanguage(Language):
         return d2
 
     @staticmethod
-    def group_to_variable_name(group):
+    def group_to_variable_name(group: int) -> str:
         adjective = "left_" if group < 0 else "right_"
         return "group_" + adjective + str(abs(group))
 
@@ -1441,8 +1448,12 @@ class CLanguage(Language):
         add("}")
         template_dict['option_group_parsing'] = format_escape(output())
 
-    def render_function(self, clinic, f):
-        if not f:
+    def render_function(
+            self,
+            clinic: Clinic | None,
+            f: Function | None
+    ) -> str:
+        if f is None or clinic is None:
             return ""
 
         add, output = text_accumulator()
@@ -1504,10 +1515,12 @@ class CLanguage(Language):
 
         template_dict = {}
 
+        assert isinstance(f.full_name, str)
         full_name = f.full_name
         template_dict['full_name'] = full_name
 
         if new_or_init:
+            assert isinstance(f.cls, Class)
             name = f.cls.name
         else:
             name = f.name
