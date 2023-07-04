@@ -28,11 +28,12 @@ import sys
 import textwrap
 import traceback
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterable, Reversible
 from types import FunctionType, NoneType
 from typing import (
     Any,
     Final,
+    Generator,
     Literal,
     NamedTuple,
     NoReturn,
@@ -516,7 +517,13 @@ class PythonLanguage(Language):
     checksum_line = "#/*[{dsl_name} end generated code: {arguments}]*/"
 
 
-def permute_left_option_groups(l):
+ParamGroup = Iterable["Parameter"]
+ParamGenerator = Generator[tuple[ParamGroup, ...], None, None]
+
+
+def permute_left_option_groups(
+        l: Reversible[ParamGroup]
+) -> ParamGenerator:
     """
     Given [(1,), (2,), (3,)], should yield:
        ()
@@ -525,13 +532,15 @@ def permute_left_option_groups(l):
        (1, 2, 3)
     """
     yield tuple()
-    accumulator = []
+    accumulator: list[ParamGroup] = []
     for group in reversed(l):
         accumulator = list(group) + accumulator
         yield tuple(accumulator)
 
 
-def permute_right_option_groups(l):
+def permute_right_option_groups(
+        l: Iterable[ParamGroup]
+) -> ParamGenerator:
     """
     Given [(1,), (2,), (3,)], should yield:
       ()
@@ -540,13 +549,17 @@ def permute_right_option_groups(l):
       (1, 2, 3)
     """
     yield tuple()
-    accumulator = []
+    accumulator: list[ParamGroup] = []
     for group in l:
         accumulator.extend(group)
         yield tuple(accumulator)
 
 
-def permute_optional_groups(left, required, right):
+def permute_optional_groups(
+        left: Reversible[ParamGroup],
+        required: Iterable[ParamGroup],
+        right: Iterable[ParamGroup]
+) -> tuple[ParamGroup, ...]:
     """
     Generator function that computes the set of acceptable
     argument lists for the provided iterables of
@@ -561,7 +574,7 @@ def permute_optional_groups(left, required, right):
         if left:
             raise ValueError("required is empty but left is not")
 
-    accumulator = []
+    accumulator: list[ParamGroup] = []
     counts = set()
     for r in permute_right_option_groups(right):
         for l in permute_left_option_groups(left):
