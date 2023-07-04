@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_pylifecycle.h"   // _Py_gitidentifier()
 
 #ifndef DONT_HAVE_STDIO_H
 #include <stdio.h>
