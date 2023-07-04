@@ -525,7 +525,7 @@ ParamTuple = tuple["Parameter", ...]
 
 
 def permute_left_option_groups(
-        l: Sequence[ParamTuple]
+        l: Sequence[Iterable[Parameter]]
 ) -> Iterator[ParamTuple]:
     """
     Given [(1,), (2,), (3,)], should yield:
@@ -542,7 +542,7 @@ def permute_left_option_groups(
 
 
 def permute_right_option_groups(
-        l: Sequence[ParamTuple]
+        l: Sequence[Iterable[Parameter]]
 ) -> Iterator[ParamTuple]:
     """
     Given [(1,), (2,), (3,)], should yield:
@@ -559,9 +559,9 @@ def permute_right_option_groups(
 
 
 def permute_optional_groups(
-        left: Sequence[ParamTuple],
-        required: ParamTuple,
-        right: Sequence[ParamTuple]
+        left: Sequence[Iterable[Parameter]],
+        required: Iterable[Parameter],
+        right: Sequence[Iterable[Parameter]]
 ) -> tuple[ParamTuple, ...]:
     """
     Generator function that computes the set of acceptable
