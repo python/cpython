@@ -11,7 +11,12 @@
  *--------------------------------------------------------------------
  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
+#include "pycore_import.h"        // _PyImport_GetModuleAttrString()
 #include "structmember.h"         // PyMemberDef
 #include "expat.h"
 #include "pyexpat.h"

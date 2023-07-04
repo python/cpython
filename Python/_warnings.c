@@ -1,10 +1,11 @@
 #include "Python.h"
+#include "pycore_frame.h"
 #include "pycore_initconfig.h"
 #include "pycore_interp.h"        // PyInterpreterState.warnings
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_pyerrors.h"
+#include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_frame.h"
 #include "clinic/_warnings.c.h"
 
 #define MODULE_NAME "_warnings"

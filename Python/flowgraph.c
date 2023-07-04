@@ -1377,9 +1377,9 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                             goto error;
                         }
                         if (!Py_IsNone(cnt)) {
+                            Py_DECREF(cnt);
                             break;
                         }
-                        Py_DECREF(cnt);
                         if (bb->b_iused <= i + 2) {
                             break;
                         }
