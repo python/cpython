@@ -1,9 +1,10 @@
-
 #include "Python.h"
 #include "opcode.h"
 #include "pycore_interp.h"
 #include "pycore_opcode.h"
-#include "pycore_pystate.h"
+#include "opcode_metadata.h"
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_uops.h"
 #include "cpython/optimizer.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -123,7 +124,7 @@ _PyOptimizerObject _PyOptimizer_Default = {
 _PyOptimizerObject *
 PyUnstable_GetOptimizer(void)
 {
-    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->optimizer == &_PyOptimizer_Default) {
         return NULL;
     }
@@ -136,7 +137,7 @@ PyUnstable_GetOptimizer(void)
 void
 PyUnstable_SetOptimizer(_PyOptimizerObject *optimizer)
 {
-    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (optimizer == NULL) {
         optimizer = &_PyOptimizer_Default;
     }
@@ -153,7 +154,7 @@ _PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNI
 {
     PyCodeObject *code = (PyCodeObject *)frame->f_executable;
     assert(PyCode_Check(code));
-    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (!has_space_for_executor(code, src)) {
         goto jump_to_destination;
     }
@@ -276,5 +277,216 @@ PyUnstable_Optimizer_NewCounter(void)
     opt->base.resume_threshold = UINT16_MAX;
     opt->base.backedge_threshold = 0;
     opt->count = 0;
+    return (PyObject *)opt;
+}
+
+///////////////////// Experimental UOp Optimizer /////////////////////
+
+static void
+uop_dealloc(_PyUOpExecutorObject *self) {
+    PyObject_Free(self);
+}
+
+static PyTypeObject UOpExecutor_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    .tp_name = "uop_executor",
+    .tp_basicsize = sizeof(_PyUOpExecutorObject),
+    .tp_itemsize = 0,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .tp_dealloc = (destructor)uop_dealloc,
+};
+
+static int
+translate_bytecode_to_trace(
+    PyCodeObject *code,
+    _Py_CODEUNIT *instr,
+    _PyUOpInstruction *trace,
+    int max_length)
+{
+    int trace_length = 0;
+
+#ifdef Py_DEBUG
+    char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
+    int lltrace = 0;
+    if (uop_debug != NULL && *uop_debug >= '0') {
+        lltrace = *uop_debug - '0';  // TODO: Parse an int and all that
+    }
+#define DPRINTF(level, ...) \
+    if (lltrace >= (level)) { fprintf(stderr, __VA_ARGS__); }
+#else
+#define DPRINTF(level, ...)
+#endif
+
+#define ADD_TO_TRACE(OPCODE, OPERAND) \
+    DPRINTF(2, \
+            "  ADD_TO_TRACE(%s, %" PRIu64 ")\n", \
+            (OPCODE) < 256 ? _PyOpcode_OpName[(OPCODE)] : _PyOpcode_uop_name[(OPCODE)], \
+            (uint64_t)(OPERAND)); \
+    assert(trace_length < max_length); \
+    trace[trace_length].opcode = (OPCODE); \
+    trace[trace_length].operand = (OPERAND); \
+    trace_length++;
+
+    DPRINTF(4,
+            "Optimizing %s (%s:%d) at offset %ld\n",
+            PyUnicode_AsUTF8(code->co_qualname),
+            PyUnicode_AsUTF8(code->co_filename),
+            code->co_firstlineno,
+            (long)(instr - (_Py_CODEUNIT *)code->co_code_adaptive));
+
+    for (;;) {
+        ADD_TO_TRACE(SAVE_IP, (int)(instr - (_Py_CODEUNIT *)code->co_code_adaptive));
+        int opcode = instr->op.code;
+        uint64_t operand = instr->op.arg;
+        switch (opcode) {
+            case LOAD_FAST_LOAD_FAST:
+            case STORE_FAST_LOAD_FAST:
+            case STORE_FAST_STORE_FAST:
+            {
+                // Reserve space for two uops (+ SAVE_IP + EXIT_TRACE)
+                if (trace_length + 4 > max_length) {
+                    DPRINTF(1, "Ran out of space for LOAD_FAST_LOAD_FAST\n");
+                    goto done;
+                }
+                uint64_t oparg1 = operand >> 4;
+                uint64_t oparg2 = operand & 15;
+                switch (opcode) {
+                    case LOAD_FAST_LOAD_FAST:
+                        ADD_TO_TRACE(LOAD_FAST, oparg1);
+                        ADD_TO_TRACE(LOAD_FAST, oparg2);
+                        break;
+                    case STORE_FAST_LOAD_FAST:
+                        ADD_TO_TRACE(STORE_FAST, oparg1);
+                        ADD_TO_TRACE(LOAD_FAST, oparg2);
+                        break;
+                    case STORE_FAST_STORE_FAST:
+                        ADD_TO_TRACE(STORE_FAST, oparg1);
+                        ADD_TO_TRACE(STORE_FAST, oparg2);
+                        break;
+                    default:
+                        Py_FatalError("Missing case");
+                }
+                break;
+            }
+            default:
+            {
+                const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
+                if (expansion->nuops > 0) {
+                    // Reserve space for nuops (+ SAVE_IP + EXIT_TRACE)
+                    int nuops = expansion->nuops;
+                    if (trace_length + nuops + 2 > max_length) {
+                        DPRINTF(1,
+                                "Ran out of space for %s\n",
+                                opcode < 256 ? _PyOpcode_OpName[opcode] : _PyOpcode_uop_name[opcode]);
+                        goto done;
+                    }
+                    for (int i = 0; i < nuops; i++) {
+                        int offset = expansion->uops[i].offset;
+                        switch (expansion->uops[i].size) {
+                            case 0:
+                                break;
+                            case 1:
+                                operand = read_u16(&instr[offset].cache);
+                                break;
+                            case 2:
+                                operand = read_u32(&instr[offset].cache);
+                                break;
+                            case 4:
+                                operand = read_u64(&instr[offset].cache);
+                                break;
+                            default:
+                                fprintf(stderr,
+                                        "opcode=%d, operand=%" PRIu64 "; nuops=%d, i=%d; size=%d, offset=%d\n",
+                                        opcode, operand, nuops, i,
+                                        expansion->uops[i].size,
+                                        expansion->uops[i].offset);
+                                Py_FatalError("garbled expansion");
+                        }
+                        ADD_TO_TRACE(expansion->uops[i].uop, operand);
+                    }
+                    break;
+                }
+                DPRINTF(2,
+                        "Unsupported opcode %s\n",
+                        opcode < 256 ? _PyOpcode_OpName[opcode] : _PyOpcode_uop_name[opcode]);
+                goto done;  // Break out of loop
+            }
+        }
+        instr++;
+        // Add cache size for opcode
+        instr += _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
+    }
+
+done:
+    // Skip short traces like SAVE_IP, LOAD_FAST, SAVE_IP, EXIT_TRACE
+    if (trace_length > 3) {
+        ADD_TO_TRACE(EXIT_TRACE, 0);
+        DPRINTF(1,
+                "Created a trace for %s (%s:%d) at offset %ld -- length %d\n",
+                PyUnicode_AsUTF8(code->co_qualname),
+                PyUnicode_AsUTF8(code->co_filename),
+                code->co_firstlineno,
+                (long)(instr - (_Py_CODEUNIT *)code->co_code_adaptive),
+                trace_length);
+        return trace_length;
+    }
+    else {
+        DPRINTF(4,
+                "No trace for %s (%s:%d) at offset %ld\n",
+                PyUnicode_AsUTF8(code->co_qualname),
+                PyUnicode_AsUTF8(code->co_filename),
+                code->co_firstlineno,
+                (long)(instr - (_Py_CODEUNIT *)code->co_code_adaptive));
+    }
+    return 0;
+
+#undef ADD_TO_TRACE
+#undef DPRINTF
+}
+
+static int
+uop_optimize(
+    _PyOptimizerObject *self,
+    PyCodeObject *code,
+    _Py_CODEUNIT *instr,
+    _PyExecutorObject **exec_ptr)
+{
+    _PyUOpInstruction trace[_Py_UOP_MAX_TRACE_LENGTH];
+    int trace_length = translate_bytecode_to_trace(code, instr, trace, _Py_UOP_MAX_TRACE_LENGTH);
+    if (trace_length <= 0) {
+        // Error or nothing translated
+        return trace_length;
+    }
+    OBJECT_STAT_INC(optimization_traces_created);
+    _PyUOpExecutorObject *executor = (_PyUOpExecutorObject *)_PyObject_New(&UOpExecutor_Type);
+    if (executor == NULL) {
+        return -1;
+    }
+    executor->base.execute = _PyUopExecute;
+    memcpy(executor->trace, trace, trace_length * sizeof(_PyUOpInstruction));
+    *exec_ptr = (_PyExecutorObject *)executor;
+    return 1;
+}
+
+static PyTypeObject UOpOptimizer_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    .tp_name = "uop_optimizer",
+    .tp_basicsize = sizeof(_PyOptimizerObject),
+    .tp_itemsize = 0,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+};
+
+PyObject *
+PyUnstable_Optimizer_NewUOpOptimizer(void)
+{
+    _PyOptimizerObject *opt = (_PyOptimizerObject *)_PyObject_New(&UOpOptimizer_Type);
+    if (opt == NULL) {
+        return NULL;
+    }
+    opt->optimize = uop_optimize;
+    opt->resume_threshold = UINT16_MAX;
+    // Need at least 3 iterations to settle specializations.
+    // A few lower bits of the counter are reserved for other flags.
+    opt->backedge_threshold = 3 << OPTIMIZER_BITS_IN_COUNTER;
     return (PyObject *)opt;
 }

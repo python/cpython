@@ -631,6 +631,13 @@ class PydocDocTest(unittest.TestCase):
         # Testing that the subclasses section does not appear
         self.assertNotIn('Built-in subclasses', text)
 
+    def test_fail_help_output_redirect(self):
+        with StringIO() as buf:
+            helper = pydoc.Helper(output=buf)
+            helper.help("abd")
+            expected = missing_pattern % "abd"
+            self.assertEqual(expected, buf.getvalue().strip().replace('\n', os.linesep))
+
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'trace function introduces __locals__ unexpectedly')
     @requires_docstrings
