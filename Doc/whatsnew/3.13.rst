@@ -76,6 +76,12 @@ New Features
 Other Language Changes
 ======================
 
+* Compiler now strip indents from docstrings.
+  This will reduce size of ``.pyc`` cache files.
+  For example, cache file size for ``sqlalchemy.orm.session`` in SQLAlchemy 2.0
+  is reduced by about 5%.
+  This change will affects to tools using docstrings like doctest.
+  (Contributed by Inada Naoki in :gh:`81283`.)
 
 
 New Modules
