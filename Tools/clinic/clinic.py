@@ -4219,7 +4219,12 @@ class float_return_converter(double_return_converter):
     cast = '(double)'
 
 
-def eval_ast_expr(node, globals, *, filename='-'):
+def eval_ast_expr(
+        node: ast.expr,
+        globals: dict[str, Any],
+        *,
+        filename: str = '-'
+) -> FunctionType:
     """
     Takes an ast.Expr node.  Compiles and evaluates it.
     Returns the result of the expression.
@@ -4231,8 +4236,8 @@ def eval_ast_expr(node, globals, *, filename='-'):
     if isinstance(node, ast.Expr):
         node = node.value
 
-    node = ast.Expression(node)
-    co = compile(node, filename, 'eval')
+    expr = ast.Expression(node)
+    co = compile(expr, filename, 'eval')
     fn = FunctionType(co, globals)
     return fn()
 
