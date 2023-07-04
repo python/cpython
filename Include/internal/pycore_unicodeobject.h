@@ -356,7 +356,7 @@ PyAPI_FUNC(int) _PyUnicode_Equal(PyObject *, PyObject *);
 extern int _PyUnicode_WideCharString_Converter(PyObject *, void *);
 extern int _PyUnicode_WideCharString_Opt_Converter(PyObject *, void *);
 
-extern Py_ssize_t _PyUnicode_ScanIdentifier(PyObject *);
+PyAPI_FUNC(Py_ssize_t) _PyUnicode_ScanIdentifier(PyObject *);
 
 /* --- Runtime lifecycle -------------------------------------------------- */
 
