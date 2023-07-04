@@ -1253,6 +1253,17 @@ test_tstate_capi(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 
+/* Test _PyUnicode_TransformDecimalAndSpaceToASCII() */
+static PyObject *
+unicode_transformdecimalandspacetoascii(PyObject *self, PyObject *arg)
+{
+    if (arg == Py_None) {
+        arg = NULL;
+    }
+    return _PyUnicode_TransformDecimalAndSpaceToASCII(arg);
+}
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -1304,6 +1315,7 @@ static PyMethodDef module_functions[] = {
     {"_PyTime_ObjectToTimeval",   test_pytime_object_to_timeval,  METH_VARARGS},
     {"_PyTraceMalloc_GetTraceback", tracemalloc_get_traceback, METH_VARARGS},
     {"test_tstate_capi", test_tstate_capi, METH_NOARGS, NULL},
+    {"_PyUnicode_TransformDecimalAndSpaceToASCII", unicode_transformdecimalandspacetoascii, METH_O},
     {NULL, NULL} /* sentinel */
 };
 
