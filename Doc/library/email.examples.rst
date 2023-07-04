@@ -55,7 +55,7 @@ Up to the prompt, the output from the above is:
 
     To: Penelope Pussycat <penelope@example.com>, Fabrette Pussycat <fabrette@example.com>
     From: Pepé Le Pew <pepe@example.com>
-    Subject: Pourquoi pas des asperges pour ce midi?
+    Subject: Pourquoi pas des asperges pour ce midi ?
 
     Salut!
 

@@ -8,7 +8,7 @@ from email.utils import make_msgid
 
 # Create the base text message.
 msg = EmailMessage()
-msg['Subject'] = "Pourquoi pas des asperges pour ce midi?"
+msg['Subject'] = "Pourquoi pas des asperges pour ce midi ?"
 msg['From'] = Address("Pepé Le Pew", "pepe", "example.com")
 msg['To'] = (Address("Penelope Pussycat", "penelope", "example.com"),
              Address("Fabrette Pussycat", "fabrette", "example.com"))
