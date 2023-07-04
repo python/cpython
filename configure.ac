@@ -1058,6 +1058,16 @@ cat > conftest.c <<EOF
 #  else
 #   error unknown platform triplet
 #  endif
+# elif defined(__loongarch64)
+#    if defined(__loongarch_double_float)
+	loongarch64-linux-gnu
+#    elif defined(__loongarch_single_float)
+	loongarch64-linux-gnuf32
+#    elif defined(__loongarch_soft_float)
+	loongarch64-linux-gnusf
+#    else
+#      error unknown platform triplet
+#    endif
 # else
 #   error unknown platform triplet
 # endif
