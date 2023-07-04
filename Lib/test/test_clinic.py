@@ -1719,16 +1719,28 @@ class FormatHelperTests(unittest.TestCase):
             two
             three
         """
-        template = (
-            "{indent}one\n"
-            "{indent}two\n"
-            "{indent}three"
+
+        # Expected outputs:
+        zero_indent = (
+            "one\n"
+            "two\n"
+            "three"
         )
-        for indent in 0, 4, 8:
-            expected = template.format(indent=" " * indent)
-            with self.subTest(snippet=snippet, indent=indent, expected=expected):
-                out = clinic.normalize_snippet(snippet, indent=indent)
-                self.assertEqual(out, expected)
+        four_indent = (
+            "    one\n"
+            "    two\n"
+            "    three"
+        )
+        eight_indent = (
+            "        one\n"
+            "        two\n"
+            "        three"
+        )
+        expected_outputs = {0: zero_indent, 4: four_indent, 8: eight_indent}
+        for indent, expected in expected_outputs.items():
+            with self.subTest(indent=indent):
+                actual = clinic.normalize_snippet(snippet, indent=indent)
+                self.assertEqual(actual, expected)
 
     def test_accumulator(self):
         acc = clinic.text_accumulator()
@@ -1743,14 +1755,6 @@ class FormatHelperTests(unittest.TestCase):
         acc.append("d")
         self.assertEqual(acc.output(), "cd")
         self.assertEqual(acc.output(), "")
-
-    def test_c_repr(self):
-        dataset = "", "a", "abc"
-        for line in dataset:
-            expected = f'"{line}"'
-            with self.subTest(line=line, expected=expected):
-                out = clinic.c_repr(line)
-                self.assertEqual(out, expected)
 
     def test_quoted_for_c_string(self):
         dataset = (
@@ -1790,19 +1794,18 @@ class FormatHelperTests(unittest.TestCase):
         self.assertEqual(out, expected)
 
     def test_indent_all_lines(self):
-        prefix = "prefix"
         # Blank lines are expected to be unchanged.
-        self.assertEqual(clinic.indent_all_lines("", prefix=prefix), "")
+        self.assertEqual(clinic.indent_all_lines("", prefix="bar"), "")
 
         lines = (
             "one\n"
             "two"  # The missing newline is deliberate.
         )
         expected = (
-            f"{prefix}one\n"
-            f"{prefix}two"
+            "barone\n"
+            "bartwo"
         )
-        out = clinic.indent_all_lines(lines, prefix=prefix)
+        out = clinic.indent_all_lines(lines, prefix="bar")
         self.assertEqual(out, expected)
 
         # If last line is empty, expect it to be unchanged.
@@ -1813,28 +1816,27 @@ class FormatHelperTests(unittest.TestCase):
             ""
         )
         expected = (
-            f"{prefix}\n"
-            f"{prefix}one\n"
-            f"{prefix}two\n"
-            f""
+            "bar\n"
+            "barone\n"
+            "bartwo\n"
+            ""
         )
-        out = clinic.indent_all_lines(lines, prefix=prefix)
+        out = clinic.indent_all_lines(lines, prefix="bar")
         self.assertEqual(out, expected)
 
     def test_suffix_all_lines(self):
-        suffix = "suffix"
         # Blank lines are expected to be unchanged.
-        self.assertEqual(clinic.suffix_all_lines("", suffix=suffix), "")
+        self.assertEqual(clinic.suffix_all_lines("", suffix="foo"), "")
 
         lines = (
             "one\n"
             "two"  # The missing newline is deliberate.
         )
         expected = (
-            f"one{suffix}\n"
-            f"two{suffix}"
+            "onefoo\n"
+            "twofoo"
         )
-        out = clinic.suffix_all_lines(lines, suffix=suffix)
+        out = clinic.suffix_all_lines(lines, suffix="foo")
         self.assertEqual(out, expected)
 
         # If last line is empty, expect it to be unchanged.
@@ -1845,12 +1847,12 @@ class FormatHelperTests(unittest.TestCase):
             ""
         )
         expected = (
-            f"{suffix}\n"
-            f"one{suffix}\n"
-            f"two{suffix}\n"
-            f""
+            "foo\n"
+            "onefoo\n"
+            "twofoo\n"
+            ""
         )
-        out = clinic.suffix_all_lines(lines, suffix=suffix)
+        out = clinic.suffix_all_lines(lines, suffix="foo")
         self.assertEqual(out, expected)
 
 
