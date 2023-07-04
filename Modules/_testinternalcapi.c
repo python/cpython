@@ -1264,6 +1264,38 @@ unicode_transformdecimalandspacetoascii(PyObject *self, PyObject *arg)
 }
 
 
+struct atexit_data {
+    int called;
+};
+
+static void
+callback(void *data)
+{
+    ((struct atexit_data *)data)->called += 1;
+}
+
+static PyObject *
+test_atexit(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyThreadState *oldts = PyThreadState_Swap(NULL);
+    PyThreadState *tstate = Py_NewInterpreter();
+
+    struct atexit_data data = {0};
+    int res = _Py_AtExit(tstate->interp, callback, (void *)&data);
+    Py_EndInterpreter(tstate);
+    PyThreadState_Swap(oldts);
+    if (res < 0) {
+        return NULL;
+    }
+
+    if (data.called == 0) {
+        PyErr_SetString(PyExc_RuntimeError, "atexit callback not called");
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -1316,6 +1348,7 @@ static PyMethodDef module_functions[] = {
     {"_PyTraceMalloc_GetTraceback", tracemalloc_get_traceback, METH_VARARGS},
     {"test_tstate_capi", test_tstate_capi, METH_NOARGS, NULL},
     {"_PyUnicode_TransformDecimalAndSpaceToASCII", unicode_transformdecimalandspacetoascii, METH_O},
+    {"test_atexit", test_atexit, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
