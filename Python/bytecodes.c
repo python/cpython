@@ -2415,12 +2415,14 @@ dummy_func(
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
                         goto error;
                     }
-                    monitor_raise(tstate, frame, next_instr-1);
+                    monitor_raise(tstate, frame, frame->prev_instr);
                     _PyErr_Clear(tstate);
                 }
                 /* iterator ended normally */
+                #if ENABLE_SPECIALIZATION
                 assert(next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg].op.code == END_FOR ||
                        next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg].op.code == INSTRUMENTED_END_FOR);
+                #endif
                 Py_DECREF(iter);
                 /* Jump forward oparg, then skip following END_FOR instruction */
                 JUMP_POP_DISPATCH(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1, 1);
