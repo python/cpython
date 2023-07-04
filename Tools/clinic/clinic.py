@@ -658,7 +658,7 @@ def declare_parser(f: Function, *, hasformat=False) -> str:
     return normalize_snippet(declarations)
 
 
-def wrap_declarations(text, length=78):
+def wrap_declarations(text: str, length=78) -> str:
     """
     A simple-minded text wrapper for C function declarations.
 
@@ -680,14 +680,14 @@ def wrap_declarations(text, length=78):
         if not after_l_paren:
             lines.append(line)
             continue
-        parameters, _, after_r_paren = after_l_paren.partition(')')
+        in_paren, _, after_r_paren = after_l_paren.partition(')')
         if not _:
             lines.append(line)
             continue
-        if ',' not in parameters:
+        if ',' not in in_paren:
             lines.append(line)
             continue
-        parameters = [x.strip() + ", " for x in parameters.split(',')]
+        parameters = [x.strip() + ", " for x in in_paren.split(',')]
         prefix += "("
         if len(prefix) < length:
             spaces = " " * len(prefix)
