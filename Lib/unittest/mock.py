@@ -3070,7 +3070,7 @@ class ThreadingMixin(Base):
                    f" timeout({timeout}).")
             raise AssertionError(msg)
 
-    def wait_until_any_call(self, *args, **kwargs):
+    def wait_until_any_call_with(self, *args, **kwargs):
         """Wait until the mock object is called with given args.
 
         Waits for the timeout in seconds provided in the constructor.
