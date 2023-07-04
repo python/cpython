@@ -585,7 +585,7 @@ def strip_leading_and_trailing_blank_lines(s: str) -> str:
     return '\n'.join(lines)
 
 @functools.lru_cache()
-def normalize_snippet(s, *, indent=0):
+def normalize_snippet(s: str, *, indent=0) -> str:
     """
     Reformats s:
         * removes leading and trailing blank lines
