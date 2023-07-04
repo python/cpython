@@ -1518,5 +1518,111 @@ class ClinicFunctionalTest(unittest.TestCase):
             ac_tester.gh_99240_double_free('a', '\0b')
 
 
+class PermutationTests(unittest.TestCase):
+    """Test permutation support functions."""
+
+    def test_permute_left_option_groups(self):
+        expected = (
+            (),
+            (3,),
+            (2, 3),
+            (1, 2, 3),
+        )
+        data = list(zip([1, 2, 3]))  # Generate a list of 1-tuples.
+        actual = tuple(clinic.permute_left_option_groups(data))
+        self.assertEqual(actual, expected)
+
+    def test_permute_right_option_groups(self):
+        expected = (
+            (),
+            (1,),
+            (1, 2),
+            (1, 2, 3),
+        )
+        data = list(zip([1, 2, 3]))  # Generate a list of 1-tuples.
+        actual = tuple(clinic.permute_right_option_groups(data))
+        self.assertEqual(actual, expected)
+
+    def test_permute_optional_groups(self):
+        empty = {
+            "left": (), "required": (), "right": (),
+            "expected": ((),),
+        }
+        noleft1 = {
+            "left": (), "required": ("b",), "right": ("c",),
+            "expected": (
+                ("b",),
+                ("b", "c"),
+            ),
+        }
+        noleft2 = {
+            "left": (), "required": ("b", "c",), "right": ("d",),
+            "expected": (
+                ("b", "c"),
+                ("b", "c", "d"),
+            ),
+        }
+        noleft3 = {
+            "left": (), "required": ("b", "c",), "right": ("d", "e"),
+            "expected": (
+                ("b", "c"),
+                ("b", "c", "d"),
+                ("b", "c", "d", "e"),
+            ),
+        }
+        noright1 = {
+            "left": ("a",), "required": ("b",), "right": (),
+            "expected": (
+                ("b",),
+                ("a", "b"),
+            ),
+        }
+        noright2 = {
+            "left": ("a",), "required": ("b", "c"), "right": (),
+            "expected": (
+                ("b", "c"),
+                ("a", "b", "c"),
+            ),
+        }
+        noright3 = {
+            "left": ("a", "b"), "required": ("c",), "right": (),
+            "expected": (
+                ("c",),
+                ("b", "c"),
+                ("a", "b", "c"),
+            ),
+        }
+        leftandright1 = {
+            "left": ("a",), "required": ("b",), "right": ("c",),
+            "expected": (
+                ("b",),
+                ("a", "b"),  # Prefer left.
+                ("a", "b", "c"),
+            ),
+        }
+        leftandright2 = {
+            "left": ("a", "b"), "required": ("c", "d"), "right": ("e", "f"),
+            "expected": (
+                ("c", "d"),
+                ("b", "c", "d"),       # Prefer left.
+                ("a", "b", "c", "d"),  # Prefer left.
+                ("a", "b", "c", "d", "e"),
+                ("a", "b", "c", "d", "e", "f"),
+            ),
+        }
+        dataset = (
+            empty,
+            noleft1, noleft2, noleft3,
+            noright1, noright2, noright3,
+            leftandright1, leftandright2,
+        )
+        for params in dataset:
+            with self.subTest(**params):
+                left, required, right, expected = params.values()
+                permutations = clinic.permute_optional_groups(left, required, right)
+                actual = tuple(permutations)
+                self.assertEqual(actual, expected)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -460,7 +460,7 @@ class PythonLanguage(Language):
 
 def permute_left_option_groups(l):
     """
-    Given [1, 2, 3], should yield:
+    Given [(1,), (2,), (3,)], should yield:
        ()
        (3,)
        (2, 3)
@@ -475,7 +475,7 @@ def permute_left_option_groups(l):
 
 def permute_right_option_groups(l):
     """
-    Given [1, 2, 3], should yield:
+    Given [(1,), (2,), (3,)], should yield:
       ()
       (1,)
       (1, 2)
