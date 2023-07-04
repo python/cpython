@@ -1,7 +1,5 @@
 /* bytes object implementation */
 
-#define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_bytesobject.h"   // _PyBytes_Find(), _PyBytes_Repeat()
@@ -2154,7 +2152,7 @@ bytes.maketrans
     to: Py_buffer
     /
 
-Return a translation table useable for the bytes or bytearray translate method.
+Return a translation table usable for the bytes or bytearray translate method.
 
 The returned table will be one where each byte in frm is mapped to the byte at
 the same position in to.
@@ -2164,7 +2162,7 @@ The bytes objects frm and to must be of the same length.
 
 static PyObject *
 bytes_maketrans_impl(Py_buffer *frm, Py_buffer *to)
-/*[clinic end generated code: output=a36f6399d4b77f6f input=de7a8fc5632bb8f1]*/
+/*[clinic end generated code: output=a36f6399d4b77f6f input=a3bd00d430a0979f]*/
 {
     return _Py_bytes_maketrans(frm, to);
 }

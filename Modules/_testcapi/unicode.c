@@ -1,6 +1,5 @@
 #include <stddef.h>               // ptrdiff_t
 
-#define PY_SSIZE_T_CLEAN
 #include "parts.h"
 
 static struct PyModuleDef *_testcapimodule = NULL;  // set at initialization
@@ -661,14 +660,6 @@ unicode_getdefaultencoding(PyObject *self, PyObject *Py_UNUSED(ignored))
     return PyBytes_FromString(s);
 }
 
-/* Test _PyUnicode_TransformDecimalAndSpaceToASCII() */
-static PyObject *
-unicode_transformdecimalandspacetoascii(PyObject *self, PyObject *arg)
-{
-    NULLABLE(arg);
-    return _PyUnicode_TransformDecimalAndSpaceToASCII(arg);
-}
-
 /* Test PyUnicode_DecodeUTF8() */
 static PyObject *
 unicode_decodeutf8(PyObject *self, PyObject *args)
@@ -1101,7 +1092,7 @@ test_string_from_format(PyObject *self, PyObject *Py_UNUSED(ignored))
     }                                                               \
     else if (result == NULL)                                        \
         return NULL;                                                \
-    else if (!_PyUnicode_EqualToASCIIString(result, EXPECTED)) {    \
+    else if (PyUnicode_CompareWithASCIIString(result, EXPECTED) != 0) { \
         PyErr_Format(PyExc_AssertionError,                          \
                      "test_string_from_format: failed at \"%s\" "   \
                      "expected \"%s\" got \"%s\"",                  \
@@ -1545,7 +1536,6 @@ static PyMethodDef TestMethods[] = {
     {"unicode_decodeutf8",       unicode_decodeutf8,             METH_VARARGS},
     {"unicode_decodeutf8stateful",unicode_decodeutf8stateful,    METH_VARARGS},
     {"unicode_getdefaultencoding",unicode_getdefaultencoding,    METH_NOARGS},
-    {"unicode_transformdecimalandspacetoascii", unicode_transformdecimalandspacetoascii, METH_O},
     {"unicode_concat",           unicode_concat,                 METH_VARARGS},
     {"unicode_splitlines",       unicode_splitlines,             METH_VARARGS},
     {"unicode_split",            unicode_split,                  METH_VARARGS},

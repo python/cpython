@@ -122,7 +122,7 @@ are always available.  They are listed here in alphabetical order.
 
    Convert an integer number to a binary string prefixed with "0b". The result
    is a valid Python expression. If *x* is not a Python :class:`int` object, it
-   has to define an :meth:`__index__` method that returns an integer. Some
+   has to define an :meth:`~object.__index__` method that returns an integer. Some
    examples:
 
       >>> bin(3)
@@ -383,9 +383,9 @@ are always available.  They are listed here in alphabetical order.
    ``0j``.
 
    For a general Python object ``x``, ``complex(x)`` delegates to
-   ``x.__complex__()``.  If ``__complex__()`` is not defined then it falls back
-   to :meth:`__float__`.  If ``__float__()`` is not defined then it falls back
-   to :meth:`__index__`.
+   ``x.__complex__()``.  If :meth:`~object.__complex__` is not defined then it falls back
+   to :meth:`~object.__float__`.  If :meth:`!__float__` is not defined then it falls back
+   to :meth:`~object.__index__`.
 
    .. note::
 
@@ -400,8 +400,8 @@ are always available.  They are listed here in alphabetical order.
       Grouping digits with underscores as in code literals is allowed.
 
    .. versionchanged:: 3.8
-      Falls back to :meth:`__index__` if :meth:`__complex__` and
-      :meth:`__float__` are not defined.
+      Falls back to :meth:`~object.__index__` if :meth:`~object.__complex__` and
+      :meth:`~object.__float__` are not defined.
 
 
 .. function:: delattr(object, name)
@@ -681,8 +681,8 @@ are always available.  They are listed here in alphabetical order.
    float, an :exc:`OverflowError` will be raised.
 
    For a general Python object ``x``, ``float(x)`` delegates to
-   ``x.__float__()``.  If ``__float__()`` is not defined then it falls back
-   to :meth:`__index__`.
+   ``x.__float__()``.  If :meth:`~object.__float__` is not defined then it falls back
+   to :meth:`~object.__index__`.
 
    If no argument is given, ``0.0`` is returned.
 
@@ -708,7 +708,7 @@ are always available.  They are listed here in alphabetical order.
       *x* is now a positional-only parameter.
 
    .. versionchanged:: 3.8
-      Falls back to :meth:`__index__` if :meth:`__float__` is not defined.
+      Falls back to :meth:`~object.__index__` if :meth:`~object.__float__` is not defined.
 
 
 .. index::
@@ -822,7 +822,7 @@ are always available.  They are listed here in alphabetical order.
 
    Convert an integer number to a lowercase hexadecimal string prefixed with
    "0x". If *x* is not a Python :class:`int` object, it has to define an
-   :meth:`__index__` method that returns an integer. Some examples:
+   :meth:`~object.__index__` method that returns an integer. Some examples:
 
       >>> hex(255)
       '0xff'
@@ -893,9 +893,9 @@ are always available.  They are listed here in alphabetical order.
            int(x, base=10)
 
    Return an integer object constructed from a number or string *x*, or return
-   ``0`` if no arguments are given.  If *x* defines :meth:`__int__`,
-   ``int(x)`` returns ``x.__int__()``.  If *x* defines :meth:`__index__`,
-   it returns ``x.__index__()``.  If *x* defines :meth:`__trunc__`,
+   ``0`` if no arguments are given.  If *x* defines :meth:`~object.__int__`,
+   ``int(x)`` returns ``x.__int__()``.  If *x* defines :meth:`~object.__index__`,
+   it returns ``x.__index__()``.  If *x* defines :meth:`~object.__trunc__`,
    it returns ``x.__trunc__()``.
    For floating point numbers, this truncates towards zero.
 
@@ -932,10 +932,10 @@ are always available.  They are listed here in alphabetical order.
       *x* is now a positional-only parameter.
 
    .. versionchanged:: 3.8
-      Falls back to :meth:`__index__` if :meth:`__int__` is not defined.
+      Falls back to :meth:`~object.__index__` if :meth:`~object.__int__` is not defined.
 
    .. versionchanged:: 3.11
-      The delegation to :meth:`__trunc__` is deprecated.
+      The delegation to :meth:`~object.__trunc__` is deprecated.
 
    .. versionchanged:: 3.11
       :class:`int` string inputs and string representations can be limited to
@@ -1138,7 +1138,7 @@ are always available.  They are listed here in alphabetical order.
 
   Convert an integer number to an octal string prefixed with "0o".  The result
   is a valid Python expression. If *x* is not a Python :class:`int` object, it
-  has to define an :meth:`__index__` method that returns an integer. For
+  has to define an :meth:`~object.__index__` method that returns an integer. For
   example:
 
       >>> oct(8)

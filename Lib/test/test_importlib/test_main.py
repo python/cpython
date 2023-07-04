@@ -4,7 +4,6 @@ import unittest
 import warnings
 import importlib.metadata
 import contextlib
-import itertools
 
 try:
     import pyfakefs.fake_filesystem_unittest as ffs

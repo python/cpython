@@ -7,6 +7,10 @@ try:
     import _testcapi
 except ImportError:
     _testcapi = None
+try:
+    import _testinternalcapi
+except ImportError:
+    _testinternalcapi = None
 
 
 NULL = None
@@ -329,7 +333,7 @@ class CAPITest(unittest.TestCase):
             pythonapi, py_object, sizeof,
             c_int, c_long, c_longlong, c_ssize_t,
             c_uint, c_ulong, c_ulonglong, c_size_t, c_void_p,
-            sizeof, c_wchar, c_wchar_p)
+            c_wchar, c_wchar_p)
         name = "PyUnicode_FromFormat"
         _PyUnicode_FromFormat = getattr(pythonapi, name)
         _PyUnicode_FromFormat.argtypes = (c_char_p,)
@@ -913,10 +917,10 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(getdefaultencoding(), b'utf-8')
 
     @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
+    @unittest.skipIf(_testinternalcapi is None, 'need _testinternalcapi module')
     def test_transform_decimal_and_space(self):
         """Test _PyUnicode_TransformDecimalAndSpaceToASCII()"""
-        from _testcapi import unicode_transformdecimalandspacetoascii as transform_decimal
+        from _testinternalcapi import _PyUnicode_TransformDecimalAndSpaceToASCII as transform_decimal
 
         self.assertEqual(transform_decimal('123'),
                          '123')
