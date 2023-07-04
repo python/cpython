@@ -561,7 +561,7 @@ def permute_right_option_groups(
 
 def permute_optional_groups(
         left: Sequence[ParamGroup],
-        required: Iterable[Parameter],
+        required: ParamGroup,
         right: Sequence[ParamGroup]
 ) -> tuple[ParamTuple, ...]:
     """
