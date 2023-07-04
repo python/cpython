@@ -919,10 +919,12 @@ enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC00, INSTR_FMT
 #define HAS_CONST_FLAG (2)
 #define HAS_NAME_FLAG (4)
 #define HAS_JUMP_FLAG (8)
+#define NO_EXCEPTION_FLAG (16)
 #define OPCODE_HAS_ARG(OP) (_PyOpcode_opcode_metadata[(OP)].flags & (HAS_ARG_FLAG))
 #define OPCODE_HAS_CONST(OP) (_PyOpcode_opcode_metadata[(OP)].flags & (HAS_CONST_FLAG))
 #define OPCODE_HAS_NAME(OP) (_PyOpcode_opcode_metadata[(OP)].flags & (HAS_NAME_FLAG))
 #define OPCODE_HAS_JUMP(OP) (_PyOpcode_opcode_metadata[(OP)].flags & (HAS_JUMP_FLAG))
+#define OPCODE_NO_EXCEPTION(OP) (_PyOpcode_opcode_metadata[(OP)].flags & (NO_EXCEPTION_FLAG))
 struct opcode_metadata {
     bool valid_entry;
     enum InstructionFormat instr_format;
@@ -947,22 +949,22 @@ extern const char * const _PyOpcode_uop_name[512];
 #endif
 #else
 const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {
-    [NOP] = { true, INSTR_FMT_IX, 0 },
+    [NOP] = { true, INSTR_FMT_IX, NO_EXCEPTION_FLAG },
     [RESUME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [INSTRUMENTED_RESUME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [LOAD_CLOSURE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [LOAD_FAST_CHECK] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [LOAD_FAST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
-    [LOAD_FAST_AND_CLEAR] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
+    [LOAD_FAST_AND_CLEAR] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | NO_EXCEPTION_FLAG },
     [LOAD_FAST_LOAD_FAST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [LOAD_CONST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_CONST_FLAG },
-    [STORE_FAST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
-    [STORE_FAST_MAYBE_NULL] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
+    [STORE_FAST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | NO_EXCEPTION_FLAG },
+    [STORE_FAST_MAYBE_NULL] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | NO_EXCEPTION_FLAG },
     [STORE_FAST_LOAD_FAST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
-    [STORE_FAST_STORE_FAST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
-    [POP_TOP] = { true, INSTR_FMT_IX, 0 },
-    [PUSH_NULL] = { true, INSTR_FMT_IX, 0 },
-    [END_FOR] = { true, INSTR_FMT_IB, 0 },
+    [STORE_FAST_STORE_FAST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | NO_EXCEPTION_FLAG },
+    [POP_TOP] = { true, INSTR_FMT_IX, NO_EXCEPTION_FLAG },
+    [PUSH_NULL] = { true, INSTR_FMT_IX, NO_EXCEPTION_FLAG },
+    [END_FOR] = { true, INSTR_FMT_IB, NO_EXCEPTION_FLAG },
     [INSTRUMENTED_END_FOR] = { true, INSTR_FMT_IX, 0 },
     [END_SEND] = { true, INSTR_FMT_IX, 0 },
     [INSTRUMENTED_END_SEND] = { true, INSTR_FMT_IX, 0 },
@@ -1109,10 +1111,10 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {
     [BEFORE_ASYNC_WITH] = { true, INSTR_FMT_IX, 0 },
     [BEFORE_WITH] = { true, INSTR_FMT_IX, 0 },
     [WITH_EXCEPT_START] = { true, INSTR_FMT_IX, 0 },
-    [SETUP_FINALLY] = { true, INSTR_FMT_IX, 0 },
-    [SETUP_CLEANUP] = { true, INSTR_FMT_IX, 0 },
-    [SETUP_WITH] = { true, INSTR_FMT_IX, 0 },
-    [POP_BLOCK] = { true, INSTR_FMT_IX, 0 },
+    [SETUP_FINALLY] = { true, INSTR_FMT_IX, NO_EXCEPTION_FLAG },
+    [SETUP_CLEANUP] = { true, INSTR_FMT_IX, NO_EXCEPTION_FLAG },
+    [SETUP_WITH] = { true, INSTR_FMT_IX, NO_EXCEPTION_FLAG },
+    [POP_BLOCK] = { true, INSTR_FMT_IX, NO_EXCEPTION_FLAG },
     [PUSH_EXC_INFO] = { true, INSTR_FMT_IX, 0 },
     [LOAD_ATTR_METHOD_WITH_VALUES] = { true, INSTR_FMT_IBC00000000, HAS_ARG_FLAG },
     [LOAD_ATTR_METHOD_NO_DICT] = { true, INSTR_FMT_IBC00000000, HAS_ARG_FLAG },
@@ -1150,7 +1152,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {
     [FORMAT_WITH_SPEC] = { true, INSTR_FMT_IX, 0 },
     [COPY] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [BINARY_OP] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG },
-    [SWAP] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
+    [SWAP] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | NO_EXCEPTION_FLAG },
     [INSTRUMENTED_INSTRUCTION] = { true, INSTR_FMT_IX, 0 },
     [INSTRUMENTED_JUMP_FORWARD] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [INSTRUMENTED_JUMP_BACKWARD] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
@@ -1158,7 +1160,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {
     [INSTRUMENTED_POP_JUMP_IF_FALSE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [INSTRUMENTED_POP_JUMP_IF_NONE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [INSTRUMENTED_POP_JUMP_IF_NOT_NONE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
-    [EXTENDED_ARG] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
+    [EXTENDED_ARG] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | NO_EXCEPTION_FLAG },
     [CACHE] = { true, INSTR_FMT_IX, 0 },
     [RESERVED] = { true, INSTR_FMT_IX, 0 },
 };

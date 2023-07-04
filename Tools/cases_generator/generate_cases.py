@@ -252,6 +252,7 @@ class InstructionFlags:
     HAS_CONST_FLAG: bool
     HAS_NAME_FLAG: bool
     HAS_JUMP_FLAG: bool
+    NO_EXCEPTION_FLAG: bool
 
     def __post_init__(self):
         self.bitmask = {
@@ -265,11 +266,12 @@ class InstructionFlags:
             HAS_CONST_FLAG=variable_used(instr, "FRAME_CO_CONSTS"),
             HAS_NAME_FLAG=variable_used(instr, "FRAME_CO_NAMES"),
             HAS_JUMP_FLAG=variable_used(instr, "JUMPBY"),
+            NO_EXCEPTION_FLAG=no_exception(instr),
         )
 
     @staticmethod
     def newEmpty():
-        return InstructionFlags(False, False, False, False)
+        return InstructionFlags(False, False, False, False, False)
 
     def add(self, other: "InstructionFlags") -> None:
         for name, value in dataclasses.asdict(other).items():
@@ -1583,6 +1585,19 @@ def variable_used(node: parser.Node, name: str) -> bool:
     return any(
         token.kind == "IDENTIFIER" and token.text == name for token in node.tokens
     )
+
+
+def no_exception(node: parser.Node) -> bool:
+    if node.name.startswith("JUMP"):
+        return False
+    for token in node.tokens:
+        token_text = token.text.lower()
+        if token.kind == "IDENTIFIER":
+            if token_text in ("error_if", "go_to_instruction"):
+                return False
+            if token_text.startswith("py") or token_text.startswith("_py"):
+                return False
+    return True
 
 
 def main():
