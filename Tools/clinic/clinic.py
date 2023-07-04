@@ -3922,7 +3922,9 @@ def correct_name_for_self(
         return "PyTypeObject *", "type"
     raise RuntimeError("Unhandled type of function f: " + repr(f.kind))
 
-def required_type_for_self_for_parser(f):
+def required_type_for_self_for_parser(
+        f: Function
+) -> str | None:
     type, _ = correct_name_for_self(f)
     if f.kind in (METHOD_INIT, METHOD_NEW, STATIC_METHOD, CLASS_METHOD):
         return type
