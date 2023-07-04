@@ -455,9 +455,11 @@ translate_bytecode_to_trace(
             }
             case JUMP_BACKWARD:
             {
-                if (instr + 2 - operand == initial_instr) {
+                if (instr + 2 - operand == initial_instr
+                    && trace_length + 3 <= max_length)
+                {
                     ADD_TO_TRACE(JUMP_TO_TOP, 0);
-                    break;
+                    goto done;
                 }
                 // Else fall through!
             }
