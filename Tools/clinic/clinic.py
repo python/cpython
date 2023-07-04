@@ -758,7 +758,7 @@ class CLanguage(Language):
     def render(
             self,
             clinic: Clinic | None,
-            signatures
+            signatures: Iterable[Function]
     ) -> str:
         function = None
         for o in signatures:
