@@ -2619,9 +2619,9 @@ class LandMine:
 
 
 def add_c_converter(
-        f: ConverterType,
+        f: type[CConverter],
         name: str | None = None
-) -> ConverterType:
+) -> type[CConverter]:
     if not name:
         name = f.__name__
         if not name.endswith('_converter'):
