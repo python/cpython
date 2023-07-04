@@ -575,7 +575,7 @@ def permute_optional_groups(left, required, right):
     return tuple(accumulator)
 
 
-def strip_leading_and_trailing_blank_lines(s):
+def strip_leading_and_trailing_blank_lines(s: str) -> str:
     lines = s.rstrip().split('\n')
     while lines:
         line = lines[0]
