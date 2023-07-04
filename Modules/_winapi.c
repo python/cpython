@@ -36,6 +36,7 @@
 
 #include "Python.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_pystate.h"       // _PyInterpreterState_GET
 #include "structmember.h"         // PyMemberDef
 
 
@@ -133,7 +134,7 @@ overlapped_dealloc(OverlappedObject *self)
         {
             /* The operation is no longer pending -- nothing to do. */
         }
-        else if (_Py_IsInterpreterFinalizing(PyInterpreterState_Get()))
+        else if (_Py_IsInterpreterFinalizing(_PyInterpreterState_GET()))
         {
             /* The operation is still pending -- give a warning.  This
                will probably only happen on Windows XP. */
@@ -796,6 +797,17 @@ getenvironment(PyObject* environment)
     }
 
     envsize = PyList_GET_SIZE(keys);
+
+    if (envsize == 0) {
+        // A environment block must be terminated by two null characters --
+        // one for the last string and one for the block.
+        buffer = PyMem_Calloc(2, sizeof(wchar_t));
+        if (!buffer) {
+            PyErr_NoMemory();
+        }
+        goto cleanup;
+    }
+
     if (PyList_GET_SIZE(values) != envsize) {
         PyErr_SetString(PyExc_RuntimeError,
             "environment changed size during iteration");
@@ -869,7 +881,8 @@ getenvironment(PyObject* environment)
     *p++ = L'\0';
     assert(p == end);
 
- error:
+cleanup:
+error:
     Py_XDECREF(keys);
     Py_XDECREF(values);
     return buffer;

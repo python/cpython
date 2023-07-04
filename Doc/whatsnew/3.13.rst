@@ -106,12 +106,17 @@ built on debug mode <debug-build>`.
 pathlib
 -------
 
+* Add :exc:`pathlib.UnsupportedOperation`, which is raised instead of
+  :exc:`NotImplementedError` when a path operation isn't supported.
+  (Contributed by Barney Gale in :gh:`89812`.)
+
 * Add support for recursive wildcards in :meth:`pathlib.PurePath.match`.
   (Contributed by Barney Gale in :gh:`73435`.)
 
-* Add *follow_symlinks* keyword-only argument to :meth:`pathlib.Path.glob` and
-  :meth:`~pathlib.Path.rglob`.
-  (Contributed by Barney Gale in :gh:`77609`.)
+* Add *follow_symlinks* keyword-only argument to :meth:`pathlib.Path.glob`,
+  :meth:`~pathlib.Path.rglob`, :meth:`~pathlib.Path.is_file`, and
+  :meth:`~pathlib.Path.is_dir`.
+  (Contributed by Barney Gale in :gh:`77609` and :gh:`105793`.)
 
 traceback
 ---------
@@ -119,6 +124,14 @@ traceback
 * Add *show_group* paramter to :func:`traceback.TracebackException.format_exception_only`
   to format the nested exceptions of a :exc:`BaseExceptionGroup` instance, recursively.
   (Contributed by Irit Katriel in :gh:`105292`.)
+
+typing
+------
+
+* Add :func:`typing.get_protocol_members` to return the set of members
+  defining a :class:`typing.Protocol`. Add :func:`typing.is_protocol` to
+  check whether a class is a :class:`typing.Protocol`. (Contributed by Jelle Zijlstra in
+  :gh:`104873`.)
 
 Optimizations
 =============
@@ -133,6 +146,31 @@ Deprecated
   methods of the :class:`wave.Wave_read` and :class:`wave.Wave_write` classes.
   They will be removed in Python 3.15.
   (Contributed by Victor Stinner in :gh:`105096`.)
+* Creating a :class:`typing.NamedTuple` class using keyword arguments to denote
+  the fields (``NT = NamedTuple("NT", x=int, y=int)``) is deprecated, and will
+  be disallowed in Python 3.15. Use the class-based syntax or the functional
+  syntax instead. (Contributed by Alex Waygood in :gh:`105566`.)
+* When using the functional syntax to create a :class:`typing.NamedTuple`
+  class or a :class:`typing.TypedDict` class, failing to pass a value to the
+  'fields' parameter (``NT = NamedTuple("NT")`` or ``TD = TypedDict("TD")``) is
+  deprecated. Passing ``None`` to the 'fields' parameter
+  (``NT = NamedTuple("NT", None)`` or ``TD = TypedDict("TD", None)``) is also
+  deprecated. Both will be disallowed in Python 3.15. To create a NamedTuple
+  class with 0 fields, use ``class NT(NamedTuple): pass`` or
+  ``NT = NamedTuple("NT", [])``. To create a TypedDict class with 0 fields, use
+  ``class TD(TypedDict): pass`` or ``TD = TypedDict("TD", {})``.
+  (Contributed by Alex Waygood in :gh:`105566` and :gh:`105570`.)
+
+* :mod:`array`'s ``'u'`` format code, deprecated in docs since Python 3.3,
+  emits :exc:`DeprecationWarning` since 3.13
+  and will be removed in Python 3.16.
+  Use the ``'w'`` format code instead.
+  (contributed by Hugo van Kemenade in :gh:`80480`)
+
+* :mod:`ctypes`: Deprecate undocumented :func:`!ctypes.SetPointerType`
+  and :func:`!ctypes.ARRAY` functions.
+  Replace ``ctypes.SetPointerType(item_type, size)`` with ``item_type * size``.
+  (Contributed by Victor Stinner in :gh:`105733`.)
 
 
 Removed
@@ -329,6 +367,10 @@ Removed
   attribute instead.
   (Contributed by Nikita Sobolev in :gh:`105546`.)
 
+* Remove undocumented, never working, and deprecated ``re.template`` function
+  and ``re.TEMPLATE`` flag (and ``re.T`` alias).
+  (Contributed by Serhiy Storchaka and Nikita Sobolev in :gh:`105687`.)
+
 
 Porting to Python 3.13
 ======================
@@ -373,6 +415,9 @@ Build Changes
   :file:`!configure`.
   (Contributed by Christian Heimes in :gh:`89886`.)
 
+* SQLite 3.15.2 or newer is required to build the :mod:`sqlite3` extension module.
+  (Contributed by Erlend Aasland in :gh:`105875`.)
+
 
 C API Changes
 =============
@@ -386,6 +431,21 @@ New Features
   APIs accepting the format codes always use ``Py_ssize_t`` for ``#`` formats.
   (Contributed by Inada Naoki in :gh:`104922`.)
 
+* Add :c:func:`PyImport_AddModuleRef`: similar to
+  :c:func:`PyImport_AddModule`, but return a :term:`strong reference` instead
+  of a :term:`borrowed reference`.
+  (Contributed by Victor Stinner in :gh:`105922`.)
+
+* Add :c:func:`PyWeakref_GetRef` function: similar to
+  :c:func:`PyWeakref_GetObject` but returns a :term:`strong reference`, or
+  ``NULL`` if the referent is no longer live.
+  (Contributed by Victor Stinner in :gh:`105927`.)
+
+* If Python is built in :ref:`debug mode <debug-build>` or :option:`with
+  assertions <--with-assertions>`, :c:func:`PyTuple_SET_ITEM` and
+  :c:func:`PyList_SET_ITEM` now check the index argument with an assertion.
+  If the assertion fails, make sure that the size is set before.
+  (Contributed by Victor Stinner in :gh:`106168`.)
 
 Porting to Python 3.13
 ----------------------
@@ -416,6 +476,14 @@ Deprecated
   an alias to :c:func:`PyImport_ImportModule` since Python 3.3.
   Scheduled for removal in Python 3.15.
   (Contributed by Victor Stinner in :gh:`105396`.)
+
+* Deprecate the :c:func:`PyWeakref_GetObject` and
+  :c:func:`PyWeakref_GET_OBJECT` functions, which return a :term:`borrowed
+  reference`: use the new :c:func:`PyWeakref_GetRef` function instead, it
+  returns a :term:`strong reference`. The `pythoncapi-compat project
+  <https://github.com/python/pythoncapi-compat/>`__ can be used to get
+  :c:func:`PyWeakref_GetRef` on Python 3.12 and older.
+  (Contributed by Victor Stinner in :gh:`105927`.)
 
 Removed
 -------
@@ -512,6 +580,35 @@ Removed
 * Remove the old private, undocumented and untested ``_PyGC_FINALIZED()`` macro
   which was kept for backward compatibility with Python 3.8 and older: use
   :c:func:`PyObject_GC_IsFinalized()` instead. The `pythoncapi-compat project
-  <https://github.com/python/pythoncapi-compat/>`_ can be used to get this
+  <https://github.com/python/pythoncapi-compat/>`__ can be used to get this
   function on Python 3.8 and older.
   (Contributed by Victor Stinner in :gh:`105268`.)
+
+* Remove the old aliases to functions calling functions which were kept for
+  backward compatibility with Python 3.8 provisional API:
+
+  * ``_PyObject_CallMethodNoArgs()``: use ``PyObject_CallMethodNoArgs()``
+  * ``_PyObject_CallMethodOneArg()``: use ``PyObject_CallMethodOneArg()``
+  * ``_PyObject_CallOneArg()``: use ``PyObject_CallOneArg()``
+  * ``_PyObject_FastCallDict()``: use ``PyObject_VectorcallDict()``
+  * ``_PyObject_Vectorcall()``: use ``PyObject_Vectorcall()``
+  * ``_PyObject_VectorcallMethod()``: use ``PyObject_VectorcallMethod()``
+  * ``_PyVectorcall_Function()``: use ``PyVectorcall_Function()``
+
+  Just remove the underscore prefix to update your code.
+  (Contributed by Victor Stinner in :gh:`106084`.)
+
+* Remove private ``_PyObject_FastCall()`` function:
+  use ``PyObject_Vectorcall()`` which is available since Python 3.8
+  (:pep:`590`).
+  (Contributed by Victor Stinner in :gh:`106023`.)
+
+* Remove ``cpython/pytime.h`` header file: it only contained private functions.
+  (Contributed by Victor Stinner in :gh:`106316`.)
+
+* Remove ``_PyInterpreterState_Get()`` alias to
+  :c:func:`PyInterpreterState_Get()` which was kept for backward compatibility
+  with Python 3.8. The `pythoncapi-compat project
+  <https://github.com/python/pythoncapi-compat/>`__ can be used to get
+  :c:func:`PyInterpreterState_Get()` on Python 3.8 and older.
+  (Contributed by Victor Stinner in :gh:`106320`.)

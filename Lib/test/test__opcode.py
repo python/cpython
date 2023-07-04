@@ -15,20 +15,14 @@ class OpcodeTests(unittest.TestCase):
         self.assertEqual(stack_effect(dis.opmap['BUILD_SLICE'], 1), -1)
         self.assertEqual(stack_effect(dis.opmap['BUILD_SLICE'], 3), -2)
         self.assertRaises(ValueError, stack_effect, 30000)
-        self.assertRaises(ValueError, stack_effect, dis.opmap['BUILD_SLICE'])
-        self.assertRaises(ValueError, stack_effect, dis.opmap['POP_TOP'], 0)
         # All defined opcodes
         has_arg = dis.hasarg
         for name, code in filter(lambda item: item[0] not in dis.deoptmap, dis.opmap.items()):
             if code >= opcode.MIN_INSTRUMENTED_OPCODE:
                 continue
             with self.subTest(opname=name):
-                if code not in has_arg:
-                    stack_effect(code)
-                    self.assertRaises(ValueError, stack_effect, code, 0)
-                else:
-                    stack_effect(code, 0)
-                    self.assertRaises(ValueError, stack_effect, code)
+                stack_effect(code)
+                stack_effect(code, 0)
         # All not defined opcodes
         for code in set(range(256)) - set(dis.opmap.values()):
             with self.subTest(opcode=code):

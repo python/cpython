@@ -476,7 +476,7 @@ PyDoc_STRVAR(bytes_maketrans__doc__,
 "maketrans(frm, to, /)\n"
 "--\n"
 "\n"
-"Return a translation table useable for the bytes or bytearray translate method.\n"
+"Return a translation table usable for the bytes or bytearray translate method.\n"
 "\n"
 "The returned table will be one where each byte in frm is mapped to the byte at\n"
 "the same position in to.\n"
@@ -1060,4 +1060,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7b6e4e8b5bc4eb57 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bc4801bf1fa628f4 input=a9049054013a1b77]*/

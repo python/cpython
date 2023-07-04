@@ -32,6 +32,7 @@
 */
 
 #include "Python.h"
+#include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include <stddef.h>               // offsetof()
 

@@ -40,8 +40,6 @@ PyAPI_FUNC(int) _PyInterpreterState_HasFeature(PyInterpreterState *interp,
 PyAPI_FUNC(int) _PyInterpreterState_RequiresIDRef(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_RequireIDRef(PyInterpreterState *, int);
 
-PyAPI_FUNC(PyObject *) _PyInterpreterState_GetMainModule(PyInterpreterState *);
-
 
 /* State unique per thread */
 
@@ -261,18 +259,9 @@ struct _ts {
 
 /* other API */
 
-// Alias for backward compatibility with Python 3.8
-#define _PyInterpreterState_Get PyInterpreterState_Get
-
-/* An alias for the internal _PyThreadState_New(),
-   kept for stable ABI compatibility. */
-PyAPI_FUNC(PyThreadState *) _PyThreadState_Prealloc(PyInterpreterState *);
-
 /* Similar to PyThreadState_Get(), but don't issue a fatal error
  * if it is NULL. */
 PyAPI_FUNC(PyThreadState *) _PyThreadState_UncheckedGet(void);
-
-PyAPI_FUNC(PyObject *) _PyThreadState_GetDict(PyThreadState *tstate);
 
 // Disable tracing and profiling.
 PyAPI_FUNC(void) PyThreadState_EnterTracing(PyThreadState *tstate);
@@ -295,18 +284,8 @@ PyAPI_FUNC(int) PyGILState_Check(void);
    This function doesn't check for error. Return NULL before _PyGILState_Init()
    is called and after _PyGILState_Fini() is called.
 
-   See also _PyInterpreterState_Get() and _PyInterpreterState_GET(). */
+   See also PyInterpreterState_Get() and _PyInterpreterState_GET(). */
 PyAPI_FUNC(PyInterpreterState *) _PyGILState_GetInterpreterStateUnsafe(void);
-
-/* The implementation of sys._current_frames()  Returns a dict mapping
-   thread id to that thread's current frame.
-*/
-PyAPI_FUNC(PyObject *) _PyThread_CurrentFrames(void);
-
-/* The implementation of sys._current_exceptions()  Returns a dict mapping
-   thread id to that thread's current exception.
-*/
-PyAPI_FUNC(PyObject *) _PyThread_CurrentExceptions(void);
 
 /* Routines for advanced debuggers, requested by David Beazley.
    Don't use unless you know what you are doing! */
@@ -326,45 +305,6 @@ PyAPI_FUNC(_PyFrameEvalFunction) _PyInterpreterState_GetEvalFrameFunc(
 PyAPI_FUNC(void) _PyInterpreterState_SetEvalFrameFunc(
     PyInterpreterState *interp,
     _PyFrameEvalFunction eval_frame);
-
-PyAPI_FUNC(const PyConfig*) _PyInterpreterState_GetConfig(PyInterpreterState *interp);
-
-/* Get a copy of the current interpreter configuration.
-
-   Return 0 on success. Raise an exception and return -1 on error.
-
-   The caller must initialize 'config', using PyConfig_InitPythonConfig()
-   for example.
-
-   Python must be preinitialized to call this method.
-   The caller must hold the GIL.
-
-   Once done with the configuration, PyConfig_Clear() must be called to clear
-   it. */
-PyAPI_FUNC(int) _PyInterpreterState_GetConfigCopy(
-    struct PyConfig *config);
-
-/* Set the configuration of the current interpreter.
-
-   This function should be called during or just after the Python
-   initialization.
-
-   Update the sys module with the new configuration. If the sys module was
-   modified directly after the Python initialization, these changes are lost.
-
-   Some configuration like faulthandler or warnoptions can be updated in the
-   configuration, but don't reconfigure Python (don't enable/disable
-   faulthandler and don't reconfigure warnings filters).
-
-   Return 0 on success. Raise an exception and return -1 on error.
-
-   The configuration should come from _PyInterpreterState_GetConfigCopy(). */
-PyAPI_FUNC(int) _PyInterpreterState_SetConfig(
-    const struct PyConfig *config);
-
-// Get the configuration of the current interpreter.
-// The caller must hold the GIL.
-PyAPI_FUNC(const PyConfig*) _Py_GetConfig(void);
 
 
 /* cross-interpreter data */
