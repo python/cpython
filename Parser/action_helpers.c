@@ -998,6 +998,8 @@ _PyPegen_setup_full_format_spec(Parser *p, Token *colon, asdl_expr_seq *spec, in
         return NULL;
     }
 
+    // This is needed to keep compatibility with 3.11, where an empty format spec is parsed
+    // as an *empty* JoinedStr node, instead of having an empty constant in it.
     if (asdl_seq_LEN(spec) == 1) {
         expr_ty e = asdl_seq_GET(spec, 0);
         if (e->kind == Constant_kind
