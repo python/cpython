@@ -3909,7 +3909,9 @@ class Py_buffer_converter(CConverter):
         return super().parse_arg(argname, displayname)
 
 
-def correct_name_for_self(f) -> tuple[str, str]:
+def correct_name_for_self(
+        f: Function
+) -> tuple[str, str]:
     if f.kind in (CALLABLE, METHOD_INIT):
         if f.cls:
             return "PyObject *", "self"
