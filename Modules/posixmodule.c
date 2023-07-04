@@ -7,8 +7,6 @@
    of the compiler used.  Different compilers define their own feature
    test macro, e.g. '_MSC_VER'. */
 
-#define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
 
 #ifdef __VXWORKS__
@@ -21,6 +19,7 @@
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyObject_LookupSpecial()
+#include "pycore_pylifecycle.h"   // _PyOS_URandom()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_signal.h"        // Py_NSIG
 

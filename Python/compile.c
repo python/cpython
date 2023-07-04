@@ -33,6 +33,7 @@
 #include "pycore_compile.h"
 #include "pycore_intrinsics.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_pystate.h"       // _Py_GetConfig()
 #include "pycore_symtable.h"      // PySTEntryObject, _PyFuture_FromAST()
 
 #include "opcode_metadata.h"      // _PyOpcode_opcode_metadata, _PyOpcode_num_popped/pushed
@@ -130,16 +131,6 @@ enum {
     COMPILER_SCOPE_TYPEPARAMS,
 };
 
-
-int
-_PyCompile_InstrSize(int opcode, int oparg)
-{
-    assert(!IS_PSEUDO_INSTR(opcode));
-    assert(OPCODE_HAS_ARG(opcode) || oparg == 0);
-    int extended_args = (0xFFFFFF < oparg) + (0xFFFF < oparg) + (0xFF < oparg);
-    int caches = _PyOpcode_Caches[opcode];
-    return extended_args + 1 + caches;
-}
 
 typedef _PyCompile_Instruction instruction;
 typedef _PyCompile_InstructionSequence instr_sequence;
@@ -846,6 +837,8 @@ stack_effect(int opcode, int oparg, int jump)
 
         case STORE_FAST_MAYBE_NULL:
             return -1;
+        case LOAD_CLOSURE:
+            return 1;
         case LOAD_METHOD:
             return 1;
         case LOAD_SUPER_METHOD:
@@ -2798,9 +2791,11 @@ static int compiler_addcompare(struct compiler *c, location loc,
     default:
         Py_UNREACHABLE();
     }
-    /* cmp goes in top bits of the oparg, while the low bits are used by quickened
-     * versions of this opcode to store the comparison mask. */
-    ADDOP_I(c, loc, COMPARE_OP, (cmp << 4) | compare_masks[cmp]);
+    // cmp goes in top three bits of the oparg, while the low four bits are used
+    // by quickened versions of this opcode to store the comparison mask. The
+    // fifth-lowest bit indicates whether the result should be converted to bool
+    // and is set later):
+    ADDOP_I(c, loc, COMPARE_OP, (cmp << 5) | compare_masks[cmp]);
     return SUCCESS;
 }
 
@@ -2866,10 +2861,12 @@ compiler_jump_if(struct compiler *c, location loc,
                 ADDOP_I(c, LOC(e), SWAP, 2);
                 ADDOP_I(c, LOC(e), COPY, 2);
                 ADDOP_COMPARE(c, LOC(e), asdl_seq_GET(e->v.Compare.ops, i));
+                ADDOP(c, LOC(e), TO_BOOL);
                 ADDOP_JUMP(c, LOC(e), POP_JUMP_IF_FALSE, cleanup);
             }
             VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, n));
             ADDOP_COMPARE(c, LOC(e), asdl_seq_GET(e->v.Compare.ops, n));
+            ADDOP(c, LOC(e), TO_BOOL);
             ADDOP_JUMP(c, LOC(e), cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
             NEW_JUMP_TARGET_LABEL(c, end);
             ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
@@ -2893,6 +2890,7 @@ compiler_jump_if(struct compiler *c, location loc,
 
     /* general implementation */
     VISIT(c, expr, e);
+    ADDOP(c, LOC(e), TO_BOOL);
     ADDOP_JUMP(c, LOC(e), cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
     return SUCCESS;
 }
@@ -4024,8 +4022,6 @@ unaryop(unaryop_ty op)
     switch (op) {
     case Invert:
         return UNARY_INVERT;
-    case Not:
-        return UNARY_NOT;
     case USub:
         return UNARY_NEGATIVE;
     default:
@@ -4255,6 +4251,7 @@ compiler_boolop(struct compiler *c, expr_ty e)
     for (i = 0; i < n; ++i) {
         VISIT(c, expr, (expr_ty)asdl_seq_GET(s, i));
         ADDOP_I(c, loc, COPY, 1);
+        ADDOP(c, loc, TO_BOOL);
         ADDOP_JUMP(c, loc, jumpi, end);
         ADDOP(c, loc, POP_TOP);
     }
@@ -4562,6 +4559,7 @@ compiler_compare(struct compiler *c, expr_ty e)
             ADDOP_I(c, loc, COPY, 2);
             ADDOP_COMPARE(c, loc, asdl_seq_GET(e->v.Compare.ops, i));
             ADDOP_I(c, loc, COPY, 1);
+            ADDOP(c, loc, TO_BOOL);
             ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, cleanup);
             ADDOP(c, loc, POP_TOP);
         }
@@ -5797,6 +5795,7 @@ compiler_visit_keyword(struct compiler *c, keyword_ty k)
 static int
 compiler_with_except_finish(struct compiler *c, jump_target_label cleanup) {
     NEW_JUMP_TARGET_LABEL(c, suppress);
+    ADDOP(c, NO_LOCATION, TO_BOOL);
     ADDOP_JUMP(c, NO_LOCATION, POP_JUMP_IF_TRUE, suppress);
     ADDOP_I(c, NO_LOCATION, RERAISE, 2);
 
@@ -6029,6 +6028,10 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         VISIT(c, expr, e->v.UnaryOp.operand);
         if (e->v.UnaryOp.op == UAdd) {
             ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_UNARY_POSITIVE);
+        }
+        else if (e->v.UnaryOp.op == Not) {
+            ADDOP(c, loc, TO_BOOL);
+            ADDOP(c, loc, UNARY_NOT);
         }
         else {
             ADDOP(c, loc, unaryop(e->v.UnaryOp.op));
@@ -7205,6 +7208,7 @@ compiler_pattern_value(struct compiler *c, pattern_ty p, pattern_context *pc)
     }
     VISIT(c, expr, value);
     ADDOP_COMPARE(c, LOC(p), Eq);
+    ADDOP(c, LOC(p), TO_BOOL);
     RETURN_IF_ERROR(jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE));
     return SUCCESS;
 }
@@ -7717,17 +7721,20 @@ cfg_to_instr_sequence(cfg_builder *g, instr_sequence *seq)
         RETURN_IF_ERROR(instr_sequence_use_label(seq, b->b_label.id));
         for (int i = 0; i < b->b_iused; i++) {
             cfg_instr *instr = &b->b_instr[i];
+            if (OPCODE_HAS_JUMP(instr->i_opcode)) {
+                instr->i_oparg = instr->i_target->b_label.id;
+            }
             RETURN_IF_ERROR(
                 instr_sequence_addop(seq, instr->i_opcode, instr->i_oparg, instr->i_loc));
 
             _PyCompile_ExceptHandlerInfo *hi = &seq->s_instrs[seq->s_used-1].i_except_handler_info;
             if (instr->i_except != NULL) {
-                hi->h_offset = instr->i_except->b_offset;
+                hi->h_label = instr->i_except->b_label.id;
                 hi->h_startdepth = instr->i_except->b_startdepth;
                 hi->h_preserve_lasti = instr->i_except->b_preserve_lasti;
             }
             else {
-                hi->h_offset = -1;
+                hi->h_label = -1;
             }
         }
     }

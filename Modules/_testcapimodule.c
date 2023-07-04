@@ -17,8 +17,6 @@
 /* Always enable assertions */
 #undef NDEBUG
 
-#define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
 #include "frameobject.h"          // PyFrame_New
 #include "marshal.h"              // PyMarshal_WriteLongToFile
@@ -1269,9 +1267,15 @@ test_pep3118_obsolete_write_locks(PyObject* self, PyObject *Py_UNUSED(ignored))
     if (ret != -1 || match == 0)
         goto error;
 
+    PyObject *mod_io = PyImport_ImportModule("_io");
+    if (mod_io == NULL) {
+        return NULL;
+    }
+
     /* bytesiobuf_getbuffer() */
-    PyTypeObject *type = (PyTypeObject *)_PyImport_GetModuleAttrString(
-            "_io", "_BytesIOBuffer");
+    PyTypeObject *type = (PyTypeObject *)PyObject_GetAttrString(
+            mod_io, "_BytesIOBuffer");
+    Py_DECREF(mod_io);
     if (type == NULL) {
         return NULL;
     }
@@ -2714,11 +2718,6 @@ test_tstate_capi(PyObject *self, PyObject *Py_UNUSED(args))
     assert(PyDict_Check(dict));
     // dict is a borrowed reference
 
-    // private _PyThreadState_GetDict()
-    PyObject *dict2 = _PyThreadState_GetDict(tstate);
-    assert(dict2 == dict);
-    // dict2 is a borrowed reference
-
     // PyThreadState_GetInterpreter()
     PyInterpreterState *interp = PyThreadState_GetInterpreter(tstate);
     assert(interp != NULL);
@@ -3294,37 +3293,6 @@ function_set_kw_defaults(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-struct atexit_data {
-    int called;
-};
-
-static void
-callback(void *data)
-{
-    ((struct atexit_data *)data)->called += 1;
-}
-
-static PyObject *
-test_atexit(PyObject *self, PyObject *Py_UNUSED(args))
-{
-    PyThreadState *oldts = PyThreadState_Swap(NULL);
-    PyThreadState *tstate = Py_NewInterpreter();
-
-    struct atexit_data data = {0};
-    int res = _Py_AtExit(tstate->interp, callback, (void *)&data);
-    Py_EndInterpreter(tstate);
-    PyThreadState_Swap(oldts);
-    if (res < 0) {
-        return NULL;
-    }
-    if (data.called == 0) {
-        PyErr_SetString(PyExc_RuntimeError, "atexit callback not called");
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
-
 static PyObject *
 check_pyimport_addmodule(PyObject *self, PyObject *args)
 {
@@ -3614,7 +3582,6 @@ static PyMethodDef TestMethods[] = {
     {"function_set_defaults", function_set_defaults, METH_VARARGS, NULL},
     {"function_get_kw_defaults", function_get_kw_defaults, METH_O, NULL},
     {"function_set_kw_defaults", function_set_kw_defaults, METH_VARARGS, NULL},
-    {"test_atexit", test_atexit, METH_NOARGS},
     {"check_pyimport_addmodule", check_pyimport_addmodule, METH_VARARGS},
     {"test_weakref_capi", test_weakref_capi, METH_NOARGS},
     {NULL, NULL} /* sentinel */
@@ -4214,9 +4181,6 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_GetArgs(m) < 0) {
-        return NULL;
-    }
-    if (_PyTestCapi_Init_PyTime(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_DateTime(m) < 0) {

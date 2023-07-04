@@ -3,8 +3,6 @@
 
 /* Windows users:  read Python's PCbuild\readme.txt */
 
-#define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
 #include "structmember.h"         // PyMemberDef
 #include "zlib.h"
