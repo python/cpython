@@ -28,12 +28,11 @@ import sys
 import textwrap
 import traceback
 
-from collections.abc import Callable, Iterable, Reversible
+from collections.abc import Callable, Generator, Iterable, Reversible
 from types import FunctionType, NoneType
 from typing import (
     Any,
     Final,
-    Generator,
     Literal,
     NamedTuple,
     NoReturn,
