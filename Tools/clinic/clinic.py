@@ -521,11 +521,12 @@ class PythonLanguage(Language):
     checksum_line = "#/*[{dsl_name} end generated code: {arguments}]*/"
 
 
+ParamGroup = Iterable["Parameter"]
 ParamTuple = tuple["Parameter", ...]
 
 
 def permute_left_option_groups(
-        l: Sequence[Iterable[Parameter]]
+        l: Sequence[ParamGroup]
 ) -> Iterator[ParamTuple]:
     """
     Given [(1,), (2,), (3,)], should yield:
@@ -542,7 +543,7 @@ def permute_left_option_groups(
 
 
 def permute_right_option_groups(
-        l: Sequence[Iterable[Parameter]]
+        l: Sequence[ParamGroup]
 ) -> Iterator[ParamTuple]:
     """
     Given [(1,), (2,), (3,)], should yield:
@@ -559,9 +560,9 @@ def permute_right_option_groups(
 
 
 def permute_optional_groups(
-        left: Sequence[Iterable[Parameter]],
+        left: Sequence[ParamGroup],
         required: Iterable[Parameter],
-        right: Sequence[Iterable[Parameter]]
+        right: Sequence[ParamGroup]
 ) -> tuple[ParamTuple, ...]:
     """
     Generator function that computes the set of acceptable
