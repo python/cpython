@@ -272,17 +272,14 @@ class zipimporter(_bootstrap_external._LoaderBasics):
             try:
                 files = _zip_directory_cache[self.archive] = _read_directory(self.archive)
             except ZipImportError:
-                files = _zip_directory_cache.pop(self.archive, {})
+                files = {}
 
         return files
 
 
     def invalidate_caches(self):
         """Invalidates the cache of file data of the archive path."""
-        try:
-            del _zip_directory_cache[self.archive]
-        except KeyError:
-            pass
+        _zip_directory_cache.pop(self.archive, None)
 
 
     def __repr__(self):
