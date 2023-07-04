@@ -599,7 +599,7 @@ def normalize_snippet(s: str, *, indent=0) -> str:
     return s
 
 
-def declare_parser(f, *, hasformat=False):
+def declare_parser(f: Function, *, hasformat=False) -> str:
     """
     Generates the code template for a static local PyArg_Parser variable,
     with an initializer.  For core code (incl. builtin modules) the
