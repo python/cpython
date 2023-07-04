@@ -9,6 +9,7 @@
 #include "pycore_opcode.h"        // _PyOpcode_Caches
 #include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
 #include "pycore_descrobject.h"
+#include "pycore_pylifecycle.h"   // _PyOS_URandomNonblock()
 
 #include <stdlib.h> // rand()
 
