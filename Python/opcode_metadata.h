@@ -942,9 +942,7 @@ struct opcode_macro_expansion {
 #ifndef NEED_OPCODE_METADATA
 extern const struct opcode_metadata _PyOpcode_opcode_metadata[512];
 extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[256];
-#ifdef Py_DEBUG
 extern const char * const _PyOpcode_uop_name[512];
-#endif
 #else
 const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {
     [NOP] = { true, INSTR_FMT_IX, 0 },
@@ -1265,7 +1263,7 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] = {
     [COPY] = { .nuops = 1, .uops = { { COPY, 0, 0 } } },
     [SWAP] = { .nuops = 1, .uops = { { SWAP, 0, 0 } } },
 };
-#ifdef Py_DEBUG
+#ifdef NEED_OPCODE_METADATA
 const char * const _PyOpcode_uop_name[512] = {
     [300] = "EXIT_TRACE",
     [301] = "SAVE_IP",
@@ -1282,5 +1280,5 @@ const char * const _PyOpcode_uop_name[512] = {
     [312] = "_LOAD_LOCALS",
     [313] = "_LOAD_FROM_DICT_OR_GLOBALS",
 };
-#endif
+#endif // NEED_OPCODE_METADATA
 #endif
