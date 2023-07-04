@@ -90,7 +90,6 @@ class zipimporter(_bootstrap_external._LoaderBasics):
 
         if path not in _zip_directory_cache:
             _zip_directory_cache[path] = _read_directory(path)
-        self._cache_is_valid = True
         self.archive = path
         # a prefix directory following the ZIP file path.
         self.prefix = _bootstrap_external._path_join(*prefix[::-1])
@@ -267,24 +266,23 @@ class zipimporter(_bootstrap_external._LoaderBasics):
 
     def _get_files(self):
         """Return the files within the archive path."""
-        if not self._cache_is_valid:
-            try:
-                _zip_directory_cache[self.archive] = _read_directory(self.archive)
-            except ZipImportError:
-                _zip_directory_cache.pop(self.archive, None)
-            self._cache_is_valid = True
-
         try:
             files = _zip_directory_cache[self.archive]
         except KeyError:
-            files = {}
+            try:
+                files = _zip_directory_cache[self.archive] = _read_directory(self.archive)
+            except ZipImportError:
+                files = _zip_directory_cache.pop(self.archive, {})
 
         return files
 
 
     def invalidate_caches(self):
         """Invalidates the cache of file data of the archive path."""
-        self._cache_is_valid = False
+        try:
+            del _zip_directory_cache[self.archive]
+        except KeyError:
+            pass
 
 
     def __repr__(self):
