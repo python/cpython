@@ -1495,6 +1495,8 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 if (opcode == nextop &&
                     oparg == bb->b_instr[i+1].i_oparg &&
                     bb->b_instr[i].i_loc.lineno == bb->b_instr[i+1].i_loc.lineno) {
+                    assert(OPCODE_NO_EXCEPTION(opcode));
+                    assert(OPCODE_NO_EXCEPTION(nextop));
                     bb->b_instr[i].i_opcode = POP_TOP;
                     bb->b_instr[i].i_oparg = 0;
                 }
