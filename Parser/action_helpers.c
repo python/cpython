@@ -997,6 +997,16 @@ _PyPegen_setup_full_format_spec(Parser *p, Token *colon, asdl_expr_seq *spec, in
     if (!spec) {
         return NULL;
     }
+
+    if (asdl_seq_LEN(spec) == 1) {
+        expr_ty e = asdl_seq_GET(spec, 0);
+        if (e->kind == Constant_kind
+                && PyUnicode_Check(e->v.Constant.value)
+                && PyUnicode_GetLength(e->v.Constant.value) == 0) {
+            spec = _Py_asdl_expr_seq_new(0, arena);
+        }
+    }
+
     expr_ty res = _PyAST_JoinedStr(spec, lineno, col_offset, end_lineno, end_col_offset, p->arena);
     if (!res) {
         return NULL;
