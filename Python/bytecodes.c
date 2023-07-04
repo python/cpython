@@ -2422,11 +2422,8 @@ dummy_func(
                 assert(next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg].op.code == END_FOR ||
                        next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg].op.code == INSTRUMENTED_END_FOR);
                 Py_DECREF(iter);
-                // STACK_SHRINK(1);
-                // SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
                 /* Jump forward oparg, then skip following END_FOR instruction */
                 JUMP_POP_DISPATCH(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1, 1);
-                // DISPATCH();
             }
             // Common case: no jump, leave it to the code generator
         }
@@ -2473,11 +2470,8 @@ dummy_func(
                 Py_DECREF(seq);
             }
             Py_DECREF(iter);
-            // STACK_SHRINK(1);
-            // SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
             /* Jump forward oparg, then skip following END_FOR instruction */
             JUMP_POP_DISPATCH(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1, 1);
-            // DISPATCH();
         end_for_iter_list:
             // Common case: no jump, leave it to the code generator
         }
@@ -2496,11 +2490,8 @@ dummy_func(
                 Py_DECREF(seq);
             }
             Py_DECREF(iter);
-            // STACK_SHRINK(1);
-            // SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
             /* Jump forward oparg, then skip following END_FOR instruction */
             JUMP_POP_DISPATCH(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1, 1);
-            // DISPATCH();
         end_for_iter_tuple:
             // Common case: no jump, leave it to the code generator
         }
@@ -2512,10 +2503,7 @@ dummy_func(
             if (r->len <= 0) {
                 // STACK_SHRINK(1);
                 Py_DECREF(r);
-                // SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
-                // Jump over END_FOR instruction.
                 JUMP_POP_DISPATCH(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1, 1);
-                // DISPATCH();
             }
             long value = r->start;
             r->start = value + r->step;
