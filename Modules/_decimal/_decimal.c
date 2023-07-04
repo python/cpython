@@ -39,6 +39,41 @@
 
 #include "docstrings.h"
 
+struct PyDecContextObject;
+
+typedef struct _decimal_state {
+    PyTypeObject *PyDecContextManager_Type;
+    PyTypeObject *PyDecContext_Type;
+    PyTypeObject *PyDecSignalDictMixin_Type;
+    PyTypeObject *PyDec_Type;
+    PyTypeObject *PyDecSignalDict_Type;
+    PyTypeObject *DecimalTuple;
+
+    /* Top level Exception; inherits from ArithmeticError */
+    PyObject *DecimalException;
+
+#ifndef WITH_DECIMAL_CONTEXTVAR
+    /* Key for thread state dictionary */
+    PyObject *tls_context_key;
+    /* Invariant: NULL or the most recently accessed thread local context */
+    struct PyDecContextObject *cached_context;
+#else
+    PyObject *current_context_var;
+#endif
+
+    /* Template for creating new thread contexts, calling Context() without
+     * arguments and initializing the module_context on first access. */
+    PyObject *default_context_template;
+
+    /* Basic and extended context templates */
+    PyObject *basic_context_template;
+    PyObject *extended_context_template;
+} decimal_state;
+
+static decimal_state global_state;
+
+#define GLOBAL_STATE() (&global_state)
+
 #if !defined(MPD_VERSION_HEX) || MPD_VERSION_HEX < 0x02050000
   #error "libmpdec version >= 2.5.0 required"
 #endif
@@ -68,19 +103,19 @@
 /* _Py_DEC_MINALLOC >= MPD_MINALLOC */
 #define _Py_DEC_MINALLOC 4
 
-typedef struct {
+typedef struct PyDecObject {
     PyObject_HEAD
     Py_hash_t hash;
     mpd_t dec;
     mpd_uint_t data[_Py_DEC_MINALLOC];
 } PyDecObject;
 
-typedef struct {
+typedef struct PyDecSignalDictObject {
     PyObject_HEAD
     uint32_t *flags;
 } PyDecSignalDictObject;
 
-typedef struct {
+typedef struct PyDecContextObject {
     PyObject_HEAD
     mpd_context_t ctx;
     PyObject *traps;
@@ -89,44 +124,11 @@ typedef struct {
     PyThreadState *tstate;
 } PyDecContextObject;
 
-typedef struct {
+typedef struct PyDecContextManagerObject {
     PyObject_HEAD
     PyObject *local;
     PyObject *global;
 } PyDecContextManagerObject;
-
-typedef struct {
-    PyTypeObject *PyDecContextManager_Type;
-    PyTypeObject *PyDecContext_Type;
-    PyTypeObject *PyDecSignalDictMixin_Type;
-    PyTypeObject *PyDec_Type;
-    PyTypeObject *PyDecSignalDict_Type;
-    PyTypeObject *DecimalTuple;
-
-    /* Top level Exception; inherits from ArithmeticError */
-    PyObject *DecimalException;
-
-#ifndef WITH_DECIMAL_CONTEXTVAR
-    /* Key for thread state dictionary */
-    PyObject *tls_context_key;
-    /* Invariant: NULL or the most recently accessed thread local context */
-    PyDecContextObject *cached_context;
-#else
-    PyObject *current_context_var;
-#endif
-
-    /* Template for creating new thread contexts, calling Context() without
-     * arguments and initializing the module_context on first access. */
-    PyObject *default_context_template;
-
-    /* Basic and extended context templates */
-    PyObject *basic_context_template;
-    PyObject *extended_context_template;
-} decimal_state;
-
-static decimal_state global_state;
-
-#define GLOBAL_STATE() (&global_state)
 
 #undef MPD
 #undef CTX
