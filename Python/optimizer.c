@@ -317,41 +317,6 @@ uop_name(int index) {
     return _PyOpcode_uop_name[index];
 }
 
-static PyObject *
-uop_str(_PyUOpExecutorObject *self)
-{
-    int count = 1;
-    for (; count < _Py_UOP_MAX_TRACE_LENGTH; count++) {
-        if (self->trace[count-1].opcode == EXIT_TRACE) {
-            break;
-        }
-    }
-    _PyUnicodeWriter writer;
-    _PyUnicodeWriter_Init(&writer);
-    for (int i = 0; i < count; i++) {
-        const char *name = uop_name(self->trace[i].opcode);
-        if (_PyUnicodeWriter_WriteASCIIString(&writer,
-            name, strlen(name)) < 0) {
-            goto error;
-        }
-        if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ", 2) < 0) {
-            goto error;
-        }
-        char operand_buffer[24];
-        int len = snprintf(operand_buffer, 23, "%lu", self->trace[i].operand);
-        if (_PyUnicodeWriter_WriteASCIIString(&writer, operand_buffer, len) < 0) {
-                goto error;
-        }
-        if (_PyUnicodeWriter_WriteASCIIString(&writer, "\n", 1) < 0) {
-            goto error;
-        }
-    }
-    return _PyUnicodeWriter_Finish(&writer);
-error:
-    _PyUnicodeWriter_Dealloc(&writer);
-    return NULL;
-}
-
 static Py_ssize_t
 uop_len(_PyUOpExecutorObject *self)
 {
@@ -403,7 +368,6 @@ static PyTypeObject UOpExecutor_Type = {
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .tp_dealloc = (destructor)uop_dealloc,
-    .tp_str = (reprfunc)uop_str,
     .tp_as_sequence = &uop_as_sequence,
 };
 
