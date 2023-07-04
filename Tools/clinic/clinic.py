@@ -751,7 +751,10 @@ class CLanguage(Language):
                 function = o
         return self.render_function(clinic, function)
 
-    def docstring_for_c_string(self, f):
+    def docstring_for_c_string(
+            self,
+            f: Function
+    ) -> str:
         if re.search(r'[^\x00-\x7F]', f.docstring):
             warn("Non-ascii character appear in docstring.")
 
