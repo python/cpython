@@ -344,7 +344,7 @@ extern Py_ssize_t _PyUnicode_InsertThousandsGrouping(
 extern PyObject* _PyUnicode_FormatLong(PyObject *, int, int, int);
 
 /* Return an interned Unicode object for an Identifier; may fail if there is no memory.*/
-extern PyObject* _PyUnicode_FromId(_Py_Identifier*);
+PyAPI_FUNC(PyObject*) _PyUnicode_FromId(_Py_Identifier*);
 
 /* Fast equality check when the inputs are known to be exact unicode types
    and where the hash values are equal (i.e. a very probable match) */
