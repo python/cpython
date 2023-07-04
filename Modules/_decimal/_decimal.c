@@ -114,6 +114,14 @@ typedef struct {
 #else
     PyObject *current_context_var;
 #endif
+
+    /* Template for creating new thread contexts, calling Context() without
+     * arguments and initializing the module_context on first access. */
+    PyObject *default_context_template;
+
+    /* Basic and extended context templates */
+    PyObject *basic_context_template;
+    PyObject *extended_context_template;
 } decimal_state;
 
 static decimal_state global_state;
@@ -144,14 +152,6 @@ incr_false(void)
 {
     return Py_NewRef(Py_False);
 }
-
-/* Template for creating new thread contexts, calling Context() without
- * arguments and initializing the module_context on first access. */
-static PyObject *default_context_template = NULL;
-/* Basic and extended context templates */
-static PyObject *basic_context_template = NULL;
-static PyObject *extended_context_template = NULL;
-
 
 /* Error codes for functions that return signals or conditions */
 #define DEC_INVALID_SIGNALS (MPD_Max_status+1U)
@@ -1270,8 +1270,8 @@ context_new(PyTypeObject *type, PyObject *args UNUSED, PyObject *kwds UNUSED)
 
     ctx = CTX(self);
 
-    if (default_context_template) {
-        *ctx = *CTX(default_context_template);
+    if (state->default_context_template) {
+        *ctx = *CTX(state->default_context_template);
     }
     else {
         *ctx = dflt_ctx;
@@ -1575,7 +1575,7 @@ current_context_from_dict(void)
         }
 
         /* Set up a new thread local context. */
-        tl_context = context_copy(default_context_template, NULL);
+        tl_context = context_copy(state->default_context_template, NULL);
         if (tl_context == NULL) {
             return NULL;
         }
@@ -1649,9 +1649,9 @@ PyDec_SetCurrentContext(PyObject *self UNUSED, PyObject *v)
 
     /* If the new context is one of the templates, make a copy.
      * This is the current behavior of decimal.py. */
-    if (v == default_context_template ||
-        v == basic_context_template ||
-        v == extended_context_template) {
+    if (v == state->default_context_template ||
+        v == state->basic_context_template ||
+        v == state->extended_context_template) {
         v = context_copy(v, NULL);
         if (v == NULL) {
             return NULL;
@@ -1676,7 +1676,7 @@ static PyObject *
 init_current_context(void)
 {
     decimal_state *state = GLOBAL_STATE();
-    PyObject *tl_context = context_copy(default_context_template, NULL);
+    PyObject *tl_context = context_copy(state->default_context_template, NULL);
     if (tl_context == NULL) {
         return NULL;
     }
@@ -1732,9 +1732,9 @@ PyDec_SetCurrentContext(PyObject *self UNUSED, PyObject *v)
 
     /* If the new context is one of the templates, make a copy.
      * This is the current behavior of decimal.py. */
-    if (v == default_context_template ||
-        v == basic_context_template ||
-        v == extended_context_template) {
+    if (v == state->default_context_template ||
+        v == state->basic_context_template ||
+        v == state->extended_context_template) {
         v = context_copy(v, NULL);
         if (v == NULL) {
             return NULL;
@@ -5982,10 +5982,10 @@ PyInit__decimal(void)
 
 
     /* Init default context template first */
-    ASSIGN_PTR(default_context_template,
+    ASSIGN_PTR(state->default_context_template,
                PyObject_CallObject((PyObject *)state->PyDecContext_Type, NULL));
     CHECK_INT(PyModule_AddObject(m, "DefaultContext",
-                                 Py_NewRef(default_context_template)));
+                                 Py_NewRef(state->default_context_template)));
 
 #ifndef WITH_DECIMAL_CONTEXTVAR
     ASSIGN_PTR(state->tls_context_key,
@@ -5998,18 +5998,18 @@ PyInit__decimal(void)
     CHECK_INT(PyModule_AddObject(m, "HAVE_THREADS", Py_NewRef(Py_True)));
 
     /* Init basic context template */
-    ASSIGN_PTR(basic_context_template,
+    ASSIGN_PTR(state->basic_context_template,
                PyObject_CallObject((PyObject *)state->PyDecContext_Type, NULL));
-    init_basic_context(basic_context_template);
+    init_basic_context(state->basic_context_template);
     CHECK_INT(PyModule_AddObject(m, "BasicContext",
-                                 Py_NewRef(basic_context_template)));
+                                 Py_NewRef(state->basic_context_template)));
 
     /* Init extended context template */
-    ASSIGN_PTR(extended_context_template,
+    ASSIGN_PTR(state->extended_context_template,
                PyObject_CallObject((PyObject *)state->PyDecContext_Type, NULL));
-    init_extended_context(extended_context_template);
+    init_extended_context(state->extended_context_template);
     CHECK_INT(PyModule_AddObject(m, "ExtendedContext",
-                                 Py_NewRef(extended_context_template)));
+                                 Py_NewRef(state->extended_context_template)));
 
 
     /* Init mpd_ssize_t constants */
@@ -6049,14 +6049,14 @@ error:
     Py_CLEAR(MutableMapping); /* GCOV_NOT_REACHED */
     Py_CLEAR(SignalTuple); /* GCOV_NOT_REACHED */
     Py_CLEAR(state->DecimalTuple); /* GCOV_NOT_REACHED */
-    Py_CLEAR(default_context_template); /* GCOV_NOT_REACHED */
+    Py_CLEAR(state->default_context_template); /* GCOV_NOT_REACHED */
 #ifndef WITH_DECIMAL_CONTEXTVAR
     Py_CLEAR(state->tls_context_key); /* GCOV_NOT_REACHED */
 #else
     Py_CLEAR(state->current_context_var); /* GCOV_NOT_REACHED */
 #endif
-    Py_CLEAR(basic_context_template); /* GCOV_NOT_REACHED */
-    Py_CLEAR(extended_context_template); /* GCOV_NOT_REACHED */
+    Py_CLEAR(state->basic_context_template); /* GCOV_NOT_REACHED */
+    Py_CLEAR(state->extended_context_template); /* GCOV_NOT_REACHED */
     Py_CLEAR(m); /* GCOV_NOT_REACHED */
 
     return NULL; /* GCOV_NOT_REACHED */
