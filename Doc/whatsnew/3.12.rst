@@ -6,6 +6,9 @@
 :Release: |release|
 :Date: |today|
 
+TEMP: example reference with a warning:
+:c:func:`PyFrame_BlockSetup`
+
 .. Rules for maintenance:
 
    * Anyone can add text to this document.  Do not spend very much time
