@@ -95,6 +95,7 @@ def_op('NOP', 9)
 
 def_op('UNARY_NEGATIVE', 11)
 def_op('UNARY_NOT', 12)
+def_op('IS_OP', 13)
 
 def_op('UNARY_INVERT', 15)
 def_op('EXIT_INIT_CHECK', 16)
@@ -176,7 +177,7 @@ jrel_op('JUMP_FORWARD', 110)    # Number of words to skip
 jrel_op('POP_JUMP_IF_FALSE', 114)
 jrel_op('POP_JUMP_IF_TRUE', 115)
 name_op('LOAD_GLOBAL', 116)     # Index in name list
-def_op('IS_OP', 117)
+
 def_op('CONTAINS_OP', 118)
 def_op('RERAISE', 119)
 def_op('COPY', 120)

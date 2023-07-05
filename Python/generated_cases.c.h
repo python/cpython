@@ -3053,7 +3053,7 @@
             PyObject *left = stack_pointer[-2];
             PyObject *b;
             #line 2163 "Python/bytecodes.c"
-            int res = Py_Is(left, right) ^ oparg;
+            int res = Py_Is(left, right);
             #line 3058 "Python/generated_cases.c.h"
             Py_DECREF(left);
             Py_DECREF(right);

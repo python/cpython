@@ -2777,10 +2777,11 @@ static int compiler_addcompare(struct compiler *c, location loc,
         cmp = Py_GE;
         break;
     case Is:
-        ADDOP_I(c, loc, IS_OP, 0);
+        ADDOP(c, loc, IS_OP);
         return SUCCESS;
     case IsNot:
-        ADDOP_I(c, loc, IS_OP, 1);
+        ADDOP(c, loc, IS_OP);
+        ADDOP(c, loc, UNARY_NOT);
         return SUCCESS;
     case In:
         ADDOP_I(c, loc, CONTAINS_OP, 0);
@@ -6825,7 +6826,8 @@ compiler_pattern_class(struct compiler *c, pattern_ty p, pattern_context *pc)
     ADDOP_I(c, LOC(p), MATCH_CLASS, nargs);
     ADDOP_I(c, LOC(p), COPY, 1);
     ADDOP_LOAD_CONST(c, LOC(p), Py_None);
-    ADDOP_I(c, LOC(p), IS_OP, 1);
+    ADDOP(c, LOC(p), IS_OP);
+    ADDOP(c, LOC(p), UNARY_NOT);
     // TOS is now a tuple of (nargs + nattrs) attributes (or None):
     pc->on_top++;
     RETURN_IF_ERROR(jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE));
@@ -6944,7 +6946,8 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p,
     pc->on_top += 2;
     ADDOP_I(c, LOC(p), COPY, 1);
     ADDOP_LOAD_CONST(c, LOC(p), Py_None);
-    ADDOP_I(c, LOC(p), IS_OP, 1);
+    ADDOP(c, LOC(p), IS_OP);
+    ADDOP(c, LOC(p), UNARY_NOT);
     RETURN_IF_ERROR(jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE));
     // So far so good. Use that tuple of values on the stack to match
     // sub-patterns against:

@@ -2160,7 +2160,7 @@ dummy_func(
         }
 
         inst(IS_OP, (left, right -- b)) {
-            int res = Py_Is(left, right) ^ oparg;
+            int res = Py_Is(left, right);
             DECREF_INPUTS();
             b = res ? Py_True : Py_False;
         }

@@ -77,10 +77,8 @@ class TestTranforms(BytecodeTestCase):
         self.assertInBytecode(unot, 'POP_JUMP_IF_TRUE')
         self.check_lnotab(unot)
 
-    def test_elim_inversion_of_is_or_in(self):
+    def test_elim_inversion_of_in(self):
         for line, cmp_op, invert in (
-            ('not a is b', 'IS_OP', 1,),
-            ('not a is not b', 'IS_OP', 0,),
             ('not a in b', 'CONTAINS_OP', 1,),
             ('not a not in b', 'CONTAINS_OP', 0,),
             ):
