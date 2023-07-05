@@ -953,6 +953,7 @@ class singledispatchmethod:
         _method.__isabstractmethod__ = self.__isabstractmethod__
         _method.register = self.register
         update_wrapper(_method, self.func)
+        self._dispatch_method = _method
         return _method
 
     @property
