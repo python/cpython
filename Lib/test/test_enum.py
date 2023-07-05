@@ -858,11 +858,18 @@ class _FlagTests:
         A, B = OpenAB
         AB_MASK = OpenAB.MASK
         #
-        self.assertIs(~A, B)
-        self.assertIs(~B, A)
-        self.assertIs(~(A|B), OpenAB(0))
-        self.assertIs(~AB_MASK, OpenAB(0))
-        self.assertIs(~OpenAB(0), (A|B))
+        if OpenAB._boundary_ in (EJECT, KEEP):
+            self.assertIs(~A, OpenAB(254))
+            self.assertIs(~B, OpenAB(253))
+            self.assertIs(~(A|B), OpenAB(252))
+            self.assertIs(~AB_MASK, OpenAB(0))
+            self.assertIs(~OpenAB(0), AB_MASK)
+        else:
+            self.assertIs(~A, B)
+            self.assertIs(~B, A)
+            self.assertIs(~(A|B), OpenAB(0))
+            self.assertIs(~AB_MASK, OpenAB(0))
+            self.assertIs(~OpenAB(0), (A|B))
         #
         class OpenXYZ(self.enum_type):
             X = 4
@@ -872,15 +879,26 @@ class _FlagTests:
         X, Y, Z = OpenXYZ
         XYZ_MASK = OpenXYZ.MASK
         #
-        self.assertIs(~X, Y|Z)
-        self.assertIs(~Y, X|Z)
-        self.assertIs(~Z, X|Y)
-        self.assertIs(~(X|Y), Z)
-        self.assertIs(~(X|Z), Y)
-        self.assertIs(~(Y|Z), X)
-        self.assertIs(~(X|Y|Z), OpenXYZ(0))
-        self.assertIs(~XYZ_MASK, OpenXYZ(0))
-        self.assertTrue(~OpenXYZ(0), (X|Y|Z))
+        if OpenXYZ._boundary_ in (EJECT, KEEP):
+            self.assertIs(~X, OpenXYZ(27))
+            self.assertIs(~Y, OpenXYZ(29))
+            self.assertIs(~Z, OpenXYZ(30))
+            self.assertIs(~(X|Y), OpenXYZ(25))
+            self.assertIs(~(X|Z), OpenXYZ(26))
+            self.assertIs(~(Y|Z), OpenXYZ(28))
+            self.assertIs(~(X|Y|Z), OpenXYZ(24))
+            self.assertIs(~XYZ_MASK, OpenXYZ(0))
+            self.assertTrue(~OpenXYZ(0), XYZ_MASK)
+        else:
+            self.assertIs(~X, Y|Z)
+            self.assertIs(~Y, X|Z)
+            self.assertIs(~Z, X|Y)
+            self.assertIs(~(X|Y), Z)
+            self.assertIs(~(X|Z), Y)
+            self.assertIs(~(Y|Z), X)
+            self.assertIs(~(X|Y|Z), OpenXYZ(0))
+            self.assertIs(~XYZ_MASK, OpenXYZ(0))
+            self.assertTrue(~OpenXYZ(0), (X|Y|Z))
 
 
 class TestPlainEnum(_EnumTests, _PlainOutputTests, unittest.TestCase):

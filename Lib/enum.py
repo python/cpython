@@ -1515,7 +1515,10 @@ class Flag(Enum, boundary=STRICT):
 
     def __invert__(self):
         if self._inverted_ is None:
-            self._inverted_ = self.__class__(self._singles_mask_ & ~self._value_)
+            if self._boundary_ in (EJECT, KEEP):
+                self._inverted_ = self.__class__(~self._value_)
+            else:
+                self._inverted_ = self.__class__(self._singles_mask_ & ~self._value_)
         return self._inverted_
 
     __rand__ = __and__
