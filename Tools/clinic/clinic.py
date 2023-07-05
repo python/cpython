@@ -2021,22 +2021,20 @@ extensions: LangDict = { name: CLanguage for name in "c cc cpp cxx h hh hpp hxx"
 extensions['py'] = PythonLanguage
 
 
-def file_changed(filename: str, new_contents: str) -> bool:
-    """Return true if file contents changed (meaning we must update it)"""
-    try:
-        with open(filename, encoding="utf-8") as fp:
-            old_contents = fp.read()
-        return old_contents != new_contents
-    except FileNotFoundError:
-        return True
-
-
 def write_file(filename: str, new_contents: str) -> None:
+    try:
+        with open(filename, 'r', encoding="utf-8") as fp:
+            old_contents = fp.read()
+
+        if old_contents == new_contents:
+            # no change: avoid modifying the file modification time
+            return
+    except FileNotFoundError:
+        pass
     # Atomic write using a temporary file and os.replace()
     filename_new = f"{filename}.new"
     with open(filename_new, "w", encoding="utf-8") as fp:
         fp.write(new_contents)
-
     try:
         os.replace(filename_new, filename)
     except:
@@ -2214,8 +2212,6 @@ impl_definition block
                          traceback.format_exc().rstrip())
             printer.print_block(block)
 
-        clinic_out = []
-
         # these are destinations not buffers
         for name, destination in self.destinations.items():
             if destination.type == 'suppress':
@@ -2223,7 +2219,6 @@ impl_definition block
             output = destination.dump()
 
             if output:
-
                 block = Block("", dsl_name="clinic", output=output)
 
                 if destination.type == 'buffer':
@@ -2255,11 +2250,10 @@ impl_definition block
                     block.input = 'preserve\n'
                     printer_2 = BlockPrinter(self.language)
                     printer_2.print_block(block, core_includes=True)
-                    pair = destination.filename, printer_2.f.getvalue()
-                    clinic_out.append(pair)
+                    write_file(destination.filename, printer_2.f.getvalue())
                     continue
 
-        return printer.f.getvalue(), clinic_out
+        return printer.f.getvalue()
 
 
     def _module_and_class(self, fields):
@@ -2321,14 +2315,9 @@ def parse_file(
 
     assert isinstance(language, CLanguage)
     clinic = Clinic(language, verify=verify, filename=filename)
-    src_out, clinic_out = clinic.parse(raw)
+    cooked = clinic.parse(raw)
 
-    changes = [(fn, data) for fn, data in clinic_out if file_changed(fn, data)]
-    if changes:
-        # Always (re)write the source file.
-        write_file(output, src_out)
-        for fn, data in clinic_out:
-            write_file(fn, data)
+    write_file(output, cooked)
 
 
 def compute_checksum(
