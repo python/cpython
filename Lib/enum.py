@@ -1463,12 +1463,11 @@ class Flag(Enum, boundary=STRICT):
         else:
             pseudo_member._name_ = None
         # use setdefault in case another thread already created a composite
-        # with this value, but only if all members are known
-        # note: zero is a special case -- add it
-        if not unknown:
-            pseudo_member = cls._value2member_map_.setdefault(value, pseudo_member)
-            if neg_value is not None:
-                cls._value2member_map_[neg_value] = pseudo_member
+        # with this value
+        # note: zero is a special case -- always add it
+        pseudo_member = cls._value2member_map_.setdefault(value, pseudo_member)
+        if neg_value is not None:
+            cls._value2member_map_[neg_value] = pseudo_member
         return pseudo_member
 
     def __contains__(self, other):
@@ -1544,8 +1543,8 @@ class Flag(Enum, boundary=STRICT):
                 # use all bits
                 self._inverted_ = self.__class__(~self._value_)
             else:
-                # calculate flags not in this member
-                self._inverted_ = self.__class__(self._flag_mask_ ^ self._value_)
+                # use canonical bits (i.e. calculate flags not in this member)
+                self._inverted_ = self.__class__(self._singles_mask_ ^ self._value_)
             if isinstance(self._inverted_, self.__class__):
                 self._inverted_._inverted_ = self
         return self._inverted_
