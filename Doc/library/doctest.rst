@@ -411,8 +411,8 @@ Simple example::
      File "<stdin>", line 1, in <module>
    ValueError: 42 is not in list
 
-That doctest succeeds if :exc:`ValueError` is raised, with the ``42 is not in list
-`` detail as shown.
+That doctest succeeds if :exc:`ValueError` is raised, with the ``42 is not in list``
+detail as shown.
 
 The expected output for an exception must start with a traceback header, which
 may be either of the following two lines, indented the same as the first line of
