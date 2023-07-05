@@ -924,7 +924,7 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
     if (globals == Py_None) {
         globals = PyEval_GetGlobals();
         if (locals == Py_None) {
-            locals = _PyEval_GetLocals();
+            locals = _PyEval_GetFrameLocals();
             if (locals == NULL)
                 return NULL;
         }
@@ -1016,7 +1016,7 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
     if (globals == Py_None) {
         globals = PyEval_GetGlobals();
         if (locals == Py_None) {
-            locals = _PyEval_GetLocals();
+            locals = _PyEval_GetFrameLocals();
             if (locals == NULL)
                 return NULL;
         }
@@ -1743,7 +1743,7 @@ static PyObject *
 builtin_locals_impl(PyObject *module)
 /*[clinic end generated code: output=b46c94015ce11448 input=7874018d478d5c4b]*/
 {
-    return _PyEval_GetLocals();
+    return _PyEval_GetFrameLocals();
 }
 
 
@@ -2461,7 +2461,7 @@ builtin_vars_impl(PyObject *module, PyObject *object)
     PyObject *d;
 
     if (object == NULL) {
-        d = _PyEval_GetLocals();
+        d = _PyEval_GetFrameLocals();
     }
     else {
         if (_PyObject_LookupAttr(object, &_Py_ID(__dict__), &d) == 0) {

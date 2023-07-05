@@ -156,7 +156,7 @@ extern PyObject* _Py_MakeCoro(PyFunctionObject *func);
    and asynchronous exception */
 extern int _Py_HandlePending(PyThreadState *tstate);
 
-extern PyObject * _PyEval_GetLocals(void);
+extern PyObject * _PyEval_GetFrameLocals(void);
 
 
 #ifdef __cplusplus

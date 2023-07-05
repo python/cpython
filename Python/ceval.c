@@ -2262,7 +2262,7 @@ PyEval_GetLocals(void)
 }
 
 PyObject *
-_PyEval_GetLocals(void)
+_PyEval_GetFrameLocals(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
      _PyInterpreterFrame *current_frame = _PyThreadState_GetFrame(tstate);

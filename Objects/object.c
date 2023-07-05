@@ -1690,7 +1690,7 @@ _dir_locals(void)
     PyObject *names;
     PyObject *locals;
 
-    locals = _PyEval_GetLocals();
+    locals = _PyEval_GetFrameLocals();
     if (locals == NULL)
         return NULL;
 
