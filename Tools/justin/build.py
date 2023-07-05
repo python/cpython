@@ -160,6 +160,39 @@ T = typing.TypeVar("T")
 def unwrap(source: list[dict[S, T]], wrapper: S) -> list[T]:
     return [child[wrapper] for child in source]
 
+def get_llvm_tool_version(name: str) -> int | None:
+    try:
+        args = [name, "--version"]
+        process = subprocess.run(args, check=True, stdout=subprocess.PIPE)
+    except FileNotFoundError:
+        return None
+    match = re.search(br"version\s+(\d+)\.\d+\.\d+\s+", process.stdout)
+    return match and int(match.group(1))
+
+def find_llvm_tool(tool: str) -> str:
+    versions = {14, 15, 16}
+    # Unversioned executables:
+    path = tool
+    if get_llvm_tool_version(path) in versions:
+        return path
+    for version in sorted(versions, reverse=True):
+        # Versioned executables:
+        path = f"{tool}-{version}"
+        if get_llvm_tool_version(path) == version:
+            return path
+        # My homebrew homies:
+        try:
+            args = ["brew", "--prefix", f"llvm@{version}"]
+            process = subprocess.run(args, check=True, stdout=subprocess.PIPE)
+        except (FileNotFoundError, subprocess.CalledProcessError):
+            pass
+        else:
+            prefix = process.stdout.decode().removesuffix("\n")
+            path = f"{prefix}/bin/{tool}"
+            if get_llvm_tool_version(path) == version:
+                return path
+    raise RuntimeError(f"Can't find {tool}!")
+
 # TODO: Divide into read-only data and writable/executable text.
 
 class ObjectParser:
@@ -175,7 +208,7 @@ class ObjectParser:
         "--sections",
     ]
 
-    def __init__(self, path: pathlib.Path, symbol_prefix: str = "") -> None:
+    def __init__(self, path: pathlib.Path, reader: str, symbol_prefix: str = "") -> None:
         self.path = path
         self.body = bytearray()
         self.body_symbols = {}
@@ -185,14 +218,15 @@ class ObjectParser:
         self.got_entries = []
         self.relocations_todo = []
         self.symbol_prefix = symbol_prefix
+        self.reader = reader
 
     async def parse(self):
         # subprocess.run(["llvm-objdump", path, "-dr"], check=True)
-        process = await asyncio.create_subprocess_exec("llvm-readobj", *self._ARGS, self.path, stdout=subprocess.PIPE)
+        process = await asyncio.create_subprocess_exec(self.reader, *self._ARGS, self.path, stdout=subprocess.PIPE)
         stdout, stderr = await process.communicate()
         assert stderr is None, stderr
         if process.returncode:
-            raise RuntimeError(f"llvm-readobj exited with {process.returncode}")
+            raise RuntimeError(f"{self.reader} exited with {process.returncode}")
         output = stdout
         output = output.replace(b"PrivateExtern\n", b"\n")  # XXX: MachO
         output = output.replace(b"Extern\n", b"\n")  # XXX: MachO
@@ -573,6 +607,9 @@ class Compiler:
     def __init__(self, *, verbose: bool = False) -> None:
         self._stencils_built = {}
         self._verbose = verbose
+        self._clang = find_llvm_tool("clang")
+        self._readobj = find_llvm_tool("llvm-readobj")
+        self._stderr(f"Using {self._clang} and {self._readobj}.")
 
     def _stderr(self, *args, **kwargs) -> None:
         if self._verbose:
@@ -606,22 +643,22 @@ class Compiler:
             c.write_text(body)
             self._use_tos_caching(c, 0)
             self._stderr(f"Compiling {opname}...")
-            process = await asyncio.create_subprocess_exec("clang", *CFLAGS, "-emit-llvm", "-S", *defines, "-o", ll, c)
+            process = await asyncio.create_subprocess_exec(self._clang, *CFLAGS, "-emit-llvm", "-S", *defines, "-o", ll, c)
             stdout, stderr = await process.communicate()
             assert stdout is None, stdout
             assert stderr is None, stderr
             if process.returncode:
-                raise RuntimeError(f"clang exited with {process.returncode}")
+                raise RuntimeError(f"{self._clang} exited with {process.returncode}")
             self._use_ghccc(ll, True)
             self._stderr(f"Recompiling {opname}...")
-            process = await asyncio.create_subprocess_exec("clang", *CFLAGS, "-c", "-o", o, ll)
+            process = await asyncio.create_subprocess_exec(self._clang, *CFLAGS, "-c", "-o", o, ll)
             stdout, stderr = await process.communicate()
             assert stdout is None, stdout
             assert stderr is None, stderr
             if process.returncode:
-                raise RuntimeError(f"clang exited with {process.returncode}")
+                raise RuntimeError(f"{self._clang} exited with {process.returncode}")
             self._stderr(f"Parsing {opname}...")
-            self._stencils_built[opname] = await ObjectParserDefault(o).parse()
+            self._stencils_built[opname] = await ObjectParserDefault(o, self._readobj).parse()
         self._stderr(f"Built {opname}!")
 
     async def build(self) -> None:
