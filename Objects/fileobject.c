@@ -1,6 +1,5 @@
 /* File object implementation (what's left of it -- see io.py) */
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_runtime.h"       // _PyRuntime

@@ -572,8 +572,10 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
             elif deop in haslocal or deop in hasfree:
                 argval, argrepr = _get_name_info(arg, varname_from_oparg)
             elif deop in hascompare:
-                argval = cmp_op[arg>>4]
+                argval = cmp_op[arg >> 5]
                 argrepr = argval
+                if arg & 16:
+                    argrepr = f"bool({argrepr})"
             elif deop == CONVERT_VALUE:
                 argval = (None, str, repr, ascii)[arg]
                 argrepr = ('', 'str', 'repr', 'ascii')[arg]

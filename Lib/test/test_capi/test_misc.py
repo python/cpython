@@ -1823,7 +1823,6 @@ class SubinterpreterTest(unittest.TestCase):
         1-to-1 with the new interpreter's settings.  This test verifies
         that they match.
         """
-        import json
 
         OBMALLOC = 1<<5
         EXTENSIONS = 1<<8
@@ -1902,7 +1901,6 @@ class SubinterpreterTest(unittest.TestCase):
         This verifies that the override works but does not modify
         the underlying setting.
         """
-        import json
 
         OBMALLOC = 1<<5
         EXTENSIONS = 1<<8
@@ -2372,10 +2370,14 @@ class TestOptimizerAPI(unittest.TestCase):
         self.assertEqual(_testinternalcapi.get_optimizer(), None)
 
     def test_counter_optimizer(self):
-
-        def loop():
-            for _ in range(1000):
-                pass
+        # Generate a new function at each call
+        ns = {}
+        exec(textwrap.dedent("""
+            def loop():
+                for _ in range(1000):
+                    pass
+        """), ns, ns)
+        loop = ns['loop']
 
         for repeat in range(5):
             opt = _testinternalcapi.get_counter_optimizer()
@@ -2388,24 +2390,52 @@ class TestOptimizerAPI(unittest.TestCase):
     def test_long_loop(self):
         "Check that we aren't confused by EXTENDED_ARG"
 
-        def nop():
-            pass
+        # Generate a new function at each call
+        ns = {}
+        exec(textwrap.dedent("""
+            def nop():
+                pass
 
-        def long_loop():
-            for _ in range(10):
-                nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
-                nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
-                nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
-                nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
-                nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
-                nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
-                nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
+            def long_loop():
+                for _ in range(10):
+                    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
+                    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
+                    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
+                    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
+                    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
+                    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
+                    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
+        """), ns, ns)
+        long_loop = ns['long_loop']
 
         opt = _testinternalcapi.get_counter_optimizer()
         with self.temporary_optimizer(opt):
             self.assertEqual(opt.get_count(), 0)
             long_loop()
             self.assertEqual(opt.get_count(), 10)
+
+
+class TestUops(unittest.TestCase):
+
+    def test_basic_loop(self):
+
+        def testfunc(x):
+            i = 0
+            while i < x:
+                i += 1
+
+        testfunc(1000)
+
+        ex = None
+        for offset in range(0, 100, 2):
+            try:
+                ex = _testinternalcapi.get_executor(testfunc.__code__, offset)
+                break
+            except ValueError:
+                pass
+        if ex is None:
+            return
+        self.assertIn("SAVE_IP", str(ex))
 
 
 if __name__ == "__main__":

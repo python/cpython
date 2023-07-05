@@ -834,11 +834,8 @@ _PyErr_PrintEx(PyThreadState *tstate, int set_sys_last_vars)
         _PyErr_WriteUnraisableMsg("in audit hook", NULL);
     }
     if (hook) {
-        PyObject* stack[3];
-        stack[0] = typ;
-        stack[1] = exc;
-        stack[2] = tb;
-        PyObject *result = _PyObject_FastCall(hook, stack, 3);
+        PyObject* args[3] = {typ, exc, tb};
+        PyObject *result = PyObject_Vectorcall(hook, args, 3, NULL);
         if (result == NULL) {
             handle_system_exit();
 

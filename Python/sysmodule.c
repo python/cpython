@@ -20,6 +20,7 @@ Data members:
 #include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_long.h"          // _PY_LONG_MAX_STR_DIGITS_THRESHOLD
+#include "pycore_modsupport.h"    // _PyModule_CreateInitialized()
 #include "pycore_namespace.h"     // _PyNamespace_New()
 #include "pycore_object.h"        // _PyObject_IS_GC()
 #include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
@@ -268,7 +269,7 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
                 PyThreadState_LeaveTracing(ts);
             }
             PyObject* args[2] = {eventName, eventArgs};
-            o = _PyObject_FastCallTstate(ts, hook, args, 2);
+            o = _PyObject_VectorcallTstate(ts, hook, args, 2, NULL);
             if (canTrace) {
                 PyThreadState_EnterTracing(ts);
             }
@@ -425,7 +426,7 @@ PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
     e->userData = userData;
 
     if (runtime->audit_hooks.mutex == NULL) {
-        /* The runtime must not be initailized yet. */
+        /* The runtime must not be initialized yet. */
         add_audit_hook_entry_unlocked(runtime, e);
     }
     else {
@@ -863,6 +864,13 @@ sys_exit_impl(PyObject *module, PyObject *status)
 }
 
 
+static PyObject *
+get_utf8_unicode(void)
+{
+    _Py_DECLARE_STR(utf_8, "utf-8");
+    PyObject *ret = &_Py_STR(utf_8);
+    return Py_NewRef(ret);
+}
 
 /*[clinic input]
 sys.getdefaultencoding
@@ -874,9 +882,7 @@ static PyObject *
 sys_getdefaultencoding_impl(PyObject *module)
 /*[clinic end generated code: output=256d19dfcc0711e6 input=d416856ddbef6909]*/
 {
-    _Py_DECLARE_STR(utf_8, "utf-8");
-    PyObject *ret = &_Py_STR(utf_8);
-    return Py_NewRef(ret);
+    return get_utf8_unicode();
 }
 
 /*[clinic input]
@@ -891,7 +897,17 @@ sys_getfilesystemencoding_impl(PyObject *module)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     const PyConfig *config = _PyInterpreterState_GetConfig(interp);
-    return PyUnicode_FromWideChar(config->filesystem_encoding, -1);
+
+    if (wcscmp(config->filesystem_encoding, L"utf-8") == 0) {
+        return get_utf8_unicode();
+    }
+
+    PyObject *u = PyUnicode_FromWideChar(config->filesystem_encoding, -1);
+    if (u == NULL) {
+        return NULL;
+    }
+    _PyUnicode_InternInPlace(interp, &u);
+    return u;
 }
 
 /*[clinic input]
@@ -906,7 +922,12 @@ sys_getfilesystemencodeerrors_impl(PyObject *module)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     const PyConfig *config = _PyInterpreterState_GetConfig(interp);
-    return PyUnicode_FromWideChar(config->filesystem_errors, -1);
+    PyObject *u = PyUnicode_FromWideChar(config->filesystem_errors, -1);
+    if (u == NULL) {
+        return NULL;
+    }
+    _PyUnicode_InternInPlace(interp, &u);
+    return u;
 }
 
 /*[clinic input]
@@ -959,12 +980,6 @@ static PyObject *
 call_trampoline(PyThreadState *tstate, PyObject* callback,
                 PyFrameObject *frame, int what, PyObject *arg)
 {
-
-    PyObject *stack[3];
-    stack[0] = (PyObject *)frame;
-    stack[1] = whatstrings[what];
-    stack[2] = (arg != NULL) ? arg : Py_None;
-
     /* Discard any previous modifications the frame's fast locals */
     if (frame->f_fast_as_locals) {
         if (PyFrame_FastToLocalsWithError(frame) < 0) {
@@ -973,7 +988,11 @@ call_trampoline(PyThreadState *tstate, PyObject* callback,
     }
 
     /* call the Python-level function */
-    PyObject *result = _PyObject_FastCallTstate(tstate, callback, stack, 3);
+    if (arg == NULL) {
+        arg = Py_None;
+    }
+    PyObject *args[3] = {(PyObject *)frame, whatstrings[what], arg};
+    PyObject *result = _PyObject_VectorcallTstate(tstate, callback, args, 3, NULL);
 
     PyFrame_LocalsToFast(frame, 1);
     return result;
@@ -2277,7 +2296,10 @@ PyAPI_FUNC(int) PyUnstable_PerfMapState_Init(void) {
     char filename[100];
     pid_t pid = getpid();
     // Use nofollow flag to prevent symlink attacks.
-    int flags = O_WRONLY | O_CREAT | O_APPEND | O_NOFOLLOW | O_CLOEXEC;
+    int flags = O_WRONLY | O_CREAT | O_APPEND | O_NOFOLLOW;
+#ifdef O_CLOEXEC
+    flags |= O_CLOEXEC;
+#endif
     snprintf(filename, sizeof(filename) - 1, "/tmp/perf-%jd.map",
                 (intmax_t)pid);
     int fd = open(filename, flags, 0600);
