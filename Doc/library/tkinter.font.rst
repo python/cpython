@@ -91,6 +91,9 @@ The different font weights and slants are:
 
    Return the names of defined fonts.
 
-.. function:: nametofont(name)
+.. function:: nametofont(name, root=None)
 
    Return a :class:`Font` representation of a tk named font.
+
+   .. versionchanged:: 3.10
+      The *root* parameter was added.

@@ -10,7 +10,7 @@ from idlelib.idle_test.mock_tk import Text
 
 
 # Test Class TC is used in multiple get_argspec test methods
-class TC():
+class TC:
     'doc'
     tip = "(ai=None, *b)"
     def __init__(self, ai=None, *b): 'doc'
@@ -77,7 +77,9 @@ class Get_argspecTest(unittest.TestCase):
         tiptest(List.append, '(self, object, /)' + append_doc)
         tiptest([].append, '(object, /)' + append_doc)
 
-        tiptest(types.MethodType, "method(function, instance)")
+        tiptest(types.MethodType,
+              '(function, instance, /)\n'
+              'Create a bound instance method object.')
         tiptest(SB(), default_tip)
 
         p = re.compile('')
@@ -99,9 +101,14 @@ non-overlapping occurrences o...''')
 (width=70, initial_indent='', subsequent_indent='', expand_tabs=True,
     replace_whitespace=True, fix_sentence_endings=False, break_long_words=True,
     drop_whitespace=True, break_on_hyphens=True, tabsize=8, *, max_lines=None,
-    placeholder=' [...]')''')
+    placeholder=' [...]')
+Object for wrapping/filling text.  The public interface consists of
+the wrap() and fill() methods; the other methods are just there for
+subclasses to override in order to tweak the default behaviour.
+If you want to completely replace the main wrapping algorithm,
+you\'ll probably have to override _wrap_chunks().''')
 
-    def test_properly_formated(self):
+    def test_properly_formatted(self):
 
         def foo(s='a'*100):
             pass
@@ -241,7 +248,7 @@ bytes() -> empty bytes object''')
             __class__ = property({}.__getitem__, {}.__setitem__)
         class Object(metaclass=Type):
             __slots__ = '__class__'
-        for meth, mtip  in ((Type, default_tip), (Object, default_tip),
+        for meth, mtip  in ((Type, get_spec(type)), (Object, default_tip),
                             (Object(), '')):
             with self.subTest(meth=meth, mtip=mtip):
                 self.assertEqual(get_spec(meth), mtip)
@@ -263,7 +270,7 @@ class Get_entityTest(unittest.TestCase):
 # open_calltip is about half the code; the others are fairly trivial.
 # The default mocks are what are needed for open_calltip.
 
-class mock_Shell():
+class mock_Shell:
     "Return mock sufficient to pass to hyperparser."
     def __init__(self, text):
         text.tag_prevrange = Mock(return_value=None)

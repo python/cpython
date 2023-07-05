@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_pyarena.h"       // PyArena
 
 /* A simple arena block structure.
 
@@ -125,7 +126,7 @@ block_alloc(block *b, size_t size)
 }
 
 PyArena *
-PyArena_New()
+_PyArena_New(void)
 {
     PyArena* arena = (PyArena *)PyMem_Malloc(sizeof(PyArena));
     if (!arena)
@@ -154,7 +155,7 @@ PyArena_New()
 }
 
 void
-PyArena_Free(PyArena *arena)
+_PyArena_Free(PyArena *arena)
 {
     assert(arena);
 #if defined(Py_DEBUG)
@@ -177,7 +178,7 @@ PyArena_Free(PyArena *arena)
 }
 
 void *
-PyArena_Malloc(PyArena *arena, size_t size)
+_PyArena_Malloc(PyArena *arena, size_t size)
 {
     void *p = block_alloc(arena->a_cur, size);
     if (!p)
@@ -200,7 +201,7 @@ PyArena_Malloc(PyArena *arena, size_t size)
 }
 
 int
-PyArena_AddPyObject(PyArena *arena, PyObject *obj)
+_PyArena_AddPyObject(PyArena *arena, PyObject *obj)
 {
     int r = PyList_Append(arena->a_objects, obj);
     if (r >= 0) {
