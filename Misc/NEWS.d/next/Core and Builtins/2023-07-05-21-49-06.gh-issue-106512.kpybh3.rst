@@ -1,0 +1,3 @@
+Change :opcode:`IS_OP` to not use its `oparg`. This is done primarily to
+simplify the decomposition into micro-ops and optimization of
+`POP_JUMP_IF_[NOT_]NONE`.
