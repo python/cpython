@@ -38,19 +38,21 @@ jobs:
         with:
           version: ${{ matrix.llvm }}
           directory: ${{ runner.temp }}/llvm
-      - if: matrix.os == 'Ubuntu'
-        run: ./configure${{ matrix.debug && ' --with-pydebug' || '' }}
-      - if: matrix.os == 'Ubuntu'
-        run: make all
-      - if: matrix.os == 'Ubuntu'
-        run: ./python -m test -j0 -wW
       - if: matrix.os == 'macOS'
-        run: SDKROOT=$(xcrun --show-sdk-path) ./configure${{ matrix.debug && ' --with-pydebug' || '' }}
-      - if: matrix.os == 'macOS'
-        run: SDKROOT=$(xcrun --show-sdk-path) make all
-      - if: matrix.os == 'macOS'
-        run: ./python.exe -m test -j0 -wW
+        run: |
+          export SDKROOT=$(xcrun --show-sdk-path)
+          ./configure${{ matrix.debug && ' --with-pydebug' || '' }}
+          make all
+          ./python.exe -c 'import sys; assert sys._support_tier == 1, sys._support_tier'
+          ./python.exe -m test -j0 -wW
+      - if: matrix.os == 'Ubuntu'
+        run: |
+          ./configure${{ matrix.debug && ' --with-pydebug' || '' }}
+          make all
+          ./python -c 'import sys; assert sys._support_tier == 1, sys._support_tier'
+          ./python -m test -j0 -wW
       - if: matrix.os == 'Windows'
-        run: ./PCbuild/build${{ matrix.debug && ' -d' || '' }} -p ${{ matrix.platform }}
-      - if: matrix.os == 'Windows'
-        run: ./PCbuild/rt${{ matrix.debug && ' -d' || '' }} -p ${{ matrix.platform }} -q -j0 -wW
+        run: |
+          ./PCbuild/build${{ matrix.debug && ' -d' || '' }} -p ${{ matrix.platform }}
+          ./python -c 'import sys; assert sys._support_tier == 1, sys._support_tier'
+          ./PCbuild/rt${{ matrix.debug && ' -d' || '' }} -p ${{ matrix.platform }} -q -j0 -wW
