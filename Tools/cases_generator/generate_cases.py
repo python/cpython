@@ -1593,7 +1593,7 @@ def no_exception(node: parser.Node) -> bool:
     for token in node.tokens:
         token_text = token.text.lower()
         if token.kind == "IDENTIFIER":
-            if token_text in ("error_if", "go_to_instruction"):
+            if token_text == "error_if":
                 return False
             if token_text.startswith("py") or token_text.startswith("_py"):
                 return False
