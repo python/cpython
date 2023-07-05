@@ -17,7 +17,6 @@ Doc/c-api/complex.rst
 Doc/c-api/conversion.rst
 Doc/c-api/datetime.rst
 Doc/c-api/descriptor.rst
-Doc/c-api/dict.rst
 Doc/c-api/exceptions.rst
 Doc/c-api/file.rst
 Doc/c-api/float.rst
@@ -47,7 +46,6 @@ Doc/c-api/typehints.rst
 Doc/c-api/typeobj.rst
 Doc/c-api/unicode.rst
 Doc/c-api/veryhigh.rst
-Doc/c-api/weakref.rst
 Doc/extending/embedding.rst
 Doc/extending/extending.rst
 Doc/extending/newtypes.rst
@@ -87,8 +85,6 @@ Doc/library/bdb.rst
 Doc/library/bisect.rst
 Doc/library/bz2.rst
 Doc/library/calendar.rst
-Doc/library/cgi.rst
-Doc/library/cmath.rst
 Doc/library/cmd.rst
 Doc/library/code.rst
 Doc/library/codecs.rst
@@ -104,7 +100,6 @@ Doc/library/contextlib.rst
 Doc/library/copy.rst
 Doc/library/csv.rst
 Doc/library/ctypes.rst
-Doc/library/curses.ascii.rst
 Doc/library/curses.rst
 Doc/library/datetime.rst
 Doc/library/dbm.rst
