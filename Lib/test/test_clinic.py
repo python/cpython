@@ -1089,15 +1089,16 @@ class ClinicExternalTest(TestCase):
     maxDiff = None
 
     def test_external(self):
+        CLINIC_TEST = 'clinic.test.c'
         # bpo-42398: Test that the destination file is left unchanged if the
         # content does not change. Moreover, check also that the file
         # modification time does not change in this case.
-        source = support.findfile('clinic.test')
+        source = support.findfile(CLINIC_TEST)
         with open(source, 'r', encoding='utf-8') as f:
             orig_contents = f.read()
 
         with os_helper.temp_dir() as tmp_dir:
-            testfile = os.path.join(tmp_dir, 'clinic.test.c')
+            testfile = os.path.join(tmp_dir, CLINIC_TEST)
             with open(testfile, 'w', encoding='utf-8') as f:
                 f.write(orig_contents)
             old_mtime_ns = os.stat(testfile).st_mtime_ns
