@@ -1617,19 +1617,6 @@ class CLanguage(Language):
         return clinic.get_destination('block').dump()
 
 
-
-
-@contextlib.contextmanager
-def OverrideStdioWith(stdout):
-    saved_stdout = sys.stdout
-    sys.stdout = stdout
-    try:
-        yield
-    finally:
-        assert sys.stdout is stdout
-        sys.stdout = saved_stdout
-
-
 def create_regex(
         before: str,
         after: str,
@@ -2331,17 +2318,14 @@ def compute_checksum(
     return s
 
 
-
-
 class PythonParser:
     def __init__(self, clinic: Clinic) -> None:
         pass
 
     def parse(self, block: Block) -> None:
-        s = io.StringIO()
-        with OverrideStdioWith(s):
+        with contextlib.redirect_stdout(io.StringIO()) as s:
             exec(block.input)
-        block.output = s.getvalue()
+            block.output = s.getvalue()
 
 
 class Module:
