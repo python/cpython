@@ -414,7 +414,7 @@ def check_sanitizer(*, address=False, memory=False, ub=False):
     )
     address_sanitizer = (
         '-fsanitize=address' in _cflags or
-        '--with-memory-sanitizer' in _config_args
+        '--with-address-sanitizer' in _config_args
     )
     ub_sanitizer = (
         '-fsanitize=undefined' in _cflags or
