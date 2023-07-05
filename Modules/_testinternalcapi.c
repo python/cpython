@@ -858,6 +858,26 @@ get_optimizer(PyObject *self, PyObject *Py_UNUSED(ignored))
     return opt;
 }
 
+static PyObject *
+get_executor(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+
+    if (!_PyArg_CheckPositional("get_executor", nargs, 2, 2)) {
+        return NULL;
+    }
+    PyObject *code = args[0];
+    PyObject *offset = args[1];
+    long ioffset = PyLong_AsLong(offset);
+    if (ioffset == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    if (!PyCode_Check(code)) {
+         PyErr_SetString(PyExc_TypeError, "first argument must be a code object");
+        return NULL;
+    }
+    return (PyObject *)PyUnstable_GetExecutor((PyCodeObject *)code, ioffset);
+}
+
 static int _pending_callback(void *arg)
 {
     /* we assume the argument is callable object to which we own a reference */
@@ -1253,6 +1273,49 @@ test_tstate_capi(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 
+/* Test _PyUnicode_TransformDecimalAndSpaceToASCII() */
+static PyObject *
+unicode_transformdecimalandspacetoascii(PyObject *self, PyObject *arg)
+{
+    if (arg == Py_None) {
+        arg = NULL;
+    }
+    return _PyUnicode_TransformDecimalAndSpaceToASCII(arg);
+}
+
+
+struct atexit_data {
+    int called;
+};
+
+static void
+callback(void *data)
+{
+    ((struct atexit_data *)data)->called += 1;
+}
+
+static PyObject *
+test_atexit(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyThreadState *oldts = PyThreadState_Swap(NULL);
+    PyThreadState *tstate = Py_NewInterpreter();
+
+    struct atexit_data data = {0};
+    int res = _Py_AtExit(tstate->interp, callback, (void *)&data);
+    Py_EndInterpreter(tstate);
+    PyThreadState_Swap(oldts);
+    if (res < 0) {
+        return NULL;
+    }
+
+    if (data.called == 0) {
+        PyErr_SetString(PyExc_RuntimeError, "atexit callback not called");
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -1283,6 +1346,7 @@ static PyMethodDef module_functions[] = {
     {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
     {"get_optimizer", get_optimizer,  METH_NOARGS, NULL},
     {"set_optimizer", set_optimizer,  METH_O, NULL},
+    {"get_executor", _PyCFunction_CAST(get_executor),  METH_FASTCALL, NULL},
     {"get_counter_optimizer", get_counter_optimizer, METH_NOARGS, NULL},
     {"get_uop_optimizer", get_uop_optimizer, METH_NOARGS, NULL},
     {"pending_threadfunc", _PyCFunction_CAST(pending_threadfunc),
@@ -1304,6 +1368,8 @@ static PyMethodDef module_functions[] = {
     {"_PyTime_ObjectToTimeval",   test_pytime_object_to_timeval,  METH_VARARGS},
     {"_PyTraceMalloc_GetTraceback", tracemalloc_get_traceback, METH_VARARGS},
     {"test_tstate_capi", test_tstate_capi, METH_NOARGS, NULL},
+    {"_PyUnicode_TransformDecimalAndSpaceToASCII", unicode_transformdecimalandspacetoascii, METH_O},
+    {"test_atexit", test_atexit, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
