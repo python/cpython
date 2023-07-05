@@ -254,14 +254,12 @@ value_error_int(const char *mesg)
     return -1;
 }
 
-#ifdef CONFIG_32
 static PyObject *
 value_error_ptr(const char *mesg)
 {
     PyErr_SetString(PyExc_ValueError, mesg);
     return NULL;
 }
-#endif
 
 static int
 type_error_int(const char *mesg)
@@ -548,6 +546,8 @@ getround(PyObject *v)
    initialized to new SignalDicts. Once a SignalDict is tied to
    a context, it cannot be deleted. */
 
+#define INVALID_SIGNALDICT_ERROR_MSG "invalid signal dict"
+
 static int
 signaldict_init(PyObject *self, PyObject *args UNUSED, PyObject *kwds UNUSED)
 {
@@ -559,9 +559,7 @@ static Py_ssize_t
 signaldict_len(PyObject *self)
 {
     if (SdFlagAddr(self) == NULL) {
-        PyErr_SetString(PyExc_ValueError,
-            "invalid signal dict");
-        return -1;
+        return value_error_int(INVALID_SIGNALDICT_ERROR_MSG);
     }
     return SIGNAL_MAP_LEN;
 }
@@ -571,9 +569,7 @@ static PyObject *
 signaldict_iter(PyObject *self)
 {
     if (SdFlagAddr(self) == NULL) {
-        PyErr_SetString(PyExc_ValueError,
-            "invalid signal dict");
-        return NULL;
+        return value_error_ptr(INVALID_SIGNALDICT_ERROR_MSG);
     }
     return PyTuple_Type.tp_iter(SignalTuple);
 }
@@ -584,9 +580,7 @@ signaldict_getitem(PyObject *self, PyObject *key)
     uint32_t flag;
 
     if (SdFlagAddr(self) == NULL) {
-        PyErr_SetString(PyExc_ValueError,
-            "invalid signal dict");
-        return NULL;
+        return value_error_ptr(INVALID_SIGNALDICT_ERROR_MSG);
     }
 
     flag = exception_as_flag(key);
@@ -604,9 +598,7 @@ signaldict_setitem(PyObject *self, PyObject *key, PyObject *value)
     int x;
 
     if (SdFlagAddr(self) == NULL) {
-        PyErr_SetString(PyExc_ValueError,
-            "invalid signal dict");
-        return -1;
+        return value_error_int(INVALID_SIGNALDICT_ERROR_MSG);
     }
 
     if (value == NULL) {
@@ -658,9 +650,7 @@ signaldict_repr(PyObject *self)
     int i;
 
     if (SdFlagAddr(self) == NULL) {
-        PyErr_SetString(PyExc_ValueError,
-            "invalid signal dict");
-        return NULL;
+        return value_error_ptr(INVALID_SIGNALDICT_ERROR_MSG);
     }
 
     assert(SIGNAL_MAP_LEN == 9);
@@ -687,9 +677,7 @@ signaldict_richcompare(PyObject *v, PyObject *w, int op)
     assert(PyDecSignalDict_Check(state, v));
 
     if ((SdFlagAddr(v) == NULL) || (SdFlagAddr(w) == NULL)) {
-        PyErr_SetString(PyExc_ValueError,
-            "invalid signal dict");
-        return NULL;
+        return value_error_ptr(INVALID_SIGNALDICT_ERROR_MSG);
     }
 
     if (op == Py_EQ || op == Py_NE) {
@@ -720,9 +708,7 @@ static PyObject *
 signaldict_copy(PyObject *self, PyObject *args UNUSED)
 {
     if (SdFlagAddr(self) == NULL) {
-        PyErr_SetString(PyExc_ValueError,
-            "invalid signal dict");
-        return NULL;
+        return value_error_ptr(INVALID_SIGNALDICT_ERROR_MSG);
     }
     return flags_as_dict(SdFlags(self));
 }
