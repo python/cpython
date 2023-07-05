@@ -31,6 +31,7 @@ from test import support
 from test.support import hashlib_helper
 from test.support import import_helper
 from test.support import os_helper
+from test.support import script_helper
 from test.support import socket_helper
 from test.support import threading_helper
 from test.support import warnings_helper
@@ -5849,17 +5850,23 @@ class MiscTestCase(unittest.TestCase):
         support.check__all__(self, multiprocessing, extra=multiprocessing.__all__,
                              not_exported=['SUBDEBUG', 'SUBWARNING'])
 
-    def test_spawn_set_executable_none(self):
+    def test_spawn_sys_executable_none_allows_import(self):
         # Regression test for a bug introduced in
         # https://github.com/python/cpython/issues/90876 that caused an
-        # ImportError in multiprocessing when sys.executable (or sys.exec_prefix
-        # on Windows) was None.  This can be true in embedded environments.
-        import multiprocessing.spawn
-        orig_exe = multiprocessing.spawn.get_executable()
-        try:
-            multiprocessing.spawn.set_executable(None)
-        finally:
-            multiprocessing.spawn.set_executable(orig_exe)
+        # ImportError in multiprocessing when sys.executable was None.
+        # This can be true in embedded environments.
+        testfn = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, testfn)
+        with open(testfn, 'wb') as f:
+            f.write(b'''\
+import sys
+sys.executable = None
+assert "multiprocessing" not in sys.modules, "mp already imported!"
+import multiprocessing
+import multiprocessing.spawn  # This should not fail\n''')
+        rc, _, err = script_helper.assert_python_ok(testfn)
+        self.assertEqual(rc, 0)
+        self.assertEqual(err, b'')
 
 
 #
