@@ -35,7 +35,9 @@ else:
 
 def set_executable(exe):
     global _python_exe
-    if sys.platform == 'win32':
+    if exe is None:
+        _python_exe = exe
+    elif sys.platform == 'win32':
         _python_exe = os.fsdecode(exe)
     else:
         _python_exe = os.fsencode(exe)
