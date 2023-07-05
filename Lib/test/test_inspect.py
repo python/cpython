@@ -607,17 +607,19 @@ class TestRetrievingSourceCode(GetSourceBase):
          'doc\0string\n\nsecond\0line\nthird\0line\0'),
         # first line is lstrip()-ped. other lines are kept when no margin.[w:
         ('   ', ''),
+        # compiler.cleandoc() doesn't strip leading/trailing newlines
+        # to keep maximum backward compatibility.
+        # inspect.cleandoc() removes them.
+        ('\n\n\n  first paragraph\n\n   second paragraph\n\n',
+         '\n\n\nfirst paragraph\n\n second paragraph\n\n'),
+        ('   \n \n  \n   ', '\n \n  \n   '),
     ]
 
     def test_cleandoc(self):
         func = inspect.cleandoc
-        testdata = self.cleandoc_testdata + [
-            # leading and trailing empty lines should be removed
-            ('\n\n\n  first paragraph\n\n   second paragraph\n\n',
-             'first paragraph\n\n second paragraph'),
-            ('   \n \n  \n   ', ' \n  \n   '),
-        ]
-        for i, (input, expected) in enumerate(testdata):
+        for i, (input, expected) in enumerate(self.cleandoc_testdata):
+            # only inspect.cleandoc() strip \n
+            expected = expected.strip('\n')
             with self.subTest(i=i):
                 self.assertEqual(func(input), expected)
 
@@ -625,12 +627,6 @@ class TestRetrievingSourceCode(GetSourceBase):
     def test_c_cleandoc(self):
         import _testinternalcapi
         func = _testinternalcapi.compiler_cleandoc
-        testdata = self.cleandoc_testdata + [
-            # leading and trailing empty lines are not removed
-            ('\n\n\n  first paragraph\n\n   second paragraph\n\n',
-             '\n\n\nfirst paragraph\n\n second paragraph\n\n'),
-            ('   \n \n  \n   ', '\n \n  \n   '),
-        ]
         for i, (input, expected) in enumerate(self.cleandoc_testdata):
             with self.subTest(i=i):
                 self.assertEqual(func(input), expected)
