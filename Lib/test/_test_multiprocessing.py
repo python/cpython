@@ -5849,6 +5849,18 @@ class MiscTestCase(unittest.TestCase):
         support.check__all__(self, multiprocessing, extra=multiprocessing.__all__,
                              not_exported=['SUBDEBUG', 'SUBWARNING'])
 
+    def test_spawn_set_executable_none(self):
+        # Regression test for a bug introduced in
+        # https://github.com/python/cpython/issues/90876 that caused an
+        # ImportError in multiprocessing when sys.executable (or sys.exec_prefix
+        # on Windows) was None.  This can be true in embedded environments.
+        import multiprocessing.spawn
+        orig_exe = multiprocessing.spawn.get_executable()
+        try:
+            multiprocessing.spawn.set_executable(None)
+        finally:
+            multiprocessing.spawn.set_executable(orig_exe)
+
 
 #
 # Mixins
