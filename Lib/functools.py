@@ -960,8 +960,8 @@ class singledispatchmethod:
         return getattr(self.func, '__isabstractmethod__', False)
 
     def __set_name__(self, owner, name):
-         if self.attrname is None:
-             self.attrname = name
+        if self.attrname is None:
+            self.attrname = name
 
 
 ################################################################################
