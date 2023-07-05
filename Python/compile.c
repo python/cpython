@@ -510,8 +510,10 @@ static PyCodeObject *optimize_and_assemble(struct compiler *, int addNone);
 
 static int
 compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
-               PyCompilerFlags flags, int optimize, PyArena *arena)
+               PyCompilerFlags *flags, int optimize, PyArena *arena)
 {
+    PyCompilerFlags local_flags = _PyCompilerFlags_INIT;
+
     c->c_const_cache = PyDict_New();
     if (!c->c_const_cache) {
         return ERROR;
@@ -527,10 +529,13 @@ compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
     if (!_PyFuture_FromAST(mod, filename, &c->c_future)) {
         return ERROR;
     }
-    int merged = c->c_future.ff_features | flags.cf_flags;
+    if (!flags) {
+        flags = &local_flags;
+    }
+    int merged = c->c_future.ff_features | flags->cf_flags;
     c->c_future.ff_features = merged;
-    flags.cf_flags = merged;
-    c->c_flags = flags;
+    flags->cf_flags = merged;
+    c->c_flags = *flags;
     c->c_optimize = (optimize == -1) ? _Py_GetConfig()->optimization_level : optimize;
     c->c_nestlevel = 0;
 
@@ -555,12 +560,11 @@ static struct compiler*
 new_compiler(mod_ty mod, PyObject *filename, PyCompilerFlags *pflags,
              int optimize, PyArena *arena)
 {
-    PyCompilerFlags flags = pflags ? *pflags : _PyCompilerFlags_INIT;
     struct compiler *c = PyMem_Calloc(1, sizeof(struct compiler));
     if (c == NULL) {
         return NULL;
     }
-    if (compiler_setup(c, mod, filename, flags, optimize, arena) < 0) {
+    if (compiler_setup(c, mod, filename, pflags, optimize, arena) < 0) {
         compiler_free(c);
         return NULL;
     }
@@ -1252,8 +1256,12 @@ compiler_enter_scope(struct compiler *c, identifier name,
     }
     u->u_metadata.u_name = Py_NewRef(name);
     u->u_metadata.u_varnames = list2dict(u->u_ste->ste_varnames);
+    if (!u->u_metadata.u_varnames) {
+        compiler_unit_free(u);
+        return ERROR;
+    }
     u->u_metadata.u_cellvars = dictbytype(u->u_ste->ste_symbols, CELL, DEF_COMP_CELL, 0);
-    if (!u->u_metadata.u_varnames || !u->u_metadata.u_cellvars) {
+    if (!u->u_metadata.u_cellvars) {
         compiler_unit_free(u);
         return ERROR;
     }
@@ -1422,8 +1430,18 @@ find_ann(asdl_stmt_seq *stmts)
                   find_ann(st->v.TryStar.finalbody) ||
                   find_ann(st->v.TryStar.orelse);
             break;
+        case Match_kind:
+            for (j = 0; j < asdl_seq_LEN(st->v.Match.cases); j++) {
+                match_case_ty match_case = (match_case_ty)asdl_seq_GET(
+                    st->v.Match.cases, j);
+                if (find_ann(match_case->body)) {
+                    return true;
+                }
+            }
+            break;
         default:
             res = false;
+            break;
         }
         if (res) {
             break;

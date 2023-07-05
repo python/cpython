@@ -23,6 +23,7 @@ import types
 import unittest
 from unittest import mock
 import _testinternalcapi
+import _imp
 
 from test.support import os_helper
 from test.support import (
@@ -762,6 +763,13 @@ class ImportTests(unittest.TestCase):
                                     stderr=subprocess.STDOUT,
                                     env=env,
                                     cwd=os.path.dirname(pyexe))
+
+    def test_issue105979(self):
+        # this used to crash
+        with self.assertRaises(ImportError) as cm:
+            _imp.get_frozen_object("x", b"6\'\xd5Cu\x12")
+        self.assertIn("Frozen object named 'x' is invalid",
+                      str(cm.exception))
 
 
 @skip_if_dont_write_bytecode
@@ -1640,9 +1648,10 @@ class SubinterpImportTests(unittest.TestCase):
     )
     ISOLATED = dict(
         use_main_obmalloc=False,
-        own_gil=True,
+        gil=2,
     )
     NOT_ISOLATED = {k: not v for k, v in ISOLATED.items()}
+    NOT_ISOLATED['gil'] = 1
 
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def pipe(self):
@@ -2320,6 +2329,7 @@ class SinglephaseInitTests(unittest.TestCase):
         self.add_module_cleanup(name)
         with self.subTest(name):
             loaded = self.load(name)
+            self.addCleanup(loaded.module._clear_module_state)
 
             self.check_common(loaded)
             self.assertIsNot(loaded.snapshot.state_initialized, None)
@@ -2379,14 +2389,19 @@ class SinglephaseInitTests(unittest.TestCase):
         # Keep a reference around.
         basic = self.load(self.NAME)
 
-        for name in [
-            f'{self.NAME}_with_reinit',  # m_size == 0
-            f'{self.NAME}_with_state',  # m_size > 0
+        for name, has_state in [
+            (f'{self.NAME}_with_reinit', False),  # m_size == 0
+            (f'{self.NAME}_with_state', True),    # m_size > 0
         ]:
             self.add_module_cleanup(name)
-            with self.subTest(name):
+            with self.subTest(name=name, has_state=has_state):
                 loaded = self.load(name)
+                if has_state:
+                    self.addCleanup(loaded.module._clear_module_state)
+
                 reloaded = self.re_load(name, loaded.module)
+                if has_state:
+                    self.addCleanup(reloaded.module._clear_module_state)
 
                 self.check_common(loaded)
                 self.check_common(reloaded)

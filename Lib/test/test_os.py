@@ -4700,6 +4700,22 @@ class ForkTests(unittest.TestCase):
         self.assertEqual(err.decode("utf-8"), "")
         self.assertEqual(out.decode("utf-8"), "")
 
+    def test_fork_at_exit(self):
+        code = """if 1:
+            import atexit
+            import os
+
+            def exit_handler():
+                pid = os.fork()
+                if pid != 0:
+                    print("shouldn't be printed")
+
+            atexit.register(exit_handler)
+        """
+        _, out, err = assert_python_ok("-c", code)
+        self.assertEqual(b"", out)
+        self.assertIn(b"can't fork at interpreter shutdown", err)
+
 
 # Only test if the C version is provided, otherwise TestPEP519 already tested
 # the pure Python implementation.

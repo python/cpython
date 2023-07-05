@@ -76,6 +76,21 @@ static inline void _Py_SetImmortal(PyObject *op)
 }
 #define _Py_SetImmortal(op) _Py_SetImmortal(_PyObject_CAST(op))
 
+/* _Py_ClearImmortal() should only be used during runtime finalization. */
+static inline void _Py_ClearImmortal(PyObject *op)
+{
+    if (op) {
+        assert(op->ob_refcnt == _Py_IMMORTAL_REFCNT);
+        op->ob_refcnt = 1;
+        Py_DECREF(op);
+    }
+}
+#define _Py_ClearImmortal(op) \
+    do { \
+        _Py_ClearImmortal(_PyObject_CAST(op)); \
+        op = NULL; \
+    } while (0)
+
 static inline void
 _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
 {

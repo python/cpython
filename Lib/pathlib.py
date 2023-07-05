@@ -54,12 +54,29 @@ def _ignore_error(exception):
             getattr(exception, 'winerror', None) in _IGNORED_WINERRORS)
 
 
+@functools.cache
 def _is_case_sensitive(flavour):
     return flavour.normcase('Aa') == 'Aa'
 
 #
 # Globbing helpers
 #
+
+
+# fnmatch.translate() returns a regular expression that includes a prefix and
+# a suffix, which enable matching newlines and ensure the end of the string is
+# matched, respectively. These features are undesirable for our implementation
+# of PurePatch.match(), which represents path separators as newlines and joins
+# pattern segments together. As a workaround, we define a slice object that
+# can remove the prefix and suffix from any translate() result. See the
+# _compile_pattern_lines() function for more details.
+_FNMATCH_PREFIX, _FNMATCH_SUFFIX = fnmatch.translate('_').split('_')
+_FNMATCH_SLICE = slice(len(_FNMATCH_PREFIX), -len(_FNMATCH_SUFFIX))
+_SWAP_SEP_AND_NEWLINE = {
+    '/': str.maketrans({'/': '\n', '\n': '/'}),
+    '\\': str.maketrans({'\\': '\n', '\n': '\\'}),
+}
+
 
 @functools.lru_cache()
 def _make_selector(pattern_parts, flavour, case_sensitive):
@@ -90,6 +107,45 @@ def _make_selector(pattern_parts, flavour, case_sensitive):
 def _compile_pattern(pat, case_sensitive):
     flags = re.NOFLAG if case_sensitive else re.IGNORECASE
     return re.compile(fnmatch.translate(pat), flags).match
+
+
+@functools.lru_cache()
+def _compile_pattern_lines(pattern_lines, case_sensitive):
+    """Compile the given pattern lines to an `re.Pattern` object.
+
+    The *pattern_lines* argument is a glob-style pattern (e.g. '*/*.py') with
+    its path separators and newlines swapped (e.g. '*\n*.py`). By using
+    newlines to separate path components, and not setting `re.DOTALL`, we
+    ensure that the `*` wildcard cannot match path separators.
+
+    The returned `re.Pattern` object may have its `match()` method called to
+    match a complete pattern, or `search()` to match from the right. The
+    argument supplied to these methods must also have its path separators and
+    newlines swapped.
+    """
+
+    # Match the start of the path, or just after a path separator
+    parts = ['^']
+    for part in pattern_lines.splitlines(keepends=True):
+        if part == '*\n':
+            part = r'.+\n'
+        elif part == '*':
+            part = r'.+'
+        else:
+            # Any other component: pass to fnmatch.translate(). We slice off
+            # the common prefix and suffix added by translate() to ensure that
+            # re.DOTALL is not set, and the end of the string not matched,
+            # respectively. With DOTALL not set, '*' wildcards will not match
+            # path separators, because the '.' characters in the pattern will
+            # not match newlines.
+            part = fnmatch.translate(part)[_FNMATCH_SLICE]
+        parts.append(part)
+    # Match the end of the path, always.
+    parts.append(r'\Z')
+    flags = re.MULTILINE
+    if not case_sensitive:
+        flags |= re.IGNORECASE
+    return re.compile(''.join(parts), flags=flags)
 
 
 class _Selector:
@@ -244,9 +300,9 @@ class PurePath(object):
     """
 
     __slots__ = (
-        # The `_raw_path` slot stores an unnormalized string path. This is set
+        # The `_raw_paths` slot stores unnormalized string paths. This is set
         # in the `__init__()` method.
-        '_raw_path',
+        '_raw_paths',
 
         # The `_drv`, `_root` and `_tail_cached` slots store parsed and
         # normalized parts of the path. They are set when any of the `drive`,
@@ -274,6 +330,10 @@ class PurePath(object):
         # to implement comparison methods like `__lt__()`.
         '_parts_normcase_cached',
 
+        # The `_lines_cached` slot stores the string path with path separators
+        # and newlines swapped. This is used to implement `match()`.
+        '_lines_cached',
+
         # The `_hash` slot stores the hash of the case-normalized string
         # path. It's set when `__hash__()` is called for the first time.
         '_hash',
@@ -299,10 +359,11 @@ class PurePath(object):
         paths = []
         for arg in args:
             if isinstance(arg, PurePath):
-                path = arg._raw_path
                 if arg._flavour is ntpath and self._flavour is posixpath:
                     # GH-103631: Convert separators for backwards compatibility.
-                    path = path.replace('\\', '/')
+                    paths.extend(path.replace('\\', '/') for path in arg._raw_paths)
+                else:
+                    paths.extend(arg._raw_paths)
             else:
                 try:
                     path = os.fspath(arg)
@@ -313,13 +374,8 @@ class PurePath(object):
                         "argument should be a str or an os.PathLike "
                         "object where __fspath__ returns a str, "
                         f"not {type(path).__name__!r}")
-            paths.append(path)
-        if len(paths) == 0:
-            self._raw_path = ''
-        elif len(paths) == 1:
-            self._raw_path = paths[0]
-        else:
-            self._raw_path = self._flavour.join(*paths)
+                paths.append(path)
+        self._raw_paths = paths
 
     def with_segments(self, *pathsegments):
         """Construct a new path object from any number of path-like objects.
@@ -349,7 +405,14 @@ class PurePath(object):
         return drv, root, parsed
 
     def _load_parts(self):
-        drv, root, tail = self._parse_path(self._raw_path)
+        paths = self._raw_paths
+        if len(paths) == 0:
+            path = ''
+        elif len(paths) == 1:
+            path = paths[0]
+        else:
+            path = self._flavour.join(*paths)
+        drv, root, tail = self._parse_path(path)
         self._drv = drv
         self._root = root
         self._tail_cached = tail
@@ -438,6 +501,20 @@ class PurePath(object):
         except AttributeError:
             self._parts_normcase_cached = self._str_normcase.split(self._flavour.sep)
             return self._parts_normcase_cached
+
+    @property
+    def _lines(self):
+        # Path with separators and newlines swapped, for pattern matching.
+        try:
+            return self._lines_cached
+        except AttributeError:
+            path_str = str(self)
+            if path_str == '.':
+                self._lines_cached = ''
+            else:
+                trans = _SWAP_SEP_AND_NEWLINE[self._flavour.sep]
+                self._lines_cached = path_str.translate(trans)
+            return self._lines_cached
 
     def __eq__(self, other):
         if not isinstance(other, PurePath):
@@ -670,10 +747,17 @@ class PurePath(object):
     def is_absolute(self):
         """True if the path is absolute (has both a root and, if applicable,
         a drive)."""
-        # ntpath.isabs() is defective - see GH-44626 .
         if self._flavour is ntpath:
+            # ntpath.isabs() is defective - see GH-44626.
             return bool(self.drive and self.root)
-        return self._flavour.isabs(self._raw_path)
+        elif self._flavour is posixpath:
+            # Optimization: work with raw paths on POSIX.
+            for path in self._raw_paths:
+                if path.startswith('/'):
+                    return True
+            return False
+        else:
+            return self._flavour.isabs(str(self))
 
     def is_reserved(self):
         """Return True if the path contains one of the special names reserved
@@ -695,23 +779,18 @@ class PurePath(object):
         """
         Return True if this path matches the given pattern.
         """
+        if not isinstance(path_pattern, PurePath):
+            path_pattern = self.with_segments(path_pattern)
         if case_sensitive is None:
             case_sensitive = _is_case_sensitive(self._flavour)
-        pat = self.with_segments(path_pattern)
-        if not pat.parts:
+        pattern = _compile_pattern_lines(path_pattern._lines, case_sensitive)
+        if path_pattern.drive or path_pattern.root:
+            return pattern.match(self._lines) is not None
+        elif path_pattern._tail:
+            return pattern.search(self._lines) is not None
+        else:
             raise ValueError("empty pattern")
-        pat_parts = pat.parts
-        parts = self.parts
-        if pat.drive or pat.root:
-            if len(pat_parts) != len(parts):
-                return False
-        elif len(pat_parts) > len(parts):
-            return False
-        for part, pat in zip(reversed(parts), reversed(pat_parts)):
-            match = _compile_pattern(pat, case_sensitive)
-            if not match(part):
-                return False
-        return True
+
 
 # Can't subclass os.PathLike from PurePath and keep the constructor
 # optimizations in PurePath.__slots__.

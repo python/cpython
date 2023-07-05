@@ -48,12 +48,22 @@ struct _Py_long_state {
    */
 struct _is {
 
-    struct _ceval_state ceval;
     PyInterpreterState *next;
+
+    int64_t id;
+    int64_t id_refcount;
+    int requires_idref;
+    PyThread_type_lock id_mutex;
+
+    /* Has been initialized to a safe state.
+
+       In order to be effective, this must be set to 0 during or right
+       after allocation. */
+    int _initialized;
+    int finalizing;
 
     uint64_t monitoring_version;
     uint64_t last_restart_version;
-
     struct pythreads {
         uint64_t next_unique_id;
         /* The linked list of threads, newest first. */
@@ -72,18 +82,6 @@ struct _is {
        Get runtime from tstate: tstate->interp->runtime. */
     struct pyruntimestate *runtime;
 
-    int64_t id;
-    int64_t id_refcount;
-    int requires_idref;
-    PyThread_type_lock id_mutex;
-
-    /* Has been initialized to a safe state.
-
-       In order to be effective, this must be set to 0 during or right
-       after allocation. */
-    int _initialized;
-    int finalizing;
-
     /* Set by Py_EndInterpreter().
 
        Use _PyInterpreterState_GetFinalizing()
@@ -91,16 +89,37 @@ struct _is {
        to access it, don't access it directly. */
     _Py_atomic_address _finalizing;
 
-    struct _obmalloc_state obmalloc;
-
     struct _gc_runtime_state gc;
 
-    struct _import_state imports;
+    /* The following fields are here to avoid allocation during init.
+       The data is exposed through PyInterpreterState pointer fields.
+       These fields should not be accessed directly outside of init.
+
+       All other PyInterpreterState pointer fields are populated when
+       needed and default to NULL.
+
+       For now there are some exceptions to that rule, which require
+       allocation during init.  These will be addressed on a case-by-case
+       basis.  Also see _PyRuntimeState regarding the various mutex fields.
+       */
 
     // Dictionary of the sys module
     PyObject *sysdict;
+
     // Dictionary of the builtins module
     PyObject *builtins;
+
+    struct _ceval_state ceval;
+
+    struct _import_state imports;
+
+    /* The per-interpreter GIL, which might not be used. */
+    struct _gil_runtime_state _gil;
+
+     /* ---------- IMPORTANT ---------------------------
+     The fields above this line are declared as early as
+     possible to facilitate out-of-process observability
+     tools. */
 
     PyObject *codec_search_path;
     PyObject *codec_search_cache;
@@ -132,6 +151,8 @@ struct _is {
 
     struct _warnings_runtime_state warnings;
     struct atexit_state atexit;
+
+    struct _obmalloc_state obmalloc;
 
     PyObject *audit_hooks;
     PyType_WatchCallback type_watchers[TYPE_MAX_WATCHERS];
@@ -173,22 +194,7 @@ struct _is {
     struct _Py_interp_cached_objects cached_objects;
     struct _Py_interp_static_objects static_objects;
 
-    /* The following fields are here to avoid allocation during init.
-       The data is exposed through PyInterpreterState pointer fields.
-       These fields should not be accessed directly outside of init.
-
-       All other PyInterpreterState pointer fields are populated when
-       needed and default to NULL.
-
-       For now there are some exceptions to that rule, which require
-       allocation during init.  These will be addressed on a case-by-case
-       basis.  Also see _PyRuntimeState regarding the various mutex fields.
-       */
-
-    /* The per-interpreter GIL, which might not be used. */
-    struct _gil_runtime_state _gil;
-
-    /* the initial PyInterpreterState.threads.head */
+   /* the initial PyInterpreterState.threads.head */
     PyThreadState _initial_thread;
 };
 

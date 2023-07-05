@@ -18,6 +18,7 @@ typedef struct {
 } debug_alloc_api_t;
 
 struct _pymem_allocators {
+    PyThread_type_lock mutex;
     struct {
         PyMemAllocatorEx raw;
         PyMemAllocatorEx mem;

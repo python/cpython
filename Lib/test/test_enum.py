@@ -31,6 +31,11 @@ def load_tests(loader, tests, ignore):
                 '../../Doc/library/enum.rst',
                 optionflags=doctest.ELLIPSIS|doctest.NORMALIZE_WHITESPACE,
                 ))
+    if os.path.exists('Doc/howto/enum.rst'):
+        tests.addTests(doctest.DocFileSuite(
+                '../../Doc/howto/enum.rst',
+                optionflags=doctest.ELLIPSIS|doctest.NORMALIZE_WHITESPACE,
+                ))
     return tests
 
 MODULE = __name__
@@ -66,6 +71,7 @@ try:
         LARRY = 1
         CURLY = 2
         MOE = 4
+        BIG = 389
 except Exception as exc:
     FlagStooges = exc
 
@@ -74,17 +80,20 @@ class FlagStoogesWithZero(Flag):
     LARRY = 1
     CURLY = 2
     MOE = 4
+    BIG = 389
 
 class IntFlagStooges(IntFlag):
     LARRY = 1
     CURLY = 2
     MOE = 4
+    BIG = 389
 
 class IntFlagStoogesWithZero(IntFlag):
     NOFLAG = 0
     LARRY = 1
     CURLY = 2
     MOE = 4
+    BIG = 389
 
 # for pickle test and subclass tests
 class Name(StrEnum):
@@ -1942,7 +1951,6 @@ class TestSpecial(unittest.TestCase):
             __qualname__ = 'NEI'
             x = ('the-x', 1)
             y = ('the-y', 2)
-
         self.assertIs(NEI.__new__, Enum.__new__)
         self.assertEqual(repr(NEI.x + NEI.y), "NamedInt('(the-x + the-y)', 3)")
         globals()['NamedInt'] = NamedInt
@@ -1950,6 +1958,10 @@ class TestSpecial(unittest.TestCase):
         NI5 = NamedInt('test', 5)
         self.assertEqual(NI5, 5)
         self.assertEqual(NEI.y.value, 2)
+        with self.assertRaisesRegex(TypeError, "name and value must be specified"):
+            test_pickle_dump_load(self.assertIs, NEI.y)
+        # fix pickle support and try again
+        NEI.__reduce_ex__ = enum.pickle_by_enum_name
         test_pickle_dump_load(self.assertIs, NEI.y)
         test_pickle_dump_load(self.assertIs, NEI)
 
@@ -3252,11 +3264,17 @@ class OldTestFlag(unittest.TestCase):
         test_pickle_dump_load(self.assertEqual,
                         FlagStooges.CURLY&~FlagStooges.CURLY)
         test_pickle_dump_load(self.assertIs, FlagStooges)
+        test_pickle_dump_load(self.assertEqual, FlagStooges.BIG)
+        test_pickle_dump_load(self.assertEqual,
+                        FlagStooges.CURLY|FlagStooges.BIG)
 
         test_pickle_dump_load(self.assertIs, FlagStoogesWithZero.CURLY)
         test_pickle_dump_load(self.assertEqual,
                         FlagStoogesWithZero.CURLY|FlagStoogesWithZero.MOE)
         test_pickle_dump_load(self.assertIs, FlagStoogesWithZero.NOFLAG)
+        test_pickle_dump_load(self.assertEqual, FlagStoogesWithZero.BIG)
+        test_pickle_dump_load(self.assertEqual,
+                        FlagStoogesWithZero.CURLY|FlagStoogesWithZero.BIG)
 
         test_pickle_dump_load(self.assertIs, IntFlagStooges.CURLY)
         test_pickle_dump_load(self.assertEqual,
@@ -3266,11 +3284,19 @@ class OldTestFlag(unittest.TestCase):
         test_pickle_dump_load(self.assertEqual, IntFlagStooges(0))
         test_pickle_dump_load(self.assertEqual, IntFlagStooges(0x30))
         test_pickle_dump_load(self.assertIs, IntFlagStooges)
+        test_pickle_dump_load(self.assertEqual, IntFlagStooges.BIG)
+        test_pickle_dump_load(self.assertEqual, IntFlagStooges.BIG|1)
+        test_pickle_dump_load(self.assertEqual,
+                        IntFlagStooges.CURLY|IntFlagStooges.BIG)
 
         test_pickle_dump_load(self.assertIs, IntFlagStoogesWithZero.CURLY)
         test_pickle_dump_load(self.assertEqual,
                         IntFlagStoogesWithZero.CURLY|IntFlagStoogesWithZero.MOE)
         test_pickle_dump_load(self.assertIs, IntFlagStoogesWithZero.NOFLAG)
+        test_pickle_dump_load(self.assertEqual, IntFlagStoogesWithZero.BIG)
+        test_pickle_dump_load(self.assertEqual, IntFlagStoogesWithZero.BIG|1)
+        test_pickle_dump_load(self.assertEqual,
+                        IntFlagStoogesWithZero.CURLY|IntFlagStoogesWithZero.BIG)
 
     def test_contains_tf(self):
         Open = self.Open

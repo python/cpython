@@ -331,6 +331,18 @@ gen_close_iter(PyObject *yf)
     return 0;
 }
 
+static inline bool
+is_resume(_Py_CODEUNIT *instr)
+{
+    return instr->op.code == RESUME || instr->op.code == INSTRUMENTED_RESUME;
+}
+
+static inline bool
+is_yield(_Py_CODEUNIT *instr)
+{
+    return instr->op.code == YIELD_VALUE || instr->op.code == INSTRUMENTED_YIELD_VALUE;
+}
+
 PyObject *
 _PyGen_yf(PyGenObject *gen)
 {
@@ -347,7 +359,7 @@ _PyGen_yf(PyGenObject *gen)
             return NULL;
         }
         _Py_CODEUNIT next = frame->prev_instr[1];
-        if (next.op.code != RESUME || next.op.arg < 2)
+        if (!is_resume(&next) || next.op.arg < 2)
         {
             /* Not in a yield from */
             return NULL;
@@ -382,8 +394,8 @@ gen_close(PyGenObject *gen, PyObject *args)
     _PyInterpreterFrame *frame = (_PyInterpreterFrame *)gen->gi_iframe;
     /* It is possible for the previous instruction to not be a
      * YIELD_VALUE if the debugger has changed the lineno. */
-    if (err == 0 && frame->prev_instr[0].op.code == YIELD_VALUE) {
-        assert(frame->prev_instr[1].op.code == RESUME);
+    if (err == 0 && is_yield(frame->prev_instr)) {
+        assert(is_resume(frame->prev_instr + 1));
         int exception_handler_depth = frame->prev_instr[0].op.code;
         assert(exception_handler_depth > 0);
         /* We can safely ignore the outermost try block

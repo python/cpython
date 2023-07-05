@@ -248,6 +248,25 @@ basic__clear_globals(PyObject *self, PyObject *Py_UNUSED(ignored))
      basic__clear_globals_doc}
 
 
+PyDoc_STRVAR(basic__clear_module_state_doc, "_clear_module_state()\n\
+\n\
+Free the module state and set it to uninitialized.");
+
+static PyObject *
+basic__clear_module_state(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    module_state *state = get_module_state(self);
+    if (state != NULL) {
+        clear_state(state);
+    }
+    Py_RETURN_NONE;
+}
+
+#define _CLEAR_MODULE_STATE_METHODDEF \
+    {"_clear_module_state", basic__clear_module_state, METH_NOARGS, \
+     basic__clear_module_state_doc}
+
+
 /*********************************************/
 /* the _testsinglephase module (and aliases) */
 /*********************************************/
@@ -408,7 +427,7 @@ finally:
 /* the _testsinglephase_with_state module */
 /******************************************/
 
-/* This ia less typical of legacy extensions in the wild:
+/* This is less typical of legacy extensions in the wild:
    - single-phase init  (same as _testsinglephase above)
    - has some module state
    - supports repeated initialization
@@ -424,6 +443,7 @@ static PyMethodDef TestMethods_WithState[] = {
     LOOK_UP_SELF_METHODDEF,
     SUM_METHODDEF,
     STATE_INITIALIZED_METHODDEF,
+    _CLEAR_MODULE_STATE_METHODDEF,
     {NULL, NULL}           /* sentinel */
 };
 

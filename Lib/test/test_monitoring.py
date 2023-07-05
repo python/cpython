@@ -1425,3 +1425,38 @@ class TestUninitialized(unittest.TestCase, MonitoringTestBase):
 
     def test_get_local_events_uninitialized(self):
         self.assertEqual(sys.monitoring.get_local_events(TEST_TOOL, self.f.__code__), 0)
+
+class TestRegressions(MonitoringTestBase, unittest.TestCase):
+
+    def test_105162(self):
+        caught = None
+
+        def inner():
+            nonlocal caught
+            try:
+                yield
+            except Exception:
+                caught = "inner"
+                yield
+
+        def outer():
+            nonlocal caught
+            try:
+                yield from inner()
+            except Exception:
+                caught = "outer"
+                yield
+
+        def run():
+            gen = outer()
+            gen.send(None)
+            gen.throw(Exception)
+        run()
+        self.assertEqual(caught, "inner")
+        caught = None
+        try:
+            sys.monitoring.set_events(TEST_TOOL, E.PY_RESUME)
+            run()
+            self.assertEqual(caught, "inner")
+        finally:
+            sys.monitoring.set_events(TEST_TOOL, 0)

@@ -1389,11 +1389,14 @@ iterations of the loop.
    * ``0x02`` a dictionary of keyword-only parameters' default values
    * ``0x04`` a tuple of strings containing parameters' annotations
    * ``0x08`` a tuple containing cells for free variables, making a closure
-   * the code associated with the function (at ``STACK[-2]``)
-   * the :term:`qualified name` of the function (at ``STACK[-1]``)
+   * the code associated with the function (at ``STACK[-1]``)
 
    .. versionchanged:: 3.10
       Flag value ``0x04`` is a tuple of strings instead of dictionary
+
+   .. versionchanged:: 3.11
+      Qualified name at ``STACK[-1]`` was removed.
+
 
 .. opcode:: BUILD_SLICE (argc)
 

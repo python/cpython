@@ -51,8 +51,6 @@ jobs:
         cache-dependency-path: 'Doc/requirements.txt'
     - name: 'Install build dependencies'
       run: make -C Doc/ venv
-    - name: 'Check documentation'
-      run: make -C Doc/ check
     - name: 'Build HTML documentation'
       run: make -C Doc/ SPHINXOPTS="-q" SPHINXERRORHANDLING="-W --keep-going" html
 
@@ -82,8 +80,6 @@ jobs:
         make -C Doc/ PYTHON=../python SPHINXOPTS="-q -n -W --keep-going" html 2>&1
 
   # This build doesn't use problem matchers or check annotations
-  # It also does not run 'make check', as sphinx-lint is not installed into the
-  # environment.
   build_doc_oldest_supported_sphinx:
     name: 'Docs (Oldest Sphinx)'
     runs-on: ubuntu-latest

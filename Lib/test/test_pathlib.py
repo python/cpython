@@ -317,6 +317,10 @@ class _BasePurePathTest(object):
         self.assertTrue(P('A.py').match('a.PY', case_sensitive=False))
         self.assertFalse(P('c:/a/B.Py').match('C:/A/*.pY', case_sensitive=True))
         self.assertTrue(P('/a/b/c.py').match('/A/*/*.Py', case_sensitive=False))
+        # Matching against empty path
+        self.assertFalse(P().match('*'))
+        self.assertTrue(P().match('**'))
+        self.assertFalse(P().match('**/*'))
 
     def test_ordering_common(self):
         # Ordering is tuple-alike.
@@ -1985,7 +1989,7 @@ class _BasePathTest(object):
         self.assertEqual(sorted(base.glob('**/*')), [bad_link])
 
     def test_glob_above_recursion_limit(self):
-        recursion_limit = 40
+        recursion_limit = 50
         # directory_depth > recursion_limit
         directory_depth = recursion_limit + 10
         base = pathlib.Path(os_helper.TESTFN, 'deep')

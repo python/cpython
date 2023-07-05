@@ -569,6 +569,13 @@ Pure paths provide the following methods and properties:
       >>> PurePath('a/b.py').match('/*.py')
       False
 
+   The *pattern* may be another path object; this speeds up matching the same
+   pattern against multiple files::
+
+      >>> pattern = PurePath('*.py')
+      >>> PurePath('a/b.py').match(pattern)
+      True
+
    As with other methods, case-sensitivity follows platform defaults::
 
       >>> PurePosixPath('b.py').match('*.PY')
@@ -578,8 +585,8 @@ Pure paths provide the following methods and properties:
 
    Set *case_sensitive* to ``True`` or ``False`` to override this behaviour.
 
-   .. versionadded:: 3.12
-      The *case_sensitive* argument.
+   .. versionchanged:: 3.12
+      The *case_sensitive* parameter was added.
 
 
 .. method:: PurePath.relative_to(other, walk_up=False)
@@ -620,8 +627,8 @@ Pure paths provide the following methods and properties:
       are present in the path; call :meth:`~Path.resolve` first if
       necessary to resolve symlinks.
 
-   .. versionadded:: 3.12
-      The *walk_up* argument (old behavior is the same as ``walk_up=False``).
+   .. versionchanged:: 3.12
+      The *walk_up* parameter was added (old behavior is the same as ``walk_up=False``).
 
    .. deprecated-removed:: 3.12 3.14
 
@@ -921,8 +928,9 @@ call fails (for example because the path doesn't exist).
       Return only directories if *pattern* ends with a pathname components
       separator (:data:`~os.sep` or :data:`~os.altsep`).
 
-   .. versionadded:: 3.12
-      The *case_sensitive* argument.
+   .. versionchanged:: 3.12
+      The *case_sensitive* parameter was added.
+
 
 .. method:: Path.group()
 
@@ -1306,8 +1314,8 @@ call fails (for example because the path doesn't exist).
    infinite loop is encountered along the resolution path, :exc:`RuntimeError`
    is raised.
 
-   .. versionadded:: 3.6
-      The *strict* argument (pre-3.6 behavior is strict).
+   .. versionchanged:: 3.6
+      The *strict* parameter was added (pre-3.6 behavior is strict).
 
 .. method:: Path.rglob(pattern, *, case_sensitive=None)
 
@@ -1333,8 +1341,9 @@ call fails (for example because the path doesn't exist).
       Return only directories if *pattern* ends with a pathname components
       separator (:data:`~os.sep` or :data:`~os.altsep`).
 
-   .. versionadded:: 3.12
-      The *case_sensitive* argument.
+   .. versionchanged:: 3.12
+      The *case_sensitive* parameter was added.
+
 
 .. method:: Path.rmdir()
 

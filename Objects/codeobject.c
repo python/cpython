@@ -2030,6 +2030,7 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
                     co_code, co_filename, co_name, co_argcount,
                     co_posonlyargcount, co_kwonlyargcount, co_nlocals,
                     co_stacksize, co_flags) < 0) {
+        Py_XDECREF(code);
         return NULL;
     }
 

@@ -71,6 +71,7 @@ Python/thread_pthread_stubs.h
 
 # only huge constants (safe but parsing is slow)
 Modules/_ssl_data.h
+Modules/_ssl_data_31.h
 Modules/_ssl_data_300.h
 Modules/_ssl_data_111.h
 Modules/cjkcodecs/mappings_*.h

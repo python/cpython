@@ -391,15 +391,6 @@ class Konqueror(BaseBrowser):
             return (p.poll() is None)
 
 
-    def open(self, url, new=0, autoraise=True):
-        sys.audit("webbrowser.open", url)
-        if new:
-            ok = self._remote("LOADNEW " + url)
-        else:
-            ok = self._remote("LOAD " + url)
-        return ok
-
-
 class Edge(UnixBrowser):
     "Launcher class for Microsoft Edge browser."
 

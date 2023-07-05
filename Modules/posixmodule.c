@@ -6414,7 +6414,7 @@ parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
 {
     Py_ssize_t i, pos, envc;
     PyObject *keys=NULL, *vals=NULL;
-    PyObject *key, *val, *key2, *val2, *keyval;
+    PyObject *key2, *val2, *keyval;
     EXECV_CHAR **envlist;
 
     i = PyMapping_Size(env);
@@ -6439,10 +6439,14 @@ parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
     }
 
     for (pos = 0; pos < i; pos++) {
-        key = PyList_GetItem(keys, pos);
-        val = PyList_GetItem(vals, pos);
-        if (!key || !val)
+        PyObject *key = PyList_GetItem(keys, pos);  // Borrowed ref.
+        if (key == NULL) {
             goto error;
+        }
+        PyObject *val = PyList_GetItem(vals, pos);  // Borrowed ref.
+        if (val == NULL) {
+            goto error;
+        }
 
 #if defined(HAVE_WEXECV) || defined(HAVE_WSPAWNV)
         if (!PyUnicode_FSDecoder(key, &key2))
@@ -7620,7 +7624,13 @@ os_fork1_impl(PyObject *module)
 {
     pid_t pid;
 
-    if (!_Py_IsMainInterpreter(_PyInterpreterState_GET())) {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->finalizing) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "can't fork at interpreter shutdown");
+        return NULL;
+    }
+    if (!_Py_IsMainInterpreter(interp)) {
         PyErr_SetString(PyExc_RuntimeError, "fork not supported for subinterpreters");
         return NULL;
     }
@@ -7656,6 +7666,11 @@ os_fork_impl(PyObject *module)
 {
     pid_t pid;
     PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->finalizing) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "can't fork at interpreter shutdown");
+        return NULL;
+    }
     if (!_PyInterpreterState_HasFeature(interp, Py_RTFLAGS_FORK)) {
         PyErr_SetString(PyExc_RuntimeError,
                         "fork not supported for isolated subinterpreters");
@@ -8327,7 +8342,13 @@ os_forkpty_impl(PyObject *module)
     int master_fd = -1;
     pid_t pid;
 
-    if (!_Py_IsMainInterpreter(_PyInterpreterState_GET())) {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->finalizing) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "can't fork at interpreter shutdown");
+        return NULL;
+    }
+    if (!_Py_IsMainInterpreter(interp)) {
         PyErr_SetString(PyExc_RuntimeError, "fork not supported for subinterpreters");
         return NULL;
     }
