@@ -2447,11 +2447,8 @@ _Py_normpathAndSize(wchar_t *path, Py_ssize_t size, Py_ssize_t *length)
     }
 #endif /* MS_WINDOWS */
 
-    *length = size;
-
     /* if pEnd is specified, check that. Else, check for null terminator */
     for (; !IS_END(p1); ++p1) {
-        *length++;
         wchar_t c = *p1;
 #ifdef ALTSEP
         if (c == ALTSEP) {
@@ -2498,6 +2495,11 @@ _Py_normpathAndSize(wchar_t *path, Py_ssize_t size, Py_ssize_t *length)
         while (--p2 != minP2 && *p2 == SEP) {
             *p2 = L'\0';
         }
+    }
+    if (path == p2) {
+        *length = 0;
+    } else{
+        *length = p2 - path + 1;
     }
 #undef SEP_OR_END
 #undef IS_SEP
