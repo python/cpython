@@ -3752,6 +3752,7 @@
             uint32_t keys_version = read_u32(&next_instr[3].cache);
             PyObject *descr = read_obj(&next_instr[5].cache);
             #line 2663 "Python/bytecodes.c"
+            assert(oparg & 1);
             /* Cached method object */
             PyTypeObject *self_cls = Py_TYPE(self);
             assert(type_version != 0);
@@ -3767,11 +3768,10 @@
             res2 = Py_NewRef(descr);
             assert(_PyType_HasFeature(Py_TYPE(res2), Py_TPFLAGS_METHOD_DESCRIPTOR));
             res = self;
-            assert(oparg & 1);
             #line 3772 "Python/generated_cases.c.h"
-            STACK_GROW(((oparg & 1) ? 1 : 0));
+            STACK_GROW((1 ? 1 : 0));
             stack_pointer[-1] = res;
-            if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = res2; }
+            if (1) { stack_pointer[-(1 + (1 ? 1 : 0))] = res2; }
             next_instr += 9;
             DISPATCH();
         }
@@ -3783,6 +3783,7 @@
             uint32_t type_version = read_u32(&next_instr[1].cache);
             PyObject *descr = read_obj(&next_instr[5].cache);
             #line 2682 "Python/bytecodes.c"
+            assert(oparg & 1);
             PyTypeObject *self_cls = Py_TYPE(self);
             DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_ATTR);
             assert(self_cls->tp_dictoffset == 0);
@@ -3791,11 +3792,10 @@
             assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
             res2 = Py_NewRef(descr);
             res = self;
-            assert(oparg & 1);
             #line 3796 "Python/generated_cases.c.h"
-            STACK_GROW(((oparg & 1) ? 1 : 0));
+            STACK_GROW((1 ? 1 : 0));
             stack_pointer[-1] = res;
-            if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = res2; }
+            if (1) { stack_pointer[-(1 + (1 ? 1 : 0))] = res2; }
             next_instr += 9;
             DISPATCH();
         }
@@ -3808,6 +3808,7 @@
             uint32_t keys_version = read_u32(&next_instr[3].cache);
             PyObject *descr = read_obj(&next_instr[5].cache);
             #line 2694 "Python/bytecodes.c"
+            assert((oparg & 1) == 0);
             PyTypeObject *self_cls = Py_TYPE(self);
             assert(type_version != 0);
             DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_ATTR);
@@ -3819,15 +3820,14 @@
                      keys_version, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
-            #line 3823 "Python/generated_cases.c.h"
+            #line 3824 "Python/generated_cases.c.h"
             Py_DECREF(self);
-            #line 2706 "Python/bytecodes.c"
+            #line 2707 "Python/bytecodes.c"
             res = Py_NewRef(descr);
-            assert((oparg & 1) == 0);
             #line 3828 "Python/generated_cases.c.h"
-            STACK_GROW(((oparg & 1) ? 1 : 0));
+            STACK_GROW((0 ? 1 : 0));
             stack_pointer[-1] = res;
-            if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = res2; }
+            if (0) { stack_pointer[-(1 + (0 ? 1 : 0))] = res2; }
             next_instr += 9;
             DISPATCH();
         }
@@ -3839,21 +3839,21 @@
             uint32_t type_version = read_u32(&next_instr[1].cache);
             PyObject *descr = read_obj(&next_instr[5].cache);
             #line 2711 "Python/bytecodes.c"
+            assert((oparg & 1) == 0);
             PyTypeObject *self_cls = Py_TYPE(self);
             assert(type_version != 0);
             DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_ATTR);
             assert(self_cls->tp_dictoffset == 0);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
-            #line 3849 "Python/generated_cases.c.h"
+            #line 3850 "Python/generated_cases.c.h"
             Py_DECREF(self);
-            #line 2718 "Python/bytecodes.c"
+            #line 2719 "Python/bytecodes.c"
             res = Py_NewRef(descr);
-            assert((oparg & 1) == 0);
             #line 3854 "Python/generated_cases.c.h"
-            STACK_GROW(((oparg & 1) ? 1 : 0));
+            STACK_GROW((0 ? 1 : 0));
             stack_pointer[-1] = res;
-            if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = res2; }
+            if (0) { stack_pointer[-(1 + (0 ? 1 : 0))] = res2; }
             next_instr += 9;
             DISPATCH();
         }
@@ -3865,6 +3865,7 @@
             uint32_t type_version = read_u32(&next_instr[1].cache);
             PyObject *descr = read_obj(&next_instr[5].cache);
             #line 2723 "Python/bytecodes.c"
+            assert(oparg & 1);
             PyTypeObject *self_cls = Py_TYPE(self);
             DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_ATTR);
             Py_ssize_t dictoffset = self_cls->tp_dictoffset;
@@ -3877,11 +3878,10 @@
             assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
             res2 = Py_NewRef(descr);
             res = self;
-            assert(oparg & 1);
             #line 3882 "Python/generated_cases.c.h"
-            STACK_GROW(((oparg & 1) ? 1 : 0));
+            STACK_GROW((1 ? 1 : 0));
             stack_pointer[-1] = res;
-            if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = res2; }
+            if (1) { stack_pointer[-(1 + (1 ? 1 : 0))] = res2; }
             next_instr += 9;
             DISPATCH();
         }
