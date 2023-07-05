@@ -1,7 +1,6 @@
 # All RST files under Doc/ -- except these -- must pass Sphinx nit-picky mode,
-# as tested on the CI via touch-clean-files.py in doc.yml.
-# Add blank lines between files and keep them sorted lexicographically
-# to help avoid merge conflicts.
+# as tested on the CI via check-warnings.py in reusable-docs.yml.
+# Keep lines sorted lexicographically to help avoid merge conflicts.
 
 Doc/c-api/allocation.rst
 Doc/c-api/apiabiversion.rst
