@@ -159,6 +159,39 @@ T = typing.TypeVar("T")
 def unwrap(source: list[dict[S, T]], wrapper: S) -> list[T]:
     return [child[wrapper] for child in source]
 
+def get_llvm_tool_version(name: str) -> int | None:
+    try:
+        args = [name, "--version"]
+        process = subprocess.run(args, check=True, stdout=subprocess.PIPE)
+    except FileNotFoundError:
+        return None
+    match = re.search(br"version\s+(\d+)\.\d+\.\d+\s+", process.stdout)
+    return match and int(match.group(1))
+
+def find_llvm_tool(tool: str) -> str:
+    versions = {14, 15, 16}
+    # Unversioned executables:
+    path = tool
+    if get_llvm_tool_version(path) in versions:
+        return path
+    for version in sorted(versions, reverse=True):
+        # Versioned executables:
+        path = f"{tool}-{version}"
+        if get_llvm_tool_version(path) == version:
+            return path
+        # My homebrew homies:
+        try:
+            args = ["brew", "--prefix", f"llvm@{version}"]
+            process = subprocess.run(args, check=True, stdout=subprocess.PIPE)
+        except (FileNotFoundError, subprocess.CalledProcessError):
+            pass
+        else:
+            prefix = process.stdout.decode().removesuffix("\n")
+            path = f"{prefix}/bin/{tool}"
+            if get_llvm_tool_version(path) == version:
+                return path
+    raise RuntimeError(f"Can't find {tool}!")
+
 # TODO: Divide into read-only data and writable/executable text.
 
 class ObjectParser:
@@ -174,9 +207,9 @@ class ObjectParser:
         "--sections",
     ]
 
-    def __init__(self, path: pathlib.Path, symbol_prefix: str = "") -> None:
-        args = ["llvm-readobj", *self._ARGS, path]
-        # subprocess.run(["llvm-objdump", path, "-dr"], check=True)
+    def __init__(self, path: pathlib.Path, reader: str, symbol_prefix: str = "") -> None:
+        # subprocess.run([find_llvm_tool("llvm-objdump"), path, "-dr"], check=True)
+        args = [reader, *self._ARGS, path]
         process = subprocess.run(args, check=True, capture_output=True)
         output = process.stdout
         output = output.replace(b"PrivateExtern\n", b"\n")  # XXX: MachO
@@ -572,6 +605,9 @@ class Compiler:
         self._trampoline_built = None
         self._trampoline_loaded = None
         self._verbose = verbose
+        self._clang = find_llvm_tool("clang")
+        self._readobj = find_llvm_tool("llvm-readobj")
+        self._stderr(f"Using {self._clang} and {self._readobj}.")
 
     def _stderr(self, *args, **kwargs) -> None:
         if self._verbose:
@@ -606,15 +642,15 @@ class Compiler:
             c.write_text(body)
             self._use_tos_caching(c, 0)
             subprocess.run(
-                ["clang", *CFLAGS, "-emit-llvm", "-S", *defines, "-o", ll, c],
+                [self._clang, *CFLAGS, "-emit-llvm", "-S", *defines, "-o", ll, c],
                 check=True,
             )
             self._use_ghccc(ll, True)
             subprocess.run(
-                ["clang", *CFLAGS, "-c", "-o", o, ll],
+                [self._clang, *CFLAGS, "-c", "-o", o, ll],
                 check=True,
             )
-            return ObjectParserDefault(o).parse()
+            return ObjectParserDefault(o, self._readobj).parse()
 
     def build(self) -> None:
         generated_cases = PYTHON_GENERATED_CASES_C_H.read_text()
