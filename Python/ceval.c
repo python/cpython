@@ -2313,6 +2313,19 @@ PyEval_GetLocals(void)
 }
 
 PyObject *
+_PyEval_GetFrameLocals(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+     _PyInterpreterFrame *current_frame = _PyThreadState_GetFrame(tstate);
+    if (current_frame == NULL) {
+        _PyErr_SetString(tstate, PyExc_SystemError, "frame does not exist");
+        return NULL;
+    }
+
+    return _PyFrame_GetLocals(current_frame, 1);
+}
+
+PyObject *
 PyEval_GetGlobals(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
