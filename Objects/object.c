@@ -2556,39 +2556,13 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
 }
 
 
-static inline void
-safe_dealloc(PyObject *op)
-{
-    PyTypeObject *type = Py_TYPE(op);
-    if (type->tp_flags_internal & _Py_TPFLAG_INTERNAL_DECREF_IS_FREE) {
-        PyObject_Free(op);
-    }
-    else if (type->tp_flags_internal & _Py_TPFLAG_INTERNAL_SAFE_DECREF) {
-        type->tp_dealloc(op);
-    }
-    else {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        if (interp->finalization_deferred) {
-            /* TO DO -- Awkward error handling  */
-            int err = PyList_Append((PyObject *)interp->finalize_list, op);
-            assert(err == 0);
-            struct _ceval_state *ceval = &interp->ceval;
-            if (!_Py_atomic_load_relaxed(&ceval->pending_finalization)) {
-                _Py_atomic_store_relaxed(&ceval->pending_finalization, 1);
-                _Py_atomic_store_relaxed(&ceval->eval_breaker, 1);
-            }
-        }
-        else {
-            type->tp_dealloc(op);
-        }
-    }
-}
 
-void
-_Py_Dealloc(PyObject *op)
+static void
+immediate_dealloc(PyTypeObject *type, PyObject *op)
 {
+    assert(!_PyThreadState_GET()->finalization_deferred);
+    assert(type == Py_TYPE(op));
 #ifdef Py_DEBUG
-    PyTypeObject *type = Py_TYPE(op);
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *old_exc = tstate != NULL ? tstate->current_exception : NULL;
     // Keep the old exception type alive to prevent undefined behavior
@@ -2602,7 +2576,8 @@ _Py_Dealloc(PyObject *op)
     _Py_ForgetReference(op);
 #endif
 
-    safe_dealloc(op);
+    type->tp_dealloc(op);
+    assert(!_PyThreadState_GET()->finalization_deferred);
 
 #ifdef Py_DEBUG
     // gh-89373: The tp_dealloc function must leave the current exception
@@ -2629,30 +2604,72 @@ _Py_Dealloc(PyObject *op)
 }
 
 void
-_Py_ClearFinalizerList(PyInterpreterState *interp)
+_Py_Dealloc(PyObject *op)
 {
-    assert(interp->finalization_deferred == false);
-
-    PyObject *list = interp->finalize_list;
-    if (list == Py_None) {
-        return;
+    assert(Py_REFCNT(op) == 0);
+    PyTypeObject *type = Py_TYPE(op);
+    if (type->tp_flags_internal & _Py_TPFLAG_INTERNAL_DEALLOC_IS_FREE) {
+    #ifdef Py_TRACE_REFS
+        _Py_ForgetReference(op);
+    #endif
+        PyObject_Free(op);
     }
-
-    /* Make sure no-one else can see the list */
-    interp->finalize_list = Py_None;
-    assert(Py_REFCNT(list) == 1);
-
-    /* Don't resize the list, just empty it */
-    Py_ssize_t size = PyList_GET_SIZE(list);
-    for (Py_ssize_t i = 0; i < size; i++) {
-        PyObject *obj = PyList_GET_ITEM(list, i);
-        Py_DECREF(obj);
+    else if (type->tp_flags_internal & _Py_TPFLAG_INTERNAL_SAFE_DEALLOC) {
+    #ifdef Py_TRACE_REFS
+        _Py_ForgetReference(op);
+    #endif
+        type->tp_dealloc(op);
     }
-    Py_SET_SIZE(list, 0);
-
-    interp->finalize_list = list;
+    else {
+        PyThreadState *tstate = _PyThreadState_GET();
+        if (tstate->finalization_deferred) {
+            int err = PyList_Append((PyObject *)&tstate->interp->finalize_list, op);
+            /* TO DO -- Awkward error handling  */
+            assert(err == 0);
+            assert(Py_REFCNT(op) == 1);
+            struct _ceval_state *ceval = &tstate->interp->ceval;
+            if (!_Py_atomic_load_relaxed(&ceval->eval_breaker)) {
+                _Py_atomic_store_relaxed(&ceval->eval_breaker, 1);
+            }
+        }
+        else {
+            immediate_dealloc(type, op);
+            assert(!tstate->finalization_deferred);
+        }
+    }
 }
 
+static PyObject *
+_PyList_PopEndNonEmpty(PyListObject *self)
+{
+    assert(Py_SIZE(self) > 0);
+    assert(self->ob_item);
+    Py_ssize_t new_size = self->ob_base.ob_size-1;
+    self->ob_base.ob_size = new_size;
+    return self->ob_item[new_size];
+}
+
+void
+_Py_ClearFinalizerList(PyInterpreterState *interp)
+{
+    PyListObject *list = &interp->finalize_list;
+    assert(PyList_Check(list));
+    assert(Py_SIZE(list) > 0);
+    do {
+        PyObject *obj = _PyList_PopEndNonEmpty(list);
+        assert((Py_TYPE(obj)->tp_flags_internal & _Py_TPFLAG_INTERNAL_DEALLOC_IS_FREE) == 0);
+        assert((Py_TYPE(obj)->tp_flags_internal & _Py_TPFLAG_INTERNAL_SAFE_DEALLOC) == 0);
+        assert(!_Py_IsImmortal(obj));
+        _Py_DECREF_STAT_INC();
+#ifdef Py_REF_DEBUG
+        interp->object_state.reftotal--;
+#endif
+        assert(Py_TYPE(obj) == &_PyWeakref_RefType || obj->ob_refcnt == 1);
+        if (--obj->ob_refcnt == 0) {
+            immediate_dealloc(Py_TYPE(obj), obj);
+        }
+    } while (Py_SIZE(list));
+}
 
 PyObject **
 PyObject_GET_WEAKREFS_LISTPTR(PyObject *op)

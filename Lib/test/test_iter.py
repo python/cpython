@@ -1000,6 +1000,7 @@ class TestCase(unittest.TestCase):
         x = C()
         self.assertEqual(C.count, 1)
         del x
+        len([]) # Trigger finalizers
         self.assertEqual(C.count, 0)
         l = [C(), C(), C()]
         self.assertEqual(C.count, 3)
@@ -1008,6 +1009,7 @@ class TestCase(unittest.TestCase):
         except ValueError:
             pass
         del l
+        len([]) # Trigger finalizers
         self.assertEqual(C.count, 0)
 
 

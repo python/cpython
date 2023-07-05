@@ -1536,16 +1536,17 @@ Run the garbage collector.
 
 With no arguments, run a full collection.  The optional argument
 may be an integer specifying which generation to collect.  A ValueError
-is raised if the generation number is invalid.
+// is raised if the generation number is invalid.
 
 The number of unreachable objects is returned.
 [clinic start generated code]*/
 
 static Py_ssize_t
 gc_collect_impl(PyObject *module, int generation)
-/*[clinic end generated code: output=b697e633043233c7 input=40720128b682d879]*/
+/*[clinic end generated code: output=b697e633043233c7 input=8cdd8a9f188a3263]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
+    assert(!tstate->finalization_deferred);
 
     if (generation < 0 || generation >= NUM_GENERATIONS) {
         _PyErr_SetString(tstate, PyExc_ValueError, "invalid generation");
@@ -1560,7 +1561,9 @@ gc_collect_impl(PyObject *module, int generation)
     }
     else {
         gcstate->collecting = 1;
+        _Py_RunPendingFinalizers(tstate->interp);
         n = gc_collect_with_callback(tstate, generation);
+        _Py_RunPendingFinalizers(tstate->interp);
         gcstate->collecting = 0;
     }
     return n;
@@ -2099,6 +2102,9 @@ PyGC_Collect(void)
         return 0;
     }
 
+    char deferred = tstate->finalization_deferred;
+    tstate->finalization_deferred = 0;
+    _Py_RunPendingFinalizers(tstate->interp);
     Py_ssize_t n;
     if (gcstate->collecting) {
         /* already collecting, don't do anything */
@@ -2111,7 +2117,8 @@ PyGC_Collect(void)
         _PyErr_SetRaisedException(tstate, exc);
         gcstate->collecting = 0;
     }
-
+    _Py_RunPendingFinalizers(tstate->interp);
+    tstate->finalization_deferred = deferred;
     return n;
 }
 
@@ -2129,10 +2136,15 @@ _PyGC_CollectNoFail(PyThreadState *tstate)
         return 0;
     }
 
+    char deferred = tstate->finalization_deferred;
+    tstate->finalization_deferred = 0;
+    _Py_RunPendingFinalizers(tstate->interp);
     Py_ssize_t n;
     gcstate->collecting = 1;
     n = gc_collect_main(tstate, NUM_GENERATIONS - 1, NULL, NULL, 1);
     gcstate->collecting = 0;
+    _Py_RunPendingFinalizers(tstate->interp);
+    tstate->finalization_deferred = deferred;
     return n;
 }
 
@@ -2286,7 +2298,7 @@ _PyObject_GC_Link(PyObject *op)
 void
 _Py_RunGC(PyThreadState *tstate)
 {
-    assert(tstate->interp->finalization_deferred == false);
+    assert(!tstate->finalization_deferred);
     GCState *gcstate = &tstate->interp->gc;
     gcstate->collecting = 1;
     gc_collect_generations(tstate);

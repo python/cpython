@@ -742,6 +742,7 @@ dummy_func(
             assert(tstate->cframe->current_frame == frame->previous);
             assert(!_PyErr_Occurred(tstate));
             _Py_LeaveRecursiveCallTstate(tstate);
+            tstate->finalization_deferred = previous_deferred;
             return retval;
         }
 
@@ -2810,10 +2811,12 @@ dummy_func(
                 DISPATCH_INLINED(new_frame);
             }
             /* Callable is not a normal Python function */
-            res = PyObject_Vectorcall(
-                callable, args,
-                positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
-                kwnames);
+            ALLOW_IMMEDIATE_DEALLOC(
+                res = PyObject_Vectorcall(
+                    callable, args,
+                    positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
+                    kwnames)
+            );
             if (opcode == INSTRUMENTED_CALL) {
                 PyObject *arg = total_args == 0 ?
                     &_PyInstrumentation_MISSING : PEEK(total_args);
@@ -2941,7 +2944,7 @@ dummy_func(
             DEOPT_IF(callable != (PyObject *)&PyUnicode_Type, CALL);
             STAT_INC(CALL, hit);
             PyObject *arg = args[0];
-            res = PyObject_Str(arg);
+            ALLOW_IMMEDIATE_DEALLOC(res = PyObject_Str(arg));
             Py_DECREF(arg);
             Py_DECREF(&PyUnicode_Type);  // I.e., callable
             ERROR_IF(res == NULL, error);
@@ -2955,7 +2958,7 @@ dummy_func(
             DEOPT_IF(callable != (PyObject *)&PyTuple_Type, CALL);
             STAT_INC(CALL, hit);
             PyObject *arg = args[0];
-            res = PySequence_Tuple(arg);
+            ALLOW_IMMEDIATE_DEALLOC(res = PySequence_Tuple(arg));
             Py_DECREF(arg);
             Py_DECREF(&PyTuple_Type);  // I.e., tuple
             ERROR_IF(res == NULL, error);
@@ -3037,8 +3040,8 @@ dummy_func(
             PyTypeObject *tp = (PyTypeObject *)callable;
             DEOPT_IF(tp->tp_vectorcall == NULL, CALL);
             STAT_INC(CALL, hit);
-            res = tp->tp_vectorcall((PyObject *)tp, args,
-                                    total_args - kwnames_len, kwnames);
+            ALLOW_IMMEDIATE_DEALLOC(res = tp->tp_vectorcall((PyObject *)tp, args,
+                                    total_args - kwnames_len, kwnames));
             kwnames = NULL;
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
@@ -3070,7 +3073,7 @@ dummy_func(
                 goto error;
             }
             PyObject *arg = args[0];
-            res = _PyCFunction_TrampolineCall(cfunc, PyCFunction_GET_SELF(callable), arg);
+            ALLOW_IMMEDIATE_DEALLOC(res = _PyCFunction_TrampolineCall(cfunc, PyCFunction_GET_SELF(callable), arg));
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
@@ -3095,10 +3098,12 @@ dummy_func(
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
             /* res = func(self, args, nargs) */
-            res = ((_PyCFunctionFast)(void(*)(void))cfunc)(
-                PyCFunction_GET_SELF(callable),
-                args,
-                total_args);
+            ALLOW_IMMEDIATE_DEALLOC(
+                res = ((_PyCFunctionFast)(void(*)(void))cfunc)(
+                    PyCFunction_GET_SELF(callable),
+                    args,
+                    total_args)
+            );
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
             /* Free the arguments. */
@@ -3132,11 +3137,13 @@ dummy_func(
             _PyCFunctionFastWithKeywords cfunc =
                 (_PyCFunctionFastWithKeywords)(void(*)(void))
                 PyCFunction_GET_FUNCTION(callable);
-            res = cfunc(
-                PyCFunction_GET_SELF(callable),
-                args,
-                total_args - KWNAMES_LEN(),
-                kwnames
+            ALLOW_IMMEDIATE_DEALLOC(
+                res = cfunc(
+                    PyCFunction_GET_SELF(callable),
+                    args,
+                    total_args - KWNAMES_LEN(),
+                    kwnames
+                )
             );
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             kwnames = NULL;
@@ -3251,7 +3258,9 @@ dummy_func(
             if (_Py_EnterRecursiveCallTstate(tstate, " while calling a Python object")) {
                 goto error;
             }
-            res = _PyCFunction_TrampolineCall(cfunc, self, arg);
+            ALLOW_IMMEDIATE_DEALLOC(
+                res = _PyCFunction_TrampolineCall(cfunc, self, arg)
+            );
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             Py_DECREF(self);
@@ -3280,7 +3289,9 @@ dummy_func(
             int nargs = total_args - 1;
             _PyCFunctionFastWithKeywords cfunc =
                 (_PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
-            res = cfunc(self, args + 1, nargs - KWNAMES_LEN(), kwnames);
+            ALLOW_IMMEDIATE_DEALLOC(
+                res = cfunc(self, args + 1, nargs - KWNAMES_LEN(), kwnames)
+            );
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             kwnames = NULL;
 
@@ -3316,7 +3327,9 @@ dummy_func(
             if (_Py_EnterRecursiveCallTstate(tstate, " while calling a Python object")) {
                 goto error;
             }
-            res = _PyCFunction_TrampolineCall(cfunc, self, NULL);
+            ALLOW_IMMEDIATE_DEALLOC(
+                res = _PyCFunction_TrampolineCall(cfunc, self, NULL)
+            );
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             Py_DECREF(self);
@@ -3345,7 +3358,7 @@ dummy_func(
             _PyCFunctionFast cfunc =
                 (_PyCFunctionFast)(void(*)(void))meth->ml_meth;
             int nargs = total_args - 1;
-            res = cfunc(self, args + 1, nargs);
+            ALLOW_IMMEDIATE_DEALLOC(res = cfunc(self, args + 1, nargs));
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Clear the stack of the arguments. */
             for (int i = 0; i < total_args; i++) {
@@ -3385,7 +3398,9 @@ dummy_func(
                     tstate, PY_MONITORING_EVENT_CALL,
                     frame, next_instr-1, func, arg);
                 if (err) goto error;
-                result = PyObject_Call(func, callargs, kwargs);
+                ALLOW_IMMEDIATE_DEALLOC(
+                    result = PyObject_Call(func, callargs, kwargs)
+                );
                 if (result == NULL) {
                     _Py_call_instrumentation_exc2(
                         tstate, PY_MONITORING_EVENT_C_RAISE,
@@ -3420,7 +3435,9 @@ dummy_func(
                     frame->return_offset = 0;
                     DISPATCH_INLINED(new_frame);
                 }
-                result = PyObject_Call(func, callargs, kwargs);
+                ALLOW_IMMEDIATE_DEALLOC(
+                    result = PyObject_Call(func, callargs, kwargs)
+                );
             }
             DECREF_INPUTS();
             assert(PEEK(3 + (oparg & 1)) == NULL);

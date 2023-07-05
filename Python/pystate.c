@@ -674,6 +674,11 @@ init_interpreter(PyInterpreterState *interp,
                 _obmalloc_pools_INIT(interp->obmalloc.pools);
         memcpy(&interp->obmalloc.pools.used, temp, sizeof(temp));
     }
+    interp->finalize_list.ob_base.ob_base.ob_type = &PyList_Type;
+    interp->finalize_list.ob_base.ob_base.ob_refcnt = _Py_IMMORTAL_REFCNT;
+    interp->finalize_list.ob_base.ob_size = 0;
+    interp->finalize_list.allocated = 0;
+    interp->finalize_list.ob_item = NULL;
 
     _PyEval_InitState(interp, pending_lock);
     _PyGC_InitState(&interp->gc);
@@ -832,8 +837,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     interp->optimizer_backedge_threshold = _PyOptimizer_Default.backedge_threshold;
     interp->optimizer_resume_threshold = _PyOptimizer_Default.backedge_threshold;
 
-    interp->finalization_deferred = false;
-    _Py_ClearFinalizerList(interp);
+    _Py_RunPendingFinalizers(interp);
 
     /* It is possible that any of the objects below have a finalizer
        that runs Python code or otherwise relies on a thread state
@@ -896,8 +900,11 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     PyDict_Clear(interp->builtins);
     Py_CLEAR(interp->sysdict);
     Py_CLEAR(interp->builtins);
-    assert(PyList_GET_SIZE(interp->finalize_list) == 0);
-    Py_CLEAR(interp->finalize_list);
+
+    assert(PyList_GET_SIZE(&interp->finalize_list) == 0);
+    if (interp->finalize_list.ob_item) {
+        PyMem_Free(interp->finalize_list.ob_item);
+    }
 
     if (tstate->interp == interp) {
         /* We are now safe to fix tstate->_status.cleared. */
@@ -1319,6 +1326,7 @@ init_threadstate(PyThreadState *tstate,
     tstate->datastack_top = NULL;
     tstate->datastack_limit = NULL;
     tstate->what_event = -1;
+    tstate->finalization_deferred = 0;
 
     tstate->_status.initialized = 1;
 }

@@ -349,3 +349,12 @@ static const convertion_func_ptr CONVERSION_FUNCTIONS[4] = {
     [FVC_REPR] = PyObject_Repr,
     [FVC_ASCII] = PyObject_ASCII
 };
+
+#define ALLOW_IMMEDIATE_DEALLOC(CALL) \
+do { \
+    char _deferred_temp = tstate->finalization_deferred; \
+    tstate->finalization_deferred = 0; \
+    _Py_RunPendingFinalizers(tstate->interp); \
+    CALL; \
+    tstate->finalization_deferred = _deferred_temp; \
+} while (0)

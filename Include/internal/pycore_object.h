@@ -438,10 +438,19 @@ extern PyObject* _PyCFunctionWithKeywords_TrampolineCall(
     (meth)((self), (args), (kw))
 #endif // __EMSCRIPTEN__ && PY_CALL_TRAMPOLINE
 
-#define _Py_TPFLAG_INTERNAL_DECREF_IS_FREE 1
-#define _Py_TPFLAG_INTERNAL_SAFE_DECREF 2
+#define _Py_TPFLAG_INTERNAL_DEALLOC_IS_FREE 1
+#define _Py_TPFLAG_INTERNAL_SAFE_DEALLOC 2
 
 void _Py_ClearFinalizerList(PyInterpreterState *interp);
+
+static inline void
+_Py_RunPendingFinalizers(PyInterpreterState *interp)
+{
+    if (interp->finalize_list.ob_base.ob_size != 0) {
+        _Py_ClearFinalizerList(interp);
+    }
+}
+
 
 #ifdef __cplusplus
 }

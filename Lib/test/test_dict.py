@@ -1249,6 +1249,8 @@ class DictTest(unittest.TestCase):
         d = {k: Mutating() for k in 'abcdefghijklmnopqr'}
         for k in list(d):
             d[k] = k
+            # Call builtin method to run __del__
+            len(())
 
     def test_reentrant_insertion(self):
         # Reentrant insertion shouldn't crash (see issue #22653)

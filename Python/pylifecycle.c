@@ -1853,8 +1853,6 @@ Py_FinalizeEx(void)
      * XXX but I'm unclear on exactly how that one happens.  In any case,
      * XXX I haven't seen a real-life report of either of these.
      */
-    tstate->interp->finalization_deferred = false;
-    _Py_ClearFinalizerList(tstate->interp);
     PyGC_Collect();
 
     /* Destroy all modules */

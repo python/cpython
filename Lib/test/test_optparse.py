@@ -410,6 +410,7 @@ class TestOptionParser(BaseTest):
         parser.destroy()
         #self.assertEqual(refcount, sys.getrefcount(big_thing))
         del parser
+        #len([])
         self.assertEqual(refcount, sys.getrefcount(big_thing))
 
 

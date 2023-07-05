@@ -80,7 +80,7 @@ PyDoc_STRVAR(gc_collect__doc__,
 "\n"
 "With no arguments, run a full collection.  The optional argument\n"
 "may be an integer specifying which generation to collect.  A ValueError\n"
-"is raised if the generation number is invalid.\n"
+"// is raised if the generation number is invalid.\n"
 "\n"
 "The number of unreachable objects is returned.");
 
@@ -424,4 +424,4 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=66432ac0e17fd04f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9ba67b2405332e58 input=a9049054013a1b77]*/

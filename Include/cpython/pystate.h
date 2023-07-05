@@ -113,6 +113,8 @@ struct _py_trashcan {
 struct _ts {
     /* See Python/ceval.c for comments explaining most fields */
 
+    char finalization_deferred;
+
     PyThreadState *prev;
     PyThreadState *next;
     PyInterpreterState *interp;

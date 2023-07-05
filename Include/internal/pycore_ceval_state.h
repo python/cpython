@@ -93,7 +93,6 @@ struct _ceval_state {
     int own_gil;
     /* The GC is ready to be executed */
     _Py_atomic_int gc_scheduled;
-    _Py_atomic_int pending_finalization;
     struct _pending_calls pending;
 };
 

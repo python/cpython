@@ -11,7 +11,7 @@
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
-#include "pycore_object.h"        // _Py_ClearFinalizerList()
+#include "pycore_object.h"        // _Py_RunPendingFinalizers()
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_signal.h"        // _Py_RestoreSignals()
@@ -1771,21 +1771,19 @@ PyErr_CheckSignals(void)
        even if it doesn't run the evaluation loop */
 
 
-    bool deferred = tstate->interp->finalization_deferred;
-    tstate->interp->finalization_deferred = false;
+    char deferred = tstate->finalization_deferred;
+    tstate->finalization_deferred = 0;
 
     struct _ceval_state *interp_ceval_state = &tstate->interp->ceval;
-    /* Finalizers to run */
-    if (_Py_atomic_load_relaxed(&interp_ceval_state->pending_finalization)) {
-        _Py_atomic_store_relaxed(&interp_ceval_state->pending_finalization, 0);
-        _Py_ClearFinalizerList(tstate->interp);
-    }
+
+    _Py_RunPendingFinalizers(tstate->interp);
 
     if (_Py_atomic_load_relaxed(&interp_ceval_state->gc_scheduled)) {
         _Py_atomic_store_relaxed(&interp_ceval_state->gc_scheduled, 0);
         _Py_RunGC(tstate);
+        _Py_RunPendingFinalizers(tstate->interp);
     }
-    tstate->interp->finalization_deferred = deferred;
+    tstate->finalization_deferred = deferred;
 
     if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
         return 0;

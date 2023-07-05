@@ -682,13 +682,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     cframe.previous = prev_cframe;
     tstate->cframe = &cframe;
 
-    if (tstate->interp->finalize_list == NULL) {
-        tstate->interp->finalize_list = (PyListObject *)PyList_New(0);
-        if (tstate->interp->finalize_list == NULL) {
-            return NULL;
-        }
-        tstate->interp->finalization_deferred = true;
-    }
+    char previous_deferred = tstate->finalization_deferred;
+    tstate->finalization_deferred = 1;
 #ifdef Py_DEBUG
     /* Set these to invalid but identifiable values for debugging. */
     entry_frame.f_funcobj = (PyObject*)0xaaa0;
@@ -943,6 +938,7 @@ exit_unwind:
         tstate->cframe = cframe.previous;
         assert(tstate->cframe->current_frame == frame->previous);
         _Py_LeaveRecursiveCallTstate(tstate);
+        tstate->finalization_deferred = previous_deferred;
         return NULL;
     }
 
