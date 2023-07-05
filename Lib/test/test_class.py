@@ -745,19 +745,15 @@ class ClassTests(unittest.TestCase):
             def __init__(self):
                 self.c = C()
 
-        try:
+        with self.assertRaises(RecursionError):
             C()
-        except RecursionError:
-            # OK
-            pass
+
         def add_one_level():
             #Each call to C() consumes 2 levels, so offset by 1.
             C()
-        try:
+
+        with self.assertRaises(RecursionError):
             add_one_level()
-        except RecursionError:
-            # OK
-            pass
 
 
 if __name__ == '__main__':
