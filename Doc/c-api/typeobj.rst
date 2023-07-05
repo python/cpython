@@ -1143,14 +1143,14 @@ and :c:type:`PyType_Type` effectively act as defaults.)
       :const:`Py_TPFLAGS_IMMUTABLETYPE` flag set.  For extension types, it is
       inherited whenever :c:member:`~PyTypeObject.tp_descr_get` is inherited.
 
-    .. data:: Py_TPFLAGS_MANAGED_DICT
+   .. data:: Py_TPFLAGS_MANAGED_DICT
 
-       This bit indicates that instances of the class have a ``__dict__``
-       attribute, and that the space for the dictionary is managed by the VM.
+      This bit indicates that instances of the class have a ``__dict__``
+      attribute, and that the space for the dictionary is managed by the VM.
 
-       If this flag is set, :const:`Py_TPFLAGS_HAVE_GC` should also be set.
+      If this flag is set, :const:`Py_TPFLAGS_HAVE_GC` should also be set.
 
-       .. versionadded:: 3.12
+      .. versionadded:: 3.12
 
       **Inheritance:**
 
@@ -1158,12 +1158,12 @@ and :c:type:`PyType_Type` effectively act as defaults.)
       :c:member:`~PyTypeObject.tp_dictoffset` field is set in a superclass.
 
 
-    .. data:: Py_TPFLAGS_MANAGED_WEAKREF
+   .. data:: Py_TPFLAGS_MANAGED_WEAKREF
 
-       This bit indicates that instances of the class should be weakly
-       referenceable.
+      This bit indicates that instances of the class should be weakly
+      referenceable.
 
-       .. versionadded:: 3.12
+      .. versionadded:: 3.12
 
       **Inheritance:**
 

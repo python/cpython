@@ -28,7 +28,12 @@ import sys
 import textwrap
 import traceback
 
-from collections.abc import Callable
+from collections.abc import (
+    Callable,
+    Iterable,
+    Iterator,
+    Sequence,
+)
 from types import FunctionType, NoneType
 from typing import (
     Any,
@@ -516,37 +521,49 @@ class PythonLanguage(Language):
     checksum_line = "#/*[{dsl_name} end generated code: {arguments}]*/"
 
 
-def permute_left_option_groups(l):
+ParamGroup = Iterable["Parameter"]
+ParamTuple = tuple["Parameter", ...]
+
+
+def permute_left_option_groups(
+        l: Sequence[ParamGroup]
+) -> Iterator[ParamTuple]:
     """
-    Given [1, 2, 3], should yield:
+    Given [(1,), (2,), (3,)], should yield:
        ()
        (3,)
        (2, 3)
        (1, 2, 3)
     """
     yield tuple()
-    accumulator = []
+    accumulator: list[Parameter] = []
     for group in reversed(l):
         accumulator = list(group) + accumulator
         yield tuple(accumulator)
 
 
-def permute_right_option_groups(l):
+def permute_right_option_groups(
+        l: Sequence[ParamGroup]
+) -> Iterator[ParamTuple]:
     """
-    Given [1, 2, 3], should yield:
+    Given [(1,), (2,), (3,)], should yield:
       ()
       (1,)
       (1, 2)
       (1, 2, 3)
     """
     yield tuple()
-    accumulator = []
+    accumulator: list[Parameter] = []
     for group in l:
         accumulator.extend(group)
         yield tuple(accumulator)
 
 
-def permute_optional_groups(left, required, right):
+def permute_optional_groups(
+        left: Sequence[ParamGroup],
+        required: ParamGroup,
+        right: Sequence[ParamGroup]
+) -> tuple[ParamTuple, ...]:
     """
     Generator function that computes the set of acceptable
     argument lists for the provided iterables of
@@ -561,7 +578,7 @@ def permute_optional_groups(left, required, right):
         if left:
             raise ValueError("required is empty but left is not")
 
-    accumulator = []
+    accumulator: list[ParamTuple] = []
     counts = set()
     for r in permute_right_option_groups(right):
         for l in permute_left_option_groups(left):
@@ -575,7 +592,7 @@ def permute_optional_groups(left, required, right):
     return tuple(accumulator)
 
 
-def strip_leading_and_trailing_blank_lines(s):
+def strip_leading_and_trailing_blank_lines(s: str) -> str:
     lines = s.rstrip().split('\n')
     while lines:
         line = lines[0]
@@ -585,7 +602,11 @@ def strip_leading_and_trailing_blank_lines(s):
     return '\n'.join(lines)
 
 @functools.lru_cache()
-def normalize_snippet(s, *, indent=0):
+def normalize_snippet(
+        s: str,
+        *,
+        indent: int = 0
+) -> str:
     """
     Reformats s:
         * removes leading and trailing blank lines
@@ -599,7 +620,11 @@ def normalize_snippet(s, *, indent=0):
     return s
 
 
-def declare_parser(f, *, hasformat=False):
+def declare_parser(
+        f: Function,
+        *,
+        hasformat: bool = False
+) -> str:
     """
     Generates the code template for a static local PyArg_Parser variable,
     with an initializer.  For core code (incl. builtin modules) the
@@ -658,7 +683,10 @@ def declare_parser(f, *, hasformat=False):
     return normalize_snippet(declarations)
 
 
-def wrap_declarations(text, length=78):
+def wrap_declarations(
+        text: str,
+        length: int = 78
+) -> str:
     """
     A simple-minded text wrapper for C function declarations.
 
@@ -680,14 +708,14 @@ def wrap_declarations(text, length=78):
         if not after_l_paren:
             lines.append(line)
             continue
-        parameters, _, after_r_paren = after_l_paren.partition(')')
+        in_paren, _, after_r_paren = after_l_paren.partition(')')
         if not _:
             lines.append(line)
             continue
-        if ',' not in parameters:
+        if ',' not in in_paren:
             lines.append(line)
             continue
-        parameters = [x.strip() + ", " for x in parameters.split(',')]
+        parameters = [x.strip() + ", " for x in in_paren.split(',')]
         prefix += "("
         if len(prefix) < length:
             spaces = " " * len(prefix)
@@ -724,10 +752,14 @@ class CLanguage(Language):
         self.cpp = cpp.Monitor(filename)
         self.cpp.fail = fail
 
-    def parse_line(self, line):
+    def parse_line(self, line: str) -> None:
         self.cpp.writeline(line)
 
-    def render(self, clinic, signatures):
+    def render(
+            self,
+            clinic: Clinic | None,
+            signatures: Iterable[Function]
+    ) -> str:
         function = None
         for o in signatures:
             if isinstance(o, Function):
@@ -736,7 +768,10 @@ class CLanguage(Language):
                 function = o
         return self.render_function(clinic, function)
 
-    def docstring_for_c_string(self, f):
+    def docstring_for_c_string(
+            self,
+            f: Function
+    ) -> str:
         if re.search(r'[^\x00-\x7F]', f.docstring):
             warn("Non-ascii character appear in docstring.")
 
@@ -1317,7 +1352,7 @@ class CLanguage(Language):
         return d2
 
     @staticmethod
-    def group_to_variable_name(group):
+    def group_to_variable_name(group: int) -> str:
         adjective = "left_" if group < 0 else "right_"
         return "group_" + adjective + str(abs(group))
 
@@ -1413,8 +1448,12 @@ class CLanguage(Language):
         add("}")
         template_dict['option_group_parsing'] = format_escape(output())
 
-    def render_function(self, clinic, f):
-        if not f:
+    def render_function(
+            self,
+            clinic: Clinic | None,
+            f: Function | None
+    ) -> str:
+        if f is None or clinic is None:
             return ""
 
         add, output = text_accumulator()
@@ -1476,10 +1515,12 @@ class CLanguage(Language):
 
         template_dict = {}
 
+        assert isinstance(f.full_name, str)
         full_name = f.full_name
         template_dict['full_name'] = full_name
 
         if new_or_init:
+            assert isinstance(f.cls, Class)
             name = f.cls.name
         else:
             name = f.name
@@ -1589,7 +1630,12 @@ def OverrideStdioWith(stdout):
         sys.stdout = saved_stdout
 
 
-def create_regex(before, after, word=True, whole_line=True):
+def create_regex(
+        before: str,
+        after: str,
+        word: bool = True,
+        whole_line: bool = True
+) -> re.Pattern[str]:
     """Create an re object for matching marker lines."""
     group_re = r"\w+" if word else ".+"
     pattern = r'{}({}){}'
@@ -1975,22 +2021,20 @@ extensions: LangDict = { name: CLanguage for name in "c cc cpp cxx h hh hpp hxx"
 extensions['py'] = PythonLanguage
 
 
-def file_changed(filename: str, new_contents: str) -> bool:
-    """Return true if file contents changed (meaning we must update it)"""
+def write_file(filename: str, new_contents: str) -> None:
     try:
-        with open(filename, encoding="utf-8") as fp:
+        with open(filename, 'r', encoding="utf-8") as fp:
             old_contents = fp.read()
-        return old_contents != new_contents
+
+        if old_contents == new_contents:
+            # no change: avoid modifying the file modification time
+            return
     except FileNotFoundError:
-        return True
-
-
-def write_file(filename: str, new_contents: str):
+        pass
     # Atomic write using a temporary file and os.replace()
     filename_new = f"{filename}.new"
     with open(filename_new, "w", encoding="utf-8") as fp:
         fp.write(new_contents)
-
     try:
         os.replace(filename_new, filename)
     except:
@@ -2168,8 +2212,6 @@ impl_definition block
                          traceback.format_exc().rstrip())
             printer.print_block(block)
 
-        clinic_out = []
-
         # these are destinations not buffers
         for name, destination in self.destinations.items():
             if destination.type == 'suppress':
@@ -2177,7 +2219,6 @@ impl_definition block
             output = destination.dump()
 
             if output:
-
                 block = Block("", dsl_name="clinic", output=output)
 
                 if destination.type == 'buffer':
@@ -2209,11 +2250,10 @@ impl_definition block
                     block.input = 'preserve\n'
                     printer_2 = BlockPrinter(self.language)
                     printer_2.print_block(block, core_includes=True)
-                    pair = destination.filename, printer_2.f.getvalue()
-                    clinic_out.append(pair)
+                    write_file(destination.filename, printer_2.f.getvalue())
                     continue
 
-        return printer.f.getvalue(), clinic_out
+        return printer.f.getvalue()
 
 
     def _module_and_class(self, fields):
@@ -2275,14 +2315,9 @@ def parse_file(
 
     assert isinstance(language, CLanguage)
     clinic = Clinic(language, verify=verify, filename=filename)
-    src_out, clinic_out = clinic.parse(raw)
+    cooked = clinic.parse(raw)
 
-    changes = [(fn, data) for fn, data in clinic_out if file_changed(fn, data)]
-    if changes:
-        # Always (re)write the source file.
-        write_file(output, src_out)
-        for fn, data in clinic_out:
-            write_file(fn, data)
+    write_file(output, cooked)
 
 
 def compute_checksum(
@@ -2602,7 +2637,10 @@ class LandMine:
         fail("Stepped on a land mine, trying to access attribute " + repr(name) + ":\n" + self.__message__)
 
 
-def add_c_converter(f, name=None):
+def add_c_converter(
+        f: type[CConverter],
+        name: str | None = None
+) -> type[CConverter]:
     if not name:
         name = f.__name__
         if not name.endswith('_converter'):
@@ -2620,7 +2658,10 @@ def add_default_legacy_c_converter(cls):
         legacy_converters[cls.format_unit] = cls
     return cls
 
-def add_legacy_c_converter(format_unit, **kwargs):
+def add_legacy_c_converter(
+        format_unit: str,
+        **kwargs
+) -> Callable[[ConverterType], ConverterType]:
     """
     Adds a legacy converter.
     """
@@ -3887,7 +3928,9 @@ class Py_buffer_converter(CConverter):
         return super().parse_arg(argname, displayname)
 
 
-def correct_name_for_self(f) -> tuple[str, str]:
+def correct_name_for_self(
+        f: Function
+) -> tuple[str, str]:
     if f.kind in (CALLABLE, METHOD_INIT):
         if f.cls:
             return "PyObject *", "self"
@@ -3898,7 +3941,9 @@ def correct_name_for_self(f) -> tuple[str, str]:
         return "PyTypeObject *", "type"
     raise RuntimeError("Unhandled type of function f: " + repr(f.kind))
 
-def required_type_for_self_for_parser(f):
+def required_type_for_self_for_parser(
+        f: Function
+) -> str | None:
     type, _ = correct_name_for_self(f)
     if f.kind in (METHOD_INIT, METHOD_NEW, STATIC_METHOD, CLASS_METHOD):
         return type
@@ -4193,7 +4238,12 @@ class float_return_converter(double_return_converter):
     cast = '(double)'
 
 
-def eval_ast_expr(node, globals, *, filename='-'):
+def eval_ast_expr(
+        node: ast.expr,
+        globals: dict[str, Any],
+        *,
+        filename: str = '-'
+) -> FunctionType:
     """
     Takes an ast.Expr node.  Compiles and evaluates it.
     Returns the result of the expression.
@@ -4205,8 +4255,8 @@ def eval_ast_expr(node, globals, *, filename='-'):
     if isinstance(node, ast.Expr):
         node = node.value
 
-    node = ast.Expression(node)
-    co = compile(node, filename, 'eval')
+    expr = ast.Expression(node)
+    co = compile(expr, filename, 'eval')
     fn = FunctionType(co, globals)
     return fn()
 
