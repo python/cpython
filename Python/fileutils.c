@@ -2497,11 +2497,7 @@ _Py_normpathAndSize(wchar_t *path, Py_ssize_t size, Py_ssize_t *norm_size)
             *p2 = L'\0';
         }
     }
-    if (path == p2) {
-        *norm_size = 0;
-    } else{
-        *norm_size = p2 - path + 1;
-    }
+    *norm_size = p2 - path + 1;
 #undef SEP_OR_END
 #undef IS_SEP
 #undef IS_END
