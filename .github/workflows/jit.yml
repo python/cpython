@@ -4,7 +4,7 @@ permissions:
   contents: read
 jobs:
   jit:
-    name: ${{ matrix.target }}${{ matrix.debug_flag }} (LLVM ${{ matrix.llvm }})
+    name: ${{ matrix.target }} (${{ matrix.debug && 'Debug' || 'Release' }}, LLVM ${{ matrix.llvm }})
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -62,39 +62,33 @@ jobs:
             runner: ubuntu-latest
             tier: 2
             compiler: clang
-          - debug: true
-            runner: windows-latest
-            debug_flag: ' -d'
-          - debug: true
-            debug_flag: ' --with-pydebug'
-          - debug_flag: ''
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
       - name: Run (macOS)
-        if: matrix.runner == 'macos-latest'
+        if: runner.os == 'macOS'
         run: |
           brew install llvm@${{ matrix.llvm }}
           export SDKROOT="$(xcrun --show-sdk-path)"
-          ./configure${{ matrix.debug_flag }}
+          ./configure${{ matrix.debug && ' --with-pydebug' || '' }}
           make all
           ./python.exe -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
           ./python.exe -m test -j0 -wW
       - name: Run (Ubuntu)
-        if: matrix.runner == 'ubuntu-latest'
+        if: runner.os == 'Ubuntu'
         run: |
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
           export CC="${{ matrix.compiler }}"
-          ./configure${{ matrix.debug_flag }}
+          ./configure${{ matrix.debug && ' --with-pydebug' || '' }}
           make all
           ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
           ./python -m test -j0 -wW
       - name: Run (Windows)
-        if: matrix.runner == 'windows-latest'
+        if: runner.os == 'Windows'
         run: |
           choco install llvm --version ${{ matrix.llvm }}
-          ./PCbuild/build${{ matrix.debug_flag }} -p ${{ matrix.platform }}
+          ./PCbuild/build${{ matrix.debug && ' -d' || '' }} -p ${{ matrix.platform }}
           ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
-          ./PCbuild/rt${{ matrix.debug_flag }} -p ${{ matrix.platform }} -q -j0 -wW
+          ./PCbuild/rt${{ matrix.debug && ' -d' || '' }} -p ${{ matrix.platform }} -q -j0 -wW
