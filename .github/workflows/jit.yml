@@ -48,7 +48,7 @@ jobs:
           ./python.exe -m test -j0 -wW
       - if: matrix.os == 'Ubuntu'
         run: |
-          bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
+          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
           ./configure${{ matrix.debug && ' --with-pydebug' || '' }}
           make all
           ./python -c 'import sys; assert sys._support_tier == 1, sys._support_tier'
