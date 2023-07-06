@@ -2343,23 +2343,26 @@ class Test_Pep523API(unittest.TestCase):
         names = ["func", "outer", "outer", "inner", "inner", "outer", "inner"]
         self.do_test(func, names)
 
+
+@contextlib.contextmanager
+def temporary_optimizer(opt):
+    _testinternalcapi.set_optimizer(opt)
+    try:
+        yield
+    finally:
+        _testinternalcapi.set_optimizer(None)
+
+@contextlib.contextmanager
+def clear_executors(func):
+    # Clear executors in func before and after running a block
+    func.__code__ = func.__code__.replace()
+    try:
+        yield
+    finally:
+        func.__code__ = func.__code__.replace()
+
+
 class TestOptimizerAPI(unittest.TestCase):
-
-    @contextlib.contextmanager
-    def temporary_optimizer(self, opt):
-        _testinternalcapi.set_optimizer(opt)
-        try:
-            yield
-        finally:
-            _testinternalcapi.set_optimizer(None)
-
-    @contextlib.contextmanager
-    def clear_executors(self, func):
-        try:
-            yield
-        finally:
-            #Clear executors
-            func.__code__ = func.__code__.replace()
 
     def test_get_set_optimizer(self):
         self.assertEqual(_testinternalcapi.get_optimizer(), None)
@@ -2381,9 +2384,9 @@ class TestOptimizerAPI(unittest.TestCase):
 
         for repeat in range(5):
             opt = _testinternalcapi.get_counter_optimizer()
-            with self.temporary_optimizer(opt):
+            with temporary_optimizer(opt):
                 self.assertEqual(opt.get_count(), 0)
-                with self.clear_executors(loop):
+                with clear_executors(loop):
                     loop()
                 self.assertEqual(opt.get_count(), 1000)
 
@@ -2409,7 +2412,7 @@ class TestOptimizerAPI(unittest.TestCase):
         long_loop = ns['long_loop']
 
         opt = _testinternalcapi.get_counter_optimizer()
-        with self.temporary_optimizer(opt):
+        with temporary_optimizer(opt):
             self.assertEqual(opt.get_count(), 0)
             long_loop()
             self.assertEqual(opt.get_count(), 10)
@@ -2418,24 +2421,27 @@ class TestOptimizerAPI(unittest.TestCase):
 class TestUops(unittest.TestCase):
 
     def test_basic_loop(self):
-
         def testfunc(x):
             i = 0
             while i < x:
                 i += 1
 
-        testfunc(1000)
+        opt = _testinternalcapi.get_uop_optimizer()
+
+        with temporary_optimizer(opt):
+            testfunc(1000)
 
         ex = None
-        for offset in range(0, 100, 2):
+        for offset in range(0, len(testfunc.__code__.co_code), 2):
             try:
                 ex = _testinternalcapi.get_executor(testfunc.__code__, offset)
                 break
             except ValueError:
                 pass
-        if ex is None:
-            return
-        self.assertIn("SAVE_IP", str(ex))
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _ in ex}
+        self.assertIn("SAVE_IP", uops)
+        self.assertIn("LOAD_FAST", uops)
 
 
 if __name__ == "__main__":
