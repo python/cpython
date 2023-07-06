@@ -28,74 +28,81 @@ jobs:
           - 16
         include:
           - target: i686-pc-windows-msvc/msvc
+            architecture: i686
             runner: windows-latest
+            compiler: msvc
             tier: 1
             windows_platform: Win32
           - target: x86_64-pc-windows-msvc/msvc
+            architecture: x86_64
             runner: windows-latest
+            compiler: msvc
             tier: 1
             windows_platform: x64
           - target: x86_64-apple-darwin/clang
+            architecture: x86_64
             runner: macos-latest
+            compiler: clang
             tier: 1
           - target: x86_64-unknown-linux-gnu/gcc
+            architecture: x86_64
             runner: ubuntu-latest
+            compiler: gcc
             tier: 1
-            linux_architecture: x86_64
-            linux_compiler: gcc
           # - target: aarch64-apple-darwin/clang
+          #   architecture: aarch64
           #   runner: macos-latest
+          #   compiler: clang
           #   tier: 2
           # - target: aarch64-unknown-linux-gnu/gcc
+          #   architecture: aarch64
           #   runner: ubuntu-latest
+          #   compiler: gcc
           #   tier: 2
-          #   linux_architecture: aarch64
-          #   linux_compiler: gcc
           # - target: aarch64-unknown-linux-gnu/clang
+          #   architecture: aarch64
           #   runner: ubuntu-latest
+          #   compiler: clang
           #   tier: 2
-          #   linux_architecture: aarch64
-          #   linux_compiler: clang
           # - target: powerpc64le-unknown-linux-gnu/gcc
+          #   architecture: ppc64le
           #   runner: ubuntu-latest
+          #   compiler: gcc
           #   tier: 2
-          #   linux_architecture: ppc64le
-          #   linux_compiler: gcc
           - target: x86_64-unknown-linux-gnu/clang
+            architecture: x86_64
             runner: ubuntu-latest
+            compiler: clang
             tier: 2
-            linux_architecture: x86_64
-            linux_compiler: clang
+    env:
+      CC: ${{ matrix.compiler }}
+      PYTHON_LLVM_VERSION: ${{ matrix.llvm }}
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-      - name: Run (macOS)
+      - name: macOS
         if: runner.os == 'macOS'
         run: |
           brew install llvm@${{ matrix.llvm }}
-          export PYTHON_LLVM_VERSION=${{ matrix.llvm }}
           export SDKROOT="$(xcrun --show-sdk-path)"
           ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
           make all
           ./python.exe -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
           ./python.exe -m test -j0 -wW
-      - name: Run (Linux)
-        if: runner.os == 'Linux' && matrix.linux_architecture == 'x86_64'
+      - name: Linux
+        if: runner.os == 'Linux' && matrix.architecture == 'x86_64'
         run: |
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
-          export PYTHON_LLVM_VERSION=${{ matrix.llvm }}
-          export CC="${{ matrix.linux_compiler }}"
           ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
           make all
           ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
           ./python -m test -j0 -wW
-      - name: Run (Windows)
+      - name: Windows
         if: runner.os == 'Windows'
         run: |
           choco install llvm --allow-downgrade --version ${{ matrix.llvm }}
-          $env:PYTHON_LLVM_VERSION=${{ matrix.llvm }}
           ./PCbuild/build ${{ matrix.debug && '-d' || '--pgo' }} -p ${{ matrix.windows_platform }}
           ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
           ./PCbuild/rt${{ matrix.debug && ' -d' || '' }} -p ${{ matrix.windows_platform }} -q -j0 -wW
