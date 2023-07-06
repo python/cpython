@@ -2602,9 +2602,6 @@ raw_unicode_escape(PyObject *obj)
     int kind;
     _PyBytesWriter writer;
 
-    if (PyUnicode_READY(obj))
-        return NULL;
-
     _PyBytesWriter_Init(&writer);
 
     size = PyUnicode_GET_LENGTH(obj);
@@ -2673,9 +2670,6 @@ write_unicode_binary(PicklerObject *self, PyObject *obj)
     PyObject *encoded = NULL;
     Py_ssize_t size;
     const char *data;
-
-    if (PyUnicode_READY(obj))
-        return -1;
 
     data = PyUnicode_AsUTF8AndSize(obj, &size);
     if (data == NULL) {

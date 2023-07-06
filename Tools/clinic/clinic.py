@@ -3266,9 +3266,6 @@ class int_converter(CConverter):
                     _PyArg_BadArgument("{{name}}", {displayname}, "a unicode character", {argname});
                     goto exit;
                 }}}}
-                if (PyUnicode_READY({argname})) {{{{
-                    goto exit;
-                }}}}
                 if (PyUnicode_GET_LENGTH({argname}) != 1) {{{{
                     _PyArg_BadArgument("{{name}}", {displayname}, "a unicode character", {argname});
                     goto exit;
@@ -3728,9 +3725,6 @@ class unicode_converter(CConverter):
             return """
                 if (!PyUnicode_Check({argname})) {{{{
                     _PyArg_BadArgument("{{name}}", {displayname}, "str", {argname});
-                    goto exit;
-                }}}}
-                if (PyUnicode_READY({argname}) == -1) {{{{
                     goto exit;
                 }}}}
                 {paramname} = {argname};
@@ -5528,7 +5522,8 @@ For more information see https://docs.python.org/3/howto/clinic.html""")
                 if rcs_dir in dirs:
                     dirs.remove(rcs_dir)
             for filename in files:
-                if not (filename.endswith('.c') or filename.endswith('.h')):
+                # handle .c, .cpp and .h files
+                if not filename.endswith(('.c', '.cpp', '.h')):
                     continue
                 path = os.path.join(root, filename)
                 if ns.verbose:

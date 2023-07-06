@@ -560,11 +560,6 @@ PyObject_Repr(PyObject *v)
         Py_DECREF(res);
         return NULL;
     }
-#ifndef Py_DEBUG
-    if (PyUnicode_READY(res) < 0) {
-        return NULL;
-    }
-#endif
     return res;
 }
 
@@ -583,10 +578,6 @@ PyObject_Str(PyObject *v)
     if (v == NULL)
         return PyUnicode_FromString("<NULL>");
     if (PyUnicode_CheckExact(v)) {
-#ifndef Py_DEBUG
-        if (PyUnicode_READY(v) < 0)
-            return NULL;
-#endif
         return Py_NewRef(v);
     }
     if (Py_TYPE(v)->tp_str == NULL)
@@ -618,11 +609,6 @@ PyObject_Str(PyObject *v)
         Py_DECREF(res);
         return NULL;
     }
-#ifndef Py_DEBUG
-    if (PyUnicode_READY(res) < 0) {
-        return NULL;
-    }
-#endif
     assert(_PyUnicode_CheckConsistency(res, 1));
     return res;
 }

@@ -1934,10 +1934,6 @@ numeric_as_ascii(PyObject *u, int strip_ws, int ignore_underscores)
     Py_ssize_t j, len;
     int d;
 
-    if (PyUnicode_READY(u) == -1) {
-        return NULL;
-    }
-
     kind = PyUnicode_KIND(u);
     data = PyUnicode_DATA(u);
     len =  PyUnicode_GET_LENGTH(u);

@@ -2901,9 +2901,6 @@ date_new(PyTypeObject *type, PyObject *args, PyObject *kw)
             }
         }
         else if (PyUnicode_Check(state)) {
-            if (PyUnicode_READY(state)) {
-                return NULL;
-            }
             if (PyUnicode_GET_LENGTH(state) == _PyDateTime_DATE_DATASIZE &&
                 MONTH_IS_SANE(PyUnicode_READ_CHAR(state, 2)))
             {
@@ -4234,9 +4231,6 @@ time_new(PyTypeObject *type, PyObject *args, PyObject *kw)
             }
         }
         else if (PyUnicode_Check(state)) {
-            if (PyUnicode_READY(state)) {
-                return NULL;
-            }
             if (PyUnicode_GET_LENGTH(state) == _PyDateTime_TIME_DATASIZE &&
                 (0x7F & PyUnicode_READ_CHAR(state, 0)) < 24)
             {
@@ -4909,9 +4903,6 @@ datetime_new(PyTypeObject *type, PyObject *args, PyObject *kw)
             }
         }
         else if (PyUnicode_Check(state)) {
-            if (PyUnicode_READY(state)) {
-                return NULL;
-            }
             if (PyUnicode_GET_LENGTH(state) == _PyDateTime_DATETIME_DATASIZE &&
                 MONTH_IS_SANE(PyUnicode_READ_CHAR(state, 2) & 0x7F))
             {

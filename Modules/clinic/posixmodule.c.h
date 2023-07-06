@@ -8282,15 +8282,9 @@ os_putenv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("putenv", "argument 1", "str", args[0]);
         goto exit;
     }
-    if (PyUnicode_READY(args[0]) == -1) {
-        goto exit;
-    }
     name = args[0];
     if (!PyUnicode_Check(args[1])) {
         _PyArg_BadArgument("putenv", "argument 2", "str", args[1]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[1]) == -1) {
         goto exit;
     }
     value = args[1];
@@ -8367,9 +8361,6 @@ os_unsetenv(PyObject *module, PyObject *arg)
 
     if (!PyUnicode_Check(arg)) {
         _PyArg_BadArgument("unsetenv", "argument", "str", arg);
-        goto exit;
-    }
-    if (PyUnicode_READY(arg) == -1) {
         goto exit;
     }
     name = arg;
@@ -11990,4 +11981,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=02bece83d20d497b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a7e8c3df2db09717 input=a9049054013a1b77]*/
