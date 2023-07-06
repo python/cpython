@@ -532,7 +532,7 @@ uop_optimize(
         return trace_length;
     }
     OBJECT_STAT_INC(optimization_traces_created);
-    _PyUOpExecutorObject *executor = (_PyUOpExecutorObject *)_PyObject_New(&UOpExecutor_Type);
+    _PyUOpExecutorObject *executor = PyObject_New(_PyUOpExecutorObject, &UOpExecutor_Type);
     if (executor == NULL) {
         return -1;
     }
@@ -542,18 +542,24 @@ uop_optimize(
     return 1;
 }
 
+static void
+uop_opt_dealloc(PyObject *self) {
+    PyObject_Free(self);
+}
+
 static PyTypeObject UOpOptimizer_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "uop_optimizer",
     .tp_basicsize = sizeof(_PyOptimizerObject),
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .tp_dealloc = uop_opt_dealloc,
 };
 
 PyObject *
 PyUnstable_Optimizer_NewUOpOptimizer(void)
 {
-    _PyOptimizerObject *opt = (_PyOptimizerObject *)_PyObject_New(&UOpOptimizer_Type);
+    _PyOptimizerObject *opt = PyObject_New(_PyOptimizerObject, &UOpOptimizer_Type);
     if (opt == NULL) {
         return NULL;
     }
