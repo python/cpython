@@ -532,11 +532,11 @@ elif sys.platform == "win32":
     elif sys.argv[2] == "Debug|x64":
         ObjectParserDefault = ObjectParserCOFF
         CFLAGS += ["-D_DEBUG"]
-    elif sys.argv[2] == "Release|Win32":
+    elif sys.argv[2] in {"PGInstrument|Win32", "PGUpdate|Win32", "Release|Win32"}:
         ObjectParserDefault = functools.partial(ObjectParserCOFF, symbol_prefix="_")  # XXX
         # CFLAGS += ["-DNDEBUG", "-m32"]  # XXX
         CFLAGS += ["-m32"]
-    elif sys.argv[2] == "Release|x64":
+    elif sys.argv[2] in {"PGInstrument|x64", "PGUpdate|x64", "Release|x64"}:
         ObjectParserDefault = ObjectParserCOFF
         # CFLAGS += ["-DNDEBUG"]  # XXX
         pass

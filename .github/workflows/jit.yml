@@ -1,7 +1,5 @@
 name: JIT
 on: push
-permissions:
-  contents: read
 jobs:
   jit:
     name: ${{ matrix.target }} (${{ matrix.debug && 'Debug' || 'Release' }}, LLVM ${{ matrix.llvm }})
@@ -87,7 +85,7 @@ jobs:
         run: |
           brew install llvm@${{ matrix.llvm }}
           export SDKROOT="$(xcrun --show-sdk-path)"
-          ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
+          ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations' }}
           make all
           ./python.exe -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
           ./python.exe -m test -j0 -wW
@@ -95,7 +93,7 @@ jobs:
         if: runner.os == 'Linux' && matrix.architecture == 'x86_64'
         run: |
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
-          ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
+          ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations' }}
           make all
           ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
           ./python -m test -j0 -wW
