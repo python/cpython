@@ -355,6 +355,12 @@ class TestNtpath(NtpathTestCase):
         tester("ntpath.normpath('\\\\foo')", '\\\\foo')
         tester("ntpath.normpath('\\\\')", '\\\\')
 
+        # gh-106242: don't truncate null characters in path
+        tester("ntpath.normpath('foo\x00bar')", 'foo\x00bar')
+        tester("ntpath.normpath('\x00\x00')", '\x00\x00')
+        tester("ntpath.normpath('\x00foo')", '\x00foo')
+        tester("ntpath.normpath('\x00')", '\x00')
+
     def test_realpath_curdir(self):
         expected = ntpath.normpath(os.getcwd())
         tester("ntpath.realpath('.')", expected)
