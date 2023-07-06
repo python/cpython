@@ -412,6 +412,13 @@ translate_bytecode_to_trace(
         ADD_TO_TRACE(SAVE_IP, (int)(instr - (_Py_CODEUNIT *)code->co_code_adaptive));
         int opcode = instr->op.code;
         uint64_t operand = instr->op.arg;
+        int extras = 0;
+        while (opcode == EXTENDED_ARG) {
+            instr++;
+            extras += 1;
+            opcode = instr->op.code;
+            operand = (operand << 8) | instr->op.arg;
+        }
         switch (opcode) {
             case LOAD_FAST_LOAD_FAST:
             case STORE_FAST_LOAD_FAST:
@@ -458,6 +465,15 @@ translate_bytecode_to_trace(
                         int offset = expansion->uops[i].offset;
                         switch (expansion->uops[i].size) {
                             case 0:
+                                if (extras && OPCODE_HAS_JUMP(opcode)) {
+                                    if (opcode == JUMP_BACKWARD_NO_INTERRUPT) {
+                                        operand -= extras;
+                                    }
+                                    else {
+                                        assert(opcode != JUMP_BACKWARD);
+                                        operand += extras;
+                                    }
+                                }
                                 break;
                             case 1:
                                 operand = read_u16(&instr[offset].cache);
