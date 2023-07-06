@@ -186,13 +186,40 @@ def only_run_in_spawn_testsuite(reason):
     """
 
     def decorator(test_item):
+
         @functools.wraps(test_item)
         def spawn_check_wrapper(*args, **kwargs):
             if (start_method := multiprocessing.get_start_method()) != "spawn":
                 raise unittest.SkipTest(f"{start_method=}, not 'spawn'; {reason}")
+            return test_item(*args, **kwargs)
+
         return spawn_check_wrapper
 
     return decorator
+
+
+class TestInternalDecorators(unittest.TestCase):
+    """Logic within a test suite that could errantly skip tests? Test it!"""
+
+    def test_only_run_in_spawn_testsuite(self):
+        try:
+            @only_run_in_spawn_testsuite("testing this decorator")
+            def return_four_if_spawn():
+                return 4
+        except Exception as err:
+            self.fail(f"expected decorated `def` not to raise; caught {err}")
+
+        orig_start_method = multiprocessing.get_start_method(allow_none=True)
+        try:
+            multiprocessing.set_start_method("spawn", force=True)
+            self.assertEqual(return_four_if_spawn(), 4)
+            multiprocessing.set_start_method("forkserver", force=True)
+            with self.assertRaises(unittest.SkipTest) as ctx:
+                return_four_if_spawn()
+            self.assertIn("testing this decorator", str(ctx.exception))
+            self.assertIn("start_method=", str(ctx.exception))
+        finally:
+            multiprocessing.set_start_method(orig_start_method, force=True)
 
 
 #
@@ -5845,24 +5872,23 @@ class TestNamedResource(unittest.TestCase):
         # gh-90549: Check that global named resources in main module
         # will not leak by a subprocess, in spawn context.
         #
-        test_source = """if 1:
-            import multiprocessing as mp
-
-            ctx = mp.get_context('spawn')
-
-            global_resource = ctx.Semaphore()
-
-            def submain(): pass
-
-            if __name__ == '__main__':
-                p = ctx.Process(target=submain)
-                p.start()
-                p.join()
-        """
-        rc, out, err = script_helper.assert_python_ok("-c", test_source)
+        testfn = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, testfn)
+        with open(testfn, 'w', encoding='utf-8') as f:
+            f.write(textwrap.dedent('''\
+                import multiprocessing as mp
+                ctx = mp.get_context('spawn')
+                global_resource = ctx.Semaphore()
+                def submain(): pass
+                if __name__ == '__main__':
+                    p = ctx.Process(target=submain)
+                    p.start()
+                    p.join()
+            '''))
+        rc, out, err = script_helper.assert_python_ok(testfn)
         # on error, err = 'UserWarning: resource_tracker: There appear to
         # be 1 leaked semaphore objects to clean up at shutdown'
-        self.assertEqual(err, b'')
+        self.assertFalse(err, msg=err.decode('utf-8'))
 
 
 class MiscTestCase(unittest.TestCase):
@@ -5878,16 +5904,16 @@ class MiscTestCase(unittest.TestCase):
         # ImportError in multiprocessing when sys.executable was None.
         # This can be true in embedded environments.
         rc, out, err = script_helper.assert_python_ok(
-                "-c",
-                """if 1:
-                import sys
-                sys.executable = None
-                assert "multiprocessing" not in sys.modules, "already imported!"
-                import multiprocessing
-                import multiprocessing.spawn  # This should not fail""",
+            "-c",
+            """if 1:
+            import sys
+            sys.executable = None
+            assert "multiprocessing" not in sys.modules, "already imported!"
+            import multiprocessing
+            import multiprocessing.spawn  # This should not fail\n""",
         )
         self.assertEqual(rc, 0)
-        self.assertEqual(err, b'')
+        self.assertFalse(err, msg=err.decode('utf-8'))
 
 
 #
