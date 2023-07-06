@@ -7,6 +7,26 @@ extern "C" {
 
 #include "pycore_time.h"          // _PyTime_t
 
+extern int _PyImport_IsInitialized(PyInterpreterState *);
+
+PyAPI_FUNC(PyObject *) _PyImport_GetModuleId(_Py_Identifier *name);
+PyAPI_FUNC(int) _PyImport_SetModule(PyObject *name, PyObject *module);
+PyAPI_FUNC(int) _PyImport_SetModuleString(const char *name, PyObject* module);
+
+extern void _PyImport_AcquireLock(PyInterpreterState *interp);
+extern int _PyImport_ReleaseLock(PyInterpreterState *interp);
+
+extern int _PyImport_FixupBuiltin(
+    PyObject *mod,
+    const char *name,            /* UTF-8 encoded string */
+    PyObject *modules
+    );
+extern int _PyImport_FixupExtensionObject(PyObject*, PyObject *,
+                                          PyObject *, PyObject *);
+
+PyAPI_FUNC(PyObject *) _PyImport_GetModuleAttr(PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) _PyImport_GetModuleAttrString(const char *, const char *);
+
 
 struct _import_runtime_state {
     /* The builtin modules (defined in config.c). */
