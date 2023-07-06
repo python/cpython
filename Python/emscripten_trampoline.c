@@ -1,9 +1,9 @@
 #if defined(PY_CALL_TRAMPOLINE)
 
-#include <emscripten.h>
+#include <emscripten.h>             // EM_JS, EM_JS_DEPS
 #include <Python.h>
+#include "pycore_runtime.h"         // _PyRuntime
 
-static int type_reflection_available;
 
 /**
  * This is the GoogleChromeLabs approved way to feature detect type-reflection:
@@ -14,8 +14,9 @@ EM_JS(int, _PyEM_detect_type_reflection, (), {
 });
 
 void
-_Py_EmscriptenTrampoline_Init(){
-  type_reflection_available = _PyEM_detect_type_reflection();
+_Py_EmscriptenTrampoline_Init(_PyRuntimeState *runtime)
+{
+  runtime->wasm_type_reflection_available = _PyEM_detect_type_reflection();
 }
 
 /**
@@ -56,7 +57,7 @@ _PyEM_TrampolineCall(PyCFunctionWithKeywords func,
               PyObject* args,
               PyObject* kw)
 {
-  if (!type_reflection_available) {
+  if (!_PyRuntime.wasm_type_reflection_available) {
     return _PyEMJS_TrampolineCall(func, self, args, kw);
   } else {
     switch (_PyEM_CountFuncParams(func)) {
