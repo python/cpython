@@ -80,15 +80,23 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-      - name: macOS
-        if: runner.os == 'macOS'
-        run: |
-          brew install llvm@${{ matrix.llvm }}
-          export SDKROOT="$(xcrun --show-sdk-path)"
-          ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
-          make
-          ./python.exe -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
-          ./python.exe -m test -j0 -wW
+      - name: Emulated Linux
+        if: runner.os == 'Linux' && matrix.architecture != 'x86_64'
+        uses: uraimo/run-on-arch-action@v2
+        with:
+          arch: ${{ matrix.architecture }}
+          distro: ubuntu_latest
+          env:
+            CC: ${{ matrix.compiler }}
+            PYTHON_LLVM_VERSION: ${{ matrix.llvm }}
+          run: |
+            sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
+            ${{ matrix.llvm == 14 && 'sudo apt install libclang-rt-14-dev' || '' }}
+            export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
+            ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
+            make
+            ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
+            ./python -m test -j0 -wW
       - name: Native Linux
         if: runner.os == 'Linux' && matrix.architecture == 'x86_64'
         run: |
@@ -99,20 +107,15 @@ jobs:
           make
           ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
           ./python -m test -j0 -wW
-      - name: Emulated Linux
-        if: runner.os == 'Linux' && matrix.architecture != 'x86_64'
-        uses: uraimo/run-on-arch-action@v2
-        with:
-          arch: ${{ matrix.architecture }}
-          distro: ubuntu_latest
-          run: |
-            sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
-            ${{ matrix.llvm == 14 && 'sudo apt install libclang-rt-14-dev' || '' }}
-            export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
-            ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
-            make
-            ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
-            ./python -m test -j0 -wW
+      - name: macOS
+        if: runner.os == 'macOS'
+        run: |
+          brew install llvm@${{ matrix.llvm }}
+          export SDKROOT="$(xcrun --show-sdk-path)"
+          ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
+          make
+          ./python.exe -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
+          ./python.exe -m test -j0 -wW
       - name: Windows
         if: runner.os == 'Windows'
         run: |
