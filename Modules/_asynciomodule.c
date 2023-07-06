@@ -3,10 +3,11 @@
 #endif
 
 #include "Python.h"
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
+#include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_runtime_init.h"  // _Py_ID()
-#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "structmember.h"         // PyMemberDef
 #include <stddef.h>               // offsetof()
 
@@ -527,7 +528,7 @@ future_init(FutureObj *fut, PyObject *loop)
     if (is_true < 0) {
         return -1;
     }
-    if (is_true && !_Py_IsInterpreterFinalizing(PyInterpreterState_Get())) {
+    if (is_true && !_Py_IsInterpreterFinalizing(_PyInterpreterState_GET())) {
         /* Only try to capture the traceback if the interpreter is not being
            finalized.  The original motivation to add a `_Py_IsFinalizing()`
            call was to prevent SIGSEGV when a Future is created in a __del__

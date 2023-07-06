@@ -4,6 +4,14 @@
 # Do not edit!
 
 _specializations = {
+    "TO_BOOL": [
+        "TO_BOOL_ALWAYS_TRUE",
+        "TO_BOOL_BOOL",
+        "TO_BOOL_INT",
+        "TO_BOOL_LIST",
+        "TO_BOOL_NONE",
+        "TO_BOOL_STR",
+    ],
     "BINARY_OP": [
         "BINARY_OP_MULTIPLY_INT",
         "BINARY_OP_ADD_INT",
