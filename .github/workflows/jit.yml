@@ -93,6 +93,7 @@ jobs:
         if: runner.os == 'Linux' && matrix.architecture == 'x86_64'
         run: |
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
+          export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
           ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations' }}
           make all
           ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
