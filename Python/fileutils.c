@@ -2379,10 +2379,11 @@ _Py_find_basename(const wchar_t *filename)
    the path, if known. If -1, the first null character will be assumed
    to be the end of the path. */
 wchar_t *
-_Py_normpathAndSize(wchar_t *path, Py_ssize_t size, Py_ssize_t *length)
+_Py_normpathAndSize(wchar_t *path, Py_ssize_t size, Py_ssize_t *norm_size)
 {
     assert(path != NULL);
-    if (!path[0] || size == 0) {
+    if (!path[0] && size < 0 || size == 0) {
+        *norm_size = 0;
         return path;
     }
     wchar_t *pEnd = size >= 0 ? &path[size] : NULL;
@@ -2497,9 +2498,9 @@ _Py_normpathAndSize(wchar_t *path, Py_ssize_t size, Py_ssize_t *length)
         }
     }
     if (path == p2) {
-        *length = 0;
+        *norm_size = 0;
     } else{
-        *length = p2 - path + 1;
+        *norm_size = p2 - path + 1;
     }
 #undef SEP_OR_END
 #undef IS_SEP
@@ -2510,8 +2511,8 @@ _Py_normpathAndSize(wchar_t *path, Py_ssize_t size, Py_ssize_t *length)
 wchar_t *
 _Py_normpath(wchar_t *path, Py_ssize_t size)
 {
-    Py_ssize_t length;
-    return _Py_normpathAndSize(path, size, &length);
+    Py_ssize_t norm_length;
+    return _Py_normpathAndSize(path, size, &norm_length);
 }
 
 
