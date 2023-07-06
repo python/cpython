@@ -39,6 +39,12 @@
 
 #include "docstrings.h"
 
+#ifdef EXTRA_FUNCTIONALITY
+  #define _PY_DEC_ROUND_GUARD MPD_ROUND_GUARD
+#else
+  #define _PY_DEC_ROUND_GUARD (MPD_ROUND_GUARD-1)
+#endif
+
 typedef struct {
     PyTypeObject *PyDecContextManager_Type;
     PyTypeObject *PyDecContext_Type;
@@ -57,6 +63,8 @@ typedef struct {
     /* Basic and extended context templates */
     PyObject *basic_context_template;
     PyObject *extended_context_template;
+
+    PyObject *round_map[_PY_DEC_ROUND_GUARD];
 } decimal_state;
 
 static decimal_state global_state;
@@ -215,13 +223,6 @@ static const char *dec_signal_string[MPD_NUM_FLAGS] = {
     "Subnormal",
     "Underflow",
 };
-
-#ifdef EXTRA_FUNCTIONALITY
-  #define _PY_DEC_ROUND_GUARD MPD_ROUND_GUARD
-#else
-  #define _PY_DEC_ROUND_GUARD (MPD_ROUND_GUARD-1)
-#endif
-static PyObject *round_map[_PY_DEC_ROUND_GUARD];
 
 static const char *invalid_rounding_err =
 "valid values for rounding are:\n\
@@ -520,15 +521,16 @@ static int
 getround(PyObject *v)
 {
     int i;
+    decimal_state *state = GLOBAL_STATE();
 
     if (PyUnicode_Check(v)) {
         for (i = 0; i < _PY_DEC_ROUND_GUARD; i++) {
-            if (v == round_map[i]) {
+            if (v == state->round_map[i]) {
                 return i;
             }
         }
         for (i = 0; i < _PY_DEC_ROUND_GUARD; i++) {
-            if (PyUnicode_Compare(v, round_map[i]) == 0) {
+            if (PyUnicode_Compare(v, state->round_map[i]) == 0) {
                 return i;
             }
         }
@@ -754,8 +756,9 @@ static PyObject *
 context_getround(PyObject *self, void *closure UNUSED)
 {
     int i = mpd_getround(CTX(self));
+    decimal_state *state = GLOBAL_STATE();
 
-    return Py_NewRef(round_map[i]);
+    return Py_NewRef(state->round_map[i]);
 }
 
 static PyObject *
@@ -6025,8 +6028,8 @@ PyInit__decimal(void)
 
     /* Init string constants */
     for (i = 0; i < _PY_DEC_ROUND_GUARD; i++) {
-        ASSIGN_PTR(round_map[i], PyUnicode_InternFromString(mpd_round_string[i]));
-        CHECK_INT(PyModule_AddObject(m, mpd_round_string[i], Py_NewRef(round_map[i])));
+        ASSIGN_PTR(state->round_map[i], PyUnicode_InternFromString(mpd_round_string[i]));
+        CHECK_INT(PyModule_AddObject(m, mpd_round_string[i], Py_NewRef(state->round_map[i])));
     }
 
     /* Add specification version number */
