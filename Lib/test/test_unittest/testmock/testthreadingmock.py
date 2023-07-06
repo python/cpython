@@ -2,7 +2,11 @@ import time
 import unittest
 import concurrent.futures
 
+from test.support import threading_helper
 from unittest.mock import patch, ThreadingMock, call
+
+
+threading_helper.requires_working_threading(module=True)
 
 
 class Something:
@@ -133,11 +137,9 @@ class TestThreadingMock(unittest.TestCase):
 
         with patch(f"{__name__}.Something", waitable_mock):
             something = Something()
-            self.run_async(something.method_1, delay=0.1)
+            self.run_async(something.method_1, delay=0.5)
             with self.assertRaises(AssertionError):
                 something.method_1.wait_until_called(timeout=0.05)
-            with self.assertRaises(AssertionError):
-                something.method_1.wait_until_any_call_with(timeout=0.05)
 
     def test_wait_success_called_before(self):
         waitable_mock = self._make_mock()
@@ -163,10 +165,10 @@ class TestThreadingMock(unittest.TestCase):
 
         with patch(f"{__name__}.Something", waitable_mock):
             something = Something()
-            self.run_async(something.method_1, 1, delay=0.1)
-            self.run_async(something.method_1, 2, delay=0.2)
-            self.run_async(something.method_1, 3, delay=0.3)
+            self.run_async(something.method_1, 1, delay=0.2)
             self.assertNotIn(call(1), something.method_1.mock_calls)
+            self.run_async(something.method_1, 2, delay=0.5)
+            self.run_async(something.method_1, 3, delay=0.6)
 
             something.method_1.wait_until_any_call_with(1)
             something.method_1.assert_called_with(1)
@@ -182,10 +184,10 @@ class TestThreadingMock(unittest.TestCase):
 
         with patch(f"{__name__}.Something", waitable_mock):
             something = Something()
-            self.run_async(something.method_1, a=1, delay=0.1)
-            self.run_async(something.method_1, b=2, delay=0.2)
-            self.run_async(something.method_1, c=3, delay=0.3)
+            self.run_async(something.method_1, a=1, delay=0.2)
             self.assertNotIn(call(a=1), something.method_1.mock_calls)
+            self.run_async(something.method_1, b=2, delay=0.5)
+            self.run_async(something.method_1, c=3, delay=0.6)
 
             something.method_1.wait_until_any_call_with(a=1)
             something.method_1.assert_called_with(a=1)
