@@ -1604,9 +1604,9 @@ static PyObject *
 current_context(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    decimal_state *state = GLOBAL_STATE();
-    if (state->cached_context && state->cached_context->tstate == tstate) {
-        return (PyObject *)(state->cached_context);
+    decimal_state *modstate = GLOBAL_STATE();
+    if (modstate->cached_context && modstate->cached_context->tstate == tstate) {
+        return (PyObject *)(modstate->cached_context);
     }
 
     return current_context_from_dict();
