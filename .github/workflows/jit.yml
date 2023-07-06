@@ -41,6 +41,7 @@ jobs:
           - target: x86_64-unknown-linux-gnu/gcc
             runner: ubuntu-latest
             tier: 1
+            linux_architecture: x86_64
             linux_compiler: gcc
           # - target: aarch64-apple-darwin/clang
           #   runner: macos-latest
@@ -48,18 +49,22 @@ jobs:
           # - target: aarch64-unknown-linux-gnu/gcc
           #   runner: ubuntu-latest
           #   tier: 2
+          #   linux_architecture: aarch64
           #   linux_compiler: gcc
           # - target: aarch64-unknown-linux-gnu/clang
           #   runner: ubuntu-latest
           #   tier: 2
+          #   linux_architecture: aarch64
           #   linux_compiler: clang
           # - target: powerpc64le-unknown-linux-gnu/gcc
           #   runner: ubuntu-latest
           #   tier: 2
+          #   linux_architecture: ppc64le
           #   linux_compiler: gcc
           - target: x86_64-unknown-linux-gnu/clang
             runner: ubuntu-latest
             tier: 2
+            linux_architecture: x86_64
             linux_compiler: clang
     steps:
       - uses: actions/checkout@v3
@@ -71,23 +76,23 @@ jobs:
         run: |
           brew install llvm@${{ matrix.llvm }}
           export SDKROOT="$(xcrun --show-sdk-path)"
-          ./configure${{ matrix.debug && ' --with-pydebug' || '' }}
+          ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
           make all
           ./python.exe -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
           ./python.exe -m test -j0 -wW
       - name: Run (Linux)
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && matrix.linux_architecture == 'x86_64'
         run: |
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
           export CC="${{ matrix.linux_compiler }}"
-          ./configure${{ matrix.debug && ' --with-pydebug' || '' }}
+          ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
           make all
           ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
           ./python -m test -j0 -wW
       - name: Run (Windows)
         if: runner.os == 'Windows'
         run: |
-          choco install llvm --version ${{ matrix.llvm }}
-          ./PCbuild/build${{ matrix.debug && ' -d' || '' }} -p ${{ matrix.windows_platform }}
+          choco install llvm --allow-downgrade --version ${{ matrix.llvm }}
+          ./PCbuild/build ${{ matrix.debug && '-d' || '--pgo' }} -p ${{ matrix.windows_platform }}
           ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
           ./PCbuild/rt${{ matrix.debug && ' -d' || '' }} -p ${{ matrix.windows_platform }} -q -j0 -wW
