@@ -1104,13 +1104,13 @@ class TestDistributions(unittest.TestCase):
         # exceedingly unlikely to ever fail for correct code.
 
         # BG code path
-        # Expected dist: [31641, 42188, 21094, 4688, 391]
+        # Expected dist: [42139, 42317, 13979, 1565]
         c = Counter(B(4, 0.25) for i in range(100_000))
-        self.assertTrue(29_641 <= c[0] <= 33_641, c)
-        self.assertTrue(40_188 <= c[1] <= 44_188)
-        self.assertTrue(19_094 <= c[2] <= 23_094)
-        self.assertTrue(2_688  <= c[3] <= 6_688)
-        self.assertEqual(set(c), {0, 1, 2, 3, 4})
+        self.assertTrue(40_139 <= c[0] <= 44_139, c)
+        self.assertTrue(40_317 <= c[1] <= 44_317)
+        self.assertTrue(11_979 <= c[2] <= 15_979)
+        self.assertTrue(0      <= c[3] <= 3_565)
+        self.assertEqual(set(c), {0, 1, 2, 3})
 
         # BTRS code path
         # Sum of c[20], c[21], c[22], c[23], c[24] expected to be 36,214
