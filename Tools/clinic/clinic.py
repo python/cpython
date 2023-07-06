@@ -13,6 +13,7 @@ import collections
 import contextlib
 import copy
 import cpp
+import dataclasses as dc
 import enum
 import functools
 import hashlib
@@ -1858,11 +1859,10 @@ class BlockParser:
         return Block(input_output(), dsl_name, output=output)
 
 
+@dc.dataclass(slots=True)
 class BlockPrinter:
-
-    def __init__(self, language, f=None):
-        self.language = language
-        self.f = f or io.StringIO()
+    language: Language
+    f: io.StringIO = dc.field(default_factory=io.StringIO)
 
     def print_block(self, block, *, core_includes=False):
         input = block.input
@@ -2328,15 +2328,13 @@ class PythonParser:
             block.output = s.getvalue()
 
 
+@dc.dataclass(repr=False)
 class Module:
-    def __init__(
-            self,
-            name: str,
-            module = None
-    ) -> None:
-        self.name = name
-        self.module = self.parent = module
+    name: str
+    module: Module | None = None
 
+    def __post_init__(self) -> None:
+        self.parent = self.module
         self.modules: ModuleDict = {}
         self.classes: ClassDict = {}
         self.functions: list[Function] = []
@@ -2345,22 +2343,16 @@ class Module:
         return "<clinic.Module " + repr(self.name) + " at " + str(id(self)) + ">"
 
 
+@dc.dataclass(repr=False)
 class Class:
-    def __init__(
-            self,
-            name: str,
-            module: Module | None = None,
-            cls = None,
-            typedef: str | None = None,
-            type_object: str | None = None
-    ) -> None:
-        self.name = name
-        self.module = module
-        self.cls = cls
-        self.typedef = typedef
-        self.type_object = type_object
-        self.parent = cls or module
+    name: str
+    module: Module | None = None
+    cls: Class | None = None
+    typedef: str | None = None
+    type_object: str | None = None
 
+    def __post_init__(self) -> None:
+        self.parent = self.cls or self.module
         self.classes: ClassDict = {}
         self.functions: list[Function] = []
 
@@ -2606,13 +2598,10 @@ class Parameter:
             return f'"argument {i}"'
 
 
+@dc.dataclass
 class LandMine:
     # try to access any
-    def __init__(self, message: str) -> None:
-        self.__message__ = message
-
-    def __repr__(self) -> str:
-        return '<LandMine ' + repr(self.__message__) + ">"
+    __message__: str
 
     def __getattribute__(self, name: str):
         if name in ('__repr__', '__message__'):
