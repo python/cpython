@@ -4,7 +4,7 @@ permissions:
   contents: read
 jobs:
   jit:
-    name: ${{ matrix.target }} / LLVM ${{ matrix.llvm }} / ${{ matrix.debug && 'Debug' || 'Release' }}
+    name: ${{ matrix.target }}${{ matrix.debug_flag }} (LLVM ${{ matrix.llvm }})
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -21,6 +21,11 @@ jobs:
           - x86_64-pc-windows-msvc/msvc
           - x86_64-apple-darwin/clang
           - x86_64-unknown-linux-gnu/gcc
+          # - aarch64-apple-darwin/clang
+          # - aarch64-unknown-linux-gnu/gcc
+          # - aarch64-unknown-linux-gnu/clang
+          # - powerpc64le-unknown-linux-gnu/gcc
+          - x86_64-unknown-linux-gnu/clang
         include:
           - target: i686-pc-windows-msvc/msvc
             runner: windows-latest
@@ -36,6 +41,33 @@ jobs:
           - target: x86_64-unknown-linux-gnu/gcc
             runner: ubuntu-latest
             tier: 1
+            compiler: gcc
+          # - target: aarch64-apple-darwin/clang
+          #   runner: macos-latest
+          #   tier: 2
+          #   compiler: clang
+          # - target: aarch64-unknown-linux-gnu/gcc
+          #   runner: ubuntu-latest
+          #   tier: 2
+          #   compiler: gcc
+          # - target: aarch64-unknown-linux-gnu/clang
+          #   runner: ubuntu-latest
+          #   tier: 2
+          #   compiler: clang
+          # - target: powerpc64le-unknown-linux-gnu/gcc
+          #   runner: ubuntu-latest
+          #   tier: 2
+          #   compiler: gcc
+          - target: x86_64-unknown-linux-gnu/clang
+            runner: ubuntu-latest
+            tier: 2
+            compiler: clang
+          - debug: true
+            runner: windows-latest
+            debug_flag: ' -d'
+          - debug: true
+            debug_flag: ' --with-pydebug'
+          - debug_flag: ''
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -45,8 +77,8 @@ jobs:
         if: matrix.runner == 'macos-latest'
         run: |
           brew install llvm@${{ matrix.llvm }}
-          export SDKROOT=$(xcrun --show-sdk-path)
-          ./configure${{ matrix.debug && ' --with-pydebug' || '' }}
+          export SDKROOT="$(xcrun --show-sdk-path)"
+          ./configure${{ matrix.debug_flag }}
           make all
           ./python.exe -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
           ./python.exe -m test -j0 -wW
@@ -54,7 +86,8 @@ jobs:
         if: matrix.runner == 'ubuntu-latest'
         run: |
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
-          ./configure${{ matrix.debug && ' --with-pydebug' || '' }}
+          export CC="${{ matrix.compiler }}"
+          ./configure${{ matrix.debug_flag }}
           make all
           ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
           ./python -m test -j0 -wW
@@ -62,6 +95,6 @@ jobs:
         if: matrix.runner == 'windows-latest'
         run: |
           choco install llvm --version ${{ matrix.llvm }}
-          ./PCbuild/build${{ matrix.debug && ' -d' || '' }} -p ${{ matrix.platform }}
+          ./PCbuild/build${{ matrix.debug_flag }} -p ${{ matrix.platform }}
           ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
-          ./PCbuild/rt${{ matrix.debug && ' -d' || '' }} -p ${{ matrix.platform }} -q -j0 -wW
+          ./PCbuild/rt${{ matrix.debug_flag }} -p ${{ matrix.platform }} -q -j0 -wW

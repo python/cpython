@@ -169,17 +169,18 @@ def get_llvm_tool_version(name: str) -> int | None:
     match = re.search(br"version\s+(\d+)\.\d+\.\d+\s+", process.stdout)
     return match and int(match.group(1))
 
-def find_llvm_tool(tool: str) -> str:
+def find_llvm_tool(tool: str) -> tuple[str, int]:
     versions = {14, 15, 16}
     # Unversioned executables:
     path = tool
-    if get_llvm_tool_version(path) in versions:
-        return path
+    version = get_llvm_tool_version(tool)
+    if version in versions:
+        return tool, version
     for version in sorted(versions, reverse=True):
         # Versioned executables:
         path = f"{tool}-{version}"
         if get_llvm_tool_version(path) == version:
-            return path
+            return path, version
         # My homebrew homies:
         try:
             args = ["brew", "--prefix", f"llvm@{version}"]
@@ -190,7 +191,7 @@ def find_llvm_tool(tool: str) -> str:
             prefix = process.stdout.decode().removesuffix("\n")
             path = f"{prefix}/bin/{tool}"
             if get_llvm_tool_version(path) == version:
-                return path
+                return path, version
     raise RuntimeError(f"Can't find {tool}!")
 
 # TODO: Divide into read-only data and writable/executable text.
@@ -221,7 +222,7 @@ class ObjectParser:
         self.reader = reader
 
     async def parse(self):
-        # subprocess.run(["llvm-objdump", path, "-dr"], check=True)
+        # subprocess.run([find_llvm_tool("llvm-objdump")[0], path, "-dr"], check=True)
         process = await asyncio.create_subprocess_exec(self.reader, *self._ARGS, self.path, stdout=subprocess.PIPE)
         stdout, stderr = await process.communicate()
         assert stderr is None, stderr
@@ -607,9 +608,9 @@ class Compiler:
     def __init__(self, *, verbose: bool = False) -> None:
         self._stencils_built = {}
         self._verbose = verbose
-        self._clang = find_llvm_tool("clang")
-        self._readobj = find_llvm_tool("llvm-readobj")
-        self._stderr(f"Using {self._clang} and {self._readobj}.")
+        self._clang, clang_version = find_llvm_tool("clang")
+        self._readobj, readobj_version = find_llvm_tool("llvm-readobj")
+        self._stderr(f"Using {self._clang} ({clang_version}) and {self._readobj} ({readobj_version}).")
 
     def _stderr(self, *args, **kwargs) -> None:
         if self._verbose:
