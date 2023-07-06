@@ -1,61 +1,67 @@
 name: JIT
-
-on: [push, workflow_dispatch]
-
+on: push
 permissions:
   contents: read
-
 jobs:
   jit:
-    name: JIT / ${{ matrix.debug && 'Debug' || 'Release' }} / LLVM ${{ matrix.llvm }} / ${{ matrix.os }} / ${{ matrix.platform }}
-    runs-on: ${{ matrix.os }}-latest
+    name: ${{ matrix.target }} / LLVM ${{ matrix.llvm }} / ${{ matrix.debug && 'Debug' || 'Release' }}
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
-        debug: [false, true]
-        llvm: [14, 15, 16]
-        os: [macOS, Ubuntu, Windows]
-        # This is awkward, but whatever...
-        platform: [x64, Win32]
-        exclude:
-          # Looks like LLVM doesn't provide Intel macOS binaries anymore...
-          - llvm: 16
-            os: macOS
-          # Duh...
-          - os: macOS
+        debug:
+          - false
+          - true
+        llvm:
+          - 14
+          - 15
+          - 16
+        target:
+          - i686-pc-windows-msvc/msvc
+          - x86_64-pc-windows-msvc/msvc
+          - x86_64-apple-darwin/clang
+          - x86_64-unknown-linux-gnu/gcc
+        include:
+          - target: i686-pc-windows-msvc/msvc
+            runner: windows-latest
+            tier: 1
             platform: Win32
-          - os: Ubuntu
-            platform: Win32
+          - target: x86_64-pc-windows-msvc/msvc
+            runner: windows-latest
+            tier: 1
+            platform: x64
+          - target: x86_64-apple-darwin/clang
+            runner: macos-latest
+            tier: 1
+          - target: x86_64-unknown-linux-gnu/gcc
+            runner: ubuntu-latest
+            tier: 1
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-      # # libtinfo.so.5 not found when compiling stencils:
-      # - if: matrix.os == 'Ubuntu' && matrix.llvm == 16
-      #   run: sudo apt install libtinfo5
-      # - uses: KyleMayes/install-llvm-action@v1
-      #   with:
-      #     version: ${{ matrix.llvm }}
-      #     directory: ${{ runner.temp }}/llvm
-      - if: matrix.os == 'macOS'
+      - name: Run (macOS)
+        if: matrix.runner == 'macos-latest'
         run: |
           brew install llvm@${{ matrix.llvm }}
           export SDKROOT=$(xcrun --show-sdk-path)
           ./configure${{ matrix.debug && ' --with-pydebug' || '' }}
           make all
-          ./python.exe -c 'import sys; assert sys._support_tier == 1, sys._support_tier'
+          ./python.exe -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
           ./python.exe -m test -j0 -wW
-      - if: matrix.os == 'Ubuntu'
+      - name: Run (Ubuntu)
+        if: matrix.runner == 'ubuntu-latest'
         run: |
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
           ./configure${{ matrix.debug && ' --with-pydebug' || '' }}
           make all
-          ./python -c 'import sys; assert sys._support_tier == 1, sys._support_tier'
+          ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
           ./python -m test -j0 -wW
-      - if: matrix.os == 'Windows'
+      - name: Run (Windows)
+        if: matrix.runner == 'windows-latest'
         run: |
           choco install llvm --version ${{ matrix.llvm }}
           ./PCbuild/build${{ matrix.debug && ' -d' || '' }} -p ${{ matrix.platform }}
-          ./python -c 'import sys; assert sys._support_tier == 1, sys._support_tier'
+          ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
           ./PCbuild/rt${{ matrix.debug && ' -d' || '' }} -p ${{ matrix.platform }} -q -j0 -wW
