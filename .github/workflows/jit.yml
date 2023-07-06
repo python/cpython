@@ -89,7 +89,7 @@ jobs:
           make
           ./python.exe -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
           ./python.exe -m test -j0 -wW
-      - name: Linux
+      - name: Native Linux
         if: runner.os == 'Linux' && matrix.architecture == 'x86_64'
         run: |
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
@@ -99,6 +99,20 @@ jobs:
           make
           ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
           ./python -m test -j0 -wW
+      - name: Emulated Linux
+        if: runner.os == 'Linux' && matrix.architecture != 'x86_64'
+        uses: uraimo/run-on-arch-action@v2
+        with:
+          arch: ${{ matrix.architecture }}
+          distro: ubuntu_latest
+          run: |
+            sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
+            ${{ matrix.llvm == 14 && 'sudo apt install libclang-rt-14-dev' || '' }}
+            export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
+            ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
+            make
+            ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
+            ./python -m test -j0 -wW
       - name: Windows
         if: runner.os == 'Windows'
         run: |
