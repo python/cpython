@@ -420,35 +420,6 @@ translate_bytecode_to_trace(
             operand = (operand << 8) | instr->op.arg;
         }
         switch (opcode) {
-            case LOAD_FAST_LOAD_FAST:
-            case STORE_FAST_LOAD_FAST:
-            case STORE_FAST_STORE_FAST:
-            {
-                // Reserve space for two uops (+ SAVE_IP + EXIT_TRACE)
-                if (trace_length + 4 > max_length) {
-                    DPRINTF(1, "Ran out of space for LOAD_FAST_LOAD_FAST\n");
-                    goto done;
-                }
-                uint64_t oparg1 = operand >> 4;
-                uint64_t oparg2 = operand & 15;
-                switch (opcode) {
-                    case LOAD_FAST_LOAD_FAST:
-                        ADD_TO_TRACE(LOAD_FAST, oparg1);
-                        ADD_TO_TRACE(LOAD_FAST, oparg2);
-                        break;
-                    case STORE_FAST_LOAD_FAST:
-                        ADD_TO_TRACE(STORE_FAST, oparg1);
-                        ADD_TO_TRACE(LOAD_FAST, oparg2);
-                        break;
-                    case STORE_FAST_STORE_FAST:
-                        ADD_TO_TRACE(STORE_FAST, oparg1);
-                        ADD_TO_TRACE(STORE_FAST, oparg2);
-                        break;
-                    default:
-                        Py_FatalError("Missing case");
-                }
-                break;
-            }
             default:
             {
                 const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
@@ -464,7 +435,7 @@ translate_bytecode_to_trace(
                     for (int i = 0; i < nuops; i++) {
                         int offset = expansion->uops[i].offset;
                         switch (expansion->uops[i].size) {
-                            case 0:
+                            case OPARG_FULL:
                                 if (extras && OPCODE_HAS_JUMP(opcode)) {
                                     if (opcode == JUMP_BACKWARD_NO_INTERRUPT) {
                                         operand -= extras;
@@ -475,14 +446,20 @@ translate_bytecode_to_trace(
                                     }
                                 }
                                 break;
-                            case 1:
+                            case OPARG_CACHE_1:
                                 operand = read_u16(&instr[offset].cache);
                                 break;
-                            case 2:
+                            case OPARG_CACHE_2:
                                 operand = read_u32(&instr[offset].cache);
                                 break;
-                            case 4:
+                            case OPARG_CACHE_4:
                                 operand = read_u64(&instr[offset].cache);
+                                break;
+                            case OPARG_TOP:  // First half of super-instr
+                                operand = operand >> 4;
+                                break;
+                            case OPARG_BOTTOM:  // Second half of super-instr
+                                operand = operand & 0xF;
                                 break;
                             default:
                                 fprintf(stderr,
