@@ -9,13 +9,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        debug:
-          - false
-          - true
-        llvm:
-          - 14
-          - 15
-          - 16
         target:
           - i686-pc-windows-msvc/msvc
           - x86_64-pc-windows-msvc/msvc
@@ -26,42 +19,48 @@ jobs:
           # - aarch64-unknown-linux-gnu/clang
           # - powerpc64le-unknown-linux-gnu/gcc
           - x86_64-unknown-linux-gnu/clang
+        debug:
+          - true
+          - false
+        llvm:
+          - 14
+          - 15
+          - 16
         include:
           - target: i686-pc-windows-msvc/msvc
             runner: windows-latest
             tier: 1
-            platform: Win32
+            windows_platform: Win32
           - target: x86_64-pc-windows-msvc/msvc
             runner: windows-latest
             tier: 1
-            platform: x64
+            windows_platform: x64
           - target: x86_64-apple-darwin/clang
             runner: macos-latest
             tier: 1
           - target: x86_64-unknown-linux-gnu/gcc
             runner: ubuntu-latest
             tier: 1
-            compiler: gcc
+            linux_compiler: gcc
           # - target: aarch64-apple-darwin/clang
           #   runner: macos-latest
           #   tier: 2
-          #   compiler: clang
           # - target: aarch64-unknown-linux-gnu/gcc
           #   runner: ubuntu-latest
           #   tier: 2
-          #   compiler: gcc
+          #   linux_compiler: gcc
           # - target: aarch64-unknown-linux-gnu/clang
           #   runner: ubuntu-latest
           #   tier: 2
-          #   compiler: clang
+          #   linux_compiler: clang
           # - target: powerpc64le-unknown-linux-gnu/gcc
           #   runner: ubuntu-latest
           #   tier: 2
-          #   compiler: gcc
+          #   linux_compiler: gcc
           - target: x86_64-unknown-linux-gnu/clang
             runner: ubuntu-latest
             tier: 2
-            compiler: clang
+            linux_compiler: clang
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -80,7 +79,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
-          export CC="${{ matrix.compiler }}"
+          export CC="${{ matrix.linux_compiler }}"
           ./configure${{ matrix.debug && ' --with-pydebug' || '' }}
           make all
           ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
@@ -89,6 +88,6 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           choco install llvm --version ${{ matrix.llvm }}
-          ./PCbuild/build${{ matrix.debug && ' -d' || '' }} -p ${{ matrix.platform }}
+          ./PCbuild/build${{ matrix.debug && ' -d' || '' }} -p ${{ matrix.windows_platform }}
           ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
-          ./PCbuild/rt${{ matrix.debug && ' -d' || '' }} -p ${{ matrix.platform }} -q -j0 -wW
+          ./PCbuild/rt${{ matrix.debug && ' -d' || '' }} -p ${{ matrix.windows_platform }} -q -j0 -wW
