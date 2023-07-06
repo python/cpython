@@ -871,6 +871,8 @@ The following exceptions are used as warning categories; see the
    .. versionadded:: 3.2
 
 
+.. _lib-exception-groups:
+
 Exception groups
 ----------------
 
