@@ -76,8 +76,8 @@ jobs:
           make all
           ./python.exe -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
           ./python.exe -m test -j0 -wW
-      - name: Run (Ubuntu)
-        if: runner.os == 'Ubuntu'
+      - name: Run (Linux)
+        if: runner.os == 'Linux'
         run: |
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
           export CC="${{ matrix.compiler }}"
