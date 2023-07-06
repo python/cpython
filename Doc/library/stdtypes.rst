@@ -2020,6 +2020,9 @@ expression support in the :mod:`re` module).
    *new*.  If the optional argument *count* is given, only the first *count*
    occurrences are replaced.
 
+   .. versionchanged:: 3.13
+      *count* is now supported as a keyword argument.
+
 
 .. method:: str.rfind(sub[, start[, end]])
 
