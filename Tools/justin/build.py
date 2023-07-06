@@ -5,6 +5,7 @@ import dataclasses
 import functools
 import itertools
 import json
+import os
 import pathlib
 import re
 import subprocess
@@ -171,6 +172,9 @@ def get_llvm_tool_version(name: str) -> int | None:
 
 def find_llvm_tool(tool: str) -> tuple[str, int]:
     versions = {14, 15, 16}
+    forced_version = os.getenv("PYTHON_LLVM_VERSION")
+    if forced_version:
+        versions &= {int(forced_version)}
     # Unversioned executables:
     path = tool
     version = get_llvm_tool_version(tool)

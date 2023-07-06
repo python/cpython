@@ -75,6 +75,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           brew install llvm@${{ matrix.llvm }}
+          export PYTHON_LLVM_VERSION=${{ matrix.llvm }}
           export SDKROOT="$(xcrun --show-sdk-path)"
           ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
           make all
@@ -84,6 +85,7 @@ jobs:
         if: runner.os == 'Linux' && matrix.linux_architecture == 'x86_64'
         run: |
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
+          export PYTHON_LLVM_VERSION=${{ matrix.llvm }}
           export CC="${{ matrix.linux_compiler }}"
           ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
           make all
@@ -93,6 +95,7 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           choco install llvm --allow-downgrade --version ${{ matrix.llvm }}
+          $env:PYTHON_LLVM_VERSION=${{ matrix.llvm }}
           ./PCbuild/build ${{ matrix.debug && '-d' || '--pgo' }} -p ${{ matrix.windows_platform }}
           ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
           ./PCbuild/rt${{ matrix.debug && ' -d' || '' }} -p ${{ matrix.windows_platform }} -q -j0 -wW
