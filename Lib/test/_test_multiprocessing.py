@@ -5878,12 +5878,14 @@ class MiscTestCase(unittest.TestCase):
         # ImportError in multiprocessing when sys.executable was None.
         # This can be true in embedded environments.
         rc, out, err = script_helper.assert_python_ok(
-                "-c", """if 1:
-import sys
-sys.executable = None
-assert "multiprocessing" not in sys.modules, "mp already imported!"
-import multiprocessing
-import multiprocessing.spawn  # This should not fail\n""")
+                "-c",
+                """if 1:
+                import sys
+                sys.executable = None
+                assert "multiprocessing" not in sys.modules, "already imported!"
+                import multiprocessing
+                import multiprocessing.spawn  # This should not fail""",
+        )
         self.assertEqual(rc, 0)
         self.assertEqual(err, b'')
 
