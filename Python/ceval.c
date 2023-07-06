@@ -763,11 +763,6 @@ resume_frame:
 
     DISPATCH();
 
-    if (_Py_HandlePending(tstate) != 0) {
-        goto error;
-    }
-    DISPATCH();
-
     {
     /* Start instructions */
 #if !USE_COMPUTED_GOTOS
