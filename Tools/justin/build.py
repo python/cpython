@@ -586,7 +586,6 @@ class Compiler:
             "INSTRUMENTED_YIELD_VALUE", # XXX
             "INTERPRETER_EXIT", # XXX
             "JUMP_BACKWARD",  # XXX: Is this a problem?
-            "JUMP_BACKWARD_INTO_TRACE",
             "JUMP_BACKWARD_NO_INTERRUPT",
             "KW_NAMES",  # XXX: Only because we don't handle kwnames correctly...
             "LOAD_CLASSDEREF",

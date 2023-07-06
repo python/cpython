@@ -32,6 +32,7 @@
 #include "dictobject.h"
 #include "pycore_frame.h"
 #include "opcode.h"
+#include "optimizer.h"
 #include "pydtrace.h"
 #include "setobject.h"
 #include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
@@ -2113,79 +2114,36 @@ dummy_func(
             JUMPBY(oparg);
         }
 
-        // family(jump_backward, 5) = {
-        //     JUMP_BACKWARD,
-        //     JUMP_BACKWARD_INTO_TRACE,
-        //     JUMP_BACKWARD_RECORDING,
-        //     JUMP_BACKWARD_QUICK,
-        // };
-
-        inst(JUMP_BACKWARD, (unused/1, unused/4 --)) {
-            #if ENABLE_SPECIALIZATION && _PyJIT_MAX_RECORDING_LENGTH
-            if (ADAPTIVE_COUNTER_IS_ZERO(next_instr->cache)) {
-                _Py_Specialize_JumpBackwardBegin(&cframe, next_instr - 1);
-                GO_TO_INSTRUCTION(JUMP_BACKWARD_QUICK);
+        inst(JUMP_BACKWARD, (--)) {
+            _Py_CODEUNIT *here = next_instr - 1;
+            assert(oparg <= INSTR_OFFSET());
+            JUMPBY(1-oparg);
+            #if ENABLE_SPECIALIZATION
+            here[1].cache += (1 << OPTIMIZER_BITS_IN_COUNTER);
+            if (here[1].cache > tstate->interp->optimizer_backedge_threshold) {
+                OBJECT_STAT_INC(optimization_attempts);
+                frame = _PyOptimizer_BackEdge(frame, here, next_instr, stack_pointer);
+                if (frame == NULL) {
+                    frame = cframe.current_frame;
+                    goto error;
+                }
+                here[1].cache &= ((1 << OPTIMIZER_BITS_IN_COUNTER) -1);
+                goto resume_frame;
             }
-            DECREMENT_ADAPTIVE_COUNTER(next_instr->cache);
             #endif  /* ENABLE_SPECIALIZATION */
-            GO_TO_INSTRUCTION(JUMP_BACKWARD_QUICK);
-        }
-
-        inst(JUMP_BACKWARD_QUICK, (unused/1, unused/4 --)) {
-        #ifdef _PyJIT_ACTIVE
-            STAT_INC(JUMP_BACKWARD, hit);
-        #else
-            STAT_INC(JUMP_BACKWARD, deferred);
-        #endif
-            JUMPBY(_PyOpcode_Caches[JUMP_BACKWARD]);
-            assert(oparg < INSTR_OFFSET());
-            JUMPBY(-oparg);
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
-        inst(JUMP_BACKWARD_RECORDING, (unused/1, unused/4 --)) {
-            next_instr--;
-            _Py_Specialize_JumpBackwardEnd(&cframe, next_instr);
-            DISPATCH_SAME_OPARG();
-        }
-
-        inst(JUMP_BACKWARD_INTO_TRACE, (unused/1, trace/4 --)) {
-            _Py_CODEUNIT *saved_next_instr = next_instr;
-            JUMPBY(_PyOpcode_Caches[JUMP_BACKWARD]);
-            assert(oparg < INSTR_OFFSET());
-            JUMPBY(-oparg);
-            CHECK_EVAL_BREAKER();
-            _PyJITReturnCode status = ((_PyJITFunction)(uintptr_t)trace)(tstate, frame, stack_pointer, next_instr);
-            next_instr = saved_next_instr;
-            if (status < 0) {
-                UPDATE_MISS_STATS(JUMP_BACKWARD);
-                if (ADAPTIVE_COUNTER_IS_ZERO(next_instr->cache)) {
-                    next_instr[-1].op.code = JUMP_BACKWARD;
-                    // _PyJIT_Free((_PyJITFunction)(uintptr_t)trace);
-                }
-                else {
-                    STAT_INC(JUMP_BACKWARD, deferred);
-                    DECREMENT_ADAPTIVE_COUNTER(next_instr->cache);
-                }
+        inst(ENTER_EXECUTOR, (--)) {
+            _PyExecutorObject *executor = (_PyExecutorObject *)frame->f_code->co_executors->executors[oparg];
+            Py_INCREF(executor);
+            frame = executor->execute(executor, frame, stack_pointer);
+            if (frame == NULL) {
+                frame = cframe.current_frame;
+                goto error;
             }
-            else {
-                STAT_INC(JUMP_BACKWARD, hit);
-            }
-            frame = cframe.current_frame;
-            next_instr = frame->prev_instr;
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            switch (status) {
-                case _JUSTIN_RETURN_DEOPT:
-                    NEXTOPARG();
-                    opcode = _PyOpcode_Deopt[opcode];
-                    DISPATCH_GOTO();
-                case _JUSTIN_RETURN_OK:
-                    DISPATCH();
-                case _JUSTIN_RETURN_GOTO_ERROR:
-                    goto error;
-            }
-            Py_UNREACHABLE();
+            goto resume_frame;
         }
 
         inst(POP_JUMP_IF_FALSE, (cond -- )) {
@@ -3433,8 +3391,7 @@ dummy_func(
         }
 
         inst(INSTRUMENTED_JUMP_BACKWARD, ( -- )) {
-            _Py_CODEUNIT *dest = next_instr + _PyOpcode_Caches[JUMP_BACKWARD] - oparg;
-            INSTRUMENTED_JUMP(next_instr-1, dest, PY_MONITORING_EVENT_JUMP);
+            INSTRUMENTED_JUMP(next_instr-1, next_instr+1-oparg, PY_MONITORING_EVENT_JUMP);
             CHECK_EVAL_BREAKER();
         }
 

@@ -76,7 +76,7 @@ _justin_entry(PyThreadState *tstate, _PyInterpreterFrame *frame,
     if (next_instr != &_justin_next_instr) {
         goto _return_ok;
     }
-    if (opcode != JUMP_BACKWARD_QUICK && next_instr->op.code != opcode) {
+    if (next_instr->op.code != opcode) {
         frame->prev_instr = next_instr;
         goto _return_deopt;
     }

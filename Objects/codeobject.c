@@ -433,6 +433,7 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_weakreflist = NULL;
     co->co_extra = NULL;
     co->_co_cached = NULL;
+    co->co_executors = NULL;
 
     memcpy(_PyCode_CODE(co), PyBytes_AS_STRING(con->code),
            PyBytes_GET_SIZE(con->code));
@@ -1676,6 +1677,12 @@ code_dealloc(PyCodeObject *co)
         }
 
         PyMem_Free(co_extra);
+    }
+    if (co->co_executors != NULL) {
+        for (int i = 0; i < co->co_executors->size; i++) {
+            Py_CLEAR(co->co_executors->executors[i]);
+        }
+        PyMem_Free(co->co_executors);
     }
 
     Py_XDECREF(co->co_consts);

@@ -232,6 +232,9 @@ name_op('LOAD_FROM_DICT_OR_GLOBALS', 175)
 def_op('LOAD_FROM_DICT_OR_DEREF', 176)
 hasfree.append(176)
 
+# Optimizer hook
+def_op('ENTER_EXECUTOR', 230)
+
 # Instrumented instructions
 MIN_INSTRUMENTED_OPCODE = 237
 
@@ -385,11 +388,6 @@ _specializations = {
         "FOR_ITER_RANGE",
         "FOR_ITER_GEN",
     ],
-    "JUMP_BACKWARD": [
-        "JUMP_BACKWARD_INTO_TRACE",
-        "JUMP_BACKWARD_QUICK",
-        "JUMP_BACKWARD_RECORDING",
-    ],
     "LOAD_SUPER_ATTR": [
         "LOAD_SUPER_ATTR_ATTR",
         "LOAD_SUPER_ATTR_METHOD",
@@ -493,8 +491,7 @@ _cache_format = {
     },
     "JUMP_BACKWARD": {
         "counter": 1,
-        "trace": 4,
-    }
+    },
 }
 
 _inline_cache_entries = [

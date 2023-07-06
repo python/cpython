@@ -246,9 +246,6 @@ extern void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
                                           int oparg);
 extern void _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int oparg);
 extern void _Py_Specialize_Send(PyObject *receiver, _Py_CODEUNIT *instr);
-extern void _Py_Specialize_JumpBackwardBegin(_PyCFrame *cframe, _Py_CODEUNIT *instr);
-extern void _Py_Specialize_JumpBackwardReset(_PyCFrame *cframe);
-PyAPI_FUNC(void) _Py_Specialize_JumpBackwardEnd(_PyCFrame *cframe, _Py_CODEUNIT *instr);
 
 /* Finalizer function for static codeobjects used in deepfreeze.py */
 extern void _PyStaticCode_Fini(PyCodeObject *co);
@@ -490,6 +487,7 @@ PyAPI_FUNC(int) _Py_Instrument(PyCodeObject *co, PyInterpreterState *interp);
 
 extern int _Py_GetBaseOpcode(PyCodeObject *code, int offset);
 
+extern int _PyInstruction_GetLength(PyCodeObject *code, int offset);
 
 #ifdef __cplusplus
 }

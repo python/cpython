@@ -59,31 +59,9 @@
     #define USE_COMPUTED_GOTOS 0
 #endif
 
-#if !defined(_PyJIT_ACTIVE) && _PyJIT_MAX_RECORDING_LENGTH
-    #define _PyJIT_RECORD(CFRAME, NEXT_INSTR)                                                    \
-        do {                                                                                     \
-            if ((CFRAME).jit_recording_end) {                                                    \
-                if ((CFRAME).jit_recording_size < _PyJIT_MAX_RECORDING_LENGTH) {                 \
-                    if ((CFRAME).jit_recording_size == 0 ||                                      \
-                        (CFRAME).jit_recording[cframe.jit_recording_size - 1] != (NEXT_INSTR)) { \
-                        (CFRAME).jit_recording[cframe.jit_recording_size++] = (NEXT_INSTR);      \
-                    }                                                                            \
-                }                                                                                \
-                else {                                                                           \
-                    _Py_Specialize_JumpBackwardReset(&(CFRAME));                                 \
-                }                                                                                \
-            }                                                                                    \
-        } while (0)
-#else
-    #define _PyJIT_RECORD(CFRAME, NEXT_INSTR) \
-        do {                                  \
-        } while (0)
-#endif
-
 #ifdef Py_STATS
 #define INSTRUCTION_START(op) \
     do { \
-        _PyJIT_RECORD(cframe, next_instr); \
         frame->prev_instr = next_instr++; \
         OPCODE_EXE_INC(op); \
         if (_py_stats) _py_stats->opcode_stats[lastopcode].pair_count[op]++; \
@@ -92,7 +70,6 @@
 #else
 #define INSTRUCTION_START(op)              \
     do {                                   \
-        _PyJIT_RECORD(cframe, next_instr); \
         frame->prev_instr = next_instr++;  \
     } while (0)
 #endif
@@ -326,7 +303,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 
 #define INCREMENT_ADAPTIVE_COUNTER(COUNTER)          \
     do {                                             \
-        assert(!ADAPTIVE_COUNTER_IS_MAX((COUNTER))); \
         (COUNTER) += (1 << ADAPTIVE_BACKOFF_BITS);   \
     } while (0);
 

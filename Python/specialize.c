@@ -463,12 +463,6 @@ _PyCode_Quicken(PyCodeObject *code)
 #define SPEC_FAIL_UNPACK_SEQUENCE_ITERATOR 9
 #define SPEC_FAIL_UNPACK_SEQUENCE_SEQUENCE 10
 
-// JUMP_BACKWARD
-
-#define SPEC_FAIL_JUMP_BACKWARD_TOO_LONG 9
-#define SPEC_FAIL_JUMP_BACKWARD_INNER_LOOP 10
-#define SPEC_FAIL_JUMP_BACKWARD_UNSUPPORTED_OPCODE 11
-
 static int function_kind(PyCodeObject *code);
 static bool function_check_args(PyObject *o, int expected_argcount, int opcode);
 static uint32_t function_get_version(PyObject *o, int opcode);
@@ -2257,64 +2251,3 @@ success:
     STAT_INC(SEND, success);
     cache->counter = adaptive_counter_cooldown();
 }
-
-void
-_Py_Specialize_JumpBackwardBegin(_PyCFrame *cframe, _Py_CODEUNIT *instr)
-{
-    assert(ENABLE_SPECIALIZATION);
-    // assert(_PyOpcode_Caches[JUMP_BACKWARD] == INLINE_CACHE_ENTRIES_JUMP_BACKWARD);
-    instr->op.code = JUMP_BACKWARD_RECORDING;
-    _Py_CODEUNIT *outer = cframe->jit_recording_end;
-    if (outer) {
-        // assert(instr->op.code == JUMP_BACKWARD_RECORDING);
-        SPECIALIZATION_FAIL(JUMP_BACKWARD, SPEC_FAIL_JUMP_BACKWARD_INNER_LOOP);
-        STAT_INC(JUMP_BACKWARD, failure);
-        outer->op.code = JUMP_BACKWARD_QUICK;
-        outer[1].cache = adaptive_counter_backoff(outer[1].cache);
-    }
-    cframe->jit_recording_end = instr;
-    cframe->jit_recording_size = 0;
-}
-
-void
-_Py_Specialize_JumpBackwardReset(_PyCFrame *cframe)
-{
-    assert(ENABLE_SPECIALIZATION);
-    // assert(_PyOpcode_Caches[JUMP_BACKWARD] == INLINE_CACHE_ENTRIES_JUMP_BACKWARD);
-    _Py_CODEUNIT *instr = cframe->jit_recording_end;
-    cframe->jit_recording_end = NULL;
-    // assert(instr->op.code == JUMP_BACKWARD_RECORDING);
-    SPECIALIZATION_FAIL(JUMP_BACKWARD, SPEC_FAIL_JUMP_BACKWARD_TOO_LONG);
-    STAT_INC(JUMP_BACKWARD, failure);
-    instr->op.code = JUMP_BACKWARD_QUICK;
-    instr[1].cache = adaptive_counter_backoff(instr[1].cache);
-}
-
-void
-_Py_Specialize_JumpBackwardEnd(_PyCFrame *cframe, _Py_CODEUNIT *instr)
-{
-    assert(ENABLE_SPECIALIZATION);
-    // assert(_PyOpcode_Caches[JUMP_BACKWARD] == INLINE_CACHE_ENTRIES_JUMP_BACKWARD);
-    instr->op.code = JUMP_BACKWARD_QUICK;
-    if (instr == cframe->jit_recording_end) {
-        _PyJITFunction compiled = _PyJIT_CompileTrace(cframe->jit_recording_size, cframe->jit_recording);
-        if (compiled) {
-            STAT_INC(JUMP_BACKWARD, success);
-            instr->op.code = JUMP_BACKWARD_INTO_TRACE;
-            instr[1].cache = adaptive_counter_cooldown();
-            *(_PyJITFunction *)(&instr[2]) = compiled;
-            goto done;
-        }
-        SPECIALIZATION_FAIL(JUMP_BACKWARD, SPEC_FAIL_JUMP_BACKWARD_UNSUPPORTED_OPCODE);
-    }
-    else {
-        // XXX: This can happen if we exit a frame and then run again... or if
-        // the same code is run from multiple C frames?
-        SPECIALIZATION_FAIL(JUMP_BACKWARD, SPEC_FAIL_OTHER);
-    }
-    instr[1].cache = adaptive_counter_backoff(instr[1].cache);
-    STAT_INC(JUMP_BACKWARD, failure);
-done:
-    cframe->jit_recording_end = NULL;
-}
-
