@@ -5839,29 +5839,27 @@ class TestSyncManagerTypes(unittest.TestCase):
 
 
 class TestNamedResource(unittest.TestCase):
+    @only_run_in_spawn_testsuite("spawn specific test.")
     def test_global_named_resource_spawn(self):
         #
         # gh-90549: Check that global named resources in main module
         # will not leak by a subprocess, in spawn context.
         #
-        testfn = os_helper.TESTFN
-        self.addCleanup(os_helper.unlink, testfn)
-        with open(testfn, 'w', encoding='utf-8') as f:
-            f.write(textwrap.dedent('''\
-                import multiprocessing as mp
+        test_source = """if 1:
+            import multiprocessing as mp
 
-                ctx = mp.get_context('spawn')
+            ctx = mp.get_context('spawn')
 
-                global_resource = ctx.Semaphore()
+            global_resource = ctx.Semaphore()
 
-                def submain(): pass
+            def submain(): pass
 
-                if __name__ == '__main__':
-                    p = ctx.Process(target=submain)
-                    p.start()
-                    p.join()
-            '''))
-        rc, out, err = test.support.script_helper.assert_python_ok(testfn)
+            if __name__ == '__main__':
+                p = ctx.Process(target=submain)
+                p.start()
+                p.join()
+        """
+        rc, out, err = script_helper.assert_python_ok("-c", test_source)
         # on error, err = 'UserWarning: resource_tracker: There appear to
         # be 1 leaked semaphore objects to clean up at shutdown'
         self.assertEqual(err, b'')
@@ -5879,8 +5877,8 @@ class MiscTestCase(unittest.TestCase):
         # https://github.com/python/cpython/issues/90876 that caused an
         # ImportError in multiprocessing when sys.executable was None.
         # This can be true in embedded environments.
-        rc, _, err = script_helper.assert_python_ok(
-                "-c", """\
+        rc, out, err = script_helper.assert_python_ok(
+                "-c", """if 1:
 import sys
 sys.executable = None
 assert "multiprocessing" not in sys.modules, "mp already imported!"
