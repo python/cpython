@@ -13,6 +13,7 @@ import sys
 import os
 import gc
 import errno
+import functools
 import signal
 import array
 import socket
@@ -170,6 +171,28 @@ def check_enough_semaphores():
         return
     raise unittest.SkipTest("The OS doesn't support enough semaphores "
                             "to run the test (required: %d)." % nsems_min)
+
+
+def only_run_in_spawn_testsuite(reason):
+    """Returns a decorator: raises SkipTest when SM != spawn at test time.
+
+    This can be useful to save overall Python test suite execution time.
+    "spawn" is the universal mode available on all platforms so this limits the
+    decorated test to only execute within test_multiprocessing_spawn.
+
+    This would not be necessary if we refactored our test suite to split things
+    into other test files when they are not start method specific to be rerun
+    under all start methods.
+    """
+
+    def decorator(test_item):
+        @functools.wraps(test_item)
+        def spawn_check_wrapper(*args, **kwargs):
+            if (start_method := multiprocessing.get_start_method()) != "spawn":
+                raise unittest.SkipTest(f"{start_method=}, not 'spawn'; {reason}")
+        return spawn_check_wrapper
+
+    return decorator
 
 
 #
@@ -5850,21 +5873,19 @@ class MiscTestCase(unittest.TestCase):
         support.check__all__(self, multiprocessing, extra=multiprocessing.__all__,
                              not_exported=['SUBDEBUG', 'SUBWARNING'])
 
+    @only_run_in_spawn_testsuite("avoids redundant testing.")
     def test_spawn_sys_executable_none_allows_import(self):
         # Regression test for a bug introduced in
         # https://github.com/python/cpython/issues/90876 that caused an
         # ImportError in multiprocessing when sys.executable was None.
         # This can be true in embedded environments.
-        testfn = os_helper.TESTFN
-        self.addCleanup(os_helper.unlink, testfn)
-        with open(testfn, 'wb') as f:
-            f.write(b'''\
+        rc, _, err = script_helper.assert_python_ok(
+                "-c", """\
 import sys
 sys.executable = None
 assert "multiprocessing" not in sys.modules, "mp already imported!"
 import multiprocessing
-import multiprocessing.spawn  # This should not fail\n''')
-        rc, _, err = script_helper.assert_python_ok(testfn)
+import multiprocessing.spawn  # This should not fail\n""")
         self.assertEqual(rc, 0)
         self.assertEqual(err, b'')
 
