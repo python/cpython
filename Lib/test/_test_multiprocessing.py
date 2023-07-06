@@ -201,7 +201,11 @@ def only_run_in_spawn_testsuite(reason):
 class TestInternalDecorators(unittest.TestCase):
     """Logic within a test suite that could errantly skip tests? Test it!"""
 
+    @unittest.skipIf(sys.platform == "win32", "test requires that fork exists.")
     def test_only_run_in_spawn_testsuite(self):
+        if multiprocessing.get_start_method() != "spawn":
+            raise unittest.SkipTest("only run in test_multiprocessing_spawn.")
+
         try:
             @only_run_in_spawn_testsuite("testing this decorator")
             def return_four_if_spawn():
@@ -213,7 +217,7 @@ class TestInternalDecorators(unittest.TestCase):
         try:
             multiprocessing.set_start_method("spawn", force=True)
             self.assertEqual(return_four_if_spawn(), 4)
-            multiprocessing.set_start_method("forkserver", force=True)
+            multiprocessing.set_start_method("fork", force=True)
             with self.assertRaises(unittest.SkipTest) as ctx:
                 return_four_if_spawn()
             self.assertIn("testing this decorator", str(ctx.exception))
