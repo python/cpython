@@ -85,7 +85,7 @@ jobs:
         run: |
           brew install llvm@${{ matrix.llvm }}
           export SDKROOT="$(xcrun --show-sdk-path)"
-          ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations' }}
+          ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
           make all
           ./python.exe -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
           ./python.exe -m test -j0 -wW
@@ -94,7 +94,7 @@ jobs:
         run: |
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
           export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
-          ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations' }}
+          ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
           make all
           ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
           ./python -m test -j0 -wW
