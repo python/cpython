@@ -374,7 +374,9 @@ translate_bytecode_to_trace(
     _PyUOpInstruction *trace,
     int max_length)
 {
+#ifdef Py_DEBUG
     _Py_CODEUNIT *initial_instr = instr;
+#endif
     int trace_length = 0;
 
 #ifdef Py_DEBUG
