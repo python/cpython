@@ -103,7 +103,7 @@ static decimal_state global_state;
 /* _Py_DEC_MINALLOC >= MPD_MINALLOC */
 #define _Py_DEC_MINALLOC 4
 
-typedef struct PyDecObject {
+typedef struct {
     PyObject_HEAD
     Py_hash_t hash;
     mpd_t dec;
