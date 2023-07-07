@@ -947,7 +947,6 @@ typedef struct fd_set {
 #define Py_ULL(x) Py_LL(x##U)
 #endif
 
-#ifdef Py_BUILD_CORE 
 /*
  * Macros to protect CRT calls against instant termination when passed an
  * invalid parameter (issue23524).
@@ -965,6 +964,5 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #define _Py_END_SUPPRESS_IPH
 
 #endif /* _MSC_VER >= 1900 */
-#endif /* Py_BUILD_CORE */
 
 #endif /* Py_PYPORT_H */
