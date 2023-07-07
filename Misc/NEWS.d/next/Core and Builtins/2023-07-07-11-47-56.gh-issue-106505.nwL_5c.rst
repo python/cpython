@@ -1,0 +1,2 @@
+don't resolve the computer's own hostname when getting a fully-qualified
+domain name
