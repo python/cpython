@@ -864,20 +864,21 @@ class TestRacesDoNotCrash(unittest.TestCase):
 
             items = []
             for _ in range(self.ITEMS):
-                o = C()
-                o.a = None
-                # Need to keep a __dict__ reference so it isn't un-materialized:
-                item = o, o.__dict__
+                item = C()
+                item.a = None
+                # Resize into a combined unicode dict:
+                for i in range(29):
+                    setattr(item, f"_{i}", None)
                 items.append(item)
             return items
 
         def read(items):
             for item in items:
-                item[0].a
+                item.a
 
         def write(items):
             for item in items:
-                item[1][None] = None
+                item.__dict__[None] = None
 
         opname = "LOAD_ATTR_WITH_HINT"
         self.assert_races_do_not_crash(opname, get_items, read, write)
@@ -933,7 +934,9 @@ class TestRacesDoNotCrash(unittest.TestCase):
             items = []
             for _ in range(self.ITEMS):
                 item = C()
-                item.__dict__
+                # Resize into a combined unicode dict:
+                for i in range(29):
+                    setattr(item, f"_{i}", None)
                 items.append(item)
             return items
 
