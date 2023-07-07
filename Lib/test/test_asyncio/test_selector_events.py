@@ -178,7 +178,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
                 sock.connect.assert_called_with(('127.0.0.1', 0))
 
     def test_add_reader(self):
-        self.loop._selector.get_map.return_value = {1: mock.Mock()}
+        self.loop._selector.get_map.return_value = {}
         cb = lambda: True
         self.loop.add_reader(1, cb)
 
