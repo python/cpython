@@ -563,10 +563,10 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 
         zi = zipimport.zipimporter(TEMP_ZIP)
         self.assertEqual(zi._get_files().keys(), files.keys())
-        # Zipimport the same path
+        # Zipimporter for the same path.
         zi2 = zipimport.zipimporter(TEMP_ZIP)
         self.assertEqual(zi2._get_files().keys(), files.keys())
-        # Add a new file to the ZIP archive
+        # Add a new file to the ZIP archive to make the cache wrong.
         newfile = {"spam2" + pyc_ext: (NOW, test_pyc)}
         files.update(newfile)
         with ZipFile(TEMP_ZIP, "a") as z:
@@ -575,9 +575,9 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
                 zinfo.compress_type = self.compression
                 zinfo.comment = b"spam"
                 z.writestr(zinfo, data)
-        # Invalidate the cache of the first zipimporter
+        # Invalidate the cache of the first zipimporter.
         zi.invalidate_caches()
-        # Check that the second zipimporter detects the new file
+        # Check that the second zipimporter detects the new file and isn't using a stale cache.
         self.assertEqual(zi2._get_files().keys(), files.keys())
         spec = zi2.find_spec('spam2')
         self.assertIsNotNone(spec)
