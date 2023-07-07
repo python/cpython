@@ -411,37 +411,21 @@ translate_bytecode_to_trace(
     for (;;) {
         ADD_TO_TRACE(SAVE_IP, (int)(instr - (_Py_CODEUNIT *)code->co_code_adaptive));
         int opcode = instr->op.code;
-        uint64_t operand = instr->op.arg;
+        int oparg = instr->op.arg;
+        int extras = 0;
+        while (opcode == EXTENDED_ARG) {
+            instr++;
+            extras += 1;
+            opcode = instr->op.code;
+            oparg = (oparg << 8) | instr->op.arg;
+        }
+        if (opcode == ENTER_EXECUTOR) {
+            _PyExecutorObject *executor = (_PyExecutorObject *)code->co_executors->executors[oparg&255];
+            opcode = executor->vm_data.opcode;
+            DPRINTF(2, "  * ENTER_EXECUTOR -> %s\n",  _PyOpcode_OpName[opcode]);
+            oparg = (oparg & 0xffffff00) | executor->vm_data.oparg;
+        }
         switch (opcode) {
-            case LOAD_FAST_LOAD_FAST:
-            case STORE_FAST_LOAD_FAST:
-            case STORE_FAST_STORE_FAST:
-            {
-                // Reserve space for two uops (+ SAVE_IP + EXIT_TRACE)
-                if (trace_length + 4 > max_length) {
-                    DPRINTF(1, "Ran out of space for LOAD_FAST_LOAD_FAST\n");
-                    goto done;
-                }
-                uint64_t oparg1 = operand >> 4;
-                uint64_t oparg2 = operand & 15;
-                switch (opcode) {
-                    case LOAD_FAST_LOAD_FAST:
-                        ADD_TO_TRACE(LOAD_FAST, oparg1);
-                        ADD_TO_TRACE(LOAD_FAST, oparg2);
-                        break;
-                    case STORE_FAST_LOAD_FAST:
-                        ADD_TO_TRACE(STORE_FAST, oparg1);
-                        ADD_TO_TRACE(LOAD_FAST, oparg2);
-                        break;
-                    case STORE_FAST_STORE_FAST:
-                        ADD_TO_TRACE(STORE_FAST, oparg1);
-                        ADD_TO_TRACE(STORE_FAST, oparg2);
-                        break;
-                    default:
-                        Py_FatalError("Missing case");
-                }
-                break;
-            }
             default:
             {
                 const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
@@ -455,23 +439,40 @@ translate_bytecode_to_trace(
                         goto done;
                     }
                     for (int i = 0; i < nuops; i++) {
+                        uint64_t operand;
                         int offset = expansion->uops[i].offset;
                         switch (expansion->uops[i].size) {
-                            case 0:
+                            case OPARG_FULL:
+                                operand = oparg;
+                                if (extras && OPCODE_HAS_JUMP(opcode)) {
+                                    if (opcode == JUMP_BACKWARD_NO_INTERRUPT) {
+                                        operand -= extras;
+                                    }
+                                    else {
+                                        assert(opcode != JUMP_BACKWARD);
+                                        operand += extras;
+                                    }
+                                }
                                 break;
-                            case 1:
+                            case OPARG_CACHE_1:
                                 operand = read_u16(&instr[offset].cache);
                                 break;
-                            case 2:
+                            case OPARG_CACHE_2:
                                 operand = read_u32(&instr[offset].cache);
                                 break;
-                            case 4:
+                            case OPARG_CACHE_4:
                                 operand = read_u64(&instr[offset].cache);
+                                break;
+                            case OPARG_TOP:  // First half of super-instr
+                                operand = oparg >> 4;
+                                break;
+                            case OPARG_BOTTOM:  // Second half of super-instr
+                                operand = oparg & 0xF;
                                 break;
                             default:
                                 fprintf(stderr,
-                                        "opcode=%d, operand=%" PRIu64 "; nuops=%d, i=%d; size=%d, offset=%d\n",
-                                        opcode, operand, nuops, i,
+                                        "opcode=%d, oparg=%d; nuops=%d, i=%d; size=%d, offset=%d\n",
+                                        opcode, oparg, nuops, i,
                                         expansion->uops[i].size,
                                         expansion->uops[i].offset);
                                 Py_FatalError("garbled expansion");
@@ -532,7 +533,7 @@ uop_optimize(
         return trace_length;
     }
     OBJECT_STAT_INC(optimization_traces_created);
-    _PyUOpExecutorObject *executor = (_PyUOpExecutorObject *)_PyObject_New(&UOpExecutor_Type);
+    _PyUOpExecutorObject *executor = PyObject_New(_PyUOpExecutorObject, &UOpExecutor_Type);
     if (executor == NULL) {
         return -1;
     }
@@ -542,18 +543,24 @@ uop_optimize(
     return 1;
 }
 
+static void
+uop_opt_dealloc(PyObject *self) {
+    PyObject_Free(self);
+}
+
 static PyTypeObject UOpOptimizer_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "uop_optimizer",
     .tp_basicsize = sizeof(_PyOptimizerObject),
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .tp_dealloc = uop_opt_dealloc,
 };
 
 PyObject *
 PyUnstable_Optimizer_NewUOpOptimizer(void)
 {
-    _PyOptimizerObject *opt = (_PyOptimizerObject *)_PyObject_New(&UOpOptimizer_Type);
+    _PyOptimizerObject *opt = PyObject_New(_PyOptimizerObject, &UOpOptimizer_Type);
     if (opt == NULL) {
         return NULL;
     }

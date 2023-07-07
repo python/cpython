@@ -7,6 +7,7 @@ import contextlib
 import importlib.machinery
 import importlib.util
 import json
+import opcode
 import os
 import pickle
 import queue
@@ -2343,23 +2344,27 @@ class Test_Pep523API(unittest.TestCase):
         names = ["func", "outer", "outer", "inner", "inner", "outer", "inner"]
         self.do_test(func, names)
 
+
+@contextlib.contextmanager
+def temporary_optimizer(opt):
+    _testinternalcapi.set_optimizer(opt)
+    try:
+        yield
+    finally:
+        _testinternalcapi.set_optimizer(None)
+
+
+@contextlib.contextmanager
+def clear_executors(func):
+    # Clear executors in func before and after running a block
+    func.__code__ = func.__code__.replace()
+    try:
+        yield
+    finally:
+        func.__code__ = func.__code__.replace()
+
+
 class TestOptimizerAPI(unittest.TestCase):
-
-    @contextlib.contextmanager
-    def temporary_optimizer(self, opt):
-        _testinternalcapi.set_optimizer(opt)
-        try:
-            yield
-        finally:
-            _testinternalcapi.set_optimizer(None)
-
-    @contextlib.contextmanager
-    def clear_executors(self, func):
-        try:
-            yield
-        finally:
-            #Clear executors
-            func.__code__ = func.__code__.replace()
 
     def test_get_set_optimizer(self):
         self.assertEqual(_testinternalcapi.get_optimizer(), None)
@@ -2381,9 +2386,9 @@ class TestOptimizerAPI(unittest.TestCase):
 
         for repeat in range(5):
             opt = _testinternalcapi.get_counter_optimizer()
-            with self.temporary_optimizer(opt):
+            with temporary_optimizer(opt):
                 self.assertEqual(opt.get_count(), 0)
-                with self.clear_executors(loop):
+                with clear_executors(loop):
                     loop()
                 self.assertEqual(opt.get_count(), 1000)
 
@@ -2409,33 +2414,118 @@ class TestOptimizerAPI(unittest.TestCase):
         long_loop = ns['long_loop']
 
         opt = _testinternalcapi.get_counter_optimizer()
-        with self.temporary_optimizer(opt):
+        with temporary_optimizer(opt):
             self.assertEqual(opt.get_count(), 0)
             long_loop()
             self.assertEqual(opt.get_count(), 10)
 
 
+
+def get_first_executor(code):
+    co_code = code.co_code
+    JUMP_BACKWARD = opcode.opmap["JUMP_BACKWARD"]
+    for i in range(0, len(co_code), 2):
+        if co_code[i] == JUMP_BACKWARD or 1:
+            try:
+                return _testinternalcapi.get_executor(code, i)
+            except ValueError:
+                pass
+    return None
+
+
 class TestUops(unittest.TestCase):
 
     def test_basic_loop(self):
-
         def testfunc(x):
             i = 0
             while i < x:
                 i += 1
 
-        testfunc(1000)
+        opt = _testinternalcapi.get_uop_optimizer()
+
+        with temporary_optimizer(opt):
+            testfunc(1000)
 
         ex = None
-        for offset in range(0, 100, 2):
+        for offset in range(0, len(testfunc.__code__.co_code), 2):
             try:
                 ex = _testinternalcapi.get_executor(testfunc.__code__, offset)
                 break
             except ValueError:
                 pass
-        if ex is None:
-            return
-        self.assertIn("SAVE_IP", str(ex))
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _ in ex}
+        self.assertIn("SAVE_IP", uops)
+        self.assertIn("LOAD_FAST", uops)
+
+    def test_extended_arg(self):
+        "Check EXTENDED_ARG handling in superblock creation"
+        def many_vars():
+            # 260 vars, so z9 should have index 259
+            a0 = a1 = a2 = a3 = a4 = a5 = a6 = a7 = a8 = a9 = 42
+            b0 = b1 = b2 = b3 = b4 = b5 = b6 = b7 = b8 = b9 = 42
+            c0 = c1 = c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = 42
+            d0 = d1 = d2 = d3 = d4 = d5 = d6 = d7 = d8 = d9 = 42
+            e0 = e1 = e2 = e3 = e4 = e5 = e6 = e7 = e8 = e9 = 42
+            f0 = f1 = f2 = f3 = f4 = f5 = f6 = f7 = f8 = f9 = 42
+            g0 = g1 = g2 = g3 = g4 = g5 = g6 = g7 = g8 = g9 = 42
+            h0 = h1 = h2 = h3 = h4 = h5 = h6 = h7 = h8 = h9 = 42
+            i0 = i1 = i2 = i3 = i4 = i5 = i6 = i7 = i8 = i9 = 42
+            j0 = j1 = j2 = j3 = j4 = j5 = j6 = j7 = j8 = j9 = 42
+            k0 = k1 = k2 = k3 = k4 = k5 = k6 = k7 = k8 = k9 = 42
+            l0 = l1 = l2 = l3 = l4 = l5 = l6 = l7 = l8 = l9 = 42
+            m0 = m1 = m2 = m3 = m4 = m5 = m6 = m7 = m8 = m9 = 42
+            n0 = n1 = n2 = n3 = n4 = n5 = n6 = n7 = n8 = n9 = 42
+            o0 = o1 = o2 = o3 = o4 = o5 = o6 = o7 = o8 = o9 = 42
+            p0 = p1 = p2 = p3 = p4 = p5 = p6 = p7 = p8 = p9 = 42
+            q0 = q1 = q2 = q3 = q4 = q5 = q6 = q7 = q8 = q9 = 42
+            r0 = r1 = r2 = r3 = r4 = r5 = r6 = r7 = r8 = r9 = 42
+            s0 = s1 = s2 = s3 = s4 = s5 = s6 = s7 = s8 = s9 = 42
+            t0 = t1 = t2 = t3 = t4 = t5 = t6 = t7 = t8 = t9 = 42
+            u0 = u1 = u2 = u3 = u4 = u5 = u6 = u7 = u8 = u9 = 42
+            v0 = v1 = v2 = v3 = v4 = v5 = v6 = v7 = v8 = v9 = 42
+            w0 = w1 = w2 = w3 = w4 = w5 = w6 = w7 = w8 = w9 = 42
+            x0 = x1 = x2 = x3 = x4 = x5 = x6 = x7 = x8 = x9 = 42
+            y0 = y1 = y2 = y3 = y4 = y5 = y6 = y7 = y8 = y9 = 42
+            z0 = z1 = z2 = z3 = z4 = z5 = z6 = z7 = z8 = z9 = 42
+            while z9 > 0:
+                z9 = z9 - 1
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            ex = get_first_executor(many_vars.__code__)
+            self.assertIsNone(ex)
+            many_vars()
+            ex = get_first_executor(many_vars.__code__)
+            self.assertIn(("LOAD_FAST", 259), list(ex))
+
+    def test_unspecialized_unpack(self):
+        # An example of an unspecialized opcode
+        def testfunc(x):
+            i = 0
+            while i < x:
+                i += 1
+                a, b = {1: 2, 3: 3}
+            assert a == 1 and b == 3
+            i = 0
+            while i < x:
+                i += 1
+
+        opt = _testinternalcapi.get_uop_optimizer()
+
+        with temporary_optimizer(opt):
+            testfunc(10)
+
+        ex = None
+        for offset in range(0, len(testfunc.__code__.co_code), 2):
+            try:
+                ex = _testinternalcapi.get_executor(testfunc.__code__, offset)
+                break
+            except ValueError:
+                pass
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _ in ex}
+        self.assertIn("UNPACK_SEQUENCE", uops)
 
 
 if __name__ == "__main__":
