@@ -1869,9 +1869,29 @@ dummy_func(
             DEOPT_IF(tp->tp_version_tag != type_version, LOAD_ATTR);
             assert(tp->tp_dictoffset < 0);
             assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
-            DEOPT_IF(!_PyDictOrValues_IsValues(dorv), LOAD_ATTR);
-            res = _PyDictOrValues_GetValues(dorv)->values[index];
+            PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(owner);
+            if (!_PyDictOrValues_IsValues(*dorv)) {
+                PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(*dorv);
+                // It's likely that this __dict__ still shares its keys (if it
+                // was materialized on request and not heavily modified):
+                assert(dict);
+                assert(PyDict_CheckExact(dict));
+                assert(_PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE));
+                PyHeapTypeObject *ht = (PyHeapTypeObject *)tp;
+                DEOPT_IF(dict->ma_keys != ht->ht_cached_keys, LOAD_ATTR);
+                assert(dict->ma_values);
+                DEOPT_IF(Py_REFCNT(dict) != 1, LOAD_ATTR);
+                // We have an opportunity to do something *really* cool:
+                // un-materialize it!
+                _PyDictKeys_DecRef(dict->ma_keys);
+                _PyDictOrValues_SetValues(dorv, dict->ma_values);
+                OBJECT_STAT_INC(dict_unmaterialized);
+                // Don't try this at home, kids:
+                dict->ma_keys = NULL;
+                dict->ma_values = NULL;
+                Py_DECREF(dict);
+            }
+            res = _PyDictOrValues_GetValues(*dorv)->values[index];
             DEOPT_IF(res == NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(res);
@@ -1918,27 +1938,7 @@ dummy_func(
                 DEOPT_IF(ep->me_key != name, LOAD_ATTR);
                 res = ep->me_value;
             }
-            if (res == NULL) {
-                // This is almost never an AttributeError. It's way more likely
-                // that this __dict__ still shares its keys (for example, if it
-                // was materialized on request and not heavily modified):
-                DEOPT_IF(!_PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE), LOAD_ATTR);
-                PyHeapTypeObject *ht = (PyHeapTypeObject *)tp;
-                DEOPT_IF(dict->ma_keys != ht->ht_cached_keys, LOAD_ATTR);
-                assert(dict->ma_values);
-                DEOPT_IF(Py_REFCNT(dict) != 1, LOAD_ATTR);
-                // We have an opportunity to do something *really* cool:
-                // un-materialize it!
-                _PyDictKeys_DecRef(dict->ma_keys);
-                _PyDictOrValues_SetValues(dorv, dict->ma_values);
-                OBJECT_STAT_INC(dict_unmaterialized);
-                // Don't try this at home, kids:
-                dict->ma_keys = NULL;
-                dict->ma_values = NULL;
-                Py_DECREF(dict);
-                // Guess what... our caches are still valid!
-                GO_TO_INSTRUCTION(LOAD_ATTR_INSTANCE_VALUE);
-            }
+            DEOPT_IF(res == NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(res);
             res2 = NULL;

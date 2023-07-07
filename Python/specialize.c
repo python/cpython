@@ -674,6 +674,8 @@ specialize_dict_access(
     PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
     if (_PyDictOrValues_IsValues(dorv)) {
         // Virtual dictionary
+    unmaterializing:
+        ;  // Load-bearing semicolon; don't touch!
         PyDictKeysObject *keys = ((PyHeapTypeObject *)type)->ht_cached_keys;
         assert(PyUnicode_CheckExact(name));
         Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
@@ -696,6 +698,16 @@ specialize_dict_access(
             return 0;
         }
         // We found an instance with a __dict__.
+        if (dict->ma_values) {
+            if (base_op == LOAD_ATTR &&
+                Py_REFCNT(dict) == 1 &&
+                dict->ma_keys == ((PyHeapTypeObject *)type)->ht_cached_keys)
+            {
+                goto unmaterializing;
+            }
+            SPECIALIZATION_FAIL(base_op, SPEC_FAIL_ATTR_NON_STRING_OR_SPLIT);
+            return 0;
+        }
         Py_ssize_t index =
             _PyDict_LookupIndex(dict, name);
         if (index != (uint16_t)index) {
