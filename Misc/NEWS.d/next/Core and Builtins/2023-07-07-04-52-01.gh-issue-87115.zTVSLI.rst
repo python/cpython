@@ -1,0 +1,1 @@
+Fixed bug where error `AttributeError: module '__main__' has no attribute '__spec__'` occurs when using `pdb` with module `multiprocessing`
