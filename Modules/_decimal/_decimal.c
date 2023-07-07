@@ -41,7 +41,7 @@
 
 struct PyDecContextObject;
 
-typedef struct _decimal_state {
+typedef struct {
     PyTypeObject *PyDecContextManager_Type;
     PyTypeObject *PyDecContext_Type;
     PyTypeObject *PyDecSignalDictMixin_Type;
