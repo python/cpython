@@ -411,13 +411,13 @@ translate_bytecode_to_trace(
     for (;;) {
         ADD_TO_TRACE(SAVE_IP, (int)(instr - (_Py_CODEUNIT *)code->co_code_adaptive));
         int opcode = instr->op.code;
-        uint64_t operand = instr->op.arg;
+        int oparg = instr->op.arg;
         int extras = 0;
         while (opcode == EXTENDED_ARG) {
             instr++;
             extras += 1;
             opcode = instr->op.code;
-            operand = (operand << 8) | instr->op.arg;
+            oparg = (oparg << 8) | instr->op.arg;
         }
         switch (opcode) {
             default:
@@ -433,9 +433,11 @@ translate_bytecode_to_trace(
                         goto done;
                     }
                     for (int i = 0; i < nuops; i++) {
+                        uint64_t operand;
                         int offset = expansion->uops[i].offset;
                         switch (expansion->uops[i].size) {
                             case OPARG_FULL:
+                                operand = oparg;
                                 if (extras && OPCODE_HAS_JUMP(opcode)) {
                                     if (opcode == JUMP_BACKWARD_NO_INTERRUPT) {
                                         operand -= extras;
@@ -456,15 +458,15 @@ translate_bytecode_to_trace(
                                 operand = read_u64(&instr[offset].cache);
                                 break;
                             case OPARG_TOP:  // First half of super-instr
-                                operand = operand >> 4;
+                                operand = oparg >> 4;
                                 break;
                             case OPARG_BOTTOM:  // Second half of super-instr
-                                operand = operand & 0xF;
+                                operand = oparg & 0xF;
                                 break;
                             default:
                                 fprintf(stderr,
-                                        "opcode=%d, operand=%" PRIu64 "; nuops=%d, i=%d; size=%d, offset=%d\n",
-                                        opcode, operand, nuops, i,
+                                        "opcode=%d, oparg=%d; nuops=%d, i=%d; size=%d, offset=%d\n",
+                                        opcode, oparg, nuops, i,
                                         expansion->uops[i].size,
                                         expansion->uops[i].offset);
                                 Py_FatalError("garbled expansion");
