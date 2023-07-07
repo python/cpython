@@ -934,6 +934,12 @@ struct opcode_macro_expansion {
     struct { int16_t uop; int8_t size; int8_t offset; } uops[8];
 };
 
+#define OPARG_FULL 0
+#define OPARG_CACHE_1 1
+#define OPARG_CACHE_2 2
+#define OPARG_CACHE_4 4
+#define OPARG_TOP 5
+#define OPARG_BOTTOM 6
 
 #define OPCODE_METADATA_FMT(OP) (_PyOpcode_opcode_metadata[(OP)].instr_format)
 #define SAME_OPCODE_METADATA(OP1, OP2) \
@@ -1165,8 +1171,11 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] = {
     [LOAD_FAST_CHECK] = { .nuops = 1, .uops = { { LOAD_FAST_CHECK, 0, 0 } } },
     [LOAD_FAST] = { .nuops = 1, .uops = { { LOAD_FAST, 0, 0 } } },
     [LOAD_FAST_AND_CLEAR] = { .nuops = 1, .uops = { { LOAD_FAST_AND_CLEAR, 0, 0 } } },
+    [LOAD_FAST_LOAD_FAST] = { .nuops = 2, .uops = { { LOAD_FAST, 5, 0 }, { LOAD_FAST, 6, 0 } } },
     [LOAD_CONST] = { .nuops = 1, .uops = { { LOAD_CONST, 0, 0 } } },
     [STORE_FAST] = { .nuops = 1, .uops = { { STORE_FAST, 0, 0 } } },
+    [STORE_FAST_LOAD_FAST] = { .nuops = 2, .uops = { { STORE_FAST, 5, 0 }, { LOAD_FAST, 6, 0 } } },
+    [STORE_FAST_STORE_FAST] = { .nuops = 2, .uops = { { STORE_FAST, 5, 0 }, { STORE_FAST, 6, 0 } } },
     [POP_TOP] = { .nuops = 1, .uops = { { POP_TOP, 0, 0 } } },
     [PUSH_NULL] = { .nuops = 1, .uops = { { PUSH_NULL, 0, 0 } } },
     [END_FOR] = { .nuops = 2, .uops = { { POP_TOP, 0, 0 }, { POP_TOP, 0, 0 } } },
