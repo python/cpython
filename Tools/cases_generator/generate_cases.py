@@ -414,6 +414,8 @@ class Instruction:
                 return False
         res = True
         for forbidden in FORBIDDEN_NAMES_IN_UOPS:
+            # NOTE: To disallow unspecialized uops, use
+            # if variable_used(self.inst, forbidden):
             if variable_used_unspecialized(self.inst, forbidden):
                 # print(f"Skipping {self.name} because it uses {forbidden}")
                 res = False
