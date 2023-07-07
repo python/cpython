@@ -3,6 +3,7 @@ import io
 import os
 import sys
 import errno
+import ntpath
 import pathlib
 import pickle
 import posixpath
@@ -66,7 +67,7 @@ class PurePathTest(unittest.TestCase):
 
     def setUp(self):
         p = self.cls('a')
-        self.flavour = p._flavour
+        self.flavour = p.flavour
         self.sep = self.flavour.sep
         self.altsep = self.flavour.altsep
 
@@ -93,9 +94,16 @@ class PurePathTest(unittest.TestCase):
         p = self.cls('a')
         self.assertIs(type(p), expected)
 
+    def test_flavour(self):
+        p = self.cls('a')
+        if isinstance(p, pathlib.PureWindowsPath):
+            self.assertIs(p.flavour, ntpath)
+        elif isinstance(p, pathlib.PurePosixPath):
+            self.assertIs(p.flavour, posixpath)
+
     def test_different_flavours_unequal(self):
         p = self.cls('a')
-        if p._flavour is posixpath:
+        if p.flavour is posixpath:
             q = pathlib.PureWindowsPath('a')
         else:
             q = pathlib.PurePosixPath('a')
@@ -103,7 +111,7 @@ class PurePathTest(unittest.TestCase):
 
     def test_different_flavours_unordered(self):
         p = self.cls('a')
-        if p._flavour is posixpath:
+        if p.flavour is posixpath:
             q = pathlib.PureWindowsPath('a')
         else:
             q = pathlib.PurePosixPath('a')
@@ -1549,6 +1557,15 @@ class PurePathSubclassTest(PurePathTest):
     # repr() roundtripping is not supported in custom subclass.
     test_repr_roundtrips = None
 
+    def test_set_flavour(self):
+        p = self.cls('a', 'b', flavour=posixpath)
+        self.assertEqual(p.flavour, posixpath)
+        self.assertEqual(str(p), 'a/b')
+
+        q = self.cls('a', 'b', flavour=ntpath)
+        self.assertEqual(q.flavour, ntpath)
+        self.assertEqual(str(q), 'a\\b')
+
 
 @only_posix
 class PosixPathAsPureTest(PurePosixPathTest):
@@ -2393,7 +2410,7 @@ class PathTest(unittest.TestCase):
         self.assertIs(type(p), expected)
 
     def test_unsupported_flavour(self):
-        if self.cls._flavour is os.path:
+        if (os.name == 'nt') == issubclass(self.cls, pathlib.PureWindowsPath):
             self.skipTest("path flavour is supported")
         else:
             self.assertRaises(pathlib.UnsupportedOperation, self.cls)
@@ -2848,9 +2865,9 @@ class PathTest(unittest.TestCase):
     def test_is_junction(self):
         P = self.cls(BASE)
 
-        with mock.patch.object(P._flavour, 'isjunction'):
-            self.assertEqual(P.is_junction(), P._flavour.isjunction.return_value)
-            P._flavour.isjunction.assert_called_once_with(P)
+        with mock.patch.object(P.flavour, 'isjunction'):
+            self.assertEqual(P.is_junction(), P.flavour.isjunction.return_value)
+            P.flavour.isjunction.assert_called_once_with(P)
 
     @unittest.skipUnless(hasattr(os, "mkfifo"), "os.mkfifo() required")
     @unittest.skipIf(sys.platform == "vxworks",
@@ -3449,6 +3466,12 @@ class PathSubclassTest(PathTest):
 
     # repr() roundtripping is not supported in custom subclass.
     test_repr_roundtrips = None
+
+    def test_set_flavour_unsupported(self):
+        self.assertRaises(
+            pathlib.UnsupportedOperation,
+            self.cls,
+            flavour=posixpath if os.name == 'nt' else ntpath)
 
 
 class CompatiblePathTest(unittest.TestCase):

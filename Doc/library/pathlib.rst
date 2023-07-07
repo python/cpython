@@ -108,7 +108,7 @@ Pure path objects provide path-handling operations which don't actually
 access a filesystem.  There are three ways to access these classes, which
 we also call *flavours*:
 
-.. class:: PurePath(*pathsegments)
+.. class:: PurePath(*pathsegments, flavour=os.path)
 
    A generic class that represents the system's path flavour (instantiating
    it creates either a :class:`PurePosixPath` or a :class:`PureWindowsPath`)::
@@ -161,6 +161,15 @@ we also call *flavours*:
    (a naïve approach would make ``PurePosixPath('foo/../bar')`` equivalent
    to ``PurePosixPath('bar')``, which is wrong if ``foo`` is a symbolic link
    to another directory)
+
+   The *flavour* keyword-only argument is available only in user subclasses of
+   :class:`PurePath` and :class:`Path`. It specifies the implementation of
+   :mod:`os.path` to use for low-level path operations. It may be left unset
+   or set to :mod:`os.path` to use the current system's flavour, or set to
+   :mod:`posixpath` or :mod:`ntpath` to use POSIX or Windows path semantics.
+
+   .. versionchanged:: 3.13
+      The *flavour* parameter was added.
 
    Pure path objects implement the :class:`os.PathLike` interface, allowing them
    to be used anywhere the interface is accepted.
@@ -302,6 +311,13 @@ Methods and properties
    from pathlib import PurePath, PurePosixPath, PureWindowsPath
 
 Pure paths provide the following methods and properties:
+
+.. attribute:: PurePath.flavour
+
+   The implementation of :mod:`os.path` used for low-level path operations;
+   either :mod:`posixpath` or :mod:`ntpath`.
+
+   .. versionchanged:: 3.13
 
 .. attribute:: PurePath.drive
 
@@ -742,7 +758,7 @@ Concrete paths are subclasses of the pure path classes.  In addition to
 operations provided by the latter, they also provide methods to do system
 calls on path objects.  There are three ways to instantiate concrete paths:
 
-.. class:: Path(*pathsegments)
+.. class:: Path(*pathsegments, flavour=os.path)
 
    A subclass of :class:`PurePath`, this class represents concrete paths of
    the system's path flavour (instantiating it creates either a
@@ -751,7 +767,10 @@ calls on path objects.  There are three ways to instantiate concrete paths:
       >>> Path('setup.py')
       PosixPath('setup.py')
 
-   *pathsegments* is specified similarly to :class:`PurePath`.
+   *pathsegments* and *flavour* are specified similarly to :class:`PurePath`.
+
+   .. versionchanged:: 3.13
+      The *flavour* parameter was added.
 
 .. class:: PosixPath(*pathsegments)
 
