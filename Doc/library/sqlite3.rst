@@ -2519,6 +2519,13 @@ Queries now return :class:`!Row` objects:
    >>> row["RADIUS"]  # Column names are case-insensitive.
    6378
 
+.. note::
+
+    The ``FROM`` clause can be omitted in the ``SELECT`` statement, as in the
+    above example. In such cases, SQLite returns a single row with columns
+    defined by expressions, e.g. literals, with the given aliases
+    ``expr AS alias``.
+
 You can create a custom :attr:`~Cursor.row_factory`
 that returns each row as a :class:`dict`, with column names mapped to values:
 
