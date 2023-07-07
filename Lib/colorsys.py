@@ -78,7 +78,13 @@ def rgb_to_hls(r, g, b):
     sumc = (maxc+minc)
     rangec = (maxc-minc)
     l = sumc/2.0
-    if minc == maxc:
+    # gh-106498
+    # Due to a degree of float precision error, it's possible that maxc != minc
+    # but maxc + minc == 2.0. Which will make (2.0 - sumc) zero, causing the
+    # ZeroDivisionError.
+    # e.g. colorsys.rgb_to_hls(1, 1, 0.9999999999999999)
+    # In this case, it's an extreme near white color so we can just return white
+    if minc == maxc or sumc == 2.0:
         return 0.0, l, 0.0
     if l <= 0.5:
         s = rangec / sumc
