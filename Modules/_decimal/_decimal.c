@@ -546,7 +546,7 @@ getround(PyObject *v)
    initialized to new SignalDicts. Once a SignalDict is tied to
    a context, it cannot be deleted. */
 
-#define INVALID_SIGNALDICT_ERROR_MSG "invalid signal dict"
+static const char *INVALID_SIGNALDICT_ERROR_MSG = "invalid signal dict";
 
 static int
 signaldict_init(PyObject *self, PyObject *args UNUSED, PyObject *kwds UNUSED)
