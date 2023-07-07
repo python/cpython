@@ -69,11 +69,15 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalOptions>/Zm200  %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(PySourcePath)Python;$(PySourcePath)Modules\zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_USRDLL;Py_BUILD_CORE;Py_ENABLE_SHARED;_CRT_SECURE_NO_WARNINGS;MS_DLL_ID="$(SysWinVer)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(PySourcePath)Python;$(zlibIncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_USRDLL;Py_BUILD_CORE;Py_ENABLE_SHARED;_Py_HAVE_ZLIB;_CRT_SECURE_NO_WARNINGS;MS_DLL_ID="$(SysWinVer)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>version.lib;shlwapi.lib;ws2_32.lib;pathcch.lib;zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir);%(AdditionalLibraryDirectories);$(zlibLibDir)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">$(OutDir);%(AdditionalLibraryDirectories);$(zlibLibDir)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">$(OutDir);%(AdditionalLibraryDirectories);$(zlibLibDir)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir);%(AdditionalLibraryDirectories);$(zlibLibDir)</AdditionalLibraryDirectories>
       <BaseAddress>0x1e000000</BaseAddress>
     </Link>
   </ItemDefinitionGroup>
@@ -170,17 +174,17 @@
     <ClInclude Include="..\Modules\_math.h" />
     <ClInclude Include="..\Modules\md5.h" />
     <ClInclude Include="..\Modules\rotatingtree.h" />
-    <ClInclude Include="..\Modules\zlib\crc32.h" />
-    <ClInclude Include="..\Modules\zlib\deflate.h" />
-    <ClInclude Include="..\Modules\zlib\inffast.h" />
-    <ClInclude Include="..\Modules\zlib\inffixed.h" />
-    <ClInclude Include="..\Modules\zlib\inflate.h" />
-    <ClInclude Include="..\Modules\zlib\inftrees.h" />
-    <ClInclude Include="..\Modules\zlib\trees.h" />
-    <ClInclude Include="..\Modules\zlib\zconf.h" />
-    <ClInclude Include="..\Modules\zlib\zconf.in.h" />
-    <ClInclude Include="..\Modules\zlib\zlib.h" />
-    <ClInclude Include="..\Modules\zlib\zutil.h" />
+    <ClInclude Include="$(zlibIncludeDir)\crc32.h" />
+    <ClInclude Include="$(zlibIncludeDir)\deflate.h" />
+    <ClInclude Include="$(zlibIncludeDir)\inffast.h" />
+    <ClInclude Include="$(zlibIncludeDir)\inffixed.h" />
+    <ClInclude Include="$(zlibIncludeDir)\inflate.h" />
+    <ClInclude Include="$(zlibIncludeDir)\inftrees.h" />
+    <ClInclude Include="$(zlibIncludeDir)\trees.h" />
+    <ClInclude Include="$(zlibIncludeDir)\zconf.h" />
+    <ClInclude Include="$(zlibIncludeDir)\zconf.in.h" />
+    <ClInclude Include="$(zlibIncludeDir)\zlib.h" />
+    <ClInclude Include="$(zlibIncludeDir)\zutil.h" />
     <ClInclude Include="..\Modules\cjkcodecs\alg_jisx0201.h" />
     <ClInclude Include="..\Modules\cjkcodecs\cjkcodecs.h" />
     <ClInclude Include="..\Modules\cjkcodecs\emu_jisx0213_2000.h" />
@@ -253,21 +257,6 @@
     <ClCompile Include="..\Modules\xxsubtype.c" />
     <ClCompile Include="..\Modules\zipimport.c" />
     <ClCompile Include="..\Modules\zlibmodule.c" />
-    <ClCompile Include="..\Modules\zlib\adler32.c" />
-    <ClCompile Include="..\Modules\zlib\compress.c" />
-    <ClCompile Include="..\Modules\zlib\crc32.c" />
-    <ClCompile Include="..\Modules\zlib\deflate.c" />
-    <ClCompile Include="..\Modules\zlib\gzclose.c" />
-    <ClCompile Include="..\Modules\zlib\gzlib.c" />
-    <ClCompile Include="..\Modules\zlib\gzread.c" />
-    <ClCompile Include="..\Modules\zlib\gzwrite.c" />
-    <ClCompile Include="..\Modules\zlib\infback.c" />
-    <ClCompile Include="..\Modules\zlib\inffast.c" />
-    <ClCompile Include="..\Modules\zlib\inflate.c" />
-    <ClCompile Include="..\Modules\zlib\inftrees.c" />
-    <ClCompile Include="..\Modules\zlib\trees.c" />
-    <ClCompile Include="..\Modules\zlib\uncompr.c" />
-    <ClCompile Include="..\Modules\zlib\zutil.c" />
     <ClCompile Include="..\Modules\cjkcodecs\_codecs_cn.c" />
     <ClCompile Include="..\Modules\cjkcodecs\_codecs_hk.c" />
     <ClCompile Include="..\Modules\cjkcodecs\_codecs_iso2022.c" />
