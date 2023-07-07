@@ -110,7 +110,7 @@ typedef struct {
     mpd_uint_t data[_Py_DEC_MINALLOC];
 } PyDecObject;
 
-typedef struct PyDecSignalDictObject {
+typedef struct {
     PyObject_HEAD
     uint32_t *flags;
 } PyDecSignalDictObject;
