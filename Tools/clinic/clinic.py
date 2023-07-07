@@ -1687,7 +1687,7 @@ class Block:
     indent: str = ''
     preindent: str = ''
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         dsl_name = self.dsl_name or "text"
         def summarize(s):
             s = repr(s)
