@@ -250,15 +250,22 @@ The special characters are:
      ``[a\-z]``) or if it's placed as the first or last character
      (e.g. ``[-a]`` or ``[a-]``), it will match a literal ``'-'``.
 
-   * Special characters lose their special meaning inside sets.  For example,
+   * Special characters except backslash lose their special meaning inside sets.
+     For example,
      ``[(+*)]`` will match any of the literal characters ``'('``, ``'+'``,
      ``'*'``, or ``')'``.
 
    .. index:: single: \ (backslash); in regular expressions
 
-   * Character classes such as ``\w`` or ``\S`` (defined below) are also accepted
-     inside a set, although the characters they match depends on whether
-     :const:`ASCII` or :const:`LOCALE` mode is in force.
+   * Backslash either escapes characters which have special meaning in a set
+     such as ``'-'``, ``']'``, ``'^'`` and ``'\\'`` itself or signals
+     a special sequence which represents a single character such as
+     ``\xa0`` or ``\n`` or a character class such as ``\w`` or ``\S``
+     (defined below).
+     Note that ``\b`` is used to represent a single "backspace" character,
+     not word boundaries as outside a set.
+     Special sequences which do not match a single character such as ``\A``
+     and ``\Z`` are not allowed.
 
    .. index:: single: ^ (caret); in regular expressions
 
