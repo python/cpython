@@ -2711,7 +2711,7 @@
                 // This is almost never an AttributeError. It's way more likely
                 // that this __dict__ still shares its keys (for example, if it
                 // was materialized on request and not heavily modified):
-                DEOPT_IF(!_PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE), LOAD_ATTR);
+                assert(_PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE));
                 PyHeapTypeObject *ht = (PyHeapTypeObject *)tp;
                 DEOPT_IF(dict->ma_keys != ht->ht_cached_keys, LOAD_ATTR);
                 assert(dict->ma_values);
