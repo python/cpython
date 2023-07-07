@@ -378,6 +378,10 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case LOAD_ATTR_METHOD_NO_DICT:
             return 1;
+        case LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES:
+            return 1;
+        case LOAD_ATTR_NONDESCRIPTOR_NO_DICT:
+            return 1;
         case LOAD_ATTR_METHOD_LAZY_DICT:
             return 1;
         case KW_NAMES:
@@ -815,11 +819,15 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case PUSH_EXC_INFO:
             return 2;
         case LOAD_ATTR_METHOD_WITH_VALUES:
-            return ((oparg & 1) ? 1 : 0) + 1;
+            return (1 ? 1 : 0) + 1;
         case LOAD_ATTR_METHOD_NO_DICT:
-            return ((oparg & 1) ? 1 : 0) + 1;
+            return (1 ? 1 : 0) + 1;
+        case LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES:
+            return (0 ? 1 : 0) + 1;
+        case LOAD_ATTR_NONDESCRIPTOR_NO_DICT:
+            return (0 ? 1 : 0) + 1;
         case LOAD_ATTR_METHOD_LAZY_DICT:
-            return ((oparg & 1) ? 1 : 0) + 1;
+            return (1 ? 1 : 0) + 1;
         case KW_NAMES:
             return 0;
         case INSTRUMENTED_CALL:
@@ -1120,6 +1128,8 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {
     [PUSH_EXC_INFO] = { true, INSTR_FMT_IX, 0 },
     [LOAD_ATTR_METHOD_WITH_VALUES] = { true, INSTR_FMT_IBC00000000, HAS_ARG_FLAG },
     [LOAD_ATTR_METHOD_NO_DICT] = { true, INSTR_FMT_IBC00000000, HAS_ARG_FLAG },
+    [LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES] = { true, INSTR_FMT_IBC00000000, HAS_ARG_FLAG },
+    [LOAD_ATTR_NONDESCRIPTOR_NO_DICT] = { true, INSTR_FMT_IBC00000000, HAS_ARG_FLAG },
     [LOAD_ATTR_METHOD_LAZY_DICT] = { true, INSTR_FMT_IBC00000000, HAS_ARG_FLAG },
     [KW_NAMES] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_CONST_FLAG },
     [INSTRUMENTED_CALL] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
