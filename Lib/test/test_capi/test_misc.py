@@ -2499,6 +2499,34 @@ class TestUops(unittest.TestCase):
             ex = get_first_executor(many_vars.__code__)
             self.assertIn(("LOAD_FAST", 259), list(ex))
 
+    def test_unspecialized_unpack(self):
+        # An example of an unspecialized opcode
+        def testfunc(x):
+            i = 0
+            while i < x:
+                i += 1
+                a, b = {1: 2, 3: 3}
+            assert a == 1 and b == 3
+            i = 0
+            while i < x:
+                i += 1
+
+        opt = _testinternalcapi.get_uop_optimizer()
+
+        with temporary_optimizer(opt):
+            testfunc(10)
+
+        ex = None
+        for offset in range(0, len(testfunc.__code__.co_code), 2):
+            try:
+                ex = _testinternalcapi.get_executor(testfunc.__code__, offset)
+                break
+            except ValueError:
+                pass
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _ in ex}
+        self.assertIn("UNPACK_SEQUENCE", uops)
+
 
 if __name__ == "__main__":
     unittest.main()
