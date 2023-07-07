@@ -120,7 +120,6 @@ typedef enum {
     PyObject *prefix##_result;                                              \
     PyObject *prefix##_source_tb;                                           \
     PyObject *prefix##_cancel_msg;                                          \
-    PyObject *prefix##_weakreflist;                                         \
     PyObject *prefix##_cancelled_exc;                                       \
     fut_state prefix##_state;                                               \
     /* These bitfields need to be at the end of the struct
@@ -1564,9 +1563,7 @@ FutureObj_dealloc(PyObject *self)
     PyTypeObject *tp = Py_TYPE(fut);
     PyObject_GC_UnTrack(self);
 
-    if (fut->fut_weakreflist != NULL) {
-        PyObject_ClearWeakRefs(self);
-    }
+    PyObject_ClearWeakRefs(self);
 
     (void)FutureObj_clear(fut);
     tp->tp_free(fut);
@@ -2687,9 +2684,7 @@ TaskObj_dealloc(PyObject *self)
     PyTypeObject *tp = Py_TYPE(task);
     PyObject_GC_UnTrack(self);
 
-    if (task->task_weakreflist != NULL) {
-        PyObject_ClearWeakRefs(self);
-    }
+    PyObject_ClearWeakRefs(self);
 
     (void)TaskObj_clear(task);
     tp->tp_free(task);
