@@ -188,7 +188,7 @@ def get_preparation_data(name):
     main_module = sys.modules['__main__']
     try:
         main_mod_name = getattr(main_module.__spec__, "name", None)
-    except BaseException:
+    except AttributeError:
         main_mod_name = None
     if main_mod_name is not None:
         d['init_main_from_name'] = main_mod_name
