@@ -1689,7 +1689,7 @@ class Block:
 
     def __repr__(self) -> str:
         dsl_name = self.dsl_name or "text"
-        def summarize(s):
+        def summarize(s: object) -> str:
             s = repr(s)
             if len(s) > 30:
                 return s[:26] + "..." + s[0]
