@@ -425,8 +425,9 @@ class Instruction:
                 return False
         res = True
         for forbidden in FORBIDDEN_NAMES_IN_UOPS:
-            # TODO: Don't check in '#ifdef ENABLE_SPECIALIZATION' regions
-            if variable_used(self.inst, forbidden):
+            # NOTE: To disallow unspecialized uops, use
+            # if variable_used(self.inst, forbidden):
+            if variable_used_unspecialized(self.inst, forbidden):
                 # print(f"Skipping {self.name} because it uses {forbidden}")
                 res = False
         return res
@@ -1642,6 +1643,27 @@ def variable_used(node: parser.Node, name: str) -> bool:
     return any(
         token.kind == "IDENTIFIER" and token.text == name for token in node.tokens
     )
+
+
+def variable_used_unspecialized(node: parser.Node, name: str) -> bool:
+    """Like variable_used(), but skips #if ENABLE_SPECIALIZATION blocks."""
+    tokens: list[lx.Token] = []
+    skipping = False
+    for i, token in enumerate(node.tokens):
+        if token.kind == "MACRO":
+            text = "".join(token.text.split())
+            # TODO: Handle nested #if
+            if text == "#if":
+                if (
+                    i + 1 < len(node.tokens)
+                    and node.tokens[i + 1].text == "ENABLE_SPECIALIZATION"
+                ):
+                    skipping = True
+            elif text in ("#else", "#endif"):
+                skipping = False
+        if not skipping:
+            tokens.append(token)
+    return any(token.kind == "IDENTIFIER" and token.text == name for token in tokens)
 
 
 def main():
