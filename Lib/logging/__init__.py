@@ -238,7 +238,11 @@ def _acquireLock():
     This should be released with _releaseLock().
     """
     if _lock:
-        _lock.acquire()
+        try:
+            _lock.acquire()
+        except BaseException:
+            _lock.release()
+            raise
 
 def _releaseLock():
     """

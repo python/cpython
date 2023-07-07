@@ -763,11 +763,6 @@ resume_frame:
 
     DISPATCH();
 
-    if (_Py_HandlePending(tstate) != 0) {
-        goto error;
-    }
-    DISPATCH();
-
     {
     /* Start instructions */
 #if !USE_COMPUTED_GOTOS
@@ -2262,6 +2257,19 @@ PyEval_GetLocals(void)
 }
 
 PyObject *
+_PyEval_GetFrameLocals(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+     _PyInterpreterFrame *current_frame = _PyThreadState_GetFrame(tstate);
+    if (current_frame == NULL) {
+        _PyErr_SetString(tstate, PyExc_SystemError, "frame does not exist");
+        return NULL;
+    }
+
+    return _PyFrame_GetLocals(current_frame, 1);
+}
+
+PyObject *
 PyEval_GetGlobals(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
@@ -2724,11 +2732,11 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
 #endif
 
     DPRINTF(3,
-            "Entering _PyUopExecute for %s (%s:%d) at offset %ld\n",
+            "Entering _PyUopExecute for %s (%s:%d) at byte offset %ld\n",
             PyUnicode_AsUTF8(_PyFrame_GetCode(frame)->co_qualname),
             PyUnicode_AsUTF8(_PyFrame_GetCode(frame)->co_filename),
             _PyFrame_GetCode(frame)->co_firstlineno,
-            (long)(frame->prev_instr + 1 -
+            2 * (long)(frame->prev_instr + 1 -
                    (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive));
 
     PyThreadState *tstate = _PyThreadState_GET();
