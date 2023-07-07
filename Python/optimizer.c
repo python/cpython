@@ -181,6 +181,7 @@ _PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNI
     }
     insert_executor(code, src, index, executor);
     assert(frame->prev_instr == src);
+    frame->prev_instr = dest - 1;
     return executor->execute(executor, frame, stack_pointer);
 jump_to_destination:
     frame->prev_instr = dest - 1;
@@ -201,7 +202,7 @@ PyUnstable_GetExecutor(PyCodeObject *code, int offset)
         }
         i += _PyInstruction_GetLength(code, i);
     }
-    PyErr_SetString(PyExc_ValueError, "no executor at given offset");
+    PyErr_SetString(PyExc_ValueError, "no executor at given byte offset");
     return NULL;
 }
 
@@ -373,6 +374,9 @@ translate_bytecode_to_trace(
     _PyUOpInstruction *trace,
     int max_length)
 {
+#ifdef Py_DEBUG
+    _Py_CODEUNIT *initial_instr = instr;
+#endif
     int trace_length = 0;
 
 #ifdef Py_DEBUG
@@ -398,16 +402,23 @@ translate_bytecode_to_trace(
     trace_length++;
 
     DPRINTF(4,
-            "Optimizing %s (%s:%d) at offset %ld\n",
+            "Optimizing %s (%s:%d) at byte offset %ld\n",
             PyUnicode_AsUTF8(code->co_qualname),
             PyUnicode_AsUTF8(code->co_filename),
             code->co_firstlineno,
-            (long)(instr - (_Py_CODEUNIT *)code->co_code_adaptive));
+            2 * (long)(initial_instr - (_Py_CODEUNIT *)code->co_code_adaptive));
 
     for (;;) {
         ADD_TO_TRACE(SAVE_IP, (int)(instr - (_Py_CODEUNIT *)code->co_code_adaptive));
         int opcode = instr->op.code;
         uint64_t operand = instr->op.arg;
+        int extras = 0;
+        while (opcode == EXTENDED_ARG) {
+            instr++;
+            extras += 1;
+            opcode = instr->op.code;
+            operand = (operand << 8) | instr->op.arg;
+        }
         switch (opcode) {
             case LOAD_FAST_LOAD_FAST:
             case STORE_FAST_LOAD_FAST:
@@ -454,6 +465,15 @@ translate_bytecode_to_trace(
                         int offset = expansion->uops[i].offset;
                         switch (expansion->uops[i].size) {
                             case 0:
+                                if (extras && OPCODE_HAS_JUMP(opcode)) {
+                                    if (opcode == JUMP_BACKWARD_NO_INTERRUPT) {
+                                        operand -= extras;
+                                    }
+                                    else {
+                                        assert(opcode != JUMP_BACKWARD);
+                                        operand += extras;
+                                    }
+                                }
                                 break;
                             case 1:
                                 operand = read_u16(&instr[offset].cache);
@@ -492,21 +512,21 @@ done:
     if (trace_length > 3) {
         ADD_TO_TRACE(EXIT_TRACE, 0);
         DPRINTF(1,
-                "Created a trace for %s (%s:%d) at offset %ld -- length %d\n",
+                "Created a trace for %s (%s:%d) at byte offset %ld -- length %d\n",
                 PyUnicode_AsUTF8(code->co_qualname),
                 PyUnicode_AsUTF8(code->co_filename),
                 code->co_firstlineno,
-                (long)(instr - (_Py_CODEUNIT *)code->co_code_adaptive),
+                2 * (long)(initial_instr - (_Py_CODEUNIT *)code->co_code_adaptive),
                 trace_length);
         return trace_length;
     }
     else {
         DPRINTF(4,
-                "No trace for %s (%s:%d) at offset %ld\n",
+                "No trace for %s (%s:%d) at byte offset %ld\n",
                 PyUnicode_AsUTF8(code->co_qualname),
                 PyUnicode_AsUTF8(code->co_filename),
                 code->co_firstlineno,
-                (long)(instr - (_Py_CODEUNIT *)code->co_code_adaptive));
+                2 * (long)(initial_instr - (_Py_CODEUNIT *)code->co_code_adaptive));
     }
     return 0;
 
@@ -528,7 +548,7 @@ uop_optimize(
         return trace_length;
     }
     OBJECT_STAT_INC(optimization_traces_created);
-    _PyUOpExecutorObject *executor = (_PyUOpExecutorObject *)_PyObject_New(&UOpExecutor_Type);
+    _PyUOpExecutorObject *executor = PyObject_New(_PyUOpExecutorObject, &UOpExecutor_Type);
     if (executor == NULL) {
         return -1;
     }
@@ -538,18 +558,24 @@ uop_optimize(
     return 1;
 }
 
+static void
+uop_opt_dealloc(PyObject *self) {
+    PyObject_Free(self);
+}
+
 static PyTypeObject UOpOptimizer_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "uop_optimizer",
     .tp_basicsize = sizeof(_PyOptimizerObject),
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .tp_dealloc = uop_opt_dealloc,
 };
 
 PyObject *
 PyUnstable_Optimizer_NewUOpOptimizer(void)
 {
-    _PyOptimizerObject *opt = (_PyOptimizerObject *)_PyObject_New(&UOpOptimizer_Type);
+    _PyOptimizerObject *opt = PyObject_New(_PyOptimizerObject, &UOpOptimizer_Type);
     if (opt == NULL) {
         return NULL;
     }

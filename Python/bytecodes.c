@@ -2234,7 +2234,7 @@ dummy_func(
                 frame = _PyOptimizer_BackEdge(frame, here, next_instr, stack_pointer);
                 if (frame == NULL) {
                     frame = cframe.current_frame;
-                    goto error;
+                    goto resume_with_error;
                 }
                 assert(frame == cframe.current_frame);
                 here[1].cache &= ((1 << OPTIMIZER_BITS_IN_COUNTER) -1);
