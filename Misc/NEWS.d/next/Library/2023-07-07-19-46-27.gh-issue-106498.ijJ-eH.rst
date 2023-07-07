@@ -1,0 +1,1 @@
+Fixed :func:`colorsys.rgb_to_hls` under an extreme input.
