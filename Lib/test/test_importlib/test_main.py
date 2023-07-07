@@ -69,7 +69,7 @@ class BasicTests(fixtures.DistInfoPkg, unittest.TestCase):
         dict(name=''),
     )
     def test_invalid_inputs_to_from_name(self, name):
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValueError):
             Distribution.from_name(name)
 
 

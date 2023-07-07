@@ -436,9 +436,10 @@ class AsyncArguments(IsolatedAsyncioTestCase):
         self.assertEqual(output, 10)
 
     async def test_add_side_effect_exception(self):
+        class CustomError(Exception): pass
         async def addition(var): pass
-        mock = AsyncMock(addition, side_effect=Exception('err'))
-        with self.assertRaises(Exception):
+        mock = AsyncMock(addition, side_effect=CustomError('side-effect'))
+        with self.assertRaisesRegex(CustomError, 'side-effect'):
             await mock(5)
 
     async def test_add_side_effect_coroutine(self):
