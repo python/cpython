@@ -124,7 +124,7 @@ typedef struct PyDecContextObject {
     PyThreadState *tstate;
 } PyDecContextObject;
 
-typedef struct PyDecContextManagerObject {
+typedef struct {
     PyObject_HEAD
     PyObject *local;
     PyObject *global;
