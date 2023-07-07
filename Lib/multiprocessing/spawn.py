@@ -186,14 +186,17 @@ def get_preparation_data(name):
     # Figure out whether to initialise main in the subprocess as a module
     # or through direct execution (or to leave it alone entirely)
     main_module = sys.modules['__main__']
-    main_mod_name = getattr(main_module.__spec__, "name", None)
+    try:
+        main_mod_name = getattr(main_module.__spec__, "name", None)
+    except BaseException:
+        main_mod_name = None
     if main_mod_name is not None:
         d['init_main_from_name'] = main_mod_name
     elif sys.platform != 'win32' or (not WINEXE and not WINSERVICE):
         main_path = getattr(main_module, '__file__', None)
         if main_path is not None:
             if (not os.path.isabs(main_path) and
-                        process.ORIGINAL_DIR is not None):
+                    process.ORIGINAL_DIR is not None):
                 main_path = os.path.join(process.ORIGINAL_DIR, main_path)
             d['init_main_from_path'] = os.path.normpath(main_path)
 
