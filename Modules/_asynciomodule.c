@@ -1502,11 +1502,6 @@ static PyMethodDef FutureType_methods[] = {
     {NULL, NULL}        /* Sentinel */
 };
 
-static PyMemberDef FutureType_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(FutureObj, fut_weakreflist), READONLY},
-    {NULL},
-};
-
 #define FUTURE_COMMON_GETSETLIST                                              \
     {"_state", (getter)FutureObj_get_state, NULL, NULL},                      \
     {"_asyncio_future_blocking", (getter)FutureObj_get_blocking,              \
@@ -1537,7 +1532,6 @@ static PyType_Slot Future_slots[] = {
     {Py_tp_clear, (inquiry)FutureObj_clear},
     {Py_tp_iter, (getiterfunc)future_new_iter},
     {Py_tp_methods, FutureType_methods},
-    {Py_tp_members, FutureType_members},
     {Py_tp_getset, FutureType_getsetlist},
     {Py_tp_init, (initproc)_asyncio_Future___init__},
     {Py_tp_new, PyType_GenericNew},
@@ -1552,7 +1546,8 @@ static PyType_Spec Future_spec = {
     .name = "_asyncio.Future",
     .basicsize = sizeof(FutureObj),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE |
-              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_MANAGED_DICT),
+              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_MANAGED_DICT |
+              Py_TPFLAGS_MANAGED_WEAKREF),
     .slots = Future_slots,
 };
 
@@ -2642,11 +2637,6 @@ static PyMethodDef TaskType_methods[] = {
     {NULL, NULL}        /* Sentinel */
 };
 
-static PyMemberDef TaskType_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(TaskObj, task_weakreflist), READONLY},
-    {NULL},
-};
-
 static PyGetSetDef TaskType_getsetlist[] = {
     FUTURE_COMMON_GETSETLIST
     {"_log_destroy_pending", (getter)TaskObj_get_log_destroy_pending,
@@ -2665,7 +2655,6 @@ static PyType_Slot Task_slots[] = {
     {Py_tp_clear, (inquiry)TaskObj_clear},
     {Py_tp_iter, (getiterfunc)future_new_iter},
     {Py_tp_methods, TaskType_methods},
-    {Py_tp_members, TaskType_members},
     {Py_tp_getset, TaskType_getsetlist},
     {Py_tp_init, (initproc)_asyncio_Task___init__},
     {Py_tp_new, PyType_GenericNew},
@@ -2680,7 +2669,8 @@ static PyType_Spec Task_spec = {
     .name = "_asyncio.Task",
     .basicsize = sizeof(TaskObj),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE |
-              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_MANAGED_DICT),
+              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_MANAGED_DICT |
+              Py_TPFLAGS_MANAGED_WEAKREF),
     .slots = Task_slots,
 };
 
