@@ -1484,7 +1484,7 @@
         TARGET(LOAD_BUILD_CLASS) {
             PyObject *bc;
             #line 1089 "Python/bytecodes.c"
-            if (_PyMapping_LookupItem(BUILTINS(), &_Py_ID(__build_class__), &bc) < 0) goto error;
+            if (PyMapping_GetOptionalItem(BUILTINS(), &_Py_ID(__build_class__), &bc) < 0) goto error;
             if (bc == NULL) {
                 _PyErr_SetString(tstate, PyExc_NameError,
                                  "__build_class__ not found");
@@ -1762,7 +1762,7 @@
                 PyObject *v;
                 #line 1267 "Python/bytecodes.c"
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-                if (_PyMapping_LookupItem(mod_or_class_dict, name, &v) < 0) {
+                if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
                     Py_DECREF(mod_or_class_dict);
                     goto error;
                 }
@@ -1776,7 +1776,7 @@
                         goto error;
                     }
                     else {
-                        if (_PyMapping_LookupItem(BUILTINS(), name, &v) < 0) {
+                        if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
                             goto error;
                         }
                         if (v == NULL) {
@@ -1802,7 +1802,7 @@
                 PyObject *v;
                 #line 1267 "Python/bytecodes.c"
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-                if (_PyMapping_LookupItem(mod_or_class_dict, name, &v) < 0) {
+                if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
                     Py_DECREF(mod_or_class_dict);
                     goto error;
                 }
@@ -1816,7 +1816,7 @@
                         goto error;
                     }
                     else {
-                        if (_PyMapping_LookupItem(BUILTINS(), name, &v) < 0) {
+                        if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
                             goto error;
                         }
                         if (v == NULL) {
@@ -1873,10 +1873,10 @@
                 /* Slow-path if globals or builtins is not a dict */
 
                 /* namespace 1: globals */
-                if (_PyMapping_LookupItem(GLOBALS(), name, &v) < 0) goto error;
+                if (PyMapping_GetOptionalItem(GLOBALS(), name, &v) < 0) goto error;
                 if (v == NULL) {
                     /* namespace 2: builtins */
-                    if (_PyMapping_LookupItem(BUILTINS(), name, &v) < 0) goto error;
+                    if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) goto error;
                     if (v == NULL) {
                         format_exc_check_arg(
                                     tstate, PyExc_NameError,
@@ -1997,7 +1997,7 @@
             assert(class_dict);
             assert(oparg >= 0 && oparg < _PyFrame_GetCode(frame)->co_nlocalsplus);
             name = PyTuple_GET_ITEM(_PyFrame_GetCode(frame)->co_localsplusnames, oparg);
-            if (_PyMapping_LookupItem(class_dict, name, &value) < 0) {
+            if (PyMapping_GetOptionalItem(class_dict, name, &value) < 0) {
                 Py_DECREF(class_dict);
                 goto error;
             }
@@ -2219,7 +2219,7 @@
             }
             else {
                 /* do the same if locals() is not a dict */
-                if (_PyMapping_LookupItem(LOCALS(), &_Py_ID(__annotations__), &ann_dict) < 0) goto error;
+                if (PyMapping_GetOptionalItem(LOCALS(), &_Py_ID(__annotations__), &ann_dict) < 0) goto error;
                 if (ann_dict == NULL) {
                     ann_dict = PyDict_New();
                     if (ann_dict == NULL) goto error;

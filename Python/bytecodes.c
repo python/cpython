@@ -1086,7 +1086,7 @@ dummy_func(
         }
 
         inst(LOAD_BUILD_CLASS, ( -- bc)) {
-            ERROR_IF(_PyMapping_LookupItem(BUILTINS(), &_Py_ID(__build_class__), &bc) < 0, error);
+            ERROR_IF(PyMapping_GetOptionalItem(BUILTINS(), &_Py_ID(__build_class__), &bc) < 0, error);
             if (bc == NULL) {
                 _PyErr_SetString(tstate, PyExc_NameError,
                                  "__build_class__ not found");
@@ -1265,7 +1265,7 @@ dummy_func(
 
         op(_LOAD_FROM_DICT_OR_GLOBALS, (mod_or_class_dict -- v)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            if (_PyMapping_LookupItem(mod_or_class_dict, name, &v) < 0) {
+            if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
                 Py_DECREF(mod_or_class_dict);
                 goto error;
             }
@@ -1279,7 +1279,7 @@ dummy_func(
                     goto error;
                 }
                 else {
-                    if (_PyMapping_LookupItem(BUILTINS(), name, &v) < 0) {
+                    if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
                         goto error;
                     }
                     if (v == NULL) {
@@ -1336,10 +1336,10 @@ dummy_func(
                 /* Slow-path if globals or builtins is not a dict */
 
                 /* namespace 1: globals */
-                ERROR_IF(_PyMapping_LookupItem(GLOBALS(), name, &v) < 0, error);
+                ERROR_IF(PyMapping_GetOptionalItem(GLOBALS(), name, &v) < 0, error);
                 if (v == NULL) {
                     /* namespace 2: builtins */
-                    ERROR_IF(_PyMapping_LookupItem(BUILTINS(), name, &v) < 0, error);
+                    ERROR_IF(PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0, error);
                     if (v == NULL) {
                         format_exc_check_arg(
                                     tstate, PyExc_NameError,
@@ -1416,7 +1416,7 @@ dummy_func(
             assert(class_dict);
             assert(oparg >= 0 && oparg < _PyFrame_GetCode(frame)->co_nlocalsplus);
             name = PyTuple_GET_ITEM(_PyFrame_GetCode(frame)->co_localsplusnames, oparg);
-            if (_PyMapping_LookupItem(class_dict, name, &value) < 0) {
+            if (PyMapping_GetOptionalItem(class_dict, name, &value) < 0) {
                 Py_DECREF(class_dict);
                 goto error;
             }
@@ -1556,7 +1556,7 @@ dummy_func(
             }
             else {
                 /* do the same if locals() is not a dict */
-                ERROR_IF(_PyMapping_LookupItem(LOCALS(), &_Py_ID(__annotations__), &ann_dict) < 0, error);
+                ERROR_IF(PyMapping_GetOptionalItem(LOCALS(), &_Py_ID(__annotations__), &ann_dict) < 0, error);
                 if (ann_dict == NULL) {
                     ann_dict = PyDict_New();
                     ERROR_IF(ann_dict == NULL, error);

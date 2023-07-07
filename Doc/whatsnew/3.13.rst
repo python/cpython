@@ -441,6 +441,14 @@ New Features
   ``NULL`` if the referent is no longer live.
   (Contributed by Victor Stinner in :gh:`105927`.)
 
+* Add :c:func:`PyMapping_GetOptionalItem` and
+  :c:func:`PyMapping_GetOptionalItemString` function: replacements of
+  :c:func:`PyObject_GetAttr` and :c:func:`PyMapping_GetItemString` which don't
+  raise :exc:`KeyError`.
+  It is convenient and faster if the missing key should not be treated
+  as a failure.
+  (Contributed by Serhiy Storchaka in :gh:`106307`.)
+
 * If Python is built in :ref:`debug mode <debug-build>` or :option:`with
   assertions <--with-assertions>`, :c:func:`PyTuple_SET_ITEM` and
   :c:func:`PyList_SET_ITEM` now check the index argument with an assertion.

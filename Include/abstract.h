@@ -810,6 +810,20 @@ PyAPI_FUNC(PyObject *) PyMapping_Items(PyObject *o);
 PyAPI_FUNC(PyObject *) PyMapping_GetItemString(PyObject *o,
                                                const char *key);
 
+/* Replacements of PyObject_GetItem() and PyMapping_GetItemString() which don't
+   raise KeyError.
+
+   Return 1 and set *result != NULL if a key is found.
+   Return 0 and set *result == NULL if a key is not found;
+   a KeyError is silenced.
+   Return -1 and set *result == NULL if an error other than KeyError
+   is raised.
+*/
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+PyAPI_FUNC(int) PyMapping_GetOptionalItem(PyObject *, PyObject *, PyObject **);
+PyAPI_FUNC(int) PyMapping_GetOptionalItemString(PyObject *, const char *, PyObject **);
+#endif
+
 /* Map the string 'key' to the value 'v' in the mapping 'o'.
    Returns -1 on failure.
 

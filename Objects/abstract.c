@@ -200,7 +200,7 @@ PyObject_GetItem(PyObject *o, PyObject *key)
 }
 
 int
-_PyMapping_LookupItem(PyObject *o, PyObject *key, PyObject **pvalue)
+PyMapping_GetOptionalItem(PyObject *o, PyObject *key, PyObject **pvalue)
 {
     if (PyDict_CheckExact(o)) {
         *pvalue = PyDict_GetItemWithError(o, key);  /* borrowed */
@@ -2391,7 +2391,7 @@ PyMapping_GetItemString(PyObject *o, const char *key)
 }
 
 int
-_PyMapping_LookupItemString(PyObject *o, const char *key, PyObject **pvalue)
+PyMapping_GetOptionalItemString(PyObject *o, const char *key, PyObject **pvalue)
 {
     if (key == NULL) {
         null_error();
@@ -2401,7 +2401,7 @@ _PyMapping_LookupItemString(PyObject *o, const char *key, PyObject **pvalue)
     if (okey == NULL) {
         return -1;
     }
-    int r = _PyMapping_LookupItem(o, okey, pvalue);
+    int r = PyMapping_GetOptionalItem(o, okey, pvalue);
     Py_DECREF(okey);
     return r;
 }
