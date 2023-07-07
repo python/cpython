@@ -2237,7 +2237,7 @@
             PyObject *rhs = stack_pointer[-1];
             PyObject *lhs = stack_pointer[-2];
             PyObject *res;
-            #line 3536 "Python/bytecodes.c"
+            #line 3537 "Python/bytecodes.c"
             #if ENABLE_SPECIALIZATION
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
@@ -2255,7 +2255,7 @@
             #line 2256 "Python/executor_cases.c.h"
             Py_DECREF(lhs);
             Py_DECREF(rhs);
-            #line 3551 "Python/bytecodes.c"
+            #line 3552 "Python/bytecodes.c"
             if (res == NULL) goto pop_2_error;
             #line 2261 "Python/executor_cases.c.h"
             STACK_SHRINK(1);
