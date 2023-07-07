@@ -100,9 +100,8 @@ class ClinicWholeFileTest(TestCase):
         # the last line of the block got corrupted.
         c = clinic.Clinic(clinic.CLanguage(None), filename="file")
         raw = "/*[clinic]\nfoo\n[clinic]*/"
-        cooked, _ = c.parse(raw)
-        lines = cooked.splitlines()
-        end_line = lines[2].rstrip()
+        cooked = c.parse(raw).splitlines()
+        end_line = cooked[2].rstrip()
         # this test is redundant, it's just here explicitly to catch
         # the regression test so we don't forget what it looked like
         self.assertNotEqual(end_line, "[clinic]*/[clinic]*/")
@@ -261,7 +260,7 @@ xyz
         c = clinic.Clinic(language, filename="file")
         c.parsers['inert'] = InertParser(c)
         c.parsers['copy'] = CopyParser(c)
-        computed, _ = c.parse(input)
+        computed = c.parse(input)
         self.assertEqual(output, computed)
 
     def test_clinic_1(self):
@@ -643,7 +642,7 @@ class ClinicParserTest(TestCase):
         self.assertEqual(out, expected_msg)
 
     def test_disallowed_grouping__two_top_groups_on_right(self):
-        self.parse_function_should_fail("""
+        out = self.parse_function_should_fail("""
             module foo
             foo.two_top_groups_on_right
                 param: int
@@ -654,9 +653,14 @@ class ClinicParserTest(TestCase):
                 group2 : int
                 ]
         """)
+        msg = (
+            "Function two_top_groups_on_right has an unsupported group "
+            "configuration. (Unexpected state 6.b)"
+        )
+        self.assertIn(msg, out)
 
     def test_disallowed_grouping__parameter_after_group_on_right(self):
-        self.parse_function_should_fail("""
+        out = self.parse_function_should_fail("""
             module foo
             foo.parameter_after_group_on_right
                 param: int
@@ -667,9 +671,14 @@ class ClinicParserTest(TestCase):
                 group2 : int
                 ]
         """)
+        msg = (
+            "Function parameter_after_group_on_right has an unsupported group "
+            "configuration. (Unexpected state 6.a)"
+        )
+        self.assertIn(msg, out)
 
     def test_disallowed_grouping__group_after_parameter_on_left(self):
-        self.parse_function_should_fail("""
+        out = self.parse_function_should_fail("""
             module foo
             foo.group_after_parameter_on_left
                 [
@@ -680,9 +689,14 @@ class ClinicParserTest(TestCase):
                 ]
                 param: int
         """)
+        msg = (
+            "Function group_after_parameter_on_left has an unsupported group "
+            "configuration. (Unexpected state 2.b)"
+        )
+        self.assertIn(msg, out)
 
     def test_disallowed_grouping__empty_group_on_left(self):
-        self.parse_function_should_fail("""
+        out = self.parse_function_should_fail("""
             module foo
             foo.empty_group
                 [
@@ -692,9 +706,14 @@ class ClinicParserTest(TestCase):
                 ]
                 param: int
         """)
+        msg = (
+            "Function empty_group has an empty group.\n"
+            "All groups must contain at least one parameter."
+        )
+        self.assertIn(msg, out)
 
     def test_disallowed_grouping__empty_group_on_right(self):
-        self.parse_function_should_fail("""
+        out = self.parse_function_should_fail("""
             module foo
             foo.empty_group
                 param: int
@@ -704,6 +723,23 @@ class ClinicParserTest(TestCase):
                 group2 : int
                 ]
         """)
+        msg = (
+            "Function empty_group has an empty group.\n"
+            "All groups must contain at least one parameter."
+        )
+        self.assertIn(msg, out)
+
+    def test_disallowed_grouping__no_matching_bracket(self):
+        out = self.parse_function_should_fail("""
+            module foo
+            foo.empty_group
+                param: int
+                ]
+                group2: int
+                ]
+        """)
+        msg = "Function empty_group has a ] without a matching [."
+        self.assertIn(msg, out)
 
     def test_no_parameters(self):
         function = self.parse_function("""
@@ -732,69 +768,72 @@ class ClinicParserTest(TestCase):
         self.assertEqual(1, len(function.parameters))
 
     def test_illegal_module_line(self):
-        self.parse_function_should_fail("""
+        out = self.parse_function_should_fail("""
             module foo
             foo.bar => int
                 /
         """)
+        msg = "Illegal function name: foo.bar => int"
+        self.assertIn(msg, out)
 
     def test_illegal_c_basename(self):
-        self.parse_function_should_fail("""
+        out = self.parse_function_should_fail("""
             module foo
             foo.bar as 935
                 /
         """)
+        msg = "Illegal C basename: 935"
+        self.assertIn(msg, out)
 
     def test_single_star(self):
-        self.parse_function_should_fail("""
+        out = self.parse_function_should_fail("""
             module foo
             foo.bar
                 *
                 *
         """)
+        self.assertIn("Function bar uses '*' more than once.", out)
 
-    def test_parameters_required_after_star_without_initial_parameters_or_docstring(self):
-        self.parse_function_should_fail("""
-            module foo
-            foo.bar
-                *
-        """)
-
-    def test_parameters_required_after_star_without_initial_parameters_with_docstring(self):
-        self.parse_function_should_fail("""
-            module foo
-            foo.bar
-                *
-            Docstring here.
-        """)
-
-    def test_parameters_required_after_star_with_initial_parameters_without_docstring(self):
-        self.parse_function_should_fail("""
-            module foo
-            foo.bar
-                this: int
-                *
-        """)
-
-    def test_parameters_required_after_star_with_initial_parameters_and_docstring(self):
-        self.parse_function_should_fail("""
-            module foo
-            foo.bar
-                this: int
-                *
-            Docstring.
-        """)
+    def test_parameters_required_after_star(self):
+        dataset = (
+            "module foo\nfoo.bar\n  *",
+            "module foo\nfoo.bar\n  *\nDocstring here.",
+            "module foo\nfoo.bar\n  this: int\n  *",
+            "module foo\nfoo.bar\n  this: int\n  *\nDocstring.",
+        )
+        msg = "Function bar specifies '*' without any parameters afterwards."
+        for block in dataset:
+            with self.subTest(block=block):
+                out = self.parse_function_should_fail(block)
+                self.assertIn(msg, out)
 
     def test_single_slash(self):
-        self.parse_function_should_fail("""
+        out = self.parse_function_should_fail("""
             module foo
             foo.bar
                 /
                 /
         """)
+        msg = (
+            "Function bar has an unsupported group configuration. "
+            "(Unexpected state 0.d)"
+        )
+        self.assertIn(msg, out)
+
+    def test_double_slash(self):
+        out = self.parse_function_should_fail("""
+            module foo
+            foo.bar
+                a: int
+                /
+                b: int
+                /
+        """)
+        msg = "Function bar uses '/' more than once."
+        self.assertIn(msg, out)
 
     def test_mix_star_and_slash(self):
-        self.parse_function_should_fail("""
+        out = self.parse_function_should_fail("""
             module foo
             foo.bar
                x: int
@@ -803,14 +842,24 @@ class ClinicParserTest(TestCase):
                z: int
                /
         """)
+        msg = (
+            "Function bar mixes keyword-only and positional-only parameters, "
+            "which is unsupported."
+        )
+        self.assertIn(msg, out)
 
     def test_parameters_not_permitted_after_slash_for_now(self):
-        self.parse_function_should_fail("""
+        out = self.parse_function_should_fail("""
             module foo
             foo.bar
                 /
                 x: int
         """)
+        msg = (
+            "Function bar has an unsupported group configuration. "
+            "(Unexpected state 0.d)"
+        )
+        self.assertIn(msg, out)
 
     def test_parameters_no_more_than_one_vararg(self):
         expected_msg = (
@@ -1039,15 +1088,16 @@ class ClinicExternalTest(TestCase):
     maxDiff = None
 
     def test_external(self):
+        CLINIC_TEST = 'clinic.test.c'
         # bpo-42398: Test that the destination file is left unchanged if the
         # content does not change. Moreover, check also that the file
         # modification time does not change in this case.
-        source = support.findfile('clinic.test')
+        source = support.findfile(CLINIC_TEST)
         with open(source, 'r', encoding='utf-8') as f:
             orig_contents = f.read()
 
         with os_helper.temp_dir() as tmp_dir:
-            testfile = os.path.join(tmp_dir, 'clinic.test.c')
+            testfile = os.path.join(tmp_dir, CLINIC_TEST)
             with open(testfile, 'w', encoding='utf-8') as f:
                 f.write(orig_contents)
             old_mtime_ns = os.stat(testfile).st_mtime_ns
@@ -1534,6 +1584,276 @@ class ClinicFunctionalTest(unittest.TestCase):
             with self.subTest(name=name):
                 func = getattr(ac_tester, name)
                 self.assertEqual(func(), name)
+
+
+class PermutationTests(unittest.TestCase):
+    """Test permutation support functions."""
+
+    def test_permute_left_option_groups(self):
+        expected = (
+            (),
+            (3,),
+            (2, 3),
+            (1, 2, 3),
+        )
+        data = list(zip([1, 2, 3]))  # Generate a list of 1-tuples.
+        actual = tuple(clinic.permute_left_option_groups(data))
+        self.assertEqual(actual, expected)
+
+    def test_permute_right_option_groups(self):
+        expected = (
+            (),
+            (1,),
+            (1, 2),
+            (1, 2, 3),
+        )
+        data = list(zip([1, 2, 3]))  # Generate a list of 1-tuples.
+        actual = tuple(clinic.permute_right_option_groups(data))
+        self.assertEqual(actual, expected)
+
+    def test_permute_optional_groups(self):
+        empty = {
+            "left": (), "required": (), "right": (),
+            "expected": ((),),
+        }
+        noleft1 = {
+            "left": (), "required": ("b",), "right": ("c",),
+            "expected": (
+                ("b",),
+                ("b", "c"),
+            ),
+        }
+        noleft2 = {
+            "left": (), "required": ("b", "c",), "right": ("d",),
+            "expected": (
+                ("b", "c"),
+                ("b", "c", "d"),
+            ),
+        }
+        noleft3 = {
+            "left": (), "required": ("b", "c",), "right": ("d", "e"),
+            "expected": (
+                ("b", "c"),
+                ("b", "c", "d"),
+                ("b", "c", "d", "e"),
+            ),
+        }
+        noright1 = {
+            "left": ("a",), "required": ("b",), "right": (),
+            "expected": (
+                ("b",),
+                ("a", "b"),
+            ),
+        }
+        noright2 = {
+            "left": ("a",), "required": ("b", "c"), "right": (),
+            "expected": (
+                ("b", "c"),
+                ("a", "b", "c"),
+            ),
+        }
+        noright3 = {
+            "left": ("a", "b"), "required": ("c",), "right": (),
+            "expected": (
+                ("c",),
+                ("b", "c"),
+                ("a", "b", "c"),
+            ),
+        }
+        leftandright1 = {
+            "left": ("a",), "required": ("b",), "right": ("c",),
+            "expected": (
+                ("b",),
+                ("a", "b"),  # Prefer left.
+                ("a", "b", "c"),
+            ),
+        }
+        leftandright2 = {
+            "left": ("a", "b"), "required": ("c", "d"), "right": ("e", "f"),
+            "expected": (
+                ("c", "d"),
+                ("b", "c", "d"),       # Prefer left.
+                ("a", "b", "c", "d"),  # Prefer left.
+                ("a", "b", "c", "d", "e"),
+                ("a", "b", "c", "d", "e", "f"),
+            ),
+        }
+        dataset = (
+            empty,
+            noleft1, noleft2, noleft3,
+            noright1, noright2, noright3,
+            leftandright1, leftandright2,
+        )
+        for params in dataset:
+            with self.subTest(**params):
+                left, required, right, expected = params.values()
+                permutations = clinic.permute_optional_groups(left, required, right)
+                actual = tuple(permutations)
+                self.assertEqual(actual, expected)
+
+
+class FormatHelperTests(unittest.TestCase):
+
+    def test_strip_leading_and_trailing_blank_lines(self):
+        dataset = (
+            # Input lines, expected output.
+            ("a\nb",            "a\nb"),
+            ("a\nb\n",          "a\nb"),
+            ("a\nb ",           "a\nb"),
+            ("\na\nb\n\n",      "a\nb"),
+            ("\n\na\nb\n\n",    "a\nb"),
+            ("\n\na\n\nb\n\n",  "a\n\nb"),
+            # Note, leading whitespace is preserved:
+            (" a\nb",               " a\nb"),
+            (" a\nb ",              " a\nb"),
+            (" \n \n a\nb \n \n ",  " a\nb"),
+        )
+        for lines, expected in dataset:
+            with self.subTest(lines=lines, expected=expected):
+                out = clinic.strip_leading_and_trailing_blank_lines(lines)
+                self.assertEqual(out, expected)
+
+    def test_normalize_snippet(self):
+        snippet = """
+            one
+            two
+            three
+        """
+
+        # Expected outputs:
+        zero_indent = (
+            "one\n"
+            "two\n"
+            "three"
+        )
+        four_indent = (
+            "    one\n"
+            "    two\n"
+            "    three"
+        )
+        eight_indent = (
+            "        one\n"
+            "        two\n"
+            "        three"
+        )
+        expected_outputs = {0: zero_indent, 4: four_indent, 8: eight_indent}
+        for indent, expected in expected_outputs.items():
+            with self.subTest(indent=indent):
+                actual = clinic.normalize_snippet(snippet, indent=indent)
+                self.assertEqual(actual, expected)
+
+    def test_accumulator(self):
+        acc = clinic.text_accumulator()
+        self.assertEqual(acc.output(), "")
+        acc.append("a")
+        self.assertEqual(acc.output(), "a")
+        self.assertEqual(acc.output(), "")
+        acc.append("b")
+        self.assertEqual(acc.output(), "b")
+        self.assertEqual(acc.output(), "")
+        acc.append("c")
+        acc.append("d")
+        self.assertEqual(acc.output(), "cd")
+        self.assertEqual(acc.output(), "")
+
+    def test_quoted_for_c_string(self):
+        dataset = (
+            # input,    expected
+            (r"abc",    r"abc"),
+            (r"\abc",   r"\\abc"),
+            (r"\a\bc",  r"\\a\\bc"),
+            (r"\a\\bc", r"\\a\\\\bc"),
+            (r'"abc"',  r'\"abc\"'),
+            (r"'a'",    r"\'a\'"),
+        )
+        for line, expected in dataset:
+            with self.subTest(line=line, expected=expected):
+                out = clinic.quoted_for_c_string(line)
+                self.assertEqual(out, expected)
+
+    def test_rstrip_lines(self):
+        lines = (
+            "a \n"
+            "b\n"
+            " c\n"
+            " d \n"
+        )
+        expected = (
+            "a\n"
+            "b\n"
+            " c\n"
+            " d\n"
+        )
+        out = clinic.rstrip_lines(lines)
+        self.assertEqual(out, expected)
+
+    def test_format_escape(self):
+        line = "{}, {a}"
+        expected = "{{}}, {{a}}"
+        out = clinic.format_escape(line)
+        self.assertEqual(out, expected)
+
+    def test_indent_all_lines(self):
+        # Blank lines are expected to be unchanged.
+        self.assertEqual(clinic.indent_all_lines("", prefix="bar"), "")
+
+        lines = (
+            "one\n"
+            "two"  # The missing newline is deliberate.
+        )
+        expected = (
+            "barone\n"
+            "bartwo"
+        )
+        out = clinic.indent_all_lines(lines, prefix="bar")
+        self.assertEqual(out, expected)
+
+        # If last line is empty, expect it to be unchanged.
+        lines = (
+            "\n"
+            "one\n"
+            "two\n"
+            ""
+        )
+        expected = (
+            "bar\n"
+            "barone\n"
+            "bartwo\n"
+            ""
+        )
+        out = clinic.indent_all_lines(lines, prefix="bar")
+        self.assertEqual(out, expected)
+
+    def test_suffix_all_lines(self):
+        # Blank lines are expected to be unchanged.
+        self.assertEqual(clinic.suffix_all_lines("", suffix="foo"), "")
+
+        lines = (
+            "one\n"
+            "two"  # The missing newline is deliberate.
+        )
+        expected = (
+            "onefoo\n"
+            "twofoo"
+        )
+        out = clinic.suffix_all_lines(lines, suffix="foo")
+        self.assertEqual(out, expected)
+
+        # If last line is empty, expect it to be unchanged.
+        lines = (
+            "\n"
+            "one\n"
+            "two\n"
+            ""
+        )
+        expected = (
+            "foo\n"
+            "onefoo\n"
+            "twofoo\n"
+            ""
+        )
+        out = clinic.suffix_all_lines(lines, suffix="foo")
+        self.assertEqual(out, expected)
 
 
 if __name__ == "__main__":

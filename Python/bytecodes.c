@@ -2234,7 +2234,7 @@ dummy_func(
                 frame = _PyOptimizer_BackEdge(frame, here, next_instr, stack_pointer);
                 if (frame == NULL) {
                     frame = cframe.current_frame;
-                    goto error;
+                    goto resume_with_error;
                 }
                 assert(frame == cframe.current_frame);
                 here[1].cache &= ((1 << OPTIMIZER_BITS_IN_COUNTER) -1);
@@ -2985,9 +2985,6 @@ dummy_func(
                 goto error;
             }
             Py_DECREF(tp);
-            if (_Py_EnterRecursivePy(tstate)) {
-                goto exit_unwind;
-            }
             _PyInterpreterFrame *shim = _PyFrame_PushTrampolineUnchecked(
                 tstate, (PyCodeObject *)&_Py_InitCleanup, 1, 0);
             assert(_PyCode_CODE((PyCodeObject *)shim->f_executable)[1].op.code == EXIT_INIT_CHECK);
@@ -3011,6 +3008,10 @@ dummy_func(
             shim->previous = frame;
             frame = cframe.current_frame = init_frame;
             CALL_STAT_INC(inlined_py_calls);
+            /* Account for pushing the extra frame.
+             * We don't check recursion depth here,
+             * as it will be checked after start_frame */
+            tstate->py_recursion_remaining--;
             goto start_frame;
         }
 
