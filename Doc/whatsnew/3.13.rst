@@ -620,8 +620,8 @@ Pending Removal in Python 3.15
 * :c:func:`PyImport_ImportModuleNoBlock`: use :c:func:`PyImport_ImportModule`.
 * :c:func:`PyWeakref_GET_OBJECT`: use :c:func:`PyWeakref_GetRef` instead.
 * :c:func:`PyWeakref_GetObject`: use :c:func:`PyWeakref_GetRef` instead.
-* :c:type:`Py_UNICODE_WIDE` type: use :c:expr:`wchar_t` instead.
-* :c:type:`Py_UNICODE` type: use :c:expr:`wchar_t` instead.
+* :c:type:`!Py_UNICODE_WIDE` type: use ``wchar_t`` instead.
+* :c:type:`Py_UNICODE` type: use ``wchar_t`` instead.
 * Python initialization functions:
 
   * :c:func:`PySys_ResetWarnOptions`: clear :data:`sys.warnoptions` and
@@ -640,21 +640,22 @@ Pending Removal in Future Versions
 The following APIs were deprecated in earlier Python versions and will be
 removed, although there is currently no date scheduled for their removal.
 
-* :c:data:`Py_TPFLAGS_HAVE_FINALIZE`: no needed since Python 3.8.
+* :const:`Py_TPFLAGS_HAVE_FINALIZE`: no needed since Python 3.8.
 * :c:func:`PyErr_Fetch`: use :c:func:`PyErr_GetRaisedException`.
 * :c:func:`PyErr_NormalizeException`: use :c:func:`PyErr_GetRaisedException`.
 * :c:func:`PyErr_Restore`: use :c:func:`PyErr_SetRaisedException`.
 * :c:func:`PyModule_GetFilename`: use :c:func:`PyModule_GetFilenameObject`.
 * :c:func:`PyOS_AfterFork`: use :c:func:`PyOS_AfterFork_Child()`.
 * :c:func:`PySlice_GetIndicesEx`.
-* :c:func:`PyUnicode_AsDecodedObject`.
-* :c:func:`PyUnicode_AsDecodedUnicode`.
-* :c:func:`PyUnicode_AsEncodedObject`.
-* :c:func:`PyUnicode_AsEncodedUnicode`.
+* :c:func:`!PyUnicode_AsDecodedObject`.
+* :c:func:`!PyUnicode_AsDecodedUnicode`.
+* :c:func:`!PyUnicode_AsEncodedObject`.
+* :c:func:`!PyUnicode_AsEncodedUnicode`.
 * :c:func:`PyUnicode_READY`: not needed since Python 3.12.
-* :c:func:`_PyErr_ChainExceptions`
-* :c:member:`PyBytesObject.ob_shash` member: call :c:func:`PyObject_Hash` instead.
-* :c:member:`PyDictObject.ma_version_tag` member.
+* :c:func:`!_PyErr_ChainExceptions`.
+* :c:member:`!PyBytesObject.ob_shash` member:
+  call :c:func:`PyObject_Hash` instead.
+* :c:member:`!PyDictObject.ma_version_tag` member.
 * Global configuration variables:
 
   * :c:var:`Py_DebugFlag`: use :c:member:`PyConfig.parser_debug`
