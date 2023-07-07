@@ -2458,7 +2458,7 @@ class Function:
     module: Module
     cls: Class | None = None
     c_basename: str | None = None
-    full_name: str | None
+    full_name: str | None = None
     return_converter: CReturnConverter
     return_annotation: object = inspect.Signature.empty
     docstring: str = ''
