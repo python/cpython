@@ -37,7 +37,8 @@ Object Protocol
 
       Exceptions that occur when this calls :meth:`~object.__getattr__` and
       :meth:`~object.__getattribute__` methods are silently ignored.
-      For proper error handling, use :c:func:`PyObject_GetAttr` instead.
+      For proper error handling, use :c:func:`PyObject_GetOptionalAttr` or
+      :c:func:`PyObject_GetAttr` instead.
 
 
 .. c:function:: int PyObject_HasAttrString(PyObject *o, const char *attr_name)
@@ -60,6 +61,22 @@ Object Protocol
    value on success, or ``NULL`` on failure.  This is the equivalent of the Python
    expression ``o.attr_name``.
 
+   If the missing attribute should not be treated as a failure, you can use
+   :c:func:`PyObject_GetOptionalAttr` instead.
+
+
+.. c:function:: int PyObject_GetOptionalAttr(PyObject *obj, PyObject *attr_name, PyObject **result);
+
+   Replacement of :c:func:`PyObject_GetAttr` which doesn't raise
+   :exc:`AttributeError`.
+
+   Return ``1`` and set ``*result != NULL`` if an attribute is found.
+   Return ``0`` and set ``*result == NULL`` if an attribute is not found;
+   an :exc:`AttributeError` is silenced.
+   Return ``-1`` and set ``*result == NULL`` if an error other than
+   :exc:`AttributeError` is raised.
+
+   .. versionadded:: 3.13
 
 .. c:function:: PyObject* PyObject_GetAttrString(PyObject *o, const char *attr_name)
 

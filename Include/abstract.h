@@ -62,6 +62,20 @@ extern "C" {
 
 /* Implemented elsewhere:
 
+   int PyObject_GetOptionalAttr(PyObject *obj, PyObject *attr_name, PyObject **result);
+
+   Replacement of PyObject_GetAttr() which doesn't raise AttributeError.
+
+   Return 1 and set *result != NULL if an attribute is found.
+   Return 0 and set *result == NULL if an attribute is not found;
+   an AttributeError is silenced.
+   Return -1 and set *result == NULL if an error other than AttributeError
+   is raised.
+*/
+
+
+/* Implemented elsewhere:
+
    int PyObject_SetAttrString(PyObject *o, const char *attr_name, PyObject *v);
 
    Set the value of the attribute named attr_name, for object 'o',

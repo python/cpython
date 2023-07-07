@@ -2423,7 +2423,7 @@ import_from(PyThreadState *tstate, PyObject *v, PyObject *name)
     PyObject *x;
     PyObject *fullmodname, *pkgname, *pkgpath, *pkgname_or_unknown, *errmsg;
 
-    if (_PyObject_LookupAttr(v, name, &x) != 0) {
+    if (PyObject_GetOptionalAttr(v, name, &x) != 0) {
         return x;
     }
     /* Issue #17636: in case this failed because of a circular relative
