@@ -637,6 +637,9 @@ Pending Removal in Python 3.15
 Pending Removal in Future Versions
 ----------------------------------
 
+The following APIs were deprecated in earlier Python versions and will be
+removed, although there is currently no date scheduled for their removal.
+
 * :c:data:`Py_TPFLAGS_HAVE_FINALIZE`: no needed since Python 3.8.
 * :c:func:`PyErr_Fetch`: use :c:func:`PyErr_GetRaisedException`.
 * :c:func:`PyErr_NormalizeException`: use :c:func:`PyErr_GetRaisedException`.
