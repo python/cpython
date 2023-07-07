@@ -166,7 +166,7 @@ we also call *flavours*:
    :class:`PurePath` and :class:`Path`. It specifies the implementation of
    :mod:`os.path` to use for low-level path operations. It may be left unset
    or set to :mod:`os.path` to use the current system's flavour, or set to
-   :mod:`posixpath` or :mod:`ntpath` to use POSIX or Windows path semantics.
+   ``posixpath`` or ``ntpath`` to use POSIX or Windows path semantics.
 
    .. versionchanged:: 3.13
       The *flavour* parameter was added.
@@ -315,7 +315,7 @@ Pure paths provide the following methods and properties:
 .. attribute:: PurePath.flavour
 
    The implementation of :mod:`os.path` used for low-level path operations;
-   either :mod:`posixpath` or :mod:`ntpath`.
+   either ``posixpath`` or ``ntpath``.
 
    .. versionchanged:: 3.13
 

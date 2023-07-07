@@ -2410,10 +2410,12 @@ class PathTest(unittest.TestCase):
         self.assertIs(type(p), expected)
 
     def test_unsupported_flavour(self):
-        if (os.name == 'nt') == issubclass(self.cls, pathlib.PureWindowsPath):
-            self.skipTest("path flavour is supported")
-        else:
+        if issubclass(self.cls, pathlib.PureWindowsPath) and os.name != 'nt':
             self.assertRaises(pathlib.UnsupportedOperation, self.cls)
+        elif issubclass(self.cls, pathlib.PurePosixPath) and os.name == 'nt':
+            self.assertRaises(pathlib.UnsupportedOperation, self.cls)
+        else:
+            self.skipTest("path flavour is supported")
 
     def _test_cwd(self, p):
         q = self.cls(os.getcwd())
