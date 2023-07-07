@@ -17,7 +17,7 @@
 #include "pycore_typevarobject.h" // _PyTypeAlias_Type, _Py_initialize_generic
 #include "pycore_typeobject.h"    // _PyBufferWrapper_Type
 #include "pycore_unionobject.h"   // _PyUnion_Type
-#include "pycore_interpreteridobject.h"  // _PyInterpreterID_Type
+#include "interpreteridobject.h"  // _PyInterpreterID_Type
 
 #ifdef Py_LIMITED_API
    // Prevent recursive call _Py_IncRef() <=> Py_INCREF()
@@ -1690,13 +1690,15 @@ _dir_locals(void)
     PyObject *names;
     PyObject *locals;
 
-    locals = PyEval_GetLocals();
+    locals = _PyEval_GetFrameLocals();
     if (locals == NULL)
         return NULL;
 
     names = PyMapping_Keys(locals);
-    if (!names)
+    Py_DECREF(locals);
+    if (!names) {
         return NULL;
+    }
     if (!PyList_Check(names)) {
         PyErr_Format(PyExc_TypeError,
             "dir(): expected keys() of locals to be a list, "
@@ -1708,7 +1710,6 @@ _dir_locals(void)
         Py_DECREF(names);
         return NULL;
     }
-    /* the locals don't need to be DECREF'd */
     return names;
 }
 

@@ -23,7 +23,6 @@ from shutil import (make_archive,
                     unregister_unpack_format, get_unpack_formats,
                     SameFileError, _GiveupOnFastCopy)
 import tarfile
-import warnings
 import zipfile
 try:
     import posix

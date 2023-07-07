@@ -4,8 +4,13 @@
  * recently, it was largely rewritten by Guido van Rossum.
  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 /* Standard definitions */
 #include "Python.h"
+#include "pycore_pylifecycle.h"   // _Py_SetLocaleFromEnv()
 
 #include <errno.h>
 #include <signal.h>
@@ -1015,7 +1020,7 @@ static int
 #if defined(_RL_FUNCTION_TYPEDEF)
 on_startup_hook(void)
 #else
-on_startup_hook()
+on_startup_hook(void)
 #endif
 {
     int r;
@@ -1030,7 +1035,7 @@ static int
 #if defined(_RL_FUNCTION_TYPEDEF)
 on_pre_input_hook(void)
 #else
-on_pre_input_hook()
+on_pre_input_hook(void)
 #endif
 {
     int r;

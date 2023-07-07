@@ -28,8 +28,6 @@ jobs:
         cache-dependency-path: 'Doc/requirements.txt'
     - name: 'Install build dependencies'
       run: make -C Doc/ venv
-    - name: 'Check documentation'
-      run: make -C Doc/ check
     - name: 'Build HTML documentation'
       run: make -C Doc/ SPHINXOPTS="-q" SPHINXERRORHANDLING="-W --keep-going" html
 
@@ -40,12 +38,14 @@ jobs:
       uses: Ana06/get-changed-files@v2.2.0
       with:
         filter: "Doc/**"
+        format: csv  # works for paths with spaces
     - name: 'Build changed files in nit-picky mode'
       if: github.event_name == 'pull_request'
       continue-on-error: true
       run: |
+        set -Eeuo pipefail
         # Mark files the pull request modified
-        touch ${{ steps.changed_files.outputs.added_modified }}
+        python Doc/tools/touch-clean-files.py --clean '${{ steps.changed_files.outputs.added_modified }}'
         # Build docs with the '-n' (nit-picky) option; convert warnings to annotations
         make -C Doc/ PYTHON=../python SPHINXOPTS="-q -n --keep-going" html 2>&1 |
             python Doc/tools/warnings-to-gh-actions.py
@@ -59,8 +59,6 @@ jobs:
         make -C Doc/ PYTHON=../python SPHINXOPTS="-q -n -W --keep-going" html 2>&1
 
   # This build doesn't use problem matchers or check annotations
-  # It also does not run 'make check', as sphinx-lint is not installed into the
-  # environment.
   build_doc_oldest_supported_sphinx:
     name: 'Docs (Oldest Sphinx)'
     runs-on: ubuntu-latest

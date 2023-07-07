@@ -517,7 +517,7 @@ PyBuffer_GetPointer(const Py_buffer *view, const Py_ssize_t *indices)
 }
 
 
-void
+static void
 _Py_add_one_to_index_F(int nd, Py_ssize_t *index, const Py_ssize_t *shape)
 {
     int k;
@@ -533,7 +533,7 @@ _Py_add_one_to_index_F(int nd, Py_ssize_t *index, const Py_ssize_t *shape)
     }
 }
 
-void
+static void
 _Py_add_one_to_index_C(int nd, Py_ssize_t *index, const Py_ssize_t *shape)
 {
     int k;
@@ -2905,81 +2905,4 @@ PyIter_Send(PyObject *iter, PyObject *arg, PyObject **result)
         return PYGEN_RETURN;
     }
     return PYGEN_ERROR;
-}
-
-/*
- * Flatten a sequence of bytes() objects into a C array of
- * NULL terminated string pointers with a NULL char* terminating the array.
- * (ie: an argv or env list)
- *
- * Memory allocated for the returned list is allocated using PyMem_Malloc()
- * and MUST be freed by _Py_FreeCharPArray().
- */
-char *const *
-_PySequence_BytesToCharpArray(PyObject* self)
-{
-    char **array;
-    Py_ssize_t i, argc;
-    PyObject *item = NULL;
-    Py_ssize_t size;
-
-    argc = PySequence_Size(self);
-    if (argc == -1)
-        return NULL;
-
-    assert(argc >= 0);
-
-    if ((size_t)argc > (PY_SSIZE_T_MAX-sizeof(char *)) / sizeof(char *)) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-
-    array = PyMem_Malloc((argc + 1) * sizeof(char *));
-    if (array == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    for (i = 0; i < argc; ++i) {
-        char *data;
-        item = PySequence_GetItem(self, i);
-        if (item == NULL) {
-            /* NULL terminate before freeing. */
-            array[i] = NULL;
-            goto fail;
-        }
-        /* check for embedded null bytes */
-        if (PyBytes_AsStringAndSize(item, &data, NULL) < 0) {
-            /* NULL terminate before freeing. */
-            array[i] = NULL;
-            goto fail;
-        }
-        size = PyBytes_GET_SIZE(item) + 1;
-        array[i] = PyMem_Malloc(size);
-        if (!array[i]) {
-            PyErr_NoMemory();
-            goto fail;
-        }
-        memcpy(array[i], data, size);
-        Py_DECREF(item);
-    }
-    array[argc] = NULL;
-
-    return array;
-
-fail:
-    Py_XDECREF(item);
-    _Py_FreeCharPArray(array);
-    return NULL;
-}
-
-
-/* Free's a NULL terminated char** array of C strings. */
-void
-_Py_FreeCharPArray(char *const array[])
-{
-    Py_ssize_t i;
-    for (i = 0; array[i] != NULL; ++i) {
-        PyMem_Free(array[i]);
-    }
-    PyMem_Free((void*)array);
 }

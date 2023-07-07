@@ -1,4 +1,3 @@
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_long.h"          // _PyLong_GetZero()
@@ -98,8 +97,8 @@ class itertools.pairwise "pairwiseobject *" "clinic_state()->pairwise_type"
 #define ITERTOOL_PICKLE_DEPRECATION                                           \
     if (PyErr_WarnEx(                                                         \
             PyExc_DeprecationWarning,                                         \
-            "Itertool pickle/copy/deepcopy support "                          \
-            "will be removed in a Python 3.14.", 1) < 0) {                    \
+            "Pickle, copy, and deepcopy support will be "                     \
+            "removed from itertools in Python 3.14.", 1) < 0) {               \
         return NULL;                                                          \
     }
 

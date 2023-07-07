@@ -9,6 +9,8 @@ extern "C" {
 #endif
 
 
+#include "pycore_unicodeobject.h" // _PyUnicodeWriter
+
 /* runtime lifecycle */
 
 extern void _PyFloat_InitState(PyInterpreterState *);

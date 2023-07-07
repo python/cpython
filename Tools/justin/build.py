@@ -551,6 +551,7 @@ class Compiler:
         {
             "CALL_BOUND_METHOD_EXACT_ARGS",
             "CALL_FUNCTION_EX",
+            "CALL_NO_KW_ALLOC_AND_ENTER_INIT",
             "CHECK_EG_MATCH",
             "CHECK_EXC_MATCH",
             "CLEANUP_THROW",
@@ -560,6 +561,7 @@ class Compiler:
             "DELETE_NAME",
             "DICT_MERGE",
             "END_ASYNC_FOR",
+            "ENTER_EXECUTOR",  # XXX: Is this a problem?
             "EXTENDED_ARG",  # XXX: Only because we don't handle extended args correctly...
             "FOR_ITER",
             "FORMAT_VALUE",
@@ -602,6 +604,7 @@ class Compiler:
             "RAISE_VARARGS",
             "RERAISE",
             "SEND",
+            "SET_FUNCTION_ATTRIBUTE",
             "STORE_ATTR_WITH_HINT",
             "UNPACK_EX",
             "UNPACK_SEQUENCE",

@@ -895,6 +895,9 @@ TLS Upgrade
    object only because the coder caches *protocol*-side data and sporadically
    exchanges extra TLS session packets with *transport*.
 
+   In some situations (e.g. when the passed transport is already closing) this
+   may return ``None``.
+
    Parameters:
 
    * *transport* and *protocol* instances that methods like

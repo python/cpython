@@ -101,7 +101,6 @@ bytes(cdata)
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
-#define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
 // windows.h must be included before pycore internal headers
@@ -238,20 +237,29 @@ PyDict_SetItemProxy(PyObject *dict, PyObject *key, PyObject *item)
     return result;
 }
 
-PyObject *
-PyDict_GetItemProxy(PyObject *dict, PyObject *key)
+static int
+_PyDict_GetItemProxy(PyObject *dict, PyObject *key, PyObject **presult)
 {
-    PyObject *result;
     PyObject *item = PyDict_GetItemWithError(dict, key);
+    if (item == NULL) {
+        if (PyErr_Occurred()) {
+            return -1;
+        }
+        *presult = NULL;
+        return 0;
+    }
 
-    if (item == NULL)
-        return NULL;
-    if (!PyWeakref_CheckProxy(item))
-        return item;
-    result = PyWeakref_GET_OBJECT(item);
-    if (result == Py_None)
-        return NULL;
-    return result;
+    if (!PyWeakref_CheckProxy(item)) {
+        *presult = Py_NewRef(item);
+        return 0;
+    }
+    PyObject *ref;
+    if (PyWeakref_GetRef(item, &ref) < 0) {
+        return -1;
+    }
+    // ref is NULL if the referenced object was destroyed
+    *presult = ref;
+    return 0;
 }
 
 /******************************************************************/
@@ -4832,7 +4840,6 @@ PyCArrayType_from_ctype(PyObject *itemtype, Py_ssize_t length)
 {
     static PyObject *cache;
     PyObject *key;
-    PyObject *result;
     char name[256];
     PyObject *len;
 
@@ -4848,15 +4855,15 @@ PyCArrayType_from_ctype(PyObject *itemtype, Py_ssize_t length)
     Py_DECREF(len);
     if (!key)
         return NULL;
-    result = PyDict_GetItemProxy(cache, key);
-    if (result) {
-        Py_INCREF(result);
-        Py_DECREF(key);
-        return result;
-    }
-    else if (PyErr_Occurred()) {
+
+    PyObject *result;
+    if (_PyDict_GetItemProxy(cache, key, &result) < 0) {
         Py_DECREF(key);
         return NULL;
+    }
+    if (result) {
+        Py_DECREF(key);
+        return result;
     }
 
     if (!PyType_Check(itemtype)) {
