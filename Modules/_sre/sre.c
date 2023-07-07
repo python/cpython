@@ -1541,6 +1541,7 @@ _sre_template_impl(PyObject *module, PyObject *pattern, PyObject *template)
         return NULL;
     self->chunks = 1 + 2*n;
     self->literal = Py_NewRef(PyList_GET_ITEM(template, 0));
+    memset(self->items, 0, sizeof(self->items[0]) * n);
     for (Py_ssize_t i = 0; i < n; i++) {
         Py_ssize_t index = PyLong_AsSsize_t(PyList_GET_ITEM(template, 2*i+1));
         if (index == -1 && PyErr_Occurred()) {
