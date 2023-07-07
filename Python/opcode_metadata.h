@@ -934,6 +934,12 @@ struct opcode_macro_expansion {
     struct { int16_t uop; int8_t size; int8_t offset; } uops[8];
 };
 
+#define OPARG_FULL 0
+#define OPARG_CACHE_1 1
+#define OPARG_CACHE_2 2
+#define OPARG_CACHE_4 4
+#define OPARG_TOP 5
+#define OPARG_BOTTOM 6
 
 #define OPCODE_METADATA_FMT(OP) (_PyOpcode_opcode_metadata[(OP)].instr_format)
 #define SAME_OPCODE_METADATA(OP1, OP2) \
@@ -1165,14 +1171,18 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] = {
     [LOAD_FAST_CHECK] = { .nuops = 1, .uops = { { LOAD_FAST_CHECK, 0, 0 } } },
     [LOAD_FAST] = { .nuops = 1, .uops = { { LOAD_FAST, 0, 0 } } },
     [LOAD_FAST_AND_CLEAR] = { .nuops = 1, .uops = { { LOAD_FAST_AND_CLEAR, 0, 0 } } },
+    [LOAD_FAST_LOAD_FAST] = { .nuops = 2, .uops = { { LOAD_FAST, 5, 0 }, { LOAD_FAST, 6, 0 } } },
     [LOAD_CONST] = { .nuops = 1, .uops = { { LOAD_CONST, 0, 0 } } },
     [STORE_FAST] = { .nuops = 1, .uops = { { STORE_FAST, 0, 0 } } },
+    [STORE_FAST_LOAD_FAST] = { .nuops = 2, .uops = { { STORE_FAST, 5, 0 }, { LOAD_FAST, 6, 0 } } },
+    [STORE_FAST_STORE_FAST] = { .nuops = 2, .uops = { { STORE_FAST, 5, 0 }, { STORE_FAST, 6, 0 } } },
     [POP_TOP] = { .nuops = 1, .uops = { { POP_TOP, 0, 0 } } },
     [PUSH_NULL] = { .nuops = 1, .uops = { { PUSH_NULL, 0, 0 } } },
     [END_FOR] = { .nuops = 2, .uops = { { POP_TOP, 0, 0 }, { POP_TOP, 0, 0 } } },
     [END_SEND] = { .nuops = 1, .uops = { { END_SEND, 0, 0 } } },
     [UNARY_NEGATIVE] = { .nuops = 1, .uops = { { UNARY_NEGATIVE, 0, 0 } } },
     [UNARY_NOT] = { .nuops = 1, .uops = { { UNARY_NOT, 0, 0 } } },
+    [TO_BOOL] = { .nuops = 1, .uops = { { TO_BOOL, 0, 0 } } },
     [TO_BOOL_BOOL] = { .nuops = 1, .uops = { { TO_BOOL_BOOL, 0, 0 } } },
     [TO_BOOL_INT] = { .nuops = 1, .uops = { { TO_BOOL_INT, 0, 0 } } },
     [TO_BOOL_LIST] = { .nuops = 1, .uops = { { TO_BOOL_LIST, 0, 0 } } },
@@ -1187,6 +1197,7 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] = {
     [BINARY_OP_ADD_FLOAT] = { .nuops = 2, .uops = { { _GUARD_BOTH_FLOAT, 0, 0 }, { _BINARY_OP_ADD_FLOAT, 0, 0 } } },
     [BINARY_OP_SUBTRACT_FLOAT] = { .nuops = 2, .uops = { { _GUARD_BOTH_FLOAT, 0, 0 }, { _BINARY_OP_SUBTRACT_FLOAT, 0, 0 } } },
     [BINARY_OP_ADD_UNICODE] = { .nuops = 2, .uops = { { _GUARD_BOTH_UNICODE, 0, 0 }, { _BINARY_OP_ADD_UNICODE, 0, 0 } } },
+    [BINARY_SUBSCR] = { .nuops = 1, .uops = { { BINARY_SUBSCR, 0, 0 } } },
     [BINARY_SLICE] = { .nuops = 1, .uops = { { BINARY_SLICE, 0, 0 } } },
     [STORE_SLICE] = { .nuops = 1, .uops = { { STORE_SLICE, 0, 0 } } },
     [BINARY_SUBSCR_LIST_INT] = { .nuops = 1, .uops = { { BINARY_SUBSCR_LIST_INT, 0, 0 } } },
@@ -1194,6 +1205,7 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] = {
     [BINARY_SUBSCR_DICT] = { .nuops = 1, .uops = { { BINARY_SUBSCR_DICT, 0, 0 } } },
     [LIST_APPEND] = { .nuops = 1, .uops = { { LIST_APPEND, 0, 0 } } },
     [SET_ADD] = { .nuops = 1, .uops = { { SET_ADD, 0, 0 } } },
+    [STORE_SUBSCR] = { .nuops = 1, .uops = { { STORE_SUBSCR, 1, 0 } } },
     [STORE_SUBSCR_LIST_INT] = { .nuops = 1, .uops = { { STORE_SUBSCR_LIST_INT, 0, 0 } } },
     [STORE_SUBSCR_DICT] = { .nuops = 1, .uops = { { STORE_SUBSCR_DICT, 0, 0 } } },
     [DELETE_SUBSCR] = { .nuops = 1, .uops = { { DELETE_SUBSCR, 0, 0 } } },
@@ -1207,6 +1219,7 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] = {
     [LOAD_BUILD_CLASS] = { .nuops = 1, .uops = { { LOAD_BUILD_CLASS, 0, 0 } } },
     [STORE_NAME] = { .nuops = 1, .uops = { { STORE_NAME, 0, 0 } } },
     [DELETE_NAME] = { .nuops = 1, .uops = { { DELETE_NAME, 0, 0 } } },
+    [UNPACK_SEQUENCE] = { .nuops = 1, .uops = { { UNPACK_SEQUENCE, 0, 0 } } },
     [UNPACK_SEQUENCE_TWO_TUPLE] = { .nuops = 1, .uops = { { UNPACK_SEQUENCE_TWO_TUPLE, 0, 0 } } },
     [UNPACK_SEQUENCE_TUPLE] = { .nuops = 1, .uops = { { UNPACK_SEQUENCE_TUPLE, 0, 0 } } },
     [UNPACK_SEQUENCE_LIST] = { .nuops = 1, .uops = { { UNPACK_SEQUENCE_LIST, 0, 0 } } },
@@ -1217,6 +1230,7 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] = {
     [LOAD_LOCALS] = { .nuops = 1, .uops = { { _LOAD_LOCALS, 0, 0 } } },
     [LOAD_NAME] = { .nuops = 2, .uops = { { _LOAD_LOCALS, 0, 0 }, { _LOAD_FROM_DICT_OR_GLOBALS, 0, 0 } } },
     [LOAD_FROM_DICT_OR_GLOBALS] = { .nuops = 1, .uops = { { _LOAD_FROM_DICT_OR_GLOBALS, 0, 0 } } },
+    [LOAD_GLOBAL] = { .nuops = 1, .uops = { { LOAD_GLOBAL, 0, 0 } } },
     [DELETE_FAST] = { .nuops = 1, .uops = { { DELETE_FAST, 0, 0 } } },
     [DELETE_DEREF] = { .nuops = 1, .uops = { { DELETE_DEREF, 0, 0 } } },
     [LOAD_FROM_DICT_OR_DEREF] = { .nuops = 1, .uops = { { LOAD_FROM_DICT_OR_DEREF, 0, 0 } } },
@@ -1237,6 +1251,8 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] = {
     [MAP_ADD] = { .nuops = 1, .uops = { { MAP_ADD, 0, 0 } } },
     [LOAD_SUPER_ATTR_ATTR] = { .nuops = 1, .uops = { { LOAD_SUPER_ATTR_ATTR, 0, 0 } } },
     [LOAD_SUPER_ATTR_METHOD] = { .nuops = 1, .uops = { { LOAD_SUPER_ATTR_METHOD, 0, 0 } } },
+    [LOAD_ATTR] = { .nuops = 1, .uops = { { LOAD_ATTR, 0, 0 } } },
+    [COMPARE_OP] = { .nuops = 1, .uops = { { COMPARE_OP, 0, 0 } } },
     [COMPARE_OP_FLOAT] = { .nuops = 1, .uops = { { COMPARE_OP_FLOAT, 0, 0 } } },
     [COMPARE_OP_INT] = { .nuops = 1, .uops = { { COMPARE_OP_INT, 0, 0 } } },
     [COMPARE_OP_STR] = { .nuops = 1, .uops = { { COMPARE_OP_STR, 0, 0 } } },
@@ -1261,6 +1277,7 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] = {
     [FORMAT_SIMPLE] = { .nuops = 1, .uops = { { FORMAT_SIMPLE, 0, 0 } } },
     [FORMAT_WITH_SPEC] = { .nuops = 1, .uops = { { FORMAT_WITH_SPEC, 0, 0 } } },
     [COPY] = { .nuops = 1, .uops = { { COPY, 0, 0 } } },
+    [BINARY_OP] = { .nuops = 1, .uops = { { BINARY_OP, 0, 0 } } },
     [SWAP] = { .nuops = 1, .uops = { { SWAP, 0, 0 } } },
 };
 #ifdef NEED_OPCODE_METADATA
