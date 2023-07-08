@@ -1198,7 +1198,7 @@ class HTTPConnection:
 
                     # remove interface scope from IPv6 address
                     # when used as Host header
-                    if netloc.find('%') >= 0:
+                    if "%" in netloc:
                         netloc_enc = netloc_enc[:netloc.find('%')] + b']'
 
                     self.putheader('Host', netloc_enc)
@@ -1218,10 +1218,10 @@ class HTTPConnection:
                     # As per RFC 273, IPv6 address should be wrapped with []
                     # when used as Host header
 
-                    if host.find(':') >= 0:
+                    if ":" in host:
                         # remove interface scope from IPv6 address
                         # when used as Host header
-                        if host.find('%') >= 0:
+                        if "%" in host:
                             host_enc = host_enc[:host.find('%')]
                         host_enc = b'[' + host_enc + b']'
 
