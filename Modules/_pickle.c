@@ -4437,12 +4437,13 @@ save(PickleState *st, PicklerObject *self, PyObject *obj, int pers_save)
                PyObject_GetItem and _PyObject_GetAttrId used below. */
             Py_INCREF(reduce_func);
         }
-    } else {
-        if (PyMapping_GetOptionalItem(self->dispatch_table, (PyObject *)type,
-                                      &reduce_func) < 0) {
-            goto error;
-        }
     }
+    else if (PyMapping_GetOptionalItem(self->dispatch_table, (PyObject *)type,
+                                       &reduce_func) < 0)
+    {
+        goto error;
+    }
+
     if (reduce_func != NULL) {
         reduce_value = _Pickle_FastCall(reduce_func, Py_NewRef(obj));
     }

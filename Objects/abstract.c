@@ -200,19 +200,19 @@ PyObject_GetItem(PyObject *o, PyObject *key)
 }
 
 int
-PyMapping_GetOptionalItem(PyObject *o, PyObject *key, PyObject **pvalue)
+PyMapping_GetOptionalItem(PyObject *obj, PyObject *key, PyObject **result)
 {
-    if (PyDict_CheckExact(o)) {
-        *pvalue = PyDict_GetItemWithError(o, key);  /* borrowed */
-        if (*pvalue) {
-            Py_INCREF(*pvalue);
+    if (PyDict_CheckExact(obj)) {
+        *result = PyDict_GetItemWithError(obj, key);  /* borrowed */
+        if (*result) {
+            Py_INCREF(*result);
             return 1;
         }
         return PyErr_Occurred() ? -1 : 0;
     }
 
-    *pvalue = PyObject_GetItem(o, key);
-    if (*pvalue) {
+    *result = PyObject_GetItem(obj, key);
+    if (*result) {
         return 1;
     }
     assert(PyErr_Occurred());
@@ -2391,7 +2391,7 @@ PyMapping_GetItemString(PyObject *o, const char *key)
 }
 
 int
-PyMapping_GetOptionalItemString(PyObject *o, const char *key, PyObject **pvalue)
+PyMapping_GetOptionalItemString(PyObject *obj, const char *key, PyObject **result)
 {
     if (key == NULL) {
         null_error();
@@ -2401,9 +2401,9 @@ PyMapping_GetOptionalItemString(PyObject *o, const char *key, PyObject **pvalue)
     if (okey == NULL) {
         return -1;
     }
-    int r = PyMapping_GetOptionalItem(o, okey, pvalue);
+    int rc = PyMapping_GetOptionalItem(obj, okey, result);
     Py_DECREF(okey);
-    return r;
+    return rc;
 }
 
 int
