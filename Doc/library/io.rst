@@ -730,7 +730,7 @@ than raw I/O does.
 
    .. method:: peek(size=0, /)
 
-      .. versionadded:: 3.12
+      .. versionadded:: 3.13
 
       Return bytes from the current position onwards but without advancing the
       position. The number of bytes returned may be less or more than requested.
