@@ -16,11 +16,11 @@ typedef struct {
 
     /* Dictionary version: globally unique, value change each time
        the dictionary is modified */
-#ifdef Py_BUILD_CORE       
+#ifdef Py_BUILD_CORE
     uint64_t ma_version_tag;
 #else
     Py_DEPRECATED(3.12) uint64_t ma_version_tag;
-#endif        
+#endif
 
     PyDictKeysObject *ma_keys;
 
@@ -90,13 +90,18 @@ PyAPI_FUNC(PyObject *) _PyDictView_Intersect(PyObject* self, PyObject *other);
 
 /* Dictionary watchers */
 
+#define PY_FOREACH_DICT_EVENT(V) \
+    V(ADDED)                     \
+    V(MODIFIED)                  \
+    V(DELETED)                   \
+    V(CLONED)                    \
+    V(CLEARED)                   \
+    V(DEALLOCATED)
+
 typedef enum {
-    PyDict_EVENT_ADDED,
-    PyDict_EVENT_MODIFIED,
-    PyDict_EVENT_DELETED,
-    PyDict_EVENT_CLONED,
-    PyDict_EVENT_CLEARED,
-    PyDict_EVENT_DEALLOCATED,
+    #define PY_DEF_EVENT(EVENT) PyDict_EVENT_##EVENT,
+    PY_FOREACH_DICT_EVENT(PY_DEF_EVENT)
+    #undef PY_DEF_EVENT
 } PyDict_WatchEvent;
 
 // Callback to be invoked when a watched dict is cleared, dealloced, or modified.

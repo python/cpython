@@ -138,7 +138,6 @@ _zoneinfo
 _decimal
 _elementtree
 _hashlib
-_msi
 _multiprocessing
 _overlapped
 _socket
@@ -169,7 +168,7 @@ _lzma
     Homepage:
         https://tukaani.org/xz/
 _ssl
-    Python wrapper for version 1.1.1q of the OpenSSL secure sockets
+    Python wrapper for version 1.1.1u of the OpenSSL secure sockets
     library, which is downloaded from our binaries repository at
     https://github.com/python/cpython-bin-deps.
 
@@ -188,7 +187,7 @@ _ssl
     again when building.
 
 _sqlite3
-    Wraps SQLite 3.39.4, which is itself built by sqlite3.vcxproj
+    Wraps SQLite 3.42.0, which is itself built by sqlite3.vcxproj
     Homepage:
         https://www.sqlite.org/
 _tkinter
@@ -283,7 +282,7 @@ The property files used are:
  * python (versions, directories and build names)
  * pyproject (base settings for all projects)
  * openssl (used by projects dependent upon OpenSSL)
- * tcltk (used by _tkinter, tcl, tk and tix projects)
+ * tcltk (used by _tkinter, tcl, and tk projects)
 
 The pyproject property file defines all of the build settings for each
 project, with some projects overriding certain specific values. The GUI

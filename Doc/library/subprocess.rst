@@ -57,10 +57,13 @@ underlying :class:`Popen` interface can be used directly.
    and combine both streams into one, use ``stdout=PIPE`` and ``stderr=STDOUT``
    instead of *capture_output*.
 
-   The *timeout* argument is passed to :meth:`Popen.communicate`. If the timeout
-   expires, the child process will be killed and waited for.  The
-   :exc:`TimeoutExpired` exception will be re-raised after the child process
-   has terminated.
+   A *timeout* may be specified in seconds, it is internally passed on to
+   :meth:`Popen.communicate`. If the timeout expires, the child process will be
+   killed and waited for. The :exc:`TimeoutExpired` exception will be
+   re-raised after the child process has terminated. The initial process
+   creation itself cannot be interrupted on many platform APIs so you are not
+   guaranteed to see a timeout exception until at least after however long
+   process creation takes.
 
    The *input* argument is passed to :meth:`Popen.communicate` and thus to the
    subprocess's stdin.  If used it must be a byte sequence, or a string if
@@ -110,6 +113,14 @@ underlying :class:`Popen` interface can be used directly.
 
       Added the *text* parameter, as a more understandable alias of *universal_newlines*.
       Added the *capture_output* parameter.
+
+   .. versionchanged:: 3.12
+
+      Changed Windows shell search order for ``shell=True``. The current
+      directory and ``%PATH%`` are replaced with ``%COMSPEC%`` and
+      ``%SystemRoot%\System32\cmd.exe``. As a result, dropping a
+      malicious program named ``cmd.exe`` into a current directory no
+      longer works.
 
 .. class:: CompletedProcess
 
@@ -487,6 +498,14 @@ functions.
       *executable* parameter accepts a bytes and :term:`path-like object`
       on Windows.
 
+   .. versionchanged:: 3.12
+
+      Changed Windows shell search order for ``shell=True``. The current
+      directory and ``%PATH%`` are replaced with ``%COMSPEC%`` and
+      ``%SystemRoot%\System32\cmd.exe``. As a result, dropping a
+      malicious program named ``cmd.exe`` into a current directory no
+      longer works.
+
    *stdin*, *stdout* and *stderr* specify the executed program's standard input,
    standard output and standard error file handles, respectively.  Valid values
    are ``None``, :data:`PIPE`, :data:`DEVNULL`, an existing file descriptor (a
@@ -718,7 +737,7 @@ arguments.
 code.
 
 All of the functions and methods that accept a *timeout* parameter, such as
-:func:`call` and :meth:`Popen.communicate` will raise :exc:`TimeoutExpired` if
+:func:`run` and :meth:`Popen.communicate` will raise :exc:`TimeoutExpired` if
 the timeout expires before the process exits.
 
 Exceptions defined in this module all inherit from :exc:`SubprocessError`.
@@ -903,9 +922,12 @@ Reassigning them to new values is unsupported:
 
 .. attribute:: Popen.returncode
 
-   The child return code, set by :meth:`poll` and :meth:`wait` (and indirectly
-   by :meth:`communicate`).  A ``None`` value indicates that the process
-   hasn't terminated yet.
+   The child return code. Initially ``None``, :attr:`returncode` is set by
+   a call to the :meth:`poll`, :meth:`wait`, or :meth:`communicate` methods
+   if they detect that the process has terminated.
+
+   A ``None`` value indicates that the process hadn't yet terminated at the
+   time of the last method call.
 
    A negative value ``-N`` indicates that the child was terminated by signal
    ``N`` (POSIX only).
@@ -1158,6 +1180,14 @@ calls these functions.
    .. versionchanged:: 3.3
       *timeout* was added.
 
+   .. versionchanged:: 3.12
+
+      Changed Windows shell search order for ``shell=True``. The current
+      directory and ``%PATH%`` are replaced with ``%COMSPEC%`` and
+      ``%SystemRoot%\System32\cmd.exe``. As a result, dropping a
+      malicious program named ``cmd.exe`` into a current directory no
+      longer works.
+
 .. function:: check_call(args, *, stdin=None, stdout=None, stderr=None, \
                          shell=False, cwd=None, timeout=None, \
                          **other_popen_kwargs)
@@ -1189,6 +1219,14 @@ calls these functions.
 
    .. versionchanged:: 3.3
       *timeout* was added.
+
+   .. versionchanged:: 3.12
+
+      Changed Windows shell search order for ``shell=True``. The current
+      directory and ``%PATH%`` are replaced with ``%COMSPEC%`` and
+      ``%SystemRoot%\System32\cmd.exe``. As a result, dropping a
+      malicious program named ``cmd.exe`` into a current directory no
+      longer works.
 
 
 .. function:: check_output(args, *, stdin=None, stderr=None, shell=False, \
@@ -1244,6 +1282,14 @@ calls these functions.
 
    .. versionadded:: 3.7
       *text* was added as a more readable alias for *universal_newlines*.
+
+   .. versionchanged:: 3.12
+
+      Changed Windows shell search order for ``shell=True``. The current
+      directory and ``%PATH%`` are replaced with ``%COMSPEC%`` and
+      ``%SystemRoot%\System32\cmd.exe``. As a result, dropping a
+      malicious program named ``cmd.exe`` into a current directory no
+      longer works.
 
 
 .. _subprocess-replacements:
@@ -1582,7 +1628,7 @@ that.
 It is safe to set these to false on any Python version. They will have no
 effect on older versions when unsupported. Do not assume the attributes are
 available to read. Despite their names, a true value does not indicate that the
-corresponding function will be used, only that that it may be.
+corresponding function will be used, only that it may be.
 
 Please file issues any time you have to use these private knobs with a way to
 reproduce the issue you were seeing. Link to that issue from a comment in your

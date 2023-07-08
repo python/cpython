@@ -22,7 +22,7 @@ fi
 
 # Update this when updating to a new version after verifying that the changes
 # the update brings in are good.
-expected_hacl_star_rev=94aabbb4cf71347d3779a8db486c761403c6d036
+expected_hacl_star_rev=521af282fdf6d60227335120f18ae9309a4b8e8c
 
 hacl_dir="$(realpath "$1")"
 cd "$(dirname "$0")"
@@ -40,9 +40,19 @@ fi
 
 declare -a dist_files
 dist_files=(
-  Hacl_Streaming_SHA2.h
-  internal/Hacl_SHA2_Generic.h
-  Hacl_Streaming_SHA2.c
+  Hacl_Hash_SHA2.h
+  Hacl_Streaming_Types.h
+  Hacl_Hash_SHA1.h
+  internal/Hacl_Hash_SHA1.h
+  Hacl_Hash_MD5.h
+  Hacl_Hash_SHA3.h
+  internal/Hacl_Hash_MD5.h
+  internal/Hacl_Hash_SHA3.h
+  Hacl_Hash_SHA2.c
+  internal/Hacl_Hash_SHA2.h
+  Hacl_Hash_SHA1.c
+  Hacl_Hash_MD5.c
+  Hacl_Hash_SHA3.c
 )
 
 declare -a include_files
@@ -54,6 +64,8 @@ include_files=(
 declare -a lib_files
 lib_files=(
   krmllib/dist/minimal/FStar_UInt_8_16_32_64.h
+  krmllib/dist/minimal/fstar_uint128_struct_endianness.h
+  krmllib/dist/minimal/FStar_UInt128_Verified.h
 )
 
 # C files for the algorithms themselves: current directory
@@ -82,10 +94,27 @@ fi
 
 readarray -t all_files < <(find . -name '*.h' -or -name '*.c')
 
-# types.h is a simple wrapper that defines the uint128 type then proceeds to
-# include FStar_UInt_8_16_32_64.h; we jump the types.h step since our current
-# selection of algorithms does not necessitate the use of uint128
-$sed -i 's!#include.*types.h"!#include "krml/FStar_UInt_8_16_32_64.h"!g' "${all_files[@]}"
+# types.h originally contains a complex series of if-defs and auxiliary type
+# definitions; here, we just need a proper uint128 type in scope
+# is a simple wrapper that defines the uint128 type
+cat > include/krml/types.h <<EOF
+#pragma once
+
+#include <inttypes.h>
+
+typedef struct FStar_UInt128_uint128_s {
+  uint64_t low;
+  uint64_t high;
+} FStar_UInt128_uint128, uint128_t;
+
+#define KRML_VERIFIED_UINT128
+
+#include "krml/lowstar_endianness.h"
+#include "krml/fstar_uint128_struct_endianness.h"
+#include "krml/FStar_UInt128_Verified.h"
+EOF
+# Adjust the include path to reflect the local directory structure
+$sed -i 's!#include.*types.h"!#include "krml/types.h"!g' "${all_files[@]}"
 $sed -i 's!#include.*compat.h"!!g' "${all_files[@]}"
 
 # FStar_UInt_8_16_32_64 contains definitions useful in the general case, but not
@@ -97,36 +126,14 @@ $sed -i -z 's!\(extern\|typedef\)[^;]*;\n\n!!g' include/krml/FStar_UInt_8_16_32_
 # compilation, but this is not necessary.
 $sed -i 's!#include.*Hacl_Krmllib.h"!!g' "${all_files[@]}"
 
-# This header is useful for *other* algorithms that refer to SHA2, e.g. Ed25519
-# which needs to compute a digest of a message before signing it. Here, since no
-# other algorithm builds upon SHA2, this internal header is useless (and is not
-# included in $dist_files).
-$sed -i 's!#include.*internal/Hacl_Streaming_SHA2.h"!#include "Hacl_Streaming_SHA2.h"!g' "${all_files[@]}"
-
-# The SHA2 file contains all variants of SHA2. We strip 384 and 512 for the time
-# being, to be included later.
-# This regexp matches a separator (two new lines), followed by:
-#
-# <non-empty-line>*
-# ... 384 or 512 ... {
-#   <indented-line>*
-# }
-#
-# The first non-empty lines are the comment block. The second ... may spill over
-# the next following lines if the arguments are printed in one-per-line mode.
-$sed -i -z 's/\n\n\([^\n]\+\n\)*[^\n]*\(384\|512\)[^{]*{\n\?\(  [^\n]*\n\)*}//g' Hacl_Streaming_SHA2.c
-
-# Same thing with function prototypes
-$sed -i -z 's/\n\n\([^\n]\+\n\)*[^\n]*\(384\|512\)[^;]*;//g' Hacl_Streaming_SHA2.h
-
 # Use globally unique names for the Hacl_ C APIs to avoid linkage conflicts.
-$sed -i -z 's!#include <string.h>\n!#include <string.h>\n#include "python_hacl_namespaces.h"\n!' Hacl_Streaming_SHA2.h
+$sed -i -z 's!#include <string.h>\n!#include <string.h>\n#include "python_hacl_namespaces.h"\n!' Hacl_Hash_SHA2.h
 
 # Finally, we remove a bunch of ifdefs from target.h that are, again, useful in
 # the general case, but not exercised by the subset of HACL* that we vendor.
-$sed -z -i 's!#ifndef KRML_\(HOST_PRINTF\|HOST_EXIT\|PRE_ALIGN\|POST_ALIGN\|ALIGNED_MALLOC\|ALIGNED_FREE\|HOST_TIME\)\n\(\n\|#  [^\n]*\n\|[^#][^\n]*\n\)*#endif\n\n!!g' include/krml/internal/target.h
-$sed -z -i 's!\n\n\([^#][^\n]*\n\)*#define KRML_\(EABORT\|EXIT\|CHECK_SIZE\)[^\n]*\(\n  [^\n]*\)*!!g' include/krml/internal/target.h
+$sed -z -i 's!#ifndef KRML_\(PRE_ALIGN\|POST_ALIGN\|ALIGNED_MALLOC\|ALIGNED_FREE\|HOST_TIME\)\n\(\n\|#  [^\n]*\n\|[^#][^\n]*\n\)*#endif\n\n!!g' include/krml/internal/target.h
+$sed -z -i 's!\n\n\([^#][^\n]*\n\)*#define KRML_\(EABORT\|EXIT\)[^\n]*\(\n  [^\n]*\)*!!g' include/krml/internal/target.h
 $sed -z -i 's!\n\n\([^#][^\n]*\n\)*#if [^\n]*\n\(  [^\n]*\n\)*#define  KRML_\(EABORT\|EXIT\|CHECK_SIZE\)[^\n]*\(\n  [^\n]*\)*!!g' include/krml/internal/target.h
-$sed -z -i 's!\n\n\([^#][^\n]*\n\)*#if [^\n]*\n\(  [^\n]*\n\)*#  define _\?KRML_\(DEPRECATED\|CHECK_SIZE_PRAGMA\|HOST_EPRINTF\|HOST_SNPRINTF\)[^\n]*\n\([^#][^\n]*\n\|#el[^\n]*\n\|#  [^\n]*\n\)*#endif!!g' include/krml/internal/target.h
+$sed -z -i 's!\n\n\([^#][^\n]*\n\)*#if [^\n]*\n\(  [^\n]*\n\)*#  define _\?KRML_\(DEPRECATED\|HOST_SNPRINTF\)[^\n]*\n\([^#][^\n]*\n\|#el[^\n]*\n\|#  [^\n]*\n\)*#endif!!g' include/krml/internal/target.h
 
 echo "Updated; verify all is okay using git diff and git status."

@@ -21,6 +21,12 @@ try:
 except ImportError:
     pass
 
+# _opcode_metadata may not be ready during early stages of the build
+try:
+    from _opcode_metadata import _specializations, _specialized_instructions
+except ModuleNotFoundError:
+    pass
+
 cmp_op = ('<', '<=', '==', '!=', '>', '>=')
 
 hasarg = []
@@ -81,8 +87,9 @@ def_op('CACHE', 0)
 def_op('POP_TOP', 1)
 def_op('PUSH_NULL', 2)
 def_op('INTERPRETER_EXIT', 3)
-
 def_op('END_FOR', 4)
+def_op('END_SEND', 5)
+def_op('TO_BOOL', 6)
 
 def_op('NOP', 9)
 
@@ -90,7 +97,13 @@ def_op('UNARY_NEGATIVE', 11)
 def_op('UNARY_NOT', 12)
 
 def_op('UNARY_INVERT', 15)
+def_op('EXIT_INIT_CHECK', 16)
 
+# We reserve 17 as it is the initial value for the specializing counter
+# This helps us catch cases where we attempt to execute a cache.
+def_op('RESERVED', 17)
+
+def_op('MAKE_FUNCTION', 24)
 def_op('BINARY_SUBSCR', 25)
 def_op('BINARY_SLICE', 26)
 def_op('STORE_SLICE', 27)
@@ -103,6 +116,9 @@ def_op('MATCH_KEYS', 33)
 def_op('PUSH_EXC_INFO', 35)
 def_op('CHECK_EXC_MATCH', 36)
 def_op('CHECK_EG_MATCH', 37)
+
+def_op('FORMAT_SIMPLE', 40)
+def_op('FORMAT_WITH_SPEC', 41)
 
 def_op('WITH_EXCEPT_START', 49)
 def_op('GET_AITER', 50)
@@ -127,7 +143,8 @@ def_op('RETURN_VALUE', 83)
 
 def_op('SETUP_ANNOTATIONS', 85)
 
-def_op('PREP_RERAISE_STAR', 88)
+def_op('LOAD_LOCALS', 87)
+
 def_op('POP_EXCEPT', 89)
 
 HAVE_ARGUMENT = 90             # real opcodes from here have an argument:
@@ -155,8 +172,7 @@ hascompare.append(107)
 name_op('IMPORT_NAME', 108)     # Index in name list
 name_op('IMPORT_FROM', 109)     # Index in name list
 jrel_op('JUMP_FORWARD', 110)    # Number of words to skip
-jrel_op('JUMP_IF_FALSE_OR_POP', 111) # Number of words to skip
-jrel_op('JUMP_IF_TRUE_OR_POP', 112)  # ""
+
 jrel_op('POP_JUMP_IF_FALSE', 114)
 jrel_op('POP_JUMP_IF_TRUE', 115)
 name_op('LOAD_GLOBAL', 116)     # Index in name list
@@ -167,7 +183,7 @@ def_op('COPY', 120)
 def_op('RETURN_CONST', 121)
 hasconst.append(121)
 def_op('BINARY_OP', 122)
-jrel_op('SEND', 123) # Number of bytes to skip
+jrel_op('SEND', 123)            # Number of words to skip
 def_op('LOAD_FAST', 124)        # Local variable number, no null check
 haslocal.append(124)
 def_op('STORE_FAST', 125)       # Local variable number
@@ -180,13 +196,10 @@ jrel_op('POP_JUMP_IF_NOT_NONE', 128)
 jrel_op('POP_JUMP_IF_NONE', 129)
 def_op('RAISE_VARARGS', 130)    # Number of raise arguments (1, 2, or 3)
 def_op('GET_AWAITABLE', 131)
-def_op('MAKE_FUNCTION', 132)    # Flags
 def_op('BUILD_SLICE', 133)      # Number of items
 jrel_op('JUMP_BACKWARD_NO_INTERRUPT', 134) # Number of words to skip (backwards)
 def_op('MAKE_CELL', 135)
 hasfree.append(135)
-def_op('LOAD_CLOSURE', 136)
-hasfree.append(136)
 def_op('LOAD_DEREF', 137)
 hasfree.append(137)
 def_op('STORE_DEREF', 138)
@@ -194,36 +207,68 @@ hasfree.append(138)
 def_op('DELETE_DEREF', 139)
 hasfree.append(139)
 jrel_op('JUMP_BACKWARD', 140)    # Number of words to skip (backwards)
-def_op('COMPARE_AND_BRANCH', 141)   # Comparison and jump
-hascompare.append(141)
-
+name_op('LOAD_SUPER_ATTR', 141)
 def_op('CALL_FUNCTION_EX', 142)  # Flags
-
+def_op('LOAD_FAST_AND_CLEAR', 143)  # Local variable number
+haslocal.append(143)
 def_op('EXTENDED_ARG', 144)
 EXTENDED_ARG = 144
 def_op('LIST_APPEND', 145)
 def_op('SET_ADD', 146)
 def_op('MAP_ADD', 147)
-def_op('LOAD_CLASSDEREF', 148)
 hasfree.append(148)
 def_op('COPY_FREE_VARS', 149)
 def_op('YIELD_VALUE', 150)
 def_op('RESUME', 151)   # This must be kept in sync with deepfreeze.py
 def_op('MATCH_CLASS', 152)
 
-def_op('FORMAT_VALUE', 155)
 def_op('BUILD_CONST_KEY_MAP', 156)
 def_op('BUILD_STRING', 157)
+def_op('CONVERT_VALUE', 158)
 
 def_op('LIST_EXTEND', 162)
 def_op('SET_UPDATE', 163)
 def_op('DICT_MERGE', 164)
 def_op('DICT_UPDATE', 165)
 
+def_op('LOAD_FAST_LOAD_FAST', 168)
+def_op('STORE_FAST_LOAD_FAST', 169)
+def_op('STORE_FAST_STORE_FAST', 170)
 def_op('CALL', 171)
 def_op('KW_NAMES', 172)
 hasconst.append(172)
 def_op('CALL_INTRINSIC_1', 173)
+def_op('CALL_INTRINSIC_2', 174)
+name_op('LOAD_FROM_DICT_OR_GLOBALS', 175)
+def_op('LOAD_FROM_DICT_OR_DEREF', 176)
+hasfree.append(176)
+def_op('SET_FUNCTION_ATTRIBUTE', 177)    # Attribute
+
+# Optimizer hook
+def_op('ENTER_EXECUTOR', 230)
+
+# Instrumented instructions
+MIN_INSTRUMENTED_OPCODE = 237
+
+def_op('INSTRUMENTED_LOAD_SUPER_ATTR', 237)
+def_op('INSTRUMENTED_POP_JUMP_IF_NONE', 238)
+def_op('INSTRUMENTED_POP_JUMP_IF_NOT_NONE', 239)
+def_op('INSTRUMENTED_RESUME', 240)
+def_op('INSTRUMENTED_CALL', 241)
+def_op('INSTRUMENTED_RETURN_VALUE', 242)
+def_op('INSTRUMENTED_YIELD_VALUE', 243)
+def_op('INSTRUMENTED_CALL_FUNCTION_EX', 244)
+def_op('INSTRUMENTED_JUMP_FORWARD', 245)
+def_op('INSTRUMENTED_JUMP_BACKWARD', 246)
+def_op('INSTRUMENTED_RETURN_CONST', 247)
+def_op('INSTRUMENTED_FOR_ITER', 248)
+def_op('INSTRUMENTED_POP_JUMP_IF_FALSE', 249)
+def_op('INSTRUMENTED_POP_JUMP_IF_TRUE', 250)
+def_op('INSTRUMENTED_END_FOR', 251)
+def_op('INSTRUMENTED_END_SEND', 252)
+def_op('INSTRUMENTED_INSTRUCTION', 253)
+def_op('INSTRUMENTED_LINE', 254)
+# 255 is reserved
 
 hasarg.extend([op for op in opmap.values() if op >= HAVE_ARGUMENT])
 
@@ -241,6 +286,12 @@ pseudo_op('JUMP', 260, ['JUMP_FORWARD', 'JUMP_BACKWARD'])
 pseudo_op('JUMP_NO_INTERRUPT', 261, ['JUMP_FORWARD', 'JUMP_BACKWARD_NO_INTERRUPT'])
 
 pseudo_op('LOAD_METHOD', 262, ['LOAD_ATTR'])
+pseudo_op('LOAD_SUPER_METHOD', 263, ['LOAD_SUPER_ATTR'])
+pseudo_op('LOAD_ZERO_SUPER_METHOD', 264, ['LOAD_SUPER_ATTR'])
+pseudo_op('LOAD_ZERO_SUPER_ATTR', 265, ['LOAD_SUPER_ATTR'])
+
+pseudo_op('STORE_FAST_MAYBE_NULL', 266, ['STORE_FAST'])
+pseudo_op('LOAD_CLOSURE', 267, ['LOAD_FAST'])
 
 MAX_PSEUDO_OPCODE = MIN_PSEUDO_OPCODE + len(_pseudo_ops) - 1
 
@@ -280,114 +331,35 @@ _nb_ops = [
     ("NB_INPLACE_XOR", "^="),
 ]
 
-_specializations = {
-    "BINARY_OP": [
-        "BINARY_OP_ADD_FLOAT",
-        "BINARY_OP_ADD_INT",
-        "BINARY_OP_ADD_UNICODE",
-        "BINARY_OP_INPLACE_ADD_UNICODE",
-        "BINARY_OP_MULTIPLY_FLOAT",
-        "BINARY_OP_MULTIPLY_INT",
-        "BINARY_OP_SUBTRACT_FLOAT",
-        "BINARY_OP_SUBTRACT_INT",
-    ],
-    "BINARY_SUBSCR": [
-        "BINARY_SUBSCR_DICT",
-        "BINARY_SUBSCR_GETITEM",
-        "BINARY_SUBSCR_LIST_INT",
-        "BINARY_SUBSCR_TUPLE_INT",
-    ],
-    "CALL": [
-        "CALL_PY_EXACT_ARGS",
-        "CALL_PY_WITH_DEFAULTS",
-        "CALL_BOUND_METHOD_EXACT_ARGS",
-        "CALL_BUILTIN_CLASS",
-        "CALL_BUILTIN_FAST_WITH_KEYWORDS",
-        "CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS",
-        "CALL_NO_KW_BUILTIN_FAST",
-        "CALL_NO_KW_BUILTIN_O",
-        "CALL_NO_KW_ISINSTANCE",
-        "CALL_NO_KW_LEN",
-        "CALL_NO_KW_LIST_APPEND",
-        "CALL_NO_KW_METHOD_DESCRIPTOR_FAST",
-        "CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS",
-        "CALL_NO_KW_METHOD_DESCRIPTOR_O",
-        "CALL_NO_KW_STR_1",
-        "CALL_NO_KW_TUPLE_1",
-        "CALL_NO_KW_TYPE_1",
-    ],
-    "COMPARE_AND_BRANCH": [
-        "COMPARE_AND_BRANCH_FLOAT",
-        "COMPARE_AND_BRANCH_INT",
-        "COMPARE_AND_BRANCH_STR",
-    ],
-    "FOR_ITER": [
-        "FOR_ITER_LIST",
-        "FOR_ITER_TUPLE",
-        "FOR_ITER_RANGE",
-        "FOR_ITER_GEN",
-    ],
-    "LOAD_ATTR": [
-        # These potentially push [NULL, bound method] onto the stack.
-        "LOAD_ATTR_CLASS",
-        "LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN",
-        "LOAD_ATTR_INSTANCE_VALUE",
-        "LOAD_ATTR_MODULE",
-        "LOAD_ATTR_PROPERTY",
-        "LOAD_ATTR_SLOT",
-        "LOAD_ATTR_WITH_HINT",
-        # These will always push [unbound method, self] onto the stack.
-        "LOAD_ATTR_METHOD_LAZY_DICT",
-        "LOAD_ATTR_METHOD_NO_DICT",
-        "LOAD_ATTR_METHOD_WITH_VALUES",
-    ],
-    "LOAD_CONST": [
-        "LOAD_CONST__LOAD_FAST",
-    ],
-    "LOAD_FAST": [
-        "LOAD_FAST__LOAD_CONST",
-        "LOAD_FAST__LOAD_FAST",
-    ],
-    "LOAD_GLOBAL": [
-        "LOAD_GLOBAL_BUILTIN",
-        "LOAD_GLOBAL_MODULE",
-    ],
-    "STORE_ATTR": [
-        "STORE_ATTR_INSTANCE_VALUE",
-        "STORE_ATTR_SLOT",
-        "STORE_ATTR_WITH_HINT",
-    ],
-    "STORE_FAST": [
-        "STORE_FAST__LOAD_FAST",
-        "STORE_FAST__STORE_FAST",
-    ],
-    "STORE_SUBSCR": [
-        "STORE_SUBSCR_DICT",
-        "STORE_SUBSCR_LIST_INT",
-    ],
-    "UNPACK_SEQUENCE": [
-        "UNPACK_SEQUENCE_LIST",
-        "UNPACK_SEQUENCE_TUPLE",
-        "UNPACK_SEQUENCE_TWO_TUPLE",
-    ],
-}
-_specialized_instructions = [
-    opcode for family in _specializations.values() for opcode in family
+_intrinsic_1_descs = [
+    "INTRINSIC_1_INVALID",
+    "INTRINSIC_PRINT",
+    "INTRINSIC_IMPORT_STAR",
+    "INTRINSIC_STOPITERATION_ERROR",
+    "INTRINSIC_ASYNC_GEN_WRAP",
+    "INTRINSIC_UNARY_POSITIVE",
+    "INTRINSIC_LIST_TO_TUPLE",
+    "INTRINSIC_TYPEVAR",
+    "INTRINSIC_PARAMSPEC",
+    "INTRINSIC_TYPEVARTUPLE",
+    "INTRINSIC_SUBSCRIPT_GENERIC",
+    "INTRINSIC_TYPEALIAS",
 ]
-_specialization_stats = [
-    "success",
-    "failure",
-    "hit",
-    "deferred",
-    "miss",
-    "deopt",
+
+_intrinsic_2_descs = [
+    "INTRINSIC_2_INVALID",
+    "INTRINSIC_PREP_RERAISE_STAR",
+    "INTRINSIC_TYPEVAR_WITH_BOUND",
+    "INTRINSIC_TYPEVAR_WITH_CONSTRAINTS",
+    "INTRINSIC_SET_FUNCTION_TYPE_PARAMS",
 ]
+
 
 _cache_format = {
     "LOAD_GLOBAL": {
         "counter": 1,
         "index": 1,
-        "module_keys_version": 2,
+        "module_keys_version": 1,
         "builtin_keys_version": 1,
     },
     "BINARY_OP": {
@@ -399,15 +371,13 @@ _cache_format = {
     "COMPARE_OP": {
         "counter": 1,
     },
-    "COMPARE_AND_BRANCH": {
-        "counter": 1,
-    },
     "BINARY_SUBSCR": {
         "counter": 1,
-        "type_version": 2,
-        "func_version": 1,
     },
     "FOR_ITER": {
+        "counter": 1,
+    },
+    "LOAD_SUPER_ATTR": {
         "counter": 1,
     },
     "LOAD_ATTR": {
@@ -424,10 +394,19 @@ _cache_format = {
     "CALL": {
         "counter": 1,
         "func_version": 2,
-        "min_args": 1,
     },
     "STORE_SUBSCR": {
         "counter": 1,
+    },
+    "SEND": {
+        "counter": 1,
+    },
+    "JUMP_BACKWARD": {
+        "counter": 1,
+    },
+    "TO_BOOL": {
+        "counter": 1,
+        "version": 2,
     },
 }
 

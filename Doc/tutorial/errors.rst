@@ -160,7 +160,7 @@ accessing ``.args``.  ::
    >>> try:
    ...     raise Exception('spam', 'eggs')
    ... except Exception as inst:
-   ...     print(type(inst))    # the exception instance
+   ...     print(type(inst))    # the exception type
    ...     print(inst.args)     # arguments stored in .args
    ...     print(inst)          # __str__ allows args to be printed directly,
    ...                          # but may be overridden in exception subclasses
@@ -577,6 +577,8 @@ the following pattern::
    ...    raise ExceptionGroup("Test Failures", excs)
    ...
 
+
+.. _tut-exception-notes:
 
 Enriching Exceptions with Notes
 ===============================
