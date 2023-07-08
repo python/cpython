@@ -1469,19 +1469,19 @@ class ExhaustiveChannelTests(TestBase):
             with self.assertRaises(channels.ChannelClosedError):
                 channels.close(fix.cid, force=True)
         else:
-            run_interp(interp.id, f"""
+            run_interp(interp.id, """
                 with helpers.expect_channel_closed():
                     channels.recv(cid)
                 """)
-            run_interp(interp.id, f"""
+            run_interp(interp.id, """
                 with helpers.expect_channel_closed():
                     channels.send(cid, b'spam')
                 """)
-            run_interp(interp.id, f"""
+            run_interp(interp.id, """
                 with helpers.expect_channel_closed():
                     channels.close(cid)
                 """)
-            run_interp(interp.id, f"""
+            run_interp(interp.id, """
                 with helpers.expect_channel_closed():
                     channels.close(cid, force=True)
                 """)
