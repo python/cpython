@@ -961,7 +961,6 @@ class singledispatchmethod:
         return getattr(self.func, '__isabstractmethod__', False)
 
 
-
 ################################################################################
 ### cached_property() - computed once per instance, cached as attribute
 ################################################################################
