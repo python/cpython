@@ -401,6 +401,14 @@ translate_bytecode_to_trace(
     trace[trace_length].operand = (OPERAND); \
     trace_length++;
 
+#define ADD_TO_STUB(INDEX, OPCODE, OPERAND) \
+    DPRINTF(2, "    ADD_TO_STUB(%d, %s, %" PRIu64 ")\n", \
+            (INDEX), \
+            (OPCODE) < 256 ? _PyOpcode_OpName[(OPCODE)] : _PyOpcode_uop_name[(OPCODE)], \
+            (uint64_t)(OPERAND)); \
+    trace[(INDEX)].opcode = (OPCODE); \
+    trace[(INDEX)].operand = (OPERAND);
+
     DPRINTF(4,
             "Optimizing %s (%s:%d) at byte offset %ld\n",
             PyUnicode_AsUTF8(code->co_qualname),
@@ -409,7 +417,7 @@ translate_bytecode_to_trace(
             2 * (long)(initial_instr - (_Py_CODEUNIT *)code->co_code_adaptive));
 
     for (;;) {
-        ADD_TO_TRACE(SAVE_IP, (int)(instr - (_Py_CODEUNIT *)code->co_code_adaptive));
+        ADD_TO_TRACE(SAVE_IP, instr - (_Py_CODEUNIT *)code->co_code_adaptive);
         int opcode = instr->op.code;
         int oparg = instr->op.arg;
         int extras = 0;
@@ -426,6 +434,25 @@ translate_bytecode_to_trace(
             oparg = (oparg & 0xffffff00) | executor->vm_data.oparg;
         }
         switch (opcode) {
+
+            case POP_JUMP_IF_FALSE:
+            {
+                // Assume jump unlikely (TODO: handle jump likely case)
+                // Reserve 7 entries (2 here, 3 stub, plus SAVE_IP + EXIT_TRACE)
+                if (trace_length + 7 > max_length) {
+                    DPRINTF(1, "Ran out of space for POP_JUMP_IF_FALSE\n");
+                    goto done;
+                }
+                _Py_CODEUNIT *target_instr = instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]] + oparg;
+                max_length -= 3;  // Really the start of the stubs
+                ADD_TO_TRACE(JUMP_IF_FALSE, max_length);
+                ADD_TO_TRACE(POP_TOP, 0);
+                ADD_TO_STUB(max_length, POP_TOP, 0);
+                ADD_TO_STUB(max_length + 1, SAVE_IP, target_instr - (_Py_CODEUNIT *)code->co_code_adaptive);
+                ADD_TO_STUB(max_length + 2, EXIT_TRACE, 0);
+                break;
+            }
+
             default:
             {
                 const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
@@ -538,7 +565,7 @@ uop_optimize(
         return -1;
     }
     executor->base.execute = _PyUopExecute;
-    memcpy(executor->trace, trace, trace_length * sizeof(_PyUOpInstruction));
+    memcpy(executor->trace, trace, _Py_UOP_MAX_TRACE_LENGTH * sizeof(_PyUOpInstruction));
     *exec_ptr = (_PyExecutorObject *)executor;
     return 1;
 }

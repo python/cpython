@@ -2755,7 +2755,8 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
         operand = self->trace[pc].operand;
         oparg = (int)operand;
         DPRINTF(3,
-                "  uop %s, operand %" PRIu64 ", stack_level %d\n",
+                "%4d: uop %s, operand %" PRIu64 ", stack_level %d\n",
+                pc,
                 opcode < 256 ? _PyOpcode_OpName[opcode] : _PyOpcode_uop_name[opcode],
                 operand,
                 (int)(stack_pointer - _PyFrame_Stackbase(frame)));
@@ -2766,6 +2767,38 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
 #undef ENABLE_SPECIALIZATION
 #define ENABLE_SPECIALIZATION 0
 #include "executor_cases.c.h"
+
+            case JUMP_IF_FALSE:
+            {
+                if (Py_IsFalse(stack_pointer[-1])) {
+                    pc = oparg;
+                }
+                break;
+            }
+
+            case JUMP_IF_TRUE:
+            {
+                if (Py_IsTrue(stack_pointer[-1])) {
+                    pc = oparg;
+                }
+                break;
+            }
+
+            case JUMP_IF_NONE:
+            {
+                if (Py_IsNone(stack_pointer[-1])) {
+                    pc = oparg;
+                }
+                break;
+            }
+
+            case JUMP_IF_NOT_NONE:
+            {
+                if (!Py_IsNone(stack_pointer[-1])) {
+                    pc = oparg;
+                }
+                break;
+            }
 
             case SAVE_IP:
             {

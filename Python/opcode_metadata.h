@@ -21,18 +21,22 @@
 
 #define EXIT_TRACE 300
 #define SAVE_IP 301
-#define _GUARD_BOTH_INT 302
-#define _BINARY_OP_MULTIPLY_INT 303
-#define _BINARY_OP_ADD_INT 304
-#define _BINARY_OP_SUBTRACT_INT 305
-#define _GUARD_BOTH_FLOAT 306
-#define _BINARY_OP_MULTIPLY_FLOAT 307
-#define _BINARY_OP_ADD_FLOAT 308
-#define _BINARY_OP_SUBTRACT_FLOAT 309
-#define _GUARD_BOTH_UNICODE 310
-#define _BINARY_OP_ADD_UNICODE 311
-#define _LOAD_LOCALS 312
-#define _LOAD_FROM_DICT_OR_GLOBALS 313
+#define JUMP_IF_FALSE 302
+#define JUMP_IF_TRUE 303
+#define JUMP_IF_NONE 304
+#define JUMP_IF_NOT_NONE 305
+#define _GUARD_BOTH_INT 306
+#define _BINARY_OP_MULTIPLY_INT 307
+#define _BINARY_OP_ADD_INT 308
+#define _BINARY_OP_SUBTRACT_INT 309
+#define _GUARD_BOTH_FLOAT 310
+#define _BINARY_OP_MULTIPLY_FLOAT 311
+#define _BINARY_OP_ADD_FLOAT 312
+#define _BINARY_OP_SUBTRACT_FLOAT 313
+#define _GUARD_BOTH_UNICODE 314
+#define _BINARY_OP_ADD_UNICODE 315
+#define _LOAD_LOCALS 316
+#define _LOAD_FROM_DICT_OR_GLOBALS 317
 
 #ifndef NEED_OPCODE_METADATA
 extern int _PyOpcode_num_popped(int opcode, int oparg, bool jump);
@@ -1284,18 +1288,22 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] = {
 const char * const _PyOpcode_uop_name[512] = {
     [300] = "EXIT_TRACE",
     [301] = "SAVE_IP",
-    [302] = "_GUARD_BOTH_INT",
-    [303] = "_BINARY_OP_MULTIPLY_INT",
-    [304] = "_BINARY_OP_ADD_INT",
-    [305] = "_BINARY_OP_SUBTRACT_INT",
-    [306] = "_GUARD_BOTH_FLOAT",
-    [307] = "_BINARY_OP_MULTIPLY_FLOAT",
-    [308] = "_BINARY_OP_ADD_FLOAT",
-    [309] = "_BINARY_OP_SUBTRACT_FLOAT",
-    [310] = "_GUARD_BOTH_UNICODE",
-    [311] = "_BINARY_OP_ADD_UNICODE",
-    [312] = "_LOAD_LOCALS",
-    [313] = "_LOAD_FROM_DICT_OR_GLOBALS",
+    [302] = "JUMP_IF_FALSE",
+    [303] = "JUMP_IF_TRUE",
+    [304] = "JUMP_IF_NONE",
+    [305] = "JUMP_IF_NOT_NONE",
+    [306] = "_GUARD_BOTH_INT",
+    [307] = "_BINARY_OP_MULTIPLY_INT",
+    [308] = "_BINARY_OP_ADD_INT",
+    [309] = "_BINARY_OP_SUBTRACT_INT",
+    [310] = "_GUARD_BOTH_FLOAT",
+    [311] = "_BINARY_OP_MULTIPLY_FLOAT",
+    [312] = "_BINARY_OP_ADD_FLOAT",
+    [313] = "_BINARY_OP_SUBTRACT_FLOAT",
+    [314] = "_GUARD_BOTH_UNICODE",
+    [315] = "_BINARY_OP_ADD_UNICODE",
+    [316] = "_LOAD_LOCALS",
+    [317] = "_LOAD_FROM_DICT_OR_GLOBALS",
 };
 #endif // NEED_OPCODE_METADATA
 #endif
