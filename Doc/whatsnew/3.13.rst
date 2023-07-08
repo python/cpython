@@ -470,6 +470,7 @@ Deprecated
   * :c:func:`Py_GetPythonHome`: get :c:member:`PyConfig.home` or
     :envvar:`PYTHONHOME` environment variable instead.
 
+  Functions scheduled for removal in Python 3.15.
   (Contributed by Victor Stinner in :gh:`105145`.)
 
 * Deprecate the :c:func:`PyImport_ImportModuleNoBlock` function which is just
@@ -612,3 +613,85 @@ Removed
   <https://github.com/python/pythoncapi-compat/>`__ can be used to get
   :c:func:`PyInterpreterState_Get()` on Python 3.8 and older.
   (Contributed by Victor Stinner in :gh:`106320`.)
+
+Pending Removal in Python 3.14
+------------------------------
+
+* Global configuration variables:
+
+  * :c:var:`Py_DebugFlag`: use :c:member:`PyConfig.parser_debug`
+  * :c:var:`Py_VerboseFlag`: use :c:member:`PyConfig.verbose`
+  * :c:var:`Py_QuietFlag`: use :c:member:`PyConfig.quiet`
+  * :c:var:`Py_InteractiveFlag`: use :c:member:`PyConfig.interactive`
+  * :c:var:`Py_InspectFlag`: use :c:member:`PyConfig.inspect`
+  * :c:var:`Py_OptimizeFlag`: use :c:member:`PyConfig.optimization_level`
+  * :c:var:`Py_NoSiteFlag`: use :c:member:`PyConfig.site_import`
+  * :c:var:`Py_BytesWarningFlag`: use :c:member:`PyConfig.bytes_warning`
+  * :c:var:`Py_FrozenFlag`: use :c:member:`PyConfig.pathconfig_warnings`
+  * :c:var:`Py_IgnoreEnvironmentFlag`: use :c:member:`PyConfig.use_environment`
+  * :c:var:`Py_DontWriteBytecodeFlag`: use :c:member:`PyConfig.write_bytecode`
+  * :c:var:`Py_NoUserSiteDirectory`: use :c:member:`PyConfig.user_site_directory`
+  * :c:var:`Py_UnbufferedStdioFlag`: use :c:member:`PyConfig.buffered_stdio`
+  * :c:var:`Py_HashRandomizationFlag`: use :c:member:`PyConfig.use_hash_seed`
+    and :c:member:`PyConfig.hash_seed`
+  * :c:var:`Py_IsolatedFlag`: use :c:member:`PyConfig.isolated`
+  * :c:var:`Py_LegacyWindowsFSEncodingFlag`: use :c:member:`PyPreConfig.legacy_windows_fs_encoding`
+  * :c:var:`Py_LegacyWindowsStdioFlag`: use :c:member:`PyConfig.legacy_windows_stdio`
+  * :c:var:`!Py_FileSystemDefaultEncoding`: use :c:member:`PyConfig.filesystem_encoding`
+  * :c:var:`!Py_HasFileSystemDefaultEncoding`: use :c:member:`PyConfig.filesystem_encoding`
+  * :c:var:`!Py_FileSystemDefaultEncodeErrors`: use :c:member:`PyConfig.filesystem_errors`
+  * :c:var:`!Py_UTF8Mode`: use :c:member:`PyPreConfig.utf8_mode` (see :c:func:`Py_PreInitialize`)
+
+  The :c:func:`Py_InitializeFromConfig` API should be used with
+  :c:type:`PyConfig` instead.
+
+Pending Removal in Python 3.15
+------------------------------
+
+* :c:func:`PyImport_ImportModuleNoBlock`: use :c:func:`PyImport_ImportModule`.
+* :c:func:`PyWeakref_GET_OBJECT`: use :c:func:`PyWeakref_GetRef` instead.
+* :c:func:`PyWeakref_GetObject`: use :c:func:`PyWeakref_GetRef` instead.
+* :c:type:`!Py_UNICODE_WIDE` type: use ``wchar_t`` instead.
+* :c:type:`Py_UNICODE` type: use ``wchar_t`` instead.
+* Python initialization functions:
+
+  * :c:func:`PySys_ResetWarnOptions`: clear :data:`sys.warnoptions` and
+    :data:`!warnings.filters` instead.
+  * :c:func:`Py_GetExecPrefix`: get :data:`sys.exec_prefix` instead.
+  * :c:func:`Py_GetPath`: get :data:`sys.path` instead.
+  * :c:func:`Py_GetPrefix`: get :data:`sys.prefix` instead.
+  * :c:func:`Py_GetProgramFullPath`: get :data:`sys.executable` instead.
+  * :c:func:`Py_GetProgramName`: get :data:`sys.executable` instead.
+  * :c:func:`Py_GetPythonHome`: get :c:member:`PyConfig.home` or
+    :envvar:`PYTHONHOME` environment variable instead.
+
+Pending Removal in Future Versions
+----------------------------------
+
+The following APIs were deprecated in earlier Python versions and will be
+removed, although there is currently no date scheduled for their removal.
+
+* :const:`Py_TPFLAGS_HAVE_FINALIZE`: no needed since Python 3.8.
+* :c:func:`PyErr_Fetch`: use :c:func:`PyErr_GetRaisedException`.
+* :c:func:`PyErr_NormalizeException`: use :c:func:`PyErr_GetRaisedException`.
+* :c:func:`PyErr_Restore`: use :c:func:`PyErr_SetRaisedException`.
+* :c:func:`PyModule_GetFilename`: use :c:func:`PyModule_GetFilenameObject`.
+* :c:func:`PyOS_AfterFork`: use :c:func:`PyOS_AfterFork_Child()`.
+* :c:func:`PySlice_GetIndicesEx`.
+* :c:func:`!PyUnicode_AsDecodedObject`.
+* :c:func:`!PyUnicode_AsDecodedUnicode`.
+* :c:func:`!PyUnicode_AsEncodedObject`.
+* :c:func:`!PyUnicode_AsEncodedUnicode`.
+* :c:func:`PyUnicode_READY`: not needed since Python 3.12.
+* :c:func:`!_PyErr_ChainExceptions`.
+* :c:member:`!PyBytesObject.ob_shash` member:
+  call :c:func:`PyObject_Hash` instead.
+* :c:member:`!PyDictObject.ma_version_tag` member.
+* TLS API:
+
+  * :c:func:`PyThread_create_key`: use :c:func:`PyThread_tss_alloc`.
+  * :c:func:`PyThread_delete_key`: use :c:func:`PyThread_tss_free`.
+  * :c:func:`PyThread_set_key_value`: use :c:func:`PyThread_tss_set`.
+  * :c:func:`PyThread_get_key_value`: use :c:func:`PyThread_tss_get`.
+  * :c:func:`PyThread_delete_key_value`: use :c:func:`PyThread_tss_delete`.
+  * :c:func:`PyThread_ReInitTLS`: no longer needed.

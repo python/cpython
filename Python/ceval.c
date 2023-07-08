@@ -763,11 +763,6 @@ resume_frame:
 
     DISPATCH();
 
-    if (_Py_HandlePending(tstate) != 0) {
-        goto error;
-    }
-    DISPATCH();
-
     {
     /* Start instructions */
 #if !USE_COMPUTED_GOTOS
@@ -2737,11 +2732,11 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
 #endif
 
     DPRINTF(3,
-            "Entering _PyUopExecute for %s (%s:%d) at offset %ld\n",
+            "Entering _PyUopExecute for %s (%s:%d) at byte offset %ld\n",
             PyUnicode_AsUTF8(_PyFrame_GetCode(frame)->co_qualname),
             PyUnicode_AsUTF8(_PyFrame_GetCode(frame)->co_filename),
             _PyFrame_GetCode(frame)->co_firstlineno,
-            (long)(frame->prev_instr + 1 -
+            2 * (long)(frame->prev_instr + 1 -
                    (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive));
 
     PyThreadState *tstate = _PyThreadState_GET();

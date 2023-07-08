@@ -84,6 +84,7 @@ typedef struct {
     int charsize; /* character size */
     int match_all;
     int must_advance;
+    int debug;
     /* marks */
     int lastmark;
     int lastindex;

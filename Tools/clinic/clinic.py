@@ -13,6 +13,7 @@ import collections
 import contextlib
 import copy
 import cpp
+import dataclasses as dc
 import enum
 import functools
 import hashlib
@@ -1617,19 +1618,6 @@ class CLanguage(Language):
         return clinic.get_destination('block').dump()
 
 
-
-
-@contextlib.contextmanager
-def OverrideStdioWith(stdout):
-    saved_stdout = sys.stdout
-    sys.stdout = stdout
-    try:
-        yield
-    finally:
-        assert sys.stdout is stdout
-        sys.stdout = saved_stdout
-
-
 def create_regex(
         before: str,
         after: str,
@@ -1871,11 +1859,10 @@ class BlockParser:
         return Block(input_output(), dsl_name, output=output)
 
 
+@dc.dataclass(slots=True)
 class BlockPrinter:
-
-    def __init__(self, language, f=None):
-        self.language = language
-        self.f = f or io.StringIO()
+    language: Language
+    f: io.StringIO = dc.field(default_factory=io.StringIO)
 
     def print_block(self, block, *, core_includes=False):
         input = block.input
@@ -2331,28 +2318,23 @@ def compute_checksum(
     return s
 
 
-
-
 class PythonParser:
     def __init__(self, clinic: Clinic) -> None:
         pass
 
     def parse(self, block: Block) -> None:
-        s = io.StringIO()
-        with OverrideStdioWith(s):
+        with contextlib.redirect_stdout(io.StringIO()) as s:
             exec(block.input)
-        block.output = s.getvalue()
+            block.output = s.getvalue()
 
 
+@dc.dataclass(repr=False)
 class Module:
-    def __init__(
-            self,
-            name: str,
-            module = None
-    ) -> None:
-        self.name = name
-        self.module = self.parent = module
+    name: str
+    module: Module | None = None
 
+    def __post_init__(self) -> None:
+        self.parent = self.module
         self.modules: ModuleDict = {}
         self.classes: ClassDict = {}
         self.functions: list[Function] = []
@@ -2361,22 +2343,16 @@ class Module:
         return "<clinic.Module " + repr(self.name) + " at " + str(id(self)) + ">"
 
 
+@dc.dataclass(repr=False)
 class Class:
-    def __init__(
-            self,
-            name: str,
-            module: Module | None = None,
-            cls = None,
-            typedef: str | None = None,
-            type_object: str | None = None
-    ) -> None:
-        self.name = name
-        self.module = module
-        self.cls = cls
-        self.typedef = typedef
-        self.type_object = type_object
-        self.parent = cls or module
+    name: str
+    module: Module | None = None
+    cls: Class | None = None
+    typedef: str | None = None
+    type_object: str | None = None
 
+    def __post_init__(self) -> None:
+        self.parent = self.cls or self.module
         self.classes: ClassDict = {}
         self.functions: list[Function] = []
 
@@ -2463,6 +2439,8 @@ INVALID, CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW
 ParamDict = dict[str, "Parameter"]
 ReturnConverterType = Callable[..., "CReturnConverter"]
 
+
+@dc.dataclass(repr=False)
 class Function:
     """
     Mutable duck type for inspect.Function.
@@ -2474,49 +2452,34 @@ class Function:
         It will always be true that
             (not docstring) or ((not docstring[0].isspace()) and (docstring.rstrip() == docstring))
     """
+    parameters: ParamDict = dc.field(default_factory=dict)
+    _: dc.KW_ONLY
+    name: str
+    module: Module
+    cls: Class | None = None
+    c_basename: str | None = None
+    full_name: str | None = None
+    return_converter: CReturnConverter
+    return_annotation: object = inspect.Signature.empty
+    docstring: str = ''
+    kind: str = CALLABLE
+    coexist: bool = False
+    # docstring_only means "don't generate a machine-readable
+    # signature, just a normal docstring".  it's True for
+    # functions with optional groups because we can't represent
+    # those accurately with inspect.Signature in 3.4.
+    docstring_only: bool = False
 
-    def __init__(
-            self,
-            parameters: ParamDict | None = None,
-            *,
-            name: str,
-            module: Module,
-            cls: Class | None = None,
-            c_basename: str | None = None,
-            full_name: str | None = None,
-            return_converter: CReturnConverter,
-            return_annotation = inspect.Signature.empty,
-            docstring: str | None = None,
-            kind: str = CALLABLE,
-            coexist: bool = False,
-            docstring_only: bool = False
-    ) -> None:
-        self.parameters = parameters or {}
-        self.return_annotation = return_annotation
-        self.name = name
-        self.full_name = full_name
-        self.module = module
-        self.cls = cls
-        self.parent = cls or module
-        self.c_basename = c_basename
-        self.return_converter = return_converter
-        self.docstring = docstring or ''
-        self.kind = kind
-        self.coexist = coexist
+    def __post_init__(self) -> None:
+        self.parent: Class | Module = self.cls or self.module
         self.self_converter: self_converter | None = None
-        # docstring_only means "don't generate a machine-readable
-        # signature, just a normal docstring".  it's True for
-        # functions with optional groups because we can't represent
-        # those accurately with inspect.Signature in 3.4.
-        self.docstring_only = docstring_only
+        self.__render_parameters__: list[Parameter] | None = None
 
-        self.rendered_parameters = None
-
-    __render_parameters__ = None
     @property
-    def render_parameters(self):
+    def render_parameters(self) -> list[Parameter]:
         if not self.__render_parameters__:
-            self.__render_parameters__ = l = []
+            l: list[Parameter] = []
+            self.__render_parameters__ = l
             for p in self.parameters.values():
                 p = p.copy()
                 p.converter.pre_render()
@@ -2541,17 +2504,8 @@ class Function:
     def __repr__(self) -> str:
         return '<clinic.Function ' + self.name + '>'
 
-    def copy(self, **overrides) -> "Function":
-        kwargs = {
-            'name': self.name, 'module': self.module, 'parameters': self.parameters,
-            'cls': self.cls, 'c_basename': self.c_basename,
-            'full_name': self.full_name,
-            'return_converter': self.return_converter, 'return_annotation': self.return_annotation,
-            'docstring': self.docstring, 'kind': self.kind, 'coexist': self.coexist,
-            'docstring_only': self.docstring_only,
-            }
-        kwargs.update(overrides)
-        f = Function(**kwargs)
+    def copy(self, **overrides: Any) -> Function:
+        f = dc.replace(self, **overrides)
         f.parameters = {
             name: value.copy(function=f)
             for name, value in f.parameters.items()
@@ -2559,31 +2513,21 @@ class Function:
         return f
 
 
+@dc.dataclass(repr=False, slots=True)
 class Parameter:
     """
     Mutable duck type of inspect.Parameter.
     """
-
-    def __init__(
-            self,
-            name: str,
-            kind: inspect._ParameterKind,
-            *,
-            default = inspect.Parameter.empty,
-            function: Function,
-            converter: "CConverter",
-            annotation = inspect.Parameter.empty,
-            docstring: str | None = None,
-            group: int = 0
-    ) -> None:
-        self.name = name
-        self.kind = kind
-        self.default = default
-        self.function = function
-        self.converter = converter
-        self.annotation = annotation
-        self.docstring = docstring or ''
-        self.group = group
+    name: str
+    kind: inspect._ParameterKind
+    _: dc.KW_ONLY
+    default: object = inspect.Parameter.empty
+    function: Function
+    converter: CConverter
+    annotation: object = inspect.Parameter.empty
+    docstring: str = ''
+    group: int = 0
+    right_bracket_count: int = dc.field(init=False, default=0)
 
     def __repr__(self) -> str:
         return '<clinic.Parameter ' + self.name + '>'
@@ -2600,18 +2544,19 @@ class Parameter:
     def is_optional(self) -> bool:
         return not self.is_vararg() and (self.default is not unspecified)
 
-    def copy(self, **overrides) -> "Parameter":
-        kwargs = {
-            'name': self.name, 'kind': self.kind, 'default':self.default,
-                 'function': self.function, 'converter': self.converter, 'annotation': self.annotation,
-                 'docstring': self.docstring, 'group': self.group,
-            }
-        kwargs.update(overrides)
-        if 'converter' not in overrides:
+    def copy(
+        self,
+        /,
+        *,
+        converter: CConverter | None = None,
+        function: Function | None = None,
+        **overrides: Any
+    ) -> Parameter:
+        function = function or self.function
+        if not converter:
             converter = copy.copy(self.converter)
-            converter.function = kwargs['function']
-            kwargs['converter'] = converter
-        return Parameter(**kwargs)
+            converter.function = function
+        return dc.replace(self, **overrides, function=function, converter=converter)
 
     def get_displayname(self, i: int) -> str:
         if i == 0:
@@ -2622,13 +2567,10 @@ class Parameter:
             return f'"argument {i}"'
 
 
+@dc.dataclass
 class LandMine:
     # try to access any
-    def __init__(self, message: str) -> None:
-        self.__message__ = message
-
-    def __repr__(self) -> str:
-        return '<LandMine ' + repr(self.__message__) + ">"
+    __message__: str
 
     def __getattribute__(self, name: str):
         if name in ('__repr__', '__message__'):
@@ -2788,7 +2730,7 @@ class CConverter(metaclass=CConverterAutoRegister):
              # Positional args:
              name: str,
              py_name: str,
-             function,
+             function: Function,
              default: object = unspecified,
              *,  # Keyword only args:
              c_default: str | None = None,
@@ -2827,7 +2769,9 @@ class CConverter(metaclass=CConverterAutoRegister):
         # about the function in the init.
         # (that breaks if we get cloned.)
         # so after this change we will noisily fail.
-        self.function = LandMine("Don't access members of self.function inside converter_init!")
+        self.function: Function | LandMine = LandMine(
+            "Don't access members of self.function inside converter_init!"
+        )
         self.converter_init(**kwargs)
         self.function = function
 
@@ -2837,7 +2781,7 @@ class CConverter(metaclass=CConverterAutoRegister):
     def is_optional(self) -> bool:
         return (self.default is not unspecified)
 
-    def _render_self(self, parameter: str, data: CRenderData) -> None:
+    def _render_self(self, parameter: Parameter, data: CRenderData) -> None:
         self.parameter = parameter
         name = self.parser_name
 
@@ -2897,7 +2841,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         if cleanup:
             data.cleanup.append('/* Cleanup for ' + name + ' */\n' + cleanup.rstrip() + "\n")
 
-    def render(self, parameter: str, data: CRenderData) -> None:
+    def render(self, parameter: Parameter, data: CRenderData) -> None:
         """
         parameter is a clinic.Parameter instance.
         data is a CRenderData instance.
@@ -5273,7 +5217,7 @@ class DSLParser:
         assert isinstance(parameters[0].converter, self_converter)
         # self is always positional-only.
         assert parameters[0].is_positional_only()
-        parameters[0].right_bracket_count = 0
+        assert parameters[0].right_bracket_count == 0
         positional_only = True
         for p in parameters[1:]:
             if not p.is_positional_only():
