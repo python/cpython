@@ -1,2 +1,0 @@
-Do not ignore user-defined ``__getstate__`` and ``__setstate__`` methods for
-slotted frozen dataclasses.

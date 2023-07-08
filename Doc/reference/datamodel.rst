@@ -499,6 +499,7 @@ Callable types
          single: __globals__ (function attribute)
          single: __annotations__ (function attribute)
          single: __kwdefaults__ (function attribute)
+         single: __type_params__ (function attribute)
          pair: global; namespace
 
       +-------------------------+-------------------------------+-----------+
@@ -560,6 +561,12 @@ Callable types
       +-------------------------+-------------------------------+-----------+
       | :attr:`__kwdefaults__`  | A dict containing defaults    | Writable  |
       |                         | for keyword-only parameters.  |           |
+      +-------------------------+-------------------------------+-----------+
+      | :attr:`__type_params__` | A tuple containing the        | Writable  |
+      |                         | :ref:`type parameters         |           |
+      |                         | <type-params>` of a           |           |
+      |                         | :ref:`generic function        |           |
+      |                         | <generic-functions>`.         |           |
       +-------------------------+-------------------------------+-----------+
 
       Most of the attributes labelled "Writable" check the type of the assigned value.
@@ -837,6 +844,7 @@ Custom classes
       single: __bases__ (class attribute)
       single: __doc__ (class attribute)
       single: __annotations__ (class attribute)
+      single: __type_params__ (class attribute)
 
    Special attributes:
 
@@ -862,6 +870,10 @@ Custom classes
          collected during class body execution.  For best practices on
          working with :attr:`__annotations__`, please see
          :ref:`annotations-howto`.
+
+      :attr:`__type_params__`
+         A tuple containing the :ref:`type parameters <type-params>` of
+         a :ref:`generic class <generic-classes>`.
 
 Class instances
    .. index::
@@ -3167,8 +3179,9 @@ An example of an asynchronous context manager class::
    lead to some very strange behaviour if it is handled incorrectly.
 
 .. [#] The :meth:`~object.__hash__`, :meth:`~object.__iter__`,
-   :meth:`~object.__reversed__`, and :meth:`~object.__contains__` methods have
-   special handling for this; others
+   :meth:`~object.__reversed__`, :meth:`~object.__contains__`,
+   :meth:`~object.__class_getitem__` and :meth:`~os.PathLike.__fspath__`
+   methods have special handling for this. Others
    will still raise a :exc:`TypeError`, but may do so by relying on
    the behavior that ``None`` is not callable.
 

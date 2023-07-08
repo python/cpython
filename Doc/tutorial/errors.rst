@@ -578,6 +578,8 @@ the following pattern::
    ...
 
 
+.. _tut-exception-notes:
+
 Enriching Exceptions with Notes
 ===============================
 
