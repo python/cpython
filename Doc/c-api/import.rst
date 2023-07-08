@@ -38,6 +38,9 @@ Importing Modules
       to per-module locks for most purposes, so this function's special
       behaviour isn't needed anymore.
 
+   .. deprecated-removed:: 3.13 3.15
+      Use :c:func:`PyImport_ImportModule` instead.
+
 
 .. c:function:: PyObject* PyImport_ImportModuleEx(const char *name, PyObject *globals, PyObject *locals, PyObject *fromlist)
 
@@ -95,27 +98,40 @@ Importing Modules
    an exception set on failure (the module still exists in this case).
 
 
+.. c:function:: PyObject* PyImport_AddModuleRef(const char *name)
+
+   Return the module object corresponding to a module name.
+
+   The *name* argument may be of the form ``package.module``. First check the
+   modules dictionary if there's one there, and if not, create a new one and
+   insert it in the modules dictionary.
+
+   Return a :term:`strong reference` to the module on success. Return ``NULL``
+   with an exception set on failure.
+
+   The module name *name* is decoded from UTF-8.
+
+   This function does not load or import the module; if the module wasn't
+   already loaded, you will get an empty module object. Use
+   :c:func:`PyImport_ImportModule` or one of its variants to import a module.
+   Package structures implied by a dotted name for *name* are not created if
+   not already present.
+
+   .. versionadded:: 3.13
+
+
 .. c:function:: PyObject* PyImport_AddModuleObject(PyObject *name)
 
-   Return the module object corresponding to a module name.  The *name* argument
-   may be of the form ``package.module``. First check the modules dictionary if
-   there's one there, and if not, create a new one and insert it in the modules
-   dictionary. Return ``NULL`` with an exception set on failure.
-
-   .. note::
-
-      This function does not load or import the module; if the module wasn't already
-      loaded, you will get an empty module object. Use :c:func:`PyImport_ImportModule`
-      or one of its variants to import a module.  Package structures implied by a
-      dotted name for *name* are not created if not already present.
+   Similar to :c:func:`PyImport_AddModuleRef`, but return a :term:`borrowed
+   reference` and *name* is a Python :class:`str` object.
 
    .. versionadded:: 3.3
 
 
 .. c:function:: PyObject* PyImport_AddModule(const char *name)
 
-   Similar to :c:func:`PyImport_AddModuleObject`, but the name is a UTF-8
-   encoded string instead of a Unicode object.
+   Similar to :c:func:`PyImport_AddModuleRef`, but return a :term:`borrowed
+   reference`.
 
 
 .. c:function:: PyObject* PyImport_ExecCodeModule(const char *name, PyObject *co)

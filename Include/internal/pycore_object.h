@@ -326,9 +326,9 @@ _PyObject_GET_WEAKREFS_LISTPTR_FROM_OFFSET(PyObject *op)
 static inline int
 _PyObject_IS_GC(PyObject *obj)
 {
-    return (PyType_IS_GC(Py_TYPE(obj))
-            && (Py_TYPE(obj)->tp_is_gc == NULL
-                || Py_TYPE(obj)->tp_is_gc(obj)));
+    PyTypeObject *type = Py_TYPE(obj);
+    return (PyType_IS_GC(type)
+            && (type->tp_is_gc == NULL || type->tp_is_gc(obj)));
 }
 
 // Fast inlined version of PyType_IS_GC()
@@ -355,8 +355,10 @@ static inline int _PyType_SUPPORTS_WEAKREFS(PyTypeObject *type) {
 }
 
 extern PyObject* _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems);
+PyObject *_PyType_NewManagedObject(PyTypeObject *type);
 
 extern int _PyObject_InitializeDict(PyObject *obj);
+int _PyObject_InitInlineValues(PyObject *obj, PyTypeObject *tp);
 extern int _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
                                           PyObject *name, PyObject *value);
 PyObject * _PyObject_GetInstanceAttribute(PyObject *obj, PyDictValues *values,
