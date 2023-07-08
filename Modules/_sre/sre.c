@@ -1549,10 +1549,12 @@ _sre_template_impl(PyObject *module, PyObject *pattern, PyObject *template)
     for (Py_ssize_t i = 0; i < n; i++) {
         Py_ssize_t index = PyLong_AsSsize_t(PyList_GET_ITEM(template, 2*i+1));
         if (index == -1 && PyErr_Occurred()) {
+            Py_SET_SIZE(self, i);
             Py_DECREF(self);
             return NULL;
         }
         if (index < 0) {
+            Py_SET_SIZE(self, i);
             goto bad_template;
         }
         self->items[i].index = index;

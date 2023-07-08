@@ -2441,6 +2441,16 @@ class ReTests(unittest.TestCase):
                 p.terminate()
                 p.join()
 
+    def test_sre_template_invalid_group_index(self):
+        # see gh-106524
+        import _sre
+        with self.assertRaises(TypeError) as cm:
+            _sre.template("", ["", -1, ""])
+        self.assertIn("invalid template", str(cm.exception))
+        with self.assertRaises(TypeError) as cm:
+            _sre.template("", ["", (), ""])
+        self.assertIn("an integer is required", str(cm.exception))
+
 
 def get_debug_out(pat):
     with captured_stdout() as out:
