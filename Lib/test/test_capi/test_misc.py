@@ -2446,13 +2446,7 @@ class TestUops(unittest.TestCase):
         with temporary_optimizer(opt):
             testfunc(1000)
 
-        ex = None
-        for offset in range(0, len(testfunc.__code__.co_code), 2):
-            try:
-                ex = _testinternalcapi.get_executor(testfunc.__code__, offset)
-                break
-            except ValueError:
-                pass
+        ex = get_first_executor(testfunc.__code__)
         self.assertIsNotNone(ex)
         uops = {opname for opname, _ in ex}
         self.assertIn("SAVE_IP", uops)
@@ -2496,8 +2490,10 @@ class TestUops(unittest.TestCase):
             ex = get_first_executor(many_vars.__code__)
             self.assertIsNone(ex)
             many_vars()
-            ex = get_first_executor(many_vars.__code__)
-            self.assertIn(("LOAD_FAST", 259), list(ex))
+
+        ex = get_first_executor(many_vars.__code__)
+        self.assertIsNotNone(ex)
+        self.assertIn(("LOAD_FAST", 259), list(ex))
 
     def test_unspecialized_unpack(self):
         # An example of an unspecialized opcode
@@ -2516,13 +2512,7 @@ class TestUops(unittest.TestCase):
         with temporary_optimizer(opt):
             testfunc(10)
 
-        ex = None
-        for offset in range(0, len(testfunc.__code__.co_code), 2):
-            try:
-                ex = _testinternalcapi.get_executor(testfunc.__code__, offset)
-                break
-            except ValueError:
-                pass
+        ex = get_first_executor(testfunc.__code__)
         self.assertIsNotNone(ex)
         uops = {opname for opname, _ in ex}
         self.assertIn("UNPACK_SEQUENCE", uops)
