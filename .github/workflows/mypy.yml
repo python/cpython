@@ -1,0 +1,39 @@
+# Workflow to run mypy on select parts of the CPython repo
+name: mypy
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    paths:
+      - "Tools/clinic/**"
+      - ".github/workflows/mypy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: 1
+  FORCE_COLOR: 1
+  TERM: xterm-256color  # needed for FORCE_COLOR to work on mypy on Ubuntu, see https://github.com/python/mypy/issues/13817
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  mypy:
+    name: Run mypy on Tools/clinic/
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+          cache: pip
+          cache-dependency-path: Tools/clinic/requirements-dev.txt
+      - run: pip install -r Tools/clinic/requirements-dev.txt
+      - run: mypy --config-file Tools/clinic/mypy.ini

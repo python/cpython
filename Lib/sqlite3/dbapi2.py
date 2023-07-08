@@ -55,16 +55,25 @@ Binary = memoryview
 collections.abc.Sequence.register(Row)
 
 def register_adapters_and_converters():
+    from warnings import warn
+
+    msg = ("The default {what} is deprecated as of Python 3.12; "
+           "see the sqlite3 documentation for suggested replacement recipes")
+
     def adapt_date(val):
+        warn(msg.format(what="date adapter"), DeprecationWarning, stacklevel=2)
         return val.isoformat()
 
     def adapt_datetime(val):
+        warn(msg.format(what="datetime adapter"), DeprecationWarning, stacklevel=2)
         return val.isoformat(" ")
 
     def convert_date(val):
+        warn(msg.format(what="date converter"), DeprecationWarning, stacklevel=2)
         return datetime.date(*map(int, val.split(b"-")))
 
     def convert_timestamp(val):
+        warn(msg.format(what="timestamp converter"), DeprecationWarning, stacklevel=2)
         datepart, timepart = val.split(b" ")
         year, month, day = map(int, datepart.split(b"-"))
         timepart_full = timepart.split(b".")

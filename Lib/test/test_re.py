@@ -1,6 +1,7 @@
 from test.support import (gc_collect, bigmemtest, _2G,
                           cpython_only, captured_stdout,
-                          check_disallow_instantiation, is_emscripten, is_wasi)
+                          check_disallow_instantiation, is_emscripten, is_wasi,
+                          warnings_helper, SHORT_TIMEOUT)
 import locale
 import re
 import string
@@ -10,6 +11,14 @@ import unittest
 import warnings
 from re import Scanner
 from weakref import proxy
+
+# some platforms lack working multiprocessing
+try:
+    import _multiprocessing
+except ImportError:
+    multiprocessing = None
+else:
+    import multiprocessing
 
 # Misc tests from Tim Peters' re.doc
 
@@ -620,6 +629,11 @@ class ReTests(unittest.TestCase):
                                'two branches', 10)
         self.checkPatternError(r'()(?(2)a)',
                                "invalid group reference 2", 5)
+
+    def test_re_groupref_exists_validation_bug(self):
+        for i in range(256):
+            with self.subTest(code=i):
+                re.compile(r'()(?(1)\x%02x?)' % i)
 
     def test_re_groupref_overflow(self):
         from re._constants import MAXGROUPS
@@ -1508,10 +1522,11 @@ class ReTests(unittest.TestCase):
         for x in not_decimal_digits:
             self.assertIsNone(re.match(r'^\d$', x))
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-80480 array('u')
     def test_empty_array(self):
         # SF buf 1647541
         import array
-        for typecode in 'bBuhHiIlLfd':
+        for typecode in 'bBhuwHiIlLfd':
             a = array.array(typecode)
             self.assertIsNone(re.compile(b"bla").match(a))
             self.assertEqual(re.compile(b"").match(a).groups(), ())
@@ -2383,29 +2398,25 @@ class ReTests(unittest.TestCase):
         self.assertTrue(re.fullmatch(r'(?s:(?>.*?\.).*)\Z', "a.txt")) # reproducer
         self.assertTrue(re.fullmatch(r'(?s:(?=(?P<g0>.*?\.))(?P=g0).*)\Z', "a.txt"))
 
-    def test_template_function_and_flag_is_deprecated(self):
-        with self.assertWarns(DeprecationWarning) as cm:
-            template_re1 = re.template(r'a')
-        self.assertIn('re.template()', str(cm.warning))
-        self.assertIn('is deprecated', str(cm.warning))
-        self.assertIn('function', str(cm.warning))
-        self.assertNotIn('flag', str(cm.warning))
-
-        with self.assertWarns(DeprecationWarning) as cm:
-            # we deliberately use more flags here to test that that still
-            # triggers the warning
-            # if paranoid, we could test multiple different combinations,
-            # but it's probably not worth it
-            template_re2 = re.compile(r'a', flags=re.TEMPLATE|re.UNICODE)
-        self.assertIn('re.TEMPLATE', str(cm.warning))
-        self.assertIn('is deprecated', str(cm.warning))
-        self.assertIn('flag', str(cm.warning))
-        self.assertNotIn('function', str(cm.warning))
-
-        # while deprecated, is should still function
-        self.assertEqual(template_re1, template_re2)
-        self.assertTrue(template_re1.match('ahoy'))
-        self.assertFalse(template_re1.match('nope'))
+    @unittest.skipIf(multiprocessing is None, 'test requires multiprocessing')
+    def test_regression_gh94675(self):
+        pattern = re.compile(r'(?<=[({}])(((//[^\n]*)?[\n])([\000-\040])*)*'
+                             r'((/[^/\[\n]*(([^\n]|(\[\n]*(]*)*\]))'
+                             r'[^/\[]*)*/))((((//[^\n]*)?[\n])'
+                             r'([\000-\040]|(/\*[^*]*\*+'
+                             r'([^/*]\*+)*/))*)+(?=[^\000-\040);\]}]))')
+        input_js = '''a(function() {
+            ///////////////////////////////////////////////////////////////////
+        });'''
+        p = multiprocessing.Process(target=pattern.sub, args=('', input_js))
+        p.start()
+        p.join(SHORT_TIMEOUT)
+        try:
+            self.assertFalse(p.is_alive(), 'pattern.sub() timed out')
+        finally:
+            if p.is_alive():
+                p.terminate()
+                p.join()
 
 
 def get_debug_out(pat):
@@ -2580,11 +2591,11 @@ class PatternReprTests(unittest.TestCase):
                          "re.IGNORECASE|re.DOTALL|re.VERBOSE|0x100000")
         self.assertEqual(
                 repr(~re.I),
-                "re.ASCII|re.LOCALE|re.UNICODE|re.MULTILINE|re.DOTALL|re.VERBOSE|re.TEMPLATE|re.DEBUG")
+                "re.ASCII|re.LOCALE|re.UNICODE|re.MULTILINE|re.DOTALL|re.VERBOSE|re.DEBUG|0x1")
         self.assertEqual(repr(~(re.I|re.S|re.X)),
-                         "re.ASCII|re.LOCALE|re.UNICODE|re.MULTILINE|re.TEMPLATE|re.DEBUG")
+                         "re.ASCII|re.LOCALE|re.UNICODE|re.MULTILINE|re.DEBUG|0x1")
         self.assertEqual(repr(~(re.I|re.S|re.X|(1<<20))),
-                         "re.ASCII|re.LOCALE|re.UNICODE|re.MULTILINE|re.TEMPLATE|re.DEBUG|0xffe00")
+                         "re.ASCII|re.LOCALE|re.UNICODE|re.MULTILINE|re.DEBUG|0xffe01")
 
 
 class ImplementationTest(unittest.TestCase):

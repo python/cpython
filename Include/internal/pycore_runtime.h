@@ -8,22 +8,28 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_atexit.h"          // struct atexit_runtime_state
 #include "pycore_atomic.h"          /* _Py_atomic_address */
-#include "pycore_gil.h"             // struct _gil_runtime_state
+#include "pycore_ceval_state.h"     // struct _ceval_runtime_state
+#include "pycore_floatobject.h"     // struct _Py_float_runtime_state
+#include "pycore_faulthandler.h"    // struct _faulthandler_runtime_state
 #include "pycore_global_objects.h"  // struct _Py_global_objects
+#include "pycore_import.h"          // struct _import_runtime_state
 #include "pycore_interp.h"          // PyInterpreterState
+#include "pycore_object_state.h"    // struct _py_object_runtime_state
+#include "pycore_parser.h"          // struct _parser_runtime_state
+#include "pycore_pymem.h"           // struct _pymem_allocators
+#include "pycore_pyhash.h"          // struct pyhash_runtime_state
+#include "pycore_pythread.h"        // struct _pythread_runtime_state
+#include "pycore_signal.h"          // struct _signals_runtime_state
+#include "pycore_time.h"            // struct _time_runtime_state
+#include "pycore_tracemalloc.h"     // struct _tracemalloc_runtime_state
+#include "pycore_typeobject.h"      // struct types_runtime_state
 #include "pycore_unicodeobject.h"   // struct _Py_unicode_runtime_ids
 
-
-/* ceval state */
-
-struct _ceval_runtime_state {
-    /* Request for checking signals. It is shared by all interpreters (see
-       bpo-40513). Any thread of any interpreter can receive a signal, but only
-       the main thread of the main interpreter can handle signals: see
-       _Py_ThreadCanHandleSignals(). */
-    _Py_atomic_int signals_pending;
-    struct _gil_runtime_state gil;
+struct _getargs_runtime_state {
+    PyThread_type_lock mutex;
+    struct _PyArg_Parser *static_parsers;
 };
 
 /* GIL state */
@@ -32,15 +38,11 @@ struct _gilstate_runtime_state {
     /* bpo-26558: Flag to disable PyGILState_Check().
        If set to non-zero, PyGILState_Check() always return 1. */
     int check_enabled;
-    /* Assuming the current thread holds the GIL, this is the
-       PyThreadState for the current thread. */
-    _Py_atomic_address tstate_current;
     /* The single PyInterpreterState used by this process'
        GILState implementation
     */
     /* TODO: Given interp_main, it may be possible to kill this ref */
     PyInterpreterState *autoInterpreterState;
-    Py_tss_t autoTSSkey;
 };
 
 /* Runtime audit hook state */
@@ -90,8 +92,8 @@ typedef struct pyruntimestate {
            in the operation of the runtime.  It is also often the only
            interpreter. */
         PyInterpreterState *main;
-        /* _next_interp_id is an auto-numbered sequence of small
-           integers.  It gets initialized in _PyInterpreterState_Init(),
+        /* next_id is an auto-numbered sequence of small
+           integers.  It gets initialized in _PyInterpreterState_Enable(),
            which is called in Py_Initialize(), and used in
            PyInterpreterState_New().  A negative interpreter ID
            indicates an error occurred.  The main interpreter will
@@ -100,20 +102,46 @@ typedef struct pyruntimestate {
            using a Python int. */
         int64_t next_id;
     } interpreters;
+
+    unsigned long main_thread;
+
+    /* ---------- IMPORTANT ---------------------------
+     The fields above this line are declared as early as
+     possible to facilitate out-of-process observability
+     tools. */
+
     // XXX Remove this field once we have a tp_* slot.
     struct _xidregistry {
         PyThread_type_lock mutex;
         struct _xidregitem *head;
     } xidregistry;
 
-    unsigned long main_thread;
+    struct _pymem_allocators allocators;
+    struct _obmalloc_global_state obmalloc;
+    struct pyhash_runtime_state pyhash_state;
+    struct _time_runtime_state time;
+    struct _pythread_runtime_state threads;
+    struct _signals_runtime_state signals;
 
-#define NEXITFUNCS 32
-    void (*exitfuncs[NEXITFUNCS])(void);
-    int nexitfuncs;
+    /* Used for the thread state bound to the current thread. */
+    Py_tss_t autoTSSkey;
 
+    /* Used instead of PyThreadState.trash when there is not current tstate. */
+    Py_tss_t trashTSSkey;
+
+    PyWideStringList orig_argv;
+
+    struct _parser_runtime_state parser;
+
+    struct _atexit_runtime_state atexit;
+
+    struct _import_runtime_state imports;
     struct _ceval_runtime_state ceval;
     struct _gilstate_runtime_state gilstate;
+    struct _getargs_runtime_state getargs;
+    struct _fileutils_state fileutils;
+    struct _faulthandler_runtime_state faulthandler;
+    struct _tracemalloc_runtime_state tracemalloc;
 
     PyPreConfig preconfig;
 
@@ -121,12 +149,18 @@ typedef struct pyruntimestate {
     // is called multiple times.
     Py_OpenCodeHookFunction open_code_hook;
     void *open_code_userdata;
-    _Py_AuditHookEntry *audit_hook_head;
+    struct {
+        PyThread_type_lock mutex;
+        _Py_AuditHookEntry *head;
+    } audit_hooks;
 
-    struct _Py_unicode_runtime_ids unicode_ids;
+    struct _py_object_runtime_state object_state;
+    struct _Py_float_runtime_state float_state;
+    struct _Py_unicode_runtime_state unicode_state;
+    struct _types_runtime_state types;
 
     /* All the objects that are shared by the runtime's interpreters. */
-    struct _Py_global_objects global_objects;
+    struct _Py_static_objects static_objects;
 
     /* The following fields are here to avoid allocation during init.
        The data is exposed through _PyRuntimeState pointer fields.

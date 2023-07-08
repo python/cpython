@@ -2,8 +2,6 @@
 posixshmem - A Python extension that provides shm_open() and shm_unlink()
 */
 
-#define PY_SSIZE_T_CLEAN
-
 #include <Python.h>
 
 // for shm_open() and shm_unlink()
@@ -110,12 +108,19 @@ static PyMethodDef module_methods[ ] = {
 };
 
 
+static PyModuleDef_Slot module_slots[] = {
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {0, NULL}
+};
+
+
 static struct PyModuleDef _posixshmemmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_posixshmem",
     .m_doc = "POSIX shared memory module",
     .m_size = 0,
     .m_methods = module_methods,
+    .m_slots = module_slots,
 };
 
 /* Module init function */

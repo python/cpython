@@ -1,8 +1,0 @@
-Added the new function :c:func:`PyType_FromMetaclass`, which generalizes the
-existing :c:func:`PyType_FromModuleAndSpec` using an additional metaclass
-argument. This is useful for language binding tools, where it can be used to
-intercept type-related operations like subclassing or static attribute access
-by specifying a metaclass with custom slots.
-
-Importantly, :c:func:`PyType_FromMetaclass` is available in the Limited API,
-which provides a path towards migrating more binding tools onto the Stable ABI.

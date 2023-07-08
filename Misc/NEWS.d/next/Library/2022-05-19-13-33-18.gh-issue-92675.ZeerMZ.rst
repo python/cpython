@@ -1,2 +1,0 @@
-Fix :func:`venv.ensure_directories` to accept :class:`pathlib.Path` arguments
-in addition to :class:`str` paths. Patch by David Foster.

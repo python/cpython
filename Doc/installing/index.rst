@@ -52,8 +52,7 @@ Key terms
   developers and documentation authors responsible for the maintenance and
   evolution of the standard packaging tools and the associated metadata and
   file format standards. They maintain a variety of tools, documentation,
-  and issue trackers on both `GitHub <https://github.com/pypa>`__ and
-  `Bitbucket <https://bitbucket.org/pypa/>`__.
+  and issue trackers on `GitHub <https://github.com/pypa>`__.
 * ``distutils`` is the original build and distribution system first added to
   the Python standard library in 1998. While direct use of ``distutils`` is
   being phased out, it still laid the foundation for the current packaging

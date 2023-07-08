@@ -17,7 +17,7 @@ the set are:
   reference material about types, functions, and the modules in the standard
   library.  The standard Python distribution includes a *lot* of additional code.
   There are modules to read Unix mailboxes, retrieve documents via HTTP, generate
-  random numbers, parse command-line options, write CGI programs, compress data,
+  random numbers, parse command-line options, compress data,
   and many other tasks. Skimming through the Library Reference will give you an
   idea of what's available.
 
@@ -45,7 +45,7 @@ More Python resources:
   Particularly notable contributions are collected in a book also titled Python
   Cookbook (O'Reilly & Associates, ISBN 0-596-00797-3.)
 
-* http://www.pyvideo.org collects links to Python-related videos from
+* https://pyvideo.org collects links to Python-related videos from
   conferences and user-group meetings.
 
 * https://scipy.org: The Scientific Python project includes modules for fast
