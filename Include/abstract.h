@@ -810,7 +810,7 @@ PyAPI_FUNC(PyObject *) PyMapping_Items(PyObject *o);
 PyAPI_FUNC(PyObject *) PyMapping_GetItemString(PyObject *o,
                                                const char *key);
 
-/* Replacements of PyObject_GetItem() and PyMapping_GetItemString() which don't
+/* Variants of PyObject_GetItem() and PyMapping_GetItemString() which don't
    raise KeyError.
 
    Return 1 and set *result != NULL if a key is found.

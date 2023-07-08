@@ -35,11 +35,11 @@ See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
 
 .. c:function:: int PyMapping_GetOptionalItem(PyObject *obj, PyObject *key, PyObject **result)
 
-   Replacement of :c:func:`PyObject_GetItem` which doesn't raise :exc:`KeyError`.
+   Variant of :c:func:`PyObject_GetItem` which doesn't raise :exc:`KeyError`.
 
-   Return ``1`` and set ``*result != NULL`` if a key is found.
-   Return ``0`` and set ``*result == NULL`` if a key is not found;
-   a :exc:`KeyError` is silenced.
+   Return ``1`` and set ``*result != NULL`` if the key is found.
+   Return ``0`` and set ``*result == NULL`` if the key is not found;
+   the :exc:`KeyError` is silenced.
    Return ``-1`` and set ``*result == NULL`` if an error other than
    :exc:`KeyError` is raised.
 
@@ -48,11 +48,11 @@ See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
 
 .. c:function:: int PyMapping_GetOptionalItemString(PyObject *obj, const char *key, PyObject **result)
 
-   Replacement of :c:func:`PyMapping_GetItemString` which doesn't raise :exc:`KeyError`.
+   Variant of :c:func:`PyMapping_GetItemString` which doesn't raise :exc:`KeyError`.
 
-   Return ``1`` and set ``*result != NULL`` if a key is found.
-   Return ``0`` and set ``*result == NULL`` if a key is not found;
-   a :exc:`KeyError` is silenced.
+   Return ``1`` and set ``*result != NULL`` if the key is found.
+   Return ``0`` and set ``*result == NULL`` if the key is not found;
+   the :exc:`KeyError` is silenced.
    Return ``-1`` and set ``*result == NULL`` if an error other than
    :exc:`KeyError` is raised.
 

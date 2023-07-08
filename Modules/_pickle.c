@@ -4439,7 +4439,7 @@ save(PickleState *st, PicklerObject *self, PyObject *obj, int pers_save)
         }
     } else {
         if (PyMapping_GetOptionalItem(self->dispatch_table, (PyObject *)type,
-                                  &reduce_func) < 0) {
+                                      &reduce_func) < 0) {
             goto error;
         }
     }
