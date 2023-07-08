@@ -128,6 +128,10 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
                 f.write(stuff)
                 f.write(data)
 
+    def getZip64Files(self):
+        # This is the simplest way to make zipfile generate the zip64 EOCD block
+        return {f"f{n}.py": (NOW, test_src) for n in range(65537)}
+
     def doTest(self, expected_ext, files, *modules, **kw):
         self.makeZip(files, **kw)
 
@@ -799,13 +803,11 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         self.doTest(".py", files, TESTMOD, comment=b"c" * ((1 << 16) - 1))
 
     def testZip64(self):
-        # This is the simplest way to make zipfile generate the zip64 EOCD block
-        files = {f"f{n}.py": (NOW, test_src) for n in range(65537)}
+        files = self.getZip64Files()
         self.doTest(".py", files, "f6")
 
     def testZip64CruftAndComment(self):
-        # This is the simplest way to make zipfile generate the zip64 EOCD block
-        files = {f"f{n}.py": (NOW, test_src) for n in range(65537)}
+        files = self.getZip64Files()
         self.doTest(".py", files, "f65536", comment=b"c" * ((1 << 16) - 1))
 
 
