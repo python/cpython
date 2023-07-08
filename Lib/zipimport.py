@@ -368,16 +368,17 @@ def _read_directory(archive):
                 file_size = fp.tell()
             except OSError:
                 raise ZipImportError(f"can't read Zip file: {archive!r}",
-                                    path=archive)
-            max_comment_start = max(file_size - MAX_COMMENT_LEN -
-                                    END_CENTRAL_DIR_SIZE - END_CENTRAL_DIR_SIZE_64 -
-                                    END_CENTRAL_DIR_LOCATOR_SIZE_64, 0)
+                                     path=archive)
+            max_comment_plus_dirs_size = (
+                MAX_COMMENT_LEN + END_CENTRAL_DIR_SIZE +
+                END_CENTRAL_DIR_SIZE_64 + END_CENTRAL_DIR_LOCATOR_SIZE_64)
+            max_comment_start = max(file_size - max_comment_plus_dirs_size, 0)
             try:
                 fp.seek(max_comment_start)
-                data = fp.read()
+                data = fp.read(max_comment_plus_dirs_size)
             except OSError:
                 raise ZipImportError(f"can't read Zip file: {archive!r}",
-                                    path=archive)
+                                     path=archive)
             pos = data.rfind(STRING_END_ARCHIVE)
             pos64 = data.rfind(STRING_END_ZIP_64)
 
@@ -385,8 +386,10 @@ def _read_directory(archive):
                 # Zip64 at "correct" offset from standard EOCD
                 buffer = data[pos64:pos64 + END_CENTRAL_DIR_SIZE_64]
                 if len(buffer) != END_CENTRAL_DIR_SIZE_64:
-                    raise ZipImportError(f"corrupt Zip64 file: {archive!r}",
-                                        path=archive)
+                    raise ZipImportError(
+                        f"corrupt Zip64 file: Expected {END_CENTRAL_DIR_SIZE_64} byte "
+                        f"zip64 central directory, but read {len(buffer)} bytes.",
+                        path=archive)
                 header_position = file_size - len(data) + pos64
 
                 central_directory_size = int.from_bytes(buffer[40:48], 'little')
@@ -396,7 +399,7 @@ def _read_directory(archive):
                 buffer = data[pos:pos+END_CENTRAL_DIR_SIZE]
                 if len(buffer) != END_CENTRAL_DIR_SIZE:
                     raise ZipImportError(f"corrupt Zip file: {archive!r}",
-                                        path=archive)
+                                         path=archive)
 
                 header_position = file_size - len(data) + pos
 
@@ -410,7 +413,7 @@ def _read_directory(archive):
                 # you need to adjust position by 76 for arc to be 0.
             else:
                 raise ZipImportError(f'not a Zip file: {archive!r}',
-                                    path=archive)
+                                     path=archive)
 
             # Buffer now contains a valid EOCD, and header_position gives the
             # starting position of it.
@@ -473,7 +476,7 @@ def _read_directory(archive):
                 # internal buffers.    See issue #8745.
                 try:
                     extra_data_len = header_size - name_size
-                    extra_data = fp.read(extra_data_len)
+                    extra_data = memoryview(fp.read(extra_data_len))
 
                     if len(extra_data) != extra_data_len:
                         raise ZipImportError(f"can't read Zip file: {archive!r}", path=archive)
@@ -511,26 +514,21 @@ def _read_directory(archive):
                         if tag == ZIP64_EXTRA_TAG:
                             if (len(extra_data) - 4) % 8 != 0:
                                 raise ZipImportError(f"can't read header extra: {archive!r}", path=archive)
-                            values = [
-                                int.from_bytes(extra_data[i:i+8], 'little')
-                                for i in range(4, len(extra_data), 8)
-                            ]
+                            num_extra_values = (len(extra_data) - 4) // 8
+                            if num_extra_values > 3:
+                                raise ZipImportError(f"can't read header extra: {archive!r}", path=archive)
+                            values = struct.unpack_from(f"<{min(num_extra_values, 3)}Q",
+                                                        extra_data, offset=4)
 
                             # N.b. Here be dragons: the ordering of these is different than
                             # the header fields, and it's really easy to get it wrong since
-                            # naturally-occuring zips that use all 3 are >4GB and not
-                            # something that would be checked-in.
-                            # The tests include a binary-edited zip that uses zip64
-                            # (unnecessarily) for all three.
+                            # naturally-occuring zips that use all 3 are >4GB
                             if file_size == MAX_UINT32:
                                 file_size = values.pop(0)
                             if data_size == MAX_UINT32:
                                 data_size = values.pop(0)
                             if file_offset == MAX_UINT32:
                                 file_offset = values.pop(0)
-
-                            if values:
-                                raise ZipImportError(f"can't read header extra: {archive!r}", path=archive)
 
                             break
 
@@ -542,8 +540,8 @@ def _read_directory(archive):
                             "zipimport: suspected zip64 but no zip64 extra for {!r}",
                             path,
                         )
-                # XXX These two statements seem swapped because `header_offset` is a
-                # position within the actual file, but `file_offset` (when compared) is
+                # XXX These two statements seem swapped because `central_directory_position`
+                # is a position within the actual file, but `file_offset` (when compared) is
                 # as encoded in the entry, not adjusted for this file.
                 # N.b. this must be after we've potentially read the zip64 extra which can
                 # change `file_offset`.
