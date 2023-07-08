@@ -2489,7 +2489,10 @@ ELSE
 
     def test_atomic_group(self):
         self.assertEqual(get_debug_out(r'(?>ab?)'), '''\
-ATOMIC_GROUP [(LITERAL, 97), (MAX_REPEAT, (0, 1, [(LITERAL, 98)]))]
+ATOMIC_GROUP
+  LITERAL 97
+  MAX_REPEAT 0 1
+    LITERAL 98
 
  0. INFO 4 0b0 1 2 (to 5)
  5: ATOMIC_GROUP 11 (to 17)
