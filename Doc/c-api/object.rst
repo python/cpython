@@ -67,12 +67,12 @@ Object Protocol
 
 .. c:function:: int PyObject_GetOptionalAttr(PyObject *obj, PyObject *attr_name, PyObject **result);
 
-   Replacement of :c:func:`PyObject_GetAttr` which doesn't raise
+   Variant of :c:func:`PyObject_GetAttr` which doesn't raise
    :exc:`AttributeError`.
 
-   Return ``1`` and set ``*result != NULL`` if an attribute is found.
-   Return ``0`` and set ``*result == NULL`` if an attribute is not found;
-   an :exc:`AttributeError` is silenced.
+   Return ``1`` and set ``*result != NULL`` if the attribute is found.
+   Return ``0`` and set ``*result == NULL`` if the attribute is not found;
+   the :exc:`AttributeError` is silenced.
    Return ``-1`` and set ``*result == NULL`` if an error other than
    :exc:`AttributeError` is raised.
 

@@ -441,7 +441,7 @@ New Features
   ``NULL`` if the referent is no longer live.
   (Contributed by Victor Stinner in :gh:`105927`.)
 
-* Add :c:func:`PyObject_GetOptionalAttr` function: replacement of
+* Add :c:func:`PyObject_GetOptionalAttr`, a variant of
   :c:func:`PyObject_GetAttr` which doesn't raise :exc:`AttributeError`.
   It is convenient and faster if the missing attribute should not be treated
   as a failure.

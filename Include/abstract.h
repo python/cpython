@@ -64,11 +64,11 @@ extern "C" {
 
    int PyObject_GetOptionalAttr(PyObject *obj, PyObject *attr_name, PyObject **result);
 
-   Replacement of PyObject_GetAttr() which doesn't raise AttributeError.
+   Variant of PyObject_GetAttr() which doesn't raise AttributeError.
 
-   Return 1 and set *result != NULL if an attribute is found.
-   Return 0 and set *result == NULL if an attribute is not found;
-   an AttributeError is silenced.
+   Return 1 and set *result != NULL if the attribute is found.
+   Return 0 and set *result == NULL if the attribute is not found;
+   the AttributeError is silenced.
    Return -1 and set *result == NULL if an error other than AttributeError
    is raised.
 */
