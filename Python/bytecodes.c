@@ -2468,11 +2468,8 @@ dummy_func(
                 Py_DECREF(seq);
             }
             Py_DECREF(iter);
-            STACK_SHRINK(1);
-            SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
             /* Jump forward oparg, then skip following END_FOR instruction */
-            JUMPBY(oparg + 1);
-            DISPATCH();
+            JUMP_POP_DISPATCH(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
         end_for_iter_list:
             // Common case: no jump, leave it to the code generator
         }
@@ -2491,11 +2488,8 @@ dummy_func(
                 Py_DECREF(seq);
             }
             Py_DECREF(iter);
-            STACK_SHRINK(1);
-            SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
             /* Jump forward oparg, then skip following END_FOR instruction */
-            JUMPBY(oparg + 1);
-            DISPATCH();
+            JUMP_POP_DISPATCH(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
         end_for_iter_tuple:
             // Common case: no jump, leave it to the code generator
         }
@@ -2505,12 +2499,8 @@ dummy_func(
             DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type, FOR_ITER);
             STAT_INC(FOR_ITER, hit);
             if (r->len <= 0) {
-                STACK_SHRINK(1);
                 Py_DECREF(r);
-                SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
-                // Jump over END_FOR instruction.
-                JUMPBY(oparg + 1);
-                DISPATCH();
+                JUMP_POP_DISPATCH(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
             }
             long value = r->start;
             r->start = value + r->step;

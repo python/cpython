@@ -2710,6 +2710,14 @@ void Py_LeaveRecursiveCall(void)
 
 ///////////////////// Experimental UOp Interpreter /////////////////////
 
+#undef JUMP_POP_DISPATCH
+#define JUMP_POP_DISPATCH(x) \
+    do { \
+        frame->prev_instr += (x); \
+        stack_pointer--; \
+        goto exit; \
+    } while (0)
+
 #undef DEOPT_IF
 #define DEOPT_IF(COND, INSTNAME) \
     if ((COND)) {                \
@@ -2789,6 +2797,12 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
 
         }
     }
+
+exit:
+    DPRINTF(2, "Jumping out of trace\n");
+    _PyFrame_SetStackPointer(frame, stack_pointer);
+    Py_DECREF(self);
+    return frame;
 
 unbound_local_error:
     format_exc_check_arg(tstate, PyExc_UnboundLocalError,

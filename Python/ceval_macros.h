@@ -155,6 +155,15 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define JUMPBY(x)       (next_instr += (x))
 #define SKIP_OVER(x)    (next_instr += (x))
 
+// Helper for FOR_ITER and specializations.
+// This macro is defined differently in the Tier 2 (uops) interpreter.
+#define JUMP_POP_DISPATCH(x) \
+    do { \
+        JUMPBY(x); \
+        stack_pointer--; \
+        DISPATCH(); \
+    } while (0)
+
 /* OpCode prediction macros
     Some opcodes tend to come in pairs thus making it possible to
     predict the second code when the first is run.  For example,

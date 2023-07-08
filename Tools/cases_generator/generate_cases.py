@@ -275,7 +275,10 @@ class InstructionFlags:
             HAS_ARG_FLAG=variable_used(instr, "oparg"),
             HAS_CONST_FLAG=variable_used(instr, "FRAME_CO_CONSTS"),
             HAS_NAME_FLAG=variable_used(instr, "FRAME_CO_NAMES"),
-            HAS_JUMP_FLAG=variable_used(instr, "JUMPBY"),
+            HAS_JUMP_FLAG=(
+                variable_used(instr, "JUMPBY")
+                or variable_used(instr, "JUMP_POP_DISPATCH")
+            ),
         )
 
     @staticmethod
