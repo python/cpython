@@ -478,7 +478,6 @@ _io_BytesIO_peek_impl(bytesio *self, Py_ssize_t size)
 /*[clinic end generated code: output=fa4d8ce28b35db9b input=afc80e71b37e7c59]*/
 {
     Py_ssize_t n;
-    const char *output;
 
     CHECK_CLOSED(self);
 
