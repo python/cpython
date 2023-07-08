@@ -39,6 +39,8 @@
 
 #include "docstrings.h"
 
+struct PyDecContextObject;
+
 typedef struct {
     PyTypeObject *PyDecContextManager_Type;
     PyTypeObject *PyDecContext_Type;
@@ -49,6 +51,15 @@ typedef struct {
 
     /* Top level Exception; inherits from ArithmeticError */
     PyObject *DecimalException;
+
+#ifndef WITH_DECIMAL_CONTEXTVAR
+    /* Key for thread state dictionary */
+    PyObject *tls_context_key;
+    /* Invariant: NULL or the most recently accessed thread local context */
+    struct PyDecContextObject *cached_context;
+#else
+    PyObject *current_context_var;
+#endif
 
     /* Template for creating new thread contexts, calling Context() without
      * arguments and initializing the module_context on first access. */
@@ -104,7 +115,7 @@ typedef struct {
     uint32_t *flags;
 } PyDecSignalDictObject;
 
-typedef struct {
+typedef struct PyDecContextObject {
     PyObject_HEAD
     mpd_context_t ctx;
     PyObject *traps;
@@ -118,7 +129,6 @@ typedef struct {
     PyObject *local;
     PyObject *global;
 } PyDecContextManagerObject;
-
 
 #undef MPD
 #undef CTX
@@ -144,16 +154,6 @@ incr_false(void)
 {
     return Py_NewRef(Py_False);
 }
-
-
-#ifndef WITH_DECIMAL_CONTEXTVAR
-/* Key for thread state dictionary */
-static PyObject *tls_context_key = NULL;
-/* Invariant: NULL or the most recently accessed thread local context */
-static PyDecContextObject *cached_context = NULL;
-#else
-static PyObject *current_context_var = NULL;
-#endif
 
 /* Error codes for functions that return signals or conditions */
 #define DEC_INVALID_SIGNALS (MPD_Max_status+1U)
@@ -1565,7 +1565,8 @@ current_context_from_dict(void)
         return NULL;
     }
 
-    PyObject *tl_context = PyDict_GetItemWithError(dict, tls_context_key);
+    PyObject *tl_context;
+    tl_context = PyDict_GetItemWithError(dict, modstate->tls_context_key);
     if (tl_context != NULL) {
         /* We already have a thread local context. */
         CONTEXT_CHECK(modstate, tl_context);
@@ -1576,13 +1577,13 @@ current_context_from_dict(void)
         }
 
         /* Set up a new thread local context. */
-        tl_context = context_copy(state->default_context_template, NULL);
+        tl_context = context_copy(modstate->default_context_template, NULL);
         if (tl_context == NULL) {
             return NULL;
         }
         CTX(tl_context)->status = 0;
 
-        if (PyDict_SetItem(dict, tls_context_key, tl_context) < 0) {
+        if (PyDict_SetItem(dict, modstate->tls_context_key, tl_context) < 0) {
             Py_DECREF(tl_context);
             return NULL;
         }
@@ -1591,8 +1592,8 @@ current_context_from_dict(void)
 
     /* Cache the context of the current thread, assuming that it
      * will be accessed several times before a thread switch. */
-    cached_context = (PyDecContextObject *)tl_context;
-    cached_context->tstate = tstate;
+    modstate->cached_context = (PyDecContextObject *)tl_context;
+    modstate->cached_context->tstate = tstate;
 
     /* Borrowed reference with refcount==1 */
     return tl_context;
@@ -1603,8 +1604,9 @@ static PyObject *
 current_context(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    if (cached_context && cached_context->tstate == tstate) {
-        return (PyObject *)cached_context;
+    decimal_state *modstate = GLOBAL_STATE();
+    if (modstate->cached_context && modstate->cached_context->tstate == tstate) {
+        return (PyObject *)(modstate->cached_context);
     }
 
     return current_context_from_dict();
@@ -1662,8 +1664,8 @@ PyDec_SetCurrentContext(PyObject *self UNUSED, PyObject *v)
         Py_INCREF(v);
     }
 
-    cached_context = NULL;
-    if (PyDict_SetItem(dict, tls_context_key, v) < 0) {
+    state->cached_context = NULL;
+    if (PyDict_SetItem(dict, state->tls_context_key, v) < 0) {
         Py_DECREF(v);
         return NULL;
     }
@@ -1682,7 +1684,7 @@ init_current_context(void)
     }
     CTX(tl_context)->status = 0;
 
-    PyObject *tok = PyContextVar_Set(current_context_var, tl_context);
+    PyObject *tok = PyContextVar_Set(state->current_context_var, tl_context);
     if (tok == NULL) {
         Py_DECREF(tl_context);
         return NULL;
@@ -1696,7 +1698,8 @@ static inline PyObject *
 current_context(void)
 {
     PyObject *tl_context;
-    if (PyContextVar_Get(current_context_var, NULL, &tl_context) < 0) {
+    decimal_state *state = GLOBAL_STATE();
+    if (PyContextVar_Get(state->current_context_var, NULL, &tl_context) < 0) {
         return NULL;
     }
 
@@ -1744,7 +1747,7 @@ PyDec_SetCurrentContext(PyObject *self UNUSED, PyObject *v)
         Py_INCREF(v);
     }
 
-    PyObject *tok = PyContextVar_Set(current_context_var, v);
+    PyObject *tok = PyContextVar_Set(state->current_context_var, v);
     Py_DECREF(v);
     if (tok == NULL) {
         return NULL;
@@ -5987,10 +5990,11 @@ PyInit__decimal(void)
                                  Py_NewRef(state->default_context_template)));
 
 #ifndef WITH_DECIMAL_CONTEXTVAR
-    ASSIGN_PTR(tls_context_key, PyUnicode_FromString("___DECIMAL_CTX__"));
+    ASSIGN_PTR(state->tls_context_key,
+               PyUnicode_FromString("___DECIMAL_CTX__"));
     CHECK_INT(PyModule_AddObject(m, "HAVE_CONTEXTVAR", Py_NewRef(Py_False)));
 #else
-    ASSIGN_PTR(current_context_var, PyContextVar_New("decimal_context", NULL));
+    ASSIGN_PTR(state->current_context_var, PyContextVar_New("decimal_context", NULL));
     CHECK_INT(PyModule_AddObject(m, "HAVE_CONTEXTVAR", Py_NewRef(Py_True)));
 #endif
     CHECK_INT(PyModule_AddObject(m, "HAVE_THREADS", Py_NewRef(Py_True)));
@@ -6049,9 +6053,9 @@ error:
     Py_CLEAR(state->DecimalTuple); /* GCOV_NOT_REACHED */
     Py_CLEAR(state->default_context_template); /* GCOV_NOT_REACHED */
 #ifndef WITH_DECIMAL_CONTEXTVAR
-    Py_CLEAR(tls_context_key); /* GCOV_NOT_REACHED */
+    Py_CLEAR(state->tls_context_key); /* GCOV_NOT_REACHED */
 #else
-    Py_CLEAR(current_context_var); /* GCOV_NOT_REACHED */
+    Py_CLEAR(state->current_context_var); /* GCOV_NOT_REACHED */
 #endif
     Py_CLEAR(state->basic_context_template); /* GCOV_NOT_REACHED */
     Py_CLEAR(state->extended_context_template); /* GCOV_NOT_REACHED */
