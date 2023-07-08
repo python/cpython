@@ -1,0 +1,18 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+        types: [python]
+        exclude: Lib/test/coding20731.py
+      - id: trailing-whitespace
+        types_or: [c, python, rst]
+
+  - repo: https://github.com/sphinx-contrib/sphinx-lint
+    rev: v0.6.7
+    hooks:
+      - id: sphinx-lint
+        args: [--enable=default-role]
+        files: ^Doc/
+        types: [rst]

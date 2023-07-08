@@ -1,1 +1,0 @@
-Add docstring to :meth:`http.client.HTTPResponse.read` to fix ``pydoc`` output.
