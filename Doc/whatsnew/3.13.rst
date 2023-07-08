@@ -441,10 +441,12 @@ New Features
   ``NULL`` if the referent is no longer live.
   (Contributed by Victor Stinner in :gh:`105927`.)
 
-* Add :c:func:`PyObject_GetOptionalAttr`, a variant of
-  :c:func:`PyObject_GetAttr` which doesn't raise :exc:`AttributeError`.
-  It is convenient and faster if the missing attribute should not be treated
-  as a failure.
+* Add :c:func:`PyObject_GetOptionalAttr` and
+  :c:func:`PyObject_GetOptionalAttrString`, variants of
+  :c:func:`PyObject_GetAttr` and :c:func:`PyObject_GetAttrString` which
+  don't raise :exc:`AttributeError`.
+  These variants are more convenient and faster if the missing attribute
+  should not be treated as a failure.
   (Contributed by Serhiy Storchaka in :gh:`106521`.)
 
 * If Python is built in :ref:`debug mode <debug-build>` or :option:`with

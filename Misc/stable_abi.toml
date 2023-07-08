@@ -1180,6 +1180,8 @@
     added = '3.2'
 [function.PyObject_GetOptionalAttr]
     added = '3.13'
+[function.PyObject_GetOptionalAttrString]
+    added = '3.13'
 [function.PyObject_HasAttr]
     added = '3.2'
 [function.PyObject_HasAttrString]

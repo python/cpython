@@ -1111,6 +1111,31 @@ PyObject_GetOptionalAttr(PyObject *v, PyObject *name, PyObject **result)
 }
 
 int
+PyObject_GetOptionalAttrString(PyObject *obj, const char *name, PyObject **result)
+{
+    if (Py_TYPE(obj)->tp_getattr == NULL) {
+        PyObject *oname = PyUnicode_FromString(name);
+        if (oname == NULL) {
+            *result = NULL;
+            return -1;
+        }
+        int rc = PyObject_GetOptionalAttr(obj, oname, result);
+        Py_DECREF(oname);
+        return rc;
+    }
+
+    *result = (*Py_TYPE(obj)->tp_getattr)(obj, (char*)name);
+    if (*result != NULL) {
+        return 1;
+    }
+    if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        return -1;
+    }
+    PyErr_Clear();
+    return 0;
+}
+
+int
 PyObject_HasAttr(PyObject *v, PyObject *name)
 {
     PyObject *res;
