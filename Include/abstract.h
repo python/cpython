@@ -813,9 +813,9 @@ PyAPI_FUNC(PyObject *) PyMapping_GetItemString(PyObject *o,
 /* Variants of PyObject_GetItem() and PyMapping_GetItemString() which don't
    raise KeyError.
 
-   Return 1 and set *result != NULL if a key is found.
-   Return 0 and set *result == NULL if a key is not found;
-   a KeyError is silenced.
+   Return 1 and set *result != NULL if the key is found.
+   Return 0 and set *result == NULL if the key is not found;
+   the KeyError is silenced.
    Return -1 and set *result == NULL if an error other than KeyError
    is raised.
 */
