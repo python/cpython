@@ -2517,6 +2517,21 @@ class TestUops(unittest.TestCase):
         uops = {opname for opname, _ in ex}
         self.assertIn("UNPACK_SEQUENCE", uops)
 
+    def test_for_iter(self):
+        def testfunc(x):
+            for i in range(x):
+                i += 1
+
+        opt = _testinternalcapi.get_uop_optimizer()
+
+        with temporary_optimizer(opt):
+            testfunc(10)
+
+        ex = get_first_executor(testfunc.__code__)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _ in ex}
+        self.assertIn("FOR_ITER_RANGE", uops)
+
 
 if __name__ == "__main__":
     unittest.main()
