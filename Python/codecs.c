@@ -11,7 +11,7 @@ Copyright (c) Corporation for National Research Initiatives.
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_interp.h"        // PyInterpreterState.codec_search_path
-#include "pycore_pyerrors.h"       // _PyErr_FormatNote()
+#include "pycore_pyerrors.h"      // _PyErr_FormatNote()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 #include <ctype.h>
@@ -55,7 +55,7 @@ int PyCodec_Register(PyObject *search_function)
 int
 PyCodec_Unregister(PyObject *search_function)
 {
-    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     PyObject *codec_search_path = interp->codec_search_path;
     /* Do nothing if codec_search_path is not created yet or was cleared. */
     if (codec_search_path == NULL) {

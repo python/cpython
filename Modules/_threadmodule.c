@@ -1104,7 +1104,7 @@ thread_run(void *boot_raw)
 static PyObject *
 thread_daemon_threads_allowed(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    PyInterpreterState *interp = _PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->feature_flags & Py_RTFLAGS_DAEMON_THREADS) {
         Py_RETURN_TRUE;
     }
