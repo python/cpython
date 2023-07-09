@@ -1240,7 +1240,7 @@ dummy_func(
 
         inst(DELETE_ATTR, (owner --)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyObject_SetAttr(owner, name, (PyObject *)NULL);
+            int err = PyObject_DelAttr(owner, name);
             DECREF_INPUTS();
             ERROR_IF(err, error);
         }
