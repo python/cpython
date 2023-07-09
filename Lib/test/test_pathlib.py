@@ -3,7 +3,6 @@ import io
 import os
 import sys
 import errno
-import ntpath
 import pathlib
 import pickle
 import posixpath
@@ -93,13 +92,6 @@ class PurePathTest(unittest.TestCase):
             expected = self.cls
         p = self.cls('a')
         self.assertIs(type(p), expected)
-
-    def test_pathmod(self):
-        p = self.cls('a')
-        if isinstance(p, pathlib.PureWindowsPath):
-            self.assertIs(p.pathmod, ntpath)
-        elif isinstance(p, pathlib.PurePosixPath):
-            self.assertIs(p.pathmod, posixpath)
 
     def test_different_pathmods_unequal(self):
         p = self.cls('a')
@@ -1557,15 +1549,6 @@ class PurePathSubclassTest(PurePathTest):
     # repr() roundtripping is not supported in custom subclass.
     test_repr_roundtrips = None
 
-    def test_set_pathmod(self):
-        p = self.cls('a', 'b', pathmod=posixpath)
-        self.assertEqual(p.pathmod, posixpath)
-        self.assertEqual(str(p), 'a/b')
-
-        q = self.cls('a', 'b', pathmod=ntpath)
-        self.assertEqual(q.pathmod, ntpath)
-        self.assertEqual(str(q), 'a\\b')
-
 
 @only_posix
 class PosixPathAsPureTest(PurePosixPathTest):
@@ -2410,12 +2393,10 @@ class PathTest(unittest.TestCase):
         self.assertIs(type(p), expected)
 
     def test_unsupported_pathmod(self):
-        if issubclass(self.cls, pathlib.PureWindowsPath) and os.name != 'nt':
-            self.assertRaises(pathlib.UnsupportedOperation, self.cls)
-        elif issubclass(self.cls, pathlib.PurePosixPath) and os.name == 'nt':
-            self.assertRaises(pathlib.UnsupportedOperation, self.cls)
-        else:
+        if self.cls.pathmod is os.path:
             self.skipTest("path flavour is supported")
+        else:
+            self.assertRaises(pathlib.UnsupportedOperation, self.cls)
 
     def _test_cwd(self, p):
         q = self.cls(os.getcwd())
@@ -3468,12 +3449,6 @@ class PathSubclassTest(PathTest):
 
     # repr() roundtripping is not supported in custom subclass.
     test_repr_roundtrips = None
-
-    def test_set_pathmod_unsupported(self):
-        self.assertRaises(
-            pathlib.UnsupportedOperation,
-            self.cls,
-            pathmod=posixpath if os.name == 'nt' else ntpath)
 
 
 class CompatiblePathTest(unittest.TestCase):

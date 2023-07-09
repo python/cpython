@@ -255,10 +255,6 @@ class PurePath:
     """
 
     __slots__ = (
-        # The 'pathmod' slot stores the implementation of `os.path` used for
-        # low-level path operations. It can be set to `posixpath` or `ntpath`.
-        'pathmod',
-
         # The `_raw_paths` slot stores unnormalized string paths. This is set
         # in the `__init__()` method.
         '_raw_paths',
@@ -297,6 +293,7 @@ class PurePath:
         # path. It's set when `__hash__()` is called for the first time.
         '_hash',
     )
+    pathmod = os.path
 
     def __new__(cls, *args, **kwargs):
         """Construct a PurePath from one or several strings and or existing
@@ -313,12 +310,11 @@ class PurePath:
         # when pickling related paths.
         return (self.__class__, self.parts)
 
-    def __init__(self, *args, pathmod=os.path):
-        self.pathmod = pathmod
+    def __init__(self, *args):
         paths = []
         for arg in args:
             if isinstance(arg, PurePath):
-                if arg.pathmod is ntpath and pathmod is posixpath:
+                if arg.pathmod is ntpath and self.pathmod is posixpath:
                     # GH-103631: Convert separators for backwards compatibility.
                     paths.extend(path.replace('\\', '/') for path in arg._raw_paths)
                 else:
@@ -341,16 +337,17 @@ class PurePath:
         Subclasses may override this method to customize how new path objects
         are created from methods like `iterdir()`.
         """
-        return type(self)(*pathsegments, pathmod=self.pathmod)
+        return type(self)(*pathsegments)
 
-    def _parse_path(self, path):
+    @classmethod
+    def _parse_path(cls, path):
         if not path:
             return '', '', []
-        sep = self.pathmod.sep
-        altsep = self.pathmod.altsep
+        sep = cls.pathmod.sep
+        altsep = cls.pathmod.altsep
         if altsep:
             path = path.replace(altsep, sep)
-        drv, root, rel = self.pathmod.splitroot(path)
+        drv, root, rel = cls.pathmod.splitroot(path)
         if not root and drv.startswith(sep) and not drv.endswith(sep):
             drv_parts = drv.split(sep)
             if len(drv_parts) == 4 and drv_parts[2] not in '?.':
@@ -384,12 +381,13 @@ class PurePath:
         path._tail_cached = tail
         return path
 
-    def _format_parsed_parts(self, drv, root, tail):
+    @classmethod
+    def _format_parsed_parts(cls, drv, root, tail):
         if drv or root:
-            return drv + root + self.pathmod.sep.join(tail)
-        elif tail and self.pathmod.splitdrive(tail[0])[0]:
+            return drv + root + cls.pathmod.sep.join(tail)
+        elif tail and cls.pathmod.splitdrive(tail[0])[0]:
             tail = ['.'] + tail
-        return self.pathmod.sep.join(tail)
+        return cls.pathmod.sep.join(tail)
 
     def __str__(self):
         """Return the string representation of the path, suitable for
@@ -759,13 +757,8 @@ class PurePosixPath(PurePath):
     On a POSIX system, instantiating a PurePath should return this object.
     However, you can also instantiate it directly on any system.
     """
+    pathmod = posixpath
     __slots__ = ()
-
-    def __init__(self, *pathsegments, **kwargs):
-        super().__init__(*pathsegments, pathmod=posixpath, **kwargs)
-
-    def with_segments(self, *pathsegments):
-        return type(self)(*pathsegments)
 
 
 class PureWindowsPath(PurePath):
@@ -774,13 +767,9 @@ class PureWindowsPath(PurePath):
     On a Windows system, instantiating a PurePath should return this object.
     However, you can also instantiate it directly on any system.
     """
+    pathmod = ntpath
     __slots__ = ()
 
-    def __init__(self, *pathsegments, **kwargs):
-        super().__init__(*pathsegments, pathmod=ntpath, **kwargs)
-
-    def with_segments(self, *pathsegments):
-        return type(self)(*pathsegments)
 
 # Filesystem-accessing classes
 
@@ -1177,15 +1166,12 @@ class Path(PurePath):
 
             paths += [path._make_child_relpath(d) for d in reversed(dirnames)]
 
-    def __init__(self, *pathsegments, pathmod=os.path, **kwargs):
-        if pathmod is not os.path:
-            raise UnsupportedOperation(
-                f"cannot instantiate {type(self).__name__!r} on your system")
+    def __init__(self, *args, **kwargs):
         if kwargs:
             msg = ("support for supplying keyword arguments to pathlib.PurePath "
                    "is deprecated and scheduled for removal in Python {remove}")
             warnings._deprecated("pathlib.PurePath(**kwargs)", msg, remove=(3, 14))
-        super().__init__(*pathsegments, pathmod=pathmod)
+        super().__init__(*args)
 
     def __new__(cls, *args, **kwargs):
         if cls is Path:
@@ -1417,17 +1403,26 @@ class Path(PurePath):
         return self
 
 
-class PosixPath(PurePosixPath, Path):
+class PosixPath(Path, PurePosixPath):
     """Path subclass for non-Windows systems.
 
     On a POSIX system, instantiating a Path should return this object.
     """
     __slots__ = ()
 
+    if os.name == 'nt':
+        def __new__(cls, *args, **kwargs):
+            raise UnsupportedOperation(
+                f"cannot instantiate {cls.__name__!r} on your system")
 
-class WindowsPath(PureWindowsPath, Path):
+class WindowsPath(Path, PureWindowsPath):
     """Path subclass for Windows systems.
 
     On a Windows system, instantiating a Path should return this object.
     """
     __slots__ = ()
+
+    if os.name != 'nt':
+        def __new__(cls, *args, **kwargs):
+            raise UnsupportedOperation(
+                f"cannot instantiate {cls.__name__!r} on your system")
