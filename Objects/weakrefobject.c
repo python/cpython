@@ -913,11 +913,7 @@ PyWeakref_GetRef(PyObject *ref, PyObject **pobj)
         return -1;
     }
     *pobj = _PyWeakref_GET_REF(ref);
-    if (*pobj == NULL) {
-        // The reference is dead
-        return 0;
-    }
-    return 1;
+    return (*pobj != NULL);
 }
 
 
