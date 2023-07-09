@@ -8,62 +8,59 @@ preserve
 #endif
 
 
-PyDoc_STRVAR(_testcapi_test_pyobject_fastcalldict__doc__,
-"test_pyobject_fastcalldict($module, func, func_args, kwargs, /)\n"
+PyDoc_STRVAR(_testcapi_pyobject_fastcalldict__doc__,
+"pyobject_fastcalldict($module, func, func_args, kwargs, /)\n"
 "--\n"
 "\n");
 
-#define _TESTCAPI_TEST_PYOBJECT_FASTCALLDICT_METHODDEF    \
-    {"test_pyobject_fastcalldict", _PyCFunction_CAST(_testcapi_test_pyobject_fastcalldict), METH_FASTCALL, _testcapi_test_pyobject_fastcalldict__doc__},
+#define _TESTCAPI_PYOBJECT_FASTCALLDICT_METHODDEF    \
+    {"pyobject_fastcalldict", _PyCFunction_CAST(_testcapi_pyobject_fastcalldict), METH_FASTCALL, _testcapi_pyobject_fastcalldict__doc__},
 
 static PyObject *
-_testcapi_test_pyobject_fastcalldict_impl(PyObject *module, PyObject *func,
-                                          PyObject *func_args,
-                                          PyObject *kwargs);
+_testcapi_pyobject_fastcalldict_impl(PyObject *module, PyObject *func,
+                                     PyObject *func_args, PyObject *kwargs);
 
 static PyObject *
-_testcapi_test_pyobject_fastcalldict(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+_testcapi_pyobject_fastcalldict(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *func;
     PyObject *func_args;
     PyObject *__clinic_kwargs;
 
-    if (!_PyArg_CheckPositional("test_pyobject_fastcalldict", nargs, 3, 3)) {
+    if (!_PyArg_CheckPositional("pyobject_fastcalldict", nargs, 3, 3)) {
         goto exit;
     }
     func = args[0];
     func_args = args[1];
     __clinic_kwargs = args[2];
-    return_value = _testcapi_test_pyobject_fastcalldict_impl(module, func, func_args, __clinic_kwargs);
+    return_value = _testcapi_pyobject_fastcalldict_impl(module, func, func_args, __clinic_kwargs);
 
 exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_testcapi_test_pyobject_vectorcall__doc__,
-"test_pyobject_vectorcall($module, func, func_args,\n"
-"                         kwnames=<unrepresentable>, /)\n"
+PyDoc_STRVAR(_testcapi_pyobject_vectorcall__doc__,
+"pyobject_vectorcall($module, func, func_args, kwnames=None, /)\n"
 "--\n"
 "\n");
 
-#define _TESTCAPI_TEST_PYOBJECT_VECTORCALL_METHODDEF    \
-    {"test_pyobject_vectorcall", _PyCFunction_CAST(_testcapi_test_pyobject_vectorcall), METH_FASTCALL, _testcapi_test_pyobject_vectorcall__doc__},
+#define _TESTCAPI_PYOBJECT_VECTORCALL_METHODDEF    \
+    {"pyobject_vectorcall", _PyCFunction_CAST(_testcapi_pyobject_vectorcall), METH_FASTCALL, _testcapi_pyobject_vectorcall__doc__},
 
 static PyObject *
-_testcapi_test_pyobject_vectorcall_impl(PyObject *module, PyObject *func,
-                                        PyObject *func_args,
-                                        PyObject *kwnames);
+_testcapi_pyobject_vectorcall_impl(PyObject *module, PyObject *func,
+                                   PyObject *func_args, PyObject *kwnames);
 
 static PyObject *
-_testcapi_test_pyobject_vectorcall(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+_testcapi_pyobject_vectorcall(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *func;
     PyObject *func_args;
-    PyObject *__clinic_kwnames = NULL;
+    PyObject *__clinic_kwnames = Py_None;
 
-    if (!_PyArg_CheckPositional("test_pyobject_vectorcall", nargs, 2, 3)) {
+    if (!_PyArg_CheckPositional("pyobject_vectorcall", nargs, 2, 3)) {
         goto exit;
     }
     func = args[0];
@@ -73,34 +70,33 @@ _testcapi_test_pyobject_vectorcall(PyObject *module, PyObject *const *args, Py_s
     }
     __clinic_kwnames = args[2];
 skip_optional:
-    return_value = _testcapi_test_pyobject_vectorcall_impl(module, func, func_args, __clinic_kwnames);
+    return_value = _testcapi_pyobject_vectorcall_impl(module, func, func_args, __clinic_kwnames);
 
 exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_testcapi_test_pyvectorcall_call__doc__,
-"test_pyvectorcall_call($module, func, argstuple,\n"
-"                       kwargs=<unrepresentable>, /)\n"
+PyDoc_STRVAR(_testcapi_pyvectorcall_call__doc__,
+"pyvectorcall_call($module, func, argstuple, kwargs=<unrepresentable>, /)\n"
 "--\n"
 "\n");
 
-#define _TESTCAPI_TEST_PYVECTORCALL_CALL_METHODDEF    \
-    {"test_pyvectorcall_call", _PyCFunction_CAST(_testcapi_test_pyvectorcall_call), METH_FASTCALL, _testcapi_test_pyvectorcall_call__doc__},
+#define _TESTCAPI_PYVECTORCALL_CALL_METHODDEF    \
+    {"pyvectorcall_call", _PyCFunction_CAST(_testcapi_pyvectorcall_call), METH_FASTCALL, _testcapi_pyvectorcall_call__doc__},
 
 static PyObject *
-_testcapi_test_pyvectorcall_call_impl(PyObject *module, PyObject *func,
-                                      PyObject *argstuple, PyObject *kwargs);
+_testcapi_pyvectorcall_call_impl(PyObject *module, PyObject *func,
+                                 PyObject *argstuple, PyObject *kwargs);
 
 static PyObject *
-_testcapi_test_pyvectorcall_call(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+_testcapi_pyvectorcall_call(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *func;
     PyObject *argstuple;
     PyObject *__clinic_kwargs = NULL;
 
-    if (!_PyArg_CheckPositional("test_pyvectorcall_call", nargs, 2, 3)) {
+    if (!_PyArg_CheckPositional("pyvectorcall_call", nargs, 2, 3)) {
         goto exit;
     }
     func = args[0];
@@ -110,7 +106,7 @@ _testcapi_test_pyvectorcall_call(PyObject *module, PyObject *const *args, Py_ssi
     }
     __clinic_kwargs = args[2];
 skip_optional:
-    return_value = _testcapi_test_pyvectorcall_call_impl(module, func, argstuple, __clinic_kwargs);
+    return_value = _testcapi_pyvectorcall_call_impl(module, func, argstuple, __clinic_kwargs);
 
 exit:
     return return_value;
@@ -218,4 +214,4 @@ _testcapi_has_vectorcall_flag(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5960972282b4bd2f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a7c09c9060137f4a input=a9049054013a1b77]*/

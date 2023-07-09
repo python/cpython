@@ -30,7 +30,7 @@ fastcall_args(PyObject *args, PyObject ***stack, Py_ssize_t *nargs)
 }
 
 /*[clinic input]
-_testcapi.test_pyobject_fastcalldict
+_testcapi.pyobject_fastcalldict
     func: object
     func_args: object
     kwargs: object
@@ -38,10 +38,9 @@ _testcapi.test_pyobject_fastcalldict
 [clinic start generated code]*/
 
 static PyObject *
-_testcapi_test_pyobject_fastcalldict_impl(PyObject *module, PyObject *func,
-                                          PyObject *func_args,
-                                          PyObject *kwargs)
-/*[clinic end generated code: output=a39da56b27d27212 input=94464574e929fbe5]*/
+_testcapi_pyobject_fastcalldict_impl(PyObject *module, PyObject *func,
+                                     PyObject *func_args, PyObject *kwargs)
+/*[clinic end generated code: output=35902ece94de4418 input=b9c0196ca7d5f9e4]*/
 {
     PyObject **stack;
     Py_ssize_t nargs;
@@ -62,18 +61,17 @@ _testcapi_test_pyobject_fastcalldict_impl(PyObject *module, PyObject *func,
 }
 
 /*[clinic input]
-_testcapi.test_pyobject_vectorcall
+_testcapi.pyobject_vectorcall
     func: object
     func_args: object
-    kwnames: object = NULL
+    kwnames: object = None
     /
 [clinic start generated code]*/
 
 static PyObject *
-_testcapi_test_pyobject_vectorcall_impl(PyObject *module, PyObject *func,
-                                        PyObject *func_args,
-                                        PyObject *kwnames)
-/*[clinic end generated code: output=bb25a5410142b848 input=14dd1f8bbc465b49]*/
+_testcapi_pyobject_vectorcall_impl(PyObject *module, PyObject *func,
+                                   PyObject *func_args, PyObject *kwnames)
+/*[clinic end generated code: output=ff77245bc6afe0d8 input=c427975e9408ca84]*/
 {
     PyObject **stack;
     Py_ssize_t nargs, nkw;
@@ -119,7 +117,7 @@ function_setvectorcall(PyObject *self, PyObject *func)
 }
 
 /*[clinic input]
-_testcapi.test_pyvectorcall_call
+_testcapi.pyvectorcall_call
     func: object
     argstuple: object
     kwargs: object = NULL
@@ -127,9 +125,9 @@ _testcapi.test_pyvectorcall_call
 [clinic start generated code]*/
 
 static PyObject *
-_testcapi_test_pyvectorcall_call_impl(PyObject *module, PyObject *func,
-                                      PyObject *argstuple, PyObject *kwargs)
-/*[clinic end generated code: output=f9f5cbdfe90dd6d6 input=4cc647aa0c81365a]*/
+_testcapi_pyvectorcall_call_impl(PyObject *module, PyObject *func,
+                                 PyObject *argstuple, PyObject *kwargs)
+/*[clinic end generated code: output=809046fe78511306 input=4376ee7cabd698ce]*/
 {
     if (!PyTuple_Check(argstuple)) {
         PyErr_SetString(PyExc_TypeError, "args must be a tuple");
@@ -259,10 +257,10 @@ _testcapi_has_vectorcall_flag_impl(PyObject *module, PyTypeObject *type)
 }
 
 static PyMethodDef TestMethods[] = {
-    _TESTCAPI_TEST_PYOBJECT_FASTCALLDICT_METHODDEF
-    _TESTCAPI_TEST_PYOBJECT_VECTORCALL_METHODDEF
+    _TESTCAPI_PYOBJECT_FASTCALLDICT_METHODDEF
+    _TESTCAPI_PYOBJECT_VECTORCALL_METHODDEF
     {"function_setvectorcall", function_setvectorcall, METH_O},
-    _TESTCAPI_TEST_PYVECTORCALL_CALL_METHODDEF
+    _TESTCAPI_PYVECTORCALL_CALL_METHODDEF
     _TESTCAPI_MAKE_VECTORCALL_CLASS_METHODDEF
     _TESTCAPI_HAS_VECTORCALL_FLAG_METHODDEF
     {NULL},
