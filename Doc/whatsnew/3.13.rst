@@ -169,7 +169,7 @@ Deprecated
 
 * :mod:`ctypes`: Deprecate undocumented :func:`!ctypes.SetPointerType`
   and :func:`!ctypes.ARRAY` functions.
-  Replace ``ctypes.SetPointerType(item_type, size)`` with ``item_type * size``.
+  Replace ``ctypes.ARRAY(item_type, size)`` with ``item_type * size``.
   (Contributed by Victor Stinner in :gh:`105733`.)
 
 Pending Removal in Python 3.14
