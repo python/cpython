@@ -2527,6 +2527,22 @@ class TestUops(unittest.TestCase):
         uops = {opname for opname, _ in ex}
         self.assertIn("UNPACK_SEQUENCE", uops)
 
+    def test_pop_jump_if_false(self):
+        def testfunc(n):
+            i = 0
+            while i < n:
+                i += 1
+
+        opt = _testinternalcapi.get_uop_optimizer()
+
+        with temporary_optimizer(opt):
+            testfunc(10)
+
+        ex = get_first_executor(testfunc.__code__)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _ in ex}
+        self.assertIn("JUMP_IF_FALSE", uops)
+
 
 if __name__ == "__main__":
     unittest.main()
