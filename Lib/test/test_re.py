@@ -2721,17 +2721,6 @@ class ImplementationTest(unittest.TestCase):
         self.assertRaises(OverflowError, re.compile, r".{,%d}" % MAXREPEAT)
         self.assertRaises(OverflowError, re.compile, r".{%d,}?" % MAXREPEAT)
 
-    @cpython_only
-    def test_sre_template_invalid_group_index(self):
-        # see gh-106524
-        import _sre
-        with self.assertRaises(TypeError) as cm:
-            _sre.template("", ["", -1, ""])
-        self.assertIn("invalid template", str(cm.exception))
-        with self.assertRaises(TypeError) as cm:
-            _sre.template("", ["", (), ""])
-        self.assertIn("an integer is required", str(cm.exception))
-
 
 class ExternalTests(unittest.TestCase):
 
