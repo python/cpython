@@ -1314,6 +1314,28 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
     int opcode = 0;
     int oparg = 0;
     int nextop = 0;
+
+    int last_store_fast_lino = -1;
+    int last_i_oparg = -1;
+    for (int i = bb->b_iused - 1; i >= 0; i--) {
+        cfg_instr *inst = &bb->b_instr[i];
+        if (inst->i_opcode == STORE_FAST) {
+            if (last_store_fast_lino < 0 && last_i_oparg < 0) {
+                last_store_fast_lino = inst->i_loc.lineno;
+                last_i_oparg = inst->i_oparg;
+            }
+            else if (inst->i_loc.lineno == last_store_fast_lino) {
+                if (last_i_oparg == inst->i_oparg) {
+                    bb->b_instr[i].i_opcode = POP_TOP;
+                }
+            }
+            else {
+                last_store_fast_lino = inst->i_loc.lineno;
+                last_i_oparg = inst->i_oparg;
+            }
+        }
+    }
+
     for (int i = 0; i < bb->b_iused; i++) {
         cfg_instr *inst = &bb->b_instr[i];
         bool is_copy_of_load_const = (opcode == LOAD_CONST &&
@@ -1489,14 +1511,6 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                     /*
                     i -= jump_thread(inst, target, FOR_ITER);
                     */
-                }
-                break;
-            case STORE_FAST:
-                if (opcode == nextop &&
-                    oparg == bb->b_instr[i+1].i_oparg &&
-                    bb->b_instr[i].i_loc.lineno == bb->b_instr[i+1].i_loc.lineno) {
-                    bb->b_instr[i].i_opcode = POP_TOP;
-                    bb->b_instr[i].i_oparg = 0;
                 }
                 break;
             case SWAP:
