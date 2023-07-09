@@ -1029,28 +1029,31 @@ class DisTests(DisTestBase):
             s = ['''\
   1        %*d RESUME                   0
 
+''' % (w, 0)]
+            s += ['''\
   2        %*d LOAD_FAST                0 (x)
            %*d LOAD_CONST               1 (1)
            %*d BINARY_OP                0 (+)
-''' % (w, 0, w, 2, w, 4, w, 6)]
+''' % (w, 2, w, 4, w, 6)]
             s += ['''\
-           %*d STORE_FAST_LOAD_FAST     0 (x, x)
+           %*d POP_TOP
+           %*d LOAD_FAST                0 (x)
            %*d LOAD_CONST               1 (1)
            %*d BINARY_OP                0 (+)
-''' % (w, 8*i + 10, w, 8*i + 12, w, 8*i + 14)
-                 for i in range(count-1)]
+''' % (w, 10*i + 10, w, 10*i + 12, w, 10*i + 14, w, 10*i + 16)
+                  for i in range(count-1)]
             s += ['''\
            %*d STORE_FAST               0 (x)
 
   3        %*d LOAD_FAST                0 (x)
            %*d RETURN_VALUE
-''' % (w, 8*count + 2, w, 8*count + 4, w, 8*count + 6)]
+''' % (w, 10*count, w, 10*count + 2, w, 10*count + 4)]
             return ''.join(s)
 
         for i in range(1, 5):
             self.do_disassembly_test(func(i), expected(i, 4), True)
-        self.do_disassembly_test(func(1200), expected(1200, 4), True)
-        self.do_disassembly_test(func(1300), expected(1300, 5), True)
+        self.do_disassembly_test(func(999), expected(999, 4), True)
+        self.do_disassembly_test(func(1000), expected(1000, 5), True)
 
     def test_disassemble_str(self):
         self.do_disassembly_test(expr_str, dis_expr_str)
