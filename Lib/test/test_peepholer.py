@@ -1104,6 +1104,25 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         ]
         self.cfg_optimization_test(insts, expected_insts, consts=list(range(3)), nlocals=1)
 
+    def test_dead_store_elimination_in_same_lineno_wider(self):
+        insts = [
+            ('LOAD_CONST', 0, 1),
+            ('LOAD_CONST', 1, 2),
+            ('LOAD_CONST', 2, 3),
+            ('STORE_FAST', 1, 4),
+            ('STORE_FAST', 0, 4),
+            ('STORE_FAST', 1, 4),
+            ('RETURN_VALUE', 5)
+        ]
+        expected_insts = [
+            ('LOAD_CONST', 0, 1),
+            ('LOAD_CONST', 1, 2),
+            ('NOP', 0, 3),
+            ('STORE_FAST_STORE_FAST', 1, 4),
+            ('RETURN_VALUE', 5)
+        ]
+        self.cfg_optimization_test(insts, expected_insts, consts=list(range(3)), nlocals=1)
+
     def test_no_dead_store_elimination_in_different_lineno(self):
         insts = [
             ('LOAD_CONST', 0, 1),
