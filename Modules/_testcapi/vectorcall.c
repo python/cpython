@@ -64,7 +64,7 @@ _testcapi_pyobject_fastcalldict_impl(PyObject *module, PyObject *func,
 _testcapi.pyobject_vectorcall
     func: object
     func_args: object
-    kwnames: object = None
+    kwnames: object
     /
 [clinic start generated code]*/
 
