@@ -258,12 +258,12 @@ See :pep:`484` for more details.
    The performance of calling ``NewType`` has been restored to its level in
    Python 3.9.
 
-.. _annotating-callbacks:
+.. _annotating-callables:
 
-Annotating callbacks
-====================
+Annotating callable objects
+===========================
 
-Functions -- or other callable objects -- can be annotated using
+Functions -- or other :term:`callable` objects -- can be annotated using
 :class:`collections.abc.Callable` or :data:`typing.Callable`.
 ``Callable[[int], str]`` signifies a function that takes a single parameter
 of type :class:`int` and returns a :class:`str`.
@@ -1044,12 +1044,12 @@ These can be used as types in annotations. They all support subscription using
 
    Special form for annotating higher-order functions.
 
-   ``Concatenate`` can be used in conjunction with :ref:`Callable <annotating-callbacks>` and
+   ``Concatenate`` can be used in conjunction with :ref:`Callable <annotating-callables>` and
    :class:`ParamSpec` to annotate a higher-order callable which adds, removes,
    or transforms parameters of another
    callable.  Usage is in the form
    ``Concatenate[Arg1Type, Arg2Type, ..., ParamSpecVariable]``. ``Concatenate``
-   is currently only valid when used as the first argument to a :ref:`Callable <annotating-callbacks>`.
+   is currently only valid when used as the first argument to a :ref:`Callable <annotating-callables>`.
    The last parameter to ``Concatenate`` must be a :class:`ParamSpec` or
    ellipsis (``...``).
 
@@ -1095,7 +1095,7 @@ These can be used as types in annotations. They all support subscription using
       * :pep:`612` -- Parameter Specification Variables (the PEP which introduced
         ``ParamSpec`` and ``Concatenate``)
       * :class:`ParamSpec`
-      * :ref:`annotating-callbacks`
+      * :ref:`annotating-callables`
 
 
 .. class:: Type(Generic[CT_co])
@@ -1902,7 +1902,7 @@ without the dedicated syntax, as documented below.
       * :pep:`612` -- Parameter Specification Variables (the PEP which introduced
         ``ParamSpec`` and ``Concatenate``)
       * :data:`Concatenate`
-      * :ref:`annotating-callbacks`
+      * :ref:`annotating-callables`
 
 .. data:: ParamSpecArgs
 .. data:: ParamSpecKwargs
@@ -2187,7 +2187,7 @@ types.
         methods or attributes, not their type signatures or types.
         For example, :class:`ssl.SSLObject`
         is a class, therefore it passes an :func:`issubclass`
-        check against :ref:`Callable <annotating-callbacks>`. However, the
+        check against :ref:`Callable <annotating-callables>`. However, the
         ``ssl.SSLObject.__init__`` method exists only to raise a
         :exc:`TypeError` with a more informative message, therefore making
         it impossible to call (instantiate) :class:`ssl.SSLObject`.
@@ -3532,7 +3532,7 @@ Aliases to other ABCs in :mod:`collections.abc`
 
    Deprecated alias to :class:`collections.abc.Callable`.
 
-   See :ref:`annotating-callbacks` for details on how to use
+   See :ref:`annotating-callables` for details on how to use
    :class:`collections.abc.Callable` and ``typing.Callable`` in type annotations.
 
    .. deprecated:: 3.9
