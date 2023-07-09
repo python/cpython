@@ -1327,6 +1327,7 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
             else if (inst->i_loc.lineno == last_store_fast_lino) {
                 if (last_i_oparg == inst->i_oparg) {
                     inst->i_opcode = POP_TOP;
+                    inst->i_oparg = 0;
                 }
             }
             else {
