@@ -2541,7 +2541,7 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc.__code__)
         self.assertIsNotNone(ex)
         uops = {opname for opname, _ in ex}
-        self.assertIn("JUMP_IF_FALSE", uops)
+        self.assertIn("_POP_JUMP_IF_FALSE", uops)
 
 
 if __name__ == "__main__":

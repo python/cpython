@@ -2768,35 +2768,44 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
 #define ENABLE_SPECIALIZATION 0
 #include "executor_cases.c.h"
 
-            case JUMP_IF_FALSE:
+            // NOTE: These pop-jumps move the uop pc, not the bytecode ip
+            case _POP_JUMP_IF_FALSE:
             {
                 if (Py_IsFalse(stack_pointer[-1])) {
                     pc = oparg;
                 }
+                stack_pointer--;
                 break;
             }
 
-            case JUMP_IF_TRUE:
+            case _POP_JUMP_IF_TRUE:
             {
                 if (Py_IsTrue(stack_pointer[-1])) {
                     pc = oparg;
                 }
+                stack_pointer--;
                 break;
             }
 
-            case JUMP_IF_NONE:
+            case _POP_JUMP_IF_NONE:
             {
                 if (Py_IsNone(stack_pointer[-1])) {
                     pc = oparg;
                 }
+                else {
+                    Py_DECREF(stack_pointer[-1]);
+                }
+                stack_pointer--;
                 break;
             }
 
-            case JUMP_IF_NOT_NONE:
+            case _POP_JUMP_IF_NOT_NONE:
             {
                 if (!Py_IsNone(stack_pointer[-1])) {
                     pc = oparg;
+                    Py_DECREF(stack_pointer[-1]);
                 }
+                stack_pointer--;
                 break;
             }
 

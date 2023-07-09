@@ -21,10 +21,10 @@
 
 #define EXIT_TRACE 300
 #define SAVE_IP 301
-#define JUMP_IF_FALSE 302
-#define JUMP_IF_TRUE 303
-#define JUMP_IF_NONE 304
-#define JUMP_IF_NOT_NONE 305
+#define _POP_JUMP_IF_FALSE 302
+#define _POP_JUMP_IF_TRUE 303
+#define _POP_JUMP_IF_NONE 304
+#define _POP_JUMP_IF_NOT_NONE 305
 #define _GUARD_BOTH_INT 306
 #define _BINARY_OP_MULTIPLY_INT 307
 #define _BINARY_OP_ADD_INT 308
@@ -1288,10 +1288,10 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] = {
 const char * const _PyOpcode_uop_name[512] = {
     [300] = "EXIT_TRACE",
     [301] = "SAVE_IP",
-    [302] = "JUMP_IF_FALSE",
-    [303] = "JUMP_IF_TRUE",
-    [304] = "JUMP_IF_NONE",
-    [305] = "JUMP_IF_NOT_NONE",
+    [302] = "_POP_JUMP_IF_FALSE",
+    [303] = "_POP_JUMP_IF_TRUE",
+    [304] = "_POP_JUMP_IF_NONE",
+    [305] = "_POP_JUMP_IF_NOT_NONE",
     [306] = "_GUARD_BOTH_INT",
     [307] = "_BINARY_OP_MULTIPLY_INT",
     [308] = "_BINARY_OP_ADD_INT",

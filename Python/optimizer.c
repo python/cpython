@@ -438,18 +438,16 @@ translate_bytecode_to_trace(
             case POP_JUMP_IF_FALSE:
             {
                 // Assume jump unlikely (TODO: handle jump likely case)
-                // Reserve 7 entries (2 here, 3 stub, plus SAVE_IP + EXIT_TRACE)
-                if (trace_length + 7 > max_length) {
+                // Reserve 5 entries (1 here, 2 stub, plus SAVE_IP + EXIT_TRACE)
+                if (trace_length + 5 > max_length) {
                     DPRINTF(1, "Ran out of space for POP_JUMP_IF_FALSE\n");
                     goto done;
                 }
                 _Py_CODEUNIT *target_instr = instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]] + oparg;
-                max_length -= 3;  // Really the start of the stubs
-                ADD_TO_TRACE(JUMP_IF_FALSE, max_length);
-                ADD_TO_TRACE(POP_TOP, 0);
-                ADD_TO_STUB(max_length, POP_TOP, 0);
-                ADD_TO_STUB(max_length + 1, SAVE_IP, target_instr - (_Py_CODEUNIT *)code->co_code_adaptive);
-                ADD_TO_STUB(max_length + 2, EXIT_TRACE, 0);
+                max_length -= 2;  // Really the start of the stubs
+                ADD_TO_TRACE(_POP_JUMP_IF_FALSE, max_length);
+                ADD_TO_STUB(max_length, SAVE_IP, target_instr - (_Py_CODEUNIT *)code->co_code_adaptive);
+                ADD_TO_STUB(max_length + 1, EXIT_TRACE, 0);
                 break;
             }
 
