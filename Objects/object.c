@@ -926,8 +926,11 @@ PyObject_HasAttrString(PyObject *v, const char *name)
     return ok;
 }
 
-int
-PyObject_SetAttrString(PyObject *v, const char *name, PyObject *w)
+// Forward declaration
+static int object_set_attr(PyObject *v, PyObject *name, PyObject *value);
+
+static int
+object_set_attr_string(PyObject *v, const char *name, PyObject *w)
 {
     PyObject *s;
     int res;
@@ -937,15 +940,32 @@ PyObject_SetAttrString(PyObject *v, const char *name, PyObject *w)
     s = PyUnicode_InternFromString(name);
     if (s == NULL)
         return -1;
-    res = PyObject_SetAttr(v, s, w);
+    res = object_set_attr(v, s, w);
     Py_XDECREF(s);
     return res;
 }
 
 int
+PyObject_SetAttrString(PyObject *v, const char *name, PyObject *w)
+{
+    if (w == NULL
+#ifndef Py_DEBUG
+        && _Py_GetConfig()->dev_mode
+#endif
+        && PyErr_WarnEx(PyExc_DeprecationWarning,
+                        "PyObject_SetAttrString(v, name, NULL) is deprecated: "
+                        "use PyObject_DelAttrString(v, name) instead",
+                        1) < 0)
+    {
+        return -1;
+    }
+    return object_set_attr_string(v, name, w);
+}
+
+int
 PyObject_DelAttrString(PyObject *v, const char *name)
 {
-    return PyObject_SetAttrString(v, name, NULL);
+    return object_set_attr_string(v, name, NULL);
 }
 
 int
@@ -1156,8 +1176,8 @@ PyObject_HasAttr(PyObject *v, PyObject *name)
     return 1;
 }
 
-int
-PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
+static int
+object_set_attr(PyObject *v, PyObject *name, PyObject *value)
 {
     PyTypeObject *tp = Py_TYPE(v);
     int err;
@@ -1206,9 +1226,26 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
 }
 
 int
+PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
+{
+    if (value == NULL
+#ifndef Py_DEBUG
+        && _Py_GetConfig()->dev_mode
+#endif
+        && PyErr_WarnEx(PyExc_DeprecationWarning,
+                        "PyObject_SetAttr(v, name, NULL) is deprecated: "
+                        "use PyObject_DelAttr(v, name) instead",
+                        1) < 0)
+    {
+        return -1;
+    }
+    return object_set_attr(v, name, value);
+}
+
+int
 PyObject_DelAttr(PyObject *v, PyObject *name)
 {
-    return PyObject_SetAttr(v, name, NULL);
+    return object_set_attr(v, name, NULL);
 }
 
 PyObject **

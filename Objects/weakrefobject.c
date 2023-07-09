@@ -485,7 +485,13 @@ proxy_setattr(PyObject *proxy, PyObject *name, PyObject *value)
     if (!proxy_check_ref(obj)) {
         return -1;
     }
-    int res = PyObject_SetAttr(obj, name, value);
+    int res;
+    if (value != NULL) {
+        res = PyObject_SetAttr(obj, name, value);
+    }
+    else {
+        res = PyObject_DelAttr(obj, name);
+    }
     Py_DECREF(obj);
     return res;
 }

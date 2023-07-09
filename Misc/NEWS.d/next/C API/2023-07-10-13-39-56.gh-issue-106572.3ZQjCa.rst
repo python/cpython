@@ -1,0 +1,9 @@
+Deprecate :c:func:`PyObject_SetAttr` and :c:func:`PyObject_SetAttrString` to
+remove an attribute (if *value* is ``NULL``): ``PyObject_DelAttr(v, name)`` and
+``PyObject_DelAttrString(v, name)`` must be used instead. If the development
+mode is enabled or if Python is built in debug mode, these deprecated functions
+now emit a :exc:`DeprecationWarning` if *value* is ``NULL``.  When
+:c:func:`PyObject_SetAttr` is called with a ``NULL`` value, it's unclear if the
+caller wants to remove the attribute on purpose, or if the value is ``NULL``
+because of an error. Such API is error prone and should be avoided.
+Patch by Victor Stinner.

@@ -1115,6 +1115,24 @@ class CAPITest(unittest.TestCase):
         del d.extra
         self.assertIsNone(d.extra)
 
+    def test_setattr(self):
+        class MyType:
+            pass
+
+        PyObject_SetAttr = _testcapi.PyObject_SetAttr
+
+        obj = MyType()
+        PyObject_SetAttr(obj, "attr", 123)
+        self.assertEqual(obj.attr, 123)
+        # PyObject_SetAttr(obj, name, NULL) emits a DeprecationWarning
+        # in the Python Development Mode or if Python is built in debug mode
+        if support.Py_DEBUG or sys.flags.dev_mode:
+            with self.assertWarns(DeprecationWarning):
+                PyObject_SetAttr(obj, "attr")
+        else:
+            PyObject_SetAttr(obj, "attr")
+        self.assertFalse(hasattr(obj, "attr"))
+
 
 @requires_limited_api
 class TestHeapTypeRelative(unittest.TestCase):

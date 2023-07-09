@@ -3464,6 +3464,20 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 }
 
 
+static PyObject *
+test_pyobject_setattr(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *obj, *name, *value = NULL;
+    if (!PyArg_ParseTuple(args, "OO|O", &obj, &name, &value)) {
+        return NULL;
+    }
+    if (PyObject_SetAttr(obj, name, value) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -3609,6 +3623,7 @@ static PyMethodDef TestMethods[] = {
     {"function_set_kw_defaults", function_set_kw_defaults, METH_VARARGS, NULL},
     {"check_pyimport_addmodule", check_pyimport_addmodule, METH_VARARGS},
     {"test_weakref_capi", test_weakref_capi, METH_NOARGS},
+    {"PyObject_SetAttr", test_pyobject_setattr, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 

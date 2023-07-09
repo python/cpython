@@ -122,9 +122,13 @@ Object Protocol
    return ``0`` on success.  This is the equivalent of the Python statement
    ``o.attr_name = v``.
 
-   If *v* is ``NULL``, the attribute is deleted. This behaviour is deprecated
-   in favour of using :c:func:`PyObject_DelAttr`, but there are currently no
-   plans to remove it.
+   If *v* is ``NULL``, emit a :exc:`DeprecationWarning` in :ref:`Python
+   Development Mode <devmode>` or if :ref:`Python is built in debug mode
+   <debug-build>`.
+
+   .. deprecated:: 3.13
+      Calling ``PyObject_SetAttrString(o, attr_name, NULL)`` is deprecated:
+      ``PyObject_DelAttr(o, attr_name)`` must be used instead.
 
 
 .. c:function:: int PyObject_SetAttrString(PyObject *o, const char *attr_name, PyObject *v)
@@ -134,8 +138,13 @@ Object Protocol
    return ``0`` on success.  This is the equivalent of the Python statement
    ``o.attr_name = v``.
 
-   If *v* is ``NULL``, the attribute is deleted, but this feature is
-   deprecated in favour of using :c:func:`PyObject_DelAttrString`.
+   If *v* is ``NULL``, emit a :exc:`DeprecationWarning` in :ref:`Python
+   Development Mode <devmode>` or if :ref:`Python is built in debug mode
+   <debug-build>`.
+
+   .. deprecated:: 3.13
+      Calling ``PyObject_SetAttrString(o, attr_name, NULL)`` is deprecated:
+      ``PyObject_DelAttrString(o, attr_name)`` must be used instead.
 
 
 .. c:function:: int PyObject_GenericSetAttr(PyObject *o, PyObject *name, PyObject *value)
