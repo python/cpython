@@ -868,7 +868,7 @@ class Path(PurePath):
         """
         Check if this path is a mount point
         """
-        return self.pathmod.ismount(self)
+        return os.path.ismount(self)
 
     def is_symlink(self):
         """
@@ -889,7 +889,7 @@ class Path(PurePath):
         """
         Whether this path is a junction.
         """
-        return self.pathmod.isjunction(self)
+        return os.path.isjunction(self)
 
     def is_block_device(self):
         """
@@ -964,7 +964,8 @@ class Path(PurePath):
             other_st = other_path.stat()
         except AttributeError:
             other_st = self.with_segments(other_path).stat()
-        return self.pathmod.samestat(st, other_st)
+        return (st.st_ino == other_st.st_ino and
+                st.st_dev == other_st.st_dev)
 
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
@@ -1217,7 +1218,7 @@ class Path(PurePath):
             return self
         elif self.drive:
             # There is a CWD on each drive-letter drive.
-            cwd = self.pathmod.abspath(self.drive)
+            cwd = os.path.abspath(self.drive)
         else:
             cwd = os.getcwd()
             # Fast path for "empty" paths, e.g. Path("."), Path("") or Path().
@@ -1243,7 +1244,7 @@ class Path(PurePath):
                 raise RuntimeError("Symlink loop from %r" % e.filename)
 
         try:
-            s = self.pathmod.realpath(self, strict=strict)
+            s = os.path.realpath(self, strict=strict)
         except OSError as e:
             check_eloop(e)
             raise
@@ -1407,7 +1408,7 @@ class Path(PurePath):
         """
         if (not (self.drive or self.root) and
             self._tail and self._tail[0][:1] == '~'):
-            homedir = self.pathmod.expanduser(self._tail[0])
+            homedir = os.path.expanduser(self._tail[0])
             if homedir[:1] == "~":
                 raise RuntimeError("Could not determine home directory.")
             drv, root, tail = self._parse_path(homedir)
