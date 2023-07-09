@@ -262,8 +262,9 @@ The special characters are:
      a special sequence which represents a single character such as
      ``\xa0`` or ``\n`` or a character class such as ``\w`` or ``\S``
      (defined below).
-     Note that ``\b`` is used to represent a single "backspace" character,
-     not word boundaries as outside a set.
+     Note that ``\b`` represents a single "backspace" character,
+     not a word boundary as outside a set, and numeric escapes
+     such as ``\1`` are always octal escapes, not group references.
      Special sequences which do not match a single character such as ``\A``
      and ``\Z`` are not allowed.
 
