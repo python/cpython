@@ -10,7 +10,7 @@
  * https://github.com/GoogleChromeLabs/wasm-feature-detect/blob/main/src/detectors/type-reflection/index.js
  */
 EM_JS(int, _PyEM_detect_type_reflection, (), {
-  return "function" in WebAssembly;
+  return "Function" in WebAssembly;
 });
 
 void
