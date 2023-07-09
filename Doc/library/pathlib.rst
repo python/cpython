@@ -305,8 +305,8 @@ Pure paths provide the following methods and properties:
 
 .. attribute:: PurePath.pathmod
 
-   The implementation of :mod:`os.path` used for low-level path operations;
-   either ``posixpath`` or ``ntpath``.
+   The implementation of the :mod:`os.path` module used for low-level path
+   operations: either ``posixpath`` or ``ntpath``.
 
    .. versionadded:: 3.13
 
