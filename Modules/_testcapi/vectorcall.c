@@ -71,7 +71,7 @@ _testcapi.pyobject_vectorcall
 static PyObject *
 _testcapi_pyobject_vectorcall_impl(PyObject *module, PyObject *func,
                                    PyObject *func_args, PyObject *kwnames)
-/*[clinic end generated code: output=ff77245bc6afe0d8 input=c427975e9408ca84]*/
+/*[clinic end generated code: output=ff77245bc6afe0d8 input=a0668dfef625764c]*/
 {
     PyObject **stack;
     Py_ssize_t nargs, nkw;

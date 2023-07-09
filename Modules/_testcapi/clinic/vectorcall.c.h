@@ -41,7 +41,7 @@ exit:
 }
 
 PyDoc_STRVAR(_testcapi_pyobject_vectorcall__doc__,
-"pyobject_vectorcall($module, func, func_args, kwnames=None, /)\n"
+"pyobject_vectorcall($module, func, func_args, kwnames, /)\n"
 "--\n"
 "\n");
 
@@ -58,18 +58,14 @@ _testcapi_pyobject_vectorcall(PyObject *module, PyObject *const *args, Py_ssize_
     PyObject *return_value = NULL;
     PyObject *func;
     PyObject *func_args;
-    PyObject *__clinic_kwnames = Py_None;
+    PyObject *__clinic_kwnames;
 
-    if (!_PyArg_CheckPositional("pyobject_vectorcall", nargs, 2, 3)) {
+    if (!_PyArg_CheckPositional("pyobject_vectorcall", nargs, 3, 3)) {
         goto exit;
     }
     func = args[0];
     func_args = args[1];
-    if (nargs < 3) {
-        goto skip_optional;
-    }
     __clinic_kwnames = args[2];
-skip_optional:
     return_value = _testcapi_pyobject_vectorcall_impl(module, func, func_args, __clinic_kwnames);
 
 exit:
@@ -214,4 +210,4 @@ _testcapi_has_vectorcall_flag(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a7c09c9060137f4a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=beaf6beac3d13c25 input=a9049054013a1b77]*/
