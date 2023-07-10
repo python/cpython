@@ -418,10 +418,8 @@ match_class_attr(PyThreadState *tstate, PyObject *subject, PyObject *type,
         }
         return NULL;
     }
-    PyObject *attr = PyObject_GetAttr(subject, name);
-    if (attr == NULL && _PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
-        _PyErr_Clear(tstate);
-    }
+    PyObject *attr;
+    (void)_PyObject_LookupAttr(subject, name, &attr);
     return attr;
 }
 
@@ -456,7 +454,9 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
     // First, the positional subpatterns:
     if (nargs) {
         int match_self = 0;
-        match_args = PyObject_GetAttrString(type, "__match_args__");
+        if (_PyObject_LookupAttr(type, &_Py_ID(__match_args__), &match_args) < 0) {
+            goto fail;
+        }
         if (match_args) {
             if (!PyTuple_CheckExact(match_args)) {
                 const char *e = "%s.__match_args__ must be a tuple (got %s)";
@@ -466,8 +466,7 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
                 goto fail;
             }
         }
-        else if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
-            _PyErr_Clear(tstate);
+        else {
             // _Py_TPFLAGS_MATCH_SELF is only acknowledged if the type does not
             // define __match_args__. This is natural behavior for subclasses:
             // it's as if __match_args__ is some "magic" value that is lost as
@@ -475,9 +474,6 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
             match_args = PyTuple_New(0);
             match_self = PyType_HasFeature((PyTypeObject*)type,
                                             _Py_TPFLAGS_MATCH_SELF);
-        }
-        else {
-            goto fail;
         }
         assert(PyTuple_CheckExact(match_args));
         Py_ssize_t allowed = match_self ? 1 : PyTuple_GET_SIZE(match_args);
@@ -761,11 +757,6 @@ resume_frame:
     assert(!_PyErr_Occurred(tstate));
 #endif
 
-    DISPATCH();
-
-    if (_Py_HandlePending(tstate) != 0) {
-        goto error;
-    }
     DISPATCH();
 
     {
@@ -2737,11 +2728,11 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
 #endif
 
     DPRINTF(3,
-            "Entering _PyUopExecute for %s (%s:%d) at offset %ld\n",
+            "Entering _PyUopExecute for %s (%s:%d) at byte offset %ld\n",
             PyUnicode_AsUTF8(_PyFrame_GetCode(frame)->co_qualname),
             PyUnicode_AsUTF8(_PyFrame_GetCode(frame)->co_filename),
             _PyFrame_GetCode(frame)->co_firstlineno,
-            (long)(frame->prev_instr + 1 -
+            2 * (long)(frame->prev_instr + 1 -
                    (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive));
 
     PyThreadState *tstate = _PyThreadState_GET();
