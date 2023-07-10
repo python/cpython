@@ -24,36 +24,42 @@ extern PyTypeObject _PyExc_MemoryError;
 #define _PyRuntimeState_INIT(runtime) \
     { \
         .debug_offsets = { \
-            .rs_finalizing = offsetof(_PyRuntimeState, _finalizing), \
-            .rs_interpreters_head = offsetof(_PyRuntimeState, interpreters.head), \
-            \
-            .is_next = offsetof(PyInterpreterState, next), \
-            .is_threads_head = offsetof(PyInterpreterState, threads.head), \
-            .is_gc = offsetof(PyInterpreterState, gc), \
-            .is_imports_modules = offsetof(PyInterpreterState, imports.modules), \
-            .is_sysdict = offsetof(PyInterpreterState, sysdict), \
-            .is_builtins = offsetof(PyInterpreterState, builtins), \
-            .is_ceval_gil = offsetof(PyInterpreterState, ceval.gil), \
-            \
-            .ts_prev = offsetof(PyThreadState, prev), \
-            .ts_next = offsetof(PyThreadState, next), \
-            .ts_interp = offsetof(PyThreadState, interp), \
-            .ts_cframe = offsetof(PyThreadState, cframe), \
-            .ts_thread_id = offsetof(PyThreadState, thread_id), \
-            \
-            .fo_previous = offsetof(_PyInterpreterFrame, previous), \
-            .fo_executable = offsetof(_PyInterpreterFrame, f_executable), \
-            .fo_prev_instr = offsetof(_PyInterpreterFrame, prev_instr), \
-            .fo_localsplus = offsetof(_PyInterpreterFrame, localsplus), \
-            .fo_owner = offsetof(_PyInterpreterFrame, owner), \
-            \
-            .co_filename = offsetof(PyCodeObject, co_filename), \
-            .co_name = offsetof(PyCodeObject, co_name), \
-            .co_linetable = offsetof(PyCodeObject, co_linetable), \
-            .co_firstlineno = offsetof(PyCodeObject, co_firstlineno), \
-            .co_argcount = offsetof(PyCodeObject, co_argcount), \
-            .co_localsplusnames = offsetof(PyCodeObject, co_localsplusnames), \
-            .co_co_code_adaptive = offsetof(PyCodeObject, co_code_adaptive), \
+            .runtime_state = { \
+                .finalizing = offsetof(_PyRuntimeState, _finalizing), \
+                .interpreters_head = offsetof(_PyRuntimeState, interpreters.head), \
+            }, \
+            .interpreter_state = { \
+                .next = offsetof(PyInterpreterState, next), \
+                .threads_head = offsetof(PyInterpreterState, threads.head), \
+                .gc = offsetof(PyInterpreterState, gc), \
+                .imports_modules = offsetof(PyInterpreterState, imports.modules), \
+                .sysdict = offsetof(PyInterpreterState, sysdict), \
+                .builtins = offsetof(PyInterpreterState, builtins), \
+                .ceval_gil = offsetof(PyInterpreterState, ceval.gil), \
+            }, \
+            .thread_state = { \
+                .prev = offsetof(PyThreadState, prev), \
+                .next = offsetof(PyThreadState, next), \
+                .interp = offsetof(PyThreadState, interp), \
+                .cframe = offsetof(PyThreadState, cframe), \
+                .thread_id = offsetof(PyThreadState, thread_id), \
+            }, \
+            .frame_object = { \
+                .previous = offsetof(_PyInterpreterFrame, previous), \
+                .executable = offsetof(_PyInterpreterFrame, f_executable), \
+                .prev_instr = offsetof(_PyInterpreterFrame, prev_instr), \
+                .localsplus = offsetof(_PyInterpreterFrame, localsplus), \
+                .owner = offsetof(_PyInterpreterFrame, owner), \
+            }, \
+            .code_object = { \
+                .filename = offsetof(PyCodeObject, co_filename), \
+                .name = offsetof(PyCodeObject, co_name), \
+                .linetable = offsetof(PyCodeObject, co_linetable), \
+                .firstlineno = offsetof(PyCodeObject, co_firstlineno), \
+                .argcount = offsetof(PyCodeObject, co_argcount), \
+                .localsplusnames = offsetof(PyCodeObject, co_localsplusnames), \
+                .co_code_adaptive = offsetof(PyCodeObject, co_code_adaptive), \
+            }, \
         }, \
         .allocators = { \
             .standard = _pymem_allocators_standard_INIT(runtime), \

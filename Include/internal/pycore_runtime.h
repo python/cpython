@@ -55,40 +55,50 @@ typedef struct _Py_AuditHookEntry {
 
 typedef struct _Py_DebugOffsets {
     // Runtime state offset;
-    off_t rs_finalizing;
-    off_t rs_interpreters_head;
+    struct _runtime_state {
+        off_t finalizing;
+        off_t interpreters_head;
+    } runtime_state;
 
     // Interpreter state offset;
-    off_t is_next;
-    off_t is_threads_head;
-    off_t is_gc;
-    off_t is_imports_modules;
-    off_t is_sysdict;
-    off_t is_builtins;
-    off_t is_ceval_gil;
+    struct _interpreter_state {
+        off_t next;
+        off_t threads_head;
+        off_t gc;
+        off_t imports_modules;
+        off_t sysdict;
+        off_t builtins;
+        off_t ceval_gil;
+    } interpreter_state;
 
     // Thread state offset;
-    off_t ts_prev;
-    off_t ts_next;
-    off_t ts_interp;
-    off_t ts_cframe;
-    off_t ts_thread_id;
+    struct _thread_state{
+        off_t prev;
+        off_t next;
+        off_t interp;
+        off_t cframe;
+        off_t thread_id;
+    } thread_state;
 
     // Frame object offset;
-    off_t fo_previous;
-    off_t fo_executable;
-    off_t fo_prev_instr;
-    off_t fo_localsplus;
-    off_t fo_owner;
+    struct _frame_object {
+        off_t previous;
+        off_t executable;
+        off_t prev_instr;
+        off_t localsplus;
+        off_t owner;
+    } frame_object;
 
     // Code object offset;
-    off_t co_filename;
-    off_t co_name;
-    off_t co_linetable;
-    off_t co_firstlineno;
-    off_t co_argcount;
-    off_t co_localsplusnames;
-    off_t co_co_code_adaptive;
+    struct _code_object {
+        off_t filename;
+        off_t name;
+        off_t linetable;
+        off_t firstlineno;
+        off_t argcount;
+        off_t localsplusnames;
+        off_t co_code_adaptive;
+    } code_object;
 } _Py_DebugOffsets;
 
 /* Full Python runtime state */
