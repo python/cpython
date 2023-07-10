@@ -35,7 +35,7 @@ EM_JS(int, _PyEM_CountFuncParams, (PyCFunctionWithKeywords func), {
   if (n !== undefined) {
     return n;
   }
-  n = WebAssembly.Function.type(getWasmTableEntry(func)).parameters.length;
+  n = WebAssembly.Function.type(wasmTable.get(func)).parameters.length;
   _PyEM_CountFuncParams.cache.set(func, n);
   return n;
 }
