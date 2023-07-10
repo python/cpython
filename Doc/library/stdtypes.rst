@@ -5206,10 +5206,10 @@ enables cleaner type hinting syntax compared to :data:`typing.Union`.
    However, union objects containing :ref:`parameterized generics
    <types-genericalias>` cannot be used::
 
-      >>> isinstance(1, int | list[int])
+      >>> isinstance([1], int | list[int])
       Traceback (most recent call last):
-        File "<stdin>", line 1, in <module>
-      TypeError: isinstance() argument 2 cannot contain a parameterized generic
+        ...
+      TypeError: isinstance() argument 2 cannot be a parameterized generic
 
 The user-exposed type for the union object can be accessed from
 :data:`types.UnionType` and used for :func:`isinstance` checks.  An object cannot be
