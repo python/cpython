@@ -200,9 +200,10 @@ class Element:
 
     def __bool__(self):
         warnings.warn(
-            "The behavior of this method will change in future versions.  "
+            "Testing an element's truth value will raise an exception in "
+            "future versions.  "
             "Use specific 'len(elem)' or 'elem is not None' test instead.",
-            FutureWarning, stacklevel=2
+            DeprecationWarning, stacklevel=2
             )
         return len(self._children) != 0 # emulate old behaviour, for now
 
@@ -566,10 +567,7 @@ class ElementTree:
                     # it with chunks.
                     self._root = parser._parse_whole(source)
                     return self._root
-            while True:
-                data = source.read(65536)
-                if not data:
-                    break
+            while data := source.read(65536):
                 parser.feed(data)
             self._root = parser.close()
             return self._root

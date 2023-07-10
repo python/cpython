@@ -19,7 +19,7 @@ testcfg = {
 }
 code_sample = """\
 
-class C1():
+class C1:
     # Class comment.
     def __init__(self, a, b):
         self.a = a

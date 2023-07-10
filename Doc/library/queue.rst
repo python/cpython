@@ -15,7 +15,7 @@ module implements all the required locking semantics.
 
 The module implements three types of queue, which differ only in the order in
 which the entries are retrieved.  In a :abbr:`FIFO (first-in, first-out)`
-queue, the first tasks added are the first retrieved. In a
+queue, the first tasks added are the first retrieved.  In a
 :abbr:`LIFO (last-in, first-out)` queue, the most recently added entry is
 the first retrieved (operating like a stack).  With a priority queue,
 the entries are kept sorted (using the :mod:`heapq` module) and the
@@ -57,8 +57,8 @@ The :mod:`queue` module defines the following classes and exceptions:
    *maxsize* is less than or equal to zero, the queue size is infinite.
 
    The lowest valued entries are retrieved first (the lowest valued entry is the
-   one returned by ``sorted(list(entries))[0]``).  A typical pattern for entries
-   is a tuple in the form: ``(priority_number, data)``.
+   one that would be returned by ``min(entries)``).  A typical pattern for
+   entries is a tuple in the form: ``(priority_number, data)``.
 
    If the *data* elements are not comparable, the data can be wrapped in a class
    that ignores the data item and only compares the priority number::
@@ -127,8 +127,8 @@ provide the public methods described below.
 
 .. method:: Queue.put(item, block=True, timeout=None)
 
-   Put *item* into the queue. If optional args *block* is true and *timeout* is
-   ``None`` (the default), block if necessary until a free slot is available. If
+   Put *item* into the queue.  If optional args *block* is true and *timeout* is
+   ``None`` (the default), block if necessary until a free slot is available.  If
    *timeout* is a positive number, it blocks at most *timeout* seconds and raises
    the :exc:`Full` exception if no free slot was available within that time.
    Otherwise (*block* is false), put an item on the queue if a free slot is
@@ -143,7 +143,7 @@ provide the public methods described below.
 
 .. method:: Queue.get(block=True, timeout=None)
 
-   Remove and return an item from the queue. If optional args *block* is true and
+   Remove and return an item from the queue.  If optional args *block* is true and
    *timeout* is ``None`` (the default), block if necessary until an item is available.
    If *timeout* is a positive number, it blocks at most *timeout* seconds and
    raises the :exc:`Empty` exception if no item was available within that time.
@@ -152,7 +152,7 @@ provide the public methods described below.
 
    Prior to 3.0 on POSIX systems, and for all versions on Windows, if
    *block* is true and *timeout* is ``None``, this operation goes into
-   an uninterruptible wait on an underlying lock. This means that no exceptions
+   an uninterruptible wait on an underlying lock.  This means that no exceptions
    can occur, and in particular a SIGINT will not trigger a :exc:`KeyboardInterrupt`.
 
 
@@ -184,7 +184,7 @@ fully processed by daemon consumer threads.
 
    The count of unfinished tasks goes up whenever an item is added to the queue.
    The count goes down whenever a consumer thread calls :meth:`task_done` to
-   indicate that the item was retrieved and all work on it is complete. When the
+   indicate that the item was retrieved and all work on it is complete.  When the
    count of unfinished tasks drops to zero, :meth:`join` unblocks.
 
 
@@ -227,7 +227,7 @@ SimpleQueue Objects
 
 .. method:: SimpleQueue.empty()
 
-   Return ``True`` if the queue is empty, ``False`` otherwise. If empty()
+   Return ``True`` if the queue is empty, ``False`` otherwise.  If empty()
    returns ``False`` it doesn't guarantee that a subsequent call to get()
    will not block.
 

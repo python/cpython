@@ -9,6 +9,7 @@ except ImportError:
 
 # Skip this test if the _testcapi module isn't available.
 type_get_version = import_helper.import_module('_testcapi').type_get_version
+type_assign_version = import_helper.import_module('_testcapi').type_assign_version
 
 
 @support.cpython_only
@@ -41,6 +42,19 @@ class TypeCacheTests(unittest.TestCase):
             append_result(tp_version_tag_after)
         self.assertEqual(len(set(all_version_tags)), 30,
                          msg=f"{all_version_tags} contains non-unique versions")
+
+    def test_type_assign_version(self):
+        class C:
+            x = 5
+
+        self.assertEqual(type_assign_version(C), 1)
+        c_ver = type_get_version(C)
+
+        C.x = 6
+        self.assertEqual(type_get_version(C), 0)
+        self.assertEqual(type_assign_version(C), 1)
+        self.assertNotEqual(type_get_version(C), 0)
+        self.assertNotEqual(type_get_version(C), c_ver)
 
 
 if __name__ == "__main__":

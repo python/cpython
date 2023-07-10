@@ -445,6 +445,20 @@ class ClassTests(unittest.TestCase):
         del testme.cardinal
         self.assertCallStack([('__delattr__', (testme, "cardinal"))])
 
+    def testHasAttrString(self):
+        import sys
+        from test.support import import_helper
+        _testcapi = import_helper.import_module('_testcapi')
+
+        class A:
+            def __init__(self):
+                self.attr = 1
+
+        a = A()
+        self.assertEqual(_testcapi.hasattr_string(a, "attr"), True)
+        self.assertEqual(_testcapi.hasattr_string(a, "noattr"), False)
+        self.assertIsNone(sys.exception())
+
     def testDel(self):
         x = []
 
@@ -725,6 +739,21 @@ class ClassTests(unittest.TestCase):
         self.assertEqual(A, (tuple(range(8)), {}))
         class A(0, *range(1, 8), **d, foo='bar'): pass
         self.assertEqual(A, (tuple(range(8)), {'foo': 'bar'}))
+
+    def testClassCallRecursionLimit(self):
+        class C:
+            def __init__(self):
+                self.c = C()
+
+        with self.assertRaises(RecursionError):
+            C()
+
+        def add_one_level():
+            #Each call to C() consumes 2 levels, so offset by 1.
+            C()
+
+        with self.assertRaises(RecursionError):
+            add_one_level()
 
 
 if __name__ == '__main__':

@@ -22,6 +22,9 @@ from test.libregrtest.runtest import (
 from test.libregrtest.setup import setup_tests
 from test.libregrtest.utils import format_duration, print_warning
 
+if sys.platform == 'win32':
+    import locale
+
 
 # Display the running tests if nothing happened last N seconds
 PROGRESS_UPDATE = 30.0   # seconds
@@ -267,11 +270,17 @@ class TestWorkerProcess(threading.Thread):
             self.current_test_name = None
 
     def _runtest(self, test_name: str) -> MultiprocessResult:
+        if sys.platform == 'win32':
+            # gh-95027: When stdout is not a TTY, Python uses the ANSI code
+            # page for the sys.stdout encoding. If the main process runs in a
+            # terminal, sys.stdout uses WindowsConsoleIO with UTF-8 encoding.
+            encoding = locale.getencoding()
+        else:
+            encoding = sys.stdout.encoding
+
         # gh-94026: Write stdout+stderr to a tempfile as workaround for
         # non-blocking pipes on Emscripten with NodeJS.
-        with tempfile.TemporaryFile(
-            'w+', encoding=sys.stdout.encoding
-        ) as stdout_fh:
+        with tempfile.TemporaryFile('w+', encoding=encoding) as stdout_fh:
             # gh-93353: Check for leaked temporary files in the parent process,
             # since the deletion of temporary files can happen late during
             # Python finalization: too late for libregrtest.
@@ -290,7 +299,14 @@ class TestWorkerProcess(threading.Thread):
                 retcode = self._run_process(test_name, None, stdout_fh)
                 tmp_files = ()
             stdout_fh.seek(0)
-            stdout = stdout_fh.read().strip()
+
+            try:
+                stdout = stdout_fh.read().strip()
+            except Exception as exc:
+                # gh-101634: Catch UnicodeDecodeError if stdout cannot be
+                # decoded from encoding
+                err_msg = f"Cannot read process stdout: {exc}"
+                return self.mp_result_error(ChildError(test_name), '', err_msg)
 
         if retcode is None:
             return self.mp_result_error(Timeout(test_name), stdout)
@@ -473,6 +489,8 @@ class MultiprocessTestRunner:
             # Thread got an exception
             format_exc = item[1]
             print_warning(f"regrtest worker thread failed: {format_exc}")
+            result = ChildError("<regrtest worker>")
+            self.regrtest.accumulate_result(result)
             return True
 
         self.test_index += 1

@@ -33,6 +33,11 @@ class ModuleLockAsRLockTests:
     test_repr = None
     test_locked_repr = None
 
+    def tearDown(self):
+        for splitinit in init.values():
+            splitinit._bootstrap._blocking_on.clear()
+
+
 LOCK_TYPES = {kind: splitinit._bootstrap._ModuleLock
               for kind, splitinit in init.items()}
 
