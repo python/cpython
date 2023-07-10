@@ -273,7 +273,7 @@ _sharedexception_bind(PyObject *exc, _sharedexception *sharedexc)
     assert(exc != NULL);
     const char *failure = NULL;
 
-    PyObject *nameobj = PyUnicode_FromFormat("%S", Py_TYPE(exc));
+    PyObject *nameobj = PyUnicode_FromString(Py_TYPE(exc)->tp_name);
     if (nameobj == NULL) {
         failure = "unable to format exception type name";
         goto error;
