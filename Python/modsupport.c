@@ -587,13 +587,13 @@ add_object(PyObject *m, const char *name, PyObject *o)
     PyObject *dict;
     if (!PyModule_Check(m)) {
         PyErr_SetString(PyExc_TypeError,
-                    "PyModule_Add() needs module as first arg");
+                    "PyModule_AddNew() needs module as first arg");
         return -1;
     }
     if (!o) {
         if (!PyErr_Occurred())
             PyErr_SetString(PyExc_SystemError,
-                    "PyModule_Add() needs non-NULL value or exception set");
+                    "PyModule_AddNew() needs non-NULL value or exception set");
         return -1;
     }
 
@@ -614,7 +614,7 @@ PyModule_AddObjectRef(PyObject *mod, const char *name, PyObject *value)
 }
 
 int
-PyModule_Add(PyObject *m, const char *name, PyObject *o)
+PyModule_AddNew(PyObject *m, const char *name, PyObject *o)
 {
     int res = add_object(m, name, o);
     Py_XDECREF(o);
@@ -634,13 +634,13 @@ PyModule_AddObject(PyObject *m, const char *name, PyObject *o)
 int
 PyModule_AddIntConstant(PyObject *m, const char *name, long value)
 {
-    return PyModule_Add(m, name, PyLong_FromLong(value));
+    return PyModule_AddNew(m, name, PyLong_FromLong(value));
 }
 
 int
 PyModule_AddStringConstant(PyObject *m, const char *name, const char *value)
 {
-    return PyModule_Add(m, name, PyUnicode_FromString(value));
+    return PyModule_AddNew(m, name, PyUnicode_FromString(value));
 }
 
 int
@@ -654,5 +654,5 @@ PyModule_AddType(PyObject *module, PyTypeObject *type)
     assert(name != NULL);
 
     Py_INCREF(type);
-    return PyModule_Add(module, name, (PyObject *)type);
+    return PyModule_AddNew(module, name, (PyObject *)type);
 }

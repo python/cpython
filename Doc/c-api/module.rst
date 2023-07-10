@@ -486,7 +486,7 @@ state:
    .. versionadded:: 3.10
 
 
-.. c:function:: int PyModule_Add(PyObject *module, const char *name, PyObject *value)
+.. c:function:: int PyModule_AddNew(PyObject *module, const char *name, PyObject *value)
 
    Add an object to *module* as *name*.  This is a convenience function which
    can be used from the module's initialization function.
@@ -502,7 +502,7 @@ state:
 
    Example usage::
 
-        if (PyModule_Add(module, "spam", PyBytes_FromString(value)) < 0) {
+        if (PyModule_AddNew(module, "spam", PyBytes_FromString(value)) < 0) {
             goto error;
         }
 
@@ -511,10 +511,10 @@ state:
 
 .. c:function:: int PyModule_AddObject(PyObject *module, const char *name, PyObject *value)
 
-   Similar to :c:func:`PyModule_Add`, but only steals a reference to
+   Similar to :c:func:`PyModule_AddNew`, but only steals a reference to
    *value* on success (if it returns ``0``).
 
-   The new :c:func:`PyModule_Add` function is recommended, since it is
+   The new :c:func:`PyModule_AddNew` function is recommended, since it is
    easy to introduce reference leaks by misusing the
    :c:func:`PyModule_AddObject` function.
 

@@ -398,7 +398,7 @@ register_maps(PyObject *module)
         strcpy(mhname + sizeof("__map_") - 1, h->charset);
 
         PyObject *capsule = PyCapsule_New((void *)h, MAP_CAPSULE, NULL);
-        if (PyModule_Add(module, mhname, capsule) < 0) {
+        if (PyModule_AddNew(module, mhname, capsule) < 0) {
             return -1;
         }
     }

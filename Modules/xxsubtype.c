@@ -274,10 +274,10 @@ xxsubtype_exec(PyObject* m)
     if (PyType_Ready(&spamdict_type) < 0)
         return -1;
 
-    if (PyModule_Add(m, "spamlist", Py_NewRef(&spamlist_type)) < 0)
+    if (PyModule_AddNew(m, "spamlist", Py_NewRef(&spamlist_type)) < 0)
         return -1;
 
-    if (PyModule_Add(m, "spamdict", Py_NewRef(&spamdict_type)) < 0)
+    if (PyModule_AddNew(m, "spamdict", Py_NewRef(&spamdict_type)) < 0)
         return -1;
     return 0;
 }
