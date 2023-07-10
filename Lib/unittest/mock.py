@@ -3012,9 +3012,7 @@ class ThreadingMixin(Base):
     DEFAULT_TIMEOUT = None
 
     def _get_child_mock(self, /, **kw):
-        if "timeout" in kw:
-            kw["timeout"] = kw.pop("timeout")
-        elif isinstance(kw.get("parent"), ThreadingMixin):
+        if isinstance(kw.get("parent"), ThreadingMixin):
             kw["timeout"] = kw["parent"]._mock_wait_timeout
         elif isinstance(kw.get("_new_parent"), ThreadingMixin):
             kw["timeout"] = kw["_new_parent"]._mock_wait_timeout

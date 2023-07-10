@@ -76,7 +76,8 @@ New Features
 Other Language Changes
 ======================
 
-
+* Allow the *count* argument of :meth:`str.replace` to be a keyword.
+  (Contributed by Hugo van Kemenade in :gh:`106487`.)
 
 New Modules
 ===========
