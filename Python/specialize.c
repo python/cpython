@@ -711,8 +711,8 @@ specialize_dict_access(
     return 1;
 }
 
-static int specialize_attr_loadmethod(PyObject* owner, _Py_CODEUNIT* instr, PyObject* name,
-    PyObject* descr, DescriptorClassification kind);
+static int specialize_attr_loadclassattr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* name,
+    PyObject* descr, DescriptorClassification kind, bool is_method);
 static int specialize_class_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* name);
 
 void
@@ -753,7 +753,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
         {
             int oparg = instr->op.arg;
             if (oparg & 1) {
-                if (specialize_attr_loadmethod(owner, instr, name, descr, kind)) {
+                if (specialize_attr_loadclassattr(owner, instr, name, descr, kind, true)) {
                     goto success;
                 }
             }
@@ -872,10 +872,14 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
                                 SPEC_FAIL_ATTR_NOT_MANAGED_DICT);
             goto fail;
         case NON_DESCRIPTOR:
-            SPECIALIZATION_FAIL(LOAD_ATTR,
-                                (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) ?
-                                SPEC_FAIL_ATTR_CLASS_ATTR_SIMPLE :
-                                SPEC_FAIL_ATTR_NOT_MANAGED_DICT);
+            if ((instr->op.arg & 1) == 0) {
+                if (specialize_attr_loadclassattr(owner, instr, name, descr, kind, false)) {
+                    goto success;
+                }
+            }
+            else {
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_CLASS_ATTR_SIMPLE);
+            }
             goto fail;
         case ABSENT:
             if (specialize_dict_access(owner, instr, type, kind, name, LOAD_ATTR,
@@ -1064,13 +1068,14 @@ specialize_class_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
 // can cause a significant drop in cache hits. A possible test is
 // python.exe -m test_typing test_re test_dis test_zlib.
 static int
-specialize_attr_loadmethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name,
-PyObject *descr, DescriptorClassification kind)
+specialize_attr_loadclassattr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name,
+PyObject *descr, DescriptorClassification kind, bool is_method)
 {
     _PyLoadMethodCache *cache = (_PyLoadMethodCache *)(instr + 1);
     PyTypeObject *owner_cls = Py_TYPE(owner);
 
-    assert(kind == METHOD && descr != NULL);
+    assert(descr != NULL);
+    assert((is_method && kind == METHOD) || (!is_method && kind == NON_DESCRIPTOR));
     if (owner_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
         PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
         PyDictKeysObject *keys = ((PyHeapTypeObject *)owner_cls)->ht_cached_keys;
@@ -1090,7 +1095,7 @@ PyObject *descr, DescriptorClassification kind)
             return 0;
         }
         write_u32(cache->keys_version, keys_version);
-        instr->op.code = LOAD_ATTR_METHOD_WITH_VALUES;
+        instr->op.code = is_method ? LOAD_ATTR_METHOD_WITH_VALUES : LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES;
     }
     else {
         Py_ssize_t dictoffset = owner_cls->tp_dictoffset;
@@ -1099,9 +1104,9 @@ PyObject *descr, DescriptorClassification kind)
             return 0;
         }
         if (dictoffset == 0) {
-            instr->op.code = LOAD_ATTR_METHOD_NO_DICT;
+            instr->op.code = is_method ? LOAD_ATTR_METHOD_NO_DICT : LOAD_ATTR_NONDESCRIPTOR_NO_DICT;
         }
-        else {
+        else if (is_method) {
             PyObject *dict = *(PyObject **) ((char *)owner + dictoffset);
             if (dict) {
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_NOT_MANAGED_DICT);
@@ -1110,6 +1115,10 @@ PyObject *descr, DescriptorClassification kind)
             assert(owner_cls->tp_dictoffset > 0);
             assert(owner_cls->tp_dictoffset <= INT16_MAX);
             instr->op.code = LOAD_ATTR_METHOD_LAZY_DICT;
+        }
+        else {
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_CLASS_ATTR_SIMPLE);
+            return 0;
         }
     }
     /* `descr` is borrowed. This is safe for methods (even inherited ones from

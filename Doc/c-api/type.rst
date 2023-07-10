@@ -50,6 +50,23 @@ Type Objects
       The return type is now ``unsigned long`` rather than ``long``.
 
 
+.. c:function:: PyObject* PyType_GetDict(PyTypeObject* type)
+
+   Return the type object's internal namespace, which is otherwise only
+   exposed via a read-only proxy (``cls.__dict__``).  This is a
+   replacement for accessing :c:member:`~PyTypeObject.tp_dict` directly.
+   The returned dictionary must be treated as read-only.
+
+   This function is meant for specific embedding and language-binding cases,
+   where direct access to the dict is necessary and indirect access
+   (e.g. via the proxy or :c:func:`PyObject_GetAttr`) isn't adequate.
+
+   Extension modules should continue to use ``tp_dict``,
+   directly or indirectly, when setting up their own types.
+
+   .. versionadded:: 3.12
+
+
 .. c:function:: void PyType_Modified(PyTypeObject *type)
 
    Invalidate the internal lookup cache for the type and all of its

@@ -736,7 +736,7 @@ exit:
 }
 
 PyDoc_STRVAR(unicode_replace__doc__,
-"replace($self, old, new, count=-1, /)\n"
+"replace($self, old, new, /, count=-1)\n"
 "--\n"
 "\n"
 "Return a copy with all occurrences of substring old replaced by new.\n"
@@ -749,21 +749,49 @@ PyDoc_STRVAR(unicode_replace__doc__,
 "replaced.");
 
 #define UNICODE_REPLACE_METHODDEF    \
-    {"replace", _PyCFunction_CAST(unicode_replace), METH_FASTCALL, unicode_replace__doc__},
+    {"replace", _PyCFunction_CAST(unicode_replace), METH_FASTCALL|METH_KEYWORDS, unicode_replace__doc__},
 
 static PyObject *
 unicode_replace_impl(PyObject *self, PyObject *old, PyObject *new,
                      Py_ssize_t count);
 
 static PyObject *
-unicode_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+unicode_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(count), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "", "count", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "replace",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     PyObject *old;
     PyObject *new;
     Py_ssize_t count = -1;
 
-    if (!_PyArg_CheckPositional("replace", nargs, 2, 3)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -776,8 +804,8 @@ unicode_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     new = args[1];
-    if (nargs < 3) {
-        goto skip_optional;
+    if (!noptargs) {
+        goto skip_optional_pos;
     }
     {
         Py_ssize_t ival = -1;
@@ -791,7 +819,7 @@ unicode_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         }
         count = ival;
     }
-skip_optional:
+skip_optional_pos:
     return_value = unicode_replace_impl(self, old, new, count);
 
 exit:
@@ -1476,4 +1504,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0a71c4aeffdf0bc5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ee76a1b49cd4cbb3 input=a9049054013a1b77]*/
