@@ -2432,3 +2432,5 @@
     added = '3.13'
 [function.PyWeakref_GetRef]
     added = '3.13'
+[function.PyModule_AddNew]
+    added = '3.13'
