@@ -592,16 +592,16 @@ stat_exec(PyObject *module)
     ADD_INT_MACRO(module, FILE_ATTRIBUTE_VIRTUAL);
 
     if (PyModule_AddNew(module, "IO_REPARSE_TAG_SYMLINK",
-                     PyLong_FromUnsignedLong(IO_REPARSE_TAG_SYMLINK)) < 0) {
-            return -1;
+            PyLong_FromUnsignedLong(IO_REPARSE_TAG_SYMLINK)) < 0) {
+        return -1;
     }
     if (PyModule_AddNew(module, "IO_REPARSE_TAG_MOUNT_POINT",
-                     PyLong_FromUnsignedLong(IO_REPARSE_TAG_MOUNT_POINT)) < 0) {
-            return -1;
+            PyLong_FromUnsignedLong(IO_REPARSE_TAG_MOUNT_POINT)) < 0) {
+        return -1;
     }
     if (PyModule_AddNew(module, "IO_REPARSE_TAG_APPEXECLINK",
-                     PyLong_FromUnsignedLong(IO_REPARSE_TAG_APPEXECLINK)) < 0) {
-            return -1;
+            PyLong_FromUnsignedLong(IO_REPARSE_TAG_APPEXECLINK)) < 0) {
+        return -1;
     }
 #endif
 

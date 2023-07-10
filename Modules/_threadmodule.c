@@ -1672,7 +1672,7 @@ thread_module_exec(PyObject *module)
     timeout_max = floor(timeout_max);
 
     if (PyModule_AddNew(module, "TIMEOUT_MAX",
-                     PyFloat_FromDouble(timeout_max)) < 0) {
+                        PyFloat_FromDouble(timeout_max)) < 0) {
         return -1;
     }
 

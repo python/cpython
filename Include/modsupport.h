@@ -22,20 +22,19 @@ PyAPI_FUNC(int) PyArg_UnpackTuple(PyObject *, const char *, Py_ssize_t, Py_ssize
 PyAPI_FUNC(PyObject *) Py_BuildValue(const char *, ...);
 PyAPI_FUNC(PyObject *) Py_VaBuildValue(const char *, va_list);
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
-// Add an attribute with name 'name' and value 'value' to the module 'mod'.
-// Steal a reference to 'value'.
-// On success, return 0.
-// On error, raise an exception and return -1.
-PyAPI_FUNC(int) PyModule_AddNew(PyObject *mod, const char *name, PyObject *value);
-#endif   /* Py_LIMITED_API */
-
 // Add an attribute with name 'name' and value 'obj' to the module 'mod.
-// On success, return 0 on success.
+// On success, return 0.
 // On error, raise an exception and return -1.
 PyAPI_FUNC(int) PyModule_AddObjectRef(PyObject *mod, const char *name, PyObject *value);
 
-// Similar to PyModule_AddNew() but steal a reference to 'value' only on success.
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+// Similar to PyModule_AddObjectRef() but steal a reference to 'value'.
+PyAPI_FUNC(int) PyModule_AddNew(PyObject *mod, const char *name, PyObject *value);
+#endif   /* Py_LIMITED_API */
+
+// Similar to PyModule_AddObjectRef() and PyModule_AddNew() but steal
+// a reference to 'value' on success and only on success.
+// Errorprone. Should not be used in new code.
 PyAPI_FUNC(int) PyModule_AddObject(PyObject *mod, const char *, PyObject *value);
 
 PyAPI_FUNC(int) PyModule_AddIntConstant(PyObject *, const char *, long);

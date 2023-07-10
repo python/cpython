@@ -1380,12 +1380,12 @@ static int
 module_exec(PyObject *module)
 {
     if (PyModule_AddNew(module, "SIZEOF_PYGC_HEAD",
-                     PyLong_FromSsize_t(sizeof(PyGC_Head))) < 0) {
+                        PyLong_FromSsize_t(sizeof(PyGC_Head))) < 0) {
         return 1;
     }
 
     if (PyModule_AddNew(module, "SIZEOF_TIME_T",
-                     PyLong_FromSsize_t(sizeof(time_t))) < 0) {
+                        PyLong_FromSsize_t(sizeof(time_t))) < 0) {
         return 1;
     }
 

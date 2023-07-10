@@ -1,1 +1,1 @@
-Added :func:`PyModule_AddNew`.
+Add :func:`PyModule_AddNew` function.
