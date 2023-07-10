@@ -1312,6 +1312,7 @@ remove_redundant_deadstore(basicblock *bb)
             for (int j = i - 1; j >= 0; j--) {
                 cfg_instr *prev = &bb->b_instr[j];
                 if (prev->i_loc.lineno != inst->i_loc.lineno) {
+                    // Invariant condition: lineno is always monotonically increasing.
                     break;
                 }
                 if (prev->i_opcode == STORE_FAST && prev->i_oparg == inst->i_oparg) {
