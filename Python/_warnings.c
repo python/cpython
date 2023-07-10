@@ -1,10 +1,11 @@
 #include "Python.h"
+#include "pycore_frame.h"
 #include "pycore_initconfig.h"
 #include "pycore_interp.h"        // PyInterpreterState.warnings
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_pyerrors.h"
+#include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_frame.h"
 #include "clinic/_warnings.c.h"
 
 #define MODULE_NAME "_warnings"
@@ -898,7 +899,7 @@ setup_context(Py_ssize_t stack_level,
     }
     else {
         globals = f->f_frame->f_globals;
-        *filename = Py_NewRef(f->f_frame->f_code->co_filename);
+        *filename = Py_NewRef(_PyFrame_GetCode(f->f_frame)->co_filename);
         *lineno = PyFrame_GetLineNumber(f);
         Py_DECREF(f);
     }

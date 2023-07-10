@@ -2,10 +2,12 @@
 
 #include "Python.h"
 
+#include "pycore_call.h"          // _PyObject_CallMethod()
 #include "pycore_ceval.h"         // _PyEval_FiniGIL()
+#include "pycore_codecs.h"        // _PyCodec_Lookup()
 #include "pycore_context.h"       // _PyContext_Init()
-#include "pycore_exceptions.h"    // _PyExc_InitTypes()
 #include "pycore_dict.h"          // _PyDict_Fini()
+#include "pycore_exceptions.h"    // _PyExc_InitTypes()
 #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
 #include "pycore_floatobject.h"   // _PyFloat_InitTypes()
 #include "pycore_genobject.h"     // _PyAsyncGen_Fini()
@@ -28,6 +30,7 @@
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()
 #include "pycore_typevarobject.h" // _Py_clear_generic_types()
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
+#include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 #include "opcode.h"
 
 #include <locale.h>               // setlocale()
@@ -737,22 +740,6 @@ pycore_init_types(PyInterpreterState *interp)
     return _PyStatus_OK();
 }
 
-static const uint8_t INTERPRETER_TRAMPOLINE_INSTRUCTIONS[] = {
-    /* Put a NOP at the start, so that the IP points into
-    * the code, rather than before it */
-    NOP, 0,
-    INTERPRETER_EXIT, 0,
-    /* RESUME at end makes sure that the frame appears incomplete */
-    RESUME, 0
-};
-
-static const _PyShimCodeDef INTERPRETER_TRAMPOLINE_CODEDEF = {
-    INTERPRETER_TRAMPOLINE_INSTRUCTIONS,
-    sizeof(INTERPRETER_TRAMPOLINE_INSTRUCTIONS),
-    1,
-    "<interpreter trampoline>"
-};
-
 static PyStatus
 pycore_init_builtins(PyThreadState *tstate)
 {
@@ -786,10 +773,6 @@ pycore_init_builtins(PyThreadState *tstate)
     PyObject *object__getattribute__ = _PyType_Lookup(&PyBaseObject_Type, &_Py_ID(__getattribute__));
     assert(object__getattribute__);
     interp->callable_cache.object__getattribute__ = object__getattribute__;
-    interp->interpreter_trampoline = _Py_MakeShimCode(&INTERPRETER_TRAMPOLINE_CODEDEF);
-    if (interp->interpreter_trampoline == NULL) {
-        return _PyStatus_ERR("failed to create interpreter trampoline.");
-    }
     if (_PyBuiltins_AddExceptions(bimod) < 0) {
         return _PyStatus_ERR("failed to add exceptions to builtins");
     }
@@ -1200,6 +1183,19 @@ init_interp_main(PyThreadState *tstate)
 #endif
     }
 
+    // Turn on experimental tier 2 (uops-based) optimizer
+    if (is_main_interp) {
+        char *envvar = Py_GETENV("PYTHONUOPS");
+        int enabled = envvar != NULL && *envvar > '0';
+        if (_Py_get_xoption(&config->xoptions, L"uops") != NULL) {
+            enabled = 1;
+        }
+        if (enabled) {
+            PyObject *opt = PyUnstable_Optimizer_NewUOpOptimizer();
+            PyUnstable_SetOptimizer((_PyOptimizerObject *)opt);
+        }
+    }
+
     assert(!_PyErr_Occurred(tstate));
 
     return _PyStatus_OK();
@@ -1484,16 +1480,16 @@ finalize_modules_clear_weaklist(PyInterpreterState *interp,
     for (Py_ssize_t i = PyList_GET_SIZE(weaklist) - 1; i >= 0; i--) {
         PyObject *tup = PyList_GET_ITEM(weaklist, i);
         PyObject *name = PyTuple_GET_ITEM(tup, 0);
-        PyObject *mod = PyWeakref_GET_OBJECT(PyTuple_GET_ITEM(tup, 1));
-        if (mod == Py_None) {
+        PyObject *mod = _PyWeakref_GET_REF(PyTuple_GET_ITEM(tup, 1));
+        if (mod == NULL) {
             continue;
         }
         assert(PyModule_Check(mod));
-        PyObject *dict = PyModule_GetDict(mod);
+        PyObject *dict = _PyModule_GetDict(mod);  // borrowed reference
         if (dict == interp->builtins || dict == interp->sysdict) {
+            Py_DECREF(mod);
             continue;
         }
-        Py_INCREF(mod);
         if (verbose && PyUnicode_Check(name)) {
             PySys_FormatStderr("# cleanup[3] wiping %U\n", name);
         }
@@ -2151,6 +2147,9 @@ Py_EndInterpreter(PyThreadState *tstate)
 
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown(tstate);
+
+    // Make any remaining pending calls.
+    _Py_FinishPendingCalls(tstate);
 
     _PyAtExit_Call(tstate->interp);
 

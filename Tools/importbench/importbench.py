@@ -15,6 +15,7 @@ import py_compile
 import sys
 import tabnanny
 import timeit
+import types
 
 
 def bench(name, cleanup=lambda: None, *, seconds=1, repeat=3):
@@ -40,7 +41,7 @@ def bench(name, cleanup=lambda: None, *, seconds=1, repeat=3):
 def from_cache(seconds, repeat):
     """sys.modules"""
     name = '<benchmark import>'
-    module = imp.new_module(name)
+    module = types.ModuleType(name)
     module.__file__ = '<test>'
     module.__package__ = ''
     with util.uncache(name):
