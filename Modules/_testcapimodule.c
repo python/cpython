@@ -3376,7 +3376,7 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 
     // test PyWeakref_GetRef(), reference is alive
     PyObject *ref = Py_True;  // marker to check that value was set
-    assert(PyWeakref_GetRef(weakref, &ref) == 0);
+    assert(PyWeakref_GetRef(weakref, &ref) == 1);
     assert(ref == obj);
     assert(Py_REFCNT(obj) == (refcnt + 1));
     Py_DECREF(ref);
