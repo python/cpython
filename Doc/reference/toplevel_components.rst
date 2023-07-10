@@ -21,9 +21,9 @@ Complete Python programs
 .. index:: single: program
 
 .. index::
-   module: sys
-   module: __main__
-   module: builtins
+   pair: module; sys
+   pair: module; __main__
+   pair: module; builtins
 
 While a language specification need not prescribe how the language interpreter
 is invoked, it is useful to have a notion of a complete Python program.  A
@@ -38,7 +38,7 @@ the next section.
 
 .. index::
    single: interactive mode
-   module: __main__
+   pair: module; __main__
 
 The interpreter may also be invoked in interactive mode; in this case, it does
 not read and execute a complete program but reads and executes one statement
@@ -98,7 +98,7 @@ Expression input
 ================
 
 .. index:: single: input
-.. index:: builtin: eval
+.. index:: pair: built-in function; eval
 
 :func:`eval` is used for expression input.  It ignores leading whitespace. The
 string argument to :func:`eval` must have the following form:

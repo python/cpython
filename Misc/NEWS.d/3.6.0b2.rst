@@ -460,7 +460,7 @@ In the traceback module, restore the formatting of exception messages like
 .. nonce: 3UhyPo
 .. section: Library
 
-Allow falsy values to be used for msg parameter of subTest().
+Allow false values to be used for msg parameter of subTest().
 
 ..
 
