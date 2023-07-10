@@ -1178,10 +1178,6 @@
     added = '3.2'
 [function.PyObject_GetIter]
     added = '3.2'
-[function.PyObject_GetOptionalAttr]
-    added = '3.13'
-[function.PyObject_GetOptionalAttrString]
-    added = '3.13'
 [function.PyObject_HasAttr]
     added = '3.2'
 [function.PyObject_HasAttrString]
@@ -2435,4 +2431,8 @@
 [function.PyImport_AddModuleRef]
     added = '3.13'
 [function.PyWeakref_GetRef]
+    added = '3.13'
+[function.PyObject_GetOptionalAttr]
+    added = '3.13'
+[function.PyObject_GetOptionalAttrString]
     added = '3.13'
