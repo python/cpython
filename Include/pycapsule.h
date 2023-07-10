@@ -34,7 +34,10 @@ PyAPI_FUNC(void *) PyCapsule_GetPointer(PyObject *capsule, const char *name);
 
 PyAPI_FUNC(PyCapsule_Destructor) PyCapsule_GetDestructor(PyObject *capsule);
 
-PyAPI_FUNC(const char *) PyCapsule_GetName(PyObject *capsule);
+PyAPI_FUNC(const char*) PyCapsule_GetName(PyObject *capsule);
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(const char*) PyCapsule_GetNameRes(PyObject *capsule, PyResource *res);
+#endif
 
 PyAPI_FUNC(void *) PyCapsule_GetContext(PyObject *capsule);
 

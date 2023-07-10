@@ -3781,7 +3781,7 @@ PyUnicode_FSDecoder(PyObject* arg, void* addr)
 
 static int unicode_fill_utf8(PyObject *unicode);
 
-const char *
+const char*
 PyUnicode_AsUTF8AndSize(PyObject *unicode, Py_ssize_t *psize)
 {
     if (!PyUnicode_Check(unicode)) {
@@ -3800,11 +3800,43 @@ PyUnicode_AsUTF8AndSize(PyObject *unicode, Py_ssize_t *psize)
     return PyUnicode_UTF8(unicode);
 }
 
-const char *
+const char*
 PyUnicode_AsUTF8(PyObject *unicode)
 {
     return PyUnicode_AsUTF8AndSize(unicode, NULL);
 }
+
+
+const char*
+PyUnicode_AsUTF8AndSizeRes(PyObject *unicode, Py_ssize_t *psize, PyResource *res)
+{
+    if (!PyUnicode_Check(unicode)) {
+        PyErr_BadArgument();
+        return NULL;
+    }
+
+    if (PyUnicode_UTF8(unicode) == NULL) {
+        if (unicode_fill_utf8(unicode) == -1) {
+            return NULL;
+        }
+    }
+
+    if (psize) {
+        *psize = PyUnicode_UTF8_LENGTH(unicode);
+    }
+
+    res->close_func = _PyResource_DECREF;
+    res->data = Py_NewRef(unicode);
+    return PyUnicode_UTF8(unicode);
+}
+
+
+const char*
+PyUnicode_AsUTF8Res(PyObject *unicode, PyResource *res)
+{
+    return PyUnicode_AsUTF8AndSizeRes(unicode, NULL, res);
+}
+
 
 /*
 PyUnicode_GetSize() has been deprecated since Python 3.3

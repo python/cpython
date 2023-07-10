@@ -39,6 +39,7 @@
 #include "pymacro.h"
 #include "pymath.h"
 #include "pymem.h"
+#include "pyresource.h"
 #include "pytypedefs.h"
 #include "pybuffer.h"
 #include "object.h"

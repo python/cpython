@@ -317,34 +317,46 @@ compute_abstract_methods(PyObject *self)
     }
     assert(PyList_Check(items));
     for (Py_ssize_t pos = 0; pos < PyList_GET_SIZE(items); pos++) {
-        PyObject *it = PySequence_Fast(
-                PyList_GET_ITEM(items, pos),
-                "items() returned non-iterable");
-        if (!it) {
+        PyObject *seq = PyList_GET_ITEM(items, pos);
+        PyResource res;
+        PyObject **items;
+        Py_ssize_t nitem;
+        if (PySequence_AsObjectArray(seq, &items, &nitem, &res) < 0) {
+            if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+                PyErr_SetString(PyExc_TypeError, "items() returned non-iterable");
+            }
             goto error;
         }
-        if (PySequence_Fast_GET_SIZE(it) != 2) {
+        if (nitem != 2) {
             PyErr_SetString(PyExc_TypeError,
                             "items() returned item which size is not 2");
-            Py_DECREF(it);
+            PyResource_Close(&res);
             goto error;
         }
 
-        // borrowed
-        PyObject *key = PySequence_Fast_GET_ITEM(it, 0);
-        PyObject *value = PySequence_Fast_GET_ITEM(it, 1);
         // items or it may be cleared while accessing __abstractmethod__
         // So we need to keep strong reference for key
-        Py_INCREF(key);
+        PyObject *key = Py_NewRef(items[0]);
+        PyObject *value = Py_NewRef(items[1]);
+        PyResource_Close(&res);
+
         int is_abstract = _PyObject_IsAbstract(value);
-        if (is_abstract < 0 ||
-                (is_abstract && PySet_Add(abstracts, key) < 0)) {
-            Py_DECREF(it);
-            Py_DECREF(key);
-            goto error;
+        int err;
+        if (is_abstract < 0) {
+            err = 1;
+        }
+        else if (is_abstract) {
+            err = PySet_Add(abstracts, key) < 0;
+        }
+        else {
+            err = 0;
         }
         Py_DECREF(key);
-        Py_DECREF(it);
+        Py_DECREF(value);
+
+        if (err) {
+            goto error;
+        }
     }
 
     /* Stage 2: inherited abstract methods. */

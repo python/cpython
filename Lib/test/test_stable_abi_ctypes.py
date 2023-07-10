@@ -564,6 +564,7 @@ SYMBOL_NAMES = (
     "PyProperty_Type",
     "PyRangeIter_Type",
     "PyRange_Type",
+    "PyResource_Close",
     "PyReversed_Type",
     "PySeqIter_New",
     "PySeqIter_Type",

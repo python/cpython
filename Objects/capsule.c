@@ -106,6 +106,20 @@ PyCapsule_GetName(PyObject *o)
 }
 
 
+const char *
+PyCapsule_GetNameRes(PyObject *o, PyResource *res)
+{
+    PyCapsule *capsule = (PyCapsule *)o;
+
+    if (!is_legal_capsule(capsule, "PyCapsule_GetName")) {
+        return NULL;
+    }
+    res->close_func = _PyResource_DECREF;
+    res->data = Py_NewRef(capsule);
+    return capsule->name;
+}
+
+
 PyCapsule_Destructor
 PyCapsule_GetDestructor(PyObject *o)
 {

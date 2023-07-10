@@ -2298,6 +2298,7 @@ PyEval_MergeCompilerFlags(PyCompilerFlags *cf)
 const char *
 PyEval_GetFuncName(PyObject *func)
 {
+    // Should be kept in sync with PyEval_GetFuncNameRes()
     if (PyMethod_Check(func))
         return PyEval_GetFuncName(PyMethod_GET_FUNCTION(func));
     else if (PyFunction_Check(func))
@@ -2306,6 +2307,29 @@ PyEval_GetFuncName(PyObject *func)
         return ((PyCFunctionObject*)func)->m_ml->ml_name;
     else
         return Py_TYPE(func)->tp_name;
+}
+
+const char *
+PyEval_GetFuncNameRes(PyObject *func, PyResource *res)
+{
+    // Should be kept in sync with PyEval_GetFuncName()
+    if (PyMethod_Check(func)) {
+        return PyEval_GetFuncNameRes(PyMethod_GET_FUNCTION(func), res);
+    }
+    else if (PyFunction_Check(func)) {
+        return PyUnicode_AsUTF8Res(((PyFunctionObject*)func)->func_name, res);
+    }
+    else if (PyCFunction_Check(func)) {
+        res->close_func = _PyResource_DECREF;
+        res->data = Py_NewRef(func);
+        return ((PyCFunctionObject*)func)->m_ml->ml_name;
+    }
+    else {
+        PyTypeObject *type = (PyTypeObject*)Py_NewRef(Py_TYPE(func));
+        res->close_func = _PyResource_DECREF;
+        res->data = (PyObject *)type;  // steal the reference
+        return type->tp_name;
+    }
 }
 
 const char *

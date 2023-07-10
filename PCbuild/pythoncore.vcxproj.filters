@@ -171,6 +171,9 @@
     <ClInclude Include="..\Include\pyport.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\pyresource.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\pystate.h">
       <Filter>Include</Filter>
     </ClInclude>

@@ -2205,6 +2205,72 @@ PySequence_Fast(PyObject *v, const char *m)
     return v;
 }
 
+static void pysequence_decref_track(void *data)
+{
+    PyObject *obj = _PyObject_CAST(data);
+    _PyObject_GC_TRACK(obj);
+    Py_DECREF(obj);
+}
+
+int
+PySequence_AsObjectArray(PyObject *v, PyObject ***parray, Py_ssize_t *psize,
+                         PyResource *res)
+{
+    if (v == NULL) {
+        null_error();
+        goto error;
+    }
+
+    if (PyTuple_CheckExact(v)) {
+        if (_PyObject_GC_IS_TRACKED(v)) {
+            // Don't track the tuple while it's being used
+            _PyObject_GC_UNTRACK(v);
+            res->close_func = pysequence_decref_track;
+        }
+        else {
+            res->close_func = _PyResource_DECREF;
+        }
+        res->data = Py_NewRef(v);
+        *parray = _PyTuple_ITEMS(v);
+        *psize = PyTuple_GET_SIZE(v);
+        return 0;
+    }
+
+    if (PyList_CheckExact(v)) {
+        // Don't track the list while it's being used
+        _PyObject_GC_UNTRACK(v);
+        res->close_func = pysequence_decref_track;
+        res->data = Py_NewRef(v);
+        *parray = _PyList_ITEMS(v);
+        *psize = PyList_GET_SIZE(v);
+        return 0;
+    }
+
+    PyObject *it = PyObject_GetIter(v);
+    if (it == NULL) {
+        goto error;
+    }
+
+    v = PySequence_List(it);
+    Py_DECREF(it);
+    if (v == NULL) {
+        goto error;
+    }
+
+    // Don't track the list while it's being used
+    _PyObject_GC_UNTRACK(v);
+    res->close_func = pysequence_decref_track;
+    res->data = v;
+    *parray = _PyList_ITEMS(v);
+    *psize = PyList_GET_SIZE(v);
+    return 0;
+
+error:
+    *parray = NULL;
+    *psize = 0;
+    return -1;
+}
+
 /* Iterate over seq.  Result depends on the operation:
    PY_ITERSEARCH_COUNT:  -1 if error, else # of times obj appears in seq.
    PY_ITERSEARCH_INDEX:  0-based index of first occurrence of obj in seq;

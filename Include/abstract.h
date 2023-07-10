@@ -706,6 +706,12 @@ PyAPI_FUNC(PyObject *) PySequence_List(PyObject *o);
    TypeError exception with 'm' as the message text. */
 PyAPI_FUNC(PyObject *) PySequence_Fast(PyObject *o, const char* m);
 
+PyAPI_FUNC(int) PySequence_AsObjectArray(
+    PyObject *,
+    PyObject ***parray,
+    Py_ssize_t *psize,
+    PyResource *res);
+
 /* Return the size of the sequence 'o', assuming that 'o' was returned by
    PySequence_Fast and is not NULL. */
 #define PySequence_Fast_GET_SIZE(o) \

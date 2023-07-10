@@ -1220,6 +1220,19 @@ PyBytes_AsString(PyObject *op)
     return ((PyBytesObject *)op)->ob_sval;
 }
 
+const char*
+PyBytes_AsStringRes(PyObject *op, PyResource *res)
+{
+    if (!PyBytes_Check(op)) {
+        PyErr_Format(PyExc_TypeError,
+             "expected bytes, %.200s found", Py_TYPE(op)->tp_name);
+        return NULL;
+    }
+    res->close_func = _PyResource_DECREF;
+    res->data = Py_NewRef(op);
+    return ((PyBytesObject *)op)->ob_sval;
+}
+
 int
 PyBytes_AsStringAndSize(PyObject *obj,
                          char **s,

@@ -157,7 +157,7 @@ PyByteArray_Size(PyObject *self)
     return PyByteArray_GET_SIZE(self);
 }
 
-char  *
+char*
 PyByteArray_AsString(PyObject *self)
 {
     assert(self != NULL);
@@ -165,6 +165,19 @@ PyByteArray_AsString(PyObject *self)
 
     return PyByteArray_AS_STRING(self);
 }
+
+
+char*
+PyByteArray_AsStringRes(PyObject *self, PyResource *res)
+{
+    assert(self != NULL);
+    assert(PyByteArray_Check(self));
+
+    res->close_func = _PyResource_DECREF;
+    res->data = Py_NewRef(self);
+    return PyByteArray_AS_STRING(self);
+}
+
 
 int
 PyByteArray_Resize(PyObject *self, Py_ssize_t requested_size)
