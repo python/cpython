@@ -4036,8 +4036,8 @@ copying.
          >>> x = memoryview(b)
          >>> x[0] = b'a'
          Traceback (most recent call last):
-           File "<stdin>", line 1, in <module>
-         ValueError: memoryview: invalid value for format "B"
+           ...
+         TypeError: memoryview: invalid type for format 'B'
          >>> y = x.cast('c')
          >>> y[0] = b'a'
          >>> b
