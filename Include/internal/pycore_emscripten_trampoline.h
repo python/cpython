@@ -30,10 +30,22 @@
 void _Py_EmscriptenTrampoline_Init(_PyRuntimeState *runtime);
 
 PyObject*
-_PyEM_TrampolineCall(PyCFunctionWithKeywords func,
-                     PyObject* self,
-                     PyObject* args,
-                     PyObject* kw);
+_PyEM_TrampolineCall_JS(PyCFunctionWithKeywords func,
+                        PyObject* self,
+                        PyObject* args,
+                        PyObject* kw);
+
+PyObject*
+_PyEM_TrampolineCall_Reflection(PyCFunctionWithKeywords func,
+                                PyObject* self,
+                                PyObject* args,
+                                PyObject* kw);
+
+#define _PyEM_TrampolineCall(meth, self, args, kw) \
+    ((_PyRuntime.wasm_type_reflection_available) ? \
+        (_PyEM_TrampolineCall_Reflection(meth, self, args, kw)) : \
+        (_PyEM_TrampolineCall_JS(meth, self, args, kw)))
+
 
 #define _PyCFunction_TrampolineCall(meth, self, args) \
     _PyEM_TrampolineCall( \

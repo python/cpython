@@ -22,9 +22,10 @@ _Py_EmscriptenTrampoline_Init(_PyRuntimeState *runtime)
 /**
  * Backwards compatible trampoline works with all JS runtimes
  */
-EM_JS(PyObject*, _PyEMJS_TrampolineCall, (PyCFunctionWithKeywords func, PyObject *arg1, PyObject *arg2, PyObject *arg3), {
+EM_JS(PyObject*, _PyEM_TrampolineCall_JS, (PyCFunctionWithKeywords func, PyObject *arg1, PyObject *arg2, PyObject *arg3), {
     return wasmTable.get(func)(arg1, arg2, arg3);
-});
+}
+);
 
 /**
  * In runtimes with WebAssembly type reflection, count the number of parameters
@@ -50,27 +51,23 @@ typedef PyObject* (*three_arg)(PyObject*, PyObject*, PyObject*);
 
 
 PyObject*
-_PyEM_TrampolineCall(PyCFunctionWithKeywords func,
+_PyEM_TrampolineCall_Reflection(PyCFunctionWithKeywords func,
               PyObject* self,
               PyObject* args,
               PyObject* kw)
 {
-  if (!_PyRuntime.wasm_type_reflection_available) {
-    return _PyEMJS_TrampolineCall(func, self, args, kw);
-  } else {
-    switch (_PyEM_CountFuncParams(func)) {
-      case 0:
-        return ((zero_arg)func)();
-      case 1:
-        return ((one_arg)func)(self);
-      case 2:
-        return ((two_arg)func)(self, args);
-      case 3:
-        return ((three_arg)func)(self, args, kw);
-      default:
-        PyErr_SetString(PyExc_SystemError, "Handler takes too many arguments");
-        return NULL;
-    }
+  switch (_PyEM_CountFuncParams(func)) {
+    case 0:
+      return ((zero_arg)func)();
+    case 1:
+      return ((one_arg)func)(self);
+    case 2:
+      return ((two_arg)func)(self, args);
+    case 3:
+      return ((three_arg)func)(self, args, kw);
+    default:
+      PyErr_SetString(PyExc_SystemError, "Handler takes too many arguments");
+      return NULL;
   }
 }
 
