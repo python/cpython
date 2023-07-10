@@ -238,6 +238,75 @@ PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
 PyAPI_FUNC(int) _PyInterpreterState_IDIncref(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
 
+PyAPI_FUNC(PyObject*) _PyInterpreterState_GetMainModule(PyInterpreterState *);
+
+extern const PyConfig* _PyInterpreterState_GetConfig(PyInterpreterState *interp);
+
+/* Get a copy of the current interpreter configuration.
+
+   Return 0 on success. Raise an exception and return -1 on error.
+
+   The caller must initialize 'config', using PyConfig_InitPythonConfig()
+   for example.
+
+   Python must be preinitialized to call this method.
+   The caller must hold the GIL.
+
+   Once done with the configuration, PyConfig_Clear() must be called to clear
+   it. */
+PyAPI_FUNC(int) _PyInterpreterState_GetConfigCopy(
+    struct PyConfig *config);
+
+/* Set the configuration of the current interpreter.
+
+   This function should be called during or just after the Python
+   initialization.
+
+   Update the sys module with the new configuration. If the sys module was
+   modified directly after the Python initialization, these changes are lost.
+
+   Some configuration like faulthandler or warnoptions can be updated in the
+   configuration, but don't reconfigure Python (don't enable/disable
+   faulthandler and don't reconfigure warnings filters).
+
+   Return 0 on success. Raise an exception and return -1 on error.
+
+   The configuration should come from _PyInterpreterState_GetConfigCopy(). */
+PyAPI_FUNC(int) _PyInterpreterState_SetConfig(
+    const struct PyConfig *config);
+
+
+/*
+Runtime Feature Flags
+
+Each flag indicate whether or not a specific runtime feature
+is available in a given context.  For example, forking the process
+might not be allowed in the current interpreter (i.e. os.fork() would fail).
+*/
+
+/* Set if the interpreter share obmalloc runtime state
+   with the main interpreter. */
+#define Py_RTFLAGS_USE_MAIN_OBMALLOC (1UL << 5)
+
+/* Set if import should check a module for subinterpreter support. */
+#define Py_RTFLAGS_MULTI_INTERP_EXTENSIONS (1UL << 8)
+
+/* Set if threads are allowed. */
+#define Py_RTFLAGS_THREADS (1UL << 10)
+
+/* Set if daemon threads are allowed. */
+#define Py_RTFLAGS_DAEMON_THREADS (1UL << 11)
+
+/* Set if os.fork() is allowed. */
+#define Py_RTFLAGS_FORK (1UL << 15)
+
+/* Set if os.exec*() is allowed. */
+#define Py_RTFLAGS_EXEC (1UL << 16)
+
+extern int _PyInterpreterState_HasFeature(PyInterpreterState *interp,
+                                          unsigned long feature);
+
+
 #ifdef __cplusplus
 }
 #endif

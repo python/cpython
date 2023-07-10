@@ -1,6 +1,6 @@
 // TypeVar, TypeVarTuple, and ParamSpec
 #include "Python.h"
-#include "pycore_object.h"  // _PyObject_GC_TRACK/UNTRACK
+#include "pycore_object.h"        // _PyObject_GC_TRACK/UNTRACK
 #include "pycore_typevarobject.h"
 #include "pycore_unionobject.h"   // _Py_union_type_or
 #include "structmember.h"
@@ -144,7 +144,7 @@ static int
 contains_typevartuple(PyTupleObject *params)
 {
     Py_ssize_t n = PyTuple_GET_SIZE(params);
-    PyTypeObject *tp = PyInterpreterState_Get()->cached_objects.typevartuple_type;
+    PyTypeObject *tp = _PyInterpreterState_GET()->cached_objects.typevartuple_type;
     for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *param = PyTuple_GET_ITEM(params, i);
         if (Py_IS_TYPE(param, tp)) {
@@ -165,7 +165,7 @@ unpack_typevartuples(PyObject *params)
         if (new_params == NULL) {
             return NULL;
         }
-        PyTypeObject *tp = PyInterpreterState_Get()->cached_objects.typevartuple_type;
+        PyTypeObject *tp = _PyInterpreterState_GET()->cached_objects.typevartuple_type;
         for (Py_ssize_t i = 0; i < n; i++) {
             PyObject *param = PyTuple_GET_ITEM(params, i);
             if (Py_IS_TYPE(param, tp)) {
@@ -291,7 +291,7 @@ typevar_alloc(PyObject *name, PyObject *bound, PyObject *evaluate_bound,
               bool covariant, bool contravariant, bool infer_variance,
               PyObject *module)
 {
-    PyTypeObject *tp = PyInterpreterState_Get()->cached_objects.typevar_type;
+    PyTypeObject *tp = _PyInterpreterState_GET()->cached_objects.typevar_type;
     assert(tp != NULL);
     typevarobject *tv = PyObject_GC_New(typevarobject, tp);
     if (tv == NULL) {
@@ -576,7 +576,7 @@ paramspecargs_repr(PyObject *self)
 {
     paramspecattrobject *psa = (paramspecattrobject *)self;
 
-    PyTypeObject *tp = PyInterpreterState_Get()->cached_objects.paramspec_type;
+    PyTypeObject *tp = _PyInterpreterState_GET()->cached_objects.paramspec_type;
     if (Py_IS_TYPE(psa->__origin__, tp)) {
         return PyUnicode_FromFormat("%U.args",
             ((paramspecobject *)psa->__origin__)->name);
@@ -656,7 +656,7 @@ paramspeckwargs_repr(PyObject *self)
 {
     paramspecattrobject *psk = (paramspecattrobject *)self;
 
-    PyTypeObject *tp = PyInterpreterState_Get()->cached_objects.paramspec_type;
+    PyTypeObject *tp = _PyInterpreterState_GET()->cached_objects.paramspec_type;
     if (Py_IS_TYPE(psk->__origin__, tp)) {
         return PyUnicode_FromFormat("%U.kwargs",
             ((paramspecobject *)psk->__origin__)->name);
@@ -789,14 +789,14 @@ static PyMemberDef paramspec_members[] = {
 static PyObject *
 paramspec_args(PyObject *self, void *unused)
 {
-    PyTypeObject *tp = PyInterpreterState_Get()->cached_objects.paramspecargs_type;
+    PyTypeObject *tp = _PyInterpreterState_GET()->cached_objects.paramspecargs_type;
     return (PyObject *)paramspecattr_new(tp, self);
 }
 
 static PyObject *
 paramspec_kwargs(PyObject *self, void *unused)
 {
-    PyTypeObject *tp = PyInterpreterState_Get()->cached_objects.paramspeckwargs_type;
+    PyTypeObject *tp = _PyInterpreterState_GET()->cached_objects.paramspeckwargs_type;
     return (PyObject *)paramspecattr_new(tp, self);
 }
 
@@ -810,7 +810,7 @@ static paramspecobject *
 paramspec_alloc(PyObject *name, PyObject *bound, bool covariant,
                 bool contravariant, bool infer_variance, PyObject *module)
 {
-    PyTypeObject *tp = PyInterpreterState_Get()->cached_objects.paramspec_type;
+    PyTypeObject *tp = _PyInterpreterState_GET()->cached_objects.paramspec_type;
     paramspecobject *ps = PyObject_GC_New(paramspecobject, tp);
     if (ps == NULL) {
         return NULL;
@@ -1059,7 +1059,7 @@ static PyMemberDef typevartuple_members[] = {
 static typevartupleobject *
 typevartuple_alloc(PyObject *name, PyObject *module)
 {
-    PyTypeObject *tp = PyInterpreterState_Get()->cached_objects.typevartuple_type;
+    PyTypeObject *tp = _PyInterpreterState_GET()->cached_objects.typevartuple_type;
     typevartupleobject *tvt = PyObject_GC_New(typevartupleobject, tp);
     if (tvt == NULL) {
         return NULL;
@@ -1598,7 +1598,7 @@ _Py_subscript_generic(PyThreadState* unused, PyObject *params)
 {
     params = unpack_typevartuples(params);
 
-    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->cached_objects.generic_type == NULL) {
         PyErr_SetString(PyExc_SystemError, "Cannot find Generic type");
         return NULL;

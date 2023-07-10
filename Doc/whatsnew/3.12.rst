@@ -253,6 +253,12 @@ Inlining does result in a few visible behavior changes:
 * Calling :func:`locals` inside a comprehension now includes variables
   from outside the comprehension, and no longer includes the synthetic ``.0``
   variable for the comprehension "argument".
+* A comprehension iterating directly over ``locals()`` (e.g. ``[k for k in
+  locals()]``) may see "RuntimeError: dictionary changed size during iteration"
+  when run under tracing (e.g. code coverage measurement). This is the same
+  behavior already seen in e.g. ``for k in locals():``. To avoid the error, first
+  create a list of keys to iterate over: ``keys = list(locals()); [k for k in
+  keys]``.
 
 Contributed by Carl Meyer and Vladimir Matveev in :pep:`709`.
 

@@ -4,7 +4,10 @@
  * Written by Hye-Shik Chang <perky@FreeBSD.org>
  */
 
-#define PY_SSIZE_T_CLEAN
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 #include "structmember.h"         // PyMemberDef
 #include "multibytecodec.h"
