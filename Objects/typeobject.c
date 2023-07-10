@@ -238,6 +238,13 @@ _PyType_GetDict(PyTypeObject *self)
     return lookup_tp_dict(self);
 }
 
+PyObject *
+PyType_GetDict(PyTypeObject *self)
+{
+    PyObject *dict = lookup_tp_dict(self);
+    return _Py_XNewRef(dict);
+}
+
 static inline void
 set_tp_dict(PyTypeObject *self, PyObject *dict)
 {
