@@ -428,7 +428,8 @@ translate_bytecode_to_trace(
             oparg = (oparg << 8) | instr->op.arg;
         }
         if (opcode == ENTER_EXECUTOR) {
-            _PyExecutorObject *executor = (_PyExecutorObject *)code->co_executors->executors[oparg&255];
+            _PyExecutorObject *executor =
+                (_PyExecutorObject *)code->co_executors->executors[oparg&255];
             opcode = executor->vm_data.opcode;
             DPRINTF(2, "  * ENTER_EXECUTOR -> %s\n",  _PyOpcode_OpName[opcode]);
             oparg = (oparg & 0xffffff00) | executor->vm_data.oparg;
@@ -436,6 +437,7 @@ translate_bytecode_to_trace(
         switch (opcode) {
 
             case POP_JUMP_IF_FALSE:
+            case POP_JUMP_IF_TRUE:
             {
                 // Assume jump unlikely (TODO: handle jump likely case)
                 // Reserve 5 entries (1 here, 2 stub, plus SAVE_IP + EXIT_TRACE)
@@ -443,10 +445,14 @@ translate_bytecode_to_trace(
                     DPRINTF(1, "Ran out of space for POP_JUMP_IF_FALSE\n");
                     goto done;
                 }
-                _Py_CODEUNIT *target_instr = instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]] + oparg;
+                _Py_CODEUNIT *target_instr =
+                    instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]] + oparg;
                 max_length -= 2;  // Really the start of the stubs
-                ADD_TO_TRACE(_POP_JUMP_IF_FALSE, max_length);
-                ADD_TO_STUB(max_length, SAVE_IP, target_instr - (_Py_CODEUNIT *)code->co_code_adaptive);
+                int uopcode = opcode == POP_JUMP_IF_TRUE ?
+                    _POP_JUMP_IF_TRUE : _POP_JUMP_IF_FALSE;
+                ADD_TO_TRACE(uopcode, max_length);
+                ADD_TO_STUB(max_length, SAVE_IP,
+                            target_instr - (_Py_CODEUNIT *)code->co_code_adaptive);
                 ADD_TO_STUB(max_length + 1, EXIT_TRACE, 0);
                 break;
             }

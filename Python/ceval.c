@@ -2787,28 +2787,6 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
                 break;
             }
 
-            case _POP_JUMP_IF_NONE:
-            {
-                if (Py_IsNone(stack_pointer[-1])) {
-                    pc = oparg;
-                }
-                else {
-                    Py_DECREF(stack_pointer[-1]);
-                }
-                stack_pointer--;
-                break;
-            }
-
-            case _POP_JUMP_IF_NOT_NONE:
-            {
-                if (!Py_IsNone(stack_pointer[-1])) {
-                    pc = oparg;
-                    Py_DECREF(stack_pointer[-1]);
-                }
-                stack_pointer--;
-                break;
-            }
-
             case SAVE_IP:
             {
                 frame->prev_instr = ip_offset + oparg;
