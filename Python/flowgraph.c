@@ -1303,6 +1303,26 @@ apply_static_swaps(basicblock *block, int i)
     }
 }
 
+static void
+remove_redundant_deadstore(basicblock *bb)
+{
+    for (int i = bb->b_iused - 1; i >= 0; i--) {
+        cfg_instr *inst = &bb->b_instr[i];
+        if (inst->i_opcode == STORE_FAST) {
+            for (int j = i - 1; j >= 0; j--) {
+                cfg_instr *prev = &bb->b_instr[j];
+                if (prev->i_loc.lineno != inst->i_loc.lineno) {
+                    break;
+                }
+                if (prev->i_opcode == STORE_FAST && prev->i_oparg == inst->i_oparg) {
+                    prev->i_opcode = POP_TOP;
+                    prev->i_oparg = 0;
+                }
+            }
+        }
+    }
+}
+
 static int
 optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
 {
@@ -1315,27 +1335,7 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
     int oparg = 0;
     int nextop = 0;
 
-    int last_store_fast_lino = -1;
-    int last_i_oparg = -1;
-    for (int i = bb->b_iused - 1; i >= 0; i--) {
-        cfg_instr *inst = &bb->b_instr[i];
-        if (inst->i_opcode == STORE_FAST) {
-            if (last_store_fast_lino < 0 && last_i_oparg < 0) {
-                last_store_fast_lino = inst->i_loc.lineno;
-                last_i_oparg = inst->i_oparg;
-            }
-            else if (last_store_fast_lino == inst->i_loc.lineno) {
-                if (last_i_oparg == inst->i_oparg) {
-                    inst->i_opcode = POP_TOP;
-                    inst->i_oparg = 0;
-                }
-            }
-            else {
-                last_store_fast_lino = inst->i_loc.lineno;
-                last_i_oparg = inst->i_oparg;
-            }
-        }
-    }
+    remove_redundant_deadstore(bb);
 
     for (int i = 0; i < bb->b_iused; i++) {
         cfg_instr *inst = &bb->b_instr[i];
