@@ -110,7 +110,7 @@ Quick Reference
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | :c:member:`~PyTypeObject.tp_base`              | :c:type:`PyTypeObject` *          | __base__          |   |   | X |   |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | <<:c:member:`~PyTypeObject.tp_dict`>>          | :c:type:`PyObject` *              | __dict__          |   |   | ? |   |
+   | :c:member:`~PyTypeObject.tp_dict`              | :c:type:`PyObject` *              | __dict__          |   |   | ? |   |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | :c:member:`~PyTypeObject.tp_descr_get`         | :c:type:`descrgetfunc`            | __get__           |   |   |   | X |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
@@ -156,9 +156,6 @@ Quick Reference
 
    **<>**: Names in angle brackets should be initially set to ``NULL`` and
    treated as read-only.
-
-   **<<>>**: Names in double angle brackets should be initially set to
-   ``NULL`` and treated as read-only after initialization.
 
    **[]**: Names in square brackets are for internal use only.
 
