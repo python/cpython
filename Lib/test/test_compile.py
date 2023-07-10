@@ -1187,6 +1187,9 @@ class TestSpecifics(unittest.TestCase):
         self.assertEqual(f("x", "y", "z"), "y")
 
     def test_variable_dependent(self):
+        # gh-104635: Since the value of b is dependent on the value of a
+        # the first STORE_FAST for a should not be skipped. (e.g POP_TOP).
+        # This test case is added for prevent future regression from aggresive optimization.
         def f():
             a = 42; b = a + 54; a = 54
             return a, b
