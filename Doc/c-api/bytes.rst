@@ -151,6 +151,13 @@ called with a non-bytes parameter.
    Similar to :c:func:`PyBytes_AsString`, but without error checking.
 
 
+.. c:function:: char* PyBytes_AsStringRes(PyObject *o, PyResource *res)
+
+   Similar to :c:func:`PyBytes_AsString`, but the returning string remains
+   valid until :c:func:`PyResource_Close(res) <PyResource_Close>` is called.
+
+   .. versionadded:: 3.13
+
 .. c:function:: int PyBytes_AsStringAndSize(PyObject *obj, char **buffer, Py_ssize_t *length)
 
    Return the null-terminated contents of the object *obj*

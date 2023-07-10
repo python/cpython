@@ -1,0 +1,1 @@
+Added the :c:func:`PyBytes_AsStringRes` function. Patch by Victor Stinner.

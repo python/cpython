@@ -802,6 +802,12 @@ New Features
   not needed.
   (Contributed by Victor Stinner in :gh:`106004`.)
 
+* Added the :c:func:`PyResource_Close` function.
+  (Contributed by Victor Stinner in :gh:`106592`.)
+
+* Added the :c:func:`PyBytes_AsStringRes` function.
+  (Contributed by Victor Stinner in :gh:`106592`.)
+
 Porting to Python 3.13
 ----------------------
 

@@ -2450,3 +2450,10 @@
     added = '3.13'
 [function.PyDict_GetItemStringRef]
     added = '3.13'
+[struct.PyResource]
+    added = '3.13'
+    struct_abi_kind = 'full-abi'
+[function.PyResource_Close]
+    added = '3.13'
+[function.PyBytes_AsStringRes]
+    added = '3.13'

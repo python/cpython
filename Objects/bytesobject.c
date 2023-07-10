@@ -1209,7 +1209,7 @@ PyBytes_Size(PyObject *op)
     return Py_SIZE(op);
 }
 
-char *
+char*
 PyBytes_AsString(PyObject *op)
 {
     if (!PyBytes_Check(op)) {
@@ -1217,6 +1217,19 @@ PyBytes_AsString(PyObject *op)
              "expected bytes, %.200s found", Py_TYPE(op)->tp_name);
         return NULL;
     }
+    return ((PyBytesObject *)op)->ob_sval;
+}
+
+const char*
+PyBytes_AsStringRes(PyObject *op, PyResource *res)
+{
+    if (!PyBytes_Check(op)) {
+        PyErr_Format(PyExc_TypeError,
+             "expected bytes, %.200s found", Py_TYPE(op)->tp_name);
+        return NULL;
+    }
+    res->close_func = _PyResource_DECREF;
+    res->data = Py_NewRef(op);
     return ((PyBytesObject *)op)->ob_sval;
 }
 

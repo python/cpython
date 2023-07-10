@@ -2689,6 +2689,20 @@ int Py_IsFalse(PyObject *x)
     return Py_Is(x, Py_False);
 }
 
+void _PyResource_DECREF(void *data)
+{
+    PyObject *obj = _PyObject_CAST(data);
+    Py_DECREF(obj);
+}
+
+void PyResource_Close(PyResource *res)
+{
+    if (res->close_func == NULL) {
+        return;
+    }
+    res->close_func(res->data);
+}
+
 #ifdef __cplusplus
 }
 #endif

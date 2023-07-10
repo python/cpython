@@ -3654,6 +3654,33 @@ error:
 }
 
 
+static PyObject *
+test_resource_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
+{
+    const char *src = "test_resource_capi";
+    PyObject *bytes = PyBytes_FromString(src);
+    if (bytes == NULL) {
+        return NULL;
+    }
+
+    // test PyBytes_AsStringRes()
+    PyResource res;
+    const char *str = PyBytes_AsStringRes(bytes, &res);
+    // delete the bytes object, the resource keeps a strong reference to it
+    Py_CLEAR(bytes);
+
+    // test PyResource_Close()
+    assert(memcmp(str, src, strlen(src)) == 0);
+    PyResource_Close(&res);
+
+    // test PyResource_Close() with NULL callback: must not crash
+    PyResource res2 = {.close_func = NULL, .data = NULL};
+    PyResource_Close(&res2);
+
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -3800,6 +3827,7 @@ static PyMethodDef TestMethods[] = {
     {"check_pyimport_addmodule", check_pyimport_addmodule, METH_VARARGS},
     {"test_weakref_capi", test_weakref_capi, METH_NOARGS},
     {"test_dict_capi", test_dict_capi, METH_NOARGS},
+    {"test_resource_capi", test_resource_capi, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

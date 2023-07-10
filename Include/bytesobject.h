@@ -39,7 +39,8 @@ PyAPI_FUNC(PyObject *) PyBytes_FromFormatV(const char*, va_list)
 PyAPI_FUNC(PyObject *) PyBytes_FromFormat(const char*, ...)
                                 Py_GCC_ATTRIBUTE((format(printf, 1, 2)));
 PyAPI_FUNC(Py_ssize_t) PyBytes_Size(PyObject *);
-PyAPI_FUNC(char *) PyBytes_AsString(PyObject *);
+PyAPI_FUNC(char*) PyBytes_AsString(PyObject *op);
+PyAPI_FUNC(const char*) PyBytes_AsStringRes(PyObject *op, PyResource *res);
 PyAPI_FUNC(PyObject *) PyBytes_Repr(PyObject *, int);
 PyAPI_FUNC(void) PyBytes_Concat(PyObject **, PyObject *);
 PyAPI_FUNC(void) PyBytes_ConcatAndDel(PyObject **, PyObject *);

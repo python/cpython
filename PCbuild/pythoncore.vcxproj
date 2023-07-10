@@ -308,6 +308,7 @@
     <ClInclude Include="..\Include\pymath.h" />
     <ClInclude Include="..\Include\pymem.h" />
     <ClInclude Include="..\Include\pyport.h" />
+    <ClInclude Include="..\Include\pyresource.h" />
     <ClInclude Include="..\Include\pystate.h" />
     <ClInclude Include="..\Include\pystats.h" />
     <ClInclude Include="..\Include\pystrcmp.h" />

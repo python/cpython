@@ -1,0 +1,1 @@
+Added the :c:func:`PyResource_Close` function. Patch by Victor Stinner.
