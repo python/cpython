@@ -372,12 +372,13 @@ translate_bytecode_to_trace(
     PyCodeObject *code,
     _Py_CODEUNIT *instr,
     _PyUOpInstruction *trace,
-    int max_length)
+    int buffer_size)
 {
 #ifdef Py_DEBUG
     _Py_CODEUNIT *initial_instr = instr;
 #endif
     int trace_length = 0;
+    int max_length = buffer_size;
 
 #ifdef Py_DEBUG
     char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
@@ -534,6 +535,30 @@ done:
                 code->co_firstlineno,
                 2 * (long)(initial_instr - (_Py_CODEUNIT *)code->co_code_adaptive),
                 trace_length);
+        if (max_length < buffer_size && trace_length < max_length) {
+            // Move the stubs back to be immediately after the main trace
+            // (which ends at trace_length)
+            DPRINTF(2,
+                    "Moving %d stub uops back by %d\n",
+                    buffer_size - max_length,
+                    max_length - trace_length);
+            memmove(trace + trace_length,
+                    trace + max_length,
+                    (buffer_size - max_length) * sizeof(_PyUOpInstruction));
+            // Patch up the jump targets
+            for (int i = 0; i < trace_length; i++) {
+                if (trace[i].opcode == _POP_JUMP_IF_FALSE ||
+                    trace[i].opcode == _POP_JUMP_IF_TRUE)
+                {
+                    int target = trace[i].operand;
+                    if (target >= max_length) {
+                        target += trace_length - max_length;
+                        trace[i].operand = target;
+                    }
+                }
+            }
+            trace_length += buffer_size - max_length;
+        }
         return trace_length;
     }
     else {
