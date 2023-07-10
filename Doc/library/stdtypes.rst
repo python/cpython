@@ -4996,8 +4996,8 @@ exception to disallow mistakes like ``dict[str][str]``::
 
    >>> dict[str][str]
    Traceback (most recent call last):
-     File "<stdin>", line 1, in <module>
-   TypeError: There are no type variables left in dict[str]
+     ...
+   TypeError: dict[str] is not a generic class
 
 However, such expressions are valid when :ref:`type variables <generics>` are
 used.  The index must have as many elements as there are type variable items
