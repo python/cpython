@@ -1172,6 +1172,11 @@ def _crash(delay=None):
     faulthandler._sigsegv()
 
 
+def _crash_with_data(data):
+    """Induces a segfault with dummy data in input."""
+    _crash()
+
+
 def _exit():
     """Induces a sys exit with exitcode 1."""
     sys.exit(1)
@@ -1370,6 +1375,19 @@ class ExecutorDeadlockTest:
         # Make sure the executor is eventually shutdown and do not leave
         # dangling threads
         executor_manager.join()
+
+    def test_crash_big_data(self):
+        # Test that there is a clean exception instad of a deadlock when a
+        # child process crashes while some data is being written into the
+        # queue.
+        # https://github.com/python/cpython/issues/94777
+        self.executor.shutdown(wait=True)
+        data = "a" * support.PIPE_MAX_SIZE
+        with self.executor_type(max_workers=2,
+                                mp_context=self.get_context()) as executor:
+            self.executor = executor  # Allow clean up in fail_on_deadlock
+            with self.assertRaises(BrokenProcessPool):
+                list(executor.map(_crash_with_data, [data] * 10))
 
 
 create_executor_tests(ExecutorDeadlockTest,
