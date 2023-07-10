@@ -57,10 +57,11 @@ Type Objects
    replacement for accessing :c:member:`~PyTypeObject.tp_dict` directly.
    The returned dictionary must be treated as read-only.
 
-   This function isn't intended for general use.  It's meant for
-   specific embedding and language-binding cases, where direct access
-   to the dict is necessary and indirect access (e.g. via the proxy)
-   isn't adequate.  Extension modules may continue to use ``tp_dict``,
+   This function is meant for specific embedding and language-binding cases,
+   where direct access to the dict is necessary and indirect access
+   (e.g. via the proxy or :c:func:`PyObject_GetAttr`) isn't adequate.
+
+   Extension modules should continue to use ``tp_dict``,
    directly or indirectly, when setting up their own types.
 
    .. versionadded:: 3.12

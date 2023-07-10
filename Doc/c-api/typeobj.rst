@@ -1724,13 +1724,15 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    initialization for the type has finished, this field should be
    treated as read-only.
 
+   Some types may not store their dictionary in this slot.
+   Use :c:func:`PyType_GetDict` to retreive the dictionary for an arbitrary
+   type.
+
    .. versionchanged:: 3.12
 
-      Internals detail: For the static builtin types this is always ``NULL``.
-      Instead, the dict for each is stored on ``PyInterpreterState``.
-      If needed, use :c:func:`PyType_GetDict` to get the corresponding
-      dict for those types.  This is not normally necessary,
-      and certainly not for user-defined type objects.
+      Internals detail: For static builtin types, this is always ``NULL``.
+      Instead, the dict for such types is stored on ``PyInterpreterState``.
+      Use :c:func:`PyType_GetDict` to get the dict for an arbitrary type.
 
    **Inheritance:**
 
