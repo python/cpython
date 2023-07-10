@@ -1186,6 +1186,12 @@ class TestSpecifics(unittest.TestCase):
             return a
         self.assertEqual(f("x", "y", "z"), "y")
 
+    def test_variable_dependent(self):
+        def f():
+            a = 42; b = a + 54; a = 54
+            return a, b
+        self.assertEqual(f(), (54, 96))
+
 
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):
