@@ -1308,6 +1308,9 @@ remove_redundant_deadstore(basicblock *bb)
 {
     for (int i = bb->b_iused - 1; i >= 0; i--) {
         cfg_instr *inst = &bb->b_instr[i];
+        // Optimize only if the opcode is STORE_FAST and the lineno is same.
+        // The number of STORE_FAST will be decreased if the optimization is success.
+        // So most of case could be skipped.
         if (inst->i_opcode == STORE_FAST) {
             for (int j = i - 1; j >= 0; j--) {
                 cfg_instr *prev = &bb->b_instr[j];
