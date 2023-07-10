@@ -977,10 +977,6 @@
     added = '3.2'
 [function.PyMapping_GetItemString]
     added = '3.2'
-[function.PyMapping_GetOptionalItem]
-    added = '3.13'
-[function.PyMapping_GetOptionalItemString]
-    added = '3.13'
 [function.PyMapping_HasKey]
     added = '3.2'
 [function.PyMapping_HasKeyString]
@@ -2435,4 +2431,8 @@
 [function.PyImport_AddModuleRef]
     added = '3.13'
 [function.PyWeakref_GetRef]
+    added = '3.13'
+[function.PyMapping_GetOptionalItem]
+    added = '3.13'
+[function.PyMapping_GetOptionalItemString]
     added = '3.13'
