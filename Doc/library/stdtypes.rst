@@ -3766,7 +3766,7 @@ copying.
     98
     >>> v[-1]
     103
-    >>> v[1:4]
+    >>> v[1:4]  # doctest: +SKIP
     <memory at 0x7f3ddc9f4350>
     >>> bytes(v[1:4])
     b'bce'
