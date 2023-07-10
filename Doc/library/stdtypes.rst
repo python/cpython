@@ -3950,7 +3950,7 @@ copying.
          >>> m = memoryview(bytearray(b'abc'))
          >>> mm = m.toreadonly()
          >>> mm.tolist()
-         [89, 98, 99]
+         [97, 98, 99]
          >>> mm[0] = 42
          Traceback (most recent call last):
            File "<stdin>", line 1, in <module>
