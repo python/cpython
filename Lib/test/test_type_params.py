@@ -2,14 +2,21 @@ import asyncio
 import textwrap
 import types
 import unittest
+import pickle
 from test.support import requires_working_socket, check_syntax_error, run_code
 
 from typing import Generic, Sequence, TypeVar, TypeVarTuple, ParamSpec, get_args
 
 
 class TypeParamsInvalidTest(unittest.TestCase):
-    def test_name_collision_01(self):
-        check_syntax_error(self, """def func[**A, A](): ...""")
+    def test_name_collisions(self):
+        check_syntax_error(self, 'def func[**A, A](): ...', "duplicate type parameter 'A'")
+        check_syntax_error(self, 'def func[A, *A](): ...', "duplicate type parameter 'A'")
+        check_syntax_error(self, 'def func[*A, **A](): ...', "duplicate type parameter 'A'")
+
+        check_syntax_error(self, 'class C[**A, A](): ...', "duplicate type parameter 'A'")
+        check_syntax_error(self, 'class C[A, *A](): ...', "duplicate type parameter 'A'")
+        check_syntax_error(self, 'class C[*A, **A](): ...', "duplicate type parameter 'A'")
 
     def test_name_non_collision_02(self):
         ns = run_code("""def func[A](A): return A""")
@@ -849,3 +856,68 @@ class TypeParamsTypeParamsDunder(unittest.TestCase):
 
         ns = run_code(code)
         self.assertEqual(ns["func"].__type_params__, ())
+
+
+
+# All these type aliases are used for pickling tests:
+T = TypeVar('T')
+def func1[X](x: X) -> X: ...
+def func2[X, Y](x: X | Y) -> X | Y: ...
+def func3[X, *Y, **Z](x: X, y: tuple[*Y], z: Z) -> X: ...
+def func4[X: int, Y: (bytes, str)](x: X, y: Y) -> X | Y: ...
+
+class Class1[X]: ...
+class Class2[X, Y]: ...
+class Class3[X, *Y, **Z]: ...
+class Class4[X: int, Y: (bytes, str)]: ...
+
+
+class TypeParamsPickleTest(unittest.TestCase):
+    def test_pickling_functions(self):
+        things_to_test = [
+            func1,
+            func2,
+            func3,
+            func4,
+        ]
+        for thing in things_to_test:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(thing=thing, proto=proto):
+                    pickled = pickle.dumps(thing, protocol=proto)
+                    self.assertEqual(pickle.loads(pickled), thing)
+
+    def test_pickling_classes(self):
+        things_to_test = [
+            Class1,
+            Class1[int],
+            Class1[T],
+
+            Class2,
+            Class2[int, T],
+            Class2[T, int],
+            Class2[int, str],
+
+            Class3,
+            Class3[int, T, str, bytes, [float, object, T]],
+
+            Class4,
+            Class4[int, bytes],
+            Class4[T, bytes],
+            Class4[int, T],
+            Class4[T, T],
+        ]
+        for thing in things_to_test:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(thing=thing, proto=proto):
+                    pickled = pickle.dumps(thing, protocol=proto)
+                    self.assertEqual(pickle.loads(pickled), thing)
+
+        for klass in things_to_test:
+            real_class = getattr(klass, '__origin__', klass)
+            thing = klass()
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(thing=thing, proto=proto):
+                    pickled = pickle.dumps(thing, protocol=proto)
+                    # These instances are not equal,
+                    # but class check is good enough:
+                    self.assertIsInstance(pickle.loads(pickled), real_class)

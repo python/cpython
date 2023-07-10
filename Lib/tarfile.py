@@ -1633,7 +1633,7 @@ class TarFile(object):
     def __init__(self, name=None, mode="r", fileobj=None, format=None,
             tarinfo=None, dereference=None, ignore_zeros=None, encoding=None,
             errors="surrogateescape", pax_headers=None, debug=None,
-            errorlevel=None, copybufsize=None):
+            errorlevel=None, copybufsize=None, stream=False):
         """Open an (uncompressed) tar archive `name'. `mode' is either 'r' to
            read from an existing archive, 'a' to append data to an existing
            file or 'w' to create a new file overwriting an existing one. `mode'
@@ -1664,6 +1664,8 @@ class TarFile(object):
             self._extfileobj = True
         self.name = os.path.abspath(name) if name else None
         self.fileobj = fileobj
+
+        self.stream = stream
 
         # Init attributes.
         if format is not None:
@@ -2631,7 +2633,9 @@ class TarFile(object):
             break
 
         if tarinfo is not None:
-            self.members.append(tarinfo)
+            # if streaming the file we do not want to cache the tarinfo
+            if not self.stream:
+                self.members.append(tarinfo)
         else:
             self._loaded = True
 
@@ -2682,11 +2686,12 @@ class TarFile(object):
 
     def _load(self):
         """Read through the entire archive file and look for readable
-           members.
+           members. This should not run if the file is set to stream.
         """
-        while self.next() is not None:
-            pass
-        self._loaded = True
+        if not self.stream:
+            while self.next() is not None:
+                pass
+            self._loaded = True
 
     def _check(self, mode=None):
         """Check if TarFile is still open, and if the operation's mode

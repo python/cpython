@@ -59,24 +59,43 @@ perform some operation on a file. ::
    int
    main(int argc, char *argv[])
    {
-       wchar_t *program = Py_DecodeLocale(argv[0], NULL);
-       if (program == NULL) {
-           fprintf(stderr, "Fatal error: cannot decode argv[0]\n");
-           exit(1);
+       PyStatus status;
+       PyConfig config;
+       PyConfig_InitPythonConfig(&config);
+
+       /* optional but recommended */
+       status = PyConfig_SetBytesString(&config, &config.program_name, argv[0]);
+       if (PyStatus_Exception(status)) {
+           goto exception;
        }
-       Py_SetProgramName(program);  /* optional but recommended */
-       Py_Initialize();
+
+       status = Py_InitializeFromConfig(&config);
+       if (PyStatus_Exception(status)) {
+           goto exception;
+       }
+       PyConfig_Clear(&config);
+
        PyRun_SimpleString("from time import time,ctime\n"
                           "print('Today is', ctime(time()))\n");
        if (Py_FinalizeEx() < 0) {
            exit(120);
        }
-       PyMem_RawFree(program);
        return 0;
+
+     exception:
+        PyConfig_Clear(&config);
+        Py_ExitStatusException(status);
    }
 
-The :c:func:`Py_SetProgramName` function should be called before
-:c:func:`Py_Initialize` to inform the interpreter about paths to Python run-time
+.. note::
+
+   ``#define PY_SSIZE_T_CLEAN`` was used to indicate that ``Py_ssize_t`` should be
+   used in some APIs instead of ``int``.
+   It is not necessary since Python 3.13, but we keep it here for backward compatibility.
+   See :ref:`arg-parsing-string-and-buffers` for a description of this macro.
+
+Setting :c:member:`PyConfig.program_name` should be called before
+:c:func:`Py_InitializeFromConfig` to inform the interpreter about paths to Python run-time
 libraries.  Next, the Python interpreter is initialized with
 :c:func:`Py_Initialize`, followed by the execution of a hard-coded Python script
 that prints the date and time.  Afterwards, the :c:func:`Py_FinalizeEx` call shuts

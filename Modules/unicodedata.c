@@ -16,8 +16,6 @@
 #  define Py_BUILD_CORE_MODULE 1
 #endif
 
-#define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 #include "structmember.h"         // PyMemberDef
@@ -864,10 +862,6 @@ unicodedata_UCD_is_normalized_impl(PyObject *self, PyObject *form,
                                    PyObject *input)
 /*[clinic end generated code: output=11e5a3694e723ca5 input=a544f14cea79e508]*/
 {
-    if (PyUnicode_READY(input) == -1) {
-        return NULL;
-    }
-
     if (PyUnicode_GET_LENGTH(input) == 0) {
         /* special case empty input strings. */
         Py_RETURN_TRUE;

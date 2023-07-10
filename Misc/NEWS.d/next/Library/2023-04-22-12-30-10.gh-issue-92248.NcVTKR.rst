@@ -1,2 +1,0 @@
-Deprecate ``type``, ``choices``, and ``metavar`` parameters of
-``argparse.BooleanOptionalAction``.

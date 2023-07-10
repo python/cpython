@@ -1,1 +1,0 @@
-Implement PEP 701 changes in the :mod:`tokenize` module. Patch by Marta Gómez Macías and Pablo Galindo Salgado

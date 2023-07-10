@@ -1,4 +1,10 @@
 #include "parts.h"
+#include "clinic/long.c.h"
+
+/*[clinic input]
+module _testcapi
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6361033e795369fc]*/
 
 
 static PyObject *
@@ -40,8 +46,13 @@ raise_test_long_error(const char* msg)
 
 #include "testcapi_long.h"
 
+/*[clinic input]
+_testcapi.test_long_api
+[clinic start generated code]*/
+
 static PyObject *
-test_long_api(PyObject* self, PyObject *Py_UNUSED(ignored))
+_testcapi_test_long_api_impl(PyObject *module)
+/*[clinic end generated code: output=4405798ca1e9f444 input=e9b8880d7331c688]*/
 {
     return TESTNAME(raise_test_long_error);
 }
@@ -68,8 +79,13 @@ raise_test_longlong_error(const char* msg)
 
 #include "testcapi_long.h"
 
+/*[clinic input]
+_testcapi.test_longlong_api
+[clinic start generated code]*/
+
 static PyObject *
-test_longlong_api(PyObject* self, PyObject *args)
+_testcapi_test_longlong_api_impl(PyObject *module)
+/*[clinic end generated code: output=2b3414ba8c31dfe6 input=ccbb2a48c2b3c4a5]*/
 {
     return TESTNAME(raise_test_longlong_error);
 }
@@ -81,13 +97,19 @@ test_longlong_api(PyObject* self, PyObject *args)
 #undef F_U_TO_PY
 #undef F_PY_TO_U
 
-/* Test the PyLong_AsLongAndOverflow API. General conversion to PY_LONG
-   is tested by test_long_api_inner. This test will concentrate on proper
-   handling of overflow.
-*/
+
+/*[clinic input]
+_testcapi.test_long_and_overflow
+
+Test the PyLong_AsLongAndOverflow API.
+
+General conversion to PY_LONG is tested by test_long_api_inner.
+This test will concentrate on proper handling of overflow.
+[clinic start generated code]*/
 
 static PyObject *
-test_long_and_overflow(PyObject *self, PyObject *Py_UNUSED(ignored))
+_testcapi_test_long_and_overflow_impl(PyObject *module)
+/*[clinic end generated code: output=f8460ca115e31d8e input=762f6b62da0a3cdc]*/
 {
     PyObject *num, *one, *temp;
     long value;
@@ -243,13 +265,18 @@ test_long_and_overflow(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_RETURN_NONE;
 }
 
-/* Test the PyLong_AsLongLongAndOverflow API. General conversion to
-   long long is tested by test_long_api_inner. This test will
-   concentrate on proper handling of overflow.
-*/
+/*[clinic input]
+_testcapi.test_long_long_and_overflow
+
+Test the PyLong_AsLongLongAndOverflow API.
+
+General conversion to long long is tested by test_long_api_inner.
+This test will concentrate on proper handling of overflow.
+[clinic start generated code]*/
 
 static PyObject *
-test_long_long_and_overflow(PyObject *self, PyObject *Py_UNUSED(ignored))
+_testcapi_test_long_long_and_overflow_impl(PyObject *module)
+/*[clinic end generated code: output=0b92330786f45483 input=544bb0aefe5e8a9e]*/
 {
     PyObject *num, *one, *temp;
     long long value;
@@ -405,13 +432,18 @@ test_long_long_and_overflow(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_RETURN_NONE;
 }
 
-/* Test the PyLong_As{Size,Ssize}_t API. At present this just tests that
-   non-integer arguments are handled correctly. It should be extended to
-   test overflow handling.
- */
+/*[clinic input]
+_testcapi.test_long_as_size_t
+
+Test the PyLong_As{Size,Ssize}_t API.
+
+At present this just tests that non-integer arguments are handled correctly.
+It should be extended to test overflow handling.
+[clinic start generated code]*/
 
 static PyObject *
-test_long_as_size_t(PyObject *self, PyObject *Py_UNUSED(ignored))
+_testcapi_test_long_as_size_t_impl(PyObject *module)
+/*[clinic end generated code: output=f6490ea2b41e6173 input=922990c4a3edfb0d]*/
 {
     size_t out_u;
     Py_ssize_t out_s;
@@ -442,9 +474,13 @@ test_long_as_size_t(PyObject *self, PyObject *Py_UNUSED(ignored))
     return Py_None;
 }
 
+/*[clinic input]
+_testcapi.test_long_as_unsigned_long_long_mask
+[clinic start generated code]*/
+
 static PyObject *
-test_long_as_unsigned_long_long_mask(PyObject *self,
-                                     PyObject *Py_UNUSED(ignored))
+_testcapi_test_long_as_unsigned_long_long_mask_impl(PyObject *module)
+/*[clinic end generated code: output=e3e16cd0189440cc input=eb2438493ae7b9af]*/
 {
     unsigned long long res = PyLong_AsUnsignedLongLongMask(NULL);
 
@@ -462,12 +498,13 @@ test_long_as_unsigned_long_long_mask(PyObject *self,
     Py_RETURN_NONE;
 }
 
-/* Test the PyLong_AsDouble API. At present this just tests that
-   non-integer arguments are handled correctly.
- */
+/*[clinic input]
+_testcapi.test_long_as_double
+[clinic start generated code]*/
 
 static PyObject *
-test_long_as_double(PyObject *self, PyObject *Py_UNUSED(ignored))
+_testcapi_test_long_as_double_impl(PyObject *module)
+/*[clinic end generated code: output=deca0898e15adde5 input=c77bc88ef5a1de76]*/
 {
     double out;
 
@@ -487,9 +524,13 @@ test_long_as_double(PyObject *self, PyObject *Py_UNUSED(ignored))
     return Py_None;
 }
 
-/* Simple test of _PyLong_NumBits and _PyLong_Sign. */
+/*[clinic input]
+_testcapi.test_long_numbits
+[clinic start generated code]*/
+
 static PyObject *
-test_long_numbits(PyObject *self, PyObject *Py_UNUSED(ignored))
+_testcapi_test_long_numbits_impl(PyObject *module)
+/*[clinic end generated code: output=9eaf8458cb15d7f7 input=265c02d48a13059e]*/
 {
     struct triple {
         long input;
@@ -534,8 +575,16 @@ test_long_numbits(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_testcapi.call_long_compact_api
+    arg: object
+    /
+[clinic start generated code]*/
+
 static PyObject *
-check_long_compact_api(PyObject *self, PyObject *arg)
+_testcapi_call_long_compact_api(PyObject *module, PyObject *arg)
+/*[clinic end generated code: output=7e3894f611b1b2b7 input=87b87396967af14c]*/
+
 {
     assert(PyLong_Check(arg));
     int is_compact = PyUnstable_Long_IsCompact((PyLongObject*)arg);
@@ -547,15 +596,15 @@ check_long_compact_api(PyObject *self, PyObject *arg)
 }
 
 static PyMethodDef test_methods[] = {
-    {"test_long_and_overflow",  test_long_and_overflow,          METH_NOARGS},
-    {"test_long_api",           test_long_api,                   METH_NOARGS},
-    {"test_long_as_double",     test_long_as_double,             METH_NOARGS},
-    {"test_long_as_size_t",     test_long_as_size_t,             METH_NOARGS},
-    {"test_long_as_unsigned_long_long_mask", test_long_as_unsigned_long_long_mask, METH_NOARGS},
-    {"test_long_long_and_overflow",test_long_long_and_overflow,  METH_NOARGS},
-    {"test_long_numbits",       test_long_numbits,               METH_NOARGS},
-    {"test_longlong_api",       test_longlong_api,               METH_NOARGS},
-    {"call_long_compact_api",   check_long_compact_api,          METH_O},
+    _TESTCAPI_TEST_LONG_AND_OVERFLOW_METHODDEF
+    _TESTCAPI_TEST_LONG_API_METHODDEF
+    _TESTCAPI_TEST_LONG_AS_DOUBLE_METHODDEF
+    _TESTCAPI_TEST_LONG_AS_SIZE_T_METHODDEF
+    _TESTCAPI_TEST_LONG_AS_UNSIGNED_LONG_LONG_MASK_METHODDEF
+    _TESTCAPI_TEST_LONG_LONG_AND_OVERFLOW_METHODDEF
+    _TESTCAPI_TEST_LONG_NUMBITS_METHODDEF
+    _TESTCAPI_TEST_LONGLONG_API_METHODDEF
+    _TESTCAPI_CALL_LONG_COMPACT_API_METHODDEF
     {NULL},
 };
 

@@ -27,11 +27,11 @@ can be used to compare three different expressions:
 
 .. code-block:: shell-session
 
-   $ python -m timeit '"-".join(str(n) for n in range(100))'
+   $ python -m timeit "'-'.join(str(n) for n in range(100))"
    10000 loops, best of 5: 30.2 usec per loop
-   $ python -m timeit '"-".join([str(n) for n in range(100)])'
+   $ python -m timeit "'-'.join([str(n) for n in range(100)])"
    10000 loops, best of 5: 27.5 usec per loop
-   $ python -m timeit '"-".join(map(str, range(100)))'
+   $ python -m timeit "'-'.join(map(str, range(100)))"
    10000 loops, best of 5: 23.2 usec per loop
 
 This can be achieved from the :ref:`python-interface` with::
@@ -277,9 +277,9 @@ It is possible to provide a setup statement that is executed only once at the be
 
 .. code-block:: shell-session
 
-   $ python -m timeit -s 'text = "sample string"; char = "g"'  'char in text'
+   $ python -m timeit -s "text = 'sample string'; char = 'g'" "char in text"
    5000000 loops, best of 5: 0.0877 usec per loop
-   $ python -m timeit -s 'text = "sample string"; char = "g"'  'text.find(char)'
+   $ python -m timeit -s "text = 'sample string'; char = 'g'" "text.find(char)"
    1000000 loops, best of 5: 0.342 usec per loop
 
 In the output, there are three fields. The loop count, which tells you how many
@@ -313,14 +313,14 @@ to test for missing and present object attributes:
 
 .. code-block:: shell-session
 
-   $ python -m timeit 'try:' '  str.__bool__' 'except AttributeError:' '  pass'
+   $ python -m timeit "try:" "  str.__bool__" "except AttributeError:" "  pass"
    20000 loops, best of 5: 15.7 usec per loop
-   $ python -m timeit 'if hasattr(str, "__bool__"): pass'
+   $ python -m timeit "if hasattr(str, '__bool__'): pass"
    50000 loops, best of 5: 4.26 usec per loop
 
-   $ python -m timeit 'try:' '  int.__bool__' 'except AttributeError:' '  pass'
+   $ python -m timeit "try:" "  int.__bool__" "except AttributeError:" "  pass"
    200000 loops, best of 5: 1.43 usec per loop
-   $ python -m timeit 'if hasattr(int, "__bool__"): pass'
+   $ python -m timeit "if hasattr(int, '__bool__'): pass"
    100000 loops, best of 5: 2.23 usec per loop
 
 ::

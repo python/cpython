@@ -107,12 +107,6 @@ The module defines the following items:
       :attr:`ssl.SSLContext.check_hostname` and *Server Name Indication* (see
       :data:`ssl.HAS_SNI`).
 
-   .. deprecated:: 3.6
-       *keyfile* and *certfile* are deprecated in favor of *context*.
-       Please use :meth:`ssl.SSLContext.load_cert_chain` instead, or let
-       :func:`ssl.create_default_context` select the system's trusted CA
-       certificates for you.
-
    .. versionchanged:: 3.9
       If the *timeout* parameter is set to be zero, it will raise a
       :class:`ValueError` to prevent the creation of a non-blocking socket.
@@ -120,7 +114,7 @@ The module defines the following items:
       Latin-1 to UTF-8 to follow :rfc:`2640`.
 
    .. versionchanged:: 3.12
-       The deprecated *keyfile* and *certfile* parameters have been removed.
+      The deprecated *keyfile* and *certfile* parameters have been removed.
 
    Here's a sample session using the :class:`FTP_TLS` class::
 

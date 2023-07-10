@@ -8,10 +8,10 @@
 */
 
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_call.h"          // _PyObject_CallMethod()
 #include "pycore_long.h"          // _PyLong_GetOne()
-#include "pycore_object.h"
+#include "pycore_object.h"        // _PyType_HasFeature()
 #include <stddef.h>               // offsetof()
 #include "_iomodule.h"
 
@@ -319,20 +319,8 @@ iobase_finalize(PyObject *self)
         if (PyObject_SetAttr(self, &_Py_ID(_finalizing), Py_True))
             PyErr_Clear();
         res = PyObject_CallMethodNoArgs((PyObject *)self, &_Py_ID(close));
-        /* Silencing I/O errors is bad, but printing spurious tracebacks is
-           equally as bad, and potentially more frequent (because of
-           shutdown issues). */
         if (res == NULL) {
-#ifndef Py_DEBUG
-            if (_Py_GetConfig()->dev_mode) {
-                PyErr_WriteUnraisable(self);
-            }
-            else {
-                PyErr_Clear();
-            }
-#else
             PyErr_WriteUnraisable(self);
-#endif
         }
         else {
             Py_DECREF(res);

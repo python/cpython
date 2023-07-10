@@ -1524,6 +1524,52 @@ class TraceTestCase(unittest.TestCase):
              (3, 'return'),
              (1, 'return')])
 
+    def test_class_creation_with_decorator(self):
+        def func():
+            def decorator(arg):
+                def _dec(c):
+                    return c
+                return _dec
+
+            @decorator(6)
+            @decorator(
+                len([8]),
+            )
+            class MyObject:
+                pass
+
+        self.run_and_compare(func, [
+            (0, 'call'),
+            (1, 'line'),
+            (6, 'line'),
+            (1, 'call'),
+            (2, 'line'),
+            (4, 'line'),
+            (4, 'return'),
+            (7, 'line'),
+            (8, 'line'),
+            (7, 'line'),
+            (1, 'call'),
+            (2, 'line'),
+            (4, 'line'),
+            (4, 'return'),
+            (10, 'line'),
+            (6, 'call'),
+            (6, 'line'),
+            (11, 'line'),
+            (11, 'return'),
+            (7, 'line'),
+            (2, 'call'),
+            (3, 'line'),
+            (3, 'return'),
+            (6, 'line'),
+            (2, 'call'),
+            (3, 'line'),
+            (3, 'return'),
+            (10, 'line'),
+            (10, 'return'),
+        ])
+
     @support.cpython_only
     def test_no_line_event_after_creating_generator(self):
         # Spurious line events before call events only show up with C tracer
@@ -1568,8 +1614,30 @@ class TraceTestCase(unittest.TestCase):
 
         self.run_and_compare(func, EXPECTED_EVENTS)
 
-    def test_settrace_error(self):
+    def test_correct_tracing_quickened_call_class_init(self):
 
+        class C:
+            def __init__(self):
+                self
+
+        def func():
+            C()
+
+        EXPECTED_EVENTS = [
+            (0, 'call'),
+            (1, 'line'),
+            (-3, 'call'),
+            (-2, 'line'),
+            (-2, 'return'),
+            (1, 'return')]
+
+        self.run_and_compare(func, EXPECTED_EVENTS)
+        # Quicken
+        for _ in range(100):
+            func()
+        self.run_and_compare(func, EXPECTED_EVENTS)
+
+    def test_settrace_error(self):
         raised = False
         def error_once(frame, event, arg):
             nonlocal raised

@@ -465,7 +465,6 @@ _PyPegen_new_identifier(Parser *p, const char *n)
        identifier; if so, normalize to NFKC. */
     if (!PyUnicode_IS_ASCII(id))
     {
-        PyObject *id2;
         if (!init_normalization(p))
         {
             Py_DECREF(id);
@@ -478,12 +477,13 @@ _PyPegen_new_identifier(Parser *p, const char *n)
             goto error;
         }
         PyObject *args[2] = {form, id};
-        id2 = _PyObject_FastCall(p->normalize, args, 2);
+        PyObject *id2 = PyObject_Vectorcall(p->normalize, args, 2, NULL);
         Py_DECREF(id);
         Py_DECREF(form);
         if (!id2) {
             goto error;
         }
+
         if (!PyUnicode_Check(id2))
         {
             PyErr_Format(PyExc_TypeError,
@@ -924,9 +924,9 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
 
     struct tok_state *tok;
     if (flags != NULL && flags->cf_flags & PyCF_IGNORE_COOKIE) {
-        tok = _PyTokenizer_FromUTF8(str, exec_input);
+        tok = _PyTokenizer_FromUTF8(str, exec_input, 0);
     } else {
-        tok = _PyTokenizer_FromString(str, exec_input);
+        tok = _PyTokenizer_FromString(str, exec_input, 0);
     }
     if (tok == NULL) {
         if (PyErr_Occurred()) {
