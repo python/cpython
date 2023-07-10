@@ -4789,7 +4789,7 @@ An example of dictionary view usage::
    >>> keys ^ {'sausage', 'juice'}
    {'juice', 'sausage', 'bacon', 'spam'}
    >>> keys | ['juice', 'juice', 'juice']
-   {'juice', 'sausage', 'bacon', 'spam', 'eggs'}
+   {'bacon', 'spam', 'juice'}
 
    >>> # get back a read-only proxy for the original dictionary
    >>> values.mapping
