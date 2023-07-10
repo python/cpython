@@ -21,9 +21,40 @@ extern PyTypeObject _PyExc_MemoryError;
 /* The static initializers defined here should only be used
    in the runtime init code (in pystate.c and pylifecycle.c). */
 
-
 #define _PyRuntimeState_INIT(runtime) \
     { \
+        .debug_offsets = { \
+            .rs_finalizing = offsetof(_PyRuntimeState, _finalizing), \
+            .rs_interpreters_head = offsetof(_PyRuntimeState, interpreters.head), \
+            \
+            .is_next = offsetof(PyInterpreterState, next), \
+            .is_threads_head = offsetof(PyInterpreterState, threads.head), \
+            .is_gc = offsetof(PyInterpreterState, gc), \
+            .is_imports_modules = offsetof(PyInterpreterState, imports.modules), \
+            .is_sysdict = offsetof(PyInterpreterState, sysdict), \
+            .is_builtins = offsetof(PyInterpreterState, builtins), \
+            .is_ceval_gil = offsetof(PyInterpreterState, ceval.gil), \
+            \
+            .ts_prev = offsetof(PyThreadState, prev), \
+            .ts_next = offsetof(PyThreadState, next), \
+            .ts_interp = offsetof(PyThreadState, interp), \
+            .ts_cframe = offsetof(PyThreadState, cframe), \
+            .ts_thread_id = offsetof(PyThreadState, thread_id), \
+            \
+            .fo_previous = offsetof(_PyInterpreterFrame, previous), \
+            .fo_executable = offsetof(_PyInterpreterFrame, f_executable), \
+            .fo_prev_instr = offsetof(_PyInterpreterFrame, prev_instr), \
+            .fo_localsplus = offsetof(_PyInterpreterFrame, localsplus), \
+            .fo_owner = offsetof(_PyInterpreterFrame, owner), \
+            \
+            .co_filename = offsetof(PyCodeObject, co_filename), \
+            .co_name = offsetof(PyCodeObject, co_name), \
+            .co_linetable = offsetof(PyCodeObject, co_linetable), \
+            .co_firstlineno = offsetof(PyCodeObject, co_firstlineno), \
+            .co_argcount = offsetof(PyCodeObject, co_argcount), \
+            .co_localsplusnames = offsetof(PyCodeObject, co_localsplusnames), \
+            .co_co_code_adaptive = offsetof(PyCodeObject, co_code_adaptive), \
+        }, \
         .allocators = { \
             .standard = _pymem_allocators_standard_INIT(runtime), \
             .debug = _pymem_allocators_debug_INIT, \

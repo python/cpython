@@ -53,12 +53,56 @@ typedef struct _Py_AuditHookEntry {
     void *userData;
 } _Py_AuditHookEntry;
 
+typedef struct _Py_DebugOffsets {
+    // Runtime state offset;
+    off_t rs_finalizing;
+    off_t rs_interpreters_head;
+
+    // Interpreter state offset;
+    off_t is_next;
+    off_t is_threads_head;
+    off_t is_gc;
+    off_t is_imports_modules;
+    off_t is_sysdict;
+    off_t is_builtins;
+    off_t is_ceval_gil;
+
+    // Thread state offset;
+    off_t ts_prev;
+    off_t ts_next;
+    off_t ts_interp;
+    off_t ts_cframe;
+    off_t ts_thread_id;
+
+    // Frame object offset;
+    off_t fo_previous;
+    off_t fo_executable;
+    off_t fo_prev_instr;
+    off_t fo_localsplus;
+    off_t fo_owner;
+
+    // Code object offset;
+    off_t co_filename;
+    off_t co_name;
+    off_t co_linetable;
+    off_t co_firstlineno;
+    off_t co_argcount;
+    off_t co_localsplusnames;
+    off_t co_co_code_adaptive;
+} _Py_DebugOffsets;
+
 /* Full Python runtime state */
 
 /* _PyRuntimeState holds the global state for the CPython runtime.
    That data is exposed in the internal API as a static variable (_PyRuntime).
    */
 typedef struct pyruntimestate {
+    /* This field must be first to facilitate locating it by out of process
+     * debuggers. Out of process debuggers will use the offsets contained in this
+     * field to be able to locate other fields in several interpreter structures
+     * in a way that doesn't require them to know the exact layout of those
+     * structures */
+    _Py_DebugOffsets debug_offsets;
     /* Has been initialized to a safe state.
 
        In order to be effective, this must be set to 0 during or right
