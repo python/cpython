@@ -65,6 +65,11 @@ of the new API.
    *email address* parts.  Returns a tuple of that information, unless the parse
    fails, in which case a 2-tuple of ``('', '')`` is returned.
 
+   .. versionchanged:: 3.12
+      For security reasons, addresses that were ambiguous and could parse into
+      multiple different addresses now cause ``('', '')`` to be returned
+      instead of only one of the *potential* addresses.
+
 
 .. function:: formataddr(pair, charset='utf-8')
 
