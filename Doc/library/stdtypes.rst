@@ -5512,7 +5512,7 @@ types, where they are relevant.  Some of these are not reported by the
    definition order.  Example::
 
       >>> int.__subclasses__()
-      [<class 'bool'>]
+      [<class 'bool'>, <enum 'IntEnum'>, <flag 'IntFlag'>, <class 're._constants._NamedIntConstant'>]
 
 
 .. _int_max_str_digits:
