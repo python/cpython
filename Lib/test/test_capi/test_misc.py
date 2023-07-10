@@ -2347,11 +2347,12 @@ class Test_Pep523API(unittest.TestCase):
 
 @contextlib.contextmanager
 def temporary_optimizer(opt):
+    old_opt = _testinternalcapi.get_optimizer()
     _testinternalcapi.set_optimizer(opt)
     try:
         yield
     finally:
-        _testinternalcapi.set_optimizer(None)
+        _testinternalcapi.set_optimizer(old_opt)
 
 
 @contextlib.contextmanager
@@ -2420,8 +2421,8 @@ class TestOptimizerAPI(unittest.TestCase):
             self.assertEqual(opt.get_count(), 10)
 
 
-
-def get_first_executor(code):
+def get_first_executor(func):
+    code = func.__code__
     co_code = code.co_code
     JUMP_BACKWARD = opcode.opmap["JUMP_BACKWARD"]
     for i in range(0, len(co_code), 2):
@@ -2446,13 +2447,7 @@ class TestUops(unittest.TestCase):
         with temporary_optimizer(opt):
             testfunc(1000)
 
-        ex = None
-        for offset in range(0, len(testfunc.__code__.co_code), 2):
-            try:
-                ex = _testinternalcapi.get_executor(testfunc.__code__, offset)
-                break
-            except ValueError:
-                pass
+        ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = {opname for opname, _ in ex}
         self.assertIn("SAVE_IP", uops)
@@ -2493,11 +2488,13 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.get_uop_optimizer()
         with temporary_optimizer(opt):
-            ex = get_first_executor(many_vars.__code__)
+            ex = get_first_executor(many_vars)
             self.assertIsNone(ex)
             many_vars()
-            ex = get_first_executor(many_vars.__code__)
-            self.assertIn(("LOAD_FAST", 259), list(ex))
+
+        ex = get_first_executor(many_vars)
+        self.assertIsNotNone(ex)
+        self.assertIn(("LOAD_FAST", 259), list(ex))
 
     def test_unspecialized_unpack(self):
         # An example of an unspecialized opcode
@@ -2516,16 +2513,42 @@ class TestUops(unittest.TestCase):
         with temporary_optimizer(opt):
             testfunc(10)
 
-        ex = None
-        for offset in range(0, len(testfunc.__code__.co_code), 2):
-            try:
-                ex = _testinternalcapi.get_executor(testfunc.__code__, offset)
-                break
-            except ValueError:
-                pass
+        ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = {opname for opname, _ in ex}
         self.assertIn("UNPACK_SEQUENCE", uops)
+
+    def test_pop_jump_if_false(self):
+        def testfunc(n):
+            i = 0
+            while i < n:
+                i += 1
+
+        opt = _testinternalcapi.get_uop_optimizer()
+
+        with temporary_optimizer(opt):
+            testfunc(10)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _ in ex}
+        self.assertIn("_POP_JUMP_IF_FALSE", uops)
+
+    def test_pop_jump_if_true(self):
+        def testfunc(n):
+            i = 0
+            while not i >= n:
+                i += 1
+
+        opt = _testinternalcapi.get_uop_optimizer()
+
+        with temporary_optimizer(opt):
+            testfunc(10)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _ in ex}
+        self.assertIn("_POP_JUMP_IF_TRUE", uops)
 
 
 if __name__ == "__main__":

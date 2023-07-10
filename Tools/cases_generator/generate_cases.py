@@ -1338,12 +1338,17 @@ class Analyzer:
     def write_uop_items(self, make_text: typing.Callable[[str, int], str]) -> None:
         """Write '#define XXX NNN' for each uop"""
         counter = 300  # TODO: Avoid collision with pseudo instructions
+
         def add(name: str) -> None:
             nonlocal counter
             self.out.emit(make_text(name, counter))
             counter += 1
+
         add("EXIT_TRACE")
         add("SAVE_IP")
+        add("_POP_JUMP_IF_FALSE")
+        add("_POP_JUMP_IF_TRUE")
+
         for instr in self.instrs.values():
             if instr.kind == "op" and instr.is_viable_uop():
                 add(instr.name)
