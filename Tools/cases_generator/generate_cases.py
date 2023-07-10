@@ -1349,6 +1349,7 @@ class Analyzer:
         add("_POP_JUMP_IF_FALSE")
         add("_POP_JUMP_IF_TRUE")
 
+        add("JUMP_TO_TOP")
         for instr in self.instrs.values():
             if instr.kind == "op" and instr.is_viable_uop():
                 add(instr.name)
