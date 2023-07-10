@@ -307,7 +307,7 @@ uop_dealloc(_PyUOpExecutorObject *self) {
 
 static const char *
 uop_name(int index) {
-    if (index < EXIT_TRACE) {
+    if (index < 256) {
         return _PyOpcode_OpName[index];
     }
     return _PyOpcode_uop_name[index];
@@ -316,9 +316,9 @@ uop_name(int index) {
 static Py_ssize_t
 uop_len(_PyUOpExecutorObject *self)
 {
-    int count = 1;
+    int count = 0;
     for (; count < _Py_UOP_MAX_TRACE_LENGTH; count++) {
-        if (self->trace[count-1].opcode == EXIT_TRACE) {
+        if (self->trace[count].opcode == 0) {
             break;
         }
     }
@@ -328,28 +328,26 @@ uop_len(_PyUOpExecutorObject *self)
 static PyObject *
 uop_item(_PyUOpExecutorObject *self, Py_ssize_t index)
 {
-    for (int i = 0; i < _Py_UOP_MAX_TRACE_LENGTH; i++) {
-        if (self->trace[i].opcode == EXIT_TRACE) {
-            break;
-        }
-        if (i != index) {
-            continue;
-        }
-        const char *name = uop_name(self->trace[i].opcode);
-        PyObject *oname = _PyUnicode_FromASCII(name, strlen(name));
-        if (oname == NULL) {
-            return NULL;
-        }
-        PyObject *operand = PyLong_FromUnsignedLongLong(self->trace[i].operand);
-        if (operand == NULL) {
-            Py_DECREF(oname);
-            return NULL;
-        }
-        PyObject *args[2] = { oname, operand };
-        return _PyTuple_FromArraySteal(args, 2);
+    Py_ssize_t len = uop_len(self);
+    if (index < 0 || index >= len) {
+        PyErr_SetNone(PyExc_IndexError);
+        return NULL;
     }
-    PyErr_SetNone(PyExc_IndexError);
-    return NULL;
+    const char *name = uop_name(self->trace[index].opcode);
+    if (name == NULL) {
+        name = "<nil>";
+    }
+    PyObject *oname = _PyUnicode_FromASCII(name, strlen(name));
+    if (oname == NULL) {
+        return NULL;
+    }
+    PyObject *operand = PyLong_FromUnsignedLongLong(self->trace[index].operand);
+    if (operand == NULL) {
+        Py_DECREF(oname);
+        return NULL;
+    }
+    PyObject *args[2] = { oname, operand };
+    return _PyTuple_FromArraySteal(args, 2);
 }
 
 PySequenceMethods uop_as_sequence = {
@@ -594,7 +592,10 @@ uop_optimize(
         return -1;
     }
     executor->base.execute = _PyUopExecute;
-    memcpy(executor->trace, trace, _Py_UOP_MAX_TRACE_LENGTH * sizeof(_PyUOpInstruction));
+    memcpy(executor->trace, trace, trace_length * sizeof(_PyUOpInstruction));
+        if (trace_length < _Py_UOP_MAX_TRACE_LENGTH) {
+            executor->trace[trace_length].opcode = 0;  // Sentinel
+        }
     *exec_ptr = (_PyExecutorObject *)executor;
     return 1;
 }
