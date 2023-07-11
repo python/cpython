@@ -1086,26 +1086,11 @@ dummy_func(
         }
 
         inst(LOAD_BUILD_CLASS, ( -- bc)) {
-            if (PyDict_CheckExact(BUILTINS())) {
-                bc = _PyDict_GetItemWithError(BUILTINS(),
-                                              &_Py_ID(__build_class__));
-                if (bc == NULL) {
-                    if (!_PyErr_Occurred(tstate)) {
-                        _PyErr_SetString(tstate, PyExc_NameError,
-                                         "__build_class__ not found");
-                    }
-                    ERROR_IF(true, error);
-                }
-                Py_INCREF(bc);
-            }
-            else {
-                bc = PyObject_GetItem(BUILTINS(), &_Py_ID(__build_class__));
-                if (bc == NULL) {
-                    if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError))
-                        _PyErr_SetString(tstate, PyExc_NameError,
-                                         "__build_class__ not found");
-                    ERROR_IF(true, error);
-                }
+            ERROR_IF(PyMapping_GetOptionalItem(BUILTINS(), &_Py_ID(__build_class__), &bc) < 0, error);
+            if (bc == NULL) {
+                _PyErr_SetString(tstate, PyExc_NameError,
+                                 "__build_class__ not found");
+                ERROR_IF(true, error);
             }
         }
 
@@ -1240,7 +1225,7 @@ dummy_func(
 
         inst(DELETE_ATTR, (owner --)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyObject_SetAttr(owner, name, (PyObject *)NULL);
+            int err = PyObject_DelAttr(owner, name);
             DECREF_INPUTS();
             ERROR_IF(err, error);
         }
@@ -1280,25 +1265,9 @@ dummy_func(
 
         op(_LOAD_FROM_DICT_OR_GLOBALS, (mod_or_class_dict -- v)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            if (PyDict_CheckExact(mod_or_class_dict)) {
-                v = PyDict_GetItemWithError(mod_or_class_dict, name);
-                if (v != NULL) {
-                    Py_INCREF(v);
-                }
-                else if (_PyErr_Occurred(tstate)) {
-                    Py_DECREF(mod_or_class_dict);
-                    goto error;
-                }
-            }
-            else {
-                v = PyObject_GetItem(mod_or_class_dict, name);
-                if (v == NULL) {
-                    if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-                        Py_DECREF(mod_or_class_dict);
-                        goto error;
-                    }
-                    _PyErr_Clear(tstate);
-                }
+            if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
+                Py_DECREF(mod_or_class_dict);
+                goto error;
             }
             Py_DECREF(mod_or_class_dict);
             if (v == NULL) {
@@ -1310,28 +1279,14 @@ dummy_func(
                     goto error;
                 }
                 else {
-                    if (PyDict_CheckExact(BUILTINS())) {
-                        v = PyDict_GetItemWithError(BUILTINS(), name);
-                        if (v == NULL) {
-                            if (!_PyErr_Occurred(tstate)) {
-                                format_exc_check_arg(
-                                        tstate, PyExc_NameError,
-                                        NAME_ERROR_MSG, name);
-                            }
-                            goto error;
-                        }
-                        Py_INCREF(v);
+                    if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
+                        goto error;
                     }
-                    else {
-                        v = PyObject_GetItem(BUILTINS(), name);
-                        if (v == NULL) {
-                            if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-                                format_exc_check_arg(
-                                            tstate, PyExc_NameError,
-                                            NAME_ERROR_MSG, name);
-                            }
-                            goto error;
-                        }
+                    if (v == NULL) {
+                        format_exc_check_arg(
+                                    tstate, PyExc_NameError,
+                                    NAME_ERROR_MSG, name);
+                        goto error;
                     }
                 }
             }
@@ -1381,19 +1336,14 @@ dummy_func(
                 /* Slow-path if globals or builtins is not a dict */
 
                 /* namespace 1: globals */
-                v = PyObject_GetItem(GLOBALS(), name);
+                ERROR_IF(PyMapping_GetOptionalItem(GLOBALS(), name, &v) < 0, error);
                 if (v == NULL) {
-                    ERROR_IF(!_PyErr_ExceptionMatches(tstate, PyExc_KeyError), error);
-                    _PyErr_Clear(tstate);
-
                     /* namespace 2: builtins */
-                    v = PyObject_GetItem(BUILTINS(), name);
+                    ERROR_IF(PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0, error);
                     if (v == NULL) {
-                        if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-                            format_exc_check_arg(
-                                        tstate, PyExc_NameError,
-                                        NAME_ERROR_MSG, name);
-                        }
+                        format_exc_check_arg(
+                                    tstate, PyExc_NameError,
+                                    NAME_ERROR_MSG, name);
                         ERROR_IF(true, error);
                     }
                 }
@@ -1466,25 +1416,9 @@ dummy_func(
             assert(class_dict);
             assert(oparg >= 0 && oparg < _PyFrame_GetCode(frame)->co_nlocalsplus);
             name = PyTuple_GET_ITEM(_PyFrame_GetCode(frame)->co_localsplusnames, oparg);
-            if (PyDict_CheckExact(class_dict)) {
-                value = PyDict_GetItemWithError(class_dict, name);
-                if (value != NULL) {
-                    Py_INCREF(value);
-                }
-                else if (_PyErr_Occurred(tstate)) {
-                    Py_DECREF(class_dict);
-                    goto error;
-                }
-            }
-            else {
-                value = PyObject_GetItem(class_dict, name);
-                if (value == NULL) {
-                    if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-                        Py_DECREF(class_dict);
-                        goto error;
-                    }
-                    _PyErr_Clear(tstate);
-                }
+            if (PyMapping_GetOptionalItem(class_dict, name, &value) < 0) {
+                Py_DECREF(class_dict);
+                goto error;
             }
             Py_DECREF(class_dict);
             if (!value) {
@@ -1622,10 +1556,8 @@ dummy_func(
             }
             else {
                 /* do the same if locals() is not a dict */
-                ann_dict = PyObject_GetItem(LOCALS(), &_Py_ID(__annotations__));
+                ERROR_IF(PyMapping_GetOptionalItem(LOCALS(), &_Py_ID(__annotations__), &ann_dict) < 0, error);
                 if (ann_dict == NULL) {
-                    ERROR_IF(!_PyErr_ExceptionMatches(tstate, PyExc_KeyError), error);
-                    _PyErr_Clear(tstate);
                     ann_dict = PyDict_New();
                     ERROR_IF(ann_dict == NULL, error);
                     err = PyObject_SetItem(LOCALS(), &_Py_ID(__annotations__),
@@ -1809,6 +1741,8 @@ dummy_func(
             LOAD_ATTR_METHOD_WITH_VALUES,
             LOAD_ATTR_METHOD_NO_DICT,
             LOAD_ATTR_METHOD_LAZY_DICT,
+            LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES,
+            LOAD_ATTR_NONDESCRIPTOR_NO_DICT,
         };
 
         inst(LOAD_ATTR, (unused/9, owner -- res2 if (oparg & 1), res)) {
@@ -2280,21 +2214,19 @@ dummy_func(
             JUMPBY(oparg * Py_IsTrue(cond));
         }
 
-        inst(POP_JUMP_IF_NOT_NONE, (value -- )) {
-            if (!Py_IsNone(value)) {
+        op(IS_NONE, (value -- b)) {
+            if (Py_IsNone(value)) {
+                b = Py_True;
+            }
+            else {
+                b = Py_False;
                 DECREF_INPUTS();
-                JUMPBY(oparg);
             }
         }
 
-        inst(POP_JUMP_IF_NONE, (value -- )) {
-            if (Py_IsNone(value)) {
-                JUMPBY(oparg);
-            }
-            else {
-                DECREF_INPUTS();
-            }
-        }
+        macro(POP_JUMP_IF_NONE) = IS_NONE + POP_JUMP_IF_TRUE;
+
+        macro(POP_JUMP_IF_NOT_NONE) = IS_NONE + POP_JUMP_IF_FALSE;
 
         inst(JUMP_BACKWARD_NO_INTERRUPT, (--)) {
             /* This bytecode is used in the `yield from` or `await` loop.
@@ -2657,7 +2589,8 @@ dummy_func(
             exc_info->exc_value = Py_NewRef(new_exc);
         }
 
-        inst(LOAD_ATTR_METHOD_WITH_VALUES, (unused/1, type_version/2, keys_version/2, descr/4, self -- res2 if (oparg & 1), res)) {
+        inst(LOAD_ATTR_METHOD_WITH_VALUES, (unused/1, type_version/2, keys_version/2, descr/4, self -- res2 if (1), res)) {
+            assert(oparg & 1);
             /* Cached method object */
             PyTypeObject *self_cls = Py_TYPE(self);
             assert(type_version != 0);
@@ -2673,10 +2606,10 @@ dummy_func(
             res2 = Py_NewRef(descr);
             assert(_PyType_HasFeature(Py_TYPE(res2), Py_TPFLAGS_METHOD_DESCRIPTOR));
             res = self;
-            assert(oparg & 1);
         }
 
-        inst(LOAD_ATTR_METHOD_NO_DICT, (unused/1, type_version/2, unused/2, descr/4, self -- res2 if (oparg & 1), res)) {
+        inst(LOAD_ATTR_METHOD_NO_DICT, (unused/1, type_version/2, unused/2, descr/4, self -- res2 if (1), res)) {
+            assert(oparg & 1);
             PyTypeObject *self_cls = Py_TYPE(self);
             DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_ATTR);
             assert(self_cls->tp_dictoffset == 0);
@@ -2685,10 +2618,39 @@ dummy_func(
             assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
             res2 = Py_NewRef(descr);
             res = self;
-            assert(oparg & 1);
         }
 
-        inst(LOAD_ATTR_METHOD_LAZY_DICT, (unused/1, type_version/2, unused/2, descr/4, self -- res2 if (oparg & 1), res)) {
+        inst(LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES, (unused/1, type_version/2, keys_version/2, descr/4, self -- res2 if (0), res)) {
+            assert((oparg & 1) == 0);
+            PyTypeObject *self_cls = Py_TYPE(self);
+            assert(type_version != 0);
+            DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_ATTR);
+            assert(self_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(self);
+            DEOPT_IF(!_PyDictOrValues_IsValues(dorv), LOAD_ATTR);
+            PyHeapTypeObject *self_heap_type = (PyHeapTypeObject *)self_cls;
+            DEOPT_IF(self_heap_type->ht_cached_keys->dk_version !=
+                     keys_version, LOAD_ATTR);
+            STAT_INC(LOAD_ATTR, hit);
+            assert(descr != NULL);
+            DECREF_INPUTS();
+            res = Py_NewRef(descr);
+        }
+
+        inst(LOAD_ATTR_NONDESCRIPTOR_NO_DICT, (unused/1, type_version/2, unused/2, descr/4, self -- res2 if (0), res)) {
+            assert((oparg & 1) == 0);
+            PyTypeObject *self_cls = Py_TYPE(self);
+            assert(type_version != 0);
+            DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_ATTR);
+            assert(self_cls->tp_dictoffset == 0);
+            STAT_INC(LOAD_ATTR, hit);
+            assert(descr != NULL);
+            DECREF_INPUTS();
+            res = Py_NewRef(descr);
+        }
+
+        inst(LOAD_ATTR_METHOD_LAZY_DICT, (unused/1, type_version/2, unused/2, descr/4, self -- res2 if (1), res)) {
+            assert(oparg & 1);
             PyTypeObject *self_cls = Py_TYPE(self);
             DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_ATTR);
             Py_ssize_t dictoffset = self_cls->tp_dictoffset;
@@ -2701,7 +2663,6 @@ dummy_func(
             assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
             res2 = Py_NewRef(descr);
             res = self;
-            assert(oparg & 1);
         }
 
         inst(KW_NAMES, (--)) {

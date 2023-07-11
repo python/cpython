@@ -818,6 +818,89 @@ class _FlagTests:
             self.MainEnum('RED')
         self.assertIs(ctx.exception.__context__, None)
 
+    def test_closed_invert_expectations(self):
+        class ClosedAB(self.enum_type):
+            A = 1
+            B = 2
+            MASK = 3
+        A, B = ClosedAB
+        AB_MASK = ClosedAB.MASK
+        #
+        self.assertIs(~A, B)
+        self.assertIs(~B, A)
+        self.assertIs(~(A|B), ClosedAB(0))
+        self.assertIs(~AB_MASK, ClosedAB(0))
+        self.assertIs(~ClosedAB(0), (A|B))
+        #
+        class ClosedXYZ(self.enum_type):
+            X = 4
+            Y = 2
+            Z = 1
+            MASK = 7
+        X, Y, Z = ClosedXYZ
+        XYZ_MASK = ClosedXYZ.MASK
+        #
+        self.assertIs(~X, Y|Z)
+        self.assertIs(~Y, X|Z)
+        self.assertIs(~Z, X|Y)
+        self.assertIs(~(X|Y), Z)
+        self.assertIs(~(X|Z), Y)
+        self.assertIs(~(Y|Z), X)
+        self.assertIs(~(X|Y|Z), ClosedXYZ(0))
+        self.assertIs(~XYZ_MASK, ClosedXYZ(0))
+        self.assertIs(~ClosedXYZ(0), (X|Y|Z))
+
+    def test_open_invert_expectations(self):
+        class OpenAB(self.enum_type):
+            A = 1
+            B = 2
+            MASK = 255
+        A, B = OpenAB
+        AB_MASK = OpenAB.MASK
+        #
+        if OpenAB._boundary_ in (EJECT, KEEP):
+            self.assertIs(~A, OpenAB(254))
+            self.assertIs(~B, OpenAB(253))
+            self.assertIs(~(A|B), OpenAB(252))
+            self.assertIs(~AB_MASK, OpenAB(0))
+            self.assertIs(~OpenAB(0), AB_MASK)
+        else:
+            self.assertIs(~A, B)
+            self.assertIs(~B, A)
+            self.assertIs(~(A|B), OpenAB(0))
+            self.assertIs(~AB_MASK, OpenAB(0))
+            self.assertIs(~OpenAB(0), (A|B))
+        #
+        class OpenXYZ(self.enum_type):
+            X = 4
+            Y = 2
+            Z = 1
+            MASK = 31
+        X, Y, Z = OpenXYZ
+        XYZ_MASK = OpenXYZ.MASK
+        #
+        if OpenXYZ._boundary_ in (EJECT, KEEP):
+            self.assertIs(~X, OpenXYZ(27))
+            self.assertIs(~Y, OpenXYZ(29))
+            self.assertIs(~Z, OpenXYZ(30))
+            self.assertIs(~(X|Y), OpenXYZ(25))
+            self.assertIs(~(X|Z), OpenXYZ(26))
+            self.assertIs(~(Y|Z), OpenXYZ(28))
+            self.assertIs(~(X|Y|Z), OpenXYZ(24))
+            self.assertIs(~XYZ_MASK, OpenXYZ(0))
+            self.assertTrue(~OpenXYZ(0), XYZ_MASK)
+        else:
+            self.assertIs(~X, Y|Z)
+            self.assertIs(~Y, X|Z)
+            self.assertIs(~Z, X|Y)
+            self.assertIs(~(X|Y), Z)
+            self.assertIs(~(X|Z), Y)
+            self.assertIs(~(Y|Z), X)
+            self.assertIs(~(X|Y|Z), OpenXYZ(0))
+            self.assertIs(~XYZ_MASK, OpenXYZ(0))
+            self.assertTrue(~OpenXYZ(0), (X|Y|Z))
+
+
 class TestPlainEnum(_EnumTests, _PlainOutputTests, unittest.TestCase):
     enum_type = Enum
 
@@ -3045,33 +3128,6 @@ class OldTestFlag(unittest.TestCase):
         WHITE = RED|GREEN|BLUE
         BLANCO = RED|GREEN|BLUE
 
-    class Complete(Flag):
-        A = 0x01
-        B = 0x02
-
-    class Partial(Flag):
-        A = 0x01
-        B = 0x02
-        MASK = 0xff
-
-    class CompleteInt(IntFlag):
-        A = 0x01
-        B = 0x02
-
-    class PartialInt(IntFlag):
-        A = 0x01
-        B = 0x02
-        MASK = 0xff
-
-    class CompleteIntStrict(IntFlag, boundary=STRICT):
-        A = 0x01
-        B = 0x02
-
-    class PartialIntStrict(IntFlag, boundary=STRICT):
-        A = 0x01
-        B = 0x02
-        MASK = 0xff
-
     def test_or(self):
         Perm = self.Perm
         for i in Perm:
@@ -3114,34 +3170,6 @@ class OldTestFlag(unittest.TestCase):
         Open = self.Open
         self.assertIs(Open.RO ^ Open.CE, Open.CE)
         self.assertIs(Open.CE ^ Open.CE, Open.RO)
-
-    def test_invert(self):
-        Perm = self.Perm
-        RW = Perm.R | Perm.W
-        RX = Perm.R | Perm.X
-        WX = Perm.W | Perm.X
-        RWX = Perm.R | Perm.W | Perm.X
-        values = list(Perm) + [RW, RX, WX, RWX, Perm(0)]
-        for i in values:
-            self.assertIs(type(~i), Perm)
-            self.assertEqual(~~i, i)
-        for i in Perm:
-            self.assertIs(~~i, i)
-        Open = self.Open
-        self.assertIs(Open.WO & ~Open.WO, Open.RO)
-        self.assertIs((Open.WO|Open.CE) & ~Open.WO, Open.CE)
-        Complete = self.Complete
-        self.assertIs(~Complete.A, Complete.B)
-        Partial = self.Partial
-        self.assertIs(~Partial.A, Partial.B)
-        CompleteInt = self.CompleteInt
-        self.assertIs(~CompleteInt.A, CompleteInt.B)
-        PartialInt = self.PartialInt
-        self.assertIs(~PartialInt.A, PartialInt(254))
-        CompleteIntStrict = self.CompleteIntStrict
-        self.assertIs(~CompleteIntStrict.A, CompleteIntStrict.B)
-        PartialIntStrict = self.PartialIntStrict
-        self.assertIs(~PartialIntStrict.A, PartialIntStrict.B)
 
     def test_bool(self):
         Perm = self.Perm
