@@ -1015,6 +1015,10 @@ interchangeably.
    Attribute :attr:`manager` and method :meth:`_log` were added, which
    delegate to the underlying logger and allow adapters to be nested.
 
+.. versionchanged:: 3.13
+   Remove the undocumented ``warn()`` method which was an alias to the
+   ``warning()`` method.
+
 
 Thread Safety
 -------------
@@ -1161,6 +1165,10 @@ functions.
    .. note:: There is an obsolete function ``warn`` which is functionally
       identical to ``warning``. As ``warn`` is deprecated, please do not use
       it - use ``warning`` instead.
+
+   .. versionchanged:: 3.13
+      Remove the undocumented ``warn()`` function which was an alias to the
+      :func:`warning` function.
 
 
 .. function:: error(msg, *args, **kwargs)

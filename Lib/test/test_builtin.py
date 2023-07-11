@@ -2368,9 +2368,6 @@ class ShutdownTest(unittest.TestCase):
         # implemented in Python
         rc, out, err = assert_python_ok("-c", code,
                                         PYTHONIOENCODING="ascii")
-        print("---------------")
-        print(out)
-        print("---------------")
         self.assertEqual(["before", "after"], out.decode().splitlines())
 
 

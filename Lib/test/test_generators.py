@@ -2433,10 +2433,12 @@ Our ill-behaved code should be invoked during GC:
 ...     g = f()
 ...     next(g)
 ...     del g
+...     len(()) # Run finalizers
 ...
 ...     cm.unraisable.exc_type == RuntimeError
 ...     "generator ignored GeneratorExit" in str(cm.unraisable.exc_value)
 ...     cm.unraisable.exc_traceback is not None
+0
 True
 True
 True
@@ -2546,11 +2548,13 @@ to test.
 >>> with support.catch_unraisable_exception() as cm:
 ...     l = Leaker()
 ...     del l
+...     len(()) # Run finalizers
 ...
 ...     cm.unraisable.object == Leaker.__del__
 ...     cm.unraisable.exc_type == RuntimeError
 ...     str(cm.unraisable.exc_value) == "del failed"
 ...     cm.unraisable.exc_traceback is not None
+0
 True
 True
 True

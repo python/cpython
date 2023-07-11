@@ -1245,12 +1245,11 @@ class DictTest(unittest.TestCase):
         class Mutating:
             def __del__(self):
                 mutate(d)
+                len(()) # Trigger finalizers to run
 
         d = {k: Mutating() for k in 'abcdefghijklmnopqr'}
         for k in list(d):
             d[k] = k
-            # Call builtin method to run __del__
-            len(())
 
     def test_reentrant_insertion(self):
         # Reentrant insertion shouldn't crash (see issue #22653)
@@ -1264,8 +1263,7 @@ class DictTest(unittest.TestCase):
         self.check_reentrant_insertion(mutate)
 
         def mutate(d):
-            while d:
-                d.popitem()
+            d.popitem()
         self.check_reentrant_insertion(mutate)
 
     def test_merge_and_mutate(self):

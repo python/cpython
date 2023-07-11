@@ -47,14 +47,12 @@
 #  error "ceval.c must be build with Py_BUILD_CORE define for best performance"
 #endif
 
+#if !defined(Py_DEBUG) && !defined(Py_TRACE_REFS)
 // GH-89279: The MSVC compiler does not inline these static inline functions
 // in PGO build in _PyEval_EvalFrameDefault(), because this function is over
 // the limit of PGO, and that limit cannot be configured.
 // Define them as macros to make sure that they are always inlined by the
 // preprocessor.
-
-// Use "safe DECREF in interpreter, to avoid thw world changing during execution */
-
 
 #undef Py_DECREF
 #define Py_DECREF(arg) \
@@ -95,6 +93,7 @@
             d(op); \
         } \
     } while (0)
+#endif
 
 // GH-89279: Similar to above, force inlining by using a macro.
 #if defined(_MSC_VER) && SIZEOF_INT == 4
@@ -418,10 +417,8 @@ match_class_attr(PyThreadState *tstate, PyObject *subject, PyObject *type,
         }
         return NULL;
     }
-    PyObject *attr = PyObject_GetAttr(subject, name);
-    if (attr == NULL && _PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
-        _PyErr_Clear(tstate);
-    }
+    PyObject *attr;
+    (void)_PyObject_LookupAttr(subject, name, &attr);
     return attr;
 }
 
@@ -456,7 +453,9 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
     // First, the positional subpatterns:
     if (nargs) {
         int match_self = 0;
-        match_args = PyObject_GetAttrString(type, "__match_args__");
+        if (_PyObject_LookupAttr(type, &_Py_ID(__match_args__), &match_args) < 0) {
+            goto fail;
+        }
         if (match_args) {
             if (!PyTuple_CheckExact(match_args)) {
                 const char *e = "%s.__match_args__ must be a tuple (got %s)";
@@ -466,8 +465,7 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
                 goto fail;
             }
         }
-        else if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
-            _PyErr_Clear(tstate);
+        else {
             // _Py_TPFLAGS_MATCH_SELF is only acknowledged if the type does not
             // define __match_args__. This is natural behavior for subclasses:
             // it's as if __match_args__ is some "magic" value that is lost as
@@ -475,9 +473,6 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
             match_args = PyTuple_New(0);
             match_self = PyType_HasFeature((PyTypeObject*)type,
                                             _Py_TPFLAGS_MATCH_SELF);
-        }
-        else {
-            goto fail;
         }
         assert(PyTuple_CheckExact(match_args));
         Py_ssize_t allowed = match_self ? 1 : PyTuple_GET_SIZE(match_args);
@@ -763,11 +758,6 @@ resume_frame:
     assert(!_PyErr_Occurred(tstate));
 #endif
 
-    DISPATCH();
-
-    if (_Py_HandlePending(tstate) != 0) {
-        goto error;
-    }
     DISPATCH();
 
     {
@@ -2265,6 +2255,19 @@ PyEval_GetLocals(void)
 }
 
 PyObject *
+_PyEval_GetFrameLocals(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+     _PyInterpreterFrame *current_frame = _PyThreadState_GetFrame(tstate);
+    if (current_frame == NULL) {
+        _PyErr_SetString(tstate, PyExc_SystemError, "frame does not exist");
+        return NULL;
+    }
+
+    return _PyFrame_GetLocals(current_frame, 1);
+}
+
+PyObject *
 PyEval_GetGlobals(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
@@ -2727,11 +2730,11 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
 #endif
 
     DPRINTF(3,
-            "Entering _PyUopExecute for %s (%s:%d) at offset %ld\n",
+            "Entering _PyUopExecute for %s (%s:%d) at byte offset %ld\n",
             PyUnicode_AsUTF8(_PyFrame_GetCode(frame)->co_qualname),
             PyUnicode_AsUTF8(_PyFrame_GetCode(frame)->co_filename),
             _PyFrame_GetCode(frame)->co_firstlineno,
-            (long)(frame->prev_instr + 1 -
+            2 * (long)(frame->prev_instr + 1 -
                    (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive));
 
     PyThreadState *tstate = _PyThreadState_GET();
@@ -2750,7 +2753,8 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
         operand = self->trace[pc].operand;
         oparg = (int)operand;
         DPRINTF(3,
-                "  uop %s, operand %" PRIu64 ", stack_level %d\n",
+                "%4d: uop %s, operand %" PRIu64 ", stack_level %d\n",
+                pc,
                 opcode < 256 ? _PyOpcode_OpName[opcode] : _PyOpcode_uop_name[opcode],
                 operand,
                 (int)(stack_pointer - _PyFrame_Stackbase(frame)));
@@ -2761,6 +2765,25 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
 #undef ENABLE_SPECIALIZATION
 #define ENABLE_SPECIALIZATION 0
 #include "executor_cases.c.h"
+
+            // NOTE: These pop-jumps move the uop pc, not the bytecode ip
+            case _POP_JUMP_IF_FALSE:
+            {
+                if (Py_IsFalse(stack_pointer[-1])) {
+                    pc = oparg;
+                }
+                stack_pointer--;
+                break;
+            }
+
+            case _POP_JUMP_IF_TRUE:
+            {
+                if (Py_IsTrue(stack_pointer[-1])) {
+                    pc = oparg;
+                }
+                stack_pointer--;
+                break;
+            }
 
             case SAVE_IP:
             {

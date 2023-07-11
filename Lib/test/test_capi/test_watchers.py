@@ -122,6 +122,7 @@ class TestDictWatchers(unittest.TestCase):
             self.watch(wid, d)
             with catch_unraisable_exception() as cm:
                 del d
+                len(()) # Run finalizers
                 self.assertEqual(str(cm.unraisable.exc_value), "boom!")
 
     def test_two_watchers(self):
@@ -416,7 +417,7 @@ class TestCodeObjectWatchers(unittest.TestCase):
         with self.code_watcher(2):
             with catch_unraisable_exception() as cm:
                 del co
-
+                len(()) # Run finalizers
                 self.assertEqual(str(cm.unraisable.exc_value), "boom!")
 
     def test_clear_out_of_range_watcher_id(self):
@@ -527,6 +528,7 @@ class TestFuncWatchers(unittest.TestCase):
         with self.add_watcher(watcher):
             with catch_unraisable_exception() as cm:
                 del myfunc
+                len(()) # Run finalizers
 
                 self.assertIsInstance(cm.unraisable.exc_value, MyError)
 
