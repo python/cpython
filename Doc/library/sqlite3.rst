@@ -266,8 +266,9 @@ Module functions
 
    :param database:
        The path to the database file to be opened.
-       Pass ``":memory:"`` to open a connection to a database that is
-       in RAM instead of on disk.
+       You can pass ``":memory:"`` to create an `SQLite database existing only
+       in memory <https://sqlite.org/inmemorydb.html>`_, and open a connection
+       to it.
    :type database: :term:`path-like object`
 
    :param float timeout:
