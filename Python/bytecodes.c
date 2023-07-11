@@ -2432,9 +2432,15 @@ dummy_func(
             // Common case: no jump, leave it to the code generator
         }
 
-        op(_ITER_NEXT_RANGE, (iter -- iter, next)) {
+        op(_ITER_CHECK_RANGE, (iter -- iter)) {
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
             DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type, FOR_ITER);
+        }
+
+        // NOTE: next may be NULL (TODO: Can we show this in the type?)
+        op(_ITER_NEXT_RANGE, (iter -- iter, next)) {
+            _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
+            assert(Py_TYPE(r) == &PyRangeIter_Type);
             STAT_INC(FOR_ITER, hit);
             if (r->len <= 0) {
                 next = NULL;
@@ -2465,7 +2471,8 @@ dummy_func(
             }
         }
 
-        macro(FOR_ITER_RANGE) = unused/1 + _ITER_NEXT_RANGE + _FOR_ITER_END;
+        macro(FOR_ITER_RANGE) =
+            unused/1 + _ITER_CHECK_RANGE + _ITER_NEXT_RANGE + _FOR_ITER_END;
 
         inst(FOR_ITER_GEN, (unused/1, iter -- iter, unused)) {
             DEOPT_IF(tstate->interp->eval_frame, FOR_ITER);
