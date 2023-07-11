@@ -1240,7 +1240,7 @@ dummy_func(
 
         inst(DELETE_ATTR, (owner --)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyObject_SetAttr(owner, name, (PyObject *)NULL);
+            int err = PyObject_DelAttr(owner, name);
             DECREF_INPUTS();
             ERROR_IF(err, error);
         }
@@ -2282,21 +2282,19 @@ dummy_func(
             JUMPBY(oparg * Py_IsTrue(cond));
         }
 
-        inst(POP_JUMP_IF_NOT_NONE, (value -- )) {
-            if (!Py_IsNone(value)) {
+        op(IS_NONE, (value -- b)) {
+            if (Py_IsNone(value)) {
+                b = Py_True;
+            }
+            else {
+                b = Py_False;
                 DECREF_INPUTS();
-                JUMPBY(oparg);
             }
         }
 
-        inst(POP_JUMP_IF_NONE, (value -- )) {
-            if (Py_IsNone(value)) {
-                JUMPBY(oparg);
-            }
-            else {
-                DECREF_INPUTS();
-            }
-        }
+        macro(POP_JUMP_IF_NONE) = IS_NONE + POP_JUMP_IF_TRUE;
+
+        macro(POP_JUMP_IF_NOT_NONE) = IS_NONE + POP_JUMP_IF_FALSE;
 
         inst(JUMP_BACKWARD_NO_INTERRUPT, (--)) {
             /* This bytecode is used in the `yield from` or `await` loop.
