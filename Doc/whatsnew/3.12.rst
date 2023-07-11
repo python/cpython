@@ -1836,7 +1836,31 @@ Porting to Python 3.12
   allowing incomplete initialization.
 
   Note that :c:func:`PyType_FromMetaclass` (added in Python 3.12)
-  already disallows creating classes whose metaclass overrides ``tp_new``.
+  already disallows creating classes whose metaclass overrides ``tp_new``
+  (:meth:`~object.__new__` in Python).
+
+  Since ``tp_new`` overrides almost everything ``PyType_From*`` functions do,
+  the two are incompatible with each other.
+  The existing behavior -- ignoring the metaclass for several steps
+  of type creation -- is unsafe in general, since (meta)classes assume that
+  ``tp_new`` was called.
+  There is no simple general workaround. One of the following may work for you:
+
+  - If you control the metaclass, avoid using ``tp_new`` in it:
+
+    - If initialization can be skipped, it can be done in
+      :c:member:`~PyTypeObject.tp_init` instead.
+    - If the metaclass doesn't need to be instantiated from Python,
+      set its ``tp_new`` to ``NULL`` using
+      the :const:`Py_TPFLAGS_DISALLOW_INSTANTIATION` flag.
+      This makes it acceptable for ``PyType_From*`` functions.
+
+  - Avoid ``PyType_From*`` functions: if you don't need C-specific features
+    (slots or setting the instance size), create types by :ref:`calling <call>`
+    the metaclass.
+
+  - If you *know* the ``tp_new`` can be skipped safely, filter the deprecation
+    warning out using :func:`warnings.catch_warnings` from Python.
 
 * :c:var:`PyOS_InputHook` and :c:var:`PyOS_ReadlineFunctionPointer` are no
   longer called in :ref:`subinterpreters <sub-interpreter-support>`. This is
