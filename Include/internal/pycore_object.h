@@ -15,8 +15,6 @@ extern "C" {
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_runtime.h"       // _PyRuntime
 
-
-
 /* We need to maintain an internal copy of Py{Var}Object_HEAD_INIT to avoid
    designated initializer conflicts in C++20. If we use the deinition in
    object.h, we will be mixing designated and non-designated initializers in

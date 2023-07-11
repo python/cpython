@@ -542,7 +542,6 @@ pycore_init_runtime(_PyRuntimeState *runtime,
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
-
     return _PyStatus_OK();
 }
 
