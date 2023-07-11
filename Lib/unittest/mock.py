@@ -221,8 +221,6 @@ def _set_async_signature(mock, original, instance=False, is_async_mock=False):
     _copy_func_details(func, checksig)
 
     name = original.__name__
-    if not name.isidentifier():
-        name = 'funcopy'
     context = {'_checksig_': checksig, 'mock': mock}
     src = """async def %s(*args, **kwargs):
     _checksig_(*args, **kwargs)
