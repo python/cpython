@@ -1819,7 +1819,7 @@ class ZipFile:
 
         if isinstance(self.filename, os.PathLike) or isinstance(self.filename, bytes) \
             or isinstance(self.filename, str):
-            if os.path.abspath(filename) == os.path.abspath(self.filename):
+            if os.path.realpath(filename) == os.path.realpath(self.filename):
                 raise ValueError(f"Attempt to write {filename} in {self.filename} recursively")
 
         if zinfo.is_dir():
