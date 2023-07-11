@@ -1959,14 +1959,19 @@ class Destination:
         self.name = name
         self.type = type
         self.clinic = clinic
+        self.buffers = BufferSeries()
+
         valid_types = ('buffer', 'file', 'suppress')
         if type not in valid_types:
-            fail("Invalid destination type " + repr(type) + " for " + name + " , must be " + ', '.join(valid_types))
+            fail(
+                f"Invalid destination type {type!r} for {name}, "
+                f"must be {', '.join(valid_types)}"
+            )
         extra_arguments = 1 if type == "file" else 0
         if len(args) < extra_arguments:
-            fail("Not enough arguments for destination " + name + " new " + type)
+            fail(f"Not enough arguments for destination {name} new {type}")
         if len(args) > extra_arguments:
-            fail("Too many arguments for destination " + name + " new " + type)
+            fail(f"Too many arguments for destination {name} new {type}")
         if type =='file':
             d = {}
             filename = clinic.filename
@@ -1978,8 +1983,6 @@ class Destination:
             d['basename'] = basename
             d['basename_root'], d['basename_extension'] = os.path.splitext(filename)
             self.filename = args[0].format_map(d)
-
-        self.buffers = BufferSeries()
 
     def __repr__(self):
         if self.type == 'file':
