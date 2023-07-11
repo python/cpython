@@ -2432,26 +2432,40 @@ dummy_func(
             // Common case: no jump, leave it to the code generator
         }
 
-        inst(FOR_ITER_RANGE, (unused/1, iter -- iter, next)) {
+        op(_ITER_NEXT_RANGE, (iter -- iter, next)) {
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
             DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type, FOR_ITER);
             STAT_INC(FOR_ITER, hit);
             if (r->len <= 0) {
+                next = NULL;
+            }
+            else {
+                long value = r->start;
+                r->start = value + r->step;
+                r->len--;
+                next = PyLong_FromLong(value);
+                ERROR_IF(next == NULL, error);
+            }
+        }
+
+        op(_FOR_ITER_END, (iter, next -- iter, next)) {
+            if (next == NULL) {
+                // You might expect STACK_SHRINK(2) here.
+                // But we're taking a dangerous shortcut here:
+                // This op is always the second half of a
+                // (_ITER_NEXT_RANGE, _FOR_ITER_END) pair,
+                // and and the code generator hasn't increased
+                // the stack pointer to account for 'next' yet.
                 STACK_SHRINK(1);
-                Py_DECREF(r);
+                Py_DECREF(iter);
                 SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
                 // Jump over END_FOR instruction.
                 JUMPBY(oparg + 1);
                 DISPATCH();
             }
-            long value = r->start;
-            r->start = value + r->step;
-            r->len--;
-            next = PyLong_FromLong(value);
-            if (next == NULL) {
-                goto error;
-            }
         }
+
+        macro(FOR_ITER_RANGE) = unused/1 + _ITER_NEXT_RANGE + _FOR_ITER_END;
 
         inst(FOR_ITER_GEN, (unused/1, iter -- iter, unused)) {
             DEOPT_IF(tstate->interp->eval_frame, FOR_ITER);
