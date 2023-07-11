@@ -668,6 +668,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__lshift__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__lt__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__main__));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__match_args__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__matmul__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__missing__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__mod__));

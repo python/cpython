@@ -49,8 +49,14 @@ static const char copyright[] =
 
 #include <ctype.h>
 
-/* defining this one enables tracing */
-#undef VERBOSE
+/* Defining this one controls tracing:
+ * 0 -- disabled
+ * 1 -- only if the DEBUG flag set
+ * 2 -- always
+ */
+#ifndef VERBOSE
+#  define VERBOSE 0
+#endif
 
 /* -------------------------------------------------------------------- */
 
@@ -70,10 +76,21 @@ static const char copyright[] =
 #define SRE_ERROR_MEMORY -9 /* out of memory */
 #define SRE_ERROR_INTERRUPTED -10 /* signal handler raised exception */
 
-#if defined(VERBOSE)
-#define TRACE(v) printf v
+#if VERBOSE == 0
+#  define INIT_TRACE(state)
+#  define TRACE(v)
+#elif VERBOSE == 1
+#  define INIT_TRACE(state) int _debug = (state)->debug
+#  define TRACE(v) do {     \
+        if (_debug) { \
+            printf v;       \
+        }                   \
+    } while (0)
+#elif VERBOSE == 2
+#  define INIT_TRACE(state)
+#  define TRACE(v) printf v
 #else
-#define TRACE(v)
+#  error VERBOSE must be 0, 1 or 2
 #endif
 
 /* -------------------------------------------------------------------- */
@@ -198,6 +215,7 @@ data_stack_dealloc(SRE_STATE* state)
 static int
 data_stack_grow(SRE_STATE* state, Py_ssize_t size)
 {
+    INIT_TRACE(state);
     Py_ssize_t minsize, cursize;
     minsize = state->data_stack_base+size;
     cursize = state->data_stack_size;
@@ -449,6 +467,7 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
     state->charsize = charsize;
     state->match_all = 0;
     state->must_advance = 0;
+    state->debug = ((pattern->flags & SRE_FLAG_DEBUG) != 0);
 
     state->beginning = ptr;
 
@@ -641,6 +660,7 @@ _sre_SRE_Pattern_match_impl(PatternObject *self, PyTypeObject *cls,
     if (!state_init(&state, (PatternObject *)self, string, pos, endpos))
         return NULL;
 
+    INIT_TRACE(&state);
     state.ptr = state.start;
 
     TRACE(("|%p|%p|MATCH\n", PatternObject_GetCode(self), state.ptr));
@@ -684,6 +704,7 @@ _sre_SRE_Pattern_fullmatch_impl(PatternObject *self, PyTypeObject *cls,
     if (!state_init(&state, self, string, pos, endpos))
         return NULL;
 
+    INIT_TRACE(&state);
     state.ptr = state.start;
 
     TRACE(("|%p|%p|FULLMATCH\n", PatternObject_GetCode(self), state.ptr));
@@ -730,6 +751,7 @@ _sre_SRE_Pattern_search_impl(PatternObject *self, PyTypeObject *cls,
     if (!state_init(&state, self, string, pos, endpos))
         return NULL;
 
+    INIT_TRACE(&state);
     TRACE(("|%p|%p|SEARCH\n", PatternObject_GetCode(self), state.ptr));
 
     status = sre_search(&state, PatternObject_GetCode(self));
@@ -1544,10 +1566,12 @@ _sre_template_impl(PyObject *module, PyObject *pattern, PyObject *template)
     for (Py_ssize_t i = 0; i < n; i++) {
         Py_ssize_t index = PyLong_AsSsize_t(PyList_GET_ITEM(template, 2*i+1));
         if (index == -1 && PyErr_Occurred()) {
+            Py_SET_SIZE(self, i);
             Py_DECREF(self);
             return NULL;
         }
         if (index < 0) {
+            Py_SET_SIZE(self, i);
             goto bad_template;
         }
         self->items[i].index = index;

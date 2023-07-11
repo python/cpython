@@ -943,6 +943,12 @@ PyObject_SetAttrString(PyObject *v, const char *name, PyObject *w)
 }
 
 int
+PyObject_DelAttrString(PyObject *v, const char *name)
+{
+    return PyObject_SetAttrString(v, name, NULL);
+}
+
+int
 _PyObject_IsAbstract(PyObject *obj)
 {
     int res;
@@ -1183,6 +1189,12 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
                      value==NULL ? "del" : "assign to",
                      name);
     return -1;
+}
+
+int
+PyObject_DelAttr(PyObject *v, PyObject *name)
+{
+    return PyObject_SetAttr(v, name, NULL);
 }
 
 PyObject **
@@ -1690,13 +1702,15 @@ _dir_locals(void)
     PyObject *names;
     PyObject *locals;
 
-    locals = PyEval_GetLocals();
+    locals = _PyEval_GetFrameLocals();
     if (locals == NULL)
         return NULL;
 
     names = PyMapping_Keys(locals);
-    if (!names)
+    Py_DECREF(locals);
+    if (!names) {
         return NULL;
+    }
     if (!PyList_Check(names)) {
         PyErr_Format(PyExc_TypeError,
             "dir(): expected keys() of locals to be a list, "
@@ -1708,7 +1722,6 @@ _dir_locals(void)
         Py_DECREF(names);
         return NULL;
     }
-    /* the locals don't need to be DECREF'd */
     return names;
 }
 
