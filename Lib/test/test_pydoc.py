@@ -633,19 +633,12 @@ class PydocDocTest(unittest.TestCase):
         self.assertNotIn('Built-in subclasses', text)
 
     def test_fail_help_cli(self):
-        fd, name = tempfile.mkstemp()
-        self.addCleanup(os_helper.unlink, name)
-        with open(fd, "w") as f:
-            f.write("help()")
-        with spawn_python(name) as proc:
+        elines = (missing_pattern % 'abd').splitlines()
+        with spawn_python("-c" "help()") as proc:
             out, _ = proc.communicate(b"abd")
-            pretty_string = out.decode().replace("help> ", "")
-            pretty_expected = missing_pattern.replace(os.linesep, "")
-            lines = pretty_string.splitlines()
-            last_lines = lines[-10:-6]
-            out = "".join(last_lines)
-            expected = pretty_expected % "abd"
-            self.assertEqual(expected, out.strip())
+            olines = out.decode().splitlines()[-9:-6]
+            olines[0] = olines[0].removeprefix('help> ')
+            self.assertEqual(elines, olines)
 
     def test_fail_help_output_redirect(self):
         with StringIO() as buf:
