@@ -472,6 +472,13 @@ translate_bytecode_to_trace(
                 goto done;
             }
 
+            case JUMP_FORWARD:
+            {
+                // This will emit two SAVE_IP instructions; leave it to the optimizer
+                instr += oparg;
+                break;
+            }
+
             default:
             {
                 const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
