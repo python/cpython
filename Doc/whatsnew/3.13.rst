@@ -737,7 +737,7 @@ New Features
 * Add :c:func:`PyMapping_GetOptionalItem` and
   :c:func:`PyMapping_GetOptionalItemString`: variants of
   :c:func:`PyObject_GetAttr` and :c:func:`PyMapping_GetItemString` which don't
-  raise :exc:`KeyError`.
+  raise :exc:`KeyError` if the key is not found.
   These variants are more convenient and faster if the missing key should not
   be treated as a failure.
   (Contributed by Serhiy Storchaka in :gh:`106307`.)
