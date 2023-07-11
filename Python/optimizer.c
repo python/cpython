@@ -548,8 +548,8 @@ done:
                 if (trace[i].opcode == _POP_JUMP_IF_FALSE ||
                     trace[i].opcode == _POP_JUMP_IF_TRUE)
                 {
-                    int target = trace[i].operand;
-                    if (target >= max_length) {
+                    uint64_t target = trace[i].operand;
+                    if (target >= (uint64_t)max_length) {
                         target += trace_length - max_length;
                         trace[i].operand = target;
                     }
