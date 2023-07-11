@@ -372,9 +372,7 @@ translate_bytecode_to_trace(
     _PyUOpInstruction *trace,
     int buffer_size)
 {
-#ifdef Py_DEBUG
     _Py_CODEUNIT *initial_instr = instr;
-#endif
     int trace_length = 0;
     int max_length = buffer_size;
 
@@ -454,6 +452,19 @@ translate_bytecode_to_trace(
                             target_instr - (_Py_CODEUNIT *)code->co_code_adaptive);
                 ADD_TO_STUB(max_length + 1, EXIT_TRACE, 0);
                 break;
+            }
+
+            case JUMP_BACKWARD:
+            {
+                if (instr + 2 - oparg == initial_instr
+                    && trace_length + 3 <= max_length)
+                {
+                    ADD_TO_TRACE(JUMP_TO_TOP, 0);
+                }
+                else {
+                    DPRINTF(2, "JUMP_BACKWARD not to top ends trace\n");
+                }
+                goto done;
             }
 
             default:
