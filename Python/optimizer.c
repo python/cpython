@@ -3,12 +3,15 @@
 #include "pycore_interp.h"
 #include "pycore_opcode.h"
 #include "opcode_metadata.h"
+#include "pycore_opcode_utils.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_uops.h"
 #include "cpython/optimizer.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
+
+#define MAX_EXECUTORS_SIZE 256
 
 static bool
 has_space_for_executor(PyCodeObject *code, _Py_CODEUNIT *instr)
@@ -19,7 +22,7 @@ has_space_for_executor(PyCodeObject *code, _Py_CODEUNIT *instr)
     if (code->co_executors == NULL) {
         return true;
     }
-    return code->co_executors->size < 256;
+    return code->co_executors->size < MAX_EXECUTORS_SIZE;
 }
 
 static int32_t
@@ -34,7 +37,7 @@ get_index_for_executor(PyCodeObject *code, _Py_CODEUNIT *instr)
     if (old != NULL) {
         size = old->size;
         capacity = old->capacity;
-        assert(size < 256);
+        assert(size < MAX_EXECUTORS_SIZE);
     }
     assert(size <= capacity);
     if (size == capacity) {
@@ -74,7 +77,7 @@ insert_executor(PyCodeObject *code, _Py_CODEUNIT *instr, int index, _PyExecutorO
         executor->vm_data.opcode = instr->op.code;
         executor->vm_data.oparg = instr->op.arg;
         code->co_executors->executors[index] = executor;
-        assert(index < 256);
+        assert(index < MAX_EXECUTORS_SIZE);
         instr->op.code = ENTER_EXECUTOR;
         instr->op.arg = index;
         code->co_executors->size++;
@@ -307,7 +310,7 @@ uop_dealloc(_PyUOpExecutorObject *self) {
 
 static const char *
 uop_name(int index) {
-    if (index < 256) {
+    if (index <= MAX_REAL_OPCODE) {
         return _PyOpcode_OpName[index];
     }
     return _PyOpcode_uop_name[index];
@@ -393,7 +396,7 @@ translate_bytecode_to_trace(
 #define ADD_TO_TRACE(OPCODE, OPERAND) \
     DPRINTF(2, \
             "  ADD_TO_TRACE(%s, %" PRIu64 ")\n", \
-            (OPCODE) < 256 ? _PyOpcode_OpName[(OPCODE)] : _PyOpcode_uop_name[(OPCODE)], \
+            uop_name(OPCODE), \
             (uint64_t)(OPERAND)); \
     assert(trace_length < max_length); \
     trace[trace_length].opcode = (OPCODE); \
@@ -403,7 +406,7 @@ translate_bytecode_to_trace(
 #define ADD_TO_STUB(INDEX, OPCODE, OPERAND) \
     DPRINTF(2, "    ADD_TO_STUB(%d, %s, %" PRIu64 ")\n", \
             (INDEX), \
-            (OPCODE) < 256 ? _PyOpcode_OpName[(OPCODE)] : _PyOpcode_uop_name[(OPCODE)], \
+            uop_name(OPCODE), \
             (uint64_t)(OPERAND)); \
     trace[(INDEX)].opcode = (OPCODE); \
     trace[(INDEX)].operand = (OPERAND);
@@ -463,9 +466,7 @@ translate_bytecode_to_trace(
                     // Reserve space for nuops (+ SAVE_IP + EXIT_TRACE)
                     int nuops = expansion->nuops;
                     if (trace_length + nuops + 2 > max_length) {
-                        DPRINTF(1,
-                                "Ran out of space for %s\n",
-                                opcode < 256 ? _PyOpcode_OpName[opcode] : _PyOpcode_uop_name[opcode]);
+                        DPRINTF(1, "Ran out of space for %s\n", uop_name(opcode));
                         goto done;
                     }
                     for (int i = 0; i < nuops; i++) {
@@ -511,9 +512,7 @@ translate_bytecode_to_trace(
                     }
                     break;
                 }
-                DPRINTF(2,
-                        "Unsupported opcode %s\n",
-                        opcode < 256 ? _PyOpcode_OpName[opcode] : _PyOpcode_uop_name[opcode]);
+                DPRINTF(2, "Unsupported opcode %s\n", uop_name(opcode));
                 goto done;  // Break out of loop
             }
         }
