@@ -616,7 +616,7 @@ class TestCase(object):
                 _addSkip(result, self, skip_why)
                 return result
 
-            # Increase the number of running tests only if it hasn't been skipped
+            # Increase the number of tests only if it hasn't been skipped
             result.startTest(self)
 
             expecting_failure = (
