@@ -24,6 +24,8 @@ extern PyTypeObject _PyExc_MemoryError;
 #define _PyRuntimeState_INIT(runtime) \
     { \
         .debug_offsets = { \
+            .cookie = "xdebugpy", \
+            .version = PY_VERSION_HEX, \
             .runtime_state = { \
                 .finalizing = offsetof(_PyRuntimeState, _finalizing), \
                 .interpreters_head = offsetof(_PyRuntimeState, interpreters.head), \
@@ -36,6 +38,8 @@ extern PyTypeObject _PyExc_MemoryError;
                 .sysdict = offsetof(PyInterpreterState, sysdict), \
                 .builtins = offsetof(PyInterpreterState, builtins), \
                 .ceval_gil = offsetof(PyInterpreterState, ceval.gil), \
+                .gil_runtime_state_locked = offsetof(PyInterpreterState, _gil.locked), \
+                .gil_runtime_state_holder = offsetof(PyInterpreterState, _gil.last_holder), \
             }, \
             .thread_state = { \
                 .prev = offsetof(PyThreadState, prev), \
@@ -43,13 +47,18 @@ extern PyTypeObject _PyExc_MemoryError;
                 .interp = offsetof(PyThreadState, interp), \
                 .cframe = offsetof(PyThreadState, cframe), \
                 .thread_id = offsetof(PyThreadState, thread_id), \
+                .native_thread_id = offsetof(PyThreadState, native_thread_id), \
             }, \
-            .frame_object = { \
+            .interpreter_frame = { \
                 .previous = offsetof(_PyInterpreterFrame, previous), \
                 .executable = offsetof(_PyInterpreterFrame, f_executable), \
                 .prev_instr = offsetof(_PyInterpreterFrame, prev_instr), \
                 .localsplus = offsetof(_PyInterpreterFrame, localsplus), \
                 .owner = offsetof(_PyInterpreterFrame, owner), \
+            }, \
+            .cframe = { \
+                .current_frame = offsetof(_PyCFrame, current_frame), \
+                .previous = offsetof(_PyCFrame, previous), \
             }, \
             .code_object = { \
                 .filename = offsetof(PyCodeObject, co_filename), \
@@ -58,7 +67,17 @@ extern PyTypeObject _PyExc_MemoryError;
                 .firstlineno = offsetof(PyCodeObject, co_firstlineno), \
                 .argcount = offsetof(PyCodeObject, co_argcount), \
                 .localsplusnames = offsetof(PyCodeObject, co_localsplusnames), \
+                .localspluskinds = offsetof(PyCodeObject, co_localspluskinds), \
                 .co_code_adaptive = offsetof(PyCodeObject, co_code_adaptive), \
+            }, \
+            .pyobject = { \
+                .ob_type = offsetof(PyObject, ob_type), \
+            }, \
+            .type_object = { \
+                .tp_name = offsetof(PyTypeObject, tp_name), \
+            }, \
+            .tuple_object = { \
+                .ob_item = offsetof(PyTupleObject, ob_item), \
             }, \
         }, \
         .allocators = { \

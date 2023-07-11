@@ -54,6 +54,8 @@ typedef struct _Py_AuditHookEntry {
 } _Py_AuditHookEntry;
 
 typedef struct _Py_DebugOffsets {
+    char cookie[8];
+    uint64_t version;
     // Runtime state offset;
     struct _runtime_state {
         off_t finalizing;
@@ -69,6 +71,8 @@ typedef struct _Py_DebugOffsets {
         off_t sysdict;
         off_t builtins;
         off_t ceval_gil;
+        off_t gil_runtime_state_locked;
+        off_t gil_runtime_state_holder;
     } interpreter_state;
 
     // Thread state offset;
@@ -78,16 +82,23 @@ typedef struct _Py_DebugOffsets {
         off_t interp;
         off_t cframe;
         off_t thread_id;
+        off_t native_thread_id;
     } thread_state;
 
-    // Frame object offset;
-    struct _frame_object {
+    // InterpreterFrame offset;
+    struct _interpreter_frame {
         off_t previous;
         off_t executable;
         off_t prev_instr;
         off_t localsplus;
         off_t owner;
-    } frame_object;
+    } interpreter_frame;
+
+    // CFrame offset;
+    struct _cframe {
+        off_t current_frame;
+        off_t previous;
+    } cframe;
 
     // Code object offset;
     struct _code_object {
@@ -97,8 +108,24 @@ typedef struct _Py_DebugOffsets {
         off_t firstlineno;
         off_t argcount;
         off_t localsplusnames;
+        off_t localspluskinds;
         off_t co_code_adaptive;
     } code_object;
+
+    // PyObject offset;
+    struct _pyobject {
+        off_t ob_type;
+    } pyobject;
+
+    // PyTypeObject object offset;
+    struct _type_object {
+        off_t tp_name;
+    } type_object;
+
+    // PyTuple object offset;
+    struct _tuple_object {
+        off_t ob_item;
+    } tuple_object;
 } _Py_DebugOffsets;
 
 /* Full Python runtime state */
@@ -111,8 +138,16 @@ typedef struct pyruntimestate {
      * debuggers. Out of process debuggers will use the offsets contained in this
      * field to be able to locate other fields in several interpreter structures
      * in a way that doesn't require them to know the exact layout of those
-     * structures */
+     * structures.
+     *
+     * IMPORTANT:
+     * This struct is **NOT** backwards compatible between minor version of the
+     * interpreter and the members, order of members and size can change between
+     * minor versions. This struct is only guaranteed to be stable between patch
+     * versions for a given minor version of the interpreter.
+     */
     _Py_DebugOffsets debug_offsets;
+
     /* Has been initialized to a safe state.
 
        In order to be effective, this must be set to 0 during or right
