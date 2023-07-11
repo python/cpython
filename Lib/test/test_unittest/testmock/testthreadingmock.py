@@ -11,10 +11,10 @@ threading_helper.requires_working_threading(module=True)
 
 class Something:
     def method_1(self):
-        pass
+        pass  # pragma: no cover
 
     def method_2(self):
-        pass
+        pass  # pragma: no cover
 
 
 class TestThreadingMock(unittest.TestCase):
