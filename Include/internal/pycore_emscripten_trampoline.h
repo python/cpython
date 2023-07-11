@@ -31,9 +31,9 @@ void _Py_EmscriptenTrampoline_Init(_PyRuntimeState *runtime);
 
 PyObject*
 _PyEM_TrampolineCall_JavaScript(PyCFunctionWithKeywords func,
-                        PyObject* self,
-                        PyObject* args,
-                        PyObject* kw);
+                                PyObject* self,
+                                PyObject* args,
+                                PyObject* kw);
 
 PyObject*
 _PyEM_TrampolineCall_Reflection(PyCFunctionWithKeywords func,
