@@ -1696,7 +1696,7 @@
             PyObject *owner = stack_pointer[-1];
             #line 1242 "Python/bytecodes.c"
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyObject_SetAttr(owner, name, (PyObject *)NULL);
+            int err = PyObject_DelAttr(owner, name);
             #line 1701 "Python/generated_cases.c.h"
             Py_DECREF(owner);
             #line 1245 "Python/bytecodes.c"
