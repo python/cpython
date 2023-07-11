@@ -46,6 +46,14 @@ _PyEM_TrampolineCall_Reflection(PyCFunctionWithKeywords func,
         (_PyEM_TrampolineCall_Reflection(meth, self, args, kw)) : \
         (_PyEM_TrampolineCall_JS(meth, self, args, kw)))
 
+#else // defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
+
+#define _Py_EmscriptenTrampoline_Init(runtime)
+
+#define _PyEM_TrampolineCall(meth, self, args, kw) \
+    (meth)((self), (args), (kw))
+
+#endif // defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
 
 #define _PyCFunction_TrampolineCall(meth, self, args) \
     _PyEM_TrampolineCall( \
@@ -54,14 +62,4 @@ _PyEM_TrampolineCall_Reflection(PyCFunctionWithKeywords func,
 #define _PyCFunctionWithKeywords_TrampolineCall(meth, self, args, kw) \
     _PyEM_TrampolineCall((meth), (self), (args), (kw))
 
-#else // defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
-
-#define _Py_EmscriptenTrampoline_Init(runtime)
-
-#define _PyCFunction_TrampolineCall(meth, self, args) \
-    (meth)((self), (args))
-#define _PyCFunctionWithKeywords_TrampolineCall(meth, self, args, kw) \
-    (meth)((self), (args), (kw))
-
-#endif // defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
 #endif // ndef Py_EMSCRIPTEN_SIGNAL_H
