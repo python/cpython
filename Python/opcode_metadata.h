@@ -960,7 +960,7 @@ struct opcode_macro_expansion {
 extern const struct opcode_metadata _PyOpcode_opcode_metadata[512];
 extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[256];
 extern const char * const _PyOpcode_uop_name[512];
-#else
+#else // if NEED_OPCODE_METADATA
 const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {
     [NOP] = { true, INSTR_FMT_IX, 0 },
     [RESUME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
@@ -1293,7 +1293,6 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] = {
     [BINARY_OP] = { .nuops = 1, .uops = { { BINARY_OP, 0, 0 } } },
     [SWAP] = { .nuops = 1, .uops = { { SWAP, 0, 0 } } },
 };
-#ifdef NEED_OPCODE_METADATA
 const char * const _PyOpcode_uop_name[512] = {
     [300] = "EXIT_TRACE",
     [301] = "SAVE_IP",
@@ -1314,4 +1313,3 @@ const char * const _PyOpcode_uop_name[512] = {
     [316] = "IS_NONE",
 };
 #endif // NEED_OPCODE_METADATA
-#endif
