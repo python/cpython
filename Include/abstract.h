@@ -80,7 +80,7 @@ extern "C" {
 
    This is the equivalent of the Python statement o.attr_name=v. */
 
-/* Implemented as a macro:
+/* Implemented elsewhere:
 
    int PyObject_DelAttrString(PyObject *o, const char *attr_name);
 
@@ -88,17 +88,15 @@ extern "C" {
    -1 on failure.
 
    This is the equivalent of the Python statement: del o.attr_name. */
-#define PyObject_DelAttrString(O, A) PyObject_SetAttrString((O), (A), NULL)
 
 
-/* Implemented as a macro:
+/* Implemented elsewhere:
 
    int PyObject_DelAttr(PyObject *o, PyObject *attr_name);
 
    Delete attribute named attr_name, for object o. Returns -1
    on failure.  This is the equivalent of the Python
    statement: del o.attr_name. */
-#define  PyObject_DelAttr(O, A) PyObject_SetAttr((O), (A), NULL)
 
 
 /* Implemented elsewhere:

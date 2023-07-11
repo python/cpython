@@ -36,6 +36,7 @@
 #define _BINARY_OP_ADD_UNICODE 314
 #define _LOAD_LOCALS 315
 #define _LOAD_FROM_DICT_OR_GLOBALS 316
+#define IS_NONE 317
 
 #ifndef NEED_OPCODE_METADATA
 extern int _PyOpcode_num_popped(int opcode, int oparg, bool jump);
@@ -329,9 +330,9 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case POP_JUMP_IF_TRUE:
             return 1;
-        case POP_JUMP_IF_NOT_NONE:
-            return 1;
         case POP_JUMP_IF_NONE:
+            return 1;
+        case POP_JUMP_IF_NOT_NONE:
             return 1;
         case JUMP_BACKWARD_NO_INTERRUPT:
             return 0;
@@ -773,9 +774,9 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case POP_JUMP_IF_TRUE:
             return 0;
-        case POP_JUMP_IF_NOT_NONE:
-            return 0;
         case POP_JUMP_IF_NONE:
+            return 0;
+        case POP_JUMP_IF_NOT_NONE:
             return 0;
         case JUMP_BACKWARD_NO_INTERRUPT:
             return 0;
@@ -960,7 +961,7 @@ struct opcode_macro_expansion {
 extern const struct opcode_metadata _PyOpcode_opcode_metadata[512];
 extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[256];
 extern const char * const _PyOpcode_uop_name[512];
-#else
+#else // if NEED_OPCODE_METADATA
 const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {
     [NOP] = { true, INSTR_FMT_IX, 0 },
     [RESUME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
@@ -1105,8 +1106,8 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {
     [ENTER_EXECUTOR] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [POP_JUMP_IF_FALSE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [POP_JUMP_IF_TRUE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
-    [POP_JUMP_IF_NOT_NONE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [POP_JUMP_IF_NONE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
+    [POP_JUMP_IF_NOT_NONE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [JUMP_BACKWARD_NO_INTERRUPT] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [GET_LEN] = { true, INSTR_FMT_IX, 0 },
     [MATCH_CLASS] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
@@ -1293,7 +1294,6 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] = {
     [BINARY_OP] = { .nuops = 1, .uops = { { BINARY_OP, 0, 0 } } },
     [SWAP] = { .nuops = 1, .uops = { { SWAP, 0, 0 } } },
 };
-#ifdef NEED_OPCODE_METADATA
 const char * const _PyOpcode_uop_name[512] = {
     [300] = "EXIT_TRACE",
     [301] = "SAVE_IP",
@@ -1312,6 +1312,6 @@ const char * const _PyOpcode_uop_name[512] = {
     [314] = "_BINARY_OP_ADD_UNICODE",
     [315] = "_LOAD_LOCALS",
     [316] = "_LOAD_FROM_DICT_OR_GLOBALS",
+    [317] = "IS_NONE",
 };
 #endif // NEED_OPCODE_METADATA
-#endif

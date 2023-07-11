@@ -943,6 +943,12 @@ PyObject_SetAttrString(PyObject *v, const char *name, PyObject *w)
 }
 
 int
+PyObject_DelAttrString(PyObject *v, const char *name)
+{
+    return PyObject_SetAttrString(v, name, NULL);
+}
+
+int
 _PyObject_IsAbstract(PyObject *obj)
 {
     int res;
@@ -1183,6 +1189,12 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
                      value==NULL ? "del" : "assign to",
                      name);
     return -1;
+}
+
+int
+PyObject_DelAttr(PyObject *v, PyObject *name)
+{
+    return PyObject_SetAttr(v, name, NULL);
 }
 
 PyObject **
