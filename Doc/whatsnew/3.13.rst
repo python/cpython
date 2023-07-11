@@ -734,9 +734,17 @@ New Features
   ``NULL`` if the referent is no longer live.
   (Contributed by Victor Stinner in :gh:`105927`.)
 
+* Add :c:func:`PyObject_GetOptionalAttr` and
+  :c:func:`PyObject_GetOptionalAttrString`, variants of
+  :c:func:`PyObject_GetAttr` and :c:func:`PyObject_GetAttrString` which
+  don't raise :exc:`AttributeError` if the attribute is not found.
+  These variants are more convenient and faster if the missing attribute
+  should not be treated as a failure.
+  (Contributed by Serhiy Storchaka in :gh:`106521`.)
+
 * Add :c:func:`PyMapping_GetOptionalItem` and
   :c:func:`PyMapping_GetOptionalItemString`: variants of
-  :c:func:`PyObject_GetAttr` and :c:func:`PyMapping_GetItemString` which don't
+  :c:func:`PyObject_GetItem` and :c:func:`PyMapping_GetItemString` which don't
   raise :exc:`KeyError` if the key is not found.
   These variants are more convenient and faster if the missing key should not
   be treated as a failure.
