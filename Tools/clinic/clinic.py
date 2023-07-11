@@ -4618,10 +4618,13 @@ class DSLParser:
 
                 if not (existing_function.kind == self.kind and existing_function.coexist == self.coexist):
                     fail("'kind' of function and cloned function don't match!  (@classmethod/@staticmethod/@coexist)")
-                self.function = existing_function.copy(name=function_name, full_name=full_name, module=module, cls=cls, c_basename=c_basename, docstring='')
-                assert self.function is not None
-                self.block.signatures.append(self.function)
-                (cls or module).functions.append(self.function)
+                function = existing_function.copy(
+                    name=function_name, full_name=full_name, module=module,
+                    cls=cls, c_basename=c_basename, docstring=''
+                )
+                self.function = function
+                self.block.signatures.append(function)
+                (cls or module).functions.append(function)
                 self.next(self.state_function_docstring)
                 return
 
