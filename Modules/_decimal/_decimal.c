@@ -2322,8 +2322,8 @@ PyDecType_FromFloatExact(PyTypeObject *type, PyObject *v,
     uint32_t status = 0;
     mpd_context_t maxctx;
 
-#ifdef Py_DEBUG
     decimal_state *state = GLOBAL_STATE();
+#ifdef Py_DEBUG
     assert(PyType_IsSubtype(type, state->PyDec_Type));
 #endif
     if (PyLong_Check(v)) {
