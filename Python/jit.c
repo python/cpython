@@ -159,6 +159,9 @@ _PyJIT_CompileTrace(int size, _Py_CODEUNIT **trace)
                 break;
             }
         }
+        if (preload_stencil(&trampoline_stencil)) {
+            stencils_loaded = -1;
+        }
     }
     if (stencils_loaded < 0) {
         printf("XXX: JIT disabled!\n");
