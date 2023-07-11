@@ -737,7 +737,7 @@ New Features
 * Add :c:func:`PyObject_GetOptionalAttr` and
   :c:func:`PyObject_GetOptionalAttrString`, variants of
   :c:func:`PyObject_GetAttr` and :c:func:`PyObject_GetAttrString` which
-  don't raise :exc:`AttributeError`.
+  don't raise :exc:`AttributeError` if the attribute is not found.
   These variants are more convenient and faster if the missing attribute
   should not be treated as a failure.
   (Contributed by Serhiy Storchaka in :gh:`106521`.)
