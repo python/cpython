@@ -3766,7 +3766,7 @@ copying.
     98
     >>> v[-1]
     103
-    >>> v[1:4]  # doctest: +SKIP
+    >>> v[1:4]
     <memory at 0x7f3ddc9f4350>
     >>> bytes(v[1:4])
     b'bce'
@@ -4786,10 +4786,10 @@ An example of dictionary view usage::
    >>> # set operations
    >>> keys & {'eggs', 'bacon', 'salad'}
    {'bacon'}
-   >>> keys ^ {'sausage', 'juice'}
-   {'juice', 'sausage', 'bacon', 'spam'}
-   >>> keys | ['juice', 'juice', 'juice']
-   {'bacon', 'spam', 'juice'}
+   >>> keys ^ {'sausage', 'juice'} == {'juice', 'sausage', 'bacon', 'spam'}
+   True
+   >>> keys | ['juice', 'juice', 'juice'] == {'bacon', 'spam', 'juice'}
+   True
 
    >>> # get back a read-only proxy for the original dictionary
    >>> values.mapping
@@ -5203,9 +5203,11 @@ enables cleaner type hinting syntax compared to :data:`typing.Union`.
       >>> isinstance("", int | str)
       True
 
-   However, union objects containing :ref:`parameterized generics
-   <types-genericalias>` cannot be used::
+   However, :ref:`parameterized generics <types-genericalias>` in
+   union objects cannot be checked::
 
+      >>> isinstance(1, int | list[int])  # short-circuit evaluation
+      True
       >>> isinstance([1], int | list[int])
       Traceback (most recent call last):
         ...
