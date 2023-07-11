@@ -4647,6 +4647,45 @@ class TestPEP519(unittest.TestCase):
                 return ''
         self.assertFalse(hasattr(A(), '__dict__'))
 
+    def test_fspath_set_to_None(self):
+        class Foo:
+            __fspath__ = None
+
+        class Bar:
+            def __fspath__(self):
+                return 'bar'
+
+        class Baz(Bar):
+            __fspath__ = None
+
+        good_error_msg = (
+            r"expected str, bytes or os.PathLike object, not {}".format
+        )
+
+        with self.assertRaisesRegex(TypeError, good_error_msg("Foo")):
+            self.fspath(Foo())
+
+        self.assertEqual(self.fspath(Bar()), 'bar')
+
+        with self.assertRaisesRegex(TypeError, good_error_msg("Baz")):
+            self.fspath(Baz())
+
+        with self.assertRaisesRegex(TypeError, good_error_msg("Foo")):
+            open(Foo())
+
+        with self.assertRaisesRegex(TypeError, good_error_msg("Baz")):
+            open(Baz())
+
+        other_good_error_msg = (
+            r"should be string, bytes or os.PathLike, not {}".format
+        )
+
+        with self.assertRaisesRegex(TypeError, other_good_error_msg("Foo")):
+            os.rename(Foo(), "foooo")
+
+        with self.assertRaisesRegex(TypeError, other_good_error_msg("Baz")):
+            os.rename(Baz(), "bazzz")
+
 class TimesTests(unittest.TestCase):
     def test_times(self):
         times = os.times()
@@ -4705,6 +4744,22 @@ class ForkTests(unittest.TestCase):
         _, out, err = assert_python_ok("-c", code, PYTHONOPTIMIZE='0')
         self.assertEqual(err.decode("utf-8"), "")
         self.assertEqual(out.decode("utf-8"), "")
+
+    def test_fork_at_exit(self):
+        code = """if 1:
+            import atexit
+            import os
+
+            def exit_handler():
+                pid = os.fork()
+                if pid != 0:
+                    print("shouldn't be printed")
+
+            atexit.register(exit_handler)
+        """
+        _, out, err = assert_python_ok("-c", code)
+        self.assertEqual(b"", out)
+        self.assertIn(b"can't fork at interpreter shutdown", err)
 
 
 # Only test if the C version is provided, otherwise TestPEP519 already tested

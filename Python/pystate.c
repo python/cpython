@@ -13,7 +13,8 @@
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
-#include "pycore_sysmodule.h"
+#include "pycore_sysmodule.h"     // _PySys_Audit()
+#include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 /* --------------------------------------------------------------------------
 CAUTION
@@ -380,7 +381,19 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 static const _PyRuntimeState initial = _PyRuntimeState_INIT(_PyRuntime);
 _Py_COMP_DIAG_POP
 
-#define NUMLOCKS 5
+#define NUMLOCKS 9
+#define LOCKS_INIT(runtime) \
+    { \
+        &(runtime)->interpreters.mutex, \
+        &(runtime)->xidregistry.mutex, \
+        &(runtime)->getargs.mutex, \
+        &(runtime)->unicode_state.ids.lock, \
+        &(runtime)->imports.extensions.mutex, \
+        &(runtime)->ceval.pending_mainthread.lock, \
+        &(runtime)->atexit.mutex, \
+        &(runtime)->audit_hooks.mutex, \
+        &(runtime)->allocators.mutex, \
+    }
 
 static int
 alloc_for_runtime(PyThread_type_lock locks[NUMLOCKS])
@@ -423,17 +436,11 @@ init_runtime(_PyRuntimeState *runtime,
 
     runtime->open_code_hook = open_code_hook;
     runtime->open_code_userdata = open_code_userdata;
-    runtime->audit_hook_head = audit_hook_head;
+    runtime->audit_hooks.head = audit_hook_head;
 
     PyPreConfig_InitPythonConfig(&runtime->preconfig);
 
-    PyThread_type_lock *lockptrs[NUMLOCKS] = {
-        &runtime->interpreters.mutex,
-        &runtime->xidregistry.mutex,
-        &runtime->getargs.mutex,
-        &runtime->unicode_state.ids.lock,
-        &runtime->imports.extensions.mutex,
-    };
+    PyThread_type_lock *lockptrs[NUMLOCKS] = LOCKS_INIT(runtime);
     for (int i = 0; i < NUMLOCKS; i++) {
         assert(locks[i] != NULL);
         *lockptrs[i] = locks[i];
@@ -455,7 +462,7 @@ _PyRuntimeState_Init(_PyRuntimeState *runtime)
        initialization and interpreter initialization. */
     void *open_code_hook = runtime->open_code_hook;
     void *open_code_userdata = runtime->open_code_userdata;
-    _Py_AuditHookEntry *audit_hook_head = runtime->audit_hook_head;
+    _Py_AuditHookEntry *audit_hook_head = runtime->audit_hooks.head;
     // bpo-42882: Preserve next_index value if Py_Initialize()/Py_Finalize()
     // is called multiple times.
     Py_ssize_t unicode_next_index = runtime->unicode_state.ids.next_index;
@@ -512,13 +519,7 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
         LOCK = NULL; \
     }
 
-    PyThread_type_lock *lockptrs[NUMLOCKS] = {
-        &runtime->interpreters.mutex,
-        &runtime->xidregistry.mutex,
-        &runtime->getargs.mutex,
-        &runtime->unicode_state.ids.lock,
-        &runtime->imports.extensions.mutex,
-    };
+    PyThread_type_lock *lockptrs[NUMLOCKS] = LOCKS_INIT(runtime);
     for (int i = 0; i < NUMLOCKS; i++) {
         FREE_LOCK(*lockptrs[i]);
     }
@@ -541,13 +542,7 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
     PyMemAllocatorEx old_alloc;
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
-    PyThread_type_lock *lockptrs[NUMLOCKS] = {
-        &runtime->interpreters.mutex,
-        &runtime->xidregistry.mutex,
-        &runtime->getargs.mutex,
-        &runtime->unicode_state.ids.lock,
-        &runtime->imports.extensions.mutex,
-    };
+    PyThread_type_lock *lockptrs[NUMLOCKS] = LOCKS_INIT(runtime);
     int reinit_err = 0;
     for (int i = 0; i < NUMLOCKS; i++) {
         reinit_err += _PyThread_at_fork_reinit(lockptrs[i]);
@@ -898,7 +893,6 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     PyDict_Clear(interp->builtins);
     Py_CLEAR(interp->sysdict);
     Py_CLEAR(interp->builtins);
-    Py_CLEAR(interp->interpreter_trampoline);
 
     if (tstate->interp == interp) {
         /* We are now safe to fix tstate->_status.cleared. */
@@ -1172,7 +1166,7 @@ PyInterpreterState_GetDict(PyInterpreterState *interp)
    The GIL must be held.
   */
 
-PyInterpreterState *
+PyInterpreterState*
 PyInterpreterState_Get(void)
 {
     PyThreadState *tstate = current_fast_get(&_PyRuntime);
@@ -1414,7 +1408,7 @@ _PyThreadState_New(PyInterpreterState *interp)
 }
 
 // We keep this for stable ABI compabibility.
-PyThreadState *
+PyAPI_FUNC(PyThreadState*)
 _PyThreadState_Prealloc(PyInterpreterState *interp)
 {
     return _PyThreadState_New(interp);
@@ -1422,7 +1416,7 @@ _PyThreadState_Prealloc(PyInterpreterState *interp)
 
 // We keep this around for (accidental) stable ABI compatibility.
 // Realistically, no extensions are using it.
-void
+PyAPI_FUNC(void)
 _PyThreadState_Init(PyThreadState *tstate)
 {
     Py_FatalError("_PyThreadState_Init() is for internal use only");
@@ -2596,16 +2590,18 @@ _xidregistry_find_type(struct _xidregistry *xidregistry, PyTypeObject *cls)
 {
     struct _xidregitem *cur = xidregistry->head;
     while (cur != NULL) {
-        PyObject *registered = PyWeakref_GetObject(cur->cls);
-        if (registered == Py_None) {
+        PyObject *registered = _PyWeakref_GET_REF(cur->cls);
+        if (registered == NULL) {
             // The weakly ref'ed object was freed.
             cur = _xidregistry_remove_entry(xidregistry, cur);
         }
         else {
             assert(PyType_Check(registered));
             if (registered == (PyObject *)cls) {
+                Py_DECREF(registered);
                 return cur;
             }
+            Py_DECREF(registered);
             cur = cur->next;
         }
     }
@@ -2839,7 +2835,7 @@ _PyInterpreterState_GetConfig(PyInterpreterState *interp)
 int
 _PyInterpreterState_GetConfigCopy(PyConfig *config)
 {
-    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
 
     PyStatus status = _PyConfig_Copy(config, &interp->config);
     if (PyStatus_Exception(status)) {

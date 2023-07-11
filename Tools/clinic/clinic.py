@@ -4,6 +4,7 @@
 # Copyright 2012-2013 by Larry Hastings.
 # Licensed to the PSF under a contributor agreement.
 #
+from __future__ import annotations
 
 import abc
 import ast
@@ -12,6 +13,7 @@ import collections
 import contextlib
 import copy
 import cpp
+import dataclasses as dc
 import enum
 import functools
 import hashlib
@@ -27,9 +29,22 @@ import sys
 import textwrap
 import traceback
 
-from collections.abc import Callable
+from collections.abc import (
+    Callable,
+    Iterable,
+    Iterator,
+    Sequence,
+)
 from types import FunctionType, NoneType
-from typing import Any, Final, NamedTuple, NoReturn, Literal, overload
+from typing import (
+    Any,
+    Final,
+    Literal,
+    NamedTuple,
+    NoReturn,
+    TypeGuard,
+    overload,
+)
 
 # TODO:
 #
@@ -507,37 +522,49 @@ class PythonLanguage(Language):
     checksum_line = "#/*[{dsl_name} end generated code: {arguments}]*/"
 
 
-def permute_left_option_groups(l):
+ParamGroup = Iterable["Parameter"]
+ParamTuple = tuple["Parameter", ...]
+
+
+def permute_left_option_groups(
+        l: Sequence[ParamGroup]
+) -> Iterator[ParamTuple]:
     """
-    Given [1, 2, 3], should yield:
+    Given [(1,), (2,), (3,)], should yield:
        ()
        (3,)
        (2, 3)
        (1, 2, 3)
     """
     yield tuple()
-    accumulator = []
+    accumulator: list[Parameter] = []
     for group in reversed(l):
         accumulator = list(group) + accumulator
         yield tuple(accumulator)
 
 
-def permute_right_option_groups(l):
+def permute_right_option_groups(
+        l: Sequence[ParamGroup]
+) -> Iterator[ParamTuple]:
     """
-    Given [1, 2, 3], should yield:
+    Given [(1,), (2,), (3,)], should yield:
       ()
       (1,)
       (1, 2)
       (1, 2, 3)
     """
     yield tuple()
-    accumulator = []
+    accumulator: list[Parameter] = []
     for group in l:
         accumulator.extend(group)
         yield tuple(accumulator)
 
 
-def permute_optional_groups(left, required, right):
+def permute_optional_groups(
+        left: Sequence[ParamGroup],
+        required: ParamGroup,
+        right: Sequence[ParamGroup]
+) -> tuple[ParamTuple, ...]:
     """
     Generator function that computes the set of acceptable
     argument lists for the provided iterables of
@@ -552,7 +579,7 @@ def permute_optional_groups(left, required, right):
         if left:
             raise ValueError("required is empty but left is not")
 
-    accumulator = []
+    accumulator: list[ParamTuple] = []
     counts = set()
     for r in permute_right_option_groups(right):
         for l in permute_left_option_groups(left):
@@ -566,7 +593,7 @@ def permute_optional_groups(left, required, right):
     return tuple(accumulator)
 
 
-def strip_leading_and_trailing_blank_lines(s):
+def strip_leading_and_trailing_blank_lines(s: str) -> str:
     lines = s.rstrip().split('\n')
     while lines:
         line = lines[0]
@@ -576,7 +603,11 @@ def strip_leading_and_trailing_blank_lines(s):
     return '\n'.join(lines)
 
 @functools.lru_cache()
-def normalize_snippet(s, *, indent=0):
+def normalize_snippet(
+        s: str,
+        *,
+        indent: int = 0
+) -> str:
     """
     Reformats s:
         * removes leading and trailing blank lines
@@ -590,7 +621,11 @@ def normalize_snippet(s, *, indent=0):
     return s
 
 
-def declare_parser(f, *, hasformat=False):
+def declare_parser(
+        f: Function,
+        *,
+        hasformat: bool = False
+) -> str:
     """
     Generates the code template for a static local PyArg_Parser variable,
     with an initializer.  For core code (incl. builtin modules) the
@@ -649,7 +684,10 @@ def declare_parser(f, *, hasformat=False):
     return normalize_snippet(declarations)
 
 
-def wrap_declarations(text, length=78):
+def wrap_declarations(
+        text: str,
+        length: int = 78
+) -> str:
     """
     A simple-minded text wrapper for C function declarations.
 
@@ -671,14 +709,14 @@ def wrap_declarations(text, length=78):
         if not after_l_paren:
             lines.append(line)
             continue
-        parameters, _, after_r_paren = after_l_paren.partition(')')
+        in_paren, _, after_r_paren = after_l_paren.partition(')')
         if not _:
             lines.append(line)
             continue
-        if ',' not in parameters:
+        if ',' not in in_paren:
             lines.append(line)
             continue
-        parameters = [x.strip() + ", " for x in parameters.split(',')]
+        parameters = [x.strip() + ", " for x in in_paren.split(',')]
         prefix += "("
         if len(prefix) < length:
             spaces = " " * len(prefix)
@@ -715,10 +753,14 @@ class CLanguage(Language):
         self.cpp = cpp.Monitor(filename)
         self.cpp.fail = fail
 
-    def parse_line(self, line):
+    def parse_line(self, line: str) -> None:
         self.cpp.writeline(line)
 
-    def render(self, clinic, signatures):
+    def render(
+            self,
+            clinic: Clinic | None,
+            signatures: Iterable[Function]
+    ) -> str:
         function = None
         for o in signatures:
             if isinstance(o, Function):
@@ -727,7 +769,10 @@ class CLanguage(Language):
                 function = o
         return self.render_function(clinic, function)
 
-    def docstring_for_c_string(self, f):
+    def docstring_for_c_string(
+            self,
+            f: Function
+    ) -> str:
         if re.search(r'[^\x00-\x7F]', f.docstring):
             warn("Non-ascii character appear in docstring.")
 
@@ -1308,7 +1353,7 @@ class CLanguage(Language):
         return d2
 
     @staticmethod
-    def group_to_variable_name(group):
+    def group_to_variable_name(group: int) -> str:
         adjective = "left_" if group < 0 else "right_"
         return "group_" + adjective + str(abs(group))
 
@@ -1404,8 +1449,12 @@ class CLanguage(Language):
         add("}")
         template_dict['option_group_parsing'] = format_escape(output())
 
-    def render_function(self, clinic, f):
-        if not f:
+    def render_function(
+            self,
+            clinic: Clinic | None,
+            f: Function | None
+    ) -> str:
+        if f is None or clinic is None:
             return ""
 
         add, output = text_accumulator()
@@ -1467,10 +1516,12 @@ class CLanguage(Language):
 
         template_dict = {}
 
+        assert isinstance(f.full_name, str)
         full_name = f.full_name
         template_dict['full_name'] = full_name
 
         if new_or_init:
+            assert isinstance(f.cls, Class)
             name = f.cls.name
         else:
             name = f.name
@@ -1567,20 +1618,12 @@ class CLanguage(Language):
         return clinic.get_destination('block').dump()
 
 
-
-
-@contextlib.contextmanager
-def OverrideStdioWith(stdout):
-    saved_stdout = sys.stdout
-    sys.stdout = stdout
-    try:
-        yield
-    finally:
-        assert sys.stdout is stdout
-        sys.stdout = saved_stdout
-
-
-def create_regex(before, after, word=True, whole_line=True):
+def create_regex(
+        before: str,
+        after: str,
+        word: bool = True,
+        whole_line: bool = True
+) -> re.Pattern[str]:
     """Create an re object for matching marker lines."""
     group_re = r"\w+" if word else ".+"
     pattern = r'{}({}){}'
@@ -1816,11 +1859,10 @@ class BlockParser:
         return Block(input_output(), dsl_name, output=output)
 
 
+@dc.dataclass(slots=True)
 class BlockPrinter:
-
-    def __init__(self, language, f=None):
-        self.language = language
-        self.f = f or io.StringIO()
+    language: Language
+    f: io.StringIO = dc.field(default_factory=io.StringIO)
 
     def print_block(self, block, *, core_includes=False):
         input = block.input
@@ -1966,22 +2008,20 @@ extensions: LangDict = { name: CLanguage for name in "c cc cpp cxx h hh hpp hxx"
 extensions['py'] = PythonLanguage
 
 
-def file_changed(filename: str, new_contents: str) -> bool:
-    """Return true if file contents changed (meaning we must update it)"""
+def write_file(filename: str, new_contents: str) -> None:
     try:
-        with open(filename, encoding="utf-8") as fp:
+        with open(filename, 'r', encoding="utf-8") as fp:
             old_contents = fp.read()
-        return old_contents != new_contents
+
+        if old_contents == new_contents:
+            # no change: avoid modifying the file modification time
+            return
     except FileNotFoundError:
-        return True
-
-
-def write_file(filename: str, new_contents: str):
+        pass
     # Atomic write using a temporary file and os.replace()
     filename_new = f"{filename}.new"
     with open(filename_new, "w", encoding="utf-8") as fp:
         fp.write(new_contents)
-
     try:
         os.replace(filename_new, filename)
     except:
@@ -2159,8 +2199,6 @@ impl_definition block
                          traceback.format_exc().rstrip())
             printer.print_block(block)
 
-        clinic_out = []
-
         # these are destinations not buffers
         for name, destination in self.destinations.items():
             if destination.type == 'suppress':
@@ -2168,7 +2206,6 @@ impl_definition block
             output = destination.dump()
 
             if output:
-
                 block = Block("", dsl_name="clinic", output=output)
 
                 if destination.type == 'buffer':
@@ -2200,11 +2237,10 @@ impl_definition block
                     block.input = 'preserve\n'
                     printer_2 = BlockPrinter(self.language)
                     printer_2.print_block(block, core_includes=True)
-                    pair = destination.filename, printer_2.f.getvalue()
-                    clinic_out.append(pair)
+                    write_file(destination.filename, printer_2.f.getvalue())
                     continue
 
-        return printer.f.getvalue(), clinic_out
+        return printer.f.getvalue()
 
 
     def _module_and_class(self, fields):
@@ -2266,14 +2302,9 @@ def parse_file(
 
     assert isinstance(language, CLanguage)
     clinic = Clinic(language, verify=verify, filename=filename)
-    src_out, clinic_out = clinic.parse(raw)
+    cooked = clinic.parse(raw)
 
-    changes = [(fn, data) for fn, data in clinic_out if file_changed(fn, data)]
-    if changes:
-        # Always (re)write the source file.
-        write_file(output, src_out)
-        for fn, data in clinic_out:
-            write_file(fn, data)
+    write_file(output, cooked)
 
 
 def compute_checksum(
@@ -2287,28 +2318,23 @@ def compute_checksum(
     return s
 
 
-
-
 class PythonParser:
     def __init__(self, clinic: Clinic) -> None:
         pass
 
     def parse(self, block: Block) -> None:
-        s = io.StringIO()
-        with OverrideStdioWith(s):
+        with contextlib.redirect_stdout(io.StringIO()) as s:
             exec(block.input)
-        block.output = s.getvalue()
+            block.output = s.getvalue()
 
 
+@dc.dataclass(repr=False)
 class Module:
-    def __init__(
-            self,
-            name: str,
-            module = None
-    ) -> None:
-        self.name = name
-        self.module = self.parent = module
+    name: str
+    module: Module | None = None
 
+    def __post_init__(self) -> None:
+        self.parent = self.module
         self.modules: ModuleDict = {}
         self.classes: ClassDict = {}
         self.functions: list[Function] = []
@@ -2317,22 +2343,16 @@ class Module:
         return "<clinic.Module " + repr(self.name) + " at " + str(id(self)) + ">"
 
 
+@dc.dataclass(repr=False)
 class Class:
-    def __init__(
-            self,
-            name: str,
-            module: Module | None = None,
-            cls = None,
-            typedef: str | None = None,
-            type_object: str | None = None
-    ) -> None:
-        self.name = name
-        self.module = module
-        self.cls = cls
-        self.typedef = typedef
-        self.type_object = type_object
-        self.parent = cls or module
+    name: str
+    module: Module | None = None
+    cls: Class | None = None
+    typedef: str | None = None
+    type_object: str | None = None
 
+    def __post_init__(self) -> None:
+        self.parent = self.cls or self.module
         self.classes: ClassDict = {}
         self.functions: list[Function] = []
 
@@ -2419,6 +2439,8 @@ INVALID, CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW
 ParamDict = dict[str, "Parameter"]
 ReturnConverterType = Callable[..., "CReturnConverter"]
 
+
+@dc.dataclass(repr=False)
 class Function:
     """
     Mutable duck type for inspect.Function.
@@ -2430,49 +2452,34 @@ class Function:
         It will always be true that
             (not docstring) or ((not docstring[0].isspace()) and (docstring.rstrip() == docstring))
     """
+    parameters: ParamDict = dc.field(default_factory=dict)
+    _: dc.KW_ONLY
+    name: str
+    module: Module
+    cls: Class | None = None
+    c_basename: str | None = None
+    full_name: str | None = None
+    return_converter: CReturnConverter
+    return_annotation: object = inspect.Signature.empty
+    docstring: str = ''
+    kind: str = CALLABLE
+    coexist: bool = False
+    # docstring_only means "don't generate a machine-readable
+    # signature, just a normal docstring".  it's True for
+    # functions with optional groups because we can't represent
+    # those accurately with inspect.Signature in 3.4.
+    docstring_only: bool = False
 
-    def __init__(
-            self,
-            parameters: ParamDict | None = None,
-            *,
-            name: str,
-            module: Module,
-            cls: Class | None = None,
-            c_basename: str | None = None,
-            full_name: str | None = None,
-            return_converter: ReturnConverterType,
-            return_annotation = inspect.Signature.empty,
-            docstring: str | None = None,
-            kind: str = CALLABLE,
-            coexist: bool = False,
-            docstring_only: bool = False
-    ) -> None:
-        self.parameters = parameters or {}
-        self.return_annotation = return_annotation
-        self.name = name
-        self.full_name = full_name
-        self.module = module
-        self.cls = cls
-        self.parent = cls or module
-        self.c_basename = c_basename
-        self.return_converter = return_converter
-        self.docstring = docstring or ''
-        self.kind = kind
-        self.coexist = coexist
-        self.self_converter = None
-        # docstring_only means "don't generate a machine-readable
-        # signature, just a normal docstring".  it's True for
-        # functions with optional groups because we can't represent
-        # those accurately with inspect.Signature in 3.4.
-        self.docstring_only = docstring_only
+    def __post_init__(self) -> None:
+        self.parent: Class | Module = self.cls or self.module
+        self.self_converter: self_converter | None = None
+        self.__render_parameters__: list[Parameter] | None = None
 
-        self.rendered_parameters = None
-
-    __render_parameters__ = None
     @property
-    def render_parameters(self):
+    def render_parameters(self) -> list[Parameter]:
         if not self.__render_parameters__:
-            self.__render_parameters__ = l = []
+            l: list[Parameter] = []
+            self.__render_parameters__ = l
             for p in self.parameters.values():
                 p = p.copy()
                 p.converter.pre_render()
@@ -2497,17 +2504,8 @@ class Function:
     def __repr__(self) -> str:
         return '<clinic.Function ' + self.name + '>'
 
-    def copy(self, **overrides) -> "Function":
-        kwargs = {
-            'name': self.name, 'module': self.module, 'parameters': self.parameters,
-            'cls': self.cls, 'c_basename': self.c_basename,
-            'full_name': self.full_name,
-            'return_converter': self.return_converter, 'return_annotation': self.return_annotation,
-            'docstring': self.docstring, 'kind': self.kind, 'coexist': self.coexist,
-            'docstring_only': self.docstring_only,
-            }
-        kwargs.update(overrides)
-        f = Function(**kwargs)
+    def copy(self, **overrides: Any) -> Function:
+        f = dc.replace(self, **overrides)
         f.parameters = {
             name: value.copy(function=f)
             for name, value in f.parameters.items()
@@ -2515,31 +2513,21 @@ class Function:
         return f
 
 
+@dc.dataclass(repr=False, slots=True)
 class Parameter:
     """
     Mutable duck type of inspect.Parameter.
     """
-
-    def __init__(
-            self,
-            name: str,
-            kind: str,
-            *,
-            default = inspect.Parameter.empty,
-            function: Function,
-            converter: "CConverter",
-            annotation = inspect.Parameter.empty,
-            docstring: str | None = None,
-            group: int = 0
-    ) -> None:
-        self.name = name
-        self.kind = kind
-        self.default = default
-        self.function = function
-        self.converter = converter
-        self.annotation = annotation
-        self.docstring = docstring or ''
-        self.group = group
+    name: str
+    kind: inspect._ParameterKind
+    _: dc.KW_ONLY
+    default: object = inspect.Parameter.empty
+    function: Function
+    converter: CConverter
+    annotation: object = inspect.Parameter.empty
+    docstring: str = ''
+    group: int = 0
+    right_bracket_count: int = dc.field(init=False, default=0)
 
     def __repr__(self) -> str:
         return '<clinic.Parameter ' + self.name + '>'
@@ -2556,18 +2544,19 @@ class Parameter:
     def is_optional(self) -> bool:
         return not self.is_vararg() and (self.default is not unspecified)
 
-    def copy(self, **overrides) -> "Parameter":
-        kwargs = {
-            'name': self.name, 'kind': self.kind, 'default':self.default,
-                 'function': self.function, 'converter': self.converter, 'annotation': self.annotation,
-                 'docstring': self.docstring, 'group': self.group,
-            }
-        kwargs.update(overrides)
-        if 'converter' not in overrides:
+    def copy(
+        self,
+        /,
+        *,
+        converter: CConverter | None = None,
+        function: Function | None = None,
+        **overrides: Any
+    ) -> Parameter:
+        function = function or self.function
+        if not converter:
             converter = copy.copy(self.converter)
-            converter.function = kwargs['function']
-            kwargs['converter'] = converter
-        return Parameter(**kwargs)
+            converter.function = function
+        return dc.replace(self, **overrides, function=function, converter=converter)
 
     def get_displayname(self, i: int) -> str:
         if i == 0:
@@ -2578,13 +2567,10 @@ class Parameter:
             return f'"argument {i}"'
 
 
+@dc.dataclass
 class LandMine:
     # try to access any
-    def __init__(self, message: str) -> None:
-        self.__message__ = message
-
-    def __repr__(self) -> str:
-        return '<LandMine ' + repr(self.__message__) + ">"
+    __message__: str
 
     def __getattribute__(self, name: str):
         if name in ('__repr__', '__message__'):
@@ -2593,7 +2579,10 @@ class LandMine:
         fail("Stepped on a land mine, trying to access attribute " + repr(name) + ":\n" + self.__message__)
 
 
-def add_c_converter(f, name=None):
+def add_c_converter(
+        f: type[CConverter],
+        name: str | None = None
+) -> type[CConverter]:
     if not name:
         name = f.__name__
         if not name.endswith('_converter'):
@@ -2611,7 +2600,10 @@ def add_default_legacy_c_converter(cls):
         legacy_converters[cls.format_unit] = cls
     return cls
 
-def add_legacy_c_converter(format_unit, **kwargs):
+def add_legacy_c_converter(
+        format_unit: str,
+        **kwargs
+) -> Callable[[ConverterType], ConverterType]:
     """
     Adds a legacy converter.
     """
@@ -2738,7 +2730,7 @@ class CConverter(metaclass=CConverterAutoRegister):
              # Positional args:
              name: str,
              py_name: str,
-             function,
+             function: Function,
              default: object = unspecified,
              *,  # Keyword only args:
              c_default: str | None = None,
@@ -2777,7 +2769,9 @@ class CConverter(metaclass=CConverterAutoRegister):
         # about the function in the init.
         # (that breaks if we get cloned.)
         # so after this change we will noisily fail.
-        self.function = LandMine("Don't access members of self.function inside converter_init!")
+        self.function: Function | LandMine = LandMine(
+            "Don't access members of self.function inside converter_init!"
+        )
         self.converter_init(**kwargs)
         self.function = function
 
@@ -2787,7 +2781,7 @@ class CConverter(metaclass=CConverterAutoRegister):
     def is_optional(self) -> bool:
         return (self.default is not unspecified)
 
-    def _render_self(self, parameter: str, data: CRenderData) -> None:
+    def _render_self(self, parameter: Parameter, data: CRenderData) -> None:
         self.parameter = parameter
         name = self.parser_name
 
@@ -2847,7 +2841,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         if cleanup:
             data.cleanup.append('/* Cleanup for ' + name + ' */\n' + cleanup.rstrip() + "\n")
 
-    def render(self, parameter: str, data: CRenderData) -> None:
+    def render(self, parameter: Parameter, data: CRenderData) -> None:
         """
         parameter is a clinic.Parameter instance.
         data is a CRenderData instance.
@@ -3878,7 +3872,9 @@ class Py_buffer_converter(CConverter):
         return super().parse_arg(argname, displayname)
 
 
-def correct_name_for_self(f) -> tuple[str, str]:
+def correct_name_for_self(
+        f: Function
+) -> tuple[str, str]:
     if f.kind in (CALLABLE, METHOD_INIT):
         if f.cls:
             return "PyObject *", "self"
@@ -3889,7 +3885,9 @@ def correct_name_for_self(f) -> tuple[str, str]:
         return "PyTypeObject *", "type"
     raise RuntimeError("Unhandled type of function f: " + repr(f.kind))
 
-def required_type_for_self_for_parser(f):
+def required_type_for_self_for_parser(
+        f: Function
+) -> str | None:
     type, _ = correct_name_for_self(f)
     if f.kind in (METHOD_INIT, METHOD_NEW, STATIC_METHOD, CLASS_METHOD):
         return type
@@ -4184,7 +4182,12 @@ class float_return_converter(double_return_converter):
     cast = '(double)'
 
 
-def eval_ast_expr(node, globals, *, filename='-'):
+def eval_ast_expr(
+        node: ast.expr,
+        globals: dict[str, Any],
+        *,
+        filename: str = '-'
+) -> FunctionType:
     """
     Takes an ast.Expr node.  Compiles and evaluates it.
     Returns the result of the expression.
@@ -4196,8 +4199,8 @@ def eval_ast_expr(node, globals, *, filename='-'):
     if isinstance(node, ast.Expr):
         node = node.value
 
-    node = ast.Expression(node)
-    co = compile(node, filename, 'eval')
+    expr = ast.Expression(node)
+    co = compile(expr, filename, 'eval')
     fn = FunctionType(co, globals)
     return fn()
 
@@ -4283,8 +4286,53 @@ class IndentStack:
 
 
 StateKeeper = Callable[[str | None], None]
+ConverterArgs = dict[str, Any]
+
+class ParamState(enum.IntEnum):
+    """Parameter parsing state.
+
+     [ [ a, b, ] c, ] d, e, f=3, [ g, h, [ i ] ]   <- line
+    01   2          3       4    5           6     <- state transitions
+    """
+    # Before we've seen anything.
+    # Legal transitions: to LEFT_SQUARE_BEFORE or REQUIRED
+    START = 0
+
+    # Left square backets before required params.
+    LEFT_SQUARE_BEFORE = 1
+
+    # In a group, before required params.
+    GROUP_BEFORE = 2
+
+    # Required params, positional-or-keyword or positional-only (we
+    # don't know yet). Renumber left groups!
+    REQUIRED = 3
+
+    # Positional-or-keyword or positional-only params that now must have
+    # default values.
+    OPTIONAL = 4
+
+    # In a group, after required params.
+    GROUP_AFTER = 5
+
+    # Right square brackets after required params.
+    RIGHT_SQUARE_AFTER = 6
+
 
 class DSLParser:
+    function: Function | None
+    state: StateKeeper
+    keyword_only: bool
+    positional_only: bool
+    group: int
+    parameter_state: int
+    seen_positional_with_default: bool
+    indent: IndentStack
+    kind: str
+    coexist: bool
+    parameter_continuation: str
+    preserve_output: bool
+
     def __init__(self, clinic: Clinic) -> None:
         self.clinic = clinic
 
@@ -4304,12 +4352,11 @@ class DSLParser:
 
     def reset(self) -> None:
         self.function = None
-        self.state: StateKeeper = self.state_dsl_start
-        self.parameter_indent = None
+        self.state = self.state_dsl_start
         self.keyword_only = False
         self.positional_only = False
         self.group = 0
-        self.parameter_state = self.ps_start
+        self.parameter_state: ParamState = ParamState.START
         self.seen_positional_with_default = False
         self.indent = IndentStack()
         self.kind = CALLABLE
@@ -4471,17 +4518,20 @@ class DSLParser:
             block.output = self.saved_output
 
     @staticmethod
-    def ignore_line(line):
+    def valid_line(line: str | None) -> TypeGuard[str]:
+        if line is None:
+            return False
+
         # ignore comment-only lines
         if line.lstrip().startswith('#'):
-            return True
+            return False
 
         # Ignore empty lines too
         # (but not in docstring sections!)
         if not line.strip():
-            return True
+            return False
 
-        return False
+        return True
 
     @staticmethod
     def calculate_indent(line: str) -> int:
@@ -4497,9 +4547,9 @@ class DSLParser:
         if line is not None:
             self.state(line)
 
-    def state_dsl_start(self, line):
+    def state_dsl_start(self, line: str | None) -> None:
         # self.block = self.ClinicOutputBlock(self)
-        if self.ignore_line(line):
+        if not self.valid_line(line):
             return
 
         # is it a directive?
@@ -4515,7 +4565,7 @@ class DSLParser:
 
         self.next(self.state_modulename_name, line)
 
-    def state_modulename_name(self, line):
+    def state_modulename_name(self, line: str | None) -> None:
         # looking for declaration, which establishes the leftmost column
         # line should be
         #     modulename.fnname [as c_basename] [-> return annotation]
@@ -4532,13 +4582,14 @@ class DSLParser:
         # this line is permitted to start with whitespace.
         # we'll call this number of spaces F (for "function").
 
-        if not line.strip():
+        if not self.valid_line(line):
             return
 
         self.indent.infer(line)
 
         # are we cloning?
         before, equals, existing = line.rpartition('=')
+        c_basename: str | None
         if equals:
             full_name, _, c_basename = before.partition(' as ')
             full_name = full_name.strip()
@@ -4641,8 +4692,9 @@ class DSLParser:
         if cls and type == "PyObject *":
             kwargs['type'] = cls.typedef
         sc = self.function.self_converter = self_converter(name, name, self.function, **kwargs)
-        p_self = Parameter(sc.name, inspect.Parameter.POSITIONAL_ONLY, function=self.function, converter=sc)
-        self.function.parameters[sc.name] = p_self
+        p_self = Parameter(name, inspect.Parameter.POSITIONAL_ONLY,
+                           function=self.function, converter=sc)
+        self.function.parameters[name] = p_self
 
         (cls or module).functions.append(self.function)
         self.next(self.state_parameters_start)
@@ -4699,25 +4751,11 @@ class DSLParser:
     #
     # These rules are enforced with a single state variable:
     # "parameter_state".  (Previously the code was a miasma of ifs and
-    # separate boolean state variables.)  The states are:
-    #
-    #  [ [ a, b, ] c, ] d, e, f=3, [ g, h, [ i ] ]   <- line
-    # 01   2          3       4    5           6     <- state transitions
-    #
-    # 0: ps_start.  before we've seen anything.  legal transitions are to 1 or 3.
-    # 1: ps_left_square_before.  left square brackets before required parameters.
-    # 2: ps_group_before.  in a group, before required parameters.
-    # 3: ps_required.  required parameters, positional-or-keyword or positional-only
-    #     (we don't know yet).  (renumber left groups!)
-    # 4: ps_optional.  positional-or-keyword or positional-only parameters that
-    #    now must have default values.
-    # 5: ps_group_after.  in a group, after required parameters.
-    # 6: ps_right_square_after.  right square brackets after required parameters.
-    ps_start, ps_left_square_before, ps_group_before, ps_required, \
-    ps_optional, ps_group_after, ps_right_square_after = range(7)
+    # separate boolean state variables.)  The states are defined in the
+    # ParamState class.
 
-    def state_parameters_start(self, line):
-        if self.ignore_line(line):
+    def state_parameters_start(self, line: str | None) -> None:
+        if not self.valid_line(line):
             return
 
         # if this line is not indented, we have no parameters
@@ -4732,18 +4770,20 @@ class DSLParser:
         """
         Transition to the "required" parameter state.
         """
-        if self.parameter_state != self.ps_required:
-            self.parameter_state = self.ps_required
+        if self.parameter_state is not ParamState.REQUIRED:
+            self.parameter_state = ParamState.REQUIRED
             for p in self.function.parameters.values():
                 p.group = -p.group
 
-    def state_parameter(self, line):
+    def state_parameter(self, line: str | None) -> None:
+        assert isinstance(self.function, Function)
+
+        if not self.valid_line(line):
+            return
+
         if self.parameter_continuation:
             line = self.parameter_continuation + ' ' + line.lstrip()
             self.parameter_continuation = ''
-
-        if self.ignore_line(line):
-            return
 
         assert self.indent.depth == 2
         indent = self.indent.infer(line)
@@ -4766,17 +4806,18 @@ class DSLParser:
             self.parse_special_symbol(line)
             return
 
-        if self.parameter_state in (self.ps_start, self.ps_required):
-            self.to_required()
-        elif self.parameter_state == self.ps_left_square_before:
-            self.parameter_state = self.ps_group_before
-        elif self.parameter_state == self.ps_group_before:
-            if not self.group:
+        match self.parameter_state:
+            case ParamState.START | ParamState.REQUIRED:
                 self.to_required()
-        elif self.parameter_state in (self.ps_group_after, self.ps_optional):
-            pass
-        else:
-            fail("Function " + self.function.name + " has an unsupported group configuration. (Unexpected state " + str(self.parameter_state) + ".a)")
+            case ParamState.LEFT_SQUARE_BEFORE:
+                self.parameter_state = ParamState.GROUP_BEFORE
+            case ParamState.GROUP_BEFORE:
+                if not self.group:
+                    self.to_required()
+            case ParamState.GROUP_AFTER | ParamState.OPTIONAL:
+                pass
+            case st:
+                fail(f"Function {self.function.name} has an unsupported group configuration. (Unexpected state {st}.a)")
 
         # handle "as" for  parameters too
         c_name = None
@@ -4794,6 +4835,7 @@ class DSLParser:
                 fields[0] = name
                 line = ' '.join(fields)
 
+        default: str | None
         base, equals, default = line.rpartition('=')
         if not equals:
             base = default
@@ -4816,7 +4858,9 @@ class DSLParser:
         if not module:
             fail("Function " + self.function.name + " has an invalid parameter declaration:\n\t" + line)
 
-        function_args = module.body[0].args
+        function = module.body[0]
+        assert isinstance(function, ast.FunctionDef)
+        function_args = function.args
 
         if len(function_args.args) > 1:
             fail("Function " + self.function.name + " has an invalid parameter declaration (comma?):\n\t" + line)
@@ -4836,8 +4880,10 @@ class DSLParser:
         name, legacy, kwargs = self.parse_converter(parameter.annotation)
 
         if not default:
-            if self.parameter_state == self.ps_optional:
-                fail("Can't have a parameter without a default (" + repr(parameter_name) + ")\nafter a parameter with a default!")
+            if self.parameter_state is ParamState.OPTIONAL:
+                fail(f"Can't have a parameter without a default ({parameter_name!r})\n"
+                      "after a parameter with a default!")
+            value: Sentinels | Null
             if is_vararg:
                 value = NULL
                 kwargs.setdefault('c_default', "NULL")
@@ -4849,8 +4895,8 @@ class DSLParser:
             if is_vararg:
                 fail("Vararg can't take a default value!")
 
-            if self.parameter_state == self.ps_required:
-                self.parameter_state = self.ps_optional
+            if self.parameter_state is ParamState.REQUIRED:
+                self.parameter_state = ParamState.OPTIONAL
             default = default.strip()
             bad = False
             ast_input = f"x = {default}"
@@ -4900,8 +4946,11 @@ class DSLParser:
                 if bad:
                     fail("Unsupported expression as default value: " + repr(default))
 
-                expr = module.body[0].value
+                assignment = module.body[0]
+                assert isinstance(assignment, ast.Assign)
+                expr = assignment.value
                 # mild hack: explicitly support NULL as a default value
+                c_default: str | None
                 if isinstance(expr, ast.Name) and expr.id == 'NULL':
                     value = NULL
                     py_default = '<unrepresentable>'
@@ -4918,7 +4967,7 @@ class DSLParser:
                     value = unknown
                 elif isinstance(expr, ast.Attribute):
                     a = []
-                    n = expr
+                    n: ast.expr | ast.Attribute = expr
                     while isinstance(n, ast.Attribute):
                         a.append(n.attr)
                         n = n.value
@@ -4938,7 +4987,7 @@ class DSLParser:
                 else:
                     value = ast.literal_eval(expr)
                     py_default = repr(value)
-                    if isinstance(value, (bool, None.__class__)):
+                    if isinstance(value, (bool, NoneType)):
                         c_default = "Py_" + py_default
                     elif isinstance(value, str):
                         c_default = c_repr(value)
@@ -4965,6 +5014,7 @@ class DSLParser:
         # but the parameter object gets the python name
         converter = dict[name](c_name or parameter_name, parameter_name, self.function, value, **kwargs)
 
+        kind: inspect._ParameterKind
         if is_vararg:
             kind = inspect.Parameter.VAR_POSITIONAL
         elif self.keyword_only:
@@ -4974,14 +5024,14 @@ class DSLParser:
 
         if isinstance(converter, self_converter):
             if len(self.function.parameters) == 1:
-                if (self.parameter_state != self.ps_required):
+                if self.parameter_state is not ParamState.REQUIRED:
                     fail("A 'self' parameter cannot be marked optional.")
                 if value is not unspecified:
                     fail("A 'self' parameter cannot have a default value.")
                 if self.group:
                     fail("A 'self' parameter cannot be in an optional group.")
                 kind = inspect.Parameter.POSITIONAL_ONLY
-                self.parameter_state = self.ps_start
+                self.parameter_state = ParamState.START
                 self.function.parameters.clear()
             else:
                 fail("A 'self' parameter, if specified, must be the very first thing in the parameter block.")
@@ -4989,7 +5039,7 @@ class DSLParser:
         if isinstance(converter, defining_class_converter):
             _lp = len(self.function.parameters)
             if _lp == 1:
-                if (self.parameter_state != self.ps_required):
+                if self.parameter_state is not ParamState.REQUIRED:
                     fail("A 'defining_class' parameter cannot be marked optional.")
                 if value is not unspecified:
                     fail("A 'defining_class' parameter cannot have a default value.")
@@ -5010,10 +5060,10 @@ class DSLParser:
         key = f"{parameter_name}_as_{c_name}" if c_name else parameter_name
         self.function.parameters[key] = p
 
-    KwargDict = dict[str | None, Any]
-
     @staticmethod
-    def parse_converter(annotation: ast.expr | None) -> tuple[str, bool, KwargDict]:
+    def parse_converter(
+            annotation: ast.expr | None
+    ) -> tuple[str, bool, ConverterArgs]:
         match annotation:
             case ast.Constant(value=str() as value):
                 return value, True, {}
@@ -5021,10 +5071,11 @@ class DSLParser:
                 return name, False, {}
             case ast.Call(func=ast.Name(name)):
                 symbols = globals()
-                kwargs = {
-                    node.arg: eval_ast_expr(node.value, symbols)
-                    for node in annotation.keywords
-                }
+                kwargs: ConverterArgs = {}
+                for node in annotation.keywords:
+                    if not isinstance(node.arg, str):
+                        fail("Cannot use a kwarg splat in a function-call annotation")
+                    kwargs[node.arg] = eval_ast_expr(node.value, symbols)
                 return name, False, kwargs
             case _:
                 fail(
@@ -5037,12 +5088,13 @@ class DSLParser:
                 fail("Function " + self.function.name + " uses '*' more than once.")
             self.keyword_only = True
         elif symbol == '[':
-            if self.parameter_state in (self.ps_start, self.ps_left_square_before):
-                self.parameter_state = self.ps_left_square_before
-            elif self.parameter_state in (self.ps_required, self.ps_group_after):
-                self.parameter_state = self.ps_group_after
-            else:
-                fail("Function " + self.function.name + " has an unsupported group configuration. (Unexpected state " + str(self.parameter_state) + ".b)")
+            match self.parameter_state:
+                case ParamState.START | ParamState.LEFT_SQUARE_BEFORE:
+                    self.parameter_state = ParamState.LEFT_SQUARE_BEFORE
+                case ParamState.REQUIRED | ParamState.GROUP_AFTER:
+                    self.parameter_state = ParamState.GROUP_AFTER
+                case st:
+                    fail(f"Function {self.function.name} has an unsupported group configuration. (Unexpected state {st}.b)")
             self.group += 1
             self.function.docstring_only = True
         elif symbol == ']':
@@ -5051,20 +5103,27 @@ class DSLParser:
             if not any(p.group == self.group for p in self.function.parameters.values()):
                 fail("Function " + self.function.name + " has an empty group.\nAll groups must contain at least one parameter.")
             self.group -= 1
-            if self.parameter_state in (self.ps_left_square_before, self.ps_group_before):
-                self.parameter_state = self.ps_group_before
-            elif self.parameter_state in (self.ps_group_after, self.ps_right_square_after):
-                self.parameter_state = self.ps_right_square_after
-            else:
-                fail("Function " + self.function.name + " has an unsupported group configuration. (Unexpected state " + str(self.parameter_state) + ".c)")
+            match self.parameter_state:
+                case ParamState.LEFT_SQUARE_BEFORE | ParamState.GROUP_BEFORE:
+                    self.parameter_state = ParamState.GROUP_BEFORE
+                case ParamState.GROUP_AFTER | ParamState.RIGHT_SQUARE_AFTER:
+                    self.parameter_state = ParamState.RIGHT_SQUARE_AFTER
+                case st:
+                    fail(f"Function {self.function.name} has an unsupported group configuration. (Unexpected state {st}.c)")
         elif symbol == '/':
             if self.positional_only:
                 fail("Function " + self.function.name + " uses '/' more than once.")
             self.positional_only = True
-            # ps_required and ps_optional are allowed here, that allows positional-only without option groups
+            # REQUIRED and OPTIONAL are allowed here, that allows positional-only without option groups
             # to work (and have default values!)
-            if (self.parameter_state not in (self.ps_required, self.ps_optional, self.ps_right_square_after, self.ps_group_before)) or self.group:
-                fail("Function " + self.function.name + " has an unsupported group configuration. (Unexpected state " + str(self.parameter_state) + ".d)")
+            allowed = {
+                ParamState.REQUIRED,
+                ParamState.OPTIONAL,
+                ParamState.RIGHT_SQUARE_AFTER,
+                ParamState.GROUP_BEFORE,
+            }
+            if (self.parameter_state not in allowed) or self.group:
+                fail(f"Function {self.function.name} has an unsupported group configuration. (Unexpected state {self.parameter_state}.d)")
             if self.keyword_only:
                 fail("Function " + self.function.name + " mixes keyword-only and positional-only parameters, which is unsupported.")
             # fixup preceding parameters
@@ -5075,7 +5134,7 @@ class DSLParser:
                     fail("Function " + self.function.name + " mixes keyword-only and positional-only parameters, which is unsupported.")
                 p.kind = inspect.Parameter.POSITIONAL_ONLY
 
-    def state_parameter_docstring_start(self, line):
+    def state_parameter_docstring_start(self, line: str | None) -> None:
         self.parameter_docstring_indent = len(self.indent.margin)
         assert self.indent.depth == 3
         return self.next(self.state_parameter_docstring, line)
@@ -5158,7 +5217,7 @@ class DSLParser:
         assert isinstance(parameters[0].converter, self_converter)
         # self is always positional-only.
         assert parameters[0].is_positional_only()
-        parameters[0].right_bracket_count = 0
+        assert parameters[0].right_bracket_count == 0
         positional_only = True
         for p in parameters[1:]:
             if not p.is_positional_only():

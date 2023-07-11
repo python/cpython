@@ -14,18 +14,6 @@ jobs:
   - template: ./prebuild-checks.yml
 
 
-- job: Docs_PR
-  displayName: Docs PR
-  dependsOn: Prebuild
-  condition: and(succeeded(), eq(dependencies.Prebuild.outputs['docs.run'], 'true'))
-
-  pool:
-    vmImage: ubuntu-22.04
-
-  steps:
-  - template: ./docs-steps.yml
-
-
 - job: macOS_PR_Tests
   displayName: macOS PR Tests
   dependsOn: Prebuild
