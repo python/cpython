@@ -86,7 +86,7 @@ jobs:
         with:
           arch: ${{ matrix.architecture }}
           distro: ubuntu_latest
-          env:
+          env: |
             CC: ${{ matrix.compiler }}
             PYTHON_LLVM_VERSION: ${{ matrix.llvm }}
           run: |
