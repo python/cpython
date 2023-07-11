@@ -1,0 +1,318 @@
+.. date: 2023-06-13-20-52-24
+.. gh-issue: 102988
+.. nonce: Kei7Vf
+.. release date: 2023-07-11
+.. section: Security
+
+CVE-2023-27043: Prevent :func:`email.utils.parseaddr` and
+:func:`email.utils.getaddresses` from returning the realname portion of an
+invalid RFC2822 email header in the email address portion of the 2-tuple
+returned after being parsed by :class:`email._parseaddr.AddressList`.
+
+..
+
+.. date: 2023-07-04-09-51-45
+.. gh-issue: 106396
+.. nonce: DmYp7x
+.. section: Core and Builtins
+
+When the format specification of an f-string expression is empty, the parser
+now generates an empty :class:`ast.JoinedStr` node for it instead of an
+one-element :class:`ast.JoinedStr` with an empty string
+:class:`ast.Constant`.
+
+..
+
+.. date: 2023-06-29-09-46-41
+.. gh-issue: 106145
+.. nonce: QC6-Kq
+.. section: Core and Builtins
+
+Make ``end_lineno`` and ``end_col_offset`` required on ``type_param`` ast
+nodes.
+
+..
+
+.. date: 2023-06-22-19-16-24
+.. gh-issue: 105979
+.. nonce: TDP2CU
+.. section: Core and Builtins
+
+Fix crash in :func:`!_imp.get_frozen_object` due to improper exception
+handling.
+
+..
+
+.. date: 2023-06-22-14-19-17
+.. gh-issue: 98931
+.. nonce: PPgvSF
+.. section: Core and Builtins
+
+Ensure custom :exc:`SyntaxError` error messages are raised for invalid
+imports with multiple targets. Patch by Pablo Galindo
+
+..
+
+.. date: 2023-06-19-11-04-01
+.. gh-issue: 105908
+.. nonce: 7oanny
+.. section: Core and Builtins
+
+Fixed bug where :gh:`99111` breaks future import ``barry_as_FLUFL`` in the
+Python REPL.
+
+..
+
+.. date: 2023-06-12-16-38-31
+.. gh-issue: 105340
+.. nonce: _jRHXe
+.. section: Core and Builtins
+
+Include the comprehension iteration variable in ``locals()`` inside a
+module- or class-scope comprehension.
+
+..
+
+.. date: 2023-06-08-09-10-15
+.. gh-issue: 105486
+.. nonce: dev-WS
+.. section: Core and Builtins
+
+Change the repr of ``ParamSpec`` list of args in ``types.GenericAlias``.
+
+..
+
+.. date: 2023-01-13-11-37-41
+.. gh-issue: 101006
+.. nonce: fuLvn2
+.. section: Core and Builtins
+
+Improve error handling when read :mod:`marshal` data.
+
+..
+
+.. date: 2023-07-07-17-44-03
+.. gh-issue: 106524
+.. nonce: XkBV8h
+.. section: Library
+
+Fix crash in :func:`!_sre.template` with templates containing invalid group
+indices.
+
+..
+
+.. date: 2023-07-07-13-47-28
+.. gh-issue: 106510
+.. nonce: 9n5BdC
+.. section: Library
+
+Improve debug output for atomic groups in regular expressions.
+
+..
+
+.. date: 2023-07-07-03-05-58
+.. gh-issue: 106503
+.. nonce: ltfeiH
+.. section: Library
+
+Fix ref cycle in :class:`!asyncio._SelectorSocketTransport` by removing
+``_write_ready`` in ``close``.
+
+..
+
+.. date: 2023-07-05-14-34-10
+.. gh-issue: 105497
+.. nonce: HU5u89
+.. section: Library
+
+Fix flag mask inversion when unnamed flags exist.
+
+..
+
+.. date: 2023-07-05-13-08-23
+.. gh-issue: 90876
+.. nonce: Qvlkfl
+.. section: Library
+
+Prevent :mod:`multiprocessing.spawn` from failing to *import* in
+environments where ``sys.executable`` is ``None``.  This regressed in 3.11
+with the addition of support for path-like objects in multiprocessing.
+
+..
+
+.. date: 2023-07-03-15-09-44
+.. gh-issue: 106292
+.. nonce: 3npldV
+.. section: Library
+
+Check for an instance-dict cached value in the :meth:`__get__` method of
+:func:`functools.cached_property`. This better matches the pre-3.12 behavior
+and improves compatibility for users subclassing
+:func:`functools.cached_property` and adding a :meth:`__set__` method.
+
+..
+
+.. date: 2023-07-02-10-56-41
+.. gh-issue: 106330
+.. nonce: QSkIUH
+.. section: Library
+
+Fix incorrect matching of empty paths in :meth:`pathlib.PurePath.match`.
+This bug was introduced in Python 3.12.0 beta 1.
+
+..
+
+.. date: 2023-07-01-16-40-54
+.. gh-issue: 102541
+.. nonce: C1ahtk
+.. section: Library
+
+Make pydoc.doc catch bad module ImportError when output stream is not None.
+
+..
+
+.. date: 2023-06-27-23-22-37
+.. gh-issue: 106152
+.. nonce: ya5jBT
+.. section: Library
+
+Added PY_THROW event hook for :mod:`cProfile` for generators
+
+..
+
+.. date: 2023-06-25-12-28-55
+.. gh-issue: 106075
+.. nonce: W7tMRb
+.. section: Library
+
+Added `asyncio.taskgroups.__all__` to `asyncio.__all__` for export in star
+imports.
+
+..
+
+.. date: 2023-06-22-15-21-11
+.. gh-issue: 105987
+.. nonce: T7Kzrb
+.. section: Library
+
+Fix crash due to improper reference counting in :mod:`asyncio` eager task
+factory internal routines.
+
+..
+
+.. date: 2023-06-21-19-04-27
+.. gh-issue: 105974
+.. nonce: M47n3t
+.. section: Library
+
+Fix bug where a :class:`typing.Protocol` class that had one or more
+non-callable members would raise :exc:`TypeError` when :func:`issubclass`
+was called against it, even if it defined a custom ``__subclasshook__``
+method. The behaviour in Python 3.11 and lower -- which has now been
+restored -- was not to raise :exc:`TypeError` in these situations if a
+custom ``__subclasshook__`` method was defined. Patch by Alex Waygood.
+
+..
+
+.. date: 2023-06-20-23-18-45
+.. gh-issue: 96145
+.. nonce: o5dTRM
+.. section: Library
+
+Reverted addition of ``json.AttrDict``.
+
+..
+
+.. date: 2023-06-08-17-49-46
+.. gh-issue: 105497
+.. nonce: K6Q8nU
+.. section: Library
+
+Fix flag inversion when alias/mask members exist.
+
+..
+
+.. date: 2023-06-05-14-43-56
+.. gh-issue: 104554
+.. nonce: pwfKIo
+.. section: Library
+
+Add RTSPS scheme support in urllib.parse
+
+..
+
+.. date: 2022-07-12-18-45-13
+.. gh-issue: 94777
+.. nonce: mOybx7
+.. section: Library
+
+Fix hanging :mod:`multiprocessing` ``ProcessPoolExecutor`` when a child
+process crashes while data is being written in the call queue.
+
+..
+
+.. date: 2023-06-30-19-28-59
+.. gh-issue: 106232
+.. nonce: hQ4-tz
+.. section: Documentation
+
+Make timeit doc command lines compatible with Windows by using double quotes
+for arguments.  This works on linux and macOS also.
+
+..
+
+.. date: 2023-06-28-02-51-08
+.. gh-issue: 101634
+.. nonce: Rayczr
+.. section: Tests
+
+When running the Python test suite with ``-jN`` option, if a worker stdout
+cannot be decoded from the locale encoding report a failed testn so the
+exitcode is non-zero. Patch by Victor Stinner.
+
+..
+
+.. date: 2023-06-26-21-56-29
+.. gh-issue: 106118
+.. nonce: 0cCfhl
+.. section: Build
+
+Fix compilation for platforms without :data:`!O_CLOEXEC`. The issue was
+introduced with Python 3.12b1 in :gh:`103295`. Patch by Erlend Aasland.
+
+..
+
+.. date: 2023-05-20-23-49-30
+.. gh-issue: 104692
+.. nonce: s5UIu5
+.. section: Build
+
+Include ``commoninstall`` as a prerequisite for ``bininstall``
+
+This ensures that ``commoninstall`` is completed before ``bininstall`` is
+started when parallel builds are used (``make -j install``), and so the
+``python3`` symlink is only installed after all standard library modules are
+installed.
+
+..
+
+.. date: 2023-07-03-14-06-19
+.. gh-issue: 106359
+.. nonce: RfJuR0
+.. section: Tools/Demos
+
+Argument Clinic now explicitly forbids "kwarg splats" in function calls used
+as annotations.
+
+..
+
+.. date: 2023-06-13-14-24-55
+.. gh-issue: 105227
+.. nonce: HDL9aF
+.. section: C API
+
+The new :c:func:`PyType_GetDict` provides the dictionary for the given type
+object that is normally exposed by ``cls.__dict__``.  Normally it's
+sufficient to use :c:member:`~PyTypeObject.tp_dict`, but for the static
+builtin types :c:member:`!tp_dict` is now always ``NULL``.
+:c:func:`!PyType_GetDict()` provides the correct dict object instead.
