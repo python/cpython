@@ -1143,14 +1143,14 @@ and :c:type:`PyType_Type` effectively act as defaults.)
       :const:`Py_TPFLAGS_IMMUTABLETYPE` flag set.  For extension types, it is
       inherited whenever :c:member:`~PyTypeObject.tp_descr_get` is inherited.
 
-    .. data:: Py_TPFLAGS_MANAGED_DICT
+   .. data:: Py_TPFLAGS_MANAGED_DICT
 
-       This bit indicates that instances of the class have a ``__dict__``
-       attribute, and that the space for the dictionary is managed by the VM.
+      This bit indicates that instances of the class have a ``__dict__``
+      attribute, and that the space for the dictionary is managed by the VM.
 
-       If this flag is set, :const:`Py_TPFLAGS_HAVE_GC` should also be set.
+      If this flag is set, :const:`Py_TPFLAGS_HAVE_GC` should also be set.
 
-       .. versionadded:: 3.12
+      .. versionadded:: 3.12
 
       **Inheritance:**
 
@@ -1158,12 +1158,12 @@ and :c:type:`PyType_Type` effectively act as defaults.)
       :c:member:`~PyTypeObject.tp_dictoffset` field is set in a superclass.
 
 
-    .. data:: Py_TPFLAGS_MANAGED_WEAKREF
+   .. data:: Py_TPFLAGS_MANAGED_WEAKREF
 
-       This bit indicates that instances of the class should be weakly
-       referenceable.
+      This bit indicates that instances of the class should be weakly
+      referenceable.
 
-       .. versionadded:: 3.12
+      .. versionadded:: 3.12
 
       **Inheritance:**
 
@@ -1717,7 +1717,19 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    called; it may also be initialized to a dictionary containing initial attributes
    for the type.  Once :c:func:`PyType_Ready` has initialized the type, extra
    attributes for the type may be added to this dictionary only if they don't
-   correspond to overloaded operations (like :meth:`__add__`).
+   correspond to overloaded operations (like :meth:`__add__`).  Once
+   initialization for the type has finished, this field should be
+   treated as read-only.
+
+   Some types may not store their dictionary in this slot.
+   Use :c:func:`PyType_GetDict` to retreive the dictionary for an arbitrary
+   type.
+
+   .. versionchanged:: 3.12
+
+      Internals detail: For static builtin types, this is always ``NULL``.
+      Instead, the dict for such types is stored on ``PyInterpreterState``.
+      Use :c:func:`PyType_GetDict` to get the dict for an arbitrary type.
 
    **Inheritance:**
 

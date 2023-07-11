@@ -1,0 +1,2 @@
+Argument Clinic now explicitly forbids "kwarg splats" in function calls used as
+annotations.
