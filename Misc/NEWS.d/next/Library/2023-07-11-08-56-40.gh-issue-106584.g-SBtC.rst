@@ -1,2 +1,3 @@
-Fix exit code for `unittest` in Python 3.12 or greater if all
+Fix exit code for ``unittest`` if all
+
 tests are skipped. Patch by Egor Eliseev.
