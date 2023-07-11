@@ -2437,42 +2437,32 @@ dummy_func(
             DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type, FOR_ITER);
         }
 
-        // NOTE: next may be NULL (TODO: Can we show this in the type?)
-        op(_ITER_NEXT_RANGE, (iter -- iter, next)) {
+        op(_ITER_JUMP_RANGE, (iter -- iter)) {
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
             assert(Py_TYPE(r) == &PyRangeIter_Type);
             STAT_INC(FOR_ITER, hit);
             if (r->len <= 0) {
-                next = NULL;
-            }
-            else {
-                long value = r->start;
-                r->start = value + r->step;
-                r->len--;
-                next = PyLong_FromLong(value);
-                ERROR_IF(next == NULL, error);
-            }
-        }
-
-        op(_FOR_ITER_END, (iter, next -- iter, next)) {
-            if (next == NULL) {
-                // You might expect STACK_SHRINK(2) here.
-                // But we're taking a dangerous shortcut here:
-                // This op is always the second half of a
-                // (_ITER_NEXT_RANGE, _FOR_ITER_END) pair,
-                // and and the code generator hasn't increased
-                // the stack pointer to account for 'next' yet.
                 STACK_SHRINK(1);
-                Py_DECREF(iter);
                 SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
-                // Jump over END_FOR instruction.
+                /* Jump forward oparg, then skip following END_FOR instruction */
                 JUMPBY(oparg + 1);
                 DISPATCH();
             }
         }
 
+        op(_ITER_NEXT_RANGE, (iter -- iter, next)) {
+            _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
+            assert(Py_TYPE(r) == &PyRangeIter_Type);
+            assert(r->len > 0);
+            long value = r->start;
+            r->start = value + r->step;
+            r->len--;
+            next = PyLong_FromLong(value);
+            ERROR_IF(next == NULL, error);
+        }
+
         macro(FOR_ITER_RANGE) =
-            unused/1 + _ITER_CHECK_RANGE + _ITER_NEXT_RANGE + _FOR_ITER_END;
+            unused/1 + _ITER_CHECK_RANGE + _ITER_JUMP_RANGE + _ITER_NEXT_RANGE;
 
         inst(FOR_ITER_GEN, (unused/1, iter -- iter, unused)) {
             DEOPT_IF(tstate->interp->eval_frame, FOR_ITER);
