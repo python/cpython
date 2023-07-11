@@ -1539,14 +1539,10 @@ class Flag(Enum, boundary=STRICT):
 
     def __invert__(self):
         if self._inverted_ is None:
-            if self._boundary_ is KEEP:
-                # use all bits
+            if self._boundary_ in (EJECT, KEEP):
                 self._inverted_ = self.__class__(~self._value_)
             else:
-                # use canonical bits (i.e. calculate flags not in this member)
-                self._inverted_ = self.__class__(self._singles_mask_ ^ self._value_)
-            if isinstance(self._inverted_, self.__class__):
-                self._inverted_._inverted_ = self
+                self._inverted_ = self.__class__(self._singles_mask_ & ~self._value_)
         return self._inverted_
 
     __rand__ = __and__
