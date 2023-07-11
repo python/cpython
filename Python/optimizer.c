@@ -403,6 +403,9 @@ translate_bytecode_to_trace(
     trace[trace_length].operand = (OPERAND); \
     trace_length++;
 
+#define INSTR_IP(INSTR, CODE) \
+    ((long)((INSTR) - ((_Py_CODEUNIT *)(CODE)->co_code_adaptive)))
+
 #define ADD_TO_STUB(INDEX, OPCODE, OPERAND) \
     DPRINTF(2, "    ADD_TO_STUB(%d, %s, %" PRIu64 ")\n", \
             (INDEX), \
@@ -416,10 +419,10 @@ translate_bytecode_to_trace(
             PyUnicode_AsUTF8(code->co_qualname),
             PyUnicode_AsUTF8(code->co_filename),
             code->co_firstlineno,
-            2 * (long)(initial_instr - (_Py_CODEUNIT *)code->co_code_adaptive));
+            2 * INSTR_IP(initial_instr, code));
 
     for (;;) {
-        ADD_TO_TRACE(SAVE_IP, instr - (_Py_CODEUNIT *)code->co_code_adaptive);
+        ADD_TO_TRACE(SAVE_IP, INSTR_IP(instr, code));
         int opcode = instr->op.code;
         int oparg = instr->op.arg;
         int extras = 0;
@@ -453,8 +456,7 @@ translate_bytecode_to_trace(
                 int uopcode = opcode == POP_JUMP_IF_TRUE ?
                     _POP_JUMP_IF_TRUE : _POP_JUMP_IF_FALSE;
                 ADD_TO_TRACE(uopcode, max_length);
-                ADD_TO_STUB(max_length, SAVE_IP,
-                            target_instr - (_Py_CODEUNIT *)code->co_code_adaptive);
+                ADD_TO_STUB(max_length, SAVE_IP, INSTR_IP(target_instr, code));
                 ADD_TO_STUB(max_length + 1, EXIT_TRACE, 0);
                 break;
             }
@@ -530,7 +532,7 @@ done:
                 PyUnicode_AsUTF8(code->co_qualname),
                 PyUnicode_AsUTF8(code->co_filename),
                 code->co_firstlineno,
-                2 * (long)(initial_instr - (_Py_CODEUNIT *)code->co_code_adaptive),
+                2 * INSTR_IP(initial_instr, code),
                 trace_length);
         if (max_length < buffer_size && trace_length < max_length) {
             // Move the stubs back to be immediately after the main trace
@@ -564,7 +566,7 @@ done:
                 PyUnicode_AsUTF8(code->co_qualname),
                 PyUnicode_AsUTF8(code->co_filename),
                 code->co_firstlineno,
-                2 * (long)(initial_instr - (_Py_CODEUNIT *)code->co_code_adaptive));
+                2 * INSTR_IP(initial_instr, code));
     }
     return 0;
 
