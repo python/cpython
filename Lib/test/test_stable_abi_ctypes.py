@@ -398,6 +398,8 @@ SYMBOL_NAMES = (
     "PyMap_Type",
     "PyMapping_Check",
     "PyMapping_GetItemString",
+    "PyMapping_GetOptionalItem",
+    "PyMapping_GetOptionalItemString",
     "PyMapping_HasKey",
     "PyMapping_HasKeyString",
     "PyMapping_Items",
