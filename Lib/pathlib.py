@@ -463,8 +463,12 @@ class PurePath:
         try:
             return self._lines_cached
         except AttributeError:
-            trans = _SWAP_SEP_AND_NEWLINE[self._flavour.sep]
-            self._lines_cached = str(self).translate(trans)
+            path_str = str(self)
+            if path_str == '.':
+                self._lines_cached = ''
+            else:
+                trans = _SWAP_SEP_AND_NEWLINE[self._flavour.sep]
+                self._lines_cached = path_str.translate(trans)
             return self._lines_cached
 
     def __eq__(self, other):

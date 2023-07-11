@@ -72,6 +72,7 @@
 
 #include "Python.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_pylifecycle.h"   // _PyOS_URandomNonblock()
 #include "pycore_runtime.h"
 #ifdef HAVE_PROCESS_H
 #  include <process.h>            // getpid()

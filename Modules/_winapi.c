@@ -36,6 +36,8 @@
 
 #include "Python.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
+#include "pycore_pystate.h"       // _PyInterpreterState_GET
 #include "structmember.h"         // PyMemberDef
 
 
@@ -133,7 +135,7 @@ overlapped_dealloc(OverlappedObject *self)
         {
             /* The operation is no longer pending -- nothing to do. */
         }
-        else if (_Py_IsInterpreterFinalizing(PyInterpreterState_Get()))
+        else if (_Py_IsInterpreterFinalizing(_PyInterpreterState_GET()))
         {
             /* The operation is still pending -- give a warning.  This
                will probably only happen on Windows XP. */

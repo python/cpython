@@ -4,8 +4,13 @@
  * recently, it was largely rewritten by Guido van Rossum.
  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 /* Standard definitions */
 #include "Python.h"
+#include "pycore_pylifecycle.h"   // _Py_SetLocaleFromEnv()
 
 #include <errno.h>
 #include <signal.h>
