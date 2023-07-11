@@ -2,10 +2,10 @@
 /* Thread and interpreter state structures and their interfaces */
 
 #include "Python.h"
-#include "pycore_emscripten_trampoline.h"  // _Py_EmscriptenTrampoline_Init()
 #include "pycore_ceval.h"
 #include "pycore_code.h"          // stats
 #include "pycore_dtoa.h"          // _dtoa_state_INIT()
+#include "pycore_emscripten_trampoline.h"  // _Py_EmscriptenTrampoline_Init()
 #include "pycore_frame.h"
 #include "pycore_initconfig.h"
 #include "pycore_object.h"        // _PyType_InitCache()
