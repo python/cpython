@@ -251,23 +251,24 @@ class ObjectParser:
                 assert newhole.symbol not in self.dupes
                 if newhole.symbol in self.body_symbols:
                     addend = newhole.addend + self.body_symbols[newhole.symbol] - entry
-                    newhole = Hole("_justin_base", newhole.offset, addend, newhole.pc)
+                    newhole = Hole(newhole.kind, "_justin_base", newhole.offset, addend)
                 holes.append(newhole)
         got = len(self.body)
         for i, got_symbol in enumerate(self.got_entries):
             if got_symbol in self.body_symbols:
                 self.body_symbols[got_symbol] -= entry
-            holes.append(Hole(got_symbol, got + 8 * i, 0, 0))
+            # XXX: PATCH_ABS_32 on 32-bit platforms?
+            holes.append(Hole("PATCH_ABS_64", got_symbol, got + 8 * i, 0))
         self.body.extend([0] * 8 * len(self.got_entries))
         holes.sort(key=lambda hole: hole.offset)
         return Stencil(bytes(self.body)[entry:], tuple(holes))  # XXX
 
 @dataclasses.dataclass(frozen=True)
 class Hole:
+    kind: str  # XXX: Enum
     symbol: str
     offset: int
     addend: int
-    pc: int
 
 @dataclasses.dataclass(frozen=True)
 class Stencil:
@@ -293,7 +294,7 @@ def handle_one_relocation(
             # assert not what, what
             addend = what
             body[where] = [0] * 8
-            yield Hole(symbol, offset, addend, 0)
+            yield Hole("PATCH_ABS_64", symbol, offset, addend)
         case {
             "Offset": int(offset),
             "Symbol": str(symbol),
@@ -307,7 +308,7 @@ def handle_one_relocation(
             body[where] = [0] * 4
             # assert symbol.startswith("_")
             symbol = symbol.removeprefix("_")
-            yield Hole(symbol, offset, addend, 0)
+            yield Hole("PATCH_ABS_32", symbol, offset, addend)
         case {
             "Addend": int(addend),
             "Offset": int(offset),
@@ -318,7 +319,7 @@ def handle_one_relocation(
             where = slice(offset, offset + 8)
             what = int.from_bytes(body[where], sys.byteorder)
             assert not what, what
-            yield Hole(symbol, offset, addend, 0)
+            yield Hole("PATCH_ABS_64", symbol, offset, addend)
         case {
             "Addend": int(addend),
             "Offset": int(offset),
@@ -344,7 +345,7 @@ def handle_one_relocation(
             what = int.from_bytes(body[where], sys.byteorder)
             assert not what, what
             addend += offset - len(body)
-            yield Hole(symbol, offset, addend, -1)
+            yield Hole("PATCH_REL_64", symbol, offset, addend)
         case {
             "Addend": int(addend),
             "Offset": int(offset),
@@ -364,10 +365,10 @@ def handle_one_relocation(
             "Type": {"Value": "R_X86_64_PC32"},
         }:
             offset += base
-            where = slice(offset, offset + 4)  # XXX: The jit can only do 8 right now...
+            where = slice(offset, offset + 4)
             what = int.from_bytes(body[where], sys.byteorder)
             assert not what, what
-            yield Hole(symbol, offset, addend, -1)
+            yield Hole("PATCH_REL_32", symbol, offset, addend)
         case {
             "Length": 3,
             "Offset": int(offset),
@@ -383,7 +384,7 @@ def handle_one_relocation(
             body[where] = [0] * 8
             assert section.startswith("_")
             section = section.removeprefix("_")
-            yield Hole(section, offset, addend, 0)
+            yield Hole("PATCH_ABS_64", section, offset, addend)
         case {
             "Length": 3,
             "Offset": int(offset),
@@ -399,7 +400,7 @@ def handle_one_relocation(
             body[where] = [0] * 8
             assert symbol.startswith("_")
             symbol = symbol.removeprefix("_")
-            yield Hole(symbol, offset, addend, 0)
+            yield Hole("PATCH_ABS_64", symbol, offset, addend)
         case _:
             raise NotImplementedError(relocation)
 
@@ -684,7 +685,14 @@ class Compiler:
 
     def dump(self) -> str:
         lines = []
+        # XXX: Rework these to use Enums:
         kinds = {
+            "PATCH_ABS_32",
+            "PATCH_ABS_64",
+            "PATCH_REL_32",
+            "PATCH_REL_64",
+        }
+        values = {
             "HOLE_base",
             "HOLE_continue",
             "HOLE_next_instr",
@@ -703,12 +711,13 @@ class Compiler:
             holes = []
             loads = []
             for hole in stencil.holes:
+                assert hole.kind in kinds, hole.kind
                 if hole.symbol.startswith("_justin_"):
-                    kind = f"HOLE_{hole.symbol.removeprefix('_justin_')}"
-                    assert kind in kinds, kind
-                    holes.append(f"    {{.offset = {hole.offset:4}, .addend = {hole.addend:4}, .kind = {kind}, .pc = {hole.pc}}},")
+                    value = f"HOLE_{hole.symbol.removeprefix('_justin_')}"
+                    assert value in values, value
+                    holes.append(f"    {{.kind = {hole.kind}, .offset = {hole.offset:4}, .addend = {hole.addend:4}, .value = {value}}},")
                 else:
-                    loads.append(f"    {{.offset = {hole.offset:4}, .addend = {hole.addend:4}, .symbol = \"{hole.symbol}\", .pc = {hole.pc}}},")
+                    loads.append(f"    {{.kind = {hole.kind}, .offset = {hole.offset:4}, .addend = {hole.addend:4}, .symbol = \"{hole.symbol}\"}},")
             assert holes, stencil.holes
             lines.append(f"static const Hole {opname}_stencil_holes[] = {{")
             for hole in holes:
@@ -717,7 +726,7 @@ class Compiler:
             lines.append(f"static const SymbolLoad {opname}_stencil_loads[] = {{")
             for  load in loads:
                 lines.append(load)
-            lines.append(f"    {{.offset =    0, .addend =    0, .symbol = NULL, .pc = 0}},")
+            lines.append(f"    {{.kind =            0, .offset =    0, .addend =    0, .symbol = NULL}},")
             lines.append(f"}};")
             lines.append(f"")
         lines.append(f"#define INIT_STENCIL(OP) {{                             \\")
@@ -740,9 +749,9 @@ class Compiler:
         lines.append(f"#define INIT_HOLE(NAME) [HOLE_##NAME] = (uintptr_t)0xBAD0BAD0BAD0BAD0")
         lines.append(f"")
         lines.append(f"#define GET_PATCHES() {{ \\")
-        for kind in sorted(kinds):
-            if kind.startswith("HOLE_"):
-                name = kind.removeprefix("HOLE_")
+        for value in sorted(values):
+            if value.startswith("HOLE_"):
+                name = value.removeprefix("HOLE_")
                 lines.append(f"    INIT_HOLE({name}), \\")
         lines.append(f"}}")
         header = []
@@ -753,18 +762,23 @@ class Compiler:
             header.append(f"    {kind},")
         header.append(f"}} HoleKind;")
         header.append(f"")
+        header.append(f"typedef enum {{")
+        for value in sorted(values):
+            header.append(f"    {value},")
+        header.append(f"}} HoleValue;")
+        header.append(f"")
         header.append(f"typedef struct {{")
+        header.append(f"    const HoleKind kind;")
         header.append(f"    const uintptr_t offset;")
         header.append(f"    const uintptr_t addend;")
-        header.append(f"    const HoleKind kind;")
-        header.append(f"    const int pc;")
+        header.append(f"    const HoleValue value;")
         header.append(f"}} Hole;")
         header.append(f"")
         header.append(f"typedef struct {{")
+        header.append(f"    const HoleKind kind;")
         header.append(f"    const uintptr_t offset;")
         header.append(f"    const uintptr_t addend;")
         header.append(f"    const char * const symbol;")
-        header.append(f"    const int pc;")
         header.append(f"}} SymbolLoad;")
         header.append(f"")
         header.append(f"typedef struct {{")

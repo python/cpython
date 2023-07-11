@@ -53,13 +53,37 @@ preload_stencil(const Stencil *loading)
 {
     for (size_t i = 0; i < loading->nloads; i++) {
         const SymbolLoad *load = &loading->loads[i];
-        uintptr_t *addr = (uintptr_t *)(loading->bytes + load->offset);
         uintptr_t value = (uintptr_t)DLSYM(load->symbol);
         if (value == 0) {
             printf("XXX: Failed to preload symbol %s!\n", load->symbol);
             return -1;
         }
-        *addr = value + load->addend + load->pc * (uintptr_t)addr;
+        // XXX: Deduplicate this code:
+        switch (load->kind) {
+            case PATCH_ABS_32: {
+                uint32_t *addr = (uint32_t *)(loading->bytes + load->offset);
+                *addr = value + load->addend;
+                break;
+            }
+            case PATCH_ABS_64: {
+                uint64_t *addr = (uint64_t *)(loading->bytes + load->offset);
+                *addr = value + load->addend;
+                break;
+            }
+            case PATCH_REL_32: {
+                uint32_t *addr = (uint32_t *)(loading->bytes + load->offset);
+                *addr = value + load->addend - (uintptr_t)addr;
+                break;
+            }
+            case PATCH_REL_64: {
+                uint64_t *addr = (uint64_t *)(loading->bytes + load->offset);
+                *addr = value + load->addend - (uintptr_t)addr;
+                break;
+            }
+            default: {
+                Py_UNREACHABLE();
+            }
+        }
     }
     return 0;
 }
@@ -91,13 +115,34 @@ static void
 copy_and_patch(unsigned char *memory, const Stencil *stencil, uintptr_t patches[])
 {
     memcpy(memory, stencil->bytes, stencil->nbytes);
+        // XXX: Deduplicate this code:
     for (size_t i = 0; i < stencil->nholes; i++) {
         const Hole *hole = &stencil->holes[i];
-        uintptr_t *addr = (uintptr_t *)(memory + hole->offset);
-        // XXX: This can't handle 32-bit relocations...
-        // XXX: Use += to allow multiple relocations for one offset.
-        // XXX: Get rid of pc, and replace it with HOLE_base + addend.
-        *addr = patches[hole->kind] + hole->addend + hole->pc * (uintptr_t)addr;
+        switch (hole->kind) {
+            case PATCH_ABS_32: {
+                uint32_t *addr = (uint32_t *)(memory + hole->offset);
+                *addr = patches[hole->value] + hole->addend;
+                break;
+            }
+            case PATCH_ABS_64: {
+                uint64_t *addr = (uint64_t *)(memory + hole->offset);
+                *addr = patches[hole->value] + hole->addend;
+                break;
+            }
+            case PATCH_REL_32: {
+                uint32_t *addr = (uint32_t *)(memory + hole->offset);
+                *addr = patches[hole->value] + hole->addend - (uintptr_t)addr;
+                break;
+            }
+            case PATCH_REL_64: {
+                uint64_t *addr = (uint64_t *)(memory + hole->offset);
+                *addr = patches[hole->value] + hole->addend - (uintptr_t)addr;
+                break;
+            }
+            default: {
+                Py_UNREACHABLE();
+            }
+        }
     }
 }
 
