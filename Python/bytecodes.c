@@ -2450,6 +2450,13 @@ dummy_func(
             }
         }
 
+        // Only used by Tier 2
+        op(_ITER_EXHAUSTED_RANGE, (iter -- iter, exhausted)) {
+            _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
+            assert(Py_TYPE(r) == &PyRangeIter_Type);
+            exhausted = r->len <= 0 ? Py_True : Py_False;
+        }
+
         op(_ITER_NEXT_RANGE, (iter -- iter, next)) {
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
             assert(Py_TYPE(r) == &PyRangeIter_Type);

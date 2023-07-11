@@ -38,7 +38,8 @@
 #define _LOAD_FROM_DICT_OR_GLOBALS 316
 #define IS_NONE 317
 #define _ITER_CHECK_RANGE 318
-#define _ITER_NEXT_RANGE 319
+#define _ITER_EXHAUSTED_RANGE 319
+#define _ITER_NEXT_RANGE 320
 
 #ifndef NEED_OPCODE_METADATA
 extern int _PyOpcode_num_popped(int opcode, int oparg, bool jump);
@@ -1316,6 +1317,7 @@ const char * const _PyOpcode_uop_name[512] = {
     [316] = "_LOAD_FROM_DICT_OR_GLOBALS",
     [317] = "IS_NONE",
     [318] = "_ITER_CHECK_RANGE",
-    [319] = "_ITER_NEXT_RANGE",
+    [319] = "_ITER_EXHAUSTED_RANGE",
+    [320] = "_ITER_NEXT_RANGE",
 };
 #endif // NEED_OPCODE_METADATA
