@@ -275,9 +275,9 @@ method_repr(PyMethodObject *a)
     PyObject *funcname, *result;
     const char *defname = "?";
 
-    if (PyObject_GetOptionalAttr(func, &_Py_ID(__qualname__), &funcname) < 0 ||
+    if (_PyObject_LookupAttr(func, &_Py_ID(__qualname__), &funcname) < 0 ||
         (funcname == NULL &&
-         PyObject_GetOptionalAttr(func, &_Py_ID(__name__), &funcname) < 0))
+         _PyObject_LookupAttr(func, &_Py_ID(__name__), &funcname) < 0))
     {
         return NULL;
     }
@@ -479,7 +479,7 @@ instancemethod_repr(PyObject *self)
         return NULL;
     }
 
-    if (PyObject_GetOptionalAttr(func, &_Py_ID(__name__), &funcname) < 0) {
+    if (_PyObject_LookupAttr(func, &_Py_ID(__name__), &funcname) < 0) {
         return NULL;
     }
     if (funcname != NULL && !PyUnicode_Check(funcname)) {
