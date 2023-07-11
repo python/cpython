@@ -200,6 +200,30 @@ PyObject_GetItem(PyObject *o, PyObject *key)
 }
 
 int
+PyMapping_GetOptionalItem(PyObject *obj, PyObject *key, PyObject **result)
+{
+    if (PyDict_CheckExact(obj)) {
+        *result = PyDict_GetItemWithError(obj, key);  /* borrowed */
+        if (*result) {
+            Py_INCREF(*result);
+            return 1;
+        }
+        return PyErr_Occurred() ? -1 : 0;
+    }
+
+    *result = PyObject_GetItem(obj, key);
+    if (*result) {
+        return 1;
+    }
+    assert(PyErr_Occurred());
+    if (!PyErr_ExceptionMatches(PyExc_KeyError)) {
+        return -1;
+    }
+    PyErr_Clear();
+    return 0;
+}
+
+int
 PyObject_SetItem(PyObject *o, PyObject *key, PyObject *value)
 {
     if (o == NULL || key == NULL || value == NULL) {
@@ -2364,6 +2388,22 @@ PyMapping_GetItemString(PyObject *o, const char *key)
     r = PyObject_GetItem(o, okey);
     Py_DECREF(okey);
     return r;
+}
+
+int
+PyMapping_GetOptionalItemString(PyObject *obj, const char *key, PyObject **result)
+{
+    if (key == NULL) {
+        null_error();
+        return -1;
+    }
+    PyObject *okey = PyUnicode_FromString(key);
+    if (okey == NULL) {
+        return -1;
+    }
+    int rc = PyMapping_GetOptionalItem(obj, okey, result);
+    Py_DECREF(okey);
+    return rc;
 }
 
 int
