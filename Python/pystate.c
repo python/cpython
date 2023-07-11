@@ -452,8 +452,9 @@ init_runtime(_PyRuntimeState *runtime,
 
     runtime->unicode_state.ids.next_index = unicode_next_index;
 
-    runtime->_initialized = 1;
     _Py_EmscriptenTrampoline_Init(runtime);
+
+    runtime->_initialized = 1;
 }
 
 PyStatus
