@@ -306,6 +306,9 @@ If you are using classes to structure your data
 you can use the class name followed by an argument list resembling a
 constructor, but with the ability to capture attributes into variables::
 
+    from dataclasses import dataclass
+    @dataclass
+
     class Point:
         x: int
         y: int
