@@ -2607,6 +2607,7 @@ void
 _Py_Dealloc(PyObject *op)
 {
     assert(Py_REFCNT(op) == 0);
+    assert(!_Py_IsImmortal(op));
     PyTypeObject *type = Py_TYPE(op);
     if (type->tp_flags_internal & _Py_TPFLAG_INTERNAL_DEALLOC_IS_FREE) {
     #ifdef Py_TRACE_REFS
