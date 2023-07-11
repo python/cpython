@@ -2525,7 +2525,6 @@ class TestUops(unittest.TestCase):
                 i += 1
 
         opt = _testinternalcapi.get_uop_optimizer()
-
         with temporary_optimizer(opt):
             testfunc(10)
 
@@ -2541,7 +2540,6 @@ class TestUops(unittest.TestCase):
                 i += 1
 
         opt = _testinternalcapi.get_uop_optimizer()
-
         with temporary_optimizer(opt):
             testfunc(10)
 
@@ -2549,6 +2547,20 @@ class TestUops(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = {opname for opname, _ in ex}
         self.assertIn("_POP_JUMP_IF_TRUE", uops)
+
+    def test_jump_backward(self):
+        def testfunc(n):
+            i = 0
+            while i < n:
+                i += 1
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            testfunc(10)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _ in ex}
+        self.assertIn("JUMP_TO_TOP", uops)
 
 
 if __name__ == "__main__":
