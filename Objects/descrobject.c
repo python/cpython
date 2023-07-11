@@ -4,7 +4,7 @@
 #include "pycore_abstract.h"      // _PyObject_RealIsSubclass()
 #include "pycore_call.h"          // _PyStack_AsDict()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
-#include "pycore_emscripten_trampoline.h" // _PyEM_TrampolineCall()
+#include "pycore_emscripten_trampoline.h" // descr_set_trampoline_call(), descr_get_trampoline_call()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
@@ -16,12 +16,6 @@ class mappingproxy "mappingproxyobject *" "&PyDictProxy_Type"
 class property "propertyobject *" "&PyProperty_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=556352653fd4c02e]*/
-
-#define descr_set_trampoline_call(set, obj, value, closure) \
-    ((int)_PyEM_TrampolineCall((PyCFunctionWithKeywords)(set), (obj), (value), (PyObject*)(closure)))
-
-#define descr_get_trampoline_call(get, obj, closure) \
-    _PyEM_TrampolineCall((PyCFunctionWithKeywords)(get), (obj), (PyObject*)(closure), NULL)
 
 static void
 descr_dealloc(PyDescrObject *descr)

@@ -22,7 +22,7 @@ _Py_EmscriptenTrampoline_Init(_PyRuntimeState *runtime)
 /**
  * Backwards compatible trampoline works with all JS runtimes
  */
-EM_JS(PyObject*, _PyEM_TrampolineCall_JS, (PyCFunctionWithKeywords func, PyObject *arg1, PyObject *arg2, PyObject *arg3), {
+EM_JS(PyObject*, _PyEM_TrampolineCall_Javascript, (PyCFunctionWithKeywords func, PyObject *arg1, PyObject *arg2, PyObject *arg3), {
     return wasmTable.get(func)(arg1, arg2, arg3);
 }
 );
