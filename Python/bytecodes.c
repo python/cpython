@@ -17,6 +17,7 @@
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_moduleobject.h"  // PyModuleObject
 #include "pycore_opcode.h"        // EXTRA_CASES
+#include "pycore_opcode_metadata.h"  // uop names
 #include "pycore_opcode_utils.h"  // MAKE_FUNCTION_*
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
@@ -62,7 +63,7 @@ static PyObject **pieces, **values;
 static size_t jump;
 // Dummy variables for cache effects
 static uint16_t invert, counter, index, hint;
-#define unused 0
+#define unused 0  // Used in a macro def, can't be static
 static uint32_t type_version;
 
 static PyObject *
