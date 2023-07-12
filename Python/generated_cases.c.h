@@ -3092,29 +3092,47 @@
         }
 
         TARGET(FOR_ITER_RANGE) {
-            PyObject *iter = stack_pointer[-1];
-            PyObject *next;
-            _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
-            DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type, FOR_ITER);
-            STAT_INC(FOR_ITER, hit);
-            if (r->len <= 0) {
-                STACK_SHRINK(1);
-                Py_DECREF(r);
-                SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
-                // Jump over END_FOR instruction.
-                JUMPBY(oparg + 1);
-                DISPATCH();
+            PyObject *_tmp_1;
+            PyObject *_tmp_2 = stack_pointer[-1];
+            {
+                PyObject *iter = _tmp_2;
+                _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
+                DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type, FOR_ITER);
+                _tmp_2 = iter;
             }
-            long value = r->start;
-            r->start = value + r->step;
-            r->len--;
-            next = PyLong_FromLong(value);
-            if (next == NULL) {
-                goto error;
+            {
+                PyObject *iter = _tmp_2;
+                _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
+                assert(Py_TYPE(r) == &PyRangeIter_Type);
+                STAT_INC(FOR_ITER, hit);
+                if (r->len <= 0) {
+                    STACK_SHRINK(1);
+                    Py_DECREF(r);
+                    SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
+                    // Jump over END_FOR instruction.
+                    JUMPBY(oparg + 1);
+                    DISPATCH();
+                }
+                _tmp_2 = iter;
             }
-            STACK_GROW(1);
-            stack_pointer[-1] = next;
+            {
+                PyObject *iter = _tmp_2;
+                PyObject *next;
+                _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
+                assert(Py_TYPE(r) == &PyRangeIter_Type);
+                assert(r->len > 0);
+                long value = r->start;
+                r->start = value + r->step;
+                r->len--;
+                next = PyLong_FromLong(value);
+                if (next == NULL) goto error;
+                _tmp_2 = iter;
+                _tmp_1 = next;
+            }
             next_instr += 1;
+            STACK_GROW(1);
+            stack_pointer[-1] = _tmp_1;
+            stack_pointer[-2] = _tmp_2;
             DISPATCH();
         }
 

@@ -479,6 +479,28 @@ translate_bytecode_to_trace(
                 break;
             }
 
+            case FOR_ITER_RANGE:
+            {
+                // Assume jump unlikely (can a for-loop exit be likely?)
+                // Reserve 9 entries (4 here, 3 stub, plus SAVE_IP + EXIT_TRACE)
+                if (trace_length + 9 > max_length) {
+                    DPRINTF(1, "Ran out of space for FOR_ITER_RANGE\n");
+                    goto done;
+                }
+                _Py_CODEUNIT *target_instr =  // +1 at the end skips over END_FOR
+                    instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]] + oparg + 1;
+                max_length -= 3;  // Really the start of the stubs
+                ADD_TO_TRACE(_ITER_CHECK_RANGE, 0);
+                ADD_TO_TRACE(_ITER_EXHAUSTED_RANGE, 0);
+                ADD_TO_TRACE(_POP_JUMP_IF_TRUE, max_length);
+                ADD_TO_TRACE(_ITER_NEXT_RANGE, 0);
+
+                ADD_TO_STUB(max_length + 0, POP_TOP, 0);
+                ADD_TO_STUB(max_length + 1, SAVE_IP, INSTR_IP(target_instr, code));
+                ADD_TO_STUB(max_length + 2, EXIT_TRACE, 0);
+                break;
+            }
+
             default:
             {
                 const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
@@ -574,8 +596,8 @@ done:
                     }
                 }
             }
-            trace_length += buffer_size - max_length;
         }
+        trace_length += buffer_size - max_length;
         return trace_length;
     }
     else {

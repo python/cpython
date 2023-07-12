@@ -40,6 +40,9 @@
 #define _GUARD_GLOBALS_VERSION 318
 #define _GUARD_BUILTINS_VERSION 319
 #define IS_NONE 320
+#define _ITER_CHECK_RANGE 321
+#define _ITER_EXHAUSTED_RANGE 322
+#define _ITER_NEXT_RANGE 323
 
 #ifndef NEED_OPCODE_METADATA
 extern int _PyOpcode_num_popped(int opcode, int oparg, bool jump);
@@ -1319,5 +1322,8 @@ const char * const _PyOpcode_uop_name[512] = {
     [318] = "_GUARD_GLOBALS_VERSION",
     [319] = "_GUARD_BUILTINS_VERSION",
     [320] = "IS_NONE",
+    [321] = "_ITER_CHECK_RANGE",
+    [322] = "_ITER_EXHAUSTED_RANGE",
+    [323] = "_ITER_NEXT_RANGE",
 };
 #endif // NEED_OPCODE_METADATA

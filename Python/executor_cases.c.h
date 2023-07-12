@@ -1720,6 +1720,40 @@
             break;
         }
 
+        case _ITER_CHECK_RANGE: {
+            PyObject *iter = stack_pointer[-1];
+            _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
+            DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type, FOR_ITER);
+            break;
+        }
+
+        case _ITER_EXHAUSTED_RANGE: {
+            PyObject *iter = stack_pointer[-1];
+            PyObject *exhausted;
+            _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
+            assert(Py_TYPE(r) == &PyRangeIter_Type);
+            exhausted = r->len <= 0 ? Py_True : Py_False;
+            STACK_GROW(1);
+            stack_pointer[-1] = exhausted;
+            break;
+        }
+
+        case _ITER_NEXT_RANGE: {
+            PyObject *iter = stack_pointer[-1];
+            PyObject *next;
+            _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
+            assert(Py_TYPE(r) == &PyRangeIter_Type);
+            assert(r->len > 0);
+            long value = r->start;
+            r->start = value + r->step;
+            r->len--;
+            next = PyLong_FromLong(value);
+            if (next == NULL) goto error;
+            STACK_GROW(1);
+            stack_pointer[-1] = next;
+            break;
+        }
+
         case WITH_EXCEPT_START: {
             PyObject *val = stack_pointer[-1];
             PyObject *lasti = stack_pointer[-3];
