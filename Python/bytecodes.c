@@ -3654,6 +3654,36 @@ dummy_func(
             Py_UNREACHABLE();
         }
 
+        ///////// Tier-2 only opcodes /////////
+
+        op(_POP_JUMP_IF_FALSE, (flag -- )) {
+            if (Py_IsFalse(flag)) {
+                pc = oparg;
+            }
+        }
+
+        op(_POP_JUMP_IF_TRUE, (flag -- )) {
+            if (Py_IsTrue(flag)) {
+                pc = oparg;
+            }
+        }
+
+        op(JUMP_TO_TOP, (--)) {
+            pc = 0;
+            CHECK_EVAL_BREAKER();
+        }
+
+        op(SAVE_IP, (--)) {
+            frame->prev_instr = ip_offset + oparg;
+        }
+
+        op(EXIT_TRACE, (--)) {
+            frame->prev_instr--;  // Back up to just before destination
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            Py_DECREF(self);
+            return frame;
+        }
+
 
 // END BYTECODES //
 

@@ -1987,3 +1987,39 @@
             stack_pointer[-(2 + (oparg-2))] = top;
             break;
         }
+
+        case _POP_JUMP_IF_FALSE: {
+            PyObject *flag = stack_pointer[-1];
+            if (Py_IsFalse(flag)) {
+                pc = oparg;
+            }
+            STACK_SHRINK(1);
+            break;
+        }
+
+        case _POP_JUMP_IF_TRUE: {
+            PyObject *flag = stack_pointer[-1];
+            if (Py_IsTrue(flag)) {
+                pc = oparg;
+            }
+            STACK_SHRINK(1);
+            break;
+        }
+
+        case JUMP_TO_TOP: {
+            pc = 0;
+            break;
+        }
+
+        case SAVE_IP: {
+            frame->prev_instr = ip_offset + oparg;
+            break;
+        }
+
+        case EXIT_TRACE: {
+            frame->prev_instr--;  // Back up to just before destination
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            Py_DECREF(self);
+            return frame;
+            break;
+        }
