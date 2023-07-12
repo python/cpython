@@ -2849,6 +2849,9 @@ Functions and decorators
    This wraps the decorator with something that wraps the decorated
    function in :func:`no_type_check`.
 
+   .. deprecated-removed:: 3.13 3.15
+      No type checker ever added support for ``@no_type_check_decorator``. It
+      is therefore deprecated, and will be removed in Python 3.15.
 
 .. decorator:: override
 
@@ -3648,18 +3651,20 @@ Certain features in ``typing`` are deprecated and may be removed in a future
 version of Python. The following table summarizes major deprecations for your
 convenience. This is subject to change, and not all deprecations are listed.
 
-+----------------------------------+---------------+-------------------+----------------+
-|  Feature                         | Deprecated in | Projected removal | PEP/issue      |
-+==================================+===============+===================+================+
-|  ``typing`` versions of standard | 3.9           | Undecided         | :pep:`585`     |
-|  collections                     |               |                   |                |
-+----------------------------------+---------------+-------------------+----------------+
-|  ``typing.ByteString``           | 3.9           | 3.14              | :gh:`91896`    |
-+----------------------------------+---------------+-------------------+----------------+
-|  ``typing.Text``                 | 3.11          | Undecided         | :gh:`92332`    |
-+----------------------------------+---------------+-------------------+----------------+
-|  ``typing.Hashable`` and         | 3.12          | Undecided         | :gh:`94309`    |
-|  ``typing.Sized``                |               |                   |                |
-+----------------------------------+---------------+-------------------+----------------+
-|  ``typing.TypeAlias``            | 3.12          | Undecided         | :pep:`695`     |
-+----------------------------------+---------------+-------------------+----------------+
++-------------------------------------+---------------+-------------------+----------------+
+|  Feature                            | Deprecated in | Projected removal | PEP/issue      |
++=====================================+===============+===================+================+
+|  ``typing`` versions of standard    | 3.9           | Undecided         | :pep:`585`     |
+|  collections                        |               |                   |                |
++-------------------------------------+---------------+-------------------+----------------+
+|  ``typing.ByteString``              | 3.9           | 3.14              | :gh:`91896`    |
++-------------------------------------+---------------+-------------------+----------------+
+|  ``typing.Text``                    | 3.11          | Undecided         | :gh:`92332`    |
++-------------------------------------+---------------+-------------------+----------------+
+|  ``typing.Hashable`` and            | 3.12          | Undecided         | :gh:`94309`    |
+|  ``typing.Sized``                   |               |                   |                |
++-------------------------------------+---------------+-------------------+----------------+
+|  ``typing.TypeAlias``               | 3.12          | Undecided         | :pep:`695`     |
++-------------------------------------+---------------+-------------------+----------------+
+|  ``typing.no_type_check_decorator`` | 3.13          | 3.15              | :gh:`106309`   |
++-------------------------------------+---------------+-------------------+----------------+
