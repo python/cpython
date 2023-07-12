@@ -495,13 +495,13 @@ check_bytes_find_large(Py_ssize_t len_haystack, Py_ssize_t len_needle,
         return -1;
     }
     Py_ssize_t res = _PyBytes_Find(zeros, len_haystack, needle, len_needle, 0);
+    PyMem_RawFree(zeros);
     if (res != -1) {
         PyErr_Format(PyExc_AssertionError,
                     "check_bytes_find_large(%zd, %zd) found %zd",
                     len_haystack, len_needle, res);
         return -1;
     }
-    PyMem_RawFree(zeros);
     return 0;
 }
 
