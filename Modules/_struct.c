@@ -8,6 +8,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_bytesobject.h"   // _PyBytesWriter
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "structmember.h"         // PyMemberDef
 #include <ctype.h>

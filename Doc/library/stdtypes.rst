@@ -2014,11 +2014,14 @@ expression support in the :mod:`re` module).
    .. versionadded:: 3.9
 
 
-.. method:: str.replace(old, new[, count])
+.. method:: str.replace(old, new, count=-1)
 
    Return a copy of the string with all occurrences of substring *old* replaced by
-   *new*.  If the optional argument *count* is given, only the first *count*
-   occurrences are replaced.
+   *new*.  If *count* is given, only the first *count* occurrences are replaced.
+   If *count* is not specified or ``-1``, then all occurrences are replaced.
+
+   .. versionchanged:: 3.13
+      *count* is now supported as a keyword argument.
 
 
 .. method:: str.rfind(sub[, start[, end]])

@@ -1792,7 +1792,7 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
     }
     /* if no docstring given and the getter has one, use that one */
     else if (fget != NULL) {
-        int rc = _PyObject_LookupAttr(fget, &_Py_ID(__doc__), &prop_doc);
+        int rc = PyObject_GetOptionalAttr(fget, &_Py_ID(__doc__), &prop_doc);
         if (rc <= 0) {
             return rc;
         }

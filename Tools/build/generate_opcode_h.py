@@ -184,14 +184,15 @@ def main(opcode_py,
         fobj.write(f"#define ENABLE_SPECIALIZATION {int(ENABLE_SPECIALIZATION)}")
 
         iobj.write("\n")
-        iobj.write("#ifdef Py_DEBUG\n")
-        iobj.write(f"static const char *const _PyOpcode_OpName[{NUM_OPCODES}] = {{\n")
+        iobj.write(f"\nextern const char *const _PyOpcode_OpName[{NUM_OPCODES}];\n")
+        iobj.write("\n#ifdef NEED_OPCODE_TABLES\n")
+        iobj.write(f"const char *const _PyOpcode_OpName[{NUM_OPCODES}] = {{\n")
         for op, name in enumerate(opname_including_specialized):
             if name[0] != "<":
                 op = name
             iobj.write(f'''    [{op}] = "{name}",\n''')
         iobj.write("};\n")
-        iobj.write("#endif\n")
+        iobj.write("#endif   // NEED_OPCODE_TABLES\n")
 
         iobj.write("\n")
         iobj.write("#define EXTRA_CASES \\\n")
