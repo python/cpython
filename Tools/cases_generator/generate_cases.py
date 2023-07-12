@@ -24,7 +24,7 @@ THIS = os.path.relpath(__file__, ROOT).replace(os.path.sep, posixpath.sep)
 DEFAULT_INPUT = os.path.relpath(os.path.join(ROOT, "Python/bytecodes.c"))
 DEFAULT_OUTPUT = os.path.relpath(os.path.join(ROOT, "Python/generated_cases.c.h"))
 DEFAULT_METADATA_OUTPUT = os.path.relpath(
-    os.path.join(ROOT, "Python/opcode_metadata.h")
+    os.path.join(ROOT, "Include/internal/pycore_opcode_metadata.h")
 )
 DEFAULT_PYMETADATA_OUTPUT = os.path.relpath(
     os.path.join(ROOT, "Lib/_opcode_metadata.py")
@@ -39,6 +39,17 @@ RE_PREDICTED = (
 )
 UNUSED = "unused"
 BITS_PER_CODE_UNIT = 16
+
+# Constants used instead of size for macro expansions.
+# Note: 1, 2, 4 must match actual cache entry sizes.
+OPARG_SIZES = {
+    "OPARG_FULL": 0,
+    "OPARG_CACHE_1": 1,
+    "OPARG_CACHE_2": 2,
+    "OPARG_CACHE_4": 4,
+    "OPARG_TOP": 5,
+    "OPARG_BOTTOM": 6,
+}
 
 RESERVED_WORDS = {
     "co_consts" : "Use FRAME_CO_CONSTS.",
@@ -414,8 +425,9 @@ class Instruction:
                 return False
         res = True
         for forbidden in FORBIDDEN_NAMES_IN_UOPS:
-            # TODO: Don't check in '#ifdef ENABLE_SPECIALIZATION' regions
-            if variable_used(self.inst, forbidden):
+            # NOTE: To disallow unspecialized uops, use
+            # if variable_used(self.inst, forbidden):
+            if variable_used_unspecialized(self.inst, forbidden):
                 # print(f"Skipping {self.name} because it uses {forbidden}")
                 res = False
         return res
@@ -1213,7 +1225,10 @@ class Analyzer:
                 self.out.emit("struct { int16_t uop; int8_t size; int8_t offset; } uops[8];")
             self.out.emit("")
 
+            for key, value in OPARG_SIZES.items():
+                self.out.emit(f"#define {key} {value}")
             self.out.emit("")
+
             self.out.emit("#define OPCODE_METADATA_FMT(OP) "
                           "(_PyOpcode_opcode_metadata[(OP)].instr_format)")
             self.out.emit("#define SAME_OPCODE_METADATA(OP1, OP2) \\")
@@ -1224,10 +1239,8 @@ class Analyzer:
             self.out.emit("#ifndef NEED_OPCODE_METADATA")
             self.out.emit("extern const struct opcode_metadata _PyOpcode_opcode_metadata[512];")
             self.out.emit("extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[256];")
-            self.out.emit("#ifdef Py_DEBUG")
             self.out.emit("extern const char * const _PyOpcode_uop_name[512];")
-            self.out.emit("#endif")
-            self.out.emit("#else")
+            self.out.emit("#else // if NEED_OPCODE_METADATA")
 
             self.out.emit("const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {")
 
@@ -1265,6 +1278,9 @@ class Analyzer:
                                 # Construct a dummy Component -- input/output mappings are not used
                                 part = Component(instr, [], [], instr.active_caches)
                                 self.write_macro_expansions(instr.name, [part])
+                            elif instr.kind == "inst" and variable_used(instr.inst, "oparg1"):
+                                assert variable_used(instr.inst, "oparg2"), "Half super-instr?"
+                                self.write_super_expansions(instr.name)
                         case parser.Macro():
                             mac = self.macro_instrs[thing.name]
                             self.write_macro_expansions(mac.name, mac.parts)
@@ -1273,12 +1289,10 @@ class Analyzer:
                         case _:
                             typing.assert_never(thing)
 
-            self.out.emit("#ifdef Py_DEBUG")
             with self.out.block("const char * const _PyOpcode_uop_name[512] =", ";"):
                 self.write_uop_items(lambda name, counter: f"[{counter}] = \"{name}\",")
-            self.out.emit("#endif")
 
-            self.out.emit("#endif")
+            self.out.emit("#endif // NEED_OPCODE_METADATA")
 
         with open(self.pymetadata_filename, "w") as f:
             # Create formatter
@@ -1322,12 +1336,18 @@ class Analyzer:
     def write_uop_items(self, make_text: typing.Callable[[str, int], str]) -> None:
         """Write '#define XXX NNN' for each uop"""
         counter = 300  # TODO: Avoid collision with pseudo instructions
+
         def add(name: str) -> None:
             nonlocal counter
             self.out.emit(make_text(name, counter))
             counter += 1
+
         add("EXIT_TRACE")
         add("SAVE_IP")
+        add("_POP_JUMP_IF_FALSE")
+        add("_POP_JUMP_IF_TRUE")
+        add("JUMP_TO_TOP")
+
         for instr in self.instrs.values():
             if instr.kind == "op" and instr.is_viable_uop():
                 add(instr.name)
@@ -1344,7 +1364,7 @@ class Analyzer:
                     print(f"NOTE: Part {part.instr.name} of {name} is not a viable uop")
                     return
                 if part.instr.instr_flags.HAS_ARG_FLAG or not part.active_caches:
-                    size, offset = 0, 0
+                    size, offset = OPARG_SIZES["OPARG_FULL"], 0
                 else:
                     # If this assert triggers, is_viable_uops() lied
                     assert len(part.active_caches) == 1, (name, part.instr.name)
@@ -1352,10 +1372,50 @@ class Analyzer:
                     size, offset = cache.effect.size, cache.offset
                 expansions.append((part.instr.name, size, offset))
         assert len(expansions) > 0, f"Macro {name} has empty expansion?!"
+        self.write_expansions(name, expansions)
+
+    def write_super_expansions(self, name: str) -> None:
+        """Write special macro expansions for super-instructions.
+
+        If you get an assertion failure here, you probably have accidentally
+        violated one of the assumptions here.
+
+        - A super-instruction's name is of the form FIRST_SECOND where
+          FIRST and SECOND are regular instructions whose name has the
+          form FOO_BAR. Thus, there must be exactly 3 underscores.
+          Example: LOAD_CONST_STORE_FAST.
+
+        - A super-instruction's body uses `oparg1 and `oparg2`, and no
+          other instruction's body uses those variable names.
+
+        - A super-instruction has no active (used) cache entries.
+
+        In the expansion, the first instruction's operand is all but the
+        bottom 4 bits of the super-instruction's oparg, and the second
+        instruction's operand is the bottom 4 bits. We use the special
+        size codes OPARG_TOP and OPARG_BOTTOM for these.
+        """
+        pieces = name.split("_")
+        assert len(pieces) == 4, f"{name} doesn't look like a super-instr"
+        name1 = "_".join(pieces[:2])
+        name2 = "_".join(pieces[2:])
+        assert name1 in self.instrs, f"{name1} doesn't match any instr"
+        assert name2 in self.instrs, f"{name2} doesn't match any instr"
+        instr1 = self.instrs[name1]
+        instr2 = self.instrs[name2]
+        assert not instr1.active_caches, f"{name1} has active caches"
+        assert not instr2.active_caches, f"{name2} has active caches"
+        expansions = [
+            (name1, OPARG_SIZES["OPARG_TOP"], 0),
+            (name2, OPARG_SIZES["OPARG_BOTTOM"], 0),
+        ]
+        self.write_expansions(name, expansions)
+
+    def write_expansions(self, name: str, expansions: list[tuple[str, int, int]]) -> None:
         pieces = [f"{{ {name}, {size}, {offset} }}" for name, size, offset in expansions]
         self.out.emit(
             f"[{name}] = "
-            f"{{ .nuops = {len(expansions)}, .uops = {{ {', '.join(pieces)} }} }},"
+            f"{{ .nuops = {len(pieces)}, .uops = {{ {', '.join(pieces)} }} }},"
         )
 
     def emit_metadata_entry(
@@ -1587,6 +1647,27 @@ def variable_used(node: parser.Node, name: str) -> bool:
     return any(
         token.kind == "IDENTIFIER" and token.text == name for token in node.tokens
     )
+
+
+def variable_used_unspecialized(node: parser.Node, name: str) -> bool:
+    """Like variable_used(), but skips #if ENABLE_SPECIALIZATION blocks."""
+    tokens: list[lx.Token] = []
+    skipping = False
+    for i, token in enumerate(node.tokens):
+        if token.kind == "MACRO":
+            text = "".join(token.text.split())
+            # TODO: Handle nested #if
+            if text == "#if":
+                if (
+                    i + 1 < len(node.tokens)
+                    and node.tokens[i + 1].text == "ENABLE_SPECIALIZATION"
+                ):
+                    skipping = True
+            elif text in ("#else", "#endif"):
+                skipping = False
+        if not skipping:
+            tokens.append(token)
+    return any(token.kind == "IDENTIFIER" and token.text == name for token in tokens)
 
 
 def main():

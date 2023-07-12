@@ -1107,6 +1107,21 @@ Glossary
       when several are given, such as in ``variable_name[1:3:5]``.  The bracket
       (subscript) notation uses :class:`slice` objects internally.
 
+   soft deprecated
+      A soft deprecation can be used when using an API which should no longer
+      be used to write new code, but it remains safe to continue using it in
+      existing code. The API remains documented and tested, but will not be
+      developed further (no enhancement).
+
+      The main difference between a "soft" and a (regular) "hard" deprecation
+      is that the soft deprecation does not imply scheduling the removal of the
+      deprecated API.
+
+      Another difference is that a soft deprecation does not issue a warning.
+
+      See `PEP 387: Soft Deprecation
+      <https://peps.python.org/pep-0387/#soft-deprecation>`_.
+
    special method
       .. index:: pair: special; method
 
