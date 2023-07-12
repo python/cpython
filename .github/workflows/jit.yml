@@ -97,7 +97,7 @@ jobs:
           run: |
             export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
             ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
-            make --jobs
+            make
             ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
             ./python -m test --multiprocess 0 --verbose2 --verbose3
       - name: Native Linux
@@ -107,7 +107,7 @@ jobs:
           ${{ matrix.llvm == 14 && 'sudo apt install --yes libclang-rt-14-dev' || '' }}
           export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
           ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
-          make --jobs
+          make
           ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
           ./python -m test --multiprocess 0 --verbose2 --verbose3
       - name: macOS
@@ -116,7 +116,7 @@ jobs:
           brew install llvm@${{ matrix.llvm }}
           export SDKROOT="$(xcrun --show-sdk-path)"
           ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
-          make --jobs
+          make
           ./python.exe -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
           ./python.exe -m test --multiprocess 0 --verbose2 --verbose3
       - name: Windows
