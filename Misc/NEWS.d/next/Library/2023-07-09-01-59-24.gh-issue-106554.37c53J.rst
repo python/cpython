@@ -1,1 +1,1 @@
-Reduce selector overhead by switching ``SelectSelector`` to use a ``dict`` ``.get()`` to fetch file descriptors.
+Reduce selector overhead by switching ``SelectSelector`` to use a ``dict`` ``.get()`` to lookup file descriptors.
