@@ -904,26 +904,16 @@ PyObject_GetAttrString(PyObject *v, const char *name)
 }
 
 int
-PyObject_HasAttrString(PyObject *v, const char *name)
+PyObject_HasAttrString(PyObject *obj, const char *name)
 {
-    if (Py_TYPE(v)->tp_getattr != NULL) {
-        PyObject *res = (*Py_TYPE(v)->tp_getattr)(v, (char*)name);
-        if (res != NULL) {
-            Py_DECREF(res);
-            return 1;
-        }
-        PyErr_Clear();
+    PyObject *dummy;
+    int rc = PyObject_GetOptionalAttrString(obj, name, &dummy);
+    if (rc < 0) {
+        _PyErr_WriteUnraisableMsg("on testing an object attribute", obj);
         return 0;
     }
-
-    PyObject *attr_name = PyUnicode_FromString(name);
-    if (attr_name == NULL) {
-        PyErr_Clear();
-        return 0;
-    }
-    int ok = PyObject_HasAttr(v, attr_name);
-    Py_DECREF(attr_name);
-    return ok;
+    Py_XDECREF(dummy);
+    return rc;
 }
 
 int
@@ -1142,18 +1132,16 @@ PyObject_GetOptionalAttrString(PyObject *obj, const char *name, PyObject **resul
 }
 
 int
-PyObject_HasAttr(PyObject *v, PyObject *name)
+PyObject_HasAttr(PyObject *obj, PyObject *name)
 {
-    PyObject *res;
-    if (PyObject_GetOptionalAttr(v, name, &res) < 0) {
-        PyErr_Clear();
+    PyObject *dummy;
+    int rc = PyObject_GetOptionalAttr(obj, name, &dummy);
+    if (rc < 0) {
+        _PyErr_WriteUnraisableMsg("on testing an object attribute", obj);
         return 0;
     }
-    if (res == NULL) {
-        return 0;
-    }
-    Py_DECREF(res);
-    return 1;
+    Py_XDECREF(dummy);
+    return rc;
 }
 
 int

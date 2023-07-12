@@ -2078,30 +2078,6 @@ get_mapping_items(PyObject* self, PyObject *obj)
 }
 
 static PyObject *
-test_mapping_has_key_string(PyObject *self, PyObject *Py_UNUSED(args))
-{
-    PyObject *context = PyDict_New();
-    PyObject *val = PyLong_FromLong(1);
-
-    // Since this uses `const char*` it is easier to test this in C:
-    PyDict_SetItemString(context, "a", val);
-    if (!PyMapping_HasKeyString(context, "a")) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "Existing mapping key does not exist");
-        return NULL;
-    }
-    if (PyMapping_HasKeyString(context, "b")) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "Missing mapping key exists");
-        return NULL;
-    }
-
-    Py_DECREF(val);
-    Py_DECREF(context);
-    Py_RETURN_NONE;
-}
-
-static PyObject *
 mapping_has_key(PyObject* self, PyObject *args)
 {
     PyObject *context, *key;
@@ -2109,6 +2085,18 @@ mapping_has_key(PyObject* self, PyObject *args)
         return NULL;
     }
     return PyLong_FromLong(PyMapping_HasKey(context, key));
+}
+
+static PyObject *
+mapping_has_key_string(PyObject* self, PyObject *args)
+{
+    PyObject *context;
+    const char *key;
+    Py_ssize_t size;
+    if (!PyArg_ParseTuple(args, "Oz#", &context, &key, &size)) {
+        return NULL;
+    }
+    return PyLong_FromLong(PyMapping_HasKeyString(context, key));
 }
 
 static PyObject *
@@ -3548,8 +3536,8 @@ static PyMethodDef TestMethods[] = {
     {"get_mapping_keys", get_mapping_keys, METH_O},
     {"get_mapping_values", get_mapping_values, METH_O},
     {"get_mapping_items", get_mapping_items, METH_O},
-    {"test_mapping_has_key_string", test_mapping_has_key_string, METH_NOARGS},
     {"mapping_has_key", mapping_has_key, METH_VARARGS},
+    {"mapping_has_key_string", mapping_has_key_string, METH_VARARGS},
     {"sequence_set_slice", sequence_set_slice, METH_VARARGS},
     {"sequence_del_slice", sequence_del_slice, METH_VARARGS},
     {"test_pythread_tss_key_state", test_pythread_tss_key_state, METH_VARARGS},

@@ -51,6 +51,8 @@ _testcapi = import_helper.import_module('_testcapi')
 import _testinternalcapi
 
 
+NULL = None
+
 def decode_stderr(err):
     return err.decode('utf-8', 'replace').replace('\r', '')
 
@@ -338,16 +340,83 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, _testcapi.get_mapping_items, bad_mapping)
 
     def test_mapping_has_key(self):
-        dct = {'a': 1}
-        self.assertTrue(_testcapi.mapping_has_key(dct, 'a'))
-        self.assertFalse(_testcapi.mapping_has_key(dct, 'b'))
+        has_key = _testcapi.mapping_has_key
+        dct = {'a': 1, '\U0001f40d': 2}
+        self.assertTrue(has_key(dct, 'a'))
+        self.assertFalse(has_key(dct, 'b'))
+        self.assertTrue(has_key(dct, '\U0001f40d'))
 
-        class SubDict(dict):
-            pass
+        class M:
+            def __getitem__(self, key):
+                return dct[key]
 
-        dct2 = SubDict({'a': 1})
-        self.assertTrue(_testcapi.mapping_has_key(dct2, 'a'))
-        self.assertFalse(_testcapi.mapping_has_key(dct2, 'b'))
+        dct2 = M()
+        self.assertTrue(has_key(dct2, 'a'))
+        self.assertFalse(has_key(dct2, 'b'))
+
+        with support.catch_unraisable_exception() as cm:
+            self.assertFalse(has_key(42, 'a'))
+            self.assertEqual(cm.unraisable.exc_type, TypeError)
+            self.assertEqual(str(cm.unraisable.exc_value),
+                             "'int' object is not subscriptable")
+
+        with support.catch_unraisable_exception() as cm:
+            self.assertFalse(has_key({}, []))
+            self.assertEqual(cm.unraisable.exc_type, TypeError)
+            self.assertEqual(str(cm.unraisable.exc_value),
+                             "unhashable type: 'list'")
+
+        self.assertTrue(has_key(['a', 'b'], 1))
+        with support.catch_unraisable_exception() as cm:
+            self.assertFalse(has_key([], 1))
+            self.assertEqual(cm.unraisable.exc_type, IndexError)
+            self.assertEqual(str(cm.unraisable.exc_value),
+                             'list index out of range')
+
+        with support.catch_unraisable_exception() as cm:
+            self.assertFalse(has_key([], 'a'))
+            self.assertEqual(cm.unraisable.exc_type, TypeError)
+            self.assertEqual(str(cm.unraisable.exc_value),
+                             'list indices must be integers or slices, not str')
+
+    def test_mapping_has_key_string(self):
+        has_key_string = _testcapi.mapping_has_key_string
+        dct = {'a': 1, '\U0001f40d': 2}
+        self.assertTrue(has_key_string(dct, b'a'))
+        self.assertFalse(has_key_string(dct, b'b'))
+        self.assertTrue(has_key_string(dct, '\U0001f40d'.encode()))
+
+        class M:
+            def __getitem__(self, key):
+                return dct[key]
+
+        dct2 = M()
+        self.assertTrue(has_key_string(dct2, b'a'))
+        self.assertFalse(has_key_string(dct2, b'b'))
+
+        with support.catch_unraisable_exception() as cm:
+            self.assertFalse(has_key_string(42, b'a'))
+            self.assertEqual(cm.unraisable.exc_type, TypeError)
+            self.assertEqual(str(cm.unraisable.exc_value),
+                             "'int' object is not subscriptable")
+
+        with support.catch_unraisable_exception() as cm:
+            self.assertFalse(has_key_string({}, b'\xff'))
+            self.assertEqual(cm.unraisable.exc_type, UnicodeDecodeError)
+            self.assertRegex(str(cm.unraisable.exc_value),
+                             "'utf-8' codec can't decode")
+
+        with support.catch_unraisable_exception() as cm:
+            self.assertFalse(has_key_string({}, NULL))
+            self.assertEqual(cm.unraisable.exc_type, SystemError)
+            self.assertEqual(str(cm.unraisable.exc_value),
+                             "null argument to internal routine")
+
+        with support.catch_unraisable_exception() as cm:
+            self.assertFalse(has_key_string([], b'a'))
+            self.assertEqual(cm.unraisable.exc_type, TypeError)
+            self.assertEqual(str(cm.unraisable.exc_value),
+                             'list indices must be integers or slices, not str')
 
     def test_sequence_set_slice(self):
         # Correct case:

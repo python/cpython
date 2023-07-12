@@ -2426,31 +2426,37 @@ PyMapping_SetItemString(PyObject *o, const char *key, PyObject *value)
 }
 
 int
-PyMapping_HasKeyString(PyObject *o, const char *key)
+PyMapping_HasKeyString(PyObject *obj, const char *key)
 {
-    PyObject *v;
-
-    v = PyMapping_GetItemString(o, key);
-    if (v) {
-        Py_DECREF(v);
-        return 1;
+    PyObject *dummy;
+    int rc = PyMapping_GetOptionalItemString(obj, key, &dummy);
+    if (rc < 0) {
+        _PyErr_WriteUnraisableMsg("on testing a mapping key", obj);
+        return 0;
     }
-    PyErr_Clear();
-    return 0;
+    if (rc == 0 && PyErr_Occurred()) {
+        _PyErr_WriteUnraisableMsg("before testing a mapping key", obj);
+        return 0;
+    }
+    Py_XDECREF(dummy);
+    return rc;
 }
 
 int
-PyMapping_HasKey(PyObject *o, PyObject *key)
+PyMapping_HasKey(PyObject *obj, PyObject *key)
 {
-    PyObject *v;
-
-    v = PyObject_GetItem(o, key);
-    if (v) {
-        Py_DECREF(v);
-        return 1;
+    PyObject *dummy;
+    int rc = PyMapping_GetOptionalItem(obj, key, &dummy);
+    if (rc < 0) {
+        _PyErr_WriteUnraisableMsg("on testing a mapping key", obj);
+        return 0;
     }
-    PyErr_Clear();
-    return 0;
+    if (rc == 0 && PyErr_Occurred()) {
+        _PyErr_WriteUnraisableMsg("before testing a mapping key", obj);
+        return 0;
+    }
+    Py_XDECREF(dummy);
+    return rc;
 }
 
 /* This function is quite similar to PySequence_Fast(), but specialized to be

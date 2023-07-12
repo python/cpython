@@ -1673,7 +1673,7 @@ PyDict_GetItem(PyObject *op, PyObject *key)
     if (!PyUnicode_CheckExact(key) || (hash = unicode_get_hash(key)) == -1) {
         hash = PyObject_Hash(key);
         if (hash == -1) {
-            PyErr_Clear();
+            _PyErr_WriteUnraisableMsg("on getting a dict key", op);
             return NULL;
         }
     }
@@ -1694,6 +1694,10 @@ PyDict_GetItem(PyObject *op, PyObject *key)
     ix = _Py_dict_lookup(mp, key, hash, &value);
 
     /* Ignore any exception raised by the lookup */
+    PyObject *exc2 = _PyErr_Occurred(tstate);
+    if (exc2 && !PyErr_GivenExceptionMatches(exc2, PyExc_KeyError)) {
+        _PyErr_WriteUnraisableMsg("on getting a dict key", op);
+    }
     _PyErr_SetRaisedException(tstate, exc);
 
 
@@ -3889,7 +3893,7 @@ PyDict_GetItemString(PyObject *v, const char *key)
     PyObject *kv, *rv;
     kv = PyUnicode_FromString(key);
     if (kv == NULL) {
-        PyErr_Clear();
+        _PyErr_WriteUnraisableMsg("on getting a dict key", v);
         return NULL;
     }
     rv = PyDict_GetItem(v, kv);
