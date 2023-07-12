@@ -1242,6 +1242,12 @@ class Enum(metaclass=EnumType):
     def __reduce_ex__(self, proto):
         return self.__class__, (self._value_, )
 
+    def __deepcopy__(self,memo):
+        return self
+
+    def __copy__(self):
+        return self
+
     # enum.property is used to provide access to the `name` and
     # `value` attributes of enum members while keeping some measure of
     # protection from modification, while still allowing for an enumeration
