@@ -2627,6 +2627,28 @@ class TestUops(unittest.TestCase):
         # Verification that the jump goes past END_FOR
         # is done by manual inspection of the output
 
+    def test_for_iter_tuple(self):
+        def testfunc(a):
+            total = 0
+            for i in a:
+                total += i
+            return total
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            a = tuple(range(10))
+            total = testfunc(a)
+            self.assertEqual(total, 45)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        # for i, (opname, oparg) in enumerate(ex):
+        #     print(f"{i:4d}: {opname:<20s} {oparg:3d}")
+        uops = {opname for opname, _ in ex}
+        self.assertIn("_ITER_EXHAUSTED_TUPLE", uops)
+        # Verification that the jump goes past END_FOR
+        # is done by manual inspection of the output
+
 
 if __name__ == "__main__":
     unittest.main()
