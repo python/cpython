@@ -397,7 +397,7 @@ although there is currently no date scheduled for their removal.
 * :mod:`os`: Calling :func:`os.register_at_fork` in multi-threaded process.
 
 * :class:`!pydoc.ErrorDuringImport`: A tuple value for *exc_info* parameter is
-  deprecated, use an exception instance
+  deprecated, use an exception instance.
 
 * :mod:`re`: More strict rules are now applied for numerical group references
   and group names in regular expressions.  Only sequence of ASCII digits is now
