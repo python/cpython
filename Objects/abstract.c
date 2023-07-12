@@ -182,7 +182,7 @@ PyObject_GetItem(PyObject *o, PyObject *key)
             return Py_GenericAlias(o, key);
         }
 
-        if (_PyObject_LookupAttr(o, &_Py_ID(__class_getitem__), &meth) < 0) {
+        if (PyObject_GetOptionalAttr(o, &_Py_ID(__class_getitem__), &meth) < 0) {
             return NULL;
         }
         if (meth && meth != Py_None) {
@@ -2552,7 +2552,7 @@ abstract_get_bases(PyObject *cls)
 {
     PyObject *bases;
 
-    (void)_PyObject_LookupAttr(cls, &_Py_ID(__bases__), &bases);
+    (void)PyObject_GetOptionalAttr(cls, &_Py_ID(__bases__), &bases);
     if (bases != NULL && !PyTuple_Check(bases)) {
         Py_DECREF(bases);
         return NULL;
@@ -2636,7 +2636,7 @@ object_isinstance(PyObject *inst, PyObject *cls)
     if (PyType_Check(cls)) {
         retval = PyObject_TypeCheck(inst, (PyTypeObject *)cls);
         if (retval == 0) {
-            retval = _PyObject_LookupAttr(inst, &_Py_ID(__class__), &icls);
+            retval = PyObject_GetOptionalAttr(inst, &_Py_ID(__class__), &icls);
             if (icls != NULL) {
                 if (icls != (PyObject *)(Py_TYPE(inst)) && PyType_Check(icls)) {
                     retval = PyType_IsSubtype(
@@ -2654,7 +2654,7 @@ object_isinstance(PyObject *inst, PyObject *cls)
         if (!check_class(cls,
             "isinstance() arg 2 must be a type, a tuple of types, or a union"))
             return -1;
-        retval = _PyObject_LookupAttr(inst, &_Py_ID(__class__), &icls);
+        retval = PyObject_GetOptionalAttr(inst, &_Py_ID(__class__), &icls);
         if (icls != NULL) {
             retval = abstract_issubclass(icls, cls);
             Py_DECREF(icls);

@@ -988,6 +988,28 @@
             break;
         }
 
+        case _SKIP_CACHE: {
+            break;
+        }
+
+        case _GUARD_GLOBALS_VERSION: {
+            uint16_t version = (uint16_t)operand;
+            PyDictObject *dict = (PyDictObject *)GLOBALS();
+            DEOPT_IF(!PyDict_CheckExact(dict), LOAD_GLOBAL);
+            DEOPT_IF(dict->ma_keys->dk_version != version, LOAD_GLOBAL);
+            assert(DK_IS_UNICODE(dict->ma_keys));
+            break;
+        }
+
+        case _GUARD_BUILTINS_VERSION: {
+            uint16_t version = (uint16_t)operand;
+            PyDictObject *dict = (PyDictObject *)BUILTINS();
+            DEOPT_IF(!PyDict_CheckExact(dict), LOAD_GLOBAL);
+            DEOPT_IF(dict->ma_keys->dk_version != version, LOAD_GLOBAL);
+            assert(DK_IS_UNICODE(dict->ma_keys));
+            break;
+        }
+
         case DELETE_FAST: {
             PyObject *v = GETLOCAL(oparg);
             if (v == NULL) goto unbound_local_error;

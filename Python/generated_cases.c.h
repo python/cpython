@@ -1660,53 +1660,79 @@
         }
 
         TARGET(LOAD_GLOBAL_MODULE) {
-            PyObject *null = NULL;
-            PyObject *res;
-            uint16_t index = read_u16(&next_instr[1].cache);
-            uint16_t version = read_u16(&next_instr[2].cache);
-            DEOPT_IF(!PyDict_CheckExact(GLOBALS()), LOAD_GLOBAL);
-            PyDictObject *dict = (PyDictObject *)GLOBALS();
-            DEOPT_IF(dict->ma_keys->dk_version != version, LOAD_GLOBAL);
-            assert(DK_IS_UNICODE(dict->ma_keys));
-            PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
-            res = entries[index].me_value;
-            DEOPT_IF(res == NULL, LOAD_GLOBAL);
-            Py_INCREF(res);
-            STAT_INC(LOAD_GLOBAL, hit);
-            null = NULL;
+            PyObject *_tmp_1;
+            PyObject *_tmp_2;
+            {
+            }
+            {
+                uint16_t version = read_u16(&next_instr[1].cache);
+                PyDictObject *dict = (PyDictObject *)GLOBALS();
+                DEOPT_IF(!PyDict_CheckExact(dict), LOAD_GLOBAL);
+                DEOPT_IF(dict->ma_keys->dk_version != version, LOAD_GLOBAL);
+                assert(DK_IS_UNICODE(dict->ma_keys));
+            }
+            {
+            }
+            {
+                PyObject *null = NULL;
+                PyObject *res;
+                uint16_t index = read_u16(&next_instr[3].cache);
+                PyDictObject *dict = (PyDictObject *)GLOBALS();
+                PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
+                res = entries[index].me_value;
+                DEOPT_IF(res == NULL, LOAD_GLOBAL);
+                Py_INCREF(res);
+                STAT_INC(LOAD_GLOBAL, hit);
+                null = NULL;
+                if (oparg & 1) { _tmp_2 = null; }
+                _tmp_1 = res;
+            }
+            next_instr += 4;
             STACK_GROW(1);
             STACK_GROW(((oparg & 1) ? 1 : 0));
-            stack_pointer[-1] = res;
-            if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = null; }
-            next_instr += 4;
+            stack_pointer[-1] = _tmp_1;
+            if (oparg & 1) { stack_pointer[-2] = _tmp_2; }
             DISPATCH();
         }
 
         TARGET(LOAD_GLOBAL_BUILTIN) {
-            PyObject *null = NULL;
-            PyObject *res;
-            uint16_t index = read_u16(&next_instr[1].cache);
-            uint16_t mod_version = read_u16(&next_instr[2].cache);
-            uint16_t bltn_version = read_u16(&next_instr[3].cache);
-            DEOPT_IF(!PyDict_CheckExact(GLOBALS()), LOAD_GLOBAL);
-            DEOPT_IF(!PyDict_CheckExact(BUILTINS()), LOAD_GLOBAL);
-            PyDictObject *mdict = (PyDictObject *)GLOBALS();
-            PyDictObject *bdict = (PyDictObject *)BUILTINS();
-            assert(opcode == LOAD_GLOBAL_BUILTIN);
-            DEOPT_IF(mdict->ma_keys->dk_version != mod_version, LOAD_GLOBAL);
-            DEOPT_IF(bdict->ma_keys->dk_version != bltn_version, LOAD_GLOBAL);
-            assert(DK_IS_UNICODE(bdict->ma_keys));
-            PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(bdict->ma_keys);
-            res = entries[index].me_value;
-            DEOPT_IF(res == NULL, LOAD_GLOBAL);
-            Py_INCREF(res);
-            STAT_INC(LOAD_GLOBAL, hit);
-            null = NULL;
+            PyObject *_tmp_1;
+            PyObject *_tmp_2;
+            {
+            }
+            {
+                uint16_t version = read_u16(&next_instr[1].cache);
+                PyDictObject *dict = (PyDictObject *)GLOBALS();
+                DEOPT_IF(!PyDict_CheckExact(dict), LOAD_GLOBAL);
+                DEOPT_IF(dict->ma_keys->dk_version != version, LOAD_GLOBAL);
+                assert(DK_IS_UNICODE(dict->ma_keys));
+            }
+            {
+                uint16_t version = read_u16(&next_instr[2].cache);
+                PyDictObject *dict = (PyDictObject *)BUILTINS();
+                DEOPT_IF(!PyDict_CheckExact(dict), LOAD_GLOBAL);
+                DEOPT_IF(dict->ma_keys->dk_version != version, LOAD_GLOBAL);
+                assert(DK_IS_UNICODE(dict->ma_keys));
+            }
+            {
+                PyObject *null = NULL;
+                PyObject *res;
+                uint16_t index = read_u16(&next_instr[3].cache);
+                PyDictObject *bdict = (PyDictObject *)BUILTINS();
+                PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(bdict->ma_keys);
+                res = entries[index].me_value;
+                DEOPT_IF(res == NULL, LOAD_GLOBAL);
+                Py_INCREF(res);
+                STAT_INC(LOAD_GLOBAL, hit);
+                null = NULL;
+                if (oparg & 1) { _tmp_2 = null; }
+                _tmp_1 = res;
+            }
+            next_instr += 4;
             STACK_GROW(1);
             STACK_GROW(((oparg & 1) ? 1 : 0));
-            stack_pointer[-1] = res;
-            if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = null; }
-            next_instr += 4;
+            stack_pointer[-1] = _tmp_1;
+            if (oparg & 1) { stack_pointer[-2] = _tmp_2; }
             DISPATCH();
         }
 
