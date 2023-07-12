@@ -529,6 +529,9 @@ result back on the stack.
 
    Implements ``STACK[-1] = not STACK[-1]``.
 
+   .. versionchanged:: 3.13
+      This instruction now requires an exact :class:`bool` operand.
+
 
 .. opcode:: UNARY_INVERT
 
@@ -546,6 +549,13 @@ result back on the stack.
    it is left as is.  Otherwise, implements ``STACK[-1] = iter(STACK[-1])``.
 
    .. versionadded:: 3.5
+
+
+.. opcode:: TO_BOOL
+
+   Implements ``STACK[-1] = bool(STACK[-1])``.
+
+   .. versionadded:: 3.13
 
 
 **Binary and in-place operations**
@@ -1127,7 +1137,12 @@ iterations of the loop.
 .. opcode:: COMPARE_OP (opname)
 
    Performs a Boolean operation.  The operation name can be found in
-   ``cmp_op[opname]``.
+   ``cmp_op[opname >> 5]``. If the fifth-lowest bit of ``opname`` is set
+   (``opname & 16``), the result should be coerced to ``bool``.
+
+   .. versionchanged:: 3.13
+      The fifth-lowest bit of the oparg now indicates a forced conversion to
+      :class:`bool`.
 
 
 .. opcode:: IS_OP (invert)
@@ -1191,6 +1206,9 @@ iterations of the loop.
    .. versionchanged:: 3.12
       This is no longer a pseudo-instruction.
 
+   .. versionchanged:: 3.13
+      This instruction now requires an exact :class:`bool` operand.
+
 .. opcode:: POP_JUMP_IF_FALSE (delta)
 
    If ``STACK[-1]`` is false, increments the bytecode counter by *delta*.
@@ -1203,6 +1221,9 @@ iterations of the loop.
 
    .. versionchanged:: 3.12
       This is no longer a pseudo-instruction.
+
+   .. versionchanged:: 3.13
+      This instruction now requires an exact :class:`bool` operand.
 
 .. opcode:: POP_JUMP_IF_NOT_NONE (delta)
 
@@ -1289,18 +1310,6 @@ iterations of the loop.
    that value is stored into the new cell.
 
    .. versionadded:: 3.11
-
-
-.. opcode:: LOAD_CLOSURE (i)
-
-   Pushes a reference to the cell contained in slot ``i`` of the "fast locals"
-   storage.  The name of the variable is ``co_fastlocalnames[i]``.
-
-   Note that ``LOAD_CLOSURE`` is effectively an alias for ``LOAD_FAST``.
-   It exists to keep bytecode a little more readable.
-
-   .. versionchanged:: 3.11
-      ``i`` is no longer offset by the length of ``co_varnames``.
 
 
 .. opcode:: LOAD_DEREF (i)
@@ -1724,6 +1733,17 @@ but are replaced by real opcodes or removed before bytecode is generated.
 
    Undirected relative jump instructions which are replaced by their
    directed (forward/backward) counterparts by the assembler.
+
+.. opcode:: LOAD_CLOSURE (i)
+
+   Pushes a reference to the cell contained in slot ``i`` of the "fast locals"
+   storage.
+
+   Note that ``LOAD_CLOSURE`` is replaced with ``LOAD_FAST`` in the assembler.
+
+   .. versionchanged:: 3.13
+      This opcode is now a pseudo-instruction.
+
 
 .. opcode:: LOAD_METHOD
 

@@ -253,6 +253,12 @@ Inlining does result in a few visible behavior changes:
 * Calling :func:`locals` inside a comprehension now includes variables
   from outside the comprehension, and no longer includes the synthetic ``.0``
   variable for the comprehension "argument".
+* A comprehension iterating directly over ``locals()`` (e.g. ``[k for k in
+  locals()]``) may see "RuntimeError: dictionary changed size during iteration"
+  when run under tracing (e.g. code coverage measurement). This is the same
+  behavior already seen in e.g. ``for k in locals():``. To avoid the error, first
+  create a list of keys to iterate over: ``keys = list(locals()); [k for k in
+  keys]``.
 
 Contributed by Carl Meyer and Vladimir Matveev in :pep:`709`.
 
@@ -564,6 +570,14 @@ dis
   :data:`~dis.hasarg` collection instead.
   (Contributed by Irit Katriel in :gh:`94216`.)
 
+email
+-----
+
+* :func:`email.utils.getaddresses` and :func:`email.utils.parseaddr` now return
+  ``('', '')`` 2-tuples in more situations where invalid email addresses are
+  encountered instead of potentially inaccurate values.
+  (Contributed by Thomas Dwyer for :gh:`102988` to ameliorate CVE-2023-27043.)
+
 fractions
 ---------
 
@@ -592,14 +606,6 @@ itertools
 * Added :class:`itertools.batched()` for collecting into even-sized
   tuples where the last batch may be shorter than the rest.
   (Contributed by Raymond Hettinger in :gh:`98363`.)
-
-json
-----
-
-* Added :class:`json.AttrDict` for use with ``object_hook`` in :func:`json.load`
-  or :func:`json.loads`.  This is a subclass of :class:`dict` that also supports
-  attribute style dotted access.
-  (Contributed by Raymond Hettinger in :gh:`96145`.)
 
 math
 ----
@@ -1831,7 +1837,31 @@ Porting to Python 3.12
   allowing incomplete initialization.
 
   Note that :c:func:`PyType_FromMetaclass` (added in Python 3.12)
-  already disallows creating classes whose metaclass overrides ``tp_new``.
+  already disallows creating classes whose metaclass overrides ``tp_new``
+  (:meth:`~object.__new__` in Python).
+
+  Since ``tp_new`` overrides almost everything ``PyType_From*`` functions do,
+  the two are incompatible with each other.
+  The existing behavior -- ignoring the metaclass for several steps
+  of type creation -- is unsafe in general, since (meta)classes assume that
+  ``tp_new`` was called.
+  There is no simple general workaround. One of the following may work for you:
+
+  - If you control the metaclass, avoid using ``tp_new`` in it:
+
+    - If initialization can be skipped, it can be done in
+      :c:member:`~PyTypeObject.tp_init` instead.
+    - If the metaclass doesn't need to be instantiated from Python,
+      set its ``tp_new`` to ``NULL`` using
+      the :const:`Py_TPFLAGS_DISALLOW_INSTANTIATION` flag.
+      This makes it acceptable for ``PyType_From*`` functions.
+
+  - Avoid ``PyType_From*`` functions: if you don't need C-specific features
+    (slots or setting the instance size), create types by :ref:`calling <call>`
+    the metaclass.
+
+  - If you *know* the ``tp_new`` can be skipped safely, filter the deprecation
+    warning out using :func:`warnings.catch_warnings` from Python.
 
 * :c:var:`PyOS_InputHook` and :c:var:`PyOS_ReadlineFunctionPointer` are no
   longer called in :ref:`subinterpreters <sub-interpreter-support>`. This is
@@ -1866,6 +1896,7 @@ Deprecated
   * :c:var:`Py_LegacyWindowsFSEncodingFlag`: use :c:member:`PyPreConfig.legacy_windows_fs_encoding`
   * :c:var:`Py_LegacyWindowsStdioFlag`: use :c:member:`PyConfig.legacy_windows_stdio`
   * :c:var:`!Py_FileSystemDefaultEncoding`: use :c:member:`PyConfig.filesystem_encoding`
+  * :c:var:`!Py_HasFileSystemDefaultEncoding`: use :c:member:`PyConfig.filesystem_encoding`
   * :c:var:`!Py_FileSystemDefaultEncodeErrors`: use :c:member:`PyConfig.filesystem_errors`
   * :c:var:`!Py_UTF8Mode`: use :c:member:`PyPreConfig.utf8_mode` (see :c:func:`Py_PreInitialize`)
 

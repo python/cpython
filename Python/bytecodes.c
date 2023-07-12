@@ -8,7 +8,6 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
-#include "pycore_call.h"          // _PyObject_FastCallDictTstate()
 #include "pycore_ceval.h"         // _PyEval_SignalAsyncExc()
 #include "pycore_code.h"
 #include "pycore_function.h"
@@ -51,8 +50,6 @@
 #define super(name) static int SUPER_##name
 #define family(name, ...) static int family_##name
 #define pseudo(name) static int pseudo_##name
-
-typedef PyObject *(*convertion_func_ptr)(PyObject *);
 
 // Dummy variables for stack effects.
 static PyObject *value, *value1, *value2, *left, *right, *res, *sum, *prod, *sub;
@@ -144,8 +141,8 @@ dummy_func(
                 ERROR_IF(err, error);
                 next_instr--;
             }
-            else if (_Py_atomic_load_relaxed_int32(&tstate->interp->ceval.eval_breaker) && oparg < 2) {
-                goto handle_eval_breaker;
+            else if (oparg < 2) {
+                CHECK_EVAL_BREAKER();
             }
         }
 
@@ -161,6 +158,9 @@ dummy_func(
                 next_instr--;
             }
             else {
+                if (oparg < 2) {
+                    CHECK_EVAL_BREAKER();
+                }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 int err = _Py_call_instrumentation(
                         tstate, oparg > 0, frame, next_instr-1);
@@ -171,18 +171,12 @@ dummy_func(
                     next_instr = frame->prev_instr;
                     DISPATCH();
                 }
-                if (_Py_atomic_load_relaxed_int32(&tstate->interp->ceval.eval_breaker) && oparg < 2) {
-                    goto handle_eval_breaker;
-                }
             }
         }
 
-        inst(LOAD_CLOSURE, (-- value)) {
-            /* We keep LOAD_CLOSURE so that the bytecode stays more readable. */
-            value = GETLOCAL(oparg);
-            ERROR_IF(value == NULL, unbound_local_error);
-            Py_INCREF(value);
-        }
+        pseudo(LOAD_CLOSURE) = {
+            LOAD_FAST,
+        };
 
         inst(LOAD_FAST_CHECK, (-- value)) {
             value = GETLOCAL(oparg);
@@ -284,15 +278,90 @@ dummy_func(
         }
 
         inst(UNARY_NOT, (value -- res)) {
+            assert(PyBool_Check(value));
+            res = Py_IsFalse(value) ? Py_True : Py_False;
+        }
+
+        family(to_bool, INLINE_CACHE_ENTRIES_TO_BOOL) = {
+            TO_BOOL,
+            TO_BOOL_ALWAYS_TRUE,
+            TO_BOOL_BOOL,
+            TO_BOOL_INT,
+            TO_BOOL_LIST,
+            TO_BOOL_NONE,
+            TO_BOOL_STR,
+        };
+
+        inst(TO_BOOL, (unused/1, unused/2, value -- res)) {
+            #if ENABLE_SPECIALIZATION
+            _PyToBoolCache *cache = (_PyToBoolCache *)next_instr;
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
+                next_instr--;
+                _Py_Specialize_ToBool(value, next_instr);
+                DISPATCH_SAME_OPARG();
+            }
+            STAT_INC(TO_BOOL, deferred);
+            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            #endif  /* ENABLE_SPECIALIZATION */
             int err = PyObject_IsTrue(value);
             DECREF_INPUTS();
             ERROR_IF(err < 0, error);
-            if (err == 0) {
-                res = Py_True;
-            }
-            else {
+            res = err ? Py_True : Py_False;
+        }
+
+        inst(TO_BOOL_BOOL, (unused/1, unused/2, value -- value)) {
+            DEOPT_IF(!PyBool_Check(value), TO_BOOL);
+            STAT_INC(TO_BOOL, hit);
+        }
+
+        inst(TO_BOOL_INT, (unused/1, unused/2, value -- res)) {
+            DEOPT_IF(!PyLong_CheckExact(value), TO_BOOL);
+            STAT_INC(TO_BOOL, hit);
+            if (_PyLong_IsZero((PyLongObject *)value)) {
+                assert(_Py_IsImmortal(value));
                 res = Py_False;
             }
+            else {
+                DECREF_INPUTS();
+                res = Py_True;
+            }
+        }
+
+        inst(TO_BOOL_LIST, (unused/1, unused/2, value -- res)) {
+            DEOPT_IF(!PyList_CheckExact(value), TO_BOOL);
+            STAT_INC(TO_BOOL, hit);
+            res = Py_SIZE(value) ? Py_True : Py_False;
+            DECREF_INPUTS();
+        }
+
+        inst(TO_BOOL_NONE, (unused/1, unused/2, value -- res)) {
+            // This one is a bit weird, because we expect *some* failures:
+            DEOPT_IF(!Py_IsNone(value), TO_BOOL);
+            STAT_INC(TO_BOOL, hit);
+            res = Py_False;
+        }
+
+        inst(TO_BOOL_STR, (unused/1, unused/2, value -- res)) {
+            DEOPT_IF(!PyUnicode_CheckExact(value), TO_BOOL);
+            STAT_INC(TO_BOOL, hit);
+            if (value == &_Py_STR(empty)) {
+                assert(_Py_IsImmortal(value));
+                res = Py_False;
+            }
+            else {
+                assert(Py_SIZE(value));
+                DECREF_INPUTS();
+                res = Py_True;
+            }
+        }
+
+        inst(TO_BOOL_ALWAYS_TRUE, (unused/1, version/2, value -- res)) {
+            // This one is a bit weird, because we expect *some* failures:
+            assert(version);
+            DEOPT_IF(Py_TYPE(value)->tp_version_tag != version, TO_BOOL);
+            STAT_INC(TO_BOOL, hit);
+            DECREF_INPUTS();
+            res = Py_True;
         }
 
         inst(UNARY_INVERT, (value -- res)) {
@@ -1017,26 +1086,11 @@ dummy_func(
         }
 
         inst(LOAD_BUILD_CLASS, ( -- bc)) {
-            if (PyDict_CheckExact(BUILTINS())) {
-                bc = _PyDict_GetItemWithError(BUILTINS(),
-                                              &_Py_ID(__build_class__));
-                if (bc == NULL) {
-                    if (!_PyErr_Occurred(tstate)) {
-                        _PyErr_SetString(tstate, PyExc_NameError,
-                                         "__build_class__ not found");
-                    }
-                    ERROR_IF(true, error);
-                }
-                Py_INCREF(bc);
-            }
-            else {
-                bc = PyObject_GetItem(BUILTINS(), &_Py_ID(__build_class__));
-                if (bc == NULL) {
-                    if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError))
-                        _PyErr_SetString(tstate, PyExc_NameError,
-                                         "__build_class__ not found");
-                    ERROR_IF(true, error);
-                }
+            ERROR_IF(PyMapping_GetOptionalItem(BUILTINS(), &_Py_ID(__build_class__), &bc) < 0, error);
+            if (bc == NULL) {
+                _PyErr_SetString(tstate, PyExc_NameError,
+                                 "__build_class__ not found");
+                ERROR_IF(true, error);
             }
         }
 
@@ -1171,7 +1225,7 @@ dummy_func(
 
         inst(DELETE_ATTR, (owner --)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyObject_SetAttr(owner, name, (PyObject *)NULL);
+            int err = PyObject_DelAttr(owner, name);
             DECREF_INPUTS();
             ERROR_IF(err, error);
         }
@@ -1211,25 +1265,9 @@ dummy_func(
 
         op(_LOAD_FROM_DICT_OR_GLOBALS, (mod_or_class_dict -- v)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            if (PyDict_CheckExact(mod_or_class_dict)) {
-                v = PyDict_GetItemWithError(mod_or_class_dict, name);
-                if (v != NULL) {
-                    Py_INCREF(v);
-                }
-                else if (_PyErr_Occurred(tstate)) {
-                    Py_DECREF(mod_or_class_dict);
-                    goto error;
-                }
-            }
-            else {
-                v = PyObject_GetItem(mod_or_class_dict, name);
-                if (v == NULL) {
-                    if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-                        Py_DECREF(mod_or_class_dict);
-                        goto error;
-                    }
-                    _PyErr_Clear(tstate);
-                }
+            if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
+                Py_DECREF(mod_or_class_dict);
+                goto error;
             }
             Py_DECREF(mod_or_class_dict);
             if (v == NULL) {
@@ -1241,28 +1279,14 @@ dummy_func(
                     goto error;
                 }
                 else {
-                    if (PyDict_CheckExact(BUILTINS())) {
-                        v = PyDict_GetItemWithError(BUILTINS(), name);
-                        if (v == NULL) {
-                            if (!_PyErr_Occurred(tstate)) {
-                                format_exc_check_arg(
-                                        tstate, PyExc_NameError,
-                                        NAME_ERROR_MSG, name);
-                            }
-                            goto error;
-                        }
-                        Py_INCREF(v);
+                    if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
+                        goto error;
                     }
-                    else {
-                        v = PyObject_GetItem(BUILTINS(), name);
-                        if (v == NULL) {
-                            if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-                                format_exc_check_arg(
-                                            tstate, PyExc_NameError,
-                                            NAME_ERROR_MSG, name);
-                            }
-                            goto error;
-                        }
+                    if (v == NULL) {
+                        format_exc_check_arg(
+                                    tstate, PyExc_NameError,
+                                    NAME_ERROR_MSG, name);
+                        goto error;
                     }
                 }
             }
@@ -1312,19 +1336,14 @@ dummy_func(
                 /* Slow-path if globals or builtins is not a dict */
 
                 /* namespace 1: globals */
-                v = PyObject_GetItem(GLOBALS(), name);
+                ERROR_IF(PyMapping_GetOptionalItem(GLOBALS(), name, &v) < 0, error);
                 if (v == NULL) {
-                    ERROR_IF(!_PyErr_ExceptionMatches(tstate, PyExc_KeyError), error);
-                    _PyErr_Clear(tstate);
-
                     /* namespace 2: builtins */
-                    v = PyObject_GetItem(BUILTINS(), name);
+                    ERROR_IF(PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0, error);
                     if (v == NULL) {
-                        if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-                            format_exc_check_arg(
-                                        tstate, PyExc_NameError,
-                                        NAME_ERROR_MSG, name);
-                        }
+                        format_exc_check_arg(
+                                    tstate, PyExc_NameError,
+                                    NAME_ERROR_MSG, name);
                         ERROR_IF(true, error);
                     }
                 }
@@ -1332,11 +1351,25 @@ dummy_func(
             null = NULL;
         }
 
-        inst(LOAD_GLOBAL_MODULE, (unused/1, index/1, version/1, unused/1 -- null if (oparg & 1), res)) {
-            DEOPT_IF(!PyDict_CheckExact(GLOBALS()), LOAD_GLOBAL);
+        op(_SKIP_CACHE, (unused/1 -- )) {
+        }
+
+        op(_GUARD_GLOBALS_VERSION, (version/1 --)) {
             PyDictObject *dict = (PyDictObject *)GLOBALS();
+            DEOPT_IF(!PyDict_CheckExact(dict), LOAD_GLOBAL);
             DEOPT_IF(dict->ma_keys->dk_version != version, LOAD_GLOBAL);
             assert(DK_IS_UNICODE(dict->ma_keys));
+        }
+
+        op(_GUARD_BUILTINS_VERSION, (version/1 --)) {
+            PyDictObject *dict = (PyDictObject *)BUILTINS();
+            DEOPT_IF(!PyDict_CheckExact(dict), LOAD_GLOBAL);
+            DEOPT_IF(dict->ma_keys->dk_version != version, LOAD_GLOBAL);
+            assert(DK_IS_UNICODE(dict->ma_keys));
+        }
+
+        op(_LOAD_GLOBAL_MODULE, (index/1 -- null if (oparg & 1), res)) {
+            PyDictObject *dict = (PyDictObject *)GLOBALS();
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
             res = entries[index].me_value;
             DEOPT_IF(res == NULL, LOAD_GLOBAL);
@@ -1345,15 +1378,8 @@ dummy_func(
             null = NULL;
         }
 
-        inst(LOAD_GLOBAL_BUILTIN, (unused/1, index/1, mod_version/1, bltn_version/1 -- null if (oparg & 1), res)) {
-            DEOPT_IF(!PyDict_CheckExact(GLOBALS()), LOAD_GLOBAL);
-            DEOPT_IF(!PyDict_CheckExact(BUILTINS()), LOAD_GLOBAL);
-            PyDictObject *mdict = (PyDictObject *)GLOBALS();
+        op(_LOAD_GLOBAL_BUILTINS, (index/1 -- null if (oparg & 1), res)) {
             PyDictObject *bdict = (PyDictObject *)BUILTINS();
-            assert(opcode == LOAD_GLOBAL_BUILTIN);
-            DEOPT_IF(mdict->ma_keys->dk_version != mod_version, LOAD_GLOBAL);
-            DEOPT_IF(bdict->ma_keys->dk_version != bltn_version, LOAD_GLOBAL);
-            assert(DK_IS_UNICODE(bdict->ma_keys));
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(bdict->ma_keys);
             res = entries[index].me_value;
             DEOPT_IF(res == NULL, LOAD_GLOBAL);
@@ -1361,6 +1387,18 @@ dummy_func(
             STAT_INC(LOAD_GLOBAL, hit);
             null = NULL;
         }
+
+        macro(LOAD_GLOBAL_MODULE) =
+            _SKIP_CACHE + // Skip over the counter
+            _GUARD_GLOBALS_VERSION +
+            _SKIP_CACHE + // Skip over the builtins version
+            _LOAD_GLOBAL_MODULE;
+
+        macro(LOAD_GLOBAL_BUILTIN) =
+            _SKIP_CACHE + // Skip over the counter
+            _GUARD_GLOBALS_VERSION +
+            _GUARD_BUILTINS_VERSION +
+            _LOAD_GLOBAL_BUILTINS;
 
         inst(DELETE_FAST, (--)) {
             PyObject *v = GETLOCAL(oparg);
@@ -1397,25 +1435,9 @@ dummy_func(
             assert(class_dict);
             assert(oparg >= 0 && oparg < _PyFrame_GetCode(frame)->co_nlocalsplus);
             name = PyTuple_GET_ITEM(_PyFrame_GetCode(frame)->co_localsplusnames, oparg);
-            if (PyDict_CheckExact(class_dict)) {
-                value = PyDict_GetItemWithError(class_dict, name);
-                if (value != NULL) {
-                    Py_INCREF(value);
-                }
-                else if (_PyErr_Occurred(tstate)) {
-                    Py_DECREF(class_dict);
-                    goto error;
-                }
-            }
-            else {
-                value = PyObject_GetItem(class_dict, name);
-                if (value == NULL) {
-                    if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-                        Py_DECREF(class_dict);
-                        goto error;
-                    }
-                    _PyErr_Clear(tstate);
-                }
+            if (PyMapping_GetOptionalItem(class_dict, name, &value) < 0) {
+                Py_DECREF(class_dict);
+                goto error;
             }
             Py_DECREF(class_dict);
             if (!value) {
@@ -1553,10 +1575,8 @@ dummy_func(
             }
             else {
                 /* do the same if locals() is not a dict */
-                ann_dict = PyObject_GetItem(LOCALS(), &_Py_ID(__annotations__));
+                ERROR_IF(PyMapping_GetOptionalItem(LOCALS(), &_Py_ID(__annotations__), &ann_dict) < 0, error);
                 if (ann_dict == NULL) {
-                    ERROR_IF(!_PyErr_ExceptionMatches(tstate, PyExc_KeyError), error);
-                    _PyErr_Clear(tstate);
                     ann_dict = PyDict_New();
                     ERROR_IF(ann_dict == NULL, error);
                     err = PyObject_SetItem(LOCALS(), &_Py_ID(__annotations__),
@@ -1740,6 +1760,8 @@ dummy_func(
             LOAD_ATTR_METHOD_WITH_VALUES,
             LOAD_ATTR_METHOD_NO_DICT,
             LOAD_ATTR_METHOD_LAZY_DICT,
+            LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES,
+            LOAD_ATTR_NONDESCRIPTOR_NO_DICT,
         };
 
         inst(LOAD_ATTR, (unused/9, owner -- res2 if (oparg & 1), res)) {
@@ -2029,10 +2051,16 @@ dummy_func(
             STAT_INC(COMPARE_OP, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
-            assert((oparg >> 4) <= Py_GE);
-            res = PyObject_RichCompare(left, right, oparg>>4);
+            assert((oparg >> 5) <= Py_GE);
+            res = PyObject_RichCompare(left, right, oparg >> 5);
             DECREF_INPUTS();
             ERROR_IF(res == NULL, error);
+            if (oparg & 16) {
+                int res_bool = PyObject_IsTrue(res);
+                Py_DECREF(res);
+                ERROR_IF(res_bool < 0, error);
+                res = res_bool ? Py_True : Py_False;
+            }
         }
 
         inst(COMPARE_OP_FLOAT, (unused/1, left, right -- res)) {
@@ -2046,6 +2074,7 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
             res = (sign_ish & oparg) ? Py_True : Py_False;
+            // It's always a bool, so we don't care about oparg & 16.
         }
 
         // Similar to COMPARE_OP_FLOAT
@@ -2064,6 +2093,7 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             res = (sign_ish & oparg) ? Py_True : Py_False;
+            // It's always a bool, so we don't care about oparg & 16.
         }
 
         // Similar to COMPARE_OP_FLOAT, but for ==, != only
@@ -2072,13 +2102,14 @@ dummy_func(
             DEOPT_IF(!PyUnicode_CheckExact(right), COMPARE_OP);
             STAT_INC(COMPARE_OP, hit);
             int eq = _PyUnicode_Equal(left, right);
-            assert((oparg >>4) == Py_EQ || (oparg >>4) == Py_NE);
+            assert((oparg >> 5) == Py_EQ || (oparg >> 5) == Py_NE);
             _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
             _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
             assert(eq == 0 || eq == 1);
             assert((oparg & 0xf) == COMPARISON_NOT_EQUALS || (oparg & 0xf) == COMPARISON_EQUALS);
             assert(COMPARISON_NOT_EQUALS + 1 == COMPARISON_EQUALS);
             res = ((COMPARISON_NOT_EQUALS + eq) & oparg) ? Py_True : Py_False;
+            // It's always a bool, so we don't care about oparg & 16.
         }
 
         inst(IS_OP, (left, right -- b)) {
@@ -2145,6 +2176,7 @@ dummy_func(
         }
 
         inst(JUMP_BACKWARD, (--)) {
+            CHECK_EVAL_BREAKER();
             _Py_CODEUNIT *here = next_instr - 1;
             assert(oparg <= INSTR_OFFSET());
             JUMPBY(1-oparg);
@@ -2155,14 +2187,13 @@ dummy_func(
                 frame = _PyOptimizer_BackEdge(frame, here, next_instr, stack_pointer);
                 if (frame == NULL) {
                     frame = cframe.current_frame;
-                    goto error;
+                    goto resume_with_error;
                 }
                 assert(frame == cframe.current_frame);
                 here[1].cache &= ((1 << OPTIMIZER_BITS_IN_COUNTER) -1);
                 goto resume_frame;
             }
             #endif  /* ENABLE_SPECIALIZATION */
-            CHECK_EVAL_BREAKER();
         }
 
         pseudo(JUMP) = {
@@ -2176,64 +2207,45 @@ dummy_func(
         };
 
         inst(ENTER_EXECUTOR, (--)) {
+            CHECK_EVAL_BREAKER();
+
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _PyExecutorObject *executor = (_PyExecutorObject *)code->co_executors->executors[oparg&255];
+            int original_oparg = executor->vm_data.oparg | (oparg & 0xfffff00);
+            JUMPBY(1-original_oparg);
+            frame->prev_instr = next_instr - 1;
             Py_INCREF(executor);
             frame = executor->execute(executor, frame, stack_pointer);
             if (frame == NULL) {
                 frame = cframe.current_frame;
-                goto error;
+                goto resume_with_error;
             }
             goto resume_frame;
         }
 
         inst(POP_JUMP_IF_FALSE, (cond -- )) {
-            if (Py_IsFalse(cond)) {
-                JUMPBY(oparg);
-            }
-            else if (!Py_IsTrue(cond)) {
-                int err = PyObject_IsTrue(cond);
-                DECREF_INPUTS();
-                if (err == 0) {
-                    JUMPBY(oparg);
-                }
-                else {
-                    ERROR_IF(err < 0, error);
-                }
-            }
+            assert(PyBool_Check(cond));
+            JUMPBY(oparg * Py_IsFalse(cond));
         }
 
         inst(POP_JUMP_IF_TRUE, (cond -- )) {
-            if (Py_IsTrue(cond)) {
-                JUMPBY(oparg);
-            }
-            else if (!Py_IsFalse(cond)) {
-                int err = PyObject_IsTrue(cond);
-                DECREF_INPUTS();
-                if (err > 0) {
-                    JUMPBY(oparg);
-                }
-                else {
-                    ERROR_IF(err < 0, error);
-                }
-            }
+            assert(PyBool_Check(cond));
+            JUMPBY(oparg * Py_IsTrue(cond));
         }
 
-        inst(POP_JUMP_IF_NOT_NONE, (value -- )) {
-            if (!Py_IsNone(value)) {
-                DECREF_INPUTS();
-                JUMPBY(oparg);
-            }
-        }
-
-        inst(POP_JUMP_IF_NONE, (value -- )) {
+        op(IS_NONE, (value -- b)) {
             if (Py_IsNone(value)) {
-                JUMPBY(oparg);
+                b = Py_True;
             }
             else {
+                b = Py_False;
                 DECREF_INPUTS();
             }
         }
+
+        macro(POP_JUMP_IF_NONE) = IS_NONE + POP_JUMP_IF_TRUE;
+
+        macro(POP_JUMP_IF_NOT_NONE) = IS_NONE + POP_JUMP_IF_FALSE;
 
         inst(JUMP_BACKWARD_NO_INTERRUPT, (--)) {
             /* This bytecode is used in the `yield from` or `await` loop.
@@ -2439,9 +2451,14 @@ dummy_func(
             // Common case: no jump, leave it to the code generator
         }
 
-        inst(FOR_ITER_RANGE, (unused/1, iter -- iter, next)) {
+        op(_ITER_CHECK_RANGE, (iter -- iter)) {
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
             DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type, FOR_ITER);
+        }
+
+        op(_ITER_JUMP_RANGE, (iter -- iter)) {
+            _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
+            assert(Py_TYPE(r) == &PyRangeIter_Type);
             STAT_INC(FOR_ITER, hit);
             if (r->len <= 0) {
                 STACK_SHRINK(1);
@@ -2451,14 +2468,28 @@ dummy_func(
                 JUMPBY(oparg + 1);
                 DISPATCH();
             }
+        }
+
+        // Only used by Tier 2
+        op(_ITER_EXHAUSTED_RANGE, (iter -- iter, exhausted)) {
+            _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
+            assert(Py_TYPE(r) == &PyRangeIter_Type);
+            exhausted = r->len <= 0 ? Py_True : Py_False;
+        }
+
+        op(_ITER_NEXT_RANGE, (iter -- iter, next)) {
+            _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
+            assert(Py_TYPE(r) == &PyRangeIter_Type);
+            assert(r->len > 0);
             long value = r->start;
             r->start = value + r->step;
             r->len--;
             next = PyLong_FromLong(value);
-            if (next == NULL) {
-                goto error;
-            }
+            ERROR_IF(next == NULL, error);
         }
+
+        macro(FOR_ITER_RANGE) =
+            unused/1 + _ITER_CHECK_RANGE + _ITER_JUMP_RANGE + _ITER_NEXT_RANGE;
 
         inst(FOR_ITER_GEN, (unused/1, iter -- iter, unused)) {
             DEOPT_IF(tstate->interp->eval_frame, FOR_ITER);
@@ -2596,7 +2627,8 @@ dummy_func(
             exc_info->exc_value = Py_NewRef(new_exc);
         }
 
-        inst(LOAD_ATTR_METHOD_WITH_VALUES, (unused/1, type_version/2, keys_version/2, descr/4, self -- res2 if (oparg & 1), res)) {
+        inst(LOAD_ATTR_METHOD_WITH_VALUES, (unused/1, type_version/2, keys_version/2, descr/4, self -- res2 if (1), res)) {
+            assert(oparg & 1);
             /* Cached method object */
             PyTypeObject *self_cls = Py_TYPE(self);
             assert(type_version != 0);
@@ -2612,10 +2644,10 @@ dummy_func(
             res2 = Py_NewRef(descr);
             assert(_PyType_HasFeature(Py_TYPE(res2), Py_TPFLAGS_METHOD_DESCRIPTOR));
             res = self;
-            assert(oparg & 1);
         }
 
-        inst(LOAD_ATTR_METHOD_NO_DICT, (unused/1, type_version/2, unused/2, descr/4, self -- res2 if (oparg & 1), res)) {
+        inst(LOAD_ATTR_METHOD_NO_DICT, (unused/1, type_version/2, unused/2, descr/4, self -- res2 if (1), res)) {
+            assert(oparg & 1);
             PyTypeObject *self_cls = Py_TYPE(self);
             DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_ATTR);
             assert(self_cls->tp_dictoffset == 0);
@@ -2624,10 +2656,39 @@ dummy_func(
             assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
             res2 = Py_NewRef(descr);
             res = self;
-            assert(oparg & 1);
         }
 
-        inst(LOAD_ATTR_METHOD_LAZY_DICT, (unused/1, type_version/2, unused/2, descr/4, self -- res2 if (oparg & 1), res)) {
+        inst(LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES, (unused/1, type_version/2, keys_version/2, descr/4, self -- res2 if (0), res)) {
+            assert((oparg & 1) == 0);
+            PyTypeObject *self_cls = Py_TYPE(self);
+            assert(type_version != 0);
+            DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_ATTR);
+            assert(self_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(self);
+            DEOPT_IF(!_PyDictOrValues_IsValues(dorv), LOAD_ATTR);
+            PyHeapTypeObject *self_heap_type = (PyHeapTypeObject *)self_cls;
+            DEOPT_IF(self_heap_type->ht_cached_keys->dk_version !=
+                     keys_version, LOAD_ATTR);
+            STAT_INC(LOAD_ATTR, hit);
+            assert(descr != NULL);
+            DECREF_INPUTS();
+            res = Py_NewRef(descr);
+        }
+
+        inst(LOAD_ATTR_NONDESCRIPTOR_NO_DICT, (unused/1, type_version/2, unused/2, descr/4, self -- res2 if (0), res)) {
+            assert((oparg & 1) == 0);
+            PyTypeObject *self_cls = Py_TYPE(self);
+            assert(type_version != 0);
+            DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_ATTR);
+            assert(self_cls->tp_dictoffset == 0);
+            STAT_INC(LOAD_ATTR, hit);
+            assert(descr != NULL);
+            DECREF_INPUTS();
+            res = Py_NewRef(descr);
+        }
+
+        inst(LOAD_ATTR_METHOD_LAZY_DICT, (unused/1, type_version/2, unused/2, descr/4, self -- res2 if (1), res)) {
+            assert(oparg & 1);
             PyTypeObject *self_cls = Py_TYPE(self);
             DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_ATTR);
             Py_ssize_t dictoffset = self_cls->tp_dictoffset;
@@ -2640,7 +2701,6 @@ dummy_func(
             assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
             res2 = Py_NewRef(descr);
             res = self;
-            assert(oparg & 1);
         }
 
         inst(KW_NAMES, (--)) {
@@ -2924,9 +2984,6 @@ dummy_func(
                 goto error;
             }
             Py_DECREF(tp);
-            if (_Py_EnterRecursivePy(tstate)) {
-                goto exit_unwind;
-            }
             _PyInterpreterFrame *shim = _PyFrame_PushTrampolineUnchecked(
                 tstate, (PyCodeObject *)&_Py_InitCleanup, 1, 0);
             assert(_PyCode_CODE((PyCodeObject *)shim->f_executable)[1].op.code == EXIT_INIT_CHECK);
@@ -2950,6 +3007,10 @@ dummy_func(
             shim->previous = frame;
             frame = cframe.current_frame = init_frame;
             CALL_STAT_INC(inlined_py_calls);
+            /* Account for pushing the extra frame.
+             * We don't check recursion depth here,
+             * as it will be checked after start_frame */
+            tstate->py_recursion_remaining--;
             goto start_frame;
         }
 
@@ -3514,29 +3575,23 @@ dummy_func(
         }
 
         inst(INSTRUMENTED_JUMP_BACKWARD, ( -- )) {
-            INSTRUMENTED_JUMP(next_instr-1, next_instr+1-oparg, PY_MONITORING_EVENT_JUMP);
             CHECK_EVAL_BREAKER();
+            INSTRUMENTED_JUMP(next_instr-1, next_instr+1-oparg, PY_MONITORING_EVENT_JUMP);
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_TRUE, ( -- )) {
             PyObject *cond = POP();
-            int err = PyObject_IsTrue(cond);
-            Py_DECREF(cond);
-            ERROR_IF(err < 0, error);
-            _Py_CODEUNIT *here = next_instr-1;
-            assert(err == 0 || err == 1);
-            int offset = err*oparg;
+            assert(PyBool_Check(cond));
+            _Py_CODEUNIT *here = next_instr - 1;
+            int offset = Py_IsTrue(cond) * oparg;
             INSTRUMENTED_JUMP(here, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_FALSE, ( -- )) {
             PyObject *cond = POP();
-            int err = PyObject_IsTrue(cond);
-            Py_DECREF(cond);
-            ERROR_IF(err < 0, error);
-            _Py_CODEUNIT *here = next_instr-1;
-            assert(err == 0 || err == 1);
-            int offset = (1-err)*oparg;
+            assert(PyBool_Check(cond));
+            _Py_CODEUNIT *here = next_instr - 1;
+            int offset = Py_IsFalse(cond) * oparg;
             INSTRUMENTED_JUMP(here, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
         }
 
@@ -3563,7 +3618,7 @@ dummy_func(
             }
             else {
                 Py_DECREF(value);
-                 offset = oparg;
+                offset = oparg;
             }
             INSTRUMENTED_JUMP(here, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
         }

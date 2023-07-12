@@ -2432,3 +2432,15 @@
     added = '3.13'
 [function.PyWeakref_GetRef]
     added = '3.13'
+[function.PyObject_DelAttr]
+    added = '3.13'
+[function.PyObject_DelAttrString]
+    added = '3.13'
+[function.PyObject_GetOptionalAttr]
+    added = '3.13'
+[function.PyObject_GetOptionalAttrString]
+    added = '3.13'
+[function.PyMapping_GetOptionalItem]
+    added = '3.13'
+[function.PyMapping_GetOptionalItemString]
+    added = '3.13'

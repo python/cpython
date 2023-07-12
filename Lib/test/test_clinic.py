@@ -4,6 +4,7 @@
 
 from test import support, test_tools
 from test.support import os_helper
+from textwrap import dedent
 from unittest import TestCase
 import collections
 import inspect
@@ -99,9 +100,8 @@ class ClinicWholeFileTest(TestCase):
         # the last line of the block got corrupted.
         c = clinic.Clinic(clinic.CLanguage(None), filename="file")
         raw = "/*[clinic]\nfoo\n[clinic]*/"
-        cooked, _ = c.parse(raw)
-        lines = cooked.splitlines()
-        end_line = lines[2].rstrip()
+        cooked = c.parse(raw).splitlines()
+        end_line = cooked[2].rstrip()
         # this test is redundant, it's just here explicitly to catch
         # the regression test so we don't forget what it looked like
         self.assertNotEqual(end_line, "[clinic]*/[clinic]*/")
@@ -171,43 +171,43 @@ class ClinicLinearFormatTest(TestCase):
     def test_no_substitution(self):
         self._test("""
           abc
-          """, """
+        """, """
           abc
-          """)
+        """)
 
     def test_empty_substitution(self):
         self._test("""
           abc
           {name}
           def
-          """, """
+        """, """
           abc
           def
-          """, name='')
+        """, name='')
 
     def test_single_line_substitution(self):
         self._test("""
           abc
           {name}
           def
-          """, """
+        """, """
           abc
           GARGLE
           def
-          """, name='GARGLE')
+        """, name='GARGLE')
 
     def test_multiline_substitution(self):
         self._test("""
           abc
           {name}
           def
-          """, """
+        """, """
           abc
           bingle
           bungle
 
           def
-          """, name='bingle\nbungle\n')
+        """, name='bingle\nbungle\n')
 
 class InertParser:
     def __init__(self, clinic):
@@ -240,9 +240,9 @@ class ClinicBlockParserTest(TestCase):
 
     def test_round_trip_1(self):
         self.round_trip("""
-    verbatim text here
-    lah dee dah
-""")
+            verbatim text here
+            lah dee dah
+        """)
     def test_round_trip_2(self):
         self.round_trip("""
     verbatim text here
@@ -260,7 +260,7 @@ xyz
         c = clinic.Clinic(language, filename="file")
         c.parsers['inert'] = InertParser(c)
         c.parsers['copy'] = CopyParser(c)
-        computed, _ = c.parse(input)
+        computed = c.parse(input)
         self.assertEqual(output, computed)
 
     def test_clinic_1(self):
@@ -286,22 +286,38 @@ xyz
 
 
 class ClinicParserTest(TestCase):
+    def checkDocstring(self, fn, expected):
+        self.assertTrue(hasattr(fn, "docstring"))
+        self.assertEqual(fn.docstring.strip(),
+                         dedent(expected).strip())
+
     def test_trivial(self):
         parser = DSLParser(FakeClinic())
-        block = clinic.Block("module os\nos.access")
+        block = clinic.Block("""
+            module os
+            os.access
+        """)
         parser.parse(block)
         module, function = block.signatures
         self.assertEqual("access", function.name)
         self.assertEqual("os", module.name)
 
     def test_ignore_line(self):
-        block = self.parse("#\nmodule os\nos.access")
+        block = self.parse(dedent("""
+            #
+            module os
+            os.access
+        """))
         module, function = block.signatures
         self.assertEqual("access", function.name)
         self.assertEqual("os", module.name)
 
     def test_param(self):
-        function = self.parse_function("module os\nos.access\n   path: int")
+        function = self.parse_function("""
+            module os
+            os.access
+                path: int
+        """)
         self.assertEqual("access", function.name)
         self.assertEqual(2, len(function.parameters))
         p = function.parameters['path']
@@ -309,236 +325,296 @@ class ClinicParserTest(TestCase):
         self.assertIsInstance(p.converter, clinic.int_converter)
 
     def test_param_default(self):
-        function = self.parse_function("module os\nos.access\n    follow_symlinks: bool = True")
+        function = self.parse_function("""
+            module os
+            os.access
+                follow_symlinks: bool = True
+        """)
         p = function.parameters['follow_symlinks']
         self.assertEqual(True, p.default)
 
     def test_param_with_continuations(self):
-        function = self.parse_function("module os\nos.access\n    follow_symlinks: \\\n   bool \\\n   =\\\n    True")
+        function = self.parse_function(r"""
+            module os
+            os.access
+                follow_symlinks: \
+                bool \
+                = \
+                True
+        """)
         p = function.parameters['follow_symlinks']
         self.assertEqual(True, p.default)
 
     def test_param_default_expression(self):
-        function = self.parse_function("module os\nos.access\n    follow_symlinks: int(c_default='MAXSIZE') = sys.maxsize")
+        function = self.parse_function("""
+            module os
+            os.access
+                follow_symlinks: int(c_default='MAXSIZE') = sys.maxsize
+            """)
         p = function.parameters['follow_symlinks']
         self.assertEqual(sys.maxsize, p.default)
         self.assertEqual("MAXSIZE", p.converter.c_default)
 
-        s = self.parse_function_should_fail("module os\nos.access\n    follow_symlinks: int = sys.maxsize")
-        self.assertEqual(s, "Error on line 0:\nWhen you specify a named constant ('sys.maxsize') as your default value,\nyou MUST specify a valid c_default.\n")
+        expected_msg = (
+            "Error on line 0:\n"
+            "When you specify a named constant ('sys.maxsize') as your default value,\n"
+            "you MUST specify a valid c_default.\n"
+        )
+        out = self.parse_function_should_fail("""
+            module os
+            os.access
+                follow_symlinks: int = sys.maxsize
+        """)
+        self.assertEqual(out, expected_msg)
 
     def test_param_no_docstring(self):
         function = self.parse_function("""
-module os
-os.access
-    follow_symlinks: bool = True
-    something_else: str = ''""")
+            module os
+            os.access
+                follow_symlinks: bool = True
+                something_else: str = ''
+        """)
         p = function.parameters['follow_symlinks']
         self.assertEqual(3, len(function.parameters))
-        self.assertIsInstance(function.parameters['something_else'].converter, clinic.str_converter)
+        conv = function.parameters['something_else'].converter
+        self.assertIsInstance(conv, clinic.str_converter)
 
     def test_param_default_parameters_out_of_order(self):
-        s = self.parse_function_should_fail("""
-module os
-os.access
-    follow_symlinks: bool = True
-    something_else: str""")
-        self.assertEqual(s, """Error on line 0:
-Can't have a parameter without a default ('something_else')
-after a parameter with a default!
-""")
+        expected_msg = (
+            "Error on line 0:\n"
+            "Can't have a parameter without a default ('something_else')\n"
+            "after a parameter with a default!\n"
+        )
+        out = self.parse_function_should_fail("""
+            module os
+            os.access
+                follow_symlinks: bool = True
+                something_else: str""")
+        self.assertEqual(out, expected_msg)
 
     def disabled_test_converter_arguments(self):
-        function = self.parse_function("module os\nos.access\n    path: path_t(allow_fd=1)")
+        function = self.parse_function("""
+            module os
+            os.access
+                path: path_t(allow_fd=1)
+        """)
         p = function.parameters['path']
         self.assertEqual(1, p.converter.args['allow_fd'])
 
     def test_function_docstring(self):
         function = self.parse_function("""
-module os
-os.stat as os_stat_fn
+            module os
+            os.stat as os_stat_fn
 
-   path: str
-       Path to be examined
+               path: str
+                   Path to be examined
 
-Perform a stat system call on the given path.""")
-        self.assertEqual("""
-stat($module, /, path)
---
+            Perform a stat system call on the given path.
+        """)
+        self.checkDocstring(function, """
+            stat($module, /, path)
+            --
 
-Perform a stat system call on the given path.
+            Perform a stat system call on the given path.
 
-  path
-    Path to be examined
-""".strip(), function.docstring)
+              path
+                Path to be examined
+        """)
 
     def test_explicit_parameters_in_docstring(self):
-        function = self.parse_function("""
-module foo
-foo.bar
-  x: int
-     Documentation for x.
-  y: int
+        function = self.parse_function(dedent("""
+            module foo
+            foo.bar
+              x: int
+                 Documentation for x.
+              y: int
 
-This is the documentation for foo.
+            This is the documentation for foo.
 
-Okay, we're done here.
-""")
-        self.assertEqual("""
-bar($module, /, x, y)
---
+            Okay, we're done here.
+        """))
+        self.checkDocstring(function, """
+            bar($module, /, x, y)
+            --
 
-This is the documentation for foo.
+            This is the documentation for foo.
 
-  x
-    Documentation for x.
+              x
+                Documentation for x.
 
-Okay, we're done here.
-""".strip(), function.docstring)
+            Okay, we're done here.
+        """)
 
     def test_parser_regression_special_character_in_parameter_column_of_docstring_first_line(self):
-        function = self.parse_function("""
-module os
-os.stat
-    path: str
-This/used to break Clinic!
-""")
-        self.assertEqual("stat($module, /, path)\n--\n\nThis/used to break Clinic!", function.docstring)
+        function = self.parse_function(dedent("""
+            module os
+            os.stat
+                path: str
+            This/used to break Clinic!
+        """))
+        self.checkDocstring(function, """
+            stat($module, /, path)
+            --
+
+            This/used to break Clinic!
+        """)
 
     def test_c_name(self):
-        function = self.parse_function("module os\nos.stat as os_stat_fn")
+        function = self.parse_function("""
+            module os
+            os.stat as os_stat_fn
+        """)
         self.assertEqual("os_stat_fn", function.c_basename)
 
     def test_return_converter(self):
-        function = self.parse_function("module os\nos.stat -> int")
+        function = self.parse_function("""
+            module os
+            os.stat -> int
+        """)
         self.assertIsInstance(function.return_converter, clinic.int_return_converter)
 
     def test_star(self):
-        function = self.parse_function("module os\nos.access\n    *\n    follow_symlinks: bool = True")
+        function = self.parse_function("""
+            module os
+            os.access
+                *
+                follow_symlinks: bool = True
+        """)
         p = function.parameters['follow_symlinks']
         self.assertEqual(inspect.Parameter.KEYWORD_ONLY, p.kind)
         self.assertEqual(0, p.group)
 
     def test_group(self):
-        function = self.parse_function("module window\nwindow.border\n [\n ls : int\n ]\n /\n")
+        function = self.parse_function("""
+            module window
+            window.border
+                [
+                ls: int
+                ]
+                /
+        """)
         p = function.parameters['ls']
         self.assertEqual(1, p.group)
 
     def test_left_group(self):
         function = self.parse_function("""
-module curses
-curses.addch
-   [
-   y: int
-     Y-coordinate.
-   x: int
-     X-coordinate.
-   ]
-   ch: char
-     Character to add.
-   [
-   attr: long
-     Attributes for the character.
-   ]
-   /
-""")
-        for name, group in (
+            module curses
+            curses.addch
+                [
+                y: int
+                    Y-coordinate.
+                x: int
+                    X-coordinate.
+                ]
+                ch: char
+                    Character to add.
+                [
+                attr: long
+                    Attributes for the character.
+                ]
+                /
+        """)
+        dataset = (
             ('y', -1), ('x', -1),
             ('ch', 0),
             ('attr', 1),
-            ):
-            p = function.parameters[name]
-            self.assertEqual(p.group, group)
-            self.assertEqual(p.kind, inspect.Parameter.POSITIONAL_ONLY)
-        self.assertEqual(function.docstring.strip(), """
-addch([y, x,] ch, [attr])
+        )
+        for name, group in dataset:
+            with self.subTest(name=name, group=group):
+                p = function.parameters[name]
+                self.assertEqual(p.group, group)
+                self.assertEqual(p.kind, inspect.Parameter.POSITIONAL_ONLY)
+        self.checkDocstring(function, """
+            addch([y, x,] ch, [attr])
 
 
-  y
-    Y-coordinate.
-  x
-    X-coordinate.
-  ch
-    Character to add.
-  attr
-    Attributes for the character.
-            """.strip())
+              y
+                Y-coordinate.
+              x
+                X-coordinate.
+              ch
+                Character to add.
+              attr
+                Attributes for the character.
+        """)
 
     def test_nested_groups(self):
         function = self.parse_function("""
-module curses
-curses.imaginary
-   [
-   [
-   y1: int
-     Y-coordinate.
-   y2: int
-     Y-coordinate.
-   ]
-   x1: int
-     X-coordinate.
-   x2: int
-     X-coordinate.
-   ]
-   ch: char
-     Character to add.
-   [
-   attr1: long
-     Attributes for the character.
-   attr2: long
-     Attributes for the character.
-   attr3: long
-     Attributes for the character.
-   [
-   attr4: long
-     Attributes for the character.
-   attr5: long
-     Attributes for the character.
-   attr6: long
-     Attributes for the character.
-   ]
-   ]
-   /
-""")
-        for name, group in (
+            module curses
+            curses.imaginary
+               [
+               [
+               y1: int
+                 Y-coordinate.
+               y2: int
+                 Y-coordinate.
+               ]
+               x1: int
+                 X-coordinate.
+               x2: int
+                 X-coordinate.
+               ]
+               ch: char
+                 Character to add.
+               [
+               attr1: long
+                 Attributes for the character.
+               attr2: long
+                 Attributes for the character.
+               attr3: long
+                 Attributes for the character.
+               [
+               attr4: long
+                 Attributes for the character.
+               attr5: long
+                 Attributes for the character.
+               attr6: long
+                 Attributes for the character.
+               ]
+               ]
+               /
+        """)
+        dataset = (
             ('y1', -2), ('y2', -2),
             ('x1', -1), ('x2', -1),
             ('ch', 0),
             ('attr1', 1), ('attr2', 1), ('attr3', 1),
             ('attr4', 2), ('attr5', 2), ('attr6', 2),
-            ):
-            p = function.parameters[name]
-            self.assertEqual(p.group, group)
-            self.assertEqual(p.kind, inspect.Parameter.POSITIONAL_ONLY)
+        )
+        for name, group in dataset:
+            with self.subTest(name=name, group=group):
+                p = function.parameters[name]
+                self.assertEqual(p.group, group)
+                self.assertEqual(p.kind, inspect.Parameter.POSITIONAL_ONLY)
 
-        self.assertEqual(function.docstring.strip(), """
-imaginary([[y1, y2,] x1, x2,] ch, [attr1, attr2, attr3, [attr4, attr5,
-          attr6]])
+        self.checkDocstring(function, """
+            imaginary([[y1, y2,] x1, x2,] ch, [attr1, attr2, attr3, [attr4, attr5,
+                      attr6]])
 
 
-  y1
-    Y-coordinate.
-  y2
-    Y-coordinate.
-  x1
-    X-coordinate.
-  x2
-    X-coordinate.
-  ch
-    Character to add.
-  attr1
-    Attributes for the character.
-  attr2
-    Attributes for the character.
-  attr3
-    Attributes for the character.
-  attr4
-    Attributes for the character.
-  attr5
-    Attributes for the character.
-  attr6
-    Attributes for the character.
-                """.strip())
+              y1
+                Y-coordinate.
+              y2
+                Y-coordinate.
+              x1
+                X-coordinate.
+              x2
+                X-coordinate.
+              ch
+                Character to add.
+              attr1
+                Attributes for the character.
+              attr2
+                Attributes for the character.
+              attr3
+                Attributes for the character.
+              attr4
+                Attributes for the character.
+              attr5
+                Attributes for the character.
+              attr6
+                Attributes for the character.
+        """)
 
     def parse_function_should_fail(self, s):
         with support.captured_stdout() as stdout:
@@ -547,218 +623,276 @@ imaginary([[y1, y2,] x1, x2,] ch, [attr1, attr2, attr3, [attr4, attr5,
         return stdout.getvalue()
 
     def test_disallowed_grouping__two_top_groups_on_left(self):
-        s = self.parse_function_should_fail("""
-module foo
-foo.two_top_groups_on_left
-    [
-    group1 : int
-    ]
-    [
-    group2 : int
-    ]
-    param: int
-            """)
-        self.assertEqual(s,
-            ('Error on line 0:\n'
-            'Function two_top_groups_on_left has an unsupported group configuration. (Unexpected state 2.b)\n'))
+        expected_msg = (
+            'Error on line 0:\n'
+            'Function two_top_groups_on_left has an unsupported group '
+            'configuration. (Unexpected state 2.b)\n'
+        )
+        out = self.parse_function_should_fail("""
+            module foo
+            foo.two_top_groups_on_left
+                [
+                group1 : int
+                ]
+                [
+                group2 : int
+                ]
+                param: int
+        """)
+        self.assertEqual(out, expected_msg)
 
     def test_disallowed_grouping__two_top_groups_on_right(self):
-        self.parse_function_should_fail("""
-module foo
-foo.two_top_groups_on_right
-    param: int
-    [
-    group1 : int
-    ]
-    [
-    group2 : int
-    ]
-            """)
+        out = self.parse_function_should_fail("""
+            module foo
+            foo.two_top_groups_on_right
+                param: int
+                [
+                group1 : int
+                ]
+                [
+                group2 : int
+                ]
+        """)
+        msg = (
+            "Function two_top_groups_on_right has an unsupported group "
+            "configuration. (Unexpected state 6.b)"
+        )
+        self.assertIn(msg, out)
 
     def test_disallowed_grouping__parameter_after_group_on_right(self):
-        self.parse_function_should_fail("""
-module foo
-foo.parameter_after_group_on_right
-    param: int
-    [
-    [
-    group1 : int
-    ]
-    group2 : int
-    ]
-            """)
+        out = self.parse_function_should_fail("""
+            module foo
+            foo.parameter_after_group_on_right
+                param: int
+                [
+                [
+                group1 : int
+                ]
+                group2 : int
+                ]
+        """)
+        msg = (
+            "Function parameter_after_group_on_right has an unsupported group "
+            "configuration. (Unexpected state 6.a)"
+        )
+        self.assertIn(msg, out)
 
     def test_disallowed_grouping__group_after_parameter_on_left(self):
-        self.parse_function_should_fail("""
-module foo
-foo.group_after_parameter_on_left
-    [
-    group2 : int
-    [
-    group1 : int
-    ]
-    ]
-    param: int
-            """)
+        out = self.parse_function_should_fail("""
+            module foo
+            foo.group_after_parameter_on_left
+                [
+                group2 : int
+                [
+                group1 : int
+                ]
+                ]
+                param: int
+        """)
+        msg = (
+            "Function group_after_parameter_on_left has an unsupported group "
+            "configuration. (Unexpected state 2.b)"
+        )
+        self.assertIn(msg, out)
 
     def test_disallowed_grouping__empty_group_on_left(self):
-        self.parse_function_should_fail("""
-module foo
-foo.empty_group
-    [
-    [
-    ]
-    group2 : int
-    ]
-    param: int
-            """)
+        out = self.parse_function_should_fail("""
+            module foo
+            foo.empty_group
+                [
+                [
+                ]
+                group2 : int
+                ]
+                param: int
+        """)
+        msg = (
+            "Function empty_group has an empty group.\n"
+            "All groups must contain at least one parameter."
+        )
+        self.assertIn(msg, out)
 
     def test_disallowed_grouping__empty_group_on_right(self):
-        self.parse_function_should_fail("""
-module foo
-foo.empty_group
-    param: int
-    [
-    [
-    ]
-    group2 : int
-    ]
-            """)
+        out = self.parse_function_should_fail("""
+            module foo
+            foo.empty_group
+                param: int
+                [
+                [
+                ]
+                group2 : int
+                ]
+        """)
+        msg = (
+            "Function empty_group has an empty group.\n"
+            "All groups must contain at least one parameter."
+        )
+        self.assertIn(msg, out)
+
+    def test_disallowed_grouping__no_matching_bracket(self):
+        out = self.parse_function_should_fail("""
+            module foo
+            foo.empty_group
+                param: int
+                ]
+                group2: int
+                ]
+        """)
+        msg = "Function empty_group has a ] without a matching [."
+        self.assertIn(msg, out)
 
     def test_no_parameters(self):
         function = self.parse_function("""
-module foo
-foo.bar
+            module foo
+            foo.bar
 
-Docstring
+            Docstring
 
-""")
+        """)
         self.assertEqual("bar($module, /)\n--\n\nDocstring", function.docstring)
         self.assertEqual(1, len(function.parameters)) # self!
 
     def test_init_with_no_parameters(self):
         function = self.parse_function("""
-module foo
-class foo.Bar "unused" "notneeded"
-foo.Bar.__init__
+            module foo
+            class foo.Bar "unused" "notneeded"
+            foo.Bar.__init__
 
-Docstring
+            Docstring
 
-""", signatures_in_block=3, function_index=2)
+        """, signatures_in_block=3, function_index=2)
+
         # self is not in the signature
         self.assertEqual("Bar()\n--\n\nDocstring", function.docstring)
         # but it *is* a parameter
         self.assertEqual(1, len(function.parameters))
 
     def test_illegal_module_line(self):
-        self.parse_function_should_fail("""
-module foo
-foo.bar => int
-    /
-""")
+        out = self.parse_function_should_fail("""
+            module foo
+            foo.bar => int
+                /
+        """)
+        msg = "Illegal function name: foo.bar => int"
+        self.assertIn(msg, out)
 
     def test_illegal_c_basename(self):
-        self.parse_function_should_fail("""
-module foo
-foo.bar as 935
-    /
-""")
+        out = self.parse_function_should_fail("""
+            module foo
+            foo.bar as 935
+                /
+        """)
+        msg = "Illegal C basename: 935"
+        self.assertIn(msg, out)
 
     def test_single_star(self):
-        self.parse_function_should_fail("""
-module foo
-foo.bar
-    *
-    *
-""")
+        out = self.parse_function_should_fail("""
+            module foo
+            foo.bar
+                *
+                *
+        """)
+        self.assertIn("Function bar uses '*' more than once.", out)
 
-    def test_parameters_required_after_star_without_initial_parameters_or_docstring(self):
-        self.parse_function_should_fail("""
-module foo
-foo.bar
-    *
-""")
-
-    def test_parameters_required_after_star_without_initial_parameters_with_docstring(self):
-        self.parse_function_should_fail("""
-module foo
-foo.bar
-    *
-Docstring here.
-""")
-
-    def test_parameters_required_after_star_with_initial_parameters_without_docstring(self):
-        self.parse_function_should_fail("""
-module foo
-foo.bar
-    this: int
-    *
-""")
-
-    def test_parameters_required_after_star_with_initial_parameters_and_docstring(self):
-        self.parse_function_should_fail("""
-module foo
-foo.bar
-    this: int
-    *
-Docstring.
-""")
+    def test_parameters_required_after_star(self):
+        dataset = (
+            "module foo\nfoo.bar\n  *",
+            "module foo\nfoo.bar\n  *\nDocstring here.",
+            "module foo\nfoo.bar\n  this: int\n  *",
+            "module foo\nfoo.bar\n  this: int\n  *\nDocstring.",
+        )
+        msg = "Function bar specifies '*' without any parameters afterwards."
+        for block in dataset:
+            with self.subTest(block=block):
+                out = self.parse_function_should_fail(block)
+                self.assertIn(msg, out)
 
     def test_single_slash(self):
-        self.parse_function_should_fail("""
-module foo
-foo.bar
-    /
-    /
-""")
+        out = self.parse_function_should_fail("""
+            module foo
+            foo.bar
+                /
+                /
+        """)
+        msg = (
+            "Function bar has an unsupported group configuration. "
+            "(Unexpected state 0.d)"
+        )
+        self.assertIn(msg, out)
+
+    def test_double_slash(self):
+        out = self.parse_function_should_fail("""
+            module foo
+            foo.bar
+                a: int
+                /
+                b: int
+                /
+        """)
+        msg = "Function bar uses '/' more than once."
+        self.assertIn(msg, out)
 
     def test_mix_star_and_slash(self):
-        self.parse_function_should_fail("""
-module foo
-foo.bar
-   x: int
-   y: int
-   *
-   z: int
-   /
-""")
+        out = self.parse_function_should_fail("""
+            module foo
+            foo.bar
+               x: int
+               y: int
+               *
+               z: int
+               /
+        """)
+        msg = (
+            "Function bar mixes keyword-only and positional-only parameters, "
+            "which is unsupported."
+        )
+        self.assertIn(msg, out)
 
     def test_parameters_not_permitted_after_slash_for_now(self):
-        self.parse_function_should_fail("""
-module foo
-foo.bar
-    /
-    x: int
-""")
+        out = self.parse_function_should_fail("""
+            module foo
+            foo.bar
+                /
+                x: int
+        """)
+        msg = (
+            "Function bar has an unsupported group configuration. "
+            "(Unexpected state 0.d)"
+        )
+        self.assertIn(msg, out)
 
     def test_parameters_no_more_than_one_vararg(self):
-        s = self.parse_function_should_fail("""
-module foo
-foo.bar
-   *vararg1: object
-   *vararg2: object
-""")
-        self.assertEqual(s, "Error on line 0:\nToo many var args\n")
+        expected_msg = (
+            "Error on line 0:\n"
+            "Too many var args\n"
+        )
+        out = self.parse_function_should_fail("""
+            module foo
+            foo.bar
+               *vararg1: object
+               *vararg2: object
+        """)
+        self.assertEqual(out, expected_msg)
 
     def test_function_not_at_column_0(self):
         function = self.parse_function("""
-  module foo
-  foo.bar
-    x: int
-      Nested docstring here, goeth.
-    *
-    y: str
-  Not at column 0!
-""")
-        self.assertEqual("""
-bar($module, /, x, *, y)
---
+              module foo
+              foo.bar
+                x: int
+                  Nested docstring here, goeth.
+                *
+                y: str
+              Not at column 0!
+        """)
+        self.checkDocstring(function, """
+            bar($module, /, x, *, y)
+            --
 
-Not at column 0!
+            Not at column 0!
 
-  x
-    Nested docstring here, goeth.
-""".strip(), function.docstring)
+              x
+                Nested docstring here, goeth.
+        """)
 
     def test_directive(self):
         c = FakeClinic()
@@ -772,46 +906,112 @@ Not at column 0!
     def test_legacy_converters(self):
         block = self.parse('module os\nos.access\n   path: "s"')
         module, function = block.signatures
-        self.assertIsInstance((function.parameters['path']).converter, clinic.str_converter)
+        conv = (function.parameters['path']).converter
+        self.assertIsInstance(conv, clinic.str_converter)
 
     def test_legacy_converters_non_string_constant_annotation(self):
-        expected_failure_message = """\
-Error on line 0:
-Annotations must be either a name, a function call, or a string.
-"""
-
-        s = self.parse_function_should_fail('module os\nos.access\n   path: 42')
-        self.assertEqual(s, expected_failure_message)
-
-        s = self.parse_function_should_fail('module os\nos.access\n   path: 42.42')
-        self.assertEqual(s, expected_failure_message)
-
-        s = self.parse_function_should_fail('module os\nos.access\n   path: 42j')
-        self.assertEqual(s, expected_failure_message)
-
-        s = self.parse_function_should_fail('module os\nos.access\n   path: b"42"')
-        self.assertEqual(s, expected_failure_message)
+        expected_failure_message = (
+            "Error on line 0:\n"
+            "Annotations must be either a name, a function call, or a string.\n"
+        )
+        dataset = (
+            'module os\nos.access\n   path: 42',
+            'module os\nos.access\n   path: 42.42',
+            'module os\nos.access\n   path: 42j',
+            'module os\nos.access\n   path: b"42"',
+        )
+        for block in dataset:
+            with self.subTest(block=block):
+                out = self.parse_function_should_fail(block)
+                self.assertEqual(out, expected_failure_message)
 
     def test_other_bizarre_things_in_annotations_fail(self):
-        expected_failure_message = """\
-Error on line 0:
-Annotations must be either a name, a function call, or a string.
-"""
-
-        s = self.parse_function_should_fail(
-            'module os\nos.access\n   path: {"some": "dictionary"}'
+        expected_failure_message = (
+            "Error on line 0:\n"
+            "Annotations must be either a name, a function call, or a string.\n"
         )
-        self.assertEqual(s, expected_failure_message)
-
-        s = self.parse_function_should_fail(
-            'module os\nos.access\n   path: ["list", "of", "strings"]'
+        dataset = (
+            'module os\nos.access\n   path: {"some": "dictionary"}',
+            'module os\nos.access\n   path: ["list", "of", "strings"]',
+            'module os\nos.access\n   path: (x for x in range(42))',
         )
-        self.assertEqual(s, expected_failure_message)
+        for block in dataset:
+            with self.subTest(block=block):
+                out = self.parse_function_should_fail(block)
+                self.assertEqual(out, expected_failure_message)
 
-        s = self.parse_function_should_fail(
-            'module os\nos.access\n   path: (x for x in range(42))'
+    def test_kwarg_splats_disallowed_in_function_call_annotations(self):
+        expected_error_msg = (
+            "Error on line 0:\n"
+            "Cannot use a kwarg splat in a function-call annotation\n"
         )
-        self.assertEqual(s, expected_failure_message)
+        dataset = (
+            'module fo\nfo.barbaz\n   o: bool(**{None: "bang!"})',
+            'module fo\nfo.barbaz -> bool(**{None: "bang!"})',
+            'module fo\nfo.barbaz -> bool(**{"bang": 42})',
+            'module fo\nfo.barbaz\n   o: bool(**{"bang": None})',
+        )
+        for fn in dataset:
+            with self.subTest(fn=fn):
+                out = self.parse_function_should_fail(fn)
+                self.assertEqual(out, expected_error_msg)
+
+    def test_self_param_placement(self):
+        expected_error_msg = (
+            "Error on line 0:\n"
+            "A 'self' parameter, if specified, must be the very first thing "
+            "in the parameter block.\n"
+        )
+        block = """
+            module foo
+            foo.func
+                a: int
+                self: self(type="PyObject *")
+        """
+        out = self.parse_function_should_fail(block)
+        self.assertEqual(out, expected_error_msg)
+
+    def test_self_param_cannot_be_optional(self):
+        expected_error_msg = (
+            "Error on line 0:\n"
+            "A 'self' parameter cannot be marked optional.\n"
+        )
+        block = """
+            module foo
+            foo.func
+                self: self(type="PyObject *") = None
+        """
+        out = self.parse_function_should_fail(block)
+        self.assertEqual(out, expected_error_msg)
+
+    def test_defining_class_param_placement(self):
+        expected_error_msg = (
+            "Error on line 0:\n"
+            "A 'defining_class' parameter, if specified, must either be the "
+            "first thing in the parameter block, or come just after 'self'.\n"
+        )
+        block = """
+            module foo
+            foo.func
+                self: self(type="PyObject *")
+                a: int
+                cls: defining_class
+        """
+        out = self.parse_function_should_fail(block)
+        self.assertEqual(out, expected_error_msg)
+
+    def test_defining_class_param_cannot_be_optional(self):
+        expected_error_msg = (
+            "Error on line 0:\n"
+            "A 'defining_class' parameter cannot be marked optional.\n"
+        )
+        block = """
+            module foo
+            foo.func
+                cls: defining_class(type="PyObject *") = None
+        """
+        out = self.parse_function_should_fail(block)
+        self.assertEqual(out, expected_error_msg)
 
     def test_unused_param(self):
         block = self.parse("""
@@ -872,25 +1072,32 @@ Annotations must be either a name, a function call, or a string.
         self.assertEqual(repr(clinic.NULL), '<Null>')
 
         # test that fail fails
+        expected = (
+            'Error in file "clown.txt" on line 69:\n'
+            'The igloos are melting!\n'
+        )
         with support.captured_stdout() as stdout:
             with self.assertRaises(SystemExit):
-                clinic.fail('The igloos are melting!', filename='clown.txt', line_number=69)
-        self.assertEqual(stdout.getvalue(), 'Error in file "clown.txt" on line 69:\nThe igloos are melting!\n')
+                clinic.fail('The igloos are melting!',
+                            filename='clown.txt', line_number=69)
+        actual = stdout.getvalue()
+        self.assertEqual(actual, expected)
 
 
 class ClinicExternalTest(TestCase):
     maxDiff = None
 
     def test_external(self):
+        CLINIC_TEST = 'clinic.test.c'
         # bpo-42398: Test that the destination file is left unchanged if the
         # content does not change. Moreover, check also that the file
         # modification time does not change in this case.
-        source = support.findfile('clinic.test')
+        source = support.findfile(CLINIC_TEST)
         with open(source, 'r', encoding='utf-8') as f:
             orig_contents = f.read()
 
         with os_helper.temp_dir() as tmp_dir:
-            testfile = os.path.join(tmp_dir, 'clinic.test.c')
+            testfile = os.path.join(tmp_dir, CLINIC_TEST)
             with open(testfile, 'w', encoding='utf-8') as f:
                 f.write(orig_contents)
             old_mtime_ns = os.stat(testfile).st_mtime_ns
@@ -1377,6 +1584,276 @@ class ClinicFunctionalTest(unittest.TestCase):
             with self.subTest(name=name):
                 func = getattr(ac_tester, name)
                 self.assertEqual(func(), name)
+
+
+class PermutationTests(unittest.TestCase):
+    """Test permutation support functions."""
+
+    def test_permute_left_option_groups(self):
+        expected = (
+            (),
+            (3,),
+            (2, 3),
+            (1, 2, 3),
+        )
+        data = list(zip([1, 2, 3]))  # Generate a list of 1-tuples.
+        actual = tuple(clinic.permute_left_option_groups(data))
+        self.assertEqual(actual, expected)
+
+    def test_permute_right_option_groups(self):
+        expected = (
+            (),
+            (1,),
+            (1, 2),
+            (1, 2, 3),
+        )
+        data = list(zip([1, 2, 3]))  # Generate a list of 1-tuples.
+        actual = tuple(clinic.permute_right_option_groups(data))
+        self.assertEqual(actual, expected)
+
+    def test_permute_optional_groups(self):
+        empty = {
+            "left": (), "required": (), "right": (),
+            "expected": ((),),
+        }
+        noleft1 = {
+            "left": (), "required": ("b",), "right": ("c",),
+            "expected": (
+                ("b",),
+                ("b", "c"),
+            ),
+        }
+        noleft2 = {
+            "left": (), "required": ("b", "c",), "right": ("d",),
+            "expected": (
+                ("b", "c"),
+                ("b", "c", "d"),
+            ),
+        }
+        noleft3 = {
+            "left": (), "required": ("b", "c",), "right": ("d", "e"),
+            "expected": (
+                ("b", "c"),
+                ("b", "c", "d"),
+                ("b", "c", "d", "e"),
+            ),
+        }
+        noright1 = {
+            "left": ("a",), "required": ("b",), "right": (),
+            "expected": (
+                ("b",),
+                ("a", "b"),
+            ),
+        }
+        noright2 = {
+            "left": ("a",), "required": ("b", "c"), "right": (),
+            "expected": (
+                ("b", "c"),
+                ("a", "b", "c"),
+            ),
+        }
+        noright3 = {
+            "left": ("a", "b"), "required": ("c",), "right": (),
+            "expected": (
+                ("c",),
+                ("b", "c"),
+                ("a", "b", "c"),
+            ),
+        }
+        leftandright1 = {
+            "left": ("a",), "required": ("b",), "right": ("c",),
+            "expected": (
+                ("b",),
+                ("a", "b"),  # Prefer left.
+                ("a", "b", "c"),
+            ),
+        }
+        leftandright2 = {
+            "left": ("a", "b"), "required": ("c", "d"), "right": ("e", "f"),
+            "expected": (
+                ("c", "d"),
+                ("b", "c", "d"),       # Prefer left.
+                ("a", "b", "c", "d"),  # Prefer left.
+                ("a", "b", "c", "d", "e"),
+                ("a", "b", "c", "d", "e", "f"),
+            ),
+        }
+        dataset = (
+            empty,
+            noleft1, noleft2, noleft3,
+            noright1, noright2, noright3,
+            leftandright1, leftandright2,
+        )
+        for params in dataset:
+            with self.subTest(**params):
+                left, required, right, expected = params.values()
+                permutations = clinic.permute_optional_groups(left, required, right)
+                actual = tuple(permutations)
+                self.assertEqual(actual, expected)
+
+
+class FormatHelperTests(unittest.TestCase):
+
+    def test_strip_leading_and_trailing_blank_lines(self):
+        dataset = (
+            # Input lines, expected output.
+            ("a\nb",            "a\nb"),
+            ("a\nb\n",          "a\nb"),
+            ("a\nb ",           "a\nb"),
+            ("\na\nb\n\n",      "a\nb"),
+            ("\n\na\nb\n\n",    "a\nb"),
+            ("\n\na\n\nb\n\n",  "a\n\nb"),
+            # Note, leading whitespace is preserved:
+            (" a\nb",               " a\nb"),
+            (" a\nb ",              " a\nb"),
+            (" \n \n a\nb \n \n ",  " a\nb"),
+        )
+        for lines, expected in dataset:
+            with self.subTest(lines=lines, expected=expected):
+                out = clinic.strip_leading_and_trailing_blank_lines(lines)
+                self.assertEqual(out, expected)
+
+    def test_normalize_snippet(self):
+        snippet = """
+            one
+            two
+            three
+        """
+
+        # Expected outputs:
+        zero_indent = (
+            "one\n"
+            "two\n"
+            "three"
+        )
+        four_indent = (
+            "    one\n"
+            "    two\n"
+            "    three"
+        )
+        eight_indent = (
+            "        one\n"
+            "        two\n"
+            "        three"
+        )
+        expected_outputs = {0: zero_indent, 4: four_indent, 8: eight_indent}
+        for indent, expected in expected_outputs.items():
+            with self.subTest(indent=indent):
+                actual = clinic.normalize_snippet(snippet, indent=indent)
+                self.assertEqual(actual, expected)
+
+    def test_accumulator(self):
+        acc = clinic.text_accumulator()
+        self.assertEqual(acc.output(), "")
+        acc.append("a")
+        self.assertEqual(acc.output(), "a")
+        self.assertEqual(acc.output(), "")
+        acc.append("b")
+        self.assertEqual(acc.output(), "b")
+        self.assertEqual(acc.output(), "")
+        acc.append("c")
+        acc.append("d")
+        self.assertEqual(acc.output(), "cd")
+        self.assertEqual(acc.output(), "")
+
+    def test_quoted_for_c_string(self):
+        dataset = (
+            # input,    expected
+            (r"abc",    r"abc"),
+            (r"\abc",   r"\\abc"),
+            (r"\a\bc",  r"\\a\\bc"),
+            (r"\a\\bc", r"\\a\\\\bc"),
+            (r'"abc"',  r'\"abc\"'),
+            (r"'a'",    r"\'a\'"),
+        )
+        for line, expected in dataset:
+            with self.subTest(line=line, expected=expected):
+                out = clinic.quoted_for_c_string(line)
+                self.assertEqual(out, expected)
+
+    def test_rstrip_lines(self):
+        lines = (
+            "a \n"
+            "b\n"
+            " c\n"
+            " d \n"
+        )
+        expected = (
+            "a\n"
+            "b\n"
+            " c\n"
+            " d\n"
+        )
+        out = clinic.rstrip_lines(lines)
+        self.assertEqual(out, expected)
+
+    def test_format_escape(self):
+        line = "{}, {a}"
+        expected = "{{}}, {{a}}"
+        out = clinic.format_escape(line)
+        self.assertEqual(out, expected)
+
+    def test_indent_all_lines(self):
+        # Blank lines are expected to be unchanged.
+        self.assertEqual(clinic.indent_all_lines("", prefix="bar"), "")
+
+        lines = (
+            "one\n"
+            "two"  # The missing newline is deliberate.
+        )
+        expected = (
+            "barone\n"
+            "bartwo"
+        )
+        out = clinic.indent_all_lines(lines, prefix="bar")
+        self.assertEqual(out, expected)
+
+        # If last line is empty, expect it to be unchanged.
+        lines = (
+            "\n"
+            "one\n"
+            "two\n"
+            ""
+        )
+        expected = (
+            "bar\n"
+            "barone\n"
+            "bartwo\n"
+            ""
+        )
+        out = clinic.indent_all_lines(lines, prefix="bar")
+        self.assertEqual(out, expected)
+
+    def test_suffix_all_lines(self):
+        # Blank lines are expected to be unchanged.
+        self.assertEqual(clinic.suffix_all_lines("", suffix="foo"), "")
+
+        lines = (
+            "one\n"
+            "two"  # The missing newline is deliberate.
+        )
+        expected = (
+            "onefoo\n"
+            "twofoo"
+        )
+        out = clinic.suffix_all_lines(lines, suffix="foo")
+        self.assertEqual(out, expected)
+
+        # If last line is empty, expect it to be unchanged.
+        lines = (
+            "\n"
+            "one\n"
+            "two\n"
+            ""
+        )
+        expected = (
+            "foo\n"
+            "onefoo\n"
+            "twofoo\n"
+            ""
+        )
+        out = clinic.suffix_all_lines(lines, suffix="foo")
+        self.assertEqual(out, expected)
 
 
 if __name__ == "__main__":

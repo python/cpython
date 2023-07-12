@@ -17,8 +17,6 @@
 /* Always enable assertions */
 #undef NDEBUG
 
-#define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
 #include "frameobject.h"          // PyFrame_New
 #include "marshal.h"              // PyMarshal_WriteLongToFile
@@ -637,6 +635,30 @@ test_get_type_qualname(PyObject *self, PyObject *Py_UNUSED(ignored))
 
   done:
     Py_DECREF(HeapTypeNameType);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+test_get_type_dict(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    /* Test for PyType_GetDict */
+
+    // Assert ints have a `to_bytes` method
+    PyObject *long_dict = PyType_GetDict(&PyLong_Type);
+    assert(long_dict);
+    assert(PyDict_GetItemString(long_dict, "to_bytes")); // borrowed ref
+    Py_DECREF(long_dict);
+
+    // Make a new type, add an attribute to it and assert it's there
+    PyObject *HeapTypeNameType = PyType_FromSpec(&HeapTypeNameType_Spec);
+    assert(HeapTypeNameType);
+    assert(PyObject_SetAttrString(
+        HeapTypeNameType, "new_attr", Py_NewRef(Py_None)) >= 0);
+    PyObject *type_dict = PyType_GetDict((PyTypeObject*)HeapTypeNameType);
+    assert(type_dict);
+    assert(PyDict_GetItemString(type_dict, "new_attr")); // borrowed ref
+    Py_DECREF(HeapTypeNameType);
+    Py_DECREF(type_dict);
     Py_RETURN_NONE;
 }
 
@@ -1269,9 +1291,15 @@ test_pep3118_obsolete_write_locks(PyObject* self, PyObject *Py_UNUSED(ignored))
     if (ret != -1 || match == 0)
         goto error;
 
+    PyObject *mod_io = PyImport_ImportModule("_io");
+    if (mod_io == NULL) {
+        return NULL;
+    }
+
     /* bytesiobuf_getbuffer() */
-    PyTypeObject *type = (PyTypeObject *)_PyImport_GetModuleAttrString(
-            "_io", "_BytesIOBuffer");
+    PyTypeObject *type = (PyTypeObject *)PyObject_GetAttrString(
+            mod_io, "_BytesIOBuffer");
+    Py_DECREF(mod_io);
     if (type == NULL) {
         return NULL;
     }
@@ -2714,11 +2742,6 @@ test_tstate_capi(PyObject *self, PyObject *Py_UNUSED(args))
     assert(PyDict_Check(dict));
     // dict is a borrowed reference
 
-    // private _PyThreadState_GetDict()
-    PyObject *dict2 = _PyThreadState_GetDict(tstate);
-    assert(dict2 == dict);
-    // dict2 is a borrowed reference
-
     // PyThreadState_GetInterpreter()
     PyInterpreterState *interp = PyThreadState_GetInterpreter(tstate);
     assert(interp != NULL);
@@ -3294,37 +3317,6 @@ function_set_kw_defaults(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-struct atexit_data {
-    int called;
-};
-
-static void
-callback(void *data)
-{
-    ((struct atexit_data *)data)->called += 1;
-}
-
-static PyObject *
-test_atexit(PyObject *self, PyObject *Py_UNUSED(args))
-{
-    PyThreadState *oldts = PyThreadState_Swap(NULL);
-    PyThreadState *tstate = Py_NewInterpreter();
-
-    struct atexit_data data = {0};
-    int res = _Py_AtExit(tstate->interp, callback, (void *)&data);
-    Py_EndInterpreter(tstate);
-    PyThreadState_Swap(oldts);
-    if (res < 0) {
-        return NULL;
-    }
-    if (data.called == 0) {
-        PyErr_SetString(PyExc_RuntimeError, "atexit callback not called");
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
-
 static PyObject *
 check_pyimport_addmodule(PyObject *self, PyObject *args)
 {
@@ -3375,6 +3367,10 @@ error:
 static PyObject *
 test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 {
+    // Ignore PyWeakref_GetObject() deprecation, we test it on purpose
+    _Py_COMP_DIAG_PUSH
+    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
+
     // Create a new heap type, create an instance of this type, and delete the
     // type. This object supports weak references.
     PyObject *new_type = PyObject_CallFunction((PyObject*)&PyType_Type,
@@ -3404,7 +3400,7 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 
     // test PyWeakref_GetRef(), reference is alive
     PyObject *ref = Py_True;  // marker to check that value was set
-    assert(PyWeakref_GetRef(weakref, &ref) == 0);
+    assert(PyWeakref_GetRef(weakref, &ref) == 1);
     assert(ref == obj);
     assert(Py_REFCNT(obj) == (refcnt + 1));
     Py_DECREF(ref);
@@ -3463,6 +3459,8 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     Py_DECREF(weakref);
 
     Py_RETURN_NONE;
+
+    _Py_COMP_DIAG_POP
 }
 
 
@@ -3498,6 +3496,7 @@ static PyMethodDef TestMethods[] = {
     {"test_get_statictype_slots", test_get_statictype_slots,     METH_NOARGS},
     {"test_get_type_name",        test_get_type_name,            METH_NOARGS},
     {"test_get_type_qualname",    test_get_type_qualname,        METH_NOARGS},
+    {"test_get_type_dict",        test_get_type_dict,            METH_NOARGS},
     {"_test_thread_state",      test_thread_state,               METH_VARARGS},
 #ifndef MS_WINDOWS
     {"_spawn_pthread_waiter",   spawn_pthread_waiter,            METH_NOARGS},
@@ -3608,7 +3607,6 @@ static PyMethodDef TestMethods[] = {
     {"function_set_defaults", function_set_defaults, METH_VARARGS, NULL},
     {"function_get_kw_defaults", function_get_kw_defaults, METH_O, NULL},
     {"function_set_kw_defaults", function_set_kw_defaults, METH_VARARGS, NULL},
-    {"test_atexit", test_atexit, METH_NOARGS},
     {"check_pyimport_addmodule", check_pyimport_addmodule, METH_VARARGS},
     {"test_weakref_capi", test_weakref_capi, METH_NOARGS},
     {NULL, NULL} /* sentinel */
@@ -4208,9 +4206,6 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_GetArgs(m) < 0) {
-        return NULL;
-    }
-    if (_PyTestCapi_Init_PyTime(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_DateTime(m) < 0) {
