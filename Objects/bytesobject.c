@@ -1272,6 +1272,7 @@ _PyBytes_Find(const char *haystack, Py_ssize_t len_haystack,
               const char *needle, Py_ssize_t len_needle,
               Py_ssize_t offset)
 {
+#if 0
     assert(len_haystack >= 0);
     assert(len_needle >= 0);
     // Extra checks because stringlib_find accesses haystack[len_haystack].
@@ -1291,6 +1292,10 @@ _PyBytes_Find(const char *haystack, Py_ssize_t len_haystack,
         }
     }
     return res;
+#else
+    return stringlib_find(haystack, len_haystack,
+                          needle, len_needle, offset);
+#endif
 }
 
 Py_ssize_t
