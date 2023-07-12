@@ -99,7 +99,7 @@ PySys_GetObject(const char *name)
     /* XXX Suppress a new exception if it was raised and restore
      * the old one. */
     if (_PyErr_Occurred(tstate)) {
-        _PyErr_WriteUnraisableMsg("on getting the sys module attribute", NULL);
+        _PyErr_WriteUnraisableMsg("in PySys_GetObject()", NULL);
     }
     _PyErr_SetRaisedException(tstate, exc);
     return value;

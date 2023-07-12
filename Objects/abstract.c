@@ -2431,11 +2431,19 @@ PyMapping_HasKeyString(PyObject *obj, const char *key)
     PyObject *dummy;
     int rc = PyMapping_GetOptionalItemString(obj, key, &dummy);
     if (rc < 0) {
-        _PyErr_WriteUnraisableMsg("on testing a mapping key", obj);
+        _PyErr_WriteUnraisableMsg(
+            "in PyMapping_HasKeyString(); consider using "
+            "PyMapping_GetOptionalItemString() or PyMapping_GetItemString()",
+            NULL);
         return 0;
     }
+    // PyMapping_HasKeyString() also clears the error set before it's call
+    // if the key is not found.
     if (rc == 0 && PyErr_Occurred()) {
-        _PyErr_WriteUnraisableMsg("before testing a mapping key", obj);
+        _PyErr_WriteUnraisableMsg(
+            "in PyMapping_HasKeyString(); consider using "
+            "PyMapping_GetOptionalItemString() or PyMapping_GetItemString()",
+            NULL);
         return 0;
     }
     Py_XDECREF(dummy);
@@ -2448,11 +2456,17 @@ PyMapping_HasKey(PyObject *obj, PyObject *key)
     PyObject *dummy;
     int rc = PyMapping_GetOptionalItem(obj, key, &dummy);
     if (rc < 0) {
-        _PyErr_WriteUnraisableMsg("on testing a mapping key", obj);
+        _PyErr_WriteUnraisableMsg(
+            "in PyMapping_HasKey(); consider using "
+            "PyMapping_GetOptionalItem() or PyObject_GetItem()", NULL);
         return 0;
     }
+    // PyMapping_HasKey() also clears the error set before it's call
+    // if the key is not found.
     if (rc == 0 && PyErr_Occurred()) {
-        _PyErr_WriteUnraisableMsg("before testing a mapping key", obj);
+        _PyErr_WriteUnraisableMsg(
+            "in PyMapping_HasKey(); consider using "
+            "PyMapping_GetOptionalItem() or PyObject_GetItem()", NULL);
         return 0;
     }
     Py_XDECREF(dummy);

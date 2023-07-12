@@ -909,7 +909,10 @@ PyObject_HasAttrString(PyObject *obj, const char *name)
     PyObject *dummy;
     int rc = PyObject_GetOptionalAttrString(obj, name, &dummy);
     if (rc < 0) {
-        _PyErr_WriteUnraisableMsg("on testing an object attribute", obj);
+        _PyErr_WriteUnraisableMsg(
+            "in PyObject_HasAttrString(); consider using "
+            "PyObject_GetOptionalAttrString() or PyObject_GetAttrString()",
+            NULL);
         return 0;
     }
     Py_XDECREF(dummy);
@@ -1137,7 +1140,9 @@ PyObject_HasAttr(PyObject *obj, PyObject *name)
     PyObject *dummy;
     int rc = PyObject_GetOptionalAttr(obj, name, &dummy);
     if (rc < 0) {
-        _PyErr_WriteUnraisableMsg("on testing an object attribute", obj);
+        _PyErr_WriteUnraisableMsg(
+            "in PyObject_HasAttr(); consider using "
+            "PyObject_GetOptionalAttr() or PyObject_GetAttr()", NULL);
         return 0;
     }
     Py_XDECREF(dummy);
