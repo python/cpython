@@ -14,6 +14,7 @@
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_moduleobject.h"  // PyModuleObject
 #include "pycore_opcode.h"        // EXTRA_CASES
+#include "pycore_opcode_metadata.h"
 #include "pycore_opcode_utils.h"  // MAKE_FUNCTION_*
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
@@ -30,7 +31,6 @@
 #include "pycore_frame.h"
 #include "frameobject.h"          // _PyInterpreterFrame_GetLine
 #include "opcode.h"
-#include "opcode_metadata.h"
 #include "pydtrace.h"
 #include "setobject.h"
 #include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX

@@ -8,7 +8,7 @@
 
 #include "pycore_opcode_utils.h"
 #define NEED_OPCODE_METADATA
-#include "opcode_metadata.h"      // _PyOpcode_opcode_metadata, _PyOpcode_num_popped/pushed
+#include "pycore_opcode_metadata.h" // _PyOpcode_opcode_metadata, _PyOpcode_num_popped/pushed
 #undef NEED_OPCODE_METADATA
 
 
