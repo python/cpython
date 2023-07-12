@@ -666,7 +666,7 @@ Constants
           HV_GUID_BROADCAST
           HV_GUID_CHILDREN
           HV_GUID_LOOPBACK
-          HV_GUID_LOOPBACK
+          HV_GUID_PARENT
 
    Constants for Windows Hyper-V sockets for host/guest communications.
 
