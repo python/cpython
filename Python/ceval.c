@@ -419,7 +419,7 @@ match_class_attr(PyThreadState *tstate, PyObject *subject, PyObject *type,
         return NULL;
     }
     PyObject *attr;
-    (void)_PyObject_LookupAttr(subject, name, &attr);
+    (void)PyObject_GetOptionalAttr(subject, name, &attr);
     return attr;
 }
 
@@ -454,7 +454,7 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
     // First, the positional subpatterns:
     if (nargs) {
         int match_self = 0;
-        if (_PyObject_LookupAttr(type, &_Py_ID(__match_args__), &match_args) < 0) {
+        if (PyObject_GetOptionalAttr(type, &_Py_ID(__match_args__), &match_args) < 0) {
             goto fail;
         }
         if (match_args) {
@@ -2414,7 +2414,7 @@ import_from(PyThreadState *tstate, PyObject *v, PyObject *name)
     PyObject *x;
     PyObject *fullmodname, *pkgname, *pkgpath, *pkgname_or_unknown, *errmsg;
 
-    if (_PyObject_LookupAttr(v, name, &x) != 0) {
+    if (PyObject_GetOptionalAttr(v, name, &x) != 0) {
         return x;
     }
     /* Issue #17636: in case this failed because of a circular relative
@@ -2780,6 +2780,13 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
                     pc = oparg;
                 }
                 stack_pointer--;
+                break;
+            }
+
+            case JUMP_TO_TOP:
+            {
+                pc = 0;
+                CHECK_EVAL_BREAKER();
                 break;
             }
 

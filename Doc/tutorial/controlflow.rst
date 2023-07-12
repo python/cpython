@@ -307,8 +307,9 @@ you can use the class name followed by an argument list resembling a
 constructor, but with the ability to capture attributes into variables::
 
     class Point:
-        x: int
-        y: int
+        def __init__(self, x, y):
+            self.x = x
+            self.y = y
 
     def where_is(point):
         match point:

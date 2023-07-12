@@ -37,7 +37,8 @@ Object Protocol
 
       Exceptions that occur when this calls :meth:`~object.__getattr__` and
       :meth:`~object.__getattribute__` methods are silently ignored.
-      For proper error handling, use :c:func:`PyObject_GetAttr` instead.
+      For proper error handling, use :c:func:`PyObject_GetOptionalAttr` or
+      :c:func:`PyObject_GetAttr` instead.
 
 
 .. c:function:: int PyObject_HasAttrString(PyObject *o, const char *attr_name)
@@ -51,7 +52,8 @@ Object Protocol
       Exceptions that occur when this calls :meth:`~object.__getattr__` and
       :meth:`~object.__getattribute__` methods or while creating the temporary :class:`str`
       object are silently ignored.
-      For proper error handling, use :c:func:`PyObject_GetAttrString` instead.
+      For proper error handling, use :c:func:`PyObject_GetOptionalAttrString`
+      or :c:func:`PyObject_GetAttrString` instead.
 
 
 .. c:function:: PyObject* PyObject_GetAttr(PyObject *o, PyObject *attr_name)
@@ -60,6 +62,9 @@ Object Protocol
    value on success, or ``NULL`` on failure.  This is the equivalent of the Python
    expression ``o.attr_name``.
 
+   If the missing attribute should not be treated as a failure, you can use
+   :c:func:`PyObject_GetOptionalAttr` instead.
+
 
 .. c:function:: PyObject* PyObject_GetAttrString(PyObject *o, const char *attr_name)
 
@@ -67,6 +72,38 @@ Object Protocol
    value on success, or ``NULL`` on failure. This is the equivalent of the Python
    expression ``o.attr_name``.
 
+   If the missing attribute should not be treated as a failure, you can use
+   :c:func:`PyObject_GetOptionalAttrString` instead.
+
+
+.. c:function:: int PyObject_GetOptionalAttr(PyObject *obj, PyObject *attr_name, PyObject **result);
+
+   Variant of :c:func:`PyObject_GetAttr` which doesn't raise
+   :exc:`AttributeError` if the attribute is not found.
+
+   If the attribute is found, return ``1`` and set *\*result* to a new
+   :term:`strong reference` to the attribute.
+   If the attribute is not found, return ``0`` and set *\*result* to ``NULL``;
+   the :exc:`AttributeError` is silenced.
+   If an error other than :exc:`AttributeError` is raised, return ``-1`` and
+   set *\*result* to ``NULL``.
+
+   .. versionadded:: 3.13
+
+
+.. c:function:: int PyObject_GetOptionalAttrString(PyObject *obj, const char *attr_name, PyObject **result);
+
+   Variant of :c:func:`PyObject_GetAttrString` which doesn't raise
+   :exc:`AttributeError` if the attribute is not found.
+
+   If the attribute is found, return ``1`` and set *\*result* to a new
+   :term:`strong reference` to the attribute.
+   If the attribute is not found, return ``0`` and set *\*result* to ``NULL``;
+   the :exc:`AttributeError` is silenced.
+   If an error other than :exc:`AttributeError` is raised, return ``-1`` and
+   set *\*result* to ``NULL``.
+
+   .. versionadded:: 3.13
 
 .. c:function:: PyObject* PyObject_GenericGetAttr(PyObject *o, PyObject *name)
 

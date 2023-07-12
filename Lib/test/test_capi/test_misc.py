@@ -2525,7 +2525,6 @@ class TestUops(unittest.TestCase):
                 i += 1
 
         opt = _testinternalcapi.get_uop_optimizer()
-
         with temporary_optimizer(opt):
             testfunc(10)
 
@@ -2541,7 +2540,6 @@ class TestUops(unittest.TestCase):
                 i += 1
 
         opt = _testinternalcapi.get_uop_optimizer()
-
         with temporary_optimizer(opt):
             testfunc(10)
 
@@ -2549,6 +2547,45 @@ class TestUops(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = {opname for opname, _ in ex}
         self.assertIn("_POP_JUMP_IF_TRUE", uops)
+
+    def test_jump_backward(self):
+        def testfunc(n):
+            i = 0
+            while i < n:
+                i += 1
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            testfunc(10)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _ in ex}
+        self.assertIn("JUMP_TO_TOP", uops)
+
+    def test_jump_forward(self):
+        def testfunc(n):
+            a = 0
+            while a < n:
+                if a < 0:
+                    a = -a
+                else:
+                    a = +a
+                a += 1
+            return a
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            testfunc(10)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        # for i, (opname, oparg) in enumerate(ex):
+        #     print(f"{i:4d}: {opname:<20s} {oparg:4d}")
+        uops = {opname for opname, _ in ex}
+        # Since there is no JUMP_FORWARD instruction,
+        # look for indirect evidence: the += operator
+        self.assertIn("_BINARY_OP_ADD_INT", uops)
 
 
 if __name__ == "__main__":
