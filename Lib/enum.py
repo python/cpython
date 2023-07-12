@@ -1232,7 +1232,6 @@ class Enum(metaclass=EnumType):
     # on class lookup; on instance lookup it either executes a provided function
     # or raises an AttributeError.
 
-
     @property
     def name(self):
         """The name of the Enum member."""
