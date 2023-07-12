@@ -85,10 +85,12 @@ jobs:
         uses: uraimo/run-on-arch-action@v2
         with:
           arch: ${{ matrix.architecture }}
-          distro: ubuntu20.04
+          distro: ubuntu_latest
           env: |
             CC: ${{ matrix.compiler }}
             PYTHON_LLVM_VERSION: ${{ matrix.llvm }}
+          install: |
+            apt install --yes sudo wget
           run: |
             sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
             ${{ matrix.llvm == 14 && 'sudo apt install libclang-rt-14-dev' || '' }}
