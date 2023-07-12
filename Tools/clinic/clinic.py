@@ -1964,7 +1964,7 @@ class Destination:
 
     args: dc.InitVar[tuple[str, ...]] = ()
 
-    def __post_init__(self, args: tuple[str, ...] = ()) -> None:
+    def __post_init__(self, args: tuple[str, ...]) -> None:
         valid_types = ('buffer', 'file', 'suppress')
         if self.type not in valid_types:
             fail(
