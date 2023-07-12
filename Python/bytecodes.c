@@ -2451,9 +2451,14 @@ dummy_func(
             // Common case: no jump, leave it to the code generator
         }
 
-        inst(FOR_ITER_RANGE, (unused/1, iter -- iter, next)) {
+        op(_ITER_CHECK_RANGE, (iter -- iter)) {
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
             DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type, FOR_ITER);
+        }
+
+        op(_ITER_JUMP_RANGE, (iter -- iter)) {
+            _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
+            assert(Py_TYPE(r) == &PyRangeIter_Type);
             STAT_INC(FOR_ITER, hit);
             if (r->len <= 0) {
                 STACK_SHRINK(1);
@@ -2463,14 +2468,28 @@ dummy_func(
                 JUMPBY(oparg + 1);
                 DISPATCH();
             }
+        }
+
+        // Only used by Tier 2
+        op(_ITER_EXHAUSTED_RANGE, (iter -- iter, exhausted)) {
+            _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
+            assert(Py_TYPE(r) == &PyRangeIter_Type);
+            exhausted = r->len <= 0 ? Py_True : Py_False;
+        }
+
+        op(_ITER_NEXT_RANGE, (iter -- iter, next)) {
+            _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
+            assert(Py_TYPE(r) == &PyRangeIter_Type);
+            assert(r->len > 0);
             long value = r->start;
             r->start = value + r->step;
             r->len--;
             next = PyLong_FromLong(value);
-            if (next == NULL) {
-                goto error;
-            }
+            ERROR_IF(next == NULL, error);
         }
+
+        macro(FOR_ITER_RANGE) =
+            unused/1 + _ITER_CHECK_RANGE + _ITER_JUMP_RANGE + _ITER_NEXT_RANGE;
 
         inst(FOR_ITER_GEN, (unused/1, iter -- iter, unused)) {
             DEOPT_IF(tstate->interp->eval_frame, FOR_ITER);

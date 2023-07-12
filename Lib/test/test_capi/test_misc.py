@@ -2443,7 +2443,6 @@ class TestUops(unittest.TestCase):
                 i += 1
 
         opt = _testinternalcapi.get_uop_optimizer()
-
         with temporary_optimizer(opt):
             testfunc(1000)
 
@@ -2580,12 +2579,32 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        # for i, (opname, oparg) in enumerate(ex):
-        #     print(f"{i:4d}: {opname:<20s} {oparg:4d}")
         uops = {opname for opname, _ in ex}
         # Since there is no JUMP_FORWARD instruction,
         # look for indirect evidence: the += operator
         self.assertIn("_BINARY_OP_ADD_INT", uops)
+
+    def test_for_iter_range(self):
+        def testfunc(n):
+            total = 0
+            for i in range(n):
+                total += i
+            return total
+        # import dis; dis.dis(testfunc)
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            total = testfunc(10)
+            self.assertEqual(total, 45)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        # for i, (opname, oparg) in enumerate(ex):
+        #     print(f"{i:4d}: {opname:<20s} {oparg:3d}")
+        uops = {opname for opname, _ in ex}
+        self.assertIn("_ITER_EXHAUSTED_RANGE", uops)
+        # Verification that the jump goes past END_FOR
+        # is done by manual inspection of the output
 
 
 if __name__ == "__main__":
