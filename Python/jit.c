@@ -97,6 +97,38 @@ patch_one(unsigned char *location, HoleKind kind, uint64_t value, uint64_t adden
             *addr = instruction;
             break;
         }
+        case PATCH_ABS_16_A: {
+            uint32_t *addr = (uint32_t *)location;
+            uint32_t instruction = *addr;
+            assert(((instruction >> 21) & 0x3) == 0);
+            instruction = (instruction & 0xFFE0001F) | ((((value + addend) >> 0) & 0xFFFF) << 5);
+            *addr = instruction;
+            break;
+        }
+        case PATCH_ABS_16_B: {
+            uint32_t *addr = (uint32_t *)location;
+            uint32_t instruction = *addr;
+            assert(((instruction >> 21) & 0x3) == 1);
+            instruction = (instruction & 0xFFE0001F) | ((((value + addend) >> 16) & 0xFFFF) << 5);
+            *addr = instruction;
+            break;
+        }
+        case PATCH_ABS_16_C: {
+            uint32_t *addr = (uint32_t *)location;
+            uint32_t instruction = *addr;
+            assert(((instruction >> 21) & 0x3) == 2);
+            instruction = (instruction & 0xFFE0001F) | ((((value + addend) >> 32) & 0xFFFF) << 5);
+            *addr = instruction;
+            break;
+        }
+        case PATCH_ABS_16_D: {
+            uint32_t *addr = (uint32_t *)location;
+            uint32_t instruction = *addr;
+            assert(((instruction >> 21) & 0x3) == 3);
+            instruction = (instruction & 0xFFE0001F) | ((((value + addend) >> 48) & 0xFFFF) << 5);
+            *addr = instruction;
+            break;
+        }
         case PATCH_ABS_32: {
             uint32_t *addr = (uint32_t *)location;
             uint32_t instruction = *addr;

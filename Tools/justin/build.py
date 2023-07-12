@@ -436,10 +436,10 @@ def handle_relocations(
                 yield Hole("PATCH_ABS_64", symbol, offset, addend)
     ##############################################################################
             case {
+                "Addend": 0,
                 "Offset": int(offset),
-                "Type": {"Value": "R_AARCH64_ADR_GOT_PAGE"},
                 "Symbol": {'Value': str(symbol)},
-                "Addend": addend,
+                "Type": {"Value": "R_AARCH64_ADR_GOT_PAGE"},
             }:
                 offset += base
                 where = slice(offset, offset + 4)
@@ -455,6 +455,92 @@ def handle_relocations(
                     got_entries.append(symbol)
                 addend += len(body) + got_entries.index(symbol) * 8
                 yield Hole("PATCH_REL_21", "_justin_base", offset, addend)
+            case {
+                "Addend": 0,
+                "Offset": int(offset),
+                "Symbol": {"Value": str(symbol)},
+                "Type": {"Value": "R_AARCH64_CALL26" | "R_AARCH64_JUMP26"},  # XXX
+            }:
+                offset += base
+                where = slice(offset, offset + 4)
+                what = int.from_bytes(body[where], "little", signed=False)
+                # XXX: This nonsense...
+                assert what & 0xFC000000 == 0x14000000 or what & 0xFC000000 == 0x94000000, what
+                add = (what & 0x03FFFFFF) << 2
+                add = sign_extend_64(add, 28)
+                addend += add  # XXX?
+                assert symbol.startswith("_"), symbol
+                symbol = symbol.removeprefix("_")
+                yield Hole("PATCH_REL_26", symbol, offset, addend)
+            case {
+                "Addend": 0,
+                "Offset": int(offset),
+                "Symbol": {"Value": str(symbol)},
+                "Type": {"Value": "R_AARCH64_LD64_GOT_LO12_NC"},
+            }:
+                offset += base
+                where = slice(offset, offset + 4)
+                what = int.from_bytes(body[where], "little", signed=False)
+                # XXX: This nonsense...
+                assert what & 0x3B000000 == 0x39000000, what
+                addend = (what & 0x003FFC00) >> 10
+                implicit_shift = 0
+                if what & 0x3B000000 == 0x39000000:
+                    implicit_shift = (what >> 30) & 0x3
+                    if implicit_shift == 0:
+                        if what & 0x04800000 == 0x04800000:
+                            implicit_shift = 4
+                addend <<= implicit_shift
+                # assert symbol.startswith("_"), symbol
+                symbol = symbol.removeprefix("_")
+                if symbol not in got_entries:
+                    got_entries.append(symbol)
+                addend += len(body) + got_entries.index(symbol) * 8
+                yield Hole("PATCH_ABS_12", "_justin_base", offset, addend)
+            case {
+                "Addend": int(addend),
+                "Offset": int(offset),
+                "Symbol": {"Value": str(symbol)},
+                "Type": {"Value": "R_AARCH64_MOVW_UABS_G0_NC"},
+            }:
+                offset += base
+                where = slice(offset, offset + 4)
+                what = int.from_bytes(body[where], "little", signed=False)
+                assert ((what >> 5) & 0xFFFF) == 0, what
+                yield Hole("PATCH_ABS_16_A", "_justin_base", offset, addend)
+            case {
+                "Addend": int(addend),
+                "Offset": int(offset),
+                "Symbol": {"Value": str(symbol)},
+                "Type": {"Value": "R_AARCH64_MOVW_UABS_G1_NC"},
+            }:
+                offset += base
+                where = slice(offset, offset + 4)
+                what = int.from_bytes(body[where], "little", signed=False)
+                assert ((what >> 5) & 0xFFFF) == 0, what
+                yield Hole("PATCH_ABS_16_B", "_justin_base", offset, addend)
+            case {
+                "Addend": int(addend),
+                "Offset": int(offset),
+                "Symbol": {"Value": str(symbol)},
+                "Type": {"Value": "R_AARCH64_MOVW_UABS_G2_NC"},
+            }:
+                offset += base
+                where = slice(offset, offset + 4)
+                what = int.from_bytes(body[where], "little", signed=False)
+                assert ((what >> 5) & 0xFFFF) == 0, what
+                yield Hole("PATCH_ABS_16_C", "_justin_base", offset, addend)
+            case {
+                "Addend": int(addend),
+                "Offset": int(offset),
+                "Symbol": {"Value": str(symbol)},
+                "Type": {"Value": "R_AARCH64_MOVW_UABS_G3"},
+            }:
+                offset += base
+                where = slice(offset, offset + 4)
+                what = int.from_bytes(body[where], "little", signed=False)
+                assert ((what >> 5) & 0xFFFF) == 0, what
+                yield Hole("PATCH_ABS_16_D", "_justin_base", offset, addend)
     ##############################################################################
             case {
                 "Offset": int(offset),
@@ -881,6 +967,10 @@ class Compiler:
         # XXX: Rework these to use Enums:
         kinds = {
             "PATCH_ABS_12",
+            "PATCH_ABS_16_A",
+            "PATCH_ABS_16_B",
+            "PATCH_ABS_16_C",
+            "PATCH_ABS_16_D",
             "PATCH_ABS_32",
             "PATCH_ABS_64",
             "PATCH_REL_21",
