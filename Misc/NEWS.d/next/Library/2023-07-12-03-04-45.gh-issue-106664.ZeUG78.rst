@@ -1,1 +1,1 @@
-Reduce overhead to add new selectors
+:mod:`selectors`: Add `_SelectorMapping.get()` method and optimize `_SelectorMapping.__getitem__()`.
