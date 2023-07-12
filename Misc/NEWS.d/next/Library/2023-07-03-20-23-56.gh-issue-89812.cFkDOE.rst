@@ -1,2 +1,2 @@
-Add :class:`tarfile.TarPath` class, which provides access to tar archive
-members via the :class:`pathlib.Path` interface.
+Add private ``pathlib._VirtualPath`` class, which provides experimental support
+for virtual filesystems, and may be made public in a future version of Python.
