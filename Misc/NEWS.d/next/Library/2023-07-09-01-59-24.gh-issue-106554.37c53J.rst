@@ -1,1 +1,1 @@
-Reduce selector overhead
+Reduce selector overhead by switching `SelectSelector` to use a `dict` `.get()` for `fd`s
