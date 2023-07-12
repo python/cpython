@@ -1226,6 +1226,12 @@ class Enum(metaclass=EnumType):
     # on class lookup; on instance lookup it either executes a provided function
     # or raises an AttributeError.
 
+    def __deepcopy__(self,memo):
+        return self
+
+    def __copy__(self):
+        return self
+
     @property
     def name(self):
         """The name of the Enum member."""
