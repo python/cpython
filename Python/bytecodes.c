@@ -2454,28 +2454,53 @@ dummy_func(
         macro(FOR_ITER_LIST) =
             unused/1 + _ITER_CHECK_LIST + _ITER_JUMP_LIST + _ITER_NEXT_LIST;
 
-        inst(FOR_ITER_TUPLE, (unused/1, iter -- iter, next)) {
+        op(_ITER_CHECK_TUPLE, (iter -- iter)) {
+            DEOPT_IF(Py_TYPE(iter) != &PyTupleIter_Type, FOR_ITER);
+        }
+
+        op(_ITER_JUMP_TUPLE, (iter -- iter)) {
             _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
-            DEOPT_IF(Py_TYPE(it) != &PyTupleIter_Type, FOR_ITER);
+            assert(Py_TYPE(iter) == &PyTupleIter_Type);
             STAT_INC(FOR_ITER, hit);
             PyTupleObject *seq = it->it_seq;
-            if (seq) {
-                if (it->it_index < PyTuple_GET_SIZE(seq)) {
-                    next = Py_NewRef(PyTuple_GET_ITEM(seq, it->it_index++));
-                    goto end_for_iter_tuple;  // End of this instruction
+            if (seq == NULL || it->it_index >= PyTuple_GET_SIZE(seq)) {
+                if (seq != NULL) {
+                    it->it_seq = NULL;
+                    Py_DECREF(seq);
                 }
-                it->it_seq = NULL;
-                Py_DECREF(seq);
+                Py_DECREF(iter);
+                STACK_SHRINK(1);
+                SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
+                /* Jump forward oparg, then skip following END_FOR instruction */
+                JUMPBY(oparg + 1);
+                DISPATCH();
             }
-            Py_DECREF(iter);
-            STACK_SHRINK(1);
-            SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
-            /* Jump forward oparg, then skip following END_FOR instruction */
-            JUMPBY(oparg + 1);
-            DISPATCH();
-        end_for_iter_tuple:
-            // Common case: no jump, leave it to the code generator
         }
+
+        // Only used by Tier 2
+        op(_ITER_EXHAUSTED_TUPLE, (iter -- iter, exhausted)) {
+            _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
+            assert(Py_TYPE(iter) == &PyTupleIter_Type);
+            PyTupleObject *seq = it->it_seq;
+            if (seq == NULL || it->it_index >= PyTuple_GET_SIZE(seq)) {
+                exhausted = Py_True;
+            }
+            else {
+                exhausted = Py_False;
+            }
+        }
+
+        op(_ITER_NEXT_TUPLE, (iter -- iter, next)) {
+            _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
+            assert(Py_TYPE(iter) == &PyTupleIter_Type);
+            PyTupleObject *seq = it->it_seq;
+            assert(seq);
+            assert(it->it_index < PyTuple_GET_SIZE(seq));
+            next = Py_NewRef(PyTuple_GET_ITEM(seq, it->it_index++));
+        }
+
+        macro(FOR_ITER_TUPLE) =
+            unused/1 + _ITER_CHECK_TUPLE + _ITER_JUMP_TUPLE + _ITER_NEXT_TUPLE;
 
         op(_ITER_CHECK_RANGE, (iter -- iter)) {
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;

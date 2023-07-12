@@ -43,9 +43,12 @@
 #define _ITER_CHECK_LIST 321
 #define _ITER_EXHAUSTED_LIST 322
 #define _ITER_NEXT_LIST 323
-#define _ITER_CHECK_RANGE 324
-#define _ITER_EXHAUSTED_RANGE 325
-#define _ITER_NEXT_RANGE 326
+#define _ITER_CHECK_TUPLE 324
+#define _ITER_EXHAUSTED_TUPLE 325
+#define _ITER_NEXT_TUPLE 326
+#define _ITER_CHECK_RANGE 327
+#define _ITER_EXHAUSTED_RANGE 328
+#define _ITER_NEXT_RANGE 329
 
 #ifndef NEED_OPCODE_METADATA
 extern int _PyOpcode_num_popped(int opcode, int oparg, bool jump);
@@ -1328,8 +1331,11 @@ const char * const _PyOpcode_uop_name[512] = {
     [321] = "_ITER_CHECK_LIST",
     [322] = "_ITER_EXHAUSTED_LIST",
     [323] = "_ITER_NEXT_LIST",
-    [324] = "_ITER_CHECK_RANGE",
-    [325] = "_ITER_EXHAUSTED_RANGE",
-    [326] = "_ITER_NEXT_RANGE",
+    [324] = "_ITER_CHECK_TUPLE",
+    [325] = "_ITER_EXHAUSTED_TUPLE",
+    [326] = "_ITER_NEXT_TUPLE",
+    [327] = "_ITER_CHECK_RANGE",
+    [328] = "_ITER_EXHAUSTED_RANGE",
+    [329] = "_ITER_NEXT_RANGE",
 };
 #endif // NEED_OPCODE_METADATA
