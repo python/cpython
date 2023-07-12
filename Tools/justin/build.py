@@ -286,6 +286,7 @@ def handle_relocations(
     body: bytearray,
     relocations: typing.Sequence[tuple[int, typing.Mapping[str, typing.Any]]],
 ) -> typing.Generator[Hole, None, None]:
+    missed = []  # XXX
     for i, (base, relocation) in enumerate(relocations):
         match relocation:
     ##############################################################################
@@ -436,6 +437,27 @@ def handle_relocations(
     ##############################################################################
             case {
                 "Offset": int(offset),
+                "Type": {"Value": "R_AARCH64_ADR_GOT_PAGE"},
+                "Symbol": {'Value': str(symbol)},
+                "Addend": addend,
+            }:
+                offset += base
+                where = slice(offset, offset + 4)
+                what = int.from_bytes(body[where], "little", signed=False)
+                # XXX: This nonsense...
+                assert what & 0x9F000000 == 0x90000000, what
+                add = ((what & 0x60000000) >> 29) | ((what & 0x01FFFFE0) >> 3) << 12
+                add = sign_extend_64(add, 33)
+                addend += add  # XXX?
+                # assert symbol.startswith("_"), symbol
+                symbol = symbol.removeprefix("_")
+                if symbol not in got_entries:
+                    got_entries.append(symbol)
+                addend += len(body) + got_entries.index(symbol) * 8
+                yield Hole("PATCH_REL_21", "_justin_base", offset, addend)
+    ##############################################################################
+            case {
+                "Offset": int(offset),
                 "Symbol": str(symbol),
                 "Type": {"Value": "IMAGE_REL_AMD64_ADDR64"},
             }:
@@ -553,7 +575,11 @@ def handle_relocations(
                 symbol = symbol.removeprefix("_")
                 yield Hole("PATCH_ABS_64", symbol, offset, addend)
             case _:
-                raise NotImplementedError(relocation)
+                missed.append(relocation)
+    for relocation in missed:  # XXX
+        print(f"XXX: {relocation}")  # XXX
+    if missed:  # XXX
+        raise NotImplementedError(missed)  # XXX
 
 
 class ObjectParserCOFF(ObjectParser):
