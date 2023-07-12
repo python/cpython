@@ -1816,7 +1816,7 @@ dummy_func(
             LOAD_ATTR,
         };
 
-        op(_TYPE_CHECK, (type_version/2, owner -- owner)) {
+        op(_GUARD_TYPE_VERSION, (type_version/2, owner -- owner)) {
             PyTypeObject *tp = Py_TYPE(owner);
             assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version, LOAD_ATTR);
@@ -1840,7 +1840,10 @@ dummy_func(
         }
 
         macro(LOAD_ATTR_INSTANCE_VALUE) =
-            _SKIP_CACHE + _TYPE_CHECK + _CHECK_MANAGED_OBJECT_HAS_VALUES + _LOAD_ATTR_INSTANCE_VALUE;
+            _SKIP_CACHE + // Skip over the counter
+            _GUARD_TYPE_VERSION +
+            _CHECK_MANAGED_OBJECT_HAS_VALUES +
+            _LOAD_ATTR_INSTANCE_VALUE;
 
         inst(LOAD_ATTR_MODULE, (unused/1, type_version/2, index/1, unused/5, owner -- res2 if (oparg & 1), res)) {
             DEOPT_IF(!PyModule_CheckExact(owner), LOAD_ATTR);

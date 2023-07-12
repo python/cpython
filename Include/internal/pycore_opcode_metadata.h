@@ -39,7 +39,7 @@
 #define _SKIP_CACHE 317
 #define _GUARD_GLOBALS_VERSION 318
 #define _GUARD_BUILTINS_VERSION 319
-#define _TYPE_CHECK 320
+#define _GUARD_TYPE_VERSION 320
 #define _CHECK_MANAGED_OBJECT_HAS_VALUES 321
 #define IS_NONE 322
 
@@ -1320,7 +1320,7 @@ const char * const _PyOpcode_uop_name[512] = {
     [317] = "_SKIP_CACHE",
     [318] = "_GUARD_GLOBALS_VERSION",
     [319] = "_GUARD_BUILTINS_VERSION",
-    [320] = "_TYPE_CHECK",
+    [320] = "_GUARD_TYPE_VERSION",
     [321] = "_CHECK_MANAGED_OBJECT_HAS_VALUES",
     [322] = "IS_NONE",
 };
