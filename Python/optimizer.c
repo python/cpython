@@ -596,8 +596,8 @@ done:
                     }
                 }
             }
-            trace_length += buffer_size - max_length;
         }
+        trace_length += buffer_size - max_length;
         return trace_length;
     }
     else {
