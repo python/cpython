@@ -35,7 +35,10 @@
 #define _BINARY_OP_ADD_UNICODE 313
 #define _LOAD_LOCALS 314
 #define _LOAD_FROM_DICT_OR_GLOBALS 315
-#define IS_NONE 316
+#define _SKIP_CACHE 316
+#define _GUARD_GLOBALS_VERSION 317
+#define _GUARD_BUILTINS_VERSION 318
+#define IS_NONE 319
 
 #ifndef NEED_OPCODE_METADATA
 extern int _PyOpcode_num_popped(int opcode, int oparg, bool jump);
@@ -1311,7 +1314,10 @@ const char * const _PyOpcode_uop_name[512] = {
     [313] = "_BINARY_OP_ADD_UNICODE",
     [314] = "_LOAD_LOCALS",
     [315] = "_LOAD_FROM_DICT_OR_GLOBALS",
-    [316] = "IS_NONE",
+    [316] = "_SKIP_CACHE",
+    [317] = "_GUARD_GLOBALS_VERSION",
+    [318] = "_GUARD_BUILTINS_VERSION",
+    [319] = "IS_NONE",
 };
 #endif // NEED_OPCODE_METADATA
 #endif
