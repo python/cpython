@@ -785,7 +785,7 @@ class PureWindowsPath(PurePath):
 # Filesystem-accessing classes
 
 
-class _VirtualPath(PurePath):
+class _PathBase(PurePath):
     """PurePath subclass for virtual filesystems, such as archives and remote
     storage.
     """
@@ -1379,7 +1379,7 @@ class _VirtualPath(PurePath):
         raise UnsupportedOperation(f"{type(self).__name__}.as_uri()")
 
 
-class Path(_VirtualPath):
+class Path(_PathBase):
     """PurePath subclass that can make system calls.
 
     Path represents a filesystem path but unlike PurePath, also offers

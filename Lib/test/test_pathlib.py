@@ -1573,8 +1573,8 @@ class WindowsPathAsPureTest(PureWindowsPathTest):
 # Tests for the virtual classes.
 #
 
-class VirtualPathTest(PurePathTest):
-    cls = pathlib._VirtualPath
+class PathBaseTest(PurePathTest):
+    cls = pathlib._PathBase
 
     def test_unsupported_operation(self):
         P = self.cls
@@ -1632,9 +1632,9 @@ class VirtualPathTest(PurePathTest):
         self.assertRaises(TypeError, bytes, self.cls())
 
 
-class DummyVirtualPathIO(io.BytesIO):
+class DummyPathIO(io.BytesIO):
     """
-    Used by DummyVirtualPath to implement `open('w')`
+    Used by DummyPath to implement `open('w')`
     """
 
     def __init__(self, files, path):
@@ -1647,9 +1647,9 @@ class DummyVirtualPathIO(io.BytesIO):
         super().close()
 
 
-class DummyVirtualPath(pathlib._VirtualPath):
+class DummyPath(pathlib._PathBase):
     """
-    Simple implementation of VirtualPath that keeps files and directories in
+    Simple implementation of PathBase that keeps files and directories in
     memory.
     """
     _files = {}
@@ -1691,7 +1691,7 @@ class DummyVirtualPath(pathlib._VirtualPath):
         elif mode == 'w':
             if parent not in self._directories:
                 raise FileNotFoundError(errno.ENOENT, "File not found", parent)
-            stream = DummyVirtualPathIO(self._files, path)
+            stream = DummyPathIO(self._files, path)
             self._files[path] = b''
             self._directories[parent].add(name)
         else:
@@ -1724,10 +1724,10 @@ class DummyVirtualPath(pathlib._VirtualPath):
                 raise
 
 
-class DummyVirtualPathTest(unittest.TestCase):
-    """Tests for VirtualPath methods that use stat(), open() and iterdir()."""
+class DummyPathTest(unittest.TestCase):
+    """Tests for PathBase methods that use stat(), open() and iterdir()."""
 
-    cls = DummyVirtualPath
+    cls = DummyPath
     can_symlink = False
 
     # (BASE)
@@ -2541,7 +2541,7 @@ class DummyVirtualPathTest(unittest.TestCase):
         self._check_complex_symlinks(os.path.join('dirA', '..'))
 
 
-class DummyVirtualPathWithSymlinks(DummyVirtualPath):
+class DummyPathWithSymlinks(DummyPath):
     def readlink(self):
         path = str(self)
         if path in self._symlinks:
@@ -2556,8 +2556,8 @@ class DummyVirtualPathWithSymlinks(DummyVirtualPath):
         self._symlinks[str(self)] = str(target)
 
 
-class DummyVirtualPathWithSymlinksTest(DummyVirtualPathTest):
-    cls = DummyVirtualPathWithSymlinks
+class DummyPathWithSymlinksTest(DummyPathTest):
+    cls = DummyPathWithSymlinks
     can_symlink = True
 
     def setUp(self):
@@ -2581,13 +2581,13 @@ class DummyVirtualPathWithSymlinksTest(DummyVirtualPathTest):
 # Tests for the concrete classes.
 #
 
-class PathTest(DummyVirtualPathTest):
+class PathTest(DummyPathTest):
     """Tests for the FS-accessing functionalities of the Path classes."""
     cls = pathlib.Path
     can_symlink = os_helper.can_symlink()
 
     def setUp(self):
-        # note: this must be kept in sync with `DummyVirtualPathTest.setUp()`
+        # note: this must be kept in sync with `DummyPathTest.setUp()`
         def cleanup():
             os.chmod(join('dirE'), 0o777)
             os_helper.rmtree(BASE)
