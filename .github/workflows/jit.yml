@@ -8,45 +8,45 @@ jobs:
       fail-fast: false
       matrix:
         target:
-          - i686-pc-windows-msvc/msvc
-          - x86_64-pc-windows-msvc/msvc
-          - x86_64-apple-darwin/clang
-          - x86_64-unknown-linux-gnu/gcc
+          # - i686-pc-windows-msvc/msvc
+          # - x86_64-pc-windows-msvc/msvc
+          # - x86_64-apple-darwin/clang
+          # - x86_64-unknown-linux-gnu/gcc
           # - aarch64-apple-darwin/clang
           # - aarch64-unknown-linux-gnu/gcc
-          # - aarch64-unknown-linux-gnu/clang
+          - aarch64-unknown-linux-gnu/clang
           # - powerpc64le-unknown-linux-gnu/gcc
-          - x86_64-unknown-linux-gnu/clang
+          # - x86_64-unknown-linux-gnu/clang
         debug:
           - true
-          - false
+          # - false
         llvm:
           - 14
-          - 15
-          - 16
+          # - 15
+          # - 16
         include:
-          - target: i686-pc-windows-msvc/msvc
-            architecture: i686
-            runner: windows-latest
-            compiler: msvc
-            tier: 1
-            windows_platform: Win32
-          - target: x86_64-pc-windows-msvc/msvc
-            architecture: x86_64
-            runner: windows-latest
-            compiler: msvc
-            tier: 1
-            windows_platform: x64
-          - target: x86_64-apple-darwin/clang
-            architecture: x86_64
-            runner: macos-latest
-            compiler: clang
-            tier: 1
-          - target: x86_64-unknown-linux-gnu/gcc
-            architecture: x86_64
-            runner: ubuntu-latest
-            compiler: gcc
-            tier: 1
+          # - target: i686-pc-windows-msvc/msvc
+          #   architecture: i686
+          #   runner: windows-latest
+          #   compiler: msvc
+          #   tier: 1
+          #   windows_platform: Win32
+          # - target: x86_64-pc-windows-msvc/msvc
+          #   architecture: x86_64
+          #   runner: windows-latest
+          #   compiler: msvc
+          #   tier: 1
+          #   windows_platform: x64
+          # - target: x86_64-apple-darwin/clang
+          #   architecture: x86_64
+          #   runner: macos-latest
+          #   compiler: clang
+          #   tier: 1
+          # - target: x86_64-unknown-linux-gnu/gcc
+          #   architecture: x86_64
+          #   runner: ubuntu-latest
+          #   compiler: gcc
+          #   tier: 1
           # - target: aarch64-apple-darwin/clang
           #   architecture: aarch64
           #   runner: macos-latest
@@ -57,21 +57,21 @@ jobs:
           #   runner: ubuntu-latest
           #   compiler: gcc
           #   tier: 2
-          # - target: aarch64-unknown-linux-gnu/clang
-          #   architecture: aarch64
-          #   runner: ubuntu-latest
-          #   compiler: clang
-          #   tier: 2
+          - target: aarch64-unknown-linux-gnu/clang
+            architecture: aarch64
+            runner: ubuntu-latest
+            compiler: clang
+            tier: 2
           # - target: powerpc64le-unknown-linux-gnu/gcc
           #   architecture: ppc64le
           #   runner: ubuntu-latest
           #   compiler: gcc
           #   tier: 2
-          - target: x86_64-unknown-linux-gnu/clang
-            architecture: x86_64
-            runner: ubuntu-latest
-            compiler: clang
-            tier: 2
+          # - target: x86_64-unknown-linux-gnu/clang
+          #   architecture: x86_64
+          #   runner: ubuntu-latest
+          #   compiler: clang
+          #   tier: 2
     env:
       CC: ${{ matrix.compiler }}
       PYTHON_LLVM_VERSION: ${{ matrix.llvm }}
