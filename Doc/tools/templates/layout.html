@@ -26,6 +26,7 @@
 {% endblock %}
 
 {% block extrahead %}
+    <script defer data-domain="docs.python.org" src="https://plausible.io/js/script.js"></script>
     <link rel="canonical" href="https://docs.python.org/3/{{pagename}}.html" />
     {% if builder != "htmlhelp" %}
       {% if pagename == 'whatsnew/changelog' and not embedded %}
