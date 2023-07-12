@@ -20,14 +20,7 @@
    The :mod:`crypt` module is deprecated
    (see :pep:`PEP 594 <594#crypt>` for details and alternatives).
    The :mod:`hashlib` module is a potential replacement for certain use cases.
-   The :mod:`passlib` package can replace all use cases of this module.
-
-    >>> import crypt
-    >>> crypt.crypt("cleartext", salt="ab")
-    'ab/GpyA5I.S12'
-    >>> from passlib.hash import des_crypt # doctest: +SKIP
-    >>> des_crypt.hash("cleartext", salt="ab") # doctest: +SKIP
-    'ab/GpyA5I.S12'
+   The `passlib <https://pypi.org/project/passlib/>`_ package can replace all use cases of this module.
 
 --------------
 
