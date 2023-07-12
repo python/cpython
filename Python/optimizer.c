@@ -3,12 +3,15 @@
 #include "pycore_interp.h"
 #include "pycore_opcode.h"
 #include "opcode_metadata.h"
+#include "pycore_opcode_utils.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_uops.h"
 #include "cpython/optimizer.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
+
+#define MAX_EXECUTORS_SIZE 256
 
 static bool
 has_space_for_executor(PyCodeObject *code, _Py_CODEUNIT *instr)
@@ -19,7 +22,7 @@ has_space_for_executor(PyCodeObject *code, _Py_CODEUNIT *instr)
     if (code->co_executors == NULL) {
         return true;
     }
-    return code->co_executors->size < 256;
+    return code->co_executors->size < MAX_EXECUTORS_SIZE;
 }
 
 static int32_t
@@ -34,7 +37,7 @@ get_index_for_executor(PyCodeObject *code, _Py_CODEUNIT *instr)
     if (old != NULL) {
         size = old->size;
         capacity = old->capacity;
-        assert(size < 256);
+        assert(size < MAX_EXECUTORS_SIZE);
     }
     assert(size <= capacity);
     if (size == capacity) {
@@ -74,7 +77,7 @@ insert_executor(PyCodeObject *code, _Py_CODEUNIT *instr, int index, _PyExecutorO
         executor->vm_data.opcode = instr->op.code;
         executor->vm_data.oparg = instr->op.arg;
         code->co_executors->executors[index] = executor;
-        assert(index < 256);
+        assert(index < MAX_EXECUTORS_SIZE);
         instr->op.code = ENTER_EXECUTOR;
         instr->op.arg = index;
         code->co_executors->size++;
@@ -307,7 +310,7 @@ uop_dealloc(_PyUOpExecutorObject *self) {
 
 static const char *
 uop_name(int index) {
-    if (index < 256) {
+    if (index <= MAX_REAL_OPCODE) {
         return _PyOpcode_OpName[index];
     }
     return _PyOpcode_uop_name[index];
@@ -372,9 +375,7 @@ translate_bytecode_to_trace(
     _PyUOpInstruction *trace,
     int buffer_size)
 {
-#ifdef Py_DEBUG
     _Py_CODEUNIT *initial_instr = instr;
-#endif
     int trace_length = 0;
     int max_length = buffer_size;
 
@@ -393,17 +394,20 @@ translate_bytecode_to_trace(
 #define ADD_TO_TRACE(OPCODE, OPERAND) \
     DPRINTF(2, \
             "  ADD_TO_TRACE(%s, %" PRIu64 ")\n", \
-            (OPCODE) < 256 ? _PyOpcode_OpName[(OPCODE)] : _PyOpcode_uop_name[(OPCODE)], \
+            uop_name(OPCODE), \
             (uint64_t)(OPERAND)); \
     assert(trace_length < max_length); \
     trace[trace_length].opcode = (OPCODE); \
     trace[trace_length].operand = (OPERAND); \
     trace_length++;
 
+#define INSTR_IP(INSTR, CODE) \
+    ((long)((INSTR) - ((_Py_CODEUNIT *)(CODE)->co_code_adaptive)))
+
 #define ADD_TO_STUB(INDEX, OPCODE, OPERAND) \
     DPRINTF(2, "    ADD_TO_STUB(%d, %s, %" PRIu64 ")\n", \
             (INDEX), \
-            (OPCODE) < 256 ? _PyOpcode_OpName[(OPCODE)] : _PyOpcode_uop_name[(OPCODE)], \
+            uop_name(OPCODE), \
             (uint64_t)(OPERAND)); \
     trace[(INDEX)].opcode = (OPCODE); \
     trace[(INDEX)].operand = (OPERAND);
@@ -413,10 +417,10 @@ translate_bytecode_to_trace(
             PyUnicode_AsUTF8(code->co_qualname),
             PyUnicode_AsUTF8(code->co_filename),
             code->co_firstlineno,
-            2 * (long)(initial_instr - (_Py_CODEUNIT *)code->co_code_adaptive));
+            2 * INSTR_IP(initial_instr, code));
 
     for (;;) {
-        ADD_TO_TRACE(SAVE_IP, instr - (_Py_CODEUNIT *)code->co_code_adaptive);
+        ADD_TO_TRACE(SAVE_IP, INSTR_IP(instr, code));
         int opcode = instr->op.code;
         int oparg = instr->op.arg;
         int extras = 0;
@@ -450,9 +454,28 @@ translate_bytecode_to_trace(
                 int uopcode = opcode == POP_JUMP_IF_TRUE ?
                     _POP_JUMP_IF_TRUE : _POP_JUMP_IF_FALSE;
                 ADD_TO_TRACE(uopcode, max_length);
-                ADD_TO_STUB(max_length, SAVE_IP,
-                            target_instr - (_Py_CODEUNIT *)code->co_code_adaptive);
+                ADD_TO_STUB(max_length, SAVE_IP, INSTR_IP(target_instr, code));
                 ADD_TO_STUB(max_length + 1, EXIT_TRACE, 0);
+                break;
+            }
+
+            case JUMP_BACKWARD:
+            {
+                if (instr + 2 - oparg == initial_instr
+                    && trace_length + 3 <= max_length)
+                {
+                    ADD_TO_TRACE(JUMP_TO_TOP, 0);
+                }
+                else {
+                    DPRINTF(2, "JUMP_BACKWARD not to top ends trace\n");
+                }
+                goto done;
+            }
+
+            case JUMP_FORWARD:
+            {
+                // This will emit two SAVE_IP instructions; leave it to the optimizer
+                instr += oparg;
                 break;
             }
 
@@ -463,9 +486,7 @@ translate_bytecode_to_trace(
                     // Reserve space for nuops (+ SAVE_IP + EXIT_TRACE)
                     int nuops = expansion->nuops;
                     if (trace_length + nuops + 2 > max_length) {
-                        DPRINTF(1,
-                                "Ran out of space for %s\n",
-                                opcode < 256 ? _PyOpcode_OpName[opcode] : _PyOpcode_uop_name[opcode]);
+                        DPRINTF(1, "Ran out of space for %s\n", uop_name(opcode));
                         goto done;
                     }
                     for (int i = 0; i < nuops; i++) {
@@ -511,9 +532,7 @@ translate_bytecode_to_trace(
                     }
                     break;
                 }
-                DPRINTF(2,
-                        "Unsupported opcode %s\n",
-                        opcode < 256 ? _PyOpcode_OpName[opcode] : _PyOpcode_uop_name[opcode]);
+                DPRINTF(2, "Unsupported opcode %s\n", uop_name(opcode));
                 goto done;  // Break out of loop
             }
         }
@@ -531,7 +550,7 @@ done:
                 PyUnicode_AsUTF8(code->co_qualname),
                 PyUnicode_AsUTF8(code->co_filename),
                 code->co_firstlineno,
-                2 * (long)(initial_instr - (_Py_CODEUNIT *)code->co_code_adaptive),
+                2 * INSTR_IP(initial_instr, code),
                 trace_length);
         if (max_length < buffer_size && trace_length < max_length) {
             // Move the stubs back to be immediately after the main trace
@@ -565,7 +584,7 @@ done:
                 PyUnicode_AsUTF8(code->co_qualname),
                 PyUnicode_AsUTF8(code->co_filename),
                 code->co_firstlineno,
-                2 * (long)(initial_instr - (_Py_CODEUNIT *)code->co_code_adaptive));
+                2 * INSTR_IP(initial_instr, code));
     }
     return 0;
 

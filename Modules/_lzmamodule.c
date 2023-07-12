@@ -240,15 +240,10 @@ parse_filter_spec_lzma(_lzma_state *state, PyObject *spec)
     /* First, fill in default values for all the options using a preset.
        Then, override the defaults with any values given by the caller. */
 
-    preset_obj = PyMapping_GetItemString(spec, "preset");
-    if (preset_obj == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_KeyError)) {
-            PyErr_Clear();
-        }
-        else {
-            return NULL;
-        }
-    } else {
+    if (PyMapping_GetOptionalItemString(spec, "preset", &preset_obj) < 0) {
+        return NULL;
+    }
+    if (preset_obj != NULL) {
         int ok = uint32_converter(preset_obj, &preset);
         Py_DECREF(preset_obj);
         if (!ok) {
@@ -345,11 +340,12 @@ lzma_filter_converter(_lzma_state *state, PyObject *spec, void *ptr)
                         "Filter specifier must be a dict or dict-like object");
         return 0;
     }
-    id_obj = PyMapping_GetItemString(spec, "id");
+    if (PyMapping_GetOptionalItemString(spec, "id", &id_obj) < 0) {
+        return 0;
+    }
     if (id_obj == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_KeyError))
-            PyErr_SetString(PyExc_ValueError,
-                            "Filter specifier must have an \"id\" entry");
+        PyErr_SetString(PyExc_ValueError,
+                        "Filter specifier must have an \"id\" entry");
         return 0;
     }
     f->id = PyLong_AsUnsignedLongLong(id_obj);

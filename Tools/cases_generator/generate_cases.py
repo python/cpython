@@ -1240,7 +1240,7 @@ class Analyzer:
             self.out.emit("extern const struct opcode_metadata _PyOpcode_opcode_metadata[512];")
             self.out.emit("extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[256];")
             self.out.emit("extern const char * const _PyOpcode_uop_name[512];")
-            self.out.emit("#else")
+            self.out.emit("#else // if NEED_OPCODE_METADATA")
 
             self.out.emit("const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {")
 
@@ -1289,12 +1289,10 @@ class Analyzer:
                         case _:
                             typing.assert_never(thing)
 
-            self.out.emit("#ifdef NEED_OPCODE_METADATA")
             with self.out.block("const char * const _PyOpcode_uop_name[512] =", ";"):
                 self.write_uop_items(lambda name, counter: f"[{counter}] = \"{name}\",")
-            self.out.emit("#endif // NEED_OPCODE_METADATA")
 
-            self.out.emit("#endif")
+            self.out.emit("#endif // NEED_OPCODE_METADATA")
 
         with open(self.pymetadata_filename, "w") as f:
             # Create formatter
@@ -1348,6 +1346,7 @@ class Analyzer:
         add("SAVE_IP")
         add("_POP_JUMP_IF_FALSE")
         add("_POP_JUMP_IF_TRUE")
+        add("JUMP_TO_TOP")
 
         for instr in self.instrs.values():
             if instr.kind == "op" and instr.is_viable_uop():

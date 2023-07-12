@@ -361,7 +361,7 @@ compute_abstract_methods(PyObject *self)
         PyObject *item = PyTuple_GET_ITEM(bases, pos);  // borrowed
         PyObject *base_abstracts, *iter;
 
-        if (_PyObject_LookupAttr(item, &_Py_ID(__abstractmethods__),
+        if (PyObject_GetOptionalAttr(item, &_Py_ID(__abstractmethods__),
                                  &base_abstracts) < 0) {
             goto error;
         }
@@ -375,7 +375,7 @@ compute_abstract_methods(PyObject *self)
         Py_DECREF(base_abstracts);
         PyObject *key, *value;
         while ((key = PyIter_Next(iter))) {
-            if (_PyObject_LookupAttr(self, key, &value) < 0) {
+            if (PyObject_GetOptionalAttr(self, key, &value) < 0) {
                 Py_DECREF(key);
                 Py_DECREF(iter);
                 goto error;

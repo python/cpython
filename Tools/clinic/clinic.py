@@ -759,7 +759,7 @@ class CLanguage(Language):
     def render(
             self,
             clinic: Clinic | None,
-            signatures: Iterable[Function]
+            signatures: Iterable[Module | Class | Function]
     ) -> str:
         function = None
         for o in signatures:
@@ -1633,6 +1633,7 @@ def create_regex(
     return re.compile(pattern)
 
 
+@dc.dataclass(slots=True, repr=False)
 class Block:
     r"""
     Represents a single block of text embedded in
@@ -1679,18 +1680,16 @@ class Block:
     "preindent" would be "____" and "indent" would be "__".
 
     """
-    def __init__(self, input, dsl_name=None, signatures=None, output=None, indent='', preindent=''):
-        assert isinstance(input, str)
-        self.input = input
-        self.dsl_name = dsl_name
-        self.signatures = signatures or []
-        self.output = output
-        self.indent = indent
-        self.preindent = preindent
+    input: str
+    dsl_name: str | None = None
+    signatures: list[Module | Class | Function] = dc.field(default_factory=list)
+    output: Any = None  # TODO: Very dynamic; probably untypeable in its current form?
+    indent: str = ''
+    preindent: str = ''
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         dsl_name = self.dsl_name or "text"
-        def summarize(s):
+        def summarize(s: object) -> str:
             s = repr(s)
             if len(s) > 30:
                 return s[:26] + "..." + s[0]
@@ -1960,14 +1959,19 @@ class Destination:
         self.name = name
         self.type = type
         self.clinic = clinic
+        self.buffers = BufferSeries()
+
         valid_types = ('buffer', 'file', 'suppress')
         if type not in valid_types:
-            fail("Invalid destination type " + repr(type) + " for " + name + " , must be " + ', '.join(valid_types))
+            fail(
+                f"Invalid destination type {type!r} for {name}, "
+                f"must be {', '.join(valid_types)}"
+            )
         extra_arguments = 1 if type == "file" else 0
         if len(args) < extra_arguments:
-            fail("Not enough arguments for destination " + name + " new " + type)
+            fail(f"Not enough arguments for destination {name} new {type}")
         if len(args) > extra_arguments:
-            fail("Too many arguments for destination " + name + " new " + type)
+            fail(f"Too many arguments for destination {name} new {type}")
         if type =='file':
             d = {}
             filename = clinic.filename
@@ -1979,8 +1983,6 @@ class Destination:
             d['basename'] = basename
             d['basename_root'], d['basename_extension'] = os.path.splitext(filename)
             self.filename = args[0].format_map(d)
-
-        self.buffers = BufferSeries()
 
     def __repr__(self):
         if self.type == 'file':
@@ -4619,10 +4621,13 @@ class DSLParser:
 
                 if not (existing_function.kind == self.kind and existing_function.coexist == self.coexist):
                     fail("'kind' of function and cloned function don't match!  (@classmethod/@staticmethod/@coexist)")
-                self.function = existing_function.copy(name=function_name, full_name=full_name, module=module, cls=cls, c_basename=c_basename, docstring='')
-
-                self.block.signatures.append(self.function)
-                (cls or module).functions.append(self.function)
+                function = existing_function.copy(
+                    name=function_name, full_name=full_name, module=module,
+                    cls=cls, c_basename=c_basename, docstring=''
+                )
+                self.function = function
+                self.block.signatures.append(function)
+                (cls or module).functions.append(function)
                 self.next(self.state_function_docstring)
                 return
 
