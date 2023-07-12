@@ -807,7 +807,7 @@ class _MinimalOutputTests:
         self.assertIs(copied, TE)
         deep = copy.deepcopy(TE)
         self.assertEqual(deep, TE)
-        self.assertIs(copied, TE)
+        self.assertIs(deep, TE)
 
     def test_copy_member(self):
         TE = self.MainEnum
