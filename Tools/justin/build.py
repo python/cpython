@@ -446,9 +446,8 @@ def handle_relocations(
                 what = int.from_bytes(body[where], "little", signed=False)
                 # XXX: This nonsense...
                 assert what & 0x9F000000 == 0x90000000, what
-                add = ((what & 0x60000000) >> 29) | ((what & 0x01FFFFE0) >> 3) << 12
-                add = sign_extend_64(add, 33)
-                addend += add  # XXX?
+                addend = ((what & 0x60000000) >> 29) | ((what & 0x01FFFFE0) >> 3) << 12
+                addend = sign_extend_64(addend, 33)
                 # assert symbol.startswith("_"), symbol
                 symbol = symbol.removeprefix("_")
                 if symbol not in got_entries:
@@ -466,9 +465,8 @@ def handle_relocations(
                 what = int.from_bytes(body[where], "little", signed=False)
                 # XXX: This nonsense...
                 assert what & 0xFC000000 == 0x14000000 or what & 0xFC000000 == 0x94000000, what
-                add = (what & 0x03FFFFFF) << 2
-                add = sign_extend_64(add, 28)
-                addend += add  # XXX?
+                addend = (what & 0x03FFFFFF) << 2
+                addend = sign_extend_64(addend, 28)
                 assert symbol.startswith("_"), symbol
                 symbol = symbol.removeprefix("_")
                 yield Hole("PATCH_REL_26", symbol, offset, addend)
