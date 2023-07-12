@@ -1202,6 +1202,8 @@ class Analyzer:
 
             self.write_provenance_header()
 
+            self.out.emit("\n#include <stdbool.h>")
+
             self.write_pseudo_instrs()
 
             self.out.emit("")
@@ -1212,8 +1214,16 @@ class Analyzer:
             # Write type definitions
             self.out.emit(f"enum InstructionFormat {{ {', '.join(format_enums)} }};")
 
+            self.out.emit("")
+            self.out.emit(
+                "#define IS_VALID_OPCODE(OP) \\\n"
+                "    (((OP) >= 0) && ((OP) < OPCODE_METADATA_SIZE) && \\\n"
+                "     (_PyOpcode_opcode_metadata[(OP)].valid_entry))")
+
+            self.out.emit("")
             InstructionFlags.emit_macros(self.out)
 
+            self.out.emit("")
             with self.out.block("struct opcode_metadata", ";"):
                 self.out.emit("bool valid_entry;")
                 self.out.emit("enum InstructionFormat instr_format;")
@@ -1236,13 +1246,20 @@ class Analyzer:
             self.out.emit("")
 
             # Write metadata array declaration
+            self.out.emit("#define OPCODE_METADATA_SIZE 512")
+            self.out.emit("#define OPCODE_UOP_NAME_SIZE 512")
+            self.out.emit("#define OPCODE_MACRO_EXPANSION_SIZE 256")
+            self.out.emit("")
             self.out.emit("#ifndef NEED_OPCODE_METADATA")
-            self.out.emit("extern const struct opcode_metadata _PyOpcode_opcode_metadata[512];")
-            self.out.emit("extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[256];")
-            self.out.emit("extern const char * const _PyOpcode_uop_name[512];")
+            self.out.emit("extern const struct opcode_metadata "
+                          "_PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE];")
+            self.out.emit("extern const struct opcode_macro_expansion "
+                          "_PyOpcode_macro_expansion[OPCODE_MACRO_EXPANSION_SIZE];")
+            self.out.emit("extern const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE];")
             self.out.emit("#else // if NEED_OPCODE_METADATA")
 
-            self.out.emit("const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {")
+            self.out.emit("const struct opcode_metadata "
+                          "_PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {")
 
             # Write metadata for each instruction
             for thing in self.everything:
@@ -1263,7 +1280,8 @@ class Analyzer:
             self.out.emit("};")
 
             with self.out.block(
-                "const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] =",
+                "const struct opcode_macro_expansion "
+                "_PyOpcode_macro_expansion[OPCODE_MACRO_EXPANSION_SIZE] =",
                 ";",
             ):
                 # Write macro expansion for each non-pseudo instruction
@@ -1289,7 +1307,7 @@ class Analyzer:
                         case _:
                             typing.assert_never(thing)
 
-            with self.out.block("const char * const _PyOpcode_uop_name[512] =", ";"):
+            with self.out.block("const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE] =", ";"):
                 self.write_uop_items(lambda name, counter: f"[{counter}] = \"{name}\",")
 
             self.out.emit("#endif // NEED_OPCODE_METADATA")
