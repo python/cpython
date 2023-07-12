@@ -2443,8 +2443,9 @@ dummy_func(
             STAT_INC(FOR_ITER, hit);
             if (r->len <= 0) {
                 STACK_SHRINK(1);
+                Py_DECREF(r);
                 SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
-                /* Jump forward oparg, then skip following END_FOR instruction */
+                // Jump over END_FOR instruction.
                 JUMPBY(oparg + 1);
                 DISPATCH();
             }
