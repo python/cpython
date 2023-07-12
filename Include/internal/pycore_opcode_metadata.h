@@ -37,9 +37,11 @@
 #define _LOAD_LOCALS 315
 #define _LOAD_FROM_DICT_OR_GLOBALS 316
 #define _SKIP_CACHE 317
-#define _TYPE_CHECK 318
-#define _CHECK_MANAGED_OBJECT_HAS_VALUES 319
-#define IS_NONE 320
+#define _GUARD_GLOBALS_VERSION 318
+#define _GUARD_BUILTINS_VERSION 319
+#define _TYPE_CHECK 320
+#define _CHECK_MANAGED_OBJECT_HAS_VALUES 321
+#define IS_NONE 322
 
 #ifndef NEED_OPCODE_METADATA
 extern int _PyOpcode_num_popped(int opcode, int oparg, bool jump);
@@ -1316,8 +1318,10 @@ const char * const _PyOpcode_uop_name[512] = {
     [315] = "_LOAD_LOCALS",
     [316] = "_LOAD_FROM_DICT_OR_GLOBALS",
     [317] = "_SKIP_CACHE",
-    [318] = "_TYPE_CHECK",
-    [319] = "_CHECK_MANAGED_OBJECT_HAS_VALUES",
-    [320] = "IS_NONE",
+    [318] = "_GUARD_GLOBALS_VERSION",
+    [319] = "_GUARD_BUILTINS_VERSION",
+    [320] = "_TYPE_CHECK",
+    [321] = "_CHECK_MANAGED_OBJECT_HAS_VALUES",
+    [322] = "IS_NONE",
 };
 #endif // NEED_OPCODE_METADATA
