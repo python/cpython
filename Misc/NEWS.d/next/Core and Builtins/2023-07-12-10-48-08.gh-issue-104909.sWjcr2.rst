@@ -1,0 +1,1 @@
+Split `LOAD_GLOBAL` specializations into micro-ops.
