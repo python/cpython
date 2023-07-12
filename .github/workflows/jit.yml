@@ -90,6 +90,7 @@ jobs:
             CC: ${{ matrix.compiler }}
             PYTHON_LLVM_VERSION: ${{ matrix.llvm }}
           install: |
+            apt update --yes
             apt install --yes sudo wget
           run: |
             sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
