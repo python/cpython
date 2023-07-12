@@ -65,7 +65,7 @@ patch_one(unsigned char *location, HoleKind kind, uint64_t value, uint64_t adden
         case PATCH_ABS_12: {
             uint32_t *addr = (uint32_t *)location;
             uint32_t instruction = *addr;
-            assert(((instruction & 0x3B000000) == 0x39000000) || 
+            assert(((instruction & 0x3B000000) == 0x39000000) ||
                    ((instruction & 0x11C00000) == 0x11000000));
             value = (value + addend) & ((1 << 12) - 1);
             int implicit_shift = 0;
@@ -92,7 +92,7 @@ patch_one(unsigned char *location, HoleKind kind, uint64_t value, uint64_t adden
             value >>= implicit_shift;
             assert((value & ((1 << 12) - 1)) == value);
             instruction = (instruction & 0xFFC003FF) | ((uint32_t)(value << 10) & 0x003FFC00);
-            assert(((instruction & 0x3B000000) == 0x39000000) || 
+            assert(((instruction & 0x3B000000) == 0x39000000) ||
                    ((instruction & 0x11C00000) == 0x11000000));
             *addr = instruction;
             break;
