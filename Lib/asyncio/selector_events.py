@@ -290,19 +290,20 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         if self.is_closed():
             return False
         key = self._selector.get_map().get(fd)
-        if key is not None:
-            mask, (reader, writer) = key.events, key.data
-            mask &= ~selectors.EVENT_READ
-            if not mask:
-                self._selector.unregister(fd)
-            else:
-                self._selector.modify(fd, mask, (None, writer))
+        if key is None:
+            return False
+        mask, (reader, writer) = key.events, key.data
+        mask &= ~selectors.EVENT_READ
+        if not mask:
+            self._selector.unregister(fd)
+        else:
+            self._selector.modify(fd, mask, (None, writer))
 
-            if reader is not None:
-                reader.cancel()
-                return True
-            else:
-                return False
+        if reader is not None:
+            reader.cancel()
+            return True
+        else:
+            return False
 
     def _add_writer(self, fd, callback, *args):
         self._check_closed()
@@ -326,20 +327,19 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         key = self._selector.get_map().get(fd)
         if key is None:
             return False
+        mask, (reader, writer) = key.events, key.data
+        # Remove both writer and connector.
+        mask &= ~selectors.EVENT_WRITE
+        if not mask:
+            self._selector.unregister(fd)
         else:
-            mask, (reader, writer) = key.events, key.data
-            # Remove both writer and connector.
-            mask &= ~selectors.EVENT_WRITE
-            if not mask:
-                self._selector.unregister(fd)
-            else:
-                self._selector.modify(fd, mask, (reader, None))
+            self._selector.modify(fd, mask, (reader, None))
 
-            if writer is not None:
-                writer.cancel()
-                return True
-            else:
-                return False
+        if writer is not None:
+            writer.cancel()
+            return True
+        else:
+            return False
 
     def add_reader(self, fd, callback, *args):
         """Add a reader callback."""
