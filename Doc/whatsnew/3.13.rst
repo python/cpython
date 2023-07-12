@@ -270,7 +270,9 @@ Pending Removal in Python 3.14
 * :mod:`typing`: :class:`~typing.ByteString`, deprecated since Python 3.9,
   now causes a :exc:`DeprecationWarning` to be emitted when it is used.
 
-* :class:`!urllib.parse.Quoter`.
+* :class:`!urllib.parse.Quoter` is deprecated: it was not intended to be a
+  public API.
+  (Contributed by Gregory P. Smith in :gh:`88168`.)
 
 * :mod:`xml.etree.ElementTree`: Testing the truth value of an
   :class:`~xml.etree.ElementTree.Element` is deprecated and will raise an
@@ -397,7 +399,12 @@ although there is currently no date scheduled for their removal.
 * :class:`!pydoc.ErrorDuringImport`: A tuple value for *exc_info* parameter is
   deprecated, use an exception instance.
 
-* :mod:`re`: bad character in group name.
+* :mod:`re`: More strict rules are now applied for numerical group references
+  and group names in regular expressions.  Only sequence of ASCII digits is now
+  accepted as a numerical reference.  The group name in bytes patterns and
+  replacement strings can now only contain ASCII letters and digits and
+  underscore.
+  (Contributed by Serhiy Storchaka in :gh:`91760`.)
 
 * :mod:`ssl` options and protocols:
 

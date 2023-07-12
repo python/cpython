@@ -727,7 +727,7 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
 
     {
         PyObject *arg;
-        if (_PyObject_LookupAttr(obj, &_Py_ID(_as_parameter_), &arg) < 0) {
+        if (PyObject_GetOptionalAttr(obj, &_Py_ID(_as_parameter_), &arg) < 0) {
             return -1;
         }
         /* Which types should we exactly allow here?

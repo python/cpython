@@ -2878,7 +2878,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     }
     else {
         PyObject *path;
-        if (_PyObject_LookupAttr(mod, &_Py_ID(__path__), &path) < 0) {
+        if (PyObject_GetOptionalAttr(mod, &_Py_ID(__path__), &path) < 0) {
             goto error;
         }
         if (path) {

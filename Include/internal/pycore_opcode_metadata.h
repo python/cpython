@@ -36,10 +36,13 @@
 #define _BINARY_OP_ADD_UNICODE 314
 #define _LOAD_LOCALS 315
 #define _LOAD_FROM_DICT_OR_GLOBALS 316
-#define IS_NONE 317
-#define _ITER_CHECK_RANGE 318
-#define _ITER_EXHAUSTED_RANGE 319
-#define _ITER_NEXT_RANGE 320
+#define _SKIP_CACHE 317
+#define _GUARD_GLOBALS_VERSION 318
+#define _GUARD_BUILTINS_VERSION 319
+#define IS_NONE 320
+#define _ITER_CHECK_RANGE 321
+#define _ITER_EXHAUSTED_RANGE 322
+#define _ITER_NEXT_RANGE 323
 
 #ifndef NEED_OPCODE_METADATA
 extern int _PyOpcode_num_popped(int opcode, int oparg, bool jump);
@@ -1315,9 +1318,12 @@ const char * const _PyOpcode_uop_name[512] = {
     [314] = "_BINARY_OP_ADD_UNICODE",
     [315] = "_LOAD_LOCALS",
     [316] = "_LOAD_FROM_DICT_OR_GLOBALS",
-    [317] = "IS_NONE",
-    [318] = "_ITER_CHECK_RANGE",
-    [319] = "_ITER_EXHAUSTED_RANGE",
-    [320] = "_ITER_NEXT_RANGE",
+    [317] = "_SKIP_CACHE",
+    [318] = "_GUARD_GLOBALS_VERSION",
+    [319] = "_GUARD_BUILTINS_VERSION",
+    [320] = "IS_NONE",
+    [321] = "_ITER_CHECK_RANGE",
+    [322] = "_ITER_EXHAUSTED_RANGE",
+    [323] = "_ITER_NEXT_RANGE",
 };
 #endif // NEED_OPCODE_METADATA
