@@ -1181,7 +1181,7 @@
         }
 
         case DELETE_FAST: {
-            #line 1396 "Python/bytecodes.c"
+            #line 1404 "Python/bytecodes.c"
             PyObject *v = GETLOCAL(oparg);
             if (v == NULL) goto unbound_local_error;
             SETLOCAL(oparg, NULL);
@@ -1190,7 +1190,7 @@
         }
 
         case DELETE_DEREF: {
-            #line 1413 "Python/bytecodes.c"
+            #line 1421 "Python/bytecodes.c"
             PyObject *cell = GETLOCAL(oparg);
             PyObject *oldobj = PyCell_GET(cell);
             // Can't use ERROR_IF here.
@@ -1208,7 +1208,7 @@
         case LOAD_FROM_DICT_OR_DEREF: {
             PyObject *class_dict = stack_pointer[-1];
             PyObject *value;
-            #line 1426 "Python/bytecodes.c"
+            #line 1434 "Python/bytecodes.c"
             PyObject *name;
             assert(class_dict);
             assert(oparg >= 0 && oparg < _PyFrame_GetCode(frame)->co_nlocalsplus);
@@ -1234,7 +1234,7 @@
 
         case LOAD_DEREF: {
             PyObject *value;
-            #line 1447 "Python/bytecodes.c"
+            #line 1455 "Python/bytecodes.c"
             PyObject *cell = GETLOCAL(oparg);
             value = PyCell_GET(cell);
             if (value == NULL) {
@@ -1250,7 +1250,7 @@
 
         case STORE_DEREF: {
             PyObject *v = stack_pointer[-1];
-            #line 1457 "Python/bytecodes.c"
+            #line 1465 "Python/bytecodes.c"
             PyObject *cell = GETLOCAL(oparg);
             PyObject *oldobj = PyCell_GET(cell);
             PyCell_SET(cell, v);
@@ -1261,7 +1261,7 @@
         }
 
         case COPY_FREE_VARS: {
-            #line 1464 "Python/bytecodes.c"
+            #line 1472 "Python/bytecodes.c"
             /* Copy closure variables to free variables */
             PyCodeObject *co = _PyFrame_GetCode(frame);
             assert(PyFunction_Check(frame->f_funcobj));
@@ -1279,13 +1279,13 @@
         case BUILD_STRING: {
             PyObject **pieces = (stack_pointer - oparg);
             PyObject *str;
-            #line 1477 "Python/bytecodes.c"
+            #line 1485 "Python/bytecodes.c"
             str = _PyUnicode_JoinArray(&_Py_STR(empty), pieces, oparg);
             #line 1285 "Python/executor_cases.c.h"
             for (int _i = oparg; --_i >= 0;) {
                 Py_DECREF(pieces[_i]);
             }
-            #line 1479 "Python/bytecodes.c"
+            #line 1487 "Python/bytecodes.c"
             if (str == NULL) { STACK_SHRINK(oparg); goto error; }
             #line 1291 "Python/executor_cases.c.h"
             STACK_SHRINK(oparg);
@@ -1297,7 +1297,7 @@
         case BUILD_TUPLE: {
             PyObject **values = (stack_pointer - oparg);
             PyObject *tup;
-            #line 1483 "Python/bytecodes.c"
+            #line 1491 "Python/bytecodes.c"
             tup = _PyTuple_FromArraySteal(values, oparg);
             if (tup == NULL) { STACK_SHRINK(oparg); goto error; }
             #line 1304 "Python/executor_cases.c.h"
@@ -1310,7 +1310,7 @@
         case BUILD_LIST: {
             PyObject **values = (stack_pointer - oparg);
             PyObject *list;
-            #line 1488 "Python/bytecodes.c"
+            #line 1496 "Python/bytecodes.c"
             list = _PyList_FromArraySteal(values, oparg);
             if (list == NULL) { STACK_SHRINK(oparg); goto error; }
             #line 1317 "Python/executor_cases.c.h"
@@ -1323,7 +1323,7 @@
         case LIST_EXTEND: {
             PyObject *iterable = stack_pointer[-1];
             PyObject *list = stack_pointer[-(2 + (oparg-1))];
-            #line 1493 "Python/bytecodes.c"
+            #line 1501 "Python/bytecodes.c"
             PyObject *none_val = _PyList_Extend((PyListObject *)list, iterable);
             if (none_val == NULL) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_TypeError) &&
@@ -1336,7 +1336,7 @@
                 }
             #line 1338 "Python/executor_cases.c.h"
                 Py_DECREF(iterable);
-            #line 1504 "Python/bytecodes.c"
+            #line 1512 "Python/bytecodes.c"
                 if (true) goto pop_1_error;
             }
             assert(Py_IsNone(none_val));
@@ -1349,11 +1349,11 @@
         case SET_UPDATE: {
             PyObject *iterable = stack_pointer[-1];
             PyObject *set = stack_pointer[-(2 + (oparg-1))];
-            #line 1511 "Python/bytecodes.c"
+            #line 1519 "Python/bytecodes.c"
             int err = _PySet_Update(set, iterable);
             #line 1355 "Python/executor_cases.c.h"
             Py_DECREF(iterable);
-            #line 1513 "Python/bytecodes.c"
+            #line 1521 "Python/bytecodes.c"
             if (err < 0) goto pop_1_error;
             #line 1359 "Python/executor_cases.c.h"
             STACK_SHRINK(1);
@@ -1363,7 +1363,7 @@
         case BUILD_SET: {
             PyObject **values = (stack_pointer - oparg);
             PyObject *set;
-            #line 1517 "Python/bytecodes.c"
+            #line 1525 "Python/bytecodes.c"
             set = PySet_New(NULL);
             if (set == NULL)
                 goto error;
@@ -1388,7 +1388,7 @@
         case BUILD_MAP: {
             PyObject **values = (stack_pointer - oparg*2);
             PyObject *map;
-            #line 1534 "Python/bytecodes.c"
+            #line 1542 "Python/bytecodes.c"
             map = _PyDict_FromItems(
                     values, 2,
                     values+1, 2,
@@ -1400,7 +1400,7 @@
             for (int _i = oparg*2; --_i >= 0;) {
                 Py_DECREF(values[_i]);
             }
-            #line 1542 "Python/bytecodes.c"
+            #line 1550 "Python/bytecodes.c"
             if (map == NULL) { STACK_SHRINK(oparg*2); goto error; }
             #line 1406 "Python/executor_cases.c.h"
             STACK_SHRINK(oparg*2);
@@ -1410,7 +1410,7 @@
         }
 
         case SETUP_ANNOTATIONS: {
-            #line 1546 "Python/bytecodes.c"
+            #line 1554 "Python/bytecodes.c"
             int err;
             PyObject *ann_dict;
             if (LOCALS() == NULL) {
@@ -1456,7 +1456,7 @@
             PyObject *keys = stack_pointer[-1];
             PyObject **values = (stack_pointer - (1 + oparg));
             PyObject *map;
-            #line 1586 "Python/bytecodes.c"
+            #line 1594 "Python/bytecodes.c"
             if (!PyTuple_CheckExact(keys) ||
                 PyTuple_GET_SIZE(keys) != (Py_ssize_t)oparg) {
                 _PyErr_SetString(tstate, PyExc_SystemError,
@@ -1471,7 +1471,7 @@
                 Py_DECREF(values[_i]);
             }
             Py_DECREF(keys);
-            #line 1596 "Python/bytecodes.c"
+            #line 1604 "Python/bytecodes.c"
             if (map == NULL) { STACK_SHRINK(oparg); goto pop_1_error; }
             #line 1477 "Python/executor_cases.c.h"
             STACK_SHRINK(oparg);
@@ -1481,7 +1481,7 @@
 
         case DICT_UPDATE: {
             PyObject *update = stack_pointer[-1];
-            #line 1600 "Python/bytecodes.c"
+            #line 1608 "Python/bytecodes.c"
             PyObject *dict = PEEK(oparg + 1);  // update is still on the stack
             if (PyDict_Update(dict, update) < 0) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
@@ -1491,7 +1491,7 @@
                 }
             #line 1493 "Python/executor_cases.c.h"
                 Py_DECREF(update);
-            #line 1608 "Python/bytecodes.c"
+            #line 1616 "Python/bytecodes.c"
                 if (true) goto pop_1_error;
             }
             #line 1498 "Python/executor_cases.c.h"
@@ -1502,14 +1502,14 @@
 
         case DICT_MERGE: {
             PyObject *update = stack_pointer[-1];
-            #line 1614 "Python/bytecodes.c"
+            #line 1622 "Python/bytecodes.c"
             PyObject *dict = PEEK(oparg + 1);  // update is still on the stack
 
             if (_PyDict_MergeEx(dict, update, 2) < 0) {
                 format_kwargs_error(tstate, PEEK(3 + oparg), update);
             #line 1511 "Python/executor_cases.c.h"
                 Py_DECREF(update);
-            #line 1619 "Python/bytecodes.c"
+            #line 1627 "Python/bytecodes.c"
                 if (true) goto pop_1_error;
             }
             #line 1516 "Python/executor_cases.c.h"
@@ -1521,7 +1521,7 @@
         case MAP_ADD: {
             PyObject *value = stack_pointer[-1];
             PyObject *key = stack_pointer[-2];
-            #line 1625 "Python/bytecodes.c"
+            #line 1633 "Python/bytecodes.c"
             PyObject *dict = PEEK(oparg + 2);  // key, value are still on the stack
             assert(PyDict_CheckExact(dict));
             /* dict[key] = value */
@@ -1538,7 +1538,7 @@
             PyObject *global_super = stack_pointer[-3];
             PyObject *res2 = NULL;
             PyObject *res;
-            #line 1708 "Python/bytecodes.c"
+            #line 1716 "Python/bytecodes.c"
             assert(!(oparg & 1));
             DEOPT_IF(global_super != (PyObject *)&PySuper_Type, LOAD_SUPER_ATTR);
             DEOPT_IF(!PyType_Check(class), LOAD_SUPER_ATTR);
@@ -1549,7 +1549,7 @@
             Py_DECREF(global_super);
             Py_DECREF(class);
             Py_DECREF(self);
-            #line 1715 "Python/bytecodes.c"
+            #line 1723 "Python/bytecodes.c"
             if (res == NULL) goto pop_3_error;
             #line 1555 "Python/executor_cases.c.h"
             STACK_SHRINK(2);
@@ -1565,7 +1565,7 @@
             PyObject *global_super = stack_pointer[-3];
             PyObject *res2;
             PyObject *res;
-            #line 1719 "Python/bytecodes.c"
+            #line 1727 "Python/bytecodes.c"
             assert(oparg & 1);
             DEOPT_IF(global_super != (PyObject *)&PySuper_Type, LOAD_SUPER_ATTR);
             DEOPT_IF(!PyType_Check(class), LOAD_SUPER_ATTR);
@@ -1600,7 +1600,7 @@
             PyObject *owner = stack_pointer[-1];
             PyObject *res2 = NULL;
             PyObject *res;
-            #line 1760 "Python/bytecodes.c"
+            #line 1768 "Python/bytecodes.c"
             #if ENABLE_SPECIALIZATION
             _PyAttrCache *cache = (_PyAttrCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
@@ -1636,7 +1636,7 @@
                     */
             #line 1638 "Python/executor_cases.c.h"
                     Py_DECREF(owner);
-            #line 1794 "Python/bytecodes.c"
+            #line 1802 "Python/bytecodes.c"
                     if (meth == NULL) goto pop_1_error;
                     res2 = NULL;
                     res = meth;
@@ -1647,7 +1647,7 @@
                 res = PyObject_GetAttr(owner, name);
             #line 1649 "Python/executor_cases.c.h"
                 Py_DECREF(owner);
-            #line 1803 "Python/bytecodes.c"
+            #line 1811 "Python/bytecodes.c"
                 if (res == NULL) goto pop_1_error;
             }
             #line 1654 "Python/executor_cases.c.h"
@@ -1662,7 +1662,7 @@
             PyObject *right = stack_pointer[-1];
             PyObject *left = stack_pointer[-2];
             PyObject *res;
-            #line 2036 "Python/bytecodes.c"
+            #line 2044 "Python/bytecodes.c"
             #if ENABLE_SPECIALIZATION
             _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
@@ -1678,7 +1678,7 @@
             #line 1679 "Python/executor_cases.c.h"
             Py_DECREF(left);
             Py_DECREF(right);
-            #line 2049 "Python/bytecodes.c"
+            #line 2057 "Python/bytecodes.c"
             if (res == NULL) goto pop_2_error;
             if (oparg & 16) {
                 int res_bool = PyObject_IsTrue(res);
@@ -1696,7 +1696,7 @@
             PyObject *right = stack_pointer[-1];
             PyObject *left = stack_pointer[-2];
             PyObject *res;
-            #line 2059 "Python/bytecodes.c"
+            #line 2067 "Python/bytecodes.c"
             DEOPT_IF(!PyFloat_CheckExact(left), COMPARE_OP);
             DEOPT_IF(!PyFloat_CheckExact(right), COMPARE_OP);
             STAT_INC(COMPARE_OP, hit);
@@ -1718,7 +1718,7 @@
             PyObject *right = stack_pointer[-1];
             PyObject *left = stack_pointer[-2];
             PyObject *res;
-            #line 2074 "Python/bytecodes.c"
+            #line 2082 "Python/bytecodes.c"
             DEOPT_IF(!PyLong_CheckExact(left), COMPARE_OP);
             DEOPT_IF(!PyLong_CheckExact(right), COMPARE_OP);
             DEOPT_IF(!_PyLong_IsCompact((PyLongObject *)left), COMPARE_OP);
@@ -1744,7 +1744,7 @@
             PyObject *right = stack_pointer[-1];
             PyObject *left = stack_pointer[-2];
             PyObject *res;
-            #line 2093 "Python/bytecodes.c"
+            #line 2101 "Python/bytecodes.c"
             DEOPT_IF(!PyUnicode_CheckExact(left), COMPARE_OP);
             DEOPT_IF(!PyUnicode_CheckExact(right), COMPARE_OP);
             STAT_INC(COMPARE_OP, hit);
@@ -1767,12 +1767,12 @@
             PyObject *right = stack_pointer[-1];
             PyObject *left = stack_pointer[-2];
             PyObject *b;
-            #line 2108 "Python/bytecodes.c"
+            #line 2116 "Python/bytecodes.c"
             int res = Py_Is(left, right) ^ oparg;
             #line 1773 "Python/executor_cases.c.h"
             Py_DECREF(left);
             Py_DECREF(right);
-            #line 2110 "Python/bytecodes.c"
+            #line 2118 "Python/bytecodes.c"
             b = res ? Py_True : Py_False;
             #line 1778 "Python/executor_cases.c.h"
             STACK_SHRINK(1);
@@ -1784,12 +1784,12 @@
             PyObject *right = stack_pointer[-1];
             PyObject *left = stack_pointer[-2];
             PyObject *b;
-            #line 2114 "Python/bytecodes.c"
+            #line 2122 "Python/bytecodes.c"
             int res = PySequence_Contains(right, left);
             #line 1790 "Python/executor_cases.c.h"
             Py_DECREF(left);
             Py_DECREF(right);
-            #line 2116 "Python/bytecodes.c"
+            #line 2124 "Python/bytecodes.c"
             if (res < 0) goto pop_2_error;
             b = (res ^ oparg) ? Py_True : Py_False;
             #line 1796 "Python/executor_cases.c.h"
@@ -1803,12 +1803,12 @@
             PyObject *exc_value = stack_pointer[-2];
             PyObject *rest;
             PyObject *match;
-            #line 2121 "Python/bytecodes.c"
+            #line 2129 "Python/bytecodes.c"
             if (check_except_star_type_valid(tstate, match_type) < 0) {
             #line 1809 "Python/executor_cases.c.h"
                 Py_DECREF(exc_value);
                 Py_DECREF(match_type);
-            #line 2123 "Python/bytecodes.c"
+            #line 2131 "Python/bytecodes.c"
                 if (true) goto pop_2_error;
             }
 
@@ -1819,7 +1819,7 @@
             #line 1820 "Python/executor_cases.c.h"
             Py_DECREF(exc_value);
             Py_DECREF(match_type);
-            #line 2131 "Python/bytecodes.c"
+            #line 2139 "Python/bytecodes.c"
             if (res < 0) goto pop_2_error;
 
             assert((match == NULL) == (rest == NULL));
@@ -1838,19 +1838,19 @@
             PyObject *right = stack_pointer[-1];
             PyObject *left = stack_pointer[-2];
             PyObject *b;
-            #line 2142 "Python/bytecodes.c"
+            #line 2150 "Python/bytecodes.c"
             assert(PyExceptionInstance_Check(left));
             if (check_except_type_valid(tstate, right) < 0) {
             #line 1845 "Python/executor_cases.c.h"
                  Py_DECREF(right);
-            #line 2145 "Python/bytecodes.c"
+            #line 2153 "Python/bytecodes.c"
                  if (true) goto pop_1_error;
             }
 
             int res = PyErr_GivenExceptionMatches(left, right);
             #line 1852 "Python/executor_cases.c.h"
             Py_DECREF(right);
-            #line 2150 "Python/bytecodes.c"
+            #line 2158 "Python/bytecodes.c"
             b = res ? Py_True : Py_False;
             #line 1856 "Python/executor_cases.c.h"
             stack_pointer[-1] = b;
@@ -1860,7 +1860,7 @@
         case IS_NONE: {
             PyObject *value = stack_pointer[-1];
             PyObject *b;
-            #line 2229 "Python/bytecodes.c"
+            #line 2237 "Python/bytecodes.c"
             if (Py_IsNone(value)) {
                 b = Py_True;
             }
@@ -1868,7 +1868,7 @@
                 b = Py_False;
             #line 1870 "Python/executor_cases.c.h"
                 Py_DECREF(value);
-            #line 2235 "Python/bytecodes.c"
+            #line 2243 "Python/bytecodes.c"
             }
             #line 1874 "Python/executor_cases.c.h"
             stack_pointer[-1] = b;
@@ -1878,7 +1878,7 @@
         case GET_LEN: {
             PyObject *obj = stack_pointer[-1];
             PyObject *len_o;
-            #line 2252 "Python/bytecodes.c"
+            #line 2260 "Python/bytecodes.c"
             // PUSH(len(TOS))
             Py_ssize_t len_i = PyObject_Length(obj);
             if (len_i < 0) goto error;
@@ -1895,7 +1895,7 @@
             PyObject *type = stack_pointer[-2];
             PyObject *subject = stack_pointer[-3];
             PyObject *attrs;
-            #line 2260 "Python/bytecodes.c"
+            #line 2268 "Python/bytecodes.c"
             // Pop TOS and TOS1. Set TOS to a tuple of attributes on success, or
             // None on failure.
             assert(PyTuple_CheckExact(names));
@@ -1904,7 +1904,7 @@
             Py_DECREF(subject);
             Py_DECREF(type);
             Py_DECREF(names);
-            #line 2265 "Python/bytecodes.c"
+            #line 2273 "Python/bytecodes.c"
             if (attrs) {
                 assert(PyTuple_CheckExact(attrs));  // Success!
             }
@@ -1921,7 +1921,7 @@
         case MATCH_MAPPING: {
             PyObject *subject = stack_pointer[-1];
             PyObject *res;
-            #line 2275 "Python/bytecodes.c"
+            #line 2283 "Python/bytecodes.c"
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_MAPPING;
             res = match ? Py_True : Py_False;
             #line 1928 "Python/executor_cases.c.h"
@@ -1933,7 +1933,7 @@
         case MATCH_SEQUENCE: {
             PyObject *subject = stack_pointer[-1];
             PyObject *res;
-            #line 2280 "Python/bytecodes.c"
+            #line 2288 "Python/bytecodes.c"
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_SEQUENCE;
             res = match ? Py_True : Py_False;
             #line 1940 "Python/executor_cases.c.h"
@@ -1946,7 +1946,7 @@
             PyObject *keys = stack_pointer[-1];
             PyObject *subject = stack_pointer[-2];
             PyObject *values_or_none;
-            #line 2285 "Python/bytecodes.c"
+            #line 2293 "Python/bytecodes.c"
             // On successful match, PUSH(values). Otherwise, PUSH(None).
             values_or_none = match_keys(tstate, subject, keys);
             if (values_or_none == NULL) goto error;
@@ -1959,12 +1959,12 @@
         case GET_ITER: {
             PyObject *iterable = stack_pointer[-1];
             PyObject *iter;
-            #line 2291 "Python/bytecodes.c"
+            #line 2299 "Python/bytecodes.c"
             /* before: [obj]; after [getiter(obj)] */
             iter = PyObject_GetIter(iterable);
             #line 1966 "Python/executor_cases.c.h"
             Py_DECREF(iterable);
-            #line 2294 "Python/bytecodes.c"
+            #line 2302 "Python/bytecodes.c"
             if (iter == NULL) goto pop_1_error;
             #line 1970 "Python/executor_cases.c.h"
             stack_pointer[-1] = iter;
@@ -1974,7 +1974,7 @@
         case GET_YIELD_FROM_ITER: {
             PyObject *iterable = stack_pointer[-1];
             PyObject *iter;
-            #line 2298 "Python/bytecodes.c"
+            #line 2306 "Python/bytecodes.c"
             /* before: [obj]; after [getiter(obj)] */
             if (PyCoro_CheckExact(iterable)) {
                 /* `iterable` is a coroutine */
@@ -1999,7 +1999,7 @@
                 }
             #line 2001 "Python/executor_cases.c.h"
                 Py_DECREF(iterable);
-            #line 2321 "Python/bytecodes.c"
+            #line 2329 "Python/bytecodes.c"
             }
             #line 2005 "Python/executor_cases.c.h"
             stack_pointer[-1] = iter;
@@ -2011,7 +2011,7 @@
             PyObject *lasti = stack_pointer[-3];
             PyObject *exit_func = stack_pointer[-4];
             PyObject *res;
-            #line 2553 "Python/bytecodes.c"
+            #line 2561 "Python/bytecodes.c"
             /* At the top of the stack are 4 values:
                - val: TOP = exc_info()
                - unused: SECOND = previous exception
@@ -2041,7 +2041,7 @@
         case PUSH_EXC_INFO: {
             PyObject *new_exc = stack_pointer[-1];
             PyObject *prev_exc;
-            #line 2592 "Python/bytecodes.c"
+            #line 2600 "Python/bytecodes.c"
             _PyErr_StackItem *exc_info = tstate->exc_info;
             if (exc_info->exc_value != NULL) {
                 prev_exc = exc_info->exc_value;
@@ -2060,7 +2060,7 @@
 
         case EXIT_INIT_CHECK: {
             PyObject *should_be_none = stack_pointer[-1];
-            #line 2991 "Python/bytecodes.c"
+            #line 2999 "Python/bytecodes.c"
             assert(STACK_LEVEL() == 2);
             if (should_be_none != Py_None) {
                 PyErr_Format(PyExc_TypeError,
@@ -2076,7 +2076,7 @@
         case MAKE_FUNCTION: {
             PyObject *codeobj = stack_pointer[-1];
             PyObject *func;
-            #line 3405 "Python/bytecodes.c"
+            #line 3413 "Python/bytecodes.c"
 
             PyFunctionObject *func_obj = (PyFunctionObject *)
                 PyFunction_New(codeobj, GLOBALS());
@@ -2096,7 +2096,7 @@
         case SET_FUNCTION_ATTRIBUTE: {
             PyObject *func = stack_pointer[-1];
             PyObject *attr = stack_pointer[-2];
-            #line 3419 "Python/bytecodes.c"
+            #line 3427 "Python/bytecodes.c"
             assert(PyFunction_Check(func));
             PyFunctionObject *func_obj = (PyFunctionObject *)func;
             switch(oparg) {
@@ -2132,13 +2132,13 @@
             PyObject *stop = stack_pointer[-(1 + ((oparg == 3) ? 1 : 0))];
             PyObject *start = stack_pointer[-(2 + ((oparg == 3) ? 1 : 0))];
             PyObject *slice;
-            #line 3469 "Python/bytecodes.c"
+            #line 3477 "Python/bytecodes.c"
             slice = PySlice_New(start, stop, step);
             #line 2138 "Python/executor_cases.c.h"
             Py_DECREF(start);
             Py_DECREF(stop);
             Py_XDECREF(step);
-            #line 3471 "Python/bytecodes.c"
+            #line 3479 "Python/bytecodes.c"
             if (slice == NULL) { STACK_SHRINK(((oparg == 3) ? 1 : 0)); goto pop_2_error; }
             #line 2144 "Python/executor_cases.c.h"
             STACK_SHRINK(((oparg == 3) ? 1 : 0));
@@ -2150,7 +2150,7 @@
         case CONVERT_VALUE: {
             PyObject *value = stack_pointer[-1];
             PyObject *result;
-            #line 3475 "Python/bytecodes.c"
+            #line 3483 "Python/bytecodes.c"
             convertion_func_ptr  conv_fn;
             assert(oparg >= FVC_STR && oparg <= FVC_ASCII);
             conv_fn = CONVERSION_FUNCTIONS[oparg];
@@ -2165,7 +2165,7 @@
         case FORMAT_SIMPLE: {
             PyObject *value = stack_pointer[-1];
             PyObject *res;
-            #line 3484 "Python/bytecodes.c"
+            #line 3492 "Python/bytecodes.c"
             /* If value is a unicode object, then we know the result
              * of format(value) is value itself. */
             if (!PyUnicode_CheckExact(value)) {
@@ -2185,7 +2185,7 @@
             PyObject *fmt_spec = stack_pointer[-1];
             PyObject *value = stack_pointer[-2];
             PyObject *res;
-            #line 3497 "Python/bytecodes.c"
+            #line 3505 "Python/bytecodes.c"
             res = PyObject_Format(value, fmt_spec);
             Py_DECREF(value);
             Py_DECREF(fmt_spec);
@@ -2199,7 +2199,7 @@
         case COPY: {
             PyObject *bottom = stack_pointer[-(1 + (oparg-1))];
             PyObject *top;
-            #line 3504 "Python/bytecodes.c"
+            #line 3512 "Python/bytecodes.c"
             assert(oparg > 0);
             top = Py_NewRef(bottom);
             #line 2206 "Python/executor_cases.c.h"
@@ -2213,7 +2213,7 @@
             PyObject *rhs = stack_pointer[-1];
             PyObject *lhs = stack_pointer[-2];
             PyObject *res;
-            #line 3509 "Python/bytecodes.c"
+            #line 3517 "Python/bytecodes.c"
             #if ENABLE_SPECIALIZATION
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
@@ -2231,7 +2231,7 @@
             #line 2232 "Python/executor_cases.c.h"
             Py_DECREF(lhs);
             Py_DECREF(rhs);
-            #line 3524 "Python/bytecodes.c"
+            #line 3532 "Python/bytecodes.c"
             if (res == NULL) goto pop_2_error;
             #line 2237 "Python/executor_cases.c.h"
             STACK_SHRINK(1);
@@ -2242,7 +2242,7 @@
         case SWAP: {
             PyObject *top = stack_pointer[-1];
             PyObject *bottom = stack_pointer[-(2 + (oparg-2))];
-            #line 3529 "Python/bytecodes.c"
+            #line 3537 "Python/bytecodes.c"
             assert(oparg >= 2);
             #line 2248 "Python/executor_cases.c.h"
             stack_pointer[-1] = bottom;

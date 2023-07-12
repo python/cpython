@@ -1388,9 +1388,17 @@ dummy_func(
             null = NULL;
         }
 
-        macro(LOAD_GLOBAL_MODULE) = _SKIP_CACHE + _GUARD_GLOBALS_VERSION + _SKIP_CACHE + _LOAD_GLOBAL_MODULE;
+        macro(LOAD_GLOBAL_MODULE) =
+            _SKIP_CACHE + // Skip over the counter
+            _GUARD_GLOBALS_VERSION +
+            _SKIP_CACHE + // Skip over the builtins version
+            _LOAD_GLOBAL_MODULE;
 
-        macro(LOAD_GLOBAL_BUILTIN) = _SKIP_CACHE + _GUARD_GLOBALS_VERSION + _GUARD_BUILTINS_VERSION + _LOAD_GLOBAL_BUILTINS;
+        macro(LOAD_GLOBAL_BUILTIN) =
+            _SKIP_CACHE + // Skip over the counter
+            _GUARD_GLOBALS_VERSION +
+            _GUARD_BUILTINS_VERSION +
+            _LOAD_GLOBAL_BUILTINS;
 
         inst(DELETE_FAST, (--)) {
             PyObject *v = GETLOCAL(oparg);
