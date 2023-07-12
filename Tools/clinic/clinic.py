@@ -898,22 +898,24 @@ class CLanguage(Language):
         # parser_body_fields remembers the fields passed in to the
         # previous call to parser_body. this is used for an awful hack.
         parser_body_fields = ()
-        def parser_body(prototype, *fields, declarations=''):
+        def parser_body(
+                prototype: str,
+                *fields: str,
+                declarations: str = ''
+        ) -> str:
             nonlocal parser_body_fields
             add, output = text_accumulator()
             add(prototype)
             parser_body_fields = fields
 
-            fields = list(fields)
-            fields.insert(0, normalize_snippet("""
+            preamble = normalize_snippet("""
                 {{
                     {return_value_declaration}
                     {parser_declarations}
                     {declarations}
                     {initializers}
-                """) + "\n")
-            # just imagine--your code is here in the middle
-            fields.append(normalize_snippet("""
+            """) + "\n"
+            finale = normalize_snippet("""
                     {modifications}
                     {return_value} = {c_basename}_impl({impl_arguments});
                     {return_conversion}
@@ -923,8 +925,8 @@ class CLanguage(Language):
                     {cleanup}
                     return return_value;
                 }}
-                """))
-            for field in fields:
+            """)
+            for field in preamble, *fields, finale:
                 add('\n')
                 add(field)
             return linear_format(output(), parser_declarations=declarations)
