@@ -206,6 +206,10 @@ class _ModuleTarget(str):
 line_prefix = '\n-> '   # Probably a better default
 
 class Pdb(bdb.Bdb, cmd.Cmd):
+    # the max number of chained exceptions + exception groups we accept to navigate.
+    _max_chained_exception_depth = 999
+    _chained_exceptions = tuple()
+    _chained_exception_index = 0
 
     _previous_sigint_handler = None
 
@@ -414,8 +418,37 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                     self.message('display %s: %r  [old: %r]' %
                                  (expr, newvalue, oldvalue))
 
-    def interaction(self, frame, traceback):
+    def interaction(self, frame, tb_or_exc):
         # Restore the previous signal handler at the Pdb prompt.
+
+        _exceptions = []
+        if isinstance(tb_or_exc, BaseException):
+            traceback, exception = tb_or_exc.__traceback__, tb_or_exc
+            current = exception
+
+            while current is not None:
+                if current in _exceptions:
+                    break
+                _exceptions.append(current)
+                if current.__cause__ is not None:
+                    current = current.__cause__
+                elif (
+                    current.__context__ is not None and not current.__suppress_context__
+                ):
+                    current = current.__context__
+
+                if len(_exceptions) >= self._max_chained_exception_depth:
+                    self.message(
+                        f"More than {self._max_chained_exception_depth}"
+                        " chained exceptions found, not all exceptions"
+                        "will be browsable with `exceptions`."
+                    )
+                    break
+        else:
+            traceback = tb_or_exc
+        self._chained_exceptions = tuple(reversed(_exceptions))
+        self._chained_exception_index = len(_exceptions) - 1
+
         if Pdb._previous_sigint_handler:
             try:
                 signal.signal(signal.SIGINT, Pdb._previous_sigint_handler)
@@ -431,6 +464,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.print_stack_entry(self.stack[self.curindex])
         self._cmdloop()
         self.forget()
+
+        # we can't put those in forget as otherwise they would
+        # be cleared on exception change
+        self._chained_exceptions = tuple()
+        self._chained_exception_index = 0
+
 
     def displayhook(self, obj):
         """Custom displayhook for the exec in default(), which prevents
@@ -1072,6 +1111,44 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.set_convenience_variable(self.curframe, '_frame', self.curframe)
         self.print_stack_entry(self.stack[self.curindex])
         self.lineno = None
+
+    def do_exceptions(self, arg):
+        """exceptions [number]
+
+        List or change current exception in an exception chain.
+
+        Without arguments, list all the current exception in the exception
+        chain. Exceptions will be numbered, with the current exception indicated
+        with an arrow.
+
+        If given an integer as argument, switch to the exception at that index.
+        """
+        if not self._chained_exceptions:
+            self.message(
+                "Did not find chained exceptions. To move between"
+                " exceptions, pdb/post_mortem must be given an exception"
+                " object instead of a traceback."
+            )
+            return
+        if not arg:
+            for ix, exc in enumerate(self._chained_exceptions):
+                prompt = ">" if ix == self._chained_exception_index else " "
+                rep = repr(exc)
+                if len(rep) > 80:
+                    rep = rep[:77] + "..."
+                self.message(f"{prompt} {ix:>3} {rep}")
+        else:
+            try:
+                number = int(arg)
+            except ValueError:
+                self.error("Argument must be an integer")
+                return
+            if 0 <= number < len(self._chained_exceptions):
+                self._chained_exception_index = number
+                self.setup(None, self._chained_exceptions[number].__traceback__)
+                self.print_stack_entry(self.stack[self.curindex])
+            else:
+                self.error("No exception with that number")
 
     def do_up(self, arg):
         """u(p) [count]
@@ -1890,11 +1967,16 @@ def set_trace(*, header=None):
 # Post-Mortem interface
 
 def post_mortem(t=None):
-    """Enter post-mortem debugging of the given *traceback* object.
+    """Enter post-mortem debugging of the given *traceback*, or *exception*
+    object.
 
     If no traceback is given, it uses the one of the exception that is
     currently being handled (an exception must be being handled if the
     default is to be used).
+
+    If `t` is an Exception and is a chained exception (i.e it has a __context__,
+    or a __cause__), pdb will be able to list and move to other exceptions in
+    the chain using the `exceptions` command
     """
     # handling the default
     if t is None:
@@ -1912,11 +1994,7 @@ def post_mortem(t=None):
 
 def pm():
     """Enter post-mortem debugging of the traceback found in sys.last_traceback."""
-    if hasattr(sys, 'last_exc'):
-        tb = sys.last_exc.__traceback__
-    else:
-        tb = sys.last_traceback
-    post_mortem(tb)
+    post_mortem(sys.last_exc)
 
 
 # Main program for testing
@@ -1996,8 +2074,7 @@ def main():
             traceback.print_exc()
             print("Uncaught exception. Entering post mortem debugging")
             print("Running 'cont' or 'step' will restart the program")
-            t = e.__traceback__
-            pdb.interaction(None, t)
+            pdb.interaction(None, e)
             print("Post mortem debugger finished. The " + target +
                   " will be restarted")
 
