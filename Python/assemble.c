@@ -1,11 +1,11 @@
 #include <stdbool.h>
 
 #include "Python.h"
-#include "pycore_code.h"          // write_location_entry_start()
+#include "pycore_code.h"            // write_location_entry_start()
 #include "pycore_compile.h"
-#include "pycore_opcode.h"        // _PyOpcode_Caches[] and opcode category macros
-#include "pycore_opcode_utils.h"  // IS_BACKWARDS_JUMP_OPCODE
-#include "opcode_metadata.h"      // IS_PSEUDO_INSTR
+#include "pycore_opcode.h"          // _PyOpcode_Caches[] and opcode category macros
+#include "pycore_opcode_utils.h"    // IS_BACKWARDS_JUMP_OPCODE
+#include "pycore_opcode_metadata.h" // IS_PSEUDO_INSTR
 
 
 #define DEFAULT_CODE_SIZE 128
