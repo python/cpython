@@ -448,8 +448,6 @@ def handle_relocations(
                 assert what & 0x9F000000 == 0x90000000, what
                 addend = ((what & 0x60000000) >> 29) | ((what & 0x01FFFFE0) >> 3) << 12
                 addend = sign_extend_64(addend, 33)
-                # assert symbol.startswith("_"), symbol
-                symbol = symbol.removeprefix("_")
                 if symbol not in got_entries:
                     got_entries.append(symbol)
                 addend += len(body) + got_entries.index(symbol) * 8
@@ -467,8 +465,6 @@ def handle_relocations(
                 assert what & 0xFC000000 == 0x14000000 or what & 0xFC000000 == 0x94000000, what
                 addend = (what & 0x03FFFFFF) << 2
                 addend = sign_extend_64(addend, 28)
-                assert symbol.startswith("_"), symbol
-                symbol = symbol.removeprefix("_")
                 yield Hole("PATCH_REL_26", symbol, offset, addend)
             case {
                 "Addend": 0,
@@ -489,8 +485,6 @@ def handle_relocations(
                         if what & 0x04800000 == 0x04800000:
                             implicit_shift = 4
                 addend <<= implicit_shift
-                # assert symbol.startswith("_"), symbol
-                symbol = symbol.removeprefix("_")
                 if symbol not in got_entries:
                     got_entries.append(symbol)
                 addend += len(body) + got_entries.index(symbol) * 8
@@ -876,7 +870,6 @@ class Compiler:
             "CALL_PY_WITH_DEFAULTS",  # XXX: M2 Mac...
             "LOAD_ATTR_PROPERTY",  # XXX: M2 Mac...
             "GET_ANEXT",  # XXX: M2 Mac...
-            "IS_OP",  # XXX: M2 Mac...
             "LOAD_ATTR",  # XXX: M2 Mac...
             "LOAD_ATTR_WITH_HINT",  # XXX: M2 Mac...
             "BINARY_OP_SUBTRACT_FLOAT",  # XXX: M2 Mac...
