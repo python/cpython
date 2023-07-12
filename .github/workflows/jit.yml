@@ -97,9 +97,9 @@ jobs:
           run: |
             export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
             ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
-            make
+            make --jobs
             ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
-            ./python -m test -j0 -wW
+            ./python -m test --multiprocess 0 --verbose2 --verbose3
       - name: Native Linux
         if: runner.os == 'Linux' && matrix.architecture == 'x86_64'
         run: |
@@ -107,22 +107,22 @@ jobs:
           ${{ matrix.llvm == 14 && 'sudo apt install --yes libclang-rt-14-dev' || '' }}
           export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
           ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
-          make
+          make --jobs
           ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
-          ./python -m test -j0 -wW
+          ./python -m test --multiprocess 0 --verbose2 --verbose3
       - name: macOS
         if: runner.os == 'macOS'
         run: |
           brew install llvm@${{ matrix.llvm }}
           export SDKROOT="$(xcrun --show-sdk-path)"
           ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
-          make
+          make --jobs
           ./python.exe -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
-          ./python.exe -m test -j0 -wW
+          ./python.exe -m test --multiprocess 0 --verbose2 --verbose3
       - name: Windows
         if: runner.os == 'Windows'
         run: |
           choco install llvm --allow-downgrade --version ${{ matrix.llvm }}
           ./PCbuild/build ${{ matrix.debug && '-d' || '--pgo' }} -p ${{ matrix.windows_platform }}
           ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
-          ./PCbuild/rt${{ matrix.debug && ' -d' || '' }} -p ${{ matrix.windows_platform }} -q -j0 -wW
+          ./PCbuild/rt${{ matrix.debug && ' -d' || '' }} -p ${{ matrix.windows_platform }} -q --multiprocess 0 --verbose2 --verbose3

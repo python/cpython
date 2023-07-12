@@ -846,7 +846,9 @@ class Compiler:
         opname = "trampoline"
         body = TOOLS_JUSTIN_TRAMPOLINE.read_text()
         tasks.append(self._compile(opname, body))
-        await asyncio.gather(*tasks)
+        # await asyncio.gather(*tasks)
+        for task in tasks:  # XXX
+            await asyncio.gather(task)
 
     def dump(self) -> str:
         lines = []
