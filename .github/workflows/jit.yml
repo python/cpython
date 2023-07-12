@@ -85,7 +85,7 @@ jobs:
         uses: uraimo/run-on-arch-action@v2
         with:
           arch: ${{ matrix.architecture }}
-          distro: ubuntu_latest
+          distro: ubuntu20.04
           env: |
             CC: ${{ matrix.compiler }}
             PYTHON_LLVM_VERSION: ${{ matrix.llvm }}
