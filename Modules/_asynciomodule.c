@@ -248,7 +248,7 @@ get_future_loop(asyncio_state *state, PyObject *fut)
         return Py_NewRef(loop);
     }
 
-    if (_PyObject_LookupAttr(fut, &_Py_ID(get_loop), &getloop) < 0) {
+    if (PyObject_GetOptionalAttr(fut, &_Py_ID(get_loop), &getloop) < 0) {
         return NULL;
     }
     if (getloop != NULL) {
@@ -2966,7 +2966,7 @@ task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *resu
     }
 
     /* Check if `result` is a Future-compatible object */
-    if (_PyObject_LookupAttr(result, &_Py_ID(_asyncio_future_blocking), &o) < 0) {
+    if (PyObject_GetOptionalAttr(result, &_Py_ID(_asyncio_future_blocking), &o) < 0) {
         goto fail;
     }
     if (o != NULL && o != Py_None) {
