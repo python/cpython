@@ -104,8 +104,9 @@
     <_LicenseSources Include="$(PySourcePath)LICENSE;
                               $(PySourcePath)PC\crtlicense.txt;
                               $(bz2Dir)LICENSE;
-                              $(opensslOutDir)LICENSE;
                               $(libffiDir)LICENSE;" />
+    <_LicenseSources Include="$(opensslOutDir)LICENSE.txt" Condition="Exists('$(opensslOutDir)LICENSE.txt')" />
+    <_LicenseSources Include="$(opensslOutDir)LICENSE" Condition="!Exists('$(opensslOutDir)LICENSE.txt')" />
     <_LicenseSources Include="$(tcltkDir)tcllicense.terms;
                               $(tcltkDir)tklicense.terms;
                               $(tcltkDir)tixlicense.terms" Condition="$(IncludeTkinter)" />
