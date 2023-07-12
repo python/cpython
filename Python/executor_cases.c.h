@@ -1720,6 +1720,43 @@
             break;
         }
 
+        case _ITER_CHECK_LIST: {
+            PyObject *iter = stack_pointer[-1];
+            DEOPT_IF(Py_TYPE(iter) != &PyListIter_Type, FOR_ITER);
+            break;
+        }
+
+        case _ITER_EXHAUSTED_LIST: {
+            PyObject *iter = stack_pointer[-1];
+            PyObject *exhausted;
+            _PyListIterObject *it = (_PyListIterObject *)iter;
+            assert(Py_TYPE(iter) == &PyListIter_Type);
+            PyListObject *seq = it->it_seq;
+            if (seq == NULL || it->it_index >= PyList_GET_SIZE(seq)) {
+                exhausted = Py_True;
+            }
+            else {
+                exhausted = Py_False;
+            }
+            STACK_GROW(1);
+            stack_pointer[-1] = exhausted;
+            break;
+        }
+
+        case _ITER_NEXT_LIST: {
+            PyObject *iter = stack_pointer[-1];
+            PyObject *next;
+            _PyListIterObject *it = (_PyListIterObject *)iter;
+            assert(Py_TYPE(iter) == &PyListIter_Type);
+            PyListObject *seq = it->it_seq;
+            assert(seq);
+            assert(it->it_index < PyList_GET_SIZE(seq));
+            next = Py_NewRef(PyList_GET_ITEM(seq, it->it_index++));
+            STACK_GROW(1);
+            stack_pointer[-1] = next;
+            break;
+        }
+
         case _ITER_CHECK_RANGE: {
             PyObject *iter = stack_pointer[-1];
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;

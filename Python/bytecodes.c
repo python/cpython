@@ -55,13 +55,14 @@
 static PyObject *value, *value1, *value2, *left, *right, *res, *sum, *prod, *sub;
 static PyObject *container, *start, *stop, *v, *lhs, *rhs, *res2;
 static PyObject *list, *tuple, *dict, *owner, *set, *str, *tup, *map, *keys;
-static PyObject *exit_func, *lasti, *val, *retval, *obj, *iter;
+static PyObject *exit_func, *lasti, *val, *retval, *obj, *iter, *exhausted;
 static PyObject *aiter, *awaitable, *iterable, *w, *exc_value, *bc, *locals;
 static PyObject *orig, *excs, *update, *b, *fromlist, *level, *from;
 static PyObject **pieces, **values;
 static size_t jump;
 // Dummy variables for cache effects
 static uint16_t invert, counter, index, hint;
+#define unused 0
 static uint32_t type_version;
 
 static PyObject *
@@ -2405,28 +2406,53 @@ dummy_func(
             INSTRUMENTED_JUMP(here, target, PY_MONITORING_EVENT_BRANCH);
         }
 
-        inst(FOR_ITER_LIST, (unused/1, iter -- iter, next)) {
+        op(_ITER_CHECK_LIST, (iter -- iter)) {
             DEOPT_IF(Py_TYPE(iter) != &PyListIter_Type, FOR_ITER);
+        }
+
+        op(_ITER_JUMP_LIST, (iter -- iter)) {
             _PyListIterObject *it = (_PyListIterObject *)iter;
+            assert(Py_TYPE(iter) == &PyListIter_Type);
             STAT_INC(FOR_ITER, hit);
             PyListObject *seq = it->it_seq;
-            if (seq) {
-                if (it->it_index < PyList_GET_SIZE(seq)) {
-                    next = Py_NewRef(PyList_GET_ITEM(seq, it->it_index++));
-                    goto end_for_iter_list;  // End of this instruction
+            if (seq == NULL || it->it_index >= PyList_GET_SIZE(seq)) {
+                if (seq != NULL) {
+                    it->it_seq = NULL;
+                    Py_DECREF(seq);
                 }
-                it->it_seq = NULL;
-                Py_DECREF(seq);
+                Py_DECREF(iter);
+                STACK_SHRINK(1);
+                SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
+                /* Jump forward oparg, then skip following END_FOR instruction */
+                JUMPBY(oparg + 1);
+                DISPATCH();
             }
-            Py_DECREF(iter);
-            STACK_SHRINK(1);
-            SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
-            /* Jump forward oparg, then skip following END_FOR instruction */
-            JUMPBY(oparg + 1);
-            DISPATCH();
-        end_for_iter_list:
-            // Common case: no jump, leave it to the code generator
         }
+
+        // Only used by Tier 2
+        op(_ITER_EXHAUSTED_LIST, (iter -- iter, exhausted)) {
+            _PyListIterObject *it = (_PyListIterObject *)iter;
+            assert(Py_TYPE(iter) == &PyListIter_Type);
+            PyListObject *seq = it->it_seq;
+            if (seq == NULL || it->it_index >= PyList_GET_SIZE(seq)) {
+                exhausted = Py_True;
+            }
+            else {
+                exhausted = Py_False;
+            }
+        }
+
+        op(_ITER_NEXT_LIST, (iter -- iter, next)) {
+            _PyListIterObject *it = (_PyListIterObject *)iter;
+            assert(Py_TYPE(iter) == &PyListIter_Type);
+            PyListObject *seq = it->it_seq;
+            assert(seq);
+            assert(it->it_index < PyList_GET_SIZE(seq));
+            next = Py_NewRef(PyList_GET_ITEM(seq, it->it_index++));
+        }
+
+        macro(FOR_ITER_LIST) =
+            unused/1 + _ITER_CHECK_LIST + _ITER_JUMP_LIST + _ITER_NEXT_LIST;
 
         inst(FOR_ITER_TUPLE, (unused/1, iter -- iter, next)) {
             _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
