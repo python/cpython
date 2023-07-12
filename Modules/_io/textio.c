@@ -6,12 +6,13 @@
     Written by Amaury Forgeot d'Arc and Antoine Pitrou
 */
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_call.h"          // _PyObject_CallMethod()
+#include "pycore_codecs.h"        // _PyCodecInfo_GetIncrementalDecoder()
 #include "pycore_interp.h"        // PyInterpreterState.fs_codec
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_fileutils.h"     // _Py_GetLocaleEncoding()
-#include "pycore_object.h"
+#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "structmember.h"         // PyMemberDef
 #include "_iomodule.h"
@@ -285,10 +286,6 @@ check_decoded(PyObject *decoded)
         PyErr_Format(PyExc_TypeError,
                      "decoder should return a string result, not '%.200s'",
                      Py_TYPE(decoded)->tp_name);
-        Py_DECREF(decoded);
-        return -1;
-    }
-    if (PyUnicode_READY(decoded) < 0) {
         Py_DECREF(decoded);
         return -1;
     }
@@ -1611,9 +1608,6 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
     int haslf = 0;
     int needflush = 0, text_needflush = 0;
 
-    if (PyUnicode_READY(text) == -1)
-        return NULL;
-
     CHECK_ATTACHED(self);
     CHECK_CLOSED(self);
 
@@ -1972,8 +1966,6 @@ _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n)
         result = textiowrapper_get_decoded_chars(self, n);
         if (result == NULL)
             goto fail;
-        if (PyUnicode_READY(result) == -1)
-            goto fail;
         remaining -= PyUnicode_GET_LENGTH(result);
 
         /* Keep reading chunks until we have n characters to return */
@@ -2184,8 +2176,6 @@ _textiowrapper_readline(textio *self, Py_ssize_t limit)
             offset_to_buffer = PyUnicode_GET_LENGTH(remaining);
             Py_CLEAR(remaining);
             if (line == NULL)
-                goto error;
-            if (PyUnicode_READY(line) == -1)
                 goto error;
         }
 
@@ -3106,7 +3096,7 @@ textiowrapper_iternext(textio *self)
         }
     }
 
-    if (line == NULL || PyUnicode_READY(line) == -1)
+    if (line == NULL)
         return NULL;
 
     if (PyUnicode_GET_LENGTH(line) == 0) {

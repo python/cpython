@@ -80,7 +80,7 @@ extern "C" {
 
    This is the equivalent of the Python statement o.attr_name=v. */
 
-/* Implemented as a macro:
+/* Implemented elsewhere:
 
    int PyObject_DelAttrString(PyObject *o, const char *attr_name);
 
@@ -88,17 +88,15 @@ extern "C" {
    -1 on failure.
 
    This is the equivalent of the Python statement: del o.attr_name. */
-#define PyObject_DelAttrString(O, A) PyObject_SetAttrString((O), (A), NULL)
 
 
-/* Implemented as a macro:
+/* Implemented elsewhere:
 
    int PyObject_DelAttr(PyObject *o, PyObject *attr_name);
 
    Delete attribute named attr_name, for object o. Returns -1
    on failure.  This is the equivalent of the Python
    statement: del o.attr_name. */
-#define  PyObject_DelAttr(O, A) PyObject_SetAttr((O), (A), NULL)
 
 
 /* Implemented elsewhere:
@@ -319,55 +317,6 @@ PyAPI_FUNC(int) PyObject_DelItemString(PyObject *o, const char *key);
    This is the equivalent of the Python statement: del o[key]. */
 PyAPI_FUNC(int) PyObject_DelItem(PyObject *o, PyObject *key);
 
-
-/* === Old Buffer API ============================================ */
-
-/* FIXME:  usage of these should all be replaced in Python itself
-   but for backwards compatibility we will implement them.
-   Their usage without a corresponding "unlock" mechanism
-   may create issues (but they would already be there). */
-
-/* Takes an arbitrary object which must support the (character, single segment)
-   buffer interface and returns a pointer to a read-only memory location
-   usable as character based input for subsequent processing.
-
-   Return 0 on success.  buffer and buffer_len are only set in case no error
-   occurs. Otherwise, -1 is returned and an exception set. */
-Py_DEPRECATED(3.0)
-PyAPI_FUNC(int) PyObject_AsCharBuffer(PyObject *obj,
-                                      const char **buffer,
-                                      Py_ssize_t *buffer_len);
-
-/* Checks whether an arbitrary object supports the (character, single segment)
-   buffer interface.
-
-   Returns 1 on success, 0 on failure. */
-Py_DEPRECATED(3.0) PyAPI_FUNC(int) PyObject_CheckReadBuffer(PyObject *obj);
-
-/* Same as PyObject_AsCharBuffer() except that this API expects (readable,
-   single segment) buffer interface and returns a pointer to a read-only memory
-   location which can contain arbitrary data.
-
-   0 is returned on success.  buffer and buffer_len are only set in case no
-   error occurs.  Otherwise, -1 is returned and an exception set. */
-Py_DEPRECATED(3.0)
-PyAPI_FUNC(int) PyObject_AsReadBuffer(PyObject *obj,
-                                      const void **buffer,
-                                      Py_ssize_t *buffer_len);
-
-/* Takes an arbitrary object which must support the (writable, single segment)
-   buffer interface and returns a pointer to a writable memory location in
-   buffer of size 'buffer_len'.
-
-   Return 0 on success.  buffer and buffer_len are only set in case no error
-   occurs. Otherwise, -1 is returned and an exception set. */
-Py_DEPRECATED(3.0)
-PyAPI_FUNC(int) PyObject_AsWriteBuffer(PyObject *obj,
-                                       void **buffer,
-                                       Py_ssize_t *buffer_len);
-
-
-/* === New Buffer API ============================================ */
 
 /* Takes an arbitrary object and returns the result of calling
    obj.__format__(format_spec). */

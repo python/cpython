@@ -231,7 +231,7 @@ struct _typeobject {
 };
 
 /* This struct is used by the specializer
- * It should should be treated as an opaque blob
+ * It should be treated as an opaque blob
  * by code other than the specializer and interpreter. */
 struct _specialization_cache {
     // In order to avoid bloating the bytecode with lots of inline caches, the
@@ -246,6 +246,7 @@ struct _specialization_cache {
     //   *args nor **kwargs (as required by BINARY_SUBSCR_GETITEM):
     PyObject *getitem;
     uint32_t getitem_version;
+    PyObject *init;
 };
 
 /* The *real* layout of a type object when allocated on the heap */
@@ -283,6 +284,7 @@ PyAPI_FUNC(PyTypeObject *) _PyType_CalculateMetaclass(PyTypeObject *, PyObject *
 PyAPI_FUNC(PyObject *) _PyType_GetDocFromInternalDoc(const char *, const char *);
 PyAPI_FUNC(PyObject *) _PyType_GetTextSignatureFromInternalDoc(const char *, const char *);
 PyAPI_FUNC(PyObject *) PyType_GetModuleByDef(PyTypeObject *, PyModuleDef *);
+PyAPI_FUNC(PyObject *) PyType_GetDict(PyTypeObject *);
 
 PyAPI_FUNC(int) PyObject_Print(PyObject *, FILE *, int);
 PyAPI_FUNC(void) _Py_BreakPoint(void);

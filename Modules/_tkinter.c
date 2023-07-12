@@ -21,7 +21,6 @@ Copyright (C) 1994 Steen Lumholt.
 
 */
 
-#define PY_SSIZE_T_CLEAN
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
@@ -64,6 +63,12 @@ Copyright (C) 1994 Steen Lumholt.
 #define TCL_NO_TOMMATH_H
 #endif
 #include <tclTomMath.h>
+
+#if defined(TCL_WITH_EXTERNAL_TOMMATH) || (TK_HEX_VERSION >= 0x08070000)
+#define USE_DEPRECATED_TOMMATH_API 0
+#else
+#define USE_DEPRECATED_TOMMATH_API 1
+#endif
 
 #if !(defined(MS_WINDOWS) || defined(__CYGWIN__))
 #define HAVE_CREATEFILEHANDLER
@@ -962,9 +967,6 @@ AsObj(PyObject *value)
     }
 
     if (PyUnicode_Check(value)) {
-        if (PyUnicode_READY(value) == -1)
-            return NULL;
-
         Py_ssize_t size = PyUnicode_GET_LENGTH(value);
         if (size == 0) {
             return Tcl_NewStringObj("", 0);
@@ -1052,20 +1054,33 @@ static PyObject*
 fromBignumObj(TkappObject *tkapp, Tcl_Obj *value)
 {
     mp_int bigValue;
+    mp_err err;
+#if USE_DEPRECATED_TOMMATH_API
     unsigned long numBytes;
+#else
+    size_t numBytes;
+#endif
     unsigned char *bytes;
     PyObject *res;
 
     if (Tcl_GetBignumFromObj(Tkapp_Interp(tkapp), value, &bigValue) != TCL_OK)
         return Tkinter_Error(tkapp);
+#if USE_DEPRECATED_TOMMATH_API
     numBytes = mp_unsigned_bin_size(&bigValue);
+#else
+    numBytes = mp_ubin_size(&bigValue);
+#endif
     bytes = PyMem_Malloc(numBytes);
     if (bytes == NULL) {
         mp_clear(&bigValue);
         return PyErr_NoMemory();
     }
-    if (mp_to_unsigned_bin_n(&bigValue, bytes,
-                                &numBytes) != MP_OKAY) {
+#if USE_DEPRECATED_TOMMATH_API
+    err = mp_to_unsigned_bin_n(&bigValue, bytes, &numBytes);
+#else
+    err = mp_to_ubin(&bigValue, bytes, numBytes, NULL);
+#endif
+    if (err != MP_OKAY) {
         mp_clear(&bigValue);
         PyMem_Free(bytes);
         return PyErr_NoMemory();

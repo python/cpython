@@ -7,6 +7,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_complexobject.h" // _Py_c_neg()
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
 /* we need DBL_MAX, DBL_MIN, DBL_EPSILON, DBL_MANT_DIG and FLT_RADIX from
    float.h.  We assume that FLT_RADIX is either 2 or 16. */

@@ -17,8 +17,6 @@
 /* Always enable assertions */
 #undef NDEBUG
 
-#define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
 #include "frameobject.h"          // PyFrame_New
 #include "marshal.h"              // PyMarshal_WriteLongToFile
@@ -637,6 +635,30 @@ test_get_type_qualname(PyObject *self, PyObject *Py_UNUSED(ignored))
 
   done:
     Py_DECREF(HeapTypeNameType);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+test_get_type_dict(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    /* Test for PyType_GetDict */
+
+    // Assert ints have a `to_bytes` method
+    PyObject *long_dict = PyType_GetDict(&PyLong_Type);
+    assert(long_dict);
+    assert(PyDict_GetItemString(long_dict, "to_bytes")); // borrowed ref
+    Py_DECREF(long_dict);
+
+    // Make a new type, add an attribute to it and assert it's there
+    PyObject *HeapTypeNameType = PyType_FromSpec(&HeapTypeNameType_Spec);
+    assert(HeapTypeNameType);
+    assert(PyObject_SetAttrString(
+        HeapTypeNameType, "new_attr", Py_NewRef(Py_None)) >= 0);
+    PyObject *type_dict = PyType_GetDict((PyTypeObject*)HeapTypeNameType);
+    assert(type_dict);
+    assert(PyDict_GetItemString(type_dict, "new_attr")); // borrowed ref
+    Py_DECREF(HeapTypeNameType);
+    Py_DECREF(type_dict);
     Py_RETURN_NONE;
 }
 
@@ -1269,9 +1291,15 @@ test_pep3118_obsolete_write_locks(PyObject* self, PyObject *Py_UNUSED(ignored))
     if (ret != -1 || match == 0)
         goto error;
 
+    PyObject *mod_io = PyImport_ImportModule("_io");
+    if (mod_io == NULL) {
+        return NULL;
+    }
+
     /* bytesiobuf_getbuffer() */
-    PyTypeObject *type = (PyTypeObject *)_PyImport_GetModuleAttrString(
-            "_io", "_BytesIOBuffer");
+    PyTypeObject *type = (PyTypeObject *)PyObject_GetAttrString(
+            mod_io, "_BytesIOBuffer");
+    Py_DECREF(mod_io);
     if (type == NULL) {
         return NULL;
     }
@@ -1426,7 +1454,7 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
     int allow_threads = -1;
     int allow_daemon_threads = -1;
     int check_multi_interp_extensions = -1;
-    int own_gil = -1;
+    int gil = -1;
     int r;
     PyThreadState *substate, *mainstate;
     /* only initialise 'cflags.cf_flags' to test backwards compatibility */
@@ -1439,15 +1467,15 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
                              "allow_threads",
                              "allow_daemon_threads",
                              "check_multi_interp_extensions",
-                             "own_gil",
+                             "gil",
                              NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                    "s$ppppppp:run_in_subinterp_with_config", kwlist,
+                    "s$ppppppi:run_in_subinterp_with_config", kwlist,
                     &code, &use_main_obmalloc,
                     &allow_fork, &allow_exec,
                     &allow_threads, &allow_daemon_threads,
                     &check_multi_interp_extensions,
-                    &own_gil)) {
+                    &gil)) {
         return NULL;
     }
     if (use_main_obmalloc < 0) {
@@ -1466,8 +1494,8 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
         PyErr_SetString(PyExc_ValueError, "missing allow_threads");
         return NULL;
     }
-    if (own_gil < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing own_gil");
+    if (gil < 0) {
+        PyErr_SetString(PyExc_ValueError, "missing gil");
         return NULL;
     }
     if (allow_daemon_threads < 0) {
@@ -1490,7 +1518,7 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
         .allow_threads = allow_threads,
         .allow_daemon_threads = allow_daemon_threads,
         .check_multi_interp_extensions = check_multi_interp_extensions,
-        .own_gil = own_gil,
+        .gil = gil,
     };
     PyStatus status = Py_NewInterpreterFromConfig(&substate, &config);
     if (PyStatus_Exception(status)) {
@@ -2640,6 +2668,52 @@ type_get_tp_mro(PyObject *self, PyObject *type)
 }
 
 
+/* We only use 2 in test_capi/test_misc.py. */
+#define NUM_BASIC_STATIC_TYPES 2
+static PyTypeObject BasicStaticTypes[NUM_BASIC_STATIC_TYPES] = {
+#define INIT_BASIC_STATIC_TYPE \
+    { \
+        PyVarObject_HEAD_INIT(NULL, 0) \
+        .tp_name = "BasicStaticType", \
+        .tp_basicsize = sizeof(PyObject), \
+    }
+    INIT_BASIC_STATIC_TYPE,
+    INIT_BASIC_STATIC_TYPE,
+#undef INIT_BASIC_STATIC_TYPE
+};
+static int num_basic_static_types_used = 0;
+
+static PyObject *
+get_basic_static_type(PyObject *self, PyObject *args)
+{
+    PyObject *base = NULL;
+    if (!PyArg_ParseTuple(args, "|O", &base)) {
+        return NULL;
+    }
+    assert(base == NULL || PyType_Check(base));
+
+    if(num_basic_static_types_used >= NUM_BASIC_STATIC_TYPES) {
+        PyErr_SetString(PyExc_RuntimeError, "no more available basic static types");
+        return NULL;
+    }
+    PyTypeObject *cls = &BasicStaticTypes[num_basic_static_types_used++];
+
+    if (base != NULL) {
+        cls->tp_bases = Py_BuildValue("(O)", base);
+        if (cls->tp_bases == NULL) {
+            return NULL;
+        }
+        cls->tp_base = (PyTypeObject *)Py_NewRef(base);
+    }
+    if (PyType_Ready(cls) < 0) {
+        Py_DECREF(cls->tp_bases);
+        Py_DECREF(cls->tp_base);
+        return NULL;
+    }
+    return (PyObject *)cls;
+}
+
+
 // Test PyThreadState C API
 static PyObject *
 test_tstate_capi(PyObject *self, PyObject *Py_UNUSED(args))
@@ -2667,11 +2741,6 @@ test_tstate_capi(PyObject *self, PyObject *Py_UNUSED(args))
     assert(dict != NULL);
     assert(PyDict_Check(dict));
     // dict is a borrowed reference
-
-    // private _PyThreadState_GetDict()
-    PyObject *dict2 = _PyThreadState_GetDict(tstate);
-    assert(dict2 == dict);
-    // dict2 is a borrowed reference
 
     // PyThreadState_GetInterpreter()
     PyInterpreterState *interp = PyThreadState_GetInterpreter(tstate);
@@ -3248,34 +3317,150 @@ function_set_kw_defaults(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-struct atexit_data {
-    int called;
-};
-
-static void
-callback(void *data)
+static PyObject *
+check_pyimport_addmodule(PyObject *self, PyObject *args)
 {
-    ((struct atexit_data *)data)->called += 1;
+    const char *name;
+    if (!PyArg_ParseTuple(args, "s", &name)) {
+        return NULL;
+    }
+
+    // test PyImport_AddModuleRef()
+    PyObject *module = PyImport_AddModuleRef(name);
+    if (module == NULL) {
+        return NULL;
+    }
+    assert(PyModule_Check(module));
+    // module is a strong reference
+
+    // test PyImport_AddModule()
+    PyObject *module2 = PyImport_AddModule(name);
+    if (module2 == NULL) {
+        goto error;
+    }
+    assert(PyModule_Check(module2));
+    assert(module2 == module);
+    // module2 is a borrowed ref
+
+    // test PyImport_AddModuleObject()
+    PyObject *name_obj = PyUnicode_FromString(name);
+    if (name_obj == NULL) {
+        goto error;
+    }
+    PyObject *module3 = PyImport_AddModuleObject(name_obj);
+    Py_DECREF(name_obj);
+    if (module3 == NULL) {
+        goto error;
+    }
+    assert(PyModule_Check(module3));
+    assert(module3 == module);
+    // module3 is a borrowed ref
+
+    return module;
+
+error:
+    Py_DECREF(module);
+    return NULL;
 }
 
-static PyObject *
-test_atexit(PyObject *self, PyObject *Py_UNUSED(args))
-{
-    PyThreadState *oldts = PyThreadState_Swap(NULL);
-    PyThreadState *tstate = Py_NewInterpreter();
 
-    struct atexit_data data = {0};
-    int res = _Py_AtExit(tstate->interp, callback, (void *)&data);
-    Py_EndInterpreter(tstate);
-    PyThreadState_Swap(oldts);
-    if (res < 0) {
+static PyObject *
+test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
+{
+    // Ignore PyWeakref_GetObject() deprecation, we test it on purpose
+    _Py_COMP_DIAG_PUSH
+    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
+
+    // Create a new heap type, create an instance of this type, and delete the
+    // type. This object supports weak references.
+    PyObject *new_type = PyObject_CallFunction((PyObject*)&PyType_Type,
+                                               "s(){}", "TypeName");
+    if (new_type == NULL) {
         return NULL;
     }
-    if (data.called == 0) {
-        PyErr_SetString(PyExc_RuntimeError, "atexit callback not called");
+    PyObject *obj = PyObject_CallNoArgs(new_type);
+    Py_DECREF(new_type);
+    if (obj == NULL) {
         return NULL;
     }
+    Py_ssize_t refcnt = Py_REFCNT(obj);
+
+    // test PyWeakref_NewRef(), reference is alive
+    PyObject *weakref = PyWeakref_NewRef(obj, NULL);
+    if (weakref == NULL) {
+        Py_DECREF(obj);
+        return NULL;
+    }
+
+    // test PyWeakref_Check(), valid weakref object
+    assert(PyWeakref_Check(weakref));
+    assert(PyWeakref_CheckRefExact(weakref));
+    assert(PyWeakref_CheckRefExact(weakref));
+    assert(Py_REFCNT(obj) == refcnt);
+
+    // test PyWeakref_GetRef(), reference is alive
+    PyObject *ref = Py_True;  // marker to check that value was set
+    assert(PyWeakref_GetRef(weakref, &ref) == 1);
+    assert(ref == obj);
+    assert(Py_REFCNT(obj) == (refcnt + 1));
+    Py_DECREF(ref);
+
+    // test PyWeakref_GetObject(), reference is alive
+    ref = PyWeakref_GetObject(weakref);  // borrowed ref
+    assert(ref == obj);
+
+    // test PyWeakref_GET_OBJECT(), reference is alive
+    ref = PyWeakref_GET_OBJECT(weakref);  // borrowed ref
+    assert(ref == obj);
+
+    // delete the referenced object: clear the weakref
+    assert(Py_REFCNT(obj) == 1);
+    Py_DECREF(obj);
+
+    // test PyWeakref_GET_OBJECT(), reference is dead
+    assert(PyWeakref_GET_OBJECT(weakref) == Py_None);
+
+    // test PyWeakref_GetRef(), reference is dead
+    ref = Py_True;
+    assert(PyWeakref_GetRef(weakref, &ref) == 0);
+    assert(ref == NULL);
+
+    // test PyWeakref_Check(), not a weakref object
+    PyObject *invalid_weakref = Py_None;
+    assert(!PyWeakref_Check(invalid_weakref));
+    assert(!PyWeakref_CheckRefExact(invalid_weakref));
+    assert(!PyWeakref_CheckRefExact(invalid_weakref));
+
+    // test PyWeakref_GetRef(), invalid type
+    assert(!PyErr_Occurred());
+    ref = Py_True;
+    assert(PyWeakref_GetRef(invalid_weakref, &ref) == -1);
+    assert(PyErr_ExceptionMatches(PyExc_TypeError));
+    PyErr_Clear();
+    assert(ref == NULL);
+
+    // test PyWeakref_GetObject(), invalid type
+    assert(PyWeakref_GetObject(invalid_weakref) == NULL);
+    assert(PyErr_ExceptionMatches(PyExc_SystemError));
+    PyErr_Clear();
+
+    // test PyWeakref_GetRef(NULL)
+    ref = Py_True;  // marker to check that value was set
+    assert(PyWeakref_GetRef(NULL, &ref) == -1);
+    assert(PyErr_ExceptionMatches(PyExc_SystemError));
+    assert(ref == NULL);
+    PyErr_Clear();
+
+    // test PyWeakref_GetObject(NULL)
+    assert(PyWeakref_GetObject(NULL) == NULL);
+    assert(PyErr_ExceptionMatches(PyExc_SystemError));
+    PyErr_Clear();
+
+    Py_DECREF(weakref);
+
     Py_RETURN_NONE;
+
+    _Py_COMP_DIAG_POP
 }
 
 
@@ -3311,6 +3496,7 @@ static PyMethodDef TestMethods[] = {
     {"test_get_statictype_slots", test_get_statictype_slots,     METH_NOARGS},
     {"test_get_type_name",        test_get_type_name,            METH_NOARGS},
     {"test_get_type_qualname",    test_get_type_qualname,        METH_NOARGS},
+    {"test_get_type_dict",        test_get_type_dict,            METH_NOARGS},
     {"_test_thread_state",      test_thread_state,               METH_VARARGS},
 #ifndef MS_WINDOWS
     {"_spawn_pthread_waiter",   spawn_pthread_waiter,            METH_NOARGS},
@@ -3395,6 +3581,7 @@ static PyMethodDef TestMethods[] = {
     {"type_assign_version", type_assign_version, METH_O, PyDoc_STR("PyUnstable_Type_AssignVersionTag")},
     {"type_get_tp_bases", type_get_tp_bases, METH_O},
     {"type_get_tp_mro", type_get_tp_mro, METH_O},
+    {"get_basic_static_type", get_basic_static_type, METH_VARARGS, NULL},
     {"test_tstate_capi", test_tstate_capi, METH_NOARGS, NULL},
     {"frame_getlocals", frame_getlocals, METH_O, NULL},
     {"frame_getglobals", frame_getglobals, METH_O, NULL},
@@ -3420,7 +3607,8 @@ static PyMethodDef TestMethods[] = {
     {"function_set_defaults", function_set_defaults, METH_VARARGS, NULL},
     {"function_get_kw_defaults", function_get_kw_defaults, METH_O, NULL},
     {"function_set_kw_defaults", function_set_kw_defaults, METH_VARARGS, NULL},
-    {"test_atexit", test_atexit, METH_NOARGS},
+    {"check_pyimport_addmodule", check_pyimport_addmodule, METH_VARARGS},
+    {"test_weakref_capi", test_weakref_capi, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -4018,9 +4206,6 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_GetArgs(m) < 0) {
-        return NULL;
-    }
-    if (_PyTestCapi_Init_PyTime(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_DateTime(m) < 0) {
