@@ -1013,6 +1013,18 @@ class ClinicParserTest(TestCase):
         out = self.parse_function_should_fail(block)
         self.assertEqual(out, expected_error_msg)
 
+    def test_slot_methods_cannot_access_defining_class(self):
+        block = """
+            module foo
+            class Foo "" ""
+            Foo.__init__
+                cls: defining_class
+                a: object
+        """
+        msg = "Slot methods cannot access their defining class."
+        with self.assertRaisesRegex(ValueError, msg):
+            self.parse_function(block)
+
     def test_unused_param(self):
         block = self.parse("""
             module foo
