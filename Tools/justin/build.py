@@ -7,6 +7,7 @@ import itertools
 import json
 import os
 import pathlib
+import platform
 import re
 import subprocess
 import sys
@@ -236,7 +237,7 @@ class ObjectParser:
         output = output.replace(b"PrivateExtern\n", b"\n")  # XXX: MachO
         output = output.replace(b"Extern\n", b"\n")  # XXX: MachO
         start = output.index(b"[", 1)  # XXX: MachO, COFF
-        end = output.rindex(b"]", 0, -1) + 1  # XXXL MachO, COFF
+        end = output.rindex(b"]", 0, -1) + 1  # XXX: MachO, COFF
         self._data = json.loads(output[start:end])
         for section in unwrap(self._data, "Section"):
             self._handle_section(section)
@@ -288,6 +289,7 @@ def handle_relocations(
 ) -> typing.Generator[Hole, None, None]:
     for i, (base, relocation) in enumerate(relocations):
         match relocation:
+            # aarch64-apple-darwin:
             case {
                 "Length": 2 as length,
                 "Offset": int(offset),
@@ -394,9 +396,6 @@ def handle_relocations(
                 addend <<= implicit_shift
                 # assert symbol.startswith("_"), symbol
                 symbol = symbol.removeprefix("_")
-                if implicit_shift and addend % implicit_shift == 0:
-                    print("XXX:", addend, implicit_shift, len(body), base)
-                    breakpoint()
                 yield Hole("PATCH_ABS_12", symbol, offset, addend)
             case {
                 "Length": 3 as length,
@@ -426,7 +425,7 @@ def handle_relocations(
                 assert symbol.startswith("_"), symbol
                 symbol = symbol.removeprefix("_")
                 yield Hole("PATCH_ABS_64", symbol, offset, addend)
-##############################################################################
+            # x86_64-pc-windows-msvc:
             case {
                 "Offset": int(offset),
                 "Symbol": str(symbol),
@@ -439,7 +438,7 @@ def handle_relocations(
                 addend = what
                 body[where] = [0] * 8
                 yield Hole("PATCH_ABS_64", symbol, offset, addend)
-##############################################################################
+            # i686-pc-windows-msvc:
             case {
                 "Offset": int(offset),
                 "Symbol": str(symbol),
@@ -454,7 +453,7 @@ def handle_relocations(
                 # assert symbol.startswith("_")
                 symbol = symbol.removeprefix("_")
                 yield Hole("PATCH_ABS_32", symbol, offset, addend)
-##############################################################################
+            # aarch64-unknown-linux-gnu:
             case {
                 "Addend": int(addend),
                 "Offset": int(offset),
@@ -568,7 +567,7 @@ def handle_relocations(
                 what = int.from_bytes(body[where], "little", signed=False)
                 assert ((what >> 5) & 0xFFFF) == 0, what
                 yield Hole("PATCH_ABS_16_D", "_justin_base", offset, addend)
-##############################################################################
+            # x86_64-unknown-linux-gnu:
             case {
                 "Addend": int(addend),
                 "Offset": int(offset),
@@ -606,6 +605,8 @@ def handle_relocations(
                 where = slice(offset, offset + 8)
                 what = int.from_bytes(body[where], sys.byteorder)
                 assert not what, what
+                while len(body) % 8:
+                    body.append(0)
                 addend += offset - len(body)
                 yield Hole("PATCH_REL_64", symbol, offset, addend)
             case {
@@ -618,6 +619,8 @@ def handle_relocations(
                 where = slice(offset, offset + 8)
                 what = int.from_bytes(body[where], sys.byteorder)
                 assert not what, what
+                while len(body) % 8:
+                    body.append(0)
                 addend += len(body) - offset
                 body[where] = addend.to_bytes(8, sys.byteorder)
             case {
@@ -631,6 +634,7 @@ def handle_relocations(
                 what = int.from_bytes(body[where], sys.byteorder)
                 assert not what, what
                 yield Hole("PATCH_REL_32", symbol, offset, addend)
+            # x86_64-apple-darwin:
             case {
                 "Length": 3,
                 "Offset": int(offset),
@@ -874,32 +878,39 @@ class Compiler:
         }
     )
 
-    def __init__(self, *, verbose: bool = False, jobs: int = os.cpu_count() or 1) -> None:
+    def __init__(
+        self,
+        *,
+        verbose: bool = False,
+        jobs: int = os.cpu_count() or 1,
+        ghccc: bool = True,
+        tos_cache: int = 0,
+    )-> None:
         self._stencils_built = {}
         self._verbose = verbose
         self._clang, clang_version = find_llvm_tool("clang")
         self._readobj, readobj_version = find_llvm_tool("llvm-readobj")
         self._stderr(f"Using {self._clang} ({clang_version}) and {self._readobj} ({readobj_version}).")
         self._semaphore = asyncio.BoundedSemaphore(jobs)
+        self._ghccc = ghccc
+        self._tos_cache = tos_cache
 
     def _stderr(self, *args, **kwargs) -> None:
         if self._verbose:
             print(*args, **kwargs, file=sys.stderr)
 
-    @staticmethod
-    def _use_ghccc(ll: pathlib.Path, enable: bool = False) -> None:
-        if enable:
+    def _use_ghccc(self, ll: pathlib.Path) -> None:
+        if self._ghccc:
             ir = ll.read_text()
             ir = ir.replace("i32 @_justin_continue", "ghccc i32 @_justin_continue")
             ir = ir.replace("i32 @_justin_entry", "ghccc i32 @_justin_entry")
             ll.write_text(ir)
 
-    @staticmethod
-    def _use_tos_caching(c: pathlib.Path, enable: int = 0) -> None:
+    def _use_tos_caching(self, c: pathlib.Path) -> None:
         sc = c.read_text()
-        for i in range(1, enable + 1):
+        for i in range(1, self._tos_cache + 1):
             sc = sc.replace(f" = stack_pointer[-{i}];", f" = _tos{i};")
-        for i in range(enable + 1, 5):
+        for i in range(self._tos_cache + 1, 5):
             sc = "".join(
                 line for line in sc.splitlines(True) if f"_tos{i}" not in line
             )
@@ -921,7 +932,7 @@ class Compiler:
                 assert stderr is None, stderr
                 if process.returncode:
                     raise RuntimeError(f"{self._clang} exited with {process.returncode}")
-                # self._use_ghccc(ll, True)  # XXX: M2 Mac...
+                self._use_ghccc(ll)
                 self._stderr(f"Recompiling {opname}...")
                 process = await asyncio.create_subprocess_exec(self._clang, *CFLAGS, "-c", "-o", o, ll)
                 stdout, stderr = await process.communicate()
@@ -1068,10 +1079,8 @@ class Compiler:
         return "\n".join(lines)
 
 if __name__ == "__main__":
-    # First, create our JIT engine:
-    engine = Compiler(verbose=True)
-    # This performs all of the steps that normally happen at build time:
-    # TODO: Actual arg parser...
+    ghccc = sys.platform != "darwin" or platform.machine() != "arm64"  # XXX: clang bug on aarch64-apple-darwin
+    engine = Compiler(verbose=True, ghccc=ghccc)
     asyncio.run(engine.build())
     with open(sys.argv[2], "w") as file:
         file.write(engine.dump())
