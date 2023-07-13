@@ -1,5 +1,7 @@
 import tempfile
 import unittest
+import os
+import shutil
 
 from test import test_tools
 
@@ -63,36 +65,48 @@ class TestEffects(unittest.TestCase):
 
 
 class TestGeneratedCases(unittest.TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+
+        self.temp_dir = tempfile.gettempdir()
+        self.temp_input_filename = os.path.join(self.temp_dir, "input.txt")
+        self.temp_output_filename = os.path.join(self.temp_dir, "output.txt")
+        self.temp_metadata_filename = os.path.join(self.temp_dir, "metadata.txt")
+        self.temp_pymetadata_filename = os.path.join(self.temp_dir, "pymetadata.txt")
+        self.temp_executor_filename = os.path.join(self.temp_dir, "executor.txt")
+
+    def tearDown(self) -> None:
+        try:
+            shutil.rmtree(self.temp_dir)
+        except:
+            pass
+        super().tearDown()
+
     def run_cases_test(self, input: str, expected: str):
-        with (
-            tempfile.NamedTemporaryFile("w+") as temp_input,
-            tempfile.NamedTemporaryFile("w+") as temp_output,
-            tempfile.NamedTemporaryFile("w+") as temp_metadata,
-            tempfile.NamedTemporaryFile("w+") as temp_pymetadata,
-            tempfile.NamedTemporaryFile("w+") as temp_executor,
-        ):
+        with open(self.temp_input_filename, "w+") as temp_input:
             temp_input.write(generate_cases.BEGIN_MARKER)
             temp_input.write(input)
             temp_input.write(generate_cases.END_MARKER)
             temp_input.flush()
 
-            a = generate_cases.Analyzer(
-                [temp_input.name],
-                temp_output.name,
-                temp_metadata.name,
-                temp_pymetadata.name,
-                temp_executor.name,
-            )
-            a.parse()
-            a.analyze()
-            if a.errors:
-                raise RuntimeError(f"Found {a.errors} errors")
-            a.write_instructions()
-            temp_output.seek(0)
+        a = generate_cases.Analyzer(
+            [self.temp_input_filename],
+            self.temp_output_filename,
+            self.temp_metadata_filename,
+            self.temp_pymetadata_filename,
+            self.temp_executor_filename,
+        )
+        a.parse()
+        a.analyze()
+        if a.errors:
+            raise RuntimeError(f"Found {a.errors} errors")
+        a.write_instructions()
+
+        with open(self.temp_output_filename) as temp_output:
             lines = temp_output.readlines()
             while lines and lines[0].startswith("// "):
                 lines.pop(0)
-            actual = "".join(lines)
+        actual = "".join(lines)
         # if actual.rstrip() != expected.rstrip():
         #     print("Actual:")
         #     print(actual)
