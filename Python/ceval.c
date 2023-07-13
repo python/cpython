@@ -89,8 +89,8 @@
         } \
         _Py_DECREF_STAT_INC(); \
         if (--op->ob_refcnt == 0) { \
-            destructor d = (destructor)(dealloc); \
-            d(op); \
+            destructor_v2 d = (destructor_v2)(dealloc); \
+            d(tstate, op); \
         } \
     } while (0)
 #endif
@@ -533,6 +533,7 @@ fail:
 
 static int do_raise(PyThreadState *tstate, PyObject *exc, PyObject *cause);
 static int exception_group_match(
+    PyThreadState *tstate,
     PyObject* exc_value, PyObject *match_type,
     PyObject **match, PyObject **rest);
 
@@ -1780,7 +1781,8 @@ raise_error:
 */
 
 static int
-exception_group_match(PyObject* exc_value, PyObject *match_type,
+exception_group_match(PyThreadState *tstate,
+                      PyObject* exc_value, PyObject *match_type,
                       PyObject **match, PyObject **rest)
 {
     if (Py_IsNone(exc_value)) {

@@ -2694,7 +2694,7 @@
 
             match = NULL;
             rest = NULL;
-            int res = exception_group_match(exc_value, match_type,
+            int res = exception_group_match(tstate, exc_value, match_type,
                                             &match, &rest);
             Py_DECREF(exc_value);
             Py_DECREF(match_type);
