@@ -168,11 +168,12 @@ patch_one(unsigned char *location, HoleKind kind, uint64_t value, uint64_t adden
                 assert(0);
             }
             assert((value & 0x3) == 0);
-            // assert((value & ((1ULL << 28) - 1)) == value);  // XXX: This should be signed.
+            assert((value & ((1ULL << 27) - 1)) == value);  // XXX: This should be signed.
             instruction = (instruction & 0xFC000000) | ((uint32_t)(value >> 2) & 0x03FFFFFF);
             assert(((instruction & 0xFC000000) == 0x14000000) ||
                    ((instruction & 0xFC000000) == 0x94000000));
             *addr = instruction;
+            break;
         }
         case PATCH_REL_32: {
             uint32_t *addr = (uint32_t *)location;
