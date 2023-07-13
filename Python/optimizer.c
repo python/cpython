@@ -509,17 +509,17 @@ translate_bytecode_to_trace(
                 switch (opcode) {
                     case FOR_ITER_LIST:
                         check_op = _ITER_CHECK_LIST;
-                        exhausted_op = _ITER_EXHAUSTED_LIST;
+                        exhausted_op = _IS_ITER_EXHAUSTED_LIST;
                         next_op = _ITER_NEXT_LIST;
                         break;
                     case FOR_ITER_TUPLE:
                         check_op = _ITER_CHECK_TUPLE;
-                        exhausted_op = _ITER_EXHAUSTED_TUPLE;
+                        exhausted_op = _IS_ITER_EXHAUSTED_TUPLE;
                         next_op = _ITER_NEXT_TUPLE;
                         break;
                     case FOR_ITER_RANGE:
                         check_op = _ITER_CHECK_RANGE;
-                        exhausted_op = _ITER_EXHAUSTED_RANGE;
+                        exhausted_op = _IS_ITER_EXHAUSTED_RANGE;
                         next_op = _ITER_NEXT_RANGE;
                         break;
                     default:

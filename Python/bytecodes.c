@@ -2444,7 +2444,7 @@ dummy_func(
         }
 
         // Only used by Tier 2
-        op(_ITER_EXHAUSTED_LIST, (iter -- iter, exhausted)) {
+        op(_IS_ITER_EXHAUSTED_LIST, (iter -- iter, exhausted)) {
             _PyListIterObject *it = (_PyListIterObject *)iter;
             assert(Py_TYPE(iter) == &PyListIter_Type);
             PyListObject *seq = it->it_seq;
@@ -2492,7 +2492,7 @@ dummy_func(
         }
 
         // Only used by Tier 2
-        op(_ITER_EXHAUSTED_TUPLE, (iter -- iter, exhausted)) {
+        op(_IS_ITER_EXHAUSTED_TUPLE, (iter -- iter, exhausted)) {
             _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
             assert(Py_TYPE(iter) == &PyTupleIter_Type);
             PyTupleObject *seq = it->it_seq;
@@ -2536,7 +2536,7 @@ dummy_func(
         }
 
         // Only used by Tier 2
-        op(_ITER_EXHAUSTED_RANGE, (iter -- iter, exhausted)) {
+        op(_IS_ITER_EXHAUSTED_RANGE, (iter -- iter, exhausted)) {
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
             assert(Py_TYPE(r) == &PyRangeIter_Type);
             exhausted = r->len <= 0 ? Py_True : Py_False;

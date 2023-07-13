@@ -1744,7 +1744,7 @@
             break;
         }
 
-        case _ITER_EXHAUSTED_LIST: {
+        case _IS_ITER_EXHAUSTED_LIST: {
             PyObject *iter = stack_pointer[-1];
             PyObject *exhausted;
             _PyListIterObject *it = (_PyListIterObject *)iter;
@@ -1781,7 +1781,7 @@
             break;
         }
 
-        case _ITER_EXHAUSTED_TUPLE: {
+        case _IS_ITER_EXHAUSTED_TUPLE: {
             PyObject *iter = stack_pointer[-1];
             PyObject *exhausted;
             _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
@@ -1819,7 +1819,7 @@
             break;
         }
 
-        case _ITER_EXHAUSTED_RANGE: {
+        case _IS_ITER_EXHAUSTED_RANGE: {
             PyObject *iter = stack_pointer[-1];
             PyObject *exhausted;
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
