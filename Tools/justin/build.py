@@ -923,7 +923,7 @@ class Compiler:
             ll = pathlib.Path(tempdir, f"{opname}.ll")
             o = pathlib.Path(tempdir, f"{opname}.o")
             c.write_text(body)
-            self._use_tos_caching(c, 0)
+            self._use_tos_caching(c)
             async with self._semaphore:
                 self._stderr(f"Compiling {opname}...")
                 process = await asyncio.create_subprocess_exec(self._clang, *CFLAGS, "-emit-llvm", "-S", *defines, "-o", ll, c)
