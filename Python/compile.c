@@ -866,6 +866,12 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
     return stack_effect(opcode, oparg, -1);
 }
 
+struct opcode_metadata
+PyUnstable_OpcodeMetadata(int opcode)
+{
+    return _PyOpcode_opcode_metadata[opcode];
+}
+
 static int
 codegen_addop_noarg(instr_sequence *seq, int opcode, location loc)
 {

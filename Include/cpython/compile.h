@@ -67,3 +67,4 @@ typedef struct {
 #define PY_INVALID_STACK_EFFECT INT_MAX
 PyAPI_FUNC(int) PyCompile_OpcodeStackEffect(int opcode, int oparg);
 PyAPI_FUNC(int) PyCompile_OpcodeStackEffectWithJump(int opcode, int oparg, int jump);
+PyAPI_FUNC(struct opcode_metadata) PyUnstable_OpcodeMetadata(int opcode);

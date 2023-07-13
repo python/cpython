@@ -1,9 +1,8 @@
 #include "Python.h"
+#include "compile.h"
 #include "opcode.h"
 #include "internal/pycore_code.h"
-#define NEED_OPCODE_METADATA
 #include "internal/pycore_opcode_metadata.h"
-#undef NEED_OPCODE_METADATA
 
 /*[clinic input]
 module _opcode

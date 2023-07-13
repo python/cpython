@@ -308,7 +308,7 @@ class InstructionFlags:
         for name, value in flags.bitmask.items():
             out.emit(
                 f"#define OPCODE_{name[:-len('_FLAG')]}(OP) "
-                f"(_PyOpcode_opcode_metadata[(OP)].flags & ({name}))")
+                f"(PyUnstable_OpcodeMetadata(OP).flags & ({name}))")
 
 
 @dataclasses.dataclass
@@ -1218,7 +1218,7 @@ class Analyzer:
             self.out.emit(
                 "#define IS_VALID_OPCODE(OP) \\\n"
                 "    (((OP) >= 0) && ((OP) < OPCODE_METADATA_SIZE) && \\\n"
-                "     (_PyOpcode_opcode_metadata[(OP)].valid_entry))")
+                "     (PyUnstable_OpcodeMetadata(OP).valid_entry))")
 
             self.out.emit("")
             InstructionFlags.emit_macros(self.out)
@@ -1240,7 +1240,7 @@ class Analyzer:
             self.out.emit("")
 
             self.out.emit("#define OPCODE_METADATA_FMT(OP) "
-                          "(_PyOpcode_opcode_metadata[(OP)].instr_format)")
+                          "(PyUnstable_OpcodeMetadata(OP).instr_format)")
             self.out.emit("#define SAME_OPCODE_METADATA(OP1, OP2) \\")
             self.out.emit("        (OPCODE_METADATA_FMT(OP1) == OPCODE_METADATA_FMT(OP2))")
             self.out.emit("")
