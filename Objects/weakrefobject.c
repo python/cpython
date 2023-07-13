@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _PyObject_GET_WEAKREFS_LISTPTR()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 #include "structmember.h"         // PyMemberDef
@@ -140,7 +141,11 @@ weakref_vectorcall(PyObject *self, PyObject *const *args,
     if (!_PyArg_CheckPositional("weakref", nargs, 0, 0)) {
         return NULL;
     }
-    return Py_NewRef(PyWeakref_GET_OBJECT(self));
+    PyObject *obj = _PyWeakref_GET_REF(self);
+    if (obj == NULL) {
+        Py_RETURN_NONE;
+    }
+    return obj;
 }
 
 static Py_hash_t
@@ -894,6 +899,24 @@ PyWeakref_NewProxy(PyObject *ob, PyObject *callback)
 }
 
 
+int
+PyWeakref_GetRef(PyObject *ref, PyObject **pobj)
+{
+    if (ref == NULL) {
+        *pobj = NULL;
+        PyErr_BadInternalCall();
+        return -1;
+    }
+    if (!PyWeakref_Check(ref)) {
+        *pobj = NULL;
+        PyErr_SetString(PyExc_TypeError, "expected a weakref");
+        return -1;
+    }
+    *pobj = _PyWeakref_GET_REF(ref);
+    return (*pobj != NULL);
+}
+
+
 PyObject *
 PyWeakref_GetObject(PyObject *ref)
 {
@@ -901,7 +924,12 @@ PyWeakref_GetObject(PyObject *ref)
         PyErr_BadInternalCall();
         return NULL;
     }
-    return PyWeakref_GET_OBJECT(ref);
+    PyObject *obj = _PyWeakref_GET_REF(ref);
+    if (obj == NULL) {
+        return Py_None;
+    }
+    Py_DECREF(obj);
+    return obj;  // borrowed reference
 }
 
 /* Note that there's an inlined copy-paste of handle_callback() in gcmodule.c's

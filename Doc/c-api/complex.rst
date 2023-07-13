@@ -127,12 +127,12 @@ Complex Numbers as Python Objects
 
    Return the :c:type:`Py_complex` value of the complex number *op*.
 
-   If *op* is not a Python complex number object but has a :meth:`__complex__`
+   If *op* is not a Python complex number object but has a :meth:`~object.__complex__`
    method, this method will first be called to convert *op* to a Python complex
-   number object.  If ``__complex__()`` is not defined then it falls back to
-   :meth:`__float__`.  If ``__float__()`` is not defined then it falls back
-   to :meth:`__index__`.  Upon failure, this method returns ``-1.0`` as a real
+   number object.  If :meth:`!__complex__` is not defined then it falls back to
+   :meth:`~object.__float__`.  If :meth:`!__float__` is not defined then it falls back
+   to :meth:`~object.__index__`.  Upon failure, this method returns ``-1.0`` as a real
    value.
 
    .. versionchanged:: 3.8
-      Use :meth:`__index__` if available.
+      Use :meth:`~object.__index__` if available.

@@ -22,7 +22,6 @@
 #  define Py_BUILD_CORE_MODULE 1
 #endif
 
-#define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include "pycore_bytesobject.h"   // _PyBytes_Find()
 #include "pycore_fileutils.h"     // _Py_stat_struct
@@ -343,12 +342,17 @@ mmap_gfind(mmap_object *self,
 
         Py_ssize_t res;
         CHECK_VALID_OR_RELEASE(NULL, view);
-        if (reverse) {
+        if (end < start) {
+            res = -1;
+        }
+        else if (reverse) {
+            assert(0 <= start && start <= end && end <= self->size);
             res = _PyBytes_ReverseFind(
                 self->data + start, end - start,
                 view.buf, view.len, start);
         }
         else {
+            assert(0 <= start && start <= end && end <= self->size);
             res = _PyBytes_Find(
                 self->data + start, end - start,
                 view.buf, view.len, start);
