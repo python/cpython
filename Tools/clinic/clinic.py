@@ -807,7 +807,7 @@ class CLanguage(Language):
         default_return_converter = (not f.return_converter or
             f.return_converter.type == 'PyObject *')
 
-        new_or_init = f.kind in (METHOD_NEW, METHOD_INIT)
+        new_or_init = f.kind.new_or_init
 
         vararg = NO_VARARG
         pos_only = min_pos = max_pos = min_kw_only = pseudo_args = 0
@@ -1250,7 +1250,7 @@ class CLanguage(Language):
         if new_or_init:
             methoddef_define = ''
 
-            if f.kind == METHOD_NEW:
+            if f.kind is METHOD_NEW:
                 parser_prototype = parser_prototype_keyword
             else:
                 return_value_declaration = "int return_value = -1;"
@@ -1475,7 +1475,7 @@ class CLanguage(Language):
         last_group = 0
         first_optional = len(selfless)
         positional = selfless and selfless[-1].is_positional_only()
-        new_or_init = f.kind in (METHOD_NEW, METHOD_INIT)
+        new_or_init = f.kind.new_or_init
         has_option_groups = False
 
         # offset i by -1 because first_optional needs to ignore self
@@ -2441,9 +2441,28 @@ __xor__
 """.strip().split())
 
 
-INVALID, CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW = """
-INVALID, CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW
-""".replace(",", "").strip().split()
+class FunctionKind(enum.Enum):
+    INVALID         = enum.auto()
+    CALLABLE        = enum.auto()
+    STATIC_METHOD   = enum.auto()
+    CLASS_METHOD    = enum.auto()
+    METHOD_INIT     = enum.auto()
+    METHOD_NEW      = enum.auto()
+
+    @functools.cached_property
+    def new_or_init(self) -> bool:
+        return self in {FunctionKind.METHOD_INIT, FunctionKind.METHOD_NEW}
+
+    def __repr__(self) -> str:
+        return f"<FunctionKind.{self.name}>"
+
+
+INVALID: Final = FunctionKind.INVALID
+CALLABLE: Final = FunctionKind.CALLABLE
+STATIC_METHOD: Final = FunctionKind.STATIC_METHOD
+CLASS_METHOD: Final = FunctionKind.CLASS_METHOD
+METHOD_INIT: Final = FunctionKind.METHOD_INIT
+METHOD_NEW: Final = FunctionKind.METHOD_NEW
 
 ParamDict = dict[str, "Parameter"]
 ReturnConverterType = Callable[..., "CReturnConverter"]
@@ -2471,7 +2490,7 @@ class Function:
     return_converter: CReturnConverter
     return_annotation: object = inspect.Signature.empty
     docstring: str = ''
-    kind: str = CALLABLE
+    kind: FunctionKind = CALLABLE
     coexist: bool = False
     # docstring_only means "don't generate a machine-readable
     # signature, just a normal docstring".  it's True for
@@ -2497,15 +2516,16 @@ class Function:
 
     @property
     def methoddef_flags(self) -> str | None:
-        if self.kind in (METHOD_INIT, METHOD_NEW):
+        if self.kind.new_or_init:
             return None
         flags = []
-        if self.kind == CLASS_METHOD:
-            flags.append('METH_CLASS')
-        elif self.kind == STATIC_METHOD:
-            flags.append('METH_STATIC')
-        else:
-            assert self.kind == CALLABLE, "unknown kind: " + repr(self.kind)
+        match self.kind:
+            case FunctionKind.CLASS_METHOD:
+                flags.append('METH_CLASS')
+            case FunctionKind.STATIC_METHOD:
+                flags.append('METH_STATIC')
+            case _ as kind:
+                assert kind is FunctionKind.CALLABLE, f"unknown kind: {kind!r}"
         if self.coexist:
             flags.append('METH_COEXIST')
         return '|'.join(flags)
@@ -3888,7 +3908,7 @@ def correct_name_for_self(
         if f.cls:
             return "PyObject *", "self"
         return "PyObject *", "module"
-    if f.kind == STATIC_METHOD:
+    if f.kind is STATIC_METHOD:
         return "void *", "null"
     if f.kind in (CLASS_METHOD, METHOD_NEW):
         return "PyTypeObject *", "type"
@@ -3921,9 +3941,8 @@ class self_converter(CConverter):
         self.type = self.specified_type or self.type or default_type
 
         kind = self.function.kind
-        new_or_init = kind in (METHOD_NEW, METHOD_INIT)
 
-        if (kind == STATIC_METHOD) or new_or_init:
+        if kind is STATIC_METHOD or kind.new_or_init:
             self.show_in_signature = False
 
     # tp_new (METHOD_NEW) functions are of type newfunc:
@@ -3973,7 +3992,7 @@ class self_converter(CConverter):
         parameter is a clinic.Parameter instance.
         data is a CRenderData instance.
         """
-        if self.function.kind == STATIC_METHOD:
+        if self.function.kind is STATIC_METHOD:
             return
 
         self._render_self(parameter, data)
@@ -3992,8 +4011,8 @@ class self_converter(CConverter):
         kind = self.function.kind
         cls = self.function.cls
 
-        if ((kind in (METHOD_NEW, METHOD_INIT)) and cls and cls.typedef):
-            if kind == METHOD_NEW:
+        if kind.new_or_init and cls and cls.typedef:
+            if kind is METHOD_NEW:
                 type_check = (
                     '({0} == base_tp || {0}->tp_init == base_tp->tp_init)'
                  ).format(self.name)
@@ -4337,7 +4356,7 @@ class DSLParser:
     parameter_state: int
     seen_positional_with_default: bool
     indent: IndentStack
-    kind: str
+    kind: FunctionKind
     coexist: bool
     parameter_continuation: str
     preserve_output: bool
@@ -4626,7 +4645,7 @@ class DSLParser:
                 function_name = fields.pop()
                 module, cls = self.clinic._module_and_class(fields)
 
-                if not (existing_function.kind == self.kind and existing_function.coexist == self.coexist):
+                if not (existing_function.kind is self.kind and existing_function.coexist == self.coexist):
                     fail("'kind' of function and cloned function don't match!  (@classmethod/@staticmethod/@coexist)")
                 function = existing_function.copy(
                     name=function_name, full_name=full_name, module=module,
@@ -4679,11 +4698,11 @@ class DSLParser:
             fail(f"{fields[-1]} is a special method and cannot be converted to Argument Clinic!  (Yet.)")
 
         if fields[-1] == '__new__':
-            if (self.kind != CLASS_METHOD) or (not cls):
+            if (self.kind is not CLASS_METHOD) or (not cls):
                 fail("__new__ must be a class method!")
             self.kind = METHOD_NEW
         elif fields[-1] == '__init__':
-            if (self.kind != CALLABLE) or (not cls):
+            if (self.kind is not CALLABLE) or (not cls):
                 fail("__init__ must be a normal method, not a class or static method!")
             self.kind = METHOD_INIT
             if not return_converter:
@@ -5203,7 +5222,7 @@ class DSLParser:
     def format_docstring(self):
         f = self.function
 
-        new_or_init = f.kind in (METHOD_NEW, METHOD_INIT)
+        new_or_init = f.kind.new_or_init
         if new_or_init and not f.docstring:
             # don't render a docstring at all, no signature, nothing.
             return f.docstring
