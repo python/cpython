@@ -24,7 +24,7 @@ THIS = os.path.relpath(__file__, ROOT).replace(os.path.sep, posixpath.sep)
 DEFAULT_INPUT = os.path.relpath(os.path.join(ROOT, "Python/bytecodes.c"))
 DEFAULT_OUTPUT = os.path.relpath(os.path.join(ROOT, "Python/generated_cases.c.h"))
 DEFAULT_METADATA_OUTPUT = os.path.relpath(
-    os.path.join(ROOT, "Python/opcode_metadata.h")
+    os.path.join(ROOT, "Include/internal/pycore_opcode_metadata.h")
 )
 DEFAULT_PYMETADATA_OUTPUT = os.path.relpath(
     os.path.join(ROOT, "Lib/_opcode_metadata.py")
@@ -1346,6 +1346,7 @@ class Analyzer:
         add("SAVE_IP")
         add("_POP_JUMP_IF_FALSE")
         add("_POP_JUMP_IF_TRUE")
+        add("JUMP_TO_TOP")
 
         for instr in self.instrs.values():
             if instr.kind == "op" and instr.is_viable_uop():

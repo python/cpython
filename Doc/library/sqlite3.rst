@@ -266,8 +266,9 @@ Module functions
 
    :param database:
        The path to the database file to be opened.
-       Pass ``":memory:"`` to open a connection to a database that is
-       in RAM instead of on disk.
+       You can pass ``":memory:"`` to create an `SQLite database existing only
+       in memory <https://sqlite.org/inmemorydb.html>`_, and open a connection
+       to it.
    :type database: :term:`path-like object`
 
    :param float timeout:
@@ -2518,6 +2519,13 @@ Queries now return :class:`!Row` objects:
    'Earth'
    >>> row["RADIUS"]  # Column names are case-insensitive.
    6378
+
+.. note::
+
+    The ``FROM`` clause can be omitted in the ``SELECT`` statement, as in the
+    above example. In such cases, SQLite returns a single row with columns
+    defined by expressions, e.g. literals, with the given aliases
+    ``expr AS alias``.
 
 You can create a custom :attr:`~Cursor.row_factory`
 that returns each row as a :class:`dict`, with column names mapped to values:

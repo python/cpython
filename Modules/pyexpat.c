@@ -832,7 +832,7 @@ pyexpat_xmlparser_ParseFile_impl(xmlparseobject *self, PyTypeObject *cls,
 
     pyexpat_state *state = PyType_GetModuleState(cls);
 
-    if (_PyObject_LookupAttr(file, state->str_read, &readmethod) < 0) {
+    if (PyObject_GetOptionalAttr(file, state->str_read, &readmethod) < 0) {
         return NULL;
     }
     if (readmethod == NULL) {
