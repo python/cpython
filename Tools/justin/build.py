@@ -253,12 +253,12 @@ class ObjectParser:
                 newhole = Hole(newhole.kind, "_justin_base", newhole.offset, addend)
             holes.append(newhole)
         got = len(self.body)
-        for i, got_symbol in enumerate(self.got_entries):
+        for i, (got_symbol, addend) in enumerate(self.got_entries):
             if got_symbol in self.body_symbols:
-                holes.append(Hole("PATCH_ABS_64", "_justin_base", got + 8 * i, self.body_symbols[got_symbol]))
+                holes.append(Hole("PATCH_ABS_64", "_justin_base", got + 8 * i, self.body_symbols[got_symbol] + addend))
                 continue
             # XXX: PATCH_ABS_32 on 32-bit platforms?
-            holes.append(Hole("PATCH_ABS_64", got_symbol, got + 8 * i, 0))
+            holes.append(Hole("PATCH_ABS_64", got_symbol, got + 8 * i, addend))
         self.body.extend([0] * 8 * len(self.got_entries))
         holes.sort(key=lambda hole: hole.offset)
         return Stencil(bytes(self.body)[entry:], tuple(holes))  # XXX
@@ -282,11 +282,10 @@ def sign_extend_64(value: int, bits: int) -> int:
     return value - ((value & (1 << (bits - 1))) << 1)
 
 def handle_relocations(
-    got_entries: list[str],
+    got_entries: list[tuple[str, int]],
     body: bytearray,
     relocations: typing.Sequence[tuple[int, typing.Mapping[str, typing.Any]]],
 ) -> typing.Generator[Hole, None, None]:
-    missed = []  # XXX
     for i, (base, relocation) in enumerate(relocations):
         match relocation:
             case {
@@ -322,9 +321,9 @@ def handle_relocations(
                 addend = sign_extend_64(addend, 33)
                 # assert symbol.startswith("_"), symbol
                 symbol = symbol.removeprefix("_")
-                if symbol not in got_entries:
-                    got_entries.append(symbol)
-                addend += len(body) + got_entries.index(symbol) * 8
+                if (symbol, addend) not in got_entries:
+                    got_entries.append((symbol, addend))
+                addend = len(body) + got_entries.index((symbol, addend)) * 8
                 yield Hole("PATCH_REL_21", "_justin_base", offset, addend)
             case {
                 "Length": 2 as length,
@@ -348,9 +347,9 @@ def handle_relocations(
                 addend <<= implicit_shift
                 # assert symbol.startswith("_"), symbol
                 symbol = symbol.removeprefix("_")
-                if symbol not in got_entries:
-                    got_entries.append(symbol)
-                addend += len(body) + got_entries.index(symbol) * 8
+                if (symbol, addend) not in got_entries:
+                    got_entries.append((symbol, addend))
+                addend = len(body) + got_entries.index((symbol, addend)) * 8
                 yield Hole("PATCH_ABS_12", "_justin_base", offset, addend)
             case {
                 "Length": 2 as length,
@@ -392,19 +391,6 @@ def handle_relocations(
                 # assert symbol.startswith("_"), symbol
                 symbol = symbol.removeprefix("_")
                 yield Hole("PATCH_ABS_12", symbol, offset, addend)
-            case {
-                "Length": 3 as length,
-                "Offset": int(offset),
-                "PCRel": 0 as pcrel,
-                "Symbol": {"Value": str(symbol)},
-                "Type": {"Value": "ARM64_RELOC_SUBTRACTOR"},
-            }:
-                offset += base
-                where = slice(offset, offset + (1 << length))
-                what = int.from_bytes(body[where], "little", signed=True)
-                addend = what
-                print(f"ARM64_RELOC_SUBTRACTOR: {offset:#x} {what:#x} {addend:#x} {symbol}")
-                # XXX: Need to pair with UNSIGNED...
             case {
                 "Length": 3 as length,
                 "Offset": int(offset),
@@ -486,9 +472,9 @@ def handle_relocations(
                 assert what & 0x9F000000 == 0x90000000, what
                 addend = ((what & 0x60000000) >> 29) | ((what & 0x01FFFFE0) >> 3) << 12
                 addend = sign_extend_64(addend, 33)
-                if symbol not in got_entries:
-                    got_entries.append(symbol)
-                addend += len(body) + got_entries.index(symbol) * 8
+                if (symbol, addend) not in got_entries:
+                    got_entries.append((symbol, addend))
+                addend = len(body) + got_entries.index((symbol, addend)) * 8
                 yield Hole("PATCH_REL_21", "_justin_base", offset, addend)
             case {
                 "Addend": 0,
@@ -523,9 +509,9 @@ def handle_relocations(
                         if what & 0x04800000 == 0x04800000:
                             implicit_shift = 4
                 addend <<= implicit_shift
-                if symbol not in got_entries:
-                    got_entries.append(symbol)
-                addend += len(body) + got_entries.index(symbol) * 8
+                if (symbol, addend) not in got_entries:
+                    got_entries.append((symbol, addend))
+                addend = len(body) + got_entries.index((symbol, addend)) * 8
                 yield Hole("PATCH_ABS_12", "_justin_base", offset, addend)
             case {
                 "Addend": int(addend),
@@ -593,9 +579,9 @@ def handle_relocations(
                 where = slice(offset, offset + 8)
                 what = int.from_bytes(body[where], sys.byteorder)
                 assert not what, what
-                if symbol not in got_entries:
-                    got_entries.append(symbol)
-                addend += got_entries.index(symbol) * 8
+                if (symbol, addend) not in got_entries:
+                    got_entries.append((symbol, addend))
+                addend = got_entries.index((symbol, addend)) * 8
                 body[where] = addend.to_bytes(8, sys.byteorder)
             case {
                 "Addend": int(addend),
@@ -665,11 +651,7 @@ def handle_relocations(
                 symbol = symbol.removeprefix("_")
                 yield Hole("PATCH_ABS_64", symbol, offset, addend)
             case _:
-                missed.append(relocation)
-    for relocation in missed:  # XXX
-        print(f"XXX: {relocation}")  # XXX
-    if missed:  # XXX
-        raise NotImplementedError(missed)  # XXX
+                raise NotImplementedError(relocation)
 
 
 class ObjectParserCOFF(ObjectParser):
@@ -711,6 +693,8 @@ class ObjectParserMachO(ObjectParser):
         name = section["Name"]["Value"]
         # assert name.startswith("_")  # XXX
         name = name.removeprefix(self.symbol_prefix)  # XXX
+        if name == "_eh_frame":
+            return
         if name in self.body_symbols:
             self.dupes.add(name)
         self.body_symbols[name] = 0  # before
@@ -874,19 +858,6 @@ class Compiler:
             "STORE_ATTR_WITH_HINT",
             "UNPACK_EX",
             "UNPACK_SEQUENCE",
-            "CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS",  # XXX: M2 Mac...
-            "CALL_NO_KW_METHOD_DESCRIPTOR_O",  # XXX: M2 Mac...
-            "CALL_PY_EXACT_ARGS",  # XXX: M2 Mac...
-            "BINARY_SUBSCR_GETITEM",  # XXX: M2 Mac...
-            "CALL_NO_KW_BUILTIN_O",  # XXX: M2 Mac...
-            "CALL_PY_WITH_DEFAULTS",  # XXX: M2 Mac...
-            "LOAD_ATTR_PROPERTY",  # XXX: M2 Mac...
-            "GET_ANEXT",  # XXX: M2 Mac...
-            "LOAD_ATTR",  # XXX: M2 Mac...
-            "LOAD_ATTR_WITH_HINT",  # XXX: M2 Mac...
-            "BINARY_OP_SUBTRACT_FLOAT",  # XXX: M2 Mac...
-            "BINARY_OP_MULTIPLY_FLOAT",  # XXX: M2 Mac...
-            "BINARY_OP_ADD_FLOAT",  # XXX: M2 Mac...
         }
     )
 
