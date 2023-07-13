@@ -351,7 +351,7 @@ A _family_ represents a specializable instruction and its specializations.
 
 Example: These opcodes all share the same instruction format):
 ```C
-    family(LOAD_ATTR) = { LOAD_ATTR, LOAD_ATTR_INSTANCE_VALUE, LOAD_SLOT };
+    family(LOAD_ATTR) = { LOAD_ATTR_INSTANCE_VALUE, LOAD_SLOT };
 ```
 
 ### Defining a pseudo instruction
