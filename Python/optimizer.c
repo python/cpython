@@ -523,7 +523,7 @@ translate_bytecode_to_trace(
                         next_op = _ITER_NEXT_RANGE;
                         break;
                     default:
-                        assert(0);
+                        Py_UNREACHABLE();
                 }
                 // Assume jump unlikely (can a for-loop exit be likely?)
                 _Py_CODEUNIT *target_instr =  // +1 at the end skips over END_FOR
