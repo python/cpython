@@ -66,6 +66,58 @@ test_object_converter_impl(PyObject *module, PyObject *a, PyObject *b,
 
 
 /*[clinic input]
+cloned = test_object_converter
+Check the clone feature.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(cloned__doc__,
+"cloned($module, a, b, c, d, /)\n"
+"--\n"
+"\n"
+"Check the clone feature.");
+
+#define CLONED_METHODDEF    \
+    {"cloned", _PyCFunction_CAST(cloned), METH_FASTCALL, cloned__doc__},
+
+static PyObject *
+cloned_impl(PyObject *module, PyObject *a, PyObject *b, PyObject *c,
+            PyUnicode_Object *d);
+
+static PyObject *
+cloned(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *a;
+    PyObject *b;
+    PyObject *c;
+    PyUnicode_Object *d;
+
+    if (!_PyArg_CheckPositional("cloned", nargs, 4, 4)) {
+        goto exit;
+    }
+    a = args[0];
+    if (!PyUnicode_FSConverter(args[1], &b)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[2])) {
+        _PyArg_BadArgument("cloned", "argument 3", "str", args[2]);
+        goto exit;
+    }
+    c = args[2];
+    d = (PyUnicode_Object *)args[3];
+    return_value = cloned_impl(module, a, b, c, d);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+cloned_impl(PyObject *module, PyObject *a, PyObject *b, PyObject *c,
+            PyUnicode_Object *d)
+/*[clinic end generated code: output=026b483e27c38065 input=0543614019d6fcc7]*/
+
+
+/*[clinic input]
 test_object_converter_one_arg
 
     a: object
@@ -4342,7 +4394,14 @@ Test_cls_with_param_impl(TestObj *self, PyTypeObject *cls, int a)
 
 /*[clinic input]
 Test.__init__
+Empty init method.
 [clinic start generated code]*/
+
+PyDoc_STRVAR(Test___init____doc__,
+"Test()\n"
+"--\n"
+"\n"
+"Empty init method.");
 
 static int
 Test___init___impl(TestObj *self);
@@ -4371,13 +4430,20 @@ exit:
 
 static int
 Test___init___impl(TestObj *self)
-/*[clinic end generated code: output=da50a99af529626a input=b0f700e30cdd6220]*/
+/*[clinic end generated code: output=f6a35c85bc5b408f input=4ea79fee54d0c3ff]*/
 
 
 /*[clinic input]
 @classmethod
 Test.__new__
+Empty new method.
 [clinic start generated code]*/
+
+PyDoc_STRVAR(Test__doc__,
+"Test()\n"
+"--\n"
+"\n"
+"Empty new method.");
 
 static PyObject *
 Test_impl(PyTypeObject *type);
@@ -4404,7 +4470,7 @@ exit:
 
 static PyObject *
 Test_impl(PyTypeObject *type)
-/*[clinic end generated code: output=db442a90412eea98 input=0d37ef449a67da29]*/
+/*[clinic end generated code: output=68a117adc057940f input=6fe98a19f097907f]*/
 
 
 /*[clinic input]
@@ -4524,7 +4590,14 @@ Test_an_metho_arg_named_arg_impl(TestObj *self, int arg)
 Test.__init__
     *args: object
     /
+Varargs init method. For example, nargs is translated to PyTuple_GET_SIZE.
 [clinic start generated code]*/
+
+PyDoc_STRVAR(Test___init____doc__,
+"Test(*args)\n"
+"--\n"
+"\n"
+"Varargs init method. For example, nargs is translated to PyTuple_GET_SIZE.");
 
 static int
 Test___init___impl(TestObj *self, PyObject *args);
@@ -4554,7 +4627,7 @@ exit:
 
 static int
 Test___init___impl(TestObj *self, PyObject *args)
-/*[clinic end generated code: output=1b7c174a321a029c input=e9cfd173475026e7]*/
+/*[clinic end generated code: output=0ed1009fe0dcf98d input=96c3ddc0cd38fc0c]*/
 
 
 /*[clinic input]
@@ -4562,7 +4635,14 @@ Test___init___impl(TestObj *self, PyObject *args)
 Test.__new__
     *args: object
     /
+Varargs new method. For example, nargs is translated to PyTuple_GET_SIZE.
 [clinic start generated code]*/
+
+PyDoc_STRVAR(Test__doc__,
+"Test(*args)\n"
+"--\n"
+"\n"
+"Varargs new method. For example, nargs is translated to PyTuple_GET_SIZE.");
 
 static PyObject *
 Test_impl(PyTypeObject *type, PyObject *args);
@@ -4591,7 +4671,7 @@ exit:
 
 static PyObject *
 Test_impl(PyTypeObject *type, PyObject *args)
-/*[clinic end generated code: output=b2212c9499e13c81 input=90fdeac9dfa1f6b5]*/
+/*[clinic end generated code: output=8b219f6633e2a2e9 input=26a672e2e9750120]*/
 
 
 /*[clinic input]
@@ -4657,3 +4737,84 @@ exit:
 static int
 Test___init___impl(TestObj *self, PyObject *a)
 /*[clinic end generated code: output=0b9ca79638ab3ecb input=a8f9222a6ab35c59]*/
+
+
+/*[clinic input]
+@classmethod
+Test.class_method
+[clinic start generated code]*/
+
+PyDoc_STRVAR(Test_class_method__doc__,
+"class_method($type, /)\n"
+"--\n"
+"\n");
+
+#define TEST_CLASS_METHOD_METHODDEF    \
+    {"class_method", (PyCFunction)Test_class_method, METH_NOARGS|METH_CLASS, Test_class_method__doc__},
+
+static PyObject *
+Test_class_method_impl(PyTypeObject *type);
+
+static PyObject *
+Test_class_method(PyTypeObject *type, PyObject *Py_UNUSED(ignored))
+{
+    return Test_class_method_impl(type);
+}
+
+static PyObject *
+Test_class_method_impl(PyTypeObject *type)
+/*[clinic end generated code: output=47fb7ecca1abcaaa input=43bc4a0494547b80]*/
+
+
+/*[clinic input]
+@staticmethod
+Test.static_method
+[clinic start generated code]*/
+
+PyDoc_STRVAR(Test_static_method__doc__,
+"static_method()\n"
+"--\n"
+"\n");
+
+#define TEST_STATIC_METHOD_METHODDEF    \
+    {"static_method", (PyCFunction)Test_static_method, METH_NOARGS|METH_STATIC, Test_static_method__doc__},
+
+static PyObject *
+Test_static_method_impl();
+
+static PyObject *
+Test_static_method(void *null, PyObject *Py_UNUSED(ignored))
+{
+    return Test_static_method_impl();
+}
+
+static PyObject *
+Test_static_method_impl()
+/*[clinic end generated code: output=82524a63025cf7ab input=dae892fac55ae72b]*/
+
+
+/*[clinic input]
+@coexist
+Test.meth_coexist
+[clinic start generated code]*/
+
+PyDoc_STRVAR(Test_meth_coexist__doc__,
+"meth_coexist($self, /)\n"
+"--\n"
+"\n");
+
+#define TEST_METH_COEXIST_METHODDEF    \
+    {"meth_coexist", (PyCFunction)Test_meth_coexist, METH_NOARGS|METH_COEXIST, Test_meth_coexist__doc__},
+
+static PyObject *
+Test_meth_coexist_impl(TestObj *self);
+
+static PyObject *
+Test_meth_coexist(TestObj *self, PyObject *Py_UNUSED(ignored))
+{
+    return Test_meth_coexist_impl(self);
+}
+
+static PyObject *
+Test_meth_coexist_impl(TestObj *self)
+/*[clinic end generated code: output=808a293d0cd27439 input=2a1d75b5e6fec6dd]*/

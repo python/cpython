@@ -1025,6 +1025,31 @@ class ClinicParserTest(TestCase):
         with self.assertRaisesRegex(ValueError, msg):
             self.parse_function(block)
 
+    def test_new_must_be_a_class_method(self):
+        expected_error_msg = (
+            "Error on line 0:\n"
+            "__new__ must be a class method!\n"
+        )
+        out = self.parse_function_should_fail("""
+            module foo
+            class Foo "" ""
+            Foo.__new__
+        """)
+        self.assertEqual(out, expected_error_msg)
+
+    def test_init_must_be_a_normal_method(self):
+        expected_error_msg = (
+            "Error on line 0:\n"
+            "__init__ must be a normal method, not a class or static method!\n"
+        )
+        out = self.parse_function_should_fail("""
+            module foo
+            class Foo "" ""
+            @classmethod
+            Foo.__init__
+        """)
+        self.assertEqual(out, expected_error_msg)
+
     def test_unused_param(self):
         block = self.parse("""
             module foo
