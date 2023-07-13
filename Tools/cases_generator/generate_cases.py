@@ -735,8 +735,8 @@ class Analyzer:
         with open(filename) as file:
             src = file.read()
 
-        filename = os.path.relpath(filename, ROOT)
-        # Make filename more user-friendly and less platform-specific
+        # Make filename more user-friendly and less platform-specific,
+        # it is only used for error reporting at this point.
         filename = filename.replace("\\", "/")
         if filename.startswith("./"):
             filename = filename[2:]
