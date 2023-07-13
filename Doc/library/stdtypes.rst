@@ -4006,6 +4006,7 @@ copying.
       :mod:`struct` syntax. One of the formats must be a byte format
       ('B', 'b' or 'c'). The byte length of the result must be the same
       as the original length.
+      Note that all byte lengths may depend on the operating system.
 
       Cast 1D/long to 1D/unsigned bytes::
 
