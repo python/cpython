@@ -1080,8 +1080,8 @@ class Compiler:
 
 if __name__ == "__main__":
     # Clang internal error with musttail + ghccc + aarch64:
-    print(platform.machine())  # XXX: for debugging
-    engine = Compiler(verbose=True, ghccc=False)#platform.machine() != "arm64")  # XXX
+    ghccc = platform.machine() not in {"aarch64", "arm64"}
+    engine = Compiler(verbose=True, ghccc=ghccc)
     asyncio.run(engine.build())
     with open(sys.argv[2], "w") as file:
         file.write(engine.dump())

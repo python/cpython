@@ -67,9 +67,8 @@ patch_one(unsigned char *location, HoleKind kind, uint64_t value, uint64_t adden
             uint32_t instruction = *addr;
             assert(((instruction & 0x3B000000) == 0x39000000) ||
                    ((instruction & 0x11C00000) == 0x11000000));
-            if ((value + addend) & 0x3) {  // XXX: Remote debugging info.
-                printf("PATCH_ABS_12: unaligned value %llu + %llu (at %p)\n", value, addend, location);
-                abort();
+            if ((value + addend) & 0x7) {  // XXX: Remote debugging info.
+                printf("PATCH_ABS_12: possibly unaligned value %llu + %llu (at %p)\n", value, addend, location);
             };
             value = (value + addend) & ((1 << 12) - 1);
             int implicit_shift = 0;
