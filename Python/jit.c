@@ -163,12 +163,8 @@ patch_one(unsigned char *location, HoleKind kind, uint64_t value, uint64_t adden
             assert(((instruction & 0xFC000000) == 0x14000000) ||
                    ((instruction & 0xFC000000) == 0x94000000));
             value = value + addend - (uintptr_t)location;
-            if (value & 0x3) {  // XXX
-                printf("XXX: %llx + %llx - %llx\n", value, addend, (uintptr_t)location);
-                assert(0);
-            }
             assert((value & 0x3) == 0);
-            assert((value & ((1ULL << 27) - 1)) == value);  // XXX: This should be signed.
+            // assert((value & ((1ULL << 29) - 1)) == value);  // XXX: This should be signed.
             instruction = (instruction & 0xFC000000) | ((uint32_t)(value >> 2) & 0x03FFFFFF);
             assert(((instruction & 0xFC000000) == 0x14000000) ||
                    ((instruction & 0xFC000000) == 0x94000000));

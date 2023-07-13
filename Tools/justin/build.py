@@ -323,6 +323,8 @@ def handle_relocations(
                 symbol = symbol.removeprefix("_")
                 if (symbol, addend) not in got_entries:
                     got_entries.append((symbol, addend))
+                while len(body) % 8:
+                    body.append(0)
                 addend = len(body) + got_entries.index((symbol, addend)) * 8
                 yield Hole("PATCH_REL_21", "_justin_base", offset, addend)
             case {
@@ -349,6 +351,8 @@ def handle_relocations(
                 symbol = symbol.removeprefix("_")
                 if (symbol, addend) not in got_entries:
                     got_entries.append((symbol, addend))
+                while len(body) % 8:
+                    body.append(0)
                 addend = len(body) + got_entries.index((symbol, addend)) * 8
                 yield Hole("PATCH_ABS_12", "_justin_base", offset, addend)
             case {
@@ -390,6 +394,9 @@ def handle_relocations(
                 addend <<= implicit_shift
                 # assert symbol.startswith("_"), symbol
                 symbol = symbol.removeprefix("_")
+                if implicit_shift and addend % implicit_shift == 0:
+                    print("XXX:", addend, implicit_shift, len(body), base)
+                    breakpoint()
                 yield Hole("PATCH_ABS_12", symbol, offset, addend)
             case {
                 "Length": 3 as length,
@@ -474,6 +481,8 @@ def handle_relocations(
                 addend = sign_extend_64(addend, 33)
                 if (symbol, addend) not in got_entries:
                     got_entries.append((symbol, addend))
+                while len(body) % 8:
+                    body.append(0)
                 addend = len(body) + got_entries.index((symbol, addend)) * 8
                 yield Hole("PATCH_REL_21", "_justin_base", offset, addend)
             case {
@@ -511,6 +520,8 @@ def handle_relocations(
                 addend <<= implicit_shift
                 if (symbol, addend) not in got_entries:
                     got_entries.append((symbol, addend))
+                while len(body) % 8:
+                    body.append(0)
                 addend = len(body) + got_entries.index((symbol, addend)) * 8
                 yield Hole("PATCH_ABS_12", "_justin_base", offset, addend)
             case {
@@ -581,6 +592,8 @@ def handle_relocations(
                 assert not what, what
                 if (symbol, addend) not in got_entries:
                     got_entries.append((symbol, addend))
+                while len(body) % 8:
+                    body.append(0)
                 addend = got_entries.index((symbol, addend)) * 8
                 body[where] = addend.to_bytes(8, sys.byteorder)
             case {
