@@ -2601,7 +2601,7 @@ class TestUops(unittest.TestCase):
         # for i, (opname, oparg) in enumerate(ex):
         #     print(f"{i:4d}: {opname:<20s} {oparg:3d}")
         uops = {opname for opname, _ in ex}
-        self.assertIn("_ITER_EXHAUSTED_RANGE", uops)
+        self.assertIn("_IS_ITER_EXHAUSTED_RANGE", uops)
         # Verification that the jump goes past END_FOR
         # is done by manual inspection of the output
 
@@ -2623,7 +2623,7 @@ class TestUops(unittest.TestCase):
         # for i, (opname, oparg) in enumerate(ex):
         #     print(f"{i:4d}: {opname:<20s} {oparg:3d}")
         uops = {opname for opname, _ in ex}
-        self.assertIn("_ITER_EXHAUSTED_LIST", uops)
+        self.assertIn("_IS_ITER_EXHAUSTED_LIST", uops)
         # Verification that the jump goes past END_FOR
         # is done by manual inspection of the output
 
@@ -2645,7 +2645,7 @@ class TestUops(unittest.TestCase):
         # for i, (opname, oparg) in enumerate(ex):
         #     print(f"{i:4d}: {opname:<20s} {oparg:3d}")
         uops = {opname for opname, _ in ex}
-        self.assertIn("_ITER_EXHAUSTED_TUPLE", uops)
+        self.assertIn("_IS_ITER_EXHAUSTED_TUPLE", uops)
         # Verification that the jump goes past END_FOR
         # is done by manual inspection of the output
 
