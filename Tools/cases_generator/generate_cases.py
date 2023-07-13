@@ -839,19 +839,7 @@ class Analyzer:
                         )
                     else:
                         member_instr.family = family
-                elif member_macro := self.macro_instrs.get(member):
-                    for part in member_macro.parts:
-                        if isinstance(part, Component):
-                            if part.instr.family not in (family, None):
-                                self.error(
-                                    f"Component {part.instr.name} of macro {member} "
-                                    f"is a member of multiple families "
-                                    f"({part.instr.family.name}, {family.name}).",
-                                    family,
-                                )
-                            else:
-                                part.instr.family = family
-                else:
+                elif not self.macro_instrs.get(member):
                     self.error(
                         f"Unknown instruction {member!r} referenced in family {family.name!r}",
                         family,

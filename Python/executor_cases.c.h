@@ -1424,6 +1424,24 @@
             break;
         }
 
+        case _GUARD_TYPE_VERSION: {
+            PyObject *owner = stack_pointer[-1];
+            uint32_t type_version = (uint32_t)operand;
+            PyTypeObject *tp = Py_TYPE(owner);
+            assert(type_version != 0);
+            DEOPT_IF(tp->tp_version_tag != type_version, LOAD_ATTR);
+            break;
+        }
+
+        case _CHECK_MANAGED_OBJECT_HAS_VALUES: {
+            PyObject *owner = stack_pointer[-1];
+            assert(Py_TYPE(owner)->tp_dictoffset < 0);
+            assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
+            DEOPT_IF(!_PyDictOrValues_IsValues(dorv), LOAD_ATTR);
+            break;
+        }
+
         case COMPARE_OP: {
             PyObject *right = stack_pointer[-1];
             PyObject *left = stack_pointer[-2];
