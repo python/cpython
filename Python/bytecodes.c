@@ -2466,7 +2466,10 @@ dummy_func(
         }
 
         macro(FOR_ITER_LIST) =
-            unused/1 + _ITER_CHECK_LIST + _ITER_JUMP_LIST + _ITER_NEXT_LIST;
+            unused/1 +  // Skip over the counter
+            _ITER_CHECK_LIST +
+            _ITER_JUMP_LIST +
+            _ITER_NEXT_LIST;
 
         op(_ITER_CHECK_TUPLE, (iter -- iter)) {
             DEOPT_IF(Py_TYPE(iter) != &PyTupleIter_Type, FOR_ITER);
@@ -2514,7 +2517,10 @@ dummy_func(
         }
 
         macro(FOR_ITER_TUPLE) =
-            unused/1 + _ITER_CHECK_TUPLE + _ITER_JUMP_TUPLE + _ITER_NEXT_TUPLE;
+            unused/1 +  // Skip over the counter
+            _ITER_CHECK_TUPLE +
+            _ITER_JUMP_TUPLE +
+            _ITER_NEXT_TUPLE;
 
         op(_ITER_CHECK_RANGE, (iter -- iter)) {
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
@@ -2554,7 +2560,10 @@ dummy_func(
         }
 
         macro(FOR_ITER_RANGE) =
-            unused/1 + _ITER_CHECK_RANGE + _ITER_JUMP_RANGE + _ITER_NEXT_RANGE;
+            unused/1 +  // Skip over the counter
+            _ITER_CHECK_RANGE +
+            _ITER_JUMP_RANGE +
+            _ITER_NEXT_RANGE;
 
         inst(FOR_ITER_GEN, (unused/1, iter -- iter, unused)) {
             DEOPT_IF(tstate->interp->eval_frame, FOR_ITER);
