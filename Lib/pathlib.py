@@ -940,14 +940,11 @@ class Path(PurePath):
         return os.scandir(self)
 
     def _make_child_relpath(self, name):
-        path_str = self._str
         tail = self._tail
         if tail:
-            path_str = f'{path_str}{self._flavour.sep}{name}'
-        elif path_str:
-            path_str = f'{path_str}{name}'
+            path_str = f'{self._str}{self._flavour.sep}{name}'
         else:
-            path_str = name
+            path_str = f'{self._str}{name}'
         path = self.with_segments(path_str)
         path._str_cached = path_str
         path._drv = self.drive
