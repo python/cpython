@@ -485,6 +485,7 @@ class CAPITest(unittest.TestCase):
                 L = (L,)
             self.assertGreater(PyList.num, 0)
             del L
+            len(()) # Trigger deferred finalizers
             self.assertEqual(PyList.num, 0)
 
     def test_heap_ctype_doc_and_text_signature(self):

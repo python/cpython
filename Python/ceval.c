@@ -63,7 +63,7 @@
         } \
         _Py_DECREF_STAT_INC(); \
         if (--op->ob_refcnt == 0) { \
-            _Py_Dealloc(op); \
+            Py_TYPE(op)->tp_unreachable(tstate, op); \
         } \
     } while (0)
 

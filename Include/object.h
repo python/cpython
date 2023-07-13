@@ -304,6 +304,7 @@ typedef int (*traverseproc)(PyObject *, visitproc, void *);
 
 typedef void (*freefunc)(void *);
 typedef void (*destructor)(PyObject *);
+typedef void (*destructor_v2)(PyThreadState *, PyObject *);
 typedef PyObject *(*getattrfunc)(PyObject *, char *);
 typedef PyObject *(*getattrofunc)(PyObject *, PyObject *);
 typedef int (*setattrfunc)(PyObject *, char *, PyObject *);
@@ -597,6 +598,8 @@ PyAPI_FUNC(void) _Py_DecRefTotal_DO_NOT_USE_THIS(void);
 #endif  // Py_REF_DEBUG && !Py_LIMITED_API
 
 PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
+PyAPI_FUNC(void) _Py_DeferDealloc(PyThreadState *, PyObject *);
+PyAPI_FUNC(void) _Py_SafeDealloc(PyThreadState *, PyObject *);
 
 /*
 These are provided as conveniences to Python runtime embedders, so that

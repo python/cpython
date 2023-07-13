@@ -271,8 +271,8 @@
             #line 391 "Python/bytecodes.c"
             STAT_INC(BINARY_OP, hit);
             res = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
-            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
-            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(right, PyObject_Free_v2);
+            _Py_DECREF_SPECIALIZED(left, PyObject_Free_v2);
             if (res == NULL) goto pop_2_error;
             #line 278 "Python/executor_cases.c.h"
             STACK_SHRINK(1);
@@ -287,8 +287,8 @@
             #line 399 "Python/bytecodes.c"
             STAT_INC(BINARY_OP, hit);
             res = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
-            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
-            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(right, PyObject_Free_v2);
+            _Py_DECREF_SPECIALIZED(left, PyObject_Free_v2);
             if (res == NULL) goto pop_2_error;
             #line 294 "Python/executor_cases.c.h"
             STACK_SHRINK(1);
@@ -303,8 +303,8 @@
             #line 407 "Python/bytecodes.c"
             STAT_INC(BINARY_OP, hit);
             res = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
-            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
-            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(right, PyObject_Free_v2);
+            _Py_DECREF_SPECIALIZED(left, PyObject_Free_v2);
             if (res == NULL) goto pop_2_error;
             #line 310 "Python/executor_cases.c.h"
             STACK_SHRINK(1);
@@ -487,7 +487,7 @@
             res = PyList_GET_ITEM(list, index);
             assert(res != NULL);
             Py_INCREF(res);
-            _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(sub, PyObject_Free_v2);
             Py_DECREF(list);
             #line 493 "Python/executor_cases.c.h"
             STACK_SHRINK(1);
@@ -511,7 +511,7 @@
             res = PyTuple_GET_ITEM(tuple, index);
             assert(res != NULL);
             Py_INCREF(res);
-            _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(sub, PyObject_Free_v2);
             Py_DECREF(tuple);
             #line 517 "Python/executor_cases.c.h"
             STACK_SHRINK(1);
@@ -621,7 +621,7 @@
             PyList_SET_ITEM(list, index, value);
             assert(old_value != NULL);
             Py_DECREF(old_value);
-            _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(sub, PyObject_Free_v2);
             Py_DECREF(list);
             #line 627 "Python/executor_cases.c.h"
             STACK_SHRINK(3);
@@ -1772,8 +1772,8 @@
             Py_ssize_t iright = _PyLong_CompactValue((PyLongObject *)right);
             // 2 if <, 4 if >, 8 if ==; this matches the low 4 bits of the oparg
             int sign_ish = COMPARISON_BIT(ileft, iright);
-            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
-            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(left, PyObject_Free_v2);
+            _Py_DECREF_SPECIALIZED(right, PyObject_Free_v2);
             res = (sign_ish & oparg) ? Py_True : Py_False;
             // It's always a bool, so we don't care about oparg & 16.
             #line 1780 "Python/executor_cases.c.h"

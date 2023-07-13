@@ -100,6 +100,7 @@ PyAPI_FUNC(void *) PyObject_Calloc(size_t nelem, size_t elsize);
 #endif
 PyAPI_FUNC(void *) PyObject_Realloc(void *ptr, size_t new_size);
 PyAPI_FUNC(void) PyObject_Free(void *ptr);
+PyAPI_FUNC(void) PyObject_Free_v2(PyThreadState *tstate, PyObject *ptr);
 
 
 // Deprecated aliases only kept for backward compatibility.

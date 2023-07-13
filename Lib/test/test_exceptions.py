@@ -1367,8 +1367,7 @@ class ExceptionTests(unittest.TestCase):
     def test_recursion_normalizing_exception(self):
         # Issue #22898.
         # Test that a RecursionError is raised when tstate->recursion_depth is
-        # equal to recursion_limit in PyErr_NormalizeException() and check
-        # that a ResourceWarning is printed.
+        # equal to recursion_limit in PyErr_NormalizeException().
         # Prior to #22898, the recursivity of PyErr_NormalizeException() was
         # controlled by tstate->recursion_depth and a PyExc_RecursionErrorInst
         # singleton was being used in that case, that held traceback data and
@@ -1415,7 +1414,6 @@ class ExceptionTests(unittest.TestCase):
         # Check that the program does not fail with SIGABRT.
         self.assertEqual(rc, 1)
         self.assertIn(b'RecursionError', err)
-        self.assertIn(b'ResourceWarning', err)
         self.assertIn(b'Done.', out)
 
     @cpython_only

@@ -36,7 +36,22 @@ static inline void
 _Py_DECREF_INT(PyLongObject *op)
 {
     assert(PyLong_CheckExact(op));
-    _Py_DECREF_SPECIALIZED((PyObject *)op, (destructor)PyObject_Free);
+    if (_Py_IsImmortal(op)) {
+        return;
+    }
+    _Py_DECREF_STAT_INC();
+#ifdef Py_REF_DEBUG
+    PyInterpreterState_Get()->object_state.reftotal--;
+#endif
+    if (--op->ob_base.ob_refcnt != 0) {
+        assert(op->ob_base.ob_refcnt > 0);
+    }
+    else {
+#ifdef Py_TRACE_REFS
+        _Py_ForgetReference(op);
+#endif
+        PyObject_Free(op);
+    }
 }
 
 static inline int
@@ -6289,6 +6304,7 @@ PyTypeObject PyLong_Type = {
     0,                                          /* tp_alloc */
     long_new,                                   /* tp_new */
     PyObject_Free,                              /* tp_free */
+    .tp_unreachable = PyObject_Free_v2,
 };
 
 static PyTypeObject Int_InfoType;

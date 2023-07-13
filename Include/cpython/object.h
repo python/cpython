@@ -225,8 +225,9 @@ struct _typeobject {
 
     destructor tp_finalize;
     vectorcallfunc tp_vectorcall;
+    /* Set by the VM, for internal use only */
+    destructor_v2 tp_unreachable;
 
-    uint32_t tp_flags_internal;
     /* bitset of which type-watchers care about this type */
     char tp_watched;
 };
@@ -541,6 +542,17 @@ PyAPI_FUNC(int) _PyTrash_cond(PyObject *op, destructor dealloc);
 #define Py_TRASHCAN_BEGIN(op, dealloc) \
     Py_TRASHCAN_BEGIN_CONDITION((op), \
         _PyTrash_cond(_PyObject_CAST(op), (destructor)(dealloc)))
+
+#define Py_TRASHCAN_2_START(tstate, op) \
+if ((tstate)->c_recursion_remaining-- <= C_RECURSION_LIMIT/4) { \
+    (tstate)->c_recursion_remaining++; \
+    _Py_DeferDealloc(tstate, _PyObject_CAST(op)); \
+} \
+else { \
+
+#define Py_TRASHCAN_2_END(tstate) \
+    (tstate)->c_recursion_remaining++; \
+}
 
 
 PyAPI_FUNC(void *) PyObject_GetItemData(PyObject *obj);

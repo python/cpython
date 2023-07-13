@@ -746,6 +746,7 @@ PyTypeObject PyMethodDescr_Type = {
     0,                                          /* tp_dict */
     (descrgetfunc)method_get,                   /* tp_descr_get */
     0,                                          /* tp_descr_set */
+    .tp_unreachable = _Py_SafeDealloc,
 };
 
 /* This is for METH_CLASS in C, not for "f = classmethod(f)" in Python! */
@@ -784,6 +785,7 @@ PyTypeObject PyClassMethodDescr_Type = {
     0,                                          /* tp_dict */
     (descrgetfunc)classmethod_get,              /* tp_descr_get */
     0,                                          /* tp_descr_set */
+    .tp_unreachable = _Py_SafeDealloc,
 };
 
 PyTypeObject PyMemberDescr_Type = {
@@ -821,6 +823,7 @@ PyTypeObject PyMemberDescr_Type = {
     0,                                          /* tp_dict */
     (descrgetfunc)member_get,                   /* tp_descr_get */
     (descrsetfunc)member_set,                   /* tp_descr_set */
+    .tp_unreachable = _Py_SafeDealloc,
 };
 
 PyTypeObject PyGetSetDescr_Type = {
@@ -858,6 +861,7 @@ PyTypeObject PyGetSetDescr_Type = {
     0,                                          /* tp_dict */
     (descrgetfunc)getset_get,                   /* tp_descr_get */
     (descrsetfunc)getset_set,                   /* tp_descr_set */
+    .tp_unreachable = _Py_SafeDealloc,
 };
 
 PyTypeObject PyWrapperDescr_Type = {
@@ -896,6 +900,7 @@ PyTypeObject PyWrapperDescr_Type = {
     0,                                          /* tp_dict */
     (descrgetfunc)wrapperdescr_get,             /* tp_descr_get */
     0,                                          /* tp_descr_set */
+    .tp_unreachable = _Py_SafeDealloc,
 };
 
 static PyDescrObject *

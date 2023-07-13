@@ -206,12 +206,26 @@ tupledealloc(PyTupleObject *op)
     while (--i >= 0) {
         Py_XDECREF(op->ob_item[i]);
     }
-    // This will abort on the empty singleton (if there is one).
+    Py_TYPE(op)->tp_free((PyObject *)op);
+
+    Py_TRASHCAN_END
+}
+
+static void
+tupledealloc_v2(PyThreadState *tstate, PyTupleObject *op)
+{
+    assert(PyTuple_CheckExact(op));
+    assert(Py_SIZE(op));
+    PyObject_GC_UnTrack(op);
+    Py_TRASHCAN_2_START(tstate, op);
+    Py_ssize_t i = Py_SIZE(op);
+    while (--i >= 0) {
+        Py_XDECREF(op->ob_item[i]);
+    }
     if (!maybe_freelist_push(op)) {
         Py_TYPE(op)->tp_free((PyObject *)op);
     }
-
-    Py_TRASHCAN_END
+    Py_TRASHCAN_2_END(tstate);
 }
 
 static PyObject *
@@ -885,6 +899,7 @@ PyTypeObject PyTuple_Type = {
     tuple_new,                                  /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
     .tp_vectorcall = tuple_vectorcall,
+    .tp_unreachable = (destructor_v2)tupledealloc_v2               /* tp_dealloc */
 };
 
 /* The following function breaks the notion that tuples are immutable:
@@ -1168,19 +1183,17 @@ maybe_freelist_pop(Py_ssize_t size)
 static inline int
 maybe_freelist_push(PyTupleObject *op)
 {
+    assert(PyTuple_CheckExact(op));
+    assert(Py_SIZE(op));
 #if PyTuple_NFREELISTS > 0
     PyInterpreterState *interp = _PyInterpreterState_GET();
 #ifdef Py_DEBUG
     /* maybe_freelist_push() must not be called after maybe_freelist_fini(). */
     assert(!FREELIST_FINALIZED);
 #endif
-    if (Py_SIZE(op) == 0) {
-        return 0;
-    }
     Py_ssize_t index = Py_SIZE(op) - 1;
     if (index < PyTuple_NFREELISTS
-        && STATE.numfree[index] < PyTuple_MAXFREELIST
-        && Py_IS_TYPE(op, &PyTuple_Type))
+        && STATE.numfree[index] < PyTuple_MAXFREELIST)
     {
         /* op is the head of a linked list, with the first item
            pointing to the next node.  Here we set op as the new head. */

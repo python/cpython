@@ -2494,6 +2494,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
 {
     PyObject *result = start;
     PyObject *temp, *item, *iter;
+    PyThreadState* tstate = PyThreadState_Get();
 
     iter = PyObject_GetIter(iterable);
     if (iter == NULL)

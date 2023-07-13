@@ -342,29 +342,34 @@ PyList_Append(PyObject *op, PyObject *newitem)
 /* Methods */
 
 static void
-list_dealloc(PyListObject *op)
+dealloc_items(PyListObject *op)
 {
-    Py_ssize_t i;
-    PyObject_GC_UnTrack(op);
-    Py_TRASHCAN_BEGIN(op, list_dealloc)
     if (op->ob_item != NULL) {
         /* Do it backwards, for Christian Tismer.
            There's a simple test case where somehow this reduces
            thrashing when a *very* large list is created and
            immediately deleted. */
-        i = Py_SIZE(op);
+        Py_ssize_t i = Py_SIZE(op);
         while (--i >= 0) {
             Py_XDECREF(op->ob_item[i]);
         }
         PyMem_Free(op->ob_item);
     }
+}
+static void
+list_dealloc_v2(PyThreadState *tstate, PyListObject *op)
+{
+    assert(PyList_CheckExact(op));
+    PyObject_GC_UnTrack(op);
+    Py_TRASHCAN_2_START(tstate, op);
+    dealloc_items(op);
 #if PyList_MAXFREELIST > 0
-    struct _Py_list_state *state = get_list_state();
+    struct _Py_list_state *state = &tstate->interp->list;
 #ifdef Py_DEBUG
     // list_dealloc() must not be called after _PyList_Fini()
     assert(state->numfree != -1);
 #endif
-    if (state->numfree < PyList_MAXFREELIST && PyList_CheckExact(op)) {
+    if (state->numfree < PyList_MAXFREELIST) {
         state->free_list[state->numfree++] = op;
         OBJECT_STAT_INC(to_freelist);
     }
@@ -373,8 +378,21 @@ list_dealloc(PyListObject *op)
     {
         Py_TYPE(op)->tp_free((PyObject *)op);
     }
+    Py_TRASHCAN_2_END(tstate);
+}
+
+/* This is still needed by list subclasses */
+static void
+list_dealloc(PyListObject *op)
+{
+    assert(PyList_Check(op));
+    PyObject_GC_UnTrack(op);
+    Py_TRASHCAN_BEGIN(op, list_dealloc)
+    dealloc_items(op);
+    Py_TYPE(op)->tp_free((PyObject *)op);
     Py_TRASHCAN_END
 }
+
 
 static PyObject *
 list_repr(PyListObject *v)
@@ -3141,6 +3159,7 @@ PyTypeObject PyList_Type = {
     PyType_GenericNew,                          /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
     .tp_vectorcall = list_vectorcall,
+    .tp_unreachable = (destructor_v2)list_dealloc_v2,
 };
 
 /*********************** List Iterator **************************/

@@ -248,12 +248,12 @@ PyFloat_FromString(PyObject *v)
 }
 
 void
-_PyFloat_ExactDealloc(PyObject *obj)
+_PyFloat_ExactDealloc(PyThreadState *tstate, PyObject *obj)
 {
     assert(PyFloat_CheckExact(obj));
     PyFloatObject *op = (PyFloatObject *)obj;
 #if PyFloat_MAXFREELIST > 0
-    struct _Py_float_state *state = get_float_state();
+    struct _Py_float_state *state = &tstate->interp->float_state;
 #ifdef Py_DEBUG
     // float_dealloc() must not be called after _PyFloat_Fini()
     assert(state->numfree != -1);
@@ -271,19 +271,12 @@ _PyFloat_ExactDealloc(PyObject *obj)
 #endif
 }
 
+/* Needed for float subclasses */
 static void
 float_dealloc(PyObject *op)
 {
-    assert(PyFloat_Check(op));
-#if PyFloat_MAXFREELIST > 0
-    if (PyFloat_CheckExact(op)) {
-        _PyFloat_ExactDealloc(op);
-    }
-    else
-#endif
-    {
-        Py_TYPE(op)->tp_free(op);
-    }
+    assert(!PyFloat_CheckExact(op));
+    Py_TYPE(op)->tp_free(op);
 }
 
 double
@@ -1925,6 +1918,7 @@ PyTypeObject PyFloat_Type = {
     0,                                          /* tp_alloc */
     float_new,                                  /* tp_new */
     .tp_vectorcall = (vectorcallfunc)float_vectorcall,
+    .tp_unreachable = _PyFloat_ExactDealloc,
 };
 
 static void

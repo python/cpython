@@ -92,7 +92,7 @@ static inline void _Py_ClearImmortal(PyObject *op)
     } while (0)
 
 static inline void
-_Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
+_py_decref_specialized(PyThreadState *tstate, PyObject *op, const destructor_v2 destruct)
 {
     if (_Py_IsImmortal(op)) {
         return;
@@ -108,9 +108,11 @@ _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
 #ifdef Py_TRACE_REFS
         _Py_ForgetReference(op);
 #endif
-        destruct(op);
+        destruct(tstate, op);
     }
 }
+
+#define _Py_DECREF_SPECIALIZED(op, destruct) _py_decref_specialized(tstate, op, destruct)
 
 static inline void
 _Py_DECREF_NO_DEALLOC(PyObject *op)
@@ -437,9 +439,6 @@ extern PyObject* _PyCFunctionWithKeywords_TrampolineCall(
 #define _PyCFunctionWithKeywords_TrampolineCall(meth, self, args, kw) \
     (meth)((self), (args), (kw))
 #endif // __EMSCRIPTEN__ && PY_CALL_TRAMPOLINE
-
-#define _Py_TPFLAG_INTERNAL_DEALLOC_IS_FREE 1
-#define _Py_TPFLAG_INTERNAL_SAFE_DEALLOC 2
 
 void _Py_ClearFinalizerList(PyInterpreterState *interp);
 

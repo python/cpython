@@ -2671,6 +2671,7 @@ static PyTypeObject NDArray_Type = {
     ndarray_init,                /* tp_init */
     0,                           /* tp_alloc */
     ndarray_new,                 /* tp_new */
+    .tp_unreachable = _Py_SafeDealloc,
 };
 
 /**************************************************************************/

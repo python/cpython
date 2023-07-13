@@ -233,6 +233,7 @@ static PyTypeObject CounterExecutor_Type = {
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .tp_dealloc = (destructor)counter_dealloc,
+    .tp_unreachable = _Py_SafeDealloc,
 };
 
 static _PyInterpreterFrame *
@@ -282,6 +283,7 @@ static PyTypeObject CounterOptimizer_Type = {
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .tp_methods = counter_methods,
+    .tp_unreachable = _Py_SafeDealloc,
 };
 
 PyObject *
@@ -363,6 +365,7 @@ static PyTypeObject UOpExecutor_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .tp_dealloc = (destructor)uop_dealloc,
     .tp_as_sequence = &uop_as_sequence,
+    .tp_unreachable = _Py_SafeDealloc,
 };
 
 static int
@@ -612,6 +615,7 @@ static PyTypeObject UOpOptimizer_Type = {
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .tp_dealloc = uop_opt_dealloc,
+    .tp_unreachable = _Py_SafeDealloc,
 };
 
 PyObject *

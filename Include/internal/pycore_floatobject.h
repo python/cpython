@@ -52,7 +52,7 @@ struct _Py_float_state {
 #endif
 };
 
-void _PyFloat_ExactDealloc(PyObject *op);
+void _PyFloat_ExactDealloc(PyThreadState *,PyObject *op);
 
 
 PyAPI_FUNC(void) _PyFloat_DebugMallocStats(FILE* out);

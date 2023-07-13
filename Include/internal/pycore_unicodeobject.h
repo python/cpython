@@ -15,7 +15,7 @@ PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
     PyObject *op,
     int check_content);
 
-extern void _PyUnicode_ExactDealloc(PyObject *op);
+extern void _PyUnicode_ExactDealloc(PyThreadState *, PyObject *op);
 extern Py_ssize_t _PyUnicode_InternedSize(void);
 
 /* Get a copy of a Unicode string. */

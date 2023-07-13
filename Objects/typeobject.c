@@ -7325,7 +7325,6 @@ type_ready_inherit(PyTypeObject *type)
                      type->tp_name);
         return -1;
     }
-
     return 0;
 }
 
@@ -7477,7 +7476,6 @@ type_ready_post_checks(PyTypeObject *type)
     return 0;
 }
 
-
 static int
 type_ready(PyTypeObject *type, int rerunbuiltin)
 {
@@ -7488,6 +7486,9 @@ type_ready(PyTypeObject *type, int rerunbuiltin)
         goto error;
     }
 
+    if (type->tp_unreachable == NULL) {
+        type->tp_unreachable = _Py_SafeDealloc;
+    }
 #ifdef Py_TRACE_REFS
     /* PyType_Ready is the closest thing we have to a choke point
      * for type objects, so is the best place I can think of to try
@@ -7578,7 +7579,6 @@ _PyStaticType_InitBuiltin(PyInterpreterState *interp, PyTypeObject *self)
     assert(!(self->tp_flags & Py_TPFLAGS_HEAPTYPE));
     assert(!(self->tp_flags & Py_TPFLAGS_MANAGED_DICT));
     assert(!(self->tp_flags & Py_TPFLAGS_MANAGED_WEAKREF));
-
     int ismain = _Py_IsMainInterpreter(interp);
     if ((self->tp_flags & Py_TPFLAGS_READY) == 0) {
         assert(ismain);

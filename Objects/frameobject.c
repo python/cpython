@@ -874,7 +874,7 @@ static PyGetSetDef frame_getsetlist[] = {
 };
 
 static void
-frame_dealloc(PyFrameObject *f)
+frame_dealloc(PyThreadState*tstate, PyFrameObject *f)
 {
     /* It is the responsibility of the owning generator/coroutine
      * to have cleared the generator pointer */
@@ -886,7 +886,7 @@ frame_dealloc(PyFrameObject *f)
         _PyObject_GC_UNTRACK(f);
     }
 
-    Py_TRASHCAN_BEGIN(f, frame_dealloc);
+    Py_TRASHCAN_2_START(tstate, f);
     PyObject *co = NULL;
 
     /* Kill all local variables including specials, if we own them */
@@ -907,7 +907,7 @@ frame_dealloc(PyFrameObject *f)
     Py_CLEAR(f->f_trace);
     PyObject_GC_Del(f);
     Py_XDECREF(co);
-    Py_TRASHCAN_END;
+    Py_TRASHCAN_2_END(tstate);
 }
 
 static int
@@ -1001,7 +1001,7 @@ PyTypeObject PyFrame_Type = {
     offsetof(PyFrameObject, _f_frame_data) +
     offsetof(_PyInterpreterFrame, localsplus),
     sizeof(PyObject *),
-    (destructor)frame_dealloc,                  /* tp_dealloc */
+    0,                                          /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
@@ -1029,7 +1029,7 @@ PyTypeObject PyFrame_Type = {
     frame_getsetlist,                           /* tp_getset */
     0,                                          /* tp_base */
     0,                                          /* tp_dict */
-    .tp_flags_internal = _Py_TPFLAG_INTERNAL_SAFE_DEALLOC,
+    .tp_unreachable = (destructor_v2)frame_dealloc,
 };
 
 static void
