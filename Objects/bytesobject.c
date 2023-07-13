@@ -1274,7 +1274,6 @@ _PyBytes_Find(const char *haystack, Py_ssize_t len_haystack,
 {
     assert(len_haystack >= 0);
     assert(len_needle >= 0);
-    assert(offset <= len_haystack);
     // Extra checks because stringlib_find accesses haystack[len_haystack].
     if (len_needle == 0) {
         return offset;
