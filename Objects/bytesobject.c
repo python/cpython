@@ -1282,8 +1282,8 @@ _PyBytes_Find(const char *haystack, Py_ssize_t len_haystack,
         return -1;
     }
     assert(len_haystack >= 1);
-    Py_ssize_t res =  stringlib_find(haystack, len_haystack - 1,
-                                     needle, len_needle, offset);
+    Py_ssize_t res = stringlib_find(haystack, len_haystack - 1,
+                                    needle, len_needle, offset);
     if (res == -1) {
         Py_ssize_t last_align = len_haystack - len_needle;
         if (memcmp(haystack + last_align, needle, len_needle) == 0) {

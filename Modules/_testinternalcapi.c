@@ -514,6 +514,9 @@ test_bytes_find(PyObject *self, PyObject *Py_UNUSED(args))
         }                                        \
     } while (0)
 
+    CHECK("", "", 0, 0);
+    CHECK("Python", "", 0, 0);
+    CHECK("Python", "", 3, 3);
     CHECK("Python", "yth", 0, 1);
     CHECK("ython", "yth", 1, 1);
     CHECK("thon", "yth", 2, -1);
