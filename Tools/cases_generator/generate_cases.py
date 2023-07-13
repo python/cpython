@@ -885,7 +885,7 @@ class Analyzer:
             if len(members) < 1:
                 continue
             expected_effects = self.effect_counts(family.name)
-            for member in members[0:]:
+            for member in members:
                 member_effects = self.effect_counts(member)
                 if member_effects != expected_effects:
                     self.error(
@@ -1312,7 +1312,7 @@ class Analyzer:
                 with self.out.indent():
                     self.out.emit(f"\"{family.name}\": [")
                     with self.out.indent():
-                        for m in family.members[0:]:
+                        for m in family.members:
                             self.out.emit(f"\"{m}\",")
                     self.out.emit(f"],")
             self.out.emit("}")
