@@ -1,7 +1,6 @@
 import tempfile
 import unittest
 import os
-import shutil
 
 from test import test_tools
 
@@ -76,10 +75,17 @@ class TestGeneratedCases(unittest.TestCase):
         self.temp_executor_filename = os.path.join(self.temp_dir, "executor.txt")
 
     def tearDown(self) -> None:
-        try:
-            shutil.rmtree(self.temp_dir)
-        except:
-            pass
+        for filename in [
+            self.temp_input_filename,
+            self.temp_output_filename,
+            self.temp_metadata_filename,
+            self.temp_pymetadata_filename,
+            self.temp_executor_filename,
+        ]:
+            try:
+                os.remove(filename)
+            except:
+                pass
         super().tearDown()
 
     def run_cases_test(self, input: str, expected: str):
