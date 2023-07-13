@@ -340,7 +340,6 @@ mmap_gfind(mmap_object *self,
         else if (end > self->size)
             end = self->size;
 
-
         Py_ssize_t res;
         CHECK_VALID_OR_RELEASE(NULL, view);
         if (end < start) {
