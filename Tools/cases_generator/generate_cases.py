@@ -156,16 +156,9 @@ class Formatter:
         self.emit_line_directives = emit_line_directives
         self.comment = comment
         self.lineno = 1
-        filename = os.path.relpath(self.stream.name, ROOT)
-        # Make filename more user-friendly and less platform-specific
-        filename = filename.replace("\\", "/")
-        if filename.startswith("./"):
-            filename = filename[2:]
-        if filename.endswith(".new"):
-            filename = filename[:-4]
-        self.filename = filename
+        self.filename = prettify_filename(self.stream.name)
         self.nominal_lineno = 1
-        self.nominal_filename = filename
+        self.nominal_filename = self.filename
 
     def write_raw(self, s: str) -> None:
         self.stream.write(s)
@@ -735,12 +728,8 @@ class Analyzer:
         with open(filename) as file:
             src = file.read()
 
-        # Make filename more user-friendly and less platform-specific,
-        # it is only used for error reporting at this point.
-        filename = filename.replace("\\", "/")
-        if filename.startswith("./"):
-            filename = filename[2:]
-        psr = parser.Parser(src, filename=filename)
+
+        psr = parser.Parser(src, filename=prettify_filename(filename))
 
         # Skip until begin marker
         while tkn := psr.next(raw=True):
@@ -1582,6 +1571,17 @@ class Analyzer:
                 self.out.assign(dst, var)
 
             self.out.emit(f"DISPATCH();")
+
+
+def prettify_filename(filename: str) -> str:
+    # Make filename more user-friendly and less platform-specific,
+    # it is only used for error reporting at this point.
+    filename = filename.replace("\\", "/")
+    if filename.startswith("./"):
+        filename = filename[2:]
+    if filename.endswith(".new"):
+        filename = filename[:-4]
+    return filename
 
 
 def extract_block_text(block: parser.Block) -> tuple[list[str], bool, int]:
