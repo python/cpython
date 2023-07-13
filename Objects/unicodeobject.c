@@ -1541,8 +1541,34 @@ find_maxchar_surrogates(const wchar_t *begin, const wchar_t *end,
     return 0;
 }
 
+void
+_PyUnicode_ExactDealloc(PyThreadState *tstate, PyObject *unicode)
+{
+    assert(PyUnicode_CheckExact(unicode));
+#ifdef Py_DEBUG
+    if (!unicode_is_finalizing() && unicode_is_singleton(unicode)) {
+        _Py_FatalRefcountError("deallocating an Unicode singleton");
+    }
+#endif
+    /* This should never get called, but we also don't want to SEGV if
+     * we accidentally decref an immortal string out of existence. Since
+     * the string is an immortal object, just re-set the reference count.
+     */
+    if (PyUnicode_CHECK_INTERNED(unicode)) {
+        _Py_SetImmortal(unicode);
+        return;
+    }
+    if (_PyUnicode_HAS_UTF8_MEMORY(unicode)) {
+        PyObject_Free(_PyUnicode_UTF8(unicode));
+    }
+    if (!PyUnicode_IS_COMPACT(unicode) && _PyUnicode_DATA_ANY(unicode)) {
+        PyObject_Free(_PyUnicode_DATA_ANY(unicode));
+    }
+    PyObject_Del(unicode);
+}
+
 static void
-unicode_dealloc(PyThreadState *tstate, PyObject *unicode)
+unicode_dealloc(PyObject *unicode)
 {
 #ifdef Py_DEBUG
     if (!unicode_is_finalizing() && unicode_is_singleton(unicode)) {
@@ -14550,13 +14576,6 @@ onError:
     return NULL;
 }
 
-void
-_PyUnicode_ExactDealloc(PyThreadState *tstate, PyObject *op)
-{
-    assert(PyUnicode_CheckExact(op));
-    unicode_dealloc(tstate, op);
-}
-
 PyDoc_STRVAR(unicode_doc,
 "str(object='') -> str\n\
 str(bytes_or_buffer[, encoding[, errors]]) -> str\n\
@@ -14577,7 +14596,7 @@ PyTypeObject PyUnicode_Type = {
     sizeof(PyUnicodeObject),      /* tp_basicsize */
     0,                            /* tp_itemsize */
     /* Slots */
-    0,                            /* tp_dealloc */
+    unicode_dealloc,              /* tp_dealloc */
     0,                            /* tp_vectorcall_offset */
     0,                            /* tp_getattr */
     0,                            /* tp_setattr */
@@ -14614,7 +14633,7 @@ PyTypeObject PyUnicode_Type = {
     0,                            /* tp_alloc */
     unicode_new,                  /* tp_new */
     PyObject_Del,                 /* tp_free */
-    .tp_unreachable = (destructor_v2)unicode_dealloc
+    .tp_unreachable = (destructor_v2)_PyUnicode_ExactDealloc
 };
 
 /* Initialize the Unicode implementation */

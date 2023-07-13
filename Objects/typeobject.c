@@ -6596,6 +6596,7 @@ PyTypeObject PyBaseObject_Type = {
     PyType_GenericAlloc,                        /* tp_alloc */
     object_new,                                 /* tp_new */
     PyObject_Del,                               /* tp_free */
+    .tp_unreachable = PyObject_Free_v2,
 };
 
 
