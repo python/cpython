@@ -769,7 +769,10 @@ class Regrtest:
             return self.win_load_tracker.getloadavg()
 
         if hasattr(os, 'getloadavg'):
-            return os.getloadavg()[0]
+            try:
+                return os.getloadavg()[0]
+            except OSError:
+                pass
 
         return None
 
