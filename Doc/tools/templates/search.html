@@ -3,7 +3,7 @@
     {{ super() }}
     <meta name="robots" content="noindex">
     <script type="text/javascript">
-        var GLOSSARY_PAGE = 'glossary.html';
+        const GLOSSARY_PAGE = 'glossary.html';
 
         document.addEventListener('DOMContentLoaded', function() {
           fetch('_static/glossary.json')
@@ -15,35 +15,35 @@
               }
             })
             .then(function(glossary) {
-              var RESULT_TEMPLATE = '<div style="display: none" class="admonition seealso" id="glossary-result">' +
-                                    '  <p class="topic-title">' +
-                                    '    <a class="glossary-title" href="#"></a>' +
-                                    '  </p>' +
-                                    '  <div class="glossary-body"></div>' +
-                                    '</div>';
-              var searchResults = document.getElementById('search-results');
+              const RESULT_TEMPLATE = '<div style="display: none" class="admonition seealso" id="glossary-result">' +
+                                      '  <p class="topic-title">' +
+                                      '    <a class="glossary-title" href="#"></a>' +
+                                      '  </p>' +
+                                      '  <div class="glossary-body"></div>' +
+                                      '</div>';
+              let searchResults = document.getElementById('search-results');
               searchResults.insertAdjacentHTML('afterbegin', RESULT_TEMPLATE);
 
-              var params = new URLSearchParams(document.location.search).get("q");
+              const params = new URLSearchParams(document.location.search).get("q");
               if (params) {
-                var searchParam = params.toLowerCase();
-                var glossaryItem = glossary[searchParam];
+                const searchParam = params.toLowerCase();
+                const glossaryItem = glossary[searchParam];
                 if (glossaryItem) {
-                  var resultDiv = document.getElementById('glossary-result');
+                  let resultDiv = document.getElementById('glossary-result');
 
                   // set up the title text with a link to the glossary page
-                  var glossaryTitle = resultDiv.querySelector('.glossary-title');
+                  let glossaryTitle = resultDiv.querySelector('.glossary-title');
                   glossaryTitle.textContent = 'Glossary: ' + glossaryItem.title;
-                  var linkTarget = searchParam.replace(/ /g, '-');
+                  const linkTarget = searchParam.replace(/ /g, '-');
                   glossaryTitle.href = GLOSSARY_PAGE + '#term-' + linkTarget;
 
                   // rewrite any anchor links (to other glossary terms)
                   // to have a full reference to the glossary page
-                  var body = document.createElement('div');
+                  let body = document.createElement('div');
                   body.innerHTML = glossaryItem.body;
-                  var anchorLinks = body.querySelectorAll('a[href^="#"]');
+                  const anchorLinks = body.querySelectorAll('a[href^="#"]');
                   anchorLinks.forEach(function(link) {
-                    var currentUrl = link.getAttribute('href');
+                    const currentUrl = link.getAttribute('href');
                     link.href = GLOSSARY_PAGE + currentUrl;
                   });
                   resultDiv.querySelector('.glossary-body').appendChild(body);
