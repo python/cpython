@@ -251,6 +251,14 @@ class ThreadTests(BaseTestCase):
         #Issue 29376
         self.assertTrue(threading._active[tid].is_alive())
         self.assertRegex(repr(threading._active[tid]), '_DummyThread')
+
+        # Issue gh-106236:
+        with self.assertRaises(RuntimeError):
+            threading._active[tid].join()
+        threading._active[tid]._started.clear()
+        with self.assertRaises(RuntimeError):
+            threading._active[tid].is_alive()
+
         del threading._active[tid]
 
     # PyThreadState_SetAsyncExc() is a CPython-only gimmick, not (currently)
