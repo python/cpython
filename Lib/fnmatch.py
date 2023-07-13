@@ -92,13 +92,12 @@ def translate(pat, seps=None):
         i = i+1
         if c == '*':
             # compress consecutive `*` into one
-            h = i - 1
+            h = i-1
             while i < n and pat[i] == '*':
-                i = i + 1
-
+                i = i+1
             if seps:
-                star_count = i - h
-                is_segment = (h == 0 or pat[h - 1] in seps) and (i == n or pat[i] in seps)
+                star_count = i-h
+                is_segment = (h == 0 or pat[h-1] in seps) and (i == n or pat[i] in seps)
                 if star_count == 1:
                     if is_segment:
                         add(f'{DOT}+')
@@ -109,7 +108,7 @@ def translate(pat, seps=None):
                         add('.*')
                     else:
                         add(f'(.*[{SEPS}])?')
-                        i += 1
+                        i = i+1
                 else:
                     raise ValueError("Invalid pattern: '**' can only be an entire path component")
             else:
