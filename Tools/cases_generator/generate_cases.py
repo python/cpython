@@ -410,6 +410,8 @@ class Instruction:
 
     def is_viable_uop(self) -> bool:
         """Whether this instruction is viable as a uop."""
+        if self.name == "EXIT_TRACE":
+            return True  # This has 'return frame' but it's okay
         if self.always_exits:
             # print(f"Skipping {self.name} because it always exits")
             return False
@@ -1278,7 +1280,7 @@ class Analyzer:
                             typing.assert_never(thing)
 
             with self.out.block("const char * const _PyOpcode_uop_name[512] =", ";"):
-                self.write_uop_items(lambda name, counter: f"[{counter}] = \"{name}\",")
+                self.write_uop_items(lambda name, counter: f"[{name}] = \"{name}\",")
 
             self.out.emit("#endif // NEED_OPCODE_METADATA")
 
@@ -1324,17 +1326,19 @@ class Analyzer:
     def write_uop_items(self, make_text: typing.Callable[[str, int], str]) -> None:
         """Write '#define XXX NNN' for each uop"""
         counter = 300  # TODO: Avoid collision with pseudo instructions
+        seen = set()
 
         def add(name: str) -> None:
+            if name in seen:
+                return
             nonlocal counter
             self.out.emit(make_text(name, counter))
             counter += 1
+            seen.add(name)
 
+        # These two are first by convention
         add("EXIT_TRACE")
         add("SAVE_IP")
-        add("_POP_JUMP_IF_FALSE")
-        add("_POP_JUMP_IF_TRUE")
-        add("JUMP_TO_TOP")
 
         for instr in self.instrs.values():
             if instr.kind == "op" and instr.is_viable_uop():
