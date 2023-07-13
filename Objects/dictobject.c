@@ -2344,24 +2344,11 @@ Fail:
 /* Methods */
 
 static void
-dict_dealloc(PyDictObject *mp)
+dict_dealloc_contents(PyInterpreterState *interp, PyDictObject *mp)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    assert(Py_REFCNT(mp) == 0);
-    Py_SET_REFCNT(mp, 1);
-    _PyDict_NotifyEvent(interp, PyDict_EVENT_DEALLOCATED, mp, NULL, NULL);
-    if (Py_REFCNT(mp) > 1) {
-        Py_SET_REFCNT(mp, Py_REFCNT(mp) - 1);
-        return;
-    }
-    Py_SET_REFCNT(mp, 0);
     PyDictValues *values = mp->ma_values;
     PyDictKeysObject *keys = mp->ma_keys;
     Py_ssize_t i, n;
-
-    /* bpo-31095: UnTrack is needed before calling any callbacks */
-    PyObject_GC_UnTrack(mp);
-    Py_TRASHCAN_BEGIN(mp, dict_dealloc)
     if (values != NULL) {
         for (i = 0, n = mp->ma_keys->dk_nentries; i < n; i++) {
             Py_XDECREF(values->values[i]);
@@ -2373,24 +2360,58 @@ dict_dealloc(PyDictObject *mp)
         assert(keys->dk_refcnt == 1 || keys == Py_EMPTY_KEYS);
         dictkeys_decref(interp, keys);
     }
+}
+
+static void
+dict_dealloc(PyDictObject *mp)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(Py_REFCNT(mp) == 0);
+    Py_SET_REFCNT(mp, 1);
+    PyObject_GC_UnTrack(mp);
+    _PyDict_NotifyEvent(interp, PyDict_EVENT_DEALLOCATED, mp, NULL, NULL);
+    if (Py_REFCNT(mp) > 1) {
+        Py_SET_REFCNT(mp, Py_REFCNT(mp) - 1);
+        PyObject_GC_Track(mp);
+        return;
+    }
+    Py_SET_REFCNT(mp, 0);
+    Py_TRASHCAN_BEGIN(mp, dict_dealloc)
+    dict_dealloc_contents(interp, mp);
+    Py_TYPE(mp)->tp_free((PyObject *)mp);
+    Py_TRASHCAN_END
+}
+
+static void
+dict_dealloc_v2(PyThreadState *tstate, PyDictObject *mp)
+{
+    PyObject_GC_UnTrack(mp);
+    if (mp->ma_version_tag & DICT_VERSION_MASK) {
+        _Py_DeferDealloc(tstate, (PyObject *)mp);
+        return;
+    }
+    Py_TRASHCAN_2_START(tstate, mp)
+    dict_dealloc_contents(tstate->interp, mp);
+    assert(PyDict_CheckExact(mp));
 #if PyDict_MAXFREELIST > 0
-    struct _Py_dict_state *state = get_dict_state(interp);
+    struct _Py_dict_state *state = get_dict_state(tstate->interp);
 #ifdef Py_DEBUG
     // new_dict() must not be called after _PyDict_Fini()
     assert(state->numfree != -1);
 #endif
-    if (state->numfree < PyDict_MAXFREELIST && Py_IS_TYPE(mp, &PyDict_Type)) {
+    if (state->numfree < PyDict_MAXFREELIST) {
         state->free_list[state->numfree++] = mp;
         OBJECT_STAT_INC(to_freelist);
     }
     else
-#endif
     {
         Py_TYPE(mp)->tp_free((PyObject *)mp);
     }
-    Py_TRASHCAN_END
+#else
+    Py_TYPE(mp)->tp_free((PyObject *)mp);
+#endif
+    Py_TRASHCAN_2_END(tstate)
 }
-
 
 static PyObject *
 dict_repr(PyDictObject *mp)
@@ -3879,6 +3900,7 @@ PyTypeObject PyDict_Type = {
     dict_new,                                   /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
     .tp_vectorcall = dict_vectorcall,
+    .tp_unreachable = (destructor_v2)dict_dealloc_v2,
 };
 
 /* For backward compatibility with old dictionary interface */

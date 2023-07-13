@@ -2950,6 +2950,7 @@ PyTypeObject PyBytes_Type = {
     bytes_alloc,                                /* tp_alloc */
     bytes_new,                                  /* tp_new */
     PyObject_Del,                               /* tp_free */
+    .tp_unreachable = (destructor_v2)PyObject_Free_v2,
 };
 
 void

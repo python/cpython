@@ -548,7 +548,8 @@ if ((tstate)->c_recursion_remaining-- <= C_RECURSION_LIMIT/4) { \
     (tstate)->c_recursion_remaining++; \
     _Py_DeferDealloc(tstate, _PyObject_CAST(op)); \
 } \
-else { \
+else \
+{
 
 #define Py_TRASHCAN_2_END(tstate) \
     (tstate)->c_recursion_remaining++; \
