@@ -289,7 +289,6 @@ def handle_relocations(
     missed = []  # XXX
     for i, (base, relocation) in enumerate(relocations):
         match relocation:
-    ##############################################################################
             case {
                 "Length": 2 as length,
                 "Offset": int(offset),
@@ -434,7 +433,46 @@ def handle_relocations(
                 assert symbol.startswith("_"), symbol
                 symbol = symbol.removeprefix("_")
                 yield Hole("PATCH_ABS_64", symbol, offset, addend)
-    ##############################################################################
+##############################################################################
+            case {
+                "Offset": int(offset),
+                "Symbol": str(symbol),
+                "Type": {"Value": "IMAGE_REL_AMD64_ADDR64"},
+            }:
+                offset += base
+                where = slice(offset, offset + 8)
+                what = int.from_bytes(body[where], sys.byteorder)
+                # assert not what, what
+                addend = what
+                body[where] = [0] * 8
+                yield Hole("PATCH_ABS_64", symbol, offset, addend)
+##############################################################################
+            case {
+                "Offset": int(offset),
+                "Symbol": str(symbol),
+                "Type": {"Value": "IMAGE_REL_I386_DIR32"},
+            }:
+                offset += base
+                where = slice(offset, offset + 4)
+                what = int.from_bytes(body[where], sys.byteorder)
+                # assert not what, what
+                addend = what
+                body[where] = [0] * 4
+                # assert symbol.startswith("_")
+                symbol = symbol.removeprefix("_")
+                yield Hole("PATCH_ABS_32", symbol, offset, addend)
+##############################################################################
+            case {
+                "Addend": int(addend),
+                "Offset": int(offset),
+                "Symbol": {"Value": str(symbol)},
+                "Type": {"Value": "R_AARCH64_ABS64"},
+            }:
+                offset += base
+                where = slice(offset, offset + 8)
+                what = int.from_bytes(body[where], sys.byteorder)
+                assert not what, what
+                yield Hole("PATCH_ABS_64", symbol, offset, addend)
             case {
                 "Addend": 0,
                 "Offset": int(offset),
@@ -533,33 +571,7 @@ def handle_relocations(
                 what = int.from_bytes(body[where], "little", signed=False)
                 assert ((what >> 5) & 0xFFFF) == 0, what
                 yield Hole("PATCH_ABS_16_D", "_justin_base", offset, addend)
-    ##############################################################################
-            case {
-                "Offset": int(offset),
-                "Symbol": str(symbol),
-                "Type": {"Value": "IMAGE_REL_AMD64_ADDR64"},
-            }:
-                offset += base
-                where = slice(offset, offset + 8)
-                what = int.from_bytes(body[where], sys.byteorder)
-                # assert not what, what
-                addend = what
-                body[where] = [0] * 8
-                yield Hole("PATCH_ABS_64", symbol, offset, addend)
-            case {
-                "Offset": int(offset),
-                "Symbol": str(symbol),
-                "Type": {"Value": "IMAGE_REL_I386_DIR32"},
-            }:
-                offset += base
-                where = slice(offset, offset + 4)
-                what = int.from_bytes(body[where], sys.byteorder)
-                # assert not what, what
-                addend = what
-                body[where] = [0] * 4
-                # assert symbol.startswith("_")
-                symbol = symbol.removeprefix("_")
-                yield Hole("PATCH_ABS_32", symbol, offset, addend)
+##############################################################################
             case {
                 "Addend": int(addend),
                 "Offset": int(offset),
@@ -923,7 +935,7 @@ class Compiler:
             assert stderr is None, stderr
             if process.returncode:
                 raise RuntimeError(f"{self._clang} exited with {process.returncode}")
-            # self._use_ghccc(ll, True)  # XXX: M2 Mac... (LLVM 14)
+            # self._use_ghccc(ll, True)  # XXX: M2 Mac...
             self._stderr(f"Recompiling {opname}...")
             process = await asyncio.create_subprocess_exec(self._clang, *CFLAGS, "-c", "-o", o, ll)
             stdout, stderr = await process.communicate()
