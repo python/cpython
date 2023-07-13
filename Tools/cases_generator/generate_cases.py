@@ -867,6 +867,11 @@ class Analyzer:
         for family in self.families.values():
             if len(family.members) < 1:
                 self.error(f"Family {family.name!r} has insufficient members", family)
+            if family.name not in self.macro_instrs:
+                self.error(
+                    f"Family {family.name!r} has unknown instruction {family.name!r}",
+                    family,
+                )
             members = [
                 member
                 for member in family.members
@@ -877,10 +882,10 @@ class Analyzer:
                 self.error(
                     f"Family {family.name!r} has unknown members: {unknown}", family
                 )
-            if len(members) < 2:
+            if len(members) < 1:
                 continue
-            expected_effects = self.effect_counts(members[0])
-            for member in members[1:]:
+            expected_effects = self.effect_counts(family.name)
+            for member in members[0:]:
                 member_effects = self.effect_counts(member)
                 if member_effects != expected_effects:
                     self.error(
@@ -1305,9 +1310,9 @@ class Analyzer:
             for name, family in self.families.items():
                 assert len(family.members) > 1
                 with self.out.indent():
-                    self.out.emit(f"\"{family.members[0]}\": [")
+                    self.out.emit(f"\"{family.name}\": [")
                     with self.out.indent():
-                        for m in family.members[1:]:
+                        for m in family.members[0:]:
                             self.out.emit(f"\"{m}\",")
                     self.out.emit(f"],")
             self.out.emit("}")
