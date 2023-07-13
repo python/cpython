@@ -874,12 +874,13 @@ class Compiler:
         }
     )
 
-    def __init__(self, *, verbose: bool = False) -> None:
+    def __init__(self, *, verbose: bool = False, jobs: int = os.cpu_count() or 1) -> None:
         self._stencils_built = {}
         self._verbose = verbose
         self._clang, clang_version = find_llvm_tool("clang")
         self._readobj, readobj_version = find_llvm_tool("llvm-readobj")
         self._stderr(f"Using {self._clang} ({clang_version}) and {self._readobj} ({readobj_version}).")
+        self._semaphore = asyncio.BoundedSemaphore(jobs)
 
     def _stderr(self, *args, **kwargs) -> None:
         if self._verbose:
@@ -912,23 +913,24 @@ class Compiler:
             o = pathlib.Path(tempdir, f"{opname}.o")
             c.write_text(body)
             self._use_tos_caching(c, 0)
-            self._stderr(f"Compiling {opname}...")
-            process = await asyncio.create_subprocess_exec(self._clang, *CFLAGS, "-emit-llvm", "-S", *defines, "-o", ll, c)
-            stdout, stderr = await process.communicate()
-            assert stdout is None, stdout
-            assert stderr is None, stderr
-            if process.returncode:
-                raise RuntimeError(f"{self._clang} exited with {process.returncode}")
-            # self._use_ghccc(ll, True)  # XXX: M2 Mac...
-            self._stderr(f"Recompiling {opname}...")
-            process = await asyncio.create_subprocess_exec(self._clang, *CFLAGS, "-c", "-o", o, ll)
-            stdout, stderr = await process.communicate()
-            assert stdout is None, stdout
-            assert stderr is None, stderr
-            if process.returncode:
-                raise RuntimeError(f"{self._clang} exited with {process.returncode}")
-            self._stderr(f"Parsing {opname}...")
-            self._stencils_built[opname] = await ObjectParserDefault(o, self._readobj).parse()
+            async with self._semaphore:
+                self._stderr(f"Compiling {opname}...")
+                process = await asyncio.create_subprocess_exec(self._clang, *CFLAGS, "-emit-llvm", "-S", *defines, "-o", ll, c)
+                stdout, stderr = await process.communicate()
+                assert stdout is None, stdout
+                assert stderr is None, stderr
+                if process.returncode:
+                    raise RuntimeError(f"{self._clang} exited with {process.returncode}")
+                # self._use_ghccc(ll, True)  # XXX: M2 Mac...
+                self._stderr(f"Recompiling {opname}...")
+                process = await asyncio.create_subprocess_exec(self._clang, *CFLAGS, "-c", "-o", o, ll)
+                stdout, stderr = await process.communicate()
+                assert stdout is None, stdout
+                assert stderr is None, stderr
+                if process.returncode:
+                    raise RuntimeError(f"{self._clang} exited with {process.returncode}")
+                self._stderr(f"Parsing {opname}...")
+                self._stencils_built[opname] = await ObjectParserDefault(o, self._readobj).parse()
         self._stderr(f"Built {opname}!")
 
     async def build(self) -> None:
@@ -945,9 +947,7 @@ class Compiler:
         opname = "trampoline"
         body = TOOLS_JUSTIN_TRAMPOLINE.read_text()
         tasks.append(self._compile(opname, body))
-        # await asyncio.gather(*tasks)
-        for task in tasks:  # XXX
-            await asyncio.gather(task)
+        await asyncio.gather(*tasks)
 
     def dump(self) -> str:
         lines = []
