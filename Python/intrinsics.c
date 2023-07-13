@@ -40,11 +40,11 @@ import_all_from(PyThreadState *tstate, PyObject *locals, PyObject *v)
     int skip_leading_underscores = 0;
     int pos, err;
 
-    if (_PyObject_LookupAttr(v, &_Py_ID(__all__), &all) < 0) {
+    if (PyObject_GetOptionalAttr(v, &_Py_ID(__all__), &all) < 0) {
         return -1; /* Unexpected error */
     }
     if (all == NULL) {
-        if (_PyObject_LookupAttr(v, &_Py_ID(__dict__), &dict) < 0) {
+        if (PyObject_GetOptionalAttr(v, &_Py_ID(__dict__), &dict) < 0) {
             return -1;
         }
         if (dict == NULL) {

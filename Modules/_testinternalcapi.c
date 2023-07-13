@@ -14,7 +14,8 @@
 #include "interpreteridobject.h"  // _PyInterpreterID_LookUp()
 #include "pycore_atomic_funcs.h" // _Py_atomic_int_get()
 #include "pycore_bitutils.h"     // _Py_bswap32()
-#include "pycore_compile.h"      // _PyCompile_CodeGen, _PyCompile_OptimizeCfg, _PyCompile_Assemble
+#include "pycore_bytesobject.h"  // _PyBytes_Find()
+#include "pycore_compile.h"      // _PyCompile_CodeGen, _PyCompile_OptimizeCfg, _PyCompile_Assemble, _PyCompile_CleanDoc
 #include "pycore_ceval.h"        // _PyEval_AddPendingCall
 #include "pycore_fileutils.h"    // _Py_normpath
 #include "pycore_frame.h"        // _PyInterpreterFrame
@@ -443,6 +444,118 @@ test_edit_cost(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 
+static int
+check_bytes_find(const char *haystack0, const char *needle0,
+                 int offset, Py_ssize_t expected)
+{
+    Py_ssize_t len_haystack = strlen(haystack0);
+    Py_ssize_t len_needle = strlen(needle0);
+    Py_ssize_t result_1 = _PyBytes_Find(haystack0, len_haystack,
+                                        needle0, len_needle, offset);
+    if (result_1 != expected) {
+        PyErr_Format(PyExc_AssertionError,
+                    "Incorrect result_1: '%s' in '%s' (offset=%zd)",
+                    needle0, haystack0, offset);
+        return -1;
+    }
+    // Allocate new buffer with no NULL terminator.
+    char *haystack = PyMem_Malloc(len_haystack);
+    if (haystack == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    char *needle = PyMem_Malloc(len_needle);
+    if (needle == NULL) {
+        PyMem_Free(haystack);
+        PyErr_NoMemory();
+        return -1;
+    }
+    memcpy(haystack, haystack0, len_haystack);
+    memcpy(needle, needle0, len_needle);
+    Py_ssize_t result_2 = _PyBytes_Find(haystack, len_haystack,
+                                        needle, len_needle, offset);
+    PyMem_Free(haystack);
+    PyMem_Free(needle);
+    if (result_2 != expected) {
+        PyErr_Format(PyExc_AssertionError,
+                    "Incorrect result_2: '%s' in '%s' (offset=%zd)",
+                    needle0, haystack0, offset);
+        return -1;
+    }
+    return 0;
+}
+
+static int
+check_bytes_find_large(Py_ssize_t len_haystack, Py_ssize_t len_needle,
+                       const char *needle)
+{
+    char *zeros = PyMem_RawCalloc(len_haystack, 1);
+    if (zeros == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    Py_ssize_t res = _PyBytes_Find(zeros, len_haystack, needle, len_needle, 0);
+    PyMem_RawFree(zeros);
+    if (res != -1) {
+        PyErr_Format(PyExc_AssertionError,
+                    "check_bytes_find_large(%zd, %zd) found %zd",
+                    len_haystack, len_needle, res);
+        return -1;
+    }
+    return 0;
+}
+
+static PyObject *
+test_bytes_find(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    #define CHECK(H, N, O, E) do {               \
+        if (check_bytes_find(H, N, O, E) < 0) {  \
+            return NULL;                         \
+        }                                        \
+    } while (0)
+
+    CHECK("", "", 0, 0);
+    CHECK("Python", "", 0, 0);
+    CHECK("Python", "", 3, 3);
+    CHECK("Python", "", 6, 6);
+    CHECK("Python", "yth", 0, 1);
+    CHECK("ython", "yth", 1, 1);
+    CHECK("thon", "yth", 2, -1);
+    CHECK("Python", "thon", 0, 2);
+    CHECK("ython", "thon", 1, 2);
+    CHECK("thon", "thon", 2, 2);
+    CHECK("hon", "thon", 3, -1);
+    CHECK("Pytho", "zz", 0, -1);
+    CHECK("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "ab", 0, -1);
+    CHECK("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "ba", 0, -1);
+    CHECK("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "bb", 0, -1);
+    CHECK("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab", "ab", 0, 30);
+    CHECK("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaba", "ba", 0, 30);
+    CHECK("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb", "bb", 0, 30);
+    #undef CHECK
+
+    // Hunt for segfaults
+    // n, m chosen here so that (n - m) % (m + 1) == 0
+    // This would make default_find in fastsearch.h access haystack[n].
+    if (check_bytes_find_large(2048, 2, "ab") < 0) {
+        return NULL;
+    }
+    if (check_bytes_find_large(4096, 16, "0123456789abcdef") < 0) {
+        return NULL;
+    }
+    if (check_bytes_find_large(8192, 2, "ab") < 0) {
+        return NULL;
+    }
+    if (check_bytes_find_large(16384, 4, "abcd") < 0) {
+        return NULL;
+    }
+    if (check_bytes_find_large(32768, 2, "ab") < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
 static PyObject *
 normalize_path(PyObject *self, PyObject *filename)
 {
@@ -590,6 +703,23 @@ set_eval_frame_record(PyObject *self, PyObject *list)
     _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), record_eval);
     Py_RETURN_NONE;
 }
+
+/*[clinic input]
+
+_testinternalcapi.compiler_cleandoc -> object
+
+    doc: unicode
+
+C implementation of inspect.cleandoc().
+[clinic start generated code]*/
+
+static PyObject *
+_testinternalcapi_compiler_cleandoc_impl(PyObject *module, PyObject *doc)
+/*[clinic end generated code: output=2dd203a80feff5bc input=2de03fab931d9cdc]*/
+{
+    return _PyCompile_CleanDoc(doc);
+}
+
 
 /*[clinic input]
 
@@ -1328,12 +1458,14 @@ static PyMethodDef module_functions[] = {
     {"reset_path_config", test_reset_path_config, METH_NOARGS},
     {"test_atomic_funcs", test_atomic_funcs, METH_NOARGS},
     {"test_edit_cost", test_edit_cost, METH_NOARGS},
+    {"test_bytes_find", test_bytes_find, METH_NOARGS},
     {"normalize_path", normalize_path, METH_O, NULL},
     {"get_getpath_codeobject", get_getpath_codeobject, METH_NOARGS, NULL},
     {"EncodeLocaleEx", encode_locale_ex, METH_VARARGS},
     {"DecodeLocaleEx", decode_locale_ex, METH_VARARGS},
     {"set_eval_frame_default", set_eval_frame_default, METH_NOARGS, NULL},
     {"set_eval_frame_record", set_eval_frame_record, METH_O, NULL},
+    _TESTINTERNALCAPI_COMPILER_CLEANDOC_METHODDEF
     _TESTINTERNALCAPI_COMPILER_CODEGEN_METHODDEF
     _TESTINTERNALCAPI_OPTIMIZE_CFG_METHODDEF
     _TESTINTERNALCAPI_ASSEMBLE_CODE_OBJECT_METHODDEF

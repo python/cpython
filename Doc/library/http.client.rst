@@ -390,7 +390,7 @@ HTTPConnection Objects
    Returns a dictionary with the headers of the response received from
    the proxy server to the CONNECT request.
 
-   If the CONNECT request was not sent, the method returns an empty dictionary.
+   If the CONNECT request was not sent, the method returns ``None``.
 
    .. versionadded:: 3.12
 

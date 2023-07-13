@@ -24,6 +24,16 @@ class TestAbstractContextManager(unittest.TestCase):
         manager = DefaultEnter()
         self.assertIs(manager.__enter__(), manager)
 
+    def test_slots(self):
+        class DefaultContextManager(AbstractContextManager):
+            __slots__ = ()
+
+            def __exit__(self, *args):
+                super().__exit__(*args)
+
+        with self.assertRaises(AttributeError):
+            DefaultContextManager().var = 42
+
     def test_exit_is_abstract(self):
         class MissingExit(AbstractContextManager):
             pass

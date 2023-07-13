@@ -662,7 +662,7 @@ class Formatter(object):
         # See issues #9427, #1553375. Commented out for now.
         #if getattr(self, 'fullstack', False):
         #    traceback.print_stack(tb.tb_frame.f_back, file=sio)
-        traceback.print_exception(ei[0], ei[1], tb, None, sio)
+        traceback.print_exception(ei[0], ei[1], tb, limit=None, file=sio)
         s = sio.getvalue()
         sio.close()
         if s[-1:] == "\n":
@@ -1080,14 +1080,14 @@ class Handler(Filterer):
         The record which was being processed is passed in to this method.
         """
         if raiseExceptions and sys.stderr:  # see issue 13807
-            t, v, tb = sys.exc_info()
+            exc = sys.exception()
             try:
                 sys.stderr.write('--- Logging error ---\n')
-                traceback.print_exception(t, v, tb, None, sys.stderr)
+                traceback.print_exception(exc, limit=None, file=sys.stderr)
                 sys.stderr.write('Call stack:\n')
                 # Walk the stack frame up until we're out of logging,
                 # so as to print the calling context.
-                frame = tb.tb_frame
+                frame = exc.__traceback__.tb_frame
                 while (frame and os.path.dirname(frame.f_code.co_filename) ==
                        __path__[0]):
                     frame = frame.f_back
@@ -1112,7 +1112,7 @@ class Handler(Filterer):
             except OSError: #pragma: no cover
                 pass    # see issue 5971
             finally:
-                del t, v, tb
+                del exc
 
     def __repr__(self):
         level = getLevelName(self.level)
