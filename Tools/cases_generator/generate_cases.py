@@ -1147,7 +1147,7 @@ class Analyzer:
 
     def from_source_files(self) -> str:
         paths = f"\n{self.out.comment}   ".join(
-            os.path.relpath(filename, ROOT).replace(os.path.sep, posixpath.sep)
+            prettify_filename(filename)
             for filename in self.input_filenames
         )
         return f"{self.out.comment} from:\n{self.out.comment}   {paths}\n"
