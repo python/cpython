@@ -283,7 +283,6 @@ dummy_func(
         }
 
         family(TO_BOOL, INLINE_CACHE_ENTRIES_TO_BOOL) = {
-            TO_BOOL,
             TO_BOOL_ALWAYS_TRUE,
             TO_BOOL_BOOL,
             TO_BOOL_INT,
@@ -371,7 +370,6 @@ dummy_func(
         }
 
         family(BINARY_OP, INLINE_CACHE_ENTRIES_BINARY_OP) = {
-            BINARY_OP,
             BINARY_OP_MULTIPLY_INT,
             BINARY_OP_ADD_INT,
             BINARY_OP_SUBTRACT_INT,
@@ -506,7 +504,6 @@ dummy_func(
             _GUARD_BOTH_UNICODE + _BINARY_OP_INPLACE_ADD_UNICODE;
 
         family(BINARY_SUBSCR, INLINE_CACHE_ENTRIES_BINARY_SUBSCR) = {
-            BINARY_SUBSCR,
             BINARY_SUBSCR_DICT,
             BINARY_SUBSCR_GETITEM,
             BINARY_SUBSCR_LIST_INT,
@@ -642,7 +639,6 @@ dummy_func(
         }
 
         family(STORE_SUBSCR, INLINE_CACHE_ENTRIES_STORE_SUBSCR) = {
-            STORE_SUBSCR,
             STORE_SUBSCR_DICT,
             STORE_SUBSCR_LIST_INT,
         };
@@ -920,7 +916,6 @@ dummy_func(
         }
 
         family(SEND, INLINE_CACHE_ENTRIES_SEND) = {
-            SEND,
             SEND_GEN,
         };
 
@@ -1133,7 +1128,6 @@ dummy_func(
         }
 
         family(UNPACK_SEQUENCE, INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE) = {
-            UNPACK_SEQUENCE,
             UNPACK_SEQUENCE_TWO_TUPLE,
             UNPACK_SEQUENCE_TUPLE,
             UNPACK_SEQUENCE_LIST,
@@ -1197,7 +1191,6 @@ dummy_func(
         }
 
         family(STORE_ATTR, INLINE_CACHE_ENTRIES_STORE_ATTR) = {
-            STORE_ATTR,
             STORE_ATTR_INSTANCE_VALUE,
             STORE_ATTR_SLOT,
             STORE_ATTR_WITH_HINT,
@@ -1297,7 +1290,6 @@ dummy_func(
         macro(LOAD_FROM_DICT_OR_GLOBALS) = _LOAD_FROM_DICT_OR_GLOBALS;
 
         family(LOAD_GLOBAL, INLINE_CACHE_ENTRIES_LOAD_GLOBAL) = {
-            LOAD_GLOBAL,
             LOAD_GLOBAL_MODULE,
             LOAD_GLOBAL_BUILTIN,
         };
@@ -1646,7 +1638,6 @@ dummy_func(
         }
 
         family(LOAD_SUPER_ATTR, INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR) = {
-            LOAD_SUPER_ATTR,
             LOAD_SUPER_ATTR_ATTR,
             LOAD_SUPER_ATTR_METHOD,
         };
@@ -1749,7 +1740,6 @@ dummy_func(
         }
 
         family(LOAD_ATTR, INLINE_CACHE_ENTRIES_LOAD_ATTR) = {
-            LOAD_ATTR,
             LOAD_ATTR_INSTANCE_VALUE,
             LOAD_ATTR_MODULE,
             LOAD_ATTR_WITH_HINT,
@@ -2034,7 +2024,6 @@ dummy_func(
         }
 
         family(COMPARE_OP, INLINE_CACHE_ENTRIES_COMPARE_OP) = {
-            COMPARE_OP,
             COMPARE_OP_FLOAT,
             COMPARE_OP_INT,
             COMPARE_OP_STR,
@@ -2336,7 +2325,6 @@ dummy_func(
         // its effect (popping 'iter' instead of pushing 'next'.)
 
         family(FOR_ITER, INLINE_CACHE_ENTRIES_FOR_ITER) = {
-            FOR_ITER,
             FOR_ITER_LIST,
             FOR_ITER_TUPLE,
             FOR_ITER_RANGE,
@@ -2727,7 +2715,6 @@ dummy_func(
         // Cache layout: counter/1, func_version/2
         // Neither CALL_INTRINSIC_1/2 nor CALL_FUNCTION_EX are members!
         family(CALL, INLINE_CACHE_ENTRIES_CALL) = {
-            CALL,
             CALL_BOUND_METHOD_EXACT_ARGS,
             CALL_PY_EXACT_ARGS,
             CALL_PY_WITH_DEFAULTS,
