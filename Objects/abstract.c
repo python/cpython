@@ -204,12 +204,7 @@ int
 PyMapping_GetOptionalItem(PyObject *obj, PyObject *key, PyObject **result)
 {
     if (PyDict_CheckExact(obj)) {
-        *result = PyDict_GetItemWithError(obj, key);  /* borrowed */
-        if (*result) {
-            Py_INCREF(*result);
-            return 1;
-        }
-        return PyErr_Occurred() ? -1 : 0;
+        return PyDict_GetItemRef(obj, key, result);
     }
 
     *result = PyObject_GetItem(obj, key);

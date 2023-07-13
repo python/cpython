@@ -372,9 +372,11 @@ get_attrib_from_keywords(PyObject *kwds)
     if (attrib_str == NULL) {
         return NULL;
     }
-    PyObject *attrib = PyDict_GetItemWithError(kwds, attrib_str);
-
-    if (attrib) {
+    PyObject *attrib;
+    if (PyDict_GetItemRef(kwds, attrib_str, &attrib) == 0) {
+        attrib = PyDict_New();
+    }
+    else if (attrib) {
         /* If attrib was found in kwds, copy its value and remove it from
          * kwds
          */
@@ -382,15 +384,13 @@ get_attrib_from_keywords(PyObject *kwds)
             Py_DECREF(attrib_str);
             PyErr_Format(PyExc_TypeError, "attrib must be dict, not %.100s",
                          Py_TYPE(attrib)->tp_name);
+            Py_DECREF(attrib);
             return NULL;
         }
-        attrib = PyDict_Copy(attrib);
+        Py_SETREF(attrib, PyDict_Copy(attrib));
         if (attrib && PyDict_DelItem(kwds, attrib_str) < 0) {
             Py_SETREF(attrib, NULL);
         }
-    }
-    else if (!PyErr_Occurred()) {
-        attrib = PyDict_New();
     }
 
     Py_DECREF(attrib_str);
@@ -1421,11 +1421,12 @@ _elementtree_Element_get_impl(ElementObject *self, PyObject *key,
 {
     if (self->extra && self->extra->attrib) {
         PyObject *attrib = Py_NewRef(self->extra->attrib);
-        PyObject *value = Py_XNewRef(PyDict_GetItemWithError(attrib, key));
-        Py_DECREF(attrib);
-        if (value != NULL || PyErr_Occurred()) {
+        PyObject *value;
+        if (PyDict_GetItemRef(attrib, key, &value) != 0) {
+            Py_DECREF(attrib);
             return value;
         }
+        Py_DECREF(attrib);
     }
 
     return Py_NewRef(default_value);
@@ -3085,9 +3086,7 @@ makeuniversal(XMLParserObject* self, const char* string)
     if (!key)
         return NULL;
 
-    value = Py_XNewRef(PyDict_GetItemWithError(self->names, key));
-
-    if (value == NULL && !PyErr_Occurred()) {
+    if (PyDict_GetItemRef(self->names, key, &value) == 0) {
         /* new name.  convert to universal name, and decode as
            necessary */
 
