@@ -865,7 +865,7 @@ class Analyzer:
         - All members must have the same cache, input and output effects
         """
         for family in self.families.values():
-            if len(family.members) < 2:
+            if len(family.members) < 1:
                 self.error(f"Family {family.name!r} has insufficient members", family)
             members = [
                 member
