@@ -97,7 +97,6 @@
         }
 
         case TO_BOOL: {
-            static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
             PyObject *value = stack_pointer[-1];
             PyObject *res;
             #if ENABLE_SPECIALIZATION
@@ -183,6 +182,7 @@
         }
 
         case TO_BOOL_ALWAYS_TRUE: {
+            static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
             PyObject *value = stack_pointer[-1];
             PyObject *res;
             uint32_t version = (uint32_t)operand;
@@ -329,7 +329,6 @@
         }
 
         case BINARY_SUBSCR: {
-            static_assert(INLINE_CACHE_ENTRIES_BINARY_SUBSCR == 1, "incorrect cache size");
             PyObject *sub = stack_pointer[-1];
             PyObject *container = stack_pointer[-2];
             PyObject *res;
@@ -440,6 +439,7 @@
         }
 
         case BINARY_SUBSCR_DICT: {
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_SUBSCR == 1, "incorrect cache size");
             PyObject *sub = stack_pointer[-1];
             PyObject *dict = stack_pointer[-2];
             PyObject *res;
@@ -481,7 +481,6 @@
         }
 
         case STORE_SUBSCR: {
-            static_assert(INLINE_CACHE_ENTRIES_STORE_SUBSCR == 1, "incorrect cache size");
             PyObject *sub = stack_pointer[-1];
             PyObject *container = stack_pointer[-2];
             PyObject *v = stack_pointer[-3];
@@ -533,6 +532,7 @@
         }
 
         case STORE_SUBSCR_DICT: {
+            static_assert(INLINE_CACHE_ENTRIES_STORE_SUBSCR == 1, "incorrect cache size");
             PyObject *sub = stack_pointer[-1];
             PyObject *dict = stack_pointer[-2];
             PyObject *value = stack_pointer[-3];
@@ -770,7 +770,6 @@
         }
 
         case UNPACK_SEQUENCE: {
-            static_assert(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE == 1, "incorrect cache size");
             PyObject *seq = stack_pointer[-1];
             #if ENABLE_SPECIALIZATION
             _PyUnpackSequenceCache *cache = (_PyUnpackSequenceCache *)next_instr;
@@ -792,6 +791,7 @@
         }
 
         case UNPACK_SEQUENCE_TWO_TUPLE: {
+            static_assert(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE == 1, "incorrect cache size");
             PyObject *seq = stack_pointer[-1];
             PyObject **values = stack_pointer - (1);
             DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
@@ -932,7 +932,6 @@
         }
 
         case LOAD_GLOBAL: {
-            static_assert(INLINE_CACHE_ENTRIES_LOAD_GLOBAL == 4, "incorrect cache size");
             PyObject *null = NULL;
             PyObject *v;
             #if ENABLE_SPECIALIZATION
@@ -1313,6 +1312,7 @@
         }
 
         case LOAD_SUPER_ATTR_ATTR: {
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR == 1, "incorrect cache size");
             PyObject *self = stack_pointer[-1];
             PyObject *class = stack_pointer[-2];
             PyObject *global_super = stack_pointer[-3];
@@ -1370,7 +1370,6 @@
         }
 
         case LOAD_ATTR: {
-            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             PyObject *owner = stack_pointer[-1];
             PyObject *res2 = NULL;
             PyObject *res;
@@ -1426,7 +1425,6 @@
         }
 
         case COMPARE_OP: {
-            static_assert(INLINE_CACHE_ENTRIES_COMPARE_OP == 1, "incorrect cache size");
             PyObject *right = stack_pointer[-1];
             PyObject *left = stack_pointer[-2];
             PyObject *res;
@@ -1457,6 +1455,7 @@
         }
 
         case COMPARE_OP_FLOAT: {
+            static_assert(INLINE_CACHE_ENTRIES_COMPARE_OP == 1, "incorrect cache size");
             PyObject *right = stack_pointer[-1];
             PyObject *left = stack_pointer[-2];
             PyObject *res;
@@ -1935,7 +1934,6 @@
         }
 
         case BINARY_OP: {
-            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
             PyObject *rhs = stack_pointer[-1];
             PyObject *lhs = stack_pointer[-2];
             PyObject *res;

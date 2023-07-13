@@ -1308,7 +1308,7 @@ class Analyzer:
             self.out.emit("")
             self.out.emit("_specializations = {")
             for name, family in self.families.items():
-                assert len(family.members) > 1
+                assert len(family.members) >= 1
                 with self.out.indent():
                     self.out.emit(f"\"{family.name}\": [")
                     with self.out.indent():
