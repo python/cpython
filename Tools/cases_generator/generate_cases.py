@@ -867,7 +867,7 @@ class Analyzer:
         for family in self.families.values():
             if len(family.members) < 1:
                 self.error(f"Family {family.name!r} has insufficient members", family)
-            if family.name not in self.macro_instrs:
+            if family.name not in self.macro_instrs and family.name not in self.instrs:
                 self.error(
                     f"Family {family.name!r} has unknown instruction {family.name!r}",
                     family,
