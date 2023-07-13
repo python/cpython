@@ -1818,14 +1818,21 @@ dummy_func(
             LOAD_ATTR,
         };
 
-        inst(LOAD_ATTR_INSTANCE_VALUE, (unused/1, type_version/2, index/1, unused/5, owner -- res2 if (oparg & 1), res)) {
+        op(_GUARD_TYPE_VERSION, (type_version/2, owner -- owner)) {
             PyTypeObject *tp = Py_TYPE(owner);
             assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version, LOAD_ATTR);
-            assert(tp->tp_dictoffset < 0);
-            assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+        }
+
+        op(_CHECK_MANAGED_OBJECT_HAS_VALUES, (owner -- owner)) {
+            assert(Py_TYPE(owner)->tp_dictoffset < 0);
+            assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             DEOPT_IF(!_PyDictOrValues_IsValues(dorv), LOAD_ATTR);
+        }
+
+        op(_LOAD_ATTR_INSTANCE_VALUE, (index/1, unused/5, owner -- res2 if (oparg & 1), res)) {
+            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             res = _PyDictOrValues_GetValues(dorv)->values[index];
             DEOPT_IF(res == NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
@@ -1833,6 +1840,12 @@ dummy_func(
             res2 = NULL;
             DECREF_INPUTS();
         }
+
+        macro(LOAD_ATTR_INSTANCE_VALUE) =
+            _SKIP_CACHE + // Skip over the counter
+            _GUARD_TYPE_VERSION +
+            _CHECK_MANAGED_OBJECT_HAS_VALUES +
+            _LOAD_ATTR_INSTANCE_VALUE;
 
         inst(LOAD_ATTR_MODULE, (unused/1, type_version/2, index/1, unused/5, owner -- res2 if (oparg & 1), res)) {
             DEOPT_IF(!PyModule_CheckExact(owner), LOAD_ATTR);
@@ -3691,6 +3704,36 @@ dummy_func(
         inst(RESERVED, (--)) {
             assert(0 && "Executing RESERVED instruction.");
             Py_UNREACHABLE();
+        }
+
+        ///////// Tier-2 only opcodes /////////
+
+        op(_POP_JUMP_IF_FALSE, (flag -- )) {
+            if (Py_IsFalse(flag)) {
+                pc = oparg;
+            }
+        }
+
+        op(_POP_JUMP_IF_TRUE, (flag -- )) {
+            if (Py_IsTrue(flag)) {
+                pc = oparg;
+            }
+        }
+
+        op(JUMP_TO_TOP, (--)) {
+            pc = 0;
+            CHECK_EVAL_BREAKER();
+        }
+
+        op(SAVE_IP, (--)) {
+            frame->prev_instr = ip_offset + oparg;
+        }
+
+        op(EXIT_TRACE, (--)) {
+            frame->prev_instr--;  // Back up to just before destination
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            Py_DECREF(self);
+            return frame;
         }
 
 

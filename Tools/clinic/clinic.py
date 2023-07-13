@@ -898,22 +898,24 @@ class CLanguage(Language):
         # parser_body_fields remembers the fields passed in to the
         # previous call to parser_body. this is used for an awful hack.
         parser_body_fields = ()
-        def parser_body(prototype, *fields, declarations=''):
+        def parser_body(
+                prototype: str,
+                *fields: str,
+                declarations: str = ''
+        ) -> str:
             nonlocal parser_body_fields
             add, output = text_accumulator()
             add(prototype)
             parser_body_fields = fields
 
-            fields = list(fields)
-            fields.insert(0, normalize_snippet("""
+            preamble = normalize_snippet("""
                 {{
                     {return_value_declaration}
                     {parser_declarations}
                     {declarations}
                     {initializers}
-                """) + "\n")
-            # just imagine--your code is here in the middle
-            fields.append(normalize_snippet("""
+            """) + "\n"
+            finale = normalize_snippet("""
                     {modifications}
                     {return_value} = {c_basename}_impl({impl_arguments});
                     {return_conversion}
@@ -923,8 +925,8 @@ class CLanguage(Language):
                     {cleanup}
                     return return_value;
                 }}
-                """))
-            for field in fields:
+            """)
+            for field in preamble, *fields, finale:
                 add('\n')
                 add(field)
             return linear_format(output(), parser_declarations=declarations)
@@ -1954,27 +1956,32 @@ class BufferSeries:
         return "".join(texts)
 
 
+@dc.dataclass(slots=True, repr=False)
 class Destination:
-    def __init__(self, name, type, clinic, *args):
-        self.name = name
-        self.type = type
-        self.clinic = clinic
-        self.buffers = BufferSeries()
+    name: str
+    type: str
+    clinic: Clinic
+    buffers: BufferSeries = dc.field(init=False, default_factory=BufferSeries)
+    filename: str = dc.field(init=False)  # set in __post_init__
 
+    args: dc.InitVar[tuple[str, ...]] = ()
+
+    def __post_init__(self, args: tuple[str, ...]) -> None:
         valid_types = ('buffer', 'file', 'suppress')
-        if type not in valid_types:
+        if self.type not in valid_types:
             fail(
-                f"Invalid destination type {type!r} for {name}, "
+                f"Invalid destination type {self.type!r} for {self.name}, "
                 f"must be {', '.join(valid_types)}"
             )
-        extra_arguments = 1 if type == "file" else 0
+        extra_arguments = 1 if self.type == "file" else 0
         if len(args) < extra_arguments:
-            fail(f"Not enough arguments for destination {name} new {type}")
+            fail(f"Not enough arguments for destination {self.name} new {self.type}")
         if len(args) > extra_arguments:
-            fail(f"Too many arguments for destination {name} new {type}")
-        if type =='file':
+            fail(f"Too many arguments for destination {self.name} new {self.type}")
+        if self.type =='file':
             d = {}
-            filename = clinic.filename
+            filename = self.clinic.filename
+            assert filename is not None
             d['path'] = filename
             dirname, basename = os.path.split(filename)
             if not dirname:
@@ -1984,19 +1991,19 @@ class Destination:
             d['basename_root'], d['basename_extension'] = os.path.splitext(filename)
             self.filename = args[0].format_map(d)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.type == 'file':
             file_repr = " " + repr(self.filename)
         else:
             file_repr = ''
         return "".join(("<Destination ", self.name, " ", self.type, file_repr, ">"))
 
-    def clear(self):
+    def clear(self) -> None:
         if self.type != 'buffer':
             fail("Can't clear destination" + self.name + " , it's not of type buffer")
         self.buffers.clear()
 
-    def dump(self):
+    def dump(self) -> str:
         return self.buffers.dump()
 
 
@@ -2164,11 +2171,11 @@ impl_definition block
             self,
             name: str,
             type: str,
-            *args
+            *args: str
     ) -> None:
         if name in self.destinations:
             fail("Destination already exists: " + repr(name))
-        self.destinations[name] = Destination(name, type, self, *args)
+        self.destinations[name] = Destination(name, type, self, args)
 
     def get_destination(self, name: str) -> Destination:
         d = self.destinations.get(name)
