@@ -1079,8 +1079,9 @@ class Compiler:
         return "\n".join(lines)
 
 if __name__ == "__main__":
-    ghccc = sys.platform != "darwin" or platform.machine() != "arm64"  # XXX: clang bug on aarch64-apple-darwin
-    engine = Compiler(verbose=True, ghccc=ghccc)
+    # Clang internal error with musttail + ghccc + aarch64:
+    print(platform.machine())  # XXX: for debugging
+    engine = Compiler(verbose=True, ghccc=False)#platform.machine() != "arm64")  # XXX
     asyncio.run(engine.build())
     with open(sys.argv[2], "w") as file:
         file.write(engine.dump())
