@@ -602,6 +602,20 @@ translate_bytecode_to_trace(
     }  // End for (;;)
 
 done:
+    // Ensure the trace doesn't end in KW_NAMES
+    {
+        int i = trace_length - 1;
+        while (i >= 0 && trace[i].opcode == SAVE_IP) {
+            i--;
+        }
+        if (i >= 0 && trace[i].opcode == KW_NAMES) {
+            DPRINTF(2, "* Backing up over KW_NAMES\n");
+            assert(i > 0);
+            assert(trace[i-1].opcode == SAVE_IP);
+            trace_length = i;
+            instr--;  // Back up input too!
+        }
+    }
     // Skip short traces like SAVE_IP, LOAD_FAST, SAVE_IP, EXIT_TRACE
     if (trace_length > 3) {
         ADD_TO_TRACE(EXIT_TRACE, 0);

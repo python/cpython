@@ -320,7 +320,6 @@ class ActiveCacheEffect:
 
 FORBIDDEN_NAMES_IN_UOPS = (
     "resume_with_error",
-    "kwnames",
     "next_instr",
     "oparg1",  # Proxy for super-instructions like LOAD_FAST_LOAD_FAST
     "JUMPBY",
@@ -410,27 +409,32 @@ class Instruction:
 
     def is_viable_uop(self) -> bool:
         """Whether this instruction is viable as a uop."""
+        if self.name.startswith("CALL"):
+            dprint: typing.Callable[..., None] = print
+        else:
+            dprint = lambda *args, **kwargs: None
+
         if self.name == "EXIT_TRACE":
             return True  # This has 'return frame' but it's okay
         if self.always_exits:
-            # print(f"Skipping {self.name} because it always exits")
+            dprint(f"Skipping {self.name} because it always exits")
             return False
         if self.instr_flags.HAS_ARG_FLAG:
             # If the instruction uses oparg, it cannot use any caches
             if self.active_caches:
-                # print(f"Skipping {self.name} because it uses oparg and caches")
+                dprint(f"Skipping {self.name} because it uses oparg and caches")
                 return False
         else:
             # If it doesn't use oparg, it can have one cache entry
             if len(self.active_caches) > 1:
-                # print(f"Skipping {self.name} because it has >1 cache entries")
+                dprint(f"Skipping {self.name} because it has >1 cache entries")
                 return False
         res = True
         for forbidden in FORBIDDEN_NAMES_IN_UOPS:
             # NOTE: To disallow unspecialized uops, use
             # if variable_used(self.inst, forbidden):
             if variable_used_unspecialized(self.inst, forbidden):
-                # print(f"Skipping {self.name} because it uses {forbidden}")
+                dprint(f"Skipping {self.name} because it uses {forbidden}")
                 res = False
         return res
 
@@ -1502,6 +1506,8 @@ class Analyzer:
                             with self.out.block(f"case {thing.name}:"):
                                 instr.write(self.out, tier=TIER_TWO)
                                 self.out.emit("break;")
+                        # elif instr.kind != "op":
+                        #     print(f"NOTE: {thing.name} is not a viable uop")
                     case parser.Macro():
                         pass
                     case parser.Pseudo():

@@ -2746,6 +2746,8 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
     int opcode;
     uint64_t operand;
     int oparg;
+    PyObject *kwnames = NULL; // Borrowed reference. Reset by CALL instructions.
+
     for (;;) {
         opcode = self->trace[pc].opcode;
         operand = self->trace[pc].operand;
