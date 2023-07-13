@@ -2432,11 +2432,7 @@ _Py_normpathAndSize(wchar_t *path, Py_ssize_t size, Py_ssize_t *norm_size)
                 *p2++ = lastC = *p1;
             }
         }
-        if (sepCount) {
-            minP2 = p2;      // Invalid path
-        } else {
-            minP2 = p2 - 1;  // Absolute path has SEP at minP2
-        }
+        minP2 = p2 - 1;
     }
 #else
     // Skip past two leading SEPs
@@ -2496,13 +2492,10 @@ _Py_normpathAndSize(wchar_t *path, Py_ssize_t size, Py_ssize_t *norm_size)
         while (--p2 != minP2 && *p2 == SEP) {
             *p2 = L'\0';
         }
+    } else {
+        --p2;
     }
     *norm_size = p2 - path + 1;
-    if (path == p2 && *norm_size < size && path[0] == L'\0') {
-        *norm_size = 0;
-    } else if (size > 0 && *norm_size > size) {
-        *norm_size = size;
-    }
 #undef SEP_OR_END
 #undef IS_SEP
 #undef IS_END
