@@ -953,7 +953,7 @@ print_exception_file_and_line(struct exception_print_context *ctx,
     PyObject *f = ctx->file;
 
     PyObject *tmp;
-    int res = _PyObject_LookupAttr(*value_p, &_Py_ID(print_file_and_line), &tmp);
+    int res = PyObject_GetOptionalAttr(*value_p, &_Py_ID(print_file_and_line), &tmp);
     if (res <= 0) {
         if (res < 0) {
             PyErr_Clear();
@@ -1132,7 +1132,7 @@ print_exception_notes(struct exception_print_context *ctx, PyObject *value)
     }
 
     PyObject *notes;
-    int res = _PyObject_LookupAttr(value, &_Py_ID(__notes__), &notes);
+    int res = PyObject_GetOptionalAttr(value, &_Py_ID(__notes__), &notes);
     if (res <= 0) {
         return res;
     }

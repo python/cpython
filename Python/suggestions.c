@@ -247,7 +247,7 @@ get_suggestions_for_name_error(PyObject* name, PyFrameObject* frame)
         }
 
         PyObject *value;
-        res = _PyObject_LookupAttr(self, name, &value);
+        res = PyObject_GetOptionalAttr(self, name, &value);
         Py_DECREF(locals);
         if (res < 0) {
             goto error;

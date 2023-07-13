@@ -2664,7 +2664,7 @@ dict_update_arg(PyObject *self, PyObject *arg)
         return PyDict_Merge(self, arg, 1);
     }
     PyObject *func;
-    if (_PyObject_LookupAttr(arg, &_Py_ID(keys), &func) < 0) {
+    if (PyObject_GetOptionalAttr(arg, &_Py_ID(keys), &func) < 0) {
         return -1;
     }
     if (func != NULL) {

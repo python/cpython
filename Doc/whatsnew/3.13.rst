@@ -161,6 +161,10 @@ Deprecated
   ``NT = NamedTuple("NT", [])``. To create a TypedDict class with 0 fields, use
   ``class TD(TypedDict): pass`` or ``TD = TypedDict("TD", {})``.
   (Contributed by Alex Waygood in :gh:`105566` and :gh:`105570`.)
+* :func:`typing.no_type_check_decorator` is deprecated, and scheduled for
+  removal in Python 3.15. After eight years in the :mod:`typing` module, it
+  has yet to be supported by any major type checkers.
+  (Contributed by Alex Waygood in :gh:`106309`.)
 
 * :mod:`array`'s ``'u'`` format code, deprecated in docs since Python 3.3,
   emits :exc:`DeprecationWarning` since 3.13
@@ -270,7 +274,9 @@ Pending Removal in Python 3.14
 * :mod:`typing`: :class:`~typing.ByteString`, deprecated since Python 3.9,
   now causes a :exc:`DeprecationWarning` to be emitted when it is used.
 
-* :class:`!urllib.parse.Quoter`.
+* :class:`!urllib.parse.Quoter` is deprecated: it was not intended to be a
+  public API.
+  (Contributed by Gregory P. Smith in :gh:`88168`.)
 
 * :mod:`xml.etree.ElementTree`: Testing the truth value of an
   :class:`~xml.etree.ElementTree.Element` is deprecated and will raise an
@@ -397,7 +403,12 @@ although there is currently no date scheduled for their removal.
 * :class:`!pydoc.ErrorDuringImport`: A tuple value for *exc_info* parameter is
   deprecated, use an exception instance.
 
-* :mod:`re`: bad character in group name.
+* :mod:`re`: More strict rules are now applied for numerical group references
+  and group names in regular expressions.  Only sequence of ASCII digits is now
+  accepted as a numerical reference.  The group name in bytes patterns and
+  replacement strings can now only contain ASCII letters and digits and
+  underscore.
+  (Contributed by Serhiy Storchaka in :gh:`91760`.)
 
 * :mod:`ssl` options and protocols:
 
@@ -733,6 +744,22 @@ New Features
   :c:func:`PyWeakref_GetObject` but returns a :term:`strong reference`, or
   ``NULL`` if the referent is no longer live.
   (Contributed by Victor Stinner in :gh:`105927`.)
+
+* Add :c:func:`PyObject_GetOptionalAttr` and
+  :c:func:`PyObject_GetOptionalAttrString`, variants of
+  :c:func:`PyObject_GetAttr` and :c:func:`PyObject_GetAttrString` which
+  don't raise :exc:`AttributeError` if the attribute is not found.
+  These variants are more convenient and faster if the missing attribute
+  should not be treated as a failure.
+  (Contributed by Serhiy Storchaka in :gh:`106521`.)
+
+* Add :c:func:`PyMapping_GetOptionalItem` and
+  :c:func:`PyMapping_GetOptionalItemString`: variants of
+  :c:func:`PyObject_GetItem` and :c:func:`PyMapping_GetItemString` which don't
+  raise :exc:`KeyError` if the key is not found.
+  These variants are more convenient and faster if the missing key should not
+  be treated as a failure.
+  (Contributed by Serhiy Storchaka in :gh:`106307`.)
 
 * If Python is built in :ref:`debug mode <debug-build>` or :option:`with
   assertions <--with-assertions>`, :c:func:`PyTuple_SET_ITEM` and
