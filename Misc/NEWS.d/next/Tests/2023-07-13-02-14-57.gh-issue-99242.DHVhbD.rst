@@ -1,0 +1,1 @@
+When running regression tests under certain conditions (such as chroot) it was possible that calls to `os.getloadavg` would throw. This PR catches OS errors as reporting load average is optional.
