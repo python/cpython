@@ -82,7 +82,7 @@ cache the compiled regex patterns in the following functions: :func:`fnmatch`,
    ``[n for n in names if fnmatch(n, pattern)]``, but implemented more efficiently.
 
 
-.. function:: translate(pattern, seps='')
+.. function:: translate(pattern, seps=None)
 
    Return the shell-style *pattern* converted to a regular expression for
    using with :func:`re.match`.
