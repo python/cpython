@@ -284,6 +284,7 @@ PyAPI_FUNC(PyTypeObject *) _PyType_CalculateMetaclass(PyTypeObject *, PyObject *
 PyAPI_FUNC(PyObject *) _PyType_GetDocFromInternalDoc(const char *, const char *);
 PyAPI_FUNC(PyObject *) _PyType_GetTextSignatureFromInternalDoc(const char *, const char *);
 PyAPI_FUNC(PyObject *) PyType_GetModuleByDef(PyTypeObject *, PyModuleDef *);
+PyAPI_FUNC(PyObject *) PyType_GetDict(PyTypeObject *);
 
 PyAPI_FUNC(int) PyObject_Print(PyObject *, FILE *, int);
 PyAPI_FUNC(void) _Py_BreakPoint(void);
@@ -293,17 +294,6 @@ PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
 PyAPI_FUNC(int) _PyObject_IsAbstract(PyObject *);
 PyAPI_FUNC(PyObject *) _PyObject_GetAttrId(PyObject *, _Py_Identifier *);
 PyAPI_FUNC(int) _PyObject_SetAttrId(PyObject *, _Py_Identifier *, PyObject *);
-/* Replacements of PyObject_GetAttr() and _PyObject_GetAttrId() which
-   don't raise AttributeError.
-
-   Return 1 and set *result != NULL if an attribute is found.
-   Return 0 and set *result == NULL if an attribute is not found;
-   an AttributeError is silenced.
-   Return -1 and set *result == NULL if an error other than AttributeError
-   is raised.
-*/
-PyAPI_FUNC(int) _PyObject_LookupAttr(PyObject *, PyObject *, PyObject **);
-PyAPI_FUNC(int) _PyObject_LookupAttrId(PyObject *, _Py_Identifier *, PyObject **);
 
 PyAPI_FUNC(int) _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method);
 

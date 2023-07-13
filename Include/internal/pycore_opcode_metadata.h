@@ -21,18 +21,28 @@
 
 #define EXIT_TRACE 300
 #define SAVE_IP 301
-#define _GUARD_BOTH_INT 302
-#define _BINARY_OP_MULTIPLY_INT 303
-#define _BINARY_OP_ADD_INT 304
-#define _BINARY_OP_SUBTRACT_INT 305
-#define _GUARD_BOTH_FLOAT 306
-#define _BINARY_OP_MULTIPLY_FLOAT 307
-#define _BINARY_OP_ADD_FLOAT 308
-#define _BINARY_OP_SUBTRACT_FLOAT 309
-#define _GUARD_BOTH_UNICODE 310
-#define _BINARY_OP_ADD_UNICODE 311
-#define _LOAD_LOCALS 312
-#define _LOAD_FROM_DICT_OR_GLOBALS 313
+#define _POP_JUMP_IF_FALSE 302
+#define _POP_JUMP_IF_TRUE 303
+#define JUMP_TO_TOP 304
+#define _GUARD_BOTH_INT 305
+#define _BINARY_OP_MULTIPLY_INT 306
+#define _BINARY_OP_ADD_INT 307
+#define _BINARY_OP_SUBTRACT_INT 308
+#define _GUARD_BOTH_FLOAT 309
+#define _BINARY_OP_MULTIPLY_FLOAT 310
+#define _BINARY_OP_ADD_FLOAT 311
+#define _BINARY_OP_SUBTRACT_FLOAT 312
+#define _GUARD_BOTH_UNICODE 313
+#define _BINARY_OP_ADD_UNICODE 314
+#define _LOAD_LOCALS 315
+#define _LOAD_FROM_DICT_OR_GLOBALS 316
+#define _SKIP_CACHE 317
+#define _GUARD_GLOBALS_VERSION 318
+#define _GUARD_BUILTINS_VERSION 319
+#define IS_NONE 320
+#define _ITER_CHECK_RANGE 321
+#define _ITER_EXHAUSTED_RANGE 322
+#define _ITER_NEXT_RANGE 323
 
 #ifndef NEED_OPCODE_METADATA
 extern int _PyOpcode_num_popped(int opcode, int oparg, bool jump);
@@ -326,9 +336,9 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case POP_JUMP_IF_TRUE:
             return 1;
-        case POP_JUMP_IF_NOT_NONE:
-            return 1;
         case POP_JUMP_IF_NONE:
+            return 1;
+        case POP_JUMP_IF_NOT_NONE:
             return 1;
         case JUMP_BACKWARD_NO_INTERRUPT:
             return 0;
@@ -770,9 +780,9 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case POP_JUMP_IF_TRUE:
             return 0;
-        case POP_JUMP_IF_NOT_NONE:
-            return 0;
         case POP_JUMP_IF_NONE:
+            return 0;
+        case POP_JUMP_IF_NOT_NONE:
             return 0;
         case JUMP_BACKWARD_NO_INTERRUPT:
             return 0;
@@ -957,7 +967,7 @@ struct opcode_macro_expansion {
 extern const struct opcode_metadata _PyOpcode_opcode_metadata[512];
 extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[256];
 extern const char * const _PyOpcode_uop_name[512];
-#else
+#else // if NEED_OPCODE_METADATA
 const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {
     [NOP] = { true, INSTR_FMT_IX, 0 },
     [RESUME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
@@ -1102,8 +1112,8 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {
     [ENTER_EXECUTOR] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [POP_JUMP_IF_FALSE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [POP_JUMP_IF_TRUE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
-    [POP_JUMP_IF_NOT_NONE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [POP_JUMP_IF_NONE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
+    [POP_JUMP_IF_NOT_NONE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [JUMP_BACKWARD_NO_INTERRUPT] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [GET_LEN] = { true, INSTR_FMT_IX, 0 },
     [MATCH_CLASS] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
@@ -1290,22 +1300,30 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] = {
     [BINARY_OP] = { .nuops = 1, .uops = { { BINARY_OP, 0, 0 } } },
     [SWAP] = { .nuops = 1, .uops = { { SWAP, 0, 0 } } },
 };
-#ifdef NEED_OPCODE_METADATA
 const char * const _PyOpcode_uop_name[512] = {
     [300] = "EXIT_TRACE",
     [301] = "SAVE_IP",
-    [302] = "_GUARD_BOTH_INT",
-    [303] = "_BINARY_OP_MULTIPLY_INT",
-    [304] = "_BINARY_OP_ADD_INT",
-    [305] = "_BINARY_OP_SUBTRACT_INT",
-    [306] = "_GUARD_BOTH_FLOAT",
-    [307] = "_BINARY_OP_MULTIPLY_FLOAT",
-    [308] = "_BINARY_OP_ADD_FLOAT",
-    [309] = "_BINARY_OP_SUBTRACT_FLOAT",
-    [310] = "_GUARD_BOTH_UNICODE",
-    [311] = "_BINARY_OP_ADD_UNICODE",
-    [312] = "_LOAD_LOCALS",
-    [313] = "_LOAD_FROM_DICT_OR_GLOBALS",
+    [302] = "_POP_JUMP_IF_FALSE",
+    [303] = "_POP_JUMP_IF_TRUE",
+    [304] = "JUMP_TO_TOP",
+    [305] = "_GUARD_BOTH_INT",
+    [306] = "_BINARY_OP_MULTIPLY_INT",
+    [307] = "_BINARY_OP_ADD_INT",
+    [308] = "_BINARY_OP_SUBTRACT_INT",
+    [309] = "_GUARD_BOTH_FLOAT",
+    [310] = "_BINARY_OP_MULTIPLY_FLOAT",
+    [311] = "_BINARY_OP_ADD_FLOAT",
+    [312] = "_BINARY_OP_SUBTRACT_FLOAT",
+    [313] = "_GUARD_BOTH_UNICODE",
+    [314] = "_BINARY_OP_ADD_UNICODE",
+    [315] = "_LOAD_LOCALS",
+    [316] = "_LOAD_FROM_DICT_OR_GLOBALS",
+    [317] = "_SKIP_CACHE",
+    [318] = "_GUARD_GLOBALS_VERSION",
+    [319] = "_GUARD_BUILTINS_VERSION",
+    [320] = "IS_NONE",
+    [321] = "_ITER_CHECK_RANGE",
+    [322] = "_ITER_EXHAUSTED_RANGE",
+    [323] = "_ITER_NEXT_RANGE",
 };
 #endif // NEED_OPCODE_METADATA
-#endif

@@ -34,7 +34,7 @@ update_bases(PyObject *bases, PyObject *const *args, Py_ssize_t nargs)
             }
             continue;
         }
-        if (_PyObject_LookupAttr(base, &_Py_ID(__mro_entries__), &meth) < 0) {
+        if (PyObject_GetOptionalAttr(base, &_Py_ID(__mro_entries__), &meth) < 0) {
             goto error;
         }
         if (!meth) {
@@ -175,7 +175,7 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
     }
     /* else: meta is not a class, so we cannot do the metaclass
        calculation, so we will use the explicitly given object as it is */
-    if (_PyObject_LookupAttr(meta, &_Py_ID(__prepare__), &prep) < 0) {
+    if (PyObject_GetOptionalAttr(meta, &_Py_ID(__prepare__), &prep) < 0) {
         ns = NULL;
     }
     else if (prep == NULL) {
@@ -1160,7 +1160,7 @@ builtin_getattr_impl(PyObject *module, PyObject *object, PyObject *name,
     PyObject *result;
 
     if (default_value != NULL) {
-        if (_PyObject_LookupAttr(object, name, &result) == 0) {
+        if (PyObject_GetOptionalAttr(object, name, &result) == 0) {
             return Py_NewRef(default_value);
         }
     }
@@ -1209,7 +1209,7 @@ builtin_hasattr_impl(PyObject *module, PyObject *obj, PyObject *name)
 {
     PyObject *v;
 
-    if (_PyObject_LookupAttr(obj, name, &v) < 0) {
+    if (PyObject_GetOptionalAttr(obj, name, &v) < 0) {
         return NULL;
     }
     if (v == NULL) {
@@ -1567,8 +1567,9 @@ static PyObject *
 builtin_delattr_impl(PyObject *module, PyObject *obj, PyObject *name)
 /*[clinic end generated code: output=85134bc58dff79fa input=164865623abe7216]*/
 {
-    if (PyObject_SetAttr(obj, name, (PyObject *)NULL) != 0)
+    if (PyObject_DelAttr(obj, name) < 0) {
         return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -2464,7 +2465,7 @@ builtin_vars_impl(PyObject *module, PyObject *object)
         d = _PyEval_GetFrameLocals();
     }
     else {
-        if (_PyObject_LookupAttr(object, &_Py_ID(__dict__), &d) == 0) {
+        if (PyObject_GetOptionalAttr(object, &_Py_ID(__dict__), &d) == 0) {
             PyErr_SetString(PyExc_TypeError,
                 "vars() argument must have __dict__ attribute");
         }

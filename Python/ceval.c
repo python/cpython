@@ -14,6 +14,7 @@
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_moduleobject.h"  // PyModuleObject
 #include "pycore_opcode.h"        // EXTRA_CASES
+#include "pycore_opcode_metadata.h"
 #include "pycore_opcode_utils.h"  // MAKE_FUNCTION_*
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
@@ -30,7 +31,6 @@
 #include "pycore_frame.h"
 #include "frameobject.h"          // _PyInterpreterFrame_GetLine
 #include "opcode.h"
-#include "opcode_metadata.h"
 #include "pydtrace.h"
 #include "setobject.h"
 #include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
@@ -419,7 +419,7 @@ match_class_attr(PyThreadState *tstate, PyObject *subject, PyObject *type,
         return NULL;
     }
     PyObject *attr;
-    (void)_PyObject_LookupAttr(subject, name, &attr);
+    (void)PyObject_GetOptionalAttr(subject, name, &attr);
     return attr;
 }
 
@@ -454,7 +454,7 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
     // First, the positional subpatterns:
     if (nargs) {
         int match_self = 0;
-        if (_PyObject_LookupAttr(type, &_Py_ID(__match_args__), &match_args) < 0) {
+        if (PyObject_GetOptionalAttr(type, &_Py_ID(__match_args__), &match_args) < 0) {
             goto fail;
         }
         if (match_args) {
@@ -2414,7 +2414,7 @@ import_from(PyThreadState *tstate, PyObject *v, PyObject *name)
     PyObject *x;
     PyObject *fullmodname, *pkgname, *pkgpath, *pkgname_or_unknown, *errmsg;
 
-    if (_PyObject_LookupAttr(v, name, &x) != 0) {
+    if (PyObject_GetOptionalAttr(v, name, &x) != 0) {
         return x;
     }
     /* Issue #17636: in case this failed because of a circular relative
@@ -2751,7 +2751,8 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
         operand = self->trace[pc].operand;
         oparg = (int)operand;
         DPRINTF(3,
-                "  uop %s, operand %" PRIu64 ", stack_level %d\n",
+                "%4d: uop %s, operand %" PRIu64 ", stack_level %d\n",
+                pc,
                 opcode < 256 ? _PyOpcode_OpName[opcode] : _PyOpcode_uop_name[opcode],
                 operand,
                 (int)(stack_pointer - _PyFrame_Stackbase(frame)));
@@ -2762,6 +2763,32 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
 #undef ENABLE_SPECIALIZATION
 #define ENABLE_SPECIALIZATION 0
 #include "executor_cases.c.h"
+
+            // NOTE: These pop-jumps move the uop pc, not the bytecode ip
+            case _POP_JUMP_IF_FALSE:
+            {
+                if (Py_IsFalse(stack_pointer[-1])) {
+                    pc = oparg;
+                }
+                stack_pointer--;
+                break;
+            }
+
+            case _POP_JUMP_IF_TRUE:
+            {
+                if (Py_IsTrue(stack_pointer[-1])) {
+                    pc = oparg;
+                }
+                stack_pointer--;
+                break;
+            }
+
+            case JUMP_TO_TOP:
+            {
+                pc = 0;
+                CHECK_EVAL_BREAKER();
+                break;
+            }
 
             case SAVE_IP:
             {

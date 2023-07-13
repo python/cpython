@@ -24,7 +24,7 @@ THIS = os.path.relpath(__file__, ROOT).replace(os.path.sep, posixpath.sep)
 DEFAULT_INPUT = os.path.relpath(os.path.join(ROOT, "Python/bytecodes.c"))
 DEFAULT_OUTPUT = os.path.relpath(os.path.join(ROOT, "Python/generated_cases.c.h"))
 DEFAULT_METADATA_OUTPUT = os.path.relpath(
-    os.path.join(ROOT, "Python/opcode_metadata.h")
+    os.path.join(ROOT, "Include/internal/pycore_opcode_metadata.h")
 )
 DEFAULT_PYMETADATA_OUTPUT = os.path.relpath(
     os.path.join(ROOT, "Lib/_opcode_metadata.py")
@@ -1240,7 +1240,7 @@ class Analyzer:
             self.out.emit("extern const struct opcode_metadata _PyOpcode_opcode_metadata[512];")
             self.out.emit("extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[256];")
             self.out.emit("extern const char * const _PyOpcode_uop_name[512];")
-            self.out.emit("#else")
+            self.out.emit("#else // if NEED_OPCODE_METADATA")
 
             self.out.emit("const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {")
 
@@ -1289,12 +1289,10 @@ class Analyzer:
                         case _:
                             typing.assert_never(thing)
 
-            self.out.emit("#ifdef NEED_OPCODE_METADATA")
             with self.out.block("const char * const _PyOpcode_uop_name[512] =", ";"):
                 self.write_uop_items(lambda name, counter: f"[{counter}] = \"{name}\",")
-            self.out.emit("#endif // NEED_OPCODE_METADATA")
 
-            self.out.emit("#endif")
+            self.out.emit("#endif // NEED_OPCODE_METADATA")
 
         with open(self.pymetadata_filename, "w") as f:
             # Create formatter
@@ -1338,12 +1336,18 @@ class Analyzer:
     def write_uop_items(self, make_text: typing.Callable[[str, int], str]) -> None:
         """Write '#define XXX NNN' for each uop"""
         counter = 300  # TODO: Avoid collision with pseudo instructions
+
         def add(name: str) -> None:
             nonlocal counter
             self.out.emit(make_text(name, counter))
             counter += 1
+
         add("EXIT_TRACE")
         add("SAVE_IP")
+        add("_POP_JUMP_IF_FALSE")
+        add("_POP_JUMP_IF_TRUE")
+        add("JUMP_TO_TOP")
+
         for instr in self.instrs.values():
             if instr.kind == "op" and instr.is_viable_uop():
                 add(instr.name)
