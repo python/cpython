@@ -3114,9 +3114,9 @@ corresponding pre-existing classes were enhanced to support ``[]`` (see
 :pep:`585`).
 
 The redundant types are deprecated as of Python 3.9. However, while the aliases
-may be removed at some point, removal of these aliases is not currently planned
-for the foreseeable future. As such, no deprecation warnings are currently
-issued by the interpreter for these aliases.
+may be removed at some point, removal of these aliases is not currently
+planned. As such, no deprecation warnings are currently issued by the
+interpreter for these aliases.
 
 If at some point it is decided to remove these deprecated aliases, a
 deprecation warning will be issued by the interpreter for at least two releases
