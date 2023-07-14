@@ -23,6 +23,7 @@
 #include "pycore_hashtable.h"    // _Py_hashtable_new()
 #include "pycore_initconfig.h"   // _Py_GetConfigsAsDict()
 #include "pycore_interp.h"       // _PyInterpreterState_GetConfigCopy()
+#include "pycore_modsupport.h"   // _PyModule_AddNew()
 #include "pycore_pathconfig.h"   // _PyPathConfig_ClearGlobal()
 #include "pycore_pyerrors.h"     // _Py_UTF8_Edit_Cost()
 #include "pycore_pystate.h"      // _PyThreadState_GET()
@@ -1493,13 +1494,13 @@ static PyMethodDef module_functions[] = {
 static int
 module_exec(PyObject *module)
 {
-    if (PyModule_AddObject(module, "SIZEOF_PYGC_HEAD",
-                           PyLong_FromSsize_t(sizeof(PyGC_Head))) < 0) {
+    if (_PyModule_AddNew(module, "SIZEOF_PYGC_HEAD",
+                        PyLong_FromSsize_t(sizeof(PyGC_Head))) < 0) {
         return 1;
     }
 
-    if (PyModule_AddObject(module, "SIZEOF_TIME_T",
-                           PyLong_FromSsize_t(sizeof(time_t))) < 0) {
+    if (_PyModule_AddNew(module, "SIZEOF_TIME_T",
+                        PyLong_FromSsize_t(sizeof(time_t))) < 0) {
         return 1;
     }
 
