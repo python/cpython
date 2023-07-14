@@ -430,7 +430,7 @@ if hasattr(select, 'poll'):
 
 if hasattr(select, 'epoll'):
 
-    NOT_EPOLLIN = ~select.EPOLLIN
+    _NOT_EPOLLIN = ~select.EPOLLIN
     NOT_EPOLLOUT = ~select.EPOLLOUT
 
     class EpollSelector(_PollLikeSelector):
