@@ -1741,7 +1741,7 @@ class BlockParser:
         self.dsl_name: str | None = None
         self.first_block = True
 
-    def __iter__(self):
+    def __iter__(self) -> BlockParser:
         return self
 
     def __next__(self) -> Block:
