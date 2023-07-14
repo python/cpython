@@ -14,9 +14,9 @@ pass it as the argument to input().  A single file name is also allowed.
 
 Functions filename(), lineno() return the filename and cumulative line
 number of the line that has just been read; filelineno() returns its
-line number in the current file; isfirstline() returns true iff the
+line number in the current file; isfirstline() returns true if the
 line just read is the first line of its file; isstdin() returns true
-iff the line was read from sys.stdin.  Function nextfile() closes the
+if the line was read from sys.stdin.  Function nextfile() closes the
 current file so that the next iteration will read the first line from
 the next file (if any); lines not read from the file will not count
 towards the cumulative line count; the filename is not changed until
