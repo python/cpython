@@ -1,0 +1,3 @@
+Reverted the :mod:`email.utils` change from 3.12beta4 that unintentionally
+:mod:`email.utils.getaddresses` to fail to parse email addresses with a comma
+in the quoted name field.  See :gh:`106669`.
