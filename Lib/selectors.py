@@ -431,7 +431,7 @@ if hasattr(select, 'poll'):
 if hasattr(select, 'epoll'):
 
     _NOT_EPOLLIN = ~select.EPOLLIN
-    NOT_EPOLLOUT = ~select.EPOLLOUT
+    _NOT_EPOLLOUT = ~select.EPOLLOUT
 
     class EpollSelector(_PollLikeSelector):
         """Epoll-based selector."""
@@ -471,8 +471,8 @@ if hasattr(select, 'epoll'):
                         (
                             key,
                             (
-                                (event & NOT_EPOLLIN and EVENT_WRITE)
-                                | (event & NOT_EPOLLOUT and EVENT_READ)
+                                (event & _NOT_EPOLLIN and EVENT_WRITE)
+                                | (event & _NOT_EPOLLOUT and EVENT_READ)
                             )
                             & key.events
                         )
