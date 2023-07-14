@@ -1736,9 +1736,9 @@ class BlockParser:
         self.find_start_re = create_regex(before, after, whole_line=False)
         self.start_re = create_regex(before, after)
         self.verify = verify
-        self.last_checksum_re = None
-        self.last_dsl_name = None
-        self.dsl_name = None
+        self.last_checksum_re: Any = None
+        self.last_dsl_name: str | None = None
+        self.dsl_name: str | None = None
         self.first_block = True
 
     def __iter__(self):
@@ -1761,7 +1761,7 @@ class BlockParser:
             return block
 
 
-    def is_start_line(self, line: str) -> bool:
+    def is_start_line(self, line: str) -> str | None:
         match = self.start_re.match(line.lstrip())
         return match.group(1) if match else None
 
@@ -1840,7 +1840,8 @@ class BlockParser:
             if self.is_start_line(line):
                 break
 
-        output = output_output()
+        output: str | None = output_output()
+        assert isinstance(output, str)
         if arguments:
             d = {}
             for field in shlex.split(arguments):
