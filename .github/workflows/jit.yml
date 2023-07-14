@@ -21,9 +21,9 @@ jobs:
           - true
           # - false
         llvm:
-          # - 14
+          - 14
           # - 15
-          - 16
+          # - 16
         include:
           # - target: i686-pc-windows-msvc/msvc
           #   architecture: i686
