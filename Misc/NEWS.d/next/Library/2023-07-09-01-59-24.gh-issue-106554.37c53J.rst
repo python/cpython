@@ -1,1 +1,1 @@
-Reduce selector overhead by switching ``SelectSelector`` to use a ``dict`` ``.get()`` to lookup file descriptors.
+:mod:`selectors`: Reduce Selector overhead by using a ``dict.get()`` to lookup file descriptors.
