@@ -2443,7 +2443,6 @@ class TestUops(unittest.TestCase):
                 i += 1
 
         opt = _testinternalcapi.get_uop_optimizer()
-
         with temporary_optimizer(opt):
             testfunc(1000)
 
@@ -2525,7 +2524,6 @@ class TestUops(unittest.TestCase):
                 i += 1
 
         opt = _testinternalcapi.get_uop_optimizer()
-
         with temporary_optimizer(opt):
             testfunc(10)
 
@@ -2541,7 +2539,6 @@ class TestUops(unittest.TestCase):
                 i += 1
 
         opt = _testinternalcapi.get_uop_optimizer()
-
         with temporary_optimizer(opt):
             testfunc(10)
 
@@ -2549,6 +2546,108 @@ class TestUops(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = {opname for opname, _ in ex}
         self.assertIn("_POP_JUMP_IF_TRUE", uops)
+
+    def test_jump_backward(self):
+        def testfunc(n):
+            i = 0
+            while i < n:
+                i += 1
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            testfunc(10)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _ in ex}
+        self.assertIn("JUMP_TO_TOP", uops)
+
+    def test_jump_forward(self):
+        def testfunc(n):
+            a = 0
+            while a < n:
+                if a < 0:
+                    a = -a
+                else:
+                    a = +a
+                a += 1
+            return a
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            testfunc(10)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _ in ex}
+        # Since there is no JUMP_FORWARD instruction,
+        # look for indirect evidence: the += operator
+        self.assertIn("_BINARY_OP_ADD_INT", uops)
+
+    def test_for_iter_range(self):
+        def testfunc(n):
+            total = 0
+            for i in range(n):
+                total += i
+            return total
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            total = testfunc(10)
+            self.assertEqual(total, 45)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        # for i, (opname, oparg) in enumerate(ex):
+        #     print(f"{i:4d}: {opname:<20s} {oparg:3d}")
+        uops = {opname for opname, _ in ex}
+        self.assertIn("_IS_ITER_EXHAUSTED_RANGE", uops)
+        # Verification that the jump goes past END_FOR
+        # is done by manual inspection of the output
+
+    def test_for_iter_list(self):
+        def testfunc(a):
+            total = 0
+            for i in a:
+                total += i
+            return total
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            a = list(range(10))
+            total = testfunc(a)
+            self.assertEqual(total, 45)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        # for i, (opname, oparg) in enumerate(ex):
+        #     print(f"{i:4d}: {opname:<20s} {oparg:3d}")
+        uops = {opname for opname, _ in ex}
+        self.assertIn("_IS_ITER_EXHAUSTED_LIST", uops)
+        # Verification that the jump goes past END_FOR
+        # is done by manual inspection of the output
+
+    def test_for_iter_tuple(self):
+        def testfunc(a):
+            total = 0
+            for i in a:
+                total += i
+            return total
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            a = tuple(range(10))
+            total = testfunc(a)
+            self.assertEqual(total, 45)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        # for i, (opname, oparg) in enumerate(ex):
+        #     print(f"{i:4d}: {opname:<20s} {oparg:3d}")
+        uops = {opname for opname, _ in ex}
+        self.assertIn("_IS_ITER_EXHAUSTED_TUPLE", uops)
+        # Verification that the jump goes past END_FOR
+        # is done by manual inspection of the output
 
 
 if __name__ == "__main__":
