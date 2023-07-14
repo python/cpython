@@ -444,9 +444,16 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if line[:1] == '!': line = line[1:].strip()
         locals = self.curframe_locals
         globals = self.curframe.f_globals
+        readline = None
         try:
             if (code := codeop.compile_command(line + '\n', '<stdin>', 'single')) is None:
                 # Multi-line mode
+                try:
+                    import readline
+                    # Disable tab-completion temporarily
+                    readline.parse_and_bind('tab: self-insert')
+                except ImportError:
+                    pass
                 buffer = line
                 continue_prompt = "...   "
                 while (code := codeop.compile_command(buffer, '<stdin>', 'single')) is None:
@@ -483,6 +490,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 sys.displayhook = save_displayhook
         except:
             self._error_exc()
+        finally:
+            if readline:
+                readline.parse_and_bind('tab: complete')
 
     def precmd(self, line):
         """Handle alias expansion and ';;' separator."""
