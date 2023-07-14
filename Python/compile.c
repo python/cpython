@@ -866,10 +866,34 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
     return stack_effect(opcode, oparg, -1);
 }
 
-struct opcode_metadata
-PyUnstable_OpcodeMetadata(int opcode)
+int
+PyUnstable_OpcodeIsValid(int opcode)
 {
-    return _PyOpcode_opcode_metadata[opcode];
+    return IS_VALID_OPCODE(opcode);
+}
+
+int
+PyUnstable_OpcodeHasArg(int opcode)
+{
+    return OPCODE_HAS_ARG(opcode);
+}
+
+int
+PyUnstable_OpcodeHasConst(int opcode)
+{
+    return OPCODE_HAS_CONST(opcode);
+}
+
+int
+PyUnstable_OpcodeHasName(int opcode)
+{
+    return OPCODE_HAS_NAME(opcode);
+}
+
+int
+PyUnstable_OpcodeHasJump(int opcode)
+{
+    return OPCODE_HAS_JUMP(opcode);
 }
 
 static int

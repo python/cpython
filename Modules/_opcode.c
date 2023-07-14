@@ -74,7 +74,7 @@ static int
 _opcode_is_valid_impl(PyObject *module, int opcode)
 /*[clinic end generated code: output=b0d918ea1d073f65 input=fe23e0aa194ddae0]*/
 {
-    return IS_VALID_OPCODE(opcode);
+    return PyUnstable_OpcodeIsValid(opcode);
 }
 
 /*[clinic input]
@@ -90,7 +90,8 @@ static int
 _opcode_has_arg_impl(PyObject *module, int opcode)
 /*[clinic end generated code: output=7a062d3b2dcc0815 input=93d878ba6361db5f]*/
 {
-    return IS_VALID_OPCODE(opcode) && OPCODE_HAS_ARG(opcode);
+    return PyUnstable_OpcodeIsValid(opcode) &&
+           PyUnstable_OpcodeHasArg(opcode);
 }
 
 /*[clinic input]
@@ -106,7 +107,8 @@ static int
 _opcode_has_const_impl(PyObject *module, int opcode)
 /*[clinic end generated code: output=c646d5027c634120 input=a6999e4cf13f9410]*/
 {
-    return IS_VALID_OPCODE(opcode) && OPCODE_HAS_CONST(opcode);
+    return PyUnstable_OpcodeIsValid(opcode) &&
+           PyUnstable_OpcodeHasConst(opcode);
 }
 
 /*[clinic input]
@@ -122,7 +124,8 @@ static int
 _opcode_has_name_impl(PyObject *module, int opcode)
 /*[clinic end generated code: output=b49a83555c2fa517 input=448aa5e4bcc947ba]*/
 {
-    return IS_VALID_OPCODE(opcode) && OPCODE_HAS_NAME(opcode);
+    return PyUnstable_OpcodeIsValid(opcode) &&
+           PyUnstable_OpcodeHasName(opcode);
 }
 
 /*[clinic input]
@@ -138,9 +141,10 @@ static int
 _opcode_has_jump_impl(PyObject *module, int opcode)
 /*[clinic end generated code: output=e9c583c669f1c46a input=35f711274357a0c3]*/
 {
-    return IS_VALID_OPCODE(opcode) && OPCODE_HAS_JUMP(opcode);
-}
+    return PyUnstable_OpcodeIsValid(opcode) &&
+           PyUnstable_OpcodeHasJump(opcode);
 
+}
 
 /*[clinic input]
 
