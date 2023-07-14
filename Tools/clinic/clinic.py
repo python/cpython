@@ -792,11 +792,14 @@ class CLanguage(Language):
             add('"')
         return ''.join(text)
 
-    def output_templates(self, f):
+    def output_templates(
+            self,
+            f: Function
+    ) -> dict[str, str]:
         parameters = list(f.parameters.values())
         assert parameters
-        assert isinstance(parameters[0].converter, self_converter)
-        del parameters[0]
+        first_param = parameters.pop(0)
+        assert isinstance(first_param.converter, self_converter)
         requires_defining_class = False
         if parameters and isinstance(parameters[0].converter, defining_class_converter):
             requires_defining_class = True
@@ -809,7 +812,7 @@ class CLanguage(Language):
 
         new_or_init = f.kind.new_or_init
 
-        vararg = NO_VARARG
+        vararg: int | str = NO_VARARG
         pos_only = min_pos = max_pos = min_kw_only = pseudo_args = 0
         for i, p in enumerate(parameters, 1):
             if p.is_keyword_only():
@@ -897,7 +900,7 @@ class CLanguage(Language):
 
         # parser_body_fields remembers the fields passed in to the
         # previous call to parser_body. this is used for an awful hack.
-        parser_body_fields = ()
+        parser_body_fields: tuple[str, ...] = ()
         def parser_body(
                 prototype: str,
                 *fields: str,
@@ -932,6 +935,7 @@ class CLanguage(Language):
             return linear_format(output(), parser_declarations=declarations)
 
         if not parameters:
+            parser_code: list[str] | None
             if not requires_defining_class:
                 # no parameters, METH_NOARGS
                 flags = "METH_NOARGS"
@@ -1165,7 +1169,7 @@ class CLanguage(Language):
                 flags = 'METH_METHOD|' + flags
                 parser_prototype = parser_prototype_def_class
 
-            add_label = None
+            add_label: str | None = None
             for i, p in enumerate(parameters):
                 if isinstance(p.converter, defining_class_converter):
                     raise ValueError("defining_class should be the first "
@@ -1308,6 +1312,8 @@ class CLanguage(Language):
             cpp_if = "#if " + conditional
             cpp_endif = "#endif /* " + conditional + " */"
 
+            assert clinic is not None
+            assert f.full_name is not None
             if methoddef_define and f.full_name not in clinic.ifndef_symbols:
                 clinic.ifndef_symbols.add(f.full_name)
                 methoddef_ifndef = normalize_snippet("""
