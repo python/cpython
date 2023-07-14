@@ -531,3 +531,7 @@ class TestGeneratedCases(unittest.TestCase):
         }
     """
         self.run_cases_test(input, output)
+
+
+if __name__ == "__main__":
+    unittest.main()
