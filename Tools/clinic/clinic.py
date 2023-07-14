@@ -1841,8 +1841,8 @@ class BlockParser:
             if self.is_start_line(line):
                 break
 
-        output: str | None = output_output()
-        assert isinstance(output, str)
+        output: str | None
+        output = output_output()
         if arguments:
             d = {}
             for field in shlex.split(arguments):
