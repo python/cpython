@@ -2110,7 +2110,7 @@ LIBSUBDIRS=	asyncio \
 		wsgiref \
 		$(XMLLIBSUBDIRS) \
 		xmlrpc \
-		zipfile \
+		zipfile zipfile/_path \
 		zoneinfo \
 		__phello__
 TESTSUBDIRS=	idlelib/idle_test \
@@ -2220,6 +2220,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_warnings \
 		test/test_warnings/data \
 		test/test_zipfile \
+		test/test_zipfile/_path \
 		test/test_zoneinfo \
 		test/test_zoneinfo/data \
 		test/tracedmodules \
