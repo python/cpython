@@ -815,7 +815,7 @@ class ClinicParserTest(TestCase):
                 x
             Docstring.
         """)
-        msg = "Function bar specifies + without any parameters afterwards."
+        msg = "Function bar specifies '*' without any parameters afterwards."
         self.assertIn(msg, out)
 
     def test_cross_must_come_before_star(self):

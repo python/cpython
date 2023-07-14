@@ -5519,13 +5519,13 @@ class DSLParser:
                 last_parameter = next(reversed(list(values)))
                 no_param_after_symbol = condition(last_parameter)
             if no_param_after_symbol:
-                fail(f"Function {self.function.name} specifies {symbol} without any parameters afterwards.")
+                fail(f"Function {self.function.name} specifies {symbol!r} without any parameters afterwards.")
 
         if self.keyword_only:
             check_remaining_params("*", lambda p: p.kind != inspect.Parameter.KEYWORD_ONLY)
 
         if self.deprecated_positional:
-            check_remaining_params("+", lambda p: not p.deprecated_positional)
+            check_remaining_params("*", lambda p: not p.deprecated_positional)
 
         # remove trailing whitespace from all parameter docstrings
         for name, value in self.function.parameters.items():
