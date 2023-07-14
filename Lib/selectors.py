@@ -451,6 +451,7 @@ if hasattr(select, 'epoll'):
                 # epoll_wait() has a resolution of 1 millisecond, round away
                 # from zero to wait *at least* timeout seconds.
                 timeout = math.ceil(timeout * 1e3) * 1e-3
+
             # epoll_wait() expects `maxevents` to be greater than zero;
             # we want to make sure that `select()` can be called when no
             # FD is registered.
