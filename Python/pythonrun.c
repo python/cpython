@@ -834,11 +834,8 @@ _PyErr_PrintEx(PyThreadState *tstate, int set_sys_last_vars)
         _PyErr_WriteUnraisableMsg("in audit hook", NULL);
     }
     if (hook) {
-        PyObject* stack[3];
-        stack[0] = typ;
-        stack[1] = exc;
-        stack[2] = tb;
-        PyObject *result = _PyObject_FastCall(hook, stack, 3);
+        PyObject* args[3] = {typ, exc, tb};
+        PyObject *result = PyObject_Vectorcall(hook, args, 3, NULL);
         if (result == NULL) {
             handle_system_exit();
 
@@ -956,7 +953,7 @@ print_exception_file_and_line(struct exception_print_context *ctx,
     PyObject *f = ctx->file;
 
     PyObject *tmp;
-    int res = _PyObject_LookupAttr(*value_p, &_Py_ID(print_file_and_line), &tmp);
+    int res = PyObject_GetOptionalAttr(*value_p, &_Py_ID(print_file_and_line), &tmp);
     if (res <= 0) {
         if (res < 0) {
             PyErr_Clear();
@@ -1135,7 +1132,7 @@ print_exception_notes(struct exception_print_context *ctx, PyObject *value)
     }
 
     PyObject *notes;
-    int res = _PyObject_LookupAttr(value, &_Py_ID(__notes__), &notes);
+    int res = PyObject_GetOptionalAttr(value, &_Py_ID(__notes__), &notes);
     if (res <= 0) {
         return res;
     }
@@ -1565,7 +1562,7 @@ _PyErr_Display(PyObject *file, PyObject *unused, PyObject *value, PyObject *tb)
     Py_XDECREF(ctx.seen);
 
     /* Call file.flush() */
-    PyObject *res = _PyObject_CallMethodNoArgs(file, &_Py_ID(flush));
+    PyObject *res = PyObject_CallMethodNoArgs(file, &_Py_ID(flush));
     if (!res) {
         /* Silently ignore file.flush() error */
         PyErr_Clear();
@@ -1677,7 +1674,7 @@ flush_io_stream(PyThreadState *tstate, PyObject *name)
 {
     PyObject *f = _PySys_GetAttr(tstate, name);
     if (f != NULL) {
-        PyObject *r = _PyObject_CallMethodNoArgs(f, &_Py_ID(flush));
+        PyObject *r = PyObject_CallMethodNoArgs(f, &_Py_ID(flush));
         if (r) {
             Py_DECREF(r);
         }

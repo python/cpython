@@ -66,12 +66,16 @@ class _SelectorMapping(Mapping):
     def __len__(self):
         return len(self._selector._fd_to_key)
 
+    def get(self, fileobj, default=None):
+        fd = self._selector._fileobj_lookup(fileobj)
+        return self._selector._fd_to_key.get(fd, default)
+
     def __getitem__(self, fileobj):
-        try:
-            fd = self._selector._fileobj_lookup(fileobj)
-            return self._selector._fd_to_key[fd]
-        except KeyError:
-            raise KeyError("{!r} is not registered".format(fileobj)) from None
+        fd = self._selector._fileobj_lookup(fileobj)
+        key = self._selector._fd_to_key.get(fd)
+        if key is None:
+            raise KeyError("{!r} is not registered".format(fileobj))
+        return key
 
     def __iter__(self):
         return iter(self._selector._fd_to_key)

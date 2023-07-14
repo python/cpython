@@ -4,9 +4,9 @@
  * Thanks go to Tim Peters and Michael Hudson for debugging.
  */
 
-#define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <stdbool.h>
+#include "pycore_abstract.h"      // _PyObject_RealIsSubclass()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall
 #include "pycore_pyerrors.h"      // struct _PyErr_SetRaisedException
 #include "pycore_exceptions.h"    // struct _Py_exc_state
@@ -208,7 +208,7 @@ BaseException_add_note(PyObject *self, PyObject *note)
     }
 
     PyObject *notes;
-    if (_PyObject_LookupAttr(self, &_Py_ID(__notes__), &notes) < 0) {
+    if (PyObject_GetOptionalAttr(self, &_Py_ID(__notes__), &notes) < 0) {
         return NULL;
     }
     if (notes == NULL) {
@@ -941,7 +941,7 @@ exceptiongroup_subset(
     PyException_SetCause(eg, PyException_GetCause(orig));
 
     PyObject *notes;
-    if (_PyObject_LookupAttr(orig, &_Py_ID(__notes__), &notes) < 0) {
+    if (PyObject_GetOptionalAttr(orig, &_Py_ID(__notes__), &notes) < 0) {
         goto error;
     }
     if (notes) {
@@ -1463,7 +1463,7 @@ PyUnstable_Exc_PrepReraiseStar(PyObject *orig, PyObject *excs)
     }
 
     /* Make sure that orig has something as traceback, in the interpreter
-     * it always does becuase it's a raised exception.
+     * it always does because it's a raised exception.
      */
     PyObject *tb = PyException_GetTraceback(orig);
 

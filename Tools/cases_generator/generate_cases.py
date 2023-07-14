@@ -24,10 +24,13 @@ THIS = os.path.relpath(__file__, ROOT).replace(os.path.sep, posixpath.sep)
 DEFAULT_INPUT = os.path.relpath(os.path.join(ROOT, "Python/bytecodes.c"))
 DEFAULT_OUTPUT = os.path.relpath(os.path.join(ROOT, "Python/generated_cases.c.h"))
 DEFAULT_METADATA_OUTPUT = os.path.relpath(
-    os.path.join(ROOT, "Python/opcode_metadata.h")
+    os.path.join(ROOT, "Include/internal/pycore_opcode_metadata.h")
 )
 DEFAULT_PYMETADATA_OUTPUT = os.path.relpath(
     os.path.join(ROOT, "Lib/_opcode_metadata.py")
+)
+DEFAULT_EXECUTOR_OUTPUT = os.path.relpath(
+    os.path.join(ROOT, "Python/executor_cases.c.h")
 )
 BEGIN_MARKER = "// BEGIN BYTECODES //"
 END_MARKER = "// END BYTECODES //"
@@ -36,6 +39,17 @@ RE_PREDICTED = (
 )
 UNUSED = "unused"
 BITS_PER_CODE_UNIT = 16
+
+# Constants used instead of size for macro expansions.
+# Note: 1, 2, 4 must match actual cache entry sizes.
+OPARG_SIZES = {
+    "OPARG_FULL": 0,
+    "OPARG_CACHE_1": 1,
+    "OPARG_CACHE_2": 2,
+    "OPARG_CACHE_4": 4,
+    "OPARG_TOP": 5,
+    "OPARG_BOTTOM": 6,
+}
 
 RESERVED_WORDS = {
     "co_consts" : "Use FRAME_CO_CONSTS.",
@@ -60,6 +74,13 @@ arg_parser.add_argument(
 )
 arg_parser.add_argument(
     "input", nargs=argparse.REMAINDER, help="Instruction definition file(s)"
+)
+arg_parser.add_argument(
+    "-e",
+    "--executor-cases",
+    type=str,
+    help="Write executor cases to this file",
+    default=DEFAULT_EXECUTOR_OUTPUT,
 )
 
 
@@ -176,14 +197,14 @@ class Formatter:
         self.prefix = self.prefix[:-4]
 
     @contextlib.contextmanager
-    def block(self, head: str):
+    def block(self, head: str, tail: str = ""):
         if head:
             self.emit(head + " {")
         else:
             self.emit("{")
         with self.indent():
             yield
-        self.emit("}")
+        self.emit("}" + tail)
 
     def stack_adjust(
         self,
@@ -287,7 +308,36 @@ class InstructionFlags:
         for name, value in flags.bitmask.items():
             out.emit(
                 f"#define OPCODE_{name[:-len('_FLAG')]}(OP) "
-                f"(_PyOpcode_opcode_metadata[(OP)].flags & ({name}))")
+                f"(_PyOpcode_opcode_metadata[OP].flags & ({name}))")
+
+
+@dataclasses.dataclass
+class ActiveCacheEffect:
+    """Wraps a CacheEffect that is actually used, in context."""
+    effect: parser.CacheEffect
+    offset: int
+
+
+FORBIDDEN_NAMES_IN_UOPS = (
+    "resume_with_error",
+    "kwnames",
+    "next_instr",
+    "oparg1",  # Proxy for super-instructions like LOAD_FAST_LOAD_FAST
+    "JUMPBY",
+    "DISPATCH",
+    "INSTRUMENTED_JUMP",
+    "throwflag",
+    "exception_unwind",
+    "import_from",
+    "import_name",
+    "_PyObject_CallNoArgs",  # Proxy for BEFORE_WITH
+)
+
+
+# Interpreter tiers
+TIER_ONE = 1  # Specializing adaptive interpreter (PEP 659)
+TIER_TWO = 2  # Experimental tracing interpreter
+Tiers: typing.TypeAlias = typing.Literal[1, 2]
 
 
 @dataclasses.dataclass
@@ -311,6 +361,7 @@ class Instruction:
     unmoved_names: frozenset[str]
     instr_fmt: str
     instr_flags: InstructionFlags
+    active_caches: list[ActiveCacheEffect]
 
     # Set later
     family: parser.Family | None = None
@@ -342,18 +393,48 @@ class Instruction:
 
         self.instr_flags = InstructionFlags.fromInstruction(inst)
 
+        self.active_caches = []
+        offset = 0
+        for effect in self.cache_effects:
+            if effect.name != UNUSED:
+                self.active_caches.append(ActiveCacheEffect(effect, offset))
+            offset += effect.size
+
         if self.instr_flags.HAS_ARG_FLAG:
             fmt = "IB"
         else:
             fmt = "IX"
-        cache = "C"
-        for ce in self.cache_effects:
-            for _ in range(ce.size):
-                fmt += cache
-                cache = "0"
+        if offset:
+            fmt += "C" + "0"*(offset-1)
         self.instr_fmt = fmt
 
-    def write(self, out: Formatter) -> None:
+    def is_viable_uop(self) -> bool:
+        """Whether this instruction is viable as a uop."""
+        if self.name == "EXIT_TRACE":
+            return True  # This has 'return frame' but it's okay
+        if self.always_exits:
+            # print(f"Skipping {self.name} because it always exits")
+            return False
+        if self.instr_flags.HAS_ARG_FLAG:
+            # If the instruction uses oparg, it cannot use any caches
+            if self.active_caches:
+                # print(f"Skipping {self.name} because it uses oparg and caches")
+                return False
+        else:
+            # If it doesn't use oparg, it can have one cache entry
+            if len(self.active_caches) > 1:
+                # print(f"Skipping {self.name} because it has >1 cache entries")
+                return False
+        res = True
+        for forbidden in FORBIDDEN_NAMES_IN_UOPS:
+            # NOTE: To disallow unspecialized uops, use
+            # if variable_used(self.inst, forbidden):
+            if variable_used_unspecialized(self.inst, forbidden):
+                # print(f"Skipping {self.name} because it uses {forbidden}")
+                res = False
+        return res
+
+    def write(self, out: Formatter, tier: Tiers = TIER_ONE) -> None:
         """Write one instruction, sans prologue and epilogue."""
         # Write a static assertion that a family's cache size is correct
         if family := self.family:
@@ -400,7 +481,7 @@ class Instruction:
 
         # out.emit(f"next_instr += OPSIZE({self.inst.name}) - 1;")
 
-        self.write_body(out, 0)
+        self.write_body(out, 0, self.active_caches, tier=tier)
 
         # Skip the rest if the block always exits
         if self.always_exits:
@@ -427,31 +508,37 @@ class Instruction:
             out.assign(dst, oeffect)
 
         # Write cache effect
-        if self.cache_offset:
+        if tier == TIER_ONE and self.cache_offset:
             out.emit(f"next_instr += {self.cache_offset};")
 
-    def write_body(self, out: Formatter, dedent: int, cache_adjust: int = 0) -> None:
+    def write_body(
+            self,
+            out: Formatter,
+            dedent: int,
+            active_caches: list[ActiveCacheEffect],
+            tier: Tiers = TIER_ONE,
+        ) -> None:
         """Write the instruction body."""
         # Write cache effect variable declarations and initializations
-        cache_offset = cache_adjust
-        for ceffect in self.cache_effects:
-            if ceffect.name != UNUSED:
-                bits = ceffect.size * BITS_PER_CODE_UNIT
-                if bits == 64:
-                    # NOTE: We assume that 64-bit data in the cache
-                    # is always an object pointer.
-                    # If this becomes false, we need a way to specify
-                    # syntactically what type the cache data is.
-                    typ = "PyObject *"
-                    func = "read_obj"
-                else:
-                    typ = f"uint{bits}_t "
-                    func = f"read_u{bits}"
+        for active in active_caches:
+            ceffect = active.effect
+            bits = ceffect.size * BITS_PER_CODE_UNIT
+            if bits == 64:
+                # NOTE: We assume that 64-bit data in the cache
+                # is always an object pointer.
+                # If this becomes false, we need a way to specify
+                # syntactically what type the cache data is.
+                typ = "PyObject *"
+                func = "read_obj"
+            else:
+                typ = f"uint{bits}_t "
+                func = f"read_u{bits}"
+            if tier == TIER_ONE:
                 out.emit(
-                    f"{typ}{ceffect.name} = {func}(&next_instr[{cache_offset}].cache);"
+                    f"{typ}{ceffect.name} = {func}(&next_instr[{active.offset}].cache);"
                 )
-            cache_offset += ceffect.size
-        assert cache_offset == self.cache_offset + cache_adjust
+            else:
+                out.emit(f"{typ}{ceffect.name} = ({typ.strip()})operand;")
 
         # Write the body, substituting a goto for ERROR_IF() and other stuff
         assert dedent <= 0
@@ -516,8 +603,9 @@ class Component:
     instr: Instruction
     input_mapping: StackEffectMapping
     output_mapping: StackEffectMapping
+    active_caches: list[ActiveCacheEffect]
 
-    def write_body(self, out: Formatter, cache_adjust: int) -> None:
+    def write_body(self, out: Formatter) -> None:
         with out.block(""):
             input_names = {ieffect.name for _, ieffect in self.input_mapping}
             for var, ieffect in self.input_mapping:
@@ -526,10 +614,13 @@ class Component:
                 if oeffect.name not in input_names:
                     out.declare(oeffect, None)
 
-            self.instr.write_body(out, dedent=-4, cache_adjust=cache_adjust)
+            self.instr.write_body(out, -4, self.active_caches)
 
             for var, oeffect in self.output_mapping:
                 out.assign(var, oeffect)
+
+
+MacroParts = list[Component | parser.CacheEffect]
 
 
 @dataclasses.dataclass
@@ -543,7 +634,8 @@ class MacroInstruction:
     instr_fmt: str
     instr_flags: InstructionFlags
     macro: parser.Macro
-    parts: list[Component | parser.CacheEffect]
+    parts: MacroParts
+    cache_offset: int
     predicted: bool = False
 
 
@@ -573,16 +665,24 @@ class Analyzer:
     output_filename: str
     metadata_filename: str
     pymetadata_filename: str
+    executor_filename: str
     errors: int = 0
     emit_line_directives: bool = False
 
-    def __init__(self, input_filenames: list[str], output_filename: str,
-                 metadata_filename: str, pymetadata_filename: str):
+    def __init__(
+        self,
+        input_filenames: list[str],
+        output_filename: str,
+        metadata_filename: str,
+        pymetadata_filename: str,
+        executor_filename: str,
+    ):
         """Read the input file."""
         self.input_filenames = input_filenames
         self.output_filename = output_filename
         self.metadata_filename = metadata_filename
         self.pymetadata_filename = pymetadata_filename
+        self.executor_filename = executor_filename
 
     def error(self, msg: str, node: parser.Node) -> None:
         lineno = 0
@@ -741,19 +841,7 @@ class Analyzer:
                         )
                     else:
                         member_instr.family = family
-                elif member_macro := self.macro_instrs.get(member):
-                    for part in member_macro.parts:
-                        if isinstance(part, Component):
-                            if part.instr.family not in (family, None):
-                                self.error(
-                                    f"Component {part.instr.name} of macro {member} "
-                                    f"is a member of multiple families "
-                                    f"({part.instr.family.name}, {family.name}).",
-                                    family,
-                                )
-                            else:
-                                part.instr.family = family
-                else:
+                elif not self.macro_instrs.get(member):
                     self.error(
                         f"Unknown instruction {member!r} referenced in family {family.name!r}",
                         family,
@@ -798,11 +886,11 @@ class Analyzer:
             cache = instr.cache_offset
             input = len(instr.input_effects)
             output = len(instr.output_effects)
-        elif macro := self.macro_instrs.get(name):
-            cache, input, output = 0, 0, 0
-            for part in macro.parts:
+        elif mac := self.macro_instrs.get(name):
+            cache = mac.cache_offset
+            input, output = 0, 0
+            for part in mac.parts:
                 if isinstance(part, Component):
-                    cache += part.instr.cache_offset
                     # A component may pop what the previous component pushed,
                     # so we offset the input/output counts by that.
                     delta_i = len(part.instr.input_effects)
@@ -810,9 +898,6 @@ class Analyzer:
                     offset = min(delta_i, output)
                     input += delta_i - offset
                     output += delta_o - offset
-                else:
-                    assert isinstance(part, parser.CacheEffect), part
-                    cache += part.size
         else:
             assert False, f"Unknown instruction {name!r}"
         return cache, input, output
@@ -830,30 +915,26 @@ class Analyzer:
         components = self.check_macro_components(macro)
         stack, initial_sp = self.stack_analysis(components)
         sp = initial_sp
-        parts: list[Component | parser.CacheEffect] = []
-        format = "IB"
+        parts: MacroParts = []
         flags = InstructionFlags.newEmpty()
-        cache = "C"
+        offset = 0
         for component in components:
             match component:
                 case parser.CacheEffect() as ceffect:
                     parts.append(ceffect)
-                    for _ in range(ceffect.size):
-                        format += cache
-                        cache = "0"
+                    offset += ceffect.size
                 case Instruction() as instr:
-                    part, sp = self.analyze_instruction(instr, stack, sp)
+                    part, sp, offset = self.analyze_instruction(instr, stack, sp, offset)
                     parts.append(part)
-                    for ce in instr.cache_effects:
-                        for _ in range(ce.size):
-                            format += cache
-                            cache = "0"
                     flags.add(instr.instr_flags)
                 case _:
                     typing.assert_never(component)
         final_sp = sp
+        format = "IB"
+        if offset:
+            format += "C" + "0"*(offset-1)
         return MacroInstruction(
-            macro.name, stack, initial_sp, final_sp, format, flags, macro, parts
+            macro.name, stack, initial_sp, final_sp, format, flags, macro, parts, offset
         )
 
     def analyze_pseudo(self, pseudo: parser.Pseudo) -> PseudoInstruction:
@@ -866,8 +947,8 @@ class Analyzer:
         return PseudoInstruction(pseudo.name, targets, fmts[0], targets[0].instr_flags)
 
     def analyze_instruction(
-        self, instr: Instruction, stack: list[StackEffect], sp: int
-    ) -> tuple[Component, int]:
+        self, instr: Instruction, stack: list[StackEffect], sp: int, offset: int
+    ) -> tuple[Component, int, int]:
         input_mapping: StackEffectMapping = []
         for ieffect in reversed(instr.input_effects):
             sp -= 1
@@ -876,7 +957,12 @@ class Analyzer:
         for oeffect in instr.output_effects:
             output_mapping.append((stack[sp], oeffect))
             sp += 1
-        return Component(instr, input_mapping, output_mapping), sp
+        active_effects: list[ActiveCacheEffect] = []
+        for ceffect in instr.cache_effects:
+            if ceffect.name != UNUSED:
+                active_effects.append(ActiveCacheEffect(ceffect, offset))
+            offset += ceffect.size
+        return Component(instr, input_mapping, output_mapping, active_effects), sp, offset
 
     def check_macro_components(
         self, macro: parser.Macro
@@ -955,7 +1041,7 @@ class Analyzer:
 
     def get_stack_effect_info(
         self, thing: parser.InstDef | parser.Macro | parser.Pseudo
-    ) -> tuple[AnyInstruction | None, str, str]:
+    ) -> tuple[AnyInstruction | None, str | None, str | None]:
         def effect_str(effects: list[StackEffect]) -> str:
             n_effect, sym_effect = list_effect_size(effects)
             if sym_effect:
@@ -1033,6 +1119,7 @@ class Analyzer:
                 continue
             instr, popped, pushed = self.get_stack_effect_info(thing)
             if instr is not None:
+                assert popped is not None and pushed is not None
                 popped_data.append((instr, popped))
                 pushed_data.append((instr, pushed))
 
@@ -1105,22 +1192,43 @@ class Analyzer:
 
             self.write_provenance_header()
 
+            self.out.emit("\n#include <stdbool.h>")
+
             self.write_pseudo_instrs()
+
+            self.out.emit("")
+            self.write_uop_items(lambda name, counter: f"#define {name} {counter}")
 
             self.write_stack_effect_functions()
 
             # Write type definitions
             self.out.emit(f"enum InstructionFormat {{ {', '.join(format_enums)} }};")
 
+            self.out.emit("")
+            self.out.emit(
+                "#define IS_VALID_OPCODE(OP) \\\n"
+                "    (((OP) >= 0) && ((OP) < OPCODE_METADATA_SIZE) && \\\n"
+                "     (_PyOpcode_opcode_metadata[(OP)].valid_entry))")
+
+            self.out.emit("")
             InstructionFlags.emit_macros(self.out)
 
-            self.out.emit("struct opcode_metadata {")
-            with self.out.indent():
+            self.out.emit("")
+            with self.out.block("struct opcode_metadata", ";"):
                 self.out.emit("bool valid_entry;")
                 self.out.emit("enum InstructionFormat instr_format;")
                 self.out.emit("int flags;")
-            self.out.emit("};")
             self.out.emit("")
+
+            with self.out.block("struct opcode_macro_expansion", ";"):
+                self.out.emit("int nuops;")
+                self.out.emit("struct { int16_t uop; int8_t size; int8_t offset; } uops[8];")
+            self.out.emit("")
+
+            for key, value in OPARG_SIZES.items():
+                self.out.emit(f"#define {key} {value}")
+            self.out.emit("")
+
             self.out.emit("#define OPCODE_METADATA_FMT(OP) "
                           "(_PyOpcode_opcode_metadata[(OP)].instr_format)")
             self.out.emit("#define SAME_OPCODE_METADATA(OP1, OP2) \\")
@@ -1128,10 +1236,20 @@ class Analyzer:
             self.out.emit("")
 
             # Write metadata array declaration
+            self.out.emit("#define OPCODE_METADATA_SIZE 512")
+            self.out.emit("#define OPCODE_UOP_NAME_SIZE 512")
+            self.out.emit("#define OPCODE_MACRO_EXPANSION_SIZE 256")
+            self.out.emit("")
             self.out.emit("#ifndef NEED_OPCODE_METADATA")
-            self.out.emit("extern const struct opcode_metadata _PyOpcode_opcode_metadata[512];")
-            self.out.emit("#else")
-            self.out.emit("const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {")
+            self.out.emit("extern const struct opcode_metadata "
+                          "_PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE];")
+            self.out.emit("extern const struct opcode_macro_expansion "
+                          "_PyOpcode_macro_expansion[OPCODE_MACRO_EXPANSION_SIZE];")
+            self.out.emit("extern const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE];")
+            self.out.emit("#else // if NEED_OPCODE_METADATA")
+
+            self.out.emit("const struct opcode_metadata "
+                          "_PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {")
 
             # Write metadata for each instruction
             for thing in self.everything:
@@ -1150,7 +1268,39 @@ class Analyzer:
 
             # Write end of array
             self.out.emit("};")
-            self.out.emit("#endif")
+
+            with self.out.block(
+                "const struct opcode_macro_expansion "
+                "_PyOpcode_macro_expansion[OPCODE_MACRO_EXPANSION_SIZE] =",
+                ";",
+            ):
+                # Write macro expansion for each non-pseudo instruction
+                for thing in self.everything:
+                    match thing:
+                        case OverriddenInstructionPlaceHolder():
+                            pass
+                        case parser.InstDef(name=name):
+                            instr = self.instrs[name]
+                            # Since an 'op' is not a bytecode, it has no expansion; but 'inst' is
+                            if instr.kind == "inst" and instr.is_viable_uop():
+                                # Construct a dummy Component -- input/output mappings are not used
+                                part = Component(instr, [], [], instr.active_caches)
+                                self.write_macro_expansions(instr.name, [part])
+                            elif instr.kind == "inst" and variable_used(instr.inst, "oparg1"):
+                                assert variable_used(instr.inst, "oparg2"), "Half super-instr?"
+                                self.write_super_expansions(instr.name)
+                        case parser.Macro():
+                            mac = self.macro_instrs[thing.name]
+                            self.write_macro_expansions(mac.name, mac.parts)
+                        case parser.Pseudo():
+                            pass
+                        case _:
+                            typing.assert_never(thing)
+
+            with self.out.block("const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE] =", ";"):
+                self.write_uop_items(lambda name, counter: f"[{name}] = \"{name}\",")
+
+            self.out.emit("#endif // NEED_OPCODE_METADATA")
 
         with open(self.pymetadata_filename, "w") as f:
             # Create formatter
@@ -1184,13 +1334,99 @@ class Analyzer:
                     "opcode for family in _specializations.values() for opcode in family"
                 "]")
 
-
     def write_pseudo_instrs(self) -> None:
         """Write the IS_PSEUDO_INSTR macro"""
-        self.out.emit("\n\n#define IS_PSEUDO_INSTR(OP)  \\")
+        self.out.emit("\n\n#define IS_PSEUDO_INSTR(OP)  ( \\")
         for op in self.pseudos:
             self.out.emit(f"    ((OP) == {op}) || \\")
-        self.out.emit(f"    0")
+        self.out.emit(f"    0)")
+
+    def write_uop_items(self, make_text: typing.Callable[[str, int], str]) -> None:
+        """Write '#define XXX NNN' for each uop"""
+        counter = 300  # TODO: Avoid collision with pseudo instructions
+        seen = set()
+
+        def add(name: str) -> None:
+            if name in seen:
+                return
+            nonlocal counter
+            self.out.emit(make_text(name, counter))
+            counter += 1
+            seen.add(name)
+
+        # These two are first by convention
+        add("EXIT_TRACE")
+        add("SAVE_IP")
+
+        for instr in self.instrs.values():
+            if instr.kind == "op" and instr.is_viable_uop():
+                add(instr.name)
+
+    def write_macro_expansions(self, name: str, parts: MacroParts) -> None:
+        """Write the macro expansions for a macro-instruction."""
+        # TODO: Refactor to share code with write_cody(), is_viaible_uop(), etc.
+        offset = 0  # Cache effect offset
+        expansions: list[tuple[str, int, int]] = []  # [(name, size, offset), ...]
+        for part in parts:
+            if isinstance(part, Component):
+                # All component instructions must be viable uops
+                if not part.instr.is_viable_uop():
+                    print(f"NOTE: Part {part.instr.name} of {name} is not a viable uop")
+                    return
+                if part.instr.instr_flags.HAS_ARG_FLAG or not part.active_caches:
+                    size, offset = OPARG_SIZES["OPARG_FULL"], 0
+                else:
+                    # If this assert triggers, is_viable_uops() lied
+                    assert len(part.active_caches) == 1, (name, part.instr.name)
+                    cache = part.active_caches[0]
+                    size, offset = cache.effect.size, cache.offset
+                expansions.append((part.instr.name, size, offset))
+        assert len(expansions) > 0, f"Macro {name} has empty expansion?!"
+        self.write_expansions(name, expansions)
+
+    def write_super_expansions(self, name: str) -> None:
+        """Write special macro expansions for super-instructions.
+
+        If you get an assertion failure here, you probably have accidentally
+        violated one of the assumptions here.
+
+        - A super-instruction's name is of the form FIRST_SECOND where
+          FIRST and SECOND are regular instructions whose name has the
+          form FOO_BAR. Thus, there must be exactly 3 underscores.
+          Example: LOAD_CONST_STORE_FAST.
+
+        - A super-instruction's body uses `oparg1 and `oparg2`, and no
+          other instruction's body uses those variable names.
+
+        - A super-instruction has no active (used) cache entries.
+
+        In the expansion, the first instruction's operand is all but the
+        bottom 4 bits of the super-instruction's oparg, and the second
+        instruction's operand is the bottom 4 bits. We use the special
+        size codes OPARG_TOP and OPARG_BOTTOM for these.
+        """
+        pieces = name.split("_")
+        assert len(pieces) == 4, f"{name} doesn't look like a super-instr"
+        name1 = "_".join(pieces[:2])
+        name2 = "_".join(pieces[2:])
+        assert name1 in self.instrs, f"{name1} doesn't match any instr"
+        assert name2 in self.instrs, f"{name2} doesn't match any instr"
+        instr1 = self.instrs[name1]
+        instr2 = self.instrs[name2]
+        assert not instr1.active_caches, f"{name1} has active caches"
+        assert not instr2.active_caches, f"{name2} has active caches"
+        expansions = [
+            (name1, OPARG_SIZES["OPARG_TOP"], 0),
+            (name2, OPARG_SIZES["OPARG_BOTTOM"], 0),
+        ]
+        self.write_expansions(name, expansions)
+
+    def write_expansions(self, name: str, expansions: list[tuple[str, int, int]]) -> None:
+        pieces = [f"{{ {name}, {size}, {offset} }}" for name, size, offset in expansions]
+        self.out.emit(
+            f"[{name}] = "
+            f"{{ .nuops = {len(pieces)}, .uops = {{ {', '.join(pieces)} }} }},"
+        )
 
     def emit_metadata_entry(
         self, name: str, fmt: str, flags: InstructionFlags
@@ -1221,10 +1457,7 @@ class Analyzer:
             # Create formatter
             self.out = Formatter(f, 8, self.emit_line_directives)
 
-            # Write provenance header
-            self.out.write_raw(f"{self.out.comment} This file is generated by {THIS}\n")
-            self.out.write_raw(self.from_source_files())
-            self.out.write_raw(f"{self.out.comment} Do not edit!\n")
+            self.write_provenance_header()
 
             # Write and count instructions of all kinds
             n_instrs = 0
@@ -1249,6 +1482,34 @@ class Analyzer:
         print(
             f"Wrote {n_instrs} instructions, {n_macros} macros, "
             f"and {n_pseudos} pseudos to {self.output_filename}",
+            file=sys.stderr,
+        )
+
+    def write_executor_instructions(self) -> None:
+        """Generate cases for the Tier 2 interpreter."""
+        with open(self.executor_filename, "w") as f:
+            self.out = Formatter(f, 8, self.emit_line_directives)
+            self.write_provenance_header()
+            for thing in self.everything:
+                match thing:
+                    case OverriddenInstructionPlaceHolder():
+                        # TODO: Is this helpful?
+                        self.write_overridden_instr_place_holder(thing)
+                    case parser.InstDef():
+                        instr = self.instrs[thing.name]
+                        if instr.is_viable_uop():
+                            self.out.emit("")
+                            with self.out.block(f"case {thing.name}:"):
+                                instr.write(self.out, tier=TIER_TWO)
+                                self.out.emit("break;")
+                    case parser.Macro():
+                        pass
+                    case parser.Pseudo():
+                        pass
+                    case _:
+                        typing.assert_never(thing)
+        print(
+            f"Wrote some stuff to {self.executor_filename}",
             file=sys.stderr,
         )
 
@@ -1283,7 +1544,7 @@ class Analyzer:
                         cache_adjust += size
                     case Component() as comp:
                         last_instr = comp.instr
-                        comp.write_body(self.out, cache_adjust)
+                        comp.write_body(self.out)
                         cache_adjust += comp.instr.cache_offset
 
             if cache_adjust:
@@ -1398,6 +1659,27 @@ def variable_used(node: parser.Node, name: str) -> bool:
     )
 
 
+def variable_used_unspecialized(node: parser.Node, name: str) -> bool:
+    """Like variable_used(), but skips #if ENABLE_SPECIALIZATION blocks."""
+    tokens: list[lx.Token] = []
+    skipping = False
+    for i, token in enumerate(node.tokens):
+        if token.kind == "MACRO":
+            text = "".join(token.text.split())
+            # TODO: Handle nested #if
+            if text == "#if":
+                if (
+                    i + 1 < len(node.tokens)
+                    and node.tokens[i + 1].text == "ENABLE_SPECIALIZATION"
+                ):
+                    skipping = True
+            elif text in ("#else", "#endif"):
+                skipping = False
+        if not skipping:
+            tokens.append(token)
+    return any(token.kind == "IDENTIFIER" and token.text == name for token in tokens)
+
+
 def main():
     """Parse command line, parse input, analyze, write output."""
     args = arg_parser.parse_args()  # Prints message and sys.exit(2) on error
@@ -1405,7 +1687,7 @@ def main():
         args.input.append(DEFAULT_INPUT)
 
     # Raises OSError if input unreadable
-    a = Analyzer(args.input, args.output, args.metadata, args.pymetadata)
+    a = Analyzer(args.input, args.output, args.metadata, args.pymetadata, args.executor_cases)
 
     if args.emit_line_directives:
         a.emit_line_directives = True
@@ -1415,6 +1697,7 @@ def main():
         sys.exit(f"Found {a.errors} errors")
     a.write_instructions()  # Raises OSError if output can't be written
     a.write_metadata()
+    a.write_executor_instructions()
 
 
 if __name__ == "__main__":

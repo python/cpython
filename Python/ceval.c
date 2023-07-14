@@ -4,7 +4,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
-#include "pycore_call.h"          // _PyObject_FastCallDictTstate()
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_SignalAsyncExc()
 #include "pycore_code.h"
 #include "pycore_function.h"
@@ -14,6 +14,7 @@
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_moduleobject.h"  // PyModuleObject
 #include "pycore_opcode.h"        // EXTRA_CASES
+#include "pycore_opcode_metadata.h"
 #include "pycore_opcode_utils.h"  // MAKE_FUNCTION_*
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
@@ -22,6 +23,7 @@
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_typeobject.h"    // _PySuper_Lookup()
+#include "pycore_uops.h"          // _PyUOpExecutorObject
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 
 #include "pycore_dict.h"
@@ -29,7 +31,6 @@
 #include "pycore_frame.h"
 #include "frameobject.h"          // _PyInterpreterFrame_GetLine
 #include "opcode.h"
-#include "opcode_metadata.h"
 #include "pydtrace.h"
 #include "setobject.h"
 #include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
@@ -222,14 +223,6 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, PyFunctionObject *func,
     PyObject *locals, Py_ssize_t nargs, PyObject *callargs, PyObject *kwargs);
 static void
 _PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
-
-typedef PyObject *(*convertion_func_ptr)(PyObject *);
-
-static const convertion_func_ptr CONVERSION_FUNCTIONS[4] = {
-    [FVC_STR] = PyObject_Str,
-    [FVC_REPR] = PyObject_Repr,
-    [FVC_ASCII] = PyObject_ASCII
-};
 
 #define UNBOUNDLOCAL_ERROR_MSG \
     "cannot access local variable '%s' where it is not associated with a value"
@@ -425,10 +418,8 @@ match_class_attr(PyThreadState *tstate, PyObject *subject, PyObject *type,
         }
         return NULL;
     }
-    PyObject *attr = PyObject_GetAttr(subject, name);
-    if (attr == NULL && _PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
-        _PyErr_Clear(tstate);
-    }
+    PyObject *attr;
+    (void)PyObject_GetOptionalAttr(subject, name, &attr);
     return attr;
 }
 
@@ -463,7 +454,9 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
     // First, the positional subpatterns:
     if (nargs) {
         int match_self = 0;
-        match_args = PyObject_GetAttrString(type, "__match_args__");
+        if (PyObject_GetOptionalAttr(type, &_Py_ID(__match_args__), &match_args) < 0) {
+            goto fail;
+        }
         if (match_args) {
             if (!PyTuple_CheckExact(match_args)) {
                 const char *e = "%s.__match_args__ must be a tuple (got %s)";
@@ -473,8 +466,7 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
                 goto fail;
             }
         }
-        else if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
-            _PyErr_Clear(tstate);
+        else {
             // _Py_TPFLAGS_MATCH_SELF is only acknowledged if the type does not
             // define __match_args__. This is natural behavior for subclasses:
             // it's as if __match_args__ is some "magic" value that is lost as
@@ -482,9 +474,6 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
             match_args = PyTuple_New(0);
             match_self = PyType_HasFeature((PyTypeObject*)type,
                                             _Py_TPFLAGS_MATCH_SELF);
-        }
-        else {
-            goto fail;
         }
         assert(PyTuple_CheckExact(match_args));
         Py_ssize_t allowed = match_self ? 1 : PyTuple_GET_SIZE(match_args);
@@ -768,73 +757,6 @@ resume_frame:
     assert(!_PyErr_Occurred(tstate));
 #endif
 
-    DISPATCH();
-
-handle_eval_breaker:
-
-    /* Do periodic things, like check for signals and async I/0.
-     * We need to do reasonably frequently, but not too frequently.
-     * All loops should include a check of the eval breaker.
-     * We also check on return from any builtin function.
-     *
-     * ## More Details ###
-     *
-     * The eval loop (this function) normally executes the instructions
-     * of a code object sequentially.  However, the runtime supports a
-     * number of out-of-band execution scenarios that may pause that
-     * sequential execution long enough to do that out-of-band work
-     * in the current thread using the current PyThreadState.
-     *
-     * The scenarios include:
-     *
-     *  - cyclic garbage collection
-     *  - GIL drop requests
-     *  - "async" exceptions
-     *  - "pending calls"  (some only in the main thread)
-     *  - signal handling (only in the main thread)
-     *
-     * When the need for one of the above is detected, the eval loop
-     * pauses long enough to handle the detected case.  Then, if doing
-     * so didn't trigger an exception, the eval loop resumes executing
-     * the sequential instructions.
-     *
-     * To make this work, the eval loop periodically checks if any
-     * of the above needs to happen.  The individual checks can be
-     * expensive if computed each time, so a while back we switched
-     * to using pre-computed, per-interpreter variables for the checks,
-     * and later consolidated that to a single "eval breaker" variable
-     * (now a PyInterpreterState field).
-     *
-     * For the longest time, the eval breaker check would happen
-     * frequently, every 5 or so times through the loop, regardless
-     * of what instruction ran last or what would run next.  Then, in
-     * early 2021 (gh-18334, commit 4958f5d), we switched to checking
-     * the eval breaker less frequently, by hard-coding the check to
-     * specific places in the eval loop (e.g. certain instructions).
-     * The intent then was to check after returning from calls
-     * and on the back edges of loops.
-     *
-     * In addition to being more efficient, that approach keeps
-     * the eval loop from running arbitrary code between instructions
-     * that don't handle that well.  (See gh-74174.)
-     *
-     * Currently, the eval breaker check happens here at the
-     * "handle_eval_breaker" label.  Some instructions come here
-     * explicitly (goto) and some indirectly.  Notably, the check
-     * happens on back edges in the control flow graph, which
-     * pretty much applies to all loops and most calls.
-     * (See bytecodes.c for exact information.)
-     *
-     * One consequence of this approach is that it might not be obvious
-     * how to force any specific thread to pick up the eval breaker,
-     * or for any specific thread to not pick it up.  Mostly this
-     * involves judicious uses of locks and careful ordering of code,
-     * while avoiding code that might trigger the eval breaker
-     * until so desired.
-     */
-    if (_Py_HandlePending(tstate) != 0) {
-        goto error;
-    }
     DISPATCH();
 
     {
@@ -2331,6 +2253,19 @@ PyEval_GetLocals(void)
 }
 
 PyObject *
+_PyEval_GetFrameLocals(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+     _PyInterpreterFrame *current_frame = _PyThreadState_GetFrame(tstate);
+    if (current_frame == NULL) {
+        _PyErr_SetString(tstate, PyExc_SystemError, "frame does not exist");
+        return NULL;
+    }
+
+    return _PyFrame_GetLocals(current_frame, 1);
+}
+
+PyObject *
 PyEval_GetGlobals(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
@@ -2438,40 +2373,37 @@ static PyObject *
 import_name(PyThreadState *tstate, _PyInterpreterFrame *frame,
             PyObject *name, PyObject *fromlist, PyObject *level)
 {
-    PyObject *import_func, *res;
-    PyObject* stack[5];
-
-    import_func = _PyDict_GetItemWithError(frame->f_builtins, &_Py_ID(__import__));
+    PyObject *import_func = _PyDict_GetItemWithError(frame->f_builtins,
+                                                     &_Py_ID(__import__));
     if (import_func == NULL) {
         if (!_PyErr_Occurred(tstate)) {
             _PyErr_SetString(tstate, PyExc_ImportError, "__import__ not found");
         }
         return NULL;
     }
+
     PyObject *locals = frame->f_locals;
+    if (locals == NULL) {
+        locals = Py_None;
+    }
+
     /* Fast path for not overloaded __import__. */
     if (_PyImport_IsDefaultImportFunc(tstate->interp, import_func)) {
         int ilevel = _PyLong_AsInt(level);
         if (ilevel == -1 && _PyErr_Occurred(tstate)) {
             return NULL;
         }
-        res = PyImport_ImportModuleLevelObject(
+        return PyImport_ImportModuleLevelObject(
                         name,
                         frame->f_globals,
-                        locals == NULL ? Py_None :locals,
+                        locals,
                         fromlist,
                         ilevel);
-        return res;
     }
 
+    PyObject* args[5] = {name, frame->f_globals, locals, fromlist, level};
     Py_INCREF(import_func);
-
-    stack[0] = name;
-    stack[1] = frame->f_globals;
-    stack[2] = locals == NULL ? Py_None : locals;
-    stack[3] = fromlist;
-    stack[4] = level;
-    res = _PyObject_FastCall(import_func, stack, 5);
+    PyObject *res = PyObject_Vectorcall(import_func, args, 5, NULL);
     Py_DECREF(import_func);
     return res;
 }
@@ -2482,7 +2414,7 @@ import_from(PyThreadState *tstate, PyObject *v, PyObject *name)
     PyObject *x;
     PyObject *fullmodname, *pkgname, *pkgpath, *pkgname_or_unknown, *errmsg;
 
-    if (_PyObject_LookupAttr(v, name, &x) != 0) {
+    if (PyObject_GetOptionalAttr(v, name, &x) != 0) {
         return x;
     }
     /* Issue #17636: in case this failed because of a circular relative
@@ -2770,4 +2702,106 @@ int Py_EnterRecursiveCall(const char *where)
 void Py_LeaveRecursiveCall(void)
 {
     _Py_LeaveRecursiveCall();
+}
+
+///////////////////// Experimental UOp Interpreter /////////////////////
+
+#undef DEOPT_IF
+#define DEOPT_IF(COND, INSTNAME) \
+    if ((COND)) {                \
+        goto deoptimize;         \
+    }
+
+_PyInterpreterFrame *
+_PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **stack_pointer)
+{
+#ifdef Py_DEBUG
+    char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
+    int lltrace = 0;
+    if (uop_debug != NULL && *uop_debug >= '0') {
+        lltrace = *uop_debug - '0';  // TODO: Parse an int and all that
+    }
+#define DPRINTF(level, ...) \
+    if (lltrace >= (level)) { fprintf(stderr, __VA_ARGS__); }
+#else
+#define DPRINTF(level, ...)
+#endif
+
+    DPRINTF(3,
+            "Entering _PyUopExecute for %s (%s:%d) at byte offset %ld\n",
+            PyUnicode_AsUTF8(_PyFrame_GetCode(frame)->co_qualname),
+            PyUnicode_AsUTF8(_PyFrame_GetCode(frame)->co_filename),
+            _PyFrame_GetCode(frame)->co_firstlineno,
+            2 * (long)(frame->prev_instr + 1 -
+                   (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive));
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyUOpExecutorObject *self = (_PyUOpExecutorObject *)executor;
+
+    CHECK_EVAL_BREAKER();
+
+    OBJECT_STAT_INC(optimization_traces_executed);
+    _Py_CODEUNIT *ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive;
+    int pc = 0;
+    int opcode;
+    uint64_t operand;
+    int oparg;
+    for (;;) {
+        opcode = self->trace[pc].opcode;
+        operand = self->trace[pc].operand;
+        oparg = (int)operand;
+        DPRINTF(3,
+                "%4d: uop %s, operand %" PRIu64 ", stack_level %d\n",
+                pc,
+                opcode < 256 ? _PyOpcode_OpName[opcode] : _PyOpcode_uop_name[opcode],
+                operand,
+                (int)(stack_pointer - _PyFrame_Stackbase(frame)));
+        pc++;
+        OBJECT_STAT_INC(optimization_uops_executed);
+        switch (opcode) {
+
+#undef ENABLE_SPECIALIZATION
+#define ENABLE_SPECIALIZATION 0
+#include "executor_cases.c.h"
+
+            default:
+            {
+                fprintf(stderr, "Unknown uop %d, operand %" PRIu64 "\n", opcode, operand);
+                Py_FatalError("Unknown uop");
+            }
+
+        }
+    }
+
+unbound_local_error:
+    format_exc_check_arg(tstate, PyExc_UnboundLocalError,
+        UNBOUNDLOCAL_ERROR_MSG,
+        PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
+    );
+    goto error;
+
+pop_4_error:
+    STACK_SHRINK(1);
+pop_3_error:
+    STACK_SHRINK(1);
+pop_2_error:
+    STACK_SHRINK(1);
+pop_1_error:
+    STACK_SHRINK(1);
+error:
+    // On ERROR_IF we return NULL as the frame.
+    // The caller recovers the frame from cframe.current_frame.
+    DPRINTF(2, "Error: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
+    _PyFrame_SetStackPointer(frame, stack_pointer);
+    Py_DECREF(self);
+    return NULL;
+
+deoptimize:
+    // On DEOPT_IF we just repeat the last instruction.
+    // This presumes nothing was popped from the stack (nor pushed).
+    DPRINTF(2, "DEOPT: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
+    frame->prev_instr--;  // Back up to just before destination
+    _PyFrame_SetStackPointer(frame, stack_pointer);
+    Py_DECREF(self);
+    return frame;
 }

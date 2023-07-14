@@ -101,7 +101,6 @@ bytes(cdata)
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
-#define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
 // windows.h must be included before pycore internal headers
@@ -852,7 +851,7 @@ CDataType_from_param(PyObject *type, PyObject *value)
         return NULL;
     }
 
-    if (_PyObject_LookupAttr(value, &_Py_ID(_as_parameter_), &as_parameter) < 0) {
+    if (PyObject_GetOptionalAttr(value, &_Py_ID(_as_parameter_), &as_parameter) < 0) {
         return NULL;
     }
     if (as_parameter) {
@@ -1496,7 +1495,7 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     stgdict = NULL;
     type_attr = NULL;
 
-    if (_PyObject_LookupAttr((PyObject *)result, &_Py_ID(_length_), &length_attr) < 0) {
+    if (PyObject_GetOptionalAttr((PyObject *)result, &_Py_ID(_length_), &length_attr) < 0) {
         goto error;
     }
     if (!length_attr) {
@@ -1529,7 +1528,7 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         goto error;
     }
 
-    if (_PyObject_LookupAttr((PyObject *)result, &_Py_ID(_type_), &type_attr) < 0) {
+    if (PyObject_GetOptionalAttr((PyObject *)result, &_Py_ID(_type_), &type_attr) < 0) {
         goto error;
     }
     if (!type_attr) {
@@ -1721,7 +1720,7 @@ c_wchar_p_from_param(PyObject *type, PyObject *value)
         }
     }
 
-    if (_PyObject_LookupAttr(value, &_Py_ID(_as_parameter_), &as_parameter) < 0) {
+    if (PyObject_GetOptionalAttr(value, &_Py_ID(_as_parameter_), &as_parameter) < 0) {
         return NULL;
     }
     if (as_parameter) {
@@ -1785,7 +1784,7 @@ c_char_p_from_param(PyObject *type, PyObject *value)
         }
     }
 
-    if (_PyObject_LookupAttr(value, &_Py_ID(_as_parameter_), &as_parameter) < 0) {
+    if (PyObject_GetOptionalAttr(value, &_Py_ID(_as_parameter_), &as_parameter) < 0) {
         return NULL;
     }
     if (as_parameter) {
@@ -1920,7 +1919,7 @@ c_void_p_from_param(PyObject *type, PyObject *value)
         }
     }
 
-    if (_PyObject_LookupAttr(value, &_Py_ID(_as_parameter_), &as_parameter) < 0) {
+    if (PyObject_GetOptionalAttr(value, &_Py_ID(_as_parameter_), &as_parameter) < 0) {
         return NULL;
     }
     if (as_parameter) {
@@ -2055,7 +2054,7 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (result == NULL)
         return NULL;
 
-    if (_PyObject_LookupAttr((PyObject *)result, &_Py_ID(_type_), &proto) < 0) {
+    if (PyObject_GetOptionalAttr((PyObject *)result, &_Py_ID(_type_), &proto) < 0) {
         return NULL;
     }
     if (!proto) {
@@ -2267,7 +2266,7 @@ PyCSimpleType_from_param(PyObject *type, PyObject *value)
     PyObject *exc = PyErr_GetRaisedException();
     Py_DECREF(parg);
 
-    if (_PyObject_LookupAttr(value, &_Py_ID(_as_parameter_), &as_parameter) < 0) {
+    if (PyObject_GetOptionalAttr(value, &_Py_ID(_as_parameter_), &as_parameter) < 0) {
         Py_XDECREF(exc);
         return NULL;
     }
@@ -2430,7 +2429,7 @@ converters_from_argtypes(PyObject *ob)
         }
  */
 
-        if (_PyObject_LookupAttr(tp, &_Py_ID(from_param), &cnv) <= 0) {
+        if (PyObject_GetOptionalAttr(tp, &_Py_ID(from_param), &cnv) <= 0) {
             Py_DECREF(converters);
             Py_DECREF(ob);
             if (!PyErr_Occurred()) {
@@ -2490,7 +2489,7 @@ make_funcptrtype_dict(StgDictObject *stgdict)
             return -1;
         }
         stgdict->restype = Py_NewRef(ob);
-        if (_PyObject_LookupAttr(ob, &_Py_ID(_check_retval_),
+        if (PyObject_GetOptionalAttr(ob, &_Py_ID(_check_retval_),
                                    &stgdict->checker) < 0)
         {
             return -1;
@@ -3276,7 +3275,7 @@ PyCFuncPtr_set_restype(PyCFuncPtrObject *self, PyObject *ob, void *Py_UNUSED(ign
                         "restype must be a type, a callable, or None");
         return -1;
     }
-    if (_PyObject_LookupAttr(ob, &_Py_ID(_check_retval_), &checker) < 0) {
+    if (PyObject_GetOptionalAttr(ob, &_Py_ID(_check_retval_), &checker) < 0) {
         return -1;
     }
     oldchecker = self->checker;

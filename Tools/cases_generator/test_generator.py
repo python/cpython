@@ -44,7 +44,15 @@ def run_cases_test(input: str, expected: str):
     temp_input.flush()
     temp_output = tempfile.NamedTemporaryFile("w+")
     temp_metadata = tempfile.NamedTemporaryFile("w+")
-    a = generate_cases.Analyzer([temp_input.name], temp_output.name, temp_metadata.name)
+    temp_pymetadata = tempfile.NamedTemporaryFile("w+")
+    temp_executor = tempfile.NamedTemporaryFile("w+")
+    a = generate_cases.Analyzer(
+        [temp_input.name],
+        temp_output.name,
+        temp_metadata.name,
+        temp_pymetadata.name,
+        temp_executor.name,
+    )
     a.parse()
     a.analyze()
     if a.errors:

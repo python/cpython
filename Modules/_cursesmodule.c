@@ -104,8 +104,6 @@ static const char PyCursesVersion[] = "2.2";
 #  define Py_BUILD_CORE_MODULE 1
 #endif
 
-#define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_structseq.h"     // _PyStructSequence_NewType()

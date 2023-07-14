@@ -463,8 +463,12 @@ class PurePath:
         try:
             return self._lines_cached
         except AttributeError:
-            trans = _SWAP_SEP_AND_NEWLINE[self._flavour.sep]
-            self._lines_cached = str(self).translate(trans)
+            path_str = str(self)
+            if path_str == '.':
+                self._lines_cached = ''
+            else:
+                trans = _SWAP_SEP_AND_NEWLINE[self._flavour.sep]
+                self._lines_cached = path_str.translate(trans)
             return self._lines_cached
 
     def __eq__(self, other):
@@ -817,12 +821,12 @@ class Path(PurePath):
             return False
         return True
 
-    def is_dir(self):
+    def is_dir(self, *, follow_symlinks=True):
         """
         Whether this path is a directory.
         """
         try:
-            return S_ISDIR(self.stat().st_mode)
+            return S_ISDIR(self.stat(follow_symlinks=follow_symlinks).st_mode)
         except OSError as e:
             if not _ignore_error(e):
                 raise
@@ -833,13 +837,13 @@ class Path(PurePath):
             # Non-encodable path
             return False
 
-    def is_file(self):
+    def is_file(self, *, follow_symlinks=True):
         """
         Whether this path is a regular file (also True for symlinks pointing
         to regular files).
         """
         try:
-            return S_ISREG(self.stat().st_mode)
+            return S_ISREG(self.stat(follow_symlinks=follow_symlinks).st_mode)
         except OSError as e:
             if not _ignore_error(e):
                 raise
