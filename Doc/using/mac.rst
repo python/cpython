@@ -64,10 +64,10 @@ the Finder you first need an editor to create your script. macOS comes with a
 number of standard Unix command line editors, :program:`vim` and
 :program:`emacs` among them. If you want a more Mac-like editor,
 :program:`BBEdit` or :program:`TextWrangler` from Bare Bones Software (see
-http://www.barebones.com/products/bbedit/index.html) are good choices, as is
+https://www.barebones.com/products/bbedit/) are good choices, as is
 :program:`TextMate` (see https://macromates.com/). Other editors include
-:program:`Gvim` (https://macvim.org/macvim/) and :program:`Aquamacs`
-(http://aquamacs.org/).
+:program:`Gvim` (https://macvim.org/) and :program:`Aquamacs`
+(https://aquamacs.org/).
 
 To run your script from the Terminal window you must make sure that
 :file:`/usr/local/bin` is in your shell search path.
@@ -117,7 +117,7 @@ The IDE
 
 MacPython ships with the standard IDLE development environment. A good
 introduction to using IDLE can be found at
-http://www.hashcollision.org/hkn/python/idle_intro/index.html.
+https://www.hashcollision.org/hkn/python/idle_intro/.
 
 
 .. _mac-package-manager:
@@ -144,12 +144,12 @@ the foundation of most modern Mac development. Information on PyObjC is
 available from https://pypi.org/project/pyobjc/.
 
 The standard Python GUI toolkit is :mod:`tkinter`, based on the cross-platform
-Tk toolkit (https://www.tcl.tk). An Aqua-native version of Tk is bundled with
+Tk toolkit (https://tcl.tk). An Aqua-native version of Tk is bundled with
 macOS by Apple, and the latest version can be downloaded and installed from
 https://www.activestate.com; it can also be built from source.
 
 *wxPython* is another popular cross-platform GUI toolkit that runs natively on
-macOS. Packages and documentation are available from https://www.wxpython.org.
+macOS. Packages and documentation are available from https://wxpython.org.
 
 *PyQt* is another popular cross-platform GUI toolkit that runs natively on
 macOS. More information can be found at
