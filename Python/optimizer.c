@@ -378,6 +378,7 @@ translate_bytecode_to_trace(
     _Py_CODEUNIT *initial_instr = instr;
     int trace_length = 0;
     int max_length = buffer_size;
+    int reserved = 0;
 
 #ifdef Py_DEBUG
     char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
@@ -385,6 +386,9 @@ translate_bytecode_to_trace(
     if (uop_debug != NULL && *uop_debug >= '0') {
         lltrace = *uop_debug - '0';  // TODO: Parse an int and all that
     }
+#endif
+
+#ifdef Py_DEBUG
 #define DPRINTF(level, ...) \
     if (lltrace >= (level)) { fprintf(stderr, __VA_ARGS__); }
 #else
@@ -397,6 +401,8 @@ translate_bytecode_to_trace(
             uop_name(OPCODE), \
             (uint64_t)(OPERAND)); \
     assert(trace_length < max_length); \
+    assert(reserved > 0); \
+    reserved--; \
     trace[trace_length].opcode = (OPCODE); \
     trace[trace_length].operand = (OPERAND); \
     trace_length++;
@@ -409,8 +415,22 @@ translate_bytecode_to_trace(
             (INDEX), \
             uop_name(OPCODE), \
             (uint64_t)(OPERAND)); \
+    assert(reserved > 0); \
+    reserved--; \
     trace[(INDEX)].opcode = (OPCODE); \
     trace[(INDEX)].operand = (OPERAND);
+
+// Reserve space for n uops
+#define RESERVE_RAW(n, opname) \
+    if (trace_length + (n) > max_length) { \
+        DPRINTF(2, "No room for %s (need %d, got %d)\n", \
+                (opname), (n), max_length - trace_length); \
+        goto done; \
+    } \
+    reserved = (n);  // Keep ADD_TO_TRACE / ADD_TO_STUB honest
+
+// Reserve space for main+stub uops, plus 2 for SAVE_IP and EXIT_TRACE
+#define RESERVE(main, stub) RESERVE_RAW((main) + (stub) + 2, uop_name(opcode))
 
     DPRINTF(4,
             "Optimizing %s (%s:%d) at byte offset %ld\n",
@@ -420,16 +440,20 @@ translate_bytecode_to_trace(
             2 * INSTR_IP(initial_instr, code));
 
     for (;;) {
+        RESERVE_RAW(2, "epilogue");  // Always need space for SAVE_IP and EXIT_TRACE
         ADD_TO_TRACE(SAVE_IP, INSTR_IP(instr, code));
+
         int opcode = instr->op.code;
         int oparg = instr->op.arg;
         int extras = 0;
+
         while (opcode == EXTENDED_ARG) {
             instr++;
             extras += 1;
             opcode = instr->op.code;
             oparg = (oparg << 8) | instr->op.arg;
         }
+
         if (opcode == ENTER_EXECUTOR) {
             _PyExecutorObject *executor =
                 (_PyExecutorObject *)code->co_executors->executors[oparg&255];
@@ -437,17 +461,14 @@ translate_bytecode_to_trace(
             DPRINTF(2, "  * ENTER_EXECUTOR -> %s\n",  _PyOpcode_OpName[opcode]);
             oparg = (oparg & 0xffffff00) | executor->vm_data.oparg;
         }
+
         switch (opcode) {
 
             case POP_JUMP_IF_FALSE:
             case POP_JUMP_IF_TRUE:
             {
                 // Assume jump unlikely (TODO: handle jump likely case)
-                // Reserve 5 entries (1 here, 2 stub, plus SAVE_IP + EXIT_TRACE)
-                if (trace_length + 5 > max_length) {
-                    DPRINTF(1, "Ran out of space for POP_JUMP_IF_FALSE\n");
-                    goto done;
-                }
+                RESERVE(1, 2);
                 _Py_CODEUNIT *target_instr =
                     instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]] + oparg;
                 max_length -= 2;  // Really the start of the stubs
@@ -461,9 +482,8 @@ translate_bytecode_to_trace(
 
             case JUMP_BACKWARD:
             {
-                if (instr + 2 - oparg == initial_instr
-                    && trace_length + 3 <= max_length)
-                {
+                if (instr + 2 - oparg == initial_instr) {
+                    RESERVE(1, 0);
                     ADD_TO_TRACE(JUMP_TO_TOP, 0);
                 }
                 else {
@@ -474,26 +494,45 @@ translate_bytecode_to_trace(
 
             case JUMP_FORWARD:
             {
+                RESERVE(0, 0);
                 // This will emit two SAVE_IP instructions; leave it to the optimizer
                 instr += oparg;
                 break;
             }
 
+            case FOR_ITER_LIST:
+            case FOR_ITER_TUPLE:
             case FOR_ITER_RANGE:
             {
-                // Assume jump unlikely (can a for-loop exit be likely?)
-                // Reserve 9 entries (4 here, 3 stub, plus SAVE_IP + EXIT_TRACE)
-                if (trace_length + 9 > max_length) {
-                    DPRINTF(1, "Ran out of space for FOR_ITER_RANGE\n");
-                    goto done;
+                RESERVE(4, 3);
+                int check_op, exhausted_op, next_op;
+                switch (opcode) {
+                    case FOR_ITER_LIST:
+                        check_op = _ITER_CHECK_LIST;
+                        exhausted_op = _IS_ITER_EXHAUSTED_LIST;
+                        next_op = _ITER_NEXT_LIST;
+                        break;
+                    case FOR_ITER_TUPLE:
+                        check_op = _ITER_CHECK_TUPLE;
+                        exhausted_op = _IS_ITER_EXHAUSTED_TUPLE;
+                        next_op = _ITER_NEXT_TUPLE;
+                        break;
+                    case FOR_ITER_RANGE:
+                        check_op = _ITER_CHECK_RANGE;
+                        exhausted_op = _IS_ITER_EXHAUSTED_RANGE;
+                        next_op = _ITER_NEXT_RANGE;
+                        break;
+                    default:
+                        Py_UNREACHABLE();
                 }
+                // Assume jump unlikely (can a for-loop exit be likely?)
                 _Py_CODEUNIT *target_instr =  // +1 at the end skips over END_FOR
                     instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]] + oparg + 1;
                 max_length -= 3;  // Really the start of the stubs
-                ADD_TO_TRACE(_ITER_CHECK_RANGE, 0);
-                ADD_TO_TRACE(_ITER_EXHAUSTED_RANGE, 0);
+                ADD_TO_TRACE(check_op, 0);
+                ADD_TO_TRACE(exhausted_op, 0);
                 ADD_TO_TRACE(_POP_JUMP_IF_TRUE, max_length);
-                ADD_TO_TRACE(_ITER_NEXT_RANGE, 0);
+                ADD_TO_TRACE(next_op, 0);
 
                 ADD_TO_STUB(max_length + 0, POP_TOP, 0);
                 ADD_TO_STUB(max_length + 1, SAVE_IP, INSTR_IP(target_instr, code));
@@ -507,10 +546,7 @@ translate_bytecode_to_trace(
                 if (expansion->nuops > 0) {
                     // Reserve space for nuops (+ SAVE_IP + EXIT_TRACE)
                     int nuops = expansion->nuops;
-                    if (trace_length + nuops + 2 > max_length) {
-                        DPRINTF(1, "Ran out of space for %s\n", uop_name(opcode));
-                        goto done;
-                    }
+                    RESERVE(nuops, 0);
                     for (int i = 0; i < nuops; i++) {
                         uint64_t operand;
                         int offset = expansion->uops[i].offset;
@@ -556,12 +592,14 @@ translate_bytecode_to_trace(
                 }
                 DPRINTF(2, "Unsupported opcode %s\n", uop_name(opcode));
                 goto done;  // Break out of loop
-            }
-        }
+            }  // End default
+
+        }  // End switch (opcode)
+
         instr++;
         // Add cache size for opcode
         instr += _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
-    }
+    }  // End for (;;)
 
 done:
     // Skip short traces like SAVE_IP, LOAD_FAST, SAVE_IP, EXIT_TRACE
@@ -610,6 +648,9 @@ done:
     }
     return 0;
 
+#undef RESERVE
+#undef RESERVE_RAW
+#undef INSTR_IP
 #undef ADD_TO_TRACE
 #undef DPRINTF
 }
