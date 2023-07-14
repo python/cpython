@@ -3124,7 +3124,7 @@ prior to removal. The aliases are guaranteed to remain in the typing module
 without deprecation warnings until at least Python 3.14.
 
 Type checkers are encouraged to flag uses of the deprecated types if the
-program they are checking targets Python 3.9 or newer.
+program they are checking targets a minimum Python version of 3.9 or newer.
 
 .. _corresponding-to-built-in-types:
 
