@@ -6,15 +6,16 @@ The CPython interpreter is defined in C, meaning that the semantics of the
 bytecode instructions, the dispatching mechanism, error handling, and
 tracing and instrumentation are all intermixed.
 
-This document proposes defining a custom C-like DSL for defining the 
+This document proposes defining a custom C-like DSL for defining the
 instruction semantics and tools for generating the code deriving from
 the instruction definitions.
 
 These tools would be used to:
-* Generate the main interpreter (done)
-* Generate the tier 2 interpreter
-* Generate documentation for instructions
-* Generate metadata about instructions, such as stack use (done).
+
+- Generate the main interpreter (done)
+- Generate the tier 2 interpreter
+- Generate documentation for instructions
+- Generate metadata about instructions, such as stack use (done).
 
 Having a single definition file ensures that there is a single source
 of truth for bytecode semantics.
@@ -45,7 +46,7 @@ passes from the semantic definition, reducing errors.
 
 As we improve the performance of CPython, we need to optimize larger regions
 of code, use more complex optimizations and, ultimately, translate to machine
-code. 
+code.
 
 All of these steps introduce the possibility of more bugs, and require more code
 to be written. One way to mitigate this is through the use of code generators.
@@ -61,9 +62,8 @@ blocks as the instructions for the tier 1 (PEP 659) interpreter.
 Rewriting all the instructions is tedious and error-prone, and changing the
 instructions is a maintenance headache as both versions need to be kept in sync.
 
-By using a code generator and using a common source for the instructions, or 
+By using a code generator and using a common source for the instructions, or
 parts of instructions, we can reduce the potential for errors considerably.
-
 
 ## Specification
 
@@ -74,7 +74,7 @@ We update it as the need arises.
 
 Each op definition has a kind, a name, a stack and instruction stream effect,
 and a piece of C code describing its semantics::
- 
+
 ```
   file:
     (definition | family | pseudo)+
@@ -85,7 +85,7 @@ and a piece of C code describing its semantics::
     "op" "(" NAME "," stack_effect ")" "{" C-code "}"
     |
     "macro" "(" NAME ")" "=" uop ("+" uop)* ";"
- 
+
   stack_effect:
     "(" [inputs] "--" [outputs] ")"
 
@@ -128,9 +128,9 @@ and a piece of C code describing its semantics::
 
 The following definitions may occur:
 
-* `inst`: A normal instruction, as previously defined by `TARGET(NAME)` in `ceval.c`.
-* `op`: A part instruction from which macros can be constructed.
-* `macro`: A bytecode instruction constructed from ops and cache effects.
+- `inst`: A normal instruction, as previously defined by `TARGET(NAME)` in `ceval.c`.
+- `op`: A part instruction from which macros can be constructed.
+- `macro`: A bytecode instruction constructed from ops and cache effects.
 
 `NAME` can be any ASCII identifier that is a C identifier and not a C or Python keyword.
 `foo_1` is legal. `$` is not legal, nor is `struct` or `class`.
@@ -165,9 +165,9 @@ part of the DSL.
 
 Those functions include:
 
-* `DEOPT_IF(cond, instruction)`. Deoptimize if `cond` is met.
-* `ERROR_IF(cond, label)`. Jump to error handler at `label` if `cond` is true.
-* `DECREF_INPUTS()`. Generate `Py_DECREF()` calls for the input stack effects.
+- `DEOPT_IF(cond, instruction)`. Deoptimize if `cond` is met.
+- `ERROR_IF(cond, label)`. Jump to error handler at `label` if `cond` is true.
+- `DECREF_INPUTS()`. Generate `Py_DECREF()` calls for the input stack effects.
 
 Note that the use of `DECREF_INPUTS()` is optional -- manual calls
 to `Py_DECREF()` or other approaches are also acceptable
@@ -203,6 +203,7 @@ two idioms are valid:
   `ERROR_IF(true, error)`.
 
 An example of the latter would be:
+
 ```cc
     res = PyObject_Add(left, right);
     if (res == NULL) {
@@ -231,13 +232,16 @@ The same is true for all members of a pseudo instruction
 Some examples:
 
 ### Output stack effect
+
 ```C
     inst ( LOAD_FAST, (-- value) ) {
         value = frame->f_localsplus[oparg];
         Py_INCREF(value);
     }
 ```
+
 This would generate:
+
 ```C
     TARGET(LOAD_FAST) {
         PyObject *value;
@@ -249,12 +253,15 @@ This would generate:
 ```
 
 ### Input stack effect
+
 ```C
     inst ( STORE_FAST, (value --) ) {
         SETLOCAL(oparg, value);
     }
 ```
+
 This would generate:
+
 ```C
     TARGET(STORE_FAST) {
         PyObject *value = PEEK(1);
@@ -265,6 +272,7 @@ This would generate:
 ```
 
 ### Input stack effect and cache effect
+
 ```C
     op ( CHECK_OBJECT_TYPE, (owner, type_version/2 -- owner) ) {
         PyTypeObject *tp = Py_TYPE(owner);
@@ -272,7 +280,9 @@ This would generate:
         DEOPT_IF(tp->tp_version_tag != type_version);
     }
 ```
+
 This might become (if it was an instruction):
+
 ```C
     TARGET(CHECK_OBJECT_TYPE) {
         PyObject *owner = PEEK(1);
@@ -288,12 +298,14 @@ This might become (if it was an instruction):
 ### More examples
 
 For explanations see "Generating the interpreter" below.)
+
 ```C
     op ( CHECK_HAS_INSTANCE_VALUES, (owner -- owner) ) {
         PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
         DEOPT_IF(!_PyDictOrValues_IsValues(dorv));
     }
 ```
+
 ```C
     op ( LOAD_INSTANCE_VALUE, (owner, index/1 -- null if (oparg & 1), res) ) {
         res = _PyDictOrValues_GetValues(dorv)->values[index];
@@ -303,11 +315,13 @@ For explanations see "Generating the interpreter" below.)
         Py_DECREF(owner);
     }
 ```
+
 ```C
     macro ( LOAD_ATTR_INSTANCE_VALUE ) =
         counter/1 + CHECK_OBJECT_TYPE + CHECK_HAS_INSTANCE_VALUES +
         LOAD_INSTANCE_VALUE + unused/4 ;
 ```
+
 ```C
     op ( LOAD_SLOT, (owner, index/1 -- null if (oparg & 1), res) ) {
         char *addr = (char *)owner + index;
@@ -318,15 +332,18 @@ For explanations see "Generating the interpreter" below.)
         Py_DECREF(owner);
     }
 ```
+
 ```C
     macro ( LOAD_ATTR_SLOT ) = counter/1 + CHECK_OBJECT_TYPE + LOAD_SLOT + unused/4;
 ```
+
 ```C
     inst ( BUILD_TUPLE, (items[oparg] -- tuple) ) {
         tuple = _PyTuple_FromArraySteal(items, oparg);
         ERROR_IF(tuple == NULL, error);
     }
 ```
+
 ```C
     inst ( PRINT_EXPR ) {
         PyObject *value = POP();
@@ -347,9 +364,10 @@ For explanations see "Generating the interpreter" below.)
 
 ### Defining an instruction family
 
-A _family_ represents a specializable instruction and its specializations.
+A _family_ maps a specializable instruction to its specializations.
 
 Example: These opcodes all share the same instruction format):
+
 ```C
     family(LOAD_ATTR) = { LOAD_ATTR_INSTANCE_VALUE, LOAD_SLOT };
 ```
@@ -359,10 +377,10 @@ Example: These opcodes all share the same instruction format):
 A _pseudo instruction_ is used by the bytecode compiler to represent a set of possible concrete instructions.
 
 Example: `JUMP` may expand to `JUMP_FORWARD` or `JUMP_BACKWARD`:
+
 ```C
     pseudo(JUMP) = { JUMP_FORWARD, JUMP_BACKWARD };
 ```
-
 
 ## Generating the interpreter
 
@@ -412,7 +430,7 @@ rather than popping and pushing, such that `LOAD_ATTR_SLOT` would look something
                 stack_pointer += 1;
             }
             s1 = res;
-        }   
+        }
         next_instr += (1 + 1 + 2 + 1 + 4);
         stack_pointer[-1] = s1;
         DISPATCH();
