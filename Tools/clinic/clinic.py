@@ -2044,10 +2044,16 @@ def write_file(filename: str, new_contents: str) -> None:
         raise
 
 
+class Parser:
+
+    @abc.abstractmethod
+    def parse(self, block: Block) -> None: ...
+
+
 ClassDict = dict[str, "Class"]
 DestinationDict = dict[str, Destination]
 ModuleDict = dict[str, "Module"]
-ParserDict = dict[str, "DSLParser"]
+ParserDict = dict[str, Parser]
 
 clinic = None
 class Clinic:
@@ -2197,7 +2203,7 @@ impl_definition block
         d = self.get_destination(name)
         return d.buffers[item]
 
-    def parse(self, input):
+    def parse(self, input: str) -> str:
         printer = self.printer
         self.block_parser = BlockParser(input, self.language, verify=self.verify)
         for block in self.block_parser:
@@ -2333,7 +2339,7 @@ def compute_checksum(
     return s
 
 
-class PythonParser:
+class PythonParser(Parser):
     def __init__(self, clinic: Clinic) -> None:
         pass
 
@@ -4353,7 +4359,7 @@ class ParamState(enum.IntEnum):
     RIGHT_SQUARE_AFTER = 6
 
 
-class DSLParser:
+class DSLParser(Parser):
     function: Function | None
     state: StateKeeper
     keyword_only: bool
