@@ -946,7 +946,7 @@ enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC00, INSTR_FMT
 
 #define IS_VALID_OPCODE(OP) \
     (((OP) >= 0) && ((OP) < OPCODE_METADATA_SIZE) && \
-     (_PyOpcode_opcode_metadata[OP].valid_entry))
+     (_PyOpcode_opcode_metadata[(OP)].valid_entry))
 
 #define HAS_ARG_FLAG (1)
 #define HAS_CONST_FLAG (2)
@@ -975,7 +975,7 @@ struct opcode_macro_expansion {
 #define OPARG_TOP 5
 #define OPARG_BOTTOM 6
 
-#define OPCODE_METADATA_FMT(OP) (_PyOpcode_opcode_metadata[OP].instr_format)
+#define OPCODE_METADATA_FMT(OP) (_PyOpcode_opcode_metadata[(OP)].instr_format)
 #define SAME_OPCODE_METADATA(OP1, OP2) \
         (OPCODE_METADATA_FMT(OP1) == OPCODE_METADATA_FMT(OP2))
 
