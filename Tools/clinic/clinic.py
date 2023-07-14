@@ -1736,7 +1736,7 @@ class BlockParser:
         self.find_start_re = create_regex(before, after, whole_line=False)
         self.start_re = create_regex(before, after)
         self.verify = verify
-        self.last_checksum_re: Any = None
+        self.last_checksum_re: re.Pattern[str] | None = None
         self.last_dsl_name: str | None = None
         self.dsl_name: str | None = None
         self.first_block = True
@@ -1826,6 +1826,7 @@ class BlockParser:
             checksum_re = create_regex(before, after, word=False)
             self.last_dsl_name = dsl_name
             self.last_checksum_re = checksum_re
+        assert checksum_re is not None
 
         # scan forward for checksum line
         output_add, output_output = text_accumulator()
