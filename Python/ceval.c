@@ -2706,6 +2706,9 @@ void Py_LeaveRecursiveCall(void)
 
 ///////////////////// Experimental UOp Interpreter /////////////////////
 
+#undef ASSERT_KWNAMES_IS_NULL
+#define ASSERT_KWNAMES_IS_NULL() (void)0
+
 #undef DEOPT_IF
 #define DEOPT_IF(COND, INSTNAME) \
     if ((COND)) {                \
@@ -2746,7 +2749,6 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
     int opcode;
     uint64_t operand;
     int oparg;
-    PyObject *kwnames = NULL; // Borrowed reference. Reset by CALL instructions.
 
     for (;;) {
         opcode = self->trace[pc].opcode;

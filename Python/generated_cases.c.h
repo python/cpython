@@ -3466,7 +3466,7 @@
         }
 
         TARGET(KW_NAMES) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             assert(oparg < PyTuple_GET_SIZE(FRAME_CO_CONSTS));
             kwnames = GETITEM(FRAME_CO_CONSTS, oparg);
             DISPATCH();
@@ -3603,7 +3603,7 @@
             PyObject *callable = stack_pointer[-(1 + oparg)];
             PyObject *method = stack_pointer[-(2 + oparg)];
             uint32_t func_version = read_u32(&next_instr[1].cache);
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             DEOPT_IF(tstate->interp->eval_frame, CALL);
             int is_meth = method != NULL;
             int argcount = oparg;
@@ -3635,7 +3635,7 @@
             PyObject *callable = stack_pointer[-(1 + oparg)];
             PyObject *method = stack_pointer[-(2 + oparg)];
             uint32_t func_version = read_u32(&next_instr[1].cache);
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             DEOPT_IF(tstate->interp->eval_frame, CALL);
             int is_meth = method != NULL;
             int argcount = oparg;
@@ -3677,7 +3677,7 @@
             PyObject *callable = stack_pointer[-(1 + oparg)];
             PyObject *null = stack_pointer[-(2 + oparg)];
             PyObject *res;
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
             DEOPT_IF(null != NULL, CALL);
             PyObject *obj = args[0];
@@ -3698,7 +3698,7 @@
             PyObject *callable = stack_pointer[-(1 + oparg)];
             PyObject *null = stack_pointer[-(2 + oparg)];
             PyObject *res;
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(callable != (PyObject *)&PyUnicode_Type, CALL);
@@ -3721,7 +3721,7 @@
             PyObject *callable = stack_pointer[-(1 + oparg)];
             PyObject *null = stack_pointer[-(2 + oparg)];
             PyObject *res;
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(callable != (PyObject *)&PyTuple_Type, CALL);
@@ -3748,7 +3748,7 @@
              * 2. Pushes a shim frame to the frame stack (to cleanup after ``__init__``)
              * 3. Pushes the frame for ``__init__`` to the frame stack
              * */
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             _PyCallCache *cache = (_PyCallCache *)next_instr;
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(!PyType_Check(callable), CALL);
@@ -3848,7 +3848,7 @@
             PyObject *method = stack_pointer[-(2 + oparg)];
             PyObject *res;
             /* Builtin METH_O functions */
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             int is_meth = method != NULL;
             int total_args = oparg;
             if (is_meth) {
@@ -3888,7 +3888,7 @@
             PyObject *method = stack_pointer[-(2 + oparg)];
             PyObject *res;
             /* Builtin METH_FASTCALL functions, without keywords */
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             int is_meth = method != NULL;
             int total_args = oparg;
             if (is_meth) {
@@ -3975,7 +3975,7 @@
             PyObject *callable = stack_pointer[-(1 + oparg)];
             PyObject *method = stack_pointer[-(2 + oparg)];
             PyObject *res;
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             /* len(o) */
             int is_meth = method != NULL;
             int total_args = oparg;
@@ -4011,7 +4011,7 @@
             PyObject *callable = stack_pointer[-(1 + oparg)];
             PyObject *method = stack_pointer[-(2 + oparg)];
             PyObject *res;
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             /* isinstance(o, o2) */
             int is_meth = method != NULL;
             int total_args = oparg;
@@ -4048,7 +4048,7 @@
             PyObject **args = (stack_pointer - oparg);
             PyObject *self = stack_pointer[-(1 + oparg)];
             PyObject *method = stack_pointer[-(2 + oparg)];
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
             assert(method != NULL);
             PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -4071,7 +4071,7 @@
             PyObject **args = (stack_pointer - oparg);
             PyObject *method = stack_pointer[-(2 + oparg)];
             PyObject *res;
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             int is_meth = method != NULL;
             int total_args = oparg;
             if (is_meth) {
@@ -4153,7 +4153,7 @@
             PyObject **args = (stack_pointer - oparg);
             PyObject *method = stack_pointer[-(2 + oparg)];
             PyObject *res;
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 0 || oparg == 1);
             int is_meth = method != NULL;
             int total_args = oparg;
@@ -4193,7 +4193,7 @@
             PyObject **args = (stack_pointer - oparg);
             PyObject *method = stack_pointer[-(2 + oparg)];
             PyObject *res;
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             int is_meth = method != NULL;
             int total_args = oparg;
             if (is_meth) {

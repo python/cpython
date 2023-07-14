@@ -2788,7 +2788,7 @@ dummy_func(
         }
 
         inst(KW_NAMES, (--)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             assert(oparg < PyTuple_GET_SIZE(FRAME_CO_CONSTS));
             kwnames = GETITEM(FRAME_CO_CONSTS, oparg);
         }
@@ -2940,7 +2940,7 @@ dummy_func(
         }
 
         inst(CALL_PY_EXACT_ARGS, (unused/1, func_version/2, method, callable, args[oparg] -- unused)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             DEOPT_IF(tstate->interp->eval_frame, CALL);
             int is_meth = method != NULL;
             int argcount = oparg;
@@ -2968,7 +2968,7 @@ dummy_func(
         }
 
         inst(CALL_PY_WITH_DEFAULTS, (unused/1, func_version/2, method, callable, args[oparg] -- unused)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             DEOPT_IF(tstate->interp->eval_frame, CALL);
             int is_meth = method != NULL;
             int argcount = oparg;
@@ -3006,7 +3006,7 @@ dummy_func(
         }
 
         inst(CALL_NO_KW_TYPE_1, (unused/1, unused/2, null, callable, args[oparg] -- res)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
             DEOPT_IF(null != NULL, CALL);
             PyObject *obj = args[0];
@@ -3018,7 +3018,7 @@ dummy_func(
         }
 
         inst(CALL_NO_KW_STR_1, (unused/1, unused/2, null, callable, args[oparg] -- res)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(callable != (PyObject *)&PyUnicode_Type, CALL);
@@ -3032,7 +3032,7 @@ dummy_func(
         }
 
         inst(CALL_NO_KW_TUPLE_1, (unused/1, unused/2, null, callable, args[oparg] -- res)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(callable != (PyObject *)&PyTuple_Type, CALL);
@@ -3051,7 +3051,7 @@ dummy_func(
              * 2. Pushes a shim frame to the frame stack (to cleanup after ``__init__``)
              * 3. Pushes the frame for ``__init__`` to the frame stack
              * */
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             _PyCallCache *cache = (_PyCallCache *)next_instr;
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(!PyType_Check(callable), CALL);
@@ -3135,7 +3135,7 @@ dummy_func(
 
         inst(CALL_NO_KW_BUILTIN_O, (unused/1, unused/2, method, callable, args[oparg] -- res)) {
             /* Builtin METH_O functions */
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             int is_meth = method != NULL;
             int total_args = oparg;
             if (is_meth) {
@@ -3166,7 +3166,7 @@ dummy_func(
 
         inst(CALL_NO_KW_BUILTIN_FAST, (unused/1, unused/2, method, callable, args[oparg] -- res)) {
             /* Builtin METH_FASTCALL functions, without keywords */
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             int is_meth = method != NULL;
             int total_args = oparg;
             if (is_meth) {
@@ -3235,7 +3235,7 @@ dummy_func(
         }
 
         inst(CALL_NO_KW_LEN, (unused/1, unused/2, method, callable, args[oparg] -- res)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             /* len(o) */
             int is_meth = method != NULL;
             int total_args = oparg;
@@ -3262,7 +3262,7 @@ dummy_func(
         }
 
         inst(CALL_NO_KW_ISINSTANCE, (unused/1, unused/2, method, callable, args[oparg] -- res)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             /* isinstance(o, o2) */
             int is_meth = method != NULL;
             int total_args = oparg;
@@ -3292,7 +3292,7 @@ dummy_func(
 
         // This is secretly a super-instruction
         inst(CALL_NO_KW_LIST_APPEND, (unused/1, unused/2, method, self, args[oparg] -- unused)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
             assert(method != NULL);
             PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -3312,7 +3312,7 @@ dummy_func(
         }
 
         inst(CALL_NO_KW_METHOD_DESCRIPTOR_O, (unused/1, unused/2, method, unused, args[oparg] -- res)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             int is_meth = method != NULL;
             int total_args = oparg;
             if (is_meth) {
@@ -3378,7 +3378,7 @@ dummy_func(
         }
 
         inst(CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS, (unused/1, unused/2, method, unused, args[oparg] -- res)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 0 || oparg == 1);
             int is_meth = method != NULL;
             int total_args = oparg;
@@ -3410,7 +3410,7 @@ dummy_func(
         }
 
         inst(CALL_NO_KW_METHOD_DESCRIPTOR_FAST, (unused/1, unused/2, method, unused, args[oparg] -- res)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             int is_meth = method != NULL;
             int total_args = oparg;
             if (is_meth) {

@@ -1904,19 +1904,12 @@
             break;
         }
 
-        case KW_NAMES: {
-            assert(kwnames == NULL);
-            assert(oparg < PyTuple_GET_SIZE(FRAME_CO_CONSTS));
-            kwnames = GETITEM(FRAME_CO_CONSTS, oparg);
-            break;
-        }
-
         case CALL_NO_KW_TYPE_1: {
             PyObject **args = (stack_pointer - oparg);
             PyObject *callable = stack_pointer[-(1 + oparg)];
             PyObject *null = stack_pointer[-(2 + oparg)];
             PyObject *res;
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
             DEOPT_IF(null != NULL, CALL);
             PyObject *obj = args[0];
@@ -1936,7 +1929,7 @@
             PyObject *callable = stack_pointer[-(1 + oparg)];
             PyObject *null = stack_pointer[-(2 + oparg)];
             PyObject *res;
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(callable != (PyObject *)&PyUnicode_Type, CALL);
@@ -1957,7 +1950,7 @@
             PyObject *callable = stack_pointer[-(1 + oparg)];
             PyObject *null = stack_pointer[-(2 + oparg)];
             PyObject *res;
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(callable != (PyObject *)&PyTuple_Type, CALL);
@@ -1986,45 +1979,13 @@
             break;
         }
 
-        case CALL_BUILTIN_CLASS: {
-            PyObject **args = (stack_pointer - oparg);
-            PyObject *callable = stack_pointer[-(1 + oparg)];
-            PyObject *method = stack_pointer[-(2 + oparg)];
-            PyObject *res;
-            int is_meth = method != NULL;
-            int total_args = oparg;
-            if (is_meth) {
-                callable = method;
-                args--;
-                total_args++;
-            }
-            int kwnames_len = KWNAMES_LEN();
-            DEOPT_IF(!PyType_Check(callable), CALL);
-            PyTypeObject *tp = (PyTypeObject *)callable;
-            DEOPT_IF(tp->tp_vectorcall == NULL, CALL);
-            STAT_INC(CALL, hit);
-            res = tp->tp_vectorcall((PyObject *)tp, args,
-                                    total_args - kwnames_len, kwnames);
-            kwnames = NULL;
-            /* Free the arguments. */
-            for (int i = 0; i < total_args; i++) {
-                Py_DECREF(args[i]);
-            }
-            Py_DECREF(tp);
-            if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
-            STACK_SHRINK(oparg);
-            STACK_SHRINK(1);
-            stack_pointer[-1] = res;
-            break;
-        }
-
         case CALL_NO_KW_BUILTIN_O: {
             PyObject **args = (stack_pointer - oparg);
             PyObject *callable = stack_pointer[-(1 + oparg)];
             PyObject *method = stack_pointer[-(2 + oparg)];
             PyObject *res;
             /* Builtin METH_O functions */
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             int is_meth = method != NULL;
             int total_args = oparg;
             if (is_meth) {
@@ -2062,7 +2023,7 @@
             PyObject *method = stack_pointer[-(2 + oparg)];
             PyObject *res;
             /* Builtin METH_FASTCALL functions, without keywords */
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             int is_meth = method != NULL;
             int total_args = oparg;
             if (is_meth) {
@@ -2098,54 +2059,12 @@
             break;
         }
 
-        case CALL_BUILTIN_FAST_WITH_KEYWORDS: {
-            PyObject **args = (stack_pointer - oparg);
-            PyObject *callable = stack_pointer[-(1 + oparg)];
-            PyObject *method = stack_pointer[-(2 + oparg)];
-            PyObject *res;
-            /* Builtin METH_FASTCALL | METH_KEYWORDS functions */
-            int is_meth = method != NULL;
-            int total_args = oparg;
-            if (is_meth) {
-                callable = method;
-                args--;
-                total_args++;
-            }
-            DEOPT_IF(!PyCFunction_CheckExact(callable), CALL);
-            DEOPT_IF(PyCFunction_GET_FLAGS(callable) !=
-                (METH_FASTCALL | METH_KEYWORDS), CALL);
-            STAT_INC(CALL, hit);
-            /* res = func(self, args, nargs, kwnames) */
-            _PyCFunctionFastWithKeywords cfunc =
-                (_PyCFunctionFastWithKeywords)(void(*)(void))
-                PyCFunction_GET_FUNCTION(callable);
-            res = cfunc(
-                PyCFunction_GET_SELF(callable),
-                args,
-                total_args - KWNAMES_LEN(),
-                kwnames
-            );
-            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-            kwnames = NULL;
-
-            /* Free the arguments. */
-            for (int i = 0; i < total_args; i++) {
-                Py_DECREF(args[i]);
-            }
-            Py_DECREF(callable);
-            if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
-            STACK_SHRINK(oparg);
-            STACK_SHRINK(1);
-            stack_pointer[-1] = res;
-            break;
-        }
-
         case CALL_NO_KW_LEN: {
             PyObject **args = (stack_pointer - oparg);
             PyObject *callable = stack_pointer[-(1 + oparg)];
             PyObject *method = stack_pointer[-(2 + oparg)];
             PyObject *res;
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             /* len(o) */
             int is_meth = method != NULL;
             int total_args = oparg;
@@ -2180,7 +2099,7 @@
             PyObject *callable = stack_pointer[-(1 + oparg)];
             PyObject *method = stack_pointer[-(2 + oparg)];
             PyObject *res;
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             /* isinstance(o, o2) */
             int is_meth = method != NULL;
             int total_args = oparg;
@@ -2216,7 +2135,7 @@
             PyObject **args = (stack_pointer - oparg);
             PyObject *method = stack_pointer[-(2 + oparg)];
             PyObject *res;
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             int is_meth = method != NULL;
             int total_args = oparg;
             if (is_meth) {
@@ -2252,49 +2171,11 @@
             break;
         }
 
-        case CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS: {
-            PyObject **args = (stack_pointer - oparg);
-            PyObject *method = stack_pointer[-(2 + oparg)];
-            PyObject *res;
-            int is_meth = method != NULL;
-            int total_args = oparg;
-            if (is_meth) {
-                args--;
-                total_args++;
-            }
-            PyMethodDescrObject *callable =
-                (PyMethodDescrObject *)PEEK(total_args + 1);
-            DEOPT_IF(!Py_IS_TYPE(callable, &PyMethodDescr_Type), CALL);
-            PyMethodDef *meth = callable->d_method;
-            DEOPT_IF(meth->ml_flags != (METH_FASTCALL|METH_KEYWORDS), CALL);
-            PyTypeObject *d_type = callable->d_common.d_type;
-            PyObject *self = args[0];
-            DEOPT_IF(!Py_IS_TYPE(self, d_type), CALL);
-            STAT_INC(CALL, hit);
-            int nargs = total_args - 1;
-            _PyCFunctionFastWithKeywords cfunc =
-                (_PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
-            res = cfunc(self, args + 1, nargs - KWNAMES_LEN(), kwnames);
-            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-            kwnames = NULL;
-
-            /* Free the arguments. */
-            for (int i = 0; i < total_args; i++) {
-                Py_DECREF(args[i]);
-            }
-            Py_DECREF(callable);
-            if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
-            STACK_SHRINK(oparg);
-            STACK_SHRINK(1);
-            stack_pointer[-1] = res;
-            break;
-        }
-
         case CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS: {
             PyObject **args = (stack_pointer - oparg);
             PyObject *method = stack_pointer[-(2 + oparg)];
             PyObject *res;
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 0 || oparg == 1);
             int is_meth = method != NULL;
             int total_args = oparg;
@@ -2332,7 +2213,7 @@
             PyObject **args = (stack_pointer - oparg);
             PyObject *method = stack_pointer[-(2 + oparg)];
             PyObject *res;
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             int is_meth = method != NULL;
             int total_args = oparg;
             if (is_meth) {
