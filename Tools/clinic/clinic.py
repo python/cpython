@@ -4378,6 +4378,11 @@ class DSLParser:
     coexist: bool
     parameter_continuation: str
     preserve_output: bool
+    deprecate_posonly_re = create_regex(
+        before="* [from ",
+        after="]",
+        word=False,
+    )
 
     def __init__(self, clinic: Clinic) -> None:
         self.clinic = clinic
@@ -4852,7 +4857,11 @@ class DSLParser:
 
         line = line.lstrip()
 
-        if line in ('x', '*', '/', '[', ']'):
+        if match := self.deprecate_posonly_re.match(line):
+            self.parse_deprecated_positional(match.group(1))
+            return
+
+        if line in ('*', '/', '[', ']'):
             self.parse_special_symbol(line)
             return
 
@@ -5134,15 +5143,18 @@ class DSLParser:
                     "Annotations must be either a name, a function call, or a string."
                 )
 
+    def parse_deprecated_positional(self, arg: str):
+        assert isinstance(self.function, Function)
+
+        if self.keyword_only:
+            fail(f"Function {self.function.name}: '* [from ...]' must come before '*'")
+        if self.deprecated_positional:
+            fail(f"Function {self.function.name} uses 'x' more than once.")
+        self.deprecated_positional = True
+
     def parse_special_symbol(self, symbol: str) -> None:
         assert isinstance(self.function, Function)
 
-        if symbol == 'x':
-            if self.keyword_only:
-                fail("Function " + self.function.name + ": 'x' must come before '*'")
-            if self.deprecated_positional:
-                fail("Function " + self.function.name + " uses 'x' more than once.")
-            self.deprecated_positional = True
         if symbol == '*':
             if self.keyword_only:
                 fail("Function " + self.function.name + " uses '*' more than once.")
@@ -5525,7 +5537,7 @@ class DSLParser:
             check_remaining_params("*", lambda p: p.kind != inspect.Parameter.KEYWORD_ONLY)
 
         if self.deprecated_positional:
-            check_remaining_params("*", lambda p: not p.deprecated_positional)
+            check_remaining_params("* [from ...]", lambda p: not p.deprecated_positional)
 
         # remove trailing whitespace from all parameter docstrings
         for name, value in self.function.parameters.items():

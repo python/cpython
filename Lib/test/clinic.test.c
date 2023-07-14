@@ -4824,7 +4824,7 @@ Test_meth_coexist_impl(TestObj *self)
 test_deprecate_positional_use
 
     pos: object
-    x
+    * [from 3.14]
     optarg: int = 5
 [clinic start generated code]*/
 
@@ -4903,7 +4903,7 @@ exit:
 static PyObject *
 test_deprecate_positional_use_impl(PyObject *module, PyObject *pos,
                                    int optarg)
-/*[clinic end generated code: output=b47aecf1c5245c0e input=462e9741eb865665]*/
+/*[clinic end generated code: output=b47aecf1c5245c0e input=ab63c6aed293eb31]*/
 
 PyDoc_STRVAR(test_deprecate_positional_use__doc__,
 "test_deprecate_positional_use($module, /, pos, optarg=5)\n"
