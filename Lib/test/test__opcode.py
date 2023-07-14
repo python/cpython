@@ -24,6 +24,7 @@ class OpcodeTests(unittest.TestCase):
         self.check_bool_function_result(_opcode.has_const, invalid, False)
         self.check_bool_function_result(_opcode.has_name, invalid, False)
         self.check_bool_function_result(_opcode.has_jump, invalid, False)
+        self.check_bool_function_result(_opcode.has_free, invalid, False)
         self.check_bool_function_result(_opcode.has_local, invalid, False)
 
     def test_is_valid(self):
@@ -61,6 +62,13 @@ class OpcodeTests(unittest.TestCase):
         no_jump = ['SETUP_WITH', 'POP_TOP', 'NOP', 'CACHE']
         self.check_bool_function_result(_opcode.has_jump, has_jump, True)
         self.check_bool_function_result(_opcode.has_jump, no_jump, False)
+
+    def test_has_free(self):
+        has_free = ['MAKE_CELL', 'LOAD_DEREF', 'STORE_DEREF', 'DELETE_DEREF',
+                     'LOAD_FROM_DICT_OR_DEREF']
+        no_free = ['SETUP_WITH', 'POP_TOP', 'NOP', 'CACHE']
+        self.check_bool_function_result(_opcode.has_free, has_free, True)
+        self.check_bool_function_result(_opcode.has_free, no_free, False)
 
     def test_has_local(self):
         has_local = ['LOAD_FAST', 'LOAD_FAST_CHECK', 'LOAD_FAST_AND_CLEAR',

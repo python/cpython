@@ -30,7 +30,6 @@ except ModuleNotFoundError:
 cmp_op = ('<', '<=', '==', '!=', '>', '>=')
 
 hascompare = []
-hasfree = []
 hasexc = []
 
 
@@ -39,7 +38,7 @@ ENABLE_SPECIALIZATION = True
 def is_pseudo(op):
     return op >= MIN_PSEUDO_OPCODE and op <= MAX_PSEUDO_OPCODE
 
-oplists = [hascompare, hasfree, hasexc]
+oplists = [hascompare, hasexc]
 
 opmap = {}
 
@@ -174,13 +173,9 @@ def_op('GET_AWAITABLE', 131)
 def_op('BUILD_SLICE', 133)      # Number of items
 def_op('JUMP_BACKWARD_NO_INTERRUPT', 134) # Number of words to skip (backwards)
 def_op('MAKE_CELL', 135)
-hasfree.append(135)
 def_op('LOAD_DEREF', 137)
-hasfree.append(137)
 def_op('STORE_DEREF', 138)
-hasfree.append(138)
 def_op('DELETE_DEREF', 139)
-hasfree.append(139)
 def_op('JUMP_BACKWARD', 140)    # Number of words to skip (backwards)
 def_op('LOAD_SUPER_ATTR', 141)
 def_op('CALL_FUNCTION_EX', 142)  # Flags
@@ -190,7 +185,6 @@ EXTENDED_ARG = 144
 def_op('LIST_APPEND', 145)
 def_op('SET_ADD', 146)
 def_op('MAP_ADD', 147)
-hasfree.append(148)
 def_op('COPY_FREE_VARS', 149)
 def_op('YIELD_VALUE', 150)
 def_op('RESUME', 151)   # This must be kept in sync with deepfreeze.py
@@ -214,7 +208,6 @@ def_op('CALL_INTRINSIC_1', 173)
 def_op('CALL_INTRINSIC_2', 174)
 def_op('LOAD_FROM_DICT_OR_GLOBALS', 175)
 def_op('LOAD_FROM_DICT_OR_DEREF', 176)
-hasfree.append(176)
 def_op('SET_FUNCTION_ATTRIBUTE', 177)    # Attribute
 
 # Optimizer hook
@@ -276,20 +269,20 @@ for op, i in opmap.items():
 # _opcode may not be ready during early stages of the build
 try:
     import _opcode
-except ImportError:
+    hasarg = [op for op in opmap.values() if _opcode.has_arg(op)]
+    hasconst = [op for op in opmap.values() if _opcode.has_const(op)]
+    hasname = [op for op in opmap.values() if _opcode.has_name(op)]
+    hasjrel = [op for op in opmap.values() if _opcode.has_jump(op)]
+    hasjabs = []
+    hasfree = [op for op in opmap.values() if _opcode.has_free(op)]
+    haslocal = [op for op in opmap.values() if _opcode.has_local(op)]
+except (ImportError, AttributeError):
     hasarg = []
     hasconst = []
     hasname = []
     hasjrel = []
     hasjabs = []
     haslocal = []
-else:
-    hasarg = [op for op in opmap.values() if _opcode.has_arg(op)]
-    hasconst = [op for op in opmap.values() if _opcode.has_const(op)]
-    hasname = [op for op in opmap.values() if _opcode.has_name(op)]
-    hasjrel = [op for op in opmap.values() if _opcode.has_jump(op)]
-    hasjabs = []
-    haslocal = [op for op in opmap.values() if _opcode.has_local(op)]
 
 _nb_ops = [
     ("NB_ADD", "+"),

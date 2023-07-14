@@ -952,11 +952,13 @@ enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC00, INSTR_FMT
 #define HAS_CONST_FLAG (2)
 #define HAS_NAME_FLAG (4)
 #define HAS_JUMP_FLAG (8)
-#define HAS_LOCAL_FLAG (16)
+#define HAS_FREE_FLAG (16)
+#define HAS_LOCAL_FLAG (32)
 #define OPCODE_HAS_ARG(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_ARG_FLAG))
 #define OPCODE_HAS_CONST(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_CONST_FLAG))
 #define OPCODE_HAS_NAME(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_NAME_FLAG))
 #define OPCODE_HAS_JUMP(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_JUMP_FLAG))
+#define OPCODE_HAS_FREE(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_FREE_FLAG))
 #define OPCODE_HAS_LOCAL(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_LOCAL_FLAG))
 
 struct opcode_metadata {
@@ -1080,11 +1082,11 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {
     [LOAD_GLOBAL_MODULE] = { true, INSTR_FMT_IBC000, HAS_ARG_FLAG },
     [LOAD_GLOBAL_BUILTIN] = { true, INSTR_FMT_IBC000, HAS_ARG_FLAG },
     [DELETE_FAST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_LOCAL_FLAG },
-    [MAKE_CELL] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_LOCAL_FLAG },
-    [DELETE_DEREF] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_LOCAL_FLAG },
-    [LOAD_FROM_DICT_OR_DEREF] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_LOCAL_FLAG },
-    [LOAD_DEREF] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_LOCAL_FLAG },
-    [STORE_DEREF] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_LOCAL_FLAG },
+    [MAKE_CELL] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_FREE_FLAG },
+    [DELETE_DEREF] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_FREE_FLAG },
+    [LOAD_FROM_DICT_OR_DEREF] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_FREE_FLAG },
+    [LOAD_DEREF] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_FREE_FLAG },
+    [STORE_DEREF] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_FREE_FLAG },
     [COPY_FREE_VARS] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [BUILD_STRING] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [BUILD_TUPLE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },

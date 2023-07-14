@@ -147,6 +147,29 @@ _opcode_has_jump_impl(PyObject *module, int opcode)
 
 /*[clinic input]
 
+_opcode.has_free -> bool
+
+  opcode: int
+
+Return True if the opcode accesses a free variable, False otherwise.
+
+Note that ‘free’ in this context refers to names in the current scope
+that are referenced by inner scopes or names in outer scopes that are
+referenced from this scope. It does not include references to global
+or builtin scopes.
+[clinic start generated code]*/
+
+static int
+_opcode_has_free_impl(PyObject *module, int opcode)
+/*[clinic end generated code: output=d81ae4d79af0ee26 input=6b2ce67a4a4017b1]*/
+{
+    return PyUnstable_OpcodeIsValid(opcode) &&
+           PyUnstable_OpcodeHasFree(opcode);
+
+}
+
+/*[clinic input]
+
 _opcode.has_local -> bool
 
   opcode: int
@@ -190,6 +213,7 @@ opcode_functions[] =  {
     _OPCODE_HAS_CONST_METHODDEF
     _OPCODE_HAS_NAME_METHODDEF
     _OPCODE_HAS_JUMP_METHODDEF
+    _OPCODE_HAS_FREE_METHODDEF
     _OPCODE_HAS_LOCAL_METHODDEF
     _OPCODE_GET_SPECIALIZATION_STATS_METHODDEF
     {NULL, NULL, 0, NULL}
