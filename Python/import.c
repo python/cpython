@@ -249,16 +249,7 @@ import_get_module(PyThreadState *tstate, PyObject *name)
 
     PyObject *m;
     Py_INCREF(modules);
-    if (PyDict_CheckExact(modules)) {
-        m = PyDict_GetItemWithError(modules, name);  /* borrowed */
-        Py_XINCREF(m);
-    }
-    else {
-        m = PyObject_GetItem(modules, name);
-        if (m == NULL && _PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-            _PyErr_Clear(tstate);
-        }
-    }
+    (void)PyMapping_GetOptionalItem(modules, name, &m);
     Py_DECREF(modules);
     return m;
 }
@@ -322,18 +313,7 @@ import_add_module(PyThreadState *tstate, PyObject *name)
     }
 
     PyObject *m;
-    if (PyDict_CheckExact(modules)) {
-        m = Py_XNewRef(PyDict_GetItemWithError(modules, name));
-    }
-    else {
-        m = PyObject_GetItem(modules, name);
-        // For backward-compatibility we copy the behavior
-        // of PyDict_GetItemWithError().
-        if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-            _PyErr_Clear(tstate);
-        }
-    }
-    if (_PyErr_Occurred(tstate)) {
+    if (PyMapping_GetOptionalItem(modules, name, &m) < 0) {
         return NULL;
     }
     if (m != NULL && PyModule_Check(m)) {
@@ -2898,7 +2878,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     }
     else {
         PyObject *path;
-        if (_PyObject_LookupAttr(mod, &_Py_ID(__path__), &path) < 0) {
+        if (PyObject_GetOptionalAttr(mod, &_Py_ID(__path__), &path) < 0) {
             goto error;
         }
         if (path) {

@@ -39,6 +39,12 @@
 
 #include "docstrings.h"
 
+#ifdef EXTRA_FUNCTIONALITY
+  #define _PY_DEC_ROUND_GUARD MPD_ROUND_GUARD
+#else
+  #define _PY_DEC_ROUND_GUARD (MPD_ROUND_GUARD-1)
+#endif
+
 struct PyDecContextObject;
 
 typedef struct {
@@ -68,6 +74,21 @@ typedef struct {
     /* Basic and extended context templates */
     PyObject *basic_context_template;
     PyObject *extended_context_template;
+
+    PyObject *round_map[_PY_DEC_ROUND_GUARD];
+
+    /* Convert rationals for comparison */
+    PyObject *Rational;
+
+    PyObject *SignalTuple;
+
+    /* External C-API functions */
+    binaryfunc _py_long_multiply;
+    binaryfunc _py_long_floor_divide;
+    ternaryfunc _py_long_power;
+    unaryfunc _py_float_abs;
+    PyCFunction _py_long_bit_length;
+    PyCFunction _py_float_as_integer_ratio;
 } decimal_state;
 
 static decimal_state global_state;
@@ -215,13 +236,6 @@ static const char *dec_signal_string[MPD_NUM_FLAGS] = {
     "Subnormal",
     "Underflow",
 };
-
-#ifdef EXTRA_FUNCTIONALITY
-  #define _PY_DEC_ROUND_GUARD MPD_ROUND_GUARD
-#else
-  #define _PY_DEC_ROUND_GUARD (MPD_ROUND_GUARD-1)
-#endif
-static PyObject *round_map[_PY_DEC_ROUND_GUARD];
 
 static const char *invalid_rounding_err =
 "valid values for rounding are:\n\
@@ -520,15 +534,16 @@ static int
 getround(PyObject *v)
 {
     int i;
+    decimal_state *state = GLOBAL_STATE();
 
     if (PyUnicode_Check(v)) {
         for (i = 0; i < _PY_DEC_ROUND_GUARD; i++) {
-            if (v == round_map[i]) {
+            if (v == state->round_map[i]) {
                 return i;
             }
         }
         for (i = 0; i < _PY_DEC_ROUND_GUARD; i++) {
-            if (PyUnicode_Compare(v, round_map[i]) == 0) {
+            if (PyUnicode_Compare(v, state->round_map[i]) == 0) {
                 return i;
             }
         }
@@ -561,11 +576,11 @@ signaldict_len(PyObject *self UNUSED)
     return SIGNAL_MAP_LEN;
 }
 
-static PyObject *SignalTuple;
 static PyObject *
 signaldict_iter(PyObject *self UNUSED)
 {
-    return PyTuple_Type.tp_iter(SignalTuple);
+    decimal_state *state = GLOBAL_STATE();
+    return PyTuple_Type.tp_iter(state->SignalTuple);
 }
 
 static PyObject *
@@ -754,8 +769,9 @@ static PyObject *
 context_getround(PyObject *self, void *closure UNUSED)
 {
     int i = mpd_getround(CTX(self));
+    decimal_state *state = GLOBAL_STATE();
 
-    return Py_NewRef(round_map[i]);
+    return Py_NewRef(state->round_map[i]);
 }
 
 static PyObject *
@@ -2291,14 +2307,6 @@ PyDecType_FromLongExact(PyTypeObject *type, PyObject *v,
     return dec;
 }
 
-/* External C-API functions */
-static binaryfunc _py_long_multiply;
-static binaryfunc _py_long_floor_divide;
-static ternaryfunc _py_long_power;
-static unaryfunc _py_float_abs;
-static PyCFunction _py_long_bit_length;
-static PyCFunction _py_float_as_integer_ratio;
-
 /* Return a PyDecObject or a subtype from a PyFloatObject.
    Conversion is exact. */
 static PyObject *
@@ -2314,8 +2322,8 @@ PyDecType_FromFloatExact(PyTypeObject *type, PyObject *v,
     uint32_t status = 0;
     mpd_context_t maxctx;
 
-#ifdef Py_DEBUG
     decimal_state *state = GLOBAL_STATE();
+#ifdef Py_DEBUG
     assert(PyType_IsSubtype(type, state->PyDec_Type));
 #endif
     if (PyLong_Check(v)) {
@@ -2350,13 +2358,13 @@ PyDecType_FromFloatExact(PyTypeObject *type, PyObject *v,
     }
 
     /* absolute value of the float */
-    tmp = _py_float_abs(v);
+    tmp = state->_py_float_abs(v);
     if (tmp == NULL) {
         return NULL;
     }
 
     /* float as integer ratio: numerator/denominator */
-    n_d = _py_float_as_integer_ratio(tmp, NULL);
+    n_d = state->_py_float_as_integer_ratio(tmp, NULL);
     Py_DECREF(tmp);
     if (n_d == NULL) {
         return NULL;
@@ -2364,7 +2372,7 @@ PyDecType_FromFloatExact(PyTypeObject *type, PyObject *v,
     n = PyTuple_GET_ITEM(n_d, 0);
     d = PyTuple_GET_ITEM(n_d, 1);
 
-    tmp = _py_long_bit_length(d, NULL);
+    tmp = state->_py_long_bit_length(d, NULL);
     if (tmp == NULL) {
         Py_DECREF(n_d);
         return NULL;
@@ -2987,8 +2995,6 @@ convert_op(int type_err, PyObject **conv, PyObject *v, PyObject *context)
 /*              Implicit conversions to Decimal for comparison                */
 /******************************************************************************/
 
-/* Convert rationals for comparison */
-static PyObject *Rational = NULL;
 static PyObject *
 multiply_by_denominator(PyObject *v, PyObject *r, PyObject *context)
 {
@@ -3117,7 +3123,7 @@ convert_op_cmp(PyObject **vcmp, PyObject **wcmp, PyObject *v, PyObject *w,
         }
     }
     else {
-        int is_rational = PyObject_IsInstance(w, Rational);
+        int is_rational = PyObject_IsInstance(w, state->Rational);
         if (is_rational < 0) {
             *wcmp = NULL;
         }
@@ -3654,14 +3660,14 @@ dec_as_integer_ratio(PyObject *self, PyObject *args UNUSED)
         goto error;
     }
 
-    Py_SETREF(exponent, _py_long_power(tmp, exponent, Py_None));
+    Py_SETREF(exponent, state->_py_long_power(tmp, exponent, Py_None));
     Py_DECREF(tmp);
     if (exponent == NULL) {
         goto error;
     }
 
     if (exp >= 0) {
-        Py_SETREF(numerator, _py_long_multiply(numerator, exponent));
+        Py_SETREF(numerator, state->_py_long_multiply(numerator, exponent));
         if (numerator == NULL) {
             goto error;
         }
@@ -3677,12 +3683,12 @@ dec_as_integer_ratio(PyObject *self, PyObject *args UNUSED)
         if (tmp == NULL) {
             goto error;
         }
-        Py_SETREF(numerator, _py_long_floor_divide(numerator, tmp));
+        Py_SETREF(numerator, state->_py_long_floor_divide(numerator, tmp));
         if (numerator == NULL) {
             Py_DECREF(tmp);
             goto error;
         }
-        Py_SETREF(denominator, _py_long_floor_divide(denominator, tmp));
+        Py_SETREF(denominator, state->_py_long_floor_divide(denominator, tmp));
         Py_DECREF(tmp);
         if (denominator == NULL) {
             goto error;
@@ -5828,13 +5834,14 @@ PyInit__decimal(void)
     decimal_state *state = GLOBAL_STATE();
 
     /* Init external C-API functions */
-    _py_long_multiply = PyLong_Type.tp_as_number->nb_multiply;
-    _py_long_floor_divide = PyLong_Type.tp_as_number->nb_floor_divide;
-    _py_long_power = PyLong_Type.tp_as_number->nb_power;
-    _py_float_abs = PyFloat_Type.tp_as_number->nb_absolute;
-    ASSIGN_PTR(_py_float_as_integer_ratio, cfunc_noargs(&PyFloat_Type,
-                                                        "as_integer_ratio"));
-    ASSIGN_PTR(_py_long_bit_length, cfunc_noargs(&PyLong_Type, "bit_length"));
+    state->_py_long_multiply = PyLong_Type.tp_as_number->nb_multiply;
+    state->_py_long_floor_divide = PyLong_Type.tp_as_number->nb_floor_divide;
+    state->_py_long_power = PyLong_Type.tp_as_number->nb_power;
+    state->_py_float_abs = PyFloat_Type.tp_as_number->nb_absolute;
+    ASSIGN_PTR(state->_py_float_as_integer_ratio,
+               cfunc_noargs(&PyFloat_Type, "as_integer_ratio"));
+    ASSIGN_PTR(state->_py_long_bit_length,
+               cfunc_noargs(&PyLong_Type, "bit_length"));
 
 
     /* Init types */
@@ -5865,7 +5872,7 @@ PyInit__decimal(void)
                                         (PyObject *)state->PyDec_Type));
     Py_CLEAR(obj);
     /* Rational is a global variable used for fraction comparisons. */
-    ASSIGN_PTR(Rational, PyObject_GetAttrString(numbers, "Rational"));
+    ASSIGN_PTR(state->Rational, PyObject_GetAttrString(numbers, "Rational"));
     /* Done with numbers, Number */
     Py_CLEAR(numbers);
     Py_CLEAR(Number);
@@ -5912,7 +5919,7 @@ PyInit__decimal(void)
     CHECK_INT(PyModule_AddType(m, (PyTypeObject *)state->DecimalException));
 
     /* Create signal tuple */
-    ASSIGN_PTR(SignalTuple, PyTuple_New(SIGNAL_MAP_LEN));
+    ASSIGN_PTR(state->SignalTuple, PyTuple_New(SIGNAL_MAP_LEN));
 
     /* Add exceptions that correspond to IEEE signals */
     for (i = SIGNAL_MAP_LEN-1; i >= 0; i--) {
@@ -5953,7 +5960,7 @@ PyInit__decimal(void)
         CHECK_INT(PyModule_AddObject(m, cm->name, Py_NewRef(cm->ex)));
 
         /* add to signal tuple */
-        PyTuple_SET_ITEM(SignalTuple, i, Py_NewRef(cm->ex));
+        PyTuple_SET_ITEM(state->SignalTuple, i, Py_NewRef(cm->ex));
     }
 
     /*
@@ -6029,8 +6036,8 @@ PyInit__decimal(void)
 
     /* Init string constants */
     for (i = 0; i < _PY_DEC_ROUND_GUARD; i++) {
-        ASSIGN_PTR(round_map[i], PyUnicode_InternFromString(mpd_round_string[i]));
-        CHECK_INT(PyModule_AddObject(m, mpd_round_string[i], Py_NewRef(round_map[i])));
+        ASSIGN_PTR(state->round_map[i], PyUnicode_InternFromString(mpd_round_string[i]));
+        CHECK_INT(PyModule_AddObject(m, mpd_round_string[i], Py_NewRef(state->round_map[i])));
     }
 
     /* Add specification version number */
@@ -6045,11 +6052,11 @@ error:
     Py_CLEAR(obj); /* GCOV_NOT_REACHED */
     Py_CLEAR(numbers); /* GCOV_NOT_REACHED */
     Py_CLEAR(Number); /* GCOV_NOT_REACHED */
-    Py_CLEAR(Rational); /* GCOV_NOT_REACHED */
+    Py_CLEAR(state->Rational); /* GCOV_NOT_REACHED */
     Py_CLEAR(collections); /* GCOV_NOT_REACHED */
     Py_CLEAR(collections_abc); /* GCOV_NOT_REACHED */
     Py_CLEAR(MutableMapping); /* GCOV_NOT_REACHED */
-    Py_CLEAR(SignalTuple); /* GCOV_NOT_REACHED */
+    Py_CLEAR(state->SignalTuple); /* GCOV_NOT_REACHED */
     Py_CLEAR(state->DecimalTuple); /* GCOV_NOT_REACHED */
     Py_CLEAR(state->default_context_template); /* GCOV_NOT_REACHED */
 #ifndef WITH_DECIMAL_CONTEXTVAR
