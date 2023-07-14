@@ -742,7 +742,7 @@ _PyModuleSpec_IsInitializing(PyObject *spec)
 {
     if (spec != NULL) {
         PyObject *value;
-        int ok = _PyObject_LookupAttr(spec, &_Py_ID(_initializing), &value);
+        int ok = PyObject_GetOptionalAttr(spec, &_Py_ID(_initializing), &value);
         if (ok == 0) {
             return 0;
         }
