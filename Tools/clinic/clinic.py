@@ -13,6 +13,7 @@ import collections
 import contextlib
 import copy
 import cpp
+import dataclasses as dc
 import enum
 import functools
 import hashlib
@@ -28,7 +29,12 @@ import sys
 import textwrap
 import traceback
 
-from collections.abc import Callable
+from collections.abc import (
+    Callable,
+    Iterable,
+    Iterator,
+    Sequence,
+)
 from types import FunctionType, NoneType
 from typing import (
     Any,
@@ -516,7 +522,13 @@ class PythonLanguage(Language):
     checksum_line = "#/*[{dsl_name} end generated code: {arguments}]*/"
 
 
-def permute_left_option_groups(l):
+ParamGroup = Iterable["Parameter"]
+ParamTuple = tuple["Parameter", ...]
+
+
+def permute_left_option_groups(
+        l: Sequence[ParamGroup]
+) -> Iterator[ParamTuple]:
     """
     Given [(1,), (2,), (3,)], should yield:
        ()
@@ -525,13 +537,15 @@ def permute_left_option_groups(l):
        (1, 2, 3)
     """
     yield tuple()
-    accumulator = []
+    accumulator: list[Parameter] = []
     for group in reversed(l):
         accumulator = list(group) + accumulator
         yield tuple(accumulator)
 
 
-def permute_right_option_groups(l):
+def permute_right_option_groups(
+        l: Sequence[ParamGroup]
+) -> Iterator[ParamTuple]:
     """
     Given [(1,), (2,), (3,)], should yield:
       ()
@@ -540,13 +554,17 @@ def permute_right_option_groups(l):
       (1, 2, 3)
     """
     yield tuple()
-    accumulator = []
+    accumulator: list[Parameter] = []
     for group in l:
         accumulator.extend(group)
         yield tuple(accumulator)
 
 
-def permute_optional_groups(left, required, right):
+def permute_optional_groups(
+        left: Sequence[ParamGroup],
+        required: ParamGroup,
+        right: Sequence[ParamGroup]
+) -> tuple[ParamTuple, ...]:
     """
     Generator function that computes the set of acceptable
     argument lists for the provided iterables of
@@ -561,7 +579,7 @@ def permute_optional_groups(left, required, right):
         if left:
             raise ValueError("required is empty but left is not")
 
-    accumulator = []
+    accumulator: list[ParamTuple] = []
     counts = set()
     for r in permute_right_option_groups(right):
         for l in permute_left_option_groups(left):
@@ -575,7 +593,7 @@ def permute_optional_groups(left, required, right):
     return tuple(accumulator)
 
 
-def strip_leading_and_trailing_blank_lines(s):
+def strip_leading_and_trailing_blank_lines(s: str) -> str:
     lines = s.rstrip().split('\n')
     while lines:
         line = lines[0]
@@ -585,7 +603,11 @@ def strip_leading_and_trailing_blank_lines(s):
     return '\n'.join(lines)
 
 @functools.lru_cache()
-def normalize_snippet(s, *, indent=0):
+def normalize_snippet(
+        s: str,
+        *,
+        indent: int = 0
+) -> str:
     """
     Reformats s:
         * removes leading and trailing blank lines
@@ -599,7 +621,11 @@ def normalize_snippet(s, *, indent=0):
     return s
 
 
-def declare_parser(f, *, hasformat=False):
+def declare_parser(
+        f: Function,
+        *,
+        hasformat: bool = False
+) -> str:
     """
     Generates the code template for a static local PyArg_Parser variable,
     with an initializer.  For core code (incl. builtin modules) the
@@ -658,7 +684,10 @@ def declare_parser(f, *, hasformat=False):
     return normalize_snippet(declarations)
 
 
-def wrap_declarations(text, length=78):
+def wrap_declarations(
+        text: str,
+        length: int = 78
+) -> str:
     """
     A simple-minded text wrapper for C function declarations.
 
@@ -680,14 +709,14 @@ def wrap_declarations(text, length=78):
         if not after_l_paren:
             lines.append(line)
             continue
-        parameters, _, after_r_paren = after_l_paren.partition(')')
+        in_paren, _, after_r_paren = after_l_paren.partition(')')
         if not _:
             lines.append(line)
             continue
-        if ',' not in parameters:
+        if ',' not in in_paren:
             lines.append(line)
             continue
-        parameters = [x.strip() + ", " for x in parameters.split(',')]
+        parameters = [x.strip() + ", " for x in in_paren.split(',')]
         prefix += "("
         if len(prefix) < length:
             spaces = " " * len(prefix)
@@ -724,10 +753,14 @@ class CLanguage(Language):
         self.cpp = cpp.Monitor(filename)
         self.cpp.fail = fail
 
-    def parse_line(self, line):
+    def parse_line(self, line: str) -> None:
         self.cpp.writeline(line)
 
-    def render(self, clinic, signatures):
+    def render(
+            self,
+            clinic: Clinic | None,
+            signatures: Iterable[Module | Class | Function]
+    ) -> str:
         function = None
         for o in signatures:
             if isinstance(o, Function):
@@ -736,7 +769,10 @@ class CLanguage(Language):
                 function = o
         return self.render_function(clinic, function)
 
-    def docstring_for_c_string(self, f):
+    def docstring_for_c_string(
+            self,
+            f: Function
+    ) -> str:
         if re.search(r'[^\x00-\x7F]', f.docstring):
             warn("Non-ascii character appear in docstring.")
 
@@ -756,11 +792,14 @@ class CLanguage(Language):
             add('"')
         return ''.join(text)
 
-    def output_templates(self, f):
+    def output_templates(
+            self,
+            f: Function
+    ) -> dict[str, str]:
         parameters = list(f.parameters.values())
         assert parameters
-        assert isinstance(parameters[0].converter, self_converter)
-        del parameters[0]
+        first_param = parameters.pop(0)
+        assert isinstance(first_param.converter, self_converter)
         requires_defining_class = False
         if parameters and isinstance(parameters[0].converter, defining_class_converter):
             requires_defining_class = True
@@ -771,9 +810,9 @@ class CLanguage(Language):
         default_return_converter = (not f.return_converter or
             f.return_converter.type == 'PyObject *')
 
-        new_or_init = f.kind in (METHOD_NEW, METHOD_INIT)
+        new_or_init = f.kind.new_or_init
 
-        vararg = NO_VARARG
+        vararg: int | str = NO_VARARG
         pos_only = min_pos = max_pos = min_kw_only = pseudo_args = 0
         for i, p in enumerate(parameters, 1):
             if p.is_keyword_only():
@@ -861,23 +900,25 @@ class CLanguage(Language):
 
         # parser_body_fields remembers the fields passed in to the
         # previous call to parser_body. this is used for an awful hack.
-        parser_body_fields = ()
-        def parser_body(prototype, *fields, declarations=''):
+        parser_body_fields: tuple[str, ...] = ()
+        def parser_body(
+                prototype: str,
+                *fields: str,
+                declarations: str = ''
+        ) -> str:
             nonlocal parser_body_fields
             add, output = text_accumulator()
             add(prototype)
             parser_body_fields = fields
 
-            fields = list(fields)
-            fields.insert(0, normalize_snippet("""
+            preamble = normalize_snippet("""
                 {{
                     {return_value_declaration}
                     {parser_declarations}
                     {declarations}
                     {initializers}
-                """) + "\n")
-            # just imagine--your code is here in the middle
-            fields.append(normalize_snippet("""
+            """) + "\n"
+            finale = normalize_snippet("""
                     {modifications}
                     {return_value} = {c_basename}_impl({impl_arguments});
                     {return_conversion}
@@ -887,13 +928,14 @@ class CLanguage(Language):
                     {cleanup}
                     return return_value;
                 }}
-                """))
-            for field in fields:
+            """)
+            for field in preamble, *fields, finale:
                 add('\n')
                 add(field)
             return linear_format(output(), parser_declarations=declarations)
 
         if not parameters:
+            parser_code: list[str] | None
             if not requires_defining_class:
                 # no parameters, METH_NOARGS
                 flags = "METH_NOARGS"
@@ -1127,7 +1169,7 @@ class CLanguage(Language):
                 flags = 'METH_METHOD|' + flags
                 parser_prototype = parser_prototype_def_class
 
-            add_label = None
+            add_label: str | None = None
             for i, p in enumerate(parameters):
                 if isinstance(p.converter, defining_class_converter):
                     raise ValueError("defining_class should be the first "
@@ -1212,7 +1254,7 @@ class CLanguage(Language):
         if new_or_init:
             methoddef_define = ''
 
-            if f.kind == METHOD_NEW:
+            if f.kind is METHOD_NEW:
                 parser_prototype = parser_prototype_keyword
             else:
                 return_value_declaration = "int return_value = -1;"
@@ -1270,6 +1312,8 @@ class CLanguage(Language):
             cpp_if = "#if " + conditional
             cpp_endif = "#endif /* " + conditional + " */"
 
+            assert clinic is not None
+            assert f.full_name is not None
             if methoddef_define and f.full_name not in clinic.ifndef_symbols:
                 clinic.ifndef_symbols.add(f.full_name)
                 methoddef_ifndef = normalize_snippet("""
@@ -1317,7 +1361,7 @@ class CLanguage(Language):
         return d2
 
     @staticmethod
-    def group_to_variable_name(group):
+    def group_to_variable_name(group: int) -> str:
         adjective = "left_" if group < 0 else "right_"
         return "group_" + adjective + str(abs(group))
 
@@ -1413,8 +1457,12 @@ class CLanguage(Language):
         add("}")
         template_dict['option_group_parsing'] = format_escape(output())
 
-    def render_function(self, clinic, f):
-        if not f:
+    def render_function(
+            self,
+            clinic: Clinic | None,
+            f: Function | None
+    ) -> str:
+        if f is None or clinic is None:
             return ""
 
         add, output = text_accumulator()
@@ -1433,7 +1481,7 @@ class CLanguage(Language):
         last_group = 0
         first_optional = len(selfless)
         positional = selfless and selfless[-1].is_positional_only()
-        new_or_init = f.kind in (METHOD_NEW, METHOD_INIT)
+        new_or_init = f.kind.new_or_init
         has_option_groups = False
 
         # offset i by -1 because first_optional needs to ignore self
@@ -1476,10 +1524,12 @@ class CLanguage(Language):
 
         template_dict = {}
 
+        assert isinstance(f.full_name, str)
         full_name = f.full_name
         template_dict['full_name'] = full_name
 
         if new_or_init:
+            assert isinstance(f.cls, Class)
             name = f.cls.name
         else:
             name = f.name
@@ -1576,20 +1626,12 @@ class CLanguage(Language):
         return clinic.get_destination('block').dump()
 
 
-
-
-@contextlib.contextmanager
-def OverrideStdioWith(stdout):
-    saved_stdout = sys.stdout
-    sys.stdout = stdout
-    try:
-        yield
-    finally:
-        assert sys.stdout is stdout
-        sys.stdout = saved_stdout
-
-
-def create_regex(before, after, word=True, whole_line=True):
+def create_regex(
+        before: str,
+        after: str,
+        word: bool = True,
+        whole_line: bool = True
+) -> re.Pattern[str]:
     """Create an re object for matching marker lines."""
     group_re = r"\w+" if word else ".+"
     pattern = r'{}({}){}'
@@ -1599,6 +1641,7 @@ def create_regex(before, after, word=True, whole_line=True):
     return re.compile(pattern)
 
 
+@dc.dataclass(slots=True, repr=False)
 class Block:
     r"""
     Represents a single block of text embedded in
@@ -1645,18 +1688,16 @@ class Block:
     "preindent" would be "____" and "indent" would be "__".
 
     """
-    def __init__(self, input, dsl_name=None, signatures=None, output=None, indent='', preindent=''):
-        assert isinstance(input, str)
-        self.input = input
-        self.dsl_name = dsl_name
-        self.signatures = signatures or []
-        self.output = output
-        self.indent = indent
-        self.preindent = preindent
+    input: str
+    dsl_name: str | None = None
+    signatures: list[Module | Class | Function] = dc.field(default_factory=list)
+    output: Any = None  # TODO: Very dynamic; probably untypeable in its current form?
+    indent: str = ''
+    preindent: str = ''
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         dsl_name = self.dsl_name or "text"
-        def summarize(s):
+        def summarize(s: object) -> str:
             s = repr(s)
             if len(s) > 30:
                 return s[:26] + "..." + s[0]
@@ -1825,11 +1866,10 @@ class BlockParser:
         return Block(input_output(), dsl_name, output=output)
 
 
+@dc.dataclass(slots=True)
 class BlockPrinter:
-
-    def __init__(self, language, f=None):
-        self.language = language
-        self.f = f or io.StringIO()
+    language: Language
+    f: io.StringIO = dc.field(default_factory=io.StringIO)
 
     def print_block(self, block, *, core_includes=False):
         input = block.input
@@ -1922,22 +1962,32 @@ class BufferSeries:
         return "".join(texts)
 
 
+@dc.dataclass(slots=True, repr=False)
 class Destination:
-    def __init__(self, name, type, clinic, *args):
-        self.name = name
-        self.type = type
-        self.clinic = clinic
+    name: str
+    type: str
+    clinic: Clinic
+    buffers: BufferSeries = dc.field(init=False, default_factory=BufferSeries)
+    filename: str = dc.field(init=False)  # set in __post_init__
+
+    args: dc.InitVar[tuple[str, ...]] = ()
+
+    def __post_init__(self, args: tuple[str, ...]) -> None:
         valid_types = ('buffer', 'file', 'suppress')
-        if type not in valid_types:
-            fail("Invalid destination type " + repr(type) + " for " + name + " , must be " + ', '.join(valid_types))
-        extra_arguments = 1 if type == "file" else 0
+        if self.type not in valid_types:
+            fail(
+                f"Invalid destination type {self.type!r} for {self.name}, "
+                f"must be {', '.join(valid_types)}"
+            )
+        extra_arguments = 1 if self.type == "file" else 0
         if len(args) < extra_arguments:
-            fail("Not enough arguments for destination " + name + " new " + type)
+            fail(f"Not enough arguments for destination {self.name} new {self.type}")
         if len(args) > extra_arguments:
-            fail("Too many arguments for destination " + name + " new " + type)
-        if type =='file':
+            fail(f"Too many arguments for destination {self.name} new {self.type}")
+        if self.type =='file':
             d = {}
-            filename = clinic.filename
+            filename = self.clinic.filename
+            assert filename is not None
             d['path'] = filename
             dirname, basename = os.path.split(filename)
             if not dirname:
@@ -1947,21 +1997,19 @@ class Destination:
             d['basename_root'], d['basename_extension'] = os.path.splitext(filename)
             self.filename = args[0].format_map(d)
 
-        self.buffers = BufferSeries()
-
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.type == 'file':
             file_repr = " " + repr(self.filename)
         else:
             file_repr = ''
         return "".join(("<Destination ", self.name, " ", self.type, file_repr, ">"))
 
-    def clear(self):
+    def clear(self) -> None:
         if self.type != 'buffer':
             fail("Can't clear destination" + self.name + " , it's not of type buffer")
         self.buffers.clear()
 
-    def dump(self):
+    def dump(self) -> str:
         return self.buffers.dump()
 
 
@@ -1975,22 +2023,20 @@ extensions: LangDict = { name: CLanguage for name in "c cc cpp cxx h hh hpp hxx"
 extensions['py'] = PythonLanguage
 
 
-def file_changed(filename: str, new_contents: str) -> bool:
-    """Return true if file contents changed (meaning we must update it)"""
+def write_file(filename: str, new_contents: str) -> None:
     try:
-        with open(filename, encoding="utf-8") as fp:
+        with open(filename, 'r', encoding="utf-8") as fp:
             old_contents = fp.read()
-        return old_contents != new_contents
+
+        if old_contents == new_contents:
+            # no change: avoid modifying the file modification time
+            return
     except FileNotFoundError:
-        return True
-
-
-def write_file(filename: str, new_contents: str):
+        pass
     # Atomic write using a temporary file and os.replace()
     filename_new = f"{filename}.new"
     with open(filename_new, "w", encoding="utf-8") as fp:
         fp.write(new_contents)
-
     try:
         os.replace(filename_new, filename)
     except:
@@ -2131,11 +2177,11 @@ impl_definition block
             self,
             name: str,
             type: str,
-            *args
+            *args: str
     ) -> None:
         if name in self.destinations:
             fail("Destination already exists: " + repr(name))
-        self.destinations[name] = Destination(name, type, self, *args)
+        self.destinations[name] = Destination(name, type, self, args)
 
     def get_destination(self, name: str) -> Destination:
         d = self.destinations.get(name)
@@ -2168,8 +2214,6 @@ impl_definition block
                          traceback.format_exc().rstrip())
             printer.print_block(block)
 
-        clinic_out = []
-
         # these are destinations not buffers
         for name, destination in self.destinations.items():
             if destination.type == 'suppress':
@@ -2177,7 +2221,6 @@ impl_definition block
             output = destination.dump()
 
             if output:
-
                 block = Block("", dsl_name="clinic", output=output)
 
                 if destination.type == 'buffer':
@@ -2209,11 +2252,10 @@ impl_definition block
                     block.input = 'preserve\n'
                     printer_2 = BlockPrinter(self.language)
                     printer_2.print_block(block, core_includes=True)
-                    pair = destination.filename, printer_2.f.getvalue()
-                    clinic_out.append(pair)
+                    write_file(destination.filename, printer_2.f.getvalue())
                     continue
 
-        return printer.f.getvalue(), clinic_out
+        return printer.f.getvalue()
 
 
     def _module_and_class(self, fields):
@@ -2275,14 +2317,9 @@ def parse_file(
 
     assert isinstance(language, CLanguage)
     clinic = Clinic(language, verify=verify, filename=filename)
-    src_out, clinic_out = clinic.parse(raw)
+    cooked = clinic.parse(raw)
 
-    changes = [(fn, data) for fn, data in clinic_out if file_changed(fn, data)]
-    if changes:
-        # Always (re)write the source file.
-        write_file(output, src_out)
-        for fn, data in clinic_out:
-            write_file(fn, data)
+    write_file(output, cooked)
 
 
 def compute_checksum(
@@ -2296,28 +2333,23 @@ def compute_checksum(
     return s
 
 
-
-
 class PythonParser:
     def __init__(self, clinic: Clinic) -> None:
         pass
 
     def parse(self, block: Block) -> None:
-        s = io.StringIO()
-        with OverrideStdioWith(s):
+        with contextlib.redirect_stdout(io.StringIO()) as s:
             exec(block.input)
-        block.output = s.getvalue()
+            block.output = s.getvalue()
 
 
+@dc.dataclass(repr=False)
 class Module:
-    def __init__(
-            self,
-            name: str,
-            module = None
-    ) -> None:
-        self.name = name
-        self.module = self.parent = module
+    name: str
+    module: Module | None = None
 
+    def __post_init__(self) -> None:
+        self.parent = self.module
         self.modules: ModuleDict = {}
         self.classes: ClassDict = {}
         self.functions: list[Function] = []
@@ -2326,22 +2358,16 @@ class Module:
         return "<clinic.Module " + repr(self.name) + " at " + str(id(self)) + ">"
 
 
+@dc.dataclass(repr=False)
 class Class:
-    def __init__(
-            self,
-            name: str,
-            module: Module | None = None,
-            cls = None,
-            typedef: str | None = None,
-            type_object: str | None = None
-    ) -> None:
-        self.name = name
-        self.module = module
-        self.cls = cls
-        self.typedef = typedef
-        self.type_object = type_object
-        self.parent = cls or module
+    name: str
+    module: Module | None = None
+    cls: Class | None = None
+    typedef: str | None = None
+    type_object: str | None = None
 
+    def __post_init__(self) -> None:
+        self.parent = self.cls or self.module
         self.classes: ClassDict = {}
         self.functions: list[Function] = []
 
@@ -2421,13 +2447,34 @@ __xor__
 """.strip().split())
 
 
-INVALID, CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW = """
-INVALID, CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW
-""".replace(",", "").strip().split()
+class FunctionKind(enum.Enum):
+    INVALID         = enum.auto()
+    CALLABLE        = enum.auto()
+    STATIC_METHOD   = enum.auto()
+    CLASS_METHOD    = enum.auto()
+    METHOD_INIT     = enum.auto()
+    METHOD_NEW      = enum.auto()
+
+    @functools.cached_property
+    def new_or_init(self) -> bool:
+        return self in {FunctionKind.METHOD_INIT, FunctionKind.METHOD_NEW}
+
+    def __repr__(self) -> str:
+        return f"<FunctionKind.{self.name}>"
+
+
+INVALID: Final = FunctionKind.INVALID
+CALLABLE: Final = FunctionKind.CALLABLE
+STATIC_METHOD: Final = FunctionKind.STATIC_METHOD
+CLASS_METHOD: Final = FunctionKind.CLASS_METHOD
+METHOD_INIT: Final = FunctionKind.METHOD_INIT
+METHOD_NEW: Final = FunctionKind.METHOD_NEW
 
 ParamDict = dict[str, "Parameter"]
 ReturnConverterType = Callable[..., "CReturnConverter"]
 
+
+@dc.dataclass(repr=False)
 class Function:
     """
     Mutable duck type for inspect.Function.
@@ -2439,49 +2486,34 @@ class Function:
         It will always be true that
             (not docstring) or ((not docstring[0].isspace()) and (docstring.rstrip() == docstring))
     """
+    parameters: ParamDict = dc.field(default_factory=dict)
+    _: dc.KW_ONLY
+    name: str
+    module: Module
+    cls: Class | None = None
+    c_basename: str | None = None
+    full_name: str | None = None
+    return_converter: CReturnConverter
+    return_annotation: object = inspect.Signature.empty
+    docstring: str = ''
+    kind: FunctionKind = CALLABLE
+    coexist: bool = False
+    # docstring_only means "don't generate a machine-readable
+    # signature, just a normal docstring".  it's True for
+    # functions with optional groups because we can't represent
+    # those accurately with inspect.Signature in 3.4.
+    docstring_only: bool = False
 
-    def __init__(
-            self,
-            parameters: ParamDict | None = None,
-            *,
-            name: str,
-            module: Module,
-            cls: Class | None = None,
-            c_basename: str | None = None,
-            full_name: str | None = None,
-            return_converter: CReturnConverter,
-            return_annotation = inspect.Signature.empty,
-            docstring: str | None = None,
-            kind: str = CALLABLE,
-            coexist: bool = False,
-            docstring_only: bool = False
-    ) -> None:
-        self.parameters = parameters or {}
-        self.return_annotation = return_annotation
-        self.name = name
-        self.full_name = full_name
-        self.module = module
-        self.cls = cls
-        self.parent = cls or module
-        self.c_basename = c_basename
-        self.return_converter = return_converter
-        self.docstring = docstring or ''
-        self.kind = kind
-        self.coexist = coexist
+    def __post_init__(self) -> None:
+        self.parent: Class | Module = self.cls or self.module
         self.self_converter: self_converter | None = None
-        # docstring_only means "don't generate a machine-readable
-        # signature, just a normal docstring".  it's True for
-        # functions with optional groups because we can't represent
-        # those accurately with inspect.Signature in 3.4.
-        self.docstring_only = docstring_only
+        self.__render_parameters__: list[Parameter] | None = None
 
-        self.rendered_parameters = None
-
-    __render_parameters__ = None
     @property
-    def render_parameters(self):
+    def render_parameters(self) -> list[Parameter]:
         if not self.__render_parameters__:
-            self.__render_parameters__ = l = []
+            l: list[Parameter] = []
+            self.__render_parameters__ = l
             for p in self.parameters.values():
                 p = p.copy()
                 p.converter.pre_render()
@@ -2490,15 +2522,16 @@ class Function:
 
     @property
     def methoddef_flags(self) -> str | None:
-        if self.kind in (METHOD_INIT, METHOD_NEW):
+        if self.kind.new_or_init:
             return None
         flags = []
-        if self.kind == CLASS_METHOD:
-            flags.append('METH_CLASS')
-        elif self.kind == STATIC_METHOD:
-            flags.append('METH_STATIC')
-        else:
-            assert self.kind == CALLABLE, "unknown kind: " + repr(self.kind)
+        match self.kind:
+            case FunctionKind.CLASS_METHOD:
+                flags.append('METH_CLASS')
+            case FunctionKind.STATIC_METHOD:
+                flags.append('METH_STATIC')
+            case _ as kind:
+                assert kind is FunctionKind.CALLABLE, f"unknown kind: {kind!r}"
         if self.coexist:
             flags.append('METH_COEXIST')
         return '|'.join(flags)
@@ -2506,17 +2539,8 @@ class Function:
     def __repr__(self) -> str:
         return '<clinic.Function ' + self.name + '>'
 
-    def copy(self, **overrides) -> "Function":
-        kwargs = {
-            'name': self.name, 'module': self.module, 'parameters': self.parameters,
-            'cls': self.cls, 'c_basename': self.c_basename,
-            'full_name': self.full_name,
-            'return_converter': self.return_converter, 'return_annotation': self.return_annotation,
-            'docstring': self.docstring, 'kind': self.kind, 'coexist': self.coexist,
-            'docstring_only': self.docstring_only,
-            }
-        kwargs.update(overrides)
-        f = Function(**kwargs)
+    def copy(self, **overrides: Any) -> Function:
+        f = dc.replace(self, **overrides)
         f.parameters = {
             name: value.copy(function=f)
             for name, value in f.parameters.items()
@@ -2524,31 +2548,21 @@ class Function:
         return f
 
 
+@dc.dataclass(repr=False, slots=True)
 class Parameter:
     """
     Mutable duck type of inspect.Parameter.
     """
-
-    def __init__(
-            self,
-            name: str,
-            kind: inspect._ParameterKind,
-            *,
-            default = inspect.Parameter.empty,
-            function: Function,
-            converter: "CConverter",
-            annotation = inspect.Parameter.empty,
-            docstring: str | None = None,
-            group: int = 0
-    ) -> None:
-        self.name = name
-        self.kind = kind
-        self.default = default
-        self.function = function
-        self.converter = converter
-        self.annotation = annotation
-        self.docstring = docstring or ''
-        self.group = group
+    name: str
+    kind: inspect._ParameterKind
+    _: dc.KW_ONLY
+    default: object = inspect.Parameter.empty
+    function: Function
+    converter: CConverter
+    annotation: object = inspect.Parameter.empty
+    docstring: str = ''
+    group: int = 0
+    right_bracket_count: int = dc.field(init=False, default=0)
 
     def __repr__(self) -> str:
         return '<clinic.Parameter ' + self.name + '>'
@@ -2565,18 +2579,19 @@ class Parameter:
     def is_optional(self) -> bool:
         return not self.is_vararg() and (self.default is not unspecified)
 
-    def copy(self, **overrides) -> "Parameter":
-        kwargs = {
-            'name': self.name, 'kind': self.kind, 'default':self.default,
-                 'function': self.function, 'converter': self.converter, 'annotation': self.annotation,
-                 'docstring': self.docstring, 'group': self.group,
-            }
-        kwargs.update(overrides)
-        if 'converter' not in overrides:
+    def copy(
+        self,
+        /,
+        *,
+        converter: CConverter | None = None,
+        function: Function | None = None,
+        **overrides: Any
+    ) -> Parameter:
+        function = function or self.function
+        if not converter:
             converter = copy.copy(self.converter)
-            converter.function = kwargs['function']
-            kwargs['converter'] = converter
-        return Parameter(**kwargs)
+            converter.function = function
+        return dc.replace(self, **overrides, function=function, converter=converter)
 
     def get_displayname(self, i: int) -> str:
         if i == 0:
@@ -2587,13 +2602,10 @@ class Parameter:
             return f'"argument {i}"'
 
 
+@dc.dataclass
 class LandMine:
     # try to access any
-    def __init__(self, message: str) -> None:
-        self.__message__ = message
-
-    def __repr__(self) -> str:
-        return '<LandMine ' + repr(self.__message__) + ">"
+    __message__: str
 
     def __getattribute__(self, name: str):
         if name in ('__repr__', '__message__'):
@@ -2602,7 +2614,10 @@ class LandMine:
         fail("Stepped on a land mine, trying to access attribute " + repr(name) + ":\n" + self.__message__)
 
 
-def add_c_converter(f, name=None):
+def add_c_converter(
+        f: type[CConverter],
+        name: str | None = None
+) -> type[CConverter]:
     if not name:
         name = f.__name__
         if not name.endswith('_converter'):
@@ -2620,7 +2635,10 @@ def add_default_legacy_c_converter(cls):
         legacy_converters[cls.format_unit] = cls
     return cls
 
-def add_legacy_c_converter(format_unit, **kwargs):
+def add_legacy_c_converter(
+        format_unit: str,
+        **kwargs
+) -> Callable[[ConverterType], ConverterType]:
     """
     Adds a legacy converter.
     """
@@ -2747,7 +2765,7 @@ class CConverter(metaclass=CConverterAutoRegister):
              # Positional args:
              name: str,
              py_name: str,
-             function,
+             function: Function,
              default: object = unspecified,
              *,  # Keyword only args:
              c_default: str | None = None,
@@ -2786,7 +2804,9 @@ class CConverter(metaclass=CConverterAutoRegister):
         # about the function in the init.
         # (that breaks if we get cloned.)
         # so after this change we will noisily fail.
-        self.function = LandMine("Don't access members of self.function inside converter_init!")
+        self.function: Function | LandMine = LandMine(
+            "Don't access members of self.function inside converter_init!"
+        )
         self.converter_init(**kwargs)
         self.function = function
 
@@ -2796,7 +2816,7 @@ class CConverter(metaclass=CConverterAutoRegister):
     def is_optional(self) -> bool:
         return (self.default is not unspecified)
 
-    def _render_self(self, parameter: str, data: CRenderData) -> None:
+    def _render_self(self, parameter: Parameter, data: CRenderData) -> None:
         self.parameter = parameter
         name = self.parser_name
 
@@ -2856,7 +2876,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         if cleanup:
             data.cleanup.append('/* Cleanup for ' + name + ' */\n' + cleanup.rstrip() + "\n")
 
-    def render(self, parameter: str, data: CRenderData) -> None:
+    def render(self, parameter: Parameter, data: CRenderData) -> None:
         """
         parameter is a clinic.Parameter instance.
         data is a CRenderData instance.
@@ -3887,18 +3907,22 @@ class Py_buffer_converter(CConverter):
         return super().parse_arg(argname, displayname)
 
 
-def correct_name_for_self(f) -> tuple[str, str]:
+def correct_name_for_self(
+        f: Function
+) -> tuple[str, str]:
     if f.kind in (CALLABLE, METHOD_INIT):
         if f.cls:
             return "PyObject *", "self"
         return "PyObject *", "module"
-    if f.kind == STATIC_METHOD:
+    if f.kind is STATIC_METHOD:
         return "void *", "null"
     if f.kind in (CLASS_METHOD, METHOD_NEW):
         return "PyTypeObject *", "type"
     raise RuntimeError("Unhandled type of function f: " + repr(f.kind))
 
-def required_type_for_self_for_parser(f):
+def required_type_for_self_for_parser(
+        f: Function
+) -> str | None:
     type, _ = correct_name_for_self(f)
     if f.kind in (METHOD_INIT, METHOD_NEW, STATIC_METHOD, CLASS_METHOD):
         return type
@@ -3923,9 +3947,8 @@ class self_converter(CConverter):
         self.type = self.specified_type or self.type or default_type
 
         kind = self.function.kind
-        new_or_init = kind in (METHOD_NEW, METHOD_INIT)
 
-        if (kind == STATIC_METHOD) or new_or_init:
+        if kind is STATIC_METHOD or kind.new_or_init:
             self.show_in_signature = False
 
     # tp_new (METHOD_NEW) functions are of type newfunc:
@@ -3975,7 +3998,7 @@ class self_converter(CConverter):
         parameter is a clinic.Parameter instance.
         data is a CRenderData instance.
         """
-        if self.function.kind == STATIC_METHOD:
+        if self.function.kind is STATIC_METHOD:
             return
 
         self._render_self(parameter, data)
@@ -3994,8 +4017,8 @@ class self_converter(CConverter):
         kind = self.function.kind
         cls = self.function.cls
 
-        if ((kind in (METHOD_NEW, METHOD_INIT)) and cls and cls.typedef):
-            if kind == METHOD_NEW:
+        if kind.new_or_init and cls and cls.typedef:
+            if kind is METHOD_NEW:
                 type_check = (
                     '({0} == base_tp || {0}->tp_init == base_tp->tp_init)'
                  ).format(self.name)
@@ -4193,7 +4216,12 @@ class float_return_converter(double_return_converter):
     cast = '(double)'
 
 
-def eval_ast_expr(node, globals, *, filename='-'):
+def eval_ast_expr(
+        node: ast.expr,
+        globals: dict[str, Any],
+        *,
+        filename: str = '-'
+) -> FunctionType:
     """
     Takes an ast.Expr node.  Compiles and evaluates it.
     Returns the result of the expression.
@@ -4205,8 +4233,8 @@ def eval_ast_expr(node, globals, *, filename='-'):
     if isinstance(node, ast.Expr):
         node = node.value
 
-    node = ast.Expression(node)
-    co = compile(node, filename, 'eval')
+    expr = ast.Expression(node)
+    co = compile(expr, filename, 'eval')
     fn = FunctionType(co, globals)
     return fn()
 
@@ -4334,7 +4362,7 @@ class DSLParser:
     parameter_state: int
     seen_positional_with_default: bool
     indent: IndentStack
-    kind: str
+    kind: FunctionKind
     coexist: bool
     parameter_continuation: str
     preserve_output: bool
@@ -4623,12 +4651,15 @@ class DSLParser:
                 function_name = fields.pop()
                 module, cls = self.clinic._module_and_class(fields)
 
-                if not (existing_function.kind == self.kind and existing_function.coexist == self.coexist):
+                if not (existing_function.kind is self.kind and existing_function.coexist == self.coexist):
                     fail("'kind' of function and cloned function don't match!  (@classmethod/@staticmethod/@coexist)")
-                self.function = existing_function.copy(name=function_name, full_name=full_name, module=module, cls=cls, c_basename=c_basename, docstring='')
-
-                self.block.signatures.append(self.function)
-                (cls or module).functions.append(self.function)
+                function = existing_function.copy(
+                    name=function_name, full_name=full_name, module=module,
+                    cls=cls, c_basename=c_basename, docstring=''
+                )
+                self.function = function
+                self.block.signatures.append(function)
+                (cls or module).functions.append(function)
                 self.next(self.state_function_docstring)
                 return
 
@@ -4673,11 +4704,11 @@ class DSLParser:
             fail(f"{fields[-1]} is a special method and cannot be converted to Argument Clinic!  (Yet.)")
 
         if fields[-1] == '__new__':
-            if (self.kind != CLASS_METHOD) or (not cls):
+            if (self.kind is not CLASS_METHOD) or (not cls):
                 fail("__new__ must be a class method!")
             self.kind = METHOD_NEW
         elif fields[-1] == '__init__':
-            if (self.kind != CALLABLE) or (not cls):
+            if (self.kind is not CALLABLE) or (not cls):
                 fail("__init__ must be a normal method, not a class or static method!")
             self.kind = METHOD_INIT
             if not return_converter:
@@ -5197,7 +5228,7 @@ class DSLParser:
     def format_docstring(self):
         f = self.function
 
-        new_or_init = f.kind in (METHOD_NEW, METHOD_INIT)
+        new_or_init = f.kind.new_or_init
         if new_or_init and not f.docstring:
             # don't render a docstring at all, no signature, nothing.
             return f.docstring
@@ -5223,7 +5254,7 @@ class DSLParser:
         assert isinstance(parameters[0].converter, self_converter)
         # self is always positional-only.
         assert parameters[0].is_positional_only()
-        parameters[0].right_bracket_count = 0
+        assert parameters[0].right_bracket_count == 0
         positional_only = True
         for p in parameters[1:]:
             if not p.is_positional_only():
