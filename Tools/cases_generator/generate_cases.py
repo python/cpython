@@ -865,8 +865,6 @@ class Analyzer:
         - All members must have the same cache, input and output effects
         """
         for family in self.families.values():
-            if len(family.members) < 1:
-                self.error(f"Family {family.name!r} has insufficient members", family)
             if family.name not in self.macro_instrs and family.name not in self.instrs:
                 self.error(
                     f"Family {family.name!r} has unknown instruction {family.name!r}",
@@ -882,8 +880,6 @@ class Analyzer:
                 self.error(
                     f"Family {family.name!r} has unknown members: {unknown}", family
                 )
-            if len(members) < 1:
-                continue
             expected_effects = self.effect_counts(family.name)
             for member in members:
                 member_effects = self.effect_counts(member)
@@ -1308,7 +1304,6 @@ class Analyzer:
             self.out.emit("")
             self.out.emit("_specializations = {")
             for name, family in self.families.items():
-                assert len(family.members) >= 1
                 with self.out.indent():
                     self.out.emit(f"\"{family.name}\": [")
                     with self.out.indent():
