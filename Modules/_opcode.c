@@ -2,7 +2,6 @@
 #include "compile.h"
 #include "opcode.h"
 #include "internal/pycore_code.h"
-#include "internal/pycore_opcode_metadata.h"
 
 /*[clinic input]
 module _opcode
