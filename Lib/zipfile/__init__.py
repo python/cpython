@@ -209,8 +209,10 @@ class _Extra(bytes):
 
     @classmethod
     def split(cls, data):
-        while data:
-            extra, data = _Extra.read_one(data)
+        # use memoryview for zero-copy slices
+        rest = memoryview(data)
+        while rest:
+            extra, rest = _Extra.read_one(rest)
             yield extra
 
     @classmethod
