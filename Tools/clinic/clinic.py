@@ -798,8 +798,8 @@ class CLanguage(Language):
     ) -> dict[str, str]:
         parameters = list(f.parameters.values())
         assert parameters
-        assert isinstance(parameters[0].converter, self_converter)
-        del parameters[0]
+        first_param = parameters.pop(0)
+        assert isinstance(first_param.converter, self_converter)
         requires_defining_class = False
         if parameters and isinstance(parameters[0].converter, defining_class_converter):
             requires_defining_class = True
