@@ -3051,60 +3051,96 @@
         }
 
         TARGET(FOR_ITER_LIST) {
-            PyObject *iter = stack_pointer[-1];
-            PyObject *next;
-            DEOPT_IF(Py_TYPE(iter) != &PyListIter_Type, FOR_ITER);
-            _PyListIterObject *it = (_PyListIterObject *)iter;
-            STAT_INC(FOR_ITER, hit);
-            PyListObject *seq = it->it_seq;
-            if (seq) {
-                if (it->it_index < PyList_GET_SIZE(seq)) {
-                    next = Py_NewRef(PyList_GET_ITEM(seq, it->it_index++));
-                    goto end_for_iter_list;  // End of this instruction
-                }
-                it->it_seq = NULL;
-                Py_DECREF(seq);
+            PyObject *_tmp_1;
+            PyObject *_tmp_2 = stack_pointer[-1];
+            {
+                PyObject *iter = _tmp_2;
+                DEOPT_IF(Py_TYPE(iter) != &PyListIter_Type, FOR_ITER);
+                _tmp_2 = iter;
             }
-            Py_DECREF(iter);
-            STACK_SHRINK(1);
-            SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
-            /* Jump forward oparg, then skip following END_FOR instruction */
-            JUMPBY(oparg + 1);
-            DISPATCH();
-        end_for_iter_list:
-            // Common case: no jump, leave it to the code generator
-            STACK_GROW(1);
-            stack_pointer[-1] = next;
+            {
+                PyObject *iter = _tmp_2;
+                _PyListIterObject *it = (_PyListIterObject *)iter;
+                assert(Py_TYPE(iter) == &PyListIter_Type);
+                STAT_INC(FOR_ITER, hit);
+                PyListObject *seq = it->it_seq;
+                if (seq == NULL || it->it_index >= PyList_GET_SIZE(seq)) {
+                    if (seq != NULL) {
+                        it->it_seq = NULL;
+                        Py_DECREF(seq);
+                    }
+                    Py_DECREF(iter);
+                    STACK_SHRINK(1);
+                    SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
+                    /* Jump forward oparg, then skip following END_FOR instruction */
+                    JUMPBY(oparg + 1);
+                    DISPATCH();
+                }
+                _tmp_2 = iter;
+            }
+            {
+                PyObject *iter = _tmp_2;
+                PyObject *next;
+                _PyListIterObject *it = (_PyListIterObject *)iter;
+                assert(Py_TYPE(iter) == &PyListIter_Type);
+                PyListObject *seq = it->it_seq;
+                assert(seq);
+                assert(it->it_index < PyList_GET_SIZE(seq));
+                next = Py_NewRef(PyList_GET_ITEM(seq, it->it_index++));
+                _tmp_2 = iter;
+                _tmp_1 = next;
+            }
             next_instr += 1;
+            STACK_GROW(1);
+            stack_pointer[-1] = _tmp_1;
+            stack_pointer[-2] = _tmp_2;
             DISPATCH();
         }
 
         TARGET(FOR_ITER_TUPLE) {
-            PyObject *iter = stack_pointer[-1];
-            PyObject *next;
-            _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
-            DEOPT_IF(Py_TYPE(it) != &PyTupleIter_Type, FOR_ITER);
-            STAT_INC(FOR_ITER, hit);
-            PyTupleObject *seq = it->it_seq;
-            if (seq) {
-                if (it->it_index < PyTuple_GET_SIZE(seq)) {
-                    next = Py_NewRef(PyTuple_GET_ITEM(seq, it->it_index++));
-                    goto end_for_iter_tuple;  // End of this instruction
-                }
-                it->it_seq = NULL;
-                Py_DECREF(seq);
+            PyObject *_tmp_1;
+            PyObject *_tmp_2 = stack_pointer[-1];
+            {
+                PyObject *iter = _tmp_2;
+                DEOPT_IF(Py_TYPE(iter) != &PyTupleIter_Type, FOR_ITER);
+                _tmp_2 = iter;
             }
-            Py_DECREF(iter);
-            STACK_SHRINK(1);
-            SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
-            /* Jump forward oparg, then skip following END_FOR instruction */
-            JUMPBY(oparg + 1);
-            DISPATCH();
-        end_for_iter_tuple:
-            // Common case: no jump, leave it to the code generator
-            STACK_GROW(1);
-            stack_pointer[-1] = next;
+            {
+                PyObject *iter = _tmp_2;
+                _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
+                assert(Py_TYPE(iter) == &PyTupleIter_Type);
+                STAT_INC(FOR_ITER, hit);
+                PyTupleObject *seq = it->it_seq;
+                if (seq == NULL || it->it_index >= PyTuple_GET_SIZE(seq)) {
+                    if (seq != NULL) {
+                        it->it_seq = NULL;
+                        Py_DECREF(seq);
+                    }
+                    Py_DECREF(iter);
+                    STACK_SHRINK(1);
+                    SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
+                    /* Jump forward oparg, then skip following END_FOR instruction */
+                    JUMPBY(oparg + 1);
+                    DISPATCH();
+                }
+                _tmp_2 = iter;
+            }
+            {
+                PyObject *iter = _tmp_2;
+                PyObject *next;
+                _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
+                assert(Py_TYPE(iter) == &PyTupleIter_Type);
+                PyTupleObject *seq = it->it_seq;
+                assert(seq);
+                assert(it->it_index < PyTuple_GET_SIZE(seq));
+                next = Py_NewRef(PyTuple_GET_ITEM(seq, it->it_index++));
+                _tmp_2 = iter;
+                _tmp_1 = next;
+            }
             next_instr += 1;
+            STACK_GROW(1);
+            stack_pointer[-1] = _tmp_1;
+            stack_pointer[-2] = _tmp_2;
             DISPATCH();
         }
 
