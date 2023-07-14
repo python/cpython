@@ -1214,15 +1214,20 @@ class CLanguage(Language):
                             }}
                             """ % add_label, indent=4))
                     if p.deprecated_positional:
+                        whence = p.deprecated_positional
+                        msg = (
+                            f"Using {p.name!r} as a positional argument is deprecated. "
+                            f"It will become a keyword-only argument in Python {whence}."
+                        )
                         parser_code.append(normalize_snippet("""
                             if (nargs == %s) {{
                                 if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                                    "Using '%s' as a positional argument is deprecated", 2))
+                                    "%s", 2))
                                 {{
                                     goto exit;
                                 }}
                             }}
-                            """ % (str(i+1), p.name), indent=4))
+                            """ % (str(i+1), msg), indent=4))
                     if i + 1 == len(parameters):
                         parser_code.append(normalize_snippet(parsearg, indent=4))
                     else:
@@ -2572,7 +2577,7 @@ class Parameter:
     annotation: object = inspect.Parameter.empty
     docstring: str = ''
     group: int = 0
-    deprecated_positional: bool = False
+    deprecated_positional: str = ""
     right_bracket_count: int = dc.field(init=False, default=0)
 
     def __repr__(self) -> str:
@@ -4369,7 +4374,7 @@ class DSLParser:
     state: StateKeeper
     keyword_only: bool
     positional_only: bool
-    deprecated_positional: bool
+    deprecated_positional: str
     group: int
     parameter_state: int
     seen_positional_with_default: bool
@@ -4406,7 +4411,7 @@ class DSLParser:
         self.state = self.state_dsl_start
         self.keyword_only = False
         self.positional_only = False
-        self.deprecated_positional = False
+        self.deprecated_positional = ""
         self.group = 0
         self.parameter_state: ParamState = ParamState.START
         self.seen_positional_with_default = False
@@ -5143,14 +5148,14 @@ class DSLParser:
                     "Annotations must be either a name, a function call, or a string."
                 )
 
-    def parse_deprecated_positional(self, arg: str):
+    def parse_deprecated_positional(self, whence: str):
         assert isinstance(self.function, Function)
 
         if self.keyword_only:
             fail(f"Function {self.function.name}: '* [from ...]' must come before '*'")
         if self.deprecated_positional:
             fail(f"Function {self.function.name} uses 'x' more than once.")
-        self.deprecated_positional = True
+        self.deprecated_positional = whence
 
     def parse_special_symbol(self, symbol: str) -> None:
         assert isinstance(self.function, Function)
