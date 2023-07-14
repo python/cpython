@@ -1986,7 +1986,7 @@ class BufferSeries:
 
     def clear(self) -> None:
         for ta in self._array:
-            ta._text.clear()
+            ta.text.clear()
 
     def dump(self) -> str:
         texts = [ta.output() for ta in self._array]
