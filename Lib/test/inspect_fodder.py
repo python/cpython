@@ -113,3 +113,8 @@ class WhichComments:
        # after asyncf - line 113
     # end of WhichComments - line 114
   # after WhichComments - line 115
+
+# Test that getsource works on a line that includes
+# a closing parenthesis with the opening paren being in another line
+(
+); after_closing = lambda: 1

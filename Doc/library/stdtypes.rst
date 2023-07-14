@@ -52,7 +52,7 @@ objects considered false:
      single: None (Built-in object)
      single: False (Built-in object)
 
-* constants defined to be false: ``None`` and ``False``.
+* constants defined to be false: ``None`` and ``False``
 
 * zero of any numeric type: ``0``, ``0.0``, ``0j``, ``Decimal(0)``,
   ``Fraction(0, 1)``
@@ -2014,11 +2014,14 @@ expression support in the :mod:`re` module).
    .. versionadded:: 3.9
 
 
-.. method:: str.replace(old, new[, count])
+.. method:: str.replace(old, new, count=-1)
 
    Return a copy of the string with all occurrences of substring *old* replaced by
-   *new*.  If the optional argument *count* is given, only the first *count*
-   occurrences are replaced.
+   *new*.  If *count* is given, only the first *count* occurrences are replaced.
+   If *count* is not specified or ``-1``, then all occurrences are replaced.
+
+   .. versionchanged:: 3.13
+      *count* is now supported as a keyword argument.
 
 
 .. method:: str.rfind(sub[, start[, end]])
@@ -5162,6 +5165,14 @@ enables cleaner type hinting syntax compared to :data:`typing.Union`.
       def square(number: int | float) -> int | float:
           return number ** 2
 
+   .. note::
+
+      The ``|`` operand cannot be used at runtime to define unions where one or
+      more members is a forward reference. For example, ``int | "Foo"``, where
+      ``"Foo"`` is a reference to a class not yet defined, will fail at
+      runtime. For unions which include forward references, present the
+      whole expression as a string, e.g. ``"int | Foo"``.
+
 .. describe:: union_object == other
 
    Union objects can be tested for equality with other union objects.  Details:
@@ -5474,6 +5485,14 @@ types, where they are relevant.  Some of these are not reported by the
    or generator instance.
 
    .. versionadded:: 3.3
+
+
+.. attribute:: definition.__type_params__
+
+   The :ref:`type parameters <type-params>` of generic classes, functions,
+   and :ref:`type aliases <type-aliases>`.
+
+   .. versionadded:: 3.12
 
 
 .. attribute:: class.__mro__

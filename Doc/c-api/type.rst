@@ -42,12 +42,29 @@ Type Objects
    Return the :c:member:`~PyTypeObject.tp_flags` member of *type*. This function is primarily
    meant for use with ``Py_LIMITED_API``; the individual flag bits are
    guaranteed to be stable across Python releases, but access to
-   :c:member:`~PyTypeObject.tp_flags` itself is not part of the limited API.
+   :c:member:`~PyTypeObject.tp_flags` itself is not part of the :ref:`limited API <limited-c-api>`.
 
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.4
       The return type is now ``unsigned long`` rather than ``long``.
+
+
+.. c:function:: PyObject* PyType_GetDict(PyTypeObject* type)
+
+   Return the type object's internal namespace, which is otherwise only
+   exposed via a read-only proxy (``cls.__dict__``).  This is a
+   replacement for accessing :c:member:`~PyTypeObject.tp_dict` directly.
+   The returned dictionary must be treated as read-only.
+
+   This function is meant for specific embedding and language-binding cases,
+   where direct access to the dict is necessary and indirect access
+   (e.g. via the proxy or :c:func:`PyObject_GetAttr`) isn't adequate.
+
+   Extension modules should continue to use ``tp_dict``,
+   directly or indirectly, when setting up their own types.
+
+   .. versionadded:: 3.12
 
 
 .. c:function:: void PyType_Modified(PyTypeObject *type)
@@ -258,7 +275,7 @@ The following functions and structs are used to create
    (or *Py_tp_base[s]* slots if *bases* is ``NULL``, see below).
 
    Metaclasses that override :c:member:`~PyTypeObject.tp_new` are not
-   supported.
+   supported, except if ``tp_new`` is ``NULL``.
    (For backwards compatibility, other ``PyType_From*`` functions allow
    such metaclasses. They ignore ``tp_new``, which may result in incomplete
    initialization. This is deprecated and in Python 3.14+ such metaclasses will
@@ -349,6 +366,15 @@ The following functions and structs are used to create
       :c:member:`~PyTypeObject.tp_new` is deprecated and in Python 3.14+ it
       will be no longer allowed.
 
+.. raw:: html
+
+   <!-- Keep old URL fragments working (see gh-97908) -->
+   <span id='c.PyType_Spec.PyType_Spec.name'></span>
+   <span id='c.PyType_Spec.PyType_Spec.basicsize'></span>
+   <span id='c.PyType_Spec.PyType_Spec.itemsize'></span>
+   <span id='c.PyType_Spec.PyType_Spec.flags'></span>
+   <span id='c.PyType_Spec.PyType_Spec.slots'></span>
+
 .. c:type:: PyType_Spec
 
    Structure defining a type's behavior.
@@ -410,12 +436,18 @@ The following functions and structs are used to create
 
       Each slot ID should be specified at most once.
 
+.. raw:: html
+
+   <!-- Keep old URL fragments working (see gh-97908) -->
+   <span id='c.PyType_Slot.PyType_Slot.slot'></span>
+   <span id='c.PyType_Slot.PyType_Slot.pfunc'></span>
+
 .. c:type:: PyType_Slot
 
    Structure defining optional functionality of a type, containing a slot ID
    and a value pointer.
 
-   .. c:member:: int PyType_Slot.slot
+   .. c:member:: int slot
 
       A slot ID.
 
@@ -457,9 +489,9 @@ The following functions and structs are used to create
      .. versionchanged:: 3.11
         :c:member:`~PyBufferProcs.bf_getbuffer` and
         :c:member:`~PyBufferProcs.bf_releasebuffer` are now available
-        under the limited API.
+        under the :ref:`limited API <limited-c-api>`.
 
-   .. c:member:: void *PyType_Slot.pfunc
+   .. c:member:: void *pfunc
 
       The desired value of the slot. In most cases, this is a pointer
       to a function.

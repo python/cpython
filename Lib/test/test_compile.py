@@ -1168,6 +1168,33 @@ class TestSpecifics(unittest.TestCase):
         """)
         compile(code, "<test>", "exec")
 
+    def test_apply_static_swaps(self):
+        def f(x, y):
+            a, a = x, y
+            return a
+        self.assertEqual(f("x", "y"), "y")
+
+    def test_apply_static_swaps_2(self):
+        def f(x, y, z):
+            a, b, a = x, y, z
+            return a
+        self.assertEqual(f("x", "y", "z"), "z")
+
+    def test_apply_static_swaps_3(self):
+        def f(x, y, z):
+            a, a, b = x, y, z
+            return a
+        self.assertEqual(f("x", "y", "z"), "y")
+
+    def test_variable_dependent(self):
+        # gh-104635: Since the value of b is dependent on the value of a
+        # the first STORE_FAST for a should not be skipped. (e.g POP_TOP).
+        # This test case is added to prevent potential regression from aggressive optimization.
+        def f():
+            a = 42; b = a + 54; a = 54
+            return a, b
+        self.assertEqual(f(), (54, 96))
+
 
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):

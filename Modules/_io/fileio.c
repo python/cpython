@@ -1,6 +1,5 @@
 /* Author: Daniel Stutzbach */
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
@@ -231,7 +230,7 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
 /*[clinic end generated code: output=23413f68e6484bbd input=588aac967e0ba74b]*/
 {
 #ifdef MS_WINDOWS
-    Py_UNICODE *widename = NULL;
+    wchar_t *widename = NULL;
 #else
     const char *name = NULL;
 #endif
@@ -536,7 +535,7 @@ fileio_dealloc(fileio *self)
     _PyObject_GC_UNTRACK(self);
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
-    Py_CLEAR(self->dict);
+    (void)fileio_clear(self);
     tp->tp_free((PyObject *)self);
     Py_DECREF(tp);
 }
@@ -1100,7 +1099,7 @@ fileio_repr(fileio *self)
     if (self->fd < 0)
         return PyUnicode_FromFormat("<_io.FileIO [closed]>");
 
-    if (_PyObject_LookupAttr((PyObject *) self, &_Py_ID(name), &nameobj) < 0) {
+    if (PyObject_GetOptionalAttr((PyObject *) self, &_Py_ID(name), &nameobj) < 0) {
         return NULL;
     }
     if (nameobj == NULL) {
@@ -1166,6 +1165,8 @@ static PyMethodDef fileio_methods[] = {
     _IO_FILEIO_FILENO_METHODDEF
     _IO_FILEIO_ISATTY_METHODDEF
     {"_dealloc_warn", (PyCFunction)fileio_dealloc_warn, METH_O, NULL},
+    {"__reduce__", _PyIOBase_cannot_pickle, METH_VARARGS},
+    {"__reduce_ex__", _PyIOBase_cannot_pickle, METH_VARARGS},
     {NULL,           NULL}             /* sentinel */
 };
 

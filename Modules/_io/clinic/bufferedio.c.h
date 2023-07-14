@@ -108,15 +108,15 @@ _io__BufferedIOBase_detach(PyObject *self, PyTypeObject *cls, PyObject *const *a
 }
 
 PyDoc_STRVAR(_io__BufferedIOBase_read__doc__,
-"read($self, /, *args)\n"
+"read($self, size=-1, /)\n"
 "--\n"
 "\n"
 "Read and return up to n bytes.\n"
 "\n"
-"If the argument is omitted, None, or negative, read and\n"
+"If the size argument is omitted, None, or negative, read and\n"
 "return all data until EOF.\n"
 "\n"
-"If the argument is positive, and the underlying raw stream is\n"
+"If the size argument is positive, and the underlying raw stream is\n"
 "not \'interactive\', multiple raw reads may be issued to satisfy\n"
 "the byte count (unless EOF is reached first).\n"
 "However, for interactive raw streams (as well as sockets and pipes),\n"
@@ -133,7 +133,7 @@ PyDoc_STRVAR(_io__BufferedIOBase_read__doc__,
 
 static PyObject *
 _io__BufferedIOBase_read_impl(PyObject *self, PyTypeObject *cls,
-                              PyObject *args);
+                              int Py_UNUSED(size));
 
 static PyObject *
 _io__BufferedIOBase_read(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -145,7 +145,7 @@ _io__BufferedIOBase_read(PyObject *self, PyTypeObject *cls, PyObject *const *arg
     #  define KWTUPLE NULL
     #endif
 
-    static const char * const _keywords[] = { NULL};
+    static const char * const _keywords[] = {"", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "read",
@@ -153,25 +153,31 @@ _io__BufferedIOBase_read(PyObject *self, PyTypeObject *cls, PyObject *const *arg
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    PyObject *__clinic_args = NULL;
+    int size = -1;
 
-    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    __clinic_args = args[0];
-    return_value = _io__BufferedIOBase_read_impl(self, cls, __clinic_args);
+    if (nargs < 1) {
+        goto skip_optional_posonly;
+    }
+    size = _PyLong_AsInt(args[0]);
+    if (size == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_posonly:
+    return_value = _io__BufferedIOBase_read_impl(self, cls, size);
 
 exit:
-    Py_XDECREF(__clinic_args);
     return return_value;
 }
 
 PyDoc_STRVAR(_io__BufferedIOBase_read1__doc__,
-"read1($self, /, *args)\n"
+"read1($self, size=-1, /)\n"
 "--\n"
 "\n"
-"Read and return up to n bytes, with at most one read() call to the underlying raw stream.\n"
+"Read and return up to size bytes, with at most one read() call to the underlying raw stream.\n"
 "\n"
 "Return an empty bytes object on EOF.\n"
 "A short result does not imply that EOF is imminent.");
@@ -181,7 +187,7 @@ PyDoc_STRVAR(_io__BufferedIOBase_read1__doc__,
 
 static PyObject *
 _io__BufferedIOBase_read1_impl(PyObject *self, PyTypeObject *cls,
-                               PyObject *args);
+                               int Py_UNUSED(size));
 
 static PyObject *
 _io__BufferedIOBase_read1(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -193,7 +199,7 @@ _io__BufferedIOBase_read1(PyObject *self, PyTypeObject *cls, PyObject *const *ar
     #  define KWTUPLE NULL
     #endif
 
-    static const char * const _keywords[] = { NULL};
+    static const char * const _keywords[] = {"", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "read1",
@@ -201,25 +207,31 @@ _io__BufferedIOBase_read1(PyObject *self, PyTypeObject *cls, PyObject *const *ar
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    PyObject *__clinic_args = NULL;
+    int size = -1;
 
-    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    __clinic_args = args[0];
-    return_value = _io__BufferedIOBase_read1_impl(self, cls, __clinic_args);
+    if (nargs < 1) {
+        goto skip_optional_posonly;
+    }
+    size = _PyLong_AsInt(args[0]);
+    if (size == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_posonly:
+    return_value = _io__BufferedIOBase_read1_impl(self, cls, size);
 
 exit:
-    Py_XDECREF(__clinic_args);
     return return_value;
 }
 
 PyDoc_STRVAR(_io__BufferedIOBase_write__doc__,
-"write($self, /, *args)\n"
+"write($self, b, /)\n"
 "--\n"
 "\n"
-"Write the given buffer to the IO stream.\n"
+"Write buffer b to the IO stream.\n"
 "\n"
 "Return the number of bytes written, which is always\n"
 "the length of b in bytes.\n"
@@ -232,7 +244,7 @@ PyDoc_STRVAR(_io__BufferedIOBase_write__doc__,
 
 static PyObject *
 _io__BufferedIOBase_write_impl(PyObject *self, PyTypeObject *cls,
-                               PyObject *args);
+                               PyObject *Py_UNUSED(b));
 
 static PyObject *
 _io__BufferedIOBase_write(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -244,7 +256,7 @@ _io__BufferedIOBase_write(PyObject *self, PyTypeObject *cls, PyObject *const *ar
     #  define KWTUPLE NULL
     #endif
 
-    static const char * const _keywords[] = { NULL};
+    static const char * const _keywords[] = {"", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "write",
@@ -252,17 +264,16 @@ _io__BufferedIOBase_write(PyObject *self, PyTypeObject *cls, PyObject *const *ar
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    PyObject *__clinic_args = NULL;
+    PyObject *b;
 
-    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    __clinic_args = args[0];
-    return_value = _io__BufferedIOBase_write_impl(self, cls, __clinic_args);
+    b = args[0];
+    return_value = _io__BufferedIOBase_write_impl(self, cls, b);
 
 exit:
-    Py_XDECREF(__clinic_args);
     return return_value;
 }
 
@@ -1087,4 +1098,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d770e392e8702e12 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b7ddf84a5bc2bf34 input=a9049054013a1b77]*/

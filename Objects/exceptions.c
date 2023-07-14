@@ -4,9 +4,9 @@
  * Thanks go to Tim Peters and Michael Hudson for debugging.
  */
 
-#define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <stdbool.h>
+#include "pycore_abstract.h"      // _PyObject_RealIsSubclass()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall
 #include "pycore_pyerrors.h"      // struct _PyErr_SetRaisedException
 #include "pycore_exceptions.h"    // struct _Py_exc_state
@@ -207,22 +207,21 @@ BaseException_add_note(PyObject *self, PyObject *note)
         return NULL;
     }
 
-    if (!PyObject_HasAttr(self, &_Py_ID(__notes__))) {
-        PyObject *new_notes = PyList_New(0);
-        if (new_notes == NULL) {
-            return NULL;
-        }
-        if (PyObject_SetAttr(self, &_Py_ID(__notes__), new_notes) < 0) {
-            Py_DECREF(new_notes);
-            return NULL;
-        }
-        Py_DECREF(new_notes);
-    }
-    PyObject *notes = PyObject_GetAttr(self, &_Py_ID(__notes__));
-    if (notes == NULL) {
+    PyObject *notes;
+    if (PyObject_GetOptionalAttr(self, &_Py_ID(__notes__), &notes) < 0) {
         return NULL;
     }
-    if (!PyList_Check(notes)) {
+    if (notes == NULL) {
+        notes = PyList_New(0);
+        if (notes == NULL) {
+            return NULL;
+        }
+        if (PyObject_SetAttr(self, &_Py_ID(__notes__), notes) < 0) {
+            Py_DECREF(notes);
+            return NULL;
+        }
+    }
+    else if (!PyList_Check(notes)) {
         Py_DECREF(notes);
         PyErr_SetString(PyExc_TypeError, "Cannot add note: __notes__ is not a list");
         return NULL;
@@ -941,11 +940,11 @@ exceptiongroup_subset(
     PyException_SetContext(eg, PyException_GetContext(orig));
     PyException_SetCause(eg, PyException_GetCause(orig));
 
-    if (PyObject_HasAttr(orig, &_Py_ID(__notes__))) {
-        PyObject *notes = PyObject_GetAttr(orig, &_Py_ID(__notes__));
-        if (notes == NULL) {
-            goto error;
-        }
+    PyObject *notes;
+    if (PyObject_GetOptionalAttr(orig, &_Py_ID(__notes__), &notes) < 0) {
+        goto error;
+    }
+    if (notes) {
         if (PySequence_Check(notes)) {
             /* Make a copy so the parts have independent notes lists. */
             PyObject *notes_copy = PySequence_List(notes);
@@ -993,7 +992,7 @@ get_matcher_type(PyObject *value,
 {
     assert(value);
 
-    if (PyFunction_Check(value)) {
+    if (PyCallable_Check(value) && !PyType_Check(value)) {
         *type = EXCEPTION_GROUP_MATCH_BY_PREDICATE;
         return 0;
     }
@@ -1017,7 +1016,7 @@ get_matcher_type(PyObject *value,
 error:
     PyErr_SetString(
         PyExc_TypeError,
-        "expected a function, exception type or tuple of exception types");
+        "expected an exception type, a tuple of exception types, or a callable (other than a class)");
     return -1;
 }
 
@@ -1033,7 +1032,7 @@ exceptiongroup_split_check_match(PyObject *exc,
         return PyErr_GivenExceptionMatches(exc, matcher_value);
     }
     case EXCEPTION_GROUP_MATCH_BY_PREDICATE: {
-        assert(PyFunction_Check(matcher_value));
+        assert(PyCallable_Check(matcher_value) && !PyType_Check(matcher_value));
         PyObject *exc_matches = PyObject_CallOneArg(matcher_value, exc);
         if (exc_matches == NULL) {
             return -1;
@@ -1351,7 +1350,10 @@ is_same_exception_metadata(PyObject *exc1, PyObject *exc2)
 PyObject *
 _PyExc_PrepReraiseStar(PyObject *orig, PyObject *excs)
 {
+    /* orig must be a raised & caught exception, so it has a traceback */
     assert(PyExceptionInstance_Check(orig));
+    assert(_PyBaseExceptionObject_cast(orig)->traceback != NULL);
+
     assert(PyList_Check(excs));
 
     Py_ssize_t numexcs = PyList_GET_SIZE(excs);
@@ -1436,6 +1438,42 @@ done:
     Py_XDECREF(raised_list);
     Py_XDECREF(reraised_list);
     return result;
+}
+
+PyObject *
+PyUnstable_Exc_PrepReraiseStar(PyObject *orig, PyObject *excs)
+{
+    if (orig == NULL || !PyExceptionInstance_Check(orig)) {
+        PyErr_SetString(PyExc_TypeError, "orig must be an exception instance");
+        return NULL;
+    }
+    if (excs == NULL || !PyList_Check(excs)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "excs must be a list of exception instances");
+        return NULL;
+    }
+    Py_ssize_t numexcs = PyList_GET_SIZE(excs);
+    for (Py_ssize_t i = 0; i < numexcs; i++) {
+        PyObject *exc = PyList_GET_ITEM(excs, i);
+        if (exc == NULL || !(PyExceptionInstance_Check(exc) || Py_IsNone(exc))) {
+            PyErr_Format(PyExc_TypeError,
+                         "item %d of excs is not an exception", i);
+            return NULL;
+        }
+    }
+
+    /* Make sure that orig has something as traceback, in the interpreter
+     * it always does because it's a raised exception.
+     */
+    PyObject *tb = PyException_GetTraceback(orig);
+
+    if (tb == NULL) {
+        PyErr_Format(PyExc_ValueError, "orig must be a raised exception");
+        return NULL;
+    }
+    Py_DECREF(tb);
+
+    return _PyExc_PrepReraiseStar(orig, excs);
 }
 
 static PyMemberDef BaseExceptionGroup_members[] = {
@@ -2441,8 +2479,6 @@ my_basename(PyObject *name)
     int kind;
     const void *data;
 
-    if (PyUnicode_READY(name))
-        return NULL;
     kind = PyUnicode_KIND(name);
     data = PyUnicode_DATA(name);
     size = PyUnicode_GET_LENGTH(name);

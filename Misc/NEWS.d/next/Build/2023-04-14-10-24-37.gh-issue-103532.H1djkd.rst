@@ -1,4 +1,0 @@
-The ``TKINTER_PROTECT_LOADTK`` macro is no longer defined or used in the
-``_tkinter`` module.  It was previously only defined when building against
-Tk 8.4.13 and older, but Tk older than 8.5.12 has been unsupported since
-gh-issue-91152.

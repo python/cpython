@@ -370,16 +370,6 @@ The :mod:`locale` module defines the following exception and functions:
    encoding for the locale code just like :func:`setlocale`.
 
 
-.. function:: resetlocale(category=LC_ALL)
-
-   Sets the locale for *category* to the default setting.
-
-   The default setting is determined by calling :func:`getdefaultlocale`.
-   *category* defaults to :const:`LC_ALL`.
-
-   .. deprecated-removed:: 3.11 3.13
-
-
 .. function:: strcoll(string1, string2)
 
    Compares two strings according to the current :const:`LC_COLLATE` setting. As

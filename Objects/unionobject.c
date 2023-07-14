@@ -1,6 +1,7 @@
 // types.UnionType -- used to represent e.g. Union[int, str], int | str
 #include "Python.h"
 #include "pycore_object.h"  // _PyObject_GC_TRACK/UNTRACK
+#include "pycore_typevarobject.h"  // _PyTypeAlias_Type
 #include "pycore_unionobject.h"
 #include "structmember.h"
 
@@ -147,10 +148,14 @@ get_types(PyObject **obj, Py_ssize_t *size)
 static int
 is_unionable(PyObject *obj)
 {
-    return (obj == Py_None ||
+    if (obj == Py_None ||
         PyType_Check(obj) ||
         _PyGenericAlias_Check(obj) ||
-        _PyUnion_Check(obj));
+        _PyUnion_Check(obj) ||
+        Py_IS_TYPE(obj, &_PyTypeAlias_Type)) {
+        return 1;
+    }
+    return 0;
 }
 
 PyObject *
@@ -189,13 +194,13 @@ union_repr_item(_PyUnicodeWriter *writer, PyObject *p)
         return _PyUnicodeWriter_WriteASCIIString(writer, "None", 4);
     }
 
-    if (_PyObject_LookupAttr(p, &_Py_ID(__origin__), &tmp) < 0) {
+    if (PyObject_GetOptionalAttr(p, &_Py_ID(__origin__), &tmp) < 0) {
         goto exit;
     }
 
     if (tmp) {
         Py_DECREF(tmp);
-        if (_PyObject_LookupAttr(p, &_Py_ID(__args__), &tmp) < 0) {
+        if (PyObject_GetOptionalAttr(p, &_Py_ID(__args__), &tmp) < 0) {
             goto exit;
         }
         if (tmp) {
@@ -205,13 +210,13 @@ union_repr_item(_PyUnicodeWriter *writer, PyObject *p)
         }
     }
 
-    if (_PyObject_LookupAttr(p, &_Py_ID(__qualname__), &qualname) < 0) {
+    if (PyObject_GetOptionalAttr(p, &_Py_ID(__qualname__), &qualname) < 0) {
         goto exit;
     }
     if (qualname == NULL) {
         goto use_repr;
     }
-    if (_PyObject_LookupAttr(p, &_Py_ID(__module__), &module) < 0) {
+    if (PyObject_GetOptionalAttr(p, &_Py_ID(__module__), &module) < 0) {
         goto exit;
     }
     if (module == NULL || module == Py_None) {
