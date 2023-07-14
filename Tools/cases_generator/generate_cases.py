@@ -263,6 +263,7 @@ class InstructionFlags:
     HAS_CONST_FLAG: bool
     HAS_NAME_FLAG: bool
     HAS_JUMP_FLAG: bool
+    HAS_LOCAL_FLAG: bool
 
     def __post_init__(self):
         self.bitmask = {
@@ -276,11 +277,13 @@ class InstructionFlags:
             HAS_CONST_FLAG=variable_used(instr, "FRAME_CO_CONSTS"),
             HAS_NAME_FLAG=variable_used(instr, "FRAME_CO_NAMES"),
             HAS_JUMP_FLAG=variable_used(instr, "JUMPBY"),
+            HAS_LOCAL_FLAG=variable_used(instr, "GETLOCAL") or
+                           variable_used(instr, "SETLOCAL"),
         )
 
     @staticmethod
     def newEmpty():
-        return InstructionFlags(False, False, False, False)
+        return InstructionFlags(*(5 * (False,)))
 
     def add(self, other: "InstructionFlags") -> None:
         for name, value in dataclasses.asdict(other).items():

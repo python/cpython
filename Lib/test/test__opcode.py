@@ -24,6 +24,7 @@ class OpcodeTests(unittest.TestCase):
         self.check_bool_function_result(_opcode.has_const, invalid, False)
         self.check_bool_function_result(_opcode.has_name, invalid, False)
         self.check_bool_function_result(_opcode.has_jump, invalid, False)
+        self.check_bool_function_result(_opcode.has_local, invalid, False)
 
     def test_is_valid(self):
         names = [
@@ -61,17 +62,12 @@ class OpcodeTests(unittest.TestCase):
         self.check_bool_function_result(_opcode.has_jump, has_jump, True)
         self.check_bool_function_result(_opcode.has_jump, no_jump, False)
 
-    # the following test is part of the refactor, it will be removed soon
-    def test_against_legacy_bool_values(self):
-        # limiting to ops up to ENTER_EXECUTOR, because everything after that
-        # is not currently categorized correctly in opcode.py.
-        for op in range(0, opcode.opmap['ENTER_EXECUTOR']):
-            with self.subTest(op=op):
-                if opcode.opname[op] != f'<{op}>':
-                    self.assertEqual(op in dis.hasarg, _opcode.has_arg(op))
-                    self.assertEqual(op in dis.hasconst, _opcode.has_const(op))
-                    self.assertEqual(op in dis.hasname, _opcode.has_name(op))
-                    self.assertEqual(op in dis.hasjrel, _opcode.has_jump(op))
+    def test_has_local(self):
+        has_local = ['LOAD_FAST', 'LOAD_FAST_CHECK', 'LOAD_FAST_AND_CLEAR',
+                     'STORE_FAST_MAYBE_NULL', 'LOAD_CLOSURE']
+        no_local = ['SETUP_WITH', 'POP_TOP', 'NOP', 'CACHE']
+        self.check_bool_function_result(_opcode.has_local, has_local, True)
+        self.check_bool_function_result(_opcode.has_local, no_local, False)
 
     def test_stack_effect(self):
         self.assertEqual(stack_effect(dis.opmap['POP_TOP']), -1)

@@ -896,6 +896,11 @@ PyUnstable_OpcodeHasJump(int opcode)
     return OPCODE_HAS_JUMP(opcode);
 }
 
+int PyUnstable_OpcodeHasLocal(int opcode)
+{
+    return OPCODE_HAS_LOCAL(opcode);
+}
+
 static int
 codegen_addop_noarg(instr_sequence *seq, int opcode, location loc)
 {

@@ -71,5 +71,6 @@ PyAPI_FUNC(int) PyCompile_OpcodeStackEffectWithJump(int opcode, int oparg, int j
 PyAPI_FUNC(int) PyUnstable_OpcodeIsValid(int opcode);
 PyAPI_FUNC(int) PyUnstable_OpcodeHasArg(int opcode);
 PyAPI_FUNC(int) PyUnstable_OpcodeHasConst(int opcode);
-PyAPI_FUNC(int) PyUnstable_OpcodeHasName(int opcode);
 PyAPI_FUNC(int) PyUnstable_OpcodeHasJump(int opcode);
+PyAPI_FUNC(int) PyUnstable_OpcodeHasLocal(int opcode);
+PyAPI_FUNC(int) PyUnstable_OpcodeHasName(int opcode);

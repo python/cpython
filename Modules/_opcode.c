@@ -147,6 +147,25 @@ _opcode_has_jump_impl(PyObject *module, int opcode)
 
 /*[clinic input]
 
+_opcode.has_local -> bool
+
+  opcode: int
+
+Return True if the opcode accesses a local variable, False otherwise.
+[clinic start generated code]*/
+
+static int
+_opcode_has_local_impl(PyObject *module, int opcode)
+/*[clinic end generated code: output=da5a8616b7a5097b input=9a798ee24aaef49d]*/
+{
+    return PyUnstable_OpcodeIsValid(opcode) &&
+           PyUnstable_OpcodeHasLocal(opcode);
+
+}
+
+
+/*[clinic input]
+
 _opcode.get_specialization_stats
 
 Return the specialization stats
@@ -171,6 +190,7 @@ opcode_functions[] =  {
     _OPCODE_HAS_CONST_METHODDEF
     _OPCODE_HAS_NAME_METHODDEF
     _OPCODE_HAS_JUMP_METHODDEF
+    _OPCODE_HAS_LOCAL_METHODDEF
     _OPCODE_GET_SPECIALIZATION_STATS_METHODDEF
     {NULL, NULL, 0, NULL}
 };
