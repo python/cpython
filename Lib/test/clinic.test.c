@@ -4882,6 +4882,10 @@ test_deprecate_positional_use(PyObject *module, PyObject *const *args, Py_ssize_
     if (!noptargs) {
         goto skip_optional_pos;
     }
+    #if (PY_MAJOR_VERSION > 3) ||
+        (PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION >= 14)
+    #  error "Convert 'optarg' to a keyword-argument"
+    #endif
     if (nargs == 2) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
             "Using 'optarg' as a positional argument is deprecated. It will become a keyword-only argument in Python 3.14.", 2))
@@ -4903,7 +4907,7 @@ exit:
 static PyObject *
 test_deprecate_positional_use_impl(PyObject *module, PyObject *pos,
                                    int optarg)
-/*[clinic end generated code: output=965cb550b49aa7eb input=ab63c6aed293eb31]*/
+/*[clinic end generated code: output=9702577e0b5804e8 input=ab63c6aed293eb31]*/
 
 PyDoc_STRVAR(test_deprecate_positional_use__doc__,
 "test_deprecate_positional_use($module, /, pos, optarg=5)\n"

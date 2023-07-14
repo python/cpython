@@ -1215,19 +1215,24 @@ class CLanguage(Language):
                             """ % add_label, indent=4))
                     if p.deprecated_positional:
                         whence = p.deprecated_positional
+                        major, minor = whence.split(".")  # FIXME: validate format during parsing
                         msg = (
                             f"Using {p.name!r} as a positional argument is deprecated. "
                             f"It will become a keyword-only argument in Python {whence}."
                         )
-                        parser_code.append(normalize_snippet("""
-                            if (nargs == %s) {{
+                        parser_code.append(normalize_snippet(f"""
+                            #if (PY_MAJOR_VERSION > {major}) ||
+                                (PY_MAJOR_VERSION == {major} && PY_MINOR_VERSION >= {minor})
+                            #  error "Convert '{p.name}' to a keyword-argument"
+                            #endif
+                            if (nargs == {i+1}) {{{{
                                 if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                                    "%s", 2))
-                                {{
+                                    "{msg}", 2))
+                                {{{{
                                     goto exit;
-                                }}
-                            }}
-                            """ % (str(i+1), msg), indent=4))
+                                }}}}
+                            }}}}
+                            """, indent=4))
                     if i + 1 == len(parameters):
                         parser_code.append(normalize_snippet(parsearg, indent=4))
                     else:
