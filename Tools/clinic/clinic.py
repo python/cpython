@@ -1712,7 +1712,13 @@ class BlockParser:
     Iterator, yields Block objects.
     """
 
-    def __init__(self, input, language, *, verify=True):
+    def __init__(
+            self,
+            input: str,
+            language: Language,
+            *,
+            verify: bool = True
+    ) -> None:
         """
         "input" should be a str object
         with embedded \n characters.
@@ -1738,7 +1744,7 @@ class BlockParser:
     def __iter__(self):
         return self
 
-    def __next__(self):
+    def __next__(self) -> Block:
         while True:
             if not self.input:
                 raise StopIteration
@@ -1755,18 +1761,18 @@ class BlockParser:
             return block
 
 
-    def is_start_line(self, line):
+    def is_start_line(self, line: str) -> bool:
         match = self.start_re.match(line.lstrip())
         return match.group(1) if match else None
 
-    def _line(self, lookahead=False):
+    def _line(self, lookahead: bool = False) -> str:
         self.line_number += 1
         line = self.input.pop()
         if not lookahead:
             self.language.parse_line(line)
         return line
 
-    def parse_verbatim_block(self):
+    def parse_verbatim_block(self) -> Block:
         add, output = text_accumulator()
         self.block_start_line_number = self.line_number
 
@@ -1780,13 +1786,13 @@ class BlockParser:
 
         return Block(output())
 
-    def parse_clinic_block(self, dsl_name):
+    def parse_clinic_block(self, dsl_name: str) -> Block:
         input_add, input_output = text_accumulator()
         self.block_start_line_number = self.line_number + 1
         stop_line = self.language.stop_line.format(dsl_name=dsl_name)
         body_prefix = self.language.body_prefix.format(dsl_name=dsl_name)
 
-        def is_stop_line(line):
+        def is_stop_line(line: str) -> bool:
             # make sure to recognize stop line even if it
             # doesn't end with EOL (it could be the very end of the file)
             if line.startswith(stop_line):
