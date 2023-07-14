@@ -935,6 +935,7 @@ class CLanguage(Language):
             return linear_format(output(), parser_declarations=declarations)
 
         if not parameters:
+            parser_code: list[str] | None
             if not requires_defining_class:
                 # no parameters, METH_NOARGS
                 flags = "METH_NOARGS"
@@ -1168,7 +1169,7 @@ class CLanguage(Language):
                 flags = 'METH_METHOD|' + flags
                 parser_prototype = parser_prototype_def_class
 
-            add_label = None
+            add_label: str | None = None
             for i, p in enumerate(parameters):
                 if isinstance(p.converter, defining_class_converter):
                     raise ValueError("defining_class should be the first "
