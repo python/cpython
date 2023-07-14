@@ -3,6 +3,8 @@
 //   Python/bytecodes.c
 // Do not edit!
 
+#include <stdbool.h>
+
 
 #define IS_PSEUDO_INSTR(OP)  ( \
     ((OP) == LOAD_CLOSURE) || \
@@ -21,28 +23,36 @@
 
 #define EXIT_TRACE 300
 #define SAVE_IP 301
-#define _POP_JUMP_IF_FALSE 302
-#define _POP_JUMP_IF_TRUE 303
-#define JUMP_TO_TOP 304
-#define _GUARD_BOTH_INT 305
-#define _BINARY_OP_MULTIPLY_INT 306
-#define _BINARY_OP_ADD_INT 307
-#define _BINARY_OP_SUBTRACT_INT 308
-#define _GUARD_BOTH_FLOAT 309
-#define _BINARY_OP_MULTIPLY_FLOAT 310
-#define _BINARY_OP_ADD_FLOAT 311
-#define _BINARY_OP_SUBTRACT_FLOAT 312
-#define _GUARD_BOTH_UNICODE 313
-#define _BINARY_OP_ADD_UNICODE 314
-#define _LOAD_LOCALS 315
-#define _LOAD_FROM_DICT_OR_GLOBALS 316
-#define _SKIP_CACHE 317
-#define _GUARD_GLOBALS_VERSION 318
-#define _GUARD_BUILTINS_VERSION 319
-#define IS_NONE 320
-#define _ITER_CHECK_RANGE 321
-#define _ITER_EXHAUSTED_RANGE 322
-#define _ITER_NEXT_RANGE 323
+#define _GUARD_BOTH_INT 302
+#define _BINARY_OP_MULTIPLY_INT 303
+#define _BINARY_OP_ADD_INT 304
+#define _BINARY_OP_SUBTRACT_INT 305
+#define _GUARD_BOTH_FLOAT 306
+#define _BINARY_OP_MULTIPLY_FLOAT 307
+#define _BINARY_OP_ADD_FLOAT 308
+#define _BINARY_OP_SUBTRACT_FLOAT 309
+#define _GUARD_BOTH_UNICODE 310
+#define _BINARY_OP_ADD_UNICODE 311
+#define _LOAD_LOCALS 312
+#define _LOAD_FROM_DICT_OR_GLOBALS 313
+#define _SKIP_CACHE 314
+#define _GUARD_GLOBALS_VERSION 315
+#define _GUARD_BUILTINS_VERSION 316
+#define _GUARD_TYPE_VERSION 317
+#define _CHECK_MANAGED_OBJECT_HAS_VALUES 318
+#define IS_NONE 319
+#define _ITER_CHECK_LIST 320
+#define _IS_ITER_EXHAUSTED_LIST 321
+#define _ITER_NEXT_LIST 322
+#define _ITER_CHECK_TUPLE 323
+#define _IS_ITER_EXHAUSTED_TUPLE 324
+#define _ITER_NEXT_TUPLE 325
+#define _ITER_CHECK_RANGE 326
+#define _IS_ITER_EXHAUSTED_RANGE 327
+#define _ITER_NEXT_RANGE 328
+#define _POP_JUMP_IF_FALSE 329
+#define _POP_JUMP_IF_TRUE 330
+#define JUMP_TO_TOP 331
 
 #ifndef NEED_OPCODE_METADATA
 extern int _PyOpcode_num_popped(int opcode, int oparg, bool jump);
@@ -932,15 +942,21 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
 }
 #endif
 
-enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC00, INSTR_FMT_IBC000, INSTR_FMT_IBC00000000, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC00, INSTR_FMT_IXC000 };
+enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC00, INSTR_FMT_IBC000, INSTR_FMT_IBC00000, INSTR_FMT_IBC00000000, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC0, INSTR_FMT_IXC00, INSTR_FMT_IXC000 };
+
+#define IS_VALID_OPCODE(OP) \
+    (((OP) >= 0) && ((OP) < OPCODE_METADATA_SIZE) && \
+     (_PyOpcode_opcode_metadata[(OP)].valid_entry))
+
 #define HAS_ARG_FLAG (1)
 #define HAS_CONST_FLAG (2)
 #define HAS_NAME_FLAG (4)
 #define HAS_JUMP_FLAG (8)
-#define OPCODE_HAS_ARG(OP) (_PyOpcode_opcode_metadata[(OP)].flags & (HAS_ARG_FLAG))
-#define OPCODE_HAS_CONST(OP) (_PyOpcode_opcode_metadata[(OP)].flags & (HAS_CONST_FLAG))
-#define OPCODE_HAS_NAME(OP) (_PyOpcode_opcode_metadata[(OP)].flags & (HAS_NAME_FLAG))
-#define OPCODE_HAS_JUMP(OP) (_PyOpcode_opcode_metadata[(OP)].flags & (HAS_JUMP_FLAG))
+#define OPCODE_HAS_ARG(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_ARG_FLAG))
+#define OPCODE_HAS_CONST(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_CONST_FLAG))
+#define OPCODE_HAS_NAME(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_NAME_FLAG))
+#define OPCODE_HAS_JUMP(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_JUMP_FLAG))
+
 struct opcode_metadata {
     bool valid_entry;
     enum InstructionFormat instr_format;
@@ -963,12 +979,16 @@ struct opcode_macro_expansion {
 #define SAME_OPCODE_METADATA(OP1, OP2) \
         (OPCODE_METADATA_FMT(OP1) == OPCODE_METADATA_FMT(OP2))
 
+#define OPCODE_METADATA_SIZE 512
+#define OPCODE_UOP_NAME_SIZE 512
+#define OPCODE_MACRO_EXPANSION_SIZE 256
+
 #ifndef NEED_OPCODE_METADATA
-extern const struct opcode_metadata _PyOpcode_opcode_metadata[512];
-extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[256];
-extern const char * const _PyOpcode_uop_name[512];
+extern const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE];
+extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPANSION_SIZE];
+extern const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE];
 #else // if NEED_OPCODE_METADATA
-const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {
+const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {
     [NOP] = { true, INSTR_FMT_IX, 0 },
     [RESUME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [INSTRUMENTED_RESUME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
@@ -1186,7 +1206,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {
     [CACHE] = { true, INSTR_FMT_IX, 0 },
     [RESERVED] = { true, INSTR_FMT_IX, 0 },
 };
-const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] = {
+const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPANSION_SIZE] = {
     [NOP] = { .nuops = 1, .uops = { { NOP, 0, 0 } } },
     [LOAD_FAST_CHECK] = { .nuops = 1, .uops = { { LOAD_FAST_CHECK, 0, 0 } } },
     [LOAD_FAST] = { .nuops = 1, .uops = { { LOAD_FAST, 0, 0 } } },
@@ -1300,30 +1320,38 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] = {
     [BINARY_OP] = { .nuops = 1, .uops = { { BINARY_OP, 0, 0 } } },
     [SWAP] = { .nuops = 1, .uops = { { SWAP, 0, 0 } } },
 };
-const char * const _PyOpcode_uop_name[512] = {
-    [300] = "EXIT_TRACE",
-    [301] = "SAVE_IP",
-    [302] = "_POP_JUMP_IF_FALSE",
-    [303] = "_POP_JUMP_IF_TRUE",
-    [304] = "JUMP_TO_TOP",
-    [305] = "_GUARD_BOTH_INT",
-    [306] = "_BINARY_OP_MULTIPLY_INT",
-    [307] = "_BINARY_OP_ADD_INT",
-    [308] = "_BINARY_OP_SUBTRACT_INT",
-    [309] = "_GUARD_BOTH_FLOAT",
-    [310] = "_BINARY_OP_MULTIPLY_FLOAT",
-    [311] = "_BINARY_OP_ADD_FLOAT",
-    [312] = "_BINARY_OP_SUBTRACT_FLOAT",
-    [313] = "_GUARD_BOTH_UNICODE",
-    [314] = "_BINARY_OP_ADD_UNICODE",
-    [315] = "_LOAD_LOCALS",
-    [316] = "_LOAD_FROM_DICT_OR_GLOBALS",
-    [317] = "_SKIP_CACHE",
-    [318] = "_GUARD_GLOBALS_VERSION",
-    [319] = "_GUARD_BUILTINS_VERSION",
-    [320] = "IS_NONE",
-    [321] = "_ITER_CHECK_RANGE",
-    [322] = "_ITER_EXHAUSTED_RANGE",
-    [323] = "_ITER_NEXT_RANGE",
+const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE] = {
+    [EXIT_TRACE] = "EXIT_TRACE",
+    [SAVE_IP] = "SAVE_IP",
+    [_GUARD_BOTH_INT] = "_GUARD_BOTH_INT",
+    [_BINARY_OP_MULTIPLY_INT] = "_BINARY_OP_MULTIPLY_INT",
+    [_BINARY_OP_ADD_INT] = "_BINARY_OP_ADD_INT",
+    [_BINARY_OP_SUBTRACT_INT] = "_BINARY_OP_SUBTRACT_INT",
+    [_GUARD_BOTH_FLOAT] = "_GUARD_BOTH_FLOAT",
+    [_BINARY_OP_MULTIPLY_FLOAT] = "_BINARY_OP_MULTIPLY_FLOAT",
+    [_BINARY_OP_ADD_FLOAT] = "_BINARY_OP_ADD_FLOAT",
+    [_BINARY_OP_SUBTRACT_FLOAT] = "_BINARY_OP_SUBTRACT_FLOAT",
+    [_GUARD_BOTH_UNICODE] = "_GUARD_BOTH_UNICODE",
+    [_BINARY_OP_ADD_UNICODE] = "_BINARY_OP_ADD_UNICODE",
+    [_LOAD_LOCALS] = "_LOAD_LOCALS",
+    [_LOAD_FROM_DICT_OR_GLOBALS] = "_LOAD_FROM_DICT_OR_GLOBALS",
+    [_SKIP_CACHE] = "_SKIP_CACHE",
+    [_GUARD_GLOBALS_VERSION] = "_GUARD_GLOBALS_VERSION",
+    [_GUARD_BUILTINS_VERSION] = "_GUARD_BUILTINS_VERSION",
+    [_GUARD_TYPE_VERSION] = "_GUARD_TYPE_VERSION",
+    [_CHECK_MANAGED_OBJECT_HAS_VALUES] = "_CHECK_MANAGED_OBJECT_HAS_VALUES",
+    [IS_NONE] = "IS_NONE",
+    [_ITER_CHECK_LIST] = "_ITER_CHECK_LIST",
+    [_IS_ITER_EXHAUSTED_LIST] = "_IS_ITER_EXHAUSTED_LIST",
+    [_ITER_NEXT_LIST] = "_ITER_NEXT_LIST",
+    [_ITER_CHECK_TUPLE] = "_ITER_CHECK_TUPLE",
+    [_IS_ITER_EXHAUSTED_TUPLE] = "_IS_ITER_EXHAUSTED_TUPLE",
+    [_ITER_NEXT_TUPLE] = "_ITER_NEXT_TUPLE",
+    [_ITER_CHECK_RANGE] = "_ITER_CHECK_RANGE",
+    [_IS_ITER_EXHAUSTED_RANGE] = "_IS_ITER_EXHAUSTED_RANGE",
+    [_ITER_NEXT_RANGE] = "_ITER_NEXT_RANGE",
+    [_POP_JUMP_IF_FALSE] = "_POP_JUMP_IF_FALSE",
+    [_POP_JUMP_IF_TRUE] = "_POP_JUMP_IF_TRUE",
+    [JUMP_TO_TOP] = "JUMP_TO_TOP",
 };
 #endif // NEED_OPCODE_METADATA

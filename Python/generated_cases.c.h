@@ -2240,28 +2240,45 @@
         }
 
         TARGET(LOAD_ATTR_INSTANCE_VALUE) {
-            PyObject *owner = stack_pointer[-1];
-            PyObject *res2 = NULL;
-            PyObject *res;
-            uint32_t type_version = read_u32(&next_instr[1].cache);
-            uint16_t index = read_u16(&next_instr[3].cache);
-            PyTypeObject *tp = Py_TYPE(owner);
-            assert(type_version != 0);
-            DEOPT_IF(tp->tp_version_tag != type_version, LOAD_ATTR);
-            assert(tp->tp_dictoffset < 0);
-            assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
-            DEOPT_IF(!_PyDictOrValues_IsValues(dorv), LOAD_ATTR);
-            res = _PyDictOrValues_GetValues(dorv)->values[index];
-            DEOPT_IF(res == NULL, LOAD_ATTR);
-            STAT_INC(LOAD_ATTR, hit);
-            Py_INCREF(res);
-            res2 = NULL;
-            Py_DECREF(owner);
-            STACK_GROW(((oparg & 1) ? 1 : 0));
-            stack_pointer[-1] = res;
-            if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = res2; }
+            PyObject *_tmp_1;
+            PyObject *_tmp_2 = stack_pointer[-1];
+            {
+            }
+            {
+                PyObject *owner = _tmp_2;
+                uint32_t type_version = read_u32(&next_instr[1].cache);
+                PyTypeObject *tp = Py_TYPE(owner);
+                assert(type_version != 0);
+                DEOPT_IF(tp->tp_version_tag != type_version, LOAD_ATTR);
+                _tmp_2 = owner;
+            }
+            {
+                PyObject *owner = _tmp_2;
+                assert(Py_TYPE(owner)->tp_dictoffset < 0);
+                assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+                PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
+                DEOPT_IF(!_PyDictOrValues_IsValues(dorv), LOAD_ATTR);
+                _tmp_2 = owner;
+            }
+            {
+                PyObject *owner = _tmp_2;
+                PyObject *res2 = NULL;
+                PyObject *res;
+                uint16_t index = read_u16(&next_instr[3].cache);
+                PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
+                res = _PyDictOrValues_GetValues(dorv)->values[index];
+                DEOPT_IF(res == NULL, LOAD_ATTR);
+                STAT_INC(LOAD_ATTR, hit);
+                Py_INCREF(res);
+                res2 = NULL;
+                Py_DECREF(owner);
+                if (oparg & 1) { _tmp_2 = res2; }
+                _tmp_1 = res;
+            }
             next_instr += 9;
+            STACK_GROW(((oparg & 1) ? 1 : 0));
+            stack_pointer[-1] = _tmp_1;
+            if (oparg & 1) { stack_pointer[-2] = _tmp_2; }
             DISPATCH();
         }
 
@@ -3034,60 +3051,96 @@
         }
 
         TARGET(FOR_ITER_LIST) {
-            PyObject *iter = stack_pointer[-1];
-            PyObject *next;
-            DEOPT_IF(Py_TYPE(iter) != &PyListIter_Type, FOR_ITER);
-            _PyListIterObject *it = (_PyListIterObject *)iter;
-            STAT_INC(FOR_ITER, hit);
-            PyListObject *seq = it->it_seq;
-            if (seq) {
-                if (it->it_index < PyList_GET_SIZE(seq)) {
-                    next = Py_NewRef(PyList_GET_ITEM(seq, it->it_index++));
-                    goto end_for_iter_list;  // End of this instruction
-                }
-                it->it_seq = NULL;
-                Py_DECREF(seq);
+            PyObject *_tmp_1;
+            PyObject *_tmp_2 = stack_pointer[-1];
+            {
+                PyObject *iter = _tmp_2;
+                DEOPT_IF(Py_TYPE(iter) != &PyListIter_Type, FOR_ITER);
+                _tmp_2 = iter;
             }
-            Py_DECREF(iter);
-            STACK_SHRINK(1);
-            SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
-            /* Jump forward oparg, then skip following END_FOR instruction */
-            JUMPBY(oparg + 1);
-            DISPATCH();
-        end_for_iter_list:
-            // Common case: no jump, leave it to the code generator
-            STACK_GROW(1);
-            stack_pointer[-1] = next;
+            {
+                PyObject *iter = _tmp_2;
+                _PyListIterObject *it = (_PyListIterObject *)iter;
+                assert(Py_TYPE(iter) == &PyListIter_Type);
+                STAT_INC(FOR_ITER, hit);
+                PyListObject *seq = it->it_seq;
+                if (seq == NULL || it->it_index >= PyList_GET_SIZE(seq)) {
+                    if (seq != NULL) {
+                        it->it_seq = NULL;
+                        Py_DECREF(seq);
+                    }
+                    Py_DECREF(iter);
+                    STACK_SHRINK(1);
+                    SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
+                    /* Jump forward oparg, then skip following END_FOR instruction */
+                    JUMPBY(oparg + 1);
+                    DISPATCH();
+                }
+                _tmp_2 = iter;
+            }
+            {
+                PyObject *iter = _tmp_2;
+                PyObject *next;
+                _PyListIterObject *it = (_PyListIterObject *)iter;
+                assert(Py_TYPE(iter) == &PyListIter_Type);
+                PyListObject *seq = it->it_seq;
+                assert(seq);
+                assert(it->it_index < PyList_GET_SIZE(seq));
+                next = Py_NewRef(PyList_GET_ITEM(seq, it->it_index++));
+                _tmp_2 = iter;
+                _tmp_1 = next;
+            }
             next_instr += 1;
+            STACK_GROW(1);
+            stack_pointer[-1] = _tmp_1;
+            stack_pointer[-2] = _tmp_2;
             DISPATCH();
         }
 
         TARGET(FOR_ITER_TUPLE) {
-            PyObject *iter = stack_pointer[-1];
-            PyObject *next;
-            _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
-            DEOPT_IF(Py_TYPE(it) != &PyTupleIter_Type, FOR_ITER);
-            STAT_INC(FOR_ITER, hit);
-            PyTupleObject *seq = it->it_seq;
-            if (seq) {
-                if (it->it_index < PyTuple_GET_SIZE(seq)) {
-                    next = Py_NewRef(PyTuple_GET_ITEM(seq, it->it_index++));
-                    goto end_for_iter_tuple;  // End of this instruction
-                }
-                it->it_seq = NULL;
-                Py_DECREF(seq);
+            PyObject *_tmp_1;
+            PyObject *_tmp_2 = stack_pointer[-1];
+            {
+                PyObject *iter = _tmp_2;
+                DEOPT_IF(Py_TYPE(iter) != &PyTupleIter_Type, FOR_ITER);
+                _tmp_2 = iter;
             }
-            Py_DECREF(iter);
-            STACK_SHRINK(1);
-            SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
-            /* Jump forward oparg, then skip following END_FOR instruction */
-            JUMPBY(oparg + 1);
-            DISPATCH();
-        end_for_iter_tuple:
-            // Common case: no jump, leave it to the code generator
-            STACK_GROW(1);
-            stack_pointer[-1] = next;
+            {
+                PyObject *iter = _tmp_2;
+                _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
+                assert(Py_TYPE(iter) == &PyTupleIter_Type);
+                STAT_INC(FOR_ITER, hit);
+                PyTupleObject *seq = it->it_seq;
+                if (seq == NULL || it->it_index >= PyTuple_GET_SIZE(seq)) {
+                    if (seq != NULL) {
+                        it->it_seq = NULL;
+                        Py_DECREF(seq);
+                    }
+                    Py_DECREF(iter);
+                    STACK_SHRINK(1);
+                    SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
+                    /* Jump forward oparg, then skip following END_FOR instruction */
+                    JUMPBY(oparg + 1);
+                    DISPATCH();
+                }
+                _tmp_2 = iter;
+            }
+            {
+                PyObject *iter = _tmp_2;
+                PyObject *next;
+                _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
+                assert(Py_TYPE(iter) == &PyTupleIter_Type);
+                PyTupleObject *seq = it->it_seq;
+                assert(seq);
+                assert(it->it_index < PyTuple_GET_SIZE(seq));
+                next = Py_NewRef(PyTuple_GET_ITEM(seq, it->it_index++));
+                _tmp_2 = iter;
+                _tmp_1 = next;
+            }
             next_instr += 1;
+            STACK_GROW(1);
+            stack_pointer[-1] = _tmp_1;
+            stack_pointer[-2] = _tmp_2;
             DISPATCH();
         }
 

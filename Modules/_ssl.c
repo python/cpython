@@ -847,6 +847,15 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
         _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
         return NULL;
     }
+
+    if (socket_type == PY_SSL_SERVER) {
+#define SID_CTX "Python"
+        /* Set the session id context (server-side only) */
+        SSL_set_session_id_context(self->ssl, (const unsigned char *) SID_CTX,
+                                   sizeof(SID_CTX));
+#undef SID_CTX
+    }
+
     /* bpo43522 and OpenSSL < 1.1.1l: copy hostflags manually */
 #if !defined(LIBRESSL_VERSION_NUMBER) && OPENSSL_VERSION < 0x101010cf
     X509_VERIFY_PARAM *ssl_params = SSL_get0_param(self->ssl);
@@ -3185,11 +3194,6 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     /* Set SSL_MODE_RELEASE_BUFFERS. This potentially greatly reduces memory
        usage for no cost at all. */
     SSL_CTX_set_mode(self->ctx, SSL_MODE_RELEASE_BUFFERS);
-
-#define SID_CTX "Python"
-    SSL_CTX_set_session_id_context(self->ctx, (const unsigned char *) SID_CTX,
-                                   sizeof(SID_CTX));
-#undef SID_CTX
 
     params = SSL_CTX_get0_param(self->ctx);
     /* Improve trust chain building when cross-signed intermediate
