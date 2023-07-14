@@ -33,6 +33,36 @@ See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
    See also :c:func:`PyObject_GetItem`.
 
 
+.. c:function:: int PyMapping_GetOptionalItem(PyObject *obj, PyObject *key, PyObject **result)
+
+   Variant of :c:func:`PyObject_GetItem` which doesn't raise
+   :exc:`KeyError` if the key is not found.
+
+   If the key is found, return ``1`` and set *\*result* to a new
+   :term:`strong reference` to the corresponding value.
+   If the key is not found, return ``0`` and set *\*result* to ``NULL``;
+   the :exc:`KeyError` is silenced.
+   If an error other than :exc:`KeyError` is raised, return ``-1`` and
+   set *\*result* to ``NULL``.
+
+   .. versionadded:: 3.13
+
+
+.. c:function:: int PyMapping_GetOptionalItemString(PyObject *obj, const char *key, PyObject **result)
+
+   Variant of :c:func:`PyMapping_GetItemString` which doesn't raise
+   :exc:`KeyError` if the key is not found.
+
+   If the key is found, return ``1`` and set *\*result* to a new
+   :term:`strong reference` to the corresponding value.
+   If the key is not found, return ``0`` and set *\*result* to ``NULL``;
+   the :exc:`KeyError` is silenced.
+   If an error other than :exc:`KeyError` is raised, return ``-1`` and
+   set *\*result* to ``NULL``.
+
+   .. versionadded:: 3.13
+
+
 .. c:function:: int PyMapping_SetItemString(PyObject *o, const char *key, PyObject *v)
 
    Map the string *key* to the value *v* in object *o*.  Returns ``-1`` on

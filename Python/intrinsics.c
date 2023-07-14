@@ -40,11 +40,11 @@ import_all_from(PyThreadState *tstate, PyObject *locals, PyObject *v)
     int skip_leading_underscores = 0;
     int pos, err;
 
-    if (_PyObject_LookupAttr(v, &_Py_ID(__all__), &all) < 0) {
+    if (PyObject_GetOptionalAttr(v, &_Py_ID(__all__), &all) < 0) {
         return -1; /* Unexpected error */
     }
     if (all == NULL) {
-        if (_PyObject_LookupAttr(v, &_Py_ID(__dict__), &dict) < 0) {
+        if (PyObject_GetOptionalAttr(v, &_Py_ID(__dict__), &dict) < 0) {
             return -1;
         }
         if (dict == NULL) {
@@ -96,11 +96,6 @@ import_all_from(PyThreadState *tstate, PyObject *locals, PyObject *v)
             break;
         }
         if (skip_leading_underscores) {
-            if (PyUnicode_READY(name) == -1) {
-                Py_DECREF(name);
-                err = -1;
-                break;
-            }
             if (PyUnicode_READ_CHAR(name, 0) == '_') {
                 Py_DECREF(name);
                 continue;
@@ -153,14 +148,14 @@ stopiteration_error(PyThreadState* tstate, PyObject *exc)
     const char *msg = NULL;
     if (PyErr_GivenExceptionMatches(exc, PyExc_StopIteration)) {
         msg = "generator raised StopIteration";
-        if (frame->f_code->co_flags & CO_ASYNC_GENERATOR) {
+        if (_PyFrame_GetCode(frame)->co_flags & CO_ASYNC_GENERATOR) {
             msg = "async generator raised StopIteration";
         }
-        else if (frame->f_code->co_flags & CO_COROUTINE) {
+        else if (_PyFrame_GetCode(frame)->co_flags & CO_COROUTINE) {
             msg = "coroutine raised StopIteration";
         }
     }
-    else if ((frame->f_code->co_flags & CO_ASYNC_GENERATOR) &&
+    else if ((_PyFrame_GetCode(frame)->co_flags & CO_ASYNC_GENERATOR) &&
             PyErr_GivenExceptionMatches(exc, PyExc_StopAsyncIteration))
     {
         /* code in `gen` raised a StopAsyncIteration error:

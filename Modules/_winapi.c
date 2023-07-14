@@ -36,6 +36,8 @@
 
 #include "Python.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
+#include "pycore_pystate.h"       // _PyInterpreterState_GET
 #include "structmember.h"         // PyMemberDef
 
 
@@ -133,7 +135,7 @@ overlapped_dealloc(OverlappedObject *self)
         {
             /* The operation is no longer pending -- nothing to do. */
         }
-        else if (_Py_IsInterpreterFinalizing(PyInterpreterState_Get()))
+        else if (_Py_IsInterpreterFinalizing(_PyInterpreterState_GET()))
         {
             /* The operation is still pending -- give a warning.  This
                will probably only happen on Windows XP. */
@@ -796,6 +798,17 @@ getenvironment(PyObject* environment)
     }
 
     envsize = PyList_GET_SIZE(keys);
+
+    if (envsize == 0) {
+        // A environment block must be terminated by two null characters --
+        // one for the last string and one for the block.
+        buffer = PyMem_Calloc(2, sizeof(wchar_t));
+        if (!buffer) {
+            PyErr_NoMemory();
+        }
+        goto cleanup;
+    }
+
     if (PyList_GET_SIZE(values) != envsize) {
         PyErr_SetString(PyExc_RuntimeError,
             "environment changed size during iteration");
@@ -869,7 +882,8 @@ getenvironment(PyObject* environment)
     *p++ = L'\0';
     assert(p == end);
 
- error:
+cleanup:
+error:
     Py_XDECREF(keys);
     Py_XDECREF(values);
     return buffer;
@@ -1058,14 +1072,13 @@ process ID, and thread ID.
 [clinic start generated code]*/
 
 static PyObject *
-_winapi_CreateProcess_impl(PyObject *module,
-                           const Py_UNICODE *application_name,
+_winapi_CreateProcess_impl(PyObject *module, const wchar_t *application_name,
                            PyObject *command_line, PyObject *proc_attrs,
                            PyObject *thread_attrs, BOOL inherit_handles,
                            DWORD creation_flags, PyObject *env_mapping,
-                           const Py_UNICODE *current_directory,
+                           const wchar_t *current_directory,
                            PyObject *startup_info)
-/*[clinic end generated code: output=9b2423a609230132 input=42ac293eaea03fc4]*/
+/*[clinic end generated code: output=a25c8e49ea1d6427 input=42ac293eaea03fc4]*/
 {
     PyObject *ret = NULL;
     BOOL result;

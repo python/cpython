@@ -22,8 +22,6 @@
 #  define Py_BUILD_CORE_MODULE 1
 #endif
 
-#define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
 #include "pycore_hashtable.h"
 #include "hashlib.h"
@@ -383,14 +381,15 @@ py_digest_by_digestmod(PyObject *module, PyObject *digestmod, enum Py_hash_type 
     } else {
         _hashlibstate *state = get_hashlib_state(module);
         // borrowed ref
-        name_obj = PyDict_GetItem(state->constructs, digestmod);
+        name_obj = PyDict_GetItemWithError(state->constructs, digestmod);
     }
     if (name_obj == NULL) {
-        _hashlibstate *state = get_hashlib_state(module);
-        PyErr_Clear();
-        PyErr_Format(
-            state->unsupported_digestmod_error,
-            "Unsupported digestmod %R", digestmod);
+        if (!PyErr_Occurred()) {
+            _hashlibstate *state = get_hashlib_state(module);
+            PyErr_Format(
+                state->unsupported_digestmod_error,
+                "Unsupported digestmod %R", digestmod);
+        }
         return NULL;
     }
 
@@ -1988,9 +1987,6 @@ _hashlib_compare_digest_impl(PyObject *module, PyObject *a, PyObject *b)
 
     /* ASCII unicode string */
     if(PyUnicode_Check(a) && PyUnicode_Check(b)) {
-        if (PyUnicode_READY(a) == -1 || PyUnicode_READY(b) == -1) {
-            return NULL;
-        }
         if (!PyUnicode_IS_ASCII(a) || !PyUnicode_IS_ASCII(b)) {
             PyErr_SetString(PyExc_TypeError,
                             "comparing strings with non-ASCII characters is "

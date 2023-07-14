@@ -21,21 +21,14 @@ PyAPI_FUNC(PyCodeObject*) _PyAST_Compile(
 
 static const _PyCompilerSrcLocation NO_LOCATION = {-1, -1, -1, -1};
 
-typedef struct {
-    int optimize;
-    int ff_features;
-
-    int recursion_depth;            /* current recursion depth */
-    int recursion_limit;            /* recursion limit */
-} _PyASTOptimizeState;
-
 extern int _PyAST_Optimize(
     struct _mod *,
     struct _arena *arena,
-    _PyASTOptimizeState *state);
+    int optimize,
+    int ff_features);
 
 typedef struct {
-    int h_offset;
+    int h_label;
     int h_startdepth;
     int h_preserve_lasti;
 } _PyCompile_ExceptHandlerInfo;
@@ -45,6 +38,10 @@ typedef struct {
     int i_oparg;
     _PyCompilerSrcLocation i_loc;
     _PyCompile_ExceptHandlerInfo i_except_handler_info;
+
+    /* Used by the assembler */
+    int i_target;
+    int i_offset;
 } _PyCompile_Instruction;
 
 typedef struct {
@@ -91,8 +88,6 @@ int _PyCompile_EnsureArrayLargeEnough(
         size_t item_size);
 
 int _PyCompile_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj);
-
-int _PyCompile_InstrSize(int opcode, int oparg);
 
 /* Access compiler internals for unit testing */
 

@@ -7,8 +7,6 @@
    of the compiler used.  Different compilers define their own feature
    test macro, e.g. '_MSC_VER'. */
 
-#define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
 
 #ifdef __VXWORKS__
@@ -21,6 +19,7 @@
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyObject_LookupSpecial()
+#include "pycore_pylifecycle.h"   // _PyOS_URandom()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_signal.h"        // Py_NSIG
 
@@ -1197,7 +1196,7 @@ path_converter(PyObject *o, void *p)
         PyObject *func, *res;
 
         func = _PyObject_LookupSpecial(o, &_Py_ID(__fspath__));
-        if (NULL == func) {
+        if ((NULL == func) || (func == Py_None)) {
             goto error_format;
         }
         res = _PyObject_CallNoArgs(func);
@@ -5650,8 +5649,8 @@ Execute the command in a subshell.
 [clinic start generated code]*/
 
 static long
-os_system_impl(PyObject *module, const Py_UNICODE *command)
-/*[clinic end generated code: output=5b7c3599c068ca42 input=303f5ce97df606b0]*/
+os_system_impl(PyObject *module, const wchar_t *command)
+/*[clinic end generated code: output=dd528cbd5943a679 input=303f5ce97df606b0]*/
 {
     long result;
 
@@ -6414,7 +6413,7 @@ parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
 {
     Py_ssize_t i, pos, envc;
     PyObject *keys=NULL, *vals=NULL;
-    PyObject *key, *val, *key2, *val2, *keyval;
+    PyObject *key2, *val2, *keyval;
     EXECV_CHAR **envlist;
 
     i = PyMapping_Size(env);
@@ -6439,10 +6438,14 @@ parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
     }
 
     for (pos = 0; pos < i; pos++) {
-        key = PyList_GetItem(keys, pos);
-        val = PyList_GetItem(vals, pos);
-        if (!key || !val)
+        PyObject *key = PyList_GetItem(keys, pos);  // Borrowed ref.
+        if (key == NULL) {
             goto error;
+        }
+        PyObject *val = PyList_GetItem(vals, pos);  // Borrowed ref.
+        if (val == NULL) {
+            goto error;
+        }
 
 #if defined(HAVE_WEXECV) || defined(HAVE_WSPAWNV)
         if (!PyUnicode_FSDecoder(key, &key2))
@@ -7620,7 +7623,13 @@ os_fork1_impl(PyObject *module)
 {
     pid_t pid;
 
-    if (!_Py_IsMainInterpreter(_PyInterpreterState_GET())) {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->finalizing) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "can't fork at interpreter shutdown");
+        return NULL;
+    }
+    if (!_Py_IsMainInterpreter(interp)) {
         PyErr_SetString(PyExc_RuntimeError, "fork not supported for subinterpreters");
         return NULL;
     }
@@ -7656,6 +7665,11 @@ os_fork_impl(PyObject *module)
 {
     pid_t pid;
     PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->finalizing) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "can't fork at interpreter shutdown");
+        return NULL;
+    }
     if (!_PyInterpreterState_HasFeature(interp, Py_RTFLAGS_FORK)) {
         PyErr_SetString(PyExc_RuntimeError,
                         "fork not supported for isolated subinterpreters");
@@ -8327,7 +8341,13 @@ os_forkpty_impl(PyObject *module)
     int master_fd = -1;
     pid_t pid;
 
-    if (!_Py_IsMainInterpreter(_PyInterpreterState_GET())) {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->finalizing) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "can't fork at interpreter shutdown");
+        return NULL;
+    }
+    if (!_Py_IsMainInterpreter(interp)) {
         PyErr_SetString(PyExc_RuntimeError, "fork not supported for subinterpreters");
         return NULL;
     }
@@ -13571,9 +13591,9 @@ the underlying Win32 ShellExecute function doesn't work if it is.
 
 static PyObject *
 os_startfile_impl(PyObject *module, path_t *filepath,
-                  const Py_UNICODE *operation, const Py_UNICODE *arguments,
+                  const wchar_t *operation, const wchar_t *arguments,
                   path_t *cwd, int show_cmd)
-/*[clinic end generated code: output=3baa4f9795841880 input=8248997b80669622]*/
+/*[clinic end generated code: output=1c6f2f3340e31ffa input=8248997b80669622]*/
 {
     HINSTANCE rc;
 
@@ -15409,7 +15429,7 @@ PyOS_FSPath(PyObject *path)
     }
 
     func = _PyObject_LookupSpecial(path, &_Py_ID(__fspath__));
-    if (NULL == func) {
+    if ((NULL == func) || (func == Py_None)) {
         return PyErr_Format(PyExc_TypeError,
                             "expected str, bytes or os.PathLike object, "
                             "not %.200s",
