@@ -118,7 +118,8 @@ another rational number, or from a string.
    .. method:: as_integer_ratio()
 
       Return a tuple of two integers, whose ratio is equal
-      to the Fraction and with a positive denominator.
+      to the original Fraction.  The ratio is in lowest terms
+      and has a positive denominator.
 
       .. versionadded:: 3.8
 

@@ -33,9 +33,12 @@ Object Protocol
    is equivalent to the Python expression ``hasattr(o, attr_name)``.  This function
    always succeeds.
 
-   Note that exceptions which occur while calling :meth:`__getattr__` and
-   :meth:`__getattribute__` methods will get suppressed.
-   To get error reporting use :c:func:`PyObject_GetAttr()` instead.
+   .. note::
+
+      Exceptions that occur when this calls :meth:`~object.__getattr__` and
+      :meth:`~object.__getattribute__` methods are silently ignored.
+      For proper error handling, use :c:func:`PyObject_GetOptionalAttr` or
+      :c:func:`PyObject_GetAttr` instead.
 
 
 .. c:function:: int PyObject_HasAttrString(PyObject *o, const char *attr_name)
@@ -44,10 +47,13 @@ Object Protocol
    is equivalent to the Python expression ``hasattr(o, attr_name)``.  This function
    always succeeds.
 
-   Note that exceptions which occur while calling :meth:`__getattr__` and
-   :meth:`__getattribute__` methods and creating a temporary string object
-   will get suppressed.
-   To get error reporting use :c:func:`PyObject_GetAttrString()` instead.
+   .. note::
+
+      Exceptions that occur when this calls :meth:`~object.__getattr__` and
+      :meth:`~object.__getattribute__` methods or while creating the temporary :class:`str`
+      object are silently ignored.
+      For proper error handling, use :c:func:`PyObject_GetOptionalAttrString`
+      or :c:func:`PyObject_GetAttrString` instead.
 
 
 .. c:function:: PyObject* PyObject_GetAttr(PyObject *o, PyObject *attr_name)
@@ -56,6 +62,9 @@ Object Protocol
    value on success, or ``NULL`` on failure.  This is the equivalent of the Python
    expression ``o.attr_name``.
 
+   If the missing attribute should not be treated as a failure, you can use
+   :c:func:`PyObject_GetOptionalAttr` instead.
+
 
 .. c:function:: PyObject* PyObject_GetAttrString(PyObject *o, const char *attr_name)
 
@@ -63,6 +72,38 @@ Object Protocol
    value on success, or ``NULL`` on failure. This is the equivalent of the Python
    expression ``o.attr_name``.
 
+   If the missing attribute should not be treated as a failure, you can use
+   :c:func:`PyObject_GetOptionalAttrString` instead.
+
+
+.. c:function:: int PyObject_GetOptionalAttr(PyObject *obj, PyObject *attr_name, PyObject **result);
+
+   Variant of :c:func:`PyObject_GetAttr` which doesn't raise
+   :exc:`AttributeError` if the attribute is not found.
+
+   If the attribute is found, return ``1`` and set *\*result* to a new
+   :term:`strong reference` to the attribute.
+   If the attribute is not found, return ``0`` and set *\*result* to ``NULL``;
+   the :exc:`AttributeError` is silenced.
+   If an error other than :exc:`AttributeError` is raised, return ``-1`` and
+   set *\*result* to ``NULL``.
+
+   .. versionadded:: 3.13
+
+
+.. c:function:: int PyObject_GetOptionalAttrString(PyObject *obj, const char *attr_name, PyObject **result);
+
+   Variant of :c:func:`PyObject_GetAttrString` which doesn't raise
+   :exc:`AttributeError` if the attribute is not found.
+
+   If the attribute is found, return ``1`` and set *\*result* to a new
+   :term:`strong reference` to the attribute.
+   If the attribute is not found, return ``0`` and set *\*result* to ``NULL``;
+   the :exc:`AttributeError` is silenced.
+   If an error other than :exc:`AttributeError` is raised, return ``-1`` and
+   set *\*result* to ``NULL``.
+
+   .. versionadded:: 3.13
 
 .. c:function:: PyObject* PyObject_GenericGetAttr(PyObject *o, PyObject *name)
 
@@ -179,9 +220,18 @@ Object Protocol
    If *o1* and *o2* are the same object, :c:func:`PyObject_RichCompareBool`
    will always return ``1`` for :const:`Py_EQ` and ``0`` for :const:`Py_NE`.
 
+.. c:function:: PyObject* PyObject_Format(PyObject *obj, PyObject *format_spec)
+
+   Format *obj* using *format_spec*. This is equivalent to the Python
+   expression ``format(obj, format_spec)``.
+
+   *format_spec* may be ``NULL``. In this case the call is equivalent
+   to ``format(obj)``.
+   Returns the formatted string on success, ``NULL`` on failure.
+
 .. c:function:: PyObject* PyObject_Repr(PyObject *o)
 
-   .. index:: builtin: repr
+   .. index:: pair: built-in function; repr
 
    Compute a string representation of object *o*.  Returns the string
    representation on success, ``NULL`` on failure.  This is the equivalent of the
@@ -193,7 +243,7 @@ Object Protocol
 
 .. c:function:: PyObject* PyObject_ASCII(PyObject *o)
 
-   .. index:: builtin: ascii
+   .. index:: pair: built-in function; ascii
 
    As :c:func:`PyObject_Repr`, compute a string representation of object *o*, but
    escape the non-ASCII characters in the string returned by
@@ -218,7 +268,7 @@ Object Protocol
 
 .. c:function:: PyObject* PyObject_Bytes(PyObject *o)
 
-   .. index:: builtin: bytes
+   .. index:: pair: built-in function; bytes
 
    Compute a bytes representation of object *o*.  ``NULL`` is returned on
    failure and a bytes object on success.  This is equivalent to the Python
@@ -269,7 +319,7 @@ Object Protocol
 
 .. c:function:: Py_hash_t PyObject_Hash(PyObject *o)
 
-   .. index:: builtin: hash
+   .. index:: pair: built-in function; hash
 
    Compute and return the hash value of an object *o*.  On failure, return ``-1``.
    This is the equivalent of the Python expression ``hash(o)``.
@@ -303,7 +353,7 @@ Object Protocol
 
 .. c:function:: PyObject* PyObject_Type(PyObject *o)
 
-   .. index:: builtin: type
+   .. index:: pair: built-in function; type
 
    When *o* is non-``NULL``, returns a type object corresponding to the object type
    of object *o*. On failure, raises :exc:`SystemError` and returns ``NULL``.  This
@@ -323,7 +373,7 @@ Object Protocol
 .. c:function:: Py_ssize_t PyObject_Size(PyObject *o)
                Py_ssize_t PyObject_Length(PyObject *o)
 
-   .. index:: builtin: len
+   .. index:: pair: built-in function; len
 
    Return the length of object *o*.  If the object *o* provides either the sequence
    and mapping protocols, the sequence length is returned.  On error, ``-1`` is
@@ -386,3 +436,42 @@ Object Protocol
    returns ``NULL`` if the object cannot be iterated.
 
    .. versionadded:: 3.10
+
+.. c:function:: void *PyObject_GetTypeData(PyObject *o, PyTypeObject *cls)
+
+   Get a pointer to subclass-specific data reserved for *cls*.
+
+   The object *o* must be an instance of *cls*, and *cls* must have been
+   created using negative :c:member:`PyType_Spec.basicsize`.
+   Python does not check this.
+
+   On error, set an exception and return ``NULL``.
+
+   .. versionadded:: 3.12
+
+.. c:function:: Py_ssize_t PyType_GetTypeDataSize(PyTypeObject *cls)
+
+   Return the size of the instance memory space reserved for *cls*, i.e. the size of the
+   memory :c:func:`PyObject_GetTypeData` returns.
+
+   This may be larger than requested using :c:member:`-PyType_Spec.basicsize <PyType_Spec.basicsize>`;
+   it is safe to use this larger size (e.g. with :c:func:`!memset`).
+
+   The type *cls* **must** have been created using
+   negative :c:member:`PyType_Spec.basicsize`.
+   Python does not check this.
+
+   On error, set an exception and return a negative value.
+
+   .. versionadded:: 3.12
+
+.. c:function:: void *PyObject_GetItemData(PyObject *o)
+
+   Get a pointer to per-item data for a class with
+   :const:`Py_TPFLAGS_ITEMS_AT_END`.
+
+   On error, set an exception and return ``NULL``.
+   :py:exc:`TypeError` is raised if *o* does not have
+   :const:`Py_TPFLAGS_ITEMS_AT_END` set.
+
+   .. versionadded:: 3.12

@@ -3,7 +3,7 @@
 import os
 import sys
 import threading
-from os.path import pardir, realpath
+from os.path import realpath
 
 __all__ = [
     'get_config_h_filename',

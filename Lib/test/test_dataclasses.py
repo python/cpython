@@ -5,11 +5,13 @@
 from dataclasses import *
 
 import abc
+import io
 import pickle
 import inspect
 import builtins
 import types
 import weakref
+import traceback
 import unittest
 from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol, DefaultDict
@@ -282,6 +284,23 @@ class TestCase(unittest.TestCase):
             BUILTINS: int
         c = C(5)
         self.assertEqual(c.BUILTINS, 5)
+
+    def test_field_with_special_single_underscore_names(self):
+        # gh-98886
+
+        @dataclass
+        class X:
+            x: int = field(default_factory=lambda: 111)
+            _dflt_x: int = field(default_factory=lambda: 222)
+
+        X()
+
+        @dataclass
+        class Y:
+            y: int = field(default_factory=lambda: 111)
+            _HAS_DEFAULT_FACTORY: int = 222
+
+        assert Y(y=222).y == 222
 
     def test_field_named_like_builtin(self):
         # Attribute names can shadow built-in names
@@ -738,8 +757,8 @@ class TestCase(unittest.TestCase):
                 class Subclass(typ): pass
 
                 with self.assertRaisesRegex(ValueError,
-                                            f"mutable default .*Subclass'>"
-                                            ' for field z is not allowed'
+                                            "mutable default .*Subclass'>"
+                                            " for field z is not allowed"
                                             ):
                     @dataclass
                     class Point:
@@ -1526,6 +1545,16 @@ class TestCase(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, 'dataclass type or instance'):
             fields(C())
 
+    def test_clean_traceback_from_fields_exception(self):
+        stdout = io.StringIO()
+        try:
+            fields(object)
+        except TypeError as exc:
+            traceback.print_exception(exc, file=stdout)
+        printed_traceback = stdout.getvalue()
+        self.assertNotIn("AttributeError", printed_traceback)
+        self.assertNotIn("__dataclass_fields__", printed_traceback)
+
     def test_helper_asdict(self):
         # Basic tests for asdict(), it should return a new dictionary.
         @dataclass
@@ -1706,19 +1735,17 @@ class TestCase(unittest.TestCase):
     def test_helper_asdict_defaultdict(self):
         # Ensure asdict() does not throw exceptions when a
         # defaultdict is a member of a dataclass
-
         @dataclass
         class C:
             mp: DefaultDict[str, List]
-
 
         dd = defaultdict(list)
         dd["x"].append(12)
         c = C(mp=dd)
         d = asdict(c)
 
-        assert d == {"mp": {"x": [12]}}
-        assert d["mp"] is not c.mp  # make sure defaultdict is copied
+        self.assertEqual(d, {"mp": {"x": [12]}})
+        self.assertTrue(d["mp"] is not c.mp)  # make sure defaultdict is copied
 
     def test_helper_astuple(self):
         # Basic tests for astuple(), it should return a new tuple.
@@ -1846,6 +1873,21 @@ class TestCase(unittest.TestCase):
         # Now, using a tuple_factory.  list is convenient here.
         t = astuple(c, tuple_factory=list)
         self.assertEqual(t, ['outer', T(1, ['inner', T(11, 12, 13)], 2)])
+
+    def test_helper_astuple_defaultdict(self):
+        # Ensure astuple() does not throw exceptions when a
+        # defaultdict is a member of a dataclass
+        @dataclass
+        class C:
+            mp: DefaultDict[str, List]
+
+        dd = defaultdict(list)
+        dd["x"].append(12)
+        c = C(mp=dd)
+        t = astuple(c)
+
+        self.assertEqual(t, ({"x": [12]},))
+        self.assertTrue(t[0] is not dd) # make sure defaultdict is copied
 
     def test_dynamic_class_creation(self):
         cls_dict = {'__annotations__': {'x': int, 'y': int},
@@ -2255,13 +2297,25 @@ class TestDocString(unittest.TestCase):
 
         self.assertDocStrEqual(C.__doc__, "C(x:collections.deque=<factory>)")
 
+    def test_docstring_with_no_signature(self):
+        # See https://github.com/python/cpython/issues/103449
+        class Meta(type):
+            __call__ = dict
+        class Base(metaclass=Meta):
+            pass
+
+        @dataclass
+        class C(Base):
+            pass
+
+        self.assertDocStrEqual(C.__doc__, "C")
+
 
 class TestInit(unittest.TestCase):
     def test_base_has_init(self):
         class B:
             def __init__(self):
                 self.z = 100
-                pass
 
         # Make sure that declaring this class doesn't raise an error.
         #  The issue is that we can't override __init__ in our class,
@@ -2768,6 +2822,19 @@ class TestFrozen(unittest.TestCase):
             c.i = 5
         self.assertEqual(c.i, 10)
 
+    def test_frozen_empty(self):
+        @dataclass(frozen=True)
+        class C:
+            pass
+
+        c = C()
+        self.assertFalse(hasattr(c, 'i'))
+        with self.assertRaises(FrozenInstanceError):
+            c.i = 5
+        self.assertFalse(hasattr(c, 'i'))
+        with self.assertRaises(FrozenInstanceError):
+            del c.i
+
     def test_inherit(self):
         @dataclass(frozen=True)
         class C:
@@ -2890,6 +2957,37 @@ class TestFrozen(unittest.TestCase):
         self.assertEqual(s.x, 3)
         self.assertEqual(s.y, 10)
         self.assertEqual(s.cached, True)
+
+        with self.assertRaises(FrozenInstanceError):
+            del s.x
+        self.assertEqual(s.x, 3)
+        with self.assertRaises(FrozenInstanceError):
+            del s.y
+        self.assertEqual(s.y, 10)
+        del s.cached
+        self.assertFalse(hasattr(s, 'cached'))
+        with self.assertRaises(AttributeError) as cm:
+            del s.cached
+        self.assertNotIsInstance(cm.exception, FrozenInstanceError)
+
+    def test_non_frozen_normal_derived_from_empty_frozen(self):
+        @dataclass(frozen=True)
+        class D:
+            pass
+
+        class S(D):
+            pass
+
+        s = S()
+        self.assertFalse(hasattr(s, 'x'))
+        s.x = 5
+        self.assertEqual(s.x, 5)
+
+        del s.x
+        self.assertFalse(hasattr(s, 'x'))
+        with self.assertRaises(AttributeError) as cm:
+            del s.x
+        self.assertNotIsInstance(cm.exception, FrozenInstanceError)
 
     def test_overwriting_frozen(self):
         # frozen uses __setattr__ and __delattr__.
@@ -3086,6 +3184,74 @@ class TestSlots(unittest.TestCase):
                 self.assertIsNot(obj, p)
                 self.assertEqual(obj, p)
 
+    @dataclass(frozen=True, slots=True)
+    class FrozenSlotsGetStateClass:
+        foo: str
+        bar: int
+
+        getstate_called: bool = field(default=False, compare=False)
+
+        def __getstate__(self):
+            object.__setattr__(self, 'getstate_called', True)
+            return [self.foo, self.bar]
+
+    @dataclass(frozen=True, slots=True)
+    class FrozenSlotsSetStateClass:
+        foo: str
+        bar: int
+
+        setstate_called: bool = field(default=False, compare=False)
+
+        def __setstate__(self, state):
+            object.__setattr__(self, 'setstate_called', True)
+            object.__setattr__(self, 'foo', state[0])
+            object.__setattr__(self, 'bar', state[1])
+
+    @dataclass(frozen=True, slots=True)
+    class FrozenSlotsAllStateClass:
+        foo: str
+        bar: int
+
+        getstate_called: bool = field(default=False, compare=False)
+        setstate_called: bool = field(default=False, compare=False)
+
+        def __getstate__(self):
+            object.__setattr__(self, 'getstate_called', True)
+            return [self.foo, self.bar]
+
+        def __setstate__(self, state):
+            object.__setattr__(self, 'setstate_called', True)
+            object.__setattr__(self, 'foo', state[0])
+            object.__setattr__(self, 'bar', state[1])
+
+    def test_frozen_slots_pickle_custom_state(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                obj = self.FrozenSlotsGetStateClass('a', 1)
+                dumped = pickle.dumps(obj, protocol=proto)
+
+                self.assertTrue(obj.getstate_called)
+                self.assertEqual(obj, pickle.loads(dumped))
+
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                obj = self.FrozenSlotsSetStateClass('a', 1)
+                obj2 = pickle.loads(pickle.dumps(obj, protocol=proto))
+
+                self.assertTrue(obj2.setstate_called)
+                self.assertEqual(obj, obj2)
+
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                obj = self.FrozenSlotsAllStateClass('a', 1)
+                dumped = pickle.dumps(obj, protocol=proto)
+
+                self.assertTrue(obj.getstate_called)
+
+                obj2 = pickle.loads(dumped)
+                self.assertTrue(obj2.setstate_called)
+                self.assertEqual(obj, obj2)
+
     def test_slots_with_default_no_init(self):
         # Originally reported in bpo-44649.
         @dataclass(slots=True)
@@ -3119,6 +3285,8 @@ class TestSlots(unittest.TestCase):
         with self.assertRaisesRegex(TypeError,
                                     "cannot create weak reference"):
             weakref.ref(a)
+        with self.assertRaises(AttributeError):
+            a.__weakref__
 
     def test_slots_weakref(self):
         @dataclass(slots=True, weakref_slot=True)
@@ -3127,7 +3295,9 @@ class TestSlots(unittest.TestCase):
 
         self.assertIn("__weakref__", A.__slots__)
         a = A(1)
-        weakref.ref(a)
+        a_ref = weakref.ref(a)
+
+        self.assertIs(a.__weakref__, a_ref)
 
     def test_slots_weakref_base_str(self):
         class Base:
@@ -3193,7 +3363,8 @@ class TestSlots(unittest.TestCase):
         self.assertIn("__weakref__", Base.__slots__)
         self.assertNotIn("__weakref__", A.__slots__)
         a = A(1)
-        weakref.ref(a)
+        a_ref = weakref.ref(a)
+        self.assertIs(a.__weakref__, a_ref)
 
     def test_weakref_slot_subclass_no_weakref_slot(self):
         @dataclass(slots=True, weakref_slot=True)
@@ -3209,7 +3380,8 @@ class TestSlots(unittest.TestCase):
         self.assertIn("__weakref__", Base.__slots__)
         self.assertNotIn("__weakref__", A.__slots__)
         a = A(1)
-        weakref.ref(a)
+        a_ref = weakref.ref(a)
+        self.assertIs(a.__weakref__, a_ref)
 
     def test_weakref_slot_normal_base_weakref_slot(self):
         class Base:
@@ -3224,7 +3396,8 @@ class TestSlots(unittest.TestCase):
         self.assertIn("__weakref__", Base.__slots__)
         self.assertNotIn("__weakref__", A.__slots__)
         a = A(1)
-        weakref.ref(a)
+        a_ref = weakref.ref(a)
+        self.assertIs(a.__weakref__, a_ref)
 
 
 class TestDescriptors(unittest.TestCase):
@@ -3563,6 +3736,15 @@ class TestStringAnnotations(unittest.TestCase):
              'return': type(None)})
 
 
+ByMakeDataClass = make_dataclass('ByMakeDataClass', [('x', int)])
+ManualModuleMakeDataClass = make_dataclass('ManualModuleMakeDataClass',
+                                           [('x', int)],
+                                           module=__name__)
+WrongNameMakeDataclass = make_dataclass('Wrong', [('x', int)])
+WrongModuleMakeDataclass = make_dataclass('WrongModuleMakeDataclass',
+                                          [('x', int)],
+                                          module='custom')
+
 class TestMakeDataclass(unittest.TestCase):
     def test_simple(self):
         C = make_dataclass('C',
@@ -3671,6 +3853,36 @@ class TestMakeDataclass(unittest.TestCase):
         self.assertEqual(C.__annotations__, {'x': 'typing.Any',
                                              'y': int,
                                              'z': 'typing.Any'})
+
+    def test_module_attr(self):
+        self.assertEqual(ByMakeDataClass.__module__, __name__)
+        self.assertEqual(ByMakeDataClass(1).__module__, __name__)
+        self.assertEqual(WrongModuleMakeDataclass.__module__, "custom")
+        Nested = make_dataclass('Nested', [])
+        self.assertEqual(Nested.__module__, __name__)
+        self.assertEqual(Nested().__module__, __name__)
+
+    def test_pickle_support(self):
+        for klass in [ByMakeDataClass, ManualModuleMakeDataClass]:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(proto=proto):
+                    self.assertEqual(
+                        pickle.loads(pickle.dumps(klass, proto)),
+                        klass,
+                    )
+                    self.assertEqual(
+                        pickle.loads(pickle.dumps(klass(1), proto)),
+                        klass(1),
+                    )
+
+    def test_cannot_be_pickled(self):
+        for klass in [WrongNameMakeDataclass, WrongModuleMakeDataclass]:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(proto=proto):
+                    with self.assertRaises(pickle.PickleError):
+                        pickle.dumps(klass, proto)
+                    with self.assertRaises(pickle.PickleError):
+                        pickle.dumps(klass(1), proto)
 
     def test_invalid_type_specification(self):
         for bad_field in [(),

@@ -21,10 +21,16 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "cursor.h"
 #include "microprotocols.h"
 #include "module.h"
 #include "util.h"
+
+#include "pycore_pyerrors.h"      // _PyErr_FormatFromCause()
 
 typedef enum {
     TYPE_LONG,
@@ -705,11 +711,10 @@ bind_parameters(pysqlite_state *state, pysqlite_Statement *self,
             Py_DECREF(adapted);
 
             if (rc != SQLITE_OK) {
-                PyObject *exc, *val, *tb;
-                PyErr_Fetch(&exc, &val, &tb);
+                PyObject *exc = PyErr_GetRaisedException();
                 sqlite3 *db = sqlite3_db_handle(self->st);
                 _pysqlite_seterror(state, db);
-                _PyErr_ChainExceptions(exc, val, tb);
+                _PyErr_ChainExceptions1(exc);
                 return;
             }
         }
@@ -765,11 +770,10 @@ bind_parameters(pysqlite_state *state, pysqlite_Statement *self,
             Py_DECREF(adapted);
 
             if (rc != SQLITE_OK) {
-                PyObject *exc, *val, *tb;
-                PyErr_Fetch(&exc, &val, &tb);
+                PyObject *exc = PyErr_GetRaisedException();
                 sqlite3 *db = sqlite3_db_handle(self->st);
                 _pysqlite_seterror(state, db);
-                _PyErr_ChainExceptions(exc, val, tb);
+                _PyErr_ChainExceptions1(exc);
                 return;
            }
         }

@@ -5,6 +5,28 @@
 extern "C" {
 #endif
 
+#include "pycore_time.h"          // _PyTime_t
+
+extern int _PyImport_IsInitialized(PyInterpreterState *);
+
+PyAPI_FUNC(PyObject *) _PyImport_GetModuleId(_Py_Identifier *name);
+PyAPI_FUNC(int) _PyImport_SetModule(PyObject *name, PyObject *module);
+PyAPI_FUNC(int) _PyImport_SetModuleString(const char *name, PyObject* module);
+
+extern void _PyImport_AcquireLock(PyInterpreterState *interp);
+extern int _PyImport_ReleaseLock(PyInterpreterState *interp);
+
+extern int _PyImport_FixupBuiltin(
+    PyObject *mod,
+    const char *name,            /* UTF-8 encoded string */
+    PyObject *modules
+    );
+extern int _PyImport_FixupExtensionObject(PyObject*, PyObject *,
+                                          PyObject *, PyObject *);
+
+PyAPI_FUNC(PyObject *) _PyImport_GetModuleAttr(PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) _PyImport_GetModuleAttrString(const char *, const char *);
+
 
 struct _import_runtime_state {
     /* The builtin modules (defined in config.c). */
@@ -14,24 +36,21 @@ struct _import_runtime_state {
        which is just about every time an extension module is imported.
        See PyInterpreterState.modules_by_index for more info. */
     Py_ssize_t last_module_index;
-    /* A dict mapping (filename, name) to PyModuleDef for modules.
-       Only legacy (single-phase init) extension modules are added
-       and only if they support multiple initialization (m_size >- 0)
-       or are imported in the main interpreter.
-       This is initialized lazily in _PyImport_FixupExtensionObject().
-       Modules are added there and looked up in _imp.find_extension(). */
-    PyObject *extensions;
-    /* The global import lock. */
     struct {
+        /* A thread state tied to the main interpreter,
+           used exclusively for when the extensions dict is access/modified
+           from an arbitrary thread. */
+        PyThreadState main_tstate;
+        /* A lock to guard the dict. */
         PyThread_type_lock mutex;
-        unsigned long thread;
-        int level;
-    } lock;
-    struct {
-        int import_level;
-        _PyTime_t accumulated;
-        int header;
-    } find_and_load;
+        /* A dict mapping (filename, name) to PyModuleDef for modules.
+           Only legacy (single-phase init) extension modules are added
+           and only if they support multiple initialization (m_size >- 0)
+           or are imported in the main interpreter.
+           This is initialized lazily in _PyImport_FixupExtensionObject().
+           Modules are added there and looked up in _imp.find_extension(). */
+        PyObject *dict;
+    } extensions;
     /* Package context -- the full module name for package imports */
     const char * pkgcontext;
 };
@@ -69,6 +88,18 @@ struct _import_state {
     int dlopenflags;
 #endif
     PyObject *import_func;
+    /* The global import lock. */
+    struct {
+        PyThread_type_lock mutex;
+        unsigned long thread;
+        int level;
+    } lock;
+    /* diagnostic info in PyImport_ImportModuleLevelObject() */
+    struct {
+        int import_level;
+        _PyTime_t accumulated;
+        int header;
+    } find_and_load;
 };
 
 #ifdef HAVE_DLOPEN
@@ -86,8 +117,15 @@ struct _import_state {
 
 #define IMPORTS_INIT \
     { \
-        .override_frozen_modules = 0, \
         DLOPENFLAGS_INIT \
+        .lock = { \
+            .mutex = NULL, \
+            .thread = PYTHREAD_INVALID_THREAD_ID, \
+            .level = 0, \
+        }, \
+        .find_and_load = { \
+            .header = 1, \
+        }, \
     }
 
 extern void _PyImport_ClearCore(PyInterpreterState *interp);
@@ -138,7 +176,7 @@ extern void _PyImport_FiniExternal(PyInterpreterState *interp);
 
 
 #ifdef HAVE_FORK
-extern PyStatus _PyImport_ReInitLock(void);
+extern PyStatus _PyImport_ReInitLock(PyInterpreterState *interp);
 #endif
 
 

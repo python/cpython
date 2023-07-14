@@ -1,11 +1,12 @@
-import unittest
-import unittest.mock
 import os.path
 import sys
 import test.support
-from test.support import os_helper
-from ctypes import *
+import unittest
+import unittest.mock
+from ctypes import CDLL, RTLD_GLOBAL
 from ctypes.util import find_library
+from test.support import os_helper
+
 
 # On some systems, loading the OpenGL libraries needs the RTLD_GLOBAL mode.
 class Test_OpenGL_libs(unittest.TestCase):
@@ -22,7 +23,7 @@ class Test_OpenGL_libs(unittest.TestCase):
             lib_glu = find_library("GLU")
             lib_gle = find_library("gle")
 
-        ## print, for debugging
+        # print, for debugging
         if test.support.verbose:
             print("OpenGL libraries:")
             for item in (("GL", lib_gl),
@@ -36,11 +37,13 @@ class Test_OpenGL_libs(unittest.TestCase):
                 cls.gl = CDLL(lib_gl, mode=RTLD_GLOBAL)
             except OSError:
                 pass
+
         if lib_glu:
             try:
                 cls.glu = CDLL(lib_glu, RTLD_GLOBAL)
             except OSError:
                 pass
+
         if lib_gle:
             try:
                 cls.gle = CDLL(lib_gle)

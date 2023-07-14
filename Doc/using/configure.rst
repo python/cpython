@@ -216,6 +216,22 @@ WebAssembly Options
 Install Options
 ---------------
 
+.. cmdoption:: --prefix=PREFIX
+
+   Install architecture-independent files in PREFIX. On Unix, it
+   defaults to :file:`/usr/local`.
+
+   This value can be retrived at runtime using :data:`sys.prefix`.
+
+   As an example, one can use ``--prefix="$HOME/.local/"`` to install
+   a Python in its home directory.
+
+.. cmdoption:: --exec-prefix=EPREFIX
+
+   Install architecture-dependent files in EPREFIX, defaults to :option:`--prefix`.
+
+   This value can be retrived at runtime using :data:`sys.exec_prefix`.
+
 .. cmdoption:: --disable-test-modules
 
    Don't build nor install test modules, like the :mod:`test` package or the
@@ -298,6 +314,13 @@ also be used to improve performance.
    is dependent on a combination of the build environment + the other
    optimization configure args + the CPU architecture, and not all combinations
    are supported.
+   BOLT versions before LLVM 16 are known to crash BOLT under some scenarios.
+   Use of LLVM 16 or newer for BOLT optimization is strongly encouraged.
+
+   The :envvar:`!BOLT_INSTRUMENT_FLAGS` and :envvar:`!BOLT_APPLY_FLAGS`
+   :program:`configure` variables can be defined to override the default set of
+   arguments for :program:`llvm-bolt` to instrument and apply BOLT data to
+   binaries, respectively.
 
    .. versionadded:: 3.12
 
@@ -325,6 +348,11 @@ also be used to improve performance.
 .. cmdoption:: --enable-profiling
 
    Enable C-level code profiling with ``gprof`` (disabled by default).
+
+.. cmdoption:: --with-strict-overflow
+
+   Add ``-fstrict-overflow`` to the C compiler flags (by default we add
+   ``-fno-strict-overflow`` instead).
 
 
 .. _debug-build:
