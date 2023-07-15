@@ -41,9 +41,13 @@ def build_alpharep_fixture():
     │   ├── d
     │   │   └── e.txt
     │   └── f.txt
-    └── g
-        └── h
-            └── i.txt
+    ├── g
+    │   └── h
+    │       └── i.txt
+    └── j
+        ├── k.bin
+        ├── l.baz
+        └── m.bar
 
     This fixture has the following key characteristics:
 
@@ -51,6 +55,7 @@ def build_alpharep_fixture():
     - a file two levels deep (b/d/e)
     - multiple files in a directory (b/c, b/f)
     - a directory containing only a directory (g/h)
+    - a directory with files of different extensions (j/klm)
 
     "alpha" because it uses alphabet
     "rep" because it's a representative example
@@ -62,6 +67,9 @@ def build_alpharep_fixture():
     zf.writestr("b/d/e.txt", b"content of e")
     zf.writestr("b/f.txt", b"content of f")
     zf.writestr("g/h/i.txt", b"content of i")
+    zf.writestr("j/k.bin", b"content of k")
+    zf.writestr("j/l.baz", b"content of l")
+    zf.writestr("j/m.bar", b"content of m")
     zf.filename = "alpharep.zip"
     return zf
 
@@ -92,7 +100,7 @@ class TestPath(unittest.TestCase):
     def test_iterdir_and_types(self, alpharep):
         root = zipfile.Path(alpharep)
         assert root.is_dir()
-        a, b, g = root.iterdir()
+        a, b, g, j = root.iterdir()
         assert a.is_file()
         assert b.is_dir()
         assert g.is_dir()
@@ -112,7 +120,7 @@ class TestPath(unittest.TestCase):
     @pass_alpharep
     def test_iterdir_on_file(self, alpharep):
         root = zipfile.Path(alpharep)
-        a, b, g = root.iterdir()
+        a, b, g, j = root.iterdir()
         with self.assertRaises(ValueError):
             a.iterdir()
 
@@ -127,7 +135,7 @@ class TestPath(unittest.TestCase):
     @pass_alpharep
     def test_open(self, alpharep):
         root = zipfile.Path(alpharep)
-        a, b, g = root.iterdir()
+        a, b, g, j = root.iterdir()
         with a.open(encoding="utf-8") as strm:
             data = strm.read()
         self.assertEqual(data, "content of a")
@@ -229,7 +237,7 @@ class TestPath(unittest.TestCase):
     @pass_alpharep
     def test_read(self, alpharep):
         root = zipfile.Path(alpharep)
-        a, b, g = root.iterdir()
+        a, b, g, j = root.iterdir()
         assert a.read_text(encoding="utf-8") == "content of a"
         # Also check positional encoding arg (gh-101144).
         assert a.read_text("utf-8") == "content of a"
@@ -295,7 +303,7 @@ class TestPath(unittest.TestCase):
         reflect that change.
         """
         root = zipfile.Path(alpharep)
-        a, b, g = root.iterdir()
+        a, b, g, j = root.iterdir()
         alpharep.writestr('foo.txt', 'foo')
         alpharep.writestr('bar/baz.txt', 'baz')
         assert any(child.name == 'foo.txt' for child in root.iterdir())
@@ -395,6 +403,13 @@ class TestPath(unittest.TestCase):
         assert e.suffixes == []
 
     @pass_alpharep
+    def test_suffix_no_filename(self, alpharep):
+        alpharep.filename = None
+        root = zipfile.Path(alpharep)
+        assert root.joinpath('example').suffix == ""
+        assert root.joinpath('example').suffixes == []
+
+    @pass_alpharep
     def test_stem(self, alpharep):
         """
         The final path component, without its suffix
@@ -410,6 +425,8 @@ class TestPath(unittest.TestCase):
 
         d = root / "d"
         assert d.stem == "d"
+
+        assert (root / ".gitignore").stem == ".gitignore"
 
     @pass_alpharep
     def test_root_parent(self, alpharep):
@@ -442,11 +459,48 @@ class TestPath(unittest.TestCase):
         assert not root.match("*.txt")
 
         assert list(root.glob("b/c.*")) == [zipfile.Path(alpharep, "b/c.txt")]
+        assert list(root.glob("b/*.txt")) == [
+            zipfile.Path(alpharep, "b/c.txt"),
+            zipfile.Path(alpharep, "b/f.txt"),
+        ]
 
+    @pass_alpharep
+    def test_glob_recursive(self, alpharep):
+        root = zipfile.Path(alpharep)
         files = root.glob("**/*.txt")
         assert all(each.match("*.txt") for each in files)
 
         assert list(root.glob("**/*.txt")) == list(root.rglob("*.txt"))
+
+    @pass_alpharep
+    def test_glob_subdirs(self, alpharep):
+        root = zipfile.Path(alpharep)
+
+        assert list(root.glob("*/i.txt")) == []
+        assert list(root.rglob("*/i.txt")) == [zipfile.Path(alpharep, "g/h/i.txt")]
+
+    @pass_alpharep
+    def test_glob_does_not_overmatch_dot(self, alpharep):
+        root = zipfile.Path(alpharep)
+
+        assert list(root.glob("*.xt")) == []
+
+    @pass_alpharep
+    def test_glob_single_char(self, alpharep):
+        root = zipfile.Path(alpharep)
+
+        assert list(root.glob("a?txt")) == [zipfile.Path(alpharep, "a.txt")]
+        assert list(root.glob("a[.]txt")) == [zipfile.Path(alpharep, "a.txt")]
+        assert list(root.glob("a[?]txt")) == []
+
+    @pass_alpharep
+    def test_glob_chars(self, alpharep):
+        root = zipfile.Path(alpharep)
+
+        assert list(root.glob("j/?.b[ai][nz]")) == [
+            zipfile.Path(alpharep, "j/k.bin"),
+            zipfile.Path(alpharep, "j/l.baz"),
+        ]
 
     def test_glob_empty(self):
         root = zipfile.Path(zipfile.ZipFile(io.BytesIO(), 'w'))
