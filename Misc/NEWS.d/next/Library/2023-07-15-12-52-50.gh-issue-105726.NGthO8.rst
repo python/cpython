@@ -1,0 +1,2 @@
+Bug fixed: Inheritance from AbstractContextManager and AbstractAsyncContextManager
+specifying slots in the child-class does not lead to the immutability of child-class instance.
