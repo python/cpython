@@ -26,6 +26,7 @@ class OpcodeTests(unittest.TestCase):
         self.check_bool_function_result(_opcode.has_jump, invalid, False)
         self.check_bool_function_result(_opcode.has_free, invalid, False)
         self.check_bool_function_result(_opcode.has_local, invalid, False)
+        self.check_bool_function_result(_opcode.has_exc, invalid, False)
 
     def test_is_valid(self):
         names = [
@@ -76,6 +77,12 @@ class OpcodeTests(unittest.TestCase):
         no_local = ['SETUP_WITH', 'POP_TOP', 'NOP', 'CACHE']
         self.check_bool_function_result(_opcode.has_local, has_local, True)
         self.check_bool_function_result(_opcode.has_local, no_local, False)
+
+    def test_has_exc(self):
+        has_exc = ['SETUP_FINALLY', 'SETUP_WITH', 'SETUP_CLEANUP']
+        no_exc = ['DELETE_DEREF', 'POP_TOP', 'NOP', 'CACHE']
+        self.check_bool_function_result(_opcode.has_exc, has_exc, True)
+        self.check_bool_function_result(_opcode.has_exc, no_exc, False)
 
     def test_stack_effect(self):
         self.assertEqual(stack_effect(dis.opmap['POP_TOP']), -1)

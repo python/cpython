@@ -161,7 +161,7 @@ or builtin scopes.
 
 static int
 _opcode_has_free_impl(PyObject *module, int opcode)
-/*[clinic end generated code: output=d81ae4d79af0ee26 input=6b2ce67a4a4017b1]*/
+/*[clinic end generated code: output=d81ae4d79af0ee26 input=f94ce9c2475f3ff0]*/
 {
     return PyUnstable_OpcodeIsValid(opcode) &&
            PyUnstable_OpcodeHasFree(opcode);
@@ -183,9 +183,24 @@ _opcode_has_local_impl(PyObject *module, int opcode)
 {
     return PyUnstable_OpcodeIsValid(opcode) &&
            PyUnstable_OpcodeHasLocal(opcode);
-
 }
 
+/*[clinic input]
+
+_opcode.has_exc -> bool
+
+  opcode: int
+
+Return True if the opcode sets and exception handler, False otherwise.
+[clinic start generated code]*/
+
+static int
+_opcode_has_exc_impl(PyObject *module, int opcode)
+/*[clinic end generated code: output=41b68dff0ec82a52 input=a3f202bb94f233b5]*/
+{
+    return PyUnstable_OpcodeIsValid(opcode) &&
+           PyUnstable_OpcodeHasExc(opcode);
+}
 
 /*[clinic input]
 
@@ -215,6 +230,7 @@ opcode_functions[] =  {
     _OPCODE_HAS_JUMP_METHODDEF
     _OPCODE_HAS_FREE_METHODDEF
     _OPCODE_HAS_LOCAL_METHODDEF
+    _OPCODE_HAS_EXC_METHODDEF
     _OPCODE_GET_SPECIALIZATION_STATS_METHODDEF
     {NULL, NULL, 0, NULL}
 };

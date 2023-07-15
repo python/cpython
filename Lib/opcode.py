@@ -30,7 +30,6 @@ except ModuleNotFoundError:
 cmp_op = ('<', '<=', '==', '!=', '>', '>=')
 
 hascompare = []
-hasexc = []
 
 
 ENABLE_SPECIALIZATION = True
@@ -38,7 +37,7 @@ ENABLE_SPECIALIZATION = True
 def is_pseudo(op):
     return op >= MIN_PSEUDO_OPCODE and op <= MAX_PSEUDO_OPCODE
 
-oplists = [hascompare, hasexc]
+oplists = [hascompare]
 
 opmap = {}
 
@@ -240,11 +239,8 @@ def_op('INSTRUMENTED_LINE', 254)
 MIN_PSEUDO_OPCODE = 256
 
 pseudo_op('SETUP_FINALLY', 256, ['NOP'])
-hasexc.append(256)
 pseudo_op('SETUP_CLEANUP', 257, ['NOP'])
-hasexc.append(257)
 pseudo_op('SETUP_WITH', 258, ['NOP'])
-hasexc.append(258)
 pseudo_op('POP_BLOCK', 259, ['NOP'])
 
 pseudo_op('JUMP', 260, ['JUMP_FORWARD', 'JUMP_BACKWARD'])
@@ -277,6 +273,7 @@ try:
     hasjabs = []
     hasfree = [op for op in opmap.values() if _opcode.has_free(op)]
     haslocal = [op for op in opmap.values() if _opcode.has_local(op)]
+    hasexc = [op for op in opmap.values() if _opcode.has_exc(op)]
 except (ImportError, AttributeError):
     hasarg = []
     hasconst = []
@@ -286,6 +283,7 @@ except (ImportError, AttributeError):
     hasjabs = []
     hasfree = []
     haslocal = []
+    hasexc = []
 
 _nb_ops = [
     ("NB_ADD", "+"),

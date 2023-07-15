@@ -908,6 +908,12 @@ PyUnstable_OpcodeHasLocal(int opcode)
     return OPCODE_HAS_LOCAL(opcode);
 }
 
+int
+PyUnstable_OpcodeHasExc(int opcode)
+{
+    return IS_BLOCK_PUSH_OPCODE(opcode);
+}
+
 static int
 codegen_addop_noarg(instr_sequence *seq, int opcode, location loc)
 {
