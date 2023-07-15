@@ -189,8 +189,16 @@ class ClinicWholeFileTest(_ParserBase):
             //[clinic start]
             //module test
             //[clinic stop]
-        """)
-        cl.parse(raw)
+        """).strip()
+        out = cl.parse(raw)
+        expected = dedent("""
+            //[clinic start]
+            //module test
+            //
+            //[clinic stop]
+            /*[clinic end generated code: output=da39a3ee5e6b4b0d input=65fab8adff58cf08]*/
+        """).lstrip()  # Note, lstrip() because of the newline
+        self.assertEqual(out, expected)
 
 
 class ClinicGroupPermuterTest(TestCase):
