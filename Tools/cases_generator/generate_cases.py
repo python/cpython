@@ -415,16 +415,9 @@ class Instruction:
         if self.always_exits:
             # print(f"Skipping {self.name} because it always exits")
             return False
-        if self.instr_flags.HAS_ARG_FLAG:
-            # If the instruction uses oparg, it cannot use any caches
-            if self.active_caches:
-                # print(f"Skipping {self.name} because it uses oparg and caches")
-                return False
-        else:
-            # If it doesn't use oparg, it can have one cache entry
-            if len(self.active_caches) > 1:
-                # print(f"Skipping {self.name} because it has >1 cache entries")
-                return False
+        if len(self.active_caches) > 1:
+            # print(f"Skipping {self.name} because it has >1 cache entries")
+            return False
         res = True
         for forbidden in FORBIDDEN_NAMES_IN_UOPS:
             # NOTE: To disallow unspecialized uops, use
