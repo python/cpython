@@ -36,7 +36,9 @@
 #include "pycore_pystate.h"       // _Py_GetConfig()
 #include "pycore_symtable.h"      // PySTEntryObject, _PyFuture_FromAST()
 
+#define NEED_OPCODE_METADATA
 #include "pycore_opcode_metadata.h" // _PyOpcode_opcode_metadata, _PyOpcode_num_popped/pushed
+#undef NEED_OPCODE_METADATA
 
 #define COMP_GENEXP   0
 #define COMP_LISTCOMP 1
@@ -862,6 +864,36 @@ int
 PyCompile_OpcodeStackEffect(int opcode, int oparg)
 {
     return stack_effect(opcode, oparg, -1);
+}
+
+int
+PyUnstable_OpcodeIsValid(int opcode)
+{
+    return IS_VALID_OPCODE(opcode);
+}
+
+int
+PyUnstable_OpcodeHasArg(int opcode)
+{
+    return OPCODE_HAS_ARG(opcode);
+}
+
+int
+PyUnstable_OpcodeHasConst(int opcode)
+{
+    return OPCODE_HAS_CONST(opcode);
+}
+
+int
+PyUnstable_OpcodeHasName(int opcode)
+{
+    return OPCODE_HAS_NAME(opcode);
+}
+
+int
+PyUnstable_OpcodeHasJump(int opcode)
+{
+    return OPCODE_HAS_JUMP(opcode);
 }
 
 static int

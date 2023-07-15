@@ -1,0 +1,1 @@
+Expose opcode metadata through :mod:`_opcode`.

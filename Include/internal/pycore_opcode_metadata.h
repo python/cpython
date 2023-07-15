@@ -3,6 +3,8 @@
 //   Python/bytecodes.c
 // Do not edit!
 
+#include <stdbool.h>
+
 
 #define IS_PSEUDO_INSTR(OP)  ( \
     ((OP) == LOAD_CLOSURE) || \
@@ -941,14 +943,20 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
 #endif
 
 enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC00, INSTR_FMT_IBC000, INSTR_FMT_IBC00000, INSTR_FMT_IBC00000000, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC0, INSTR_FMT_IXC00, INSTR_FMT_IXC000 };
+
+#define IS_VALID_OPCODE(OP) \
+    (((OP) >= 0) && ((OP) < OPCODE_METADATA_SIZE) && \
+     (_PyOpcode_opcode_metadata[(OP)].valid_entry))
+
 #define HAS_ARG_FLAG (1)
 #define HAS_CONST_FLAG (2)
 #define HAS_NAME_FLAG (4)
 #define HAS_JUMP_FLAG (8)
-#define OPCODE_HAS_ARG(OP) (_PyOpcode_opcode_metadata[(OP)].flags & (HAS_ARG_FLAG))
-#define OPCODE_HAS_CONST(OP) (_PyOpcode_opcode_metadata[(OP)].flags & (HAS_CONST_FLAG))
-#define OPCODE_HAS_NAME(OP) (_PyOpcode_opcode_metadata[(OP)].flags & (HAS_NAME_FLAG))
-#define OPCODE_HAS_JUMP(OP) (_PyOpcode_opcode_metadata[(OP)].flags & (HAS_JUMP_FLAG))
+#define OPCODE_HAS_ARG(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_ARG_FLAG))
+#define OPCODE_HAS_CONST(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_CONST_FLAG))
+#define OPCODE_HAS_NAME(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_NAME_FLAG))
+#define OPCODE_HAS_JUMP(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_JUMP_FLAG))
+
 struct opcode_metadata {
     bool valid_entry;
     enum InstructionFormat instr_format;
@@ -971,12 +979,16 @@ struct opcode_macro_expansion {
 #define SAME_OPCODE_METADATA(OP1, OP2) \
         (OPCODE_METADATA_FMT(OP1) == OPCODE_METADATA_FMT(OP2))
 
+#define OPCODE_METADATA_SIZE 512
+#define OPCODE_UOP_NAME_SIZE 512
+#define OPCODE_MACRO_EXPANSION_SIZE 256
+
 #ifndef NEED_OPCODE_METADATA
-extern const struct opcode_metadata _PyOpcode_opcode_metadata[512];
-extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[256];
-extern const char * const _PyOpcode_uop_name[512];
+extern const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE];
+extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPANSION_SIZE];
+extern const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE];
 #else // if NEED_OPCODE_METADATA
-const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {
+const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {
     [NOP] = { true, INSTR_FMT_IX, 0 },
     [RESUME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [INSTRUMENTED_RESUME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
@@ -1194,7 +1206,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {
     [CACHE] = { true, INSTR_FMT_IX, 0 },
     [RESERVED] = { true, INSTR_FMT_IX, 0 },
 };
-const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] = {
+const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPANSION_SIZE] = {
     [NOP] = { .nuops = 1, .uops = { { NOP, 0, 0 } } },
     [LOAD_FAST_CHECK] = { .nuops = 1, .uops = { { LOAD_FAST_CHECK, 0, 0 } } },
     [LOAD_FAST] = { .nuops = 1, .uops = { { LOAD_FAST, 0, 0 } } },
@@ -1308,7 +1320,7 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] = {
     [BINARY_OP] = { .nuops = 1, .uops = { { BINARY_OP, 0, 0 } } },
     [SWAP] = { .nuops = 1, .uops = { { SWAP, 0, 0 } } },
 };
-const char * const _PyOpcode_uop_name[512] = {
+const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE] = {
     [EXIT_TRACE] = "EXIT_TRACE",
     [SAVE_IP] = "SAVE_IP",
     [_GUARD_BOTH_INT] = "_GUARD_BOTH_INT",
