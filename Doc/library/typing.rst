@@ -3053,6 +3053,7 @@ Constant
    .. versionadded:: 3.5.2
 
 .. _generic-concrete-collections:
+.. _deprecated-aliases:
 
 Deprecated aliases
 ------------------
@@ -3061,16 +3062,21 @@ This module defines several deprecated aliases to pre-existing
 standard library classes. These were originally included in the typing
 module in order to support parameterizing these generic classes using ``[]``.
 However, the aliases became redundant in Python 3.9 when the
-corresponding pre-existing classes were enhanced to support ``[]``.
+corresponding pre-existing classes were enhanced to support ``[]`` (see
+:pep:`585`).
 
-The redundant types are deprecated as of Python 3.9 but no
-deprecation warnings are issued by the interpreter.
-It is expected that type checkers will flag the deprecated types
-when the checked program targets Python 3.9 or newer.
+The redundant types are deprecated as of Python 3.9. However, while the aliases
+may be removed at some point, removal of these aliases is not currently
+planned. As such, no deprecation warnings are currently issued by the
+interpreter for these aliases.
 
-The deprecated types will be removed from the :mod:`typing` module
-no sooner than the first Python version released 5 years after the release of Python 3.9.0.
-See details in :pep:`585`—*Type Hinting Generics In Standard Collections*.
+If at some point it is decided to remove these deprecated aliases, a
+deprecation warning will be issued by the interpreter for at least two releases
+prior to removal. The aliases are guaranteed to remain in the typing module
+without deprecation warnings until at least Python 3.14.
+
+Type checkers are encouraged to flag uses of the deprecated types if the
+program they are checking targets a minimum Python version of 3.9 or newer.
 
 .. _corresponding-to-built-in-types:
 
@@ -3611,21 +3617,34 @@ Certain features in ``typing`` are deprecated and may be removed in a future
 version of Python. The following table summarizes major deprecations for your
 convenience. This is subject to change, and not all deprecations are listed.
 
-+----------------------------------+---------------+-------------------+----------------+
-|  Feature                         | Deprecated in | Projected removal | PEP/issue      |
-+==================================+===============+===================+================+
-|  ``typing.io`` and ``typing.re`` | 3.8           | 3.13              | :issue:`38291` |
-|  submodules                      |               |                   |                |
-+----------------------------------+---------------+-------------------+----------------+
-|  ``typing`` versions of standard | 3.9           | Undecided         | :pep:`585`     |
-|  collections                     |               |                   |                |
-+----------------------------------+---------------+-------------------+----------------+
-|  ``typing.ByteString``           | 3.9           | 3.14              | :gh:`91896`    |
-+----------------------------------+---------------+-------------------+----------------+
-|  ``typing.Text``                 | 3.11          | Undecided         | :gh:`92332`    |
-+----------------------------------+---------------+-------------------+----------------+
-|  ``typing.Hashable`` and         | 3.12          | Undecided         | :gh:`94309`    |
-|  ``typing.Sized``                |               |                   |                |
-+----------------------------------+---------------+-------------------+----------------+
-|  ``typing.TypeAlias``            | 3.12          | Undecided         | :pep:`695`     |
-+----------------------------------+---------------+-------------------+----------------+
+.. list-table::
+   :header-rows: 1
+
+   * - Feature
+     - Deprecated in
+     - Projected removal
+     - PEP/issue
+   * - ``typing.io`` and ``typing.re`` submodules
+     - 3.8
+     - 3.13
+     - :issue:`38291`
+   * - ``typing`` versions of standard collections
+     - 3.9
+     - Undecided (see :ref:`deprecated-aliases` for more information)
+     - :pep:`585`
+   * - :class:`typing.ByteString`
+     - 3.9
+     - 3.14
+     - :gh:`91896`
+   * - :data:`typing.Text`
+     - 3.11
+     - Undecided
+     - :gh:`92332`
+   * - :class:`typing.Hashable` and :class:`typing.Sized`
+     - 3.12
+     - Undecided
+     - :gh:`94309`
+   * - :data:`typing.TypeAlias`
+     - 3.12
+     - Undecided
+     - :pep:`695`
