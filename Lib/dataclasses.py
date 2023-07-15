@@ -565,7 +565,7 @@ def _init_param(f):
     return f'{f.name}:__dataclass_type_{f.name}__{default}'
 
 
-def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
+def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init, kw_only_post_init,
              self_name, globals, slots):
     # fields contains both real fields and InitVar pseudo-fields.
 
@@ -601,8 +601,14 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
 
     # Does this class have a post-init function?
     if has_post_init:
-        params_str = ','.join(f.name for f in fields
-                              if f._field_type is _FIELD_INITVAR)
+        # KEYWORD_ONLY (after 'self')
+        if kw_only_post_init:
+            params_str = ', '.join(f'{f.name}={f.name}' for f in fields
+                                   if f._field_type is _FIELD_INITVAR)
+        # POSITIONAL_OR_KEYWORD, or no args other than 'self'
+        else:
+            params_str = ','.join(f.name for f in fields
+                                  if f._field_type is _FIELD_INITVAR)
         body_lines.append(f'{self_name}.{_POST_INIT_NAME}({params_str})')
 
     # If no body lines, use 'pass'.
@@ -1059,12 +1065,36 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
         # Does this class have a post-init function?
         has_post_init = hasattr(cls, _POST_INIT_NAME)
 
+        # Does it only accept kwargs?
+        kw_only_post_init = False
+        if has_post_init:
+
+            # get params
+            post_init_sig = inspect.signature(getattr(cls, _POST_INIT_NAME))
+            post_init_params = post_init_sig.parameters
+
+            # are there more than 1 POSITIONAL_OR_KEYWORD params?
+            # ('self' is convention, not guaranteed spelling)
+            p_or_k_count = 0
+            for param in post_init_params.values():
+                if param.kind == param.POSITIONAL_OR_KEYWORD:
+                    p_or_k_count += 1
+                    if p_or_k_count > 1:
+                        break
+
+            # set to True if __post_init__ has a '*' after self, forcing
+            # all additional params to KEYWORD_ONLY
+            # eg, def __post_init__(self, *, init_var1, init_var2...
+            if p_or_k_count == 1 and len(post_init_params) > 1:
+                kw_only_post_init = True
+
         _set_new_attribute(cls, '__init__',
                            _init_fn(all_init_fields,
                                     std_init_fields,
                                     kw_only_init_fields,
                                     frozen,
                                     has_post_init,
+                                    kw_only_post_init,
                                     # The name to use for the "self"
                                     # param in __init__.  Use "self"
                                     # if possible.
