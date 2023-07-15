@@ -1214,15 +1214,12 @@ class CLanguage(Language):
                             }}
                             """ % add_label, indent=4))
                     if p.deprecated_positional:
+                        arg = p.name
                         whence = p.deprecated_positional
                         major, minor = whence.split(".")  # FIXME: validate format during parsing
-                        deprecation_message = (
-                            f"Using {p.name!r} as a positional argument is deprecated. "
-                            f"It will become a keyword-only argument in Python {whence}."
-                        )
+                        source = self.cpp.filename
                         cpp_warning = (
-                            f"Using {p.name!r} as a positional argument is now disallowed. "
-                            f"Please update the clinic code in {self.cpp.filename!r}."
+                            f"Update {p.name!r} in {f.name!r} in {source!r} to be keyword-only."
                         )
                         parser_code.append(normalize_snippet(fr"""
                             #if (PY_MAJOR_VERSION > {major}) || \
@@ -1235,7 +1232,8 @@ class CLanguage(Language):
                             #endif
                             if (nargs == {i+1}) {{{{
                                 if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                                    "{deprecation_message}", 2))
+                                    "Using {p.name!r} as a positional argument is deprecated. "
+                                    "It will become a keyword-only argument in Python {whence}.", 2))
                                 {{{{
                                     goto exit;
                                 }}}}

@@ -4885,14 +4885,15 @@ test_deprecate_positional_use(PyObject *module, PyObject *const *args, Py_ssize_
     #if (PY_MAJOR_VERSION > 3) || \
         (PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION >= 14)
     #  ifdef _MSC_VER
-    #    pragma message ("Using 'optarg' as a positional argument is now disallowed. Please update the clinic code in 'Lib/test/clinic.test.c'.")
+    #    pragma message ("Update 'optarg' in 'test_deprecate_positional_use' in 'Lib/test/clinic.test.c' to be keyword-only.")
     #  else
-    #    warning "Using 'optarg' as a positional argument is now disallowed. Please update the clinic code in 'Lib/test/clinic.test.c'."
+    #    warning "Update 'optarg' in 'test_deprecate_positional_use' in 'Lib/test/clinic.test.c' to be keyword-only."
     #  endif
     #endif
     if (nargs == 2) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
-            "Using 'optarg' as a positional argument is deprecated. It will become a keyword-only argument in Python 3.14.", 2))
+            "Using 'optarg' as a positional argument is deprecated. "
+            "It will become a keyword-only argument in Python 3.14.", 2))
         {
             goto exit;
         }
@@ -4911,7 +4912,7 @@ exit:
 static PyObject *
 test_deprecate_positional_use_impl(PyObject *module, PyObject *pos,
                                    int optarg)
-/*[clinic end generated code: output=8b8ea55feb831cb9 input=ab63c6aed293eb31]*/
+/*[clinic end generated code: output=6a47ac0d4ecb9de6 input=ab63c6aed293eb31]*/
 
 PyDoc_STRVAR(test_deprecate_positional_use__doc__,
 "test_deprecate_positional_use($module, /, pos, optarg=5)\n"
