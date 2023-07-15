@@ -42,6 +42,7 @@ from typing import (
     Literal,
     NamedTuple,
     NoReturn,
+    Protocol,
     TypeGuard,
     overload,
 )
@@ -2052,16 +2053,19 @@ def write_file(filename: str, new_contents: str) -> None:
         raise
 
 
-class Parser:
+ClassDict = dict[str, "Class"]
+DestinationDict = dict[str, Destination]
+ModuleDict = dict[str, "Module"]
+
+
+class Parser(Protocol):
+
+    @abc.abstractmethod
+    def __init__(self, *args, **kwargs): ...
 
     @abc.abstractmethod
     def parse(self, block: Block) -> None: ...
 
-
-ClassDict = dict[str, "Class"]
-DestinationDict = dict[str, Destination]
-ModuleDict = dict[str, "Module"]
-ParserDict = dict[str, Parser]
 
 clinic = None
 class Clinic:
@@ -2119,7 +2123,7 @@ impl_definition block
     ) -> None:
         # maps strings to Parser objects.
         # (instantiated from the "parsers" global.)
-        self.parsers: ParserDict = {}
+        self.parsers: dict[str, Parser] = {}
         self.language: CLanguage = language
         if printer:
             fail("Custom printers are broken right now")
@@ -2347,7 +2351,7 @@ def compute_checksum(
     return s
 
 
-class PythonParser(Parser):
+class PythonParser:
     def __init__(self, clinic: Clinic) -> None:
         pass
 
@@ -4367,7 +4371,7 @@ class ParamState(enum.IntEnum):
     RIGHT_SQUARE_AFTER = 6
 
 
-class DSLParser(Parser):
+class DSLParser:
     function: Function | None
     state: StateKeeper
     keyword_only: bool
@@ -5527,7 +5531,7 @@ class DSLParser(Parser):
 #   "clinic", handles the Clinic DSL
 #   "python", handles running Python code
 #
-parsers = {'clinic' : DSLParser, 'python': PythonParser}
+parsers: dict[str, type[Parser]] = {'clinic' : DSLParser, 'python': PythonParser}
 
 
 clinic = None
