@@ -1893,3 +1893,9 @@ with the ``*`` from the line above *c*::
 
 Finally, run ``make clinic`` to regenerate the Argument Clinic code,
 and update your unit tests to reflect the new behaviour.
+
+.. note::
+
+   If you forget to update your clinic code during the target beta phase, the
+   copmiler warning will turn into a compiler error when the release candidate
+   phase kicks in.
