@@ -1820,3 +1820,50 @@ blocks embedded in Python files look slightly different.  They look like this:
     #[python start generated code]*/
     def foo(): pass
     #/*[python checksum:...]*/
+
+
+How to deprecate positional use of optional parameters
+------------------------------------------------------
+
+Argument Clinic provides syntax that makes it possible to generate code that
+deprecates positional use of optional parameters.
+For example, say we've got a module level function :py:func:`!foo.myfunc` that
+takes three :class:`int` parameters:
+*a* (positional only), *b* (optional), and *c* (keyword-only)::
+
+   /*[clinic input]
+   module foo
+   myfunc
+       a: int
+       /
+       b: int
+       *
+       c: int
+   [clinic start generated output]*/
+
+We now want to make the *b* parameter keyword-only from Python 3.14 and onward,
+and since :py:func:`!myfunc` is a public API,
+we must follow :pep:`387` and issue a deprecation warning.
+We can do that using the ``* [from ...]``` syntax,
+by adding the line ``* [from 3.14]`` right above the *b* parameter::
+
+   /*[clinic input]
+   module foo
+   myfunc
+       a: int
+       /
+       * [from 3.14]
+       b: int
+       *
+       c: int
+   [clinic start generated output]*/
+
+Next, regenerate Argument Clinic code (``make clinic``),
+and add unit tests for the new behaviour.
+
+The generated code will now emit a :exc:`DeprecationWarning`
+when an the optional parameter *b* is used as a positional paremeter.
+C preprocessor directives are also generated for emitting
+compiler warnings if the ``* [from ...]`` line has not been removed
+from the Argument Clinic input when the deprecation period is over,
+which means when the beta phase of the specified Python version kicks in.
