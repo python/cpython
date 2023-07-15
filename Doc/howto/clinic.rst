@@ -1874,9 +1874,9 @@ Luckily for us, compiler warnings are now generated:
 .. code-block:: none
 
    In file included from Modules/foomodule.c:139:
-   Modules/clinic/foomodule.c.h:83:8: error: Update 'b' in 'myfunc' in 'foomodule.c' to be keyword-only.
-    #  error Update 'b' in 'myfunc' in 'foomodule.c' to be keyword-only.
-       ^
+   Modules/clinic/foomodule.c.h:83:8: warning: Update 'b' in 'myfunc' in 'foomodule.c' to be keyword-only. [-W#warnings]
+    #    warning "Update 'b' in 'myfunc' in 'foomodule.c' to be keyword-only."
+         ^
 
 We now close the deprecation phase by making *b* keyword-only;
 replace the ``* [from ...]``` line above *b*
