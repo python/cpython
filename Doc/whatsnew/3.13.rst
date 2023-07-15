@@ -79,6 +79,13 @@ Other Language Changes
 * Allow the *count* argument of :meth:`str.replace` to be a keyword.
   (Contributed by Hugo van Kemenade in :gh:`106487`.)
 
+* Compiler now strip indents from docstrings.
+  This will reduce the size of :term:`bytecode cache <bytecode>` (e.g. ``.pyc`` file).
+  For example, cache file size for ``sqlalchemy.orm.session`` in SQLAlchemy 2.0
+  is reduced by about 5%.
+  This change will affect tools using docstrings, like :mod:`doctest`.
+  (Contributed by Inada Naoki in :gh:`81283`.)
+
 New Modules
 ===========
 
