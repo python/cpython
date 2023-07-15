@@ -4664,7 +4664,7 @@ static unsigned int psk_client_callback(SSL *s,
         goto error;
     }
 
-    PyObject *hint_str = (hint != NULL) ?
+    PyObject *hint_str = (hint != NULL && hint[0] != '\0') ?
             PyUnicode_DecodeUTF8(hint, strlen(hint), "strict") :
             Py_NewRef(Py_None);
     if (hint_str == NULL) {
@@ -4765,7 +4765,7 @@ static unsigned int psk_server_callback(SSL *s,
         goto error;
     }
 
-    PyObject *identity_str = (identity[0] != '\0') ?
+    PyObject *identity_str = (identity != NULL && identity[0] != '\0') ?
             PyUnicode_DecodeUTF8(identity, strlen(identity), "strict") :
             Py_NewRef(Py_None);
     if (identity_str == NULL) {
