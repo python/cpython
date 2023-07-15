@@ -1215,8 +1215,8 @@ class CLanguage(Language):
                             """ % add_label, indent=4))
                     if p.deprecated_positional:
                         arg = p.name
-                        whence = p.deprecated_positional
-                        major, minor = whence.split(".")
+                        thenceforth = p.deprecated_positional
+                        major, minor = thenceforth.split(".")
                         source = os.path.basename(self.cpp.filename)
                         cpp_warning = (
                             f"Update {p.name!r} in {f.name!r} in {source!r} to be keyword-only."
@@ -1233,7 +1233,7 @@ class CLanguage(Language):
                             if (nargs == {i+1}) {{{{
                                 if (PyErr_WarnEx(PyExc_DeprecationWarning,
                                     "Using {p.name!r} as a positional argument is deprecated. "
-                                    "It will become a keyword-only argument in Python {whence}.", 2))
+                                    "It will become a keyword-only argument in Python {thenceforth}.", 2))
                                 {{{{
                                     goto exit;
                                 }}}}
@@ -5167,16 +5167,16 @@ class DSLParser:
                     "Annotations must be either a name, a function call, or a string."
                 )
 
-    def parse_deprecated_positional(self, whence: str):
+    def parse_deprecated_positional(self, thenceforth: str):
         assert isinstance(self.function, Function)
 
-        if "." not in whence:
+        if "." not in thenceforth:
             fail(
                 f"Function {self.function.name!r}: '* [from ...]' format "
                 "expected to be '<major.minor>', where 'major' and 'minor' "
                 "are digits."
             )
-        major, minor = whence.split(".")
+        major, minor = thenceforth.split(".")
         if not major.isdigit() or not minor.isdigit():
             fail(
                 f"Function {self.function.name!r}, '* [from <major.minor>]': "
@@ -5186,7 +5186,7 @@ class DSLParser:
             fail(f"Function {self.function.name!r}: '* [from ...]' must come before '*'")
         if self.deprecated_positional:
             fail(f"Function {self.function.name!r} uses 'x' more than once.")
-        self.deprecated_positional = whence
+        self.deprecated_positional = thenceforth
 
     def parse_special_symbol(self, symbol: str) -> None:
         assert isinstance(self.function, Function)
