@@ -2745,7 +2745,7 @@ Constant
    .. versionadded:: 3.5.2
 
 .. _generic-concrete-collections:
-.. _deprecated-aliases:
+.. _deprecated-typing-aliases:
 
 Deprecated aliases
 ------------------
@@ -3314,7 +3314,7 @@ convenience. This is subject to change, and not all deprecations are listed.
      - :issue:`38291`
    * - ``typing`` versions of standard collections
      - 3.9
-     - Undecided (see :ref:`deprecated-aliases` for more information)
+     - Undecided (see :ref:`deprecated-typing-aliases` for more information)
      - :pep:`585`
    * - :class:`typing.ByteString`
      - 3.9
