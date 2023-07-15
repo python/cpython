@@ -1366,7 +1366,7 @@ class Analyzer:
                 if not part.instr.is_viable_uop():
                     print(f"NOTE: Part {part.instr.name} of {name} is not a viable uop")
                     return
-                if part.instr.instr_flags.HAS_ARG_FLAG or not part.active_caches:
+                if not part.active_caches:
                     size, offset = OPARG_SIZES["OPARG_FULL"], 0
                 else:
                     # If this assert triggers, is_viable_uops() lied
