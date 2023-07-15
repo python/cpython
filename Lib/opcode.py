@@ -4,9 +4,9 @@ opcode module - potentially shared between dis and other modules which
 operate on bytecodes (e.g. peephole optimizers).
 """
 
-__all__ = ["cmp_op", "hasarg", "hasconst", "hasname", "hasjrel", "hasjabs",
-           "haslocal", "hascompare", "hasfree", "hasexc", "opname", "opmap",
-           "HAVE_ARGUMENT", "EXTENDED_ARG"]
+__all__ = ["cmp_op", "hasarg", "hasconst", "hasname", "hasjump", "hasjrel",
+           "hasjabs", "haslocal", "hascompare", "hasfree", "hasexc",
+           "opname", "opmap", "HAVE_ARGUMENT", "EXTENDED_ARG"]
 
 # It's a chicken-and-egg I'm afraid:
 # We're imported before _opcode's made.
@@ -272,7 +272,8 @@ try:
     hasarg = [op for op in opmap.values() if _opcode.has_arg(op)]
     hasconst = [op for op in opmap.values() if _opcode.has_const(op)]
     hasname = [op for op in opmap.values() if _opcode.has_name(op)]
-    hasjrel = [op for op in opmap.values() if _opcode.has_jump(op)]
+    hasjump = [op for op in opmap.values() if _opcode.has_jump(op)]
+    hasjrel = hasjump  # for backward compatibility
     hasjabs = []
     hasfree = [op for op in opmap.values() if _opcode.has_free(op)]
     haslocal = [op for op in opmap.values() if _opcode.has_local(op)]
@@ -280,8 +281,10 @@ except (ImportError, AttributeError):
     hasarg = []
     hasconst = []
     hasname = []
+    hasjump = []
     hasjrel = []
     hasjabs = []
+    hasfree = []
     haslocal = []
 
 _nb_ops = [
