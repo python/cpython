@@ -106,7 +106,8 @@ class ClinicWholeFileTest(_ParserBase):
     def setUp(self):
         self.clinic = clinic.Clinic(clinic.CLanguage(None), filename="test.c")
 
-    def expect_failure(self, _input):
+    def expect_failure(self, raw):
+        _input = dedent(raw).strip()
         return self.expect_parser_failure(self.clinic.parse, _input)
 
     def test_eol(self):
@@ -127,11 +128,11 @@ class ClinicWholeFileTest(_ParserBase):
         self.assertEqual(end_line, "[clinic]*/")
 
     def test_mangled_marker_line(self):
-        raw = dedent("""
+        raw = """
             /*[clinic input]
             [clinic start generated code]*/
             /*[clinic end generated code: foo]*/
-        """).strip()
+        """
         msg = (
             'Error in file "test.c" on line 3:\n'
             "Mangled Argument Clinic marker line: '/*[clinic end generated code: foo]*/'\n"
@@ -140,11 +141,11 @@ class ClinicWholeFileTest(_ParserBase):
         self.assertEqual(out, msg)
 
     def test_checksum_mismatch(self):
-        raw = dedent("""
+        raw = """
             /*[clinic input]
             [clinic start generated code]*/
             /*[clinic end generated code: output=0123456789abcdef input=fedcba9876543210]*/
-        """).strip()
+        """
         msg = (
             'Error in file "test.c" on line 3:\n'
             'Checksum mismatch!\n'
@@ -155,10 +156,10 @@ class ClinicWholeFileTest(_ParserBase):
         self.assertIn(msg, out)
 
     def test_garbage_after_stop_line(self):
-        raw = dedent("""
+        raw = """
             /*[clinic input]
             [clinic start generated code]*/foobarfoobar!
-        """).strip()
+        """
         msg = (
             'Error in file "test.c" on line 2:\n'
             "Garbage after stop line: 'foobarfoobar!'\n"
@@ -167,10 +168,10 @@ class ClinicWholeFileTest(_ParserBase):
         self.assertEqual(out, msg)
 
     def test_whitespace_before_stop_line(self):
-        raw = dedent("""
+        raw = """
             /*[clinic input]
              [clinic start generated code]*/
-        """).strip()
+        """
         msg = (
             'Error in file "test.c" on line 2:\n'
             "Whitespace is not allowed before the stop line: ' [clinic start generated code]*/'\n"
