@@ -18,6 +18,19 @@ with test_tools.imports_under_tool('clinic'):
     from clinic import DSLParser
 
 
+class _ParserBase(TestCase):
+    maxDiff = None
+
+    def expect_parser_failure(self, parser, _input):
+        with support.captured_stdout() as stdout:
+            with self.assertRaises(SystemExit):
+                parser(_input)
+        return stdout.getvalue()
+
+    def parse_function_should_fail(self, _input):
+        return self.expect_parser_failure(self.parse_function, _input)
+
+
 class FakeConverter:
     def __init__(self, name, args):
         self.name = name
@@ -88,7 +101,15 @@ class FakeClinic:
 
     _module_and_class = clinic.Clinic._module_and_class
 
-class ClinicWholeFileTest(TestCase):
+
+class ClinicWholeFileTest(_ParserBase):
+    def setUp(self):
+        self.clinic = clinic.Clinic(clinic.CLanguage(None), filename="test.c")
+
+    def expect_failure(self, raw):
+        _input = dedent(raw).strip()
+        return self.expect_parser_failure(self.clinic.parse, _input)
+
     def test_eol(self):
         # regression test:
         # clinic's block parser didn't recognize
@@ -98,15 +119,86 @@ class ClinicWholeFileTest(TestCase):
         # so it would spit out an end line for you.
         # and since you really already had one,
         # the last line of the block got corrupted.
-        c = clinic.Clinic(clinic.CLanguage(None), filename="file")
         raw = "/*[clinic]\nfoo\n[clinic]*/"
-        cooked = c.parse(raw).splitlines()
+        cooked = self.clinic.parse(raw).splitlines()
         end_line = cooked[2].rstrip()
         # this test is redundant, it's just here explicitly to catch
         # the regression test so we don't forget what it looked like
         self.assertNotEqual(end_line, "[clinic]*/[clinic]*/")
         self.assertEqual(end_line, "[clinic]*/")
 
+    def test_mangled_marker_line(self):
+        raw = """
+            /*[clinic input]
+            [clinic start generated code]*/
+            /*[clinic end generated code: foo]*/
+        """
+        msg = (
+            'Error in file "test.c" on line 3:\n'
+            "Mangled Argument Clinic marker line: '/*[clinic end generated code: foo]*/'\n"
+        )
+        out = self.expect_failure(raw)
+        self.assertEqual(out, msg)
+
+    def test_checksum_mismatch(self):
+        raw = """
+            /*[clinic input]
+            [clinic start generated code]*/
+            /*[clinic end generated code: output=0123456789abcdef input=fedcba9876543210]*/
+        """
+        msg = (
+            'Error in file "test.c" on line 3:\n'
+            'Checksum mismatch!\n'
+            'Expected: 0123456789abcdef\n'
+            'Computed: da39a3ee5e6b4b0d\n'
+        )
+        out = self.expect_failure(raw)
+        self.assertIn(msg, out)
+
+    def test_garbage_after_stop_line(self):
+        raw = """
+            /*[clinic input]
+            [clinic start generated code]*/foobarfoobar!
+        """
+        msg = (
+            'Error in file "test.c" on line 2:\n'
+            "Garbage after stop line: 'foobarfoobar!'\n"
+        )
+        out = self.expect_failure(raw)
+        self.assertEqual(out, msg)
+
+    def test_whitespace_before_stop_line(self):
+        raw = """
+            /*[clinic input]
+             [clinic start generated code]*/
+        """
+        msg = (
+            'Error in file "test.c" on line 2:\n'
+            "Whitespace is not allowed before the stop line: ' [clinic start generated code]*/'\n"
+        )
+        out = self.expect_failure(raw)
+        self.assertEqual(out, msg)
+
+    def test_parse_with_body_prefix(self):
+        clang = clinic.CLanguage(None)
+        clang.body_prefix = "//"
+        clang.start_line = "//[{dsl_name} start]"
+        clang.stop_line = "//[{dsl_name} stop]"
+        cl = clinic.Clinic(clang, filename="test.c")
+        raw = dedent("""
+            //[clinic start]
+            //module test
+            //[clinic stop]
+        """).strip()
+        out = cl.parse(raw)
+        expected = dedent("""
+            //[clinic start]
+            //module test
+            //
+            //[clinic stop]
+            /*[clinic end generated code: output=da39a3ee5e6b4b0d input=65fab8adff58cf08]*/
+        """).lstrip()  # Note, lstrip() because of the newline
+        self.assertEqual(out, expected)
 
 
 class ClinicGroupPermuterTest(TestCase):
@@ -285,7 +377,7 @@ xyz
 """)
 
 
-class ClinicParserTest(TestCase):
+class ClinicParserTest(_ParserBase):
     def checkDocstring(self, fn, expected):
         self.assertTrue(hasattr(fn, "docstring"))
         self.assertEqual(fn.docstring.strip(),
