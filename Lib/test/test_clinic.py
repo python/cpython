@@ -952,6 +952,19 @@ class ClinicParserTest(_ParserBase):
         msg = "Function 'bar': '* [from ...]' must come before '*'"
         self.assertIn(msg, out)
 
+    def test_duplicate_depr_star(self):
+        out = self.parse_function_should_fail("""
+            module foo
+            foo.bar
+                a: int
+                * [from 3.14]
+                * [from 3.14]
+                b: int
+            Docstring.
+        """)
+        msg = "Function 'bar' uses '[from ...]' more than once."
+        self.assertIn(msg, out)
+
     def test_single_slash(self):
         out = self.parse_function_should_fail("""
             module foo

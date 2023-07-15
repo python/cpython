@@ -5192,7 +5192,7 @@ class DSLParser:
         if self.keyword_only:
             fail(f"Function {self.function.name!r}: '* [from ...]' must come before '*'")
         if self.deprecated_positional:
-            fail(f"Function {self.function.name!r} uses 'x' more than once.")
+            fail(f"Function {self.function.name!r} uses '[from ...]' more than once.")
         self.deprecated_positional = thenceforth
 
     def parse_special_symbol(self, symbol: str) -> None:
