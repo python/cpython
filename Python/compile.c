@@ -8022,12 +8022,20 @@ _PyCompile_CleanDoc(PyObject *doc)
     }
 
     // Second pass: write cleandoc into buff.
-    char *buff = PyMem_Malloc(doc_size + 1);
-    char *w = buff;
-    p = doc_utf8;
 
-    // copy firstline without indent.
-    while (*p == ' ') p++;
+    // copy first line without leading spaces.
+    p = doc_utf8;
+    while (*p == ' ') {
+        p++;
+    }
+    if (p == doc_utf8 && margin == 0 ) {
+        // doc is already clean.
+        return doc;
+    }
+
+    char *buff = PyMem_Malloc(doc_size);
+    char *w = buff;
+
     while (p < pend) {
         int ch = *w++ = *p++;
         if (ch == '\n') {
