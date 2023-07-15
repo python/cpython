@@ -1230,11 +1230,11 @@ class CLanguage(Language):
                             #  else
                             #    warning "{cpp_warning}"
                             #  endif
-                            #elseif PY_MAJOR_VERSION > {major} || \
-                              (PY_MAJOR_VERSION == {major} && PY_MINOR_VERSION > {minor}) || \
-                              (PY_MAJOR_VERSION == {major} && \
-                               PY_MINOR_VERSION == {minor} &&\
-                               PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_GAMMA)
+                            #elif PY_MAJOR_VERSION > {major} || \
+                                 (PY_MAJOR_VERSION == {major} && PY_MINOR_VERSION > {minor}) || \
+                                 (PY_MAJOR_VERSION == {major} && \
+                                  PY_MINOR_VERSION == {minor} && \
+                                  PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_GAMMA)
                             #  #error {cpp_warning}
                             #endif
                             if (nargs == {i+1}) {{{{
