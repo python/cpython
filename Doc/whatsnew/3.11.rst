@@ -126,7 +126,7 @@ that caused the error, instead of just the line. For example:
                                ^^^^^^^^^
     AttributeError: 'NoneType' object has no attribute 'x'
 
-Previous versions of the interpreter would point to just the line, making it
+Previous versions of the interpreter would just point to the line, making it
 ambiguous which object was ``None``. These enhanced errors can also be helpful
 when dealing with deeply nested :class:`dict` objects and multiple function calls:
 
@@ -184,15 +184,15 @@ PEP 654: Exception Groups and ``except*``
 
 :pep:`654` introduces language features that enable a program
 to raise and handle multiple unrelated exceptions simultaneously.
-The builtin types :exc:`ExceptionGroup` and :exc:`BaseExceptionGroup`
+The built-in types :exc:`ExceptionGroup` and :exc:`BaseExceptionGroup`
 make it possible to group exceptions and raise them together,
 and the new :keyword:`except* <except_star>` syntax generalizes
 :keyword:`except` to match subgroups of exception groups.
 
 See :pep:`654` for more details.
 
-(Contributed by Irit Katriel in :issue:`45292`. PEP written by
-Irit Katriel, Yury Selivanov and Guido van Rossum.)
+(Contributed by Irit Katriel in :issue:`45292`. PEP is written by
+Irit Katriel, Yury Selivanov, and Guido van Rossum.)
 
 
 .. _whatsnew311-pep678:
@@ -200,15 +200,15 @@ Irit Katriel, Yury Selivanov and Guido van Rossum.)
 PEP 678: Exceptions can be enriched with notes
 ----------------------------------------------
 
-The :meth:`~BaseException.add_note` method is added to :exc:`BaseException`.
+The:meth:`~BaseException.add_note` method is added to exc:`BaseException`.
 It can be used to enrich exceptions with context information
 that is not available at the time when the exception is raised.
 The added notes appear in the default traceback.
 
-See :pep:`678` for more details.
+See pep:`678` for more details.
 
-(Contributed by Irit Katriel in :issue:`45607`.
-PEP written by Zac Hatfield-Dodds.)
+(Contributed by Irit Katriel in issue:`45607`.
+PEP is written by Zac Hatfield-Dodds.)
 
 
 .. _whatsnew311-windows-launcher:
@@ -216,8 +216,8 @@ PEP written by Zac Hatfield-Dodds.)
 Windows ``py.exe`` launcher improvements
 ----------------------------------------
 
-The copy of the :ref:`launcher` included with Python 3.11 has been significantly
-updated. It now supports company/tag syntax as defined in :pep:`514` using the
+The copy of the:ref:`launcher` included with Python 3.11 has been significantly
+updated. It now supports company/tag syntax as defined in pep:`514` using the
 ``-V:<company>/<tag>`` argument instead of the limited ``-<major>.<minor>``.
 This allows launching distributions other than ``PythonCore``,
 the one hosted on `python.org <https://www.python.org>`_.
@@ -225,11 +225,11 @@ the one hosted on `python.org <https://www.python.org>`_.
 When using ``-V:`` selectors, either company or tag can be omitted, but all
 installs will be searched. For example, ``-V:OtherPython/`` will select the
 "best" tag registered for ``OtherPython``, while ``-V:3.11`` or ``-V:/3.11``
-will select the "best" distribution with tag ``3.11``.
+will select the "best" distribution with the tag ``3.11``.
 
 When using the legacy ``-<major>``, ``-<major>.<minor>``,
 ``-<major>-<bitness>`` or ``-<major>.<minor>-<bitness>`` arguments,
-all existing behaviour should be preserved from past versions,
+all existing behavior should be preserved from past versions,
 and only releases from ``PythonCore`` will be selected.
 However, the ``-64`` suffix now implies "not 32-bit" (not necessarily x86-64),
 as there are multiple supported 64-bit platforms.
@@ -243,8 +243,8 @@ All releases of Python since 3.5 have included this in their 32-bit builds.
 New Features Related to Type Hints
 ==================================
 
-This section covers major changes affecting :pep:`484` type hints and
-the :mod:`typing` module.
+This section covers major changes affecting:pep:`484` type hints and
+the:mod:`typing` module.
 
 
 .. _whatsnew311-pep646:
@@ -252,23 +252,22 @@ the :mod:`typing` module.
 PEP 646: Variadic generics
 --------------------------
 
-:pep:`484` previously introduced :data:`~typing.TypeVar`, enabling creation
-of generics parameterised with a single type. :pep:`646` adds
+:pep:`484` previously introduced:data:`~typing.TypeVar`, enabling the creation
+of generics parameterized with a single type. :pep:`646` adds
 :data:`~typing.TypeVarTuple`, enabling parameterisation
 with an *arbitrary* number of types. In other words,
-a :data:`~typing.TypeVarTuple` is a *variadic* type variable,
+a:data:`~typing.TypeVarTuple` is a *variadic* type variable,
 enabling *variadic* generics.
 
 This enables a wide variety of use cases.
 In particular, it allows the type of array-like structures
 in numerical computing libraries such as NumPy and TensorFlow to be
-parameterised with the array *shape*. Static type checkers will now
-be able to catch shape-related bugs in code that uses these libraries.
+parameterized with the array *shape*. Static type checkers can now catch shape-related bugs in code that uses these libraries.
 
-See :pep:`646` for more details.
+See pep:`646` for more details.
 
-(Contributed by Matthew Rahtz in :issue:`43224`, with contributions by
-Serhiy Storchaka and Jelle Zijlstra. PEP written by Mark Mendoza, Matthew
+(Contributed by Matthew Rahtz in issue:`43224`, with contributions by
+Serhiy Storchaka and Jelle Zijlstra. PEP is written by Mark Mendoza, Matthew
 Rahtz, Pradeep Kumar Srinivasan, and Vincent Siles.)
 
 
@@ -277,9 +276,8 @@ Rahtz, Pradeep Kumar Srinivasan, and Vincent Siles.)
 PEP 655: Marking individual ``TypedDict`` items as required or not-required
 ---------------------------------------------------------------------------
 
-:data:`~typing.Required` and :data:`~typing.NotRequired` provide a
-straightforward way to mark whether individual items in a
-:class:`~typing.TypedDict` must be present. Previously, this was only possible
+:data:`~typing.Required` and:data:`~typing.NotRequired` provide a
+straightforward way to mark whether individual items in a:class:`~typing.TypedDict` must be present. Previously, this was only possible
 using inheritance.
 
 All fields are still required by default,
@@ -302,9 +300,9 @@ The following definition is equivalent::
       title: Required[str]
       year: int
 
-See :pep:`655` for more details.
+See pep:`655` for more details.
 
-(Contributed by David Foster and Jelle Zijlstra in :issue:`47087`. PEP
+(Contributed by David Foster and Jelle Zijlstra in issue:`47087`. PEP
 written by David Foster.)
 
 
@@ -313,9 +311,9 @@ written by David Foster.)
 PEP 673: ``Self`` type
 ----------------------
 
-The new :data:`~typing.Self` annotation provides a simple and intuitive
+The new:data:`~typing.Self` annotation provides a simple and intuitive
 way to annotate methods that return an instance of their class. This
-behaves the same as the :class:`~typing.TypeVar`-based approach
+behaves the same as the:class:`~typing.TypeVar`-based approach
 :pep:`specified in PEP 484 <484#annotating-instance-and-class-methods>`,
 but is more concise and easier to follow.
 
@@ -342,7 +340,7 @@ or attributes of the same type as their enclosing class.
 
 See :pep:`673` for more details.
 
-(Contributed by James Hilton-Balfe in :issue:`46534`. PEP written by
+(Contributed by James Hilton-Balfe in :issue:`46534`. PEP is written by
 Pradeep Kumar Srinivasan and James Hilton-Balfe.)
 
 
@@ -379,7 +377,7 @@ For example, a SQL query function could be annotated as follows::
 
 See :pep:`675` for more details.
 
-(Contributed by Jelle Zijlstra in :issue:`47088`. PEP written by Pradeep
+(Contributed by Jelle Zijlstra in :issue:`47088`. PEP is written by Pradeep
 Kumar Srinivasan and Graham Bleaney.)
 
 
@@ -414,7 +412,7 @@ For example::
 
 See :pep:`681` for more details.
 
-(Contributed by Jelle Zijlstra in :gh:`91860`. PEP written by
+(Contributed by Jelle Zijlstra in :gh:`91860`. PEP is written by
 Erik De Bonte and Eric Traut.)
 
 
@@ -444,18 +442,17 @@ Other Language Changes
   Outer comprehensions implicitly become asynchronous in this case.
   (Contributed by Serhiy Storchaka in :issue:`33346`.)
 
-* A :exc:`TypeError` is now raised instead of an :exc:`AttributeError` in
+* A:exc:`TypeError` is now raised instead of an :exc:`AttributeError` in
   :keyword:`with` statements and :meth:`contextlib.ExitStack.enter_context`
-  for objects that do not support the :term:`context manager` protocol,
+  for objects that do not support the:term:`context manager` protocol,
   and in :keyword:`async with` statements and
   :meth:`contextlib.AsyncExitStack.enter_async_context`
   for objects not supporting the :term:`asynchronous context manager` protocol.
   (Contributed by Serhiy Storchaka in :issue:`12022` and :issue:`44471`.)
 
-* Added :meth:`object.__getstate__`, which provides the default
+* Added:meth:`object.__getstate__`, which provides the default
   implementation of the :meth:`!__getstate__` method. :mod:`copy`\ing
-  and :mod:`pickle`\ing instances of subclasses of builtin types
-  :class:`bytearray`, :class:`set`, :class:`frozenset`,
+  and :mod:`pickle`\ing instances of subclasses of builtin types:class:`bytearray`, :class:`set`, :class:`frozenset`,
   :class:`collections.OrderedDict`, :class:`collections.deque`,
   :class:`weakref.WeakSet`, and :class:`datetime.tzinfo` now copies and
   pickles instance attributes implemented as :term:`slots <__slots__>`.
@@ -465,7 +462,7 @@ Other Language Changes
 
 * Added a :option:`-P` command line option
   and a :envvar:`PYTHONSAFEPATH` environment variable,
-  which disable the automatic prepending to :data:`sys.path`
+  which disables the automatic prepending to :data:`sys.path`
   of the script's directory when running a script,
   or the current directory when using :option:`-c` and :option:`-m`.
   This ensures only stdlib and installed modules
@@ -531,7 +528,7 @@ Other CPython Implementation Changes
 
 * The output of the :option:`--help` option now fits in 50 lines/80 columns.
   Information about :ref:`Python environment variables <using-on-envvars>`
-  and :option:`-X` options is now available using the respective
+  and :option:`-X` options are now available using the respective
   :option:`--help-env` and :option:`--help-xoptions` flags,
   and with the new :option:`--help-all`.
   (Contributed by Éric Araujo in :issue:`46142`.)
@@ -542,7 +539,7 @@ Other CPython Implementation Changes
   above a limit to avoid potential denial of service attacks due to the
   algorithmic complexity. This is a mitigation for `CVE-2020-10735
   <https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10735>`_.
-  This limit can be configured or disabled by environment variable, command
+  This limit can be configured or disabled by an environment variable, command
   line flag, or :mod:`sys` APIs. See the :ref:`integer string conversion
   length limitation <int_max_str_digits>` documentation.  The default limit
   is 4300 digits in string form.
@@ -575,7 +572,7 @@ asyncio
 * Added the :class:`~asyncio.TaskGroup` class,
   an :ref:`asynchronous context manager <async-context-managers>`
   holding a group of tasks that will wait for all of them upon exit.
-  For new code this is recommended over using
+  For new code, this is recommended over using
   :func:`~asyncio.create_task` and :func:`~asyncio.gather` directly.
   (Contributed by Yury Selivanov and others in :gh:`90908`.)
 
