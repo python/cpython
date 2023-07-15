@@ -1222,13 +1222,20 @@ class CLanguage(Language):
                             f"Update {p.name!r} in {f.name!r} in {source!r} to be keyword-only."
                         )
                         parser_code.append(normalize_snippet(fr"""
-                            #if (PY_MAJOR_VERSION > {major}) || \
-                                (PY_MAJOR_VERSION == {major} && PY_MINOR_VERSION >= {minor})
+                            #if PY_MAJOR_VERSION == {major} && \
+                                PY_MINOR_VERSION == {minor} && \
+                                PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_BETA
                             #  ifdef _MSC_VER
                             #    pragma message ("{cpp_warning}")
                             #  else
                             #    warning "{cpp_warning}"
                             #  endif
+                            #elseif PY_MAJOR_VERSION > {major} || \
+                              (PY_MAJOR_VERSION == {major} && PY_MINOR_VERSION > {minor}) || \
+                              (PY_MAJOR_VERSION == {major} && \
+                               PY_MINOR_VERSION == {minor} &&\
+                               PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_GAMMA)
+                            #  #error {cpp_warning}
                             #endif
                             if (nargs == {i+1}) {{{{
                                 if (PyErr_WarnEx(PyExc_DeprecationWarning,
