@@ -1564,6 +1564,7 @@ Python/ceval.o: \
 		$(srcdir)/Python/ceval_macros.h \
 		$(srcdir)/Python/condvar.h \
 		$(srcdir)/Python/generated_cases.c.h \
+		$(srcdir)/Python/executor_cases.c.h \
 		$(srcdir)/Include/internal/pycore_opcode_metadata.h \
 		$(srcdir)/Python/opcode_targets.h
 
