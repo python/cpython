@@ -1829,13 +1829,12 @@ Argument Clinic provides syntax that makes it possible to generate code that
 deprecates positional use of optional parameters.
 For example, say we've got a module level function :py:func:`!foo.myfunc` that
 takes three :class:`int` parameters:
-*a* (positional only), *b* (optional), and *c* (keyword-only)::
+optional parameters *a* and *b*, and keyword-only parameter *c*::
 
    /*[clinic input]
    module foo
    myfunc
        a: int
-       /
        b: int
        *
        c: int
@@ -1851,7 +1850,6 @@ by adding the line ``* [from 3.14]`` right above the *b* parameter::
    module foo
    myfunc
        a: int
-       /
        * [from 3.14]
        b: int
        *
@@ -1867,3 +1865,31 @@ C preprocessor directives are also generated for emitting
 compiler warnings if the ``* [from ...]`` line has not been removed
 from the Argument Clinic input when the deprecation period is over,
 which means when the beta phase of the specified Python version kicks in.
+
+Let's return to our example and assume Python 3.14 development has entered the
+beta phase, and we forgot all about updating the Argument Clinic code for
+:py:func:`!myfunc`.
+Luckily for us, compiler warnings are now generated:
+
+.. code-block:: none
+
+   In file included from Modules/foomodule.c:139:
+   Modules/clinic/foomodule.c.h:83:8: error: Update 'b' in 'myfunc' in 'foomodule.c' to be keyword-only.
+    #  error Update 'b' in 'myfunc' in 'foomodule.c' to be keyword-only.
+       ^
+
+We now close the deprecation phase by making *b* keyword-only;
+replace the ``* [from ...]``` line above *b*
+with the ``*`` from the line above *c*::
+
+   /*[clinic input]
+   module foo
+   myfunc
+       a: int
+       *
+       b: int
+       c: int
+   [clinic start generated output]*/
+
+Finally, run ``make clinic`` to regenerate the Argument Clinic code,
+and update your unit tests to reflect the new behaviour.
