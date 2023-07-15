@@ -4653,12 +4653,13 @@ static unsigned int psk_client_callback(SSL *s,
                                         unsigned int max_psk_len)
 {
     PyGILState_STATE gstate = PyGILState_Ensure();
+    PyObject *callback = NULL;
 
     PySSLSocket *ssl = SSL_get_app_data(s);
     if (ssl == NULL || ssl->ctx == NULL) {
         goto error;
     }
-    PyObject *callback = ssl->ctx->psk_client_callback;
+    callback = ssl->ctx->psk_client_callback;
     if (callback == NULL) {
         goto error;
     }
@@ -4699,6 +4700,9 @@ static unsigned int psk_client_callback(SSL *s,
     return (unsigned int)psk_len_;
 
 error:
+    if (PyErr_Occurred()) {
+        PyErr_WriteUnraisable(callback);
+    }
     PyGILState_Release(gstate);
     return 0;
 }
@@ -4750,12 +4754,13 @@ static unsigned int psk_server_callback(SSL *s,
                                         unsigned int max_psk_len)
 {
     PyGILState_STATE gstate = PyGILState_Ensure();
+    PyObject *callback = NULL;
 
     PySSLSocket *ssl = SSL_get_app_data(s);
     if (ssl == NULL || ssl->ctx == NULL) {
         goto error;
     }
-    PyObject *callback = ssl->ctx->psk_server_callback;
+    callback = ssl->ctx->psk_server_callback;
     if (callback == NULL) {
         goto error;
     }
@@ -4792,6 +4797,9 @@ static unsigned int psk_server_callback(SSL *s,
     return (unsigned int)psk_len_;
 
 error:
+    if (PyErr_Occurred()) {
+        PyErr_WriteUnraisable(callback);
+    }
     PyGILState_Release(gstate);
     return 0;
 }
