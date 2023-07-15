@@ -1235,7 +1235,7 @@ class CLanguage(Language):
                                  (PY_MAJOR_VERSION == {major} && \
                                   PY_MINOR_VERSION == {minor} && \
                                   PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_GAMMA)
-                            #  #error {cpp_warning}
+                            #  error {cpp_warning}
                             #endif
                             if (nargs == {i+1}) {{{{
                                 if (PyErr_WarnEx(PyExc_DeprecationWarning,
