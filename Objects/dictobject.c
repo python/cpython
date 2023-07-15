@@ -5418,6 +5418,35 @@ _PyObject_MakeDictFromInstanceAttributes(PyObject *obj, PyDictValues *values)
     return make_dict_from_instance_attributes(interp, keys, values);
 }
 
+// Return 1 if the dict was dematerialized, 0 otherwise.
+int
+_PyObject_MakeInstanceAttributesFromDict(PyObject *obj, PyDictOrValues *dorv)
+{
+    assert(_PyObject_DictOrValuesPointer(obj) == dorv);
+    assert(!_PyDictOrValues_IsValues(*dorv));
+    PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(*dorv);
+    if (dict == NULL) {
+        return 0;
+    }
+    // It's likely that this dict still shares its keys (if it was materialized
+    // on request and not heavily modified):
+    assert(PyDict_CheckExact(dict));
+    assert(_PyType_HasFeature(Py_TYPE(obj), Py_TPFLAGS_HEAPTYPE));
+    if (dict->ma_keys != CACHED_KEYS(Py_TYPE(obj)) || Py_REFCNT(dict) != 1) {
+        return 0;
+    }
+    assert(dict->ma_values);
+    // We have an opportunity to do something *really* cool: dematerialize it!
+    _PyDictKeys_DecRef(dict->ma_keys);
+    _PyDictOrValues_SetValues(dorv, dict->ma_values);
+    OBJECT_STAT_INC(dict_dematerialized);
+    // Don't try this at home, kids:
+    dict->ma_keys = NULL;
+    dict->ma_values = NULL;
+    Py_DECREF(dict);
+    return 1;
+}
+
 int
 _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
                               PyObject *name, PyObject *value)

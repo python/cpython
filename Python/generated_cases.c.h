@@ -2257,27 +2257,9 @@
                 assert(Py_TYPE(owner)->tp_dictoffset < 0);
                 assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
                 PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(owner);
-                if (!_PyDictOrValues_IsValues(*dorv)) {
-                    PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(*dorv);
-                    // It's likely that this __dict__ still shares its keys (if it
-                    // was materialized on request and not heavily modified):
-                    assert(dict);
-                    assert(PyDict_CheckExact(dict));
-                    assert(_PyType_HasFeature(Py_TYPE(owner), Py_TPFLAGS_HEAPTYPE));
-                    PyHeapTypeObject *ht = (PyHeapTypeObject *)Py_TYPE(owner);
-                    DEOPT_IF(dict->ma_keys != ht->ht_cached_keys, LOAD_ATTR);
-                    assert(dict->ma_values);
-                    DEOPT_IF(Py_REFCNT(dict) != 1, LOAD_ATTR);
-                    // We have an opportunity to do something *really* cool:
-                    // un-materialize it!
-                    _PyDictKeys_DecRef(dict->ma_keys);
-                    _PyDictOrValues_SetValues(dorv, dict->ma_values);
-                    OBJECT_STAT_INC(dict_unmaterialized);
-                    // Don't try this at home, kids:
-                    dict->ma_keys = NULL;
-                    dict->ma_values = NULL;
-                    Py_DECREF(dict);
-                }
+                DEOPT_IF(!_PyDictOrValues_IsValues(*dorv) &&
+                         !_PyObject_MakeInstanceAttributesFromDict(owner, dorv),
+                         LOAD_ATTR);
                 _tmp_2 = owner;
             }
             {
@@ -3370,8 +3352,10 @@
             assert(type_version != 0);
             DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_ATTR);
             assert(self_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(self);
-            DEOPT_IF(!_PyDictOrValues_IsValues(dorv), LOAD_ATTR);
+            PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(self);
+            DEOPT_IF(!_PyDictOrValues_IsValues(*dorv) &&
+                     !_PyObject_MakeInstanceAttributesFromDict(self, dorv),
+                     LOAD_ATTR);
             PyHeapTypeObject *self_heap_type = (PyHeapTypeObject *)self_cls;
             DEOPT_IF(self_heap_type->ht_cached_keys->dk_version !=
                      keys_version, LOAD_ATTR);
@@ -3421,8 +3405,10 @@
             assert(type_version != 0);
             DEOPT_IF(self_cls->tp_version_tag != type_version, LOAD_ATTR);
             assert(self_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(self);
-            DEOPT_IF(!_PyDictOrValues_IsValues(dorv), LOAD_ATTR);
+            PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(self);
+            DEOPT_IF(!_PyDictOrValues_IsValues(*dorv) &&
+                     !_PyObject_MakeInstanceAttributesFromDict(self, dorv),
+                     LOAD_ATTR);
             PyHeapTypeObject *self_heap_type = (PyHeapTypeObject *)self_cls;
             DEOPT_IF(self_heap_type->ht_cached_keys->dk_version !=
                      keys_version, LOAD_ATTR);
