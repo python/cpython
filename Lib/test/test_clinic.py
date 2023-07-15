@@ -807,6 +807,36 @@ class ClinicParserTest(TestCase):
                 out = self.parse_function_should_fail(block)
                 self.assertIn(msg, out)
 
+    def test_depr_star_invalid_format_1(self):
+        out = self.parse_function_should_fail("""
+            module foo
+            foo.bar
+                this: int
+                * [from 3]
+            Docstring.
+        """)
+        expected = (
+            "Error on line 0:\n"
+            "Function 'bar': '* [from ...]' format expected to be "
+            "'<major.minor>', where 'major' and 'minor' are digits.\n"
+        )
+        self.assertEqual(out, expected)
+
+    def test_depr_star_invalid_format_2(self):
+        out = self.parse_function_should_fail("""
+            module foo
+            foo.bar
+                this: int
+                * [from a.b]
+            Docstring.
+        """)
+        expected = (
+            "Error on line 0:\n"
+            "Function 'bar', '* [from <major.minor>]': "
+            "'major' and 'minor' must be digits, not 'a' and 'b'\n"
+        )
+        self.assertEqual(out, expected)
+
     def test_parameters_required_after_depr_star(self):
         out = self.parse_function_should_fail("""
             module foo
@@ -827,7 +857,7 @@ class ClinicParserTest(TestCase):
                 * [from 3.14]
             Docstring.
         """)
-        msg = "Function bar: '* [from ...]' must come before '*'"
+        msg = "Function 'bar': '* [from ...]' must come before '*'"
         self.assertIn(msg, out)
 
     def test_single_slash(self):

@@ -1216,8 +1216,8 @@ class CLanguage(Language):
                     if p.deprecated_positional:
                         arg = p.name
                         whence = p.deprecated_positional
-                        major, minor = whence.split(".")  # FIXME: validate format during parsing
-                        source = self.cpp.filename
+                        major, minor = whence.split(".")
+                        source = os.path.basename(self.cpp.filename)
                         cpp_warning = (
                             f"Update {p.name!r} in {f.name!r} in {source!r} to be keyword-only."
                         )
@@ -5162,10 +5162,22 @@ class DSLParser:
     def parse_deprecated_positional(self, whence: str):
         assert isinstance(self.function, Function)
 
+        if "." not in whence:
+            fail(
+                f"Function {self.function.name!r}: '* [from ...]' format "
+                "expected to be '<major.minor>', where 'major' and 'minor' "
+                "are digits."
+            )
+        major, minor = whence.split(".")
+        if not major.isdigit() or not minor.isdigit():
+            fail(
+                f"Function {self.function.name!r}, '* [from <major.minor>]': "
+                f"'major' and 'minor' must be digits, not {major!r} and {minor!r}"
+            )
         if self.keyword_only:
-            fail(f"Function {self.function.name}: '* [from ...]' must come before '*'")
+            fail(f"Function {self.function.name!r}: '* [from ...]' must come before '*'")
         if self.deprecated_positional:
-            fail(f"Function {self.function.name} uses 'x' more than once.")
+            fail(f"Function {self.function.name!r} uses 'x' more than once.")
         self.deprecated_positional = whence
 
     def parse_special_symbol(self, symbol: str) -> None:
