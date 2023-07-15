@@ -191,7 +191,7 @@ _opcode.has_exc -> bool
 
   opcode: int
 
-Return True if the opcode sets and exception handler, False otherwise.
+Return True if the opcode sets an exception handler, False otherwise.
 [clinic start generated code]*/
 
 static int
