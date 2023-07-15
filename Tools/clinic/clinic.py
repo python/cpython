@@ -1216,18 +1216,26 @@ class CLanguage(Language):
                     if p.deprecated_positional:
                         whence = p.deprecated_positional
                         major, minor = whence.split(".")  # FIXME: validate format during parsing
-                        msg = (
+                        deprecation_message = (
                             f"Using {p.name!r} as a positional argument is deprecated. "
                             f"It will become a keyword-only argument in Python {whence}."
                         )
-                        parser_code.append(normalize_snippet(f"""
-                            #if (PY_MAJOR_VERSION > {major}) ||
+                        cpp_warning = (
+                            f"Using {p.name!r} as a positional argument is now disallowed. "
+                            f"Please update the clinic code in {self.cpp.filename!r}."
+                        )
+                        parser_code.append(normalize_snippet(fr"""
+                            #if (PY_MAJOR_VERSION > {major}) || \
                                 (PY_MAJOR_VERSION == {major} && PY_MINOR_VERSION >= {minor})
-                            #  error "Convert '{p.name}' to a keyword-argument"
+                            #  ifdef _MSC_VER
+                            #    pragma message ("{cpp_warning}")
+                            #  else
+                            #    warning "{cpp_warning}"
+                            #  endif
                             #endif
                             if (nargs == {i+1}) {{{{
                                 if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                                    "{msg}", 2))
+                                    "{deprecation_message}", 2))
                                 {{{{
                                     goto exit;
                                 }}}}
