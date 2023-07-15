@@ -4778,9 +4778,9 @@ static unsigned int psk_server_callback(SSL *s,
         goto error;
     }
 
-    const char *psk_;
+    char *psk_;
     Py_ssize_t psk_len_;
-    if (!PyArg_Parse(result, "y#", &psk_, &psk_len_)) {
+    if (PyBytes_AsStringAndSize(result, &psk_, &psk_len_) < 0) {
         Py_DECREF(result);
         goto error;
     }
