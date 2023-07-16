@@ -229,6 +229,7 @@
 
         TARGET(TO_BOOL) {
             PREDICTED(TO_BOOL);
+            static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
             PyObject *value = stack_pointer[-1];
             PyObject *res;
             #if ENABLE_SPECIALIZATION
@@ -320,7 +321,6 @@
         }
 
         TARGET(TO_BOOL_ALWAYS_TRUE) {
-            static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
             PyObject *value = stack_pointer[-1];
             PyObject *res;
             uint32_t version = read_u32(&next_instr[1].cache);
@@ -585,6 +585,7 @@
 
         TARGET(BINARY_SUBSCR) {
             PREDICTED(BINARY_SUBSCR);
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_SUBSCR == 1, "incorrect cache size");
             PyObject *sub = stack_pointer[-1];
             PyObject *container = stack_pointer[-2];
             PyObject *res;
@@ -698,7 +699,6 @@
         }
 
         TARGET(BINARY_SUBSCR_DICT) {
-            static_assert(INLINE_CACHE_ENTRIES_BINARY_SUBSCR == 1, "incorrect cache size");
             PyObject *sub = stack_pointer[-1];
             PyObject *dict = stack_pointer[-2];
             PyObject *res;
@@ -769,6 +769,7 @@
 
         TARGET(STORE_SUBSCR) {
             PREDICTED(STORE_SUBSCR);
+            static_assert(INLINE_CACHE_ENTRIES_STORE_SUBSCR == 1, "incorrect cache size");
             PyObject *sub = stack_pointer[-1];
             PyObject *container = stack_pointer[-2];
             PyObject *v = stack_pointer[-3];
@@ -822,7 +823,6 @@
         }
 
         TARGET(STORE_SUBSCR_DICT) {
-            static_assert(INLINE_CACHE_ENTRIES_STORE_SUBSCR == 1, "incorrect cache size");
             PyObject *sub = stack_pointer[-1];
             PyObject *dict = stack_pointer[-2];
             PyObject *value = stack_pointer[-3];
@@ -1097,6 +1097,7 @@
 
         TARGET(SEND) {
             PREDICTED(SEND);
+            static_assert(INLINE_CACHE_ENTRIES_SEND == 1, "incorrect cache size");
             PyObject *v = stack_pointer[-1];
             PyObject *receiver = stack_pointer[-2];
             PyObject *retval;
@@ -1152,7 +1153,6 @@
         }
 
         TARGET(SEND_GEN) {
-            static_assert(INLINE_CACHE_ENTRIES_SEND == 1, "incorrect cache size");
             PyObject *v = stack_pointer[-1];
             PyObject *receiver = stack_pointer[-2];
             DEOPT_IF(tstate->interp->eval_frame, SEND);
@@ -1349,6 +1349,7 @@
 
         TARGET(UNPACK_SEQUENCE) {
             PREDICTED(UNPACK_SEQUENCE);
+            static_assert(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE == 1, "incorrect cache size");
             PyObject *seq = stack_pointer[-1];
             #if ENABLE_SPECIALIZATION
             _PyUnpackSequenceCache *cache = (_PyUnpackSequenceCache *)next_instr;
@@ -1371,7 +1372,6 @@
         }
 
         TARGET(UNPACK_SEQUENCE_TWO_TUPLE) {
-            static_assert(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE == 1, "incorrect cache size");
             PyObject *seq = stack_pointer[-1];
             PyObject **values = stack_pointer - (1);
             DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
@@ -1434,6 +1434,7 @@
 
         TARGET(STORE_ATTR) {
             PREDICTED(STORE_ATTR);
+            static_assert(INLINE_CACHE_ENTRIES_STORE_ATTR == 4, "incorrect cache size");
             PyObject *owner = stack_pointer[-1];
             PyObject *v = stack_pointer[-2];
             uint16_t counter = read_u16(&next_instr[0].cache);
@@ -1601,6 +1602,7 @@
 
         TARGET(LOAD_GLOBAL) {
             PREDICTED(LOAD_GLOBAL);
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_GLOBAL == 4, "incorrect cache size");
             PyObject *null = NULL;
             PyObject *v;
             #if ENABLE_SPECIALIZATION
@@ -2058,6 +2060,7 @@
 
         TARGET(LOAD_SUPER_ATTR) {
             PREDICTED(LOAD_SUPER_ATTR);
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR == 1, "incorrect cache size");
             PyObject *self = stack_pointer[-1];
             PyObject *class = stack_pointer[-2];
             PyObject *global_super = stack_pointer[-3];
@@ -2120,7 +2123,6 @@
         }
 
         TARGET(LOAD_SUPER_ATTR_ATTR) {
-            static_assert(INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR == 1, "incorrect cache size");
             PyObject *self = stack_pointer[-1];
             PyObject *class = stack_pointer[-2];
             PyObject *global_super = stack_pointer[-3];
@@ -2181,6 +2183,7 @@
 
         TARGET(LOAD_ATTR) {
             PREDICTED(LOAD_ATTR);
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             PyObject *owner = stack_pointer[-1];
             PyObject *res2 = NULL;
             PyObject *res;
@@ -2456,7 +2459,6 @@
         }
 
         TARGET(STORE_ATTR_INSTANCE_VALUE) {
-            static_assert(INLINE_CACHE_ENTRIES_STORE_ATTR == 4, "incorrect cache size");
             PyObject *owner = stack_pointer[-1];
             PyObject *value = stack_pointer[-2];
             uint32_t type_version = read_u32(&next_instr[1].cache);
@@ -2552,6 +2554,7 @@
 
         TARGET(COMPARE_OP) {
             PREDICTED(COMPARE_OP);
+            static_assert(INLINE_CACHE_ENTRIES_COMPARE_OP == 1, "incorrect cache size");
             PyObject *right = stack_pointer[-1];
             PyObject *left = stack_pointer[-2];
             PyObject *res;
@@ -2583,7 +2586,6 @@
         }
 
         TARGET(COMPARE_OP_FLOAT) {
-            static_assert(INLINE_CACHE_ENTRIES_COMPARE_OP == 1, "incorrect cache size");
             PyObject *right = stack_pointer[-1];
             PyObject *left = stack_pointer[-2];
             PyObject *res;
@@ -2979,6 +2981,7 @@
 
         TARGET(FOR_ITER) {
             PREDICTED(FOR_ITER);
+            static_assert(INLINE_CACHE_ENTRIES_FOR_ITER == 1, "incorrect cache size");
             PyObject *iter = stack_pointer[-1];
             PyObject *next;
             #if ENABLE_SPECIALIZATION
@@ -3486,6 +3489,7 @@
 
         TARGET(CALL) {
             PREDICTED(CALL);
+            static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             PyObject **args = (stack_pointer - oparg);
             PyObject *callable = stack_pointer[-(1 + oparg)];
             PyObject *method = stack_pointer[-(2 + oparg)];
@@ -3580,7 +3584,6 @@
         }
 
         TARGET(CALL_BOUND_METHOD_EXACT_ARGS) {
-            static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             PyObject *callable = stack_pointer[-(1 + oparg)];
             PyObject *method = stack_pointer[-(2 + oparg)];
             DEOPT_IF(method != NULL, CALL);
@@ -4452,6 +4455,7 @@
 
         TARGET(BINARY_OP) {
             PREDICTED(BINARY_OP);
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
             PyObject *rhs = stack_pointer[-1];
             PyObject *lhs = stack_pointer[-2];
             PyObject *res;

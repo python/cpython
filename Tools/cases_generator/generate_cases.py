@@ -770,7 +770,6 @@ class Analyzer:
 
             match thing:
                 case parser.InstDef(name=name):
-                    breakpoint()
                     if name in self.instrs:
                         if not thing.override:
                             raise psr.make_syntax_error(
@@ -786,7 +785,6 @@ class Analyzer:
                             thing_first_token,
                         )
                     self.instrs[name] = Instruction(thing)
-                    breakpoint()
                     instrs_idx[name] = len(self.everything)
                     self.everything.append(thing)
                 case parser.Macro(name):
