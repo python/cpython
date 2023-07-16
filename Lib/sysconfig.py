@@ -466,7 +466,7 @@ def _get_sysconfigdata_name():
     )
 
 def _print_config_dict(d, stream):
-    print (" {", file=stream)
+    print ("{", file=stream)
     for k, v in sorted(d.items()):
         print(f"    {k!r}: {v!r},", file=stream)
     print ("}", file=stream)
