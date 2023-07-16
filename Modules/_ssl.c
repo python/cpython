@@ -4741,13 +4741,12 @@ _ssl__SSLContext_set_psk_client_callback_impl(PySSLContext *self,
             PyErr_SetString(PyExc_TypeError, "callback must be callable");
             return NULL;
         }
-        Py_INCREF(callback);
         ssl_callback = psk_client_callback;
     }
 
-    if (self->psk_client_callback != NULL) {
-        Py_DECREF(self->psk_client_callback);
-    }
+    Py_XDECREF(self->psk_client_callback);
+    Py_XINCREF(callback);
+
     self->psk_client_callback = callback;
     SSL_CTX_set_psk_client_callback(self->ctx, ssl_callback);
 
@@ -4845,13 +4844,12 @@ _ssl__SSLContext_set_psk_server_callback_impl(PySSLContext *self,
             PyErr_SetString(PyExc_TypeError, "callback must be callable");
             return NULL;
         }
-        Py_INCREF(callback);
         ssl_callback = psk_server_callback;
     }
 
-    if (self->psk_server_callback != NULL) {
-        Py_DECREF(self->psk_server_callback);
-    }
+    Py_XDECREF(self->psk_server_callback);
+    Py_XINCREF(callback);
+
     self->psk_server_callback = callback;
     SSL_CTX_set_psk_server_callback(self->ctx, ssl_callback);
     SSL_CTX_use_psk_identity_hint(self->ctx, identity_hint);
