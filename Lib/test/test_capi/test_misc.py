@@ -2532,6 +2532,36 @@ class TestUops(unittest.TestCase):
         uops = {opname for opname, _ in ex}
         self.assertIn("_POP_JUMP_IF_FALSE", uops)
 
+    def test_pop_jump_if_none(self):
+        def testfunc(a):
+            for x in a:
+                if x is None:
+                    x = 0
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            testfunc([1, 2, 3])
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _ in ex}
+        self.assertIn("_POP_JUMP_IF_TRUE", uops)
+
+    def test_pop_jump_if_not_none(self):
+        def testfunc(a):
+            for x in a:
+                if x is not None:
+                    x = 0
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            testfunc([1, 2, 3])
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _ in ex}
+        self.assertIn("_POP_JUMP_IF_FALSE", uops)
+
     def test_pop_jump_if_true(self):
         def testfunc(n):
             i = 0
