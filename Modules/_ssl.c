@@ -4668,6 +4668,10 @@ static unsigned int psk_client_callback(SSL *s,
             PyUnicode_DecodeUTF8(hint, strlen(hint), "strict") :
             Py_NewRef(Py_None);
     if (hint_str == NULL) {
+        /* The remote side has sent an invalid UTF-8 string
+         * (breaking the standard), drop the connection without
+         * raising a decode exception. */
+        PyErr_Clear();
         goto error;
     }
     PyObject *result = PyObject_CallFunctionObjArgs(callback, hint_str, NULL);
@@ -4769,6 +4773,10 @@ static unsigned int psk_server_callback(SSL *s,
             PyUnicode_DecodeUTF8(identity, strlen(identity), "strict") :
             Py_NewRef(Py_None);
     if (identity_str == NULL) {
+        /* The remote side has sent an invalid UTF-8 string
+         * (breaking the standard), drop the connection without
+         * raising a decode exception. */
+        PyErr_Clear();
         goto error;
     }
     PyObject *result = PyObject_CallFunctionObjArgs(callback, identity_str, NULL);
