@@ -250,7 +250,7 @@ class Formatter:
             self.emit(f"Py_XSETREF({dst.name}, {cast}{src.name});")
         else:
             stmt = f"{dst.name} = {cast}{src.name};"
-            if src.cond:
+            if src.cond and src.cond != "1":
                 if src.cond == "0":
                     # It will not be executed
                     return

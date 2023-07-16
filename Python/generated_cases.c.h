@@ -3362,7 +3362,7 @@
             res = self;
             STACK_GROW(1);
             stack_pointer[-1] = res;
-            if (1) { stack_pointer[-(1 + 1)] = res2; }
+            stack_pointer[-(1 + 1)] = res2;
             next_instr += 9;
             DISPATCH();
         }
@@ -3384,7 +3384,7 @@
             res = self;
             STACK_GROW(1);
             stack_pointer[-1] = res;
-            if (1) { stack_pointer[-(1 + 1)] = res2; }
+            stack_pointer[-(1 + 1)] = res2;
             next_instr += 9;
             DISPATCH();
         }
@@ -3456,7 +3456,7 @@
             res = self;
             STACK_GROW(1);
             stack_pointer[-1] = res;
-            if (1) { stack_pointer[-(1 + 1)] = res2; }
+            stack_pointer[-(1 + 1)] = res2;
             next_instr += 9;
             DISPATCH();
         }
