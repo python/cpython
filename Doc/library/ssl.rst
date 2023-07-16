@@ -1998,8 +1998,10 @@ to speed up repeated connections from the same clients.
    The ``hint`` parameter is an optional identity hint sent by the server.
    The return value is a tuple in the form (client-identity, psk).
    Client-identity is an optional string which may be used by the server to
-   select a corresponding PSK for the client. PSK is a
-   :term:`bytes-like object` representing the pre-shared key.
+   select a corresponding PSK for the client. The string must be less than or
+   equal to ``256`` octets when UTF-8 encoded. PSK is a
+   :term:`bytes-like object` representing the pre-shared key. Return a zero
+   length PSK to reject the connection.
 
    Setting ``callback`` to :const:`None` removes any existing callback.
 
@@ -2042,10 +2044,13 @@ to speed up repeated connections from the same clients.
    The ``identity`` parameter is an optional identity sent by the client which can
    be used to select a corresponding PSK.
    The return value is a :term:`bytes-like object` representing the pre-shared key.
+   Return a zero length PSK to reject the connection.
 
    Setting ``callback`` to :const:`None` removes any existing callback.
 
-   The parameter ``identity_hint`` is an optional identity hint sent to the client.
+   The parameter ``identity_hint`` is an optional identity hint string sent to
+   the client. The string must be less than or equal to ``256`` octets when
+   UTF-8 encoded.
 
    .. note::
       When using TLS 1.3 the ``identity_hint`` parameter is not sent to the client.
