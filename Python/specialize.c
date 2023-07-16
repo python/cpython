@@ -672,7 +672,7 @@ specialize_dict_access(
     }
     _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
     PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(owner);
-    if (_PyDictOrValues_IsValues(*dorv) || 
+    if (_PyDictOrValues_IsValues(*dorv) ||
         _PyObject_MakeInstanceAttributesFromDict(owner, dorv))
     {
         // Virtual dictionary
