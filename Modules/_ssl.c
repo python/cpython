@@ -3232,6 +3232,8 @@ context_clear(PySSLContext *self)
     Py_CLEAR(self->set_sni_cb);
     Py_CLEAR(self->msg_cb);
     Py_CLEAR(self->keylog_filename);
+    Py_CLEAR(self->psk_client_callback);
+    Py_CLEAR(self->psk_server_callback);
     if (self->keylog_bio != NULL) {
         PySSL_BEGIN_ALLOW_THREADS
         BIO_free_all(self->keylog_bio);
