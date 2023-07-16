@@ -1,2 +1,3 @@
-Bug fixed: Inheritance from AbstractContextManager and AbstractAsyncContextManager
+Added ``__slots__`` to :class:`contextlib.AbstractContextManager` and :class:`context.AbstractAsyncContextManager`
+so that child classes can use ``__slots__``.
 specifying slots in the child-class does not lead to the immutability of child-class instance.
