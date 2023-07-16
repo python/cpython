@@ -2649,6 +2649,19 @@ class TestUops(unittest.TestCase):
         # Verification that the jump goes past END_FOR
         # is done by manual inspection of the output
 
+    def test_list_edge_case(self):
+        def testfunc(it):
+            for x in it:
+                pass
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            a = [1, 2, 3]
+            it = iter(a)
+            testfunc(it)
+            a.append(4)
+            with self.assertRaises(StopIteration):
+                next(it)
 
 if __name__ == "__main__":
     unittest.main()

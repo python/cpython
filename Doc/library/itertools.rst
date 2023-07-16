@@ -1045,6 +1045,8 @@ The following recipes have a more mathematical flavor:
    def factor(n):
        "Prime factors of n."
        # factor(99) --> 3 3 11
+       # factor(1_000_000_000_000_007) --> 47 59 360620266859
+       # factor(1_000_000_000_000_403) --> 1000000000000403
        for prime in sieve(math.isqrt(n) + 1):
            while True:
                quotient, remainder = divmod(n, prime)
