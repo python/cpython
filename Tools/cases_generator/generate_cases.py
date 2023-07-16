@@ -438,7 +438,7 @@ class Instruction:
         """Write one instruction, sans prologue and epilogue."""
         # Write a static assertion that a family's cache size is correct
         if family := self.family:
-            if self.name == family.members[0]:
+            if self.name == family.name:
                 if cache_size := family.size:
                     out.emit(
                         f"static_assert({cache_size} == "
@@ -831,7 +831,7 @@ class Analyzer:
     def map_families(self) -> None:
         """Link instruction names back to their family, if they have one."""
         for family in self.families.values():
-            for member in family.members:
+            for member in [family.name] + family.members:
                 if member_instr := self.instrs.get(member):
                     if member_instr.family not in (family, None):
                         self.error(
@@ -1535,7 +1535,7 @@ class Analyzer:
             if (
                 last_instr
                 and (family := last_instr.family)
-                and mac.name == family.members[0]
+                and mac.name == family.name
                 and (cache_size := family.size)
             ):
                 self.out.emit(
