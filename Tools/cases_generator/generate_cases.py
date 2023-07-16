@@ -1533,8 +1533,7 @@ class Analyzer:
                 self.out.emit(f"next_instr += {cache_adjust};")
 
             if (
-                last_instr
-                and (family := last_instr.family)
+                (family := self.families.get(mac.name))
                 and mac.name == family.name
                 and (cache_size := family.size)
             ):
