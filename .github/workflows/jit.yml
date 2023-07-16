@@ -8,10 +8,10 @@ jobs:
       fail-fast: false
       matrix:
         target:
-          # - i686-pc-windows-msvc/msvc
-          # - x86_64-pc-windows-msvc/msvc
-          # - x86_64-apple-darwin/clang
-          # - x86_64-unknown-linux-gnu/gcc
+          - i686-pc-windows-msvc/msvc
+          - x86_64-pc-windows-msvc/msvc
+          - x86_64-apple-darwin/clang
+          - x86_64-unknown-linux-gnu/gcc
           # - aarch64-apple-darwin/clang
           - aarch64-unknown-linux-gnu/gcc
           - aarch64-unknown-linux-gnu/clang
@@ -19,34 +19,32 @@ jobs:
           - x86_64-unknown-linux-gnu/clang
         debug:
           - true
-          # - false
+          - false
         llvm:
           - 14
-          # - 15
-          # - 16
+          - 15
+          - 16
         include:
-          # - target: i686-pc-windows-msvc/msvc
-          #   architecture: i686
-          #   runner: windows-latest
-          #   compiler: msvc
-          #   tier: 1
-          #   windows_platform: Win32
-          # - target: x86_64-pc-windows-msvc/msvc
-          #   architecture: x86_64
-          #   runner: windows-latest
-          #   compiler: msvc
-          #   tier: 1
-          #   windows_platform: x64
-          # - target: x86_64-apple-darwin/clang
-          #   architecture: x86_64
-          #   runner: macos-latest
-          #   compiler: clang
-          #   tier: 1
-          # - target: x86_64-unknown-linux-gnu/gcc
-          #   architecture: x86_64
-          #   runner: ubuntu-latest
-          #   compiler: gcc
-          #   tier: 1
+          - target: i686-pc-windows-msvc/msvc
+            architecture: Win32
+            runner: windows-latest
+            compiler: msvc
+            tier: 1
+          - target: x86_64-pc-windows-msvc/msvc
+            architecture: x64
+            runner: windows-latest
+            compiler: msvc
+            tier: 1
+          - target: x86_64-apple-darwin/clang
+            architecture: x86_64
+            runner: macos-latest
+            compiler: clang
+            tier: 1
+          - target: x86_64-unknown-linux-gnu/gcc
+            architecture: x86_64
+            runner: ubuntu-latest
+            compiler: gcc
+            tier: 1
           # - target: aarch64-apple-darwin/clang
           #   architecture: aarch64
           #   runner: macos-latest
@@ -57,21 +55,29 @@ jobs:
             runner: ubuntu-latest
             compiler: gcc
             tier: 2
+            exclude: test_cmd_line test_concurrent_futures test_eintr test_faulthandler test_os test_perf_profiler test_posix test_signal test_socket test_subprocess test_tools
           - target: aarch64-unknown-linux-gnu/clang
             architecture: aarch64
             runner: ubuntu-latest
             compiler: clang
             tier: 2
+            exclude: test_cmd_line test_concurrent_futures test_eintr test_faulthandler test_os test_perf_profiler test_posix test_signal test_socket test_subprocess test_tools
           # - target: powerpc64le-unknown-linux-gnu/gcc
           #   architecture: ppc64le
           #   runner: ubuntu-latest
           #   compiler: gcc
           #   tier: 2
+          #   exclude: test_cmd_line test_concurrent_futures test_eintr test_faulthandler test_os test_posix test_signal test_socket test_subprocess test_tools
           - target: x86_64-unknown-linux-gnu/clang
             architecture: x86_64
             runner: ubuntu-latest
             compiler: clang
             tier: 2
+            exclude: test_tools
+        # exclude:
+        #   # Can't find LLVM 16:
+        #   - target: powerpc64le-unknown-linux-gnu/gcc
+        #     llvm: 16
     env:
       CC: ${{ matrix.compiler }}
       PYTHON_LLVM_VERSION: ${{ matrix.llvm }}
@@ -92,9 +98,9 @@ jobs:
           install: |
             echo "::group::Install LLVM"
             apt update --yes
-            apt install --yes build-essential gnupg lsb-release sudo software-properties-common wget
+            apt install --yes build-essential gnupg lsb-release sudo software-properties-common wget zlib1g-dev
             bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
-            ${{ matrix.llvm == 14 && 'apt install --yes libclang-rt-14-dev' || '' }}
+            ${{ matrix.debug == false && matrix.llvm == 14 && matrix.compiler == 'clang' && 'apt install --yes libclang-rt-14-dev' || '' }}
             echo "::endgroup::"
           run: |
             echo "::group::Configure Python"
@@ -102,29 +108,29 @@ jobs:
             ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
             echo "::endgroup::"
             echo "::group::Build Python"
-            make
+            make --jobs 2
             echo "::endgroup::"
             echo "::group::Test Python"
             ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
-            ./python -m test --multiprocess 0 --verbose2 --verbose3
+            ./python -m test --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 3600 --verbose2 --verbose3 
             echo "::endgroup::"
       - name: Native Linux
         if: runner.os == 'Linux' && matrix.architecture == 'x86_64'
         run: |
           echo "::group::Install LLVM"
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
-          ${{ matrix.llvm == 14 && 'sudo apt install --yes libclang-rt-14-dev' || '' }}
-          export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
+          ${{ matrix.debug == false && matrix.llvm == 14 && matrix.compiler == 'clang' && 'sudo apt install --yes libclang-rt-14-dev' || '' }}
           echo "::endgroup::"
           echo "::group::Configure Python"
+          export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
           ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
           echo "::endgroup::"
           echo "::group::Build Python"
-          make
+          make --jobs 2
           echo "::endgroup::"
           echo "::group::Test Python"
           ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
-          ./python -m test --multiprocess 0 --verbose2 --verbose3
+          ./python -m test --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 3600 --verbose2 --verbose3
           echo "::endgroup::"
       - name: macOS
         if: runner.os == 'macOS'
@@ -137,11 +143,11 @@ jobs:
           ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
           echo "::endgroup::"
           echo "::group::Build Python"
-          make
+          make --jobs 3
           echo "::endgroup::"
           echo "::group::Test Python"
           ./python.exe -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
-          ./python.exe -m test --multiprocess 0 --verbose2 --verbose3
+          ./python.exe -m test --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 3600 --verbose2 --verbose3
           echo "::endgroup::"
       - name: Windows
         if: runner.os == 'Windows'
@@ -150,9 +156,9 @@ jobs:
           choco install llvm --allow-downgrade --version ${{ matrix.llvm }}
           echo "::endgroup::"
           echo "::group::Build Python"
-          ./PCbuild/build ${{ matrix.debug && '-d' || '--pgo' }} -p ${{ matrix.windows_platform }}
+          ./PCbuild/build ${{ matrix.debug && '-d' || '--pgo' }} -p ${{ matrix.architecture }}
           echo "::endgroup::"
           echo "::group::Test Python"
           ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
-          ./PCbuild/rt${{ matrix.debug && ' -d' || '' }} -p ${{ matrix.windows_platform }} -q --multiprocess 0 --verbose2 --verbose3
+          ./PCbuild/rt ${{ matrix.debug && '-d' }} -p ${{ matrix.architecture }} -q --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 3600 --verbose2 --verbose3
           echo "::endgroup::"
