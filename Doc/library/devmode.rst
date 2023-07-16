@@ -198,7 +198,7 @@ descriptor" error when finalizing the file object:
 
 .. code-block:: shell-session
 
-    $ python script.py
+    $ python -X dev script.py
     import os
     script.py:10: ResourceWarning: unclosed file <_io.TextIOWrapper name='script.py' mode='r' encoding='UTF-8'>
       main()
