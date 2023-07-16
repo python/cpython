@@ -2377,14 +2377,14 @@ _Py_find_basename(const wchar_t *filename)
    path, which will be within the original buffer. Guaranteed to not
    make the path longer, and will not fail. 'size' is the length of
    the path, if known. If -1, the first null character will be assumed
-   to be the end of the path. 'norm_size' is a pointer to a variable
-   that will be set to the length of the resulting normalized path. */
+   to be the end of the path. 'normsize' will be set to contain the 
+   length of the resulting normalized path. */
 wchar_t *
-_Py_normpathAndSize(wchar_t *path, Py_ssize_t size, Py_ssize_t *norm_size)
+_Py_normpathAndSize(wchar_t *path, Py_ssize_t size, Py_ssize_t *normsize)
 {
     assert(path != NULL);
     if (!path[0] && size < 0 || size == 0) {
-        *norm_size = 0;
+        *normsize = 0;
         return path;
     }
     wchar_t *pEnd = size >= 0 ? &path[size] : NULL;
@@ -2496,7 +2496,7 @@ _Py_normpathAndSize(wchar_t *path, Py_ssize_t size, Py_ssize_t *norm_size)
     } else {
         --p2;
     }
-    *norm_size = p2 - path + 1;
+    *normsize = p2 - path + 1;
 #undef SEP_OR_END
 #undef IS_SEP
 #undef IS_END
