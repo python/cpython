@@ -9,7 +9,11 @@ __all__ = ["cmp_op", "hasarg", "hasconst", "hasname", "hasjrel", "hasjabs",
            "stack_effect", "HAVE_ARGUMENT", "EXTENDED_ARG"]
 
 from _opcode import stack_effect
-from _opcode_metadata import _specializations, _specialized_instructions
+
+import sys
+# The build uses older versions of Python which do not have _opcode_metadata
+if sys.version_info[:2] >= (3, 13):
+    from _opcode_metadata import _specializations, _specialized_instructions
 
 cmp_op = ('<', '<=', '==', '!=', '>', '>=')
 
