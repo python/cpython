@@ -438,7 +438,7 @@ class Instruction:
         """Write one instruction, sans prologue and epilogue."""
         # Write a static assertion that a family's cache size is correct
         if family := self.family:
-            if self.name == family.members[0]:
+            if self.name == family.name:
                 if cache_size := family.size:
                     out.emit(
                         f"static_assert({cache_size} == "
@@ -831,7 +831,7 @@ class Analyzer:
     def map_families(self) -> None:
         """Link instruction names back to their family, if they have one."""
         for family in self.families.values():
-            for member in family.members:
+            for member in [family.name] + family.members:
                 if member_instr := self.instrs.get(member):
                     if member_instr.family not in (family, None):
                         self.error(
@@ -855,8 +855,11 @@ class Analyzer:
         - All members must have the same cache, input and output effects
         """
         for family in self.families.values():
-            if len(family.members) < 2:
-                self.error(f"Family {family.name!r} has insufficient members", family)
+            if family.name not in self.macro_instrs and family.name not in self.instrs:
+                self.error(
+                    f"Family {family.name!r} has unknown instruction {family.name!r}",
+                    family,
+                )
             members = [
                 member
                 for member in family.members
@@ -867,10 +870,8 @@ class Analyzer:
                 self.error(
                     f"Family {family.name!r} has unknown members: {unknown}", family
                 )
-            if len(members) < 2:
-                continue
-            expected_effects = self.effect_counts(members[0])
-            for member in members[1:]:
+            expected_effects = self.effect_counts(family.name)
+            for member in members:
                 member_effects = self.effect_counts(member)
                 if member_effects != expected_effects:
                     self.error(
@@ -1311,11 +1312,10 @@ class Analyzer:
             self.out.emit("")
             self.out.emit("_specializations = {")
             for name, family in self.families.items():
-                assert len(family.members) > 1
                 with self.out.indent():
-                    self.out.emit(f"\"{family.members[0]}\": [")
+                    self.out.emit(f"\"{family.name}\": [")
                     with self.out.indent():
-                        for m in family.members[1:]:
+                        for m in family.members:
                             self.out.emit(f"\"{m}\",")
                     self.out.emit(f"],")
             self.out.emit("}")
@@ -1551,9 +1551,8 @@ class Analyzer:
                 self.out.emit(f"next_instr += {cache_adjust};")
 
             if (
-                last_instr
-                and (family := last_instr.family)
-                and mac.name == family.members[0]
+                (family := self.families.get(mac.name))
+                and mac.name == family.name
                 and (cache_size := family.size)
             ):
                 self.out.emit(
