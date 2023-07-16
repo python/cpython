@@ -6,11 +6,9 @@ operate on bytecodes (e.g. peephole optimizers).
 
 __all__ = ["cmp_op", "hasarg", "hasconst", "hasname", "hasjrel", "hasjabs",
            "haslocal", "hascompare", "hasfree", "hasexc", "opname", "opmap",
-           "HAVE_ARGUMENT", "EXTENDED_ARG"]
+           "stack_effect", "HAVE_ARGUMENT", "EXTENDED_ARG"]
 
 from _opcode import stack_effect
-__all__.append('stack_effect')
-
 from _opcode_metadata import _specializations, _specialized_instructions
 
 cmp_op = ('<', '<=', '==', '!=', '>', '>=')
