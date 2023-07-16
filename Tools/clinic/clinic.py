@@ -5527,7 +5527,7 @@ class DSLParser:
 #   "clinic", handles the Clinic DSL
 #   "python", handles running Python code
 #
-parsers: dict[str, type[Parser]] = {
+parsers: dict[str, Callable[[Clinic], Parser]] = {
     'clinic': DSLParser,
     'python': PythonParser,
 }
