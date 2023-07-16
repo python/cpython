@@ -5536,6 +5536,40 @@ class TestResourceTracker(unittest.TestCase):
         with self.assertRaises(ValueError):
             resource_tracker.register(too_long_name_resource, rtype)
 
+    def _test_resource_tracker_leak_resources(self, context, delete_queue):
+        from multiprocessing.resource_tracker import _resource_tracker
+        _resource_tracker.ensure_running()
+        self.assertTrue(_resource_tracker._check_alive())
+
+        # Reset exit code value
+        _resource_tracker._exitcode = None
+        exit_code_assert = self.assertNotEqual
+
+        mp_context = multiprocessing.get_context(context)
+
+        # Keep it on variable, so it won't be cleared yet
+        q = mp_context.Queue()
+        if delete_queue:
+            del q
+            exit_code_assert = self.assertEqual
+
+        self.assertIsNone(_resource_tracker._exitcode)
+        _resource_tracker._stop()
+
+        exit_code_assert(_resource_tracker._exitcode, 0)
+
+    def test_resource_tracker_should_return_0_exit_code_when_no_resources_were_leaked_spawn_ctx(self):
+        self._test_resource_tracker_leak_resources(context="spawn", delete_queue=True)
+
+    def test_resource_tracker_should_return_non_0_exit_code_when_resources_were_leaked_spawn_ctx(self):
+        self._test_resource_tracker_leak_resources(context="spawn", delete_queue=False)
+
+    def test_resource_tracker_should_return_0_exit_code_when_no_resources_were_leaked_forkserver_ctx(self):
+        self._test_resource_tracker_leak_resources(context="forkserver", delete_queue=True)
+
+    def test_resource_tracker_should_return_non_0_exit_code_when_resources_were_leaked_forkserver_ctx(self):
+        self._test_resource_tracker_leak_resources(context="forkserver", delete_queue=False)
+
 
 class TestSimpleQueue(unittest.TestCase):
 

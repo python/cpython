@@ -290,6 +290,35 @@ create_executor_tests(InitializerMixin)
 create_executor_tests(FailingInitializerMixin)
 
 
+@unittest.skipIf(sys.platform == "win32", "Resource Tracker doesn't run on Windows")
+class FailingInitializerResourcesTest(unittest.TestCase):
+    """
+    Source: https://github.com/python/cpython/issues/104090
+    """
+
+    def _test(self, test_class):
+        runner = unittest.TextTestRunner()
+        result = runner.run(test_class('test_initializer'))
+
+        self.assertEqual(result.testsRun, 1)
+        self.assertEqual(result.failures, [])
+        self.assertEqual(result.errors, [])
+
+        # GH-104090:
+        # Stop resource tracker manually now, so we can verify there are not leaked resources by checking
+        # the process exit code
+        from multiprocessing.resource_tracker import _resource_tracker
+        _resource_tracker._stop()
+
+        self.assertEqual(_resource_tracker._exitcode, 0)
+
+    def test_spawn(self):
+        self._test(ProcessPoolSpawnFailingInitializerTest)
+
+    def test_forkserver(self):
+        self._test(ProcessPoolForkserverFailingInitializerTest)
+
+
 class ExecutorShutdownTest:
     def test_run_after_shutdown(self):
         self.executor.shutdown()

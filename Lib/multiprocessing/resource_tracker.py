@@ -57,6 +57,7 @@ class ResourceTracker(object):
         self._lock = threading.Lock()
         self._fd = None
         self._pid = None
+        self._exitcode = None
 
     def _stop(self):
         with self._lock:
@@ -68,7 +69,7 @@ class ResourceTracker(object):
             os.close(self._fd)
             self._fd = None
 
-            os.waitpid(self._pid, 0)
+            _, self._exitcode = os.waitpid(self._pid, 0)
             self._pid = None
 
     def getfd(self):
@@ -191,6 +192,8 @@ def main(fd):
             pass
 
     cache = {rtype: set() for rtype in _CLEANUP_FUNCS.keys()}
+    exit_code = 0
+
     try:
         # keep track of registered/unregistered resources
         with open(fd, 'rb') as f:
@@ -221,6 +224,7 @@ def main(fd):
         for rtype, rtype_cache in cache.items():
             if rtype_cache:
                 try:
+                    exit_code = 1
                     warnings.warn('resource_tracker: There appear to be %d '
                                   'leaked %s objects to clean up at shutdown' %
                                   (len(rtype_cache), rtype))
@@ -237,3 +241,5 @@ def main(fd):
                         warnings.warn('resource_tracker: %r: %s' % (name, e))
                 finally:
                     pass
+
+        sys.exit(exit_code)
