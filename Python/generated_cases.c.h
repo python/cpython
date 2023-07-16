@@ -3360,9 +3360,9 @@
             res2 = Py_NewRef(descr);
             assert(_PyType_HasFeature(Py_TYPE(res2), Py_TPFLAGS_METHOD_DESCRIPTOR));
             res = self;
-            STACK_GROW((1 ? 1 : 0));
+            STACK_GROW(1);
             stack_pointer[-1] = res;
-            if (1) { stack_pointer[-(1 + (1 ? 1 : 0))] = res2; }
+            if (1) { stack_pointer[-(1 + 1)] = res2; }
             next_instr += 9;
             DISPATCH();
         }
@@ -3382,9 +3382,9 @@
             assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
             res2 = Py_NewRef(descr);
             res = self;
-            STACK_GROW((1 ? 1 : 0));
+            STACK_GROW(1);
             stack_pointer[-1] = res;
-            if (1) { stack_pointer[-(1 + (1 ? 1 : 0))] = res2; }
+            if (1) { stack_pointer[-(1 + 1)] = res2; }
             next_instr += 9;
             DISPATCH();
         }
@@ -3410,9 +3410,9 @@
             assert(descr != NULL);
             Py_DECREF(self);
             res = Py_NewRef(descr);
-            STACK_GROW((0 ? 1 : 0));
+            STACK_GROW(0);
             stack_pointer[-1] = res;
-            if (0) { stack_pointer[-(1 + (0 ? 1 : 0))] = res2; }
+            if (0) { stack_pointer[-(1 + 0)] = res2; }
             next_instr += 9;
             DISPATCH();
         }
@@ -3432,9 +3432,9 @@
             assert(descr != NULL);
             Py_DECREF(self);
             res = Py_NewRef(descr);
-            STACK_GROW((0 ? 1 : 0));
+            STACK_GROW(0);
             stack_pointer[-1] = res;
-            if (0) { stack_pointer[-(1 + (0 ? 1 : 0))] = res2; }
+            if (0) { stack_pointer[-(1 + 0)] = res2; }
             next_instr += 9;
             DISPATCH();
         }
@@ -3458,9 +3458,9 @@
             assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
             res2 = Py_NewRef(descr);
             res = self;
-            STACK_GROW((1 ? 1 : 0));
+            STACK_GROW(1);
             stack_pointer[-1] = res;
-            if (1) { stack_pointer[-(1 + (1 ? 1 : 0))] = res2; }
+            if (1) { stack_pointer[-(1 + 1)] = res2; }
             next_instr += 9;
             DISPATCH();
         }
