@@ -16,7 +16,7 @@ setting the :envvar:`PYTHONDEVMODE` environment variable to ``1``.
 See also :ref:`Python debug build <debug-build>`.
 
 Effects of the Python Development Mode
-======================================
+--------------------------------------
 
 Enabling the Python Development Mode is similar to the following command, but
 with additional effects described below::
@@ -107,7 +107,7 @@ value can be read from :data:`sys.flags.dev_mode <sys.flags>`.
 
 
 ResourceWarning Example
-=======================
+-----------------------
 
 Example of a script counting the number of lines of the text file specified in
 the command line::
@@ -171,7 +171,7 @@ application more deterministic and more reliable.
 
 
 Bad file descriptor error example
-=================================
+---------------------------------
 
 Script displaying the first line of itself::
 
