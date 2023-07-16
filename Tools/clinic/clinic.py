@@ -433,10 +433,9 @@ class FormatCounterFormatter(string.Formatter):
          {'a': 2, 'b': 1, 'c': 1}
     """
     def __init__(self) -> None:
-        self.counts: dict[str, int] = collections.Counter()
+        self.counts = collections.Counter[str]()
 
-    def get_value(self, key: str | int, args, kwargs) -> str:
-        assert isinstance(key, str)
+    def get_value(self, key: str, args, kwargs) -> str:  # type: ignore[override]
         self.counts[key] += 1
         return ''
 
@@ -759,7 +758,7 @@ class CLanguage(Language):
     def __init__(self, filename: str) -> None:
         super().__init__(filename)
         self.cpp = cpp.Monitor(filename)
-        setattr(self.cpp, "fail", fail)
+        self.cpp.fail = fail  # type: ignore[method-assign]
 
     def parse_line(self, line: str) -> None:
         self.cpp.writeline(line)
