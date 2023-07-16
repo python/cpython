@@ -3412,7 +3412,7 @@
             res = Py_NewRef(descr);
             STACK_GROW(0);
             stack_pointer[-1] = res;
-            if (0) { stack_pointer[-(1 + 0)] = res2; }
+
             next_instr += 9;
             DISPATCH();
         }
@@ -3434,7 +3434,7 @@
             res = Py_NewRef(descr);
             STACK_GROW(0);
             stack_pointer[-1] = res;
-            if (0) { stack_pointer[-(1 + 0)] = res2; }
+
             next_instr += 9;
             DISPATCH();
         }

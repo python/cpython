@@ -251,7 +251,10 @@ class Formatter:
         else:
             stmt = f"{dst.name} = {cast}{src.name};"
             if src.cond:
-                stmt = f"if ({src.cond}) {{ {stmt} }}"
+                if src.cond == "0":
+                    stmt = "" # skip
+                else:
+                    stmt = f"if ({src.cond}) {{ {stmt} }}"
             self.emit(stmt)
 
     def cast(self, dst: StackEffect, src: StackEffect) -> str:
