@@ -3391,7 +3391,6 @@
 
         TARGET(LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES) {
             PyObject *self = stack_pointer[-1];
-            PyObject *res2 = NULL;
             PyObject *res;
             uint32_t type_version = read_u32(&next_instr[1].cache);
             uint32_t keys_version = read_u32(&next_instr[3].cache);
@@ -3418,7 +3417,6 @@
 
         TARGET(LOAD_ATTR_NONDESCRIPTOR_NO_DICT) {
             PyObject *self = stack_pointer[-1];
-            PyObject *res2 = NULL;
             PyObject *res;
             uint32_t type_version = read_u32(&next_instr[1].cache);
             PyObject *descr = read_obj(&next_instr[5].cache);

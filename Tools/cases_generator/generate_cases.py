@@ -226,7 +226,7 @@ class Formatter:
             self.emit(f"STACK_GROW({osym});")
 
     def declare(self, dst: StackEffect, src: StackEffect | None):
-        if dst.name == UNUSED:
+        if dst.name == UNUSED or dst.cond == "0":
             return
         typ = f"{dst.type}" if dst.type else "PyObject *"
         if src:
