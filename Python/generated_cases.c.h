@@ -3412,7 +3412,6 @@
             res = Py_NewRef(descr);
             STACK_GROW(0);
             stack_pointer[-1] = res;
-
             next_instr += 9;
             DISPATCH();
         }
@@ -3434,7 +3433,6 @@
             res = Py_NewRef(descr);
             STACK_GROW(0);
             stack_pointer[-1] = res;
-
             next_instr += 9;
             DISPATCH();
         }
