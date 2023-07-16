@@ -4847,12 +4847,16 @@ _ssl__SSLContext_set_psk_server_callback_impl(PySSLContext *self,
         ssl_callback = psk_server_callback;
     }
 
+    if (SSL_CTX_use_psk_identity_hint(self->ctx, identity_hint) != 1) {
+        PyErr_SetString(PyExc_ValueError, "failed to set identity hint");
+        return NULL;
+    }
+
     Py_XDECREF(self->psk_server_callback);
     Py_XINCREF(callback);
 
     self->psk_server_callback = callback;
     SSL_CTX_set_psk_server_callback(self->ctx, ssl_callback);
-    SSL_CTX_use_psk_identity_hint(self->ctx, identity_hint);
 
     Py_RETURN_NONE;
 }
