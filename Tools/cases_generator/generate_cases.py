@@ -24,7 +24,7 @@ THIS = os.path.relpath(__file__, ROOT).replace(os.path.sep, posixpath.sep)
 DEFAULT_INPUT = os.path.relpath(os.path.join(ROOT, "Python/bytecodes.c"))
 DEFAULT_OUTPUT = os.path.relpath(os.path.join(ROOT, "Python/generated_cases.c.h"))
 DEFAULT_METADATA_OUTPUT = os.path.relpath(
-    os.path.join(ROOT, "Python/opcode_metadata.h")
+    os.path.join(ROOT, "Include/internal/pycore_opcode_metadata.h")
 )
 DEFAULT_PYMETADATA_OUTPUT = os.path.relpath(
     os.path.join(ROOT, "Lib/_opcode_metadata.py")
@@ -301,7 +301,7 @@ class InstructionFlags:
         for name, value in flags.bitmask.items():
             out.emit(
                 f"#define OPCODE_{name[:-len('_FLAG')]}(OP) "
-                f"(_PyOpcode_opcode_metadata[(OP)].flags & ({name}))")
+                f"(_PyOpcode_opcode_metadata[OP].flags & ({name}))")
 
 
 @dataclasses.dataclass
@@ -403,6 +403,8 @@ class Instruction:
 
     def is_viable_uop(self) -> bool:
         """Whether this instruction is viable as a uop."""
+        if self.name == "EXIT_TRACE":
+            return True  # This has 'return frame' but it's okay
         if self.always_exits:
             # print(f"Skipping {self.name} because it always exits")
             return False
@@ -429,7 +431,7 @@ class Instruction:
         """Write one instruction, sans prologue and epilogue."""
         # Write a static assertion that a family's cache size is correct
         if family := self.family:
-            if self.name == family.members[0]:
+            if self.name == family.name:
                 if cache_size := family.size:
                     out.emit(
                         f"static_assert({cache_size} == "
@@ -818,7 +820,7 @@ class Analyzer:
     def map_families(self) -> None:
         """Link instruction names back to their family, if they have one."""
         for family in self.families.values():
-            for member in family.members:
+            for member in [family.name] + family.members:
                 if member_instr := self.instrs.get(member):
                     if member_instr.family not in (family, None):
                         self.error(
@@ -828,19 +830,7 @@ class Analyzer:
                         )
                     else:
                         member_instr.family = family
-                elif member_macro := self.macro_instrs.get(member):
-                    for part in member_macro.parts:
-                        if isinstance(part, Component):
-                            if part.instr.family not in (family, None):
-                                self.error(
-                                    f"Component {part.instr.name} of macro {member} "
-                                    f"is a member of multiple families "
-                                    f"({part.instr.family.name}, {family.name}).",
-                                    family,
-                                )
-                            else:
-                                part.instr.family = family
-                else:
+                elif not self.macro_instrs.get(member):
                     self.error(
                         f"Unknown instruction {member!r} referenced in family {family.name!r}",
                         family,
@@ -854,8 +844,11 @@ class Analyzer:
         - All members must have the same cache, input and output effects
         """
         for family in self.families.values():
-            if len(family.members) < 2:
-                self.error(f"Family {family.name!r} has insufficient members", family)
+            if family.name not in self.macro_instrs and family.name not in self.instrs:
+                self.error(
+                    f"Family {family.name!r} has unknown instruction {family.name!r}",
+                    family,
+                )
             members = [
                 member
                 for member in family.members
@@ -866,10 +859,8 @@ class Analyzer:
                 self.error(
                     f"Family {family.name!r} has unknown members: {unknown}", family
                 )
-            if len(members) < 2:
-                continue
-            expected_effects = self.effect_counts(members[0])
-            for member in members[1:]:
+            expected_effects = self.effect_counts(family.name)
+            for member in members:
                 member_effects = self.effect_counts(member)
                 if member_effects != expected_effects:
                     self.error(
@@ -1191,6 +1182,8 @@ class Analyzer:
 
             self.write_provenance_header()
 
+            self.out.emit("\n#include <stdbool.h>")
+
             self.write_pseudo_instrs()
 
             self.out.emit("")
@@ -1201,8 +1194,16 @@ class Analyzer:
             # Write type definitions
             self.out.emit(f"enum InstructionFormat {{ {', '.join(format_enums)} }};")
 
+            self.out.emit("")
+            self.out.emit(
+                "#define IS_VALID_OPCODE(OP) \\\n"
+                "    (((OP) >= 0) && ((OP) < OPCODE_METADATA_SIZE) && \\\n"
+                "     (_PyOpcode_opcode_metadata[(OP)].valid_entry))")
+
+            self.out.emit("")
             InstructionFlags.emit_macros(self.out)
 
+            self.out.emit("")
             with self.out.block("struct opcode_metadata", ";"):
                 self.out.emit("bool valid_entry;")
                 self.out.emit("enum InstructionFormat instr_format;")
@@ -1225,13 +1226,20 @@ class Analyzer:
             self.out.emit("")
 
             # Write metadata array declaration
+            self.out.emit("#define OPCODE_METADATA_SIZE 512")
+            self.out.emit("#define OPCODE_UOP_NAME_SIZE 512")
+            self.out.emit("#define OPCODE_MACRO_EXPANSION_SIZE 256")
+            self.out.emit("")
             self.out.emit("#ifndef NEED_OPCODE_METADATA")
-            self.out.emit("extern const struct opcode_metadata _PyOpcode_opcode_metadata[512];")
-            self.out.emit("extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[256];")
-            self.out.emit("extern const char * const _PyOpcode_uop_name[512];")
-            self.out.emit("#else")
+            self.out.emit("extern const struct opcode_metadata "
+                          "_PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE];")
+            self.out.emit("extern const struct opcode_macro_expansion "
+                          "_PyOpcode_macro_expansion[OPCODE_MACRO_EXPANSION_SIZE];")
+            self.out.emit("extern const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE];")
+            self.out.emit("#else // if NEED_OPCODE_METADATA")
 
-            self.out.emit("const struct opcode_metadata _PyOpcode_opcode_metadata[512] = {")
+            self.out.emit("const struct opcode_metadata "
+                          "_PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {")
 
             # Write metadata for each instruction
             for thing in self.everything:
@@ -1252,7 +1260,8 @@ class Analyzer:
             self.out.emit("};")
 
             with self.out.block(
-                "const struct opcode_macro_expansion _PyOpcode_macro_expansion[256] =",
+                "const struct opcode_macro_expansion "
+                "_PyOpcode_macro_expansion[OPCODE_MACRO_EXPANSION_SIZE] =",
                 ";",
             ):
                 # Write macro expansion for each non-pseudo instruction
@@ -1278,12 +1287,10 @@ class Analyzer:
                         case _:
                             typing.assert_never(thing)
 
-            self.out.emit("#ifdef NEED_OPCODE_METADATA")
-            with self.out.block("const char * const _PyOpcode_uop_name[512] =", ";"):
-                self.write_uop_items(lambda name, counter: f"[{counter}] = \"{name}\",")
-            self.out.emit("#endif // NEED_OPCODE_METADATA")
+            with self.out.block("const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE] =", ";"):
+                self.write_uop_items(lambda name, counter: f"[{name}] = \"{name}\",")
 
-            self.out.emit("#endif")
+            self.out.emit("#endif // NEED_OPCODE_METADATA")
 
         with open(self.pymetadata_filename, "w") as f:
             # Create formatter
@@ -1294,11 +1301,10 @@ class Analyzer:
             self.out.emit("")
             self.out.emit("_specializations = {")
             for name, family in self.families.items():
-                assert len(family.members) > 1
                 with self.out.indent():
-                    self.out.emit(f"\"{family.members[0]}\": [")
+                    self.out.emit(f"\"{family.name}\": [")
                     with self.out.indent():
-                        for m in family.members[1:]:
+                        for m in family.members:
                             self.out.emit(f"\"{m}\",")
                     self.out.emit(f"],")
             self.out.emit("}")
@@ -1327,12 +1333,20 @@ class Analyzer:
     def write_uop_items(self, make_text: typing.Callable[[str, int], str]) -> None:
         """Write '#define XXX NNN' for each uop"""
         counter = 300  # TODO: Avoid collision with pseudo instructions
+        seen = set()
+
         def add(name: str) -> None:
+            if name in seen:
+                return
             nonlocal counter
             self.out.emit(make_text(name, counter))
             counter += 1
+            seen.add(name)
+
+        # These two are first by convention
         add("EXIT_TRACE")
         add("SAVE_IP")
+
         for instr in self.instrs.values():
             if instr.kind == "op" and instr.is_viable_uop():
                 add(instr.name)
@@ -1526,9 +1540,8 @@ class Analyzer:
                 self.out.emit(f"next_instr += {cache_adjust};")
 
             if (
-                last_instr
-                and (family := last_instr.family)
-                and mac.name == family.members[0]
+                (family := self.families.get(mac.name))
+                and mac.name == family.name
                 and (cache_size := family.size)
             ):
                 self.out.emit(

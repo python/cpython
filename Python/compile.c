@@ -36,7 +36,9 @@
 #include "pycore_pystate.h"       // _Py_GetConfig()
 #include "pycore_symtable.h"      // PySTEntryObject, _PyFuture_FromAST()
 
-#include "opcode_metadata.h"      // _PyOpcode_opcode_metadata, _PyOpcode_num_popped/pushed
+#define NEED_OPCODE_METADATA
+#include "pycore_opcode_metadata.h" // _PyOpcode_opcode_metadata, _PyOpcode_num_popped/pushed
+#undef NEED_OPCODE_METADATA
 
 #define COMP_GENEXP   0
 #define COMP_LISTCOMP 1
@@ -864,6 +866,36 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
     return stack_effect(opcode, oparg, -1);
 }
 
+int
+PyUnstable_OpcodeIsValid(int opcode)
+{
+    return IS_VALID_OPCODE(opcode);
+}
+
+int
+PyUnstable_OpcodeHasArg(int opcode)
+{
+    return OPCODE_HAS_ARG(opcode);
+}
+
+int
+PyUnstable_OpcodeHasConst(int opcode)
+{
+    return OPCODE_HAS_CONST(opcode);
+}
+
+int
+PyUnstable_OpcodeHasName(int opcode)
+{
+    return OPCODE_HAS_NAME(opcode);
+}
+
+int
+PyUnstable_OpcodeHasJump(int opcode)
+{
+    return OPCODE_HAS_JUMP(opcode);
+}
+
 static int
 codegen_addop_noarg(instr_sequence *seq, int opcode, location loc)
 {
@@ -1672,10 +1704,16 @@ compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
     if (c->c_optimize < 2) {
         docstring = _PyAST_GetDocString(stmts);
         if (docstring) {
+            PyObject *cleandoc = _PyCompile_CleanDoc(docstring);
+            if (cleandoc == NULL) {
+                return ERROR;
+            }
             i = 1;
             st = (stmt_ty)asdl_seq_GET(stmts, 0);
             assert(st->kind == Expr_kind);
-            VISIT(c, expr, st->v.Expr.value);
+            location loc = LOC(st->v.Expr.value);
+            ADDOP_LOAD_CONST(c, loc, cleandoc);
+            Py_DECREF(cleandoc);
             RETURN_IF_ERROR(compiler_nameop(c, NO_LOCATION, &_Py_ID(__doc__), Store));
         }
     }
@@ -2220,11 +2258,19 @@ compiler_function_body(struct compiler *c, stmt_ty s, int is_async, Py_ssize_t f
     /* if not -OO mode, add docstring */
     if (c->c_optimize < 2) {
         docstring = _PyAST_GetDocString(body);
+        if (docstring) {
+            docstring = _PyCompile_CleanDoc(docstring);
+            if (docstring == NULL) {
+                compiler_exit_scope(c);
+                return ERROR;
+            }
+        }
     }
     if (compiler_add_const(c->c_const_cache, c->u, docstring ? docstring : Py_None) < 0) {
         compiler_exit_scope(c);
         return ERROR;
     }
+    Py_XDECREF(docstring);
 
     c->u->u_metadata.u_argcount = asdl_seq_LEN(args->args);
     c->u->u_metadata.u_posonlyargcount = asdl_seq_LEN(args->posonlyargs);
@@ -7934,6 +7980,89 @@ error:
     Py_DECREF(instructions);
     return NULL;
 }
+
+// C implementation of inspect.cleandoc()
+//
+// Difference from inspect.cleandoc():
+// - Do not remove leading and trailing blank lines to keep lineno.
+PyObject *
+_PyCompile_CleanDoc(PyObject *doc)
+{
+    doc = PyObject_CallMethod(doc, "expandtabs", NULL);
+    if (doc == NULL) {
+        return NULL;
+    }
+
+    Py_ssize_t doc_size;
+    const char *doc_utf8 = PyUnicode_AsUTF8AndSize(doc, &doc_size);
+    if (doc_utf8 == NULL) {
+        Py_DECREF(doc);
+        return NULL;
+    }
+    const char *p = doc_utf8;
+    const char *pend = p + doc_size;
+
+    // First pass: find minimum indentation of any non-blank lines
+    // after first line.
+    while (p < pend && *p++ != '\n') {
+    }
+
+    Py_ssize_t margin = PY_SSIZE_T_MAX;
+    while (p < pend) {
+        const char *s = p;
+        while (*p == ' ') p++;
+        if (p < pend && *p != '\n') {
+            margin = Py_MIN(margin, p - s);
+        }
+        while (p < pend && *p++ != '\n') {
+        }
+    }
+    if (margin == PY_SSIZE_T_MAX) {
+        margin = 0;
+    }
+
+    // Second pass: write cleandoc into buff.
+
+    // copy first line without leading spaces.
+    p = doc_utf8;
+    while (*p == ' ') {
+        p++;
+    }
+    if (p == doc_utf8 && margin == 0 ) {
+        // doc is already clean.
+        return doc;
+    }
+
+    char *buff = PyMem_Malloc(doc_size);
+    char *w = buff;
+
+    while (p < pend) {
+        int ch = *w++ = *p++;
+        if (ch == '\n') {
+            break;
+        }
+    }
+
+    // copy subsequent lines without margin.
+    while (p < pend) {
+        for (Py_ssize_t i = 0; i < margin; i++, p++) {
+            if (*p != ' ') {
+                assert(*p == '\n' || *p == '\0');
+                break;
+            }
+        }
+        while (p < pend) {
+            int ch = *w++ = *p++;
+            if (ch == '\n') {
+                break;
+            }
+        }
+    }
+
+    Py_DECREF(doc);
+    return PyUnicode_FromStringAndSize(buff, w - buff);
+}
+
 
 PyObject *
 _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,

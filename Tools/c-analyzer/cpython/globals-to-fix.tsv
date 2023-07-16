@@ -422,9 +422,6 @@ Modules/_datetimemodule.c	-	us_per_day	-
 Modules/_datetimemodule.c	-	us_per_week	-
 Modules/_datetimemodule.c	-	seconds_per_day	-
 Modules/_decimal/_decimal.c	-	global_state	-
-Modules/_decimal/_decimal.c	-	round_map	-
-Modules/_decimal/_decimal.c	-	Rational	-
-Modules/_decimal/_decimal.c	-	SignalTuple	-
 
 ## state
 Modules/_asynciomodule.c	-	fi_freelist	-
@@ -452,12 +449,6 @@ Modules/_cursesmodule.c	-	initialised	-
 Modules/_cursesmodule.c	-	initialised_setupterm	-
 Modules/_cursesmodule.c	-	initialisedcolors	-
 Modules/_cursesmodule.c	-	screen_encoding	-
-Modules/_decimal/_decimal.c	-	_py_long_multiply	-
-Modules/_decimal/_decimal.c	-	_py_long_floor_divide	-
-Modules/_decimal/_decimal.c	-	_py_long_power	-
-Modules/_decimal/_decimal.c	-	_py_float_abs	-
-Modules/_decimal/_decimal.c	-	_py_long_bit_length	-
-Modules/_decimal/_decimal.c	-	_py_float_as_integer_ratio	-
 Modules/_elementtree.c	-	expat_capi	-
 Modules/readline.c	-	libedit_append_replace_history_offset	-
 Modules/readline.c	-	using_libedit_emulation	-

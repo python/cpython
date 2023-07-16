@@ -338,7 +338,7 @@ class TestGeneratedCases(unittest.TestCase):
         inst(OP3, (unused/5, arg2, left, right -- res)) {
             res = op3(arg2, left, right);
         }
-        family(op, INLINE_CACHE_ENTRIES_OP) = { OP, OP3 };
+        family(OP, INLINE_CACHE_ENTRIES_OP) = { OP3 };
     """
         output = """
         TARGET(OP1) {

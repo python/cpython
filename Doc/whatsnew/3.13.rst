@@ -76,7 +76,15 @@ New Features
 Other Language Changes
 ======================
 
+* Allow the *count* argument of :meth:`str.replace` to be a keyword.
+  (Contributed by Hugo van Kemenade in :gh:`106487`.)
 
+* Compiler now strip indents from docstrings.
+  This will reduce the size of :term:`bytecode cache <bytecode>` (e.g. ``.pyc`` file).
+  For example, cache file size for ``sqlalchemy.orm.session`` in SQLAlchemy 2.0
+  is reduced by about 5%.
+  This change will affect tools using docstrings, like :mod:`doctest`.
+  (Contributed by Inada Naoki in :gh:`81283`.)
 
 New Modules
 ===========
@@ -90,7 +98,7 @@ Improved Modules
 array
 -----
 
-* Add ``'w'`` type code that can be used for Unicode strings.
+* Add ``'w'`` type code (``Py_UCS4``) that can be used for Unicode strings.
   It can be used instead of ``'u'`` type code, which is deprecated.
   (Contributed by Inada Naoki in :gh:`80480`.)
 
@@ -146,11 +154,11 @@ Deprecated
   methods of the :class:`wave.Wave_read` and :class:`wave.Wave_write` classes.
   They will be removed in Python 3.15.
   (Contributed by Victor Stinner in :gh:`105096`.)
-* Creating a :class:`typing.NamedTuple` class using keyword arguments to denote
+* :mod:`typing`: Creating a :class:`typing.NamedTuple` class using keyword arguments to denote
   the fields (``NT = NamedTuple("NT", x=int, y=int)``) is deprecated, and will
   be disallowed in Python 3.15. Use the class-based syntax or the functional
   syntax instead. (Contributed by Alex Waygood in :gh:`105566`.)
-* When using the functional syntax to create a :class:`typing.NamedTuple`
+* :mod:`typing`: When using the functional syntax to create a :class:`typing.NamedTuple`
   class or a :class:`typing.TypedDict` class, failing to pass a value to the
   'fields' parameter (``NT = NamedTuple("NT")`` or ``TD = TypedDict("TD")``) is
   deprecated. Passing ``None`` to the 'fields' parameter
@@ -160,6 +168,10 @@ Deprecated
   ``NT = NamedTuple("NT", [])``. To create a TypedDict class with 0 fields, use
   ``class TD(TypedDict): pass`` or ``TD = TypedDict("TD", {})``.
   (Contributed by Alex Waygood in :gh:`105566` and :gh:`105570`.)
+* :func:`typing.no_type_check_decorator` is deprecated, and scheduled for
+  removal in Python 3.15. After eight years in the :mod:`typing` module, it
+  has yet to be supported by any major type checkers.
+  (Contributed by Alex Waygood in :gh:`106309`.)
 
 * :mod:`array`'s ``'u'`` format code, deprecated in docs since Python 3.3,
   emits :exc:`DeprecationWarning` since 3.13
@@ -169,8 +181,306 @@ Deprecated
 
 * :mod:`ctypes`: Deprecate undocumented :func:`!ctypes.SetPointerType`
   and :func:`!ctypes.ARRAY` functions.
-  Replace ``ctypes.SetPointerType(item_type, size)`` with ``item_type * size``.
+  Replace ``ctypes.ARRAY(item_type, size)`` with ``item_type * size``.
   (Contributed by Victor Stinner in :gh:`105733`.)
+
+Pending Removal in Python 3.14
+------------------------------
+
+* :mod:`argparse`: The *type*, *choices*, and *metavar* parameters
+  of :class:`!argparse.BooleanOptionalAction` are deprecated
+  and will be removed in 3.14.
+  (Contributed by Nikita Sobolev in :gh:`92248`.)
+
+* :mod:`ast`: The following features have been deprecated in documentation
+  since Python 3.8, now cause a :exc:`DeprecationWarning` to be emitted at
+  runtime when they are accessed or used, and will be removed in Python 3.14:
+
+  * :class:`!ast.Num`
+  * :class:`!ast.Str`
+  * :class:`!ast.Bytes`
+  * :class:`!ast.NameConstant`
+  * :class:`!ast.Ellipsis`
+
+  Use :class:`ast.Constant` instead.
+  (Contributed by Serhiy Storchaka in :gh:`90953`.)
+
+* :mod:`collections.abc`: Deprecated :class:`~collections.abc.ByteString`.
+  Prefer :class:`!Sequence` or :class:`~collections.abc.Buffer`.
+  For use in typing, prefer a union, like ``bytes | bytearray``,
+  or :class:`collections.abc.Buffer`.
+  (Contributed by Shantanu Jain in :gh:`91896`.)
+
+* :mod:`email`: Deprecated the *isdst* parameter in :func:`email.utils.localtime`.
+  (Contributed by Alan Williams in :gh:`72346`.)
+
+* :mod:`importlib`: ``__package__`` and ``__cached__`` will cease to be set or
+  taken into consideration by the import system (:gh:`97879`).
+
+* :mod:`importlib.abc` deprecated classes:
+
+  * :class:`!importlib.abc.ResourceReader`
+  * :class:`!importlib.abc.Traversable`
+  * :class:`!importlib.abc.TraversableResources`
+
+  Use :mod:`importlib.resources.abc` classes instead:
+
+  * :class:`importlib.resources.abc.Traversable`
+  * :class:`importlib.resources.abc.TraversableResources`
+
+  (Contributed by Jason R. Coombs and Hugo van Kemenade in :gh:`93963`.)
+
+* :mod:`itertools` had undocumented, inefficient, historically buggy,
+  and inconsistent support for copy, deepcopy, and pickle operations.
+  This will be removed in 3.14 for a significant reduction in code
+  volume and maintenance burden.
+  (Contributed by Raymond Hettinger in :gh:`101588`.)
+
+* :mod:`multiprocessing`: The default start method will change to a safer one on
+  Linux, BSDs, and other non-macOS POSIX platforms where ``'fork'`` is currently
+  the default (:gh:`84559`). Adding a runtime warning about this was deemed too
+  disruptive as the majority of code is not expected to care. Use the
+  :func:`~multiprocessing.get_context` or
+  :func:`~multiprocessing.set_start_method` APIs to explicitly specify when
+  your code *requires* ``'fork'``.  See :ref:`multiprocessing-start-methods`.
+
+* :mod:`pathlib`: :meth:`~pathlib.PurePath.is_relative_to`,
+  :meth:`~pathlib.PurePath.relative_to`: passing additional arguments is
+  deprecated.
+
+* :func:`pkgutil.find_loader` and :func:`pkgutil.get_loader`
+  now raise :exc:`DeprecationWarning`;
+  use :func:`importlib.util.find_spec` instead.
+  (Contributed by Nikita Sobolev in :gh:`97850`.)
+
+* :mod:`pty`:
+
+  * ``master_open()``: use :func:`pty.openpty`.
+  * ``slave_open()``: use :func:`pty.openpty`.
+
+* :func:`shutil.rmtree` *onerror* parameter is deprecated in 3.12,
+  and will be removed in 3.14: use the *onexc* parameter instead.
+
+* :mod:`sqlite3`:
+
+  * :data:`~sqlite3.version` and :data:`~sqlite3.version_info`.
+
+  * :meth:`~sqlite3.Cursor.execute` and :meth:`~sqlite3.Cursor.executemany`
+    if :ref:`named placeholders <sqlite3-placeholders>` are used and
+    *parameters* is a sequence instead of a :class:`dict`.
+
+  * date and datetime adapter, date and timestamp converter:
+    see the :mod:`sqlite3` documentation for suggested replacement recipes.
+
+* :class:`types.CodeType`: Accessing ``co_lnotab`` was deprecated in :pep:`626`
+  since 3.10 and was planned to be removed in 3.12,
+  but it only got a proper :exc:`DeprecationWarning` in 3.12.
+  May be removed in 3.14.
+  (Contributed by Nikita Sobolev in :gh:`101866`.)
+
+* :mod:`typing`: :class:`~typing.ByteString`, deprecated since Python 3.9,
+  now causes a :exc:`DeprecationWarning` to be emitted when it is used.
+
+* :class:`!urllib.parse.Quoter` is deprecated: it was not intended to be a
+  public API.
+  (Contributed by Gregory P. Smith in :gh:`88168`.)
+
+* :mod:`xml.etree.ElementTree`: Testing the truth value of an
+  :class:`~xml.etree.ElementTree.Element` is deprecated and will raise an
+  exception in Python 3.14.
+
+Pending Removal in Python 3.15
+------------------------------
+
+* :class:`typing.NamedTuple`:
+
+  * The undocumented keyword argument syntax for creating NamedTuple classes
+    (``NT = NamedTuple("NT", x=int)``) is deprecated, and will be disallowed in
+    3.15. Use the class-based syntax or the functional syntax instead.
+
+  * When using the functional syntax to create a NamedTuple class, failing to
+    pass a value to the 'fields' parameter (``NT = NamedTuple("NT")``) is
+    deprecated. Passing ``None`` to the 'fields' parameter
+    (``NT = NamedTuple("NT", None)``) is also deprecated. Both will be
+    disallowed in Python 3.15. To create a NamedTuple class with 0 fields, use
+    ``class NT(NamedTuple): pass`` or ``NT = NamedTuple("NT", [])``.
+
+* :class:`typing.TypedDict`: When using the functional syntax to create a
+  TypedDict class, failing to pass a value to the 'fields' parameter (``TD =
+  TypedDict("TD")``) is deprecated. Passing ``None`` to the 'fields' parameter
+  (``TD = TypedDict("TD", None)``) is also deprecated. Both will be disallowed
+  in Python 3.15. To create a TypedDict class with 0 fields, use ``class
+  TD(TypedDict): pass`` or ``TD = TypedDict("TD", {})``.
+
+* :mod:`wave`: Deprecate the ``getmark()``, ``setmark()`` and ``getmarkers()``
+  methods of the :class:`wave.Wave_read` and :class:`wave.Wave_write` classes.
+  They will be removed in Python 3.15.
+  (Contributed by Victor Stinner in :gh:`105096`.)
+
+Pending Removal in Python 3.16
+------------------------------
+
+* :class:`array.array` ``'u'`` type (``wchar_t``):
+  use the ``'w'`` type instead (``Py_UCS4``).
+
+Pending Removal in Future Versions
+----------------------------------
+
+The following APIs were deprecated in earlier Python versions and will be removed,
+although there is currently no date scheduled for their removal.
+
+* :mod:`argparse`: Nesting argument groups and nesting mutually exclusive
+  groups are deprecated.
+
+* :mod:`builtins`:
+
+  * ``~bool``, bitwise inversion on bool.
+  * ``bool(NotImplemented)``.
+  * Generators: ``throw(type, exc, tb)`` and ``athrow(type, exc, tb)``
+    signature is deprecated: use ``throw(exc)`` and ``athrow(exc)`` instead,
+    the single argument signature.
+  * Currently Python accepts numeric literals immediately followed by keywords,
+    for example ``0in x``, ``1or x``, ``0if 1else 2``.  It allows confusing and
+    ambiguous expressions like ``[0x1for x in y]`` (which can be interpreted as
+    ``[0x1 for x in y]`` or ``[0x1f or x in y]``).  A syntax warning is raised
+    if the numeric literal is immediately followed by one of keywords
+    :keyword:`and`, :keyword:`else`, :keyword:`for`, :keyword:`if`,
+    :keyword:`in`, :keyword:`is` and :keyword:`or`.  In a future release it
+    will be changed to a syntax error. (:gh:`87999`)
+  * Support for ``__index__()`` and ``__int__()`` method returning non-int type:
+    these methods will be required to return an instance of a strict subclass of
+    :class:`int`.
+  * Support for ``__float__()`` method returning a strict subclass of
+    :class:`float`: these methods will be required to return an instance of
+    :class:`float`.
+  * Support for ``__complex__()`` method returning a strict subclass of
+    :class:`complex`: these methods will be required to return an instance of
+    :class:`complex`.
+  * Delegation of ``int()`` to ``__trunc__()`` method.
+
+* :mod:`calendar`: ``calendar.January`` and ``calendar.February`` constants are
+  deprecated and replaced by :data:`calendar.Month.JANUARY` and
+  :data:`calendar.Month.FEBRUARY`.
+  (Contributed by Prince Roshan in :gh:`103636`.)
+
+* :mod:`datetime`:
+
+  * :meth:`~datetime.datetime.utcnow`:
+    use ``datetime.datetime.now(tz=datetime.UTC)``.
+  * :meth:`~datetime.datetime.utcfromtimestamp`:
+    use ``datetime.datetime.fromtimestamp(timestamp, tz=datetime.UTC)``.
+
+* :mod:`gettext`: Plural value must be an integer.
+
+* :mod:`importlib`:
+
+  * ``load_module()`` method: use ``exec_module()`` instead.
+  * :func:`~importlib.util.cache_from_source` *debug_override* parameter is
+    deprecated: use the *optimization* parameter instead.
+
+* :mod:`importlib.metadata`:
+
+  * ``EntryPoints`` tuple interface.
+  * Implicit ``None`` on return values.
+
+* :mod:`importlib.resources`: First parameter to files is renamed to 'anchor'.
+* :mod:`importlib.resources` deprecated methods:
+
+  * ``contents()``
+  * ``is_resource()``
+  * ``open_binary()``
+  * ``open_text()``
+  * ``path()``
+  * ``read_binary()``
+  * ``read_text()``
+
+  Use ``files()`` instead.  Refer to `importlib-resources: Migrating from Legacy
+  <https://importlib-resources.readthedocs.io/en/latest/using.html#migrating-from-legacy>`_
+  for migration advice.
+
+* :func:`locale.getdefaultlocale`: use :func:`locale.setlocale()`,
+  :func:`locale.getencoding()` and :func:`locale.getlocale()` instead
+  (:gh:`90817`)
+
+* :mod:`mailbox`: Use of StringIO input and text mode is deprecated, use
+  BytesIO and binary mode instead.
+
+* :mod:`os`: Calling :func:`os.register_at_fork` in multi-threaded process.
+
+* :class:`!pydoc.ErrorDuringImport`: A tuple value for *exc_info* parameter is
+  deprecated, use an exception instance.
+
+* :mod:`re`: More strict rules are now applied for numerical group references
+  and group names in regular expressions.  Only sequence of ASCII digits is now
+  accepted as a numerical reference.  The group name in bytes patterns and
+  replacement strings can now only contain ASCII letters and digits and
+  underscore.
+  (Contributed by Serhiy Storchaka in :gh:`91760`.)
+
+* :mod:`ssl` options and protocols:
+
+  * :class:`ssl.SSLContext` without protocol argument is deprecated.
+  * :class:`ssl.SSLContext`: :meth:`~ssl.SSLContext.set_npn_protocols` and
+    :meth:`!~ssl.SSLContext.selected_npn_protocol` are deprecated: use ALPN
+    instead.
+  * ``ssl.OP_NO_SSL*`` options
+  * ``ssl.OP_NO_TLS*`` options
+  * ``ssl.PROTOCOL_SSLv3``
+  * ``ssl.PROTOCOL_TLS``
+  * ``ssl.PROTOCOL_TLSv1``
+  * ``ssl.PROTOCOL_TLSv1_1``
+  * ``ssl.PROTOCOL_TLSv1_2``
+  * ``ssl.TLSVersion.SSLv3``
+  * ``ssl.TLSVersion.TLSv1``
+  * ``ssl.TLSVersion.TLSv1_1``
+
+* :mod:`!sre_compile`, :mod:`!sre_constants` and :mod:`!sre_parse` modules.
+
+* ``types.CodeType.co_lnotab``: use the ``co_lines`` attribute instead.
+
+* :class:`typing.Text` (:gh:`92332`).
+
+* :func:`sysconfig.is_python_build` *check_home* parameter is deprecated and
+  ignored.
+
+* :mod:`threading` methods:
+
+  * :meth:`!threading.Condition.notifyAll`: use :meth:`~threading.Condition.notify_all`.
+  * :meth:`!threading.Event.isSet`: use :meth:`~threading.Event.is_set`.
+  * :meth:`!threading.Thread.isDaemon`, :meth:`threading.Thread.setDaemon`:
+    use :attr:`threading.Thread.daemon` attribute.
+  * :meth:`!threading.Thread.getName`, :meth:`threading.Thread.setName`:
+    use :attr:`threading.Thread.name` attribute.
+  * :meth:`!threading.currentThread`: use :meth:`threading.current_thread`.
+  * :meth:`!threading.activeCount`: use :meth:`threading.active_count`.
+
+* :class:`unittest.IsolatedAsyncioTestCase`: it is deprecated to return a value
+  that is not None from a test case.
+
+* :mod:`urllib.request`: :class:`~urllib.request.URLopener` and
+  :class:`~urllib.request.FancyURLopener` style of invoking requests is
+  deprecated. Use newer :func:`~urllib.request.urlopen` functions and methods.
+
+* :func:`!urllib.parse.to_bytes`.
+
+* :mod:`urllib.parse` deprecated functions: :func:`~urllib.parse.urlparse` instead
+
+  * ``splitattr()``
+  * ``splithost()``
+  * ``splitnport()``
+  * ``splitpasswd()``
+  * ``splitport()``
+  * ``splitquery()``
+  * ``splittag()``
+  * ``splittype()``
+  * ``splituser()``
+  * ``splitvalue()``
+
+* :mod:`wsgiref`: ``SimpleHandler.stdout.write()`` should not do partial
+  writes.
+
+* :meth:`zipimport.zipimporter.load_module` is deprecated:
+  use :meth:`~zipimport.zipimporter.exec_module` instead.
 
 
 Removed
@@ -348,10 +658,11 @@ Removed
   use ``locale.setlocale(locale.LC_ALL, "")`` instead.
   (Contributed by Victor Stinner in :gh:`104783`.)
 
-* Remove the undocumented and untested ``logging.Logger.warn()`` method,
-  deprecated since Python 3.3, which was an alias to the
-  :meth:`logging.Logger.warning` method: use the :meth:`logging.Logger.warning`
-  method instead.
+* :mod:`logging`: Remove undocumented and untested ``Logger.warn()`` and
+  ``LoggerAdapter.warn()`` methods and ``logging.warn()`` function. Deprecated
+  since Python 3.3, they were aliases to the :meth:`logging.Logger.warning`
+  method, :meth:`!logging.LoggerAdapter.warning` method and
+  :func:`logging.warning` function.
   (Contributed by Victor Stinner in :gh:`105376`.)
 
 * Remove *cafile*, *capath* and *cadefault* parameters of the
@@ -440,6 +751,22 @@ New Features
   :c:func:`PyWeakref_GetObject` but returns a :term:`strong reference`, or
   ``NULL`` if the referent is no longer live.
   (Contributed by Victor Stinner in :gh:`105927`.)
+
+* Add :c:func:`PyObject_GetOptionalAttr` and
+  :c:func:`PyObject_GetOptionalAttrString`, variants of
+  :c:func:`PyObject_GetAttr` and :c:func:`PyObject_GetAttrString` which
+  don't raise :exc:`AttributeError` if the attribute is not found.
+  These variants are more convenient and faster if the missing attribute
+  should not be treated as a failure.
+  (Contributed by Serhiy Storchaka in :gh:`106521`.)
+
+* Add :c:func:`PyMapping_GetOptionalItem` and
+  :c:func:`PyMapping_GetOptionalItemString`: variants of
+  :c:func:`PyObject_GetItem` and :c:func:`PyMapping_GetItemString` which don't
+  raise :exc:`KeyError` if the key is not found.
+  These variants are more convenient and faster if the missing key should not
+  be treated as a failure.
+  (Contributed by Serhiy Storchaka in :gh:`106307`.)
 
 * If Python is built in :ref:`debug mode <debug-build>` or :option:`with
   assertions <--with-assertions>`, :c:func:`PyTuple_SET_ITEM` and
@@ -617,6 +944,8 @@ Removed
 Pending Removal in Python 3.14
 ------------------------------
 
+* Creating immutable types (:data:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
+  bases using the C API.
 * Global configuration variables:
 
   * :c:var:`Py_DebugFlag`: use :c:member:`PyConfig.parser_debug`
