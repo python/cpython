@@ -4,7 +4,7 @@
 
 from test import support, test_tools
 from test.support import os_helper
-from textwrap import dedent
+from textwrap import dedent, indent
 from unittest import TestCase
 import collections
 import inspect
@@ -15,6 +15,7 @@ import unittest
 test_tools.skip_if_missing('clinic')
 with test_tools.imports_under_tool('clinic'):
     import clinic
+    import cpp
     from clinic import DSLParser
 
 
@@ -199,6 +200,20 @@ class ClinicWholeFileTest(_ParserBase):
             /*[clinic end generated code: output=da39a3ee5e6b4b0d input=65fab8adff58cf08]*/
         """).lstrip()  # Note, lstrip() because of the newline
         self.assertEqual(out, expected)
+
+    def test_cpp_monitor_fail_override(self):
+        raw = """
+        #if
+        /*[clinic input]
+        [clinic start generated code]
+        #endif
+        """
+        msg = (
+            'Error in file "test.c" on line 1:\n'
+            'Invalid format for #if line: no argument!\n'
+        )
+        out = self.expect_failure(raw)
+        self.assertEqual(out, msg)
 
 
 class ClinicGroupPermuterTest(TestCase):
@@ -1983,6 +1998,247 @@ class FormatHelperTests(unittest.TestCase):
         )
         out = clinic.suffix_all_lines(lines, suffix="foo")
         self.assertEqual(out, expected)
+
+
+class CppMonitorTests(TestCase):
+
+    def validate_checkpoints(self, code, checkpoints):
+        mon = cpp.Monitor("", verbose=False)
+        lines = code.strip().split("\n")
+        for num, line in enumerate(lines, 1):
+            with self.subTest(num=num, line=line):
+                mon.writeline(line)
+                if num in checkpoints:
+                    self.assertEqual(mon.status(), checkpoints[num])
+
+    def validate_verbose_run(self, code, expected):
+        mon = cpp.Monitor("", verbose=True)
+        with support.captured_stdout() as stdout:
+            mon.write(code.strip())
+        out = stdout.getvalue()
+        expected = dedent(expected)
+        expected = indent(expected.lstrip(), prefix="   ")
+        self.assertEqual(out, expected)
+
+    def expect_failure(self, code, msg, *, fn=None):
+        mon = cpp.Monitor(fn, verbose=True)
+        with support.captured_stdout() as stdout:
+            with self.assertRaises(SystemExit):
+                mon.write(code.strip())
+        out = stdout.getvalue()
+        self.assertIn(msg, out)
+
+    def test_cpp_monitor_no_defs(self):
+        code = """
+            // one comment, no preprocessor directives
+        """
+        checkpoints = {0: ""}
+        self.validate_checkpoints(code, checkpoints)
+
+    def test_cpp_monitor_simple_if(self):
+        code = """
+            #if MYDEF
+            // code
+            #endif
+        """
+        checkpoints = {
+            1: "   1: (MYDEF)",
+            3: "   3: ",
+        }
+        self.validate_checkpoints(code, checkpoints)
+
+    def test_cpp_monitor_simple_if_else(self):
+        code = """
+            #if MYDEF
+            // code
+            #else
+            // more code
+            #endif
+        """
+        checkpoints = {
+            1: "   1: (MYDEF)",
+            3: "   3: !(MYDEF)",
+            5: "   5: ",
+        }
+        self.validate_checkpoints(code, checkpoints)
+
+    def test_cpp_monitor_multi_if(self):
+        code = """
+            #if MYDEF
+            f();
+            #  if OTHER
+            g();
+            #  endif
+            #else
+            h();
+            #  if MORE
+            i();
+            #  else
+            j();
+            k();
+            l();
+            #  endif
+            #endif
+        """
+        checkpoints = {
+            1: "   1: (MYDEF)",
+            3: "   3: (MYDEF) && (OTHER)",
+            5: "   5: (MYDEF)",
+            7: "   7: !(MYDEF)",
+            9: "   9: !(MYDEF) && (MORE)",
+            11: "  11: !(MYDEF) && !(MORE)",
+            12: "  12: !(MYDEF) && !(MORE)",
+            13: "  13: !(MYDEF) && !(MORE)",
+            15: "  15: ",
+        }
+        self.validate_checkpoints(code, checkpoints)
+
+    def test_cpp_monitor_expr(self):
+        code = """
+            // comment
+            #if VER < 1
+            a();
+            #elif VER < 2
+            b();
+            #else
+            c();
+            #endif
+            // comment
+        """
+        checkpoints = {
+            2: "   2: (VER < 1)",
+            4: "   4: !(VER < 1) && (VER < 2)",
+            6: "   6: !(VER < 1) && !(VER < 2)",
+            8: "   8: ",
+        }
+        self.validate_checkpoints(code, checkpoints)
+
+    def test_cpp_monitor_ifdefs(self):
+        code = """
+            #ifdef A
+            a();
+            #  if defined(B)
+            b();
+            #  endif
+            #endif
+        """
+        checkpoints = {
+            1: "   1: defined(A)",
+            3: "   3: defined(A) && defined(B)",
+            5: "   5: defined(A)",
+            6: "   6: ",
+        }
+        self.validate_checkpoints(code, checkpoints)
+
+    def test_cpp_monitor_verbose_1(self):
+        code = """
+            #if A || B
+            // code
+            #endif
+        """
+        expected = """
+            1: (A || B)
+            3: 
+        """
+        self.validate_verbose_run(code, expected)
+
+    def test_cpp_monitor_verbose_2(self):
+        code = """
+            #if defined(A) && B || C
+            // code
+            #  ifndef E
+            // code
+            #  else
+            // code
+            #endif
+            #endif
+        """
+        expected = """
+            1: (defined(A) && B || C)
+            3: (defined(A) && B || C) && !defined(E)
+            5: (defined(A) && B || C) && defined(E)
+            7: (defined(A) && B || C)
+            8: 
+        """
+        self.validate_verbose_run(code, expected)
+
+    def test_cpp_monitor_verbose_3(self):
+        code = """
+            #if A
+            #  ifdef B
+            #  else
+            #  endif
+            #endif
+        """
+        expected = """
+            1: (A)
+            2: (A) && defined(B)
+            3: (A) && !defined(B)
+            4: (A)
+            5: 
+        """
+        self.validate_verbose_run(code, expected)
+
+    def test_cpp_monitor_verbose_cont(self):
+        code = r"""
+            #if A \
+            &&\
+            C
+            #pragma message ("")
+            #endif
+        """
+        expected = """
+            3: (A && C)
+            5: 
+        """
+        self.validate_verbose_run(code, expected)
+
+    def test_cpp_monitor_fail_nested_block_comment(self):
+        code = """
+        /* start
+          /* nested
+          */
+        */
+        """
+        expected = dedent("""
+            Error at test.c line 2 :
+                Nested block comment!
+        """).strip()
+        self.expect_failure(code, expected, fn="test.c")
+
+    def test_cpp_monitor_fail_invalid_format_noarg(self):
+        code = """
+            #if
+            a()
+            #endif
+        """
+        expected = dedent("""
+            Error at test.c line 1 :
+                Invalid format for #if line: no argument!
+        """).strip()
+        self.expect_failure(code, expected, fn="test.c")
+
+    def test_cpp_monitor_fail_invalid_format_toomanyargs(self):
+        code = """
+            #ifdef A B
+            a()
+            #endif
+        """
+        expected = dedent("""
+            Error at test.c line 1 :
+                Invalid format for #ifdef line: should be exactly one argument!
+        """).strip()
+        self.expect_failure(code, expected, fn="test.c")
+
+    def test_cpp_monitor_fail_no_matching(self):
+        dataset = (
+            ("#else", "#else without matching #if / #ifdef / #ifndef!"),
+            ("#endif", "#endif without matching #if / #ifdef / #ifndef!"),
+            ("#elif B", "#elif without matching #if / #ifdef / #ifndef!"),
+        )
+        for line, msg in dataset:
+            with self.subTest(line=line):
+                self.expect_failure(line, msg)
 
 
 if __name__ == "__main__":
