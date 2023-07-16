@@ -162,7 +162,7 @@ Let's dive in!
 1. Find a Python builtin that calls either :c:func:`PyArg_ParseTuple`
    or :c:func:`PyArg_ParseTupleAndKeywords`, and hasn't been converted
    to work with Argument Clinic yet.
-   For my example I'm using ``_pickle.Pickler.dump()``.
+   For my example I'm using ``_asyncio.Future.add_done_callback()``.
 
 2. If the call to the ``PyArg_Parse`` function uses any of the
    following format units:
@@ -208,7 +208,7 @@ Let's dive in!
    Sample::
 
     /*[clinic input]
-    Write a pickled representation of obj to the open file.
+    Add a callback to be run when the future becomes done.
     [clinic start generated code]*/
 
 5. If your docstring doesn't have a "summary" line, Argument Clinic will
@@ -216,8 +216,15 @@ Let's dive in!
    be a paragraph consisting of a single 80-column line
    at the beginning of the docstring.
 
-   (Our example docstring consists solely of a summary line, so the sample
-   code doesn't have to change for this step.)
+   Sample::
+
+    /*[clinic input]
+    Add a callback to be run when the future becomes done.
+
+    The callback is called with a single argument - the future object. If
+    the future is already done when this is called, the callback is
+    scheduled with call_soon.
+    [clinic start generated code]*/
 
 6. Above the docstring, enter the name of the function, followed
    by a blank line.  This should be the Python name of the function,
@@ -229,9 +236,13 @@ Let's dive in!
    Sample::
 
     /*[clinic input]
-    _pickle.Pickler.dump
+    _asyncio.Future.add_done_callback
 
-    Write a pickled representation of obj to the open file.
+    Add a callback to be run when the future becomes done.
+
+    The callback is called with a single argument - the future object. If
+    the future is already done when this is called, the callback is
+    scheduled with call_soon.
     [clinic start generated code]*/
 
 7. If this is the first time that module or class has been used with Argument
@@ -253,14 +264,17 @@ Let's dive in!
    Sample::
 
        /*[clinic input]
-       module _pickle
-       class _pickle.Pickler "PicklerObject *" "&Pickler_Type"
+       class _asyncio.Future "FutureObj *" "&Future_Type"
        [clinic start generated code]*/
 
        /*[clinic input]
-       _pickle.Pickler.dump
+       _asyncio.Future.add_done_callback
 
-       Write a pickled representation of obj to the open file.
+       Add a callback to be run when the future becomes done.
+
+       The callback is called with a single argument - the future object. If
+       the future is already done when this is called, the callback is
+       scheduled with call_soon.
        [clinic start generated code]*/
 
 
@@ -310,17 +324,21 @@ Let's dive in!
 
    Sample::
 
-        /*[clinic input]
-        module _pickle
-        class _pickle.Pickler "PicklerObject *" "&Pickler_Type"
-        [clinic start generated code]*/
+       /*[clinic input]
+       class _asyncio.Future "FutureObj *" "&Future_Type"
+       [clinic start generated code]*/
 
-        /*[clinic input]
-        _pickle.Pickler.dump
+       /*[clinic input]
+       _asyncio.Future.add_done_callback
 
-           obj: 'O'
+           cls: defining_class
+           fn: object
 
-       Write a pickled representation of obj to the open file.
+       Add a callback to be run when the future becomes done.
+
+       The callback is called with a single argument - the future object. If
+       the future is already done when this is called, the callback is
+       scheduled with call_soon.
        [clinic start generated code]*/
 
 9. If your function has ``|`` in the format string, meaning some
@@ -333,7 +351,27 @@ Let's dive in!
    itself before the first keyword-only argument, indented the
    same as the parameter lines.
 
-   (``_pickle.Pickler.dump`` has neither, so our sample is unchanged.)
+   Sample::
+
+       /*[clinic input]
+       class _asyncio.Future "FutureObj *" "&Future_Type"
+       [clinic start generated code]*/
+
+       /*[clinic input]
+       _asyncio.Future.add_done_callback
+
+           cls: defining_class
+           fn: object
+
+           *
+           context: object = NULL
+
+       Add a callback to be run when the future becomes done.
+
+       The callback is called with a single argument - the future object. If
+       the future is already done when this is called, the callback is
+       scheduled with call_soon.
+       [clinic start generated code]*/
 
 
 10. If the existing C function calls :c:func:`PyArg_ParseTuple`
@@ -350,19 +388,25 @@ Let's dive in!
 
     Sample::
 
-        /*[clinic input]
-        module _pickle
-        class _pickle.Pickler "PicklerObject *" "&Pickler_Type"
-        [clinic start generated code]*/
+       /*[clinic input]
+       class _asyncio.Future "FutureObj *" "&Future_Type"
+       [clinic start generated code]*/
 
-        /*[clinic input]
-        _pickle.Pickler.dump
+       /*[clinic input]
+       _asyncio.Future.add_done_callback
 
-            obj: 'O'
-            /
+           cls: defining_class
+           fn: object
+           /
+           *
+           context: object = NULL
 
-        Write a pickled representation of obj to the open file.
-        [clinic start generated code]*/
+       Add a callback to be run when the future becomes done.
+
+       The callback is called with a single argument - the future object. If
+       the future is already done when this is called, the callback is
+       scheduled with call_soon.
+       [clinic start generated code]*/
 
 11. It's helpful to write a per-parameter docstring for each parameter.
     But per-parameter docstrings are optional; you can skip this step
@@ -377,20 +421,26 @@ Let's dive in!
 
     Sample::
 
-        /*[clinic input]
-        module _pickle
-        class _pickle.Pickler "PicklerObject *" "&Pickler_Type"
-        [clinic start generated code]*/
+       /*[clinic input]
+       class _asyncio.Future "FutureObj *" "&Future_Type"
+       [clinic start generated code]*/
 
-        /*[clinic input]
-        _pickle.Pickler.dump
+       /*[clinic input]
+       _asyncio.Future.add_done_callback
 
-            obj: 'O'
-                The object to be pickled.
-            /
+           cls: defining_class
+           fn: object
+               the callback function
+           /
+           *
+           context: object = NULL
 
-        Write a pickled representation of obj to the open file.
-        [clinic start generated code]*/
+       Add a callback to be run when the future becomes done.
+
+       The callback is called with a single argument - the future object. If
+       the future is already done when this is called, the callback is
+       scheduled with call_soon.
+       [clinic start generated code]*/
 
 12. Save and close the file, then run ``Tools/clinic/clinic.py`` on
     it.  With luck everything worked---your block now has output, and
@@ -398,18 +448,26 @@ Let's dive in!
     text editor to see::
 
        /*[clinic input]
-       _pickle.Pickler.dump
+       _asyncio.Future.add_done_callback
 
-           obj: 'O'
-               The object to be pickled.
+           cls: defining_class
+           fn: object
+               the callback function
            /
+           *
+           context: object = NULL
 
-       Write a pickled representation of obj to the open file.
+       Add a callback to be run when the future becomes done.
+
+       The callback is called with a single argument - the future object. If
+       the future is already done when this is called, the callback is
+       scheduled with call_soon.
        [clinic start generated code]*/
 
        static PyObject *
-       _pickle_Pickler_dump(PicklerObject *self, PyObject *obj)
-       /*[clinic end generated code: output=87ecad1261e02ac7 input=552eb1c0f52260d9]*/
+       _asyncio_Future_add_done_callback_impl(FutureObj *self, PyTypeObject *cls,
+                                       PyObject *fn, PyObject *context)
+       /*[clinic end generated code: output=922e9a4cbd601167 input=599261c521458cc2]*/
 
     Obviously, if Argument Clinic didn't produce any output, it's because
     it found an error in your input.  Keep fixing your errors and retrying
@@ -419,7 +477,7 @@ Let's dive in!
     file.  You'll need to include that in your original ``.c`` file,
     typically right after the clinic module block::
 
-       #include "clinic/_pickle.c.h"
+       #include "clinic/_asynciomodule.c.h"
 
 13. Double-check that the argument-parsing code Argument Clinic generated
     looks basically the same as the existing code.
@@ -449,8 +507,9 @@ Let's dive in!
     macro defining the appropriate static :c:type:`PyMethodDef` structure for
     this builtin::
 
-        #define __PICKLE_PICKLER_DUMP_METHODDEF    \
-        {"dump", (PyCFunction)__pickle_Pickler_dump, METH_O, __pickle_Pickler_dump__doc__},
+        #define _ASYNCIO_FUTURE_ADD_DONE_CALLBACK_METHODDEF    \
+        {"add_done_callback", _PyCFunction_CAST(_asyncio_Future_add_done_callback), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _asyncio_Future_add_done_callback__doc__},
+
 
     This static structure should be *exactly* the same as the existing static
     :c:type:`PyMethodDef` structure for this builtin.
@@ -484,43 +543,43 @@ Let's dive in!
     Sample::
 
         /*[clinic input]
-        module _pickle
-        class _pickle.Pickler "PicklerObject *" "&Pickler_Type"
+        class _asyncio.Future "FutureObj *" "&Future_Type"
         [clinic start generated code]*/
-        /*[clinic end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+        /*[clinic end generated code: output=da39a3ee5e6b4b0d input=00d3e4abca711e0f]*/
 
         /*[clinic input]
-        _pickle.Pickler.dump
+        _asyncio.Future.add_done_callback
 
-            obj: 'O'
-                The object to be pickled.
+            cls: defining_class
+            fn: object
             /
+            *
+            context: object = NULL
 
-        Write a pickled representation of obj to the open file.
+        Add a callback to be run when the future becomes done.
+
+        The callback is called with a single argument - the future object. If
+        the future is already done when this is called, the callback is
+        scheduled with call_soon.
         [clinic start generated code]*/
 
-        PyDoc_STRVAR(__pickle_Pickler_dump__doc__,
-        "Write a pickled representation of obj to the open file.\n"
-        "\n"
-        ...
         static PyObject *
-        _pickle_Pickler_dump_impl(PicklerObject *self, PyObject *obj)
-        /*[clinic end generated code: checksum=3bd30745bf206a48f8b576a1da3d90f55a0a4187]*/
+        _asyncio_Future_add_done_callback_impl(FutureObj *self, PyTypeObject *cls,
+                                            PyObject *fn, PyObject *context)
+        /*[clinic end generated code: output=922e9a4cbd601167 input=599261c521458cc2]*/
         {
-            /* Check whether the Pickler was initialized correctly (issue3664).
-               Developers often forget to call __init__() in their subclasses, which
-               would trigger a segfault without this check. */
-            if (self->write == NULL) {
-                PyErr_Format(PicklingError,
-                             "Pickler.__init__() was not called by %s.__init__()",
-                             Py_TYPE(self)->tp_name);
-                return NULL;
+            asyncio_state *state = get_asyncio_state_by_cls(cls);
+            if (context == NULL) {
+                context = PyContext_CopyCurrent();
+                if (context == NULL) {
+                    return NULL;
+                }
+                PyObject *res = future_add_done_callback(state, self, fn, context);
+                Py_DECREF(context);
+                return res;
             }
-
-            if (_Pickler_ClearBuffer(self) < 0)
-                return NULL;
-
-            ...
+            return future_add_done_callback(state, self, fn, context);
+        }
 
 15. Remember the macro with the :c:type:`PyMethodDef` structure for this
     function?  Find the existing :c:type:`PyMethodDef` structure for this
@@ -535,10 +594,10 @@ Let's dive in!
 
     Sample::
 
-        static struct PyMethodDef Pickler_methods[] = {
-            __PICKLE_PICKLER_DUMP_METHODDEF
-            __PICKLE_PICKLER_CLEAR_MEMO_METHODDEF
-            {NULL, NULL}                /* sentinel */
+        static PyMethodDef FutureType_methods[] = {
+            _ASYNCIO_FUTURE_ADD_DONE_CALLBACK_METHODDEF
+            ...
+            {NULL, NULL}        /* Sentinel */
         };
 
 
