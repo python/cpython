@@ -2059,11 +2059,7 @@ ModuleDict = dict[str, "Module"]
 
 
 class Parser(Protocol):
-
-    @abc.abstractmethod
-    def __init__(self, *args, **kwargs): ...
-
-    @abc.abstractmethod
+    def __init__(self, clinic: Clinic) -> None: ...
     def parse(self, block: Block) -> None: ...
 
 
