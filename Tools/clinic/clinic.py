@@ -109,7 +109,7 @@ class _TextAccumulator(NamedTuple):
 
 def _text_accumulator() -> _TextAccumulator:
     text: list[str] = []
-    def output():
+    def output() -> str:
         s = ''.join(text)
         text.clear()
         return s
@@ -433,10 +433,10 @@ class FormatCounterFormatter(string.Formatter):
          the counts dict would now look like
          {'a': 2, 'b': 1, 'c': 1}
     """
-    def __init__(self):
-        self.counts = collections.Counter()
+    def __init__(self) -> None:
+        self.counts = collections.Counter[str]()
 
-    def get_value(self, key, args, kwargs):
+    def get_value(self, key: str, args, kwargs) -> str:  # type: ignore[override]
         self.counts[key] += 1
         return ''
 
@@ -447,18 +447,25 @@ class Language(metaclass=abc.ABCMeta):
     stop_line = ""
     checksum_line = ""
 
-    def __init__(self, filename):
+    def __init__(self, filename: str) -> None:
         pass
 
     @abc.abstractmethod
-    def render(self, clinic, signatures):
+    def render(
+            self,
+            clinic: Clinic | None,
+            signatures: Iterable[Module | Class | Function]
+    ) -> str:
         pass
 
-    def parse_line(self, line):
+    def parse_line(self, line: str) -> None:
         pass
 
-    def validate(self):
-        def assert_only_one(attr, *additional_fields):
+    def validate(self) -> None:
+        def assert_only_one(
+                attr: str,
+                *additional_fields: str
+        ) -> None:
             """
             Ensures that the string found at getattr(self, attr)
             contains exactly one formatter replacement string for
@@ -485,10 +492,10 @@ class Language(metaclass=abc.ABCMeta):
             """
             fields = ['dsl_name']
             fields.extend(additional_fields)
-            line = getattr(self, attr)
+            line: str = getattr(self, attr)
             fcf = FormatCounterFormatter()
             fcf.format(line)
-            def local_fail(should_be_there_but_isnt):
+            def local_fail(should_be_there_but_isnt: bool) -> None:
                 if should_be_there_but_isnt:
                     fail("{} {} must contain {{{}}} exactly once!".format(
                         self.__class__.__name__, attr, name))
@@ -749,10 +756,10 @@ class CLanguage(Language):
     stop_line     = "[{dsl_name} start generated code]*/"
     checksum_line = "/*[{dsl_name} end generated code: {arguments}]*/"
 
-    def __init__(self, filename):
+    def __init__(self, filename: str) -> None:
         super().__init__(filename)
         self.cpp = cpp.Monitor(filename)
-        self.cpp.fail = fail
+        self.cpp.fail = fail  # type: ignore[method-assign]
 
     def parse_line(self, line: str) -> None:
         self.cpp.writeline(line)
@@ -935,6 +942,7 @@ class CLanguage(Language):
                 add(field)
             return linear_format(output(), parser_declarations=declarations)
 
+        parsearg: str | None
         if not parameters:
             parser_code: list[str] | None
             if not requires_defining_class:
@@ -1880,7 +1888,12 @@ class BlockPrinter:
     language: Language
     f: io.StringIO = dc.field(default_factory=io.StringIO)
 
-    def print_block(self, block, *, core_includes=False):
+    def print_block(
+            self,
+            block: Block,
+            *,
+            core_includes: bool = False
+    ) -> None:
         input = block.input
         output = block.output
         dsl_name = block.dsl_name
@@ -1931,7 +1944,7 @@ class BlockPrinter:
         write(self.language.checksum_line.format(dsl_name=dsl_name, arguments=arguments))
         write("\n")
 
-    def write(self, text):
+    def write(self, text: str) -> None:
         self.f.write(text)
 
 
@@ -2755,7 +2768,7 @@ class CConverter(metaclass=CConverterAutoRegister):
     # If not None, should be a string representing a pointer to a
     # PyTypeObject (e.g. "&PyUnicode_Type").
     # Only used by the 'O!' format unit (and the "object" converter).
-    subclass_of = None
+    subclass_of: str | None = None
 
     # Do we want an adjacent '_length' variable for this variable?
     # Only used by format units ending with '#'.
@@ -2948,7 +2961,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         prototype.append(name)
         return "".join(prototype)
 
-    def declaration(self, *, in_parser=False):
+    def declaration(self, *, in_parser=False) -> str:
         """
         The C statement to declare this variable.
         """
@@ -3006,7 +3019,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         """
         pass
 
-    def parse_arg(self, argname, displayname):
+    def parse_arg(self, argname: str, displayname: str):
         if self.format_unit == 'O&':
             return """
                 if (!{converter}({argname}, &{paramname})) {{{{
