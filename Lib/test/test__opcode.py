@@ -7,16 +7,70 @@ _opcode = import_module("_opcode")
 from _opcode import stack_effect
 
 
-class OpcodeTests(unittest.TestCase):
+EXPECTED_OPLISTS = {
+    'HAS_ARG': [
+        'BINARY_OP', 'BUILD_CONST_KEY_MAP', 'BUILD_LIST', 'BUILD_MAP',
+        'BUILD_SET', 'BUILD_SLICE', 'BUILD_STRING', 'BUILD_TUPLE', 'CALL',
+        'CALL_FUNCTION_EX', 'CALL_INTRINSIC_1', 'CALL_INTRINSIC_2', 'COMPARE_OP',
+        'CONTAINS_OP', 'CONVERT_VALUE', 'COPY', 'COPY_FREE_VARS', 'DELETE_ATTR',
+        'DELETE_DEREF', 'DELETE_FAST', 'DELETE_GLOBAL', 'DELETE_NAME',
+        'DICT_MERGE', 'DICT_UPDATE', 'ENTER_EXECUTOR', 'EXTENDED_ARG',
+        'FOR_ITER', 'GET_AWAITABLE', 'IMPORT_FROM', 'IMPORT_NAME',
+        'INSTRUMENTED_CALL', 'INSTRUMENTED_FOR_ITER',
+        'INSTRUMENTED_JUMP_BACKWARD', 'INSTRUMENTED_JUMP_FORWARD',
+        'INSTRUMENTED_LOAD_SUPER_ATTR', 'INSTRUMENTED_POP_JUMP_IF_FALSE',
+        'INSTRUMENTED_POP_JUMP_IF_NONE', 'INSTRUMENTED_POP_JUMP_IF_NOT_NONE',
+        'INSTRUMENTED_POP_JUMP_IF_TRUE', 'INSTRUMENTED_RESUME',
+        'INSTRUMENTED_RETURN_CONST', 'INSTRUMENTED_YIELD_VALUE', 'IS_OP', 'JUMP',
+        'JUMP_BACKWARD', 'JUMP_BACKWARD_NO_INTERRUPT', 'JUMP_FORWARD',
+        'JUMP_NO_INTERRUPT', 'KW_NAMES', 'LIST_APPEND', 'LIST_EXTEND',
+        'LOAD_ATTR', 'LOAD_CLOSURE', 'LOAD_CONST', 'LOAD_DEREF', 'LOAD_FAST',
+        'LOAD_FAST_AND_CLEAR', 'LOAD_FAST_CHECK', 'LOAD_FAST_LOAD_FAST',
+        'LOAD_FROM_DICT_OR_DEREF', 'LOAD_FROM_DICT_OR_GLOBALS', 'LOAD_GLOBAL',
+        'LOAD_METHOD', 'LOAD_NAME', 'LOAD_SUPER_ATTR', 'LOAD_SUPER_METHOD',
+        'LOAD_ZERO_SUPER_ATTR', 'LOAD_ZERO_SUPER_METHOD', 'MAKE_CELL', 'MAP_ADD',
+        'MATCH_CLASS', 'POP_JUMP_IF_FALSE', 'POP_JUMP_IF_NONE',
+        'POP_JUMP_IF_NOT_NONE', 'POP_JUMP_IF_TRUE', 'RAISE_VARARGS', 'RERAISE',
+        'RESUME', 'RETURN_CONST', 'SEND', 'SET_ADD', 'SET_FUNCTION_ATTRIBUTE',
+        'SET_UPDATE', 'STORE_ATTR', 'STORE_DEREF', 'STORE_FAST',
+        'STORE_FAST_LOAD_FAST', 'STORE_FAST_MAYBE_NULL', 'STORE_FAST_STORE_FAST',
+        'STORE_GLOBAL', 'STORE_NAME', 'SWAP', 'UNPACK_EX', 'UNPACK_SEQUENCE',
+        'YIELD_VALUE'],
 
-    def check_bool_function_result(self, func, ops, expected):
-        for op in ops:
-            if isinstance(op, str):
-                op = dis.opmap[op]
-            with self.subTest(opcode=op, func=func):
-                self.assertIsInstance(func(op), bool)
-                self.assertEqual(func(op), expected)
+    'HAS_CONST': [
+        'LOAD_CONST', 'RETURN_CONST', 'KW_NAMES', 'INSTRUMENTED_RETURN_CONST'],
 
+    'HAS_NAME': [
+        'STORE_NAME', 'DELETE_NAME', 'STORE_ATTR', 'DELETE_ATTR', 'STORE_GLOBAL',
+        'DELETE_GLOBAL', 'LOAD_NAME', 'LOAD_ATTR', 'IMPORT_NAME', 'IMPORT_FROM',
+        'LOAD_GLOBAL', 'LOAD_SUPER_ATTR', 'LOAD_FROM_DICT_OR_GLOBALS',
+        'LOAD_METHOD', 'LOAD_SUPER_METHOD', 'LOAD_ZERO_SUPER_METHOD',
+        'LOAD_ZERO_SUPER_ATTR'],
+
+    'HAS_CONST': [
+        'LOAD_CONST', 'RETURN_CONST', 'KW_NAMES', 'INSTRUMENTED_RETURN_CONST'],
+
+    'HAS_JUMP': [
+        'FOR_ITER', 'JUMP_FORWARD', 'POP_JUMP_IF_FALSE', 'POP_JUMP_IF_TRUE',
+        'SEND', 'POP_JUMP_IF_NOT_NONE', 'POP_JUMP_IF_NONE',
+        'JUMP_BACKWARD_NO_INTERRUPT', 'JUMP_BACKWARD', 'ENTER_EXECUTOR', 'JUMP',
+        'JUMP_NO_INTERRUPT'],
+
+    'HAS_FREE': [
+        'MAKE_CELL', 'LOAD_DEREF', 'STORE_DEREF', 'DELETE_DEREF',
+        'LOAD_FROM_DICT_OR_DEREF'],
+
+    'HAS_LOCAL': [
+        'LOAD_FAST', 'STORE_FAST', 'DELETE_FAST', 'LOAD_FAST_CHECK',
+        'LOAD_FAST_AND_CLEAR', 'LOAD_FAST_LOAD_FAST', 'STORE_FAST_LOAD_FAST',
+        'STORE_FAST_STORE_FAST', 'STORE_FAST_MAYBE_NULL', 'LOAD_CLOSURE'],
+
+    'HAS_EXC': ['SETUP_FINALLY', 'SETUP_CLEANUP', 'SETUP_WITH'],
+
+    'HAS_COMPARE': ['COMPARE_OP'],
+}
+
+class OpListTests(unittest.TestCase):
     def test_invalid_opcodes(self):
         invalid = [-100, -1, 255, 512, 513, 1000]
         self.check_bool_function_result(_opcode.is_valid, invalid, False)
@@ -39,51 +93,24 @@ class OpcodeTests(unittest.TestCase):
         opcodes = [dis.opmap[opname] for opname in names]
         self.check_bool_function_result(_opcode.is_valid, opcodes, True)
 
-    def test_has_arg(self):
-        has_arg = ['SWAP', 'LOAD_FAST', 'INSTRUMENTED_POP_JUMP_IF_TRUE', 'JUMP']
-        no_arg = ['SETUP_WITH', 'POP_TOP', 'NOP', 'CACHE']
-        self.check_bool_function_result(_opcode.has_arg, has_arg, True)
-        self.check_bool_function_result(_opcode.has_arg, no_arg, False)
+    def test_oplists(self):
+        def check_function(self, func, expected):
+            for op in [-10, 520]:
+                with self.subTest(opcode=op, func=func):
+                    res = func(op)
+                    self.assertIsInstance(res, bool)
+                    self.assertEqual(res, op in expected)
 
-    def test_has_const(self):
-        has_const = ['LOAD_CONST', 'RETURN_CONST', 'KW_NAMES']
-        no_const = ['SETUP_WITH', 'POP_TOP', 'NOP', 'CACHE']
-        self.check_bool_function_result(_opcode.has_const, has_const, True)
-        self.check_bool_function_result(_opcode.has_const, no_const, False)
+        check_function(self, _opcode.has_arg, EXPECTED_OPLISTS['HAS_ARG'])
+        check_function(self, _opcode.has_const, EXPECTED_OPLISTS['HAS_CONST'])
+        check_function(self, _opcode.has_name, EXPECTED_OPLISTS['HAS_NAME'])
+        check_function(self, _opcode.has_jump, EXPECTED_OPLISTS['HAS_JUMP'])
+        check_function(self, _opcode.has_free, EXPECTED_OPLISTS['HAS_FREE'])
+        check_function(self, _opcode.has_local, EXPECTED_OPLISTS['HAS_LOCAL'])
+        check_function(self, _opcode.has_exc, EXPECTED_OPLISTS['HAS_EXC'])
 
-    def test_has_name(self):
-        has_name = ['STORE_NAME', 'DELETE_ATTR', 'STORE_GLOBAL', 'IMPORT_FROM',
-                    'LOAD_FROM_DICT_OR_GLOBALS']
-        no_name = ['SETUP_WITH', 'POP_TOP', 'NOP', 'CACHE']
-        self.check_bool_function_result(_opcode.has_name, has_name, True)
-        self.check_bool_function_result(_opcode.has_name, no_name, False)
 
-    def test_has_jump(self):
-        has_jump = ['FOR_ITER', 'JUMP_FORWARD', 'JUMP', 'POP_JUMP_IF_TRUE', 'SEND']
-        no_jump = ['SETUP_WITH', 'POP_TOP', 'NOP', 'CACHE']
-        self.check_bool_function_result(_opcode.has_jump, has_jump, True)
-        self.check_bool_function_result(_opcode.has_jump, no_jump, False)
-
-    def test_has_free(self):
-        has_free = ['MAKE_CELL', 'LOAD_DEREF', 'STORE_DEREF', 'DELETE_DEREF',
-                     'LOAD_FROM_DICT_OR_DEREF']
-        no_free = ['SETUP_WITH', 'POP_TOP', 'NOP', 'CACHE']
-        self.check_bool_function_result(_opcode.has_free, has_free, True)
-        self.check_bool_function_result(_opcode.has_free, no_free, False)
-
-    def test_has_local(self):
-        has_local = ['LOAD_FAST', 'LOAD_FAST_CHECK', 'LOAD_FAST_AND_CLEAR',
-                     'STORE_FAST_MAYBE_NULL', 'LOAD_CLOSURE']
-        no_local = ['SETUP_WITH', 'POP_TOP', 'NOP', 'CACHE']
-        self.check_bool_function_result(_opcode.has_local, has_local, True)
-        self.check_bool_function_result(_opcode.has_local, no_local, False)
-
-    def test_has_exc(self):
-        has_exc = ['SETUP_FINALLY', 'SETUP_WITH', 'SETUP_CLEANUP']
-        no_exc = ['DELETE_DEREF', 'POP_TOP', 'NOP', 'CACHE']
-        self.check_bool_function_result(_opcode.has_exc, has_exc, True)
-        self.check_bool_function_result(_opcode.has_exc, no_exc, False)
-
+class OpListTests(unittest.TestCase):
     def test_stack_effect(self):
         self.assertEqual(stack_effect(dis.opmap['POP_TOP']), -1)
         self.assertEqual(stack_effect(dis.opmap['BUILD_SLICE'], 0), -1)
