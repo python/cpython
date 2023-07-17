@@ -349,3 +349,5 @@ static const convertion_func_ptr CONVERSION_FUNCTIONS[4] = {
     [FVC_REPR] = PyObject_Repr,
     [FVC_ASCII] = PyObject_ASCII
 };
+
+#define ASSERT_KWNAMES_IS_NULL() assert(kwnames == NULL)
