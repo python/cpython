@@ -1,4 +1,3 @@
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_long.h"          // _PyLong_GetZero()
@@ -1147,7 +1146,7 @@ itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n)
         return NULL;
     }
 
-    if (_PyObject_LookupAttr(it, &_Py_ID(__copy__), &copyfunc) < 0) {
+    if (PyObject_GetOptionalAttr(it, &_Py_ID(__copy__), &copyfunc) < 0) {
         Py_DECREF(it);
         Py_DECREF(result);
         return NULL;

@@ -14,6 +14,10 @@
        http://bugs.python.org/issue8108#msg102867 ?
 */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 /* Don't warn about deprecated functions, */
 #ifndef OPENSSL_API_COMPAT
   // 0x10101000L == 1.1.1, 30000 == 3.0.0
@@ -21,9 +25,8 @@
 #endif
 #define OPENSSL_NO_DEPRECATED 1
 
-#define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
+#include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 /* Include symbols from _socket module */
 #include "socketmodule.h"
@@ -378,9 +381,25 @@ typedef enum {
 #define ERRSTR1(x,y,z) (x ":" y ": " z)
 #define ERRSTR(x) ERRSTR1("_ssl.c", Py_STRINGIFY(__LINE__), x)
 
-/* Get the socket from a PySSLSocket, if it has one */
-#define GET_SOCKET(obj) ((obj)->Socket ? \
-    (PySocketSockObject *) PyWeakref_GetObject((obj)->Socket) : NULL)
+// Get the socket from a PySSLSocket, if it has one.
+// Return a borrowed reference.
+static inline PySocketSockObject* GET_SOCKET(PySSLSocket *obj) {
+    if (obj->Socket) {
+        PyObject *sock = _PyWeakref_GET_REF(obj->Socket);
+        if (sock != NULL) {
+            // GET_SOCKET() returns a borrowed reference
+            Py_DECREF(sock);
+        }
+        else {
+            // dead weak reference
+            sock = Py_None;
+        }
+        return (PySocketSockObject *)sock;  // borrowed reference
+    }
+    else {
+        return NULL;
+    }
+}
 
 /* If sock is NULL, use a timeout of 0 second */
 #define GET_SOCKET_TIMEOUT(sock) \
@@ -828,6 +847,15 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
         _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
         return NULL;
     }
+
+    if (socket_type == PY_SSL_SERVER) {
+#define SID_CTX "Python"
+        /* Set the session id context (server-side only) */
+        SSL_set_session_id_context(self->ssl, (const unsigned char *) SID_CTX,
+                                   sizeof(SID_CTX));
+#undef SID_CTX
+    }
+
     /* bpo43522 and OpenSSL < 1.1.1l: copy hostflags manually */
 #if !defined(LIBRESSL_VERSION_NUMBER) && OPENSSL_VERSION < 0x101010cf
     X509_VERIFY_PARAM *ssl_params = SSL_get0_param(self->ssl);
@@ -2177,13 +2205,14 @@ PyDoc_STRVAR(PySSL_get_server_hostname_doc,
 static PyObject *
 PySSL_get_owner(PySSLSocket *self, void *c)
 {
-    PyObject *owner;
-
-    if (self->owner == NULL)
+    if (self->owner == NULL) {
         Py_RETURN_NONE;
-
-    owner = PyWeakref_GetObject(self->owner);
-    return Py_NewRef(owner);
+    }
+    PyObject *owner = _PyWeakref_GET_REF(self->owner);
+    if (owner == NULL) {
+        Py_RETURN_NONE;
+    }
+    return owner;
 }
 
 static int
@@ -3165,11 +3194,6 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     /* Set SSL_MODE_RELEASE_BUFFERS. This potentially greatly reduces memory
        usage for no cost at all. */
     SSL_CTX_set_mode(self->ctx, SSL_MODE_RELEASE_BUFFERS);
-
-#define SID_CTX "Python"
-    SSL_CTX_set_session_id_context(self->ctx, (const unsigned char *) SID_CTX,
-                                   sizeof(SID_CTX));
-#undef SID_CTX
 
     params = SSL_CTX_get0_param(self->ctx);
     /* Improve trust chain building when cross-signed intermediate
@@ -4393,14 +4417,13 @@ _servername_callback(SSL *s, int *al, void *args)
      * will be passed. If both do not exist only then the C-level object is
      * passed. */
     if (ssl->owner)
-        ssl_socket = PyWeakref_GetObject(ssl->owner);
+        ssl_socket = _PyWeakref_GET_REF(ssl->owner);
     else if (ssl->Socket)
-        ssl_socket = PyWeakref_GetObject(ssl->Socket);
+        ssl_socket = _PyWeakref_GET_REF(ssl->Socket);
     else
-        ssl_socket = (PyObject *) ssl;
+        ssl_socket = Py_NewRef(ssl);
 
-    Py_INCREF(ssl_socket);
-    if (ssl_socket == Py_None)
+    if (ssl_socket == NULL)
         goto error;
 
     if (servername == NULL) {
@@ -6001,15 +6024,21 @@ sslmodule_init_errorcodes(PyObject *module)
 
     errcode = error_codes;
     while (errcode->mnemonic != NULL) {
-        PyObject *mnemo, *key;
-        mnemo = PyUnicode_FromString(errcode->mnemonic);
-        key = Py_BuildValue("ii", errcode->library, errcode->reason);
-        if (mnemo == NULL || key == NULL)
+        PyObject *mnemo = PyUnicode_FromString(errcode->mnemonic);
+        if (mnemo == NULL) {
             return -1;
-        if (PyDict_SetItem(state->err_codes_to_names, key, mnemo))
+        }
+        PyObject *key = Py_BuildValue("ii", errcode->library, errcode->reason);
+        if (key == NULL) {
+            Py_DECREF(mnemo);
             return -1;
+        }
+        int rc = PyDict_SetItem(state->err_codes_to_names, key, mnemo);
         Py_DECREF(key);
         Py_DECREF(mnemo);
+        if (rc < 0) {
+            return -1;
+        }
         errcode++;
     }
 

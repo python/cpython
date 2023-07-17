@@ -27,7 +27,8 @@ PyAPI_FUNC(void) _PyEval_SignalReceived(PyInterpreterState *interp);
 PyAPI_FUNC(int) _PyEval_AddPendingCall(
     PyInterpreterState *interp,
     int (*func)(void *),
-    void *arg);
+    void *arg,
+    int mainthreadonly);
 PyAPI_FUNC(void) _PyEval_SignalAsyncExc(PyInterpreterState *interp);
 #ifdef HAVE_FORK
 extern PyStatus _PyEval_ReInitThreads(PyThreadState *tstate);
@@ -151,8 +152,11 @@ extern struct _PyInterpreterFrame* _PyEval_GetFrame(void);
 
 extern PyObject* _Py_MakeCoro(PyFunctionObject *func);
 
+/* Handle signals, pending calls, GIL drop request
+   and asynchronous exception */
 extern int _Py_HandlePending(PyThreadState *tstate);
 
+extern PyObject * _PyEval_GetFrameLocals(void);
 
 
 #ifdef __cplusplus

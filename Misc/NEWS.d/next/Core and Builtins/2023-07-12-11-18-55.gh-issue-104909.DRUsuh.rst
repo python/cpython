@@ -1,0 +1,1 @@
+Split :opcode:`LOAD_ATTR_INSTANCE_VALUE` into micro-ops.
