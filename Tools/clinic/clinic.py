@@ -4865,10 +4865,16 @@ class DSLParser:
             return
 
         line = line.lstrip()
-
-        if line in ('*', '/', '[', ']'):
-            self.parse_special_symbol(line)
-            return
+        func = self.function
+        match line:
+            case '*':
+                return self.parse_star(func)
+            case '[':
+                return self.parse_open_bracket(func)
+            case ']':
+                return self.parse_close_bracket(func)
+            case '/':
+                return self.parse_slash(func)
 
         match self.parameter_state:
             case ParamState.START | ParamState.REQUIRED:
@@ -5207,20 +5213,6 @@ class DSLParser:
                 fail(f"Function {function.name} mixes keyword-only and "
                      "positional-only parameters, which is unsupported.")
             p.kind = inspect.Parameter.POSITIONAL_ONLY
-
-    def parse_special_symbol(self, symbol: str):
-        assert isinstance(self.function, Function)
-        func = self.function
-
-        match symbol:
-            case '*':
-                self.parse_star(func)
-            case '[':
-                self.parse_open_bracket(func)
-            case ']':
-                self.parse_close_bracket(func)
-            case '/':
-                self.parse_slash(func)
 
     def state_parameter_docstring_start(self, line: str | None) -> None:
         self.parameter_docstring_indent = len(self.indent.margin)
