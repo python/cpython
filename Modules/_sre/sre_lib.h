@@ -209,6 +209,7 @@ SRE(count)(SRE_STATE* state, const SRE_CODE* pattern, Py_ssize_t maxcount)
     const SRE_CHAR* ptr = (const SRE_CHAR *)state->ptr;
     const SRE_CHAR* end = (const SRE_CHAR *)state->end;
     Py_ssize_t i;
+    INIT_TRACE(state);
 
     /* adjust end */
     if (maxcount < end - ptr && maxcount != SRE_MAXREPEAT)
@@ -567,6 +568,7 @@ SRE(match)(SRE_STATE* state, const SRE_CODE* pattern, int toplevel)
 
     SRE(match_context)* ctx;
     SRE(match_context)* nextctx;
+    INIT_TRACE(state);
 
     TRACE(("|%p|%p|ENTER\n", pattern, state->ptr));
 
@@ -1639,6 +1641,7 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
     SRE_CODE* charset = NULL;
     SRE_CODE* overlap = NULL;
     int flags = 0;
+    INIT_TRACE(state);
 
     if (ptr > end)
         return 0;

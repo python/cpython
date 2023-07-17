@@ -12,7 +12,6 @@
 
 */
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_moduleobject.h"

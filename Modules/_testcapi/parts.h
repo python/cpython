@@ -28,7 +28,6 @@ int _PyTestCapi_Init_Vectorcall(PyObject *module);
 int _PyTestCapi_Init_Heaptype(PyObject *module);
 int _PyTestCapi_Init_Unicode(PyObject *module);
 int _PyTestCapi_Init_GetArgs(PyObject *module);
-int _PyTestCapi_Init_PyTime(PyObject *module);
 int _PyTestCapi_Init_DateTime(PyObject *module);
 int _PyTestCapi_Init_Docstring(PyObject *module);
 int _PyTestCapi_Init_Mem(PyObject *module);

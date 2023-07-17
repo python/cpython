@@ -21,7 +21,8 @@ typedef struct _PyExecutorObject {
 
 typedef struct _PyOptimizerObject _PyOptimizerObject;
 
-typedef _PyExecutorObject *(*optimize_func)(_PyOptimizerObject* self, PyCodeObject *code, _Py_CODEUNIT *instr);
+/* Should return > 0 if a new executor is created. O if no executor is produced and < 0 if an error occurred. */
+typedef int (*optimize_func)(_PyOptimizerObject* self, PyCodeObject *code, _Py_CODEUNIT *instr, _PyExecutorObject **);
 
 typedef struct _PyOptimizerObject {
     PyObject_HEAD
@@ -37,6 +38,8 @@ PyAPI_FUNC(void) PyUnstable_SetOptimizer(_PyOptimizerObject* optimizer);
 
 PyAPI_FUNC(_PyOptimizerObject *) PyUnstable_GetOptimizer(void);
 
+PyAPI_FUNC(_PyExecutorObject *)PyUnstable_GetExecutor(PyCodeObject *code, int offset);
+
 struct _PyInterpreterFrame *
 _PyOptimizer_BackEdge(struct _PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNIT *dest, PyObject **stack_pointer);
 
@@ -44,6 +47,7 @@ extern _PyOptimizerObject _PyOptimizer_Default;
 
 /* For testing */
 PyAPI_FUNC(PyObject *)PyUnstable_Optimizer_NewCounter(void);
+PyAPI_FUNC(PyObject *)PyUnstable_Optimizer_NewUOpOptimizer(void);
 
 #define OPTIMIZER_BITS_IN_COUNTER 4
 

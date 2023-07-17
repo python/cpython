@@ -929,9 +929,7 @@ which incur interpreter overhead.
    def sliding_window(iterable, n):
        # sliding_window('ABCDEFG', 4) --> ABCD BCDE CDEF DEFG
        it = iter(iterable)
-       window = collections.deque(islice(it, n), maxlen=n)
-       if len(window) == n:
-           yield tuple(window)
+       window = collections.deque(islice(it, n-1), maxlen=n)
        for x in it:
            window.append(x)
            yield tuple(window)
@@ -1047,13 +1045,14 @@ The following recipes have a more mathematical flavor:
    def factor(n):
        "Prime factors of n."
        # factor(99) --> 3 3 11
+       # factor(1_000_000_000_000_007) --> 47 59 360620266859
+       # factor(1_000_000_000_000_403) --> 1000000000000403
        for prime in sieve(math.isqrt(n) + 1):
            while True:
-               quotient, remainder = divmod(n, prime)
-               if remainder:
+               if n % prime:
                    break
                yield prime
-               n = quotient
+               n //= prime
                if n == 1:
                    return
        if n > 1:
@@ -1087,8 +1086,8 @@ The following recipes have a more mathematical flavor:
        kernel = tuple(kernel)[::-1]
        n = len(kernel)
        padded_signal = chain(repeat(0, n-1), signal, repeat(0, n-1))
-       for window in sliding_window(padded_signal, n):
-           yield math.sumprod(kernel, window)
+       windowed_signal = sliding_window(padded_signal, n)
+       return map(math.sumprod, repeat(kernel), windowed_signal)
 
    def polynomial_from_roots(roots):
        """Compute a polynomial's coefficients from its roots.
@@ -1354,6 +1353,12 @@ The following recipes have a more mathematical flavor:
     >>> set(sieve(10_000)).isdisjoint(carmichael)
     True
 
+    >>> list(factor(99))                    # Code example 1
+    [3, 3, 11]
+    >>> list(factor(1_000_000_000_000_007)) # Code example 2
+    [47, 59, 360620266859]
+    >>> list(factor(1_000_000_000_000_403)) # Code example 3
+    [1000000000000403]
     >>> list(factor(0))
     []
     >>> list(factor(1))
@@ -1420,8 +1425,34 @@ The following recipes have a more mathematical flavor:
     >>> list(grouper('abcdefg', n=3, incomplete='ignore'))
     [('a', 'b', 'c'), ('d', 'e', 'f')]
 
+    >>> list(sliding_window('ABCDEFG', 1))
+    [('A',), ('B',), ('C',), ('D',), ('E',), ('F',), ('G',)]
+    >>> list(sliding_window('ABCDEFG', 2))
+    [('A', 'B'), ('B', 'C'), ('C', 'D'), ('D', 'E'), ('E', 'F'), ('F', 'G')]
+    >>> list(sliding_window('ABCDEFG', 3))
+    [('A', 'B', 'C'), ('B', 'C', 'D'), ('C', 'D', 'E'), ('D', 'E', 'F'), ('E', 'F', 'G')]
     >>> list(sliding_window('ABCDEFG', 4))
     [('A', 'B', 'C', 'D'), ('B', 'C', 'D', 'E'), ('C', 'D', 'E', 'F'), ('D', 'E', 'F', 'G')]
+    >>> list(sliding_window('ABCDEFG', 5))
+    [('A', 'B', 'C', 'D', 'E'), ('B', 'C', 'D', 'E', 'F'), ('C', 'D', 'E', 'F', 'G')]
+    >>> list(sliding_window('ABCDEFG', 6))
+    [('A', 'B', 'C', 'D', 'E', 'F'), ('B', 'C', 'D', 'E', 'F', 'G')]
+    >>> list(sliding_window('ABCDEFG', 7))
+    [('A', 'B', 'C', 'D', 'E', 'F', 'G')]
+    >>> list(sliding_window('ABCDEFG', 8))
+    []
+    >>> try:
+    ...     list(sliding_window('ABCDEFG', -1))
+    ... except ValueError:
+    ...     'zero or negative n not supported'
+    ...
+    'zero or negative n not supported'
+    >>> try:
+    ...     list(sliding_window('ABCDEFG', 0))
+    ... except ValueError:
+    ...     'zero or negative n not supported'
+    ...
+    'zero or negative n not supported'
 
     >>> list(roundrobin('abc', 'd', 'ef'))
     ['a', 'd', 'e', 'b', 'f', 'c']

@@ -195,7 +195,6 @@ class FunctionTests(unittest.TestCase):
         self.con.create_function("returnblob", 0, func_returnblob)
         self.con.create_function("returnlonglong", 0, func_returnlonglong)
         self.con.create_function("returnnan", 0, lambda: float("nan"))
-        self.con.create_function("returntoolargeint", 0, lambda: 1 << 65)
         self.con.create_function("return_noncont_blob", 0,
                                  lambda: memoryview(b"blob")[::2])
         self.con.create_function("raiseexception", 0, func_raiseexception)
@@ -294,11 +293,6 @@ class FunctionTests(unittest.TestCase):
         cur.execute("select returnnan()")
         self.assertIsNone(cur.fetchone()[0])
 
-    def test_func_return_too_large_int(self):
-        cur = self.con.cursor()
-        self.assertRaisesRegex(sqlite.DataError, "string or blob too big",
-                               self.con.execute, "select returntoolargeint()")
-
     @with_tracebacks(ZeroDivisionError, name="func_raiseexception")
     def test_func_exception(self):
         cur = self.con.cursor()
@@ -387,38 +381,22 @@ class FunctionTests(unittest.TestCase):
     # Regarding deterministic functions:
     #
     # Between 3.8.3 and 3.15.0, deterministic functions were only used to
-    # optimize inner loops, so for those versions we can only test if the
-    # sqlite machinery has factored out a call or not. From 3.15.0 and onward,
-    # deterministic functions were permitted in WHERE clauses of partial
-    # indices, which allows testing based on syntax, iso. the query optimizer.
-    @unittest.skipIf(sqlite.sqlite_version_info < (3, 8, 3), "Requires SQLite 3.8.3 or higher")
+    # optimize inner loops. From 3.15.0 and onward, deterministic functions
+    # were permitted in WHERE clauses of partial indices, which allows testing
+    # based on syntax, iso. the query optimizer.
     def test_func_non_deterministic(self):
         mock = Mock(return_value=None)
         self.con.create_function("nondeterministic", 0, mock, deterministic=False)
-        if sqlite.sqlite_version_info < (3, 15, 0):
-            self.con.execute("select nondeterministic() = nondeterministic()")
-            self.assertEqual(mock.call_count, 2)
-        else:
-            with self.assertRaises(sqlite.OperationalError):
-                self.con.execute("create index t on test(t) where nondeterministic() is not null")
+        with self.assertRaises(sqlite.OperationalError):
+            self.con.execute("create index t on test(t) where nondeterministic() is not null")
 
-    @unittest.skipIf(sqlite.sqlite_version_info < (3, 8, 3), "Requires SQLite 3.8.3 or higher")
     def test_func_deterministic(self):
         mock = Mock(return_value=None)
         self.con.create_function("deterministic", 0, mock, deterministic=True)
-        if sqlite.sqlite_version_info < (3, 15, 0):
-            self.con.execute("select deterministic() = deterministic()")
-            self.assertEqual(mock.call_count, 1)
-        else:
-            try:
-                self.con.execute("create index t on test(t) where deterministic() is not null")
-            except sqlite.OperationalError:
-                self.fail("Unexpected failure while creating partial index")
-
-    @unittest.skipIf(sqlite.sqlite_version_info >= (3, 8, 3), "SQLite < 3.8.3 needed")
-    def test_func_deterministic_not_supported(self):
-        with self.assertRaises(sqlite.NotSupportedError):
-            self.con.create_function("deterministic", 0, int, deterministic=True)
+        try:
+            self.con.execute("create index t on test(t) where deterministic() is not null")
+        except sqlite.OperationalError:
+            self.fail("Unexpected failure while creating partial index")
 
     def test_func_deterministic_keyword_only(self):
         with self.assertRaises(TypeError):
@@ -444,9 +422,10 @@ class FunctionTests(unittest.TestCase):
     @with_tracebacks(OverflowError)
     def test_func_return_too_large_int(self):
         cur = self.con.cursor()
+        msg = "string or blob too big"
         for value in 2**63, -2**63-1, 2**64:
             self.con.create_function("largeint", 0, lambda value=value: value)
-            with self.assertRaises(sqlite.DataError):
+            with self.assertRaisesRegex(sqlite.DataError, msg):
                 cur.execute("select largeint()")
 
     @with_tracebacks(UnicodeEncodeError, "surrogates not allowed", "chr")
