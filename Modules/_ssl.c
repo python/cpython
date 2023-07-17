@@ -2822,7 +2822,8 @@ _ssl_session_dup(SSL_SESSION *session) {
     }
     const_p = senc;
     newsession = d2i_SSL_SESSION(NULL, &const_p, slen);
-    if (session == NULL) {
+    if (newsession == NULL) {
+        PyErr_SetString(PyExc_ValueError, "d2i() failed.");
         goto error;
     }
     PyMem_Free(senc);
