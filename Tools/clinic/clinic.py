@@ -4864,15 +4864,14 @@ class DSLParser:
             self.parameter_continuation = line[:-1]
             return
 
-        line = line.lstrip()
         func = self.function
-        match line:
+        match line.lstrip():
             case '*':
                 self.parse_star(func)
             case '[':
-                self.parse_open_bracket(func)
+                self.parse_opening_square_bracket(func)
             case ']':
-                self.parse_close_bracket(func)
+                self.parse_closing_square_bracket(func)
             case '/':
                 self.parse_slash(func)
             case param:
@@ -5158,11 +5157,13 @@ class DSLParser:
                 )
 
     def parse_star(self, function: Function) -> None:
+        """Parse keyword-only parameter marker '*'."""
         if self.keyword_only:
             fail(f"Function {function.name} uses '*' more than once.")
         self.keyword_only = True
 
-    def parse_open_bracket(self, function: Function) -> None:
+    def parse_opening_square_bracket(self, function: Function) -> None:
+        """Parse opening parameter group symbol '['."""
         match self.parameter_state:
             case ParamState.START | ParamState.LEFT_SQUARE_BEFORE:
                 self.parameter_state = ParamState.LEFT_SQUARE_BEFORE
@@ -5174,7 +5175,8 @@ class DSLParser:
         self.group += 1
         function.docstring_only = True
 
-    def parse_close_bracket(self, function: Function) -> None:
+    def parse_closing_square_bracket(self, function: Function) -> None:
+        """Parse closing parameter group symbol '['."""
         if not self.group:
             fail(f"Function {function.name} has a ] without a matching [.")
         if not any(p.group == self.group for p in function.parameters.values()):
@@ -5191,6 +5193,7 @@ class DSLParser:
                      f"(Unexpected state {st}.c)")
 
     def parse_slash(self, function: Function) -> None:
+        """Parse positional-only parameter marker '/'."""
         if self.positional_only:
             fail(f"Function {function.name} uses '/' more than once.")
         self.positional_only = True
