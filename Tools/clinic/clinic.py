@@ -5161,7 +5161,7 @@ class DSLParser:
                 fail(f"Function {function.name} has an unsupported group configuration. "
                      f"(Unexpected state {st}.b)")
         self.group += 1
-        self.function.docstring_only = True
+        function.docstring_only = True
 
     def parse_close_bracket(self, function: Function) -> None:
         if not self.group:
@@ -5198,7 +5198,7 @@ class DSLParser:
             fail(f"Function {function.name} mixes keyword-only and "
                  "positional-only parameters, which is unsupported.")
         # fixup preceding parameters
-        for p in self.function.parameters.values():
+        for p in function.parameters.values():
             if p.is_vararg():
                 continue
             if (p.kind != inspect.Parameter.POSITIONAL_OR_KEYWORD and
