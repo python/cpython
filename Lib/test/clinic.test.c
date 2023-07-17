@@ -3759,11 +3759,12 @@ test_preprocessor_guarded_if_with_continuation_impl(PyObject *module)
 #warning "different type of CPP directive"
 /*[clinic input]
 test_preprocessor_guarded_if_e_or_f
+Makes sure cpp.Monitor handles other directives than preprocessor conditionals.
 [clinic start generated code]*/
 
 static PyObject *
 test_preprocessor_guarded_if_e_or_f_impl(PyObject *module)
-/*[clinic end generated code: output=e49d24ff64ad88bc input=5c0fdd4a5a1a1f0a]*/
+/*[clinic end generated code: output=e49d24ff64ad88bc input=57b9c37f938bc4f1]*/
 #endif
 
 /*[clinic input]
@@ -3884,7 +3885,8 @@ test_preprocessor_guarded_if_with_continuation(PyObject *module, PyObject *Py_UN
 PyDoc_STRVAR(test_preprocessor_guarded_if_e_or_f__doc__,
 "test_preprocessor_guarded_if_e_or_f($module, /)\n"
 "--\n"
-"\n");
+"\n"
+"Makes sure cpp.Monitor handles other directives than preprocessor conditionals.");
 
 #define TEST_PREPROCESSOR_GUARDED_IF_E_OR_F_METHODDEF    \
     {"test_preprocessor_guarded_if_e_or_f", (PyCFunction)test_preprocessor_guarded_if_e_or_f, METH_NOARGS, test_preprocessor_guarded_if_e_or_f__doc__},
@@ -3924,7 +3926,7 @@ test_preprocessor_guarded_if_e_or_f(PyObject *module, PyObject *Py_UNUSED(ignore
 #ifndef TEST_PREPROCESSOR_GUARDED_IF_E_OR_F_METHODDEF
     #define TEST_PREPROCESSOR_GUARDED_IF_E_OR_F_METHODDEF
 #endif /* !defined(TEST_PREPROCESSOR_GUARDED_IF_E_OR_F_METHODDEF) */
-/*[clinic end generated code: output=b39c183d80b9fb9e input=3fc80c9989d2f2e1]*/
+/*[clinic end generated code: output=fcfae7cac7a99e62 input=3fc80c9989d2f2e1]*/
 
 /*[clinic input]
 test_vararg_and_posonly
