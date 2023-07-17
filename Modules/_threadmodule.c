@@ -1671,7 +1671,7 @@ thread_module_exec(PyObject *module)
     // Round towards minus infinity
     timeout_max = floor(timeout_max);
 
-    if (PyModule_AddNew(module, "TIMEOUT_MAX",
+    if (PyModule_Add(module, "TIMEOUT_MAX",
                         PyFloat_FromDouble(timeout_max)) < 0) {
         return -1;
     }

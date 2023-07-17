@@ -29,10 +29,10 @@ PyAPI_FUNC(int) PyModule_AddObjectRef(PyObject *mod, const char *name, PyObject 
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
 // Similar to PyModule_AddObjectRef() but steal a reference to 'value'.
-PyAPI_FUNC(int) PyModule_AddNew(PyObject *mod, const char *name, PyObject *value);
+PyAPI_FUNC(int) PyModule_Add(PyObject *mod, const char *name, PyObject *value);
 #endif   /* Py_LIMITED_API */
 
-// Similar to PyModule_AddObjectRef() and PyModule_AddNew() but steal
+// Similar to PyModule_AddObjectRef() and PyModule_Add() but steal
 // a reference to 'value' on success and only on success.
 // Errorprone. Should not be used in new code.
 PyAPI_FUNC(int) PyModule_AddObject(PyObject *mod, const char *, PyObject *value);

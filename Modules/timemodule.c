@@ -1790,7 +1790,7 @@ init_timezone(PyObject *m)
         return -1;
     }
 #endif // MS_WINDOWS
-    if (PyModule_AddNew(m, "tzname", Py_BuildValue("(NN)", otz0, otz1)) < 0) {
+    if (PyModule_Add(m, "tzname", Py_BuildValue("(NN)", otz0, otz1)) < 0) {
         return -1;
     }
 #else // !HAVE_DECL_TZNAME
@@ -1835,7 +1835,7 @@ init_timezone(PyObject *m)
         PyModule_AddIntConstant(m, "daylight", janzone != julyzone);
         tzname_obj = Py_BuildValue("(zz)", janname, julyname);
     }
-    if (PyModule_AddNew(m, "tzname", tzname_obj) < 0) {
+    if (PyModule_Add(m, "tzname", tzname_obj) < 0) {
         return -1;
     }
 #endif // !HAVE_DECL_TZNAME

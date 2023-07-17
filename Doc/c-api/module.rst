@@ -486,7 +486,7 @@ state:
    .. versionadded:: 3.10
 
 
-.. c:function:: int PyModule_AddNew(PyObject *module, const char *name, PyObject *value)
+.. c:function:: int PyModule_Add(PyObject *module, const char *name, PyObject *value)
 
    Similar to :c:func:`PyModule_AddObjectRef`, but "steals" a reference
    to *value*.
@@ -495,7 +495,7 @@ state:
 
    Example usage::
 
-        if (PyModule_AddNew(module, "spam", PyBytes_FromString(value)) < 0) {
+        if (PyModule_Add(module, "spam", PyBytes_FromString(value)) < 0) {
             goto error;
         }
 
@@ -507,7 +507,7 @@ state:
    Similar to :c:func:`PyModule_AddObjectRef`, but steals a reference to
    *value* on success (if it returns ``0``).
 
-   The new :c:func:`PyModule_AddNew` or :c:func:`PyModule_AddObjectRef`
+   The new :c:func:`PyModule_Add` or :c:func:`PyModule_AddObjectRef`
    functions are recommended, since it is
    easy to introduce reference leaks by misusing the
    :c:func:`PyModule_AddObject` function.

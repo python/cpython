@@ -610,7 +610,7 @@ PyModule_AddObjectRef(PyObject *mod, const char *name, PyObject *value)
 }
 
 int
-PyModule_AddNew(PyObject *mod, const char *name, PyObject *value)
+PyModule_Add(PyObject *mod, const char *name, PyObject *value)
 {
     int res = PyModule_AddObjectRef(mod, name, value);
     Py_XDECREF(value);
@@ -630,13 +630,13 @@ PyModule_AddObject(PyObject *mod, const char *name, PyObject *value)
 int
 PyModule_AddIntConstant(PyObject *m, const char *name, long value)
 {
-    return PyModule_AddNew(m, name, PyLong_FromLong(value));
+    return PyModule_Add(m, name, PyLong_FromLong(value));
 }
 
 int
 PyModule_AddStringConstant(PyObject *m, const char *name, const char *value)
 {
-    return PyModule_AddNew(m, name, PyUnicode_FromString(value));
+    return PyModule_Add(m, name, PyUnicode_FromString(value));
 }
 
 int
