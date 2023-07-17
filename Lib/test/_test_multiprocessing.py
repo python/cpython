@@ -5558,17 +5558,14 @@ class TestResourceTracker(unittest.TestCase):
 
         exit_code_assert(_resource_tracker._exitcode, 0)
 
-    def test_resource_tracker_should_return_0_exit_code_when_no_resources_were_leaked_spawn_ctx(self):
-        self._test_resource_tracker_leak_resources(context="spawn", delete_queue=True)
-
-    def test_resource_tracker_should_return_non_0_exit_code_when_resources_were_leaked_spawn_ctx(self):
-        self._test_resource_tracker_leak_resources(context="spawn", delete_queue=False)
-
-    def test_resource_tracker_should_return_0_exit_code_when_no_resources_were_leaked_forkserver_ctx(self):
-        self._test_resource_tracker_leak_resources(context="forkserver", delete_queue=True)
-
-    def test_resource_tracker_should_return_non_0_exit_code_when_resources_were_leaked_forkserver_ctx(self):
-        self._test_resource_tracker_leak_resources(context="forkserver", delete_queue=False)
+    def test_resource_tracker_exit_code(self):
+        for context in ["spawn", "forkserver"]:
+            for delete_queue in [True, False]:
+                with self.subTest(context=context, delete_queue=delete_queue):
+                    self._test_resource_tracker_leak_resources(
+                        context=context,
+                        delete_queue=delete_queue,
+                    )
 
 
 class TestSimpleQueue(unittest.TestCase):
