@@ -17,8 +17,6 @@ if sys.version_info[:2] >= (3, 13):
 
 cmp_op = ('<', '<=', '==', '!=', '>', '>=')
 
-hascompare = []
-
 
 ENABLE_SPECIALIZATION = True
 
