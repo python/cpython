@@ -432,7 +432,7 @@ Pure paths provide the following methods and properties:
 
 .. attribute:: PurePath.suffix
 
-   The file extension of the final component, if any::
+   The last dot-separated portion of the final component, if any::
 
       >>> PurePosixPath('my/library/setup.py').suffix
       '.py'
@@ -441,10 +441,11 @@ Pure paths provide the following methods and properties:
       >>> PurePosixPath('my/library').suffix
       ''
 
+   This is commonly called the file extension.
 
 .. attribute:: PurePath.suffixes
 
-   A list of the path's file extensions::
+   A list of the path's suffixes, often called file extensions::
 
       >>> PurePosixPath('my/library.tar.gar').suffixes
       ['.tar', '.gar']

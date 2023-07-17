@@ -257,7 +257,7 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
         PyThreadState_EnterTracing(ts);
         while ((hook = PyIter_Next(hooks)) != NULL) {
             PyObject *o;
-            int canTrace = _PyObject_LookupAttr(hook, &_Py_ID(__cantrace__), &o);
+            int canTrace = PyObject_GetOptionalAttr(hook, &_Py_ID(__cantrace__), &o);
             if (o) {
                 canTrace = PyObject_IsTrue(o);
                 Py_DECREF(o);
@@ -657,7 +657,7 @@ sys_displayhook_unencodable(PyObject *outf, PyObject *o)
     if (encoded == NULL)
         goto error;
 
-    if (_PyObject_LookupAttr(outf, &_Py_ID(buffer), &buffer) < 0) {
+    if (PyObject_GetOptionalAttr(outf, &_Py_ID(buffer), &buffer) < 0) {
         Py_DECREF(encoded);
         goto error;
     }

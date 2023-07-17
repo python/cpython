@@ -1625,7 +1625,7 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
    :meth:`__getattr__` and :meth:`__setattr__`.) This is done both for efficiency
    reasons and because otherwise :meth:`__getattr__` would have no way to access
    other attributes of the instance.  Note that at least for instance variables,
-   you can fake total control by not inserting any values in the instance attribute
+   you can take total control by not inserting any values in the instance attribute
    dictionary (but instead inserting them in another object).  See the
    :meth:`__getattribute__` method below for a way to actually get total control
    over attribute access.

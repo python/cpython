@@ -27,7 +27,8 @@ Argument Clinic How-To
   version of Argument Clinic that ships with the next version
   of CPython *could* be totally incompatible and break all your code.
 
-The Goals Of Argument Clinic
+
+The goals of Argument Clinic
 ============================
 
 Argument Clinic's primary goal
@@ -78,7 +79,7 @@ and it should be able to do many interesting and smart
 things with all the information you give it.
 
 
-Basic Concepts And Usage
+Basic concepts and usage
 ========================
 
 Argument Clinic ships with CPython; you'll find it in ``Tools/clinic/clinic.py``.
@@ -141,7 +142,7 @@ For the sake of clarity, here's the terminology we'll use with Argument Clinic:
   a block.)
 
 
-Converting Your First Function
+Converting your first function
 ==============================
 
 The best way to get a sense of how Argument Clinic works is to
@@ -558,7 +559,8 @@ Let's dive in!
 
     Congratulations, you've ported your first function to work with Argument Clinic!
 
-Advanced Topics
+
+Advanced topics
 ===============
 
 Now that you've had some experience working with Argument Clinic, it's time
@@ -636,7 +638,8 @@ after the last argument).
 Currently the generated code will use :c:func:`PyArg_ParseTuple`, but this
 will change soon.
 
-Optional Groups
+
+Optional groups
 ---------------
 
 Some legacy functions have a tricky approach to parsing their arguments:
@@ -899,6 +902,7 @@ available.  For each converter it'll show you all the parameters
 it accepts, along with the default value for each parameter.
 Just run ``Tools/clinic/clinic.py --converters`` to see the full list.
 
+
 Py_buffer
 ---------
 
@@ -906,7 +910,6 @@ When using the ``Py_buffer`` converter
 (or the ``'s*'``, ``'w*'``, ``'*y'``, or ``'z*'`` legacy converters),
 you *must* not call :c:func:`PyBuffer_Release` on the provided buffer.
 Argument Clinic generates code that does it for you (in the parsing function).
-
 
 
 Advanced converters
@@ -975,6 +978,7 @@ value called ``NULL`` for just this reason: from Python's perspective it
 behaves like a default value of ``None``, but the C variable is initialized
 with ``NULL``.
 
+
 Expressions specified as default values
 ---------------------------------------
 
@@ -1030,7 +1034,6 @@ you're not permitted to use:
 * Automatic sequence unpacking (``*[1, 2, 3]``).
 * List/set/dict comprehensions and generator expressions.
 * Tuple/list/set/dict literals.
-
 
 
 Using a return converter
@@ -1145,6 +1148,7 @@ then modifying it.  Cloning is an all-or nothing proposition.
 
 Also, the function you are cloning from must have been previously defined
 in the current file.
+
 
 Calling Python code
 -------------------
@@ -1380,6 +1384,7 @@ handle initialization and cleanup.
 You can see more examples of custom converters in the CPython
 source tree; grep the C files for the string ``CConverter``.
 
+
 Writing a custom return converter
 ---------------------------------
 
@@ -1394,8 +1399,9 @@ write your own return converter, please read ``Tools/clinic/clinic.py``,
 specifically the implementation of ``CReturnConverter`` and
 all its subclasses.
 
+
 METH_O and METH_NOARGS
-----------------------------------------------
+----------------------
 
 To convert a function using ``METH_O``, make sure the function's
 single argument is using the ``object`` converter, and mark the
@@ -1415,8 +1421,9 @@ any arguments.
 You can still use a self converter, a return converter, and specify
 a ``type`` argument to the object converter for ``METH_O``.
 
+
 tp_new and tp_init functions
-----------------------------------------------
+----------------------------
 
 You can convert ``tp_new`` and ``tp_init`` functions.  Just name
 them ``__new__`` or ``__init__`` as appropriate.  Notes:
@@ -1436,6 +1443,7 @@ them ``__new__`` or ``__init__`` as appropriate.  Notes:
   you may specify any signature for these functions that you like.
   (If your function doesn't support keywords, the parsing function
   generated will throw an exception if it receives any.)
+
 
 Changing and redirecting Clinic's output
 ----------------------------------------
@@ -1721,7 +1729,7 @@ the file was not modified by hand before it gets overwritten.
 
 
 The #ifdef trick
-----------------------------------------------
+----------------
 
 If you're converting a function that isn't available on all platforms,
 there's a trick you can use to make life a little easier.  The existing
@@ -1799,7 +1807,6 @@ This may mean that you get a complaint from Argument Clinic:
 When this happens, just open your file, find the ``dump buffer`` block that
 Argument Clinic added to your file (it'll be at the very bottom), then
 move it above the ``PyMethodDef`` structure where that macro is used.
-
 
 
 Using Argument Clinic in Python files

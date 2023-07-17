@@ -66,12 +66,16 @@ class _SelectorMapping(Mapping):
     def __len__(self):
         return len(self._selector._fd_to_key)
 
+    def get(self, fileobj, default=None):
+        fd = self._selector._fileobj_lookup(fileobj)
+        return self._selector._fd_to_key.get(fd, default)
+
     def __getitem__(self, fileobj):
-        try:
-            fd = self._selector._fileobj_lookup(fileobj)
-            return self._selector._fd_to_key[fd]
-        except KeyError:
-            raise KeyError("{!r} is not registered".format(fileobj)) from None
+        fd = self._selector._fileobj_lookup(fileobj)
+        key = self._selector._fd_to_key.get(fd)
+        if key is None:
+            raise KeyError("{!r} is not registered".format(fileobj))
+        return key
 
     def __iter__(self):
         return iter(self._selector._fd_to_key)
@@ -272,19 +276,6 @@ class _BaseSelectorImpl(BaseSelector):
     def get_map(self):
         return self._map
 
-    def _key_from_fd(self, fd):
-        """Return the key associated to a given file descriptor.
-
-        Parameters:
-        fd -- file descriptor
-
-        Returns:
-        corresponding key, or None if not found
-        """
-        try:
-            return self._fd_to_key[fd]
-        except KeyError:
-            return None
 
 
 class SelectSelector(_BaseSelectorImpl):
@@ -332,7 +323,7 @@ class SelectSelector(_BaseSelectorImpl):
             if fd in w:
                 events |= EVENT_WRITE
 
-            key = self._key_from_fd(fd)
+            key = self._fd_to_key.get(fd)
             if key:
                 ready.append((key, events & key.events))
         return ready
@@ -422,7 +413,7 @@ class _PollLikeSelector(_BaseSelectorImpl):
             if event & ~self._EVENT_WRITE:
                 events |= EVENT_READ
 
-            key = self._key_from_fd(fd)
+            key = self._fd_to_key.get(fd)
             if key:
                 ready.append((key, events & key.events))
         return ready
@@ -475,7 +466,7 @@ if hasattr(select, 'epoll'):
                 if event & ~select.EPOLLOUT:
                     events |= EVENT_READ
 
-                key = self._key_from_fd(fd)
+                key = self._fd_to_key.get(fd)
                 if key:
                     ready.append((key, events & key.events))
             return ready
@@ -570,7 +561,7 @@ if hasattr(select, 'kqueue'):
                 if flag == select.KQ_FILTER_WRITE:
                     events |= EVENT_WRITE
 
-                key = self._key_from_fd(fd)
+                key = self._fd_to_key.get(fd)
                 if key:
                     ready.append((key, events & key.events))
             return ready
