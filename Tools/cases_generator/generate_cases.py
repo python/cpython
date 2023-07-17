@@ -98,6 +98,8 @@ def effect_size(effect: StackEffect) -> tuple[int, str]:
         assert not effect.cond, "Array effects cannot have a condition"
         return 0, effect.size
     elif effect.cond:
+        if effect.cond in ("0", "1"):
+            return 0, effect.cond
         return 0, f"{maybe_parenthesize(effect.cond)} ? 1 : 0"
     else:
         return 1, ""
@@ -156,16 +158,9 @@ class Formatter:
         self.emit_line_directives = emit_line_directives
         self.comment = comment
         self.lineno = 1
-        filename = os.path.relpath(self.stream.name, ROOT)
-        # Make filename more user-friendly and less platform-specific
-        filename = filename.replace("\\", "/")
-        if filename.startswith("./"):
-            filename = filename[2:]
-        if filename.endswith(".new"):
-            filename = filename[:-4]
-        self.filename = filename
+        self.filename = prettify_filename(self.stream.name)
         self.nominal_lineno = 1
-        self.nominal_filename = filename
+        self.nominal_filename = self.filename
 
     def write_raw(self, s: str) -> None:
         self.stream.write(s)
@@ -224,7 +219,7 @@ class Formatter:
             self.emit(f"STACK_GROW({osym});")
 
     def declare(self, dst: StackEffect, src: StackEffect | None):
-        if dst.name == UNUSED:
+        if dst.name == UNUSED or dst.cond == "0":
             return
         typ = f"{dst.type}" if dst.type else "PyObject *"
         if src:
@@ -248,7 +243,10 @@ class Formatter:
             self.emit(f"Py_XSETREF({dst.name}, {cast}{src.name});")
         else:
             stmt = f"{dst.name} = {cast}{src.name};"
-            if src.cond:
+            if src.cond and src.cond != "1":
+                if src.cond == "0":
+                    # It will not be executed
+                    return
                 stmt = f"if ({src.cond}) {{ {stmt} }}"
             self.emit(stmt)
 
@@ -438,7 +436,7 @@ class Instruction:
         """Write one instruction, sans prologue and epilogue."""
         # Write a static assertion that a family's cache size is correct
         if family := self.family:
-            if self.name == family.members[0]:
+            if self.name == family.name:
                 if cache_size := family.size:
                     out.emit(
                         f"static_assert({cache_size} == "
@@ -737,12 +735,8 @@ class Analyzer:
         with open(filename) as file:
             src = file.read()
 
-        filename = os.path.relpath(filename, ROOT)
-        # Make filename more user-friendly and less platform-specific
-        filename = filename.replace("\\", "/")
-        if filename.startswith("./"):
-            filename = filename[2:]
-        psr = parser.Parser(src, filename=filename)
+
+        psr = parser.Parser(src, filename=prettify_filename(filename))
 
         # Skip until begin marker
         while tkn := psr.next(raw=True):
@@ -831,7 +825,7 @@ class Analyzer:
     def map_families(self) -> None:
         """Link instruction names back to their family, if they have one."""
         for family in self.families.values():
-            for member in family.members:
+            for member in [family.name] + family.members:
                 if member_instr := self.instrs.get(member):
                     if member_instr.family not in (family, None):
                         self.error(
@@ -855,8 +849,11 @@ class Analyzer:
         - All members must have the same cache, input and output effects
         """
         for family in self.families.values():
-            if len(family.members) < 2:
-                self.error(f"Family {family.name!r} has insufficient members", family)
+            if family.name not in self.macro_instrs and family.name not in self.instrs:
+                self.error(
+                    f"Family {family.name!r} has unknown instruction {family.name!r}",
+                    family,
+                )
             members = [
                 member
                 for member in family.members
@@ -867,10 +864,8 @@ class Analyzer:
                 self.error(
                     f"Family {family.name!r} has unknown members: {unknown}", family
                 )
-            if len(members) < 2:
-                continue
-            expected_effects = self.effect_counts(members[0])
-            for member in members[1:]:
+            expected_effects = self.effect_counts(family.name)
+            for member in members:
                 member_effects = self.effect_counts(member)
                 if member_effects != expected_effects:
                     self.error(
@@ -1077,7 +1072,10 @@ class Analyzer:
                     for effect in comp.instr.output_effects:
                         assert not effect.size, effect
                         if effect.cond:
-                            pushed_symbolic.append(maybe_parenthesize(f"{maybe_parenthesize(effect.cond)} ? 1 : 0"))
+                            if effect.cond in ("0", "1"):
+                                pushed_symbolic.append(effect.cond)
+                            else:
+                                pushed_symbolic.append(maybe_parenthesize(f"{maybe_parenthesize(effect.cond)} ? 1 : 0"))
                         sp += 1
                         high = max(sp, high)
                 if high != max(0, sp):
@@ -1148,7 +1146,7 @@ class Analyzer:
 
     def from_source_files(self) -> str:
         paths = f"\n{self.out.comment}   ".join(
-            os.path.relpath(filename, ROOT).replace(os.path.sep, posixpath.sep)
+            prettify_filename(filename)
             for filename in self.input_filenames
         )
         return f"{self.out.comment} from:\n{self.out.comment}   {paths}\n"
@@ -1311,11 +1309,10 @@ class Analyzer:
             self.out.emit("")
             self.out.emit("_specializations = {")
             for name, family in self.families.items():
-                assert len(family.members) > 1
                 with self.out.indent():
-                    self.out.emit(f"\"{family.members[0]}\": [")
+                    self.out.emit(f"\"{family.name}\": [")
                     with self.out.indent():
-                        for m in family.members[1:]:
+                        for m in family.members:
                             self.out.emit(f"\"{m}\",")
                     self.out.emit(f"],")
             self.out.emit("}")
@@ -1551,9 +1548,8 @@ class Analyzer:
                 self.out.emit(f"next_instr += {cache_adjust};")
 
             if (
-                last_instr
-                and (family := last_instr.family)
-                and mac.name == family.members[0]
+                (family := self.families.get(mac.name))
+                and mac.name == family.name
                 and (cache_size := family.size)
             ):
                 self.out.emit(
@@ -1596,6 +1592,17 @@ class Analyzer:
                 self.out.assign(dst, var)
 
             self.out.emit(f"DISPATCH();")
+
+
+def prettify_filename(filename: str) -> str:
+    # Make filename more user-friendly and less platform-specific,
+    # it is only used for error reporting at this point.
+    filename = filename.replace("\\", "/")
+    if filename.startswith("./"):
+        filename = filename[2:]
+    if filename.endswith(".new"):
+        filename = filename[:-4]
+    return filename
 
 
 def extract_block_text(block: parser.Block) -> tuple[list[str], bool, int]:
