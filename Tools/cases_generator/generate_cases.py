@@ -98,6 +98,8 @@ def effect_size(effect: StackEffect) -> tuple[int, str]:
         assert not effect.cond, "Array effects cannot have a condition"
         return 0, effect.size
     elif effect.cond:
+        if effect.cond in ("0", "1"):
+            return 0, effect.cond
         return 0, f"{maybe_parenthesize(effect.cond)} ? 1 : 0"
     else:
         return 1, ""
@@ -217,7 +219,7 @@ class Formatter:
             self.emit(f"STACK_GROW({osym});")
 
     def declare(self, dst: StackEffect, src: StackEffect | None):
-        if dst.name == UNUSED:
+        if dst.name == UNUSED or dst.cond == "0":
             return
         typ = f"{dst.type}" if dst.type else "PyObject *"
         if src:
@@ -241,7 +243,10 @@ class Formatter:
             self.emit(f"Py_XSETREF({dst.name}, {cast}{src.name});")
         else:
             stmt = f"{dst.name} = {cast}{src.name};"
-            if src.cond:
+            if src.cond and src.cond != "1":
+                if src.cond == "0":
+                    # It will not be executed
+                    return
                 stmt = f"if ({src.cond}) {{ {stmt} }}"
             self.emit(stmt)
 
@@ -1067,7 +1072,10 @@ class Analyzer:
                     for effect in comp.instr.output_effects:
                         assert not effect.size, effect
                         if effect.cond:
-                            pushed_symbolic.append(maybe_parenthesize(f"{maybe_parenthesize(effect.cond)} ? 1 : 0"))
+                            if effect.cond in ("0", "1"):
+                                pushed_symbolic.append(effect.cond)
+                            else:
+                                pushed_symbolic.append(maybe_parenthesize(f"{maybe_parenthesize(effect.cond)} ? 1 : 0"))
                         sp += 1
                         high = max(sp, high)
                 if high != max(0, sp):
