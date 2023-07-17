@@ -5275,7 +5275,7 @@ os__path_normpath_impl(PyObject *module, PyObject *path)
         return NULL;
     }
     Py_ssize_t norm_len;
-    wchar_t *norm_path = _Py_normpathAndSize(buffer, len, &norm_len);
+    wchar_t *norm_path = _Py_normpath_and_size(buffer, len, &norm_len);
     PyObject *result = PyUnicode_FromWideChar(norm_path, norm_len);
     PyMem_Free(buffer);
     return result;
