@@ -623,8 +623,8 @@ array) would be ``file``, but the C variable would be named ``file_obj``.
 You can use this to rename the ``self`` parameter too!
 
 
-How to convert functions using PyArg_UnpackTuple
-------------------------------------------------
+How to convert functions using ``PyArg_UnpackTuple``
+----------------------------------------------------
 
 To convert a function parsing its arguments with :c:func:`PyArg_UnpackTuple`,
 simply write out all the arguments, specifying each as an ``object``.  You
@@ -900,8 +900,8 @@ it accepts, along with the default value for each parameter.
 Just run ``Tools/clinic/clinic.py --converters`` to see the full list.
 
 
-How to use the Py_buffer converter
-----------------------------------
+How to use the ``Py_buffer`` converter
+--------------------------------------
 
 When using the ``Py_buffer`` converter
 (or the ``'s*'``, ``'w*'``, ``'*y'``, or ``'z*'`` legacy converters),
@@ -941,8 +941,8 @@ hard-coded encoding strings for parameters whose format units start with ``e``.
 
 .. _default_values:
 
-How to assign parameter default values
---------------------------------------
+How to assign default values to parameter
+-----------------------------------------
 
 Default values for parameters can be any of a number of values.
 At their simplest, they can be string, int, or float literals:
@@ -976,7 +976,7 @@ behaves like a default value of ``None``, but the C variable is initialized
 with ``NULL``.
 
 
-Who to use expressions as default values
+How to use expressions as default values
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The default value for a parameter can be more than just a literal value.
@@ -1397,8 +1397,8 @@ specifically the implementation of ``CReturnConverter`` and
 all its subclasses.
 
 
-How to convert METH_O and METH_NOARGS functions
------------------------------------------------
+How to convert ``METH_O`` and ``METH_NOARGS`` functions
+-------------------------------------------------------
 
 To convert a function using ``METH_O``, make sure the function's
 single argument is using the ``object`` converter, and mark the
@@ -1419,8 +1419,8 @@ You can still use a self converter, a return converter, and specify
 a ``type`` argument to the object converter for ``METH_O``.
 
 
-How to convert tp_new and tp_init functions
--------------------------------------------
+How to convert ``tp_new`` and ``tp_init`` functions
+---------------------------------------------------
 
 You can convert ``tp_new`` and ``tp_init`` functions.  Just name
 them ``__new__`` or ``__init__`` as appropriate.  Notes:
