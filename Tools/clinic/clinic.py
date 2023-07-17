@@ -4868,13 +4868,18 @@ class DSLParser:
         func = self.function
         match line:
             case '*':
-                return self.parse_star(func)
+                self.parse_star(func)
             case '[':
-                return self.parse_open_bracket(func)
+                self.parse_open_bracket(func)
             case ']':
-                return self.parse_close_bracket(func)
+                self.parse_close_bracket(func)
             case '/':
-                return self.parse_slash(func)
+                self.parse_slash(func)
+            case param:
+                self.parse_parameter(param)
+
+    def parse_parameter(self, line: str) -> None:
+        assert self.function is not None
 
         match self.parameter_state:
             case ParamState.START | ParamState.REQUIRED:
