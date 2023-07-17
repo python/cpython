@@ -842,15 +842,15 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case PUSH_EXC_INFO:
             return 2;
         case LOAD_ATTR_METHOD_WITH_VALUES:
-            return (1 ? 1 : 0) + 1;
+            return 1 + 1;
         case LOAD_ATTR_METHOD_NO_DICT:
-            return (1 ? 1 : 0) + 1;
+            return 1 + 1;
         case LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES:
-            return (0 ? 1 : 0) + 1;
+            return 0 + 1;
         case LOAD_ATTR_NONDESCRIPTOR_NO_DICT:
-            return (0 ? 1 : 0) + 1;
+            return 0 + 1;
         case LOAD_ATTR_METHOD_LAZY_DICT:
-            return (1 ? 1 : 0) + 1;
+            return 1 + 1;
         case KW_NAMES:
             return 0;
         case INSTRUMENTED_CALL:
@@ -1316,7 +1316,17 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPAN
     [GET_YIELD_FROM_ITER] = { .nuops = 1, .uops = { { GET_YIELD_FROM_ITER, 0, 0 } } },
     [WITH_EXCEPT_START] = { .nuops = 1, .uops = { { WITH_EXCEPT_START, 0, 0 } } },
     [PUSH_EXC_INFO] = { .nuops = 1, .uops = { { PUSH_EXC_INFO, 0, 0 } } },
+    [CALL_NO_KW_TYPE_1] = { .nuops = 1, .uops = { { CALL_NO_KW_TYPE_1, 0, 0 } } },
+    [CALL_NO_KW_STR_1] = { .nuops = 1, .uops = { { CALL_NO_KW_STR_1, 0, 0 } } },
+    [CALL_NO_KW_TUPLE_1] = { .nuops = 1, .uops = { { CALL_NO_KW_TUPLE_1, 0, 0 } } },
     [EXIT_INIT_CHECK] = { .nuops = 1, .uops = { { EXIT_INIT_CHECK, 0, 0 } } },
+    [CALL_NO_KW_BUILTIN_O] = { .nuops = 1, .uops = { { CALL_NO_KW_BUILTIN_O, 0, 0 } } },
+    [CALL_NO_KW_BUILTIN_FAST] = { .nuops = 1, .uops = { { CALL_NO_KW_BUILTIN_FAST, 0, 0 } } },
+    [CALL_NO_KW_LEN] = { .nuops = 1, .uops = { { CALL_NO_KW_LEN, 0, 0 } } },
+    [CALL_NO_KW_ISINSTANCE] = { .nuops = 1, .uops = { { CALL_NO_KW_ISINSTANCE, 0, 0 } } },
+    [CALL_NO_KW_METHOD_DESCRIPTOR_O] = { .nuops = 1, .uops = { { CALL_NO_KW_METHOD_DESCRIPTOR_O, 0, 0 } } },
+    [CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS] = { .nuops = 1, .uops = { { CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS, 0, 0 } } },
+    [CALL_NO_KW_METHOD_DESCRIPTOR_FAST] = { .nuops = 1, .uops = { { CALL_NO_KW_METHOD_DESCRIPTOR_FAST, 0, 0 } } },
     [MAKE_FUNCTION] = { .nuops = 1, .uops = { { MAKE_FUNCTION, 0, 0 } } },
     [SET_FUNCTION_ATTRIBUTE] = { .nuops = 1, .uops = { { SET_FUNCTION_ATTRIBUTE, 0, 0 } } },
     [BUILD_SLICE] = { .nuops = 1, .uops = { { BUILD_SLICE, 0, 0 } } },

@@ -284,8 +284,7 @@ dummy_func(
             res = Py_IsFalse(value) ? Py_True : Py_False;
         }
 
-        family(to_bool, INLINE_CACHE_ENTRIES_TO_BOOL) = {
-            TO_BOOL,
+        family(TO_BOOL, INLINE_CACHE_ENTRIES_TO_BOOL) = {
             TO_BOOL_ALWAYS_TRUE,
             TO_BOOL_BOOL,
             TO_BOOL_INT,
@@ -372,8 +371,7 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        family(binary_op, INLINE_CACHE_ENTRIES_BINARY_OP) = {
-            BINARY_OP,
+        family(BINARY_OP, INLINE_CACHE_ENTRIES_BINARY_OP) = {
             BINARY_OP_MULTIPLY_INT,
             BINARY_OP_ADD_INT,
             BINARY_OP_SUBTRACT_INT,
@@ -507,8 +505,7 @@ dummy_func(
         macro(BINARY_OP_INPLACE_ADD_UNICODE) =
             _GUARD_BOTH_UNICODE + _BINARY_OP_INPLACE_ADD_UNICODE;
 
-        family(binary_subscr, INLINE_CACHE_ENTRIES_BINARY_SUBSCR) = {
-            BINARY_SUBSCR,
+        family(BINARY_SUBSCR, INLINE_CACHE_ENTRIES_BINARY_SUBSCR) = {
             BINARY_SUBSCR_DICT,
             BINARY_SUBSCR_GETITEM,
             BINARY_SUBSCR_LIST_INT,
@@ -643,8 +640,7 @@ dummy_func(
             ERROR_IF(err, error);
         }
 
-        family(store_subscr, INLINE_CACHE_ENTRIES_STORE_SUBSCR) = {
-            STORE_SUBSCR,
+        family(STORE_SUBSCR, INLINE_CACHE_ENTRIES_STORE_SUBSCR) = {
             STORE_SUBSCR_DICT,
             STORE_SUBSCR_LIST_INT,
         };
@@ -919,8 +915,7 @@ dummy_func(
             ERROR_IF(iter == NULL, error);
         }
 
-        family(send, INLINE_CACHE_ENTRIES_SEND) = {
-            SEND,
+        family(SEND, INLINE_CACHE_ENTRIES_SEND) = {
             SEND_GEN,
         };
 
@@ -1132,8 +1127,7 @@ dummy_func(
             }
         }
 
-        family(unpack_sequence, INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE) = {
-            UNPACK_SEQUENCE,
+        family(UNPACK_SEQUENCE, INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE) = {
             UNPACK_SEQUENCE_TWO_TUPLE,
             UNPACK_SEQUENCE_TUPLE,
             UNPACK_SEQUENCE_LIST,
@@ -1196,8 +1190,7 @@ dummy_func(
             ERROR_IF(res == 0, error);
         }
 
-        family(store_attr, INLINE_CACHE_ENTRIES_STORE_ATTR) = {
-            STORE_ATTR,
+        family(STORE_ATTR, INLINE_CACHE_ENTRIES_STORE_ATTR) = {
             STORE_ATTR_INSTANCE_VALUE,
             STORE_ATTR_SLOT,
             STORE_ATTR_WITH_HINT,
@@ -1294,8 +1287,7 @@ dummy_func(
 
         macro(LOAD_FROM_DICT_OR_GLOBALS) = _LOAD_FROM_DICT_OR_GLOBALS;
 
-        family(load_global, INLINE_CACHE_ENTRIES_LOAD_GLOBAL) = {
-            LOAD_GLOBAL,
+        family(LOAD_GLOBAL, INLINE_CACHE_ENTRIES_LOAD_GLOBAL) = {
             LOAD_GLOBAL_MODULE,
             LOAD_GLOBAL_BUILTIN,
         };
@@ -1643,8 +1635,7 @@ dummy_func(
             GO_TO_INSTRUCTION(LOAD_SUPER_ATTR);
         }
 
-        family(load_super_attr, INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR) = {
-            LOAD_SUPER_ATTR,
+        family(LOAD_SUPER_ATTR, INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR) = {
             LOAD_SUPER_ATTR_ATTR,
             LOAD_SUPER_ATTR_METHOD,
         };
@@ -1746,8 +1737,7 @@ dummy_func(
             }
         }
 
-        family(load_attr, INLINE_CACHE_ENTRIES_LOAD_ATTR) = {
-            LOAD_ATTR,
+        family(LOAD_ATTR, INLINE_CACHE_ENTRIES_LOAD_ATTR) = {
             LOAD_ATTR_INSTANCE_VALUE,
             LOAD_ATTR_MODULE,
             LOAD_ATTR_WITH_HINT,
@@ -2044,8 +2034,7 @@ dummy_func(
             Py_DECREF(owner);
         }
 
-        family(compare_op, INLINE_CACHE_ENTRIES_COMPARE_OP) = {
-            COMPARE_OP,
+        family(COMPARE_OP, INLINE_CACHE_ENTRIES_COMPARE_OP) = {
             COMPARE_OP_FLOAT,
             COMPARE_OP_INT,
             COMPARE_OP_STR,
@@ -2346,8 +2335,7 @@ dummy_func(
         // This is optimized by skipping that instruction and combining
         // its effect (popping 'iter' instead of pushing 'next'.)
 
-        family(for_iter, INLINE_CACHE_ENTRIES_FOR_ITER) = {
-            FOR_ITER,
+        family(FOR_ITER, INLINE_CACHE_ENTRIES_FOR_ITER) = {
             FOR_ITER_LIST,
             FOR_ITER_TUPLE,
             FOR_ITER_RANGE,
@@ -2784,7 +2772,7 @@ dummy_func(
         }
 
         inst(KW_NAMES, (--)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             assert(oparg < PyTuple_GET_SIZE(FRAME_CO_CONSTS));
             kwnames = GETITEM(FRAME_CO_CONSTS, oparg);
         }
@@ -2806,8 +2794,7 @@ dummy_func(
 
         // Cache layout: counter/1, func_version/2
         // Neither CALL_INTRINSIC_1/2 nor CALL_FUNCTION_EX are members!
-        family(call, INLINE_CACHE_ENTRIES_CALL) = {
-            CALL,
+        family(CALL, INLINE_CACHE_ENTRIES_CALL) = {
             CALL_BOUND_METHOD_EXACT_ARGS,
             CALL_PY_EXACT_ARGS,
             CALL_PY_WITH_DEFAULTS,
@@ -2936,7 +2923,7 @@ dummy_func(
         }
 
         inst(CALL_PY_EXACT_ARGS, (unused/1, func_version/2, method, callable, args[oparg] -- unused)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             DEOPT_IF(tstate->interp->eval_frame, CALL);
             int is_meth = method != NULL;
             int argcount = oparg;
@@ -2964,7 +2951,7 @@ dummy_func(
         }
 
         inst(CALL_PY_WITH_DEFAULTS, (unused/1, func_version/2, method, callable, args[oparg] -- unused)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             DEOPT_IF(tstate->interp->eval_frame, CALL);
             int is_meth = method != NULL;
             int argcount = oparg;
@@ -3002,7 +2989,7 @@ dummy_func(
         }
 
         inst(CALL_NO_KW_TYPE_1, (unused/1, unused/2, null, callable, args[oparg] -- res)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
             DEOPT_IF(null != NULL, CALL);
             PyObject *obj = args[0];
@@ -3014,7 +3001,7 @@ dummy_func(
         }
 
         inst(CALL_NO_KW_STR_1, (unused/1, unused/2, null, callable, args[oparg] -- res)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(callable != (PyObject *)&PyUnicode_Type, CALL);
@@ -3028,7 +3015,7 @@ dummy_func(
         }
 
         inst(CALL_NO_KW_TUPLE_1, (unused/1, unused/2, null, callable, args[oparg] -- res)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(callable != (PyObject *)&PyTuple_Type, CALL);
@@ -3047,7 +3034,7 @@ dummy_func(
              * 2. Pushes a shim frame to the frame stack (to cleanup after ``__init__``)
              * 3. Pushes the frame for ``__init__`` to the frame stack
              * */
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             _PyCallCache *cache = (_PyCallCache *)next_instr;
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(!PyType_Check(callable), CALL);
@@ -3131,7 +3118,7 @@ dummy_func(
 
         inst(CALL_NO_KW_BUILTIN_O, (unused/1, unused/2, method, callable, args[oparg] -- res)) {
             /* Builtin METH_O functions */
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             int is_meth = method != NULL;
             int total_args = oparg;
             if (is_meth) {
@@ -3162,7 +3149,7 @@ dummy_func(
 
         inst(CALL_NO_KW_BUILTIN_FAST, (unused/1, unused/2, method, callable, args[oparg] -- res)) {
             /* Builtin METH_FASTCALL functions, without keywords */
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             int is_meth = method != NULL;
             int total_args = oparg;
             if (is_meth) {
@@ -3231,7 +3218,7 @@ dummy_func(
         }
 
         inst(CALL_NO_KW_LEN, (unused/1, unused/2, method, callable, args[oparg] -- res)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             /* len(o) */
             int is_meth = method != NULL;
             int total_args = oparg;
@@ -3258,7 +3245,7 @@ dummy_func(
         }
 
         inst(CALL_NO_KW_ISINSTANCE, (unused/1, unused/2, method, callable, args[oparg] -- res)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             /* isinstance(o, o2) */
             int is_meth = method != NULL;
             int total_args = oparg;
@@ -3288,7 +3275,7 @@ dummy_func(
 
         // This is secretly a super-instruction
         inst(CALL_NO_KW_LIST_APPEND, (unused/1, unused/2, method, self, args[oparg] -- unused)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
             assert(method != NULL);
             PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -3308,7 +3295,7 @@ dummy_func(
         }
 
         inst(CALL_NO_KW_METHOD_DESCRIPTOR_O, (unused/1, unused/2, method, unused, args[oparg] -- res)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             int is_meth = method != NULL;
             int total_args = oparg;
             if (is_meth) {
@@ -3374,7 +3361,7 @@ dummy_func(
         }
 
         inst(CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS, (unused/1, unused/2, method, unused, args[oparg] -- res)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 0 || oparg == 1);
             int is_meth = method != NULL;
             int total_args = oparg;
@@ -3406,7 +3393,7 @@ dummy_func(
         }
 
         inst(CALL_NO_KW_METHOD_DESCRIPTOR_FAST, (unused/1, unused/2, method, unused, args[oparg] -- res)) {
-            assert(kwnames == NULL);
+            ASSERT_KWNAMES_IS_NULL();
             int is_meth = method != NULL;
             int total_args = oparg;
             if (is_meth) {

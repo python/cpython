@@ -1,97 +1,148 @@
-# Sorry for using pytest, these tests are mostly just for me.
-# Use pytest -vv for best results.
-
 import tempfile
+import unittest
+import os
 
-import generate_cases
-from parser import StackEffect
+from test import test_tools
 
-
-def test_effect_sizes():
-    input_effects = [
-        x := StackEffect("x", "", "", ""),
-        y := StackEffect("y", "", "", "oparg"),
-        z := StackEffect("z", "", "", "oparg*2"),
-    ]
-    output_effects = [
-        StackEffect("a", "", "", ""),
-        StackEffect("b", "", "", "oparg*4"),
-        StackEffect("c", "", "", ""),
-    ]
-    other_effects = [
-        StackEffect("p", "", "", "oparg<<1"),
-        StackEffect("q", "", "", ""),
-        StackEffect("r", "", "", ""),
-    ]
-    assert generate_cases.effect_size(x) == (1, "")
-    assert generate_cases.effect_size(y) == (0, "oparg")
-    assert generate_cases.effect_size(z) == (0, "oparg*2")
-
-    assert generate_cases.list_effect_size(input_effects) == (1, "oparg + oparg*2")
-    assert generate_cases.list_effect_size(output_effects) == (2, "oparg*4")
-    assert generate_cases.list_effect_size(other_effects) == (2, "(oparg<<1)")
-
-    assert generate_cases.string_effect_size(generate_cases.list_effect_size(input_effects)) == "1 + oparg + oparg*2"
-    assert generate_cases.string_effect_size(generate_cases.list_effect_size(output_effects)) == "2 + oparg*4"
-    assert generate_cases.string_effect_size(generate_cases.list_effect_size(other_effects)) == "2 + (oparg<<1)"
+test_tools.skip_if_missing('cases_generator')
+with test_tools.imports_under_tool('cases_generator'):
+    import generate_cases
+    from parser import StackEffect
 
 
-def run_cases_test(input: str, expected: str):
-    temp_input = tempfile.NamedTemporaryFile("w+")
-    temp_input.write(generate_cases.BEGIN_MARKER)
-    temp_input.write(input)
-    temp_input.write(generate_cases.END_MARKER)
-    temp_input.flush()
-    temp_output = tempfile.NamedTemporaryFile("w+")
-    temp_metadata = tempfile.NamedTemporaryFile("w+")
-    temp_pymetadata = tempfile.NamedTemporaryFile("w+")
-    temp_executor = tempfile.NamedTemporaryFile("w+")
-    a = generate_cases.Analyzer(
-        [temp_input.name],
-        temp_output.name,
-        temp_metadata.name,
-        temp_pymetadata.name,
-        temp_executor.name,
-    )
-    a.parse()
-    a.analyze()
-    if a.errors:
-        raise RuntimeError(f"Found {a.errors} errors")
-    a.write_instructions()
-    temp_output.seek(0)
-    lines = temp_output.readlines()
-    while lines and lines[0].startswith("// "):
-        lines.pop(0)
-    actual = "".join(lines)
-    # if actual.rstrip() != expected.rstrip():
-    #     print("Actual:")
-    #     print(actual)
-    #     print("Expected:")
-    #     print(expected)
-    #     print("End")
-    assert actual.rstrip() == expected.rstrip()
+class TestEffects(unittest.TestCase):
+    def test_effect_sizes(self):
+        input_effects = [
+            x := StackEffect("x", "", "", ""),
+            y := StackEffect("y", "", "", "oparg"),
+            z := StackEffect("z", "", "", "oparg*2"),
+        ]
+        output_effects = [
+            StackEffect("a", "", "", ""),
+            StackEffect("b", "", "", "oparg*4"),
+            StackEffect("c", "", "", ""),
+        ]
+        other_effects = [
+            StackEffect("p", "", "", "oparg<<1"),
+            StackEffect("q", "", "", ""),
+            StackEffect("r", "", "", ""),
+        ]
+        self.assertEqual(generate_cases.effect_size(x), (1, ""))
+        self.assertEqual(generate_cases.effect_size(y), (0, "oparg"))
+        self.assertEqual(generate_cases.effect_size(z), (0, "oparg*2"))
 
-def test_inst_no_args():
-    input = """
+        self.assertEqual(
+            generate_cases.list_effect_size(input_effects),
+            (1, "oparg + oparg*2"),
+        )
+        self.assertEqual(
+            generate_cases.list_effect_size(output_effects),
+            (2, "oparg*4"),
+        )
+        self.assertEqual(
+            generate_cases.list_effect_size(other_effects),
+            (2, "(oparg<<1)"),
+        )
+
+        self.assertEqual(
+            generate_cases.string_effect_size(
+                generate_cases.list_effect_size(input_effects),
+            ), "1 + oparg + oparg*2",
+        )
+        self.assertEqual(
+            generate_cases.string_effect_size(
+                generate_cases.list_effect_size(output_effects),
+            ),
+            "2 + oparg*4",
+        )
+        self.assertEqual(
+            generate_cases.string_effect_size(
+                generate_cases.list_effect_size(other_effects),
+            ),
+            "2 + (oparg<<1)",
+        )
+
+
+class TestGeneratedCases(unittest.TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+
+        self.temp_dir = tempfile.gettempdir()
+        self.temp_input_filename = os.path.join(self.temp_dir, "input.txt")
+        self.temp_output_filename = os.path.join(self.temp_dir, "output.txt")
+        self.temp_metadata_filename = os.path.join(self.temp_dir, "metadata.txt")
+        self.temp_pymetadata_filename = os.path.join(self.temp_dir, "pymetadata.txt")
+        self.temp_executor_filename = os.path.join(self.temp_dir, "executor.txt")
+
+    def tearDown(self) -> None:
+        for filename in [
+            self.temp_input_filename,
+            self.temp_output_filename,
+            self.temp_metadata_filename,
+            self.temp_pymetadata_filename,
+            self.temp_executor_filename,
+        ]:
+            try:
+                os.remove(filename)
+            except:
+                pass
+        super().tearDown()
+
+    def run_cases_test(self, input: str, expected: str):
+        with open(self.temp_input_filename, "w+") as temp_input:
+            temp_input.write(generate_cases.BEGIN_MARKER)
+            temp_input.write(input)
+            temp_input.write(generate_cases.END_MARKER)
+            temp_input.flush()
+
+        a = generate_cases.Analyzer(
+            [self.temp_input_filename],
+            self.temp_output_filename,
+            self.temp_metadata_filename,
+            self.temp_pymetadata_filename,
+            self.temp_executor_filename,
+        )
+        a.parse()
+        a.analyze()
+        if a.errors:
+            raise RuntimeError(f"Found {a.errors} errors")
+        a.write_instructions()
+
+        with open(self.temp_output_filename) as temp_output:
+            lines = temp_output.readlines()
+            while lines and lines[0].startswith("// "):
+                lines.pop(0)
+        actual = "".join(lines)
+        # if actual.rstrip() != expected.rstrip():
+        #     print("Actual:")
+        #     print(actual)
+        #     print("Expected:")
+        #     print(expected)
+        #     print("End")
+
+        self.assertEqual(actual.rstrip(), expected.rstrip())
+
+    def test_inst_no_args(self):
+        input = """
         inst(OP, (--)) {
             spam();
         }
     """
-    output = """
+        output = """
         TARGET(OP) {
             spam();
             DISPATCH();
         }
     """
-    run_cases_test(input, output)
+        self.run_cases_test(input, output)
 
-def test_inst_one_pop():
-    input = """
+    def test_inst_one_pop(self):
+        input = """
         inst(OP, (value --)) {
             spam();
         }
     """
-    output = """
+        output = """
         TARGET(OP) {
             PyObject *value = stack_pointer[-1];
             spam();
@@ -99,15 +150,15 @@ def test_inst_one_pop():
             DISPATCH();
         }
     """
-    run_cases_test(input, output)
+        self.run_cases_test(input, output)
 
-def test_inst_one_push():
-    input = """
+    def test_inst_one_push(self):
+        input = """
         inst(OP, (-- res)) {
             spam();
         }
     """
-    output = """
+        output = """
         TARGET(OP) {
             PyObject *res;
             spam();
@@ -116,15 +167,15 @@ def test_inst_one_push():
             DISPATCH();
         }
     """
-    run_cases_test(input, output)
+        self.run_cases_test(input, output)
 
-def test_inst_one_push_one_pop():
-    input = """
+    def test_inst_one_push_one_pop(self):
+        input = """
         inst(OP, (value -- res)) {
             spam();
         }
     """
-    output = """
+        output = """
         TARGET(OP) {
             PyObject *value = stack_pointer[-1];
             PyObject *res;
@@ -133,15 +184,15 @@ def test_inst_one_push_one_pop():
             DISPATCH();
         }
     """
-    run_cases_test(input, output)
+        self.run_cases_test(input, output)
 
-def test_binary_op():
-    input = """
+    def test_binary_op(self):
+        input = """
         inst(OP, (left, right -- res)) {
             spam();
         }
     """
-    output = """
+        output = """
         TARGET(OP) {
             PyObject *right = stack_pointer[-1];
             PyObject *left = stack_pointer[-2];
@@ -152,15 +203,15 @@ def test_binary_op():
             DISPATCH();
         }
     """
-    run_cases_test(input, output)
+        self.run_cases_test(input, output)
 
-def test_overlap():
-    input = """
+    def test_overlap(self):
+        input = """
         inst(OP, (left, right -- left, result)) {
             spam();
         }
     """
-    output = """
+        output = """
         TARGET(OP) {
             PyObject *right = stack_pointer[-1];
             PyObject *left = stack_pointer[-2];
@@ -170,10 +221,10 @@ def test_overlap():
             DISPATCH();
         }
     """
-    run_cases_test(input, output)
+        self.run_cases_test(input, output)
 
-def test_predictions_and_eval_breaker():
-    input = """
+    def test_predictions_and_eval_breaker(self):
+        input = """
         inst(OP1, (--)) {
         }
         inst(OP3, (arg -- res)) {
@@ -181,7 +232,7 @@ def test_predictions_and_eval_breaker():
             CHECK_EVAL_BREAKER();
         }
     """
-    output = """
+        output = """
         TARGET(OP1) {
             PREDICTED(OP1);
             DISPATCH();
@@ -196,43 +247,43 @@ def test_predictions_and_eval_breaker():
             DISPATCH();
         }
     """
-    run_cases_test(input, output)
+        self.run_cases_test(input, output)
 
-def test_error_if_plain():
-    input = """
+    def test_error_if_plain(self):
+        input = """
         inst(OP, (--)) {
             ERROR_IF(cond, label);
         }
     """
-    output = """
+        output = """
         TARGET(OP) {
             if (cond) goto label;
             DISPATCH();
         }
     """
-    run_cases_test(input, output)
+        self.run_cases_test(input, output)
 
-def test_error_if_plain_with_comment():
-    input = """
+    def test_error_if_plain_with_comment(self):
+        input = """
         inst(OP, (--)) {
             ERROR_IF(cond, label);  // Comment is ok
         }
     """
-    output = """
+        output = """
         TARGET(OP) {
             if (cond) goto label;
             DISPATCH();
         }
     """
-    run_cases_test(input, output)
+        self.run_cases_test(input, output)
 
-def test_error_if_pop():
-    input = """
+    def test_error_if_pop(self):
+        input = """
         inst(OP, (left, right -- res)) {
             ERROR_IF(cond, label);
         }
     """
-    output = """
+        output = """
         TARGET(OP) {
             PyObject *right = stack_pointer[-1];
             PyObject *left = stack_pointer[-2];
@@ -243,14 +294,14 @@ def test_error_if_pop():
             DISPATCH();
         }
     """
-    run_cases_test(input, output)
+        self.run_cases_test(input, output)
 
-def test_cache_effect():
-    input = """
+    def test_cache_effect(self):
+        input = """
         inst(OP, (counter/1, extra/2, value --)) {
         }
     """
-    output = """
+        output = """
         TARGET(OP) {
             PyObject *value = stack_pointer[-1];
             uint16_t counter = read_u16(&next_instr[0].cache);
@@ -260,23 +311,23 @@ def test_cache_effect():
             DISPATCH();
         }
     """
-    run_cases_test(input, output)
+        self.run_cases_test(input, output)
 
-def test_suppress_dispatch():
-    input = """
+    def test_suppress_dispatch(self):
+        input = """
         inst(OP, (--)) {
             goto somewhere;
         }
     """
-    output = """
+        output = """
         TARGET(OP) {
             goto somewhere;
         }
     """
-    run_cases_test(input, output)
+        self.run_cases_test(input, output)
 
-def test_macro_instruction():
-    input = """
+    def test_macro_instruction(self):
+        input = """
         inst(OP1, (counter/1, left, right -- left, right)) {
             op1(left, right);
         }
@@ -287,9 +338,9 @@ def test_macro_instruction():
         inst(OP3, (unused/5, arg2, left, right -- res)) {
             res = op3(arg2, left, right);
         }
-        family(op, INLINE_CACHE_ENTRIES_OP) = { OP, OP3 };
+        family(OP, INLINE_CACHE_ENTRIES_OP) = { OP3 };
     """
-    output = """
+        output = """
         TARGET(OP1) {
             PyObject *right = stack_pointer[-1];
             PyObject *left = stack_pointer[-2];
@@ -339,15 +390,15 @@ def test_macro_instruction():
             DISPATCH();
         }
     """
-    run_cases_test(input, output)
+        self.run_cases_test(input, output)
 
-def test_array_input():
-    input = """
+    def test_array_input(self):
+        input = """
         inst(OP, (below, values[oparg*2], above --)) {
             spam();
         }
     """
-    output = """
+        output = """
         TARGET(OP) {
             PyObject *above = stack_pointer[-1];
             PyObject **values = (stack_pointer - (1 + oparg*2));
@@ -358,15 +409,15 @@ def test_array_input():
             DISPATCH();
         }
     """
-    run_cases_test(input, output)
+        self.run_cases_test(input, output)
 
-def test_array_output():
-    input = """
+    def test_array_output(self):
+        input = """
         inst(OP, (unused, unused -- below, values[oparg*3], above)) {
             spam(values, oparg);
         }
     """
-    output = """
+        output = """
         TARGET(OP) {
             PyObject *below;
             PyObject **values = stack_pointer - (2) + 1;
@@ -378,15 +429,15 @@ def test_array_output():
             DISPATCH();
         }
     """
-    run_cases_test(input, output)
+        self.run_cases_test(input, output)
 
-def test_array_input_output():
-    input = """
+    def test_array_input_output(self):
+        input = """
         inst(OP, (values[oparg] -- values[oparg], above)) {
             spam(values, oparg);
         }
     """
-    output = """
+        output = """
         TARGET(OP) {
             PyObject **values = (stack_pointer - oparg);
             PyObject *above;
@@ -396,15 +447,15 @@ def test_array_input_output():
             DISPATCH();
         }
     """
-    run_cases_test(input, output)
+        self.run_cases_test(input, output)
 
-def test_array_error_if():
-    input = """
+    def test_array_error_if(self):
+        input = """
         inst(OP, (extra, values[oparg] --)) {
             ERROR_IF(oparg == 0, somewhere);
         }
     """
-    output = """
+        output = """
         TARGET(OP) {
             PyObject **values = (stack_pointer - oparg);
             PyObject *extra = stack_pointer[-(1 + oparg)];
@@ -414,15 +465,15 @@ def test_array_error_if():
             DISPATCH();
         }
     """
-    run_cases_test(input, output)
+        self.run_cases_test(input, output)
 
-def test_cond_effect():
-    input = """
+    def test_cond_effect(self):
+        input = """
         inst(OP, (aa, input if ((oparg & 1) == 1), cc -- xx, output if (oparg & 2), zz)) {
             output = spam(oparg, input);
         }
     """
-    output = """
+        output = """
         TARGET(OP) {
             PyObject *cc = stack_pointer[-1];
             PyObject *input = ((oparg & 1) == 1) ? stack_pointer[-(1 + (((oparg & 1) == 1) ? 1 : 0))] : NULL;
@@ -439,10 +490,10 @@ def test_cond_effect():
             DISPATCH();
         }
     """
-    run_cases_test(input, output)
+        self.run_cases_test(input, output)
 
-def test_macro_cond_effect():
-    input = """
+    def test_macro_cond_effect(self):
+        input = """
         op(A, (left, middle, right --)) {
             # Body of A
         }
@@ -451,7 +502,7 @@ def test_macro_cond_effect():
         }
         macro(M) = A + B;
     """
-    output = """
+        output = """
         TARGET(M) {
             PyObject *_tmp_1 = stack_pointer[-1];
             PyObject *_tmp_2 = stack_pointer[-2];
@@ -479,4 +530,8 @@ def test_macro_cond_effect():
             DISPATCH();
         }
     """
-    run_cases_test(input, output)
+        self.run_cases_test(input, output)
+
+
+if __name__ == "__main__":
+    unittest.main()
