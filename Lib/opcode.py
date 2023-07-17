@@ -25,8 +25,6 @@ ENABLE_SPECIALIZATION = True
 def is_pseudo(op):
     return op >= MIN_PSEUDO_OPCODE and op <= MAX_PSEUDO_OPCODE
 
-oplists = [hascompare]
-
 opmap = {}
 
 ## pseudo opcodes (used in the compiler) mapped to the values
@@ -39,12 +37,6 @@ def def_op(name, op):
 def pseudo_op(name, op, real_ops):
     def_op(name, op)
     _pseudo_ops[name] = real_ops
-    # add the pseudo opcode to the lists its targets are in
-    for oplist in oplists:
-        res = [opmap[rop] in oplist for rop in real_ops]
-        if any(res):
-            assert all(res)
-            oplist.append(op)
 
 
 # Instruction opcodes for compiled code
