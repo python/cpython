@@ -524,12 +524,18 @@ state:
 
         PyObject *obj = PyBytes_FromString(value);
         if (PyModule_AddObject(module, "spam", obj) < 0) {
+            // If 'obj' is not NULL and PyModule_AddObject() failed,
+            // 'obj' strong reference must be deleted with Py_XDECREF().
+            // If 'obj' is NULL, Py_XDECREF() does nothing.
             Py_XDECREF(obj);
             goto error;
         }
+        // PyModule_AddObject() stole a reference to obj:
+        // Py_XDECREF(obj) is not needed here.
 
-   Note that ``Py_XDECREF()`` should be used instead of ``Py_DECREF()`` in
-   this case, since *obj* can be ``NULL``.
+   .. deprecated:: 3.13
+
+      :c:func:`PyModule_AddObject` is :term:`soft deprecated`.
 
 
 .. c:function:: int PyModule_AddIntConstant(PyObject *module, const char *name, long value)
