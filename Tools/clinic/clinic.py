@@ -5176,7 +5176,7 @@ class DSLParser:
         function.docstring_only = True
 
     def parse_closing_square_bracket(self, function: Function) -> None:
-        """Parse closing parameter group symbol '['."""
+        """Parse closing parameter group symbol ']'."""
         if not self.group:
             fail(f"Function {function.name} has a ] without a matching [.")
         if not any(p.group == self.group for p in function.parameters.values()):
@@ -5215,7 +5215,7 @@ class DSLParser:
         for p in function.parameters.values():
             if p.is_vararg():
                 continue
-            if (p.kind != inspect.Parameter.POSITIONAL_OR_KEYWORD and
+            if (p.kind is not inspect.Parameter.POSITIONAL_OR_KEYWORD and
                 not isinstance(p.converter, self_converter)
             ):
                 fail(f"Function {function.name} mixes keyword-only and "
