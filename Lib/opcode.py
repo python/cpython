@@ -4,7 +4,8 @@ opcode module - potentially shared between dis and other modules which
 operate on bytecodes (e.g. peephole optimizers).
 """
 
-__all__ = ["cmp_op", "opname", "opmap", "stack_effect", "HAVE_ARGUMENT", "EXTENDED_ARG"]
+__all__ = ["cmp_op", "opname", "opmap", "stack_effect", "hascompare",
+           "HAVE_ARGUMENT", "EXTENDED_ARG"]
 
 import _opcode
 from _opcode import stack_effect
@@ -125,7 +126,6 @@ def_op('BUILD_SET', 104)        # Number of set items
 def_op('BUILD_MAP', 105)        # Number of dict entries
 def_op('LOAD_ATTR', 106)       # Index in name list
 def_op('COMPARE_OP', 107)       # Comparison operator
-hascompare.append(107)
 def_op('IMPORT_NAME', 108)     # Index in name list
 def_op('IMPORT_FROM', 109)     # Index in name list
 def_op('JUMP_FORWARD', 110)    # Number of words to skip
@@ -255,6 +255,8 @@ if sys.version_info[:2] >= (3, 13):
 
     __all__.extend(["hasarg", "hasconst", "hasname", "hasjump", "hasjrel",
                     "hasjabs", "hasfree", "haslocal", "hasexc"])
+
+hascompare = [opmap["COMPARE_OP"]]  # for backwards compatibility
 
 _nb_ops = [
     ("NB_ADD", "+"),
