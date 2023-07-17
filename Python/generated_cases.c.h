@@ -3360,9 +3360,9 @@
             res2 = Py_NewRef(descr);
             assert(_PyType_HasFeature(Py_TYPE(res2), Py_TPFLAGS_METHOD_DESCRIPTOR));
             res = self;
-            STACK_GROW((1 ? 1 : 0));
+            STACK_GROW(1);
             stack_pointer[-1] = res;
-            if (1) { stack_pointer[-(1 + (1 ? 1 : 0))] = res2; }
+            stack_pointer[-(1 + 1)] = res2;
             next_instr += 9;
             DISPATCH();
         }
@@ -3382,16 +3382,15 @@
             assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
             res2 = Py_NewRef(descr);
             res = self;
-            STACK_GROW((1 ? 1 : 0));
+            STACK_GROW(1);
             stack_pointer[-1] = res;
-            if (1) { stack_pointer[-(1 + (1 ? 1 : 0))] = res2; }
+            stack_pointer[-(1 + 1)] = res2;
             next_instr += 9;
             DISPATCH();
         }
 
         TARGET(LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES) {
             PyObject *self = stack_pointer[-1];
-            PyObject *res2 = NULL;
             PyObject *res;
             uint32_t type_version = read_u32(&next_instr[1].cache);
             uint32_t keys_version = read_u32(&next_instr[3].cache);
@@ -3410,16 +3409,14 @@
             assert(descr != NULL);
             Py_DECREF(self);
             res = Py_NewRef(descr);
-            STACK_GROW((0 ? 1 : 0));
+            STACK_GROW(0);
             stack_pointer[-1] = res;
-            if (0) { stack_pointer[-(1 + (0 ? 1 : 0))] = res2; }
             next_instr += 9;
             DISPATCH();
         }
 
         TARGET(LOAD_ATTR_NONDESCRIPTOR_NO_DICT) {
             PyObject *self = stack_pointer[-1];
-            PyObject *res2 = NULL;
             PyObject *res;
             uint32_t type_version = read_u32(&next_instr[1].cache);
             PyObject *descr = read_obj(&next_instr[5].cache);
@@ -3432,9 +3429,8 @@
             assert(descr != NULL);
             Py_DECREF(self);
             res = Py_NewRef(descr);
-            STACK_GROW((0 ? 1 : 0));
+            STACK_GROW(0);
             stack_pointer[-1] = res;
-            if (0) { stack_pointer[-(1 + (0 ? 1 : 0))] = res2; }
             next_instr += 9;
             DISPATCH();
         }
@@ -3458,9 +3454,9 @@
             assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
             res2 = Py_NewRef(descr);
             res = self;
-            STACK_GROW((1 ? 1 : 0));
+            STACK_GROW(1);
             stack_pointer[-1] = res;
-            if (1) { stack_pointer[-(1 + (1 ? 1 : 0))] = res2; }
+            stack_pointer[-(1 + 1)] = res2;
             next_instr += 9;
             DISPATCH();
         }

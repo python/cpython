@@ -1750,7 +1750,12 @@
             _PyListIterObject *it = (_PyListIterObject *)iter;
             assert(Py_TYPE(iter) == &PyListIter_Type);
             PyListObject *seq = it->it_seq;
-            if (seq == NULL || it->it_index >= PyList_GET_SIZE(seq)) {
+            if (seq == NULL) {
+                exhausted = Py_True;
+            }
+            else if (it->it_index >= PyList_GET_SIZE(seq)) {
+                Py_DECREF(seq);
+                it->it_seq = NULL;
                 exhausted = Py_True;
             }
             else {
@@ -1787,7 +1792,12 @@
             _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
             assert(Py_TYPE(iter) == &PyTupleIter_Type);
             PyTupleObject *seq = it->it_seq;
-            if (seq == NULL || it->it_index >= PyTuple_GET_SIZE(seq)) {
+            if (seq == NULL) {
+                exhausted = Py_True;
+            }
+            else if (it->it_index >= PyTuple_GET_SIZE(seq)) {
+                Py_DECREF(seq);
+                it->it_seq = NULL;
                 exhausted = Py_True;
             }
             else {

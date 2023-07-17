@@ -839,15 +839,15 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case PUSH_EXC_INFO:
             return 2;
         case LOAD_ATTR_METHOD_WITH_VALUES:
-            return (1 ? 1 : 0) + 1;
+            return 1 + 1;
         case LOAD_ATTR_METHOD_NO_DICT:
-            return (1 ? 1 : 0) + 1;
+            return 1 + 1;
         case LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES:
-            return (0 ? 1 : 0) + 1;
+            return 0 + 1;
         case LOAD_ATTR_NONDESCRIPTOR_NO_DICT:
-            return (0 ? 1 : 0) + 1;
+            return 0 + 1;
         case LOAD_ATTR_METHOD_LAZY_DICT:
-            return (1 ? 1 : 0) + 1;
+            return 1 + 1;
         case KW_NAMES:
             return 0;
         case INSTRUMENTED_CALL:
