@@ -33,7 +33,7 @@ can be set to handler functions.  When an XML document is then fed to the
 parser, the handler functions are called for the character data and markup in
 the XML document.
 
-.. index:: module: pyexpat
+.. index:: pair: module; pyexpat
 
 This module uses the :mod:`pyexpat` module to provide access to the Expat
 parser.  Direct use of the :mod:`pyexpat` module is deprecated.
@@ -865,6 +865,40 @@ The ``errors`` module has the following attributes:
 
 
 .. data:: XML_ERROR_SUSPEND_PE
+
+
+.. data:: XML_ERROR_RESERVED_PREFIX_XML
+
+   An attempt was made to
+   undeclare reserved namespace prefix ``xml``
+   or to bind it to another namespace URI.
+
+
+.. data:: XML_ERROR_RESERVED_PREFIX_XMLNS
+
+   An attempt was made to declare or undeclare reserved namespace prefix ``xmlns``.
+
+
+.. data:: XML_ERROR_RESERVED_NAMESPACE_URI
+
+   An attempt was made to bind the URI of one the reserved namespace
+   prefixes ``xml`` and ``xmlns`` to another namespace prefix.
+
+
+.. data:: XML_ERROR_INVALID_ARGUMENT
+
+   This should not be reported to Python applications.
+
+
+.. data:: XML_ERROR_NO_BUFFER
+
+   This should not be reported to Python applications.
+
+
+.. data:: XML_ERROR_AMPLIFICATION_LIMIT_BREACH
+
+   The limit on input amplification factor (from DTD and entities)
+   has been breached.
 
 
 .. rubric:: Footnotes

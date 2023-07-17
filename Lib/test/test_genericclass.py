@@ -220,6 +220,7 @@ class TestClassGetitem(unittest.TestCase):
                 return None
         with self.assertRaises(TypeError):
             C_too_few[int]
+
         class C_too_many:
             def __class_getitem__(cls, one, two):
                 return None
@@ -232,15 +233,22 @@ class TestClassGetitem(unittest.TestCase):
                 return None
         with self.assertRaises(TypeError):
             C()[int]
+
         class E: ...
         e = E()
         e.__class_getitem__ = lambda cls, item: 'This will not work'
         with self.assertRaises(TypeError):
             e[int]
+
         class C_not_callable:
             __class_getitem__ = "Surprise!"
         with self.assertRaises(TypeError):
             C_not_callable[int]
+
+        class C_is_none(tuple):
+            __class_getitem__ = None
+        with self.assertRaisesRegex(TypeError, "C_is_none"):
+            C_is_none[int]
 
     def test_class_getitem_metaclass(self):
         class Meta(type):

@@ -32,7 +32,7 @@ STRINGLIB(bytes_join)(PyObject *sep, PyObject *iterable)
         Py_DECREF(seq);
         return STRINGLIB_NEW(NULL, 0);
     }
-#ifndef STRINGLIB_MUTABLE
+#if !STRINGLIB_MUTABLE
     if (seqlen == 1) {
         item = PySequence_Fast_GET_ITEM(seq, 0);
         if (STRINGLIB_CHECK_EXACT(item)) {
@@ -63,8 +63,7 @@ STRINGLIB(bytes_join)(PyObject *sep, PyObject *iterable)
         item = PySequence_Fast_GET_ITEM(seq, i);
         if (PyBytes_CheckExact(item)) {
             /* Fast path. */
-            Py_INCREF(item);
-            buffers[i].obj = item;
+            buffers[i].obj = Py_NewRef(item);
             buffers[i].buf = PyBytes_AS_STRING(item);
             buffers[i].len = PyBytes_GET_SIZE(item);
         }

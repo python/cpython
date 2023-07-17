@@ -106,12 +106,54 @@ def formataddr(pair, charset='utf-8'):
     return address
 
 
+def _pre_parse_validation(email_header_fields):
+    accepted_values = []
+    for v in email_header_fields:
+        s = v.replace('\\(', '').replace('\\)', '')
+        if s.count('(') != s.count(')'):
+            v = "('', '')"
+        accepted_values.append(v)
+
+    return accepted_values
+
+
+def _post_parse_validation(parsed_email_header_tuples):
+    accepted_values = []
+    # The parser would have parsed a correctly formatted domain-literal
+    # The existence of an [ after parsing indicates a parsing failure
+    for v in parsed_email_header_tuples:
+        if '[' in v[1]:
+            v = ('', '')
+        accepted_values.append(v)
+
+    return accepted_values
+
 
 def getaddresses(fieldvalues):
-    """Return a list of (REALNAME, EMAIL) for each fieldvalue."""
-    all = COMMASPACE.join(fieldvalues)
+    """Return a list of (REALNAME, EMAIL) or ('','') for each fieldvalue.
+
+    When parsing fails for a fieldvalue, a 2-tuple of ('', '') is returned in
+    its place.
+
+    If the resulting list of parsed address is not the same as the number of
+    fieldvalues in the input list a parsing error has occurred.  A list
+    containing a single empty 2-tuple [('', '')] is returned in its place.
+    This is done to avoid invalid output.
+    """
+    fieldvalues = [str(v) for v in fieldvalues]
+    fieldvalues = _pre_parse_validation(fieldvalues)
+    all = COMMASPACE.join(v for v in fieldvalues)
     a = _AddressList(all)
-    return a.addresslist
+    result = _post_parse_validation(a.addresslist)
+
+    n = 0
+    for v in fieldvalues:
+        n += v.count(',') + 1
+
+    if len(result) != n:
+        return [('', '')]
+
+    return result
 
 
 def _format_timetuple_and_zone(timetuple, zone):
@@ -143,13 +185,13 @@ def formatdate(timeval=None, localtime=False, usegmt=False):
     # 2822 requires that day and month names be the English abbreviations.
     if timeval is None:
         timeval = time.time()
-    if localtime or usegmt:
-        dt = datetime.datetime.fromtimestamp(timeval, datetime.timezone.utc)
-    else:
-        dt = datetime.datetime.utcfromtimestamp(timeval)
+    dt = datetime.datetime.fromtimestamp(timeval, datetime.timezone.utc)
+
     if localtime:
         dt = dt.astimezone()
         usegmt = False
+    elif not usegmt:
+        dt = dt.replace(tzinfo=None)
     return format_datetime(dt, usegmt)
 
 def format_datetime(dt, usegmt=False):
@@ -212,9 +254,18 @@ def parseaddr(addr):
     Return a tuple of realname and email address, unless the parse fails, in
     which case return a 2-tuple of ('', '').
     """
-    addrs = _AddressList(addr).addresslist
-    if not addrs:
-        return '', ''
+    if isinstance(addr, list):
+        addr = addr[0]
+
+    if not isinstance(addr, str):
+        return ('', '')
+
+    addr = _pre_parse_validation([addr])[0]
+    addrs = _post_parse_validation(_AddressList(addr).addresslist)
+
+    if not addrs or len(addrs) > 1:
+        return ('', '')
+
     return addrs[0]
 
 
@@ -331,41 +382,23 @@ def collapse_rfc2231_value(value, errors='replace',
 # better than not having it.
 #
 
-def localtime(dt=None, isdst=-1):
+def localtime(dt=None, isdst=None):
     """Return local time as an aware datetime object.
 
     If called without arguments, return current time.  Otherwise *dt*
     argument should be a datetime instance, and it is converted to the
     local time zone according to the system time zone database.  If *dt* is
     naive (that is, dt.tzinfo is None), it is assumed to be in local time.
-    In this case, a positive or zero value for *isdst* causes localtime to
-    presume initially that summer time (for example, Daylight Saving Time)
-    is or is not (respectively) in effect for the specified time.  A
-    negative value for *isdst* causes the localtime() function to attempt
-    to divine whether summer time is in effect for the specified time.
+    The isdst parameter is ignored.
 
     """
+    if isdst is not None:
+        import warnings
+        warnings._deprecated(
+            "The 'isdst' parameter to 'localtime'",
+            message='{name} is deprecated and slated for removal in Python {remove}',
+            remove=(3, 14),
+            )
     if dt is None:
-        return datetime.datetime.now(datetime.timezone.utc).astimezone()
-    if dt.tzinfo is not None:
-        return dt.astimezone()
-    # We have a naive datetime.  Convert to a (localtime) timetuple and pass to
-    # system mktime together with the isdst hint.  System mktime will return
-    # seconds since epoch.
-    tm = dt.timetuple()[:-1] + (isdst,)
-    seconds = time.mktime(tm)
-    localtm = time.localtime(seconds)
-    try:
-        delta = datetime.timedelta(seconds=localtm.tm_gmtoff)
-        tz = datetime.timezone(delta, localtm.tm_zone)
-    except AttributeError:
-        # Compute UTC offset and compare with the value implied by tm_isdst.
-        # If the values match, use the zone name implied by tm_isdst.
-        delta = dt - datetime.datetime(*time.gmtime(seconds)[:6])
-        dst = time.daylight and localtm.tm_isdst > 0
-        gmtoff = -(time.altzone if dst else time.timezone)
-        if delta == datetime.timedelta(seconds=gmtoff):
-            tz = datetime.timezone(delta, time.tzname[dst])
-        else:
-            tz = datetime.timezone(delta)
-    return dt.replace(tzinfo=tz)
+        dt = datetime.datetime.now()
+    return dt.astimezone()

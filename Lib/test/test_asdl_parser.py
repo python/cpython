@@ -62,7 +62,9 @@ class TestAsdlParser(unittest.TestCase):
         alias = self.types['alias']
         self.assertEqual(
             str(alias),
-            'Product([Field(identifier, name), Field(identifier, asname, opt=True)])')
+            'Product([Field(identifier, name), Field(identifier, asname, opt=True)], '
+            '[Field(int, lineno), Field(int, col_offset), '
+            'Field(int, end_lineno, opt=True), Field(int, end_col_offset, opt=True)])')
 
     def test_attributes(self):
         stmt = self.types['stmt']

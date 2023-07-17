@@ -19,8 +19,8 @@ interface supporting the ``.xz`` and legacy ``.lzma`` file formats used by the
 :program:`xz` utility, as well as raw compressed streams.
 
 The interface provided by this module is very similar to that of the :mod:`bz2`
-module. However, note that :class:`LZMAFile` is *not* thread-safe, unlike
-:class:`bz2.BZ2File`, so if you need to use a single :class:`LZMAFile` instance
+module. Note that :class:`LZMAFile` and :class:`bz2.BZ2File` are *not*
+thread-safe, so if you need to use a single :class:`LZMAFile` instance
 from multiple threads, it is necessary to protect it with a lock.
 
 
@@ -258,7 +258,7 @@ Compressing and decompressing data in memory
       will be set to ``True``.
 
       Attempting to decompress data after the end of stream is reached
-      raises an `EOFError`.  Any data found after the end of the
+      raises an :exc:`EOFError`.  Any data found after the end of the
       stream is ignored and saved in the :attr:`~.unused_data` attribute.
 
       .. versionchanged:: 3.5

@@ -1,5 +1,7 @@
 .. highlight:: c
 
+.. _howto-clinic:
+
 **********************
 Argument Clinic How-To
 **********************
@@ -25,7 +27,8 @@ Argument Clinic How-To
   version of Argument Clinic that ships with the next version
   of CPython *could* be totally incompatible and break all your code.
 
-The Goals Of Argument Clinic
+
+The goals of Argument Clinic
 ============================
 
 Argument Clinic's primary goal
@@ -76,7 +79,7 @@ and it should be able to do many interesting and smart
 things with all the information you give it.
 
 
-Basic Concepts And Usage
+Basic concepts and usage
 ========================
 
 Argument Clinic ships with CPython; you'll find it in ``Tools/clinic/clinic.py``.
@@ -84,7 +87,7 @@ If you run that script, specifying a C file as an argument:
 
 .. code-block:: shell-session
 
-    $ python3 Tools/clinic/clinic.py foo.c
+    $ python Tools/clinic/clinic.py foo.c
 
 Argument Clinic will scan over the file looking for lines that
 look exactly like this:
@@ -139,7 +142,7 @@ For the sake of clarity, here's the terminology we'll use with Argument Clinic:
   a block.)
 
 
-Converting Your First Function
+Converting your first function
 ==============================
 
 The best way to get a sense of how Argument Clinic works is to
@@ -539,16 +542,25 @@ Let's dive in!
         };
 
 
-16. Compile, then run the relevant portions of the regression-test suite.
+16. Argument Clinic may generate new instances of ``_Py_ID``. For example::
+
+        &_Py_ID(new_unique_py_id)
+
+    If it does, you'll have to run ``Tools/scripts/generate_global_objects.py``
+    to regenerate the list of precompiled identifiers at this point.
+
+
+17. Compile, then run the relevant portions of the regression-test suite.
     This change should not introduce any new compile-time warnings or errors,
-    and there should be no externally-visible change to Python's behavior.
+    and there should be no externally visible change to Python's behavior.
 
     Well, except for one difference: ``inspect.signature()`` run on your function
     should now provide a valid signature!
 
     Congratulations, you've ported your first function to work with Argument Clinic!
 
-Advanced Topics
+
+Advanced topics
 ===============
 
 Now that you've had some experience working with Argument Clinic, it's time
@@ -566,9 +578,6 @@ expression.  Currently the following are explicitly supported:
 * ``True``, ``False``, and ``None``
 * Simple symbolic constants like ``sys.maxsize``, which must
   start with the name of the module
-
-In case you're curious, this is implemented in  ``from_builtin()``
-in ``Lib/inspect.py``.
 
 (In the future, this may need to get even more elaborate,
 to allow full expressions like ``CONSTANT - 1``.)
@@ -629,7 +638,8 @@ after the last argument).
 Currently the generated code will use :c:func:`PyArg_ParseTuple`, but this
 will change soon.
 
-Optional Groups
+
+Optional groups
 ---------------
 
 Some legacy functions have a tricky approach to parsing their arguments:
@@ -768,6 +778,9 @@ All Argument Clinic converters accept the following arguments:
     because :pep:`8` mandates that the Python library may not use
     annotations.
 
+  ``unused``
+    Wrap the argument with :c:macro:`Py_UNUSED` in the impl function signature.
+
 In addition, some converters accept additional arguments.  Here is a list
 of these arguments, along with their meanings:
 
@@ -851,15 +864,15 @@ on the right is the text you'd replace it with.
 ``'s#'``    ``str(zeroes=True)``
 ``'s*'``    ``Py_buffer(accept={buffer, str})``
 ``'U'``     ``unicode``
-``'u'``     ``Py_UNICODE``
-``'u#'``    ``Py_UNICODE(zeroes=True)``
+``'u'``     ``wchar_t``
+``'u#'``    ``wchar_t(zeroes=True)``
 ``'w*'``    ``Py_buffer(accept={rwbuffer})``
 ``'Y'``     ``PyByteArrayObject``
 ``'y'``     ``str(accept={bytes})``
 ``'y#'``    ``str(accept={robuffer}, zeroes=True)``
 ``'y*'``    ``Py_buffer``
-``'Z'``     ``Py_UNICODE(accept={str, NoneType})``
-``'Z#'``    ``Py_UNICODE(accept={str, NoneType}, zeroes=True)``
+``'Z'``     ``wchar_t(accept={str, NoneType})``
+``'Z#'``    ``wchar_t(accept={str, NoneType}, zeroes=True)``
 ``'z'``     ``str(accept={str, NoneType})``
 ``'z#'``    ``str(accept={str, NoneType}, zeroes=True)``
 ``'z*'``    ``Py_buffer(accept={buffer, str, NoneType})``
@@ -889,6 +902,7 @@ available.  For each converter it'll show you all the parameters
 it accepts, along with the default value for each parameter.
 Just run ``Tools/clinic/clinic.py --converters`` to see the full list.
 
+
 Py_buffer
 ---------
 
@@ -896,7 +910,6 @@ When using the ``Py_buffer`` converter
 (or the ``'s*'``, ``'w*'``, ``'*y'``, or ``'z*'`` legacy converters),
 you *must* not call :c:func:`PyBuffer_Release` on the provided buffer.
 Argument Clinic generates code that does it for you (in the parsing function).
-
 
 
 Advanced converters
@@ -965,6 +978,7 @@ value called ``NULL`` for just this reason: from Python's perspective it
 behaves like a default value of ``None``, but the C variable is initialized
 with ``NULL``.
 
+
 Expressions specified as default values
 ---------------------------------------
 
@@ -1022,23 +1036,39 @@ you're not permitted to use:
 * Tuple/list/set/dict literals.
 
 
-
 Using a return converter
 ------------------------
 
-By default the impl function Argument Clinic generates for you returns ``PyObject *``.
-But your C function often computes some C type, then converts it into the ``PyObject *``
+By default, the impl function Argument Clinic generates for you returns
+:c:type:`PyObject * <PyObject>`.
+But your C function often computes some C type,
+then converts it into the :c:type:`!PyObject *`
 at the last moment.  Argument Clinic handles converting your inputs from Python types
 into native C types—why not have it convert your return value from a native C type
 into a Python type too?
 
 That's what a "return converter" does.  It changes your impl function to return
 some C type, then adds code to the generated (non-impl) function to handle converting
-that value into the appropriate ``PyObject *``.
+that value into the appropriate :c:type:`!PyObject *`.
 
 The syntax for return converters is similar to that of parameter converters.
 You specify the return converter like it was a return annotation on the
-function itself.  Return converters behave much the same as parameter converters;
+function itself, using ``->`` notation.
+
+For example:
+
+.. code-block:: c
+
+   /*[clinic input]
+   add -> int
+
+       a: int
+       b: int
+       /
+
+   [clinic start generated code]*/
+
+Return converters behave much the same as parameter converters;
 they take arguments, the arguments are all keyword-only, and if you're not changing
 any of the default arguments you can omit the parentheses.
 
@@ -1059,24 +1089,17 @@ Currently Argument Clinic supports only a few return converters:
 .. code-block:: none
 
     bool
-    int
-    unsigned int
-    long
-    unsigned int
-    size_t
-    Py_ssize_t
-    float
     double
-    DecodeFSDefault
+    float
+    int
+    long
+    Py_ssize_t
+    size_t
+    unsigned int
+    unsigned long
 
-None of these take parameters.  For the first three, return -1 to indicate
-error.  For ``DecodeFSDefault``, the return type is ``const char *``; return a ``NULL``
-pointer to indicate an error.
-
-(There's also an experimental ``NoneType`` converter, which lets you
-return ``Py_None`` on success or ``NULL`` on failure, without having
-to increment the reference count on ``Py_None``.  I'm not sure it adds
-enough clarity to be worth using.)
+None of these take parameters.
+For all of these, return ``-1`` to indicate error.
 
 To see all the return converters Argument Clinic supports, along with
 their parameters (if any),
@@ -1120,11 +1143,12 @@ Here's the syntax for cloning a function::
 ``module.class`` in the sample just to illustrate that you must
 use the full path to *both* functions.)
 
-Sorry, there's no syntax for partially-cloning a function, or cloning a function
+Sorry, there's no syntax for partially cloning a function, or cloning a function
 then modifying it.  Cloning is an all-or nothing proposition.
 
 Also, the function you are cloning from must have been previously defined
 in the current file.
+
 
 Calling Python code
 -------------------
@@ -1252,15 +1276,15 @@ The ``defining_class`` converter is not compatible with ``__init__`` and ``__new
 methods, which cannot use the ``METH_METHOD`` convention.
 
 It is not possible to use ``defining_class`` with slot methods.  In order to
-fetch the module state from such methods, use ``_PyType_GetModuleByDef`` to
-look up the module and then :c:func:`PyModule_GetState` to fetch the module
+fetch the module state from such methods, use :c:func:`PyType_GetModuleByDef`
+to look up the module and then :c:func:`PyModule_GetState` to fetch the module
 state.  Example from the ``setattro`` slot method in
 ``Modules/_threadmodule.c``::
 
     static int
     local_setattro(localobject *self, PyObject *name, PyObject *v)
     {
-        PyObject *module = _PyType_GetModuleByDef(Py_TYPE(self), &thread_module);
+        PyObject *module = PyType_GetModuleByDef(Py_TYPE(self), &thread_module);
         thread_module_state *state = get_thread_state(module);
         ...
     }
@@ -1318,7 +1342,7 @@ to specify in your subclass.  Here's the current list:
     there is no default, but not specifying a default may
     result in an "uninitialized variable" warning.  This can
     easily happen when using option groups—although
-    properly-written code will never actually use this value,
+    properly written code will never actually use this value,
     the variable does get passed in to the impl, and the
     C compiler will complain about the "use" of the
     uninitialized value.  This value should always be a
@@ -1350,7 +1374,7 @@ Here's the simplest example of a custom converter, from ``Modules/zlibmodule.c``
     /*[python end generated code: output=da39a3ee5e6b4b0d input=35521e4e733823c7]*/
 
 This block adds a converter to Argument Clinic named ``ssize_t``.  Parameters
-declared as ``ssize_t`` will be declared as type ``Py_ssize_t``, and will
+declared as ``ssize_t`` will be declared as type :c:type:`Py_ssize_t`, and will
 be parsed by the ``'O&'`` format unit, which will call the
 ``ssize_t_converter`` converter function.  ``ssize_t`` variables
 automatically support default values.
@@ -1359,6 +1383,7 @@ More sophisticated custom converters can insert custom C code to
 handle initialization and cleanup.
 You can see more examples of custom converters in the CPython
 source tree; grep the C files for the string ``CConverter``.
+
 
 Writing a custom return converter
 ---------------------------------
@@ -1374,8 +1399,9 @@ write your own return converter, please read ``Tools/clinic/clinic.py``,
 specifically the implementation of ``CReturnConverter`` and
 all its subclasses.
 
+
 METH_O and METH_NOARGS
-----------------------------------------------
+----------------------
 
 To convert a function using ``METH_O``, make sure the function's
 single argument is using the ``object`` converter, and mark the
@@ -1395,8 +1421,9 @@ any arguments.
 You can still use a self converter, a return converter, and specify
 a ``type`` argument to the object converter for ``METH_O``.
 
+
 tp_new and tp_init functions
-----------------------------------------------
+----------------------------
 
 You can convert ``tp_new`` and ``tp_init`` functions.  Just name
 them ``__new__`` or ``__init__`` as appropriate.  Notes:
@@ -1416,6 +1443,7 @@ them ``__new__`` or ``__init__`` as appropriate.  Notes:
   you may specify any signature for these functions that you like.
   (If your function doesn't support keywords, the parsing function
   generated will throw an exception if it receives any.)
+
 
 Changing and redirecting Clinic's output
 ----------------------------------------
@@ -1701,7 +1729,7 @@ the file was not modified by hand before it gets overwritten.
 
 
 The #ifdef trick
-----------------------------------------------
+----------------
 
 If you're converting a function that isn't available on all platforms,
 there's a trick you can use to make life a little easier.  The existing
@@ -1779,7 +1807,6 @@ This may mean that you get a complaint from Argument Clinic:
 When this happens, just open your file, find the ``dump buffer`` block that
 Argument Clinic added to your file (it'll be at the very bottom), then
 move it above the ``PyMethodDef`` structure where that macro is used.
-
 
 
 Using Argument Clinic in Python files

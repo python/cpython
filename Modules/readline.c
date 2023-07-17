@@ -4,12 +4,22 @@
  * recently, it was largely rewritten by Guido van Rossum.
  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 /* Standard definitions */
 #include "Python.h"
-#include <stddef.h>
-#include <signal.h>
+#include "pycore_pylifecycle.h"   // _Py_SetLocaleFromEnv()
+
 #include <errno.h>
+#include <signal.h>
+#include <stddef.h>
+#include <stdlib.h>               // free()
+#ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
+#endif
+#include <time.h>
 
 #if defined(HAVE_SETLOCALE)
 /* GNU readline() mistakenly sets the LC_CTYPE locale.
@@ -156,6 +166,26 @@ decode(const char *s)
 }
 
 
+/*
+Explicitly disable bracketed paste in the interactive interpreter, even if it's
+set in the inputrc, is enabled by default (eg GNU Readline 8.1), or a user calls
+readline.read_init_file(). The Python REPL has not implemented bracketed
+paste support. Also, bracketed mode writes the "\x1b[?2004h" escape sequence
+into stdout which causes test failures in applications that don't support it.
+It can still be explicitly enabled by calling readline.parse_and_bind("set
+enable-bracketed-paste on"). See bpo-42819 for more details.
+
+This should be removed if bracketed paste mode is implemented (bpo-39820).
+*/
+
+static void
+disable_bracketed_paste(void)
+{
+    if (!using_libedit_emulation) {
+        rl_variable_bind ("enable-bracketed-paste", "off");
+    }
+}
+
 /* Exported function to send one line to readline's init file parser */
 
 /*[clinic input]
@@ -217,6 +247,7 @@ readline_read_init_file_impl(PyObject *module, PyObject *filename_obj)
         errno = rl_read_init_file(NULL);
     if (errno)
         return PyErr_SetFromErrno(PyExc_OSError);
+    disable_bracketed_paste();
     Py_RETURN_NONE;
 }
 
@@ -379,8 +410,7 @@ set_hook(const char *funcname, PyObject **hook_var, PyObject *function)
         Py_CLEAR(*hook_var);
     }
     else if (PyCallable_Check(function)) {
-        Py_INCREF(function);
-        Py_XSETREF(*hook_var, function);
+        Py_XSETREF(*hook_var, Py_NewRef(function));
     }
     else {
         PyErr_Format(PyExc_TypeError,
@@ -501,8 +531,7 @@ static PyObject *
 readline_get_begidx_impl(PyObject *module)
 /*[clinic end generated code: output=362616ee8ed1b2b1 input=e083b81c8eb4bac3]*/
 {
-    Py_INCREF(readlinestate_global->begidx);
-    return readlinestate_global->begidx;
+    return Py_NewRef(readlinestate_global->begidx);
 }
 
 /* Get the ending index for the scope of the tab-completion */
@@ -517,8 +546,7 @@ static PyObject *
 readline_get_endidx_impl(PyObject *module)
 /*[clinic end generated code: output=7f763350b12d7517 input=d4c7e34a625fd770]*/
 {
-    Py_INCREF(readlinestate_global->endidx);
-    return readlinestate_global->endidx;
+    return Py_NewRef(readlinestate_global->endidx);
 }
 
 /* Set the tab-completion word-delimiters that readline uses */
@@ -761,8 +789,7 @@ readline_get_completer_impl(PyObject *module)
     if (readlinestate_global->completer == NULL) {
         Py_RETURN_NONE;
     }
-    Py_INCREF(readlinestate_global->completer);
-    return readlinestate_global->completer;
+    return Py_NewRef(readlinestate_global->completer);
 }
 
 /* Private function to get current length of history.  XXX It may be
@@ -993,7 +1020,7 @@ static int
 #if defined(_RL_FUNCTION_TYPEDEF)
 on_startup_hook(void)
 #else
-on_startup_hook()
+on_startup_hook(void)
 #endif
 {
     int r;
@@ -1008,7 +1035,7 @@ static int
 #if defined(_RL_FUNCTION_TYPEDEF)
 on_pre_input_hook(void)
 #else
-on_pre_input_hook()
+on_pre_input_hook(void)
 #endif
 {
     int r;
@@ -1235,9 +1262,9 @@ setup_readline(readlinestate *mod_state)
     rl_attempted_completion_function = flex_complete;
     /* Set Python word break characters */
     completer_word_break_characters =
-        rl_completer_word_break_characters =
         strdup(" \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?");
         /* All nonalphanums except '.' */
+    rl_completer_word_break_characters = completer_word_break_characters;
 
     mod_state->begidx = PyLong_FromLong(0L);
     mod_state->endidx = PyLong_FromLong(0L);
@@ -1266,6 +1293,8 @@ setup_readline(readlinestate *mod_state)
         rl_read_init_file(NULL);
     else
         rl_initialize();
+
+    disable_bracketed_paste();
 
     RESTORE_LOCALE(saved_locale)
     return 0;
