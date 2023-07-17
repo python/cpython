@@ -1904,6 +1904,68 @@
             break;
         }
 
+        case CALL_NO_KW_TYPE_1: {
+            PyObject **args = (stack_pointer - oparg);
+            PyObject *callable = stack_pointer[-(1 + oparg)];
+            PyObject *null = stack_pointer[-(2 + oparg)];
+            PyObject *res;
+            ASSERT_KWNAMES_IS_NULL();
+            assert(oparg == 1);
+            DEOPT_IF(null != NULL, CALL);
+            PyObject *obj = args[0];
+            DEOPT_IF(callable != (PyObject *)&PyType_Type, CALL);
+            STAT_INC(CALL, hit);
+            res = Py_NewRef(Py_TYPE(obj));
+            Py_DECREF(obj);
+            Py_DECREF(&PyType_Type);  // I.e., callable
+            STACK_SHRINK(oparg);
+            STACK_SHRINK(1);
+            stack_pointer[-1] = res;
+            break;
+        }
+
+        case CALL_NO_KW_STR_1: {
+            PyObject **args = (stack_pointer - oparg);
+            PyObject *callable = stack_pointer[-(1 + oparg)];
+            PyObject *null = stack_pointer[-(2 + oparg)];
+            PyObject *res;
+            ASSERT_KWNAMES_IS_NULL();
+            assert(oparg == 1);
+            DEOPT_IF(null != NULL, CALL);
+            DEOPT_IF(callable != (PyObject *)&PyUnicode_Type, CALL);
+            STAT_INC(CALL, hit);
+            PyObject *arg = args[0];
+            res = PyObject_Str(arg);
+            Py_DECREF(arg);
+            Py_DECREF(&PyUnicode_Type);  // I.e., callable
+            if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
+            STACK_SHRINK(oparg);
+            STACK_SHRINK(1);
+            stack_pointer[-1] = res;
+            break;
+        }
+
+        case CALL_NO_KW_TUPLE_1: {
+            PyObject **args = (stack_pointer - oparg);
+            PyObject *callable = stack_pointer[-(1 + oparg)];
+            PyObject *null = stack_pointer[-(2 + oparg)];
+            PyObject *res;
+            ASSERT_KWNAMES_IS_NULL();
+            assert(oparg == 1);
+            DEOPT_IF(null != NULL, CALL);
+            DEOPT_IF(callable != (PyObject *)&PyTuple_Type, CALL);
+            STAT_INC(CALL, hit);
+            PyObject *arg = args[0];
+            res = PySequence_Tuple(arg);
+            Py_DECREF(arg);
+            Py_DECREF(&PyTuple_Type);  // I.e., tuple
+            if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
+            STACK_SHRINK(oparg);
+            STACK_SHRINK(1);
+            stack_pointer[-1] = res;
+            break;
+        }
+
         case EXIT_INIT_CHECK: {
             PyObject *should_be_none = stack_pointer[-1];
             assert(STACK_LEVEL() == 2);
@@ -1914,6 +1976,273 @@
                 goto error;
             }
             STACK_SHRINK(1);
+            break;
+        }
+
+        case CALL_NO_KW_BUILTIN_O: {
+            PyObject **args = (stack_pointer - oparg);
+            PyObject *callable = stack_pointer[-(1 + oparg)];
+            PyObject *method = stack_pointer[-(2 + oparg)];
+            PyObject *res;
+            /* Builtin METH_O functions */
+            ASSERT_KWNAMES_IS_NULL();
+            int is_meth = method != NULL;
+            int total_args = oparg;
+            if (is_meth) {
+                callable = method;
+                args--;
+                total_args++;
+            }
+            DEOPT_IF(total_args != 1, CALL);
+            DEOPT_IF(!PyCFunction_CheckExact(callable), CALL);
+            DEOPT_IF(PyCFunction_GET_FLAGS(callable) != METH_O, CALL);
+            STAT_INC(CALL, hit);
+            PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
+            // This is slower but CPython promises to check all non-vectorcall
+            // function calls.
+            if (_Py_EnterRecursiveCallTstate(tstate, " while calling a Python object")) {
+                goto error;
+            }
+            PyObject *arg = args[0];
+            res = _PyCFunction_TrampolineCall(cfunc, PyCFunction_GET_SELF(callable), arg);
+            _Py_LeaveRecursiveCallTstate(tstate);
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+
+            Py_DECREF(arg);
+            Py_DECREF(callable);
+            if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
+            STACK_SHRINK(oparg);
+            STACK_SHRINK(1);
+            stack_pointer[-1] = res;
+            break;
+        }
+
+        case CALL_NO_KW_BUILTIN_FAST: {
+            PyObject **args = (stack_pointer - oparg);
+            PyObject *callable = stack_pointer[-(1 + oparg)];
+            PyObject *method = stack_pointer[-(2 + oparg)];
+            PyObject *res;
+            /* Builtin METH_FASTCALL functions, without keywords */
+            ASSERT_KWNAMES_IS_NULL();
+            int is_meth = method != NULL;
+            int total_args = oparg;
+            if (is_meth) {
+                callable = method;
+                args--;
+                total_args++;
+            }
+            DEOPT_IF(!PyCFunction_CheckExact(callable), CALL);
+            DEOPT_IF(PyCFunction_GET_FLAGS(callable) != METH_FASTCALL, CALL);
+            STAT_INC(CALL, hit);
+            PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
+            /* res = func(self, args, nargs) */
+            res = ((_PyCFunctionFast)(void(*)(void))cfunc)(
+                PyCFunction_GET_SELF(callable),
+                args,
+                total_args);
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+
+            /* Free the arguments. */
+            for (int i = 0; i < total_args; i++) {
+                Py_DECREF(args[i]);
+            }
+            Py_DECREF(callable);
+            if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
+                /* Not deopting because this doesn't mean our optimization was
+                   wrong. `res` can be NULL for valid reasons. Eg. getattr(x,
+                   'invalid'). In those cases an exception is set, so we must
+                   handle it.
+                */
+            STACK_SHRINK(oparg);
+            STACK_SHRINK(1);
+            stack_pointer[-1] = res;
+            break;
+        }
+
+        case CALL_NO_KW_LEN: {
+            PyObject **args = (stack_pointer - oparg);
+            PyObject *callable = stack_pointer[-(1 + oparg)];
+            PyObject *method = stack_pointer[-(2 + oparg)];
+            PyObject *res;
+            ASSERT_KWNAMES_IS_NULL();
+            /* len(o) */
+            int is_meth = method != NULL;
+            int total_args = oparg;
+            if (is_meth) {
+                callable = method;
+                args--;
+                total_args++;
+            }
+            DEOPT_IF(total_args != 1, CALL);
+            PyInterpreterState *interp = _PyInterpreterState_GET();
+            DEOPT_IF(callable != interp->callable_cache.len, CALL);
+            STAT_INC(CALL, hit);
+            PyObject *arg = args[0];
+            Py_ssize_t len_i = PyObject_Length(arg);
+            if (len_i < 0) {
+                goto error;
+            }
+            res = PyLong_FromSsize_t(len_i);
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+
+            Py_DECREF(callable);
+            Py_DECREF(arg);
+            if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
+            STACK_SHRINK(oparg);
+            STACK_SHRINK(1);
+            stack_pointer[-1] = res;
+            break;
+        }
+
+        case CALL_NO_KW_ISINSTANCE: {
+            PyObject **args = (stack_pointer - oparg);
+            PyObject *callable = stack_pointer[-(1 + oparg)];
+            PyObject *method = stack_pointer[-(2 + oparg)];
+            PyObject *res;
+            ASSERT_KWNAMES_IS_NULL();
+            /* isinstance(o, o2) */
+            int is_meth = method != NULL;
+            int total_args = oparg;
+            if (is_meth) {
+                callable = method;
+                args--;
+                total_args++;
+            }
+            DEOPT_IF(total_args != 2, CALL);
+            PyInterpreterState *interp = _PyInterpreterState_GET();
+            DEOPT_IF(callable != interp->callable_cache.isinstance, CALL);
+            STAT_INC(CALL, hit);
+            PyObject *cls = args[1];
+            PyObject *inst = args[0];
+            int retval = PyObject_IsInstance(inst, cls);
+            if (retval < 0) {
+                goto error;
+            }
+            res = PyBool_FromLong(retval);
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+
+            Py_DECREF(inst);
+            Py_DECREF(cls);
+            Py_DECREF(callable);
+            if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
+            STACK_SHRINK(oparg);
+            STACK_SHRINK(1);
+            stack_pointer[-1] = res;
+            break;
+        }
+
+        case CALL_NO_KW_METHOD_DESCRIPTOR_O: {
+            PyObject **args = (stack_pointer - oparg);
+            PyObject *method = stack_pointer[-(2 + oparg)];
+            PyObject *res;
+            ASSERT_KWNAMES_IS_NULL();
+            int is_meth = method != NULL;
+            int total_args = oparg;
+            if (is_meth) {
+                args--;
+                total_args++;
+            }
+            PyMethodDescrObject *callable =
+                (PyMethodDescrObject *)PEEK(total_args + 1);
+            DEOPT_IF(total_args != 2, CALL);
+            DEOPT_IF(!Py_IS_TYPE(callable, &PyMethodDescr_Type), CALL);
+            PyMethodDef *meth = callable->d_method;
+            DEOPT_IF(meth->ml_flags != METH_O, CALL);
+            PyObject *arg = args[1];
+            PyObject *self = args[0];
+            DEOPT_IF(!Py_IS_TYPE(self, callable->d_common.d_type), CALL);
+            STAT_INC(CALL, hit);
+            PyCFunction cfunc = meth->ml_meth;
+            // This is slower but CPython promises to check all non-vectorcall
+            // function calls.
+            if (_Py_EnterRecursiveCallTstate(tstate, " while calling a Python object")) {
+                goto error;
+            }
+            res = _PyCFunction_TrampolineCall(cfunc, self, arg);
+            _Py_LeaveRecursiveCallTstate(tstate);
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+            Py_DECREF(self);
+            Py_DECREF(arg);
+            Py_DECREF(callable);
+            if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
+            STACK_SHRINK(oparg);
+            STACK_SHRINK(1);
+            stack_pointer[-1] = res;
+            break;
+        }
+
+        case CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS: {
+            PyObject **args = (stack_pointer - oparg);
+            PyObject *method = stack_pointer[-(2 + oparg)];
+            PyObject *res;
+            ASSERT_KWNAMES_IS_NULL();
+            assert(oparg == 0 || oparg == 1);
+            int is_meth = method != NULL;
+            int total_args = oparg;
+            if (is_meth) {
+                args--;
+                total_args++;
+            }
+            DEOPT_IF(total_args != 1, CALL);
+            PyMethodDescrObject *callable = (PyMethodDescrObject *)SECOND();
+            DEOPT_IF(!Py_IS_TYPE(callable, &PyMethodDescr_Type), CALL);
+            PyMethodDef *meth = callable->d_method;
+            PyObject *self = args[0];
+            DEOPT_IF(!Py_IS_TYPE(self, callable->d_common.d_type), CALL);
+            DEOPT_IF(meth->ml_flags != METH_NOARGS, CALL);
+            STAT_INC(CALL, hit);
+            PyCFunction cfunc = meth->ml_meth;
+            // This is slower but CPython promises to check all non-vectorcall
+            // function calls.
+            if (_Py_EnterRecursiveCallTstate(tstate, " while calling a Python object")) {
+                goto error;
+            }
+            res = _PyCFunction_TrampolineCall(cfunc, self, NULL);
+            _Py_LeaveRecursiveCallTstate(tstate);
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+            Py_DECREF(self);
+            Py_DECREF(callable);
+            if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
+            STACK_SHRINK(oparg);
+            STACK_SHRINK(1);
+            stack_pointer[-1] = res;
+            break;
+        }
+
+        case CALL_NO_KW_METHOD_DESCRIPTOR_FAST: {
+            PyObject **args = (stack_pointer - oparg);
+            PyObject *method = stack_pointer[-(2 + oparg)];
+            PyObject *res;
+            ASSERT_KWNAMES_IS_NULL();
+            int is_meth = method != NULL;
+            int total_args = oparg;
+            if (is_meth) {
+                args--;
+                total_args++;
+            }
+            PyMethodDescrObject *callable =
+                (PyMethodDescrObject *)PEEK(total_args + 1);
+            /* Builtin METH_FASTCALL methods, without keywords */
+            DEOPT_IF(!Py_IS_TYPE(callable, &PyMethodDescr_Type), CALL);
+            PyMethodDef *meth = callable->d_method;
+            DEOPT_IF(meth->ml_flags != METH_FASTCALL, CALL);
+            PyObject *self = args[0];
+            DEOPT_IF(!Py_IS_TYPE(self, callable->d_common.d_type), CALL);
+            STAT_INC(CALL, hit);
+            _PyCFunctionFast cfunc =
+                (_PyCFunctionFast)(void(*)(void))meth->ml_meth;
+            int nargs = total_args - 1;
+            res = cfunc(self, args + 1, nargs);
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+            /* Clear the stack of the arguments. */
+            for (int i = 0; i < total_args; i++) {
+                Py_DECREF(args[i]);
+            }
+            Py_DECREF(callable);
+            if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
+            STACK_SHRINK(oparg);
+            STACK_SHRINK(1);
+            stack_pointer[-1] = res;
             break;
         }
 
