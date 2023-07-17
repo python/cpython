@@ -42,6 +42,7 @@ from typing import (
     Literal,
     NamedTuple,
     NoReturn,
+    Protocol,
     TypeGuard,
     overload,
 )
@@ -2055,7 +2056,12 @@ def write_file(filename: str, new_contents: str) -> None:
 ClassDict = dict[str, "Class"]
 DestinationDict = dict[str, Destination]
 ModuleDict = dict[str, "Module"]
-ParserDict = dict[str, "DSLParser"]
+
+
+class Parser(Protocol):
+    def __init__(self, clinic: Clinic) -> None: ...
+    def parse(self, block: Block) -> None: ...
+
 
 clinic = None
 class Clinic:
@@ -2113,7 +2119,7 @@ impl_definition block
     ) -> None:
         # maps strings to Parser objects.
         # (instantiated from the "parsers" global.)
-        self.parsers: ParserDict = {}
+        self.parsers: dict[str, Parser] = {}
         self.language: CLanguage = language
         if printer:
             fail("Custom printers are broken right now")
@@ -2205,7 +2211,7 @@ impl_definition block
         d = self.get_destination(name)
         return d.buffers[item]
 
-    def parse(self, input):
+    def parse(self, input: str) -> str:
         printer = self.printer
         self.block_parser = BlockParser(input, self.language, verify=self.verify)
         for block in self.block_parser:
@@ -5521,7 +5527,10 @@ class DSLParser:
 #   "clinic", handles the Clinic DSL
 #   "python", handles running Python code
 #
-parsers = {'clinic' : DSLParser, 'python': PythonParser}
+parsers: dict[str, Callable[[Clinic], Parser]] = {
+    'clinic': DSLParser,
+    'python': PythonParser,
+}
 
 
 clinic = None
