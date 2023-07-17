@@ -161,7 +161,7 @@ or builtin scopes.
 
 static int
 _opcode_has_free_impl(PyObject *module, int opcode)
-/*[clinic end generated code: output=d81ae4d79af0ee26 input=f94ce9c2475f3ff0]*/
+/*[clinic end generated code: output=d81ae4d79af0ee26 input=117dcd5c19c1139b]*/
 {
     return PyUnstable_OpcodeIsValid(opcode) &&
            PyUnstable_OpcodeHasFree(opcode);

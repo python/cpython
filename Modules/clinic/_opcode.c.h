@@ -407,7 +407,7 @@ PyDoc_STRVAR(_opcode_has_free__doc__,
 "\n"
 "Return True if the opcode accesses a free variable, False otherwise.\n"
 "\n"
-"Note that ‘free’ in this context refers to names in the current scope\n"
+"Note that \'free\' in this context refers to names in the current scope\n"
 "that are referenced by inner scopes or names in outer scopes that are\n"
 "referenced from this scope. It does not include references to global\n"
 "or builtin scopes.");
@@ -536,7 +536,7 @@ PyDoc_STRVAR(_opcode_has_exc__doc__,
 "has_exc($module, /, opcode)\n"
 "--\n"
 "\n"
-"Return True if the opcode sets and exception handler, False otherwise.");
+"Return True if the opcode sets an exception handler, False otherwise.");
 
 #define _OPCODE_HAS_EXC_METHODDEF    \
     {"has_exc", _PyCFunction_CAST(_opcode_has_exc), METH_FASTCALL|METH_KEYWORDS, _opcode_has_exc__doc__},
@@ -612,4 +612,4 @@ _opcode_get_specialization_stats(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _opcode_get_specialization_stats_impl(module);
 }
-/*[clinic end generated code: output=36ba0ad318c53d65 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e507bf14fb2796f8 input=a9049054013a1b77]*/
