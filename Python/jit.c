@@ -3,11 +3,10 @@
 #include "pycore_ceval.h"
 #include "pycore_jit.h"
 #include "pycore_opcode.h"
+#include "pycore_opcode_metadata.h"
 
 #include "ceval_macros.h"
 #include "jit_stencils.h"
-
-// XXX: Pre-populate symbol addresses once.
 
 #ifdef MS_WINDOWS
     #include <psapi.h>
