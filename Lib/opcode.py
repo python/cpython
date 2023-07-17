@@ -254,7 +254,7 @@ if sys.version_info[:2] >= (3, 13):
     __all__.extend(["hasarg", "hasconst", "hasname", "hasjump", "hasjrel",
                     "hasjabs", "hasfree", "haslocal", "hasexc"])
 
-hascompare = [opmap["COMPARE_OP"]]  # for backwards compatibility
+hascompare = [opmap["COMPARE_OP"]]
 
 _nb_ops = [
     ("NB_ADD", "+"),
