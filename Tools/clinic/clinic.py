@@ -4864,11 +4864,21 @@ class DSLParser:
             self.parameter_continuation = line[:-1]
             return
 
-        line = line.lstrip()
+        func = self.function
+        match line.lstrip():
+            case '*':
+                self.parse_star(func)
+            case '[':
+                self.parse_opening_square_bracket(func)
+            case ']':
+                self.parse_closing_square_bracket(func)
+            case '/':
+                self.parse_slash(func)
+            case param:
+                self.parse_parameter(param)
 
-        if line in ('*', '/', '[', ']'):
-            self.parse_special_symbol(line)
-            return
+    def parse_parameter(self, line: str) -> None:
+        assert self.function is not None
 
         match self.parameter_state:
             case ParamState.START | ParamState.REQUIRED:
@@ -5146,57 +5156,71 @@ class DSLParser:
                     "Annotations must be either a name, a function call, or a string."
                 )
 
-    def parse_special_symbol(self, symbol):
-        if symbol == '*':
-            if self.keyword_only:
-                fail("Function " + self.function.name + " uses '*' more than once.")
-            self.keyword_only = True
-        elif symbol == '[':
-            match self.parameter_state:
-                case ParamState.START | ParamState.LEFT_SQUARE_BEFORE:
-                    self.parameter_state = ParamState.LEFT_SQUARE_BEFORE
-                case ParamState.REQUIRED | ParamState.GROUP_AFTER:
-                    self.parameter_state = ParamState.GROUP_AFTER
-                case st:
-                    fail(f"Function {self.function.name} has an unsupported group configuration. (Unexpected state {st}.b)")
-            self.group += 1
-            self.function.docstring_only = True
-        elif symbol == ']':
-            if not self.group:
-                fail("Function " + self.function.name + " has a ] without a matching [.")
-            if not any(p.group == self.group for p in self.function.parameters.values()):
-                fail("Function " + self.function.name + " has an empty group.\nAll groups must contain at least one parameter.")
-            self.group -= 1
-            match self.parameter_state:
-                case ParamState.LEFT_SQUARE_BEFORE | ParamState.GROUP_BEFORE:
-                    self.parameter_state = ParamState.GROUP_BEFORE
-                case ParamState.GROUP_AFTER | ParamState.RIGHT_SQUARE_AFTER:
-                    self.parameter_state = ParamState.RIGHT_SQUARE_AFTER
-                case st:
-                    fail(f"Function {self.function.name} has an unsupported group configuration. (Unexpected state {st}.c)")
-        elif symbol == '/':
-            if self.positional_only:
-                fail("Function " + self.function.name + " uses '/' more than once.")
-            self.positional_only = True
-            # REQUIRED and OPTIONAL are allowed here, that allows positional-only without option groups
-            # to work (and have default values!)
-            allowed = {
-                ParamState.REQUIRED,
-                ParamState.OPTIONAL,
-                ParamState.RIGHT_SQUARE_AFTER,
-                ParamState.GROUP_BEFORE,
-            }
-            if (self.parameter_state not in allowed) or self.group:
-                fail(f"Function {self.function.name} has an unsupported group configuration. (Unexpected state {self.parameter_state}.d)")
-            if self.keyword_only:
-                fail("Function " + self.function.name + " mixes keyword-only and positional-only parameters, which is unsupported.")
-            # fixup preceding parameters
-            for p in self.function.parameters.values():
-                if p.is_vararg():
-                    continue
-                if (p.kind != inspect.Parameter.POSITIONAL_OR_KEYWORD and not isinstance(p.converter, self_converter)):
-                    fail("Function " + self.function.name + " mixes keyword-only and positional-only parameters, which is unsupported.")
-                p.kind = inspect.Parameter.POSITIONAL_ONLY
+    def parse_star(self, function: Function) -> None:
+        """Parse keyword-only parameter marker '*'."""
+        if self.keyword_only:
+            fail(f"Function {function.name} uses '*' more than once.")
+        self.keyword_only = True
+
+    def parse_opening_square_bracket(self, function: Function) -> None:
+        """Parse opening parameter group symbol '['."""
+        match self.parameter_state:
+            case ParamState.START | ParamState.LEFT_SQUARE_BEFORE:
+                self.parameter_state = ParamState.LEFT_SQUARE_BEFORE
+            case ParamState.REQUIRED | ParamState.GROUP_AFTER:
+                self.parameter_state = ParamState.GROUP_AFTER
+            case st:
+                fail(f"Function {function.name} has an unsupported group configuration. "
+                     f"(Unexpected state {st}.b)")
+        self.group += 1
+        function.docstring_only = True
+
+    def parse_closing_square_bracket(self, function: Function) -> None:
+        """Parse closing parameter group symbol ']'."""
+        if not self.group:
+            fail(f"Function {function.name} has a ] without a matching [.")
+        if not any(p.group == self.group for p in function.parameters.values()):
+            fail(f"Function {function.name} has an empty group.\n"
+                 "All groups must contain at least one parameter.")
+        self.group -= 1
+        match self.parameter_state:
+            case ParamState.LEFT_SQUARE_BEFORE | ParamState.GROUP_BEFORE:
+                self.parameter_state = ParamState.GROUP_BEFORE
+            case ParamState.GROUP_AFTER | ParamState.RIGHT_SQUARE_AFTER:
+                self.parameter_state = ParamState.RIGHT_SQUARE_AFTER
+            case st:
+                fail(f"Function {function.name} has an unsupported group configuration. "
+                     f"(Unexpected state {st}.c)")
+
+    def parse_slash(self, function: Function) -> None:
+        """Parse positional-only parameter marker '/'."""
+        if self.positional_only:
+            fail(f"Function {function.name} uses '/' more than once.")
+        self.positional_only = True
+        # REQUIRED and OPTIONAL are allowed here, that allows positional-only
+        # without option groups to work (and have default values!)
+        allowed = {
+            ParamState.REQUIRED,
+            ParamState.OPTIONAL,
+            ParamState.RIGHT_SQUARE_AFTER,
+            ParamState.GROUP_BEFORE,
+        }
+        if (self.parameter_state not in allowed) or self.group:
+            fail(f"Function {function.name} has an unsupported group configuration. "
+                 f"(Unexpected state {self.parameter_state}.d)")
+        if self.keyword_only:
+            fail(f"Function {function.name} mixes keyword-only and "
+                 "positional-only parameters, which is unsupported.")
+        # fixup preceding parameters
+        for p in function.parameters.values():
+            if p.is_vararg():
+                continue
+            if (p.kind is not inspect.Parameter.POSITIONAL_OR_KEYWORD and
+                not isinstance(p.converter, self_converter)
+            ):
+                fail(f"Function {function.name} mixes keyword-only and "
+                     "positional-only parameters, which is unsupported.")
+            p.kind = inspect.Parameter.POSITIONAL_ONLY
 
     def state_parameter_docstring_start(self, line: str | None) -> None:
         self.parameter_docstring_indent = len(self.indent.margin)
