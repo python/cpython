@@ -417,16 +417,9 @@ class Instruction:
         if self.always_exits:
             dprint(f"Skipping {self.name} because it always exits")
             return False
-        if self.instr_flags.HAS_ARG_FLAG:
-            # If the instruction uses oparg, it cannot use any caches
-            if self.active_caches:
-                dprint(f"Skipping {self.name} because it uses oparg and caches")
-                return False
-        else:
-            # If it doesn't use oparg, it can have one cache entry
-            if len(self.active_caches) > 1:
-                dprint(f"Skipping {self.name} because it has >1 cache entries")
-                return False
+        if len(self.active_caches) > 1:
+            # print(f"Skipping {self.name} because it has >1 cache entries")
+            return False
         res = True
         for forbidden in FORBIDDEN_NAMES_IN_UOPS:
             # NOTE: To disallow unspecialized uops, use
@@ -1374,7 +1367,7 @@ class Analyzer:
                 if not part.instr.is_viable_uop():
                     print(f"NOTE: Part {part.instr.name} of {name} is not a viable uop")
                     return
-                if part.instr.instr_flags.HAS_ARG_FLAG or not part.active_caches:
+                if not part.active_caches:
                     size, offset = OPARG_SIZES["OPARG_FULL"], 0
                 else:
                     # If this assert triggers, is_viable_uops() lied
