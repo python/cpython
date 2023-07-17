@@ -662,7 +662,8 @@ _curses_panel_exec(PyObject *mod)
     state->PyCursesError = PyErr_NewException(
         "_curses_panel.error", NULL, NULL);
 
-    if (PyModule_AddObjectRef(mod, "error", state->PyCursesError) < 0) {
+    if (PyModule_AddObject(mod, "error", Py_NewRef(state->PyCursesError)) < 0) {
+        Py_DECREF(state->PyCursesError);
         return -1;
     }
 

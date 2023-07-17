@@ -6085,22 +6085,22 @@ sslmodule_init_versioninfo(PyObject *m)
     */
     libver = OpenSSL_version_num();
     r = PyLong_FromUnsignedLong(libver);
-    if (PyModule_Add(m, "OPENSSL_VERSION_NUMBER", r) < 0)
+    if (r == NULL || PyModule_AddObject(m, "OPENSSL_VERSION_NUMBER", r))
         return -1;
 
     parse_openssl_version(libver, &major, &minor, &fix, &patch, &status);
     r = Py_BuildValue("IIIII", major, minor, fix, patch, status);
-    if (PyModule_Add(m, "OPENSSL_VERSION_INFO", r) < 0)
+    if (r == NULL || PyModule_AddObject(m, "OPENSSL_VERSION_INFO", r))
         return -1;
 
     r = PyUnicode_FromString(OpenSSL_version(OPENSSL_VERSION));
-    if (PyModule_Add(m, "OPENSSL_VERSION", r) < 0)
+    if (r == NULL || PyModule_AddObject(m, "OPENSSL_VERSION", r))
         return -1;
 
     libver = OPENSSL_VERSION_NUMBER;
     parse_openssl_version(libver, &major, &minor, &fix, &patch, &status);
     r = Py_BuildValue("IIIII", major, minor, fix, patch, status);
-    if (PyModule_Add(m, "_OPENSSL_API_VERSION", r) < 0)
+    if (r == NULL || PyModule_AddObject(m, "_OPENSSL_API_VERSION", r))
         return -1;
 
     return 0;
