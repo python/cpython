@@ -284,8 +284,7 @@ dummy_func(
             res = Py_IsFalse(value) ? Py_True : Py_False;
         }
 
-        family(to_bool, INLINE_CACHE_ENTRIES_TO_BOOL) = {
-            TO_BOOL,
+        family(TO_BOOL, INLINE_CACHE_ENTRIES_TO_BOOL) = {
             TO_BOOL_ALWAYS_TRUE,
             TO_BOOL_BOOL,
             TO_BOOL_INT,
@@ -372,8 +371,7 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        family(binary_op, INLINE_CACHE_ENTRIES_BINARY_OP) = {
-            BINARY_OP,
+        family(BINARY_OP, INLINE_CACHE_ENTRIES_BINARY_OP) = {
             BINARY_OP_MULTIPLY_INT,
             BINARY_OP_ADD_INT,
             BINARY_OP_SUBTRACT_INT,
@@ -507,8 +505,7 @@ dummy_func(
         macro(BINARY_OP_INPLACE_ADD_UNICODE) =
             _GUARD_BOTH_UNICODE + _BINARY_OP_INPLACE_ADD_UNICODE;
 
-        family(binary_subscr, INLINE_CACHE_ENTRIES_BINARY_SUBSCR) = {
-            BINARY_SUBSCR,
+        family(BINARY_SUBSCR, INLINE_CACHE_ENTRIES_BINARY_SUBSCR) = {
             BINARY_SUBSCR_DICT,
             BINARY_SUBSCR_GETITEM,
             BINARY_SUBSCR_LIST_INT,
@@ -643,8 +640,7 @@ dummy_func(
             ERROR_IF(err, error);
         }
 
-        family(store_subscr, INLINE_CACHE_ENTRIES_STORE_SUBSCR) = {
-            STORE_SUBSCR,
+        family(STORE_SUBSCR, INLINE_CACHE_ENTRIES_STORE_SUBSCR) = {
             STORE_SUBSCR_DICT,
             STORE_SUBSCR_LIST_INT,
         };
@@ -921,8 +917,7 @@ dummy_func(
             ERROR_IF(iter == NULL, error);
         }
 
-        family(send, INLINE_CACHE_ENTRIES_SEND) = {
-            SEND,
+        family(SEND, INLINE_CACHE_ENTRIES_SEND) = {
             SEND_GEN,
         };
 
@@ -1134,8 +1129,7 @@ dummy_func(
             }
         }
 
-        family(unpack_sequence, INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE) = {
-            UNPACK_SEQUENCE,
+        family(UNPACK_SEQUENCE, INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE) = {
             UNPACK_SEQUENCE_TWO_TUPLE,
             UNPACK_SEQUENCE_TUPLE,
             UNPACK_SEQUENCE_LIST,
@@ -1198,8 +1192,7 @@ dummy_func(
             ERROR_IF(res == 0, error);
         }
 
-        family(store_attr, INLINE_CACHE_ENTRIES_STORE_ATTR) = {
-            STORE_ATTR,
+        family(STORE_ATTR, INLINE_CACHE_ENTRIES_STORE_ATTR) = {
             STORE_ATTR_INSTANCE_VALUE,
             STORE_ATTR_SLOT,
             STORE_ATTR_WITH_HINT,
@@ -1298,8 +1291,7 @@ dummy_func(
 
         macro(LOAD_FROM_DICT_OR_GLOBALS) = _LOAD_FROM_DICT_OR_GLOBALS;
 
-        family(load_global, INLINE_CACHE_ENTRIES_LOAD_GLOBAL) = {
-            LOAD_GLOBAL,
+        family(LOAD_GLOBAL, INLINE_CACHE_ENTRIES_LOAD_GLOBAL) = {
             LOAD_GLOBAL_MODULE,
             LOAD_GLOBAL_BUILTIN,
         };
@@ -1647,8 +1639,7 @@ dummy_func(
             GO_TO_INSTRUCTION(LOAD_SUPER_ATTR);
         }
 
-        family(load_super_attr, INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR) = {
-            LOAD_SUPER_ATTR,
+        family(LOAD_SUPER_ATTR, INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR) = {
             LOAD_SUPER_ATTR_ATTR,
             LOAD_SUPER_ATTR_METHOD,
         };
@@ -1750,8 +1741,7 @@ dummy_func(
             }
         }
 
-        family(load_attr, INLINE_CACHE_ENTRIES_LOAD_ATTR) = {
-            LOAD_ATTR,
+        family(LOAD_ATTR, INLINE_CACHE_ENTRIES_LOAD_ATTR) = {
             LOAD_ATTR_INSTANCE_VALUE,
             LOAD_ATTR_MODULE,
             LOAD_ATTR_WITH_HINT,
@@ -2048,8 +2038,7 @@ dummy_func(
             Py_DECREF(owner);
         }
 
-        family(compare_op, INLINE_CACHE_ENTRIES_COMPARE_OP) = {
-            COMPARE_OP,
+        family(COMPARE_OP, INLINE_CACHE_ENTRIES_COMPARE_OP) = {
             COMPARE_OP_FLOAT,
             COMPARE_OP_INT,
             COMPARE_OP_STR,
@@ -2350,8 +2339,7 @@ dummy_func(
         // This is optimized by skipping that instruction and combining
         // its effect (popping 'iter' instead of pushing 'next'.)
 
-        family(for_iter, INLINE_CACHE_ENTRIES_FOR_ITER) = {
-            FOR_ITER,
+        family(FOR_ITER, INLINE_CACHE_ENTRIES_FOR_ITER) = {
             FOR_ITER_LIST,
             FOR_ITER_TUPLE,
             FOR_ITER_RANGE,
@@ -2810,8 +2798,7 @@ dummy_func(
 
         // Cache layout: counter/1, func_version/2
         // Neither CALL_INTRINSIC_1/2 nor CALL_FUNCTION_EX are members!
-        family(call, INLINE_CACHE_ENTRIES_CALL) = {
-            CALL,
+        family(CALL, INLINE_CACHE_ENTRIES_CALL) = {
             CALL_BOUND_METHOD_EXACT_ARGS,
             CALL_PY_EXACT_ARGS,
             CALL_PY_WITH_DEFAULTS,

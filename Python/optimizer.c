@@ -464,9 +464,26 @@ translate_bytecode_to_trace(
 
         switch (opcode) {
 
+            case POP_JUMP_IF_NONE:
+            {
+                RESERVE(2, 2);
+                ADD_TO_TRACE(IS_NONE, 0);
+                opcode = POP_JUMP_IF_TRUE;
+                goto pop_jump_if_bool;
+            }
+
+            case POP_JUMP_IF_NOT_NONE:
+            {
+                RESERVE(2, 2);
+                ADD_TO_TRACE(IS_NONE, 0);
+                opcode = POP_JUMP_IF_FALSE;
+                goto pop_jump_if_bool;
+            }
+
             case POP_JUMP_IF_FALSE:
             case POP_JUMP_IF_TRUE:
             {
+pop_jump_if_bool:
                 // Assume jump unlikely (TODO: handle jump likely case)
                 RESERVE(1, 2);
                 _Py_CODEUNIT *target_instr =
