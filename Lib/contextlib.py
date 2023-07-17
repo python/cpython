@@ -740,7 +740,7 @@ class AsyncExitStack(_BaseExitStack, AbstractAsyncContextManager):
                     exc = None
             except BaseException as new_exc:
                 # simulate the stack of exceptions by setting the context
-                _fix_exception_context(new_exc, exc_details[1])
+                _fix_exception_context(new_exc, exc)
                 pending_raise = True
                 exc = new_exc
 
