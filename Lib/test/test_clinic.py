@@ -200,6 +200,55 @@ class ClinicWholeFileTest(_ParserBase):
         """).lstrip()  # Note, lstrip() because of the newline
         self.assertEqual(out, expected)
 
+    def test_cpp_monitor_fail_nested_block_comment(self):
+        raw = """
+            /* start
+            /* nested
+            */
+            */
+        """
+        msg = (
+            'Error in file "test.c" on line 2:\n'
+            'Nested block comment!\n'
+        )
+        out = self.expect_failure(raw)
+        self.assertEqual(out, msg)
+
+    def test_cpp_monitor_fail_invalid_format_noarg(self):
+        raw = """
+            #if
+            a()
+            #endif
+        """
+        msg = (
+            'Error in file "test.c" on line 1:\n'
+            'Invalid format for #if line: no argument!\n'
+        )
+        out = self.expect_failure(raw)
+        self.assertEqual(out, msg)
+
+    def test_cpp_monitor_fail_invalid_format_toomanyargs(self):
+        raw = """
+            #ifdef A B
+            a()
+            #endif
+        """
+        msg = (
+            'Error in file "test.c" on line 1:\n'
+            'Invalid format for #ifdef line: should be exactly one argument!\n'
+        )
+        out = self.expect_failure(raw)
+        self.assertEqual(out, msg)
+
+    def test_cpp_monitor_fail_no_matching_if(self):
+        raw = '#else'
+        msg = (
+            'Error in file "test.c" on line 1:\n'
+            '#else without matching #if / #ifdef / #ifndef!\n'
+        )
+        out = self.expect_failure(raw)
+        self.assertEqual(out, msg)
+
 
 class ClinicGroupPermuterTest(TestCase):
     def _test(self, l, m, r, output):
