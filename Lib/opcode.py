@@ -6,26 +6,14 @@ operate on bytecodes (e.g. peephole optimizers).
 
 __all__ = ["cmp_op", "hasarg", "hasconst", "hasname", "hasjrel", "hasjabs",
            "haslocal", "hascompare", "hasfree", "hasexc", "opname", "opmap",
-           "HAVE_ARGUMENT", "EXTENDED_ARG"]
+           "stack_effect", "HAVE_ARGUMENT", "EXTENDED_ARG"]
 
-# It's a chicken-and-egg I'm afraid:
-# We're imported before _opcode's made.
-# With exception unheeded
-# (stack_effect is not needed)
-# Both our chickens and eggs are allayed.
-#     --Larry Hastings, 2013/11/23
+from _opcode import stack_effect
 
-try:
-    from _opcode import stack_effect
-    __all__.append('stack_effect')
-except ImportError:
-    pass
-
-# _opcode_metadata may not be ready during early stages of the build
-try:
+import sys
+# The build uses older versions of Python which do not have _opcode_metadata
+if sys.version_info[:2] >= (3, 13):
     from _opcode_metadata import _specializations, _specialized_instructions
-except ModuleNotFoundError:
-    pass
 
 cmp_op = ('<', '<=', '==', '!=', '>', '>=')
 
