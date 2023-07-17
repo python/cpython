@@ -153,7 +153,7 @@ _opcode.has_free -> bool
 
 Return True if the opcode accesses a free variable, False otherwise.
 
-Note that ‘free’ in this context refers to names in the current scope
+Note that 'free' in this context refers to names in the current scope
 that are referenced by inner scopes or names in outer scopes that are
 referenced from this scope. It does not include references to global
 or builtin scopes.
@@ -196,7 +196,7 @@ Return True if the opcode sets an exception handler, False otherwise.
 
 static int
 _opcode_has_exc_impl(PyObject *module, int opcode)
-/*[clinic end generated code: output=41b68dff0ec82a52 input=a3f202bb94f233b5]*/
+/*[clinic end generated code: output=41b68dff0ec82a52 input=db0e4bdb9bf13fa5]*/
 {
     return PyUnstable_OpcodeIsValid(opcode) &&
            PyUnstable_OpcodeHasExc(opcode);
