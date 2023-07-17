@@ -408,10 +408,9 @@ class Instruction:
 
     def is_viable_uop(self) -> bool:
         """Whether this instruction is viable as a uop."""
-        if self.name.startswith("CALL"):
-            dprint: typing.Callable[..., None] = print
-        else:
-            dprint = lambda *args, **kwargs: None
+        dprint: typing.Callable[..., None] = lambda *args, **kwargs: None
+        # if self.name.startswith("CALL"):
+        #     dprint = print
 
         if self.name == "EXIT_TRACE":
             return True  # This has 'return frame' but it's okay
