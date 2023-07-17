@@ -2544,7 +2544,7 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _ in ex}
+        uops = {opname for opname, _, _ in ex}
         self.assertIn("_POP_JUMP_IF_TRUE", uops)
 
     def test_pop_jump_if_not_none(self):
@@ -2559,7 +2559,7 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _ in ex}
+        uops = {opname for opname, _, _ in ex}
         self.assertIn("_POP_JUMP_IF_FALSE", uops)
 
     def test_pop_jump_if_true(self):
