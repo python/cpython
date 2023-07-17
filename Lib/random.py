@@ -209,7 +209,7 @@ class Random(_random.Random):
         # common case while still doing adequate error checking.
         istart = _int(start)
         if istart != start:
-            raise ValueError("non-integer arg 1 for randrange()")
+            raise ValueError("non-integer start for randrange()")
         if stop is None:
             if istart > 0:
                 return self._randbelow(istart)
