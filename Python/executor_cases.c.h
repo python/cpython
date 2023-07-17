@@ -485,18 +485,15 @@
             PyObject *sub = stack_pointer[-1];
             PyObject *container = stack_pointer[-2];
             PyObject *v = stack_pointer[-3];
-            uint16_t counter = (uint16_t)operand;
             #if ENABLE_SPECIALIZATION
-            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
+            _PyStoreSubscrCache *cache = (_PyStoreSubscrCache *)next_instr;
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 next_instr--;
                 _Py_Specialize_StoreSubscr(container, sub, next_instr);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(STORE_SUBSCR, deferred);
-            _PyStoreSubscrCache *cache = (_PyStoreSubscrCache *)next_instr;
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
-            #else
-            (void)counter;  // Unused.
             #endif  /* ENABLE_SPECIALIZATION */
             /* container[sub] = v */
             int err = PyObject_SetItem(container, sub, v);
@@ -849,6 +846,30 @@
             break;
         }
 
+        case STORE_ATTR: {
+            static_assert(INLINE_CACHE_ENTRIES_STORE_ATTR == 4, "incorrect cache size");
+            PyObject *owner = stack_pointer[-1];
+            PyObject *v = stack_pointer[-2];
+            #if ENABLE_SPECIALIZATION
+            _PyAttrCache *cache = (_PyAttrCache *)next_instr;
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
+                PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+                next_instr--;
+                _Py_Specialize_StoreAttr(owner, next_instr, name);
+                DISPATCH_SAME_OPARG();
+            }
+            STAT_INC(STORE_ATTR, deferred);
+            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            #endif  /* ENABLE_SPECIALIZATION */
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+            int err = PyObject_SetAttr(owner, name, v);
+            Py_DECREF(v);
+            Py_DECREF(owner);
+            if (err) goto pop_2_error;
+            STACK_SHRINK(2);
+            break;
+        }
+
         case DELETE_ATTR: {
             PyObject *owner = stack_pointer[-1];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
@@ -1007,6 +1028,42 @@
             DEOPT_IF(!PyDict_CheckExact(dict), LOAD_GLOBAL);
             DEOPT_IF(dict->ma_keys->dk_version != version, LOAD_GLOBAL);
             assert(DK_IS_UNICODE(dict->ma_keys));
+            break;
+        }
+
+        case _LOAD_GLOBAL_MODULE: {
+            PyObject *null = NULL;
+            PyObject *res;
+            uint16_t index = (uint16_t)operand;
+            PyDictObject *dict = (PyDictObject *)GLOBALS();
+            PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
+            res = entries[index].me_value;
+            DEOPT_IF(res == NULL, LOAD_GLOBAL);
+            Py_INCREF(res);
+            STAT_INC(LOAD_GLOBAL, hit);
+            null = NULL;
+            STACK_GROW(1);
+            STACK_GROW(((oparg & 1) ? 1 : 0));
+            stack_pointer[-1] = res;
+            if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = null; }
+            break;
+        }
+
+        case _LOAD_GLOBAL_BUILTINS: {
+            PyObject *null = NULL;
+            PyObject *res;
+            uint16_t index = (uint16_t)operand;
+            PyDictObject *bdict = (PyDictObject *)BUILTINS();
+            PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(bdict->ma_keys);
+            res = entries[index].me_value;
+            DEOPT_IF(res == NULL, LOAD_GLOBAL);
+            Py_INCREF(res);
+            STAT_INC(LOAD_GLOBAL, hit);
+            null = NULL;
+            STACK_GROW(1);
+            STACK_GROW(((oparg & 1) ? 1 : 0));
+            stack_pointer[-1] = res;
+            if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = null; }
             break;
         }
 
@@ -1440,6 +1497,24 @@
             assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             DEOPT_IF(!_PyDictOrValues_IsValues(dorv), LOAD_ATTR);
+            break;
+        }
+
+        case _LOAD_ATTR_INSTANCE_VALUE: {
+            PyObject *owner = stack_pointer[-1];
+            PyObject *res2 = NULL;
+            PyObject *res;
+            uint16_t index = (uint16_t)operand;
+            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
+            res = _PyDictOrValues_GetValues(dorv)->values[index];
+            DEOPT_IF(res == NULL, LOAD_ATTR);
+            STAT_INC(LOAD_ATTR, hit);
+            Py_INCREF(res);
+            res2 = NULL;
+            Py_DECREF(owner);
+            STACK_GROW(((oparg & 1) ? 1 : 0));
+            stack_pointer[-1] = res;
+            if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = res2; }
             break;
         }
 
