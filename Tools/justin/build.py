@@ -7,6 +7,7 @@ import itertools
 import json
 import os
 import pathlib
+import platform
 import re
 import subprocess
 import sys
@@ -226,7 +227,7 @@ class ObjectParser:
         self.reader = reader
 
     async def parse(self):
-        # subprocess.run([find_llvm_tool("llvm-objdump")[0], path, "-dr"], check=True)
+        # subprocess.run([find_llvm_tool("llvm-objdump")[0], self.path, "-dr"], check=True)  # XXX
         process = await asyncio.create_subprocess_exec(self.reader, *self._ARGS, self.path, stdout=subprocess.PIPE)
         stdout, stderr = await process.communicate()
         assert stderr is None, stderr
@@ -236,7 +237,7 @@ class ObjectParser:
         output = output.replace(b"PrivateExtern\n", b"\n")  # XXX: MachO
         output = output.replace(b"Extern\n", b"\n")  # XXX: MachO
         start = output.index(b"[", 1)  # XXX: MachO, COFF
-        end = output.rindex(b"]", 0, -1) + 1  # XXXL MachO, COFF
+        end = output.rindex(b"]", 0, -1) + 1  # XXX: MachO, COFF
         self._data = json.loads(output[start:end])
         for section in unwrap(self._data, "Section"):
             self._handle_section(section)
@@ -246,19 +247,19 @@ class ObjectParser:
         #     entry = self.body_symbols["_justin_trampoline"]
         entry = 0  # XXX
         holes = []
-        for before, relocation in self.relocations_todo:
-            for newhole in handle_one_relocation(self.got_entries, self.body, before, relocation):
-                assert newhole.symbol not in self.dupes
-                if newhole.symbol in self.body_symbols:
-                    addend = newhole.addend + self.body_symbols[newhole.symbol] - entry
-                    newhole = Hole(newhole.kind, "_justin_base", newhole.offset, addend)
-                holes.append(newhole)
+        for newhole in handle_relocations(self.got_entries, self.body, self.relocations_todo):
+            assert newhole.symbol not in self.dupes
+            if newhole.symbol in self.body_symbols:
+                addend = newhole.addend + self.body_symbols[newhole.symbol] - entry
+                newhole = Hole(newhole.kind, "_justin_base", newhole.offset, addend)
+            holes.append(newhole)
         got = len(self.body)
-        for i, got_symbol in enumerate(self.got_entries):
+        for i, (got_symbol, addend) in enumerate(self.got_entries):
             if got_symbol in self.body_symbols:
-                self.body_symbols[got_symbol] -= entry
+                holes.append(Hole("PATCH_ABS_64", "_justin_base", got + 8 * i, self.body_symbols[got_symbol] + addend))
+                continue
             # XXX: PATCH_ABS_32 on 32-bit platforms?
-            holes.append(Hole("PATCH_ABS_64", got_symbol, got + 8 * i, 0))
+            holes.append(Hole("PATCH_ABS_64", got_symbol, got + 8 * i, addend))
         self.body.extend([0] * 8 * len(self.got_entries))
         holes.sort(key=lambda hole: hole.offset)
         return Stencil(bytes(self.body)[entry:], tuple(holes))  # XXX
@@ -276,133 +277,398 @@ class Stencil:
     holes: tuple[Hole, ...]
     # entry: int
 
-def handle_one_relocation(
-    got_entries: list[str],
+def sign_extend_64(value: int, bits: int) -> int:
+    """Sign-extend a value to 64 bits."""
+    assert 0 <= value < (1 << bits) < (1 << 64)
+    return value - ((value & (1 << (bits - 1))) << 1)
+
+def handle_relocations(
+    got_entries: list[tuple[str, int]],
     body: bytearray,
-    base: int,
-    relocation: typing.Mapping[str, typing.Any],
+    relocations: typing.Sequence[tuple[int, typing.Mapping[str, typing.Any]]],
 ) -> typing.Generator[Hole, None, None]:
-    match relocation:
-        case {
-            "Offset": int(offset),
-            "Symbol": str(symbol),
-            "Type": {"Value": "IMAGE_REL_AMD64_ADDR64"},
-        }:
-            offset += base
-            where = slice(offset, offset + 8)
-            what = int.from_bytes(body[where], sys.byteorder)
-            # assert not what, what
-            addend = what
-            body[where] = [0] * 8
-            yield Hole("PATCH_ABS_64", symbol, offset, addend)
-        case {
-            "Offset": int(offset),
-            "Symbol": str(symbol),
-            "Type": {"Value": "IMAGE_REL_I386_DIR32"},
-        }:
-            offset += base
-            where = slice(offset, offset + 4)
-            what = int.from_bytes(body[where], sys.byteorder)
-            # assert not what, what
-            addend = what
-            body[where] = [0] * 4
-            # assert symbol.startswith("_")
-            symbol = symbol.removeprefix("_")
-            yield Hole("PATCH_ABS_32", symbol, offset, addend)
-        case {
-            "Addend": int(addend),
-            "Offset": int(offset),
-            "Symbol": {"Value": str(symbol)},
-            "Type": {"Value": "R_X86_64_64"},
-        }:
-            offset += base
-            where = slice(offset, offset + 8)
-            what = int.from_bytes(body[where], sys.byteorder)
-            assert not what, what
-            yield Hole("PATCH_ABS_64", symbol, offset, addend)
-        case {
-            "Addend": int(addend),
-            "Offset": int(offset),
-            "Symbol": {"Value": str(symbol)},
-            "Type": {"Value": "R_X86_64_GOT64"},
-        }:
-            offset += base
-            where = slice(offset, offset + 8)
-            what = int.from_bytes(body[where], sys.byteorder)
-            assert not what, what
-            if symbol not in got_entries:
-                got_entries.append(symbol)
-            addend += got_entries.index(symbol) * 8
-            body[where] = int(addend).to_bytes(8, sys.byteorder)
-        case {
-            "Addend": int(addend),
-            "Offset": int(offset),
-            "Symbol": {"Value": str(symbol)},
-            "Type": {"Value": "R_X86_64_GOTOFF64"},
-        }:
-            offset += base
-            where = slice(offset, offset + 8)
-            what = int.from_bytes(body[where], sys.byteorder)
-            assert not what, what
-            addend += offset - len(body)
-            yield Hole("PATCH_REL_64", symbol, offset, addend)
-        case {
-            "Addend": int(addend),
-            "Offset": int(offset),
-            "Symbol": {"Value": "_GLOBAL_OFFSET_TABLE_"},
-            "Type": {"Value": "R_X86_64_GOTPC64"},
-        }:
-            offset += base
-            where = slice(offset, offset + 8)
-            what = int.from_bytes(body[where], sys.byteorder)
-            assert not what, what
-            addend += len(body) - offset
-            body[where] = int(addend).to_bytes(8, sys.byteorder)
-        case {
-            "Addend": int(addend),
-            "Offset": int(offset),
-            "Symbol": {"Value": str(symbol)},
-            "Type": {"Value": "R_X86_64_PC32"},
-        }:
-            offset += base
-            where = slice(offset, offset + 4)
-            what = int.from_bytes(body[where], sys.byteorder)
-            assert not what, what
-            yield Hole("PATCH_REL_32", symbol, offset, addend)
-        case {
-            "Length": 3,
-            "Offset": int(offset),
-            "PCRel": 0,
-            "Section": {"Value": str(section)},
-            "Type": {"Value": "X86_64_RELOC_UNSIGNED"},
-        }:
-            offset += base
-            where = slice(offset, offset + 8)
-            what = int.from_bytes(body[where], sys.byteorder)
-            # assert not what, what
-            addend = what
-            body[where] = [0] * 8
-            assert section.startswith("_")
-            section = section.removeprefix("_")
-            yield Hole("PATCH_ABS_64", section, offset, addend)
-        case {
-            "Length": 3,
-            "Offset": int(offset),
-            "PCRel": 0,
-            "Symbol": {"Value": str(symbol)},
-            "Type": {"Value": "X86_64_RELOC_UNSIGNED"},
-        }:
-            offset += base
-            where = slice(offset, offset + 8)
-            what = int.from_bytes(body[where], sys.byteorder)
-            # assert not what, what
-            addend = what
-            body[where] = [0] * 8
-            assert symbol.startswith("_")
-            symbol = symbol.removeprefix("_")
-            yield Hole("PATCH_ABS_64", symbol, offset, addend)
-        case _:
-            raise NotImplementedError(relocation)
+    for i, (base, relocation) in enumerate(relocations):
+        match relocation:
+            # aarch64-apple-darwin:
+            case {
+                "Length": 2 as length,
+                "Offset": int(offset),
+                "PCRel": 1 as pcrel,
+                "Symbol": {"Value": str(symbol)},
+                "Type": {"Value": "ARM64_RELOC_BRANCH26"},
+            }:
+                offset += base
+                where = slice(offset, offset + (1 << length))
+                what = int.from_bytes(body[where], "little", signed=False)
+                # XXX: This nonsense...
+                assert what & 0xFC000000 == 0x14000000 or what & 0xFC000000 == 0x94000000, what
+                addend = (what & 0x03FFFFFF) << 2
+                addend = sign_extend_64(addend, 28)
+                assert symbol.startswith("_"), symbol
+                symbol = symbol.removeprefix("_")
+                yield Hole("PATCH_REL_26", symbol, offset, addend)
+            case {
+                "Length": 2 as length,
+                "Offset": int(offset),
+                "PCRel": 1 as pcrel,
+                "Symbol": {"Value": str(symbol)},
+                "Type": {"Value": "ARM64_RELOC_GOT_LOAD_PAGE21"},
+            }:
+                offset += base
+                where = slice(offset, offset + (1 << length))
+                what = int.from_bytes(body[where], "little", signed=False)
+                # XXX: This nonsense...
+                assert what & 0x9F000000 == 0x90000000, what
+                addend = ((what & 0x60000000) >> 29) | ((what & 0x01FFFFE0) >> 3) << 12
+                addend = sign_extend_64(addend, 33)
+                # assert symbol.startswith("_"), symbol
+                symbol = symbol.removeprefix("_")
+                if (symbol, addend) not in got_entries:
+                    got_entries.append((symbol, addend))
+                while len(body) % 8:
+                    body.append(0)
+                addend = len(body) + got_entries.index((symbol, addend)) * 8
+                yield Hole("PATCH_REL_21", "_justin_base", offset, addend)
+            case {
+                "Length": 2 as length,
+                "Offset": int(offset),
+                "PCRel": 0 as pcrel,
+                "Symbol": {"Value": str(symbol)},
+                "Type": {"Value": "ARM64_RELOC_GOT_LOAD_PAGEOFF12"},
+            }:
+                offset += base
+                where = slice(offset, offset + (1 << length))
+                what = int.from_bytes(body[where], "little", signed=False)
+                # XXX: This nonsense...
+                assert what & 0x3B000000 == 0x39000000, what
+                addend = (what & 0x003FFC00) >> 10
+                implicit_shift = 0
+                if what & 0x3B000000 == 0x39000000:
+                    implicit_shift = (what >> 30) & 0x3
+                    if implicit_shift == 0:
+                        if what & 0x04800000 == 0x04800000:
+                            implicit_shift = 4
+                addend <<= implicit_shift
+                # assert symbol.startswith("_"), symbol
+                symbol = symbol.removeprefix("_")
+                if (symbol, addend) not in got_entries:
+                    got_entries.append((symbol, addend))
+                while len(body) % 8:
+                    body.append(0)
+                addend = len(body) + got_entries.index((symbol, addend)) * 8
+                yield Hole("PATCH_ABS_12", "_justin_base", offset, addend)
+            case {
+                "Length": 2 as length,
+                "Offset": int(offset),
+                "PCRel": 1 as pcrel,
+                "Symbol": {"Value": str(symbol)},
+                "Type": {"Value": "ARM64_RELOC_PAGE21"},
+            }:
+                offset += base
+                where = slice(offset, offset + (1 << length))
+                what = int.from_bytes(body[where], "little", signed=False)
+                # XXX: This nonsense...
+                assert what & 0x9F000000 == 0x90000000, what
+                addend = ((what & 0x60000000) >> 29) | ((what & 0x01FFFFE0) >> 3) << 12
+                addend = sign_extend_64(addend, 33)
+                # assert symbol.startswith("_"), symbol
+                symbol = symbol.removeprefix("_")
+                yield Hole("PATCH_REL_21", symbol, offset, addend)
+            case {
+                "Length": 2 as length,
+                "Offset": int(offset),
+                "PCRel": 0 as pcrel,
+                "Symbol": {"Value": str(symbol)},
+                "Type": {"Value": "ARM64_RELOC_PAGEOFF12"},
+            }:
+                offset += base
+                where = slice(offset, offset + (1 << length))
+                what = int.from_bytes(body[where], "little", signed=False)
+                # XXX: This nonsense...
+                assert what & 0x3B000000 == 0x39000000 or what & 0x11C00000 == 0x11000000, what
+                addend = (what & 0x003FFC00) >> 10
+                implicit_shift = 0
+                if what & 0x3B000000 == 0x39000000:
+                    implicit_shift = (what >> 30) & 0x3
+                    if implicit_shift == 0:
+                        if what & 0x04800000 == 0x04800000:
+                            implicit_shift = 4
+                addend <<= implicit_shift
+                # assert symbol.startswith("_"), symbol
+                symbol = symbol.removeprefix("_")
+                yield Hole("PATCH_ABS_12", symbol, offset, addend)
+            case {
+                "Length": 3 as length,
+                "Offset": int(offset),
+                "PCRel": 0 as pcrel,
+                "Section": {"Value": str(section)},
+                "Type": {"Value": "ARM64_RELOC_UNSIGNED"},
+            }:
+                offset += base
+                where = slice(offset, offset + (1 << length))
+                what = int.from_bytes(body[where], "little", signed=False)
+                addend = what
+                assert section.startswith("_"), section
+                section = section.removeprefix("_")
+                yield Hole("PATCH_ABS_64", section, offset, addend)
+            case {
+                "Length": 3 as length,
+                "Offset": int(offset),
+                "PCRel": 0 as pcrel,
+                "Symbol": {"Value": str(symbol)},
+                "Type": {"Value": "ARM64_RELOC_UNSIGNED"},
+            }:
+                offset += base
+                where = slice(offset, offset + (1 << length))
+                what = int.from_bytes(body[where], "little", signed=False)
+                addend = what
+                assert symbol.startswith("_"), symbol
+                symbol = symbol.removeprefix("_")
+                yield Hole("PATCH_ABS_64", symbol, offset, addend)
+            # x86_64-pc-windows-msvc:
+            case {
+                "Offset": int(offset),
+                "Symbol": str(symbol),
+                "Type": {"Value": "IMAGE_REL_AMD64_ADDR64"},
+            }:
+                offset += base
+                where = slice(offset, offset + 8)
+                what = int.from_bytes(body[where], sys.byteorder)
+                # assert not what, what
+                addend = what
+                body[where] = [0] * 8
+                yield Hole("PATCH_ABS_64", symbol, offset, addend)
+            # i686-pc-windows-msvc:
+            case {
+                "Offset": int(offset),
+                "Symbol": str(symbol),
+                "Type": {"Value": "IMAGE_REL_I386_DIR32"},
+            }:
+                offset += base
+                where = slice(offset, offset + 4)
+                what = int.from_bytes(body[where], sys.byteorder)
+                # assert not what, what
+                addend = what
+                body[where] = [0] * 4
+                # assert symbol.startswith("_")
+                symbol = symbol.removeprefix("_")
+                yield Hole("PATCH_ABS_32", symbol, offset, addend)
+            # aarch64-unknown-linux-gnu:
+            case {
+                "Addend": int(addend),
+                "Offset": int(offset),
+                "Symbol": {"Value": str(symbol)},
+                "Type": {"Value": "R_AARCH64_ABS64"},
+            }:
+                offset += base
+                where = slice(offset, offset + 8)
+                what = int.from_bytes(body[where], sys.byteorder)
+                assert not what, what
+                yield Hole("PATCH_ABS_64", symbol, offset, addend)
+            case {
+                "Addend": 0,
+                "Offset": int(offset),
+                "Symbol": {'Value': str(symbol)},
+                "Type": {"Value": "R_AARCH64_ADR_GOT_PAGE"},
+            }:
+                offset += base
+                where = slice(offset, offset + 4)
+                what = int.from_bytes(body[where], "little", signed=False)
+                # XXX: This nonsense...
+                assert what & 0x9F000000 == 0x90000000, what
+                addend = ((what & 0x60000000) >> 29) | ((what & 0x01FFFFE0) >> 3) << 12
+                addend = sign_extend_64(addend, 33)
+                if (symbol, addend) not in got_entries:
+                    got_entries.append((symbol, addend))
+                while len(body) % 8:
+                    body.append(0)
+                addend = len(body) + got_entries.index((symbol, addend)) * 8
+                yield Hole("PATCH_REL_21", "_justin_base", offset, addend)
+            case {
+                "Addend": 0,
+                "Offset": int(offset),
+                "Symbol": {"Value": str(symbol)},
+                "Type": {"Value": "R_AARCH64_CALL26" | "R_AARCH64_JUMP26"},  # XXX
+            }:
+                offset += base
+                where = slice(offset, offset + 4)
+                what = int.from_bytes(body[where], "little", signed=False)
+                # XXX: This nonsense...
+                assert what & 0xFC000000 == 0x14000000 or what & 0xFC000000 == 0x94000000, what
+                addend = (what & 0x03FFFFFF) << 2
+                addend = sign_extend_64(addend, 28)
+                yield Hole("PATCH_REL_26", symbol, offset, addend)
+            case {
+                "Addend": 0,
+                "Offset": int(offset),
+                "Symbol": {"Value": str(symbol)},
+                "Type": {"Value": "R_AARCH64_LD64_GOT_LO12_NC"},
+            }:
+                offset += base
+                where = slice(offset, offset + 4)
+                what = int.from_bytes(body[where], "little", signed=False)
+                # XXX: This nonsense...
+                assert what & 0x3B000000 == 0x39000000, what
+                addend = (what & 0x003FFC00) >> 10
+                implicit_shift = 0
+                if what & 0x3B000000 == 0x39000000:
+                    implicit_shift = (what >> 30) & 0x3
+                    if implicit_shift == 0:
+                        if what & 0x04800000 == 0x04800000:
+                            implicit_shift = 4
+                addend <<= implicit_shift
+                if (symbol, addend) not in got_entries:
+                    got_entries.append((symbol, addend))
+                while len(body) % 8:
+                    body.append(0)
+                addend = len(body) + got_entries.index((symbol, addend)) * 8
+                yield Hole("PATCH_ABS_12", "_justin_base", offset, addend)
+            case {
+                "Addend": int(addend),
+                "Offset": int(offset),
+                "Symbol": {"Value": str(symbol)},
+                "Type": {"Value": "R_AARCH64_MOVW_UABS_G0_NC"},
+            }:
+                offset += base
+                where = slice(offset, offset + 4)
+                what = int.from_bytes(body[where], "little", signed=False)
+                assert ((what >> 5) & 0xFFFF) == 0, what
+                yield Hole("PATCH_ABS_16_A", "_justin_base", offset, addend)
+            case {
+                "Addend": int(addend),
+                "Offset": int(offset),
+                "Symbol": {"Value": str(symbol)},
+                "Type": {"Value": "R_AARCH64_MOVW_UABS_G1_NC"},
+            }:
+                offset += base
+                where = slice(offset, offset + 4)
+                what = int.from_bytes(body[where], "little", signed=False)
+                assert ((what >> 5) & 0xFFFF) == 0, what
+                yield Hole("PATCH_ABS_16_B", "_justin_base", offset, addend)
+            case {
+                "Addend": int(addend),
+                "Offset": int(offset),
+                "Symbol": {"Value": str(symbol)},
+                "Type": {"Value": "R_AARCH64_MOVW_UABS_G2_NC"},
+            }:
+                offset += base
+                where = slice(offset, offset + 4)
+                what = int.from_bytes(body[where], "little", signed=False)
+                assert ((what >> 5) & 0xFFFF) == 0, what
+                yield Hole("PATCH_ABS_16_C", "_justin_base", offset, addend)
+            case {
+                "Addend": int(addend),
+                "Offset": int(offset),
+                "Symbol": {"Value": str(symbol)},
+                "Type": {"Value": "R_AARCH64_MOVW_UABS_G3"},
+            }:
+                offset += base
+                where = slice(offset, offset + 4)
+                what = int.from_bytes(body[where], "little", signed=False)
+                assert ((what >> 5) & 0xFFFF) == 0, what
+                yield Hole("PATCH_ABS_16_D", "_justin_base", offset, addend)
+            # x86_64-unknown-linux-gnu:
+            case {
+                "Addend": int(addend),
+                "Offset": int(offset),
+                "Symbol": {"Value": str(symbol)},
+                "Type": {"Value": "R_X86_64_64"},
+            }:
+                offset += base
+                where = slice(offset, offset + 8)
+                what = int.from_bytes(body[where], sys.byteorder)
+                assert not what, what
+                yield Hole("PATCH_ABS_64", symbol, offset, addend)
+            case {
+                "Addend": int(addend),
+                "Offset": int(offset),
+                "Symbol": {"Value": str(symbol)},
+                "Type": {"Value": "R_X86_64_GOT64"},
+            }:
+                offset += base
+                where = slice(offset, offset + 8)
+                what = int.from_bytes(body[where], sys.byteorder)
+                assert not what, what
+                if (symbol, addend) not in got_entries:
+                    got_entries.append((symbol, addend))
+                while len(body) % 8:
+                    body.append(0)
+                addend = got_entries.index((symbol, addend)) * 8
+                body[where] = addend.to_bytes(8, sys.byteorder)
+            case {
+                "Addend": int(addend),
+                "Offset": int(offset),
+                "Symbol": {"Value": str(symbol)},
+                "Type": {"Value": "R_X86_64_GOTOFF64"},
+            }:
+                offset += base
+                where = slice(offset, offset + 8)
+                what = int.from_bytes(body[where], sys.byteorder)
+                assert not what, what
+                while len(body) % 8:
+                    body.append(0)
+                addend += offset - len(body)
+                yield Hole("PATCH_REL_64", symbol, offset, addend)
+            case {
+                "Addend": int(addend),
+                "Offset": int(offset),
+                "Symbol": {"Value": "_GLOBAL_OFFSET_TABLE_"},
+                "Type": {"Value": "R_X86_64_GOTPC64"},
+            }:
+                offset += base
+                where = slice(offset, offset + 8)
+                what = int.from_bytes(body[where], sys.byteorder)
+                assert not what, what
+                while len(body) % 8:
+                    body.append(0)
+                addend += len(body) - offset
+                body[where] = addend.to_bytes(8, sys.byteorder)
+            case {
+                "Addend": int(addend),
+                "Offset": int(offset),
+                "Symbol": {"Value": str(symbol)},
+                "Type": {"Value": "R_X86_64_PC32"},
+            }:
+                offset += base
+                where = slice(offset, offset + 4)
+                what = int.from_bytes(body[where], sys.byteorder)
+                assert not what, what
+                yield Hole("PATCH_REL_32", symbol, offset, addend)
+            # x86_64-apple-darwin:
+            case {
+                "Length": 3,
+                "Offset": int(offset),
+                "PCRel": 0,
+                "Section": {"Value": str(section)},
+                "Type": {"Value": "X86_64_RELOC_UNSIGNED"},
+            }:
+                offset += base
+                where = slice(offset, offset + 8)
+                what = int.from_bytes(body[where], sys.byteorder)
+                # assert not what, what
+                addend = what
+                body[where] = [0] * 8
+                assert section.startswith("_")
+                section = section.removeprefix("_")
+                yield Hole("PATCH_ABS_64", section, offset, addend)
+            case {
+                "Length": 3,
+                "Offset": int(offset),
+                "PCRel": 0,
+                "Symbol": {"Value": str(symbol)},
+                "Type": {"Value": "X86_64_RELOC_UNSIGNED"},
+            }:
+                offset += base
+                where = slice(offset, offset + 8)
+                what = int.from_bytes(body[where], sys.byteorder)
+                # assert not what, what
+                addend = what
+                body[where] = [0] * 8
+                assert symbol.startswith("_")
+                symbol = symbol.removeprefix("_")
+                yield Hole("PATCH_ABS_64", symbol, offset, addend)
+            case _:
+                raise NotImplementedError(relocation)
 
 
 class ObjectParserCOFF(ObjectParser):
@@ -444,6 +710,8 @@ class ObjectParserMachO(ObjectParser):
         name = section["Name"]["Value"]
         # assert name.startswith("_")  # XXX
         name = name.removeprefix(self.symbol_prefix)  # XXX
+        if name == "_eh_frame":
+            return
         if name in self.body_symbols:
             self.dupes.add(name)
         self.body_symbols[name] = 0  # before
@@ -610,31 +878,39 @@ class Compiler:
         }
     )
 
-    def __init__(self, *, verbose: bool = False) -> None:
+    def __init__(
+        self,
+        *,
+        verbose: bool = False,
+        jobs: int = os.cpu_count() or 1,
+        ghccc: bool = True,
+        tos_cache: int = 0,
+    )-> None:
         self._stencils_built = {}
         self._verbose = verbose
         self._clang, clang_version = find_llvm_tool("clang")
         self._readobj, readobj_version = find_llvm_tool("llvm-readobj")
         self._stderr(f"Using {self._clang} ({clang_version}) and {self._readobj} ({readobj_version}).")
+        self._semaphore = asyncio.BoundedSemaphore(jobs)
+        self._ghccc = ghccc
+        self._tos_cache = tos_cache
 
     def _stderr(self, *args, **kwargs) -> None:
         if self._verbose:
             print(*args, **kwargs, file=sys.stderr)
 
-    @staticmethod
-    def _use_ghccc(ll: pathlib.Path, enable: bool = False) -> None:
-        if enable:
+    def _use_ghccc(self, ll: pathlib.Path) -> None:
+        if self._ghccc:
             ir = ll.read_text()
             ir = ir.replace("i32 @_justin_continue", "ghccc i32 @_justin_continue")
             ir = ir.replace("i32 @_justin_entry", "ghccc i32 @_justin_entry")
             ll.write_text(ir)
 
-    @staticmethod
-    def _use_tos_caching(c: pathlib.Path, enable: int = 0) -> None:
+    def _use_tos_caching(self, c: pathlib.Path) -> None:
         sc = c.read_text()
-        for i in range(1, enable + 1):
+        for i in range(1, self._tos_cache + 1):
             sc = sc.replace(f" = stack_pointer[-{i}];", f" = _tos{i};")
-        for i in range(enable + 1, 5):
+        for i in range(self._tos_cache + 1, 5):
             sc = "".join(
                 line for line in sc.splitlines(True) if f"_tos{i}" not in line
             )
@@ -647,24 +923,25 @@ class Compiler:
             ll = pathlib.Path(tempdir, f"{opname}.ll")
             o = pathlib.Path(tempdir, f"{opname}.o")
             c.write_text(body)
-            self._use_tos_caching(c, 0)
-            self._stderr(f"Compiling {opname}...")
-            process = await asyncio.create_subprocess_exec(self._clang, *CFLAGS, "-emit-llvm", "-S", *defines, "-o", ll, c)
-            stdout, stderr = await process.communicate()
-            assert stdout is None, stdout
-            assert stderr is None, stderr
-            if process.returncode:
-                raise RuntimeError(f"{self._clang} exited with {process.returncode}")
-            self._use_ghccc(ll, True)
-            self._stderr(f"Recompiling {opname}...")
-            process = await asyncio.create_subprocess_exec(self._clang, *CFLAGS, "-c", "-o", o, ll)
-            stdout, stderr = await process.communicate()
-            assert stdout is None, stdout
-            assert stderr is None, stderr
-            if process.returncode:
-                raise RuntimeError(f"{self._clang} exited with {process.returncode}")
-            self._stderr(f"Parsing {opname}...")
-            self._stencils_built[opname] = await ObjectParserDefault(o, self._readobj).parse()
+            self._use_tos_caching(c)
+            async with self._semaphore:
+                self._stderr(f"Compiling {opname}...")
+                process = await asyncio.create_subprocess_exec(self._clang, *CFLAGS, "-emit-llvm", "-S", *defines, "-o", ll, c)
+                stdout, stderr = await process.communicate()
+                assert stdout is None, stdout
+                assert stderr is None, stderr
+                if process.returncode:
+                    raise RuntimeError(f"{self._clang} exited with {process.returncode}")
+                self._use_ghccc(ll)
+                self._stderr(f"Recompiling {opname}...")
+                process = await asyncio.create_subprocess_exec(self._clang, *CFLAGS, "-c", "-o", o, ll)
+                stdout, stderr = await process.communicate()
+                assert stdout is None, stdout
+                assert stderr is None, stderr
+                if process.returncode:
+                    raise RuntimeError(f"{self._clang} exited with {process.returncode}")
+                self._stderr(f"Parsing {opname}...")
+                self._stencils_built[opname] = await ObjectParserDefault(o, self._readobj).parse()
         self._stderr(f"Built {opname}!")
 
     async def build(self) -> None:
@@ -687,8 +964,15 @@ class Compiler:
         lines = []
         # XXX: Rework these to use Enums:
         kinds = {
+            "PATCH_ABS_12",
+            "PATCH_ABS_16_A",
+            "PATCH_ABS_16_B",
+            "PATCH_ABS_16_C",
+            "PATCH_ABS_16_D",
             "PATCH_ABS_32",
             "PATCH_ABS_64",
+            "PATCH_REL_21",
+            "PATCH_REL_26",
             "PATCH_REL_32",
             "PATCH_REL_64",
         }
@@ -715,9 +999,9 @@ class Compiler:
                 if hole.symbol.startswith("_justin_"):
                     value = f"HOLE_{hole.symbol.removeprefix('_justin_')}"
                     assert value in values, value
-                    holes.append(f"    {{.kind = {hole.kind}, .offset = {hole.offset:4}, .addend = {hole.addend:4}, .value = {value}}},")
+                    holes.append(f"    {{.kind = {hole.kind}, .offset = {hole.offset:4}, .addend = {hole.addend % (1 << 64):4}, .value = {value}}},")
                 else:
-                    loads.append(f"    {{.kind = {hole.kind}, .offset = {hole.offset:4}, .addend = {hole.addend:4}, .symbol = \"{hole.symbol}\"}},")
+                    loads.append(f"    {{.kind = {hole.kind}, .offset = {hole.offset:4}, .addend = {hole.addend % (1 << 64):4}, .symbol = \"{hole.symbol}\"}},")
             assert holes, stencil.holes
             lines.append(f"static const Hole {opname}_stencil_holes[] = {{")
             for hole in holes:
@@ -795,10 +1079,9 @@ class Compiler:
         return "\n".join(lines)
 
 if __name__ == "__main__":
-    # First, create our JIT engine:
-    engine = Compiler(verbose=True)
-    # This performs all of the steps that normally happen at build time:
-    # TODO: Actual arg parser...
+    # Clang internal error with musttail + ghccc + aarch64:
+    ghccc = platform.machine() not in {"aarch64", "arm64"}
+    engine = Compiler(verbose=True, ghccc=ghccc)
     asyncio.run(engine.build())
     with open(sys.argv[2], "w") as file:
         file.write(engine.dump())
