@@ -1049,11 +1049,10 @@ The following recipes have a more mathematical flavor:
        # factor(1_000_000_000_000_403) --> 1000000000000403
        for prime in sieve(math.isqrt(n) + 1):
            while True:
-               quotient, remainder = divmod(n, prime)
-               if remainder:
+               if n % prime:
                    break
                yield prime
-               n = quotient
+               n //= prime
                if n == 1:
                    return
        if n > 1:
@@ -1354,6 +1353,12 @@ The following recipes have a more mathematical flavor:
     >>> set(sieve(10_000)).isdisjoint(carmichael)
     True
 
+    >>> list(factor(99))                    # Code example 1
+    [3, 3, 11]
+    >>> list(factor(1_000_000_000_000_007)) # Code example 2
+    [47, 59, 360620266859]
+    >>> list(factor(1_000_000_000_000_403)) # Code example 3
+    [1000000000000403]
     >>> list(factor(0))
     []
     >>> list(factor(1))
