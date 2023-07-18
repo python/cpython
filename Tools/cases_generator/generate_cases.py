@@ -99,7 +99,7 @@ def effect_size(effect: StackEffect) -> tuple[int, str]:
         return 0, effect.size
     elif effect.cond:
         if effect.cond in ("0", "1"):
-            return 0, effect.cond
+            return int(effect.cond), ""
         return 0, f"{maybe_parenthesize(effect.cond)} ? 1 : 0"
     else:
         return 1, ""
@@ -408,27 +408,24 @@ class Instruction:
 
     def is_viable_uop(self) -> bool:
         """Whether this instruction is viable as a uop."""
+        dprint: typing.Callable[..., None] = lambda *args, **kwargs: None
+        # if self.name.startswith("CALL"):
+        #     dprint = print
+
         if self.name == "EXIT_TRACE":
             return True  # This has 'return frame' but it's okay
         if self.always_exits:
-            # print(f"Skipping {self.name} because it always exits")
+            dprint(f"Skipping {self.name} because it always exits")
             return False
-        if self.instr_flags.HAS_ARG_FLAG:
-            # If the instruction uses oparg, it cannot use any caches
-            if self.active_caches:
-                # print(f"Skipping {self.name} because it uses oparg and caches")
-                return False
-        else:
-            # If it doesn't use oparg, it can have one cache entry
-            if len(self.active_caches) > 1:
-                # print(f"Skipping {self.name} because it has >1 cache entries")
-                return False
+        if len(self.active_caches) > 1:
+            # print(f"Skipping {self.name} because it has >1 cache entries")
+            return False
         res = True
         for forbidden in FORBIDDEN_NAMES_IN_UOPS:
             # NOTE: To disallow unspecialized uops, use
             # if variable_used(self.inst, forbidden):
             if variable_used_unspecialized(self.inst, forbidden):
-                # print(f"Skipping {self.name} because it uses {forbidden}")
+                dprint(f"Skipping {self.name} because it uses {forbidden}")
                 res = False
         return res
 
@@ -844,9 +841,9 @@ class Analyzer:
     def check_families(self) -> None:
         """Check each family:
 
-        - Must have at least 2 members
-        - All members must be known instructions
-        - All members must have the same cache, input and output effects
+        - Must have at least 2 members (including head)
+        - Head and all members must be known instructions
+        - Head and all members must have the same cache, input and output effects
         """
         for family in self.families.values():
             if family.name not in self.macro_instrs and family.name not in self.instrs:
@@ -871,7 +868,7 @@ class Analyzer:
                     self.error(
                         f"Family {family.name!r} has inconsistent "
                         f"(cache, input, output) effects:\n"
-                        f"  {family.members[0]} = {expected_effects}; "
+                        f"  {family.name} = {expected_effects}; "
                         f"{member} = {member_effects}",
                         family,
                     )
@@ -1370,7 +1367,7 @@ class Analyzer:
                 if not part.instr.is_viable_uop():
                     print(f"NOTE: Part {part.instr.name} of {name} is not a viable uop")
                     return
-                if part.instr.instr_flags.HAS_ARG_FLAG or not part.active_caches:
+                if not part.active_caches:
                     size, offset = OPARG_SIZES["OPARG_FULL"], 0
                 else:
                     # If this assert triggers, is_viable_uops() lied
@@ -1499,6 +1496,8 @@ class Analyzer:
                             with self.out.block(f"case {thing.name}:"):
                                 instr.write(self.out, tier=TIER_TWO)
                                 self.out.emit("break;")
+                        # elif instr.kind != "op":
+                        #     print(f"NOTE: {thing.name} is not a viable uop")
                     case parser.Macro():
                         pass
                     case parser.Pseudo():
