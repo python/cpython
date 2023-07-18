@@ -5773,13 +5773,7 @@ static int
 sslmodule_add_option(PyObject *m, const char *name, uint64_t value)
 {
     Py_BUILD_ASSERT(sizeof(unsigned long long) >= sizeof(value));
-    PyObject *obj = PyLong_FromUnsignedLongLong(value);
-    if (obj == NULL) {
-        return -1;
-    }
-    int res = PyModule_AddObjectRef(m, name, obj);
-    Py_DECREF(obj);
-    return res;
+    return PyModule_Add(m, name, PyLong_FromUnsignedLongLong(value));
 }
 
 
