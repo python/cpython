@@ -1,0 +1,2 @@
+Fix null-bytes handling in ``LCMapStringEx`` which affects
+:func:`ntpath.normcase`.
