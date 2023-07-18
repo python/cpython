@@ -33,9 +33,12 @@
 #include "pycore_compile.h"
 #include "pycore_intrinsics.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_pystate.h"       // _Py_GetConfig()
 #include "pycore_symtable.h"      // PySTEntryObject, _PyFuture_FromAST()
 
-#include "opcode_metadata.h"      // _PyOpcode_opcode_metadata, _PyOpcode_num_popped/pushed
+#define NEED_OPCODE_METADATA
+#include "pycore_opcode_metadata.h" // _PyOpcode_opcode_metadata, _PyOpcode_num_popped/pushed
+#undef NEED_OPCODE_METADATA
 
 #define COMP_GENEXP   0
 #define COMP_LISTCOMP 1
@@ -836,6 +839,8 @@ stack_effect(int opcode, int oparg, int jump)
 
         case STORE_FAST_MAYBE_NULL:
             return -1;
+        case LOAD_CLOSURE:
+            return 1;
         case LOAD_METHOD:
             return 1;
         case LOAD_SUPER_METHOD:
@@ -859,6 +864,54 @@ int
 PyCompile_OpcodeStackEffect(int opcode, int oparg)
 {
     return stack_effect(opcode, oparg, -1);
+}
+
+int
+PyUnstable_OpcodeIsValid(int opcode)
+{
+    return IS_VALID_OPCODE(opcode);
+}
+
+int
+PyUnstable_OpcodeHasArg(int opcode)
+{
+    return OPCODE_HAS_ARG(opcode);
+}
+
+int
+PyUnstable_OpcodeHasConst(int opcode)
+{
+    return OPCODE_HAS_CONST(opcode);
+}
+
+int
+PyUnstable_OpcodeHasName(int opcode)
+{
+    return OPCODE_HAS_NAME(opcode);
+}
+
+int
+PyUnstable_OpcodeHasJump(int opcode)
+{
+    return OPCODE_HAS_JUMP(opcode);
+}
+
+int
+PyUnstable_OpcodeHasFree(int opcode)
+{
+    return OPCODE_HAS_FREE(opcode);
+}
+
+int
+PyUnstable_OpcodeHasLocal(int opcode)
+{
+    return OPCODE_HAS_LOCAL(opcode);
+}
+
+int
+PyUnstable_OpcodeHasExc(int opcode)
+{
+    return IS_BLOCK_PUSH_OPCODE(opcode);
 }
 
 static int
@@ -1669,10 +1722,16 @@ compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
     if (c->c_optimize < 2) {
         docstring = _PyAST_GetDocString(stmts);
         if (docstring) {
+            PyObject *cleandoc = _PyCompile_CleanDoc(docstring);
+            if (cleandoc == NULL) {
+                return ERROR;
+            }
             i = 1;
             st = (stmt_ty)asdl_seq_GET(stmts, 0);
             assert(st->kind == Expr_kind);
-            VISIT(c, expr, st->v.Expr.value);
+            location loc = LOC(st->v.Expr.value);
+            ADDOP_LOAD_CONST(c, loc, cleandoc);
+            Py_DECREF(cleandoc);
             RETURN_IF_ERROR(compiler_nameop(c, NO_LOCATION, &_Py_ID(__doc__), Store));
         }
     }
@@ -2217,11 +2276,20 @@ compiler_function_body(struct compiler *c, stmt_ty s, int is_async, Py_ssize_t f
     /* if not -OO mode, add docstring */
     if (c->c_optimize < 2) {
         docstring = _PyAST_GetDocString(body);
+        if (docstring) {
+            docstring = _PyCompile_CleanDoc(docstring);
+            if (docstring == NULL) {
+                compiler_exit_scope(c);
+                return ERROR;
+            }
+        }
     }
     if (compiler_add_const(c->c_const_cache, c->u, docstring ? docstring : Py_None) < 0) {
+        Py_XDECREF(docstring);
         compiler_exit_scope(c);
         return ERROR;
     }
+    Py_XDECREF(docstring);
 
     c->u->u_metadata.u_argcount = asdl_seq_LEN(args->args);
     c->u->u_metadata.u_posonlyargcount = asdl_seq_LEN(args->posonlyargs);
@@ -2788,9 +2856,11 @@ static int compiler_addcompare(struct compiler *c, location loc,
     default:
         Py_UNREACHABLE();
     }
-    /* cmp goes in top bits of the oparg, while the low bits are used by quickened
-     * versions of this opcode to store the comparison mask. */
-    ADDOP_I(c, loc, COMPARE_OP, (cmp << 4) | compare_masks[cmp]);
+    // cmp goes in top three bits of the oparg, while the low four bits are used
+    // by quickened versions of this opcode to store the comparison mask. The
+    // fifth-lowest bit indicates whether the result should be converted to bool
+    // and is set later):
+    ADDOP_I(c, loc, COMPARE_OP, (cmp << 5) | compare_masks[cmp]);
     return SUCCESS;
 }
 
@@ -2856,10 +2926,12 @@ compiler_jump_if(struct compiler *c, location loc,
                 ADDOP_I(c, LOC(e), SWAP, 2);
                 ADDOP_I(c, LOC(e), COPY, 2);
                 ADDOP_COMPARE(c, LOC(e), asdl_seq_GET(e->v.Compare.ops, i));
+                ADDOP(c, LOC(e), TO_BOOL);
                 ADDOP_JUMP(c, LOC(e), POP_JUMP_IF_FALSE, cleanup);
             }
             VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, n));
             ADDOP_COMPARE(c, LOC(e), asdl_seq_GET(e->v.Compare.ops, n));
+            ADDOP(c, LOC(e), TO_BOOL);
             ADDOP_JUMP(c, LOC(e), cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
             NEW_JUMP_TARGET_LABEL(c, end);
             ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
@@ -2883,6 +2955,7 @@ compiler_jump_if(struct compiler *c, location loc,
 
     /* general implementation */
     VISIT(c, expr, e);
+    ADDOP(c, LOC(e), TO_BOOL);
     ADDOP_JUMP(c, LOC(e), cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
     return SUCCESS;
 }
@@ -4014,8 +4087,6 @@ unaryop(unaryop_ty op)
     switch (op) {
     case Invert:
         return UNARY_INVERT;
-    case Not:
-        return UNARY_NOT;
     case USub:
         return UNARY_NEGATIVE;
     default:
@@ -4245,6 +4316,7 @@ compiler_boolop(struct compiler *c, expr_ty e)
     for (i = 0; i < n; ++i) {
         VISIT(c, expr, (expr_ty)asdl_seq_GET(s, i));
         ADDOP_I(c, loc, COPY, 1);
+        ADDOP(c, loc, TO_BOOL);
         ADDOP_JUMP(c, loc, jumpi, end);
         ADDOP(c, loc, POP_TOP);
     }
@@ -4552,6 +4624,7 @@ compiler_compare(struct compiler *c, expr_ty e)
             ADDOP_I(c, loc, COPY, 2);
             ADDOP_COMPARE(c, loc, asdl_seq_GET(e->v.Compare.ops, i));
             ADDOP_I(c, loc, COPY, 1);
+            ADDOP(c, loc, TO_BOOL);
             ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, cleanup);
             ADDOP(c, loc, POP_TOP);
         }
@@ -5787,6 +5860,7 @@ compiler_visit_keyword(struct compiler *c, keyword_ty k)
 static int
 compiler_with_except_finish(struct compiler *c, jump_target_label cleanup) {
     NEW_JUMP_TARGET_LABEL(c, suppress);
+    ADDOP(c, NO_LOCATION, TO_BOOL);
     ADDOP_JUMP(c, NO_LOCATION, POP_JUMP_IF_TRUE, suppress);
     ADDOP_I(c, NO_LOCATION, RERAISE, 2);
 
@@ -6019,6 +6093,10 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         VISIT(c, expr, e->v.UnaryOp.operand);
         if (e->v.UnaryOp.op == UAdd) {
             ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_UNARY_POSITIVE);
+        }
+        else if (e->v.UnaryOp.op == Not) {
+            ADDOP(c, loc, TO_BOOL);
+            ADDOP(c, loc, UNARY_NOT);
         }
         else {
             ADDOP(c, loc, unaryop(e->v.UnaryOp.op));
@@ -7195,6 +7273,7 @@ compiler_pattern_value(struct compiler *c, pattern_ty p, pattern_context *pc)
     }
     VISIT(c, expr, value);
     ADDOP_COMPARE(c, LOC(p), Eq);
+    ADDOP(c, LOC(p), TO_BOOL);
     RETURN_IF_ERROR(jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE));
     return SUCCESS;
 }
@@ -7920,6 +7999,91 @@ error:
     Py_DECREF(instructions);
     return NULL;
 }
+
+// C implementation of inspect.cleandoc()
+//
+// Difference from inspect.cleandoc():
+// - Do not remove leading and trailing blank lines to keep lineno.
+PyObject *
+_PyCompile_CleanDoc(PyObject *doc)
+{
+    doc = PyObject_CallMethod(doc, "expandtabs", NULL);
+    if (doc == NULL) {
+        return NULL;
+    }
+
+    Py_ssize_t doc_size;
+    const char *doc_utf8 = PyUnicode_AsUTF8AndSize(doc, &doc_size);
+    if (doc_utf8 == NULL) {
+        Py_DECREF(doc);
+        return NULL;
+    }
+    const char *p = doc_utf8;
+    const char *pend = p + doc_size;
+
+    // First pass: find minimum indentation of any non-blank lines
+    // after first line.
+    while (p < pend && *p++ != '\n') {
+    }
+
+    Py_ssize_t margin = PY_SSIZE_T_MAX;
+    while (p < pend) {
+        const char *s = p;
+        while (*p == ' ') p++;
+        if (p < pend && *p != '\n') {
+            margin = Py_MIN(margin, p - s);
+        }
+        while (p < pend && *p++ != '\n') {
+        }
+    }
+    if (margin == PY_SSIZE_T_MAX) {
+        margin = 0;
+    }
+
+    // Second pass: write cleandoc into buff.
+
+    // copy first line without leading spaces.
+    p = doc_utf8;
+    while (*p == ' ') {
+        p++;
+    }
+    if (p == doc_utf8 && margin == 0 ) {
+        // doc is already clean.
+        return doc;
+    }
+
+    char *buff = PyMem_Malloc(doc_size);
+    char *w = buff;
+
+    while (p < pend) {
+        int ch = *w++ = *p++;
+        if (ch == '\n') {
+            break;
+        }
+    }
+
+    // copy subsequent lines without margin.
+    while (p < pend) {
+        for (Py_ssize_t i = 0; i < margin; i++, p++) {
+            if (*p != ' ') {
+                assert(*p == '\n' || *p == '\0');
+                break;
+            }
+        }
+        while (p < pend) {
+            int ch = *w++ = *p++;
+            if (ch == '\n') {
+                break;
+            }
+        }
+    }
+
+    Py_DECREF(doc);
+    PyObject *res = PyUnicode_FromStringAndSize(buff, w - buff);
+    PyMem_Free(buff);
+    return res;
+}
+
 
 PyObject *
 _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
