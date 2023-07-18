@@ -3356,7 +3356,7 @@
             res = self;
             STACK_GROW(1);
             stack_pointer[-1] = res;
-            stack_pointer[-(1 + 1)] = res2;
+            stack_pointer[-2] = res2;
             next_instr += 9;
             DISPATCH();
         }
@@ -3378,7 +3378,7 @@
             res = self;
             STACK_GROW(1);
             stack_pointer[-1] = res;
-            stack_pointer[-(1 + 1)] = res2;
+            stack_pointer[-2] = res2;
             next_instr += 9;
             DISPATCH();
         }
@@ -3403,7 +3403,6 @@
             assert(descr != NULL);
             Py_DECREF(self);
             res = Py_NewRef(descr);
-            STACK_GROW(0);
             stack_pointer[-1] = res;
             next_instr += 9;
             DISPATCH();
@@ -3423,7 +3422,6 @@
             assert(descr != NULL);
             Py_DECREF(self);
             res = Py_NewRef(descr);
-            STACK_GROW(0);
             stack_pointer[-1] = res;
             next_instr += 9;
             DISPATCH();
@@ -3450,7 +3448,7 @@
             res = self;
             STACK_GROW(1);
             stack_pointer[-1] = res;
-            stack_pointer[-(1 + 1)] = res2;
+            stack_pointer[-2] = res2;
             next_instr += 9;
             DISPATCH();
         }
