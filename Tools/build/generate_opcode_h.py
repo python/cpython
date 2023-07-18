@@ -84,13 +84,7 @@ def main(opcode_py,
     opcode = get_python_module_dict(opcode_py)
     opmap = opcode['opmap']
     opname = opcode['opname']
-    hasarg = opcode['hasarg']
-    hasconst = opcode['hasconst']
-    hasjrel = opcode['hasjrel']
-    hasjabs = opcode['hasjabs']
     is_pseudo = opcode['is_pseudo']
-    _pseudo_ops = opcode['_pseudo_ops']
-
 
     ENABLE_SPECIALIZATION = opcode["ENABLE_SPECIALIZATION"]
     MIN_PSEUDO_OPCODE = opcode["MIN_PSEUDO_OPCODE"]
