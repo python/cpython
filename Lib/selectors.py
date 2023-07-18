@@ -467,16 +467,9 @@ if hasattr(select, 'epoll'):
             for fd, event in fd_event_list:
                 key = fd_to_key.get(fd)
                 if key:
-                    ready.append(
-                        (
-                            key,
-                            (
-                                (event & _NOT_EPOLLIN and EVENT_WRITE)
-                                | (event & _NOT_EPOLLOUT and EVENT_READ)
-                            )
-                            & key.events
-                        )
-                    )
+                    events = ((event & _NOT_EPOLLIN and EVENT_WRITE)
+                              | (event & _NOT_EPOLLOUT and EVENT_READ))
+                    ready.append((key, events & key.events))
             return ready
 
         def close(self):
