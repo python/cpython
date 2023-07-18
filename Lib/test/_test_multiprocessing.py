@@ -5550,16 +5550,20 @@ class TestResourceTracker(unittest.TestCase):
         q = mp_context.Queue()
         if delete_queue:
             del q
+            expected_exit_code = 0
+        else:
+            expected_exit_code = 1
 
         self.assertIsNone(_resource_tracker._exitcode)
         _resource_tracker._stop()
 
-        if delete_queue:
-            self.assertEqual(_resource_tracker._exitcode, 0)
-        else:
-            self.assertEqual(_resource_tracker._exitcode, 1)
+        self.assertEqual(_resource_tracker._exitcode, expected_exit_code)
 
     def test_resource_tracker_exit_code(self):
+        """
+        Test the exit code of the resource tracker based on if there were left leaked resources when we stop the process.
+        If not leaked resources were found, exit code should be 0, otherwise 1
+        """
         for context in ["spawn", "forkserver"]:
             for delete_queue in [True, False]:
                 with self.subTest(context=context, delete_queue=delete_queue):
