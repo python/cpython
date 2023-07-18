@@ -535,7 +535,7 @@ always available.
    :const:`utf8_mode`              :option:`-X utf8 <-X>`
    :const:`safe_path`              :option:`-P`
    :const:`int_max_str_digits`     :option:`-X int_max_str_digits <-X>` (:ref:`integer string conversion length limitation <int_max_str_digits>`)
-   :const:`warn_default_encoding`  :option:`-X warn_default_encoding`
+   :const:`warn_default_encoding`  :option:`-X warn_default_encoding <-X>`
    ==============================  ==============================================================================================================
 
    .. versionchanged:: 3.2
