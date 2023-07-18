@@ -331,8 +331,7 @@ Let's dive in!
        /*[clinic input]
        _asyncio.Future.add_done_callback
 
-           cls: defining_class
-           fn: object
+           fn: 'O'
 
        Add a callback to be run when the future becomes done.
 
@@ -360,11 +359,10 @@ Let's dive in!
        /*[clinic input]
        _asyncio.Future.add_done_callback
 
-           cls: defining_class
-           fn: object
+           fn: 'O'
 
            *
-           context: object = NULL
+           context: 'O' = NULL
 
        Add a callback to be run when the future becomes done.
 
@@ -395,11 +393,10 @@ Let's dive in!
        /*[clinic input]
        _asyncio.Future.add_done_callback
 
-           cls: defining_class
-           fn: object
+           fn: 'O'
            /
            *
-           context: object = NULL
+           context: 'O' = NULL
 
        Add a callback to be run when the future becomes done.
 
@@ -428,12 +425,11 @@ Let's dive in!
        /*[clinic input]
        _asyncio.Future.add_done_callback
 
-           cls: defining_class
-           fn: object
+           fn: 'O'
                the callback function
            /
            *
-           context: object = NULL
+           context: 'O' = NULL
 
        Add a callback to be run when the future becomes done.
 
@@ -450,12 +446,11 @@ Let's dive in!
        /*[clinic input]
        _asyncio.Future.add_done_callback
 
-           cls: defining_class
-           fn: object
+           fn: 'O'
                the callback function
            /
            *
-           context: object = NULL
+           context: 'O' = NULL
 
        Add a callback to be run when the future becomes done.
 
@@ -465,8 +460,7 @@ Let's dive in!
        [clinic start generated code]*/
 
        static PyObject *
-       _asyncio_Future_add_done_callback_impl(FutureObj *self, PyTypeObject *cls,
-                                       PyObject *fn, PyObject *context)
+       _asyncio_Future_add_done_callback_impl(PyObject *fn, PyObject *context)
        /*[clinic end generated code: output=922e9a4cbd601167 input=599261c521458cc2]*/
 
     Obviously, if Argument Clinic didn't produce any output, it's because
@@ -550,11 +544,10 @@ Let's dive in!
         /*[clinic input]
         _asyncio.Future.add_done_callback
 
-            cls: defining_class
-            fn: object
+            fn: 'O'
             /
             *
-            context: object = NULL
+            context: 'O' = NULL
 
         Add a callback to be run when the future becomes done.
 
@@ -564,22 +557,10 @@ Let's dive in!
         [clinic start generated code]*/
 
         static PyObject *
-        _asyncio_Future_add_done_callback_impl(FutureObj *self, PyTypeObject *cls,
-                                            PyObject *fn, PyObject *context)
+        _asyncio_Future_add_done_callback_impl(PyObject *fn, PyObject *context)
         /*[clinic end generated code: output=922e9a4cbd601167 input=599261c521458cc2]*/
         {
-            asyncio_state *state = get_asyncio_state_by_cls(cls);
-            if (context == NULL) {
-                context = PyContext_CopyCurrent();
-                if (context == NULL) {
-                    return NULL;
-                }
-                PyObject *res = future_add_done_callback(state, self, fn, context);
-                Py_DECREF(context);
-                return res;
-            }
-            return future_add_done_callback(state, self, fn, context);
-        }
+        ...
 
 15. Remember the macro with the :c:type:`PyMethodDef` structure for this
     function?  Find the existing :c:type:`PyMethodDef` structure for this
@@ -654,15 +635,15 @@ Argument Clinic will use that function name for the base (generated) function,
 then add ``"_impl"`` to the end and use that for the name of the impl function.
 
 For example, if we wanted to rename the C function names generated for
-``pickle.Pickler.dump``, it'd look like this::
+``_asyncio.Future.add_done_callback``, it'd look like this::
 
     /*[clinic input]
-    pickle.Pickler.dump as pickler_dumper
+    _asyncio.Future.add_done_callback as future_add_done_callback
 
     ...
 
-The base function would now be named ``pickler_dumper()``,
-and the impl function would now be named ``pickler_dumper_impl()``.
+The base function would now be named ``future_add_done_callback()``,
+and the impl function would now be named ``future_add_done_callback_impl()``.
 
 
 Similarly, you may have a problem where you want to give a parameter
@@ -671,16 +652,15 @@ Clinic allows you to give a parameter different names in Python and in C,
 using the same ``"as"`` syntax::
 
     /*[clinic input]
-    pickle.Pickler.dump
+    _asyncio.Future.add_done_callback
 
-        obj: object
-        file as file_obj: object
-        protocol: object = NULL
+        fn: 'O'
+        /
         *
-        fix_imports: bool = True
+        context as ctx: 'O' = NULL
 
 Here, the name used in Python (in the signature and the ``keywords``
-array) would be ``file``, but the C variable would be named ``file_obj``.
+array) would be ``context``, but the C variable would be named ``ctx``.
 
 You can use this to rename the ``self`` parameter too!
 
@@ -937,17 +917,18 @@ on the right is the text you'd replace it with.
 ``'z*'``    ``Py_buffer(accept={buffer, str, NoneType})``
 =========   =================================================================================
 
-As an example, here's our sample ``pickle.Pickler.dump`` using the proper
+As an example, here's our sample ``_asyncio.Future.add_done_callback`` using the proper
 converter::
 
     /*[clinic input]
-    pickle.Pickler.dump
+    _asyncio.Future.add_done_callback
 
-        obj: object
-            The object to be pickled.
+        fn: object
         /
+        *
+        context: object = NULL
 
-    Write a pickled representation of obj to the open file.
+    Add a callback to be run when the future becomes done.
     [clinic start generated code]*/
 
 One advantage of real converters is that they're more flexible than legacy
@@ -1258,14 +1239,15 @@ you can directly use Argument Clinic's existing ``self`` converter,
 passing in the type you want to use as the ``type`` parameter::
 
     /*[clinic input]
+    _asyncio.Future.add_done_callback
 
-    _pickle.Pickler.dump
+        self: self(type="FutureObj *")
+        fn: object
+        /
+        *
+        context: object = NULL
 
-      self: self(type="PicklerObject *")
-      obj: object
-      /
-
-    Write a pickled representation of the given object to the open file.
+    Add a callback to be run when the future becomes done.
     [clinic start generated code]*/
 
 On the other hand, if you have a lot of functions that will use the same
@@ -1273,19 +1255,20 @@ type for ``self``, it's best to create your own converter, subclassing
 ``self_converter`` but overwriting the ``type`` member::
 
     /*[python input]
-    class PicklerObject_converter(self_converter):
-        type = "PicklerObject *"
+    class FutureObj_converter(self_converter):
+        type = "FutureObj *"
     [python start generated code]*/
 
     /*[clinic input]
+    _asyncio.Future.add_done_callback
 
-    _pickle.Pickler.dump
+        self: FutureObj
+        fn: object
+        /
+        *
+        context: object = NULL
 
-      self: PicklerObject
-      obj: object
-      /
-
-    Write a pickled representation of the given object to the open file.
+    Add a callback to be run when the future becomes done.
     [clinic start generated code]*/
 
 
@@ -1298,33 +1281,34 @@ module level state.  Use :c:func:`PyType_FromModuleAndSpec` to associate a new
 heap type with a module.  You can now use :c:func:`PyType_GetModuleState` on
 the defining class to fetch the module state, for example from a module method.
 
-Example from ``Modules/zlibmodule.c``.  First, ``defining_class`` is added to
+Example from ``Modules/_asynciomodule.c``.  First, ``defining_class`` is added to
 the clinic input::
 
     /*[clinic input]
-    zlib.Compress.compress
+    _asyncio.Future.add_done_callback
 
-      cls: defining_class
-      data: Py_buffer
-        Binary data to be compressed.
-      /
+        cls: defining_class
+        fn: object
+        /
+        *
+        context: object = NULL
+
+    Add a callback to be run when the future becomes done.
 
 
 After running the Argument Clinic tool, the following function signature is
 generated::
 
     /*[clinic start generated code]*/
-    static PyObject *
-    zlib_Compress_compress_impl(compobject *self, PyTypeObject *cls,
-                                Py_buffer *data)
+    _asyncio_Future_add_done_callback_impl(FutureObj *self, PyTypeObject *cls,
+                                       PyObject *fn, PyObject *context)
     /*[clinic end generated code: output=6731b3f0ff357ca6 input=04d00f65ab01d260]*/
 
 
 The following code can now use ``PyType_GetModuleState(cls)`` to fetch the
 module state::
 
-    zlibstate *state = PyType_GetModuleState(cls);
-
+    asyncio_state *state = get_asyncio_state_by_cls(cls);
 
 Each method may only have one argument using this converter, and it must appear
 after ``self``, or, if ``self`` is not used, as the first argument.  The argument
