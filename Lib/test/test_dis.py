@@ -12,6 +12,7 @@ from test.support import (captured_stdout, requires_debug_ranges,
 from test.support.bytecode_helper import BytecodeTestCase
 
 import opcode
+import _opcode_metadata
 
 
 def get_tb():
@@ -1939,12 +1940,12 @@ class InstructionTests(InstructionTestCase):
             self.assertEqual(code, baseopcode)
 
         # Specialized instructions
-        for name in opcode._specialized_instructions:
+        for name in _opcode_metadata._specialized_instructions:
             instruction = Instruction(opname=name, opcode=dis._all_opmap[name], arg=None, argval=None, argrepr='',
                                       offset=0, start_offset=0, starts_line=1, is_jump_target=False, positions=None)
             baseopname = instruction.baseopname
             baseopcode = instruction.baseopcode
-            self.assertIn(name, opcode._specializations[baseopname])
+            self.assertIn(name, _opcode_metadata._specializations[baseopname])
             self.assertEqual(opcode.opmap[baseopname], baseopcode)
 
     def test_jump_target(self):
