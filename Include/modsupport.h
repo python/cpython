@@ -23,12 +23,18 @@ PyAPI_FUNC(PyObject *) Py_BuildValue(const char *, ...);
 PyAPI_FUNC(PyObject *) Py_VaBuildValue(const char *, va_list);
 
 // Add an attribute with name 'name' and value 'obj' to the module 'mod.
-// On success, return 0 on success.
+// On success, return 0.
 // On error, raise an exception and return -1.
 PyAPI_FUNC(int) PyModule_AddObjectRef(PyObject *mod, const char *name, PyObject *value);
 
-// Similar to PyModule_AddObjectRef() but steal a reference to 'obj'
-// (Py_DECREF(obj)) on success (if it returns 0).
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+// Similar to PyModule_AddObjectRef() but steal a reference to 'value'.
+PyAPI_FUNC(int) PyModule_Add(PyObject *mod, const char *name, PyObject *value);
+#endif   /* Py_LIMITED_API */
+
+// Similar to PyModule_AddObjectRef() and PyModule_Add() but steal
+// a reference to 'value' on success and only on success.
+// Errorprone. Should not be used in new code.
 PyAPI_FUNC(int) PyModule_AddObject(PyObject *mod, const char *, PyObject *value);
 
 PyAPI_FUNC(int) PyModule_AddIntConstant(PyObject *, const char *, long);
