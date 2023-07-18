@@ -69,8 +69,15 @@ class ResourceTracker(object):
             os.close(self._fd)
             self._fd = None
 
-            _, self._exitcode = os.waitpid(self._pid, 0)
+            _, status = os.waitpid(self._pid, 0)
+
             self._pid = None
+
+            try:
+                self._exitcode = os.waitstatus_to_exitcode(status)
+            except ValueError:
+                # os.waitstatus_to_exitcode may raise an exception for invalid values
+                self._exitcode = None
 
     def getfd(self):
         self.ensure_running()

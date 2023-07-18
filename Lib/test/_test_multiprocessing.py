@@ -5551,12 +5551,14 @@ class TestResourceTracker(unittest.TestCase):
         q = mp_context.Queue()
         if delete_queue:
             del q
-            exit_code_assert = self.assertEqual
 
         self.assertIsNone(_resource_tracker._exitcode)
         _resource_tracker._stop()
 
-        exit_code_assert(_resource_tracker._exitcode, 0)
+        if delete_queue:
+            self.assertEqual(_resource_tracker._exitcode, 0)
+        else:
+            self.assertEqual(_resource_tracker._exitcode, 1)
 
     def test_resource_tracker_exit_code(self):
         for context in ["spawn", "forkserver"]:
