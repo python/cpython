@@ -99,7 +99,7 @@ def effect_size(effect: StackEffect) -> tuple[int, str]:
         return 0, effect.size
     elif effect.cond:
         if effect.cond in ("0", "1"):
-            return 0, effect.cond
+            return int(effect.cond), ""
         return 0, f"{maybe_parenthesize(effect.cond)} ? 1 : 0"
     else:
         return 1, ""
