@@ -1,9 +1,6 @@
 /* C Extension module to test all aspects of PEP-3118.
    Written by Stefan Krah. */
 
-
-#define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
 
 
@@ -1524,8 +1521,7 @@ ndarray_getbuf(NDArrayObject *self, Py_buffer *view, int flags)
             return -1;
     }
 
-    view->obj = (PyObject *)self;
-    Py_INCREF(view->obj);
+    view->obj = Py_NewRef(self);
     self->head->exports++;
 
     return 0;
@@ -1788,8 +1784,7 @@ ndarray_subscript(NDArrayObject *self, PyObject *key)
             return unpack_single(base->buf, base->format, base->itemsize);
         }
         else if (key == Py_Ellipsis) {
-            Py_INCREF(self);
-            return (PyObject *)self;
+            return Py_NewRef(self);
         }
         else {
             PyErr_SetString(PyExc_TypeError, "invalid indexing of scalar");
@@ -2021,8 +2016,7 @@ ndarray_get_obj(NDArrayObject *self, void *closure)
     if (base->obj == NULL) {
         Py_RETURN_NONE;
     }
-    Py_INCREF(base->obj);
-    return base->obj;
+    return Py_NewRef(base->obj);
 }
 
 static PyObject *
@@ -2559,8 +2553,7 @@ result:
     PyBuffer_Release(&v2);
 
     ret = equal ? Py_True : Py_False;
-    Py_INCREF(ret);
-    return ret;
+    return Py_NewRef(ret);
 }
 
 static PyObject *
@@ -2597,8 +2590,7 @@ is_contiguous(PyObject *self, PyObject *args)
         PyBuffer_Release(&view);
     }
 
-    Py_INCREF(ret);
-    return ret;
+    return Py_NewRef(ret);
 }
 
 static Py_hash_t
@@ -2633,7 +2625,7 @@ static PyMethodDef ndarray_methods [] =
 {
     { "tolist", ndarray_tolist, METH_NOARGS, NULL },
     { "tobytes", ndarray_tobytes, METH_NOARGS, NULL },
-    { "push", (PyCFunction)(void(*)(void))ndarray_push, METH_VARARGS|METH_KEYWORDS, NULL },
+    { "push", _PyCFunction_CAST(ndarray_push), METH_VARARGS|METH_KEYWORDS, NULL },
     { "pop", ndarray_pop, METH_NOARGS, NULL },
     { "add_suboffsets", ndarray_add_suboffsets, METH_NOARGS, NULL },
     { "memoryview_from_buffer", ndarray_memoryview_from_buffer, METH_NOARGS, NULL },
@@ -2748,8 +2740,7 @@ staticarray_getbuf(StaticArrayObject *self, Py_buffer *view, int flags)
         view->obj = NULL; /* Don't use this in new code. */
     }
     else {
-        view->obj = (PyObject *)self;
-        Py_INCREF(view->obj);
+        view->obj = Py_NewRef(self);
     }
 
     return 0;

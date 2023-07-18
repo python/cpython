@@ -1,5 +1,4 @@
 import os
-import re
 import sys
 import warnings
 from inspect import isabstract
@@ -74,10 +73,10 @@ def dash_R(ns, test_name, test_func):
     fd_deltas = [0] * repcount
     getallocatedblocks = sys.getallocatedblocks
     gettotalrefcount = sys.gettotalrefcount
-    _getquickenedcount = sys._getquickenedcount
+    getunicodeinternedsize = sys.getunicodeinternedsize
     fd_count = os_helper.fd_count
     # initialize variables to make pyflakes quiet
-    rc_before = alloc_before = fd_before = 0
+    rc_before = alloc_before = fd_before = interned_before = 0
 
     if not ns.quiet:
         print("beginning", repcount, "repetitions", file=sys.stderr)
@@ -85,15 +84,21 @@ def dash_R(ns, test_name, test_func):
               flush=True)
 
     dash_R_cleanup(fs, ps, pic, zdc, abcs)
+    support.gc_collect()
 
     for i in rep_range:
         test_func()
-        dash_R_cleanup(fs, ps, pic, zdc, abcs)
 
-        # dash_R_cleanup() ends with collecting cyclic trash:
-        # read memory statistics immediately after.
-        alloc_after = getallocatedblocks() - _getquickenedcount()
-        rc_after = gettotalrefcount()
+        dash_R_cleanup(fs, ps, pic, zdc, abcs)
+        support.gc_collect()
+
+        # Read memory statistics immediately after the garbage collection.
+        # Also, readjust the reference counts and alloc blocks by ignoring
+        # any strings that might have been interned during test_func. These
+        # strings will be deallocated at runtime shutdown
+        interned_after = getunicodeinternedsize()
+        alloc_after = getallocatedblocks() - interned_after
+        rc_after = gettotalrefcount() - interned_after * 2
         fd_after = fd_count()
 
         if not ns.quiet:
@@ -106,13 +111,14 @@ def dash_R(ns, test_name, test_func):
         alloc_before = alloc_after
         rc_before = rc_after
         fd_before = fd_after
+        interned_before = interned_after
 
     if not ns.quiet:
         print(file=sys.stderr)
 
     # These checkers return False on success, True on failure
     def check_rc_deltas(deltas):
-        # Checker for reference counters and memomry blocks.
+        # Checker for reference counters and memory blocks.
         #
         # bpo-30776: Try to ignore false positives:
         #
@@ -141,7 +147,7 @@ def dash_R(ns, test_name, test_func):
             msg = '%s leaked %s %s, sum=%s' % (
                 test_name, deltas, item_name, sum(deltas))
             print(msg, file=sys.stderr, flush=True)
-            with open(fname, "a") as refrep:
+            with open(fname, "a", encoding="utf-8") as refrep:
                 print(msg, file=refrep)
                 refrep.flush()
             failed = True
@@ -166,10 +172,8 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
         zipimport._zip_directory_cache.clear()
         zipimport._zip_directory_cache.update(zdc)
 
-    # clear type cache
-    sys._clear_type_cache()
-
     # Clear ABC registries, restoring previously saved ABC registries.
+    # ignore deprecation warning for collections.abc.ByteString
     abs_classes = [getattr(collections.abc, a) for a in collections.abc.__all__]
     abs_classes = filter(isabstract, abs_classes)
     for abc in abs_classes:
@@ -179,7 +183,11 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
                     obj.register(ref())
             obj._abc_caches_clear()
 
+    # Clear caches
     clear_caches()
+
+    # Clear type cache at the end: previous function calls can modify types
+    sys._clear_type_cache()
 
 
 def warm_caches():

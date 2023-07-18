@@ -1,2 +1,0 @@
-Reverts removal of the old buffer protocol because they are part of stable
-ABI.

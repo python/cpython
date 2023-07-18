@@ -188,7 +188,7 @@ which compiles to this:
 
   3           6 LOAD_GLOBAL              0 (print)
               8 LOAD_CONST               1 (1)
-             10 CALL_FUNCTION            1
+             10 CALL_NO_KW               1
              12 POP_TOP
 
   4          14 BREAK_LOOP
@@ -197,7 +197,7 @@ which compiles to this:
 
   6          20 LOAD_GLOBAL              0 (print)
              22 LOAD_CONST               2 (2)
-             24 CALL_FUNCTION            1
+             24 CALL_NO_KW               1
              26 POP_TOP
         >>   28 LOAD_CONST               0 (None)
              30 RETURN_VALUE

@@ -168,7 +168,7 @@ class Parser:
         self._verbose = verbose
         self._level = 0
         self._cache: Dict[Tuple[Mark, str, Tuple[Any, ...]], Tuple[Any, Mark]] = {}
-        # Integer tracking wether we are in a left recursive rule or not. Can be useful
+        # Integer tracking whether we are in a left recursive rule or not. Can be useful
         # for error reporting.
         self.in_recursive_rule = 0
         # Pass through common tokenizer methods.

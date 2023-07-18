@@ -1,2 +1,0 @@
-Remove unused ``_signature_get_bound_param`` function from :mod:`inspect` -
-by Anthony Sottile.

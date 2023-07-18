@@ -29,7 +29,6 @@ from test.support import verbose
 from test.support.os_helper import TESTFN
 from test.support.os_helper import unlink as safe_unlink
 from test.support import os_helper
-from test.support import warnings_helper
 from test import support
 from unittest import mock
 
@@ -230,20 +229,11 @@ class FileInputTests(BaseTests, unittest.TestCase):
         line = list(fi)
         self.assertEqual(fi.fileno(), -1)
 
-    def test_opening_mode(self):
-        try:
-            # invalid mode, should raise ValueError
-            fi = FileInput(mode="w", encoding="utf-8")
-            self.fail("FileInput should reject invalid mode argument")
-        except ValueError:
-            pass
-        # try opening in universal newline mode
-        t1 = self.writeTmp(b"A\nB\r\nC\rD", mode="wb")
-        with warnings_helper.check_warnings(('', DeprecationWarning)):
-            fi = FileInput(files=t1, mode="U", encoding="utf-8")
-        with warnings_helper.check_warnings(('', DeprecationWarning)):
-            lines = list(fi)
-        self.assertEqual(lines, ["A\n", "B\n", "C\n", "D"])
+    def test_invalid_opening_mode(self):
+        for mode in ('w', 'rU', 'U'):
+            with self.subTest(mode=mode):
+                with self.assertRaises(ValueError):
+                    FileInput(mode=mode)
 
     def test_stdin_binary_mode(self):
         with mock.patch('sys.stdin') as m_stdin:
@@ -336,6 +326,16 @@ class FileInputTests(BaseTests, unittest.TestCase):
         with open(temp_file, 'rb') as f:
             self.assertEqual(f.read(), b'New line.')
 
+    def test_inplace_encoding_errors(self):
+        temp_file = self.writeTmp(b'Initial text \x88', mode='wb')
+        with FileInput(temp_file, inplace=True,
+                       encoding="ascii", errors="replace") as fobj:
+            line = fobj.readline()
+            self.assertEqual(line, 'Initial text \ufffd')
+            print("New line \x88")
+        with open(temp_file, 'rb') as f:
+            self.assertEqual(f.read().rstrip(b'\r\n'), b'New line ?')
+
     def test_file_hook_backward_compatibility(self):
         def old_hook(filename, mode):
             return io.StringIO("I used to receive only filename and mode")
@@ -365,44 +365,6 @@ class FileInputTests(BaseTests, unittest.TestCase):
     def test_empty_files_list_specified_to_constructor(self):
         with FileInput(files=[], encoding="utf-8") as fi:
             self.assertEqual(fi._files, ('-',))
-
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
-    def test__getitem__(self):
-        """Tests invoking FileInput.__getitem__() with the current
-           line number"""
-        t = self.writeTmp("line1\nline2\n")
-        with FileInput(files=[t], encoding="utf-8") as fi:
-            retval1 = fi[0]
-            self.assertEqual(retval1, "line1\n")
-            retval2 = fi[1]
-            self.assertEqual(retval2, "line2\n")
-
-    def test__getitem___deprecation(self):
-        t = self.writeTmp("line1\nline2\n")
-        with self.assertWarnsRegex(DeprecationWarning,
-                                   r'Use iterator protocol instead'):
-            with FileInput(files=[t]) as fi:
-                self.assertEqual(fi[0], "line1\n")
-
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
-    def test__getitem__invalid_key(self):
-        """Tests invoking FileInput.__getitem__() with an index unequal to
-           the line number"""
-        t = self.writeTmp("line1\nline2\n")
-        with FileInput(files=[t], encoding="utf-8") as fi:
-            with self.assertRaises(RuntimeError) as cm:
-                fi[1]
-        self.assertEqual(cm.exception.args, ("accessing lines out of order",))
-
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
-    def test__getitem__eof(self):
-        """Tests invoking FileInput.__getitem__() with the line number but at
-           end-of-input"""
-        t = self.writeTmp('')
-        with FileInput(files=[t], encoding="utf-8") as fi:
-            with self.assertRaises(IndexError) as cm:
-                fi[0]
-        self.assertEqual(cm.exception.args, ("end of input reached",))
 
     def test_nextfile_oserror_deleting_backup(self):
         """Tests invoking FileInput.nextfile() when the attempt to delete
@@ -893,29 +855,29 @@ class Test_hook_compressed(unittest.TestCase):
         self.fake_open = InvocationRecorder()
 
     def test_empty_string(self):
-        self.do_test_use_builtin_open("", 1)
+        self.do_test_use_builtin_open_text("", "r")
 
     def test_no_ext(self):
-        self.do_test_use_builtin_open("abcd", 2)
+        self.do_test_use_builtin_open_text("abcd", "r")
 
     @unittest.skipUnless(gzip, "Requires gzip and zlib")
     def test_gz_ext_fake(self):
         original_open = gzip.open
         gzip.open = self.fake_open
         try:
-            result = fileinput.hook_compressed("test.gz", "3")
+            result = fileinput.hook_compressed("test.gz", "r")
         finally:
             gzip.open = original_open
 
         self.assertEqual(self.fake_open.invocation_count, 1)
-        self.assertEqual(self.fake_open.last_invocation, (("test.gz", "3"), {}))
+        self.assertEqual(self.fake_open.last_invocation, (("test.gz", "r"), {}))
 
     @unittest.skipUnless(gzip, "Requires gzip and zlib")
     def test_gz_with_encoding_fake(self):
         original_open = gzip.open
         gzip.open = lambda filename, mode: io.BytesIO(b'Ex-binary string')
         try:
-            result = fileinput.hook_compressed("test.gz", "3", encoding="utf-8")
+            result = fileinput.hook_compressed("test.gz", "r", encoding="utf-8")
         finally:
             gzip.open = original_open
         self.assertEqual(list(result), ['Ex-binary string'])
@@ -925,23 +887,40 @@ class Test_hook_compressed(unittest.TestCase):
         original_open = bz2.BZ2File
         bz2.BZ2File = self.fake_open
         try:
-            result = fileinput.hook_compressed("test.bz2", "4")
+            result = fileinput.hook_compressed("test.bz2", "r")
         finally:
             bz2.BZ2File = original_open
 
         self.assertEqual(self.fake_open.invocation_count, 1)
-        self.assertEqual(self.fake_open.last_invocation, (("test.bz2", "4"), {}))
+        self.assertEqual(self.fake_open.last_invocation, (("test.bz2", "r"), {}))
 
     def test_blah_ext(self):
-        self.do_test_use_builtin_open("abcd.blah", "5")
+        self.do_test_use_builtin_open_binary("abcd.blah", "rb")
 
     def test_gz_ext_builtin(self):
-        self.do_test_use_builtin_open("abcd.Gz", "6")
+        self.do_test_use_builtin_open_binary("abcd.Gz", "rb")
 
     def test_bz2_ext_builtin(self):
-        self.do_test_use_builtin_open("abcd.Bz2", "7")
+        self.do_test_use_builtin_open_binary("abcd.Bz2", "rb")
 
-    def do_test_use_builtin_open(self, filename, mode):
+    def test_binary_mode_encoding(self):
+        self.do_test_use_builtin_open_binary("abcd", "rb")
+
+    def test_text_mode_encoding(self):
+        self.do_test_use_builtin_open_text("abcd", "r")
+
+    def do_test_use_builtin_open_binary(self, filename, mode):
+        original_open = self.replace_builtin_open(self.fake_open)
+        try:
+            result = fileinput.hook_compressed(filename, mode)
+        finally:
+            self.replace_builtin_open(original_open)
+
+        self.assertEqual(self.fake_open.invocation_count, 1)
+        self.assertEqual(self.fake_open.last_invocation,
+                         ((filename, mode), {'encoding': None, 'errors': None}))
+
+    def do_test_use_builtin_open_text(self, filename, mode):
         original_open = self.replace_builtin_open(self.fake_open)
         try:
             result = fileinput.hook_compressed(filename, mode)
@@ -1015,10 +994,6 @@ class Test_hook_encoded(unittest.TestCase):
             self.assertEqual(lines, expected_lines)
 
         check('r', ['A\n', 'B\n', 'C\n', 'D\u20ac'])
-        with self.assertWarns(DeprecationWarning):
-            check('rU', ['A\n', 'B\n', 'C\n', 'D\u20ac'])
-        with self.assertWarns(DeprecationWarning):
-            check('U', ['A\n', 'B\n', 'C\n', 'D\u20ac'])
         with self.assertRaises(ValueError):
             check('rb', ['A\n', 'B\r\n', 'C\r', 'D\u20ac'])
 

@@ -12,12 +12,6 @@ from xml.sax.handler import feature_external_ges, feature_external_pes
 from xml.sax.handler import feature_string_interning
 from xml.sax.handler import property_xml_string, property_interning_dict
 
-# xml.parsers.expat does not raise ImportError in Jython
-import sys
-if sys.platform[:4] == "java":
-    raise SAXReaderNotAvailable("expat not available in Java", None)
-del sys
-
 try:
     from xml.parsers import expat
 except ImportError:

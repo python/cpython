@@ -12,8 +12,7 @@ Graphical User Interfaces with Tk
 
 Tk/Tcl has long been an integral part of Python.  It provides a robust and
 platform independent windowing toolkit, that is available to Python programmers
-using the :mod:`tkinter` package, and its extension, the :mod:`tkinter.tix` and
-the :mod:`tkinter.ttk` modules.
+using the :mod:`tkinter` package, and its extension, the :mod:`tkinter.ttk` module.
 
 The :mod:`tkinter` package is a thin object-oriented layer on top of Tcl/Tk. To
 use :mod:`tkinter`, you don't need to write Tcl code, but you will need to
@@ -26,8 +25,8 @@ bundled with Python. Although its standard documentation is weak, good
 material is available, which includes: references, tutorials, a book and
 others. :mod:`tkinter` is also famous for having an outdated look and feel,
 which has been vastly improved in Tk 8.5. Nevertheless, there are many other
-GUI libraries that you could be interested in. For more information about
-alternatives, see the :ref:`other-gui-packages` section.
+GUI libraries that you could be interested in. The Python wiki lists several
+alternative `GUI frameworks and tools <https://wiki.python.org/moin/GuiProgramming>`_.
 
 .. toctree::
 
@@ -39,9 +38,7 @@ alternatives, see the :ref:`other-gui-packages` section.
    tkinter.scrolledtext.rst
    tkinter.dnd.rst
    tkinter.ttk.rst
-   tkinter.tix.rst
    idle.rst
-   othergui.rst
 
 .. Other sections I have in mind are
    Tkinter internals

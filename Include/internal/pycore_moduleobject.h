@@ -11,7 +11,7 @@ extern "C" {
 typedef struct {
     PyObject_HEAD
     PyObject *md_dict;
-    struct PyModuleDef *md_def;
+    PyModuleDef *md_def;
     void *md_state;
     PyObject *md_weaklist;
     // for logging purposes after md_dict is cleared
@@ -33,8 +33,11 @@ static inline PyObject* _PyModule_GetDict(PyObject *mod) {
     PyObject *dict = ((PyModuleObject *)mod) -> md_dict;
     // _PyModule_GetDict(mod) must not be used after calling module_clear(mod)
     assert(dict != NULL);
-    return dict;
+    return dict;  // borrowed reference
 }
+
+PyObject* _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress);
+PyObject* _Py_module_getattro(PyModuleObject *m, PyObject *name);
 
 #ifdef __cplusplus
 }

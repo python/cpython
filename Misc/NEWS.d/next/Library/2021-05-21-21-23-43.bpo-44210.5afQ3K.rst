@@ -1,1 +1,0 @@
-Make importlib.metadata._meta.PackageMetadata public.

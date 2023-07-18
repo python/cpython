@@ -1,2 +1,0 @@
-Include the name of the type in unset __slots__ attribute errors. Patch by
-Pablo Galindo
