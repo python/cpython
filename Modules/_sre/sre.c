@@ -3195,12 +3195,7 @@ do {                                                                \
 
 #define ADD_ULONG_CONSTANT(module, name, value)           \
     do {                                                  \
-        PyObject *o = PyLong_FromUnsignedLong(value);     \
-        if (!o)                                           \
-            goto error;                                   \
-        int res = PyModule_AddObjectRef(module, name, o); \
-        Py_DECREF(o);                                     \
-        if (res < 0) {                                    \
+        if (PyModule_Add(module, name, PyLong_FromUnsignedLong(value)) < 0) { \
             goto error;                                   \
         }                                                 \
 } while (0)
