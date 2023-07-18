@@ -5561,8 +5561,9 @@ class TestResourceTracker(unittest.TestCase):
 
     def test_resource_tracker_exit_code(self):
         """
-        Test the exit code of the resource tracker based on if there were left leaked resources when we stop the process.
-        If not leaked resources were found, exit code should be 0, otherwise 1
+        Test the exit code of the resource tracker based on if there were left
+        leaked resources when we stop the process. If not leaked resources were
+        found, exit code should be 0, otherwise 1
         """
         for context in ["spawn", "forkserver"]:
             for delete_queue in [True, False]:

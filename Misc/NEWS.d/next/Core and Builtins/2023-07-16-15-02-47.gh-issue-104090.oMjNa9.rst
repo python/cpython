@@ -1,2 +1,2 @@
-Updated Resource Tracker to return exit code based on resource leaked found
-or not
+The multiprocessing resource tracker now exits with status code 1 if a resource
+leak was detected. It still exits with status code 0 otherwise.
