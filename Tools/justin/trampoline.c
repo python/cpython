@@ -1,8 +1,8 @@
 #include "Python.h"
 
 #include "pycore_frame.h"
+#include "pycore_uops.h"
 #include "pycore_jit.h"
-#include "pycore_pystate.h"
 
 // Stuff that will be patched at "JIT time":
 extern _PyInterpreterFrame *_justin_continue(_PyExecutorObject *executor,

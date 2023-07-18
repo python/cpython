@@ -295,7 +295,7 @@ PyAPI_FUNC(PyObject*) _PyUnicode_TransformDecimalAndSpaceToASCII(
 
 /* --- Methods & Slots ---------------------------------------------------- */
 
-extern PyObject* _PyUnicode_JoinArray(
+PyAPI_FUNC(PyObject *)_PyUnicode_JoinArray(
     PyObject *separator,
     PyObject *const *items,
     Py_ssize_t seqlen

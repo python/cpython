@@ -6,7 +6,6 @@
 #include "pycore_dict.h"
 #include "pycore_emscripten_signal.h"
 #include "pycore_intrinsics.h"
-#include "pycore_jit.h"
 #include "pycore_long.h"
 #include "pycore_object.h"
 #include "pycore_opcode.h"
@@ -15,6 +14,7 @@
 #include "pycore_range.h"
 #include "pycore_sliceobject.h"
 #include "pycore_uops.h"
+#include "pycore_jit.h"
 
 #include "Python/ceval_macros.h"
 
@@ -36,8 +36,8 @@ extern _PyInterpreterFrame *_justin_continue(_PyExecutorObject *executor,
                                              , PyObject *_tos3
                                              , PyObject *_tos4
                                              );
-extern _Py_CODEUNIT _justin_next_instr;  // minus one
-extern void _justin_oparg_plus_one;
+extern _Py_CODEUNIT _justin_pc_plus_one;
+extern void _justin_operand_plus_one;
 
 // XXX
 #define ip_offset ((_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive)
@@ -59,10 +59,12 @@ _justin_entry(_PyExecutorObject *executor, _PyInterpreterFrame *frame,
     int opcode = _JUSTIN_OPCODE;
     // Locals that the instruction implementations expect to exist:
     // The address of an extern can't be 0:
-    uint64_t operand = (uintptr_t)&_justin_oparg_plus_one - 1;
+    uint64_t operand = (uintptr_t)&_justin_operand_plus_one - 1;
     int oparg = (int)operand;
-    DEOPT_IF(pc != (intptr_t)&_justin_next_instr, opcode);
-    DEOPT_IF(self->trace[pc].opcode != opcode, opcode);
+    if (pc != (intptr_t)&_justin_pc_plus_one - 1) {
+        return _PyUopExecute(executor, frame, stack_pointer, pc);
+    }
+    assert(self->trace[pc].opcode == opcode);
     assert(self->trace[pc].operand == operand);
     pc++;
     switch (opcode) {

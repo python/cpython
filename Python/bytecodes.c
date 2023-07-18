@@ -12,7 +12,6 @@
 #include "pycore_code.h"
 #include "pycore_function.h"
 #include "pycore_intrinsics.h"
-#include "pycore_jit.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_instruments.h"
 #include "pycore_object.h"        // _PyObject_GC_TRACK()

@@ -6,6 +6,7 @@
 #include "pycore_opcode_utils.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_uops.h"
+#include "pycore_jit.h"
 #include "cpython/optimizer.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -305,6 +306,7 @@ PyUnstable_Optimizer_NewCounter(void)
 
 static void
 uop_dealloc(_PyUOpExecutorObject *self) {
+    _PyJIT_Free(self->base.execute);
     PyObject_Free(self);
 }
 
@@ -669,11 +671,15 @@ uop_optimize(
         return trace_length;
     }
     OBJECT_STAT_INC(optimization_traces_created);
+    _PyJITFunction jitted = _PyJIT_CompileTrace(trace, trace_length);
+    if (jitted == NULL) {
+        return 0;
+    }
     _PyUOpExecutorObject *executor = PyObject_New(_PyUOpExecutorObject, &UOpExecutor_Type);
     if (executor == NULL) {
         return -1;
     }
-    executor->base.execute = _PyUopExecute;
+    executor->base.execute = jitted;
     memcpy(executor->trace, trace, trace_length * sizeof(_PyUOpInstruction));
         if (trace_length < _Py_UOP_MAX_TRACE_LENGTH) {
             executor->trace[trace_length].opcode = 0;  // Sentinel

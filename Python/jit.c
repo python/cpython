@@ -1,9 +1,10 @@
 #include "Python.h"
 #include "pycore_abstract.h"
 #include "pycore_ceval.h"
-#include "pycore_jit.h"
 #include "pycore_opcode.h"
 #include "pycore_opcode_metadata.h"
+#include "pycore_uops.h"
+#include "pycore_jit.h"
 
 #include "ceval_macros.h"
 #include "jit_stencils.h"
@@ -258,7 +259,7 @@ copy_and_patch(unsigned char *memory, const Stencil *stencil, uintptr_t patches[
 // The world's smallest compiler?
 // Make sure to call _PyJIT_Free on the memory when you're done with it!
 _PyJITFunction
-_PyJIT_CompileTrace(int size, _Py_CODEUNIT **trace)
+_PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
 {
     if (!stencils_loaded) {
         stencils_loaded = 1;
@@ -279,8 +280,8 @@ _PyJIT_CompileTrace(int size, _Py_CODEUNIT **trace)
     // First, loop over everything once to find the total compiled size:
     size_t nbytes = trampoline_stencil.nbytes;
     for (int i = 0; i < size; i++) {
-        _Py_CODEUNIT *instruction = trace[i];
-        const Stencil *stencil = &stencils[instruction->op.code];
+        _PyUOpInstruction *instruction = &trace[i];
+        const Stencil *stencil = &stencils[instruction->opcode];
         if (stencil->nbytes == 0) {
             return NULL;
         }
@@ -300,14 +301,14 @@ _PyJIT_CompileTrace(int size, _Py_CODEUNIT **trace)
     head += stencil->nbytes;
     // Then, all of the stencils:
     for (int i = 0; i < size; i++) {
-        _Py_CODEUNIT *instruction = trace[i];
-        const Stencil *stencil = &stencils[instruction->op.code];
+        _PyUOpInstruction *instruction = &trace[i];
+        const Stencil *stencil = &stencils[instruction->opcode];
         patches[HOLE_base] = (uintptr_t)head;
         patches[HOLE_continue] = (i != size - 1)
                                ? (uintptr_t)head + stencil->nbytes
                                : (uintptr_t)memory + trampoline_stencil.nbytes;
-        patches[HOLE_next_instr] = (uintptr_t)instruction;
-        patches[HOLE_oparg_plus_one] = instruction->op.arg + 1;
+        patches[HOLE_operand_plus_one] = instruction->operand + 1;
+        patches[HOLE_pc_plus_one] = i + 1;
         copy_and_patch(head, stencil, patches);
         head += stencil->nbytes;
     };

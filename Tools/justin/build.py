@@ -948,9 +948,9 @@ class Compiler:
         values = {
             "HOLE_base",
             "HOLE_continue",
-            "HOLE_next_instr",
             "HOLE_next_trace",
-            "HOLE_oparg_plus_one",
+            "HOLE_operand_plus_one",
+            "HOLE_pc_plus_one",
         }
         opnames = []
         for opname, stencil in sorted(self._stencils_built.items()):
