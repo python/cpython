@@ -108,6 +108,7 @@ class ResourceTracker(object):
                     pass
                 self._fd = None
                 self._pid = None
+                self._exitcode = None
 
                 warnings.warn('resource_tracker: process died unexpectedly, '
                               'relaunching.  Some resources might leak.')
