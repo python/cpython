@@ -5543,7 +5543,6 @@ class TestResourceTracker(unittest.TestCase):
 
         # Reset exit code value
         _resource_tracker._exitcode = None
-        exit_code_assert = self.assertNotEqual
 
         mp_context = multiprocessing.get_context(context)
 
