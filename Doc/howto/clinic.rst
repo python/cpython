@@ -585,7 +585,7 @@ For example, if we wanted to rename the C function names generated for
     ...
 
 The base function would now be named :c:func:`!pickler_dumper`,
-and the impl function would now be named c:func:`!pickler_dumper_impl`.
+and the impl function would now be named :c:func:`!pickler_dumper_impl`.
 
 
 Similarly, you may have a problem where you want to give a parameter
