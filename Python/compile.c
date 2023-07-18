@@ -2267,6 +2267,7 @@ compiler_function_body(struct compiler *c, stmt_ty s, int is_async, Py_ssize_t f
         }
     }
     if (compiler_add_const(c->c_const_cache, c->u, docstring ? docstring : Py_None) < 0) {
+        Py_XDECREF(docstring);
         compiler_exit_scope(c);
         return ERROR;
     }
@@ -8060,7 +8061,9 @@ _PyCompile_CleanDoc(PyObject *doc)
     }
 
     Py_DECREF(doc);
-    return PyUnicode_FromStringAndSize(buff, w - buff);
+    PyObject *res = PyUnicode_FromStringAndSize(buff, w - buff);
+    PyMem_Free(buff);
+    return res;
 }
 
 
