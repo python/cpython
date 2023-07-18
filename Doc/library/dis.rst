@@ -1803,15 +1803,12 @@ instructions:
    Sequence of bytecodes that access an attribute by name.
 
 
-.. data:: hasjrel
+.. data:: hasjump
 
-   Sequence of bytecodes that have a relative jump target.
+   Sequence of bytecodes that have a jump target. All jumps
+   are relative.
 
-
-.. data:: hasjabs
-
-   Sequence of bytecodes that have an absolute jump target.
-
+   .. versionadded:: 3.13
 
 .. data:: haslocal
 
@@ -1827,3 +1824,20 @@ instructions:
    Sequence of bytecodes that set an exception handler.
 
    .. versionadded:: 3.12
+
+
+.. data:: hasjrel
+
+   Sequence of bytecodes that have a relative jump target.
+
+   .. deprecated:: 3.13
+      All jumps are now relative. Use :data:`hasjump`.
+
+
+.. data:: hasjabs
+
+   Sequence of bytecodes that have an absolute jump target.
+
+   .. deprecated:: 3.13
+      All jumps are now relative. This list is empty.
+
