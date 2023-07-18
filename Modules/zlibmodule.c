@@ -2034,7 +2034,7 @@ zlib_exec(PyObject *mod)
         return -1;
     }
     if (PyModule_AddObjectRef(mod, "_ZlibDecompressor",
-                           state->ZlibDecompressorType) < 0) {
+                              (PyObject *)state->ZlibDecompressorType) < 0) {
         return -1;
     }
 
@@ -2076,10 +2076,12 @@ zlib_exec(PyObject *mod)
 #ifdef Z_TREES // 1.2.3.4, only for inflate
     ZLIB_ADD_INT_MACRO(Z_TREES);
 #endif
-    if (PyModule_Add(mod, "ZLIB_VERSION", PyUnicode_FromString(ZLIB_VERSION)) < 0) {
+    if (PyModule_Add(mod, "ZLIB_VERSION",
+                     PyUnicode_FromString(ZLIB_VERSION)) < 0) {
         return -1;
     }
-    if (PyModule_Add(mod, "ZLIB_RUNTIME_VERSION", PyUnicode_FromString(zlibVersion())) < 0) {
+    if (PyModule_Add(mod, "ZLIB_RUNTIME_VERSION",
+                     PyUnicode_FromString(zlibVersion())) < 0) {
         return -1;
     }
     if (PyModule_AddStringConstant(mod, "__version__", "1.0") < 0) {

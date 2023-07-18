@@ -235,6 +235,8 @@ PyDoc_STRVAR(module_doc,
 static int
 xx_modexec(PyObject *m)
 {
+    PyObject *o;
+
     /* Due to cross platform compiler issues the slots must be filled
      * here. It's required for portability to Windows without requiring
      * C++. */
@@ -245,24 +247,43 @@ xx_modexec(PyObject *m)
     /* Add some symbolic constants to the module */
     if (ErrorObject == NULL) {
         ErrorObject = PyErr_NewException("xxlimited_35.error", NULL, NULL);
+        if (ErrorObject == NULL) {
+            return -1;
+        }
     }
-    if (PyModule_AddObjectRef(m, "error", ErrorObject) < 0) {
+    Py_INCREF(ErrorObject);
+    if (PyModule_AddObject(m, "error", ErrorObject) < 0) {
+        Py_DECREF(ErrorObject);
         return -1;
     }
 
     /* Add Xxo */
     Xxo_Type = PyType_FromSpec(&Xxo_Type_spec);
-    if (PyModule_Add(m, "Xxo", Xxo_Type) < 0) {
+    if (Xxo_Type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObject(m, "Xxo", Xxo_Type) < 0) {
+        Py_DECREF(Xxo_Type);
         return -1;
     }
 
     /* Add Str */
-    if (PyModule_Add(m, "Str", PyType_FromSpec(&Str_Type_spec)) < 0) {
+    o = PyType_FromSpec(&Str_Type_spec);
+    if (o == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObject(m, "Str", o) < 0) {
+        Py_DECREF(o);
         return -1;
     }
 
     /* Add Null */
-    if (PyModule_Add(m, "Null", PyType_FromSpec(&Null_Type_spec)) < 0) {
+    o = PyType_FromSpec(&Null_Type_spec);
+    if (o == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObject(m, "Null", o) < 0) {
+        Py_DECREF(o);
         return -1;
     }
 

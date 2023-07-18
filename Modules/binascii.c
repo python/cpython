@@ -1253,8 +1253,8 @@ static struct PyMethodDef binascii_module_methods[] = {
 PyDoc_STRVAR(doc_binascii, "Conversion between binary data and ASCII");
 
 static int
-binascii_exec(PyObject *module) {
-    int result;
+binascii_exec(PyObject *module)
+{
     binascii_state *state = PyModule_GetState(module);
     if (state == NULL) {
         return -1;

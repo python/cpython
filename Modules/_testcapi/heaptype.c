@@ -1174,15 +1174,9 @@ _PyTestCapi_Init_Heaptype(PyObject *m) {
     ADD("HeapCTypeWithWeakref2", HeapCTypeWithWeakref2);
 
     PyObject *HeapCTypeWithBuffer = PyType_FromSpec(&HeapCTypeWithBuffer_spec);
-    if (HeapCTypeWithBuffer == NULL) {
-        return -1;
-    }
     ADD("HeapCTypeWithBuffer", HeapCTypeWithBuffer);
 
     PyObject *HeapCTypeSetattr = PyType_FromSpec(&HeapCTypeSetattr_spec);
-    if (HeapCTypeSetattr == NULL) {
-        return -1;
-    }
     ADD("HeapCTypeSetattr", HeapCTypeSetattr);
 
     PyObject *subclass_with_finalizer_bases = PyTuple_Pack(1, HeapCTypeSubclass);

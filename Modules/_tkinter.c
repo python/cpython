@@ -3197,7 +3197,7 @@ static struct PyModuleDef _tkintermodule = {
 PyMODINIT_FUNC
 PyInit__tkinter(void)
 {
-  PyObject *m, *uexe, *cexe, *o;
+    PyObject *m, *uexe, *cexe;
 
     tcl_lock = PyThread_allocate_lock();
     if (tcl_lock == NULL)
