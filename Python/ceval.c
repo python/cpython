@@ -2654,6 +2654,9 @@ void Py_LeaveRecursiveCall(void)
 
 ///////////////////// Experimental UOp Interpreter /////////////////////
 
+#undef ASSERT_KWNAMES_IS_NULL
+#define ASSERT_KWNAMES_IS_NULL() (void)0
+
 #undef DEOPT_IF
 #define DEOPT_IF(COND, INSTNAME) \
     if ((COND)) {                \
@@ -2691,16 +2694,18 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
     OBJECT_STAT_INC(optimization_traces_executed);
     _Py_CODEUNIT *ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive;
     int opcode;
-    uint64_t operand;
     int oparg;
+    uint64_t operand;
+
     for (;;) {
         opcode = self->trace[pc].opcode;
+        oparg = self->trace[pc].oparg;
         operand = self->trace[pc].operand;
-        oparg = (int)operand;
         DPRINTF(3,
-                "%4d: uop %s, operand %" PRIu64 ", stack_level %d\n",
+                "%4d: uop %s, oparg %d, operand %" PRIu64 ", stack_level %d\n",
                 pc,
                 opcode < 256 ? _PyOpcode_OpName[opcode] : _PyOpcode_uop_name[opcode],
+                oparg,
                 operand,
                 (int)(stack_pointer - _PyFrame_Stackbase(frame)));
         pc++;
