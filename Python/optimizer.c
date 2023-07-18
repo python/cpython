@@ -701,6 +701,9 @@ uop_optimize(
     OBJECT_STAT_INC(optimization_traces_created);
     _PyJITFunction jitted = _PyJIT_CompileTrace(trace, trace_length);
     if (jitted == NULL) {
+        if (PyErr_Occurred()) {
+            return -1;
+        }
         return 0;
     }
     _PyUOpExecutorObject *executor = PyObject_New(_PyUOpExecutorObject, &UOpExecutor_Type);

@@ -215,7 +215,8 @@ preload_stencil(const Stencil *loading)
         const SymbolLoad *load = &loading->loads[i];
         uintptr_t value = (uintptr_t)DLSYM(load->symbol);
         if (value == 0) {
-            printf("XXX: Failed to preload symbol %s!\n", load->symbol);
+            const char *w = "JIT initialization failed (can't find symbol \"%s\")";
+            PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, load->symbol);
             return -1;
         }
         patch_one(loading->bytes + load->offset, load->kind, value, load->addend);
@@ -261,22 +262,22 @@ copy_and_patch(unsigned char *memory, const Stencil *stencil, uintptr_t patches[
 _PyJITFunction
 _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
 {
-    if (!stencils_loaded) {
-        stencils_loaded = 1;
+    if (stencils_loaded < 0) {
+        return NULL;
+    }
+    if (stencils_loaded == 0) {
+        stencils_loaded = -1;
         for (size_t i = 0; i < Py_ARRAY_LENGTH(stencils); i++) {
             if (preload_stencil(&stencils[i])) {
-                stencils_loaded = -1;
-                break;
+                return NULL;
             }
         }
         if (preload_stencil(&trampoline_stencil)) {
-            stencils_loaded = -1;
+            return NULL;
         }
+        stencils_loaded = 1;
     }
-    if (stencils_loaded < 0) {
-        printf("XXX: JIT disabled!\n");
-        return NULL;
-    }
+    assert(stencils_loaded > 0);
     // First, loop over everything once to find the total compiled size:
     size_t nbytes = trampoline_stencil.nbytes;
     for (int i = 0; i < size; i++) {
@@ -307,6 +308,7 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
         patches[HOLE_continue] = (i != size - 1)
                                ? (uintptr_t)head + stencil->nbytes
                                : (uintptr_t)memory + trampoline_stencil.nbytes;
+        patches[HOLE_oparg_plus_one] = instruction->oparg + 1;
         patches[HOLE_operand_plus_one] = instruction->operand + 1;
         patches[HOLE_pc_plus_one] = i + 1;
         copy_and_patch(head, stencil, patches);

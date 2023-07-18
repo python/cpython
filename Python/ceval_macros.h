@@ -396,3 +396,6 @@ static const convertion_func_ptr CONVERSION_FUNCTIONS[4] = {
 };
 
 #define ASSERT_KWNAMES_IS_NULL() assert(kwnames == NULL)
+
+#define UNBOUNDLOCAL_ERROR_MSG \
+    "cannot access local variable '%s' where it is not associated with a value"

@@ -823,29 +823,6 @@ else:
     raise NotImplementedError(sys.platform)
 
 class Compiler:
-    # XXX: Most of these just reference functions in ceval.c, so we can probably just include all of the cases and *don't* format the template for each one once we have symbols available.
-    _SKIP = frozenset(
-        {
-            "CHECK_EG_MATCH",
-            "CHECK_EXC_MATCH",
-            "DELETE_DEREF",
-            "DELETE_FAST",
-            "DELETE_GLOBAL",
-            "DELETE_NAME",
-            "DICT_MERGE",
-            "GET_AWAITABLE",
-            "LOAD_DEREF",
-            "LOAD_FAST_CHECK",
-            "LOAD_FROM_DICT_OR_DEREF",
-            "LOAD_GLOBAL",
-            "MATCH_CLASS",
-            "MATCH_KEYS",
-            "SET_FUNCTION_ATTRIBUTE",
-            "UNPACK_EX",
-            "UNPACK_SEQUENCE",
-            "_LOAD_FROM_DICT_OR_GLOBALS",
-        }
-    )
 
     def __init__(
         self,
@@ -915,19 +892,13 @@ class Compiler:
 
     async def build(self) -> None:
         generated_cases = PYTHON_GENERATED_CASES_C_H.read_text()
-        pattern = r"(?s:\n( {8}case (\w+): \{\n.*?\n {8}\})\n)"
-        self._cases = {}
-        for body, opname in re.findall(pattern, generated_cases):
-            self._cases[opname] = body.replace(" " * 8, " " * 4)
+        opnames = sorted(re.findall(r"\n {8}case (\w+): \{\n", generated_cases))
+        trampoline = TOOLS_JUSTIN_TRAMPOLINE.read_text()
         template = TOOLS_JUSTIN_TEMPLATE.read_text()
-        tasks = []
-        for opname in sorted(self._cases.keys() - self._SKIP):
-            body = template % self._cases[opname]
-            tasks.append(self._compile(opname, body))
-        opname = "trampoline"
-        body = TOOLS_JUSTIN_TRAMPOLINE.read_text()
-        tasks.append(self._compile(opname, body))
-        await asyncio.gather(*tasks)
+        await asyncio.gather(
+            self._compile("trampoline", trampoline),
+            *[self._compile(opname, template) for opname in opnames],
+        )
 
     def dump(self) -> str:
         lines = []
@@ -949,6 +920,7 @@ class Compiler:
             "HOLE_base",
             "HOLE_continue",
             "HOLE_next_trace",
+            "HOLE_oparg_plus_one",
             "HOLE_operand_plus_one",
             "HOLE_pc_plus_one",
         }

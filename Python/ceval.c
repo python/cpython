@@ -199,13 +199,7 @@ static void monitor_throw(PyThreadState *tstate,
 static PyObject * import_name(PyThreadState *, _PyInterpreterFrame *,
                               PyObject *, PyObject *, PyObject *);
 static PyObject * import_from(PyThreadState *, PyObject *, PyObject *);
-static void format_exc_check_arg(PyThreadState *, PyObject *, const char *, PyObject *);
-static void format_exc_unbound(PyThreadState *tstate, PyCodeObject *co, int oparg);
 static int check_args_iterable(PyThreadState *, PyObject *func, PyObject *vararg);
-static int check_except_type_valid(PyThreadState *tstate, PyObject* right);
-static int check_except_star_type_valid(PyThreadState *tstate, PyObject* right);
-static void format_kwargs_error(PyThreadState *, PyObject *func, PyObject *kwargs);
-static void format_awaitable_error(PyThreadState *, PyTypeObject *, int);
 static int get_exception_handler(PyCodeObject *, int, int*, int*, int*);
 _PyInterpreterFrame *
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
@@ -284,8 +278,8 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
 
 // Return a tuple of values corresponding to keys, with error checks for
 // duplicate/missing keys.
-static PyObject*
-match_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
+PyObject *
+_PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys)
 {
     assert(PyTuple_CheckExact(keys));
     Py_ssize_t nkeys = PyTuple_GET_SIZE(keys);
@@ -388,9 +382,9 @@ match_class_attr(PyThreadState *tstate, PyObject *subject, PyObject *type,
 
 // On success (match), return a tuple of extracted attributes. On failure (no
 // match), return NULL. Use _PyErr_Occurred(tstate) to disambiguate.
-static PyObject*
-match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
-            Py_ssize_t nargs, PyObject *kwargs)
+PyObject *
+_PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type,
+                   Py_ssize_t nargs, PyObject *kwargs)
 {
     if (!PyType_Check(type)) {
         const char *e = "called match pattern must be a class";
@@ -496,11 +490,6 @@ fail:
 
 
 static int do_raise(PyThreadState *tstate, PyObject *exc, PyObject *cause);
-static int exception_group_match(
-    PyObject* exc_value, PyObject *match_type,
-    PyObject **match, PyObject **rest);
-
-static int unpack_iterable(PyThreadState *, PyObject *, int, int, PyObject **);
 
 PyObject *
 PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
@@ -775,7 +764,7 @@ resume_frame:
 
 unbound_local_error:
         {
-            format_exc_check_arg(tstate, PyExc_UnboundLocalError,
+            _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
                 UNBOUNDLOCAL_ERROR_MSG,
                 PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
             );
@@ -1725,9 +1714,9 @@ raise_error:
    complicated for inlining).
 */
 
-static int
-exception_group_match(PyObject* exc_value, PyObject *match_type,
-                      PyObject **match, PyObject **rest)
+int
+_PyEval_ExceptionGroupMatch(PyObject* exc_value, PyObject *match_type,
+                            PyObject **match, PyObject **rest)
 {
     if (Py_IsNone(exc_value)) {
         *match = Py_NewRef(Py_None);
@@ -1788,9 +1777,9 @@ exception_group_match(PyObject* exc_value, PyObject *match_type,
    with a variable target.
 */
 
-static int
-unpack_iterable(PyThreadState *tstate, PyObject *v,
-                int argcnt, int argcntafter, PyObject **sp)
+int
+_PyEval_UnpackIterable(PyThreadState *tstate, PyObject *v,
+                       int argcnt, int argcntafter, PyObject **sp)
 {
     int i = 0, j = 0;
     Py_ssize_t ll = 0;
@@ -2435,8 +2424,8 @@ import_from(PyThreadState *tstate, PyObject *v, PyObject *name)
 #define CANNOT_EXCEPT_STAR_EG "catching ExceptionGroup with except* "\
                               "is not allowed. Use except instead."
 
-static int
-check_except_type_valid(PyThreadState *tstate, PyObject* right)
+int
+_PyEval_CheckExceptTypeValid(PyThreadState *tstate, PyObject* right)
 {
     if (PyTuple_Check(right)) {
         Py_ssize_t i, length;
@@ -2460,10 +2449,10 @@ check_except_type_valid(PyThreadState *tstate, PyObject* right)
     return 0;
 }
 
-static int
-check_except_star_type_valid(PyThreadState *tstate, PyObject* right)
+int
+_PyEval_CheckExceptStarTypeValid(PyThreadState *tstate, PyObject* right)
 {
-    if (check_except_type_valid(tstate, right) < 0) {
+    if (_PyEval_CheckExceptTypeValid(tstate, right) < 0) {
         return -1;
     }
 
@@ -2517,8 +2506,8 @@ check_args_iterable(PyThreadState *tstate, PyObject *func, PyObject *args)
     return 0;
 }
 
-static void
-format_kwargs_error(PyThreadState *tstate, PyObject *func, PyObject *kwargs)
+void
+_PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwargs)
 {
     /* _PyDict_MergeEx raises attribute
      * error (percolated from an attempt
@@ -2559,9 +2548,9 @@ format_kwargs_error(PyThreadState *tstate, PyObject *func, PyObject *kwargs)
     }
 }
 
-static void
-format_exc_check_arg(PyThreadState *tstate, PyObject *exc,
-                     const char *format_str, PyObject *obj)
+void
+_PyEval_FormatExcCheckArg(PyThreadState *tstate, PyObject *exc,
+                          const char *format_str, PyObject *obj)
 {
     const char *obj_str;
 
@@ -2588,8 +2577,8 @@ format_exc_check_arg(PyThreadState *tstate, PyObject *exc,
     }
 }
 
-static void
-format_exc_unbound(PyThreadState *tstate, PyCodeObject *co, int oparg)
+void
+_PyEval_FormatExcUnbound(PyThreadState *tstate, PyCodeObject *co, int oparg)
 {
     PyObject *name;
     /* Don't stomp existing exception */
@@ -2597,16 +2586,16 @@ format_exc_unbound(PyThreadState *tstate, PyCodeObject *co, int oparg)
         return;
     name = PyTuple_GET_ITEM(co->co_localsplusnames, oparg);
     if (oparg < PyCode_GetFirstFree(co)) {
-        format_exc_check_arg(tstate, PyExc_UnboundLocalError,
-                             UNBOUNDLOCAL_ERROR_MSG, name);
+        _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
+                                  UNBOUNDLOCAL_ERROR_MSG, name);
     } else {
-        format_exc_check_arg(tstate, PyExc_NameError,
-                             UNBOUNDFREE_ERROR_MSG, name);
+        _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                                  UNBOUNDFREE_ERROR_MSG, name);
     }
 }
 
-static void
-format_awaitable_error(PyThreadState *tstate, PyTypeObject *type, int oparg)
+void
+_PyEval_FormatAwaitableError(PyThreadState *tstate, PyTypeObject *type, int oparg)
 {
     if (type->tp_as_async == NULL || type->tp_as_async->am_await == NULL) {
         if (oparg == 1) {
@@ -2726,7 +2715,7 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
     }
 
 unbound_local_error:
-    format_exc_check_arg(tstate, PyExc_UnboundLocalError,
+    _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
         UNBOUNDLOCAL_ERROR_MSG,
         PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
     );
