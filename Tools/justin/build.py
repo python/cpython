@@ -762,7 +762,7 @@ class ObjectParserELF(ObjectParser):
 
 
 CFLAGS = [
-    # "-DNDEBUG",  # XXX
+    "-DNDEBUG",  # XXX
     "-DPy_BUILD_CORE",
     "-D_PyJIT_ACTIVE",
     "-I.",
