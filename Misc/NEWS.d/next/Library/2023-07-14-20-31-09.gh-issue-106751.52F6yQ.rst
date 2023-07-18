@@ -1,1 +1,1 @@
-:mod:`selectors`: Reduce EpollSelector overhead by moving code outside of the loop and avoiding a call to ``max()``.
+:mod:`selectors`: Optimize ``EpollSelector.select()`` code by moving some code outside of the loop.
