@@ -774,6 +774,11 @@ New Features
   If the assertion fails, make sure that the size is set before.
   (Contributed by Victor Stinner in :gh:`106168`.)
 
+* Add :c:func:`PyModule_Add` function: similar to
+  :c:func:`PyModule_AddObjectRef` and :c:func:`PyModule_AddObject` but
+  always steals a reference to the value.
+  (Contributed by Serhiy Storchaka in :gh:`86493`.)
+
 Porting to Python 3.13
 ----------------------
 
