@@ -425,6 +425,7 @@ SYMBOL_NAMES = (
     "PyMethodDescr_Type",
     "PyModuleDef_Init",
     "PyModuleDef_Type",
+    "PyModule_Add",
     "PyModule_AddFunctions",
     "PyModule_AddIntConstant",
     "PyModule_AddObject",
